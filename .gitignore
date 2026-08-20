@@ -6,3 +6,5 @@ out/
 .env
 .env.*
 data/
+dist/
+*.tsbuildinfo

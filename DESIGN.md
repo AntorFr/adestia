@@ -114,7 +114,7 @@ agent only.
 
 | Layer | Choice | Why |
 |---|---|---|
-| Language | TypeScript everywhere (Node ≥ 22, pnpm monorepo) | one language for core, front and third-party plugins; Claude Agent SDK is first-class TS; Copilot CLI is itself npm |
+| Language | TypeScript everywhere (Node ≥ 22, **npm workspaces** monorepo) | one language for core, front and third-party plugins; Claude Agent SDK is first-class TS; Copilot CLI is itself npm. npm workspaces rather than pnpm: it ships with Node, so contributors and CI need nothing installed — the extra tool earned nothing here |
 | Server | Fastify | TS-native, fast, encapsulated plugin system that maps well to Golem's plugin host |
 | Frontend | React 18+ + Vite | the block-editor ecosystem and the plugin-author audience are there |
 | Block editor | **Milkdown** (ProseMirror + remark) — decided by spike 1, see `spikes/editor/VERDICT.md` | byte-identical round-trip proven; same remark grammar as the renderer (one grammar, two consumers — drift eliminated structurally); wrapped behind a Golem editor interface, Tiptap spike kept as proven fallback |
