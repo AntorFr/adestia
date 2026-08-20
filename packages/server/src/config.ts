@@ -23,6 +23,12 @@ export interface OidcConfig {
   readonly groupsClaim: string
   /** Groups allowed in at all. Empty means any authenticated user. */
   readonly allowedGroups: readonly string[]
+  /**
+   * Signs session cookies. Absent means one is generated per boot, which
+   * signs everyone out on restart — fine for a single instance, wrong the
+   * moment there are two behind a load balancer.
+   */
+  readonly sessionSecret?: string | undefined
 }
 
 export interface ProxyAuthConfig {
@@ -163,6 +169,9 @@ function parseAuth(raw: unknown, issues: string[]): AuthConfig {
         redirectUri: requireString(oidc, 'redirectUri', 'auth.oidc.redirectUri', issues),
         groupsClaim: typeof oidc['groupsClaim'] === 'string' ? oidc['groupsClaim'] : 'groups',
         allowedGroups: stringList(oidc['allowedGroups'], 'auth.oidc.allowedGroups', issues),
+        ...(typeof oidc['sessionSecret'] === 'string'
+          ? { sessionSecret: oidc['sessionSecret'] }
+          : {}),
       },
     }
   }

@@ -30,9 +30,17 @@ auth:
   #   issuer: https://auth.example.org
   #   clientId: golem
   #   clientSecret: ${OIDC_CLIENT_SECRET}
+  #   # Must match the client registration EXACTLY. Golem anchors every URL on
+  #   # this value rather than on the incoming request: behind a reverse proxy
+  #   # the request carries the container's host, and a redirect built from it
+  #   # sends the browser somewhere it cannot reach.
   #   redirectUri: https://golem.example.org/auth/callback
   #   groupsClaim: groups
   #   allowedGroups: [staff]        # empty means any authenticated user
+  #   # Signs session cookies. Omit it and one is generated per boot, which
+  #   # signs everyone out on restart — fine for one instance, wrong the moment
+  #   # there are two behind a load balancer.
+  #   sessionSecret: ${GOLEM_SESSION_SECRET}
 
 workspace:
   # The agent's home. Its instructions live here in its CLI's own dialect —

@@ -18,6 +18,7 @@ import { isPublicRoute, resolveIdentity, type Identity } from './auth.js'
 import { ConversationStore, type StoredMessage } from './conversations.js'
 import type { GolemConfig } from './config.js'
 import { frontendPayload, type DiscoveredPlugin, type DiscoveryProblem } from './extensions.js'
+import { registerOidc } from './oidc-routes.js'
 import { registerPages } from './pages.js'
 import { ArmingSessions, SecretStore } from './secrets.js'
 import { registerStatic } from './static.js'
@@ -127,11 +128,19 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
 
   app.decorateRequest('identity', null)
 
+  // Mounted FIRST, because it installs the hook that reads the session cookie
+  // — and a gate that runs before the session is resolved sees every signed-in
+  // user as anonymous. Hook order is the whole correctness of this file.
+  await registerOidc(app, config)
+
   app.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
     if (isPublicRoute(request.url.split('?')[0] ?? request.url)) return
 
     const outcome = resolveIdentity(
-      { headers: request.headers as Record<string, string | string[] | undefined> },
+      {
+        headers: request.headers as Record<string, string | string[] | undefined>,
+        session: (request as FastifyRequest & { session?: { identity?: Identity } }).session,
+      },
       config.auth,
     )
     if (!outcome.ok) {
