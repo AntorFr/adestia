@@ -72,10 +72,21 @@ describe('configuration loading', () => {
   it('refuses an unavailable driver rather than falling back', async () => {
     // Silently running a different CLI than the operator configured is
     // indefensible: they would debug the wrong engine.
-    await writeFile(join(root, 'other.yaml'), 'driver:\n  id: copilot-cli\nport: 0\n')
+    await writeFile(join(root, 'other.yaml'), 'driver:\n  id: gemini-cli\nport: 0\n')
     await expect(start({ cwd: root, configPath: 'other.yaml' })).rejects.toThrow(
-      /is not available in this build/,
+      /is not available in this build \(have: claude-code, copilot-cli\)/,
     )
+  })
+
+  it('starts on the copilot driver without needing its binary present', async () => {
+    // Building the driver must not run the CLI: an instance configured for an
+    // engine that is not installed yet should still come up and say so, rather
+    // than refusing to boot.
+    await writeFile(join(root, 'copilot.yaml'), 'driver:\n  id: copilot-cli\nport: 0\n')
+    started = await start({ cwd: root, configPath: 'copilot.yaml', log: () => undefined })
+    const instance = (await started.app.inject({ url: '/api/instance' })).json()
+    expect(instance.driver.label).toBe('GitHub Copilot CLI')
+    expect(instance.driver.capabilities).toContain('authManagement')
   })
 })
 

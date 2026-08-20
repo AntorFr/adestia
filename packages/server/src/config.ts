@@ -48,6 +48,12 @@ export interface WorkspaceConfig {
 export interface DriverConfig {
   readonly id: string
   readonly models: readonly { id: string; label?: string }[]
+  /**
+   * The binary to run, when the driver spawns one. Worth pinning to an exact
+   * path in a container: the Copilot CLI self-updates, so "whatever is on
+   * PATH" is not a version anyone can reason about.
+   */
+  readonly command?: string | undefined
 }
 
 export interface ExtensionsConfig {
@@ -320,7 +326,11 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
     dataDir: typeof raw['dataDir'] === 'string' ? raw['dataDir'] : DEFAULTS.dataDir,
     auth,
     workspace,
-    driver: { id: driverId, models },
+    driver: {
+      id: driverId,
+      models,
+      ...(typeof driverRaw['command'] === 'string' ? { command: driverRaw['command'] } : {}),
+    },
     extensions,
     maxConcurrentTurns: maxConcurrentTurns as number,
   }

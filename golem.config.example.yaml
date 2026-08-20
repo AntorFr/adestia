@@ -43,7 +43,15 @@ workspace:
   planif: planif
 
 driver:
+  # claude-code (Claude Code, via its SDK) or copilot-cli (the `copilot`
+  # binary). One engine per instance: instructions live in that CLI's own
+  # dialect, and switching later is an assisted migration, not a config flip.
   id: claude-code
+
+  # The binary to run, when the driver spawns one. Worth pinning to an exact
+  # path for copilot-cli: it self-updates, so "whatever is on PATH" is not a
+  # version anyone can reason about.
+  # command: /usr/local/bin/copilot
   # Claude's catalogue is per-account and cannot be enumerated offline, so an
   # instance declares what it may use. Omit the list and the model selector
   # hides rather than showing a hardcoded catalogue that lies.

@@ -12,7 +12,12 @@ import { mkdir, readFile, stat } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { ClaudeCodeDriver, createSetupTokenFlow, type Driver } from '@antorfr/golem-drivers'
+import {
+  ClaudeCodeDriver,
+  CopilotDriver,
+  createSetupTokenFlow,
+  type Driver,
+} from '@antorfr/golem-drivers'
 import type { FastifyInstance } from 'fastify'
 
 import { buildApp } from './app.js'
@@ -57,22 +62,37 @@ export async function loadConfigFile(
   }
 }
 
-async function buildDriver(config: GolemConfig): Promise<Driver> {
-  if (config.driver.id !== 'claude-code') {
-    // Named loudly rather than falling back to the default engine: silently
-    // running a different CLI than the operator configured is indefensible.
-    throw new ConfigError([
-      `driver.id "${config.driver.id}" is not available in this build (have: claude-code)`,
-    ])
+const AVAILABLE_DRIVERS = ['claude-code', 'copilot-cli'] as const
+
+async function buildDriver(config: GolemConfig, dataDir: string): Promise<Driver> {
+  switch (config.driver.id) {
+    case 'claude-code': {
+      const { query } = await import('@anthropic-ai/claude-agent-sdk')
+      return new ClaudeCodeDriver({
+        query: query as unknown as ConstructorParameters<typeof ClaudeCodeDriver>[0]['query'],
+        models: config.driver.models,
+        // The terminal flow, so a token can be armed from the interface rather
+        // than requiring a shell inside the container.
+        armingFlow: createSetupTokenFlow(),
+      })
+    }
+
+    case 'copilot-cli':
+      return new CopilotDriver({
+        // Driver-owned: config, MCP servers, session store and its SQLite all
+        // land here rather than in whatever HOME the process happens to have.
+        home: join(dataDir, 'copilot-home'),
+        models: config.driver.models,
+        ...(config.driver.command ? { command: config.driver.command } : {}),
+      })
+
+    default:
+      // Named loudly rather than falling back to the default engine: silently
+      // running a different CLI than the operator configured is indefensible.
+      throw new ConfigError([
+        `driver.id "${config.driver.id}" is not available in this build (have: ${AVAILABLE_DRIVERS.join(', ')})`,
+      ])
   }
-  const { query } = await import('@anthropic-ai/claude-agent-sdk')
-  return new ClaudeCodeDriver({
-    query: query as unknown as ConstructorParameters<typeof ClaudeCodeDriver>[0]['query'],
-    models: config.driver.models,
-    // The terminal flow, so a token can be armed from the interface rather
-    // than requiring a shell inside the container.
-    armingFlow: createSetupTokenFlow(),
-  })
 }
 
 /** The web bundle ships beside the server package; found, never configured. */
@@ -137,14 +157,15 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     log(`skin "${config.extensions.skin}" is configured but was not found; using the default`)
   }
 
+  const dataDir = resolve(cwd, config.dataDir)
   const driver = options.driverFactory
     ? await options.driverFactory(config)
-    : await buildDriver(config)
+    : await buildDriver(config, dataDir)
 
   // A token armed in a previous run is loaded before the first turn: an
   // instance that forgets its credential on restart is an instance someone
   // has to re-arm every deploy.
-  const secrets = new SecretStore(resolve(cwd, config.dataDir))
+  const secrets = new SecretStore(dataDir)
   const stored = await secrets.read(config.driver.id)
   const armable = driver as Driver & {
     credentialVar?: string
