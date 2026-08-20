@@ -1,0 +1,26 @@
+# Golem — a self-hosted instance.
+#
+# Everything the container needs from outside lives in the three mounts below.
+# Copy golem.config.example.yaml to golem.config.yaml, adjust, and start.
+
+services:
+  golem:
+    build: .
+    # image: ghcr.io/antorfr/golem:latest   # once published
+    ports:
+      - '127.0.0.1:8730:8730'
+    volumes:
+      # The agent's home: its instructions, in its CLI's own dialect, and the
+      # pages both it and you edit.
+      - ./workspace:/workspace
+      # Server-side state: conversations, driver credentials.
+      - ./data:/data
+      # Extensions, dropped in and discovered at startup — no image rebuild.
+      - ./plugins:/plugins:ro
+      - ./skins:/skins:ro
+      - ./golem.config.yaml:/app/golem.config.yaml:ro
+    environment:
+      # The CLI's own credentials. Which variables matter depends on the
+      # configured driver; Golem can also arm a token from its own UI.
+      - CLAUDE_CODE_OAUTH_TOKEN=${CLAUDE_CODE_OAUTH_TOKEN:-}
+    restart: unless-stopped

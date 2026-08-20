@@ -177,16 +177,71 @@ function parseAuth(raw: unknown, issues: string[]): AuthConfig {
   return { mode }
 }
 
-export function parseConfig(source: string): GolemConfig {
+/**
+ * Environment overrides — deployment-specific values only.
+ *
+ * The line this draws matters: the FILE describes the instance (what it is,
+ * which plugins, which driver), the ENVIRONMENT describes where it happens to
+ * run and what secrets it holds. The predecessor put everything in env vars,
+ * and nothing about it could be read as a whole.
+ *
+ * Container images need exactly this much: a Dockerfile cannot mount a
+ * different config for `host` alone, and hardcoding 0.0.0.0 into the file
+ * would carry that binding to a laptop.
+ */
+const ENV_OVERRIDES = {
+  GOLEM_HOST: 'host',
+  GOLEM_PORT: 'port',
+  GOLEM_DATA_DIR: 'dataDir',
+  GOLEM_WORKSPACE: 'workspace.root',
+  GOLEM_PLUGINS_DIR: 'extensions.pluginsDir',
+  GOLEM_SKINS_DIR: 'extensions.skinsDir',
+} as const
+
+/**
+ * `${VAR}` in a config VALUE is replaced by the environment.
+ *
+ * This is what keeps a secret out of the file an operator commits: the OIDC
+ * client secret lives in the environment, and the config says where it goes.
+ * An undefined variable is left as written rather than blanked, so the error
+ * names the placeholder instead of "invalid client".
+ */
+export function interpolate(source: string, env: NodeJS.ProcessEnv): string {
+  return source.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)\}/g, (whole, name: string) =>
+    env[name] ?? whole,
+  )
+}
+
+function applyOverrides(raw: Record<string, unknown>, env: NodeJS.ProcessEnv): void {
+  for (const [variable, path] of Object.entries(ENV_OVERRIDES)) {
+    const value = env[variable]
+    if (value === undefined || value === '') continue
+
+    const segments = path.split('.')
+    let target = raw
+    for (const segment of segments.slice(0, -1)) {
+      if (!isObject(target[segment])) target[segment] = {}
+      target = target[segment] as Record<string, unknown>
+    }
+    const key = segments.at(-1)!
+    // Ports arrive as strings from the environment; everything else is a path
+    // or a host, which is a string on both sides.
+    target[key] = variable === 'GOLEM_PORT' ? Number.parseInt(value, 10) : value
+  }
+}
+
+export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env): GolemConfig {
   const issues: string[] = []
   let raw: unknown
   try {
-    raw = parseYaml(source)
+    raw = parseYaml(interpolate(source, env))
   } catch (error) {
     throw new ConfigError([`not valid YAML: ${(error as Error).message}`])
   }
   if (raw === null || raw === undefined) raw = {}
   if (!isObject(raw)) throw new ConfigError(['the config file must be a YAML mapping'])
+
+  applyOverrides(raw, env)
 
   for (const key of Object.keys(raw)) {
     if (!KNOWN_KEYS.has(key)) {

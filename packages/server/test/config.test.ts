@@ -148,3 +148,56 @@ describe('malformed input', () => {
     ])
   })
 })
+
+describe('environment overrides', () => {
+  it('overrides only deployment-specific values', () => {
+    // The FILE says what the instance IS; the ENVIRONMENT says where it runs.
+    // A container cannot mount a different config for `host` alone.
+    const config = parseConfig('auth:\n  mode: proxy\n', {
+      GOLEM_HOST: '0.0.0.0',
+      GOLEM_PORT: '9000',
+      GOLEM_DATA_DIR: '/data',
+      GOLEM_WORKSPACE: '/workspace',
+    })
+    expect(config).toMatchObject({ host: '0.0.0.0', port: 9000, dataDir: '/data' })
+    expect(config.workspace.root).toBe('/workspace')
+    // And what the file said about the instance is untouched.
+    expect(config.auth.mode).toBe('proxy')
+  })
+
+  it('ignores an empty variable rather than blanking a setting', () => {
+    expect(parseConfig('host: 10.0.0.1\n', { GOLEM_HOST: '' }).host).toBe('10.0.0.1')
+  })
+
+  it('works with no config file at all', () => {
+    // How the container image runs before anyone writes a config.
+    expect(parseConfig('', { GOLEM_HOST: '0.0.0.0' }).host).toBe('0.0.0.0')
+  })
+
+  it('substitutes ${VAR} so a secret never lands in the file', () => {
+    const config = parseConfig(
+      [
+        'auth:',
+        '  mode: oidc',
+        '  oidc:',
+        '    issuer: https://id.example',
+        '    clientId: golem',
+        '    clientSecret: ${OIDC_SECRET}',
+        '    redirectUri: https://golem.example/auth/callback',
+      ].join('\n'),
+      { OIDC_SECRET: 'from-the-environment' },
+    )
+    expect(config.auth.oidc?.clientSecret).toBe('from-the-environment')
+  })
+
+  it('leaves an undefined placeholder visible instead of blanking it', () => {
+    // Blanking turns a missing variable into "invalid client" from the IdP,
+    // which names nothing an operator can act on.
+    const config = parseConfig('dataDir: ${NOT_SET}\n', {})
+    expect(config.dataDir).toBe('${NOT_SET}')
+  })
+
+  it('refuses a non-numeric port from the environment', () => {
+    expect(() => parseConfig('', { GOLEM_PORT: 'eight-thousand' })).toThrow(/port must be/)
+  })
+})

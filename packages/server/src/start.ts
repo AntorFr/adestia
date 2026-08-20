@@ -39,14 +39,18 @@ export interface StartedInstance {
   close(): Promise<void>
 }
 
-export async function loadConfigFile(path: string): Promise<GolemConfig> {
+export async function loadConfigFile(
+  path: string,
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<GolemConfig> {
   try {
-    return parseConfig(await readFile(path, 'utf8'))
+    return parseConfig(await readFile(path, 'utf8'), env)
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       // A missing config file is a legitimate first run: defaults give a
-      // single-user instance on loopback. Inventing a file would be worse.
-      return parseConfig('')
+      // single-user instance on loopback — and the environment can still
+      // override, which is how the container image works with no file at all.
+      return parseConfig('', env)
     }
     throw error
   }

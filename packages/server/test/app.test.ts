@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import type { Driver, DriverDescriptor, TurnEvent, TurnRequest } from '@antorfr/golem-drivers'
 
+import { mkdtemp } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+
 import { buildApp, sseFrame, type AppDependencies } from '../src/app.js'
 import { parseConfig } from '../src/config.js'
 
@@ -239,6 +243,99 @@ describe('/api/turn', () => {
     await app.inject({ method: 'POST', url: '/api/turn', payload: { prompt: 'a' } })
     const second = await app.inject({ method: 'POST', url: '/api/turn', payload: { prompt: 'b' } })
     expect(second.statusCode).toBe(200)
+    await app.close()
+  })
+})
+
+describe('conversations', () => {
+  const withStore = async (overrides: Partial<AppDependencies> = {}) => {
+    const dataDir = await mkdtemp(join(tmpdir(), 'golem-app-conv-'))
+    return buildApp({
+      ...deps(overrides),
+      config: { ...deps(overrides).config, dataDir },
+    })
+  }
+
+  it('creates, lists and reads a thread', async () => {
+    const app = await withStore()
+    const created = (await app.inject({ method: 'POST', url: '/api/conversations' })).json()
+    expect(created.id).toBeTruthy()
+
+    const listed = (await app.inject({ url: '/api/conversations' })).json()
+    expect(listed.conversations.map((c: { id: string }) => c.id)).toEqual([created.id])
+
+    const read = (await app.inject({ url: `/api/conversations/${created.id}` })).json()
+    expect(read.messages).toEqual([])
+    await app.close()
+  })
+
+  it('404s a conversation that is not there', async () => {
+    // "not yours" and "empty" must not look the same to the UI.
+    const app = await withStore()
+    const response = await app.inject({ url: '/api/conversations/00000000-0000-4000-8000-000000000000' })
+    expect(response.statusCode).toBe(404)
+    await app.close()
+  })
+
+  it('records the whole exchange, tool trace included', async () => {
+    const driver = new ScriptedDriver([
+      { type: 'text-delta', text: 'Bonjour' },
+      { type: 'tool-use', name: 'Read', target: '/a.md' },
+      { type: 'tool-result', name: 'Read', ok: true },
+      { type: 'result', sessionId: 's1', stopped: false, usage: { contextTokens: 4200 } },
+    ])
+    const app = await withStore({ driver })
+    const { id } = (await app.inject({ method: 'POST', url: '/api/conversations' })).json()
+
+    await app.inject({
+      method: 'POST',
+      url: '/api/turn',
+      payload: { prompt: 'salut', conversationId: id },
+    })
+
+    const conversation = (await app.inject({ url: `/api/conversations/${id}` })).json()
+    expect(conversation.messages.map((m: { role: string; text: string }) => [m.role, m.text])).toEqual([
+      ['user', 'salut'],
+      ['agent', 'Bonjour'],
+    ])
+    expect(conversation.messages[1].tools).toEqual([{ name: 'Read', target: '/a.md', ok: true }])
+    expect(conversation.messages[1].usage.contextTokens).toBe(4200)
+    // And the thread remembers which CLI session to resume.
+    expect(conversation.sessionId).toBe('s1')
+    await app.close()
+  })
+
+  it('stores the partial answer of a turn that failed', async () => {
+    // A thread that silently drops what the agent did produce is worse than
+    // one that shows it broke.
+    const driver = new ScriptedDriver([])
+    driver.runTurn = async function* () {
+      yield { type: 'text-delta', text: 'half' } as TurnEvent
+      throw new Error('CLI died')
+    }
+    const app = await withStore({ driver })
+    const { id } = (await app.inject({ method: 'POST', url: '/api/conversations' })).json()
+    await app.inject({ method: 'POST', url: '/api/turn', payload: { prompt: 'x', conversationId: id } })
+
+    const conversation = (await app.inject({ url: `/api/conversations/${id}` })).json()
+    expect(conversation.messages[1]).toMatchObject({ text: 'half', error: 'CLI died' })
+    await app.close()
+  })
+
+  it('runs a turn without a conversation just as well', async () => {
+    // Nothing forces a thread: an ephemeral question should not have to
+    // create one to be answered.
+    const app = await withStore()
+    const response = await app.inject({ method: 'POST', url: '/api/turn', payload: { prompt: 'hi' } })
+    expect(response.statusCode).toBe(200)
+    await app.close()
+  })
+
+  it('deletes a thread', async () => {
+    const app = await withStore()
+    const { id } = (await app.inject({ method: 'POST', url: '/api/conversations' })).json()
+    expect((await app.inject({ method: 'DELETE', url: `/api/conversations/${id}` })).statusCode).toBe(200)
+    expect((await app.inject({ url: `/api/conversations/${id}` })).statusCode).toBe(404)
     await app.close()
   })
 })

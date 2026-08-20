@@ -8,12 +8,14 @@
  * whole channel silently for days.
  */
 
+import { randomUUID } from 'node:crypto'
 import { join } from 'node:path'
 
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify'
 import type { Driver, DriverDescriptor, TurnEvent } from '@antorfr/golem-drivers'
 
 import { isPublicRoute, resolveIdentity, type Identity } from './auth.js'
+import { ConversationStore, type StoredMessage } from './conversations.js'
 import type { GolemConfig } from './config.js'
 import { frontendPayload, type DiscoveredPlugin, type DiscoveryProblem } from './extensions.js'
 import { registerPages } from './pages.js'
@@ -26,6 +28,15 @@ export interface AppDependencies {
   readonly pluginProblems: readonly DiscoveryProblem[]
   /** Built shell bundle. Absent in dev, where Vite serves it and proxies here. */
   readonly webRoot?: string | undefined
+}
+
+/** The identity every authenticated route can count on. */
+function identityOf(request: FastifyRequest): Identity {
+  return (request as FastifyRequest & { identity?: Identity }).identity ?? {
+    userId: 'local',
+    displayName: 'Local user',
+    groups: [],
+  }
 }
 
 /** Turn admission: subscription limits are real, so concurrency is bounded. */
@@ -58,6 +69,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   const { config, driver, plugins, pluginProblems, webRoot } = deps
   const app = Fastify({ logger: false })
   const limiter = new TurnLimiter(config.maxConcurrentTurns)
+  const conversations = new ConversationStore(config.dataDir)
   const descriptor: DriverDescriptor = await driver.describe()
 
   app.decorateRequest('identity', null)
@@ -113,7 +125,31 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     return { models: await listModels.call(driver) }
   })
 
-  app.post<{ Body: { prompt?: unknown; sessionId?: unknown; model?: unknown } }>(
+  app.get('/api/conversations', async (request) => ({
+    conversations: await conversations.list(identityOf(request).userId),
+  }))
+
+  app.post('/api/conversations', async (request) =>
+    conversations.create(identityOf(request).userId),
+  )
+
+  app.get<{ Params: { id: string } }>('/api/conversations/:id', async (request, reply) => {
+    const conversation = await conversations.read(identityOf(request).userId, request.params.id)
+    // 404 rather than an empty thread: "this conversation is not yours" and
+    // "this conversation is empty" must not look the same to the UI.
+    if (!conversation) return reply.code(404).send({ error: 'no such conversation' })
+    return conversation
+  })
+
+  app.delete<{ Params: { id: string } }>('/api/conversations/:id', async (request, reply) => {
+    const removed = await conversations.remove(identityOf(request).userId, request.params.id)
+    if (!removed) return reply.code(404).send({ error: 'no such conversation' })
+    return { deleted: true }
+  })
+
+  app.post<{
+    Body: { prompt?: unknown; sessionId?: unknown; model?: unknown; conversationId?: unknown }
+  }>(
     '/api/turn',
     async (request, reply) => {
       const body = request.body ?? {}
@@ -139,6 +175,27 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
         'x-accel-buffering': 'no',
       })
 
+      const userId = identityOf(request).userId
+      const conversationId =
+        typeof body.conversationId === 'string' ? body.conversationId : undefined
+
+      if (conversationId) {
+        await conversations.append(userId, conversationId, {
+          id: randomUUID(),
+          role: 'user',
+          text: body.prompt,
+          at: new Date().toISOString(),
+        })
+      }
+
+      // Accumulated as the turn streams, so what is stored is what the UI drew
+      // — tool calls, interruption, usage — not just the final text.
+      const tools: { name: string; target?: string; ok?: boolean }[] = []
+      let text = ''
+      let stopped = false
+      let failure: string | undefined
+      let usage: StoredMessage['usage']
+
       try {
         const events = driver.runTurn({
           prompt: body.prompt,
@@ -148,12 +205,46 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
         })
         for await (const event of events) {
           reply.raw.write(sseFrame(event))
+          if (event.type === 'text-delta') text += event.text
+          else if (event.type === 'tool-use') {
+            tools.push({ name: event.name, ...(event.target ? { target: event.target } : {}) })
+          } else if (event.type === 'tool-result') {
+            const pending = tools.findLast((tool) => tool.name === event.name && tool.ok === undefined)
+            if (pending) pending.ok = event.ok
+          } else if (event.type === 'error') failure = event.message
+          else if (event.type === 'result') {
+            stopped = event.stopped
+            usage = {
+              ...(event.usage?.contextTokens !== undefined
+                ? { contextTokens: event.usage.contextTokens }
+                : {}),
+              ...(event.usage?.outputTokens !== undefined
+                ? { outputTokens: event.usage.outputTokens }
+                : {}),
+            }
+            if (conversationId) await conversations.setSession(userId, conversationId, event.sessionId)
+          }
         }
       } catch (error) {
-        reply.raw.write(
-          sseFrame({ type: 'error', message: (error as Error).message, fatal: true }),
-        )
+        failure = (error as Error).message
+        reply.raw.write(sseFrame({ type: 'error', message: failure, fatal: true }))
       } finally {
+        if (conversationId) {
+          // Written even when the turn failed: a thread that silently drops
+          // the answer it did produce is worse than one showing it broke.
+          await conversations
+            .append(userId, conversationId, {
+              id: randomUUID(),
+              role: 'agent',
+              text,
+              at: new Date().toISOString(),
+              ...(tools.length > 0 ? { tools } : {}),
+              ...(stopped ? { stopped } : {}),
+              ...(failure ? { error: failure } : {}),
+              ...(usage ? { usage } : {}),
+            })
+            .catch(() => undefined)
+        }
         limiter.release()
         reply.raw.end()
       }
