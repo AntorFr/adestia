@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react'
 import { Chat } from '../chat/Chat.js'
 import { Editor, type PageDocument } from '../editor/Editor.js'
 import { Settings } from './Settings.js'
+import { browserSkinEnvironment, loadSkin, type Skin, type SkinDescriptor } from './skin.js'
 import { browserEnvironment, loadPlugins, type PluginDescriptor } from '../plugins/loader.js'
 import { useMobile } from './useMobile.js'
 import { useSplit } from './useSplit.js'
@@ -19,7 +20,7 @@ export interface InstanceInfo {
   readonly driver: { label: string; cliVersion: string; capabilities: readonly string[] }
   readonly auth: { mode: string }
   readonly user: { userId: string; displayName: string } | null
-  readonly skin: string
+  readonly skin: SkinDescriptor
   readonly plugins: readonly PluginDescriptor[]
   readonly pluginProblems: readonly { id: string; reason: string }[]
   readonly turns: { max: number; running: number }
@@ -47,6 +48,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
    */
   const [mount, setMount] = useState<EditorMount | undefined>()
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [skin, setSkin] = useState<Skin>({})
   const split = useSplit()
   const mobile = useMobile()
 
@@ -72,8 +74,29 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
         if (cancelled) return
         setInstance(info)
 
+        const dressed = await loadSkin(info.skin, browserSkinEnvironment())
+        if (!cancelled) {
+          setSkin(dressed.skin)
+          if (dressed.skin.title) document.title = dressed.skin.title
+          // Off-contract fields are reported where the plugin problems are,
+          // because a silently ignored field is an hour spent wondering why
+          // nothing happens.
+          const skinProblems = [
+            ...(dressed.error ? [{ id: `skin:${info.skin.id}`, reason: dressed.error }] : []),
+            ...(dressed.rejected.length > 0
+              ? [
+                  {
+                    id: `skin:${info.skin.id}`,
+                    reason: `ignored off-contract field(s): ${dressed.rejected.join(', ')}`,
+                  },
+                ]
+              : []),
+          ]
+          if (skinProblems.length > 0) setFailures((current) => [...current, ...skinProblems])
+        }
+
         const result = await loadPlugins(info.plugins, browserEnvironment())
-        if (!cancelled) setFailures(result.failures)
+        if (!cancelled) setFailures((current) => [...current, ...result.failures])
 
         const list = await fetchImpl('/api/pages')
         if (list.ok && !cancelled) {
@@ -138,12 +161,13 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   return (
     <div
       className="golem-shell"
-      data-skin={instance.skin}
+      data-skin={instance.skin.id}
       data-mobile={mobile ? 'true' : undefined}
       data-screen={mobile ? screen : undefined}
     >
       <Chat
         fetchImpl={fetchImpl}
+        {...(skin.placeholder ? { placeholder: skin.placeholder } : {})}
         {...(mobile ? { onOpenCanvas: () => setScreen('canvas') } : {})}
       />
       <div className="golem-gutter" {...split.gutterProps} />
@@ -161,7 +185,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
               ‹ Chat
             </button>
           )}
-          <span className="golem-canvas__brand">Golem</span>
+          <span className="golem-canvas__brand">{skin.brand ?? 'Golem'}</span>
           <span className="golem-canvas__spacer" />
           <span className="golem-canvas__driver">
             {instance.driver.label} {instance.driver.cliVersion}

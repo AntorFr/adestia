@@ -23,6 +23,13 @@ import { registerPages } from './pages.js'
 import { ArmingSessions, SecretStore } from './secrets.js'
 import { registerStatic } from './static.js'
 
+/** What the shell needs to dress itself, before it renders anything. */
+export interface SkinPayload {
+  readonly styles?: string
+  readonly module?: string
+  readonly icon?: string
+}
+
 export interface AppDependencies {
   readonly config: GolemConfig
   readonly driver: Driver
@@ -34,6 +41,8 @@ export interface AppDependencies {
   readonly secrets?: SecretStore
   /** Answers the UI's permission decisions; shared with the driver. */
   readonly permissions?: PermissionBroker
+  /** The active skin, when the configured one was found on disk. */
+  readonly skin?: { readonly id: string; readonly dir: string; readonly manifest: SkinPayload }
 }
 
 /** The optional slice of the driver contract that arms credentials. */
@@ -179,7 +188,14 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     },
     auth: { mode: config.auth.mode },
     user: (request as FastifyRequest & { identity?: Identity }).identity ?? null,
-    skin: config.extensions.skin,
+    /**
+     * What the shell loads, not just a name. A skin named in config but absent
+     * from disk must not leave the front end fetching files that are not there
+     * — it renders the default, and the boot log already said why.
+     */
+    skin: deps.skin
+      ? { id: deps.skin.id, base: '/skin/', ...deps.skin.manifest }
+      : { id: 'default', base: '/skin/' },
     plugins: frontendPayload(plugins),
     /**
      * Refused plugins are reported to the UI, not buried in a log nobody
@@ -466,7 +482,11 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   registerPages(app, { root: join(config.workspace.root, config.workspace.pages) })
 
   // Last, so an API route always wins over the shell's catch-all.
-  registerStatic(app, { plugins, ...(webRoot ? { webRoot } : {}) })
+  registerStatic(app, {
+    plugins,
+    ...(webRoot ? { webRoot } : {}),
+    ...(deps.skin ? { skinDir: deps.skin.dir } : {}),
+  })
 
   // Exposed on the instance so `start()` can hand it to the clock without a
   // second construction path.

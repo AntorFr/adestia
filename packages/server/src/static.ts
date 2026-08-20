@@ -57,6 +57,8 @@ export interface StaticOptions {
   /** Built shell bundle (`dist-web`). Absent in dev, where Vite serves it. */
   readonly webRoot?: string | undefined
   readonly plugins: readonly DiscoveredPlugin[]
+  /** The one active skin's folder, when the configured skin was found. */
+  readonly skinDir?: string | undefined
 }
 
 async function sendFile(reply: FastifyReply, path: string): Promise<FastifyReply> {
@@ -93,12 +95,23 @@ export function registerStatic(app: FastifyInstance, options: StaticOptions): vo
     },
   )
 
+  // Exactly one skin is reachable — the active one. Serving them all would
+  // let a bookmark load a livery the instance did not choose.
+  const skinDir = options.skinDir
+  if (skinDir) {
+    app.get<{ Params: { '*': string } }>('/skin/*', async (request, reply) => {
+      const path = safeJoin(skinDir, request.params['*'])
+      if (!path) return reply.code(403).send({ error: 'forbidden' })
+      return sendFile(reply, path)
+    })
+  }
+
   const webRoot = options.webRoot
   if (!webRoot) return
 
   app.get('/*', async (request, reply) => {
     const url = request.url.split('?')[0] ?? '/'
-    if (url.startsWith('/api/') || url.startsWith('/plugins/')) {
+    if (url.startsWith('/api/') || url.startsWith('/plugins/') || url.startsWith('/skin/')) {
       return reply.code(404).send({ error: 'not found' })
     }
 

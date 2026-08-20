@@ -160,10 +160,13 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     `${active.length} of ${plugins.length} plugin(s) active, ${skins.length} skin(s) available`,
   )
 
-  if (config.extensions.skin !== 'default' && !skins.some((s) => s.manifest.id === config.extensions.skin)) {
+  const activeSkin = skins.find((s) => s.manifest.id === config.extensions.skin)
+  if (config.extensions.skin !== 'default' && !activeSkin) {
     // Not fatal — the shell falls back — but silence here means running under
     // another body's name and icon without ever being told.
     log(`skin "${config.extensions.skin}" is configured but was not found; using the default`)
+  } else if (activeSkin) {
+    log(`skin "${activeSkin.manifest.id}" active`)
   }
 
   const dataDir = resolve(cwd, config.dataDir)
@@ -220,6 +223,19 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     pluginProblems: problems,
     secrets,
     permissions,
+    ...(activeSkin
+      ? {
+          skin: {
+            id: activeSkin.manifest.id,
+            dir: activeSkin.dir,
+            manifest: {
+              ...(activeSkin.manifest.styles ? { styles: activeSkin.manifest.styles } : {}),
+              ...(activeSkin.manifest.module ? { module: activeSkin.manifest.module } : {}),
+              ...(activeSkin.manifest.icon ? { icon: activeSkin.manifest.icon } : {}),
+            },
+          },
+        }
+      : {}),
     ...(webRoot ? { webRoot } : {}),
   })
   await app.listen({ host: resolved.host, port: resolved.port })

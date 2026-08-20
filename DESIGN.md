@@ -416,15 +416,13 @@ the agent and a Notion-like editor over one shared grammar; runtime plugin
 loading from a mounted folder with a shared React through an import map;
 `claude-code` and `copilot-cli` drivers behind the capability contract;
 credential arming from the interface; auth in all three modes; authoring
-skills the agent uses to write conformant plugins; scheduled turns; container
-image and CI.
+skills the agent uses to write conformant plugins; scheduled turns; skins;
+container image and CI.
 
 **Not built yet**, and none of it blocked by a design question:
 
 - **Inbound MCP** (`ask_<agent>`), so other agents can delegate work here.
 - **Chat attachments** — upload, inbox, the untrusted-data framing.
-- **Skins beyond their schema**: the manifest and the token contract exist and
-  are enforced; the shell does not yet load a skin's tokens or hooks.
 - **Remote instruction sync** (the optional git module).
 - **Subscription concurrency spike**, which needs real quota to measure.
 
