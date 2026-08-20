@@ -1,0 +1,215 @@
+/**
+ * Settings: arming the driver's credential without a terminal.
+ *
+ * The flow is rendered from the driver's `mode`, never from its name — the
+ * same panel serves a paste-a-code flow and a device-code one, and a third
+ * engine needs no change here.
+ */
+
+import { useCallback, useEffect, useState } from 'react'
+
+export interface AuthStatus {
+  readonly state: 'absent' | 'armed' | 'invalid' | 'unknown'
+  readonly source: 'managed' | 'cli-native'
+  readonly savedAt?: string
+  readonly reason?: string
+}
+
+export interface AuthPrompt {
+  readonly sessionId: string
+  readonly mode: 'url+code' | 'device-code' | 'api-key'
+  readonly authorizeUrl?: string
+  readonly userCode?: string
+  readonly inputLabel?: string
+}
+
+type Phase =
+  | { readonly kind: 'idle' }
+  | { readonly kind: 'starting' }
+  | { readonly kind: 'awaiting'; readonly prompt: AuthPrompt }
+  | { readonly kind: 'exchanging'; readonly prompt: AuthPrompt }
+  | { readonly kind: 'failed'; readonly message: string }
+
+export function StatusLine({ status }: { status: AuthStatus | undefined }) {
+  if (!status) return <span className="golem-save">Checking…</span>
+  switch (status.state) {
+    case 'armed':
+      return (
+        <span className="golem-save golem-save--ok">
+          Armed{status.savedAt ? ` on ${new Date(status.savedAt).toLocaleDateString()}` : ''}
+        </span>
+      )
+    case 'invalid':
+      return <span className="golem-save golem-save--error">{status.reason ?? 'Refused upstream'}</span>
+    case 'absent':
+      return (
+        <span className="golem-save">
+          {/* Not an error: the CLI may be living on credentials set up outside
+              Golem, and saying "missing" would send someone fixing what works. */}
+          {status.source === 'cli-native'
+            ? 'Using the CLI’s own credentials'
+            : 'No token stored here'}
+        </span>
+      )
+    default:
+      return <span className="golem-save">Unknown</span>
+  }
+}
+
+export function Settings({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
+  const [status, setStatus] = useState<AuthStatus | undefined>()
+  const [supported, setSupported] = useState(true)
+  const [phase, setPhase] = useState<Phase>({ kind: 'idle' })
+  const [code, setCode] = useState('')
+
+  const refresh = useCallback(async () => {
+    const response = await fetchImpl('/api/auth/driver')
+    // 404 means this engine cannot be armed from here at all — a different
+    // fact from "has no token", and the panel must not offer a button that
+    // can never work.
+    if (response.status === 404) {
+      setSupported(false)
+      return
+    }
+    if (response.ok) setStatus((await response.json()) as AuthStatus)
+  }, [fetchImpl])
+
+  useEffect(() => {
+    void refresh()
+  }, [refresh])
+
+  const begin = useCallback(async () => {
+    setPhase({ kind: 'starting' })
+    const response = await fetchImpl('/api/auth/driver/begin', { method: 'POST' })
+    if (!response.ok) {
+      const body = (await response.json().catch(() => ({}))) as { error?: string }
+      setPhase({ kind: 'failed', message: body.error ?? 'the flow could not be started' })
+      return
+    }
+    setPhase({ kind: 'awaiting', prompt: (await response.json()) as AuthPrompt })
+  }, [fetchImpl])
+
+  const complete = useCallback(
+    async (prompt: AuthPrompt) => {
+      setPhase({ kind: 'exchanging', prompt })
+      const response = await fetchImpl('/api/auth/driver/complete', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ sessionId: prompt.sessionId, input: code }),
+      })
+      if (!response.ok) {
+        const body = (await response.json().catch(() => ({}))) as { error?: string }
+        setPhase({ kind: 'failed', message: body.error ?? 'the code was refused' })
+        return
+      }
+      setCode('')
+      setPhase({ kind: 'idle' })
+      await refresh()
+    },
+    [code, fetchImpl, refresh],
+  )
+
+  const cancel = useCallback(
+    async (prompt: AuthPrompt) => {
+      setPhase({ kind: 'idle' })
+      setCode('')
+      await fetchImpl('/api/auth/driver/cancel', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ sessionId: prompt.sessionId }),
+      })
+    },
+    [fetchImpl],
+  )
+
+  const clear = useCallback(async () => {
+    await fetchImpl('/api/auth/driver', { method: 'DELETE' })
+    await refresh()
+  }, [fetchImpl, refresh])
+
+  if (!supported) {
+    return (
+      <section className="golem-settings">
+        <h2>Agent credential</h2>
+        <p className="golem-empty__hint">
+          This engine takes its credentials from the environment; there is nothing to arm here.
+        </p>
+      </section>
+    )
+  }
+
+  const active = phase.kind === 'awaiting' || phase.kind === 'exchanging' ? phase.prompt : undefined
+
+  return (
+    <section className="golem-settings">
+      <header className="golem-settings__header">
+        <h2>Agent credential</h2>
+        <StatusLine status={status} />
+      </header>
+
+      {phase.kind === 'failed' && (
+        <p className="golem-save golem-save--error" role="alert">
+          {phase.message}
+        </p>
+      )}
+
+      {!active && (
+        <div className="golem-settings__actions">
+          <button type="button" onClick={() => void begin()} disabled={phase.kind === 'starting'}>
+            {status?.state === 'armed' ? 'Renew the token' : 'Arm a token'}
+          </button>
+          {status?.state === 'armed' && (
+            <button type="button" onClick={() => void clear()}>
+              Forget it
+            </button>
+          )}
+        </div>
+      )}
+
+      {active && (
+        <ol className="golem-arming">
+          <li>
+            {active.mode === 'device-code' ? (
+              <>
+                Open <a href={active.authorizeUrl} target="_blank" rel="noreferrer">the sign-in page</a>{' '}
+                and enter the code <code>{active.userCode}</code>
+              </>
+            ) : (
+              <>
+                Open{' '}
+                <a href={active.authorizeUrl} target="_blank" rel="noreferrer">
+                  this authorisation link
+                </a>{' '}
+                and approve the request
+              </>
+            )}
+          </li>
+          <li>
+            <label className="golem-arming__label">
+              {active.inputLabel ?? 'Paste the code you were given'}
+              <input
+                className="golem-arming__input"
+                value={code}
+                onChange={(event) => setCode(event.target.value)}
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </label>
+            <div className="golem-settings__actions">
+              <button type="button" onClick={() => void cancel(active)}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void complete(active)}
+                disabled={code.trim() === '' || phase.kind === 'exchanging'}
+              >
+                {phase.kind === 'exchanging' ? 'Exchanging…' : 'Validate'}
+              </button>
+            </div>
+          </li>
+        </ol>
+      )}
+    </section>
+  )
+}

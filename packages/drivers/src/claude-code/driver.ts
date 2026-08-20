@@ -11,6 +11,8 @@
  */
 
 import type {
+  AuthPrompt,
+  AuthStatus,
   Driver,
   DriverDescriptor,
   ModelInfo,
@@ -18,6 +20,7 @@ import type {
   TurnRequest,
   TurnUsage,
 } from '../contract.js'
+import { TOKEN_ENV_VAR, looksLikeToken } from './arming.js'
 import { toolTarget } from './events.js'
 import { isKnownMessage } from './sdk-types.js'
 import type { QueryFn, RawMessage, SdkMessage } from './sdk-types.js'
@@ -43,6 +46,23 @@ export interface ClaudeCodeOptions {
    * rather than showing a hardcoded list that lies at the first catalog change.
    */
   readonly models?: readonly ModelInfo[]
+  /**
+   * Runs the `setup-token` flow. Injected because scripting a pty is the one
+   * part of this driver that cannot be tested without a terminal — and a
+   * driver whose auth path is untested is a driver whose auth path is tested
+   * by its first user.
+   */
+  readonly armingFlow?: ArmingFlow
+}
+
+/**
+ * The terminal flow, reduced to what the contract needs: something that
+ * yields an authorization URL, accepts a code, and returns a token.
+ */
+export interface ArmingFlow {
+  start(): Promise<{ authorizeUrl: string }>
+  submit(code: string): Promise<{ token: string }>
+  cancel(): Promise<void>
 }
 
 export class ClaudeCodeDriver implements Driver {
@@ -51,6 +71,10 @@ export class ClaudeCodeDriver implements Driver {
   readonly #credentials: Readonly<Record<string, string>>
   readonly #cliVersion: string
   readonly #models: readonly ModelInfo[]
+  readonly #armingFlow: ArmingFlow | undefined
+  /** Set by the core after it stores a secret, so status can report it. */
+  #savedAt: string | undefined
+  #invalidReason: string | undefined
   /** Live queries, so `interrupt()` can reach the right one. */
   readonly #running = new Map<string, { interrupt(): Promise<unknown> }>()
 
@@ -60,7 +84,76 @@ export class ClaudeCodeDriver implements Driver {
     this.#credentials = options.credentials ?? {}
     this.#cliVersion = options.cliVersion ?? 'unknown'
     this.#models = options.models ?? []
+    this.#armingFlow = options.armingFlow
   }
+
+  /** Called by the core when it loads or stores this driver's credentials. */
+  setCredentials(
+    credentials: Readonly<Record<string, string>>,
+    savedAt?: string | undefined,
+  ): void {
+    Object.assign(this.#credentials as Record<string, string>, credentials)
+    this.#savedAt = savedAt
+    this.#invalidReason = undefined
+  }
+
+  authStatus(): Promise<AuthStatus> {
+    const managed = this.#credentials[TOKEN_ENV_VAR]
+    if (this.#invalidReason) {
+      return Promise.resolve({
+        state: 'invalid',
+        source: 'managed',
+        reason: this.#invalidReason,
+        ...(this.#savedAt ? { savedAt: this.#savedAt } : {}),
+      })
+    }
+    if (managed) {
+      return Promise.resolve({
+        state: 'armed',
+        source: 'managed',
+        ...(this.#savedAt ? { savedAt: this.#savedAt } : {}),
+      })
+    }
+    // NOT an error: the CLI may perfectly well be living on credentials
+    // someone set up outside Golem, and forcing an arming flow to start a
+    // session would make the product harder to use than the terminal.
+    return Promise.resolve({ state: 'absent', source: 'cli-native' })
+  }
+
+  async beginAuth(): Promise<AuthPrompt> {
+    if (!this.#armingFlow) throw new Error('this instance cannot arm a token from the interface')
+    const { authorizeUrl } = await this.#armingFlow.start()
+    return {
+      sessionId: 'claude-setup-token',
+      mode: 'url+code',
+      authorizeUrl,
+      inputLabel: 'Paste the code shown after authorising',
+      ttl: 600,
+    }
+  }
+
+  async completeAuth(_sessionId: string, input: string): Promise<{ secret: string }> {
+    if (!this.#armingFlow) throw new Error('this instance cannot arm a token from the interface')
+    const { token } = await this.#armingFlow.submit(input)
+    if (!looksLikeToken(token)) {
+      // Refused here rather than stored: a malformed token fails at the first
+      // turn with an error about the CLI, which sends its owner to debug the
+      // wrong thing entirely.
+      throw new Error('the flow returned something that is not a subscription token')
+    }
+    return { secret: token }
+  }
+
+  async cancelAuth(_sessionId: string): Promise<void> {
+    await this.#armingFlow?.cancel()
+  }
+
+  /**
+   * Where the CLI reads its credential. Declared rather than hardcoded in the
+   * core, so a third-party driver can be armed too — the core validates it,
+   * refusing anything that would turn a token into code execution.
+   */
+  readonly credentialVar = TOKEN_ENV_VAR
 
   describe(): Promise<DriverDescriptor> {
     return Promise.resolve({
@@ -68,6 +161,9 @@ export class ClaudeCodeDriver implements Driver {
       label: 'Claude Code',
       cliVersion: this.#cliVersion,
       capabilities: [
+        // Declared only when a flow exists: an interface offering to arm a
+        // token it cannot arm is worse than one that does not offer.
+        ...(this.#armingFlow ? (['authManagement'] as const) : []),
         'usageMetrics',
         'cost',
         'liveTurnUsage',

@@ -1,3 +1,5 @@
 export * from './driver.js'
 export * from './events.js'
 export type * from './sdk-types.js'
+export * from './arming.js'
+export * from './setup-token.js'

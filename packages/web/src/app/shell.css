@@ -552,3 +552,81 @@
 }
 
 .golem-chat__header { gap: var(--space-2); }
+
+/* Settings ---------------------------------------------------------------- */
+
+.golem-canvas__spacer { flex: 1; }
+
+.golem-settings {
+  margin-bottom: var(--space-5);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+}
+
+.golem-settings__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.golem-settings h2 { margin: 0; font-size: var(--text-base); }
+
+.golem-settings__actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.golem-settings__actions button {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.golem-settings__actions button:last-child {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.golem-settings__actions button:disabled {
+  background: var(--surface-sunken);
+  border-color: var(--border);
+  color: var(--text-faint);
+  cursor: default;
+}
+
+.golem-arming {
+  margin: 0;
+  padding-left: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.golem-arming a { color: var(--accent); }
+
+.golem-arming__label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.golem-arming__input {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: max(16px, var(--text-sm));
+}

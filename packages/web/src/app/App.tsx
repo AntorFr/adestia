@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react'
 
 import { Chat } from '../chat/Chat.js'
 import { Editor, type PageDocument } from '../editor/Editor.js'
+import { Settings } from './Settings.js'
 import { browserEnvironment, loadPlugins, type PluginDescriptor } from '../plugins/loader.js'
 import { useMobile } from './useMobile.js'
 import { useSplit } from './useSplit.js'
@@ -44,6 +45,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
    * applies to a heavy chunk.
    */
   const [mount, setMount] = useState<EditorMount | undefined>()
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const split = useSplit()
   const mobile = useMobile()
 
@@ -118,10 +120,22 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             </button>
           )}
           <span className="golem-canvas__brand">Golem</span>
+          <span className="golem-canvas__spacer" />
           <span className="golem-canvas__driver">
             {instance.driver.label} {instance.driver.cliVersion}
           </span>
+          <button
+            type="button"
+            className="golem-switch"
+            onClick={() => setSettingsOpen(!settingsOpen)}
+            aria-label="Settings"
+            aria-expanded={settingsOpen}
+          >
+            ⚙
+          </button>
         </header>
+
+        {settingsOpen && <Settings fetchImpl={fetchImpl} />}
 
         {problems.length > 0 && (
           <section className="golem-problems" role="status">

@@ -7,6 +7,7 @@ import { join } from 'node:path'
 
 import { buildApp, sseFrame, type AppDependencies } from '../src/app.js'
 import { parseConfig } from '../src/config.js'
+import { SecretStore } from '../src/secrets.js'
 
 /** A driver reduced to a script, so the server is tested without any CLI. */
 class ScriptedDriver implements Driver {
@@ -376,6 +377,206 @@ describe('conversations', () => {
     const { id } = (await app.inject({ method: 'POST', url: '/api/conversations' })).json()
     expect((await app.inject({ method: 'DELETE', url: `/api/conversations/${id}` })).statusCode).toBe(200)
     expect((await app.inject({ url: `/api/conversations/${id}` })).statusCode).toBe(404)
+    await app.close()
+  })
+})
+
+describe('arming a driver token', () => {
+  const TOKEN = 'sk-ant-oat01-supersecretvaluenobodyshouldsee'
+
+  /** A driver that can be armed, standing in for the real terminal flow. */
+  class ArmableDriver extends ScriptedDriver {
+    readonly credentialVar: string = 'SCRIPTED_TOKEN'
+    credentials: Record<string, string> = {}
+    savedAt: string | undefined
+    cancelled = 0
+    constructor(private readonly outcome: 'ok' | 'refuse' = 'ok') {
+      super([RESULT], ['usageMetrics', 'authManagement'])
+    }
+    authStatus() {
+      return Promise.resolve(
+        Object.keys(this.credentials).length > 0
+          ? { state: 'armed', source: 'managed', savedAt: this.savedAt }
+          : { state: 'absent', source: 'cli-native' },
+      )
+    }
+    beginAuth() {
+      return Promise.resolve({
+        sessionId: 'driver-side-id',
+        mode: 'url+code',
+        authorizeUrl: 'https://claude.ai/oauth/authorize?x=1',
+        ttl: 600,
+      })
+    }
+    completeAuth(_id: string, input: string) {
+      if (this.outcome === 'refuse') return Promise.reject(new Error('code rejected upstream'))
+      return Promise.resolve({ secret: `${TOKEN}-${input}` })
+    }
+    cancelAuth() {
+      this.cancelled += 1
+      return Promise.resolve()
+    }
+    setCredentials(credentials: Record<string, string>, savedAt?: string) {
+      this.credentials = credentials
+      this.savedAt = savedAt
+    }
+  }
+
+  const armable = async (driver: ArmableDriver) => {
+    const dataDir = await mkdtemp(join(tmpdir(), 'golem-arm-'))
+    const app = await buildApp({
+      ...deps({ driver }),
+      config: { ...deps().config, dataDir },
+      secrets: new SecretStore(dataDir),
+    })
+    return { app, dataDir }
+  }
+
+  it('404s the whole surface when the driver cannot be armed', async () => {
+    // "Cannot be armed from here" and "has no token" are different facts; an
+    // interface confusing them offers a button that can never work.
+    const app = await buildApp(deps())
+    expect((await app.inject({ url: '/api/auth/driver' })).statusCode).toBe(404)
+    expect(
+      (await app.inject({ method: 'POST', url: '/api/auth/driver/begin' })).statusCode,
+    ).toBe(404)
+    await app.close()
+  })
+
+  it('reports an unarmed driver as absent, not broken', async () => {
+    // Living on credentials set up outside Golem is legitimate.
+    const { app } = await armable(new ArmableDriver())
+    expect((await app.inject({ url: '/api/auth/driver' })).json()).toMatchObject({
+      state: 'absent',
+      source: 'cli-native',
+    })
+    await app.close()
+  })
+
+  it('walks the whole flow and stores the token', async () => {
+    const driver = new ArmableDriver()
+    const { app, dataDir } = await armable(driver)
+
+    const begun = (await app.inject({ method: 'POST', url: '/api/auth/driver/begin' })).json()
+    expect(begun.mode).toBe('url+code')
+    expect(begun.authorizeUrl).toContain('claude.ai')
+    // Our session id, not the driver's: the browser holds a handle to OUR flow.
+    expect(begun.sessionId).not.toBe('driver-side-id')
+
+    const completed = await app.inject({
+      method: 'POST',
+      url: '/api/auth/driver/complete',
+      payload: { sessionId: begun.sessionId, input: 'the-code' },
+    })
+    expect(completed.json()).toMatchObject({ armed: true })
+
+    const stored = await new SecretStore(dataDir).read('scripted')
+    expect(stored?.value).toContain('the-code')
+    // Handed to the driver under the variable IT declared.
+    expect(driver.credentials['SCRIPTED_TOKEN']).toContain('the-code')
+    await app.close()
+  })
+
+  it('never sends the secret back to the browser', async () => {
+    // The whole point of holding it server-side: no XSS in a plugin's view can
+    // exfiltrate what the browser was never given.
+    const { app } = await armable(new ArmableDriver())
+    const begun = (await app.inject({ method: 'POST', url: '/api/auth/driver/begin' })).json()
+    const completed = await app.inject({
+      method: 'POST',
+      url: '/api/auth/driver/complete',
+      payload: { sessionId: begun.sessionId, input: 'code' },
+    })
+    expect(completed.body).not.toContain('sk-ant-oat01')
+
+    const status = await app.inject({ url: '/api/auth/driver' })
+    expect(status.body).not.toContain('sk-ant-oat01')
+    await app.close()
+  })
+
+  it('refuses a code for a session that expired or never existed', async () => {
+    const { app } = await armable(new ArmableDriver())
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/auth/driver/complete',
+      payload: { sessionId: 'made-up', input: 'code' },
+    })
+    expect(response.statusCode).toBe(409)
+    await app.close()
+  })
+
+  it('reports an upstream refusal and ends the session', async () => {
+    const { app } = await armable(new ArmableDriver('refuse'))
+    const begun = (await app.inject({ method: 'POST', url: '/api/auth/driver/begin' })).json()
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/auth/driver/complete',
+      payload: { sessionId: begun.sessionId, input: 'wrong' },
+    })
+    expect(response.statusCode).toBe(502)
+    expect(response.json().error).toContain('code rejected upstream')
+
+    // The session is gone, so a retry starts cleanly rather than reusing a
+    // flow whose terminal has already given up.
+    const retry = await app.inject({
+      method: 'POST',
+      url: '/api/auth/driver/complete',
+      payload: { sessionId: begun.sessionId, input: 'again' },
+    })
+    expect(retry.statusCode).toBe(409)
+    await app.close()
+  })
+
+  it('cancels a flow the user abandoned', async () => {
+    const driver = new ArmableDriver()
+    const { app } = await armable(driver)
+    const begun = (await app.inject({ method: 'POST', url: '/api/auth/driver/begin' })).json()
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/driver/cancel',
+      payload: { sessionId: begun.sessionId },
+    })
+    expect(driver.cancelled).toBe(1)
+    await app.close()
+  })
+
+  it('clears a stored token', async () => {
+    const { app, dataDir } = await armable(new ArmableDriver())
+    const begun = (await app.inject({ method: 'POST', url: '/api/auth/driver/begin' })).json()
+    await app.inject({
+      method: 'POST',
+      url: '/api/auth/driver/complete',
+      payload: { sessionId: begun.sessionId, input: 'code' },
+    })
+    expect((await app.inject({ method: 'DELETE', url: '/api/auth/driver' })).statusCode).toBe(200)
+    expect(await new SecretStore(dataDir).read('scripted')).toBeUndefined()
+    await app.close()
+  })
+
+  it('refuses a driver that asks for a dangerous variable', async () => {
+    // A token written into PATH turns an arming flow into arbitrary code
+    // execution at the next spawn.
+    class GreedyDriver extends ArmableDriver {
+      override readonly credentialVar: string = 'PATH'
+    }
+    const { app } = await armable(new GreedyDriver())
+    const begun = (await app.inject({ method: 'POST', url: '/api/auth/driver/begin' })).json()
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/auth/driver/complete',
+      payload: { sessionId: begun.sessionId, input: 'code' },
+    })
+    expect(response.statusCode).toBe(502)
+    expect(response.json().error).toContain('may not store its secret in PATH')
+    await app.close()
+  })
+
+  it('requires both a session and a code', async () => {
+    const { app } = await armable(new ArmableDriver())
+    expect(
+      (await app.inject({ method: 'POST', url: '/api/auth/driver/complete', payload: {} }))
+        .statusCode,
+    ).toBe(400)
     await app.close()
   })
 })

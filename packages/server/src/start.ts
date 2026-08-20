@@ -12,12 +12,13 @@ import { mkdir, readFile, stat } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { ClaudeCodeDriver, type Driver } from '@antorfr/golem-drivers'
+import { ClaudeCodeDriver, createSetupTokenFlow, type Driver } from '@antorfr/golem-drivers'
 import type { FastifyInstance } from 'fastify'
 
 import { buildApp } from './app.js'
 import { ConfigError, parseConfig, type GolemConfig } from './config.js'
 import { discoverPlugins, discoverSkins } from './extensions.js'
+import { SecretStore } from './secrets.js'
 
 export const DEFAULT_CONFIG_FILE = 'golem.config.yaml'
 
@@ -68,6 +69,9 @@ async function buildDriver(config: GolemConfig): Promise<Driver> {
   return new ClaudeCodeDriver({
     query: query as unknown as ConstructorParameters<typeof ClaudeCodeDriver>[0]['query'],
     models: config.driver.models,
+    // The terminal flow, so a token can be armed from the interface rather
+    // than requiring a shell inside the container.
+    armingFlow: createSetupTokenFlow(),
   })
 }
 
@@ -137,6 +141,20 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     ? await options.driverFactory(config)
     : await buildDriver(config)
 
+  // A token armed in a previous run is loaded before the first turn: an
+  // instance that forgets its credential on restart is an instance someone
+  // has to re-arm every deploy.
+  const secrets = new SecretStore(resolve(cwd, config.dataDir))
+  const stored = await secrets.read(config.driver.id)
+  const armable = driver as Driver & {
+    credentialVar?: string
+    setCredentials?(credentials: Record<string, string>, savedAt?: string): void
+  }
+  if (stored && armable.credentialVar && armable.setCredentials) {
+    armable.setCredentials({ [armable.credentialVar]: stored.value }, stored.savedAt)
+    log(`driver credential loaded (armed ${stored.savedAt})`)
+  }
+
   // One resolved config from here on. The absolute workspace path means a turn
   // never depends on the server's cwd at spawn — and returning the same object
   // the app runs on keeps callers from reading a different truth.
@@ -154,10 +172,11 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
   }
 
   const app = await buildApp({
-    config: resolved,
+    config: { ...resolved, dataDir: resolve(cwd, resolved.dataDir) },
     driver,
     plugins,
     pluginProblems: problems,
+    secrets,
     ...(webRoot ? { webRoot } : {}),
   })
   await app.listen({ host: resolved.host, port: resolved.port })
