@@ -1,0 +1,19 @@
+{
+  "name": "golem-spike-editor-tiptap",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Spike 1 candidate: Tiptap headless markdown round-trip harness",
+  "scripts": {
+    "test": "node test/roundtrip.test.js"
+  },
+  "dependencies": {
+    "@tiptap/core": "^3.30.2",
+    "@tiptap/extension-image": "^3.30.2",
+    "@tiptap/extension-list": "^3.30.2",
+    "@tiptap/extension-table": "^3.30.2",
+    "@tiptap/markdown": "^3.30.2",
+    "@tiptap/pm": "^3.30.2",
+    "@tiptap/starter-kit": "^3.30.2"
+  }
+}
