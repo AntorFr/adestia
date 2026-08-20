@@ -1,10 +1,11 @@
 # Golem — founding design
 
-> **Status: draft, pre-code.** Decisions taken 2026-08-20 with the product owner,
-> after a full review of the predecessor (`AntorFr/agent-pods/images/agent-gw`) and a
-> six-probe analysis pass (token arming, usage metrics, cockpit/instructions, plugin
-> chrome, UX parity, Copilot CLI headless surface). This document records the WHY;
-> the code, once it exists, records the WHAT.
+> **Status: built and running.** Decisions taken 2026-08-20/21 with the product
+> owner, after a full review of the predecessor (`AntorFr/agent-pods/images/agent-gw`)
+> and a six-probe analysis pass. This document records the WHY; the code records the
+> WHAT, and where the two disagree the code is right and this file is a bug.
+>
+> Everything below is implemented unless marked **not built yet**.
 
 ## What Golem is
 
@@ -405,6 +406,28 @@ resolves in Golem as follows:
 4. **Subscription concurrency — PENDING (explicit go required):** parallel
    turns vs Claude subscription limits, to pick the global-cap defaults.
    Burns real quota.
+
+## What is built, and what is not
+
+**Built and verified end to end** (in a browser and against real CLIs, not only
+in tests): streamed chat with tool trace, live token counter and interactive
+permissions; conversations per user, replayed faithfully; pages edited by both
+the agent and a Notion-like editor over one shared grammar; runtime plugin
+loading from a mounted folder with a shared React through an import map;
+`claude-code` and `copilot-cli` drivers behind the capability contract;
+credential arming from the interface; auth in all three modes; authoring
+skills the agent uses to write conformant plugins; container image and CI.
+
+**Not built yet**, and none of it blocked by a design question:
+
+- **Scheduled turns (planif).** The clock, the note format, the
+  channel-gated write policy. Designed above; no code.
+- **Inbound MCP** (`ask_<agent>`), so other agents can delegate work here.
+- **Chat attachments** — upload, inbox, the untrusted-data framing.
+- **Skins beyond their schema**: the manifest and the token contract exist and
+  are enforced; the shell does not yet load a skin's tokens or hooks.
+- **Remote instruction sync** (the optional git module).
+- **Subscription concurrency spike**, which needs real quota to measure.
 
 ## Decision log
 
