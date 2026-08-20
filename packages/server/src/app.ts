@@ -119,6 +119,18 @@ export function sseFrame(event: TurnEvent): string {
   return `event: ${event.type}\ndata: ${data}\n\n`
 }
 
+/**
+ * What `buildApp` hands back besides the app: the one function that starts a
+ * turn. The clock uses it rather than calling the driver, so the concurrency
+ * cap, the transcript and the driver's env contract apply to a scheduled turn
+ * exactly as they do to a typed one — a second spawn path is a second place
+ * for all three to be forgotten.
+ */
+export interface BuiltApp {
+  readonly app: FastifyInstance
+  runTurn(prompt: string, options?: { conversationId?: string }): Promise<void>
+}
+
 export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> {
   const { config, driver, plugins, pluginProblems, webRoot } = deps
   const app = Fastify({ logger: false })
@@ -455,6 +467,25 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
 
   // Last, so an API route always wins over the shell's catch-all.
   registerStatic(app, { plugins, ...(webRoot ? { webRoot } : {}) })
+
+  // Exposed on the instance so `start()` can hand it to the clock without a
+  // second construction path.
+  ;(app as FastifyInstance & { golemRunTurn?: unknown }).golemRunTurn = async (
+    prompt: string,
+  ): Promise<void> => {
+    if (!limiter.tryAcquire()) {
+      // The cap applies to scheduled turns too: a person typing must not find
+      // the instance busy with work nobody asked for right now.
+      throw new Error('too many turns running')
+    }
+    try {
+      for await (const event of driver.runTurn({ prompt, cwd: config.workspace.root })) {
+        if (event.type === 'error' && event.fatal) throw new Error(event.message)
+      }
+    } finally {
+      limiter.release()
+    }
+  }
 
   return app
 }

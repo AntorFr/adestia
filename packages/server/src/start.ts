@@ -23,6 +23,7 @@ import type { FastifyInstance } from 'fastify'
 
 import { buildApp } from './app.js'
 import { ConfigError, parseConfig, type GolemConfig } from './config.js'
+import { Clock, scheduleStatePath } from './clock.js'
 import { discoverPlugins, discoverSkins } from './extensions.js'
 import { SecretStore } from './secrets.js'
 import { collectSkills, deliverSkills } from './skills.js'
@@ -44,6 +45,7 @@ export interface StartedInstance {
   readonly app: FastifyInstance
   readonly config: GolemConfig
   readonly url: string
+  readonly clock: Clock | undefined
   close(): Promise<void>
 }
 
@@ -238,10 +240,30 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     log('WARNING: auth is disabled and the server is not bound to loopback.')
   }
 
+  // The clock runs through the app's own turn function, never its own path.
+  let clock: Clock | undefined
+  if (resolved.schedule.enabled) {
+    const runTurn = (app as FastifyInstance & { golemRunTurn(prompt: string): Promise<void> })
+      .golemRunTurn
+    clock = new Clock({
+      dir: join(workspaceRoot, resolved.workspace.planif),
+      statePath: scheduleStatePath(dataDir),
+      runTurn: (prompt) => runTurn(prompt),
+      log,
+      ...(resolved.schedule.tickMs ? { tickMs: resolved.schedule.tickMs } : {}),
+    })
+    clock.start()
+    log(`scheduled turns enabled (notes in ${resolved.workspace.planif}/)`)
+  }
+
   return {
     app,
     config: resolved,
     url,
-    close: () => app.close(),
+    clock,
+    close: async () => {
+      clock?.stop()
+      await app.close()
+    },
   }
 }

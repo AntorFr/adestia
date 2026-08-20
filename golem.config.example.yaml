@@ -83,6 +83,18 @@ permissions:
   # (a scheduled turn, a delegated one).
   whenUnattended: deny
 
+# Scheduled turns: markdown notes under workspace/planif/ whose BODY is run
+# verbatim as a prompt, on a cadence they declare (`every: 1d`).
+#
+# OFF by default, deliberately: a note that runs the agent while nobody is
+# watching spends a subscription and acts on your workspace. That has to be
+# something you turned on, never something you inherited.
+#
+# A scheduled turn is unattended by definition, so every permission it raises
+# is decided by `permissions.whenUnattended` above.
+schedule:
+  enabled: false
+
 extensions:
   # Where extensions are FOUND. Mount whatever you like here: presence is
   # discovery, never activation.

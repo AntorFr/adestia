@@ -87,6 +87,18 @@ export interface PermissionsConfig {
   readonly whenUnattended: 'allow' | 'deny'
 }
 
+/**
+ * Scheduled turns.
+ *
+ * OFF by default, deliberately. A note that runs the agent while nobody is
+ * watching spends a subscription and acts on a workspace; that has to be
+ * something an operator turned on, never something they inherited.
+ */
+export interface ScheduleConfig {
+  readonly enabled: boolean
+  readonly tickMs?: number | undefined
+}
+
 export interface GolemConfig {
   readonly host: string
   readonly port: number
@@ -96,6 +108,7 @@ export interface GolemConfig {
   readonly driver: DriverConfig
   readonly extensions: ExtensionsConfig
   readonly permissions: PermissionsConfig
+  readonly schedule: ScheduleConfig
   /** Concurrent turns across all conversations. Subscription limits are real. */
   readonly maxConcurrentTurns: number
 }
@@ -116,6 +129,7 @@ const KNOWN_KEYS = new Set([
   'driver',
   'extensions',
   'permissions',
+  'schedule',
   'maxConcurrentTurns',
 ])
 
@@ -361,6 +375,16 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
     whenUnattended: whenUnattended as 'allow' | 'deny',
   }
 
+  const scheduleRaw = isObject(raw['schedule']) ? raw['schedule'] : {}
+  const scheduleEnabled = scheduleRaw['enabled'] ?? false
+  if (typeof scheduleEnabled !== 'boolean') {
+    issues.push('schedule.enabled must be true or false')
+  }
+  const schedule: ScheduleConfig = {
+    enabled: scheduleEnabled === true,
+    ...(typeof scheduleRaw['tickMs'] === 'number' ? { tickMs: scheduleRaw['tickMs'] } : {}),
+  }
+
   if (issues.length > 0) throw new ConfigError(issues)
 
   return {
@@ -376,6 +400,7 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
     },
     extensions,
     permissions,
+    schedule,
     maxConcurrentTurns: maxConcurrentTurns as number,
   }
 }
