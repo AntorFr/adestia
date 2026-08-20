@@ -187,6 +187,15 @@ export interface TurnRequest {
 export interface Driver {
   describe(): Promise<DriverDescriptor>
   /**
+   * Where this CLI reads agent contracts, relative to the workspace.
+   *
+   * The driver names the location because only it knows its harness; the CORE
+   * does the writing, so a driver is never handed a filesystem writer it could
+   * point anywhere. A driver whose CLI has no such concept returns undefined,
+   * and its contracts are delivered as instruction text instead.
+   */
+  skillsPath?(): string | undefined
+  /**
    * Environment merged UNDER the turn's own env at the single spawn site.
    * The core owns the secrets; the driver only says how to hand them over.
    */

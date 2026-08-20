@@ -68,6 +68,21 @@ driver:
     - id: claude-sonnet-5
       label: Sonnet 5
 
+# When the agent must ask before using a tool, and what happens when nobody
+# answers. Asking for everything and refusing on silence is the default: an
+# agent that proceeds because nobody was watching did something nobody
+# approved, and unlike a stalled turn, that is not recoverable.
+permissions:
+  # Tools that never ask. Matched EXACTLY — a prefix rule allowing "Read"
+  # would also allow a "ReadSecrets" tool arriving in a future CLI version.
+  autoAllow: []
+  autoDeny: []
+  # How long a request waits for a person, in milliseconds.
+  timeoutMs: 300000
+  # Applied on timeout, and immediately when no interface is watching at all
+  # (a scheduled turn, a delegated one).
+  whenUnattended: deny
+
 extensions:
   # Where extensions are FOUND. Mount whatever you like here: presence is
   # discovery, never activation.

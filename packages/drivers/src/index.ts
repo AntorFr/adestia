@@ -1,4 +1,5 @@
 export * from './contract.js'
+export * from './permissions.js'
 export * from './conformance.js'
 export * from './claude-code/index.js'
 

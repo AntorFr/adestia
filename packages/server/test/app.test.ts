@@ -7,6 +7,8 @@ import { join } from 'node:path'
 
 import { buildApp, sseFrame, type AppDependencies } from '../src/app.js'
 import { parseConfig } from '../src/config.js'
+import { PermissionBroker } from '@antorfr/golem-drivers'
+
 import { SecretStore } from '../src/secrets.js'
 
 /** A driver reduced to a script, so the server is tested without any CLI. */
@@ -576,6 +578,58 @@ describe('arming a driver token', () => {
     expect(
       (await app.inject({ method: 'POST', url: '/api/auth/driver/complete', payload: {} }))
         .statusCode,
+    ).toBe(400)
+    await app.close()
+  })
+})
+
+describe('interactive permissions', () => {
+  it('answers a waiting request', async () => {
+    const permissions = new PermissionBroker()
+    const app = await buildApp(deps({ permissions }))
+
+    const decision = permissions.ask('Bash', 'rm -rf build', () => true)
+    const [waiting] = permissions.outstanding()
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/permission',
+      payload: { id: waiting!.id, allow: false },
+    })
+    expect(response.json()).toEqual({ answered: true })
+    expect(await decision).toBe('deny')
+    await app.close()
+  })
+
+  it('reports a request that is no longer waiting', async () => {
+    // 409 rather than 404: it existed, it simply timed out or was already
+    // answered — "unknown" would suggest the user clicked something that never
+    // was.
+    const app = await buildApp(deps({ permissions: new PermissionBroker() }))
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/permission',
+      payload: { id: 'gone', allow: true },
+    })
+    expect(response.statusCode).toBe(409)
+    await app.close()
+  })
+
+  it('lists what is pending so a reconnecting UI can re-ask', async () => {
+    const permissions = new PermissionBroker()
+    const app = await buildApp(deps({ permissions }))
+    void permissions.ask('Write', '/etc/passwd', () => true)
+
+    const response = await app.inject({ url: '/api/permission' })
+    expect(response.json().pending).toHaveLength(1)
+    expect(response.json().pending[0]).toMatchObject({ tool: 'Write' })
+    await app.close()
+  })
+
+  it('requires both an id and a decision', async () => {
+    const app = await buildApp(deps({ permissions: new PermissionBroker() }))
+    expect(
+      (await app.inject({ method: 'POST', url: '/api/permission', payload: { id: 'x' } })).statusCode,
     ).toBe(400)
     await app.close()
   })

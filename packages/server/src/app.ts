@@ -12,7 +12,7 @@ import { randomUUID } from 'node:crypto'
 import { join } from 'node:path'
 
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify'
-import type { Driver, DriverDescriptor, TurnEvent } from '@antorfr/golem-drivers'
+import type { Driver, DriverDescriptor, PermissionBroker, TurnEvent } from '@antorfr/golem-drivers'
 
 import { isPublicRoute, resolveIdentity, type Identity } from './auth.js'
 import { ConversationStore, type StoredMessage } from './conversations.js'
@@ -32,6 +32,8 @@ export interface AppDependencies {
   readonly webRoot?: string | undefined
   /** Injected in tests; production stores secrets under the data directory. */
   readonly secrets?: SecretStore
+  /** Answers the UI's permission decisions; shared with the driver. */
+  readonly permissions?: PermissionBroker
 }
 
 /** The optional slice of the driver contract that arms credentials. */
@@ -335,6 +337,28 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
       return reply
     },
   )
+
+  app.post<{ Body: { id?: unknown; allow?: unknown } }>(
+    '/api/permission',
+    async (request, reply) => {
+      const { id, allow } = request.body ?? {}
+      if (typeof id !== 'string' || typeof allow !== 'boolean') {
+        return reply.code(400).send({ error: 'id and allow are required' })
+      }
+      const answered = deps.permissions?.answer(id, allow ? 'allow' : 'deny') ?? false
+      // 409 rather than 404: the request existed, it simply timed out or was
+      // already answered — and telling the user "unknown" would suggest they
+      // clicked something that never was.
+      if (!answered) return reply.code(409).send({ error: 'that request is no longer waiting' })
+      return { answered: true }
+    },
+  )
+
+  app.get('/api/permission', async () => ({
+    // A reconnecting UI re-asks rather than leaving the agent stuck behind a
+    // prompt the browser forgot when it reloaded.
+    pending: deps.permissions?.outstanding() ?? [],
+  }))
 
   app.post<{ Body: { sessionId?: unknown } }>('/api/turn/stop', async (request, reply) => {
     const sessionId = request.body?.sessionId

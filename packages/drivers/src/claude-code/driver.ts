@@ -21,6 +21,7 @@ import type {
   TurnUsage,
 } from '../contract.js'
 import { TOKEN_ENV_VAR, looksLikeToken } from './arming.js'
+import { PermissionBroker, type PermissionRequest } from '../permissions.js'
 import { toolTarget } from './events.js'
 import { isKnownMessage } from './sdk-types.js'
 import type { QueryFn, RawMessage, SdkMessage } from './sdk-types.js'
@@ -53,6 +54,13 @@ export interface ClaudeCodeOptions {
    * by its first user.
    */
   readonly armingFlow?: ArmingFlow
+  /**
+   * Gates tool use behind a human. Absent means the CLI's own permission
+   * handling applies — which, with no prompt surface, denies everything it
+   * would have asked about. That is the failure this exists to fix: an agent
+   * that quietly cannot read a file, with nothing in the interface to say so.
+   */
+  readonly permissions?: PermissionBroker
 }
 
 /**
@@ -72,6 +80,7 @@ export class ClaudeCodeDriver implements Driver {
   readonly #cliVersion: string
   readonly #models: readonly ModelInfo[]
   readonly #armingFlow: ArmingFlow | undefined
+  readonly #permissions: PermissionBroker | undefined
   /** Set by the core after it stores a secret, so status can report it. */
   #savedAt: string | undefined
   #invalidReason: string | undefined
@@ -85,6 +94,7 @@ export class ClaudeCodeDriver implements Driver {
     this.#cliVersion = options.cliVersion ?? 'unknown'
     this.#models = options.models ?? []
     this.#armingFlow = options.armingFlow
+    this.#permissions = options.permissions
   }
 
   /** Called by the core when it loads or stores this driver's credentials. */
@@ -178,16 +188,42 @@ export class ClaudeCodeDriver implements Driver {
     return Promise.resolve({ ...this.#credentials })
   }
 
+  /** Claude Code reads skills from `.claude/skills/<name>/SKILL.md`. */
+  skillsPath(): string {
+    return '.claude/skills'
+  }
+
   listModels(): Promise<readonly ModelInfo[]> {
     return Promise.resolve(this.#models)
   }
 
   async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
+    // Requests raised inside the SDK's callback, drained by the loop below:
+    // `canUseTool` runs off the event stream, so it cannot yield an event
+    // itself — it can only leave one where the loop will find it.
+    const asks: PermissionRequest[] = []
+    let wakeLoop: (() => void) | undefined
+    const broker = this.#permissions
+
+    const canUseTool = broker
+      ? async (toolName: string, input: Record<string, unknown>) => {
+          const decision = await broker.ask(toolName, toolTarget(input), (ask) => {
+            asks.push(ask)
+            wakeLoop?.()
+            return true
+          })
+          return decision === 'allow'
+            ? ({ behavior: 'allow' as const, updatedInput: input })
+            : ({ behavior: 'deny' as const, message: 'refused by the user' })
+        }
+      : undefined
+
     const query = this.#query({
       prompt: request.prompt,
       options: {
         cwd: request.cwd,
         includePartialMessages: true,
+        ...(canUseTool ? { canUseTool } : {}),
         ...(request.sessionId ? { resume: request.sessionId } : {}),
         ...(request.model ? { model: request.model } : {}),
         // Credentials go ON TOP of the inherited environment, so a token
@@ -207,9 +243,22 @@ export class ClaudeCodeDriver implements Driver {
      */
     let settledOutput = 0
     let currentOutput = 0
+    void wakeLoop
 
     try {
       for await (const raw of query as AsyncIterable<RawMessage>) {
+        // Drained before each message, so a prompt reaches the UI as soon as
+        // the SDK raises it rather than after the next piece of output.
+        while (asks.length > 0) {
+          const ask = asks.shift()!
+          yield {
+            type: 'permission-request',
+            id: ask.id,
+            tool: ask.tool,
+            ...(ask.detail === undefined ? {} : { detail: ask.detail }),
+          }
+        }
+
         if (typeof raw.session_id === 'string') {
           sessionId = raw.session_id
           if (registered !== sessionId) {
@@ -284,6 +333,10 @@ export class ClaudeCodeDriver implements Driver {
         }
       }
     } finally {
+      // A request whose turn is over can never be answered usefully, and
+      // leaving it pending strands the composer behind a prompt nothing will
+      // resolve.
+      broker?.releaseAll()
       if (registered) this.#running.delete(registered)
     }
   }

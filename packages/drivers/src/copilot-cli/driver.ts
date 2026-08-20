@@ -87,6 +87,16 @@ export class CopilotDriver implements Driver {
     return Promise.resolve(this.#models)
   }
 
+  /**
+   * Copilot loads skills from `.github/skills/<name>/SKILL.md` alongside its
+   * instruction files. Delivering them as files rather than as prompt text is
+   * what keeps a contract identical across engines: same markdown, different
+   * folder.
+   */
+  skillsPath(): string {
+    return '.github/skills'
+  }
+
   setCredentials(credentials: Readonly<Record<string, string>>, savedAt?: string | undefined): void {
     this.#credentials = { ...credentials }
     this.#savedAt = savedAt

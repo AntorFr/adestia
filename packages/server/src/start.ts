@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url'
 import {
   ClaudeCodeDriver,
   CopilotDriver,
+  PermissionBroker,
   createSetupTokenFlow,
   type Driver,
 } from '@antorfr/golem-drivers'
@@ -24,6 +25,7 @@ import { buildApp } from './app.js'
 import { ConfigError, parseConfig, type GolemConfig } from './config.js'
 import { discoverPlugins, discoverSkins } from './extensions.js'
 import { SecretStore } from './secrets.js'
+import { collectSkills, deliverSkills } from './skills.js'
 
 export const DEFAULT_CONFIG_FILE = 'golem.config.yaml'
 
@@ -64,7 +66,11 @@ export async function loadConfigFile(
 
 const AVAILABLE_DRIVERS = ['claude-code', 'copilot-cli'] as const
 
-async function buildDriver(config: GolemConfig, dataDir: string): Promise<Driver> {
+async function buildDriver(
+  config: GolemConfig,
+  dataDir: string,
+  permissions: PermissionBroker,
+): Promise<Driver> {
   switch (config.driver.id) {
     case 'claude-code': {
       const { query } = await import('@anthropic-ai/claude-agent-sdk')
@@ -74,6 +80,7 @@ async function buildDriver(config: GolemConfig, dataDir: string): Promise<Driver
         // The terminal flow, so a token can be armed from the interface rather
         // than requiring a shell inside the container.
         armingFlow: createSetupTokenFlow(),
+        permissions,
       })
     }
 
@@ -158,9 +165,10 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
   }
 
   const dataDir = resolve(cwd, config.dataDir)
+  const permissions = new PermissionBroker(config.permissions)
   const driver = options.driverFactory
     ? await options.driverFactory(config)
-    : await buildDriver(config, dataDir)
+    : await buildDriver(config, dataDir, permissions)
 
   // A token armed in a previous run is loaded before the first turn: an
   // instance that forgets its credential on restart is an instance someone
@@ -174,6 +182,17 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
   if (stored && armable.credentialVar && armable.setCredentials) {
     armable.setCredentials({ [armable.credentialVar]: stored.value }, stored.savedAt)
     log(`driver credential loaded (armed ${stored.savedAt})`)
+  }
+
+  // Contracts are refreshed at every boot rather than installed once: a
+  // plugin upgraded in place would otherwise leave the agent reading last
+  // version's instructions for code that has changed underneath it.
+  const skillsPath = (driver as Driver & { skillsPath?(): string | undefined }).skillsPath?.()
+  if (skillsPath) {
+    const { skills, problems: skillProblems } = await collectSkills(plugins)
+    for (const problem of skillProblems) log(`skill not delivered — ${problem}`)
+    const { written, removed } = await deliverSkills(join(workspaceRoot, skillsPath), skills)
+    log(`${written} agent contract(s) delivered${removed > 0 ? `, ${removed} withdrawn` : ''}`)
   }
 
   // One resolved config from here on. The absolute workspace path means a turn
@@ -198,6 +217,7 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     plugins,
     pluginProblems: problems,
     secrets,
+    permissions,
     ...(webRoot ? { webRoot } : {}),
   })
   await app.listen({ host: resolved.host, port: resolved.port })
