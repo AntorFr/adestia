@@ -1,16 +1,18 @@
 # Status — Golem
 > MàJ : 2026-08-20
 
-**État :** Coque serveur POSÉE et verte. `packages/server` : config YAML
-déclarative (refus des clés inconnues), 3 modes d'auth (none/proxy/oidc, zéro
-base users), découverte d'extensions (refus bruyant, un plugin cassé coûte sa
-vue), app Fastify avec SSE de tour, cap de concurrence en 429 et point de spawn
-unique. **133 tests au vert, typecheck propre.** Reste : packages/web.
+**État :** Les 5 paquets existent et sont verts. `packages/web` : parseur SSE
+incrémental + état de tour vivant (streaming, compteur de tokens, permissions,
+interruption matérialisée), chargeur de plugins ESM runtime avec contrat
+d'import map versionné. **168 tests au vert, typecheck propre.**
+Reste à assembler : l'app React elle-même (composants, éditeur Milkdown monté
+sur le pipeline, routage), et le binaire qui démarre tout.
 
 **Prochaines étapes :**
-- [ ] packages/web : coque React, import map, chargeur de plugins ESM, éditeur Milkdown, chat SSE
-- [ ] Boucle OIDC (login/callback/session) — le module d'auth résout déjà l'identité
-- [ ] Armement de token (authManagement) sur le driver claude-code + driver copilot-cli
+- [ ] Composants React : coque, chat streamé, canvas d'apps, pastille de contexte
+- [ ] Éditeur Milkdown branché sur packages/content (le pipeline est prêt)
+- [ ] Binaire `golem` : charge la config, découvre, sert le web, démarre
+- [ ] Boucle OIDC (login/callback/session) — resolveIdentity est prêt
+- [ ] Armement de token (authManagement) + driver copilot-cli
 - [ ] Skills plugin-author / skin-author sur les schémas gelés
 - [ ] Spike 4 — concurrence vs limites d'abonnement (go utilisateur requis)
-- [ ] Upstream : bug ParserState Milkdown ; 2 fixes @tiptap/markdown

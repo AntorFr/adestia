@@ -1,5 +1,25 @@
 {
   "extends": "../../tsconfig.base.json",
-  "compilerOptions": { "outDir": "dist", "rootDir": "." },
-  "include": ["src/**/*.ts", "test/**/*.ts"]
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": ".",
+    "lib": [
+      "ES2023",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "jsx": "react-jsx",
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "src/**/*.ts",
+    "test/**/*.ts"
+  ],
+  "references": [
+    {
+      "path": "../drivers"
+    }
+  ]
 }
