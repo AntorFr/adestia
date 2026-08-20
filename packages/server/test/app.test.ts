@@ -269,6 +269,46 @@ describe('conversations', () => {
     await app.close()
   })
 
+  it('names a thread at creation, not in a second call', async () => {
+    // A thread that exists for one round trip as "New conversation" keeps
+    // that name whenever the second call is lost.
+    const app = await withStore()
+    const created = (
+      await app.inject({
+        method: 'POST',
+        url: '/api/conversations',
+        payload: { title: 'Ranger le garage' },
+      })
+    ).json()
+    expect(created.title).toBe('Ranger le garage')
+
+    const listed = (await app.inject({ url: '/api/conversations' })).json()
+    expect(listed.conversations[0].title).toBe('Ranger le garage')
+    await app.close()
+  })
+
+  it('renames an existing thread', async () => {
+    const app = await withStore()
+    const { id } = (await app.inject({ method: 'POST', url: '/api/conversations' })).json()
+    expect(
+      (await app.inject({ method: 'PATCH', url: `/api/conversations/${id}`, payload: { title: 'Renamed' } }))
+        .statusCode,
+    ).toBe(200)
+    expect((await app.inject({ url: `/api/conversations/${id}` })).json().title).toBe('Renamed')
+    await app.close()
+  })
+
+  it('refuses to rename a thread that is not there', async () => {
+    const app = await withStore()
+    const response = await app.inject({
+      method: 'PATCH',
+      url: '/api/conversations/00000000-0000-4000-8000-000000000000',
+      payload: { title: 'x' },
+    })
+    expect(response.statusCode).toBe(404)
+    await app.close()
+  })
+
   it('404s a conversation that is not there', async () => {
     // "not yours" and "empty" must not look the same to the UI.
     const app = await withStore()

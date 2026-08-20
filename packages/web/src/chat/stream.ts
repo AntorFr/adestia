@@ -170,6 +170,8 @@ export interface StreamOptions {
   readonly prompt: string
   readonly sessionId?: string
   readonly model?: string
+  /** The thread this turn belongs to; absent for an unrecorded question. */
+  readonly conversationId?: string
   readonly signal?: AbortSignal
 }
 
@@ -189,6 +191,7 @@ export async function* runTurn(
       prompt: options.prompt,
       ...(options.sessionId ? { sessionId: options.sessionId } : {}),
       ...(options.model ? { model: options.model } : {}),
+      ...(options.conversationId ? { conversationId: options.conversationId } : {}),
     }),
     ...(options.signal ? { signal: options.signal } : {}),
   })

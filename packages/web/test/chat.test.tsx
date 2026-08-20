@@ -149,13 +149,29 @@ describe('permission prompt', () => {
   })
 })
 
-/** A fetch that streams a scripted SSE body. */
+/**
+ * A fetch that streams a scripted SSE body for a turn, and answers the
+ * conversation routes the chat also calls.
+ */
 function sseFetch(frames: readonly string[]): typeof fetch {
-  return (() =>
-    Promise.resolve({
+  return ((url: string, init?: RequestInit) => {
+    if (String(url).startsWith('/api/conversations')) {
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () =>
+          Promise.resolve(
+            init?.method === 'POST'
+              ? { id: 'c1', title: 'New conversation', updatedAt: '' }
+              : { conversations: [] },
+          ),
+      } as unknown as Response)
+    }
+    return Promise.resolve({
       ok: true,
       status: 200,
       text: () => Promise.resolve(''),
+      json: () => Promise.resolve({}),
       body: new ReadableStream<Uint8Array>({
         start(controller) {
           const encoder = new TextEncoder()
@@ -163,7 +179,8 @@ function sseFetch(frames: readonly string[]): typeof fetch {
           controller.close()
         },
       }),
-    } as unknown as Response)) as unknown as typeof fetch
+    } as unknown as Response)
+  }) as unknown as typeof fetch
 }
 
 const frame = (event: unknown) => `data: ${JSON.stringify(event)}\n\n`
@@ -184,6 +201,66 @@ describe('chat', () => {
     await waitFor(() => expect(screen.getByText('Bonjour singe')).toBeTruthy())
     // The context pill appears once the turn reports what the next message costs.
     await waitFor(() => expect(screen.getByText('4.2k')).toBeTruthy())
+  })
+})
+
+describe('threads', () => {
+  /** A fetch that serves one stored thread with a rich transcript. */
+  const withThread = (): typeof fetch =>
+    ((url: string) => {
+      const body =
+        String(url) === '/api/conversations'
+          ? { conversations: [{ id: 'c1', title: 'Le garage', updatedAt: '2026-01-01' }] }
+          : {
+              id: 'c1',
+              title: 'Le garage',
+              updatedAt: '2026-01-01',
+              sessionId: 's9',
+              messages: [
+                { id: 'm1', role: 'user', text: 'range le garage', at: '' },
+                {
+                  id: 'm2',
+                  role: 'agent',
+                  text: 'half an answer',
+                  at: '',
+                  tools: [{ name: 'Read', target: '/plan.md', ok: true }],
+                  stopped: true,
+                  usage: { contextTokens: 4200 },
+                },
+              ],
+            }
+      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(body) } as unknown as Response)
+    }) as unknown as typeof fetch
+
+  it('lists the stored threads', async () => {
+    render(<Chat fetchImpl={withThread()} />)
+    fireEvent.click(screen.getByLabelText('Conversations'))
+    await waitFor(() => expect(screen.getByText('Le garage')).toBeTruthy())
+  })
+
+  it('replays a thread faithfully — tools, interruption and context', async () => {
+    // The predecessor replayed role and text only, so a truncated answer came
+    // back looking complete. The stored transcript IS what the UI drew.
+    render(<Chat fetchImpl={withThread()} />)
+    fireEvent.click(screen.getByLabelText('Conversations'))
+    fireEvent.click(await screen.findByText('Le garage'))
+
+    await waitFor(() => expect(screen.getByText('half an answer')).toBeTruthy())
+    expect(screen.getByText('range le garage')).toBeTruthy()
+    expect(screen.getByText('Turn interrupted.')).toBeTruthy()
+    expect(screen.getByText(/1 tool call/)).toBeTruthy()
+    // The pill picks up where the thread left off.
+    expect(screen.getByText('4.2k')).toBeTruthy()
+  })
+
+  it('starts a clean thread on demand', async () => {
+    render(<Chat fetchImpl={withThread()} />)
+    fireEvent.click(screen.getByLabelText('Conversations'))
+    fireEvent.click(await screen.findByText('Le garage'))
+    await waitFor(() => expect(screen.getByText('half an answer')).toBeTruthy())
+
+    fireEvent.click(screen.getByLabelText('New conversation'))
+    expect(screen.queryByText('half an answer')).toBeNull()
   })
 })
 

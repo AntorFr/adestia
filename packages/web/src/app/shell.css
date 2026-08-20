@@ -508,3 +508,47 @@
   text-decoration: none;
   border-bottom: 1px dotted var(--accent);
 }
+
+/* Threads ----------------------------------------------------------------- */
+
+.golem-threads {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-raised);
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+.golem-threads__item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.golem-threads__item:hover { background: var(--surface-sunken); }
+
+.golem-threads__item--current {
+  background: var(--accent-quiet);
+  color: var(--accent);
+}
+
+.golem-threads__empty {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-faint);
+}
+
+.golem-chat__header { gap: var(--space-2); }

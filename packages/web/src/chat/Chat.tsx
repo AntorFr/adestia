@@ -12,6 +12,14 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import {
+  createConversation,
+  listConversations,
+  readConversation,
+  titleFrom,
+  type ConversationMeta,
+  type StoredMessage,
+} from './conversations.js'
 import { runTurn, type PendingPermission, type TurnState } from './stream.js'
 
 export interface Message {
@@ -216,12 +224,54 @@ export interface ChatProps {
   readonly onOpenCanvas?: () => void
 }
 
+/** A stored message, as the thread renders it. */
+function toMessage(stored: StoredMessage): Message {
+  return {
+    id: stored.id,
+    role: stored.role,
+    text: stored.text,
+    ...(stored.tools ? { tools: stored.tools } : {}),
+    ...(stored.stopped ? { stopped: stored.stopped } : {}),
+    ...(stored.error ? { error: stored.error } : {}),
+  }
+}
+
 export function Chat({ contextWindow, placeholder, model, fetchImpl, onOpenCanvas }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [live, setLive] = useState<TurnState | undefined>()
   const [contextTokens, setContextTokens] = useState(0)
+  const [threads, setThreads] = useState<readonly ConversationMeta[]>([])
+  const [threadsOpen, setThreadsOpen] = useState(false)
+  const [conversationId, setConversationId] = useState<string | undefined>()
   const sessionId = useRef<string | undefined>(undefined)
   const bottom = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    void listConversations(fetchImpl).then(setThreads)
+  }, [fetchImpl])
+
+  const openThread = useCallback(
+    async (id: string) => {
+      const conversation = await readConversation(id, fetchImpl)
+      if (!conversation) return
+      setConversationId(conversation.id)
+      // Replayed FAITHFULLY: tool trace, interruptions and all. The stored
+      // transcript is what the UI drew, so replaying it needs no second path.
+      setMessages(conversation.messages.map(toMessage))
+      sessionId.current = conversation.sessionId
+      setContextTokens(conversation.messages.at(-1)?.usage?.contextTokens ?? 0)
+      setThreadsOpen(false)
+    },
+    [fetchImpl],
+  )
+
+  const startThread = useCallback(() => {
+    setConversationId(undefined)
+    setMessages([])
+    setContextTokens(0)
+    sessionId.current = undefined
+    setThreadsOpen(false)
+  }, [])
 
   useEffect(() => {
     // Guarded because an exception thrown in an effect tears down the whole
@@ -238,12 +288,28 @@ export function Chat({ contextWindow, placeholder, model, fetchImpl, onOpenCanva
         { id: `u${current.length}`, role: 'user', text },
       ])
 
+      // A thread is created on the first message rather than on arrival: an
+      // instance nobody has spoken to should not accumulate empty threads.
+      let thread = conversationId
+      if (!thread) {
+        // Named from the first message, at creation: a title set in a second
+        // call is a title lost whenever that call is.
+        const title = titleFrom(text)
+        const created = await createConversation(fetchImpl, title)
+        if (created) {
+          thread = created.id
+          setConversationId(thread)
+          setThreads((current) => [{ ...created, title }, ...current])
+        }
+      }
+
       let last: TurnState | undefined
       for await (const state of runTurn(
         {
           prompt: text,
           ...(sessionId.current ? { sessionId: sessionId.current } : {}),
           ...(model ? { model } : {}),
+          ...(thread ? { conversationId: thread } : {}),
         },
         fetchImpl,
       )) {
@@ -268,7 +334,7 @@ export function Chat({ contextWindow, placeholder, model, fetchImpl, onOpenCanva
       }
       setLive(undefined)
     },
-    [fetchImpl, model],
+    [conversationId, fetchImpl, model],
   )
 
   const stop = useCallback(() => {
@@ -283,7 +349,18 @@ export function Chat({ contextWindow, placeholder, model, fetchImpl, onOpenCanva
   return (
     <section className="golem-chat">
       <header className="golem-chat__header">
-        <span className="golem-chat__title">Chat</span>
+        <button
+          type="button"
+          className="golem-switch"
+          onClick={() => setThreadsOpen(!threadsOpen)}
+          aria-label="Conversations"
+          aria-expanded={threadsOpen}
+        >
+          ▤ {threads.length > 0 ? threads.length : ''}
+        </button>
+        <button type="button" className="golem-switch" onClick={startThread} aria-label="New conversation">
+          ＋
+        </button>
         {onOpenCanvas && (
           <button type="button" className="golem-switch" onClick={onOpenCanvas} aria-label="Open apps">
             Apps ›
@@ -291,6 +368,25 @@ export function Chat({ contextWindow, placeholder, model, fetchImpl, onOpenCanva
         )}
         <ContextPill tokens={contextTokens} {...(contextWindow ? { windowSize: contextWindow } : {})} />
       </header>
+
+      {threadsOpen && (
+        <ul className="golem-threads">
+          {threads.length === 0 && <li className="golem-threads__empty">No conversation yet.</li>}
+          {threads.map((thread) => (
+            <li key={thread.id}>
+              <button
+                type="button"
+                className={`golem-threads__item${
+                  thread.id === conversationId ? ' golem-threads__item--current' : ''
+                }`}
+                onClick={() => void openThread(thread.id)}
+              >
+                {thread.title}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
 
       <div className="golem-chat__thread">
         {messages.map((message) => (

@@ -129,8 +129,30 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     conversations: await conversations.list(identityOf(request).userId),
   }))
 
-  app.post('/api/conversations', async (request) =>
-    conversations.create(identityOf(request).userId),
+  app.post<{ Body?: { title?: unknown } }>('/api/conversations', async (request) => {
+    // The title comes with the creation rather than in a second call: a thread
+    // that exists for one round trip under the name "New conversation" is a
+    // thread that keeps that name whenever the second call is lost.
+    const title = typeof request.body?.title === 'string' ? request.body.title.trim() : ''
+    return conversations.create(
+      identityOf(request).userId,
+      ...(title.length > 0 ? ([title] as const) : []),
+    )
+  })
+
+  app.patch<{ Params: { id: string }; Body?: { title?: unknown } }>(
+    '/api/conversations/:id',
+    async (request, reply) => {
+      const title = typeof request.body?.title === 'string' ? request.body.title.trim() : ''
+      if (title.length === 0) return reply.code(400).send({ error: 'title is required' })
+
+      const userId = identityOf(request).userId
+      if (!(await conversations.read(userId, request.params.id))) {
+        return reply.code(404).send({ error: 'no such conversation' })
+      }
+      await conversations.rename(userId, request.params.id, title)
+      return { renamed: true }
+    },
   )
 
   app.get<{ Params: { id: string } }>('/api/conversations/:id', async (request, reply) => {
