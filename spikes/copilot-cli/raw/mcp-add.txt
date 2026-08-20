@@ -1,0 +1,12 @@
+{
+  "testsrv": {
+    "type": "local",
+    "command": "echo",
+    "args": [
+      "hello"
+    ],
+    "tools": [
+      "*"
+    ]
+  }
+}

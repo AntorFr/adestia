@@ -1,0 +1,5 @@
+# Local spike artifacts — do not commit heavy/generated state
+node_modules/
+isolated-home/
+copilot-home/
+work/

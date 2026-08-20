@@ -1,0 +1,10 @@
+/* Injected by the SHELL from manifest.styles — never imported by a module. */
+.hello-plugin {
+  color: rgb(0, 128, 0);
+  border: 2px dashed rgb(255, 0, 128);
+  padding: 12px;
+  border-radius: 8px;
+}
+.hello-plugin .heavy-box {
+  background: rgb(255, 240, 200);
+}

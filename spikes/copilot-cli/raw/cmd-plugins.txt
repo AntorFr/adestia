@@ -1,0 +1,59 @@
+Usage: copilot plugins [options] [command]
+
+Inspect plugins, MCP servers, skills, instructions, and language servers
+from a single command, grouped by kind and configuration scope.
+
+This command surfaces the same resources the in-CLI dashboard shows. Use
+`copilot plugins list` to see everything configured for the current
+workspace, optionally filtered by kind or scope. Use `--plugin`,
+`--mcp`, or `--skill` on the remove, enable, and disable subcommands to
+choose which kind of tool to target. `install` supports `--plugin`
+(default) and `--skill`; MCP servers install from the registry rather
+than this command.
+
+Options:
+  -h, --help                    display help for command
+
+Commands:
+  disable [options] <name>      Disable a configured tool
+  enable [options] <name>       Enable a configured tool
+  install|add [options] <spec>  Install a new tool
+  list [options]                List configured plugins across kinds
+  marketplace|marketplaces      Manage plugin marketplaces
+  remove|rm [options] <name>    Remove an installed tool
+  update [options] [name]       Update a plugin
+
+Examples:
+  # List everything configured for this workspace
+  $ copilot plugins list
+
+  # Install a marketplace plugin
+  $ copilot plugins install spark@copilot-plugins
+
+  # Install a skill for your user account, or into this project
+  $ copilot plugins install --skill ./my-skill/SKILL.md
+  $ copilot plugins install --skill --scope project ./my-skill/SKILL.md
+
+  # Update an installed plugin
+  $ copilot plugins update spark@copilot-plugins
+
+  # Enable or disable an MCP server or skill by name
+  $ copilot plugins enable github --mcp
+  $ copilot plugins disable my-skill --skill
+
+  # Remove a plugin, MCP server, or personal/project skill
+  $ copilot plugins remove spark@copilot-plugins
+  $ copilot plugins remove github --mcp
+  $ copilot plugins remove my-skill --skill
+
+  # Browse plugins available in a marketplace
+  $ copilot plugins marketplace browse copilot-plugins
+
+  # MCP servers are installed from a registry, which requires authentication
+  # and interactive secret entry. Registries are configured by policy (not
+  # editable here) — browse and install them from the interactive `/plugins`
+  # dashboard (Online mode) or `/mcp`.
+
+Learn More:
+  Use `copilot <command> --help` for more information about a command.
+  Read the documentation at https://docs.github.com/copilot/how-tos/copilot-cli

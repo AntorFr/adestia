@@ -1,0 +1,4 @@
+# Local spike artifacts — do not commit heavy/generated state
+node_modules/
+shell/vendor/
+plugins/hello/heavy-data.js

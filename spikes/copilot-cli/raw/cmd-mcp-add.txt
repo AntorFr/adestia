@@ -1,0 +1,50 @@
+Usage: copilot mcp add [options] <name> [url-or-command-and-args...]
+
+Add a new MCP server to the user configuration.
+
+For local (stdio) servers, provide the command after `--`:
+  copilot mcp add <name> -- <command> [args...]
+
+For remote (HTTP/SSE) servers, provide the URL:
+  copilot mcp add --transport http <name> <url>
+
+Environment variables and headers can be repeated:
+  --env KEY=VALUE --env KEY2=VALUE2
+  --header "Authorization: Bearer token" --header "X-Custom: val"
+
+Arguments:
+  name                     Server name
+  url-or-command-and-args  URL for remote servers, or command and args for local
+                           servers (after --)
+
+Options:
+  --env <env>              Environment variable (KEY=VALUE, can be repeated)
+                           (default: [])
+  -h, --help               display help for command
+  --header <header>        HTTP header for remote servers, can be repeated
+                           (default: [])
+  --json                   Output added config as JSON
+  --show-secrets           Show full environment variable and header values in
+                           output, masked by default
+  --timeout <ms>           Timeout in milliseconds
+  --tools <tools>          Tool filter: "*" for all, comma-separated list, or ""
+                           for none (default: "*")
+  --transport <transport>  Server transport (choices: "stdio", "http", "sse",
+                           default: "stdio")
+
+Examples:
+  # Add a local stdio server:
+  $ copilot mcp add context7 -- npx -y @upstash/context7-mcp
+
+  # Add a local server with environment variables:
+  $ copilot mcp add github --env GITHUB_PERSONAL_ACCESS_TOKEN=ghp_xxx -- npx -y @modelcontextprotocol/server-github
+
+  # Add a remote HTTP server:
+  $ copilot mcp add --transport http notion https://mcp.notion.com/mcp
+
+  # Add a remote server with auth header:
+  $ copilot mcp add --transport http --header "Authorization: Bearer rk_live_xxx" stripe https://mcp.stripe.com
+
+Learn More:
+  Use `copilot <command> --help` for more information about a command.
+  Read the documentation at https://docs.github.com/copilot/how-tos/copilot-cli

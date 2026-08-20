@@ -1,0 +1,17 @@
+{
+  "name": "spike-esm-runtime",
+  "private": true,
+  "type": "module",
+  "description": "Spike 2: runtime ESM plugin loading with import-map-shared React, no common bundling",
+  "scripts": {
+    "vendor": "node build/vendor.mjs",
+    "serve": "node shell/server.mjs",
+    "test": "node test/run.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "puppeteer-core": "^25.8.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  }
+}

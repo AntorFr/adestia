@@ -1,0 +1,34 @@
+Usage: copilot completion [options] <shell>
+
+Generate a shell completion script for the chosen shell.
+
+The script is written to stdout. Source it (or write it to the
+right location for your shell) to enable tab completion of
+`copilot` subcommands and flags.
+
+The generated script is self-contained — it does not call back
+into the `copilot` binary at completion time, so it works
+even if `copilot` is slow to start.
+
+Arguments:
+  shell       Target shell (choices: "bash", "zsh", "fish")
+
+Options:
+  -h, --help  display help for command
+
+Examples:
+  # Bash (current session)
+  $ source <(copilot completion bash)
+
+  # Bash (persistent, Linux)
+  $ copilot completion bash | sudo tee /etc/bash_completion.d/copilot
+
+  # Zsh — write to a directory on your $fpath, then restart the shell
+  $ copilot completion zsh > "${fpath[1]}/_copilot"
+
+  # Fish
+  $ copilot completion fish > ~/.config/fish/completions/copilot.fish
+
+Learn More:
+  Use `copilot <command> --help` for more information about a command.
+  Read the documentation at https://docs.github.com/copilot/how-tos/copilot-cli

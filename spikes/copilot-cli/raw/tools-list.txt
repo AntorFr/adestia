@@ -1,0 +1,2 @@
+up
+["bash","read_bash","stop_bash","list_bash","view","create","edit","web_fetch","fetch_copilot_cli_documentation","skill","sql","session_store_sql","read_agent","list_agents","write_agent","grep","glob","task"]

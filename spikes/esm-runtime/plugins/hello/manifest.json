@@ -1,0 +1,4 @@
+{
+  "view": "./view.js",
+  "styles": ["./style.css"]
+}
