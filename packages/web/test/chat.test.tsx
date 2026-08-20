@@ -8,7 +8,7 @@
  */
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import {
   Bubble,
@@ -20,10 +20,6 @@ import {
   contextLevel,
   formatTokens,
 } from '../src/chat/Chat.js'
-
-afterEach(() => {
-  document.body.innerHTML = ''
-})
 
 describe('context pill', () => {
   it('scales its thresholds to the model window when one is known', () => {

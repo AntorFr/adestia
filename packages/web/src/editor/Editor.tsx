@@ -1,0 +1,169 @@
+/**
+ * The page editor — the second hand that writes.
+ *
+ * What makes this safe to put next to an agent that edits the same files:
+ *
+ * - it round-trips through the SAME remark grammar as the renderer and the
+ *   server, so a save cannot change what a page means;
+ * - it carries the revision it opened, and the server refuses a save if the
+ *   agent wrote in the meantime — no silent overwrite of either author;
+ * - a page that breaks the vocabulary opens read-only with its diagnostics,
+ *   because refusing loses the file and rewriting loses the content.
+ */
+
+import { useCallback, useEffect, useRef, useState } from 'react'
+
+export interface PageDocument {
+  readonly path: string
+  readonly title: string
+  readonly markdown: string
+  readonly revision: string
+  readonly editable: boolean
+  readonly diagnostics: readonly { severity: string; message: string; line?: number }[]
+}
+
+export type SaveState =
+  | { readonly kind: 'idle' }
+  | { readonly kind: 'saving' }
+  | { readonly kind: 'saved'; readonly normalized: boolean }
+  | { readonly kind: 'conflict' }
+  | { readonly kind: 'rejected'; readonly diagnostics: readonly { message: string }[] }
+  | { readonly kind: 'failed'; readonly message: string }
+
+export async function savePage(
+  page: PageDocument,
+  markdown: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<{ state: SaveState; revision?: string }> {
+  const response = await fetchImpl(`/api/pages/${page.path}`, {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ markdown, revision: page.revision }),
+  })
+
+  if (response.ok) {
+    const body = (await response.json()) as { revision: string; normalized: boolean }
+    return { state: { kind: 'saved', normalized: body.normalized }, revision: body.revision }
+  }
+  if (response.status === 409) return { state: { kind: 'conflict' } }
+  if (response.status === 422) {
+    const body = (await response.json()) as { diagnostics: readonly { message: string }[] }
+    return { state: { kind: 'rejected', diagnostics: body.diagnostics } }
+  }
+  const body = (await response.json().catch(() => ({}))) as { error?: string }
+  return { state: { kind: 'failed', message: body.error ?? `save failed (${response.status})` } }
+}
+
+export function Diagnostics({ items }: { items: PageDocument['diagnostics'] }) {
+  if (items.length === 0) return null
+  return (
+    <ul className="golem-diagnostics">
+      {items.map((item, index) => (
+        <li key={index} className={`golem-diagnostics__item golem-diagnostics__item--${item.severity}`}>
+          {item.line !== undefined && <span className="golem-diagnostics__line">line {item.line}</span>}
+          {item.message}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+export function SaveStatus({ state }: { state: SaveState }) {
+  switch (state.kind) {
+    case 'idle':
+      return null
+    case 'saving':
+      return <span className="golem-save">Saving…</span>
+    case 'saved':
+      return (
+        <span className="golem-save golem-save--ok">
+          {/* Said out loud, because a silent reformat looks like the editor
+              mangled something the user did not touch. */}
+          {state.normalized ? 'Saved, tidied to house style' : 'Saved'}
+        </span>
+      )
+    case 'conflict':
+      return (
+        <span className="golem-save golem-save--warn">
+          The agent changed this page. Reload to see its version.
+        </span>
+      )
+    case 'rejected':
+      return (
+        <span className="golem-save golem-save--error">
+          Not saved: {state.diagnostics[0]?.message ?? 'the page breaks the vocabulary'}
+        </span>
+      )
+    case 'failed':
+      return <span className="golem-save golem-save--error">{state.message}</span>
+  }
+}
+
+export interface EditorProps {
+  readonly page: PageDocument
+  readonly fetchImpl?: typeof fetch
+  /** Injected in tests; the real one mounts Milkdown. */
+  readonly mount?: (element: HTMLElement, markdown: string, onChange: (md: string) => void) => () => void
+}
+
+export function Editor({ page, fetchImpl = fetch, mount }: EditorProps) {
+  const host = useRef<HTMLDivElement>(null)
+  const [markdown, setMarkdown] = useState(page.markdown)
+  const [revision, setRevision] = useState(page.revision)
+  const [status, setStatus] = useState<SaveState>({ kind: 'idle' })
+  const dirty = markdown !== page.markdown
+
+  useEffect(() => {
+    setMarkdown(page.markdown)
+    setRevision(page.revision)
+    setStatus({ kind: 'idle' })
+  }, [page.markdown, page.path, page.revision])
+
+  useEffect(() => {
+    if (!mount || !host.current || !page.editable) return undefined
+    return mount(host.current, page.markdown, setMarkdown)
+  }, [mount, page.editable, page.markdown, page.path])
+
+  const save = useCallback(async () => {
+    setStatus({ kind: 'saving' })
+    const result = await savePage({ ...page, revision }, markdown, fetchImpl)
+    if (result.revision) setRevision(result.revision)
+    setStatus(result.state)
+  }, [fetchImpl, markdown, page, revision])
+
+  return (
+    <section className="golem-editor">
+      <header className="golem-editor__header">
+        <h1 className="golem-editor__title">{page.title}</h1>
+        <div className="golem-editor__actions">
+          <SaveStatus state={status} />
+          {page.editable && (
+            <button
+              type="button"
+              className="golem-editor__save"
+              onClick={() => void save()}
+              disabled={!dirty || status.kind === 'saving'}
+            >
+              Save
+            </button>
+          )}
+        </div>
+      </header>
+
+      {!page.editable && (
+        <p className="golem-editor__readonly" role="status">
+          This page uses blocks Golem does not know, so it is open read-only.
+          Fixing it is a change to the code, not to the file.
+        </p>
+      )}
+
+      <Diagnostics items={page.diagnostics} />
+
+      {page.editable ? (
+        <div ref={host} className="golem-editor__surface" />
+      ) : (
+        <pre className="golem-editor__raw">{page.markdown}</pre>
+      )}
+    </section>
+  )
+}

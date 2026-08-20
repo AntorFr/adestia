@@ -58,8 +58,12 @@ const STRINGIFY_OPTIONS = {
  * Directive support is wired by hand rather than through remark-directive so
  * `preferShortcut: false` can reach the serializer — the convenience wrapper
  * gives no way to pass it, and without it `id="x"` silently becomes `#x`.
+ *
+ * Exported because the EDITOR registers this exact plugin too. That is the
+ * one-grammar principle in practice: not "two pipelines configured the same
+ * way", which drifts, but literally the same function.
  */
-function directivePlugin(this: Processor): void {
+export function directivePlugin(this: Processor): void {
   const data = this.data()
   const micromarkExtensions = (data.micromarkExtensions ??= [])
   const fromMarkdownExtensions = (data.fromMarkdownExtensions ??= [])
@@ -70,13 +74,30 @@ function directivePlugin(this: Processor): void {
   toMarkdownExtensions.push(directiveToMarkdown({ preferShortcut: STRINGIFY_OPTIONS.preferShortcut }))
 }
 
+/**
+ * The grammar, as a list.
+ *
+ * Every consumer registers THIS — the renderer, the server, and the editor
+ * (Milkdown wraps each entry as a `$remark`). Golem's whole editor verdict
+ * rests on one grammar, and a list one side can forget an entry from is not
+ * one grammar: a wikilink the editor did not know about came back as
+ * `\[\[wikilink]]` on the first save, corrupting a page nobody had touched.
+ * Anything added here reaches all three at once.
+ */
+export const GRAMMAR = [
+  [remarkGfm, undefined],
+  [remarkFrontmatter, ['yaml']],
+  [remarkWikiLink, undefined],
+  [directivePlugin, undefined],
+] as const
+
 export function createProcessor(): Processor<Root, undefined, undefined, Root, string> {
-  return unified()
-    .use(remarkParse)
-    .use(remarkGfm)
-    .use(remarkFrontmatter, ['yaml'])
-    .use(remarkWikiLink)
-    .use(directivePlugin)
+  const processor = unified().use(remarkParse)
+  for (const [plugin, options] of GRAMMAR) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    processor.use(plugin as any, options as any)
+  }
+  return processor
     .use(remarkStringify, STRINGIFY_OPTIONS)
     .freeze() as Processor<Root, undefined, undefined, Root, string>
 }

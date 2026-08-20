@@ -1,7 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "dist",
     "rootDir": ".",
     "lib": [
       "ES2023",
@@ -11,15 +10,15 @@
     "jsx": "react-jsx",
     "types": [
       "node"
-    ]
+    ],
+    "moduleResolution": "bundler",
+    "module": "preserve",
+    "noEmit": true
   },
   "include": [
     "src/**/*.ts",
-    "test/**/*.ts"
-  ],
-  "references": [
-    {
-      "path": "../drivers"
-    }
+    "src/**/*.tsx",
+    "test/**/*.ts",
+    "test/**/*.tsx"
   ]
 }

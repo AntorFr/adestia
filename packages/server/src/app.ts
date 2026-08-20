@@ -8,12 +8,15 @@
  * whole channel silently for days.
  */
 
+import { join } from 'node:path'
+
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify'
 import type { Driver, DriverDescriptor, TurnEvent } from '@antorfr/golem-drivers'
 
 import { isPublicRoute, resolveIdentity, type Identity } from './auth.js'
 import type { GolemConfig } from './config.js'
 import { frontendPayload, type DiscoveredPlugin, type DiscoveryProblem } from './extensions.js'
+import { registerPages } from './pages.js'
 import { registerStatic } from './static.js'
 
 export interface AppDependencies {
@@ -172,6 +175,8 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
       return reply
     }
   })
+
+  registerPages(app, { root: join(config.workspace.root, config.workspace.pages) })
 
   // Last, so an API route always wins over the shell's catch-all.
   registerStatic(app, { plugins, ...(webRoot ? { webRoot } : {}) })

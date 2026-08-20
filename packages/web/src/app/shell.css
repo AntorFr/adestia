@@ -366,3 +366,145 @@
   .golem-shell[data-screen='chat'] .golem-canvas { display: none; }
   .golem-shell[data-screen='canvas'] .golem-chat { display: none; }
 }
+
+/* Pages and editor ------------------------------------------------------- */
+
+.golem-pages {
+  list-style: none;
+  margin: 0 0 var(--space-5);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.golem-pages__link {
+  background: none;
+  border: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+}
+
+.golem-pages__link:hover { background: var(--surface-sunken); }
+
+.golem-editor__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 var(--space-3);
+}
+
+.golem-editor__title { margin: 0; font-size: var(--text-lg); }
+
+.golem-editor__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.golem-editor__save {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--accent-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.golem-editor__save:disabled {
+  background: var(--surface-sunken);
+  border-color: var(--border);
+  color: var(--text-faint);
+  cursor: default;
+}
+
+.golem-save { font-size: var(--text-sm); color: var(--text-muted); }
+.golem-save--ok { color: var(--success); }
+.golem-save--warn { color: var(--warning); }
+.golem-save--error { color: var(--danger); }
+
+.golem-editor__readonly {
+  padding: var(--space-3);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius);
+  background: var(--accent-quiet);
+  font-size: var(--text-sm);
+}
+
+.golem-diagnostics {
+  list-style: none;
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  font-size: var(--text-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.golem-diagnostics__item--error { color: var(--danger); }
+.golem-diagnostics__item--warning { color: var(--warning); }
+
+.golem-diagnostics__line {
+  font-family: var(--font-mono);
+  color: var(--text-faint);
+  margin-right: var(--space-2);
+}
+
+.golem-editor__raw {
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-sunken);
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.golem-editor__surface {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  min-height: 320px;
+  padding: var(--space-3);
+}
+
+/* Typed blocks, as the editor shows them. A skin may recolour these; it may
+   not change what they are. */
+.golem-block {
+  margin: var(--space-3) 0;
+  padding: var(--space-3);
+  border-inline-start: 3px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+}
+
+.golem-block--app {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  border-inline-start-style: dashed;
+}
+
+.golem-editor__frontmatter {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-faint);
+  white-space: pre-wrap;
+  padding: var(--space-2) var(--space-3);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-3);
+}
+
+.golem-wikilink {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--accent);
+}

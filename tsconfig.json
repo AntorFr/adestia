@@ -1,10 +1,17 @@
 {
   "files": [],
   "references": [
-    { "path": "packages/schemas" },
-    { "path": "packages/content" },
-    { "path": "packages/drivers" },
-    { "path": "packages/server" },
-    { "path": "packages/web" }
+    {
+      "path": "packages/schemas"
+    },
+    {
+      "path": "packages/content"
+    },
+    {
+      "path": "packages/drivers"
+    },
+    {
+      "path": "packages/server"
+    }
   ]
 }

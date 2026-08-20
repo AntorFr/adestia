@@ -12,7 +12,7 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --build",
+    "typecheck": "tsc --build && tsc -p packages/web --noEmit",
     "lint": "eslint packages"
   },
   "devDependencies": {

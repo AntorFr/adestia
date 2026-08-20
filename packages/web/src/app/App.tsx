@@ -9,6 +9,7 @@
 import { useEffect, useState } from 'react'
 
 import { Chat } from '../chat/Chat.js'
+import { Editor, type PageDocument } from '../editor/Editor.js'
 import { browserEnvironment, loadPlugins, type PluginDescriptor } from '../plugins/loader.js'
 import { useMobile } from './useMobile.js'
 import { useSplit } from './useSplit.js'
@@ -23,11 +24,26 @@ export interface InstanceInfo {
   readonly turns: { max: number; running: number }
 }
 
+type EditorMount = (
+  element: HTMLElement,
+  markdown: string,
+  onChange: (markdown: string) => void,
+) => () => void
+
 export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   const [instance, setInstance] = useState<InstanceInfo | undefined>()
   const [failures, setFailures] = useState<readonly { id: string; reason: string }[]>([])
   const [fatal, setFatal] = useState<string | undefined>()
   const [screen, setScreen] = useState<'chat' | 'canvas'>('chat')
+  const [pages, setPages] = useState<readonly { path: string; title: string }[]>([])
+  const [page, setPage] = useState<PageDocument | undefined>()
+  /**
+   * The editor is loaded on demand: ProseMirror and Milkdown weigh more than
+   * the entire rest of the shell, and someone who only wants to chat should
+   * not download an editor to do it. Same discipline the plugin loader
+   * applies to a heavy chunk.
+   */
+  const [mount, setMount] = useState<EditorMount | undefined>()
   const split = useSplit()
   const mobile = useMobile()
 
@@ -43,6 +59,11 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
 
         const result = await loadPlugins(info.plugins, browserEnvironment())
         if (!cancelled) setFailures(result.failures)
+
+        const list = await fetchImpl('/api/pages')
+        if (list.ok && !cancelled) {
+          setPages(((await list.json()) as { pages: { path: string; title: string }[] }).pages)
+        }
       } catch (error) {
         // A shell that renders an empty page when the API is unreachable makes
         // its user reload forever; naming the failure costs one line.
@@ -115,6 +136,43 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           </section>
         )}
 
+        {page ? (
+          <>
+            <button type="button" className="golem-switch" onClick={() => setPage(undefined)}>
+              ‹ All pages
+            </button>
+            <Editor page={page} fetchImpl={fetchImpl} {...(mount ? { mount } : {})} />
+          </>
+        ) : (
+          <>
+            {pages.length > 0 && (
+              <ul className="golem-pages">
+                {pages.map((entry) => (
+                  <li key={entry.path}>
+                    <button
+                      type="button"
+                      className="golem-pages__link"
+                      onClick={() => {
+                        void (async () => {
+                          const [response, editor] = await Promise.all([
+                            fetchImpl(`/api/pages/${entry.path}`),
+                            import('../editor/milkdown.js'),
+                          ])
+                          if (!response.ok) return
+                          // Stored via a thunk: passing a function to setState
+                          // directly would have React call it as an updater.
+                          setMount(() => editor.mountMilkdown)
+                          setPage((await response.json()) as PageDocument)
+                        })()
+                      }}
+                    >
+                      {entry.title}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
         {instance.plugins.length === 0 ? (
           <section className="golem-empty">
             <p>No app is active yet.</p>
@@ -134,6 +192,8 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
                 </li>
               ))}
           </ul>
+        )}
+          </>
         )}
       </main>
     </div>

@@ -1,14 +1,14 @@
 # Status — Golem
 > MàJ : 2026-08-21
 
-**État :** GOLEM A UN VISAGE. Interface React servie par Fastify, vérifiée dans
-un vrai Chrome : split view réglable (Pointer Events + clavier), chat streamé,
-trace outils, pastille de contexte, permissions, bascule mobile fonctionnelle,
-plugin chargé À CHAUD depuis un dossier monté avec React partagé par import map
-et CSS injecté par la coque. **220 tests au vert, typecheck propre.**
+**État :** LES DEUX MAINS ÉCRIVENT. Éditeur Milkdown branché sur le pipeline
+partagé, vérifié de bout en bout dans un vrai navigateur : ouverture d'une
+page, édition, sauvegarde, fichier sur disque intact (frontmatter, wikilinks,
+blocs typés, attributs). API pages avec refus de conflit (l'agent écrit sans
+prévenir), validation du vocabulaire au save, écriture atomique. Éditeur chargé
+à la demande (1,2 Mo hors du bundle de la coque). **255 tests au vert.**
 
 **Prochaines étapes :**
-- [ ] Éditeur Milkdown branché sur packages/content (pipeline prêt) + API de pages
 - [ ] Boucle OIDC (login/callback/session) — resolveIdentity est prêt
 - [ ] Armement de token (authManagement) dans l'UI + driver copilot-cli
 - [ ] Persistance des conversations (transcript riche, rejeu fidèle)

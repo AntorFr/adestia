@@ -28,6 +28,7 @@ export default defineConfig({
   },
   test: {
     include: ['packages/*/test/**/*.test.{ts,tsx}'],
+    setupFiles: [fileURLToPath(new URL('./packages/web/test/setup.ts', import.meta.url))],
     // Node by default; the browser-facing suites opt into jsdom with a
     // per-file docblock, so a pure-logic test never pays for a fake DOM.
     environment: 'node',

@@ -28,6 +28,8 @@ export interface PluginDescriptor {
   readonly chrome?: string
   readonly styles?: readonly string[]
   readonly contract?: number
+  /** Launcher tile. A view without one is legitimate — a detail screen. */
+  readonly tile?: { readonly label: string; readonly icon?: string; readonly route?: string }
 }
 
 export interface LoadedPlugin {

@@ -15,7 +15,8 @@
     "@antorfr/golem-schemas": "*",
     "@fastify/static": "^10.1.3",
     "fastify": "^5.12.1",
-    "yaml": "^2.9.0"
+    "yaml": "^2.9.0",
+    "@antorfr/golem-content": "*"
   },
   "bin": {
     "golem": "./bin/golem.js"
