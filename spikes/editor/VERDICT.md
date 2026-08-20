@@ -19,9 +19,17 @@ native there). Milkdown's transformer **is** that same micromark/remark grammar 
 a page parses identically at render time and edit time because it is the same
 tokenizer. Tiptap's official markdown path is **marked**-based: a second grammar
 in the product forever, with the cost already visible inside its own spike —
-a hand-written directive tokenizer that does not support nesting, two stock
-fidelity bugs in a days-old package, and blanket `\_` escaping that would
-pollute every save of agent-written prose (snake_case identifiers).
+a hand-written directive tokenizer that does not support nesting, and two
+stock fidelity bugs in a days-old package.
+
+**Correction (2026-08-20, found while building `packages/content`):** this
+verdict originally also credited Milkdown with not escaping `snake_case` in
+prose. That was wrong — **remark-stringify escapes intraword `_` too**, so both
+candidates would have churned agent-written prose out of the box. The
+difference is only that remark's escaping is fixable from our own pipeline: a
+narrow `text` handler unescapes `_` between two word characters, which
+CommonMark defines as literal anyway (verified). The deciding criterion — one
+grammar — is untouched.
 
 Second-order scoring: markdown-path maturity (Milkdown, strong), shared
 mdast-level vocabulary validation across renderer/editor/agent-skill (Milkdown),
