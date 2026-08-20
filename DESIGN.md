@@ -110,6 +110,20 @@ agent only.
   the driver env contract; agent-gw had two and forgetting one broke a whole channel
   silently.
 
+## Tech stack
+
+| Layer | Choice | Why |
+|---|---|---|
+| Language | TypeScript everywhere (Node ≥ 22, pnpm monorepo) | one language for core, front and third-party plugins; Claude Agent SDK is first-class TS; Copilot CLI is itself npm |
+| Server | Fastify | TS-native, fast, encapsulated plugin system that maps well to Golem's plugin host |
+| Frontend | React 18+ + Vite | the block-editor ecosystem and the plugin-author audience are there |
+| Block editor | **Milkdown** (ProseMirror + remark) — decided by spike 1, see `spikes/editor/VERDICT.md` | byte-identical round-trip proven; same remark grammar as the renderer (one grammar, two consumers — drift eliminated structurally); wrapped behind a Golem editor interface, Tiptap spike kept as proven fallback |
+| Content pipeline | unified/remark + directives (`:::block`) + wikilinks, schema-validated at the mdast level (shared by renderer, editor and agent skill); DOMPurify in depth | ONE parser both sides — two parsers means drift; replaces Markdoc from agent-gw |
+| Drivers v1 | `claude-code` (Agent SDK TS), `copilot-cli` (pinned binary, JSONL) | the two requested engines; Copilot's `--acp` (Agent Client Protocol) to evaluate as an alternative transport |
+| Testing | **Unit tests from the first package** (Vitest) + spike harnesses promoted to permanent suites: content-engine round-trip conformance, driver fake-binary suites (BYOK mock provider for Copilot), plugin DOM-mount tests | tests are scaffolding laid with the foundation, not retrofitted; every markdown/editor/driver dependency bump re-runs the conformance gates |
+| Packaging | Docker image + compose; `npx` for bare-metal local | the two self-hosting front doors; Helm stays in the deployer's own charts (out of the product) |
+| License / repo | MIT, public from day one (github.com/AntorFr/golem), docs in English | early adopters follow from the first commit; npm scope `@antorfr` |
+
 ## Driver contract
 
 The driver interface has a **mandatory core** and **optional capabilities**. The UI
@@ -186,15 +200,23 @@ on both engines without being rewritten.
 - `claude-code` — Agent SDK TS. Arming: `setup-token` flow (url+code). Usage: full
   (per-turn, context breakdown, subscription windows via RateLimitEvent / OAuth
   usage endpoint with cache+stale fallback).
-- `copilot-cli` — verified against official docs (2026): headless `copilot -p
-  --output-format json` (JSONL schema undocumented → pin binary version, tolerant
-  parser, plain-text fallback), sessions via `--resume/--session-id`, permission
-  policy via `--allow-tool/--deny-tool`, MCP via `mcp-config.json` under a dedicated
-  `COPILOT_HOME`. Arming: `COPILOT_GITHUB_TOKEN` with a fine-grained PAT ("Copilot
-  Requests" permission; classic `ghp_` tokens are silently ignored → validate token
-  shape at arming or fail mute), or relayed device flow. No auto-refresh →
-  reactive invalidation + health check. Quotas: GitHub AI Credits billing API
-  (daily/SKU aggregates, separate billing-scope token) — never promise real-time.
+- `copilot-cli` — verified hands-on (spike 3, binary 1.0.80 pinned; full facts in
+  `spikes/copilot-cli/REPORT.md`): headless `copilot -p --output-format json`
+  (JSONL event schema captured via a local BYOK mock provider — which also makes
+  the whole driver CI-testable with zero GitHub credentials), sessions via
+  `--resume/--session-id` (the driver may choose ids), permission policy via
+  `--allow-tool/--deny-tool`, MCP via `mcp-config.json` under a driver-owned
+  `COPILOT_HOME`. Arming: `COPILOT_GITHUB_TOKEN` with a fine-grained PAT —
+  classic `ghp_` tokens are **loudly rejected** as of 1.0.80 (shape validation
+  is UX polish now, not a mute-failure guard) — or relayed device flow; the
+  three unauthenticated error states are stderr prose with empty stdout (never
+  JSONL). No auto-refresh → reactive invalidation + health check. The binary
+  **self-updates by default** → the driver pins (`COPILOT_AUTO_UPDATE=false`).
+  Usage taps, richest first: driver-owned `session-store.db` (per-call tokens +
+  AI-credit units), the JSONL `result.usage` line, the OTel file exporter; the
+  AI Credits billing API stays the only quota source (daily aggregates,
+  separate billing-scope token) — never promise real-time. Discovered: `--acp`
+  (Agent Client Protocol server) — candidate transport to evaluate vs JSONL.
 
 ## MCP configuration
 
@@ -364,19 +386,25 @@ resolves in Golem as follows:
   that reads them (zero drift) and sit UNDER workspace instructions with a defined
   precedence: the product provides the generic, the workspace owns the specific.
 
-## Open spikes (before any architecture is frozen in code)
+## Spikes (validation record)
 
-1. **Editor round-trip:** Milkdown vs Tiptap+markdown vs BlockNote — prove lossless
-   md ⇄ editor round-trip *including custom typed blocks and frontmatter*.
-2. **Runtime ESM plugin views:** dynamic import + import map sharing React with
-   plugin bundles, CSS inject/remove, lazy sub-chunks — prove the scan-class plugin
-   loads from a mounted folder with zero rebuild.
-3. **Copilot CLI hands-on:** docs are verified; now capture a session id headlessly,
-   pin a binary version, and build the tolerant JSONL parser against reality —
-   including whether models can be enumerated programmatically and whether any
-   per-run or live usage appears in the stream.
-4. **Subscription concurrency:** measure parallel turns against Claude subscription
-   limits to pick sane defaults for the global cap.
+1. **Editor round-trip — DONE, verdict Milkdown** (`spikes/editor/VERDICT.md`):
+   Milkdown and Tiptap both round-tripped byte-identical with typed blocks as
+   first-class nodes; BlockNote eliminated (its md import has no extension
+   hook). Milkdown wins on the one-grammar criterion — its transformer is the
+   same remark/micromark pipeline as the renderer.
+2. **Runtime ESM plugin views — DONE, proven** (`spikes/esm-runtime/REPORT.md`):
+   16/16 assertions in real Chrome — import-map-shared single React instance,
+   manifest-listed CSS, lazy 450 kB chunk, strict-MIME and CORS negative
+   proofs. The import map is a versioned, published contract;
+   `react/jsx-runtime` is mapped from day one.
+3. **Copilot CLI hands-on — DONE** (`spikes/copilot-cli/REPORT.md`): binary
+   1.0.80 pinned, JSONL schema captured via BYOK mock, three auth error
+   states, usage taps, static model catalog, `--acp` discovered. Remaining
+   items require an authenticated session (report §9).
+4. **Subscription concurrency — PENDING (explicit go required):** parallel
+   turns vs Claude subscription limits, to pick the global-cap defaults.
+   Burns real quota.
 
 ## Decision log
 
@@ -412,6 +440,13 @@ driver.
 capability (enumeration where the CLI provides it, config-declared list otherwise,
 never a product-hardcoded catalog); the live climbing token counter on the busy
 bubble joins as a capability-gated bonus (`liveTurnUsage`).
+
+**2026-08-20 (editor verdict + tests):** Milkdown chosen (spike 1) — remark
+grammar shared with the renderer, byte-identical round-trip; Tiptap kept as
+proven fallback behind Golem's editor interface; BlockNote eliminated. Unit
+tests from the skeleton's first package; spike harnesses promoted to permanent
+conformance suites. Spike-3 corrections folded into the copilot driver section
+(`ghp_` loudly rejected; auto-update pinning; usage taps; `--acp` to evaluate).
 
 **2026-08-20 (MCP config):** outbound MCP = three layers (operator config with
 secret interpolation, plugin-declared servers, workspace-native config left
