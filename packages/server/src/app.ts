@@ -14,12 +14,15 @@ import type { Driver, DriverDescriptor, TurnEvent } from '@antorfr/golem-drivers
 import { isPublicRoute, resolveIdentity, type Identity } from './auth.js'
 import type { GolemConfig } from './config.js'
 import { frontendPayload, type DiscoveredPlugin, type DiscoveryProblem } from './extensions.js'
+import { registerStatic } from './static.js'
 
 export interface AppDependencies {
   readonly config: GolemConfig
   readonly driver: Driver
   readonly plugins: readonly DiscoveredPlugin[]
   readonly pluginProblems: readonly DiscoveryProblem[]
+  /** Built shell bundle. Absent in dev, where Vite serves it and proxies here. */
+  readonly webRoot?: string | undefined
 }
 
 /** Turn admission: subscription limits are real, so concurrency is bounded. */
@@ -49,7 +52,7 @@ export function sseFrame(event: TurnEvent): string {
 }
 
 export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> {
-  const { config, driver, plugins, pluginProblems } = deps
+  const { config, driver, plugins, pluginProblems, webRoot } = deps
   const app = Fastify({ logger: false })
   const limiter = new TurnLimiter(config.maxConcurrentTurns)
   const descriptor: DriverDescriptor = await driver.describe()
@@ -169,6 +172,9 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
       return reply
     }
   })
+
+  // Last, so an API route always wins over the shell's catch-all.
+  registerStatic(app, { plugins, ...(webRoot ? { webRoot } : {}) })
 
   return app
 }

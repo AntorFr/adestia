@@ -1,0 +1,138 @@
+/**
+ * Design tokens — the whole surface a skin may redefine.
+ *
+ * The contract, inherited from the predecessor because it was right: a skin is
+ * a DECLARATION OF TOKENS, never a structural rule scoped by agent. That is
+ * what lets several personalities share one shell without the layouts
+ * diverging, and it is enforced by lint, not by good intentions.
+ *
+ * Everything below is defined on bare `:root` first, so a viewer with no
+ * preference and no skin still gets a complete palette.
+ */
+
+:root {
+  color-scheme: light dark;
+
+  /* Surfaces, from the page up to what floats above it. */
+  --surface: #fbfbfa;
+  --surface-raised: #ffffff;
+  --surface-sunken: #f1f0ee;
+  --border: #e3e1dd;
+  --border-strong: #c9c6c0;
+
+  /* Text, three weights of presence. */
+  --text: #1f1d1a;
+  --text-muted: #6b665e;
+  --text-faint: #97918a;
+
+  --accent: #b45309;
+  --accent-text: #ffffff;
+  --accent-quiet: #fef3e2;
+
+  --danger: #b42318;
+  --warning: #b45309;
+  --success: #15803d;
+
+  /* Chat bubbles: the user speaks on accent, the agent on a bordered surface. */
+  --bubble-user-bg: var(--accent);
+  --bubble-user-text: var(--accent-text);
+  --bubble-agent-bg: var(--surface-raised);
+  --bubble-agent-text: var(--text);
+
+  --radius-sm: 4px;
+  --radius: 8px;
+  --radius-lg: 14px;
+  --radius-bubble: 14px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-lg: 1.125rem;
+
+  --shadow: 0 1px 2px rgb(0 0 0 / 6%), 0 4px 12px rgb(0 0 0 / 4%);
+
+  /* The split: chat rail against the apps canvas, resizable and persisted. */
+  --rail: 33.333%;
+  --gutter: 6px;
+  /* Shared with the JS: a layout that disagrees with itself between the two
+     is a layout that flickers on resize. */
+  --breakpoint-mobile: 820px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --surface: #17161a;
+    --surface-raised: #1f1e23;
+    --surface-sunken: #121114;
+    --border: #322f38;
+    --border-strong: #47434f;
+
+    --text: #ece9f0;
+    --text-muted: #a09aa8;
+    --text-faint: #6f6a78;
+
+    --accent: #f0a34a;
+    --accent-text: #1a1206;
+    --accent-quiet: #2b2115;
+
+    --danger: #f97066;
+    --warning: #f0a34a;
+    --success: #4ade80;
+
+    --bubble-agent-bg: var(--surface-raised);
+    --shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 4px 16px rgb(0 0 0 / 30%);
+  }
+}
+
+:root[data-theme='dark'] {
+  --surface: #17161a;
+  --surface-raised: #1f1e23;
+  --surface-sunken: #121114;
+  --border: #322f38;
+  --border-strong: #47434f;
+  --text: #ece9f0;
+  --text-muted: #a09aa8;
+  --text-faint: #6f6a78;
+  --accent: #f0a34a;
+  --accent-text: #1a1206;
+  --accent-quiet: #2b2115;
+  --danger: #f97066;
+  --warning: #f0a34a;
+  --success: #4ade80;
+  --bubble-agent-bg: var(--surface-raised);
+  --shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 4px 16px rgb(0 0 0 / 30%);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--text-base);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

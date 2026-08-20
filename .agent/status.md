@@ -1,16 +1,17 @@
 # Status — Golem
 > MàJ : 2026-08-21
 
-**État :** GOLEM DÉMARRE ET RÉPOND. Binaire `golem` fonctionnel : charge la
-config, crée le workspace, découvre les plugins d'un dossier monté (sans
-rebuild), sert, et exécute un vrai tour d'agent Claude Code en streaming
-(vérifié de bout en bout : deltas de texte, compteur de tokens, usage complet).
-**186 tests au vert, typecheck propre.** Manque encore l'UI React elle-même.
+**État :** GOLEM A UN VISAGE. Interface React servie par Fastify, vérifiée dans
+un vrai Chrome : split view réglable (Pointer Events + clavier), chat streamé,
+trace outils, pastille de contexte, permissions, bascule mobile fonctionnelle,
+plugin chargé À CHAUD depuis un dossier monté avec React partagé par import map
+et CSS injecté par la coque. **220 tests au vert, typecheck propre.**
 
 **Prochaines étapes :**
-- [ ] Composants React : coque, chat streamé, canvas, pastille de contexte + build Vite servi par Fastify
-- [ ] Éditeur Milkdown branché sur packages/content (pipeline prêt)
+- [ ] Éditeur Milkdown branché sur packages/content (pipeline prêt) + API de pages
 - [ ] Boucle OIDC (login/callback/session) — resolveIdentity est prêt
-- [ ] Armement de token (authManagement) + driver copilot-cli
+- [ ] Armement de token (authManagement) dans l'UI + driver copilot-cli
+- [ ] Persistance des conversations (transcript riche, rejeu fidèle)
 - [ ] Skills plugin-author / skin-author sur les schémas gelés
+- [ ] Dockerfile + compose ; README d'installation
 - [ ] Spike 4 — concurrence vs limites d'abonnement (go utilisateur requis)

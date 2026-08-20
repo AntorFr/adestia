@@ -77,6 +77,12 @@ export interface TurnState {
   readonly text: string
   readonly tools: readonly ToolCall[]
   readonly outputTokens: number
+  /**
+   * Weight of the context the NEXT message re-pays, known only once the turn
+   * reports its result. Distinct from `outputTokens`, which is this turn's
+   * production — conflating them is the error the driver contract calls out.
+   */
+  readonly contextTokens?: number | undefined
   readonly running: boolean
   readonly stopped: boolean
   /**
@@ -140,6 +146,9 @@ export function applyEvent(state: TurnState, event: TurnEvent): TurnState {
         permission: undefined,
         ...(event.usage?.outputTokens !== undefined
           ? { outputTokens: event.usage.outputTokens }
+          : {}),
+        ...(event.usage?.contextTokens !== undefined
+          ? { contextTokens: event.usage.contextTokens }
           : {}),
       }
 

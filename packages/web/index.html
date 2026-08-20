@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Golem</title>
+    <!--
+      The import map is the published contract plugins are written against.
+      It lives in the shell's HTML, not in a plugin: a map must be parsed
+      before the first module resolution, so a plugin can never add its own
+      bare names retroactively. Anything not listed here must be vendored by
+      the plugin as relative imports.
+    -->
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "/vendor/react.js",
+          "react-dom/client": "/vendor/react-dom-client.js",
+          "react/jsx-runtime": "/vendor/react-jsx-runtime.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

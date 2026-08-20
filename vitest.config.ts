@@ -10,6 +10,10 @@ const pkg = (name: string) =>
 // from spikes/ — those are gates, not experiments: a markdown, editor or
 // driver dependency bump must re-run them.
 export default defineConfig({
+  // No React plugin here: vitest's esbuild handles JSX from the tsconfig's
+  // `jsx: react-jsx`, and Fast Refresh has no meaning in a test run. One less
+  // dependency to keep in step with vite's major versions.
+  esbuild: { jsx: 'automatic' },
   // Packages ship built JS (`dist/`) so Node can run them, but the suites read
   // the TypeScript sources directly: otherwise every test run would depend on
   // a prior build, and a stale `dist/` would quietly test yesterday's code.
@@ -23,7 +27,9 @@ export default defineConfig({
     },
   },
   test: {
-    include: ['packages/*/test/**/*.test.ts'],
+    include: ['packages/*/test/**/*.test.{ts,tsx}'],
+    // Node by default; the browser-facing suites opt into jsdom with a
+    // per-file docblock, so a pure-logic test never pays for a fake DOM.
     environment: 'node',
   },
 })

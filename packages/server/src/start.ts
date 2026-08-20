@@ -9,7 +9,8 @@
  */
 
 import { mkdir, readFile, stat } from 'node:fs/promises'
-import { resolve } from 'node:path'
+import { join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import { ClaudeCodeDriver, type Driver } from '@antorfr/golem-drivers'
 import type { FastifyInstance } from 'fastify'
@@ -22,6 +23,8 @@ export const DEFAULT_CONFIG_FILE = 'golem.config.yaml'
 
 export interface StartOptions {
   readonly configPath?: string
+  /** Built shell bundle; discovered next to the server package by default. */
+  readonly webRoot?: string
   /** Where relative config paths resolve from. */
   readonly cwd?: string
   /** Injected in tests; production builds the driver from the config. */
@@ -62,6 +65,17 @@ async function buildDriver(config: GolemConfig): Promise<Driver> {
     query: query as unknown as ConstructorParameters<typeof ClaudeCodeDriver>[0]['query'],
     models: config.driver.models,
   })
+}
+
+/** The web bundle ships beside the server package; found, never configured. */
+async function findWebRoot(): Promise<string | undefined> {
+  const candidate = fileURLToPath(new URL('../../../web/dist-web/', import.meta.url))
+  try {
+    await stat(join(candidate, 'index.html'))
+    return candidate
+  } catch {
+    return undefined
+  }
 }
 
 export async function start(options: StartOptions = {}): Promise<StartedInstance> {
@@ -127,7 +141,21 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     workspace: { ...config.workspace, root: workspaceRoot },
   }
 
-  const app = await buildApp({ config: resolved, driver, plugins, pluginProblems: problems })
+  const webRoot = options.webRoot ?? (await findWebRoot())
+  if (!webRoot) {
+    // Not fatal: `golem` is useful as an API in development, where Vite serves
+    // the shell. But an operator who expected a web page deserves to know why
+    // they are looking at JSON.
+    log('no built web shell found; serving the API only (run `npm run build:web`)')
+  }
+
+  const app = await buildApp({
+    config: resolved,
+    driver,
+    plugins,
+    pluginProblems: problems,
+    ...(webRoot ? { webRoot } : {}),
+  })
   await app.listen({ host: resolved.host, port: resolved.port })
 
   // The bound port, not the configured one: with `port: 0` they differ, and
