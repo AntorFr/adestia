@@ -1,0 +1,18 @@
+{
+  "name": "golem-spike-editor-milkdown",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "description": "Spike 1 candidate: Milkdown round-trip harness (headless, jsdom)",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "dependencies": {
+    "@milkdown/kit": "7.22.1",
+    "jsdom": "30.0.1",
+    "mdast-util-directive": "3.1.0",
+    "mdast-util-find-and-replace": "3.0.2",
+    "micromark-extension-directive": "4.0.0",
+    "remark-frontmatter": "5.0.0"
+  }
+}
