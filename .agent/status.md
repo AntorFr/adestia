@@ -1,16 +1,18 @@
 # Status — Golem
 > MàJ : 2026-08-20
 
-**État :** Chantier LANCÉ. Repo créé (GitHub AntorFr/golem, public, MIT).
-Conception close (DESIGN.md v3). Spikes 1-3 en cours d'exécution (workflow
-parallèle) : 3 prototypes d'éditeur round-trip, chargeur ESM runtime, recon
-Copilot CLI. Spike 4 (concurrence vs quota abonnement) différé — brûle du quota
-réel, attend un go explicite.
+**État :** Spikes 1-3 TERMINÉS, vérifiés de seconde main, commités-poussés
+(a5484e2 → b50a28c). ESM runtime PROUVÉ (16/16, Chrome réel). Copilot CLI
+recon complet (JSONL capturé via mock BYOK, 3 états d'auth, session-store.db,
+catalogue modèles, flag --acp découvert). Éditeurs : Milkdown ET Tiptap
+byte-identiques sur les 2 fixtures (zéro normalisation) ; BlockNote éliminé
+(0/2, pas de hook markdown). EN ATTENTE : verdict comparatif Milkdown vs
+Tiptap — moment Fable suggéré à l'utilisateur.
 
 **Prochaines étapes :**
-- [ ] Dépouiller les spikes 1-3, verdict comparatif éditeur (moment Fable suggéré)
-- [ ] Spike 4 — concurrence vs limites d'abonnement (go utilisateur requis)
-- [ ] Figer schemaVersion 1 des manifestes plugin/skin + points de contribution
+- [ ] Verdict éditeur Milkdown vs Tiptap (critères 2e ordre : DX blocs custom, couplage pipeline, plafond UX, écosystème, risques — cf. open_questions des 2 rapports)
+- [ ] Reporter dans DESIGN.md : ghp_ rejeté bruyamment (correction), option --acp Copilot à évaluer, leçons import map (jsx-runtime day one, contrat de spécificateurs versionné)
+- [ ] Spike 4 — concurrence vs limites d'abonnement (go utilisateur requis, brûle du quota)
+- [ ] Figer schemaVersion 1 des manifestes plugin/skin (nourri par les spikes)
 - [ ] Squelette monorepo (core / web / sdk / drivers) et contrat driver v0
 - [ ] Skills plugin-author / skin-author sur les schémas gelés
-- [ ] Réserver le scope npm @antorfr (à la première publication)
