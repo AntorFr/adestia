@@ -35,6 +35,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   const [instance, setInstance] = useState<InstanceInfo | undefined>()
   const [failures, setFailures] = useState<readonly { id: string; reason: string }[]>([])
   const [fatal, setFatal] = useState<string | undefined>()
+  const [needsLogin, setNeedsLogin] = useState<'signin' | 'refused' | undefined>()
   const [screen, setScreen] = useState<'chat' | 'canvas'>('chat')
   const [pages, setPages] = useState<readonly { path: string; title: string }[]>([])
   const [page, setPage] = useState<PageDocument | undefined>()
@@ -54,6 +55,18 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
     void (async () => {
       try {
         const response = await fetchImpl('/api/instance')
+        if (response.status === 401) {
+          // Not an error to display: it means "sign in", and showing a status
+          // code instead leaves the user reading a number with no way forward.
+          if (!cancelled) setNeedsLogin('signin')
+          return
+        }
+        if (response.status === 403) {
+          // A different fact entirely: this account will never be let in, and
+          // sending them back to the login page would loop them forever.
+          if (!cancelled) setNeedsLogin('refused')
+          return
+        }
         if (!response.ok) throw new Error(`the server answered ${response.status}`)
         const info = (await response.json()) as InstanceInfo
         if (cancelled) return
@@ -76,6 +89,35 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
       cancelled = true
     }
   }, [fetchImpl])
+
+  if (needsLogin === 'refused') {
+    return (
+      <main className="golem-fatal" role="alert">
+        <h1>Not allowed</h1>
+        <p>
+          You are signed in, but your account is not in a group this instance admits. Ask whoever
+          runs it to add you.
+        </p>
+        <form method="post" action="/auth/logout">
+          <button type="submit" className="golem-switch">
+            Sign out
+          </button>
+        </form>
+      </main>
+    )
+  }
+
+  if (needsLogin === 'signin') {
+    return (
+      <main className="golem-signin">
+        <h1>Golem</h1>
+        <p>This instance requires you to sign in.</p>
+        <a className="golem-signin__button" href={`/auth/login?returnTo=${encodeURIComponent(location.pathname + location.hash)}`}>
+          Sign in
+        </a>
+      </main>
+    )
+  }
 
   if (fatal) {
     return (
@@ -133,6 +175,13 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           >
             ⚙
           </button>
+          {instance.auth.mode === 'oidc' && (
+            <form method="post" action="/auth/logout" className="golem-canvas__signout">
+              <button type="submit" className="golem-switch" title={instance.user?.displayName}>
+                Sign out
+              </button>
+            </form>
+          )}
         </header>
 
         {settingsOpen && <Settings fetchImpl={fetchImpl} />}

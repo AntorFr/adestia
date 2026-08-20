@@ -630,3 +630,27 @@
   font-family: var(--font-mono);
   font-size: max(16px, var(--text-sm));
 }
+
+.golem-signin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  height: 100dvh;
+  text-align: center;
+}
+
+.golem-signin h1 { margin: 0; font-size: 2rem; }
+.golem-signin p { margin: 0; color: var(--text-muted); }
+
+.golem-signin__button {
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--accent-text);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.golem-canvas__signout { display: inline; }

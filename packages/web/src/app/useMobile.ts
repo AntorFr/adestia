@@ -25,6 +25,17 @@ export function useMobile(): boolean {
   )
 
   useEffect(() => {
+    // Guarded because an unavailable browser API thrown from an effect tears
+    // down the whole render — the shell must not disappear because one media
+    // query API is missing. The resize fallback covers the same ground with
+    // more work and no correctness loss.
+    if (typeof window.matchMedia !== 'function') {
+      const update = () => setMobile(window.innerWidth <= mobileBreakpoint())
+      update()
+      window.addEventListener('resize', update)
+      return () => window.removeEventListener('resize', update)
+    }
+
     const query = window.matchMedia(`(max-width: ${mobileBreakpoint()}px)`)
     const update = () => setMobile(query.matches)
     update()

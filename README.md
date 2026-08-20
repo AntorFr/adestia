@@ -36,13 +36,36 @@ The agent CLI is **not** bundled: which engine runs is the operator's
 configuration, and its credentials come from the environment or are armed from
 Golem's own interface.
 
+## What it does today
+
+- **Chat that streams**, with a tool trace, a live token counter, interactive
+  permissions, and threads that survive a reload with everything the interface
+  drew — tool calls, interruptions, context weight.
+- **Pages both hands write**: markdown files with a closed vocabulary of typed
+  blocks, edited in a Notion-like editor or by the agent with its own file
+  tools. One grammar renders, edits and validates them, so a save cannot change
+  what a page means. A save is refused if the agent wrote underneath you.
+- **Extensions at runtime**: drop a plugin folder in, name it in the config,
+  restart. No image rebuild. Shared React comes from the page's import map;
+  the shell owns the stylesheets; a broken plugin costs its own view and says
+  why.
+- **Two engines** behind one contract — Claude Code and GitHub Copilot CLI.
+  The interface is built from declared capabilities and never from a driver's
+  name, so a second engine changed no UI code.
+- **A credential armed from the interface**, held server-side at 0600 and never
+  sent to a browser.
+- **Three ways in**: none (local), a trusted proxy header, or any OIDC issuer.
+  No local accounts, ever.
+- **Contracts the agent reads**: `plugin-author` and `skin-author` ship with
+  the product, so asking the agent for a plugin produces a valid one.
+
 ## Status
 
-**Early, and running.** The chat streams, pages are editable by both you and the
-agent, plugins load at runtime from a mounted folder, and the container image
-works. Not yet done: OIDC login, the Copilot CLI driver, and the authoring
-skills. See [DESIGN.md](DESIGN.md) for the principles and every decision taken,
-and [.agent/status.md](.agent/status.md) for what is in flight.
+**Early, and running.** What is not done yet, and known: scheduled turns
+(planif), inbound MCP so other agents can delegate here, chat attachments, and
+the skin system beyond its schema. See [DESIGN.md](DESIGN.md) for the
+principles and every decision taken, and [.agent/status.md](.agent/status.md)
+for what is in flight.
 
 ## License
 

@@ -1,0 +1,64 @@
+# Golem — the gate every change passes.
+#
+# Runs what a contributor runs, in the same order, so a green local run and a
+# green CI mean the same thing. Nothing here needs a Claude or GitHub Copilot
+# account: every driver is exercised against a fake binary, which is a property
+# of the driver contract rather than a convenience of this file.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # `ci`, not `install`: the lockfile is the version set that was tested,
+      # and a build that quietly resolves something newer is a build that no
+      # longer matches the one anyone ran.
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      # Proves the shipped artefact still builds, which the tests do not:
+      # they read TypeScript sources, so a packaging mistake passes them all.
+      - name: Build
+        run: |
+          npm run build --workspace @antorfr/golem-server
+          npm run build:web --workspace @antorfr/golem-web
+
+      - name: Boot the built server
+        run: |
+          mkdir -p /tmp/golem-ci
+          cd /tmp/golem-ci
+          node "$GITHUB_WORKSPACE/packages/server/bin/golem.js" &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8730/api/health && break
+            sleep 1
+          done
+          # A server that answers health is a server whose whole boot path ran:
+          # config, workspace, extension discovery, skills delivery.
+          curl -sf http://127.0.0.1:8730/api/health
+
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Built, not pushed. Publishing is a deliberate act by whoever owns the
+      # registry, not a side effect of merging.
+      - name: Build the container image
+        run: docker build -t golem:ci .
