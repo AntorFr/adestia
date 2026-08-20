@@ -25,6 +25,15 @@ import type { QueryFn, RawMessage, SdkMessage } from './sdk-types.js'
 export interface ClaudeCodeOptions {
   /** Injected so tests can drive a fake SDK — see `test/claude-code.test.ts`. */
   readonly query: QueryFn
+  /**
+   * The environment the CLI inherits. Defaults to this process's own.
+   *
+   * It matters that this REPLACES rather than merges: the SDK hands its `env`
+   * straight to the subprocess, so passing only our credentials strips PATH
+   * and the CLI cannot even launch — a failure whose message blames the binary
+   * (observed 2026-08-21, smoke test).
+   */
+  readonly baseEnv?: Readonly<Record<string, string | undefined>>
   /** Secrets the core holds; merged UNDER the turn's own env at spawn. */
   readonly credentials?: Readonly<Record<string, string>>
   readonly cliVersion?: string
@@ -38,6 +47,7 @@ export interface ClaudeCodeOptions {
 
 export class ClaudeCodeDriver implements Driver {
   readonly #query: QueryFn
+  readonly #baseEnv: Readonly<Record<string, string | undefined>>
   readonly #credentials: Readonly<Record<string, string>>
   readonly #cliVersion: string
   readonly #models: readonly ModelInfo[]
@@ -46,6 +56,7 @@ export class ClaudeCodeDriver implements Driver {
 
   constructor(options: ClaudeCodeOptions) {
     this.#query = options.query
+    this.#baseEnv = options.baseEnv ?? process.env
     this.#credentials = options.credentials ?? {}
     this.#cliVersion = options.cliVersion ?? 'unknown'
     this.#models = options.models ?? []
@@ -83,7 +94,10 @@ export class ClaudeCodeDriver implements Driver {
         includePartialMessages: true,
         ...(request.sessionId ? { resume: request.sessionId } : {}),
         ...(request.model ? { model: request.model } : {}),
-        env: { ...this.#credentials },
+        // Credentials go ON TOP of the inherited environment, so a token
+        // managed here wins over stale credentials in a shared home without
+        // stripping everything the CLI needs to run.
+        env: { ...this.#baseEnv, ...this.#credentials },
       },
     })
 

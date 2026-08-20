@@ -1,17 +1,15 @@
 # Status — Golem
-> MàJ : 2026-08-20
+> MàJ : 2026-08-21
 
-**État :** Les 5 paquets existent et sont verts. `packages/web` : parseur SSE
-incrémental + état de tour vivant (streaming, compteur de tokens, permissions,
-interruption matérialisée), chargeur de plugins ESM runtime avec contrat
-d'import map versionné. **168 tests au vert, typecheck propre.**
-Reste à assembler : l'app React elle-même (composants, éditeur Milkdown monté
-sur le pipeline, routage), et le binaire qui démarre tout.
+**État :** GOLEM DÉMARRE ET RÉPOND. Binaire `golem` fonctionnel : charge la
+config, crée le workspace, découvre les plugins d'un dossier monté (sans
+rebuild), sert, et exécute un vrai tour d'agent Claude Code en streaming
+(vérifié de bout en bout : deltas de texte, compteur de tokens, usage complet).
+**186 tests au vert, typecheck propre.** Manque encore l'UI React elle-même.
 
 **Prochaines étapes :**
-- [ ] Composants React : coque, chat streamé, canvas d'apps, pastille de contexte
-- [ ] Éditeur Milkdown branché sur packages/content (le pipeline est prêt)
-- [ ] Binaire `golem` : charge la config, découvre, sert le web, démarre
+- [ ] Composants React : coque, chat streamé, canvas, pastille de contexte + build Vite servi par Fastify
+- [ ] Éditeur Milkdown branché sur packages/content (pipeline prêt)
 - [ ] Boucle OIDC (login/callback/session) — resolveIdentity est prêt
 - [ ] Armement de token (authManagement) + driver copilot-cli
 - [ ] Skills plugin-author / skin-author sur les schémas gelés

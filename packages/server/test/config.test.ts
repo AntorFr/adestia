@@ -38,7 +38,7 @@ describe('unknown settings', () => {
   it('are reported alongside every other problem', () => {
     expect(issuesOf('nope: 1\nport: 99999\n')).toEqual([
       'unknown setting "nope"',
-      'port must be an integer between 1 and 65535',
+      'port must be an integer between 0 and 65535 (0 = pick a free port)',
     ])
   })
 })
@@ -117,6 +117,18 @@ describe('extensions', () => {
   it('refuses a scalar where a list belongs', () => {
     expect(issuesOf('extensions:\n  apps: workbench\n')).toEqual([
       'extensions.apps must be a list of strings',
+    ])
+  })
+})
+
+describe('port', () => {
+  it('accepts 0 as "pick a free port"', () => {
+    expect(parseConfig('port: 0\n').port).toBe(0)
+  })
+
+  it('refuses a port beyond the range', () => {
+    expect(issuesOf('port: 70000\n')).toEqual([
+      'port must be an integer between 0 and 65535 (0 = pick a free port)',
     ])
   })
 })

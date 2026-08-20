@@ -18,17 +18,20 @@ import type { QueryFn, SdkMessage } from '../src/claude-code/sdk-types.js'
 type FakeSdk = QueryFn & { readonly interrupts: number }
 
 /** A fake `query()` replaying a fixed script, with a spy on interrupt. */
-function fakeSdk(script: readonly SdkMessage[]): FakeSdk {
+function fakeSdk(script: readonly SdkMessage[], seen?: { params?: unknown }): FakeSdk {
   const state = { interrupts: 0 }
-  const fn: QueryFn = () => ({
-    async *[Symbol.asyncIterator]() {
-      for (const message of script) yield message
-    },
-    interrupt() {
-      state.interrupts += 1
-      return Promise.resolve(undefined)
-    },
-  })
+  const fn: QueryFn = (params) => {
+    if (seen) seen.params = params
+    return {
+      async *[Symbol.asyncIterator]() {
+        for (const message of script) yield message
+      },
+      interrupt() {
+        state.interrupts += 1
+        return Promise.resolve(undefined)
+      },
+    }
+  }
   return Object.defineProperty(fn, 'interrupts', { get: () => state.interrupts }) as FakeSdk
 }
 
@@ -86,6 +89,39 @@ describe('conformance', () => {
     const { capabilities } = await driver.describe()
     expect(capabilities).not.toContain('modelSelection')
     expect(capabilities).toContain('usageMetrics')
+  })
+
+  it('spawns with the inherited environment, credentials on top', async () => {
+    // The SDK REPLACES the subprocess environment with what it is given, so
+    // passing credentials alone strips PATH and the CLI cannot launch — the
+    // failure then blames the binary, which sends you debugging the wrong
+    // thing entirely (observed 2026-08-21).
+    const seen: { params?: unknown } = {}
+    const driver = new ClaudeCodeDriver({
+      query: fakeSdk([resultMessage], seen),
+      baseEnv: { PATH: '/usr/bin', HOME: '/home/agent' },
+      credentials: { CLAUDE_CODE_OAUTH_TOKEN: 'sk-ant-oat01-secret' },
+    })
+    await collect(driver)
+
+    const env = (seen.params as { options: { env: Record<string, string> } }).options.env
+    expect(env).toEqual({
+      PATH: '/usr/bin',
+      HOME: '/home/agent',
+      CLAUDE_CODE_OAUTH_TOKEN: 'sk-ant-oat01-secret',
+    })
+  })
+
+  it('lets a managed token override a stale one in the inherited env', async () => {
+    const seen: { params?: unknown } = {}
+    const driver = new ClaudeCodeDriver({
+      query: fakeSdk([resultMessage], seen),
+      baseEnv: { CLAUDE_CODE_OAUTH_TOKEN: 'stale-from-shared-home' },
+      credentials: { CLAUDE_CODE_OAUTH_TOKEN: 'fresh' },
+    })
+    await collect(driver)
+    const env = (seen.params as { options: { env: Record<string, string> } }).options.env
+    expect(env['CLAUDE_CODE_OAUTH_TOKEN']).toBe('fresh')
   })
 
   it('hands credentials over as env, never as arguments', async () => {

@@ -197,8 +197,10 @@ export function parseConfig(source: string): GolemConfig {
   }
 
   const port = raw['port'] ?? DEFAULTS.port
-  if (typeof port !== 'number' || !Number.isInteger(port) || port < 1 || port > 65535) {
-    issues.push('port must be an integer between 1 and 65535')
+  // 0 is meaningful, not a mistake: it is the ask-the-OS-for-a-free-port
+  // convention, which is how ephemeral and test instances bind.
+  if (typeof port !== 'number' || !Number.isInteger(port) || port < 0 || port > 65535) {
+    issues.push('port must be an integer between 0 and 65535 (0 = pick a free port)')
   }
 
   const maxConcurrentTurns = raw['maxConcurrentTurns'] ?? DEFAULTS.maxConcurrentTurns
