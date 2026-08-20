@@ -1,0 +1,68 @@
+# Golem — instance configuration
+#
+# Every setting below is optional: an empty file gives a working single-user
+# instance on 127.0.0.1:8730 with no authentication. Unknown keys are refused
+# at startup rather than ignored — a typo is a setting you believe is on.
+
+# Loopback by default, deliberately: with `auth.mode: none` there is no gate at
+# all. Change this only once something else authenticates your users.
+host: 127.0.0.1
+port: 8730
+
+# Server-side state: conversations, the attachment inbox, driver secrets (0600).
+dataDir: ./data
+
+# Concurrent agent turns across all conversations. Subscription limits are
+# real, so this is a refusal (429), never a silent queue.
+maxConcurrentTurns: 3
+
+auth:
+  # none  — single implicit local user. Pair with a loopback bind.
+  # proxy — identity from a header set by an authenticating reverse proxy.
+  # oidc  — any standard issuer. Golem never stores passwords or owns accounts.
+  mode: none
+
+  # proxy:
+  #   userHeader: remote-user
+  #   groupsHeader: remote-groups
+
+  # oidc:
+  #   issuer: https://auth.example.org
+  #   clientId: golem
+  #   clientSecret: ${OIDC_CLIENT_SECRET}
+  #   redirectUri: https://golem.example.org/auth/callback
+  #   groupsClaim: groups
+  #   allowedGroups: [staff]        # empty means any authenticated user
+
+workspace:
+  # The agent's home. Its instructions live here in its CLI's own dialect —
+  # Golem neither normalizes nor translates them.
+  root: ./workspace
+  pages: pages
+  memory: memory
+  planif: planif
+
+driver:
+  id: claude-code
+  # Claude's catalogue is per-account and cannot be enumerated offline, so an
+  # instance declares what it may use. Omit the list and the model selector
+  # hides rather than showing a hardcoded catalogue that lies.
+  models:
+    - claude-opus-5
+    - id: claude-sonnet-5
+      label: Sonnet 5
+
+extensions:
+  # Where extensions are FOUND. Mount whatever you like here: presence is
+  # discovery, never activation.
+  pluginsDir: ./plugins
+  skinsDir: ./skins
+
+  # What is turned ON, by kind. A plugin absent from these lists ships no code
+  # to the browser and mounts no API.
+  apps: []       # launcher modules: a tile, a route
+  features: []   # shell capabilities: a composer control, a settings entry
+  tools: []      # agent capabilities with no interface at all
+
+  # Exactly one skin is active — a value, not a list.
+  skin: default
