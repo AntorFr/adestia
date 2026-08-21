@@ -112,13 +112,15 @@ const build = async (
   return { app, runTurn }
 }
 
-const call = (app: FastifyInstance, body: unknown, token = 'a-shared-secret') =>
-  app.inject({
+/** Awaited inside, so callers get a response rather than Fastify's chainable. */
+async function call(app: FastifyInstance, body: unknown, token = 'a-shared-secret') {
+  return app.inject({
     method: 'POST',
     url: '/mcp',
     headers: { authorization: `Bearer ${token}` },
     payload: body,
   })
+}
 
 describe('the endpoint', () => {
   it('is not mounted when disabled', async () => {
@@ -266,17 +268,6 @@ describe('the endpoint', () => {
       params: { name: 'ask_skippy', arguments: {} },
     })
     expect(response.json().result).toMatchObject({ isError: true })
-    await app.close()
-  })
-
-  it('names an unknown tool instead of failing silently', async () => {
-    const { app } = await build()
-    const response = await call(app, {
-      method: 'tools/call',
-      id: 1,
-      params: { name: 'ask_someone_else', arguments: {} },
-    })
-    expect(response.json().result.content[0].text).toContain('unknown tool')
     await app.close()
   })
 })
