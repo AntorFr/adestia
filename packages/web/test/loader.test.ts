@@ -6,6 +6,7 @@ import {
   type LoaderEnvironment,
   type PluginDescriptor,
 } from '../src/plugins/loader.js'
+import { routeMatches } from '../src/plugins/contract.js'
 
 /** A fake environment: no browser, no network, no plugin folder. */
 function environment(modules: Record<string, Record<string, unknown> | Error>) {
@@ -273,5 +274,26 @@ describe('url building', () => {
     const { env, imported } = environment({ '/plugins/x/app.js': { default: () => () => null } })
     await loadPlugins([{ id: 'x', kind: 'app', base: '/plugins/x', view: './app.js' }], env)
     expect(imported).toEqual(['/plugins/x/app.js'])
+  })
+})
+
+describe('routeMatches', () => {
+  it('matches a route exactly', () => {
+    expect(routeMatches('/atelier', '/atelier')).toBe(true)
+  })
+
+  it('matches anything below a route, so detail screens can be bookmarked', () => {
+    expect(routeMatches('/atelier', '/atelier/projets%2Fgarage%2Fworkbook.json')).toBe(true)
+    expect(routeMatches('/atelier', '/atelier/a/b/c')).toBe(true)
+  })
+
+  it('stops at a segment boundary, so a route cannot swallow a sibling', () => {
+    expect(routeMatches('/note', '/notebook')).toBe(false)
+    expect(routeMatches('/note', '/notes')).toBe(false)
+  })
+
+  it('never matches a view that declares no route', () => {
+    expect(routeMatches(undefined, '')).toBe(false)
+    expect(routeMatches(undefined, '/anything')).toBe(false)
   })
 })

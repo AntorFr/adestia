@@ -52,8 +52,27 @@ export interface ViewContribution {
   /**
    * Hash route this view answers to (`#/workbench`). Absent means the view is
    * reached only from its tile.
+   *
+   * A route owns its descendants: a view declaring `/workbench` also answers
+   * to `/workbench/anything/deeper`, and reads the rest itself. Without that,
+   * a plugin with a detail screen has nowhere to put it — either the shell
+   * learns every plugin's URL shape, or detail screens live in component
+   * state and cannot be bookmarked, shared, or survive a reload.
    */
   readonly route?: string
+}
+
+/**
+ * Whether a hash falls inside a route.
+ *
+ * The boundary is a SEGMENT boundary, so `/note` never captures `/notebook`.
+ * Two plugins claiming overlapping routes is a configuration mistake, and one
+ * silently swallowing the other's screens would be an unpleasant way to find
+ * out.
+ */
+export function routeMatches(route: string | undefined, hash: string): boolean {
+  if (!route) return false
+  return hash === route || hash.startsWith(`${route}/`)
 }
 
 /** Composer buttons and settings entries a plugin adds to the shell. */

@@ -12,7 +12,7 @@ import { Chat } from '../chat/Chat.js'
 import { Editor, type PageDocument } from '../editor/Editor.js'
 import { Settings } from './Settings.js'
 import { browserSkinEnvironment, loadSkin, type Skin, type SkinDescriptor } from './skin.js'
-import type { PluginApi } from '../plugins/contract.js'
+import { routeMatches, type PluginApi } from '../plugins/contract.js'
 import { browserEnvironment, loadPlugins, type LoadedPlugin, type PluginDescriptor } from '../plugins/loader.js'
 import { useMobile } from './useMobile.js'
 import { useSplit } from './useSplit.js'
@@ -90,13 +90,17 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   const mobile = useMobile()
 
   // Hash routing, deliberately minimal: a plugin declares `#/its-route` and the
-  // shell opens it. A bookmarked route must resurrect the same screen, and a
-  // route whose plugin is no longer active must resolve to nothing rather than
-  // to a blank canvas.
+  // shell opens it, keeping it open for anything BELOW that route — what the
+  // plugin does with the rest is its own business. A bookmarked route must
+  // resurrect the same screen, and a route whose plugin is no longer active
+  // must resolve to nothing rather than to a blank canvas.
   useEffect(() => {
     const apply = () => {
       const hash = location.hash.replace(/^#/, '')
-      const match = loaded.find((plugin) => plugin.view?.route === hash)
+      // Longest route first, so a plugin at `/a/b` wins over one at `/a`.
+      const match = [...loaded]
+        .sort((a, b) => (b.view?.route?.length ?? 0) - (a.view?.route?.length ?? 0))
+        .find((plugin) => routeMatches(plugin.view?.route, hash))
       setOpenApp(match?.id)
     }
     apply()
