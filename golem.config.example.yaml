@@ -16,8 +16,12 @@ dataDir: ./data
 # cap, never a silent queue. Measured, not guessed (spikes/concurrency):
 # turns genuinely run in parallel and the API was happy at 8, but each CLI
 # process costs ~300 MB of RSS and any concurrency adds a one-time ~+1.3 s to
-# first-token latency. 3 fits a small container (~1 GB of CLI processes);
-# raise it if you have the memory.
+# first-token latency.
+#
+# Raising this raises the memory the deployment must provide (~300 MB per
+# concurrent turn) — see the sizing table in the README, and raise the
+# container's memory limit in the SAME change. A generous cap behind a small
+# limit is a burst that gets OOM-killed instead of politely refused.
 maxConcurrentTurns: 3
 
 auth:

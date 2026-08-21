@@ -23,4 +23,9 @@ services:
       # The CLI's own credentials. Which variables matter depends on the
       # configured driver; Golem can also arm a token from its own UI.
       - CLAUDE_CODE_OAUTH_TOKEN=${CLAUDE_CODE_OAUTH_TOKEN:-}
+    # Each concurrent turn spawns a CLI process costing ~300 MB (measured, see
+    # spikes/concurrency). This limit must agree with `maxConcurrentTurns` in
+    # the config: server baseline + N × 300 MB. Below it, the burst is
+    # OOM-killed rather than refused — and a kill loses the turn in flight.
+    mem_limit: 2g       # server + 3 concurrent turns, with headroom
     restart: unless-stopped

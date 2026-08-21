@@ -62,6 +62,12 @@ USER node
 ENV GOLEM_HOST=0.0.0.0
 EXPOSE 8730
 
+# Sizing, because it is not obvious from the image: each CONCURRENT agent turn
+# spawns a CLI process costing ~300 MB of RSS (measured, spikes/concurrency).
+# Give the container `baseline + maxConcurrentTurns × 300 MB`, and keep the two
+# numbers in step — a generous cap behind a small limit is a burst that gets
+# OOM-killed instead of politely refused.
+
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
   CMD node -e "fetch('http://127.0.0.1:8730/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 

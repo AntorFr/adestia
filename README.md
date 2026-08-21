@@ -66,6 +66,45 @@ Golem's own interface.
 - **Inbound MCP**, so another agent can delegate work here asynchronously.
 - **Skins**: tokens and a few narrow hooks, one active at a time.
 
+## Sizing (read this before deploying)
+
+**Each concurrent agent turn spawns a CLI process costing ~300 MB of RSS.**
+That is measured, not estimated (`spikes/concurrency/REPORT.md`), and it is the
+constraint that sizes the box — not CPU, and not the API, which stayed happy at
+8 simultaneous turns.
+
+Budget **server baseline + (`maxConcurrentTurns` × 300 MB)**:
+
+| `maxConcurrentTurns` | Memory to provide |
+|---|---|
+| 1 | ~0.6 GB |
+| 3 *(default)* | ~1.2 GB |
+| 8 | ~2.6 GB |
+
+Two rules follow, and both bite in production:
+
+- **The cap and the memory limit must agree.** A cap of 8 behind a 1 GB limit
+  is not a conservative deployment — it is a deployment that starts eight
+  processes and gets killed. Golem refuses a turn past its cap cleanly, with a
+  429 the interface explains; the kernel does not.
+- **An OOM kill loses the turn in flight**, along with anything the agent had
+  not yet written to disk. There is no retry: the turn died with the process,
+  and replaying it behind the user's back would be worse than losing it.
+
+On Kubernetes this is explicit deployment config, so state it:
+
+```yaml
+resources:
+  requests:
+    memory: 1Gi        # server + idle
+  limits:
+    memory: 2Gi        # server + 3 concurrent turns, with headroom
+```
+
+Set the `limit` from the table, not from what the pod uses at rest: an idle
+Golem is a few hundred megabytes, and it is the burst that kills it. Raise
+`maxConcurrentTurns` and the memory limit together, never one alone.
+
 ## Status
 
 **Early, and running.** Everything above is verified against a real browser and
