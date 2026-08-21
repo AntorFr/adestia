@@ -24,7 +24,12 @@ import type { FastifyInstance } from 'fastify'
 import { buildApp } from './app.js'
 import { ConfigError, parseConfig, type GolemConfig } from './config.js'
 import { Clock, scheduleStatePath } from './clock.js'
-import { discoverPlugins, discoverSkins, unmatchedActivations } from './extensions.js'
+import {
+  claimedTypeCollisions,
+  discoverPlugins,
+  discoverSkins,
+  unmatchedActivations,
+} from './extensions.js'
 import { runSetups } from './plugin-host.js'
 import { SecretStore } from './secrets.js'
 import { collectSkills, deliverSkills } from './skills.js'
@@ -158,6 +163,12 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
 
   for (const miss of unmatchedActivations(plugins, config.extensions)) {
     log(`extensions.${miss.list}: "${miss.id}" activated nothing — ${miss.reason}`)
+  }
+
+  for (const collision of claimedTypeCollisions(plugins)) {
+    log(
+      `page type "${collision.type}" is claimed by more than one active plugin: ${collision.ids.join(', ')}`,
+    )
   }
 
   const active = plugins.filter((plugin) => plugin.active)

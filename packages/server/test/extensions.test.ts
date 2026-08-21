@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import {
+  claimedTypeCollisions,
   discoverPlugins,
   discoverSkins,
   frontendPayload,
@@ -220,5 +221,39 @@ describe('unmatchedActivations', () => {
   it('does not claim a core plugin belongs in a list', () => {
     const missed = unmatchedActivations([plugin('editor', 'core')], { ...lists, tools: ['editor'] })
     expect(missed[0]?.reason).toMatch(/does not activate from a list/)
+  })
+})
+
+describe('claimedTypeCollisions', () => {
+  const plugin = (id: string, types: string[], active = true): DiscoveredPlugin =>
+    ({
+      dir: `/p/${id}`,
+      active,
+      manifest: { schemaVersion: 1, id, kind: 'app', description: '', types },
+    }) as DiscoveredPlugin
+
+  it('says nothing when every claimed type is unique', () => {
+    const found = [plugin('todo', ['tache', 'liste']), plugin('collections', ['collection'])]
+    expect(claimedTypeCollisions(found)).toEqual([])
+  })
+
+  it('names a type two active plugins both claim', () => {
+    const found = [plugin('todo', ['tache']), plugin('impostor', ['tache'])]
+    expect(claimedTypeCollisions(found)).toEqual([{ type: 'tache', ids: ['todo', 'impostor'] }])
+  })
+
+  it('ignores a claim from a plugin that never activated', () => {
+    const found = [plugin('todo', ['tache']), plugin('impostor', ['tache'], false)]
+    expect(claimedTypeCollisions(found)).toEqual([])
+  })
+
+  it('says nothing about a plugin that claims no type at all', () => {
+    const found = [
+      {
+        ...plugin('atelier', []),
+        manifest: { schemaVersion: 1, id: 'atelier', kind: 'app', description: '' },
+      } as DiscoveredPlugin,
+    ]
+    expect(claimedTypeCollisions(found)).toEqual([])
   })
 })

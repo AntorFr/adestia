@@ -68,6 +68,25 @@ export interface PluginManifest {
   readonly styles?: readonly string[]
   readonly tile?: PluginTile
 
+  /**
+   * Frontmatter `type:` values this plugin's own code dispatches on — e.g. a
+   * task app declaring `["tache", "liste"]`.
+   *
+   * A page's `type` is the busiest convention in the system (it is what turns
+   * one query over every page's frontmatter into a todo base for one plugin
+   * and a collection for another) and the core enforces nothing about it: two
+   * plugins can claim the same word and the failure is silent, a page quietly
+   * misread by whichever model built its filter last. Declaring the claim
+   * here is what lets discovery catch the collision instead of a person
+   * finding it in a screenshot.
+   *
+   * Absent for a plugin that dispatches some other way — a reserved workspace
+   * folder (`planif`), a sibling asset file (`atelier`) — or that reads
+   * `type` only to describe pages it does not own (`collections`' `of:`
+   * targets are a workspace's own vocabulary, not a claim this field makes).
+   */
+  readonly types?: readonly string[]
+
   /** Server-side facets. */
   readonly api?: string
   readonly setup?: string

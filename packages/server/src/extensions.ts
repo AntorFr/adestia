@@ -109,6 +109,33 @@ export function unmatchedActivations(
   return unmatched
 }
 
+/**
+ * Two active plugins claiming the same page `type`.
+ *
+ * The same silence `unmatchedActivations` guards against a config typo — an
+ * instance boots cleanly, logs "N of M active", and one of the two plugins
+ * quietly loses pages to the other's filter, or both partially match the
+ * same page. Checked across ACTIVE plugins only: two inactive ones sharing a
+ * word is not yet anybody's problem, and a plugin that never activates here
+ * must not block one that does.
+ */
+export function claimedTypeCollisions(
+  plugins: readonly DiscoveredPlugin[],
+): readonly { type: string; ids: readonly string[] }[] {
+  const claims = new Map<string, string[]>()
+  for (const plugin of plugins) {
+    if (!plugin.active) continue
+    for (const type of plugin.manifest.types ?? []) {
+      const holders = claims.get(type) ?? []
+      holders.push(plugin.manifest.id)
+      claims.set(type, holders)
+    }
+  }
+  return [...claims.entries()]
+    .filter(([, ids]) => ids.length > 1)
+    .map(([type, ids]) => ({ type, ids }))
+}
+
 async function readManifest(path: string): Promise<unknown> {
   return JSON.parse(await readFile(path, 'utf8')) as unknown
 }

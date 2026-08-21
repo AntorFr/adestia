@@ -36,6 +36,7 @@ describe('plugin manifest', () => {
       api: './api.js',
       setup: './setup',
       skills: ['./skills/workbench/SKILL.md'],
+      types: ['pièce', 'plaque'],
       mcpServers: [{ name: 'cutlist', command: 'node', args: ['./bin/cutlist.js'] }],
     }
     expect(() => parsePluginManifest(full, 'workbench')).not.toThrow()
@@ -94,6 +95,12 @@ describe('plugin manifest', () => {
       expect(
         issuesOf(() => parsePluginManifest({ ...valid, view: 'https://cdn.example/x.js' }, 'workbench')),
       ).toEqual(['view: must be a relative path, not a URL'])
+    })
+
+    it('rejects `types` that is not an array of strings', () => {
+      expect(issuesOf(() => parsePluginManifest({ ...valid, types: 'tache' }, 'workbench'))).toEqual([
+        'types: must be an array of non-empty strings',
+      ])
     })
 
     it('checks stylesheet paths too', () => {
