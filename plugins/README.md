@@ -40,6 +40,17 @@ This is why asking the agent for a cutting plan produces a workbook the
 workbench can actually draw: the format is not folklore passed between prompts,
 it is a document that travels with the plugin.
 
+What is shared across all of them — `title`/`type`/`ico`, and the three ways a
+plugin finds its own pages — lives in the core `page-author` skill instead of
+being repeated in each one. Read it first; a plugin-specific skill builds on
+it rather than restating it. `schedule-author` is the same idea for
+`planif`'s scheduled notes.
+
+A plugin whose own code dispatches on a frontmatter `type:` value declares the
+claim in its manifest (`"types": ["tache", "liste"]`, `todo`'s own). Discovery
+checks this at boot: two active plugins claiming the same word produce a line
+naming both, rather than a page silently misread by whichever one ran last.
+
 ## Adding your own
 
 Put the folder here — or anywhere you mount — and name it in the config. The

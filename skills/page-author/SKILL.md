@@ -1,0 +1,132 @@
+---
+name: page-author
+description: How any page in this instance is structured — frontmatter conventions (`title`, `type`, `ico`), the three ways an app finds its own pages, and the closed block vocabulary for everyday writing. Read this before a plugin-specific skill (todo, collections, atelier…): they build on it and do not repeat it.
+---
+
+# Writing a Golem page
+
+A page is a markdown file. Nothing here is a database row — every app that
+reads pages reads THIS format, which is why a person editing a file in the
+page editor and an app querying it never disagree: there is only one copy.
+
+Optional YAML frontmatter comes first, exactly as three dashes on their own
+line, the fields, three dashes again:
+
+```markdown
+---
+title: Poncer la porte du garage
+type: tache
+---
+
+Grain 120 puis 240.
+```
+
+Two fields the core itself reads. Everything past them is convention.
+
+## `title` — read by the core, never guessed
+
+The core takes `title:` verbatim if it is there; otherwise the page's title is
+its file name. **Not the first heading** — a page can open with any heading it
+wants, or none, without changing what it is called in a list. Set `title:`
+whenever a page should be named something other than its path.
+
+## `type` — the busiest word in the system, and the one nothing enforces
+
+`GET /api/pages/index` returns every page's frontmatter in one query. That one
+query is what lets a todo app, a collections app and any app you write next
+each see only the pages that matter to them — by filtering on `type`. There is
+no second store: `fields.type === 'tache'` in one plugin's code is the entire
+mechanism.
+
+Which means `type` is a flat, shared namespace with no code stopping two
+plugins from claiming the same word. Two apps that both decide `type: item`
+means something to them will each see the other's pages too, and the failure
+is silent — a page quietly misread, not an error anywhere.
+
+**Before writing an app that dispatches on `type`, check what already exists**
+(read the other plugins' manifests, or ask — this instance's set is usually
+small) **and declare your claim** in `golem-plugin.json`:
+
+```json
+{ "types": ["tache", "liste"] }
+```
+
+Discovery checks this at boot: two ACTIVE plugins claiming the same `type`
+produce a boot-time line naming both, before anyone finds it by watching a
+page vanish into the wrong app. See `plugin-author` for the manifest shape.
+
+This is a claim on words YOUR OWN CODE pattern-matches, not on every value a
+page might use `type` for. `collections`' `of: projet` targets pages typed
+`projet` without collections owning that word — `projet` is the workspace's
+own vocabulary, chosen by whoever writes pages, and any number of collections
+can point at it.
+
+## `ico` — a convention, not a mechanism
+
+Several apps show a page's `ico:` field as a glyph on a card. Nothing in the
+core reads it; reusing the field rather than inventing `icon`/`emoji` of your
+own is what makes those cards feel like one product instead of a pile of
+similar-but-different widgets.
+
+## Three ways an app finds its own pages
+
+Every plugin picks one, and none of them requires touching a shared registry.
+
+**By `type`.** The pattern above — a query over frontmatter, always current,
+free to compute. Use it for anything that is naturally "every page shaped like
+X": tasks, curated lists, a collection's members.
+
+**By a reserved workspace folder.** `planif` reads whatever `.md` files sit in
+the instance's `planif/` folder directly — no `type:` field involved, because
+what makes a note a scheduled turn is *where it lives*, not what it claims to
+be. Right for content whose location IS its meaning. See `schedule-author` for
+that folder's own frontmatter contract.
+
+**By a sibling asset, found by convention.** `atelier` walks the pages tree
+for `**/assets/workbook.json` and treats whichever page sits in the same
+project folder as that workbook's owner — nothing declares the pairing, the
+folder layout IS the pairing. Right when an app's real data does not fit
+markdown at all (geometry, a timeline) but still belongs to one page's world.
+
+Pick by what the data actually is, not by habit: forcing timeline JSON into
+frontmatter to stay in the `type` camp is worse than an honest sibling file.
+
+## The closed block vocabulary
+
+A page's body is markdown, plus a small set of `:::name{attrs}` blocks —
+closed on purpose, so every page looks like one product no matter who wrote
+it. `plugin-author` covers how the set is EXTENDED (a coded change); this is
+how to USE what already exists.
+
+**`callout`** — a highlighted aside, for a note, a tip or a warning that
+should not blend into the surrounding prose:
+
+```markdown
+:::callout{type=warning}
+Le guide de refente doit être reréglé après ce changement de lame.
+:::
+```
+
+`type` is `note` (the default), `tip` or `warning` — nothing else. Anything
+else is a diagnostic, not a silently-accepted typo.
+
+**`gallery`** — a group of images shown as a set rather than as a run of
+inline images down the page:
+
+```markdown
+:::gallery
+![Avant](avant.jpg)
+![Après](apres.jpg)
+:::
+```
+
+**`app`** — reserved for embedding a plugin's own view inline in a page, by
+id. It parses, validates and round-trips today; it does **not yet render a
+live plugin** — a page holding one shows an inert placeholder rather than a
+mounted app. Do not write one expecting an embedded widget until this note is
+gone from the skill; ask a person before relying on it for anything real.
+
+An unknown block, or a known one with a bad attribute, never corrupts the
+page and never gets silently dropped: it becomes a diagnostic, and the page
+opens read-only until it is fixed. Losing a person's content is worse than
+telling them what is wrong with it.

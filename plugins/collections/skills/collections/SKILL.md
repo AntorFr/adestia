@@ -5,6 +5,10 @@ description: How to declare a collection — a body of pages entered by a facet.
 
 # Collections
 
+See `page-author` for what `title`/`type`/`ico` mean everywhere in this
+instance, and for why `of:` targets are the workspace's own vocabulary rather
+than something this plugin owns.
+
 A collection is **a page**, not code. Declaring one is how a new way of
 browsing comes into existence; nobody edits the interface.
 

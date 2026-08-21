@@ -330,6 +330,19 @@ runtime; nothing is scanned by filename convention at build time.
   plugin classes without rebuild — content-only contracts, API-only tools, full apps,
   and heavy chrome capabilities (barcode scan with camera + lazy decoder). Porting
   them all is NOT a v1 goal; being *able* to is.
+- **Page-authoring contract, shared across plugins.** Five ported plugins each
+  invented their own frontmatter independently before this was written down —
+  `type`, `title` and `ico` had no stated rule beyond "what todo happened to
+  do first". The `page-author` core skill now names three legitimate ways a
+  plugin finds its own pages (`type:` dispatch, a reserved workspace folder,
+  a sibling asset found by convention), and manifests can declare the `type`
+  values their own code dispatches on (`types: [...]`) so discovery catches a
+  collision at boot instead of a page silently misread by the wrong plugin.
+  `title`/`ico` stay documented rather than schema'd: the core reads `title`
+  mechanically, `ico` is convention only, and forcing either into a schema
+  would fix a vocabulary this system deliberately leaves open. Scheduled notes
+  got the same treatment as `schedule-author`, having shipped with no
+  authoring contract at all despite executing their body as a prompt.
 
 ## v1 scope (decided)
 
@@ -475,3 +488,21 @@ secret interpolation, plugin-declared servers, workspace-native config left
 untouched), materialized per driver at spawn; conflicts loud, operator wins over
 plugin; MCP tools under interactive permissions; `mcpStatus` and per-user token
 pass-through (oidc) as capability/hook, not promises.
+
+**2026-08-21 (page-authoring contract):** audited every shipped plugin's data
+model and found four independently-invented frontmatter conventions and one
+core capability (scheduled notes) with no authoring skill at all. Resolved as
+a new core skill, `page-author` — `title` mechanical (core reads it, never the
+first heading), `type` a shared namespace a manifest now declares its claim on
+(`types: [...]`, checked for collisions at boot, mirroring the existing
+unmatched-activation diagnostic), `ico` documented as convention rather than
+schema'd. Named, rather than newly invented: the three dispatch patterns
+already in use (`type` query, reserved folder, sibling asset by convention)
+each stay the right tool for a different shape of data — no attempt to
+collapse them into one mechanism. `schedule-author` gives `planif`'s notes the
+same treatment. Left open, deliberately not implemented under this decision:
+the `:::app` block parses, validates and round-trips but does not render a
+mounted plugin view — making it live is a rendering-architecture decision
+(interactivity, recursion, the security boundary of a plugin's component
+mounting inside another page) for a person to make, not something to wire
+silently while documenting the vocabulary around it.

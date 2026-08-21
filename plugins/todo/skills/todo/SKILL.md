@@ -5,6 +5,9 @@ description: How tasks and lists are written in this instance. Use when asked to
 
 # Tasks
 
+See `page-author` for what `title`/`type`/`ico` mean everywhere in this
+instance — this skill only covers what a task and a list add on top.
+
 A task is a PAGE. There is no task database — which is why you can create,
 edit and close one with your ordinary file tools, and why a person editing the
 same file in the page editor needs nothing to synchronise.

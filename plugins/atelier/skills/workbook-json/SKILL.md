@@ -10,6 +10,12 @@ description: >
 
 # `workbook.json` — le contrat 3.0
 
+Voir `page-author` pour les trois façons dont une app retrouve ses propres
+pages — celle-ci utilise la troisième (fichier voisin trouvé par convention).
+La fiche projet qui porte ce workbook (`type: projet`) n'est réclamée par
+aucun plugin : c'est du vocabulaire de workspace, que `collections` peut
+interroger (`of: projet`) sans en être propriétaire.
+
 **Le JSON est la source de vérité unique.** Il vit dans `projets/<projet>/assets/`, le front
 le détecte seul (`rglob`) et le rend en vues liées par l'étiquette (`PROJ-MODULE-RÔLE-REPÈRE`).
 L'avancement (`workbook-state.json`) et le calepinage remanié à l'établi
