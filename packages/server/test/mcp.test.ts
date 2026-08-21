@@ -112,8 +112,16 @@ const build = async (
   return { app, runTurn }
 }
 
-/** Awaited inside, so callers get a response rather than Fastify's chainable. */
-async function call(app: FastifyInstance, body: unknown, token = 'a-shared-secret') {
+/**
+ * `payload` is typed rather than `unknown`: an untyped one makes `inject`
+ * fall through to its chainable overload, and every caller then reads
+ * properties off a builder instead of a response.
+ */
+async function call(
+  app: FastifyInstance,
+  body: Record<string, unknown>,
+  token = 'a-shared-secret',
+) {
   return app.inject({
     method: 'POST',
     url: '/mcp',
@@ -198,14 +206,19 @@ describe('the endpoint', () => {
   })
 
   it('frames the prompt so the agent knows nobody is reading', async () => {
-    const runTurn = vi.fn(async () => 'ok')
+    const prompts: string[] = []
+    const runTurn = vi.fn(async (prompt: string) => {
+      prompts.push(prompt)
+      return 'ok'
+    })
     const { app } = await build({}, runTurn)
     await call(app, {
       method: 'tools/call',
       id: 1,
       params: { name: 'ask_skippy', arguments: { prompt: 'do it' } },
     })
-    expect(runTurn.mock.calls[0]?.[0]).toContain('cannot answer questions')
+    await new Promise((resolve) => setImmediate(resolve))
+    expect(prompts[0]).toContain('cannot answer questions')
     await app.close()
   })
 
