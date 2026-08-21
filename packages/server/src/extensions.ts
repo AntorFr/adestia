@@ -66,6 +66,49 @@ function isActive(manifest: PluginManifest, config: ActivationConfig): boolean {
   }
 }
 
+/** Which config list a kind is activated from. */
+const LIST_FOR_KIND: Readonly<Record<string, keyof ActivationConfig>> = {
+  app: 'apps',
+  feature: 'features',
+  tool: 'tools',
+}
+
+/**
+ * Names in the config that activated nothing.
+ *
+ * Discovery is not activation, which is the right rule — but its failure mode
+ * is silence. A typo, or an `app` named under `features`, produces an instance
+ * that boots cleanly and is simply missing a tile, with nothing anywhere
+ * saying why. The skin already gets told when it is configured and absent;
+ * plugins deserve the same courtesy.
+ */
+export function unmatchedActivations(
+  plugins: readonly DiscoveredPlugin[],
+  config: ActivationConfig,
+): readonly { id: string; list: keyof ActivationConfig; reason: string }[] {
+  const unmatched: { id: string; list: keyof ActivationConfig; reason: string }[] = []
+  for (const list of ['apps', 'features', 'tools'] as const) {
+    for (const id of config[list]) {
+      const found = plugins.find((plugin) => plugin.manifest.id === id)
+      if (!found) {
+        unmatched.push({ id, list, reason: 'no plugin by that name was found' })
+      } else if (!found.active) {
+        // It exists and it is well-formed; it is simply filed under the wrong
+        // heading, which is the mistake worth naming precisely.
+        const belongs = LIST_FOR_KIND[found.manifest.kind]
+        unmatched.push({
+          id,
+          list,
+          reason: belongs
+            ? `it is a ${found.manifest.kind}, so it activates from \`${belongs}\``
+            : `it is a ${found.manifest.kind} and does not activate from a list`,
+        })
+      }
+    }
+  }
+  return unmatched
+}
+
 async function readManifest(path: string): Promise<unknown> {
   return JSON.parse(await readFile(path, 'utf8')) as unknown
 }

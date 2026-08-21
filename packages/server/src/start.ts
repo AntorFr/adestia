@@ -24,7 +24,7 @@ import type { FastifyInstance } from 'fastify'
 import { buildApp } from './app.js'
 import { ConfigError, parseConfig, type GolemConfig } from './config.js'
 import { Clock, scheduleStatePath } from './clock.js'
-import { discoverPlugins, discoverSkins } from './extensions.js'
+import { discoverPlugins, discoverSkins, unmatchedActivations } from './extensions.js'
 import { runSetups } from './plugin-host.js'
 import { SecretStore } from './secrets.js'
 import { collectSkills, deliverSkills } from './skills.js'
@@ -154,6 +154,10 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     // Refusals are loud, always: a plugin you believe is loaded and is not
     // costs far more than one that says why it was rejected.
     log(`extension "${problem.id}" refused: ${problem.reason}`)
+  }
+
+  for (const miss of unmatchedActivations(plugins, config.extensions)) {
+    log(`extensions.${miss.list}: "${miss.id}" activated nothing — ${miss.reason}`)
   }
 
   const active = plugins.filter((plugin) => plugin.active)

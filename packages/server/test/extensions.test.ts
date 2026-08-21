@@ -4,7 +4,13 @@ import { join } from 'node:path'
 
 import { beforeAll, describe, expect, it } from 'vitest'
 
-import { discoverPlugins, discoverSkins, frontendPayload } from '../src/extensions.js'
+import {
+  discoverPlugins,
+  discoverSkins,
+  frontendPayload,
+  unmatchedActivations,
+  type DiscoveredPlugin,
+} from '../src/extensions.js'
 
 let root: string
 
@@ -182,5 +188,37 @@ describe('skins', () => {
 
   it('treats a missing skins directory as no skins', async () => {
     expect((await discoverSkins(join(root, 'nowhere'))).skins).toEqual([])
+  })
+})
+
+describe('unmatchedActivations', () => {
+  const plugin = (id: string, kind: string): DiscoveredPlugin =>
+    ({ dir: `/p/${id}`, active: false, manifest: { schemaVersion: 1, id, kind } }) as DiscoveredPlugin
+
+  const lists = { apps: [] as string[], features: [] as string[], tools: [] as string[] }
+
+  it('says nothing when every name matched an active plugin', () => {
+    const found = [{ ...plugin('todo', 'app'), active: true }]
+    expect(unmatchedActivations(found, { ...lists, apps: ['todo'] })).toEqual([])
+  })
+
+  it('names a plugin that does not exist, and the list it was named in', () => {
+    const missed = unmatchedActivations([], { ...lists, apps: ['tdoo'] })
+    expect(missed).toHaveLength(1)
+    expect(missed[0]?.id).toBe('tdoo')
+    expect(missed[0]?.list).toBe('apps')
+    expect(missed[0]?.reason).toMatch(/no plugin by that name/)
+  })
+
+  it('tells you which list a plugin should have been named in', () => {
+    // The silent failure this exists for: the plugin is there, it is valid,
+    // and it simply never appears.
+    const missed = unmatchedActivations([plugin('scan', 'feature')], { ...lists, apps: ['scan'] })
+    expect(missed[0]?.reason).toMatch(/`features`/)
+  })
+
+  it('does not claim a core plugin belongs in a list', () => {
+    const missed = unmatchedActivations([plugin('editor', 'core')], { ...lists, tools: ['editor'] })
+    expect(missed[0]?.reason).toMatch(/does not activate from a list/)
   })
 })
