@@ -106,6 +106,21 @@ export interface AttachmentsConfig {
   readonly ttlMs: number
 }
 
+/**
+ * Inbound MCP: letting other agents delegate work here.
+ *
+ * Off by default and refused without a token. An endpoint other machines can
+ * reach that runs agent turns is a remote shell; an instance must never grow
+ * one because a setting was left blank.
+ */
+export interface McpInConfig {
+  readonly enabled: boolean
+  readonly token?: string | undefined
+  readonly agentName: string
+  readonly maxPending: number
+  readonly ttlMs: number
+}
+
 export interface GolemConfig {
   readonly host: string
   readonly port: number
@@ -117,6 +132,7 @@ export interface GolemConfig {
   readonly permissions: PermissionsConfig
   readonly schedule: ScheduleConfig
   readonly attachments: AttachmentsConfig
+  readonly mcp: McpInConfig
   /** Concurrent turns across all conversations. Subscription limits are real. */
   readonly maxConcurrentTurns: number
 }
@@ -139,6 +155,7 @@ const KNOWN_KEYS = new Set([
   'permissions',
   'schedule',
   'attachments',
+  'mcp',
   'maxConcurrentTurns',
 ])
 
@@ -407,6 +424,24 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
     issues.push('attachments.maxBytes and attachments.maxFiles must be at least 1')
   }
 
+  const mcpRaw = isObject(raw['mcp']) ? raw['mcp'] : {}
+  const mcpEnabled = mcpRaw['enabled'] === true
+  const mcp: McpInConfig = {
+    enabled: mcpEnabled,
+    ...(typeof mcpRaw['token'] === 'string' ? { token: mcpRaw['token'] } : {}),
+    agentName: typeof mcpRaw['agentName'] === 'string' ? mcpRaw['agentName'] : 'agent',
+    maxPending: typeof mcpRaw['maxPending'] === 'number' ? mcpRaw['maxPending'] : 4,
+    ttlMs: typeof mcpRaw['ttlMs'] === 'number' ? mcpRaw['ttlMs'] : 3_600_000,
+  }
+  if (mcpEnabled && !mcp.token) {
+    issues.push('mcp.enabled requires mcp.token — an open inbound endpoint runs agent turns')
+  }
+  if (!/^[a-z][a-z0-9_]{0,31}$/.test(mcp.agentName)) {
+    // It becomes a tool name in another agent's list; anything else produces a
+    // tool nobody can call.
+    issues.push('mcp.agentName must be lowercase letters, digits and underscores')
+  }
+
   if (issues.length > 0) throw new ConfigError(issues)
 
   return {
@@ -424,6 +459,7 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
     permissions,
     schedule,
     attachments,
+    mcp,
     maxConcurrentTurns: maxConcurrentTurns as number,
   }
 }

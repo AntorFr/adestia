@@ -96,7 +96,15 @@ export function resolveIdentity(request: RequestLike, config: AuthConfig): AuthO
  * public-path prefix rule ("anything under /public") is how an endpoint ends
  * up unauthenticated by accident.
  */
-export const PUBLIC_ROUTES = new Set(['/api/health', '/auth/login', '/auth/callback', '/auth/logout'])
+export const PUBLIC_ROUTES = new Set([
+  '/api/health',
+  '/auth/login',
+  '/auth/callback',
+  '/auth/logout',
+  // Its own bearer token IS its authentication; a browser session means
+  // nothing to the agent on the other end.
+  '/mcp',
+])
 
 export function isPublicRoute(path: string): boolean {
   return PUBLIC_ROUTES.has(path)

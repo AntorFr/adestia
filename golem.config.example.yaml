@@ -103,6 +103,26 @@ attachments:
   maxFiles: 8          # per message
   ttlMs: 86400000      # unclaimed files are swept after a day; 0 never sweeps
 
+# Inbound MCP: letting OTHER agents delegate work to this one.
+#
+# Off by default, and refused without a token — an endpoint other machines can
+# reach that runs agent turns is a remote shell, and an instance must never
+# grow one because a setting was left blank.
+#
+# Asynchronous by design: `ask_<agentName>` returns a job id immediately and
+# the caller collects the answer with `ask_<agentName>_status`. A delegated
+# task takes minutes, and an MCP call held open that long times out somewhere
+# between the two agents.
+mcp:
+  enabled: false
+  # token: ${GOLEM_MCP_TOKEN}
+  # Becomes the tool name in the calling agent's list, so name the agent
+  # rather than leaving it generic — two connected instances must be
+  # distinguishable there.
+  agentName: agent
+  maxPending: 4
+  ttlMs: 3600000
+
 extensions:
   # Where extensions are FOUND. Mount whatever you like here: presence is
   # discovery, never activation.

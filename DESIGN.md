@@ -417,11 +417,11 @@ loading from a mounted folder with a shared React through an import map;
 `claude-code` and `copilot-cli` drivers behind the capability contract;
 credential arming from the interface; auth in all three modes; authoring
 skills the agent uses to write conformant plugins; scheduled turns; skins;
-chat attachments; container image and CI.
+chat attachments; inbound MCP for agent-to-agent delegation; container image
+and CI.
 
 **Not built yet**, and none of it blocked by a design question:
 
-- **Inbound MCP** (`ask_<agent>`), so other agents can delegate work here.
 - **Remote instruction sync** (the optional git module).
 - **Subscription concurrency spike**, which needs real quota to measure.
 

@@ -21,6 +21,7 @@ import { ConversationStore, type StoredMessage } from './conversations.js'
 import type { GolemConfig } from './config.js'
 import { frontendPayload, type DiscoveredPlugin, type DiscoveryProblem } from './extensions.js'
 import { registerOidc } from './oidc-routes.js'
+import { registerMcp } from './mcp-routes.js'
 import { registerPages } from './pages.js'
 import { ArmingSessions, SecretStore } from './secrets.js'
 import { registerStatic } from './static.js'
@@ -524,6 +525,25 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   })
 
   registerPages(app, { root: join(config.workspace.root, config.workspace.pages) })
+
+  registerMcp(app, {
+    config: config.mcp,
+    // Through the same spawn path as everything else, so the concurrency cap
+    // applies to delegated work exactly as it does to a typed message.
+    runTurn: async (prompt) => {
+      if (!limiter.tryAcquire()) throw new Error('too many turns running')
+      let text = ''
+      try {
+        for await (const event of driver.runTurn({ prompt, cwd: config.workspace.root })) {
+          if (event.type === 'text-delta') text += event.text
+          if (event.type === 'error' && event.fatal) throw new Error(event.message)
+        }
+      } finally {
+        limiter.release()
+      }
+      return text
+    },
+  })
 
   // Last, so an API route always wins over the shell's catch-all.
   registerStatic(app, {
