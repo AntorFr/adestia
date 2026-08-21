@@ -7,7 +7,7 @@
  * inputs, the interruption that leaves a mark, the permission that blocks.
  */
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import {
@@ -202,6 +202,55 @@ describe('chat', () => {
     await waitFor(() => expect(screen.getByText('Bonjour singe')).toBeTruthy())
     // The context pill appears once the turn reports what the next message costs.
     await waitFor(() => expect(screen.getByText('4.2k')).toBeTruthy())
+  })
+})
+
+describe('the compose channel', () => {
+  // How a plugin puts text in the field WITHOUT sending it — the distinction
+  // that makes a barcode reader a keyboard rather than a scanner that
+  // commands.
+  const capture = () => {
+    const channel: { compose?: (text: string) => void } = {}
+    render(
+      <Chat
+        fetchImpl={
+          (() =>
+            Promise.resolve({
+              ok: true,
+              status: 200,
+              json: () => Promise.resolve({ conversations: [] }),
+            } as unknown as Response)) as unknown as typeof fetch
+        }
+        onReady={(c) => {
+          channel.compose = c.compose
+        }}
+      />,
+    )
+    return channel
+  }
+
+  it('fills the composer without sending', () => {
+    const channel = capture()
+    act(() => channel.compose?.('3017620422003'))
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe('3017620422003')
+    expect(screen.queryByText('3017620422003', { selector: '.golem-bubble' })).toBeNull()
+  })
+
+  it('appends to what the user already typed, never replacing it', () => {
+    // The sentence in the field IS the instruction; the codes are its object.
+    const channel = capture()
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'ajoute aux courses' } })
+    act(() => channel.compose?.('3017620422003'))
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe(
+      'ajoute aux courses 3017620422003',
+    )
+  })
+
+  it('composing nothing leaves the field exactly as it was', () => {
+    const channel = capture()
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'déjà tapé' } })
+    act(() => channel.compose?.(''))
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe('déjà tapé')
   })
 })
 

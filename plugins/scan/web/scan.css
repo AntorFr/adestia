@@ -1,0 +1,10 @@
+.scan-overlay { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; background: #000; }
+.scan-video { flex: 1; width: 100%; object-fit: cover; }
+.scan-panel { padding: var(--space-3); background: var(--surface-raised); border-top: 1px solid var(--border); }
+.scan-basket { list-style: none; margin: 0 0 var(--space-3); padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); min-height: 28px; }
+.scan-code { display: inline-flex; align-items: center; gap: var(--space-1); padding: 2px var(--space-2); border: 1px solid var(--border); border-radius: 999px; font-family: var(--font-mono); font-size: var(--text-sm); color: var(--text); }
+.scan-code button { background: none; border: 0; padding: 0 2px; color: var(--text-faint); cursor: pointer; font-size: var(--text-base); }
+.scan-actions { display: flex; gap: var(--space-2); justify-content: flex-end; }
+.scan-actions button { padding: var(--space-2) var(--space-4); border-radius: var(--radius-sm); border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font: inherit; cursor: pointer; }
+.scan-done { background: var(--accent) !important; border-color: var(--accent) !important; color: var(--accent-text) !important; }
+.scan-done:disabled { background: var(--surface-sunken) !important; border-color: var(--border) !important; color: var(--text-faint) !important; cursor: default; }

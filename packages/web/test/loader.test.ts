@@ -18,6 +18,7 @@ function environment(modules: Record<string, Record<string, unknown> | Error>) {
       base: descriptor.base,
       fetch: (() => Promise.reject(new Error('not used'))) as unknown as typeof fetch,
       ask: () => undefined,
+      compose: () => undefined,
     }),
     importModule(url) {
       imported.push(url)

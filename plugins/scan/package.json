@@ -1,0 +1,22 @@
+{
+  "name": "@antorfr/golem-plugin-scan",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "node build/decoder.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "private": "true",
+  "dependencies": {
+    "@zxing/library": "^0.23.0",
+    "esbuild": "^0.28.2"
+  }
+}

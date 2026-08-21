@@ -155,6 +155,7 @@ export function Composer({
   placeholder,
   fetchImpl = fetch,
   extraButtons,
+  onFill,
 }: {
   onSend: (text: string, attachments: readonly PendingAttachment[]) => void
   onStop: () => void
@@ -163,6 +164,7 @@ export function Composer({
   placeholder?: string
   fetchImpl?: typeof fetch
   extraButtons?: readonly ComposerButton[]
+  onFill?: (fill: (text: string) => void) => void
 }) {
   const [text, setText] = useState('')
   const [attachments, setAttachments] = useState<readonly PendingAttachment[]>([])
@@ -208,6 +210,18 @@ export function Composer({
     setText('')
     setAttachments([])
   }, [attachments, blocked, onSend, text])
+
+  useEffect(() => {
+    // Appends rather than replaces: whatever the user already typed IS the
+    // instruction, and a plugin dropping text must not erase it.
+    onFill?.((text: string) => {
+      // Composing nothing is a no-op, not a stray space: a plugin whose
+      // scanner found no code should leave the field exactly as it was.
+      if (text.trim() === '') return
+      setText((current) => (current.trim() === '' ? text : `${current.trimEnd()} ${text}`))
+      area.current?.focus()
+    })
+  }, [onFill])
 
   useEffect(() => {
     const element = area.current
@@ -343,7 +357,10 @@ export interface ChatProps {
    * agent something. The chat owns this channel; nobody else may fabricate a
    * turn behind its back and leave the thread out of step with the session.
    */
-  readonly onReady?: (ask: (prompt: string) => void) => void
+  readonly onReady?: (channel: {
+    ask: (prompt: string) => void
+    compose: (text: string) => void
+  }) => void
   /** Composer buttons contributed by plugins. */
   readonly extraButtons?: readonly ComposerButton[]
 }
@@ -385,6 +402,8 @@ export function Chat({
   const [threadsOpen, setThreadsOpen] = useState(false)
   const [conversationId, setConversationId] = useState<string | undefined>()
   const sessionId = useRef<string | undefined>(undefined)
+  /** Set by the composer once it exists, so `compose` reaches its field. */
+  const composeRef = useRef<((text: string) => void) | undefined>(undefined)
   const bottom = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -486,7 +505,10 @@ export function Chat({
   useEffect(() => {
     // Published once the sender exists, so a plugin loaded before the chat
     // mounted still gets a working channel rather than a silent no-op.
-    onReady?.((prompt: string) => void send(prompt))
+    onReady?.({
+      ask: (prompt: string) => void send(prompt),
+      compose: (text: string) => composeRef.current?.(text),
+    })
   }, [onReady, send])
 
   const stop = useCallback(() => {
@@ -578,6 +600,9 @@ export function Chat({
       )}
 
       <Composer
+        onFill={(fill) => {
+          composeRef.current = fill
+        }}
         fetchImpl={fetchImpl ?? fetch}
         {...(extraButtons ? { extraButtons } : {})}
         onSend={(text, attachments) => void send(text, attachments)}

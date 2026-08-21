@@ -33,6 +33,17 @@ export interface PluginApi {
    * ships JavaScript into the page and there is no sandbox.
    */
   ask(prompt: string): void
+  /**
+   * Puts text in the composer WITHOUT sending it.
+   *
+   * Distinct from `ask` on purpose, and the distinction is a design position
+   * rather than a convenience: a barcode reader is a KEYBOARD, not a scanner
+   * that commands. It deposits what it read and the person decides what the
+   * message means — "add these to the shopping list", "how much protein is in
+   * this". A plugin that sent on every beep would be making that decision for
+   * them, badly.
+   */
+  compose(text: string): void
 }
 
 /** A launcher view: one React component, optionally a route to reach it. */

@@ -182,13 +182,17 @@ export async function loadPlugins(
  * @param ask how a plugin sends a message to the agent. Passed in rather than
  *   imported, because the chat owns that channel and the loader must not.
  */
-export function browserEnvironment(ask: (prompt: string) => void): LoaderEnvironment {
+export function browserEnvironment(
+  ask: (prompt: string) => void,
+  compose: (text: string) => void,
+): LoaderEnvironment {
   return {
     makeApi: (descriptor) => ({
       id: descriptor.id,
       base: descriptor.base,
       fetch: (...args) => fetch(...args),
       ask,
+      compose,
     }),
     importModule: (url) => import(/* @vite-ignore */ url) as Promise<Record<string, unknown>>,
     addStylesheet(id, url) {

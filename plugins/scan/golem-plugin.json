@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "scan",
+  "kind": "feature",
+  "description": "A barcode reader in the composer. It deposits codes in the field — a keyboard, not a scanner that commands.",
+  "contract": 1,
+  "chrome": "./web/chrome.js",
+  "styles": ["./web/scan.css"]
+}

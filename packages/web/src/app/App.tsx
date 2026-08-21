@@ -85,6 +85,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   const [openApp, setOpenApp] = useState<string | undefined>()
   /** Queued while the chat mounts, so a plugin can ask before anyone typed. */
   const askRef = useRef<((prompt: string) => void) | undefined>(undefined)
+  const composeRef = useRef<((text: string) => void) | undefined>(undefined)
   const split = useSplit()
   const mobile = useMobile()
 
@@ -121,7 +122,13 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
       ...entry,
       // Namespaced: two plugins may both call a button "scan".
       key: `${plugin.id}:${entry.id}`,
-      api: { id: plugin.id, base: plugin.base, fetch, ask: (p: string) => askRef.current?.(p) },
+      api: {
+        id: plugin.id,
+        base: plugin.base,
+        fetch,
+        ask: (p: string) => askRef.current?.(p),
+        compose: (t: string) => composeRef.current?.(t),
+      },
     })),
   )
 
@@ -171,7 +178,10 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
         // `ask` is handed to plugins through a ref: the chat owns that channel
         // and mounts after this runs, so a plugin holding the function directly
         // would hold one that is not wired yet.
-        const environment = browserEnvironment((prompt) => askRef.current?.(prompt))
+        const environment = browserEnvironment(
+          (prompt) => askRef.current?.(prompt),
+          (text) => composeRef.current?.(text),
+        )
         const result = await loadPlugins(info.plugins, environment)
         if (!cancelled) {
           setLoaded(result.loaded)
@@ -247,8 +257,12 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
     >
       <Chat
         fetchImpl={fetchImpl}
-        onReady={(ask: (prompt: string) => void) => {
-          askRef.current = ask
+        onReady={(channel: {
+          ask: (prompt: string) => void
+          compose: (text: string) => void
+        }) => {
+          askRef.current = channel.ask
+          composeRef.current = channel.compose
         }}
         extraButtons={composerButtons}
         {...(skin.placeholder ? { placeholder: skin.placeholder } : {})}
