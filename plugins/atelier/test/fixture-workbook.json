@@ -1,0 +1,166 @@
+{
+  "schemaVersion": "3.0",
+  "projet": "rangement-garage",
+  "titre": "Rangement du garage",
+  "note": "Fixture built from the workbook-json contract, since no real workbook lives in this repository. Two uprights and two shelves out of one sheet.",
+  "materiaux": [
+    {
+      "id": "MEL19",
+      "label": "Mélaminé blanc 19",
+      "ep": 19,
+      "plaque": {
+        "l": 2800,
+        "h": 2070
+      },
+      "derasage": 10
+    }
+  ],
+  "meta": {
+    "kerf": 4,
+    "tronconnage": 5
+  },
+  "pieces": [
+    {
+      "etiquette": "GAR-C1-COTE-G",
+      "module": "C1",
+      "role": "CÔTÉ",
+      "repere": "gauche",
+      "longueur": 2000,
+      "largeur": 600,
+      "materiau": "MEL19",
+      "chants": [
+        "rive-avant"
+      ],
+      "haut": "about-droit"
+    },
+    {
+      "etiquette": "GAR-C1-COTE-D",
+      "module": "C1",
+      "role": "CÔTÉ",
+      "repere": "droit",
+      "longueur": 2000,
+      "largeur": 600,
+      "materiau": "MEL19",
+      "chants": [
+        "rive-avant"
+      ],
+      "haut": "about-droit"
+    },
+    {
+      "etiquette": "GAR-C1-TAB-1",
+      "module": "C1",
+      "role": "TABLETTE",
+      "repere": "1",
+      "longueur": 762,
+      "largeur": 600,
+      "materiau": "MEL19",
+      "chants": [
+        "rive-avant"
+      ]
+    },
+    {
+      "etiquette": "GAR-C1-TAB-2",
+      "module": "C1",
+      "role": "TABLETTE",
+      "repere": "2",
+      "longueur": 762,
+      "largeur": 600,
+      "materiau": "MEL19",
+      "chants": [
+        "rive-avant"
+      ]
+    }
+  ],
+  "debit": [
+    {
+      "plaque": "P1",
+      "label": "Plaque 1",
+      "materiau": "MEL19",
+      "etapes": [
+        {
+          "id": "P1-REF-1",
+          "type": "refente",
+          "label": "Refente en trois bandes",
+          "entree": "plaque",
+          "bandes": [
+            {
+              "id": "P1-B1",
+              "label": "B1",
+              "x": 10,
+              "y": 10,
+              "w": 600,
+              "h": 2050,
+              "axe": "y"
+            },
+            {
+              "id": "P1-B2",
+              "label": "B2",
+              "x": 614,
+              "y": 10,
+              "w": 600,
+              "h": 2050,
+              "axe": "y"
+            },
+            {
+              "id": "P1-B3",
+              "label": "B3",
+              "x": 1218,
+              "y": 10,
+              "w": 600,
+              "h": 2050,
+              "axe": "y"
+            }
+          ]
+        },
+        {
+          "id": "P1-TR-1",
+          "type": "tronconnage",
+          "label": "Montant gauche",
+          "entree": "P1-B1",
+          "pieces": [
+            {
+              "etiquette": "GAR-C1-COTE-G",
+              "x": 10,
+              "y": 10,
+              "rot": true
+            }
+          ]
+        },
+        {
+          "id": "P1-TR-2",
+          "type": "tronconnage",
+          "label": "Montant droit",
+          "entree": "P1-B2",
+          "pieces": [
+            {
+              "etiquette": "GAR-C1-COTE-D",
+              "x": 614,
+              "y": 10,
+              "rot": true
+            }
+          ]
+        },
+        {
+          "id": "P1-TR-3",
+          "type": "tronconnage",
+          "label": "Les deux tablettes",
+          "entree": "P1-B3",
+          "pieces": [
+            {
+              "etiquette": "GAR-C1-TAB-1",
+              "x": 1218,
+              "y": 10,
+              "rot": true
+            },
+            {
+              "etiquette": "GAR-C1-TAB-2",
+              "x": 1218,
+              "y": 776,
+              "rot": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

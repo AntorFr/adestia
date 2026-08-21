@@ -1,0 +1,156 @@
+/*
+ * The workbench's styles.
+ *
+ * Two parts, and the split is the interesting one.
+ *
+ * The FIRST is a token bridge. The engine was written against agent-gw's names
+ * (`--ink`, `--proj`, `--f-mono`) and carrying it over unchanged was the whole
+ * point of the port — so the names are aliased here, scoped to this plugin,
+ * rather than renamed across a thousand lines. Aliases mean a Golem skin still
+ * dresses the workbench: change `--accent` and the cutting diagram follows.
+ *
+ * The SECOND is the layout rules the engine's markup needs, extracted from the
+ * shell it came from. They are namespaced under `.atelier-page`, so a plugin's
+ * `.card` cannot restyle the shell's.
+ */
+
+/* The bridge is armed on the overlays too, and not only on the page: the
+   engine attaches them to `document.body`, where nothing inherits from
+   `.atelier`, and a full-screen bench with unresolved colours is a black
+   screen. */
+.atelier,
+.atelier-full,
+.atelier-modal {
+  /* Bridge: agent-gw's vocabulary, in Golem's tokens. */
+  --ink: var(--text);
+  --ink-soft: var(--text-muted);
+  --ink-faint: var(--text-faint);
+  --line: var(--border);
+  --surface2: var(--surface-sunken);
+  --f-mono: var(--font-mono);
+  --f-body: var(--font);
+  --f-title: var(--font);
+  --r-xs: var(--radius-sm);
+  --r-micro: 2px;
+  --r-s: var(--radius);
+  --r-m: var(--radius-lg);
+  --r: var(--radius);
+  --r-sm: var(--radius-sm);
+  --r-ctl: var(--radius);
+  --r-lg: var(--radius-lg);
+  --shadow-lg: var(--shadow);
+
+  /* The domain palette: a cutting diagram uses colour to MEAN something —
+     an edge banded, a piece done, a cut that will not fit — so these are
+     derived from the accent rather than left to a skin's discretion. */
+  --proj: var(--accent);
+  --agenda: var(--accent);
+  --shop: var(--text-muted);
+  --good: var(--success);
+  --warn: var(--warning);
+  --crit: var(--danger);
+  --todo: var(--danger);
+  --sink: var(--surface-sunken, var(--surface));
+  --on-solid: #fff;
+  --scrim: rgb(8 11 18 / 55%);
+}
+
+.atelier-crumbs { display: flex; gap: var(--space-2); font-size: var(--text-sm); margin-bottom: var(--space-3); }
+.atelier-crumbs a { color: var(--text-muted); text-decoration: none; }
+.atelier-crumbs a:hover { text-decoration: underline; }
+.atelier-page { color: var(--text); }
+.atelier-page .wrap { display: flex; flex-direction: column; gap: var(--space-3); }
+.atelier-page .chead { display: flex; align-items: center; gap: var(--space-3); }
+.atelier-page .aico { font-size: 1.6rem; }
+.atelier-page h1 { margin: 0; font-size: var(--text-lg); }
+.atelier-page .lede { color: var(--text-muted); font-size: var(--text-sm); }
+.atelier-page .empty { color: var(--text-faint); font-size: var(--text-sm); }
+.atelier-page .grouplabel { font-size: var(--text-sm); text-transform: uppercase; letter-spacing: .06em; color: var(--text-faint); margin-top: var(--space-4); }
+.atelier-page .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--space-3); list-style: none; margin: 0; padding: 0; }
+.atelier-page .card { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface-raised); color: var(--text); text-decoration: none; }
+.atelier-page .card:hover { border-color: var(--border-strong); }
+.atelier-page svg { max-width: 100%; height: auto; }
+.atelier-page .cutwrap { overflow-x: auto; }
+.atelier-page .wbtabs { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-3); }
+.atelier-page .wbtabs button { padding: var(--space-1) var(--space-3); border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text-muted); font: inherit; font-size: var(--text-sm); cursor: pointer; }
+.atelier-page .wbtabs button[aria-selected='true'] { border-color: var(--accent); color: var(--accent); }
+
+/* ── Extracted from the shell the engine came from ───────────────────────── */
+.atelier-page .tag { font:600 10.5px/1.5 var(--f-mono); border-radius:var(--r-xs); padding:2px 8px; border:1px solid var(--line); color:var(--ink-soft); }
+.atelier-page .card .ct { font:600 15.5px/1.2 var(--f-title); }
+.atelier-page .card .cmeta { font:12.5px var(--f-body); color:var(--ink-soft); }
+.atelier-page .card .bar { height:5px; background:var(--surface2); border-radius:var(--r-micro); overflow:hidden; }
+.atelier-page .card .bar i { display:block; height:100%; background:var(--dc,var(--proj)); }
+.atelier-page .space-toc .lbl { font:600 10px var(--f-mono); letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint); padding:2px 10px 8px; }
+/* padding:0 est INDISPENSABLE : .cbox est un <button>, le reset `button` plus haut
+   n'annule que bordure et fond, jamais le padding UA (~1px 6px). Sans ça, la zone de
+   contenu tombe à ~4px (19 - 12 de padding - 3.2 de bordure) et le ✓ déborde en biais.
+   Invisible tant que la case ne se cochait pas (color:transparent) — révélé par D28. */
+.atelier-page .cbox { width:19px; height:19px; border:1.6px solid var(--ink-faint); border-radius:var(--r-xs); flex-shrink:0; margin-top:1px; display:grid; place-items:center; color:transparent; font-size:12px; padding:0; line-height:1; transition:.14s; }
+.atelier-page .task:hover .cbox { border-color:var(--todo); }
+.atelier-page .cbox.on { background:var(--good); border-color:var(--good); color:var(--on-solid); }
+.atelier-page .lcard .bar { height:5px; background:var(--surface2); border-radius:var(--r-micro); overflow:hidden; }
+.atelier-page .lcard .bar i { display:block; height:100%; background:var(--lc); }
+/* Workbook (débit SVG à l'échelle) */
+.atelier-page .prog { height:7px; background:var(--surface2); border:1px solid var(--line); border-radius:var(--r-micro); overflow:hidden; margin:16px 0 18px; }
+.atelier-page .prog i { display:block; height:100%; background:var(--shop); }
+.atelier-page .wbtabs { display:flex; gap:2px; margin:6px 0 18px; border-bottom:1px solid var(--line); }
+.atelier-page .blueprint { background:var(--sink); border:1px solid var(--line); border-radius:var(--r-lg); margin-bottom:14px; background-image:linear-gradient(color-mix(in srgb,var(--ink) 5%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--ink) 5%,transparent) 1px,transparent 1px); background-size:20px 20px; }
+.atelier-page .bp-inner { padding:16px 18px; }
+.atelier-page .bp-h { display:flex; align-items:baseline; gap:10px; margin-bottom:6px; }
+.atelier-page .bp-h b { font:600 12.5px var(--f-mono); color:var(--shop); }
+.atelier-page .bp-h span { font:11.5px var(--f-mono); color:var(--ink-soft); }
+.atelier-page .cutwrap { overflow-x:auto; }
+.atelier-page .cutwrap svg { display:block; width:100%; height:auto; }
+/* PAS de min-width : elle remontait de force les petits dessins et cassait le px/mm commun du workbook (une plaque de 700 rendait au double d'une de 2800). L'échelle est un invariant. */ .colc { cursor:pointer; }
+.atelier-page .colc:hover .colbox { stroke-width:4; }
+.atelier-page .pname { cursor:pointer; }
+.atelier-page .pname:hover { fill:var(--accent)!important; text-decoration:underline; }
+.atelier-page .tgcols { display:flex; flex-wrap:wrap; gap:7px; margin-top:11px; }
+.atelier-page .colchip { font:600 12px var(--f-mono); padding:5px 11px; border:1.5px solid var(--shop); color:var(--shop); background:none; border-radius:var(--r-sm); cursor:pointer; }
+.atelier-page .colchip:hover { background:color-mix(in srgb,var(--shop) 10%,transparent); }
+.atelier-page .colchip.done { border-color:var(--ink-faint); color:var(--ink-faint); background:color-mix(in srgb,var(--ink-faint) 8%,transparent); }
+.atelier-page .legend { display:flex; gap:14px; flex-wrap:wrap; margin:10px 2px 0; }
+.atelier-page .legend span { display:inline-flex; align-items:center; gap:7px; font:600 11px var(--f-mono); color:var(--ink-soft); }
+.atelier-page .sw { width:13px; height:13px; border-radius:var(--r-micro); }
+.atelier-page .srow .cbox { width:17px; height:17px; }
+.atelier-page .srow.done .cbox { background:var(--good); border-color:var(--good); color:var(--on-solid); }
+.atelier-page .srow .lbl { cursor:pointer; }
+.atelier-page .srow .dim { margin-left:auto; color:var(--ink-faint); font-size:11px; }
+.atelier-page .sgrp { margin-bottom:16px; }
+.atelier-page .sgrp .sh { font:600 10.5px var(--f-mono); letter-spacing:.1em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:8px; }
+/* Assemblage v0.2 — scène + séquence de montage cochable côte à côte */
+.atelier-page .asmgrid { display:block; }
+/* la scène prend TOUTE la largeur : partagée avec la séquence, elle rendait à la moitié du px/mm des autres vues — l'échelle commune du workbook est un invariant, pas une préférence */ .asmgrid .cutwrap { min-width:0; }
+.atelier-page .asmgrid .asmseq { margin-top:12px; }
+.atelier-page .asmseq { flex:1 1 300px; display:flex; flex-direction:column; gap:6px; }
+.atelier-page .asmseqh { font:600 10.5px var(--f-mono); letter-spacing:.1em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:2px; }
+.atelier-page .asmstep .cbox { width:17px; height:17px; margin-top:1px; }
+.atelier-page .asmstep.done .cbox { background:var(--good); border-color:var(--good); color:var(--on-solid); }
+.atelier-page .asmno { font:600 11px var(--f-mono); color:var(--ink-faint); min-width:14px; text-align:right; margin-top:2px; }
+.atelier-page .asmg { font-size:14px; line-height:1.35; color:var(--shop); min-width:16px; text-align:center; }
+.atelier-page .asmt { display:flex; flex-direction:column; gap:1px; min-width:0; }
+.atelier-page .asmt b { font:600 12.5px var(--f-mono); color:var(--ink); }
+.atelier-page .asmt i { font:11px var(--f-mono); font-style:normal; color:var(--ink-soft); }
+.atelier-full .reg { font:600 15px var(--f-mono); color:var(--shop); letter-spacing:.05em; }
+.atelier-full .etq { font:800 clamp(56px,14vw,140px) var(--f-mono); line-height:1; margin:6px 0; }
+.atelier-full .dims { font:600 clamp(20px,4vw,34px) var(--f-mono); color:var(--ink-soft); }
+.atelier-full .progress { width:min(420px,80vw); height:8px; border-radius:var(--r-micro); background:var(--surface2); overflow:hidden; margin-top:26px; }
+.atelier-full .progress > div { height:100%; background:var(--good); }
+.atelier-full .pcount { font:12px var(--f-mono); color:var(--ink-faint); margin-top:10px; }
+.atelier-modal .piece-body h2 { font:800 24px var(--f-mono); margin:0 0 12px; }
+.atelier-modal .piece-body .prow { display:flex; gap:10px; font-size:13.5px; margin-bottom:8px; }
+.atelier-modal .piece-body .prow b { flex:0 0 92px; color:var(--ink-faint); font:600 12px var(--f-mono); }
+/* Overlays the engine attaches to `document.body`, which is why nothing here
+   is nested under `.atelier-page` — they are not in it. `.atelier-modal`
+   rather than the launcher's bare `.modal`: a plugin does not get to own a
+   name that generic in somebody else's shell. */
+.atelier-full { position: fixed; inset: 0; z-index: 60; background: var(--sink); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px; }
+.atelier-full[hidden] { display: none; }
+.atelier-full .close { position: absolute; top: 16px; right: 18px; width: 40px; height: 40px; border-radius: var(--r-ctl); border: 1px solid var(--line); background: var(--surface); font-size: 17px; }
+.atelier-full .extra { font: 14px var(--f-mono); color: var(--ink-faint); margin-top: 8px; }
+.atelier-full .done-btn { margin-top: 34px; border: none; background: var(--good); color: var(--on-solid); border-radius: var(--r-lg); padding: 20px 48px; font: 800 22px var(--f-body); }
+
+.atelier-modal { position: fixed; inset: 0; z-index: 50; background: var(--scrim); display: grid; place-items: center; padding: 20px; }
+.atelier-modal[hidden] { display: none; }
+.atelier-modal .card { max-width: 400px; width: 100%; max-height: calc(100dvh - 40px); overflow-y: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; box-shadow: var(--shadow-lg); cursor: default; }
