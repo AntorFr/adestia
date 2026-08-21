@@ -89,7 +89,7 @@ describe('loading', () => {
     // The trap this closes: overriding --surface to a dark value on a light
     // base gives dark surfaces under dark text, which is simply unreadable.
     const { env, schemes } = environment()
-    await loadSkin({ ...descriptor, scheme: 'dark', module: undefined }, env)
+    await loadSkin({ id: 'amber', base: '/skin/', styles: './skin.css', scheme: 'dark' }, env)
     expect(schemes).toEqual(['dark'])
   })
 
@@ -97,7 +97,7 @@ describe('loading', () => {
     // An explicit attribute meaning "no preference" would override the very
     // preference it claims to defer to.
     const { env, schemes } = environment()
-    await loadSkin({ ...descriptor, scheme: 'auto', module: undefined }, env)
+    await loadSkin({ id: 'amber', base: '/skin/', styles: './skin.css', scheme: 'auto' }, env)
     expect(schemes).toEqual([undefined])
   })
 
