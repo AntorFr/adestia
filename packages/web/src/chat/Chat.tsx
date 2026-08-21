@@ -142,28 +142,70 @@ export function PermissionPrompt({
   )
 }
 
+export interface PendingAttachment {
+  readonly id: string
+  readonly name: string
+}
+
 export function Composer({
   onSend,
   onStop,
   busy,
   blocked,
   placeholder,
+  fetchImpl = fetch,
 }: {
-  onSend: (text: string) => void
+  onSend: (text: string, attachments: readonly PendingAttachment[]) => void
   onStop: () => void
   busy: boolean
   blocked: boolean
   placeholder?: string
+  fetchImpl?: typeof fetch
 }) {
   const [text, setText] = useState('')
+  const [attachments, setAttachments] = useState<readonly PendingAttachment[]>([])
+  const [uploadError, setUploadError] = useState<string | undefined>()
   const area = useRef<HTMLTextAreaElement>(null)
+  const picker = useRef<HTMLInputElement>(null)
+
+  const upload = useCallback(
+    async (files: readonly File[]) => {
+      if (files.length === 0) return
+      setUploadError(undefined)
+      const form = new FormData()
+      for (const file of files) form.append('file', file)
+
+      try {
+        const response = await fetchImpl('/api/upload', { method: 'POST', body: form })
+        const body = (await response.json()) as {
+          attachments?: PendingAttachment[]
+          refused?: string[]
+          error?: string
+        }
+        if (!response.ok) {
+          setUploadError(body.error ?? `upload failed (${response.status})`)
+          return
+        }
+        setAttachments((current) => [...current, ...(body.attachments ?? [])])
+        // Refusals are shown next to what worked: a file silently dropped is a
+        // file the user believes the agent has.
+        if (body.refused?.length) setUploadError(body.refused.join('; '))
+      } catch (error) {
+        setUploadError((error as Error).message)
+      }
+    },
+    [fetchImpl],
+  )
 
   const submit = useCallback(() => {
     const value = text.trim()
-    if (!value || blocked) return
-    onSend(value)
+    // A message may be files only: dropping a photo and saying nothing is a
+    // complete request.
+    if ((!value && attachments.length === 0) || blocked) return
+    onSend(value, attachments)
     setText('')
-  }, [blocked, onSend, text])
+    setAttachments([])
+  }, [attachments, blocked, onSend, text])
 
   useEffect(() => {
     const element = area.current
@@ -180,6 +222,29 @@ export function Composer({
         submit()
       }}
     >
+      <AttachmentTray
+        attachments={attachments}
+        {...(uploadError ? { error: uploadError } : {})}
+        onRemove={(id) => setAttachments((current) => current.filter((a) => a.id !== id))}
+      />
+      <input
+        ref={picker}
+        type="file"
+        multiple
+        hidden
+        onChange={(event) => {
+          void upload([...(event.target.files ?? [])])
+          event.target.value = ''
+        }}
+      />
+      <button
+        type="button"
+        className="golem-composer__attach"
+        onClick={() => picker.current?.click()}
+        aria-label="Attach files"
+      >
+        📎
+      </button>
       <textarea
         ref={area}
         className="golem-composer__input"
@@ -191,6 +256,15 @@ export function Composer({
           if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault()
             submit()
+          }
+        }}
+        onPaste={(event) => {
+          // Pasting an image is the same gesture as attaching one; gating it
+          // behind the button would make a natural action fail silently.
+          const files = [...event.clipboardData.files]
+          if (files.length > 0) {
+            event.preventDefault()
+            void upload(files)
           }
         }}
       />
@@ -205,13 +279,38 @@ export function Composer({
         <button
           type="submit"
           className="golem-composer__send"
-          disabled={text.trim() === '' || blocked}
+          disabled={(text.trim() === '' && attachments.length === 0) || blocked}
           aria-label="Send"
         >
           ↑
         </button>
       )}
     </form>
+  )
+}
+
+export function AttachmentTray({
+  attachments,
+  error,
+  onRemove,
+}: {
+  attachments: readonly PendingAttachment[]
+  error?: string | undefined
+  onRemove: (id: string) => void
+}) {
+  if (attachments.length === 0 && !error) return null
+  return (
+    <div className="golem-attachments">
+      {attachments.map((attachment) => (
+        <span key={attachment.id} className="golem-attachments__item">
+          {attachment.name}
+          <button type="button" onClick={() => onRemove(attachment.id)} aria-label={`Remove ${attachment.name}`}>
+            ×
+          </button>
+        </span>
+      ))}
+      {error && <span className="golem-attachments__error">{error}</span>}
+    </div>
   )
 }
 
@@ -282,10 +381,14 @@ export function Chat({ contextWindow, placeholder, model, fetchImpl, onOpenCanva
   }, [messages, live?.text])
 
   const send = useCallback(
-    async (text: string) => {
+    async (text: string, attachments: readonly PendingAttachment[] = []) => {
       setMessages((current) => [
         ...current,
-        { id: `u${current.length}`, role: 'user', text },
+        {
+          id: `u${current.length}`,
+          role: 'user',
+          text: attachments.length > 0 ? `${text}\n📎 ${attachments.map((a) => a.name).join(', ')}`.trim() : text,
+        },
       ])
 
       // A thread is created on the first message rather than on arrival: an
@@ -310,6 +413,7 @@ export function Chat({ contextWindow, placeholder, model, fetchImpl, onOpenCanva
           ...(sessionId.current ? { sessionId: sessionId.current } : {}),
           ...(model ? { model } : {}),
           ...(thread ? { conversationId: thread } : {}),
+          ...(attachments.length > 0 ? { attachments: attachments.map((a) => a.id) } : {}),
         },
         fetchImpl,
       )) {
@@ -426,7 +530,8 @@ export function Chat({ contextWindow, placeholder, model, fetchImpl, onOpenCanva
       )}
 
       <Composer
-        onSend={(text) => void send(text)}
+        fetchImpl={fetchImpl ?? fetch}
+        onSend={(text, attachments) => void send(text, attachments)}
         onStop={stop}
         busy={live?.running ?? false}
         blocked={live?.permission !== undefined}

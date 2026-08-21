@@ -172,6 +172,8 @@ export interface StreamOptions {
   readonly model?: string
   /** The thread this turn belongs to; absent for an unrecorded question. */
   readonly conversationId?: string
+  /** Inbox ids the server resolves to paths the agent reads. */
+  readonly attachments?: readonly string[]
   readonly signal?: AbortSignal
 }
 
@@ -192,6 +194,7 @@ export async function* runTurn(
       ...(options.sessionId ? { sessionId: options.sessionId } : {}),
       ...(options.model ? { model: options.model } : {}),
       ...(options.conversationId ? { conversationId: options.conversationId } : {}),
+      ...(options.attachments?.length ? { attachments: options.attachments } : {}),
     }),
     ...(options.signal ? { signal: options.signal } : {}),
   })

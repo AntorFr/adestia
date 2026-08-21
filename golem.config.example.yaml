@@ -95,6 +95,14 @@ permissions:
 schedule:
   enabled: false
 
+# Files dropped into the chat. They land in an inbox OUTSIDE the workspace,
+# and the agent reads them with its own tools — so nothing you drag in appears
+# in the content it curates until the agent files it there itself.
+attachments:
+  maxBytes: 26214400   # 25 MB per file
+  maxFiles: 8          # per message
+  ttlMs: 86400000      # unclaimed files are swept after a day; 0 never sweeps
+
 extensions:
   # Where extensions are FOUND. Mount whatever you like here: presence is
   # discovery, never activation.

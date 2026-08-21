@@ -99,7 +99,8 @@ describe('composer', () => {
     fireEvent.change(input, { target: { value: 'bonjour' } })
     fireEvent.keyDown(input, { key: 'Enter' })
 
-    expect(onSend).toHaveBeenCalledWith('bonjour')
+    // Two arguments now: the text and whatever was attached with it.
+    expect(onSend).toHaveBeenCalledWith('bonjour', [])
     expect(input.value).toBe('')
   })
 
@@ -201,6 +202,72 @@ describe('chat', () => {
     await waitFor(() => expect(screen.getByText('Bonjour singe')).toBeTruthy())
     // The context pill appears once the turn reports what the next message costs.
     await waitFor(() => expect(screen.getByText('4.2k')).toBeTruthy())
+  })
+})
+
+describe('attachments', () => {
+  /** A fetch that accepts an upload and answers the rest blandly. */
+  const withUpload = (result: unknown, ok = true): typeof fetch =>
+    ((url: string) => {
+      if (String(url) === '/api/upload') {
+        return Promise.resolve({
+          ok,
+          status: ok ? 200 : 413,
+          json: () => Promise.resolve(result),
+        } as unknown as Response)
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ conversations: [] }),
+        text: () => Promise.resolve(''),
+        body: new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.close()
+          },
+        }),
+      } as unknown as Response)
+    }) as unknown as typeof fetch
+
+  const dropFile = (input: HTMLElement, name = 'plan.pdf') => {
+    const file = new File(['x'], name, { type: 'application/pdf' })
+    fireEvent.change(input, { target: { files: [file] } })
+  }
+
+  it('shows an attached file before it is sent', async () => {
+    const fetchImpl = withUpload({ attachments: [{ id: 'b/plan.pdf', name: 'plan.pdf' }] })
+    const { container } = render(<Chat fetchImpl={fetchImpl} />)
+    dropFile(container.querySelector('input[type="file"]')!)
+    await waitFor(() => expect(screen.getByText('plan.pdf')).toBeTruthy())
+  })
+
+  it('lets a file be removed before sending', async () => {
+    const fetchImpl = withUpload({ attachments: [{ id: 'b/plan.pdf', name: 'plan.pdf' }] })
+    const { container } = render(<Chat fetchImpl={fetchImpl} />)
+    dropFile(container.querySelector('input[type="file"]')!)
+    fireEvent.click(await screen.findByLabelText('Remove plan.pdf'))
+    expect(screen.queryByText('plan.pdf')).toBeNull()
+  })
+
+  it('says when a file was refused instead of dropping it silently', async () => {
+    // A file silently dropped is a file the user believes the agent has.
+    const fetchImpl = withUpload({ attachments: [], refused: ['plan.pdf is larger than 25 MB'] })
+    const { container } = render(<Chat fetchImpl={fetchImpl} />)
+    dropFile(container.querySelector('input[type="file"]')!)
+    await waitFor(() => expect(screen.getByText(/larger than 25 MB/)).toBeTruthy())
+  })
+
+  it('allows sending with no text at all', async () => {
+    // Dropping a photo and saying nothing is a complete request.
+    const fetchImpl = withUpload({ attachments: [{ id: 'b/photo.jpg', name: 'photo.jpg' }] })
+    const { container } = render(<Chat fetchImpl={fetchImpl} />)
+    dropFile(container.querySelector('input[type="file"]')!, 'photo.jpg')
+    await waitFor(() => expect(screen.getByLabelText('Send').closest('button')?.disabled).toBe(false))
+  })
+
+  it('keeps Send disabled with neither text nor files', () => {
+    render(<Chat fetchImpl={withUpload({})} />)
+    expect(screen.getByLabelText('Send').closest('button')?.disabled).toBe(true)
   })
 })
 

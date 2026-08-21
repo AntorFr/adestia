@@ -37,7 +37,7 @@ describe('the contract', () => {
 
   it('drops anything off-contract rather than passing it through', () => {
     const { rejected } = narrowSkin({ css: 'body{}', onLoad: 'alert(1)' })
-    expect(rejected.sort()).toEqual(['css', 'onLoad'])
+    expect([...rejected].sort()).toEqual(['css', 'onLoad'])
   })
 
   it('reports a factory that returned nothing usable', () => {

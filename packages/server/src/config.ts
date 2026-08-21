@@ -99,6 +99,13 @@ export interface ScheduleConfig {
   readonly tickMs?: number | undefined
 }
 
+export interface AttachmentsConfig {
+  readonly maxBytes: number
+  readonly maxFiles: number
+  /** Age past which an unclaimed attachment is swept, in ms. `0` never sweeps. */
+  readonly ttlMs: number
+}
+
 export interface GolemConfig {
   readonly host: string
   readonly port: number
@@ -109,6 +116,7 @@ export interface GolemConfig {
   readonly extensions: ExtensionsConfig
   readonly permissions: PermissionsConfig
   readonly schedule: ScheduleConfig
+  readonly attachments: AttachmentsConfig
   /** Concurrent turns across all conversations. Subscription limits are real. */
   readonly maxConcurrentTurns: number
 }
@@ -130,6 +138,7 @@ const KNOWN_KEYS = new Set([
   'extensions',
   'permissions',
   'schedule',
+  'attachments',
   'maxConcurrentTurns',
 ])
 
@@ -385,6 +394,19 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
     ...(typeof scheduleRaw['tickMs'] === 'number' ? { tickMs: scheduleRaw['tickMs'] } : {}),
   }
 
+  const attachmentsRaw = isObject(raw['attachments']) ? raw['attachments'] : {}
+  const attachments: AttachmentsConfig = {
+    maxBytes:
+      typeof attachmentsRaw['maxBytes'] === 'number'
+        ? attachmentsRaw['maxBytes']
+        : 25 * 1024 * 1024,
+    maxFiles: typeof attachmentsRaw['maxFiles'] === 'number' ? attachmentsRaw['maxFiles'] : 8,
+    ttlMs: typeof attachmentsRaw['ttlMs'] === 'number' ? attachmentsRaw['ttlMs'] : 86_400_000,
+  }
+  if (attachments.maxBytes < 1 || attachments.maxFiles < 1) {
+    issues.push('attachments.maxBytes and attachments.maxFiles must be at least 1')
+  }
+
   if (issues.length > 0) throw new ConfigError(issues)
 
   return {
@@ -401,6 +423,7 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
     extensions,
     permissions,
     schedule,
+    attachments,
     maxConcurrentTurns: maxConcurrentTurns as number,
   }
 }

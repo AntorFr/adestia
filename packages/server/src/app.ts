@@ -11,10 +11,12 @@
 import { randomUUID } from 'node:crypto'
 import { join } from 'node:path'
 
+import multipart from '@fastify/multipart'
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify'
 import type { Driver, DriverDescriptor, PermissionBroker, TurnEvent } from '@antorfr/golem-drivers'
 
 import { isPublicRoute, resolveIdentity, type Identity } from './auth.js'
+import { AttachmentInbox, frameAttachments, type StoredAttachment } from './attachments.js'
 import { ConversationStore, type StoredMessage } from './conversations.js'
 import type { GolemConfig } from './config.js'
 import { frontendPayload, type DiscoveredPlugin, type DiscoveryProblem } from './extensions.js'
@@ -146,6 +148,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   const limiter = new TurnLimiter(config.maxConcurrentTurns)
   const conversations = new ConversationStore(config.dataDir)
   const secrets = deps.secrets ?? new SecretStore(config.dataDir)
+  const inbox = new AttachmentInbox(config.dataDir, config.attachments)
   const arming = new ArmingSessions()
   const descriptor: DriverDescriptor = await driver.describe()
 
@@ -217,6 +220,32 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     return { models: await listModels.call(driver) }
   })
 
+  await app.register(multipart, {
+    limits: { fileSize: config.attachments.maxBytes, files: config.attachments.maxFiles },
+  })
+
+  app.post('/api/upload', async (request, reply) => {
+    const files: { name: string; data: Buffer }[] = []
+    try {
+      for await (const part of request.files()) {
+        files.push({ name: part.filename, data: await part.toBuffer() })
+      }
+    } catch (error) {
+      // The size limit surfaces here as a throw; saying which limit was hit
+      // beats a 500 that names nothing.
+      return reply.code(413).send({ error: (error as Error).message })
+    }
+    if (files.length === 0) return reply.code(400).send({ error: 'no file was sent' })
+
+    const { stored, refused } = await inbox.store(files)
+    return {
+      attachments: stored.map(({ id, name, bytes }) => ({ id, name, bytes })),
+      // Reported alongside what worked: a file silently dropped is a file the
+      // user believes the agent has.
+      refused,
+    }
+  })
+
   app.get('/api/conversations', async (request) => ({
     conversations: await conversations.list(identityOf(request).userId),
   }))
@@ -262,7 +291,13 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   })
 
   app.post<{
-    Body: { prompt?: unknown; sessionId?: unknown; model?: unknown; conversationId?: unknown }
+    Body: {
+      prompt?: unknown
+      sessionId?: unknown
+      model?: unknown
+      conversationId?: unknown
+      attachments?: unknown
+    }
   }>(
     '/api/turn',
     async (request, reply) => {
@@ -289,6 +324,15 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
         'x-accel-buffering': 'no',
       })
 
+      // Resolved before the turn: an id that escapes the inbox is refused
+      // rather than handed to the agent as a path to read.
+      const attachments: StoredAttachment[] = []
+      for (const id of Array.isArray(body.attachments) ? body.attachments : []) {
+        if (typeof id !== 'string') continue
+        const path = inbox.resolve(id)
+        if (path) attachments.push({ id, name: id.split('/').pop() ?? id, bytes: 0, path })
+      }
+
       const userId = identityOf(request).userId
       const conversationId =
         typeof body.conversationId === 'string' ? body.conversationId : undefined
@@ -312,7 +356,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
 
       try {
         const events = driver.runTurn({
-          prompt: body.prompt,
+          prompt: frameAttachments(body.prompt, attachments),
           cwd: config.workspace.root,
           ...(typeof body.sessionId === 'string' ? { sessionId: body.sessionId } : {}),
           ...(typeof body.model === 'string' ? { model: body.model } : {}),
