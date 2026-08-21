@@ -403,9 +403,13 @@ resolves in Golem as follows:
    1.0.80 pinned, JSONL schema captured via BYOK mock, three auth error
    states, usage taps, static model catalog, `--acp` discovered. Remaining
    items require an authenticated session (report §9).
-4. **Subscription concurrency — PENDING (explicit go required):** parallel
-   turns vs Claude subscription limits, to pick the global-cap defaults.
-   Burns real quota.
+4. **Subscription concurrency — DONE** (`spikes/concurrency/REPORT.md`):
+   27 real turns, bursts of 1–8. Turns genuinely overlap (78% parallel
+   efficiency at 8), zero failures and zero rate-limit warnings; TTFT pays a
+   one-time ~+1.3 s step at any concurrency then plateaus; parallel turns
+   share the prompt cache perfectly, while switching models re-pays it. The
+   binding constraint is ~300 MB of RSS per CLI process — `maxConcurrentTurns:
+   3` is confirmed as memory-bound, and 8 is verified safe API-side.
 
 ## What is built, and what is not
 
@@ -423,7 +427,6 @@ and CI.
 **Not built yet**, and none of it blocked by a design question:
 
 - **Remote instruction sync** (the optional git module).
-- **Subscription concurrency spike**, which needs real quota to measure.
 
 ## Decision log
 
