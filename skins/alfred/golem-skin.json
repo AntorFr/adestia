@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "alfred",
+  "description": "The butler's livery: warm paper, a quiet chevron, and nothing that shouts.",
+  "scheme": "auto",
+  "module": "./skin.js",
+  "styles": "./skin.css"
+}

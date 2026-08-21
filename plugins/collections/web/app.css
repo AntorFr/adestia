@@ -1,0 +1,17 @@
+.coll { display: flex; flex-direction: column; gap: var(--space-3); }
+.coll__head { display: flex; align-items: baseline; gap: var(--space-3); }
+.coll h2 { margin: 0; font-size: var(--text-lg); }
+.coll-cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: var(--space-3); }
+.coll-card { display: flex; flex-direction: column; gap: var(--space-1); width: 100%; text-align: left; padding: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface-raised); color: var(--text); font: inherit; cursor: pointer; }
+.coll-card:hover { border-color: var(--border-strong); }
+.coll-card__icon { font-size: 1.5rem; }
+.coll-card__name { font-weight: 500; }
+.coll-rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.coll-row { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2); border-radius: var(--radius-sm); }
+.coll-row:hover { background: var(--surface-sunken); }
+.coll-row__link { flex: 1; color: var(--text); text-decoration: none; }
+.coll-row__link:hover { text-decoration: underline; }
+.coll-chip { font-size: var(--text-sm); padding: 0 var(--space-2); border-radius: 999px; border: 1px solid var(--border); color: var(--text-muted); }
+.coll-muted { color: var(--text-faint); font-size: var(--text-sm); }
+.coll-problem { color: var(--danger); font-size: var(--text-sm); }
+.coll-back { align-self: flex-start; padding: var(--space-1) var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font: inherit; font-size: var(--text-sm); cursor: pointer; }

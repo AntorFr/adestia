@@ -1,14 +1,13 @@
 # Status — Golem
 > MàJ : 2026-08-21
 
-**État :** Le dernier kilomètre des plugins est fermé ET dogfoodé : deux
-plugins d'Alfred portés (`todo`, `planif`), écrits comme de vrais plugins
-externes, vérifiés en navigateur — cocher une tâche écrit dans le fichier.
-Index de frontmatter ajouté au moteur de contenu (le régime « dérivé »).
+**État :** Migration Alfred en cours. Faits et vérifiés en navigateur :
+`todo`, `planif`, `collections` (remplace `projets`), skin `alfred`.
+556 tests + 21 tests de plugins.
 
-**Parité Alfred — reste :**
-- [ ] `projets` — collections groupées par facette de frontmatter
-- [ ] `voyages` — plugin + API Google
-- [ ] `atelier` — ~1 600 lignes, plan de débit + SVG (gros morceau)
-- [ ] skin alfred (petit)
-- [ ] parcours (socle géo), scan (capacité), git (outil)
+**Reste de la surface Alfred :**
+- [ ] `atelier` — ~1 600 lignes (plan de débit, SVG). Sans obstacle, mais gros.
+- [ ] `parcours` — géo/GPX, lit le workspace, sans dépendance externe
+- [ ] `scan` — lecteur de codes-barres (caméra + chunk zxing paresseux)
+- [ ] `voyages` — BLOQUÉ : clé API Google. Demande la déclaration de secrets au manifeste.
+- [ ] `git` — NON PORTABLE tel quel : câble un credential helper vers le hub rosetta.
