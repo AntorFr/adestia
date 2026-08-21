@@ -59,13 +59,32 @@ Golem's own interface.
 - **Contracts the agent reads**: `plugin-author` and `skin-author` ship with
   the product, so asking the agent for a plugin produces a valid one.
 
+- **Scheduled turns**: notes whose body runs as a prompt on a cadence, with a
+  missed occurrence lost rather than replayed.
+- **Attachments** the agent reads with its own tools, framed as data — a file
+  that says "ignore your instructions" is reported, not obeyed.
+- **Inbound MCP**, so another agent can delegate work here asynchronously.
+- **Skins**: tokens and a few narrow hooks, one active at a time.
+
 ## Status
 
-**Early, and running.** What is not done yet, and known: scheduled turns
-(planif), inbound MCP so other agents can delegate here, chat attachments, and
-the skin system beyond its schema. See [DESIGN.md](DESIGN.md) for the
-principles and every decision taken, and [.agent/status.md](.agent/status.md)
-for what is in flight.
+**Early, and running.** Everything above is verified against a real browser and
+real CLIs, not only by tests. What is deliberately not built: remote git sync
+for instructions, and the concurrency measurements that need real subscription
+quota. See [DESIGN.md](DESIGN.md) for the principles and every decision taken.
+
+## Contributing
+
+```sh
+npm ci
+npm test          # 530 tests, no account or network needed
+npm run typecheck
+npm run build
+```
+
+Every driver is exercised against a fake binary, which is a property of the
+driver contract rather than a convenience: a driver whose behaviour is only
+testable against a live account is a driver tested by its first user.
 
 ## License
 
