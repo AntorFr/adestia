@@ -28,12 +28,23 @@ skins/<id>/
   "schemaVersion": 1,
   "id": "amber",
   "description": "Amber on charcoal, monospace headings, hard corners.",
+  "scheme": "dark",
   "styles": "./skin.css",
   "module": "./skin.js",
   "icon": "./assets/icon.svg",
   "manifest": "./assets/manifest.json"
 }
 ```
+
+### `scheme` is the field that saves you
+
+`"light"`, `"dark"`, or `"auto"` (the default, which follows the viewer).
+
+**Declare it whenever your palette commits to one.** Overriding `--surface` to
+a dark value while the base palette is light gives you dark surfaces under
+dark text — unreadable, and mystifying because each token looked right on its
+own. A skin declaring `dark` gets the shell's COMPLETE dark palette first, so
+overriding three tokens still leaves a coherent one.
 
 `<id>` is the folder name; a manifest claiming another is refused.
 
@@ -67,11 +78,13 @@ with no skin, or a skin that overrides three values, is still complete.
 
 ## Both themes, or one on purpose
 
-The shell renders in the viewer's theme. Define your palette on `:root`,
-redefine only what changes under `@media (prefers-color-scheme: dark)`, and
-again under an explicit `[data-theme='dark']` so a manual toggle wins. A skin
-that deliberately commits to one look may skip this — but must then set every
-colour explicitly rather than inheriting half a palette.
+With `scheme: "auto"` your overrides must work on BOTH base palettes: define
+what changes under `@media (prefers-color-scheme: dark)` as well, or accept
+that your accent has to read on light and dark alike.
+
+With `scheme: "light"` or `"dark"` you are handed one complete base and only
+override what differs from it. That is the easier road, and the one to take
+unless the skin genuinely has two looks.
 
 ## The hooks
 

@@ -17,6 +17,18 @@ export interface SkinManifest {
   readonly id: string
   readonly description: string
   readonly version?: string
+  /**
+   * Which base palette the skin's overrides sit on top of.
+   *
+   * This exists because of a trap that is easy to fall into and unreadable
+   * when you do: override `--surface` to a dark value while the base palette
+   * is light, and you get dark surfaces under dark text. A skin declaring
+   * `dark` gets the shell's complete dark palette first, so overriding three
+   * tokens still leaves a coherent one.
+   *
+   * `auto` (the default) follows the viewer's own preference.
+   */
+  readonly scheme?: 'light' | 'dark' | 'auto'
   /** The factory module `(api) => skin`. */
   readonly module?: string
   /** Token overrides, scoped to this skin. */

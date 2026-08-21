@@ -1,0 +1,152 @@
+/**
+ * What a plugin's front-end factories receive, and what they may return.
+ *
+ * Every facet is a default-exported function taking one `api` object. Injection
+ * rather than imports, for a reason that decides the whole loading model: the
+ * shell imports the PLUGIN, so a plugin importing the shell would be a cycle —
+ * and worse, would pin a plugin to a build of the shell it can never see.
+ *
+ * The whitelist below is enforced in code, not just described here. A
+ * contribution carrying a field off-contract is dropped AND reported, because
+ * a silently ignored field is an hour spent wondering why nothing happens.
+ */
+
+import type { ComponentType } from 'react'
+
+/** What every factory is handed. Stable across all three facet kinds. */
+export interface PluginApi {
+  /** The plugin's own id — useful for namespacing storage and CSS. */
+  readonly id: string
+  /** URL prefix its own files are served from, for assets and lazy chunks. */
+  readonly base: string
+  /**
+   * Fetch, already carrying the session. A plugin calling bare `fetch` works
+   * too; this exists so the obvious call is the correct one.
+   */
+  readonly fetch: typeof fetch
+  /**
+   * Sends a message to the agent, as if the user had typed it.
+   *
+   * Deliberately present: an app whose button can ask the agent something is
+   * the whole point of pairing a chat with apps. It is also the single most
+   * powerful thing a plugin can do, which is why `plugins/README` says a view
+   * ships JavaScript into the page and there is no sandbox.
+   */
+  ask(prompt: string): void
+}
+
+/** A launcher view: one React component, optionally a route to reach it. */
+export interface ViewContribution {
+  readonly component: ComponentType<Record<string, never>>
+  /**
+   * Hash route this view answers to (`#/workbench`). Absent means the view is
+   * reached only from its tile.
+   */
+  readonly route?: string
+}
+
+/** Composer buttons and settings entries a plugin adds to the shell. */
+export interface ChromeContribution {
+  readonly composer?: readonly {
+    readonly id: string
+    readonly glyph: string
+    readonly title: string
+    onClick(api: PluginApi): void
+  }[]
+  readonly settings?: readonly {
+    readonly id: string
+    readonly label: string
+    onClick(api: PluginApi): void
+  }[]
+}
+
+/** Content-engine tags a plugin adds to the closed vocabulary. */
+export interface BlocksContribution {
+  readonly tags: Readonly<Record<string, unknown>>
+}
+
+export type Facet = 'view' | 'blocks' | 'chrome'
+
+export interface ContractIssue {
+  readonly facet: Facet
+  readonly reason: string
+}
+
+/**
+ * Narrows what a factory returned to what the shell will actually use.
+ *
+ * Written as three small validators rather than one clever one: the error a
+ * plugin author reads has to name the facet AND what was expected, and a
+ * generic schema walker produces neither.
+ */
+export function narrowView(raw: unknown): { view?: ViewContribution; issue?: ContractIssue } {
+  if (typeof raw === 'function') {
+    // A bare component is the obvious thing to return, so it is accepted:
+    // refusing it would be pedantry over a shape that is unambiguous.
+    return { view: { component: raw as ComponentType<Record<string, never>> } }
+  }
+  if (typeof raw !== 'object' || raw === null) {
+    return { issue: { facet: 'view', reason: 'must return a component or { component }' } }
+  }
+  const record = raw as Record<string, unknown>
+  if (typeof record['component'] !== 'function') {
+    return { issue: { facet: 'view', reason: '`component` must be a React component' } }
+  }
+  const route = record['route']
+  return {
+    view: {
+      component: record['component'] as ComponentType<Record<string, never>>,
+      ...(typeof route === 'string' ? { route } : {}),
+    },
+  }
+}
+
+export function narrowChrome(raw: unknown): { chrome?: ChromeContribution; issue?: ContractIssue } {
+  if (typeof raw !== 'object' || raw === null) {
+    return { issue: { facet: 'chrome', reason: 'must return { composer?, settings? }' } }
+  }
+  const record = raw as Record<string, unknown>
+
+  const entries = (value: unknown, needs: readonly string[]) =>
+    Array.isArray(value)
+      ? value.filter(
+          (item) =>
+            typeof item === 'object' &&
+            item !== null &&
+            needs.every((key) => typeof (item as Record<string, unknown>)[key] === 'string') &&
+            typeof (item as Record<string, unknown>)['onClick'] === 'function',
+        )
+      : []
+
+  const composer = entries(record['composer'], ['id', 'glyph', 'title'])
+  const settings = entries(record['settings'], ['id', 'label'])
+
+  if (composer.length === 0 && settings.length === 0) {
+    return {
+      issue: {
+        facet: 'chrome',
+        reason: 'declared nothing usable — composer entries need {id, glyph, title, onClick}',
+      },
+    }
+  }
+  const chrome: ChromeContribution = {
+    ...(composer.length > 0
+      ? { composer: composer as NonNullable<ChromeContribution['composer']> }
+      : {}),
+    ...(settings.length > 0
+      ? { settings: settings as NonNullable<ChromeContribution['settings']> }
+      : {}),
+  }
+  return { chrome }
+}
+
+export function narrowBlocks(raw: unknown): { blocks?: BlocksContribution; issue?: ContractIssue } {
+  if (typeof raw !== 'object' || raw === null) {
+    return { issue: { facet: 'blocks', reason: 'must return { tags }' } }
+  }
+  const tags = (raw as Record<string, unknown>)['tags']
+  if (typeof tags !== 'object' || tags === null) {
+    return { issue: { facet: 'blocks', reason: '`tags` must be an object of block definitions' } }
+  }
+  return { blocks: { tags: tags as Record<string, unknown> } }
+}

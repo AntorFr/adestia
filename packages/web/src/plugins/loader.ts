@@ -13,10 +13,25 @@
  * - a plugin that throws loses its own contribution, never the page.
  */
 
+import {
+  narrowBlocks,
+  narrowChrome,
+  narrowView,
+  type BlocksContribution,
+  type ChromeContribution,
+  type PluginApi,
+  type ViewContribution,
+} from './contract.js'
+
 /** Bare specifiers a plugin may import. Anything else must be vendored. */
 export const IMPORT_MAP_CONTRACT = 1
 
-export const SHARED_SPECIFIERS = ['react', 'react-dom/client', 'react/jsx-runtime'] as const
+export const SHARED_SPECIFIERS = [
+  'react',
+  'react-dom',
+  'react-dom/client',
+  'react/jsx-runtime',
+] as const
 
 export interface PluginDescriptor {
   readonly id: string
@@ -34,9 +49,11 @@ export interface PluginDescriptor {
 
 export interface LoadedPlugin {
   readonly id: string
-  readonly view?: unknown
-  readonly blocks?: unknown
-  readonly chrome?: unknown
+  readonly base: string
+  readonly tile?: PluginDescriptor['tile']
+  readonly view?: ViewContribution
+  readonly blocks?: BlocksContribution
+  readonly chrome?: ChromeContribution
 }
 
 export interface LoadFailure {
@@ -55,6 +72,8 @@ export interface LoaderEnvironment {
   importModule(url: string): Promise<Record<string, unknown>>
   addStylesheet(id: string, url: string): void
   removeStylesheets(id: string): void
+  /** Builds the api handed to each factory. */
+  makeApi(descriptor: PluginDescriptor): PluginApi
 }
 
 function resolve(base: string, path: string): string {
@@ -64,12 +83,20 @@ function resolve(base: string, path: string): string {
   return `${prefix}${path.replace(/^\.\//, '')}`
 }
 
-async function loadFacet(
+/**
+ * Imports one facet, CALLS its factory, and narrows what came back.
+ *
+ * Calling it here rather than at use time is deliberate: a factory that throws
+ * costs its own facet at load, when the shell can report it, instead of
+ * exploding inside a render where React unmounts the tree around it.
+ */
+async function loadFacet<T>(
   environment: LoaderEnvironment,
   plugin: PluginDescriptor,
   facet: 'view' | 'blocks' | 'chrome',
+  narrow: (raw: unknown) => { issue?: { reason: string } } & Record<string, unknown>,
   failures: LoadFailure[],
-): Promise<unknown | undefined> {
+): Promise<T | undefined> {
   const path = plugin[facet]
   if (!path) return undefined
   try {
@@ -85,7 +112,14 @@ async function loadFacet(
       })
       return undefined
     }
-    return factory
+
+    const produced = (factory as (api: PluginApi) => unknown)(environment.makeApi(plugin))
+    const narrowed = narrow(produced)
+    if (narrowed.issue) {
+      failures.push({ id: plugin.id, facet, reason: narrowed.issue.reason })
+      return undefined
+    }
+    return narrowed[facet] as T
   } catch (error) {
     failures.push({ id: plugin.id, facet, reason: (error as Error).message })
     return undefined
@@ -117,9 +151,9 @@ export async function loadPlugins(
     }
 
     const [view, blocks, chrome] = await Promise.all([
-      loadFacet(environment, descriptor, 'view', failures),
-      loadFacet(environment, descriptor, 'blocks', failures),
-      loadFacet(environment, descriptor, 'chrome', failures),
+      loadFacet<ViewContribution>(environment, descriptor, 'view', narrowView, failures),
+      loadFacet<BlocksContribution>(environment, descriptor, 'blocks', narrowBlocks, failures),
+      loadFacet<ChromeContribution>(environment, descriptor, 'chrome', narrowChrome, failures),
     ])
 
     if (view === undefined && blocks === undefined && chrome === undefined) {
@@ -131,6 +165,8 @@ export async function loadPlugins(
 
     loaded.push({
       id: descriptor.id,
+      base: descriptor.base,
+      ...(descriptor.tile ? { tile: descriptor.tile } : {}),
       ...(view === undefined ? {} : { view }),
       ...(blocks === undefined ? {} : { blocks }),
       ...(chrome === undefined ? {} : { chrome }),
@@ -140,9 +176,20 @@ export async function loadPlugins(
   return { loaded, failures }
 }
 
-/** The browser implementation. Kept tiny so the logic above stays testable. */
-export function browserEnvironment(): LoaderEnvironment {
+/**
+ * The browser implementation.
+ *
+ * @param ask how a plugin sends a message to the agent. Passed in rather than
+ *   imported, because the chat owns that channel and the loader must not.
+ */
+export function browserEnvironment(ask: (prompt: string) => void): LoaderEnvironment {
   return {
+    makeApi: (descriptor) => ({
+      id: descriptor.id,
+      base: descriptor.base,
+      fetch: (...args) => fetch(...args),
+      ask,
+    }),
     importModule: (url) => import(/* @vite-ignore */ url) as Promise<Record<string, unknown>>,
     addStylesheet(id, url) {
       const link = document.createElement('link')

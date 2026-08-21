@@ -1,8 +1,26 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
+/**
+ * The specifiers the page's import map publishes.
+ *
+ * They are EXTERNAL to the shell's bundle, and that is the whole contract, not
+ * an optimisation. Bundling React into the shell while plugins resolve it
+ * through the import map gives two React copies in one page: the plugin's
+ * hooks then read a null dispatcher and every plugin view dies with "Cannot
+ * read properties of null (reading 'useState')".
+ *
+ * Spike 2 proved one shared instance in a page where the SHELL also went
+ * through the map. This is what makes the production shell behave the same.
+ */
+const SHARED = ['react', 'react-dom', 'react-dom/client', 'react/jsx-runtime']
+
 export default defineConfig({
-  build: { outDir: 'dist-web', emptyOutDir: true },
+  build: {
+    outDir: 'dist-web',
+    emptyOutDir: true,
+    rollupOptions: { external: SHARED },
+  },
   server: {
     // Dev runs the shell on Vite and the API on Golem; one origin keeps
     // cookies and same-origin plugin imports behaving as in production.

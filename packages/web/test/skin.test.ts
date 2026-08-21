@@ -6,6 +6,7 @@ function environment(modules: Record<string, Record<string, unknown> | Error> = 
   const stylesheets: string[] = []
   const icons: string[] = []
   const attributes: string[] = []
+  const schemes: (string | undefined)[] = []
   const env: SkinEnvironment = {
     importModule(url) {
       const module = modules[url]
@@ -16,8 +17,9 @@ function environment(modules: Record<string, Record<string, unknown> | Error> = 
     addStylesheet: (url) => void stylesheets.push(url),
     setIcon: (url) => void icons.push(url),
     setAttribute: (value) => void attributes.push(value),
+    setScheme: (scheme) => void schemes.push(scheme),
   }
-  return { env, stylesheets, icons, attributes }
+  return { env, stylesheets, icons, attributes, schemes }
 }
 
 describe('the contract', () => {
@@ -81,6 +83,22 @@ describe('loading', () => {
   it('refuses a module that exports something other than a factory', async () => {
     const { env } = environment({ '/skin/skin.js': { default: { brand: 'X' } } })
     expect((await loadSkin(descriptor, env)).error).toContain('default-export a factory')
+  })
+
+  it('arms the base palette a skin declares, before its overrides land', async () => {
+    // The trap this closes: overriding --surface to a dark value on a light
+    // base gives dark surfaces under dark text, which is simply unreadable.
+    const { env, schemes } = environment()
+    await loadSkin({ ...descriptor, scheme: 'dark', module: undefined }, env)
+    expect(schemes).toEqual(['dark'])
+  })
+
+  it('leaves the viewer’s own preference alone when the skin says auto', async () => {
+    // An explicit attribute meaning "no preference" would override the very
+    // preference it claims to defer to.
+    const { env, schemes } = environment()
+    await loadSkin({ ...descriptor, scheme: 'auto', module: undefined }, env)
+    expect(schemes).toEqual([undefined])
   })
 
   it('works with tokens alone, no module at all', async () => {

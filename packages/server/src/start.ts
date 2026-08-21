@@ -25,6 +25,7 @@ import { buildApp } from './app.js'
 import { ConfigError, parseConfig, type GolemConfig } from './config.js'
 import { Clock, scheduleStatePath } from './clock.js'
 import { discoverPlugins, discoverSkins } from './extensions.js'
+import { runSetups } from './plugin-host.js'
 import { SecretStore } from './secrets.js'
 import { collectSkills, deliverSkills } from './skills.js'
 
@@ -189,6 +190,11 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     log(`driver credential loaded (armed ${stored.savedAt})`)
   }
 
+  // Setup runs BEFORE the app is built: a plugin's API may depend on whatever
+  // its setup wired up, and mounting first would make that ordering luck.
+  const setupProblems = await runSetups(plugins, log)
+  for (const problem of setupProblems) log(`extension "${problem.id}": ${problem.reason}`)
+
   // Contracts are refreshed at every boot rather than installed once: a
   // plugin upgraded in place would otherwise leave the agent reading last
   // version's instructions for code that has changed underneath it.
@@ -220,7 +226,7 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     config: { ...resolved, dataDir: resolve(cwd, resolved.dataDir) },
     driver,
     plugins,
-    pluginProblems: problems,
+    pluginProblems: [...problems, ...setupProblems],
     secrets,
     permissions,
     ...(activeSkin
@@ -232,6 +238,7 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
               ...(activeSkin.manifest.styles ? { styles: activeSkin.manifest.styles } : {}),
               ...(activeSkin.manifest.module ? { module: activeSkin.manifest.module } : {}),
               ...(activeSkin.manifest.icon ? { icon: activeSkin.manifest.icon } : {}),
+              ...(activeSkin.manifest.scheme ? { scheme: activeSkin.manifest.scheme } : {}),
             },
           },
         }

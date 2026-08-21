@@ -215,6 +215,14 @@ export function parseSkinManifest(input: unknown, folderName: string): SkinManif
     checkRelativePath(input, field, issues, 'skin folder')
   }
 
+  const scheme = input['scheme']
+  if (scheme !== undefined && scheme !== 'light' && scheme !== 'dark' && scheme !== 'auto') {
+    // Refused rather than defaulted: a skin that believes it declared "dark"
+    // and silently got "auto" is a skin whose colours look wrong on half the
+    // machines that open it.
+    issues.push({ field: 'scheme', message: 'must be "light", "dark" or "auto"' })
+  }
+
   if (issues.length > 0) {
     throw new ManifestError(`skin manifest for "${folderName}"`, issues)
   }

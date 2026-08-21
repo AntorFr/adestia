@@ -154,6 +154,7 @@ export function Composer({
   blocked,
   placeholder,
   fetchImpl = fetch,
+  extraButtons,
 }: {
   onSend: (text: string, attachments: readonly PendingAttachment[]) => void
   onStop: () => void
@@ -161,6 +162,7 @@ export function Composer({
   blocked: boolean
   placeholder?: string
   fetchImpl?: typeof fetch
+  extraButtons?: readonly ComposerButton[]
 }) {
   const [text, setText] = useState('')
   const [attachments, setAttachments] = useState<readonly PendingAttachment[]>([])
@@ -245,6 +247,21 @@ export function Composer({
       >
         📎
       </button>
+      {/* Rendered BY THE SHELL from declarative data, never as markup a plugin
+          supplied: a button is a glyph and a title, and injected HTML here
+          would be injected into the one surface every user touches. */}
+      {extraButtons?.map((button) => (
+        <button
+          key={button.key}
+          type="button"
+          className="golem-composer__attach"
+          onClick={() => button.onClick(button.api)}
+          aria-label={button.title}
+          title={button.title}
+        >
+          {button.glyph}
+        </button>
+      ))}
       <textarea
         ref={area}
         className="golem-composer__input"
@@ -321,6 +338,23 @@ export interface ChatProps {
   readonly fetchImpl?: typeof fetch
   /** Only when the shell is folded onto one screen; absent on desktop. */
   readonly onOpenCanvas?: () => void
+  /**
+   * Hands the shell a way to send a message, so a plugin's button can ask the
+   * agent something. The chat owns this channel; nobody else may fabricate a
+   * turn behind its back and leave the thread out of step with the session.
+   */
+  readonly onReady?: (ask: (prompt: string) => void) => void
+  /** Composer buttons contributed by plugins. */
+  readonly extraButtons?: readonly ComposerButton[]
+}
+
+/** A composer button a plugin added. */
+export interface ComposerButton {
+  readonly key: string
+  readonly glyph: string
+  readonly title: string
+  readonly api: unknown
+  onClick(api: unknown): void
 }
 
 /** A stored message, as the thread renders it. */
@@ -335,7 +369,15 @@ function toMessage(stored: StoredMessage): Message {
   }
 }
 
-export function Chat({ contextWindow, placeholder, model, fetchImpl, onOpenCanvas }: ChatProps) {
+export function Chat({
+  contextWindow,
+  placeholder,
+  model,
+  fetchImpl,
+  onOpenCanvas,
+  onReady,
+  extraButtons,
+}: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [live, setLive] = useState<TurnState | undefined>()
   const [contextTokens, setContextTokens] = useState(0)
@@ -441,6 +483,12 @@ export function Chat({ contextWindow, placeholder, model, fetchImpl, onOpenCanva
     [conversationId, fetchImpl, model],
   )
 
+  useEffect(() => {
+    // Published once the sender exists, so a plugin loaded before the chat
+    // mounted still gets a working channel rather than a silent no-op.
+    onReady?.((prompt: string) => void send(prompt))
+  }, [onReady, send])
+
   const stop = useCallback(() => {
     if (!sessionId.current) return
     void (fetchImpl ?? fetch)('/api/turn/stop', {
@@ -531,6 +579,7 @@ export function Chat({ contextWindow, placeholder, model, fetchImpl, onOpenCanva
 
       <Composer
         fetchImpl={fetchImpl ?? fetch}
+        {...(extraButtons ? { extraButtons } : {})}
         onSend={(text, attachments) => void send(text, attachments)}
         onStop={stop}
         busy={live?.running ?? false}

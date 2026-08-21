@@ -6,13 +6,14 @@
  * second engine a driver rather than a fork.
  */
 
-import { useEffect, useState } from 'react'
+import { Component, useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 
 import { Chat } from '../chat/Chat.js'
 import { Editor, type PageDocument } from '../editor/Editor.js'
 import { Settings } from './Settings.js'
 import { browserSkinEnvironment, loadSkin, type Skin, type SkinDescriptor } from './skin.js'
-import { browserEnvironment, loadPlugins, type PluginDescriptor } from '../plugins/loader.js'
+import type { PluginApi } from '../plugins/contract.js'
+import { browserEnvironment, loadPlugins, type LoadedPlugin, type PluginDescriptor } from '../plugins/loader.js'
 import { useMobile } from './useMobile.js'
 import { useSplit } from './useSplit.js'
 
@@ -24,6 +25,36 @@ export interface InstanceInfo {
   readonly plugins: readonly PluginDescriptor[]
   readonly pluginProblems: readonly { id: string; reason: string }[]
   readonly turns: { max: number; running: number }
+}
+
+/**
+ * Keeps a plugin's render failure to itself.
+ *
+ * React unmounts the whole tree on an uncaught render error, so without this a
+ * plugin with a typo takes down the chat beside it. The boundary is the render
+ * equivalent of the try/catch the loader already puts around a factory.
+ */
+class PluginBoundary extends Component<
+  { id: string; children: ReactNode },
+  { error?: Error }
+> {
+  override state: { error?: Error } = {}
+
+  static getDerivedStateFromError(error: Error) {
+    return { error }
+  }
+
+  override render() {
+    if (this.state.error) {
+      return (
+        <section className="golem-problems" role="status">
+          <h2>The “{this.props.id}” app stopped</h2>
+          <p>{this.state.error.message}</p>
+        </section>
+      )
+    }
+    return this.props.children
+  }
 }
 
 type EditorMount = (
@@ -49,8 +80,50 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   const [mount, setMount] = useState<EditorMount | undefined>()
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [skin, setSkin] = useState<Skin>({})
+  const [loaded, setLoaded] = useState<readonly LoadedPlugin[]>([])
+  /** The plugin view currently filling the canvas, by id. */
+  const [openApp, setOpenApp] = useState<string | undefined>()
+  /** Queued while the chat mounts, so a plugin can ask before anyone typed. */
+  const askRef = useRef<((prompt: string) => void) | undefined>(undefined)
   const split = useSplit()
   const mobile = useMobile()
+
+  // Hash routing, deliberately minimal: a plugin declares `#/its-route` and the
+  // shell opens it. A bookmarked route must resurrect the same screen, and a
+  // route whose plugin is no longer active must resolve to nothing rather than
+  // to a blank canvas.
+  useEffect(() => {
+    const apply = () => {
+      const hash = location.hash.replace(/^#/, '')
+      const match = loaded.find((plugin) => plugin.view?.route === hash)
+      setOpenApp(match?.id)
+    }
+    apply()
+    window.addEventListener('hashchange', apply)
+    return () => window.removeEventListener('hashchange', apply)
+  }, [loaded])
+
+  const openPlugin = useCallback((plugin: LoadedPlugin) => {
+    if (plugin.view?.route) location.hash = plugin.view.route
+    else setOpenApp(plugin.id)
+  }, [])
+
+  const closeApp = useCallback(() => {
+    // The hash is cleared too, or Back leaves a route that reopens the app on
+    // the next render.
+    if (location.hash) location.hash = ''
+    setOpenApp(undefined)
+  }, [])
+
+  /** Composer buttons every active plugin contributed, flattened once. */
+  const composerButtons = loaded.flatMap((plugin) =>
+    (plugin.chrome?.composer ?? []).map((entry) => ({
+      ...entry,
+      // Namespaced: two plugins may both call a button "scan".
+      key: `${plugin.id}:${entry.id}`,
+      api: { id: plugin.id, base: plugin.base, fetch, ask: (p: string) => askRef.current?.(p) },
+    })),
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -95,8 +168,15 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           if (skinProblems.length > 0) setFailures((current) => [...current, ...skinProblems])
         }
 
-        const result = await loadPlugins(info.plugins, browserEnvironment())
-        if (!cancelled) setFailures((current) => [...current, ...result.failures])
+        // `ask` is handed to plugins through a ref: the chat owns that channel
+        // and mounts after this runs, so a plugin holding the function directly
+        // would hold one that is not wired yet.
+        const environment = browserEnvironment((prompt) => askRef.current?.(prompt))
+        const result = await loadPlugins(info.plugins, environment)
+        if (!cancelled) {
+          setLoaded(result.loaded)
+          setFailures((current) => [...current, ...result.failures])
+        }
 
         const list = await fetchImpl('/api/pages')
         if (list.ok && !cancelled) {
@@ -167,6 +247,10 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
     >
       <Chat
         fetchImpl={fetchImpl}
+        onReady={(ask: (prompt: string) => void) => {
+          askRef.current = ask
+        }}
+        extraButtons={composerButtons}
         {...(skin.placeholder ? { placeholder: skin.placeholder } : {})}
         {...(mobile ? { onOpenCanvas: () => setScreen('canvas') } : {})}
       />
@@ -223,7 +307,37 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           </section>
         )}
 
-        {page ? (
+        {openApp ? (
+          (() => {
+            const plugin = loaded.find((entry) => entry.id === openApp)
+            if (!plugin?.view) {
+              // A route whose plugin is gone resolves to nothing rather than to
+              // a blank canvas: a bookmark outliving a config change must say
+              // so instead of looking broken.
+              return (
+                <section className="golem-empty">
+                  <p>That app is not active on this instance.</p>
+                  <button type="button" className="golem-switch" onClick={() => closeApp()}>
+                    ‹ Back
+                  </button>
+                </section>
+              )
+            }
+            const View = plugin.view.component
+            return (
+              <>
+                <button type="button" className="golem-switch" onClick={() => closeApp()}>
+                  ‹ Back
+                </button>
+                {/* Rendered inside a boundary: a plugin that throws mid-render
+                    takes its own panel down, never the shell around it. */}
+                <PluginBoundary id={plugin.id}>
+                  <View />
+                </PluginBoundary>
+              </>
+            )
+          })()
+        ) : page ? (
           <>
             <button type="button" className="golem-switch" onClick={() => setPage(undefined)}>
               ‹ All pages
@@ -270,12 +384,22 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           </section>
         ) : (
           <ul className="golem-tiles">
-            {instance.plugins
+            {loaded
               .filter((plugin) => plugin.tile)
               .map((plugin) => (
-                <li key={plugin.id} className="golem-tile">
-                  <span className="golem-tile__icon">{plugin.tile?.icon ?? '▩'}</span>
-                  <span className="golem-tile__label">{plugin.tile?.label}</span>
+                <li key={plugin.id}>
+                  <button
+                    type="button"
+                    className="golem-tile"
+                    onClick={() => openPlugin(plugin)}
+                    // A tile whose plugin brought no view is not a button that
+                    // does nothing — it is a button that says why.
+                    disabled={!plugin.view}
+                    title={plugin.view ? undefined : 'This plugin ships no screen'}
+                  >
+                    <span className="golem-tile__icon">{plugin.tile?.icon ?? '▩'}</span>
+                    <span className="golem-tile__label">{plugin.tile?.label}</span>
+                  </button>
                 </li>
               ))}
           </ul>

@@ -38,6 +38,7 @@ function wrapper(specifier) {
 
 const entries = {
   'react.js': 'react',
+  'react-dom.js': 'react-dom',
   'react-dom-client.js': 'react-dom/client',
   'react-jsx-runtime.js': 'react/jsx-runtime',
 }

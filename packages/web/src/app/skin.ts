@@ -17,6 +17,7 @@ export interface SkinDescriptor {
   readonly styles?: string
   readonly module?: string
   readonly icon?: string
+  readonly scheme?: 'light' | 'dark' | 'auto'
 }
 
 /** Everything a skin may provide. Every field optional. */
@@ -63,6 +64,8 @@ export interface SkinEnvironment {
   addStylesheet(url: string): void
   setIcon(url: string): void
   setAttribute(value: string): void
+  /** Arms the shell's complete light or dark palette before overrides land. */
+  setScheme(scheme: 'light' | 'dark' | undefined): void
 }
 
 export async function loadSkin(
@@ -72,6 +75,13 @@ export async function loadSkin(
   // The attribute arms whatever token overrides the sheet declares. Set even
   // for the default, so a page always says which livery it is wearing.
   environment.setAttribute(descriptor.id)
+
+  // The base palette FIRST, so a skin overriding three tokens still sits on a
+  // complete one. Getting this wrong is not a subtle bug: dark surfaces under
+  // a light palette's dark text is simply unreadable.
+  environment.setScheme(
+    descriptor.scheme === 'light' || descriptor.scheme === 'dark' ? descriptor.scheme : undefined,
+  )
   if (descriptor.id === 'default') return { skin: {}, rejected: [] }
 
   const resolve = (path: string) =>
@@ -114,6 +124,13 @@ export function browserSkinEnvironment(): SkinEnvironment {
     },
     setAttribute(value) {
       document.documentElement.dataset['skin'] = value
+    },
+    setScheme(scheme) {
+      // Removed rather than set to "auto": the shell's media query IS auto,
+      // and an explicit attribute would override the viewer's own preference
+      // with a value that means "no preference".
+      if (scheme) document.documentElement.dataset['theme'] = scheme
+      else delete document.documentElement.dataset['theme']
     },
   }
 }

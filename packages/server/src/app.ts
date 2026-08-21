@@ -23,6 +23,7 @@ import { frontendPayload, type DiscoveredPlugin, type DiscoveryProblem } from '.
 import { registerOidc } from './oidc-routes.js'
 import { registerMcp } from './mcp-routes.js'
 import { registerPages } from './pages.js'
+import { mountPluginApis } from './plugin-host.js'
 import { ArmingSessions, SecretStore } from './secrets.js'
 import { registerStatic } from './static.js'
 
@@ -31,6 +32,7 @@ export interface SkinPayload {
   readonly styles?: string
   readonly module?: string
   readonly icon?: string
+  readonly scheme?: 'light' | 'dark' | 'auto'
 }
 
 export interface AppDependencies {
@@ -206,7 +208,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
      * reads: a plugin you believe is loaded and is not costs far more than one
      * that says out loud why it was rejected.
      */
-    pluginProblems,
+    pluginProblems: [...pluginProblems, ...apiProblems],
     turns: { max: config.maxConcurrentTurns, running: limiter.running },
   }))
 
@@ -525,6 +527,11 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   })
 
   registerPages(app, { root: join(config.workspace.root, config.workspace.pages) })
+
+  // Mounted before the static catch-all, so a plugin route always wins over
+  // the shell's fallback; and after the auth hook, so it is gated like
+  // everything else.
+  const apiProblems = await mountPluginApis(app, plugins)
 
   registerMcp(app, {
     config: config.mcp,
