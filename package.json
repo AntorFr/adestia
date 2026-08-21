@@ -10,11 +10,12 @@
     "packages/*"
   ],
   "scripts": {
-    "test": "vitest run",
+    "test": "vitest run && npm run test:plugins",
     "test:watch": "vitest",
     "typecheck": "tsc --build && tsc -p packages/web --noEmit",
     "lint": "eslint packages",
-    "build": "npm run build --workspace @antorfr/golem-server && npm run build:web --workspace @antorfr/golem-web"
+    "build": "npm run build --workspace @antorfr/golem-server && npm run build:web --workspace @antorfr/golem-web",
+    "test:plugins": "node --test \"plugins/*/test/*.test.js\""
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.1",

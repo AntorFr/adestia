@@ -90,9 +90,26 @@ export async function runSetups(
  * shadow the product's own route — and the failure would look like the chat
  * breaking, not like a plugin misbehaving.
  */
+/**
+ * What a plugin's API is told about the instance.
+ *
+ * Deliberately small, and deliberately paths rather than objects: a plugin
+ * needs to find files, not to reach the driver, the secret store or another
+ * plugin's data. Anything added here becomes part of the contract, so the
+ * question for each field is not "would this be handy" but "would a plugin
+ * that cannot do its job without it be a plugin worth having".
+ */
+export interface PluginApiContext {
+  readonly workspaceRoot: string
+  readonly dataDir: string
+  /** Whether scheduled turns are on — a plugin showing them must not lie. */
+  readonly scheduleEnabled: boolean
+}
+
 export async function mountPluginApis(
   app: FastifyInstance,
   plugins: readonly DiscoveredPlugin[],
+  context: PluginApiContext,
 ): Promise<readonly HostProblem[]> {
   const problems: HostProblem[] = []
 
@@ -113,9 +130,7 @@ export async function mountPluginApis(
 
       await app.register(register as Parameters<FastifyInstance['register']>[0], {
         prefix: `/api/plugin/${plugin.manifest.id}`,
-        // What a plugin's API is given: its own folder, so it can read files
-        // it shipped, and its id. Nothing that would let it reach the driver
-        // or another plugin's data.
+        ...context,
         pluginDir: plugin.dir,
         pluginId: plugin.manifest.id,
       })

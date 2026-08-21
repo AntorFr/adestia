@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "todo",
+  "kind": "app",
+  "description": "Tasks as pages: one base, curated lists by reference, dynamic lists by query.",
+  "contract": 1,
+  "view": "./web/app.js",
+  "styles": ["./web/app.css"],
+  "skills": ["./skills/todo/SKILL.md"],
+  "tile": { "label": "Todo", "icon": "☑" }
+}

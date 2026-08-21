@@ -531,7 +531,11 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   // Mounted before the static catch-all, so a plugin route always wins over
   // the shell's fallback; and after the auth hook, so it is gated like
   // everything else.
-  const apiProblems = await mountPluginApis(app, plugins)
+  const apiProblems = await mountPluginApis(app, plugins, {
+    workspaceRoot: config.workspace.root,
+    dataDir: config.dataDir,
+    scheduleEnabled: config.schedule.enabled,
+  })
 
   registerMcp(app, {
     config: config.mcp,

@@ -1,0 +1,23 @@
+.todo { display: flex; flex-direction: column; gap: var(--space-3); }
+.todo__head { display: flex; align-items: baseline; gap: var(--space-3); }
+.todo__head h2 { margin: 0; font-size: var(--text-lg); }
+.todo-group { margin: var(--space-4) 0 0; font-size: var(--text-sm); text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); }
+.todo-cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--space-3); }
+.todo-card { display: flex; flex-direction: column; gap: var(--space-1); width: 100%; text-align: left; padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface-raised); color: var(--text); font: inherit; cursor: pointer; }
+.todo-card:hover { border-color: var(--border-strong); }
+.todo-card__icon { font-size: 1.4rem; }
+.todo-card__name { font-weight: 500; }
+.todo-card__count { font-size: var(--text-sm); color: var(--text-muted); }
+.todo-bar { display: block; height: 3px; border-radius: 2px; background: var(--surface-sunken); overflow: hidden; }
+.todo-bar i { display: block; height: 100%; background: var(--accent); }
+.todo-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.todo-task { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2); border-radius: var(--radius-sm); }
+.todo-task:hover { background: var(--surface-sunken); }
+.todo-task--done .todo-task__title { text-decoration: line-through; color: var(--text-faint); }
+.todo-task__title { flex: 1; }
+.todo-chip { font-size: var(--text-sm); padding: 0 var(--space-2); border-radius: 999px; border: 1px solid var(--border); color: var(--text-muted); }
+.todo-chip--late { border-color: var(--danger); color: var(--danger); }
+.todo-domain h4 { margin: var(--space-3) 0 var(--space-1); font-size: var(--text-base); }
+.todo-muted { color: var(--text-faint); font-size: var(--text-sm); }
+.todo-problem { color: var(--danger); font-size: var(--text-sm); }
+.todo-back { align-self: flex-start; padding: var(--space-1) var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font: inherit; font-size: var(--text-sm); cursor: pointer; }

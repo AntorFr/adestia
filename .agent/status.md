@@ -1,11 +1,14 @@
 # Status — Golem
 > MàJ : 2026-08-21
 
-**État :** SPIKE 4 FAIT (le dernier). 27 tours réels, rafales 1→8 : recouvrement
-réel (78 % d'efficacité à 8), zéro échec, zéro avertissement de quota, cache du
-prompt partagé même en parallèle, ~300 Mo de RSS par CLI. `maxConcurrentTurns: 3`
-confirmé — contrainte mémoire, pas API. **530 tests verts, CI verte.**
+**État :** Le dernier kilomètre des plugins est fermé ET dogfoodé : deux
+plugins d'Alfred portés (`todo`, `planif`), écrits comme de vrais plugins
+externes, vérifiés en navigateur — cocher une tâche écrit dans le fichier.
+Index de frontmatter ajouté au moteur de contenu (le régime « dérivé »).
 
-**Reste :**
-- [ ] Sync git distante des instructions (module optionnel, v1.x par décision)
-- [ ] **Revue utilisateur de l'ensemble** — tout le périmètre v1 est livré
+**Parité Alfred — reste :**
+- [ ] `projets` — collections groupées par facette de frontmatter
+- [ ] `voyages` — plugin + API Google
+- [ ] `atelier` — ~1 600 lignes, plan de débit + SVG (gros morceau)
+- [ ] skin alfred (petit)
+- [ ] parcours (socle géo), scan (capacité), git (outil)

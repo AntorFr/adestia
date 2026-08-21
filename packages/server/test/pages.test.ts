@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import Fastify, { type FastifyInstance } from 'fastify'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { registerPages, revisionOf, safePagePath, titleOf } from '../src/pages.js'
+import { parseFrontmatter, registerPages, revisionOf, safePagePath, titleOf } from '../src/pages.js'
 
 let root: string
 let app: FastifyInstance
@@ -81,6 +81,66 @@ describe('listing', () => {
 
   it('is empty rather than failing when nothing exists yet', async () => {
     expect((await app.inject({ url: '/api/pages' })).json()).toEqual({ pages: [] })
+  })
+})
+
+describe('frontmatter parsing', () => {
+  it('reads scalars with their types', () => {
+    const fields = parseFrontmatter(
+      '---\ntitle: Le garage\ndone: true\npri: 2\ndue: 2026-08-21\nempty:\n---\n\nBody.\n',
+    )
+    expect(fields).toEqual({
+      title: 'Le garage',
+      done: true,
+      pri: 2,
+      // A date stays a string: as a number it is nonsense, as a Date it
+      // serializes differently than it was written.
+      due: '2026-08-21',
+      empty: '',
+    })
+  })
+
+  it('reads a flat list', () => {
+    expect(parseFrontmatter('---\ntags: [maison, atelier]\n---\n').tags).toEqual([
+      'maison',
+      'atelier',
+    ])
+  })
+
+  it('keeps a quoted number as text', () => {
+    expect(parseFrontmatter('---\ncode: "007"\n---\n').code).toBe('007')
+  })
+
+  it('ignores nested structures rather than half-reading them', () => {
+    // A field that looks queryable and is not costs more than an absent one.
+    const fields = parseFrontmatter('---\nmeta:\n  nested: true\ntop: yes\n---\n')
+    expect(fields).toEqual({ meta: '', top: 'yes' })
+  })
+
+  it('returns nothing for a page with no frontmatter', () => {
+    expect(parseFrontmatter('# Just a heading\n')).toEqual({})
+  })
+})
+
+describe('the index', () => {
+  it('returns every page with its fields, in one request', async () => {
+    // The DERIVED regime: a todo list, a project board and a faceted
+    // collection are all one query over this.
+    await write('t1.md', '---\ntype: tache\ndone: false\ndom: atelier\n---\n\n# Poncer\n')
+    await write('t2.md', '---\ntype: tache\ndone: true\n---\n\n# Fini\n')
+    await write('note.md', '# Just a note\n')
+
+    const { entries } = (await app.inject({ url: '/api/pages/index' })).json()
+    expect(entries).toHaveLength(3)
+    expect(entries.find((e: { path: string }) => e.path === 't1.md')).toMatchObject({
+      title: 'Poncer',
+      fields: { type: 'tache', done: false, dom: 'atelier' },
+    })
+    expect(entries.find((e: { path: string }) => e.path === 'note.md').fields).toEqual({})
+  })
+
+  it('is empty rather than failing on a fresh workspace', async () => {
+    expect((await app.inject({ url: '/api/pages/index' })).json()).toEqual({ entries: [] })
   })
 })
 

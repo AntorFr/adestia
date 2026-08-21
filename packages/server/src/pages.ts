@@ -62,6 +62,61 @@ export function safePagePath(root: string, requested: string): string | undefine
   return target
 }
 
+/**
+ * The frontmatter of every page, in one request.
+ *
+ * This is what the design calls the DERIVED regime: a view computed live from
+ * attributes, always current, costing no LLM call. A todo list, a project
+ * board and a faceted collection are all one query over this index — which is
+ * why it belongs to the content engine rather than to whichever plugin asks
+ * for it first.
+ *
+ * Values are parsed shallowly and left as strings, numbers, booleans or flat
+ * lists. Nested YAML is deliberately NOT walked: a query language over deep
+ * structures is a database, and the moment a page needs one it should be an
+ * app with its own store rather than a page pretending.
+ */
+export function parseFrontmatter(markdown: string): Record<string, unknown> {
+  const match = /^---\n([\s\S]*?)\n---/.exec(markdown)
+  if (!match?.[1]) return {}
+
+  const fields: Record<string, unknown> = {}
+  for (const line of match[1].split('\n')) {
+    // Only top-level keys: an indented line belongs to a nested structure this
+    // index does not model, and guessing at it would produce a field that
+    // looks queryable and is not.
+    if (/^\s/.test(line)) continue
+    const separator = line.indexOf(':')
+    if (separator <= 0) continue
+
+    const key = line.slice(0, separator).trim()
+    const raw = line.slice(separator + 1).trim()
+    if (key === '') continue
+    fields[key] = parseScalar(raw)
+  }
+  return fields
+}
+
+function parseScalar(raw: string): unknown {
+  if (raw === '') return ''
+  if (raw.startsWith('[') && raw.endsWith(']')) {
+    return raw
+      .slice(1, -1)
+      .split(',')
+      .map((item) => parseScalar(item.trim()))
+      .filter((item) => item !== '')
+  }
+  const unquoted = raw.replace(/^["']|["']$/g, '')
+  if (unquoted !== raw) return unquoted
+  if (raw === 'true') return true
+  if (raw === 'false') return false
+  if (raw === 'null' || raw === '~') return null
+  // Dates stay strings: `2026-08-21` as a number would be nonsense, and as a
+  // Date it would serialize differently than it was written.
+  if (/^-?\d+(\.\d+)?$/.test(raw)) return Number(raw)
+  return raw
+}
+
 /** The frontmatter title if there is one, else the file name. */
 export function titleOf(markdown: string, path: string): string {
   const match = /^---\n([\s\S]*?)\n---/.exec(markdown)
@@ -108,6 +163,20 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
       })
     }
     return { pages }
+  })
+
+  app.get('/api/pages/index', async () => {
+    const paths = await listMarkdown(root)
+    const entries: { path: string; title: string; fields: Record<string, unknown> }[] = []
+    for (const path of paths.sort()) {
+      const markdown = await readFile(join(root, path), 'utf8').catch(() => '')
+      entries.push({
+        path,
+        title: titleOf(markdown, path),
+        fields: parseFrontmatter(markdown),
+      })
+    }
+    return { entries }
   })
 
   app.get<{ Params: { '*': string } }>('/api/pages/*', async (request, reply) => {

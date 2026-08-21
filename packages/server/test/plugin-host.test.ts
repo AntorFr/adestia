@@ -99,7 +99,11 @@ describe('setup scripts', () => {
 describe('plugin APIs', () => {
   const build = async (plugins: readonly DiscoveredPlugin[]) => {
     const app = Fastify()
-    const problems = await mountPluginApis(app, plugins)
+    const problems = await mountPluginApis(app, plugins, {
+      workspaceRoot: join(root, 'workspace'),
+      dataDir: join(root, 'data'),
+      scheduleEnabled: false,
+    })
     await app.ready()
     return { app, problems }
   }
@@ -164,22 +168,30 @@ describe('plugin APIs', () => {
     expect(problems[0]?.reason).toContain('default-export a Fastify plugin')
   })
 
-  it('hands a plugin its own folder and id, and nothing more', async () => {
-    // Enough to read files it shipped; nothing that reaches the driver or
-    // another plugin's data.
+  it('hands a plugin paths, and nothing that reaches the engine', async () => {
+    // Enough to find files; nothing that reaches the driver, the secret store
+    // or another plugin's data.
     const p = await plugin('aware', { api: './api.mjs' })
     await writeApi(
       p.dir,
       `export default async function (app, opts) {
-         app.get('/who', async () => ({ id: opts.pluginId, hasDir: typeof opts.pluginDir === 'string' }))
+         app.get('/who', async () => ({
+           id: opts.pluginId,
+           keys: Object.keys(opts).filter((k) => k !== 'prefix').sort(),
+         }))
        }`,
     )
 
     const { app } = await build([p])
-    expect((await app.inject({ url: '/api/plugin/aware/who' })).json()).toEqual({
-      id: 'aware',
-      hasDir: true,
-    })
+    const body = (await app.inject({ url: '/api/plugin/aware/who' })).json()
+    expect(body.id).toBe('aware')
+    expect(body.keys).toEqual([
+      'dataDir',
+      'pluginDir',
+      'pluginId',
+      'scheduleEnabled',
+      'workspaceRoot',
+    ])
     await app.close()
   })
 })
