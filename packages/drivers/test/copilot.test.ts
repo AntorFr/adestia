@@ -8,6 +8,9 @@
  */
 
 import { EventEmitter } from 'node:events'
+import { mkdtempSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { PassThrough } from 'node:stream'
 
 import { describe, expect, it, vi } from 'vitest'
@@ -22,6 +25,7 @@ import {
   looksLikeToken,
 } from '../src/copilot-cli/auth.js'
 import { newTranslationState, parseLine, toolTargetOf, translate } from '../src/copilot-cli/events.js'
+import { harvestToken, startDeviceCodeLogin, type DeviceCodeLogin } from '../src/copilot-cli/login.js'
 
 describe('event parsing', () => {
   it('reads a JSONL line', () => {
@@ -155,6 +159,59 @@ describe('authentication', () => {
     expect(looksLikeToken('github_pat_0123456789abcdefghij')).toBe(true)
     expect(looksLikeToken('gho_0123456789abcdefghij')).toBe(true)
     expect(looksLikeToken('not-a-token')).toBe(false)
+  })
+})
+
+describe('the device-code login flow', () => {
+  /** A fake `copilot login` child with a writable stdin we can inspect. */
+  function fakeLogin() {
+    const stdin = new PassThrough()
+    const stdout = new PassThrough()
+    const stderr = new PassThrough()
+    const child = Object.assign(new EventEmitter(), { stdin, stdout, stderr, kill: vi.fn(() => true) })
+    let toStdin = ''
+    stdin.on('data', (chunk: Buffer) => {
+      toStdin += chunk.toString('utf8')
+    })
+    const spawnImpl = (() => child) as unknown as typeof import('node:child_process').spawn
+    return { child, stdout, stderr, spawnImpl, stdinText: () => toStdin }
+  }
+
+  it('announces the code the CLI prints, then harvests the stored token', async () => {
+    const home = mkdtempSync(join(tmpdir(), 'copilot-login-'))
+    writeFileSync(
+      join(home, 'config.json'),
+      '// managed automatically\n{"copilotTokens":{"https://github.com:me":"gho_harvested0123456789"}}',
+    )
+    const fake = fakeLogin()
+
+    // The listeners attach synchronously, so writing after the call is safe.
+    const flowPromise = startDeviceCodeLogin({ command: 'copilot', home, baseEnv: {}, spawnImpl: fake.spawnImpl })
+    fake.stdout.write('To authenticate, visit https://github.com/login/device and enter code ABCD-1234\n')
+    const flow = await flowPromise
+    expect(flow).toMatchObject({ userCode: 'ABCD-1234', verificationUri: 'https://github.com/login/device' })
+
+    // The keychain question is answered "y" so the token lands in plaintext.
+    fake.stdout.write('System keychain unavailable. Store token in plaintext config file? (y/N) ')
+    fake.child.emit('close', 0)
+    expect(await flow.completed).toBe('gho_harvested0123456789')
+    expect(fake.stdinText()).toBe('y\n')
+  })
+
+  it('rejects when the login exits without storing a token', async () => {
+    const home = mkdtempSync(join(tmpdir(), 'copilot-login-'))
+    const fake = fakeLogin()
+    const flowPromise = startDeviceCodeLogin({ command: 'copilot', home, baseEnv: {}, spawnImpl: fake.spawnImpl })
+    fake.stdout.write('enter code WXYZ-9999\n')
+    const flow = await flowPromise
+    fake.child.emit('close', 0) // exit 0 but no config.json written
+    await expect(flow.completed).rejects.toThrow(/no credential|stored no token/)
+  })
+
+  it('reads the token out of the commented config the CLI writes', async () => {
+    const home = mkdtempSync(join(tmpdir(), 'copilot-harvest-'))
+    writeFileSync(join(home, 'config.json'), '// a comment\n// another\n{"copilotTokens":{"x":"gho_abc"}}')
+    expect(await harvestToken(home)).toBe('gho_abc')
   })
 })
 
@@ -318,16 +375,58 @@ describe('driver', () => {
     expect((await turn)[0]).toMatchObject({ type: 'error', message: 'Segmentation fault' })
   })
 
-  it('refuses a classic PAT with the reason people get wrong twice', async () => {
-    const driver = new CopilotDriver({ home: '/x' })
-    expect(() => driver.completeAuth('s', 'ghp_0123456789abcdefghij')).toThrow(/classic PAT/)
+  it('arms through a relayed device code, harvesting the token the CLI stored', async () => {
+    const home = mkdtempSync(join(tmpdir(), 'copilot-arm-'))
+    const login: DeviceCodeLogin = {
+      verificationUri: 'https://github.com/login/device',
+      userCode: 'ABCD-1234',
+      completed: Promise.resolve('gho_0123456789abcdefghij'),
+      cancel: vi.fn(),
+    }
+    const driver = new CopilotDriver({ home, startLoginImpl: () => Promise.resolve(login) })
+
+    const prompt = await driver.beginAuth()
+    expect(prompt).toMatchObject({ mode: 'device-code', userCode: 'ABCD-1234' })
+
+    // The pasted input is ignored: a device code is approved in a browser, not
+    // copied back.
+    expect(await driver.completeAuth(prompt.sessionId, 'sentinel')).toEqual({
+      secret: 'gho_0123456789abcdefghij',
+    })
   })
 
-  it('accepts a fine-grained token', async () => {
-    const driver = new CopilotDriver({ home: '/x' })
-    expect(await driver.completeAuth('s', ' github_pat_0123456789abcdefghij ')).toEqual({
-      secret: 'github_pat_0123456789abcdefghij',
+  it('refuses a login that stored a credential Copilot would reject', async () => {
+    const home = mkdtempSync(join(tmpdir(), 'copilot-arm-'))
+    const driver = new CopilotDriver({
+      home,
+      startLoginImpl: () =>
+        Promise.resolve({
+          verificationUri: 'u',
+          userCode: 'c',
+          completed: Promise.resolve('ghp_classic0123456789'),
+          cancel: () => undefined,
+        }),
     })
+    await driver.beginAuth()
+    await expect(driver.completeAuth('s', 'x')).rejects.toThrow(/will not accept/)
+  })
+
+  it('cancels a device-code login in flight', async () => {
+    const home = mkdtempSync(join(tmpdir(), 'copilot-arm-'))
+    const cancel = vi.fn()
+    const driver = new CopilotDriver({
+      home,
+      startLoginImpl: () =>
+        Promise.resolve({
+          verificationUri: 'u',
+          userCode: 'c',
+          completed: new Promise<string>(() => undefined),
+          cancel,
+        }),
+    })
+    await driver.beginAuth()
+    await driver.cancelAuth('s')
+    expect(cancel).toHaveBeenCalled()
   })
 
   it('hands the token over through the variable it declares', async () => {
