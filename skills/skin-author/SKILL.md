@@ -182,6 +182,21 @@ protects shell classes, not yours. Do not render a status the instance cannot
 actually measure: a band asserting "all calm" without data is décor that
 lies.
 
+HOW you animate is entirely yours: CSS keyframes, canvas with
+requestAnimationFrame, masked SVG, a fetch loop. Two rules make that freedom
+safe — return a teardown for anything that must STOP (the shell empties the
+host regardless, but it cannot cancel your animation frame for you), and
+respect `prefers-reduced-motion` (a mascot that must not move is still a
+mascot).
+
+Two honest limits of today's contract, so you plan around them instead of
+discovering them: `console` is mounted ONCE with the boot-time instance
+summary — it may poll, but it is not notified when a turn starts or ends;
+and `busy` exists only WHILE a turn runs, so there is no "idle but alive"
+state in the thread. A skin needing either (a live HUD, a mascot that dozes
+between answers) needs the context extended — ask, rather than working
+around it.
+
 **There is no `routes` hook, deliberately.** A route is an app: it belongs to a
 plugin, gated by config, so it exists whichever skin is on. A skin that could
 add one would make a screen appear and disappear with the livery — and an app
