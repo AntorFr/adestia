@@ -21,6 +21,8 @@ export interface AuthPrompt {
   readonly authorizeUrl?: string
   readonly userCode?: string
   readonly inputLabel?: string
+  /** A statement the user must accept before the flow may finish. */
+  readonly consent?: string
 }
 
 type Phase =
@@ -61,6 +63,9 @@ export function Settings({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   const [supported, setSupported] = useState(true)
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' })
   const [code, setCode] = useState('')
+  // Never carried over from one flow to the next: consent is given for the
+  // login being run now, not remembered as a preference.
+  const [consented, setConsented] = useState(false)
 
   const refresh = useCallback(async () => {
     const response = await fetchImpl('/api/auth/driver')
@@ -80,6 +85,7 @@ export function Settings({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
 
   const begin = useCallback(async () => {
     setPhase({ kind: 'starting' })
+    setConsented(false)
     const response = await fetchImpl('/api/auth/driver/begin', { method: 'POST' })
     if (!response.ok) {
       const body = (await response.json().catch(() => ({}))) as { error?: string }
@@ -108,6 +114,7 @@ export function Settings({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
         return
       }
       setCode('')
+      setConsented(false)
       setPhase({ kind: 'idle' })
       await refresh()
     },
@@ -118,6 +125,7 @@ export function Settings({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
     async (prompt: AuthPrompt) => {
       setPhase({ kind: 'idle' })
       setCode('')
+      setConsented(false)
       await fetchImpl('/api/auth/driver/cancel', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -144,6 +152,10 @@ export function Settings({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   }
 
   const active = phase.kind === 'awaiting' || phase.kind === 'exchanging' ? phase.prompt : undefined
+  // A prompt that carries a statement cannot be finished until it is ticked:
+  // the driver reads "finished" as "the user agreed", so an untickable box
+  // would be consent nobody gave.
+  const consentPending = active?.consent !== undefined && !consented
 
   return (
     <section className="golem-settings">
@@ -190,6 +202,16 @@ export function Settings({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             )}
           </li>
           <li>
+            {active.consent !== undefined && (
+              <label className="golem-arming__consent">
+                <input
+                  type="checkbox"
+                  checked={consented}
+                  onChange={(event) => setConsented(event.target.checked)}
+                />
+                <span>{active.consent}</span>
+              </label>
+            )}
             {active.mode === 'device-code' ? (
               <div className="golem-settings__actions">
                 <button type="button" onClick={() => void cancel(active)}>
@@ -198,7 +220,7 @@ export function Settings({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
                 <button
                   type="button"
                   onClick={() => void complete(active)}
-                  disabled={phase.kind === 'exchanging'}
+                  disabled={consentPending || phase.kind === 'exchanging'}
                 >
                   {phase.kind === 'exchanging' ? 'Finishing…' : 'I have approved — finish'}
                 </button>
@@ -222,7 +244,7 @@ export function Settings({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
                   <button
                     type="button"
                     onClick={() => void complete(active)}
-                    disabled={code.trim() === '' || phase.kind === 'exchanging'}
+                    disabled={code.trim() === '' || consentPending || phase.kind === 'exchanging'}
                   >
                     {phase.kind === 'exchanging' ? 'Exchanging…' : 'Validate'}
                   </button>

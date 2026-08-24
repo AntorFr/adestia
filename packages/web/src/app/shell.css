@@ -621,6 +621,22 @@
   gap: var(--space-1);
 }
 
+/* Deliberately not muted: this is what the user is agreeing to, so it reads at
+   the same weight as the step it gates. */
+.golem-arming__consent {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  line-height: 1.45;
+  cursor: pointer;
+}
+
+.golem-arming__consent input {
+  margin-top: 0.2em;
+  flex: none;
+}
+
 .golem-arming__input {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);

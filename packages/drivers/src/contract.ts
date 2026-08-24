@@ -111,6 +111,15 @@ export interface AuthPrompt {
   readonly authorizeUrl?: string
   readonly userCode?: string
   readonly inputLabel?: string
+  /**
+   * A statement the user must accept before the flow may finish, rendered as a
+   * required checkbox. Generic on purpose: a driver whose CLI asks a human
+   * question mid-login (Copilot asks whether it may store the token
+   * unencrypted) needs somewhere to relay that question, and answering it in
+   * the driver's name would be deciding for the user. The front end shows the
+   * sentence and gates the button; it still never learns which CLI asked.
+   */
+  readonly consent?: string
   /** Seconds this prompt stays valid. */
   readonly ttl: number
 }

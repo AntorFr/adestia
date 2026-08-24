@@ -177,12 +177,19 @@ describe('the device-code login flow', () => {
     return { child, stdout, stderr, spawnImpl, stdinText: () => toStdin }
   }
 
-  it('announces the code the CLI prints, then harvests the stored token', async () => {
-    const home = mkdtempSync(join(tmpdir(), 'copilot-login-'))
+  /** Stdin is a stream: let its `data` events land before asserting on them. */
+  const flush = () => new Promise((resolve) => setImmediate(resolve))
+
+  function storedToken(home: string, token = 'gho_harvested0123456789'): void {
     writeFileSync(
       join(home, 'config.json'),
-      '// managed automatically\n{"copilotTokens":{"https://github.com:me":"gho_harvested0123456789"}}',
+      `// managed automatically\n{"copilotTokens":{"https://github.com:me":"${token}"}}`,
     )
+  }
+
+  it('announces the code the CLI prints, then harvests the stored token', async () => {
+    const home = mkdtempSync(join(tmpdir(), 'copilot-login-'))
+    storedToken(home)
     const fake = fakeLogin()
 
     // The listeners attach synchronously, so writing after the call is safe.
@@ -191,21 +198,107 @@ describe('the device-code login flow', () => {
     const flow = await flowPromise
     expect(flow).toMatchObject({ userCode: 'ABCD-1234', verificationUri: 'https://github.com/login/device' })
 
-    // The keychain question is answered "y" so the token lands in plaintext.
     fake.stdout.write('System keychain unavailable. Store token in plaintext config file? (y/N) ')
+    flow.consentToPlaintextStorage()
     fake.child.emit('close', 0)
     expect(await flow.completed).toBe('gho_harvested0123456789')
     expect(fake.stdinText()).toBe('y\n')
   })
 
-  it('rejects when the login exits without storing a token', async () => {
+  it('leaves the plaintext question unanswered until the user consents', async () => {
+    // The whole bug: the CLI blocks on a human question. Answering it in the
+    // user's name would write their OAuth token unencrypted without asking.
+    const home = mkdtempSync(join(tmpdir(), 'copilot-login-'))
+    const fake = fakeLogin()
+    const flowPromise = startDeviceCodeLogin({ command: 'copilot', home, baseEnv: {}, spawnImpl: fake.spawnImpl })
+    fake.stdout.write('enter code ABCD-1234\n')
+    const flow = await flowPromise
+
+    fake.stdout.write('Store token in plaintext config file? (y/N) ')
+    await flush()
+    expect(fake.stdinText()).toBe('')
+
+    flow.consentToPlaintextStorage()
+    await flush()
+    expect(fake.stdinText()).toBe('y\n')
+  })
+
+  it('consents blind, then says what is stuck when the question is worded otherwise', async () => {
+    // The question's exact wording is inferred, not captured. If it moves, the
+    // consent still goes out and the flow fails with a reason — rather than
+    // hanging silently until the device code expires, which is what shipped.
+    const home = mkdtempSync(join(tmpdir(), 'copilot-login-'))
+    const fake = fakeLogin()
+    const flowPromise = startDeviceCodeLogin({
+      command: 'copilot',
+      home,
+      baseEnv: {},
+      spawnImpl: fake.spawnImpl,
+      afterConsentMs: 10,
+    })
+    fake.stdout.write('enter code ABCD-1234\n')
+    const flow = await flowPromise
+
+    fake.stdout.write('Signed in successfully\nWhere should the token live? [1] vault [2] file ')
+    flow.consentToPlaintextStorage()
+    await flush()
+    expect(fake.stdinText()).toBe('y\n')
+    await expect(flow.completed).rejects.toThrow(/did not recognise/)
+    expect(fake.child.kill).toHaveBeenCalled()
+  })
+
+  it('names the system keychain when the login stored nothing readable', async () => {
+    // Exit 0, no question asked, no file: the token went to the OS credential
+    // store. "Stored no token" would read like the login failed; it did not.
     const home = mkdtempSync(join(tmpdir(), 'copilot-login-'))
     const fake = fakeLogin()
     const flowPromise = startDeviceCodeLogin({ command: 'copilot', home, baseEnv: {}, spawnImpl: fake.spawnImpl })
     fake.stdout.write('enter code WXYZ-9999\n')
     const flow = await flowPromise
+    fake.child.emit('close', 0)
+    await expect(flow.completed).rejects.toThrow(/system credential store/)
+  })
+
+  it('reports the plain failure when the question was asked and answered', async () => {
+    const home = mkdtempSync(join(tmpdir(), 'copilot-login-'))
+    const fake = fakeLogin()
+    const flowPromise = startDeviceCodeLogin({ command: 'copilot', home, baseEnv: {}, spawnImpl: fake.spawnImpl })
+    fake.stdout.write('enter code WXYZ-9999\n')
+    const flow = await flowPromise
+    fake.stdout.write('Store token in plaintext config file? (y/N) ')
+    flow.consentToPlaintextStorage()
     fake.child.emit('close', 0) // exit 0 but no config.json written
-    await expect(flow.completed).rejects.toThrow(/no credential|stored no token/)
+    await expect(flow.completed).rejects.toThrow(/stored no token/)
+  })
+
+  it('never lets a token ride out on an error message', async () => {
+    // These strings are rendered in the browser, which is never given a secret.
+    const home = mkdtempSync(join(tmpdir(), 'copilot-login-'))
+    const fake = fakeLogin()
+    const flowPromise = startDeviceCodeLogin({ command: 'copilot', home, baseEnv: {}, spawnImpl: fake.spawnImpl })
+    fake.stdout.write('enter code WXYZ-9999\n')
+    const flow = await flowPromise
+    fake.stderr.write('failed while writing gho_leakedsecret0123456789\n')
+    fake.child.emit('close', 1)
+    await expect(flow.completed).rejects.toThrow(/gh\*_\*\*\*/)
+  })
+
+  it('pins the binary for the login too', async () => {
+    // A login that lets the CLI self-update swaps out the version every other
+    // spawn in this driver is pinned to.
+    const home = mkdtempSync(join(tmpdir(), 'copilot-login-'))
+    const spawned: { env?: NodeJS.ProcessEnv }[] = []
+    const fake = fakeLogin()
+    const spy = ((_cmd: string, _args: string[], options: { env?: NodeJS.ProcessEnv }) => {
+      spawned.push(options)
+      return fake.child
+    }) as unknown as typeof import('node:child_process').spawn
+    const flowPromise = startDeviceCodeLogin({ command: 'copilot', home, baseEnv: {}, spawnImpl: spy })
+    fake.stdout.write('enter code ABCD-1234\n')
+    await flowPromise
+    expect(spawned[0]?.env).toMatchObject({ COPILOT_AUTO_UPDATE: 'false', COPILOT_HOME: home })
+    // CI would be read as "do not ask", and the question is the point.
+    expect(spawned[0]?.env?.CI).toBeUndefined()
   })
 
   it('reads the token out of the commented config the CLI writes', async () => {
@@ -377,22 +470,29 @@ describe('driver', () => {
 
   it('arms through a relayed device code, harvesting the token the CLI stored', async () => {
     const home = mkdtempSync(join(tmpdir(), 'copilot-arm-'))
+    const consent = vi.fn()
     const login: DeviceCodeLogin = {
       verificationUri: 'https://github.com/login/device',
       userCode: 'ABCD-1234',
       completed: Promise.resolve('gho_0123456789abcdefghij'),
+      consentToPlaintextStorage: consent,
       cancel: vi.fn(),
     }
     const driver = new CopilotDriver({ home, startLoginImpl: () => Promise.resolve(login) })
 
     const prompt = await driver.beginAuth()
     expect(prompt).toMatchObject({ mode: 'device-code', userCode: 'ABCD-1234' })
+    // The panel cannot finish before the user accepts this, and the CLI's
+    // question is not answered before they do.
+    expect(prompt.consent).toMatch(/unencrypted/)
+    expect(consent).not.toHaveBeenCalled()
 
     // The pasted input is ignored: a device code is approved in a browser, not
     // copied back.
     expect(await driver.completeAuth(prompt.sessionId, 'sentinel')).toEqual({
       secret: 'gho_0123456789abcdefghij',
     })
+    expect(consent).toHaveBeenCalled()
   })
 
   it('refuses a login that stored a credential Copilot would reject', async () => {
@@ -404,6 +504,7 @@ describe('driver', () => {
           verificationUri: 'u',
           userCode: 'c',
           completed: Promise.resolve('ghp_classic0123456789'),
+          consentToPlaintextStorage: () => undefined,
           cancel: () => undefined,
         }),
     })
@@ -421,6 +522,7 @@ describe('driver', () => {
           verificationUri: 'u',
           userCode: 'c',
           completed: new Promise<string>(() => undefined),
+          consentToPlaintextStorage: () => undefined,
           cancel,
         }),
     })

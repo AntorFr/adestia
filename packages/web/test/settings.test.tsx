@@ -94,6 +94,52 @@ describe('settings', () => {
     await waitFor(() => expect(screen.getByText('WXYZ-1234')).toBeTruthy())
   })
 
+  it('will not finish a flow until its consent statement is accepted', async () => {
+    // The driver reads "finished" as "the user agreed": Copilot's login stops
+    // on a question about storing the token unencrypted, and this box is the
+    // only place that answer comes from.
+    const { impl, calls } = armingFetch({
+      begin: {
+        sessionId: 's1',
+        mode: 'device-code',
+        authorizeUrl: 'https://github.com/login/device',
+        userCode: 'WXYZ-1234',
+        consent: 'Signing in writes the token unencrypted into a file Golem owns.',
+      },
+    })
+    render(<Settings fetchImpl={impl} />)
+    fireEvent.click(await screen.findByText('Arm a token'))
+
+    const finish = await screen.findByText('I have approved — finish')
+    expect(screen.getByText(/writes the token unencrypted/)).toBeTruthy()
+    expect(finish.closest('button')?.disabled).toBe(true)
+
+    fireEvent.click(screen.getByRole('checkbox'))
+    expect(finish.closest('button')?.disabled).toBe(false)
+    fireEvent.click(finish)
+    await waitFor(() => expect(calls).toContain('POST /api/auth/driver/complete'))
+  })
+
+  it('asks for consent again on the next flow', async () => {
+    // Consent is given for the login being run now, not stored as a setting.
+    const prompt = {
+      sessionId: 's1',
+      mode: 'device-code',
+      userCode: 'WXYZ-1234',
+      consent: 'Signing in writes the token unencrypted into a file Golem owns.',
+    }
+    const { impl } = armingFetch({ begin: prompt })
+    render(<Settings fetchImpl={impl} />)
+    fireEvent.click(await screen.findByText('Arm a token'))
+    fireEvent.click(await screen.findByRole('checkbox'))
+    fireEvent.click(screen.getByText('Cancel'))
+
+    fireEvent.click(await screen.findByText('Arm a token'))
+    const checkbox = (await screen.findByRole('checkbox')) as HTMLInputElement
+    expect(checkbox.checked).toBe(false)
+    expect(screen.getByText('I have approved — finish').closest('button')?.disabled).toBe(true)
+  })
+
   it('keeps Validate disabled until a code is typed', async () => {
     const { impl } = armingFetch({ begin: URL_PROMPT })
     render(<Settings fetchImpl={impl} />)

@@ -26,7 +26,7 @@ import type {
 } from '../contract.js'
 import { TOKEN_ENV_VAR, classifyAuthError, copilotEnv, explainAuthProblem, looksLikeToken } from './auth.js'
 import { newTranslationState, parseLine, translate } from './events.js'
-import { startDeviceCodeLogin, type DeviceCodeLogin } from './login.js'
+import { PLAINTEXT_CONSENT, startDeviceCodeLogin, type DeviceCodeLogin } from './login.js'
 
 export interface CopilotDriverOptions {
   /** The pinned binary. An absolute path in a container; `copilot` in dev. */
@@ -158,6 +158,7 @@ export class CopilotDriver implements Driver {
       authorizeUrl: login.verificationUri,
       userCode: login.userCode,
       inputLabel: 'Approve in your browser, then finish here',
+      consent: PLAINTEXT_CONSENT,
       ttl: 900,
     }
   }
@@ -169,6 +170,13 @@ export class CopilotDriver implements Driver {
     const pending = this.#pending
     if (!pending) throw new Error('no device-code login is in progress; start again')
     try {
+      // Finishing IS the consent. On a keychain-less machine the CLI blocks on
+      // "may I write this token in plaintext?", and until now nobody answered:
+      // the flow stalled until the device code expired, with no hint why. The
+      // answer is the user's to give — the panel will not enable this step
+      // until they have accepted the statement above — so it is released here,
+      // and nowhere else.
+      pending.login.consentToPlaintextStorage()
       const token = await pending.login.completed
       if (!looksLikeToken(token)) {
         throw new Error('the login stored a credential Copilot will not accept')

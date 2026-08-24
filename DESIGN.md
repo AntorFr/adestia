@@ -142,10 +142,17 @@ descriptor, version/capability probing at startup (never assume a flag set).
   source: managed|cli-native}`. "No managed token" is a legitimate state, not an
   error: a CLI living on its own credentials must work.
 - `beginAuth()` → interaction descriptor `{sessionId, mode, authorizeUrl?,
-  inputLabel?, ttl}` with `mode` an extensible enum (`url+code` for Claude
-  setup-token, `device-code` for Copilot login, `api-key`, `none`) — the front
-  renders the flow without knowing the CLI. `completeAuth(sessionId, secret)`,
-  `cancelAuth(sessionId)`.
+  inputLabel?, consent?, ttl}` with `mode` an extensible enum (`url+code` for
+  Claude setup-token, `device-code` for Copilot login, `api-key`, `none`) — the
+  front renders the flow without knowing the CLI. `completeAuth(sessionId,
+  secret)`, `cancelAuth(sessionId)`.
+- `consent` is a sentence the user must tick before the flow may finish, for
+  the case where the CLI itself stops on a human question mid-login (Copilot
+  asks whether it may store the token unencrypted, which is the only form Golem
+  can harvest). A driver answering that on the user's behalf would be deciding
+  for them; leaving it unanswered hangs the login until the code expires. So it
+  is relayed, generically: the front shows the sentence and gates the button,
+  and still never learns which CLI asked.
 - Secrets are persisted by the **core** (0600 file in data dir), redelivered via
   `env()`; the browser only ever sees state, never the token.
 - Expiry is **reactive first-class**: drivers emit `authInvalidated(reason)` on an
