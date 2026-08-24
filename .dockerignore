@@ -1,11 +1,18 @@
+# The build context carries sources and the SHIPPED extension folders; build
+# artifacts and local state stay out. `**/dist` matters: the image builds its
+# own — a stale local dist copied over a fresh build is a lie with a green CI.
 node_modules
 **/node_modules
 **/dist
 **/dist-web
 **/public/vendor
 **/.vendor-staging
+# Plugin build tooling: what ships is the pre-bundled web/ output, committed.
+plugins/*/build
+plugins/*/src
 spikes
 data
 workspace
 .git
+.github
 *.log

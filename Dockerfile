@@ -60,6 +60,15 @@ COPY --from=build /build/packages/server/bin ./packages/server/bin
 COPY --from=build /build/packages/web/package.json ./packages/web/
 COPY --from=build /build/packages/web/dist-web ./packages/web/dist-web
 
+# The extensions the product SHIPS — five plugins and three skins, loaded by
+# the same runtime path as any operator-mounted folder. Baked in because a
+# default install advertising "ships with todo, collections…" and starting
+# with none would be a box with a picture on it; an operator points
+# GOLEM_PLUGINS_DIR/GOLEM_SKINS_DIR elsewhere to replace them entirely.
+COPY plugins ./plugins
+COPY skins ./skins
+COPY skills ./skills
+
 # The workspace and the data directory are the two things worth keeping across
 # a container's life; both are meant to be volumes.
 RUN mkdir -p /data /workspace && chown -R node:node /data /workspace
@@ -74,6 +83,12 @@ USER node
 # loopback would make the port unreachable from outside it. The config's own
 # default stays 127.0.0.1, where it is the right one.
 ENV GOLEM_HOST=0.0.0.0
+# The two volumes above ARE the defaults in here: without these, the config's
+# relative `./workspace` lands on /app — read-only to the runtime user — and
+# the container dies on its first mkdir. Found by running the image, not by
+# reading it.
+ENV GOLEM_WORKSPACE=/workspace
+ENV GOLEM_DATA_DIR=/data
 EXPOSE 8730
 
 # Sizing, because it is not obvious from the image: each CONCURRENT agent turn
