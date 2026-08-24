@@ -10,7 +10,7 @@ import {
 } from './model.js'
 
 export default function view(api) {
-  return function Todo() {
+  function Todo() {
     const [model, setModel] = useState(null)
     const [openList, setOpenList] = useState(null)
     const [error, setError] = useState(null)
@@ -183,4 +183,30 @@ export default function view(api) {
       ),
     ])
   }
+
+  /**
+   * What the launcher tile says without opening the app.
+   *
+   * The same index the view reads, through the same model — so a tile can
+   * never disagree with the screen it opens. Overdue is the one figure worth
+   * colouring: it is the only one that is a request rather than a fact.
+   */
+  async function tileInfo() {
+    const response = await api.fetch('/api/pages/index')
+    if (!response.ok) return undefined
+    const { entries } = await response.json()
+    const { tasks } = buildModel(entries)
+    const open = Object.values(tasks).filter((task) => !task.done)
+    const today = new Date().toISOString().slice(0, 10)
+    const late = open.filter((task) => task.due && task.due < today).length
+
+    return {
+      chips: [
+        { text: `${open.length} to do` },
+        ...(late > 0 ? [{ text: `${late} late`, hot: true }] : []),
+      ],
+    }
+  }
+
+  return { component: Todo, tileInfo }
 }

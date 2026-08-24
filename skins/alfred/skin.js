@@ -15,5 +15,9 @@ export default function alfred() {
     placeholder: 'Écrire à Alfred… ou « ouvre mes projets »',
     busyLabel: 'Un instant',
     idleLabel: 'À votre service',
+    // The butler's address. The shell picks which of the two by the hour.
+    greetingDay: 'Bonjour, Monsieur.',
+    greetingEvening: 'Bonsoir, Monsieur.',
+    greetingAside: 'Que puis-je pour vous ?',
   }
 }

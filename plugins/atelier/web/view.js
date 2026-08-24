@@ -125,9 +125,33 @@ export default function view(api) {
     ])
   }
 
+  /**
+   * What the tile says before anyone opens the bench.
+   *
+   * Steps rather than workbooks, because a workshop's question is "how much is
+   * left to cut", not "how many files are there". Nothing is hot: a cutting
+   * plan is never overdue, it is simply unfinished.
+   */
+  async function tileInfo() {
+    const response = await api.fetch('/api/plugin/atelier/workbooks')
+    if (!response.ok) return undefined
+    const { workbooks } = await response.json()
+    if (workbooks.length === 0) return undefined
+
+    const done = workbooks.reduce((sum, book) => sum + (book.done ?? 0), 0)
+    const total = workbooks.reduce((sum, book) => sum + (book.total ?? 0), 0)
+    return {
+      subtitle: workbooks.length === 1 ? workbooks[0].titre : undefined,
+      chips: [
+        { text: `${workbooks.length} workbook${workbooks.length === 1 ? '' : 's'}` },
+        ...(total > 0 ? [{ text: `${done}/${total} steps` }] : []),
+      ],
+    }
+  }
+
   // Declared, and not merely reachable from a tile: the engine's second screen
   // is a workbook, addressed by its path under this route. The shell keeps the
   // view open for everything below `/atelier`, so a bench can bookmark the
   // exact workbook it is cutting and come back to it.
-  return { component: Atelier, route: '/atelier' }
+  return { component: Atelier, route: '/atelier', tileInfo }
 }

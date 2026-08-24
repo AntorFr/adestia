@@ -3,7 +3,7 @@ import { createElement as h, useCallback, useEffect, useState } from 'react'
 import { buildCollections, facetsOf, plural, prettify, statusOf } from './model.js'
 
 export default function view(api) {
-  return function Collections() {
+  function Collections() {
     const [model, setModel] = useState(null)
     const [error, setError] = useState(null)
     /** Where we are: nothing, a collection, or a facet inside one. */
@@ -139,4 +139,29 @@ export default function view(api) {
           ),
     ])
   }
+
+  /**
+   * What the tile says: how many ways in there are, and whether any of them
+   * is broken.
+   *
+   * A collection declaring no `of:` gathers nothing — it looks like an empty
+   * screen rather than like a mistake, so the tile is where it gets noticed.
+   */
+  async function tileInfo() {
+    const response = await api.fetch('/api/pages/index')
+    if (!response.ok) return undefined
+    const { entries } = await response.json()
+    const { collections } = buildCollections(entries)
+    if (collections.length === 0) return undefined
+
+    const broken = collections.filter((collection) => collection.problem).length
+    return {
+      chips: [
+        { text: plural(collections.length, 'collection') },
+        ...(broken > 0 ? [{ text: `${broken} incomplete`, hot: true }] : []),
+      ],
+    }
+  }
+
+  return { component: Collections, tileInfo }
 }

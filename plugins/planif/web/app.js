@@ -4,7 +4,7 @@ const fmt = (iso) =>
   iso ? new Date(iso).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' }) : '—'
 
 export default function view(api) {
-  return function Planif() {
+  function Planif() {
     const [state, setState] = useState({ loading: true, notes: [], enabled: false })
 
     useEffect(() => {
@@ -83,4 +83,33 @@ export default function view(api) {
       ),
     ])
   }
+
+  /**
+   * What the tile says about what runs on its own.
+   *
+   * The clock being OFF is the figure that matters most: an instance with
+   * eight active notes and a stopped clock does nothing at all, and that is
+   * exactly the state somebody needs told rather than discovered a week later.
+   */
+  async function tileInfo() {
+    const response = await api.fetch('/api/plugin/planif/notes')
+    if (!response.ok) return undefined
+    const { notes, enabled } = await response.json()
+
+    if (!enabled) {
+      return { chips: [{ text: 'clock off', hot: true }] }
+    }
+    if (notes.length === 0) return undefined
+
+    const active = notes.filter((note) => note.enabled && !note.problem).length
+    const broken = notes.filter((note) => note.problem).length
+    return {
+      chips: [
+        { text: `${active} active` },
+        ...(broken > 0 ? [{ text: `${broken} invalid`, hot: true }] : []),
+      ],
+    }
+  }
+
+  return { component: Planif, tileInfo }
 }
