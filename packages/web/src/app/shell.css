@@ -292,28 +292,136 @@
 .golem-canvas__brand { font-weight: 600; font-size: var(--text-lg); }
 .golem-canvas__driver { font-size: var(--text-sm); color: var(--text-faint); }
 
+/* The landing canvas -------------------------------------------------- */
+
+.golem-home__greeting {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+/* The quieter half of the greeting. One sentence, two weights: the address is
+   the body speaking, the question is it waiting. */
+.golem-home__aside { color: var(--text-faint); }
+
+.golem-home__context {
+  margin: var(--space-2) 0 0;
+  color: var(--text-muted);
+  font-size: var(--text-base);
+}
+
+.golem-home__ask {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  margin: var(--space-5) 0 var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.16s;
+}
+
+.golem-home__ask:hover { border-color: var(--accent); }
+.golem-home__ask-icon { opacity: 0.5; font-size: 1.1rem; }
+.golem-home__ask-text { color: var(--text-faint); }
+
 .golem-tiles {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: var(--space-3);
 }
 
+/* A tile is a card with a coloured edge, not a button with an emoji. The
+   colour is per-tile (`--tile-color`, declared by a section's index page or
+   left to the accent), which is what stops a mosaic of twelve from reading as
+   one grey grid. */
 .golem-tile {
+  position: relative;
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: var(--space-2);
+  width: 100%;
+  min-height: 140px;
   padding: var(--space-4);
+  text-align: left;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--surface-raised);
   box-shadow: var(--shadow);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.16s, border-color 0.16s;
 }
 
-.golem-tile__icon { font-size: 1.6rem; }
-.golem-tile__label { font-weight: 500; }
+.golem-tile::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--tile-color, var(--accent));
+}
+
+.golem-tile:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--tile-color, var(--accent)) 45%, var(--border));
+}
+
+.golem-tile:disabled { cursor: default; opacity: 0.6; }
+
+/* The icon sits on a tinted plate rather than floating: it is what makes a
+   mosaic scannable at a glance instead of a wall of same-sized cards. */
+.golem-tile__icon {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius);
+  font-size: 1.25rem;
+  background: color-mix(in srgb, var(--tile-color, var(--accent)) 14%, transparent);
+}
+
+.golem-tile__label { font-weight: 600; font-size: var(--text-lg); line-height: 1.15; }
+.golem-tile__subtitle { color: var(--text-muted); font-size: var(--text-sm); margin-top: -0.25rem; }
+
+.golem-tile__foot {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.golem-chip {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  padding: 0.1rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+}
+
+/* Exactly one kind of figure earns the colour: the one somebody has to act
+   on. A tile where every chip is hot has told the reader nothing. */
+.golem-chip--hot {
+  color: var(--tile-color, var(--accent));
+  border-color: color-mix(in srgb, var(--tile-color, var(--accent)) 40%, transparent);
+  background: color-mix(in srgb, var(--tile-color, var(--accent)) 10%, transparent);
+}
 
 .golem-empty { color: var(--text-muted); }
 .golem-empty__hint { font-size: var(--text-sm); color: var(--text-faint); }

@@ -24,7 +24,7 @@ const INSTANCE = {
 
 function apiFetch(
   instance: { status?: number; body?: unknown } = {},
-  pages?: { path: string; title: string }[],
+  pages?: { path: string; title: string; fields: Record<string, unknown> }[],
 ): typeof fetch {
   return ((url: string) => {
     if (String(url).startsWith('/api/instance')) {
@@ -38,7 +38,7 @@ function apiFetch(
     return Promise.resolve({
       ok: true,
       status: 200,
-      json: () => Promise.resolve({ pages: pages ?? [], conversations: [] }),
+      json: () => Promise.resolve({ entries: pages ?? [], conversations: [] }),
     } as unknown as Response)
   }) as unknown as typeof fetch
 }
@@ -49,30 +49,26 @@ describe('the landing canvas', () => {
     plugins: [{ id: 'todo', kind: 'app', base: '/plugins/todo/', tile: { label: 'Todo', icon: '\u2611' } }],
   }
 
-  it('puts the app tiles ABOVE the page list', async () => {
-    // A real workspace holds hundreds of pages. With the list first, every
-    // one of them sat between the user and the launcher — invisible on a
-    // six-page test instance, fatal on a 184-page one.
-    const pages = Array.from({ length: 40 }, (_, index) => ({
-      path: `notes/page-${index}.md`,
-      title: `Page ${index}`,
-    }))
+  it('never renders the whole corpus as a flat list on the landing canvas', async () => {
+    // The defect this exists for: at two hundred pages the home became a wall
+    // of links with no hierarchy, and the apps were unreachable without
+    // scrolling past all of it.
+    const pages = [
+      { path: 'notes/INDEX.md', title: 'Notes', fields: {} },
+      ...Array.from({ length: 40 }, (_, index) => ({
+        path: `notes/page-${index}.md`,
+        title: `Page ${index}`,
+        fields: {},
+      })),
+    ]
     const { container } = render(<App fetchImpl={apiFetch({ body: TILED }, pages)} />)
 
-    await waitFor(() => expect(container.querySelector('.golem-pages')).toBeTruthy())
-    const tiles = container.querySelector('.golem-tiles')
-    const list = container.querySelector('.golem-pages')
-    expect(tiles).toBeTruthy()
-    expect(
-      tiles!.compareDocumentPosition(list!) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy()
+    await waitFor(() => expect(container.querySelector('.golem-tiles')).toBeTruthy())
+    expect(container.querySelector('.golem-pages')).toBeNull()
+    // The forty pages are represented, as one section carrying its count.
+    expect(screen.getByText('40 pages')).toBeTruthy()
   })
 
-  it('announces the page list rather than letting it read as a wall of links', async () => {
-    const pages = [{ path: 'a.md', title: 'A' }]
-    render(<App fetchImpl={apiFetch({ body: TILED }, pages)} />)
-    await waitFor(() => expect(screen.getByText('Pages')).toBeTruthy())
-  })
 })
 
 describe('boot', () => {

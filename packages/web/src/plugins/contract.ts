@@ -46,6 +46,23 @@ export interface PluginApi {
   compose(text: string): void
 }
 
+/** One live figure on a plugin's tile. */
+export interface TileChip {
+  readonly text: string
+  /**
+   * Drawn in the tile's own colour rather than in the quiet default. For the
+   * one figure that is not merely informative — overdue, failing, waiting on
+   * somebody. A tile where everything is hot says nothing.
+   */
+  readonly hot?: boolean
+}
+
+/** What a plugin puts on its own tile, computed when the launcher renders. */
+export interface TileInfo {
+  readonly subtitle?: string
+  readonly chips?: readonly TileChip[]
+}
+
 /** A launcher view: one React component, optionally a route to reach it. */
 export interface ViewContribution {
   readonly component: ComponentType<Record<string, never>>
@@ -60,6 +77,16 @@ export interface ViewContribution {
    * state and cannot be bookmarked, shared, or survive a reload.
    */
   readonly route?: string
+
+  /**
+   * Live figures for this plugin's tile — "12 to do", "3 overdue".
+   *
+   * Asked for by the launcher, answered by the plugin, because only the
+   * plugin knows what counts. The shell will not wait on it: a tile renders
+   * immediately from the manifest and fills in when this resolves, so a slow
+   * or failing count costs a number, never the launcher.
+   */
+  tileInfo?(): TileInfo | Promise<TileInfo | undefined> | undefined
 }
 
 /**
@@ -123,10 +150,14 @@ export function narrowView(raw: unknown): { view?: ViewContribution; issue?: Con
     return { issue: { facet: 'view', reason: '`component` must be a React component' } }
   }
   const route = record['route']
+  const tileInfo = record['tileInfo']
   return {
     view: {
       component: record['component'] as ComponentType<Record<string, never>>,
       ...(typeof route === 'string' ? { route } : {}),
+      ...(typeof tileInfo === 'function'
+        ? { tileInfo: tileInfo as NonNullable<ViewContribution['tileInfo']> }
+        : {}),
     },
   }
 }

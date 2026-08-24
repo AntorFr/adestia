@@ -27,9 +27,29 @@ export interface Skin {
   readonly placeholder?: string
   readonly busyLabel?: string
   readonly idleLabel?: string
+  /**
+   * How this body greets you, before and after the evening turn.
+   *
+   * The SHELL owns the clock and the SKIN owns the words: a livery that only
+   * knew "Good evening" would say it at nine in the morning, and one that
+   * computed the hour itself would be a livery with logic in it.
+   */
+  readonly greetingDay?: string
+  readonly greetingEvening?: string
+  /** The quieter half — "What can I do for you?" */
+  readonly greetingAside?: string
 }
 
-const ALLOWED_FIELDS = ['brand', 'title', 'placeholder', 'busyLabel', 'idleLabel'] as const
+const ALLOWED_FIELDS = [
+  'brand',
+  'title',
+  'placeholder',
+  'busyLabel',
+  'idleLabel',
+  'greetingDay',
+  'greetingEvening',
+  'greetingAside',
+] as const
 
 export interface SkinLoad {
   readonly skin: Skin

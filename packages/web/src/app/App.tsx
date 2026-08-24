@@ -13,6 +13,9 @@ import { Editor, type PageDocument } from '../editor/Editor.js'
 import { Settings } from './Settings.js'
 import { browserSkinEnvironment, loadSkin, type Skin, type SkinDescriptor } from './skin.js'
 import { routeMatches, type PluginApi } from '../plugins/contract.js'
+import { Home } from './Home.js'
+import { Section } from './Section.js'
+import { sectionAt, type IndexEntry } from './sections.js'
 import { browserEnvironment, loadPlugins, type LoadedPlugin, type PluginDescriptor } from '../plugins/loader.js'
 import { useMobile } from './useMobile.js'
 import { useSplit } from './useSplit.js'
@@ -69,7 +72,9 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   const [fatal, setFatal] = useState<string | undefined>()
   const [needsLogin, setNeedsLogin] = useState<'signin' | 'refused' | undefined>()
   const [screen, setScreen] = useState<'chat' | 'canvas'>('chat')
-  const [pages, setPages] = useState<readonly { path: string; title: string }[]>([])
+  const [pages, setPages] = useState<readonly IndexEntry[]>([])
+  /** The section being browsed, if any. Home when undefined. */
+  const [section, setSection] = useState<string | undefined>(undefined)
   const [page, setPage] = useState<PageDocument | undefined>()
   /**
    * The editor is loaded on demand: ProseMirror and Milkdown weigh more than
@@ -107,6 +112,29 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
     window.addEventListener('hashchange', apply)
     return () => window.removeEventListener('hashchange', apply)
   }, [loaded])
+
+  /**
+   * Opens a page in the editor.
+   *
+   * The editor module is fetched ALONGSIDE the page rather than at boot: it is
+   * the heaviest thing the shell can load, and most sessions never open one.
+   */
+  const openPage = useCallback(
+    (path: string) => {
+      void (async () => {
+        const [response, editor] = await Promise.all([
+          fetchImpl(`/api/pages/${path}`),
+          import('../editor/milkdown.js'),
+        ])
+        if (!response.ok) return
+        // Stored via a thunk: passing a function to setState directly would
+        // have React call it as an updater.
+        setMount(() => editor.mountMilkdown)
+        setPage((await response.json()) as PageDocument)
+      })()
+    },
+    [fetchImpl],
+  )
 
   const openPlugin = useCallback((plugin: LoadedPlugin) => {
     if (plugin.view?.route) location.hash = plugin.view.route
@@ -192,9 +220,16 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           setFailures((current) => [...current, ...result.failures])
         }
 
-        const list = await fetchImpl('/api/pages')
+        // The INDEX rather than the plain list: sections are dressed by their
+        // index page's frontmatter, and only this endpoint carries it.
+        const list = await fetchImpl('/api/pages/index')
         if (list.ok && !cancelled) {
-          setPages(((await list.json()) as { pages: { path: string; title: string }[] }).pages)
+          // Checked rather than trusted: this JSON crosses a process boundary,
+          // and a shape the shell did not expect used to reach `sectionsOf`
+          // and throw mid-render — blanking the whole app over a payload that
+          // merely had no pages in it.
+          const body = (await list.json()) as { entries?: IndexEntry[] }
+          setPages(Array.isArray(body.entries) ? body.entries : [])
         }
       } catch (error) {
         // A shell that renders an empty page when the API is unreachable makes
@@ -362,76 +397,24 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             </button>
             <Editor page={page} fetchImpl={fetchImpl} {...(mount ? { mount } : {})} />
           </>
+        ) : section ? (
+          <Section
+            path={section}
+            title={sectionAt(pages, section)?.title ?? section}
+            entries={pages}
+            openSection={setSection}
+            openPage={openPage}
+            onBack={() => setSection(undefined)}
+          />
         ) : (
-          <>
-            {/* Tiles FIRST: the apps are this product's entry points, and a
-                workspace with a real corpus renders hundreds of page rows.
-                With the list above them, the launcher was reachable only by
-                scrolling past everything the agent had ever written — invisible
-                on a six-page test instance, fatal on a 184-page one. */}
-            {instance.plugins.length === 0 ? (
-              <section className="golem-empty">
-                <p>No app is active yet.</p>
-                <p className="golem-empty__hint">
-                  Drop a plugin under <code>plugins/</code> and name it in{' '}
-                  <code>golem.config.yaml</code>.
-                </p>
-              </section>
-            ) : (
-              <ul className="golem-tiles">
-                {loaded
-                  .filter((plugin) => plugin.tile)
-                  .map((plugin) => (
-                    <li key={plugin.id}>
-                      <button
-                        type="button"
-                        className="golem-tile"
-                        onClick={() => openPlugin(plugin)}
-                        // A tile whose plugin brought no view is not a button that
-                        // does nothing — it is a button that says why.
-                        disabled={!plugin.view}
-                        title={plugin.view ? undefined : 'This plugin ships no screen'}
-                      >
-                        <span className="golem-tile__icon">{plugin.tile?.icon ?? '▩'}</span>
-                        <span className="golem-tile__label">{plugin.tile?.label}</span>
-                      </button>
-                    </li>
-                  ))}
-              </ul>
-            )}
-
-            {pages.length > 0 && (
-              <>
-                <h2 className="golem-section">Pages</h2>
-              <ul className="golem-pages">
-                {pages.map((entry) => (
-                  <li key={entry.path}>
-                    <button
-                      type="button"
-                      className="golem-pages__link"
-                      onClick={() => {
-                        void (async () => {
-                          const [response, editor] = await Promise.all([
-                            fetchImpl(`/api/pages/${entry.path}`),
-                            import('../editor/milkdown.js'),
-                          ])
-                          if (!response.ok) return
-                          // Stored via a thunk: passing a function to setState
-                          // directly would have React call it as an updater.
-                          setMount(() => editor.mountMilkdown)
-                          setPage((await response.json()) as PageDocument)
-                        })()
-                      }}
-                    >
-                      {entry.title}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              </>
-            )}
-
-          </>
+          <Home
+            skin={skin}
+            plugins={loaded}
+            entries={pages}
+            openPlugin={openPlugin}
+            openSection={setSection}
+            focusComposer={() => composeRef.current?.('')}
+          />
         )}
       </main>
     </div>
