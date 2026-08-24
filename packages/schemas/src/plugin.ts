@@ -30,7 +30,22 @@ export type PluginKind = (typeof PLUGIN_KINDS)[number]
 /** A launcher tile. A view without one is legitimate — a detail screen. */
 export interface PluginTile {
   readonly label: string
+  /** An emoji, shown on the tile's plate. */
   readonly icon?: string
+  /**
+   * A drawn glyph from the SHELL's closed set (`ic:todo`, `ic:shop`), taking
+   * precedence over `icon`. Named rather than carried: a manifest is data,
+   * and raw SVG in one would make every plugin folder an injection surface
+   * for the launcher screen.
+   */
+  readonly glyph?: string
+  /**
+   * A named hue from the base table (`rouge`, `emeraude`…) — the tile's
+   * colour: its top bar, its plate, its hot chips. A name, never a hex, for
+   * the same reason pages declare `couleur:` by name — the skin decides what
+   * the name means.
+   */
+  readonly hue?: string
   readonly route?: string
 }
 

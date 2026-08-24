@@ -5,8 +5,20 @@
   "description": "Tasks as pages: one base, curated lists by reference, dynamic lists by query.",
   "contract": 1,
   "view": "./web/app.js",
-  "styles": ["./web/app.css"],
-  "skills": ["./skills/todo/SKILL.md"],
-  "types": ["tache", "liste"],
-  "tile": { "label": "Todo", "icon": "☑" }
+  "styles": [
+    "./web/app.css"
+  ],
+  "skills": [
+    "./skills/todo/SKILL.md"
+  ],
+  "types": [
+    "tache",
+    "liste"
+  ],
+  "tile": {
+    "label": "Todo",
+    "icon": "☑",
+    "glyph": "ic:todo",
+    "hue": "rouge"
+  }
 }

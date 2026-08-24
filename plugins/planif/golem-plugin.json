@@ -5,7 +5,13 @@
   "description": "Scheduled turns: what runs on its own, when, and whether the clock is even on.",
   "contract": 1,
   "view": "./web/app.js",
-  "styles": ["./web/app.css"],
+  "styles": [
+    "./web/app.css"
+  ],
   "api": "./api.mjs",
-  "tile": { "label": "Planifications", "icon": "⏱" }
+  "tile": {
+    "label": "Planifications",
+    "icon": "⏱",
+    "hue": "violet"
+  }
 }

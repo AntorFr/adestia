@@ -16,6 +16,7 @@ import { useEffect, useState } from 'react'
 import type { LoadedPlugin } from '../plugins/loader.js'
 import type { TileInfo } from '../plugins/contract.js'
 import type { Skin } from './skin.js'
+import { glyphOf } from './glyphs.js'
 import { sectionsOf, type IndexEntry, type SectionTile } from './sections.js'
 
 export interface HomeProps {
@@ -50,6 +51,8 @@ function hueStyle(hue?: string): Record<string, string> {
 
 function Tile(props: {
   readonly icon: string
+  /** `ic:` name resolved against the shell's closed glyph set. */
+  readonly glyph?: string
   readonly label: string
   readonly subtitle?: string
   readonly chips?: TileInfo['chips']
@@ -58,6 +61,7 @@ function Tile(props: {
   readonly title?: string
   readonly onOpen: () => void
 }) {
+  const drawn = glyphOf(props.glyph)
   return (
     <li>
       <button
@@ -68,9 +72,19 @@ function Tile(props: {
         disabled={props.disabled ?? false}
         {...(props.title ? { title: props.title } : {})}
       >
-        <span className="golem-tile__icon" aria-hidden="true">
-          {props.icon}
-        </span>
+        {/* The markup comes from the shell's own closed set, never from a
+            manifest — which is what makes the injection safe. */}
+        {drawn ? (
+          <span
+            className="golem-tile__icon"
+            aria-hidden="true"
+            dangerouslySetInnerHTML={{ __html: drawn }}
+          />
+        ) : (
+          <span className="golem-tile__icon" aria-hidden="true">
+            {props.icon}
+          </span>
+        )}
         <span className="golem-tile__label">{props.label}</span>
         {props.subtitle && <span className="golem-tile__subtitle">{props.subtitle}</span>}
         <span className="golem-tile__foot">
@@ -132,6 +146,17 @@ export function Home({
   const info = useTileInfo(plugins)
   const clock = now ?? new Date()
 
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'k' && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault()
+        focusComposer()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [focusComposer])
+
   const tiled = plugins.filter((plugin) => plugin.tile)
   const sections: readonly SectionTile[] = sectionsOf(entries)
 
@@ -165,10 +190,21 @@ export function Home({
           way in, and a second input that only looked like one would split the
           user's attention between two places that do different things. */}
       <button type="button" className="golem-home__ask" onClick={focusComposer}>
-        <span className="golem-home__ask-icon" aria-hidden="true">
-          ⌕
-        </span>
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <circle cx="11" cy="11" r="7" />
+          <path d="M21 21l-4-4" />
+        </svg>
+        {/* The block caret: invisible on most liveries, a beating amber slab
+            on the one whose whole identity is a terminal. CSS decides. */}
+        <span className="golem-home__ask-caret" aria-hidden="true" />
         <span className="golem-home__ask-text">{skin.placeholder ?? 'Ask…'}</span>
+        <kbd className="golem-home__ask-kbd">⌘K</kbd>
       </button>
 
       {tiled.length > 0 && (
@@ -179,6 +215,8 @@ export function Home({
               <Tile
                 key={plugin.id}
                 icon={plugin.tile?.icon ?? '▩'}
+                {...(plugin.tile?.glyph ? { glyph: plugin.tile.glyph } : {})}
+                {...(plugin.tile?.hue ? { hue: plugin.tile.hue } : {})}
                 label={plugin.tile?.label ?? plugin.id}
                 {...(info[plugin.id]?.subtitle
                   ? { subtitle: info[plugin.id]!.subtitle! }

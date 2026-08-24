@@ -292,79 +292,138 @@
 .golem-canvas__brand { font-weight: 600; font-size: var(--text-lg); }
 .golem-canvas__driver { font-size: var(--text-sm); color: var(--text-faint); }
 
-/* The landing canvas -------------------------------------------------- */
+/* The landing canvas --------------------------------------------------
+   The measurements below are the predecessor's, carried as-is: 33px serif
+   greeting, 210px tile columns, 146px tile height, 42px plates, 3px top bar,
+   11px mono chips. They were tuned over a year of daily use; re-deriving
+   them by eye produced the prototype this replaced. */
 
 .golem-home__greeting {
+  position: relative;
   margin: 0;
-  font-size: 2rem;
-  font-weight: 600;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
+  font: 600 33px/1.1 var(--font-title);
+  letter-spacing: var(--title-track);
 }
 
 /* The quieter half of the greeting. One sentence, two weights: the address is
    the body speaking, the question is it waiting. */
 .golem-home__aside { color: var(--text-faint); }
 
+/* The ghost tag — a skin's monogram in outline behind the greeting
+   (`--ghosttag: "SKIPPY"`). Empty, and therefore invisible, everywhere the
+   skin does not claim it. */
+.golem-home__greeting::before {
+  content: var(--ghosttag, "");
+  position: absolute;
+  top: -0.62em;
+  left: -0.04em;
+  z-index: -1;
+  font: 800 2.4em/1 var(--font-mono);
+  letter-spacing: -0.05em;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--border);
+  opacity: 0.55;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+}
+
 .golem-home__context {
-  margin: var(--space-2) 0 0;
+  margin: 7px 0 0;
   color: var(--text-muted);
-  font-size: var(--text-base);
+  font-size: 15px;
 }
 
 .golem-home__ask {
   display: flex;
-  align-items: center;
-  gap: var(--space-3);
   width: 100%;
-  margin: var(--space-5) 0 var(--space-2);
-  padding: var(--space-3) var(--space-4);
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0 8px;
+  padding: 14px 17px;
   text-align: left;
+  background: var(--surface-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: var(--surface-raised);
+  box-shadow: var(--shadow-sm);
   color: inherit;
   font: inherit;
   cursor: pointer;
-  transition: border-color 0.16s;
+  transition: border-color 0.15s;
 }
 
 .golem-home__ask:hover { border-color: var(--accent); }
-.golem-home__ask-icon { opacity: 0.5; font-size: 1.1rem; }
-.golem-home__ask-text { color: var(--text-faint); }
+.golem-home__ask svg { width: 18px; height: 18px; opacity: 0.5; flex: none; }
+
+/* The block caret: display is a TOKEN, so the terminal livery can turn it on
+   without a rule. Off, it costs nothing. */
+.golem-home__ask-caret {
+  display: var(--caret-display, none);
+  width: 8px;
+  height: 17px;
+  background: var(--accent);
+  animation: golem-caret 1.1s steps(1) infinite;
+}
+
+@keyframes golem-caret {
+  50% { opacity: 0; }
+}
+
+.golem-home__ask-text {
+  flex: 1;
+  color: var(--text-faint);
+  font-size: 15.5px;
+  font-family: var(--font-input, var(--font));
+}
+
+.golem-home__ask-kbd {
+  font: 600 11px var(--font-mono);
+  color: var(--text-faint);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 3px 7px;
+}
+
+/* Row labels: the apparatus voice — mono, uppercase, tracked. */
+.golem-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 32px 0 13px;
+  font: 600 var(--label-size) / 1 var(--font-mono);
+  letter-spacing: var(--label-track);
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
 
 .golem-tiles {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 14px;
 }
 
-/* A tile is a card with a coloured edge, not a button with an emoji. The
-   colour is per-tile (`--tile-color`, declared by a section's index page or
-   left to the accent), which is what stops a mosaic of twelve from reading as
-   one grey grid. */
 .golem-tile {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: var(--space-2);
+  gap: 11px;
   width: 100%;
-  min-height: 140px;
-  padding: var(--space-4);
+  min-height: 146px;
+  padding: 17px;
   text-align: left;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--surface-raised);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-sm);
   color: inherit;
   font: inherit;
   cursor: pointer;
   overflow: hidden;
-  transition: transform 0.16s, border-color 0.16s;
+  transition: transform 0.16s, box-shadow 0.16s, border-color 0.16s;
 }
 
 .golem-tile::before {
@@ -376,42 +435,53 @@
 }
 
 .golem-tile:hover:not(:disabled) {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
   border-color: color-mix(in srgb, var(--tile-color, var(--accent)) 45%, var(--border));
 }
 
 .golem-tile:disabled { cursor: default; opacity: 0.6; }
 
-/* The icon sits on a tinted plate rather than floating: it is what makes a
-   mosaic scannable at a glance instead of a wall of same-sized cards. */
+/* The plate — where the "app store" look lives. A saturated gradient of the
+   tile's colour under a white glyph by default; the knobs are tokens, so a
+   flat or bordered livery reshapes every plate without touching this rule. */
 .golem-tile__icon {
   display: grid;
   place-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: var(--radius);
-  font-size: 1.25rem;
-  background: color-mix(in srgb, var(--tile-color, var(--accent)) 14%, transparent);
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-ctl);
+  font-size: 20px;
+  box-shadow: var(--shadow-sm);
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--tile-color, var(--accent)) var(--plate-top), var(--plate-base)),
+    color-mix(in srgb, var(--tile-color, var(--accent)) var(--plate-mix), var(--plate-base))
+  );
+  color: color-mix(in srgb, var(--tile-color, var(--accent)) var(--plate-fg-tint), var(--plate-fg));
+  border: var(--plate-border-width) solid
+    color-mix(in srgb, var(--tile-color, var(--accent)) var(--plate-border-tint), transparent);
 }
 
-.golem-tile__label { font-weight: 600; font-size: var(--text-lg); line-height: 1.15; }
-.golem-tile__subtitle { color: var(--text-muted); font-size: var(--text-sm); margin-top: -0.25rem; }
+.golem-tile__icon svg { width: 22px; height: 22px; }
+
+.golem-tile__label { font-weight: 600; font-size: 17px; line-height: 1.1; }
+.golem-tile__subtitle { color: var(--text-muted); font-size: 13px; margin-top: -4px; }
 
 .golem-tile__foot {
   margin-top: auto;
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-1);
+  gap: 6px;
 }
 
 .golem-chip {
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  padding: 0.1rem 0.5rem;
+  font: 600 11px var(--font-mono);
+  padding: 2px 9px;
   border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--surface-sunken);
+  border-radius: var(--radius-pill);
+  background: var(--surface-soft);
   color: var(--text-muted);
 }
 

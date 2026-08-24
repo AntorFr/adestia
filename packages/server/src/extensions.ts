@@ -236,7 +236,13 @@ export interface PluginPayload {
   readonly blocks?: string
   readonly chrome?: string
   readonly styles?: readonly string[]
-  readonly tile?: { readonly label: string; readonly icon?: string; readonly route?: string }
+  readonly tile?: {
+    readonly label: string
+    readonly icon?: string
+    readonly glyph?: string
+    readonly hue?: string
+    readonly route?: string
+  }
 }
 
 export function frontendPayload(plugins: readonly DiscoveredPlugin[]): readonly PluginPayload[] {

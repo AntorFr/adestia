@@ -5,8 +5,17 @@
   "description": "The workbench: cutting diagrams, piece views and assembly, read from a workbook.json a project carries in its own assets.",
   "contract": 1,
   "view": "./web/view.js",
-  "styles": ["./web/atelier.css"],
+  "styles": [
+    "./web/atelier.css"
+  ],
   "api": "./api.mjs",
-  "skills": ["./skills/workbook-json/SKILL.md"],
-  "tile": { "label": "L'Atelier", "icon": "🪚" }
+  "skills": [
+    "./skills/workbook-json/SKILL.md"
+  ],
+  "tile": {
+    "label": "L'Atelier",
+    "icon": "🪚",
+    "glyph": "ic:shop",
+    "hue": "emeraude"
+  }
 }

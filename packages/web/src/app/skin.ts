@@ -38,6 +38,15 @@ export interface Skin {
   readonly greetingEvening?: string
   /** The quieter half — "What can I do for you?" */
   readonly greetingAside?: string
+  /**
+   * SVG markup for the header crest, drawn in `currentColor`.
+   *
+   * Markup rather than a file path because it is inlined where it must
+   * inherit the rail's text colour — an <img> cannot. It comes from the skin
+   * module, which already ships arbitrary JavaScript; an SVG string adds no
+   * reach it did not have.
+   */
+  readonly crest?: string
 }
 
 const ALLOWED_FIELDS = [
@@ -49,6 +58,7 @@ const ALLOWED_FIELDS = [
   'greetingDay',
   'greetingEvening',
   'greetingAside',
+  'crest',
 ] as const
 
 export interface SkinLoad {

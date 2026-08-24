@@ -19,5 +19,11 @@ export default function alfred() {
     greetingDay: 'Bonjour, Monsieur.',
     greetingEvening: 'Bonsoir, Monsieur.',
     greetingAside: 'Que puis-je pour vous ?',
+    // The crest: an open chevron, in currentColor so it follows the rail's
+    // own colour through light and dark without a line of CSS.
+    crest:
+      '<svg viewBox="0 0 100 100" fill="currentColor">' +
+      '<path d="M50 53 L27 39 v27 z M50 53 L73 39 v27 z"/>' +
+      '<circle cx="50" cy="53" r="7"/></svg>',
   }
 }

@@ -4,7 +4,16 @@
  * The contract, inherited from the predecessor because it was right: a skin is
  * a DECLARATION OF TOKENS, never a structural rule scoped by agent. That is
  * what lets several personalities share one shell without the layouts
- * diverging, and it is enforced by lint, not by good intentions.
+ * diverging.
+ *
+ * The VALUES are inherited from the predecessor too, and that is a decision,
+ * not laziness (2026-08-24): its base sheet was refined over a year of daily
+ * use — a cool paper canvas, white cards, three shadow depths, a serif voice
+ * for titles and a mono voice for labels, saturated icon plates. Golem's first
+ * palette was invented in an afternoon and looked it. A product whose default
+ * skin is a prototype does not have a default skin; it has an excuse. The
+ * predecessor's own doctrine transfers with the values: the base sheet IS the
+ * default body's livery, and every other skin departs from it.
  *
  * Everything below is defined on bare `:root` first, so a viewer with no
  * preference and no skin still gets a complete palette.
@@ -13,36 +22,72 @@
 :root {
   color-scheme: light dark;
 
-  /* Surfaces, from the page up to what floats above it. */
-  --surface: #fbfbfa;
+  /* Surfaces, from the page up to what floats above it. `--surface` is the
+     canvas itself — deliberately NOT white, so white cards read as raised
+     without borrowing their weight from shadows alone. */
+  --surface: #eef1f6;
   --surface-raised: #ffffff;
-  --surface-sunken: #f1f0ee;
-  --border: #e3e1dd;
-  --border-strong: #c9c6c0;
+  --surface-soft: #f4f6fa;
+  --surface-sunken: #e5e9f0;
+  --border: #e1e6ee;
+  --border-strong: #d0d7e2;
 
   /* Text, three weights of presence. */
-  --text: #1f1d1a;
-  --text-muted: #6b665e;
-  --text-faint: #97918a;
+  --text: #151a22;
+  --text-muted: #586274;
+  --text-faint: #98a2b2;
 
-  --accent: #b45309;
-  --accent-text: #ffffff;
-  --accent-quiet: #fef3e2;
+  --accent: #0e8fa6;
+  --accent-text: #04222a;
+  --accent-quiet: #0e8fa614;
 
-  --danger: #b42318;
-  --warning: #b45309;
-  --success: #15803d;
+  --danger: #d24b3e;
+  --warning: #b4771b;
+  --success: #2e9e63;
+
+  /* The named hues. A page says `couleur: turquoise`; the shell turns that
+     into `--golem-hue-turquoise`; this table says what it means. Names in
+     pages, values here — a workspace that hardcoded a hex would be a
+     workspace that looks wrong under the next livery. */
+  --golem-hue-rouge: #d24b3e;
+  --golem-hue-orange: #db7a45;
+  --golem-hue-ambre: #b8890f;
+  --golem-hue-vert: #4fb05c;
+  --golem-hue-emeraude: #1e9e86;
+  --golem-hue-turquoise: #33b4a8;
+  --golem-hue-bleu: #4f92d8;
+  --golem-hue-indigo: #4c6fe0;
+  --golem-hue-violet: #7a5bd1;
+  --golem-hue-rose: #c255a6;
+  --golem-hue-gris: #7e8aa6;
+  --golem-hue-ardoise: #5b6473;
+
+  /* Icon plates — the "app store" look. A tile's icon sits on a saturated
+     gradient of the tile's colour with a white glyph, not on a pale tint.
+     Skins reshape plates by moving these knobs (a flat skin sets the mix to
+     100%, a bordered one raises the border width) without touching a rule. */
+  --plate-top: 100%;
+  --plate-mix: 62%;
+  --plate-base: #000;
+  --plate-fg: #fff;
+  --plate-fg-tint: 0%;
+  --plate-border-width: 0px;
+  --plate-border-tint: 0%;
 
   /* Chat bubbles: the user speaks on accent, the agent on a bordered surface. */
   --bubble-user-bg: var(--accent);
   --bubble-user-text: var(--accent-text);
-  --bubble-agent-bg: var(--surface-raised);
+  --bubble-agent-bg: var(--surface-soft);
   --bubble-agent-text: var(--text);
 
-  --radius-sm: 4px;
-  --radius: 8px;
-  --radius-lg: 14px;
-  --radius-bubble: 14px;
+  --radius-micro: 4px;
+  --radius-sm: 7px;
+  --radius-ctl: 11px;
+  --radius: 13px;
+  --radius-lg: 17px;
+  --radius-pill: 20px;
+  --radius-round: 50%;
+  --radius-bubble: 15px;
 
   --space-1: 4px;
   --space-2: 8px;
@@ -51,13 +96,27 @@
   --space-5: 24px;
   --space-6: 32px;
 
-  --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+  /* Three voices: system for reading, serif for address, mono for apparatus
+     (labels, chips, counts). The serif is what makes a greeting a greeting
+     rather than a heading. */
+  --font: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-title: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
   --text-sm: 0.8125rem;
   --text-base: 0.9375rem;
   --text-lg: 1.125rem;
+  --label-size: 11px;
+  --label-track: 0.16em;
+  --title-track: -0.01em;
 
-  --shadow: 0 1px 2px rgb(0 0 0 / 6%), 0 4px 12px rgb(0 0 0 / 4%);
+  /* Three depths, and the difference matters: resting cards carry the small
+     one, the default dresses menus and popovers, the large is reserved for
+     what the pointer is about to pick up. */
+  --shadow-sm: 0 1px 2px rgb(20 28 45 / 6%);
+  --shadow: 0 4px 12px rgb(20 28 45 / 7%), 0 1px 3px rgb(20 28 45 / 6%);
+  --shadow-lg: 0 14px 36px rgb(20 28 45 / 13%);
+
+  --scrim: rgb(8 11 18 / 55%);
 
   /* The split: chat rail against the apps canvas, resizable and persisted. */
   --rail: 33.333%;
@@ -69,46 +128,73 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --surface: #17161a;
-    --surface-raised: #1f1e23;
-    --surface-sunken: #121114;
-    --border: #322f38;
-    --border-strong: #47434f;
+    --surface: #0b0d12;
+    --surface-raised: #141821;
+    --surface-soft: #1a1f29;
+    --surface-sunken: #07090d;
+    --border: #232a37;
+    --border-strong: #313a4a;
 
-    --text: #ece9f0;
-    --text-muted: #a09aa8;
-    --text-faint: #6f6a78;
+    --text: #e9ecf3;
+    --text-muted: #98a2b3;
+    --text-faint: #59616f;
 
-    --accent: #f0a34a;
-    --accent-text: #1a1206;
-    --accent-quiet: #2b2115;
+    --accent: #4ecad8;
+    --accent-quiet: #4ecad81c;
 
-    --danger: #f97066;
-    --warning: #f0a34a;
-    --success: #4ade80;
+    --danger: #ea6a5c;
+    --warning: #e0a64f;
+    --success: #5cbe83;
 
-    --bubble-agent-bg: var(--surface-raised);
-    --shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 4px 16px rgb(0 0 0 / 30%);
+    --golem-hue-rouge: #ea6a5c;
+    --golem-hue-orange: #e08a55;
+    --golem-hue-ambre: #e4c25e;
+    --golem-hue-vert: #5cc06a;
+    --golem-hue-emeraude: #3fc7a8;
+    --golem-hue-turquoise: #4fc7c0;
+    --golem-hue-bleu: #5fa2e8;
+    --golem-hue-indigo: #7b96f2;
+    --golem-hue-violet: #a78bf0;
+    --golem-hue-rose: #de86c6;
+    --golem-hue-gris: #96a0b2;
+    --golem-hue-ardoise: #8b95a6;
+
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
+    --shadow: 0 6px 18px rgb(0 0 0 / 42%), 0 1px 3px rgb(0 0 0 / 30%);
+    --shadow-lg: 0 18px 46px rgb(0 0 0 / 55%);
   }
 }
 
 :root[data-theme='dark'] {
-  --surface: #17161a;
-  --surface-raised: #1f1e23;
-  --surface-sunken: #121114;
-  --border: #322f38;
-  --border-strong: #47434f;
-  --text: #ece9f0;
-  --text-muted: #a09aa8;
-  --text-faint: #6f6a78;
-  --accent: #f0a34a;
-  --accent-text: #1a1206;
-  --accent-quiet: #2b2115;
-  --danger: #f97066;
-  --warning: #f0a34a;
-  --success: #4ade80;
-  --bubble-agent-bg: var(--surface-raised);
-  --shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 4px 16px rgb(0 0 0 / 30%);
+  --surface: #0b0d12;
+  --surface-raised: #141821;
+  --surface-soft: #1a1f29;
+  --surface-sunken: #07090d;
+  --border: #232a37;
+  --border-strong: #313a4a;
+  --text: #e9ecf3;
+  --text-muted: #98a2b3;
+  --text-faint: #59616f;
+  --accent: #4ecad8;
+  --accent-quiet: #4ecad81c;
+  --danger: #ea6a5c;
+  --warning: #e0a64f;
+  --success: #5cbe83;
+  --golem-hue-rouge: #ea6a5c;
+  --golem-hue-orange: #e08a55;
+  --golem-hue-ambre: #e4c25e;
+  --golem-hue-vert: #5cc06a;
+  --golem-hue-emeraude: #3fc7a8;
+  --golem-hue-turquoise: #4fc7c0;
+  --golem-hue-bleu: #5fa2e8;
+  --golem-hue-indigo: #7b96f2;
+  --golem-hue-violet: #a78bf0;
+  --golem-hue-rose: #de86c6;
+  --golem-hue-gris: #96a0b2;
+  --golem-hue-ardoise: #8b95a6;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
+  --shadow: 0 6px 18px rgb(0 0 0 / 42%), 0 1px 3px rgb(0 0 0 / 30%);
+  --shadow-lg: 0 18px 46px rgb(0 0 0 / 55%);
 }
 
 *,
