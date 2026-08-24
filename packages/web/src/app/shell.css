@@ -714,3 +714,15 @@
   color: var(--text-muted) !important;
   font-size: var(--text-base) !important;
 }
+
+/* Section heading on the landing canvas. The pages list sits BELOW the app
+   tiles and needs to announce itself as a second thing rather than reading as
+   an unexplained wall of links. */
+.golem-section {
+  margin: var(--space-5) 0 var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}

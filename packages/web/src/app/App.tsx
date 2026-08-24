@@ -364,7 +364,45 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           </>
         ) : (
           <>
+            {/* Tiles FIRST: the apps are this product's entry points, and a
+                workspace with a real corpus renders hundreds of page rows.
+                With the list above them, the launcher was reachable only by
+                scrolling past everything the agent had ever written — invisible
+                on a six-page test instance, fatal on a 184-page one. */}
+            {instance.plugins.length === 0 ? (
+              <section className="golem-empty">
+                <p>No app is active yet.</p>
+                <p className="golem-empty__hint">
+                  Drop a plugin under <code>plugins/</code> and name it in{' '}
+                  <code>golem.config.yaml</code>.
+                </p>
+              </section>
+            ) : (
+              <ul className="golem-tiles">
+                {loaded
+                  .filter((plugin) => plugin.tile)
+                  .map((plugin) => (
+                    <li key={plugin.id}>
+                      <button
+                        type="button"
+                        className="golem-tile"
+                        onClick={() => openPlugin(plugin)}
+                        // A tile whose plugin brought no view is not a button that
+                        // does nothing — it is a button that says why.
+                        disabled={!plugin.view}
+                        title={plugin.view ? undefined : 'This plugin ships no screen'}
+                      >
+                        <span className="golem-tile__icon">{plugin.tile?.icon ?? '▩'}</span>
+                        <span className="golem-tile__label">{plugin.tile?.label}</span>
+                      </button>
+                    </li>
+                  ))}
+              </ul>
+            )}
+
             {pages.length > 0 && (
+              <>
+                <h2 className="golem-section">Pages</h2>
               <ul className="golem-pages">
                 {pages.map((entry) => (
                   <li key={entry.path}>
@@ -390,38 +428,9 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
                   </li>
                 ))}
               </ul>
+              </>
             )}
 
-        {instance.plugins.length === 0 ? (
-          <section className="golem-empty">
-            <p>No app is active yet.</p>
-            <p className="golem-empty__hint">
-              Drop a plugin under <code>plugins/</code> and name it in{' '}
-              <code>golem.config.yaml</code>.
-            </p>
-          </section>
-        ) : (
-          <ul className="golem-tiles">
-            {loaded
-              .filter((plugin) => plugin.tile)
-              .map((plugin) => (
-                <li key={plugin.id}>
-                  <button
-                    type="button"
-                    className="golem-tile"
-                    onClick={() => openPlugin(plugin)}
-                    // A tile whose plugin brought no view is not a button that
-                    // does nothing — it is a button that says why.
-                    disabled={!plugin.view}
-                    title={plugin.view ? undefined : 'This plugin ships no screen'}
-                  >
-                    <span className="golem-tile__icon">{plugin.tile?.icon ?? '▩'}</span>
-                    <span className="golem-tile__label">{plugin.tile?.label}</span>
-                  </button>
-                </li>
-              ))}
-          </ul>
-        )}
           </>
         )}
       </main>

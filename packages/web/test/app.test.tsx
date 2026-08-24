@@ -22,7 +22,10 @@ const INSTANCE = {
   turns: { max: 3, running: 0 },
 }
 
-function apiFetch(instance: { status?: number; body?: unknown } = {}): typeof fetch {
+function apiFetch(
+  instance: { status?: number; body?: unknown } = {},
+  pages?: { path: string; title: string }[],
+): typeof fetch {
   return ((url: string) => {
     if (String(url).startsWith('/api/instance')) {
       const status = instance.status ?? 200
@@ -35,10 +38,42 @@ function apiFetch(instance: { status?: number; body?: unknown } = {}): typeof fe
     return Promise.resolve({
       ok: true,
       status: 200,
-      json: () => Promise.resolve({ pages: [], conversations: [] }),
+      json: () => Promise.resolve({ pages: pages ?? [], conversations: [] }),
     } as unknown as Response)
   }) as unknown as typeof fetch
 }
+
+describe('the landing canvas', () => {
+  const TILED = {
+    ...INSTANCE,
+    plugins: [{ id: 'todo', kind: 'app', base: '/plugins/todo/', tile: { label: 'Todo', icon: '\u2611' } }],
+  }
+
+  it('puts the app tiles ABOVE the page list', async () => {
+    // A real workspace holds hundreds of pages. With the list first, every
+    // one of them sat between the user and the launcher — invisible on a
+    // six-page test instance, fatal on a 184-page one.
+    const pages = Array.from({ length: 40 }, (_, index) => ({
+      path: `notes/page-${index}.md`,
+      title: `Page ${index}`,
+    }))
+    const { container } = render(<App fetchImpl={apiFetch({ body: TILED }, pages)} />)
+
+    await waitFor(() => expect(container.querySelector('.golem-pages')).toBeTruthy())
+    const tiles = container.querySelector('.golem-tiles')
+    const list = container.querySelector('.golem-pages')
+    expect(tiles).toBeTruthy()
+    expect(
+      tiles!.compareDocumentPosition(list!) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it('announces the page list rather than letting it read as a wall of links', async () => {
+    const pages = [{ path: 'a.md', title: 'A' }]
+    render(<App fetchImpl={apiFetch({ body: TILED }, pages)} />)
+    await waitFor(() => expect(screen.getByText('Pages')).toBeTruthy())
+  })
+})
 
 describe('boot', () => {
   it('renders the shell once the instance answers', async () => {
