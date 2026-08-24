@@ -85,6 +85,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   const [mount, setMount] = useState<EditorMount | undefined>()
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [skin, setSkin] = useState<Skin>({})
+  const [skinScheme, setSkinScheme] = useState<'light' | 'dark' | undefined>(undefined)
   const [loaded, setLoaded] = useState<readonly LoadedPlugin[]>([])
   /** The plugin view currently filling the canvas, by id. */
   const [openApp, setOpenApp] = useState<string | undefined>()
@@ -135,6 +136,35 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
     },
     [fetchImpl],
   )
+
+  /**
+   * The viewer's theme choice: '' follows the system (and the skin's own
+   * `scheme`), 'light'/'dark' override both. Reapplied when the skin loads,
+   * because the skin loader also writes `data-theme` and the LAST writer
+   * wins — a person's explicit choice must be that writer.
+   */
+  const [themePref, setThemePref] = useState<string>(() => {
+    try {
+      return localStorage.getItem('golem.theme') ?? ''
+    } catch {
+      return ''
+    }
+  })
+
+  useEffect(() => {
+    try {
+      if (themePref) localStorage.setItem('golem.theme', themePref)
+      else localStorage.removeItem('golem.theme')
+    } catch {
+      /* a preference that cannot persist still applies to this visit */
+    }
+    if (themePref) document.documentElement.dataset['theme'] = themePref
+    else if (!skinScheme) delete document.documentElement.dataset['theme']
+  }, [themePref, skinScheme])
+
+  const cycleTheme = useCallback(() => {
+    setThemePref((current) => (current === '' ? 'light' : current === 'light' ? 'dark' : ''))
+  }, [])
 
   const openPlugin = useCallback((plugin: LoadedPlugin) => {
     if (plugin.view?.route) location.hash = plugin.view.route
@@ -189,6 +219,11 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
         const dressed = await loadSkin(info.skin, browserSkinEnvironment())
         if (!cancelled) {
           setSkin(dressed.skin)
+          setSkinScheme(
+            info.skin.scheme === 'light' || info.skin.scheme === 'dark'
+              ? info.skin.scheme
+              : undefined,
+          )
           if (dressed.skin.title) document.title = dressed.skin.title
           // Off-contract fields are reported where the plugin problems are,
           // because a silently ignored field is an hour spent wondering why
@@ -305,6 +340,8 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
         }}
         extraButtons={composerButtons}
         {...(skin.placeholder ? { placeholder: skin.placeholder } : {})}
+        {...(skin.brand ? { brand: skin.brand } : {})}
+        {...(skin.crest ? { crest: skin.crest } : {})}
         {...(mobile ? { onOpenCanvas: () => setScreen('canvas') } : {})}
       />
       <div className="golem-gutter" {...split.gutterProps} />
@@ -322,14 +359,50 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
               ‹ Chat
             </button>
           )}
-          <span className="golem-canvas__brand">{skin.brand ?? 'Golem'}</span>
-          <span className="golem-canvas__spacer" />
+          {/* Where you are, in the apparatus voice. The brand moved to the
+              rail: this side of the gutter is about PLACE, not identity. */}
+          <nav className="golem-crumbs" aria-label="Breadcrumb">
+            <button
+              type="button"
+              onClick={() => {
+                closeApp()
+                setSection(undefined)
+                setPage(undefined)
+              }}
+            >
+              Home
+            </button>
+            {(() => {
+              const here = openApp
+                ? loaded.find((entry) => entry.id === openApp)?.tile?.label ?? openApp
+                : section
+                  ? (sectionAt(pages, section)?.title ?? section)
+                  : page
+                    ? page.title
+                    : undefined
+              return here ? (
+                <>
+                  <span className="golem-crumbs__sep">/</span>
+                  <b>{here}</b>
+                </>
+              ) : undefined
+            })()}
+          </nav>
           <span className="golem-canvas__driver">
             {instance.driver.label} {instance.driver.cliVersion}
           </span>
           <button
             type="button"
-            className="golem-switch"
+            className="golem-ib"
+            onClick={cycleTheme}
+            aria-label="Theme"
+            title={themePref === '' ? 'Theme: system' : `Theme: ${themePref}`}
+          >
+            ◐
+          </button>
+          <button
+            type="button"
+            className="golem-ib"
             onClick={() => setSettingsOpen(!settingsOpen)}
             aria-label="Settings"
             aria-expanded={settingsOpen}
@@ -345,6 +418,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           )}
         </header>
 
+        <div className="golem-canvas__body">
         {settingsOpen && <Settings fetchImpl={fetchImpl} />}
 
         {problems.length > 0 && (
@@ -416,6 +490,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             focusComposer={() => composeRef.current?.('')}
           />
         )}
+        </div>
       </main>
     </div>
   )

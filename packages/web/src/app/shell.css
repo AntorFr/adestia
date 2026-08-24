@@ -38,18 +38,64 @@
   display: grid;
   grid-template-rows: auto 1fr auto auto;
   min-height: 0;
-  background: var(--surface-sunken);
+  background: var(--surface-raised);
   border-right: 1px solid var(--border);
 }
 
 .golem-chat__header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
+  gap: 11px;
+  padding: 14px 18px;
   border-bottom: 1px solid var(--border);
 }
+
+/* The crest: the body's mark on an accent plate — the same plate the tiles
+   wear, which is what makes it read as the same product. */
+.golem-crest {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-ctl);
+  box-shadow: var(--shadow-sm);
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--accent) var(--plate-top), var(--plate-base)),
+    color-mix(in srgb, var(--accent) var(--plate-mix), var(--plate-base))
+  );
+  color: color-mix(in srgb, var(--accent) var(--plate-fg-tint), var(--plate-fg));
+  border: var(--plate-border-width) solid
+    color-mix(in srgb, var(--accent) var(--plate-border-tint), transparent);
+}
+
+.golem-crest svg { width: 18px; height: 18px; }
+
+.golem-brandname {
+  font: 600 20px/1 var(--font-title);
+  letter-spacing: var(--title-track);
+  color: var(--text);
+}
+
+.golem-chat__spacer { margin-left: auto; }
+
+/* Square icon buttons — the chrome's own controls, chat side and canvas side. */
+.golem-ib {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 33px;
+  height: 31px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.golem-ib:hover { border-color: var(--accent); color: var(--accent); }
 
 .golem-chat__title {
   font-weight: 600;
@@ -279,17 +325,52 @@
 
 .golem-canvas {
   overflow-y: auto;
-  padding: var(--space-4);
 }
 
 .golem-canvas__header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: var(--space-5);
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 11px 24px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  backdrop-filter: blur(6px);
 }
 
-.golem-canvas__brand { font-weight: 600; font-size: var(--text-lg); }
+/* The canvas body gets the frame the sticky bar no longer provides. */
+.golem-canvas__body {
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 26px 30px 100px;
+}
+
+.golem-crumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  font: 13px var(--font-mono);
+  color: var(--text-muted);
+}
+
+.golem-crumbs button {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.golem-crumbs button:hover { color: var(--accent); text-decoration: underline; }
+.golem-crumbs__sep { color: var(--text-faint); }
+.golem-crumbs b { color: var(--text); font-weight: 600; }
+
 .golem-canvas__driver { font-size: var(--text-sm); color: var(--text-faint); }
 
 /* The landing canvas --------------------------------------------------

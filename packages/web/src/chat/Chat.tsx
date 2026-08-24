@@ -348,6 +348,10 @@ export function AttachmentTray({
 export interface ChatProps {
   readonly contextWindow?: number
   readonly placeholder?: string
+  /** The body's name, worn on the rail. */
+  readonly brand?: string
+  /** SVG markup for the crest plate, from the skin module (see skin.ts). */
+  readonly crest?: string
   readonly model?: string
   readonly fetchImpl?: typeof fetch
   /** Only when the shell is folded onto one screen; absent on desktop. */
@@ -389,6 +393,8 @@ function toMessage(stored: StoredMessage): Message {
 export function Chat({
   contextWindow,
   placeholder,
+  brand,
+  crest,
   model,
   fetchImpl,
   onOpenCanvas,
@@ -523,24 +529,31 @@ export function Chat({
   return (
     <section className="golem-chat">
       <header className="golem-chat__header">
+        {/* The crest markup comes from the skin MODULE — code the instance
+            already chose to run — never from a manifest. */}
+        {crest && (
+          <span className="golem-crest" aria-hidden="true" dangerouslySetInnerHTML={{ __html: crest }} />
+        )}
+        <span className="golem-brandname">{brand ?? 'Golem'}</span>
+        <span className="golem-chat__spacer" />
+        <ContextPill tokens={contextTokens} {...(contextWindow ? { windowSize: contextWindow } : {})} />
         <button
           type="button"
-          className="golem-switch"
+          className="golem-ib"
           onClick={() => setThreadsOpen(!threadsOpen)}
           aria-label="Conversations"
           aria-expanded={threadsOpen}
         >
-          ▤ {threads.length > 0 ? threads.length : ''}
+          ▤
         </button>
-        <button type="button" className="golem-switch" onClick={startThread} aria-label="New conversation">
+        <button type="button" className="golem-ib" onClick={startThread} aria-label="New conversation">
           ＋
         </button>
         {onOpenCanvas && (
-          <button type="button" className="golem-switch" onClick={onOpenCanvas} aria-label="Open apps">
-            Apps ›
+          <button type="button" className="golem-ib" onClick={onOpenCanvas} aria-label="Open apps">
+            ▥
           </button>
         )}
-        <ContextPill tokens={contextTokens} {...(contextWindow ? { windowSize: contextWindow } : {})} />
       </header>
 
       {threadsOpen && (
