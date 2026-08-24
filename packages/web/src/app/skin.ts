@@ -61,8 +61,58 @@ const ALLOWED_FIELDS = [
   'crest',
 ] as const
 
+/**
+ * A living slot: the skin renders into a host element the shell owns, and may
+ * return a teardown. The DOM-imperative shape is deliberate — a skin is plain
+ * JavaScript, and asking it to speak React would pin every livery to the
+ * shell's framework and version.
+ */
+export type SkinSlotRender = (
+  host: HTMLElement,
+  context: SkinSlotContext,
+) => (() => void) | void
+
+export interface SkinSlotContext {
+  /** Sends a message to the agent, as if typed. */
+  ask(prompt: string): void
+  /** Puts text in the composer without sending. */
+  compose(text: string): void
+  /** Puts the cursor in the composer — what a custom home's prompt box does. */
+  focusComposer(): void
+  /**
+   * For the `console` slot: the instance summary, as served by
+   * `/api/instance`. Absent on the other slots.
+   */
+  readonly instance?: {
+    readonly driver: { readonly label: string; readonly cliVersion: string }
+    readonly turns: { readonly max: number; readonly running: number }
+    readonly plugins: readonly { readonly id: string }[]
+  }
+}
+
+/** The three living slots a skin may fill. All optional, like everything else. */
+export interface SkinSlots {
+  /**
+   * Replaces the landing canvas entirely. The two bodies that need this do
+   * not want Alfred's home repainted — they answer a different question
+   * (a bridge over a fleet; a rabbit and an invitation). Navigation from a
+   * custom home is ordinary hash links: every tiled plugin answers on
+   * `#/<its-route-or-id>`.
+   */
+  readonly home?: SkinSlotRender
+  /**
+   * Replaces the three working dots in the live bubble. Mounted only while a
+   * turn runs, so "hurried" is this slot's only state.
+   */
+  readonly busy?: SkinSlotRender
+  /** A status band above the canvas top bar — the HUD console. */
+  readonly console?: SkinSlotRender
+}
+
+const SLOT_FIELDS = ['home', 'busy', 'console'] as const
+
 export interface SkinLoad {
-  readonly skin: Skin
+  readonly skin: Skin & SkinSlots
   /** Off-contract fields, named so their author can find out why nothing moved. */
   readonly rejected: readonly string[]
   readonly error?: string
@@ -79,14 +129,18 @@ export function narrowSkin(raw: unknown): SkinLoad {
   for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
     if ((ALLOWED_FIELDS as readonly string[]).includes(key) && typeof value === 'string') {
       skin[key] = value
+    } else if ((SLOT_FIELDS as readonly string[]).includes(key) && typeof value === 'function') {
+      skin[key] = value
     } else {
       // `routes` is the one people try first, and the one that would lodge an
       // app inside a livery: a screen that exists under one skin and vanishes
-      // under another.
+      // under another. The slots above are the sanctioned exceptions, and
+      // they are FUNCTIONS — a string where a function belongs (or the
+      // reverse) is rejected rather than half-working.
       rejected.push(key)
     }
   }
-  return { skin: skin as Skin, rejected }
+  return { skin: skin as Skin & SkinSlots, rejected }
 }
 
 export interface SkinEnvironment {

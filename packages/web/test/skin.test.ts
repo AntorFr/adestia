@@ -109,3 +109,25 @@ describe('loading', () => {
     expect(stylesheets).toEqual(['/skin/skin.css'])
   })
 })
+
+describe('the living slots', () => {
+  it('accepts a function on the three slot fields', () => {
+    const home = () => undefined
+    const busy = () => undefined
+    const konsole = () => undefined
+    const { skin, rejected } = narrowSkin({ home, busy, console: konsole })
+    expect(skin.home).toBe(home)
+    expect(skin.busy).toBe(busy)
+    expect(skin.console).toBe(konsole)
+    expect(rejected).toEqual([])
+  })
+
+  it('rejects a string where a slot belongs, and a function where a string belongs', () => {
+    // Half-working is the failure mode this guards: a `home` that is a string
+    // would render nothing and say nothing.
+    const { skin, rejected } = narrowSkin({ home: '<div>hi</div>', brand: () => 'X' })
+    expect(skin.home).toBeUndefined()
+    expect(skin.brand).toBeUndefined()
+    expect(rejected).toEqual(['home', 'brand'])
+  })
+})

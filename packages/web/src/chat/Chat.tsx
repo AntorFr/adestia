@@ -21,6 +21,8 @@ import {
   type StoredMessage,
 } from './conversations.js'
 import { runTurn, type PendingPermission, type TurnState } from './stream.js'
+import { SkinSlot } from '../app/SkinSlot.js'
+import type { SkinSlotRender } from '../app/skin.js'
 
 export interface Message {
   readonly id: string
@@ -352,6 +354,8 @@ export interface ChatProps {
   readonly brand?: string
   /** SVG markup for the crest plate, from the skin module (see skin.ts). */
   readonly crest?: string
+  /** The livery's working indicator, replacing the three dots. */
+  readonly busySlot?: SkinSlotRender
   readonly model?: string
   readonly fetchImpl?: typeof fetch
   /** Only when the shell is folded onto one screen; absent on desktop. */
@@ -395,6 +399,7 @@ export function Chat({
   placeholder,
   brand,
   crest,
+  busySlot,
   model,
   fetchImpl,
   onOpenCanvas,
@@ -587,7 +592,15 @@ export function Chat({
               <div className="golem-bubble__text">{live.text}</div>
             ) : (
               <div className="golem-bubble__working">
-                <span className="golem-dots" aria-label="Working" />
+                {busySlot ? (
+                  <SkinSlot
+                    render={busySlot}
+                    className="golem-busy-host"
+                    context={{ ask: () => {}, compose: () => {}, focusComposer: () => {} }}
+                  />
+                ) : (
+                  <span className="golem-dots" aria-label="Working" />
+                )}
                 {/* The climbing counter, when the driver can feed it. */}
                 {live.outputTokens > 0 && (
                   <span className="golem-bubble__counter">{formatTokens(live.outputTokens)}</span>

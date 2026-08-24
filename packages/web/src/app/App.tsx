@@ -11,9 +11,16 @@ import { Component, useCallback, useEffect, useRef, useState, type ReactNode } f
 import { Chat } from '../chat/Chat.js'
 import { Editor, type PageDocument } from '../editor/Editor.js'
 import { Settings } from './Settings.js'
-import { browserSkinEnvironment, loadSkin, type Skin, type SkinDescriptor } from './skin.js'
+import {
+  browserSkinEnvironment,
+  loadSkin,
+  type Skin,
+  type SkinDescriptor,
+  type SkinSlots,
+} from './skin.js'
 import { routeMatches, type PluginApi } from '../plugins/contract.js'
 import { Home } from './Home.js'
+import { SkinSlot } from './SkinSlot.js'
 import { Section } from './Section.js'
 import { sectionAt, type IndexEntry } from './sections.js'
 import { browserEnvironment, loadPlugins, type LoadedPlugin, type PluginDescriptor } from '../plugins/loader.js'
@@ -84,7 +91,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
    */
   const [mount, setMount] = useState<EditorMount | undefined>()
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [skin, setSkin] = useState<Skin>({})
+  const [skin, setSkin] = useState<Skin & SkinSlots>({})
   const [skinScheme, setSkinScheme] = useState<'light' | 'dark' | undefined>(undefined)
   const [loaded, setLoaded] = useState<readonly LoadedPlugin[]>([])
   /** The plugin view currently filling the canvas, by id. */
@@ -104,9 +111,14 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
     const apply = () => {
       const hash = location.hash.replace(/^#/, '')
       // Longest route first, so a plugin at `/a/b` wins over one at `/a`.
+      // A tiled plugin that declares no route still answers on `/<id>`: a
+      // custom home navigates by plain hash links, and a tile nothing can
+      // link to would be unreachable from one.
       const match = [...loaded]
         .sort((a, b) => (b.view?.route?.length ?? 0) - (a.view?.route?.length ?? 0))
-        .find((plugin) => routeMatches(plugin.view?.route, hash))
+        .find((plugin) =>
+          routeMatches(plugin.view?.route ?? (plugin.tile ? `/${plugin.id}` : undefined), hash),
+        )
       setOpenApp(match?.id)
     }
     apply()
@@ -168,6 +180,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
 
   const openPlugin = useCallback((plugin: LoadedPlugin) => {
     if (plugin.view?.route) location.hash = plugin.view.route
+    else if (plugin.tile) location.hash = `/${plugin.id}`
     else setOpenApp(plugin.id)
   }, [])
 
@@ -342,10 +355,23 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
         {...(skin.placeholder ? { placeholder: skin.placeholder } : {})}
         {...(skin.brand ? { brand: skin.brand } : {})}
         {...(skin.crest ? { crest: skin.crest } : {})}
+        {...(skin.busy ? { busySlot: skin.busy } : {})}
         {...(mobile ? { onOpenCanvas: () => setScreen('canvas') } : {})}
       />
       <div className="golem-gutter" {...split.gutterProps} />
       <main className="golem-canvas">
+        {skin.console && (
+          <SkinSlot
+            render={skin.console}
+            className="golem-console-host"
+            context={{
+              ask: (prompt) => askRef.current?.(prompt),
+              compose: (text) => composeRef.current?.(text),
+              focusComposer: () => composeRef.current?.(''),
+              instance,
+            }}
+          />
+        )}
         <header className="golem-canvas__header">
           {/* Folded onto one screen, the canvas needs its own way back — the
               CSS alone would hide it with no route to it at all. */}
@@ -479,6 +505,16 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             openSection={setSection}
             openPage={openPage}
             onBack={() => setSection(undefined)}
+          />
+        ) : skin.home ? (
+          <SkinSlot
+            render={skin.home}
+            className="golem-home-host"
+            context={{
+              ask: (prompt) => askRef.current?.(prompt),
+              compose: (text) => composeRef.current?.(text),
+              focusComposer: () => composeRef.current?.(''),
+            }}
           />
         ) : (
           <Home
