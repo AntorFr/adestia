@@ -149,6 +149,26 @@ async function listMarkdown(root: string, prefix = ''): Promise<string[]> {
 export function registerPages(app: FastifyInstance, options: PagesOptions): void {
   const { root } = options
 
+  /**
+   * The curated brief — "À la une".
+   *
+   * The MATERIALIZED regime, inherited deliberately: the agent writes
+   * `home/brief.json` with its own file tools when asked to refresh the
+   * front page, and the shell reads the artifact as-is. Zero model calls at
+   * render time, and the brief is a file someone can open, diff and audit
+   * like everything else here.
+   *
+   * Absent is not an error — it is an instance whose agent was never asked
+   * to curate one, and the home simply shows no such section.
+   */
+  app.get('/api/home/brief', async (request, reply) => {
+    try {
+      return JSON.parse(await readFile(join(options.root, 'home', 'brief.json'), 'utf8'))
+    } catch {
+      return reply.code(404).send({ error: 'no brief' })
+    }
+  })
+
   app.get('/api/pages', async () => {
     const paths = await listMarkdown(root)
     const pages: PageInfo[] = []

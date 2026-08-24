@@ -477,6 +477,69 @@
   color: var(--text-faint);
 }
 
+.golem-section__by {
+  font: 500 10px var(--font-mono);
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.golem-section__refresh {
+  display: grid;
+  place-items: center;
+  margin-left: auto;
+  width: 26px;
+  height: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-faint);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.golem-section__refresh:hover { color: var(--accent); border-color: var(--accent); }
+
+/* The brief: at most four pills, each wearing its target's hue on hover. */
+.golem-brief {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.golem-brief__item {
+  display: inline-flex;
+  gap: 9px;
+  align-items: center;
+  padding: 8px 13px 8px 9px;
+  text-align: left;
+  color: var(--text);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-ctl);
+  box-shadow: var(--shadow-sm);
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.14s, border-color 0.14s;
+}
+
+.golem-brief__item:hover {
+  transform: translateY(-1px);
+  border-color: var(--u, var(--accent));
+}
+
+.golem-brief__icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-micro);
+  font-size: 13px;
+  background: var(--surface-soft);
+}
+
+.golem-brief__text { font: 600 13.5px var(--font); }
+
 .golem-tiles {
   list-style: none;
   margin: 0;

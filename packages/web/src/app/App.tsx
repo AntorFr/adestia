@@ -487,7 +487,10 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             entries={pages}
             openPlugin={openPlugin}
             openSection={setSection}
+            openPage={openPage}
             focusComposer={() => composeRef.current?.('')}
+            ask={(prompt) => askRef.current?.(prompt)}
+            fetchImpl={fetchImpl}
           />
         )}
         </div>

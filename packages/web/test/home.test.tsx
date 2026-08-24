@@ -41,6 +41,7 @@ const props = {
   entries: CORPUS,
   openPlugin: noop,
   openSection: noop,
+  openPage: noop,
   focusComposer: noop,
 }
 

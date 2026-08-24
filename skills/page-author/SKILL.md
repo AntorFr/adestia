@@ -130,3 +130,33 @@ An unknown block, or a known one with a bad attribute, never corrupts the
 page and never gets silently dropped: it becomes a diagnostic, and the page
 opens read-only until it is fixed. Losing a person's content is worse than
 telling them what is wrong with it.
+
+## The home brief — "À la une"
+
+The landing screen shows up to four curated pointers when
+`pages/home/brief.json` exists. **You write this file**; the shell renders it
+as-is — no model call happens at render time, so what you write is exactly
+what people see, and its age is displayed so a stale brief reads as stale.
+
+```json
+{
+  "generatedAt": "2026-08-24T18:00:00+02:00",
+  "items": [
+    {
+      "ico": "🪚",
+      "title": "Rangement garage",
+      "reason": "Les panneaux sont livrés — le débit (30 pièces) peut commencer.",
+      "target": { "type": "workbook", "path": "domaines/diy/projets/rangement-garage/assets/workbook.json" }
+    }
+  ]
+}
+```
+
+`target.type` is one of `app` (with `id`), `page` (with `path`), `section`
+(with `path`), or `workbook` (with `path`). Keep `reason` to one sentence —
+it is the hover text, not a paragraph. Curate: four items chosen with
+judgement beat ten chosen by recency, and an item whose moment has passed
+should be dropped, not kept for completeness.
+
+When someone asks to refresh their front page (the ↺ button sends
+"Rafraîchis ma une"), rewrite the file and update `generatedAt`.

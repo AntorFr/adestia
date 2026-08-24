@@ -25,10 +25,64 @@ export interface HomeProps {
   readonly entries: readonly IndexEntry[]
   readonly openPlugin: (plugin: LoadedPlugin) => void
   readonly openSection: (path: string) => void
+  readonly openPage: (path: string) => void
   /** Puts the cursor in the composer — what the search affordance actually does. */
   readonly focusComposer: () => void
+  /** Sends a prompt to the agent — the brief's refresh button uses it. */
+  readonly ask?: (prompt: string) => void
+  readonly fetchImpl?: typeof fetch
   /** Injectable so the greeting can be tested at a fixed hour. */
   readonly now?: Date
+}
+
+/**
+ * One entry of the curated brief.
+ *
+ * The predecessor's field names are accepted alongside the plain ones
+ * (`titre`/`title`, `raison`/`reason`, `cible`/`target`): the file is written
+ * by an agent following whatever contract its instance carries, and a rename
+ * should never blank a working front page.
+ */
+interface BriefItem {
+  readonly ico?: string
+  readonly title?: string
+  readonly titre?: string
+  readonly reason?: string
+  readonly raison?: string
+  readonly target?: BriefTarget
+  readonly cible?: BriefTarget
+}
+
+interface BriefTarget {
+  readonly type?: string
+  readonly path?: string
+  readonly id?: string
+}
+
+interface Brief {
+  readonly generatedAt?: string
+  readonly items?: readonly BriefItem[]
+}
+
+/** How old the brief is, said the way a person would. */
+function briefAge(generatedAt: string | undefined, now: Date): string | undefined {
+  if (!generatedAt) return undefined
+  const hours = Math.round((now.getTime() - new Date(generatedAt).getTime()) / 3_600_000)
+  if (!Number.isFinite(hours) || hours < 0) return undefined
+  if (hours < 1) return 'just now'
+  if (hours < 24) return `${hours} h ago`
+  return `${Math.round(hours / 24)} d ago`
+}
+
+/** The hue a target's kind wears — the predecessor's mapping, in named hues. */
+const BRIEF_HUES: Readonly<Record<string, string>> = {
+  workbook: 'emeraude',
+  fiche: 'bleu',
+  page: 'bleu',
+  domaine: 'indigo',
+  section: 'indigo',
+  todo: 'rouge',
+  app: 'rouge',
 }
 
 /** After this hour the greeting turns to the evening form. */
@@ -140,11 +194,51 @@ export function Home({
   entries,
   openPlugin,
   openSection,
+  openPage,
   focusComposer,
+  ask,
+  fetchImpl,
   now,
 }: HomeProps) {
   const info = useTileInfo(plugins)
   const clock = now ?? new Date()
+  const [brief, setBrief] = useState<Brief | undefined>(undefined)
+
+  useEffect(() => {
+    let live = true
+    const doFetch = fetchImpl ?? fetch
+    void doFetch('/api/home/brief')
+      .then((response) => (response.ok ? (response.json() as Promise<Brief>) : undefined))
+      .then((data) => {
+        if (live && data?.items?.length) setBrief(data)
+      })
+      .catch(() => {
+        /* no brief is a home without that section, never an error */
+      })
+    return () => {
+      live = false
+    }
+  }, [fetchImpl])
+
+  /** Where a brief entry leads. Unknown kinds fall back to the composer. */
+  const openTarget = (target: BriefTarget | undefined, label: string) => {
+    const kind = target?.type
+    if ((kind === 'app' || kind === 'todo') && plugins.length > 0) {
+      const wanted = target?.id ?? (kind === 'todo' ? 'todo' : undefined)
+      const found = plugins.find((entry) => entry.id === wanted)
+      if (found) return openPlugin(found)
+    }
+    if ((kind === 'fiche' || kind === 'page') && target?.path) {
+      return openPage(target.path.replace(/\.md$/, '') + '.md')
+    }
+    if ((kind === 'domaine' || kind === 'section') && target?.path) return openSection(target.path)
+    if (kind === 'workbook' && target?.path) {
+      location.hash = `/atelier/${encodeURIComponent(target.path)}`
+      return
+    }
+    // The truthful fallback: let the person ask about it.
+    ask?.(`Ouvre « ${label} »`)
+  }
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -206,6 +300,56 @@ export function Home({
         <span className="golem-home__ask-text">{skin.placeholder ?? 'Ask…'}</span>
         <kbd className="golem-home__ask-kbd">⌘K</kbd>
       </button>
+
+      {brief && (
+        <>
+          <h2 className="golem-section">
+            À la une
+            {(() => {
+              const age = briefAge(brief.generatedAt, clock)
+              const by = skin.brand ?? 'the agent'
+              return (
+                <span className="golem-section__by">
+                  — chosen by {by}
+                  {age ? ` · ${age}` : ''}
+                </span>
+              )
+            })()}
+            {ask && (
+              <button
+                type="button"
+                className="golem-section__refresh"
+                title="Ask for a fresh brief"
+                onClick={() => ask('Rafraîchis ma une')}
+              >
+                ↺
+              </button>
+            )}
+          </h2>
+          <div className="golem-brief">
+            {(brief.items ?? []).slice(0, 4).map((item) => {
+              const label = item.title ?? item.titre ?? '…'
+              const target = item.target ?? item.cible
+              const hue = BRIEF_HUES[target?.type ?? '']
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  className="golem-brief__item"
+                  style={(hue ? { '--u': `var(--golem-hue-${hue}, var(--accent))` } : {}) as Record<string, string>}
+                  title={item.reason ?? item.raison ?? ''}
+                  onClick={() => openTarget(target, label)}
+                >
+                  <span className="golem-brief__icon" aria-hidden="true">
+                    {item.ico ?? '•'}
+                  </span>
+                  <span className="golem-brief__text">{label}</span>
+                </button>
+              )
+            })}
+          </div>
+        </>
+      )}
 
       {tiled.length > 0 && (
         <>
