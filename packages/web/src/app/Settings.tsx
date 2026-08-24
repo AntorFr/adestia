@@ -95,7 +95,12 @@ export function Settings({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
       const response = await fetchImpl('/api/auth/driver/complete', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ sessionId: prompt.sessionId, input: code }),
+        // A device code is approved in a browser, with nothing to copy back;
+        // the server still requires a non-empty field, so send a sentinel.
+        body: JSON.stringify({
+          sessionId: prompt.sessionId,
+          input: prompt.mode === 'device-code' ? 'approved' : code,
+        }),
       })
       if (!response.ok) {
         const body = (await response.json().catch(() => ({}))) as { error?: string }
@@ -185,28 +190,45 @@ export function Settings({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             )}
           </li>
           <li>
-            <label className="golem-arming__label">
-              {active.inputLabel ?? 'Paste the code you were given'}
-              <input
-                className="golem-arming__input"
-                value={code}
-                onChange={(event) => setCode(event.target.value)}
-                autoComplete="off"
-                spellCheck={false}
-              />
-            </label>
-            <div className="golem-settings__actions">
-              <button type="button" onClick={() => void cancel(active)}>
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => void complete(active)}
-                disabled={code.trim() === '' || phase.kind === 'exchanging'}
-              >
-                {phase.kind === 'exchanging' ? 'Exchanging…' : 'Validate'}
-              </button>
-            </div>
+            {active.mode === 'device-code' ? (
+              <div className="golem-settings__actions">
+                <button type="button" onClick={() => void cancel(active)}>
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void complete(active)}
+                  disabled={phase.kind === 'exchanging'}
+                >
+                  {phase.kind === 'exchanging' ? 'Finishing…' : 'I have approved — finish'}
+                </button>
+              </div>
+            ) : (
+              <>
+                <label className="golem-arming__label">
+                  {active.inputLabel ?? 'Paste the code you were given'}
+                  <input
+                    className="golem-arming__input"
+                    value={code}
+                    onChange={(event) => setCode(event.target.value)}
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                </label>
+                <div className="golem-settings__actions">
+                  <button type="button" onClick={() => void cancel(active)}>
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void complete(active)}
+                    disabled={code.trim() === '' || phase.kind === 'exchanging'}
+                  >
+                    {phase.kind === 'exchanging' ? 'Exchanging…' : 'Validate'}
+                  </button>
+                </div>
+              </>
+            )}
           </li>
         </ol>
       )}

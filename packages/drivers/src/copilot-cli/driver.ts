@@ -12,6 +12,8 @@
  */
 
 import { spawn } from 'node:child_process'
+import { mkdir, rm } from 'node:fs/promises'
+import { join } from 'node:path'
 
 import type {
   AuthPrompt,
@@ -24,6 +26,7 @@ import type {
 } from '../contract.js'
 import { TOKEN_ENV_VAR, classifyAuthError, copilotEnv, explainAuthProblem, looksLikeToken } from './auth.js'
 import { newTranslationState, parseLine, translate } from './events.js'
+import { startDeviceCodeLogin, type DeviceCodeLogin } from './login.js'
 
 export interface CopilotDriverOptions {
   /** The pinned binary. An absolute path in a container; `copilot` in dev. */
@@ -35,6 +38,8 @@ export interface CopilotDriverOptions {
   readonly cliVersion?: string
   readonly models?: readonly ModelInfo[]
   readonly spawnImpl?: typeof spawn
+  /** Injection point for the device-code login flow, for tests. */
+  readonly startLoginImpl?: typeof startDeviceCodeLogin
 }
 
 export class CopilotDriver implements Driver {
@@ -46,9 +51,11 @@ export class CopilotDriver implements Driver {
   readonly #models: readonly ModelInfo[]
   readonly #cliVersion: string
   readonly #spawn: typeof spawn
+  readonly #startLogin: typeof startDeviceCodeLogin
   #credentials: Record<string, string>
   #savedAt: string | undefined
   #invalidReason: string | undefined
+  #pending: { login: DeviceCodeLogin; home: string } | undefined
   readonly #running = new Map<string, { kill(signal?: NodeJS.Signals): boolean }>()
 
   constructor(options: CopilotDriverOptions) {
@@ -58,6 +65,7 @@ export class CopilotDriver implements Driver {
     this.#models = options.models ?? []
     this.#cliVersion = options.cliVersion ?? 'unknown'
     this.#spawn = options.spawnImpl ?? spawn
+    this.#startLogin = options.startLoginImpl ?? startDeviceCodeLogin
     this.#credentials = { ...options.credentials }
   }
 
@@ -122,35 +130,62 @@ export class CopilotDriver implements Driver {
     return Promise.resolve({ state: 'absent', source: 'cli-native' })
   }
 
-  beginAuth(): Promise<AuthPrompt> {
-    // A paste-a-token flow rather than a relayed device code: the CLI's own
-    // `login --device-code` writes into ITS credential store, which is not
-    // where Golem reads from, so the interface would report "absent" straight
-    // after a login that visibly succeeded.
-    return Promise.resolve({
-      sessionId: 'copilot-token',
-      mode: 'api-key',
-      authorizeUrl: 'https://github.com/settings/personal-access-tokens/new',
-      inputLabel: 'Paste a fine-grained token with the "Copilot Requests" permission',
-      ttl: 600,
+  async beginAuth(): Promise<AuthPrompt> {
+    // A relayed device code, not a paste-a-token page. The objection to this
+    // was that `login --device-code` writes into the CLI's own store, not
+    // where Golem reads from — but the CLI stores a `gho_` token, in plaintext,
+    // under the COPILOT_HOME this driver owns, and that token works as
+    // COPILOT_GITHUB_TOKEN. So completeAuth harvests it into the one managed
+    // secret, and a login that visibly succeeds is one the interface reports
+    // as armed.
+    this.#pending?.login.cancel()
+
+    const home = join(this.#home, 'arming')
+    await rm(home, { recursive: true, force: true })
+    await mkdir(home, { recursive: true })
+
+    const login = await this.#startLogin({
+      command: this.#command,
+      home,
+      baseEnv: this.#baseEnv,
+      spawnImpl: this.#spawn,
     })
+    this.#pending = { login, home }
+
+    return {
+      sessionId: 'copilot-device',
+      mode: 'device-code',
+      authorizeUrl: login.verificationUri,
+      userCode: login.userCode,
+      inputLabel: 'Approve in your browser, then finish here',
+      ttl: 900,
+    }
   }
 
-  completeAuth(_sessionId: string, input: string): Promise<{ secret: string }> {
-    const token = input.trim()
-    if (/^ghp_/.test(token)) {
-      // Named precisely, because the CLI's own message for this is the one
-      // thing about Copilot auth people get wrong twice.
-      throw new Error(explainAuthProblem('classic-pat'))
+  async completeAuth(_sessionId: string, _input: string): Promise<{ secret: string }> {
+    // No pasted input: a device code is approved in a browser, with nothing to
+    // copy back. The server requires a non-empty field, which the interface
+    // fills with a sentinel; it is deliberately ignored here.
+    const pending = this.#pending
+    if (!pending) throw new Error('no device-code login is in progress; start again')
+    try {
+      const token = await pending.login.completed
+      if (!looksLikeToken(token)) {
+        throw new Error('the login stored a credential Copilot will not accept')
+      }
+      return { secret: token }
+    } finally {
+      await rm(pending.home, { recursive: true, force: true }).catch(() => undefined)
+      this.#pending = undefined
     }
-    if (!looksLikeToken(token)) {
-      throw new Error('That does not look like a GitHub token (expected github_pat_, gho_ or ghu_).')
-    }
-    return Promise.resolve({ secret: token })
   }
 
-  cancelAuth(): Promise<void> {
-    return Promise.resolve()
+  async cancelAuth(_sessionId: string): Promise<void> {
+    const pending = this.#pending
+    if (!pending) return
+    pending.login.cancel()
+    await rm(pending.home, { recursive: true, force: true }).catch(() => undefined)
+    this.#pending = undefined
   }
 
   mcpStatus(): Promise<readonly { name: string; ok: boolean; error?: string }[]> {
