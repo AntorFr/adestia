@@ -29,14 +29,14 @@ Grain 120 puis 240. Vérifier les gonds avant de reposer.
 | Field | Meaning |
 |---|---|
 | `type` | **`tache`** — this is what makes the page a task |
-| `done` | `true` / `false`. A checkbox in the interface flips exactly this line |
+| `done` | **the closing date** (`done: 2026-08-24`). Absent means open. A checkbox in the interface writes or removes exactly this line. A legacy `done: true` still reads as closed |
 | `due` | ISO date. Drives Late / Today / Next 7 days, all computed live |
 | `pri` | number, lower is more urgent |
 | `dom` | domain — groups the "everything" view (`atelier`, `maison`, `admin`…) |
 | `projet` | id of a project page: this task is one of its steps |
 | `sub` | ids of child tasks |
 
-**Closing a task means writing `done: true`.** Do not delete it and do not
+**Closing a task means writing `done: <today's date>`.** Do not delete it and do not
 move it: its history is the file, and a list that references it would lose the
 row rather than show it closed.
 

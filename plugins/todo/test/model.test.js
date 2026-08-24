@@ -83,16 +83,39 @@ test('progress counts what is left', () => {
   assert.deepEqual(progressOf([]), { open: 0, percent: 0 })
 })
 
-test('ticking edits the done line and nothing else', () => {
-  // A checkbox must not reformat somebody's note.
+const TODAY = new Date().toISOString().slice(0, 10)
+
+test('ticking writes the DATE, and edits nothing else', () => {
+  // A checkbox must not reformat somebody's note — and `done` carries WHEN,
+  // the predecessor's own convention, richer than a boolean for free.
   const before = '---\ntype: tache\ndone: false\ndue: 2026-09-01\n---\n\nGrain 120.\n'
   const after = toggleDone(before, true)
-  assert.equal(after, '---\ntype: tache\ndone: true\ndue: 2026-09-01\n---\n\nGrain 120.\n')
+  assert.equal(after, `---\ntype: tache\ndone: ${TODAY}\ndue: 2026-09-01\n---\n\nGrain 120.\n`)
 })
 
 test('ticking a task that never had a done field adds one', () => {
   const after = toggleDone('---\ntype: tache\n---\n\nBody.\n', true)
-  assert.equal(after, '---\ntype: tache\ndone: true\n---\n\nBody.\n')
+  assert.equal(after, `---\ntype: tache\ndone: ${TODAY}\n---\n\nBody.\n`)
+})
+
+test('unticking removes the line — absence means open', () => {
+  // `done: false` would be a third state nobody defined; the sibling shell
+  // treats absence as open, and sharing one store means sharing one meaning.
+  const before = `---\ntype: tache\ndone: ${TODAY}\ndue: 2026-09-01\n---\n\nBody.\n`
+  const after = toggleDone(before, false)
+  assert.equal(after, '---\ntype: tache\ndue: 2026-09-01\n---\n\nBody.\n')
+})
+
+test('a date-valued done reads as closed, a bare true still does too', () => {
+  const { tasks } = buildModel([
+    page('t/dated.md', { type: 'tache', done: '2026-07-22' }),
+    page('t/legacy.md', { type: 'tache', done: true }),
+    page('t/open.md', { type: 'tache' }),
+  ])
+  assert.equal(tasks['t/dated'].done, true)
+  assert.equal(tasks['t/dated'].doneOn, '2026-07-22')
+  assert.equal(tasks['t/legacy'].done, true)
+  assert.equal(tasks['t/open'].done, false)
 })
 
 test('a page with no frontmatter cannot be ticked, and says so by returning null', () => {

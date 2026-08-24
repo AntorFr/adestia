@@ -33,7 +33,13 @@ export function buildModel(entries) {
         id,
         path: entry.path,
         title: entry.title,
-        done: fields.done === true,
+        // `done` carries WHEN, not merely whether: the predecessor's corpus
+        // writes `done: 2026-07-22`, which is strictly more information than
+        // a boolean and costs nothing to honour. Truthy-but-not-"false" is
+        // closed; a bare `true` (this plugin's own former format) still
+        // counts, so no page written either way reads wrong.
+        done: fields.done === true || (typeof fields.done === 'string' && fields.done !== '' && fields.done !== 'false'),
+        doneOn: typeof fields.done === 'string' ? fields.done : null,
         due: typeof fields.due === 'string' ? fields.due : null,
         pri: typeof fields.pri === 'number' ? fields.pri : null,
         dom: typeof fields.dom === 'string' ? fields.dom : null,
@@ -146,20 +152,34 @@ export function byDomain(tasks) {
 /**
  * Flips `done:` in a page's frontmatter.
  *
- * Rewriting the file rather than keeping an overlay: memory left git, so a
- * tick is just a write, and one source of truth beats two that agree most of
- * the time. The line is edited in place so nothing else about the page moves —
- * a checkbox must not reformat someone's note.
+ * Rewriting the file rather than keeping an overlay: a tick is just a write,
+ * and one source of truth beats two that agree most of the time. The line is
+ * edited in place so nothing else about the page moves — a checkbox must not
+ * reformat someone's note.
+ *
+ * Closing writes the DATE (`done: 2026-08-24`), reopening removes the line:
+ * both are the predecessor's own conventions, adopted because they carry
+ * more than a boolean and cost nothing. That shared shape is what lets two
+ * shells tick the same file without disagreeing about what it says.
  */
 export function toggleDone(markdown, done) {
   const match = /^---\n([\s\S]*?)\n---/.exec(markdown)
   if (!match) return null
 
   const front = match[1]
-  const replaced = front.replace(/^done:.*$/m, `done: ${done}`)
+
+  if (!done) {
+    // Absence means open — a `done: false` line would be a third state
+    // nobody defined.
+    const cleared = front.replace(/\n?^done:.*$/m, '')
+    return cleared === front ? markdown : markdown.replace(front, cleared)
+  }
+
+  const stamp = new Date().toISOString().slice(0, 10)
+  const replaced = front.replace(/^done:.*$/m, `done: ${stamp}`)
   if (replaced !== front) return markdown.replace(front, replaced)
 
   // No `done` at all: added at the end of the frontmatter, where a human
   // adding one would put it.
-  return markdown.replace(front, `${front}\ndone: ${done}`)
+  return markdown.replace(front, `${front}\ndone: ${stamp}`)
 }
