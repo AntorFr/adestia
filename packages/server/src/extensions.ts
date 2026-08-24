@@ -231,6 +231,8 @@ export async function discoverSkins(
 export interface PluginPayload {
   readonly id: string
   readonly kind: string
+  /** What the plugin says it is — a custom home's tile subtitle. */
+  readonly description: string
   readonly base: string
   readonly view?: string
   readonly blocks?: string
@@ -253,6 +255,7 @@ export function frontendPayload(plugins: readonly DiscoveredPlugin[]): readonly 
       return {
         id: manifest.id,
         kind: manifest.kind,
+        description: manifest.description,
         base,
         ...(manifest.view ? { view: manifest.view } : {}),
         ...(manifest.blocks ? { blocks: manifest.blocks } : {}),

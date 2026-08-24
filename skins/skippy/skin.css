@@ -1,0 +1,305 @@
+/*
+ * Skippy — a TOKEN DECLARATION for the shell, plus the styling of markup this
+ * skin alone produces (the console band, the bridge). No structural rule ever
+ * targets a shell class: if a look is not reachable through a token, the
+ * contract gets extended — not this sheet.
+ *
+ * The deliberate counterpoint to the base: it is light, serif, teal, 13px
+ * corners, soft shadows — a drawing room. Skippy is dark, monospace-titled,
+ * amber, 2–3px corners, shadowless: emitted light (sharp borders, halos)
+ * rather than simulated depth.
+ *
+ * Ported from the predecessor's livery of the same name, values unchanged.
+ */
+
+/* ── Identity: fonts, radii, plates, signature. Both hours. ─────────────── */
+:root[data-skin='skippy'] {
+  --font-title: var(--font-mono);
+  --font-input: var(--font-mono);
+
+  --radius-micro: 2px;
+  --radius-sm: 2px;
+  --radius-ctl: 2px;
+  --radius: 3px;
+  --radius-lg: 4px;
+  --radius-pill: 2px;
+  --radius-round: 2px; /* the send button stops being a circle */
+  --radius-bubble: 3px;
+
+  /* Flat translucent slabs whose glyph TAKES the colour — no filled pastille. */
+  --plate-top: 16%;
+  --plate-mix: 16%;
+  --plate-base: var(--surface);
+  --plate-fg: var(--accent);
+  --plate-fg-tint: 100%;
+  --plate-border-width: 1px;
+  --plate-border-tint: 32%;
+
+  --label-size: 9.5px;
+  --label-track: 0.22em;
+  --title-track: -0.02em; /* a fixed pitch reads loose at display sizes */
+  --ghosttag: 'SKIPPY';
+  --caret-display: inline-block;
+}
+
+/* ── Night — the base of this body. It imposes it: dark unless a person
+   explicitly picks light. ──────────────────────────────────────────────── */
+:root[data-skin='skippy']:not([data-theme='light']) {
+  --surface: #080a0d;
+  --surface-raised: #101419;
+  --surface-soft: #171c23;
+  --surface-sunken: #05070a;
+  --border: #242b34;
+  --border-strong: #2f3844;
+
+  --text: #d7dee6;
+  --text-muted: #8e98a5;
+  --text-faint: #5c6570;
+
+  /* ONE accent: amber. The can, and a terminal's phosphor. */
+  --accent: #f2a93b;
+  --accent-text: #080a0d;
+  --accent-quiet: rgb(242 169 59 / 10%);
+
+  --danger: #e8543f;
+  --warning: #f2a93b;
+  --success: #3fbf86;
+
+  /* No domain tints: tiles distinguish themselves by label. A code agent has
+     no life domains anyway. */
+  --golem-hue-rouge: #f2a93b;
+  --golem-hue-orange: #f2a93b;
+  --golem-hue-ambre: #f2a93b;
+  --golem-hue-vert: #f2a93b;
+  --golem-hue-emeraude: #f2a93b;
+  --golem-hue-turquoise: #f2a93b;
+  --golem-hue-bleu: #f2a93b;
+  --golem-hue-indigo: #f2a93b;
+  --golem-hue-violet: #f2a93b;
+  --golem-hue-rose: #f2a93b;
+  --golem-hue-gris: #8e98a5;
+  --golem-hue-ardoise: #8e98a5;
+
+  /* No ambient shadow — separation comes from borders. One DEEP shadow stays
+     for the only things that float. */
+  --shadow-sm: none;
+  --shadow: 0 8px 24px rgb(0 0 0 / 55%);
+  --shadow-lg: 0 20px 60px rgb(0 0 0 / 72%);
+
+  --scrim: rgb(0 0 0 / 72%);
+}
+
+/* ── The explicit light variant: same identity, not a naive inversion — the
+   amber drops to hold contrast on a pale ground. Only the PALETTE moves;
+   fonts, radii and signature sit above and do not. ─────────────────────── */
+:root[data-skin='skippy'][data-theme='light'] {
+  --surface: #e9ecf0;
+  --surface-raised: #ffffff;
+  --surface-soft: #f3f5f8;
+  --surface-sunken: #dfe3e9;
+  --border: #d5dae1;
+  --border-strong: #c4cbd5;
+
+  --text: #141920;
+  --text-muted: #5a6370;
+  --text-faint: #8a929e;
+
+  --accent: #b0731a;
+  --accent-text: #ffffff;
+  --accent-quiet: rgb(176 115 26 / 10%);
+
+  --danger: #c4402c;
+  --warning: #b0731a;
+  --success: #2e9e63;
+
+  --golem-hue-rouge: #b0731a;
+  --golem-hue-orange: #b0731a;
+  --golem-hue-ambre: #b0731a;
+  --golem-hue-vert: #b0731a;
+  --golem-hue-emeraude: #b0731a;
+  --golem-hue-turquoise: #b0731a;
+  --golem-hue-bleu: #b0731a;
+  --golem-hue-indigo: #b0731a;
+  --golem-hue-violet: #b0731a;
+  --golem-hue-rose: #b0731a;
+  --golem-hue-gris: #5a6370;
+  --golem-hue-ardoise: #5a6370;
+
+  --shadow-sm: none;
+  --shadow: 0 4px 14px rgb(20 28 45 / 10%);
+  --shadow-lg: 0 14px 36px rgb(20 28 45 / 16%);
+
+  --plate-base: var(--surface-raised);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   MARKUP THIS SKIN ALONE PRODUCES — the shell knows none of these classes.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── The console band — the ship's status line, above the breadcrumb. ──── */
+.console {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 9px 22px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-soft);
+  font: 600 10px/1 var(--font-mono);
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+}
+
+.console > * { padding: 0 14px; border-right: 1px solid var(--border); }
+.console > *:first-child { padding-left: 0; }
+.console > *:last-child { border-right: 0; }
+
+.cmark { display: flex; align-items: center; gap: 9px; color: var(--accent); letter-spacing: 0.3em; }
+
+.cmark .led {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--success) 18%, transparent);
+  animation: cbeat 2.8s ease-in-out infinite;
+}
+
+@keyframes cbeat { 0%, 100% { opacity: 1; } 50% { opacity: 0.32; } }
+
+.cst { color: var(--text-faint); }
+.cst b { color: var(--text-muted); font-weight: 600; font-variant-numeric: tabular-nums; }
+.cgrow { flex: 1; border-right: 0 !important; padding: 0 !important; }
+
+/* ── The bridge — this body's landing. Not Alfred's home repainted: it
+   answers a different question. ────────────────────────────────────────── */
+.hud { padding: 4px 2px 40px; display: flex; flex-direction: column; gap: 26px; }
+
+.hudempty {
+  font: 12.5px/1.6 var(--font-mono);
+  color: var(--text-faint);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 22px 20px;
+  text-align: center;
+}
+
+.hud .panel { position: relative; background: var(--surface-raised); border: 1px solid var(--border); border-radius: var(--radius); }
+
+.hud .panel::before {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--text) 16%, transparent) 22%, var(--accent) 50%, color-mix(in srgb, var(--text) 16%, transparent) 78%, transparent);
+  opacity: 0.6;
+}
+
+.hud .ruler {
+  height: 9px;
+  border-bottom: 1px solid var(--border);
+  background-image: repeating-linear-gradient(90deg, var(--border) 0 1px, transparent 1px 13px);
+  background-position: left bottom;
+  background-size: 100% 4px;
+  background-repeat: repeat-x;
+}
+
+.hud .brackets::after,
+.hud .brackets::before {
+  content: '';
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, transparent);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.hud .brackets::before { top: 8px; left: 8px; border-right: 0; border-bottom: 0; }
+.hud .brackets::after { bottom: 8px; right: 8px; border-left: 0; border-top: 0; }
+.hud .bridge { overflow: hidden; }
+
+.bridgebody { display: grid; grid-template-columns: 170px 1fr; gap: 30px; padding: 28px 30px 26px; align-items: center; }
+
+.corewrap { position: relative; display: grid; place-items: center; }
+.corewrap::after { content: ''; position: absolute; inset: -28%; background: radial-gradient(circle, var(--accent-quiet), transparent 66%); pointer-events: none; }
+.corewrap canvas { position: relative; z-index: 1; }
+
+.hailwrap { position: relative; min-width: 0; }
+
+.hail {
+  position: relative;
+  z-index: 1;
+  font: 600 clamp(23px, 3vw, 34px) / 1.15 var(--font-mono);
+  letter-spacing: -0.025em;
+  margin: 0 0 8px;
+  text-wrap: balance;
+}
+
+.hail em { font-style: normal; color: var(--accent); }
+
+.hailsub { position: relative; z-index: 1; margin: 0 0 20px; color: var(--text-faint); font: 11.5px/1.6 var(--font-mono); letter-spacing: 0.06em; }
+
+.hailwrap::before {
+  content: var(--ghosttag);
+  position: absolute;
+  top: -34px;
+  left: -4px;
+  z-index: 0;
+  pointer-events: none;
+  user-select: none;
+  font: 800 84px/1 var(--font-mono);
+  letter-spacing: -0.05em;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--border);
+  opacity: 0.6;
+  white-space: nowrap;
+}
+
+.promptbox {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  color: var(--text-faint);
+  font: 13px var(--font-mono);
+  cursor: text;
+  text-align: left;
+  transition: border-color 0.18s;
+}
+
+.promptbox:hover { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+.promptbox .caret { display: inline-block; width: 8px; height: 15px; background: var(--accent); animation: golem-caret 1.1s steps(1) infinite; }
+.promptbox kbd { margin-left: auto; border: 1px solid var(--border); border-radius: var(--radius-micro); padding: 3px 7px; font: 10px var(--font-mono); color: var(--text-faint); }
+
+.hudrow { font: 600 var(--label-size) / 1 var(--font-mono); letter-spacing: var(--label-track); text-transform: uppercase; color: var(--text-faint); }
+
+.hud .hudmosaic { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 11px; }
+
+.hudtile {
+  position: relative;
+  display: block;
+  padding: 15px 17px 13px;
+  text-decoration: none;
+  color: inherit;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color 0.18s, background 0.18s, transform 0.18s;
+}
+
+.hudtile::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: color-mix(in srgb, var(--accent) 45%, transparent); transition: background 0.18s; }
+.hudtile:hover, .hudtile:focus-visible { background: var(--surface-raised); border-color: color-mix(in srgb, var(--accent) 50%, transparent); transform: translateY(-2px); outline: none; }
+.hudtile:hover::before, .hudtile:focus-visible::before { background: var(--accent); }
+
+.hudico { display: block; font: 600 11px var(--font-mono); letter-spacing: 0.16em; color: var(--accent); opacity: 0.85; margin-bottom: 9px; }
+.hudnm { display: block; font: 600 15px var(--font-mono); letter-spacing: var(--title-track); }
+.hudst { display: block; font-size: 12px; color: var(--text-faint); margin-top: 3px; }

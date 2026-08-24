@@ -149,10 +149,38 @@ export default function skin(api) {
 }
 ```
 
-Not yet in the contract, planned as explicit slots (do not fake them through
-CSS): a `home()` replacement, a living `busyNode()`, and a `console()` status
-band. A skin needing one of those today needs the contract extended first —
-say so rather than working around it.
+### The living slots
+
+Three fields take a FUNCTION instead of a string — the sanctioned exceptions
+for markup no token can describe:
+
+```js
+export default function skin() {
+  return {
+    // Replaces the landing canvas entirely. Navigate with plain hash links:
+    // every tiled plugin answers on `#/<id>`.
+    home(host, context) {
+      host.innerHTML = '<h1>…</h1>'
+      host.querySelector('button')?.addEventListener('click', () => context.focusComposer())
+      return () => {/* teardown, if anything must stop */}
+    },
+    // Replaces the three working dots in the live bubble. Mounted only while
+    // a turn runs — "hurried" is this slot's only state.
+    busy(host) { host.append(myMascot()) },
+    // A status band above the canvas top bar. `context.instance` carries the
+    // driver, the turn counts and the active plugins.
+    console(host, context) { host.innerHTML = '…' },
+  }
+}
+```
+
+Each receives a host element the shell owns and a context (`ask`, `compose`,
+`focusComposer`, plus `instance` for the console), and may return a teardown.
+A slot that throws costs its own box, never the shell. Style your slot's
+markup freely in `skin.css` under your OWN class names — the token rule
+protects shell classes, not yours. Do not render a status the instance cannot
+actually measure: a band asserting "all calm" without data is décor that
+lies.
 
 **There is no `routes` hook, deliberately.** A route is an app: it belongs to a
 plugin, gated by config, so it exists whichever skin is on. A skin that could

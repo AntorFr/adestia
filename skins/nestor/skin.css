@@ -1,0 +1,350 @@
+/*
+ * Nestor — a TOKEN DECLARATION for the shell, plus the styling of the markup
+ * this skin alone produces: the living rabbit and its landing.
+ *
+ * The third stance, equidistant from the other two. The base is a drawing
+ * room (light, serif, teal); Skippy is a HUD (dark, mono, amber, hard
+ * angles). Nestor is an OBJECT: the Nabaztag on the dresser — white
+ * porcelain, all curves, whose belly lights up when it works. Hence the most
+ * generous radii of the three bodies, a rounded face, and the amethyst of
+ * the original LEDs.
+ *
+ * It FOLLOWS THE PHONE, unlike Skippy who imposes his night: porcelain in
+ * daylight, night-light in the evening, nobody hunting for a switch. So the
+ * structure is the base sheet's — day in the base block, night under the
+ * media query, then both explicit variants so the theme button still rules.
+ */
+
+/* ══ DAY — porcelain. Fonts, radii and signature live ONLY here: night
+   overrides the palette and nothing else. ═══════════════════════════════ */
+:root[data-skin='nestor'],
+:root[data-skin='nestor'][data-theme='light'] {
+  --surface: #f5f1ea;
+  --surface-raised: #ffffff;
+  --surface-soft: #ede8de;
+  --surface-sunken: #e6e0d4;
+  --border: #e4ddd0;
+  --border-strong: #d6cdbc;
+
+  --text: #332e3c;
+  --text-muted: #6f6880;
+  --text-faint: #a79fb4;
+
+  /* ONE accent: amethyst, the belly-light of the original Nabaztag. Deeper
+     by day than the night's #8B6CE8 — same hue, measured for contrast. */
+  --accent: #6b4bc8;
+  --accent-text: #ffffff;
+  --accent-quiet: rgb(107 75 200 / 10%);
+
+  --danger: #c4402c;
+  --warning: #b4771b;
+  --success: #2e9e63;
+
+  /* SOFT, dropped shadows: an object rests on something. The exact opposite
+     of Skippy, who only emits light. */
+  --shadow-sm: 0 1px 2px rgb(51 46 60 / 5%);
+  --shadow: 0 6px 18px rgb(51 46 60 / 9%), 0 1px 3px rgb(51 46 60 / 6%);
+  --shadow-lg: 0 18px 44px rgb(51 46 60 / 14%);
+
+  --scrim: rgb(51 46 60 / 50%);
+}
+
+:root[data-skin='nestor'] {
+  /* Rounded, and no webfont: `ui-rounded` exists only on Apple; elsewhere it
+     falls back to the base stack, which stays correct. The radii are the
+     main gesture here, not the type. */
+  --font-title: ui-rounded, 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', 'Arial Rounded MT Bold', var(--font);
+  --font-input: var(--font-title);
+
+  /* The object has not a single hard angle. */
+  --radius-micro: 6px;
+  --radius-sm: 11px;
+  --radius-ctl: 13px;
+  --radius: 16px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+  --radius-round: 50%;
+  --radius-bubble: 18px;
+
+  /* Tinted porcelain, rimmed — never a filled pastille. */
+  --plate-top: 22%;
+  --plate-mix: 8%;
+  --plate-base: #ffffff;
+  --plate-fg: var(--accent);
+  --plate-fg-tint: 100%;
+  --plate-border-width: 1px;
+  --plate-border-tint: 22%;
+
+  --label-size: 10.5px;
+  --label-track: 0.14em;
+  --title-track: -0.005em;
+
+  /* Body-specific tokens, consumed by the rabbit's own markup. The porcelain
+     is white in BOTH hours — a beige Nabaztag does not exist. By day the
+     SHADOW lifts it off the cream; by night it glows on the plum by itself. */
+  --nst-porcelaine: #ffffff;
+  --nst-glow: #b9a3ff;
+  --nst-ombre-objet: drop-shadow(0 10px 18px rgb(51 46 60 / 20%));
+}
+
+/* ══ NIGHT — the night-light. Deep plum; only the PALETTE moves. ════════ */
+@media (prefers-color-scheme: dark) {
+  :root[data-skin='nestor']:not([data-theme='light']) {
+    --surface: #131022;
+    --surface-raised: #1d1836;
+    --surface-soft: #171331;
+    --surface-sunken: #0c0a18;
+    --border: #2c2549;
+    --border-strong: #3a3160;
+
+    --text: #ece7f6;
+    --text-muted: #9c94b4;
+    --text-faint: #6b6486;
+
+    --accent: #8b6ce8;
+    --accent-text: #0f0a1e;
+    --accent-quiet: rgb(139 108 232 / 14%);
+
+    --danger: #ea6a7e;
+    --warning: #e8b45c;
+    --success: #4fc08a;
+
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 35%);
+    --shadow: 0 8px 24px rgb(0 0 0 / 45%), 0 1px 3px rgb(0 0 0 / 30%);
+    --shadow-lg: 0 20px 52px rgb(0 0 0 / 60%);
+
+    --scrim: rgb(8 6 18 / 60%);
+
+    --plate-top: 30%;
+    --plate-mix: 10%;
+    --plate-base: #241b45;
+    --nst-ombre-objet: none;
+  }
+}
+
+/* The explicit variant: the theme button must be able to impose the
+   night-light on a phone set to light. */
+:root[data-skin='nestor'][data-theme='dark'] {
+  --surface: #131022;
+  --surface-raised: #1d1836;
+  --surface-soft: #171331;
+  --surface-sunken: #0c0a18;
+  --border: #2c2549;
+  --border-strong: #3a3160;
+  --text: #ece7f6;
+  --text-muted: #9c94b4;
+  --text-faint: #6b6486;
+  --accent: #8b6ce8;
+  --accent-text: #0f0a1e;
+  --accent-quiet: rgb(139 108 232 / 14%);
+  --danger: #ea6a7e;
+  --warning: #e8b45c;
+  --success: #4fc08a;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 35%);
+  --shadow: 0 8px 24px rgb(0 0 0 / 45%), 0 1px 3px rgb(0 0 0 / 30%);
+  --shadow-lg: 0 20px 52px rgb(0 0 0 / 60%);
+  --scrim: rgb(8 6 18 / 60%);
+  --plate-top: 30%;
+  --plate-mix: 10%;
+  --plate-base: #241b45;
+  --nst-ombre-objet: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   MARKUP THIS SKIN ALONE PRODUCES — the living rabbit and its landing.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* The rabbit: three stacked layers — ears painted UNDER the body (each
+   masked outside the dome, so nothing hidden pops out mid-turn), the body,
+   then the face on top in the BACKGROUND's colour: eyes and muzzle are
+   HOLES, never painted spots. That is what keeps it legible on any ground
+   at any size. */
+.nst-lapin {
+  position: relative;
+  flex: none;
+  width: var(--nst-taille, 240px);
+  aspect-ratio: 1;
+  color: var(--nst-porcelaine);
+  --nst-face: var(--surface);
+  filter: var(--nst-ombre-objet);
+}
+
+.nst-lapin > svg,
+.nst-lapin .nst-oreille svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: currentcolor;
+  overflow: visible;
+}
+
+/* The face takes the colour of whatever is BEHIND the rabbit. In the thread
+   that is a bubble, not the page — the modifier is set by the JS, which
+   alone knows where it puts the object. */
+.nst-lapin .nst-visage { fill: var(--nst-face); }
+.nst-lapin.nst-sur-bulle { --nst-face: var(--bubble-agent-bg); }
+
+/* Two stepper motors, two clocks: the big salute out to horizontal, then
+   held inclinations — and the right always starts a breath after the left,
+   because two motors never quite agree. Plane rotation: the real ear is a
+   spherical shell whose front silhouette never thins mid-course. */
+.nst-lapin .nst-oreille {
+  position: absolute;
+  inset: 0;
+  transform-origin: 40% 34%;
+  animation: nst-oreille-g 10s ease-in-out infinite;
+}
+
+.nst-lapin .nst-od {
+  transform-origin: 59.9% 34%;
+  animation-name: nst-oreille-d;
+  animation-delay: 0.4s;
+}
+
+@keyframes nst-oreille-g {
+  0%, 8% { transform: rotate(0deg); }
+  16%, 26% { transform: rotate(-90deg); }
+  34%, 42% { transform: rotate(-45deg); }
+  50%, 58% { transform: rotate(-67deg); }
+  66%, 76% { transform: rotate(-22deg); }
+  84%, 100% { transform: rotate(0deg); }
+}
+
+@keyframes nst-oreille-d {
+  0%, 8% { transform: rotate(0deg); }
+  16%, 26% { transform: rotate(90deg); }
+  34%, 42% { transform: rotate(45deg); }
+  50%, 58% { transform: rotate(67deg); }
+  66%, 76% { transform: rotate(22deg); }
+  84%, 100% { transform: rotate(0deg); }
+}
+
+/* The belly — the working light, and the only thing the original object knew
+   how to say. It breathes at rest, it races while a turn runs. */
+.nst-ventre {
+  position: absolute;
+  left: 50%;
+  top: 78%;
+  width: 27%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(
+    closest-side,
+    var(--nst-glow),
+    color-mix(in srgb, var(--accent) 70%, transparent) 55%,
+    transparent 72%
+  );
+  filter: blur(6px);
+  animation: nst-respire 3.2s ease-in-out infinite;
+}
+
+@keyframes nst-respire { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+.nst-lapin.nst-affaire .nst-ventre { animation-duration: 1s; filter: blur(3px); }
+
+/* The landing — rabbit and invitation, nothing else. No gauges, no version:
+   the audience is the household. Module tiles appear only when the instance
+   arms some. */
+.nst-accueil {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  padding: clamp(18px, 5vh, 54px) 20px 40px;
+}
+
+.nst-salut {
+  font-family: var(--font-title);
+  font-weight: 800;
+  line-height: 1.1;
+  font-size: clamp(26px, 4.6vw, 38px);
+  letter-spacing: var(--title-track);
+  color: var(--text);
+  margin: 0;
+}
+
+.nst-salut em { font-style: normal; color: var(--accent); }
+
+.nst-date {
+  font-size: var(--label-size);
+  letter-spacing: var(--label-track);
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--text-faint);
+  margin: 0;
+}
+
+.nst-scene { display: grid; place-items: center; margin: clamp(8px, 3vh, 26px) 0; }
+
+.nst-invite {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 420px;
+  padding: 12px 10px 12px 20px;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-family: var(--font-input);
+  color: var(--text-muted);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+
+.nst-invite span { flex: 1; }
+
+.nst-invite i {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  font-style: normal;
+  font-weight: 700;
+  border-radius: var(--radius-round);
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.nst-invite:hover { border-color: var(--accent); box-shadow: var(--shadow); }
+
+.nst-tuiles {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.nst-tuile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 150px;
+  padding: 14px 18px;
+  text-decoration: none;
+  text-align: left;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.nst-tuile b { color: var(--text); font-weight: 700; font-size: 14px; }
+.nst-tuile span { color: var(--text-muted); font-size: 12px; }
+.nst-tuile:hover { border-color: var(--accent); }
+
+/* Motion is this body's signature, not its function: whoever asks for less
+   animation keeps a rabbit — simply a still one. */
+@media (prefers-reduced-motion: reduce) {
+  .nst-lapin .nst-oreille,
+  .nst-ventre { animation: none; }
+}

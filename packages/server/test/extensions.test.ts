@@ -162,7 +162,7 @@ describe('frontend payload', () => {
   it('gives the shell a base URL and the facets to import', async () => {
     const { plugins } = await discoverPlugins(join(root, 'plugins'), activation)
     const workbench = frontendPayload(plugins).find((p) => p.id === 'workbench')
-    expect(workbench).toEqual({
+    expect(workbench).toMatchObject({
       id: 'workbench',
       kind: 'app',
       base: '/plugins/workbench/',
@@ -170,6 +170,10 @@ describe('frontend payload', () => {
       styles: ['./web/app.css'],
       tile: { label: 'Workbench', icon: '🪚' },
     })
+    // The description travels too: a custom home renders it as the tile's
+    // subtitle, and inventing one client-side would put words in the
+    // plugin's mouth.
+    expect(typeof workbench?.description).toBe('string')
   })
 
   it('omits facets a plugin does not declare', async () => {
