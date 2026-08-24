@@ -25,7 +25,7 @@ import {
   looksLikeToken,
 } from '../src/copilot-cli/auth.js'
 import { newTranslationState, parseLine, toolTargetOf, translate } from '../src/copilot-cli/events.js'
-import { harvestToken, startDeviceCodeLogin, type DeviceCodeLogin } from '../src/copilot-cli/login.js'
+import { harvestToken, ptyLogin, startDeviceCodeLogin, type DeviceCodeLogin } from '../src/copilot-cli/login.js'
 
 describe('event parsing', () => {
   it('reads a JSONL line', () => {
@@ -299,6 +299,43 @@ describe('the device-code login flow', () => {
     expect(spawned[0]?.env).toMatchObject({ COPILOT_AUTO_UPDATE: 'false', COPILOT_HOME: home })
     // CI would be read as "do not ask", and the question is the point.
     expect(spawned[0]?.env?.CI).toBeUndefined()
+  })
+
+  it('says the CLI declined for us when it was never given a terminal', async () => {
+    // Measured against 1.0.80 in a container: with piped stdio the CLI answers
+    // its own question with "no" and calls the login a success. Reading that
+    // as a keychain would send someone to fix a keychain that is not there.
+    const home = mkdtempSync(join(tmpdir(), 'copilot-login-'))
+    const fake = fakeLogin()
+    const flowPromise = startDeviceCodeLogin({ command: 'copilot', home, baseEnv: {}, spawnImpl: fake.spawnImpl })
+    fake.stdout.write('enter code ABCD-1234\n')
+    const flow = await flowPromise
+    fake.stderr.write(
+      'Login succeeded, but the token was not saved. Install a system keychain or rerun login and accept plaintext storage.\n',
+    )
+    fake.child.emit('close', 1)
+    await expect(flow.completed).rejects.toThrow(/never asked|did not get one/)
+  })
+
+  it('runs the login under a pty, because the question is TTY-gated', async () => {
+    // Verified in 1.0.80's bundle: the prompt sits behind
+    // `process.stdin.isTTY && process.stdout.isTTY`. Piped, it is skipped.
+    expect(ptyLogin('/usr/local/bin/copilot', 'linux')).toEqual({
+      file: 'script',
+      args: ['-qec', "'/usr/local/bin/copilot' login --device-code", '/dev/null'],
+    })
+    // BSD script takes an argv, not a shell string; passing one to the other
+    // silently runs the wrong thing.
+    expect(ptyLogin('copilot', 'darwin')).toEqual({
+      file: 'script',
+      args: ['-q', '/dev/null', 'copilot', 'login', '--device-code'],
+    })
+  })
+
+  it('quotes a binary path a shell would otherwise split', async () => {
+    expect(ptyLogin("/opt/my copilot/bin/it's", 'linux').args[1]).toBe(
+      "'/opt/my copilot/bin/it'\\''s' login --device-code",
+    )
   })
 
   it('reads the token out of the commented config the CLI writes', async () => {

@@ -194,7 +194,7 @@ This is the *client's* static catalog — per-plan availability, entitlement fil
 5. **`--resume` across processes with real history** — compaction behavior, `summary_count`, checkpoint semantics.
 6. **GitHub MCP server** — default toolset contents, `--add-github-mcp-toolset` effects.
 7. **Quota/billing** — AI-credits Billing API with a billing-scope token; footer/`/usage` semantics; legacy premium-requests vs AI-credits mode detection.
-8. **Device-flow relay** — `copilot login --device-code` UX capture for the relayed-arming design.
+8. ~~**Device-flow relay** — `copilot login --device-code` UX capture for the relayed-arming design.~~ **DONE, see §11.**
 9. **Enterprise knobs** — managed-settings server policy fetch (log line seen: "server policy fetch skipped: no authenticated GitHub host available"), `GH_HOST`/data-residency.
 
 ## 10. Annex — raw outputs & artifacts (all under `spikes/copilot-cli/`)
@@ -202,6 +202,7 @@ This is the *client's* static catalog — per-plan availability, entitlement fil
 | File | Content |
 |---|---|
 | `raw/help.txt` | full `--help` (273 lines) |
+| `raw/login-device-code-plaintext.txt` | `login --device-code` piped vs under a pty, with a real approval (§11) |
 | `raw/help-topic-{billing,commands,config,environment,limits,logging,monitoring,permissions,providers,sandbox}.txt` | all help topics |
 | `raw/cmd-{login,mcp,mcp-add,mcp-get,mcp-list,mcp-remove,plugin,plugins,skill,update,init,completion}.txt` | subcommand help |
 | `raw/unauth-p-text.txt`, `raw/unauth-p-json.{stdout,stderr}.txt` | exact no-auth error (state 3a), proof stdout is empty in json mode |
@@ -235,3 +236,52 @@ env -i HOME="$PWD/../isolated-home" COPILOT_HOME="$PWD/../copilot-home" \
   COPILOT_PROVIDER_BASE_URL="http://127.0.0.1:45123/v1" COPILOT_MODEL="mock-model" \
   ../node_modules/.bin/copilot -p "Say exactly: hello" --allow-all-tools --output-format json
 ```
+
+---
+
+## 11. Device-flow relay and its plaintext consent [EXECUTED — authenticated, 2026-08-24]
+
+Closes §9.8. Run in a keychain-less `node:22-slim` container (linux/arm64), against a
+real GitHub approval. Transcript: `raw/login-device-code-plaintext.txt`.
+
+**The finding that matters: the plaintext question is TTY-gated.** `copilot login`
+falls back to a plaintext `config.json` only after asking, and it asks only when
+BOTH `process.stdin.isTTY` and `process.stdout.isTTY` (guard read from the shipped
+`app.js`). With the piped stdio a server gives a child, the question is never
+printed, the CLI **declines on the user's behalf**, and the run ends:
+
+    Login succeeded, but the token was not saved. Install a system keychain or
+    rerun login and accept plaintext storage.
+
+reported as a *success* sentence, on stderr, exit 1, with no `config.json` written.
+No flag and no environment variable pre-accepts — all ~120 `COPILOT_*` names in the
+bundle were checked. The only injection point, `promptForPlaintextConsent`, is
+internal to the CLI.
+
+So a relayed login **must** run under a pty. `script` (util-linux) is enough — node
+cannot allocate one, and `script` is already in `node:22-slim` (2.38.1). Under it
+the question appears, `y\n` on stdin answers it, and the token lands where it can
+be harvested.
+
+**Verified strings** (1.0.80): code as `To authenticate, visit <url> and enter code
+XXXX-XXXX`; question as `System keychain unavailable. Store token in plaintext
+config file? (y/N) `; success as `Signed in successfully as <login>.`; refusal as
+`the token was not saved`.
+
+**Verified `config.json` shape** — what `harvestToken` reads:
+
+    // User settings belong in settings.json.
+    // This file is managed automatically.
+    { "copilotTokens": { "https://github.com:<login>": "gho_… (40 chars)" }, … }
+
+**Two traps for anyone reading this stream:**
+- The prompt carries cursor escapes even under `NO_COLOR=1` and has **no trailing
+  newline**. Match on the accumulated buffer, never line by line.
+- The code appears on stdout, but the clipboard fallback message carrying it appears
+  on stderr — and that message *disappears* under a pty, where OSC 52 works. Read both.
+
+**Deployment trap, unrelated to auth:** `node:22-slim` ships **no system CA store**
+(`/etc/ssl/certs` is empty). Node bundles its own roots and does not care; the
+Copilot binary reads the OS store and dies as `Login failed: Error: request failed:
+builder error` before any request leaves the machine. Any image running this CLI
+needs `ca-certificates`.

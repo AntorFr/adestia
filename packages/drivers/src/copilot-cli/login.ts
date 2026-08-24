@@ -23,22 +23,36 @@
  * statement the arming panel shows them. Writing someone's OAuth token to an
  * unencrypted file is not a detail to auto-confirm behind their back.
  *
- * ## What is actually captured, and what is not
+ * ## Why the login runs under a terminal it does not need
  *
- * `spikes/copilot-cli/raw/` holds `copilot login --help` (which documents the
- * plaintext fallback in prose) but NOT a transcript of the question itself:
- * reaching it needs a keychain-less machine and a real GitHub approval. So the
- * matcher below is INFERRED, not captured, and is written to fail loudly
- * rather than silently — it matches loosely, the consent is also sent blind in
- * case the wording moved, and a login that stalls after consent is killed with
- * a message naming the likely cause instead of hanging until the device code
- * expires. `enter code XXXX-XXXX` and `Signed in successfully` are the strings
- * the flow reads on the happy path.
+ * The question is asked ONLY when both streams are terminals. From 1.0.80's
+ * own bundle:
+ *
+ *     if (!process.stdin.isTTY || !process.stdout.isTTY) return false
+ *     rl.question("System keychain unavailable. Store token in plaintext config file? (y/N) ", …)
+ *
+ * With the piped stdio a server gives a child, that guard returns false before
+ * anything is printed, the CLI declines on the user's behalf, and the login
+ * ends with "Login succeeded, but the token was not saved." — measured, in a
+ * keychain-less container, against a real approval. No amount of writing "y"
+ * to a pipe can reach a prompt that was never opened.
+ *
+ * So the login is spawned under util-linux `script`, which allocates a pty:
+ * no native dependency (node cannot make one), and it is already in the
+ * `node:22-slim` base Golem's own image is built from. Everything the flow
+ * reads then arrives on that one merged stream, cursor escapes included, which
+ * is why the matchers below tolerate them.
+ *
+ * Strings verified against 1.0.80, in a container: the code as
+ * `To authenticate, visit <url> and enter code XXXX-XXXX` on stdout, success
+ * as `Signed in successfully as …!`, the storage refusal as `the token was not
+ * saved`, and the question exactly as quoted above.
  */
 
 import { spawn } from 'node:child_process'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { platform } from 'node:process'
 
 export interface DeviceCodeLogin {
   /** The GitHub device-verification URL to open in a browser. */
@@ -92,12 +106,15 @@ export const PLAINTEXT_CONSENT =
 const CODE_RE = /enter (?:the )?code ([A-Z0-9]{4,}-[A-Z0-9]{4,})/i
 const URL_RE = /(https?:\/\/\S*\/login\/device\S*)/i
 /**
- * Loose by design (see the header): any question on one line that talks about
- * plaintext or unencrypted storage. Narrow enough not to answer some unrelated
- * prompt "yes", wide enough to survive a reworded release.
+ * Looser than the string it was read from: any question on one line that talks
+ * about plaintext or unencrypted storage. Narrow enough not to answer some
+ * unrelated prompt "yes", wide enough to survive a reworded release — and
+ * unbothered by the cursor escapes readline emits around a pty prompt.
  */
 const KEYCHAIN_RE = /(plain[\s-]?text|unencrypted)[^\n]*\?|\?[^\n]*(plain[\s-]?text|unencrypted)/i
 const SUCCESS_RE = /signed in successfully/i
+/** The CLI declining storage for us — the exact shape of the original bug. */
+const NOT_SAVED_RE = /token was not saved/i
 const DEFAULT_URL = 'https://github.com/login/device'
 /** Enough of the CLI's own words to diagnose a failure, not its whole log. */
 const REPORTED_OUTPUT = 400
@@ -108,6 +125,23 @@ const REPORTED_OUTPUT = 400
  */
 function scrubTokens(text: string): string {
   return text.replace(/gh[a-z]_[A-Za-z0-9_]{10,}/g, 'gh*_***')
+}
+
+/**
+ * `copilot login`, wrapped in a pty so the CLI will ask its question at all
+ * (see the header). The two `script` implementations take their arguments in
+ * incompatible orders, and neither accepts the other's: util-linux takes one
+ * shell string after `-c`, BSD takes an argv after the typescript file.
+ *
+ * Only the util-linux branch propagates the child's exit code (`-e`). That
+ * costs nothing here: BSD `script` means macOS, macOS has a keychain, and the
+ * question never comes up there — the flow ends on a harvest that finds
+ * nothing and says why.
+ */
+export function ptyLogin(command: string, os: string = platform): { file: string; args: string[] } {
+  if (os === 'darwin') return { file: 'script', args: ['-q', '/dev/null', command, 'login', '--device-code'] }
+  const quoted = `'${command.replace(/'/g, `'\\''`)}'`
+  return { file: 'script', args: ['-qec', `${quoted} login --device-code`, '/dev/null'] }
 }
 
 /**
@@ -123,7 +157,8 @@ export function startDeviceCodeLogin(options: StartLoginOptions): Promise<Device
   const afterConsentMs = options.afterConsentMs ?? 2 * 60_000
 
   return new Promise<DeviceCodeLogin>((announce, failToStart) => {
-    const child = spawnImpl(options.command, ['login', '--device-code'], {
+    const { file, args } = ptyLogin(options.command)
+    const child = spawnImpl(file, args, {
       env: {
         ...options.baseEnv,
         COPILOT_HOME: options.home,
@@ -236,12 +271,32 @@ export function startDeviceCodeLogin(options: StartLoginOptions): Promise<Device
     child.stdout?.on('data', onChunk)
     child.stderr?.on('data', onChunk)
 
-    child.on('error', (error: Error) => {
-      fail(error)
+    child.on('error', (error: Error & { code?: string }) => {
+      // The only thing spawned here is `script`; a missing `copilot` exits
+      // through it with a status instead. So ENOENT names the pty tool.
+      fail(
+        error.code === 'ENOENT'
+          ? new Error('this login needs util-linux `script` to give the CLI a terminal, and it is not installed')
+          : error,
+      )
     })
 
     child.on('close', (code: number | null) => {
       clearTimers()
+      // The CLI declining storage on the user's behalf. It reports this as a
+      // SUCCESS ("Login succeeded, but…"), so it has to be caught before the
+      // harvest, which would otherwise blame the keychain for a token that
+      // never reached one.
+      if (NOT_SAVED_RE.test(buffer)) {
+        fail(
+          new Error(
+            questionSeen
+              ? 'the CLI refused to store the token even after the plaintext question was answered'
+              : 'the CLI never asked whether it could store the token, so it declined for you — it only asks over a terminal, and this login did not get one',
+          ),
+        )
+        return
+      }
       // Harvest only once the process has exited: the token file is flushed by
       // then, where reading it on the "signed in" line could race the write.
       if (code === 0 || signedIn) {
@@ -269,7 +324,13 @@ export function startDeviceCodeLogin(options: StartLoginOptions): Promise<Device
 /**
  * Read the `gho_` OAuth token the login wrote into `$COPILOT_HOME/config.json`.
  * The file opens with `//` comment lines before its JSON body, so the parse
- * starts at the first brace.
+ * starts at the first brace. Shape captured from a real login against 1.0.80:
+ *
+ *     { "copilotTokens": { "https://github.com:<login>": "gho_… (40 chars)" }, … }
+ *
+ * Keyed by host and account, so there can be more than one; the first is taken
+ * because the login that just ran wrote into a directory this driver made for
+ * that login alone.
  */
 export async function harvestToken(home: string): Promise<string> {
   let raw: string

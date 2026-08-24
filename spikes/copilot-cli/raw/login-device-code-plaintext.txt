@@ -1,0 +1,74 @@
+$ copilot login --device-code   # 1.0.80, linux/arm64 container, no system keychain
+#
+# Two runs, same binary, same machine. The only difference is whether the child
+# was given a terminal. Token redacted; everything else is verbatim, with the
+# bytes JSON-quoted so escapes and missing newlines stay visible.
+
+=== 1. piped stdio (what a server gives a child) ===
+
+[out] "To authenticate, visit https://github.com/login/device and enter code C395-E51F\n"
+[out] "Waiting for authorization...\n"
+[err] "Failed to copy to clipboard. Please visit https://github.com/login/device and enter the code C395-E51F manually.\n"
+
+  ... approved in a browser ...
+
+[err] "Login succeeded, but the token was not saved. Install a system keychain or rerun login and accept plaintext storage.\n"
+exit=1
+$COPILOT_HOME/config.json: does not exist
+
+# No question was ever asked. From the shipped bundle (app.js), the prompt is
+# guarded and skipped whenever either stream is not a terminal:
+#
+#   i(){ if(!process.stdin.isTTY||!process.stdout.isTTY)return!1;
+#        let t=dOi({input:process.stdin,output:process.stdout});
+#        return await new Promise(e=>{t.question(
+#          "System keychain unavailable. Store token in plaintext config file? (y/N) ",
+#          n=>{t.close();let r=n.trim().toLowerCase();e(r==="y"||r==="yes")})})}
+#
+#   async function NRe(t,e,n,r){
+#     if(!await EN.storeToken(e.token,e.host,e.login,n)){          // keychain
+#       if(!await(r?.promptForPlaintextConsent??uOi)())return!1;   // the guard above
+#       await EN.storeCurrentTokenInConfig(e.host,e.login,n)}      // config.json
+#     return await t.loginUser(e.host,e.login,e.token),!0}
+#
+# `promptForPlaintextConsent` is injectable from inside the CLI only. No flag
+# and no environment variable pre-accepts: all ~120 COPILOT_* names in the
+# bundle were listed, none concerns plaintext, keychain or credential storage.
+
+=== 2. under a pty (`script -qec '<binary> login --device-code' /dev/null`) ===
+
+[out] "To authenticate, visit https://github.com/login/device and enter code 1737-F071\r\n"
+[out] "Waiting for authorization...\r\n]52;p!;MTczNy1GMDcx;]52;c;MTczNy1GMDcx"
+
+  ... approved in a browser ...
+
+[out] "[1G[0JSystem keychain unavailable. Store token in plaintext config file? (y/N) [74G"
+
+  ... "y\n" written to the child's stdin ...
+
+[out] "y"
+[out] "\r\r\n"
+[out] "Signed in successfully as AntorFr.\r\n"
+exit=0
+
+$COPILOT_HOME/config.json:
+// User settings belong in settings.json.
+// This file is managed automatically.
+{
+  "copilotTokens": {
+    "https://github.com:AntorFr": "gho_<REDACTED, 40 chars>"
+  },
+  "lastLoggedInUser": { "host": "https://github.com", "login": "AntorFr" },
+  "loggedInUsers": [ { "host": "https://github.com", "login": "AntorFr" } ]
+}
+
+# Notes:
+# - The clipboard error on stderr disappears under a pty (OSC 52 works there),
+#   so the code is not reliably on any one stream. Read both.
+# - readline emits cursor escapes around the prompt even with NO_COLOR=1, and
+#   the prompt has NO trailing newline: match on the accumulated buffer, never
+#   line by line.
+# - The container needs a CA store. node:22-slim has none (/etc/ssl/certs is
+#   empty); node bundles its own roots, the Rust binary does not, and without
+#   one every request fails as "Login failed: Error: request failed: builder
+#   error" before it reaches the network.

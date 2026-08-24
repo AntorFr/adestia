@@ -30,6 +30,20 @@ RUN npm prune --omit=dev
 FROM node:22-slim AS runtime
 WORKDIR /app
 
+# node:22-slim ships NO system CA store: /etc/ssl/certs is empty. Node bundles
+# its own roots and never notices, but a driver's CLI is its own binary with
+# its own TLS stack — the Copilot one dies as "request failed: builder error"
+# before a single request leaves the machine, naming nothing. Since the point
+# of this image is that an operator adds their CLI to it, the certificates
+# belong here rather than in every derived image.
+#
+# `script` (util-linux, already in the base) is kept deliberately: the Copilot
+# device-code login only asks whether it may store its token when it is on a
+# terminal, so the driver spawns it under a pty. Do not slim it away.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
 ENV NODE_ENV=production
 
 COPY --from=build /build/node_modules ./node_modules
