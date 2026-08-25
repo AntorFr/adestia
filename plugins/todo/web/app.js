@@ -4,8 +4,11 @@ import {
   buildModel,
   byDomain,
   dynamicLists,
+  newTaskPath,
   progressOf,
   resolveList,
+  taskFolder,
+  taskMarkdown,
   toggleDone,
   words,
 } from './model.js'
@@ -17,6 +20,10 @@ export default function view(api) {
     const [model, setModel] = useState(null)
     const [openList, setOpenList] = useState(null)
     const [error, setError] = useState(null)
+    const [draft, setDraft] = useState({ title: '', due: '', dom: '' })
+    const [saving, setSaving] = useState(false)
+    /** The last task captured here, kept only to offer its page. */
+    const [created, setCreated] = useState(null)
 
     const reload = useCallback(async () => {
       try {
@@ -65,6 +72,63 @@ export default function view(api) {
         await reload()
       },
       [reload],
+    )
+
+    /**
+     * Capturing a task by hand.
+     *
+     * The other author is still the agent, and this does not compete with it:
+     * it writes the shortest page the contract allows and stops. What it
+     * cannot say — a body, a priority, a parent project — is said in the page
+     * editor, which is the whole reason this form can exist now and could not
+     * before: a form is a poor author only when it is the LAST word.
+     *
+     * The write carries no revision, which is precisely the guard: the server
+     * refuses a PUT with no revision on a file that already exists, so a
+     * collision with something the agent wrote a second ago is a 409 and a
+     * second name, never a page silently replaced.
+     */
+    const capture = useCallback(
+      async (event) => {
+        event.preventDefault()
+        const title = draft.title.trim()
+        if (!title || saving) return
+        setSaving(true)
+        // The previous "open" link goes with the previous capture: left up
+        // beside an error, it would offer the wrong page for the right task.
+        setCreated(null)
+
+        const folder = taskFolder(model.config, api.locale)
+        const markdown = taskMarkdown({ title, due: draft.due, dom: draft.dom.trim() })
+        const taken = Object.keys(model.tasks)
+
+        const put = (path) =>
+          api.fetch(`/api/pages/${path}`, {
+            method: 'PUT',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ markdown }),
+          })
+
+        try {
+          let path = newTaskPath(folder, title, taken)
+          let write = await put(path)
+          if (write.status === 409) {
+            path = newTaskPath(folder, title, [...taken, path.replace(/\.md$/, '')])
+            write = await put(path)
+          }
+          if (write.status === 409) throw new Error(t('another author just took that name — try again'))
+          if (!write.ok) throw new Error(`${t('could not create that task')} (${write.status})`)
+
+          setDraft({ title: '', due: '', dom: '' })
+          setCreated(path)
+          setError(null)
+        } catch (cause) {
+          setError(cause.message)
+        }
+        setSaving(false)
+        await reload()
+      },
+      [draft, model, reload, saving],
     )
 
     if (error && !model) return h('p', { className: 'todo-problem' }, error)
@@ -151,6 +215,69 @@ export default function view(api) {
           `${allTasks.filter((t) => !t.done).length} open across ${allTasks.length} tasks`,
         ),
       ]),
+      /**
+       * Quick capture.
+       *
+       * Title first and alone under the Enter key, because that is the
+       * gesture: a task remembered on a staircase is a sentence, and asking
+       * for a date before it is written loses it. The two fields beside it
+       * are the two the list itself displays — a form that offered a field
+       * this screen cannot show would be promising something it does not
+       * keep.
+       */
+      h('form', { key: 'new', className: 'todo-new', onSubmit: capture }, [
+        h('input', {
+          key: 't',
+          className: 'todo-new__title',
+          value: draft.title,
+          placeholder: t('New task'),
+          'aria-label': t('New task'),
+          onChange: (event) => setDraft({ ...draft, title: event.target.value }),
+        }),
+        h('input', {
+          key: 'd',
+          type: 'date',
+          className: 'todo-new__field',
+          value: draft.due,
+          'aria-label': t('Due date'),
+          onChange: (event) => setDraft({ ...draft, due: event.target.value }),
+        }),
+        h('input', {
+          key: 'm',
+          className: 'todo-new__field',
+          list: 'todo-domains',
+          value: draft.dom,
+          placeholder: t('Domain'),
+          'aria-label': t('Domain'),
+          onChange: (event) => setDraft({ ...draft, dom: event.target.value }),
+        }),
+        // The domains the base already uses, offered rather than imposed: a
+        // free field with a memory, so "atelier" is not re-invented as
+        // "Atelier" on a tired evening.
+        h(
+          'datalist',
+          { key: 'l', id: 'todo-domains' },
+          [...new Set(Object.values(model.tasks).map((task) => task.dom).filter(Boolean))].map((dom) =>
+            h('option', { key: dom, value: dom }),
+          ),
+        ),
+        h(
+          'button',
+          { key: 'b', type: 'submit', className: 'todo-new__add', disabled: !draft.title.trim() || saving },
+          t('Add'),
+        ),
+      ]),
+
+      // Offered, never forced: the task is already filed and shown below.
+      // This is only for the times the rest of it — a body, a priority — is
+      // in the writer's head right now.
+      created &&
+        h(
+          'a',
+          { key: 'open', className: 'todo-new__open', href: `#/page/${encodeURIComponent(created)}` },
+          `${t('Open')} ↗`,
+        ),
+
       error && h('p', { key: 'e', className: 'todo-problem' }, error),
 
       h('h3', { key: 'c', className: 'todo-group' }, t('Your lists')),
@@ -171,18 +298,6 @@ export default function view(api) {
           h('h4', { key: 'h' }, group.dom),
           h('ul', { key: 'l', className: 'todo-list' }, group.tasks.map(taskRow)),
         ]),
-      ),
-
-      h(
-        'button',
-        {
-          key: 'ask',
-          className: 'todo-back',
-          // Created through the agent: a task is a page with a contract, and
-          // a form that writes one would be a second, poorer author.
-          onClick: () => api.ask('Ajoute une tâche : '),
-        },
-        '＋ Ask for a new task',
       ),
     ])
   }

@@ -13,7 +13,8 @@
   ],
   "types": [
     "tache",
-    "liste"
+    "liste",
+    "todo-config"
   ],
   "tile": {
     "label": "Todo",

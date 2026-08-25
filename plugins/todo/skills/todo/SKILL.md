@@ -63,3 +63,26 @@ Never create a page to hold one of them.
 A task appears in as many lists as reference it, and there is still only one
 task: closing it closes it everywhere. That is the point of references — never
 copy a task into a list.
+
+## Where new tasks are filed
+
+The interface has a quick-capture form: a title, optionally a due date and a
+domain, and the page is written — the shortest task the contract allows, with
+no `done` line. Everything else it may carry is added afterwards, in the page
+editor or by you.
+
+It files into ONE folder, named after the instance's language: `taches` in
+French, `todo` otherwise. Override it for the whole instance with a page:
+
+```markdown
+---
+type: todo-config
+title: Réglages todo
+folder: perso/taches
+---
+```
+
+`folder` decides where NEW tasks are written and nothing else — a task is
+found by its `type:` wherever it sits, so an existing base scattered over
+several folders keeps working and moving a task breaks nothing. Only one such
+page is read; a second one is redundancy waiting to disagree.

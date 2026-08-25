@@ -23,6 +23,7 @@ export const idOf = (path) => path.replace(/\.md$/, '')
 export function buildModel(entries) {
   const tasks = {}
   const lists = {}
+  let config = null
 
   for (const entry of entries) {
     const fields = entry.fields ?? {}
@@ -46,6 +47,13 @@ export function buildModel(entries) {
         projet: typeof fields.projet === 'string' ? fields.projet : null,
         sub: Array.isArray(fields.sub) ? fields.sub.map(String) : [],
       }
+    } else if (fields.type === 'todo-config' && config === null) {
+      // The instance's own settings, read from the index like everything
+      // else: no second store, and the agent changes them with the file
+      // tools it already has. The FIRST one wins — the index is sorted by
+      // path, so two settings pages give the same answer on every reload
+      // rather than an answer that depends on how the folder was walked.
+      config = fields
     } else if (fields.type === 'liste') {
       lists[id] = {
         id,
@@ -56,7 +64,7 @@ export function buildModel(entries) {
     }
   }
 
-  return { tasks, lists }
+  return { tasks, lists, config: config ?? {} }
 }
 
 const today = () => new Date().toISOString().slice(0, 10)
@@ -91,6 +99,13 @@ const WORDS = {
     'Your lists': 'Vos listes',
     'Live views': 'Vues dynamiques',
     'Everything, by domain': 'Tout, par domaine',
+    'New task': 'Nouvelle tâche',
+    'Due date': 'Échéance',
+    Domain: 'Domaine',
+    Add: 'Ajouter',
+    Open: 'Ouvrir',
+    'could not create that task': 'création impossible',
+    'another author just took that name — try again': 'un autre auteur vient de prendre ce nom — réessayez',
   },
 }
 
@@ -214,4 +229,96 @@ export function toggleDone(markdown, done) {
   // No `done` at all: added at the end of the frontmatter, where a human
   // adding one would put it.
   return markdown.replace(front, `${front}\ndone: ${stamp}`)
+}
+
+/**
+ * Where a NEW task is filed.
+ *
+ * A folder name is a word before it is a path, so it follows the instance's
+ * language like every other word this plugin ships: `taches` in French,
+ * `todo` elsewhere. That default is a guess about filing, though, and only
+ * the person filing knows — so a page of `type: todo-config` overrides it
+ * for the whole instance, and the agent changes it with the file tools it
+ * already has.
+ *
+ * It decides nothing about READING: a task is found by its `type:` wherever
+ * it sits, so a base spread over several folders is merely a base spread
+ * over several folders.
+ */
+const FOLDERS = { fr: 'taches' }
+
+export function taskFolder(config, locale) {
+  const declared = typeof config?.folder === 'string' ? config.folder.trim() : ''
+  const fallback = FOLDERS[String(locale ?? '').slice(0, 2)] ?? 'todo'
+  return (declared || fallback).replace(/^\/+|\/+$/g, '')
+}
+
+/**
+ * A title, as a file name.
+ *
+ * Accents folded and punctuation dropped, because the page id ends up in URLs,
+ * in `refs:` lists and in whatever the agent types at a shell — three places
+ * where `Poncer la porte (garage).md` is a small tax paid forever.
+ */
+export function slugify(title) {
+  const slug = String(title)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60)
+    .replace(/-+$/, '')
+  // A title with nothing latin in it still deserves a file: the id is a
+  // handle, and the title stays in the frontmatter where it is read from.
+  return slug || 'tache'
+}
+
+/**
+ * A free path for a new task.
+ *
+ * Two tasks may legitimately be called the same thing — "appeler le plombier"
+ * happens twice a year — so a taken name is suffixed rather than refused. The
+ * server refuses to overwrite anyway (a PUT with no revision on an existing
+ * file is a 409), which is what makes this a courtesy rather than a guard.
+ */
+export function newTaskPath(folder, title, taken = []) {
+  const base = `${folder}/${slugify(title)}`
+  const used = new Set(taken)
+  let candidate = base
+  let n = 2
+  while (used.has(candidate)) candidate = `${base}-${n++}`
+  return `${candidate}.md`
+}
+
+/**
+ * A YAML scalar that survives being read back.
+ *
+ * Quoted only when it must be, so the file a person opens looks like the file
+ * they would have written: `title: Poncer la porte`, not `title: "Poncer la
+ * porte"`. Single quotes when quoting is needed, since the index parser reads
+ * frontmatter line by line and strips one layer of them.
+ */
+function yamlScalar(raw) {
+  const text = String(raw).trim()
+  const risky = text === '' || /^[-?:,[\]{}#&*!|>'"%@`]/.test(text) || /:\s|\s#/.test(text)
+  return risky ? `'${text.replace(/'/g, "''")}'` : text
+}
+
+/**
+ * The page a captured task becomes.
+ *
+ * Deliberately the SHORTEST page the contract allows: type, title, and the
+ * two fields the list itself displays. Everything else a task can carry —
+ * `pri`, `projet`, `sub`, a body — is written in the page editor or by the
+ * agent, because a form that asked for all of them would be a second copy of
+ * the authoring contract, in JavaScript, drifting from the skill that states
+ * it. No `done:` line either: absence means open, and this file must say the
+ * same thing as the one a tick produces.
+ */
+export function taskMarkdown({ title, due, dom } = {}) {
+  const lines = ['type: tache', `title: ${yamlScalar(title)}`]
+  if (due) lines.push(`due: ${yamlScalar(due)}`)
+  if (dom) lines.push(`dom: ${yamlScalar(dom)}`)
+  return `---\n${lines.join('\n')}\n---\n`
 }
