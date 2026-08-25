@@ -11,7 +11,7 @@
  * a silently ignored field is an hour spent wondering why nothing happens.
  */
 
-import type { ComponentType } from 'react'
+import type { ComponentType, ReactNode } from 'react'
 
 /** What every factory is handed. Stable across all three facet kinds. */
 export interface PluginApi {
@@ -126,9 +126,55 @@ export interface ChromeContribution {
   }[]
 }
 
-/** Content-engine tags a plugin adds to the closed vocabulary. */
+/**
+ * What a contributed block's component is handed when a page draws it.
+ *
+ * Note what is NOT here: `fetch`, `locale`, the plugin's id. Those come from
+ * the `api` the factory already closed over, so a block never has to be given
+ * twice what its own plugin knows. What IS here is the only thing the plugin
+ * cannot know — where in the workspace this particular occurrence sits.
+ */
+export interface BlockProps {
+  /** Validated against the manifest's spec before this ever runs. */
+  readonly attributes: Readonly<Record<string, string>>
+  /**
+   * A path written in the page, turned into something fetchable.
+   *
+   * `{% parcours source="assets/x.json" %}` means "next to the page that
+   * writes it", the way it reads on disk. Nothing in a document should have
+   * to know files are served under `/api/files`, and a plugin cannot resolve
+   * it alone: only the shell knows which page is being read.
+   */
+  resolve(path: string): string
+  /**
+   * The same path, as the WORKSPACE spells it.
+   *
+   * What a block names to its own API — "the GPX of this file" — where
+   * `resolve` is what it fetches. A plugin deriving one from the other would
+   * be reading the shell's route shape out of a string, and would break the
+   * day that shape moves.
+   */
+  locate(path: string): string
+  /** Opens another page of this instance in place, when the shell offers it. */
+  openPage?(path: string): void
+  /** The block's body, already rendered. Only ever set on a `flow` block. */
+  readonly children?: ReactNode
+}
+
+/**
+ * Content-engine blocks a plugin adds to the closed vocabulary.
+ *
+ * Only the COMPONENTS. A block's name, its attributes and whether it takes a
+ * body are declared in the manifest instead — the server validates pages and
+ * cannot execute a browser module to learn what is legal. So this half stays
+ * what a manifest genuinely cannot hold, and neither half restates the other.
+ *
+ * A component named here with no matching manifest entry never renders: the
+ * parser will not have produced the node. That is reported at load rather
+ * than left as a block that silently does nothing.
+ */
 export interface BlocksContribution {
-  readonly tags: Readonly<Record<string, unknown>>
+  readonly tags: Readonly<Record<string, ComponentType<BlockProps>>>
 }
 
 export type Facet = 'view' | 'blocks' | 'chrome'
@@ -216,7 +262,27 @@ export function narrowBlocks(raw: unknown): { blocks?: BlocksContribution; issue
   }
   const tags = (raw as Record<string, unknown>)['tags']
   if (typeof tags !== 'object' || tags === null) {
-    return { issue: { facet: 'blocks', reason: '`tags` must be an object of block definitions' } }
+    return { issue: { facet: 'blocks', reason: '`tags` must be an object of block components' } }
   }
-  return { blocks: { tags: tags as Record<string, unknown> } }
+
+  const components: Record<string, ComponentType<BlockProps>> = {}
+  const wrong: string[] = []
+  for (const [name, value] of Object.entries(tags)) {
+    if (typeof value === 'function') components[name] = value as ComponentType<BlockProps>
+    else wrong.push(name)
+  }
+  if (wrong.length > 0) {
+    // Named, not counted: the author has to know WHICH block will not draw,
+    // and a plugin contributing four blocks gets no help from "one is wrong".
+    return {
+      issue: {
+        facet: 'blocks',
+        reason: `must be React components, got something else for: ${wrong.join(', ')}`,
+      },
+    }
+  }
+  if (Object.keys(components).length === 0) {
+    return { issue: { facet: 'blocks', reason: '`tags` declared no block at all' } }
+  }
+  return { blocks: { tags: components } }
 }

@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "parcours",
+  "kind": "feature",
+  "description": "Walks and hikes: the `:::parcours` block draws a `.parcours.json` as a map with numbered markers, an elevation profile and a walking mode, and assembles its GPX on demand. A feature, not an app: a route has no domain and no tile — it hangs off whichever page has a reason to mention it.",
+  "contract": 1,
+  "blocks": "./web/blocks.js",
+  "vocabulary": {
+    "parcours": {
+      "content": "empty",
+      "description": "A walk, drawn from the `.parcours.json` that sits beside the page.",
+      "attributes": {
+        "source": { "required": true },
+        "vue": { "values": ["carte", "lien"], "default": "carte" }
+      }
+    }
+  },
+  "view": "./web/view.js",
+  "styles": ["./web/parcours.css"],
+  "api": "./api.mjs",
+  "skills": ["./skills/parcours-json/SKILL.md"]
+}

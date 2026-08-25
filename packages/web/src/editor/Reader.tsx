@@ -17,9 +17,15 @@
  * when somebody actually decides to write.
  */
 
-import { createElement as h, Fragment, type ReactNode } from 'react'
+import { createElement as h, Fragment, type ComponentType, type ReactNode } from 'react'
 
-import { parse, toneOf } from '@antorfr/golem-content'
+import { blockSpec, parse, toneOf } from '@antorfr/golem-content'
+
+import { PluginBoundary } from '../plugins/Boundary.js'
+import type { BlockProps } from '../plugins/contract.js'
+
+/** What a plugin contributed, by block name. */
+export type BlockComponents = Readonly<Record<string, ComponentType<BlockProps>>>
 
 /**
  * Where a link written in a page actually points.
@@ -64,6 +70,37 @@ export function resolveHref(url: string | undefined, base: string | undefined): 
   if (path === '') return { kind: 'external', href: raw }
   if (/\.md$/i.test(path)) return { kind: 'page', path }
   return { kind: 'file', href: `/api/files/${path.split('/').map(encodeURIComponent).join('/')}` }
+}
+
+/**
+ * The same resolution, but always ending in something fetchable.
+ *
+ * A block asks for a FILE — `source="assets/x.parcours.json"` — and does not
+ * care that a neighbour ending in `.md` would have been a page to a link. It
+ * wants bytes, so a page path is served as the file it also is.
+ */
+export function assetUrl(path: string, base: string | undefined): string {
+  const target = resolveHref(path, base)
+  if (target.kind !== 'page') return target.href
+  return `/api/files/${target.path.split('/').map(encodeURIComponent).join('/')}`
+}
+
+/**
+ * The same path, as the workspace spells it — no route, no encoding.
+ *
+ * The companion of `assetUrl`, and both are needed: a block fetches its file
+ * by URL, then has to NAME that same file to its own API ("assemble the GPX
+ * of this one"). Deriving the second by peeling the first apart is what the
+ * ported engine used to do, and it tied a plugin to the shell's route shape.
+ */
+export function workspacePath(path: string, base: string | undefined): string {
+  const target = resolveHref(path, base)
+  if (target.kind === 'page') return target.path
+  // Anything with a scheme of its own was never a workspace file; handing back
+  // what was written beats inventing a path that resolves to nothing.
+  return target.href.startsWith('/api/files/')
+    ? target.href.slice('/api/files/'.length).split('/').map(decodeURIComponent).join('/')
+    : path
 }
 
 type Node = {
@@ -122,6 +159,8 @@ type Ctx = {
   /** The folder the page lives in — what a relative link is relative TO. */
   readonly base?: string
   readonly openPage?: (path: string) => void
+  /** Blocks the active plugins draw, beyond the core's own. */
+  readonly blocks?: BlockComponents
 }
 
 function children(node: Node, ctx: Ctx): ReactNode {
@@ -235,24 +274,22 @@ function render(node: Node, ctx: Ctx): ReactNode {
       return <hr />
     case 'break':
       return <br />
-    case 'containerDirective': {
-      if (node.name === 'callout') {
+    case 'containerDirective':
+    case 'leafDirective': {
+      if (node.type === 'containerDirective' && node.name === 'callout') {
         const tone = node.attributes?.['type'] ?? 'note'
         return <aside className={`golem-callout golem-callout--${tone}`}>{children(node, ctx)}</aside>
       }
-      if (node.name === 'gallery') {
+      if (node.type === 'containerDirective' && node.name === 'gallery') {
         return <div className="golem-gallery">{children(node, ctx)}</div>
       }
-      return <div>{children(node, ctx)}</div>
+      return <Contributed node={node} ctx={ctx} />
     }
-    case 'leafDirective':
     case 'textDirective':
-      // The `app` block does not mount a plugin yet. Saying so beats drawing
-      // nothing where a person expects something.
       return (
-        <p className="golem-unknown-block">
-          :::{node.name} — {`this block does not render yet`}
-        </p>
+        <span className="golem-unknown-block">
+          :{node.name} — {`this block does not render yet`}
+        </span>
       )
     default:
       // Never silently dropped: an unrendered node is a visible gap somebody
@@ -261,10 +298,56 @@ function render(node: Node, ctx: Ctx): ReactNode {
   }
 }
 
+/**
+ * A block the core does not draw — a plugin's, or nobody's.
+ *
+ * Behind a boundary, deliberately: a block renders INSIDE somebody's page,
+ * and a plugin that throws must cost its own rectangle rather than the text
+ * around it. That is the same bargain the loader already makes for a factory.
+ */
+function Contributed({ node, ctx }: { readonly node: Node; readonly ctx: Ctx }) {
+  const name = node.name ?? ''
+  const Block = ctx.blocks?.[name]
+  // A `flow` block gets its body; an `empty` one is its attributes and
+  // nothing else, so it is not handed an empty fragment to wonder about.
+  const body = blockSpec(name)?.content === 'flow' ? children(node, ctx) : undefined
+
+  if (!Block) {
+    // Two ways to land here, and the reader cannot act on either: a block no
+    // plugin claims, or one whose plugin is off. Saying so beats drawing
+    // nothing where a person expects something.
+    //
+    // The BODY is kept underneath. A block that holds prose holds somebody's
+    // words, and losing them to a missing plugin would be a worse answer than
+    // an ugly one — the same reason a refused page shows its raw source.
+    return (
+      <>
+        <p className="golem-unknown-block">
+          :::{name} — {`this block does not render yet`}
+        </p>
+        {body}
+      </>
+    )
+  }
+  return (
+    <PluginBoundary id={name} what="block">
+      <Block
+        attributes={node.attributes ?? {}}
+        resolve={(target) => assetUrl(target, ctx.base)}
+        locate={(target) => workspacePath(target, ctx.base)}
+        {...(ctx.openPage ? { openPage: ctx.openPage } : {})}
+      >
+        {body}
+      </Block>
+    </PluginBoundary>
+  )
+}
+
 export function Reader({
   markdown,
   path,
   openPage,
+  blocks,
 }: {
   readonly markdown: string
   /**
@@ -275,6 +358,8 @@ export function Reader({
    */
   readonly path?: string
   readonly openPage?: (path: string) => void
+  /** What the active plugins draw. Absent means the core's vocabulary only. */
+  readonly blocks?: BlockComponents
 }) {
   let tree: Node
   try {
@@ -289,7 +374,11 @@ export function Reader({
   const base = path === undefined ? undefined : path.slice(0, Math.max(path.lastIndexOf('/'), 0))
   return (
     <article className="golem-reader">
-      {render(tree, { ...(base === undefined ? {} : { base }), ...(openPage ? { openPage } : {}) })}
+      {render(tree, {
+        ...(base === undefined ? {} : { base }),
+        ...(openPage ? { openPage } : {}),
+        ...(blocks ? { blocks } : {}),
+      })}
     </article>
   )
 }

@@ -13,6 +13,8 @@
  * - a plugin that throws loses its own contribution, never the page.
  */
 
+import { forgetContributedBlocks, registerBlocks, type ContributedBlock } from '@antorfr/golem-content'
+
 import {
   narrowBlocks,
   narrowChrome,
@@ -40,6 +42,12 @@ export interface PluginDescriptor {
   readonly base: string
   readonly view?: string
   readonly blocks?: string
+  /**
+   * The block specs the manifest declares — the same ones the server already
+   * registered. Sent rather than re-derived: the browser must validate and
+   * draw exactly what the server accepted, and two tables drift.
+   */
+  readonly vocabulary?: Readonly<Record<string, ContributedBlock>>
   readonly chrome?: string
   readonly styles?: readonly string[]
   readonly contract?: number
@@ -141,19 +149,41 @@ export async function loadPlugins(
   const loaded: LoadedPlugin[] = []
   const failures: LoadFailure[] = []
 
-  for (const descriptor of descriptors) {
-    if (descriptor.contract !== undefined && descriptor.contract !== IMPORT_MAP_CONTRACT) {
-      // Refused before importing anything: a plugin written against another
-      // shared-dependency contract may import a specifier this page does not
-      // map, and that failure would surface as an unreadable browser error.
+  // Refused before importing anything: a plugin written against another
+  // shared-dependency contract may import a specifier this page does not map,
+  // and that failure would surface as an unreadable browser error.
+  const usable = descriptors.filter((descriptor) => {
+    if (descriptor.contract === undefined || descriptor.contract === IMPORT_MAP_CONTRACT) {
+      return true
+    }
+    failures.push({
+      id: descriptor.id,
+      facet: 'manifest',
+      reason: `declares contract ${descriptor.contract}, this shell provides ${IMPORT_MAP_CONTRACT}`,
+    })
+    return false
+  })
+
+  // The vocabulary FIRST, and for every plugin at once, before a single module
+  // is imported. The parser decides whether `:::parcours` is a block or a
+  // diagnostic, and a page can be read the moment the shell has rendered —
+  // registering as each plugin finishes loading would make that a race.
+  //
+  // Over the USABLE ones only: a plugin the shell just refused must not get to
+  // teach the parser its words, or a page would validate against a block
+  // nothing will ever draw.
+  forgetContributedBlocks()
+  for (const descriptor of usable) {
+    for (const name of registerBlocks(descriptor.vocabulary ?? {})) {
       failures.push({
         id: descriptor.id,
-        facet: 'manifest',
-        reason: `declares contract ${descriptor.contract}, this shell provides ${IMPORT_MAP_CONTRACT}`,
+        facet: 'vocabulary',
+        reason: `block ":::${name}" is the core's own and was not taken over`,
       })
-      continue
     }
+  }
 
+  for (const descriptor of usable) {
     for (const style of descriptor.styles ?? []) {
       environment.addStylesheet(descriptor.id, resolve(descriptor.base, style))
     }
@@ -163,6 +193,28 @@ export async function loadPlugins(
       loadFacet<BlocksContribution>(environment, descriptor, 'blocks', narrowBlocks, failures),
       loadFacet<ChromeContribution>(environment, descriptor, 'chrome', narrowChrome, failures),
     ])
+
+    // A component with nothing declared for it in the manifest never draws:
+    // the parser leaves the name as prose, so the block is inert in a way its
+    // author would otherwise only discover by staring at a page.
+    for (const name of Object.keys(blocks?.tags ?? {})) {
+      if (!(descriptor.vocabulary && Object.hasOwn(descriptor.vocabulary, name))) {
+        failures.push({
+          id: descriptor.id,
+          facet: 'blocks',
+          reason: `component for ":::${name}" has no matching entry in the manifest's \`vocabulary\``,
+        })
+      }
+    }
+    for (const name of Object.keys(descriptor.vocabulary ?? {})) {
+      if (!blocks?.tags[name]) {
+        failures.push({
+          id: descriptor.id,
+          facet: 'vocabulary',
+          reason: `block ":::${name}" is declared but the \`blocks\` module draws nothing for it`,
+        })
+      }
+    }
 
     if (view === undefined && blocks === undefined && chrome === undefined) {
       // Nothing usable came back: drop the styles we just injected rather than

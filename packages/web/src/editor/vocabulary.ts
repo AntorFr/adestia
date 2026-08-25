@@ -9,7 +9,7 @@
  * genuinely closed rather than merely discouraged.
  */
 
-import { GRAMMAR, toneOf } from '@antorfr/golem-content'
+import { contributedBlocks, GRAMMAR, toneOf } from '@antorfr/golem-content'
 import type { MilkdownPlugin } from '@milkdown/kit/ctx'
 import { $node, $remark } from '@milkdown/kit/utils'
 
@@ -194,7 +194,10 @@ function atomNode(name: string) {
           'data-attributes': JSON.stringify(attributes),
           class: `golem-block golem-block--${name}`,
         },
-        `${name}: ${attributes['id'] ?? ''}`,
+        // Whatever the block is addressed BY — `id` for an app, `source` for
+        // a file-backed one. A bare name would make three blocks of the same
+        // kind indistinguishable in a document being edited.
+        `${name}: ${attributes['id'] ?? Object.values(attributes)[0] ?? ''}`,
       ]
     },
     parseMarkdown: {
@@ -287,12 +290,31 @@ export const calloutNode = containerNode('callout')
 export const galleryNode = containerNode('gallery')
 export const appNode = atomNode('app')
 
-/** Everything the editor adds on top of the commonmark preset. */
-export const golemVocabulary: MilkdownPlugin[] = [
-  grammarRemarks,
-  frontmatterNode,
-  wikiLinkNode,
-  calloutNode,
-  galleryNode,
-  appNode,
-].flat()
+/**
+ * Everything the editor adds on top of the commonmark preset.
+ *
+ * A FUNCTION, not a constant, and the reason is the ordering: the blocks a
+ * plugin contributes are registered when the shell loads its plugins, while
+ * this module is imported later still — the editor is downloaded on demand.
+ * Reading the registry at call time is what makes that ordering irrelevant
+ * instead of load-bearing.
+ *
+ * Every block needs a node here or Milkdown throws "cannot match target
+ * parser" on a document the reader renders perfectly. That is the right
+ * failure — loud, and naming the node — but it means a contributed block that
+ * only had a component would break the editor on the first page holding one.
+ */
+export function golemVocabulary(): MilkdownPlugin[] {
+  const contributed = contributedBlocks().map((spec) =>
+    spec.content === 'flow' ? containerNode(spec.name) : atomNode(spec.name),
+  )
+  return [
+    grammarRemarks,
+    frontmatterNode,
+    wikiLinkNode,
+    calloutNode,
+    galleryNode,
+    appNode,
+    ...contributed,
+  ].flat()
+}

@@ -240,6 +240,15 @@ live plugin** — a page holding one shows an inert placeholder rather than a
 mounted app. Do not write one expecting an embedded widget until this note is
 gone from the skill; ask a person before relying on it for anything real.
 
+**Blocks an active plugin adds.** The three above are the core's; a plugin may
+contribute more, and they are written exactly the same way. What a plugin
+contributes is documented in ITS OWN skill — `:::parcours` in `parcours-json`,
+and so on — so look there rather than guessing. Two consequences worth
+knowing: a block belongs to the plugin, so turning the plugin off takes the
+word back out and a page holding one opens read-only; and the vocabulary is
+still closed — a page cannot invent a block, only an operator activating a
+plugin can add one.
+
 An unknown block, or a known one with a bad attribute, never corrupts the
 page and never gets silently dropped: it becomes a diagnostic, and the page
 opens read-only until it is fixed. Losing a person's content is worse than

@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
+
+import { forgetContributedBlocks, isKnownBlock } from '@antorfr/golem-content'
 
 import {
   IMPORT_MAP_CONTRACT,
@@ -7,6 +9,8 @@ import {
   type PluginDescriptor,
 } from '../src/plugins/loader.js'
 import { routeMatches } from '../src/plugins/contract.js'
+
+afterEach(() => forgetContributedBlocks())
 
 /** A fake environment: no browser, no network, no plugin folder. */
 function environment(modules: Record<string, Record<string, unknown> | Error>) {
@@ -111,7 +115,7 @@ describe('loading', () => {
   it('loads several facets of one plugin', async () => {
     const { env } = environment({
       '/plugins/kit/web/app.js': { default: () => () => null },
-      '/plugins/kit/web/blocks.js': { default: () => ({ tags: { cutlist: {} } }) },
+      '/plugins/kit/web/blocks.js': { default: () => ({ tags: { cutlist: () => null } }) },
       '/plugins/kit/web/chrome.js': {
         default: () => ({ composer: [{ id: 'scan', glyph: '▥', title: 'Scan', onClick: () => {} }] }),
       },
@@ -124,6 +128,7 @@ describe('loading', () => {
           base: '/plugins/kit/',
           view: './web/app.js',
           blocks: './web/blocks.js',
+          vocabulary: { cutlist: { content: 'empty', description: 'A cutting list.' } },
           chrome: './web/chrome.js',
         },
       ],
@@ -134,6 +139,94 @@ describe('loading', () => {
     expect(kit.blocks?.tags).toHaveProperty('cutlist')
     expect(kit.chrome?.composer?.[0]?.glyph).toBe('▥')
     expect(result.failures).toEqual([])
+  })
+
+  it('registers the manifest\'s vocabulary, and refuses a core name', async () => {
+    const { env } = environment({
+      '/plugins/kit/web/blocks.js': { default: () => ({ tags: { cutlist: () => null } }) },
+    })
+    const result = await loadPlugins(
+      [
+        {
+          id: 'kit',
+          kind: 'app',
+          base: '/plugins/kit/',
+          blocks: './web/blocks.js',
+          vocabulary: {
+            cutlist: { content: 'empty', description: 'A cutting list.' },
+            callout: { content: 'flow', description: 'mine now' },
+          },
+        },
+      ],
+      env,
+    )
+    expect(isKnownBlock('cutlist')).toBe(true)
+    // The core keeps its own, and the operator is told rather than left with
+    // a `callout` that quietly means something else on this instance.
+    expect(result.failures).toContainEqual({
+      id: 'kit',
+      facet: 'vocabulary',
+      reason: 'block ":::callout" is the core\'s own and was not taken over',
+    })
+    // `callout` was refused, but the plugin\'s own block still loaded.
+    expect(result.loaded[0]?.blocks?.tags).toHaveProperty('cutlist')
+  })
+
+  it('names a half-declared block instead of leaving it inert', async () => {
+    const { env } = environment({
+      '/plugins/kit/web/blocks.js': { default: () => ({ tags: { drawn: () => null } }) },
+    })
+    const result = await loadPlugins(
+      [
+        {
+          id: 'kit',
+          kind: 'app',
+          base: '/plugins/kit/',
+          blocks: './web/blocks.js',
+          vocabulary: { declared: { content: 'empty', description: 'Nothing draws me.' } },
+        },
+      ],
+      env,
+    )
+    // A component the parser will never produce a node for, and a name the
+    // renderer has nothing for. Both are silent in a running instance.
+    expect(result.failures.map((f) => f.reason)).toEqual([
+      'component for ":::drawn" has no matching entry in the manifest\'s `vocabulary`',
+      'block ":::declared" is declared but the `blocks` module draws nothing for it',
+    ])
+  })
+
+  it('does not let a plugin the shell refused teach the parser its words', async () => {
+    const { env } = environment({})
+    const result = await loadPlugins(
+      [
+        {
+          id: 'kit',
+          kind: 'app',
+          base: '/plugins/kit/',
+          contract: 99,
+          vocabulary: { cutlist: { content: 'empty', description: 'A cutting list.' } },
+        },
+      ],
+      env,
+    )
+    expect(result.failures[0]?.facet).toBe('manifest')
+    // Otherwise a page would validate against a block nothing will ever draw,
+    // and open editable on the strength of a plugin that never loaded.
+    expect(isKnownBlock('cutlist')).toBe(false)
+  })
+
+  it('forgets the previous set when plugins are loaded again', async () => {
+    const { env } = environment({})
+    await loadPlugins(
+      [{ id: 'kit', kind: 'app', base: '/plugins/kit/', vocabulary: { gone: { content: 'empty', description: 'x' } } }],
+      env,
+    )
+    expect(isKnownBlock('gone')).toBe(true)
+    await loadPlugins([], env)
+    // Otherwise a plugin turned off keeps its words, and a page holding one
+    // goes on validating against a renderer that is no longer there.
+    expect(isKnownBlock('gone')).toBe(false)
   })
 
   it('reports a factory that threw, and keeps the rest of the page', async () => {

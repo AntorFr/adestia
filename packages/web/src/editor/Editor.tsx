@@ -17,7 +17,7 @@ import { parse, serialize } from '@antorfr/golem-content'
 
 import { Attachments } from './Attachments.js'
 import { carriesFiles, fileDropMessage } from './filedrop.js'
-import { Reader } from './Reader.js'
+import { Reader, type BlockComponents } from './Reader.js'
 
 export interface PageDocument {
   readonly path: string
@@ -122,6 +122,11 @@ export interface EditorProps {
   readonly attach?: (files: readonly File[]) => Promise<void> | void
   /** Puts the filing request in the composer, unsent. */
   readonly compose?: (text: string) => void
+  /**
+   * Blocks the active plugins draw. Absent means the core's vocabulary only,
+   * which is also what a test that mounts an Editor alone gets.
+   */
+  readonly blocks?: BlockComponents
   /** Injected in tests; the real one mounts Milkdown. */
   readonly mount?: (element: HTMLElement, markdown: string, onChange: (md: string) => void) => () => void
 }
@@ -134,6 +139,7 @@ export function Editor({
   locale = 'en',
   attach,
   compose,
+  blocks,
   t = (key) => key,
 }: EditorProps) {
   const host = useRef<HTMLDivElement>(null)
@@ -312,7 +318,12 @@ export function Editor({
       ) : editing ? (
         <div ref={host} className="golem-editor__surface" />
       ) : (
-        <Reader markdown={markdown} path={page.path} {...(openPage ? { openPage } : {})} />
+        <Reader
+          markdown={markdown}
+          path={page.path}
+          {...(openPage ? { openPage } : {})}
+          {...(blocks ? { blocks } : {})}
+        />
       )}
 
       {/* Not while writing: the strip is what the page CARRIES, and a list of

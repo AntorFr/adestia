@@ -1,11 +1,21 @@
-import { mkdtemp, mkdir, writeFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { beforeAll, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it } from 'vitest'
+
+import { parsePluginManifest } from '@antorfr/golem-schemas'
+
+import {
+  forgetContributedBlocks,
+  isKnownBlock,
+  parse,
+  validateDocument,
+} from '@antorfr/golem-content'
 
 import {
   claimedTypeCollisions,
+  registerPluginVocabulary,
   discoverPlugins,
   discoverSkins,
   frontendPayload,
@@ -226,6 +236,68 @@ describe('unmatchedActivations', () => {
   it('does not claim a core plugin belongs in a list', () => {
     const missed = unmatchedActivations([plugin('editor', 'core')], { ...lists, tools: ['editor'] })
     expect(missed[0]?.reason).toMatch(/does not activate from a list/)
+  })
+})
+
+describe('the plugins Golem actually ships', () => {
+  /**
+   * Every bundled manifest, parsed by the real validator.
+   *
+   * The suite is full of hand-built manifests proving the validator refuses
+   * what it should; none of them proves the folder next door is VALID. A typo
+   * in a shipped manifest would surface at somebody's boot, as a plugin that
+   * simply never activates.
+   */
+  it('all parse', async () => {
+    const root = join(import.meta.dirname, '..', '..', '..', 'plugins')
+    const folders = (await readdir(root, { withFileTypes: true }))
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+
+    expect(folders.length).toBeGreaterThan(0)
+    for (const folder of folders) {
+      const raw = JSON.parse(await readFile(join(root, folder, 'golem-plugin.json'), 'utf8'))
+      expect(() => parsePluginManifest(raw, folder)).not.toThrow()
+    }
+  })
+})
+
+describe('registerPluginVocabulary', () => {
+  const plugin = (
+    id: string,
+    vocabulary: Record<string, { content: 'flow' | 'empty'; description: string; attributes?: Record<string, { required?: boolean }> }>,
+    active = true,
+  ): DiscoveredPlugin =>
+    ({
+      dir: `/p/${id}`,
+      active,
+      manifest: { schemaVersion: 1, id, kind: 'app', description: '', vocabulary },
+    }) as DiscoveredPlugin
+
+  afterEach(() => forgetContributedBlocks())
+
+  it('teaches the content engine an active plugin\'s blocks', () => {
+    const walk = { content: 'empty', description: 'A walk.', attributes: { source: { required: true } } } as const
+    expect(registerPluginVocabulary([plugin('parcours', { parcours: walk })])).toEqual([])
+    // Which is what decides `editable` on every page holding one.
+    expect(validateDocument(parse(':::parcours{source="x.json"}\n:::\n'))).toEqual([])
+  })
+
+  it('ignores a plugin that is mounted but not active', () => {
+    registerPluginVocabulary([plugin('parcours', { parcours: { content: 'empty', description: 'A walk.' } }, false)])
+    expect(isKnownBlock('parcours')).toBe(false)
+  })
+
+  it('names the plugin that tried to take a core block over', () => {
+    expect(
+      registerPluginVocabulary([plugin('impostor', { callout: { content: 'flow', description: 'mine now' } })]),
+    ).toEqual([{ id: 'impostor', name: 'callout' }])
+  })
+
+  it('starts from nothing, so one instance never inherits another\'s words', () => {
+    registerPluginVocabulary([plugin('parcours', { parcours: { content: 'empty', description: 'A walk.' } })])
+    registerPluginVocabulary([])
+    expect(isKnownBlock('parcours')).toBe(false)
   })
 })
 

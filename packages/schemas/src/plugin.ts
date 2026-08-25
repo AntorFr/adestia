@@ -49,6 +49,32 @@ export interface PluginTile {
   readonly route?: string
 }
 
+/** One attribute of a contributed block. Mirrors the core's own `AttributeSpec`. */
+export interface PluginBlockAttribute {
+  readonly required?: boolean
+  /** Closed set of accepted values. Absent means any non-empty string. */
+  readonly values?: readonly string[]
+  readonly default?: string
+}
+
+/**
+ * One block a plugin adds to the closed vocabulary.
+ *
+ * Declared HERE — in data — rather than inside the `blocks` module, and that
+ * placement is the whole design. The server has to know a block's name, its
+ * shape and whether it takes a body: it answers `editable` on every page read
+ * and refuses a save that breaks the vocabulary. It cannot learn any of that
+ * from a module written for a browser. So the manifest carries the SPEC and
+ * the module carries only what a manifest cannot hold — the component that
+ * draws it. One declaration, two readers, nothing restated.
+ */
+export interface PluginBlockSpec {
+  /** `flow` holds nested markdown, `empty` IS its attributes. */
+  readonly content: 'flow' | 'empty'
+  readonly description: string
+  readonly attributes?: Readonly<Record<string, PluginBlockAttribute>>
+}
+
 /**
  * An MCP server a plugin brings. Active plugin = wired; inactive = absent.
  * Materialized per driver at the single spawn site (DESIGN → MCP configuration).
@@ -82,6 +108,19 @@ export interface PluginManifest {
   readonly chrome?: string
   readonly styles?: readonly string[]
   readonly tile?: PluginTile
+
+  /**
+   * Blocks this plugin adds to the closed vocabulary, by name.
+   *
+   * Only while it is ACTIVE: turning the plugin off takes the words back out,
+   * and a page still holding one opens read-only with a diagnostic naming it
+   * — which is the honest answer, not a blank where a map used to be.
+   *
+   * A name the core already owns is REFUSED and named at startup. The other
+   * direction (the plugin wins) would let `callout` quietly mean something
+   * else on one instance, which is exactly what a closed vocabulary is for.
+   */
+  readonly vocabulary?: Readonly<Record<string, PluginBlockSpec>>
 
   /**
    * Frontmatter `type:` values this plugin's own code dispatches on — e.g. a

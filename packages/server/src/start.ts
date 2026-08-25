@@ -31,6 +31,7 @@ import {
   discoverPlugins,
   discoverSkins,
   mcpServersFor,
+  registerPluginVocabulary,
   unmatchedActivations,
   type McpServer,
 } from './extensions.js'
@@ -174,6 +175,14 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
 
   for (const miss of unmatchedActivations(plugins, config.extensions)) {
     log(`extensions.${miss.list}: "${miss.id}" activated nothing — ${miss.reason}`)
+  }
+
+  // Before anything reads a page: `editable` and the refusal on save both run
+  // through the vocabulary, so a block taught late is a page refused early.
+  for (const clash of registerPluginVocabulary(plugins)) {
+    log(
+      `extension "${clash.id}": block ":::${clash.name}" is the core's own and was not taken over`,
+    )
   }
 
   for (const collision of claimedTypeCollisions(plugins)) {

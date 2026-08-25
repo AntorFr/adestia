@@ -171,6 +171,35 @@ export function parsePluginManifest(input: unknown, folderName: string): PluginM
     }
   }
 
+  const vocabulary = input['vocabulary']
+  if (vocabulary !== undefined) {
+    if (!isObject(vocabulary)) {
+      issues.push({ field: 'vocabulary', message: 'must be an object of block specs, by name' })
+    } else {
+      for (const [name, spec] of Object.entries(vocabulary)) {
+        const field = `vocabulary.${name}`
+        // The name becomes `:::name{…}` in every page of the instance, so it
+        // is held to what a directive can actually spell — a manifest that
+        // declared "mon bloc" would produce a block no page could ever write.
+        if (!/^[a-z][a-z0-9-]*$/.test(name)) {
+          issues.push({ field, message: 'is not a block name (lowercase, digits and dashes)' })
+        }
+        if (!isObject(spec)) {
+          issues.push({ field, message: 'must be an object' })
+          continue
+        }
+        checkString(spec, 'description', issues, true)
+        if (spec['content'] !== 'flow' && spec['content'] !== 'empty') {
+          issues.push({ field: `${field}.content`, message: 'must be "flow" or "empty"' })
+        }
+        const attributes = spec['attributes']
+        if (attributes !== undefined && !isObject(attributes)) {
+          issues.push({ field: `${field}.attributes`, message: 'must be an object' })
+        }
+      }
+    }
+  }
+
   if (input['tile'] !== undefined) {
     if (!isObject(input['tile'])) {
       issues.push({ field: 'tile', message: 'must be an object' })

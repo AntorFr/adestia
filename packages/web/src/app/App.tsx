@@ -6,10 +6,11 @@
  * second engine a driver rather than a fork.
  */
 
-import { Component, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Chat } from '../chat/Chat.js'
 import { Editor, type PageDocument } from '../editor/Editor.js'
+import type { BlockComponents } from '../editor/Reader.js'
 import { Modal } from './Modal.js'
 import { Instructions } from './Instructions.js'
 import { McpPanel, Settings } from './Settings.js'
@@ -20,6 +21,7 @@ import {
   type SkinDescriptor,
   type SkinSlots,
 } from './skin.js'
+import { PluginBoundary } from '../plugins/Boundary.js'
 import { routeMatches, type PluginApi } from '../plugins/contract.js'
 import { Home } from './Home.js'
 import { resolveLocale, translator } from './i18n.js'
@@ -67,36 +69,6 @@ export interface InstanceInfo {
     severity?: 'refused' | 'degraded'
   }[]
   readonly turns: { max: number; running: number }
-}
-
-/**
- * Keeps a plugin's render failure to itself.
- *
- * React unmounts the whole tree on an uncaught render error, so without this a
- * plugin with a typo takes down the chat beside it. The boundary is the render
- * equivalent of the try/catch the loader already puts around a factory.
- */
-class PluginBoundary extends Component<
-  { id: string; children: ReactNode },
-  { error?: Error }
-> {
-  override state: { error?: Error } = {}
-
-  static getDerivedStateFromError(error: Error) {
-    return { error }
-  }
-
-  override render() {
-    if (this.state.error) {
-      return (
-        <section className="golem-problems" role="status">
-          <h2>The “{this.props.id}” app stopped</h2>
-          <p>{this.state.error.message}</p>
-        </section>
-      )
-    }
-    return this.props.children
-  }
 }
 
 type EditorMount = (
@@ -278,6 +250,18 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   }, [])
 
   const closeApp = goHome
+
+  /**
+   * Every block the active plugins draw, flattened once and keyed by name.
+   *
+   * Flat rather than per plugin because a page names a block, not its owner:
+   * `:::parcours` says nothing about which plugin brought it, and it must not
+   * have to. The loader already refused a name two plugins both claim.
+   */
+  const blocks = useMemo(
+    () => Object.assign({}, ...loaded.map((plugin) => plugin.blocks?.tags ?? {})) as BlockComponents,
+    [loaded],
+  )
 
   /** Composer buttons every active plugin contributed, flattened once. */
   const composerButtons = loaded.flatMap((plugin) =>
@@ -649,6 +633,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             // filing request: the agent is still the one who moves it.
             attach={(dropped) => attachRef.current?.(dropped)}
             compose={(text) => composeRef.current?.(text)}
+            blocks={blocks}
             t={t}
             {...(mount ? { mount } : {})}
           />

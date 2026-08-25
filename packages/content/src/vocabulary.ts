@@ -58,10 +58,69 @@ export const VOCABULARY: Readonly<Record<string, BlockSpec>> = {
   },
 }
 
+/**
+ * ── Blocks a PLUGIN adds to the vocabulary ──────────────────────────────────
+ *
+ * The table above is the closed core, and closed it stays: nothing here lets a
+ * page invent a block. What it lets an INSTANCE do is decide that a mounted,
+ * activated plugin extends the vocabulary — which is a deliberate act by an
+ * operator, exactly the bar `VOCABULARY`'s own comment sets.
+ *
+ * A registry rather than a bigger table, because the same names have to be
+ * known in two processes that cannot share a module instance: the server (to
+ * validate a page and answer `editable`) and the browser (to draw it). Both
+ * read the spec from the plugin MANIFEST — declared data, not code — so the
+ * server never has to execute a line of a browser module to know what is legal.
+ */
+
+const contributed = new Map<string, BlockSpec>()
+
+/** A block spec as a MANIFEST spells it — same shape, attributes optional. */
+export type ContributedBlock = Omit<BlockSpec, 'name' | 'attributes'> & {
+  readonly attributes?: Readonly<Record<string, AttributeSpec>>
+}
+
+/**
+ * Adds a plugin's blocks, and names the ones it could not have.
+ *
+ * The core WINS a name collision, the loser is reported, and the caller says
+ * so at startup — the same rule the instance's MCP servers follow. The other
+ * direction was tempting (the plugin knows its own block best) and is wrong
+ * here: `callout` quietly meaning something else on one instance is precisely
+ * the failure the closed vocabulary exists to make impossible.
+ *
+ * @returns the names refused because the core already owns them.
+ */
+export function registerBlocks(
+  specs: Readonly<Record<string, ContributedBlock>>,
+): readonly string[] {
+  const refused: string[] = []
+  for (const [name, spec] of Object.entries(specs)) {
+    if (Object.hasOwn(VOCABULARY, name)) {
+      refused.push(name)
+      continue
+    }
+    // A block with no attributes writes no `attributes` key: the manifest is
+    // hand-written data, and `"attributes": {}` is ceremony, not information.
+    contributed.set(name, { attributes: {}, ...spec, name })
+  }
+  return refused
+}
+
+/** Drops every contribution. For a plugin set being reloaded, and for tests. */
+export function forgetContributedBlocks(): void {
+  contributed.clear()
+}
+
+/** What plugins have added — what the editor needs a node for, and the skill a line. */
+export function contributedBlocks(): readonly BlockSpec[] {
+  return [...contributed.values()]
+}
+
 export function isKnownBlock(name: string): boolean {
-  return Object.hasOwn(VOCABULARY, name)
+  return Object.hasOwn(VOCABULARY, name) || contributed.has(name)
 }
 
 export function blockSpec(name: string): BlockSpec | undefined {
-  return VOCABULARY[name]
+  return VOCABULARY[name] ?? contributed.get(name)
 }

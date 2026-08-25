@@ -37,7 +37,7 @@ export function mountMilkdown(
     },
   })
 
-  crepe.editor.use(golemVocabulary)
+  crepe.editor.use(golemVocabulary())
   void crepe.create().then(() => {
     crepe.on((listener) => {
       listener.markdownUpdated((_ctx, next) => onChange(next))

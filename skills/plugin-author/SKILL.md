@@ -44,6 +44,13 @@ config must be the thing that loaded.
 
   "view": "./web/app.js",
   "blocks": "./web/blocks.js",
+  "vocabulary": {
+    "cutlist": {
+      "content": "empty",
+      "description": "A cut list, read from the workbook beside the page.",
+      "attributes": { "project": { "required": true } }
+    }
+  },
   "chrome": "./web/chrome.js",
   "styles": ["./web/app.css"],
   "tile": { "label": "Workbench", "icon": "🪚" },
@@ -118,22 +125,72 @@ Blocks extend the CLOSED vocabulary — the reason pages look like one product
 whoever wrote them. A block is a `:::name{attrs}` directive that becomes a
 first-class node, never text that happens to look like markup.
 
-```js
-// web/blocks.js
-export default function blocks(api) {
-  return {
-    tags: {
-      cutlist: {
-        render: 'CutList',
-        attributes: { project: { type: String, required: true } },
-      },
-    },
+A block is declared in **two halves that never restate each other**.
+
+**The manifest says what the block IS** — data, under `vocabulary`:
+
+```json
+"vocabulary": {
+  "cutlist": {
+    "content": "empty",
+    "description": "A cut list, read from the workbook beside the page.",
+    "attributes": {
+      "project": { "required": true },
+      "vue": { "values": ["table", "compact"], "default": "table" }
+    }
   }
 }
 ```
 
-Extending the vocabulary is a deliberate act: a coded component, an entry in
-the schema, and a line in the skill that teaches it. It is never something a
+`content` is `flow` (the block holds markdown — a callout, a gallery) or
+`empty` (its attributes are its whole meaning). An attribute with `values` is
+a closed set; anything else is a diagnostic, not a silently-accepted typo.
+
+Why in the manifest and not in the module: **the server validates pages**. It
+decides `editable` on every read and refuses a save that breaks the
+vocabulary, and it cannot execute a module written for a browser to find out
+what is legal. Declared data is the only form both sides can read.
+
+**The module says what the block LOOKS LIKE** — components, keyed by the same
+names:
+
+```js
+// web/blocks.js
+import { createElement as h } from 'react'
+
+export default function blocks(api) {
+  function CutList({ attributes, resolve, locate, children }) {
+    // `attributes` was validated against the manifest before this ran.
+    return h('div', { className: 'cutlist' }, attributes.project)
+  }
+  return { tags: { cutlist: CutList } }
+}
+```
+
+A block component is handed four things beyond its own plugin's `api`:
+
+| | |
+|---|---|
+| `attributes` | already validated against the spec above |
+| `resolve(path)` | a path written in the page → a URL to fetch. `source="assets/x.json"` means "next to the page", the way it reads on disk — nothing in a document should know files are served under `/api/files` |
+| `locate(path)` | the same path as the WORKSPACE spells it — what you name to your own API |
+| `children` | the block's body, already rendered. Only for a `flow` block |
+
+Declare both halves or neither: a component with no manifest entry never
+renders (the parser leaves the name as prose), and a manifest entry with no
+component draws the "does not render yet" placeholder. Both are reported at
+load rather than left to be discovered by staring at a page.
+
+**The core wins a name collision.** A plugin declaring `callout` is refused
+and named at startup — `callout` quietly meaning something else on one
+instance is exactly what a closed vocabulary exists to prevent.
+
+**Only while the plugin is ACTIVE.** Turning it off takes the words back out,
+and a page still holding one opens read-only with a diagnostic naming the
+block. That is the honest answer, not a blank where a map used to be.
+
+Extending the vocabulary is a deliberate act: a manifest entry, a coded
+component, and a line in the skill that teaches it. It is never something a
 document can do by itself.
 
 ## Needing a key

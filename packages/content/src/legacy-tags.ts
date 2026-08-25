@@ -15,10 +15,18 @@
  * block would have produced, so everything downstream — validation, the
  * renderer, the editor, the round-trip suite — works unchanged and knows
  * nothing of this. One vocabulary in the tree, two spellings on disk.
+ *
+ * What is translated is driven by the VOCABULARY, not by a list kept here:
+ * `callout` needs a special case only because its type names differ, and a
+ * block a plugin contributed becomes readable in this spelling the moment the
+ * instance activates that plugin — with no second table to remember to edit.
+ * A tag the vocabulary has never heard of is still left exactly as written.
  */
 
 import type { Root, Paragraph, PhrasingContent, RootContent } from 'mdast'
 import type { ContainerDirective, LeafDirective } from 'mdast-util-directive'
+
+import { blockSpec } from './vocabulary.js'
 
 /**
  * `{% name attr="value" … %}`, `{% name … /%}`, or `{% /name %}`.
@@ -218,6 +226,22 @@ function convert(input: RootContent[], source: string): RootContent[] {
       if (tag.name === 'web') {
         const link = webLink(tag.attributes)
         out.push(link ?? node)
+      } else if (blockSpec(tag.name)?.content === 'empty') {
+        // A block the vocabulary knows — the core's own, or one a plugin
+        // contributed. `{% parcours source="…" /%}` and `:::parcours{…}` are
+        // two spellings of one node, so the renderer draws them identically
+        // and neither shell has to rewrite the other's files.
+        //
+        // A CONTAINER with no children, not a leaf directive: that is how the
+        // house spells a block whose attributes are its whole meaning (`app`),
+        // it is what the editor's atom node parses, and it is what the skill
+        // teaches. Two spellings for one concept would be one too many.
+        out.push({
+          type: 'containerDirective',
+          name: tag.name,
+          attributes: tag.attributes,
+          children: [],
+        } as ContainerDirective)
       } else {
         // A self-closing tag with no equivalent: kept verbatim, so a page
         // shows what it actually contains rather than losing a line.
@@ -250,6 +274,14 @@ function convert(input: RootContent[], source: string): RootContent[] {
         type: 'containerDirective',
         name: 'callout',
         attributes: { type: CALLOUT_TYPES[declared] ?? 'note' },
+        children: body,
+      } as ContainerDirective)
+    } else if (blockSpec(tag.name)?.content === 'flow') {
+      // Same bridge as above, for a block that HOLDS something.
+      out.push({
+        type: 'containerDirective',
+        name: tag.name,
+        attributes: tag.attributes,
         children: body,
       } as ContainerDirective)
     } else {

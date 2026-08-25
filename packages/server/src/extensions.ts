@@ -13,10 +13,12 @@
 import { readFile, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 
+import { forgetContributedBlocks, registerBlocks } from '@antorfr/golem-content'
 import {
   ManifestError,
   parsePluginManifest,
   parseSkinManifest,
+  type PluginBlockSpec,
   type PluginManifest,
   type PluginMcpServer,
   type SkinManifest,
@@ -148,6 +150,38 @@ export function unmatchedActivations(
     }
   }
   return unmatched
+}
+
+/**
+ * Teaches the content engine the blocks the ACTIVE plugins declare.
+ *
+ * Called once at startup, before a single page is read: `editable` and the
+ * 422 on save both run through `validateDocument`, so a block registered
+ * afterwards would be a page refused at boot and accepted a second later.
+ *
+ * The registry is cleared first. An instance registers once, but a test that
+ * builds two instances in one process would otherwise inherit the first
+ * one's vocabulary — a page passing validation because of a plugin that is
+ * not even mounted here.
+ *
+ * @returns the collisions, so the caller can NAME them at startup. A block
+ *   silently not registered is a page that opens read-only for a reason
+ *   nobody can find.
+ */
+export function registerPluginVocabulary(
+  plugins: readonly DiscoveredPlugin[],
+): readonly { readonly id: string; readonly name: string }[] {
+  forgetContributedBlocks()
+  const collisions: { id: string; name: string }[] = []
+  for (const plugin of plugins) {
+    if (!plugin.active) continue
+    const vocabulary = plugin.manifest.vocabulary
+    if (!vocabulary) continue
+    for (const name of registerBlocks(vocabulary)) {
+      collisions.push({ id: plugin.manifest.id, name })
+    }
+  }
+  return collisions
 }
 
 /**
@@ -329,6 +363,8 @@ export interface PluginPayload {
   readonly base: string
   readonly view?: string
   readonly blocks?: string
+  /** Block specs, so the browser registers the same vocabulary the server did. */
+  readonly vocabulary?: Readonly<Record<string, PluginBlockSpec>>
   readonly chrome?: string
   readonly styles?: readonly string[]
   readonly tile?: {
@@ -353,6 +389,7 @@ export function frontendPayload(plugins: readonly DiscoveredPlugin[]): readonly 
         base,
         ...(manifest.view ? { view: manifest.view } : {}),
         ...(manifest.blocks ? { blocks: manifest.blocks } : {}),
+        ...(manifest.vocabulary ? { vocabulary: manifest.vocabulary } : {}),
         ...(manifest.chrome ? { chrome: manifest.chrome } : {}),
         ...(manifest.styles ? { styles: manifest.styles } : {}),
         ...(manifest.tile ? { tile: manifest.tile } : {}),

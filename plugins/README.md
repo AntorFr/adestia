@@ -1,14 +1,14 @@
 # Bundled plugins
 
-Golem ships five plugins and one skin. None of them is active until you name it
+Golem ships seven plugins and one skin. None of them is active until you name it
 in your config — discovery is not activation, and a folder sitting here costs
 nothing until you ask for it.
 
 ```yaml
 extensions:
-  apps: [todo, planif, collections, atelier]   # tiles in the launcher
-  features: [scan]                             # things that live in the shell
-  tools: []                                    # agent-facing only
+  apps: [todo, planif, collections, atelier, voyages]   # tiles in the launcher
+  features: [scan, parcours]                            # things that live in the shell
+  tools: []                                             # agent-facing only
   skin: alfred
 ```
 
@@ -23,7 +23,9 @@ leaving you to wonder where the tile went.
 | [`collections`](collections/) | app | Enter a body of pages by a facet rather than by folders — projects by trade, gifts by person. The grouping is declared in a page, so a new collection is a page, not a code change. |
 | [`planif`](planif/) | app | What runs on its own, when, and whether the clock is ticking. Read-only by design: its buttons ask the agent rather than editing the schedule behind your back. |
 | [`atelier`](atelier/) | app | The workbench. Reads a `workbook.json` a project carries in its own assets and draws the cutting diagram — sheets, bands, pieces, edges to band — plus a full-screen bench mode readable from across a workshop. |
+| [`voyages`](voyages/) | app | Trips: a per-day timeline and a tray of suggestions, read from a `voyage.json` a trip carries in its own assets. Weather and legs are derived on demand. |
 | [`scan`](scan/) | feature | A barcode reader in the composer. Uses the browser's own `BarcodeDetector` where it exists and only downloads a decoder where it does not. |
+| [`parcours`](parcours/) | feature | Walks and hikes. Adds the `:::parcours` block, which draws a `.parcours.json` as a map with numbered markers, an elevation profile and a walking mode, and assembles its GPX on demand. A feature rather than an app because a route has no domain and no tile: it hangs off whichever page has a reason to mention it. |
 
 | Skin | What it is |
 |---|---|
@@ -33,8 +35,9 @@ leaving you to wonder where the tile went.
 
 A plugin that expects the agent to write a particular shape of file ships the
 contract that describes it, and Golem delivers those contracts to the agent
-alongside its own. `atelier` ships `workbook-json`, `todo` ships `todo`, and
-`collections` ships `collections`.
+alongside its own. `atelier` ships `workbook-json`, `todo` ships `todo`,
+`collections` ships `collections`, `voyages` ships `voyage-json` and
+`parcours` ships `parcours-json`.
 
 This is why asking the agent for a cutting plan produces a workbook the
 workbench can actually draw: the format is not folklore passed between prompts,
