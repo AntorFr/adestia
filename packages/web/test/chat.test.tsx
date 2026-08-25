@@ -463,6 +463,29 @@ describe('attachments', () => {
     await waitFor(() => expect(screen.getByLabelText('Send').closest('button')?.disabled).toBe(false))
   })
 
+  it('takes a file let go on the composer', async () => {
+    // Without a drop handler the browser leaves the conversation to display
+    // the file — the worst possible answer to that gesture.
+    const fetchImpl = withUpload({ attachments: [{ id: 'b/plan.pdf', name: 'plan.pdf' }] })
+    const { container } = render(<Chat fetchImpl={fetchImpl} />)
+    const composer = container.querySelector('.golem-composer')!
+
+    const file = new File(['x'], 'plan.pdf', { type: 'application/pdf' })
+    await act(async () => {
+      fireEvent.drop(composer, { dataTransfer: { files: [file], types: ['Files'] } })
+    })
+    expect(await screen.findByText('plan.pdf')).toBeTruthy()
+  })
+
+  it('ignores text dragged inside the page', async () => {
+    const fetchImpl = withUpload({ attachments: [{ id: 'b/x', name: 'x' }] })
+    const { container } = render(<Chat fetchImpl={fetchImpl} />)
+    const composer = container.querySelector('.golem-composer')!
+
+    fireEvent.dragOver(composer, { dataTransfer: { types: ['text/plain'] } })
+    expect(composer.className).not.toMatch(/dropping/)
+  })
+
   it('keeps Send disabled with neither text nor files', () => {
     render(<Chat fetchImpl={withUpload({})} />)
     expect(screen.getByLabelText('Send').closest('button')?.disabled).toBe(true)

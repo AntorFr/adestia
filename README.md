@@ -45,8 +45,9 @@ Golem's own interface.
   blocks, edited in a Notion-like editor or by the agent with its own file
   tools. One grammar renders, edits and validates them, so a save cannot change
   what a page means. A save is refused if the agent wrote underneath you.
-  What a page's status says is finished folds away rather than crowding the
-  live ones.
+  A page's other files — the plan as a PDF, the photo of the dish — sit next to
+  it on disk, display in it, and are listed under it as attachments. What a
+  page's status says is finished folds away rather than crowding the live ones.
 - **Extensions at runtime**: drop a plugin folder in, name it in the config,
   restart. No image rebuild. Shared React comes from the page's import map;
   the shell owns the stylesheets; a broken plugin costs its own view and says

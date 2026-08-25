@@ -15,6 +15,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { parse, serialize } from '@antorfr/golem-content'
 
+import { Attachments } from './Attachments.js'
+import { carriesFiles, fileDropMessage } from './filedrop.js'
 import { Reader } from './Reader.js'
 
 export interface PageDocument {
@@ -110,12 +112,36 @@ export interface EditorProps {
   readonly openPage?: (path: string) => void
   /** The shell's translator; identity in English. */
   readonly t?: (key: string) => string
+  /** The reader's language, for the sizes in the attachment strip. */
+  readonly locale?: string
+  /**
+   * Hands dropped files to the chat: uploads them to the inbox, shows them in
+   * the composer's tray. Absent — no chat on this screen — disables the drop
+   * entirely rather than accepting a file nothing will carry.
+   */
+  readonly attach?: (files: readonly File[]) => Promise<void> | void
+  /** Puts the filing request in the composer, unsent. */
+  readonly compose?: (text: string) => void
   /** Injected in tests; the real one mounts Milkdown. */
   readonly mount?: (element: HTMLElement, markdown: string, onChange: (md: string) => void) => () => void
 }
 
-export function Editor({ page, fetchImpl = fetch, mount, openPage, t = (key) => key }: EditorProps) {
+export function Editor({
+  page,
+  fetchImpl = fetch,
+  mount,
+  openPage,
+  locale = 'en',
+  attach,
+  compose,
+  t = (key) => key,
+}: EditorProps) {
   const host = useRef<HTMLDivElement>(null)
+  const [dropping, setDropping] = useState(false)
+  // Counted rather than toggled: dragging over a child fires `dragleave` on
+  // the parent, and a boolean makes the overlay flicker on every word the
+  // cursor crosses.
+  const depth = useRef(0)
 
   /**
    * What the editor is shown, which is not always what is on disk.
@@ -171,6 +197,26 @@ export function Editor({ page, fetchImpl = fetch, mount, openPage, t = (key) => 
     setEditing(false)
   }, [page.path])
 
+  /**
+   * A file let go over the page.
+   *
+   * Only in reading posture: while editing, the surface belongs to the editor
+   * and its own drag handling, and two things claiming one drop is how a
+   * paragraph ends up somewhere nobody asked for.
+   */
+  const takesDrop = attach !== undefined && !editing
+
+  const onDrop = useCallback(
+    (files: readonly File[]) => {
+      if (files.length === 0) return
+      void (async () => {
+        await attach?.(files)
+        compose?.(fileDropMessage(page, t))
+      })()
+    },
+    [attach, compose, page, t],
+  )
+
   const save = useCallback(async () => {
     setStatus({ kind: 'saving' })
     const result = await savePage({ ...page, revision }, markdown, fetchImpl)
@@ -179,7 +225,39 @@ export function Editor({ page, fetchImpl = fetch, mount, openPage, t = (key) => 
   }, [fetchImpl, markdown, page, revision])
 
   return (
-    <section className="golem-editor">
+    <section
+      className={`golem-editor${dropping ? ' golem-editor--dropping' : ''}`}
+      {...(takesDrop
+        ? {
+            onDragEnter: (event: React.DragEvent) => {
+              if (!carriesFiles(event.dataTransfer)) return
+              depth.current += 1
+              setDropping(true)
+            },
+            onDragOver: (event: React.DragEvent) => {
+              // Without this the browser navigates to the file instead, which
+              // loses the page somebody was reading.
+              if (carriesFiles(event.dataTransfer)) event.preventDefault()
+            },
+            onDragLeave: () => {
+              depth.current = Math.max(0, depth.current - 1)
+              if (depth.current === 0) setDropping(false)
+            },
+            onDrop: (event: React.DragEvent) => {
+              if (!carriesFiles(event.dataTransfer)) return
+              event.preventDefault()
+              depth.current = 0
+              setDropping(false)
+              onDrop([...event.dataTransfer.files])
+            },
+          }
+        : {})}
+    >
+      {dropping && (
+        <div className="golem-editor__dropzone" role="status">
+          {t('Drop files to attach them to this page')}
+        </div>
+      )}
       {/* No title here: the breadcrumb names the page and the document's own
           heading opens it. Three of the same words is two too many. */}
       <header className="golem-editor__header">
@@ -234,7 +312,20 @@ export function Editor({ page, fetchImpl = fetch, mount, openPage, t = (key) => 
       ) : editing ? (
         <div ref={host} className="golem-editor__surface" />
       ) : (
-        <Reader markdown={markdown} {...(openPage ? { openPage } : {})} />
+        <Reader markdown={markdown} path={page.path} {...(openPage ? { openPage } : {})} />
+      )}
+
+      {/* Not while writing: the strip is what the page CARRIES, and a list of
+          documents under a live editing surface is one more thing between the
+          cursor and the text. */}
+      {!editing && (
+        <Attachments
+          path={page.path}
+          markdown={markdown}
+          fetchImpl={fetchImpl}
+          locale={locale}
+          t={t}
+        />
       )}
     </section>
   )

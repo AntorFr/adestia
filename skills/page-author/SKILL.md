@@ -155,6 +155,56 @@ listed among them.
 section: it simply wears its folder's name. Write one when the name alone is
 not enough, or when the section deserves a colour — never as bookkeeping.
 
+## Files a page carries — its attachments
+
+A page is rarely only words: a project has its plan as a PDF, a trip its
+tickets, a recipe the photo of the dish. Those files live **next to the page**,
+and the layout IS the pairing — nothing declares it:
+
+```
+domaines/diy/projets/
+  garage.md          the page
+  devis.pdf          a document it carries
+  assets/
+    avant.jpg        and another
+```
+
+A page's attachments are the non-markdown files **in its own folder** plus
+everything under that folder's `assets/`. Files in a SIBLING folder belong to
+the pages that live there, not to this one.
+
+Reference them the way markdown always did — relative to the page:
+
+```markdown
+![Avant](assets/avant.jpg)
+
+Le [devis](devis.pdf) est parti le 12.
+```
+
+Relative links resolve against the page's own folder and are served from
+`/api/files/…`. A link to a neighbouring `.md` opens that page in place, like
+a `[[wikilink]]`. Whatever a page does not already show in its body appears
+under it as an attachment strip — photos as thumbnails, the rest as
+downloadable rows — so nothing you file next to a page is invisible.
+
+Two things worth knowing:
+
+- **Images, PDFs, audio, video and plain text display in place. Everything
+  else downloads**, including `.svg` and `.html`. That is not a limitation to
+  work around: those two render as documents, from the same origin as the
+  interface and its session, so they are handed over as files rather than
+  drawn. Never rename an SVG to make it show.
+- **A browser cannot put a file there.** The file API is read-only, and files
+  arrive one way: somebody attaches them to a message, and YOU file them into
+  the workspace. A page carrying an attachment is a decision the agent made.
+
+Which is what a message like *"Range les fichiers joints dans les pièces
+jointes de la fiche « Rangement du garage » (diy/garage.md)"* is asking for:
+somebody dropped a file on that page. Move it out of the inbox to the page's
+folder — `assets/` when it is an image — give it a name that will still mean
+something in a year, and reference it in the page when showing it there is
+useful. The inbox is swept: a file left in it is a file lost.
+
 ## The closed block vocabulary
 
 A page's body is markdown, plus a small set of `:::name{attrs}` blocks —

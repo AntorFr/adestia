@@ -1100,6 +1100,30 @@
 
 .golem-pages__link:hover { background: var(--surface-sunken); }
 
+/* A file let go over a page. The overlay is drawn INSIDE the page rather than
+   over the whole window: what is being answered is "this page", and a
+   full-screen veil would make it look like the instance was taking the file. */
+.golem-editor { position: relative; }
+
+.golem-editor--dropping { outline: 2px dashed var(--accent); outline-offset: var(--space-2); }
+
+.golem-editor__dropzone {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  /* The overlay must not eat its own drop: the section below is what carries
+     the handlers, and a child intercepting the event would cancel the gesture
+     the moment it became visible. */
+  pointer-events: none;
+}
+
 /* Actions only, pushed right: the header no longer carries a title. */
 .golem-editor__header {
   display: flex;
@@ -1425,6 +1449,11 @@
 
 .golem-composer { flex-wrap: wrap; }
 
+.golem-composer--dropping {
+  outline: 2px dashed var(--accent);
+  outline-offset: var(--space-1);
+}
+
 .golem-attachments {
   flex-basis: 100%;
   display: flex;
@@ -1614,6 +1643,74 @@
 }
 
 .golem-gallery p { margin: 0; }
+
+/* What the page carries besides its words: photos as a contact sheet, other
+   documents as rows you can weigh before opening. Set apart by a rule rather
+   than by a box — it belongs to the page, it is not a panel about it. */
+.golem-page-files {
+  margin: var(--space-6) 0 0;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+.golem-page-files__title {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.golem-page-files__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.golem-page-files__thumb {
+  display: block;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.golem-page-files__thumb img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.golem-page-files__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.golem-page-files__file {
+  display: flex;
+  gap: var(--space-2);
+  align-items: baseline;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: inherit;
+  text-decoration: none;
+}
+
+.golem-page-files__file:hover { border-color: var(--accent); }
+.golem-page-files__name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.golem-page-files__size {
+  font-size: var(--text-sm);
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
 
 .golem-unknown-block,
 .golem-reader__raw {

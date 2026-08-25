@@ -176,11 +176,11 @@ a secret no longer. Nothing declared here ever reaches it — if your view needs
 the result of a keyed call, put the call in your API and let the view ask
 YOUR endpoint.
 
-## The page index, and its verdict
+## The two core APIs a view can read
 
 Before writing an API of your own, check whether the core already answers the
-question, and using it is what keeps every screen of this instance agreeing
-about the same pages.
+question. Two endpoints carry most of what an app needs, and using them is
+what keeps every screen of this instance agreeing about the same pages.
 
 **`GET /api/pages/index`** — every page's frontmatter, in one query:
 
@@ -199,6 +199,17 @@ the one thing guaranteed to drift, and the predecessor proved it: a trip its
 own app had archived was still listed as live by the screen next door. Fold
 finished pages into a collapsed section rather than dropping them — what is
 done is what somebody looks for when they want to know how the last one went.
+
+**`GET /api/files`** — the workspace's non-markdown files:
+
+- `?page=diy/garage.md` — what that page carries (its folder's files and its
+  `assets/`), each with `{ path, name, bytes, modified, kind }`;
+- `?under=diy` — everything below a folder, recursively;
+- `GET /api/files/<path>` serves the bytes, `?download=1` forces a download.
+
+Read-only, by design: a browser does not file things into the workspace, the
+agent does. See `page-author` for the convention and for what displays in
+place versus what downloads.
 
 ## Speaking the reader's language
 

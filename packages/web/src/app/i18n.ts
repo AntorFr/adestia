@@ -109,6 +109,11 @@ const FR: Readonly<Record<string, string>> = {
   'Saving…': 'Enregistrement…',
   Saved: 'Enregistré',
   'Loading…': 'Chargement…',
+  'Attached files': 'Pièces jointes',
+  'Drop files to attach them to this page':
+    'Déposez des fichiers pour les joindre à cette fiche',
+  'File the attached files with the page “%title” (%path).':
+    'Range les fichiers joints dans les pièces jointes de la fiche « %title » (%path).',
 
   // Failures, where clarity matters most
   'Not allowed': 'Accès refusé',

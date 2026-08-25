@@ -23,6 +23,9 @@ import {
 import { runTurn, type PendingPermission, type TurnState } from './stream.js'
 import { SkinSlot } from '../app/SkinSlot.js'
 import type { SkinSlotRender } from '../app/skin.js'
+// The drag primitive is shared with the page screen: one answer to "is this
+// drag carrying files", so the two surfaces cannot disagree about it.
+import { carriesFiles } from '../editor/filedrop.js'
 
 /**
  * One model the driver offers.
@@ -173,6 +176,7 @@ export function Composer({
   fetchImpl = fetch,
   extraButtons,
   onFill,
+  onAttach,
   models,
   model,
   onModel,
@@ -186,6 +190,13 @@ export function Composer({
   fetchImpl?: typeof fetch
   extraButtons?: readonly ComposerButton[]
   onFill?: (fill: (text: string) => void) => void
+  /**
+   * Publishes the composer's uploader, so a screen elsewhere can hand it
+   * files. The chat is where an attachment belongs — the tray, the refusals
+   * and the send are already here — and a second uploader would be a second
+   * place for a file to get lost.
+   */
+  onAttach?: (attach: (files: readonly File[]) => Promise<void>) => void
   /** What this driver offers. Empty means it does not enumerate models. */
   models?: readonly ModelInfo[]
   /** The chosen id, or `''` for the CLI's own default. */
@@ -196,6 +207,7 @@ export function Composer({
   const [text, setText] = useState('')
   const [attachments, setAttachments] = useState<readonly PendingAttachment[]>([])
   const [uploadError, setUploadError] = useState<string | undefined>()
+  const [dropping, setDropping] = useState(false)
   const area = useRef<HTMLTextAreaElement>(null)
   const picker = useRef<HTMLInputElement>(null)
 
@@ -251,6 +263,10 @@ export function Composer({
   }, [onFill])
 
   useEffect(() => {
+    onAttach?.(upload)
+  }, [onAttach, upload])
+
+  useEffect(() => {
     const element = area.current
     if (!element) return
     element.style.height = 'auto'
@@ -259,10 +275,25 @@ export function Composer({
 
   return (
     <form
-      className="golem-composer"
+      className={`golem-composer${dropping ? ' golem-composer--dropping' : ''}`}
       onSubmit={(event) => {
         event.preventDefault()
         submit()
+      }}
+      // Dropping a file on the chat is the same gesture as picking one or
+      // pasting one, and without these handlers the browser does the worst
+      // possible thing with it: it leaves the conversation to display the file.
+      onDragOver={(event) => {
+        if (!carriesFiles(event.dataTransfer)) return
+        event.preventDefault()
+        setDropping(true)
+      }}
+      onDragLeave={() => setDropping(false)}
+      onDrop={(event) => {
+        if (!carriesFiles(event.dataTransfer)) return
+        event.preventDefault()
+        setDropping(false)
+        void upload([...event.dataTransfer.files])
       }}
     >
       <AttachmentTray
@@ -418,6 +449,8 @@ export interface ChatProps {
   readonly onReady?: (channel: {
     ask: (prompt: string) => void
     compose: (text: string) => void
+    /** Uploads files to the inbox and shows them in the composer's tray. */
+    attach: (files: readonly File[]) => Promise<void>
   }) => void
   /** Composer buttons contributed by plugins. */
   readonly extraButtons?: readonly ComposerButton[]
@@ -482,6 +515,7 @@ export function Chat({
   const sessionId = useRef<string | undefined>(undefined)
   /** Set by the composer once it exists, so `compose` reaches its field. */
   const composeRef = useRef<((text: string) => void) | undefined>(undefined)
+  const attachRef = useRef<((files: readonly File[]) => Promise<void>) | undefined>(undefined)
   const bottom = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -617,6 +651,7 @@ export function Chat({
     onReady?.({
       ask: (prompt: string) => void send(prompt),
       compose: (text: string) => composeRef.current?.(text),
+      attach: async (files: readonly File[]) => attachRef.current?.(files),
     })
   }, [onReady, send])
 
@@ -726,6 +761,9 @@ export function Chat({
       <Composer
         onFill={(fill) => {
           composeRef.current = fill
+        }}
+        onAttach={(attach) => {
+          attachRef.current = attach
         }}
         fetchImpl={fetchImpl ?? fetch}
         {...(extraButtons ? { extraButtons } : {})}

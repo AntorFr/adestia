@@ -560,8 +560,9 @@ and CI.
 
 Since then: the trips app; a model selector in the composer; outbound MCP
 wired end to end with OAuth-authenticating servers and health reporting; the
-authority gate; and the instruction zone, readable and correctable without an
-IDE.
+authority gate; the instruction zone, readable and correctable without an
+IDE; and the workspace's non-markdown files — served, resolvable from a page,
+and shown under it as attachments.
 
 **Not built yet**, and none of it blocked by a design question:
 
@@ -570,9 +571,6 @@ IDE.
   `cost`, `subscriptionQuotas`; only the live token counter reaches a screen.
   A capability declared and never consumed is the failure mode to watch for
   here — it looks finished from the code and shows nothing to a user.
-- **Serving workspace files.** An image or an attachment referenced from a page
-  is a 404: the server serves markdown and nothing else. Every app that needs
-  its own documents currently reinvents a bounded route.
 - **The per-user rebound** for user-scoped MCP addons, and the `oidc` auth mode
   it depends on (see MCP configuration).
 - **User-editable authority.** The gate refuses writes from a turn, which is
@@ -586,7 +584,10 @@ IDE.
 
 ## Decision log
 
-**2026-08-25 (archiving is core knowledge, not per-view knowledge):** The status
+**2026-08-25 (what a page's life is worth, and what it carries):** two gaps
+the predecessor did not have, found by comparing screen for screen.
+
+*Archiving became core knowledge rather than per-view knowledge.* The status
 vocabulary — which words mean a page is over, and the `acheté`-only-archives-a-
 purchase exception — moved from the web shell into `@antorfr/golem-content`,
 and `GET /api/pages/index` now publishes `finished` for every page. The reason
@@ -599,6 +600,44 @@ published verdict and folds finished pages into an `🗄 Archive` section
 ever dropped). Left deliberately alone: `todo` and `planif` close on `done:`,
 which is a different regime with its own contract, and `voyages` judges the
 status inside `voyage.json` — not a page, so the index cannot answer for it.
+
+*Dropping a file on a page files it — through the agent.* The gesture people
+expect, with the writing left where it belongs: the file goes up to the chat's
+inbox (outside the workspace, the route that already existed), and the composer
+is pre-filled with "range ces pièces jointes avec la fiche X (path)". Composed
+and NOT sent, the same position the scanner takes: the drop says what, the
+person says what it means — "renomme-la avant.jpg" is a thought you have while
+the file is under the cursor. Deliberately not built: a `POST` that writes
+straight into a page's folder. It would make the shell a general-purpose file
+writer behind a session cookie and skip the one step worth keeping, somebody
+deciding this file belongs in the workspace at all. Revisit when the friction
+of one agent turn is measured rather than assumed.
+
+Found while wiring it: the composer had **no drop handler at all** — picker and
+paste only — though the parity bar above claims "picker+paste+drag-drop". So a
+file let go on the chat made the browser leave the conversation to display it.
+Fixed with the same primitive, so the two surfaces cannot disagree about what a
+file drag is.
+
+*Workspace files are served.* `GET /api/files` says what is there (`?page=`
+answers "what does this page carry", `?under=` walks a folder) and
+`/api/files/<path>` hands over the bytes. A page's attachments are the
+non-markdown files in its own folder plus its `assets/` — the layout is the
+pairing, no frontmatter to keep in step — and the reader now resolves relative
+links against the page's folder, so `![Avant](assets/avant.jpg)` finally draws
+and `[le devis](devis.pdf)` finally opens. What a page does not already show
+appears under it as an attachment strip.
+
+Two positions inside that: **read-only**, because a file writer behind a
+session cookie is a categorically more dangerous thing than a page editor, and
+files reach the workspace through the chat inbox where the agent decides they
+belong there; and **inline only for inert media**, since these bytes are
+same-origin with the session — an SVG or an HTML file rendered in place would
+run its script as the signed-in user, so everything outside a short whitelist
+is `application/octet-stream` with an attachment disposition, `nosniff`, and a
+CSP that permits nothing. `voyages` keeps its own `/doc` route: it is bounded
+to one trip's folder and already forces a download, so replacing it would be
+churn rather than a fix.
 
 **2026-08-20 (founding):** product-first (no parity constraint with agent-gw; the
 author's pods migrate later). Shared-agent multi-user with OIDC plus a zero-auth

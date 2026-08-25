@@ -30,6 +30,7 @@ import {
 import { MANAGED_MARKER } from './skills.js'
 import { registerOidc } from './oidc-routes.js'
 import { registerMcp } from './mcp-routes.js'
+import { registerFiles } from './files.js'
 import { registerPages } from './pages.js'
 import { mountPluginApis } from './plugin-host.js'
 import { ArmingSessions, SecretStore } from './secrets.js'
@@ -617,7 +618,11 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     return cleared ? { cleared: true } : reply.code(404).send({ error: 'nothing stored' })
   })
 
-  registerPages(app, { root: join(config.workspace.root, config.workspace.pages) })
+  const pagesRoot = join(config.workspace.root, config.workspace.pages)
+  registerPages(app, { root: pagesRoot })
+  // The same root: an attachment is a file sitting next to a page, and a
+  // second configurable directory would be a second place to explain.
+  registerFiles(app, { root: pagesRoot })
 
   // Mounted before the static catch-all, so a plugin route always wins over
   // the shell's fallback; and after the auth hook, so it is gated like

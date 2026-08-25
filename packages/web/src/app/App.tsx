@@ -144,6 +144,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   /** Queued while the chat mounts, so a plugin can ask before anyone typed. */
   const askRef = useRef<((prompt: string) => void) | undefined>(undefined)
   const composeRef = useRef<((text: string) => void) | undefined>(undefined)
+  const attachRef = useRef<((files: readonly File[]) => Promise<void>) | undefined>(undefined)
   const split = useSplit()
   const mobile = useMobile()
 
@@ -448,9 +449,11 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
         onReady={(channel: {
           ask: (prompt: string) => void
           compose: (text: string) => void
+          attach: (files: readonly File[]) => Promise<void>
         }) => {
           askRef.current = channel.ask
           composeRef.current = channel.compose
+          attachRef.current = channel.attach
         }}
         extraButtons={composerButtons}
         {...(skin.placeholder ? { placeholder: skin.placeholder } : {})}
@@ -634,6 +637,11 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             page={page}
             fetchImpl={fetchImpl}
             openPage={openPage}
+            locale={locale}
+            // Dropping a file on a page hands it to the chat and writes the
+            // filing request: the agent is still the one who moves it.
+            attach={(dropped) => attachRef.current?.(dropped)}
+            compose={(text) => composeRef.current?.(text)}
             t={t}
             {...(mount ? { mount } : {})}
           />
