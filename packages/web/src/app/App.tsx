@@ -541,7 +541,14 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             })()}
           </nav>
           <span className="golem-canvas__driver">
-            {instance.driver.label} {instance.driver.cliVersion}
+            {/* The version only becomes knowable once a session has announced
+                itself, so before the first turn there is nothing to show.
+                "Claude Code unknown" reads as a broken field; the name alone
+                reads as a name. */}
+            {instance.driver.label}
+            {instance.driver.cliVersion && instance.driver.cliVersion !== 'unknown'
+              ? ` ${instance.driver.cliVersion}`
+              : ''}
           </span>
           <button
             type="button"

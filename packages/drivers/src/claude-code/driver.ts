@@ -163,7 +163,7 @@ export class ClaudeCodeDriver implements Driver {
   readonly #query: QueryFn
   readonly #baseEnv: Readonly<Record<string, string | undefined>>
   readonly #credentials: Readonly<Record<string, string>>
-  readonly #cliVersion: string
+  #cliVersion: string
   readonly #models: readonly ModelInfo[]
   readonly #armingFlow: ArmingFlow | undefined
   readonly #permissions: PermissionBroker | undefined
@@ -436,10 +436,15 @@ export class ClaudeCodeDriver implements Driver {
           }
 
           case 'system': {
-            // The only field consumed from session metadata. Recorded rather
-            // than yielded: it is not an event of the conversation, it is the
-            // state of the instance's plumbing, and the panel asks for it.
+            // Two fields consumed from session metadata, both recorded rather
+            // than yielded: they are not events of the conversation, they are
+            // the state of the plumbing, and the interface asks for them.
             if (message.mcpServers) this.#mcpHealth = readHealth(message.mcpServers)
+            // Where the version comes from. There is no probe to run: the SDK
+            // owns the binary, and the session announces what it is. Which
+            // means it is genuinely unknown until a first turn has run —
+            // honest, and better than never knowing.
+            if (message.claude_code_version) this.#cliVersion = message.claude_code_version
             break
           }
 

@@ -68,6 +68,8 @@ export type SdkMessage =
       readonly type: 'system'
       readonly subtype?: string
       readonly session_id?: string
+      /** What the CLI calls itself. The only place it says so. */
+      readonly claude_code_version?: string
       readonly mcpServers?: readonly {
         readonly name: string
         readonly status?: string

@@ -385,6 +385,21 @@ describe('MCP health', () => {
     expect(await driver.mcpStatus()).toEqual([{ name: 'x', state: 'unknown' }])
   })
 
+  it('learns its version from the session that announces it', async () => {
+    // There is no probe to run: the SDK owns the binary. The CLI says what it
+    // is when a session opens, and nothing was reading it — so the header
+    // read "Claude Code unknown" forever.
+    const driver = new ClaudeCodeDriver({
+      query: fakeSdk([
+        { type: 'system' as const, subtype: 'init', claude_code_version: '2.1.220' },
+        resultMessage,
+      ]),
+    })
+    expect((await driver.describe()).cliVersion).toBe('unknown')
+    await collect(driver)
+    expect((await driver.describe()).cliVersion).toBe('2.1.220')
+  })
+
   it('does not declare the capability when it wired nothing', async () => {
     // A panel offering to report the health of nothing looks broken.
     const bare = new ClaudeCodeDriver({ query: fakeSdk([]) })
