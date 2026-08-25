@@ -125,14 +125,61 @@ describe('routing a request to its conversation', () => {
     })
     await vi.waitFor(() => expect(asked).toHaveLength(1))
 
-    broker.attach(asked[0]!.id, 'conv-42')
+    broker.attach(asked[0]!.id, { userId: 'sebastien', conversationId: 'conv-42' })
     expect(broker.outstanding()[0]?.conversationId).toBe('conv-42')
 
-    broker.answer(asked[0]!.id, 'allow')
+    broker.answer(asked[0]!.id, 'allow', 'sebastien')
     await decision
     // Nothing left to route: attaching to a request that is gone is a no-op,
     // not a crash — the UI may well be a moment behind.
-    expect(() => broker.attach(asked[0]!.id, 'conv-99')).not.toThrow()
+    expect(() => broker.attach(asked[0]!.id, { conversationId: 'conv-99' })).not.toThrow()
     expect(broker.outstanding()).toHaveLength(0)
+  })
+})
+
+describe('two people on one instance', () => {
+  /** Raises a request and returns its id, as a driver would. */
+  const raise = async (broker: PermissionBroker) => {
+    const asked: PermissionRequest[] = []
+    void broker.ask('Edit', '/w/pages/x.md', (r) => {
+      asked.push(r)
+      return true
+    })
+    await vi.waitFor(() => expect(asked).toHaveLength(1))
+    return asked[0]!.id
+  }
+
+  it('shows each person only what their own turn is waiting on', async () => {
+    // One broker serves the whole instance. Unfiltered, "what is waiting"
+    // hands somebody else's tool names and file paths to whoever asks first.
+    const broker = new PermissionBroker({ whenUnattended: 'deny' })
+    broker.attach(await raise(broker), { userId: 'sebastien', conversationId: 'c1' })
+    broker.attach(await raise(broker), { userId: 'emilie', conversationId: 'c2' })
+
+    expect(broker.outstanding('sebastien').map((r) => r.conversationId)).toEqual(['c1'])
+    expect(broker.outstanding('emilie').map((r) => r.conversationId)).toEqual(['c2'])
+    // Unnarrowed stays available for the server's own bookkeeping.
+    expect(broker.outstanding()).toHaveLength(2)
+  })
+
+  it('refuses to let one answer for the other', async () => {
+    const broker = new PermissionBroker({ whenUnattended: 'deny' })
+    const id = await raise(broker)
+    broker.attach(id, { userId: 'sebastien' })
+
+    // As if it were not there: saying "not yours" would confirm a request
+    // exists, which is itself an answer.
+    expect(broker.answer(id, 'allow', 'emilie')).toBe(false)
+    expect(broker.outstanding('sebastien')).toHaveLength(1)
+    expect(broker.answer(id, 'allow', 'sebastien')).toBe(true)
+  })
+
+  it('shows an unclaimed request to nobody', async () => {
+    // A turn with no caller — the clock, a delegation — raises requests that
+    // belong to no one. They are decided by the unattended policy, never by
+    // whoever happens to be looking.
+    const broker = new PermissionBroker({ whenUnattended: 'deny' })
+    await raise(broker)
+    expect(broker.outstanding('sebastien')).toHaveLength(0)
   })
 })

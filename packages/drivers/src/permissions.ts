@@ -23,16 +23,28 @@ export interface PermissionRequest {
   readonly detail: string | undefined
   readonly askedAt: number
   /**
+   * WHOSE turn raised this.
+   *
+   * Live, the question never comes up: a turn writes into its own stream, so
+   * the connection is the routing. It comes up the moment a request has to be
+   * RECOVERED, because one broker serves the whole instance — every turn and
+   * every person. Without this, "what is still waiting" answers with
+   * everybody's, and one household member reads another's file paths and can
+   * answer for them.
+   *
+   * Absent means nobody claimed it, and it is then shown to nobody.
+   */
+  userId?: string
+  /**
    * Which conversation this was raised in.
    *
-   * An identifier, for ROUTING — not a label to show. A recovered request
-   * has to reappear in the thread it belongs to, and with more than one turn
-   * allowed at once there is nothing in "Edit todo/rails.md" that says which.
-   * Rendering it in the wrong thread is worse than not rendering it: it asks
-   * somebody to approve a change to a conversation they are not having.
+   * An identifier, for ROUTING — not a label to show. With more than one turn
+   * allowed at once there is nothing in "Edit todo/rails.md" that says which
+   * thread asked, and rendering it in the wrong one asks somebody to approve
+   * a change to a conversation they are not having.
    *
-   * Attached by the product, never by the driver: a driver knows a session
-   * id, and conversations are the shell's notion.
+   * Both are attached by the product, never by the driver: a driver knows a
+   * session id, and users and conversations are the shell's notions.
    */
   conversationId?: string
 }
@@ -168,23 +180,40 @@ export class PermissionBroker {
    * already answered or timed out is silently ignored — there is nothing
    * left to route.
    */
-  attach(id: string, conversationId: string): void {
+  attach(id: string, owner: { userId?: string; conversationId?: string }): void {
     const pending = this.#pending.get(id)
-    if (pending && conversationId) pending.request.conversationId = conversationId
+    if (!pending) return
+    if (owner.userId) pending.request.userId = owner.userId
+    if (owner.conversationId) pending.request.conversationId = owner.conversationId
   }
 
-  answer(id: string, decision: PermissionDecision): boolean {
+  /**
+   * @param by who is answering. A request claimed by somebody else is refused
+   *   as if it were not there: an instance with two people on it must not let
+   *   one decide what the other's agent may do — and saying "not yours" would
+   *   confirm that a request exists, which is itself an answer.
+   */
+  answer(id: string, decision: PermissionDecision, by?: string): boolean {
     const pending = this.#pending.get(id)
     if (!pending) return false
+    if (pending.request.userId && by !== undefined && pending.request.userId !== by) return false
     clearTimeout(pending.timer)
     this.#pending.delete(id)
     pending.resolve(decision)
     return true
   }
 
-  /** Everything still waiting, so a reconnecting UI can re-ask. */
-  outstanding(): readonly PermissionRequest[] {
-    return [...this.#pending.values()].map((pending) => pending.request)
+  /**
+   * What is still waiting, so a reconnecting UI can re-ask.
+   *
+   * Narrowed to one person when asked for: one broker serves the whole
+   * instance, and an unfiltered answer hands somebody else's tool names and
+   * file paths to whoever asks first. A request nobody claimed belongs to no
+   * one and is returned to no one.
+   */
+  outstanding(userId?: string): readonly PermissionRequest[] {
+    const all = [...this.#pending.values()].map((pending) => pending.request)
+    return userId === undefined ? all : all.filter((request) => request.userId === userId)
   }
 
   /**

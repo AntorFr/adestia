@@ -505,7 +505,10 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
             // turn belongs to. It is what lets a RECOVERED prompt reappear in
             // the right thread after a reload; live, the stream already
             // delivers it to the right place.
-            if (conversationId) deps.permissions?.attach(event.id, conversationId)
+            deps.permissions?.attach(event.id, {
+              userId,
+              ...(conversationId ? { conversationId } : {}),
+            })
           } else if (event.type === 'text-delta') text += event.text
           else if (event.type === 'tool-use') {
             tools.push({ name: event.name, ...(event.target ? { target: event.target } : {}) })
@@ -560,7 +563,12 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
       if (typeof id !== 'string' || typeof allow !== 'boolean') {
         return reply.code(400).send({ error: 'id and allow are required' })
       }
-      const answered = deps.permissions?.answer(id, allow ? 'allow' : 'deny') ?? false
+      const answered =
+        deps.permissions?.answer(
+          id,
+          allow ? 'allow' : 'deny',
+          (request as FastifyRequest & { identity?: Identity }).identity?.userId,
+        ) ?? false
       // 409 rather than 404: the request existed, it simply timed out or was
       // already answered — and telling the user "unknown" would suggest they
       // clicked something that never was.
@@ -569,10 +577,18 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     },
   )
 
-  app.get('/api/permission', async () => ({
+  app.get('/api/permission', async (request) => ({
     // A reconnecting UI re-asks rather than leaving the agent stuck behind a
     // prompt the browser forgot when it reloaded.
-    pending: deps.permissions?.outstanding() ?? [],
+    //
+    // Narrowed to the caller. One broker serves the whole instance, so an
+    // unfiltered answer would hand somebody else's tool names and file paths
+    // to whoever asked first — and let them decide what another person's
+    // agent may do.
+    pending:
+      deps.permissions?.outstanding(
+        (request as FastifyRequest & { identity?: Identity }).identity?.userId,
+      ) ?? [],
   }))
 
   app.post<{ Body: { sessionId?: unknown } }>('/api/turn/stop', async (request, reply) => {
