@@ -293,6 +293,22 @@ rather than details:
   server reads as an absent server. A provider being down costs those servers,
   never the turn, and a refusal is never cached.
 
+**A HUB is declared once and enumerated at boot.** An origin carrying several
+MCP servers — a dozen addons mounted by path — would otherwise mean a dozen
+declarations, and a config edit in every instance the day it gains one. That is
+a maintenance trap rather than a safety measure, so an operator declares the
+hub and the identity to present, and the addons come from the hub. "Declared
+beats guessed" is respected a level up: you state which hub you trust and that
+you want what it carries, and the instance says out loud at boot what it
+mounted. Enumerated ONCE, at startup — an agent whose toolset changes
+mid-conversation is a conversation whose earlier answers stop making sense.
+The hub is asked WITH the identity, so bad credentials fail loudly at boot
+instead of inside somebody's first tool call. An origin qualifies by
+convention, not by standard: `GET /` answers `{"addons": {"<name>":
+{"state"}}}`, each addon served at `/<name>/` — the trailing slash included,
+since the unslashed form redirects and a redirect is a poor thing to hand a
+bearer to.
+
 MCP tools pass under interactive permissions like any other tool. Server health
 is a driver capability (`mcpStatus`), reported off the session — both CLIs
 announce their servers when a session opens, and probing would mean opening one

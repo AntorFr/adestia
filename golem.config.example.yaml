@@ -189,6 +189,23 @@ mcp:
   # Addons of one hub share an identity: declaring it on each of them costs
   # one token exchange, not one per addon.
   #
+  # A HUB — one origin carrying several MCP servers — is declared ONCE and
+  # enumerated at startup, so the day it gains an addon no instance needs a
+  # config edit. The instance says at boot what it mounted.
+  #
+  #   hubs:
+  #     - name: rosetta            # prefixes every server it mounts
+  #       url: https://hub.example
+  #       auth: { … as above … }
+  #       # Addons that refuse a machine identity — a hub's index does not say
+  #       # which those are, so name them here until one reports it.
+  #       exclude: [google, withings, github]
+  #
+  # An origin qualifies if `GET /` answers
+  # `{"addons": {"<name>": {"state": "ok"}}}` and serves each addon at
+  # `/<name>/`. That is a convention, not an MCP standard — MCP has no notion
+  # of a hub.
+  #
   # `url` OR `command`, never both — they are two transports. A ${VAR} the
   # environment never filled is REFUSED at startup rather than passed through:
   # a literal "${HA_MCP_TOKEN}" reaching a server fails later, in a call,
