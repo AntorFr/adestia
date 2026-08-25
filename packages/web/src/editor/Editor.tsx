@@ -11,7 +11,9 @@
  *   because refusing loses the file and rewriting loses the content.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+
+import { parse, serialize } from '@antorfr/golem-content'
 
 export interface PageDocument {
   readonly path: string
@@ -108,21 +110,45 @@ export interface EditorProps {
 
 export function Editor({ page, fetchImpl = fetch, mount }: EditorProps) {
   const host = useRef<HTMLDivElement>(null)
-  const [markdown, setMarkdown] = useState(page.markdown)
+
+  /**
+   * What the editor is shown, which is not always what is on disk.
+   *
+   * A page written by the shell this store is shared with carries `{% %}`
+   * blocks. The grammar knows how to READ them, but Milkdown runs the parser
+   * without its transformers — so the editor alone would show literal braces
+   * where every other surface shows a callout. Round-tripping through the
+   * shared pipeline here is what makes the two agree.
+   *
+   * It is also the BASELINE for `dirty`: comparing against the file on disk
+   * would light up Save on the 51 pages that carry such a block, inviting a
+   * rewrite nobody asked for. Reading converts nothing; only an edit does.
+   */
+  const shown = useMemo(() => {
+    try {
+      return serialize(parse(page.markdown))
+    } catch {
+      // A page the pipeline cannot round-trip is shown exactly as written,
+      // which is worse-looking and strictly safer than showing nothing.
+      return page.markdown
+    }
+  }, [page.markdown])
+
+  const [markdown, setMarkdown] = useState(shown)
   const [revision, setRevision] = useState(page.revision)
   const [status, setStatus] = useState<SaveState>({ kind: 'idle' })
-  const dirty = markdown !== page.markdown
+  const dirty = markdown !== shown
 
   useEffect(() => {
-    setMarkdown(page.markdown)
+    setMarkdown(shown)
     setRevision(page.revision)
     setStatus({ kind: 'idle' })
-  }, [page.markdown, page.path, page.revision])
+  }, [shown, page.path, page.revision])
 
   useEffect(() => {
     if (!mount || !host.current || !page.editable) return undefined
-    return mount(host.current, page.markdown, setMarkdown)
-  }, [mount, page.editable, page.markdown, page.path])
+    return mount(host.current, shown, setMarkdown)
+  }, [mount, page.editable, shown, page.path])
 
   const save = useCallback(async () => {
     setStatus({ kind: 'saving' })
