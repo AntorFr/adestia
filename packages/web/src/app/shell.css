@@ -1447,7 +1447,11 @@
 /* The two postures show the SAME document, so they must look like it.
    Crepe brings its own type scale and its own measure; both are overridden
    here — not in a skin, because this is the product's editor and its
-   agreement with the reader is a product decision, not a livery's. */
+   agreement with the reader is a product decision, not a livery's.
+   ⚠️ Every selector below carries `.ProseMirror` deliberately. Crepe writes
+   `.milkdown .ProseMirror h1` — the same specificity as the same rule without
+   it — and its stylesheet arrives through a DYNAMIC import, so it lands last
+   and wins every tie. One extra class is the whole fix. */
 .golem-editor__surface .milkdown {
   font-family: var(--font);
   font-size: 15.5px;
@@ -1460,22 +1464,22 @@
   padding: 0;
 }
 
-.golem-editor__surface .milkdown h1,
-.golem-editor__surface .milkdown h2,
-.golem-editor__surface .milkdown h3,
-.golem-editor__surface .milkdown h4 {
+.golem-editor__surface .milkdown .ProseMirror h1,
+.golem-editor__surface .milkdown .ProseMirror h2,
+.golem-editor__surface .milkdown .ProseMirror h3,
+.golem-editor__surface .milkdown .ProseMirror h4 {
   font-family: var(--font-title);
   letter-spacing: var(--title-track);
   line-height: 1.2;
   margin: 1.8em 0 0.5em;
 }
 
-.golem-editor__surface .milkdown h1 { font-size: 1.85rem; }
-.golem-editor__surface .milkdown h2 { font-size: 1.5rem; }
-.golem-editor__surface .milkdown h3 { font-size: 1.2rem; }
-.golem-editor__surface .milkdown h4 { font-size: 1.05rem; }
-.golem-editor__surface .milkdown p { margin: 0 0 1em; }
-.golem-editor__surface .milkdown a { color: var(--accent); }
+.golem-editor__surface .milkdown .ProseMirror h1 { font-size: 1.85rem; }
+.golem-editor__surface .milkdown .ProseMirror h2 { font-size: 1.5rem; }
+.golem-editor__surface .milkdown .ProseMirror h3 { font-size: 1.2rem; }
+.golem-editor__surface .milkdown .ProseMirror h4 { font-size: 1.05rem; }
+.golem-editor__surface .milkdown .ProseMirror p { margin: 0 0 1em; }
+.golem-editor__surface .milkdown .ProseMirror a { color: var(--accent); }
 
 /* The frontmatter chips sit in the flow of both postures identically. */
 .golem-editor__surface .golem-editor__meta { margin-bottom: var(--space-4); }

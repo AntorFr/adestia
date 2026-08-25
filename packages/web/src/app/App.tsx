@@ -85,8 +85,8 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   const [screen, setScreen] = useState<'chat' | 'canvas'>('chat')
   const [pages, setPages] = useState<readonly IndexEntry[]>([])
   /** The section being browsed, if any. Home when undefined. */
-  const [section, setSection] = useState<string | undefined>(undefined)
   const [page, setPage] = useState<PageDocument | undefined>()
+  const [route, setRoute] = useState(() => location.hash.replace(/^#/, ''))
   /**
    * The editor is loaded on demand: ProseMirror and Milkdown weigh more than
    * the entire rest of the shell, and someone who only wants to chat should
@@ -113,7 +113,6 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   const [skinScheme, setSkinScheme] = useState<'light' | 'dark' | undefined>(undefined)
   const [loaded, setLoaded] = useState<readonly LoadedPlugin[]>([])
   /** The plugin view currently filling the canvas, by id. */
-  const [openApp, setOpenApp] = useState<string | undefined>()
   /** Queued while the chat mounts, so a plugin can ask before anyone typed. */
   const askRef = useRef<((prompt: string) => void) | undefined>(undefined)
   const composeRef = useRef<((text: string) => void) | undefined>(undefined)
@@ -125,24 +124,46 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   // plugin does with the rest is its own business. A bookmarked route must
   // resurrect the same screen, and a route whose plugin is no longer active
   // must resolve to nothing rather than to a blank canvas.
+  /**
+   * The URL is the navigation state — all of it.
+   *
+   * Sections and pages used to live in React state alone, which meant no
+   * address to bookmark, no address to SHARE, and a Back button that walked
+   * out of the app instead of one screen up. A product whose whole premise is
+   * that a page is a file has to be able to say where that page is.
+   *
+   *   #/                      the landing canvas
+   *   #/section/<folder>      a section
+   *   #/page/<path>.md        one page
+   *   #/<plugin route or id>  an app
+   */
   useEffect(() => {
-    const apply = () => {
-      const hash = location.hash.replace(/^#/, '')
-      // Longest route first, so a plugin at `/a/b` wins over one at `/a`.
-      // A tiled plugin that declares no route still answers on `/<id>`: a
-      // custom home navigates by plain hash links, and a tile nothing can
-      // link to would be unreachable from one.
-      const match = [...loaded]
-        .sort((a, b) => (b.view?.route?.length ?? 0) - (a.view?.route?.length ?? 0))
-        .find((plugin) =>
-          routeMatches(plugin.view?.route ?? (plugin.tile ? `/${plugin.id}` : undefined), hash),
-        )
-      setOpenApp(match?.id)
-    }
+    const apply = () => setRoute(location.hash.replace(/^#/, ''))
     apply()
     window.addEventListener('hashchange', apply)
     return () => window.removeEventListener('hashchange', apply)
-  }, [loaded])
+  }, [])
+
+  /** Which app the current route opens, if any. */
+  const openApp = useMemo(() => {
+    // Longest route first, so a plugin at `/a/b` wins over one at `/a`. A
+    // tiled plugin that declares no route still answers on `/<id>`: a custom
+    // home navigates by plain hash links, and a tile nothing can link to
+    // would be unreachable from one.
+    if (route.startsWith('/section/') || route.startsWith('/page/')) return undefined
+    return [...loaded]
+      .sort((a, b) => (b.view?.route?.length ?? 0) - (a.view?.route?.length ?? 0))
+      .find((plugin) =>
+        routeMatches(plugin.view?.route ?? (plugin.tile ? `/${plugin.id}` : undefined), route),
+      )?.id
+  }, [route, loaded])
+
+  const section = route.startsWith('/section/')
+    ? decodeURIComponent(route.slice('/section/'.length))
+    : undefined
+  const pagePath = route.startsWith('/page/')
+    ? decodeURIComponent(route.slice('/page/'.length))
+    : undefined
 
   /**
    * Opens a page in the editor.
@@ -150,22 +171,47 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
    * The editor module is fetched ALONGSIDE the page rather than at boot: it is
    * the heaviest thing the shell can load, and most sessions never open one.
    */
-  const openPage = useCallback(
-    (path: string) => {
-      void (async () => {
-        const [response, editor] = await Promise.all([
-          fetchImpl(`/api/pages/${path}`),
-          import('../editor/milkdown.js'),
-        ])
-        if (!response.ok) return
-        // Stored via a thunk: passing a function to setState directly would
-        // have React call it as an updater.
-        setMount(() => editor.mountMilkdown)
-        setPage((await response.json()) as PageDocument)
-      })()
-    },
-    [fetchImpl],
-  )
+  const openPage = useCallback((path: string) => {
+    location.hash = `/page/${encodeURIComponent(path)}`
+  }, [])
+
+  const openSection = useCallback((path: string) => {
+    location.hash = `/section/${encodeURIComponent(path)}`
+  }, [])
+
+  const goHome = useCallback(() => {
+    location.hash = ''
+  }, [])
+
+  /**
+   * Loads whatever page the route names.
+   *
+   * Driven by the URL rather than by the click, so a bookmark, a shared link
+   * and the Back button all land on the same screen as the card that opened
+   * it. The editor module is fetched ALONGSIDE the page: it is the heaviest
+   * thing the shell can load, and most sessions never open one.
+   */
+  useEffect(() => {
+    if (!pagePath) {
+      setPage(undefined)
+      return undefined
+    }
+    let cancelled = false
+    void (async () => {
+      const [response, editor] = await Promise.all([
+        fetchImpl(`/api/pages/${pagePath}`),
+        import('../editor/milkdown.js'),
+      ])
+      if (cancelled || !response.ok) return
+      // Stored via a thunk: passing a function to setState directly would
+      // have React call it as an updater.
+      setMount(() => editor.mountMilkdown)
+      setPage((await response.json()) as PageDocument)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [pagePath, fetchImpl])
 
   /**
    * The viewer's theme choice: '' follows the system (and the skin's own
@@ -197,17 +243,10 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   }, [])
 
   const openPlugin = useCallback((plugin: LoadedPlugin) => {
-    if (plugin.view?.route) location.hash = plugin.view.route
-    else if (plugin.tile) location.hash = `/${plugin.id}`
-    else setOpenApp(plugin.id)
+    location.hash = plugin.view?.route ?? `/${plugin.id}`
   }, [])
 
-  const closeApp = useCallback(() => {
-    // The hash is cleared too, or Back leaves a route that reopens the app on
-    // the next render.
-    if (location.hash) location.hash = ''
-    setOpenApp(undefined)
-  }, [])
+  const closeApp = goHome
 
   /** Composer buttons every active plugin contributed, flattened once. */
   const composerButtons = loaded.flatMap((plugin) =>
@@ -412,11 +451,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           <nav className="golem-crumbs" aria-label="Breadcrumb">
             <button
               type="button"
-              onClick={() => {
-                closeApp()
-                setSection(undefined)
-                setPage(undefined)
-              }}
+              onClick={goHome}
             >
               {t('Home')}
             </button>
@@ -451,10 +486,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
                   {holder && (
                     <>
                       <span className="golem-crumbs__sep">/</span>
-                      <button type="button" onClick={() => {
-                        setPage(undefined)
-                        setSection(holder.path)
-                      }}>
+                      <button type="button" onClick={() => openSection(holder.path)}>
                         {holder.title}
                       </button>
                     </>
@@ -554,7 +586,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             title={sectionAt(pages, section)?.title ?? section}
             {...(sectionAt(pages, section) ? { tile: sectionAt(pages, section)! } : {})}
             entries={pages}
-            openSection={setSection}
+            openSection={openSection}
             openPage={openPage}
             t={t}
           />
@@ -574,7 +606,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             plugins={loaded}
             entries={pages}
             openPlugin={openPlugin}
-            openSection={setSection}
+            openSection={openSection}
             openPage={openPage}
             focusComposer={() => composeRef.current?.('')}
             t={t}
