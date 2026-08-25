@@ -54,6 +54,11 @@ ne les couvre) revendique un chemin en le connaissant, via son listing. Le
 déclaré l'emporte sur le su. La une s'en sert : une cible qui porte un chemin
 va à qui le possède, et la coque a cessé d'épeler `workbook` avec la route de
 l'atelier en dur.
+**Livré en 0.6.0 et déployé** sur homenode (image multi-arch, manifeste bumpé,
+pod `ghcr.io/antorfr/golem:0.6.0` ready, 7 plugins sur 7 actifs au boot).
+Reste à constater AU NAVIGATEUR — la porte OIDC interdit de le faire sans la
+session de l'utilisateur : fil d'Ariane depuis une fiche de voyage, adresses
+courtes, et une ancienne URL `%2F` qui doit toujours ouvrir.
 
 **Reste :**
 - [ ] `atelier` — ~1 600 lignes (plan de débit, SVG). EN COURS.
