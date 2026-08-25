@@ -46,12 +46,27 @@ describe('screen scraping', () => {
     expect(awaitsCode('still working...')).toBe(false)
   })
 
-  it('recognises the prompt Ink draws without spaces', () => {
-    // Captured from 2.1.237: every word placed with a cursor move, so the
-    // stripped screen has no spaces left to match on.
+  it('recognises the prompt Ink draws with cursor moves', () => {
+    // Captured from 2.1.237: every word placed by column, no spaces sent.
+    // Replayed onto a screen the spaces come back, so the plain pattern hits.
     const inked = `${ESC}[2GPaste${ESC}[8Gcode${ESC}[13Ghere${ESC}[18Gif${ESC}[21Gprompted${ESC}[30G>`
     expect(awaitsCode(inked)).toBe(true)
     expect(awaitsCode(`${ESC}[2Gstill${ESC}[8Gworking`)).toBe(false)
+  })
+
+  it('reads a token the CLI only half re-sent', () => {
+    // THE bug behind "did not return a token" on a successful authorization.
+    // Ink re-sends only the cells that CHANGED: here the previous frame had
+    // already left an `X` where the token happens to carry one, so the stream
+    // jumps over it. Read from the stream, the token comes back one character
+    // short — a plausible-looking value that is simply not the token.
+    const head = 'sk-ant-oat01-' + 'A'.repeat(20)
+    const tail = 'B'.repeat(10)
+    const token = head + 'X' + tail
+    const stream = `${' '.repeat(head.length)}X\r${head}${ESC}[${head.length + 2}G${tail}`
+
+    expect(findToken(stream)).toBe(token)
+    expect(findToken(stripAnsi(stream))).toBe(head + tail)
   })
 
   it('takes the link from the hyperlink, not from the wrapped copy', () => {
@@ -64,9 +79,8 @@ describe('screen scraping', () => {
   })
 
   it('hears the CLI refuse a code', () => {
-    // Captured from 2.1.237, cursor moves and all: only `OAuth error` comes
-    // through in one piece, and it is the whole verdict.
-    const refusal = `${ESC}[4AOAuth error: Invalid${ESC}[23Gcode. Please make${ESC}[41Gsure`
+    // Captured from 2.1.237, cursor moves and all.
+    const refusal = `OAuth error: Invalid${ESC}[23Gcode. Please make${ESC}[41Gsure`
     expect(refusedCode(refusal)).toBe(true)
     expect(refusedCode('exchanging…')).toBe(false)
   })

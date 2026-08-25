@@ -13,21 +13,21 @@
  * code and its Enter.
  *
  * What DID change is the rendering. Claude Code 2.1.237 draws this flow with
- * Ink, which positions every word with a cursor escape instead of printing
- * spaces, and prints the link as an OSC 8 hyperlink. Stripped of its escapes,
- * `Paste code here if prompted >` arrives as `Pastecodehereifprompted>`, and
- * the only untruncated copy of the URL is the one inside the hyperlink's
- * target. Both matchers below are built around that, checked against a real
- * run of the binary the SDK ships.
+ * Ink, which paints FRAMES: it positions each word with a cursor escape and
+ * re-sends only the cells that changed. Stripping the escapes off that stream
+ * does not give the text — it gives the text with holes in it, since anything
+ * already on screen is never sent again. So every matcher here reads a
+ * REPLAYED screen (`screen.ts`), not the stream. The one exception is the
+ * link, taken from its OSC 8 hyperlink target, the only copy that no terminal
+ * width can wrap.
+ *
+ * All of it checked against real runs of the binary the SDK ships.
  */
+
+import { renderScreen } from './screen.js'
 
 export const URL_PATTERN = /https:\/\/\S*(?:oauth|authorize)\S*/i
 export const CODE_PROMPT_PATTERN = /paste code here|enter the code/i
-/**
- * The same prompt with every space gone — what Ink's word-by-word cursor
- * positioning leaves behind once the escapes are stripped.
- */
-export const CODE_PROMPT_SQUASHED = /pastecodehere|enterthecode/i
 /** OSC 8 hyperlink: ESC ] 8 ; params ; TARGET BEL. The target is the URL. */
 // eslint-disable-next-line no-control-regex
 export const OSC8_PATTERN = /\u001b\]8;[^;]*;([^\u0007\u001b]+)/g
@@ -40,7 +40,10 @@ export const TOKEN_PATTERN = /sk-ant-oat01-[A-Za-z0-9_-]{20,}/
  */
 export const REFUSAL_PATTERN = /oauth error/i
 
-/** ANSI escapes make every regex on this output wrong. */
+/**
+ * Escapes removed, cursor moves and all. Enough for a stream that only ever
+ * appends; `renderScreen` is what to use on one that redraws.
+ */
 export function stripAnsi(text: string): string {
   // eslint-disable-next-line no-control-regex
   return text.replace(/\[[0-9;?]*[A-Za-z]/g, '').replace(/\][^]*/g, '')
@@ -58,23 +61,28 @@ export function findAuthorizeUrl(screen: string): string | undefined {
   for (const [, target] of screen.matchAll(OSC8_PATTERN)) {
     if (target !== undefined && URL_PATTERN.test(target)) return target
   }
-  return URL_PATTERN.exec(stripAnsi(screen))?.[0]
+  return URL_PATTERN.exec(renderScreen(screen))?.[0]
 }
 
+/**
+ * The token, off the rendered screen.
+ *
+ * Never off the stream: a token is one long unbroken word, and the frame it
+ * lands in re-sends only the cells that differ from the frame before it. Read
+ * from the stream it comes back with holes — matching nothing, which is how a
+ * SUCCESSFUL authorization still ended in "the CLI did not return a token".
+ */
 export function findToken(screen: string): string | undefined {
-  return TOKEN_PATTERN.exec(stripAnsi(screen))?.[0]
+  return TOKEN_PATTERN.exec(renderScreen(screen))?.[0]
 }
 
 /** Whether the CLI has already said no to the code it was given. */
 export function refusedCode(screen: string): boolean {
-  return REFUSAL_PATTERN.test(stripAnsi(screen))
+  return REFUSAL_PATTERN.test(renderScreen(screen))
 }
 
 export function awaitsCode(screen: string): boolean {
-  const text = stripAnsi(screen)
-  // Both spellings: a plain-printed prompt, and the one Ink leaves behind with
-  // its spaces replaced by cursor moves.
-  return CODE_PROMPT_PATTERN.test(text) || CODE_PROMPT_SQUASHED.test(text.replace(/\s+/g, ''))
+  return CODE_PROMPT_PATTERN.test(renderScreen(screen))
 }
 
 /**
@@ -101,6 +109,15 @@ export function armingEnv(
     LINES: '40',
     NO_COLOR: '1',
   }
+}
+
+/** The last lines the CLI is actually SHOWING — what to put in an error. */
+export function visibleTail(screen: string, lines = 4): string {
+  return renderScreen(screen)
+    .split('\n')
+    .filter((line) => line.trim() !== '')
+    .slice(-lines)
+    .join(' | ')
 }
 
 /**

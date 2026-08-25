@@ -30,7 +30,14 @@
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
 import { platform } from 'node:process'
 
-import { armingEnv, awaitsCode, findAuthorizeUrl, findToken, refusedCode } from './arming.js'
+import {
+  armingEnv,
+  awaitsCode,
+  findAuthorizeUrl,
+  findToken,
+  refusedCode,
+  visibleTail,
+} from './arming.js'
 import { resolveClaudeCli } from './cli-path.js'
 import type { ArmingFlow } from './driver.js'
 
@@ -144,7 +151,9 @@ export function createSetupTokenFlow(options: SetupTokenOptions = {}): ArmingFlo
         clearInterval(poll)
         // The screen goes in the error: without it, "timed out" is all anyone
         // ever learns about a flow that failed on a message the CLI printed.
-        reject(new Error(`${what} (last output: ${screen.trim().slice(-200) || 'nothing'})`))
+        // What it SHOWS, not what it sent — a tail of raw frame diffs is a
+        // wall of cursor escapes nobody can read.
+        reject(new Error(`${what} (on screen: ${visibleTail(screen) || 'nothing'})`))
       }, timeoutMs)
       const poll: ReturnType<typeof setInterval> = setInterval(() => {
         if (spawnError) return fail(spawnError)
@@ -212,22 +221,25 @@ export function createSetupTokenFlow(options: SetupTokenOptions = {}): ArmingFlo
       await new Promise((resolve) => setTimeout(resolve, enterDelay))
       child.stdin.write(ENTER_KEY)
 
+      // Kept the moment it is seen, not read back at the end: the token is
+      // shown on a frame the CLI is free to clear on its way out, and a value
+      // that exists for one repaint is a value a poll can miss.
+      let seen: string | undefined
       // A refusal is an ANSWER, and a fast one: waiting the exchange out to
       // report "may be wrong or expired" hides the CLI's own verdict behind a
       // minute of silence.
       await waitFor(
-        () => findToken(screen) !== undefined || refusedCode(screen),
+        () => (seen ??= findToken(screen)) !== undefined || refusedCode(screen),
         exchangeTimeout,
         'the CLI did not return a token — the code may be wrong or expired',
       )
-      if (findToken(screen) === undefined) {
+      if (seen === undefined) {
         throw new Error(
           'the CLI refused the code — copy the WHOLE code from the page, it expires quickly',
         )
       }
-      const token = findToken(screen)!
       kill()
-      return { token }
+      return { token: seen }
     },
 
     cancel() {
