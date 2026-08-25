@@ -833,3 +833,51 @@ describe('an MCP server that authenticates itself', () => {
     expect(fake.spawns[0]?.args).not.toContain('--additional-mcp-config')
   })
 })
+
+describe('a server that serves somebody’s own data', () => {
+  const USER_SRV = { name: 'google', url: 'https://hub.example/google/', identity: 'user' as const }
+  const MACHINE_SRV = {
+    name: 'maps',
+    url: 'https://hub.example/maps/',
+    auth: { tokenUrl: 'https://auth.example/token', clientId: 'agent', clientSecret: 's' },
+  }
+  const minting = () =>
+    vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ access_token: 'machine-tok', expires_in: 3600 }),
+      } as unknown as Response),
+    ) as unknown as typeof fetch
+
+  const runTurn = async (extra: Record<string, unknown>) => {
+    const home = mkdtempSync(join(tmpdir(), 'golem-copilot-'))
+    const fake = fakeCopilot()
+    const driver = new CopilotDriver({
+      home,
+      spawnImpl: fake.spawnImpl,
+      mcpServers: [USER_SRV, MACHINE_SRV],
+      fetchImpl: minting(),
+    })
+    const running = collect(driver, { prompt: 'x', cwd: '/w', ...extra })
+    await vi.waitFor(() => expect(fake.spawns.length).toBeGreaterThan(0))
+    fake.stdout.write('{"type":"result","data":{"sessionId":"s1","exitCode":0}}\n')
+    fake.child.emit('close', 0)
+    await running
+    return JSON.parse(await readFile(join(home, 'golem-mcp.json'), 'utf8')).mcpServers
+  }
+
+  it('acts as the caller, and keeps the machine identity where it belongs', async () => {
+    const servers = await runTurn({ callerToken: 'jeton-de-sebastien' })
+    expect(servers.google.headers.Authorization).toBe('Bearer jeton-de-sebastien')
+    expect(servers.maps.headers.Authorization).toBe('Bearer machine-tok')
+  })
+
+  it('is absent from a turn that has no caller', async () => {
+    // A scheduled turn has nobody to act as; it must not reach into an
+    // account on the instance's own authority.
+    const servers = await runTurn({})
+    expect(servers.google).toBeUndefined()
+    expect(servers.maps).toBeDefined()
+  })
+})

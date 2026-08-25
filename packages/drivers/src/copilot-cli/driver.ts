@@ -284,14 +284,19 @@ export class CopilotDriver implements Driver {
    * to write is swallowed on purpose: a turn that cannot reach one MCP server
    * is worth far more than a turn that refuses to start.
    */
-  async #mcpConfig(): Promise<string | undefined> {
+  async #mcpConfig(callerToken?: string): Promise<string | undefined> {
     if (this.#mcpServers.length === 0) return undefined
 
     const mcpServers: Record<string, unknown> = {}
     for (const server of this.#mcpServers) {
       if (server.url) {
         const headers: Record<string, string> = { ...server.headers }
-        if (server.auth) {
+        if (server.identity === 'user') {
+          // See the other driver: no caller, no server. A turn the clock
+          // started has nobody to act as.
+          if (!callerToken) continue
+          headers['Authorization'] = `Bearer ${callerToken}`
+        } else if (server.auth) {
           const token = await this.#tokens.for(server.auth)
           // Omitted rather than sent unauthenticated — same rule as the other
           // driver: a wall of 401s reads as a broken tool, an absent one reads
@@ -341,7 +346,8 @@ export class CopilotDriver implements Driver {
     // reach `spawn` in the same tick it did before this existed. The await is
     // real work only when there is a file to write, and deferring the spawn by
     // a microtask for everyone else is a behaviour change nobody asked for.
-    const mcpConfig = this.#mcpServers.length === 0 ? undefined : await this.#mcpConfig()
+    const mcpConfig =
+      this.#mcpServers.length === 0 ? undefined : await this.#mcpConfig(request.callerToken)
     const args = [
       '--prompt',
       request.prompt,

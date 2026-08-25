@@ -66,6 +66,18 @@ auth:
   #   # signs everyone out on restart — fine for one instance, wrong the moment
   #   # there are two behind a load balancer.
   #   sessionSecret: ${GOLEM_SESSION_SECRET}
+  #   # Audiences to ask for at login, so a turn can act as the person who
+  #   # asked — what an MCP server declared `identity: user` requires. Present
+  #   # means the login also requests `offline_access`, the refresh token is
+  #   # kept per user (in dataDir, 0600), and a fresh access token carrying
+  #   # THEIR identity is minted per turn. Absent means Golem signs people in
+  #   # and holds nothing.
+  #   #
+  #   # ⚠️ Frozen into the grant at login: adding one takes effect at the next
+  #   # sign-in, never at a refresh. And the provider's refresh lifetime must
+  #   # outlive your session, or the instance looks signed in and reaches
+  #   # nothing — set a per-client lifespan if its default is short.
+  #   reboundAudience: [https://hub.example]
 
 workspace:
   # The agent's home. Its instructions live here in its CLI's own dialect —
@@ -188,6 +200,17 @@ mcp:
   #
   # Addons of one hub share an identity: declaring it on each of them costs
   # one token exchange, not one per addon.
+  #
+  # A server that serves somebody's OWN data — their calendar, their mail —
+  # declares `identity: user` instead. It is then reached with the token of
+  # the person who asked, which requires `auth.mode: oidc` and a
+  # `reboundAudience` below. A turn with no caller — the clock, an inbound
+  # delegation — does not see such a server at all: nothing that runs while
+  # you sleep can write in your calendar.
+  #
+  #   - name: google
+  #     url: https://hub.example/google/
+  #     identity: user
   #
   # `url` OR `command`, never both — they are two transports. A ${VAR} the
   # environment never filled is REFUSED at startup rather than passed through:

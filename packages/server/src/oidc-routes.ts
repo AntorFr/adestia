@@ -26,7 +26,16 @@ import {
   type SessionPayload,
 } from './oidc.js'
 
-export async function registerOidc(app: FastifyInstance, config: GolemConfig): Promise<void> {
+export async function registerOidc(
+  app: FastifyInstance,
+  config: GolemConfig,
+  /**
+   * Where a login's refresh token is kept, when the instance wants a rebound.
+   * Passed in rather than built here: this module speaks OIDC, and the store
+   * belongs to the instance's data directory.
+   */
+  userTokens?: { remember(subject: string, refreshToken: string): Promise<void> },
+): Promise<void> {
   if (config.auth.mode !== 'oidc' || !config.auth.oidc) return
 
   const oidc = config.auth.oidc
@@ -91,6 +100,15 @@ export async function registerOidc(app: FastifyInstance, config: GolemConfig): P
     reply.clearCookie(LOGIN_COOKIE, { path: '/auth' })
 
     if ('error' in outcome) return reply.code(403).send({ error: outcome.error })
+
+    // Kept for the person, not for the session: a cookie is a browser's, and
+    // this outlives every browser they sign in from. A failure to store must
+    // never cost them the login they just completed.
+    if (userTokens && outcome.refreshToken) {
+      await userTokens
+        .remember(outcome.identity.userId, outcome.refreshToken)
+        .catch(() => undefined)
+    }
 
     const payload: SessionPayload = { ...outcome.identity, expiresAt: Date.now() + SESSION_TTL_MS }
     return reply

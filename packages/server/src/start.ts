@@ -37,6 +37,7 @@ import {
 import { authorityEditRule, chainEditRules } from './authority-gate.js'
 import { planifEditRule } from './planif-gate.js'
 import { runSetups } from './plugin-host.js'
+import { UserTokens } from './user-tokens.js'
 import { SecretStore } from './secrets.js'
 import { collectSkills, deliverSkills } from './skills.js'
 
@@ -295,11 +296,31 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     log('no built web shell found; serving the API only (run `npm run build:web`)')
   }
 
+  /**
+   * Per-user tokens, only where they can exist and are wanted.
+   *
+   * `oidc` mode with a rebound audience. In `proxy` mode the session lives
+   * with the reverse proxy and the product holds nothing to refresh — no
+   * amount of configuration changes that, so it is not offered.
+   */
+  const rebound =
+    resolved.auth.mode === 'oidc' && resolved.auth.oidc?.reboundAudience?.length
+      ? new UserTokens(dataDir, {
+          issuer: resolved.auth.oidc.issuer,
+          clientId: resolved.auth.oidc.clientId,
+          clientSecret: resolved.auth.oidc.clientSecret,
+        })
+      : undefined
+  if (rebound) {
+    log(`user rebound on: turns act as their caller for ${resolved.auth.oidc!.reboundAudience!.join(', ')}`)
+  }
+
   const app = await buildApp({
     config: { ...resolved, dataDir: resolve(cwd, resolved.dataDir) },
     driver,
     plugins,
     pluginProblems: [...problems, ...setupProblems],
+    ...(rebound ? { userTokens: rebound } : {}),
     secrets,
     permissions,
     ...(activeSkin

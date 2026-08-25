@@ -49,6 +49,17 @@ export interface AppDependencies {
   readonly driver: Driver
   readonly plugins: readonly DiscoveredPlugin[]
   readonly pluginProblems: readonly DiscoveryProblem[]
+  /**
+   * Per-user tokens, when the instance keeps them.
+   *
+   * Present only in `oidc` mode with a rebound audience configured. Its
+   * absence is what makes a turn have no caller, and therefore no reach into
+   * anybody's own data.
+   */
+  readonly userTokens?: {
+    accessToken(subject: string): Promise<string | undefined>
+    remember(subject: string, refreshToken: string): Promise<void>
+  }
   /** Built shell bundle. Absent in dev, where Vite serves it and proxies here. */
   readonly webRoot?: string | undefined
   /** Injected in tests; production stores secrets under the data directory. */
@@ -155,7 +166,7 @@ export interface BuiltApp {
 }
 
 export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> {
-  const { config, driver, plugins, pluginProblems, webRoot } = deps
+  const { config, driver, plugins, pluginProblems, userTokens, webRoot } = deps
   const app = Fastify({ logger: false })
   const limiter = new TurnLimiter(config.maxConcurrentTurns)
   const conversations = new ConversationStore(config.dataDir)
@@ -169,7 +180,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   // Mounted FIRST, because it installs the hook that reads the session cookie
   // — and a gate that runs before the session is resolved sees every signed-in
   // user as anonymous. Hook order is the whole correctness of this file.
-  await registerOidc(app, config)
+  await registerOidc(app, config, userTokens)
 
   app.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
     if (isPublicRoute(request.url.split('?')[0] ?? request.url)) return
@@ -450,11 +461,21 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
       let usage: StoredMessage['usage']
 
       try {
+        // The caller's own identity, for the servers that serve their own
+        // data. Resolved here because this is the only turn with a person at
+        // the other end: the clock's and a delegation's have none, and
+        // deliberately pass nothing.
+        const caller = (request as FastifyRequest & { identity?: Identity }).identity
+        const callerToken = caller?.userId
+          ? await userTokens?.accessToken(caller.userId)
+          : undefined
+
         const events = driver.runTurn({
           prompt: frameAttachments(body.prompt, attachments),
           cwd: config.workspace.root,
           ...(typeof body.sessionId === 'string' ? { sessionId: body.sessionId } : {}),
           ...(typeof body.model === 'string' ? { model: body.model } : {}),
+          ...(callerToken ? { callerToken } : {}),
         })
         for await (const event of events) {
           reply.raw.write(sseFrame(event))

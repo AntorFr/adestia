@@ -146,6 +146,18 @@ export interface McpServer {
   /** HTTP authorization. The operator's alone — see the extensions layer. */
   readonly headers?: Readonly<Record<string, string>> | undefined
   /**
+   * Whose identity this server needs.
+   *
+   * `machine` (the default) — the instance's own credentials answer for it.
+   * `user` — it serves somebody's OWN data (their calendar, their mail) and
+   * refuses anything else, so it is reachable only on a turn that has a
+   * caller. A scheduled or delegated turn has none, and therefore cannot
+   * reach it at all: that is a property worth having, not a limitation to
+   * work around — nothing that runs while you sleep should be able to write
+   * in your calendar.
+   */
+  readonly identity?: 'machine' | 'user' | undefined
+  /**
    * Credentials for a server that wants a short-lived OAuth token rather than
    * a fixed header.
    *
@@ -218,6 +230,19 @@ export type TurnEvent =
 
 export interface TurnRequest {
   readonly prompt: string
+  /**
+   * An access token asserting WHO asked for this turn.
+   *
+   * Handed to MCP servers declared `identity: user`, and to nothing else.
+   * Absent on a turn with no caller — the clock, an inbound delegation — and
+   * those turns simply do not see user-scoped servers.
+   *
+   * Carried on the REQUEST rather than held by the driver, deliberately: a
+   * driver holds the instance's credentials, never a person's. This one
+   * belongs to whoever is at the other end of the conversation, and it lives
+   * exactly as long as the turn.
+   */
+  readonly callerToken?: string | undefined
   /** Resume this CLI session; absent means a fresh one. */
   readonly sessionId?: string
   readonly model?: string

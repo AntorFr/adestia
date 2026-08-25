@@ -97,6 +97,7 @@ export interface ArmingFlow {
 async function toSdkServers(
   servers: readonly McpServer[],
   tokens: McpTokens,
+  callerToken?: string,
 ): Promise<Readonly<Record<string, McpServerConfig>>> {
   const out: Record<string, McpServerConfig> = {}
   for (const server of servers) {
@@ -111,7 +112,14 @@ async function toSdkServers(
     }
 
     const headers: Record<string, string> = { ...server.headers }
-    if (server.auth) {
+    if (server.identity === 'user') {
+      // Somebody's own data. Without a caller there is nobody to act as, so
+      // the server is absent from this turn rather than reached with the
+      // instance's identity — which would be a different person's data, or a
+      // flat refusal read as a broken tool.
+      if (!callerToken) continue
+      headers['Authorization'] = `Bearer ${callerToken}`
+    } else if (server.auth) {
       const token = await tokens.for(server.auth)
       // A server whose token could not be minted is OMITTED rather than sent
       // unauthenticated: the hub would refuse every call, and the agent would
@@ -352,7 +360,7 @@ export class ClaudeCodeDriver implements Driver {
 
     // Resolved per turn, not per process: a hub's token lives about an hour,
     // and a map built at construction would be stale by the second morning.
-    const mcpServers = await toSdkServers(this.#mcpServers, this.#tokens)
+    const mcpServers = await toSdkServers(this.#mcpServers, this.#tokens, request.callerToken)
 
     const query = this.#query({
       prompt: request.prompt,

@@ -12,7 +12,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { ClaudeCodeDriver } from '../src/claude-code/driver.js'
 import { proposedFileEdit, toolTarget } from '../src/claude-code/events.js'
 import { checkConformance } from '../src/conformance.js'
-import type { TurnEvent } from '../src/contract.js'
+import type { TurnEvent, TurnRequest } from '../src/contract.js'
 import type { QueryFn, SdkMessage } from '../src/claude-code/sdk-types.js'
 
 type FakeSdk = QueryFn & { readonly interrupts: number }
@@ -68,9 +68,13 @@ const resultMessage: SdkMessage = {
   modelUsage: { 'claude-opus-5': { inputTokens: 9700, outputTokens: 340 } },
 }
 
-async function collect(driver: ClaudeCodeDriver, prompt = 'hi'): Promise<TurnEvent[]> {
+async function collect(
+  driver: ClaudeCodeDriver,
+  prompt = 'hi',
+  extra: Partial<TurnRequest> = {},
+): Promise<TurnEvent[]> {
   const events: TurnEvent[] = []
-  for await (const event of driver.runTurn({ prompt, cwd: '/tmp' })) events.push(event)
+  for await (const event of driver.runTurn({ prompt, cwd: '/tmp', ...extra })) events.push(event)
   return events
 }
 
@@ -450,5 +454,71 @@ describe('an MCP server that authenticates itself', () => {
     expect(servers['maps']).toBeUndefined()
     // And the servers that need no token are untouched by the hub's outage.
     expect(servers['local']).toMatchObject({ type: 'stdio', command: 'node' })
+  })
+})
+
+describe('a server that serves somebody’s own data', () => {
+  const HUB_USER = { name: 'google', url: 'https://hub.example/google/', identity: 'user' as const }
+  const HUB_MACHINE = {
+    name: 'maps',
+    url: 'https://hub.example/maps/',
+    auth: { tokenUrl: 'https://auth.example/token', clientId: 'agent', clientSecret: 's' },
+  }
+
+  const minting = () =>
+    vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ access_token: 'machine-tok', expires_in: 3600 }),
+      } as unknown as Response),
+    ) as unknown as typeof fetch
+
+  const serversOf = (seen: { params?: unknown }) =>
+    (seen.params as { options: { mcpServers?: Record<string, { headers?: Record<string, string> }> } })
+      .options.mcpServers ?? {}
+
+  it('acts as the caller, never as the instance', async () => {
+    const seen: { params?: unknown } = {}
+    const driver = new ClaudeCodeDriver({
+      query: fakeSdk([resultMessage], seen),
+      mcpServers: [HUB_USER, HUB_MACHINE],
+      fetchImpl: minting(),
+    })
+    await collect(driver, 'hi', { callerToken: 'jeton-de-sebastien' })
+
+    const servers = serversOf(seen)
+    expect(servers['google']?.headers?.['Authorization']).toBe('Bearer jeton-de-sebastien')
+    // And the machine server keeps the machine identity: one turn, two
+    // identities, each where it belongs.
+    expect(servers['maps']?.headers?.['Authorization']).toBe('Bearer machine-tok')
+  })
+
+  it('is absent from a turn that has no caller', async () => {
+    // THE property this exists for: the clock and an inbound delegation have
+    // nobody to act as, so nothing that runs while you sleep can write in
+    // your calendar. Not a limitation — the point.
+    const seen: { params?: unknown } = {}
+    const driver = new ClaudeCodeDriver({
+      query: fakeSdk([resultMessage], seen),
+      mcpServers: [HUB_USER, HUB_MACHINE],
+      fetchImpl: minting(),
+    })
+    await collect(driver)
+
+    const servers = serversOf(seen)
+    expect(servers['google']).toBeUndefined()
+    expect(servers['maps']).toBeDefined()
+  })
+
+  it('never sends the caller’s token to a machine server', async () => {
+    const seen: { params?: unknown } = {}
+    const driver = new ClaudeCodeDriver({
+      query: fakeSdk([resultMessage], seen),
+      mcpServers: [HUB_MACHINE],
+      fetchImpl: minting(),
+    })
+    await collect(driver, 'hi', { callerToken: 'jeton-de-sebastien' })
+    expect(JSON.stringify(serversOf(seen))).not.toContain('jeton-de-sebastien')
   })
 })

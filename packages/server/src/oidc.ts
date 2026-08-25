@@ -157,7 +157,18 @@ export class OidcClient {
       // redirect built from it sends the browser somewhere it cannot reach —
       // or fails the exchange on a mismatch.
       redirect_uri: this.config.redirectUri,
-      scope: `openid profile email ${this.config.groupsClaim}`,
+      // `offline_access` only when the instance intends to KEEP something.
+      // Asking for a refresh token nobody stores is asking a person to grant
+      // standing access for nothing.
+      scope: `openid profile email ${this.config.groupsClaim}${
+        this.config.reboundAudience?.length ? ' offline_access' : ''
+      }`,
+      // Frozen into the grant: a token minted later carries the audiences the
+      // LOGIN asked for, and no refresh can add one. Adding an audience here
+      // therefore takes effect at the next sign-in, never before.
+      ...(this.config.reboundAudience?.length
+        ? { audience: this.config.reboundAudience.join(' ') }
+        : {}),
       code_challenge: codeChallenge,
       code_challenge_method: 'S256',
       state,
@@ -172,7 +183,7 @@ export class OidcClient {
   async completeLogin(
     currentUrl: URL,
     login: LoginState,
-  ): Promise<{ identity: Identity } | { error: string }> {
+  ): Promise<{ identity: Identity; refreshToken?: string } | { error: string }> {
     if (login.expiresAt <= Date.now()) return { error: 'that sign-in took too long; try again' }
 
     let configuration: client.Configuration
@@ -205,7 +216,15 @@ export class OidcClient {
       if (!isAllowed(identity, this.config)) {
         return { error: 'your account is not in a group allowed to use this instance' }
       }
-      return { identity }
+      // Handed back rather than stored here: this module speaks OIDC and
+      // knows nothing about where an instance keeps things. A provider that
+      // grants the scope without returning a token — which happens when a
+      // client omits `refresh_token` from its grant types — simply yields
+      // undefined, and the instance signs people in without a rebound.
+      return {
+        identity,
+        ...(tokens.refresh_token ? { refreshToken: tokens.refresh_token } : {}),
+      }
     } catch (error) {
       return { error: (error as Error).message }
     }

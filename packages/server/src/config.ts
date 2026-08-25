@@ -29,6 +29,18 @@ export interface OidcConfig {
    * moment there are two behind a load balancer.
    */
   readonly sessionSecret?: string | undefined
+  /**
+   * Audiences to ask for, so a turn can act as the person who asked.
+   *
+   * Present means the login also requests `offline_access`, the refresh token
+   * is kept per user, and a fresh access token carrying THEIR identity is
+   * minted for each turn — which is what an MCP server serving somebody's own
+   * data requires. Absent means Golem signs people in and holds nothing.
+   *
+   * ⚠️ The audience is frozen into the grant at login: adding one here takes
+   * effect at the next sign-in, never at a refresh.
+   */
+  readonly reboundAudience?: readonly string[] | undefined
 }
 
 export interface ProxyAuthConfig {
@@ -132,6 +144,8 @@ export interface AttachmentsConfig {
  */
 export interface McpServerConfig {
   readonly name: string
+  /** `user` for a server that serves somebody's own data. See the contract. */
+  readonly identity?: 'machine' | 'user' | undefined
   readonly command?: string | undefined
   readonly args?: readonly string[] | undefined
   readonly url?: string | undefined
@@ -298,6 +312,15 @@ function parseAuth(raw: unknown, issues: string[]): AuthConfig {
         allowedGroups: stringList(oidc['allowedGroups'], 'auth.oidc.allowedGroups', issues),
         ...(typeof oidc['sessionSecret'] === 'string'
           ? { sessionSecret: oidc['sessionSecret'] }
+          : {}),
+        ...(oidc['reboundAudience'] !== undefined
+          ? {
+              reboundAudience: stringList(
+                oidc['reboundAudience'],
+                'auth.oidc.reboundAudience',
+                issues,
+              ),
+            }
           : {}),
       },
     }
@@ -543,8 +566,18 @@ function readMcpServers(raw: unknown, issues: string[]): readonly McpServerConfi
     }
     if (bad) continue
 
+    const identity = entry['identity']
+    if (identity !== undefined && identity !== 'machine' && identity !== 'user') {
+      issues.push(`${where}.identity must be "machine" or "user"`)
+      continue
+    }
+
     const auth = readMcpAuth(entry['auth'], where, issues)
     if (auth === false) continue
+    if (identity === 'user' && !url) {
+      issues.push(`${where}.identity: user needs "url" — a local process has no caller to act as`)
+      continue
+    }
     if (auth && !url) {
       // A stdio server is a local process; there is nobody to present a bearer
       // to. Accepting it would mint a token every turn and hand it to nothing.
@@ -554,6 +587,7 @@ function readMcpServers(raw: unknown, issues: string[]): readonly McpServerConfi
 
     servers.push({
       name,
+      ...(identity ? { identity } : {}),
       ...(auth ? { auth } : {}),
       ...(command ? { command } : {}),
       ...(args ? { args: args as readonly string[] } : {}),
