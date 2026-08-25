@@ -150,12 +150,24 @@ export function parsePluginManifest(input: unknown, folderName: string): PluginM
   for (const field of ['view', 'blocks', 'chrome', 'api', 'setup']) {
     checkRelativePath(input, field, issues, 'plugin folder')
   }
-  for (const field of ['styles', 'bin', 'skills', 'types', 'absorbs']) {
+  for (const field of ['styles', 'bin', 'skills', 'types', 'absorbs', 'secrets']) {
     checkStringArray(input, field, issues)
   }
   for (const [index, style] of (Array.isArray(input['styles']) ? input['styles'] : []).entries()) {
     if (typeof style === 'string') {
       checkRelativePath({ [`styles[${index}]`]: style }, `styles[${index}]`, issues, 'plugin folder')
+    }
+  }
+
+  for (const [index, name] of (Array.isArray(input['secrets']) ? input['secrets'] : []).entries()) {
+    // Shaped like the environment variable it is: a manifest that asked for
+    // `../../etc/passwd` or `PATH` would be asking for something else
+    // entirely, and the refusal has to come before anyone reads the value.
+    if (typeof name === 'string' && !/^[A-Z][A-Z0-9_]{0,63}$/.test(name)) {
+      issues.push({
+        field: `secrets[${index}]`,
+        message: `"${name}" is not a secret name (A-Z, digits and underscores)`,
+      })
     }
   }
 

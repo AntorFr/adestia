@@ -134,6 +134,15 @@ export interface GolemConfig {
   readonly dataDir: string
   /** `fr`, `en`… Absent means: let the browser decide. */
   readonly locale?: string | undefined
+  /**
+   * Named secrets available to plugins that DECLARE them.
+   *
+   * Written as `NAME: ${ENV_VAR}` so the value stays in the environment and
+   * the file an operator commits holds only the wiring. One entry serves
+   * every plugin that names it — a key shared by two consumers is rotated in
+   * one place.
+   */
+  readonly secrets: Readonly<Record<string, string>>
   readonly auth: AuthConfig
   readonly workspace: WorkspaceConfig
   readonly driver: DriverConfig
@@ -158,6 +167,7 @@ const KNOWN_KEYS = new Set([
   'port',
   'dataDir',
   'locale',
+  'secrets',
   'auth',
   'workspace',
   'driver',
@@ -307,6 +317,39 @@ export function interpolate(source: string, env: NodeJS.ProcessEnv): string {
  * itself.
  */
 const SERVICE_LINK = /^[a-z]+:\/\//
+
+/**
+ * The instance's secret table.
+ *
+ * Names are checked against the same shape a manifest must declare, and a
+ * value left as an un-substituted `${VAR}` is REFUSED rather than handed to a
+ * plugin: a key that is literally the string "${GOOGLE_MAPS_API_KEY}" fails
+ * somewhere far away, in a request nobody is watching.
+ */
+function readSecrets(raw: unknown, issues: string[]): Readonly<Record<string, string>> {
+  if (raw === undefined) return {}
+  if (!isObject(raw)) {
+    issues.push('secrets must be a mapping of NAME to value')
+    return {}
+  }
+  const secrets: Record<string, string> = {}
+  for (const [name, value] of Object.entries(raw)) {
+    if (!/^[A-Z][A-Z0-9_]{0,63}$/.test(name)) {
+      issues.push(`secrets: "${name}" is not a secret name (A-Z, digits and underscores)`)
+      continue
+    }
+    if (typeof value !== 'string' || value === '') {
+      issues.push(`secrets.${name} must be a non-empty string`)
+      continue
+    }
+    if (/^\$\{[A-Za-z_][A-Za-z0-9_]*\}$/.test(value)) {
+      issues.push(`secrets.${name} is still "${value}" — that variable is not set`)
+      continue
+    }
+    secrets[name] = value
+  }
+  return secrets
+}
 
 function applyOverrides(raw: Record<string, unknown>, env: NodeJS.ProcessEnv): void {
   for (const [variable, path] of Object.entries(ENV_OVERRIDES)) {
@@ -467,6 +510,10 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
     issues.push('mcp.agentName must be lowercase letters, digits and underscores')
   }
 
+  // Before the throw, or its own refusals are collected and never raised —
+  // which is how a bad secret name reached a plugin with no complaint.
+  const secrets = readSecrets(raw['secrets'], issues)
+
   if (issues.length > 0) throw new ConfigError(issues)
 
   return {
@@ -474,6 +521,7 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
     port: port as number,
     dataDir: typeof raw['dataDir'] === 'string' ? raw['dataDir'] : DEFAULTS.dataDir,
     ...(typeof raw['locale'] === 'string' ? { locale: raw['locale'] } : {}),
+    secrets,
     auth,
     workspace,
     driver: {

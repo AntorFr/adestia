@@ -136,6 +136,46 @@ Extending the vocabulary is a deliberate act: a coded component, an entry in
 the schema, and a line in the skill that teaches it. It is never something a
 document can do by itself.
 
+## Needing a key
+
+A plugin's server side sometimes needs a credential — an API key, a token.
+It **declares** the name and the core hands it over at mount time:
+
+```json
+{ "secrets": ["GOOGLE_MAPS_API_KEY"] }
+```
+
+```js
+// api.mjs — `opts.secrets` holds exactly what you declared, nothing else.
+export default async function api(app, opts) {
+  const key = opts.secrets.GOOGLE_MAPS_API_KEY
+  app.get('/nearby', async () => fetchSomething(key))
+}
+```
+
+The instance provides it once, wherever the value really lives:
+
+```yaml
+secrets:
+  GOOGLE_MAPS_API_KEY: ${MAPS_KEY}   # the file holds the wiring, not the key
+```
+
+Three things follow from naming rather than owning, and each is the point:
+
+- **Two plugins that need the same key declare the same name and get the same
+  value.** One key, one place to rotate it, however many consumers.
+- **You receive only what you declared.** The narrowing is done per plugin, so
+  the declaration is a boundary rather than a comment — without it, one
+  careless log would leak keys your plugin was never meant to know existed.
+- **A declared secret the instance lacks is ABSENT, and said out loud at
+  boot.** Never an empty string: a plugin handed `''` fails later, inside a
+  request, with an error blaming the API it called.
+
+⚠️ **Server side only.** Your `web/` code runs in a browser, where a secret is
+a secret no longer. Nothing declared here ever reaches it — if your view needs
+the result of a keyed call, put the call in your API and let the view ask
+YOUR endpoint.
+
 ## Speaking the reader's language
 
 A plugin ships its OWN words. The shell translates the shell — it cannot know

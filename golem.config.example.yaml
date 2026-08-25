@@ -18,6 +18,17 @@ dataDir: ./data
 # that. A plugin is handed the same value and translates its own words.
 # locale: fr
 
+# Named secrets, available to the plugins that DECLARE them (`secrets:` in a
+# manifest). A plugin receives only what it named, so the declaration is a
+# boundary rather than a comment — and two plugins naming the same key get the
+# same value, which is one key to rotate rather than two to keep in step.
+#
+# Write `${VAR}` so the value stays in the environment: what you commit is the
+# wiring. A placeholder whose variable is unset is REFUSED at boot rather than
+# handed over as the literal string.
+# secrets:
+#   GOOGLE_MAPS_API_KEY: ${MAPS_KEY}
+
 # Concurrent agent turns across all conversations — a refusal (429) at the
 # cap, never a silent queue. Measured, not guessed (spikes/concurrency):
 # turns genuinely run in parallel and the API was happy at 8, but each CLI

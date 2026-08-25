@@ -113,6 +113,24 @@ export interface PluginManifest {
    */
   readonly absorbs?: readonly string[]
 
+  /**
+   * Named secrets this plugin's SERVER SIDE needs — an API key, a token.
+   *
+   * Declared, never carried: the value lives in the instance's configuration
+   * and the core hands it to the plugin's `api` at mount time. A plugin that
+   * held its own key would put a credential in a folder anybody can drop in,
+   * and would put it there in plain text.
+   *
+   * Names rather than ownership, which is the other half of the point: two
+   * plugins that both need `GOOGLE_MAPS_API_KEY` declare the same name and
+   * receive the same value. One key, one place to rotate it, however many
+   * consumers.
+   *
+   * ⚠️ Server side ONLY. A plugin's web code runs in a browser, where a
+   * secret is a secret no longer — nothing declared here ever reaches it.
+   */
+  readonly secrets?: readonly string[]
+
   /** Server-side facets. */
   readonly api?: string
   readonly setup?: string

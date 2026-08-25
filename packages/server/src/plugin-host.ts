@@ -20,6 +20,7 @@ import { promisify } from 'node:util'
 import type { FastifyInstance } from 'fastify'
 
 import type { DiscoveredPlugin } from './extensions.js'
+import type { PluginManifest } from '@antorfr/golem-schemas'
 
 const execFileAsync = promisify(execFile)
 
@@ -104,6 +105,34 @@ export interface PluginApiContext {
   readonly dataDir: string
   /** Whether scheduled turns are on — a plugin showing them must not lie. */
   readonly scheduleEnabled: boolean
+  /** The instance's whole secret table; each plugin sees only what it declared. */
+  readonly secrets?: Readonly<Record<string, string>>
+}
+
+/**
+ * What one plugin's API is handed: the shared context, plus exactly the
+ * secrets it DECLARED and the instance actually holds.
+ *
+ * Narrowed per plugin rather than passed whole. Handing every API the entire
+ * table would make one careless `console.log` a leak of keys that plugin was
+ * never meant to know existed — and would make the manifest's declaration a
+ * comment rather than a boundary.
+ *
+ * A declared secret the instance does not hold is simply ABSENT, and the
+ * refusal is a boot-time line rather than an empty string: a plugin handed
+ * `''` fails later, in a request, with an error naming the wrong thing.
+ */
+function secretsFor(
+  manifest: PluginManifest,
+  available: Readonly<Record<string, string>>,
+): { granted: Record<string, string>; missing: readonly string[] } {
+  const granted: Record<string, string> = {}
+  const missing: string[] = []
+  for (const name of manifest.secrets ?? []) {
+    if (available[name] === undefined) missing.push(name)
+    else granted[name] = available[name]
+  }
+  return { granted, missing }
 }
 
 export async function mountPluginApis(
@@ -128,9 +157,24 @@ export async function mountPluginApis(
         continue
       }
 
+      const { granted, missing } = secretsFor(plugin.manifest, context.secrets ?? {})
+      for (const name of missing) {
+        // Loud, and by name: a plugin quietly missing its key fails later in
+        // a request, with an error blaming the API it called.
+        problems.push({
+          id: plugin.manifest.id,
+          reason: `declares the secret ${name}, which this instance does not provide`,
+        })
+      }
+
+      // The whole table never travels: `context.secrets` is replaced by the
+      // narrowed one, so a plugin cannot read a key it did not declare even
+      // by accident.
+      const { secrets: _all, ...shared } = context
       await app.register(register as Parameters<FastifyInstance['register']>[0], {
         prefix: `/api/plugin/${plugin.manifest.id}`,
-        ...context,
+        ...shared,
+        secrets: granted,
         pluginDir: plugin.dir,
         pluginId: plugin.manifest.id,
       })

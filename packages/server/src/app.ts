@@ -541,6 +541,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     workspaceRoot: config.workspace.root,
     dataDir: config.dataDir,
     scheduleEnabled: config.schedule.enabled,
+    secrets: config.secrets,
   })
 
   registerMcp(app, {
