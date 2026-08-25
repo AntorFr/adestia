@@ -852,8 +852,6 @@
   font-size: var(--text-sm);
 }
 
-/* A refusal is a warning; a degradation is a note. Same shape, quieter
-   border, so the eye sorts them before the words do. */
 /* The instruction zone. A list on the left, the file on the right — the shape
    of every editor anybody has used, so nothing has to be learned. */
 .golem-instructions__split {
@@ -995,11 +993,47 @@
   font-size: var(--text-sm);
 }
 
+/*
+ * A refusal and a degradation are two different pieces of news, and the
+ * SHAPE has to say which before the words do.
+ *
+ * The first attempt only made the degraded box quieter — same outline, paler
+ * colours — which produced the worst of both: a heading that announces
+ * something is amputated, sitting in a box that looks like nothing in
+ * particular. Read as a warning whose styling failed to load.
+ *
+ * So they stop sharing a shape. A refusal keeps the framed, tinted box: an
+ * extension is OFF and somebody has to act. A degradation becomes a rule and
+ * a mark in the margin — the typography of a footnote, which is what it is:
+ * true, worth knowing, and nothing to do right now.
+ */
 .golem-problems--degraded {
-  border-color: var(--border);
-  background: var(--surface-sunken);
+  border: 0;
+  border-left: 2px solid var(--border);
+  border-radius: 0;
+  background: none;
   color: var(--text-muted);
+  padding: var(--space-2) 0 var(--space-2) var(--space-3);
+  margin-bottom: var(--space-4);
 }
+
+.golem-problems--degraded h2 {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-faint);
+  letter-spacing: 0.04em;
+}
+
+/* Marked, so it reads as an aside rather than as a headline that lost its
+   colour. */
+.golem-problems--degraded h2::before {
+  content: 'ⓘ';
+  margin-right: 6px;
+  font-weight: 400;
+}
+
+.golem-problems--degraded ul { padding-left: var(--space-3); }
+.golem-problems--degraded li { list-style: none; }
 
 .golem-problems h2 { margin: 0 0 var(--space-2); font-size: var(--text-base); }
 .golem-problems ul { margin: 0; padding-left: var(--space-4); }
