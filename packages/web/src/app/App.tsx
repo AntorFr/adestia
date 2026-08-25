@@ -37,7 +37,12 @@ export interface InstanceInfo {
   readonly user: { userId: string; displayName: string } | null
   readonly skin: SkinDescriptor
   readonly plugins: readonly PluginDescriptor[]
-  readonly pluginProblems: readonly { id: string; reason: string }[]
+  readonly pluginProblems: readonly {
+    id: string
+    reason: string
+    /** Absent means refused — see the server's `DiscoveryProblem`. */
+    severity?: 'refused' | 'degraded'
+  }[]
   readonly turns: { max: number; running: number }
 }
 
@@ -394,7 +399,14 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   // Every refusal reaches the user: the server's (a malformed manifest) and
   // the browser's (a module that would not import). A plugin silently absent
   // is the failure mode this whole design exists to avoid.
-  const problems = [...instance.pluginProblems, ...failures]
+  //
+  // A browser-side failure is always a refusal: the facet did not load, so
+  // whatever it contributed is gone. Only the server reports the softer kind.
+  const problems: readonly {
+    id: string
+    reason: string
+    severity?: 'refused' | 'degraded'
+  }[] = [...instance.pluginProblems, ...failures]
 
   return (
     <div
@@ -529,18 +541,28 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
 
         <div className="golem-canvas__body">
 
-        {problems.length > 0 && (
-          <section className="golem-problems" role="status">
-            <h2>{t('Extensions refused')}</h2>
-            <ul>
-              {problems.map((problem) => (
-                <li key={`${problem.id}-${problem.reason.slice(0, 20)}`}>
-                  <strong>{problem.id}</strong>: {problem.reason}
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
+        {/*
+          Two different facts, and conflating them sends somebody hunting for a
+          plugin that works: REFUSED means the extension is off, DEGRADED means
+          it is running with something missing. Both are worth saying out loud;
+          only one is a problem to fix before the app can be used.
+        */}
+        {(['refused', 'degraded'] as const).map((severity) => {
+          const listed = problems.filter((problem) => (problem.severity ?? 'refused') === severity)
+          if (listed.length === 0) return null
+          return (
+            <section key={severity} className={`golem-problems golem-problems--${severity}`} role="status">
+              <h2>{t(severity === 'refused' ? 'Extensions refused' : 'Running with something missing')}</h2>
+              <ul>
+                {listed.map((problem) => (
+                  <li key={`${problem.id}-${problem.reason.slice(0, 20)}`}>
+                    <strong>{problem.id}</strong>: {problem.reason}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )
+        })}
 
         {openApp ? (
           (() => {

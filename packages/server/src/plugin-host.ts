@@ -30,6 +30,8 @@ export const SETUP_TIMEOUT_MS = 30_000
 export interface HostProblem {
   readonly id: string
   readonly reason: string
+  /** Off, or merely diminished. See `DiscoveryProblem` — same vocabulary. */
+  readonly severity?: 'refused' | 'degraded'
 }
 
 /**
@@ -160,10 +162,14 @@ export async function mountPluginApis(
       const { granted, missing } = secretsFor(plugin.manifest, context.secrets ?? {})
       for (const name of missing) {
         // Loud, and by name: a plugin quietly missing its key fails later in
-        // a request, with an error blaming the API it called.
+        // a request, with an error blaming the API it called. Reported as
+        // DEGRADED rather than refused — the plugin mounts and works, minus
+        // whatever that key bought. A trip still has a timeline without a
+        // weather key.
         problems.push({
           id: plugin.manifest.id,
-          reason: `declares the secret ${name}, which this instance does not provide`,
+          severity: 'degraded',
+          reason: `runs without the secret ${name}, which this instance does not provide — whatever it needed that key for is off`,
         })
       }
 

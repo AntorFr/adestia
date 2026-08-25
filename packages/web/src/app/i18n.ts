@@ -70,6 +70,7 @@ const FR: Readonly<Record<string, string>> = {
   'Sign out': 'Se déconnecter',
   'No conversation yet.': 'Aucune conversation.',
   'Extensions refused': 'Extensions refusées',
+  'Running with something missing': 'Actives, mais amputées',
   Save: 'Enregistrer',
   Edit: 'Modifier',
   Done: 'Terminé',

@@ -852,6 +852,14 @@
   font-size: var(--text-sm);
 }
 
+/* A refusal is a warning; a degradation is a note. Same shape, quieter
+   border, so the eye sorts them before the words do. */
+.golem-problems--degraded {
+  border-color: var(--border);
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+}
+
 .golem-problems h2 { margin: 0 0 var(--space-2); font-size: var(--text-base); }
 .golem-problems ul { margin: 0; padding-left: var(--space-4); }
 

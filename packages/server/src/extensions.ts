@@ -37,6 +37,17 @@ export interface DiscoveredSkin {
 export interface DiscoveryProblem {
   readonly id: string
   readonly reason: string
+  /**
+   * Whether the extension is OFF or merely diminished.
+   *
+   * Absent means refused, which is the older and the commoner case. But a
+   * plugin can now be perfectly active and still have something to report —
+   * a declared secret the instance does not hold turns off its derived
+   * features and nothing else. Filing that under "refused" would send
+   * somebody hunting for a plugin that is working, so the two are told apart
+   * here rather than by reading the sentence.
+   */
+  readonly severity?: 'refused' | 'degraded'
 }
 
 export interface PluginDiscovery {
