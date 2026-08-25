@@ -193,6 +193,27 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
       config.auth,
     )
     if (!outcome.ok) {
+      /*
+       * A person opening the page gets SENT to sign in; anything else gets the
+       * refusal as JSON.
+       *
+       * This path never ran while the instance sat behind a reverse proxy that
+       * authenticated for it: the proxy bounced the browser and Golem only
+       * ever saw requests that already had an identity. Becoming an OIDC
+       * client means owning that bounce — otherwise a person typing the
+       * address lands on `{"error":"not signed in"}`, which is a correct
+       * answer to a question they did not ask.
+       *
+       * Narrow on purpose: only a GET that asks for a document. A fetch from
+       * the already-loaded shell must keep receiving its 401, or the front
+       * would parse a login page as data and report something absurd.
+       */
+      const wantsDocument =
+        request.method === 'GET' && String(request.headers.accept ?? '').includes('text/html')
+      if (wantsDocument && config.auth.mode === 'oidc') {
+        await reply.redirect(`/auth/login?returnTo=${encodeURIComponent(request.url)}`)
+        return reply
+      }
       await reply.code(outcome.status).send({ error: outcome.reason })
       return reply
     }

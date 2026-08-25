@@ -110,6 +110,62 @@ describe('authentication', () => {
     await app.close()
   })
 
+  const OIDC = `auth:
+  mode: oidc
+  oidc:
+    issuer: https://auth.example
+    clientId: golem
+    clientSecret: s3cret
+    redirectUri: https://golem.example/auth/callback
+`
+
+  it('sends a person to sign in instead of showing them JSON', async () => {
+    // Never exercised while a reverse proxy authenticated on the instance's
+    // behalf: it bounced the browser and Golem only saw requests that already
+    // had an identity. Becoming an OIDC client means owning that bounce.
+    const app = await buildApp(deps({ config: parseConfig(OIDC) }))
+    const response = await app.inject({
+      method: 'GET',
+      url: '/',
+      headers: { accept: 'text/html,application/xhtml+xml' },
+    })
+    expect(response.statusCode).toBe(302)
+    expect(response.headers['location']).toBe('/auth/login?returnTo=%2F')
+    await app.close()
+  })
+
+  it('keeps a deep link across the sign-in', async () => {
+    const app = await buildApp(deps({ config: parseConfig(OIDC) }))
+    const response = await app.inject({
+      method: 'GET',
+      url: '/#/page/sante/dietetique.md',
+      headers: { accept: 'text/html' },
+    })
+    expect(response.headers['location']).toContain('returnTo=')
+    await app.close()
+  })
+
+  it('still answers a fetch with JSON, never a login page', async () => {
+    // The loaded shell must keep receiving its 401: handed a redirect, it
+    // would parse a login page as data and report something absurd.
+    const app = await buildApp(deps({ config: parseConfig(OIDC) }))
+    const response = await app.inject({ method: 'GET', url: '/api/instance' })
+    expect(response.statusCode).toBe(401)
+    expect(response.json()).toEqual({ error: 'not signed in' })
+    await app.close()
+  })
+
+  it('does not bounce in proxy mode, where the proxy owns the redirect', async () => {
+    const app = await buildApp(deps({ config: parseConfig('auth:\n  mode: proxy\n') }))
+    const response = await app.inject({
+      method: 'GET',
+      url: '/',
+      headers: { accept: 'text/html' },
+    })
+    expect(response.statusCode).toBe(401)
+    await app.close()
+  })
+
   it('lets a proxied identity through and reports it', async () => {
     const app = await buildApp(deps({ config: parseConfig('auth:\n  mode: proxy\n') }))
     const response = await app.inject({
