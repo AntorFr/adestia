@@ -21,6 +21,20 @@ test('la route se relit dans le chemin qui l’a faite', () => {
   }
 })
 
+test('la route ne s’encode plus d’un bloc — mais l’ancienne se relit encore', () => {
+  // La barre oblique est légale dans un fragment (RFC 3986) : l'encoder
+  // rendait chaque adresse illisible pour rien. Ce qui a été écrit à l'ancienne
+  // — un favori, un lien posé dans une fiche il y a des mois — reste lu.
+  assert.equal(
+    routeDuParcours('domaines/voyages/x/assets/val.parcours.json'),
+    '#/parcours/domaines/voyages/x/assets/val.parcours.json',
+  )
+  assert.equal(
+    parcoursDeLaRoute('#/parcours/domaines%2Fvoyages%2Fx%2Fassets%2Fval.parcours.json'),
+    'domaines/voyages/x/assets/val.parcours.json',
+  )
+})
+
 test('une adresse qui ne nomme aucun parcours ne rend rien', () => {
   assert.equal(parcoursDeLaRoute('#/parcours'), undefined)
   assert.equal(parcoursDeLaRoute('#/parcours/'), undefined)

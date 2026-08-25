@@ -41,6 +41,13 @@ du plugin : section générique, aucune devinette. Le fil remonte maintenant
 TOUS les dossiers-lieux d'une fiche (`Accueil / Voyages / Brocéliande 2026 /
 …`), les dossiers de regroupement (`domaines/`) exceptés, et il est dérivé une
 seule fois — l'en-tête le dessine, le contexte d'écran l'emporte.
+Adresses refaites : un voyage/workbook s'écrit par son NOM
+(`#/voyages/baden-2026`, `#/atelier/rangement-garage`), résolu contre le
+listing du plugin — repli sur le chemin si le nom est pris deux fois, et
+TOUTES les anciennes formes restent lues (aucun favori ni lien de fiche ne
+meurt). Les routes de la coque (`#/page/…`, `#/section/…`) et `parcours`
+encodent désormais segment par segment : plus de `%2F`. Règle par plugin dans
+son `web/address.js`, pure et testée.
 
 **Reste :**
 - [ ] `atelier` — ~1 600 lignes (plan de débit, SVG). EN COURS.

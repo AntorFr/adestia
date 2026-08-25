@@ -436,6 +436,24 @@ runtime; nothing is scanned by filename convention at build time.
   screen the breadcrumb leads to. A plugin that answers nothing gets the
   generic section back — no guessing — and an answer outside the plugin's own
   route is dropped: owning a folder is not owning the shell's navigation.
+- **An address is READ by people, so it says as little as it can.** The first
+  shapes shipped were whatever each screen had at hand:
+  `#/voyages/domaines%2Fvoyages%2Fbaden-2026%2Fassets%2Fvoyage.json`. Three
+  things nobody should have to read, in one link — `assets/voyage.json` is
+  storage the rest of the product spends its time hiding, `%2F` escapes the one
+  character a fragment always allowed (RFC 3986), and the operator's filing
+  turns a bookmark into something a tidy-up can kill. What the long form bought
+  is kept: the address IS the truth, so there is no registry of ids to maintain
+  and the agent can link to a thing without asking anybody. So the short form
+  is a NAME the plugin's own listing resolves — `#/voyages/baden-2026` — never
+  an id somebody has to allocate, and it is used only where the listing PROVES
+  it unambiguous: a name taken twice falls back to the path, because a pretty
+  link that opens the wrong trip is not an improvement on an ugly one. The
+  shell's own routes follow the same rule one notch lower, encoding segments
+  and leaving slashes alone. **Every shape ever written down keeps being read**
+  — a bookmark, a link the agent put in a page months ago — which is what makes
+  this a change of what we WRITE rather than a migration: recognising an old
+  shape costs nothing, breaking a link costs trust.
 - **Portability requirement:** the architecture must be able to host the predecessor's
   plugin classes without rebuild — content-only contracts, API-only tools, full apps,
   and heavy chrome capabilities (barcode scan with camera + lazy decoder). Porting

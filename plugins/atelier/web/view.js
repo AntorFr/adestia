@@ -15,6 +15,7 @@
 import { createElement as h, useEffect, useRef, useState } from 'react'
 
 import createAtelierApp from './app.js'
+import { folderOf, resolve, restOf, routeOf } from './address.js'
 
 /** What the engine escapes with before putting anything in innerHTML. */
 const esc = (value) =>
@@ -25,21 +26,60 @@ const esc = (value) =>
   )
 
 /**
- * Which of the engine's two routes a hash means.
+ * Which of the engine's two screens a hash means.
  *
  * Resolved here rather than by the shell: these are the plugin's own paths,
  * and the shell has no business knowing their shape.
+ *
+ * NOT to be confused with the contract's `routeFor`, which this file also
+ * has no business implementing under the same name — that one answers the
+ * SHELL (a workspace folder in, one of our routes out), this one answers a
+ * hash and returns a screen to draw. It was called `routeFor` until the two
+ * met in the same file.
  */
-function routeFor(routes, hash) {
-  const path = String(hash ?? '').replace(/^#?\/?/, '')
-  if (path.startsWith('atelier/')) {
-    const rest = decodeURIComponent(path.slice('atelier/'.length))
-    return () => routes['atelier/'](rest)
-  }
-  return () => routes.atelier()
+function screenFor(routes, workbook) {
+  return workbook === undefined ? () => routes.atelier() : () => routes['atelier/'](workbook)
 }
 
 export default function view(api) {
+  /**
+   * Project folder → the `workbook.json` that IS its bench.
+   *
+   * What makes a short address possible: a NAME only resolves against a
+   * listing, and a link is drawn synchronously. Primed from the same endpoint
+   * the tile reads, refreshed whenever the hub renders — see `address.js` for
+   * what the map buys and what it refuses to guess.
+   */
+  const books = new Map()
+  /** The request in flight, so a mount and a cold link share one fetch. */
+  let priming
+
+  /** Everything a listing teaches about where benches live. */
+  function learn(list) {
+    for (const book of list ?? []) {
+      if (typeof book?.path === 'string') books.set(folderOf(book.path), book.path)
+    }
+  }
+
+  function prime() {
+    priming ??= (async () => {
+      try {
+        const response = await api.fetch(`/api/plugin/${api.id}/workbooks`)
+        if (!response.ok) return
+        learn((await response.json()).workbooks)
+      } catch {
+        // A listing that will not load costs the short address, never the
+        // bench: the long form resolves without it.
+      } finally {
+        priming = undefined
+      }
+    })()
+    return priming
+  }
+
+  /** A workbook's address, in the shortest form that resolves back to it. */
+  const href = (path) => `#${routeOf(books, path)}`
+
   function Atelier() {
     const host = useRef(null)
     const [crumbs, setCrumbs] = useState([])
@@ -47,6 +87,9 @@ export default function view(api) {
     const [tick, setTick] = useState(0)
 
     useEffect(() => {
+      // Opening the bench is when a workbook written since boot shows up — so
+      // the index a short address resolves against is refreshed here.
+      void prime()
       const onHash = () => setTick((value) => value + 1)
       window.addEventListener('hashchange', onHash)
       return () => window.removeEventListener('hashchange', onHash)
@@ -82,6 +125,14 @@ export default function view(api) {
         // empty list is the truthful answer; inventing chips would put labels
         // on screen that mean nothing.
         chipsOf: () => [],
+        // The engine links to workbooks — hub cards, its own crumbs — and the
+        // shape of a bench's address is decided in ONE place. Two spellings of
+        // the same link is how a URL scheme rots.
+        href,
+        // The hub fetches the listing anyway, and a short address needs it:
+        // handing it over is what makes the hub's own cards short on the FIRST
+        // paint rather than after a second request nobody waited for.
+        learn,
         // The launcher's icon set, of which the engine uses exactly one. It
         // is the atelier's own header mark, so it moved with the atelier
         // rather than becoming a host contract nobody else would want.
@@ -90,7 +141,23 @@ export default function view(api) {
         },
       })
 
-      void routeFor(engine.current.routes, location.hash)()
+      // A NAME has to be looked up before it means a workbook, and a cold
+      // link is exactly the case where the listing has not landed. The long
+      // form still resolves without it — see `address.js`.
+      let cancelled = false
+      void (async () => {
+        const rest = restOf(location.hash)
+        let workbook = resolve(books, rest)
+        if (rest !== '' && workbook === undefined) {
+          await prime()
+          workbook = resolve(books, rest)
+        }
+        if (cancelled) return
+        void screenFor(engine.current.routes, workbook)()
+      })()
+      return () => {
+        cancelled = true
+      }
     }, [tick])
 
     // What the engine put on `document.body` leaves with the view. It exposes

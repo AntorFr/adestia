@@ -12,7 +12,15 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import type { LoadedPlugin } from '../src/plugins/loader.js'
-import { addressOf, folderRoute, ownerOf, routeForFolder, sectionRoute } from '../src/app/owners.js'
+import {
+  addressOf,
+  decodePath,
+  encodePath,
+  folderRoute,
+  ownerOf,
+  routeForFolder,
+  sectionRoute,
+} from '../src/app/owners.js'
 
 const component = (() => null) as unknown as LoadedPlugin['view'] extends undefined
   ? never
@@ -67,7 +75,7 @@ describe('a folder a plugin absorbs', () => {
 
   it('never claims a folder that merely starts with the same letters', () => {
     expect(ownerOf([voyages], 'domaines/mes-voyages')).toBeUndefined()
-    expect(folderRoute([voyages], 'domaines/mes-voyages')).toBe('/section/domaines%2Fmes-voyages')
+    expect(folderRoute([voyages], 'domaines/mes-voyages')).toBe('/section/domaines/mes-voyages')
   })
 
   it('falls back to the plugin route for the absorbed folder ITSELF', () => {
@@ -81,9 +89,7 @@ describe('a folder a plugin absorbs', () => {
     // A notes folder filed under `voyages/` that is not a trip. Answering
     // "unreadable trip" would be worse than the honest generic list.
     expect(routeForFolder([voyages], 'domaines/voyages/idees')).toBeUndefined()
-    expect(folderRoute([voyages], 'domaines/voyages/idees')).toBe(
-      '/section/domaines%2Fvoyages%2Fidees',
-    )
+    expect(folderRoute([voyages], 'domaines/voyages/idees')).toBe('/section/domaines/voyages/idees')
   })
 })
 
@@ -111,7 +117,7 @@ describe('what the shell refuses to route', () => {
     const complained = vi.spyOn(console, 'error').mockImplementation(() => {})
     // It costs the shortcut, never the breadcrumb drawing it: this runs
     // mid-render.
-    expect(folderRoute([broken], 'stuff/here')).toBe('/section/stuff%2Fhere')
+    expect(folderRoute([broken], 'stuff/here')).toBe('/section/stuff/here')
     expect(complained).toHaveBeenCalled()
     complained.mockRestore()
   })
@@ -119,6 +125,22 @@ describe('what the shell refuses to route', () => {
   it('leaves a folder alone when nothing absorbs it', () => {
     expect(routeForFolder([voyages], 'domaines/diy')).toBeUndefined()
     expect(folderRoute([], 'domaines/diy')).toBe(sectionRoute('domaines/diy'))
+  })
+})
+
+describe('how a path is written into a route', () => {
+  it('escapes segments and leaves the slashes alone', () => {
+    // `#/section/domaines%2Fvoyages` escaped the one character a fragment
+    // always allowed, and made every shell URL unreadable for nothing.
+    expect(encodePath('domaines/voyages/été 2026')).toBe('domaines/voyages/%C3%A9t%C3%A9%202026')
+    expect(sectionRoute('domaines/diy')).toBe('/section/domaines/diy')
+  })
+
+  it('reads back BOTH spellings, so no written link dies', () => {
+    expect(decodePath('domaines/voyages/baden-2026')).toBe('domaines/voyages/baden-2026')
+    expect(decodePath('domaines%2Fvoyages%2Fbaden-2026')).toBe('domaines/voyages/baden-2026')
+    // A stray percent somebody typed is read as itself, never thrown.
+    expect(decodePath('100%')).toBe('100%')
   })
 })
 

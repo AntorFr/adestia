@@ -20,6 +20,7 @@
 import { createElement as h, useEffect, useRef, useState } from 'react'
 
 import createVoyagesApp from './app.js'
+import { folderOf, resolve, restOf, routeOf } from './address.js'
 
 /** What the engine escapes with before putting anything in innerHTML. */
 const esc = (value) =>
@@ -52,16 +53,6 @@ const normalise = (status) => String(status ?? '').toLowerCase().trim()
 const tone = (status) => TONES[normalise(status)] ?? 'underway'
 const finished = (status) => tone(status) === 'settled'
 
-/** `domaines/voyages/x/assets/voyage.json` → `domaines/voyages/x`. */
-function folderOf(path) {
-  return String(path ?? '').replace(/\/assets\/voyage\.json$/, '')
-}
-
-/** `#/voyages/<encoded path>` → the trip, anything else → the hub. */
-function tripOf(hash) {
-  const rest = String(hash ?? '').replace(/^#?\/?voyages\/?/, '')
-  return rest === '' ? undefined : decodeURIComponent(rest)
-}
 
 export default function view(api) {
   /**
@@ -79,21 +70,37 @@ export default function view(api) {
    * `voyages/`, which is a worse answer than the honest generic one.
    */
   const trips = new Map()
+  /** The request in flight, so a mount and a cold link share one fetch. */
+  let priming
 
-  async function prime() {
-    try {
-      const response = await api.fetch(`/api/plugin/${api.id}/voyages`)
-      if (!response.ok) return
-      const { voyages } = await response.json()
-      for (const trip of voyages) {
-        if (typeof trip?.path === 'string') trips.set(folderOf(trip.path), trip.path)
-      }
-    } catch {
-      // A listing that will not load costs the shortcut, never the view: the
-      // links it would have dressed keep working, generically.
+  /** Everything a listing teaches about where trips live. */
+  function learn(list) {
+    for (const trip of list ?? []) {
+      if (typeof trip?.path === 'string') trips.set(folderOf(trip.path), trip.path)
     }
   }
+
+  function prime() {
+    priming ??= (async () => {
+      try {
+        const response = await api.fetch(`/api/plugin/${api.id}/voyages`)
+        if (!response.ok) return
+        learn((await response.json()).voyages)
+      } catch {
+        // A listing that will not load costs the shortcut, never the view: the
+        // links it would have dressed keep working, generically.
+      } finally {
+        // Cleared so the NEXT mount sees a trip framed since — the map is a
+        // cache of what exists, not a decision taken once at boot.
+        priming = undefined
+      }
+    })()
+    return priming
+  }
   void prime()
+
+  /** A trip's address, in the shortest form that resolves back to it. */
+  const href = (path) => `#${routeOf(trips, path)}`
 
   function Voyages() {
     const host = useRef(null)
@@ -135,13 +142,37 @@ export default function view(api) {
           openPage: (path) => {
             window.location.hash = `#/page/${path.split('/').map(encodeURIComponent).join('/')}`
           },
+          // The engine links to trips — hub cards, its own crumbs — and the
+          // shape of a trip's address is decided in ONE place. Two spellings
+          // of the same link is how a URL scheme rots.
+          href,
+          // The hub fetches the listing anyway, and a short address needs it:
+          // handing it over here is what makes the hub's own cards short on
+          // the FIRST paint, rather than after a second request nobody waited
+          // for.
+          learn,
         })
         // Inside the subtree, so unmounting the view takes the dialog with it.
         page.parentElement?.append(engine.current.modal)
       }
 
-      const trip = tripOf(window.location.hash)
-      void (trip ? engine.current.voyage(trip) : engine.current.hub())
+      // A NAME has to be looked up before it means a trip, and a cold link is
+      // exactly the case where the listing has not landed yet. The long form
+      // still resolves without it — see `address.js`.
+      let cancelled = false
+      void (async () => {
+        const rest = restOf(window.location.hash)
+        let trip = resolve(trips, rest)
+        if (rest !== '' && trip === undefined) {
+          await prime()
+          trip = resolve(trips, rest)
+        }
+        if (cancelled) return
+        void (trip ? engine.current.voyage(trip) : engine.current.hub())
+      })()
+      return () => {
+        cancelled = true
+      }
     }, [tick])
 
     return h('section', { className: 'voyages' }, [
@@ -212,7 +243,7 @@ export default function view(api) {
     let candidate = String(folder ?? '')
     while (candidate !== '') {
       const trip = trips.get(candidate)
-      if (trip) return `/voyages/${encodeURIComponent(trip)}`
+      if (trip) return routeOf(trips, trip)
       const cut = candidate.lastIndexOf('/')
       if (cut === -1) break
       candidate = candidate.slice(0, cut)

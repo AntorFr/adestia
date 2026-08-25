@@ -39,13 +39,10 @@ function fakeApi(listing = LISTING) {
 /** The listing is primed asynchronously; let it land. */
 const settled = () => new Promise((resolve) => setTimeout(resolve, 0))
 
-test('routes a trip folder to the voyage.json that IS the trip', async () => {
+test('routes a trip folder to that trip, by name', async () => {
   const contribution = view(fakeApi())
   await settled()
-  assert.equal(
-    contribution.routeFor('domaines/voyages/broceliande-2026'),
-    '/voyages/' + encodeURIComponent('domaines/voyages/broceliande-2026/assets/voyage.json'),
-  )
+  assert.equal(contribution.routeFor('domaines/voyages/broceliande-2026'), '/voyages/broceliande-2026')
 })
 
 test('routes a page filed DEEPER than the trip to that same trip', async () => {
@@ -53,10 +50,7 @@ test('routes a page filed DEEPER than the trip to that same trip', async () => {
   // rather than giving up on the first folder it does not recognise.
   const contribution = view(fakeApi())
   await settled()
-  assert.equal(
-    contribution.routeFor('domaines/voyages/corse/jours/mardi'),
-    '/voyages/' + encodeURIComponent('domaines/voyages/corse/assets/voyage.json'),
-  )
+  assert.equal(contribution.routeFor('domaines/voyages/corse/jours/mardi'), '/voyages/corse')
 })
 
 test('answers nothing for a folder under voyages that is not a trip', async () => {

@@ -166,6 +166,22 @@ Three rules, each of which has a failure behind it:
 Nothing to implement for the folder ITSELF — the shell already sends it to
 your `route`, since that is what the tile means.
 
+**Say as little as an address can.** `routeFor` is where your URL scheme is
+decided, so decide it for a reader: a NAME your own listing resolves
+(`#/voyages/baden-2026`), not the path of the file that happens to hold the
+data (`#/voyages/domaines%2Fvoyages%2Fbaden-2026%2Fassets%2Fvoyage.json`).
+Three rules make that safe, and `plugins/voyages/web/address.js` is the worked
+example:
+
+- **Only when it is unambiguous.** A name your listing shows twice falls back
+  to the full path. A pretty link that opens the wrong thing is worse than an
+  ugly one.
+- **Escape segments, not slashes.** `/` is legal in a fragment; encoding the
+  whole path is what makes an address unreadable for no gain.
+- **Keep reading every shape you ever wrote.** Bookmarks and links the agent
+  put in pages months ago must still resolve. Recognising an old shape costs a
+  branch; breaking a link costs trust.
+
 ## Writing content blocks
 
 Blocks extend the CLOSED vocabulary — the reason pages look like one product

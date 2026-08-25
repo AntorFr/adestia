@@ -29,7 +29,7 @@ import { resolveLocale, translator } from './i18n.js'
 import { SkinSlot } from './SkinSlot.js'
 import { Section } from './Section.js'
 import { holdsPages, sectionAt, type IndexEntry } from './sections.js'
-import { addressOf, folderRoute, ownerOf, routeForFolder } from './owners.js'
+import { addressOf, decodePath, encodePath, folderRoute, ownerOf, routeForFolder } from './owners.js'
 import { browserEnvironment, loadPlugins, type LoadedPlugin, type PluginDescriptor } from '../plugins/loader.js'
 import { useMobile } from './useMobile.js'
 import { useSplit } from './useSplit.js'
@@ -183,11 +183,9 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   }, [route, loaded])
 
   const section = route.startsWith('/section/')
-    ? decodeURIComponent(route.slice('/section/'.length))
+    ? decodePath(route.slice('/section/'.length))
     : undefined
-  const pagePath = route.startsWith('/page/')
-    ? decodeURIComponent(route.slice('/page/'.length))
-    : undefined
+  const pagePath = route.startsWith('/page/') ? decodePath(route.slice('/page/'.length)) : undefined
 
   /**
    * The breadcrumb: every crumb, and the folder it leads back to.
@@ -260,7 +258,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
    * the heaviest thing the shell can load, and most sessions never open one.
    */
   const openPage = useCallback((path: string) => {
-    location.hash = `/page/${encodeURIComponent(path)}`
+    location.hash = `/page/${encodePath(path)}`
   }, [])
 
   /**

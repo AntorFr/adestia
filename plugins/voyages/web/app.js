@@ -100,7 +100,7 @@ const FR = {
 }
 
 export default function createVoyagesApp(api) {
-  const { page, esc, crumbs, call, shellFetch, tone, finished, openPage, locale } = api
+  const { page, esc, crumbs, call, shellFetch, tone, finished, openPage, href, learn, locale } = api
   const t = (key) => (locale === 'fr' ? (FR[key] ?? key) : key)
 
   const VTYPE = {
@@ -238,6 +238,9 @@ export default function createVoyagesApp(api) {
     try {
       const r = await call('/voyages', { cache: 'no-store' })
       list = (await r.json()).voyages
+      // The host keeps the index of where trips live — it is what makes a
+      // link to one short. This is the freshest copy anybody has.
+      learn(list)
     } catch {
       page.innerHTML = `<div class="vwrap-outer"><div class="empty">${t('Trips are unavailable.')}</div></div>`
       return
@@ -255,7 +258,7 @@ export default function createVoyagesApp(api) {
       if (v.status) foot.push(`<span class="stat stat--${tone(v.status)}">${esc(v.status)}</span>`)
       if (v.confirmes) foot.push(`<span class="tag">${v.confirmes} ${t('confirmed')}${v.confirmes > 1 ? 's' : ''}</span>`)
       if (v.suggestions) foot.push(`<span class="tag">💡 ${v.suggestions}</span>`)
-      return `<a class="vhub-card" href="#/voyages/${encodeURIComponent(v.path)}"><div class="ct">${esc(v.titre)}</div><div class="cmeta">${esc(dates)}${v.lieux?.length ? ' · ' + esc(v.lieux.join(' → ')) : ''}</div>${foot.length ? `<div class="foot">${foot.join('')}</div>` : ''}</a>`
+      return `<a class="vhub-card" href="${href(v.path)}"><div class="ct">${esc(v.titre)}</div><div class="cmeta">${esc(dates)}${v.lieux?.length ? ' · ' + esc(v.lieux.join(' → ')) : ''}</div>${foot.length ? `<div class="foot">${foot.join('')}</div>` : ''}</a>`
     }
 
     // The same rule as pages: a closed trip leaves the grid for the archive
@@ -271,7 +274,7 @@ export default function createVoyagesApp(api) {
   }
 
   async function renderVoyage(path) {
-    crumbs([{ label: t('Trips'), hash: '#/voyages' }, { label: '…', hash: '#/voyages/' + encodeURIComponent(path) }])
+    crumbs([{ label: t('Trips'), hash: '#/voyages' }, { label: '…', hash: href(path) }])
     page.innerHTML = `<div class="vwrap-outer"><div class="empty">${t('loading…')}</div></div>`
     let data, state
     try {
@@ -291,7 +294,7 @@ export default function createVoyagesApp(api) {
     voy.fiches = await folderPages(path).catch(() => [])
     crumbs([
       { label: t('Trips'), hash: '#/voyages' },
-      { label: data.titre || t('Trip'), hash: '#/voyages/' + encodeURIComponent(path) },
+      { label: data.titre || t('Trip'), hash: href(path) },
     ])
     paintVoyage()
   }

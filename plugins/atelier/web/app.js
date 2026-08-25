@@ -42,7 +42,7 @@ import {
  * does not.
  */
 export default function createAtelierApp(api) {
-  const { esc, crumbs, headers, add, chipsOf } = api;
+  const { esc, crumbs, headers, add, chipsOf, href, learn } = api;
   /* The one line this port needed.
 
      In agent-gw the engine was BUNDLED into the launcher, so a bare `page`
@@ -121,7 +121,13 @@ export default function createAtelierApp(api) {
     crumbs([{ label: 'Accueil', hash: '#/' }, { label: 'L’Atelier', hash: '#/atelier' }]);
     page.innerHTML = '<div class="wrap"><div class="empty">chargement…</div></div>';
     let list;
-    try { const r = await fetch('/api/plugin/atelier/workbooks', { headers: headers(false), cache: 'no-store' }); list = (await r.json()).workbooks; }
+    try {
+      const r = await fetch('/api/plugin/atelier/workbooks', { headers: headers(false), cache: 'no-store' });
+      list = (await r.json()).workbooks;
+      // L'hôte tient l'index d'où vivent les workbooks — c'est ce qui rend
+      // court un lien vers l'un d'eux. Voici la copie la plus fraîche.
+      learn(list);
+    }
     catch { page.innerHTML = '<div class="wrap"><div class="empty">Atelier indisponible.</div></div>'; return; }
     let html = `<div class="wrap" style="--dc:var(--shop)"><div class="chead"><div class="aico" style="--dc:var(--shop)">${IC.shop}</div><div><h1>L’Atelier</h1><div class="lede">Suivi menuiserie — vos plans de débit.</div></div></div>`;
     if (!list.length) { page.innerHTML = html + '<div class="empty">Aucun workbook — demandez à Alfred d’en générer un (skill menuiserie).</div></div>'; return; }
@@ -130,13 +136,13 @@ export default function createAtelierApp(api) {
       const tot = w.total || w.pieces || 0;
       const pct = tot ? Math.round(100 * w.done / tot) : 0;
       const last = w.lastActivity ? new Date(w.lastActivity).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : 'jamais';
-      html += `<a class="card" href="#/atelier/${encodeURIComponent(w.path)}"><div class="ct">${esc(w.titre)}</div><div class="cmeta">${w.done}/${tot} étapes · ${w.pieces} pièces · ${esc(last)}</div><div class="bar"><i style="width:${pct}%"></i></div></a>`;
+      html += `<a class="card" href="${href(w.path)}"><div class="ct">${esc(w.titre)}</div><div class="cmeta">${w.done}/${tot} étapes · ${w.pieces} pièces · ${esc(last)}</div><div class="bar"><i style="width:${pct}%"></i></div></a>`;
     }
     page.innerHTML = html + '</div></div>';
   }
 
   async function renderWorkbook(path) {
-    crumbs([{ label: 'Accueil', hash: '#/' }, { label: 'L’Atelier', hash: '#/atelier' }, { label: '…', hash: '#/atelier/' + encodeURIComponent(path) }]);
+    crumbs([{ label: 'Accueil', hash: '#/' }, { label: 'L’Atelier', hash: '#/atelier' }, { label: '…', hash: href(path) }]);
     page.innerHTML = '<div class="wrap"><div class="empty">chargement…</div></div>';
     let data, state, layout;
     try {
@@ -152,7 +158,7 @@ export default function createAtelierApp(api) {
     if (!wb || wb.path !== path) { wbTab = 0; wbEditOn = false; wbSel = null; }   // autre workbook = autre barre, l'index ne se transpose pas
     wb = { path, data, state, layout, byEtq: new Map((data.pieces || []).map((p) => [p.etiquette, p])) };
     buildWbIndex();
-    crumbs([{ label: 'Accueil', hash: '#/' }, { label: 'L’Atelier', hash: '#/atelier' }, { label: data.titre || data.projet || 'Workbook', hash: '#/atelier/' + encodeURIComponent(path) }]);
+    crumbs([{ label: 'Accueil', hash: '#/' }, { label: 'L’Atelier', hash: '#/atelier' }, { label: data.titre || data.projet || 'Workbook', hash: href(path) }]);
     renderWb();
   }
 

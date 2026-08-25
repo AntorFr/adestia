@@ -22,9 +22,38 @@ import { routeMatches } from '../plugins/contract.js'
 import type { LoadedPlugin } from '../plugins/loader.js'
 import { absorbs } from './sections.js'
 
+/**
+ * How a workspace path is written into a route: segments escaped, slashes
+ * left alone.
+ *
+ * Encoding the whole path is what produced `#/page/domaines%2Fvoyages%2F…` —
+ * it escapes the one character a fragment always allowed (RFC 3986), and the
+ * only one worth keeping readable. Reading is the mirror, and reads BOTH: a
+ * link written the old way stays a link.
+ */
+export function encodePath(path: string): string {
+  return path.split('/').map(encodeURIComponent).join('/')
+}
+
+/** The path a route carries — either spelling. */
+export function decodePath(rest: string): string {
+  return rest
+    .split('/')
+    .map((segment) => {
+      try {
+        return decodeURIComponent(segment)
+      } catch {
+        // A stray `%` in a hash somebody typed: read it as itself rather than
+        // throwing out of the router.
+        return segment
+      }
+    })
+    .join('/')
+}
+
 /** `#/section/<folder>` — the shell's own screen for a folder it owns. */
 export function sectionRoute(folder: string): string {
-  return `/section/${encodeURIComponent(folder)}`
+  return `/section/${encodePath(folder)}`
 }
 
 /**
