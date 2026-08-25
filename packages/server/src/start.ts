@@ -15,7 +15,6 @@ import { fileURLToPath } from 'node:url'
 import {
   ClaudeCodeDriver,
   CopilotDriver,
-  McpTokens,
   PermissionBroker,
   createOAuthFlow,
   type Driver,
@@ -36,7 +35,6 @@ import {
   type McpServer,
 } from './extensions.js'
 import { authorityEditRule, chainEditRules } from './authority-gate.js'
-import { discoverHubs } from './mcp-hubs.js'
 import { planifEditRule } from './planif-gate.js'
 import { runSetups } from './plugin-host.js'
 import { SecretStore } from './secrets.js'
@@ -220,21 +218,10 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
       (edit) => authorityRule?.(edit),
     ),
   })
-  // A hub is asked what it carries, once, at boot — so an operator declares
-  // the hub rather than a dozen addons, and the day it gains one nobody has a
-  // config to remember. Loud on failure: an instance that silently mounted no
-  // tool looks identical to one whose agent is merely unhelpful.
-  const hubTokens = new McpTokens()
-  const { servers: hubServers, problems: hubProblems } = await discoverHubs(config.mcpHubs, hubTokens)
-  for (const problem of hubProblems) log(`${problem.id}: ${problem.reason}`)
-
-  // The layers the product owns, merged before the driver exists: a driver is
-  // HANDED its servers rather than going looking for them, which is what keeps
-  // "where does this server come from" a question with one answer.
-  const { servers: mcpServers, problems: mcpProblems } = mcpServersFor(
-    [...config.mcpServers, ...hubServers],
-    plugins,
-  )
+  // The two layers the product owns, merged before the driver exists: a
+  // driver is HANDED its servers rather than going looking for them, which is
+  // what keeps "where does this server come from" a question with one answer.
+  const { servers: mcpServers, problems: mcpProblems } = mcpServersFor(config.mcpServers, plugins)
   for (const problem of mcpProblems) {
     log(`extension "${problem.id}" — ${problem.reason}`)
   }

@@ -153,28 +153,6 @@ export interface McpServerConfig {
   } | undefined
 }
 
-/**
- * A hub: one origin carrying several MCP servers, enumerated at boot.
- *
- * Declared instead of listing a dozen addons by hand — the day the hub gains
- * one, no instance needs a config edit. See `mcp-hubs.ts` for what an origin
- * must answer to qualify.
- */
-export interface McpHubConfig {
-  /** Prefixes every mounted server, so two hubs may both carry a `maps`. */
-  readonly name: string
-  readonly url: string
-  readonly auth: NonNullable<McpServerConfig['auth']>
-  /**
-   * Addons NOT to mount.
-   *
-   * The honest use today: a hub's user-data addons, which refuse a machine
-   * identity. The index does not say which those are, so an operator names
-   * them until a hub reports it.
-   */
-  readonly exclude?: readonly string[] | undefined
-}
-
 export interface McpInConfig {
   readonly enabled: boolean
   readonly token?: string | undefined
@@ -214,8 +192,6 @@ export interface GolemConfig {
    * layer wins a name conflict, loudly.
    */
   readonly mcpServers: readonly McpServerConfig[]
-  /** Hubs whose addons are enumerated at startup. */
-  readonly mcpHubs: readonly McpHubConfig[]
   /** Concurrent turns across all conversations. Subscription limits are real. */
   readonly maxConcurrentTurns: number
 }
@@ -251,15 +227,7 @@ const KNOWN_KEYS = new Set([
  * is the endpoint other agents call HERE. Kept together because that is where
  * an operator looks for anything MCP, and told apart in the example config.
  */
-const MCP_KEYS = new Set([
-  'servers',
-  'hubs',
-  'enabled',
-  'token',
-  'agentName',
-  'maxPending',
-  'ttlMs',
-])
+const MCP_KEYS = new Set(['servers', 'enabled', 'token', 'agentName', 'maxPending', 'ttlMs'])
 
 const DEFAULTS = {
   /**
@@ -494,67 +462,6 @@ function readMcpAuth(
     ...(optional['scope'] ? { scope: optional['scope'] } : {}),
     ...(optional['audience'] ? { audience: optional['audience'] } : {}),
   }
-}
-
-/** The hubs an operator declared. Same refusals as a server, plus a URL. */
-function readMcpHubs(raw: unknown, issues: string[]): readonly McpHubConfig[] {
-  if (raw === undefined) return []
-  if (!Array.isArray(raw)) {
-    issues.push('mcp.hubs must be a list')
-    return []
-  }
-
-  const hubs: McpHubConfig[] = []
-  const seen = new Set<string>()
-
-  for (const [index, entry] of raw.entries()) {
-    const where = `mcp.hubs[${index}]`
-    if (!isObject(entry)) {
-      issues.push(`${where} must be a mapping`)
-      continue
-    }
-
-    const name = entry['name']
-    if (typeof name !== 'string' || !/^[a-zA-Z][\w-]{0,63}$/.test(name)) {
-      issues.push(`${where}.name is required (it prefixes every server it mounts)`)
-      continue
-    }
-    if (seen.has(name)) {
-      issues.push(`${where}: "${name}" is declared twice`)
-      continue
-    }
-    seen.add(name)
-
-    const url = entry['url']
-    if (typeof url !== 'string' || !/^https?:\/\//.test(url)) {
-      issues.push(`${where}.url is required and must be http(s)`)
-      continue
-    }
-
-    const auth = readMcpAuth(entry['auth'], where, issues)
-    if (auth === false) continue
-    if (!auth) {
-      // A hub is asked what it carries WITH the identity, so there is nothing
-      // to ask with. An unauthenticated hub would be declared as plain servers.
-      issues.push(`${where}.auth is required — a hub is enumerated with an identity`)
-      continue
-    }
-
-    const exclude = entry['exclude']
-    if (exclude !== undefined && !(Array.isArray(exclude) && exclude.every((x) => typeof x === 'string'))) {
-      issues.push(`${where}.exclude must be a list of addon names`)
-      continue
-    }
-
-    hubs.push({
-      name,
-      url,
-      auth,
-      ...(exclude ? { exclude: exclude as readonly string[] } : {}),
-    })
-  }
-
-  return hubs
 }
 
 function readMcpServers(raw: unknown, issues: string[]): readonly McpServerConfig[] {
@@ -811,7 +718,6 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
     }
   }
   const mcpServers = readMcpServers(mcpRaw['servers'], issues)
-  const mcpHubs = readMcpHubs(mcpRaw['hubs'], issues)
   const mcpEnabled = mcpRaw['enabled'] === true
   const mcp: McpInConfig = {
     enabled: mcpEnabled,
@@ -837,7 +743,6 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
 
   return {
     mcpServers,
-    mcpHubs,
     host: typeof raw['host'] === 'string' ? raw['host'] : DEFAULTS.host,
     port: port as number,
     dataDir: typeof raw['dataDir'] === 'string' ? raw['dataDir'] : DEFAULTS.dataDir,

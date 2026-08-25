@@ -258,7 +258,7 @@ mcp:
     // top level only, so `mcp.servers` — the shape the design documents —
     // booted clean and the agent never saw a single server.
     expect(issuesOf('mcp:\n  serveurs: []\n')).toEqual([
-      'mcp.serveurs is not a setting — known keys: servers, hubs, enabled, token, agentName, maxPending, ttlMs',
+      'mcp.serveurs is not a setting — known keys: servers, enabled, token, agentName, maxPending, ttlMs',
     ])
   })
 
