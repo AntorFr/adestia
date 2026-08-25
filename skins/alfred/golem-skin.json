@@ -4,5 +4,6 @@
   "description": "The butler's livery — the base sheet worn as-is, plus his words and his crest.",
   "scheme": "auto",
   "module": "./skin.js",
-  "styles": "./skin.css"
+  "styles": "./skin.css",
+  "icon": "./assets/icon.svg"
 }

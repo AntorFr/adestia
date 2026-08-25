@@ -109,6 +109,30 @@ export function registerStatic(app: FastifyInstance, options: StaticOptions): vo
   const webRoot = options.webRoot
   if (!webRoot) return
 
+  /**
+   * The favicon, served from the ACTIVE skin.
+   *
+   * Not left to the skin module's `setIcon`, which the loader does implement:
+   * the browser asks for `/icon.svg` before a single line of the bundle runs,
+   * so a client-side swap arrives after the tab has already drawn the default
+   * — a flash of the wrong body's mark on every load. The predecessor learned
+   * this and serves its icons from disk for the same reason.
+   *
+   * A skin that ships none falls through to the product's own, which is the
+   * right answer rather than a broken image.
+   */
+  app.get('/icon.svg', async (_request, reply) => {
+    if (skinDir) {
+      const fromSkin = safeJoin(skinDir, 'assets/icon.svg')
+      if (fromSkin && (await stat(fromSkin).catch(() => undefined))?.isFile()) {
+        return sendFile(reply, fromSkin)
+      }
+    }
+    const fallback = safeJoin(webRoot, '/icon.svg')
+    if (!fallback) return reply.code(404).send({ error: 'not found' })
+    return sendFile(reply, fallback)
+  })
+
   app.get('/*', async (request, reply) => {
     const url = request.url.split('?')[0] ?? '/'
     if (url.startsWith('/api/') || url.startsWith('/plugins/') || url.startsWith('/skin/')) {

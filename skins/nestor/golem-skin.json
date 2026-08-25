@@ -4,5 +4,6 @@
   "description": "The house's night-light: porcelain by day, plum after dark, amethyst, the roundest corners of the three bodies — and a rabbit whose belly lights up when it works. Follows the phone's setting.",
   "scheme": "auto",
   "module": "./skin.js",
-  "styles": "./skin.css"
+  "styles": "./skin.css",
+  "icon": "./assets/icon.svg"
 }

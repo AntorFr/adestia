@@ -4,5 +4,6 @@
   "description": "The code agent's HUD: dark, monospace headings, amber, hard corners, no ambient shadow — emitted light rather than simulated depth. It imposes its night; light exists only on explicit request.",
   "scheme": "dark",
   "module": "./skin.js",
-  "styles": "./skin.css"
+  "styles": "./skin.css",
+  "icon": "./assets/icon.svg"
 }

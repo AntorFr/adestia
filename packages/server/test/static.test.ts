@@ -28,6 +28,11 @@ beforeAll(async () => {
   await mkdir(join(root, 'web', 'assets'), { recursive: true })
   await writeFile(join(root, 'web', 'index.html'), '<!doctype html><title>Golem</title>')
   await writeFile(join(root, 'web', 'assets', 'app.js'), 'console.log(1)\n')
+  await writeFile(join(root, 'web', 'icon.svg'), '<svg>PRODUCT-ICON</svg>')
+
+  await mkdir(join(root, 'skin-dressed', 'assets'), { recursive: true })
+  await writeFile(join(root, 'skin-dressed', 'assets', 'icon.svg'), '<svg>SKIN-ICON</svg>')
+  await mkdir(join(root, 'skin-bare'), { recursive: true })
 })
 
 const build = async () => {
@@ -166,5 +171,42 @@ describe('the shell', () => {
     expect(response.statusCode).toBe(404)
     expect(response.body).not.toContain('<title>')
     await app.close()
+  })
+})
+
+describe('the favicon', () => {
+  const withSkin = async (dir?: string) => {
+    const app = Fastify()
+    registerStatic(app, {
+      plugins: [],
+      webRoot: join(root, 'web'),
+      ...(dir ? { skinDir: join(root, dir) } : {}),
+    })
+    await app.ready()
+    return app
+  }
+
+  it('comes from the active skin when it ships one', async () => {
+    // Server-side on purpose: the browser asks for this before a single line
+    // of the bundle runs, so a client-side swap flashes the wrong body's mark
+    // on every load.
+    const app = await withSkin('skin-dressed')
+    const response = await app.inject({ method: 'GET', url: '/icon.svg' })
+    expect(response.statusCode).toBe(200)
+    expect(response.body).toContain('SKIN-ICON')
+  })
+
+  it("falls back to the product's own when the skin ships none", async () => {
+    const app = await withSkin('skin-bare')
+    const response = await app.inject({ method: 'GET', url: '/icon.svg' })
+    expect(response.statusCode).toBe(200)
+    expect(response.body).toContain('PRODUCT-ICON')
+  })
+
+  it('serves the product icon on an instance with no skin at all', async () => {
+    const app = await withSkin()
+    const response = await app.inject({ method: 'GET', url: '/icon.svg' })
+    expect(response.statusCode).toBe(200)
+    expect(response.body).toContain('PRODUCT-ICON')
   })
 })
