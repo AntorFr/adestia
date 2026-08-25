@@ -168,6 +168,46 @@ describe('logout', () => {
     expect(response.json()).toEqual({ signedOut: true })
     expect(response.headers['set-cookie']).toMatch(new RegExp(`${SESSION_COOKIE}=;`))
   })
+
+  it('accepts the button the interface actually renders', async () => {
+    // A native `<form method="post">` carries urlencoded, which Fastify does
+    // not parse out of the box — so the sign-out answered 415 from the day
+    // this instance became an OIDC client. Behind a reverse proxy, signing
+    // out was the proxy's business and this route was dead code.
+    await build()
+    const response = await app.inject({
+      method: 'POST',
+      url: '/auth/logout',
+      headers: { 'content-type': 'application/x-www-form-urlencoded', accept: 'text/html' },
+      payload: '',
+    })
+    expect(response.statusCode).toBe(302)
+    expect(response.headers['location']).toBe('/')
+    expect(response.headers['set-cookie']).toMatch(new RegExp(`${SESSION_COOKIE}=;`))
+  })
+
+  it('sends a browser somewhere, and a fetch its JSON', async () => {
+    // `{"signedOut":true}` on the screen of somebody who clicked a button is
+    // the same mistake as `{"error":"not signed in"}` was.
+    await build()
+    const asFetch = await app.inject({ method: 'POST', url: '/auth/logout' })
+    expect(asFetch.statusCode).toBe(200)
+    expect(asFetch.json()).toEqual({ signedOut: true })
+  })
+
+  it('discards whatever the form sent', async () => {
+    // Nothing here reads a field, and a parser that accepts input it never
+    // uses is one that will be trusted with input it should not have.
+    await build()
+    const response = await app.inject({
+      method: 'POST',
+      url: '/auth/logout',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      payload: 'redirect=https://ailleurs.example&admin=true',
+    })
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toEqual({ signedOut: true })
+  })
 })
 
 describe('other modes', () => {

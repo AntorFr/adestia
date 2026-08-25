@@ -122,7 +122,33 @@ export async function registerOidc(
       .redirect(login.returnTo)
   })
 
-  app.post('/auth/logout', async (_request, reply) =>
-    reply.clearCookie(SESSION_COOKIE, { path: '/' }).send({ signedOut: true }),
+  /*
+   * A native form POST carries `application/x-www-form-urlencoded`, and
+   * Fastify parses only JSON and plain text out of the box — so the sign-out
+   * button answered 415 from the day this instance became an OIDC client.
+   * Never seen before that: behind a reverse proxy, signing out was the
+   * proxy's business and this route was dead code.
+   *
+   * The body is DISCARDED rather than parsed. Nothing here reads a field, and
+   * a parser that accepts input it never uses is a parser that will one day be
+   * trusted with input it should not have.
+   */
+  app.addContentTypeParser(
+    'application/x-www-form-urlencoded',
+    { parseAs: 'string' },
+    (_request, _body, done) => done(null, {}),
   )
+
+  app.post('/auth/logout', async (request, reply) => {
+    reply.clearCookie(SESSION_COOKIE, { path: '/' })
+    // A browser that posted a form is sent somewhere; a fetch gets its JSON.
+    // Showing `{"signedOut":true}` to somebody who clicked a button is the
+    // same mistake as showing them `{"error":"not signed in"}`.
+    const wantsDocument = String(request.headers.accept ?? '').includes('text/html')
+    // ⚠️ This ends GOLEM's session, not the identity provider's. The SSO
+    // cookie outlives it, so the next visit signs them straight back in
+    // without a password. That is what a single sign-on does, and saying so
+    // in the interface is a separate piece of work from this fix.
+    return wantsDocument ? reply.redirect('/') : reply.send({ signedOut: true })
+  })
 }
