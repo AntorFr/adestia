@@ -102,6 +102,25 @@ describe('loading', () => {
     expect(result.loaded[0]?.view?.route).toBe('/workbench')
   })
 
+  it('keeps the routeFor a view declares, and drops a non-function', async () => {
+    // The shell asks it where an absorbed folder opens; a plugin that put
+    // something else under that name must not have it called mid-render.
+    const routeFor = (folder: string) => `/workbench/${folder}`
+    const { env } = environment({
+      '/plugins/workbench/web/app.js': {
+        default: () => ({ component: () => null, route: '/workbench', routeFor }),
+      },
+    })
+    expect((await loadPlugins([workbench], env)).loaded[0]?.view?.routeFor).toBe(routeFor)
+
+    const { env: wrong } = environment({
+      '/plugins/workbench/web/app.js': {
+        default: () => ({ component: () => null, route: '/workbench', routeFor: '/nope' }),
+      },
+    })
+    expect((await loadPlugins([workbench], wrong)).loaded[0]?.view?.routeFor).toBeUndefined()
+  })
+
   it('lets the shell own the stylesheets', async () => {
     // Never `import './x.css'` from a module: that only works under a bundler,
     // and a runtime-loaded plugin has none.

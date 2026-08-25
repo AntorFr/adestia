@@ -6,7 +6,7 @@
  * second engine a driver rather than a fork.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Chat } from '../chat/Chat.js'
 import type { ScreenView } from '../chat/stream.js'
@@ -28,7 +28,8 @@ import { Home } from './Home.js'
 import { resolveLocale, translator } from './i18n.js'
 import { SkinSlot } from './SkinSlot.js'
 import { Section } from './Section.js'
-import { sectionAt, type IndexEntry } from './sections.js'
+import { holdsPages, sectionAt, type IndexEntry } from './sections.js'
+import { addressOf, folderRoute, ownerOf, routeForFolder } from './owners.js'
 import { browserEnvironment, loadPlugins, type LoadedPlugin, type PluginDescriptor } from '../plugins/loader.js'
 import { useMobile } from './useMobile.js'
 import { useSplit } from './useSplit.js'
@@ -178,9 +179,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
     }
     return [...loaded]
       .sort((a, b) => (b.view?.route?.length ?? 0) - (a.view?.route?.length ?? 0))
-      .find((plugin) =>
-        routeMatches(plugin.view?.route ?? (plugin.tile ? `/${plugin.id}` : undefined), route),
-      )?.id
+      .find((plugin) => routeMatches(addressOf(plugin), route))?.id
   }, [route, loaded])
 
   const section = route.startsWith('/section/')
@@ -191,29 +190,68 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
     : undefined
 
   /**
+   * The breadcrumb: every crumb, and the folder it leads back to.
+   *
+   * Derived ONCE and read twice — the header draws it, and every message
+   * carries it to the agent as the name of the screen. Two derivations of
+   * "where the reader is" drift, and the one nobody looks at is the one that
+   * drifts first.
+   *
+   * A page names the folders it sits IN, not merely the nearest one: stopping
+   * one level short hid the app a trip belongs to — `Brocéliande 2026` with
+   * no `Voyages` above it, from inside the trips app. Only PLACES earn a
+   * crumb: a grouping folder like `domaines/` holds no page of its own and
+   * its crumb would open an empty screen, while a folder a plugin OWNS is a
+   * place by virtue of the screen behind it.
+   */
+  const trail = useMemo<readonly { readonly label: string; readonly folder?: string }[]>(() => {
+    if (openApp) {
+      return [{ label: loaded.find((entry) => entry.id === openApp)?.tile?.label ?? openApp }]
+    }
+    const deepest = page ? page.path.slice(0, page.path.lastIndexOf('/')) : section
+    if (deepest === undefined || deepest === '') return page ? [{ label: page.title }] : []
+
+    const parts = deepest.split('/').filter(Boolean)
+    const crumbs = parts
+      .map((_, depth) => parts.slice(0, depth + 1).join('/'))
+      .filter(
+        (folder) =>
+          // The screen the reader is ON is always named, whatever its shape:
+          // a crumb trail that cannot say where you are is worse than a long one.
+          folder === section ||
+          holdsPages(pages, folder) ||
+          routeForFolder(loaded, folder) !== undefined,
+      )
+      .map((folder) => ({
+        folder,
+        // The workspace's own word for the folder first — an index page's
+        // title is what the reader sees everywhere else. The owning app's
+        // tile is the fallback for a folder that carries no page at all.
+        label:
+          sectionAt(pages, folder)?.title ??
+          ownerOf(loaded, folder)?.tile?.label ??
+          (folder.split('/').at(-1) as string),
+      }))
+    return page ? [...crumbs, { label: page.title }] : crumbs
+  }, [openApp, loaded, page, pages, section])
+
+  /**
    * Where the reader is, snapshotted onto each message.
    *
    * On a desktop the canvas sits BESIDE the chat, so « that » in a sentence
    * usually means the page in front of them — which the conversation used to
-   * know nothing about. The trail mirrors the breadcrumb below, because the
-   * note has to name the screen the way the screen names itself.
+   * know nothing about. The same trail the header draws, because the note has
+   * to name the screen the way the screen names itself.
    */
-  const view = useMemo(() => {
-    const trail: (string | undefined)[] = []
-    if (openApp) {
-      trail.push(loaded.find((entry) => entry.id === openApp)?.tile?.label ?? openApp)
-    } else if (page) {
-      const holder = sectionAt(pages, page.path.slice(0, page.path.lastIndexOf('/')))
-      trail.push(holder?.title, page.title)
-    } else if (section) {
-      trail.push(sectionAt(pages, section)?.title ?? section)
-    }
-    return screenView({
-      route,
-      watched: !mobile || screen === 'canvas',
-      trail: trail.filter((label): label is string => Boolean(label)),
-    })
-  }, [route, mobile, screen, openApp, loaded, page, pages, section])
+  const view = useMemo(
+    () =>
+      screenView({
+        route,
+        watched: !mobile || screen === 'canvas',
+        trail: trail.map((crumb) => crumb.label),
+      }),
+    [route, mobile, screen, trail],
+  )
 
   /**
    * Opens a page in the editor.
@@ -225,13 +263,42 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
     location.hash = `/page/${encodeURIComponent(path)}`
   }, [])
 
-  const openSection = useCallback((path: string) => {
-    location.hash = `/section/${encodeURIComponent(path)}`
-  }, [])
+  /**
+   * Opens a folder — wherever it actually lives.
+   *
+   * Every link to a folder goes through here, and none of them assumes the
+   * generic section any more: a folder a plugin ABSORBS opens on that
+   * plugin's screen. A trip is not a list of files, and the breadcrumb out of
+   * one of its pages used to say it was.
+   */
+  const openSection = useCallback(
+    (path: string) => {
+      location.hash = folderRoute(loaded, path)
+    },
+    [loaded],
+  )
 
   const goHome = useCallback(() => {
     location.hash = ''
   }, [])
+
+  /**
+   * A section route into an absorbed folder hands over to its owner.
+   *
+   * Resolving ownership where links are DRAWN covers the links this shell
+   * draws, and nothing else — a bookmark from before the plugin existed, a
+   * brief whose `cible` the agent wrote by path, a URL somebody typed. They
+   * all deserve the same screen the breadcrumb now leads to, so the rule
+   * lives on the route as well.
+   *
+   * `replace`, not a new entry: the generic section the reader never saw has
+   * no business sitting in their history for Back to walk into.
+   */
+  useEffect(() => {
+    if (section === undefined) return
+    const owned = routeForFolder(loaded, section)
+    if (owned) location.replace(`#${owned}`)
+  }, [section, loaded])
 
   /**
    * Loads whatever page the route names.
@@ -530,47 +597,26 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             >
               {t('Home')}
             </button>
-            {(() => {
-              if (openApp) {
-                const label = loaded.find((entry) => entry.id === openApp)?.tile?.label ?? openApp
-                return (
-                  <>
-                    <span className="golem-crumbs__sep">/</span>
-                    <b>{label}</b>
-                  </>
-                )
-              }
-              // PAGE before SECTION, matching what the body renders: opening
-              // a page from a section leaves `section` set, and checking it
-              // first left the trail stopping one step short of where the
-              // reader actually was.
-              if (!page) {
-                if (!section) return undefined
-                return (
-                  <>
-                    <span className="golem-crumbs__sep">/</span>
-                    <b>{sectionAt(pages, section)?.title ?? section}</b>
-                  </>
-                )
-              }
-              // A page names the section it sits in, and that crumb is a way
-              // BACK into it — the trail has to be walkable, not decorative.
-              const holder = sectionAt(pages, page.path.slice(0, page.path.lastIndexOf('/')))
+            {trail.map((crumb, index) => {
+              // The last crumb is where the reader IS: named, never a link to
+              // the screen already under their eyes. Every one above it is a
+              // way BACK — the trail has to be walkable, not decorative — and
+              // it walks to wherever that folder actually opens, which for a
+              // folder an app owns is the app.
+              const walkable = crumb.folder !== undefined && index < trail.length - 1
               return (
-                <>
-                  {holder && (
-                    <>
-                      <span className="golem-crumbs__sep">/</span>
-                      <button type="button" onClick={() => openSection(holder.path)}>
-                        {holder.title}
-                      </button>
-                    </>
-                  )}
+                <Fragment key={`${crumb.folder ?? ''}-${index}`}>
                   <span className="golem-crumbs__sep">/</span>
-                  <b>{page.title}</b>
-                </>
+                  {walkable ? (
+                    <button type="button" onClick={() => openSection(crumb.folder as string)}>
+                      {crumb.label}
+                    </button>
+                  ) : (
+                    <b>{crumb.label}</b>
+                  )}
+                </Fragment>
               )
-            })()}
+            })}
           </nav>
           <span className="golem-canvas__driver">
             {/* The version only becomes knowable once a session has announced

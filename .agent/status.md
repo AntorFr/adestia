@@ -31,6 +31,16 @@ depuis l'accueil ni depuis un mobile replié sur le chat. Encadrement fait
 côté serveur, donc le fil stocke le prompt brut (pas de dé-préfixage au
 rejeu, contrairement au prédécesseur). Route/titre aplatis sur une ligne et
 bornés : un `#` est pilotable par un lien.
+Propriété d'un dossier = règle de ROUTAGE (`app/owners.ts`) : `absorbs` ne
+servait qu'à retrancher une tuile de l'accueil, donc le fil d'Ariane d'une
+fiche de voyage repartait sur `#/section/…` (la liste générique) au lieu du
+voyage. La coque sait QUI possède le dossier, le plugin dit OÙ par un
+`routeFor(dossier)` optionnel — appliqué aux liens dessinés ET à la route
+`/section/` elle-même (marque-pages, cibles écrites par l'agent). Sans réponse
+du plugin : section générique, aucune devinette. Le fil remonte maintenant
+TOUS les dossiers-lieux d'une fiche (`Accueil / Voyages / Brocéliande 2026 /
+…`), les dossiers de regroupement (`domaines/`) exceptés, et il est dérivé une
+seule fois — l'en-tête le dessine, le contexte d'écran l'emporte.
 
 **Reste :**
 - [ ] `atelier` — ~1 600 lignes (plan de débit, SVG). EN COURS.

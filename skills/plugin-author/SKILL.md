@@ -119,6 +119,53 @@ working; bare ones still resolve through the page's import map.
 `styles` and it injects and removes them. A CSS import only works under a
 bundler, and a runtime-loaded plugin has none.
 
+### Owning a folder of the workspace
+
+An app whose content lives in pages says so in the manifest, and the folder
+stops being offered twice:
+
+```json
+"absorbs": ["voyages"]
+```
+
+A **name, not a path**: it matches wherever that run of segments sits
+(`voyages`, `domaines/voyages`), covers everything beneath it, and only while
+the plugin is active. The tile now stands for that folder — so the shell stops
+drawing a section tile for it.
+
+That claim also decides **where every link into the folder goes** — the
+breadcrumb above one of its pages, a bookmark, a `cible` the agent wrote. The
+shell knows the folder is yours and cannot know how you address it, so it
+asks:
+
+```js
+return {
+  component: Voyages,
+  route: '/voyages',
+  // A workspace folder in, one of YOUR routes out.
+  routeFor: (folder) => {
+    const trip = trips.get(folder)          // known trips, primed from your own API
+    return trip ? `/voyages/${encodeURIComponent(trip)}` : undefined
+  },
+}
+```
+
+Three rules, each of which has a failure behind it:
+
+- **Synchronous.** It is called while a link is being drawn. Anything that
+  needs a fetch to answer must be primed beforehand — keep a map, refresh it
+  when your view mounts.
+- **Answer `undefined` when you have no screen for that folder**, and the
+  reader gets the generic section — the screen they had before your plugin
+  existed. Deriving a path you have not verified sends them to your own error
+  state from a folder that was never yours (a notes folder filed under
+  `voyages/`), which is worse than the generic answer.
+- **Stay inside your own `route`.** An answer outside it is dropped: owning a
+  folder is not owning the shell's navigation.
+
+Nothing to implement for the folder ITSELF — the shell already sends it to
+your `route`, since that is what the tile means.
+
 ## Writing content blocks
 
 Blocks extend the CLOSED vocabulary — the reason pages look like one product

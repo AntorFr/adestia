@@ -107,7 +107,7 @@ function text(value: unknown): string | undefined {
  * became a section of its own beside the app's tile — the exact duplication
  * this field exists to prevent, minus the one folder it was aimed at.
  */
-function absorbs(declared: string, folder: string): boolean {
+export function absorbs(declared: string, folder: string): boolean {
   const parts = folder.split('/')
   const wanted = declared.split('/')
   for (let start = 0; start + wanted.length <= parts.length; start += 1) {
@@ -187,6 +187,20 @@ export function sectionAt(
 ): SectionTile | undefined {
   const holds = entries.some((entry) => entry.path.startsWith(`${folder}/`))
   return holds ? tileFor(entries, folder, indexOf(entries, folder)) : undefined
+}
+
+/**
+ * Whether a folder is a PLACE — somewhere with pages of its own.
+ *
+ * What separates `domaines/voyages` from `domaines`: the first holds pages,
+ * the second only holds folders. A grouping folder is a filing detail, and a
+ * breadcrumb that stopped at one would offer a crumb leading to an empty
+ * screen. Its own index page counts: a folder with nothing but an overview is
+ * still a place, and its overview is what the crumb would open.
+ */
+export function holdsPages(entries: readonly IndexEntry[], folder: string): boolean {
+  if (folder === '' || NOT_A_SECTION.has(folder.split('/').at(-1) ?? '')) return false
+  return entries.some((entry) => folderOf(entry.path) === folder)
 }
 
 /**

@@ -71,6 +71,50 @@ describe('the landing canvas', () => {
 
 })
 
+describe('the breadcrumb', () => {
+  const CORPUS = [
+    { path: 'domaines/voyages/INDEX.md', title: 'Voyages', fields: {} },
+    { path: 'domaines/voyages/broceliande-2026/INDEX.md', title: 'Brocéliande 2026', fields: {} },
+    { path: 'domaines/voyages/broceliande-2026/val-sans-retour.md', title: 'Val sans Retour', fields: {} },
+  ]
+
+  /** The crumbs, in order, and whether each is a way back. */
+  function crumbs(container: HTMLElement): { label: string; walkable: boolean }[] {
+    return [...(container.querySelector('.golem-crumbs')?.children ?? [])]
+      .filter((node) => !node.classList.contains('golem-crumbs__sep'))
+      .map((node) => ({
+        label: node.textContent ?? '',
+        walkable: node.tagName === 'BUTTON',
+      }))
+  }
+
+  it('names every folder a page sits in, not merely the nearest one', async () => {
+    // The defect: from inside a trip, the trail read "Home / Brocéliande 2026"
+    // and the app the trip belongs to was nowhere on it.
+    location.hash = '#/section/domaines%2Fvoyages%2Fbroceliande-2026'
+    const { container } = render(<App fetchImpl={apiFetch({}, CORPUS)} />)
+
+    await waitFor(() => expect(crumbs(container).length).toBeGreaterThan(1))
+    expect(crumbs(container)).toEqual([
+      { label: 'Home', walkable: true },
+      { label: 'Voyages', walkable: true },
+      // Where the reader IS: named, never a link to the screen under their eyes.
+      { label: 'Brocéliande 2026', walkable: false },
+    ])
+    location.hash = ''
+  })
+
+  it('skips a grouping folder, which would lead to an empty screen', async () => {
+    // `domaines/` holds no page of its own — it is a filing detail, not a place.
+    location.hash = '#/section/domaines%2Fvoyages%2Fbroceliande-2026'
+    const { container } = render(<App fetchImpl={apiFetch({}, CORPUS)} />)
+
+    await waitFor(() => expect(crumbs(container).length).toBeGreaterThan(1))
+    expect(crumbs(container).map((crumb) => crumb.label)).not.toContain('Domaines')
+    location.hash = ''
+  })
+})
+
 describe('boot', () => {
   it('renders the shell once the instance answers', async () => {
     const { container } = render(<App fetchImpl={apiFetch()} />)

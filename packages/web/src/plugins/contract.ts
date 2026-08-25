@@ -88,6 +88,30 @@ export interface ViewContribution {
   readonly route?: string
 
   /**
+   * Where a folder this plugin ABSORBS should open, as a hash route.
+   *
+   * `absorbs` says the tile stands for a folder; without this, that claim
+   * held on the launcher and nowhere else. A page inside a trip crumbed back
+   * to `#/section/domaines/voyages/broceliande-2026` — the generic list of
+   * files, from a screen that exists precisely because a trip is not one.
+   *
+   * The shell knows WHICH plugin owns a folder and cannot know WHERE it
+   * keeps it: only this plugin knows a trip is addressed by the
+   * `assets/voyage.json` it carries. So the shell asks, in its own
+   * vocabulary — a workspace folder in, a route in the same shape as `route`
+   * out (`/voyages/…`, no `#`).
+   *
+   * Answer `undefined` for a folder this view has no screen for, and the
+   * shell falls back to the generic section rather than to a dead end. An
+   * answer OUTSIDE the plugin's own `route` is dropped: a plugin owning a
+   * folder does not get to own the shell's navigation.
+   *
+   * Must be synchronous — it is called while a link is being drawn. Anything
+   * needing a fetch to answer is a screen, not a route.
+   */
+  routeFor?(folder: string): string | undefined
+
+  /**
    * Live figures for this plugin's tile — "12 to do", "3 overdue".
    *
    * Asked for by the launcher, answered by the plugin, because only the
@@ -206,10 +230,14 @@ export function narrowView(raw: unknown): { view?: ViewContribution; issue?: Con
   }
   const route = record['route']
   const tileInfo = record['tileInfo']
+  const routeFor = record['routeFor']
   return {
     view: {
       component: record['component'] as ComponentType<Record<string, never>>,
       ...(typeof route === 'string' ? { route } : {}),
+      ...(typeof routeFor === 'function'
+        ? { routeFor: routeFor as NonNullable<ViewContribution['routeFor']> }
+        : {}),
       ...(typeof tileInfo === 'function'
         ? { tileInfo: tileInfo as NonNullable<ViewContribution['tileInfo']> }
         : {}),

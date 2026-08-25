@@ -52,6 +52,11 @@ const normalise = (status) => String(status ?? '').toLowerCase().trim()
 const tone = (status) => TONES[normalise(status)] ?? 'underway'
 const finished = (status) => tone(status) === 'settled'
 
+/** `domaines/voyages/x/assets/voyage.json` → `domaines/voyages/x`. */
+function folderOf(path) {
+  return String(path ?? '').replace(/\/assets\/voyage\.json$/, '')
+}
+
 /** `#/voyages/<encoded path>` → the trip, anything else → the hub. */
 function tripOf(hash) {
   const rest = String(hash ?? '').replace(/^#?\/?voyages\/?/, '')
@@ -59,6 +64,37 @@ function tripOf(hash) {
 }
 
 export default function view(api) {
+  /**
+   * Trip folder → the `voyage.json` that IS the trip, for `routeFor`.
+   *
+   * The shell asks where a folder opens while it draws a link, so the answer
+   * has to be immediate — no fetch, no promise. What it costs is this map,
+   * primed from the same listing the tile reads and refreshed whenever the
+   * view mounts: opening the app is exactly when a new trip appears.
+   *
+   * A trip missing from it (created in another tab, listing not back yet)
+   * simply gets no answer, and the shell falls back to its own section — the
+   * screen the reader had before any of this. GUESSING a path instead would
+   * send them to "unreadable trip" for every notes folder filed under
+   * `voyages/`, which is a worse answer than the honest generic one.
+   */
+  const trips = new Map()
+
+  async function prime() {
+    try {
+      const response = await api.fetch(`/api/plugin/${api.id}/voyages`)
+      if (!response.ok) return
+      const { voyages } = await response.json()
+      for (const trip of voyages) {
+        if (typeof trip?.path === 'string') trips.set(folderOf(trip.path), trip.path)
+      }
+    } catch {
+      // A listing that will not load costs the shortcut, never the view: the
+      // links it would have dressed keep working, generically.
+    }
+  }
+  void prime()
+
   function Voyages() {
     const host = useRef(null)
     const engine = useRef(null)
@@ -67,6 +103,9 @@ export default function view(api) {
     const [tick, setTick] = useState(0)
 
     useEffect(() => {
+      // Opening the app is when a trip framed since boot shows up — so the
+      // map `routeFor` answers from is refreshed here rather than only once.
+      void prime()
       const onHash = () => setTick((value) => value + 1)
       window.addEventListener('hashchange', onHash)
       return () => window.removeEventListener('hashchange', onHash)
@@ -156,7 +195,35 @@ export default function view(api) {
     }
   }
 
+  /**
+   * Where a folder the tile stands for opens — one trip, on its timeline.
+   *
+   * `absorbs` in the manifest says this app covers `voyages/`; without this,
+   * that claim held on the launcher alone and every link INTO a trip — the
+   * breadcrumb out of one of its pages, a bookmark, a target the agent wrote
+   * — landed on the generic list of files. A trip is addressed by the
+   * `voyage.json` it carries, which the shell has no way of knowing.
+   *
+   * A page deeper than the trip folder still belongs to that trip, so the
+   * walk climbs: `.../broceliande-2026/jours` answers for Brocéliande rather
+   * than for nothing.
+   */
+  function routeFor(folder) {
+    let candidate = String(folder ?? '')
+    while (candidate !== '') {
+      const trip = trips.get(candidate)
+      if (trip) return `/voyages/${encodeURIComponent(trip)}`
+      const cut = candidate.lastIndexOf('/')
+      if (cut === -1) break
+      candidate = candidate.slice(0, cut)
+    }
+    // The `voyages` folder ITSELF is the shell's to answer: its tile route is
+    // the hub, and restating that here would be this plugin describing a rule
+    // it does not own.
+    return undefined
+  }
+
   // A route owns its descendants, so `/voyages/<path>` reaches one trip and a
   // bookmark survives a reload — the thing a screen full of state cannot do.
-  return { component: Voyages, route: '/voyages', tileInfo }
+  return { component: Voyages, route: '/voyages', routeFor, tileInfo }
 }

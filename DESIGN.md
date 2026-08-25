@@ -420,6 +420,22 @@ runtime; nothing is scanned by filename convention at build time.
   cannot know how an operator files things, and a tile that stands for a folder
   stands for its contents. Segment boundaries only, and only while the plugin
   is ACTIVE — turning it off gives the folder back rather than hiding it.
+- **Owning a folder is a ROUTING rule, not a launcher detail.** `absorbs` first
+  shipped as a way to retrench a tile from the home, and every link INTO an
+  absorbed folder kept ignoring it: the breadcrumb out of a trip's page walked
+  back to `#/section/…/broceliande-2026`, the generic list of files, from a
+  screen that exists precisely because a trip is not one. The plugin could not
+  fix that — the shell reserves `/section/` and `/page/` for itself, and by
+  then the plugin's view is unmounted. So the shell resolves ownership in one
+  place (`app/owners.ts`), and both halves of the answer come from whoever
+  holds it: the shell knows WHICH plugin owns a folder, the plugin's optional
+  `routeFor(folder)` says WHERE it keeps it — only the trips app knows a trip
+  is addressed by the `assets/voyage.json` it carries. The rule applies to the
+  links the shell draws AND to the `/section/` route itself, which hands over
+  to its owner, because a bookmark and an agent-written target deserve the
+  screen the breadcrumb leads to. A plugin that answers nothing gets the
+  generic section back — no guessing — and an answer outside the plugin's own
+  route is dropped: owning a folder is not owning the shell's navigation.
 - **Portability requirement:** the architecture must be able to host the predecessor's
   plugin classes without rebuild — content-only contracts, API-only tools, full apps,
   and heavy chrome capabilities (barcode scan with camera + lazy decoder). Porting
