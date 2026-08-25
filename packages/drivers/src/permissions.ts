@@ -23,16 +23,18 @@ export interface PermissionRequest {
   readonly detail: string | undefined
   readonly askedAt: number
   /**
-   * Where this was asked from, in words a person recognizes.
+   * Which conversation this was raised in.
    *
-   * Attached by the product, not by the driver: a driver knows a session id,
-   * and "which conversation" is a thing only the shell can name. Matters
-   * exactly when a prompt is RECOVERED after a reload — live, the surrounding
-   * thread already says it; recovered, it arrives with no context at all, and
-   * with two turns allowed at once "allow this edit" becomes a question
-   * nobody can answer.
+   * An identifier, for ROUTING — not a label to show. A recovered request
+   * has to reappear in the thread it belongs to, and with more than one turn
+   * allowed at once there is nothing in "Edit todo/rails.md" that says which.
+   * Rendering it in the wrong thread is worse than not rendering it: it asks
+   * somebody to approve a change to a conversation they are not having.
+   *
+   * Attached by the product, never by the driver: a driver knows a session
+   * id, and conversations are the shell's notion.
    */
-  context?: string
+  conversationId?: string
 }
 
 /**
@@ -159,16 +161,16 @@ export class PermissionBroker {
 
   /** @returns false when the id is unknown — expired, or already answered. */
   /**
-   * Names where a waiting request came from.
+   * Records which conversation a waiting request belongs to.
    *
    * Separate from `ask` because the two are known in different places: the
-   * driver raises the request, the shell knows which conversation it belongs
-   * to. A request already answered or timed out is silently ignored — there
-   * is nothing left to label.
+   * driver raises the request, the shell knows the conversation. A request
+   * already answered or timed out is silently ignored — there is nothing
+   * left to route.
    */
-  attach(id: string, context: string): void {
+  attach(id: string, conversationId: string): void {
     const pending = this.#pending.get(id)
-    if (pending && context) pending.request.context = context
+    if (pending && conversationId) pending.request.conversationId = conversationId
   }
 
   answer(id: string, decision: PermissionDecision): boolean {

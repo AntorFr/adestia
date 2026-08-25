@@ -501,17 +501,11 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
         for await (const event of events) {
           reply.raw.write(sseFrame(event))
           if (event.type === 'permission-request') {
-            // Named here because only the shell knows which conversation a
-            // turn belongs to. It costs nothing while the prompt is on
-            // screen — the thread around it already says so — and it is the
-            // whole answer once the prompt has to be RECOVERED after a
-            // reload, arriving otherwise with no context at all.
-            void (async () => {
-              const title = conversationId
-                ? (await conversations.list(userId)).find((c) => c.id === conversationId)?.title
-                : undefined
-              deps.permissions?.attach(event.id, title ?? 'a conversation')
-            })()
+            // Stamped here because only the shell knows which conversation a
+            // turn belongs to. It is what lets a RECOVERED prompt reappear in
+            // the right thread after a reload; live, the stream already
+            // delivers it to the right place.
+            if (conversationId) deps.permissions?.attach(event.id, conversationId)
           } else if (event.type === 'text-delta') text += event.text
           else if (event.type === 'tool-use') {
             tools.push({ name: event.name, ...(event.target ? { target: event.target } : {}) })

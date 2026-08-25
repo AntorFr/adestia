@@ -65,11 +65,11 @@ export interface PendingPermission {
   readonly tool: string
   readonly detail?: string | undefined
   /**
-   * Which conversation asked, in words. Only present on a request recovered
-   * from the server after a reload — a live one is already surrounded by its
-   * own thread.
+   * Which conversation raised it. An identifier, for routing — a recovered
+   * request must reappear in ITS thread, and nothing in "Edit x.md" says
+   * which one that is.
    */
-  readonly context?: string | undefined
+  readonly conversationId?: string | undefined
 }
 
 export interface ToolCall {

@@ -1007,9 +1007,14 @@
  * a mark in the margin — the typography of a footnote, which is what it is:
  * true, worth knowing, and nothing to do right now.
  */
-/* Where a recovered prompt came from. Quieter than the tool and the file,
-   which are what the decision turns on. */
-.golem-permission__where { color: var(--text-muted); font-style: italic; }
+/* A thread whose turn is stopped, waiting on an answer. Deliberately a mark
+   and not a count: there is one decision to make, and it is in there. */
+.golem-threads__waiting {
+  margin-left: 6px;
+  color: var(--warning);
+  font-size: 9px;
+  vertical-align: middle;
+}
 
 .golem-problems--degraded {
   border: 0;
