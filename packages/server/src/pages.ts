@@ -18,7 +18,13 @@ import { randomUUID } from 'node:crypto'
 import { mkdir, readFile, readdir, rename, stat, unlink, writeFile } from 'node:fs/promises'
 import { dirname, extname, join, relative, resolve, sep } from 'node:path'
 
-import { parse, serialize, validateDocument, type Diagnostic } from '@antorfr/golem-content'
+import {
+  isFinished,
+  parse,
+  serialize,
+  validateDocument,
+  type Diagnostic,
+} from '@antorfr/golem-content'
 import type { FastifyInstance } from 'fastify'
 
 export interface PagesOptions {
@@ -187,13 +193,31 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
 
   app.get('/api/pages/index', async () => {
     const paths = await listMarkdown(root)
-    const entries: { path: string; title: string; fields: Record<string, unknown> }[] = []
+    const entries: {
+      path: string
+      title: string
+      fields: Record<string, unknown>
+      finished: boolean
+    }[] = []
     for (const path of paths.sort()) {
       const markdown = await readFile(join(root, path), 'utf8').catch(() => '')
+      const fields = parseFrontmatter(markdown)
       entries.push({
         path,
         title: titleOf(markdown, path),
-        fields: parseFrontmatter(markdown),
+        fields,
+        /**
+         * Whether the page's life is over — answered HERE rather than by
+         * whoever draws it.
+         *
+         * A view can read `status` itself; what it cannot do is know that
+         * `réalisé` closes a page and `acheté` closes only a purchase. That
+         * knowledge is the content engine's, and publishing its verdict is
+         * what lets a plugin — which may import nothing but React — fold
+         * finished things away exactly like the shell does. The predecessor
+         * kept a copy of the table per view, and they drifted.
+         */
+        finished: isFinished(fields),
       })
     }
     return { entries }

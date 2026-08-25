@@ -19,9 +19,7 @@
 
 import { createElement as h, Fragment, type ReactNode } from 'react'
 
-import { parse } from '@antorfr/golem-content'
-
-import { toneOf } from '../app/status.js'
+import { parse, toneOf } from '@antorfr/golem-content'
 
 type Node = {
   type: string

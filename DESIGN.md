@@ -586,6 +586,20 @@ IDE.
 
 ## Decision log
 
+**2026-08-25 (archiving is core knowledge, not per-view knowledge):** The status
+vocabulary — which words mean a page is over, and the `acheté`-only-archives-a-
+purchase exception — moved from the web shell into `@antorfr/golem-content`,
+and `GET /api/pages/index` now publishes `finished` for every page. The reason
+is the failure mode, not tidiness: a plugin may import nothing but React, so
+each one that wanted to archive had to transcribe the table, and `voyages`
+already carries its own copy. The predecessor lived that drift — one screen
+archived what the next still showed as live. `collections` consumes the
+published verdict and folds finished pages into an `🗄 Archive` section
+(counts split live/archived, the fold open when nothing live is left, nothing
+ever dropped). Left deliberately alone: `todo` and `planif` close on `done:`,
+which is a different regime with its own contract, and `voyages` judges the
+status inside `voyage.json` — not a page, so the index cannot answer for it.
+
 **2026-08-20 (founding):** product-first (no parity constraint with agent-gw; the
 author's pods migrate later). Shared-agent multi-user with OIDC plus a zero-auth
 local single-user mode. Files as source of truth. Engines: Claude Code + GitHub

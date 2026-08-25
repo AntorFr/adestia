@@ -3,6 +3,10 @@ import { createElement as h, useCallback, useEffect, useState } from 'react'
 import { buildCollections, facetsOf, plural, prettify, statusOf } from './model.js'
 
 const WORDS = {
+  // English needs a table of its own for exactly one word: `archived` does not
+  // agree in number and `archivée` does, so the plural is a WORD rather than
+  // an `s` this code appends. Everything else falls back to its key.
+  en: { 'archived, plural': 'archived' },
   fr: {
     collection: 'collection',
     collections: 'collections',
@@ -11,6 +15,12 @@ const WORDS = {
     'No collection declared yet.': 'Aucune collection déclarée.',
     '＋ Ask for a collection': '＋ Demander une collection',
     Uncategorised: 'Sans catégorie',
+    page: 'fiche',
+    archived: 'archivée',
+    'archived, plural': 'archivées',
+    Archive: 'Archive',
+    'nothing live': 'rien en cours',
+    'Everything here is finished.': 'Tout est terminé ici.',
   },
 }
 const words = (locale) => {
@@ -20,6 +30,8 @@ const words = (locale) => {
 
 export default function view(api) {
   const t = words(api.locale)
+  /** "1 archivée", "2 archivées", "3 archived" — the count, in agreement. */
+  const archived = (count) => `${count} ${t(count > 1 ? 'archived, plural' : 'archived')}`
 
   function Collections() {
     const [model, setModel] = useState(null)
@@ -56,9 +68,31 @@ export default function view(api) {
         statusOf(page) && h('span', { key: 's', className: 'coll-chip' }, statusOf(page)),
       ])
 
-    // A facet, opened: its pages.
+    /**
+     * What is done, folded away — present, and out of the way.
+     *
+     * Closed rather than absent: a finished project is what somebody comes
+     * looking for when they want to know how the last one went, and a
+     * collection that quietly forgot half of itself would be lying about its
+     * own size. Open by default only when there is nothing live left, so a
+     * screen is never blank while the pages exist.
+     */
+    const archiveFold = (pages, live) =>
+      pages.length === 0
+        ? null
+        : h('details', { key: 'arch', className: 'coll-arch', open: live === 0 }, [
+            h('summary', { key: 's' }, [
+              `🗄 ${t('Archive')} `,
+              h('span', { key: 'c', className: 'coll-muted' }, plural(pages.length, t('page'))),
+            ]),
+            h('ul', { key: 'l', className: 'coll-rows' }, pages.map(pageRow)),
+          ])
+
+    // A facet, opened: what is live in it, then what is done.
     if (open && at.facet !== null) {
-      const facet = (facetsOf(open) ?? []).find((f) => f.value === at.facet)
+      const facet = (facetsOf(open, t) ?? []).find((f) => f.value === at.facet)
+      const live = facet?.pages ?? []
+      const archived = facet?.archived ?? []
       return h('section', { className: 'coll' }, [
         h(
           'button',
@@ -66,13 +100,17 @@ export default function view(api) {
           `‹ ${open.title}`,
         ),
         h('h2', { key: 'h' }, facet?.label ?? prettify(at.facet)),
-        h('ul', { key: 'l', className: 'coll-rows' }, (facet?.pages ?? []).map(pageRow)),
+        live.length > 0
+          ? h('ul', { key: 'l', className: 'coll-rows' }, live.map(pageRow))
+          : archived.length > 0 &&
+            h('p', { key: 'e', className: 'coll-muted' }, t('Everything here is finished.')),
+        archiveFold(archived, live.length),
       ])
     }
 
     // A collection, opened: its facets as cards, or its pages if it groups by nothing.
     if (open) {
-      const facets = facetsOf(open)
+      const facets = facetsOf(open, t)
       return h('section', { className: 'coll' }, [
         h(
           'button',
@@ -81,7 +119,19 @@ export default function view(api) {
         ),
         h('header', { key: 'h', className: 'coll__head' }, [
           h('h2', { key: 't' }, `${open.icon} ${open.title}`),
-          h('span', { key: 'c', className: 'coll-muted' }, plural(open.members.length, 'page')),
+          // What is live, and what is done — two figures, because "40 pages"
+          // over a grid showing four is the kind of arithmetic that makes
+          // people stop trusting a count.
+          h(
+            'span',
+            { key: 'c', className: 'coll-muted' },
+            [
+              plural(open.live.length, t('page')),
+              open.archived.length > 0 ? archived(open.archived.length) : '',
+            ]
+              .filter(Boolean)
+              .join(' · '),
+          ),
         ]),
         open.problem && h('p', { key: 'p', className: 'coll-problem' }, open.problem),
 
@@ -98,13 +148,25 @@ export default function view(api) {
                     { className: 'coll-card', onClick: () => setAt({ ...at, facet: facet.value }) },
                     [
                       h('span', { key: 'n', className: 'coll-card__name' }, facet.label),
-                      h('span', { key: 'c', className: 'coll-muted' }, plural(facet.pages.length, 'page')),
+                      h(
+                        'span',
+                        { key: 'c', className: 'coll-muted' },
+                        [
+                          facet.pages.length > 0
+                            ? plural(facet.pages.length, t('page'))
+                            : t('nothing live'),
+                          facet.archived.length > 0 ? archived(facet.archived.length) : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' · '),
+                      ),
                     ],
                   ),
                 ),
               ),
             )
-          : h('ul', { key: 'r', className: 'coll-rows' }, open.members.map(pageRow)),
+          : h('ul', { key: 'r', className: 'coll-rows' }, open.live.map(pageRow)),
+        facets ? null : archiveFold(open.archived, open.live.length),
       ])
     }
 
@@ -148,7 +210,17 @@ export default function view(api) {
                     h(
                       'span',
                       { key: 'c', className: 'coll-muted' },
-                      collection.problem ?? plural(collection.members.length, 'page'),
+                      // Live first, archived after: a collection whose work is
+                      // all done reads as finished rather than as empty.
+                      collection.problem ??
+                        [
+                          plural(collection.live.length, t('page')),
+                          collection.archived.length > 0
+                            ? archived(collection.archived.length)
+                            : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' · '),
                     ),
                   ],
                 ),

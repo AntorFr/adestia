@@ -17,9 +17,10 @@
 
 import { useMemo, useState } from 'react'
 
+import { isFinished, toneOf } from '@antorfr/golem-content'
+
 import type { IndexEntry, SectionTile } from './sections.js'
 import { pagesIn, subsectionsOf } from './sections.js'
-import { isFinished, toneOf } from './status.js'
 
 export interface SectionProps {
   readonly path: string

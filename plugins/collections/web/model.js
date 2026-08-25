@@ -28,6 +28,21 @@
 
 export const idOf = (path) => path.replace(/\.md$/, '')
 
+/**
+ * Whether a page's life is over — asked of the SERVER, never decided here.
+ *
+ * `/api/pages/index` publishes `finished` for every page, computed by the
+ * content engine: it is what knows that `réalisé` closes a page while
+ * `acheté` closes only a purchase. A plugin can import nothing but React, so
+ * a copy of that table here is the one thing guaranteed to drift — and the
+ * predecessor proved it, archiving a trip in one screen that another still
+ * showed as live.
+ *
+ * An index that does not say (an older server) means nothing is finished:
+ * everything stays visible, which is the direction that loses nobody's page.
+ */
+const isFinished = (entry) => entry.finished === true
+
 /** Reads the declarations and the pages they collect, in one pass. */
 export function buildCollections(entries) {
   const declarations = []
@@ -54,6 +69,7 @@ export function buildCollections(entries) {
         title: entry.title,
         type: fields.type,
         fields,
+        finished: isFinished(entry),
       })
     }
   }
@@ -62,11 +78,25 @@ export function buildCollections(entries) {
     // A declaration with no `of` collects nothing and says so, rather than
     // collecting everything — a collection that silently matched every page
     // would look like a bug in the pages, not in the declaration.
-    collections: declarations.map((declaration) => ({
-      ...declaration,
-      members: declaration.of ? pages.filter((page) => page.type === declaration.of) : [],
-      problem: declaration.of ? null : 'declares no `of:` — it collects nothing',
-    })),
+    collections: declarations.map((declaration) => {
+      const members = declaration.of ? pages.filter((page) => page.type === declaration.of) : []
+      return {
+        ...declaration,
+        members,
+        /**
+         * The living and the settled, split once here.
+         *
+         * A collection of projects fills up with finished ones within a year,
+         * and a grid where nine cards out of ten are done is a grid nobody
+         * scans. So the finished leave for a fold at the bottom — they are
+         * never dropped: what was done is exactly what somebody comes looking
+         * for when they want to know how it went last time.
+         */
+        live: members.filter((page) => !page.finished),
+        archived: members.filter((page) => page.finished),
+        problem: declaration.of ? null : 'declares no `of:` — it collects nothing',
+      }
+    }),
     pages,
   }
 }
@@ -100,16 +130,20 @@ export function facetsOf(collection, t = (key) => key) {
     // collection lie about its own size.
     const values = Array.isArray(raw) ? raw.map(String) : [raw == null ? '' : String(raw)]
     for (const value of values) {
-      if (!groups.has(value)) groups.set(value, [])
-      groups.get(value).push(page)
+      if (!groups.has(value)) groups.set(value, { pages: [], archived: [] })
+      groups.get(value)[page.finished ? 'archived' : 'pages'].push(page)
     }
   }
 
   return [...groups.entries()]
-    .map(([value, pages]) => ({
+    .map(([value, group]) => ({
       value,
       label: value === '' ? t('Uncategorised') : (collection.labels[value] ?? prettify(value)),
-      pages,
+      // `pages` is what is LIVE, and the archived ride along: a facet whose
+      // work is all done still deserves a card — it is where the history is —
+      // but it sorts below the ones with something happening in them.
+      pages: group.pages,
+      archived: group.archived,
     }))
     .sort((a, b) => {
       if (a.value === '') return 1

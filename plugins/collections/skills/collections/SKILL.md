@@ -50,6 +50,23 @@ status: en-cours
 yours — the collection displays whatever you wrote rather than checking it
 against a list, so a fifth status does not silently disappear.
 
+## What is finished folds away
+
+A status that means **the page is over** (`clos`, `terminé`, `réalisé`,
+`offert`… — the table is in `page-author`) takes the page out of the grid of
+live ones and into an `🗄 Archive` fold at the bottom of the screen. The counts
+say both figures — "4 fiches · 1 archivée" — because "5 fiches" over a grid
+showing four is the arithmetic that teaches people to distrust a count.
+
+Nothing is ever dropped: a category whose work is all done still gets its
+card, sorted below the ones with something happening in them, and the fold
+opens by itself when there is nothing live left.
+
+Which words archive is **not this plugin's decision**: the page index publishes
+the core's own verdict, so a collection, a section screen and the editor all
+agree without anyone maintaining a second list. Closing a project is therefore
+a one-word edit — `status: clos` — and never a move to another folder.
+
 ## The one rule worth remembering
 
 **Never copy a page into a collection.** A collection is a QUERY: a page

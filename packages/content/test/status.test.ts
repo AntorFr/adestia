@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { isFinished, toneOf } from '../src/app/status.js'
+import { isFinished, toneOf } from '../src/status.js'
 
 describe('toneOf', () => {
   it('reads the vocabulary the real corpus writes', () => {

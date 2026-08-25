@@ -68,6 +68,36 @@ core reads it; reusing the field rather than inventing `icon`/`emoji` of your
 own is what makes those cards feel like one product instead of a pile of
 similar-but-different widgets.
 
+## `status` — a page's life, and when it folds away
+
+A page may declare where it stands: `status: en-cours`, `status: bloqué`,
+`status: clos`. Nothing enforces the word — write the one that is true, and a
+word the core has never met is shown as written and treated as LIVE, which is
+the direction that loses nobody's page.
+
+What the core does read is whether the word means **the page is over**. Three
+families, and a settled page leaves the grid of live ones for a fold at the
+bottom of the screen — never dropped, because a finished project is exactly
+what somebody opens when they want to know how the last one went.
+
+| Family | Words it knows | What it does |
+|---|---|---|
+| underway | `en cours`, `idée`, `en réflexion`, `veille`, `référence retenue` | the normal state of a live page |
+| waiting | `bloqué`, `en attente`, `à acheter`, `commandé` | you cannot advance it yourself |
+| settled | `clos`, `fait`, `terminé`, `réalisé`, `choix fait`, `décidé`, `offert`, `archivé`, `done`, `closed` | archived: folded away |
+
+`acheté` is the one exception worth knowing: settled everywhere as a colour,
+but it only ARCHIVES a page that is itself a purchase (`type: achat`). A gift
+bought is still a gift to give.
+
+`statut` is read as a synonym of `status`, because a body of pages written in
+French usually has both.
+
+**Do not compute this in a view.** `GET /api/pages/index` publishes
+`finished: true|false` next to every page's fields — that is the core's own
+verdict, and reading it is what keeps a plugin's archive and the shell's
+agreeing. A private table of statuses inside one app is the thing that drifts.
+
 ## Three ways an app finds its own pages
 
 Every plugin picks one, and none of them requires touching a shared registry.

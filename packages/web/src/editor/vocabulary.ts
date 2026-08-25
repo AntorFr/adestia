@@ -9,9 +9,7 @@
  * genuinely closed rather than merely discouraged.
  */
 
-import { GRAMMAR } from '@antorfr/golem-content'
-
-import { toneOf } from '../app/status.js'
+import { GRAMMAR, toneOf } from '@antorfr/golem-content'
 import type { MilkdownPlugin } from '@milkdown/kit/ctx'
 import { $node, $remark } from '@milkdown/kit/utils'
 

@@ -1,6 +1,13 @@
 /**
  * A page's status, as a colour and a fate.
  *
+ * It lives in the content engine rather than in the shell because it says
+ * what a PAGE means, not what a screen looks like: the shell folds finished
+ * pages away with it, the page index publishes its verdict, and a plugin that
+ * cannot import a word of this code still archives exactly like everything
+ * else. The predecessor kept one such table per view, and they disagreed —
+ * `voyages` archived a trip the section screen still showed as live.
+ *
  * Two questions, one vocabulary: what does this status LOOK like, and does it
  * mean the page is over. Both were guessed once and both were wrong on the
  * real corpus, which is why the table below is a transcription of what a body

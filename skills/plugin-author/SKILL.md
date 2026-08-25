@@ -176,6 +176,30 @@ a secret no longer. Nothing declared here ever reaches it — if your view needs
 the result of a keyed call, put the call in your API and let the view ask
 YOUR endpoint.
 
+## The page index, and its verdict
+
+Before writing an API of your own, check whether the core already answers the
+question, and using it is what keeps every screen of this instance agreeing
+about the same pages.
+
+**`GET /api/pages/index`** — every page's frontmatter, in one query:
+
+```json
+{ "entries": [
+  { "path": "diy/garage.md", "title": "Le garage",
+    "fields": { "type": "projet", "cat": "menuiserie", "status": "clos" },
+    "finished": true }
+] }
+```
+
+`finished` is the CONTENT ENGINE's verdict on whether the page's life is over
+— it knows that `réalisé` closes a page while `acheté` closes only a purchase.
+**Read it; never re-derive it.** A table of statuses copied into a plugin is
+the one thing guaranteed to drift, and the predecessor proved it: a trip its
+own app had archived was still listed as live by the screen next door. Fold
+finished pages into a collapsed section rather than dropping them — what is
+done is what somebody looks for when they want to know how the last one went.
+
 ## Speaking the reader's language
 
 A plugin ships its OWN words. The shell translates the shell — it cannot know
