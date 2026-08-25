@@ -721,3 +721,115 @@ describe('MCP health', () => {
     expect((await bare.describe()).capabilities).not.toContain('mcpStatus')
   })
 })
+
+describe('an MCP server that authenticates itself', () => {
+  const HUB = {
+    name: 'maps',
+    url: 'https://hub.example/maps',
+    auth: {
+      tokenUrl: 'https://auth.example/token',
+      clientId: 'agent-golem',
+      clientSecret: 's3cret',
+      scope: 'mcp',
+    },
+  }
+
+  const minting = (answers: readonly (string | undefined)[]) => {
+    let index = 0
+    return vi.fn(() => {
+      const token = answers[Math.min(index++, answers.length - 1)]
+      return Promise.resolve({
+        ok: token !== undefined,
+        status: token === undefined ? 401 : 200,
+        // Short-lived on purpose in these tests: the point is that the file
+        // follows the token, not that a token lasts.
+        json: () => Promise.resolve({ access_token: token, expires_in: 3600 }),
+      } as unknown as Response)
+    }) as unknown as typeof fetch
+  }
+
+  const turn = async (driver: CopilotDriver, fake: ReturnType<typeof fakeCopilot>) => {
+    const running = collect(driver, { prompt: 'x', cwd: '/w' })
+    await vi.waitFor(() => expect(fake.spawns.length).toBeGreaterThan(0))
+    fake.stdout.write('{"type":"result","data":{"sessionId":"s1","exitCode":0}}\n')
+    fake.child.emit('close', 0)
+    await running
+  }
+
+  it('writes the bearer into the side file, never onto argv', async () => {
+    const home = await mkdtemp(join(tmpdir(), 'golem-copilot-'))
+    const fake = fakeCopilot()
+    const driver = new CopilotDriver({
+      home,
+      spawnImpl: fake.spawnImpl,
+      mcpServers: [HUB],
+      fetchImpl: minting(['abc']),
+    })
+    await turn(driver, fake)
+
+    const written = JSON.parse(await readFile(join(home, 'golem-mcp.json'), 'utf8'))
+    expect(written.mcpServers.maps).toMatchObject({
+      type: 'http',
+      url: 'https://hub.example/maps',
+      headers: { Authorization: 'Bearer abc' },
+      tools: ['*'],
+    })
+    expect(fake.spawns[0]?.args.join(' ')).not.toContain('abc')
+  })
+
+  it('rewrites the file on every turn, because the token rotates', async () => {
+    // Written once was right until a server could carry a token: a file
+    // produced at the first turn authenticates nothing by the second morning.
+    const home = await mkdtemp(join(tmpdir(), 'golem-copilot-'))
+    const path = join(home, 'golem-mcp.json')
+
+    const first = fakeCopilot()
+    const driver = new CopilotDriver({
+      home,
+      spawnImpl: first.spawnImpl,
+      mcpServers: [HUB],
+      // A token that is already stale, so the second turn must mint again.
+      fetchImpl: (() => {
+        let index = 0
+        const answers = ['one', 'two']
+        return vi.fn(() =>
+          Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () =>
+              Promise.resolve({ access_token: answers[Math.min(index++, 1)], expires_in: 1 }),
+          } as unknown as Response),
+        ) as unknown as typeof fetch
+      })(),
+    })
+
+    await turn(driver, first)
+    expect(JSON.parse(await readFile(path, 'utf8')).mcpServers.maps.headers.Authorization).toBe('Bearer one')
+
+    // A second turn, with a driver whose cache has nothing live left.
+    const second = fakeCopilot()
+    const again = new CopilotDriver({
+      home,
+      spawnImpl: second.spawnImpl,
+      mcpServers: [HUB],
+      fetchImpl: minting(['two']),
+    })
+    await turn(again, second)
+    expect(JSON.parse(await readFile(path, 'utf8')).mcpServers.maps.headers.Authorization).toBe('Bearer two')
+  })
+
+  it('drops the flag entirely when no server could be authenticated', async () => {
+    // No file rather than an empty one: an empty `mcpServers` map would make
+    // the CLI load nothing while looking configured.
+    const home = await mkdtemp(join(tmpdir(), 'golem-copilot-'))
+    const fake = fakeCopilot()
+    const driver = new CopilotDriver({
+      home,
+      spawnImpl: fake.spawnImpl,
+      mcpServers: [HUB],
+      fetchImpl: minting([undefined]),
+    })
+    await turn(driver, fake)
+    expect(fake.spawns[0]?.args).not.toContain('--additional-mcp-config')
+  })
+})

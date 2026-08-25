@@ -27,6 +27,7 @@ import type {
   TurnRequest,
 } from '../contract.js'
 import { TOKEN_ENV_VAR, classifyAuthError, copilotEnv, explainAuthProblem, looksLikeToken } from './auth.js'
+import { McpTokens } from '../mcp-oauth.js'
 import { newTranslationState, parseLine, translate } from './events.js'
 import { PLAINTEXT_CONSENT, startDeviceCodeLogin, type DeviceCodeLogin } from './login.js'
 
@@ -53,6 +54,8 @@ export interface CopilotDriverOptions {
    *   by any process on the box.
    */
   readonly mcpServers?: readonly McpServer[]
+  /** Injected so the token exchange can be exercised without a network. */
+  readonly fetchImpl?: typeof fetch
   readonly spawnImpl?: typeof spawn
   /** Injection point for the device-code login flow, for tests. */
   readonly startLoginImpl?: typeof startDeviceCodeLogin
@@ -69,8 +72,7 @@ export class CopilotDriver implements Driver {
   readonly #spawn: typeof spawn
   readonly #startLogin: typeof startDeviceCodeLogin
   readonly #mcpServers: readonly McpServer[]
-  /** Written once, then reused: the set is fixed for the process's life. */
-  #mcpConfigPath: Promise<string | undefined> | undefined
+  readonly #tokens: McpTokens
   /** What the last session said about them. Empty until a turn has run. */
   #mcpHealth: readonly McpServerHealth[] = []
   #credentials: Record<string, string>
@@ -88,6 +90,7 @@ export class CopilotDriver implements Driver {
     this.#spawn = options.spawnImpl ?? spawn
     this.#startLogin = options.startLoginImpl ?? startDeviceCodeLogin
     this.#mcpServers = options.mcpServers ?? []
+    this.#tokens = new McpTokens(options.fetchImpl ?? fetch)
     this.#credentials = { ...options.credentials }
   }
 
@@ -269,48 +272,68 @@ export class CopilotDriver implements Driver {
   }
 
   /**
-   * The session-scoped MCP config, written once.
+   * The session-scoped MCP config, rewritten before every turn.
+   *
+   * Written once was wrong the moment a server could carry an OAuth token: a
+   * hub's token lives about an hour, so a file produced at the first turn
+   * authenticates nothing by the second morning. The CLI reads this file per
+   * invocation, so rewriting it per turn is exactly as cheap as it looks.
    *
    * Undefined when this instance declares no servers — no file, no flag, and
-   * the CLI keeps exactly the behaviour it had before this existed. A failure
+   * the CLI keeps the behaviour it had before any of this existed. A failure
    * to write is swallowed on purpose: a turn that cannot reach one MCP server
    * is worth far more than a turn that refuses to start.
    */
-  #mcpConfig(): Promise<string | undefined> {
-    this.#mcpConfigPath ??= (async () => {
-      if (this.#mcpServers.length === 0) return undefined
-      const mcpServers: Record<string, unknown> = {}
-      for (const server of this.#mcpServers) {
-        mcpServers[server.name] = server.url
-          ? {
-              type: 'http',
-              url: server.url,
-              ...(server.headers ? { headers: server.headers } : {}),
-              tools: ['*'],
-            }
-          : {
-              // The CLI's own word for stdio, captured from what `copilot mcp
-              // add` actually writes — not guessed from the flag's vocabulary,
-              // which calls the same thing "stdio".
-              type: 'local',
-              command: server.command ?? '',
-              ...(server.args ? { args: server.args } : {}),
-              ...(server.env ? { env: server.env } : {}),
-              // Required: an entry without it exposes no tools at all.
-              tools: ['*'],
-            }
+  async #mcpConfig(): Promise<string | undefined> {
+    if (this.#mcpServers.length === 0) return undefined
+
+    const mcpServers: Record<string, unknown> = {}
+    for (const server of this.#mcpServers) {
+      if (server.url) {
+        const headers: Record<string, string> = { ...server.headers }
+        if (server.auth) {
+          const token = await this.#tokens.for(server.auth)
+          // Omitted rather than sent unauthenticated — same rule as the other
+          // driver: a wall of 401s reads as a broken tool, an absent one reads
+          // as an absent one.
+          if (!token) continue
+          headers['Authorization'] = `Bearer ${token}`
+        }
+        mcpServers[server.name] = {
+          type: 'http',
+          url: server.url,
+          ...(Object.keys(headers).length > 0 ? { headers } : {}),
+          // Required: an entry without it exposes no tools at all.
+          tools: ['*'],
+        }
+        continue
       }
-      const path = join(this.#home, 'golem-mcp.json')
-      try {
-        await mkdir(this.#home, { recursive: true })
-        // 0600: this file holds whatever tokens the servers need.
-        await writeFile(path, JSON.stringify({ mcpServers }, null, 2), { mode: 0o600 })
-        return path
-      } catch {
-        return undefined
+
+      mcpServers[server.name] = {
+        // The CLI's own word for stdio, captured from what `copilot mcp add`
+        // actually writes — not guessed from the flag's vocabulary, which
+        // calls the same thing "stdio".
+        type: 'local',
+        command: server.command ?? '',
+        ...(server.args ? { args: server.args } : {}),
+        ...(server.env ? { env: server.env } : {}),
+        tools: ['*'],
       }
-    })()
-    return this.#mcpConfigPath
+    }
+
+    // Every server dropped for want of a token: no file rather than an empty
+    // one, so the flag disappears too.
+    if (Object.keys(mcpServers).length === 0) return undefined
+
+    const path = join(this.#home, 'golem-mcp.json')
+    try {
+      await mkdir(this.#home, { recursive: true })
+      // 0600: this file holds whatever tokens the servers need.
+      await writeFile(path, JSON.stringify({ mcpServers }, null, 2), { mode: 0o600 })
+      return path
+    } catch {
+      return undefined
+    }
   }
 
   async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {

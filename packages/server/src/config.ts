@@ -137,6 +137,20 @@ export interface McpServerConfig {
   readonly url?: string | undefined
   readonly env?: Readonly<Record<string, string>> | undefined
   readonly headers?: Readonly<Record<string, string>> | undefined
+  /**
+   * Credentials for a hub that wants a short-lived OAuth token.
+   *
+   * The product mints and refreshes it per turn. Declared here rather than
+   * pasted as a `headers.Authorization`, because a bearer written into a
+   * config file works for one hour and then quietly stops.
+   */
+  readonly auth?: {
+    readonly tokenUrl: string
+    readonly clientId: string
+    readonly clientSecret: string
+    readonly scope?: string | undefined
+    readonly audience?: string | undefined
+  } | undefined
 }
 
 export interface McpInConfig {
@@ -395,6 +409,61 @@ function readSecrets(raw: unknown, issues: string[]): Readonly<Record<string, st
  * instance booted clean and the agent simply never saw the servers somebody
  * had configured, which is the worst way for a feature to be absent.
  */
+/**
+ * The OAuth identity a server may declare.
+ *
+ * Returns `false` — distinct from `undefined` — when the block is present and
+ * wrong: the caller then skips the server entirely rather than wiring one that
+ * will be refused on every call.
+ */
+function readMcpAuth(
+  raw: unknown,
+  where: string,
+  issues: string[],
+): McpServerConfig['auth'] | false {
+  if (raw === undefined) return undefined
+  if (!isObject(raw)) {
+    issues.push(`${where}.auth must be a mapping`)
+    return false
+  }
+
+  const fields: Record<string, string> = {}
+  for (const field of ['tokenUrl', 'clientId', 'clientSecret'] as const) {
+    const value = raw[field]
+    if (typeof value !== 'string' || value === '') {
+      issues.push(`${where}.auth.${field} is required`)
+      return false
+    }
+    if (/^\$\{[A-Za-z_][A-Za-z0-9_]*\}$/.test(value)) {
+      // Same rule as a secret: a literal placeholder reaching a token endpoint
+      // fails as `invalid_client`, which reads as a wrong secret rather than
+      // as a variable nobody set.
+      issues.push(`${where}.auth.${field} is still "${value}" — that variable is not set`)
+      return false
+    }
+    fields[field] = value
+  }
+
+  const optional: Record<string, string> = {}
+  for (const field of ['scope', 'audience'] as const) {
+    const value = raw[field]
+    if (value === undefined) continue
+    if (typeof value !== 'string' || value === '') {
+      issues.push(`${where}.auth.${field} must be a non-empty string`)
+      return false
+    }
+    optional[field] = value
+  }
+
+  return {
+    tokenUrl: fields['tokenUrl']!,
+    clientId: fields['clientId']!,
+    clientSecret: fields['clientSecret']!,
+    ...(optional['scope'] ? { scope: optional['scope'] } : {}),
+    ...(optional['audience'] ? { audience: optional['audience'] } : {}),
+  }
+}
+
 function readMcpServers(raw: unknown, issues: string[]): readonly McpServerConfig[] {
   if (raw === undefined) return []
   if (!Array.isArray(raw)) {
@@ -474,8 +543,18 @@ function readMcpServers(raw: unknown, issues: string[]): readonly McpServerConfi
     }
     if (bad) continue
 
+    const auth = readMcpAuth(entry['auth'], where, issues)
+    if (auth === false) continue
+    if (auth && !url) {
+      // A stdio server is a local process; there is nobody to present a bearer
+      // to. Accepting it would mint a token every turn and hand it to nothing.
+      issues.push(`${where}.auth needs "url" — a stdio server has nobody to authenticate to`)
+      continue
+    }
+
     servers.push({
       name,
+      ...(auth ? { auth } : {}),
       ...(command ? { command } : {}),
       ...(args ? { args: args as readonly string[] } : {}),
       ...(url ? { url } : {}),

@@ -171,6 +171,24 @@ mcp:
   #     env:
   #       LANG: fr
   #
+  # A hub that validates short-lived OAuth tokens gets an identity instead of
+  # a header. Golem mints and refreshes it, and puts it in `Authorization`
+  # once per turn — which is what a token with an hour of life needs, and what
+  # a config file cannot do. Do NOT paste a bearer into `headers`: it works
+  # for one hour and then quietly stops.
+  #
+  #   - name: maps
+  #     url: https://hub.example/maps
+  #     auth:
+  #       tokenUrl: https://auth.example/api/oidc/token
+  #       clientId: agent-golem
+  #       clientSecret: ${GOLEM_HUB_SECRET}
+  #       scope: mcp
+  #       audience: https://hub.example   # a resource server checks this
+  #
+  # Addons of one hub share an identity: declaring it on each of them costs
+  # one token exchange, not one per addon.
+  #
   # `url` OR `command`, never both — they are two transports. A ${VAR} the
   # environment never filled is REFUSED at startup rather than passed through:
   # a literal "${HA_MCP_TOKEN}" reaching a server fails later, in a call,

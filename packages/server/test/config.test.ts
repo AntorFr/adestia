@@ -300,3 +300,51 @@ mcp:
     expect(config.mcpServers).toHaveLength(1)
   })
 })
+
+describe('an MCP server that authenticates itself', () => {
+  it('reads the identity a hub needs', () => {
+    const config = parseConfig(`
+mcp:
+  servers:
+    - name: maps
+      url: https://hub.example/maps
+      auth:
+        tokenUrl: https://auth.example/api/oidc/token
+        clientId: agent-golem
+        clientSecret: s3cret
+        scope: mcp
+        audience: https://hub.example
+`)
+    expect(config.mcpServers[0]?.auth).toEqual({
+      tokenUrl: 'https://auth.example/api/oidc/token',
+      clientId: 'agent-golem',
+      clientSecret: 's3cret',
+      scope: 'mcp',
+      audience: 'https://hub.example',
+    })
+  })
+
+  it('refuses an identity with a piece missing', () => {
+    expect(
+      issuesOf('mcp:\n  servers:\n    - name: m\n      url: https://h/m\n      auth:\n        clientId: x\n'),
+    ).toEqual(['mcp.servers[0].auth.tokenUrl is required'])
+  })
+
+  it('refuses a placeholder the environment never filled', () => {
+    // `invalid_client` at a token endpoint reads as a wrong secret, not as a
+    // variable nobody set — so it is caught here instead.
+    expect(
+      issuesOf(
+        'mcp:\n  servers:\n    - name: m\n      url: https://h/m\n      auth:\n        tokenUrl: https://a/t\n        clientId: x\n        clientSecret: "${GOLEM_HUB_SECRET}"\n',
+      ),
+    ).toEqual(['mcp.servers[0].auth.clientSecret is still "${GOLEM_HUB_SECRET}" — that variable is not set'])
+  })
+
+  it('refuses credentials on a server that has nobody to present them to', () => {
+    expect(
+      issuesOf(
+        'mcp:\n  servers:\n    - name: m\n      command: node\n      auth:\n        tokenUrl: https://a/t\n        clientId: x\n        clientSecret: y\n',
+      ),
+    ).toEqual(['mcp.servers[0].auth needs "url" — a stdio server has nobody to authenticate to'])
+  })
+})

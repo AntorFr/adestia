@@ -124,6 +124,8 @@ export interface AuthPrompt {
   readonly ttl: number
 }
 
+import type { McpOAuth } from './mcp-oauth.js'
+
 /**
  * An outbound MCP server the instance hands its driver.
  *
@@ -143,6 +145,15 @@ export interface McpServer {
   readonly env?: Readonly<Record<string, string>> | undefined
   /** HTTP authorization. The operator's alone — see the extensions layer. */
   readonly headers?: Readonly<Record<string, string>> | undefined
+  /**
+   * Credentials for a server that wants a short-lived OAuth token rather than
+   * a fixed header.
+   *
+   * The product mints and refreshes it, and puts it in `Authorization` at the
+   * spawn site — once per turn, which is what a token with an hour of life
+   * needs and what a config file cannot do. See `McpTokens`.
+   */
+  readonly auth?: McpOAuth | undefined
 }
 
 export interface ModelInfo {

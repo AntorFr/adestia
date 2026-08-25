@@ -7,7 +7,7 @@
  * tested by accident, in production, by a user.
  */
 
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { ClaudeCodeDriver } from '../src/claude-code/driver.js'
 import { proposedFileEdit, toolTarget } from '../src/claude-code/events.js'
@@ -390,5 +390,65 @@ describe('MCP health', () => {
       mcpServers: [{ name: 'ha', url: 'https://ha/mcp' }],
     })
     expect((await wired.describe()).capabilities).toContain('mcpStatus')
+  })
+})
+
+describe('an MCP server that authenticates itself', () => {
+  const HUB = {
+    name: 'maps',
+    url: 'https://hub.example/maps',
+    auth: {
+      tokenUrl: 'https://auth.example/token',
+      clientId: 'agent-golem',
+      clientSecret: 's3cret',
+      scope: 'mcp',
+    },
+  }
+
+  const minting = (answers: readonly (string | undefined)[]) => {
+    let index = 0
+    return vi.fn(() => {
+      const token = answers[Math.min(index++, answers.length - 1)]
+      return Promise.resolve({
+        ok: token !== undefined,
+        status: token === undefined ? 401 : 200,
+        json: () => Promise.resolve({ access_token: token, expires_in: 3600 }),
+      } as unknown as Response)
+    }) as unknown as typeof fetch
+  }
+
+  it('puts a freshly minted bearer in the header', async () => {
+    const seen: { params?: unknown } = {}
+    const driver = new ClaudeCodeDriver({
+      query: fakeSdk([resultMessage], seen),
+      mcpServers: [HUB],
+      fetchImpl: minting(['abc']),
+    })
+    await collect(driver)
+
+    const servers = (seen.params as { options: { mcpServers: Record<string, { headers: Record<string, string> }> } })
+      .options.mcpServers
+    expect(servers['maps']).toMatchObject({
+      type: 'http',
+      url: 'https://hub.example/maps',
+      headers: { Authorization: 'Bearer abc' },
+    })
+  })
+
+  it('drops the server rather than calling a hub unauthenticated', async () => {
+    // A wall of 401s reads to an agent as "this tool is broken". One tool
+    // fewer reads as one tool fewer.
+    const seen: { params?: unknown } = {}
+    const driver = new ClaudeCodeDriver({
+      query: fakeSdk([resultMessage], seen),
+      mcpServers: [HUB, { name: 'local', command: 'node' }],
+      fetchImpl: minting([undefined]),
+    })
+    await collect(driver)
+
+    const servers = (seen.params as { options: { mcpServers: Record<string, unknown> } }).options.mcpServers
+    expect(servers['maps']).toBeUndefined()
+    // And the servers that need no token are untouched by the hub's outage.
+    expect(servers['local']).toMatchObject({ type: 'stdio', command: 'node' })
   })
 })

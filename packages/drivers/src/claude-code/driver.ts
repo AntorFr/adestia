@@ -22,6 +22,7 @@ import type {
   TurnRequest,
   TurnUsage,
 } from '../contract.js'
+import { McpTokens } from '../mcp-oauth.js'
 import { TOKEN_ENV_VAR, looksLikeToken } from './arming.js'
 import { PermissionBroker, type PermissionRequest } from '../permissions.js'
 import { proposedFileEdit, toolTarget } from './events.js'
@@ -65,6 +66,8 @@ export interface ClaudeCodeOptions {
    * silently, on every start. Same doctrine as instructions.
    */
   readonly mcpServers?: readonly McpServer[]
+  /** Injected so the token exchange can be exercised without a network. */
+  readonly fetchImpl?: typeof fetch
   /**
    * Gates tool use behind a human. Absent means the CLI's own permission
    * handling applies — which, with no prompt surface, denies everything it
@@ -91,21 +94,38 @@ export interface ArmingFlow {
  * URL and treats everything else as stdio. Written explicitly rather than
  * spread, so a field the config gains does not silently reach the CLI.
  */
-function toSdkServers(servers: readonly McpServer[]): Readonly<Record<string, McpServerConfig>> {
+async function toSdkServers(
+  servers: readonly McpServer[],
+  tokens: McpTokens,
+): Promise<Readonly<Record<string, McpServerConfig>>> {
   const out: Record<string, McpServerConfig> = {}
   for (const server of servers) {
-    out[server.name] = server.url
-      ? {
-          type: 'http',
-          url: server.url,
-          ...(server.headers ? { headers: { ...server.headers } } : {}),
-        }
-      : {
-          type: 'stdio',
-          command: server.command ?? '',
-          ...(server.args ? { args: [...server.args] } : {}),
-          ...(server.env ? { env: { ...server.env } } : {}),
-        }
+    if (!server.url) {
+      out[server.name] = {
+        type: 'stdio',
+        command: server.command ?? '',
+        ...(server.args ? { args: [...server.args] } : {}),
+        ...(server.env ? { env: { ...server.env } } : {}),
+      }
+      continue
+    }
+
+    const headers: Record<string, string> = { ...server.headers }
+    if (server.auth) {
+      const token = await tokens.for(server.auth)
+      // A server whose token could not be minted is OMITTED rather than sent
+      // unauthenticated: the hub would refuse every call, and the agent would
+      // read a wall of 401s as "the tool is broken" instead of "I am not
+      // logged in". Absent, the CLI simply has one tool fewer.
+      if (!token) continue
+      headers['Authorization'] = `Bearer ${token}`
+    }
+
+    out[server.name] = {
+      type: 'http',
+      url: server.url,
+      ...(Object.keys(headers).length > 0 ? { headers } : {}),
+    }
   }
   return out
 }
@@ -139,7 +159,8 @@ export class ClaudeCodeDriver implements Driver {
   readonly #models: readonly ModelInfo[]
   readonly #armingFlow: ArmingFlow | undefined
   readonly #permissions: PermissionBroker | undefined
-  readonly #mcpServers: Readonly<Record<string, McpServerConfig>>
+  readonly #mcpServers: readonly McpServer[]
+  readonly #tokens: McpTokens
   /** What the last session said about them. Empty until a turn has run. */
   #mcpHealth: readonly McpServerHealth[] = []
   /** Set by the core after it stores a secret, so status can report it. */
@@ -158,7 +179,8 @@ export class ClaudeCodeDriver implements Driver {
     this.#permissions = options.permissions
     // Shaped once, at construction: the mapping is fixed for the process's
     // life, and doing it per turn would repeat the same work on every message.
-    this.#mcpServers = toSdkServers(options.mcpServers ?? [])
+    this.#mcpServers = options.mcpServers ?? []
+    this.#tokens = new McpTokens(options.fetchImpl ?? fetch)
   }
 
   /** Called by the core when it loads or stores this driver's credentials. */
@@ -245,7 +267,7 @@ export class ClaudeCodeDriver implements Driver {
         // offering to report the health of nothing is a panel that looks
         // broken. The CLI's own `.mcp.json` servers are the user's, and Golem
         // does not claim to report on what it did not wire.
-        ...(Object.keys(this.#mcpServers).length > 0 ? (['mcpStatus'] as const) : []),
+        ...(this.#mcpServers.length > 0 ? (['mcpStatus'] as const) : []),
         // Declared only when the instance actually configured a catalogue:
         // an empty selector is worse than no selector.
         ...(this.#models.length > 0 ? (['modelSelection'] as const) : []),
@@ -298,7 +320,7 @@ export class ClaudeCodeDriver implements Driver {
   mcpStatus(): Promise<readonly McpServerHealth[]> {
     if (this.#mcpHealth.length > 0) return Promise.resolve(this.#mcpHealth)
     return Promise.resolve(
-      Object.keys(this.#mcpServers).map((name) => ({ name, state: 'unknown' as const })),
+      this.#mcpServers.map((server) => ({ name: server.name, state: 'unknown' as const })),
     )
   }
 
@@ -328,6 +350,10 @@ export class ClaudeCodeDriver implements Driver {
         }
       : undefined
 
+    // Resolved per turn, not per process: a hub's token lives about an hour,
+    // and a map built at construction would be stale by the second morning.
+    const mcpServers = await toSdkServers(this.#mcpServers, this.#tokens)
+
     const query = this.#query({
       prompt: request.prompt,
       options: {
@@ -338,7 +364,7 @@ export class ClaudeCodeDriver implements Driver {
         ...(request.model ? { model: request.model } : {}),
         // Only what this instance declared. The CLI's own MCP config still
         // applies on top — it is the user's, and Golem does not touch it.
-        ...(Object.keys(this.#mcpServers).length > 0 ? { mcpServers: this.#mcpServers } : {}),
+        ...(Object.keys(mcpServers).length > 0 ? { mcpServers } : {}),
         // Credentials go ON TOP of the inherited environment, so a token
         // managed here wins over stale credentials in a shared home without
         // stripping everything the CLI needs to run.
