@@ -24,6 +24,17 @@ numbers in the UI that mean something else entirely.
 credential to the CLI; the core decides where that credential lives, writes it
 0600, and never sends it to a browser. A driver asking for `PATH` is refused.
 
+## What arming needs on the machine
+
+Both token flows drive a real CLI through a real terminal, so both need one:
+util-linux `script` on Linux (in the image already), `expect` on macOS, where
+BSD `script` refuses a stdin that is not a terminal. Neither is a native
+dependency and neither is asked for at any other time.
+
+Claude's flow needs no `claude` on PATH: it runs the binary the Agent SDK
+ships — the same one every turn already runs — and falls back to PATH, or to
+`driver.command` when an operator pins one.
+
 ## Conformance requires a fake binary
 
 No driver is trusted on prose. Every adapter here is exercised against a

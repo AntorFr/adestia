@@ -19,7 +19,8 @@ import {
   looksLikeToken,
   stripAnsi,
 } from '../src/claude-code/arming.js'
-import { createSetupTokenFlow } from '../src/claude-code/setup-token.js'
+import { nativeCliCandidates, resolveClaudeCli } from '../src/claude-code/cli-path.js'
+import { createSetupTokenFlow, ptySetupToken } from '../src/claude-code/setup-token.js'
 
 const TOKEN = 'sk-ant-oat01-abcdefghijklmnopqrstuvwxyz123456'
 const ESC = String.fromCharCode(27)
@@ -42,6 +43,23 @@ describe('screen scraping', () => {
     expect(awaitsCode('Paste code here:')).toBe(true)
     expect(awaitsCode('Enter the code you were given')).toBe(true)
     expect(awaitsCode('still working...')).toBe(false)
+  })
+
+  it('recognises the prompt Ink draws without spaces', () => {
+    // Captured from 2.1.237: every word placed with a cursor move, so the
+    // stripped screen has no spaces left to match on.
+    const inked = `${ESC}[2GPaste${ESC}[8Gcode${ESC}[13Ghere${ESC}[18Gif${ESC}[21Gprompted${ESC}[30G>`
+    expect(awaitsCode(inked)).toBe(true)
+    expect(awaitsCode(`${ESC}[2Gstill${ESC}[8Gworking`)).toBe(false)
+  })
+
+  it('takes the link from the hyperlink, not from the wrapped copy', () => {
+    // The CLI prints the URL twice: once as an OSC 8 target, whole, and once
+    // as visible text the terminal cuts to its width. Matching the visible
+    // one yields a link that looks right and 404s.
+    const url = 'https://claude.com/cai/oauth/authorize?code=true&state=' + 'z'.repeat(60)
+    const screen = `${ESC}]8;id=h0d9kd;${url}\u0007${url.slice(0, 80)}${ESC}]8;;\u0007`
+    expect(findAuthorizeUrl(screen)).toBe(url)
   })
 
   it('finds the token and nothing that merely looks like one', () => {
@@ -164,5 +182,123 @@ describe('setup-token flow', () => {
     await flow.start()
     await flow.cancel()
     expect(child.kill).toHaveBeenCalled()
+  })
+})
+
+describe('finding the CLI', () => {
+  // `spawn('claude')` assumed a global install nobody has to do: the binary
+  // the SDK already ships is the one every turn runs. Missing it is how the
+  // flow died with `spawn claude ENOENT`.
+  it('prefers the binary the SDK ships for this platform', () => {
+    const path = resolveClaudeCli({
+      platform: 'darwin',
+      arch: 'arm64',
+      resolveImpl: (specifier) => {
+        expect(specifier).toBe('@anthropic-ai/claude-agent-sdk-darwin-arm64/claude')
+        return '/app/node_modules/' + specifier
+      },
+      exists: () => true,
+    })
+    expect(path).toBe('/app/node_modules/@anthropic-ai/claude-agent-sdk-darwin-arm64/claude')
+  })
+
+  it('tries both libc flavours on Linux, this host\'s first', () => {
+    // Those packages declare no libc, so a musl host installs BOTH — and the
+    // glibc binary cannot even be loaded there.
+    expect(nativeCliCandidates('linux', 'x64', false)).toEqual([
+      '@anthropic-ai/claude-agent-sdk-linux-x64/claude',
+      '@anthropic-ai/claude-agent-sdk-linux-x64-musl/claude',
+    ])
+    expect(nativeCliCandidates('linux', 'x64', true)).toEqual([
+      '@anthropic-ai/claude-agent-sdk-linux-x64-musl/claude',
+      '@anthropic-ai/claude-agent-sdk-linux-x64/claude',
+    ])
+    expect(nativeCliCandidates('win32', 'x64', false)).toEqual([
+      '@anthropic-ai/claude-agent-sdk-win32-x64/claude.exe',
+    ])
+  })
+
+  it('falls back to PATH rather than refusing to try', () => {
+    // An operator's own install is still a perfectly good CLI.
+    expect(
+      resolveClaudeCli({
+        platform: 'linux',
+        arch: 'x64',
+        resolveImpl: () => {
+          throw new Error('Cannot find module')
+        },
+        exists: () => false,
+      }),
+    ).toBe('claude')
+  })
+
+  it('resolves the real binary in this workspace', () => {
+    // The one assertion here that is not a mock — and the one that would have
+    // caught the bug.
+    expect(resolveClaudeCli()).toMatch(/claude-agent-sdk-.+[/\\]claude(\.exe)?$/)
+  })
+})
+
+describe('the terminal the CLI needs', () => {
+  // Over a pipe, Ink prints nothing at all and the flow times out on an empty
+  // screen. Two tools, because BSD `script` will not take a server's stdin.
+  it('wraps the command in a pty and widens it first', () => {
+    const linux = ptySetupToken('/opt/claude', ['setup-token'], 'linux')
+    expect(linux.file).toBe('script')
+    expect(linux.args[0]).toBe('-qec')
+    expect(linux.args[1]).toMatch(
+      /^stty cols \d{3,} rows \d+; exec '\/opt\/claude' 'setup-token'$/,
+    )
+    expect(linux.args[2]).toBe('/dev/null')
+  })
+
+  it('uses expect on macOS, where BSD script refuses a piped stdin', () => {
+    const mac = ptySetupToken('/opt/claude', ['setup-token'], 'darwin')
+    expect(mac.file).toBe('expect')
+    // `interact` is what joins our pipes to the pty; without it the code we
+    // write never reaches the CLI.
+    expect(mac.args[1]).toContain('interact')
+    expect(mac.args[1]).toContain("stty cols 400 rows 40; exec '/opt/claude' 'setup-token'")
+  })
+
+  it('quotes a path either layer would otherwise mangle', () => {
+    expect(ptySetupToken("/opt/my cli/cla'ude", [], 'linux').args[1]).toContain(
+      `'/opt/my cli/cla'\\''ude'`,
+    )
+    // Tcl counts braces inside its own quoting, so an unescaped one would
+    // truncate the command expect runs.
+    expect(ptySetupToken('/opt/{cli}/claude', [], 'darwin').args[1]).toContain(
+      `'/opt/\\{cli\\}/claude'`,
+    )
+  })
+})
+
+describe('when the CLI cannot start', () => {
+  it('names the missing pty tool instead of waiting out the timeout', async () => {
+    // What is spawned is `script`; blaming the CLI would send its reader to
+    // the wrong machine entirely.
+    const { child } = fakeCli()
+    const flow = createSetupTokenFlow({
+      spawnImpl: (() => child) as never,
+      timeouts: { url: 5_000 },
+    })
+
+    const started = flow.start()
+    child.emit('error', Object.assign(new Error('spawn script ENOENT'), { code: 'ENOENT' }))
+
+    await expect(started).rejects.toThrow(/needs `(script|expect)` to give the CLI a terminal/)
+  })
+
+  it('reports any other spawn failure as it came', async () => {
+    const { child } = fakeCli()
+    const flow = createSetupTokenFlow({
+      spawnImpl: (() => child) as never,
+      timeouts: { url: 5_000 },
+    })
+
+    const started = flow.start()
+    child.emit('error', new Error('EACCES'))
+
+    await expect(started).rejects.toThrow(/could not be started: EACCES/)
   })
 })

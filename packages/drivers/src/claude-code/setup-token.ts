@@ -2,18 +2,36 @@
  * Driving `claude setup-token` for real.
  *
  * The CLI is interactive by design: it prints a URL, waits for a pasted code,
- * and exchanges it. Node has no pty in its standard library, so this uses a
- * plain pipe — which works because the flow only needs stdout scraped and one
- * line written, and it avoids making a native module a hard dependency of the
- * whole product for a flow used a handful of times a year.
+ * and exchanges it. The predecessor drove it over a plain pipe, on the reading
+ * that the flow only needs stdout scraped and one line written.
  *
- * If a future CLI version requires a real terminal, this file is where that
- * changes; nothing above it moves.
+ * That reading has expired. Claude Code 2.1.237 draws this flow with Ink,
+ * which renders to a terminal or not at all: over a pipe the process prints
+ * ZERO bytes and sits there until the timeout — measured against the shipped
+ * binary, and exactly what "the CLI printed no authorization link (last
+ * output: nothing)" was reporting.
+ *
+ * So the child is spawned under a pty tool: util-linux `script` on Linux —
+ * where this ships, and the same tool the Copilot login already leans on —
+ * and `expect` on macOS, where BSD `script` refuses to run at all unless its
+ * own stdin is a terminal or a character device, and a server has neither to
+ * give it (`tcgetattr/ioctl: Operation not supported on socket`). Both are
+ * stock: no native module, nothing to add to the image. Both verified by
+ * running them, on their own platform.
+ *
+ * The pty is widened before the CLI starts, because Ink takes its width from
+ * the terminal rather than from COLUMNS, and an 80-column one cuts both the
+ * URL and the token into pieces that still match their patterns — a truncated
+ * link in the interface, or a stored token that fails at the first turn.
+ *
+ * Everything above this file still sees a URL, a code, and a token.
  */
 
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
+import { platform } from 'node:process'
 
 import { armingEnv, awaitsCode, findAuthorizeUrl, findToken } from './arming.js'
+import { resolveClaudeCli } from './cli-path.js'
 import type { ArmingFlow } from './driver.js'
 
 const URL_TIMEOUT_MS = 30_000
@@ -25,8 +43,50 @@ const EXCHANGE_TIMEOUT_MS = 60_000
  * diagnose from the outside.
  */
 const ENTER_DELAY_MS = 500
+/**
+ * Wider than any URL or token the flow has to read back in one piece. The
+ * height only has to keep the CLI from scrolling its own prompt away before it
+ * is matched.
+ */
+const PTY_COLUMNS = 400
+const PTY_LINES = 40
+
+/** Single-quote something for the shell the pty tool runs it through. */
+function shellQuote(value: string): string {
+  return `'${value.replace(/'/g, `'\\''`)}'`
+}
+
+/** Tcl's brace quoting: literal, as long as its braces stay balanced. */
+function tclBrace(value: string): string {
+  return `{${value.replace(/[{}\\]/g, (character) => `\\${character}`)}}`
+}
+
+/**
+ * The command, wrapped in a pty (see the header).
+ *
+ * The `stty` in front is what makes the terminal wide: neither tool offers it
+ * as an option, and both run their command through a shell that does.
+ */
+export function ptySetupToken(
+  command: string,
+  args: readonly string[],
+  os: string = platform,
+): { file: string; args: string[] } {
+  const run = [command, ...args].map(shellQuote).join(' ')
+  const inner = `stty cols ${PTY_COLUMNS} rows ${PTY_LINES}; exec ${run}`
+  if (os === 'darwin') {
+    // `interact` is what connects our pipes to the pty it opened; without it
+    // expect owns the conversation and the code we write goes nowhere.
+    return {
+      file: 'expect',
+      args: ['-c', `set timeout -1; spawn -noecho /bin/sh -c ${tclBrace(inner)}; interact`],
+    }
+  }
+  return { file: 'script', args: ['-qec', inner, '/dev/null'] }
+}
 
 export interface SetupTokenOptions {
+  /** Defaults to the CLI the SDK ships; see `cli-path.ts`. */
   readonly command?: string
   readonly args?: readonly string[]
   readonly env?: Readonly<Record<string, string | undefined>>
@@ -46,23 +106,37 @@ export function createSetupTokenFlow(options: SetupTokenOptions = {}): ArmingFlo
 
   let child: ChildProcessWithoutNullStreams | undefined
   let screen = ''
+  /**
+   * A process that never started cannot print anything, so waiting the whole
+   * timeout out only buries the one message its reader needs.
+   */
+  let spawnError: Error | undefined
+  /** Named in the error when it is the thing that is missing. */
+  let ptyTool = 'script'
 
   const kill = () => {
     child?.kill('SIGTERM')
     child = undefined
     screen = ''
+    spawnError = undefined
   }
 
   const waitFor = (predicate: () => boolean, timeoutMs: number, what: string) =>
     new Promise<void>((resolve, reject) => {
       if (predicate()) return resolve()
+      const fail = (error: Error) => {
+        clearInterval(poll)
+        clearTimeout(timer)
+        reject(error)
+      }
       const timer = setTimeout(() => {
         clearInterval(poll)
         // The screen goes in the error: without it, "timed out" is all anyone
         // ever learns about a flow that failed on a message the CLI printed.
         reject(new Error(`${what} (last output: ${screen.trim().slice(-200) || 'nothing'})`))
       }, timeoutMs)
-      const poll = setInterval(() => {
+      const poll: ReturnType<typeof setInterval> = setInterval(() => {
+        if (spawnError) return fail(spawnError)
         if (!predicate()) return
         clearInterval(poll)
         clearTimeout(timer)
@@ -74,7 +148,12 @@ export function createSetupTokenFlow(options: SetupTokenOptions = {}): ArmingFlo
     async start() {
       kill()
       const spawnFn = options.spawnImpl ?? spawn
-      child = spawnFn(options.command ?? 'claude', [...(options.args ?? ['setup-token'])], {
+      const pty = ptySetupToken(
+        options.command ?? resolveClaudeCli(),
+        options.args ?? ['setup-token'],
+      )
+      ptyTool = pty.file
+      child = spawnFn(pty.file, pty.args, {
         env: armingEnv(options.env ?? process.env) as NodeJS.ProcessEnv,
         stdio: ['pipe', 'pipe', 'pipe'],
       }) as ChildProcessWithoutNullStreams
@@ -85,8 +164,18 @@ export function createSetupTokenFlow(options: SetupTokenOptions = {}): ArmingFlo
       child.stderr.on('data', (chunk: Buffer) => {
         screen += chunk.toString('utf8')
       })
-      child.on('error', (error) => {
+      child.on('error', (error: Error & { code?: string }) => {
         screen += `\n${error.message}`
+        // What is spawned here is the pty tool, never the CLI itself — a
+        // missing `claude` exits through it with a status instead. So ENOENT
+        // names the wrapper, and blaming the CLI would send its reader to the
+        // wrong machine entirely.
+        spawnError =
+          error.code === 'ENOENT'
+            ? new Error(
+                `arming needs \`${ptyTool}\` to give the CLI a terminal, and it is not installed`,
+              )
+            : new Error(`the Claude CLI could not be started: ${error.message}`)
       })
 
       await waitFor(

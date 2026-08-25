@@ -37,9 +37,10 @@ WORKDIR /app
 # of this image is that an operator adds their CLI to it, the certificates
 # belong here rather than in every derived image.
 #
-# `script` (util-linux, already in the base) is kept deliberately: the Copilot
-# device-code login only asks whether it may store its token when it is on a
-# terminal, so the driver spawns it under a pty. Do not slim it away.
+# `script` (util-linux, already in the base) is kept deliberately: BOTH token
+# flows need a pty. The Copilot device-code login only asks whether it may
+# store its token when it is on a terminal, and `claude setup-token` renders
+# with Ink, which prints nothing at all down a pipe. Do not slim it away.
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates \
  && rm -rf /var/lib/apt/lists/*

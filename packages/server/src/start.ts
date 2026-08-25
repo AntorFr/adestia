@@ -87,8 +87,12 @@ async function buildDriver(
         query: query as unknown as ConstructorParameters<typeof ClaudeCodeDriver>[0]['query'],
         models: config.driver.models,
         // The terminal flow, so a token can be armed from the interface rather
-        // than requiring a shell inside the container.
-        armingFlow: createSetupTokenFlow(),
+        // than requiring a shell inside the container. With no `command` it
+        // finds the CLI the SDK ships — the same binary the turns themselves
+        // run, so nothing has to be installed or put on PATH.
+        armingFlow: createSetupTokenFlow(
+          config.driver.command ? { command: config.driver.command } : {},
+        ),
         permissions,
       })
     }
