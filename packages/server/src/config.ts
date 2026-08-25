@@ -284,10 +284,25 @@ export function interpolate(source: string, env: NodeJS.ProcessEnv): string {
   )
 }
 
+/**
+ * Kubernetes injects `<SERVICE>_PORT=tcp://10.43.0.1:8730` for every service
+ * in the namespace. A deployment whose service is named `golem` therefore
+ * hands us a `GOLEM_PORT` nobody wrote, and the obvious name is the one
+ * everybody picks.
+ *
+ * Ignored rather than parsed: it is not an operator's intent, it is the
+ * platform talking about itself. Refusing to boot over it — which is what
+ * happened, with an error blaming the port — makes the product unusable on
+ * the platform it is meant to run on, for the crime of being named after
+ * itself.
+ */
+const SERVICE_LINK = /^[a-z]+:\/\//
+
 function applyOverrides(raw: Record<string, unknown>, env: NodeJS.ProcessEnv): void {
   for (const [variable, path] of Object.entries(ENV_OVERRIDES)) {
     const value = env[variable]
     if (value === undefined || value === '') continue
+    if (SERVICE_LINK.test(value)) continue
 
     const segments = path.split('.')
     let target = raw

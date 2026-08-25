@@ -201,3 +201,29 @@ describe('environment overrides', () => {
     expect(() => parseConfig('', { GOLEM_PORT: 'eight-thousand' })).toThrow(/port must be/)
   })
 })
+
+describe('Kubernetes service links', () => {
+  it('ignores a URL-shaped override the platform injected', () => {
+    // A deployment whose Service is named `golem` gets
+    // `GOLEM_PORT=tcp://10.43.0.1:8730` for free. Parsing it yielded NaN and
+    // the instance refused to boot, blaming the port — found in the cluster,
+    // on the first deploy.
+    const config = parseConfig('port: 8730\n', {
+      GOLEM_PORT: 'tcp://10.43.69.249:8730',
+    } as NodeJS.ProcessEnv)
+    expect(config.port).toBe(8730)
+  })
+
+  it('still honours a port an operator actually set', () => {
+    const config = parseConfig('port: 8730\n', { GOLEM_PORT: '9000' } as NodeJS.ProcessEnv)
+    expect(config.port).toBe(9000)
+  })
+
+  it('ignores service links on path overrides too', () => {
+    // `GOLEM_DATA_DIR` collides the same way for a service of that name.
+    const config = parseConfig('dataDir: /data\n', {
+      GOLEM_DATA_DIR: 'tcp://10.43.0.9:8730',
+    } as NodeJS.ProcessEnv)
+    expect(config.dataDir).toBe('/data')
+  })
+})
