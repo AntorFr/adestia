@@ -329,6 +329,50 @@ describe('chat', () => {
     expect(store.has('golem.model')).toBe(false)
   })
 
+  it('recovers a permission the browser forgot', async () => {
+    // The prompt only ever lived inside a live turn's stream, so a reload
+    // left the agent waiting on an answer nobody could give — and the turn
+    // held its slot until it timed out. Two of those wedge the instance:
+    // "too many turns running", with nothing on screen to explain it.
+    const answered: unknown[] = []
+    const fetchImpl = vi.fn((url: string, init?: RequestInit) => {
+      if (String(url) === '/api/permission' && init?.method === 'POST') {
+        answered.push(JSON.parse(String(init.body)))
+        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({}) } as unknown as Response)
+      }
+      if (String(url) === '/api/permission') {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () =>
+            Promise.resolve({ pending: [{ id: 'p1', tool: 'Edit', detail: 'todo/rails.md' }] }),
+        } as unknown as Response)
+      }
+      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({}) } as unknown as Response)
+    }) as unknown as typeof fetch
+
+    render(<Chat fetchImpl={fetchImpl} />)
+    // Shown without any turn running: it belongs to one whose stream is gone.
+    expect(await screen.findByText('Edit')).toBeTruthy()
+    expect(screen.getByText('todo/rails.md')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Allow' }))
+    await waitFor(() => expect(answered).toEqual([{ id: 'p1', allow: true }]))
+  })
+
+  it('shows nothing when nothing is waiting', async () => {
+    const fetchImpl = vi.fn((url: string) =>
+      Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve(String(url) === '/api/permission' ? { pending: [] } : {}),
+      } as unknown as Response),
+    ) as unknown as typeof fetch
+    render(<Chat fetchImpl={fetchImpl} />)
+    await screen.findByRole('textbox')
+    expect(screen.queryByRole('alertdialog')).toBeNull()
+  })
+
   it('draws no picker when the driver answers 404', async () => {
     const fetchImpl = sseFetch([frame({ type: 'result', sessionId: 's1', stopped: false })])
     render(<Chat fetchImpl={fetchImpl} />)

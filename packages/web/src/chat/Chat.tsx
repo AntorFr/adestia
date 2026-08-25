@@ -537,6 +537,35 @@ export function Chat({
     [fetchImpl],
   )
 
+  /**
+   * A permission the browser forgot.
+   *
+   * The prompt only ever existed inside a live turn's event stream, so a
+   * reload — or a phone locking, or a tab crashing — left the agent waiting
+   * on an answer nobody could give any more. The turn kept its slot until it
+   * timed out minutes later, and a second one wedged the whole instance:
+   * "too many turns running", with nothing on screen to explain it.
+   *
+   * The server was built for this and says so at `GET /api/permission` — it
+   * keeps what is still waiting precisely so a reconnecting UI can re-ask.
+   * Only this half was missing.
+   */
+  const [orphan, setOrphan] = useState<PendingPermission | undefined>()
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const response = await (fetchImpl ?? fetch)('/api/permission')
+        if (!response.ok) return
+        const body = (await response.json()) as { pending?: readonly PendingPermission[] }
+        // The oldest first: it is the one holding a slot the longest.
+        setOrphan(body.pending?.[0])
+      } catch {
+        /* nothing waiting, or nothing reachable */
+      }
+    })()
+  }, [fetchImpl])
+
   useEffect(() => {
     // A 404 is the honest answer for a driver that cannot enumerate models,
     // and it lands here as an empty list — which draws no control at all.
@@ -745,15 +774,24 @@ export function Chat({
         <div ref={bottom} />
       </div>
 
-      {live?.permission && (
+      {(live?.permission ?? orphan) && (
         <PermissionPrompt
-          permission={live.permission}
+          permission={(live?.permission ?? orphan)!}
           onDecide={(id, allow) => {
-            void (fetchImpl ?? fetch)('/api/permission', {
-              method: 'POST',
-              headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({ id, allow }),
-            })
+            setOrphan(undefined)
+            void (async () => {
+              await (fetchImpl ?? fetch)('/api/permission', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ id, allow }),
+              })
+              // A recovered request belongs to a turn whose stream is gone:
+              // answering lets it finish server-side, and its reply lands in
+              // the thread rather than on a screen nobody is watching.
+              if (!live?.permission && conversationId) {
+                setThreads(await listConversations(fetchImpl ?? fetch))
+              }
+            })()
           }}
         />
       )}
