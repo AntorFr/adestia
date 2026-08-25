@@ -936,6 +936,25 @@
 
 .golem-instructions__text:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
+.golem-instructions__new {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-top: var(--space-3);
+}
+
+.golem-instructions__new button {
+  padding: 6px 13px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  background: none;
+  color: var(--text-muted);
+  font: 600 var(--text-sm) var(--font);
+  cursor: pointer;
+}
+
+.golem-instructions__new button:hover { border-color: var(--accent); color: var(--accent); }
+
 .golem-instructions__empty {
   margin-top: var(--space-4);
   color: var(--text-faint);
@@ -1049,38 +1068,6 @@
 
 /* The row keeps its own control, revealed on hover — a thread list is read
    far more often than it is tidied. */
-.golem-threads li { display: flex; align-items: center; gap: 2px; }
-.golem-threads li .golem-threads__item { flex: 1; min-width: 0; }
-
-.golem-threads__archive {
-  flex: none;
-  width: 24px;
-  height: 24px;
-  display: grid;
-  place-items: center;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: none;
-  color: var(--text-faint);
-  font-size: 12px;
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.12s, color 0.12s;
-}
-
-.golem-threads li:hover .golem-threads__archive,
-.golem-threads__archive:focus-visible { opacity: 1; }
-.golem-threads__archive:hover { color: var(--text); }
-
-/* A thread whose turn is stopped, waiting on an answer. Deliberately a mark
-   and not a count: there is one decision to make, and it is in there. */
-.golem-threads__waiting {
-  margin-left: 6px;
-  color: var(--warning);
-  font-size: 9px;
-  vertical-align: middle;
-}
-
 .golem-problems--degraded {
   border: 0;
   border-left: 2px solid var(--border);
@@ -1382,6 +1369,63 @@
 }
 
 .golem-threads__item:hover { background: var(--surface-sunken); }
+
+/*
+ * A row, not a button with something stuck beside it.
+ *
+ * These rules live HERE and not where they were written, three hundred lines
+ * up: `.golem-threads__item` below sets `display: block; width: 100%`, and at
+ * equal specificity the later rule wins — so the flex layout was silently
+ * undone and the control pushed out of the row.
+ */
+.golem-threads li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1, 4px);
+}
+
+.golem-threads li > .golem-threads__item {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+}
+
+/* Revealed on hover: a thread list is read far more often than it is tidied.
+   Always there for the keyboard, which cannot hover. */
+.golem-threads__archive {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s, color 0.12s, background 0.12s;
+}
+
+.golem-threads__archive svg { width: 15px; height: 15px; }
+
+.golem-threads li:hover .golem-threads__archive,
+.golem-threads__archive:focus-visible { opacity: 1; }
+
+.golem-threads__archive:hover {
+  color: var(--text);
+  background: var(--surface-sunken);
+}
+
+/* A thread whose turn is stopped, waiting on an answer. A mark and not a
+   count: there is one decision to make, and it is in there. */
+.golem-threads__waiting {
+  flex: none;
+  margin-left: auto;
+  padding-left: 6px;
+  color: var(--warning);
+  font-size: 9px;
+}
 
 .golem-threads__item--current {
   background: var(--accent-quiet);

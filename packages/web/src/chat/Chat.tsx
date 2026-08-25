@@ -768,7 +768,13 @@ export function Chat({
                   })()
                 }}
               >
-                ⌫
+                {/* A box with a lid, not a backspace: the previous glyph read
+                    as "delete", which is the one thing this does not do. */}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                  <rect x="3" y="4" width="18" height="4" rx="1" />
+                  <path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8" />
+                  <path d="M10 12h4" />
+                </svg>
               </button>
             </li>
           ))}
