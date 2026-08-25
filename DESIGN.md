@@ -135,6 +135,16 @@ sequence (`text-delta`, `tool-use`, `permission-request`, `result`), interrupt,
 `env()` → dict merged UNDER the turn's own env at the single spawn site, capability
 descriptor, version/capability probing at startup (never assume a flag set).
 
+**Core, and all of the same shape: the driver NAMES its own paths, the core
+does the writing.** `skillsPath()` (where agent contracts are delivered),
+`instructionPaths()` (prose it reads), `authorityPaths()` (files deciding what
+it may do). Only the driver knows its harness, and only the core should hold a
+filesystem writer — a driver is never handed one it could point anywhere. Each
+is optional: a CLI without the concept returns nothing and the product adapts,
+rather than the product assuming one CLI's layout is universal. This matters
+more than it looks: the two supported CLIs keep the same natures under
+different names, and their zones overlap without being identical.
+
 **`authManagement`** (arm / refresh the CLI's subscription token from the UI):
 - State machine, per driver, single active arming session:
   `idle → starting → awaiting-input → exchanging → armed | error`, with session TTL.
@@ -242,15 +252,64 @@ materialization**:
    doctrine as instructions).
 
 **Materializing 1+2 is a core driver responsibility** (like instruction
-delivery): Claude gets them programmatically at the single spawn site (no file
-rewritten); Copilot gets a generated `mcp-config.json` inside the driver-owned
-`COPILOT_HOME`, never colliding with user files. Name conflicts across layers are
-reported loudly; the operator layer wins over plugins. MCP tools pass under
-interactive permissions like any other tool. MCP server health in the UI is a
-driver capability (`mcpStatus`), not a promise. Designed-in hook (not v1-blocking):
-in `oidc` mode, an optional per-turn env can carry the calling user's access token
-so user-scoped MCP servers act as the requester — the predecessor's per-user
-pass-through pattern, generalized.
+delivery). The core merges the two layers before a driver exists and HANDS the
+result over: a driver is never given a discovery mechanism, so "where does this
+server come from" keeps one answer. Name conflicts are reported by name and the
+operator layer wins — a plugin is something you dropped in a folder, the config
+is something you wrote. `headers` is the operator's alone and absent from the
+manifest schema: a plugin carrying a bearer would put a credential in a folder
+anybody can drop into.
+
+Per driver, materialization differs and the asymmetry is load-bearing:
+
+- **Claude** receives the map as an argument to each turn. Nothing on disk.
+- **Copilot** receives a FILE, handed over with `--additional-mcp-config`,
+  written into the driver-owned home. Its own `mcp-config.json` — the user's —
+  is never touched. The file is `0600` and the flag takes a path rather than
+  inline JSON, because inline would put every bearer into `ps` output.
+
+**A server may authenticate itself.** A hub is a resource server: it validates
+short-lived JWTs, so a static bearer in a config file works for an hour and
+then stops. A server therefore declares an OAuth identity (`auth: {tokenUrl,
+clientId, clientSecret, scope?, audience?}`) and the product mints, caches and
+refreshes it, writing `Authorization` at the SPAWN SITE — once per turn, which
+is precisely what a config file cannot express. Consequences that are decisions
+rather than details:
+
+- **No relay process.** The predecessor needed one stdio subprocess per addon
+  whose only job was to hold a mutable token, because a CLI config file can
+  only hold a constant. Golem builds its map per turn, so the need disappears
+  rather than the relay being ported. Copilot's file is rewritten per turn for
+  the same reason.
+- **Cached by identity, not by server.** Addons of one hub share credentials;
+  nine addons cost one token exchange, not nine tokens expiring at nine
+  different moments. Concurrent turns await the same exchange instead of
+  racing it, which matters wherever a provider rotates what it returns.
+- **`client_secret_basic`.** The credentials-in-body variant is refused by some
+  providers with a bare `invalid_client`, which reads as a wrong secret and
+  sends somebody rotating a valid credential.
+- **A server whose token cannot be minted is OMITTED**, never called
+  unauthenticated: a wall of 401s reads to an agent as a broken tool, an absent
+  server reads as an absent server. A provider being down costs those servers,
+  never the turn, and a refusal is never cached.
+
+MCP tools pass under interactive permissions like any other tool. Server health
+is a driver capability (`mcpStatus`), reported off the session — both CLIs
+announce their servers when a session opens, and probing would mean opening one
+to ask. Health is five states plus `unknown`, never a boolean: `needs-auth` is
+a job for a person, not a failure, and rendering it as "down" sends somebody to
+debug a network while a server waits to be logged into. `unknown` is the honest
+answer before a first turn, where an empty list would tell somebody who just
+configured three servers that they have none.
+
+**Not built: the per-user rebound.** A user-scoped addon (somebody's own
+calendar or mail) needs a token carrying the CALLER's identity, not the
+instance's. The insertion point is the same line that writes the header; only
+the token's source differs. What is missing sits earlier: the shell must be an
+OIDC client that requested `offline_access`, must keep per-user refresh tokens,
+and `TurnRequest` must carry a per-turn env. In `proxy` auth mode this is
+structurally impossible — the session lives with the reverse proxy, and the
+product holds no token to refresh.
 
 Inbound MCP (the instance exposing `ask_<agent>`) is a separate subsystem, already
 in v1 scope — with no default allowed-hosts baked into the product (the
@@ -333,6 +392,23 @@ runtime; nothing is scanned by filename convention at build time.
 - **Authoring skills (v1):** `plugin-author` and `skin-author` ship with the
   product; the instance's agent scaffolds and validates extensions against the same
   schemas the loader enforces.
+- **Secrets are declared by NAME, never carried.** A manifest lists the names
+  its server side needs; the value lives in the instance's configuration and
+  the core hands each API exactly what it declared and the instance holds.
+  Names rather than ownership is the other half: two plugins needing the same
+  key declare the same name and it is rotated in one place. A declared secret
+  the instance lacks is ABSENT rather than empty — an empty string fails later,
+  in a request, blaming the API it called — and the plugin still mounts,
+  reported as DEGRADED rather than refused. That distinction is part of the
+  contract: a refusal means the extension is off, a degradation means it runs
+  with something missing, and filing the second under the first sends somebody
+  hunting for a plugin that works.
+- **`absorbs` is a NAME, not a path.** A plugin declares the folder its tile
+  already stands for, so the same content is not offered twice. It matches
+  wherever that run of segments sits and covers everything beneath it: a plugin
+  cannot know how an operator files things, and a tile that stands for a folder
+  stands for its contents. Segment boundaries only, and only while the plugin
+  is ACTIVE — turning it off gives the folder back rather than hiding it.
 - **Portability requirement:** the architecture must be able to host the predecessor's
   plugin classes without rebuild — content-only contracts, API-only tools, full apps,
   and heavy chrome capabilities (barcode scan with camera + lazy decoder). Porting
@@ -378,18 +454,43 @@ resolves in Golem as follows:
   model because they have different lifecycles: **identity/persona** (one shared
   source of truth, referenced not copied), **instructions** (versioned, two
   authors), **memory** (single writer, no sync — snapshots are the net).
-- **Instructions are editable in the UI, as a risk-zoned area — and the UI is
-  agnostic to their structure.** Golem imposes no layout on the instruction zone:
-  the view renders whatever file tree exists, the editor edits any markdown
-  (people ask the agent to write instructions; they rarely write them). They are
-  nonetheless an *executable security boundary* (a planif note body runs verbatim
-  as a prompt), so risk zoning comes from a **driver-declared path
-  classification** (e.g. hooks/settings high, planif medium, prose low) plus
-  config overrides — not from a fixed schema. Sensitive levels require human
-  confirmation, and the agent's self-improvement writes are gated by execution
-  channel: the channel is set by the product out of the model's reach, and a
-  scheduled turn can never edit instructions. Git/IDE editing remains fully
-  supported alongside.
+- **Two axes decide what a workspace file is, and conflating them is the
+  mistake to avoid.** WHAT IT DOES: prose is a document — a bad one produces
+  bad work, which is recoverable — while a permission list, a hook or MCP
+  wiring decides what the agent is ABLE to do. WHO WROTE IT: the core delivers
+  plugin contracts into the very same folders and rewrites them at every start,
+  so a file's owner is not derivable from its location. Ownership is read from
+  a `MANAGED_MARKER` the core stamps on what it delivers; that marker already
+  made withdrawal safe and now also decides what may be edited.
+- **Two zones, not a ladder of levels.** The driver declares
+  `instructionPaths()` (prose it reads) and `authorityPaths()` (files that
+  decide its authority), the way it already declares `skillsPath()`; the
+  product hardcodes neither, because the two CLIs keep the same natures under
+  different names and their zones overlap without matching. Prose that a PERSON
+  wrote is listed and editable from the interface — delivered files are
+  excluded, since offering to edit one would offer an edit that disappears at
+  the next restart. Authority is refused a write from a turn without a human
+  saying so. A configurable three-level taxonomy was deliberately dropped: a
+  flat refusal is understood and testable, and the level in between can be
+  added the day somebody actually wants to edit a hook from a browser.
+- **The gate is enforcement, not instruction.** A rule that asks the model to
+  seek confirmation lives in the prompt and can be argued out of it, including
+  by a page the agent reads mid-turn. The authority rule is a content rule on
+  proposed file edits, consulted BEFORE `autoAllow` — which is what lets an
+  instance trust its file tools everywhere else and still stop here. Unattended,
+  the existing policy answers deny.
+- **⚠️ Its one hole, stated wherever somebody might widen it.** The gate
+  inspects FILE EDITS. A shell command rewriting the same file is not one, so
+  it follows the name-based policy alone: auto-allowing a shell tool reopens
+  what this closes and no content rule can shut it again. The real wall there
+  is an agent running as another user against a store it cannot reach — a
+  feature in its own right, never obtained sideways.
+- **Instructions are saved byte for byte**, in plain text, never through the
+  page grammar. Pages go through a closed vocabulary with a validator because
+  this product renders them; an instruction is read by a CLI, and its
+  frontmatter, fences and whitespace mean things the product does not own.
+- **One content exception stays gated by CONTENT rather than by path** — see
+  below. Git/IDE editing remains fully supported alongside.
 - **One exception, gated by CONTENT rather than by path: a mission ticking its
   own `done:`.** A scheduled note carrying `until:` must be able to end itself,
   and the honest way to grant that is not a rule about a tool's name — it is a
@@ -457,9 +558,31 @@ skills the agent uses to write conformant plugins; scheduled turns; skins;
 chat attachments; inbound MCP for agent-to-agent delegation; container image
 and CI.
 
+Since then: the trips app; a model selector in the composer; outbound MCP
+wired end to end with OAuth-authenticating servers and health reporting; the
+authority gate; and the instruction zone, readable and correctable without an
+IDE.
+
 **Not built yet**, and none of it blocked by a design question:
 
 - **Remote instruction sync** (the optional git module).
+- **Usage, cost and quota surfaces.** The drivers declare `usageMetrics`,
+  `cost`, `subscriptionQuotas`; only the live token counter reaches a screen.
+  A capability declared and never consumed is the failure mode to watch for
+  here — it looks finished from the code and shows nothing to a user.
+- **Serving workspace files.** An image or an attachment referenced from a page
+  is a 404: the server serves markdown and nothing else. Every app that needs
+  its own documents currently reinvents a bounded route.
+- **The per-user rebound** for user-scoped MCP addons, and the `oidc` auth mode
+  it depends on (see MCP configuration).
+- **User-editable authority.** The gate refuses writes from a turn, which is
+  the right default and not the final answer: somebody with only a browser
+  cannot change a permission at all. The sketch is dedicated screens backed by
+  `dataDir` rather than the config file — a deployment's config may be
+  GitOps-managed and would be reverted — with a precedence to settle: is the
+  config a floor a person may raise, or a ceiling they cannot exceed?
+- **A PWA that installs.** Responsive, yes; no manifest, no service worker.
+- **`golem init`** — the documented workspace scaffold.
 
 ## Decision log
 
