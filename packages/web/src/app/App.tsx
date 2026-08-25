@@ -501,10 +501,10 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           <Section
             path={section}
             title={sectionAt(pages, section)?.title ?? section}
+            {...(sectionAt(pages, section) ? { tile: sectionAt(pages, section)! } : {})}
             entries={pages}
             openSection={setSection}
             openPage={openPage}
-            onBack={() => setSection(undefined)}
           />
         ) : skin.home ? (
           <SkinSlot
