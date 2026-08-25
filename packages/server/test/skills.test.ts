@@ -69,6 +69,33 @@ describe('collecting', () => {
     expect(new Set(paths).size).toBe(2)
   })
 
+  it('makes the declared name agree with the folder it lands in', async () => {
+    // The plugin writes a bare name because inside the plugin nothing else is
+    // called that; the folder gets namespaced on the way out. Leaving both
+    // meant the delivered skill claimed one name and sat in another, so the
+    // prose pointing at it had two candidates and no way to choose.
+    await writePluginSkill(
+      'voyages',
+      './skills/voyage-json/SKILL.md',
+      '---\nname: voyage-json\ndescription: le contrat\n---\n\n# Contrat\n',
+    )
+    const { skills } = await collectSkills([plugin('voyages', ['./skills/voyage-json/SKILL.md'])])
+    const delivered = skills.find((s) => s.source === 'voyages')!
+    expect(delivered.path).toBe('voyages-voyage-json/SKILL.md')
+    expect(delivered.contents).toContain('name: voyages-voyage-json')
+    // Everything else survives untouched — it is the plugin's document.
+    expect(delivered.contents).toContain('description: le contrat')
+    expect(delivered.contents).toContain('# Contrat')
+  })
+
+  it('leaves a contract with no frontmatter alone', async () => {
+    // Nothing to reconcile, and inventing a frontmatter block would rewrite a
+    // document whose shape the plugin chose.
+    await writePluginSkill('plain', './skills/plain/SKILL.md', '# Just prose\n')
+    const { skills } = await collectSkills([plugin('plain', ['./skills/plain/SKILL.md'])])
+    expect(skills.find((s) => s.source === 'plain')?.contents).toBe('# Just prose\n')
+  })
+
   it('reports a missing contract without failing the boot', async () => {
     // The plugin still works; the agent just will not know it exists, and
     // that is worth saying out loud.

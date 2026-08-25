@@ -409,6 +409,17 @@ runtime; nothing is scanned by filename convention at build time.
 - **Authoring skills (v1):** `plugin-author` and `skin-author` ship with the
   product; the instance's agent scaffolds and validates extensions against the same
   schemas the loader enforces.
+- **A delivered skill has ONE name.** A plugin writes its skill under a bare
+  name, because inside the plugin nothing else is called that; delivery
+  namespaces the folder as `<plugin-id>-<skill>` so two plugins may both ship
+  an `author` without one silently overwriting the other. The core therefore
+  rewrites the frontmatter `name` to match that folder. Copying the frontmatter
+  through untouched left every plugin skill claiming a name its own folder
+  contradicted — which costs nothing mechanically and everything in prose:
+  instructions that point at a skill then have two candidate names and no way
+  to choose. The namespaced folder wins, with no exception for the case where
+  plugin id and skill name coincide — an exception would make the name
+  unpredictable exactly where it needs to be written down.
 - **Secrets are declared by NAME, never carried.** A manifest lists the names
   its server side needs; the value lives in the instance's configuration and
   the core hands each API exactly what it declared and the instance holds.
