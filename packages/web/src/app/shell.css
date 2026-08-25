@@ -1007,6 +1007,47 @@
  * a mark in the margin — the typography of a footnote, which is what it is:
  * true, worth knowing, and nothing to do right now.
  */
+/* The conversations button, when something in there is stopped waiting. A
+   dot on the icon rather than a number: what matters is that a decision is
+   pending, not how many. */
+.golem-ib--waiting { position: relative; }
+
+.golem-ib--waiting::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--warning);
+}
+
+/* The row keeps its own control, revealed on hover — a thread list is read
+   far more often than it is tidied. */
+.golem-threads li { display: flex; align-items: center; gap: 2px; }
+.golem-threads li .golem-threads__item { flex: 1; min-width: 0; }
+
+.golem-threads__archive {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-faint);
+  font-size: 12px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s, color 0.12s;
+}
+
+.golem-threads li:hover .golem-threads__archive,
+.golem-threads__archive:focus-visible { opacity: 1; }
+.golem-threads__archive:hover { color: var(--text); }
+
 /* A thread whose turn is stopped, waiting on an answer. Deliberately a mark
    and not a count: there is one decision to make, and it is in there. */
 .golem-threads__waiting {

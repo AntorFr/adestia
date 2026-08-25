@@ -32,6 +32,14 @@ export interface ConversationMeta {
   readonly updatedAt: string
   /** The CLI session this thread resumes; absent once it has expired. */
   readonly sessionId?: string
+  /**
+   * Put away rather than deleted.
+   *
+   * A thread nobody needs today is not a thread nobody will want next month,
+   * and the only tool for that was a delete that took the whole record with
+   * it. Archiving hides it from the list and keeps every word.
+   */
+  readonly archived?: boolean
 }
 
 export interface Conversation extends ConversationMeta {
@@ -124,7 +132,11 @@ export class ConversationStore {
     }
   }
 
-  async list(userId: string): Promise<readonly ConversationMeta[]> {
+  /**
+   * @param includeArchived what a screen showing the archive would ask for.
+   *   The default answers what a chat panel wants: the live threads.
+   */
+  async list(userId: string, includeArchived = false): Promise<readonly ConversationMeta[]> {
     let files: string[]
     try {
       files = (await readdir(this.#dir(userId))).filter((name) => name.endsWith('.jsonl'))
@@ -137,6 +149,7 @@ export class ConversationStore {
       const conversation = await this.read(userId, file.replace(/\.jsonl$/, ''))
       if (conversation) {
         const { messages: _messages, ...meta } = conversation
+        if (meta.archived && !includeArchived) continue
         metas.push(meta)
       }
     }
@@ -149,6 +162,18 @@ export class ConversationStore {
     await appendFile(
       this.#file(userId, id),
       `${JSON.stringify({ type: 'meta', id, title, updatedAt: new Date().toISOString() })}\n`,
+    )
+  }
+
+  /**
+   * Hides a thread, or brings it back. Written as one more meta line, the way
+   * a rename is: the log stays append-only, and the last word wins.
+   */
+  async archive(userId: string, id: string, archived = true): Promise<void> {
+    if (!isSafeId(id)) throw new Error(`unsafe conversation id: ${id}`)
+    await appendFile(
+      this.#file(userId, id),
+      `${JSON.stringify({ type: 'meta', id, archived })}\n`,
     )
   }
 

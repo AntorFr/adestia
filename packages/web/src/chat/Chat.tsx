@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import {
+  archiveConversation,
   createConversation,
   listConversations,
   readConversation,
@@ -710,9 +711,9 @@ export function Chat({
         <ContextPill tokens={contextTokens} {...(contextWindow ? { windowSize: contextWindow } : {})} />
         <button
           type="button"
-          className="golem-ib"
+          className={`golem-ib${orphan ? ' golem-ib--waiting' : ''}`}
           onClick={() => setThreadsOpen(!threadsOpen)}
-          aria-label="Conversations"
+          aria-label={orphan ? t('Conversations — one is waiting for you') : t('Conversations')}
           aria-expanded={threadsOpen}
         >
           ▤
@@ -749,6 +750,25 @@ export function Chat({
                     ●
                   </span>
                 )}
+              </button>
+              {/* Put away, not deleted: the only tool for tidying up was a
+                  delete that took every word with it. */}
+              <button
+                type="button"
+                className="golem-threads__archive"
+                aria-label={`${t('Archive')} — ${thread.title}`}
+                title={t('Archive')}
+                onClick={() => {
+                  void (async () => {
+                    if (!(await archiveConversation(fetchImpl ?? fetch, thread.id))) return
+                    setThreads((current) => current.filter((entry) => entry.id !== thread.id))
+                    // Archiving the thread you are reading leaves you nowhere
+                    // in particular; a fresh one is the honest landing.
+                    if (thread.id === conversationId) startThread()
+                  })()
+                }}
+              >
+                ⌫
               </button>
             </li>
           ))}

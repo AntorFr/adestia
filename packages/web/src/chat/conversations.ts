@@ -108,3 +108,26 @@ export function titleFrom(text: string): string {
   const flat = text.replace(/\s+/g, ' ').trim()
   return flat.length <= 48 ? flat : `${flat.slice(0, 47)}…`
 }
+
+/**
+ * Puts a thread away, or brings it back.
+ *
+ * Reversible on purpose: the only tool for tidying up used to be a delete
+ * that took every word with it.
+ */
+export async function archiveConversation(
+  fetchImpl: typeof fetch,
+  id: string,
+  archived = true,
+): Promise<boolean> {
+  try {
+    const response = await fetchImpl(`/api/conversations/${encodeURIComponent(id)}/archive`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ archived }),
+    })
+    return response.ok
+  } catch {
+    return false
+  }
+}

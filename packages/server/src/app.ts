@@ -411,6 +411,20 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     return conversation
   })
 
+  app.post<{ Params: { id: string }; Body?: { archived?: unknown } }>(
+    '/api/conversations/:id/archive',
+    async (request, reply) => {
+      // Reversible by construction: the same route brings a thread back, so
+      // an archive is never a delete somebody has to regret.
+      const archived = request.body?.archived !== false
+      const userId = identityOf(request).userId
+      const existing = await conversations.read(userId, request.params.id)
+      if (!existing) return reply.code(404).send({ error: 'no such conversation' })
+      await conversations.archive(userId, request.params.id, archived)
+      return { id: request.params.id, archived }
+    },
+  )
+
   app.delete<{ Params: { id: string } }>('/api/conversations/:id', async (request, reply) => {
     const removed = await conversations.remove(identityOf(request).userId, request.params.id)
     if (!removed) return reply.code(404).send({ error: 'no such conversation' })
