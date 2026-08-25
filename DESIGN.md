@@ -596,8 +596,8 @@ each one that wanted to archive had to transcribe the table, and `voyages`
 already carries its own copy. The predecessor lived that drift — one screen
 archived what the next still showed as live. `collections` consumes the
 published verdict and folds finished pages into an `🗄 Archive` section
-(counts split live/archived, the fold open when nothing live is left, nothing
-ever dropped). Left deliberately alone: `todo` and `planif` close on `done:`,
+(counts split live/archived, the fold closed like the section screen's own,
+nothing ever dropped). Left deliberately alone: `todo` and `planif` close on `done:`,
 which is a different regime with its own contract, and `voyages` judges the
 status inside `voyage.json` — not a page, so the index cannot answer for it.
 

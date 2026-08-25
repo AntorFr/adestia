@@ -58,9 +58,11 @@ live ones and into an `🗄 Archive` fold at the bottom of the screen. The count
 say both figures — "4 fiches · 1 archivée" — because "5 fiches" over a grid
 showing four is the arithmetic that teaches people to distrust a count.
 
-Nothing is ever dropped: a category whose work is all done still gets its
-card, sorted below the ones with something happening in them, and the fold
-opens by itself when there is nothing live left.
+The fold stays closed until somebody opens it — the same posture as the
+section screens, so no corner of the app behaves differently from the rest.
+Nothing is ever dropped: a category whose work is all done still gets its card,
+sorted below the ones with something happening in them, and says in words that
+everything in it is finished.
 
 Which words archive is **not this plugin's decision**: the page index publishes
 the core's own verdict, so a collection, a section screen and the editor all

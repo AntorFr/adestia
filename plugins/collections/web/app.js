@@ -74,13 +74,17 @@ export default function view(api) {
      * Closed rather than absent: a finished project is what somebody comes
      * looking for when they want to know how the last one went, and a
      * collection that quietly forgot half of itself would be lying about its
-     * own size. Open by default only when there is nothing live left, so a
-     * screen is never blank while the pages exist.
+     * own size. But CLOSED, always — the same posture as the section screen's
+     * own archive. Opening it when nothing live is left, as this did at first,
+     * makes one screen in the app behave unlike every other for a reason
+     * nobody can see from the outside; the count on the summary already says
+     * the pages are there, and a facet where everything is done says so in
+     * words above the fold.
      */
-    const archiveFold = (pages, live) =>
+    const archiveFold = (pages) =>
       pages.length === 0
         ? null
-        : h('details', { key: 'arch', className: 'coll-arch', open: live === 0 }, [
+        : h('details', { key: 'arch', className: 'coll-arch' }, [
             h('summary', { key: 's' }, [
               `🗄 ${t('Archive')} `,
               h('span', { key: 'c', className: 'coll-muted' }, plural(pages.length, t('page'))),
@@ -104,7 +108,7 @@ export default function view(api) {
           ? h('ul', { key: 'l', className: 'coll-rows' }, live.map(pageRow))
           : archived.length > 0 &&
             h('p', { key: 'e', className: 'coll-muted' }, t('Everything here is finished.')),
-        archiveFold(archived, live.length),
+        archiveFold(archived),
       ])
     }
 
@@ -166,7 +170,7 @@ export default function view(api) {
               ),
             )
           : h('ul', { key: 'r', className: 'coll-rows' }, open.live.map(pageRow)),
-        facets ? null : archiveFold(open.archived, open.live.length),
+        facets ? null : archiveFold(open.archived),
       ])
     }
 
