@@ -879,12 +879,51 @@
 
 .golem-canvas__spacer { flex: 1; }
 
-.golem-settings {
-  margin-bottom: var(--space-5);
+/* The dialog: a scrim over everything, a card that floats. Placed at the
+   shell level rather than inside the canvas — a settings panel that pushed
+   the page down was the thing this replaced. */
+.golem-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
   padding: var(--space-4);
+  background: var(--scrim);
+}
+
+.golem-modal__card {
+  width: min(460px, 100%);
+  max-height: calc(100dvh - 2 * var(--space-4));
+  overflow-y: auto;
+  padding: var(--space-4);
+  background: var(--surface-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  background: var(--surface-raised);
+  box-shadow: var(--shadow-lg);
+}
+
+.golem-modal__card:focus { outline: none; }
+
+.golem-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.golem-modal__header h2 {
+  margin: 0;
+  font: 600 17px/1.2 var(--font-title);
+  letter-spacing: var(--title-track);
+}
+
+/* Inside a dialog the panel carries no box of its own — the card is the box. */
+.golem-settings {
+  padding: 0;
+  border: 0;
+  background: none;
 }
 
 .golem-settings__header {

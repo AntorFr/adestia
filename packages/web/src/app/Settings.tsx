@@ -160,7 +160,6 @@ export function Settings({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   return (
     <section className="golem-settings">
       <header className="golem-settings__header">
-        <h2>Agent credential</h2>
         <StatusLine status={status} />
       </header>
 

@@ -10,6 +10,7 @@ import { Component, useCallback, useEffect, useRef, useState, type ReactNode } f
 
 import { Chat } from '../chat/Chat.js'
 import { Editor, type PageDocument } from '../editor/Editor.js'
+import { Modal } from './Modal.js'
 import { Settings } from './Settings.js'
 import {
   browserSkinEnvironment,
@@ -445,7 +446,6 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
         </header>
 
         <div className="golem-canvas__body">
-        {settingsOpen && <Settings fetchImpl={fetchImpl} />}
 
         {problems.length > 0 && (
           <section className="golem-problems" role="status">
@@ -531,6 +531,12 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
         )}
         </div>
       </main>
+
+      {settingsOpen && (
+        <Modal title="Settings" onClose={() => setSettingsOpen(false)}>
+          <Settings fetchImpl={fetchImpl} />
+        </Modal>
+      )}
     </div>
   )
 }
