@@ -84,8 +84,10 @@ const FR: Readonly<Record<string, string>> = {
   'Read and correct what you told the agent': 'Relire et corriger ce que vous avez dit à l’agent',
   'What you have told the agent, in your words. Saved exactly as typed.':
     'Ce que vous avez dit à l’agent, dans vos mots. Enregistré tel que tapé.',
-  'Nothing here yet — ask the agent to write down how you want it to work.':
-    'Rien ici pour l’instant — demandez à l’agent de noter comment vous voulez qu’il travaille.',
+  'Nothing here yet — write one, or ask the agent to.':
+    'Rien ici pour l’instant — écrivez-en une, ou demandez à l’agent de le faire.',
+  'New instruction': 'Nouvelle instruction',
+  'What is this instruction about?': 'De quoi parle cette instruction ?',
   'This engine keeps its instructions elsewhere.':
     'Ce moteur garde ses instructions ailleurs.',
 

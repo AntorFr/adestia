@@ -22,6 +22,7 @@ import { ConversationStore, type StoredMessage } from './conversations.js'
 import type { GolemConfig } from './config.js'
 import { frontendPayload, type DiscoveredPlugin, type DiscoveryProblem } from './extensions.js'
 import {
+  describeInstructionPaths,
   isManaged,
   listInstructions,
   safeInstructionPath,
@@ -283,7 +284,14 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
       await reply.code(404).send({ error: 'this driver declares no instruction zone' })
       return reply
     }
-    return { files: await listInstructions(config.workspace.root, paths) }
+    return {
+      files: await listInstructions(config.workspace.root, paths),
+      // Where one may be CREATED. A zone with nothing in it and no way to put
+      // anything there is a dead end: the listing shows what exists, and a
+      // fresh instance has nothing. The client cannot guess these — only the
+      // driver knows where its CLI reads prose.
+      paths: await describeInstructionPaths(config.workspace.root, paths),
+    }
   })
 
   app.get<{ Params: { '*': string } }>('/api/instructions/*', async (request, reply) => {

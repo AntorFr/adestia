@@ -17,7 +17,14 @@ const FILES = [
   { path: '.claude/skills/mes-regles/SKILL.md', modified: '2026-08-25T10:00:00Z', bytes: 80 },
 ]
 
-function server(options: { files?: unknown; status?: number; onPut?: (body: unknown) => Response } = {}) {
+function server(
+  options: {
+    files?: unknown
+    paths?: unknown
+    status?: number
+    onPut?: (body: unknown) => Response
+  } = {},
+) {
   return vi.fn((url: string, init?: RequestInit) => {
     const path = String(url)
     if (path === '/api/instructions') {
@@ -25,7 +32,7 @@ function server(options: { files?: unknown; status?: number; onPut?: (body: unkn
       return Promise.resolve({
         ok: status === 200,
         status,
-        json: () => Promise.resolve({ files: options.files ?? FILES }),
+        json: () => Promise.resolve({ files: options.files ?? FILES, paths: options.paths ?? [] }),
       } as unknown as Response)
     }
     if (init?.method === 'PUT') {
@@ -124,8 +131,63 @@ describe('the instruction screen', () => {
 
   it('invites writing when the zone is simply empty', async () => {
     render(<Instructions fetchImpl={server({ files: [] })} />)
-    expect(
-      await screen.findByText('Nothing here yet — ask the agent to write down how you want it to work.'),
-    ).toBeTruthy()
+    expect(await screen.findByText('Nothing here yet — write one, or ask the agent to.')).toBeTruthy()
+  })
+
+  it('offers somewhere to write the first one', async () => {
+    // Without this the screen was a dead end on a fresh instance: an empty
+    // list and nothing to add to it. The places come from the driver, since
+    // only it knows where its CLI reads prose.
+    render(
+      <Instructions
+        fetchImpl={server({
+          files: [],
+          paths: [
+            { path: 'CLAUDE.md', kind: 'file', exists: false },
+            { path: '.claude/skills', kind: 'folder', exists: true },
+          ],
+        })}
+      />,
+    )
+    expect(await screen.findByRole('button', { name: '+ CLAUDE.md' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '+ New instruction' })).toBeTruthy()
+  })
+
+  it('does not offer to create a file that is already there', async () => {
+    render(
+      <Instructions
+        fetchImpl={server({
+          files: [{ path: 'CLAUDE.md', modified: '', bytes: 10 }],
+          paths: [{ path: 'CLAUDE.md', kind: 'file', exists: true }],
+        })}
+      />,
+    )
+    await screen.findByText('CLAUDE.md')
+    expect(screen.queryByRole('button', { name: '+ CLAUDE.md' })).toBeNull()
+  })
+
+  it('opens a file that does not exist yet, ready to be written', async () => {
+    const sent: unknown[] = []
+    render(
+      <Instructions
+        fetchImpl={server({
+          files: [],
+          paths: [{ path: 'CLAUDE.md', kind: 'file', exists: false }],
+          onPut: (body) => {
+            sent.push(body)
+            return { ok: true, status: 200, json: () => Promise.resolve({}) } as unknown as Response
+          },
+        })}
+      />,
+    )
+    fireEvent.click(await screen.findByRole('button', { name: '+ CLAUDE.md' }))
+
+    // Empty, and Save lights up at the first keystroke: nothing is on disk,
+    // so anything typed is a change.
+    const area = screen.getByRole('textbox') as HTMLTextAreaElement
+    expect(area.value).toBe('')
+    fireEvent.change(area, { target: { value: '# Comment travailler ici' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(sent).toEqual([{ markdown: '# Comment travailler ici' }]))
   })
 })

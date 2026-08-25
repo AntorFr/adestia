@@ -22,6 +22,23 @@ interface InstructionFile {
   readonly bytes: number
 }
 
+/** A place an instruction may be written, as the driver declared it. */
+interface InstructionPath {
+  readonly path: string
+  readonly kind: 'file' | 'folder'
+  readonly exists: boolean
+}
+
+/** A folder name from a title somebody typed. */
+const slug = (name: string) =>
+  name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60)
+
 type Save = { kind: 'idle' } | { kind: 'saving' } | { kind: 'saved' } | { kind: 'failed'; message: string }
 
 /** The last segment, which is what tells two SKILL.md files apart. */
@@ -39,6 +56,8 @@ export function Instructions({
   readonly t?: (key: string) => string
 }) {
   const [files, setFiles] = useState<readonly InstructionFile[] | undefined>()
+  /** Where one may be written — the listing only says what is already there. */
+  const [places, setPlaces] = useState<readonly InstructionPath[]>([])
   const [supported, setSupported] = useState(true)
   const [open, setOpen] = useState<string | undefined>()
   const [text, setText] = useState('')
@@ -57,8 +76,12 @@ export function Instructions({
         return
       }
       if (!response.ok) return
-      const body = (await response.json()) as { files?: readonly InstructionFile[] }
+      const body = (await response.json()) as {
+        files?: readonly InstructionFile[]
+        paths?: readonly InstructionPath[]
+      }
       setFiles(body.files ?? [])
+      setPlaces(body.paths ?? [])
     })()
   }, [fetchImpl])
 
@@ -77,6 +100,23 @@ export function Instructions({
       setOnDisk(body.markdown ?? '')
     },
     [fetchImpl],
+  )
+
+  const start = useCallback(
+    (path: string, seed = '') => {
+      setOpen(path)
+      setText(seed)
+      // Not on disk yet, so anything typed is a change: Save lights up at the
+      // first keystroke rather than waiting for a file that is not there.
+      setOnDisk('')
+      setSave({ kind: 'idle' })
+      setFiles((current) =>
+        current?.some((file) => file.path === path)
+          ? current
+          : [...(current ?? []), { path, modified: new Date().toISOString(), bytes: 0 }],
+      )
+    },
+    [],
   )
 
   const commit = useCallback(async () => {
@@ -129,8 +169,48 @@ export function Instructions({
 
       {files !== undefined && files.length === 0 && (
         <p className="golem-instructions__empty">
-          {t('Nothing here yet — ask the agent to write down how you want it to work.')}
+          {t('Nothing here yet — write one, or ask the agent to.')}
         </p>
+      )}
+
+      {/*
+        Where a first instruction can be written.
+        
+        Without this the screen was a dead end on a fresh instance: an empty
+        list, and nothing to add to it. The places come from the driver — only
+        it knows where its CLI reads prose — and the two shapes get the two
+        controls they deserve: a named file is created as itself, a folder
+        takes a name first.
+      */}
+      {places.length > 0 && (
+        <div className="golem-instructions__new">
+          {places
+            .filter((place) => place.kind === 'file' && !place.exists)
+            .map((place) => (
+              <button key={place.path} type="button" onClick={() => start(place.path)}>
+                + {place.path}
+              </button>
+            ))}
+          {places
+            .filter((place) => place.kind === 'folder')
+            .map((place) => (
+              <button
+                key={place.path}
+                type="button"
+                onClick={() => {
+                  const name = window.prompt(t('What is this instruction about?'))
+                  const id = slug(name ?? '')
+                  if (!id) return
+                  start(
+                    `${place.path}/${id}/SKILL.md`,
+                    `---\nname: ${id}\ndescription: ${name}\n---\n\n# ${name}\n\n`,
+                  )
+                }}
+              >
+                + {t('New instruction')}
+              </button>
+            ))}
+        </div>
       )}
 
       <div className="golem-instructions__split">

@@ -82,6 +82,45 @@ async function walk(root: string, path: string, depth = 0): Promise<InstructionF
   return found
 }
 
+/** A declared path, and whether it holds one file or many. */
+export interface InstructionPath {
+  readonly path: string
+  readonly kind: 'file' | 'folder'
+  /** False for a `file` nobody has written yet — the one worth offering. */
+  readonly exists: boolean
+}
+
+/**
+ * Where an instruction may be written.
+ *
+ * The listing answers "what is there"; a fresh instance has nothing there,
+ * and a screen showing an empty list with no way to add to it is a feature
+ * nobody can start using. Only the driver knows these paths, so the client is
+ * told rather than left to guess.
+ *
+ * A declared path that does not exist yet is a FILE by convention: a folder
+ * is named as a place to put things, and the things are what get created.
+ */
+export async function describeInstructionPaths(
+  workspaceRoot: string,
+  paths: readonly string[],
+): Promise<readonly InstructionPath[]> {
+  const described: InstructionPath[] = []
+  for (const path of paths) {
+    try {
+      const info = await stat(join(workspaceRoot, path))
+      described.push({
+        path: path.split(sep).join('/'),
+        kind: info.isDirectory() ? 'folder' : 'file',
+        exists: true,
+      })
+    } catch {
+      described.push({ path: path.split(sep).join('/'), kind: 'file', exists: false })
+    }
+  }
+  return described
+}
+
 export async function listInstructions(
   workspaceRoot: string,
   paths: readonly string[],
