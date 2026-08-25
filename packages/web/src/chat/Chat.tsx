@@ -21,7 +21,7 @@ import {
   type ConversationMeta,
   type StoredMessage,
 } from './conversations.js'
-import { runTurn, type PendingPermission, type TurnState } from './stream.js'
+import { runTurn, type PendingPermission, type ScreenView, type TurnState } from './stream.js'
 import { SkinSlot } from '../app/SkinSlot.js'
 import type { SkinSlotRender } from '../app/skin.js'
 // The drag primitive is shared with the page screen: one answer to "is this
@@ -459,6 +459,14 @@ export interface ChatProps {
   }) => void
   /** Composer buttons contributed by plugins. */
   readonly extraButtons?: readonly ComposerButton[]
+  /**
+   * The screen open next to the chat, when one is being watched.
+   *
+   * Read at send time rather than remembered: what is on screen when the
+   * message leaves is the only moment that means anything, and nothing about
+   * it sticks to the next turn.
+   */
+  readonly view?: ScreenView
 }
 
 /** A composer button a plugin added. */
@@ -493,6 +501,7 @@ export function Chat({
   onOpenCanvas,
   onReady,
   extraButtons,
+  view,
 }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [live, setLive] = useState<TurnState | undefined>()
@@ -652,6 +661,7 @@ export function Chat({
           ...(model ? { model } : {}),
           ...(thread ? { conversationId: thread } : {}),
           ...(attachments.length > 0 ? { attachments: attachments.map((a) => a.id) } : {}),
+          ...(view ? { view } : {}),
         },
         fetchImpl,
       )) {
@@ -676,7 +686,7 @@ export function Chat({
       }
       setLive(undefined)
     },
-    [conversationId, fetchImpl, model],
+    [conversationId, fetchImpl, model, view],
   )
 
   useEffect(() => {

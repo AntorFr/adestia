@@ -296,6 +296,32 @@ describe('chat', () => {
     expect((bodies[1] as { model?: string }).model).toBe('claude-sonnet-5')
   })
 
+  it('carries the screen the shell says is open, at send time', async () => {
+    const bodies: unknown[] = []
+    const fetchImpl = sseFetch([frame({ type: 'result', sessionId: 's1', stopped: false })], {
+      onTurn: (body) => bodies.push(body),
+    })
+    const { rerender } = render(<Chat fetchImpl={fetchImpl} view={{ route: '/parcours', title: 'Parcours' }} />)
+
+    const input = screen.getByRole('textbox')
+    fireEvent.change(input, { target: { value: 'et ça, c’est loin ?' } })
+    await act(async () => {
+      fireEvent.keyDown(input, { key: 'Enter' })
+    })
+    await waitFor(() => expect(bodies.length).toBe(1))
+    expect((bodies[0] as { view?: unknown }).view).toEqual({ route: '/parcours', title: 'Parcours' })
+
+    // Walking back to the landing canvas takes the note away with it: the
+    // screen is read at send time, and nothing sticks from the turn before.
+    rerender(<Chat fetchImpl={fetchImpl} />)
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'et maintenant ?' } })
+    await act(async () => {
+      fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' })
+    })
+    await waitFor(() => expect(bodies.length).toBe(2))
+    expect('view' in (bodies[1] as Record<string, unknown>)).toBe(false)
+  })
+
   it('remembers the choice, and forgets it on Auto', async () => {
     // This environment has no localStorage at all — which is why the component
     // guards every access, and why the fake below is a fake rather than a

@@ -2,7 +2,7 @@
 > MàJ : 2026-08-25
 
 **État :** Migration Alfred. Faits et vérifiés en navigateur : `todo`,
-`planif`, `collections`, `scan`, skin `alfred`. 917 tests + 85 de plugins.
+`planif`, `collections`, `scan`, skin `alfred`. 936 tests + 85 de plugins.
 Facette `blocks` CÂBLÉE : elle était chargée et narrowée depuis le début, et
 personne ne lisait le résultat. Un bloc se déclare en deux moitiés — le
 manifeste (`vocabulary`) dit ce qu'il EST, pour que le SERVEUR le valide sans
@@ -24,6 +24,13 @@ donc aucun `--crepe-*` n'était déclaré → barre d'outils, menu slash et poig
 de bloc invisibles (transparents, sans ombre). Le jeu complet est maintenant
 dérivé des tokens dans `shell.css`, avec la gouttière que la poignée réclame ;
 un test l'ancre au contrat de Crepe. Vérifié au navigateur, clair et sombre.
+Contexte d'écran porté d'agent-gw (oublié par l'audit de parité) : chaque
+message emporte `view: {route, title}`, le serveur préfixe le prompt d'une
+ligne — route et fil d'Ariane seulement, jamais le rendu de la page, rien
+depuis l'accueil ni depuis un mobile replié sur le chat. Encadrement fait
+côté serveur, donc le fil stocke le prompt brut (pas de dé-préfixage au
+rejeu, contrairement au prédécesseur). Route/titre aplatis sur une ligne et
+bornés : un `#` est pilotable par un lien.
 
 **Reste :**
 - [ ] `atelier` — ~1 600 lignes (plan de débit, SVG). EN COURS.

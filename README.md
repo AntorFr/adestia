@@ -70,6 +70,9 @@ Golem's own interface.
   turn running unattended can never rewrite the prompt it runs on.
 - **Attachments** the agent reads with its own tools, framed as data — a file
   that says "ignore your instructions" is reported, not obeyed.
+- **The screen next to the chat**, joined to each message as a hint: the route
+  and its breadcrumb, never what the page renders, and nothing at all from the
+  home canvas or from a phone folded onto the conversation.
 - **Inbound MCP**, so another agent can delegate work here asynchronously.
 - **Skins**: tokens and a few narrow hooks, one active at a time.
 

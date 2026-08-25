@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Chat } from '../chat/Chat.js'
+import type { ScreenView } from '../chat/stream.js'
 import { Editor, type PageDocument } from '../editor/Editor.js'
 import type { BlockComponents } from '../editor/Reader.js'
 import { Modal } from './Modal.js'
@@ -76,6 +77,27 @@ type EditorMount = (
   markdown: string,
   onChange: (markdown: string) => void,
 ) => () => void
+
+/**
+ * The screen the chat reports as open next to it.
+ *
+ * Route and breadcrumb only — never what the page renders, which is content
+ * the agent did not write (see the server's `screen.ts`). Two cases report
+ * nothing at all, and they are the point: the landing canvas, where there is
+ * no page to name, and a shell folded onto one screen showing the chat, where
+ * the canvas is behind it. Narrating a screen nobody is looking at is worse
+ * than saying nothing — it invents a subject.
+ */
+export function screenView(where: {
+  readonly route: string
+  readonly watched: boolean
+  /** Breadcrumb labels below Home, in order. */
+  readonly trail: readonly string[]
+}): ScreenView | undefined {
+  if (!where.route || !where.watched) return undefined
+  const title = where.trail.filter((label) => label !== '').join(' › ')
+  return { route: where.route, ...(title ? { title } : {}) }
+}
 
 export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   const [instance, setInstance] = useState<InstanceInfo | undefined>()
@@ -167,6 +189,31 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   const pagePath = route.startsWith('/page/')
     ? decodeURIComponent(route.slice('/page/'.length))
     : undefined
+
+  /**
+   * Where the reader is, snapshotted onto each message.
+   *
+   * On a desktop the canvas sits BESIDE the chat, so « that » in a sentence
+   * usually means the page in front of them — which the conversation used to
+   * know nothing about. The trail mirrors the breadcrumb below, because the
+   * note has to name the screen the way the screen names itself.
+   */
+  const view = useMemo(() => {
+    const trail: (string | undefined)[] = []
+    if (openApp) {
+      trail.push(loaded.find((entry) => entry.id === openApp)?.tile?.label ?? openApp)
+    } else if (page) {
+      const holder = sectionAt(pages, page.path.slice(0, page.path.lastIndexOf('/')))
+      trail.push(holder?.title, page.title)
+    } else if (section) {
+      trail.push(sectionAt(pages, section)?.title ?? section)
+    }
+    return screenView({
+      route,
+      watched: !mobile || screen === 'canvas',
+      trail: trail.filter((label): label is string => Boolean(label)),
+    })
+  }, [route, mobile, screen, openApp, loaded, page, pages, section])
 
   /**
    * Opens a page in the editor.
@@ -445,6 +492,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
         {...(skin.crest ? { crest: skin.crest } : {})}
         {...(skin.busy ? { busySlot: skin.busy } : {})}
         {...(mobile ? { onOpenCanvas: () => setScreen('canvas') } : {})}
+        {...(view ? { view } : {})}
       />
       <div className="golem-gutter" {...split.gutterProps} />
       <main className="golem-canvas">

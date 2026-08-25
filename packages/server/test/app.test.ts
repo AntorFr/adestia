@@ -252,6 +252,31 @@ describe('/api/turn', () => {
     await app.close()
   })
 
+  it('frames the screen the sender was watching', async () => {
+    const driver = new ScriptedDriver([RESULT])
+    const app = await buildApp(deps({ driver }))
+    await app.inject({
+      method: 'POST',
+      url: '/api/turn',
+      payload: {
+        prompt: 'range ça',
+        view: { route: '/page/trips/baden.md', title: 'Trips › Baden' },
+      },
+    })
+
+    expect(driver.requests[0]?.prompt).toContain('(#/page/trips/baden.md)')
+    expect(driver.requests[0]?.prompt.endsWith('\nrange ça')).toBe(true)
+    await app.close()
+  })
+
+  it('sends nothing about a screen when none was being watched', async () => {
+    const driver = new ScriptedDriver([RESULT])
+    const app = await buildApp(deps({ driver }))
+    await app.inject({ method: 'POST', url: '/api/turn', payload: { prompt: 'hi', view: { route: '' } } })
+    expect(driver.requests[0]?.prompt).toBe('hi')
+    await app.close()
+  })
+
   it('rejects an empty prompt', async () => {
     const app = await buildApp(deps())
     const response = await app.inject({ method: 'POST', url: '/api/turn', payload: {} })
@@ -397,6 +422,7 @@ describe('conversations', () => {
       ['user', 'salut'],
       ['agent', 'Bonjour'],
     ])
+
     expect(conversation.messages[1].tools).toEqual([{ name: 'Read', target: '/a.md', ok: true }])
     expect(conversation.messages[1].usage.contextTokens).toBe(4200)
     // And the thread remembers which CLI session to resume.
@@ -418,6 +444,22 @@ describe('conversations', () => {
 
     const conversation = (await app.inject({ url: `/api/conversations/${id}` })).json()
     expect(conversation.messages[1]).toMatchObject({ text: 'half', error: 'CLI died' })
+    await app.close()
+  })
+
+  it('stores the prompt as typed, not the framing sent with it', async () => {
+    // The screen note addresses the agent; replaying it would show the sender
+    // text they never wrote.
+    const app = await withStore()
+    const { id } = (await app.inject({ method: 'POST', url: '/api/conversations' })).json()
+    await app.inject({
+      method: 'POST',
+      url: '/api/turn',
+      payload: { prompt: 'range ça', conversationId: id, view: { route: '/parcours' } },
+    })
+
+    const conversation = (await app.inject({ url: `/api/conversations/${id}` })).json()
+    expect(conversation.messages[0].text).toBe('range ça')
     await app.close()
   })
 

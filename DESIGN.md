@@ -353,6 +353,17 @@ And **exceed it** — the audit found what the predecessor never had:
    `liveTurnUsage` deltas; drivers that cannot feed it fall back to the plain
    busy indicator.
 
+**Screen context** (ported after the fact — the parity audit above missed it):
+on a desktop the canvas sits BESIDE the chat, so « ça » in a sentence usually
+means the page in front of the reader. Each message carries `view: {route,
+title}`, and the server prefixes the prompt with one line naming it. The route
+and its breadcrumb only, never what the page renders: a page shows content the
+agent did not write, and pouring it in would strip the "untrusted" label the
+attachment framing exists to keep. It is a hint and says so — the question
+comes first. Nothing is sent from the landing canvas or from a folded shell
+showing the chat, and the note is applied server-side so the thread stores the
+prompt as typed: a reload replays what the person wrote, never the framing.
+
 Kept as-is from the predecessor: the theme contract — *a skin is a declaration of
 tokens, never a structural rule scoped by agent* — enforced by a build/CI lint, and
 narrow skin hooks (brand, crest, busy node, home).
@@ -561,8 +572,9 @@ and CI.
 Since then: the trips app; a model selector in the composer; outbound MCP
 wired end to end with OAuth-authenticating servers and health reporting; the
 authority gate; the instruction zone, readable and correctable without an
-IDE; and the workspace's non-markdown files — served, resolvable from a page,
-and shown under it as attachments.
+IDE; the workspace's non-markdown files — served, resolvable from a page,
+and shown under it as attachments; and the screen context the parity audit
+had missed.
 
 **Not built yet**, and none of it blocked by a design question:
 
@@ -583,6 +595,18 @@ and shown under it as attachments.
 - **`golem init`** — the documented workspace scaffold.
 
 ## Decision log
+
+**2026-08-25 (the screen next to the chat):** a predecessor feature the parity
+audit had missed, found by the owner rather than by the review — agent-gw
+joined the open page's route and breadcrumb to every message, and Golem sent
+nothing. Ported with its three boundaries intact (route and trail only, hint
+not topic, snapshot at send time), and with one improvement the predecessor
+needed a stripper for: the note is applied where the driver is called rather
+than in the browser, so the thread stores the raw prompt and a reload has
+nothing to hide. Hostile input is treated as such — a hash is steerable by any
+link somebody is talked into clicking, so route and title arrive flattened to
+one printable line and capped, and a newline in a route cannot forge a line of
+framing.
 
 **2026-08-25 (what a page's life is worth, and what it carries):** two gaps
 the predecessor did not have, found by comparing screen for screen.

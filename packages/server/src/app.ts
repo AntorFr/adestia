@@ -18,6 +18,7 @@ import type { Driver, DriverDescriptor, PermissionBroker, TurnEvent } from '@ant
 
 import { isPublicRoute, resolveIdentity, type Identity } from './auth.js'
 import { AttachmentInbox, frameAttachments, type StoredAttachment } from './attachments.js'
+import { frameView } from './screen.js'
 import { ConversationStore, type StoredMessage } from './conversations.js'
 import type { GolemConfig } from './config.js'
 import { frontendPayload, type DiscoveredPlugin, type DiscoveryProblem } from './extensions.js'
@@ -450,6 +451,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
       model?: unknown
       conversationId?: unknown
       attachments?: unknown
+      view?: unknown
     }
   }>(
     '/api/turn',
@@ -518,7 +520,10 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
           : undefined
 
         const events = driver.runTurn({
-          prompt: frameAttachments(body.prompt, attachments),
+          // Framed here, not in the browser: what the thread stores above is
+          // the raw prompt, so a reload replays what the person typed rather
+          // than the gateway's own notes.
+          prompt: frameView(frameAttachments(body.prompt, attachments), body.view),
           cwd: config.workspace.root,
           ...(typeof body.sessionId === 'string' ? { sessionId: body.sessionId } : {}),
           ...(typeof body.model === 'string' ? { model: body.model } : {}),

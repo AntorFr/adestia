@@ -172,6 +172,22 @@ function findLastIndex<T>(items: readonly T[], predicate: (item: T) => boolean):
   return -1
 }
 
+/**
+ * The screen open next to the chat, when one is really being watched.
+ *
+ * The route and its breadcrumb only — never what the page renders: a page
+ * shows content the agent did not write, and it does not enter a prompt
+ * stripped of its "untrusted" label. The server turns this into one line of
+ * framing (see the server's `screen.ts`); nothing of it is stored in the
+ * thread, so a reload replays what the person typed.
+ */
+export interface ScreenView {
+  /** The hash route, without its `#`. */
+  readonly route: string
+  /** The breadcrumb trail. Absent falls back to the route. */
+  readonly title?: string
+}
+
 export interface StreamOptions {
   readonly prompt: string
   readonly sessionId?: string
@@ -180,6 +196,8 @@ export interface StreamOptions {
   readonly conversationId?: string
   /** Inbox ids the server resolves to paths the agent reads. */
   readonly attachments?: readonly string[]
+  /** Where the reader is, snapshotted at send time. */
+  readonly view?: ScreenView
   readonly signal?: AbortSignal
 }
 
@@ -201,6 +219,7 @@ export async function* runTurn(
       ...(options.model ? { model: options.model } : {}),
       ...(options.conversationId ? { conversationId: options.conversationId } : {}),
       ...(options.attachments?.length ? { attachments: options.attachments } : {}),
+      ...(options.view ? { view: options.view } : {}),
     }),
     ...(options.signal ? { signal: options.signal } : {}),
   })

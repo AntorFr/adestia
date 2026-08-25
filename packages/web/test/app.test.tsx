@@ -7,10 +7,10 @@
  * not look the same.
  */
 
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { App } from '../src/app/App.js'
+import { App, screenView } from '../src/app/App.js'
 
 const INSTANCE = {
   driver: { label: 'Test CLI', cliVersion: '1.0', capabilities: [] },
@@ -119,5 +119,109 @@ describe('boot', () => {
     }
     render(<App fetchImpl={apiFetch({ body })} />)
     await waitFor(() => expect(screen.getByText(/not valid JSON/)).toBeTruthy())
+  })
+})
+
+describe('the screen reported next to the chat', () => {
+  it('names the route and its trail', () => {
+    expect(
+      screenView({ route: '/page/trips/baden.md', watched: true, trail: ['Trips', 'Baden 2026'] }),
+    ).toEqual({ route: '/page/trips/baden.md', title: 'Trips › Baden 2026' })
+  })
+
+  it('sends the route alone while the trail is still loading', () => {
+    // A page's title arrives with the page, one fetch after the route
+    // changed. The route already says more than an empty crumb would.
+    expect(screenView({ route: '/parcours', watched: true, trail: [] })).toEqual({
+      route: '/parcours',
+    })
+  })
+
+  it('reports nothing from the landing canvas', () => {
+    // Home is every thread and no page: there is no screen to narrate.
+    expect(screenView({ route: '', watched: true, trail: [] })).toBeUndefined()
+  })
+
+  it('reports nothing when the shell is folded onto the chat', () => {
+    // On a phone the canvas is BEHIND the chat, not beside it — describing a
+    // page nobody is looking at invents a subject.
+    expect(screenView({ route: '/parcours', watched: false, trail: ['Parcours'] })).toBeUndefined()
+  })
+})
+
+describe('the shell joins its screen to a message', () => {
+  /** Boot payloads plus a turn whose body is captured rather than streamed at length. */
+  function shellFetch(
+    pages: { path: string; title: string; fields: Record<string, unknown> }[],
+    onTurn: (body: unknown) => void,
+  ): typeof fetch {
+    return ((url: string, init?: RequestInit) => {
+      const target = String(url)
+      if (target.startsWith('/api/instance')) {
+        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(INSTANCE) } as unknown as Response)
+      }
+      if (target.startsWith('/api/turn') && init?.body) onTurn(JSON.parse(String(init.body)))
+      if (target.startsWith('/api/conversations')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () =>
+            Promise.resolve(
+              init?.method === 'POST' ? { id: 'c1', title: 'x', updatedAt: '' } : { conversations: [] },
+            ),
+        } as unknown as Response)
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve(''),
+        json: () => Promise.resolve({ entries: pages, conversations: [] }),
+        body: new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.enqueue(
+              new TextEncoder().encode(`data: ${JSON.stringify({ type: 'result', sessionId: 's', stopped: false })}\n\n`),
+            )
+            controller.close()
+          },
+        }),
+      } as unknown as Response)
+    }) as unknown as typeof fetch
+  }
+
+  it('names the section it is showing, and stops naming it at home', async () => {
+    // The wiring the unit tests above cannot see: the shell's own route and
+    // breadcrumb reaching the composer's turn.
+    const bodies: unknown[] = []
+    location.hash = '#/section/notes'
+    render(
+      <App
+        fetchImpl={shellFetch(
+          [
+            { path: 'notes/INDEX.md', title: 'Notes', fields: {} },
+            { path: 'notes/one.md', title: 'One', fields: {} },
+          ],
+          (body) => bodies.push(body),
+        )}
+      />,
+    )
+
+    const input = await screen.findByRole('textbox')
+    fireEvent.change(input, { target: { value: 'range ça' } })
+    await act(async () => {
+      fireEvent.keyDown(input, { key: 'Enter' })
+    })
+    await waitFor(() => expect(bodies.length).toBe(1))
+    expect((bodies[0] as { view?: unknown }).view).toEqual({ route: '/section/notes', title: 'Notes' })
+
+    await act(async () => {
+      location.hash = ''
+      window.dispatchEvent(new HashChangeEvent('hashchange'))
+    })
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'et là ?' } })
+    await act(async () => {
+      fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' })
+    })
+    await waitFor(() => expect(bodies.length).toBe(2))
+    expect('view' in (bodies[1] as Record<string, unknown>)).toBe(false)
   })
 })

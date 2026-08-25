@@ -196,6 +196,31 @@ describe('runTurn', () => {
     expect(states[0]?.text).toBe('coupé en deux')
   })
 
+  it('carries the screen being watched, and nothing when there is none', async () => {
+    const sent: unknown[] = []
+    const capture = (chunks: readonly string[]): typeof fetch => {
+      const inner = fakeFetch(chunks)
+      return ((url: string, init: RequestInit) => {
+        sent.push(JSON.parse(String(init.body)))
+        return (inner as unknown as (u: string, i: RequestInit) => Promise<Response>)(url, init)
+      }) as unknown as typeof fetch
+    }
+    const done = [frame({ type: 'result', sessionId: 's', stopped: false })]
+
+    for await (const _ of runTurn(
+      { prompt: 'hi', view: { route: '/parcours', title: 'Parcours' } },
+      capture(done),
+    )) {
+      /* drained */
+    }
+    for await (const _ of runTurn({ prompt: 'hi' }, capture(done))) {
+      /* drained */
+    }
+
+    expect(sent[0]).toMatchObject({ view: { route: '/parcours', title: 'Parcours' } })
+    expect(sent[1]).not.toHaveProperty('view')
+  })
+
   it('surfaces the server refusal message on a 429', async () => {
     // The concurrency cap answers with a reason; showing "429" instead would
     // waste the one useful thing the server said.
