@@ -917,12 +917,14 @@
 
 .golem-pages__link:hover { background: var(--surface-sunken); }
 
+/* Actions only, pushed right: the header no longer carries a title. */
 .golem-editor__header {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  align-items: center;
+  justify-content: flex-end;
   gap: var(--space-3);
-  margin: var(--space-4) 0 var(--space-3);
+  margin: 0 0 var(--space-3);
+  min-height: 32px;
 }
 
 .golem-editor__title { margin: 0; font-size: var(--text-lg); }
@@ -1017,16 +1019,17 @@
   border-inline-start-style: dashed;
 }
 
-.golem-editor__frontmatter {
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  color: var(--text-faint);
-  white-space: pre-wrap;
-  padding: var(--space-2) var(--space-3);
-  border: 1px dashed var(--border);
-  border-radius: var(--radius-sm);
-  margin-bottom: var(--space-3);
+/* What a page says about itself, as chips — the same ones its card wore. */
+.golem-editor__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: var(--space-4);
 }
+
+.golem-editor__meta:empty,
+.golem-editor__meta-empty { display: none; }
 
 .golem-wikilink {
   color: var(--accent);

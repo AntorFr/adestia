@@ -159,8 +159,9 @@ export function Editor({ page, fetchImpl = fetch, mount }: EditorProps) {
 
   return (
     <section className="golem-editor">
+      {/* No title here: the breadcrumb names the page and the document's own
+          heading opens it. Three of the same words is two too many. */}
       <header className="golem-editor__header">
-        <h1 className="golem-editor__title">{page.title}</h1>
         <div className="golem-editor__actions">
           <SaveStatus state={status} />
           {page.editable && (

@@ -400,19 +400,48 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
               Home
             </button>
             {(() => {
-              const here = openApp
-                ? loaded.find((entry) => entry.id === openApp)?.tile?.label ?? openApp
-                : section
-                  ? (sectionAt(pages, section)?.title ?? section)
-                  : page
-                    ? page.title
-                    : undefined
-              return here ? (
+              if (openApp) {
+                const label = loaded.find((entry) => entry.id === openApp)?.tile?.label ?? openApp
+                return (
+                  <>
+                    <span className="golem-crumbs__sep">/</span>
+                    <b>{label}</b>
+                  </>
+                )
+              }
+              // PAGE before SECTION, matching what the body renders: opening
+              // a page from a section leaves `section` set, and checking it
+              // first left the trail stopping one step short of where the
+              // reader actually was.
+              if (!page) {
+                if (!section) return undefined
+                return (
+                  <>
+                    <span className="golem-crumbs__sep">/</span>
+                    <b>{sectionAt(pages, section)?.title ?? section}</b>
+                  </>
+                )
+              }
+              // A page names the section it sits in, and that crumb is a way
+              // BACK into it — the trail has to be walkable, not decorative.
+              const holder = sectionAt(pages, page.path.slice(0, page.path.lastIndexOf('/')))
+              return (
                 <>
+                  {holder && (
+                    <>
+                      <span className="golem-crumbs__sep">/</span>
+                      <button type="button" onClick={() => {
+                        setPage(undefined)
+                        setSection(holder.path)
+                      }}>
+                        {holder.title}
+                      </button>
+                    </>
+                  )}
                   <span className="golem-crumbs__sep">/</span>
-                  <b>{here}</b>
+                  <b>{page.title}</b>
                 </>
-              ) : undefined
+              )
             })()}
           </nav>
           <span className="golem-canvas__driver">
@@ -491,12 +520,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             )
           })()
         ) : page ? (
-          <>
-            <button type="button" className="golem-switch" onClick={() => setPage(undefined)}>
-              ‹ All pages
-            </button>
-            <Editor page={page} fetchImpl={fetchImpl} {...(mount ? { mount } : {})} />
-          </>
+          <Editor page={page} fetchImpl={fetchImpl} {...(mount ? { mount } : {})} />
         ) : section ? (
           <Section
             path={section}

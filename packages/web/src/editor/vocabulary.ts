@@ -10,6 +10,8 @@
  */
 
 import { GRAMMAR } from '@antorfr/golem-content'
+
+import { toneOf } from '../app/status.js'
 import type { MilkdownPlugin } from '@milkdown/kit/ctx'
 import { $node, $remark } from '@milkdown/kit/utils'
 
@@ -37,12 +39,48 @@ export const grammarRemarks: MilkdownPlugin[] = GRAMMAR.flatMap(([plugin, option
 )
 
 /**
+ * The frontmatter's chips — the same ones a section card wears.
+ *
+ * Fields whose job is LIVERY (`ico`, `couleur`) or navigation (`title`,
+ * `domaine`) are not shown: the title is already the page's heading and the
+ * icon already dressed the tile you arrived by. What is left is what the
+ * page says about itself.
+ */
+function frontmatterChips(yaml: string): unknown[] {
+  const fields = new Map<string, string>()
+  for (const line of yaml.split('\n')) {
+    const cut = line.indexOf(':')
+    if (cut < 1 || /^\s/.test(line)) continue
+    fields.set(line.slice(0, cut).trim(), line.slice(cut + 1).trim().replace(/^["']|["']$/g, ''))
+  }
+
+  const chips: unknown[] = []
+  const status = fields.get('status') ?? fields.get('statut')
+  if (status) {
+    chips.push(['span', { class: `golem-stat golem-stat--${toneOf(status)}` }, status])
+  }
+  for (const key of ['type', 'cat', 'role']) {
+    const value = fields.get(key)
+    if (value) chips.push(['span', { class: 'golem-tag' }, value])
+  }
+  const tags = (fields.get('tags') ?? '').replace(/^\[|\]$/g, '')
+  for (const tag of tags.split(',').map((t) => t.trim()).filter(Boolean)) {
+    chips.push(['span', { class: 'golem-tag' }, `#${tag}`])
+  }
+  return chips
+}
+
+/**
  * Frontmatter as an atom node holding its raw YAML.
  *
- * Kept verbatim rather than modelled field by field: it carries the agent's
- * own conventions (types, statuses, links), and an editor that re-serialized
- * YAML would reformat keys it does not understand — churning a diff on every
- * save of a file it was only asked to read.
+ * The VALUE is kept verbatim — it carries conventions this editor does not
+ * model, and re-serializing YAML would reformat keys it does not understand,
+ * churning a diff on every save of a file it was only asked to read.
+ *
+ * What is DRAWN is another matter. Dumping the raw block put five lines of
+ * grey `key: value` above every page, which is apparatus, not content. The
+ * same chips the section cards wear say the same thing in one line, and the
+ * source of truth underneath does not move.
  */
 export const frontmatterNode = $node('frontmatter', () => ({
   content: '',
@@ -56,11 +94,17 @@ export const frontmatterNode = $node('frontmatter', () => ({
       getAttrs: (dom) => ({ value: (dom as HTMLElement).dataset['frontmatter'] ?? '' }),
     },
   ],
-  toDOM: (node) => [
-    'div',
-    { 'data-frontmatter': node.attrs['value'] as string, class: 'golem-editor__frontmatter' },
-    `${node.attrs['value'] as string}`,
-  ],
+  toDOM: (node) => {
+    const value = node.attrs['value'] as string
+    const chips = frontmatterChips(value)
+    return [
+      'div',
+      // The raw YAML rides along in the dataset: it is what `parseDOM` reads
+      // back, so the round trip stays byte-exact whatever is drawn.
+      { 'data-frontmatter': value, class: 'golem-editor__meta' },
+      ...(chips.length > 0 ? chips : [['span', { class: 'golem-editor__meta-empty' }, '']]),
+    ] as never
+  },
   parseMarkdown: {
     match: ({ type }) => type === 'yaml',
     runner: (state, node, type) => {
