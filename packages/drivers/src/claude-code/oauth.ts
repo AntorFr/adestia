@@ -45,6 +45,19 @@ export const ONE_YEAR_SECONDS = 31_536_000
 const EXCHANGE_TIMEOUT_MS = 30_000
 /** Enough of a failing body to diagnose it, not enough to fill a log. */
 const BODY_EXCERPT = 400
+/**
+ * Random bytes behind the verifier AND the state, both 32 as the CLI does it:
+ *
+ *     A1f = () => base64url(randomBytes(32))   // verifier
+ *     x1f = () => base64url(randomBytes(32))   // state
+ *
+ * Sixteen bytes of state produced a link the authorization page rejected out
+ * of hand with `Invalid request format`, and a 22-character state was the only
+ * difference between it and a link from the CLI that the same page accepts.
+ * Matching the implementation that works is not superstition here: nothing
+ * documents what that page will take.
+ */
+const SECRET_BYTES = 32
 
 /** The secret half of a PKCE pair, plus the state that ties one flow to one code. */
 export interface Pkce {
@@ -66,11 +79,11 @@ function base64Url(bytes: Buffer): string {
  * who did not generate the verifier.
  */
 export function createPkce(randomBytes: (size: number) => Buffer = nodeRandomBytes): Pkce {
-  const verifier = base64Url(randomBytes(32))
+  const verifier = base64Url(randomBytes(SECRET_BYTES))
   return {
     verifier,
     challenge: base64Url(createHash('sha256').update(verifier).digest()),
-    state: base64Url(randomBytes(16)),
+    state: base64Url(randomBytes(SECRET_BYTES)),
   }
 }
 

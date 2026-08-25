@@ -61,6 +61,15 @@ describe('the authorization link', () => {
   it('never repeats a verifier', () => {
     expect(createPkce().verifier).not.toBe(createPkce().verifier)
   })
+
+  it('sizes the state like the CLI does, because the page is fussy', () => {
+    // 32 bytes, base64url: 43 characters. A 22-character state was the only
+    // difference between our link and the CLI's, and the page answered
+    // `Invalid request format`.
+    const pkce = createPkce()
+    expect(pkce.state).toHaveLength(43)
+    expect(pkce.verifier).toHaveLength(43)
+  })
 })
 
 describe('the code the user pastes', () => {
