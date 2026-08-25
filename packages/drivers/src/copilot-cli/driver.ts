@@ -131,6 +131,29 @@ export class CopilotDriver implements Driver {
     return '.github/skills'
   }
 
+  /**
+   * What decides this CLI's authority, inside the workspace.
+   *
+   * Read off spike 3's captures rather than recalled: repo-level `settings.json`
+   * carries hooks and the `sandbox` key — a workspace file that can switch a
+   * protection off — `.github/hooks/*.json` is the hook schema itself, and
+   * `.mcp.json` / `.github/mcp.json` are the workspace MCP wiring.
+   *
+   * Both roots are listed because this CLI reads instructions and skills from
+   * `.github/`, `.agents/` AND `.claude/`: the two drivers' zones overlap
+   * without being identical, which is the whole reason this is declared rather
+   * than assumed.
+   */
+  authorityPaths(): readonly string[] {
+    return [
+      '.github/settings.json',
+      '.github/hooks',
+      '.github/mcp.json',
+      '.mcp.json',
+      '.agents/hooks',
+    ]
+  }
+
   setCredentials(credentials: Readonly<Record<string, string>>, savedAt?: string | undefined): void {
     this.#credentials = { ...credentials }
     this.#savedAt = savedAt

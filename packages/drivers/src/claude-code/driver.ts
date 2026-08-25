@@ -262,6 +262,21 @@ export class ClaudeCodeDriver implements Driver {
     return '.claude/skills'
   }
 
+  /**
+   * What decides this CLI's authority, inside the workspace.
+   *
+   * `settings.json` and its local variant carry the permission lists; `hooks`
+   * is shell the CLI runs on tool events; `.mcp.json` adds servers the agent
+   * can call. None of the three is a document — each of them changes what a
+   * turn is able to do, which is why a turn may not change them alone.
+   *
+   * `.claude/skills` is deliberately NOT here: skills are prose, and the core
+   * rewrites the delivered ones at every start anyway.
+   */
+  authorityPaths(): readonly string[] {
+    return ['.claude/settings.json', '.claude/settings.local.json', '.claude/hooks', '.mcp.json']
+  }
+
   listModels(): Promise<readonly ModelInfo[]> {
     return Promise.resolve(this.#models)
   }

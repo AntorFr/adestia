@@ -226,6 +226,26 @@ export interface Driver {
    */
   skillsPath?(): string | undefined
   /**
+   * Workspace paths where a file decides what the agent is ALLOWED to do —
+   * permissions, hooks, sandbox settings, MCP wiring.
+   *
+   * Declared by the driver for the same reason as `skillsPath`: only it knows
+   * its harness. The two CLIs have the same natures under different names, and
+   * their zones even overlap without being identical, so a product that
+   * hardcoded either one would be wrong about the other.
+   *
+   * What the core does with them is refuse to let a turn change them without a
+   * person saying so — see `authorityEditRule`. Prefixes, relative to the
+   * workspace root; a returned path covers everything beneath it.
+   *
+   * ⚠️ This guards FILE EDITS. A shell command that rewrites the same file is
+   * not a file edit the driver can normalize, so it follows the name-based
+   * policy alone: auto-allowing `Bash` reopens what this closes. Stated here
+   * because the person most likely to widen that list is reading a contract,
+   * not a changelog.
+   */
+  authorityPaths?(): readonly string[]
+  /**
    * Environment merged UNDER the turn's own env at the single spawn site.
    * The core owns the secrets; the driver only says how to hand them over.
    */

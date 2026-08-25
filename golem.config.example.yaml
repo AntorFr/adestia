@@ -100,6 +100,18 @@ driver:
 permissions:
   # Tools that never ask. Matched EXACTLY — a prefix rule allowing "Read"
   # would also allow a "ReadSecrets" tool arriving in a future CLI version.
+  #
+  # Two zones stay guarded whatever you put here, because their rules are
+  # consulted BEFORE this list: the scheduled-notes folder (whose bodies are
+  # prompts) and the driver's authority paths — its permission file, its
+  # hooks, its MCP wiring. A turn may not change what a turn is allowed to do.
+  #
+  # ⚠️ ONE EXCEPTION, and it is the reason to think twice before adding
+  # "Bash" here. Those guards inspect FILE EDITS. A shell command that
+  # rewrites the same file (`sed -i`, a redirect) is not a file edit anything
+  # can inspect, so it follows this list alone: auto-allowing Bash reopens
+  # what they close, and no content rule can shut it again. The instance says
+  # so out loud at startup when you do.
   autoAllow: []
   autoDeny: []
   # How long a request waits for a person, in milliseconds.
@@ -139,17 +151,17 @@ attachments:
 # task takes minutes, and an MCP call held open that long times out somewhere
 # between the two agents.
 mcp:
-  # ── Sortant : ce que L'AGENT peut appeler ───────────────────────────────
+  # ── OUTBOUND: what the AGENT may call ───────────────────────────────────
   #
-  # La surface canonique du produit. Un plugin actif peut en apporter d'autres
-  # (`mcpServers` dans son manifeste) ; en cas de conflit de nom, c'est CE
-  # bloc qui gagne, et le plugin perdant est nommé au démarrage.
+  # The product's canonical surface. An active plugin may bring its own
+  # (`mcpServers` in its manifest); on a name conflict THIS block wins, and
+  # the plugin that lost is named at startup.
   #
-  # La config MCP native du CLI (`.mcp.json`…) reste la vôtre et celle de
-  # l'agent : Golem ne la lit pas, ne la traduit pas et ne la réécrit pas.
+  # The CLI's own MCP config (`.mcp.json`…) stays yours and the agent's:
+  # Golem neither reads it, translates it, nor rewrites it.
   #
   # servers:
-  #   - name: home-assistant        # devient le préfixe des outils exposés
+  #   - name: home-assistant        # becomes the prefix of the tools exposed
   #     url: https://ha.example/mcp
   #     headers:
   #       Authorization: Bearer ${HA_MCP_TOKEN}
@@ -159,12 +171,12 @@ mcp:
   #     env:
   #       LANG: fr
   #
-  # `url` OU `command`, jamais les deux — ce sont deux transports. Un ${VAR}
-  # que l'environnement n'a pas rempli est REFUSÉ au démarrage plutôt que
-  # transmis tel quel : un jeton littéral "${HA_MCP_TOKEN}" échoue plus tard,
-  # dans un appel, en accusant le serveur au lieu de la config.
+  # `url` OR `command`, never both — they are two transports. A ${VAR} the
+  # environment never filled is REFUSED at startup rather than passed through:
+  # a literal "${HA_MCP_TOKEN}" reaching a server fails later, in a call,
+  # blaming the server instead of the config.
 
-  # ── Entrant : l'endpoint que D'AUTRES agents appellent ici ──────────────
+  # ── INBOUND: the endpoint OTHER agents call here ────────────────────────
   enabled: false
   # token: ${GOLEM_MCP_TOKEN}
   # Becomes the tool name in the calling agent's list, so name the agent

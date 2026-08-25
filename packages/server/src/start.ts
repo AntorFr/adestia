@@ -18,6 +18,8 @@ import {
   PermissionBroker,
   createOAuthFlow,
   type Driver,
+  type EditRuling,
+  type ProposedFileEdit,
 } from '@antorfr/golem-drivers'
 import type { FastifyInstance } from 'fastify'
 
@@ -32,6 +34,7 @@ import {
   unmatchedActivations,
   type McpServer,
 } from './extensions.js'
+import { authorityEditRule, chainEditRules } from './authority-gate.js'
 import { planifEditRule } from './planif-gate.js'
 import { runSetups } from './plugin-host.js'
 import { SecretStore } from './secrets.js'
@@ -193,12 +196,27 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
   }
 
   const dataDir = resolve(cwd, config.dataDir)
+  /**
+   * The authority gate, bound after the driver exists.
+   *
+   * A knot worth naming: the driver is constructed WITH the broker (it needs
+   * somewhere to raise permission requests), and the broker needs the driver's
+   * declared authority paths. Late-bound rather than building either twice —
+   * and safe, because nothing proposes an edit until a turn runs, long after
+   * this line.
+   */
+  let authorityRule: ((edit: ProposedFileEdit) => EditRuling) | undefined
+
   const permissions = new PermissionBroker({
     ...config.permissions,
-    // The planif zone's write gate: a mission may tick its own `done:`, any
-    // other change to a scheduled note requires a human — even when the file
-    // tools are otherwise auto-allowed. See planif-gate.ts for the contract.
-    decideEdit: planifEditRule(join(workspaceRoot, config.workspace.planif)),
+    // Two rules, one slot. The planif gate reasons about a file's CONTENTS —
+    // a mission may tick its own `done:` — and the authority gate about its
+    // LOCATION. Both pierce a blanket `autoAllow`, which is what lets an
+    // instance trust its file tools everywhere else and still stop here.
+    decideEdit: chainEditRules(
+      planifEditRule(join(workspaceRoot, config.workspace.planif)),
+      (edit) => authorityRule?.(edit),
+    ),
   })
   // The two layers the product owns, merged before the driver exists: a
   // driver is HANDED its servers rather than going looking for them, which is
@@ -214,6 +232,22 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
   const driver = options.driverFactory
     ? await options.driverFactory(config)
     : await buildDriver(config, dataDir, permissions, mcpServers)
+
+  // A turn may not change what a turn is ALLOWED to do. The paths come from
+  // the driver — the two CLIs keep their permissions, hooks and MCP wiring in
+  // different places, and their zones overlap without matching — and every
+  // write to them asks a person.
+  const authority = driver.authorityPaths?.() ?? []
+  if (authority.length > 0) {
+    authorityRule = authorityEditRule(workspaceRoot, authority)
+    log(`${authority.length} authority path(s) guarded: ${authority.join(', ')}`)
+    if (config.permissions.autoAllow?.includes('Bash')) {
+      // The one hole this gate cannot close, printed where the person who
+      // opened it will read it: a shell write is not a file edit, so nothing
+      // can inspect it before it lands.
+      log('WARNING: Bash is auto-allowed — a shell command can still rewrite those paths unasked')
+    }
+  }
 
   // A token armed in a previous run is loaded before the first turn: an
   // instance that forgets its credential on restart is an instance someone
