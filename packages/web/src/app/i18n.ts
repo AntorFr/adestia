@@ -73,6 +73,17 @@ const FR: Readonly<Record<string, string>> = {
   'Running with something missing': 'Actives, mais amputées',
   Save: 'Enregistrer',
 
+  // MCP servers, in the settings panel
+  'MCP servers': 'Serveurs MCP',
+  connected: 'connecté',
+  failed: 'en échec',
+  'needs a sign-in': 'connexion requise',
+  starting: 'démarrage',
+  disabled: 'désactivé',
+  'not observed yet': 'pas encore observé',
+  'Reported when a turn last ran — the CLI loads them with the session.':
+    'Relevé au dernier tour — le CLI les charge avec la session.',
+
   // The composer
   Model: 'Modèle',
   Auto: 'Auto',

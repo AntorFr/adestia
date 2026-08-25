@@ -250,6 +250,26 @@ export interface SubscriptionQuotas {
   subscriptionQuotas(): Promise<QuotaReport>
 }
 
+/**
+ * What one outbound MCP server is doing.
+ *
+ * A boolean was the first shape and it lied about the state that matters most:
+ * `needs-auth` is not a failure, it is a job for a person, and rendering it as
+ * "down" sends somebody debugging a network while a server waits to be logged
+ * into. Five real states plus one honest absence.
+ *
+ * `unknown` is the state before anything has been observed. Both CLIs report
+ * their servers when a SESSION starts, so an instance that has run no turn
+ * genuinely does not know — and saying so beats an empty list, which reads as
+ * "you have no servers" to somebody who just configured three.
+ */
+export interface McpServerHealth {
+  readonly name: string
+  readonly state: 'connected' | 'failed' | 'needs-auth' | 'pending' | 'disabled' | 'unknown'
+  /** Why, when the CLI said. Never invented. */
+  readonly error?: string
+}
+
 export interface McpStatus {
-  mcpStatus(): Promise<readonly { name: string; ok: boolean; error?: string }[]>
+  mcpStatus(): Promise<readonly McpServerHealth[]>
 }

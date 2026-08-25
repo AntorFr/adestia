@@ -59,6 +59,22 @@ export type SdkMessage =
       readonly message?: { readonly content?: readonly ContentBlock[] }
     }
   | {
+      /**
+       * Session metadata, emitted ahead of everything else in a turn. Consumed
+       * for exactly one field: what the MCP servers are doing. The CLI reports
+       * them when a SESSION starts, so this is the only moment their state is
+       * knowable without opening a session just to ask.
+       */
+      readonly type: 'system'
+      readonly subtype?: string
+      readonly session_id?: string
+      readonly mcpServers?: readonly {
+        readonly name: string
+        readonly status?: string
+        readonly error?: string
+      }[]
+    }
+  | {
       readonly type: 'result'
       readonly subtype?: string
       readonly session_id?: string
@@ -84,9 +100,9 @@ export interface RawMessage {
   readonly session_id?: string
 }
 
-const KNOWN_TYPES = new Set(['stream_event', 'assistant', 'user', 'result'])
+const KNOWN_TYPES = new Set(['stream_event', 'assistant', 'user', 'result', 'system'])
 
-/** The SDK has forty-odd message types and gains more; we consume four. */
+/** The SDK has forty-odd message types and gains more; we consume five. */
 export function isKnownMessage(message: RawMessage): message is SdkMessage {
   return KNOWN_TYPES.has(message.type)
 }

@@ -58,6 +58,87 @@ export function StatusLine({ status }: { status: AuthStatus | undefined }) {
   }
 }
 
+/** One outbound MCP server, as the driver reports it. */
+export interface McpServerHealth {
+  readonly name: string
+  readonly state: 'connected' | 'failed' | 'needs-auth' | 'pending' | 'disabled' | 'unknown'
+  readonly error?: string
+}
+
+/**
+ * How each state reads, and which of the three tones it wears.
+ *
+ * `needs-auth` is the one worth naming: it is not a failure, it is a job for a
+ * person, and painting it red would send somebody debugging a network while a
+ * server waits to be logged into. `unknown` is not red either — nothing has
+ * been observed yet, which is a fact about this instance rather than about the
+ * server.
+ */
+const MCP_STATES: Readonly<
+  Record<McpServerHealth['state'], { readonly tone: string; readonly label: string }>
+> = {
+  connected: { tone: 'settled', label: 'connected' },
+  failed: { tone: 'waiting', label: 'failed' },
+  'needs-auth': { tone: 'waiting', label: 'needs a sign-in' },
+  pending: { tone: 'underway', label: 'starting' },
+  disabled: { tone: 'underway', label: 'disabled' },
+  unknown: { tone: 'underway', label: 'not observed yet' },
+}
+
+/**
+ * The outbound MCP servers this instance wired, and what they are doing.
+ *
+ * Absent entirely when the driver cannot report — a 404 — rather than shown
+ * empty: "this engine does not report" and "you have no servers" are different
+ * facts, and one box cannot say both.
+ */
+export function McpPanel({
+  fetchImpl = fetch,
+  t = (key) => key,
+}: {
+  fetchImpl?: typeof fetch
+  t?: (key: string) => string
+}) {
+  const [servers, setServers] = useState<readonly McpServerHealth[] | undefined>()
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const response = await fetchImpl('/api/mcp/status')
+        if (!response.ok) return
+        const body = (await response.json()) as { servers?: readonly McpServerHealth[] }
+        setServers(body.servers ?? [])
+      } catch {
+        /* no report, no panel */
+      }
+    })()
+  }, [fetchImpl])
+
+  if (servers === undefined || servers.length === 0) return null
+
+  return (
+    <section className="golem-mcp">
+      <h3>{t('MCP servers')}</h3>
+      <ul>
+        {servers.map((server) => {
+          const shown = MCP_STATES[server.state] ?? MCP_STATES.unknown
+          return (
+            <li key={server.name}>
+              <span className="golem-mcp__name">{server.name}</span>
+              <span className={`golem-stat golem-stat--${shown.tone}`}>{t(shown.label)}</span>
+              {/* Only ever what the CLI said. A reason is never invented. */}
+              {server.error && <span className="golem-mcp__why">{server.error}</span>}
+            </li>
+          )
+        })}
+      </ul>
+      <p className="golem-mcp__note">
+        {t('Reported when a turn last ran — the CLI loads them with the session.')}
+      </p>
+    </section>
+  )
+}
+
 export function Settings({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   const [status, setStatus] = useState<AuthStatus | undefined>()
   const [supported, setSupported] = useState(true)

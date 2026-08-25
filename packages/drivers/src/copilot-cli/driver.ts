@@ -21,6 +21,7 @@ import type {
   Driver,
   DriverDescriptor,
   McpServer,
+  McpServerHealth,
   ModelInfo,
   TurnEvent,
   TurnRequest,
@@ -70,6 +71,8 @@ export class CopilotDriver implements Driver {
   readonly #mcpServers: readonly McpServer[]
   /** Written once, then reused: the set is fixed for the process's life. */
   #mcpConfigPath: Promise<string | undefined> | undefined
+  /** What the last session said about them. Empty until a turn has run. */
+  #mcpHealth: readonly McpServerHealth[] = []
   #credentials: Record<string, string>
   #savedAt: string | undefined
   #invalidReason: string | undefined
@@ -96,7 +99,11 @@ export class CopilotDriver implements Driver {
       capabilities: [
         'authManagement',
         'usageMetrics',
-        'mcpStatus',
+        // Only when this instance actually wired servers: a panel offering to
+        // report the health of nothing looks broken. The CLI's own config
+        // servers are the user's, and Golem does not claim to report on what
+        // it did not wire.
+        ...(this.#mcpServers.length > 0 ? (['mcpStatus'] as const) : []),
         ...(this.#models.length > 0 ? (['modelSelection'] as const) : []),
         // Deliberately NOT declared: `liveTurnUsage` (the stream carries no
         // running token count), `cost` (billing is AI credits, aggregated
@@ -215,11 +222,22 @@ export class CopilotDriver implements Driver {
     this.#pending = undefined
   }
 
-  mcpStatus(): Promise<readonly { name: string; ok: boolean; error?: string }[]> {
-    // Reported per turn through the event stream rather than probed: the CLI
-    // loads MCP servers when a session starts, and asking outside one would
-    // start a session just to ask.
-    return Promise.resolve([])
+  /**
+   * What the servers are doing, as of the last turn.
+   *
+   * Read off the session's own events rather than probed: the CLI loads MCP
+   * servers when a session starts, and asking outside one would mean starting
+   * a session just to ask. Before any turn has run, every declared server is
+   * reported as `unknown` — which is true, where an empty list would read as
+   * "you have no servers" to somebody who just configured three.
+   *
+   * This returned `[]` unconditionally until now, while the capability was
+   * declared: a method that answers "nothing" is worse than one that is
+   * absent, because the panel believes it.
+   */
+  mcpStatus(): Promise<readonly McpServerHealth[]> {
+    if (this.#mcpHealth.length > 0) return Promise.resolve(this.#mcpHealth)
+    return Promise.resolve(this.#mcpServers.map((server) => ({ name: server.name, state: 'unknown' as const })))
   }
 
   /**
@@ -366,6 +384,10 @@ export class CopilotDriver implements Driver {
     } finally {
       this.#running.delete(state.sessionId)
       child.kill('SIGTERM')
+      // Kept from the session that just ended, INCLUDING when the turn was
+      // interrupted: a server that failed to start is exactly what somebody
+      // wants to see after a turn went wrong.
+      if (state.mcp.size > 0) this.#mcpHealth = [...state.mcp.values()]
     }
   }
 

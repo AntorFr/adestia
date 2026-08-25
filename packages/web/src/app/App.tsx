@@ -11,7 +11,7 @@ import { Component, useCallback, useEffect, useMemo, useRef, useState, type Reac
 import { Chat } from '../chat/Chat.js'
 import { Editor, type PageDocument } from '../editor/Editor.js'
 import { Modal } from './Modal.js'
-import { Settings } from './Settings.js'
+import { McpPanel, Settings } from './Settings.js'
 import {
   browserSkinEnvironment,
   loadSkin,
@@ -644,6 +644,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
       {settingsOpen && (
         <Modal title={t('Settings')} closeLabel={t('Close')} onClose={() => setSettingsOpen(false)}>
           <Settings fetchImpl={fetchImpl} />
+          <McpPanel fetchImpl={fetchImpl} t={t} />
         </Modal>
       )}
     </div>

@@ -328,3 +328,67 @@ describe('outbound MCP servers', () => {
     expect('mcpServers' in optionsOf(seen)).toBe(false)
   })
 })
+
+describe('MCP health', () => {
+  const initMessage = {
+    type: 'system' as const,
+    subtype: 'init',
+    mcpServers: [
+      { name: 'ha', status: 'connected' },
+      { name: 'notion', status: 'needs-auth' },
+      { name: 'broken', status: 'failed', error: 'spawn ENOENT' },
+    ],
+  }
+
+  it('reports every declared server as unknown before a turn has run', async () => {
+    // True, and better than an empty list: "you have no servers" is what an
+    // empty list says to somebody who just configured two.
+    const driver = new ClaudeCodeDriver({
+      query: fakeSdk([resultMessage]),
+      mcpServers: [{ name: 'ha', url: 'https://ha/mcp' }, { name: 'cutlist', command: 'node' }],
+    })
+    expect(await driver.mcpStatus()).toEqual([
+      { name: 'ha', state: 'unknown' },
+      { name: 'cutlist', state: 'unknown' },
+    ])
+  })
+
+  it('reads what the session said, states and reasons alike', async () => {
+    const driver = new ClaudeCodeDriver({
+      query: fakeSdk([initMessage, resultMessage]),
+      mcpServers: [{ name: 'ha', url: 'https://ha/mcp' }],
+    })
+    await collect(driver)
+    expect(await driver.mcpStatus()).toEqual([
+      // needs-auth survives as itself: it is a job for a person, not a failure.
+      { name: 'ha', state: 'connected' },
+      { name: 'notion', state: 'needs-auth' },
+      { name: 'broken', state: 'failed', error: 'spawn ENOENT' },
+    ])
+  })
+
+  it('calls a state it has never met unknown, not failed', async () => {
+    // A word the CLI invents is not evidence a server is down, and saying
+    // "down" about a working server is the more expensive mistake.
+    const driver = new ClaudeCodeDriver({
+      query: fakeSdk([
+        { type: 'system' as const, subtype: 'init', mcpServers: [{ name: 'x', status: 'reticulating' }] },
+        resultMessage,
+      ]),
+      mcpServers: [{ name: 'x', command: 'node' }],
+    })
+    await collect(driver)
+    expect(await driver.mcpStatus()).toEqual([{ name: 'x', state: 'unknown' }])
+  })
+
+  it('does not declare the capability when it wired nothing', async () => {
+    // A panel offering to report the health of nothing looks broken.
+    const bare = new ClaudeCodeDriver({ query: fakeSdk([]) })
+    expect((await bare.describe()).capabilities).not.toContain('mcpStatus')
+    const wired = new ClaudeCodeDriver({
+      query: fakeSdk([]),
+      mcpServers: [{ name: 'ha', url: 'https://ha/mcp' }],
+    })
+    expect((await wired.describe()).capabilities).toContain('mcpStatus')
+  })
+})

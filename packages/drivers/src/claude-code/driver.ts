@@ -16,6 +16,7 @@ import type {
   Driver,
   DriverDescriptor,
   McpServer,
+  McpServerHealth,
   ModelInfo,
   TurnEvent,
   TurnRequest,
@@ -109,6 +110,27 @@ function toSdkServers(servers: readonly McpServer[]): Readonly<Record<string, Mc
   return out
 }
 
+/**
+ * The CLI's status words, in the contract's.
+ *
+ * A word this table has never met becomes `unknown` rather than `failed`: a
+ * new state the CLI invents is not evidence that a server is down, and saying
+ * "down" about a working server is the more expensive mistake.
+ */
+const HEALTH_STATES = new Set(['connected', 'failed', 'needs-auth', 'pending', 'disabled'])
+
+function readHealth(
+  reported: readonly { name: string; status?: string; error?: string }[],
+): readonly McpServerHealth[] {
+  return reported.map((server) => ({
+    name: server.name,
+    state: (HEALTH_STATES.has(server.status ?? '')
+      ? server.status
+      : 'unknown') as McpServerHealth['state'],
+    ...(server.error ? { error: server.error } : {}),
+  }))
+}
+
 export class ClaudeCodeDriver implements Driver {
   readonly #query: QueryFn
   readonly #baseEnv: Readonly<Record<string, string | undefined>>
@@ -118,6 +140,8 @@ export class ClaudeCodeDriver implements Driver {
   readonly #armingFlow: ArmingFlow | undefined
   readonly #permissions: PermissionBroker | undefined
   readonly #mcpServers: Readonly<Record<string, McpServerConfig>>
+  /** What the last session said about them. Empty until a turn has run. */
+  #mcpHealth: readonly McpServerHealth[] = []
   /** Set by the core after it stores a secret, so status can report it. */
   #savedAt: string | undefined
   #invalidReason: string | undefined
@@ -217,6 +241,11 @@ export class ClaudeCodeDriver implements Driver {
         'usageMetrics',
         'cost',
         'liveTurnUsage',
+        // Declared only when this instance actually wired servers: a panel
+        // offering to report the health of nothing is a panel that looks
+        // broken. The CLI's own `.mcp.json` servers are the user's, and Golem
+        // does not claim to report on what it did not wire.
+        ...(Object.keys(this.#mcpServers).length > 0 ? (['mcpStatus'] as const) : []),
         // Declared only when the instance actually configured a catalogue:
         // an empty selector is worse than no selector.
         ...(this.#models.length > 0 ? (['modelSelection'] as const) : []),
@@ -235,6 +264,22 @@ export class ClaudeCodeDriver implements Driver {
 
   listModels(): Promise<readonly ModelInfo[]> {
     return Promise.resolve(this.#models)
+  }
+
+  /**
+   * What the servers are doing, as of the last turn.
+   *
+   * Read off the session's init message rather than probed, because probing
+   * would mean opening a session to ask. Before any turn has run, every
+   * declared server is reported as `unknown` — which is true, and which the
+   * panel can say. An empty list would read as "you have no servers" to
+   * somebody who just configured three.
+   */
+  mcpStatus(): Promise<readonly McpServerHealth[]> {
+    if (this.#mcpHealth.length > 0) return Promise.resolve(this.#mcpHealth)
+    return Promise.resolve(
+      Object.keys(this.#mcpServers).map((name) => ({ name, state: 'unknown' as const })),
+    )
   }
 
   async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
@@ -333,6 +378,14 @@ export class ClaudeCodeDriver implements Driver {
               settledOutput += currentOutput
               currentOutput = 0
             }
+            break
+          }
+
+          case 'system': {
+            // The only field consumed from session metadata. Recorded rather
+            // than yielded: it is not an event of the conversation, it is the
+            // state of the instance's plumbing, and the panel asks for it.
+            if (message.mcpServers) this.#mcpHealth = readHealth(message.mcpServers)
             break
           }
 

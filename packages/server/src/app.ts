@@ -229,6 +229,22 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     return { models: await listModels.call(driver) }
   })
 
+  /**
+   * What the outbound MCP servers are doing.
+   *
+   * Same gate and same 404 as the models route: "this driver cannot report"
+   * and "this instance has no servers" are different facts, and a panel that
+   * cannot tell them apart shows an empty box for both.
+   */
+  app.get('/api/mcp/status', async (_request, reply) => {
+    if (!descriptor.capabilities.includes('mcpStatus')) {
+      await reply.code(404).send({ error: 'this driver does not report MCP health' })
+      return reply
+    }
+    const mcpStatus = (driver as Driver & { mcpStatus(): Promise<unknown> }).mcpStatus
+    return { servers: await mcpStatus.call(driver) }
+  })
+
   await app.register(multipart, {
     limits: { fileSize: config.attachments.maxBytes, files: config.attachments.maxFiles },
   })

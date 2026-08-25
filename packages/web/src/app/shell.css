@@ -854,6 +854,58 @@
 
 /* A refusal is a warning; a degradation is a note. Same shape, quieter
    border, so the eye sorts them before the words do. */
+/* The MCP panel: a list of names and states, in the settings dialog. Rows
+   rather than cards — this is a status board, and a board is read down a
+   column. */
+.golem-mcp {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+.golem-mcp h3 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.golem-mcp ul { list-style: none; margin: 0; padding: 0; }
+
+.golem-mcp li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.golem-mcp li:last-child { border-bottom: 0; }
+
+.golem-mcp__name {
+  flex: 1;
+  min-width: 0;
+  font: 600 var(--text-sm) var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+/* The reason takes the whole next line: it is a sentence from the CLI, and
+   squeezing it beside a pill truncates the part that explains anything. */
+.golem-mcp__why {
+  flex-basis: 100%;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.golem-mcp__note {
+  margin: var(--space-3) 0 0;
+  color: var(--text-faint);
+  font-size: var(--text-sm);
+}
+
 .golem-problems--degraded {
   border-color: var(--border);
   background: var(--surface-sunken);

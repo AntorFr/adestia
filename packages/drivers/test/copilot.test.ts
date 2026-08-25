@@ -657,3 +657,67 @@ describe('outbound MCP servers', () => {
     expect(fake.spawns[0]?.args).not.toContain('--additional-mcp-config')
   })
 })
+
+describe('MCP health', () => {
+  const run = async (lines: readonly string[], servers: { name: string; command?: string; url?: string }[]) => {
+    const fake = fakeCopilot()
+    const driver = new CopilotDriver({
+      home: mkdtempSync(join(tmpdir(), 'golem-copilot-')),
+      spawnImpl: fake.spawnImpl,
+      mcpServers: servers,
+    })
+    const turn = collect(driver, { prompt: 'x', cwd: '/w' })
+    await vi.waitFor(() => expect(fake.spawns.length).toBe(1))
+    for (const line of lines) fake.stdout.write(`${line}\n`)
+    fake.stdout.write('{"type":"result","data":{"sessionId":"s1","exitCode":0}}\n')
+    fake.child.emit('close', 0)
+    await turn
+    return driver
+  }
+
+  it('reported an empty list while declaring it could report — it no longer does', async () => {
+    // A method that answers "nothing" is worse than one that is absent,
+    // because the panel believes it.
+    const driver = await run(
+      [
+        '{"type":"session.mcp_servers_loaded","data":{"servers":[{"name":"ha","status":"connected"},{"name":"notion","status":"needs-auth"}]}}',
+      ],
+      [{ name: 'ha', url: 'https://ha/mcp' }],
+    )
+    expect(await driver.mcpStatus()).toEqual([
+      { name: 'ha', state: 'connected' },
+      { name: 'notion', state: 'needs-auth' },
+    ])
+  })
+
+  it('amends one server without forgetting the rest', async () => {
+    // The CLI announces the whole set once, then changes them one at a time.
+    // Replacing on the second kind would leave the panel reporting one server.
+    const driver = await run(
+      [
+        '{"type":"session.mcp_servers_loaded","data":{"servers":[{"name":"ha","status":"pending"},{"name":"cutlist","status":"connected"}]}}',
+        '{"type":"session.mcp_server_status_changed","data":{"serverName":"ha","status":"failed","error":"connect ECONNREFUSED"}}',
+      ],
+      [{ name: 'ha', url: 'https://ha/mcp' }],
+    )
+    expect(await driver.mcpStatus()).toEqual([
+      { name: 'ha', state: 'failed', error: 'connect ECONNREFUSED' },
+      { name: 'cutlist', state: 'connected' },
+    ])
+  })
+
+  it('says unknown for a declared server no session has spoken about', async () => {
+    const fake = fakeCopilot()
+    const driver = new CopilotDriver({
+      home: '/x',
+      spawnImpl: fake.spawnImpl,
+      mcpServers: [{ name: 'ha', url: 'https://ha/mcp' }],
+    })
+    expect(await driver.mcpStatus()).toEqual([{ name: 'ha', state: 'unknown' }])
+  })
+
+  it('does not declare the capability when it wired nothing', async () => {
+    const bare = new CopilotDriver({ home: '/x' })
+    expect((await bare.describe()).capabilities).not.toContain('mcpStatus')
+  })
+})

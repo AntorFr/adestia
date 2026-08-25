@@ -8,7 +8,7 @@
  * adds an event must not take the product down.
  */
 
-import type { TurnEvent, TurnUsage } from '../contract.js'
+import type { McpServerHealth, TurnEvent, TurnUsage } from '../contract.js'
 
 /** The envelope every line shares. */
 export interface CopilotEvent {
@@ -78,10 +78,38 @@ export interface TranslationState {
   readonly pending: Map<string, string>
   sessionId: string
   stopped: boolean
+  /**
+   * What the session said about its MCP servers, by name.
+   *
+   * Accumulated rather than replaced: the CLI announces the whole set once
+   * (`mcp_servers_loaded`) and then amends one server at a time
+   * (`mcp_server_status_changed`), so replacing on the second kind would leave
+   * the panel reporting one server and forgetting the rest.
+   */
+  readonly mcp: Map<string, McpServerHealth>
 }
 
 export function newTranslationState(sessionId = ''): TranslationState {
-  return { pending: new Map(), sessionId, stopped: false }
+  return { pending: new Map(), sessionId, stopped: false, mcp: new Map() }
+}
+
+/**
+ * The CLI's status words, in the contract's.
+ *
+ * A word this table has never met becomes `unknown` rather than `failed`: a
+ * state the CLI invents is not evidence that a server is down, and saying
+ * "down" about a working server is the more expensive mistake.
+ */
+const HEALTH_STATES = new Set(['connected', 'failed', 'needs-auth', 'pending', 'disabled'])
+
+function health(name: string, status: unknown, error: unknown): McpServerHealth {
+  return {
+    name,
+    state: (HEALTH_STATES.has(String(status ?? ''))
+      ? String(status)
+      : 'unknown') as McpServerHealth['state'],
+    ...(error ? { error: String(error) } : {}),
+  }
 }
 
 /**
@@ -117,7 +145,23 @@ export function translate(event: CopilotEvent, state: TranslationState): readonl
       return [{ type: 'tool-result', name, ok: data['success'] !== false }]
     }
 
+    case 'session.mcp_servers_loaded': {
+      // The whole set, once, when the session opens. Recorded rather than
+      // announced: it is the state of the plumbing, not an event of the
+      // conversation.
+      const servers = data['servers'] ?? data['mcpServers']
+      if (Array.isArray(servers)) {
+        for (const entry of servers as Record<string, unknown>[]) {
+          const name = String(entry['name'] ?? entry['serverName'] ?? '')
+          if (name) state.mcp.set(name, health(name, entry['status'], entry['error']))
+        }
+      }
+      return []
+    }
+
     case 'session.mcp_server_status_changed': {
+      const name = String(data['serverName'] ?? '')
+      if (name) state.mcp.set(name, health(name, data['status'], data['error']))
       // Surfaced as a non-fatal error: an MCP server that failed to start is
       // why a tool the user expects is missing, and silence there sends them
       // looking at the agent instead of at their config.
