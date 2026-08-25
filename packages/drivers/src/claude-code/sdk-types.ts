@@ -9,6 +9,23 @@
  * Shapes verified against @anthropic-ai/claude-agent-sdk 0.3.237 (sdk.d.ts).
  */
 
+/**
+ * What `options.mcpServers` accepts, verified against sdk.d.ts: a record of
+ * name → config, discriminated by `type`.
+ */
+export type McpServerConfig =
+  | {
+      readonly type: 'stdio'
+      readonly command: string
+      readonly args?: readonly string[]
+      readonly env?: Readonly<Record<string, string>>
+    }
+  | {
+      readonly type: 'http'
+      readonly url: string
+      readonly headers?: Readonly<Record<string, string>>
+    }
+
 export interface ContentBlock {
   readonly type: string
   readonly name?: string

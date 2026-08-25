@@ -15,6 +15,7 @@ import type {
   AuthStatus,
   Driver,
   DriverDescriptor,
+  McpServer,
   ModelInfo,
   TurnEvent,
   TurnRequest,
@@ -24,7 +25,7 @@ import { TOKEN_ENV_VAR, looksLikeToken } from './arming.js'
 import { PermissionBroker, type PermissionRequest } from '../permissions.js'
 import { proposedFileEdit, toolTarget } from './events.js'
 import { isKnownMessage } from './sdk-types.js'
-import type { QueryFn, RawMessage, SdkMessage } from './sdk-types.js'
+import type { McpServerConfig, QueryFn, RawMessage, SdkMessage } from './sdk-types.js'
 
 export interface ClaudeCodeOptions {
   /** Injected so tests can drive a fake SDK — see `test/claude-code.test.ts`. */
@@ -55,6 +56,15 @@ export interface ClaudeCodeOptions {
    */
   readonly armingFlow?: ArmingFlow
   /**
+   * Outbound MCP servers, from the operator's config and from active plugins.
+   *
+   * Handed to the SDK PROGRAMMATICALLY at the spawn site rather than written
+   * to a file: the CLI's own `.mcp.json` belongs to the user and the agent,
+   * and a product that rewrote it would be editing something it does not own —
+   * silently, on every start. Same doctrine as instructions.
+   */
+  readonly mcpServers?: readonly McpServer[]
+  /**
    * Gates tool use behind a human. Absent means the CLI's own permission
    * handling applies — which, with no prompt surface, denies everything it
    * would have asked about. That is the failure this exists to fix: an agent
@@ -73,6 +83,32 @@ export interface ArmingFlow {
   cancel(): Promise<void>
 }
 
+/**
+ * Golem's server shape, in the SDK's.
+ *
+ * Two transports and one discriminator: the SDK reads `type: 'http'` for a
+ * URL and treats everything else as stdio. Written explicitly rather than
+ * spread, so a field the config gains does not silently reach the CLI.
+ */
+function toSdkServers(servers: readonly McpServer[]): Readonly<Record<string, McpServerConfig>> {
+  const out: Record<string, McpServerConfig> = {}
+  for (const server of servers) {
+    out[server.name] = server.url
+      ? {
+          type: 'http',
+          url: server.url,
+          ...(server.headers ? { headers: { ...server.headers } } : {}),
+        }
+      : {
+          type: 'stdio',
+          command: server.command ?? '',
+          ...(server.args ? { args: [...server.args] } : {}),
+          ...(server.env ? { env: { ...server.env } } : {}),
+        }
+  }
+  return out
+}
+
 export class ClaudeCodeDriver implements Driver {
   readonly #query: QueryFn
   readonly #baseEnv: Readonly<Record<string, string | undefined>>
@@ -81,6 +117,7 @@ export class ClaudeCodeDriver implements Driver {
   readonly #models: readonly ModelInfo[]
   readonly #armingFlow: ArmingFlow | undefined
   readonly #permissions: PermissionBroker | undefined
+  readonly #mcpServers: Readonly<Record<string, McpServerConfig>>
   /** Set by the core after it stores a secret, so status can report it. */
   #savedAt: string | undefined
   #invalidReason: string | undefined
@@ -95,6 +132,9 @@ export class ClaudeCodeDriver implements Driver {
     this.#models = options.models ?? []
     this.#armingFlow = options.armingFlow
     this.#permissions = options.permissions
+    // Shaped once, at construction: the mapping is fixed for the process's
+    // life, and doing it per turn would repeat the same work on every message.
+    this.#mcpServers = toSdkServers(options.mcpServers ?? [])
   }
 
   /** Called by the core when it loads or stores this driver's credentials. */
@@ -231,6 +271,9 @@ export class ClaudeCodeDriver implements Driver {
         ...(canUseTool ? { canUseTool } : {}),
         ...(request.sessionId ? { resume: request.sessionId } : {}),
         ...(request.model ? { model: request.model } : {}),
+        // Only what this instance declared. The CLI's own MCP config still
+        // applies on top — it is the user's, and Golem does not touch it.
+        ...(Object.keys(this.#mcpServers).length > 0 ? { mcpServers: this.#mcpServers } : {}),
         // Credentials go ON TOP of the inherited environment, so a token
         // managed here wins over stale credentials in a shared home without
         // stripping everything the CLI needs to run.

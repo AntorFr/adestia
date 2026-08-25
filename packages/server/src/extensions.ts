@@ -18,8 +18,23 @@ import {
   parsePluginManifest,
   parseSkinManifest,
   type PluginManifest,
+  type PluginMcpServer,
   type SkinManifest,
 } from '@antorfr/golem-schemas'
+
+/**
+ * The shape a driver is handed lives in the driver contract; this layer only
+ * decides WHICH servers it hands over.
+ *
+ * Worth stating about `headers`: it is the operator's alone. It is where an
+ * HTTP server's authorization goes, and a plugin carrying a token in its
+ * manifest would put a credential in a folder anybody can drop into — the very
+ * thing the secrets contract exists to prevent. A plugin needing an
+ * authenticated server asks the operator to declare it. The manifest schema
+ * has no `headers`, so this is enforced rather than merely advised.
+ */
+import type { McpServer } from '@antorfr/golem-drivers'
+export type { McpServer }
 
 export interface DiscoveredPlugin {
   readonly manifest: PluginManifest
@@ -145,6 +160,56 @@ export function claimedTypeCollisions(
   return [...claims.entries()]
     .filter(([, ids]) => ids.length > 1)
     .map(([type, ids]) => ({ type, ids }))
+}
+
+/**
+ * The outbound MCP servers this instance will hand its driver, from the two
+ * layers the product owns.
+ *
+ * The third layer — the CLI's own `.mcp.json` — is deliberately absent: it is
+ * the user's and the agent's, and Golem neither parses nor translates it. Same
+ * doctrine as instructions.
+ *
+ * The OPERATOR wins a name conflict. Not arbitrary: a plugin is something you
+ * dropped in a folder, the config is something you wrote — and when the two
+ * disagree, the one you wrote is the one you meant. The loser is REPORTED, by
+ * name, because a server silently replaced by another under the same name is a
+ * tool call going somewhere nobody chose.
+ *
+ * Plugins are read only while ACTIVE, the same rule as their APIs: turning a
+ * plugin off takes its server with it.
+ */
+export function mcpServersFor(
+  operator: readonly McpServer[],
+  plugins: readonly DiscoveredPlugin[],
+): { servers: readonly McpServer[]; problems: readonly DiscoveryProblem[] } {
+  const problems: DiscoveryProblem[] = []
+  const byName = new Map<string, McpServer>()
+  const owner = new Map<string, string>()
+
+  for (const server of operator) {
+    byName.set(server.name, server)
+    owner.set(server.name, 'the operator configuration')
+  }
+
+  for (const plugin of plugins) {
+    if (!plugin.active) continue
+    for (const server of plugin.manifest.mcpServers ?? []) {
+      const held = owner.get(server.name)
+      if (held !== undefined) {
+        problems.push({
+          id: plugin.manifest.id,
+          severity: 'degraded',
+          reason: `brings the MCP server "${server.name}", which ${held} already declares — the plugin's is not wired`,
+        })
+        continue
+      }
+      byName.set(server.name, server)
+      owner.set(server.name, `the plugin "${plugin.manifest.id}"`)
+    }
+  }
+
+  return { servers: [...byName.values()], problems }
 }
 
 async function readManifest(path: string): Promise<unknown> {

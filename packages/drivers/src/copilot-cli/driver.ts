@@ -12,7 +12,7 @@
  */
 
 import { spawn } from 'node:child_process'
-import { mkdir, rm } from 'node:fs/promises'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import type {
@@ -20,6 +20,7 @@ import type {
   AuthStatus,
   Driver,
   DriverDescriptor,
+  McpServer,
   ModelInfo,
   TurnEvent,
   TurnRequest,
@@ -37,6 +38,20 @@ export interface CopilotDriverOptions {
   readonly baseEnv?: Readonly<Record<string, string | undefined>>
   readonly cliVersion?: string
   readonly models?: readonly ModelInfo[]
+  /**
+   * Outbound MCP servers, from the operator's config and from active plugins.
+   *
+   * Materialized as a SIDE file under the driver-owned home and handed over
+   * with `--additional-mcp-config`, which augments the user's own config for
+   * one session. Two things that buys, both deliberate:
+   *
+   * - `mcp-config.json` — the user's, written by `copilot mcp add` — is never
+   *   touched. Golem does not own it, so Golem does not rewrite it.
+   * - the servers are not on argv. Inline JSON would have worked and would
+   *   have put every `Authorization: Bearer …` header in `ps` output, readable
+   *   by any process on the box.
+   */
+  readonly mcpServers?: readonly McpServer[]
   readonly spawnImpl?: typeof spawn
   /** Injection point for the device-code login flow, for tests. */
   readonly startLoginImpl?: typeof startDeviceCodeLogin
@@ -52,6 +67,9 @@ export class CopilotDriver implements Driver {
   readonly #cliVersion: string
   readonly #spawn: typeof spawn
   readonly #startLogin: typeof startDeviceCodeLogin
+  readonly #mcpServers: readonly McpServer[]
+  /** Written once, then reused: the set is fixed for the process's life. */
+  #mcpConfigPath: Promise<string | undefined> | undefined
   #credentials: Record<string, string>
   #savedAt: string | undefined
   #invalidReason: string | undefined
@@ -66,6 +84,7 @@ export class CopilotDriver implements Driver {
     this.#cliVersion = options.cliVersion ?? 'unknown'
     this.#spawn = options.spawnImpl ?? spawn
     this.#startLogin = options.startLoginImpl ?? startDeviceCodeLogin
+    this.#mcpServers = options.mcpServers ?? []
     this.#credentials = { ...options.credentials }
   }
 
@@ -203,7 +222,57 @@ export class CopilotDriver implements Driver {
     return Promise.resolve([])
   }
 
+  /**
+   * The session-scoped MCP config, written once.
+   *
+   * Undefined when this instance declares no servers — no file, no flag, and
+   * the CLI keeps exactly the behaviour it had before this existed. A failure
+   * to write is swallowed on purpose: a turn that cannot reach one MCP server
+   * is worth far more than a turn that refuses to start.
+   */
+  #mcpConfig(): Promise<string | undefined> {
+    this.#mcpConfigPath ??= (async () => {
+      if (this.#mcpServers.length === 0) return undefined
+      const mcpServers: Record<string, unknown> = {}
+      for (const server of this.#mcpServers) {
+        mcpServers[server.name] = server.url
+          ? {
+              type: 'http',
+              url: server.url,
+              ...(server.headers ? { headers: server.headers } : {}),
+              tools: ['*'],
+            }
+          : {
+              // The CLI's own word for stdio, captured from what `copilot mcp
+              // add` actually writes — not guessed from the flag's vocabulary,
+              // which calls the same thing "stdio".
+              type: 'local',
+              command: server.command ?? '',
+              ...(server.args ? { args: server.args } : {}),
+              ...(server.env ? { env: server.env } : {}),
+              // Required: an entry without it exposes no tools at all.
+              tools: ['*'],
+            }
+      }
+      const path = join(this.#home, 'golem-mcp.json')
+      try {
+        await mkdir(this.#home, { recursive: true })
+        // 0600: this file holds whatever tokens the servers need.
+        await writeFile(path, JSON.stringify({ mcpServers }, null, 2), { mode: 0o600 })
+        return path
+      } catch {
+        return undefined
+      }
+    })()
+    return this.#mcpConfigPath
+  }
+
   async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
+    // Guarded rather than always awaited: an instance with no MCP servers must
+    // reach `spawn` in the same tick it did before this existed. The await is
+    // real work only when there is a file to write, and deferring the spawn by
+    // a microtask for everyone else is a behaviour change nobody asked for.
+    const mcpConfig = this.#mcpServers.length === 0 ? undefined : await this.#mcpConfig()
     const args = [
       '--prompt',
       request.prompt,
@@ -213,6 +282,8 @@ export class CopilotDriver implements Driver {
       '--no-auto-update',
       ...(request.sessionId ? ['--resume', request.sessionId] : []),
       ...(request.model ? ['--model', request.model] : []),
+      // `@file` rather than inline JSON: the servers' tokens stay out of argv.
+      ...(mcpConfig ? ['--additional-mcp-config', `@${mcpConfig}`] : []),
     ]
 
     const child = this.#spawn(this.#command, args, {

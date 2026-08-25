@@ -28,7 +28,9 @@ import {
   claimedTypeCollisions,
   discoverPlugins,
   discoverSkins,
+  mcpServersFor,
   unmatchedActivations,
+  type McpServer,
 } from './extensions.js'
 import { planifEditRule } from './planif-gate.js'
 import { runSetups } from './plugin-host.js'
@@ -79,6 +81,7 @@ async function buildDriver(
   config: GolemConfig,
   dataDir: string,
   permissions: PermissionBroker,
+  mcpServers: readonly McpServer[],
 ): Promise<Driver> {
   switch (config.driver.id) {
     case 'claude-code': {
@@ -91,6 +94,7 @@ async function buildDriver(
         // as a status code instead of a half-drawn frame.
         armingFlow: createOAuthFlow(),
         permissions,
+        mcpServers,
       })
     }
 
@@ -100,6 +104,7 @@ async function buildDriver(
         // land here rather than in whatever HOME the process happens to have.
         home: join(dataDir, 'copilot-home'),
         models: config.driver.models,
+        mcpServers,
         ...(config.driver.command ? { command: config.driver.command } : {}),
       })
 
@@ -195,9 +200,20 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     // tools are otherwise auto-allowed. See planif-gate.ts for the contract.
     decideEdit: planifEditRule(join(workspaceRoot, config.workspace.planif)),
   })
+  // The two layers the product owns, merged before the driver exists: a
+  // driver is HANDED its servers rather than going looking for them, which is
+  // what keeps "where does this server come from" a question with one answer.
+  const { servers: mcpServers, problems: mcpProblems } = mcpServersFor(config.mcpServers, plugins)
+  for (const problem of mcpProblems) {
+    log(`extension "${problem.id}" — ${problem.reason}`)
+  }
+  if (mcpServers.length > 0) {
+    log(`${mcpServers.length} MCP server(s) wired: ${mcpServers.map((s) => s.name).join(', ')}`)
+  }
+
   const driver = options.driverFactory
     ? await options.driverFactory(config)
-    : await buildDriver(config, dataDir, permissions)
+    : await buildDriver(config, dataDir, permissions, mcpServers)
 
   // A token armed in a previous run is loaded before the first turn: an
   // instance that forgets its credential on restart is an instance someone

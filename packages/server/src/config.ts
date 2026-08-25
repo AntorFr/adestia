@@ -120,6 +120,25 @@ export interface AttachmentsConfig {
  * reach that runs agent turns is a remote shell; an instance must never grow
  * one because a setting was left blank.
  */
+/**
+ * An MCP server the agent may CALL — the outbound direction.
+ *
+ * Either a `command` (stdio, launched by the CLI) or a `url` (http), never
+ * both: they are two transports, and a server declaring both leaves the driver
+ * guessing which one an operator meant.
+ *
+ * `env` values go through the same `${VAR}` substitution as everything else,
+ * so a token lives in the environment and the committed file holds the wiring.
+ */
+export interface McpServerConfig {
+  readonly name: string
+  readonly command?: string | undefined
+  readonly args?: readonly string[] | undefined
+  readonly url?: string | undefined
+  readonly env?: Readonly<Record<string, string>> | undefined
+  readonly headers?: Readonly<Record<string, string>> | undefined
+}
+
 export interface McpInConfig {
   readonly enabled: boolean
   readonly token?: string | undefined
@@ -151,6 +170,14 @@ export interface GolemConfig {
   readonly schedule: ScheduleConfig
   readonly attachments: AttachmentsConfig
   readonly mcp: McpInConfig
+  /**
+   * Outbound MCP servers, the OPERATOR layer.
+   *
+   * One of three sources the design names, and the canonical one: a plugin may
+   * bring its own, and the CLI's native config stays the user's business. This
+   * layer wins a name conflict, loudly.
+   */
+  readonly mcpServers: readonly McpServerConfig[]
   /** Concurrent turns across all conversations. Subscription limits are real. */
   readonly maxConcurrentTurns: number
 }
@@ -178,6 +205,15 @@ const KNOWN_KEYS = new Set([
   'mcp',
   'maxConcurrentTurns',
 ])
+
+/**
+ * What may appear inside `mcp:`.
+ *
+ * Two directions in one block: `servers` is what the agent may CALL, the rest
+ * is the endpoint other agents call HERE. Kept together because that is where
+ * an operator looks for anything MCP, and told apart in the example config.
+ */
+const MCP_KEYS = new Set(['servers', 'enabled', 'token', 'agentName', 'maxPending', 'ttlMs'])
 
 const DEFAULTS = {
   /**
@@ -351,6 +387,106 @@ function readSecrets(raw: unknown, issues: string[]): Readonly<Record<string, st
   return secrets
 }
 
+/**
+ * The outbound MCP servers an operator declared.
+ *
+ * Every refusal here is a server the agent would otherwise be missing without
+ * knowing it. Before this existed the block was accepted and IGNORED — an
+ * instance booted clean and the agent simply never saw the servers somebody
+ * had configured, which is the worst way for a feature to be absent.
+ */
+function readMcpServers(raw: unknown, issues: string[]): readonly McpServerConfig[] {
+  if (raw === undefined) return []
+  if (!Array.isArray(raw)) {
+    issues.push('mcp.servers must be a list')
+    return []
+  }
+
+  const servers: McpServerConfig[] = []
+  const seen = new Set<string>()
+
+  for (const [index, entry] of raw.entries()) {
+    const where = `mcp.servers[${index}]`
+    if (!isObject(entry)) {
+      issues.push(`${where} must be a mapping`)
+      continue
+    }
+
+    const name = entry['name']
+    if (typeof name !== 'string' || !/^[a-zA-Z][\w-]{0,63}$/.test(name)) {
+      issues.push(`${where}.name is required (letters, digits, dashes and underscores)`)
+      continue
+    }
+    if (seen.has(name)) {
+      // Two servers with one name is a config whose meaning depends on order.
+      issues.push(`${where}: "${name}" is declared twice`)
+      continue
+    }
+    seen.add(name)
+
+    const command = typeof entry['command'] === 'string' ? entry['command'] : undefined
+    const url = typeof entry['url'] === 'string' ? entry['url'] : undefined
+    if (!command && !url) {
+      issues.push(`${where}: needs either "command" (stdio) or "url" (http)`)
+      continue
+    }
+    if (command && url) {
+      issues.push(`${where}: has both "command" and "url" — pick one transport`)
+      continue
+    }
+
+    const args = entry['args']
+    if (args !== undefined && !(Array.isArray(args) && args.every((a) => typeof a === 'string'))) {
+      issues.push(`${where}.args must be a list of strings`)
+      continue
+    }
+
+    const maps: Record<'env' | 'headers', Record<string, string> | undefined> = {
+      env: undefined,
+      headers: undefined,
+    }
+    let bad = false
+    for (const field of ['env', 'headers'] as const) {
+      const value = entry[field]
+      if (value === undefined) continue
+      if (!isObject(value)) {
+        issues.push(`${where}.${field} must be a mapping`)
+        bad = true
+        break
+      }
+      const table: Record<string, string> = {}
+      for (const [key, item] of Object.entries(value)) {
+        if (typeof item !== 'string') {
+          issues.push(`${where}.${field}.${key} must be a string`)
+          bad = true
+          break
+        }
+        if (/^\$\{[A-Za-z_][A-Za-z0-9_]*\}$/.test(item)) {
+          // Same rule as a secret: a literal "${TOKEN}" reaching a server
+          // fails later, in a call, blaming the server rather than the config.
+          issues.push(`${where}.${field}.${key} is still "${item}" — that variable is not set`)
+          bad = true
+          break
+        }
+        table[key] = item
+      }
+      maps[field] = table
+    }
+    if (bad) continue
+
+    servers.push({
+      name,
+      ...(command ? { command } : {}),
+      ...(args ? { args: args as readonly string[] } : {}),
+      ...(url ? { url } : {}),
+      ...(maps.env ? { env: maps.env } : {}),
+      ...(maps.headers ? { headers: maps.headers } : {}),
+    })
+  }
+
+  return servers
+}
+
 function applyOverrides(raw: Record<string, unknown>, env: NodeJS.ProcessEnv): void {
   for (const [variable, path] of Object.entries(ENV_OVERRIDES)) {
     const value = env[variable]
@@ -493,6 +629,16 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
   }
 
   const mcpRaw = isObject(raw['mcp']) ? raw['mcp'] : {}
+  // Unknown keys are refused at the top level, and were NOT inside a block —
+  // which is how `mcp.servers`, the very shape the design documents, could be
+  // written, accepted and ignored. This block has two directions in it, so it
+  // is the one where a typo costs the most.
+  for (const key of Object.keys(mcpRaw)) {
+    if (!MCP_KEYS.has(key)) {
+      issues.push(`mcp.${key} is not a setting — known keys: ${[...MCP_KEYS].join(', ')}`)
+    }
+  }
+  const mcpServers = readMcpServers(mcpRaw['servers'], issues)
   const mcpEnabled = mcpRaw['enabled'] === true
   const mcp: McpInConfig = {
     enabled: mcpEnabled,
@@ -517,6 +663,7 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
   if (issues.length > 0) throw new ConfigError(issues)
 
   return {
+    mcpServers,
     host: typeof raw['host'] === 'string' ? raw['host'] : DEFAULTS.host,
     port: port as number,
     dataDir: typeof raw['dataDir'] === 'string' ? raw['dataDir'] : DEFAULTS.dataDir,

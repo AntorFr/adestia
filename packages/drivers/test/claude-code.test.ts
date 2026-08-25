@@ -296,3 +296,35 @@ describe('normalizing a tool call into a file edit', () => {
     expect(proposedFileEdit('Write', 'not an object')).toBeUndefined()
   })
 })
+
+describe('outbound MCP servers', () => {
+  const optionsOf = (seen: { params?: unknown }) =>
+    (seen.params as { options: Record<string, unknown> }).options
+
+  it('hands the SDK both transports, in its own shape', async () => {
+    const seen: { params?: unknown } = {}
+    const driver = new ClaudeCodeDriver({
+      query: fakeSdk([resultMessage], seen),
+      mcpServers: [
+        { name: 'ha', url: 'https://ha/mcp', headers: { Authorization: 'Bearer x' } },
+        { name: 'cutlist', command: 'node', args: ['./bin/x.js'], env: { LANG: 'fr' } },
+      ],
+    })
+    await collect(driver)
+
+    expect(optionsOf(seen)['mcpServers']).toEqual({
+      ha: { type: 'http', url: 'https://ha/mcp', headers: { Authorization: 'Bearer x' } },
+      cutlist: { type: 'stdio', command: 'node', args: ['./bin/x.js'], env: { LANG: 'fr' } },
+    })
+  })
+
+  it('passes no key at all when the instance declares none', async () => {
+    // Not an empty object: the CLI's own MCP config is the user's, and handing
+    // the SDK an empty map where it expected nothing is a behaviour change for
+    // every instance that never asked for this feature.
+    const seen: { params?: unknown } = {}
+    const driver = new ClaudeCodeDriver({ query: fakeSdk([resultMessage], seen) })
+    await collect(driver)
+    expect('mcpServers' in optionsOf(seen)).toBe(false)
+  })
+})

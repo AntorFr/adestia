@@ -139,6 +139,32 @@ attachments:
 # task takes minutes, and an MCP call held open that long times out somewhere
 # between the two agents.
 mcp:
+  # ── Sortant : ce que L'AGENT peut appeler ───────────────────────────────
+  #
+  # La surface canonique du produit. Un plugin actif peut en apporter d'autres
+  # (`mcpServers` dans son manifeste) ; en cas de conflit de nom, c'est CE
+  # bloc qui gagne, et le plugin perdant est nommé au démarrage.
+  #
+  # La config MCP native du CLI (`.mcp.json`…) reste la vôtre et celle de
+  # l'agent : Golem ne la lit pas, ne la traduit pas et ne la réécrit pas.
+  #
+  # servers:
+  #   - name: home-assistant        # devient le préfixe des outils exposés
+  #     url: https://ha.example/mcp
+  #     headers:
+  #       Authorization: Bearer ${HA_MCP_TOKEN}
+  #   - name: cutlist
+  #     command: node
+  #     args: ['./bin/cutlist.js']
+  #     env:
+  #       LANG: fr
+  #
+  # `url` OU `command`, jamais les deux — ce sont deux transports. Un ${VAR}
+  # que l'environnement n'a pas rempli est REFUSÉ au démarrage plutôt que
+  # transmis tel quel : un jeton littéral "${HA_MCP_TOKEN}" échoue plus tard,
+  # dans un appel, en accusant le serveur au lieu de la config.
+
+  # ── Entrant : l'endpoint que D'AUTRES agents appellent ici ──────────────
   enabled: false
   # token: ${GOLEM_MCP_TOKEN}
   # Becomes the tool name in the calling agent's list, so name the agent

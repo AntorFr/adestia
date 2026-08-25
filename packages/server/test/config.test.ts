@@ -227,3 +227,76 @@ describe('Kubernetes service links', () => {
     expect(config.dataDir).toBe('/data')
   })
 })
+
+describe('outbound MCP servers', () => {
+  it('reads the two transports, and keeps what each one needs', () => {
+    const config = parseConfig(`
+mcp:
+  servers:
+    - name: home-assistant
+      url: https://ha.example/mcp
+      headers:
+        Authorization: Bearer abc
+    - name: cutlist
+      command: node
+      args: ['./bin/cutlist.js']
+      env:
+        LANG: fr
+`)
+    expect(config.mcpServers).toEqual([
+      {
+        name: 'home-assistant',
+        url: 'https://ha.example/mcp',
+        headers: { Authorization: 'Bearer abc' },
+      },
+      { name: 'cutlist', command: 'node', args: ['./bin/cutlist.js'], env: { LANG: 'fr' } },
+    ])
+  })
+
+  it('was accepted and IGNORED before this existed', () => {
+    // The bug this section exists to close: unknown keys were refused at the
+    // top level only, so `mcp.servers` — the shape the design documents —
+    // booted clean and the agent never saw a single server.
+    expect(issuesOf('mcp:\n  serveurs: []\n')).toEqual([
+      'mcp.serveurs is not a setting — known keys: servers, enabled, token, agentName, maxPending, ttlMs',
+    ])
+  })
+
+  it('refuses a server with no transport, and one with both', () => {
+    expect(issuesOf('mcp:\n  servers:\n    - name: ghost\n')).toEqual([
+      'mcp.servers[0]: needs either "command" (stdio) or "url" (http)',
+    ])
+    expect(
+      issuesOf('mcp:\n  servers:\n    - name: two\n      command: node\n      url: https://x/mcp\n'),
+    ).toEqual(['mcp.servers[0]: has both "command" and "url" — pick one transport'])
+  })
+
+  it('refuses two servers under one name', () => {
+    // Otherwise the config's meaning depends on the order of a list.
+    expect(
+      issuesOf('mcp:\n  servers:\n    - name: ha\n      url: https://a/mcp\n    - name: ha\n      url: https://b/mcp\n'),
+    ).toEqual(['mcp.servers[1]: "ha" is declared twice'])
+  })
+
+  it('refuses a name that is not one', () => {
+    expect(issuesOf('mcp:\n  servers:\n    - url: https://x/mcp\n')).toEqual([
+      'mcp.servers[0].name is required (letters, digits, dashes and underscores)',
+    ])
+  })
+
+  it('refuses a placeholder the environment never filled', () => {
+    // A literal "${TOKEN}" reaching a server fails later, in a call, blaming
+    // the server rather than the config that never resolved.
+    expect(
+      issuesOf('mcp:\n  servers:\n    - name: ha\n      url: https://x/mcp\n      headers:\n        Authorization: "${HA_TOKEN}"\n'),
+    ).toEqual(['mcp.servers[0].headers.Authorization is still "${HA_TOKEN}" — that variable is not set'])
+  })
+
+  it('leaves the inbound side alone', () => {
+    // Two directions in one block: declaring servers must not switch on the
+    // endpoint other agents call.
+    const config = parseConfig('mcp:\n  servers:\n    - name: ha\n      url: https://x/mcp\n')
+    expect(config.mcp.enabled).toBe(false)
+    expect(config.mcpServers).toHaveLength(1)
+  })
+})

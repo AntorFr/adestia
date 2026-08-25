@@ -9,6 +9,7 @@
 
 import { EventEmitter } from 'node:events'
 import { mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdtemp, readFile, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { PassThrough } from 'node:stream'
@@ -585,5 +586,74 @@ describe('driver', () => {
   it('refuses to interrupt a session that is not running', async () => {
     const driver = new CopilotDriver({ home: '/x' })
     expect(() => driver.interrupt('ghost')).toThrow(/No running turn/)
+  })
+})
+
+describe('outbound MCP servers', () => {
+  it('writes a side file and points the CLI at it, never at argv', async () => {
+    // Inline JSON would have worked and would have put every
+    // `Authorization: Bearer …` in `ps` output, readable by any process.
+    const home = await mkdtemp(join(tmpdir(), 'golem-copilot-'))
+    const fake = fakeCopilot()
+    const driver = new CopilotDriver({
+      home,
+      spawnImpl: fake.spawnImpl,
+      mcpServers: [
+        { name: 'ha', url: 'https://ha/mcp', headers: { Authorization: 'Bearer x' } },
+        { name: 'cutlist', command: 'node', args: ['./bin/x.js'] },
+      ],
+    })
+    const turn = collect(driver, { prompt: 'salut', cwd: '/w' })
+    await vi.waitFor(() => expect(fake.spawns.length).toBe(1))
+    fake.stdout.write('{"type":"result","data":{"sessionId":"s1","exitCode":0}}\n')
+    fake.child.emit('close', 0)
+    await turn
+
+    const path = join(home, 'golem-mcp.json')
+    expect(fake.spawns[0]?.args).toContain('--additional-mcp-config')
+    expect(fake.spawns[0]?.args).toContain(`@${path}`)
+    // Nothing on argv carries the header.
+    expect(fake.spawns[0]?.args.join(' ')).not.toContain('Bearer x')
+
+    expect(JSON.parse(await readFile(path, 'utf8'))).toEqual({
+      mcpServers: {
+        // `local`, not `stdio`: the CLI's own word, captured from what
+        // `copilot mcp add` actually writes rather than from the flag's help.
+        cutlist: { type: 'local', command: 'node', args: ['./bin/x.js'], tools: ['*'] },
+        ha: { type: 'http', url: 'https://ha/mcp', headers: { Authorization: 'Bearer x' }, tools: ['*'] },
+      },
+    })
+    // Readable by its owner alone: it holds whatever tokens the servers need.
+    expect((await stat(path)).mode & 0o777).toBe(0o600)
+  })
+
+  it('leaves the user\'s own config alone', async () => {
+    // `mcp-config.json` is written by `copilot mcp add`. Golem does not own it,
+    // so Golem does not rewrite it.
+    const home = await mkdtemp(join(tmpdir(), 'golem-copilot-'))
+    await writeFile(join(home, 'mcp-config.json'), '{"mcpServers":{"mine":{}}}')
+    const fake = fakeCopilot()
+    const driver = new CopilotDriver({
+      home,
+      spawnImpl: fake.spawnImpl,
+      mcpServers: [{ name: 'ha', url: 'https://ha/mcp' }],
+    })
+    const turn = collect(driver, { prompt: 'x', cwd: '/w' })
+    await vi.waitFor(() => expect(fake.spawns.length).toBe(1))
+    fake.stdout.write('{"type":"result","data":{"sessionId":"s1","exitCode":0}}\n')
+    fake.child.emit('close', 0)
+    await turn
+
+    expect(await readFile(join(home, 'mcp-config.json'), 'utf8')).toBe('{"mcpServers":{"mine":{}}}')
+  })
+
+  it('adds no flag when the instance declares no server', async () => {
+    const fake = fakeCopilot()
+    const driver = new CopilotDriver({ home: '/x', spawnImpl: fake.spawnImpl })
+    const turn = collect(driver, { prompt: 'x', cwd: '/w' })
+    fake.stdout.write('{"type":"result","data":{"sessionId":"s1","exitCode":0}}\n')
+    fake.child.emit('close', 0)
+    await turn
+    expect(fake.spawns[0]?.args).not.toContain('--additional-mcp-config')
   })
 })

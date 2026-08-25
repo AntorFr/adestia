@@ -9,6 +9,7 @@ import {
   discoverPlugins,
   discoverSkins,
   frontendPayload,
+  mcpServersFor,
   unmatchedActivations,
   type DiscoveredPlugin,
 } from '../src/extensions.js'
@@ -259,5 +260,63 @@ describe('claimedTypeCollisions', () => {
       } as DiscoveredPlugin,
     ]
     expect(claimedTypeCollisions(found)).toEqual([])
+  })
+})
+
+describe('mcpServersFor', () => {
+  const withServers = (id: string, servers: unknown[], active = true): DiscoveredPlugin =>
+    ({
+      dir: `/p/${id}`,
+      active,
+      manifest: { schemaVersion: 1, id, kind: 'app', description: '', mcpServers: servers },
+    }) as DiscoveredPlugin
+
+  it('wires both layers when nothing collides', () => {
+    const { servers, problems } = mcpServersFor(
+      [{ name: 'home-assistant', url: 'https://ha/mcp' }],
+      [withServers('atelier', [{ name: 'cutlist', command: 'node' }])],
+    )
+    expect(servers.map((server) => server.name)).toEqual(['home-assistant', 'cutlist'])
+    expect(problems).toEqual([])
+  })
+
+  it('gives the operator the name, and says so', () => {
+    // A server silently replaced by another under the same name is a tool call
+    // going somewhere nobody chose.
+    const { servers, problems } = mcpServersFor(
+      [{ name: 'shared', url: 'https://mine/mcp' }],
+      [withServers('greedy', [{ name: 'shared', command: 'node' }])],
+    )
+    expect(servers).toEqual([{ name: 'shared', url: 'https://mine/mcp' }])
+    expect(problems).toEqual([
+      {
+        id: 'greedy',
+        severity: 'degraded',
+        reason:
+          'brings the MCP server "shared", which the operator configuration already declares — the plugin\'s is not wired',
+      },
+    ])
+  })
+
+  it('names the plugin that got there first when two plugins collide', () => {
+    const { servers, problems } = mcpServersFor(
+      [],
+      [
+        withServers('first', [{ name: 'shared', command: 'a' }]),
+        withServers('second', [{ name: 'shared', command: 'b' }]),
+      ],
+    )
+    expect(servers).toEqual([{ name: 'shared', command: 'a' }])
+    expect(problems[0]?.reason).toContain('the plugin "first" already declares')
+  })
+
+  it('takes nothing from a plugin that is off', () => {
+    // Same rule as its API: turning a plugin off takes its server with it.
+    const { servers } = mcpServersFor([], [withServers('sleeping', [{ name: 'x', command: 'a' }], false)])
+    expect(servers).toEqual([])
+  })
+
+  it('is empty when neither layer declares anything', () => {
+    expect(mcpServersFor([], []).servers).toEqual([])
   })
 })

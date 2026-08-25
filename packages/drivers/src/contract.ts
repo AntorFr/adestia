@@ -124,6 +124,27 @@ export interface AuthPrompt {
   readonly ttl: number
 }
 
+/**
+ * An outbound MCP server the instance hands its driver.
+ *
+ * Declared here because it is part of what a driver is GIVEN, not part of how
+ * plugins are validated: the server package merges the operator's layer with
+ * the plugins' and hands the result over, and every driver materializes it the
+ * way its own CLI expects.
+ *
+ * Either `command` (stdio) or `url` (http), never both — two transports, and
+ * a server carrying both leaves the driver guessing.
+ */
+export interface McpServer {
+  readonly name: string
+  readonly command?: string | undefined
+  readonly args?: readonly string[] | undefined
+  readonly url?: string | undefined
+  readonly env?: Readonly<Record<string, string>> | undefined
+  /** HTTP authorization. The operator's alone — see the extensions layer. */
+  readonly headers?: Readonly<Record<string, string>> | undefined
+}
+
 export interface ModelInfo {
   readonly id: string
   readonly label?: string
