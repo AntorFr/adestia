@@ -541,7 +541,13 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             )
           })()
         ) : page ? (
-          <Editor page={page} fetchImpl={fetchImpl} {...(mount ? { mount } : {})} />
+          <Editor
+            page={page}
+            fetchImpl={fetchImpl}
+            openPage={openPage}
+            t={t}
+            {...(mount ? { mount } : {})}
+          />
         ) : section ? (
           <Section
             path={section}

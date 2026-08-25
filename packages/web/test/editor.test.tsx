@@ -43,6 +43,15 @@ const fakeMount =
     }
   }
 
+/**
+ * Puts the page in writing posture, the way a reader does — by clicking the
+ * pencil. Every test below that touches the document needs this now: reading
+ * is the default, and that IS the behaviour under test.
+ */
+function startEditing() {
+  fireEvent.click(screen.getByTitle('Edit'))
+}
+
 describe('savePage', () => {
   it('sends the revision it opened with', async () => {
     const calls: RequestInit[] = []
@@ -98,9 +107,20 @@ describe('save status', () => {
 })
 
 describe('editor', () => {
-  it('mounts the editor with the page markdown', () => {
+  it('opens a page for READING, mounting no editor at all', () => {
+    // Opening a page to look at it used to mount ProseMirror, its toolbars
+    // and its handles over a document nobody had asked to change.
     const edits: string[] = []
     const { container } = render(<Editor page={page} mount={fakeMount(edits)} />)
+    expect(container.querySelector('[data-mounted]')).toBeNull()
+    expect(container.querySelector('.golem-reader')).toBeTruthy()
+    expect(edits).toEqual([])
+  })
+
+  it('mounts the editor with the page markdown once writing is chosen', () => {
+    const edits: string[] = []
+    const { container } = render(<Editor page={page} mount={fakeMount(edits)} />)
+    startEditing()
     expect(container.querySelector('[data-mounted]')?.getAttribute('data-mounted')).toBe(
       '# Le garage\n',
     )
@@ -108,11 +128,13 @@ describe('editor', () => {
 
   it('keeps Save disabled until something changes', () => {
     render(<Editor page={page} mount={fakeMount([])} />)
+    startEditing()
     expect(screen.getByText('Save').closest('button')?.disabled).toBe(true)
   })
 
   it('enables Save once the document is edited', () => {
     const { container } = render(<Editor page={page} mount={fakeMount([])} />)
+    startEditing()
     const host = container.querySelector('[data-mounted]') as HTMLElement & {
       edit: (md: string) => void
     }
@@ -122,10 +144,35 @@ describe('editor', () => {
     expect(screen.getByText('Save').closest('button')?.disabled).toBe(false)
   })
 
+  it('leaves writing posture behind when the reader moves on', () => {
+    // Arriving somewhere new in a posture nobody chose is how people edit a
+    // page they meant to read.
+    const { container, rerender } = render(<Editor page={page} mount={fakeMount([])} />)
+    startEditing()
+    expect(container.querySelector('[data-mounted]')).toBeTruthy()
+    rerender(<Editor page={{ ...page, path: 'notes/other.md' }} mount={fakeMount([])} />)
+    expect(container.querySelector('[data-mounted]')).toBeNull()
+  })
+
+  it('abandoning an edit restores what was there', () => {
+    // A half-typed sentence must not survive as a "dirty" page waiting to be
+    // saved by accident.
+    const { container } = render(<Editor page={page} mount={fakeMount([])} />)
+    startEditing()
+    const host = container.querySelector('[data-mounted]') as HTMLElement & {
+      edit: (md: string) => void
+    }
+    act(() => host.edit('# Half a thought\n'))
+    fireEvent.click(screen.getByText('Done'))
+    startEditing()
+    expect(screen.getByText('Save').closest('button')?.disabled).toBe(true)
+  })
+
   it('shows a conflict instead of overwriting the agent', async () => {
     const { container } = render(
       <Editor page={page} mount={fakeMount([])} fetchImpl={jsonFetch(409, {})} />,
     )
+    startEditing()
     const host = container.querySelector('[data-mounted]') as HTMLElement & {
       edit: (md: string) => void
     }
@@ -154,11 +201,13 @@ describe('editor', () => {
     expect(document.querySelector('.golem-editor__raw')?.textContent).toContain(':::mystery')
   })
 
-  it('tears the editor down when the page changes', () => {
-    // Two live instances on one host leave the second reading the first's
-    // document.
+  it('mounts the NEW document when writing resumes on another page', () => {
+    // Two live instances on one host would leave the second reading the
+    // first's document; the teardown is what prevents it.
     const { container, rerender } = render(<Editor page={page} mount={fakeMount([])} />)
+    startEditing()
     rerender(<Editor page={{ ...page, path: 'other.md', markdown: '# Other\n' }} mount={fakeMount([])} />)
+    startEditing()
     expect(container.querySelector('[data-mounted]')?.getAttribute('data-mounted')).toBe(
       '# Other\n',
     )

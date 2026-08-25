@@ -15,6 +15,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { parse, serialize } from '@antorfr/golem-content'
 
+import { Reader } from './Reader.js'
+
 export interface PageDocument {
   readonly path: string
   readonly title: string
@@ -104,11 +106,15 @@ export function SaveStatus({ state }: { state: SaveState }) {
 export interface EditorProps {
   readonly page: PageDocument
   readonly fetchImpl?: typeof fetch
+  /** Follows a wikilink to another page. */
+  readonly openPage?: (path: string) => void
+  /** The shell's translator; identity in English. */
+  readonly t?: (key: string) => string
   /** Injected in tests; the real one mounts Milkdown. */
   readonly mount?: (element: HTMLElement, markdown: string, onChange: (md: string) => void) => () => void
 }
 
-export function Editor({ page, fetchImpl = fetch, mount }: EditorProps) {
+export function Editor({ page, fetchImpl = fetch, mount, openPage, t = (key) => key }: EditorProps) {
   const host = useRef<HTMLDivElement>(null)
 
   /**
@@ -134,6 +140,15 @@ export function Editor({ page, fetchImpl = fetch, mount }: EditorProps) {
     }
   }, [page.markdown])
 
+  /**
+   * Reading by default.
+   *
+   * Opening a page to LOOK at it used to mount ProseMirror, its toolbars and
+   * its drag handles over a document nobody had asked to change — which makes
+   * every reader feel like they might break something. Writing is a decision
+   * now, taken by a button.
+   */
+  const [editing, setEditing] = useState(false)
   const [markdown, setMarkdown] = useState(shown)
   const [revision, setRevision] = useState(page.revision)
   const [status, setStatus] = useState<SaveState>({ kind: 'idle' })
@@ -146,9 +161,15 @@ export function Editor({ page, fetchImpl = fetch, mount }: EditorProps) {
   }, [shown, page.path, page.revision])
 
   useEffect(() => {
-    if (!mount || !host.current || !page.editable) return undefined
+    if (!editing || !mount || !host.current || !page.editable) return undefined
     return mount(host.current, shown, setMarkdown)
-  }, [mount, page.editable, shown, page.path])
+  }, [editing, mount, page.editable, shown, page.path])
+
+  // Leaving a page leaves its edit mode behind: arriving somewhere new in
+  // writing posture is a posture nobody chose.
+  useEffect(() => {
+    setEditing(false)
+  }, [page.path])
 
   const save = useCallback(async () => {
     setStatus({ kind: 'saving' })
@@ -164,15 +185,34 @@ export function Editor({ page, fetchImpl = fetch, mount }: EditorProps) {
       <header className="golem-editor__header">
         <div className="golem-editor__actions">
           <SaveStatus state={status} />
-          {page.editable && (
-            <button
-              type="button"
-              className="golem-editor__save"
-              onClick={() => void save()}
-              disabled={!dirty || status.kind === 'saving'}
-            >
-              Save
+          {page.editable && !editing && (
+            <button type="button" className="golem-ib" onClick={() => setEditing(true)} title={t('Edit')}>
+              ✎
             </button>
+          )}
+          {page.editable && editing && (
+            <>
+              <button
+                type="button"
+                className="golem-switch"
+                onClick={() => {
+                  // Abandoning restores what was shown, so a half-typed
+                  // sentence never survives as a "dirty" page.
+                  setMarkdown(shown)
+                  setEditing(false)
+                }}
+              >
+                {t('Done')}
+              </button>
+              <button
+                type="button"
+                className="golem-editor__save"
+                onClick={() => void save()}
+                disabled={!dirty || status.kind === 'saving'}
+              >
+                {t('Save')}
+              </button>
+            </>
           )}
         </div>
       </header>
@@ -186,10 +226,15 @@ export function Editor({ page, fetchImpl = fetch, mount }: EditorProps) {
 
       <Diagnostics items={page.diagnostics} />
 
-      {page.editable ? (
+      {/* A refused page shows its RAW source, not a rendering: its vocabulary
+          is broken, the diagnostics above say where, and what somebody needs
+          to see is exactly what is written — not our best guess at it. */}
+      {!page.editable ? (
+        <pre className="golem-editor__raw">{page.markdown}</pre>
+      ) : editing ? (
         <div ref={host} className="golem-editor__surface" />
       ) : (
-        <pre className="golem-editor__raw">{page.markdown}</pre>
+        <Reader markdown={markdown} {...(openPage ? { openPage } : {})} />
       )}
     </section>
   )

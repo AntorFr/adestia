@@ -1327,3 +1327,159 @@
   text-transform: uppercase;
   color: var(--text-faint);
 }
+
+/* Reading a page ------------------------------------------------------- */
+
+/* A document, not a form. Measure capped near 70 characters: the canvas is
+   940px wide and prose set that wide is prose nobody finishes a line of. */
+.golem-reader {
+  max-width: 68ch;
+  font-size: 15.5px;
+  line-height: 1.65;
+}
+
+.golem-reader > :first-child { margin-top: 0; }
+
+.golem-reader h2,
+.golem-reader h3,
+.golem-reader h4 {
+  font-family: var(--font-title);
+  letter-spacing: var(--title-track);
+  line-height: 1.2;
+  margin: 1.8em 0 0.5em;
+  text-wrap: balance;
+}
+
+.golem-reader h2 { font-size: 1.5rem; }
+.golem-reader h3 { font-size: 1.2rem; }
+.golem-reader h4 { font-size: 1.05rem; }
+
+.golem-reader p { margin: 0 0 1em; }
+.golem-reader ul,
+.golem-reader ol { margin: 0 0 1em; padding-left: 1.4em; }
+.golem-reader li { margin: 0.25em 0; }
+.golem-reader li.golem-task { list-style: none; margin-left: -1.4em; }
+.golem-reader li.golem-task input { margin-right: 0.5em; }
+
+.golem-reader a { color: var(--accent); text-underline-offset: 2px; }
+
+.golem-reader blockquote {
+  margin: 0 0 1em;
+  padding: 0.2em 0 0.2em 1em;
+  border-left: 3px solid var(--border-strong);
+  color: var(--text-muted);
+}
+
+.golem-reader code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-micro);
+  padding: 0.1em 0.35em;
+}
+
+.golem-reader pre {
+  margin: 0 0 1em;
+  padding: var(--space-3) var(--space-4);
+  overflow-x: auto;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.golem-reader pre code { background: none; border: 0; padding: 0; font-size: 0.85em; }
+
+.golem-reader img { max-width: 100%; height: auto; border-radius: var(--radius); }
+.golem-reader hr { border: 0; border-top: 1px solid var(--border); margin: 2em 0; }
+
+/* Wide content scrolls in its own box; the page never moves sideways. */
+.golem-table-scroll { overflow-x: auto; margin: 0 0 1em; }
+.golem-reader table { border-collapse: collapse; font-size: 0.94em; }
+.golem-reader td { border: 1px solid var(--border); padding: var(--space-2) var(--space-3); }
+.golem-reader tr:first-child td { font-weight: 600; background: var(--surface-soft); }
+
+/* A wikilink is a BUTTON, because it opens a page in place rather than
+   navigating away — dressed as the link it is. */
+.golem-wikilink {
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  color: var(--accent);
+  cursor: pointer;
+  border-bottom: 1px dotted var(--accent);
+}
+
+/* Callouts: the tone carries the colour, the left rule carries the weight. */
+.golem-callout {
+  margin: 0 0 1.2em;
+  padding: var(--space-3) var(--space-4);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--accent-quiet);
+}
+
+.golem-callout > :last-child { margin-bottom: 0; }
+.golem-callout--warning { border-left-color: var(--warning); background: color-mix(in srgb, var(--warning) 9%, transparent); }
+.golem-callout--tip { border-left-color: var(--success); background: color-mix(in srgb, var(--success) 9%, transparent); }
+
+.golem-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-3);
+  margin: 0 0 1.2em;
+}
+
+.golem-gallery p { margin: 0; }
+
+.golem-unknown-block,
+.golem-reader__raw {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-faint);
+  white-space: pre-wrap;
+  padding: var(--space-2) var(--space-3);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+}
+
+/* The two postures show the SAME document, so they must look like it.
+   Crepe brings its own type scale and its own measure; both are overridden
+   here — not in a skin, because this is the product's editor and its
+   agreement with the reader is a product decision, not a livery's. */
+.golem-editor__surface .milkdown {
+  font-family: var(--font);
+  font-size: 15.5px;
+  line-height: 1.65;
+  color: var(--text);
+}
+
+.golem-editor__surface .milkdown .ProseMirror {
+  max-width: 68ch;
+  padding: 0;
+}
+
+.golem-editor__surface .milkdown h1,
+.golem-editor__surface .milkdown h2,
+.golem-editor__surface .milkdown h3,
+.golem-editor__surface .milkdown h4 {
+  font-family: var(--font-title);
+  letter-spacing: var(--title-track);
+  line-height: 1.2;
+  margin: 1.8em 0 0.5em;
+}
+
+.golem-editor__surface .milkdown h1 { font-size: 1.85rem; }
+.golem-editor__surface .milkdown h2 { font-size: 1.5rem; }
+.golem-editor__surface .milkdown h3 { font-size: 1.2rem; }
+.golem-editor__surface .milkdown h4 { font-size: 1.05rem; }
+.golem-editor__surface .milkdown p { margin: 0 0 1em; }
+.golem-editor__surface .milkdown a { color: var(--accent); }
+
+/* The frontmatter chips sit in the flow of both postures identically. */
+.golem-editor__surface .golem-editor__meta { margin-bottom: var(--space-4); }
+
+/* Crepe paints its own surface; ours is the canvas the page already sits on. */
+.golem-editor__surface .milkdown,
+.golem-editor__surface .milkdown .editor { background: none; }

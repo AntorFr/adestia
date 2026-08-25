@@ -71,6 +71,8 @@ const FR: Readonly<Record<string, string>> = {
   'No conversation yet.': 'Aucune conversation.',
   'Extensions refused': 'Extensions refusées',
   Save: 'Enregistrer',
+  Edit: 'Modifier',
+  Done: 'Terminé',
   'Saving…': 'Enregistrement…',
   Saved: 'Enregistré',
   'Loading…': 'Chargement…',
