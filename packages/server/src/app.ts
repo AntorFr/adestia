@@ -421,7 +421,11 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
       const existing = await conversations.read(userId, request.params.id)
       if (!existing) return reply.code(404).send({ error: 'no such conversation' })
       await conversations.archive(userId, request.params.id, archived)
-      return { id: request.params.id, archived }
+      // A thread put away stops waiting on anybody. Its turn would otherwise
+      // hold one of the instance's slots until it timed out, for a
+      // conversation nobody is looking at any more.
+      const ended = archived ? (deps.permissions?.abandon(request.params.id) ?? 0) : 0
+      return { id: request.params.id, archived, ...(ended > 0 ? { refused: ended } : {}) }
     },
   )
 

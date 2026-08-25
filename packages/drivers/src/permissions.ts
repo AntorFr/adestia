@@ -193,6 +193,32 @@ export class PermissionBroker {
    *   one decide what the other's agent may do — and saying "not yours" would
    *   confirm that a request exists, which is itself an answer.
    */
+  /**
+   * Ends every request a conversation is waiting on.
+   *
+   * For when the conversation itself goes away — archived, deleted. The turn
+   * would otherwise sit on one of the instance's slots until it timed out,
+   * for a thread nobody is looking at any more.
+   *
+   * Denied, not left to the unattended policy: archiving is a person acting,
+   * and putting a thread away says plainly enough that its pending edit is
+   * not wanted. The unattended policy answers for turns nobody is watching,
+   * which is a different situation and may well be configured to allow.
+   *
+   * @returns how many were waiting, so a caller can say so.
+   */
+  abandon(conversationId: string): number {
+    let ended = 0
+    for (const [id, pending] of [...this.#pending]) {
+      if (pending.request.conversationId !== conversationId) continue
+      clearTimeout(pending.timer)
+      this.#pending.delete(id)
+      pending.resolve('deny')
+      ended += 1
+    }
+    return ended
+  }
+
   answer(id: string, decision: PermissionDecision, by?: string): boolean {
     const pending = this.#pending.get(id)
     if (!pending) return false

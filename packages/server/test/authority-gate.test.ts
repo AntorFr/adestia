@@ -183,3 +183,48 @@ describe('two people on one instance', () => {
     expect(broker.outstanding('sebastien')).toHaveLength(0)
   })
 })
+
+describe('a conversation that goes away', () => {
+  it('stops waiting on anybody, and frees the turn', async () => {
+    // Archived, its turn would otherwise sit on one of the instance's slots
+    // until it timed out — for a thread nobody is looking at any more.
+    const broker = new PermissionBroker({ whenUnattended: 'allow' })
+    const asked: PermissionRequest[] = []
+    const decision = broker.ask('Edit', '/w/pages/x.md', (r) => {
+      asked.push(r)
+      return true
+    })
+    await vi.waitFor(() => expect(asked).toHaveLength(1))
+    broker.attach(asked[0]!.id, { userId: 'sebastien', conversationId: 'c1' })
+
+    expect(broker.abandon('c1')).toBe(1)
+    // DENIED, not left to the unattended policy — which this instance has set
+    // to allow. Archiving is a person acting; the unattended policy answers
+    // for turns nobody is watching, and that is a different situation.
+    expect(await decision).toBe('deny')
+    expect(broker.outstanding()).toHaveLength(0)
+  })
+
+  it('leaves the other threads waiting', async () => {
+    const broker = new PermissionBroker({ whenUnattended: 'deny' })
+    const ids: string[] = []
+    for (const conversation of ['c1', 'c2']) {
+      const asked: PermissionRequest[] = []
+      void broker.ask('Edit', '/w/x.md', (r) => {
+        asked.push(r)
+        return true
+      })
+      await vi.waitFor(() => expect(asked).toHaveLength(1))
+      broker.attach(asked[0]!.id, { conversationId: conversation })
+      ids.push(asked[0]!.id)
+    }
+
+    expect(broker.abandon('c1')).toBe(1)
+    expect(broker.outstanding().map((r) => r.conversationId)).toEqual(['c2'])
+    expect(ids).toHaveLength(2)
+  })
+
+  it('says nothing was waiting when nothing was', async () => {
+    expect(new PermissionBroker().abandon('jamais-vue')).toBe(0)
+  })
+})

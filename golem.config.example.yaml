@@ -126,7 +126,15 @@ permissions:
   # so out loud at startup when you do.
   autoAllow: []
   autoDeny: []
-  # How long a request waits for a person, in milliseconds.
+  # How long a request waits for a person, in milliseconds. On expiry it is
+  # decided by `whenUnattended` below — so a prompt nobody answers does not
+  # hold one of `maxConcurrentTurns` for ever. Five minutes is long enough to
+  # walk back to a screen and short enough that a forgotten tab is not a
+  # blocked instance.
+  #
+  # Two other things end a wait before this does: answering it, and archiving
+  # the conversation it belongs to — which refuses it outright, because
+  # putting a thread away is somebody deciding, not nobody watching.
   timeoutMs: 300000
   # Applied on timeout, and immediately when no interface is watching at all
   # (a scheduled turn, a delegated one).
