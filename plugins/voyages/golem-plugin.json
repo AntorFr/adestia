@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "voyages",
+  "kind": "app",
+  "description": "Trips: a per-day timeline and a tray of suggestions, read from a voyage.json a trip carries in its own assets. Weather and legs are derived on demand.",
+  "contract": 1,
+  "view": "./web/view.js",
+  "styles": [
+    "./web/voyages.css"
+  ],
+  "api": "./api.mjs",
+  "secrets": [
+    "GOOGLE_MAPS_API_KEY"
+  ],
+  "skills": [
+    "./skills/voyage-json/SKILL.md"
+  ],
+  "absorbs": [
+    "voyages"
+  ],
+  "tile": {
+    "label": "Voyages",
+    "icon": "🌴",
+    "hue": "turquoise"
+  }
+}

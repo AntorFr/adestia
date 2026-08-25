@@ -1,0 +1,682 @@
+/*
+ * The trips livery.
+ *
+ * Three parts, and the split is the point.
+ *
+ * The FIRST is the shell's own visual language, reproduced: the icon plate,
+ * the header, the cards, the status pills. A plugin cannot use `.golem-*`
+ * classes — those belong to the shell's markup and reaching into them would
+ * make this plugin break the day the shell renames one — so the RULES are
+ * written here against this plugin's own classes, in the shell's TOKENS. Which
+ * means a skin still dresses this screen: change `--accent`, and the trip
+ * follows. The seven plate knobs are read the same way the shell reads them,
+ * so the plate on a trip's header is the plate on a section's header.
+ *
+ * The SECOND is the domain palette. A card's colour MEANS something here — a
+ * bed is not a restaurant — so those hues come from the shell's named hue
+ * scale rather than being invented, and a skin that redefines the scale
+ * redefines these too.
+ *
+ * The THIRD is the timeline itself, which has no equivalent anywhere in the
+ * shell and is simply this plugin's own.
+ *
+ * Everything is namespaced under `.voyages`, so a plugin's `.card` can never
+ * restyle the shell's.
+ */
+
+.voyages {
+  /* The domain palette: what a card's colour means. */
+  --v-maison: var(--golem-hue-ambre, #b8890f);
+  --v-cuisine: var(--golem-hue-rouge, #d24b3e);
+  --v-diy: var(--golem-hue-vert, #4fb05c);
+  --v-agenda: var(--golem-hue-indigo, #4c6fe0);
+  --v-proj: var(--golem-hue-violet, #7a5bd1);
+  --v-voyage: var(--golem-hue-turquoise, #33b4a8);
+  --tile-color: var(--v-voyage);
+
+  color: var(--text);
+}
+
+/* Crumbs ---------------------------------------------------------------- */
+
+.voyages-crumbs {
+  display: flex;
+  gap: var(--space-2);
+  font-size: 13px;
+  margin-bottom: var(--space-3);
+}
+
+.voyages-crumbs a { color: var(--text-muted); text-decoration: none; }
+.voyages-crumbs a:hover { color: var(--accent); text-decoration: underline; }
+
+.vwrap-outer { display: flex; flex-direction: column; }
+
+/* The header — the shell's, in this plugin's markup ---------------------- */
+
+.voyages .chead {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin: var(--space-3) 0 var(--space-4);
+}
+
+.voyages .aico {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  border-radius: var(--radius-ctl);
+  font-size: 22px;
+  box-shadow: var(--shadow-sm);
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--tile-color) var(--plate-top), var(--plate-base)),
+    color-mix(in srgb, var(--tile-color) var(--plate-mix), var(--plate-base))
+  );
+  color: color-mix(in srgb, var(--tile-color) var(--plate-fg-tint), var(--plate-fg));
+  border: var(--plate-border-width) solid
+    color-mix(in srgb, var(--tile-color) var(--plate-border-tint), transparent);
+}
+
+.voyages .chead h1 {
+  margin: 0;
+  font: 600 26px/1.15 var(--font-title);
+  letter-spacing: var(--title-track);
+}
+
+.voyages .lede { margin: 2px 0 0; color: var(--text-muted); font-size: 14px; }
+
+/* Chips, tags, pills ---------------------------------------------------- */
+
+.voyages .stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: 600 10.5px/1.5 var(--font-mono);
+  border-radius: var(--radius-pill);
+  padding: 2px 9px 2px 8px;
+}
+
+.voyages .stat::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentcolor;
+}
+
+.voyages .stat--underway { color: var(--accent); background: var(--accent-quiet); }
+.voyages .stat--waiting {
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 13%, transparent);
+}
+.voyages .stat--settled {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+}
+
+.voyages .tag,
+.voyages .chip {
+  font: 600 10.5px/1.5 var(--font-mono);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.voyages .chip.due {
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 40%, var(--border));
+}
+
+.voyages .hint { color: var(--text-faint); font-weight: 500; text-transform: none; }
+
+.voyages .empty {
+  padding: var(--space-4);
+  color: var(--text-faint);
+  font-size: 14px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg);
+  text-align: center;
+}
+
+/* A row label, in the shell's apparatus voice. */
+.voyages .grouplabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 32px 0 13px;
+  font: 600 var(--label-size) / 1 var(--font-mono);
+  letter-spacing: var(--label-track);
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* The trip's properties, as a compact key/value strip. */
+.voyages .props {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 11px 14px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-4);
+}
+
+.voyages .props .k {
+  font: 600 10px/1.5 var(--font-mono);
+  letter-spacing: var(--label-track);
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.voyages .props .k:not(:first-child) { margin-left: 10px; }
+
+.voyages .vnote {
+  padding: 13px 15px;
+  border-radius: var(--radius-lg);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  background: var(--accent-quiet);
+  color: var(--text);
+  font-size: 14px;
+  margin-bottom: var(--space-4);
+}
+
+/* The hub: one card per trip ------------------------------------------- */
+
+.voyages .vhub {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 13px;
+}
+
+.voyages .vhub-card {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  width: 100%;
+  min-height: 96px;
+  padding: 15px 16px;
+  text-align: left;
+  text-decoration: none;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+
+.voyages .vhub-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+  border-color: color-mix(in srgb, var(--tile-color) 45%, var(--border));
+}
+
+.voyages .vhub-card .ct { font: 600 15.5px/1.2 var(--font-title); }
+.voyages .vhub-card .cmeta { color: var(--text-muted); font-size: 13px; }
+
+.voyages .vhub-card .foot {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.voyages .archsec { margin-top: var(--space-4); }
+
+.voyages .archsec > summary {
+  cursor: pointer;
+  padding: 10px 0;
+  font: 600 var(--label-size) / 1 var(--font-mono);
+  letter-spacing: var(--label-track);
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.voyages .archsec[open] > summary { margin-bottom: 13px; }
+
+/* The trip: timeline on the left, tray on the right --------------------- */
+
+.voyages .vsplit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .voyages .vsplit { grid-template-columns: minmax(0, 1fr); }
+}
+
+.voyages .vtl { display: flex; flex-direction: column; gap: 11px; min-width: 0; }
+
+.voyages .vday {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  padding: 11px 13px 13px;
+  transition: border-color 0.14s, background 0.14s;
+}
+
+.voyages .vday.dropok {
+  border-color: var(--tile-color);
+  background: color-mix(in srgb, var(--tile-color) 7%, var(--surface-raised));
+}
+
+.voyages .vday-h {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 9px;
+  margin-bottom: 9px;
+  border-bottom: 1px solid var(--border);
+}
+
+.voyages .vday-h .dn {
+  font: 600 13px var(--font-mono);
+  letter-spacing: 0.02em;
+  text-transform: capitalize;
+  color: var(--text);
+}
+
+.voyages .wx { font-size: 13px; color: var(--text-muted); white-space: nowrap; }
+.voyages .wx.na { font-size: 11px; color: var(--text-faint); }
+
+.voyages .vflow { display: flex; flex-direction: column; gap: 7px; }
+
+.voyages .vfree {
+  padding: 13px;
+  text-align: center;
+  color: var(--text-faint);
+  font-size: 13px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+}
+
+/* One card in a day. The type's colour is a rail, not a fill: it labels the
+   card without competing with the words on it. */
+.voyages .vcard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--ic, var(--tile-color));
+  border-radius: var(--radius);
+  cursor: grab;
+  transition: transform 0.12s, box-shadow 0.12s, opacity 0.12s;
+}
+
+.voyages .vcard:hover { box-shadow: var(--shadow-sm); transform: translateX(1px); }
+.voyages .vcard.drag { opacity: 0.4; cursor: grabbing; }
+
+.voyages .vico { font-size: 17px; flex: none; line-height: 1; }
+.voyages .vcard .bd, .voyages .traycard .bd { min-width: 0; flex: 1; }
+.voyages .vt { font: 600 13.5px/1.3 var(--font); overflow-wrap: anywhere; }
+.voyages .vhint { color: var(--text-muted); font-size: 12px; margin-top: 2px; }
+
+.voyages .vmeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+/* The insertion rule a drop draws. */
+.voyages .inst { box-shadow: 0 -2px 0 0 var(--tile-color); }
+.voyages .insb { box-shadow: 0 2px 0 0 var(--tile-color); }
+
+/* A derived leg, between two cards. */
+.voyages .vlink {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-left: 13px;
+  min-height: 18px;
+  color: var(--text-faint);
+  font: 500 11.5px var(--font-mono);
+}
+
+.voyages .vlink::before {
+  content: '';
+  width: 2px;
+  height: 16px;
+  border-radius: 1px;
+  background: var(--border);
+}
+
+/* The stay closes the day: it is the night, so it sits at the bottom and
+   reads as a band rather than as one more card in the programme. */
+.voyages .vband {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 9px;
+  padding: 8px 11px;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--v-maison) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--v-maison) 30%, var(--border));
+  font: 600 12.5px var(--font);
+  cursor: pointer;
+}
+
+.voyages .vband .fx {
+  margin-left: auto;
+  font: 500 10.5px var(--font-mono);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--label-track);
+}
+
+/* The tray ------------------------------------------------------------- */
+
+.voyages .vtray {
+  position: sticky;
+  top: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-sunken);
+  transition: border-color 0.14s, background 0.14s;
+}
+
+.voyages .vtray.dropok {
+  border-color: var(--tile-color);
+  background: color-mix(in srgb, var(--tile-color) 7%, var(--surface-sunken));
+}
+
+.voyages .vtray .th {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 600 var(--label-size) / 1 var(--font-mono);
+  letter-spacing: var(--label-track);
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.voyages .vtray .cnt {
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-quiet);
+  color: var(--accent);
+}
+
+.voyages .facets { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.voyages .pill {
+  padding: 4px 11px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--text-muted);
+  font: 600 11.5px var(--font);
+  cursor: pointer;
+}
+
+.voyages .pill.on {
+  border-color: var(--tile-color);
+  color: var(--tile-color);
+  background: color-mix(in srgb, var(--tile-color) 10%, transparent);
+}
+
+.voyages .traygrid { display: flex; flex-direction: column; gap: 7px; }
+
+.voyages .traycard {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 9px 11px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--ic, var(--tile-color));
+  border-radius: var(--radius);
+  cursor: grab;
+  transition: transform 0.12s, box-shadow 0.12s, opacity 0.12s;
+}
+
+.voyages .traycard:hover { box-shadow: var(--shadow-sm); transform: translateY(-1px); }
+.voyages .traycard:hover .dis { opacity: 1; }
+.voyages .traycard.drag { opacity: 0.4; cursor: grabbing; }
+.voyages .traycard.ec { opacity: 0.55; cursor: default; }
+
+.voyages .dis {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-faint);
+  font-size: 11px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s, color 0.12s;
+}
+
+.voyages .dis:hover { color: var(--danger); }
+
+.voyages .trayfoot {
+  color: var(--text-faint);
+  font-size: 11.5px;
+  line-height: 1.5;
+  border-top: 1px solid var(--border);
+  padding-top: 9px;
+}
+
+.voyages .eclink {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--text-muted);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* One card, in full ---------------------------------------------------- */
+
+.vmodal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: rgb(8 11 18 / 55%);
+  backdrop-filter: blur(2px);
+}
+
+.vmodal[hidden] { display: none; }
+
+.vmodal .vfiche {
+  width: min(520px, 100%);
+  max-height: 85vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  padding: var(--space-4);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg, var(--shadow));
+  color: var(--text);
+}
+
+/* The dialog lives outside `.voyages`, so the tokens it needs are set again
+   here rather than inherited — an unresolved colour on a scrim is a black
+   card. Same lesson the workbench's overlays taught. */
+.vmodal {
+  --tile-color: var(--golem-hue-turquoise, #33b4a8);
+}
+
+.vmodal .vhead { display: flex; align-items: center; gap: 11px; }
+.vmodal .vico { font-size: 26px; line-height: 1; }
+.vmodal .vst { font: 600 18px/1.2 var(--font-title); }
+
+.vmodal .vsub {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+
+.vmodal .stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: 600 10.5px/1.5 var(--font-mono);
+  border-radius: var(--radius-pill);
+  padding: 2px 9px 2px 8px;
+}
+
+.vmodal .stat::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentcolor;
+}
+
+.vmodal .stat--underway { color: var(--accent); background: var(--accent-quiet); }
+.vmodal .stat--waiting {
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 13%, transparent);
+}
+.vmodal .stat--settled {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+}
+
+.vmodal .chip {
+  font: 600 10.5px/1.5 var(--font-mono);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.vmodal .vmeta { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.vmodal .vby {
+  font: 600 10px var(--font-mono);
+  letter-spacing: var(--label-track);
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.vmodal .vdesc { margin: 0; font-size: 14px; line-height: 1.6; }
+
+.vmodal .vsrc {
+  padding: 9px 11px;
+  border-radius: var(--radius);
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+
+.vmodal .vdoc {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: var(--text);
+}
+
+.vmodal .vdoc:hover { border-color: var(--accent); }
+
+.vmodal .vdoc .ext {
+  font: 600 9.5px var(--font-mono);
+  padding: 3px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-quiet);
+  color: var(--accent);
+}
+
+.vmodal .vdoc .fn { font: 600 13px var(--font); }
+.vmodal .vdoc .fs { color: var(--text-faint); font: 11px var(--font-mono); }
+
+.vmodal .vhour {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 11px;
+  border-radius: var(--radius);
+  background: var(--surface-sunken);
+}
+
+.vmodal .vhour input {
+  padding: 5px 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: 13px var(--font-mono);
+}
+
+.vmodal .vhint { color: var(--text-faint); font-size: 11.5px; }
+
+.vmodal .vactions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+  padding-top: 11px;
+  border-top: 1px solid var(--border);
+}
+
+.vmodal .vopen {
+  padding: 6px 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-ctl);
+  background: var(--surface);
+  color: var(--text);
+  font: 600 12.5px var(--font);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.vmodal .vopen:hover { border-color: var(--accent); color: var(--accent); }
+
+.vmodal .vopen.prim {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent, #fff);
+}
+
+.vmodal .vopen.prim:hover { color: var(--on-accent, #fff); filter: brightness(1.06); }
+.vmodal .vopen.crit:hover { border-color: var(--danger); color: var(--danger); }
+
+@media (prefers-reduced-motion: reduce) {
+  .voyages .vhub-card,
+  .voyages .vcard,
+  .voyages .traycard { transition: none; }
+}
