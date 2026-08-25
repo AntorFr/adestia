@@ -611,7 +611,111 @@
 }
 
 .golem-card__title { font: 600 15.5px/1.2 var(--font-title); }
-.golem-card__meta { margin-top: auto; font-size: 12.5px; color: var(--text-muted); }
+
+.golem-card__foot {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+/* A status pill. The dot carries the colour and the WORD is always written
+   out beside it: hue alone is not a label, and three families are three
+   families whether or not somebody can tell them apart by colour. */
+.golem-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: 600 10.5px/1.5 var(--font-mono);
+  border-radius: var(--radius-pill);
+  padding: 2px 9px 2px 8px;
+}
+
+.golem-stat::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentcolor;
+}
+
+/* Underway is the accent — a live page's normal state, so it wears the
+   instance's own colour rather than a semantic one. */
+.golem-stat--underway { color: var(--accent); background: var(--accent-quiet); }
+.golem-stat--waiting {
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 13%, transparent);
+}
+.golem-stat--settled {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+}
+
+.golem-tag {
+  font: 600 10.5px/1.5 var(--font-mono);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+/* Search and facets ---------------------------------------------------- */
+
+.golem-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.golem-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 200px;
+  padding: 8px 13px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-ctl);
+}
+
+.golem-search:focus-within { border-color: var(--tile-color, var(--accent)); }
+.golem-search svg { width: 15px; height: 15px; opacity: 0.5; flex: none; }
+
+.golem-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  outline: none;
+  color: var(--text);
+  font: 14px var(--font);
+}
+
+.golem-facets { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.golem-pill {
+  font: 600 11.5px var(--font-mono);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 5px 11px;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.golem-pill:hover { border-color: var(--text-faint); }
+
+/* The active pill takes the SECTION's colour, so the filter reads as part of
+   the place rather than as generic chrome. */
+.golem-pill--on {
+  background: var(--tile-color, var(--accent));
+  border-color: var(--tile-color, var(--accent));
+  color: var(--accent-text);
+}
 
 /* What is over, folded away — still counted, one click from being read. */
 .golem-archive { margin-top: var(--space-5); }

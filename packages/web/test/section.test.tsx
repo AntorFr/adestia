@@ -3,7 +3,7 @@
  * The section screen: what it says about pages, and what it folds away.
  */
 
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { Section } from '../src/app/Section.js'
@@ -40,17 +40,73 @@ describe('the section screen', () => {
     ])
   })
 
-  it('says something TRUE under a page that declares a state', () => {
-    render(<Section {...props} />)
-    expect(screen.getByText('en-cours · menuiserie')).toBeTruthy()
+  it('wears a page’s status as a coloured pill, with the word written out', () => {
+    // Hue alone is not a label: the tone is a class, the word is text.
+    const { container } = render(<Section {...props} />)
+    const pill = container.querySelector('.golem-stat')
+    expect(pill?.textContent).toBe('en-cours')
+    expect(pill?.className).toContain('underway')
   })
 
-  it('gives a page that declares nothing a title and no invented subtitle', () => {
+  it('shows a page’s tags, capped so a card stays scannable', () => {
+    render(
+      <Section
+        {...props}
+        entries={[
+          entry('domaines/diy/INDEX.md', { title: 'DIY' }),
+          entry('domaines/diy/x.md', { tags: ['a', 'b', 'c', 'd', 'e'] }),
+        ]}
+      />,
+    )
+    expect(screen.getByText('#a')).toBeTruthy()
+    expect(screen.getByText('#c')).toBeTruthy()
+    expect(screen.queryByText('#d')).toBeNull()
+  })
+
+  it('gives a page that declares nothing a title and nothing invented', () => {
     const { container } = render(<Section {...props} />)
     const card = [...container.querySelectorAll('.golem-card')].find((c) =>
       c.textContent?.startsWith('scie'),
     )
-    expect(card?.querySelector('.golem-card__meta')).toBeNull()
+    expect(card?.querySelector('.golem-card__foot')).toBeNull()
+  })
+
+  it('filters by a facet the pages actually declare', () => {
+    const many = [
+      entry('d/INDEX.md', { title: 'D' }),
+      ...['a', 'b', 'c', 'd', 'e', 'f'].map((n, i) =>
+        entry(`d/${n}.md`, { status: i % 2 === 0 ? 'en-cours' : 'veille' }),
+      ),
+    ]
+    render(<Section {...props} path="d" entries={many} />)
+    fireEvent.click(screen.getByRole('button', { name: 'veille' }))
+    // Three of the six carry `veille`; the rest leave the grid.
+    expect(document.querySelectorAll('.golem-card').length).toBe(3)
+  })
+
+  it('searches what a card actually shows', () => {
+    const many = [
+      entry('d/INDEX.md', { title: 'D' }),
+      ...['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta'].map((n) =>
+        entry(`d/${n}.md`, { tags: [n === 'beta' ? 'urgent' : 'calme'] }),
+      ),
+    ]
+    const { container } = render(<Section {...props} path="d" entries={many} />)
+    const input = container.querySelector('.golem-search input') as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'urgent' } })
+    expect(container.querySelectorAll('.golem-card').length).toBe(1)
+    expect(screen.getByText('beta')).toBeTruthy()
+  })
+
+  it('says so plainly when a filter matches nothing', () => {
+    const many = [
+      entry('d/INDEX.md', { title: 'D' }),
+      ...['a', 'b', 'c', 'd', 'e', 'f'].map((n) => entry(`d/${n}.md`)),
+    ]
+    const { container } = render(<Section {...props} path="d" entries={many} />)
+    const input = container.querySelector('.golem-search input') as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'zzz' } })
+    expect(screen.getByText('Nothing matches.')).toBeTruthy()
   })
 
   it('folds finished pages away, counted, out of the living grid', () => {

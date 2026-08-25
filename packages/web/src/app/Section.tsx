@@ -15,8 +15,11 @@
  * leads somewhere else, then what is live, then what is done.
  */
 
+import { useMemo, useState } from 'react'
+
 import type { IndexEntry, SectionTile } from './sections.js'
 import { pagesIn, subsectionsOf } from './sections.js'
+import { isFinished, toneOf } from './status.js'
 
 export interface SectionProps {
   readonly path: string
@@ -28,35 +31,6 @@ export interface SectionProps {
   readonly openPage: (path: string) => void
 }
 
-/**
- * Statuses that mean "over".
- *
- * MEASURED against a real corpus, not guessed: the first version of this list
- * was a plausible set of French words that happened to miss `clos`, which is
- * what that corpus actually writes eleven times — so eleven finished projects
- * sat among the live ones and the fold never appeared. A vocabulary somebody
- * else writes is something to go and read.
- *
- * Still a small closed set, and a page whose status we do not recognise stays
- * with the living: that is the safe direction. Hiding something over an
- * unfamiliar word would make the section lie about its own size.
- */
-const FINISHED = new Set([
-  'clos',
-  'réalisé',
-  'realise',
-  'terminé',
-  'termine',
-  'fait',
-  'done',
-  'archivé',
-  'archive',
-  'archived',
-  'abandonné',
-  'abandonne',
-  'closed',
-])
-
 function text(value: unknown): string | undefined {
   return typeof value === 'string' && value !== '' ? value : undefined
 }
@@ -65,29 +39,39 @@ function statusOf(entry: IndexEntry): string | undefined {
   return text(entry.fields['status']) ?? text(entry.fields['statut'])
 }
 
-function isFinished(entry: IndexEntry): boolean {
-  const status = statusOf(entry)?.toLowerCase()
-  return status ? FINISHED.has(status) : false
+function tagsOf(entry: IndexEntry): readonly string[] {
+  const raw = entry.fields['tags']
+  return Array.isArray(raw) ? raw.map(String).filter(Boolean) : []
 }
 
 /**
- * The line under a card's title.
+ * The facet a section is filtered by.
  *
- * Built from what the page actually declares, in the order somebody scanning
- * would want it: what state it is in, then what kind of thing it is. Empty
- * when the page declares nothing — a card with a title alone beats a card
- * with a subtitle we made up.
+ * Whichever of status / role / cat its pages actually declare, in that order:
+ * a section of contacts filters by role, one of projects by status. Chosen
+ * from the CONTENT rather than configured, so a new kind of section needs no
+ * entry anywhere.
  */
-function metaOf(entry: IndexEntry): string {
-  return [statusOf(entry), text(entry.fields['cat']), text(entry.fields['role'])]
-    .filter(Boolean)
-    .join(' · ')
+function facetKeyOf(pages: readonly IndexEntry[]): string | undefined {
+  for (const key of ['status', 'role', 'cat']) {
+    if (pages.some((entry) => text(entry.fields[key]))) return key
+  }
+  return undefined
 }
 
 function hueVar(hue: string | undefined): Record<string, string> {
   return hue ? { '--tile-color': `var(--golem-hue-${hue}, var(--accent))` } : {}
 }
 
+/**
+ * A page, as a card.
+ *
+ * The foot is where a page says what it is without being opened: its status
+ * as a coloured pill (the dot carries the colour, so the meaning survives for
+ * anyone who cannot rely on hue alone — the word is always written out), its
+ * role, and up to three tags. Three, because a card with nine chips is a card
+ * nobody scans; the rest are still on the page itself.
+ */
 function PageCard({
   entry,
   onOpen,
@@ -95,12 +79,28 @@ function PageCard({
   readonly entry: IndexEntry
   readonly onOpen: () => void
 }) {
-  const meta = metaOf(entry)
+  const status = statusOf(entry)
+  const role = text(entry.fields['role'])
+  const tags = tagsOf(entry).slice(0, 3)
+  const hasFoot = status !== undefined || role !== undefined || tags.length > 0
+
   return (
     <li>
       <button type="button" className="golem-card" onClick={onOpen}>
         <span className="golem-card__title">{entry.title}</span>
-        {meta && <span className="golem-card__meta">{meta}</span>}
+        {hasFoot && (
+          <span className="golem-card__foot">
+            {status && (
+              <span className={`golem-stat golem-stat--${toneOf(status)}`}>{status}</span>
+            )}
+            {role && <span className="golem-tag">{role}</span>}
+            {tags.map((tag) => (
+              <span key={tag} className="golem-tag">
+                #{tag}
+              </span>
+            ))}
+          </span>
+        )}
       </button>
     </li>
   )
@@ -140,8 +140,35 @@ export function Section({
 }: SectionProps) {
   const rooms = subsectionsOf(entries, path)
   const all = pagesIn(entries, path)
-  const live = all.filter((entry) => !isFinished(entry))
-  const finished = all.filter(isFinished)
+  const live = all.filter((entry) => !isFinished(entry.fields))
+  const finished = all.filter((entry) => isFinished(entry.fields))
+
+  const [query, setQuery] = useState('')
+  const [facet, setFacet] = useState<string | undefined>(undefined)
+
+  const facetKey = facetKeyOf(live)
+  const facetValues = useMemo(() => {
+    if (!facetKey) return []
+    return [...new Set(live.map((entry) => text(entry.fields[facetKey])).filter(Boolean))].sort() as string[]
+  }, [live, facetKey])
+
+  /**
+   * Search covers what a card SHOWS — title, status, role, tags — plus the
+   * path. Searching hidden fields would make results appear for a reason
+   * nobody can see on screen.
+   */
+  const shown = useMemo(() => {
+    const needle = query.trim().toLowerCase()
+    return live.filter((entry) => {
+      if (facet && facetKey && text(entry.fields[facetKey]) !== facet) return false
+      if (needle === '') return true
+      const haystack = [entry.title, entry.path, statusOf(entry), text(entry.fields['role']), ...tagsOf(entry)]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+      return haystack.includes(needle)
+    })
+  }, [live, query, facet, facetKey])
 
   const lede = rooms.length > 0 ? 'Rooms lead to pages.' : 'Cards open a page.'
 
@@ -177,11 +204,57 @@ export function Section({
       {live.length > 0 && (
         <>
           <h2 className="golem-section">Pages</h2>
-          <ul className="golem-cards">
-            {live.map((entry) => (
-              <PageCard key={entry.path} entry={entry} onOpen={() => openPage(entry.path)} />
-            ))}
-          </ul>
+
+          {/* The toolbar appears only where it earns its place: a handful of
+              cards is faster to read than to filter, and facet pills for a
+              single value would be a control with one setting. */}
+          {(live.length > 5 || facetValues.length > 1) && (
+            <div className="golem-toolbar">
+              <label className="golem-search">
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="M21 21l-4-4" />
+                </svg>
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Search…"
+                  aria-label="Search this section"
+                />
+              </label>
+              {facetValues.length > 1 && (
+                <div className="golem-facets">
+                  <button
+                    type="button"
+                    className={facet === undefined ? 'golem-pill golem-pill--on' : 'golem-pill'}
+                    onClick={() => setFacet(undefined)}
+                  >
+                    All
+                  </button>
+                  {facetValues.map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      className={facet === value ? 'golem-pill golem-pill--on' : 'golem-pill'}
+                      onClick={() => setFacet(facet === value ? undefined : value)}
+                    >
+                      {value}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {shown.length > 0 ? (
+            <ul className="golem-cards">
+              {shown.map((entry) => (
+                <PageCard key={entry.path} entry={entry} onOpen={() => openPage(entry.path)} />
+              ))}
+            </ul>
+          ) : (
+            <p className="golem-empty">Nothing matches.</p>
+          )}
         </>
       )}
 
