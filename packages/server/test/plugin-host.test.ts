@@ -178,6 +178,7 @@ describe('plugin APIs', () => {
          app.get('/who', async () => ({
            id: opts.pluginId,
            keys: Object.keys(opts).filter((k) => k !== 'prefix').sort(),
+           secrets: Object.keys(opts.secrets ?? {}),
          }))
        }`,
     )
@@ -190,8 +191,14 @@ describe('plugin APIs', () => {
       'pluginDir',
       'pluginId',
       'scheduleEnabled',
+      'secrets',
       'workspaceRoot',
     ])
+    // Present, and EMPTY. The field exists so an API can read it without
+    // checking, and holds nothing for a plugin that declared nothing — which
+    // is the boundary, not a convenience: the instance's other keys are not
+    // one careless log away.
+    expect(body.secrets).toEqual([])
     await app.close()
   })
 })
