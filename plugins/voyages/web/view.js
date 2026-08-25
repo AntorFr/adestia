@@ -138,12 +138,21 @@ export default function view(api) {
     const days = next ? Math.ceil((Date.parse(next.debut) - Date.parse(today)) / 86_400_000) : 0
     const suggestions = voyages.reduce((sum, trip) => sum + (trip.suggestions ?? 0), 0)
 
+    // The plugin's own words, in the instance's language — the same contract
+    // its screens follow. A tile is the first thing anybody reads, and it was
+    // the one place this plugin still spoke English on a French instance.
+    const fr = api.locale === 'fr'
+    const trips = fr
+      ? `${voyages.length} voyage${voyages.length === 1 ? '' : 's'}`
+      : `${voyages.length} trip${voyages.length === 1 ? '' : 's'}`
+    const sort = fr
+      ? `${suggestions} à trier`
+      : `${suggestions} to sort`
+    const away = days > 0 ? `J-${days}` : fr ? 'en cours' : 'under way'
+
     return {
-      ...(next ? { subtitle: `${next.titre} — ${days > 0 ? `J-${days}` : '…'}` } : {}),
-      chips: [
-        { text: `${voyages.length} trip${voyages.length === 1 ? '' : 's'}` },
-        ...(suggestions > 0 ? [{ text: `${suggestions} to sort`, hot: true }] : []),
-      ],
+      ...(next ? { subtitle: `${next.titre} — ${away}` } : {}),
+      chips: [{ text: trips }, ...(suggestions > 0 ? [{ text: sort, hot: true }] : [])],
     }
   }
 

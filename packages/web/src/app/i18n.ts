@@ -73,6 +73,9 @@ const FR: Readonly<Record<string, string>> = {
   'Running with something missing': 'Actives, mais amputées',
   Save: 'Enregistrer',
 
+  'runs without the secret %name, which this instance does not provide':
+    'tourne sans le secret %name, que cette instance ne fournit pas',
+
   // MCP servers, in the settings panel
   'MCP servers': 'Serveurs MCP',
   connected: 'connecté',

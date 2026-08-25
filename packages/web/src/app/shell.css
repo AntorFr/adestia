@@ -1383,7 +1383,14 @@
 .golem-composer__model {
   align-self: flex-end;
   height: 36px;
-  max-width: 116px;
+  /* Sized to the shortest useful label, not to the longest model name. Seen
+     in a screenshot: at 116px this squeezed the field in the chat column down
+     to "Écrire à Alfred… ou « ouvre". The field is the composer's job — the
+     comment said so and the number said otherwise. */
+  max-width: 84px;
+  min-width: 0;
+  flex: 0 1 auto;
+  text-overflow: ellipsis;
   padding: 0 var(--space-2);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -1399,7 +1406,7 @@
 @media (max-width: 640px) {
   /* A phone composer is the field and the send button. The picker keeps its
      place but gives up its width first. */
-  .golem-composer__model { max-width: 84px; }
+  .golem-composer__model { max-width: 68px; }
 }
 
 /* Section heading on the landing canvas. The pages list sits BELOW the app

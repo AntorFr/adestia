@@ -32,6 +32,9 @@ export interface HostProblem {
   readonly reason: string
   /** Off, or merely diminished. See `DiscoveryProblem` — same vocabulary. */
   readonly severity?: 'refused' | 'degraded'
+  /** See `DiscoveryProblem` — same contract. */
+  readonly code?: string
+  readonly params?: Readonly<Record<string, string>>
 }
 
 /**
@@ -169,6 +172,8 @@ export async function mountPluginApis(
         problems.push({
           id: plugin.manifest.id,
           severity: 'degraded',
+          code: 'missing-secret',
+          params: { name },
           reason: `runs without the secret ${name}, which this instance does not provide — whatever it needed that key for is off`,
         })
       }

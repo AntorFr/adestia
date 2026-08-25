@@ -63,6 +63,21 @@ export interface DiscoveryProblem {
    * here rather than by reading the sentence.
    */
   readonly severity?: 'refused' | 'degraded'
+  /**
+   * A translatable identity for this problem, when it has one.
+   *
+   * `reason` is English prose written where the problem was detected, which is
+   * right for a log and wrong under a translated heading — a French panel with
+   * an English sentence in it reads as a half-finished product. A problem that
+   * a person is meant to ACT on carries a code and its parameters instead, and
+   * the shell says it in the instance's language.
+   *
+   * Codeless problems stay prose on purpose: a malformed manifest is a
+   * developer's error, read once while fixing a file, and inventing a
+   * translated sentence for each of them would be a vocabulary nobody reads.
+   */
+  readonly code?: string
+  readonly params?: Readonly<Record<string, string>>
 }
 
 export interface PluginDiscovery {

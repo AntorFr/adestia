@@ -29,6 +29,26 @@ import { browserEnvironment, loadPlugins, type LoadedPlugin, type PluginDescript
 import { useMobile } from './useMobile.js'
 import { useSplit } from './useSplit.js'
 
+/**
+ * A plugin problem, in the reader's language when it has an identity.
+ *
+ * The server writes English prose where the problem is detected, which is the
+ * right thing for a log and the wrong thing under a translated heading. A
+ * problem somebody is meant to ACT on carries a code instead, and is said here.
+ * Anything else falls back to the prose — visibly untranslated beats
+ * mistranslated, and beats a raw code by a mile.
+ */
+function say(
+  t: (key: string) => string,
+  problem: { reason: string; code?: string; params?: Record<string, string> },
+): string {
+  if (problem.code !== 'missing-secret' || !problem.params?.['name']) return problem.reason
+  return t('runs without the secret %name, which this instance does not provide').replace(
+    '%name',
+    problem.params['name'],
+  )
+}
+
 export interface InstanceInfo {
   readonly driver: { label: string; cliVersion: string; capabilities: readonly string[] }
   readonly auth: { mode: string }
@@ -38,6 +58,8 @@ export interface InstanceInfo {
   readonly skin: SkinDescriptor
   readonly plugins: readonly PluginDescriptor[]
   readonly pluginProblems: readonly {
+    code?: string
+    params?: Record<string, string>
     id: string
     reason: string
     /** Absent means refused — see the server's `DiscoveryProblem`. */
@@ -406,6 +428,8 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
     id: string
     reason: string
     severity?: 'refused' | 'degraded'
+    code?: string
+    params?: Record<string, string>
   }[] = [...instance.pluginProblems, ...failures]
 
   return (
@@ -557,7 +581,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
               <ul>
                 {listed.map((problem) => (
                   <li key={`${problem.id}-${problem.reason.slice(0, 20)}`}>
-                    <strong>{problem.id}</strong>: {problem.reason}
+                    <strong>{problem.id}</strong>: {say(t, problem)}
                   </li>
                 ))}
               </ul>
