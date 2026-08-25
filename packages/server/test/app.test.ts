@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { Driver, DriverDescriptor, TurnEvent, TurnRequest } from '@antorfr/golem-drivers'
 
 import { mkdtemp } from 'node:fs/promises'
@@ -674,11 +674,44 @@ describe('interactive permissions', () => {
   it('lists what is pending so a reconnecting UI can re-ask', async () => {
     const permissions = new PermissionBroker()
     const app = await buildApp(deps({ permissions }))
-    void permissions.ask('Write', '/etc/passwd', () => true)
+    const asked: { id: string }[] = []
+    void permissions.ask('Write', '/etc/passwd', (r) => {
+      asked.push(r)
+      return true
+    })
+    await vi.waitFor(() => expect(asked).toHaveLength(1))
+    // Claimed, as a real turn's request is: the listing is narrowed to its
+    // owner, so an unclaimed one belongs to nobody.
+    permissions.attach(asked[0]!.id, { userId: 'local' })
 
     const response = await app.inject({ url: '/api/permission' })
     expect(response.json().pending).toHaveLength(1)
     expect(response.json().pending[0]).toMatchObject({ tool: 'Write' })
+    await app.close()
+  })
+
+  it('does not hand one person what another is waiting on', async () => {
+    // One broker serves the whole instance. Unfiltered, this route reads out
+    // somebody else's tool names and file paths to whoever asks first.
+    const permissions = new PermissionBroker()
+    const app = await buildApp(deps({ permissions }))
+    const asked: { id: string }[] = []
+    void permissions.ask('Write', '/w/pages/prive.md', (r) => {
+      asked.push(r)
+      return true
+    })
+    await vi.waitFor(() => expect(asked).toHaveLength(1))
+    permissions.attach(asked[0]!.id, { userId: 'emilie' })
+
+    // The default instance identifies its single user as `local`.
+    expect((await app.inject({ url: '/api/permission' })).json().pending).toEqual([])
+    // And cannot answer for her either.
+    const answer = await app.inject({
+      method: 'POST',
+      url: '/api/permission',
+      payload: { id: asked[0]!.id, allow: true },
+    })
+    expect(answer.statusCode).toBe(409)
     await app.close()
   })
 
