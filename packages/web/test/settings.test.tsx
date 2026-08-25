@@ -51,7 +51,7 @@ describe('status line', () => {
 
   it('shows when a managed token was armed', () => {
     render(<StatusLine status={{ state: 'armed', source: 'managed', savedAt: '2026-06-01T00:00:00Z' }} />)
-    expect(screen.getByText(/Armed on/)).toBeTruthy()
+    expect(screen.getByText(/Armed/)).toBeTruthy()
   })
 
   it('shows the reason a token was refused', () => {
@@ -194,7 +194,7 @@ describe('settings', () => {
     // leak one even if a plugin's view went hostile.
     const { impl } = armingFetch({ status: { state: 'armed', source: 'managed', savedAt: '2026-06-01T00:00:00Z' } })
     const { container } = render(<Settings fetchImpl={impl} />)
-    await waitFor(() => expect(screen.getByText(/Armed on/)).toBeTruthy())
+    await waitFor(() => expect(screen.getByText(/Armed/)).toBeTruthy())
     expect(container.textContent).not.toContain('sk-ant')
   })
 })

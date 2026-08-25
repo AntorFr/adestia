@@ -677,23 +677,32 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
 
       {settingsOpen && (
         <Modal title={t('Settings')} closeLabel={t('Close')} onClose={() => setSettingsOpen(false)}>
-          <Settings fetchImpl={fetchImpl} />
-          <McpPanel fetchImpl={fetchImpl} t={t} />
-          {/* The way in. Editing prose in a dialog would be cramped, so this
-              opens the screen and closes the dialog behind it. */}
-          <section className="golem-mcp">
-            <h3>{t('Instructions')}</h3>
+          <Settings fetchImpl={fetchImpl} t={t} />
+          {/*
+            Before the MCP panel, not after it. This is the one thing in here
+            somebody comes to DO; the server list is a readout. Placed last it
+            sat under a dozen rows of status and fell below the fold — the
+            feature existed and could not be found, which is the same as not
+            existing.
+
+            Editing prose inside a dialog would be cramped, so it opens the
+            screen and closes the dialog behind it.
+          */}
+          <section className="golem-settings__link">
             <button
               type="button"
-              className="golem-switch"
               onClick={() => {
                 setSettingsOpen(false)
                 window.location.hash = '/instructions'
               }}
             >
-              {t('Read and correct what you told the agent')} ›
+              <span className="golem-settings__link-title">📓 {t('Instructions')}</span>
+              <span className="golem-settings__link-lede">
+                {t('Read and correct what you told the agent')}
+              </span>
             </button>
           </section>
+          <McpPanel fetchImpl={fetchImpl} t={t} />
         </Modal>
       )}
     </div>

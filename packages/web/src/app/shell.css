@@ -941,6 +941,30 @@
   color: var(--text-faint);
 }
 
+/* A way OUT of the settings dialog, into a screen. Looks like a destination
+   rather than a control, because that is what it is. */
+.golem-settings__link { margin-top: var(--space-4); }
+
+.golem-settings__link button {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  padding: var(--space-3);
+  text-align: left;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.14s;
+}
+
+.golem-settings__link button:hover { border-color: var(--accent); }
+.golem-settings__link-title { font-weight: 600; }
+.golem-settings__link-lede { color: var(--text-muted); font-size: var(--text-sm); }
+
 /* The MCP panel: a list of names and states, in the settings dialog. Rows
    rather than cards — this is a status board, and a board is read down a
    column. */

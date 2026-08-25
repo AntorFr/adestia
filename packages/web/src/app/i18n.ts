@@ -125,6 +125,17 @@ const FR: Readonly<Record<string, string>> = {
   'That app is not active on this instance.': 'Cette app n’est pas activée sur cette instance.',
   'Turn interrupted.': 'Tour interrompu.',
   'Agent credential': 'Jeton de l’agent',
+  'Checking…': 'Vérification…',
+  Armed: 'Armé',
+  'Refused upstream': 'Refusé en amont',
+  'Using the CLI’s own credentials': 'Utilise les identifiants propres du CLI',
+  'No token stored here': 'Aucun jeton conservé ici',
+  Unknown: 'Inconnu',
+  'Arm a token': 'Armer un jeton',
+  'Renew the token': 'Renouveler le jeton',
+  'Forget it': 'L’oublier',
+  Cancel: 'Annuler',
+  'Paste the code you were given': 'Collez le code qui vous a été donné',
 }
 
 const TABLES: Readonly<Record<Locale, Readonly<Record<string, string>>>> = {

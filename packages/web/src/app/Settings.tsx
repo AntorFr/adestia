@@ -32,29 +32,38 @@ type Phase =
   | { readonly kind: 'exchanging'; readonly prompt: AuthPrompt }
   | { readonly kind: 'failed'; readonly message: string }
 
-export function StatusLine({ status }: { status: AuthStatus | undefined }) {
-  if (!status) return <span className="golem-save">Checking…</span>
+export function StatusLine({
+  status,
+  t = (key) => key,
+}: {
+  status: AuthStatus | undefined
+  t?: (key: string) => string
+}) {
+  if (!status) return <span className="golem-save">{t('Checking…')}</span>
   switch (status.state) {
     case 'armed':
       return (
         <span className="golem-save golem-save--ok">
-          Armed{status.savedAt ? ` on ${new Date(status.savedAt).toLocaleDateString()}` : ''}
+          {t('Armed')}
+          {status.savedAt ? ` — ${new Date(status.savedAt).toLocaleDateString()}` : ''}
         </span>
       )
     case 'invalid':
-      return <span className="golem-save golem-save--error">{status.reason ?? 'Refused upstream'}</span>
+      return (
+        <span className="golem-save golem-save--error">{status.reason ?? t('Refused upstream')}</span>
+      )
     case 'absent':
       return (
         <span className="golem-save">
           {/* Not an error: the CLI may be living on credentials set up outside
               Golem, and saying "missing" would send someone fixing what works. */}
           {status.source === 'cli-native'
-            ? 'Using the CLI’s own credentials'
-            : 'No token stored here'}
+            ? t('Using the CLI’s own credentials')
+            : t('No token stored here')}
         </span>
       )
     default:
-      return <span className="golem-save">Unknown</span>
+      return <span className="golem-save">{t('Unknown')}</span>
   }
 }
 
@@ -139,7 +148,14 @@ export function McpPanel({
   )
 }
 
-export function Settings({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
+export function Settings({
+  fetchImpl = fetch,
+  t = (key) => key,
+}: {
+  fetchImpl?: typeof fetch
+  /** The shell's translator; identity leaves every label in English. */
+  t?: (key: string) => string
+}) {
   const [status, setStatus] = useState<AuthStatus | undefined>()
   const [supported, setSupported] = useState(true)
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' })
@@ -224,7 +240,7 @@ export function Settings({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   if (!supported) {
     return (
       <section className="golem-settings">
-        <h2>Agent credential</h2>
+        <h2>{t('Agent credential')}</h2>
         <p className="golem-empty__hint">
           This engine takes its credentials from the environment; there is nothing to arm here.
         </p>
@@ -241,7 +257,7 @@ export function Settings({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   return (
     <section className="golem-settings">
       <header className="golem-settings__header">
-        <StatusLine status={status} />
+        <StatusLine status={status} t={t} />
       </header>
 
       {phase.kind === 'failed' && (
@@ -253,11 +269,11 @@ export function Settings({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
       {!active && (
         <div className="golem-settings__actions">
           <button type="button" onClick={() => void begin()} disabled={phase.kind === 'starting'}>
-            {status?.state === 'armed' ? 'Renew the token' : 'Arm a token'}
+            {status?.state === 'armed' ? t('Renew the token') : t('Arm a token')}
           </button>
           {status?.state === 'armed' && (
             <button type="button" onClick={() => void clear()}>
-              Forget it
+              {t('Forget it')}
             </button>
           )}
         </div>
@@ -295,7 +311,7 @@ export function Settings({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             {active.mode === 'device-code' ? (
               <div className="golem-settings__actions">
                 <button type="button" onClick={() => void cancel(active)}>
-                  Cancel
+                  {t('Cancel')}
                 </button>
                 <button
                   type="button"
@@ -308,7 +324,7 @@ export function Settings({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             ) : (
               <>
                 <label className="golem-arming__label">
-                  {active.inputLabel ?? 'Paste the code you were given'}
+                  {active.inputLabel ?? t('Paste the code you were given')}
                   <input
                     className="golem-arming__input"
                     value={code}
@@ -319,7 +335,7 @@ export function Settings({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
                 </label>
                 <div className="golem-settings__actions">
                   <button type="button" onClick={() => void cancel(active)}>
-                    Cancel
+                    {t('Cancel')}
                   </button>
                   <button
                     type="button"
