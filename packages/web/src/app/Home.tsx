@@ -28,6 +28,10 @@ export interface HomeProps {
   readonly openPage: (path: string) => void
   /** Puts the cursor in the composer — what the search affordance actually does. */
   readonly focusComposer: () => void
+  /** The shell's translator; identity in English. */
+  readonly t?: (key: string) => string
+  /** BCP-47 tag for dates and numbers — the instance's, not the browser's. */
+  readonly locale?: string
   /** Sends a prompt to the agent — the brief's refresh button uses it. */
   readonly ask?: (prompt: string) => void
   readonly fetchImpl?: typeof fetch
@@ -65,13 +69,17 @@ interface Brief {
 }
 
 /** How old the brief is, said the way a person would. */
-function briefAge(generatedAt: string | undefined, now: Date): string | undefined {
+function briefAge(
+  generatedAt: string | undefined,
+  now: Date,
+  t: (key: string) => string,
+): string | undefined {
   if (!generatedAt) return undefined
   const hours = Math.round((now.getTime() - new Date(generatedAt).getTime()) / 3_600_000)
   if (!Number.isFinite(hours) || hours < 0) return undefined
-  if (hours < 1) return 'just now'
-  if (hours < 24) return `${hours} h ago`
-  return `${Math.round(hours / 24)} d ago`
+  if (hours < 1) return t('just now')
+  if (hours < 24) return `${t('%n h ago').replace('%n', String(hours))}`
+  return `${t('%n d ago').replace('%n', String(Math.round(hours / 24)))}`
 }
 
 /** The hue a target's kind wears — the predecessor's mapping, in named hues. */
@@ -199,6 +207,8 @@ export function Home({
   ask,
   fetchImpl,
   now,
+  t = (key) => key,
+  locale = 'en',
 }: HomeProps) {
   const info = useTileInfo(plugins)
   const clock = now ?? new Date()
@@ -256,17 +266,17 @@ export function Home({
 
   const greeting =
     (clock.getHours() >= EVENING_FROM ? skin.greetingEvening : skin.greetingDay) ??
-    (clock.getHours() >= EVENING_FROM ? 'Good evening.' : 'Good morning.')
+    (clock.getHours() >= EVENING_FROM ? t('Good evening.') : t('Good morning.'))
 
   // Written by the shell because the shell is what knows the corpus: the
   // number is the reason the line exists, and a date with nothing after it is
   // decoration.
   const pages = entries.filter((entry) => !/(^|\/)index\.md$/i.test(entry.path)).length
-  const context = `${clock.toLocaleDateString(undefined, {
+  const context = `${clock.toLocaleDateString(locale, {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
-  })} — ${plural(pages, 'page', 'pages')}.`
+  })} — ${plural(pages, t('page'), t('pages'))}.`
 
   return (
     <div className="golem-home">
@@ -297,7 +307,7 @@ export function Home({
         {/* The block caret: invisible on most liveries, a beating amber slab
             on the one whose whole identity is a terminal. CSS decides. */}
         <span className="golem-home__ask-caret" aria-hidden="true" />
-        <span className="golem-home__ask-text">{skin.placeholder ?? 'Ask…'}</span>
+        <span className="golem-home__ask-text">{skin.placeholder ?? t('Ask…')}</span>
         <kbd className="golem-home__ask-kbd">⌘K</kbd>
       </button>
 
@@ -306,11 +316,11 @@ export function Home({
           <h2 className="golem-section">
             À la une
             {(() => {
-              const age = briefAge(brief.generatedAt, clock)
-              const by = skin.brand ?? 'the agent'
+              const age = briefAge(brief.generatedAt, clock, t)
+              const by = skin.brand ?? t('the agent')
               return (
                 <span className="golem-section__by">
-                  — chosen by {by}
+                  — {t('chosen by')} {by}
                   {age ? ` · ${age}` : ''}
                 </span>
               )
@@ -319,7 +329,7 @@ export function Home({
               <button
                 type="button"
                 className="golem-section__refresh"
-                title="Ask for a fresh brief"
+                title={t('Ask for a fresh brief')}
                 onClick={() => ask('Rafraîchis ma une')}
               >
                 ↺
@@ -353,7 +363,7 @@ export function Home({
 
       {tiled.length > 0 && (
         <>
-          <h2 className="golem-section">Apps</h2>
+          <h2 className="golem-section">{t('Apps')}</h2>
           <ul className="golem-tiles">
             {tiled.map((plugin) => (
               <Tile
@@ -377,7 +387,7 @@ export function Home({
 
       {sections.length > 0 && (
         <>
-          <h2 className="golem-section">Sections</h2>
+          <h2 className="golem-section">{t('Sections')}</h2>
           <ul className="golem-tiles">
             {sections.map((section) => (
               <Tile
@@ -385,7 +395,7 @@ export function Home({
                 icon={section.icon}
                 label={section.title}
                 {...(section.hue ? { hue: section.hue } : {})}
-                chips={[{ text: plural(section.count, 'page', 'pages') }]}
+                chips={[{ text: plural(section.count, t('page'), t('pages')) }]}
                 onOpen={() => openSection(section.path)}
               />
             ))}
@@ -395,7 +405,7 @@ export function Home({
 
       {tiled.length === 0 && sections.length === 0 && (
         <section className="golem-empty">
-          <p>Nothing to show yet.</p>
+          <p>{t('Nothing to show yet.')}</p>
           <p className="golem-empty__hint">
             Turn a plugin on in <code>golem.config.yaml</code>, or give a folder of pages
             an <code>INDEX.md</code> to make it a section.

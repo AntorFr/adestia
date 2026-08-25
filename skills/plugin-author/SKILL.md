@@ -136,6 +136,33 @@ Extending the vocabulary is a deliberate act: a coded component, an entry in
 the schema, and a line in the skill that teaches it. It is never something a
 document can do by itself.
 
+## Speaking the reader's language
+
+A plugin ships its OWN words. The shell translates the shell — it cannot know
+a sentence it has never seen — and what it hands you is `api.locale` (`fr`,
+`en`…), already resolved from the instance's config or the browser.
+
+```js
+const WORDS = { fr: { 'to do': 'à faire', late: 'en retard' } }
+const words = (locale) => {
+  const table = WORDS[String(locale ?? '').slice(0, 2)] ?? {}
+  return (key) => table[key] ?? key
+}
+
+export default function view(api) {
+  const t = words(api.locale)
+  // …and `api.locale` is also the right argument for toLocaleDateString,
+  // so your dates match the shell's rather than the browser's.
+}
+```
+
+Key by the ENGLISH SENTENCE, not by an identifier: the call site then reads
+as what it renders, and a missing translation degrades to correct English
+instead of `todo.list.empty` on screen.
+
+**A SKIN never translates.** A livery is a look, not a language — words there
+would mean the interface changed language when somebody changed its colours.
+
 ## Writing an API
 
 ```js

@@ -193,6 +193,12 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
       capabilities: descriptor.capabilities,
     },
     auth: { mode: config.auth.mode },
+    /**
+     * Absent when the operator set none — the shell then asks the browser,
+     * which is what lets one instance answer two visitors in their own
+     * languages.
+     */
+    ...(config.locale ? { locale: config.locale } : {}),
     user: (request as FastifyRequest & { identity?: Identity }).identity ?? null,
     /**
      * What the shell loads, not just a name. A skin named in config but absent

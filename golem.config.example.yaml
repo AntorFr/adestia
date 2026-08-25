@@ -12,6 +12,12 @@ port: 8730
 # Server-side state: conversations, the attachment inbox, driver secrets (0600).
 dataDir: ./data
 
+# The interface's language: `fr`, `en`. Omit it and the shell asks the
+# BROWSER — so a household gets its own language with no configuration, and a
+# visitor from elsewhere gets theirs on the same instance. Set it to overrule
+# that. A plugin is handed the same value and translates its own words.
+# locale: fr
+
 # Concurrent agent turns across all conversations — a refusal (429) at the
 # cap, never a silent queue. Measured, not guessed (spikes/concurrency):
 # turns genuinely run in parallel and the API was happy at 8, but each CLI

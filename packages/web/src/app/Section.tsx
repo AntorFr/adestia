@@ -29,6 +29,8 @@ export interface SectionProps {
   readonly entries: readonly IndexEntry[]
   readonly openSection: (path: string) => void
   readonly openPage: (path: string) => void
+  /** The shell's translator; identity in English. */
+  readonly t?: (key: string) => string
 }
 
 function text(value: unknown): string | undefined {
@@ -109,9 +111,11 @@ function PageCard({
 function RoomCard({
   room,
   onOpen,
+  t,
 }: {
   readonly room: SectionTile
   readonly onOpen: () => void
+  readonly t: (key: string) => string
 }) {
   return (
     <li>
@@ -122,7 +126,7 @@ function RoomCard({
         <span className="golem-tile__label">{room.title}</span>
         <span className="golem-tile__foot">
           <span className="golem-chip">
-            {room.count} {room.count === 1 ? 'page' : 'pages'}
+            {room.count} {room.count === 1 ? t('page') : t('pages')}
           </span>
         </span>
       </button>
@@ -137,6 +141,7 @@ export function Section({
   entries,
   openSection,
   openPage,
+  t = (key) => key,
 }: SectionProps) {
   const rooms = subsectionsOf(entries, path)
   const all = pagesIn(entries, path)
@@ -170,7 +175,7 @@ export function Section({
     })
   }, [live, query, facet, facetKey])
 
-  const lede = rooms.length > 0 ? 'Rooms lead to pages.' : 'Cards open a page.'
+  const lede = rooms.length > 0 ? t('Rooms lead to pages.') : t('Cards open a page.')
 
   return (
     <div className="golem-home" style={hueVar(tile?.hue)}>
@@ -192,10 +197,10 @@ export function Section({
 
       {rooms.length > 0 && (
         <>
-          <h2 className="golem-section">Inside</h2>
+          <h2 className="golem-section">{t('Inside')}</h2>
           <ul className="golem-tiles">
             {rooms.map((room) => (
-              <RoomCard key={room.path} room={room} onOpen={() => openSection(room.path)} />
+              <RoomCard key={room.path} room={room} t={t} onOpen={() => openSection(room.path)} />
             ))}
           </ul>
         </>
@@ -203,7 +208,7 @@ export function Section({
 
       {live.length > 0 && (
         <>
-          <h2 className="golem-section">Pages</h2>
+          <h2 className="golem-section">{t('Pages')}</h2>
 
           {/* The toolbar appears only where it earns its place: a handful of
               cards is faster to read than to filter, and facet pills for a
@@ -218,8 +223,8 @@ export function Section({
                 <input
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search…"
-                  aria-label="Search this section"
+                  placeholder={t('Search…')}
+                  aria-label={t('Search this section')}
                 />
               </label>
               {facetValues.length > 1 && (
@@ -229,7 +234,7 @@ export function Section({
                     className={facet === undefined ? 'golem-pill golem-pill--on' : 'golem-pill'}
                     onClick={() => setFacet(undefined)}
                   >
-                    All
+                    {t('All')}
                   </button>
                   {facetValues.map((value) => (
                     <button
@@ -253,7 +258,7 @@ export function Section({
               ))}
             </ul>
           ) : (
-            <p className="golem-empty">Nothing matches.</p>
+            <p className="golem-empty">{t('Nothing matches.')}</p>
           )}
         </>
       )}
@@ -263,7 +268,7 @@ export function Section({
       {finished.length > 0 && (
         <details className="golem-archive">
           <summary>
-            Finished <span className="golem-archive__count">{finished.length}</span>
+            {t('Finished')} <span className="golem-archive__count">{finished.length}</span>
           </summary>
           <ul className="golem-cards">
             {finished.map((entry) => (
@@ -275,7 +280,7 @@ export function Section({
 
       {rooms.length === 0 && all.length === 0 && (
         <section className="golem-empty">
-          <p>This section holds nothing yet.</p>
+          <p>{t('This section holds nothing yet.')}</p>
         </section>
       )}
     </div>

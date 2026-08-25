@@ -191,11 +191,13 @@ export async function loadPlugins(
 export function browserEnvironment(
   ask: (prompt: string) => void,
   compose: (text: string) => void,
+  locale = 'en',
 ): LoaderEnvironment {
   return {
     makeApi: (descriptor) => ({
       id: descriptor.id,
       base: descriptor.base,
+      locale,
       fetch: (...args) => fetch(...args),
       ask,
       compose,

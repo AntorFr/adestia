@@ -17,10 +17,13 @@ export function Modal({
   title,
   onClose,
   children,
+  closeLabel = 'Close',
 }: {
   readonly title: string
   readonly onClose: () => void
   readonly children: ReactNode
+  /** The shell's translator, for the close control's label. */
+  readonly closeLabel?: string
 }) {
   const card = useRef<HTMLDivElement>(null)
 
@@ -63,7 +66,7 @@ export function Modal({
       >
         <header className="golem-modal__header">
           <h2>{title}</h2>
-          <button type="button" className="golem-ib" onClick={onClose} aria-label="Close">
+          <button type="button" className="golem-ib" onClick={onClose} aria-label={closeLabel}>
             ✕
           </button>
         </header>

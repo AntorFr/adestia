@@ -43,6 +43,13 @@ export interface AuthConfig {
   readonly proxy?: ProxyAuthConfig | undefined
 }
 
+/**
+ * The instance's language, when its operator has one in mind.
+ *
+ * Absent, the shell asks the BROWSER — so a household gets its own language
+ * with no configuration, and a visitor gets theirs on the same instance.
+ * Setting it here is how an operator overrules that.
+ */
 export interface WorkspaceConfig {
   /** The agent's home: instructions in its CLI's own dialect, plus content. */
   readonly root: string
@@ -125,6 +132,8 @@ export interface GolemConfig {
   readonly host: string
   readonly port: number
   readonly dataDir: string
+  /** `fr`, `en`… Absent means: let the browser decide. */
+  readonly locale?: string | undefined
   readonly auth: AuthConfig
   readonly workspace: WorkspaceConfig
   readonly driver: DriverConfig
@@ -148,6 +157,7 @@ const KNOWN_KEYS = new Set([
   'host',
   'port',
   'dataDir',
+  'locale',
   'auth',
   'workspace',
   'driver',
@@ -463,6 +473,7 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
     host: typeof raw['host'] === 'string' ? raw['host'] : DEFAULTS.host,
     port: port as number,
     dataDir: typeof raw['dataDir'] === 'string' ? raw['dataDir'] : DEFAULTS.dataDir,
+    ...(typeof raw['locale'] === 'string' ? { locale: raw['locale'] } : {}),
     auth,
     workspace,
     driver: {

@@ -20,6 +20,15 @@ export interface PluginApi {
   /** URL prefix its own files are served from, for assets and lazy chunks. */
   readonly base: string
   /**
+   * The instance's language, as a BCP-47 tag (`fr`, `en`…).
+   *
+   * A plugin ships its OWN words, the same way it ships its own skills — the
+   * shell cannot translate sentences it has never seen. What it can do is say
+   * which language to speak, and that is this. Also the right argument for
+   * `toLocaleDateString`, so a plugin's dates match the shell's.
+   */
+  readonly locale: string
+  /**
    * Fetch, already carrying the session. A plugin calling bare `fetch` works
    * too; this exists so the obvious call is the correct one.
    */

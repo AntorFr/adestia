@@ -3,7 +3,24 @@ import { createElement as h, useEffect, useState } from 'react'
 const fmt = (iso) =>
   iso ? new Date(iso).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' }) : '—'
 
+const WORDS = {
+  fr: {
+    'clock off': 'horloge coupée',
+    active: 'actives',
+    invalid: 'invalides',
+    'Scheduled turns': 'Planifications',
+    'clock off — nothing will run': 'horloge coupée — rien ne tournera',
+    'No scheduled note yet.': 'Aucune planification pour l’instant.',
+  },
+}
+const words = (locale) => {
+  const table = WORDS[String(locale ?? '').slice(0, 2)] ?? {}
+  return (key) => table[key] ?? key
+}
+
 export default function view(api) {
+  const t = words(api.locale)
+
   function Planif() {
     const [state, setState] = useState({ loading: true, notes: [], enabled: false })
 
@@ -20,18 +37,18 @@ export default function view(api) {
 
     return h('section', { className: 'planif' }, [
       h('header', { key: 'h', className: 'planif__head' }, [
-        h('h2', { key: 't' }, 'Scheduled turns'),
+        h('h2', { key: 't' }, t('Scheduled turns')),
         // The clock's state comes first: a list of notes that will never run
         // looks exactly like a list of notes that will.
         h(
           'span',
           { key: 's', className: state.enabled ? 'planif-on' : 'planif-off' },
-          state.enabled ? 'clock running' : 'clock off — nothing will run',
+          state.enabled ? 'clock running' : t('clock off — nothing will run'),
         ),
       ]),
 
       state.notes.length === 0
-        ? h('p', { key: 'e', className: 'planif-muted' }, 'No scheduled note yet.')
+        ? h('p', { key: 'e', className: 'planif-muted' }, t('No scheduled note yet.'))
         : h(
             'ul',
             { key: 'l', className: 'planif__list' },
@@ -114,7 +131,7 @@ export default function view(api) {
     const { notes, enabled } = await response.json()
 
     if (!enabled) {
-      return { chips: [{ text: 'clock off', hot: true }] }
+      return { chips: [{ text: t('clock off'), hot: true }] }
     }
     if (notes.length === 0) return undefined
 
@@ -124,8 +141,8 @@ export default function view(api) {
     const broken = notes.filter((note) => note.problem).length
     return {
       chips: [
-        { text: `${active} active` },
-        ...(broken > 0 ? [{ text: `${broken} invalid`, hot: true }] : []),
+        { text: `${active} ${t('active')}` },
+        ...(broken > 0 ? [{ text: `${broken} ${t('invalid')}`, hot: true }] : []),
       ],
     }
   }

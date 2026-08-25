@@ -89,7 +89,7 @@ function parseLabels(raw) {
  * likely heading, and alphabetical order alone buries it under whatever starts
  * with A.
  */
-export function facetsOf(collection) {
+export function facetsOf(collection, t = (key) => key) {
   if (!collection.groupBy) return null
 
   const groups = new Map()
@@ -108,7 +108,7 @@ export function facetsOf(collection) {
   return [...groups.entries()]
     .map(([value, pages]) => ({
       value,
-      label: value === '' ? 'Uncategorised' : (collection.labels[value] ?? prettify(value)),
+      label: value === '' ? t('Uncategorised') : (collection.labels[value] ?? prettify(value)),
       pages,
     }))
     .sort((a, b) => {

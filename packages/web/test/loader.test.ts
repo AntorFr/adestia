@@ -17,6 +17,7 @@ function environment(modules: Record<string, Record<string, unknown> | Error>) {
     makeApi: (descriptor) => ({
       id: descriptor.id,
       base: descriptor.base,
+      locale: 'en',
       fetch: (() => Promise.reject(new Error('not used'))) as unknown as typeof fetch,
       ask: () => undefined,
       compose: () => undefined,

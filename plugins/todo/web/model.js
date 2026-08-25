@@ -67,7 +67,39 @@ const today = () => new Date().toISOString().slice(0, 10)
  * Kept few and obvious on purpose. A view for every possible query is a view
  * nobody scans; these are the four questions a todo list actually gets asked.
  */
-export function dynamicLists(tasks) {
+/**
+ * The plugin's own words.
+ *
+ * A plugin ships these itself — the shell translates the shell and cannot
+ * know a sentence it has never seen. What it hands over is `api.locale`.
+ */
+const WORDS = {
+  fr: {
+    Late: 'En retard',
+    'past its due date': 'échéance dépassée',
+    Today: "Aujourd'hui",
+    'due today': "pour aujourd'hui",
+    'Next 7 days': 'Sous 7 jours',
+    'due within the week': 'dans la semaine',
+    'Everything open': 'Tout ce qui reste',
+    'the whole base, undone': 'toute la base, non faite',
+    'No domain': 'Sans domaine',
+    'to do': 'à faire',
+    late: 'en retard',
+    'curated by reference': 'sélection par référence',
+    'a live query, nothing to maintain': 'une requête vivante, rien à tenir à jour',
+    'Your lists': 'Vos listes',
+    'Live views': 'Vues dynamiques',
+    'Everything, by domain': 'Tout, par domaine',
+  },
+}
+
+export function words(locale) {
+  const table = WORDS[String(locale ?? '').slice(0, 2)] ?? {}
+  return (key) => table[key] ?? key
+}
+
+export function dynamicLists(tasks, t = (key) => key) {
   const all = Object.values(tasks)
   const open = all.filter((task) => !task.done)
   const day = today()
@@ -75,30 +107,30 @@ export function dynamicLists(tasks) {
   return [
     {
       id: 'late',
-      title: 'Late',
+      title: t('Late'),
       icon: '🔥',
-      description: 'past its due date',
+      description: t('past its due date'),
       tasks: open.filter((task) => task.due && task.due < day).sort(byDue),
     },
     {
       id: 'today',
-      title: 'Today',
+      title: t('Today'),
       icon: '📅',
-      description: 'due today',
+      description: t('due today'),
       tasks: open.filter((task) => task.due === day),
     },
     {
       id: 'soon',
-      title: 'Next 7 days',
+      title: t('Next 7 days'),
       icon: '🗓',
-      description: 'due within the week',
+      description: t('due within the week'),
       tasks: open.filter((task) => task.due && task.due > day && task.due <= plusDays(day, 7)).sort(byDue),
     },
     {
       id: 'open',
-      title: 'Everything open',
+      title: t('Everything open'),
       icon: '📥',
-      description: 'the whole base, undone',
+      description: t('the whole base, undone'),
       tasks: open.sort(byDue),
     },
   ]
@@ -137,7 +169,7 @@ export function progressOf(tasks) {
 }
 
 /** Groups the base by domain, for the "everything" view. */
-export function byDomain(tasks) {
+export function byDomain(tasks, t = (key) => key) {
   const groups = new Map()
   for (const task of tasks) {
     const key = task.dom ?? ''
@@ -146,7 +178,7 @@ export function byDomain(tasks) {
   }
   return [...groups.entries()]
     .sort(([a], [b]) => (a === '' ? 1 : b === '' ? -1 : a.localeCompare(b)))
-    .map(([dom, items]) => ({ dom: dom || 'No domain', tasks: items }))
+    .map(([dom, items]) => ({ dom: dom || t('No domain'), tasks: items }))
 }
 
 /**

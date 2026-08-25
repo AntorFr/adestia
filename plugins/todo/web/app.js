@@ -7,9 +7,12 @@ import {
   progressOf,
   resolveList,
   toggleDone,
+  words,
 } from './model.js'
 
 export default function view(api) {
+  const t = words(api.locale)
+
   function Todo() {
     const [model, setModel] = useState(null)
     const [openList, setOpenList] = useState(null)
@@ -67,7 +70,7 @@ export default function view(api) {
     if (error && !model) return h('p', { className: 'todo-problem' }, error)
     if (!model) return h('p', { className: 'todo-muted' }, 'Loading…')
 
-    const dynamic = dynamicLists(model.tasks)
+    const dynamic = dynamicLists(model.tasks, t)
     const curated = Object.values(model.lists).map((list) => resolveList(list, model.tasks))
     const current =
       openList &&
@@ -110,8 +113,8 @@ export default function view(api) {
             // user who ticks something out of a dynamic view needs to know
             // why it vanished.
             current.curated
-              ? `${open} to do · curated by reference`
-              : `${open} to do · a live query, nothing to maintain`,
+              ? `${open} ${t('to do')} · ${t('curated by reference')}`
+              : `${open} ${t('to do')} · ${t('a live query, nothing to maintain')}`,
           ),
         ]),
         error && h('p', { key: 'e', className: 'todo-problem' }, error),
@@ -132,7 +135,7 @@ export default function view(api) {
           h('span', { key: 'd', className: 'todo-muted' }, list.description ?? ''),
           isCurated &&
             h('span', { key: 'b', className: 'todo-bar' }, h('i', { style: { width: `${percent}%` } })),
-          h('span', { key: 'c', className: 'todo-card__count' }, `${open} to do`),
+          h('span', { key: 'c', className: 'todo-card__count' }, `${open} ${t('to do')}`),
         ]),
       )
     }
@@ -150,7 +153,7 @@ export default function view(api) {
       ]),
       error && h('p', { key: 'e', className: 'todo-problem' }, error),
 
-      h('h3', { key: 'c', className: 'todo-group' }, 'Your lists'),
+      h('h3', { key: 'c', className: 'todo-group' }, t('Your lists')),
       curated.length === 0
         ? h(
             'p',
@@ -159,11 +162,11 @@ export default function view(api) {
           )
         : h('ul', { key: 'cl', className: 'todo-cards' }, curated.map((l) => card(l, true))),
 
-      h('h3', { key: 'd', className: 'todo-group' }, 'Live views'),
+      h('h3', { key: 'd', className: 'todo-group' }, t('Live views')),
       h('ul', { key: 'dl', className: 'todo-cards' }, dynamic.map((l) => card(l, false))),
 
-      h('h3', { key: 'g', className: 'todo-group' }, 'Everything, by domain'),
-      ...byDomain(allTasks.filter((task) => !task.done)).map((group) =>
+      h('h3', { key: 'g', className: 'todo-group' }, t('Everything, by domain')),
+      ...byDomain(allTasks.filter((task) => !task.done), t).map((group) =>
         h('div', { key: group.dom, className: 'todo-domain' }, [
           h('h4', { key: 'h' }, group.dom),
           h('ul', { key: 'l', className: 'todo-list' }, group.tasks.map(taskRow)),
@@ -202,8 +205,8 @@ export default function view(api) {
 
     return {
       chips: [
-        { text: `${open.length} to do` },
-        ...(late > 0 ? [{ text: `${late} late`, hot: true }] : []),
+        { text: `${open.length} ${t('to do')}` },
+        ...(late > 0 ? [{ text: `${late} ${t('late')}`, hot: true }] : []),
       ],
     }
   }

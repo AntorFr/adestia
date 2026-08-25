@@ -2,7 +2,25 @@ import { createElement as h, useCallback, useEffect, useState } from 'react'
 
 import { buildCollections, facetsOf, plural, prettify, statusOf } from './model.js'
 
+const WORDS = {
+  fr: {
+    collection: 'collection',
+    collections: 'collections',
+    incomplete: 'incomplètes',
+    Collections: 'Collections',
+    'No collection declared yet.': 'Aucune collection déclarée.',
+    '＋ Ask for a collection': '＋ Demander une collection',
+    Uncategorised: 'Sans catégorie',
+  },
+}
+const words = (locale) => {
+  const table = WORDS[String(locale ?? '').slice(0, 2)] ?? {}
+  return (key) => table[key] ?? key
+}
+
 export default function view(api) {
+  const t = words(api.locale)
+
   function Collections() {
     const [model, setModel] = useState(null)
     const [error, setError] = useState(null)
@@ -95,7 +113,7 @@ export default function view(api) {
       h('h2', { key: 'h' }, '🗂 Collections'),
       model.collections.length === 0
         ? h('div', { key: 'e' }, [
-            h('p', { key: 'p', className: 'coll-muted' }, 'No collection declared yet.'),
+            h('p', { key: 'p', className: 'coll-muted' }, t('No collection declared yet.')),
             h(
               'button',
               {
@@ -108,7 +126,7 @@ export default function view(api) {
                     'Crée une collection : une page avec type: collection, un titre, `of:` le type de page collecté et `groupBy:` la facette de regroupement.',
                   ),
               },
-              '＋ Ask for a collection',
+              t('＋ Ask for a collection'),
             ),
           ])
         : h(
@@ -157,8 +175,8 @@ export default function view(api) {
     const broken = collections.filter((collection) => collection.problem).length
     return {
       chips: [
-        { text: plural(collections.length, 'collection') },
-        ...(broken > 0 ? [{ text: `${broken} incomplete`, hot: true }] : []),
+        { text: plural(collections.length, t('collection')) },
+        ...(broken > 0 ? [{ text: `${broken} ${t('incomplete')}`, hot: true }] : []),
       ],
     }
   }

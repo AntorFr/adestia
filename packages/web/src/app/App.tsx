@@ -6,7 +6,7 @@
  * second engine a driver rather than a fork.
  */
 
-import { Component, useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { Component, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 
 import { Chat } from '../chat/Chat.js'
 import { Editor, type PageDocument } from '../editor/Editor.js'
@@ -21,6 +21,7 @@ import {
 } from './skin.js'
 import { routeMatches, type PluginApi } from '../plugins/contract.js'
 import { Home } from './Home.js'
+import { resolveLocale, translator } from './i18n.js'
 import { SkinSlot } from './SkinSlot.js'
 import { Section } from './Section.js'
 import { sectionAt, type IndexEntry } from './sections.js'
@@ -31,6 +32,8 @@ import { useSplit } from './useSplit.js'
 export interface InstanceInfo {
   readonly driver: { label: string; cliVersion: string; capabilities: readonly string[] }
   readonly auth: { mode: string }
+  /** Set only when the operator configured one; the browser decides otherwise. */
+  readonly locale?: string
   readonly user: { userId: string; displayName: string } | null
   readonly skin: SkinDescriptor
   readonly plugins: readonly PluginDescriptor[]
@@ -93,6 +96,20 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   const [mount, setMount] = useState<EditorMount | undefined>()
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [skin, setSkin] = useState<Skin & SkinSlots>({})
+
+  /**
+   * The shell's words. Resolved once the instance answers, because the
+   * operator's choice — when there is one — outranks the browser's.
+   */
+  const locale = useMemo(
+    () =>
+      resolveLocale(
+        instance?.locale,
+        typeof navigator === 'undefined' ? undefined : navigator.language,
+      ),
+    [instance?.locale],
+  )
+  const t = useMemo(() => translator(locale), [locale])
   const [skinScheme, setSkinScheme] = useState<'light' | 'dark' | undefined>(undefined)
   const [loaded, setLoaded] = useState<readonly LoadedPlugin[]>([])
   /** The plugin view currently filling the canvas, by id. */
@@ -201,6 +218,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
       api: {
         id: plugin.id,
         base: plugin.base,
+        locale,
         fetch,
         ask: (p: string) => askRef.current?.(p),
         compose: (t: string) => composeRef.current?.(t),
@@ -262,6 +280,9 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
         const environment = browserEnvironment(
           (prompt) => askRef.current?.(prompt),
           (text) => composeRef.current?.(text),
+          // The plugins are loaded once the instance has answered, so this is
+          // the resolved locale rather than a guess.
+          resolveLocale(info.locale, typeof navigator === 'undefined' ? undefined : navigator.language),
         )
         const result = await loadPlugins(info.plugins, environment)
         if (!cancelled) {
@@ -294,7 +315,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   if (needsLogin === 'refused') {
     return (
       <main className="golem-fatal" role="alert">
-        <h1>Not allowed</h1>
+        <h1>{t('Not allowed')}</h1>
         <p>
           You are signed in, but your account is not in a group this instance admits. Ask whoever
           runs it to add you.
@@ -323,7 +344,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   if (fatal) {
     return (
       <main className="golem-fatal" role="alert">
-        <h1>Golem could not start</h1>
+        <h1>{t('Golem could not start')}</h1>
         <p>{fatal}</p>
       </main>
     )
@@ -381,7 +402,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
               type="button"
               className="golem-switch"
               onClick={() => setScreen('chat')}
-              aria-label="Back to the chat"
+              aria-label={t('Back to the chat')}
             >
               ‹ Chat
             </button>
@@ -397,7 +418,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
                 setPage(undefined)
               }}
             >
-              Home
+              {t('Home')}
             </button>
             {(() => {
               if (openApp) {
@@ -451,7 +472,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             type="button"
             className="golem-ib"
             onClick={cycleTheme}
-            aria-label="Theme"
+            aria-label={t('Theme')}
             title={themePref === '' ? 'Theme: system' : `Theme: ${themePref}`}
           >
             ◐
@@ -460,7 +481,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             type="button"
             className="golem-ib"
             onClick={() => setSettingsOpen(!settingsOpen)}
-            aria-label="Settings"
+            aria-label={t('Settings')}
             aria-expanded={settingsOpen}
           >
             ⚙
@@ -468,7 +489,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           {instance.auth.mode === 'oidc' && (
             <form method="post" action="/auth/logout" className="golem-canvas__signout">
               <button type="submit" className="golem-switch" title={instance.user?.displayName}>
-                Sign out
+                {t('Sign out')}
               </button>
             </form>
           )}
@@ -478,7 +499,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
 
         {problems.length > 0 && (
           <section className="golem-problems" role="status">
-            <h2>Extensions refused</h2>
+            <h2>{t('Extensions refused')}</h2>
             <ul>
               {problems.map((problem) => (
                 <li key={`${problem.id}-${problem.reason.slice(0, 20)}`}>
@@ -498,7 +519,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
               // so instead of looking broken.
               return (
                 <section className="golem-empty">
-                  <p>That app is not active on this instance.</p>
+                  <p>{t('That app is not active on this instance.')}</p>
                   <button type="button" className="golem-switch" onClick={() => closeApp()}>
                     ‹ Back
                   </button>
@@ -529,6 +550,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             entries={pages}
             openSection={setSection}
             openPage={openPage}
+            t={t}
           />
         ) : skin.home ? (
           <SkinSlot
@@ -549,6 +571,8 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             openSection={setSection}
             openPage={openPage}
             focusComposer={() => composeRef.current?.('')}
+            t={t}
+            locale={locale}
             ask={(prompt) => askRef.current?.(prompt)}
             fetchImpl={fetchImpl}
           />
@@ -557,7 +581,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
       </main>
 
       {settingsOpen && (
-        <Modal title="Settings" onClose={() => setSettingsOpen(false)}>
+        <Modal title={t('Settings')} closeLabel={t('Close')} onClose={() => setSettingsOpen(false)}>
           <Settings fetchImpl={fetchImpl} />
         </Modal>
       )}
