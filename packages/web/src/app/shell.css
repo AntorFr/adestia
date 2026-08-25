@@ -890,6 +890,40 @@
      and no phone could open them. */
   .golem-shell[data-screen='chat'] .golem-canvas { display: none; }
   .golem-shell[data-screen='canvas'] .golem-chat { display: none; }
+
+  /* The top bar has room for WHERE YOU ARE and the two controls, and that is
+     all. The driver's name is diagnostics — it belongs on a screen wide
+     enough to spare the space, not crushed against the breadcrumb. */
+  .golem-canvas__driver { display: none; }
+  .golem-canvas__header { padding: 11px var(--space-4); gap: var(--space-2); }
+  .golem-crumbs { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .golem-canvas__body { padding: var(--space-4) var(--space-4) 80px; }
+
+  /* A 33px serif greeting wraps to three lines on a phone and eats a third
+     of the screen before anything useful. It scales; the rest does not. */
+  .golem-home__greeting { font-size: clamp(22px, 7vw, 33px); }
+  .golem-home__greeting::before { display: none; }
+  .golem-home__context { font-size: 14px; }
+  .golem-home__ask { margin: var(--space-4) 0 var(--space-2); padding: 12px 14px; }
+  .golem-home__ask-text { font-size: 14px; }
+  .golem-home__ask-kbd { display: none; }
+
+  /* Two up rather than one: at 210px minimum a 390px phone gets a single
+     column of very tall cards, which is a list wearing a card's costume. */
+  .golem-tiles { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .golem-tile { min-height: 118px; padding: 13px; gap: 8px; }
+  .golem-tile__icon { width: 36px; height: 36px; font-size: 17px; }
+  .golem-tile__label { font-size: 15px; }
+
+  .golem-cards { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .golem-card { min-height: 84px; padding: 13px; }
+  .golem-card__title { font-size: 14.5px; }
+
+  /* The brief goes full width: four pills of different lengths stacked
+     ragged read worse than four rows that line up. */
+  .golem-brief { flex-direction: column; }
+  .golem-brief__item { width: 100%; }
 }
 
 /* Pages and editor ------------------------------------------------------- */
