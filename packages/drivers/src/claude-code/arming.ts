@@ -31,7 +31,22 @@ export const CODE_PROMPT_PATTERN = /paste code here|enter the code/i
 /** OSC 8 hyperlink: ESC ] 8 ; params ; TARGET BEL. The target is the URL. */
 // eslint-disable-next-line no-control-regex
 export const OSC8_PATTERN = /\u001b\]8;[^;]*;([^\u0007\u001b]+)/g
-export const TOKEN_PATTERN = /sk-ant-oat01-[A-Za-z0-9_-]{20,}/
+/**
+ * The shape a subscription token has had so far. `oat01` is a version, not a
+ * law: the string is minted by the server, and the CLI's own binary never
+ * mentions it outside documentation for an unrelated key. Hence the digits
+ * are open, and hence the label below exists at all.
+ */
+export const TOKEN_PATTERN = /sk-ant-oat\d*-[A-Za-z0-9_-]{20,}/
+/**
+ * How the CLI announces the value on its success screen, one line above it:
+ * `Your OAuth token (valid for 1 year):`. Anchoring on what the CLI SAYS
+ * rather than on what the token looks like is what survives a format Anthropic
+ * changes without telling anyone.
+ */
+export const TOKEN_LABEL_PATTERN = /your oauth token/i
+/** A credential, as opposed to a sentence: one long unbroken word. */
+export const OPAQUE_SECRET_PATTERN = /^[A-Za-z0-9._~+/=-]{24,}$/
 /**
  * The CLI's own verdict on a code it would not exchange. Its wording is
  * `OAuth error: Invalid code. Please make sure the full code was copied`,
@@ -73,7 +88,28 @@ export function findAuthorizeUrl(screen: string): string | undefined {
  * SUCCESSFUL authorization still ended in "the CLI did not return a token".
  */
 export function findToken(screen: string): string | undefined {
-  return TOKEN_PATTERN.exec(renderScreen(screen))?.[0]
+  const drawn = renderScreen(screen)
+  return TOKEN_PATTERN.exec(drawn)?.[0] ?? tokenUnderLabel(drawn)
+}
+
+/**
+ * The value the CLI itself points at: the first real line after its
+ * `Your OAuth token…` heading.
+ *
+ * The screen goes on to say `Use this token by setting: export
+ * CLAUDE_CODE_OAUTH_TOKEN=<token>` — a template, not a value. Requiring one
+ * unbroken word keeps that line, and every sentence around it, out.
+ */
+function tokenUnderLabel(drawn: string): string | undefined {
+  const lines = drawn.split('\n')
+  const heading = lines.findIndex((line) => TOKEN_LABEL_PATTERN.test(line))
+  if (heading === -1) return undefined
+  for (const line of lines.slice(heading + 1)) {
+    const candidate = line.trim()
+    if (candidate === '') continue
+    return OPAQUE_SECRET_PATTERN.test(candidate) ? candidate : undefined
+  }
+  return undefined
 }
 
 /** Whether the CLI has already said no to the code it was given. */
@@ -125,10 +161,14 @@ export function visibleTail(screen: string, lines = 4): string {
  *
  * Checked before it is saved because the alternative is a token that fails at
  * the first turn with an error about the CLI, sending its owner to debug the
- * wrong thing entirely.
+ * wrong thing entirely. Loose enough to accept a format that changes, tight
+ * enough to reject a sentence — which is what a bad scrape returns.
  */
 export function looksLikeToken(value: string): boolean {
-  return TOKEN_PATTERN.test(value.trim())
+  const candidate = value.trim()
+  // The known shape, or anything the CLI presented AS the token: a single
+  // opaque word. Prose, placeholders and half-scraped screens fail both.
+  return TOKEN_PATTERN.test(candidate) || OPAQUE_SECRET_PATTERN.test(candidate)
 }
 
 /** Which variable hands the token to the CLI. */

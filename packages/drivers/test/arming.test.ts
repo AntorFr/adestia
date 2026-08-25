@@ -85,9 +85,44 @@ describe('screen scraping', () => {
     expect(refusedCode('exchanging…')).toBe(false)
   })
 
+  it('takes the value the CLI points at, whatever its format', () => {
+    // The success screen, verbatim from the binary's own strings. If the
+    // server ever mints a token that is not `sk-ant-oat…`, the heading is
+    // still there and still one line above the value.
+    const future = 'claude_oauth_9f2b' + 'Q'.repeat(40)
+    const success = [
+      'Long-lived authentication token created successfully!',
+      '',
+      'Your OAuth token (valid for 1 year):',
+      '',
+      future,
+      '',
+      "Store this token securely. You won't be able to see it again.",
+      'Use this token by setting: export CLAUDE_CODE_OAUTH_TOKEN=<token>',
+    ].join('\n')
+
+    expect(findToken(success)).toBe(future)
+    // And it is storable: the CLI presenting it as the token IS the check.
+    expect(looksLikeToken(future)).toBe(true)
+  })
+
+  it('does not mistake the instructions for the token', () => {
+    // `<token>` is a template; the sentences around it are prose. A capture
+    // that returns either of them stores garbage under the user's name.
+    const noValue = [
+      'Your OAuth token (valid for 1 year):',
+      "Store this token securely. You won't be able to see it again.",
+    ].join('\n')
+    expect(findToken(noValue)).toBeUndefined()
+    expect(looksLikeToken('export CLAUDE_CODE_OAUTH_TOKEN=<token>')).toBe(false)
+    expect(looksLikeToken('Store this token securely.')).toBe(false)
+  })
+
   it('finds the token and nothing that merely looks like one', () => {
     expect(findToken('Saved: ' + TOKEN)).toBe(TOKEN)
     expect(findToken('sk-ant-oat01-short')).toBeUndefined()
+    // A later format version is still the known shape.
+    expect(findToken('Saved: sk-ant-oat02-' + 'b'.repeat(24))).toBe('sk-ant-oat02-' + 'b'.repeat(24))
     expect(findToken('no token here')).toBeUndefined()
   })
 
