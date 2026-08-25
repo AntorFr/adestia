@@ -110,6 +110,12 @@ export interface PluginManifest {
    * betrayal every time. Declared by the plugin because only the plugin
    * knows what its screen covers — and only while it is ACTIVE, so turning
    * it off gives the folder back rather than hiding it forever.
+   *
+   * A NAME, not a path. It matches wherever that run of folder names sits —
+   * `voyages` covers `voyages` and `domaines/voyages` alike, because a plugin
+   * cannot know how an operator files things — and it covers everything UNDER
+   * the folder, since a tile that stands for a folder stands for its contents.
+   * Always at a segment boundary, so `voyages` never absorbs `mes-voyages`.
    */
   readonly absorbs?: readonly string[]
 

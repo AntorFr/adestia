@@ -74,6 +74,41 @@ describe('sectionsOf', () => {
     expect(sectionsOf(CORPUS, ['todo']).some((s) => s.path === 'todo')).toBe(false)
   })
 
+  it('absorbs a folder wherever the operator filed it', () => {
+    // A plugin cannot know the layout it lands in. The trips app declares
+    // `voyages`; the corpus here files them under `domaines/`, and on another
+    // instance they sit at the top. One declaration has to cover both.
+    const corpus = [
+      { path: 'domaines/voyages/baden/notes.md', title: 'Notes', fields: {} },
+      { path: 'voyages/corse/notes.md', title: 'Notes', fields: {} },
+    ]
+    expect(sectionsOf(corpus, ['voyages'])).toEqual([])
+  })
+
+  it('absorbs what is UNDER the folder, not only the folder', () => {
+    // Each trip is a folder holding pages, so each became a section beside the
+    // app's tile — the duplication the field exists to prevent, minus the one
+    // folder it was aimed at.
+    const corpus = [
+      { path: 'voyages/baden/notes.md', title: 'Notes', fields: {} },
+      { path: 'voyages/corse/assets/carnet.md', title: 'Carnet', fields: {} },
+    ]
+    expect(sectionsOf(corpus, ['voyages'])).toEqual([])
+  })
+
+  it('absorbs on a segment boundary, never on a prefix', () => {
+    // `voyages` must not swallow somebody's `mes-voyages`, nor a `voyages-old`
+    // they kept deliberately.
+    const corpus = [
+      { path: 'mes-voyages/notes.md', title: 'Notes', fields: {} },
+      { path: 'voyages-old/notes.md', title: 'Notes', fields: {} },
+    ]
+    expect(sectionsOf(corpus, ['voyages']).map((s) => s.path).sort()).toEqual([
+      'mes-voyages',
+      'voyages-old',
+    ])
+  })
+
   it('keeps a sub-section out of the top level', () => {
     // `domaines/diy/projets` declares an index, but `domaines/diy` already
     // owns it: surfacing both would show the same pages twice.

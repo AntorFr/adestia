@@ -90,6 +90,32 @@ function text(value: unknown): string | undefined {
  * the same screen would show the same pages twice under two different names —
  * the reader is meant to descend, not to be handed every level at once.
  */
+/**
+ * Whether a folder is covered by a plugin's `absorbs` declaration.
+ *
+ * Two things a plain equality check got wrong on a real corpus, both of which
+ * put the same content on screen twice.
+ *
+ * WHERE. A plugin cannot know how an operator files things: the trips app
+ * declares `voyages`, and the folder is `domaines/voyages` here and `voyages`
+ * somewhere else. So the declaration matches wherever that run of segments
+ * sits in the path — at a SEGMENT boundary, so `voyages` never absorbs
+ * `mes-voyages`.
+ *
+ * HOW DEEP. Absorbing a folder absorbs what is UNDER it. Trips live one folder
+ * down (`domaines/voyages/baden-2026`), and each of those held pages, so each
+ * became a section of its own beside the app's tile — the exact duplication
+ * this field exists to prevent, minus the one folder it was aimed at.
+ */
+function absorbs(declared: string, folder: string): boolean {
+  const parts = folder.split('/')
+  const wanted = declared.split('/')
+  for (let start = 0; start + wanted.length <= parts.length; start += 1) {
+    if (wanted.every((segment, offset) => parts[start + offset] === segment)) return true
+  }
+  return false
+}
+
 export function sectionsOf(
   entries: readonly IndexEntry[],
   /** Folders an app's tile already stands for — see `absorbs` in a manifest. */
@@ -111,7 +137,7 @@ export function sectionsOf(
   }
 
   const shallowest = [...holders].filter((folder) => {
-    if (absorbed.includes(folder)) return false
+    if (absorbed.some((declared) => absorbs(declared, folder))) return false
     // An ancestor that is itself a section owns this one: the reader
     // descends into it rather than meeting both at once.
     const parts = folder.split('/')
