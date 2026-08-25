@@ -419,8 +419,8 @@ export function Home({
         <section className="golem-empty">
           <p>{t('Nothing to show yet.')}</p>
           <p className="golem-empty__hint">
-            Turn a plugin on in <code>golem.config.yaml</code>, or give a folder of pages
-            an <code>INDEX.md</code> to make it a section.
+            {t('Turn a plugin on in')} <code>golem.config.yaml</code>,{' '}
+            {t('or write a page — a folder holding one becomes a section on its own.')}
           </p>
         </section>
       )}

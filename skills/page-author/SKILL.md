@@ -91,6 +91,40 @@ markdown at all (geometry, a timeline) but still belongs to one page's world.
 Pick by what the data actually is, not by habit: forcing timeline JSON into
 frontmatter to stay in the `type` camp is worse than an honest sibling file.
 
+## Sections — folders, and nothing to maintain
+
+The landing screen shows the workspace's own shape: **any folder holding
+pages is a section**, and one holding sections is where they live. Nothing
+declares this and nothing has to be kept in step — move a page, the tiles
+follow.
+
+An index page is **optional**, and its only job is to DRESS the section:
+
+```markdown
+<!-- domaines/sante/INDEX.md — or sante/sante.md, either works -->
+---
+title: Santé
+ico: ❤️
+couleur: rouge
+---
+```
+
+| Field | Effect |
+|---|---|
+| `title` | the tile's label; without it, the folder's own name, prettified |
+| `ico` | an emoji on the tile's plate; without it, a neutral mark |
+| `couleur` | one of the twelve named hues — the skin decides what each means, so never a hex |
+
+Two spellings are read, because a body of pages usually has both: `INDEX.md`,
+and a page named after its folder (`dietetique/dietetique.md`) — the second
+suits a section that is itself one subject with its own assets. Either way
+that page is the section's overview, not one of its contents, and it is not
+listed among them.
+
+**Do not create index pages for the sake of it.** A section with none is a
+section: it simply wears its folder's name. Write one when the name alone is
+not enough, or when the section deserves a colour — never as bookkeeping.
+
 ## The closed block vocabulary
 
 A page's body is markdown, plus a small set of `:::name{attrs}` blocks —

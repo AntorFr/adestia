@@ -32,8 +32,8 @@ const FR: Readonly<Record<string, string>> = {
   Pages: 'Fiches',
   'Nothing to show yet.': 'Rien à afficher pour l’instant.',
   'Turn a plugin on in': 'Activez un plugin dans',
-  'or give a folder of pages an': 'ou donnez à un dossier de fiches un',
-  'to make it a section.': 'pour en faire un domaine.',
+  'or write a page — a folder holding one becomes a section on its own.':
+    'ou écrivez une fiche — un dossier qui en contient devient un domaine tout seul.',
   'Good morning.': 'Bonjour.',
   'Good evening.': 'Bonsoir.',
   'Ask…': 'Demander…',
