@@ -24,6 +24,33 @@ export interface PermissionRequest {
   readonly askedAt: number
 }
 
+/**
+ * A file change a tool is about to make, normalized out of the engine's own
+ * tool vocabulary by its driver. Only shapes a rule can reason about are
+ * represented: anything else (a shell command, a notebook cell) never becomes
+ * one, and falls through to the name-based policy.
+ */
+export type ProposedFileEdit =
+  | { readonly kind: 'write'; readonly path: string; readonly content: string }
+  | {
+      readonly kind: 'edit'
+      readonly path: string
+      readonly oldText: string
+      readonly newText: string
+      /** Replace every occurrence, not just the first. */
+      readonly all: boolean
+    }
+
+/**
+ * What a content rule says about a proposed edit:
+ * - `'allow'` — this exact change is fine without asking anyone;
+ * - `'ask'` — this file is sensitive: a human must approve, even when the
+ *   tool's NAME is auto-allowed (unattended, that resolves to the unattended
+ *   policy — deny by default);
+ * - `undefined` — not this rule's file; the name-based policy decides.
+ */
+export type EditRuling = 'allow' | 'ask' | undefined
+
 export interface PermissionPolicy {
   /** Tools that never ask. Matched exactly, never by prefix. */
   readonly autoAllow?: readonly string[]
@@ -36,6 +63,14 @@ export interface PermissionPolicy {
    * listening at all — a scheduled turn, an MCP delegation.
    */
   readonly whenUnattended?: PermissionDecision
+  /**
+   * Content-aware rule, consulted between `autoDeny` and `autoAllow` when the
+   * driver could normalize the tool call into a file edit. The ordering is the
+   * contract: an operator's explicit deny still wins over any rule, and a
+   * rule's `'ask'` pierces a blanket `autoAllow` — that is what lets a zone
+   * stay guarded on an instance that otherwise trusts its file tools.
+   */
+  readonly decideEdit?: (edit: ProposedFileEdit) => EditRuling | Promise<EditRuling>
 }
 
 export const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000
@@ -74,19 +109,30 @@ export class PermissionBroker {
    *   When it returns false there is no interface listening, and the
    *   unattended policy decides immediately rather than waiting five minutes
    *   for a person who was never there.
+   * @param edit the call normalized as a file change, when the driver could —
+   *   what the `decideEdit` rule reasons about. Absent for anything that is
+   *   not a plain file edit, which then follows the name-based policy alone.
    */
-  ask(
+  async ask(
     tool: string,
     detail: string | undefined,
     emit: (request: PermissionRequest) => boolean,
+    edit?: ProposedFileEdit,
   ): Promise<PermissionDecision> {
-    const immediate = this.preDecide(tool)
-    if (immediate) return Promise.resolve(immediate)
+    // The operator's explicit deny is absolute — no rule re-opens it.
+    if (this.#policy.autoDeny?.includes(tool)) return 'deny'
+
+    const ruling = edit ? await this.#policy.decideEdit?.(edit) : undefined
+    if (ruling === 'allow') return 'allow'
+
+    // `'ask'` skips this line on purpose: a guarded file must reach a human
+    // even when the tool's name is blanket-allowed.
+    if (ruling !== 'ask' && this.#policy.autoAllow?.includes(tool)) return 'allow'
 
     const request: PermissionRequest = { id: randomUUID(), tool, detail, askedAt: Date.now() }
     const unattended = this.#policy.whenUnattended ?? 'deny'
 
-    if (!emit(request)) return Promise.resolve(unattended)
+    if (!emit(request)) return unattended
 
     return new Promise<PermissionDecision>((resolve) => {
       const timer = setTimeout(() => {

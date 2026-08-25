@@ -34,6 +34,9 @@ Write it assuming that.
 | `title` | shown in the planif view; falls back to the file name |
 | `every` | `30m`, `2h`, `1d` — amount plus one unit letter, nothing fancier. **Not cron.** A cadence nobody can read at a glance is a scheduled turn nobody can predict, and this instance never runs one finer than 15 minutes: that floor is enforced, not rounded — `every: 5m` is refused rather than silently coarsened to 15 |
 | `enabled` | any value but the literal string `false` counts as enabled. Omit it to mean "on" |
+| `until` | a day, `2026-08-29` — makes the note a **mission** (see below). Live through that whole day; past it, one final turn runs and the note is stamped `expired` |
+| `done` | a day, `2026-08-25` — the mission is accomplished, the note never runs again. Absence means open. Ticked by YOU, from a scheduled turn, and it is the ONE edit the gate lets that turn make |
+| `expired` | a day — the deadline fired. Written by the product only; never write it yourself |
 
 A note with no `every`, an `every` the parser cannot read, or an empty body
 does not fail loudly — it is reported as unable to run (missing `every`, or
@@ -51,6 +54,54 @@ field and it resumes on its own.
   a rhythm, not a queue.
 - **Only one scheduled turn runs at a time** — they share the same
   subscription as every chat turn in this instance.
+
+## Missions — a recurrence that must end
+
+Add `until:` and the note becomes a **mission**: a watch that concludes.
+"Poll my inbox until the hotel confirms, or escalate by Friday" is one:
+
+```markdown
+---
+title: Resa hôtel — attendre la confirmation
+every: 2h
+until: 2026-08-29
+---
+
+Regarde ma boîte mail (expéditeur *lesflots.fr*).
+
+- Confirmation arrivée → passe l'événement du 29-31/08 à « confirmé » dans
+  l'agenda, puis termine la mission.
+- Rien après 2 jours et aucune relance déjà envoyée (vois ton journal) →
+  envoie UNE relance polie.
+- À l'échéance, si toujours rien → crée une tâche todo « Relancer l'hôtel
+  par téléphone ».
+```
+
+The invariant sold to whoever writes one: **a mission always terminates** —
+either `done`, or `expired` with the escalation its body asked for. There is
+no immortal watch.
+
+How a running mission works, from inside one of its turns:
+
+- **Your memory between runs is a log file**, named in the turn's frame
+  (`memory/missions/<id>.md`). Read it first; append a dated entry saying
+  what you did or found. Without it, every run believes it is the first —
+  and "send ONE reminder" becomes a reminder every run.
+- **To finish the mission**, edit the note's frontmatter and add
+  `done: YYYY-MM-DD` (today). That exact change is the only edit to a planif
+  file an unattended turn is allowed to make — the write gate replays your
+  edit and refuses anything else, body above all. Do not try to edit the
+  body, other fields, or other notes from a scheduled turn: it will be
+  refused, and the mission simply continues.
+- **The deadline is the product's job, not yours.** Past `until`, the note is
+  stamped `expired` and one final turn runs with a distinct frame; that turn
+  applies whatever the body says about the deadline case — typically creating
+  a follow-up action — and closes the log.
+
+When asked to set up a watch like this in chat, write the note yourself
+(computing `until` as an absolute day), and put the retry/escalation policy
+IN the body — the body is the only place the running mission can read it
+from.
 
 ## Why the UI never edits these directly
 

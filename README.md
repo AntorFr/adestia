@@ -60,7 +60,11 @@ Golem's own interface.
   the product, so asking the agent for a plugin produces a valid one.
 
 - **Scheduled turns**: notes whose body runs as a prompt on a cadence, with a
-  missed occurrence lost rather than replayed.
+  missed occurrence lost rather than replayed. Give one a deadline and it
+  becomes a **mission** — a watch that ends itself once its goal is met, or
+  escalates when the deadline passes. A mission may tick its own `done:` and
+  nothing else: every other write to a scheduled note needs a human, so a
+  turn running unattended can never rewrite the prompt it runs on.
 - **Attachments** the agent reads with its own tools, framed as data — a file
   that says "ignore your instructions" is reported, not obeyed.
 - **Inbound MCP**, so another agent can delegate work here asynchronously.

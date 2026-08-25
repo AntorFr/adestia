@@ -22,7 +22,7 @@ import type {
 } from '../contract.js'
 import { TOKEN_ENV_VAR, looksLikeToken } from './arming.js'
 import { PermissionBroker, type PermissionRequest } from '../permissions.js'
-import { toolTarget } from './events.js'
+import { proposedFileEdit, toolTarget } from './events.js'
 import { isKnownMessage } from './sdk-types.js'
 import type { QueryFn, RawMessage, SdkMessage } from './sdk-types.js'
 
@@ -207,11 +207,16 @@ export class ClaudeCodeDriver implements Driver {
 
     const canUseTool = broker
       ? async (toolName: string, input: Record<string, unknown>) => {
-          const decision = await broker.ask(toolName, toolTarget(input), (ask) => {
-            asks.push(ask)
-            wakeLoop?.()
-            return true
-          })
+          const decision = await broker.ask(
+            toolName,
+            toolTarget(input),
+            (ask) => {
+              asks.push(ask)
+              wakeLoop?.()
+              return true
+            },
+            proposedFileEdit(toolName, input),
+          )
           return decision === 'allow'
             ? ({ behavior: 'allow' as const, updatedInput: input })
             : ({ behavior: 'deny' as const, message: 'refused by the user' })

@@ -390,6 +390,19 @@ resolves in Golem as follows:
   channel: the channel is set by the product out of the model's reach, and a
   scheduled turn can never edit instructions. Git/IDE editing remains fully
   supported alongside.
+- **One exception, gated by CONTENT rather than by path: a mission ticking its
+  own `done:`.** A scheduled note carrying `until:` must be able to end itself,
+  and the honest way to grant that is not a rule about a tool's name — it is a
+  rule about the resulting file. The permission layer replays the proposed edit
+  against what is on disk and allows it only when the sole difference is a
+  date-valued `done` line in the frontmatter; the body, which IS the prompt,
+  must be byte-identical, and everything else in the zone still requires a
+  human (so, unattended, is denied). This keeps the model's influence over its
+  own instructions down to one enum-sized bit about itself, and gives the write
+  gate a grammar to check instead of a convention to trust. The deliberate
+  alternative — the turn declaring a verdict in prose for the product to parse
+  — was refused: it needs the same parsing with none of the structure, and
+  would have made the note's state something other than the note.
 - **Git is optional and first-class, both modes from v1.** Without git: plain
   files, everything works. With git: every UI or agent edit is committed cleanly
   (explicit paths only — never `add -A` —, meaningful messages), so "who changed

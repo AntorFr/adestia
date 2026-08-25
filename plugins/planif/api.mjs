@@ -36,6 +36,11 @@ function parseNote(id, source) {
     every: fields.every ?? null,
     everyMinutes: minutes,
     enabled: fields.enabled !== 'false',
+    // A mission's lifecycle, read the way the server reads it: `until` makes
+    // it a mission, `done` is the agent's own tick, `expired` the product's.
+    until: fields.until ?? null,
+    done: fields.done ?? null,
+    expired: fields.expired ?? null,
     // The body is shown because it IS the prompt: a scheduled turn nobody can
     // read the text of is a scheduled turn nobody can predict.
     body,
@@ -43,9 +48,11 @@ function parseNote(id, source) {
       ? 'cannot read `every` (expected 30m, 2h, 1d…)'
       : minutes < 15
         ? 'below the 15-minute floor'
-        : body === ''
-          ? 'the note is empty — its body is the prompt'
-          : null,
+        : fields.until && !/^\d{4}-\d{2}-\d{2}$/.test(fields.until)
+          ? 'cannot read `until` (expected a day like 2026-08-29)'
+          : body === ''
+            ? 'the note is empty — its body is the prompt'
+            : null,
   }
 }
 

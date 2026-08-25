@@ -108,3 +108,56 @@ describe('end of turn', () => {
     expect(broker.outstanding()).toEqual([])
   })
 })
+
+describe('the content rule — decideEdit', () => {
+  const edit = {
+    kind: 'edit' as const,
+    path: '/w/planif/resa.md',
+    oldText: 'until: 2026-08-29\n',
+    newText: 'until: 2026-08-29\ndone: 2026-08-25\n',
+    all: false,
+  }
+
+  it('allows without asking when the rule says allow', async () => {
+    const broker = new PermissionBroker({ decideEdit: () => 'allow' })
+    expect(await broker.ask('Edit', undefined, unwatched, edit)).toBe('allow')
+  })
+
+  it("pierces a blanket autoAllow when the rule says ask", async () => {
+    // The whole point of a guarded zone: "allow Edit" must not reach into it.
+    const broker = new PermissionBroker({ autoAllow: ['Edit'], decideEdit: () => 'ask' })
+    const asked: PermissionRequest[] = []
+    const decision = broker.ask('Edit', 'planif/resa.md', watched(asked), edit)
+    // The rule is awaited before the request is emitted — let it settle.
+    await vi.waitFor(() => expect(asked).toHaveLength(1))
+    broker.answer(asked[0]!.id, 'allow')
+    expect(await decision).toBe('allow')
+  })
+
+  it('resolves an unattended ask with the unattended policy', async () => {
+    const broker = new PermissionBroker({ autoAllow: ['Edit'], decideEdit: () => 'ask' })
+    expect(await broker.ask('Edit', undefined, unwatched, edit)).toBe('deny')
+  })
+
+  it('never re-opens an operator autoDeny', async () => {
+    const broker = new PermissionBroker({ autoDeny: ['Edit'], decideEdit: () => 'allow' })
+    expect(await broker.ask('Edit', undefined, unwatched, edit)).toBe('deny')
+  })
+
+  it('falls back to the name policy when the rule abstains', async () => {
+    const broker = new PermissionBroker({ autoAllow: ['Edit'], decideEdit: () => undefined })
+    expect(await broker.ask('Edit', undefined, unwatched, edit)).toBe('allow')
+  })
+
+  it('is never consulted for a call that is not a file edit', async () => {
+    const decideEdit = vi.fn(() => 'allow' as const)
+    const broker = new PermissionBroker({ decideEdit })
+    expect(await broker.ask('Bash', 'sed -i planif/resa.md', unwatched)).toBe('deny')
+    expect(decideEdit).not.toHaveBeenCalled()
+  })
+
+  it('supports an async rule — it reads files', async () => {
+    const broker = new PermissionBroker({ decideEdit: async () => 'allow' as const })
+    expect(await broker.ask('Edit', undefined, unwatched, edit)).toBe('allow')
+  })
+})

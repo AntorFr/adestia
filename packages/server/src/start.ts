@@ -30,6 +30,7 @@ import {
   discoverSkins,
   unmatchedActivations,
 } from './extensions.js'
+import { planifEditRule } from './planif-gate.js'
 import { runSetups } from './plugin-host.js'
 import { SecretStore } from './secrets.js'
 import { collectSkills, deliverSkills } from './skills.js'
@@ -186,7 +187,13 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
   }
 
   const dataDir = resolve(cwd, config.dataDir)
-  const permissions = new PermissionBroker(config.permissions)
+  const permissions = new PermissionBroker({
+    ...config.permissions,
+    // The planif zone's write gate: a mission may tick its own `done:`, any
+    // other change to a scheduled note requires a human — even when the file
+    // tools are otherwise auto-allowed. See planif-gate.ts for the contract.
+    decideEdit: planifEditRule(join(workspaceRoot, config.workspace.planif)),
+  })
   const driver = options.driverFactory
     ? await options.driverFactory(config)
     : await buildDriver(config, dataDir, permissions)
@@ -286,6 +293,9 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     clock = new Clock({
       dir: join(workspaceRoot, resolved.workspace.planif),
       statePath: scheduleStatePath(dataDir),
+      // The agent's own memory zone: a mission's log is content it writes
+      // freely, unlike its note, which the permission gate guards.
+      missionLogDir: join(workspaceRoot, resolved.workspace.memory, 'missions'),
       runTurn: (prompt) => runTurn(prompt),
       log,
       ...(resolved.schedule.tickMs ? { tickMs: resolved.schedule.tickMs } : {}),

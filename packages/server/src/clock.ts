@@ -13,10 +13,15 @@ import { randomUUID } from 'node:crypto'
 import { dirname, join } from 'node:path'
 
 import {
+  dayOf,
+  frameExpiredPrompt,
   frameScheduledPrompt,
   isDue,
+  isExpiryDue,
   isMissed,
   readSchedule,
+  stampField,
+  type MissionPaths,
   type ScheduleState,
   type ScheduledNote,
 } from './schedule.js'
@@ -26,6 +31,13 @@ export interface ClockOptions {
   readonly dir: string
   /** Where the run journal lives. */
   readonly statePath: string
+  /**
+   * Absolute directory of mission run logs — one markdown file per mission,
+   * written by the AGENT (its only memory between runs), pointed at by the
+   * frame. Lives in the memory zone, never in planif: the log is content,
+   * the note is an instruction, and only one of them is write-gated.
+   */
+  readonly missionLogDir: string
   readonly tickMs?: number
   readonly log?: (message: string) => void
   /** Runs one turn. The SAME function the chat route uses. */
@@ -68,9 +80,42 @@ export class Clock {
     let changed = false
 
     for (const note of notes) {
+      const paths: MissionPaths = {
+        notePath: join(this.options.dir, `${note.id}.md`),
+        logPath: join(this.options.missionLogDir, `${note.id}.md`),
+      }
+
+      if (isExpiryDue(note, now)) {
+        this.#busy = true
+        try {
+          // Stamped BEFORE the turn runs — recorded-then-run, exactly like
+          // `lastRun`: a final turn that fails must not retry against a
+          // subscription every tick. The stamp is the product's own write;
+          // the model's pen never reaches `expired`.
+          await writeFile(
+            paths.notePath,
+            stampField(await readFile(paths.notePath, 'utf8'), 'expired', dayOf(now)),
+          )
+          await this.options.runTurn(frameExpiredPrompt(note, paths), note)
+          log(`mission "${note.title}" expired — its final turn ran`)
+        } catch (error) {
+          log(`mission "${note.title}" expiry failed: ${(error as Error).message}`)
+        } finally {
+          this.#busy = false
+        }
+        break
+      }
+
       // A note seen for the first time is dated, not run: adding one would
       // otherwise fire the moment it is saved, which "every day" rarely means.
-      if (lastRun[note.id] === undefined && note.enabled && !note.problem) {
+      // A closed mission is left undated: it has no next occurrence to count to.
+      if (
+        lastRun[note.id] === undefined &&
+        note.enabled &&
+        !note.problem &&
+        !note.done &&
+        !note.expired
+      ) {
         lastRun[note.id] = now
         changed = true
         continue
@@ -91,7 +136,10 @@ export class Clock {
       lastRun[note.id] = now
       changed = true
       try {
-        await this.options.runTurn(frameScheduledPrompt(note), note)
+        await this.options.runTurn(
+          frameScheduledPrompt(note, note.until ? paths : undefined),
+          note,
+        )
         log(`scheduled "${note.title}" ran`)
       } catch (error) {
         // The date is already recorded, so a failing note does not retry every
