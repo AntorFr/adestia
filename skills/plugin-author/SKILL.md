@@ -209,6 +209,36 @@ example:
   put in pages months ago must still resolve. Recognising an old shape costs a
   branch; breaking a link costs trust.
 
+## Editing a page from your own screen
+
+`api.PageEditor` is the shell's OWN page editor, handed to you as a component.
+Not an import-map entry, and the difference is the loading model: the map
+publishes third-party dependencies, while the shell's capabilities travel
+through `api` — a plugin importing the shell would be a cycle.
+
+```js
+h(api.PageEditor, { path: 'journal/atelier/2026-08-25.md', onSaved: reload })
+```
+
+| Prop | What it does |
+|---|---|
+| `path` | the page to edit, as `/api/pages/…` spells it. It fetches it itself. |
+| `attachments` | draw the page's attachment strip underneath. **Off by default** here — a strip of documents under every item is furniture, and one more request per item. |
+| `onSaved` | called after a save the server accepted: the moment to reload the list you drew from the index. |
+
+It behaves exactly as it does on `#/page/…`: **reading posture until its own ✎
+is pressed**, its own revision against an agent writing the same file, a 409
+surfaced rather than an overwrite, and a page breaking the vocabulary opened
+read-only with its diagnostics.
+
+Which is why a screen made of several of them needs no code to do the obvious
+thing: render one per item and clicking one pencil puts THAT item into edit
+mode while the rest stay readable. `journal` is the whole app built this way.
+
+⚠️ **Do not restyle `.golem-editor`.** It is the shell's, and a plugin that
+repaints it makes the same page look like two products depending on where it
+was opened.
+
 ## Writing content blocks
 
 Blocks extend the CLOSED vocabulary — the reason pages look like one product

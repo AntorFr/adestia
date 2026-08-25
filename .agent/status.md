@@ -2,7 +2,7 @@
 > MàJ : 2026-08-26
 
 **État :** Migration Alfred. Faits et vérifiés en navigateur : `todo`,
-`planif`, `collections`, `scan`, skin `alfred`. 936 tests + 85 de plugins.
+`planif`, `collections`, `scan`, skin `alfred`. 1029 tests + 131 de plugins.
 Facette `blocks` CÂBLÉE : elle était chargée et narrowée depuis le début, et
 personne ne lisait le résultat. Un bloc se déclare en deux moitiés — le
 manifeste (`vocabulary`) dit ce qu'il EST, pour que le SERVEUR le valide sans
@@ -63,6 +63,20 @@ apps portées cessent de dessiner leur propre fil sous celui de la coque.
 Reste à constater AU NAVIGATEUR — la porte OIDC interdit de le faire sans la
 session de l'utilisateur : fil d'Ariane depuis une fiche de voyage, adresses
 courtes, et une ancienne URL `%2F` qui doit toujours ouvrir.
+0.8.0 : **`api.PageEditor`** — la coque PRÊTE son éditeur de page aux plugins
+(par l'`api` injectée, jamais par l'import map : un plugin qui importe la coque
+serait un cycle ; Milkdown chargé à la demande, comme sur `#/page/…`). Rendre un
+éditeur par entrée EST la fonction « n'éditer que cette section ». Premier
+client, le plugin **`journal`** : un journal est un DOSSIER, une entrée est une
+page dedans — un fichier markdown par entrée, jamais un fichier-historique
+(l'API sauve le fichier entier sous révision optimiste, donc un seul fichier
+collisionnerait l'entrée ajoutée par l'agent avec celle qu'on est en train
+d'écrire). Écrit le 25/08 dans un worktree, resté à quai pendant 29 commits, et
+rebasé sur `main` ici : les deux moitiés se recouvraient sur 9 fichiers. Trou
+que ni l'une ni l'autre ne voyait, refermé au passage — l'éditeur prêté ne
+recevait pas les blocs des plugins (il est construit AVANT le chargement des
+plugins), donc une entrée portant un `{% %}` aurait montré des accolades là où
+l'écran page montre le bloc : il les lit maintenant par une ref.
 
 Chantier UX du 26/08 (backlog dicté par Monsieur, fiche `golem-evolutions`)
 — lot 1, le composer : le champ tenait sur une ligne de 34 px sur la surface
@@ -114,6 +128,12 @@ des zéros sous jsdom. Ce sont ses fonctions pures (`indexAt`, `moveItem`,
 navigateur, avec le reste de la 0.7.0.
 
 **Reste :**
+- [ ] `journal` — pas encore vérifié en navigateur (tests seulement)
+- [ ] `journal` non déclaré : ni dans `golem.config.example.yaml`, ni dans le
+      manifeste de version — il ne partira dans aucune image tant qu'on ne le
+      nomme pas
+- [ ] `journal` est écrit pour le contrat d'AVANT 0.7.0 : il revendique par
+      `absorbs` et ne publie pas `api.trail` (son fil s'arrête à l'app)
 - [ ] `atelier` — ~1 600 lignes (plan de débit, SVG). EN COURS.
 - [x] `parcours` vérifié au navigateur (instance Docker, magasin d'alfred-beta
       copié) : les deux vues, la page `#/parcours/…`, l'éditeur (le bloc monte

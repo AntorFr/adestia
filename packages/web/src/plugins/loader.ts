@@ -14,6 +14,7 @@
  */
 
 import { forgetContributedBlocks, registerBlocks, type ContributedBlock } from '@antorfr/golem-content'
+import { createElement, type ComponentType } from 'react'
 
 import {
   narrowBlocks,
@@ -21,6 +22,7 @@ import {
   narrowView,
   type BlocksContribution,
   type ChromeContribution,
+  type PageEditorProps,
   type PluginApi,
   type ViewContribution,
 } from './contract.js'
@@ -238,10 +240,23 @@ export async function loadPlugins(
 }
 
 /**
+ * A page editor for a shell that did not provide one.
+ *
+ * Says so where the editor would have been, rather than rendering nothing: a
+ * plugin embedding one and getting a blank space would be read as the plugin
+ * being broken, which is the wrong place to send somebody.
+ */
+const noPageEditor: ComponentType<PageEditorProps> = () =>
+  createElement('p', { className: 'golem-embed__problem' }, 'No page editor on this shell.')
+
+/**
  * The browser implementation.
  *
  * @param ask how a plugin sends a message to the agent. Passed in rather than
  *   imported, because the chat owns that channel and the loader must not.
+ * @param pageEditor the shell's page editor, built by whoever knows the
+ *   instance's language and page routing. Same reason as `ask`: the loader
+ *   hands capabilities over, it does not own them.
  */
 export function browserEnvironment(
   ask: (prompt: string) => void,
@@ -253,6 +268,7 @@ export function browserEnvironment(
    * the second one this exists to remove.
    */
   trail: (id: string, crumbs: readonly { label: string; route?: string }[]) => void = () => {},
+  pageEditor: ComponentType<PageEditorProps> = noPageEditor,
 ): LoaderEnvironment {
   return {
     makeApi: (descriptor) => ({
@@ -265,6 +281,7 @@ export function browserEnvironment(
       // Bound to the plugin's id, so the shell can ignore a trail published
       // by a view nobody is looking at — a plugin loaded but not open.
       trail: (crumbs) => trail(descriptor.id, crumbs),
+      PageEditor: pageEditor,
     }),
     importModule: (url) => import(/* @vite-ignore */ url) as Promise<Record<string, unknown>>,
     addStylesheet(id, url) {

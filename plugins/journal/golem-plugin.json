@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "journal",
+  "kind": "app",
+  "description": "A journal as a folder of entries: the whole history on one page, one entry in edit mode at a time.",
+  "contract": 1,
+  "view": "./web/app.js",
+  "styles": [
+    "./web/app.css"
+  ],
+  "skills": [
+    "./skills/journal/SKILL.md"
+  ],
+  "types": [
+    "journal",
+    "entree"
+  ],
+  "tile": {
+    "label": "Journal",
+    "icon": "📓",
+    "hue": "ambre"
+  },
+  "absorbs": [
+    "journal"
+  ]
+}

@@ -2235,3 +2235,13 @@
 .golem-editor__surface .milkdown .ProseMirror blockquote::before {
   background: var(--border-strong);
 }
+
+/* An embedded page editor — the one a plugin mounts through `api.PageEditor` —
+   while it is fetching its page, or when it could not. Styled here rather than
+   in the plugin because the shell is what renders these two lines. */
+.golem-embed__loading,
+.golem-embed__problem {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  margin: var(--space-2) 0;
+}

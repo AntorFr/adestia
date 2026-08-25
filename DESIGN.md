@@ -668,6 +668,45 @@ had missed.
 
 ## Decision log
 
+**2026-08-25 (the editor is a capability, not a screen):** `journal` — a
+history read on one page, one entry at a time in edit mode — asked a question
+the extension system had not been asked before: how does a plugin edit a page
+inside its OWN screen? Two answers were refused before the third.
+
+*Refused: a plugin's own editor.* A textarea, or a vendored ProseMirror. Both
+put a second author of markdown in the product, and the closed vocabulary
+holds because there is exactly one writing path.
+
+*Refused: publishing the content engine through the import map.* The map is
+parsed before the first module resolution and exists for THIRD-PARTY
+dependencies; the shell's own capabilities travel through the injected `api`,
+because a plugin importing the shell would be a cycle and would pin it to a
+build it cannot see. That rationale was already written at the top of the
+plugin contract — the map was the wrong door.
+
+*Taken: `api.PageEditor`.* The shell hands its own editor over as a component,
+lazily mounting Milkdown exactly as `#/page/…` does. It cost a wrapper and one
+field, because `Editor` was ALREADY per-instance: reading posture by default,
+its own `editing` state, its own revision, its own diagnostics. Rendering one
+per item is the entire "edit only this section" feature — no new grammar, and
+no plugin holding its own idea of what a save means. Two positions inside it:
+the attachment strip is OFF by default when embedded (furniture, plus a
+request per item), and file drop is not wired at all — a plugin's layout is
+not the page screen.
+
+Which settles the storage question a journal poses, and it is not a
+preference: **one markdown file per entry, never one file holding a history.**
+The page API saves whole files under an optimistic revision, so a single file
+would collide the agent's appended entry with whatever a person is editing,
+every time; the agent adds entries with its own file tools, where a new file
+cannot damage a history and a rewrite can; and `GET /api/pages/index` makes
+each entry's `date` queryable, which entries buried in one document are not. A
+journal is therefore a FOLDER, its cover the folder's index page
+(`type: journal`), its entries the pages inside it (`type: entree`). The known
+cost is stated rather than hidden: the index re-reads every markdown file on
+every call, so a few hundred entries weigh on it — the same bill `todo`
+already pays with one page per task.
+
 **2026-08-25 (the screen next to the chat):** a predecessor feature the parity
 audit had missed, found by the owner rather than by the review — agent-gw
 joined the open page's route and breadcrumb to every message, and Golem sent

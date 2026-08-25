@@ -74,6 +74,39 @@ export interface PluginApi {
    * words.
    */
   trail(crumbs: readonly { readonly label: string; readonly route?: string }[]): void
+  /**
+   * The shell's own page editor, mounted inside the plugin's screen.
+   *
+   * Handed over rather than imported, for the reason at the top of this file:
+   * a plugin importing the shell would be a cycle. It is also why this is not
+   * an import-map entry — the map publishes third-party dependencies, and the
+   * shell's own capabilities travel through `api`, where they can be versioned
+   * with the contract instead of with a bundle.
+   *
+   * What a plugin gets is the SAME component the shell uses on `#/page/…`:
+   * reading posture by default, one button to write, its own revision, its own
+   * conflict handling against an agent that writes without warning. Rendering
+   * one per item is what makes a screen where a single section goes into edit
+   * mode while the rest stays readable — no second editor, no second grammar,
+   * and no plugin holding its own idea of what a save means.
+   */
+  readonly PageEditor: ComponentType<PageEditorProps>
+}
+
+/** What a plugin may ask the embedded page editor for. */
+export interface PageEditorProps {
+  /** Path of the page to edit, as `/api/pages/…` spells it. */
+  readonly path: string
+  /**
+   * Draw the page's attachment strip underneath. Off by default here, unlike
+   * the shell's own page screen: a plugin embeds this INSIDE a layout of its
+   * own, where a list of documents under every item is furniture nobody asked
+   * for — and one more request per item. Ask for it where the embedded page is
+   * a document in its own right.
+   */
+  readonly attachments?: boolean
+  /** Called after a save the server accepted — the moment to reload a list. */
+  readonly onSaved?: () => void
 }
 
 /** One live figure on a plugin's tile. */

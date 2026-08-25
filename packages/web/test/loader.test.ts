@@ -27,6 +27,7 @@ function environment(modules: Record<string, Record<string, unknown> | Error>) {
       ask: () => undefined,
       trail: () => undefined,
       compose: () => undefined,
+      PageEditor: () => null,
     }),
     importModule(url) {
       imported.push(url)

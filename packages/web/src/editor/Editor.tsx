@@ -127,6 +127,15 @@ export interface EditorProps {
    * which is also what a test that mounts an Editor alone gets.
    */
   readonly blocks?: BlockComponents
+  /**
+   * Draw the attachment strip under the page. On for the shell's own page
+   * screen, where a page is the whole subject; a plugin embedding this inside
+   * a list of items turns it off, because a strip of documents under every
+   * item is furniture — and a request per item.
+   */
+  readonly attachments?: boolean
+  /** Called after a save the server accepted, with the revision it returned. */
+  readonly onSaved?: (revision: string) => void
   /** Injected in tests; the real one mounts Milkdown. */
   readonly mount?: (element: HTMLElement, markdown: string, onChange: (md: string) => void) => () => void
 }
@@ -140,6 +149,8 @@ export function Editor({
   attach,
   compose,
   blocks,
+  attachments = true,
+  onSaved,
   t = (key) => key,
 }: EditorProps) {
   const host = useRef<HTMLDivElement>(null)
@@ -228,7 +239,11 @@ export function Editor({
     const result = await savePage({ ...page, revision }, markdown, fetchImpl)
     if (result.revision) setRevision(result.revision)
     setStatus(result.state)
-  }, [fetchImpl, markdown, page, revision])
+    // Only on a save the server took: a caller reloading its list on a 409
+    // would replace what the person is still holding with what beat them to
+    // the file.
+    if (result.revision) onSaved?.(result.revision)
+  }, [fetchImpl, markdown, onSaved, page, revision])
 
   return (
     <section
@@ -329,7 +344,7 @@ export function Editor({
       {/* Not while writing: the strip is what the page CARRIES, and a list of
           documents under a live editing surface is one more thing between the
           cursor and the text. */}
-      {!editing && (
+      {!editing && attachments && (
         <Attachments
           path={page.path}
           markdown={markdown}

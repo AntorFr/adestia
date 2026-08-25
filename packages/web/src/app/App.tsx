@@ -31,6 +31,7 @@ import { Section } from './Section.js'
 import { holdsPages, sectionAt, type IndexEntry } from './sections.js'
 import { addressOf, decodePath, encodePath, folderRoute, ownerOf, routeForPath } from './owners.js'
 import { browserEnvironment, loadPlugins, type LoadedPlugin, type PluginDescriptor } from '../plugins/loader.js'
+import { makePageEditor } from '../plugins/PageEditor.js'
 import { useMobile } from './useMobile.js'
 import { useSplit } from './useSplit.js'
 import { useSwipe } from './useSwipe.js'
@@ -190,6 +191,10 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   const askRef = useRef<((prompt: string) => void) | undefined>(undefined)
   const composeRef = useRef<((text: string) => void) | undefined>(undefined)
   const attachRef = useRef<((files: readonly File[]) => Promise<void>) | undefined>(undefined)
+  // Same reason as `askRef`: the editor lent to plugins is built before any
+  // plugin has loaded, so it reads the blocks through a ref rather than
+  // closing over the empty set it would see at that moment.
+  const blocksRef = useRef<BlockComponents>({})
   const split = useSplit()
   const mobile = useMobile()
   /**
@@ -450,6 +455,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
     () => Object.assign({}, ...loaded.map((plugin) => plugin.blocks?.tags ?? {})) as BlockComponents,
     [loaded],
   )
+  blocksRef.current = blocks
 
   /** Composer buttons every active plugin contributed, flattened once. */
   const composerButtons = loaded.flatMap((plugin) =>
@@ -519,13 +525,27 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
         // `ask` is handed to plugins through a ref: the chat owns that channel
         // and mounts after this runs, so a plugin holding the function directly
         // would hold one that is not wired yet.
+        // The plugins are loaded once the instance has answered, so this is
+        // the resolved locale rather than a guess.
+        const pluginLocale = resolveLocale(
+          info.locale,
+          typeof navigator === 'undefined' ? undefined : navigator.language,
+        )
         const environment = browserEnvironment(
           (prompt) => askRef.current?.(prompt),
           (text) => composeRef.current?.(text),
-          // The plugins are loaded once the instance has answered, so this is
-          // the resolved locale rather than a guess.
-          resolveLocale(info.locale, typeof navigator === 'undefined' ? undefined : navigator.language),
+          pluginLocale,
           (id, crumbs) => setPluginTrail({ id, crumbs }),
+          // The shell's own editor, lent to plugins whose screen is made of
+          // pages. Built here because only the shell knows the instance's
+          // language and how to open a page a wikilink points at.
+          makePageEditor({
+            locale: pluginLocale,
+            t: translator(pluginLocale),
+            fetchImpl,
+            openPage,
+            blocks: () => blocksRef.current,
+          }),
         )
         const result = await loadPlugins(info.plugins, environment)
         if (!cancelled) {
