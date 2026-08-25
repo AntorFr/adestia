@@ -14,6 +14,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   armingEnv,
   awaitsCode,
+  refusedCode,
   findAuthorizeUrl,
   findToken,
   looksLikeToken,
@@ -60,6 +61,14 @@ describe('screen scraping', () => {
     const url = 'https://claude.com/cai/oauth/authorize?code=true&state=' + 'z'.repeat(60)
     const screen = `${ESC}]8;id=h0d9kd;${url}\u0007${url.slice(0, 80)}${ESC}]8;;\u0007`
     expect(findAuthorizeUrl(screen)).toBe(url)
+  })
+
+  it('hears the CLI refuse a code', () => {
+    // Captured from 2.1.237, cursor moves and all: only `OAuth error` comes
+    // through in one piece, and it is the whole verdict.
+    const refusal = `${ESC}[4AOAuth error: Invalid${ESC}[23Gcode. Please make${ESC}[41Gsure`
+    expect(refusedCode(refusal)).toBe(true)
+    expect(refusedCode('exchanging…')).toBe(false)
   })
 
   it('finds the token and nothing that merely looks like one', () => {
@@ -139,8 +148,10 @@ describe('setup-token flow', () => {
     expect(await submitted).toEqual({ token: TOKEN })
   })
 
-  it('sends the newline separately from the code', async () => {
-    // The CLI paste guard swallows an Enter arriving in the same burst.
+  it('sends Enter separately from the code, as a carriage return', async () => {
+    // Two lessons in one line. The paste guard swallows an Enter arriving in
+    // the same burst as the text — and Enter is `\r`: measured, `\n` leaves
+    // the code sitting in the field until the flow times out.
     const { child, stdout, written } = fakeCli()
     const flow = createSetupTokenFlow({
       spawnImpl: (() => child) as never,
@@ -154,7 +165,7 @@ describe('setup-token flow', () => {
     stdout.write('ok ' + TOKEN)
     await submitted
 
-    expect(written).toEqual(['code', '\n'])
+    expect(written).toEqual(['code', '\r'])
   })
 
   it('says what the CLI last printed when it times out', async () => {
@@ -168,6 +179,24 @@ describe('setup-token flow', () => {
     stdout.write('Error: you are already logged in elsewhere')
 
     await expect(flow.start()).rejects.toThrow(/already logged in elsewhere/)
+  })
+
+  it('reports a refused code at once instead of waiting the exchange out', async () => {
+    // The CLI answers in a second; the old flow spent a minute of silence
+    // before guessing out loud that the code "may be wrong or expired".
+    const { child, stdout } = fakeCli()
+    const flow = createSetupTokenFlow({
+      spawnImpl: (() => child) as never,
+      timeouts: { enter: 50, exchange: 10_000 },
+    })
+    stdout.write('https://claude.ai/oauth/x\nPaste code here: ')
+    await flow.start()
+
+    const submitted = flow.submit('wrong')
+    await new Promise((resolve) => setTimeout(resolve, 250))
+    stdout.write('\nOAuth error: Invalid code. Please make sure the full code was copied')
+
+    await expect(submitted).rejects.toThrow(/refused the code — copy the WHOLE code/)
   })
 
   it('refuses to submit when nothing is running', async () => {

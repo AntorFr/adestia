@@ -30,7 +30,7 @@
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
 import { platform } from 'node:process'
 
-import { armingEnv, awaitsCode, findAuthorizeUrl, findToken } from './arming.js'
+import { armingEnv, awaitsCode, findAuthorizeUrl, findToken, refusedCode } from './arming.js'
 import { resolveClaudeCli } from './cli-path.js'
 import type { ArmingFlow } from './driver.js'
 
@@ -38,11 +38,22 @@ const URL_TIMEOUT_MS = 30_000
 const EXCHANGE_TIMEOUT_MS = 60_000
 /**
  * The CLI's paste guard swallows an Enter arriving in the same burst as the
- * text, so the code and its newline are written separately. Learned the hard
+ * text, so the code and its Enter are written separately. Learned the hard
  * way by the predecessor; it costs half a second and saves a hang nobody can
  * diagnose from the outside.
  */
 const ENTER_DELAY_MS = 500
+/**
+ * Enter, as a terminal sends it: carriage return.
+ *
+ * NOT `\n`. A pty in raw mode hands the key through untouched, and the CLI
+ * reads `\r` — its termios translates an incoming CR to NL, never the other
+ * way round. Measured against the real binary: with `\n` the code sits in the
+ * field and NOTHING happens, right up to the timeout; with `\r` the same code
+ * comes straight back as `OAuth error: Invalid code`. Over the pipe this flow
+ * used to run on, the difference was invisible because nothing worked at all.
+ */
+const ENTER_KEY = '\r'
 /**
  * Wider than any URL or token the flow has to read back in one piece. The
  * height only has to keep the CLI from scrolling its own prompt away before it
@@ -199,13 +210,21 @@ export function createSetupTokenFlow(options: SetupTokenOptions = {}): ArmingFlo
 
       child.stdin.write(code.trim())
       await new Promise((resolve) => setTimeout(resolve, enterDelay))
-      child.stdin.write('\n')
+      child.stdin.write(ENTER_KEY)
 
+      // A refusal is an ANSWER, and a fast one: waiting the exchange out to
+      // report "may be wrong or expired" hides the CLI's own verdict behind a
+      // minute of silence.
       await waitFor(
-        () => findToken(screen) !== undefined,
+        () => findToken(screen) !== undefined || refusedCode(screen),
         exchangeTimeout,
         'the CLI did not return a token — the code may be wrong or expired',
       )
+      if (findToken(screen) === undefined) {
+        throw new Error(
+          'the CLI refused the code — copy the WHOLE code from the page, it expires quickly',
+        )
+      }
       const token = findToken(screen)!
       kill()
       return { token }

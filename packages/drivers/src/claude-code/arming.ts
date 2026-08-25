@@ -32,6 +32,13 @@ export const CODE_PROMPT_SQUASHED = /pastecodehere|enterthecode/i
 // eslint-disable-next-line no-control-regex
 export const OSC8_PATTERN = /\u001b\]8;[^;]*;([^\u0007\u001b]+)/g
 export const TOKEN_PATTERN = /sk-ant-oat01-[A-Za-z0-9_-]{20,}/
+/**
+ * The CLI's own verdict on a code it would not exchange. Its wording is
+ * `OAuth error: Invalid code. Please make sure the full code was copied`,
+ * word-positioned like everything else Ink draws — only the first two words
+ * survive intact, and they are enough.
+ */
+export const REFUSAL_PATTERN = /oauth error/i
 
 /** ANSI escapes make every regex on this output wrong. */
 export function stripAnsi(text: string): string {
@@ -56,6 +63,11 @@ export function findAuthorizeUrl(screen: string): string | undefined {
 
 export function findToken(screen: string): string | undefined {
   return TOKEN_PATTERN.exec(stripAnsi(screen))?.[0]
+}
+
+/** Whether the CLI has already said no to the code it was given. */
+export function refusedCode(screen: string): boolean {
+  return REFUSAL_PATTERN.test(stripAnsi(screen))
 }
 
 export function awaitsCode(screen: string): boolean {
