@@ -48,10 +48,10 @@ export interface ClaudeCodeOptions {
    */
   readonly models?: readonly ModelInfo[]
   /**
-   * Runs the `setup-token` flow. Injected because scripting a pty is the one
-   * part of this driver that cannot be tested without a terminal — and a
-   * driver whose auth path is untested is a driver whose auth path is tested
-   * by its first user.
+   * Runs the token flow (`oauth.ts`). Injected so the driver's auth path can
+   * be exercised without a network, an account or a browser — a driver whose
+   * auth path is untested is a driver whose auth path is tested by its first
+   * user.
    */
   readonly armingFlow?: ArmingFlow
   /**
@@ -134,7 +134,7 @@ export class ClaudeCodeDriver implements Driver {
     if (!this.#armingFlow) throw new Error('this instance cannot arm a token from the interface')
     const { authorizeUrl } = await this.#armingFlow.start()
     return {
-      sessionId: 'claude-setup-token',
+      sessionId: 'claude-oauth',
       mode: 'url+code',
       authorizeUrl,
       inputLabel: 'Paste the code shown after authorising',

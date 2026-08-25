@@ -7,7 +7,7 @@ descriptor — no driver name ever reaches the front end.
 
 | Driver | Engine | Notable capabilities |
 |---|---|---|
-| `claude-code` | Claude Code, through its TS SDK | streaming, live token counter, per-turn usage and context weight, cost, token arming via `setup-token` |
+| `claude-code` | Claude Code, through its TS SDK | streaming, live token counter, per-turn usage and context weight, cost, token arming over OAuth PKCE |
 | `copilot-cli` | the `copilot` binary, through its JSONL output | streaming, MCP status, token arming by pasted fine-grained PAT |
 
 ## What a driver must not do
@@ -26,14 +26,13 @@ credential to the CLI; the core decides where that credential lives, writes it
 
 ## What arming needs on the machine
 
-Both token flows drive a real CLI through a real terminal, so both need one:
-util-linux `script` on Linux (in the image already), `expect` on macOS, where
-BSD `script` refuses a stdin that is not a terminal. Neither is a native
-dependency and neither is asked for at any other time.
+Claude's flow needs nothing: it speaks the OAuth PKCE exchange itself
+(`claude-code/oauth.ts`), so there is no CLI to drive, no pty to open and
+nothing to install. It used to script `claude setup-token` through a terminal;
+that reading broke on a CLI redesign, silently, and the protocol does not.
 
-Claude's flow needs no `claude` on PATH: it runs the binary the Agent SDK
-ships — the same one every turn already runs — and falls back to PATH, or to
-`driver.command` when an operator pins one.
+Copilot's login still needs util-linux `script` — its CLI only asks whether it
+may store the token when it is on a terminal.
 
 ## Conformance requires a fake binary
 

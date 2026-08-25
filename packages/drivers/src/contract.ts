@@ -70,7 +70,7 @@ export interface DriverDescriptor {
 
 /**
  * The arming state machine, generalized from the predecessor's Claude
- * `setup-token` flow. One active arming session per driver.
+ * PKCE flow. One active arming session per driver.
  */
 export type AuthState =
   /** No managed credential — legitimate: the CLI may live on its own. */
@@ -98,7 +98,7 @@ export interface AuthStatus {
  * `mode` alone: it must never need to know which CLI it is talking to.
  */
 export type AuthMode =
-  /** Open a URL, paste back a code (Claude `setup-token`). */
+  /** Open a URL, paste back a code (Claude's OAuth flow). */
   | 'url+code'
   /** Show a code, user enters it elsewhere (GitHub device flow). */
   | 'device-code'
