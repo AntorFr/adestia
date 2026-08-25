@@ -10,10 +10,13 @@
 import { Crepe, CrepeFeature } from '@milkdown/crepe'
 
 // Crepe's own chrome — its toolbar, slash menu, block handles and tooltips.
-// Never imported until now, so every one of those rendered unstyled: the
-// editing controls a person actually clicks were raw markup on the page. The
-// theme below is deliberately the NEUTRAL one; Golem's tokens dress it in
-// shell.css rather than a second palette competing with the skin's.
+// This sheet is STRUCTURE ONLY: every colour, font and shadow in it reads a
+// `var(--crepe-*)` that one of Crepe's theme files is meant to declare. Golem
+// imports no theme on purpose — a second palette would compete with the
+// skin's — and declares the whole `--crepe-*` set from its own tokens in
+// shell.css instead. The two go together: importing this without that leaves
+// the toolbar transparent and unshadowed, which is how the editing controls
+// came to be invisible rather than absent.
 import '@milkdown/crepe/theme/common/style.css'
 
 import { golemVocabulary } from './vocabulary.js'

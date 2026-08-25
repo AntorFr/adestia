@@ -1766,3 +1766,115 @@
 /* Crepe paints its own surface; ours is the canvas the page already sits on. */
 .golem-editor__surface .milkdown,
 .golem-editor__surface .milkdown .editor { background: none; }
+
+/* ------------------------------------------------------------------------ *
+ * The editing chrome: Crepe's toolbar, block handle, slash menu, tooltips.
+ *
+ * Crepe ships its structure (`theme/common/style.css`, imported by
+ * milkdown.ts) SEPARATELY from its palette: every colour, font and shadow in
+ * that sheet is a `var(--crepe-*)` a theme file is expected to declare. Golem
+ * imports the structure and no theme — deliberately, so a second palette does
+ * not compete with the skin's — which left the whole set UNDECLARED. An
+ * undeclared custom property makes its property invalid at computed-value
+ * time, so `background: var(--crepe-color-surface)` resolved to transparent
+ * and `box-shadow: var(--crepe-shadow-1)` to none: the toolbar was a row of
+ * black glyphs floating over the text, with no plate under it and no hover
+ * state. The buttons were there and clickable — they were simply invisible.
+ *
+ * Declaring the set here IS the promised bridge. Values come from Golem's
+ * tokens, so the chrome follows the skin and the theme without a second
+ * source of truth. The names are Crepe's contract; keep all of them declared,
+ * because a missing one fails silently and looks exactly like this bug.
+ * ------------------------------------------------------------------------ */
+.golem-editor__surface .milkdown {
+  /* Type: the same three voices the document already speaks in. */
+  --crepe-base-font-size: 15.5px;
+  --crepe-font-default: var(--font);
+  --crepe-font-title: var(--font-title);
+  --crepe-font-code: var(--font-mono);
+
+  /* The page itself is painted by `.golem-editor__surface`, above. */
+  --crepe-color-background: transparent;
+  --crepe-color-on-background: var(--text);
+
+  /* What floats: toolbar, slash menu, tooltips. They must read as raised off
+     the page, which is what a card's surface and the shell's shadow say. */
+  --crepe-color-surface: var(--surface-raised);
+  --crepe-color-on-surface: var(--text);
+  --crepe-color-on-surface-variant: var(--text-muted);
+  --crepe-shadow-1: var(--shadow);
+  --crepe-shadow-2: var(--shadow-lg);
+
+  /* Sunken areas: code blocks, the CodeMirror gutter, image captions — the
+     same ground the reader gives them, so the two postures agree. */
+  --crepe-color-surface-low: var(--surface-sunken);
+  --crepe-color-secondary: var(--surface-sunken);
+  --crepe-color-on-secondary: var(--text);
+  --crepe-color-inline-area: var(--surface-sunken);
+
+  /* `outline` is not a hairline here: Crepe fills its ICONS with it. Muted
+     text, not a border colour, or every button reads as disabled. */
+  --crepe-color-outline: var(--text-muted);
+  --crepe-color-primary: var(--accent);
+
+  /* The dark plate an image's controls sit on. */
+  --crepe-color-inverse: var(--text);
+  --crepe-color-on-inverse: var(--surface-raised);
+
+  /* Inline code is neutral in the reader; red here would make one page look
+     like two depending on who is holding it. */
+  --crepe-color-inline-code: var(--text);
+  --crepe-color-error: var(--danger);
+
+  /* Hover is a wash of the ink, not a named surface: `--surface-sunken` is
+     DARKER than what floats above it in the dark theme, so a hovered row read
+     as a hole punched in the menu. A tint of the text colour moves the right
+     way in both themes. */
+  --crepe-color-hover: color-mix(in srgb, var(--text) 9%, transparent);
+  /* Doubles as the text-selection wash, so it has to be a tint, not a solid. */
+  --crepe-color-selected: color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+/* Crepe separates what floats from the page with a shadow alone. That is
+   enough on a light canvas and not enough on a dark one, where the panel and
+   the card underneath are the same colour and only the shadow's edge says
+   which is which. The shell's own raised things carry a hairline; so do
+   these. */
+.golem-editor__surface .milkdown .milkdown-toolbar,
+.golem-editor__surface .milkdown .milkdown-slash-menu {
+  border: 1px solid var(--border);
+}
+
+/* The block handle — the ⠿ and + a person grabs to move or insert a block —
+   is placed in the gutter to the LEFT of the block it serves. Crepe's own
+   themes reserve that gutter with `padding: 60px 120px` on the editor; the
+   rule above zeroes the padding to control the measure, which left the handle
+   hanging OUTSIDE the card over the page background, unreachable. The gutter
+   comes back here — added to the measure rather than taken out of it, so the
+   line length a page is written at does not depend on the posture reading it. */
+.golem-editor__surface .milkdown .ProseMirror {
+  padding-inline-start: var(--editor-gutter);
+  max-width: calc(68ch + var(--editor-gutter));
+}
+
+.golem-editor__surface {
+  /* Wide enough for the handle's two 32px buttons and Crepe's own offset. */
+  --editor-gutter: 84px;
+}
+
+/* Below that, a gutter costs more than the handle is worth: it is a hover
+   affordance a touch screen never raises, and a narrow pane is where the
+   measure matters most. The handle goes with the gutter — left in place it
+   would be shifted back into the viewport, on top of the words. Nothing is
+   lost that typing cannot do: `+` only opens the slash menu. */
+@media (max-width: 640px) {
+  .golem-editor__surface { --editor-gutter: 0px; }
+  .golem-editor__surface .milkdown .milkdown-block-handle { display: none; }
+}
+
+/* Crepe marks a quotation with the selection colour; the reader marks it with
+   a quiet rule. The reader is right — an accent bar claims a quotation is
+   important, which is the author's call and not the editor's. */
+.golem-editor__surface .milkdown .ProseMirror blockquote::before {
+  background: var(--border-strong);
+}
