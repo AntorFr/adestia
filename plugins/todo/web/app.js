@@ -13,6 +13,16 @@ import {
   words,
 } from './model.js'
 
+/**
+ * The domain menu's one non-domain entry.
+ *
+ * A sentinel rather than an empty string, which already means "no domain".
+ * Two colons because it must not collide with a real domain and must stay
+ * printable: a control character in an option value is a value that breaks
+ * whatever reads the DOM next.
+ */
+const NEW_DOMAIN = '::new'
+
 export default function view(api) {
   const t = words(api.locale)
 
@@ -24,6 +34,8 @@ export default function view(api) {
     const [saving, setSaving] = useState(false)
     /** The last task captured here, kept only to offer its page. */
     const [created, setCreated] = useState(null)
+    /** Typing a domain the base does not have yet. */
+    const [naming, setNaming] = useState(false)
 
     const reload = useCallback(async () => {
       try {
@@ -120,6 +132,7 @@ export default function view(api) {
           if (!write.ok) throw new Error(`${t('could not create that task')} (${write.status})`)
 
           setDraft({ title: '', due: '', dom: '' })
+          setNaming(false)
           setCreated(path)
           setError(null)
         } catch (cause) {
@@ -205,6 +218,10 @@ export default function view(api) {
     }
 
     const allTasks = Object.values(model.tasks)
+    /** The domains the base already uses — its own vocabulary, sorted. */
+    const domains = [...new Set(allTasks.map((task) => task.dom).filter(Boolean))].sort((a, b) =>
+      a.localeCompare(b),
+    )
 
     return h('section', { className: 'todo' }, [
       h('header', { key: 'h', className: 'todo__head' }, [
@@ -242,25 +259,52 @@ export default function view(api) {
           'aria-label': t('Due date'),
           onChange: (event) => setDraft({ ...draft, due: event.target.value }),
         }),
-        h('input', {
-          key: 'm',
-          className: 'todo-new__field',
-          list: 'todo-domains',
-          value: draft.dom,
-          placeholder: t('Domain'),
-          'aria-label': t('Domain'),
-          onChange: (event) => setDraft({ ...draft, dom: event.target.value }),
-        }),
-        // The domains the base already uses, offered rather than imposed: a
-        // free field with a memory, so "atelier" is not re-invented as
-        // "Atelier" on a tired evening.
-        h(
-          'datalist',
-          { key: 'l', id: 'todo-domains' },
-          [...new Set(Object.values(model.tasks).map((task) => task.dom).filter(Boolean))].map((dom) =>
-            h('option', { key: dom, value: dom }),
-          ),
-        ),
+        /**
+         * The domain, PICKED rather than typed.
+         *
+         * A domain is a vocabulary the base already has, and typing into a
+         * free field is how "atelier" acquires a twin called "Atelier" on a
+         * tired evening — two groups on the everything view for one place in
+         * the house. So the existing ones are a list, and inventing one is a
+         * deliberate choice at the bottom of it rather than the default
+         * gesture.
+         *
+         * A base with no domain yet has nothing to choose from, and a menu
+         * of one option that says "new…" is a worse text field: it falls
+         * back to typing until there is something to pick.
+         */
+        domains.length === 0 || naming
+          ? h('input', {
+              key: 'm',
+              className: 'todo-new__field',
+              value: draft.dom,
+              placeholder: t('Domain'),
+              'aria-label': t('Domain'),
+              autoFocus: naming,
+              onChange: (event) => setDraft({ ...draft, dom: event.target.value }),
+            })
+          : h(
+              'select',
+              {
+                key: 'm',
+                className: 'todo-new__field',
+                value: draft.dom,
+                'aria-label': t('Domain'),
+                onChange: (event) => {
+                  if (event.target.value === NEW_DOMAIN) {
+                    setNaming(true)
+                    setDraft({ ...draft, dom: '' })
+                  } else setDraft({ ...draft, dom: event.target.value })
+                },
+              },
+              [
+                // Undomained is a legitimate answer, not an empty field: the
+                // everything view has a group for it.
+                h('option', { key: '', value: '' }, t('No domain')),
+                ...domains.map((dom) => h('option', { key: dom, value: dom }, dom)),
+                h('option', { key: 'new', value: NEW_DOMAIN }, t('New domain…')),
+              ],
+            ),
         h(
           'button',
           { key: 'b', type: 'submit', className: 'todo-new__add', disabled: !draft.title.trim() || saving },

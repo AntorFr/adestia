@@ -102,6 +102,7 @@ const WORDS = {
     'New task': 'Nouvelle tâche',
     'Due date': 'Échéance',
     Domain: 'Domaine',
+    'New domain…': 'Nouveau domaine…',
     Add: 'Ajouter',
     Open: 'Ouvrir',
     'could not create that task': 'création impossible',
