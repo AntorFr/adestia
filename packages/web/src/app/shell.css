@@ -1324,6 +1324,32 @@
   font-size: var(--text-base) !important;
 }
 
+/* The model picker. Sized to the name it holds rather than to the longest one
+   a driver might ever offer, and truncated instead of pushing the field: the
+   composer's job is the text field, and a selector that shrinks it to make
+   room for "claude-sonnet-5" has its priorities backwards. */
+.golem-composer__model {
+  align-self: flex-end;
+  height: 36px;
+  max-width: 116px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-muted);
+  font: 600 var(--text-sm) var(--font-mono);
+  cursor: pointer;
+}
+
+.golem-composer__model:hover { color: var(--text); border-color: var(--accent); }
+.golem-composer__model:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+@media (max-width: 640px) {
+  /* A phone composer is the field and the send button. The picker keeps its
+     place but gives up its width first. */
+  .golem-composer__model { max-width: 84px; }
+}
+
 /* Section heading on the landing canvas. The pages list sits BELOW the app
    tiles and needs to announce itself as a second thing rather than reading as
    an unexplained wall of links. */

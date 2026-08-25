@@ -417,6 +417,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
     >
       <Chat
         fetchImpl={fetchImpl}
+        t={t}
         onReady={(channel: {
           ask: (prompt: string) => void
           compose: (text: string) => void

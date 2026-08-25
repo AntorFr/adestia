@@ -24,6 +24,21 @@ import { runTurn, type PendingPermission, type TurnState } from './stream.js'
 import { SkinSlot } from '../app/SkinSlot.js'
 import type { SkinSlotRender } from '../app/skin.js'
 
+/**
+ * One model the driver offers.
+ *
+ * Declared here rather than imported from the driver package: the browser
+ * bundle has no business depending on server code, and this is the shape of a
+ * JSON payload, not of a driver.
+ */
+export interface ModelInfo {
+  readonly id: string
+  readonly label?: string
+}
+
+/** Remembered per browser, like the predecessor's. */
+const MODEL_KEY = 'golem.model'
+
 export interface Message {
   readonly id: string
   readonly role: 'user' | 'agent'
@@ -158,6 +173,10 @@ export function Composer({
   fetchImpl = fetch,
   extraButtons,
   onFill,
+  models,
+  model,
+  onModel,
+  t = (key) => key,
 }: {
   onSend: (text: string, attachments: readonly PendingAttachment[]) => void
   onStop: () => void
@@ -167,6 +186,12 @@ export function Composer({
   fetchImpl?: typeof fetch
   extraButtons?: readonly ComposerButton[]
   onFill?: (fill: (text: string) => void) => void
+  /** What this driver offers. Empty means it does not enumerate models. */
+  models?: readonly ModelInfo[]
+  /** The chosen id, or `''` for the CLI's own default. */
+  model?: string
+  onModel?: (model: string) => void
+  t?: (key: string) => string
 }) {
   const [text, setText] = useState('')
   const [attachments, setAttachments] = useState<readonly PendingAttachment[]>([])
@@ -259,10 +284,34 @@ export function Composer({
         type="button"
         className="golem-composer__attach"
         onClick={() => picker.current?.click()}
-        aria-label="Attach files"
+        aria-label={t('Attach files')}
       >
         📎
       </button>
+      {/*
+        Rendered only when the driver enumerates models, so an instance whose
+        CLI has no catalogue shows no empty control. AUTO is first and is the
+        default: it sends no model at all and lets the CLI choose, which is a
+        real answer rather than a placeholder — most turns do not care, and
+        pinning one silently would override a default the operator may have
+        set outside Golem.
+      */}
+      {models !== undefined && models.length > 0 && (
+        <select
+          className="golem-composer__model"
+          value={model ?? ''}
+          onChange={(event) => onModel?.(event.target.value)}
+          aria-label={t('Model')}
+          title={t('Model')}
+        >
+          <option value="">{t('Auto')}</option>
+          {models.map((entry) => (
+            <option key={entry.id} value={entry.id}>
+              {entry.label ?? entry.id}
+            </option>
+          ))}
+        </select>
+      )}
       {/* Rendered BY THE SHELL from declarative data, never as markup a plugin
           supplied: a button is a glyph and a title, and injected HTML here
           would be injected into the one surface every user touches. */}
@@ -282,7 +331,7 @@ export function Composer({
         ref={area}
         className="golem-composer__input"
         value={text}
-        placeholder={placeholder ?? 'Ask the agent…'}
+        placeholder={placeholder ?? t('Ask the agent…')}
         rows={1}
         onChange={(event) => setText(event.target.value)}
         onKeyDown={(event) => {
@@ -305,7 +354,7 @@ export function Composer({
           send otherwise. Two buttons would put "stop" next to "send" for a
           user who is trying to queue a message. */}
       {busy && text.trim() === '' ? (
-        <button type="button" className="golem-composer__stop" onClick={onStop} aria-label="Stop">
+        <button type="button" className="golem-composer__stop" onClick={onStop} aria-label={t('Stop')}>
           ■
         </button>
       ) : (
@@ -313,7 +362,7 @@ export function Composer({
           type="submit"
           className="golem-composer__send"
           disabled={(text.trim() === '' && attachments.length === 0) || blocked}
-          aria-label="Send"
+          aria-label={t('Send')}
         >
           ↑
         </button>
@@ -356,8 +405,9 @@ export interface ChatProps {
   readonly crest?: string
   /** The livery's working indicator, replacing the three dots. */
   readonly busySlot?: SkinSlotRender
-  readonly model?: string
   readonly fetchImpl?: typeof fetch
+  /** The shell's translator. Absent leaves every label in English. */
+  readonly t?: (key: string) => string
   /** Only when the shell is folded onto one screen; absent on desktop. */
   readonly onOpenCanvas?: () => void
   /**
@@ -400,8 +450,8 @@ export function Chat({
   brand,
   crest,
   busySlot,
-  model,
   fetchImpl,
+  t = (key) => key,
   onOpenCanvas,
   onReady,
   extraButtons,
@@ -412,6 +462,23 @@ export function Chat({
   const [threads, setThreads] = useState<readonly ConversationMeta[]>([])
   const [threadsOpen, setThreadsOpen] = useState(false)
   const [conversationId, setConversationId] = useState<string | undefined>()
+  const [models, setModels] = useState<readonly ModelInfo[]>([])
+  /**
+   * The chosen model, `''` meaning the CLI's own default.
+   *
+   * Read from storage before the catalogue arrives, and NOT validated against
+   * it: a driver that briefly fails to enumerate must not silently reset a
+   * choice somebody made. An id the catalogue no longer holds simply stops
+   * being selectable, and the select falls back to showing Auto.
+   */
+  const [model, setModel] = useState<string>(() => {
+    try {
+      return window.localStorage.getItem(MODEL_KEY) ?? ''
+    } catch {
+      // Private windows and blocked site data throw on ACCESS, not on read.
+      return ''
+    }
+  })
   const sessionId = useRef<string | undefined>(undefined)
   /** Set by the composer once it exists, so `compose` reaches its field. */
   const composeRef = useRef<((text: string) => void) | undefined>(undefined)
@@ -435,6 +502,37 @@ export function Chat({
     },
     [fetchImpl],
   )
+
+  useEffect(() => {
+    // A 404 is the honest answer for a driver that cannot enumerate models,
+    // and it lands here as an empty list — which draws no control at all.
+    // Anything else (a network blip, a driver error) leaves it empty too: a
+    // missing selector beats a selector that lists nothing.
+    void (async () => {
+      try {
+        const response = await (fetchImpl ?? fetch)('/api/models')
+        if (!response.ok) return
+        const body = (await response.json()) as { models?: readonly ModelInfo[] }
+        setModels(body.models ?? [])
+      } catch {
+        /* no catalogue, no control */
+      }
+    })()
+  }, [fetchImpl])
+
+  const chooseModel = useCallback((chosen: string) => {
+    setModel(chosen)
+    try {
+      // Auto is the absence of a choice, so it CLEARS the key rather than
+      // storing an empty string — a stored '' and no key mean the same thing,
+      // and only one of them survives a change of default.
+      if (chosen === '') window.localStorage.removeItem(MODEL_KEY)
+      else window.localStorage.setItem(MODEL_KEY, chosen)
+    } catch {
+      // Storage refused: the choice still holds for this session, which is
+      // the part the user is actually looking at.
+    }
+  }, [])
 
   const startThread = useCallback(() => {
     setConversationId(undefined)
@@ -636,6 +734,10 @@ export function Chat({
         busy={live?.running ?? false}
         blocked={live?.permission !== undefined}
         {...(placeholder ? { placeholder } : {})}
+        models={models}
+        model={model}
+        onModel={chooseModel}
+        t={t}
       />
     </section>
   )

@@ -8,7 +8,7 @@
  */
 
 import { act, render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, onTestFinished, vi } from 'vitest'
 
 import {
   Bubble,
@@ -113,6 +113,70 @@ describe('composer', () => {
     expect(onSend).not.toHaveBeenCalled()
   })
 
+  it('shows no model picker when the driver enumerates none', () => {
+    // The whole point of the capability gate: an instance whose CLI has no
+    // catalogue must not grow an empty control that does nothing.
+    render(<Composer onSend={vi.fn()} onStop={vi.fn()} busy={false} blocked={false} />)
+    expect(screen.queryByLabelText('Model')).toBeNull()
+
+    render(<Composer onSend={vi.fn()} onStop={vi.fn()} busy={false} blocked={false} models={[]} />)
+    expect(screen.queryByLabelText('Model')).toBeNull()
+  })
+
+  it('offers Auto first, and labels each model as the instance named it', () => {
+    render(
+      <Composer
+        onSend={vi.fn()}
+        onStop={vi.fn()}
+        busy={false}
+        blocked={false}
+        models={[{ id: 'claude-opus-5' }, { id: 'claude-sonnet-5', label: 'Sonnet 5' }]}
+        model=""
+        onModel={vi.fn()}
+      />,
+    )
+    const options = [...(screen.getByLabelText('Model') as HTMLSelectElement).options]
+    // Auto is a real answer — send no model, let the CLI decide — so it leads.
+    expect(options.map((option) => option.value)).toEqual(['', 'claude-opus-5', 'claude-sonnet-5'])
+    // A model with no label wears its id; one with a label wears the label.
+    expect(options.map((option) => option.textContent)).toEqual(['Auto', 'claude-opus-5', 'Sonnet 5'])
+  })
+
+  it('reports a choice rather than keeping it', () => {
+    const onModel = vi.fn()
+    render(
+      <Composer
+        onSend={vi.fn()}
+        onStop={vi.fn()}
+        busy={false}
+        blocked={false}
+        models={[{ id: 'claude-sonnet-5', label: 'Sonnet 5' }]}
+        model=""
+        onModel={onModel}
+      />,
+    )
+    fireEvent.change(screen.getByLabelText('Model'), { target: { value: 'claude-sonnet-5' } })
+    expect(onModel).toHaveBeenCalledWith('claude-sonnet-5')
+  })
+
+  it('keeps showing a chosen model the catalogue no longer offers', () => {
+    // A driver that briefly fails to enumerate must not silently reset a
+    // choice somebody made. The select falls back to Auto; the stored id is
+    // not thrown away behind their back.
+    render(
+      <Composer
+        onSend={vi.fn()}
+        onStop={vi.fn()}
+        busy={false}
+        blocked={false}
+        models={[{ id: 'claude-opus-5' }]}
+        model="a-model-that-went-away"
+        onModel={vi.fn()}
+      />,
+    )
+    expect((screen.getByLabelText('Model') as HTMLSelectElement).value).toBe('')
+  })
+
   it('offers stop while a turn runs and the field is empty', () => {
     render(<Composer onSend={vi.fn()} onStop={vi.fn()} busy blocked={false} />)
     expect(screen.getByLabelText('Stop')).toBeTruthy()
@@ -154,8 +218,22 @@ describe('permission prompt', () => {
  * A fetch that streams a scripted SSE body for a turn, and answers the
  * conversation routes the chat also calls.
  */
-function sseFetch(frames: readonly string[]): typeof fetch {
+function sseFetch(
+  frames: readonly string[],
+  options: { models?: readonly { id: string; label?: string }[]; onTurn?: (body: unknown) => void } = {},
+): typeof fetch {
   return ((url: string, init?: RequestInit) => {
+    if (String(url) === '/api/models') {
+      return Promise.resolve(
+        options.models
+          ? ({ ok: true, status: 200, json: () => Promise.resolve({ models: options.models }) } as unknown as Response)
+          : // What a driver without the capability actually answers.
+            ({ ok: false, status: 404, json: () => Promise.resolve({}) } as unknown as Response),
+      )
+    }
+    if (String(url).startsWith('/api/turn') && init?.body) {
+      options.onTurn?.(JSON.parse(String(init.body)))
+    }
     if (String(url).startsWith('/api/conversations')) {
       return Promise.resolve({
         ok: true,
@@ -187,6 +265,77 @@ function sseFetch(frames: readonly string[]): typeof fetch {
 const frame = (event: unknown) => `data: ${JSON.stringify(event)}\n\n`
 
 describe('chat', () => {
+  it('sends the chosen model, and nothing when it is Auto', async () => {
+    // The two ends of the wire the review found unattached: the catalogue the
+    // driver enumerates, and the field the turn carries.
+    const bodies: unknown[] = []
+    const fetchImpl = sseFetch([frame({ type: 'result', sessionId: 's1', stopped: false })], {
+      models: [{ id: 'claude-opus-5' }, { id: 'claude-sonnet-5', label: 'Sonnet 5' }],
+      onTurn: (body) => bodies.push(body),
+    })
+    render(<Chat fetchImpl={fetchImpl} />)
+
+    const picker = await screen.findByLabelText('Model')
+    const input = screen.getByRole('textbox')
+
+    // Auto: the key is ABSENT, not empty. An empty string would override the
+    // CLI's own default with nothing.
+    fireEvent.change(input, { target: { value: 'un' } })
+    await act(async () => {
+      fireEvent.keyDown(input, { key: 'Enter' })
+    })
+    await waitFor(() => expect(bodies.length).toBe(1))
+    expect('model' in (bodies[0] as Record<string, unknown>)).toBe(false)
+
+    fireEvent.change(picker, { target: { value: 'claude-sonnet-5' } })
+    fireEvent.change(input, { target: { value: 'deux' } })
+    await act(async () => {
+      fireEvent.keyDown(input, { key: 'Enter' })
+    })
+    await waitFor(() => expect(bodies.length).toBe(2))
+    expect((bodies[1] as { model?: string }).model).toBe('claude-sonnet-5')
+  })
+
+  it('remembers the choice, and forgets it on Auto', async () => {
+    // This environment has no localStorage at all — which is why the component
+    // guards every access, and why the fake below is a fake rather than a
+    // `clear()` on the real thing. A private window behaves the same way.
+    const store = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => void store.set(key, value),
+      removeItem: (key: string) => void store.delete(key),
+    })
+    onTestFinished(() => {
+      vi.unstubAllGlobals()
+    })
+
+    const models = [{ id: 'claude-sonnet-5', label: 'Sonnet 5' }]
+    const view = render(<Chat fetchImpl={sseFetch([], { models })} />)
+
+    fireEvent.change(await screen.findByLabelText('Model'), { target: { value: 'claude-sonnet-5' } })
+    expect(store.get('golem.model')).toBe('claude-sonnet-5')
+
+    // Back after a reload: the choice is still the one that was made.
+    view.unmount()
+    render(<Chat fetchImpl={sseFetch([], { models })} />)
+    const picker = await screen.findByLabelText('Model')
+    expect((picker as HTMLSelectElement).value).toBe('claude-sonnet-5')
+
+    // Auto CLEARS the key rather than storing an empty string: a stored '' and
+    // no key mean the same thing, and only one of them survives a change of
+    // default.
+    fireEvent.change(picker, { target: { value: '' } })
+    expect(store.has('golem.model')).toBe(false)
+  })
+
+  it('draws no picker when the driver answers 404', async () => {
+    const fetchImpl = sseFetch([frame({ type: 'result', sessionId: 's1', stopped: false })])
+    render(<Chat fetchImpl={fetchImpl} />)
+    await screen.findByRole('textbox')
+    expect(screen.queryByLabelText('Model')).toBeNull()
+  })
+
   it('shows the user message, then the streamed answer', async () => {
     const fetchImpl = sseFetch([
       frame({ type: 'text-delta', text: 'Bonjour ' }),

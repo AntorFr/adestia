@@ -72,6 +72,14 @@ const FR: Readonly<Record<string, string>> = {
   'Extensions refused': 'Extensions refusées',
   'Running with something missing': 'Actives, mais amputées',
   Save: 'Enregistrer',
+
+  // The composer
+  Model: 'Modèle',
+  Auto: 'Auto',
+  'Attach files': 'Joindre des fichiers',
+  Stop: 'Arrêter',
+  Send: 'Envoyer',
+  'Ask the agent…': 'Demandez à l’agent…',
   Edit: 'Modifier',
   Done: 'Terminé',
   'Saving…': 'Enregistrement…',
