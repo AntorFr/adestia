@@ -1007,6 +1007,10 @@
  * a mark in the margin — the typography of a footnote, which is what it is:
  * true, worth knowing, and nothing to do right now.
  */
+/* Where a recovered prompt came from. Quieter than the tool and the file,
+   which are what the decision turns on. */
+.golem-permission__where { color: var(--text-muted); font-style: italic; }
+
 .golem-problems--degraded {
   border: 0;
   border-left: 2px solid var(--border);

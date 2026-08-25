@@ -112,3 +112,27 @@ describe('against a broker that trusts its file tools', () => {
     expect(await broker.ask('Write', target, () => false, write(target))).toBe('deny')
   })
 })
+
+describe('naming where a request came from', () => {
+  it('labels a waiting request, and forgets an answered one', async () => {
+    // Only the shell knows which conversation a turn belongs to; the driver
+    // knows a session id. So the two are attached separately.
+    const broker = new PermissionBroker({ whenUnattended: 'deny' })
+    const asked: PermissionRequest[] = []
+    const decision = broker.ask('Edit', '/w/pages/x.md', (r) => {
+      asked.push(r)
+      return true
+    })
+    await vi.waitFor(() => expect(asked).toHaveLength(1))
+
+    broker.attach(asked[0]!.id, 'Rails Festool')
+    expect(broker.outstanding()[0]?.context).toBe('Rails Festool')
+
+    broker.answer(asked[0]!.id, 'allow')
+    await decision
+    // Nothing left to label: attaching to a request that is gone is a no-op,
+    // not a crash — the UI may well be a moment behind.
+    expect(() => broker.attach(asked[0]!.id, 'trop tard')).not.toThrow()
+    expect(broker.outstanding()).toHaveLength(0)
+  })
+})

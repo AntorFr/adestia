@@ -22,6 +22,17 @@ export interface PermissionRequest {
   /** A short, telling summary — never the full input. */
   readonly detail: string | undefined
   readonly askedAt: number
+  /**
+   * Where this was asked from, in words a person recognizes.
+   *
+   * Attached by the product, not by the driver: a driver knows a session id,
+   * and "which conversation" is a thing only the shell can name. Matters
+   * exactly when a prompt is RECOVERED after a reload — live, the surrounding
+   * thread already says it; recovered, it arrives with no context at all, and
+   * with two turns allowed at once "allow this edit" becomes a question
+   * nobody can answer.
+   */
+  context?: string
 }
 
 /**
@@ -147,6 +158,19 @@ export class PermissionBroker {
   }
 
   /** @returns false when the id is unknown — expired, or already answered. */
+  /**
+   * Names where a waiting request came from.
+   *
+   * Separate from `ask` because the two are known in different places: the
+   * driver raises the request, the shell knows which conversation it belongs
+   * to. A request already answered or timed out is silently ignored — there
+   * is nothing left to label.
+   */
+  attach(id: string, context: string): void {
+    const pending = this.#pending.get(id)
+    if (pending && context) pending.request.context = context
+  }
+
   answer(id: string, decision: PermissionDecision): boolean {
     const pending = this.#pending.get(id)
     if (!pending) return false

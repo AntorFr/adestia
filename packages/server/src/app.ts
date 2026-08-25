@@ -500,7 +500,19 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
         })
         for await (const event of events) {
           reply.raw.write(sseFrame(event))
-          if (event.type === 'text-delta') text += event.text
+          if (event.type === 'permission-request') {
+            // Named here because only the shell knows which conversation a
+            // turn belongs to. It costs nothing while the prompt is on
+            // screen — the thread around it already says so — and it is the
+            // whole answer once the prompt has to be RECOVERED after a
+            // reload, arriving otherwise with no context at all.
+            void (async () => {
+              const title = conversationId
+                ? (await conversations.list(userId)).find((c) => c.id === conversationId)?.title
+                : undefined
+              deps.permissions?.attach(event.id, title ?? 'a conversation')
+            })()
+          } else if (event.type === 'text-delta') text += event.text
           else if (event.type === 'tool-use') {
             tools.push({ name: event.name, ...(event.target ? { target: event.target } : {}) })
           } else if (event.type === 'tool-result') {

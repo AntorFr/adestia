@@ -136,15 +136,24 @@ export function Bubble({ message }: { message: Message }) {
 export function PermissionPrompt({
   permission,
   onDecide,
+  recovered = false,
 }: {
   permission: PendingPermission
   onDecide: (id: string, allow: boolean) => void
+  /** Found waiting after a reload, rather than raised by the turn on screen. */
+  recovered?: boolean
 }) {
   return (
     <div className="golem-permission" role="alertdialog" aria-label="Permission required">
       <p className="golem-permission__text">
         The agent wants to use <strong>{permission.tool}</strong>
         {permission.detail && <> — <code>{permission.detail}</code></>}
+        {/* Only on a RECOVERED prompt. Live, the thread around it already
+            says which conversation asked, and repeating it would be noise
+            on the one surface that must stay readable in a hurry. */}
+        {recovered && permission.context && (
+          <span className="golem-permission__where"> — {permission.context}</span>
+        )}
       </p>
       <div className="golem-permission__actions">
         <button type="button" onClick={() => onDecide(permission.id, false)}>
@@ -777,6 +786,7 @@ export function Chat({
       {(live?.permission ?? orphan) && (
         <PermissionPrompt
           permission={(live?.permission ?? orphan)!}
+          recovered={!live?.permission}
           onDecide={(id, allow) => {
             setOrphan(undefined)
             void (async () => {

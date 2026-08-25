@@ -64,6 +64,12 @@ export interface PendingPermission {
   readonly id: string
   readonly tool: string
   readonly detail?: string | undefined
+  /**
+   * Which conversation asked, in words. Only present on a request recovered
+   * from the server after a reload — a live one is already surrounded by its
+   * own thread.
+   */
+  readonly context?: string | undefined
 }
 
 export interface ToolCall {

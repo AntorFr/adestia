@@ -345,7 +345,11 @@ describe('chat', () => {
           ok: true,
           status: 200,
           json: () =>
-            Promise.resolve({ pending: [{ id: 'p1', tool: 'Edit', detail: 'todo/rails.md' }] }),
+            Promise.resolve({
+              pending: [
+                { id: 'p1', tool: 'Edit', detail: 'todo/rails.md', context: 'Rails Festool' },
+              ],
+            }),
         } as unknown as Response)
       }
       return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({}) } as unknown as Response)
@@ -355,6 +359,9 @@ describe('chat', () => {
     // Shown without any turn running: it belongs to one whose stream is gone.
     expect(await screen.findByText('Edit')).toBeTruthy()
     expect(screen.getByText('todo/rails.md')).toBeTruthy()
+    // Which conversation asked. With two turns allowed at once, "allow this
+    // edit" is otherwise a question nobody can answer.
+    expect(screen.getByText(/Rails Festool/)).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'Allow' }))
     await waitFor(() => expect(answered).toEqual([{ id: 'p1', allow: true }]))
