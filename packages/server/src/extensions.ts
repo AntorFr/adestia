@@ -233,6 +233,8 @@ export interface PluginPayload {
   readonly kind: string
   /** What the plugin says it is — a custom home's tile subtitle. */
   readonly description: string
+  /** Page folders this plugin's tile already stands for. */
+  readonly absorbs?: readonly string[]
   readonly base: string
   readonly view?: string
   readonly blocks?: string
@@ -256,6 +258,7 @@ export function frontendPayload(plugins: readonly DiscoveredPlugin[]): readonly 
         id: manifest.id,
         kind: manifest.kind,
         description: manifest.description,
+        ...(manifest.absorbs ? { absorbs: manifest.absorbs } : {}),
         base,
         ...(manifest.view ? { view: manifest.view } : {}),
         ...(manifest.blocks ? { blocks: manifest.blocks } : {}),

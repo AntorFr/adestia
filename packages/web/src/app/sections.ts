@@ -7,15 +7,16 @@
  * like a log file.
  *
  * A workspace already knows its own shape — it is the folders. What it does
- * NOT know is what any of them should be called or look like, and guessing
- * from a folder name is how you end up with a tile labelled `diy` in a product
- * that claims files are the source of truth.
+ * NOT know is what any of them should be called, and the first version of
+ * this file answered that by only surfacing folders carrying an `INDEX.md`.
+ * Principled, and wrong: measured against a real corpus it HID TWELVE
+ * FOLDERS — seven written in the sibling shell's "space" convention (a
+ * folder beside a page of the same name) and five plain folders of pages.
  *
- * So the livery is DECLARED, in the same place everything else here is: a
- * page. A folder holding an index page (`INDEX.md`) becomes a section, and
- * that page's frontmatter — `title`, `ico`, `couleur` — dresses the tile.
- * A folder with no index page is not a section; it is just a folder, and
- * whatever it holds still reaches the reader through its parent.
+ * Hiding content is a worse failure than labelling it imperfectly. So a
+ * folder holding pages IS a section, and its livery comes from whichever
+ * index page it has — `INDEX.md`, or the homonymous page — falling back to
+ * its own name when it has none. Declared beats guessed; guessed beats gone.
  */
 
 export interface SectionTile {
@@ -37,6 +38,40 @@ export interface IndexEntry {
 
 const INDEX_FILE = /(^|\/)index\.md$/i
 
+/** Folders that are storage, not content: never a section. */
+const NOT_A_SECTION = new Set(['assets'])
+
+/**
+ * `dietetique/dietetique.md` — the sibling shell's "space": a folder and a
+ * page of the same name, the page being the folder's own overview. Seven of
+ * them in the corpus this was measured against.
+ */
+function isHomonymous(path: string): boolean {
+  const parts = path.split('/')
+  const file = parts.at(-1)?.replace(/\.md$/i, '')
+  return parts.length > 1 && file === parts.at(-2)
+}
+
+/** The index page of a folder, either spelling. */
+function indexOf(entries: readonly IndexEntry[], folder: string): IndexEntry | undefined {
+  return entries.find(
+    (entry) =>
+      folderOf(entry.path) === folder &&
+      (INDEX_FILE.test(entry.path) || isHomonymous(entry.path)),
+  )
+}
+
+/** True for a page that IS its folder's index rather than one of its contents. */
+function isIndexPage(path: string): boolean {
+  return INDEX_FILE.test(path) || isHomonymous(path)
+}
+
+/** `plan-travail-garage` → `Plan travail garage`. */
+function prettify(name: string): string {
+  const words = name.replace(/[-_]+/g, ' ').trim()
+  return words ? words.charAt(0).toUpperCase() + words.slice(1) : name
+}
+
 /** `domaines/achats/INDEX.md` → `domaines/achats`. */
 function folderOf(path: string): string {
   const cut = path.lastIndexOf('/')
@@ -55,43 +90,59 @@ function text(value: unknown): string | undefined {
  * the same screen would show the same pages twice under two different names —
  * the reader is meant to descend, not to be handed every level at once.
  */
-export function sectionsOf(entries: readonly IndexEntry[]): readonly SectionTile[] {
-  const indexed = new Map<string, IndexEntry>()
+export function sectionsOf(
+  entries: readonly IndexEntry[],
+  /** Folders an app's tile already stands for — see `absorbs` in a manifest. */
+  absorbed: readonly string[] = [],
+): readonly SectionTile[] {
+  // Every folder that holds a page at all. Grouping folders (`domaines/`)
+  // hold none directly and so are not sections; their children are.
+  const holders = new Set<string>()
   for (const entry of entries) {
-    if (INDEX_FILE.test(entry.path)) indexed.set(folderOf(entry.path), entry)
+    const folder = folderOf(entry.path)
+    if (folder === '' || NOT_A_SECTION.has(folder.split('/').at(-1) ?? '')) continue
+    if (isIndexPage(entry.path) && !entries.some((other) => folderOf(other.path) === folder && !isIndexPage(other.path))) {
+      // A folder whose ONLY page is its own index still counts: it may hold
+      // sub-folders, and an empty-looking room beats a hidden one.
+      holders.add(folder)
+      continue
+    }
+    holders.add(folder)
   }
 
-  const shallowest = [...indexed.keys()].filter((folder) => {
-    // An ancestor carrying an index page owns this one.
+  const shallowest = [...holders].filter((folder) => {
+    if (absorbed.includes(folder)) return false
+    // An ancestor that is itself a section owns this one: the reader
+    // descends into it rather than meeting both at once.
     const parts = folder.split('/')
     for (let depth = 1; depth < parts.length; depth += 1) {
-      if (indexed.has(parts.slice(0, depth).join('/'))) return false
+      if (holders.has(parts.slice(0, depth).join('/'))) return false
     }
     return true
   })
 
   return shallowest
-    .map((folder) => tileFor(entries, folder, indexed.get(folder)!))
+    .map((folder) => tileFor(entries, folder, indexOf(entries, folder)))
     .sort((a, b) => a.title.localeCompare(b.title))
 }
 
-/** One tile, dressed by a folder's index page. */
+/** One tile, dressed by a folder's index page when it has one. */
 function tileFor(
   entries: readonly IndexEntry[],
   folder: string,
-  index: IndexEntry,
+  index: IndexEntry | undefined,
 ): SectionTile {
-  const fields = index.fields
+  const fields = index?.fields ?? {}
   return {
     path: folder,
     // The declaration wins FIELD BY FIELD: a page that only gives an icon
     // keeps the title it would have had. An all-or-nothing rule would punish a
     // half-filled frontmatter by discarding the half that was there.
-    title: text(fields['title']) ?? index.title,
+    title: text(fields['title']) ?? index?.title ?? prettify(folder.split('/').at(-1) ?? folder),
     icon: text(fields['ico']) ?? '◆',
     ...(text(fields['couleur']) ? { hue: text(fields['couleur'])! } : {}),
     count: entries.filter(
-      (entry) => entry.path.startsWith(`${folder}/`) && !INDEX_FILE.test(entry.path),
+      (entry) => entry.path.startsWith(`${folder}/`) && !isIndexPage(entry.path),
     ).length,
   }
 }
@@ -108,10 +159,8 @@ export function sectionAt(
   entries: readonly IndexEntry[],
   folder: string,
 ): SectionTile | undefined {
-  const index = entries.find(
-    (entry) => INDEX_FILE.test(entry.path) && folderOf(entry.path) === folder,
-  )
-  return index ? tileFor(entries, folder, index) : undefined
+  const holds = entries.some((entry) => entry.path.startsWith(`${folder}/`))
+  return holds ? tileFor(entries, folder, indexOf(entries, folder)) : undefined
 }
 
 /**
@@ -128,7 +177,7 @@ export function pagesIn(
   return entries.filter(
     (entry) =>
       entry.path.startsWith(prefix) &&
-      !INDEX_FILE.test(entry.path) &&
+      !isIndexPage(entry.path) &&
       !entry.path.slice(prefix.length).includes('/'),
   )
 }

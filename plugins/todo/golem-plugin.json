@@ -20,5 +20,8 @@
     "icon": "☑",
     "glyph": "ic:todo",
     "hue": "rouge"
-  }
+  },
+  "absorbs": [
+    "todo"
+  ]
 }

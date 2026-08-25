@@ -102,6 +102,17 @@ export interface PluginManifest {
    */
   readonly types?: readonly string[]
 
+  /**
+   * Page folders this plugin's TILE already stands for.
+   *
+   * The todo app's tile is the todo store; a "Todo" section beside it would
+   * be the same thing said twice, and clicking the wrong one is a small
+   * betrayal every time. Declared by the plugin because only the plugin
+   * knows what its screen covers — and only while it is ACTIVE, so turning
+   * it off gives the folder back rather than hiding it forever.
+   */
+  readonly absorbs?: readonly string[]
+
   /** Server-side facets. */
   readonly api?: string
   readonly setup?: string

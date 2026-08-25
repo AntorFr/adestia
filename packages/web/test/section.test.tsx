@@ -74,7 +74,7 @@ describe('the section screen', () => {
   it('filters by a facet the pages actually declare', () => {
     const many = [
       entry('d/INDEX.md', { title: 'D' }),
-      ...['a', 'b', 'c', 'd', 'e', 'f'].map((n, i) =>
+      ...['un', 'deux', 'trois', 'quatre', 'cinq', 'six'].map((n, i) =>
         entry(`d/${n}.md`, { status: i % 2 === 0 ? 'en-cours' : 'veille' }),
       ),
     ]
@@ -101,7 +101,7 @@ describe('the section screen', () => {
   it('says so plainly when a filter matches nothing', () => {
     const many = [
       entry('d/INDEX.md', { title: 'D' }),
-      ...['a', 'b', 'c', 'd', 'e', 'f'].map((n) => entry(`d/${n}.md`)),
+      ...['un', 'deux', 'trois', 'quatre', 'cinq', 'six'].map((n) => entry(`d/${n}.md`)),
     ]
     const { container } = render(<Section {...props} path="d" entries={many} />)
     const input = container.querySelector('.golem-search input') as HTMLInputElement

@@ -262,7 +262,19 @@ export function Home({
   }, [focusComposer])
 
   const tiled = plugins.filter((plugin) => plugin.tile)
-  const sections: readonly SectionTile[] = sectionsOf(entries)
+  /**
+   * Folders an ACTIVE app already stands for. Inactive plugins absorb
+   * nothing: turning one off gives its folder back as an ordinary section
+   * rather than hiding it forever.
+   */
+  const absorbed = [
+    ...plugins.flatMap((plugin) => plugin.absorbs ?? []),
+    // The shell absorbs its own: `home/` holds the curated brief this very
+    // screen renders (see `page-author`). A "Home" tile on the home screen
+    // would offer to open what the reader is already looking at.
+    'home',
+  ]
+  const sections: readonly SectionTile[] = sectionsOf(entries, absorbed)
 
   const greeting =
     (clock.getHours() >= EVENING_FROM ? skin.greetingEvening : skin.greetingDay) ??

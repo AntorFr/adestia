@@ -44,6 +44,7 @@ export interface PluginDescriptor {
   readonly styles?: readonly string[]
   readonly contract?: number
   /** Launcher tile. A view without one is legitimate — a detail screen. */
+  readonly absorbs?: readonly string[]
   readonly tile?: {
     readonly label: string
     readonly icon?: string
@@ -56,6 +57,7 @@ export interface PluginDescriptor {
 export interface LoadedPlugin {
   readonly id: string
   readonly base: string
+  readonly absorbs?: PluginDescriptor['absorbs']
   readonly tile?: PluginDescriptor['tile']
   readonly view?: ViewContribution
   readonly blocks?: BlocksContribution
@@ -172,6 +174,7 @@ export async function loadPlugins(
     loaded.push({
       id: descriptor.id,
       base: descriptor.base,
+      ...(descriptor.absorbs ? { absorbs: descriptor.absorbs } : {}),
       ...(descriptor.tile ? { tile: descriptor.tile } : {}),
       ...(view === undefined ? {} : { view }),
       ...(blocks === undefined ? {} : { blocks }),
