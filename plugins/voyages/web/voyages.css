@@ -39,15 +39,6 @@
 
 /* Crumbs ---------------------------------------------------------------- */
 
-.voyages-crumbs {
-  display: flex;
-  gap: var(--space-2);
-  font-size: 13px;
-  margin-bottom: var(--space-3);
-}
-
-.voyages-crumbs a { color: var(--text-muted); text-decoration: none; }
-.voyages-crumbs a:hover { color: var(--accent); text-decoration: underline; }
 
 .vwrap-outer { display: flex; flex-direction: column; }
 

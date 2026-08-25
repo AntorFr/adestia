@@ -88,7 +88,6 @@ export default function view(api) {
 
   function Atelier() {
     const host = useRef(null)
-    const [crumbs, setCrumbs] = useState([])
     /** Bumped on every hash change, to re-run the engine. */
     const [tick, setTick] = useState(0)
 
@@ -117,10 +116,19 @@ export default function view(api) {
       engine.current ??= createAtelierApp({
         page,
         esc,
-        // Breadcrumbs become React state rather than DOM the engine owns: the
-        // shell already has a header, and two competing ones would look like a
-        // bug rather than a feature.
-        crumbs: (items) => setCrumbs(items ?? []),
+        // The engine's trail goes to the SHELL's header, which is where a
+        // breadcrumb belongs. It used to be drawn inside this panel — the two
+        // competing ones this comment always warned about, one under the
+        // other, with the shell's stopping at "L'Atelier" whatever bench was
+        // open. The shell drops what repeats it (Accueil, the hub) and draws
+        // the rest.
+        crumbs: (items) =>
+          api.trail(
+            (items ?? []).map((crumb) => ({
+              label: String(crumb?.label ?? '…'),
+              ...(crumb?.hash ? { route: String(crumb.hash).replace(/^#/, '') } : {}),
+            })),
+          ),
         // Auth is the session cookie here, so the only header that still
         // matters is the content type on a write.
         headers: (json) => (json ? { 'content-type': 'application/json' } : {}),
@@ -180,20 +188,10 @@ export default function view(api) {
     )
 
     return h('section', { className: 'atelier' }, [
-      crumbs.length > 0 &&
-        h(
-          'nav',
-          { key: 'c', className: 'atelier-crumbs' },
-          crumbs.map((crumb, index) =>
-            h(
-              'a',
-              { key: `${crumb.hash}-${index}`, href: crumb.hash ?? '#' },
-              crumb.label ?? '…',
-            ),
-          ),
-        ),
-      // The engine writes into this and nothing else touches it — which is
-      // what lets React and innerHTML coexist without fighting over the DOM.
+      // No breadcrumb here: it is published to the shell's header, which had
+      // one already. The engine writes into the node below and nothing else
+      // touches it — which is what lets React and innerHTML coexist without
+      // fighting over the DOM.
       h('div', { key: 'p', ref: host, className: 'atelier-page' }),
     ])
   }

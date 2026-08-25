@@ -53,6 +53,27 @@ export interface PluginApi {
    * them, badly.
    */
   compose(text: string): void
+  /**
+   * Publishes where this view IS, for the shell's own breadcrumb.
+   *
+   * A plugin owns screens the shell cannot name: `#/voyages/baden-2026` is a
+   * trip whose title lives in a JSON file, and the header stopped at "Home /
+   * Voyages" whatever screen was open under it. Both ported apps answered
+   * that by drawing their own trail inside their panel — two breadcrumbs, one
+   * above the other, which reads as a bug rather than a feature.
+   *
+   * So the plugin says WHERE, in its own words, and the shell draws it in the
+   * one place a breadcrumb belongs. Crumbs are the ones BELOW this view's own
+   * tile — the shell already draws Home and the app's name, and drops any
+   * crumb that merely repeats them. `route` is a hash route without the `#`
+   * (`/voyages/baden-2026`), absent for a step that leads nowhere.
+   *
+   * Call it whenever the view moves, including with `[]` to say "nowhere in
+   * particular": the trail is cleared on every navigation, so a screen that
+   * says nothing gets the app's name alone rather than the last screen's
+   * words.
+   */
+  trail(crumbs: readonly { readonly label: string; readonly route?: string }[]): void
 }
 
 /** One live figure on a plugin's tile. */

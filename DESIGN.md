@@ -447,6 +447,16 @@ runtime; nothing is scanned by filename convention at build time.
   owns it, and the shell stopped spelling out `workbook` — one plugin known by
   name, and a new line of shell code owed to every app that ever wanted to be
   a target.
+- **One breadcrumb, and the plugin finishes the sentence.** The shell can name
+  an app and nothing under it — a trip's title lives in a JSON file it does not
+  read — so `#/voyages` and `#/voyages/baden-2026` drew the same header. Both
+  ported apps had answered that by drawing their own trail inside their panel:
+  two breadcrumbs stacked, which reads as a bug. A view now PUBLISHES where it
+  is (`api.trail`) and the shell draws it in the one place a breadcrumb
+  belongs, dropping the crumbs that repeat Home or the app's own root — so a
+  ported view that says the whole trail from the top still lands right. Cleared
+  on every navigation: a screen that says nothing gets the app's name alone
+  rather than the last screen's words.
 - **An address is READ by people, so it says as little as it can.** The first
   shapes shipped were whatever each screen had at hand:
   `#/voyages/domaines%2Fvoyages%2Fbaden-2026%2Fassets%2Fvoyage.json`. Three

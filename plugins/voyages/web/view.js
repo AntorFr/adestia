@@ -105,7 +105,6 @@ export default function view(api) {
   function Voyages() {
     const host = useRef(null)
     const engine = useRef(null)
-    const [crumbs, setCrumbs] = useState([])
     /** Bumped on every hash change, to re-route the engine. */
     const [tick, setTick] = useState(0)
 
@@ -127,10 +126,19 @@ export default function view(api) {
           page,
           esc,
           locale: api.locale,
-          // Breadcrumbs become React state rather than DOM the engine owns:
-          // the shell already has a header, and two competing ones would look
-          // like a bug rather than a feature.
-          crumbs: (items) => setCrumbs(items ?? []),
+          // The engine's trail goes to the SHELL's header, which is where a
+          // breadcrumb belongs. It used to be drawn inside this panel — the
+          // two competing ones this comment always warned about, one under the
+          // other, with the shell's stopping at "Voyages" whatever trip was
+          // open. The shell drops what repeats it (Home, the hub) and draws
+          // the rest.
+          crumbs: (items) =>
+            api.trail(
+              (items ?? []).map((crumb) => ({
+                label: String(crumb?.label ?? '…'),
+                ...(crumb?.hash ? { route: String(crumb.hash).replace(/^#/, '') } : {}),
+              })),
+            ),
           // The plugin's own API, without the engine knowing where it is
           // mounted — a plugin that hardcoded its prefix could not be renamed.
           call: (path, init) => api.fetch(`/api/plugin/${api.id}${path}`, init),
@@ -176,16 +184,10 @@ export default function view(api) {
     }, [tick])
 
     return h('section', { className: 'voyages' }, [
-      crumbs.length > 0 &&
-        h(
-          'nav',
-          { key: 'c', className: 'voyages-crumbs' },
-          crumbs.map((crumb, index) =>
-            h('a', { key: `${crumb.hash}-${index}`, href: crumb.hash ?? '#' }, crumb.label ?? '…'),
-          ),
-        ),
-      // The engine writes into this and nothing else touches it — which is what
-      // lets React and innerHTML coexist without fighting over the DOM.
+      // No breadcrumb here: it is published to the shell's header, which had
+      // one already. The engine writes into the node below and nothing else
+      // touches it — which is what lets React and innerHTML coexist without
+      // fighting over the DOM.
       h('div', { key: 'p', ref: host, className: 'voyages-page' }),
     ])
   }

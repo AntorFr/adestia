@@ -9,6 +9,7 @@ import {
   type PluginDescriptor,
 } from '../src/plugins/loader.js'
 import { routeMatches } from '../src/plugins/contract.js'
+import { browserEnvironment } from '../src/plugins/loader.js'
 
 afterEach(() => forgetContributedBlocks())
 
@@ -24,6 +25,7 @@ function environment(modules: Record<string, Record<string, unknown> | Error>) {
       locale: 'en',
       fetch: (() => Promise.reject(new Error('not used'))) as unknown as typeof fetch,
       ask: () => undefined,
+      trail: () => undefined,
       compose: () => undefined,
     }),
     importModule(url) {
@@ -119,6 +121,21 @@ describe('loading', () => {
       },
     })
     expect((await loadPlugins([workbench], wrong)).loaded[0]?.view?.routeFor).toBeUndefined()
+  })
+
+  it('hands a view a way to say where it is, bound to its own id', async () => {
+    // The shell draws ONE breadcrumb. A plugin that drew its own put a second
+    // one under it; this is what replaced that.
+    const said: { id: string; labels: string[] }[] = []
+    const env = browserEnvironment(
+      () => {},
+      () => {},
+      'fr',
+      (id, crumbs) => said.push({ id, labels: crumbs.map((crumb) => crumb.label) }),
+    )
+    const api = env.makeApi({ id: 'voyages', base: '/plugins/voyages/', kind: 'app' })
+    api.trail([{ label: 'Baden 2026', route: '/voyages/baden-2026' }])
+    expect(said).toEqual([{ id: 'voyages', labels: ['Baden 2026'] }])
   })
 
   it('lets the shell own the stylesheets', async () => {

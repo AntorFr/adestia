@@ -247,6 +247,12 @@ export function browserEnvironment(
   ask: (prompt: string) => void,
   compose: (text: string) => void,
   locale = 'en',
+  /**
+   * Where a plugin's own screen says it is. Handed in like `ask`: the header
+   * belongs to the shell, and a plugin that drew its own breadcrumb would be
+   * the second one this exists to remove.
+   */
+  trail: (id: string, crumbs: readonly { label: string; route?: string }[]) => void = () => {},
 ): LoaderEnvironment {
   return {
     makeApi: (descriptor) => ({
@@ -256,6 +262,9 @@ export function browserEnvironment(
       fetch: (...args) => fetch(...args),
       ask,
       compose,
+      // Bound to the plugin's id, so the shell can ignore a trail published
+      // by a view nobody is looking at — a plugin loaded but not open.
+      trail: (crumbs) => trail(descriptor.id, crumbs),
     }),
     importModule: (url) => import(/* @vite-ignore */ url) as Promise<Record<string, unknown>>,
     addStylesheet(id, url) {

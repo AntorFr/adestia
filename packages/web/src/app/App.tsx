@@ -100,6 +100,42 @@ export function screenView(where: {
   return { route: where.route, ...(title ? { title } : {}) }
 }
 
+/** One step of the header's trail. Either a folder, a route, or a dead end. */
+export interface Crumb {
+  readonly label: string
+  readonly folder?: string
+  readonly route?: string
+}
+
+/**
+ * The trail over an open app: its own name, then whatever its view says.
+ *
+ * The shell can name the APP and no more — `#/voyages/baden-2026` is a trip
+ * whose title lives in a file it does not read — so the header stopped at
+ * "Home / Voyages" whatever screen was under it. What the view publishes
+ * (`api.trail`) finishes the sentence.
+ *
+ * Two rules, both about not saying the same thing twice. A crumb repeating
+ * Home or the app's own root is DROPPED: a ported view says the whole trail
+ * from the top, and this header already drew that half. And the app's name
+ * becomes a way back only when something sits below it — a link to the screen
+ * you are already looking at is furniture.
+ */
+export function appTrail(
+  app: { readonly label: string; readonly root?: string },
+  said: readonly { readonly label: string; readonly route?: string }[],
+): readonly Crumb[] {
+  const below = said.filter(
+    (crumb) =>
+      crumb.route === undefined ||
+      (crumb.route !== '' && crumb.route !== '/' && crumb.route !== app.root),
+  )
+  return [
+    { label: app.label, ...(below.length > 0 && app.root ? { route: app.root } : {}) },
+    ...below.map((crumb) => ({ label: crumb.label, ...(crumb.route ? { route: crumb.route } : {}) })),
+  ]
+}
+
 export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   const [instance, setInstance] = useState<InstanceInfo | undefined>()
   const [failures, setFailures] = useState<readonly { id: string; reason: string }[]>([])
@@ -135,6 +171,17 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   const t = useMemo(() => translator(locale), [locale])
   const [skinScheme, setSkinScheme] = useState<'light' | 'dark' | undefined>(undefined)
   const [loaded, setLoaded] = useState<readonly LoadedPlugin[]>([])
+  /**
+   * What the OPEN plugin says about the screen it is showing.
+   *
+   * Kept by id, and read only for the plugin actually on the canvas: a view
+   * that published a trail and was then navigated away from must not keep
+   * describing a screen nobody is looking at.
+   */
+  const [pluginTrail, setPluginTrail] = useState<{
+    id: string
+    crumbs: readonly { label: string; route?: string }[]
+  }>({ id: '', crumbs: [] })
   /** The plugin view currently filling the canvas, by id. */
   /** Queued while the chat mounts, so a plugin can ask before anyone typed. */
   const askRef = useRef<((prompt: string) => void) | undefined>(undefined)
@@ -162,7 +209,13 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
    *   #/<plugin route or id>  an app
    */
   useEffect(() => {
-    const apply = () => setRoute(location.hash.replace(/^#/, ''))
+    const apply = () => {
+      setRoute(location.hash.replace(/^#/, ''))
+      // The trail is cleared here rather than by the plugin: a view that says
+      // nothing about its new screen must show the app's name alone, not the
+      // previous screen's words. Whoever has something to say says it again.
+      setPluginTrail({ id: '', crumbs: [] })
+    }
     apply()
     window.addEventListener('hashchange', apply)
     return () => window.removeEventListener('hashchange', apply)
@@ -202,9 +255,17 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
    * its crumb would open an empty screen, while a folder a plugin OWNS is a
    * place by virtue of the screen behind it.
    */
-  const trail = useMemo<readonly { readonly label: string; readonly folder?: string }[]>(() => {
+  const trail = useMemo<readonly Crumb[]>(() => {
     if (openApp) {
-      return [{ label: loaded.find((entry) => entry.id === openApp)?.tile?.label ?? openApp }]
+      const plugin = loaded.find((entry) => entry.id === openApp)
+      const root = plugin ? addressOf(plugin) : undefined
+      return appTrail(
+        { label: plugin?.tile?.label ?? openApp, ...(root ? { root } : {}) },
+        // Read only for the plugin actually on the canvas: a view that
+        // published a trail and was navigated away from must not keep
+        // describing a screen nobody is looking at.
+        pluginTrail.id === openApp ? pluginTrail.crumbs : [],
+      )
     }
     const deepest = page ? page.path.slice(0, page.path.lastIndexOf('/')) : section
     if (deepest === undefined || deepest === '') return page ? [{ label: page.title }] : []
@@ -231,7 +292,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           (folder.split('/').at(-1) as string),
       }))
     return page ? [...crumbs, { label: page.title }] : crumbs
-  }, [openApp, loaded, page, pages, section])
+  }, [openApp, loaded, page, pages, section, pluginTrail])
 
   /**
    * Where the reader is, snapshotted onto each message.
@@ -449,6 +510,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           // The plugins are loaded once the instance has answered, so this is
           // the resolved locale rather than a guess.
           resolveLocale(info.locale, typeof navigator === 'undefined' ? undefined : navigator.language),
+          (id, crumbs) => setPluginTrail({ id, crumbs }),
         )
         const result = await loadPlugins(info.plugins, environment)
         if (!cancelled) {
@@ -601,12 +663,19 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
               // way BACK — the trail has to be walkable, not decorative — and
               // it walks to wherever that folder actually opens, which for a
               // folder an app owns is the app.
-              const walkable = crumb.folder !== undefined && index < trail.length - 1
+              const leads = crumb.folder ?? crumb.route
+              const walkable = leads !== undefined && index < trail.length - 1
+              // A folder is resolved (it may belong to an app); a route the
+              // plugin gave is already an address and is taken as written.
+              const walk = () =>
+                crumb.folder === undefined
+                  ? (location.hash = crumb.route as string)
+                  : openSection(crumb.folder)
               return (
-                <Fragment key={`${crumb.folder ?? ''}-${index}`}>
+                <Fragment key={`${leads ?? ''}-${index}`}>
                   <span className="golem-crumbs__sep">/</span>
                   {walkable ? (
-                    <button type="button" onClick={() => openSection(crumb.folder as string)}>
+                    <button type="button" onClick={walk}>
                       {crumb.label}
                     </button>
                   ) : (

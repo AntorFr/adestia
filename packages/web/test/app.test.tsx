@@ -10,7 +10,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { App, screenView } from '../src/app/App.js'
+import { App, appTrail, screenView } from '../src/app/App.js'
 
 const INSTANCE = {
   driver: { label: 'Test CLI', cliVersion: '1.0', capabilities: [] },
@@ -112,6 +112,55 @@ describe('the breadcrumb', () => {
     await waitFor(() => expect(crumbs(container).length).toBeGreaterThan(1))
     expect(crumbs(container).map((crumb) => crumb.label)).not.toContain('Domaines')
     location.hash = ''
+  })
+})
+
+describe('the trail over an open app', () => {
+  // The bug: `#/voyages/baden-2026` and `#/voyages` drew the same header —
+  // "Accueil / Voyages" — because the shell can name the app and nothing
+  // under it. The trip's title lives in a file only the plugin reads.
+  const VOYAGES = { label: 'Voyages', root: '/voyages' }
+
+  it('finishes the sentence with what the view says it is showing', () => {
+    expect(
+      appTrail(VOYAGES, [
+        { label: 'Voyages', route: '/voyages' },
+        { label: 'Baden 2026', route: '/voyages/baden-2026' },
+      ]),
+    ).toEqual([
+      // The app's name becomes a way BACK, now that something sits below it.
+      { label: 'Voyages', route: '/voyages' },
+      { label: 'Baden 2026', route: '/voyages/baden-2026' },
+    ])
+  })
+
+  it('drops the crumbs that repeat what the header already drew', () => {
+    // A ported view says the whole trail from Home down; half of it is the
+    // shell's own words.
+    expect(
+      appTrail({ label: "L'Atelier", root: '/atelier' }, [
+        { label: 'Accueil', route: '/' },
+        { label: "L'Atelier", route: '/atelier' },
+        { label: 'Rangement garage', route: '/atelier/rangement-garage' },
+      ]).map((crumb) => crumb.label),
+    ).toEqual(["L'Atelier", 'Rangement garage'])
+  })
+
+  it('leaves the hub screen naming the app alone, and not as a link', () => {
+    // `#/voyages` IS the app: a crumb linking to the screen under the
+    // reader's eyes is furniture.
+    expect(appTrail(VOYAGES, [{ label: 'Voyages', route: '/voyages' }])).toEqual([
+      { label: 'Voyages' },
+    ])
+    expect(appTrail(VOYAGES, [])).toEqual([{ label: 'Voyages' }])
+  })
+
+  it('keeps a step that leads nowhere — a screen still loading says so', () => {
+    // The engines publish a `…` crumb while a trip loads, with no hash.
+    expect(appTrail(VOYAGES, [{ label: '…' }])).toEqual([
+      { label: 'Voyages', route: '/voyages' },
+      { label: '…' },
+    ])
   })
 })
 

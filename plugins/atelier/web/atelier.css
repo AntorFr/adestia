@@ -55,9 +55,6 @@
   --scrim: rgb(8 11 18 / 55%);
 }
 
-.atelier-crumbs { display: flex; gap: var(--space-2); font-size: var(--text-sm); margin-bottom: var(--space-3); }
-.atelier-crumbs a { color: var(--text-muted); text-decoration: none; }
-.atelier-crumbs a:hover { text-decoration: underline; }
 .atelier-page { color: var(--text); }
 .atelier-page .wrap { display: flex; flex-direction: column; gap: var(--space-3); }
 .atelier-page .chead { display: flex; align-items: center; gap: var(--space-3); }

@@ -56,6 +56,10 @@ va à qui le possède, et la coque a cessé d'épeler `workbook` avec la route d
 l'atelier en dur.
 **Livré en 0.6.0 et déployé** sur homenode (image multi-arch, manifeste bumpé,
 pod `ghcr.io/antorfr/golem:0.6.0` ready, 7 plugins sur 7 actifs au boot).
+0.6.1 : le fil ne s'arrêtait plus au dossier mais s'arrêtait à l'APP — `#/voyages`
+et `#/voyages/baden-2026` écrivaient tous deux « Accueil / Voyages ». Une vue
+PUBLIE désormais où elle est (`api.trail`), la coque la dessine, et les deux
+apps portées cessent de dessiner leur propre fil sous celui de la coque.
 Reste à constater AU NAVIGATEUR — la porte OIDC interdit de le faire sans la
 session de l'utilisateur : fil d'Ariane depuis une fiche de voyage, adresses
 courtes, et une ancienne URL `%2F` qui doit toujours ouvrir.

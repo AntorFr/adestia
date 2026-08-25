@@ -119,6 +119,24 @@ working; bare ones still resolve through the page's import map.
 `styles` and it injects and removes them. A CSS import only works under a
 bundler, and a runtime-loaded plugin has none.
 
+### Saying where your view is
+
+The shell draws the breadcrumb — **never draw your own**. It can name your app
+and nothing under it (`#/voyages/baden-2026` is a trip whose title lives in a
+file it does not read), so a view with screens of its own publishes them:
+
+```js
+api.trail([{ label: 'Baden 2026', route: '/voyages/baden-2026' }])
+```
+
+Crumbs are the ones BELOW your tile — the shell already drew Home and your
+app's name, and drops any crumb repeating them, so a ported view that says the
+whole trail from the top still lands right. `route` is a hash route without the
+`#`, and may be absent for a step that leads nowhere (a screen still loading).
+Call it on every move, `[]` included: the trail is cleared on each navigation,
+so a screen that says nothing shows your app's name alone rather than the
+previous screen's words.
+
 ### Owning a folder of the workspace
 
 An app whose content lives in pages says so in the manifest, and the folder
