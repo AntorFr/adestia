@@ -10,7 +10,8 @@ exécuter de code navigateur ; le module dit à quoi il ressemble. Le pont `{% %
 suit le vocabulaire, donc une fiche partagée rend un bloc de plugin sans être
 réécrite. Premier client : `parcours` porté (carte sans biblio, profil, mode
 balade, GPX octet-pour-octet identique au prédécesseur) — sauf le hors-ligne,
-qui demande un service worker que Golem n'a pas.
+qui demande un service worker que Golem n'a pas. **Livré en 0.5.0 et déployé**
+sur homenode, `features: [scan, parcours]` : 7 plugins sur 7 actifs.
 Missions ajoutées à planif (`until:` → la note se termine seule, `done:` par
 l'agent, `expired:` par le produit), avec porte d'écriture par contenu sur la
 zone planif — non couverte côté driver Copilot, qui n'a pas de broker.
