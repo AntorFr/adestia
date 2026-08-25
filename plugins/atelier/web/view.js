@@ -77,6 +77,12 @@ export default function view(api) {
     return priming
   }
 
+  // Primed at LOAD, not at mount: the shell asks where a project folder opens
+  // while drawing a breadcrumb or a brief card, from screens where this view
+  // is nowhere in sight. Waiting for someone to open the bench would mean
+  // answering nothing until they did.
+  void prime()
+
   /** A workbook's address, in the shortest form that resolves back to it. */
   const href = (path) => `#${routeOf(books, path)}`
 
@@ -216,9 +222,35 @@ export default function view(api) {
     }
   }
 
+  /**
+   * Where a project folder opens — on its bench.
+   *
+   * The atelier cannot declare `absorbs`: its benches sit in whatever project
+   * folders exist (`domaines/diy/projets/rangement-garage`), and no folder
+   * NAME covers them — `projets` is a word half a workspace uses, `diy` is a
+   * domain full of notes this app does not draw. So it claims a path by
+   * KNOWING it: a folder is a workbench because a workbook is filed in it,
+   * which only this listing can say.
+   *
+   * The walk climbs, so a note filed beside the workbook answers for the same
+   * bench. A folder with no workbook answers nothing and keeps the shell's own
+   * section — the screen it always had.
+   */
+  function routeFor(path) {
+    let candidate = String(path ?? '')
+    while (candidate !== '') {
+      const book = books.get(candidate)
+      if (book) return routeOf(books, book)
+      const cut = candidate.lastIndexOf('/')
+      if (cut === -1) break
+      candidate = candidate.slice(0, cut)
+    }
+    return undefined
+  }
+
   // Declared, and not merely reachable from a tile: the engine's second screen
   // is a workbook, addressed by its path under this route. The shell keeps the
   // view open for everything below `/atelier`, so a bench can bookmark the
   // exact workbook it is cutting and come back to it.
-  return { component: Atelier, route: '/atelier', tileInfo }
+  return { component: Atelier, route: '/atelier', routeFor, tileInfo }
 }

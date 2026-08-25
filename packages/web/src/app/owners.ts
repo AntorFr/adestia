@@ -109,46 +109,78 @@ export function ownerOf(
 }
 
 /**
- * The route a folder opens at — the owning plugin's screen, or nothing.
+ * What one plugin says about one path, and nothing it is not entitled to say.
  *
- * `undefined` means "no plugin has a screen for this", NOT "error": the
- * caller falls back to `sectionRoute`. Three ways to arrive there, all
- * legitimate — no plugin absorbs the folder, the owner's view has no route to
- * link to (a view reached only from its tile has no address), or the owner
- * was asked and had nothing for that particular folder.
+ * A plugin's answer is trusted only inside its OWN route: owning a path is not
+ * owning the shell's navigation, and a plugin returning `/settings` would be
+ * redirecting screens it was never given.
  */
-export function routeForFolder(
-  plugins: readonly LoadedPlugin[],
-  folder: string,
-): string | undefined {
-  const owner = ownerOf(plugins, folder)
-  if (!owner) return undefined
-  const route = addressOf(owner)
-  if (!route) return undefined
-
-  // A plugin's answer is trusted only inside its OWN route. Owning a folder
-  // is not owning the shell's navigation, and a plugin that returned
-  // `/settings` would be redirecting screens it was never given.
+function asks(plugin: LoadedPlugin, path: string): string | undefined {
+  const route = addressOf(plugin)
+  if (!route || !plugin.view?.routeFor) return undefined
   let said: string | undefined
   try {
-    said = owner.view?.routeFor?.(folder)
+    said = plugin.view.routeFor(path)
   } catch (error) {
     // A throwing `routeFor` costs the link, never the screen drawing it: this
     // runs mid-render, in a breadcrumb.
-    console.error(`plugin "${owner.id}" failed to route ${folder}:`, error)
-    said = undefined
+    console.error(`plugin "${plugin.id}" failed to route ${path}:`, error)
+    return undefined
   }
-  if (typeof said === 'string' && routeMatches(route, said)) return said
+  return typeof said === 'string' && routeMatches(route, said) ? said : undefined
+}
 
-  return (owner.absorbs ?? []).some((declared) => isRoot(declared, folder)) ? route : undefined
+/**
+ * The route a workspace path opens at — a folder, or a file inside one.
+ *
+ * Two ways a plugin comes to own a path, and they answer different questions.
+ *
+ * DECLARED, by `absorbs`: the trips app says it stands for `voyages/`, so
+ * everything under that folder is its business and its tile leaves the home.
+ * That claim is a NAME, which is exactly what a workbench cannot use — the
+ * atelier's benches sit in whatever project folders exist, and it can no more
+ * absorb `projets` (a name half the workspace uses) than `diy` (a domain full
+ * of notes it does not draw).
+ *
+ * So a plugin may also simply KNOW: asked about a path, it answers from its
+ * own listing. A folder of notes is not a workbench because it sits under
+ * `diy`; it is one because a workbook is filed in it, and only the plugin
+ * holding the listing can say so.
+ *
+ * Declared beats known — an explicit claim is not overridden by a plugin
+ * volunteering — and two plugins claiming one path is a configuration mistake
+ * of the same family as two plugins claiming one route.
+ *
+ * `undefined` means "nobody has a screen for this", not "error": the caller
+ * falls back to the shell's own section.
+ */
+export function routeForPath(
+  plugins: readonly LoadedPlugin[],
+  path: string,
+): string | undefined {
+  const owner = ownerOf(plugins, path)
+  if (owner) {
+    const said = asks(owner, path)
+    if (said) return said
+    // The absorbed folder ITSELF still has an address even from an owner that
+    // answered nothing: a tile that stands for a folder IS its address.
+    const route = addressOf(owner)
+    if (route && (owner.absorbs ?? []).some((declared) => isRoot(declared, path))) return route
+    return undefined
+  }
+  for (const plugin of plugins) {
+    const said = asks(plugin, path)
+    if (said) return said
+  }
+  return undefined
 }
 
 /**
  * Where a folder opens, always answerable.
  *
- * The one call a link should make: ownership when a plugin has it, the
- * shell's own section otherwise.
+ * The one call a link should make: whoever owns it, the shell's own section
+ * otherwise.
  */
 export function folderRoute(plugins: readonly LoadedPlugin[], folder: string): string {
-  return routeForFolder(plugins, folder) ?? sectionRoute(folder)
+  return routeForPath(plugins, folder) ?? sectionRoute(folder)
 }

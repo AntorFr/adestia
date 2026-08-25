@@ -48,6 +48,12 @@ TOUTES les anciennes formes restent lues (aucun favori ni lien de fiche ne
 meurt). Les routes de la coque (`#/page/…`, `#/section/…`) et `parcours`
 encodent désormais segment par segment : plus de `%2F`. Règle par plugin dans
 son `web/address.js`, pure et testée.
+Répondre, C'EST revendiquer : `routeFor` n'exige plus d'`absorbs` — l'atelier
+(dont les établis vivent dans n'importe quel dossier de projet, donc aucun NOM
+ne les couvre) revendique un chemin en le connaissant, via son listing. Le
+déclaré l'emporte sur le su. La une s'en sert : une cible qui porte un chemin
+va à qui le possède, et la coque a cessé d'épeler `workbook` avec la route de
+l'atelier en dur.
 
 **Reste :**
 - [ ] `atelier` — ~1 600 lignes (plan de débit, SVG). EN COURS.

@@ -275,9 +275,23 @@ what people see, and its age is displayed so a stale brief reads as stale.
 }
 ```
 
-`target.type` is one of `app` (with `id`), `page` (with `path`), `section`
-(with `path`), or `workbook` (with `path`). Keep `reason` to one sentence —
-it is the hover text, not a paragraph. Curate: four items chosen with
+`target.type` is one of `app` (with `id`, and optionally a `path` to open it
+ON), `page` (with `path`), or `section` (with `path`).
+
+**Any other type carrying a `path` goes to whoever owns that path** — the
+trips app for a trip, the atelier for a project holding a workbook, the
+section screen for anything else. So `{"type": "workbook", "path": "…"}`
+above still works, and works for the right reason: the shell asks, the plugin
+claims. Nothing in the shell knows the word `workbook`, which is what lets a
+plugin you install tomorrow be a target without a line of shell code. When
+you know which app you mean, name it — `{"type": "app", "id": "atelier",
+"path": "…/assets/workbook.json"}` opens the bench ON that job rather than on
+its hub.
+
+A target nothing recognises is never a dead click: it falls back to asking
+the agent to open it in words.
+
+Keep `reason` to one sentence — it is the hover text, not a paragraph. Curate: four items chosen with
 judgement beat ten chosen by recency, and an item whose moment has passed
 should be dropped, not kept for completeness.
 

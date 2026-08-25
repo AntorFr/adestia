@@ -18,7 +18,7 @@ import {
   encodePath,
   folderRoute,
   ownerOf,
-  routeForFolder,
+  routeForPath,
   sectionRoute,
 } from '../src/app/owners.js'
 
@@ -61,7 +61,7 @@ const voyages = plugin({
 describe('a folder a plugin absorbs', () => {
   it('opens on the plugin screen, not on the generic section', () => {
     // The bug, exactly: from a page of the trip, the crumb above it.
-    expect(routeForFolder([voyages], 'domaines/voyages/broceliande-2026')).toBe(
+    expect(routeForPath([voyages], 'domaines/voyages/broceliande-2026')).toBe(
       '/voyages/domaines%2Fvoyages%2Fbroceliande-2026%2Fassets%2Fvoyage.json',
     )
   })
@@ -82,13 +82,13 @@ describe('a folder a plugin absorbs', () => {
     // No `routeFor` answer needed: a tile that stands for a folder IS its
     // address. `#/section/domaines/voyages` would have listed the trips as
     // files beside an app that draws them as trips.
-    expect(routeForFolder([voyages], 'domaines/voyages')).toBe('/voyages')
+    expect(routeForPath([voyages], 'domaines/voyages')).toBe('/voyages')
   })
 
   it('falls back to the generic section when the plugin has no screen for it', () => {
     // A notes folder filed under `voyages/` that is not a trip. Answering
     // "unreadable trip" would be worse than the honest generic list.
-    expect(routeForFolder([voyages], 'domaines/voyages/idees')).toBeUndefined()
+    expect(routeForPath([voyages], 'domaines/voyages/idees')).toBeUndefined()
     expect(folderRoute([voyages], 'domaines/voyages/idees')).toBe('/section/domaines/voyages/idees')
   })
 })
@@ -102,7 +102,7 @@ describe('what the shell refuses to route', () => {
       route: '/greedy',
       routeFor: () => '/settings',
     })
-    expect(routeForFolder([greedy], 'stuff/here')).toBeUndefined()
+    expect(routeForPath([greedy], 'stuff/here')).toBeUndefined()
   })
 
   it('survives a plugin whose routeFor throws', () => {
@@ -123,8 +123,51 @@ describe('what the shell refuses to route', () => {
   })
 
   it('leaves a folder alone when nothing absorbs it', () => {
-    expect(routeForFolder([voyages], 'domaines/diy')).toBeUndefined()
+    expect(routeForPath([voyages], 'domaines/diy')).toBeUndefined()
     expect(folderRoute([], 'domaines/diy')).toBe(sectionRoute('domaines/diy'))
+  })
+})
+
+describe('a plugin that owns a path without declaring anything', () => {
+  // The atelier: its benches sit in whatever project folders exist, and no
+  // folder NAME covers them. It claims a path by knowing it.
+  const atelier = plugin({
+    id: 'atelier',
+    route: '/atelier',
+    tile: true,
+    routeFor: (path) =>
+      path.startsWith('domaines/diy/projets/rangement-garage')
+        ? '/atelier/rangement-garage'
+        : undefined,
+  })
+
+  it('is asked, and answers, with no absorbs anywhere', () => {
+    expect(routeForPath([atelier], 'domaines/diy/projets/rangement-garage')).toBe(
+      '/atelier/rangement-garage',
+    )
+  })
+
+  it('leaves alone the folder next door', () => {
+    // A folder of notes is not a workbench because it sits under `diy`.
+    expect(routeForPath([atelier], 'domaines/diy/machines')).toBeUndefined()
+    expect(folderRoute([atelier], 'domaines/diy/machines')).toBe('/section/domaines/diy/machines')
+  })
+
+  it('never overrides a plugin that DECLARED the folder', () => {
+    // Declared beats known: an explicit claim is not taken by a plugin
+    // volunteering an answer.
+    const greedy = plugin({
+      id: 'greedy',
+      route: '/greedy',
+      tile: true,
+      routeFor: () => '/greedy/anything',
+    })
+    expect(routeForPath([greedy, voyages], 'domaines/voyages/broceliande-2026')).toBe(
+      '/voyages/domaines%2Fvoyages%2Fbroceliande-2026%2Fassets%2Fvoyage.json',
+    )
+    // …and the declared owner answering nothing does not hand the folder to
+    // the volunteer either: it is claimed, and that is the end of it.
+    expect(routeForPath([greedy, voyages], 'domaines/voyages/idees')).toBeUndefined()
   })
 })
 
@@ -155,7 +198,7 @@ describe('a plugin’s address', () => {
     // here too.
     const todo = plugin({ id: 'todo', absorbs: ['todo'], tile: true })
     expect(addressOf(todo)).toBe('/todo')
-    expect(routeForFolder([todo], 'todo')).toBe('/todo')
+    expect(routeForPath([todo], 'todo')).toBe('/todo')
   })
 
   it('is nothing at all for a view with neither', () => {
@@ -163,7 +206,7 @@ describe('a plugin’s address', () => {
     expect(addressOf(hidden)).toBeUndefined()
     // A view reached only from its tile has no address to link to, so the
     // folder keeps the section screen rather than pointing nowhere.
-    expect(routeForFolder([hidden], 'hidden/deep')).toBeUndefined()
+    expect(routeForPath([hidden], 'hidden/deep')).toBeUndefined()
   })
 })
 

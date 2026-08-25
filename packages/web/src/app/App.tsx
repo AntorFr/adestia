@@ -29,7 +29,7 @@ import { resolveLocale, translator } from './i18n.js'
 import { SkinSlot } from './SkinSlot.js'
 import { Section } from './Section.js'
 import { holdsPages, sectionAt, type IndexEntry } from './sections.js'
-import { addressOf, decodePath, encodePath, folderRoute, ownerOf, routeForFolder } from './owners.js'
+import { addressOf, decodePath, encodePath, folderRoute, ownerOf, routeForPath } from './owners.js'
 import { browserEnvironment, loadPlugins, type LoadedPlugin, type PluginDescriptor } from '../plugins/loader.js'
 import { useMobile } from './useMobile.js'
 import { useSplit } from './useSplit.js'
@@ -218,7 +218,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           // a crumb trail that cannot say where you are is worse than a long one.
           folder === section ||
           holdsPages(pages, folder) ||
-          routeForFolder(loaded, folder) !== undefined,
+          routeForPath(loaded, folder) !== undefined,
       )
       .map((folder) => ({
         folder,
@@ -294,7 +294,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
    */
   useEffect(() => {
     if (section === undefined) return
-    const owned = routeForFolder(loaded, section)
+    const owned = routeForPath(loaded, section)
     if (owned) location.replace(`#${owned}`)
   }, [section, loaded])
 

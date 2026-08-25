@@ -88,28 +88,35 @@ export interface ViewContribution {
   readonly route?: string
 
   /**
-   * Where a folder this plugin ABSORBS should open, as a hash route.
+   * Where a workspace path this plugin has a screen for should open.
    *
-   * `absorbs` says the tile stands for a folder; without this, that claim
-   * held on the launcher and nowhere else. A page inside a trip crumbed back
-   * to `#/section/domaines/voyages/broceliande-2026` — the generic list of
-   * files, from a screen that exists precisely because a trip is not one.
+   * The question the shell cannot answer alone. It knows a path is somebody's
+   * business — `absorbs` declares it, or this very method admits it — and it
+   * cannot know how that somebody addresses it: only the trips app knows a
+   * trip is reached through the `assets/voyage.json` it carries. So it asks,
+   * in its own vocabulary — a workspace path in (a folder, or a file inside
+   * one), a route in the same shape as `route` out (`/voyages/…`, no `#`).
    *
-   * The shell knows WHICH plugin owns a folder and cannot know WHERE it
-   * keeps it: only this plugin knows a trip is addressed by the
-   * `assets/voyage.json` it carries. So the shell asks, in its own
-   * vocabulary — a workspace folder in, a route in the same shape as `route`
-   * out (`/voyages/…`, no `#`).
+   * Without it, ownership held on the launcher and nowhere else: a page
+   * inside a trip crumbed back to `#/section/domaines/voyages/broceliande-2026`,
+   * the generic list of files, from a screen that exists precisely because a
+   * trip is not one.
    *
-   * Answer `undefined` for a folder this view has no screen for, and the
-   * shell falls back to the generic section rather than to a dead end. An
-   * answer OUTSIDE the plugin's own `route` is dropped: a plugin owning a
-   * folder does not get to own the shell's navigation.
+   * ANSWERING IS CLAIMING. A plugin that cannot use `absorbs` — the atelier's
+   * benches sit in whatever project folders exist, and no folder NAME covers
+   * them — owns a path simply by knowing it, from its own listing. Which is
+   * the more honest test anyway: a folder is a workbench because a workbook
+   * is filed in it, not because of what it is called.
+   *
+   * Answer `undefined` for a path this view has no screen for, and the shell
+   * falls back to the generic section rather than to a dead end. An answer
+   * OUTSIDE the plugin's own `route` is dropped: owning a path does not get
+   * you the shell's navigation.
    *
    * Must be synchronous — it is called while a link is being drawn. Anything
    * needing a fetch to answer is a screen, not a route.
    */
-  routeFor?(folder: string): string | undefined
+  routeFor?(path: string): string | undefined
 
   /**
    * Live figures for this plugin's tile — "12 to do", "3 overdue".

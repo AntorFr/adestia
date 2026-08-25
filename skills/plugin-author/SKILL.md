@@ -138,6 +138,15 @@ breadcrumb above one of its pages, a bookmark, a `cible` the agent wrote. The
 shell knows the folder is yours and cannot know how you address it, so it
 asks:
 
+**`absorbs` is not required to answer.** It is a name, and some apps have no
+name to give: the atelier's benches sit in whatever project folders exist, so
+it claims a path by KNOWING it — asked, it looks the path up in its own
+listing. Which is the more honest test anyway: a folder is a workbench because
+a workbook is filed in it, not because of what it is called. Declare `absorbs`
+when your tile stands for a folder (it also retrenches the section tile);
+implement `routeFor` when you can say which paths are yours. A folder somebody
+DECLARED is never taken from them by a plugin that merely volunteers.
+
 ```js
 return {
   component: Voyages,

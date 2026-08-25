@@ -436,6 +436,17 @@ runtime; nothing is scanned by filename convention at build time.
   screen the breadcrumb leads to. A plugin that answers nothing gets the
   generic section back — no guessing — and an answer outside the plugin's own
   route is dropped: owning a folder is not owning the shell's navigation.
+  **Answering IS claiming**, which is what lets an app with no folder name to
+  give own its paths at all: the atelier's benches sit in whatever project
+  folders exist, so it can absorb neither `projets` (a word half a workspace
+  uses) nor `diy` (a domain full of notes it does not draw) — it answers from
+  its listing instead, and a folder is a workbench because a workbook is filed
+  in it rather than because of what it is called. Declared beats known, so a
+  plugin volunteering never takes a folder another one claimed. The same
+  resolution serves the home's brief: a target carrying a path goes to whoever
+  owns it, and the shell stopped spelling out `workbook` — one plugin known by
+  name, and a new line of shell code owed to every app that ever wanted to be
+  a target.
 - **An address is READ by people, so it says as little as it can.** The first
   shapes shipped were whatever each screen had at hand:
   `#/voyages/domaines%2Fvoyages%2Fbaden-2026%2Fassets%2Fvoyage.json`. Three

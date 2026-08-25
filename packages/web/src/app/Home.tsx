@@ -18,6 +18,7 @@ import type { TileInfo } from '../plugins/contract.js'
 import type { Skin } from './skin.js'
 import { glyphOf } from './glyphs.js'
 import { sectionsOf, type IndexEntry, type SectionTile } from './sections.js'
+import { routeForPath } from './owners.js'
 
 export interface HomeProps {
   readonly skin: Skin
@@ -236,15 +237,34 @@ export function Home({
     if ((kind === 'app' || kind === 'todo') && plugins.length > 0) {
       const wanted = target?.id ?? (kind === 'todo' ? 'todo' : undefined)
       const found = plugins.find((entry) => entry.id === wanted)
-      if (found) return openPlugin(found)
+      if (found) {
+        // An app named WITH a path opens on that path — "the bench, on the
+        // garage job" rather than "the bench". Asked of that app alone: a
+        // named target is an instruction, not a question.
+        const inside = target?.path ? routeForPath([found], target.path) : undefined
+        if (inside) {
+          location.hash = inside
+          return
+        }
+        return openPlugin(found)
+      }
     }
     if ((kind === 'fiche' || kind === 'page') && target?.path) {
       return openPage(target.path.replace(/\.md$/, '') + '.md')
     }
     if ((kind === 'domaine' || kind === 'section') && target?.path) return openSection(target.path)
-    if (kind === 'workbook' && target?.path) {
-      location.hash = `/atelier/${encodeURIComponent(target.path)}`
-      return
+    // Any other path goes to whoever owns it — no `type` the shell has to
+    // learn, no plugin's URL shape written down here. `workbook` used to be
+    // spelled out at this spot, atelier route and all, which meant the shell
+    // knew one plugin by name and every future one would have needed its own
+    // line. A brief written that way still works, and now for the right
+    // reason: the atelier claims the path, the shell merely asks.
+    if (target?.path) {
+      const owned = routeForPath(plugins, target.path)
+      if (owned) {
+        location.hash = owned
+        return
+      }
     }
     // The truthful fallback: let the person ask about it.
     ask?.(`Ouvre « ${label} »`)

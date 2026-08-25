@@ -107,6 +107,64 @@ describe('the landing canvas', () => {
     await waitFor(() => expect(screen.getByText('todo')).toBeTruthy())
   })
 
+  it('opens a brief target on whoever owns its path, naming no plugin', async () => {
+    // The shell used to spell `workbook` out here — atelier route and all —
+    // so it knew one plugin by name and every future one needed its own line.
+    // The same brief still works, now because the plugin CLAIMS the path.
+    const atelier = plugin('atelier', {
+      view: {
+        component: () => null,
+        route: '/atelier',
+        routeFor: (path: string) =>
+          path.startsWith('domaines/diy/projets/rangement-garage')
+            ? '/atelier/rangement-garage'
+            : undefined,
+      },
+    } as Partial<LoadedPlugin>)
+    const brief = {
+      generatedAt: new Date().toISOString(),
+      items: [
+        {
+          title: 'Rangement garage',
+          target: {
+            type: 'workbook',
+            path: 'domaines/diy/projets/rangement-garage/assets/workbook.json',
+          },
+        },
+      ],
+    }
+    const fetchImpl = ((url: string) =>
+      Promise.resolve({
+        ok: String(url).includes('/api/home/brief'),
+        json: () => Promise.resolve(brief),
+      })) as unknown as typeof fetch
+
+    render(<Home {...props} plugins={[atelier]} fetchImpl={fetchImpl} />)
+    const card = await screen.findByText('Rangement garage')
+    card.closest('button')?.click()
+    expect(location.hash).toBe('#/atelier/rangement-garage')
+    location.hash = ''
+  })
+
+  it('falls back to asking when nothing owns the path', async () => {
+    const ask = vi.fn()
+    const brief = {
+      generatedAt: new Date().toISOString(),
+      items: [{ title: 'Quelque chose', target: { type: 'workbook', path: 'nowhere/at/all.json' } }],
+    }
+    const fetchImpl = ((url: string) =>
+      Promise.resolve({
+        ok: String(url).includes('/api/home/brief'),
+        json: () => Promise.resolve(brief),
+      })) as unknown as typeof fetch
+
+    render(<Home {...props} plugins={[]} fetchImpl={fetchImpl} ask={ask} />)
+    const card = await screen.findByText('Quelque chose')
+    card.closest('button')?.click()
+    // Never a dead click: the person can still ask for it in words.
+    expect(ask).toHaveBeenCalled()
+  })
+
   it('says what to do when there is nothing at all', () => {
     render(<Home {...props} plugins={[]} entries={[]} />)
     expect(screen.getByText(/Nothing to show yet/)).toBeTruthy()
