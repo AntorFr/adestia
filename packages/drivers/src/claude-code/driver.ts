@@ -277,6 +277,11 @@ export class ClaudeCodeDriver implements Driver {
     return ['.claude/settings.json', '.claude/settings.local.json', '.claude/hooks', '.mcp.json']
   }
 
+  /** Where this CLI reads prose: the project brief, and skills. */
+  instructionPaths(): readonly string[] {
+    return ['CLAUDE.md', '.claude/skills']
+  }
+
   listModels(): Promise<readonly ModelInfo[]> {
     return Promise.resolve(this.#models)
   }

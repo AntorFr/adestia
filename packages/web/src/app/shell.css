@@ -854,6 +854,95 @@
 
 /* A refusal is a warning; a degradation is a note. Same shape, quieter
    border, so the eye sorts them before the words do. */
+/* The instruction zone. A list on the left, the file on the right — the shape
+   of every editor anybody has used, so nothing has to be learned. */
+.golem-instructions__split {
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+  margin-top: var(--space-4);
+}
+
+@media (max-width: 760px) {
+  .golem-instructions__split { grid-template-columns: minmax(0, 1fr); }
+}
+
+.golem-instructions__list { list-style: none; margin: 0; padding: 0; }
+
+.golem-instructions__list button {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.golem-instructions__list button:hover { background: var(--surface-sunken); }
+
+.golem-instructions__list button.is-open {
+  background: var(--accent-quiet);
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.golem-instructions__name { font-weight: 600; font-size: var(--text-base); }
+
+/* The full path under the name: two SKILL.md files are told apart by their
+   folder, and hiding it would make the list ambiguous. */
+.golem-instructions__path {
+  font: 11px var(--font-mono);
+  color: var(--text-faint);
+  overflow-wrap: anywhere;
+}
+
+.golem-instructions__pane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.golem-instructions__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.golem-instructions__bar code {
+  font: 11.5px var(--font-mono);
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+/* Monospaced on purpose: frontmatter alignment and code fences are part of
+   what these files mean, and a proportional face hides both. */
+.golem-instructions__text {
+  min-height: 60vh;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: 13.5px/1.65 var(--font-mono);
+  resize: vertical;
+  tab-size: 2;
+}
+
+.golem-instructions__text:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.golem-instructions__empty {
+  margin-top: var(--space-4);
+  color: var(--text-faint);
+}
+
 /* The MCP panel: a list of names and states, in the settings dialog. Rows
    rather than cards — this is a status board, and a board is read down a
    column. */

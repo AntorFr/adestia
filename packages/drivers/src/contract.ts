@@ -246,6 +246,21 @@ export interface Driver {
    */
   authorityPaths?(): readonly string[]
   /**
+   * Workspace paths holding the PROSE this CLI reads as instructions.
+   *
+   * Declared for the same reason as the two above, and kept apart from them on
+   * purpose: these are documents. Getting one wrong produces bad work, not a
+   * wider blast radius, so they are the zone a person may edit from the
+   * interface — the whole point being that people ask the agent to write their
+   * instructions and then want to read and correct them.
+   *
+   * Files the CORE delivers live in here too and are excluded by their marker
+   * rather than by their path: a plugin's data-format contract is a technical
+   * spec nobody asked to read, and it is rewritten at every start, so offering
+   * to edit it would offer an edit that silently disappears.
+   */
+  instructionPaths?(): readonly string[]
+  /**
    * Environment merged UNDER the turn's own env at the single spawn site.
    * The core owns the secrets; the driver only says how to hand them over.
    */

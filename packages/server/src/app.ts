@@ -9,6 +9,7 @@
  */
 
 import { randomUUID } from 'node:crypto'
+import { readFile, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import multipart from '@fastify/multipart'
@@ -20,6 +21,13 @@ import { AttachmentInbox, frameAttachments, type StoredAttachment } from './atta
 import { ConversationStore, type StoredMessage } from './conversations.js'
 import type { GolemConfig } from './config.js'
 import { frontendPayload, type DiscoveredPlugin, type DiscoveryProblem } from './extensions.js'
+import {
+  isManaged,
+  listInstructions,
+  safeInstructionPath,
+  writeInstruction,
+} from './instructions.js'
+import { MANAGED_MARKER } from './skills.js'
 import { registerOidc } from './oidc-routes.js'
 import { registerMcp } from './mcp-routes.js'
 import { registerPages } from './pages.js'
@@ -228,6 +236,67 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     const listModels = (driver as Driver & { listModels(): Promise<unknown> }).listModels
     return { models: await listModels.call(driver) }
   })
+
+  /**
+   * The instruction zone: prose a person may read and correct.
+   *
+   * 404 when the driver declares none, the same shape as the other
+   * driver-gated routes: "this engine has no such concept" and "you have
+   * written none" are different facts.
+   */
+  app.get('/api/instructions', async (_request, reply) => {
+    const paths = driver.instructionPaths?.() ?? []
+    if (paths.length === 0) {
+      await reply.code(404).send({ error: 'this driver declares no instruction zone' })
+      return reply
+    }
+    return { files: await listInstructions(config.workspace.root, paths) }
+  })
+
+  app.get<{ Params: { '*': string } }>('/api/instructions/*', async (request, reply) => {
+    const paths = driver.instructionPaths?.() ?? []
+    const file = safeInstructionPath(config.workspace.root, paths, request.params['*'])
+    if (!file) return reply.code(400).send({ error: 'not an instruction path' })
+    try {
+      const [info, markdown] = await Promise.all([stat(file), readFile(file, 'utf8')])
+      return {
+        path: request.params['*'],
+        markdown,
+        modified: new Date(info.mtimeMs).toISOString(),
+        // Reported rather than hidden: the listing already omits managed
+        // files, and a client that reached one anyway must not be told it can
+        // save over something the next restart will rewrite.
+        managed: markdown.includes(MANAGED_MARKER),
+      }
+    } catch {
+      return reply.code(404).send({ error: 'no such instruction' })
+    }
+  })
+
+  app.put<{ Params: { '*': string }; Body: { markdown?: unknown } }>(
+    '/api/instructions/*',
+    async (request, reply) => {
+      const paths = driver.instructionPaths?.() ?? []
+      const file = safeInstructionPath(config.workspace.root, paths, request.params['*'])
+      if (!file) return reply.code(400).send({ error: 'not an instruction path' })
+
+      const markdown = request.body?.markdown
+      if (typeof markdown !== 'string') {
+        return reply.code(400).send({ error: 'markdown is required' })
+      }
+      // Refused rather than accepted-then-lost: the core rewrites this file at
+      // every start, so saving it would be a change that disappears without
+      // anyone being told.
+      if (await isManaged(file)) {
+        return reply
+          .code(409)
+          .send({ error: 'this file is delivered with the product and is rewritten at every start' })
+      }
+
+      await writeInstruction(file, markdown)
+      return { path: request.params['*'], modified: new Date().toISOString() }
+    },
+  )
 
   /**
    * What the outbound MCP servers are doing.

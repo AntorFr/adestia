@@ -11,6 +11,7 @@ import { Component, useCallback, useEffect, useMemo, useRef, useState, type Reac
 import { Chat } from '../chat/Chat.js'
 import { Editor, type PageDocument } from '../editor/Editor.js'
 import { Modal } from './Modal.js'
+import { Instructions } from './Instructions.js'
 import { McpPanel, Settings } from './Settings.js'
 import {
   browserSkinEnvironment,
@@ -177,7 +178,9 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
     // tiled plugin that declares no route still answers on `/<id>`: a custom
     // home navigates by plain hash links, and a tile nothing can link to
     // would be unreachable from one.
-    if (route.startsWith('/section/') || route.startsWith('/page/')) return undefined
+    if (route.startsWith('/section/') || route.startsWith('/page/') || route === '/instructions') {
+      return undefined
+    }
     return [...loaded]
       .sort((a, b) => (b.view?.route?.length ?? 0) - (a.view?.route?.length ?? 0))
       .find((plugin) =>
@@ -619,6 +622,13 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
               </>
             )
           })()
+        ) : route === '/instructions' ? (
+          <>
+            <button type="button" className="golem-switch" onClick={() => { window.location.hash = '' }}>
+              ‹ {t('Home')}
+            </button>
+            <Instructions fetchImpl={fetchImpl} t={t} />
+          </>
         ) : page ? (
           <Editor
             page={page}
@@ -669,6 +679,21 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
         <Modal title={t('Settings')} closeLabel={t('Close')} onClose={() => setSettingsOpen(false)}>
           <Settings fetchImpl={fetchImpl} />
           <McpPanel fetchImpl={fetchImpl} t={t} />
+          {/* The way in. Editing prose in a dialog would be cramped, so this
+              opens the screen and closes the dialog behind it. */}
+          <section className="golem-mcp">
+            <h3>{t('Instructions')}</h3>
+            <button
+              type="button"
+              className="golem-switch"
+              onClick={() => {
+                setSettingsOpen(false)
+                window.location.hash = '/instructions'
+              }}
+            >
+              {t('Read and correct what you told the agent')} ›
+            </button>
+          </section>
         </Modal>
       )}
     </div>

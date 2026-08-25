@@ -76,6 +76,16 @@ const FR: Readonly<Record<string, string>> = {
   'runs without the secret %name, which this instance does not provide':
     'tourne sans le secret %name, que cette instance ne fournit pas',
 
+  // The instruction zone
+  Instructions: 'Instructions',
+  'Read and correct what you told the agent': 'Relire et corriger ce que vous avez dit à l’agent',
+  'What you have told the agent, in your words. Saved exactly as typed.':
+    'Ce que vous avez dit à l’agent, dans vos mots. Enregistré tel que tapé.',
+  'Nothing here yet — ask the agent to write down how you want it to work.':
+    'Rien ici pour l’instant — demandez à l’agent de noter comment vous voulez qu’il travaille.',
+  'This engine keeps its instructions elsewhere.':
+    'Ce moteur garde ses instructions ailleurs.',
+
   // MCP servers, in the settings panel
   'MCP servers': 'Serveurs MCP',
   connected: 'connecté',
