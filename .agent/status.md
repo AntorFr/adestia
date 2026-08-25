@@ -2,7 +2,7 @@
 > MàJ : 2026-08-25
 
 **État :** Migration Alfred. Faits et vérifiés en navigateur : `todo`,
-`planif`, `collections`, `scan`, skin `alfred`. 910 tests + 85 de plugins.
+`planif`, `collections`, `scan`, skin `alfred`. 917 tests + 85 de plugins.
 Facette `blocks` CÂBLÉE : elle était chargée et narrowée depuis le début, et
 personne ne lisait le résultat. Un bloc se déclare en deux moitiés — le
 manifeste (`vocabulary`) dit ce qu'il EST, pour que le SERVEUR le valide sans
@@ -26,7 +26,10 @@ un test l'ancre au contrat de Crepe. Vérifié au navigateur, clair et sombre.
 
 **Reste :**
 - [ ] `atelier` — ~1 600 lignes (plan de débit, SVG). EN COURS.
-- [ ] Vérifier `parcours` AU NAVIGATEUR : rien n'a encore peint une tuile.
+- [x] `parcours` vérifié au navigateur (instance Docker, magasin d'alfred-beta
+      copié) : les deux vues, la page `#/parcours/…`, l'éditeur (le bloc monte
+      en nœud atomique, zéro erreur console), le GPX servi, la garde de chemin,
+      et le refus 422 sur un attribut hors de l'ensemble fermé.
 - [ ] `git` — non portable : spécifique au hub rosetta
 - [ ] `npm run lint` ne tourne pas : eslint absent des devDependencies
 - [ ] driver Copilot : pas de plomberie de permissions → la porte planif ne

@@ -53,18 +53,20 @@ export default function view(api) {
       )
     }
 
+    // Où ce parcours est rangé. Une ligne de CONTEXTE, pas un retour : le shell
+    // en pose déjà un au-dessus, et deux chevrons empilés se lisent comme un
+    // bug (constaté à la capture). Ce qu'elle apporte, le retour ne l'apporte
+    // pas : un lien `#/parcours/…` partagé ou mis en favori arrive ici sans
+    // rien dire du voyage auquel la balade appartient.
+    const dossier = ficheDuParcours(chemin)
+    const nom = dossier.split('/').filter(Boolean).at(-1)
+
     return h('section', { className: 'parcours-page' }, [
-      // Le dossier de la fiche à laquelle le parcours est accroché : c'est d'où
-      // l'on vient, et un écran plein cadre sans retour est un cul-de-sac.
-      h(
-        'nav',
-        { key: 'c', className: 'parcours-crumbs' },
-        h(
-          'a',
-          { href: `#/section/${encodeURIComponent(ficheDuParcours(chemin))}` },
-          fr ? '‹ Le dossier' : '‹ The folder',
-        ),
-      ),
+      dossier !== chemin &&
+        h('p', { key: 'd', className: 'parcours-dans' }, [
+          fr ? 'Dans ' : 'In ',
+          h('a', { key: 'a', href: `#/section/${encodeURIComponent(dossier)}` }, nom),
+        ]),
       h('div', { key: 'p', ref: hote, className: 'parcours' }),
     ])
   }

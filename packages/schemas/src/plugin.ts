@@ -113,8 +113,12 @@ export interface PluginManifest {
    * Blocks this plugin adds to the closed vocabulary, by name.
    *
    * Only while it is ACTIVE: turning the plugin off takes the words back out,
-   * and a page still holding one opens read-only with a diagnostic naming it
-   * — which is the honest answer, not a blank where a map used to be.
+   * and what a page holding one then does depends on how it was written. In
+   * Golem's own spelling it opens read-only with a diagnostic naming the
+   * block — the honest answer, not a blank where a map used to be. In the
+   * predecessor's `{% %}` spelling it falls back to showing the tag as text,
+   * because an unknown legacy tag is left verbatim: a store two products
+   * share must not have its pages refused over one instance's plugin list.
    *
    * A name the core already owns is REFUSED and named at startup. The other
    * direction (the plugin wins) would let `callout` quietly mean something

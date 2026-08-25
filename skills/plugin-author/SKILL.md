@@ -186,8 +186,11 @@ and named at startup — `callout` quietly meaning something else on one
 instance is exactly what a closed vocabulary exists to prevent.
 
 **Only while the plugin is ACTIVE.** Turning it off takes the words back out,
-and a page still holding one opens read-only with a diagnostic naming the
-block. That is the honest answer, not a blank where a map used to be.
+and a page written `:::yourblock` then opens read-only with a diagnostic
+naming it — the honest answer, not a blank where a map used to be. A page
+written in the predecessor's `{% %}` spelling instead shows the tag as text:
+an unknown legacy tag is left verbatim, because a store two products share
+must not have its pages refused over one instance's plugin list.
 
 Extending the vocabulary is a deliberate act: a manifest entry, a coded
 component, and a line in the skill that teaches it. It is never something a

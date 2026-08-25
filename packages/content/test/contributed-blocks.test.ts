@@ -121,6 +121,19 @@ describe('the other shell’s spelling', () => {
     expect(node.children[0]?.type).toBe('paragraph')
   })
 
+  it('goes back to being text when the plugin goes away, not to a refusal', () => {
+    // The asymmetry, verified against a running instance: `:::parcours` with
+    // no plugin is a diagnostic and a read-only page, while `{% parcours %}`
+    // is inert text. Deliberate, and it has to stay so — the corpus this
+    // spelling comes from lives in a store two products share, and one of
+    // them must not refuse those pages because the other turned a plugin off.
+    registerBlocks(PARCOURS)
+    expect(parse(legacy).children[1]?.type).toBe('containerDirective')
+    forgetContributedBlocks()
+    expect(parse(legacy).children[1]?.type).toBe('paragraph')
+    expect(validateDocument(parse(legacy))).toEqual([])
+  })
+
   it('serializes into Golem’s spelling, never back', () => {
     registerBlocks(PARCOURS)
     expect(serialize(parse(legacy))).toContain(':::parcours{source="assets/val.parcours.json"}')
