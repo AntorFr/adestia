@@ -145,6 +145,13 @@ accordés, au tour suivant, dans un fichier qui ressemble à de la prose. Les
 skills restent dehors, délibérément : elles disent quoi FAIRE, jamais ce qu'on
 peut atteindre.
 
+**Livré en 0.10.0 et déployé** sur homenode (image multi-arch amd64+arm64,
+manifeste bumpé, pod `ghcr.io/antorfr/golem:0.10.0` ready, « 8 of 8 plugin(s)
+active », skin `alfred`). 0.9.0 avait déjà emporté les réglages-app ; celle-ci
+porte le contrat des skins, **cassant** : `home` est hors contrat, `hero` le
+remplace. Sans effet sur ce pod — il porte `alfred`, qui n'a pas de slot
+`home`, et les trois livrées du repo sont portées dans l'image.
+
 Chantier UX du 26/08 (backlog dicté par Monsieur, fiche `golem-evolutions`)
 — lot 1, le composer : le champ tenait sur une ligne de 34 px sur la surface
 dont c'est le métier, il part de 48 px et pousse jusqu'à 200 (`composerHeight`,
