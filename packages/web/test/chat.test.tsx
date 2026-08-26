@@ -323,6 +323,18 @@ describe('markdown in a bubble', () => {
     expect(container.textContent).toContain('et la fin.')
   })
 
+  it('keeps a single newline as a newline', () => {
+    // CommonMark folds a soft break into a space, and for a FILE that is
+    // right. Nobody hard-wraps a chat message, and the bubble had always
+    // shown these breaks — folding them would be a regression paid for by
+    // the fix. The predecessor rendered with `breaks: true` for this reason.
+    const { container } = render(
+      <Bubble message={{ id: '1', role: 'agent', text: 'Ligne un\nLigne deux' }} />,
+    )
+    expect(container.querySelectorAll('br')).toHaveLength(1)
+    expect(container.querySelectorAll('p')).toHaveLength(1)
+  })
+
   it('keeps the words of a message that opens on a rule', () => {
     // `---` heading a source is frontmatter to the shared grammar, and the
     // page posture mines it for status chips. A chat message has none, so

@@ -168,6 +168,32 @@ type Ctx = {
   readonly prose?: boolean
 }
 
+/**
+ * A single newline, kept as one — in prose only.
+ *
+ * CommonMark folds a soft line break into a space, and for a FILE that is
+ * right: where the lines of a paragraph were wrapped is an accident of the
+ * editor somebody typed it in. A message is not a file. Nobody hard-wraps a
+ * chat message, so a newline in one was put there to be a newline, and the
+ * bubble had always shown it (the plain-text rendering this replaces ran
+ * under `white-space: pre-wrap`). Folding them now would have been a silent
+ * regression paid for by the fix — and the predecessor, which is where this
+ * feature comes from, rendered with `breaks: true` for the same reason.
+ *
+ * Done here rather than in the grammar deliberately: the grammar is shared
+ * with the editor and the server, where a file must keep meaning what
+ * CommonMark says it means. This is a posture, not a dialect.
+ */
+function withBreaks(value: string): ReactNode {
+  if (!value.includes('\n')) return value
+  return value.split('\n').map((line, index) => (
+    <Fragment key={index}>
+      {index > 0 && <br />}
+      {line}
+    </Fragment>
+  ))
+}
+
 function children(node: Node, ctx: Ctx): ReactNode {
   return (node.children ?? []).map((child, index) => (
     <Fragment key={index}>{render(child, ctx)}</Fragment>
@@ -193,7 +219,7 @@ function render(node: Node, ctx: Ctx): ReactNode {
       // documents.
       return h(`h${Math.min((node.depth ?? 1) + 1, 6)}`, {}, children(node, ctx))
     case 'text':
-      return node.value
+      return ctx.prose ? withBreaks(node.value ?? '') : node.value
     case 'strong':
       return <strong>{children(node, ctx)}</strong>
     case 'emphasis':

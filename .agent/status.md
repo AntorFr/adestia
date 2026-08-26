@@ -310,12 +310,20 @@ pour 3,4 k — d'où l'invisibilité sur les réponses courtes des tests). D'où
 `useCadence` : redessin toutes les 150 ms, coût proportionnel à la DURÉE du
 tour et non au carré de sa longueur. Le front descendant est la moitié
 porteuse : le dernier delta n'a rien derrière lui pour le pousser à l'écran.
+(1 bis) CommonMark replie un saut de ligne SIMPLE en espace — juste pour un
+FICHIER, faux pour un message : personne ne coupe ses lignes à la main dans un
+chat, et la bulle les montrait déjà (le texte brut tournait sous
+`white-space: pre-wrap`). Les replier aurait été une régression payée par le
+correctif, et le prédécesseur rendait avec `breaks: true` pour la même raison.
+Fait dans la posture, pas dans la grammaire : celle-ci est partagée avec
+l'éditeur et le serveur, où un fichier doit continuer de vouloir dire ce que
+CommonMark en dit.
 (2) `---` en tête d'un message est du FRONTMATTER pour la grammaire partagée,
 et la posture page le mine en pastilles de statut — donc un message qui ouvre
 sur une règle perdait son premier bloc, en silence. La posture prose redessine
 le texte à la place.
 Vérifié au navigateur (Chrome headless, markup réel + CSS réelle), clair et
-sombre. 5 tests, dont 4 en échec sans le correctif.
+sombre. 6 tests, dont 5 en échec sans le correctif.
 
 **Reste :**
 - [ ] `journal` — pas encore vérifié en navigateur (tests seulement) : le
