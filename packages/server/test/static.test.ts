@@ -30,8 +30,12 @@ beforeAll(async () => {
   await writeFile(join(root, 'web', 'assets', 'app.js'), 'console.log(1)\n')
   await writeFile(join(root, 'web', 'icon.svg'), '<svg>PRODUCT-ICON</svg>')
 
+  await writeFile(join(root, 'web', 'icon-180.png'), 'PRODUCT-180')
+  await writeFile(join(root, 'web', 'icon-192.png'), 'PRODUCT-192')
+
   await mkdir(join(root, 'skin-dressed', 'assets'), { recursive: true })
   await writeFile(join(root, 'skin-dressed', 'assets', 'icon.svg'), '<svg>SKIN-ICON</svg>')
+  await writeFile(join(root, 'skin-dressed', 'assets', 'icon-180.png'), 'SKIN-180')
   await mkdir(join(root, 'skin-bare'), { recursive: true })
 })
 
@@ -208,5 +212,59 @@ describe('the favicon', () => {
     const response = await app.inject({ method: 'GET', url: '/icon.svg' })
     expect(response.statusCode).toBe(200)
     expect(response.body).toContain('PRODUCT-ICON')
+  })
+
+  it('serves the raster an iPhone asks for, from the skin or the product', async () => {
+    // iOS reads `apple-touch-icon` and ignores the manifest's icons: without
+    // a PNG at this address, an installed instance wears a screenshot.
+    const dressed = await withSkin('skin-dressed')
+    const fromSkin = await dressed.inject({ method: 'GET', url: '/icon-180.png' })
+    expect(fromSkin.statusCode).toBe(200)
+    expect(fromSkin.headers['content-type']).toBe('image/png')
+    expect(fromSkin.body).toContain('SKIN-180')
+
+    // Per FILE, not per skin: a livery may ship the vector and one size and
+    // still get the product's for the rest.
+    const missing = await dressed.inject({ method: 'GET', url: '/icon-192.png' })
+    expect(missing.statusCode).toBe(200)
+    expect(missing.body).toContain('PRODUCT-192')
+  })
+
+  it('404s an icon size neither the skin nor the product ships', async () => {
+    const app = await withSkin('skin-dressed')
+    expect((await app.inject({ method: 'GET', url: '/icon-512.png' })).statusCode).toBe(404)
+  })
+})
+
+describe('the web app manifest', () => {
+  const withManifest = async (manifest?: Record<string, unknown>) => {
+    const app = Fastify()
+    registerStatic(app, {
+      plugins: [],
+      webRoot: join(root, 'web'),
+      ...(manifest ? { webManifest: manifest } : {}),
+    })
+    await app.ready()
+    return app
+  }
+
+  it('is served with the type Safari requires', async () => {
+    // `application/json` is accepted by Chrome and has historically not been
+    // by Safari — a difference that costs the whole install and shows up as
+    // nothing at all.
+    const app = await withManifest({ name: 'Skippy', start_url: '/' })
+    const response = await app.inject({ method: 'GET', url: '/manifest.webmanifest' })
+    expect(response.statusCode).toBe(200)
+    expect(response.headers['content-type']).toContain('application/manifest+json')
+    expect(JSON.parse(response.body)).toEqual({ name: 'Skippy', start_url: '/' })
+  })
+
+  it('404s rather than serving the shell when the instance has none', async () => {
+    // The catch-all would otherwise answer HTML, and a manifest parsed as
+    // HTML fails with a message about JSON that names nothing.
+    const app = await withManifest()
+    const response = await app.inject({ method: 'GET', url: '/manifest.webmanifest' })
+    expect(response.statusCode).toBe(404)
+    expect(response.body).not.toContain('<title>')
   })
 })

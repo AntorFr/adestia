@@ -647,7 +647,10 @@ wired end to end with OAuth-authenticating servers and health reporting; the
 authority gate; the instruction zone, readable and correctable without an
 IDE; the workspace's non-markdown files — served, resolvable from a page,
 and shown under it as attachments; and the screen context the parity audit
-had missed.
+had missed. And the install: a served manifest a skin renames and recolours, an
+`apple-touch-icon` beside the icons it declares, and a network-first service
+worker — so an instance is an app on a home screen, under its own body's name,
+that opens to its own words when the network is gone.
 
 **Not built yet**, and none of it blocked by a design question:
 
@@ -664,10 +667,35 @@ had missed.
   `dataDir` rather than the config file — a deployment's config may be
   GitOps-managed and would be reverted — with a precedence to settle: is the
   config a floor a person may raise, or a ceiling they cannot exceed?
-- **A PWA that installs.** Responsive, yes; no manifest, no service worker.
 - **`golem init`** — the documented workspace scaffold.
 
 ## Decision log
+
+**2026-08-26 (a livery is what an install is called):** the manifest is
+GENERATED — the product's, with the active skin's `web.manifest` merged over
+it — rather than shipped as a file. Two instances are two origins, so they were
+never one install; but they were two icons both called "Golem" on the same home
+screen, which is the same problem one layer up. The merge is a NAME-and-COLOUR
+allowlist: `start_url`, `scope`, `id` and `display` stay the product's, because
+a livery that could move the entry point changes what the app is — the line
+`skin.css` already may not cross. Icons are refused there and taken by
+convention instead (`assets/icon-192.png`, beside the `icon.svg` a skin already
+ships): the manifest is served from the ROOT while a skin's files live under
+`/skin/`, so a relative `src` in a fragment resolves against the wrong folder
+— silently, and visibly wrong only once somebody has installed it.
+
+Three facts decided the shape, and each one inverts the result if it is false.
+**iOS ignores manifest icons** and reads `apple-touch-icon`: a PNG, opaque,
+180×180 — so the vector alone would have installed a blank tile on the platform
+most likely to install it. **The manifest and the worker are fetched by the
+BROWSER, not the page**, so behind the OIDC gate they answer 401 and the offer
+to install never appears at all; both, and the icons, are now in the explicit
+public set beside `/api/health`. And **a cache-first shell is how a PWA serves
+last week's bundle against this week's API**, with no user gesture that fixes
+it: the document and everything whose name outlives its content are
+network-first, and only content-addressed `/assets/*` chunks answer from the
+cache — they cannot change meaning without changing name. `/api/` is not
+intercepted at all: an SSE turn is a body that never ends.
 
 **2026-08-26 (a livery is a look, not a navigation):** the `home` slot handed
 a skin the WHOLE landing canvas. Both liveries that took it rebuilt a tile

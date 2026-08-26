@@ -41,6 +41,7 @@ import { FileRefreshStore } from './mcp-refresh.js'
 import { runSetups } from './plugin-host.js'
 import { UserTokens } from './user-tokens.js'
 import { SecretStore } from './secrets.js'
+import { baseManifest, mergeSkinManifest } from './webmanifest.js'
 import { collectSkills, deliverSkills } from './skills.js'
 
 export const DEFAULT_CONFIG_FILE = 'golem.config.yaml'
@@ -214,6 +215,34 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     log(`skin "${activeSkin.manifest.id}" active`)
   }
 
+  /**
+   * What the instance is called once it is installed.
+   *
+   * Read here, at boot, rather than when a browser asks: a fragment that is
+   * malformed or half off-contract must be reported beside the other
+   * extension problems, not swallowed into a request nobody watches. The
+   * product's own manifest is the floor — a skin that ships none, or ships a
+   * broken one, still installs.
+   */
+  const webManifestBase = baseManifest({ locale: config.locale })
+  let webManifest = webManifestBase
+  if (activeSkin?.manifest.manifest) {
+    const path = join(activeSkin.dir, activeSkin.manifest.manifest)
+    try {
+      const merged = mergeSkinManifest(webManifestBase, JSON.parse(await readFile(path, 'utf8')))
+      webManifest = merged.manifest
+      if (merged.ignored.length > 0) {
+        log(
+          `skin "${activeSkin.manifest.id}": web manifest field(s) off contract, ignored: ${merged.ignored.join(', ')}`,
+        )
+      }
+    } catch (error) {
+      log(
+        `skin "${activeSkin.manifest.id}": web manifest not read (${(error as Error).message}); using the product's`,
+      )
+    }
+  }
+
   const dataDir = resolve(cwd, config.dataDir)
   /**
    * The authority gate, bound after the driver exists.
@@ -356,6 +385,7 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
         }
       : {}),
     ...(webRoot ? { webRoot } : {}),
+    webManifest,
   })
   await app.listen({ host: resolved.host, port: resolved.port })
 

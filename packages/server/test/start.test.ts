@@ -178,3 +178,62 @@ describe('extensions at boot', () => {
     expect(logs.join('\n')).not.toContain('was not found')
   })
 })
+
+describe('what the instance installs as', () => {
+  const writeSkin = async (id: string, fragment: unknown) => {
+    await mkdir(join(root, 'skins', id), { recursive: true })
+    await writeFile(
+      join(root, 'skins', id, 'golem-skin.json'),
+      JSON.stringify({ schemaVersion: 1, id, description: 'A body.', manifest: './web.manifest' }),
+    )
+    await writeFile(join(root, 'skins', id, 'web.manifest'), JSON.stringify(fragment))
+  }
+
+  const manifestOf = async (instance: StartedInstance) =>
+    JSON.parse((await instance.app.inject({ url: '/manifest.webmanifest' })).body) as Record<
+      string,
+      unknown
+    >
+
+  it("wears the skin's name, so two instances are two installs", async () => {
+    await writeSkin('amber', { name: 'Skippy', short_name: 'Skippy', theme_color: '#080a0d' })
+    const manifest = await manifestOf(await boot('extensions:\n  skin: amber'))
+    expect(manifest['name']).toBe('Skippy')
+    expect(manifest['theme_color']).toBe('#080a0d')
+  })
+
+  it("keeps the product's own manifest when no skin is worn", async () => {
+    const manifest = await manifestOf(await boot('auth:\n  mode: none'))
+    expect(manifest['name']).toBe('Golem')
+    expect(manifest['start_url']).toBe('/')
+  })
+
+  it('names the fields a skin declared off contract', async () => {
+    // Read at BOOT rather than when a browser asks: a fragment half off
+    // contract belongs beside the other extension problems, not swallowed
+    // into a request nobody watches.
+    await writeSkin('amber', { name: 'Skippy', start_url: '/hud' })
+    const manifest = await manifestOf(await boot('extensions:\n  skin: amber'))
+    expect(manifest['start_url']).toBe('/')
+    expect(logs.join('\n')).toContain('off contract, ignored: start_url')
+  })
+
+  it("still installs when the skin's fragment is unreadable", async () => {
+    // The product's manifest is the floor. A livery that ships a broken one
+    // costs its name, never the install.
+    await mkdir(join(root, 'skins', 'amber'), { recursive: true })
+    await writeFile(
+      join(root, 'skins', 'amber', 'golem-skin.json'),
+      JSON.stringify({
+        schemaVersion: 1,
+        id: 'amber',
+        description: 'A body.',
+        manifest: './web.manifest',
+      }),
+    )
+    await writeFile(join(root, 'skins', 'amber', 'web.manifest'), '{ not json')
+    const manifest = await manifestOf(await boot('extensions:\n  skin: amber'))
+    expect(manifest['name']).toBe('Golem')
+    expect(logs.join('\n')).toContain('web manifest not read')
+  })
+})

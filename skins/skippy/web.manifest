@@ -1,0 +1,7 @@
+{
+  "name": "Skippy",
+  "short_name": "Skippy",
+  "description": "The code agent's HUD.",
+  "theme_color": "#080a0d",
+  "background_color": "#080a0d"
+}

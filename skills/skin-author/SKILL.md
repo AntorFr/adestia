@@ -19,8 +19,11 @@ skins/<id>/
   golem-skin.json       REQUIRED
   skin.css              token overrides, and NOTHING else
   skin.js               narrow hooks (brand, crest, busy indicator, hero)
-  assets/icon.svg       favicon and home-screen icon
-  assets/manifest.json  web-app manifest overrides
+  web.manifest          what the instance INSTALLS as (name, colours)
+  assets/icon.svg       favicon, and the icon a manifest offers at any size
+  assets/icon-180.png   home-screen icon on iOS — opaque, square
+  assets/icon-192.png   installed icon
+  assets/icon-512.png   installed icon, and the maskable one
 ```
 
 ```json
@@ -32,7 +35,7 @@ skins/<id>/
   "styles": "./skin.css",
   "module": "./skin.js",
   "icon": "./assets/icon.svg",
-  "manifest": "./assets/manifest.json"
+  "manifest": "./web.manifest"
 }
 ```
 
@@ -232,6 +235,57 @@ client-side registry.
 Ship only what you change: the shell falls back to its own asset for anything
 a skin omits.
 
+## What the instance installs as
+
+Golem is an installable PWA, and the manifest it serves is the PRODUCT's with
+your `web.manifest` merged over it. This is the one place a livery is worth
+more than a look: two instances on two hosts otherwise land on a home screen
+as two icons both called "Golem".
+
+```json
+{
+  "name": "Amber",
+  "short_name": "Amber",
+  "description": "The workshop's console.",
+  "theme_color": "#0b0d12",
+  "background_color": "#0b0d12"
+}
+```
+
+Those five fields, plus `lang`, `dir` and `categories`, are all a skin may set
+— a NAME and a COLOUR. `start_url`, `scope`, `id` and `display` stay the
+product's: a livery that could move the entry point would change what the app
+IS, which is the same line `skin.css` may not cross. Anything else is dropped
+and named in the startup log.
+
+**`theme_color` is what the phone paints around your page** — its status bar,
+and the splash it shows before the shell boots. Set it to the same
+`--surface` your `skin.css` declares, or the app opens on a seam.
+
+**Icons are a CONVENTION, not a declaration** — `icons` in your fragment is
+refused. The manifest is served from the root while your files live under
+`/skin/`, so a relative path there would resolve against the wrong folder,
+silently, and be visibly wrong only once somebody has installed it. Ship the
+names above instead; each one falls back to the product's own on its own.
+
+Two things the rasters must be, both learned the hard way:
+
+- **PNG, opaque, square.** iOS reads `apple-touch-icon` (the 180) and ignores
+  the manifest's icons entirely: a vector is never offered to the home screen,
+  and a transparent corner comes back BLACK. Paint your plate's colour edge to
+  edge — the platform rounds the corners itself.
+- **Drawn inside the central 80%.** The 512 is offered as `maskable`, which
+  means a launcher may crop it to a circle. Art that touches the edge — the
+  ears, the arms of a reticle — loses its tips there.
+
+They are rendered from your `icon.svg` rather than drawn twice. Any rasteriser
+does; with a browser already on the machine:
+
+```sh
+# an HTML page whose background is your plate colour, screenshotted at size
+chrome --headless --screenshot=icon-512.png --window-size=512,512 page.html
+```
+
 ## Before you finish
 
 1. `golem-skin.json` parses, and its id equals the folder name.
@@ -242,3 +296,5 @@ a skin omits.
 4. `extensions.skin` in `golem.config.yaml` names your folder. Golem warns at
    startup when it names a skin that is not installed, but it will run under
    the default and say so only in the log.
+5. If you ship a `web.manifest`, the startup log names no ignored field, and
+   `theme_color` matches the `--surface` your `skin.css` declares.

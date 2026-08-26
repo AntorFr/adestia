@@ -2,7 +2,7 @@
 > MàJ : 2026-08-26
 
 **État :** Migration Alfred. Faits et vérifiés en navigateur : `todo`,
-`planif`, `collections`, `scan`, skin `alfred`. 1029 tests + 146 de plugins.
+`planif`, `collections`, `scan`, skin `alfred`. 1093 tests + 146 de plugins.
 Facette `blocks` CÂBLÉE : elle était chargée et narrowée depuis le début, et
 personne ne lisait le résultat. Un bloc se déclare en deux moitiés — le
 manifeste (`vocabulary`) dit ce qu'il EST, pour que le SERVEUR le valide sans
@@ -325,6 +325,50 @@ le texte à la place.
 Vérifié au navigateur (Chrome headless, markup réel + CSS réelle), clair et
 sombre. 6 tests, dont 5 en échec sans le correctif.
 
+PWA installable (worktree `feat-installable-pwa`) — le dernier point de la
+barre de parité qui restait ouvert. Le **manifeste est GÉNÉRÉ** et servi
+pré-boot : celui du produit, avec le fragment `web.manifest` de la skin
+active fusionné par-dessus. Le champ `manifest` du schéma de skin existait,
+était validé, et **personne ne le lisait** depuis le début. La fusion est une
+liste blanche de NOM et de COULEUR (`name`, `short_name`, `description`,
+`theme_color`, `background_color`, `lang`, `dir`, `categories`) : `start_url`,
+`scope`, `id` et `display` restent au produit — une livrée qui déplace le
+point d'entrée change ce que l'app EST, la ligne que `skin.css` ne franchit
+déjà pas. Le reste est jeté ET nommé au log de démarrage, lu au BOOT et pas à
+la requête. Les icônes sont **refusées** dans le fragment et prises par
+CONVENTION (`assets/icon-180/192/512.png`, à côté de l'`icon.svg` que la skin
+sert déjà) : le manifeste est servi depuis la RACINE alors que les fichiers de
+la skin vivent sous `/skin/`, donc un `src` relatif s'y résoudrait contre le
+mauvais dossier — en silence, et visible seulement une fois installé.
+
+Trois faits vérifiés AVANT d'écrire, chacun inversant la reco s'il est faux :
+(1) **iOS ignore les icônes du manifeste** et lit `apple-touch-icon` — PNG,
+opaque, 180×180 — donc le vecteur seul aurait installé une tuile blanche sur
+la plateforme la plus susceptible d'installer ; (2) **le manifeste et le
+worker sont récupérés par le NAVIGATEUR, pas par la page**, donc derrière la
+porte OIDC ils répondaient 401 et l'offre d'installation n'apparaissait
+jamais — ils rejoignent l'ensemble public explicite à côté de `/api/health`,
+avec les icônes ; (3) **une coque servie depuis le cache d'abord, c'est le
+bundle de la semaine dernière contre l'API de cette semaine**, sans geste
+utilisateur qui le répare. D'où la politique : le document et tout ce dont le
+nom survit au contenu passent par le RÉSEAU d'abord, seuls les `/assets/*`
+adressés par contenu répondent depuis le cache (ils ne peuvent pas changer de
+sens sans changer de nom), et `/api/` n'est **jamais** intercepté — un tour
+SSE est un corps qui ne finit pas. Le jugement du worker est un module PUR
+(`src/sw/policy.ts`, 12 tests) ; `build/sw.mjs` le bundle APRÈS Vite, parce
+qu'il lui faut les noms des chunks d'entrée, et nomme le cache d'après un hash
+de l'`index.html` bâti — il tourne exactement quand la coque change.
+
+**Constaté au navigateur** (Chrome 151 headless piloté en CDP) : worker
+`activated`, cache `golem-<hash>` à 11 entrées, `Page.getAppManifest` rend
+`errors: []`, puis réseau coupé + rechargement → la coque BOOTE et affiche ses
+propres mots (« Golem could not start / Failed to fetch ») au lieu de la page
+d'erreur du navigateur. L'`apple-touch-icon` servi est celui de la skippy,
+octet pour octet. Les trois livrées sont habillées (nom, couleurs, rasters
+rendus depuis leur `icon.svg`) ; les PNG sont COMMITÉS, pas générés au build —
+aucun rasteriseur ajouté à l'image.
+
+
 **Reste :**
 - [ ] `journal` — pas encore vérifié en navigateur (tests seulement) : le
       fil d'Ariane, une adresse courte, et un vieux lien `%2F` qui doit
@@ -349,6 +393,10 @@ sombre. 6 tests, dont 5 en échec sans le correctif.
       `#/instructions` (capture pixel-identique à `#/settings/instructions`),
       et les deux livrées — tête de la skin + mosaïques de la coque, avec la
       barre ambre au bord gauche et le label en pas fixe sur skippy
+- [ ] PWA : l'invite d'installation elle-même reste à constater sur un VRAI
+      appareil (iOS et Android) — headless ne la déclenche pas. Et le
+      hors-ligne de `parcours` (tuiles de carte) est un autre chantier : le
+      worker ne met en cache ni `/api/` ni les données d'un plugin.
 - [ ] Backlog UX du 26/08, reste à traiter : 3 bugs de la vague 1 (pop-up
       d'autorisation qui ne se ferme pas au clic, indicateur « … » tardif
       après envoi, la fiche `golem-evolutions` absente de la nav) ; les outils autorisés par défaut

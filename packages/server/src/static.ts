@@ -17,6 +17,7 @@ import { extname, join, relative, resolve, sep } from 'node:path'
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 
 import type { DiscoveredPlugin } from './extensions.js'
+import { MANIFEST_ROUTE, PREBOOT_ICONS, type WebManifest } from './webmanifest.js'
 
 const MIME: Readonly<Record<string, string>> = {
   '.js': 'text/javascript; charset=utf-8',
@@ -59,6 +60,8 @@ export interface StaticOptions {
   readonly plugins: readonly DiscoveredPlugin[]
   /** The one active skin's folder, when the configured skin was found. */
   readonly skinDir?: string | undefined
+  /** The merged web app manifest. Absent leaves the instance uninstallable. */
+  readonly webManifest?: WebManifest | undefined
 }
 
 async function sendFile(reply: FastifyReply, path: string): Promise<FastifyReply> {
@@ -107,10 +110,30 @@ export function registerStatic(app: FastifyInstance, options: StaticOptions): vo
   }
 
   const webRoot = options.webRoot
-  if (!webRoot) return
 
   /**
-   * The favicon, served from the ACTIVE skin.
+   * The web app manifest, merged at boot and served from the root.
+   *
+   * Generated rather than read from a file: it is the product's manifest with
+   * a skin's names and colours over it, and the merge already happened where
+   * the skin was loaded. Served here because a browser asks for it before the
+   * bundle runs — the same reason the icons below are not left to the skin
+   * module's client-side hooks.
+   */
+  const webManifest = options.webManifest
+  if (webManifest) {
+    app.get(MANIFEST_ROUTE, async (_request, reply) =>
+      reply
+        // The registered type. Served as `application/json`, Chrome accepts it
+        // and Safari has historically not — a difference that costs the whole
+        // install and shows up as nothing at all.
+        .header('content-type', 'application/manifest+json; charset=utf-8')
+        .send(JSON.stringify(webManifest)),
+    )
+  }
+
+  /**
+   * The pre-boot icons, served from the ACTIVE skin.
    *
    * Not left to the skin module's `setIcon`, which the loader does implement:
    * the browser asks for `/icon.svg` before a single line of the bundle runs,
@@ -118,20 +141,28 @@ export function registerStatic(app: FastifyInstance, options: StaticOptions): vo
    * — a flash of the wrong body's mark on every load. The predecessor learned
    * this and serves its icons from disk for the same reason.
    *
-   * A skin that ships none falls through to the product's own, which is the
-   * right answer rather than a broken image.
+   * The rasters exist because the vector is not enough where it matters most:
+   * an iPhone adding a page to its home screen reads `apple-touch-icon` — a
+   * PNG, opaque, 180×180 — and ignores the manifest's icons entirely. A skin
+   * ships them by CONVENTION, under the same names; one it does not ship falls
+   * through to the product's own, which is the right answer rather than a
+   * broken image.
    */
-  app.get('/icon.svg', async (_request, reply) => {
-    if (skinDir) {
-      const fromSkin = safeJoin(skinDir, 'assets/icon.svg')
-      if (fromSkin && (await stat(fromSkin).catch(() => undefined))?.isFile()) {
-        return sendFile(reply, fromSkin)
+  for (const icon of PREBOOT_ICONS) {
+    app.get(icon.route, async (_request, reply) => {
+      if (skinDir) {
+        const fromSkin = safeJoin(skinDir, icon.asset)
+        if (fromSkin && (await stat(fromSkin).catch(() => undefined))?.isFile()) {
+          return sendFile(reply, fromSkin)
+        }
       }
-    }
-    const fallback = safeJoin(webRoot, '/icon.svg')
-    if (!fallback) return reply.code(404).send({ error: 'not found' })
-    return sendFile(reply, fallback)
-  })
+      const fallback = webRoot ? safeJoin(webRoot, icon.route) : undefined
+      if (!fallback) return reply.code(404).send({ error: 'not found' })
+      return sendFile(reply, fallback)
+    })
+  }
+
+  if (!webRoot) return
 
   app.get('/*', async (request, reply) => {
     const url = request.url.split('?')[0] ?? '/'

@@ -32,3 +32,18 @@ The web package declares its own `TurnEvent` rather than importing the driver
 contract: the shell talks HTTP to something that speaks this protocol and never
 needs to know what runs behind it. `test/protocol.test.ts` proves the two
 declarations stay aligned.
+
+Two build steps run beside Vite, both writing files no source tree should
+carry: `build/vendor.mjs` emits the import map's shared modules, and
+`build/sw.mjs` emits the service worker AFTER the shell, because it needs the
+names Vite gave the entry chunks. Its cache is named for a hash of the built
+`index.html`, so it rotates exactly when the shell changes — a constant would
+leave every past build's chunks in a cache nothing evicts, and a timestamp
+would rotate on builds that changed nothing.
+
+`src/sw/policy.ts` is where the worker's whole judgement lives, pure and
+tested: what it must not touch (`/api/`, the sign-in bounce, anything but a
+GET), what answers from the cache (only content-addressed `/assets/*`), and
+what may enter it. The rasters in `public/` are rendered from `icon.svg` — the
+same picture, at the sizes an installer needs — and committed rather than
+generated, so the build needs no rasteriser.

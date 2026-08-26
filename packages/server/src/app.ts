@@ -37,6 +37,7 @@ import { registerPages } from './pages.js'
 import { mountPluginApis } from './plugin-host.js'
 import { ArmingSessions, SecretStore } from './secrets.js'
 import { registerStatic } from './static.js'
+import { baseManifest, type WebManifest } from './webmanifest.js'
 
 /** What the shell needs to dress itself, before it renders anything. */
 export interface SkinPayload {
@@ -70,6 +71,12 @@ export interface AppDependencies {
   readonly permissions?: PermissionBroker
   /** The active skin, when the configured one was found on disk. */
   readonly skin?: { readonly id: string; readonly dir: string; readonly manifest: SkinPayload }
+  /**
+   * The merged web app manifest. Built at boot rather than per request: the
+   * skin's fragment is read from disk once, and the fields it declared off
+   * contract are reported there, with the rest of the extension problems.
+   */
+  readonly webManifest?: WebManifest | undefined
 }
 
 /** The optional slice of the driver contract that arms credentials. */
@@ -753,6 +760,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     plugins,
     ...(webRoot ? { webRoot } : {}),
     ...(deps.skin ? { skinDir: deps.skin.dir } : {}),
+    webManifest: deps.webManifest ?? baseManifest({ locale: config.locale }),
   })
 
   // Exposed on the instance so `start()` can hand it to the clock without a

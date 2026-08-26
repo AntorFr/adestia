@@ -104,6 +104,23 @@ export const PUBLIC_ROUTES = new Set([
   // Its own bearer token IS its authentication; a browser session means
   // nothing to the agent on the other end.
   '/mcp',
+  /**
+   * What a browser reads BEFORE, or beside, a session — and what carries
+   * nothing about the workspace or its user.
+   *
+   * The manifest and the icons name the instance and colour it; the worker is
+   * a caching policy. Gated, they do not merely 401 in a console somewhere:
+   * the install offer never appears (the manifest fetch is the browser's, not
+   * the page's) and `register()` fails on a JSON body it was told would be a
+   * script — both silently, on exactly the instances that have an operator
+   * careful enough to run OIDC.
+   */
+  '/manifest.webmanifest',
+  '/sw.js',
+  '/icon.svg',
+  '/icon-180.png',
+  '/icon-192.png',
+  '/icon-512.png',
 ])
 
 export function isPublicRoute(path: string): boolean {

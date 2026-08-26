@@ -122,4 +122,20 @@ describe('public routes', () => {
     expect(isPublicRoute('/api/health/../instance')).toBe(false)
     expect(isPublicRoute('/api/turn')).toBe(false)
   })
+
+  it('include what a browser reads before it has a session', () => {
+    /*
+     * Gated, these do not merely 401 in a console: the install offer never
+     * appears — the manifest fetch is the browser's, not the page's — and
+     * `register()` fails on a JSON body it was told would be a script. Both
+     * silently, and only on the instances careful enough to run OIDC.
+     */
+    expect(isPublicRoute('/manifest.webmanifest')).toBe(true)
+    expect(isPublicRoute('/sw.js')).toBe(true)
+    expect(isPublicRoute('/icon.svg')).toBe(true)
+    expect(isPublicRoute('/icon-180.png')).toBe(true)
+    // And nothing beyond them: the worker's scope is the whole origin, but
+    // its ADDRESS being public says nothing about what it may fetch.
+    expect(isPublicRoute('/assets/index-B3xK9f2p.js')).toBe(false)
+  })
 })

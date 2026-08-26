@@ -35,7 +35,7 @@
     "README.md"
   ],
   "scripts": {
-    "build:web": "node build/vendor.mjs && vite build",
+    "build:web": "node build/vendor.mjs && vite build && node build/sw.mjs",
     "dev": "vite",
     "vendor": "node build/vendor.mjs"
   }
