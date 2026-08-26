@@ -347,7 +347,18 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
   }
 
   const app = await buildApp({
-    config: { ...resolved, dataDir: resolve(cwd, resolved.dataDir) },
+    config: {
+      ...resolved,
+      dataDir: resolve(cwd, resolved.dataDir),
+      // ⚠️ Resolved for the same reason `dataDir` is: this value becomes the
+      // CLI's working directory at the spawn site. Left relative, the driver
+      // hands `./workspace` to a subprocess whose own cwd is not this
+      // process's — and the agent then writes its files somewhere else
+      // entirely (observed 2026-08-26: `pages/essai.md` landed in the
+      // launching user's HOME). A container config names an absolute path,
+      // which is why this never bit in production.
+      workspace: { ...resolved.workspace, root: workspaceRoot },
+    },
     driver,
     plugins,
     pluginProblems: [...problems, ...setupProblems],

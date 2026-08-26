@@ -285,3 +285,16 @@ describe('the permission posture', () => {
     ).rejects.toThrow(/permissions.mode/)
   })
 })
+
+describe('the workspace handed to the driver', () => {
+  it('is an absolute path, whatever the config wrote', async () => {
+    // It becomes the CLI's working directory at the spawn site. Left relative,
+    // the driver hands "./workspace" to a subprocess whose own cwd is not this
+    // process's, and the agent writes its files somewhere else entirely —
+    // observed 2026-08-26, a page landed in the launching user's home. A
+    // container names an absolute path, which is why this never bit there.
+    const instance = await boot('workspace:\n  root: ./workspace\n')
+    expect(instance.config.workspace.root.startsWith('/')).toBe(true)
+    expect(instance.config.workspace.root.endsWith('/workspace')).toBe(true)
+  })
+})
