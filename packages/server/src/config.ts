@@ -94,6 +94,26 @@ export interface ExtensionsConfig {
 }
 
 /**
+ * How much the agent asks before acting.
+ *
+ * Two postures and no dial in between, because the in-between is what was
+ * removed in 2026-08-26: lists of tool names that judged nothing well and
+ * could be walked around by a shell one-liner.
+ *
+ * - `open` — nothing is ever asked. What bounds the agent is the container,
+ *   the MCP servers' own authorization, and the instructions somebody wrote.
+ * - `ask` — the ENGINE's own first line decides (a `Read` is never asked
+ *   about), and what it would have asked a terminal about reaches the chat
+ *   instead. Golem judges nothing; it carries the question and the answer.
+ *
+ * `ask` needs an engine that can be asked. On one that cannot, the instance
+ * refuses to boot rather than turning every question into a silent refusal.
+ */
+export interface PermissionsConfig {
+  readonly mode: 'open' | 'ask'
+}
+
+/**
  * Scheduled turns.
  *
  * OFF by default, deliberately. A note that runs the agent while nobody is
@@ -199,6 +219,7 @@ export interface GolemConfig {
   readonly workspace: WorkspaceConfig
   readonly driver: DriverConfig
   readonly extensions: ExtensionsConfig
+  readonly permissions: PermissionsConfig
   readonly schedule: ScheduleConfig
   readonly attachments: AttachmentsConfig
   readonly mcp: McpInConfig
@@ -770,6 +791,18 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
     skin: typeof extensionsRaw['skin'] === 'string' ? extensionsRaw['skin'] : 'default',
   }
 
+  const permissionsRaw = isObject(raw['permissions']) ? raw['permissions'] : {}
+  // Absent means `open`: the posture an instance already runs under, so an
+  // upgrade never silently starts asking somebody questions they did not ask
+  // for. Legacy keys (autoAllow, timeoutMs, whenUnattended) are ignored —
+  // tolerated on purpose, since a config written for an older Golem must not
+  // brick the instance over a block that no longer means anything.
+  const permissionMode = permissionsRaw['mode'] ?? 'open'
+  if (permissionMode !== 'open' && permissionMode !== 'ask') {
+    issues.push('permissions.mode must be "open" or "ask"')
+  }
+  const permissions: PermissionsConfig = { mode: permissionMode as 'open' | 'ask' }
+
   const scheduleRaw = isObject(raw['schedule']) ? raw['schedule'] : {}
   const scheduleEnabled = scheduleRaw['enabled'] ?? false
   if (typeof scheduleEnabled !== 'boolean') {
@@ -845,6 +878,7 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
       ...(typeof driverRaw['command'] === 'string' ? { command: driverRaw['command'] } : {}),
     },
     extensions,
+    permissions,
     schedule,
     attachments,
     mcp,

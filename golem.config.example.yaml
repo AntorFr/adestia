@@ -119,31 +119,45 @@ driver:
     - id: claude-sonnet-5
       label: Sonnet 5
 
-# There is NO permission layer, and that is a decision, not a gap
-# (2026-08-26). The agent runs with every tool allowed. What bounds it is
-# real walls, not prompts:
-#   - the CONTAINER: what is mounted, what is in the env, what the network
-#     reaches — Docker's job, configured in docker-compose.yml;
-#   - the MCP SERVERS: a server that acts on the real world (home automation,
-#     messages) carries its own authorization — scopes, tokens, its own
-#     confirmations. Security lives where the act happens, outside this box;
-#   - your INSTRUCTIONS: tell the agent, in the workspace's own instruction
-#     files, what it must ask you about in the chat before acting. That is a
-#     convention it follows in good faith, not a wall — and it is honest
-#     about being exactly that.
-# An earlier version shipped an interactive permission layer here
-# (autoAllow/autoDeny lists, timeouts, content gates). It was removed: every
-# rule it enforced could be bypassed by a shell one-liner, so it taxed the
-# legitimate user without stopping anything else. A leftover `permissions:`
-# block in an old config is ignored with no error.
+# How much the agent asks before acting. Two postures, no dial in between —
+# the in-between (lists of tool names) was removed in 2026-08-26: it judged
+# nothing well and a shell one-liner walked around all of it.
+permissions:
+  # open (default) — nothing is ever asked. What bounds the agent is real:
+  #   - this CONTAINER: what is mounted, what is in the env, what the network
+  #     reaches — docker-compose.yml, not Golem code;
+  #   - the MCP SERVERS: one that acts on the world (home automation,
+  #     messages) carries its own authorization, at the point where the act
+  #     lands. Security belongs outside this box;
+  #   - your INSTRUCTIONS: tell the agent, in the workspace's instruction
+  #     files, what to ask you about in the chat first. A convention it
+  #     follows in good faith — honest about being one, never a wall.
+  #
+  # ask — the ENGINE's own first line decides, and what it would have asked a
+  # terminal about surfaces in the chat instead. Golem judges nothing and
+  # keeps no rules: a `Read` or an `echo` is never asked about (the CLI
+  # settles those), and answering "for this conversation" hands the engine
+  # back its own suggestion, so IT stops asking for the rest of the session.
+  #
+  # ⚠️ `ask` needs an engine that can be asked. claude-code can; copilot-cli
+  # in programmatic mode has no return channel and auto-denies what it would
+  # have asked, so the instance REFUSES TO BOOT rather than turning every
+  # question into a silent refusal mid-turn. Pick `open` there, knowingly.
+  #
+  # A `permissions:` block written for an older Golem (autoAllow, autoDeny,
+  # timeoutMs, whenUnattended) is ignored without error.
+  mode: open
 
 # Scheduled turns: markdown notes under workspace/planif/ whose BODY is run
 # verbatim as a prompt, on a cadence they declare (`every: 1d`).
 #
 # OFF by default, deliberately: a note that runs the agent while nobody is
-# watching spends a subscription and acts on your workspace — with every tool
-# allowed and nobody in front of the chat to be asked anything. That has to
-# be something you turned on, never something you inherited.
+# watching spends a subscription and acts on your workspace. That has to be
+# something you turned on, never something you inherited.
+#
+# A scheduled turn is unattended by definition: under `open` it simply runs,
+# and under `ask` every question the engine raises is refused at once — there
+# is no screen to show it. Write scheduled prompts accordingly.
 schedule:
   enabled: false
 

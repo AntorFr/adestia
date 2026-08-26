@@ -34,6 +34,7 @@ describe('capability vocabulary', () => {
         'authManagement',
         'contextBreakdown',
         'cost',
+        'interactivePermissions',
         'liveTurnUsage',
         'mcpStatus',
         'modelSelection',

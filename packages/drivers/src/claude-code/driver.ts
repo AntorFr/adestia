@@ -22,6 +22,7 @@ import type {
   TurnRequest,
   TurnUsage,
 } from '../contract.js'
+import { AskDesk, type PendingAsk } from '../asks.js'
 import { McpTokens, type RefreshStore } from '../mcp-oauth.js'
 import { TOKEN_ENV_VAR, looksLikeToken } from './arming.js'
 import { toolTarget } from './events.js'
@@ -69,6 +70,15 @@ export interface ClaudeCodeOptions {
   readonly fetchImpl?: typeof fetch
   /** Persists a rotated MCP refresh token across restarts. */
   readonly refreshStore?: RefreshStore
+  /**
+   * Present in `ask` posture: where the ENGINE's own questions go.
+   *
+   * Absent means `open` — the instance runs with permissions bypassed and
+   * nothing is ever asked. The posture is the operator's, chosen in config;
+   * this driver only obeys, and declares `interactivePermissions` when a desk
+   * exists so the UI never offers what this instance cannot do.
+   */
+  readonly asks?: AskDesk
 }
 
 /**
@@ -153,6 +163,52 @@ function readHealth(
   }))
 }
 
+/**
+ * Pins the engine's suggestions to the session, and to nothing longer.
+ *
+ * ⚠️ Found by an end-to-end run against the real CLI, 2026-08-26, and the
+ * reason this function exists: the SDK's own suggestions carry
+ * `destination: 'localSettings'`, so returning them verbatim WROTE a permanent
+ * rule into `<workspace>/.claude/settings.local.json`. A button that says "for
+ * this conversation" would have granted the tool for ever, in every
+ * conversation, in a file nobody opened — and Golem would have started
+ * managing a permission list again, by accident, having just removed one.
+ *
+ * `session` is the destination that means what the button says. Any suggestion
+ * that cannot be pinned to it is dropped rather than downgraded to something
+ * broader: fewer remembered answers is a cost, a silent permanent grant is a
+ * betrayal.
+ */
+function asAllowRules(suggestions: readonly unknown[]): string[] {
+  const rules: string[] = []
+  for (const suggestion of suggestions) {
+    if (typeof suggestion !== 'object' || suggestion === null) continue
+    const entry = suggestion as { type?: unknown; rules?: unknown }
+    // Only additions of allow rules travel. A `setMode` suggestion would carry
+    // a whole permission MODE into the next turn, which is the operator's
+    // posture and never a per-question answer.
+    if (entry.type !== 'addRules' || !Array.isArray(entry.rules)) continue
+    for (const rule of entry.rules) {
+      const value = rule as { toolName?: unknown; ruleContent?: unknown }
+      if (typeof value.toolName !== 'string') continue
+      rules.push(
+        typeof value.ruleContent === 'string' && value.ruleContent.length > 0
+          ? `${value.toolName}(${value.ruleContent})`
+          : value.toolName,
+      )
+    }
+  }
+  return rules
+}
+
+function forThisSessionOnly(suggestions: readonly unknown[]): unknown[] {
+  return suggestions
+    .filter((suggestion): suggestion is Record<string, unknown> => {
+      return typeof suggestion === 'object' && suggestion !== null
+    })
+    .map((suggestion) => ({ ...suggestion, destination: 'session' }))
+}
+
 export class ClaudeCodeDriver implements Driver {
   readonly #query: QueryFn
   readonly #baseEnv: Readonly<Record<string, string | undefined>>
@@ -160,6 +216,7 @@ export class ClaudeCodeDriver implements Driver {
   #cliVersion: string
   readonly #models: readonly ModelInfo[]
   readonly #armingFlow: ArmingFlow | undefined
+  readonly #asks: AskDesk | undefined
   readonly #mcpServers: readonly McpServer[]
   readonly #tokens: McpTokens
   /** What the last session said about them. Empty until a turn has run. */
@@ -177,6 +234,7 @@ export class ClaudeCodeDriver implements Driver {
     this.#cliVersion = options.cliVersion ?? 'unknown'
     this.#models = options.models ?? []
     this.#armingFlow = options.armingFlow
+    this.#asks = options.asks
     // Shaped once, at construction: the mapping is fixed for the process's
     // life, and doing it per turn would repeat the same work on every message.
     this.#mcpServers = options.mcpServers ?? []
@@ -271,6 +329,10 @@ export class ClaudeCodeDriver implements Driver {
         // Declared only when the instance actually configured a catalogue:
         // an empty selector is worse than no selector.
         ...(this.#models.length > 0 ? (['modelSelection'] as const) : []),
+        // Only in `ask` posture. In `open` the instance genuinely cannot ask,
+        // and a capability declared and unhonoured is the lying zero this
+        // contract exists to prevent.
+        ...(this.#asks ? (['interactivePermissions'] as const) : []),
       ],
     })
   }
@@ -322,18 +384,106 @@ export class ClaudeCodeDriver implements Driver {
     // and a map built at construction would be stale by the second morning.
     const mcpServers = await toSdkServers(this.#mcpServers, this.#tokens, request.callerToken)
 
+    const desk = this.#asks
+    /**
+     * Questions raised inside the SDK's callback, drained by the loop below.
+     *
+     * `canUseTool` runs off the event stream, so it cannot yield an event
+     * itself — it can only leave one where the loop will find it.
+     */
+    const raised: PendingAsk[] = []
+    /**
+     * What was granted "for this conversation" during this turn, drained to
+     * the stream so the product can hand it back on the next one.
+     */
+    const granted: string[] = []
+
+    /**
+     * The engine asks; this carries the question and brings the answer back.
+     *
+     * Note what is NOT here: any judgement of our own. By the time this runs,
+     * the CLI's own first line has already let the harmless through — a
+     * `Read`, an `echo` never reach it (measured). What arrives is its
+     * residue, and the only thing Golem adds is a person.
+     *
+     * `session` returns the engine's OWN suggestions as `updatedPermissions`,
+     * which is how "stop asking me about this here" is honoured without Golem
+     * keeping a single rule: the CLI remembers, for the length of the session
+     * — and a session is a conversation.
+     */
+    const canUseTool = desk
+      ? async (
+          toolName: string,
+          input: Record<string, unknown>,
+          options: {
+            suggestions?: unknown[]
+            title?: string
+            decisionReason?: string
+          },
+        ) => {
+          const suggestions = options.suggestions ?? []
+          const answer = await desk.ask(
+            {
+              tool: toolName,
+              // The engine's own sentence when it wrote one; the tool and its
+              // target otherwise. Never truncated — this is the thing being
+              // consented to, and consent to an elided command is not consent.
+              title: options.title ?? [toolName, toolTarget(input)].filter(Boolean).join(' — '),
+              ...(options.decisionReason ? { reason: options.decisionReason } : {}),
+              remembering: suggestions.length > 0,
+            },
+            (pending) => {
+              // Nobody to ask: refuse now rather than block the turn for five
+              // minutes on a question no screen will ever show.
+              if (request.unattended) return false
+              raised.push(pending)
+              return true
+            },
+          )
+
+          if (answer === 'deny') {
+            return { behavior: 'deny' as const, message: 'refused by the user' }
+          }
+          // Remembered by the PRODUCT as well as by the session: the session's
+          // own memory dies with this turn's process.
+          if (answer === 'session') granted.push(...asAllowRules(suggestions))
+          return {
+            behavior: 'allow' as const,
+            updatedInput: input,
+            ...(answer === 'session' && suggestions.length > 0
+              ? { updatedPermissions: forThisSessionOnly(suggestions) }
+              : {}),
+          }
+        }
+      : undefined
+
     const query = this.#query({
       prompt: request.prompt,
       options: {
         cwd: request.cwd,
         includePartialMessages: true,
-        // No gate. The product's stance: what the agent may do is bounded by
-        // the container and by the instructions a person wrote — never by a
-        // Golem-side permission layer pretending to be a wall. Without a
-        // prompt surface the SDK would DENY everything it meant to ask about,
-        // which is why bypass is set explicitly rather than left to default.
-        permissionMode: 'bypassPermissions',
-        allowDangerouslySkipPermissions: true,
+        // The two postures, and the whole of the difference between them.
+        //
+        // `open` (no desk): permissions bypassed, explicitly — removing the
+        // prompt surface WITHOUT this makes the SDK deny what it meant to ask
+        // (measured), which is silent failure rather than freedom.
+        //
+        // `ask` (a desk): `default`, so the CLI applies its own first line and
+        // routes what is left to `canUseTool`. Deliberately NOT `'auto'`: its
+        // classifier approved a `rm -rf` without ever calling back (measured
+        // 2026-08-26), so it is a bypass wearing a gate's name.
+        // What this conversation already agreed to, in the engine's own rule
+        // language. Resolved BEFORE `canUseTool`, so an answered question does
+        // not come back at the next message of the same thread.
+        ...(canUseTool && request.grants && request.grants.length > 0
+          ? { settings: { permissions: { allow: [...request.grants] } } }
+          : {}),
+        ...(canUseTool
+          ? { permissionMode: 'default' as const, canUseTool }
+          : {
+              permissionMode: 'bypassPermissions' as const,
+              allowDangerouslySkipPermissions: true,
+            }),
         ...(request.sessionId ? { resume: request.sessionId } : {}),
         ...(request.model ? { model: request.model } : {}),
         // Only what this instance declared. The CLI's own MCP config still
@@ -359,6 +509,25 @@ export class ClaudeCodeDriver implements Driver {
 
     try {
       for await (const raw of query as AsyncIterable<RawMessage>) {
+        // Drained before each message, so a question reaches the screen as
+        // soon as the SDK raises it rather than after the next piece of
+        // output — the turn is BLOCKED on it, so late is the same as lost.
+        while (granted.length > 0) {
+          yield { type: 'permission-granted', grants: granted.splice(0, granted.length) }
+        }
+
+        while (raised.length > 0) {
+          const ask = raised.shift()!
+          yield {
+            type: 'permission-request',
+            id: ask.id,
+            tool: ask.tool,
+            title: ask.title,
+            ...(ask.reason === undefined ? {} : { reason: ask.reason }),
+            remembering: ask.remembering,
+          }
+        }
+
         if (typeof raw.session_id === 'string') {
           sessionId = raw.session_id
           if (registered !== sessionId) {
@@ -446,6 +615,10 @@ export class ClaudeCodeDriver implements Driver {
         }
       }
     } finally {
+      // A question whose turn is over can never be answered usefully, and
+      // leaving it pending strands the composer behind a prompt nothing will
+      // resolve.
+      desk?.releaseAll()
       if (registered) this.#running.delete(registered)
     }
   }

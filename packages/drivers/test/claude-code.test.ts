@@ -9,11 +9,19 @@
 
 import { describe, expect, it, vi } from 'vitest'
 
+import { AskDesk } from '../src/asks.js'
 import { ClaudeCodeDriver } from '../src/claude-code/driver.js'
 import { toolTarget } from '../src/claude-code/events.js'
 import { checkConformance } from '../src/conformance.js'
 import type { TurnEvent, TurnRequest } from '../src/contract.js'
 import type { QueryFn, SdkMessage } from '../src/claude-code/sdk-types.js'
+
+/** The SDK's permission callback, as the driver hands it over. */
+type CanUseToolFn = (
+  tool: string,
+  input: Record<string, unknown>,
+  options: { suggestions?: unknown[]; title?: string; decisionReason?: string },
+) => Promise<unknown>
 
 type FakeSdk = QueryFn & { readonly interrupts: number }
 
@@ -518,5 +526,168 @@ describe('a server that serves somebody’s own data', () => {
     })
     await collect(driver, 'hi', { callerToken: 'jeton-de-sebastien' })
     expect(JSON.stringify(serversOf(seen))).not.toContain('jeton-de-sebastien')
+  })
+})
+
+describe('the two postures', () => {
+  it('bypasses permissions when no desk is configured', async () => {
+    // `open`. And the bypass is EXPLICIT: removing the prompt surface without
+    // it makes the SDK deny what it meant to ask (measured 2026-08-26), which
+    // is silent failure rather than freedom.
+    const seen: { params?: unknown } = {}
+    const driver = new ClaudeCodeDriver({ query: fakeSdk([resultMessage], seen) })
+    await collect(driver)
+    const options = (seen.params as { options: Record<string, unknown> }).options
+    expect(options['permissionMode']).toBe('bypassPermissions')
+    expect(options['allowDangerouslySkipPermissions']).toBe(true)
+    expect(options['canUseTool']).toBeUndefined()
+    expect((await driver.describe()).capabilities).not.toContain('interactivePermissions')
+  })
+
+  it('lets the engine decide, and asks a person for its residue', async () => {
+    // `ask`. Deliberately NOT the SDK's `auto` mode: its classifier approved a
+    // `rm -rf` without ever calling back (measured), so it is a bypass wearing
+    // a gate's name.
+    const seen: { params?: unknown } = {}
+    const driver = new ClaudeCodeDriver({
+      query: fakeSdk([resultMessage], seen),
+      asks: new AskDesk(),
+    })
+    await collect(driver)
+    const options = (seen.params as { options: Record<string, unknown> }).options
+    expect(options['permissionMode']).toBe('default')
+    expect(typeof options['canUseTool']).toBe('function')
+    expect((await driver.describe()).capabilities).toContain('interactivePermissions')
+  })
+
+  it('hands the engine back its OWN suggestions for "this conversation"', async () => {
+    // How "stop asking me here" is honoured without Golem keeping a single
+    // rule: the answer returns the ENGINE's own suggestions, and the CLI
+    // remembers them for the length of the session — which is a conversation.
+    const desk = new AskDesk()
+    const seen: { params?: unknown } = {}
+    // Held open until the question is answered: a turn that ended would have
+    // released its questions with a refusal, which is the other behaviour.
+    let releaseTurn: () => void = () => {}
+    const held = new Promise<void>((resolve) => {
+      releaseTurn = resolve
+    })
+    const query: QueryFn = (params) => {
+      seen.params = params
+      return {
+        async *[Symbol.asyncIterator]() {
+          await held
+          yield resultMessage
+        },
+        interrupt: () => Promise.resolve(undefined),
+      }
+    }
+
+    const driver = new ClaudeCodeDriver({ query, asks: desk })
+    const turn = (async () => {
+      for await (const _ of driver.runTurn({ prompt: 'x', cwd: '/tmp' })) {
+        // drain
+      }
+    })()
+
+    await vi.waitFor(() => expect(seen.params).toBeDefined())
+    const { canUseTool } = (seen.params as { options: { canUseTool: CanUseToolFn } }).options
+    // As the real SDK hands them over: destined for a file on disk.
+    const suggestions = [
+      { type: 'addRules', rules: [{ toolName: 'WebFetch' }], destination: 'localSettings' },
+    ]
+    const decision = canUseTool(
+      'WebFetch',
+      { url: 'https://example.com' },
+      { suggestions, title: 'Claude wants to fetch example.com' },
+    )
+
+    await vi.waitFor(() => expect(desk.outstanding()).toHaveLength(1))
+    expect(desk.outstanding()[0]).toMatchObject({
+      tool: 'WebFetch',
+      // The engine's own sentence, carried through untouched.
+      title: 'Claude wants to fetch example.com',
+      remembering: true,
+    })
+    desk.answer(desk.outstanding()[0]!.id, 'session')
+
+    // ⚠️ Pinned to the SESSION, not returned verbatim. Found end-to-end
+    // against the real CLI: the SDK suggests `destination: 'localSettings'`,
+    // which WRITES a permanent rule into <workspace>/.claude/settings.local.json.
+    // A button saying "for this conversation" would then have granted the tool
+    // for ever, in every conversation, in a file nobody opened.
+    expect(await decision).toEqual({
+      behavior: 'allow',
+      updatedInput: { url: 'https://example.com' },
+      updatedPermissions: [
+        { type: 'addRules', rules: [{ toolName: 'WebFetch' }], destination: 'session' },
+      ],
+    })
+    releaseTurn()
+    await turn
+  })
+
+  it('offers no "this conversation" when the engine gave nothing to remember', async () => {
+    // A button that promises silence and does not deliver it is worse than one
+    // more question, so the option is HIDDEN rather than shown and inert.
+    const desk = new AskDesk()
+    const seen: { params?: unknown } = {}
+    let releaseTurn: () => void = () => {}
+    const held = new Promise<void>((resolve) => {
+      releaseTurn = resolve
+    })
+    const query: QueryFn = (params) => {
+      seen.params = params
+      return {
+        async *[Symbol.asyncIterator]() {
+          await held
+          yield resultMessage
+        },
+        interrupt: () => Promise.resolve(undefined),
+      }
+    }
+    const driver = new ClaudeCodeDriver({ query, asks: desk })
+    const turn = (async () => {
+      for await (const _ of driver.runTurn({ prompt: 'x', cwd: '/tmp' })) {
+        // drain
+      }
+    })()
+
+    await vi.waitFor(() => expect(seen.params).toBeDefined())
+    const { canUseTool } = (seen.params as { options: { canUseTool: CanUseToolFn } }).options
+    const decision = canUseTool('Bash', { command: 'rm -rf build' }, {})
+
+    await vi.waitFor(() => expect(desk.outstanding()).toHaveLength(1))
+    const [ask] = desk.outstanding()
+    expect(ask!.remembering).toBe(false)
+    // No engine sentence either: the tool and its target, never elided.
+    expect(ask!.title).toBe('Bash — rm -rf build')
+
+    desk.answer(ask!.id, 'once')
+    // `once` allows this call and nothing more — no rule goes back.
+    expect(await decision).toEqual({
+      behavior: 'allow',
+      updatedInput: { command: 'rm -rf build' },
+    })
+    releaseTurn()
+    await turn
+  })
+
+  it('refuses without asking when nobody is watching', async () => {
+    // A scheduled note or a delegation: the question would hold a turn slot
+    // for five minutes waiting on a screen that does not exist.
+    const seen: { params?: unknown } = {}
+    const driver = new ClaudeCodeDriver({
+      query: fakeSdk([resultMessage], seen),
+      asks: new AskDesk(),
+    })
+    for await (const _ of driver.runTurn({ prompt: 'x', cwd: '/tmp', unattended: true })) {
+      // drain
+    }
+    const canUseTool = (seen.params as { options: { canUseTool: Function } }).options.canUseTool
+    expect(await canUseTool('WebFetch', {}, { suggestions: [] })).toEqual({
+      behavior: 'deny',
+      message: 'refused by the user',
+    })
   })
 })

@@ -12,6 +12,7 @@ import { describe, expect, it, onTestFinished, vi } from 'vitest'
 
 import {
   Bubble,
+  AskPrompt,
   LiveProse,
   COMPOSER_MAX_HEIGHT,
   COMPOSER_MIN_HEIGHT,
@@ -772,5 +773,91 @@ describe('mobile', () => {
     render(<Chat fetchImpl={sseFetch([])} onOpenCanvas={onOpenCanvas} />)
     fireEvent.click(screen.getByLabelText('Open apps'))
     expect(onOpenCanvas).toHaveBeenCalled()
+  })
+})
+
+describe("the engine's question", () => {
+  const ASK = {
+    id: 'q1',
+    tool: 'Bash',
+    title: 'Claude wants to run npm install --save-dev vitest @vitest/coverage-v8 --prefix ./packages/web',
+    remembering: true,
+  }
+
+  it('shows the engine sentence whole, never elided', () => {
+    // A predecessor rendered a target truncated to 78 characters — a string
+    // built for a trace line, reused for consent. Consent to an elided
+    // command is not consent.
+    render(<AskPrompt ask={ASK} onAnswer={vi.fn()} />)
+    expect(screen.getByText(ASK.title)).toBeTruthy()
+  })
+
+  it('offers three answers when the engine can remember one', () => {
+    const onAnswer = vi.fn()
+    render(<AskPrompt ask={ASK} onAnswer={onAnswer} />)
+    fireEvent.click(screen.getByText('For this conversation'))
+    expect(onAnswer).toHaveBeenCalledWith('q1', 'session')
+  })
+
+  it('hides "for this conversation" when there is nothing to remember', () => {
+    // Hidden rather than inert: a button that promises silence and does not
+    // deliver it is worse than one more question.
+    render(<AskPrompt ask={{ ...ASK, remembering: false }} onAnswer={vi.fn()} />)
+    expect(screen.queryByText('For this conversation')).toBeNull()
+    expect(screen.getByText('Just this once')).toBeTruthy()
+  })
+
+  it('disappears as soon as it is answered, not when the turn ends', async () => {
+    // THE bug this rewrite exists to fix: the prompt used to stay on screen
+    // until the turn's result arrived, so an answered question kept asking.
+    //
+    // The stream here never closes, exactly as a real one does not: the turn
+    // is BLOCKED on this answer, so there is no next event until the server
+    // has it. Optimistic clearing is the only correct timing.
+    let answered: unknown
+    const fetchImpl = vi.fn((url: string, init?: RequestInit) => {
+      const path = String(url)
+      if (path === '/api/permission') {
+        answered = JSON.parse(String(init?.body))
+        return new Promise<Response>(() => {})
+      }
+      if (path === '/api/turn') {
+        const body = new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.enqueue(
+              new TextEncoder().encode(
+                frame({
+                  type: 'permission-request',
+                  id: 'q1',
+                  tool: 'Bash',
+                  title: 'Claude wants to run rm -rf build',
+                  remembering: true,
+                }),
+              ),
+            )
+            // Deliberately no close(): the turn is waiting on the answer.
+          },
+        })
+        return Promise.resolve(new Response(body, { status: 200 }))
+      }
+      return Promise.resolve(
+        new Response(JSON.stringify({}), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      )
+    }) as unknown as typeof fetch
+
+    render(<Chat fetchImpl={fetchImpl} />)
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'go' } })
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' })
+
+    expect(await screen.findByText('Claude wants to run rm -rf build')).toBeTruthy()
+    fireEvent.click(screen.getByText('Just this once'))
+
+    await waitFor(() =>
+      expect(screen.queryByText('Claude wants to run rm -rf build')).toBeNull(),
+    )
+    expect(answered).toEqual({ id: 'q1', answer: 'once' })
   })
 })

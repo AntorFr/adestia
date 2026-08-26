@@ -713,3 +713,56 @@ describe('/api/turn/stop', () => {
     await app.close()
   })
 })
+
+describe('remembering "for this conversation"', () => {
+  const granting: TurnEvent[] = [
+    { type: 'permission-granted', grants: ['WebFetch(domain:example.com)'] },
+    { type: 'result', sessionId: 's1', stopped: false },
+  ]
+
+  const runTurnIn = async (app: Awaited<ReturnType<typeof buildApp>>, conversationId?: string) =>
+    app.inject({
+      method: 'POST',
+      url: '/api/turn',
+      payload: { prompt: 'go', ...(conversationId ? { conversationId } : {}) },
+    })
+
+  it('hands a granted rule back on the next turn of the same thread', async () => {
+    // A session's own memory dies with the turn's process — each turn is a
+    // fresh CLI. Without this the button would have to say "for this turn".
+    const driver = new ScriptedDriver(granting)
+    const app = await buildApp(deps({ driver }))
+    const created = await app.inject({
+      method: 'POST',
+      url: '/api/conversations',
+      payload: { title: 'thread' },
+    })
+    const { id } = created.json()
+
+    await runTurnIn(app, id)
+    await runTurnIn(app, id)
+
+    expect(driver.requests[0]?.grants).toBeUndefined()
+    expect(driver.requests[1]?.grants).toEqual(['WebFetch(domain:example.com)'])
+    await app.close()
+  })
+
+  it('keeps a grant inside the thread that gave it', async () => {
+    // "For this conversation" must be true in both directions: a rule granted
+    // in one thread has no business silencing a question in another.
+    const driver = new ScriptedDriver(granting)
+    const app = await buildApp(deps({ driver }))
+    const first = (
+      await app.inject({ method: 'POST', url: '/api/conversations', payload: { title: 'one' } })
+    ).json()
+    const second = (
+      await app.inject({ method: 'POST', url: '/api/conversations', payload: { title: 'two' } })
+    ).json()
+
+    await runTurnIn(app, first.id)
+    await runTurnIn(app, second.id)
+
+    expect(driver.requests[1]?.grants).toBeUndefined()
+    await app.close()
+  })
+})

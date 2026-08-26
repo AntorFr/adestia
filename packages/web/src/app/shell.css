@@ -326,6 +326,53 @@
 .golem-pill--warn { border-color: var(--warning); color: var(--warning); }
 .golem-pill--hot { border-color: var(--danger); color: var(--danger); }
 
+/* The engine's question --------------------------------------------------- */
+
+.golem-ask {
+  margin: 0 var(--space-4) var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius);
+  background: var(--accent-quiet);
+}
+
+/* Wraps rather than truncating: this is the thing being consented to, and a
+   command cut at the fold is a command approved unseen. */
+.golem-ask__text {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.golem-ask__reason {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.golem-ask__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
+
+.golem-ask button {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.golem-ask__always {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-color: var(--accent);
+}
+
 /* Composer ---------------------------------------------------------------- */
 
 .golem-composer {

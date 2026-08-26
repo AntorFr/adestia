@@ -59,6 +59,23 @@ function parseFrame(frame: string): TurnEvent | undefined {
   }
 }
 
+/**
+ * A question the ENGINE raised, waiting on this person.
+ *
+ * The turn is blocked until it is answered, so it is held in the turn state
+ * rather than in a component: the composer must not let somebody type into a
+ * conversation that is stopped waiting on them.
+ */
+export interface PendingAsk {
+  readonly id: string
+  readonly tool: string
+  /** The engine's own sentence — shown as-is, never re-worded or elided. */
+  readonly title: string
+  readonly reason?: string | undefined
+  /** Whether "for this conversation" may be offered. */
+  readonly remembering: boolean
+}
+
 export interface ToolCall {
   readonly name: string
   readonly target?: string | undefined
@@ -78,6 +95,8 @@ export interface TurnState {
   readonly contextTokens?: number | undefined
   readonly running: boolean
   readonly stopped: boolean
+  /** Set while the engine waits on an answer; cleared the moment one is given. */
+  readonly ask?: PendingAsk | undefined
   readonly sessionId?: string | undefined
   readonly error?: string | undefined
 }
@@ -111,6 +130,22 @@ export function applyEvent(state: TurnState, event: TurnEvent): TurnState {
       return { ...state, tools }
     }
 
+    case 'permission-request':
+      return {
+        ...state,
+        ask: {
+          id: event.id,
+          tool: event.tool,
+          title: event.title,
+          reason: event.reason,
+          remembering: event.remembering,
+        },
+      }
+
+    case 'permission-granted':
+      // The server files it against the thread; nothing to draw.
+      return state
+
     case 'usage-delta':
       // The driver guarantees this only grows; the UI never has to reconcile a
       // counter that jumped backwards mid-turn.
@@ -122,6 +157,9 @@ export function applyEvent(state: TurnState, event: TurnEvent): TurnState {
         running: false,
         stopped: event.stopped,
         sessionId: event.sessionId,
+        // A question the turn ended without answering is stale; leaving it
+        // would strand the composer behind a prompt nothing can resolve.
+        ask: undefined,
         ...(event.usage?.outputTokens !== undefined
           ? { outputTokens: event.usage.outputTokens }
           : {}),

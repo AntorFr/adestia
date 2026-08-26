@@ -252,3 +252,36 @@ describe('what the instance installs as', () => {
     expect(logs.join('\n')).toContain('web manifest not read')
   })
 })
+
+describe('the permission posture', () => {
+  it('runs open by default, and says so', async () => {
+    // The posture an instance already runs under: an upgrade must never
+    // silently start asking somebody questions they did not ask for.
+    await boot('')
+    expect(logs.some((line) => line.startsWith('permissions: open'))).toBe(true)
+  })
+
+  it('tolerates a permissions block written for an older Golem', async () => {
+    // autoAllow, timeoutMs, whenUnattended: keys of a layer that no longer
+    // exists. A config that mentions them must not brick the instance.
+    await boot('permissions:\n  autoAllow: [Read, Write]\n  whenUnattended: deny\n')
+    expect(logs.some((line) => line.startsWith('permissions: open'))).toBe(true)
+  })
+
+  it('refuses to boot when asked to ask on an engine that cannot', async () => {
+    // Copilot in programmatic mode has no return channel: every question it
+    // raised would become a silent refusal mid-turn, read as "the tool is
+    // broken" by everyone including the agent. Loud beats degraded.
+    await writeFile(join(root, 'ask.yaml'), 'permissions:\n  mode: ask\nport: 0\n')
+    await expect(
+      start({ cwd: root, configPath: 'ask.yaml', driverFactory: () => new StubDriver() }),
+    ).rejects.toThrow(/cannot ask/)
+  })
+
+  it('refuses a posture it does not know', async () => {
+    await writeFile(join(root, 'bogus.yaml'), 'permissions:\n  mode: sometimes\nport: 0\n')
+    await expect(
+      start({ cwd: root, configPath: 'bogus.yaml', driverFactory: () => new StubDriver() }),
+    ).rejects.toThrow(/permissions.mode/)
+  })
+})

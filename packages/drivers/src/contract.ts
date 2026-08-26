@@ -25,6 +25,17 @@ export const CAPABILITIES = [
   'modelSelection',
   /** Report MCP server health. */
   'mcpStatus',
+  /**
+   * Route the engine's own permission questions to a person, and carry an
+   * answer back into the running turn.
+   *
+   * Declared, never assumed, because one engine on two cannot: Claude's SDK
+   * has a callback the turn waits on; Copilot in programmatic mode has no
+   * return channel at all and auto-denies what it would have asked. An
+   * instance configured to ask on an engine that cannot is refused at boot
+   * rather than silently turning every question into a refusal.
+   */
+  'interactivePermissions',
 ] as const
 
 export type Capability = (typeof CAPABILITIES)[number]
@@ -43,6 +54,10 @@ export const CAPABILITY_METHODS: Readonly<Record<Capability, readonly string[]>>
   liveTurnUsage: [],
   modelSelection: ['listModels'],
   mcpStatus: ['mcpStatus'],
+  // No method: this one is honoured in the turn's EVENT STREAM (a
+  // `permission-request` the UI answers), not through an interface the
+  // conformance suite could call.
+  interactivePermissions: [],
 }
 
 /** Capabilities that only make sense alongside another one. */
@@ -212,6 +227,46 @@ export type TurnEvent =
   | { readonly type: 'text-delta'; readonly text: string }
   | { readonly type: 'tool-use'; readonly name: string; readonly target?: string }
   | { readonly type: 'tool-result'; readonly name: string; readonly ok: boolean }
+  /**
+   * Only with `interactivePermissions`, and only when the instance is in
+   * `ask` posture: the ENGINE decided this call needs a person.
+   *
+   * Golem does not judge — no lists, no rules, no content gates. The CLI's own
+   * first line already let the harmless through (a `Read`, an `echo` never
+   * reach here); what surfaces is its residue, worded by the engine itself.
+   */
+  | {
+      readonly type: 'permission-request'
+      readonly id: string
+      readonly tool: string
+      /** The engine's own sentence — never reconstructed, never truncated. */
+      readonly title: string
+      /** Why it asked, when the engine says. */
+      readonly reason?: string
+      /**
+       * Whether "for this conversation" can be offered.
+       *
+       * True when the engine handed suggestions to remember the answer. False
+       * means the option is HIDDEN rather than shown and quietly ineffective —
+       * a button that promises silence and does not deliver it is worse than
+       * one more question.
+       */
+      readonly remembering: boolean
+    }
+  /**
+   * Somebody answered "for this conversation": here is what to hand back on
+   * the NEXT turn of that thread so the question does not return.
+   *
+   * Opaque to the core on purpose — minted by a driver, understood only by
+   * the same driver. The product's job is memory, not meaning: it files these
+   * against the conversation and returns them in `TurnRequest.grants`.
+   *
+   * It exists because a session's own memory is not enough: each turn is a
+   * fresh CLI process, so a rule the engine remembers "for this session" dies
+   * with the turn that granted it (measured end-to-end, 2026-08-26). Without
+   * this, the button would have to say "for this turn".
+   */
+  | { readonly type: 'permission-granted'; readonly grants: readonly string[] }
   /** Only with `liveTurnUsage`: feeds the climbing counter on the busy bubble. */
   | { readonly type: 'usage-delta'; readonly outputTokens: number }
   | {
@@ -237,6 +292,22 @@ export interface TurnRequest {
    * exactly as long as the turn.
    */
   readonly callerToken?: string | undefined
+  /**
+   * Nobody is watching this turn — a scheduled note, an inbound delegation.
+   *
+   * In `ask` posture it makes every question the engine raises resolve at
+   * once as a refusal, instead of holding one of the instance's turn slots
+   * for five minutes waiting on a person who was never there. Carried on the
+   * REQUEST because only the product knows who is at the other end.
+   */
+  readonly unattended?: boolean
+  /**
+   * What this conversation already answered "for this conversation" to.
+   *
+   * Opaque tokens a driver emitted earlier as `permission-granted`, handed
+   * straight back. The core never reads them — see that event.
+   */
+  readonly grants?: readonly string[]
   /** Resume this CLI session; absent means a fresh one. */
   readonly sessionId?: string
   readonly model?: string

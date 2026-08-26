@@ -21,7 +21,7 @@ import {
   type ConversationMeta,
   type StoredMessage,
 } from './conversations.js'
-import { runTurn, type ScreenView, type TurnState } from './stream.js'
+import { runTurn, type PendingAsk, type ScreenView, type TurnState } from './stream.js'
 import { SkinSlot } from '../app/SkinSlot.js'
 import type { SkinSlotRender } from '../app/skin.js'
 import { useMobile } from '../app/useMobile.js'
@@ -232,6 +232,54 @@ export function LiveProse({
 }
 
 /**
+ * The question the engine raised, and the three ways to answer it.
+ *
+ * The sentence is the ENGINE's own (`title`), shown whole. A predecessor
+ * rendered a target truncated to 78 characters — a string built for a trace
+ * line, reused for consent — so a long command was approved unseen. Consent to
+ * an elided command is not consent.
+ *
+ * "For this conversation" is the answer that makes asking bearable: the CLI
+ * remembers it for the rest of the session, so a working thread costs a
+ * handful of clicks at its start and none afterwards. It is HIDDEN, not
+ * disabled, when the engine offered nothing to remember — a button that
+ * promises silence and does not deliver it is worse than one more question.
+ */
+export function AskPrompt({
+  ask,
+  onAnswer,
+  t = (key) => key,
+}: {
+  ask: PendingAsk
+  onAnswer: (id: string, answer: 'once' | 'session' | 'deny') => void
+  t?: (key: string) => string
+}) {
+  return (
+    <div className="golem-ask" role="alertdialog" aria-label={t('Permission required')}>
+      <p className="golem-ask__text">{ask.title}</p>
+      {ask.reason && <p className="golem-ask__reason">{ask.reason}</p>}
+      <div className="golem-ask__actions">
+        <button type="button" onClick={() => onAnswer(ask.id, 'deny')}>
+          {t('Refuse')}
+        </button>
+        <button type="button" onClick={() => onAnswer(ask.id, 'once')}>
+          {t('Just this once')}
+        </button>
+        {ask.remembering && (
+          <button
+            type="button"
+            className="golem-ask__always"
+            onClick={() => onAnswer(ask.id, 'session')}
+          >
+            {t('For this conversation')}
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/**
  * The composer's secondary controls, folded under one button.
  *
  * On a phone the composer had grown a row of peers — clip, model, one glyph
@@ -353,6 +401,7 @@ export function Composer({
   onSend,
   onStop,
   busy,
+  blocked,
   placeholder,
   fetchImpl = fetch,
   extraButtons,
@@ -364,6 +413,8 @@ export function Composer({
   onSend: (text: string, attachments: readonly PendingAttachment[]) => void
   onStop: () => void
   busy: boolean
+  /** A question is on screen: the turn is waiting on it, not on more text. */
+  blocked?: boolean
   placeholder?: string
   fetchImpl?: typeof fetch
   extraButtons?: readonly ComposerButton[]
@@ -429,11 +480,11 @@ export function Composer({
     const value = text.trim()
     // A message may be files only: dropping a photo and saying nothing is a
     // complete request.
-    if (!value && attachments.length === 0) return
+    if ((!value && attachments.length === 0) || blocked) return
     onSend(value, attachments)
     setText('')
     setAttachments([])
-  }, [attachments, onSend, text])
+  }, [attachments, blocked, onSend, text])
 
   useEffect(() => {
     // Appends rather than replaces: whatever the user already typed IS the
@@ -571,7 +622,7 @@ export function Composer({
         <button
           type="submit"
           className="golem-composer__send"
-          disabled={text.trim() === '' && attachments.length === 0}
+          disabled={(text.trim() === '' && attachments.length === 0) || blocked}
           aria-label={t('Send')}
         >
           ↑
@@ -971,6 +1022,29 @@ export function Chat({
         <div ref={bottom} />
       </div>
 
+      {live?.ask && (
+        <AskPrompt
+          ask={live.ask}
+          t={t}
+          onAnswer={(id, answer) => {
+            // Cleared HERE, before the request goes out — not on the stream's
+            // next event. The predecessor left the prompt on screen until the
+            // turn ended, so an answered question kept asking. The turn is
+            // blocked on this answer, so there is no next event until the
+            // server has it: optimistic is the only correct timing.
+            setLive((current) => (current ? { ...current, ask: undefined } : current))
+            void (fetchImpl ?? fetch)('/api/permission', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ id, answer }),
+            }).catch(() => {
+              // The turn will time out on its own and refuse; saying so twice
+              // would put an error over a question that is already gone.
+            })
+          }}
+        />
+      )}
+
       <Composer
         onFill={(fill) => {
           composeRef.current = fill
@@ -983,6 +1057,7 @@ export function Chat({
         onSend={(text, attachments) => void send(text, attachments)}
         onStop={stop}
         busy={live?.running ?? false}
+        blocked={live?.ask !== undefined}
         {...(placeholder ? { placeholder } : {})}
         t={t}
       />

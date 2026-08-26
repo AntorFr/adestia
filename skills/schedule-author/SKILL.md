@@ -35,7 +35,7 @@ Write it assuming that.
 | `every` | `30m`, `2h`, `1d` — amount plus one unit letter, nothing fancier. **Not cron.** A cadence nobody can read at a glance is a scheduled turn nobody can predict, and this instance never runs one finer than 15 minutes: that floor is enforced, not rounded — `every: 5m` is refused rather than silently coarsened to 15 |
 | `enabled` | any value but the literal string `false` counts as enabled. Omit it to mean "on" |
 | `until` | a day, `2026-08-29` — makes the note a **mission** (see below). Live through that whole day; past it, one final turn runs and the note is stamped `expired` |
-| `done` | a day, `2026-08-25` — the mission is accomplished, the note never runs again. Absence means open. Ticked by YOU, from a scheduled turn, and it is the ONE edit the gate lets that turn make |
+| `done` | a day, `2026-08-25` — the mission is accomplished, the note never runs again. Absence means open. Ticked by YOU, from a scheduled turn |
 | `expired` | a day — the deadline fired. Written by the product only; never write it yourself |
 
 A note with no `every`, an `every` the parser cannot read, or an empty body
@@ -88,11 +88,11 @@ How a running mission works, from inside one of its turns:
   what you did or found. Without it, every run believes it is the first —
   and "send ONE reminder" becomes a reminder every run.
 - **To finish the mission**, edit the note's frontmatter and add
-  `done: YYYY-MM-DD` (today). That exact change is the only edit to a planif
-  file an unattended turn is allowed to make — the write gate replays your
-  edit and refuses anything else, body above all. Do not try to edit the
-  body, other fields, or other notes from a scheduled turn: it will be
-  refused, and the mission simply continues.
+  `done: YYYY-MM-DD` (today) — that one line, nothing else. Leave the body
+  alone above all: it IS the prompt, and a scheduled turn rewriting its own
+  prompt is a turn rewriting what the next one will be asked to do. Nothing
+  stops you any more (the write gate that used to was removed with the
+  permission layer); this is a rule you keep because it is right.
 - **The deadline is the product's job, not yours.** Past `until`, the note is
   stamped `expired` and one final turn runs with a distinct frame; that turn
   applies whatever the body says about the deadline case — typically creating
@@ -112,12 +112,18 @@ content — see DESIGN.md's instructions/workspace model for the risk zoning
 this implies. Creating, editing or disabling a scheduled turn is something
 **you** do, on request, exactly like editing any other file.
 
-## Unattended, with every tool
+## Unattended, whatever the instance's posture
 
-A scheduled turn runs with the same full tool access as any other — and
-nobody watching. There is no permission prompt and no unattended policy:
-whatever the note's body asks for, the turn can do. Write scheduled prompts
-accordingly — narrow, explicit about what they may touch, and never doing
-something the person would have wanted to be asked about first. If an action
-deserves a human decision, the note's job is to LEAVE A QUESTION (in its
-mission log, in a page), not to act.
+Nobody is watching a scheduled turn, and that cuts both ways depending on how
+the instance is configured — write for both, because a note outlives a config.
+
+- Under `permissions.mode: open`, the turn simply acts: full tool access, no
+  question, nobody to stop it.
+- Under `ask`, any question the engine raises is refused **at once** — there
+  is no screen to show it. A note that relies on an action the engine would
+  have asked about silently gets a refusal mid-run.
+
+So: keep scheduled prompts narrow and explicit about what they touch, and
+never make one do something the person would have wanted to be asked about
+first. If an action deserves a human decision, the note's job is to LEAVE A
+QUESTION — in its mission log, in a page — not to act.

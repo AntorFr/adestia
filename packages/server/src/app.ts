@@ -14,7 +14,7 @@ import { join } from 'node:path'
 
 import multipart from '@fastify/multipart'
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify'
-import type { Driver, DriverDescriptor, TurnEvent } from '@antorfr/golem-drivers'
+import type { AskAnswer, AskDesk, Driver, DriverDescriptor, TurnEvent } from '@antorfr/golem-drivers'
 
 import { isPublicRoute, resolveIdentity, type Identity } from './auth.js'
 import { AttachmentInbox, frameAttachments, type StoredAttachment } from './attachments.js'
@@ -67,6 +67,11 @@ export interface AppDependencies {
   readonly webRoot?: string | undefined
   /** Injected in tests; production stores secrets under the data directory. */
   readonly secrets?: SecretStore
+  /**
+   * Where the engine's questions wait, in `ask` posture. Absent in `open`,
+   * where nothing ever asks and the answer route is not mounted at all.
+   */
+  readonly asks?: AskDesk
   /** The active skin, when the configured one was found on disk. */
   readonly skin?: { readonly id: string; readonly dir: string; readonly manifest: SkinPayload }
   /**
@@ -179,6 +184,16 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   const conversations = new ConversationStore(config.dataDir)
   const secrets = deps.secrets ?? new SecretStore(config.dataDir)
   const inbox = new AttachmentInbox(config.dataDir, config.attachments)
+  /**
+   * What each conversation has already answered "for this conversation" to.
+   *
+   * In MEMORY, and deliberately not on disk: a restart forgets, and the next
+   * question is asked again. That is the safe direction to be wrong in — and
+   * it keeps this a memory of somebody's ANSWERS rather than a permission
+   * list Golem maintains. The values are opaque driver tokens; the core files
+   * them and hands them back, never reads them.
+   */
+  const grants = new Map<string, string[]>()
   const arming = new ArmingSessions()
   const descriptor: DriverDescriptor = await driver.describe()
 
@@ -535,13 +550,23 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
           // than the gateway's own notes.
           prompt: frameView(frameAttachments(body.prompt, attachments), body.view),
           cwd: config.workspace.root,
+          ...(conversationId && grants.get(conversationId)?.length
+            ? { grants: grants.get(conversationId)! }
+            : {}),
           ...(typeof body.sessionId === 'string' ? { sessionId: body.sessionId } : {}),
           ...(typeof body.model === 'string' ? { model: body.model } : {}),
           ...(callerToken ? { callerToken } : {}),
         })
         for await (const event of events) {
           reply.raw.write(sseFrame(event))
-          if (event.type === 'text-delta') text += event.text
+          if (event.type === 'permission-granted') {
+            // Filed against the thread, so the next message in it does not
+            // ask again. Deduped: the same rule granted twice is one rule.
+            if (conversationId) {
+              const kept = grants.get(conversationId) ?? []
+              grants.set(conversationId, [...new Set([...kept, ...event.grants])])
+            }
+          } else if (event.type === 'text-delta') text += event.text
           else if (event.type === 'tool-use') {
             tools.push({ name: event.name, ...(event.target ? { target: event.target } : {}) })
           } else if (event.type === 'tool-result') {
@@ -585,6 +610,32 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
         reply.raw.end()
       }
       return reply
+    },
+  )
+
+  /**
+   * Answering what the engine asked.
+   *
+   * Three answers, no policy: `once` allows this call, `session` allows it and
+   * hands the engine back its OWN suggestions so it stops asking for the rest
+   * of the conversation, `deny` refuses. Golem stores no rule either way — the
+   * remembering happens inside the CLI session.
+   */
+  app.post<{ Body: { id?: unknown; answer?: unknown } }>(
+    '/api/permission',
+    async (request, reply) => {
+      const { id, answer } = request.body ?? {}
+      const valid = answer === 'once' || answer === 'session' || answer === 'deny'
+      if (typeof id !== 'string' || !valid) {
+        return reply.code(400).send({ error: 'id and answer (once|session|deny) are required' })
+      }
+      // 409 rather than 404: the question existed, it simply timed out or was
+      // already answered — "unknown" would suggest the person clicked
+      // something that never was.
+      if (!deps.asks?.answer(id, answer as AskAnswer)) {
+        return reply.code(409).send({ error: 'that question is no longer waiting' })
+      }
+      return { answered: true }
     },
   )
 
@@ -703,7 +754,12 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
       if (!limiter.tryAcquire()) throw new Error('too many turns running')
       let text = ''
       try {
-        for await (const event of driver.runTurn({ prompt, cwd: config.workspace.root })) {
+        for await (const event of driver.runTurn({
+          prompt,
+          cwd: config.workspace.root,
+          // A delegating agent is not a person at a screen.
+          unattended: true,
+        })) {
           if (event.type === 'text-delta') text += event.text
           if (event.type === 'error' && event.fatal) throw new Error(event.message)
         }
@@ -734,7 +790,13 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
       throw new Error('too many turns running')
     }
     try {
-      for await (const event of driver.runTurn({ prompt, cwd: config.workspace.root })) {
+      for await (const event of driver.runTurn({
+        prompt,
+        cwd: config.workspace.root,
+        // The clock is nobody at a screen: a question raised here is refused
+        // at once rather than holding a turn slot until it times out.
+        unattended: true,
+      })) {
         if (event.type === 'error' && event.fatal) throw new Error(event.message)
       }
     } finally {

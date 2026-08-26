@@ -13,6 +13,7 @@ import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import {
+  AskDesk,
   ClaudeCodeDriver,
   CopilotDriver,
   createOAuthFlow,
@@ -83,6 +84,7 @@ async function buildDriver(
   config: GolemConfig,
   dataDir: string,
   mcpServers: readonly McpServer[],
+  asks: AskDesk | undefined,
   log: (message: string) => void,
 ): Promise<Driver> {
   // Rotated MCP refresh tokens outlive the process here, beside the credential.
@@ -99,6 +101,7 @@ async function buildDriver(
         // terminal screen: same authorization, but every failure comes back
         // as a status code instead of a half-drawn frame.
         armingFlow: createOAuthFlow(),
+        ...(asks ? { asks } : {}),
         mcpServers,
         refreshStore,
       })
@@ -252,9 +255,31 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     log(`${mcpServers.length} MCP server(s) wired: ${mcpServers.map((s) => s.name).join(', ')}`)
   }
 
+  // Built only in `ask` posture, and handed to the driver so IT can declare
+  // `interactivePermissions`. In `open` there is no desk, nothing asks, and
+  // the capability is honestly absent.
+  const asks = config.permissions.mode === 'ask' ? new AskDesk() : undefined
+
   const driver = options.driverFactory
     ? await options.driverFactory(config)
-    : await buildDriver(config, dataDir, mcpServers, log)
+    : await buildDriver(config, dataDir, mcpServers, asks, log)
+
+  // `ask` on an engine that cannot be asked is refused OUT LOUD rather than
+  // degraded. Copilot in programmatic mode has no return channel: every
+  // question it raised would become a silent refusal mid-turn, which reads as
+  // "the tool is broken" to everyone including the agent. The operator picks
+  // `open` themselves, knowing what they pick.
+  if (config.permissions.mode === 'ask') {
+    const { capabilities } = await driver.describe()
+    if (!capabilities.includes('interactivePermissions')) {
+      throw new ConfigError([
+        `permissions.mode is "ask" but driver "${config.driver.id}" cannot ask: it has no way to reach a person mid-turn, so every question would become a silent refusal. Use permissions.mode: open, or a driver that declares interactivePermissions.`,
+      ])
+    }
+    log('permissions: ask — the engine decides what needs a person, the chat asks it')
+  } else {
+    log('permissions: open — every tool runs unasked (container and MCP servers are the bounds)')
+  }
 
   // A token armed in a previous run is loaded before the first turn: an
   // instance that forgets its credential on restart is an instance someone
@@ -328,6 +353,7 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     pluginProblems: [...problems, ...setupProblems],
     ...(rebound ? { userTokens: rebound } : {}),
     secrets,
+    ...(asks ? { asks } : {}),
     ...(activeSkin
       ? {
           skin: {

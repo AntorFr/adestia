@@ -60,12 +60,14 @@ agent only.
 6. **Declarative instance config.** One config file (YAML) drives the instance:
    driver, auth mode, enabled plugins, skin, planif, limits. Env vars override
    secrets and deploy-specific values only.
-7. **What the agent may do is bounded by walls, not prompts.** (Rewritten
-   2026-08-26 — this principle originally mandated interactive permission
-   prompts; see the decision log for why that layer was removed.) The container
-   bounds what exists, MCP servers carry their own authorization where an act
-   lands, and the person's instructions say what the agent should check in chat
-   before acting — a good-faith convention that is honest about being one.
+7. **What the agent may do is bounded by walls, not prompts — and asking is a
+   posture, not a policy.** (Rewritten 2026-08-26; see the decision log.) The
+   container bounds what exists, MCP servers carry their own authorization
+   where an act lands, and the person's instructions say what to check in chat
+   first — a good-faith convention, honest about being one. On top of that,
+   `permissions.mode` chooses between `open` (nothing is asked) and `ask`,
+   where the ENGINE's own judgement decides what needs a person and Golem only
+   carries the question. Golem never judges: no lists, no rules, no gates.
 8. **Extension schemas are designed first.** The plugin/skin manifests and every
    contribution point are formal, versioned JSON Schemas (`schemaVersion`) from day
    one. One source of truth, three consumers: the loader validates with it, the
@@ -635,9 +637,9 @@ resolves in Golem as follows:
 ## What is built, and what is not
 
 **Built and verified end to end** (in a browser and against real CLIs, not only
-in tests): streamed chat with tool trace and live token counter (interactive
-permissions shipped here too, then were removed — decision log, 2026-08-26);
-conversations per user, replayed faithfully; pages edited by both
+in tests): streamed chat with tool trace and live token counter; the permission
+posture (`open` / `ask`, the engine judging and the chat asking — decision log,
+2026-08-26); conversations per user, replayed faithfully; pages edited by both
 the agent and a Notion-like editor over one shared grammar; runtime plugin
 loading from a mounted folder with a shared React through an import map;
 `claude-code` and `copilot-cli` drivers behind the capability contract;
@@ -702,6 +704,42 @@ against a store it cannot reach, and blast-radius economics (a revocable
 token, a committed workspace — which makes workspace auto-commit the next
 safety investment, not more rules). A leftover `permissions:` config block
 is tolerated and ignored.
+
+**2026-08-26 (asking came back as a posture, with the engine as the judge):**
+the removal above was right about the WALL and wrong to leave nothing: running
+wide open felt, in the owner's words, like replacing a rickety wooden gate with
+an open invitation. So `permissions.mode: open | ask` — optional, `open` by
+default, and roll-back is a one-line config change rather than a revert. What
+makes `ask` different from what was torn out: **Golem judges nothing.** No tool
+lists, no patterns, no content gates. In `ask` the driver runs the SDK's
+`default` mode, so the CLI's own first line settles the harmless (a `Read`, an
+`echo` never come back — measured) and only its residue reaches the chat, worded
+by the engine itself (`title`, `decisionReason` — no more consent to a string
+truncated at 78 characters). Answering "for this conversation" returns the
+engine's OWN `suggestions` as `updatedPermissions`, so a working thread costs a
+few clicks at its start and none after. Two things had to be fixed for that
+sentence to be TRUE, both found by driving the real CLI rather than a fake:
+the SDK's suggestions carry `destination: 'localSettings'`, so returning them
+verbatim wrote a PERMANENT rule into `<workspace>/.claude/settings.local.json`
+— a button saying "for this conversation" quietly granting a tool for ever, in
+every conversation, in a file nobody opens; they are now pinned to `session`.
+And a session's memory dies with the turn, since every turn is a fresh CLI
+process — so the driver emits what was granted as an opaque token, the server
+files it against that CONVERSATION in memory (never on disk, so a restart
+forgets and asks again), and hands it back on the next turn of that thread and
+no other. Golem stores somebody's ANSWERS, never a rule of its own. The SDK's `'auto'` classifier
+mode was TESTED and rejected for this: it approved a `rm -rf` without ever
+calling back, so embedded it is a bypass wearing a gate's name. Copilot cannot
+be asked at all in programmatic mode (no return channel; it auto-denies), so
+`ask` on it REFUSES TO BOOT rather than degrading every question into a silent
+refusal — which is what the new `interactivePermissions` capability declares.
+Unattended turns (planif, delegation) refuse immediately instead of holding a
+slot for five minutes. And the old prompt's real bug is fixed with a test on
+it: the question now disappears the instant it is answered, optimistically,
+because the turn is blocked on that answer and no event will arrive to clear
+it. If `ask` proves unlivable, the fallback is `open` and the next real
+security work is the one this document already names — the CLI under a second
+UID against a store it cannot reach.
 
 **2026-08-26 (a livery is what an install is called):** the manifest is
 GENERATED — the product's, with the active skin's `web.manifest` merged over
