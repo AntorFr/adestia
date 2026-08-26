@@ -38,9 +38,9 @@ Golem's own interface.
 
 ## What it does today
 
-- **Chat that streams**, with a tool trace, a live token counter, interactive
-  permissions, and threads that survive a reload with everything the interface
-  drew — tool calls, interruptions, context weight. The agent's half is
+- **Chat that streams**, with a tool trace, a live token counter, and threads
+  that survive a reload with everything the interface drew — tool calls,
+  interruptions, context weight. The agent's half is
   rendered as the markdown it is, through the same renderer a page is read
   with, so a workspace path it names opens that page; what you typed stays
   exactly as you typed it.

@@ -152,39 +152,6 @@ export class CopilotDriver implements Driver {
     return ['AGENTS.md', '.github/copilot-instructions.md', '.github/agents', '.github/skills']
   }
 
-  /**
-   * What decides this CLI's authority, inside the workspace.
-   *
-   * Read off spike 3's captures rather than recalled: repo-level `settings.json`
-   * carries hooks and the `sandbox` key — a workspace file that can switch a
-   * protection off — `.github/hooks/*.json` is the hook schema itself, and
-   * `.mcp.json` / `.github/mcp.json` are the workspace MCP wiring.
-   *
-   * Both roots are listed because this CLI reads instructions and skills from
-   * `.github/`, `.agents/` AND `.claude/`: the two drivers' zones overlap
-   * without being identical, which is the whole reason this is declared rather
-   * than assumed.
-   *
-   * `.github/agents` is here because a custom agent profile is not only prose:
-   * its frontmatter carries `tools` — which tools the agent may use, MCP
-   * server references included — and `mcp-servers`, which wires new ones. That
-   * is the same nature as `.mcp.json` two lines up, under a friendlier name. A
-   * turn that rewrote the profile an operator has selected through
-   * `driver.agent` would be handing itself tools nobody granted, on the next
-   * turn, in a file nobody thought to watch. Skills are the deliberate
-   * contrast, and stay out: they say what to DO, never what one may reach.
-   */
-  authorityPaths(): readonly string[] {
-    return [
-      '.github/settings.json',
-      '.github/hooks',
-      '.github/agents',
-      '.github/mcp.json',
-      '.mcp.json',
-      '.agents/hooks',
-    ]
-  }
-
   setCredentials(credentials: Readonly<Record<string, string>>, savedAt?: string | undefined): void {
     this.#credentials = { ...credentials }
     this.#savedAt = savedAt

@@ -21,7 +21,7 @@ import {
   type ConversationMeta,
   type StoredMessage,
 } from './conversations.js'
-import { runTurn, type PendingPermission, type ScreenView, type TurnState } from './stream.js'
+import { runTurn, type ScreenView, type TurnState } from './stream.js'
 import { SkinSlot } from '../app/SkinSlot.js'
 import type { SkinSlotRender } from '../app/skin.js'
 import { useMobile } from '../app/useMobile.js'
@@ -231,39 +231,6 @@ export function LiveProse({
   return <Prose markdown={shown} {...(openPage ? { openPage } : {})} />
 }
 
-export function PermissionPrompt({
-  permission,
-  onDecide,
-}: {
-  permission: PendingPermission
-  onDecide: (id: string, allow: boolean) => void
-}) {
-  return (
-    <div className="golem-permission" role="alertdialog" aria-label="Permission required">
-      <p className="golem-permission__text">
-        The agent wants to use <strong>{permission.tool}</strong>
-        {permission.detail && <> — <code>{permission.detail}</code></>}
-        {/* Only on a RECOVERED prompt. Live, the thread around it already
-            says which conversation asked, and repeating it would be noise
-            on the one surface that must stay readable in a hurry. */}
-
-      </p>
-      <div className="golem-permission__actions">
-        <button type="button" onClick={() => onDecide(permission.id, false)}>
-          Refuse
-        </button>
-        <button
-          type="button"
-          className="golem-permission__allow"
-          onClick={() => onDecide(permission.id, true)}
-        >
-          Allow
-        </button>
-      </div>
-    </div>
-  )
-}
-
 /**
  * The composer's secondary controls, folded under one button.
  *
@@ -386,7 +353,6 @@ export function Composer({
   onSend,
   onStop,
   busy,
-  blocked,
   placeholder,
   fetchImpl = fetch,
   extraButtons,
@@ -398,7 +364,6 @@ export function Composer({
   onSend: (text: string, attachments: readonly PendingAttachment[]) => void
   onStop: () => void
   busy: boolean
-  blocked: boolean
   placeholder?: string
   fetchImpl?: typeof fetch
   extraButtons?: readonly ComposerButton[]
@@ -464,11 +429,11 @@ export function Composer({
     const value = text.trim()
     // A message may be files only: dropping a photo and saying nothing is a
     // complete request.
-    if ((!value && attachments.length === 0) || blocked) return
+    if (!value && attachments.length === 0) return
     onSend(value, attachments)
     setText('')
     setAttachments([])
-  }, [attachments, blocked, onSend, text])
+  }, [attachments, onSend, text])
 
   useEffect(() => {
     // Appends rather than replaces: whatever the user already typed IS the
@@ -606,7 +571,7 @@ export function Composer({
         <button
           type="submit"
           className="golem-composer__send"
-          disabled={(text.trim() === '' && attachments.length === 0) || blocked}
+          disabled={text.trim() === '' && attachments.length === 0}
           aria-label={t('Send')}
         >
           ↑
@@ -769,35 +734,6 @@ export function Chat({
     [fetchImpl],
   )
 
-  /**
-   * A permission the browser forgot.
-   *
-   * The prompt only ever existed inside a live turn's event stream, so a
-   * reload — or a phone locking, or a tab crashing — left the agent waiting
-   * on an answer nobody could give any more. The turn kept its slot until it
-   * timed out minutes later, and a second one wedged the whole instance:
-   * "too many turns running", with nothing on screen to explain it.
-   *
-   * The server was built for this and says so at `GET /api/permission` — it
-   * keeps what is still waiting precisely so a reconnecting UI can re-ask.
-   * Only this half was missing.
-   */
-  const [orphan, setOrphan] = useState<PendingPermission | undefined>()
-
-  useEffect(() => {
-    void (async () => {
-      try {
-        const response = await (fetchImpl ?? fetch)('/api/permission')
-        if (!response.ok) return
-        const body = (await response.json()) as { pending?: readonly PendingPermission[] }
-        // The oldest first: it is the one holding a slot the longest.
-        setOrphan(body.pending?.[0])
-      } catch {
-        /* nothing waiting, or nothing reachable */
-      }
-    })()
-  }, [fetchImpl])
-
   useEffect(() => {
     // A 404 is the honest answer for a driver that cannot enumerate models,
     // and it lands here as an empty list — which draws no control at all.
@@ -942,9 +878,9 @@ export function Chat({
         <ContextPill tokens={contextTokens} {...(contextWindow ? { windowSize: contextWindow } : {})} />
         <button
           type="button"
-          className={`golem-ib${orphan ? ' golem-ib--waiting' : ''}`}
+          className="golem-ib"
           onClick={() => setThreadsOpen(!threadsOpen)}
-          aria-label={orphan ? t('Conversations — one is waiting for you') : t('Conversations')}
+          aria-label={t('Conversations')}
           aria-expanded={threadsOpen}
         >
           ▤
@@ -972,15 +908,6 @@ export function Chat({
                 onClick={() => void openThread(thread.id)}
               >
                 {thread.title}
-                {/* A turn in there is stopped, waiting on somebody. Without
-                    this, a recovered request is invisible until you happen to
-                    open the right thread — and it holds one of the instance's
-                    turn slots the whole time. */}
-                {orphan?.conversationId === thread.id && (
-                  <span className="golem-threads__waiting" title={t('Waiting for you')}>
-                    ●
-                  </span>
-                )}
               </button>
               {/* Put away, not deleted: the only tool for tidying up was a
                   delete that took every word with it. */}
@@ -1044,32 +971,6 @@ export function Chat({
         <div ref={bottom} />
       </div>
 
-      {/* A recovered request belongs to ONE thread. Showing it in another
-          asks somebody to approve a change to a conversation they are not
-          having — worse than not showing it at all, which is why this is a
-          match and not a fallback. */}
-      {(live?.permission ?? (orphan?.conversationId === conversationId ? orphan : undefined)) && (
-        <PermissionPrompt
-          permission={(live?.permission ?? orphan)!}
-          onDecide={(id, allow) => {
-            setOrphan(undefined)
-            void (async () => {
-              await (fetchImpl ?? fetch)('/api/permission', {
-                method: 'POST',
-                headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({ id, allow }),
-              })
-              // A recovered request belongs to a turn whose stream is gone:
-              // answering lets it finish server-side, and its reply lands in
-              // the thread rather than on a screen nobody is watching.
-              if (!live?.permission && conversationId) {
-                setThreads(await listConversations(fetchImpl ?? fetch))
-              }
-            })()
-          }}
-        />
-      )}
-
       <Composer
         onFill={(fill) => {
           composeRef.current = fill
@@ -1082,7 +983,6 @@ export function Chat({
         onSend={(text, attachments) => void send(text, attachments)}
         onStop={stop}
         busy={live?.running ?? false}
-        blocked={live?.permission !== undefined}
         {...(placeholder ? { placeholder } : {})}
         t={t}
       />

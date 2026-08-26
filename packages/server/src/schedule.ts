@@ -9,15 +9,12 @@
  *   came from — without that, the agent cannot tell a scheduled turn from a
  *   person, and answers as if someone were reading;
  * - a missed occurrence is LOST past a short grace window, never replayed. An
- *   instance that was down for a day must not wake up and run yesterday;
- * - a scheduled turn is unattended by definition, so every permission it
- *   raises is decided by the unattended policy — deny, unless the operator
- *   said otherwise.
+ *   instance that was down for a day must not wake up and run yesterday.
  *
  * A note carrying `until:` is a MISSION: a recurrence that must end. It runs
  * on its cadence like any other until its goal is met — the agent ticks
- * `done:` itself, the one write to its own note the permission gate allows
- * (see planif-gate.ts) — and past its deadline the product stamps `expired:`
+ * `done:` itself in its own frontmatter — and past its deadline the product
+ * stamps `expired:`
  * and gives it one final turn to escalate. The deadline deliberately has NO
  * grace window, inverting the rule above: an occurrence is a rhythm and
  * missing one is fine, but a deadline is an obligation, and an instance that
@@ -266,9 +263,8 @@ export interface MissionPaths {
  * waiting for a confirmation that will never come.
  *
  * A mission (a note with `until:`) gets three more things: its deadline, a
- * run log that is its only memory between turns, and the ONE way to end
- * itself — ticking `done:` in its own frontmatter, the single edit the
- * permission gate lets an unattended turn make to that file.
+ * run log that is its only memory between turns, and the way to end itself —
+ * ticking `done:` in its own frontmatter.
  */
 export function frameScheduledPrompt(note: ScheduledNote, mission?: MissionPaths): string {
   const missionLines =
@@ -317,8 +313,7 @@ export function frameExpiredPrompt(note: ScheduledNote, mission: MissionPaths): 
 
 /**
  * Insert or replace one `field: value` line in a note's frontmatter — how the
- * PRODUCT stamps `expired:`. The model never holds this pen: its own writes go
- * through the permission gate, which only ever lets `done:` through.
+ * PRODUCT stamps `expired:`.
  */
 export function stampField(source: string, field: string, value: string): string {
   const match = /^---\n([\s\S]*?)\n---\n?/.exec(source)

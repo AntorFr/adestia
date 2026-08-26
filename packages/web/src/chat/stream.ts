@@ -59,19 +59,6 @@ function parseFrame(frame: string): TurnEvent | undefined {
   }
 }
 
-/** A tool call waiting on the user. The turn is blocked until it is answered. */
-export interface PendingPermission {
-  readonly id: string
-  readonly tool: string
-  readonly detail?: string | undefined
-  /**
-   * Which conversation raised it. An identifier, for routing — a recovered
-   * request must reappear in ITS thread, and nothing in "Edit x.md" says
-   * which one that is.
-   */
-  readonly conversationId?: string | undefined
-}
-
 export interface ToolCall {
   readonly name: string
   readonly target?: string | undefined
@@ -91,12 +78,6 @@ export interface TurnState {
   readonly contextTokens?: number | undefined
   readonly running: boolean
   readonly stopped: boolean
-  /**
-   * Interactive permissions are a v1 requirement, so an unhandled request must
-   * be impossible to ignore: it lives in the turn state, and the composer
-   * cannot proceed while it is set.
-   */
-  readonly permission?: PendingPermission | undefined
   readonly sessionId?: string | undefined
   readonly error?: string | undefined
 }
@@ -130,12 +111,6 @@ export function applyEvent(state: TurnState, event: TurnEvent): TurnState {
       return { ...state, tools }
     }
 
-    case 'permission-request':
-      return {
-        ...state,
-        permission: { id: event.id, tool: event.tool, detail: event.detail },
-      }
-
     case 'usage-delta':
       // The driver guarantees this only grows; the UI never has to reconcile a
       // counter that jumped backwards mid-turn.
@@ -147,9 +122,6 @@ export function applyEvent(state: TurnState, event: TurnEvent): TurnState {
         running: false,
         stopped: event.stopped,
         sessionId: event.sessionId,
-        // A request the turn ended without answering is stale; leaving it
-        // would strand the composer behind a prompt nothing will resolve.
-        permission: undefined,
         ...(event.usage?.outputTokens !== undefined
           ? { outputTokens: event.usage.outputTokens }
           : {}),

@@ -7,7 +7,6 @@ import { join } from 'node:path'
 
 import { buildApp, sseFrame, type AppDependencies } from '../src/app.js'
 import { parseConfig } from '../src/config.js'
-import { PermissionBroker } from '@antorfr/golem-drivers'
 
 import { SecretStore } from '../src/secrets.js'
 
@@ -676,91 +675,6 @@ describe('arming a driver token', () => {
     expect(
       (await app.inject({ method: 'POST', url: '/api/auth/driver/complete', payload: {} }))
         .statusCode,
-    ).toBe(400)
-    await app.close()
-  })
-})
-
-describe('interactive permissions', () => {
-  it('answers a waiting request', async () => {
-    const permissions = new PermissionBroker()
-    const app = await buildApp(deps({ permissions }))
-
-    const decision = permissions.ask('Bash', 'rm -rf build', () => true)
-    const [waiting] = permissions.outstanding()
-
-    const response = await app.inject({
-      method: 'POST',
-      url: '/api/permission',
-      payload: { id: waiting!.id, allow: false },
-    })
-    expect(response.json()).toEqual({ answered: true })
-    expect(await decision).toBe('deny')
-    await app.close()
-  })
-
-  it('reports a request that is no longer waiting', async () => {
-    // 409 rather than 404: it existed, it simply timed out or was already
-    // answered — "unknown" would suggest the user clicked something that never
-    // was.
-    const app = await buildApp(deps({ permissions: new PermissionBroker() }))
-    const response = await app.inject({
-      method: 'POST',
-      url: '/api/permission',
-      payload: { id: 'gone', allow: true },
-    })
-    expect(response.statusCode).toBe(409)
-    await app.close()
-  })
-
-  it('lists what is pending so a reconnecting UI can re-ask', async () => {
-    const permissions = new PermissionBroker()
-    const app = await buildApp(deps({ permissions }))
-    const asked: { id: string }[] = []
-    void permissions.ask('Write', '/etc/passwd', (r) => {
-      asked.push(r)
-      return true
-    })
-    await vi.waitFor(() => expect(asked).toHaveLength(1))
-    // Claimed, as a real turn's request is: the listing is narrowed to its
-    // owner, so an unclaimed one belongs to nobody.
-    permissions.attach(asked[0]!.id, { userId: 'local' })
-
-    const response = await app.inject({ url: '/api/permission' })
-    expect(response.json().pending).toHaveLength(1)
-    expect(response.json().pending[0]).toMatchObject({ tool: 'Write' })
-    await app.close()
-  })
-
-  it('does not hand one person what another is waiting on', async () => {
-    // One broker serves the whole instance. Unfiltered, this route reads out
-    // somebody else's tool names and file paths to whoever asks first.
-    const permissions = new PermissionBroker()
-    const app = await buildApp(deps({ permissions }))
-    const asked: { id: string }[] = []
-    void permissions.ask('Write', '/w/pages/prive.md', (r) => {
-      asked.push(r)
-      return true
-    })
-    await vi.waitFor(() => expect(asked).toHaveLength(1))
-    permissions.attach(asked[0]!.id, { userId: 'emilie' })
-
-    // The default instance identifies its single user as `local`.
-    expect((await app.inject({ url: '/api/permission' })).json().pending).toEqual([])
-    // And cannot answer for her either.
-    const answer = await app.inject({
-      method: 'POST',
-      url: '/api/permission',
-      payload: { id: asked[0]!.id, allow: true },
-    })
-    expect(answer.statusCode).toBe(409)
-    await app.close()
-  })
-
-  it('requires both an id and a decision', async () => {
-    const app = await buildApp(deps({ permissions: new PermissionBroker() }))
-    expect(
-      (await app.inject({ method: 'POST', url: '/api/permission', payload: { id: 'x' } })).statusCode,
     ).toBe(400)
     await app.close()
   })

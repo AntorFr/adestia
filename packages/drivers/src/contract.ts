@@ -212,12 +212,6 @@ export type TurnEvent =
   | { readonly type: 'text-delta'; readonly text: string }
   | { readonly type: 'tool-use'; readonly name: string; readonly target?: string }
   | { readonly type: 'tool-result'; readonly name: string; readonly ok: boolean }
-  | {
-      readonly type: 'permission-request'
-      readonly id: string
-      readonly tool: string
-      readonly detail?: string
-    }
   /** Only with `liveTurnUsage`: feeds the climbing counter on the busy bubble. */
   | { readonly type: 'usage-delta'; readonly outputTokens: number }
   | {
@@ -261,26 +255,6 @@ export interface Driver {
    * and its contracts are delivered as instruction text instead.
    */
   skillsPath?(): string | undefined
-  /**
-   * Workspace paths where a file decides what the agent is ALLOWED to do —
-   * permissions, hooks, sandbox settings, MCP wiring.
-   *
-   * Declared by the driver for the same reason as `skillsPath`: only it knows
-   * its harness. The two CLIs have the same natures under different names, and
-   * their zones even overlap without being identical, so a product that
-   * hardcoded either one would be wrong about the other.
-   *
-   * What the core does with them is refuse to let a turn change them without a
-   * person saying so — see `authorityEditRule`. Prefixes, relative to the
-   * workspace root; a returned path covers everything beneath it.
-   *
-   * ⚠️ This guards FILE EDITS. A shell command that rewrites the same file is
-   * not a file edit the driver can normalize, so it follows the name-based
-   * policy alone: auto-allowing `Bash` reopens what this closes. Stated here
-   * because the person most likely to widen that list is reading a contract,
-   * not a changelog.
-   */
-  authorityPaths?(): readonly string[]
   /**
    * Workspace paths holding the PROSE this CLI reads as instructions.
    *

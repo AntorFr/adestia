@@ -5,8 +5,8 @@
  * file exists to avoid.
  *
  * WHAT IT DOES. Prose is a document — a bad one produces bad work, and that is
- * recoverable. A permission list is not a document, and lives behind the
- * authority gate instead. Only the first kind is served here.
+ * recoverable. A permission list, a hook or MCP wiring is not a document, and
+ * is deliberately not served here. Only the first kind is.
  *
  * WHO WROTE IT. The core delivers plugin contracts into the very same folders,
  * rewriting them at EVERY start. Offering to edit one would offer an edit that

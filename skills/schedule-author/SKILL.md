@@ -112,10 +112,12 @@ content — see DESIGN.md's instructions/workspace model for the risk zoning
 this implies. Creating, editing or disabling a scheduled turn is something
 **you** do, on request, exactly like editing any other file.
 
-## Permissions, unattended
+## Unattended, with every tool
 
-Nobody is present to approve anything a scheduled turn's tools ask for. Every
-permission it raises is decided by this instance's unattended policy — which
-defaults to deny — never by a prompt waiting for a click that will not come.
-Write scheduled prompts assuming the strictest plausible policy, not the one
-configured today.
+A scheduled turn runs with the same full tool access as any other — and
+nobody watching. There is no permission prompt and no unattended policy:
+whatever the note's body asks for, the turn can do. Write scheduled prompts
+accordingly — narrow, explicit about what they may touch, and never doing
+something the person would have wanted to be asked about first. If an action
+deserves a human decision, the note's job is to LEAVE A QUESTION (in its
+mission log, in a page), not to act.

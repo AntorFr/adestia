@@ -102,22 +102,6 @@ describe('applyEvent', () => {
     expect(state.outputTokens).toBe(42)
   })
 
-  it('holds a permission request so the composer cannot ignore it', () => {
-    const state = reduce([
-      { type: 'permission-request', id: 'p1', tool: 'Bash', detail: 'rm -rf build' },
-    ])
-    expect(state.permission).toEqual({ id: 'p1', tool: 'Bash', detail: 'rm -rf build' })
-  })
-
-  it('clears a permission the turn ended without answering', () => {
-    // Leaving it would strand the composer behind a prompt nothing resolves.
-    const state = reduce([
-      { type: 'permission-request', id: 'p1', tool: 'Bash' },
-      { type: 'result', sessionId: 's1', stopped: false },
-    ])
-    expect(state.permission).toBeUndefined()
-  })
-
   it('ends the turn on a result and keeps the session id', () => {
     const state = reduce([
       { type: 'text-delta', text: 'done' },

@@ -326,40 +326,6 @@
 .golem-pill--warn { border-color: var(--warning); color: var(--warning); }
 .golem-pill--hot { border-color: var(--danger); color: var(--danger); }
 
-/* Permission -------------------------------------------------------------- */
-
-.golem-permission {
-  margin: 0 var(--space-4) var(--space-3);
-  padding: var(--space-3);
-  border: 1px solid var(--warning);
-  border-radius: var(--radius);
-  background: var(--accent-quiet);
-}
-
-.golem-permission__text { margin: 0 0 var(--space-3); font-size: var(--text-sm); }
-
-.golem-permission__actions {
-  display: flex;
-  gap: var(--space-2);
-  justify-content: flex-end;
-}
-
-.golem-permission button {
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-strong);
-  background: var(--surface-raised);
-  color: var(--text);
-  font: inherit;
-  cursor: pointer;
-}
-
-.golem-permission__allow {
-  background: var(--accent);
-  color: var(--accent-text);
-  border-color: var(--accent);
-}
-
 /* Composer ---------------------------------------------------------------- */
 
 .golem-composer {
@@ -1317,22 +1283,6 @@
  * a mark in the margin — the typography of a footnote, which is what it is:
  * true, worth knowing, and nothing to do right now.
  */
-/* The conversations button, when something in there is stopped waiting. A
-   dot on the icon rather than a number: what matters is that a decision is
-   pending, not how many. */
-.golem-ib--waiting { position: relative; }
-
-.golem-ib--waiting::after {
-  content: '';
-  position: absolute;
-  top: 3px;
-  right: 3px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--warning);
-}
-
 /* The row keeps its own control, revealed on hover — a thread list is read
    far more often than it is tidied. */
 .golem-problems--degraded {
@@ -1701,16 +1651,6 @@
 .golem-threads__archive:hover {
   color: var(--text);
   background: var(--surface-sunken);
-}
-
-/* A thread whose turn is stopped, waiting on an answer. A mark and not a
-   count: there is one decision to make, and it is in there. */
-.golem-threads__waiting {
-  flex: none;
-  margin-left: auto;
-  padding-left: 6px;
-  color: var(--warning);
-  font-size: 9px;
 }
 
 .golem-threads__item--current {

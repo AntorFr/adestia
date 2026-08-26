@@ -60,9 +60,12 @@ agent only.
 6. **Declarative instance config.** One config file (YAML) drives the instance:
    driver, auth mode, enabled plugins, skin, planif, limits. Env vars override
    secrets and deploy-specific values only.
-7. **Permission requests are UI, not env vars.** The CLI's permission prompts surface
-   in the chat for approval; auto-approve policies are configuration. Bypass stays
-   possible for trusted local use, as an explicit choice.
+7. **What the agent may do is bounded by walls, not prompts.** (Rewritten
+   2026-08-26 — this principle originally mandated interactive permission
+   prompts; see the decision log for why that layer was removed.) The container
+   bounds what exists, MCP servers carry their own authorization where an act
+   lands, and the person's instructions say what the agent should check in chat
+   before acting — a good-faith convention that is honest about being one.
 8. **Extension schemas are designed first.** The plugin/skin manifests and every
    contribution point are formal, versioned JSON Schemas (`schemaVersion`) from day
    one. One source of truth, three consumers: the loader validates with it, the
@@ -78,7 +81,7 @@ agent only.
 ```
 ┌────────────────────────── Golem instance ──────────────────────────┐
 │  web (React SPA/PWA)                                               │
-│   chat ▸ streamed turns, permission prompts, attachments,          │
+│   chat ▸ streamed turns, attachments,                              │
 │          quota surfaces (per driver capability)                    │
 │   apps ▸ core views + plugin views (runtime ESM, import map),      │
 │          settings among them — credential, MCP, look, prose        │
@@ -294,7 +297,7 @@ rather than details:
   server reads as an absent server. A provider being down costs those servers,
   never the turn, and a refusal is never cached.
 
-MCP tools pass under interactive permissions like any other tool. Server health
+MCP tools run like any other tool (their own servers carry the authorization). Server health
 is a driver capability (`mcpStatus`), reported off the session — both CLIs
 announce their servers when a session opens, and probing would mean opening one
 to ask. Health is five states plus `unknown`, never a boolean: `needs-auth` is
@@ -515,7 +518,7 @@ runtime; nothing is scanned by filename convention at build time.
 
 Chat (streamed, multi-conversation, per-user) meeting the parity bar above; content
 engine + block editor; runtime plugin/skin loading with schema-first contracts;
-authoring skills; **interactive permissions**; **driver auth arming/refresh UI**;
+authoring skills; ~~interactive permissions~~ (shipped in v1, removed 2026-08-26 — see the decision log); **driver auth arming/refresh UI**;
 **usage & quota UI** (per driver capability); **model switching** (capability-gated
 listing); the **live turn counter** as a capability-gated bonus; **planif** (scheduled agent turns from
 notes); **inbound MCP** (`ask_<agent>` async jobs); **attachments**; auth modes
@@ -632,8 +635,9 @@ resolves in Golem as follows:
 ## What is built, and what is not
 
 **Built and verified end to end** (in a browser and against real CLIs, not only
-in tests): streamed chat with tool trace, live token counter and interactive
-permissions; conversations per user, replayed faithfully; pages edited by both
+in tests): streamed chat with tool trace and live token counter (interactive
+permissions shipped here too, then were removed — decision log, 2026-08-26);
+conversations per user, replayed faithfully; pages edited by both
 the agent and a Notion-like editor over one shared grammar; runtime plugin
 loading from a mounted folder with a shared React through an import map;
 `claude-code` and `copilot-cli` drivers behind the capability contract;
@@ -670,6 +674,34 @@ that opens to its own words when the network is gone.
 - **`golem init`** — the documented workspace scaffold.
 
 ## Decision log
+
+**2026-08-26 (the permission layer was a doorbell sold as a wall — removed):**
+interactive permissions were a v1 pillar: a broker gating every tool call
+behind a human, content rules guarding the driver's authority paths and the
+planif zone, an unattended policy, a prompt in the chat. All of it is gone,
+and the reasoning deserves recording because every piece was individually
+sound. The layer ran in Golem's process but enforced nothing: agent and
+server share one OS user, so every rule had a one-line bypass (`sed -i` for
+the file gates, a raw socket for any network rule, an env dump for the
+token) — and worse, LEGITIMATE work crossed it invisibly too: a granted
+Bash running a Python script that fetches the network never came back to
+the broker, so the layer mismeasured normal behavior, taxing the attended
+user with prompts while constraining nobody else. Each hole invited one
+more mechanism (pattern grammars, egress proxies) — the security-theater
+ratchet, recognized and stopped. What replaces it is walls that are walls
+and conventions that admit to being conventions: the CONTAINER bounds what
+exists (mounts, env, network — Docker's job, not Golem code); MCP SERVERS
+carry their own authorization at the point where an act lands (the home
+automation server knows what "unlock" means; Golem cannot); and the
+person's INSTRUCTIONS tell the agent what to check in chat before acting —
+followed in good faith, bypassed by anything that isn't, and honest about
+that. The driver now runs `bypassPermissions` explicitly — removing the
+prompt surface WITHOUT it would auto-deny instead of auto-allow. The real
+security features, if ever needed, are named: the CLI under a second UID
+against a store it cannot reach, and blast-radius economics (a revocable
+token, a committed workspace — which makes workspace auto-commit the next
+safety investment, not more rules). A leftover `permissions:` config block
+is tolerated and ignored.
 
 **2026-08-26 (a livery is what an install is called):** the manifest is
 GENERATED — the product's, with the active skin's `web.manifest` merged over
@@ -915,7 +947,7 @@ conformance suites. Spike-3 corrections folded into the copilot driver section
 **2026-08-20 (MCP config):** outbound MCP = three layers (operator config with
 secret interpolation, plugin-declared servers, workspace-native config left
 untouched), materialized per driver at spawn; conflicts loud, operator wins over
-plugin; MCP tools under interactive permissions; `mcpStatus` and per-user token
+plugin; MCP tools wired end to end; `mcpStatus` and per-user token
 pass-through (oidc) as capability/hook, not promises.
 
 **2026-08-21 (page-authoring contract):** audited every shipped plugin's data

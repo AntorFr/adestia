@@ -24,8 +24,7 @@ import type {
 } from '../contract.js'
 import { McpTokens, type RefreshStore } from '../mcp-oauth.js'
 import { TOKEN_ENV_VAR, looksLikeToken } from './arming.js'
-import { PermissionBroker, type PermissionRequest } from '../permissions.js'
-import { proposedFileEdit, toolTarget } from './events.js'
+import { toolTarget } from './events.js'
 import { isKnownMessage } from './sdk-types.js'
 import type { McpServerConfig, QueryFn, RawMessage, SdkMessage } from './sdk-types.js'
 
@@ -70,13 +69,6 @@ export interface ClaudeCodeOptions {
   readonly fetchImpl?: typeof fetch
   /** Persists a rotated MCP refresh token across restarts. */
   readonly refreshStore?: RefreshStore
-  /**
-   * Gates tool use behind a human. Absent means the CLI's own permission
-   * handling applies — which, with no prompt surface, denies everything it
-   * would have asked about. That is the failure this exists to fix: an agent
-   * that quietly cannot read a file, with nothing in the interface to say so.
-   */
-  readonly permissions?: PermissionBroker
 }
 
 /**
@@ -168,7 +160,6 @@ export class ClaudeCodeDriver implements Driver {
   #cliVersion: string
   readonly #models: readonly ModelInfo[]
   readonly #armingFlow: ArmingFlow | undefined
-  readonly #permissions: PermissionBroker | undefined
   readonly #mcpServers: readonly McpServer[]
   readonly #tokens: McpTokens
   /** What the last session said about them. Empty until a turn has run. */
@@ -186,7 +177,6 @@ export class ClaudeCodeDriver implements Driver {
     this.#cliVersion = options.cliVersion ?? 'unknown'
     this.#models = options.models ?? []
     this.#armingFlow = options.armingFlow
-    this.#permissions = options.permissions
     // Shaped once, at construction: the mapping is fixed for the process's
     // life, and doing it per turn would repeat the same work on every message.
     this.#mcpServers = options.mcpServers ?? []
@@ -295,40 +285,6 @@ export class ClaudeCodeDriver implements Driver {
   }
 
   /**
-   * What decides this CLI's authority, inside the workspace.
-   *
-   * `settings.json` and its local variant carry the permission lists; `hooks`
-   * is shell the CLI runs on tool events; `.mcp.json` adds servers the agent
-   * can call. None of the three is a document — each of them changes what a
-   * turn is able to do, which is why a turn may not change them alone.
-   *
-   * `.claude/agents` is the fourth, and it is the three others wearing a
-   * friendlier name. A subagent file's frontmatter carries `permissionMode`
-   * — `bypassPermissions` among its values — plus `hooks`, inline
-   * `mcpServers`, and `tools`. Verified against the SDK's own types and
-   * reference rather than recalled. Two properties make it worse than it
-   * looks: the SDK watches these directories and picks a new or edited file
-   * up within SECONDS, no restart, so a write can take effect in the session
-   * that made it; and a PreToolUse hook declared in there resolves BEFORE
-   * `canUseTool`, which is the gate this product asks its questions through.
-   * A file that reads as documentation, deciding what the next turn may
-   * reach.
-   *
-   * `.claude/skills` is deliberately NOT here: skills are prose, and the core
-   * rewrites the delivered ones at every start anyway. The contrast is the
-   * point — a skill says what to DO, never what one may reach.
-   */
-  authorityPaths(): readonly string[] {
-    return [
-      '.claude/settings.json',
-      '.claude/settings.local.json',
-      '.claude/hooks',
-      '.claude/agents',
-      '.mcp.json',
-    ]
-  }
-
-  /**
    * Where this CLI reads prose: the project brief, skills, and subagents.
    *
    * The agent folder is in BOTH lists, and that pairing is the whole posture:
@@ -362,31 +318,6 @@ export class ClaudeCodeDriver implements Driver {
   }
 
   async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
-    // Requests raised inside the SDK's callback, drained by the loop below:
-    // `canUseTool` runs off the event stream, so it cannot yield an event
-    // itself — it can only leave one where the loop will find it.
-    const asks: PermissionRequest[] = []
-    let wakeLoop: (() => void) | undefined
-    const broker = this.#permissions
-
-    const canUseTool = broker
-      ? async (toolName: string, input: Record<string, unknown>) => {
-          const decision = await broker.ask(
-            toolName,
-            toolTarget(input),
-            (ask) => {
-              asks.push(ask)
-              wakeLoop?.()
-              return true
-            },
-            proposedFileEdit(toolName, input),
-          )
-          return decision === 'allow'
-            ? ({ behavior: 'allow' as const, updatedInput: input })
-            : ({ behavior: 'deny' as const, message: 'refused by the user' })
-        }
-      : undefined
-
     // Resolved per turn, not per process: a hub's token lives about an hour,
     // and a map built at construction would be stale by the second morning.
     const mcpServers = await toSdkServers(this.#mcpServers, this.#tokens, request.callerToken)
@@ -396,7 +327,13 @@ export class ClaudeCodeDriver implements Driver {
       options: {
         cwd: request.cwd,
         includePartialMessages: true,
-        ...(canUseTool ? { canUseTool } : {}),
+        // No gate. The product's stance: what the agent may do is bounded by
+        // the container and by the instructions a person wrote — never by a
+        // Golem-side permission layer pretending to be a wall. Without a
+        // prompt surface the SDK would DENY everything it meant to ask about,
+        // which is why bypass is set explicitly rather than left to default.
+        permissionMode: 'bypassPermissions',
+        allowDangerouslySkipPermissions: true,
         ...(request.sessionId ? { resume: request.sessionId } : {}),
         ...(request.model ? { model: request.model } : {}),
         // Only what this instance declared. The CLI's own MCP config still
@@ -419,22 +356,9 @@ export class ClaudeCodeDriver implements Driver {
      */
     let settledOutput = 0
     let currentOutput = 0
-    void wakeLoop
 
     try {
       for await (const raw of query as AsyncIterable<RawMessage>) {
-        // Drained before each message, so a prompt reaches the UI as soon as
-        // the SDK raises it rather than after the next piece of output.
-        while (asks.length > 0) {
-          const ask = asks.shift()!
-          yield {
-            type: 'permission-request',
-            id: ask.id,
-            tool: ask.tool,
-            ...(ask.detail === undefined ? {} : { detail: ask.detail }),
-          }
-        }
-
         if (typeof raw.session_id === 'string') {
           sessionId = raw.session_id
           if (registered !== sessionId) {
@@ -522,10 +446,6 @@ export class ClaudeCodeDriver implements Driver {
         }
       }
     } finally {
-      // A request whose turn is over can never be answered usefully, and
-      // leaving it pending strands the composer behind a prompt nothing will
-      // resolve.
-      broker?.releaseAll()
       if (registered) this.#running.delete(registered)
     }
   }

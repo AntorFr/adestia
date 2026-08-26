@@ -4,7 +4,7 @@
  *
  * These are the pieces a user actually looks at, so what is asserted is what
  * they must be able to see: the bubble that grows, the trace that hides tool
- * inputs, the interruption that leaves a mark, the permission that blocks.
+ * inputs, the interruption that leaves a mark.
  */
 
 import { act, render, screen, fireEvent, waitFor } from '@testing-library/react'
@@ -20,7 +20,6 @@ import {
   ComposerFold,
   ContextPill,
   ModelPicker,
-  PermissionPrompt,
   ToolTrace,
   composerHeight,
   contextLevel,
@@ -109,7 +108,7 @@ describe('the composer fold', () => {
         onSend={vi.fn()}
         onStop={vi.fn()}
         busy={false}
-        blocked={false}
+       
         folded={false}
         extraButtons={[scan]}
       />,
@@ -126,7 +125,7 @@ describe('the composer fold', () => {
         onSend={vi.fn()}
         onStop={vi.fn()}
         busy={false}
-        blocked={false}
+       
         folded
         extraButtons={[button('scan')]}
       />,
@@ -350,7 +349,7 @@ describe('markdown in a bubble', () => {
 describe('composer', () => {
   it('sends on Enter and clears', () => {
     const onSend = vi.fn()
-    render(<Composer onSend={onSend} onStop={vi.fn()} busy={false} blocked={false} />)
+    render(<Composer onSend={onSend} onStop={vi.fn()} busy={false} />)
     const input = screen.getByRole('textbox') as HTMLTextAreaElement
 
     fireEvent.change(input, { target: { value: 'bonjour' } })
@@ -363,7 +362,7 @@ describe('composer', () => {
 
   it('keeps Shift+Enter for a new line', () => {
     const onSend = vi.fn()
-    render(<Composer onSend={onSend} onStop={vi.fn()} busy={false} blocked={false} />)
+    render(<Composer onSend={onSend} onStop={vi.fn()} busy={false} />)
     const input = screen.getByRole('textbox')
     fireEvent.change(input, { target: { value: 'line' } })
     fireEvent.keyDown(input, { key: 'Enter', shiftKey: true })
@@ -374,45 +373,23 @@ describe('composer', () => {
     // It moved out of the composer on purpose: the field is what this row is
     // for, and the picker was taking its width. A stray one here would mean
     // two of them on screen.
-    render(<Composer onSend={vi.fn()} onStop={vi.fn()} busy={false} blocked={false} />)
+    render(<Composer onSend={vi.fn()} onStop={vi.fn()} busy={false} />)
     expect(screen.queryByLabelText('Model')).toBeNull()
   })
 
   it('offers stop while a turn runs and the field is empty', () => {
-    render(<Composer onSend={vi.fn()} onStop={vi.fn()} busy blocked={false} />)
+    render(<Composer onSend={vi.fn()} onStop={vi.fn()} busy />)
     expect(screen.getByLabelText('Stop')).toBeTruthy()
   })
 
   it('turns back into send as soon as the user types', () => {
     // Otherwise queueing a message means aiming at a stop button.
-    render(<Composer onSend={vi.fn()} onStop={vi.fn()} busy blocked={false} />)
+    render(<Composer onSend={vi.fn()} onStop={vi.fn()} busy />)
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'next' } })
     expect(screen.queryByLabelText('Stop')).toBeNull()
     expect(screen.getByLabelText('Send')).toBeTruthy()
   })
 
-  it('refuses to send while a permission is pending', () => {
-    const onSend = vi.fn()
-    render(<Composer onSend={onSend} onStop={vi.fn()} busy blocked />)
-    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'hello' } })
-    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' })
-    expect(onSend).not.toHaveBeenCalled()
-  })
-})
-
-describe('permission prompt', () => {
-  it('offers both answers and reports which was chosen', () => {
-    const onDecide = vi.fn()
-    render(
-      <PermissionPrompt
-        permission={{ id: 'p1', tool: 'Bash', detail: 'rm -rf build' }}
-        onDecide={onDecide}
-      />,
-    )
-    expect(screen.getByText('rm -rf build')).toBeTruthy()
-    fireEvent.click(screen.getByText('Refuse'))
-    expect(onDecide).toHaveBeenCalledWith('p1', false)
-  })
 })
 
 /**
@@ -554,99 +531,6 @@ describe('chat', () => {
     // default.
     fireEvent.change(picker, { target: { value: '' } })
     expect(store.has('golem.model')).toBe(false)
-  })
-
-  it('recovers a permission the browser forgot, in its own thread', async () => {
-    // The prompt only ever lived inside a live turn's stream, so a reload
-    // left the agent waiting on an answer nobody could give — and the turn
-    // held its slot until it timed out. Two of those wedge the instance:
-    // "too many turns running", with nothing on screen to explain it.
-    const answered: unknown[] = []
-    const fetchImpl = vi.fn((url: string, init?: RequestInit) => {
-      const path = String(url)
-      if (path === '/api/permission' && init?.method === 'POST') {
-        answered.push(JSON.parse(String(init.body)))
-        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({}) } as unknown as Response)
-      }
-      if (path === '/api/permission') {
-        return Promise.resolve({
-          ok: true,
-          status: 200,
-          json: () =>
-            Promise.resolve({
-              pending: [{ id: 'p1', tool: 'Edit', detail: 'todo/rails.md', conversationId: 'c1' }],
-            }),
-        } as unknown as Response)
-      }
-      if (path === '/api/conversations/c1') {
-        return Promise.resolve({
-          ok: true,
-          status: 200,
-          json: () => Promise.resolve({ id: 'c1', title: 'Rails', messages: [] }),
-        } as unknown as Response)
-      }
-      if (path.startsWith('/api/conversations')) {
-        return Promise.resolve({
-          ok: true,
-          status: 200,
-          json: () =>
-            Promise.resolve({ conversations: [{ id: 'c1', title: 'Rails', updatedAt: '' }] }),
-        } as unknown as Response)
-      }
-      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({}) } as unknown as Response)
-    }) as unknown as typeof fetch
-
-    render(<Chat fetchImpl={fetchImpl} />)
-
-    // Invisible until its own thread is open — but the list says where it is,
-    // otherwise it holds a turn slot with nothing on screen to explain why.
-    fireEvent.click(await screen.findByLabelText('Conversations'))
-    const entry = await screen.findByText('Rails')
-    expect(entry.querySelector('.golem-threads__waiting')).toBeTruthy()
-
-    fireEvent.click(entry)
-    expect(await screen.findByText('todo/rails.md')).toBeTruthy()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Allow' }))
-    await waitFor(() => expect(answered).toEqual([{ id: 'p1', allow: true }]))
-  })
-
-  it('shows a recovered request only in the thread that raised it', async () => {
-    // With more than one turn allowed at once, a prompt in the wrong thread
-    // asks somebody to approve a change to a conversation they are not
-    // having. Worse than showing nothing, so it is a match and not a
-    // fallback.
-    const fetchImpl = vi.fn((url: string) =>
-      Promise.resolve({
-        ok: true,
-        status: 200,
-        json: () =>
-          Promise.resolve(
-            String(url) === '/api/permission'
-              ? { pending: [{ id: 'p9', tool: 'Edit', detail: 'x.md', conversationId: 'autre' }] }
-              : {},
-          ),
-      } as unknown as Response),
-    ) as unknown as typeof fetch
-
-    render(<Chat fetchImpl={fetchImpl} />)
-    await screen.findByRole('textbox')
-    // No conversation is open here, so a request belonging to `autre` stays
-    // out of the way rather than appearing anywhere it likes.
-    expect(screen.queryByRole('alertdialog')).toBeNull()
-  })
-
-  it('shows nothing when nothing is waiting', async () => {
-    const fetchImpl = vi.fn((url: string) =>
-      Promise.resolve({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve(String(url) === '/api/permission' ? { pending: [] } : {}),
-      } as unknown as Response),
-    ) as unknown as typeof fetch
-    render(<Chat fetchImpl={fetchImpl} />)
-    await screen.findByRole('textbox')
-    expect(screen.queryByRole('alertdialog')).toBeNull()
   })
 
   it('draws no picker when the driver answers 404', async () => {

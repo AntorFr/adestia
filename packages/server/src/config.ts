@@ -94,21 +94,6 @@ export interface ExtensionsConfig {
 }
 
 /**
- * When the agent must ask, and what happens when nobody answers.
- *
- * The default is to ask for everything and refuse on silence. An agent that
- * proceeds because nobody was watching is an agent that did something nobody
- * approved — and unlike a turn that stalls, that is not recoverable.
- */
-export interface PermissionsConfig {
-  /** Tools that never ask. Matched exactly, never by prefix. */
-  readonly autoAllow: readonly string[]
-  readonly autoDeny: readonly string[]
-  readonly timeoutMs: number
-  readonly whenUnattended: 'allow' | 'deny'
-}
-
-/**
  * Scheduled turns.
  *
  * OFF by default, deliberately. A note that runs the agent while nobody is
@@ -214,7 +199,6 @@ export interface GolemConfig {
   readonly workspace: WorkspaceConfig
   readonly driver: DriverConfig
   readonly extensions: ExtensionsConfig
-  readonly permissions: PermissionsConfig
   readonly schedule: ScheduleConfig
   readonly attachments: AttachmentsConfig
   readonly mcp: McpInConfig
@@ -248,6 +232,9 @@ const KNOWN_KEYS = new Set([
   'workspace',
   'driver',
   'extensions',
+  // Tolerated and ignored: the interactive-permission layer was removed
+  // (2026-08-26), and a config written for an earlier version must not brick
+  // the instance over a block that no longer means anything.
   'permissions',
   'schedule',
   'attachments',
@@ -783,23 +770,6 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
     skin: typeof extensionsRaw['skin'] === 'string' ? extensionsRaw['skin'] : 'default',
   }
 
-  const permissionsRaw = isObject(raw['permissions']) ? raw['permissions'] : {}
-  const whenUnattended = permissionsRaw['whenUnattended'] ?? 'deny'
-  if (whenUnattended !== 'allow' && whenUnattended !== 'deny') {
-    issues.push('permissions.whenUnattended must be "allow" or "deny"')
-  }
-  const timeoutMs = permissionsRaw['timeoutMs'] ?? 300_000
-  if (typeof timeoutMs !== 'number' || timeoutMs < 1000) {
-    issues.push('permissions.timeoutMs must be a number of milliseconds >= 1000')
-  }
-
-  const permissions: PermissionsConfig = {
-    autoAllow: stringList(permissionsRaw['autoAllow'], 'permissions.autoAllow', issues),
-    autoDeny: stringList(permissionsRaw['autoDeny'], 'permissions.autoDeny', issues),
-    timeoutMs: timeoutMs as number,
-    whenUnattended: whenUnattended as 'allow' | 'deny',
-  }
-
   const scheduleRaw = isObject(raw['schedule']) ? raw['schedule'] : {}
   const scheduleEnabled = scheduleRaw['enabled'] ?? false
   if (typeof scheduleEnabled !== 'boolean') {
@@ -875,7 +845,6 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
       ...(typeof driverRaw['command'] === 'string' ? { command: driverRaw['command'] } : {}),
     },
     extensions,
-    permissions,
     schedule,
     attachments,
     mcp,

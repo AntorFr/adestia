@@ -14,7 +14,7 @@ import { join } from 'node:path'
 
 import multipart from '@fastify/multipart'
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify'
-import type { Driver, DriverDescriptor, PermissionBroker, TurnEvent } from '@antorfr/golem-drivers'
+import type { Driver, DriverDescriptor, TurnEvent } from '@antorfr/golem-drivers'
 
 import { isPublicRoute, resolveIdentity, type Identity } from './auth.js'
 import { AttachmentInbox, frameAttachments, type StoredAttachment } from './attachments.js'
@@ -67,8 +67,6 @@ export interface AppDependencies {
   readonly webRoot?: string | undefined
   /** Injected in tests; production stores secrets under the data directory. */
   readonly secrets?: SecretStore
-  /** Answers the UI's permission decisions; shared with the driver. */
-  readonly permissions?: PermissionBroker
   /** The active skin, when the configured one was found on disk. */
   readonly skin?: { readonly id: string; readonly dir: string; readonly manifest: SkinPayload }
   /**
@@ -446,11 +444,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
       const existing = await conversations.read(userId, request.params.id)
       if (!existing) return reply.code(404).send({ error: 'no such conversation' })
       await conversations.archive(userId, request.params.id, archived)
-      // A thread put away stops waiting on anybody. Its turn would otherwise
-      // hold one of the instance's slots until it timed out, for a
-      // conversation nobody is looking at any more.
-      const ended = archived ? (deps.permissions?.abandon(request.params.id) ?? 0) : 0
-      return { id: request.params.id, archived, ...(ended > 0 ? { refused: ended } : {}) }
+      return { id: request.params.id, archived }
     },
   )
 
@@ -547,16 +541,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
         })
         for await (const event of events) {
           reply.raw.write(sseFrame(event))
-          if (event.type === 'permission-request') {
-            // Stamped here because only the shell knows which conversation a
-            // turn belongs to. It is what lets a RECOVERED prompt reappear in
-            // the right thread after a reload; live, the stream already
-            // delivers it to the right place.
-            deps.permissions?.attach(event.id, {
-              userId,
-              ...(conversationId ? { conversationId } : {}),
-            })
-          } else if (event.type === 'text-delta') text += event.text
+          if (event.type === 'text-delta') text += event.text
           else if (event.type === 'tool-use') {
             tools.push({ name: event.name, ...(event.target ? { target: event.target } : {}) })
           } else if (event.type === 'tool-result') {
@@ -602,41 +587,6 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
       return reply
     },
   )
-
-  app.post<{ Body: { id?: unknown; allow?: unknown } }>(
-    '/api/permission',
-    async (request, reply) => {
-      const { id, allow } = request.body ?? {}
-      if (typeof id !== 'string' || typeof allow !== 'boolean') {
-        return reply.code(400).send({ error: 'id and allow are required' })
-      }
-      const answered =
-        deps.permissions?.answer(
-          id,
-          allow ? 'allow' : 'deny',
-          (request as FastifyRequest & { identity?: Identity }).identity?.userId,
-        ) ?? false
-      // 409 rather than 404: the request existed, it simply timed out or was
-      // already answered — and telling the user "unknown" would suggest they
-      // clicked something that never was.
-      if (!answered) return reply.code(409).send({ error: 'that request is no longer waiting' })
-      return { answered: true }
-    },
-  )
-
-  app.get('/api/permission', async (request) => ({
-    // A reconnecting UI re-asks rather than leaving the agent stuck behind a
-    // prompt the browser forgot when it reloaded.
-    //
-    // Narrowed to the caller. One broker serves the whole instance, so an
-    // unfiltered answer would hand somebody else's tool names and file paths
-    // to whoever asked first — and let them decide what another person's
-    // agent may do.
-    pending:
-      deps.permissions?.outstanding(
-        (request as FastifyRequest & { identity?: Identity }).identity?.userId,
-      ) ?? [],
-  }))
 
   app.post<{ Body: { sessionId?: unknown } }>('/api/turn/stop', async (request, reply) => {
     const sessionId = request.body?.sessionId

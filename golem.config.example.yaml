@@ -119,50 +119,31 @@ driver:
     - id: claude-sonnet-5
       label: Sonnet 5
 
-# When the agent must ask before using a tool, and what happens when nobody
-# answers. Asking for everything and refusing on silence is the default: an
-# agent that proceeds because nobody was watching did something nobody
-# approved, and unlike a stalled turn, that is not recoverable.
-permissions:
-  # Tools that never ask. Matched EXACTLY — a prefix rule allowing "Read"
-  # would also allow a "ReadSecrets" tool arriving in a future CLI version.
-  #
-  # Two zones stay guarded whatever you put here, because their rules are
-  # consulted BEFORE this list: the scheduled-notes folder (whose bodies are
-  # prompts) and the driver's authority paths — its permission file, its
-  # hooks, its MCP wiring. A turn may not change what a turn is allowed to do.
-  #
-  # ⚠️ ONE EXCEPTION, and it is the reason to think twice before adding
-  # "Bash" here. Those guards inspect FILE EDITS. A shell command that
-  # rewrites the same file (`sed -i`, a redirect) is not a file edit anything
-  # can inspect, so it follows this list alone: auto-allowing Bash reopens
-  # what they close, and no content rule can shut it again. The instance says
-  # so out loud at startup when you do.
-  autoAllow: []
-  autoDeny: []
-  # How long a request waits for a person, in milliseconds. On expiry it is
-  # decided by `whenUnattended` below — so a prompt nobody answers does not
-  # hold one of `maxConcurrentTurns` for ever. Five minutes is long enough to
-  # walk back to a screen and short enough that a forgotten tab is not a
-  # blocked instance.
-  #
-  # Two other things end a wait before this does: answering it, and archiving
-  # the conversation it belongs to — which refuses it outright, because
-  # putting a thread away is somebody deciding, not nobody watching.
-  timeoutMs: 300000
-  # Applied on timeout, and immediately when no interface is watching at all
-  # (a scheduled turn, a delegated one).
-  whenUnattended: deny
+# There is NO permission layer, and that is a decision, not a gap
+# (2026-08-26). The agent runs with every tool allowed. What bounds it is
+# real walls, not prompts:
+#   - the CONTAINER: what is mounted, what is in the env, what the network
+#     reaches — Docker's job, configured in docker-compose.yml;
+#   - the MCP SERVERS: a server that acts on the real world (home automation,
+#     messages) carries its own authorization — scopes, tokens, its own
+#     confirmations. Security lives where the act happens, outside this box;
+#   - your INSTRUCTIONS: tell the agent, in the workspace's own instruction
+#     files, what it must ask you about in the chat before acting. That is a
+#     convention it follows in good faith, not a wall — and it is honest
+#     about being exactly that.
+# An earlier version shipped an interactive permission layer here
+# (autoAllow/autoDeny lists, timeouts, content gates). It was removed: every
+# rule it enforced could be bypassed by a shell one-liner, so it taxed the
+# legitimate user without stopping anything else. A leftover `permissions:`
+# block in an old config is ignored with no error.
 
 # Scheduled turns: markdown notes under workspace/planif/ whose BODY is run
 # verbatim as a prompt, on a cadence they declare (`every: 1d`).
 #
 # OFF by default, deliberately: a note that runs the agent while nobody is
-# watching spends a subscription and acts on your workspace. That has to be
-# something you turned on, never something you inherited.
-#
-# A scheduled turn is unattended by definition, so every permission it raises
-# is decided by `permissions.whenUnattended` above.
+# watching spends a subscription and acts on your workspace — with every tool
+# allowed and nobody in front of the chat to be asked anything. That has to
+# be something you turned on, never something you inherited.
 schedule:
   enabled: false
 

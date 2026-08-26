@@ -10,7 +10,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { ClaudeCodeDriver } from '../src/claude-code/driver.js'
-import { proposedFileEdit, toolTarget } from '../src/claude-code/events.js'
+import { toolTarget } from '../src/claude-code/events.js'
 import { checkConformance } from '../src/conformance.js'
 import type { TurnEvent, TurnRequest } from '../src/contract.js'
 import type { QueryFn, SdkMessage } from '../src/claude-code/sdk-types.js'
@@ -95,21 +95,9 @@ describe('conformance', () => {
     expect(capabilities).toContain('usageMetrics')
   })
 
-  it('guards the subagent folder as authority, and shows it as prose', () => {
-    // A subagent file's frontmatter carries `permissionMode` —
-    // `bypassPermissions` among its values — plus `hooks`, inline
-    // `mcpServers` and `tools`. That is the nature of the three paths beside
-    // it, in a file that reads as documentation. The SDK picks a new or
-    // edited one up within seconds, so a write can land in the session that
-    // made it.
+  it('shows the subagent folder and skills as prose', () => {
     const driver = new ClaudeCodeDriver({ query: fakeSdk([]) })
-    expect(driver.authorityPaths()).toContain('.claude/agents')
-    // Both lists: guarding the write without showing the file would tell a
-    // person "no" about something they cannot read.
     expect(driver.instructionPaths()).toContain('.claude/agents')
-    // The deliberate contrast — a skill says what to DO, never what one may
-    // reach, so it stays prose a turn may write unasked.
-    expect(driver.authorityPaths()).not.toContain('.claude/skills')
     expect(driver.instructionPaths()).toContain('.claude/skills')
   })
 
@@ -293,29 +281,6 @@ describe('toolTarget', () => {
   it('says nothing rather than guessing', () => {
     expect(toolTarget({ unexpected: 42 })).toBeUndefined()
     expect(toolTarget(null)).toBeUndefined()
-  })
-})
-
-describe('normalizing a tool call into a file edit', () => {
-  it('translates Write and Edit, the shapes a rule can replay', () => {
-    expect(
-      proposedFileEdit('Write', { file_path: '/w/planif/a.md', content: 'body' }),
-    ).toEqual({ kind: 'write', path: '/w/planif/a.md', content: 'body' })
-    expect(
-      proposedFileEdit('Edit', {
-        file_path: '/w/planif/a.md',
-        old_string: 'x',
-        new_string: 'y',
-        replace_all: true,
-      }),
-    ).toEqual({ kind: 'edit', path: '/w/planif/a.md', oldText: 'x', newText: 'y', all: true })
-  })
-
-  it('translates nothing else — Bash stays under the name policy', () => {
-    expect(proposedFileEdit('Bash', { command: 'sed -i s/a/b/ planif/a.md' })).toBeUndefined()
-    expect(proposedFileEdit('Write', { file_path: '/a.md' })).toBeUndefined()
-    expect(proposedFileEdit('Edit', { file_path: '/a.md', old_string: 'x' })).toBeUndefined()
-    expect(proposedFileEdit('Write', 'not an object')).toBeUndefined()
   })
 })
 
