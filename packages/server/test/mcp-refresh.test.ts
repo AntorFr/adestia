@@ -8,7 +8,7 @@
  * shows up days later, as a login nobody can explain.
  */
 
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -80,5 +80,75 @@ describe('the refresh token store', () => {
 
     const written = JSON.parse(await readFile(join(dataDir, 'secrets', 'mcp-refresh.json'), 'utf8'))
     expect(written).toEqual({ 'hub-a|c': 'a1', 'hub-b|c': 'b1' })
+  })
+})
+
+describe('a file it cannot read', () => {
+  /**
+   * The dangerous case, and the reason `#read` answers with three shapes
+   * rather than a best effort: an unreadable file still HOLDS every other
+   * identity's token. A store that shrugged and started from an empty map
+   * would rewrite it with the one key it happens to be saving — and `rename`
+   * answers to the DIRECTORY's permissions, so the clobber goes through
+   * perfectly happily. Every other hub would then need a fresh interactive
+   * login, over a permission somebody fixes in a minute.
+   */
+  it('refuses to write, leaving the tokens it cannot see intact', async () => {
+    // Root reads through any mode bit, so the case cannot be staged there.
+    if (process.getuid?.() === 0) return
+
+    const dataDir = await mkdtemp(join(tmpdir(), 'golem-refresh-'))
+    const store = new FileRefreshStore(dataDir, () => {})
+    await store.save('hub-a|c', 'a1')
+    await store.save('hub-b|c', 'b1')
+
+    const path = join(dataDir, 'secrets', 'mcp-refresh.json')
+    await chmod(path, 0o000)
+    const refused = await settle(store.save('hub-c|c', 'c1'))
+    await chmod(path, 0o600)
+
+    expect(refused).toBe('failed')
+    // The whole point: the two tokens it could not see are still there.
+    expect(JSON.parse(await readFile(path, 'utf8'))).toEqual({
+      'hub-a|c': 'a1',
+      'hub-b|c': 'b1',
+    })
+  })
+
+  it('says the refusal out loud rather than failing in silence', async () => {
+    if (process.getuid?.() === 0) return
+
+    const dataDir = await mkdtemp(join(tmpdir(), 'golem-refresh-'))
+    const said: string[] = []
+    const store = new FileRefreshStore(dataDir, (message) => said.push(message))
+    await store.save('hub-a|c', 'a1')
+
+    const path = join(dataDir, 'secrets', 'mcp-refresh.json')
+    await chmod(path, 0o000)
+    await settle(store.save('hub-b|c', 'b1'))
+    await chmod(path, 0o600)
+
+    // The caller swallows this to keep the turn alive, so nothing else would
+    // ever mention it.
+    expect(said.join(' ')).toMatch(/refusing to overwrite/)
+  })
+})
+
+describe('a file holding something else', () => {
+  it('sets it aside and starts anew, rather than flattening it', async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), 'golem-refresh-'))
+    await mkdir(join(dataDir, 'secrets'), { recursive: true })
+    const path = join(dataDir, 'secrets', 'mcp-refresh.json')
+    await writeFile(path, 'this is not JSON at all')
+    const said: string[] = []
+    const store = new FileRefreshStore(dataDir, (message) => said.push(message))
+
+    await store.save('hub-a|c', 'a1')
+
+    // Nothing usable was in it, so the write proceeds — but the file is kept
+    // for whoever has to explain it.
+    expect(await store.load('hub-a|c')).toBe('a1')
+    expect(await readFile(`${path}.broken`, 'utf8')).toBe('this is not JSON at all')
+    expect(said.join(' ')).toMatch(/moved to/)
   })
 })

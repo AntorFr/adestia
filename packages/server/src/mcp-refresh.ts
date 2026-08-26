@@ -17,6 +17,12 @@ import { dirname, join } from 'node:path'
 
 import type { RefreshStore } from '@antorfr/golem-drivers'
 
+/** What the file turned out to be, when somebody went to read it. */
+type Held =
+  | { readonly kind: 'map'; readonly map: Record<string, string> }
+  | { readonly kind: 'unreadable'; readonly why: string }
+  | { readonly kind: 'corrupt' }
+
 export class FileRefreshStore implements RefreshStore {
   readonly #path: string
   readonly #report: (message: string) => void
@@ -33,23 +39,93 @@ export class FileRefreshStore implements RefreshStore {
     this.#report = report
   }
 
-  async #read(): Promise<Record<string, string>> {
+  /**
+   * What the file holds, as one of three ANSWERS rather than a best effort.
+   *
+   * The distinction is the whole point, because a caller about to REWRITE this
+   * file has to tell the three apart, and a tolerant "just give me an empty
+   * map" collapses them into the one that destroys data:
+   *
+   * - **absent** — the first rotation creates it. An empty map is the truth.
+   * - **unreadable** (a permission, an I/O error, a path that is not a file) —
+   *   the tokens are still in there, unseen. Starting from `{}` and saving
+   *   would write a file holding ONE key, wiping every other identity's way
+   *   back in over a condition that may well be temporary.
+   * - **corrupt** — it parsed to something that is not a map of tokens, so
+   *   nothing in it can be used. Recoverable, unlike the one above.
+   */
+  async #read(): Promise<Held> {
+    let raw: string
     try {
-      const parsed = JSON.parse(await readFile(this.#path, 'utf8')) as unknown
-      return parsed && typeof parsed === 'object' ? (parsed as Record<string, string>) : {}
-    } catch {
-      return {}
+      raw = await readFile(this.#path, 'utf8')
+    } catch (error) {
+      const problem = error as NodeJS.ErrnoException
+      // Absent, in both spellings the filesystem uses for "there is no file
+      // here": missing, or sitting under something that is not a directory.
+      if (problem.code === 'ENOENT' || problem.code === 'ENOTDIR') {
+        return { kind: 'map', map: {} }
+      }
+      return { kind: 'unreadable', why: problem.message }
     }
+    try {
+      const parsed = JSON.parse(raw) as unknown
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return { kind: 'map', map: parsed as Record<string, string> }
+      }
+    } catch {
+      // Falls through: unparseable and parsed-to-the-wrong-shape are the same
+      // problem to whoever has to read a token out of it.
+    }
+    return { kind: 'corrupt' }
   }
 
+  /**
+   * Reading is allowed to come back empty-handed.
+   *
+   * The caller falls back to the token it holds in memory, or to the one the
+   * config carried. Nothing is lost by answering "I do not know" here — where
+   * answering it during a WRITE would be.
+   */
   async load(key: string): Promise<string | undefined> {
-    return (await this.#read())[key]
+    const held = await this.#read()
+    return held.kind === 'map' ? held.map[key] : undefined
+  }
+
+  /**
+   * Moves a corrupt file aside and starts a new one.
+   *
+   * Set aside rather than flattened: whatever is in there is somebody's to
+   * explain, and a file that gets silently overwritten never gets explained.
+   * Only ever called for content that PARSED and held nothing usable — a file
+   * that could not be read at all takes the other branch, because `rename`
+   * answers to the DIRECTORY's permissions and would happily move a file whose
+   * contents are merely unreadable.
+   */
+  async #setAside(): Promise<Record<string, string>> {
+    const aside = `${this.#path}.broken`
+    await rename(this.#path, aside)
+    this.#report(`MCP refresh token file held no usable tokens — moved to ${aside}, starting anew`)
+    return {}
   }
 
   save(key: string, refreshToken: string): Promise<void> {
     // Chained so concurrent saves for different keys do not clobber the file.
     const done = this.#queue.then(async () => {
-      const map = await this.#read()
+      const held = await this.#read()
+      if (held.kind === 'unreadable') {
+        // The one case where NOT writing is the careful answer: this file may
+        // hold every other identity's token, and a write built on a blind read
+        // would replace them all with this single key.
+        const refusal =
+          `MCP refresh token not persisted — ${this.#path} cannot be read (${held.why}), ` +
+          `refusing to overwrite tokens it may still hold`
+        // Said, not just thrown: the caller swallows this to keep the turn
+        // alive, so the refusal would otherwise be perfectly silent — and a
+        // silent refusal is indistinguishable from a store that works.
+        this.#report(refusal)
+        throw new Error(refusal)
+      }
+      const map = held.kind === 'corrupt' ? await this.#setAside() : held.map
       if (map[key] === refreshToken) return
       map[key] = refreshToken
       const temporary = `${this.#path}.${randomUUID()}.tmp`

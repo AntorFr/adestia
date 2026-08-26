@@ -121,6 +121,17 @@ Réglages devenus une APP de la coque et non un dialogue posé sur la page
 (`Modal` retiré) — chantier mené en parallèle sur l'autre poste.
 Mineur et non correctif : deux champs de config qui n'existaient pas
 (`mcp[].auth.refreshToken`, `driver.agent`) et un écran qui change de nature.
+0.9.1 : le store de jetons ne répondait qu'une chose à trois situations —
+`#read` renvoyait `{}` sur n'importe quelle erreur. Un fichier ILLISIBLE
+(droits, I/O) repartait donc d'une carte vide et le save suivant l'écrasait
+avec la seule clé en cours : tous les autres hubs perdaient leur retour, sur
+une condition souvent passagère, et le `rename` passait sans broncher puisqu'il
+répond aux droits du DOSSIER. Trois réponses distinctes désormais — absent
+(`ENOENT`/`ENOTDIR` : aucun fichier ne peut exister là, rien à protéger),
+illisible (on REFUSE d'écrire, à voix haute), corrompu (mis de côté en
+`.broken`, on repart à neuf). Trois tests, tous les trois en échec sans le
+correctif — dont un premier jet qui passait des DEUX côtés : l'ancien code
+échouait pour une raison accessoire, pas parce qu'il refusait.
 
 Chantier UX du 26/08 (backlog dicté par Monsieur, fiche `golem-evolutions`)
 — lot 1, le composer : le champ tenait sur une ligne de 34 px sur la surface
