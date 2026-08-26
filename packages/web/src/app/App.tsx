@@ -57,6 +57,8 @@ function say(
 export interface InstanceInfo {
   readonly driver: { label: string; cliVersion: string; capabilities: readonly string[] }
   readonly auth: { mode: string }
+  /** What the operator called this instance. Set only when they called it anything. */
+  readonly name?: string
   /** Set only when the operator configured one; the browser decides otherwise. */
   readonly locale?: string
   readonly user: { userId: string; displayName: string } | null
@@ -550,7 +552,18 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
               ? info.skin.scheme
               : undefined,
           )
-          if (dressed.skin.title) document.title = dressed.skin.title
+          /*
+           * The operator's name for the instance wins over the livery's.
+           * Not a cosmetic order: this title is what iOS proposes when
+           * somebody adds the page to their home screen, so it must agree
+           * with the manifest — where the same precedence already applies.
+           *
+           * The header BRAND is left to the skin either way: what the OS
+           * calls this window and what the body calls itself are two
+           * different sentences.
+           */
+          const named = info.name ?? dressed.skin.title
+          if (named) document.title = named
           // Off-contract fields are reported where the plugin problems are,
           // because a silently ignored field is an hour spent wondering why
           // nothing happens.

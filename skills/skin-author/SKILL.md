@@ -252,6 +252,10 @@ as two icons both called "Golem".
 }
 ```
 
+An operator may overrule your name with `name:` in `golem.config.yaml`, and
+that is the intended order: you know what BODY the instance wears, they know
+that this one is the workshop's and the other the kitchen's.
+
 Those five fields, plus `lang`, `dir` and `categories`, are all a skin may set
 — a NAME and a COLOUR. `start_url`, `scope`, `id` and `display` stay the
 product's: a livery that could move the entry point would change what the app

@@ -37,7 +37,7 @@ import { registerPages } from './pages.js'
 import { mountPluginApis } from './plugin-host.js'
 import { ArmingSessions, SecretStore } from './secrets.js'
 import { registerStatic } from './static.js'
-import { baseManifest, type WebManifest } from './webmanifest.js'
+import { baseManifest, withInstanceName, type WebManifest } from './webmanifest.js'
 
 /** What the shell needs to dress itself, before it renders anything. */
 export interface SkinPayload {
@@ -243,6 +243,15 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
       capabilities: descriptor.capabilities,
     },
     auth: { mode: config.auth.mode },
+    /**
+     * What the operator called this instance, when they called it anything.
+     *
+     * The shell needs it, not just the manifest: iOS proposes the DOCUMENT
+     * TITLE when someone adds the page to their home screen, so a name that
+     * only reached the manifest would be ignored on the platform it was most
+     * wanted for.
+     */
+    ...(config.name ? { name: config.name } : {}),
     /**
      * Absent when the operator set none — the shell then asks the browser,
      * which is what lets one instance answer two visitors in their own
@@ -760,7 +769,8 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     plugins,
     ...(webRoot ? { webRoot } : {}),
     ...(deps.skin ? { skinDir: deps.skin.dir } : {}),
-    webManifest: deps.webManifest ?? baseManifest({ locale: config.locale }),
+    webManifest:
+      deps.webManifest ?? withInstanceName(baseManifest({ locale: config.locale }), config.name),
   })
 
   // Exposed on the instance so `start()` can hand it to the clock without a

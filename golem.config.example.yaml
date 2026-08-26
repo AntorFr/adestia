@@ -12,6 +12,18 @@ port: 8730
 # Server-side state: conversations, the attachment inbox, driver secrets (0600).
 dataDir: ./data
 
+# What THIS instance is called — the household's, the workshop's.
+#
+# It names the browser tab and the INSTALL: Golem is an installable PWA, and
+# without this every instance lands on a home screen as an icon called after
+# the skin it wears, or "Golem" under a bare one. Two instances then look like
+# the same app. A skin can rename itself, which settles two instances wearing
+# two liveries and does nothing for two wearing the same; this wins over it.
+#
+# It lives in the FILE and has no environment override on purpose: the
+# environment says where an instance runs, the file says what it is.
+# name: Atelier
+
 # The interface's language: `fr`, `en`. Omit it and the shell asks the
 # BROWSER — so a household gets its own language with no configuration, and a
 # visitor from elsewhere gets theirs on the same instance. Set it to overrule

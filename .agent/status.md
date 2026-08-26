@@ -2,7 +2,7 @@
 > MàJ : 2026-08-26
 
 **État :** Migration Alfred. Faits et vérifiés en navigateur : `todo`,
-`planif`, `collections`, `scan`, skin `alfred`. 1093 tests + 146 de plugins.
+`planif`, `collections`, `scan`, skin `alfred`. 1108 tests + 146 de plugins.
 Facette `blocks` CÂBLÉE : elle était chargée et narrowée depuis le début, et
 personne ne lisait le résultat. Un bloc se déclare en deux moitiés — le
 manifeste (`vocabulary`) dit ce qu'il EST, pour que le SERVEUR le valide sans
@@ -358,6 +358,21 @@ SSE est un corps qui ne finit pas. Le jugement du worker est un module PUR
 (`src/sw/policy.ts`, 12 tests) ; `build/sw.mjs` le bundle APRÈS Vite, parce
 qu'il lui faut les noms des chunks d'entrée, et nomme le cache d'après un hash
 de l'`index.html` bâti — il tourne exactement quand la coque change.
+
+`name:` d'instance ajouté dans la foulée (demande de Monsieur, et elle
+comblait un vrai trou) : une livrée règle DEUX instances portant DEUX livrées
+et ne règle rien pour deux portant la même — le cas exact d'un opérateur qui
+monte un second Golem. Appliqué EN DERNIER, par-dessus la skin ; réglage de
+FICHIER sans surcharge d'environnement, sur la ligne que ce produit trace
+déjà (l'environnement dit OÙ une instance tourne, le fichier dit ce qu'elle
+EST). Il atteint la coque autant que le manifeste, parce qu'**iOS propose le
+TITRE DU DOCUMENT** quand on ajoute la page à l'écran d'accueil : un nom qui
+s'arrêtait au manifeste aurait été ignoré sur la plateforme pour laquelle on
+le voulait le plus. Le BRAND de l'en-tête reste à la skin — ce que l'OS
+appelle cette fenêtre et ce que le corps s'appelle lui-même sont deux phrases
+différentes. Vérifié : `document.title: Atelier` sur une instance habillée
+skippy, manifeste `name`/`short_name` à « Atelier » et `theme_color` toujours
+celui de la livrée.
 
 **Constaté au navigateur** (Chrome 151 headless piloté en CDP) : worker
 `activated`, cache `golem-<hash>` à 11 entrées, `Page.getAppManifest` rend

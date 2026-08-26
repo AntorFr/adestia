@@ -379,3 +379,29 @@ mcp:
     ])
   })
 })
+
+describe('the instance name', () => {
+  it('is absent unless the operator writes one', () => {
+    expect(parseConfig('').name).toBeUndefined()
+  })
+
+  it('is taken as written, trimmed', () => {
+    expect(parseConfig('name: "  Atelier  "').name).toBe('Atelier')
+  })
+
+  it('refuses a blank one rather than installing an unnamed icon', () => {
+    // "" is not "no name": it is a manifest whose name is empty, which some
+    // launchers show as an unnamed icon instead of falling back.
+    expect(() => parseConfig('name: "   "')).toThrow(/must not be blank/)
+  })
+
+  it('refuses what cannot be a name', () => {
+    expect(() => parseConfig('name: 12')).toThrow(/name must be a string/)
+    expect(() => parseConfig(`name: "${'x'.repeat(61)}"`)).toThrow(/61 characters/)
+  })
+
+  it('has no environment override, unlike where the instance runs', () => {
+    // The environment says WHERE an instance runs; the file says what it IS.
+    expect(parseConfig('', { GOLEM_NAME: 'Atelier' }).name).toBeUndefined()
+  })
+})

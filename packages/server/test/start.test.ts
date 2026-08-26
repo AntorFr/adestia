@@ -218,6 +218,21 @@ describe('what the instance installs as', () => {
     expect(logs.join('\n')).toContain('off contract, ignored: start_url')
   })
 
+  it("wears the operator's name over the livery's", async () => {
+    // The case a skin cannot settle: two instances wearing the SAME livery.
+    await writeSkin('amber', { name: 'Skippy', short_name: 'Skippy', theme_color: '#080a0d' })
+    const instance = await boot('name: Atelier\nextensions:\n  skin: amber')
+    const manifest = await manifestOf(instance)
+    expect(manifest['name']).toBe('Atelier')
+    expect(manifest['short_name']).toBe('Atelier')
+    // The livery still dresses what it legitimately dresses.
+    expect(manifest['theme_color']).toBe('#080a0d')
+    // And the shell is told, because iOS proposes the DOCUMENT TITLE when
+    // somebody adds the page to their home screen — a name that reached only
+    // the manifest would be ignored exactly where it was most wanted.
+    expect((await instance.app.inject({ url: '/api/instance' })).json().name).toBe('Atelier')
+  })
+
   it("still installs when the skin's fragment is unreadable", async () => {
     // The product's manifest is the floor. A livery that ships a broken one
     // costs its name, never the install.

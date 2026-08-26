@@ -183,6 +183,22 @@ export interface GolemConfig {
   readonly host: string
   readonly port: number
   readonly dataDir: string
+  /**
+   * What THIS instance is called — the household's, the workshop's.
+   *
+   * It names the browser tab and the install: the manifest's `name`, and the
+   * document title an iPhone proposes when someone adds the page to their home
+   * screen. A skin can already rename an install, and that covers two
+   * instances wearing two liveries; it does nothing for two wearing the same
+   * one, which is exactly the case an operator running a second Golem hits.
+   *
+   * So it wins over the skin, and it is a FILE setting rather than an
+   * environment one: the environment says where an instance runs, the file
+   * says what it is, and a name is the plainest thing an instance is.
+   *
+   * Absent, the livery's name stands, and the product's under a bare instance.
+   */
+  readonly name?: string | undefined
   /** `fr`, `en`… Absent means: let the browser decide. */
   readonly locale?: string | undefined
   /**
@@ -225,6 +241,7 @@ const KNOWN_KEYS = new Set([
   'host',
   'port',
   'dataDir',
+  'name',
   'locale',
   'secrets',
   'auth',
@@ -629,6 +646,38 @@ function readMcpServers(raw: unknown, issues: string[]): readonly McpServerConfi
   return servers
 }
 
+/**
+ * The instance's name, which ends up on somebody's home screen.
+ *
+ * Refused rather than trimmed into something else: a name is displayed, in a
+ * launcher that gives it about a dozen characters, and every rejection here is
+ * a value that would have looked like a bug in the shell instead of a typo in
+ * the file.
+ */
+function readInstanceName(value: unknown, issues: string[]): string | undefined {
+  if (value === undefined || value === null) return undefined
+  if (typeof value !== 'string') {
+    issues.push('name must be a string')
+    return undefined
+  }
+  const name = value.trim()
+  if (name === '') {
+    // A blank name is not "no name": it is a manifest whose `name` is empty,
+    // which some launchers show as an unnamed icon rather than falling back.
+    issues.push('name must not be blank — remove the setting to use the default')
+    return undefined
+  }
+  if (/[\u0000-\u001f\u007f]/.test(name)) {
+    issues.push('name must not contain control characters')
+    return undefined
+  }
+  if (name.length > 60) {
+    issues.push(`name is ${name.length} characters; 60 is the most a name can usefully be`)
+    return undefined
+  }
+  return name
+}
+
 function applyOverrides(raw: Record<string, unknown>, env: NodeJS.ProcessEnv): void {
   for (const [variable, path] of Object.entries(ENV_OVERRIDES)) {
     const value = env[variable]
@@ -805,6 +854,7 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
   // Before the throw, or its own refusals are collected and never raised —
   // which is how a bad secret name reached a plugin with no complaint.
   const secrets = readSecrets(raw['secrets'], issues)
+  const name = readInstanceName(raw['name'], issues)
 
   if (issues.length > 0) throw new ConfigError(issues)
 
@@ -813,6 +863,7 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
     host: typeof raw['host'] === 'string' ? raw['host'] : DEFAULTS.host,
     port: port as number,
     dataDir: typeof raw['dataDir'] === 'string' ? raw['dataDir'] : DEFAULTS.dataDir,
+    ...(name ? { name } : {}),
     ...(typeof raw['locale'] === 'string' ? { locale: raw['locale'] } : {}),
     secrets,
     auth,

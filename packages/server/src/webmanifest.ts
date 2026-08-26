@@ -138,3 +138,20 @@ export function mergeSkinManifest(base: WebManifest, fragment: unknown): MergedM
 
   return { manifest: merged, ignored }
 }
+
+/**
+ * The operator's own name for this instance, applied last.
+ *
+ * Last because it is the most specific: the product knows what it is, a skin
+ * knows what body it wears, and only the person deploying knows that THIS one
+ * is the workshop's and the other is the kitchen's. A skin covers two
+ * instances wearing two liveries and does nothing for two wearing the same.
+ *
+ * Both fields, deliberately. `short_name` is what a launcher shows under an
+ * icon, and leaving the livery's there under the operator's `name` would put
+ * two different words on one install.
+ */
+export function withInstanceName(manifest: WebManifest, name: string | undefined): WebManifest {
+  if (!name) return manifest
+  return { ...manifest, name, short_name: name }
+}

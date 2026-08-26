@@ -41,7 +41,7 @@ import { FileRefreshStore } from './mcp-refresh.js'
 import { runSetups } from './plugin-host.js'
 import { UserTokens } from './user-tokens.js'
 import { SecretStore } from './secrets.js'
-import { baseManifest, mergeSkinManifest } from './webmanifest.js'
+import { baseManifest, mergeSkinManifest, withInstanceName } from './webmanifest.js'
 import { collectSkills, deliverSkills } from './skills.js'
 
 export const DEFAULT_CONFIG_FILE = 'golem.config.yaml'
@@ -242,6 +242,10 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
       )
     }
   }
+  // Applied over the skin's, because the operator is the only one who knows
+  // that THIS instance is the workshop's and the other is the kitchen's.
+  webManifest = withInstanceName(webManifest, config.name)
+  if (config.name) log(`instance named "${config.name}"`)
 
   const dataDir = resolve(cwd, config.dataDir)
   /**

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { baseManifest, mergeSkinManifest, PREBOOT_ICONS } from '../src/webmanifest.js'
+import {
+  baseManifest,
+  mergeSkinManifest,
+  withInstanceName,
+  PREBOOT_ICONS,
+} from '../src/webmanifest.js'
 
 describe('the product manifest', () => {
   it('installs as one app per origin', () => {
@@ -92,5 +97,31 @@ describe('a skin dressing the manifest', () => {
     expect(mergeSkinManifest(base, undefined).manifest).toBe(base)
     expect(mergeSkinManifest(base, ['nope']).ignored).toEqual(['(root)'])
     expect(mergeSkinManifest(base, ['nope']).manifest).toBe(base)
+  })
+})
+
+describe('the operator naming the instance', () => {
+  const base = baseManifest()
+
+  it('overrules the livery, which is the whole point', () => {
+    // A skin settles two instances wearing two liveries and does nothing for
+    // two wearing the same — which is exactly the case an operator running a
+    // second Golem hits.
+    const dressed = mergeSkinManifest(base, { name: 'Skippy', short_name: 'Skippy' }).manifest
+    const named = withInstanceName(dressed, 'Atelier')
+    expect(named['name']).toBe('Atelier')
+    expect(named['short_name']).toBe('Atelier')
+  })
+
+  it('names both fields, so one install does not carry two words', () => {
+    // `short_name` is what a launcher shows under the icon.
+    expect(withInstanceName(base, 'Atelier')['short_name']).toBe('Atelier')
+  })
+
+  it('changes nothing else, and nothing at all when unset', () => {
+    const named = withInstanceName(base, 'Atelier')
+    expect(named['start_url']).toBe('/')
+    expect(named['icons']).toBe(base['icons'])
+    expect(withInstanceName(base, undefined)).toBe(base)
   })
 })

@@ -697,6 +697,17 @@ network-first, and only content-addressed `/assets/*` chunks answer from the
 cache — they cannot change meaning without changing name. `/api/` is not
 intercepted at all: an SSE turn is a body that never ends.
 
+A livery settles two instances wearing two liveries and settles nothing for two
+wearing the same one — which is the case an operator running a second Golem
+actually hits. So `name:` was added to the config, applied LAST, over the
+skin's. It is a file setting with no environment override, on the line this
+product already draws: the environment says where an instance runs, the file
+says what it is. It reaches the shell as well as the manifest, because iOS
+proposes the DOCUMENT TITLE when somebody adds a page to their home screen — a
+name that stopped at the manifest would be ignored on the platform it was most
+wanted for. The header BRAND stays the skin's either way: what the OS calls
+this window and what the body calls itself are two different sentences.
+
 **2026-08-26 (a livery is a look, not a navigation):** the `home` slot handed
 a skin the WHOLE landing canvas. Both liveries that took it rebuilt a tile
 mosaic out of `/api/instance` — which carries plugins and nothing else — so an

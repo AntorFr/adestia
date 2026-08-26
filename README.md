@@ -81,9 +81,10 @@ Golem's own interface.
   home canvas or from a phone folded onto the conversation.
 - **Inbound MCP**, so another agent can delegate work here asynchronously.
 - **Skins**: tokens and a few narrow hooks, one active at a time.
-- **Installs like an app.** The manifest is served, not shipped: the active
-  skin renames and recolours it, so two instances are two icons under two
-  names rather than two "Golem"s on one home screen. A skin's raster icons are
+- **Installs like an app.** The manifest is served, not shipped: `name:` in
+  the config, or failing that the active skin, renames and recolours it — so
+  two instances are two icons under two names rather than two "Golem"s on one
+  home screen. A skin's raster icons are
   served the way its favicon already is — including the opaque 180×180 an
   iPhone demands and the manifest cannot give it. The service worker is
   network-first on everything whose name outlives its content, so an installed
