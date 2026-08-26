@@ -253,20 +253,6 @@ export type TurnEvent =
        */
       readonly remembering: boolean
     }
-  /**
-   * Somebody answered "for this conversation": here is what to hand back on
-   * the NEXT turn of that thread so the question does not return.
-   *
-   * Opaque to the core on purpose — minted by a driver, understood only by
-   * the same driver. The product's job is memory, not meaning: it files these
-   * against the conversation and returns them in `TurnRequest.grants`.
-   *
-   * It exists because a session's own memory is not enough: each turn is a
-   * fresh CLI process, so a rule the engine remembers "for this session" dies
-   * with the turn that granted it (measured end-to-end, 2026-08-26). Without
-   * this, the button would have to say "for this turn".
-   */
-  | { readonly type: 'permission-granted'; readonly grants: readonly string[] }
   /** Only with `liveTurnUsage`: feeds the climbing counter on the busy bubble. */
   | { readonly type: 'usage-delta'; readonly outputTokens: number }
   | {
@@ -301,13 +287,6 @@ export interface TurnRequest {
    * REQUEST because only the product knows who is at the other end.
    */
   readonly unattended?: boolean
-  /**
-   * What this conversation already answered "for this conversation" to.
-   *
-   * Opaque tokens a driver emitted earlier as `permission-granted`, handed
-   * straight back. The core never reads them — see that event.
-   */
-  readonly grants?: readonly string[]
   /** Resume this CLI session; absent means a fresh one. */
   readonly sessionId?: string
   readonly model?: string

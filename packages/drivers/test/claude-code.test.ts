@@ -560,10 +560,12 @@ describe('the two postures', () => {
     expect((await driver.describe()).capabilities).toContain('interactivePermissions')
   })
 
-  it('hands the engine back its OWN suggestions for "this conversation"', async () => {
-    // How "stop asking me here" is honoured without Golem keeping a single
-    // rule: the answer returns the ENGINE's own suggestions, and the CLI
-    // remembers them for the length of the session — which is a conversation.
+  it('hands the engine back its OWN suggestion, untouched, on "always"', async () => {
+    // How a durable answer is kept without Golem keeping a list: the engine
+    // writes the rule into its own file in the workspace and reads it back on
+    // every later turn. Untouched is deliberate — an earlier version pinned
+    // these to `destination: 'session'`, which dies with the turn's process,
+    // so the answer had to be given again at the very next message.
     const desk = new AskDesk()
     const seen: { params?: unknown } = {}
     // Held open until the question is answered: a turn that ended would have
@@ -592,7 +594,8 @@ describe('the two postures', () => {
 
     await vi.waitFor(() => expect(seen.params).toBeDefined())
     const { canUseTool } = (seen.params as { options: { canUseTool: CanUseToolFn } }).options
-    // As the real SDK hands them over: destined for a file on disk.
+    // As the real SDK hands them over: destined for a file on disk, which is
+    // exactly what makes the answer outlive the turn.
     const suggestions = [
       { type: 'addRules', rules: [{ toolName: 'WebFetch' }], destination: 'localSettings' },
     ]
@@ -609,19 +612,12 @@ describe('the two postures', () => {
       title: 'Claude wants to fetch example.com',
       remembering: true,
     })
-    desk.answer(desk.outstanding()[0]!.id, 'session')
+    desk.answer(desk.outstanding()[0]!.id, 'always')
 
-    // ⚠️ Pinned to the SESSION, not returned verbatim. Found end-to-end
-    // against the real CLI: the SDK suggests `destination: 'localSettings'`,
-    // which WRITES a permanent rule into <workspace>/.claude/settings.local.json.
-    // A button saying "for this conversation" would then have granted the tool
-    // for ever, in every conversation, in a file nobody opened.
     expect(await decision).toEqual({
       behavior: 'allow',
       updatedInput: { url: 'https://example.com' },
-      updatedPermissions: [
-        { type: 'addRules', rules: [{ toolName: 'WebFetch' }], destination: 'session' },
-      ],
+      updatedPermissions: suggestions,
     })
     releaseTurn()
     await turn

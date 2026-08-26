@@ -792,18 +792,18 @@ describe("the engine's question", () => {
     expect(screen.getByText(ASK.title)).toBeTruthy()
   })
 
-  it('offers three answers when the engine can remember one', () => {
+  it('offers the durable answer when the engine can remember one', () => {
     const onAnswer = vi.fn()
     render(<AskPrompt ask={ASK} onAnswer={onAnswer} />)
-    fireEvent.click(screen.getByText('For this conversation'))
-    expect(onAnswer).toHaveBeenCalledWith('q1', 'session')
+    fireEvent.click(screen.getByText('Always'))
+    expect(onAnswer).toHaveBeenCalledWith('q1', 'always')
   })
 
-  it('hides "for this conversation" when there is nothing to remember', () => {
+  it('hides "always" when the engine gave no rule to remember', () => {
     // Hidden rather than inert: a button that promises silence and does not
     // deliver it is worse than one more question.
     render(<AskPrompt ask={{ ...ASK, remembering: false }} onAnswer={vi.fn()} />)
-    expect(screen.queryByText('For this conversation')).toBeNull()
+    expect(screen.queryByText('Always')).toBeNull()
     expect(screen.getByText('Just this once')).toBeTruthy()
   })
 

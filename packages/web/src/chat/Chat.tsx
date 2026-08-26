@@ -239,11 +239,15 @@ export function LiveProse({
  * line, reused for consent — so a long command was approved unseen. Consent to
  * an elided command is not consent.
  *
- * "For this conversation" is the answer that makes asking bearable: the CLI
- * remembers it for the rest of the session, so a working thread costs a
- * handful of clicks at its start and none afterwards. It is HIDDEN, not
- * disabled, when the engine offered nothing to remember — a button that
- * promises silence and does not deliver it is worse than one more question.
+ * "Always" is the answer that makes asking bearable, and it is the ENGINE's
+ * memory, not Golem's: the CLI writes the rule into its own file in the
+ * workspace and reads it back on every later turn. So the durable allowlist
+ * is a file a person can open, read and edit — which is also the honest
+ * answer to "what is my agent allowed to do".
+ *
+ * It is HIDDEN, not disabled, when the engine offered no rule to remember: a
+ * button that promises silence and does not deliver it is worse than one more
+ * question.
  */
 export function AskPrompt({
   ask,
@@ -251,7 +255,7 @@ export function AskPrompt({
   t = (key) => key,
 }: {
   ask: PendingAsk
-  onAnswer: (id: string, answer: 'once' | 'session' | 'deny') => void
+  onAnswer: (id: string, answer: 'once' | 'always' | 'deny') => void
   t?: (key: string) => string
 }) {
   return (
@@ -269,9 +273,9 @@ export function AskPrompt({
           <button
             type="button"
             className="golem-ask__always"
-            onClick={() => onAnswer(ask.id, 'session')}
+            onClick={() => onAnswer(ask.id, 'always')}
           >
-            {t('For this conversation')}
+            {t('Always')}
           </button>
         )}
       </div>

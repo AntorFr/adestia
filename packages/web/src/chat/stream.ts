@@ -72,7 +72,7 @@ export interface PendingAsk {
   /** The engine's own sentence — shown as-is, never re-worded or elided. */
   readonly title: string
   readonly reason?: string | undefined
-  /** Whether "for this conversation" may be offered. */
+  /** Whether "always" may be offered — the engine gave a rule to remember. */
   readonly remembering: boolean
 }
 
@@ -141,10 +141,6 @@ export function applyEvent(state: TurnState, event: TurnEvent): TurnState {
           remembering: event.remembering,
         },
       }
-
-    case 'permission-granted':
-      // The server files it against the thread; nothing to draw.
-      return state
 
     case 'usage-delta':
       // The driver guarantees this only grows; the UI never has to reconcile a

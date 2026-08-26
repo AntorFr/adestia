@@ -27,8 +27,6 @@ export type TurnEvent =
       readonly reason?: string
       readonly remembering: boolean
     }
-  /** Bookkeeping between server and driver; the chat draws nothing for it. */
-  | { readonly type: 'permission-granted'; readonly grants: readonly string[] }
   | { readonly type: 'usage-delta'; readonly outputTokens: number }
   | {
       readonly type: 'result'

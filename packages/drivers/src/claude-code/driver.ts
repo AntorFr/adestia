@@ -163,52 +163,6 @@ function readHealth(
   }))
 }
 
-/**
- * Pins the engine's suggestions to the session, and to nothing longer.
- *
- * ⚠️ Found by an end-to-end run against the real CLI, 2026-08-26, and the
- * reason this function exists: the SDK's own suggestions carry
- * `destination: 'localSettings'`, so returning them verbatim WROTE a permanent
- * rule into `<workspace>/.claude/settings.local.json`. A button that says "for
- * this conversation" would have granted the tool for ever, in every
- * conversation, in a file nobody opened — and Golem would have started
- * managing a permission list again, by accident, having just removed one.
- *
- * `session` is the destination that means what the button says. Any suggestion
- * that cannot be pinned to it is dropped rather than downgraded to something
- * broader: fewer remembered answers is a cost, a silent permanent grant is a
- * betrayal.
- */
-function asAllowRules(suggestions: readonly unknown[]): string[] {
-  const rules: string[] = []
-  for (const suggestion of suggestions) {
-    if (typeof suggestion !== 'object' || suggestion === null) continue
-    const entry = suggestion as { type?: unknown; rules?: unknown }
-    // Only additions of allow rules travel. A `setMode` suggestion would carry
-    // a whole permission MODE into the next turn, which is the operator's
-    // posture and never a per-question answer.
-    if (entry.type !== 'addRules' || !Array.isArray(entry.rules)) continue
-    for (const rule of entry.rules) {
-      const value = rule as { toolName?: unknown; ruleContent?: unknown }
-      if (typeof value.toolName !== 'string') continue
-      rules.push(
-        typeof value.ruleContent === 'string' && value.ruleContent.length > 0
-          ? `${value.toolName}(${value.ruleContent})`
-          : value.toolName,
-      )
-    }
-  }
-  return rules
-}
-
-function forThisSessionOnly(suggestions: readonly unknown[]): unknown[] {
-  return suggestions
-    .filter((suggestion): suggestion is Record<string, unknown> => {
-      return typeof suggestion === 'object' && suggestion !== null
-    })
-    .map((suggestion) => ({ ...suggestion, destination: 'session' }))
-}
-
 export class ClaudeCodeDriver implements Driver {
   readonly #query: QueryFn
   readonly #baseEnv: Readonly<Record<string, string | undefined>>
@@ -392,11 +346,6 @@ export class ClaudeCodeDriver implements Driver {
      * itself — it can only leave one where the loop will find it.
      */
     const raised: PendingAsk[] = []
-    /**
-     * What was granted "for this conversation" during this turn, drained to
-     * the stream so the product can hand it back on the next one.
-     */
-    const granted: string[] = []
 
     /**
      * The engine asks; this carries the question and brings the answer back.
@@ -406,10 +355,18 @@ export class ClaudeCodeDriver implements Driver {
      * `Read`, an `echo` never reach it (measured). What arrives is its
      * residue, and the only thing Golem adds is a person.
      *
-     * `session` returns the engine's OWN suggestions as `updatedPermissions`,
-     * which is how "stop asking me about this here" is honoured without Golem
-     * keeping a single rule: the CLI remembers, for the length of the session
-     * — and a session is a conversation.
+     * `always` returns the engine's OWN suggestions, untouched, as
+     * `updatedPermissions`. The CLI then writes the rule into its own file in
+     * the workspace and reads it back on every later turn — so the durable
+     * allowlist is the engine's, in a file a person can open and edit, and
+     * Golem keeps no list of its own.
+     *
+     * ⚠️ Untouched is deliberate, and was learned the hard way. An earlier
+     * version pinned these to `destination: 'session'` so a button reading
+     * "for this conversation" would not lie — but a session's rules die with
+     * the turn's process, so the promise became "for this turn" and the
+     * answer had to be given again at the next message. The honest fix was
+     * the LABEL, not the scope.
      */
     const canUseTool = desk
       ? async (
@@ -444,14 +401,11 @@ export class ClaudeCodeDriver implements Driver {
           if (answer === 'deny') {
             return { behavior: 'deny' as const, message: 'refused by the user' }
           }
-          // Remembered by the PRODUCT as well as by the session: the session's
-          // own memory dies with this turn's process.
-          if (answer === 'session') granted.push(...asAllowRules(suggestions))
           return {
             behavior: 'allow' as const,
             updatedInput: input,
-            ...(answer === 'session' && suggestions.length > 0
-              ? { updatedPermissions: forThisSessionOnly(suggestions) }
+            ...(answer === 'always' && suggestions.length > 0
+              ? { updatedPermissions: suggestions }
               : {}),
           }
         }
@@ -472,12 +426,6 @@ export class ClaudeCodeDriver implements Driver {
         // routes what is left to `canUseTool`. Deliberately NOT `'auto'`: its
         // classifier approved a `rm -rf` without ever calling back (measured
         // 2026-08-26), so it is a bypass wearing a gate's name.
-        // What this conversation already agreed to, in the engine's own rule
-        // language. Resolved BEFORE `canUseTool`, so an answered question does
-        // not come back at the next message of the same thread.
-        ...(canUseTool && request.grants && request.grants.length > 0
-          ? { settings: { permissions: { allow: [...request.grants] } } }
-          : {}),
         ...(canUseTool
           ? { permissionMode: 'default' as const, canUseTool }
           : {
@@ -512,10 +460,6 @@ export class ClaudeCodeDriver implements Driver {
         // Drained before each message, so a question reaches the screen as
         // soon as the SDK raises it rather than after the next piece of
         // output — the turn is BLOCKED on it, so late is the same as lost.
-        while (granted.length > 0) {
-          yield { type: 'permission-granted', grants: granted.splice(0, granted.length) }
-        }
-
         while (raised.length > 0) {
           const ask = raised.shift()!
           yield {

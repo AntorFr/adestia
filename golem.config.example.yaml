@@ -136,8 +136,11 @@ permissions:
   # ask — the ENGINE's own first line decides, and what it would have asked a
   # terminal about surfaces in the chat instead. Golem judges nothing and
   # keeps no rules: a `Read` or an `echo` is never asked about (the CLI
-  # settles those), and answering "for this conversation" hands the engine
-  # back its own suggestion, so IT stops asking for the rest of the session.
+  # settles those), and answering "always" hands the engine back its own
+  # suggestion, so IT writes the rule into `<workspace>/.claude/settings.local.json`
+  # and stops asking — in every thread, after a restart, for good. That file
+  # IS your allowlist: open it to see what the agent may do, edit it to take
+  # something back. Golem keeps no list of its own.
   #
   # ⚠️ `ask` needs an engine that can be asked. claude-code can; copilot-cli
   # in programmatic mode has no return channel and auto-denies what it would

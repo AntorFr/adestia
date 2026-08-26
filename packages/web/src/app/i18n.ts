@@ -68,7 +68,7 @@ const FR: Readonly<Record<string, string>> = {
   'Permission required': 'Autorisation demandée',
   Refuse: 'Refuser',
   'Just this once': 'Cette fois',
-  'For this conversation': 'Pour cette conversation',
+  Always: 'Toujours',
   'New conversation': 'Nouvelle conversation',
   'Open apps': 'Ouvrir les apps',
   'Back to the chat': 'Revenir au chat',

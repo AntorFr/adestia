@@ -715,19 +715,25 @@ lists, no patterns, no content gates. In `ask` the driver runs the SDK's
 `default` mode, so the CLI's own first line settles the harmless (a `Read`, an
 `echo` never come back — measured) and only its residue reaches the chat, worded
 by the engine itself (`title`, `decisionReason` — no more consent to a string
-truncated at 78 characters). Answering "for this conversation" returns the
-engine's OWN `suggestions` as `updatedPermissions`, so a working thread costs a
-few clicks at its start and none after. Two things had to be fixed for that
-sentence to be TRUE, both found by driving the real CLI rather than a fake:
-the SDK's suggestions carry `destination: 'localSettings'`, so returning them
-verbatim wrote a PERMANENT rule into `<workspace>/.claude/settings.local.json`
-— a button saying "for this conversation" quietly granting a tool for ever, in
-every conversation, in a file nobody opens; they are now pinned to `session`.
-And a session's memory dies with the turn, since every turn is a fresh CLI
-process — so the driver emits what was granted as an opaque token, the server
-files it against that CONVERSATION in memory (never on disk, so a restart
-forgets and asks again), and hands it back on the next turn of that thread and
-no other. Golem stores somebody's ANSWERS, never a rule of its own. The SDK's `'auto'` classifier
+truncated at 78 characters). The third answer is **"always"**, and it returns the
+engine's OWN `suggestions` untouched: the CLI writes the rule into its own file
+in the workspace (`.claude/settings.local.json`) and reads it back on every
+later turn — a different thread, a different day, a restarted pod. So the
+durable allowlist is the ENGINE's, in a file a person can open, read and edit,
+and Golem maintains no list at all. That file is also the honest answer to
+"what is my agent allowed to do", which is the question that started this whole
+line of work.
+
+Getting there took one wrong turn worth recording. Driving the real CLI showed
+the suggestions carry `destination: 'localSettings'` — permanent — while the
+button then read "for this conversation", so the first fix pinned them to
+`destination: 'session'` to make the label true. That was fixing the wrong
+half: session rules die with the turn's process (every turn is a fresh CLI), so
+the promise silently became "for this turn" and the answer had to be given
+again at the very next message. Carrying it in the server per conversation made
+it work and made Golem the keeper of a permission list again, by accident,
+having just removed one. The honest fix was the LABEL: say "always", let the
+engine persist it where it already wanted to, keep nothing here. The SDK's `'auto'` classifier
 mode was TESTED and rejected for this: it approved a `rm -rf` without ever
 calling back, so embedded it is a bypass wearing a gate's name. Copilot cannot
 be asked at all in programmatic mode (no return channel; it auto-denies), so

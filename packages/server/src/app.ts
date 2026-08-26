@@ -184,16 +184,6 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   const conversations = new ConversationStore(config.dataDir)
   const secrets = deps.secrets ?? new SecretStore(config.dataDir)
   const inbox = new AttachmentInbox(config.dataDir, config.attachments)
-  /**
-   * What each conversation has already answered "for this conversation" to.
-   *
-   * In MEMORY, and deliberately not on disk: a restart forgets, and the next
-   * question is asked again. That is the safe direction to be wrong in — and
-   * it keeps this a memory of somebody's ANSWERS rather than a permission
-   * list Golem maintains. The values are opaque driver tokens; the core files
-   * them and hands them back, never reads them.
-   */
-  const grants = new Map<string, string[]>()
   const arming = new ArmingSessions()
   const descriptor: DriverDescriptor = await driver.describe()
 
@@ -550,23 +540,13 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
           // than the gateway's own notes.
           prompt: frameView(frameAttachments(body.prompt, attachments), body.view),
           cwd: config.workspace.root,
-          ...(conversationId && grants.get(conversationId)?.length
-            ? { grants: grants.get(conversationId)! }
-            : {}),
           ...(typeof body.sessionId === 'string' ? { sessionId: body.sessionId } : {}),
           ...(typeof body.model === 'string' ? { model: body.model } : {}),
           ...(callerToken ? { callerToken } : {}),
         })
         for await (const event of events) {
           reply.raw.write(sseFrame(event))
-          if (event.type === 'permission-granted') {
-            // Filed against the thread, so the next message in it does not
-            // ask again. Deduped: the same rule granted twice is one rule.
-            if (conversationId) {
-              const kept = grants.get(conversationId) ?? []
-              grants.set(conversationId, [...new Set([...kept, ...event.grants])])
-            }
-          } else if (event.type === 'text-delta') text += event.text
+          if (event.type === 'text-delta') text += event.text
           else if (event.type === 'tool-use') {
             tools.push({ name: event.name, ...(event.target ? { target: event.target } : {}) })
           } else if (event.type === 'tool-result') {
@@ -616,18 +596,19 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   /**
    * Answering what the engine asked.
    *
-   * Three answers, no policy: `once` allows this call, `session` allows it and
-   * hands the engine back its OWN suggestions so it stops asking for the rest
-   * of the conversation, `deny` refuses. Golem stores no rule either way — the
-   * remembering happens inside the CLI session.
+   * Three answers, no policy: `once` allows this call, `always` allows it and
+   * hands the engine back its OWN suggestion so IT writes the rule into its
+   * own file in the workspace, `deny` refuses. Golem stores no rule either
+   * way — the durable allowlist belongs to the engine, in a file a person can
+   * open and edit.
    */
   app.post<{ Body: { id?: unknown; answer?: unknown } }>(
     '/api/permission',
     async (request, reply) => {
       const { id, answer } = request.body ?? {}
-      const valid = answer === 'once' || answer === 'session' || answer === 'deny'
+      const valid = answer === 'once' || answer === 'always' || answer === 'deny'
       if (typeof id !== 'string' || !valid) {
-        return reply.code(400).send({ error: 'id and answer (once|session|deny) are required' })
+        return reply.code(400).send({ error: 'id and answer (once|always|deny) are required' })
       }
       // 409 rather than 404: the question existed, it simply timed out or was
       // already answered — "unknown" would suggest the person clicked

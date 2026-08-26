@@ -7,14 +7,18 @@
  * holds that question until somebody answers it. Golem is the surface, never
  * the wall (DESIGN.md, decision log 2026-08-26).
  *
- * Three answers, and the middle one is why this is bearable: `once` for this
- * call, `session` to stop being asked about that tool for the rest of the
- * conversation — which the ENGINE remembers, not us — and `deny`.
+ * Three answers, and the last one is why this is bearable: `once` for this
+ * call, `always` to stop being asked at all, and `deny`.
+ *
+ * `always` is remembered by the ENGINE, in the engine's own rule file inside
+ * the workspace — not by Golem. That is the whole point: the durable
+ * allowlist is a file a person can open, read and edit, maintained by the CLI
+ * that enforces it. Golem keeps no list, and never did after 2026-08-26.
  */
 
 import { randomUUID } from 'node:crypto'
 
-export type AskAnswer = 'once' | 'session' | 'deny'
+export type AskAnswer = 'once' | 'always' | 'deny'
 
 export interface PendingAsk {
   readonly id: string
@@ -22,7 +26,7 @@ export interface PendingAsk {
   /** The engine's own sentence. */
   readonly title: string
   readonly reason?: string
-  /** Whether `session` is answerable — the engine offered something to remember. */
+  /** Whether `always` is answerable — the engine offered a rule to remember. */
   readonly remembering: boolean
 }
 

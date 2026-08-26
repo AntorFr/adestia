@@ -21,8 +21,8 @@ describe('the ask desk', () => {
       return true
     })
 
-    expect(desk.answer(published[0]!.id, 'session')).toBe(true)
-    expect(await answer).toBe('session')
+    expect(desk.answer(published[0]!.id, 'always')).toBe(true)
+    expect(await answer).toBe('always')
   })
 
   it('refuses at once when nobody is watching', async () => {
