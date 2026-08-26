@@ -152,9 +152,12 @@ export class CopilotDriver implements Driver {
    * without being identical, which is the whole reason this is declared rather
    * than assumed.
    */
-  /** Where this CLI reads prose — `copilot init` writes the second one. */
+  /**
+   * Where this CLI reads prose — `copilot init` writes the second one, and
+   * `.github/agents/*.agent.md` holds the custom agents `--agent` selects.
+   */
   instructionPaths(): readonly string[] {
-    return ['AGENTS.md', '.github/copilot-instructions.md', '.github/skills']
+    return ['AGENTS.md', '.github/copilot-instructions.md', '.github/agents', '.github/skills']
   }
 
   authorityPaths(): readonly string[] {

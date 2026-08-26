@@ -387,6 +387,12 @@ describe('driver', () => {
     expect(checkConformance(driver, await driver.describe())).toEqual([])
   })
 
+  it('reads its prose zones, including the custom-agent folder', () => {
+    const paths = new CopilotDriver({ home: '/x' }).instructionPaths()
+    expect(paths).toContain('.github/agents')
+    expect(paths).toContain('.github/copilot-instructions.md')
+  })
+
   it('promises no per-turn cost or live counter', async () => {
     // Copilot bills AI credits, aggregated daily by an API; the stream carries
     // no running token count. Declaring either would put a number in the UI
