@@ -132,6 +132,18 @@ illisible (on REFUSE d'écrire, à voix haute), corrompu (mis de côté en
 `.broken`, on repart à neuf). Trois tests, tous les trois en échec sans le
 correctif — dont un premier jet qui passait des DEUX côtés : l'ancien code
 échouait pour une raison accessoire, pas parce qu'il refusait.
+Zone d'instructions de Copilot élargie à `.github/agents` (branche poussée
+depuis l'instance GHC) : le CLI y lit ses agents personnalisés — vérifié à la
+doc GitHub, les captures du spike ne couvraient que les skills — donc l'écran
+d'instructions les montre au lieu d'un dossier invisible. Reprise à la revue :
+le dossier est aussi passé en zone d'AUTORITÉ, parce qu'un profil `.agent.md`
+ne fait pas que parler — son frontmatter porte `tools` (ce que l'agent peut
+atteindre, références MCP comprises) et `mcp-servers`. Même nature que
+`.mcp.json`, sous un nom plus avenant : un tour qui réécrirait le profil
+sélectionné par `driver.agent` se donnerait des outils que personne n'a
+accordés, au tour suivant, dans un fichier qui ressemble à de la prose. Les
+skills restent dehors, délibérément : elles disent quoi FAIRE, jamais ce qu'on
+peut atteindre.
 
 Chantier UX du 26/08 (backlog dicté par Monsieur, fiche `golem-evolutions`)
 — lot 1, le composer : le champ tenait sur une ligne de 34 px sur la surface

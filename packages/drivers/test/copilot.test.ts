@@ -393,6 +393,18 @@ describe('driver', () => {
     expect(paths).toContain('.github/copilot-instructions.md')
   })
 
+  it('guards the custom-agent folder as authority, not only as prose', () => {
+    // A profile's frontmatter carries `tools` — which tools the agent may
+    // reach, MCP references included — and `mcp-servers`, which wires new
+    // ones. Selecting one is the operator's call through `driver.agent`;
+    // rewriting the profile they selected must not be the turn's.
+    const driver = new CopilotDriver({ home: '/x' })
+    expect(driver.authorityPaths()).toContain('.github/agents')
+    // The contrast, and it is deliberate: a skill says what to DO, never what
+    // one may reach, so it stays prose a turn may write unasked.
+    expect(driver.authorityPaths()).not.toContain('.github/skills')
+  })
+
   it('promises no per-turn cost or live counter', async () => {
     // Copilot bills AI credits, aggregated daily by an API; the stream carries
     // no running token count. Declaring either would put a number in the UI

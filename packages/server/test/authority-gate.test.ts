@@ -35,6 +35,18 @@ describe('the guarded zone', () => {
     expect(rule(write(`${ROOT}/.claude/hooks/nested/deep.json`))).toBe('ask')
   })
 
+  it('asks before a custom agent profile is written', () => {
+    // Copilot's `.github/agents/*.agent.md` reads as documentation and grants
+    // tools: its frontmatter carries `tools` and `mcp-servers`. A turn that
+    // rewrote the profile an operator selected would be handing itself reach
+    // nobody granted, on the next turn, in a file that looks like prose.
+    const copilot = authorityEditRule(ROOT, ['.github/agents', '.github/mcp.json'])
+    expect(copilot(write(`${ROOT}/.github/agents/reviewer.agent.md`))).toBe('ask')
+    // Skills sit next door and stay ungoverned on purpose — they say what to
+    // do, never what one may reach.
+    expect(copilot(write(`${ROOT}/.github/skills/x/SKILL.md`))).toBeUndefined()
+  })
+
   it('says nothing about ordinary content', () => {
     // `undefined`, not `allow`: this rule has no opinion outside its zone, and
     // an opinion there would override the policy that does have one.

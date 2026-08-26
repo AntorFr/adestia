@@ -140,6 +140,19 @@ export class CopilotDriver implements Driver {
   }
 
   /**
+   * Where this CLI reads prose — `copilot init` writes the second one, and
+   * `.github/agents/*.agent.md` holds the custom agents `--agent` selects.
+   *
+   * The agent folder is BOTH prose and authority, and appears in both lists
+   * for that reason: its markdown body is a brief somebody writes and should
+   * be able to correct here, while its frontmatter grants tools and wires MCP
+   * servers. Reading it is a person's business; rewriting it is a decision.
+   */
+  instructionPaths(): readonly string[] {
+    return ['AGENTS.md', '.github/copilot-instructions.md', '.github/agents', '.github/skills']
+  }
+
+  /**
    * What decides this CLI's authority, inside the workspace.
    *
    * Read off spike 3's captures rather than recalled: repo-level `settings.json`
@@ -151,19 +164,21 @@ export class CopilotDriver implements Driver {
    * `.github/`, `.agents/` AND `.claude/`: the two drivers' zones overlap
    * without being identical, which is the whole reason this is declared rather
    * than assumed.
+   *
+   * `.github/agents` is here because a custom agent profile is not only prose:
+   * its frontmatter carries `tools` — which tools the agent may use, MCP
+   * server references included — and `mcp-servers`, which wires new ones. That
+   * is the same nature as `.mcp.json` two lines up, under a friendlier name. A
+   * turn that rewrote the profile an operator has selected through
+   * `driver.agent` would be handing itself tools nobody granted, on the next
+   * turn, in a file nobody thought to watch. Skills are the deliberate
+   * contrast, and stay out: they say what to DO, never what one may reach.
    */
-  /**
-   * Where this CLI reads prose — `copilot init` writes the second one, and
-   * `.github/agents/*.agent.md` holds the custom agents `--agent` selects.
-   */
-  instructionPaths(): readonly string[] {
-    return ['AGENTS.md', '.github/copilot-instructions.md', '.github/agents', '.github/skills']
-  }
-
   authorityPaths(): readonly string[] {
     return [
       '.github/settings.json',
       '.github/hooks',
+      '.github/agents',
       '.github/mcp.json',
       '.mcp.json',
       '.agents/hooks',
