@@ -972,27 +972,86 @@
 
 /* A way OUT of the settings dialog, into a screen. Looks like a destination
    rather than a control, because that is what it is. */
-.golem-settings__link { margin-top: var(--space-4); }
+/* The settings screen: one row per subject ------------------------------- */
 
-.golem-settings__link button {
+.golem-prefs__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  width: 100%;
-  padding: var(--space-3);
-  text-align: left;
-  background: var(--surface-sunken);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text);
-  font: inherit;
-  cursor: pointer;
-  transition: border-color 0.14s;
+  gap: var(--space-2);
 }
 
-.golem-settings__link button:hover { border-color: var(--accent); }
-.golem-settings__link-title { font-weight: 600; }
-.golem-settings__link-lede { color: var(--text-muted); font-size: var(--text-sm); }
+.golem-prefs__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.golem-prefs__row:hover { border-color: var(--tile-color, var(--accent)); }
+.golem-prefs__row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* The same saturated plate the app tiles wear, at the size a row can carry:
+   two mosaics of settings and apps that dressed their icons differently
+   would read as two products. */
+.golem-prefs__plate {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--tile-color, var(--accent)) var(--plate-top), var(--plate-base)),
+    color-mix(in srgb, var(--tile-color, var(--accent)) var(--plate-mix), var(--plate-base))
+  );
+  font-size: var(--text-base);
+}
+
+.golem-prefs__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.golem-prefs__title { font-weight: 600; }
+
+.golem-prefs__lede {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.golem-prefs__chevron { flex: none; color: var(--text-faint); font-size: var(--text-lg); }
+
+.golem-prefs__back {
+  margin-bottom: var(--space-3);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  cursor: pointer;
+}
+
+.golem-prefs__back:hover { text-decoration: underline; }
 
 /* The MCP panel: a list of names and states, in the settings dialog. Rows
    rather than cards — this is a status board, and a board is read down a

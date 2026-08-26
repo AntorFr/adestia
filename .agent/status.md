@@ -75,6 +75,17 @@ et en bas il prenait sa largeur au champ. Replié sur mobile (`ComposerFold`) :
 MOTS — Échap et clic dehors ferment, le menu s'ouvre vers le HAUT (le composer
 est en bas de l'écran). Boutons 40 px, 44 sur téléphone.
 
+Lot 2, les réglages : le dialogue empilait le jeton, un lien Instructions et
+le relevé MCP dans l'ordre où ils avaient été écrits — armer un jeton poussait
+tout le reste vers le bas et la liste MCP dormait sous douze lignes de statut.
+Devenu un écran de RANGÉES (`Preferences`, contrôlé), une par sujet, chacune
+ouvrant sa page ; le dialogue nomme la page ouverte (`prefsTitle`). La vertu
+n'est pas la familiarité iOS mais l'ADRESSAGE : une rangée dit vrai avant
+d'être ouverte (« 2 serveurs — 1 à regarder », `mcpLede`). Pas de rangée MCP
+quand le driver ne rapporte pas (404) NI quand il rapporte zéro — les deux
+ouvriraient une page vide. Instructions reste une PORTE vers l'écran plein.
+`useMcpServers` extrait de `McpPanel` : un seul fetch pour la rangée et la page.
+
 **Reste :**
 - [ ] `atelier` — ~1 600 lignes (plan de débit, SVG). EN COURS.
 - [x] `parcours` vérifié au navigateur (instance Docker, magasin d'alfred-beta

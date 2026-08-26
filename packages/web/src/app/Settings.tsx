@@ -95,6 +95,43 @@ const MCP_STATES: Readonly<
 }
 
 /**
+ * What the driver says about its outbound MCP servers.
+ *
+ * `undefined` is a THIRD answer, distinct from the empty list: it means the
+ * engine does not report at all (a 404), where `[]` means it reports and has
+ * none. The settings screen needs that distinction to decide whether an MCP
+ * row is worth offering, and the panel needs it to decide whether to draw —
+ * so the fetch lives here, once, rather than in both.
+ */
+export function useMcpServers(
+  fetchImpl: typeof fetch = fetch,
+  /** False when the caller already holds the answer — no second request. */
+  enabled = true,
+): readonly McpServerHealth[] | undefined {
+  const [servers, setServers] = useState<readonly McpServerHealth[] | undefined>()
+
+  useEffect(() => {
+    if (!enabled) return undefined
+    let live = true
+    void (async () => {
+      try {
+        const response = await fetchImpl('/api/mcp/status')
+        if (!response.ok) return
+        const body = (await response.json()) as { servers?: readonly McpServerHealth[] }
+        if (live) setServers(body.servers ?? [])
+      } catch {
+        /* no report, no panel */
+      }
+    })()
+    return () => {
+      live = false
+    }
+  }, [fetchImpl, enabled])
+
+  return servers
+}
+
+/**
  * The outbound MCP servers this instance wired, and what they are doing.
  *
  * Absent entirely when the driver cannot report — a 404 — rather than shown
@@ -103,25 +140,16 @@ const MCP_STATES: Readonly<
  */
 export function McpPanel({
   fetchImpl = fetch,
+  servers: given,
   t = (key) => key,
 }: {
   fetchImpl?: typeof fetch
+  /** Already fetched by the screen around it; asked for otherwise. */
+  servers?: readonly McpServerHealth[] | undefined
   t?: (key: string) => string
 }) {
-  const [servers, setServers] = useState<readonly McpServerHealth[] | undefined>()
-
-  useEffect(() => {
-    void (async () => {
-      try {
-        const response = await fetchImpl('/api/mcp/status')
-        if (!response.ok) return
-        const body = (await response.json()) as { servers?: readonly McpServerHealth[] }
-        setServers(body.servers ?? [])
-      } catch {
-        /* no report, no panel */
-      }
-    })()
-  }, [fetchImpl])
+  const fetched = useMcpServers(fetchImpl, given === undefined)
+  const servers = given ?? fetched
 
   if (servers === undefined || servers.length === 0) return null
 

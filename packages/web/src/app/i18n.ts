@@ -93,6 +93,11 @@ const FR: Readonly<Record<string, string>> = {
 
   // MCP servers, in the settings panel
   'MCP servers': 'Serveurs MCP',
+  server: 'serveur',
+  servers: 'serveurs',
+  '%n need attention': '%n à regarder',
+  'Arm or renew the token this instance answers with':
+    'Armer ou renouveler le jeton avec lequel cette instance répond',
   connected: 'connecté',
   failed: 'en échec',
   'needs a sign-in': 'connexion requise',

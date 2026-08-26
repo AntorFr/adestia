@@ -14,7 +14,7 @@ import { Editor, type PageDocument } from '../editor/Editor.js'
 import type { BlockComponents } from '../editor/Reader.js'
 import { Modal } from './Modal.js'
 import { Instructions } from './Instructions.js'
-import { McpPanel, Settings } from './Settings.js'
+import { Preferences, prefsTitle, type PrefsPage } from './Preferences.js'
 import {
   browserSkinEnvironment,
   loadSkin,
@@ -154,6 +154,8 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
    */
   const [mount, setMount] = useState<EditorMount | undefined>()
   const [settingsOpen, setSettingsOpen] = useState(false)
+  /** Which page of the settings screen is open; `''` is the list of cards. */
+  const [prefsPage, setPrefsPage] = useState<PrefsPage>('')
   const [skin, setSkin] = useState<Skin & SkinSlots>({})
 
   /**
@@ -837,33 +839,31 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
       </main>
 
       {settingsOpen && (
-        <Modal title={t('Settings')} closeLabel={t('Close')} onClose={() => setSettingsOpen(false)}>
-          <Settings fetchImpl={fetchImpl} t={t} />
-          {/*
-            Before the MCP panel, not after it. This is the one thing in here
-            somebody comes to DO; the server list is a readout. Placed last it
-            sat under a dozen rows of status and fell below the fold — the
-            feature existed and could not be found, which is the same as not
-            existing.
-
-            Editing prose inside a dialog would be cramped, so it opens the
-            screen and closes the dialog behind it.
-          */}
-          <section className="golem-settings__link">
-            <button
-              type="button"
-              onClick={() => {
-                setSettingsOpen(false)
-                window.location.hash = '/instructions'
-              }}
-            >
-              <span className="golem-settings__link-title">📓 {t('Instructions')}</span>
-              <span className="golem-settings__link-lede">
-                {t('Read and correct what you told the agent')}
-              </span>
-            </button>
-          </section>
-          <McpPanel fetchImpl={fetchImpl} t={t} />
+        <Modal
+          // The frame names the page, the way a phone's navigation bar does:
+          // a dialog still headed "Settings" while you are three rows into
+          // the credential flow is a frame that lost track of its contents.
+          title={prefsTitle(prefsPage, t)}
+          closeLabel={t('Close')}
+          onClose={() => {
+            setSettingsOpen(false)
+            // Reopening lands on the list rather than on whatever page was
+            // last read: a dialog that resumes where you left it makes the
+            // gear button do something different every time you press it.
+            setPrefsPage('')
+          }}
+        >
+          <Preferences
+            page={prefsPage}
+            onPage={setPrefsPage}
+            onOpenInstructions={() => {
+              setSettingsOpen(false)
+              setPrefsPage('')
+              window.location.hash = '/instructions'
+            }}
+            fetchImpl={fetchImpl}
+            t={t}
+          />
         </Modal>
       )}
     </div>
