@@ -77,11 +77,12 @@ export interface SkinSlotContext {
   ask(prompt: string): void
   /** Puts text in the composer without sending. */
   compose(text: string): void
-  /** Puts the cursor in the composer — what a custom home's prompt box does. */
+  /** Puts the cursor in the composer — what a hero's prompt box does. */
   focusComposer(): void
   /**
-   * For the `console` slot: the instance summary, as served by
-   * `/api/instance`. Absent on the other slots.
+   * For the `hero` and `console` slots: the instance summary, as served by
+   * `/api/instance`. Absent on `busy`, which is mounted mid-turn and has no
+   * business reading the instance to draw three dots.
    */
   readonly instance?: {
     readonly driver: { readonly label: string; readonly cliVersion: string }
@@ -93,13 +94,22 @@ export interface SkinSlotContext {
 /** The three living slots a skin may fill. All optional, like everything else. */
 export interface SkinSlots {
   /**
-   * Replaces the landing canvas entirely. The two bodies that need this do
-   * not want Alfred's home repainted — they answer a different question
-   * (a bridge over a fleet; a rabbit and an invitation). Navigation from a
-   * custom home is ordinary hash links: every tiled plugin answers on
-   * `#/<its-route-or-id>`.
+   * The head of the landing canvas: how this body greets you, and the way in.
+   *
+   * It replaced `home`, which handed over the WHOLE canvas — and that was the
+   * wrong cut. The two bodies using it rebuilt a tile mosaic out of
+   * `/api/instance`, which carries plugins and nothing else, so a livery
+   * silently cost its instance the domaines, the brief, the tile counts (a
+   * skin cannot even reach those: they come from a plugin's own view), the
+   * arrange mode, and — until it was noticed — settings. Every improvement to
+   * the landing was automatically absent from two instances out of three.
+   *
+   * A livery is a LOOK, not a navigation. So it draws the greeting, the
+   * mascot and the invitation, and the shell keeps the mosaics under it. What
+   * a hero wants to change about those is a TOKEN, never a rule against a
+   * shell class — same reason as ever: several personalities share one shell.
    */
-  readonly home?: SkinSlotRender
+  readonly hero?: SkinSlotRender
   /**
    * Replaces the three working dots in the live bubble. Mounted only while a
    * turn runs, so "hurried" is this slot's only state.
@@ -109,7 +119,7 @@ export interface SkinSlots {
   readonly console?: SkinSlotRender
 }
 
-const SLOT_FIELDS = ['home', 'busy', 'console'] as const
+const SLOT_FIELDS = ['hero', 'busy', 'console'] as const
 
 export interface SkinLoad {
   readonly skin: Skin & SkinSlots

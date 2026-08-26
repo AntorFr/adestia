@@ -18,7 +18,7 @@ rule of its meaning.
 skins/<id>/
   golem-skin.json       REQUIRED
   skin.css              token overrides, and NOTHING else
-  skin.js               narrow hooks (brand, crest, busy indicator, home)
+  skin.js               narrow hooks (brand, crest, busy indicator, hero)
   assets/icon.svg       favicon and home-screen icon
   assets/manifest.json  web-app manifest overrides
 ```
@@ -52,7 +52,7 @@ overriding three tokens still leaves a coherent one.
 
 **A skin declares TOKENS for the shell. It never writes a structural rule
 against shell classes.** (Classes only YOUR OWN markup produces — a mascot, a
-custom home — may carry real CSS; the shell knows nothing of them.)
+hero — may carry real CSS; the shell knows nothing of them.)
 
 ```css
 /* skin.css — this, and only this shape, for the shell's look */
@@ -107,6 +107,15 @@ gradient under a white glyph; `top = mix = 16%` over the surface with a tinted
 1px border gives a flat translucent slab whose glyph TAKES the colour. Same
 rule, opposite look.
 
+**The tile, without a rule against it.** A tile carries a colour MARK — a
+3px bar across its top in the base sheet. `--tile-mark-inset` moves it (a
+livery running it down the left edge sets `0 auto 0 0`), `--tile-mark-width`
+/ `--tile-mark-height` size it (`auto` on one axis lets the inset stretch it),
+`--tile-mark-tint` dims it as a % of the tile's colour — and the pointer
+always brings it back to full, so a mark quiet at rest still answers a hover.
+`--tile-label-font`/`--tile-label-track` set the name: a body whose identity
+is a fixed pitch points the first at `var(--font-title)`.
+
 **Named hues.** `--golem-hue-rouge` … `--golem-hue-ardoise` — what pages and
 tiles mean when they say `couleur: turquoise` or `hue: "emeraude"`. A
 single-accent skin may point all twelve at its accent: tiles then distinguish
@@ -157,11 +166,12 @@ for markup no token can describe:
 ```js
 export default function skin() {
   return {
-    // Replaces the landing canvas ENTIRELY — including the shell's own
-    // Settings tile, so offer a way to `#/settings` yourself or the gear in
-    // the top bar becomes the only one. Navigate with plain hash links:
-    // every tiled plugin answers on `#/<id>`.
-    home(host, context) {
+    // The HEAD of the landing canvas — the greeting, the mascot, the way in.
+    // What sits under it (the brief, the app and section mosaics, their
+    // counts, arranging them) stays the shell's whatever the livery is, and
+    // what you want THOSE to look like is a token. `context.instance` carries
+    // the driver and the active plugins, so a count needs no fetch.
+    hero(host, context) {
       host.innerHTML = '<h1>…</h1>'
       host.querySelector('button')?.addEventListener('click', () => context.focusComposer())
       return () => {/* teardown, if anything must stop */}
@@ -169,15 +179,23 @@ export default function skin() {
     // Replaces the three working dots in the live bubble. Mounted only while
     // a turn runs — "hurried" is this slot's only state.
     busy(host) { host.append(myMascot()) },
-    // A status band above the canvas top bar. `context.instance` carries the
-    // driver, the turn counts and the active plugins.
+    // A status band above the canvas top bar. `context.instance` here too.
     console(host, context) { host.innerHTML = '…' },
   }
 }
 ```
 
 Each receives a host element the shell owns and a context (`ask`, `compose`,
-`focusComposer`, plus `instance` for the console), and may return a teardown.
+`focusComposer`, plus `instance` for `hero` and `console`), and may return a
+teardown.
+
+**`hero` replaced a `home` slot that handed over the whole canvas**, and the
+reason is worth knowing before you reach for something similar: the two
+liveries that used it rebuilt a tile mosaic out of `/api/instance` — which
+carries plugins and nothing else — so a skinned instance silently lost its
+sections, its brief, the counts a plugin puts on its own tile (a skin cannot
+reach those at all) and the arrange mode. Every improvement to the landing
+was automatically absent from a livery. A livery is a look, not a navigation.
 A slot that throws costs its own box, never the shell. Style your slot's
 markup freely in `skin.css` under your OWN class names — the token rule
 protects shell classes, not yours. Do not render a status the instance cannot

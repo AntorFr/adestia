@@ -74,6 +74,22 @@
   --plate-border-width: 0px;
   --plate-border-tint: 0%;
 
+  /* The tile's colour mark: a 3px bar across the top by default. A livery
+     that wants it down the left edge, thinner, or quiet until hovered moves
+     these — the alternative was a rule against `.golem-tile`, and the moment
+     a skin can move a box the liveries stop being one product. `auto` on one
+     axis lets the inset stretch it: top bar = inset `0 0 auto` with a height,
+     left bar = inset `0 auto 0 0` with a width. */
+  --tile-mark-inset: 0 0 auto;
+  --tile-mark-width: auto;
+  --tile-mark-height: 3px;
+  --tile-mark-tint: 100%;
+
+  /* The tile's name, in the shell's body voice unless a livery whose
+     identity is a fixed pitch says otherwise. */
+  --tile-label-font: inherit;
+  --tile-label-track: normal;
+
   /* Chat bubbles: the user speaks on accent, the agent on a bordered surface. */
   --bubble-user-bg: var(--accent);
   --bubble-user-text: var(--accent-text);

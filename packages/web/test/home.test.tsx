@@ -166,6 +166,20 @@ describe('the landing canvas', () => {
     expect(ask).toHaveBeenCalled()
   })
 
+  it('lets a livery take the head, and keeps the mosaics under it', () => {
+    // The cut this replaced handed the WHOLE canvas to the skin, and the two
+    // liveries that took it rebuilt a tile mosaic out of `/api/instance` —
+    // plugins only. So a skinned instance silently lost the sections, the
+    // brief and the counts. A livery is a look, not a navigation.
+    render(<Home {...props} hero={<p>Encore toi, petit singe.</p>} />)
+    expect(screen.getByText('Encore toi, petit singe.')).toBeTruthy()
+    expect(screen.queryByText(/Good morning/)).toBeNull()
+    // Everything below the head is still the shell's.
+    expect(screen.getByText('todo')).toBeTruthy()
+    expect(screen.getByText('DIY')).toBeTruthy()
+    expect(screen.getByText('Settings')).toBeTruthy()
+  })
+
   it('says what to do when there is nothing at all', () => {
     render(<Home {...props} plugins={[]} entries={[]} />)
     expect(screen.getByText(/Nothing to show yet/)).toBeTruthy()

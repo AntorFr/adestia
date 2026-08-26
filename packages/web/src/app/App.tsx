@@ -914,19 +914,30 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             openPage={openPage}
             t={t}
           />
-        ) : skin.home ? (
-          <SkinSlot
-            render={skin.home}
-            className="golem-home-host"
-            context={{
-              ask: (prompt) => askRef.current?.(prompt),
-              compose: (text) => composeRef.current?.(text),
-              focusComposer: () => composeRef.current?.(''),
-            }}
-          />
         ) : (
           <Home
             skin={skin}
+            {...(skin.hero
+              ? {
+                  // The livery draws the head of the landing — the greeting,
+                  // the mascot, the way in — and the shell keeps the mosaics
+                  // under it. Built here rather than in `Home` because the
+                  // slot's context is the shell's to hand out, and this is
+                  // the same one the console band gets.
+                  hero: (
+                    <SkinSlot
+                      render={skin.hero}
+                      className="golem-home-host"
+                      context={{
+                        ask: (prompt) => askRef.current?.(prompt),
+                        compose: (text) => composeRef.current?.(text),
+                        focusComposer: () => composeRef.current?.(''),
+                        instance,
+                      }}
+                    />
+                  ),
+                }
+              : {})}
             plugins={loaded}
             entries={pages}
             openPlugin={openPlugin}

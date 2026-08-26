@@ -75,19 +75,28 @@ function core(px, speed) {
 }
 
 /**
- * The bridge — this body's landing.
+ * The bridge — the head of this body's landing.
  *
- * Its own row for the shell's own screen: a livery that replaces the landing
- * replaces the Settings tile that stands on it, and the gear alone is not a
- * landing. Not filed under "Modules" — Réglages is not a plugin, and a HUD
- * that says otherwise is a HUD that lies about what is armed.
+ * Only the head. It used to be the whole canvas, and the HUD rebuilt its own
+ * tile mosaic out of `/api/instance` — which carries plugins and nothing
+ * else. So a body wearing this livery quietly lost the domaines, the brief,
+ * the counts a plugin puts on its own tile (unreachable from a skin at all),
+ * the arrange mode, and settings. A livery is a LOOK. The shell draws the
+ * mosaics under this panel; what the HUD wants them to look like is a TOKEN,
+ * which is why `skin.css` sets the plate knobs rather than a rule against
+ * `.golem-tile`.
+ *
+ * The module count stays, and now without a fetch: the slot is handed the
+ * instance summary, the same one the console band reads.
  */
-function home(host, context) {
+function hero(host, context) {
   const h = new Date().getHours()
   const salut = h < 5 || h >= 22 ? 'Encore debout' : h < 18 ? 'Encore toi' : 'Toujours là'
   const date = new Date()
     .toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
     .toUpperCase()
+  const armed = context.instance?.plugins?.length ?? 0
+  const sub = armed ? `${date} · ${armed} MODULE${armed > 1 ? 'S' : ''} EN LIGNE` : date
 
   host.innerHTML = `<div class="hud">
     <section class="panel brackets bridge">
@@ -96,52 +105,17 @@ function home(host, context) {
         <div class="corewrap"></div>
         <div class="hailwrap">
           <h1 class="hail">${esc(salut)}, <em>petit singe</em>.</h1>
-          <p class="hailsub" data-sub>${esc(date)}</p>
+          <p class="hailsub">${esc(sub)}</p>
           <button class="promptbox" data-prompt type="button"><span class="caret" aria-hidden="true"></span><span>Ordonner quelque chose au Magnifique…</span><kbd>⌘K</kbd></button>
         </div>
       </div>
     </section>
-    <div class="hudrow">Modules</div>
-    <div class="hudmosaic" data-tiles><div class="hudempty">Interrogation du noyau…</div></div>
-    <div class="hudrow">Système</div>
-    <div class="hudmosaic">
-      <a class="hudtile" href="#/settings">
-        <span class="hudico">[ SYS ]</span>
-        <span class="hudnm">Réglages</span>
-        <span class="hudst">Jeton, serveurs MCP, aspect, instructions</span>
-      </a>
-    </div>
   </div>`
 
   host.querySelector('.corewrap').appendChild(core(150, 1))
   // The prompt only hands the cursor back to the composer: the chat stays the
   // surface, the bridge is just a way in.
   host.querySelector('[data-prompt]').addEventListener('click', () => context.focusComposer())
-
-  // The armed modules, as HUD tiles. Plain hash links: every tiled plugin
-  // answers on #/<id>, which is the whole navigation API a livery needs.
-  void fetch('/api/instance')
-    .then((r) => (r.ok ? r.json() : undefined))
-    .then((info) => {
-      const mount = host.querySelector('[data-tiles]')
-      if (!mount) return
-      const tiles = (info?.plugins ?? [])
-        .filter((plugin) => plugin.tile)
-        .map(
-          (plugin) => `<a class="hudtile" href="#/${esc(plugin.id)}">
-            <span class="hudico">[ ${esc(plugin.id.toUpperCase())} ]</span>
-            <span class="hudnm">${esc(plugin.tile.label)}</span>
-            <span class="hudst">${esc(plugin.description ?? '')}</span>
-          </a>`,
-        )
-      mount.innerHTML = tiles.join('') || '<div class="hudempty">Aucun module activé sur ce corps.</div>'
-      const sub = host.querySelector('[data-sub]')
-      if (sub && tiles.length) sub.textContent = `${date} · ${tiles.length} MODULE${tiles.length > 1 ? 'S' : ''} EN LIGNE`
-    })
-    .catch(() => {
-      const mount = host.querySelector('[data-tiles]')
-      if (mount) mount.innerHTML = '<div class="hudempty">Noyau injoignable.</div>'
-    })
 }
 
 /** The status band above the breadcrumb. */
@@ -175,7 +149,7 @@ export default function skippy() {
       '<circle cx="50" cy="50" r="31" stroke-width="9" stroke-dasharray="120 75" transform="rotate(-40 50 50)"/>' +
       '<circle cx="50" cy="50" r="10" fill="currentColor" stroke="none"/>' +
       '<path d="M50 8 v9 M50 83 v9 M8 50 h9 M83 50 h9" stroke-width="8"/></svg>',
-    home,
+    hero,
     busy: (host) => {
       host.appendChild(core(40, 4.5))
     },

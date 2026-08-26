@@ -669,6 +669,34 @@ had missed.
 
 ## Decision log
 
+**2026-08-26 (a livery is a look, not a navigation):** the `home` slot handed
+a skin the WHOLE landing canvas. Both liveries that took it rebuilt a tile
+mosaic out of `/api/instance` — which carries plugins and nothing else — so an
+instance wearing one silently lost its sections, the agent's brief, the counts
+a plugin puts on its own tile (unreachable from a skin: they come from the
+plugin's view, not from the API), the arrange mode, and, until somebody
+noticed, settings. Not a bug in either skin: an extension point cut in the
+wrong place, and one whose cost compounds — every future improvement to the
+landing is automatically absent from two instances out of three.
+
+*Taken: `hero`.* The livery draws the head — the greeting, the mascot, the way
+in, which is all either of them ever wanted — and the shell keeps everything
+below it. `home` is off-contract now rather than deprecated: the loader already
+names ignored fields in the problems band, so a third-party livery degrades to
+the shell's landing WITH a stated reason, which beats a second way of doing one
+thing forever.
+
+Which forces the other half, because "the shell keeps the mosaic" is only
+acceptable if a livery can still make the mosaic look like itself. That is
+paid in TOKENS, never in a rule against `.golem-tile` — the moment a skin can
+move a box, the personalities stop being one product. The tile's colour mark
+became four knobs (`--tile-mark-inset/-width/-height/-tint`, and a hover that
+always restores it to full) and its name two (`--tile-label-font/-track`), so
+the HUD's left-edge bar and fixed-pitch label are a token declaration. The
+skin sheet that stated the doctrine best — *"if a look is not reachable
+through a token, the contract gets extended, not this sheet"* — is the one
+that needed it.
+
 **2026-08-26 (settings is a domain, not an accessory of the screen you were
 on):** the gear opened a dialog. A dialog is 460px wide, it floats over
 whatever you were reading, and everything it holds has to be small enough to

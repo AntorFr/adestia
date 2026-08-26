@@ -868,15 +868,26 @@
   transition: transform 0.16s, box-shadow 0.16s, border-color 0.16s;
 }
 
+/* The colour mark. Every dimension of it is a token: a livery moves the bar
+   to the left edge or dims it, and never writes a rule against this class. */
 .golem-tile::before {
   content: '';
   position: absolute;
-  inset: 0 0 auto;
-  height: 3px;
-  background: var(--tile-color, var(--accent));
+  inset: var(--tile-mark-inset);
+  width: var(--tile-mark-width);
+  height: var(--tile-mark-height);
+  background: color-mix(
+    in srgb,
+    var(--tile-color, var(--accent)) var(--tile-mark-tint),
+    transparent
+  );
+  transition: background 0.16s;
 }
 
 .golem-tile:hover:not(:disabled) {
+  /* The mark answers the hover: a livery that keeps it quiet at rest still
+     gets the full colour under the pointer, without a second rule. */
+  --tile-mark-tint: 100%;
   transform: translateY(-3px);
   box-shadow: var(--shadow-lg);
   border-color: color-mix(in srgb, var(--tile-color, var(--accent)) 45%, var(--border));
@@ -908,7 +919,13 @@
 
 .golem-tile__icon svg { width: 22px; height: 22px; }
 
-.golem-tile__label { font-weight: 600; font-size: 17px; line-height: 1.1; }
+.golem-tile__label {
+  font-family: var(--tile-label-font);
+  font-weight: 600;
+  font-size: 17px;
+  line-height: 1.1;
+  letter-spacing: var(--tile-label-track);
+}
 .golem-tile__subtitle { color: var(--text-muted); font-size: 13px; margin-top: -4px; }
 
 .golem-tile__foot {

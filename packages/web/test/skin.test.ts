@@ -112,22 +112,32 @@ describe('loading', () => {
 
 describe('the living slots', () => {
   it('accepts a function on the three slot fields', () => {
-    const home = () => undefined
+    const hero = () => undefined
     const busy = () => undefined
     const konsole = () => undefined
-    const { skin, rejected } = narrowSkin({ home, busy, console: konsole })
-    expect(skin.home).toBe(home)
+    const { skin, rejected } = narrowSkin({ hero, busy, console: konsole })
+    expect(skin.hero).toBe(hero)
     expect(skin.busy).toBe(busy)
     expect(skin.console).toBe(konsole)
     expect(rejected).toEqual([])
   })
 
   it('rejects a string where a slot belongs, and a function where a string belongs', () => {
-    // Half-working is the failure mode this guards: a `home` that is a string
+    // Half-working is the failure mode this guards: a `hero` that is a string
     // would render nothing and say nothing.
-    const { skin, rejected } = narrowSkin({ home: '<div>hi</div>', brand: () => 'X' })
-    expect(skin.home).toBeUndefined()
+    const { skin, rejected } = narrowSkin({ hero: '<div>hi</div>', brand: () => 'X' })
+    expect(skin.hero).toBeUndefined()
     expect(skin.brand).toBeUndefined()
-    expect(rejected).toEqual(['home', 'brand'])
+    expect(rejected).toEqual(['hero', 'brand'])
+  })
+
+  it('reports a livery still handing over the whole canvas', () => {
+    // `home` replaced the landing entirely, mosaics included, and a livery
+    // using it silently cost its instance the domaines, the brief and the
+    // tile counts. It is off-contract now — and REPORTED, so its author
+    // reads why the landing came back rather than wondering.
+    const { skin, rejected } = narrowSkin({ home: () => undefined })
+    expect(skin).toEqual({})
+    expect(rejected).toEqual(['home'])
   })
 })

@@ -11,7 +11,7 @@
  * folders whose index page dresses them.
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 
 import type { LoadedPlugin } from '../plugins/loader.js'
 import type { TileInfo } from '../plugins/contract.js'
@@ -24,6 +24,16 @@ import { useReorder } from './useReorder.js'
 
 export interface HomeProps {
   readonly skin: Skin
+  /**
+   * The livery's own head — greeting, mascot, way in — in place of the
+   * shell's three lines. Everything BELOW it is the shell's whatever the
+   * livery is: the brief, the mosaics, their counts and their arranging.
+   *
+   * The slot it replaced handed over the whole canvas, and the two bodies
+   * that used it rebuilt a tile mosaic from `/api/instance` — plugins only.
+   * A livery is a look, not a navigation.
+   */
+  readonly hero?: ReactNode
   readonly plugins: readonly LoadedPlugin[]
   readonly entries: readonly IndexEntry[]
   readonly openPlugin: (plugin: LoadedPlugin) => void
@@ -262,6 +272,7 @@ function useTileInfo(plugins: readonly LoadedPlugin[]): Record<string, TileInfo>
 
 export function Home({
   skin,
+  hero,
   plugins,
   entries,
   openPlugin,
@@ -400,36 +411,42 @@ export function Home({
 
   return (
     <div className="golem-home">
-      <h1 className="golem-home__greeting">
-        {greeting}
-        {skin.greetingAside && (
-          <span className="golem-home__aside"> {skin.greetingAside}</span>
-        )}
-      </h1>
-      <p className="golem-home__context">
-        {context.charAt(0).toUpperCase() + context.slice(1)}
-      </p>
+      {hero ?? (
+        <>
+          <h1 className="golem-home__greeting">
+            {greeting}
+            {skin.greetingAside && (
+              <span className="golem-home__aside"> {skin.greetingAside}</span>
+            )}
+          </h1>
+          <p className="golem-home__context">
+            {context.charAt(0).toUpperCase() + context.slice(1)}
+          </p>
 
-      {/* Not a search box: it puts the cursor in the composer. The chat IS the
-          way in, and a second input that only looked like one would split the
-          user's attention between two places that do different things. */}
-      <button type="button" className="golem-home__ask" onClick={focusComposer}>
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <circle cx="11" cy="11" r="7" />
-          <path d="M21 21l-4-4" />
-        </svg>
-        {/* The block caret: invisible on most liveries, a beating amber slab
-            on the one whose whole identity is a terminal. CSS decides. */}
-        <span className="golem-home__ask-caret" aria-hidden="true" />
-        <span className="golem-home__ask-text">{skin.placeholder ?? t('Ask…')}</span>
-        <kbd className="golem-home__ask-kbd">⌘K</kbd>
-      </button>
+          {/* Not a search box: it puts the cursor in the composer. The chat IS
+              the way in, and a second input that only looked like one would
+              split the user's attention between two places that do different
+              things. */}
+          <button type="button" className="golem-home__ask" onClick={focusComposer}>
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <circle cx="11" cy="11" r="7" />
+              <path d="M21 21l-4-4" />
+            </svg>
+            {/* The block caret: invisible on most liveries, a beating amber
+                slab on the one whose whole identity is a terminal. CSS
+                decides. */}
+            <span className="golem-home__ask-caret" aria-hidden="true" />
+            <span className="golem-home__ask-text">{skin.placeholder ?? t('Ask…')}</span>
+            <kbd className="golem-home__ask-kbd">⌘K</kbd>
+          </button>
+        </>
+      )}
 
       {brief && (
         <>

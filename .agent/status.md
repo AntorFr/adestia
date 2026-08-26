@@ -212,6 +212,26 @@ Le `Modal` de la coque est SUPPRIMÉ : plus personne ne le
 rendait (les plugins ont les leurs), et un composant gardé au chaud pour un
 dialogue que personne n'a demandé ment sur ce que fait le produit.
 
+Lot 6, le bon découpage de l'accueil (question de Monsieur, et elle était
+juste) : le slot `home` donnait TOUT le canvas à la livrée. Les deux qui s'en
+servaient reconstruisaient une mosaïque depuis `/api/instance` — qui ne porte
+que les plugins — donc une instance habillée perdait en silence ses domaines,
+la une, les compteurs de tuiles (inatteignables depuis une skin : ils viennent
+de la vue du plugin), le mode Ranger, et Réglages. Pas un défaut des skins :
+un point d'extension coupé au mauvais endroit, dont le coût se cumule à chaque
+amélioration de l'accueil. Remplacé par **`hero`** — la livrée dessine la TÊTE
+(salutation, mascotte, invite), la coque garde tout ce qui est dessous.
+`home` devient hors contrat plutôt que déprécié : le loader nomme déjà les
+champs ignorés dans le bandeau des problèmes, donc une livrée tierce dégrade
+vers l'accueil de la coque AVEC la raison affichée. `hero` reçoit `instance`
+comme `console` — le HUD garde son décompte de modules sans fetch.
+Contrepartie obligatoire : la mosaïque doit pouvoir ressembler à la livrée,
+et ça se paie en TOKENS. La marque colorée de la tuile devient quatre boutons
+(`--tile-mark-inset/-width/-height/-tint`, plus un survol qui la ramène
+toujours au plein) et son nom deux (`--tile-label-font/-track`) : la barre au
+bord gauche et le pas fixe du HUD sont désormais une déclaration de tokens.
+Les CSS orphelines (`.hudtile…`, `.nst-tuile…`) sont parties avec le markup.
+
 **Reste :**
 - [ ] `journal` — pas encore vérifié en navigateur (tests seulement) : le
       fil d'Ariane, une adresse courte, et un vieux lien `%2F` qui doit
@@ -227,6 +247,9 @@ dialogue que personne n'a demandé ment sur ce que fait le produit.
 - [ ] `npm run lint` ne tourne pas : eslint absent des devDependencies
 - [ ] driver Copilot : pas de plomberie de permissions → la porte planif ne
       s'y applique pas (missions bornées par `until` malgré tout)
+- [ ] `hero` : à constater au navigateur sur les DEUX livrées — la tête
+      dessinée par la skin, les mosaïques de la coque dessous, et la tuile au
+      look HUD (barre à gauche, label en pas fixe) sur skippy
 - [ ] Réglages-app : vu au serveur (boot local, `/api/mcp/status` en 404 donc
       pas de rangée MCP, `/api/instructions` en 200) mais PAS encore au
       navigateur — les 4 pages, le fil d'Ariane, la tuile, et le vieux

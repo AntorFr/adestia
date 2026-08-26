@@ -94,15 +94,18 @@ const esc = (value) =>
   )
 
 /**
- * The landing. No "Bonjour, Monsieur": this body belongs to the WHOLE house
- * and does not know who holds the phone. The greeting follows the hour, and
- * nothing else — what can be asserted without getting the person wrong.
+ * The head of the landing. No "Bonjour, Monsieur": this body belongs to the
+ * WHOLE house and does not know who holds the phone. The greeting follows the
+ * hour, and nothing else — what can be asserted without getting the person
+ * wrong.
  *
- * Settings is written in by hand, below the modules: a livery that replaces
- * the landing replaces the shell's own tile with it, and the gear in the top
- * bar is a shortcut, not a landing.
+ * Only the head. The mosaics below are the shell's: this landing used to
+ * rebuild its own out of `/api/instance`, which knows about plugins and not
+ * about the house's domaines, the brief, or how many things are waiting in
+ * each — so the household was quietly reading a poorer screen than an
+ * unskinned instance. A livery is a look, not a navigation.
  */
-function home(host, context) {
+function hero(host, context) {
   const h = new Date().getHours()
   const salut = h < 5 ? 'Bonne nuit' : h < 18 ? 'Bonjour' : 'Bonsoir'
   const date = new Date()
@@ -116,37 +119,12 @@ function home(host, context) {
     <button class="nst-invite" data-invite type="button">
       <span>Confier quelque chose à Nestor…</span><i aria-hidden="true">↑</i>
     </button>
-    <div class="nst-tuiles" data-tuiles></div>
-    <div class="nst-tuiles">
-      <a class="nst-tuile" href="#/settings">
-        <b>Réglages</b><span>Le jeton, les serveurs, l’aspect, vos instructions</span>
-      </a>
-    </div>
   </div>`
 
   host.querySelector('.nst-scene').appendChild(lapin(240))
   // The invitation only hands the cursor back: the chat stays the surface,
   // the landing is just a way in.
   host.querySelector('[data-invite]').addEventListener('click', () => context.focusComposer())
-
-  // The armed modules, in the house's words, as plain hash links. A landing
-  // that hid an ACTIVE module is the outage the predecessor documented.
-  void fetch('/api/instance')
-    .then((r) => (r.ok ? r.json() : undefined))
-    .then((info) => {
-      const mount = host.querySelector('[data-tuiles]')
-      if (!mount) return
-      mount.innerHTML = (info?.plugins ?? [])
-        .filter((plugin) => plugin.tile)
-        .map(
-          (plugin) => `<a class="nst-tuile" href="#/${esc(plugin.id)}">` +
-            `<b>${esc(plugin.tile.label)}</b><span>${esc(plugin.description ?? '')}</span></a>`,
-        )
-        .join('')
-    })
-    .catch(() => {
-      /* no tiles is a quieter landing, not an error the household reads */
-    })
 }
 
 export default function nestor() {
@@ -161,7 +139,7 @@ export default function nestor() {
     // The crest, in currentColor: eyes and muzzle being holes, the rail makes
     // the face — the silhouette holds in monochrome as-is.
     crest: `<svg viewBox="0 0 100 100" aria-hidden="true"><path fill="currentColor" d="${LAPIN}"/></svg>`,
-    home,
+    hero,
     busy: (host) => {
       host.appendChild(lapin(30, { affaire: true, surBulle: true }))
     },
