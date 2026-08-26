@@ -1,5 +1,5 @@
 # Status — Golem
-> MàJ : 2026-08-25
+> MàJ : 2026-08-26
 
 **État :** Migration Alfred. Faits et vérifiés en navigateur : `todo`,
 `planif`, `collections`, `scan`, skin `alfred`. 936 tests + 85 de plugins.
@@ -63,6 +63,17 @@ apps portées cessent de dessiner leur propre fil sous celui de la coque.
 Reste à constater AU NAVIGATEUR — la porte OIDC interdit de le faire sans la
 session de l'utilisateur : fil d'Ariane depuis une fiche de voyage, adresses
 courtes, et une ancienne URL `%2F` qui doit toujours ouvrir.
+
+Chantier UX du 26/08 (backlog dicté par Monsieur, fiche `golem-evolutions`)
+— lot 1, le composer : le champ tenait sur une ligne de 34 px sur la surface
+dont c'est le métier, il part de 48 px et pousse jusqu'à 200 (`composerHeight`,
+plancher ET plafond, la CSS porte les deux mêmes nombres). Le sélecteur de
+modèle QUITTE le composer pour le header du chat (`ModelPicker`) : quel moteur
+répond est une propriété de la CONVERSATION, pas du message en cours de frappe,
+et en bas il prenait sa largeur au champ. Replié sur mobile (`ComposerFold`) :
+📎 et les boutons de plugins passent sous un `＋` unique, en menu nommé par des
+MOTS — Échap et clic dehors ferment, le menu s'ouvre vers le HAUT (le composer
+est en bas de l'écran). Boutons 40 px, 44 sur téléphone.
 
 **Reste :**
 - [ ] `atelier` — ~1 600 lignes (plan de débit, SVG). EN COURS.

@@ -286,13 +286,20 @@
 
 .golem-composer__input {
   flex: 1;
+  /* A floor, not a fixed height: the JS grows it up to COMPOSER_MAX_HEIGHT and
+     the two numbers must agree, or the field jumps on the first keystroke. */
+  min-height: 48px;
+  max-height: 200px;
   resize: none;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: var(--space-2) var(--space-3);
+  /* Was 8px/12px, which left the caret hard against the frame on a surface
+     people write paragraphs into. */
+  padding: 13px var(--space-4);
   background: var(--surface);
   color: var(--text);
   font: inherit;
+  line-height: 1.45;
   /* 16px minimum, or iOS zooms the whole page when the field is focused. */
   font-size: max(16px, var(--text-base));
 }
@@ -303,8 +310,11 @@
 }
 
 .golem-composer button {
-  width: 36px;
-  height: 36px;
+  /* 40px against a 48px field, and 44 on a phone below: the row reads as one
+     control rather than as buttons parked next to a box. */
+  width: 40px;
+  height: 40px;
+  flex: none;
   border-radius: var(--radius);
   border: 0;
   background: var(--accent);
@@ -1168,6 +1178,25 @@
      ragged read worse than four rows that line up. */
   .golem-brief { flex-direction: column; }
   .golem-brief__item { width: 100%; }
+
+  /* 44px is the smallest target a thumb hits reliably; below that the send
+     button is a coin toss on the one control that must never miss. */
+  .golem-composer button { width: 44px; height: 44px; }
+  .golem-composer { padding: var(--space-3); gap: var(--space-2); }
+
+  /* The header holds the brand, the picker and three controls. The picker is
+     the one that may shrink — the others are fixed glyphs. */
+  .golem-model { max-width: 92px; }
+
+  /* Full width, anchored to the composer's left edge rather than to the
+     button: a 200px card hanging off a 44px control on a 390px screen is a
+     menu that hugs one margin and ignores the other. */
+  .golem-fold { position: static; }
+  .golem-fold__menu {
+    left: var(--space-3);
+    right: var(--space-3);
+    min-width: 0;
+  }
 }
 
 /* Pages and editor ------------------------------------------------------- */
@@ -1646,38 +1675,70 @@
   font-size: var(--text-base) !important;
 }
 
-/* The model picker. Sized to the name it holds rather than to the longest one
-   a driver might ever offer, and truncated instead of pushing the field: the
-   composer's job is the text field, and a selector that shrinks it to make
-   room for "claude-sonnet-5" has its priorities backwards. */
-.golem-composer__model {
-  align-self: flex-end;
-  height: 36px;
-  /* Sized to the shortest useful label, not to the longest model name. Seen
-     in a screenshot: at 116px this squeezed the field in the chat column down
-     to "Écrire à Alfred… ou « ouvre". The field is the composer's job — the
-     comment said so and the number said otherwise. */
-  max-width: 84px;
+/* The model picker, in the chat header.
+
+   It used to sit in the composer, where it competed for width with the field
+   and lost the argument on every phone. Up here it is a label beside the
+   brand, so it may be sized to the name it actually holds — still truncated
+   rather than allowed to push the header's controls off the end. */
+.golem-model {
+  height: 26px;
+  max-width: 130px;
   min-width: 0;
   flex: 0 1 auto;
   text-overflow: ellipsis;
   padding: 0 var(--space-2);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-ctl);
   background: var(--surface);
   color: var(--text-muted);
   font: 600 var(--text-sm) var(--font-mono);
   cursor: pointer;
 }
 
-.golem-composer__model:hover { color: var(--text); border-color: var(--accent); }
-.golem-composer__model:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.golem-model:hover { color: var(--text); border-color: var(--accent); }
+.golem-model:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-@media (max-width: 640px) {
-  /* A phone composer is the field and the send button. The picker keeps its
-     place but gives up its width first. */
-  .golem-composer__model { max-width: 68px; }
+/* The composer's folded controls ---------------------------------------- */
+
+.golem-fold { position: relative; display: flex; }
+
+.golem-fold__menu {
+  position: absolute;
+  /* Opens UPWARD: the composer is at the bottom of the screen, and a menu
+     dropping from it would open off the viewport. */
+  bottom: calc(100% + var(--space-2));
+  left: 0;
+  z-index: 5;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow);
 }
+
+/* Overrides the composer's square icon buttons: these are rows of text. */
+.golem-fold__item {
+  display: flex !important;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100% !important;
+  height: auto !important;
+  padding: 10px var(--space-3) !important;
+  border-radius: var(--radius-sm) !important;
+  background: none !important;
+  color: var(--text) !important;
+  font: inherit !important;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.golem-fold__item:hover { background: var(--surface-sunken) !important; }
+.golem-fold__glyph { font-size: var(--text-lg); line-height: 1; }
 
 /* Section heading on the landing canvas. The pages list sits BELOW the app
    tiles and needs to announce itself as a second thing rather than reading as

@@ -24,6 +24,7 @@ import {
 import { runTurn, type PendingPermission, type ScreenView, type TurnState } from './stream.js'
 import { SkinSlot } from '../app/SkinSlot.js'
 import type { SkinSlotRender } from '../app/skin.js'
+import { useMobile } from '../app/useMobile.js'
 // The drag primitive is shared with the page screen: one answer to "is this
 // drag carrying files", so the two surfaces cannot disagree about it.
 import { carriesFiles } from '../editor/filedrop.js'
@@ -92,6 +93,55 @@ export function ContextPill({
     >
       {formatTokens(tokens)}
     </button>
+  )
+}
+
+/**
+ * The model this instance will answer with.
+ *
+ * It lives in the chat's HEADER rather than in the composer, and the move is
+ * the point: which engine is answering is a property of the CONVERSATION, not
+ * of the message being typed. Down in the composer it competed for width with
+ * the field — the one control that must never shrink — and on a phone it was
+ * a truncated `claude-son…` wedged between the clip and the send button.
+ * Up top it sits next to the name of the thing that is about to speak, which
+ * is where every other chat surface puts it and where a reader looks for it.
+ *
+ * Rendered only when the driver enumerates models, so an instance whose CLI
+ * has no catalogue shows no empty control. AUTO is first and is the default:
+ * it sends no model at all and lets the CLI choose, which is a real answer
+ * rather than a placeholder — most turns do not care, and pinning one
+ * silently would override a default the operator may have set outside Golem.
+ */
+export function ModelPicker({
+  models,
+  model,
+  onModel,
+  t = (key) => key,
+}: {
+  /** What this driver offers. Empty means it does not enumerate models. */
+  models?: readonly ModelInfo[]
+  /** The chosen id, or `''` for the CLI's own default. */
+  model?: string
+  onModel?: (model: string) => void
+  t?: (key: string) => string
+}) {
+  if (models === undefined || models.length === 0) return null
+  return (
+    <select
+      className="golem-model"
+      value={model ?? ''}
+      onChange={(event) => onModel?.(event.target.value)}
+      aria-label={t('Model')}
+      title={t('Model')}
+    >
+      <option value="">{t('Auto')}</option>
+      {models.map((entry) => (
+        <option key={entry.id} value={entry.id}>
+          {entry.label ?? entry.id}
+        </option>
+      ))}
+    </select>
   )
 }
 
@@ -167,6 +217,119 @@ export function PermissionPrompt({
   )
 }
 
+/**
+ * The composer's secondary controls, folded under one button.
+ *
+ * On a phone the composer had grown a row of peers — clip, model, one glyph
+ * per plugin, send — and the field they surround is the only one of them
+ * anybody came to use. Every extra button takes its width from the text.
+ *
+ * So they fold: one `+` opens them as a menu, which is the gesture every
+ * messaging app on the device already taught. Nothing is removed and nothing
+ * is hidden behind a guess — the menu names each action in words rather than
+ * asking the reader to decode a glyph, which the inline row never did either.
+ * Wide enough to lay them out, the row comes back; this is a fold, not a
+ * second navigation.
+ */
+export function ComposerFold({
+  onPick,
+  buttons,
+  t = (key) => key,
+}: {
+  onPick: () => void
+  buttons: readonly ComposerButton[]
+  t?: (key: string) => string
+}) {
+  const [open, setOpen] = useState(false)
+  const host = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return undefined
+    // Escape and a click outside, because a menu that only closes by
+    // reopening it is a menu that covers the field it belongs to.
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    const onDown = (event: MouseEvent) => {
+      if (!host.current?.contains(event.target as Node)) setOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    window.addEventListener('mousedown', onDown)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      window.removeEventListener('mousedown', onDown)
+    }
+  }, [open])
+
+  return (
+    <div className="golem-fold" ref={host}>
+      <button
+        type="button"
+        className="golem-composer__attach"
+        aria-label={t('More')}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+      >
+        ＋
+      </button>
+      {open && (
+        <div className="golem-fold__menu" role="menu">
+          <button
+            type="button"
+            role="menuitem"
+            className="golem-fold__item"
+            onClick={() => {
+              setOpen(false)
+              onPick()
+            }}
+          >
+            <span className="golem-fold__glyph" aria-hidden="true">
+              📎
+            </span>
+            {t('Attach files')}
+          </button>
+          {/* Same declarative data the inline row draws — a glyph and a
+              title, never markup a plugin supplied. */}
+          {buttons.map((button) => (
+            <button
+              key={button.key}
+              type="button"
+              role="menuitem"
+              className="golem-fold__item"
+              onClick={() => {
+                setOpen(false)
+                button.onClick(button.api)
+              }}
+            >
+              <span className="golem-fold__glyph" aria-hidden="true">
+                {button.glyph}
+              </span>
+              {button.title}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/**
+ * How tall the field stands, in pixels.
+ *
+ * A floor as well as a ceiling, and the floor is the fix: `rows={1}` left a
+ * 34px slot that read as a search box on a surface whose whole purpose is
+ * writing to somebody. Two lines' worth at rest says "type here, at length".
+ * The ceiling stops a pasted essay from eating the transcript — past it the
+ * field scrolls, which is why it is a max and not a cap on what you may say.
+ */
+export const COMPOSER_MIN_HEIGHT = 48
+export const COMPOSER_MAX_HEIGHT = 200
+
+export function composerHeight(scrollHeight: number): number {
+  return Math.min(Math.max(scrollHeight, COMPOSER_MIN_HEIGHT), COMPOSER_MAX_HEIGHT)
+}
+
 export interface PendingAttachment {
   readonly id: string
   readonly name: string
@@ -182,9 +345,7 @@ export function Composer({
   extraButtons,
   onFill,
   onAttach,
-  models,
-  model,
-  onModel,
+  folded,
   t = (key) => key,
 }: {
   onSend: (text: string, attachments: readonly PendingAttachment[]) => void
@@ -202,13 +363,20 @@ export function Composer({
    * place for a file to get lost.
    */
   onAttach?: (attach: (files: readonly File[]) => Promise<void>) => void
-  /** What this driver offers. Empty means it does not enumerate models. */
-  models?: readonly ModelInfo[]
-  /** The chosen id, or `''` for the CLI's own default. */
-  model?: string
-  onModel?: (model: string) => void
+  /**
+   * Fold the secondary controls under one button.
+   *
+   * Defaults to whatever the viewport says, and is a prop so a test — or a
+   * skin that folds early — can state it outright rather than driving a
+   * media query to get there.
+   */
+  folded?: boolean
   t?: (key: string) => string
 }) {
+  const narrow = useMobile()
+  // The prop wins when given: a caller who states it means it, and the hook
+  // still runs so the answer stays live when nobody does.
+  const fold = folded ?? narrow
   const [text, setText] = useState('')
   const [attachments, setAttachments] = useState<readonly PendingAttachment[]>([])
   const [uploadError, setUploadError] = useState<string | undefined>()
@@ -274,8 +442,15 @@ export function Composer({
   useEffect(() => {
     const element = area.current
     if (!element) return
+    // Measured from scratch each time: `scrollHeight` on an element that
+    // still carries its previous height reports that height, so a field that
+    // grew would never shrink back when the text was deleted.
     element.style.height = 'auto'
-    element.style.height = `${Math.min(element.scrollHeight, 120)}px`
+    const height = composerHeight(element.scrollHeight)
+    element.style.height = `${height}px`
+    // Only once it has stopped growing, or the scrollbar flickers in and out
+    // on every keystroke of an ordinary two-line message.
+    element.style.overflowY = element.scrollHeight > COMPOSER_MAX_HEIGHT ? 'auto' : 'hidden'
   }, [text])
 
   return (
@@ -316,53 +491,40 @@ export function Composer({
           event.target.value = ''
         }}
       />
-      <button
-        type="button"
-        className="golem-composer__attach"
-        onClick={() => picker.current?.click()}
-        aria-label={t('Attach files')}
-      >
-        📎
-      </button>
-      {/*
-        Rendered only when the driver enumerates models, so an instance whose
-        CLI has no catalogue shows no empty control. AUTO is first and is the
-        default: it sends no model at all and lets the CLI choose, which is a
-        real answer rather than a placeholder — most turns do not care, and
-        pinning one silently would override a default the operator may have
-        set outside Golem.
-      */}
-      {models !== undefined && models.length > 0 && (
-        <select
-          className="golem-composer__model"
-          value={model ?? ''}
-          onChange={(event) => onModel?.(event.target.value)}
-          aria-label={t('Model')}
-          title={t('Model')}
-        >
-          <option value="">{t('Auto')}</option>
-          {models.map((entry) => (
-            <option key={entry.id} value={entry.id}>
-              {entry.label ?? entry.id}
-            </option>
-          ))}
-        </select>
-      )}
       {/* Rendered BY THE SHELL from declarative data, never as markup a plugin
           supplied: a button is a glyph and a title, and injected HTML here
-          would be injected into the one surface every user touches. */}
-      {extraButtons?.map((button) => (
-        <button
-          key={button.key}
-          type="button"
-          className="golem-composer__attach"
-          onClick={() => button.onClick(button.api)}
-          aria-label={button.title}
-          title={button.title}
-        >
-          {button.glyph}
-        </button>
-      ))}
+          would be injected into the one surface every user touches. Folded or
+          in a row, the data is the same and only the layout differs. */}
+      {fold ? (
+        <ComposerFold
+          onPick={() => picker.current?.click()}
+          buttons={extraButtons ?? []}
+          t={t}
+        />
+      ) : (
+        <>
+          <button
+            type="button"
+            className="golem-composer__attach"
+            onClick={() => picker.current?.click()}
+            aria-label={t('Attach files')}
+          >
+            📎
+          </button>
+          {extraButtons?.map((button) => (
+            <button
+              key={button.key}
+              type="button"
+              className="golem-composer__attach"
+              onClick={() => button.onClick(button.api)}
+              aria-label={button.title}
+              title={button.title}
+            >
+              {button.glyph}
+            </button>
+          ))}
+        </>
+      )}
       <textarea
         ref={area}
         className="golem-composer__input"
@@ -717,6 +879,9 @@ export function Chat({
           <span className="golem-crest" aria-hidden="true" dangerouslySetInnerHTML={{ __html: crest }} />
         )}
         <span className="golem-brandname">{brand ?? 'Golem'}</span>
+        {/* Next to the name of the thing about to speak: which engine answers
+            belongs to the conversation, not to the message being typed. */}
+        <ModelPicker models={models} model={model} onModel={chooseModel} t={t} />
         <span className="golem-chat__spacer" />
         <ContextPill tokens={contextTokens} {...(contextWindow ? { windowSize: contextWindow } : {})} />
         <button
@@ -863,9 +1028,6 @@ export function Chat({
         busy={live?.running ?? false}
         blocked={live?.permission !== undefined}
         {...(placeholder ? { placeholder } : {})}
-        models={models}
-        model={model}
-        onModel={chooseModel}
         t={t}
       />
     </section>

@@ -329,7 +329,10 @@ The v1 chat must be **at least** agent-gw's PWA, which sets the bar:
 - **Context pill:** live weight of the next message, thresholds relative to the
   model window, clickable (compaction/reset actions).
 - **Composer:** attachments (picker+paste+drag-drop, thumbnails pre- and post-send),
-  ephemeral mode, model selector, Enter/Shift+Enter, mobile fold under "+".
+  ephemeral mode, Enter/Shift+Enter, mobile fold under "+". The model selector
+  is the one control that did NOT stay here: which engine answers belongs to
+  the conversation, so it sits in the chat header where the brand is, and the
+  composer keeps its width for the field.
 - **Split view:** chat rail | gutter | canvas, user-resizable and persisted.
 - **Mobile/PWA:** responsive breakpoint with swipe between chat and canvas;
   installable PWA, skin-merged manifest (N instances = N discernible installs),

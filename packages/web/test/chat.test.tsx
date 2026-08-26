@@ -12,14 +12,167 @@ import { describe, expect, it, onTestFinished, vi } from 'vitest'
 
 import {
   Bubble,
+  COMPOSER_MAX_HEIGHT,
+  COMPOSER_MIN_HEIGHT,
   Chat,
   Composer,
+  ComposerFold,
   ContextPill,
+  ModelPicker,
   PermissionPrompt,
   ToolTrace,
+  composerHeight,
   contextLevel,
   formatTokens,
 } from '../src/chat/Chat.js'
+
+describe('model picker', () => {
+  it('draws nothing when the driver enumerates none', () => {
+    // The whole point of the capability gate: an instance whose CLI has no
+    // catalogue must not grow an empty control that does nothing.
+    const { container } = render(<ModelPicker />)
+    expect(container.firstChild).toBeNull()
+
+    render(<ModelPicker models={[]} />)
+    expect(screen.queryByLabelText('Model')).toBeNull()
+  })
+
+  it('offers Auto first, and labels each model as the instance named it', () => {
+    render(
+      <ModelPicker
+        models={[{ id: 'claude-opus-5' }, { id: 'claude-sonnet-5', label: 'Sonnet 5' }]}
+        model=""
+        onModel={vi.fn()}
+      />,
+    )
+    const options = [...(screen.getByLabelText('Model') as HTMLSelectElement).options]
+    // Auto is a real answer — send no model, let the CLI decide — so it leads.
+    expect(options.map((option) => option.value)).toEqual(['', 'claude-opus-5', 'claude-sonnet-5'])
+    // A model with no label wears its id; one with a label wears the label.
+    expect(options.map((option) => option.textContent)).toEqual(['Auto', 'claude-opus-5', 'Sonnet 5'])
+  })
+
+  it('reports a choice rather than keeping it', () => {
+    const onModel = vi.fn()
+    render(
+      <ModelPicker models={[{ id: 'claude-sonnet-5', label: 'Sonnet 5' }]} model="" onModel={onModel} />,
+    )
+    fireEvent.change(screen.getByLabelText('Model'), { target: { value: 'claude-sonnet-5' } })
+    expect(onModel).toHaveBeenCalledWith('claude-sonnet-5')
+  })
+
+  it('keeps showing a chosen model the catalogue no longer offers', () => {
+    // A driver that briefly fails to enumerate must not silently reset a
+    // choice somebody made. The select falls back to Auto; the stored id is
+    // not thrown away behind their back.
+    render(
+      <ModelPicker
+        models={[{ id: 'claude-opus-5' }]}
+        model="a-model-that-went-away"
+        onModel={vi.fn()}
+      />,
+    )
+    expect((screen.getByLabelText('Model') as HTMLSelectElement).value).toBe('')
+  })
+})
+
+describe('the composer field', () => {
+  it('stands at two lines when empty, and stops growing at the ceiling', () => {
+    // The floor is the reported bug: a one-row slot on the surface whose
+    // entire job is writing to somebody read as a search box.
+    expect(composerHeight(20)).toBe(COMPOSER_MIN_HEIGHT)
+    expect(composerHeight(COMPOSER_MIN_HEIGHT)).toBe(COMPOSER_MIN_HEIGHT)
+    expect(composerHeight(96)).toBe(96)
+    expect(composerHeight(4000)).toBe(COMPOSER_MAX_HEIGHT)
+  })
+
+  it('keeps the floor below the ceiling', () => {
+    expect(COMPOSER_MIN_HEIGHT).toBeLessThan(COMPOSER_MAX_HEIGHT)
+  })
+})
+
+describe('the composer fold', () => {
+  const button = (id: string) => ({
+    key: id,
+    glyph: '◈',
+    title: `Run ${id}`,
+    api: {},
+    onClick: vi.fn(),
+  })
+
+  it('lays the controls out in a row when there is room', () => {
+    const scan = button('scan')
+    render(
+      <Composer
+        onSend={vi.fn()}
+        onStop={vi.fn()}
+        busy={false}
+        blocked={false}
+        folded={false}
+        extraButtons={[scan]}
+      />,
+    )
+    // Both reachable without opening anything, and no fold button at all.
+    expect(screen.getByLabelText('Attach files')).toBeTruthy()
+    expect(screen.getByLabelText('Run scan')).toBeTruthy()
+    expect(screen.queryByLabelText('More')).toBeNull()
+  })
+
+  it('folds them under one button when the shell is narrow', () => {
+    render(
+      <Composer
+        onSend={vi.fn()}
+        onStop={vi.fn()}
+        busy={false}
+        blocked={false}
+        folded
+        extraButtons={[button('scan')]}
+      />,
+    )
+    // Nothing on screen but the fold: this is the width the field needs back.
+    expect(screen.queryByLabelText('Attach files')).toBeNull()
+    expect(screen.queryByLabelText('Run scan')).toBeNull()
+    const more = screen.getByLabelText('More')
+    expect(more.getAttribute('aria-expanded')).toBe('false')
+
+    fireEvent.click(more)
+    expect(more.getAttribute('aria-expanded')).toBe('true')
+    // Named in words, which the inline row of glyphs never did.
+    expect(screen.getByRole('menuitem', { name: /Attach files/ })).toBeTruthy()
+    expect(screen.getByRole('menuitem', { name: /Run scan/ })).toBeTruthy()
+  })
+
+  it('runs a plugin button and closes behind it', () => {
+    const scan = button('scan')
+    render(<ComposerFold onPick={vi.fn()} buttons={[scan]} />)
+    fireEvent.click(screen.getByLabelText('More'))
+    fireEvent.click(screen.getByRole('menuitem', { name: /Run scan/ }))
+    expect(scan.onClick).toHaveBeenCalledWith(scan.api)
+    // A menu that stays open covers the field it belongs to.
+    expect(screen.queryByRole('menu')).toBeNull()
+  })
+
+  it('closes on Escape and on a click outside', () => {
+    render(<ComposerFold onPick={vi.fn()} buttons={[]} />)
+
+    fireEvent.click(screen.getByLabelText('More'))
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByRole('menu')).toBeNull()
+
+    fireEvent.click(screen.getByLabelText('More'))
+    expect(screen.getByRole('menu')).toBeTruthy()
+    fireEvent.mouseDown(document.body)
+    expect(screen.queryByRole('menu')).toBeNull()
+  })
+
+  it('reaches the file picker the composer owns', () => {
+    const onPick = vi.fn()
+    render(<ComposerFold onPick={onPick} buttons={[]} />)
+    fireEvent.click(screen.getByLabelText('More'))
+    fireEvent.click(screen.getByRole('menuitem', { name: /Attach files/ }))
+    expect(onPick).toHaveBeenCalled()
+  })
+})
 
 describe('context pill', () => {
   it('scales its thresholds to the model window when one is known', () => {
@@ -113,68 +266,12 @@ describe('composer', () => {
     expect(onSend).not.toHaveBeenCalled()
   })
 
-  it('shows no model picker when the driver enumerates none', () => {
-    // The whole point of the capability gate: an instance whose CLI has no
-    // catalogue must not grow an empty control that does nothing.
+  it('leaves the model picker to the header', () => {
+    // It moved out of the composer on purpose: the field is what this row is
+    // for, and the picker was taking its width. A stray one here would mean
+    // two of them on screen.
     render(<Composer onSend={vi.fn()} onStop={vi.fn()} busy={false} blocked={false} />)
     expect(screen.queryByLabelText('Model')).toBeNull()
-
-    render(<Composer onSend={vi.fn()} onStop={vi.fn()} busy={false} blocked={false} models={[]} />)
-    expect(screen.queryByLabelText('Model')).toBeNull()
-  })
-
-  it('offers Auto first, and labels each model as the instance named it', () => {
-    render(
-      <Composer
-        onSend={vi.fn()}
-        onStop={vi.fn()}
-        busy={false}
-        blocked={false}
-        models={[{ id: 'claude-opus-5' }, { id: 'claude-sonnet-5', label: 'Sonnet 5' }]}
-        model=""
-        onModel={vi.fn()}
-      />,
-    )
-    const options = [...(screen.getByLabelText('Model') as HTMLSelectElement).options]
-    // Auto is a real answer — send no model, let the CLI decide — so it leads.
-    expect(options.map((option) => option.value)).toEqual(['', 'claude-opus-5', 'claude-sonnet-5'])
-    // A model with no label wears its id; one with a label wears the label.
-    expect(options.map((option) => option.textContent)).toEqual(['Auto', 'claude-opus-5', 'Sonnet 5'])
-  })
-
-  it('reports a choice rather than keeping it', () => {
-    const onModel = vi.fn()
-    render(
-      <Composer
-        onSend={vi.fn()}
-        onStop={vi.fn()}
-        busy={false}
-        blocked={false}
-        models={[{ id: 'claude-sonnet-5', label: 'Sonnet 5' }]}
-        model=""
-        onModel={onModel}
-      />,
-    )
-    fireEvent.change(screen.getByLabelText('Model'), { target: { value: 'claude-sonnet-5' } })
-    expect(onModel).toHaveBeenCalledWith('claude-sonnet-5')
-  })
-
-  it('keeps showing a chosen model the catalogue no longer offers', () => {
-    // A driver that briefly fails to enumerate must not silently reset a
-    // choice somebody made. The select falls back to Auto; the stored id is
-    // not thrown away behind their back.
-    render(
-      <Composer
-        onSend={vi.fn()}
-        onStop={vi.fn()}
-        busy={false}
-        blocked={false}
-        models={[{ id: 'claude-opus-5' }]}
-        model="a-model-that-went-away"
-        onModel={vi.fn()}
-      />,
-    )
-    expect((screen.getByLabelText('Model') as HTMLSelectElement).value).toBe('')
   })
 
   it('offers stop while a turn runs and the field is empty', () => {
