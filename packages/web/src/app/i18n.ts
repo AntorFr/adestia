@@ -69,6 +69,8 @@ const FR: Readonly<Record<string, string>> = {
   Refuse: 'Refuser',
   'Just this once': 'Cette fois',
   Always: 'Toujours',
+  'No lasting rule for this one — the engine proposed none.':
+    "Pas d'autorisation durable ici — le moteur n'a proposé aucune règle.",
   'New conversation': 'Nouvelle conversation',
   'Open apps': 'Ouvrir les apps',
   'Back to the chat': 'Revenir au chat',

@@ -807,6 +807,63 @@ describe("the engine's question", () => {
     expect(screen.getByText('Just this once')).toBeTruthy()
   })
 
+  it('stays gone while the turn keeps streaming', async () => {
+    // The bug the first fix MISSED, reported from the real interface: the
+    // prompt vanished on click and came straight back, over and over, until
+    // the turn ended. Clearing it in the component is not enough — the
+    // stream's generator carries its own accumulated state, still holding the
+    // question, and re-yields it at the very next event.
+    let answered = false
+    let pushMore: (() => void) | undefined
+    const fetchImpl = vi.fn((url: string, init?: RequestInit) => {
+      const path = String(url)
+      if (path === '/api/permission') {
+        answered = true
+        return Promise.resolve(new Response('{}', { status: 200 }))
+      }
+      if (path === '/api/turn') {
+        const body = new ReadableStream<Uint8Array>({
+          start(controller) {
+            const send = (event: unknown) =>
+              controller.enqueue(new TextEncoder().encode(frame(event)))
+            send({
+              type: 'permission-request',
+              id: 'q1',
+              tool: 'Bash',
+              title: 'Bash — cd /workspace && cat >> notes.md',
+              reason: 'Parser skipped input between top-level statements',
+              remembering: false,
+            })
+            // Whatever the turn does next, once the answer has unblocked it.
+            pushMore = () => {
+              send({ type: 'tool-use', name: 'Bash', target: 'cd /workspace' })
+              send({ type: 'text-delta', text: 'done' })
+            }
+          },
+        })
+        return Promise.resolve(new Response(body, { status: 200 }))
+      }
+      return Promise.resolve(
+        new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } }),
+      )
+    }) as unknown as typeof fetch
+
+    render(<Chat fetchImpl={fetchImpl} />)
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'go' } })
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' })
+
+    const title = 'Bash — cd /workspace && cat >> notes.md'
+    expect(await screen.findByText(title)).toBeTruthy()
+    fireEvent.click(screen.getByText('Just this once'))
+    await waitFor(() => expect(answered).toBe(true))
+    await waitFor(() => expect(screen.queryByText(title)).toBeNull())
+
+    // The turn resumes and streams on. The question must NOT come back.
+    pushMore?.()
+    await waitFor(() => expect(screen.getByText('done')).toBeTruthy())
+    expect(screen.queryByText(title)).toBeNull()
+  })
+
   it('disappears as soon as it is answered, not when the turn ends', async () => {
     // THE bug this rewrite exists to fix: the prompt used to stay on screen
     // until the turn's result arrived, so an answered question kept asking.

@@ -262,6 +262,17 @@ export function AskPrompt({
     <div className="golem-ask" role="alertdialog" aria-label={t('Permission required')}>
       <p className="golem-ask__text">{ask.title}</p>
       {ask.reason && <p className="golem-ask__reason">{ask.reason}</p>}
+      {/* Said out loud rather than left as a missing button. The engine
+          declines to propose a rule for a command its own parser cannot cut
+          up — a `cd x && cat <<EOF` among them — so there is nothing durable
+          to offer here, and somebody clicking through the same question for
+          the tenth time deserves to know why rather than hunt for a button
+          that was never there. */}
+      {!ask.remembering && (
+        <p className="golem-ask__reason">
+          {t('No lasting rule for this one — the engine proposed none.')}
+        </p>
+      )}
       <div className="golem-ask__actions">
         <button type="button" onClick={() => onAnswer(ask.id, 'deny')}>
           {t('Refuse')}
@@ -743,6 +754,19 @@ export function Chat({
 }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [live, setLive] = useState<TurnState | undefined>()
+  /**
+   * Questions already answered, by id.
+   *
+   * Kept HERE rather than cleared out of the turn state, and that is the whole
+   * fix: the stream's generator carries its own accumulated state, so clearing
+   * `live.ask` in the component lasted exactly until the next event re-yielded
+   * it — the prompt vanished on click and came straight back, over and over,
+   * until the turn ended (reported from the real interface, 2026-08-26).
+   *
+   * The answer is a fact the INTERFACE owns: the server was told, and no
+   * event will ever say so. So the interface remembers it.
+   */
+  const [answered, setAnswered] = useState<ReadonlySet<string>>(() => new Set())
   const [contextTokens, setContextTokens] = useState(0)
   const [threads, setThreads] = useState<readonly ConversationMeta[]>([])
   const [threadsOpen, setThreadsOpen] = useState(false)
@@ -1026,17 +1050,15 @@ export function Chat({
         <div ref={bottom} />
       </div>
 
-      {live?.ask && (
+      {live?.ask && !answered.has(live.ask.id) && (
         <AskPrompt
           ask={live.ask}
           t={t}
           onAnswer={(id, answer) => {
-            // Cleared HERE, before the request goes out — not on the stream's
-            // next event. The predecessor left the prompt on screen until the
-            // turn ended, so an answered question kept asking. The turn is
-            // blocked on this answer, so there is no next event until the
-            // server has it: optimistic is the only correct timing.
-            setLive((current) => (current ? { ...current, ask: undefined } : current))
+            // Recorded BEFORE the request goes out. The turn is blocked on
+            // this answer, so no event will arrive to clear it — and any
+            // event that does arrive still carries the question.
+            setAnswered((current) => new Set(current).add(id))
             void (fetchImpl ?? fetch)('/api/permission', {
               method: 'POST',
               headers: { 'content-type': 'application/json' },
@@ -1061,7 +1083,7 @@ export function Chat({
         onSend={(text, attachments) => void send(text, attachments)}
         onStop={stop}
         busy={live?.running ?? false}
-        blocked={live?.ask !== undefined}
+        blocked={live?.ask !== undefined && !answered.has(live.ask.id)}
         {...(placeholder ? { placeholder } : {})}
         t={t}
       />
