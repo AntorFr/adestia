@@ -140,6 +140,14 @@
   border-style: dashed;
 }
 
+/* A message sent while a turn was running: held, and it must LOOK held — at
+   half voice with a dashed edge, so "waiting" cannot be mistaken for "sent".
+   It leaves as part of one merged turn when the running one settles. */
+.golem-bubble--held {
+  opacity: 0.55;
+  border: 1px dashed var(--bubble-user-text);
+}
+
 /* Markdown in a bubble ---------------------------------------------------
    The agent's answers ARE markdown, and were being read as their own source
    code. Same renderer as a page (see Reader.tsx) — different measure: a

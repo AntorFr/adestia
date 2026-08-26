@@ -557,6 +557,96 @@ describe('chat', () => {
     // The context pill appears once the turn reports what the next message costs.
     await waitFor(() => expect(screen.getByText('4.2k')).toBeTruthy())
   })
+
+  it('shows the working indicator the moment the message leaves', async () => {
+    // Between send and the driver's first event stand a conversation write,
+    // the POST and a CLI spawn — seconds, sometimes. The server here never
+    // answers AT ALL: the dots must come from the send itself, not from the
+    // stream's first state.
+    const fetchImpl = vi.fn((url: string, init?: RequestInit) => {
+      if (String(url) === '/api/turn') return new Promise<Response>(() => {})
+      return Promise.resolve(
+        new Response(
+          JSON.stringify(
+            init?.method === 'POST' ? { id: 'c1', title: 'lent', updatedAt: '' } : { conversations: [] },
+          ),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        ),
+      )
+    }) as unknown as typeof fetch
+
+    const { container } = render(<Chat fetchImpl={fetchImpl} />)
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'lent' } })
+    await act(async () => {
+      fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' })
+    })
+    expect(container.querySelector('.golem-dots')).toBeTruthy()
+  })
+
+  it('holds messages sent during a turn, then sends them as one merged turn', async () => {
+    // The predecessor's queue, ported: a second stream would fight the first
+    // over the live bubble and resume the same CLI session concurrently, so
+    // anything said during a turn waits — visibly — and leaves as ONE batch.
+    const prompts: string[] = []
+    const controllers: ReadableStreamDefaultController<Uint8Array>[] = []
+    const fetchImpl = vi.fn((url: string, init?: RequestInit) => {
+      if (String(url) === '/api/turn') {
+        prompts.push((JSON.parse(String(init?.body)) as { prompt: string }).prompt)
+        const body = new ReadableStream<Uint8Array>({
+          start(controller) {
+            controllers.push(controller)
+          },
+        })
+        return Promise.resolve(new Response(body, { status: 200 }))
+      }
+      return Promise.resolve(
+        new Response(
+          JSON.stringify(
+            init?.method === 'POST' ? { id: 'c1', title: 'premier', updatedAt: '' } : { conversations: [] },
+          ),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        ),
+      )
+    }) as unknown as typeof fetch
+
+    render(<Chat fetchImpl={fetchImpl} />)
+    const input = screen.getByRole('textbox')
+    fireEvent.change(input, { target: { value: 'premier' } })
+    await act(async () => {
+      fireEvent.keyDown(input, { key: 'Enter' })
+    })
+    await waitFor(() => expect(prompts).toEqual(['premier']))
+
+    // Two more while the turn still streams: shown as held, POSTed not at all.
+    fireEvent.change(input, { target: { value: 'deuxième' } })
+    await act(async () => {
+      fireEvent.keyDown(input, { key: 'Enter' })
+    })
+    fireEvent.change(input, { target: { value: 'troisième' } })
+    await act(async () => {
+      fireEvent.keyDown(input, { key: 'Enter' })
+    })
+    expect(prompts).toEqual(['premier'])
+    expect(screen.getByText('deuxième')).toBeTruthy()
+    expect(screen.getByText('troisième')).toBeTruthy()
+
+    // The first turn settles; the held pair leaves as one merged turn.
+    await act(async () => {
+      controllers[0]!.enqueue(
+        new TextEncoder().encode(frame({ type: 'result', sessionId: 's1', stopped: false })),
+      )
+      controllers[0]!.close()
+    })
+    await waitFor(() => expect(prompts).toEqual(['premier', 'deuxième\n\ntroisième']))
+    // One user bubble for the batch — the held chips are gone into it. The
+    // matcher reads textContent raw: the default normalizer collapses the
+    // very newlines the merge exists to insert.
+    expect(
+      screen.getByText((_, element) => element?.textContent === 'deuxième\n\ntroisième', {
+        selector: '.golem-bubble__text',
+      }),
+    ).toBeTruthy()
+  })
 })
 
 describe('the compose channel', () => {

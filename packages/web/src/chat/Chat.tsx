@@ -21,7 +21,7 @@ import {
   type ConversationMeta,
   type StoredMessage,
 } from './conversations.js'
-import { runTurn, type PendingAsk, type ScreenView, type TurnState } from './stream.js'
+import { INITIAL_TURN, runTurn, type PendingAsk, type ScreenView, type TurnState } from './stream.js'
 import { SkinSlot } from '../app/SkinSlot.js'
 import type { SkinSlotRender } from '../app/skin.js'
 import { useMobile } from '../app/useMobile.js'
@@ -726,6 +726,19 @@ export interface ComposerButton {
   onClick(api: unknown): void
 }
 
+/**
+ * A message sent while a turn was still running.
+ *
+ * Held rather than raced: a second concurrent stream would fight the first
+ * over the live bubble, and behind it over the CLI session itself. The
+ * predecessor queued these and flushed them as ONE merged turn when the
+ * running one settled; this is that behaviour, ported.
+ */
+interface HeldMessage {
+  readonly text: string
+  readonly attachments: readonly PendingAttachment[]
+}
+
 /** A stored message, as the thread renders it. */
 function toMessage(stored: StoredMessage): Message {
   return {
@@ -789,6 +802,20 @@ export function Chat({
     }
   })
   const sessionId = useRef<string | undefined>(undefined)
+  /**
+   * Mirror of `conversationId`, read by the send loop.
+   *
+   * A ref because the loop OUTLIVES the closure it was created in: the first
+   * message of a fresh thread creates the conversation, and a held message
+   * flushed by that same loop must land in it — read from state, the loop
+   * would still see the `undefined` it closed over and open a second thread.
+   */
+  const conversationRef = useRef<string | undefined>(undefined)
+  /** True from send to settle — unlike `live`, visible to the NEXT send. */
+  const turning = useRef(false)
+  /** Messages sent during a turn, waiting to leave as one batch. */
+  const heldRef = useRef<readonly HeldMessage[]>([])
+  const [held, setHeld] = useState<readonly HeldMessage[]>([])
   /** Set by the composer once it exists, so `compose` reaches its field. */
   const composeRef = useRef<((text: string) => void) | undefined>(undefined)
   const attachRef = useRef<((files: readonly File[]) => Promise<void>) | undefined>(undefined)
@@ -803,6 +830,7 @@ export function Chat({
       const conversation = await readConversation(id, fetchImpl)
       if (!conversation) return
       setConversationId(conversation.id)
+      conversationRef.current = conversation.id
       // Replayed FAITHFULLY: tool trace, interruptions and all. The stored
       // transcript is what the UI drew, so replaying it needs no second path.
       setMessages(conversation.messages.map(toMessage))
@@ -846,6 +874,7 @@ export function Chat({
 
   const startThread = useCallback(() => {
     setConversationId(undefined)
+    conversationRef.current = undefined
     setMessages([])
     setContextTokens(0)
     sessionId.current = undefined
@@ -858,10 +887,10 @@ export function Chat({
     // chat because it lacks one DOM convenience.
     const anchor = bottom.current
     if (typeof anchor?.scrollIntoView === 'function') anchor.scrollIntoView({ block: 'end' })
-  }, [messages, live?.text])
+  }, [messages, live?.text, held])
 
-  const send = useCallback(
-    async (text: string, attachments: readonly PendingAttachment[] = []) => {
+  const runOne = useCallback(
+    async (text: string, attachments: readonly PendingAttachment[]) => {
       setMessages((current) => [
         ...current,
         {
@@ -870,10 +899,15 @@ export function Chat({
           text: attachments.length > 0 ? `${text}\n📎 ${attachments.map((a) => a.name).join(', ')}`.trim() : text,
         },
       ])
+      // The dots go up BEFORE the server is asked anything: between here and
+      // the driver's first event stand a conversation write, the POST and a
+      // CLI spawn — seconds, sometimes, during which a silent screen reads as
+      // a swallowed message. The stream's first state replaces this one.
+      setLive(INITIAL_TURN)
 
       // A thread is created on the first message rather than on arrival: an
       // instance nobody has spoken to should not accumulate empty threads.
-      let thread = conversationId
+      let thread = conversationRef.current
       if (!thread) {
         // Named from the first message, at creation: a title set in a second
         // call is a title lost whenever that call is.
@@ -881,25 +915,33 @@ export function Chat({
         const created = await createConversation(fetchImpl, title)
         if (created) {
           thread = created.id
+          conversationRef.current = thread
           setConversationId(thread)
           setThreads((current) => [{ ...created, title }, ...current])
         }
       }
 
       let last: TurnState | undefined
-      for await (const state of runTurn(
-        {
-          prompt: text,
-          ...(sessionId.current ? { sessionId: sessionId.current } : {}),
-          ...(model ? { model } : {}),
-          ...(thread ? { conversationId: thread } : {}),
-          ...(attachments.length > 0 ? { attachments: attachments.map((a) => a.id) } : {}),
-          ...(view ? { view } : {}),
-        },
-        fetchImpl,
-      )) {
-        last = state
-        setLive(state)
+      try {
+        for await (const state of runTurn(
+          {
+            prompt: text,
+            ...(sessionId.current ? { sessionId: sessionId.current } : {}),
+            ...(model ? { model } : {}),
+            ...(thread ? { conversationId: thread } : {}),
+            ...(attachments.length > 0 ? { attachments: attachments.map((a) => a.id) } : {}),
+            ...(view ? { view } : {}),
+          },
+          fetchImpl,
+        )) {
+          last = state
+          setLive(state)
+        }
+      } catch (error) {
+        // A fetch that REJECTS — network down, server gone — used to leave
+        // nothing on screen at all; with the dots now up from the start it
+        // would leave them pulsing forever. Land it as the error it is.
+        last = { ...(last ?? INITIAL_TURN), running: false, error: (error as Error).message }
       }
 
       if (last) {
@@ -919,7 +961,41 @@ export function Chat({
       }
       setLive(undefined)
     },
-    [conversationId, fetchImpl, model, view],
+    [fetchImpl, model, view],
+  )
+
+  const send = useCallback(
+    async (text: string, attachments: readonly PendingAttachment[] = []) => {
+      // Sent DURING a turn, a message is held, not raced: two concurrent
+      // streams would interleave their states into the one live bubble, and
+      // behind it two CLI processes would resume the same session at once.
+      if (turning.current) {
+        heldRef.current = [...heldRef.current, { text, attachments }]
+        setHeld(heldRef.current)
+        return
+      }
+
+      turning.current = true
+      try {
+        let batchText = text
+        let batchAttachments = attachments
+        for (;;) {
+          await runOne(batchText, batchAttachments)
+          const batch = heldRef.current
+          if (batch.length === 0) break
+          heldRef.current = []
+          setHeld([])
+          // Merged into ONE turn rather than replayed one by one, as the
+          // predecessor did: messages typed at a busy agent are one growing
+          // instruction, and N turns would pay N round-trips to say it.
+          batchText = batch.map((message) => message.text).filter((part) => part !== '').join('\n\n')
+          batchAttachments = batch.flatMap((message) => message.attachments)
+        }
+      } finally {
+        turning.current = false
+      }
+    },
+    [runOne],
   )
 
   useEffect(() => {
@@ -1047,6 +1123,17 @@ export function Chat({
             )}
           </article>
         )}
+
+        {/* What was said while the agent was busy, visibly waiting its turn.
+            These leave as ONE merged turn when the running one settles; the
+            merged user bubble then replaces them. */}
+        {held.map((message, index) => (
+          <article key={`h${index}`} className="golem-bubble golem-bubble--user golem-bubble--held">
+            <div className="golem-bubble__text">
+              {message.text || `📎 ${message.attachments.map((a) => a.name).join(', ')}`}
+            </div>
+          </article>
+        ))}
         <div ref={bottom} />
       </div>
 

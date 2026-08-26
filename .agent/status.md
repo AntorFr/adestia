@@ -1,5 +1,24 @@
 # Status — Golem
-> MàJ : 2026-08-26
+> MàJ : 2026-08-27
+
+Chantier du 27/08 — le retour immédiat du chat (2 bugs de la vague 1) :
+(1) les « … » n'apparaissaient qu'au PREMIER event SSE du serveur — entre
+l'envoi et le spawn du CLI (création de conversation + POST + démarrage),
+des secondes d'écran muet qui se lisaient « message avalé ». `setLive` part
+maintenant AVANT toute requête (`INITIAL_TURN`), le premier état du stream le
+remplace. Au passage, un fetch qui REJETTE (réseau coupé) laissait le tour
+sans trace — pire avec les points levés d'entrée, ils auraient pulsé pour
+toujours : l'erreur atterrit désormais en bulle d'erreur.
+(2) la mise on hold du prédécesseur PORTÉE : un message envoyé pendant qu'un
+tour court lançait un DEUXIÈME `runTurn` concurrent — deux streams
+entrelaçaient leurs états dans la même bulle live et deux process CLI
+reprenaient la même session à la fois. Désormais il est RETENU (bulle à
+mi-voix, bord tireté), et la file part en UN SEUL tour fusionné (textes en
+paragraphes, pièces jointes concaténées) quand le tour courant se pose —
+exactement le contrat d'agent-gw (`flushQueue`). L'id de conversation passe
+par une ref : la boucle de vidage survit à sa closure, et lu depuis l'état
+elle aurait ouvert un second fil. 3 tests (points immédiats, retenue +
+fusion, bulle unique).
 
 **État :** Migration Alfred. Faits et vérifiés en navigateur : `todo`,
 `planif`, `collections`, `scan`, skin `alfred`. 1108 tests + 146 de plugins.
@@ -412,9 +431,11 @@ aucun rasteriseur ajouté à l'image.
       appareil (iOS et Android) — headless ne la déclenche pas. Et le
       hors-ligne de `parcours` (tuiles de carte) est un autre chantier : le
       worker ne met en cache ni `/api/` ni les données d'un plugin.
-- [ ] Backlog UX du 26/08, reste à traiter : 3 bugs de la vague 1 (pop-up
-      d'autorisation qui ne se ferme pas au clic, indicateur « … » tardif
-      après envoi, la fiche `golem-evolutions` absente de la nav) ; les outils autorisés par défaut
+- [ ] Backlog UX du 26/08, reste à traiter : 2 bugs de la vague 1 (pop-up
+      d'autorisation qui ne se ferme pas au clic — posture « ask » encore
+      marquée inachevée —, la fiche `golem-evolutions` absente de la nav) ;
+      l'indicateur « … » tardif est corrigé (27/08, avec la mise on hold
+      combinatoire portée) ; les outils autorisés par défaut
       (décision de niveau de risque, pas un bug) ; la fusion apps/domaines
       (chantier d'archi, à cadrer — `sections.ts`/`owners.ts` viennent d'être
       refaits en 0.6/0.7 pour DISTINGUER ces deux notions) ; et Withings/mail/
