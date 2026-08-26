@@ -138,6 +138,9 @@ Every driver is exercised against a fake binary, which is a property of the
 driver contract rather than a convenience: a driver whose behaviour is only
 testable against a live account is a driver tested by its first user.
 
+Work happens in an isolated git worktree and comes back to `main` before it is
+tagged — `CLAUDE.md` has the workflow and the reasons behind it.
+
 ## License
 
 [MIT](LICENSE)

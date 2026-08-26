@@ -8,3 +8,7 @@ out/
 data/
 dist/
 *.tsbuildinfo
+
+# Where development worktrees land (see CLAUDE.md). They are checkouts of this
+# same repository — committing one would nest the repo inside itself.
+.claude/worktrees/
