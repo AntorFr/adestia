@@ -660,6 +660,22 @@ that opens to its own words when the network is gone.
 
 **Not built yet**, and none of it blocked by a design question:
 
+- **The `ask` posture, finished.** It ships and it works, and it is OUT of the
+  MVP after a day on a real instance (2026-08-26): half-working on one engine,
+  absent on the other. Where it breaks is a granularity the ENGINE owns and
+  Golem deliberately does not second-guess — for `Bash` the CLI proposes a
+  rule on the EXACT command (`Bash(ls -la /tmp)`), so every variation asks
+  again, and for a composed one (`cd x && cat <<EOF`, any heredoc) it proposes
+  nothing at all: its own parser will not cut the command up, so there is no
+  durable answer to offer. `WebFetch` is the counter-example that shows the
+  shape is right — `WebFetch(domain:…)` is exactly the rule a person wants.
+  The fix is known and is not more Golem judgement: let the PERSON edit the
+  rule in the prompt (the engine proposes `Bash(ls -la /tmp)`, they write
+  `Bash(ls:*)` or `Bash`), which also turns the no-suggestion dead end into
+  something answerable. On copilot-cli the posture cannot exist at all —
+  no return channel in programmatic mode — so it refuses to boot there.
+  Instances run `open` until that is done.
+
 - **Remote instruction sync** (the optional git module).
 - **Usage, cost and quota surfaces.** The drivers declare `usageMetrics`,
   `cost`, `subscriptionQuotas`; only the live token counter reaches a screen.

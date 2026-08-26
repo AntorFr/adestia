@@ -133,6 +133,15 @@ permissions:
   #     files, what to ask you about in the chat first. A convention it
   #     follows in good faith — honest about being one, never a wall.
   #
+  # ⚠️ ask is NOT FINISHED, and is out of the MVP (tried on a real instance
+  # 2026-08-26, reverted the same day). It works, but the engine's rule
+  # granularity makes it tiring: for `Bash` the CLI proposes a rule on the
+  # EXACT command, so every variation asks again, and for a composed command
+  # (`cd x && cat <<EOF`) it proposes no rule at all — its parser will not cut
+  # the command up. `WebFetch(domain:…)` is what it looks like when it works.
+  # Until a person can EDIT the proposed rule (see DESIGN.md, not built yet),
+  # expect to click a lot. Use `open` unless you are working on this.
+  #
   # ask — the ENGINE's own first line decides, and what it would have asked a
   # terminal about surfaces in the chat instead. Golem judges nothing and
   # keeps no rules: a `Read` or an `echo` is never asked about (the CLI
