@@ -19,6 +19,8 @@ import type { Skin } from './skin.js'
 import { glyphOf } from './glyphs.js'
 import { sectionsOf, type IndexEntry, type SectionTile } from './sections.js'
 import { routeForPath } from './owners.js'
+import { ORDER_KEY_APPS, ORDER_KEY_SECTIONS } from './order.js'
+import { useReorder } from './useReorder.js'
 
 export interface HomeProps {
   readonly skin: Skin
@@ -123,17 +125,64 @@ function Tile(props: {
   readonly disabled?: boolean
   readonly title?: string
   readonly onOpen: () => void
+  /** Edit mode: the tile is furniture to be moved, not a way in. */
+  readonly editing?: boolean
+  readonly carried?: boolean
+  /** Moves this tile one place. Present only while editing. */
+  readonly onNudge?: (by: -1 | 1) => void
+  readonly drag?: Record<string, unknown>
+  readonly t?: (key: string) => string
 }) {
   const drawn = glyphOf(props.glyph)
+  const t = props.t ?? ((key: string) => key)
   return (
-    <li>
+    <li
+      className={[
+        'golem-tile-slot',
+        props.editing ? 'golem-tile-slot--editing' : '',
+        props.carried ? 'golem-tile-slot--carried' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      {...(props.editing ? props.drag ?? {} : {})}
+    >
+      {/* Arrows, because a mosaic that can only be dragged is a mosaic some
+          people cannot reorder at all — and "hold and drag" is the hardest
+          gesture to discover even for those who can. */}
+      {props.editing && props.onNudge && (
+        <span className="golem-tile-slot__arrows">
+          <button
+            type="button"
+            aria-label={`${t('Move earlier')} — ${props.label}`}
+            onClick={() => props.onNudge?.(-1)}
+          >
+            ‹
+          </button>
+          <button
+            type="button"
+            aria-label={`${t('Move later')} — ${props.label}`}
+            onClick={() => props.onNudge?.(1)}
+          >
+            ›
+          </button>
+        </span>
+      )}
       <button
         type="button"
         className="golem-tile"
         style={hueStyle(props.hue)}
-        onClick={props.onOpen}
+        // Editing, the tile is being ARRANGED. Opening what you are trying to
+        // pick up is the classic way an edit mode betrays the person in it.
+        //
+        // Inert by `pointer-events: none` from the slot rather than by
+        // `disabled`: a disabled button swallows pointer events in some
+        // browsers, and those are exactly the events the drag is listening
+        // for on the slot around it. Untabbable too, so the keyboard is not
+        // offered a control that does nothing.
+        onClick={props.editing ? undefined : props.onOpen}
         disabled={props.disabled ?? false}
-        {...(props.title ? { title: props.title } : {})}
+        {...(props.editing ? { tabIndex: -1, 'aria-hidden': true } : {})}
+        {...(props.title && !props.editing ? { title: props.title } : {})}
       >
         {/* The markup comes from the shell's own closed set, never from a
             manifest — which is what makes the injection safe. */}
@@ -214,6 +263,15 @@ export function Home({
   const info = useTileInfo(plugins)
   const clock = now ?? new Date()
   const [brief, setBrief] = useState<Brief | undefined>(undefined)
+  /**
+   * Arranging rather than opening.
+   *
+   * A mode with a button rather than a long-press: long-press is invisible,
+   * and on a screen whose tiles are the only way into half the product an
+   * undiscoverable mode is one nobody uses. It also keeps an ordinary tap
+   * meaning "open", which is what it means the other 99% of the time.
+   */
+  const [editing, setEditing] = useState(false)
 
   useEffect(() => {
     let live = true
@@ -295,6 +353,22 @@ export function Home({
     'home',
   ]
   const sections: readonly SectionTile[] = sectionsOf(entries, absorbed)
+
+  // One order per mosaic. An app cannot be dragged among the sections: that
+  // would be a request to MOVE A FOLDER, which is a different act entirely
+  // and not one a drag on the home screen should be able to perform.
+  const apps = useReorder({
+    source: tiled,
+    keyOf: (plugin: LoadedPlugin) => plugin.id,
+    storageKey: ORDER_KEY_APPS,
+    editing,
+  })
+  const shelves = useReorder({
+    source: sections,
+    keyOf: (section: SectionTile) => section.path,
+    storageKey: ORDER_KEY_SECTIONS,
+    editing,
+  })
 
   const greeting =
     (clock.getHours() >= EVENING_FROM ? skin.greetingEvening : skin.greetingDay) ??
@@ -395,9 +469,24 @@ export function Home({
 
       {tiled.length > 0 && (
         <>
-          <h2 className="golem-section">{t('Apps')}</h2>
-          <ul className="golem-tiles">
-            {tiled.map((plugin) => (
+          <h2 className="golem-section">
+            <span className="golem-section__name">{t('Apps')}</span>
+            {/* One switch for both mosaics: two edit modes on one screen would
+                be two states to keep track of for a gesture that is the same
+                gesture. Only offered when there is something to arrange. */}
+            {tiled.length + sections.length > 1 && (
+              <button
+                type="button"
+                className="golem-section__edit"
+                aria-pressed={editing}
+                onClick={() => setEditing(!editing)}
+              >
+                {editing ? t('Done') : t('Arrange')}
+              </button>
+            )}
+          </h2>
+          <ul className="golem-tiles" {...apps.listProps}>
+            {apps.items.map((plugin, index) => (
               <Tile
                 key={plugin.id}
                 icon={plugin.tile?.icon ?? '▩'}
@@ -411,6 +500,11 @@ export function Home({
                 disabled={!plugin.view}
                 {...(plugin.view ? {} : { title: 'This plugin ships no screen' })}
                 onOpen={() => openPlugin(plugin)}
+                editing={editing}
+                carried={apps.carried === plugin.id}
+                onNudge={(by) => apps.nudge(index, by)}
+                drag={apps.tileProps(index)}
+                t={t}
               />
             ))}
           </ul>
@@ -419,9 +513,23 @@ export function Home({
 
       {sections.length > 0 && (
         <>
-          <h2 className="golem-section">{t('Sections')}</h2>
-          <ul className="golem-tiles">
-            {sections.map((section) => (
+          <h2 className="golem-section">
+            <span className="golem-section__name">{t('Sections')}</span>
+            {/* The switch lives on the Apps heading when there is one; here
+                only when this is the sole mosaic on the screen. */}
+            {tiled.length === 0 && sections.length > 1 && (
+              <button
+                type="button"
+                className="golem-section__edit"
+                aria-pressed={editing}
+                onClick={() => setEditing(!editing)}
+              >
+                {editing ? t('Done') : t('Arrange')}
+              </button>
+            )}
+          </h2>
+          <ul className="golem-tiles" {...shelves.listProps}>
+            {shelves.items.map((section, index) => (
               <Tile
                 key={section.path}
                 icon={section.icon}
@@ -429,6 +537,11 @@ export function Home({
                 {...(section.hue ? { hue: section.hue } : {})}
                 chips={[{ text: plural(section.count, t('page'), t('pages')) }]}
                 onOpen={() => openSection(section.path)}
+                editing={editing}
+                carried={shelves.carried === section.path}
+                onNudge={(by) => shelves.nudge(index, by)}
+                drag={shelves.tileProps(index)}
+                t={t}
               />
             ))}
           </ul>

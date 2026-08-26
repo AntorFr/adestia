@@ -96,6 +96,23 @@ défile latéralement (tableau large, bloc de code — le voler les rend
 illisibles). Rien n'est `preventDefault` ni capturé : le verdict se lit à la
 FIN du geste, donc le défilement vertical n'est pas touché.
 
+Lot 4, ranger les icônes (`order.ts` pur, `useReorder`) : mode « Ranger » sur
+l'accueil — un BOUTON, pas un appui long, parce qu'un geste invisible sur
+l'écran qui porte la moitié de la navigation n'est trouvé par personne. Les
+deux mosaïques ont leur ordre propre (une app ne se glisse pas chez les
+domaines : ce serait déplacer un DOSSIER). C'est une PERMUTATION, pas une
+grille : un plugin coupé ne laisse pas de trou, un plugin neuf n'est pas perdu
+par une préférence qui ne le connaît pas. Drag au Pointer Event + flèches
+‹ › — une mosaïque qui ne se réordonne qu'au glissé ne se réordonne pas du
+tout pour certains. En mode ranger la tuile n'ouvre plus rien (`pointer-events:
+none` depuis le slot, PAS `disabled` qui avalerait les événements du drag).
+Ordre en localStorage, par navigateur, comme le modèle et la largeur du rail.
+
+⚠️ Le drag lui-même n'est pas couvert au test : `getBoundingClientRect` rend
+des zéros sous jsdom. Ce sont ses fonctions pures (`indexAt`, `moveItem`,
+`applyOrder`) et la route clavier qui le sont — le geste reste à constater au
+navigateur, avec le reste de la 0.7.0.
+
 **Reste :**
 - [ ] `atelier` — ~1 600 lignes (plan de débit, SVG). EN COURS.
 - [x] `parcours` vérifié au navigateur (instance Docker, magasin d'alfred-beta
@@ -106,3 +123,12 @@ FIN du geste, donc le défilement vertical n'est pas touché.
 - [ ] `npm run lint` ne tourne pas : eslint absent des devDependencies
 - [ ] driver Copilot : pas de plomberie de permissions → la porte planif ne
       s'y applique pas (missions bornées par `until` malgré tout)
+- [ ] Backlog UX du 26/08, reste à traiter : les 4 bugs de la vague 1 (gras et
+      liens Markdown non rendus dans le chat, pop-up d'autorisation qui ne se
+      ferme pas au clic, indicateur « … » tardif après envoi, la fiche
+      `golem-evolutions` absente de la nav) ; les outils autorisés par défaut
+      (décision de niveau de risque, pas un bug) ; la fusion apps/domaines
+      (chantier d'archi, à cadrer — `sections.ts`/`owners.ts` viennent d'être
+      refaits en 0.6/0.7 pour DISTINGUER ces deux notions) ; et Withings/mail/
+      agenda « connectés mais muets », qui sent le 403 user-data côté rosetta
+      plutôt qu'un bug de Golem

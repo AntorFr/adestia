@@ -31,6 +31,9 @@ const FR: Readonly<Record<string, string>> = {
   Sections: 'Domaines',
   Pages: 'Fiches',
   'Nothing to show yet.': 'Rien à afficher pour l’instant.',
+  Arrange: 'Ranger',
+  'Move earlier': 'Déplacer avant',
+  'Move later': 'Déplacer après',
   'Turn a plugin on in': 'Activez un plugin dans',
   'or write a page — a folder holding one becomes a section on its own.':
     'ou écrivez une fiche — un dossier qui en contient devient un domaine tout seul.',

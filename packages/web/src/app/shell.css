@@ -753,6 +753,91 @@
 
 .golem-archive .golem-card { opacity: 0.8; }
 
+/* Arranging the mosaics ------------------------------------------------- */
+
+.golem-section__edit {
+  margin-left: var(--space-3);
+  padding: 2px var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: var(--label-size);
+  letter-spacing: var(--label-track);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.golem-section__edit:hover { border-color: var(--accent); color: var(--accent); }
+
+.golem-section__edit[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.golem-tile-slot { position: relative; display: flex; }
+
+/* Inert, but still able to hear a pointer on the slot around it — which is
+   what the drag listens to. `disabled` would swallow those events. */
+.golem-tile-slot--editing .golem-tile {
+  pointer-events: none;
+  cursor: grab;
+}
+
+.golem-tile-slot--editing { touch-action: none; cursor: grab; }
+
+/* The tile being carried rides above the reflow it is causing. */
+.golem-tile-slot--carried {
+  z-index: 2;
+  cursor: grabbing;
+}
+
+.golem-tile-slot--carried .golem-tile {
+  transform: scale(1.04);
+  box-shadow: var(--shadow-lg);
+}
+
+/* The iOS tell: everything arrangeable is faintly restless. Suppressed with
+   the rest of the motion under prefers-reduced-motion (see tokens.css), so
+   the mode still reads by its outline and its Done button. */
+@keyframes golem-restless {
+  0% { transform: rotate(-0.6deg); }
+  50% { transform: rotate(0.6deg); }
+  100% { transform: rotate(-0.6deg); }
+}
+
+.golem-tile-slot--editing:not(.golem-tile-slot--carried) .golem-tile {
+  animation: golem-restless 0.28s ease-in-out infinite;
+  outline: 1px dashed var(--border-strong);
+  outline-offset: 2px;
+}
+
+.golem-tile-slot__arrows {
+  position: absolute;
+  z-index: 3;
+  top: var(--space-1);
+  right: var(--space-1);
+  display: flex;
+  gap: 2px;
+}
+
+.golem-tile-slot__arrows button {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-round);
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  font-size: var(--text-base);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.golem-tile-slot__arrows button:hover { border-color: var(--accent); color: var(--accent); }
+
 .golem-tiles {
   list-style: none;
   margin: 0;

@@ -6,8 +6,8 @@
  * arrives as a flat list again.
  */
 
-import { render, screen, waitFor } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { describe, expect, it, onTestFinished, vi } from 'vitest'
 
 import { Home } from '../src/app/Home.js'
 import type { LoadedPlugin } from '../src/plugins/loader.js'
@@ -51,7 +51,8 @@ describe('the landing canvas', () => {
     // what it stores. The version this replaced put every page first and the
     // launcher below all of them.
     const { container } = render(<Home {...props} />)
-    expect([...container.querySelectorAll('.golem-section')].map((h) => h.textContent)).toEqual([
+    // The name, not the whole heading: it also carries the Arrange switch.
+    expect([...container.querySelectorAll('.golem-section__name')].map((h) => h.textContent)).toEqual([
       'Apps',
       'Sections',
     ])
@@ -177,5 +178,126 @@ describe('the landing canvas', () => {
     render(<Home {...props} focusComposer={focusComposer} />)
     screen.getByRole('button', { name: /Ask/ }).click()
     expect(focusComposer).toHaveBeenCalled()
+  })
+})
+
+describe('arranging the mosaics', () => {
+  /** A localStorage the test can read back. */
+  const store = () => {
+    const map = new Map<string, string>()
+    return {
+      map,
+      getItem: (key: string) => map.get(key) ?? null,
+      setItem: (key: string, value: string) => void map.set(key, value),
+      removeItem: (key: string) => void map.delete(key),
+      clear: () => map.clear(),
+      key: () => null,
+      length: 0,
+    } as unknown as Storage & { map: Map<string, string> }
+  }
+
+  const withStorage = (): Map<string, string> => {
+    const storage = store()
+    const original = globalThis.localStorage
+    Object.defineProperty(globalThis, 'localStorage', { value: storage, configurable: true })
+    onTestFinished(() => {
+      Object.defineProperty(globalThis, 'localStorage', { value: original, configurable: true })
+    })
+    return storage.map
+  }
+
+  const three = [plugin('todo'), plugin('planif'), plugin('scan')]
+
+  const home = (props: Record<string, unknown> = {}) =>
+    render(
+      <Home
+        skin={{}}
+        plugins={three}
+        entries={[]}
+        openPlugin={vi.fn()}
+        openSection={vi.fn()}
+        openPage={vi.fn()}
+        focusComposer={vi.fn()}
+        fetchImpl={vi.fn(() => Promise.reject(new Error('no brief'))) as unknown as typeof fetch}
+        {...props}
+      />,
+    )
+
+  const labels = () =>
+    [...document.querySelectorAll('.golem-tiles .golem-tile__label')].map((node) => node.textContent)
+
+  it('offers a way in to arranging, and a way out', () => {
+    withStorage()
+    home()
+    const button = screen.getByRole('button', { name: 'Arrange' })
+    // A button rather than a long-press: an invisible gesture on the screen
+    // that is half the product's navigation is a gesture nobody finds.
+    expect(button.getAttribute('aria-pressed')).toBe('false')
+    fireEvent.click(button)
+    expect(screen.getByRole('button', { name: 'Done' }).getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it('offers nothing to arrange when there is one tile', () => {
+    withStorage()
+    home({ plugins: [plugin('todo')] })
+    expect(screen.queryByRole('button', { name: 'Arrange' })).toBeNull()
+  })
+
+  it('lays the tiles out as they were last left', () => {
+    const map = withStorage()
+    map.set('golem.order.apps', JSON.stringify(['scan', 'todo', 'planif']))
+    home()
+    expect(labels()).toEqual(['scan', 'todo', 'planif'])
+  })
+
+  it('moves a tile and remembers it', () => {
+    const map = withStorage()
+    home()
+    fireEvent.click(screen.getByRole('button', { name: 'Arrange' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Move later — todo' }))
+    expect(labels()).toEqual(['planif', 'todo', 'scan'])
+    expect(JSON.parse(map.get('golem.order.apps') as string)).toEqual(['planif', 'todo', 'scan'])
+  })
+
+  it('does nothing at the ends', () => {
+    withStorage()
+    home()
+    fireEvent.click(screen.getByRole('button', { name: 'Arrange' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Move earlier — todo' }))
+    expect(labels()).toEqual(['todo', 'planif', 'scan'])
+  })
+
+  it('does not open a tile somebody is trying to pick up', () => {
+    withStorage()
+    const openPlugin = vi.fn()
+    home({ openPlugin })
+    fireEvent.click(screen.getByRole('button', { name: 'Arrange' }))
+    // The classic way an edit mode betrays the person in it.
+    const tile = document.querySelector('.golem-tiles .golem-tile') as HTMLElement
+    fireEvent.click(tile)
+    expect(openPlugin).not.toHaveBeenCalled()
+  })
+
+  it('opens a tile normally when not arranging', () => {
+    withStorage()
+    const openPlugin = vi.fn()
+    home({ openPlugin })
+    fireEvent.click(document.querySelector('.golem-tiles .golem-tile') as HTMLElement)
+    expect(openPlugin).toHaveBeenCalled()
+  })
+
+  it('keeps a newly enabled app rather than hiding it', () => {
+    const map = withStorage()
+    map.set('golem.order.apps', JSON.stringify(['scan', 'todo']))
+    home({ plugins: [...three, plugin('voyages')] })
+    // Unmentioned goes last; nothing is lost to a stale preference.
+    expect(labels()).toEqual(['scan', 'todo', 'planif', 'voyages'])
+  })
+
+  it('leaves no hole where a disabled app used to be', () => {
+    const map = withStorage()
+    map.set('golem.order.apps', JSON.stringify(['scan', 'planif', 'todo']))
+    home({ plugins: [plugin('scan'), plugin('todo')] })
+    expect(labels()).toEqual(['scan', 'todo'])
   })
 })
