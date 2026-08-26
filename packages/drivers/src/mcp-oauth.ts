@@ -24,7 +24,16 @@ export interface McpOAuth {
   /** The token endpoint. */
   readonly tokenUrl: string
   readonly clientId: string
-  readonly clientSecret: string
+  /** Present for a confidential client (client_credentials, or refresh with a secret). */
+  readonly clientSecret?: string | undefined
+  /**
+   * A stored refresh token. Its presence switches the grant to
+   * `refresh_token`: the instance acts on a PERSON's behalf (a token minted
+   * once through an interactive authorization-code flow) rather than as its
+   * own machine identity. A public client sends no secret; a rotated refresh
+   * token is kept for the next turn.
+   */
+  readonly refreshToken?: string | undefined
   /** Space-separated, as OAuth spells it. */
   readonly scope?: string | undefined
   /**
@@ -44,6 +53,21 @@ interface Cached {
   readonly until: number
 }
 
+/**
+ * Persistence for a rotating refresh token, injected by the core.
+ *
+ * A refresh token minted through an interactive login is the ONLY way back in
+ * without asking the person again. OAuth 2.1 servers rotate it and invalidate
+ * the old one, so the latest must outlive the process — otherwise a restart
+ * presents a spent token and the instance is locked out until someone logs in
+ * anew. Keyed by `tokenUrl|clientId`; the core decides where it lands (0600,
+ * beside the driver credential).
+ */
+export interface RefreshStore {
+  load(key: string): Promise<string | undefined> | string | undefined
+  save(key: string, refreshToken: string): Promise<void> | void
+}
+
 /** Refreshed this long before it actually expires. */
 const EARLY_MS = 60_000
 const TIMEOUT_MS = 15_000
@@ -59,10 +83,14 @@ const TIMEOUT_MS = 15_000
 export class McpTokens {
   readonly #cache = new Map<string, Cached>()
   readonly #inFlight = new Map<string, Promise<string | undefined>>()
+  /** Current refresh token per identity, updated when a provider rotates it. */
+  readonly #refresh = new Map<string, string>()
   readonly #fetch: typeof fetch
+  readonly #store: RefreshStore | undefined
 
-  constructor(fetchImpl: typeof fetch = fetch) {
+  constructor(fetchImpl: typeof fetch = fetch, store?: RefreshStore) {
     this.#fetch = fetchImpl
+    this.#store = store
   }
 
   /**
@@ -90,32 +118,62 @@ export class McpTokens {
   }
 
   async #mint(auth: McpOAuth, key: string): Promise<string | undefined> {
-    const body = new URLSearchParams({ grant_type: 'client_credentials' })
+    const headers: Record<string, string> = {
+      'content-type': 'application/x-www-form-urlencoded',
+    }
+    const body = new URLSearchParams()
+    const rkey = `${auth.tokenUrl}|${auth.clientId}`
+    const usingRefresh = auth.refreshToken !== undefined
+
+    if (usingRefresh) {
+      // Acting for a person: the refresh token minted once through an
+      // interactive authorization-code flow. A public client sends `client_id`
+      // in the body and no secret; a confidential one still authenticates. The
+      // persisted value wins — it is the one a provider's rotation left valid.
+      const current =
+        (await this.#store?.load(rkey)) ?? this.#refresh.get(rkey) ?? auth.refreshToken!
+      body.set('grant_type', 'refresh_token')
+      body.set('refresh_token', current)
+      body.set('client_id', auth.clientId)
+      if (auth.clientSecret) {
+        headers.authorization = `Basic ${btoa(`${encodeURIComponent(auth.clientId)}:${encodeURIComponent(auth.clientSecret)}`)}`
+      }
+    } else {
+      // The machine identity: the instance's own client credentials.
+      body.set('grant_type', 'client_credentials')
+      headers.authorization = `Basic ${btoa(`${encodeURIComponent(auth.clientId)}:${encodeURIComponent(auth.clientSecret ?? '')}`)}`
+    }
     if (auth.scope) body.set('scope', auth.scope)
     if (auth.audience) body.set('audience', auth.audience)
 
-    let payload: { access_token?: string; expires_in?: number }
+    let payload: { access_token?: string; expires_in?: number; refresh_token?: string }
     try {
       const response = await this.#fetch(auth.tokenUrl, {
         method: 'POST',
-        headers: {
-          // `client_secret_basic`. The alternative — credentials in the body —
-          // is what several providers refuse with a bare `invalid_client`,
-          // which reads as a wrong secret rather than a wrong method.
-          authorization: `Basic ${btoa(`${encodeURIComponent(auth.clientId)}:${encodeURIComponent(auth.clientSecret)}`)}`,
-          'content-type': 'application/x-www-form-urlencoded',
-        },
+        headers,
         body: body.toString(),
         signal: AbortSignal.timeout(TIMEOUT_MS),
       })
       if (!response.ok) return undefined
-      payload = (await response.json()) as { access_token?: string; expires_in?: number }
+      payload = (await response.json()) as {
+        access_token?: string
+        expires_in?: number
+        refresh_token?: string
+      }
     } catch {
       return undefined
     }
 
     const token = payload.access_token
     if (!token) return undefined
+
+    // Refresh-token rotation: many providers issue a new one each time and
+    // invalidate the old. Keep the latest so the next turn does not present a
+    // spent token, and persist it so a restart does not either.
+    if (usingRefresh && payload.refresh_token) {
+      this.#refresh.set(rkey, payload.refresh_token)
+      await this.#store?.save(rkey, payload.refresh_token)
+    }
 
     // A minute early, and never negative: a provider that answers `expires_in:
     // 30` would otherwise cache a token already treated as stale, and every

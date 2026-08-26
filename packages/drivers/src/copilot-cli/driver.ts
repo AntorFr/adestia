@@ -27,7 +27,7 @@ import type {
   TurnRequest,
 } from '../contract.js'
 import { TOKEN_ENV_VAR, classifyAuthError, copilotEnv, explainAuthProblem, looksLikeToken } from './auth.js'
-import { McpTokens } from '../mcp-oauth.js'
+import { McpTokens, type RefreshStore } from '../mcp-oauth.js'
 import { newTranslationState, parseLine, translate } from './events.js'
 import { PLAINTEXT_CONSENT, startDeviceCodeLogin, type DeviceCodeLogin } from './login.js'
 
@@ -36,6 +36,7 @@ export interface CopilotDriverOptions {
   readonly command?: string
   /** Driver-owned state: config, MCP servers, session store. */
   readonly home: string
+  readonly agent?: string
   readonly credentials?: Readonly<Record<string, string>>
   readonly baseEnv?: Readonly<Record<string, string | undefined>>
   readonly cliVersion?: string
@@ -56,6 +57,8 @@ export interface CopilotDriverOptions {
   readonly mcpServers?: readonly McpServer[]
   /** Injected so the token exchange can be exercised without a network. */
   readonly fetchImpl?: typeof fetch
+  /** Persists a rotated MCP refresh token across restarts. */
+  readonly refreshStore?: RefreshStore
   readonly spawnImpl?: typeof spawn
   /** Injection point for the device-code login flow, for tests. */
   readonly startLoginImpl?: typeof startDeviceCodeLogin
@@ -68,6 +71,7 @@ export class CopilotDriver implements Driver {
   readonly #home: string
   readonly #baseEnv: Readonly<Record<string, string | undefined>>
   readonly #models: readonly ModelInfo[]
+  readonly #agent: string | undefined
   readonly #cliVersion: string
   readonly #spawn: typeof spawn
   readonly #startLogin: typeof startDeviceCodeLogin
@@ -86,11 +90,12 @@ export class CopilotDriver implements Driver {
     this.#home = options.home
     this.#baseEnv = options.baseEnv ?? process.env
     this.#models = options.models ?? []
+    this.#agent = options.agent
     this.#cliVersion = options.cliVersion ?? 'unknown'
     this.#spawn = options.spawnImpl ?? spawn
     this.#startLogin = options.startLoginImpl ?? startDeviceCodeLogin
     this.#mcpServers = options.mcpServers ?? []
-    this.#tokens = new McpTokens(options.fetchImpl ?? fetch)
+    this.#tokens = new McpTokens(options.fetchImpl ?? fetch, options.refreshStore)
     this.#credentials = { ...options.credentials }
   }
 
@@ -357,6 +362,7 @@ export class CopilotDriver implements Driver {
       '--no-auto-update',
       ...(request.sessionId ? ['--resume', request.sessionId] : []),
       ...(request.model ? ['--model', request.model] : []),
+      ...(this.#agent ? ['--agent', this.#agent] : []),
       // `@file` rather than inline JSON: the servers' tokens stay out of argv.
       ...(mcpConfig ? ['--additional-mcp-config', `@${mcpConfig}`] : []),
     ]

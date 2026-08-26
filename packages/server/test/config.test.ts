@@ -347,4 +347,35 @@ mcp:
       ),
     ).toEqual(['mcp.servers[0].auth needs "url" — a stdio server has nobody to authenticate to'])
   })
+
+  it('accepts a public client acting for a person with a refresh token', () => {
+    const config = parseConfig(`
+mcp:
+  servers:
+    - name: research
+      url: https://gw.example/mcp
+      identity: user
+      auth:
+        tokenUrl: https://gw.example/token
+        clientId: public-client
+        refreshToken: rt-armed
+        scope: openid
+`)
+    expect(config.mcpServers[0]?.auth).toEqual({
+      tokenUrl: 'https://gw.example/token',
+      clientId: 'public-client',
+      refreshToken: 'rt-armed',
+      scope: 'openid',
+    })
+  })
+
+  it('refuses an identity with neither a secret nor a refresh token', () => {
+    expect(
+      issuesOf(
+        'mcp:\n  servers:\n    - name: m\n      url: https://h/m\n      auth:\n        tokenUrl: https://a/t\n        clientId: x\n',
+      ),
+    ).toEqual([
+      'mcp.servers[0].auth needs either "clientSecret" (client_credentials) or "refreshToken" (a token from an interactive login)',
+    ])
+  })
 })

@@ -72,6 +72,8 @@ export interface WorkspaceConfig {
 
 export interface DriverConfig {
   readonly id: string
+  /** Custom agent selected by drivers that support agent profiles. */
+  readonly agent?: string | undefined
   readonly models: readonly { id: string; label?: string }[]
   /**
    * The binary to run, when the driver spawns one. Worth pinning to an exact
@@ -161,7 +163,9 @@ export interface McpServerConfig {
   readonly auth?: {
     readonly tokenUrl: string
     readonly clientId: string
-    readonly clientSecret: string
+    readonly clientSecret?: string | undefined
+    /** A stored refresh token: uses the refresh_token grant (acts for a person). */
+    readonly refreshToken?: string | undefined
     readonly scope?: string | undefined
     readonly audience?: string | undefined
   } | undefined
@@ -451,7 +455,7 @@ function readMcpAuth(
   }
 
   const fields: Record<string, string> = {}
-  for (const field of ['tokenUrl', 'clientId', 'clientSecret'] as const) {
+  for (const field of ['tokenUrl', 'clientId'] as const) {
     const value = raw[field]
     if (typeof value !== 'string' || value === '') {
       issues.push(`${where}.auth.${field} is required`)
@@ -465,6 +469,30 @@ function readMcpAuth(
       return false
     }
     fields[field] = value
+  }
+
+  // A confidential client presents `clientSecret` (client_credentials); a
+  // public client presents a `refreshToken` minted once through an interactive
+  // authorization-code flow. One of the two is required, never neither.
+  const creds: Record<string, string> = {}
+  for (const field of ['clientSecret', 'refreshToken'] as const) {
+    const value = raw[field]
+    if (value === undefined) continue
+    if (typeof value !== 'string' || value === '') {
+      issues.push(`${where}.auth.${field} must be a non-empty string`)
+      return false
+    }
+    if (/^\$\{[A-Za-z_][A-Za-z0-9_]*\}$/.test(value)) {
+      issues.push(`${where}.auth.${field} is still "${value}" — that variable is not set`)
+      return false
+    }
+    creds[field] = value
+  }
+  if (!creds['clientSecret'] && !creds['refreshToken']) {
+    issues.push(
+      `${where}.auth needs either "clientSecret" (client_credentials) or "refreshToken" (a token from an interactive login)`,
+    )
+    return false
   }
 
   const optional: Record<string, string> = {}
@@ -481,7 +509,8 @@ function readMcpAuth(
   return {
     tokenUrl: fields['tokenUrl']!,
     clientId: fields['clientId']!,
-    clientSecret: fields['clientSecret']!,
+    ...(creds['clientSecret'] ? { clientSecret: creds['clientSecret'] } : {}),
+    ...(creds['refreshToken'] ? { refreshToken: creds['refreshToken'] } : {}),
     ...(optional['scope'] ? { scope: optional['scope'] } : {}),
     ...(optional['audience'] ? { audience: optional['audience'] } : {}),
   }
@@ -668,6 +697,10 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
 
   const driverRaw = isObject(raw['driver']) ? raw['driver'] : {}
   const driverId = typeof driverRaw['id'] === 'string' ? driverRaw['id'] : 'claude-code'
+  const agent = typeof driverRaw['agent'] === 'string' ? driverRaw['agent'] : undefined
+  if (agent !== undefined && !/^[a-zA-Z][\w-]{0,63}$/.test(agent)) {
+    issues.push('driver.agent must start with a letter and contain only letters, digits, dashes and underscores')
+  }
   const modelsRaw = driverRaw['models']
   const models: { id: string; label?: string }[] = []
   if (modelsRaw !== undefined) {
@@ -786,6 +819,7 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
     workspace,
     driver: {
       id: driverId,
+      ...(agent ? { agent } : {}),
       models,
       ...(typeof driverRaw['command'] === 'string' ? { command: driverRaw['command'] } : {}),
     },

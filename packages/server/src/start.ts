@@ -37,6 +37,7 @@ import {
 } from './extensions.js'
 import { authorityEditRule, chainEditRules } from './authority-gate.js'
 import { planifEditRule } from './planif-gate.js'
+import { FileRefreshStore } from './mcp-refresh.js'
 import { runSetups } from './plugin-host.js'
 import { UserTokens } from './user-tokens.js'
 import { SecretStore } from './secrets.js'
@@ -88,6 +89,8 @@ async function buildDriver(
   permissions: PermissionBroker,
   mcpServers: readonly McpServer[],
 ): Promise<Driver> {
+  // Rotated MCP refresh tokens outlive the process here, beside the credential.
+  const refreshStore = new FileRefreshStore(dataDir)
   switch (config.driver.id) {
     case 'claude-code': {
       const { query } = await import('@anthropic-ai/claude-agent-sdk')
@@ -100,6 +103,7 @@ async function buildDriver(
         armingFlow: createOAuthFlow(),
         permissions,
         mcpServers,
+        refreshStore,
       })
     }
 
@@ -109,7 +113,9 @@ async function buildDriver(
         // land here rather than in whatever HOME the process happens to have.
         home: join(dataDir, 'copilot-home'),
         models: config.driver.models,
+        ...(config.driver.agent ? { agent: config.driver.agent } : {}),
         mcpServers,
+        refreshStore,
         ...(config.driver.command ? { command: config.driver.command } : {}),
       })
 

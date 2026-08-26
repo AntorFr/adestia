@@ -126,3 +126,85 @@ describe('the token exchange', () => {
     expect(calls).toHaveLength(2)
   })
 })
+
+describe('the refresh-token grant (acting for a person)', () => {
+  const USER = {
+    tokenUrl: 'https://gw.example/token',
+    clientId: 'public-client',
+    refreshToken: 'rt-initial',
+    scope: 'openid',
+  }
+
+  function refreshProvider(answers: readonly { token?: string; refresh?: string; expiresIn?: number }[]) {
+    const calls: { headers: Record<string, string>; body: string }[] = []
+    let index = 0
+    const fetchImpl = vi.fn((_url: string, init?: RequestInit) => {
+      calls.push({
+        headers: (init?.headers ?? {}) as Record<string, string>,
+        body: String(init?.body ?? ''),
+      })
+      const a = answers[Math.min(index++, answers.length - 1)] ?? {}
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () =>
+          Promise.resolve({
+            access_token: a.token ?? 'access',
+            expires_in: a.expiresIn ?? 3600,
+            ...(a.refresh ? { refresh_token: a.refresh } : {}),
+          }),
+      } as unknown as Response)
+    }) as unknown as typeof fetch
+    return { fetchImpl, calls }
+  }
+
+  it('uses the refresh_token grant and sends the public client id in the body', async () => {
+    const { fetchImpl, calls } = refreshProvider([{ token: 'at' }])
+    expect(await new McpTokens(fetchImpl).for(USER)).toBe('at')
+
+    const body = new URLSearchParams(calls[0]!.body)
+    expect(body.get('grant_type')).toBe('refresh_token')
+    expect(body.get('refresh_token')).toBe('rt-initial')
+    expect(body.get('client_id')).toBe('public-client')
+    // A public client authenticates with no secret: no Basic header.
+    expect(calls[0]!.headers['authorization']).toBeUndefined()
+  })
+
+  it('follows a rotated refresh token into the next exchange', async () => {
+    // OAuth 2.1 servers commonly rotate and invalidate the old one; presenting
+    // the spent token on the next turn would lock the instance out.
+    const { fetchImpl, calls } = refreshProvider([
+      { token: 'first', refresh: 'rt-2', expiresIn: 30 },
+      { token: 'second' },
+    ])
+    const tokens = new McpTokens(fetchImpl)
+    expect(await tokens.for(USER)).toBe('first')
+    vi.useFakeTimers()
+    try {
+      vi.setSystemTime(Date.now() + 5_000)
+      expect(await tokens.for(USER)).toBe('second')
+    } finally {
+      vi.useRealTimers()
+    }
+    expect(new URLSearchParams(calls[1]!.body).get('refresh_token')).toBe('rt-2')
+  })
+
+  it('persists a rotated refresh token and reads it back after a restart', async () => {
+    const saved: Record<string, string> = {}
+    const store = {
+      load: (k: string) => saved[k],
+      save: (k: string, v: string) => {
+        saved[k] = v
+      },
+    }
+    const first = refreshProvider([{ token: 'a', refresh: 'rt-2' }])
+    expect(await new McpTokens(first.fetchImpl, store).for(USER)).toBe('a')
+    expect(Object.values(saved)).toContain('rt-2')
+
+    // A fresh instance — a restart — must present the PERSISTED token, not the
+    // spent one still sitting in the config.
+    const second = refreshProvider([{ token: 'b' }])
+    expect(await new McpTokens(second.fetchImpl, store).for(USER)).toBe('b')
+    expect(new URLSearchParams(second.calls[0]!.body).get('refresh_token')).toBe('rt-2')
+  })
+})

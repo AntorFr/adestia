@@ -97,6 +97,8 @@ driver:
   # path for copilot-cli: it self-updates, so "whatever is on PATH" is not a
   # version anyone can reason about.
   # command: /usr/local/bin/copilot
+  # Optional custom agent profile, when supported by the selected driver.
+  # agent: reviewer
   # Claude's catalogue is per-account and cannot be enumerated offline, so an
   # instance declares what it may use. Omit the list and the model selector
   # hides rather than showing a hardcoded catalogue that lies.
@@ -208,6 +210,21 @@ mcp:
   #
   # Addons of one hub share an identity: declaring it on each of them costs
   # one token exchange, not one per addon.
+  #
+  # A public OAuth hub (no client secret) that logs a PERSON in — dynamic
+  # client registration + authorization_code + PKCE, as VS Code does — is
+  # reached with a `refreshToken` minted once through that interactive flow.
+  # Golem then uses the refresh_token grant per turn and follows a rotated
+  # refresh token. Arm the refresh token as a secret; do not commit it.
+  #
+  #   - name: research
+  #     url: https://hub.example/mcp
+  #     identity: user
+  #     auth:
+  #       tokenUrl: https://hub.example/token
+  #       clientId: <from dynamic client registration>
+  #       refreshToken: ${HUB_REFRESH}
+  #       scope: openid
   #
   # A server that serves somebody's OWN data — their calendar, their mail —
   # declares `identity: user` instead. It is then reached with the token of

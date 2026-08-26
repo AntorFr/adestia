@@ -22,7 +22,7 @@ import type {
   TurnRequest,
   TurnUsage,
 } from '../contract.js'
-import { McpTokens } from '../mcp-oauth.js'
+import { McpTokens, type RefreshStore } from '../mcp-oauth.js'
 import { TOKEN_ENV_VAR, looksLikeToken } from './arming.js'
 import { PermissionBroker, type PermissionRequest } from '../permissions.js'
 import { proposedFileEdit, toolTarget } from './events.js'
@@ -68,6 +68,8 @@ export interface ClaudeCodeOptions {
   readonly mcpServers?: readonly McpServer[]
   /** Injected so the token exchange can be exercised without a network. */
   readonly fetchImpl?: typeof fetch
+  /** Persists a rotated MCP refresh token across restarts. */
+  readonly refreshStore?: RefreshStore
   /**
    * Gates tool use behind a human. Absent means the CLI's own permission
    * handling applies — which, with no prompt surface, denies everything it
@@ -188,7 +190,7 @@ export class ClaudeCodeDriver implements Driver {
     // Shaped once, at construction: the mapping is fixed for the process's
     // life, and doing it per turn would repeat the same work on every message.
     this.#mcpServers = options.mcpServers ?? []
-    this.#tokens = new McpTokens(options.fetchImpl ?? fetch)
+    this.#tokens = new McpTokens(options.fetchImpl ?? fetch, options.refreshStore)
   }
 
   /** Called by the core when it loads or stores this driver's credentials. */
