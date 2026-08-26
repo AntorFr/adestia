@@ -61,7 +61,7 @@ COPY --from=build /build/packages/server/bin ./packages/server/bin
 COPY --from=build /build/packages/web/package.json ./packages/web/
 COPY --from=build /build/packages/web/dist-web ./packages/web/dist-web
 
-# The extensions the product SHIPS — seven plugins and three skins, loaded by
+# The extensions the product SHIPS — eight plugins and three skins, loaded by
 # the same runtime path as any operator-mounted folder. Baked in because a
 # default install advertising "ships with todo, collections…" and starting
 # with none would be a box with a picture on it; an operator points

@@ -2,7 +2,7 @@
 > MàJ : 2026-08-26
 
 **État :** Migration Alfred. Faits et vérifiés en navigateur : `todo`,
-`planif`, `collections`, `scan`, skin `alfred`. 1029 tests + 131 de plugins.
+`planif`, `collections`, `scan`, skin `alfred`. 1029 tests + 146 de plugins.
 Facette `blocks` CÂBLÉE : elle était chargée et narrowée depuis le début, et
 personne ne lisait le résultat. Un bloc se déclare en deux moitiés — le
 manifeste (`vocabulary`) dit ce qu'il EST, pour que le SERVEUR le valide sans
@@ -77,6 +77,23 @@ que ni l'une ni l'autre ne voyait, refermé au passage — l'éditeur prêté ne
 recevait pas les blocs des plugins (il est construit AVANT le chargement des
 plugins), donc une entrée portant un `{% %}` aurait montré des accolades là où
 l'écran page montre le bloc : il les lit maintenant par une ref.
+`journal` mis au contrat 0.7.0 dans la foulée : il PUBLIE où il est
+(`api.trail` — le nom du journal ouvert, `[]` sur l'étagère) et il répond
+`routeFor`, en remontant du chemin vers le journal qui le contient, donc une
+entrée renvoie à son journal et un dossier qui n'en est pas ne renvoie à rien.
+`absorbs` reste : il dit que le dossier `journal` est l'affaire de l'app, ce
+que `routeFor` ne dit pas — les deux moitiés, pas l'une OU l'autre. Adresses
+refaites au passage, parce que c'est `routeFor` qui décide le schéma d'URL :
+`#/journal/atelier` (le NOM, résolu contre le listing) au lieu de
+`#/journal/journal%2Fatelier`, repli sur le chemin si le nom est pris deux
+fois, et l'ancienne forme reste lue pour toujours — le décodage se fait
+segment par segment, donc un `%2F` d'un vieux favori redevient le chemin qu'il
+a toujours été. Règle dans `web/address.js`, pure et testée (15 tests).
+Décompte du Dockerfile passé à huit plugins ; le `golem.config.example.yaml`,
+lui, ne nomme aucun plugin (listes vides par conception : « la présence est la
+découverte, jamais l'activation »), il n'y avait donc rien à y déclarer. Et
+`plugins/README.md` annonçait encore UNE skin alors que trois sont livrées
+depuis le portage de Nestor et Skippy — corrigé, les deux ont leur ligne.
 
 Chantier UX du 26/08 (backlog dicté par Monsieur, fiche `golem-evolutions`)
 — lot 1, le composer : le champ tenait sur une ligne de 34 px sur la surface
@@ -128,12 +145,11 @@ des zéros sous jsdom. Ce sont ses fonctions pures (`indexAt`, `moveItem`,
 navigateur, avec le reste de la 0.7.0.
 
 **Reste :**
-- [ ] `journal` — pas encore vérifié en navigateur (tests seulement)
-- [ ] `journal` non déclaré : ni dans `golem.config.example.yaml`, ni dans le
-      manifeste de version — il ne partira dans aucune image tant qu'on ne le
-      nomme pas
-- [ ] `journal` est écrit pour le contrat d'AVANT 0.7.0 : il revendique par
-      `absorbs` et ne publie pas `api.trail` (son fil s'arrête à l'app)
+- [ ] `journal` — pas encore vérifié en navigateur (tests seulement) : le
+      fil d'Ariane, une adresse courte, et un vieux lien `%2F` qui doit
+      toujours ouvrir
+- [ ] `journal` : `api.trail` n'est pas couvert par un test — les tests de
+      plugins tournent sous `node --test`, sans rendu React
 - [ ] `atelier` — ~1 600 lignes (plan de débit, SVG). EN COURS.
 - [x] `parcours` vérifié au navigateur (instance Docker, magasin d'alfred-beta
       copié) : les deux vues, la page `#/parcours/…`, l'éditeur (le bloc monte

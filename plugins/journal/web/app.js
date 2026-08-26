@@ -18,6 +18,7 @@
 
 import { createElement as h, useCallback, useEffect, useMemo, useState } from 'react'
 
+import { ROUTE, resolve, restOf, routeOf } from './address.js'
 import {
   buildModel,
   entryMarkdown,
@@ -38,6 +39,31 @@ const PAGE = 15
 export default function view(api) {
   const t = words(api.locale)
 
+  /**
+   * Every journal folder this plugin knows — the listing `routeFor` answers
+   * from, and the one an address is resolved against.
+   *
+   * Held here rather than in the component because the shell asks while a
+   * LINK is being drawn: on the launcher, in a breadcrumb, in a page the
+   * agent wrote — all of them before this view has ever mounted. Refreshed on
+   * every reload and every tile render, so a journal created since boot is
+   * addressable without a reload of the whole shell.
+   */
+  let known = []
+
+  const refresh = async () => {
+    const response = await api.fetch('/api/pages/index')
+    if (!response.ok) throw new Error(`the page index answered ${response.status}`)
+    const { entries } = await response.json()
+    const model = buildModel(Array.isArray(entries) ? entries : [])
+    known = model.map((journal) => journal.folder)
+    return model
+  }
+
+  // Primed at load so the first link drawn is already the short form, rather
+  // than the path form every address falls back to when the listing is empty.
+  void refresh().catch(() => {})
+
   const put = (path, markdown, revision) =>
     api.fetch(`/api/pages/${path}`, {
       method: 'PUT',
@@ -55,10 +81,7 @@ export default function view(api) {
 
     const reload = useCallback(async () => {
       try {
-        const response = await api.fetch('/api/pages/index')
-        if (!response.ok) throw new Error(`the page index answered ${response.status}`)
-        const { entries } = await response.json()
-        setJournals(buildModel(Array.isArray(entries) ? entries : []))
+        setJournals(await refresh())
       } catch (cause) {
         setError(cause.message)
       }
@@ -69,18 +92,29 @@ export default function view(api) {
     }, [reload])
 
     // The route owns everything below it, so this view reads its own tail:
-    // `#/journal/journal/atelier` opens that journal, and a bookmark to it
-    // resurrects the same screen.
+    // `#/journal/atelier` opens that journal, and a bookmark to it resurrects
+    // the same screen.
     useEffect(() => {
       const apply = () => setRoute(location.hash.replace(/^#/, ''))
       window.addEventListener('hashchange', apply)
       return () => window.removeEventListener('hashchange', apply)
     }, [])
 
-    const openId = route.startsWith('/journal/')
-      ? decodeURIComponent(route.slice('/journal/'.length))
-      : null
-    const open = openId && journals ? journals.find((entry) => entry.id === openId) : null
+    // Resolved against the listing rather than read off the URL: a journal is
+    // addressed by NAME, and only the listing knows whether a name is taken
+    // twice. An empty listing answers nothing, which is the loading screen
+    // below rather than a wrong journal.
+    const folders = journals ? journals.map((journal) => journal.folder) : []
+    const openId = resolve(folders, restOf(route))
+    const open = openId ? journals.find((entry) => entry.id === openId) : null
+
+    // The shell draws the breadcrumb; this view only says where it is. `[]` on
+    // the shelf is not a no-op: the trail is cleared on every navigation, so a
+    // screen with nothing to add must SAY nothing rather than leave the last
+    // journal's name standing under the app's tile.
+    useEffect(() => {
+      api.trail(open ? [{ label: open.title, route: routeOf(folders, open.folder) }] : [])
+    }, [open?.id, open?.title])
 
     if (error && !journals) return h('p', { className: 'journal-problem' }, error)
     if (!journals) return h('p', { className: 'journal-muted' }, t('Loading…'))
@@ -117,7 +151,7 @@ export default function view(api) {
         setDraft({ title: '', ico: '' })
         setError(null)
         await reload()
-        location.hash = `/journal/${encodeURIComponent(folder)}`
+        location.hash = routeOf(known, folder)
       } catch (cause) {
         setError(cause.message)
       }
@@ -130,7 +164,7 @@ export default function view(api) {
         { key: journal.id },
         h(
           'a',
-          { className: 'journal-card', href: `#/journal/${encodeURIComponent(journal.id)}` },
+          { className: 'journal-card', href: `#${routeOf(known, journal.folder)}` },
           [
             h('span', { key: 'i', className: 'journal-card__icon' }, journal.ico ?? '📓'),
             h('span', { key: 'n', className: 'journal-card__name' }, journal.title),
@@ -311,9 +345,38 @@ export default function view(api) {
     ])
   }
 
+  /**
+   * Which of this plugin's screens a workspace folder opens on.
+   *
+   * `absorbs` says the `journal` folder is this app's business; it cannot say
+   * WHERE a particular journal inside it is reached, because that is a name
+   * this plugin resolves and the shell has no way of knowing. Without an
+   * answer, every link INTO a journal — the breadcrumb out of one of its
+   * entries, a bookmark, a target the agent wrote — landed on the generic
+   * list of files, from a screen that exists precisely because a journal is
+   * not one.
+   *
+   * A page deeper than the journal folder still belongs to that journal, so
+   * the walk climbs: an entry answers for the journal that holds it.
+   */
+  function routeFor(path) {
+    let candidate = String(path ?? '')
+    while (candidate !== '') {
+      if (known.includes(candidate)) return routeOf(known, candidate)
+      const cut = candidate.lastIndexOf('/')
+      if (cut === -1) break
+      candidate = candidate.slice(0, cut)
+    }
+    // The `journal` folder ITSELF is the shell's to answer: `absorbs` makes
+    // the tile stand for it, and restating that here would be this plugin
+    // describing a rule it does not own.
+    return undefined
+  }
+
   return {
     component: Journal,
-    route: '/journal',
+    route: ROUTE,
+    routeFor,
     /**
      * One figure on the tile: what was written last, and where.
      *
@@ -322,12 +385,9 @@ export default function view(api) {
      * never the tile.
      */
     async tileInfo() {
-      const response = await api.fetch('/api/pages/index')
-      if (!response.ok) return undefined
-      const { entries } = await response.json()
-      const journals = buildModel(Array.isArray(entries) ? entries : []).filter(
-        (journal) => !journal.finished,
-      )
+      // The launcher render is also when the listing is worth refreshing: it
+      // is the moment the shell draws every link into a journal.
+      const journals = (await refresh().catch(() => [])).filter((journal) => !journal.finished)
       const latest = journals
         .flatMap((journal) => journal.entries)
         .sort((a, b) => (a.when < b.when ? 1 : -1))[0]
