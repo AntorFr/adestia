@@ -86,6 +86,16 @@ quand le driver ne rapporte pas (404) NI quand il rapporte zéro — les deux
 ouvriraient une page vide. Instructions reste une PORTE vers l'écran plein.
 `useMcpServers` extrait de `McpPanel` : un seul fetch pour la rangée et la page.
 
+Lot 3, la navigation au doigt (`useSwipe`) : chat ↔ canvas au glissé
+horizontal quand la coque est repliée, dans le sens du layout de bureau
+(chat à gauche, canvas à droite) plutôt qu'une correspondance à mémoriser.
+Le bouton du header RESTE — un geste qu'on ne découvre pas ne peut pas être
+le seul chemin. Le travail est dans les REFUS : jamais à la souris (glisser
+sélectionne du texte), jamais depuis un champ, jamais depuis un conteneur qui
+défile latéralement (tableau large, bloc de code — le voler les rend
+illisibles). Rien n'est `preventDefault` ni capturé : le verdict se lit à la
+FIN du geste, donc le défilement vertical n'est pas touché.
+
 **Reste :**
 - [ ] `atelier` — ~1 600 lignes (plan de débit, SVG). EN COURS.
 - [x] `parcours` vérifié au navigateur (instance Docker, magasin d'alfred-beta

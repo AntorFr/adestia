@@ -33,6 +33,7 @@ import { addressOf, decodePath, encodePath, folderRoute, ownerOf, routeForPath }
 import { browserEnvironment, loadPlugins, type LoadedPlugin, type PluginDescriptor } from '../plugins/loader.js'
 import { useMobile } from './useMobile.js'
 import { useSplit } from './useSplit.js'
+import { useSwipe } from './useSwipe.js'
 
 /**
  * A plugin problem, in the reader's language when it has an identity.
@@ -191,6 +192,18 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   const attachRef = useRef<((files: readonly File[]) => Promise<void>) | undefined>(undefined)
   const split = useSplit()
   const mobile = useMobile()
+  /**
+   * The second way between the two screens, alongside the header buttons.
+   *
+   * Laid out left-to-right the way the desktop lays them out — chat, then
+   * canvas — so the gesture agrees with the layout it replaces rather than
+   * being a mapping to memorise.
+   */
+  const swipe = useSwipe({
+    enabled: mobile,
+    onLeft: () => setScreen('canvas'),
+    onRight: () => setScreen('chat'),
+  })
 
   // Hash routing, deliberately minimal: a plugin declares `#/its-route` and the
   // shell opens it, keeping it open for anything BELOW that route — what the
@@ -602,6 +615,9 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
       data-skin={instance.skin.id}
       data-mobile={mobile ? 'true' : undefined}
       data-screen={mobile ? screen : undefined}
+      // On the shell rather than on each pane: the gesture belongs to the
+      // pair, and one listener sees a swipe that starts on either of them.
+      {...swipe}
     >
       <Chat
         fetchImpl={fetchImpl}

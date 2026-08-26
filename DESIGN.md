@@ -334,7 +334,10 @@ The v1 chat must be **at least** agent-gw's PWA, which sets the bar:
   the conversation, so it sits in the chat header where the brand is, and the
   composer keeps its width for the field.
 - **Split view:** chat rail | gutter | canvas, user-resizable and persisted.
-- **Mobile/PWA:** responsive breakpoint with swipe between chat and canvas;
+- **Mobile/PWA:** responsive breakpoint with swipe between chat and canvas
+  (touch and pen only, refused inside a field or anything scrollable
+  sideways, and always alongside the header button — a gesture nobody
+  discovers must never be the only route to a screen);
   installable PWA, skin-merged manifest (N instances = N discernible installs),
   service worker with network-first shell (opens offline, never serves stale JS).
 
