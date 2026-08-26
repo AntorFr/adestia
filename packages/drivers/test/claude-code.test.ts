@@ -95,6 +95,24 @@ describe('conformance', () => {
     expect(capabilities).toContain('usageMetrics')
   })
 
+  it('guards the subagent folder as authority, and shows it as prose', () => {
+    // A subagent file's frontmatter carries `permissionMode` —
+    // `bypassPermissions` among its values — plus `hooks`, inline
+    // `mcpServers` and `tools`. That is the nature of the three paths beside
+    // it, in a file that reads as documentation. The SDK picks a new or
+    // edited one up within seconds, so a write can land in the session that
+    // made it.
+    const driver = new ClaudeCodeDriver({ query: fakeSdk([]) })
+    expect(driver.authorityPaths()).toContain('.claude/agents')
+    // Both lists: guarding the write without showing the file would tell a
+    // person "no" about something they cannot read.
+    expect(driver.instructionPaths()).toContain('.claude/agents')
+    // The deliberate contrast — a skill says what to DO, never what one may
+    // reach, so it stays prose a turn may write unasked.
+    expect(driver.authorityPaths()).not.toContain('.claude/skills')
+    expect(driver.instructionPaths()).toContain('.claude/skills')
+  })
+
   it('spawns with the inherited environment, credentials on top', async () => {
     // The SDK REPLACES the subprocess environment with what it is given, so
     // passing credentials alone strips PATH and the CLI cannot launch — the

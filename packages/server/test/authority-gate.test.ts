@@ -35,6 +35,17 @@ describe('the guarded zone', () => {
     expect(rule(write(`${ROOT}/.claude/hooks/nested/deep.json`))).toBe('ask')
   })
 
+  it('asks before a subagent profile is written, either engine', () => {
+    // The same nature under two names. Claude Code's `.claude/agents/*.md`
+    // frontmatter carries `permissionMode` (`bypassPermissions` among its
+    // values), `hooks`, and inline `mcpServers`; the folder is watched, so a
+    // file written mid-turn is picked up within seconds.
+    const claude = authorityEditRule(ROOT, [...CLAUDE, '.claude/agents'])
+    expect(claude(write(`${ROOT}/.claude/agents/reviewer.md`))).toBe('ask')
+    // Skills sit next door and stay ungoverned on purpose, in both engines.
+    expect(claude(write(`${ROOT}/.claude/skills/x/SKILL.md`))).toBeUndefined()
+  })
+
   it('asks before a custom agent profile is written', () => {
     // Copilot's `.github/agents/*.agent.md` reads as documentation and grants
     // tools: its frontmatter carries `tools` and `mcp-servers`. A turn that

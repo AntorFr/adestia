@@ -302,16 +302,43 @@ export class ClaudeCodeDriver implements Driver {
    * can call. None of the three is a document — each of them changes what a
    * turn is able to do, which is why a turn may not change them alone.
    *
+   * `.claude/agents` is the fourth, and it is the three others wearing a
+   * friendlier name. A subagent file's frontmatter carries `permissionMode`
+   * — `bypassPermissions` among its values — plus `hooks`, inline
+   * `mcpServers`, and `tools`. Verified against the SDK's own types and
+   * reference rather than recalled. Two properties make it worse than it
+   * looks: the SDK watches these directories and picks a new or edited file
+   * up within SECONDS, no restart, so a write can take effect in the session
+   * that made it; and a PreToolUse hook declared in there resolves BEFORE
+   * `canUseTool`, which is the gate this product asks its questions through.
+   * A file that reads as documentation, deciding what the next turn may
+   * reach.
+   *
    * `.claude/skills` is deliberately NOT here: skills are prose, and the core
-   * rewrites the delivered ones at every start anyway.
+   * rewrites the delivered ones at every start anyway. The contrast is the
+   * point — a skill says what to DO, never what one may reach.
    */
   authorityPaths(): readonly string[] {
-    return ['.claude/settings.json', '.claude/settings.local.json', '.claude/hooks', '.mcp.json']
+    return [
+      '.claude/settings.json',
+      '.claude/settings.local.json',
+      '.claude/hooks',
+      '.claude/agents',
+      '.mcp.json',
+    ]
   }
 
-  /** Where this CLI reads prose: the project brief, and skills. */
+  /**
+   * Where this CLI reads prose: the project brief, skills, and subagents.
+   *
+   * The agent folder is in BOTH lists, and that pairing is the whole posture:
+   * a subagent's markdown body is a brief somebody wrote and should be able
+   * to correct here, while its frontmatter is authority. Guarding the write
+   * without showing the file would leave a person told "no" about a file
+   * they cannot read.
+   */
   instructionPaths(): readonly string[] {
-    return ['CLAUDE.md', '.claude/skills']
+    return ['CLAUDE.md', '.claude/agents', '.claude/skills']
   }
 
   listModels(): Promise<readonly ModelInfo[]> {

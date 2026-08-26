@@ -152,6 +152,25 @@ porte le contrat des skins, **cassant** : `home` est hors contrat, `hero` le
 remplace. Sans effet sur ce pod — il porte `alfred`, qui n'a pas de slot
 `home`, et les trois livrées du repo sont portées dans l'image.
 
+0.10.1 : `.claude/agents` passe en zone d'AUTORITÉ **et** d'instructions pour
+le driver claude-code, symétrique de ce qui a été fait pour `.github/agents`.
+Le frontmatter d'un sous-agent porte `permissionMode` — `bypassPermissions`
+parmi ses valeurs — plus `hooks`, des `mcpServers` inline et `tools` : c'est
+la nature des trois chemins déjà gardés à côté, dans un fichier qui ressemble
+à de la doc. Deux traits l'aggravaient : le SDK SURVEILLE ces dossiers et
+ramasse un fichier neuf ou modifié en quelques SECONDES, sans redémarrage —
+donc une écriture peut prendre effet dans la session qui l'a faite ; et un
+hook `PreToolUse` déclaré là se résout AVANT `canUseTool`, la porte par
+laquelle ce produit pose ses questions. Vérifié contre les types du SDK
+installé (0.3.237) et la référence, pas de mémoire — au passage, omettre
+`settingSources` charge TOUTES les sources disque (défaut CLI), l'inverse de
+ce que faisaient les premières versions du SDK. Ce n'était pas une régression :
+le trou précédait tout ce qu'on a livré aujourd'hui. Non couvert, et la porte
+le dit déjà d'elle-même : un `sed -i` ou une redirection shell n'est pas une
+édition de fichier — sur une instance qui auto-autorise `Bash`, la garde est
+une friction, pas un mur.
+
+
 Chantier UX du 26/08 (backlog dicté par Monsieur, fiche `golem-evolutions`)
 — lot 1, le composer : le champ tenait sur une ligne de 34 px sur la surface
 dont c'est le métier, il part de 48 px et pousse jusqu'à 200 (`composerHeight`,
