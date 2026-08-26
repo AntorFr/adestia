@@ -172,10 +172,15 @@ export function translate(event: CopilotEvent, state: TranslationState): readonl
     }
 
     case 'result': {
-      const sessionId = String(data['sessionId'] ?? state.sessionId)
+      // Spike 3 (CLI 1.0.80) captured these under `data`; a later CLI moved
+      // them to the event's top level, leaving `data` empty. Reading only
+      // `data` turned every resume into a fresh session — the thread lost its
+      // memory between turns. So read either, top level winning when present.
+      const top = event as unknown as Record<string, unknown>
+      const sessionId = String(data['sessionId'] ?? top['sessionId'] ?? state.sessionId)
       state.sessionId = sessionId
-      const exitCode = data['exitCode']
-      const usage = usageOf(data)
+      const exitCode = data['exitCode'] ?? top['exitCode']
+      const usage = usageOf('usage' in data ? data : top)
       return [
         {
           type: 'result',

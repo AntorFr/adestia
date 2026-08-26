@@ -105,6 +105,16 @@ describe('translation', () => {
     expect(events[0]).toMatchObject({ type: 'result', sessionId: 'sess-7', stopped: false })
   })
 
+  it('reads the session id from the result top level, where a later CLI moved it', () => {
+    // The 1.0.80 spike had it under `data`; the shipped CLI puts sessionId,
+    // exitCode and usage as siblings of `type` with `data` empty. Missing this
+    // resumed nothing, so every turn started fresh.
+    const events = run([
+      { type: 'result', sessionId: 'sess-top', exitCode: 0, data: {} } as never,
+    ])
+    expect(events[0]).toMatchObject({ type: 'result', sessionId: 'sess-top', stopped: false })
+  })
+
   it('treats a non-zero exit as a stopped turn', () => {
     expect(run([{ type: 'result', data: { sessionId: 's', exitCode: 1 } }])[0]).toMatchObject({
       stopped: true,
