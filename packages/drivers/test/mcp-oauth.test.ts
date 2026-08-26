@@ -208,3 +208,49 @@ describe('the refresh-token grant (acting for a person)', () => {
     expect(new URLSearchParams(second.calls[0]!.body).get('refresh_token')).toBe('rt-2')
   })
 })
+
+describe('a refresh store that fails', () => {
+  /**
+   * The store is the core's, not this file's — a disk that will not read, a
+   * file somebody chmod'ed. `for` promises `undefined` rather than a throw,
+   * and that promise cannot quietly depend on which store was handed in: a
+   * rejection here would take down the TURN, not just the MCP servers.
+   */
+  const person = {
+    tokenUrl: 'https://auth.example/api/oidc/token',
+    clientId: 'public-client',
+    refreshToken: 'from-config',
+  }
+
+  it('falls back to the configured token when the store cannot be read', async () => {
+    const { fetchImpl, calls } = provider([{ token: 'live' }])
+    const tokens = new McpTokens(fetchImpl, {
+      load: () => {
+        throw new Error('disk is gone')
+      },
+      save: () => undefined,
+    })
+
+    expect(await tokens.for(person)).toBe('live')
+    // The turn ran, on the token the config carried.
+    expect(calls[0]!.body).toContain('refresh_token=from-config')
+  })
+
+  it('still hands the turn its token when the rotation cannot be persisted', async () => {
+    const fetchImpl = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () =>
+          Promise.resolve({ access_token: 'live', expires_in: 3600, refresh_token: 'rotated' }),
+      } as unknown as Response),
+    ) as unknown as typeof fetch
+    const tokens = new McpTokens(fetchImpl, {
+      load: () => undefined,
+      save: () => Promise.reject(new Error('read-only filesystem')),
+    })
+
+    // What is lost is the RESTART, never the turn in hand.
+    expect(await tokens.for(person)).toBe('live')
+  })
+})

@@ -94,6 +94,29 @@ lui, ne nomme aucun plugin (listes vides par conception : « la présence est la
 découverte, jamais l'activation »), il n'y avait donc rien à y déclarer. Et
 `plugins/README.md` annonçait encore UNE skin alors que trois sont livrées
 depuis le portage de Nestor et Skippy — corrigé, les deux ont leur ligne.
+**Livré en 0.8.0 et déployé** sur homenode (image multi-arch, manifeste bumpé,
+pod `ghcr.io/antorfr/golem:0.8.0` ready, « 8 of 8 plugin(s) active » au boot,
+`journal` ajouté à la liste `apps:` — la présence n'est pas l'activation).
+
+MCP en OAuth utilisateur (branche `feat/mcp-user-oauth-and-driver-agent`,
+écrite sur l'autre poste, revue et fusionnée ici) : un hub public sans secret
+client se joint par le grant `refresh_token`, avec un jeton frappé une fois par
+un flux interactif — l'instance agit pour une PERSONNE, à côté de l'identité
+machine en `client_credentials` qui reste. Le jeton tourne à chaque échange,
+donc il est suivi en mémoire ET persisté (0600, à côté du credential driver) :
+sans ça un redémarrage présente un jeton brûlé. `driver.agent` sélectionne au
+passage un profil d'agent (copilot-cli passe `--agent`).
+Deux défauts trouvés à la revue, prouvés puis corrigés — aucun n'était visible
+au test, les six tests de la branche ne couvraient que le chemin heureux :
+(1) la file d'écriture du store gardait sa rejection, donc UN échec de write
+empoisonnait tous les suivants pour la vie du process — ils rejetaient sans
+même s'exécuter, et le symptôme n'apparaissait que des jours plus tard, à un
+redémarrage réclamant un login inexplicable ; (2) une panne du store LEVAIT
+depuis `McpTokens.for`, dont le contrat écrit trois lignes plus haut promet un
+`undefined` — une écriture ratée coûtait le TOUR entier au lieu des seuls
+serveurs MCP. Les deux ancrés par 7 tests, dont 4 échouent sans le correctif
+(vérifié en restaurant les sources d'origine). Un write raté se dit maintenant
+à voix haute par le `log` du serveur.
 
 Chantier UX du 26/08 (backlog dicté par Monsieur, fiche `golem-evolutions`)
 — lot 1, le composer : le champ tenait sur une ligne de 34 px sur la surface

@@ -117,6 +117,23 @@ export class McpTokens {
     return attempt
   }
 
+  /**
+   * The persisted refresh token, or nothing at all.
+   *
+   * A store is injected by the core and can fail on its own terms — a disk
+   * that will not read, a file somebody chmod'ed. `for` promises `undefined`
+   * rather than a throw, and that promise cannot depend on which store was
+   * handed in: falling back to the token held in memory, or to the configured
+   * one, is a working turn where a rejection would be a broken one.
+   */
+  async #stored(key: string): Promise<string | undefined> {
+    try {
+      return await this.#store?.load(key)
+    } catch {
+      return undefined
+    }
+  }
+
   async #mint(auth: McpOAuth, key: string): Promise<string | undefined> {
     const headers: Record<string, string> = {
       'content-type': 'application/x-www-form-urlencoded',
@@ -130,8 +147,7 @@ export class McpTokens {
       // interactive authorization-code flow. A public client sends `client_id`
       // in the body and no secret; a confidential one still authenticates. The
       // persisted value wins — it is the one a provider's rotation left valid.
-      const current =
-        (await this.#store?.load(rkey)) ?? this.#refresh.get(rkey) ?? auth.refreshToken!
+      const current = (await this.#stored(rkey)) ?? this.#refresh.get(rkey) ?? auth.refreshToken!
       body.set('grant_type', 'refresh_token')
       body.set('refresh_token', current)
       body.set('client_id', auth.clientId)
@@ -172,7 +188,14 @@ export class McpTokens {
     // spent token, and persist it so a restart does not either.
     if (usingRefresh && payload.refresh_token) {
       this.#refresh.set(rkey, payload.refresh_token)
-      await this.#store?.save(rkey, payload.refresh_token)
+      try {
+        await this.#store?.save(rkey, payload.refresh_token)
+      } catch {
+        // Same rule as everything else here: a store that cannot write costs
+        // the RESTART, not the turn. The rotated token is already held in
+        // memory, so this process keeps getting in; the store says out loud
+        // what it could not persist.
+      }
     }
 
     // A minute early, and never negative: a provider that answers `expires_in:

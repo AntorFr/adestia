@@ -88,9 +88,12 @@ async function buildDriver(
   dataDir: string,
   permissions: PermissionBroker,
   mcpServers: readonly McpServer[],
+  log: (message: string) => void,
 ): Promise<Driver> {
   // Rotated MCP refresh tokens outlive the process here, beside the credential.
-  const refreshStore = new FileRefreshStore(dataDir)
+  // The log is threaded in because a write that fails costs nothing NOW — the
+  // turn runs on the token in memory — and everything after the next restart.
+  const refreshStore = new FileRefreshStore(dataDir, log)
   switch (config.driver.id) {
     case 'claude-code': {
       const { query } = await import('@anthropic-ai/claude-agent-sdk')
@@ -247,7 +250,7 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
 
   const driver = options.driverFactory
     ? await options.driverFactory(config)
-    : await buildDriver(config, dataDir, permissions, mcpServers)
+    : await buildDriver(config, dataDir, permissions, mcpServers, log)
 
   // A turn may not change what a turn is ALLOWED to do. The paths come from
   // the driver — the two CLIs keep their permissions, hooks and MCP wiring in
