@@ -170,6 +170,21 @@ le dit déjà d'elle-même : un `sed -i` ou une redirection shell n'est pas une
 édition de fichier — sur une instance qui auto-autorise `Bash`, la garde est
 une friction, pas un mur.
 
+0.10.2 : le sessionId de Copilot était perdu à chaque tour (branche
+`fix/copilot-result-sessionid`, revue et intégrée ici). `result` est le SEUL
+event que ce CLI n'emballe pas dans `data` — les captures du repo le montrent
+avec `sessionId`, `exitCode` et `usage` en frères de `type`, et AUCUNE clé
+`data`, quand tous les autres events en ont une. Le driver lisait `data`
+partout : juste ailleurs, faux ici. Coût réel : l'id stocké était la chaîne
+vide, donc `--resume` n'était jamais passé et chaque message ouvrait une
+session CLI neuve — un fil qui oubliait son passé entre deux tours, sans une
+ligne de log pour le dire. Repris à la revue : la branche annonçait « top
+level d'abord » mais lisait `data` d'abord (commentaire et code se
+contredisaient), et surtout `??` ne saute pas une chaîne VIDE — un CLI
+envoyant la clé vide écrasait un id connu et ramenait le bug tel quel. Le
+blanc compte désormais pour absent. Les deux formes restent lues, la plate
+d'abord : aucune capture ne prouve que l'autre n'a jamais existé.
+
 
 Chantier UX du 26/08 (backlog dicté par Monsieur, fiche `golem-evolutions`)
 — lot 1, le composer : le champ tenait sur une ligne de 34 px sur la surface

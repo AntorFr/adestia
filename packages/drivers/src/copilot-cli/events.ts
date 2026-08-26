@@ -172,15 +172,31 @@ export function translate(event: CopilotEvent, state: TranslationState): readonl
     }
 
     case 'result': {
-      // Spike 3 (CLI 1.0.80) captured these under `data`; a later CLI moved
-      // them to the event's top level, leaving `data` empty. Reading only
-      // `data` turned every resume into a fresh session — the thread lost its
-      // memory between turns. So read either, top level winning when present.
+      // `result` is the ONE event this CLI does not wrap in `data`. Every
+      // capture in `spikes/copilot-cli/raw` shows `sessionId`, `exitCode` and
+      // `usage` as siblings of `type`, with no `data` key at all, while every
+      // other event type has one — which is why reading `data` uniformly was
+      // right everywhere above and wrong here.
+      //
+      // What it cost: the id stored was the empty string, so `--resume` was
+      // never passed and every message opened a fresh CLI session. A thread
+      // that forgets itself between turns, with nothing in any log to say so.
+      //
+      // Both shapes are read, the flat one FIRST because it is the one the
+      // shipped CLI emits; `data` stays as the fallback rather than being
+      // dropped, since no capture proves the other shape never existed.
       const top = event as unknown as Record<string, unknown>
-      const sessionId = String(data['sessionId'] ?? top['sessionId'] ?? state.sessionId)
+      // Blank counts as absent, not as an answer. `??` alone would not do it:
+      // an empty string is neither null nor undefined, so a CLI that sent the
+      // key empty would overwrite a known id with nothing and bring this exact
+      // bug back — silently, since the symptom is only a thread with no past.
+      const stated = [top['sessionId'], data['sessionId']]
+        .map((value) => (typeof value === 'string' ? value.trim() : ''))
+        .find((value) => value !== '')
+      const sessionId = stated ?? state.sessionId
       state.sessionId = sessionId
-      const exitCode = data['exitCode'] ?? top['exitCode']
-      const usage = usageOf('usage' in data ? data : top)
+      const exitCode = top['exitCode'] ?? data['exitCode']
+      const usage = usageOf('usage' in top ? top : data)
       return [
         {
           type: 'result',

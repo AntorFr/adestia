@@ -105,14 +105,33 @@ describe('translation', () => {
     expect(events[0]).toMatchObject({ type: 'result', sessionId: 'sess-7', stopped: false })
   })
 
-  it('reads the session id from the result top level, where a later CLI moved it', () => {
-    // The 1.0.80 spike had it under `data`; the shipped CLI puts sessionId,
-    // exitCode and usage as siblings of `type` with `data` empty. Missing this
-    // resumed nothing, so every turn started fresh.
+  it('reads the session id from the result top level, where the CLI puts it', () => {
+    // `result` is the one event the CLI does not wrap in `data` — every
+    // capture in spikes/copilot-cli/raw has sessionId, exitCode and usage as
+    // siblings of `type`, and no `data` key at all. Missing this resumed
+    // nothing, so every turn started a fresh session.
     const events = run([
-      { type: 'result', sessionId: 'sess-top', exitCode: 0, data: {} } as never,
+      { type: 'result', sessionId: 'sess-top', exitCode: 0 } as never,
     ])
     expect(events[0]).toMatchObject({ type: 'result', sessionId: 'sess-top', stopped: false })
+  })
+
+  it('keeps the session id it already knows when the result states a blank one', () => {
+    // The failure was a thread with no past, and an empty string is how it
+    // looked. `??` does not skip one, so a CLI sending the key empty would
+    // overwrite a good id and bring the bug straight back.
+    const events = run([
+      { type: 'result', sessionId: 'sess-known', exitCode: 0 } as never,
+      { type: 'result', sessionId: '   ', exitCode: 0 } as never,
+    ])
+    expect(events[1]).toMatchObject({ type: 'result', sessionId: 'sess-known' })
+  })
+
+  it('still reads a result that wraps its fields in data', () => {
+    // No capture proves that shape never existed, so it stays readable —
+    // dropping it would be trading one silent regression for another.
+    const events = run([{ type: 'result', data: { sessionId: 'sess-wrapped', exitCode: 0 } }])
+    expect(events[0]).toMatchObject({ type: 'result', sessionId: 'sess-wrapped', stopped: false })
   })
 
   it('treats a non-zero exit as a stopped turn', () => {
