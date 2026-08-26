@@ -3,15 +3,19 @@
  * The settings screen.
  *
  * What it guards: that one subject is one row, that a row never opens a page
- * with nothing on it, and that the dialog around it says which page is open.
- * The failure this replaced was not ugliness — it was a feature (the MCP
- * readout) that existed and could not be found under a scroll.
+ * with nothing on it, and that the screen names the page that is open. The
+ * failure this replaced was not ugliness — it was a feature (the MCP readout)
+ * that existed and could not be found under a scroll.
+ *
+ * Every row now opens a PAGE, Instructions included: it was a door out of the
+ * dialog only because prose cannot be edited in a box 520px wide, and there
+ * is no dialog left to leave.
  */
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { Preferences, mcpLede, prefsTitle } from '../src/app/Preferences.js'
+import { Preferences, isPrefsPage, mcpLede, prefsTitle, themeLede } from '../src/app/Preferences.js'
 import type { McpServerHealth } from '../src/app/Settings.js'
 
 /** The two endpoints the screen reads, answered together. */
@@ -34,7 +38,6 @@ const answering = (servers: unknown, credential = 404): typeof fetch =>
 const props = (fetchImpl: typeof fetch, over: Record<string, unknown> = {}) => ({
   page: '' as const,
   onPage: vi.fn(),
-  onOpenInstructions: vi.fn(),
   fetchImpl,
   ...over,
 })
@@ -84,39 +87,87 @@ describe('the settings list', () => {
     expect(onPage).toHaveBeenCalledWith('credential')
   })
 
-  it('leaves the dialog for the instruction screen', async () => {
-    const onOpenInstructions = vi.fn()
+  it('opens the instructions in here rather than leaving for them', async () => {
+    // The row used to be a DOOR: prose is not edited in a dialog, and the
+    // dialog was the reason. On a screen it is a page like the others.
     const onPage = vi.fn()
-    render(<Preferences {...props(answering([]), { onOpenInstructions, onPage })} />)
+    render(<Preferences {...props(answering([]), { onPage })} />)
     fireEvent.click(screen.getByText('Instructions'))
-    expect(onOpenInstructions).toHaveBeenCalled()
-    // Prose is edited on a screen, not in a dialog: this row is a door.
-    expect(onPage).not.toHaveBeenCalled()
+    expect(onPage).toHaveBeenCalledWith('instructions')
+  })
+
+  it('says which way the appearance is set before it is opened', () => {
+    render(<Preferences {...props(answering([]), { theme: 'dark' })} />)
+    // Same virtue as the MCP count: the row is informative shut.
+    expect(screen.getByText('Dark')).toBeTruthy()
   })
 })
 
 describe('a settings page', () => {
-  it('carries a way back to the list', async () => {
-    const onPage = vi.fn()
-    render(<Preferences {...props(answering([]), { page: 'credential', onPage })} />)
-    fireEvent.click(await screen.findByText('‹ Settings'))
-    expect(onPage).toHaveBeenCalledWith('')
+  it('names itself, now that no frame is doing it', async () => {
+    render(<Preferences {...props(answering([]), { page: 'credential' })} />)
+    expect((await screen.findByRole('heading', { level: 1 })).textContent).toBe('Agent credential')
   })
 
   it('draws the servers on the MCP page', async () => {
     render(<Preferences {...props(answering([{ name: 'notion', state: 'connected' }]), { page: 'mcp' })} />)
     await waitFor(() => expect(screen.getByText('notion')).toBeTruthy())
   })
+
+  it('offers the theme as named choices, and says which is in force', () => {
+    const onTheme = vi.fn()
+    render(<Preferences {...props(answering([]), { page: 'appearance', theme: '', onTheme })} />)
+    // The header's cycling glyph can only be inferred; these SAY it.
+    expect(screen.getByRole('radio', { name: 'System' }).getAttribute('aria-checked')).toBe('true')
+    fireEvent.click(screen.getByRole('radio', { name: 'Dark' }))
+    expect(onTheme).toHaveBeenCalledWith('dark')
+  })
+
+  it('edits the instructions in place rather than sending somebody away', async () => {
+    render(<Preferences {...props(answering([]), { page: 'instructions' })} />)
+    // The instruction zone brings its own head — the screen does not add a
+    // second one over it.
+    await waitFor(() => expect(screen.getAllByRole('heading', { level: 1 }).length).toBe(1))
+  })
 })
 
-describe('the dialog title', () => {
+describe('the screen title', () => {
   it('names the page that is open', () => {
-    // A frame still headed "Settings" three rows into a flow has lost track
-    // of what it contains.
+    // The breadcrumb reads it: a trail still ending "Settings" three rows
+    // into the credential flow has lost track of where somebody is.
     const t = (key: string) => key
     expect(prefsTitle('', t)).toBe('Settings')
     expect(prefsTitle('credential', t)).toBe('Agent credential')
     expect(prefsTitle('mcp', t)).toBe('MCP servers')
+    expect(prefsTitle('appearance', t)).toBe('Appearance')
+    expect(prefsTitle('instructions', t)).toBe('Instructions')
+  })
+})
+
+describe('the addresses of the pages', () => {
+  it('answers for the pages it has, and for nothing else', () => {
+    // `#/settings/…` is public and the address bar is user-writable: a
+    // segment naming no page has to resolve to the list rather than to a
+    // title over an empty screen.
+    expect(isPrefsPage('credential')).toBe(true)
+    expect(isPrefsPage('instructions')).toBe(true)
+    expect(isPrefsPage('')).toBe(false)
+    expect(isPrefsPage('whatever')).toBe(false)
+  })
+})
+
+describe('the appearance lede', () => {
+  const t = (key: string) => key
+
+  it('says the choice in force, never a description of the subject', () => {
+    expect(themeLede('', t)).toBe('Follows this device')
+    expect(themeLede('light', t)).toBe('Light')
+    expect(themeLede('dark', t)).toBe('Dark')
+  })
+
+  it('falls back to the device for a value nobody offers', () => {
+    // localStorage is user-writable, like the order of the tiles.
+    expect(themeLede('chartreuse', t)).toBe('Follows this device')
   })
 })
 

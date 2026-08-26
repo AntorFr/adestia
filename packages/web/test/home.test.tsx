@@ -247,7 +247,8 @@ describe('arranging the mosaics', () => {
     const map = withStorage()
     map.set('golem.order.apps', JSON.stringify(['scan', 'todo', 'planif']))
     home()
-    expect(labels()).toEqual(['scan', 'todo', 'planif'])
+    // The shell's own tile closes the mosaic, whatever was arranged before it.
+    expect(labels()).toEqual(['scan', 'todo', 'planif', 'Settings'])
   })
 
   it('moves a tile and remembers it', () => {
@@ -255,7 +256,9 @@ describe('arranging the mosaics', () => {
     home()
     fireEvent.click(screen.getByRole('button', { name: 'Arrange' }))
     fireEvent.click(screen.getByRole('button', { name: 'Move later — todo' }))
-    expect(labels()).toEqual(['planif', 'todo', 'scan'])
+    expect(labels()).toEqual(['planif', 'todo', 'scan', 'Settings'])
+    // What is remembered is the arrangement of the APPS: the shell's tile is
+    // not in the permutation, so it never lands in the stored order.
     expect(JSON.parse(map.get('golem.order.apps') as string)).toEqual(['planif', 'todo', 'scan'])
   })
 
@@ -264,7 +267,7 @@ describe('arranging the mosaics', () => {
     home()
     fireEvent.click(screen.getByRole('button', { name: 'Arrange' }))
     fireEvent.click(screen.getByRole('button', { name: 'Move earlier — todo' }))
-    expect(labels()).toEqual(['todo', 'planif', 'scan'])
+    expect(labels()).toEqual(['todo', 'planif', 'scan', 'Settings'])
   })
 
   it('does not open a tile somebody is trying to pick up', () => {
@@ -291,13 +294,22 @@ describe('arranging the mosaics', () => {
     map.set('golem.order.apps', JSON.stringify(['scan', 'todo']))
     home({ plugins: [...three, plugin('voyages')] })
     // Unmentioned goes last; nothing is lost to a stale preference.
-    expect(labels()).toEqual(['scan', 'todo', 'planif', 'voyages'])
+    expect(labels()).toEqual(['scan', 'todo', 'planif', 'voyages', 'Settings'])
   })
 
   it('leaves no hole where a disabled app used to be', () => {
     const map = withStorage()
     map.set('golem.order.apps', JSON.stringify(['scan', 'planif', 'todo']))
     home({ plugins: [plugin('scan'), plugin('todo')] })
-    expect(labels()).toEqual(['scan', 'todo'])
+    expect(labels()).toEqual(['scan', 'todo', 'Settings'])
+  })
+
+  it('never lets the shell’s own tile be arranged away', () => {
+    const map = withStorage()
+    // A stale order that names it — written by hand, or by a version that
+    // did put it in the permutation — must not move it or duplicate it.
+    map.set('golem.order.apps', JSON.stringify(['Settings', 'scan']))
+    home()
+    expect(labels()).toEqual(['scan', 'todo', 'planif', 'Settings'])
   })
 })

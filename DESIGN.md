@@ -79,8 +79,9 @@ agent only.
 ┌────────────────────────── Golem instance ──────────────────────────┐
 │  web (React SPA/PWA)                                               │
 │   chat ▸ streamed turns, permission prompts, attachments,          │
-│          auth-arming & quota modals (per driver capability)        │
-│   apps ▸ core views + plugin views (runtime ESM, import map)       │
+│          quota surfaces (per driver capability)                    │
+│   apps ▸ core views + plugin views (runtime ESM, import map),      │
+│          settings among them — credential, MCP, look, prose        │
 │   editor ▸ Notion-like block editor over markdown files            │
 ├─────────────────────────────────────────────────────────────────────┤
 │  server (Node/TS)                                                  │
@@ -667,6 +668,36 @@ had missed.
 - **`golem init`** — the documented workspace scaffold.
 
 ## Decision log
+
+**2026-08-26 (settings is a domain, not an accessory of the screen you were
+on):** the gear opened a dialog. A dialog is 460px wide, it floats over
+whatever you were reading, and everything it holds has to be small enough to
+be held that way — which is why the instruction zone was a DOOR out of it
+rather than a page in it, and why the MCP readout had spent a version buried
+under a scroll. The row-per-subject shape fixed the finding; it did not fix
+the surface.
+
+*Taken: settings is an app of the shell.* Its own tile on the landing canvas,
+its own address (`#/settings`, one per page under it), a place in the
+breadcrumb, and the whole canvas to say itself in. Which is what the shape was
+waiting for: Instructions became a page like the rest, because there is no box
+left to leave, and Appearance became a row that SAYS which theme is in force
+where the header's cycling glyph could only be inferred. The gear stays in the
+header as a shortcut to the same address — arming a credential is what
+somebody does when something has just stopped working, and that is not the
+moment to hunt for a tile.
+
+Two consequences worth stating. The shell's tile is pinned last rather than
+dragged with the others: it is furniture, not one of the apps this workspace
+was given, and a tile in the same place on every instance is one nobody has to
+look for. And `#/instructions` — the address the instruction zone had when
+prose could not be edited in a dialog — hands over to `#/settings/instructions`
+rather than surviving as a second name for one screen. A bookmark does not
+stop being one because we moved a screen.
+
+The shell's modal went with it: nothing rendered it any more, and a component
+kept warm for a dialog nobody has asked for yet is a lie about what this
+product does. Plugins draw their own; git keeps ours.
 
 **2026-08-25 (the editor is a capability, not a screen):** `journal` — a
 history read on one page, one entry at a time in edit mode — asked a question

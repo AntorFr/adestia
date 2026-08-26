@@ -55,8 +55,11 @@ Golem's own interface.
 - **Two engines** behind one contract — Claude Code and GitHub Copilot CLI.
   The interface is built from declared capabilities and never from a driver's
   name, so a second engine changed no UI code.
-- **A credential armed from the interface**, held server-side at 0600 and never
-  sent to a browser.
+- **Settings as an app**, not a dialog over whatever you were reading: its own
+  tile, its own address, one page per subject — the agent's credential (armed
+  from the interface, held server-side at 0600 and never sent to a browser),
+  the MCP servers and what each is doing, the theme, and the instructions you
+  gave the agent, edited on a screen rather than in a box.
 - **Three ways in**: none (local), a trusted proxy header, or any OIDC issuer.
   No local accounts, ever.
 - **Contracts the agent reads**: `plugin-author` and `skin-author` ship with
@@ -126,7 +129,7 @@ quota. See [DESIGN.md](DESIGN.md) for the principles and every decision taken.
 
 ```sh
 npm ci
-npm test          # 530 tests, no account or network needed
+npm test          # 1045 tests, no account or network needed
 npm run typecheck
 npm run build
 ```

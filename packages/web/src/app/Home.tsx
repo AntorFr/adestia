@@ -104,6 +104,20 @@ function plural(count: number, one: string, many: string): string {
 }
 
 /**
+ * The shell's own app, on the mosaic of apps.
+ *
+ * Settings is a domain of this instance — the engine it answers with, the
+ * servers it reaches, what it looks like, what it was told — and it stopped
+ * being a dialog over whatever screen you were on. So it is where a domain
+ * belongs: a tile, opening a screen with the whole canvas to say it in.
+ *
+ * Pinned last rather than dragged with the others. It is furniture, not one
+ * of the apps this workspace was given, and a tile that is in the same place
+ * on every instance is one nobody has to look for.
+ */
+const SHELL_APP = { icon: '⚙', hue: 'ardoise', route: '/settings' } as const
+
+/**
  * A tile's colour.
  *
  * A declared hue becomes `--golem-hue-<name>`, which a skin may define and
@@ -467,49 +481,58 @@ export function Home({
         </>
       )}
 
-      {tiled.length > 0 && (
-        <>
-          <h2 className="golem-section">
-            <span className="golem-section__name">{t('Apps')}</span>
-            {/* One switch for both mosaics: two edit modes on one screen would
-                be two states to keep track of for a gesture that is the same
-                gesture. Only offered when there is something to arrange. */}
-            {tiled.length + sections.length > 1 && (
-              <button
-                type="button"
-                className="golem-section__edit"
-                aria-pressed={editing}
-                onClick={() => setEditing(!editing)}
-              >
-                {editing ? t('Done') : t('Arrange')}
-              </button>
-            )}
-          </h2>
-          <ul className="golem-tiles" {...apps.listProps}>
-            {apps.items.map((plugin, index) => (
-              <Tile
-                key={plugin.id}
-                icon={plugin.tile?.icon ?? '▩'}
-                {...(plugin.tile?.glyph ? { glyph: plugin.tile.glyph } : {})}
-                {...(plugin.tile?.hue ? { hue: plugin.tile.hue } : {})}
-                label={plugin.tile?.label ?? plugin.id}
-                {...(info[plugin.id]?.subtitle
-                  ? { subtitle: info[plugin.id]!.subtitle! }
-                  : {})}
-                {...(info[plugin.id]?.chips ? { chips: info[plugin.id]!.chips! } : {})}
-                disabled={!plugin.view}
-                {...(plugin.view ? {} : { title: 'This plugin ships no screen' })}
-                onOpen={() => openPlugin(plugin)}
-                editing={editing}
-                carried={apps.carried === plugin.id}
-                onNudge={(by) => apps.nudge(index, by)}
-                drag={apps.tileProps(index)}
-                t={t}
-              />
-            ))}
-          </ul>
-        </>
-      )}
+      {/* Always drawn: even an instance with no plugin at all has the shell's
+          own app on it, and on a fresh one that tile is the whole way in —
+          the credential is armed from behind it. */}
+      <h2 className="golem-section">
+        <span className="golem-section__name">{t('Apps')}</span>
+        {/* One switch for both mosaics: two edit modes on one screen would
+            be two states to keep track of for a gesture that is the same
+            gesture. Only offered when there is something to arrange. */}
+        {tiled.length + sections.length > 1 && (
+          <button
+            type="button"
+            className="golem-section__edit"
+            aria-pressed={editing}
+            onClick={() => setEditing(!editing)}
+          >
+            {editing ? t('Done') : t('Arrange')}
+          </button>
+        )}
+      </h2>
+      <ul className="golem-tiles" {...apps.listProps}>
+        {apps.items.map((plugin, index) => (
+          <Tile
+            key={plugin.id}
+            icon={plugin.tile?.icon ?? '▩'}
+            {...(plugin.tile?.glyph ? { glyph: plugin.tile.glyph } : {})}
+            {...(plugin.tile?.hue ? { hue: plugin.tile.hue } : {})}
+            label={plugin.tile?.label ?? plugin.id}
+            {...(info[plugin.id]?.subtitle
+              ? { subtitle: info[plugin.id]!.subtitle! }
+              : {})}
+            {...(info[plugin.id]?.chips ? { chips: info[plugin.id]!.chips! } : {})}
+            disabled={!plugin.view}
+            {...(plugin.view ? {} : { title: 'This plugin ships no screen' })}
+            onOpen={() => openPlugin(plugin)}
+            editing={editing}
+            carried={apps.carried === plugin.id}
+            onNudge={(by) => apps.nudge(index, by)}
+            drag={apps.tileProps(index)}
+            t={t}
+          />
+        ))}
+        <Tile
+          key="shell:settings"
+          icon={SHELL_APP.icon}
+          hue={SHELL_APP.hue}
+          label={t('Settings')}
+          onOpen={() => {
+            location.hash = SHELL_APP.route
+          }}
+          t={t}
+        />
+      </ul>
 
       {sections.length > 0 && (
         <>

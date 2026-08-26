@@ -1059,10 +1059,14 @@
    rather than a control, because that is what it is. */
 /* The settings screen: one row per subject ------------------------------- */
 
+/* A settings page is a screen of the canvas, so it gets the canvas's measure
+   — but the list keeps a reading width: a row stretched to 940px puts its
+   chevron a hand's width away from the words it belongs to. */
 .golem-prefs__list {
   list-style: none;
   margin: 0;
   padding: 0;
+  max-width: 640px;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -1126,36 +1130,41 @@
 
 .golem-prefs__chevron { flex: none; color: var(--text-faint); font-size: var(--text-lg); }
 
-.golem-prefs__back {
-  margin-bottom: var(--space-3);
-  padding: 0;
+.golem-prefs__note { margin: var(--space-4) 0 0; color: var(--text-faint); font-size: var(--text-sm); }
+
+/* Named choices, as one segmented control. The header's cycling glyph can
+   only be inferred; three buttons SAY which one is in force. */
+.golem-choices {
+  display: inline-flex;
+  padding: 3px;
+  gap: 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-sunken);
+}
+
+.golem-choices__choice {
+  padding: 7px var(--space-4);
   border: 0;
+  border-radius: var(--radius-sm);
   background: none;
-  color: var(--accent);
+  color: var(--text-muted);
   font: inherit;
   cursor: pointer;
 }
 
-.golem-prefs__back:hover { text-decoration: underline; }
+.golem-choices__choice[aria-checked='true'] {
+  background: var(--surface-raised);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+  font-weight: 600;
+}
 
-/* The MCP panel: a list of names and states, in the settings dialog. Rows
+.golem-choices__choice:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* The MCP panel: a list of names and states, on its own settings page. Rows
    rather than cards — this is a status board, and a board is read down a
    column. */
-.golem-mcp {
-  margin-top: var(--space-5);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--border);
-}
-
-.golem-mcp h3 {
-  margin: 0 0 var(--space-3);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-faint);
-}
-
 .golem-mcp ul { list-style: none; margin: 0; padding: 0; }
 
 .golem-mcp li {
@@ -1617,47 +1626,8 @@
 
 .golem-canvas__spacer { flex: 1; }
 
-/* The dialog: a scrim over everything, a card that floats. Placed at the
-   shell level rather than inside the canvas — a settings panel that pushed
-   the page down was the thing this replaced. */
-.golem-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  display: grid;
-  place-items: center;
-  padding: var(--space-4);
-  background: var(--scrim);
-}
-
-.golem-modal__card {
-  width: min(460px, 100%);
-  max-height: calc(100dvh - 2 * var(--space-4));
-  overflow-y: auto;
-  padding: var(--space-4);
-  background: var(--surface-raised);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-}
-
-.golem-modal__card:focus { outline: none; }
-
-.golem-modal__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  margin-bottom: var(--space-3);
-}
-
-.golem-modal__header h2 {
-  margin: 0;
-  font: 600 17px/1.2 var(--font-title);
-  letter-spacing: var(--title-track);
-}
-
-/* Inside a dialog the panel carries no box of its own — the card is the box. */
+/* The credential panel carries no box of its own: the settings page around
+   it is the box, and its head already named it. */
 .golem-settings {
   padding: 0;
   border: 0;

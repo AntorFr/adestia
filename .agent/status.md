@@ -167,6 +167,28 @@ des zéros sous jsdom. Ce sont ses fonctions pures (`indexAt`, `moveItem`,
 `applyOrder`) et la route clavier qui le sont — le geste reste à constater au
 navigateur, avec le reste de la 0.7.0.
 
+Lot 5, les réglages deviennent une APP. Le lot 2 avait rangé le contenu du
+dialogue (une rangée par sujet) sans toucher au dialogue : 460 px flottant
+au-dessus de ce qu'on était en train de lire, donc tout ce qu'il porte doit
+tenir dans une boîte — c'est POUR ÇA que les Instructions n'étaient qu'une
+porte de sortie. Réglages est un domaine de l'instance (le moteur avec lequel
+elle répond, les serveurs qu'elle atteint, son aspect, ce qu'on lui a dit) :
+c'est donc une app. Sa tuile sur l'accueil, ses adresses (`#/settings`, une
+par page dessous), sa place dans le fil d'Ariane, et toute la largeur du
+canvas. Instructions devient une page comme les autres (plus de boîte à
+quitter) et une page **Apparence** apparaît : trois choix nommés qui DISENT le
+thème en vigueur, là où le ◐ de l'en-tête ne peut que se deviner — le ◐ reste,
+un aller simple vers le thème est le geste le plus fréquent. L'engrenage reste
+aussi, en raccourci vers la même adresse : armer un jeton, c'est ce qu'on fait
+quand quelque chose vient de casser, pas le moment de chercher une tuile.
+La tuile de la coque est épinglée EN DERNIER, hors de la permutation : c'est du
+mobilier, pas une des apps qu'on a données à ce workspace. `#/instructions`
+(l'adresse de la zone d'instructions du temps du dialogue) passe la main à
+`#/settings/instructions` — un favori ne cesse pas d'en être un parce qu'un
+écran a déménagé. Le `Modal` de la coque est SUPPRIMÉ : plus personne ne le
+rendait (les plugins ont les leurs), et un composant gardé au chaud pour un
+dialogue que personne n'a demandé ment sur ce que fait le produit.
+
 **Reste :**
 - [ ] `journal` — pas encore vérifié en navigateur (tests seulement) : le
       fil d'Ariane, une adresse courte, et un vieux lien `%2F` qui doit
@@ -182,6 +204,10 @@ navigateur, avec le reste de la 0.7.0.
 - [ ] `npm run lint` ne tourne pas : eslint absent des devDependencies
 - [ ] driver Copilot : pas de plomberie de permissions → la porte planif ne
       s'y applique pas (missions bornées par `until` malgré tout)
+- [ ] Réglages-app : vu au serveur (boot local, `/api/mcp/status` en 404 donc
+      pas de rangée MCP, `/api/instructions` en 200) mais PAS encore au
+      navigateur — les 4 pages, le fil d'Ariane, la tuile, et le vieux
+      `#/instructions` qui doit ouvrir la page
 - [ ] Backlog UX du 26/08, reste à traiter : les 4 bugs de la vague 1 (gras et
       liens Markdown non rendus dans le chat, pop-up d'autorisation qui ne se
       ferme pas au clic, indicateur « … » tardif après envoi, la fiche

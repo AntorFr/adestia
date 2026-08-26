@@ -64,7 +64,6 @@ const FR: Readonly<Record<string, string>> = {
   Home: 'Accueil',
   Settings: 'Réglages',
   Theme: 'Thème',
-  Close: 'Fermer',
   Conversations: 'Conversations',
   'New conversation': 'Nouvelle conversation',
   'Open apps': 'Ouvrir les apps',
@@ -94,8 +93,23 @@ const FR: Readonly<Record<string, string>> = {
   'This engine keeps its instructions elsewhere.':
     'Ce moteur garde ses instructions ailleurs.',
 
-  // MCP servers, in the settings panel
+  // The settings screen
+  'What this instance answers with, reaches, looks like and was told':
+    'Ce avec quoi cette instance répond, ce qu’elle atteint, son aspect, ce qu’on lui a dit',
+  Appearance: 'Apparence',
+  'Light or dark, or whatever this device is set to':
+    'Clair, sombre, ou ce que demande cet appareil',
+  'Follows this device': 'Suit cet appareil',
+  System: 'Système',
+  Light: 'Clair',
+  Dark: 'Sombre',
+  'Kept in this browser, like the model choice and the rail width.':
+    'Conservé dans ce navigateur, comme le choix du modèle et la largeur du rail.',
+
+  // MCP servers, on their settings page
   'MCP servers': 'Serveurs MCP',
+  'What this instance reaches, and what it is doing about it':
+    'Ce que cette instance atteint, et où chacun en est',
   server: 'serveur',
   servers: 'serveurs',
   '%n need attention': '%n à regarder',

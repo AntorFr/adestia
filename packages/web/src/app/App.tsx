@@ -12,9 +12,7 @@ import { Chat } from '../chat/Chat.js'
 import type { ScreenView } from '../chat/stream.js'
 import { Editor, type PageDocument } from '../editor/Editor.js'
 import type { BlockComponents } from '../editor/Reader.js'
-import { Modal } from './Modal.js'
-import { Instructions } from './Instructions.js'
-import { Preferences, prefsTitle, type PrefsPage } from './Preferences.js'
+import { Preferences, isPrefsPage, prefsTitle, type PrefsPage } from './Preferences.js'
 import {
   browserSkinEnvironment,
   loadSkin,
@@ -155,9 +153,6 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
    * applies to a heavy chunk.
    */
   const [mount, setMount] = useState<EditorMount | undefined>()
-  const [settingsOpen, setSettingsOpen] = useState(false)
-  /** Which page of the settings screen is open; `''` is the list of cards. */
-  const [prefsPage, setPrefsPage] = useState<PrefsPage>('')
   const [skin, setSkin] = useState<Skin & SkinSlots>({})
 
   /**
@@ -247,13 +242,36 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
     // tiled plugin that declares no route still answers on `/<id>`: a custom
     // home navigates by plain hash links, and a tile nothing can link to
     // would be unreachable from one.
-    if (route.startsWith('/section/') || route.startsWith('/page/') || route === '/instructions') {
+    if (
+      route.startsWith('/section/') ||
+      route.startsWith('/page/') ||
+      route === '/instructions' ||
+      route === '/settings' ||
+      route.startsWith('/settings/')
+    ) {
       return undefined
     }
     return [...loaded]
       .sort((a, b) => (b.view?.route?.length ?? 0) - (a.view?.route?.length ?? 0))
       .find((plugin) => routeMatches(addressOf(plugin), route))?.id
   }, [route, loaded])
+
+  /**
+   * Which settings page the route names, `''` being the list. Undefined when
+   * settings is not the open screen at all.
+   *
+   * Derived from the URL like every other screen: settings is an app of this
+   * instance, so it is addressable, bookmarkable, and Back walks out of it one
+   * page at a time. A segment naming no page reads as the list here and is
+   * sent back to `#/settings` below — a title over an empty screen would be a
+   * frame lying about what it holds.
+   */
+  const settingsPage = useMemo<PrefsPage | undefined>(() => {
+    if (route === '/settings') return ''
+    if (!route.startsWith('/settings/')) return undefined
+    const wanted = route.slice('/settings/'.length)
+    return isPrefsPage(wanted) ? wanted : ''
+  }, [route])
 
   const section = route.startsWith('/section/')
     ? decodePath(route.slice('/section/'.length))
@@ -276,6 +294,15 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
    * place by virtue of the screen behind it.
    */
   const trail = useMemo<readonly Crumb[]>(() => {
+    // Settings is an app of the shell's own, so it wears an app's trail: its
+    // name, then the page open under it, and its name becomes a way back only
+    // once there is something below it.
+    if (settingsPage !== undefined) {
+      return appTrail(
+        { label: t('Settings'), root: '/settings' },
+        settingsPage === '' ? [] : [{ label: prefsTitle(settingsPage, t) }],
+      )
+    }
     if (openApp) {
       const plugin = loaded.find((entry) => entry.id === openApp)
       const root = plugin ? addressOf(plugin) : undefined
@@ -312,7 +339,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           (folder.split('/').at(-1) as string),
       }))
     return page ? [...crumbs, { label: page.title }] : crumbs
-  }, [openApp, loaded, page, pages, section, pluginTrail])
+  }, [openApp, loaded, page, pages, section, pluginTrail, settingsPage, t])
 
   /**
    * Where the reader is, snapshotted onto each message.
@@ -378,6 +405,25 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
     const owned = routeForPath(loaded, section)
     if (owned) location.replace(`#${owned}`)
   }, [section, loaded])
+
+  /**
+   * The addresses settings used to have, handed over rather than kept.
+   *
+   * `#/instructions` was the instruction zone's own route back when settings
+   * were a dialog and prose could not be edited inside one. It is a page of
+   * the settings app now, and a bookmark does not stop being one because we
+   * moved a screen — so the old address opens the new one instead of becoming
+   * a second name for it. Same `replace` as above: a redirect nobody saw has
+   * no business in the history Back walks through.
+   */
+  useEffect(() => {
+    if (route === '/instructions') location.replace('#/settings/instructions')
+    // A settings segment naming no page: back to the list rather than a
+    // screen with nothing on it.
+    else if (route.startsWith('/settings/') && !isPrefsPage(route.slice('/settings/'.length))) {
+      location.replace('#/settings')
+    }
+  }, [route])
 
   /**
    * Loads whatever page the route names.
@@ -742,12 +788,19 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           >
             ◐
           </button>
+          {/* A shortcut to the app, not a menu: the same screen the tile on
+              the landing canvas opens, at the same address. It stays in the
+              header because arming a credential is what somebody does when
+              something has just stopped working, and hunting for a tile is
+              not what that moment is for. */}
           <button
             type="button"
             className="golem-ib"
-            onClick={() => setSettingsOpen(!settingsOpen)}
+            onClick={() => {
+              location.hash = '/settings'
+            }}
             aria-label={t('Settings')}
-            aria-expanded={settingsOpen}
+            {...(settingsPage !== undefined ? { 'aria-current': 'page' as const } : {})}
           >
             ⚙
           </button>
@@ -815,12 +868,27 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
               </>
             )
           })()
-        ) : route === '/instructions' ? (
+        ) : settingsPage !== undefined ? (
           <>
-            <button type="button" className="golem-switch" onClick={() => { window.location.hash = '' }}>
-              ‹ {t('Home')}
+            <button
+              type="button"
+              className="golem-switch"
+              onClick={() => {
+                location.hash = settingsPage === '' ? '' : '/settings'
+              }}
+            >
+              ‹ {settingsPage === '' ? t('Home') : t('Settings')}
             </button>
-            <Instructions fetchImpl={fetchImpl} t={t} />
+            <Preferences
+              page={settingsPage}
+              onPage={(next) => {
+                location.hash = next === '' ? '/settings' : `/settings/${next}`
+              }}
+              theme={themePref}
+              onTheme={setThemePref}
+              fetchImpl={fetchImpl}
+              t={t}
+            />
           </>
         ) : page ? (
           <Editor
@@ -873,35 +941,6 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
         )}
         </div>
       </main>
-
-      {settingsOpen && (
-        <Modal
-          // The frame names the page, the way a phone's navigation bar does:
-          // a dialog still headed "Settings" while you are three rows into
-          // the credential flow is a frame that lost track of its contents.
-          title={prefsTitle(prefsPage, t)}
-          closeLabel={t('Close')}
-          onClose={() => {
-            setSettingsOpen(false)
-            // Reopening lands on the list rather than on whatever page was
-            // last read: a dialog that resumes where you left it makes the
-            // gear button do something different every time you press it.
-            setPrefsPage('')
-          }}
-        >
-          <Preferences
-            page={prefsPage}
-            onPage={setPrefsPage}
-            onOpenInstructions={() => {
-              setSettingsOpen(false)
-              setPrefsPage('')
-              window.location.hash = '/instructions'
-            }}
-            fetchImpl={fetchImpl}
-            t={t}
-          />
-        </Modal>
-      )}
     </div>
   )
 }

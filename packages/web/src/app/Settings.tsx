@@ -153,9 +153,11 @@ export function McpPanel({
 
   if (servers === undefined || servers.length === 0) return null
 
+  // Untitled on purpose: this is a whole page now, and the screen around it
+  // says its name once. It carried its own heading back when it was stacked
+  // under the credential panel in a dialog.
   return (
     <section className="golem-mcp">
-      <h3>{t('MCP servers')}</h3>
       <ul>
         {servers.map((server) => {
           const shown = MCP_STATES[server.state] ?? MCP_STATES.unknown

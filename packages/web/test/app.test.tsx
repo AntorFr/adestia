@@ -318,3 +318,98 @@ describe('the shell joins its screen to a message', () => {
     expect('view' in (bodies[1] as Record<string, unknown>)).toBe(false)
   })
 })
+
+describe('settings, as an app of the shell', () => {
+  /** Navigates the way the browser does, so the shell's listener fires. */
+  const go = async (hash: string) => {
+    await act(async () => {
+      location.hash = hash
+      window.dispatchEvent(new HashChangeEvent('hashchange'))
+    })
+  }
+
+  /** The shell, booted, with the landing canvas drawn. */
+  const shell = async () => {
+    const view = render(<App fetchImpl={apiFetch()} />)
+    // The mosaic is there on any instance now — the shell's own tile is on it.
+    await waitFor(() => expect(view.container.querySelector('.golem-tiles')).toBeTruthy())
+    return view.container
+  }
+
+  /** The crumbs, in order, and whether each is a way back. */
+  const crumbs = (container: HTMLElement) =>
+    [...(container.querySelector('.golem-crumbs')?.children ?? [])]
+      .filter((node) => !node.classList.contains('golem-crumbs__sep'))
+      .map((node) => ({ label: node.textContent ?? '', walkable: node.tagName === 'BUTTON' }))
+
+  it('stands on the landing canvas as an app, on any instance', async () => {
+    // Even with no plugin at all: on a fresh instance that tile is the whole
+    // way in, since the credential is armed from behind it.
+    const container = await shell()
+    const labels = [...container.querySelectorAll('.golem-tile__label')].map((n) => n.textContent)
+    expect(labels).toEqual(['Settings'])
+    location.hash = ''
+  })
+
+  it('opens on the canvas, under a trail that says where you are', async () => {
+    // The whole move: settings stopped being a dialog over whatever screen
+    // you were on. It is a screen, so it has an address and a place in the
+    // trail — and the canvas, not a 460px card, to say itself in.
+    const container = await shell()
+    await go('#/settings')
+
+    expect(await screen.findByText('Agent credential')).toBeTruthy()
+    expect(container.querySelector('[role="dialog"]')).toBeNull()
+    expect(crumbs(container)).toEqual([
+      { label: 'Home', walkable: true },
+      // Where the reader IS: named, never a link to the screen under their eyes.
+      { label: 'Settings', walkable: false },
+    ])
+    location.hash = ''
+  })
+
+  it('names the page open under it, and leads back to the list', async () => {
+    const container = await shell()
+    await go('#/settings/credential')
+
+    await waitFor(() => expect(crumbs(container).length).toBe(3))
+    expect(crumbs(container)).toEqual([
+      { label: 'Home', walkable: true },
+      { label: 'Settings', walkable: true },
+      { label: 'Agent credential', walkable: false },
+    ])
+    location.hash = ''
+  })
+
+  it('opens the app from the gear rather than a dialog over the page', async () => {
+    const container = await shell()
+    const gear = container.querySelector('.golem-ib[aria-label="Settings"]') as HTMLElement
+    await act(async () => {
+      fireEvent.click(gear)
+      window.dispatchEvent(new HashChangeEvent('hashchange'))
+    })
+    expect(location.hash).toBe('#/settings')
+    expect(container.querySelector('[role="dialog"]')).toBeNull()
+    location.hash = ''
+  })
+
+  it('opens the address the instruction zone used to have', async () => {
+    // `#/instructions` was its route back when prose could not be edited in a
+    // dialog. A bookmark does not stop being one because a screen moved.
+    await shell()
+    await go('#/instructions')
+
+    await waitFor(() => expect(location.hash).toBe('#/settings/instructions'))
+    location.hash = ''
+  })
+
+  it('sends a page nobody has back to the list', async () => {
+    // The address bar is user-writable: a title over an empty screen would be
+    // a frame lying about what it holds.
+    await shell()
+    await go('#/settings/chartreuse')
+
+    await waitFor(() => expect(location.hash).toBe('#/settings'))
+    location.hash = ''
+  })
+})
