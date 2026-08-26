@@ -290,6 +290,33 @@ le lapin de nestor (240 px) repoussait les apps sous la ligne de flottaison
 maintenant qu'il y a quelque chose dessous, et la page Instructions portait la
 teinte accent au lieu du `bleu` de la rangée qui l'ouvre.
 
+Lot 7, le markdown du chat (1er bug de la vague 1) : les réponses de l'agent
+s'affichaient en SOURCE — `**gras**`, `[label](url)`. L'agent n'écrit que du
+markdown, donc c'est le rendu qui manquait, pas le format. Rendu par le MÊME
+fichier qui sert à lire une fiche (`Reader.tsx`), en posture `Prose` : un
+message est un FRAGMENT, pas un document — pas de frontmatter, pas de blocs de
+plugin, et relatif à la RACINE de l'espace de travail (donc un chemin que
+l'agent nomme, `voyages/baden.md`, ouvre la fiche, exactement comme le même
+lien écrit DANS une fiche). Zéro dépendance nouvelle, zéro `innerHTML` :
+la grammaire était déjà dans le bundle et le rendu passe par React.
+La moitié de l'UTILISATEUR reste littérale, délibérément : personne ne lui a
+dit qu'une grammaire s'appliquait à son champ de saisie, et il n'a aucun moyen
+de l'échapper (le prédécesseur traçait la même ligne).
+Deux pièges que seule la mesure/le test montrait :
+(1) rendre le markdown à CHAQUE delta est quadratique — il faut re-parser
+depuis le haut, un `**` tapé maintenant décidant ce que voulait dire un `**`
+tapé avant. Mesuré : 21 s de CPU pour UNE réponse de 20 k caractères (0,7 s
+pour 3,4 k — d'où l'invisibilité sur les réponses courtes des tests). D'où
+`useCadence` : redessin toutes les 150 ms, coût proportionnel à la DURÉE du
+tour et non au carré de sa longueur. Le front descendant est la moitié
+porteuse : le dernier delta n'a rien derrière lui pour le pousser à l'écran.
+(2) `---` en tête d'un message est du FRONTMATTER pour la grammaire partagée,
+et la posture page le mine en pastilles de statut — donc un message qui ouvre
+sur une règle perdait son premier bloc, en silence. La posture prose redessine
+le texte à la place.
+Vérifié au navigateur (Chrome headless, markup réel + CSS réelle), clair et
+sombre. 5 tests, dont 4 en échec sans le correctif.
+
 **Reste :**
 - [ ] `journal` — pas encore vérifié en navigateur (tests seulement) : le
       fil d'Ariane, une adresse courte, et un vieux lien `%2F` qui doit
@@ -314,10 +341,9 @@ teinte accent au lieu du `bleu` de la rangée qui l'ouvre.
       `#/instructions` (capture pixel-identique à `#/settings/instructions`),
       et les deux livrées — tête de la skin + mosaïques de la coque, avec la
       barre ambre au bord gauche et le label en pas fixe sur skippy
-- [ ] Backlog UX du 26/08, reste à traiter : les 4 bugs de la vague 1 (gras et
-      liens Markdown non rendus dans le chat, pop-up d'autorisation qui ne se
-      ferme pas au clic, indicateur « … » tardif après envoi, la fiche
-      `golem-evolutions` absente de la nav) ; les outils autorisés par défaut
+- [ ] Backlog UX du 26/08, reste à traiter : 3 bugs de la vague 1 (pop-up
+      d'autorisation qui ne se ferme pas au clic, indicateur « … » tardif
+      après envoi, la fiche `golem-evolutions` absente de la nav) ; les outils autorisés par défaut
       (décision de niveau de risque, pas un bug) ; la fusion apps/domaines
       (chantier d'archi, à cadrer — `sections.ts`/`owners.ts` viennent d'être
       refaits en 0.6/0.7 pour DISTINGUER ces deux notions) ; et Withings/mail/

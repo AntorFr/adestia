@@ -40,7 +40,10 @@ Golem's own interface.
 
 - **Chat that streams**, with a tool trace, a live token counter, interactive
   permissions, and threads that survive a reload with everything the interface
-  drew — tool calls, interruptions, context weight.
+  drew — tool calls, interruptions, context weight. The agent's half is
+  rendered as the markdown it is, through the same renderer a page is read
+  with, so a workspace path it names opens that page; what you typed stays
+  exactly as you typed it.
 - **Pages both hands write**: markdown files with a closed vocabulary of typed
   blocks, edited in a Notion-like editor or by the agent with its own file
   tools. One grammar renders, edits and validates them, so a save cannot change

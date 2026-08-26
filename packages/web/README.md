@@ -10,11 +10,23 @@ their environment is injected:
   The parser is incremental on purpose: a network chunk has no relationship to
   a frame boundary, and code that assumes otherwise works locally and corrupts
   long answers in production.
+- **`chat/useCadence.ts`** — how often a growing answer is redrawn as markdown.
+  Rendering the agent's half means re-parsing it from the top on every delta,
+  because a `**` typed now decides what a `**` typed earlier meant; at a few
+  characters per delta that is quadratic, and it was measured rather than
+  guessed. The cadence makes the cost proportional to how LONG a turn runs
+  instead of to the square of how much it says.
 - **`plugins/loader.ts`** — the mechanism spike 2 proved, turned into product.
   Plugins are plain ESM in a mounted folder; shared dependencies come from the
   page's import map, which is a **versioned contract** (`IMPORT_MAP_CONTRACT`);
   stylesheets are listed in the manifest and owned by the shell; a plugin that
   throws loses its own contribution, never the page.
+
+A chat message is rendered by `editor/Reader.tsx`, the same file a page is
+read through — `Prose` rather than `Reader`, because a message is a fragment
+and not a document: no frontmatter, no plugin blocks, and relative to the
+workspace root. One grammar, one switch, so a link written in a message and
+the same link written in a page cannot mean two things.
 
 The web package declares its own `TurnEvent` rather than importing the driver
 contract: the shell talks HTTP to something that speaks this protocol and never

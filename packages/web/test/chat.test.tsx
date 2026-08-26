@@ -12,6 +12,7 @@ import { describe, expect, it, onTestFinished, vi } from 'vitest'
 
 import {
   Bubble,
+  LiveProse,
   COMPOSER_MAX_HEIGHT,
   COMPOSER_MIN_HEIGHT,
   Chat,
@@ -25,6 +26,7 @@ import {
   contextLevel,
   formatTokens,
 } from '../src/chat/Chat.js'
+import { PROSE_CADENCE_MS } from '../src/chat/useCadence.js'
 
 describe('model picker', () => {
   it('draws nothing when the driver enumerates none', () => {
@@ -240,6 +242,96 @@ describe('bubble', () => {
     )
     expect(screen.getByText('partial')).toBeTruthy()
     expect(screen.getByText('CLI died')).toBeTruthy()
+  })
+})
+
+describe('markdown in a bubble', () => {
+  it("renders the agent's formatting instead of printing it", () => {
+    // The bug this closes: an answer arrived as its own source code, so a
+    // reader saw the asterisks and the brackets rather than what they meant.
+    const { container } = render(
+      <Bubble
+        message={{
+          id: '1',
+          role: 'agent',
+          text: 'Voici du **gras**, de l\'`inline` et [un lien](https://example.org/x).',
+        }}
+      />,
+    )
+
+    expect(container.querySelector('strong')?.textContent).toBe('gras')
+    expect(container.querySelector('code')?.textContent).toBe('inline')
+    const link = container.querySelector('a') as HTMLAnchorElement
+    expect(link.getAttribute('href')).toBe('https://example.org/x')
+    // Off-instance opens elsewhere rather than replacing the conversation.
+    expect(link.getAttribute('target')).toBe('_blank')
+    expect(container.textContent).not.toContain('**')
+  })
+
+  it('leaves what the user typed exactly as they typed it', () => {
+    // A person typing into a field was never told a grammar applied, and has
+    // no way to escape one. Their asterisks are asterisks.
+    const { container } = render(
+      <Bubble message={{ id: '1', role: 'user', text: 'pourquoi **ça** casse ?' }} />,
+    )
+    expect(container.querySelector('strong')).toBeNull()
+    expect(screen.getByText('pourquoi **ça** casse ?')).toBeTruthy()
+  })
+
+  it('turns a workspace path the agent named into a page the shell opens', () => {
+    const openPage = vi.fn()
+    render(
+      <Bubble
+        message={{ id: '1', role: 'agent', text: 'Écrit dans [la fiche](voyages/baden.md).' }}
+        openPage={openPage}
+      />,
+    )
+
+    // A page opens IN PLACE, so it is a button and not an anchor — the chat
+    // hands back the path and the shell decides where that lands.
+    fireEvent.click(screen.getByText('la fiche'))
+    expect(openPage).toHaveBeenCalledWith('voyages/baden.md')
+  })
+
+  it('redraws a growing answer on a cadence, and always shows its last delta', () => {
+    // Not a nicety: markdown has to be re-parsed from the TOP on every delta,
+    // because a `**` typed now decides what a `**` typed earlier meant. At a
+    // few characters per delta that is quadratic — measured at 21 seconds of
+    // CPU for one 20k-character answer. What is asserted here is the shape
+    // that makes it linear in the DURATION of the turn instead: deltas
+    // arriving inside one window are coalesced, and the trailing edge still
+    // lands, because the last delta has nothing behind it to push it out.
+    vi.useFakeTimers()
+    onTestFinished(() => {
+      vi.useRealTimers()
+    })
+
+    const { rerender, container } = render(<LiveProse text="Le" />)
+    expect(container.textContent).toBe('Le')
+
+    rerender(<LiveProse text="Le **dé" />)
+    rerender(<LiveProse text="Le **début**" />)
+    // Still the first frame: three renders have cost exactly one parse.
+    expect(container.textContent).toBe('Le')
+
+    act(() => void vi.advanceTimersByTime(PROSE_CADENCE_MS))
+    expect(container.querySelector('strong')?.textContent).toBe('début')
+
+    // And nothing follows, which is the case a leading-edge throttle loses.
+    rerender(<LiveProse text="Le **début** et la fin." />)
+    act(() => void vi.advanceTimersByTime(PROSE_CADENCE_MS))
+    expect(container.textContent).toContain('et la fin.')
+  })
+
+  it('keeps the words of a message that opens on a rule', () => {
+    // `---` heading a source is frontmatter to the shared grammar, and the
+    // page posture mines it for status chips. A chat message has none, so
+    // that posture would render nothing at all and eat the first block.
+    const { container } = render(
+      <Bubble message={{ id: '1', role: 'agent', text: '---\nDeux options :\n---\nSuite.' }} />,
+    )
+    expect(container.textContent).toContain('Deux options :')
+    expect(container.textContent).toContain('Suite.')
   })
 })
 

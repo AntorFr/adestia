@@ -698,6 +698,10 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           attachRef.current = channel.attach
         }}
         extraButtons={composerButtons}
+        // A path the agent named in its answer opens the page, exactly as the
+        // same path written INSIDE a page does. The chat draws the link; only
+        // the shell knows where it goes.
+        openPage={openPage}
         {...(skin.placeholder ? { placeholder: skin.placeholder } : {})}
         {...(skin.brand ? { brand: skin.brand } : {})}
         {...(skin.crest ? { crest: skin.crest } : {})}

@@ -161,6 +161,11 @@ type Ctx = {
   readonly openPage?: (path: string) => void
   /** Blocks the active plugins draw, beyond the core's own. */
   readonly blocks?: BlockComponents
+  /**
+   * The source is PROSE, not a document — see `Prose` below. Only the head of
+   * the source tells the two apart, so only the head reads this.
+   */
+  readonly prose?: boolean
 }
 
 function children(node: Node, ctx: Ctx): ReactNode {
@@ -174,7 +179,12 @@ function render(node: Node, ctx: Ctx): ReactNode {
     case 'root':
       return children(node, ctx)
     case 'yaml':
-      return <Meta yaml={node.value ?? ''} />
+      // A page wears its frontmatter as chips. Prose has no frontmatter to
+      // wear: `---` opening a message is a rule somebody drew, and the shared
+      // grammar — which is the point — has already eaten the block behind it.
+      // Drawing its text back beats mining it for chips it does not carry,
+      // which renders nothing at all and takes the words down with it.
+      return ctx.prose ? <p>{node.value}</p> : <Meta yaml={node.value ?? ''} />
     case 'paragraph':
       return <p>{children(node, ctx)}</p>
     case 'heading':
@@ -343,6 +353,59 @@ function Contributed({ node, ctx }: { readonly node: Node; readonly ctx: Ctx }) 
   )
 }
 
+/**
+ * A source the grammar could not read, shown as it was written.
+ *
+ * Worse looking, and strictly better than a blank rectangle: whoever wrote it
+ * still gets their words, and the failure is visible rather than silent.
+ */
+function raw(markdown: string): ReactNode {
+  return <pre className="golem-reader__raw">{markdown}</pre>
+}
+
+/**
+ * The same grammar and the same switch, on something that is not a page.
+ *
+ * A chat message is markdown too. The agent writes `**gras**` and
+ * `[label](url)` in it for the same reason it writes them in a page: markdown
+ * is the only thing it writes. Rendering the two through one renderer is what
+ * keeps a link written in a message and the same link written in a page from
+ * meaning two different things — and it is why this costs no new dependency
+ * and no second vocabulary.
+ *
+ * Two things separate the postures, and both are about the source being a
+ * FRAGMENT rather than a document:
+ *
+ * - It has no frontmatter (see the `yaml` case above).
+ * - It is relative to the workspace ROOT, not to a folder. An agent naming
+ *   `voyages/baden-2026.md` in a message means the file at that path, so the
+ *   base is `''` — present, and empty. That is what turns "j'ai écrit la
+ *   fiche X" into something you can click.
+ *
+ * Plugin blocks are deliberately NOT passed: a `:::` block belongs to a page
+ * that holds it, and one drawn inside a chat bubble would be a live control
+ * in a transcript of a conversation that has already happened.
+ */
+export function Prose({
+  markdown,
+  openPage,
+}: {
+  readonly markdown: string
+  readonly openPage?: (path: string) => void
+}) {
+  let tree: Node
+  try {
+    tree = parse(markdown) as unknown as Node
+  } catch {
+    return raw(markdown)
+  }
+  return (
+    <div className="golem-prose">
+      {render(tree, { base: '', prose: true, ...(openPage ? { openPage } : {}) })}
+    </div>
+  )
+}
+
 export function Reader({
   markdown,
   path,
@@ -365,9 +428,7 @@ export function Reader({
   try {
     tree = parse(markdown) as unknown as Node
   } catch {
-    // A page the grammar cannot read is shown as it was written: worse
-    // looking, and strictly better than a blank screen.
-    return <pre className="golem-reader__raw">{markdown}</pre>
+    return raw(markdown)
   }
   // A page at the root has an EMPTY base, which is not the same as none: its
   // neighbours are the root's own files.

@@ -140,6 +140,93 @@
   border-style: dashed;
 }
 
+/* Markdown in a bubble ---------------------------------------------------
+   The agent's answers ARE markdown, and were being read as their own source
+   code. Same renderer as a page (see Reader.tsx) — different measure: a
+   bubble is not a document, so headings stay near the body size, margins are
+   tight, and the last block does not add its own bottom to the padding the
+   bubble already has.
+
+   `white-space` is reset because `.golem-bubble` sets `pre-wrap` for the
+   USER's half, where a typed newline is a newline. Here the grammar decides,
+   and leaving pre-wrap on would print the source's own line breaks on top of
+   the paragraphs it just made from them. */
+.golem-prose {
+  white-space: normal;
+  line-height: 1.55;
+}
+
+.golem-prose > :first-child { margin-top: 0; }
+.golem-prose > :last-child { margin-bottom: 0; }
+
+.golem-prose p { margin: 0 0 0.7em; }
+
+.golem-prose h2,
+.golem-prose h3,
+.golem-prose h4,
+.golem-prose h5,
+.golem-prose h6 {
+  font-family: var(--font-title);
+  letter-spacing: var(--title-track);
+  line-height: 1.25;
+  margin: 1.1em 0 0.4em;
+  font-size: 1em;
+}
+
+/* A heading has to READ as one from across a scrolling thread, and these are
+   already shifted down a level (see the `heading` case in Reader.tsx): a
+   bubble has no title of its own, and a thread full of competing H1s is a
+   document outline nobody can use. So `##` — what an agent reaches for first
+   — lands here, and has to earn its rank on size rather than on depth. */
+.golem-prose h2 { font-size: 1.28em; }
+.golem-prose h3 { font-size: 1.14em; }
+.golem-prose h4 { font-size: 1.02em; }
+
+.golem-prose ul,
+.golem-prose ol { margin: 0 0 0.7em; padding-left: 1.3em; }
+.golem-prose li { margin: 0.15em 0; }
+.golem-prose li.golem-task { list-style: none; margin-left: -1.3em; }
+.golem-prose li.golem-task input { margin-right: 0.5em; }
+.golem-prose li > p { margin: 0; }
+
+.golem-prose a { color: var(--accent); text-underline-offset: 2px; }
+
+.golem-prose blockquote {
+  margin: 0 0 0.7em;
+  padding: 0.1em 0 0.1em 0.9em;
+  border-left: 3px solid var(--border-strong);
+  color: var(--text-muted);
+}
+
+/* The bubble's own background IS `--surface-soft`, so code has to sink
+   further than it does on a page or it would draw a border around nothing. */
+.golem-prose code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-micro);
+  padding: 0.1em 0.35em;
+}
+
+.golem-prose pre {
+  margin: 0 0 0.7em;
+  padding: var(--space-2) var(--space-3);
+  overflow-x: auto;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.golem-prose pre code { background: none; padding: 0; font-size: 0.85em; }
+
+.golem-prose img { max-width: 100%; height: auto; border-radius: var(--radius-sm); }
+.golem-prose hr { border: 0; border-top: 1px solid var(--border); margin: 1.2em 0; }
+
+.golem-prose .golem-table-scroll { margin: 0 0 0.7em; }
+.golem-prose table { border-collapse: collapse; font-size: 0.92em; }
+.golem-prose td { border: 1px solid var(--border); padding: var(--space-1) var(--space-2); }
+.golem-prose tr:first-child td { font-weight: 600; background: var(--surface-sunken); }
+
 .golem-bubble__note {
   margin: var(--space-2) 0 0;
   font-size: var(--text-sm);

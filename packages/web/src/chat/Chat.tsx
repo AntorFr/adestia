@@ -28,6 +28,10 @@ import { useMobile } from '../app/useMobile.js'
 // The drag primitive is shared with the page screen: one answer to "is this
 // drag carrying files", so the two surfaces cannot disagree about it.
 import { carriesFiles } from '../editor/filedrop.js'
+// Markdown in a bubble is the SAME renderer a page is read through — one
+// grammar, one switch, no second vocabulary and no new dependency.
+import { Prose } from '../editor/Reader.js'
+import { PROSE_CADENCE_MS, useCadence } from './useCadence.js'
 
 /**
  * One model the driver offers.
@@ -173,15 +177,58 @@ export function ToolTrace({ tools }: { tools: Message['tools'] }) {
   )
 }
 
-export function Bubble({ message }: { message: Message }) {
+/**
+ * One message in the thread.
+ *
+ * The agent's half is rendered as MARKDOWN, because markdown is what it
+ * writes: an answer that says `**important**` and `[la fiche](voyages/x.md)`
+ * was showing its asterisks and its brackets, which is the transcript of a
+ * formatting intention rather than the formatting itself.
+ *
+ * The user's half deliberately is not. What somebody typed is what they meant
+ * — a message about `**` must be able to contain `**`, and a person typing
+ * into a text field has no way to escape a grammar nobody told them applied.
+ * The predecessor drew the same line, and it is the right one.
+ */
+export function Bubble({
+  message,
+  openPage,
+}: {
+  message: Message
+  /** Lets a workspace path the agent named open the page. Absent, it is text. */
+  openPage?: (path: string) => void
+}) {
   return (
     <article className={`golem-bubble golem-bubble--${message.role}`}>
       {message.role === 'agent' && <ToolTrace tools={message.tools} />}
-      {message.text && <div className="golem-bubble__text">{message.text}</div>}
+      {message.text &&
+        (message.role === 'agent' ? (
+          <Prose markdown={message.text} {...(openPage ? { openPage } : {})} />
+        ) : (
+          <div className="golem-bubble__text">{message.text}</div>
+        ))}
       {message.stopped && <p className="golem-bubble__note">Turn interrupted.</p>}
       {message.error && <p className="golem-bubble__error">{message.error}</p>}
     </article>
   )
+}
+
+/**
+ * The answer while it is still arriving.
+ *
+ * Its own component for one reason: the cadence is a hook, and the live bubble
+ * exists only some of the time. See useCadence.ts for why a growing answer is
+ * not re-parsed on every delta.
+ */
+export function LiveProse({
+  text,
+  openPage,
+}: {
+  text: string
+  openPage?: (path: string) => void
+}) {
+  const shown = useCadence(text, PROSE_CADENCE_MS)
+  return <Prose markdown={shown} {...(openPage ? { openPage } : {})} />
 }
 
 export function PermissionPrompt({
@@ -609,6 +656,14 @@ export interface ChatProps {
   /** Only when the shell is folded onto one screen; absent on desktop. */
   readonly onOpenCanvas?: () => void
   /**
+   * Opens a page of the workspace, for a path the agent named in its answer.
+   *
+   * The chat does not own routing and must not learn it — it hands the path
+   * back and the shell decides where that lands. Absent, such a path renders
+   * as the text it is rather than as a link that goes nowhere.
+   */
+  readonly openPage?: (path: string) => void
+  /**
    * Hands the shell a way to send a message, so a plugin's button can ask the
    * agent something. The chat owns this channel; nobody else may fabricate a
    * turn behind its back and leave the thread out of step with the session.
@@ -663,6 +718,7 @@ export function Chat({
   onOpenCanvas,
   onReady,
   extraButtons,
+  openPage,
   view,
 }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([])
@@ -958,14 +1014,14 @@ export function Chat({
 
       <div className="golem-chat__thread">
         {messages.map((message) => (
-          <Bubble key={message.id} message={message} />
+          <Bubble key={message.id} message={message} {...(openPage ? { openPage } : {})} />
         ))}
 
         {live && (
           <article className="golem-bubble golem-bubble--agent golem-bubble--live">
             <ToolTrace tools={live.tools} />
             {live.text ? (
-              <div className="golem-bubble__text">{live.text}</div>
+              <LiveProse text={live.text} {...(openPage ? { openPage } : {})} />
             ) : (
               <div className="golem-bubble__working">
                 {busySlot ? (
