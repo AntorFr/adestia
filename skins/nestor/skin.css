@@ -253,7 +253,7 @@
   align-items: center;
   text-align: center;
   gap: 6px;
-  padding: clamp(18px, 5vh, 54px) 20px 40px;
+  padding: clamp(14px, 3vh, 34px) 20px 10px;
 }
 
 .nst-salut {
@@ -277,7 +277,10 @@
   margin: 0;
 }
 
-.nst-scene { display: grid; place-items: center; margin: clamp(8px, 3vh, 26px) 0; }
+/* Tightened when this became a head rather than the whole canvas: the
+   mosaics sit under it now, and a landing whose apps need scrolling past a
+   rabbit is a landing that hid them. */
+.nst-scene { display: grid; place-items: center; margin: clamp(6px, 1.6vh, 14px) 0; }
 
 .nst-invite {
   display: flex;

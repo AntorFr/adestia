@@ -121,7 +121,7 @@ function hero(host, context) {
     </button>
   </div>`
 
-  host.querySelector('.nst-scene').appendChild(lapin(240))
+  host.querySelector('.nst-scene').appendChild(lapin(170))
   // The invitation only hands the cursor back: the chat stays the surface,
   // the landing is just a way in.
   host.querySelector('[data-invite]').addEventListener('click', () => context.focusComposer())

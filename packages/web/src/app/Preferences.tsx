@@ -177,9 +177,14 @@ export function Preferences({
 
   if (page === 'instructions') {
     // The one page that heads itself: the instruction zone is a screen in its
-    // own right and was one before settings became a screen at all.
+    // own right and was one before settings became a screen at all. It is
+    // handed the hue of the row that opened it, so the plate a finger just
+    // pressed is the plate at the top of the screen it landed on.
     return (
-      <div className="golem-prefs golem-prefs__page">
+      <div
+        className="golem-prefs golem-prefs__page"
+        style={{ '--tile-color': 'var(--golem-hue-bleu, var(--accent))' } as Record<string, string>}
+      >
         <Instructions fetchImpl={fetchImpl} t={t} />
       </div>
     )

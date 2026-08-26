@@ -182,7 +182,9 @@
 
 /* ── The bridge — this body's landing. Not Alfred's home repainted: it
    answers a different question. ────────────────────────────────────────── */
-.hud { padding: 4px 2px 40px; display: flex; flex-direction: column; gap: 26px; }
+/* Bottom padding of 4px, not 40: this used to end the canvas, and now the
+   shell's own mosaics follow it. */
+.hud { padding: 4px 2px 4px; display: flex; flex-direction: column; gap: 26px; }
 
 .hud .panel { position: relative; background: var(--surface-raised); border: 1px solid var(--border); border-radius: var(--radius); }
 

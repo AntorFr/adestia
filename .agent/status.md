@@ -243,6 +243,11 @@ et ça se paie en TOKENS. La marque colorée de la tuile devient quatre boutons
 toujours au plein) et son nom deux (`--tile-label-font/-track`) : la barre au
 bord gauche et le pas fixe du HUD sont désormais une déclaration de tokens.
 Les CSS orphelines (`.hudtile…`, `.nst-tuile…`) sont parties avec le markup.
+Trois retouches que seules les captures pouvaient révéler : le `.hud` de
+skippy réservait 40 px de bas de page pour une mosaïque qui n'est plus dedans,
+le lapin de nestor (240 px) repoussait les apps sous la ligne de flottaison
+maintenant qu'il y a quelque chose dessous, et la page Instructions portait la
+teinte accent au lieu du `bleu` de la rangée qui l'ouvre.
 
 **Reste :**
 - [ ] `journal` — pas encore vérifié en navigateur (tests seulement) : le
@@ -259,13 +264,15 @@ Les CSS orphelines (`.hudtile…`, `.nst-tuile…`) sont parties avec le markup.
 - [ ] `npm run lint` ne tourne pas : eslint absent des devDependencies
 - [ ] driver Copilot : pas de plomberie de permissions → la porte planif ne
       s'y applique pas (missions bornées par `until` malgré tout)
-- [ ] `hero` : à constater au navigateur sur les DEUX livrées — la tête
-      dessinée par la skin, les mosaïques de la coque dessous, et la tuile au
-      look HUD (barre à gauche, label en pas fixe) sur skippy
-- [ ] Réglages-app : vu au serveur (boot local, `/api/mcp/status` en 404 donc
-      pas de rangée MCP, `/api/instructions` en 200) mais PAS encore au
-      navigateur — les 4 pages, le fil d'Ariane, la tuile, et le vieux
-      `#/instructions` qui doit ouvrir la page
+- [x] Réglages-app ET `hero` VÉRIFIÉS AU NAVIGATEUR (Chrome headless en
+      conteneur, piloté par CDP depuis `shoot.mjs` — le drapeau
+      `--virtual-time-budget` de chromium capture avant la 2e vague de fetchs
+      de la coque, il faut une vraie attente après une vraie navigation).
+      Vus : l'accueil (Réglages en dernière tuile), les 4 pages de réglages,
+      le fil d'Ariane à trois crans, clair ET sombre, l'ancienne adresse
+      `#/instructions` (capture pixel-identique à `#/settings/instructions`),
+      et les deux livrées — tête de la skin + mosaïques de la coque, avec la
+      barre ambre au bord gauche et le label en pas fixe sur skippy
 - [ ] Backlog UX du 26/08, reste à traiter : les 4 bugs de la vague 1 (gras et
       liens Markdown non rendus dans le chat, pop-up d'autorisation qui ne se
       ferme pas au clic, indicateur « … » tardif après envoi, la fiche
