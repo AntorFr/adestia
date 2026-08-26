@@ -97,6 +97,10 @@ const esc = (value) =>
  * The landing. No "Bonjour, Monsieur": this body belongs to the WHOLE house
  * and does not know who holds the phone. The greeting follows the hour, and
  * nothing else — what can be asserted without getting the person wrong.
+ *
+ * Settings is written in by hand, below the modules: a livery that replaces
+ * the landing replaces the shell's own tile with it, and the gear in the top
+ * bar is a shortcut, not a landing.
  */
 function home(host, context) {
   const h = new Date().getHours()
@@ -113,6 +117,11 @@ function home(host, context) {
       <span>Confier quelque chose à Nestor…</span><i aria-hidden="true">↑</i>
     </button>
     <div class="nst-tuiles" data-tuiles></div>
+    <div class="nst-tuiles">
+      <a class="nst-tuile" href="#/settings">
+        <b>Réglages</b><span>Le jeton, les serveurs, l’aspect, vos instructions</span>
+      </a>
+    </div>
   </div>`
 
   host.querySelector('.nst-scene').appendChild(lapin(240))

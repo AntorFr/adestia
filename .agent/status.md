@@ -200,7 +200,15 @@ La tuile de la coque est épinglée EN DERNIER, hors de la permutation : c'est d
 mobilier, pas une des apps qu'on a données à ce workspace. `#/instructions`
 (l'adresse de la zone d'instructions du temps du dialogue) passe la main à
 `#/settings/instructions` — un favori ne cesse pas d'en être un parce qu'un
-écran a déménagé. Le `Modal` de la coque est SUPPRIMÉ : plus personne ne le
+écran a déménagé. Les deux skins qui remplacent l'accueil (`skippy`, `nestor`) ont dû suivre : un
+slot `home` remplace la mosaïque de la coque, donc la tuile Réglages n'y
+existait pas et l'engrenage redevenait le seul chemin. Chacune a la sienne,
+dans sa voix (rangée « Système » sur le HUD, tuile sous les modules chez
+Nestor), et `skin-author` dit désormais que remplacer l'accueil, c'est aussi
+remplacer cette tuile-là. `alfred` n'a pas de slot `home` : rien à faire. Côté
+couleurs, rien non plus — `ardoise` et `violet` sont dans `tokens.css`, une
+skin qui ne les redéfinit pas hérite du défaut.
+Le `Modal` de la coque est SUPPRIMÉ : plus personne ne le
 rendait (les plugins ont les leurs), et un composant gardé au chaud pour un
 dialogue que personne n'a demandé ment sur ce que fait le produit.
 

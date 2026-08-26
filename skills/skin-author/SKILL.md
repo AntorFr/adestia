@@ -157,7 +157,9 @@ for markup no token can describe:
 ```js
 export default function skin() {
   return {
-    // Replaces the landing canvas entirely. Navigate with plain hash links:
+    // Replaces the landing canvas ENTIRELY — including the shell's own
+    // Settings tile, so offer a way to `#/settings` yourself or the gear in
+    // the top bar becomes the only one. Navigate with plain hash links:
     // every tiled plugin answers on `#/<id>`.
     home(host, context) {
       host.innerHTML = '<h1>…</h1>'

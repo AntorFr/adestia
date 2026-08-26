@@ -74,7 +74,14 @@ function core(px, speed) {
   return c
 }
 
-/** The bridge — this body's landing. */
+/**
+ * The bridge — this body's landing.
+ *
+ * Its own row for the shell's own screen: a livery that replaces the landing
+ * replaces the Settings tile that stands on it, and the gear alone is not a
+ * landing. Not filed under "Modules" — Réglages is not a plugin, and a HUD
+ * that says otherwise is a HUD that lies about what is armed.
+ */
 function home(host, context) {
   const h = new Date().getHours()
   const salut = h < 5 || h >= 22 ? 'Encore debout' : h < 18 ? 'Encore toi' : 'Toujours là'
@@ -96,6 +103,14 @@ function home(host, context) {
     </section>
     <div class="hudrow">Modules</div>
     <div class="hudmosaic" data-tiles><div class="hudempty">Interrogation du noyau…</div></div>
+    <div class="hudrow">Système</div>
+    <div class="hudmosaic">
+      <a class="hudtile" href="#/settings">
+        <span class="hudico">[ SYS ]</span>
+        <span class="hudnm">Réglages</span>
+        <span class="hudst">Jeton, serveurs MCP, aspect, instructions</span>
+      </a>
+    </div>
   </div>`
 
   host.querySelector('.corewrap').appendChild(core(150, 1))
