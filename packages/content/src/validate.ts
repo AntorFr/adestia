@@ -9,7 +9,7 @@
  */
 
 import type { Root, RootContent } from 'mdast'
-import type { ContainerDirective, LeafDirective, TextDirective } from 'mdast-util-directive'
+import type { ContainerDirective, LeafDirective } from 'mdast-util-directive'
 import { visit } from 'unist-util-visit'
 
 import { blockSpec, isKnownBlock } from './vocabulary.js'
@@ -28,7 +28,7 @@ export interface Diagnostic {
   readonly block?: string | undefined
 }
 
-type AnyDirective = ContainerDirective | LeafDirective | TextDirective
+type AnyDirective = ContainerDirective | LeafDirective
 
 function hasContent(node: AnyDirective): boolean {
   return 'children' in node && Array.isArray(node.children) && node.children.length > 0
@@ -38,11 +38,9 @@ export function validateDocument(tree: Root): readonly Diagnostic[] {
   const diagnostics: Diagnostic[] = []
 
   visit(tree, (node) => {
-    if (
-      node.type !== 'containerDirective' &&
-      node.type !== 'leafDirective' &&
-      node.type !== 'textDirective'
-    ) {
+    // Only the two BLOCK forms: the grammar no longer parses an inline
+    // `:name`, so a colon in prose can never reach this check.
+    if (node.type !== 'containerDirective' && node.type !== 'leafDirective') {
       return
     }
     const directive = node as AnyDirective

@@ -321,12 +321,6 @@ function render(node: Node, ctx: Ctx): ReactNode {
       }
       return <Contributed node={node} ctx={ctx} />
     }
-    case 'textDirective':
-      return (
-        <span className="golem-unknown-block">
-          :{node.name} — {`this block does not render yet`}
-        </span>
-      )
     default:
       // Never silently dropped: an unrendered node is a visible gap somebody
       // can report, where a swallowed one is content that vanished.

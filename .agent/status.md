@@ -102,8 +102,17 @@ serveur (file/fusion/adoption), onglets de conversations. NB versions :
 0.11.0 → 0.12.2 avaient été livrées par l'autre session (posture ask, puis
 retour open) — d'où le saut depuis 0.10.2.
 
+Chantier du 27/08 (4e volet) — **une heure dans une page la passait en lecture
+seule.** `micromark-extension-directive` lit aussi `:nom` EN LIGNE : « 19:30:59 »
+se parsait en texte « 19:30 » suivi d'une directive nommée `59`, le validateur
+la signalait comme bloc inconnu, et la page se verrouillait pour avoir mentionné
+une heure. Le vocabulaire de Golem n'a aucune forme en ligne — tout y est un
+conteneur `:::` — donc la construction est retirée de la GRAMMAIRE plutôt
+qu'excusée dans le validateur : renderer, éditeur et validateur continuent de
+voir le même arbre. `:::` et `::` sont intacts. 3 tests d'épingle.
+
 **État :** Migration Alfred. Faits et vérifiés en navigateur : `todo`,
-`planif`, `collections`, `scan`, skin `alfred`. 1108 tests + 146 de plugins.
+`planif`, `collections`, `scan`, skin `alfred`. 1114 tests + 146 de plugins.
 Facette `blocks` CÂBLÉE : elle était chargée et narrowée depuis le début, et
 personne ne lisait le résultat. Un bloc se déclare en deux moitiés — le
 manifeste (`vocabulary`) dit ce qu'il EST, pour que le SERVEUR le valide sans

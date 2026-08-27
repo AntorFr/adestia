@@ -68,6 +68,33 @@ describe('attributes', () => {
   })
 })
 
+describe('a colon in prose is punctuation', () => {
+  // Reported from a real page: a schedule line reading "19:30:59" parsed as
+  // the text "19:30" plus an inline directive named "59", and the page opened
+  // read-only. The vocabulary has no inline form, so the grammar no longer
+  // offers one.
+  const timestamp = 'Départ à 19:30:59, retour à 7:15.\n'
+
+  it('leaves a time as a single text node', () => {
+    const paragraph = parse(timestamp).children[0]
+    expect(paragraph?.type).toBe('paragraph')
+    const kinds = (paragraph as { children: { type: string }[] }).children.map((c) => c.type)
+    expect(kinds).toEqual(['text'])
+  })
+
+  it('keeps the page editable', () => {
+    expect(check(timestamp)).toEqual([])
+    expect(isEditable(check(timestamp))).toBe(true)
+  })
+
+  it('still reads the block forms it always did', () => {
+    expect(check(':::callout{type="note"}\nAt 9:45.\n:::\n')).toEqual([])
+    expect(messages('::mystery\n')).toEqual([
+      'Unknown block ":::mystery". The vocabulary is closed; extending it is a coded change.',
+    ])
+  })
+})
+
 describe('editability gate', () => {
   it('keeps a clean document editable', () => {
     expect(isEditable(check('# Title\n\nJust prose.\n'))).toBe(true)

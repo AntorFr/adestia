@@ -56,6 +56,28 @@ const STRINGIFY_OPTIONS = {
 } as const
 
 /**
+ * Directive syntax with its INLINE construct removed.
+ *
+ * `micromark-extension-directive` also reads `:name` in the middle of a
+ * paragraph, and Golem's vocabulary has no inline anything: every block in it
+ * is a `:::` container. Left enabled, that construct turns ordinary prose into
+ * an unknown block — `19:30:59` parses as the text `19:30` followed by a
+ * directive named `59`, the validator errors on it, and the page opens
+ * read-only because it mentioned a time. Ratios, timestamps and `key:value`
+ * notes are what pages actually contain; an inline directive is a syntax that
+ * never meant anything here. So the colon goes back to being punctuation.
+ *
+ * Removed from the GRAMMAR rather than excused in the validator, so the
+ * renderer and the editor see the same tree the validator approved — the same
+ * reason this whole file exists.
+ */
+function blockDirectives(): ReturnType<typeof directive> {
+  const constructs = directive()
+  delete constructs.text
+  return constructs
+}
+
+/**
  * Directive support is wired by hand rather than through remark-directive so
  * `preferShortcut: false` can reach the serializer — the convenience wrapper
  * gives no way to pass it, and without it `id="x"` silently becomes `#x`.
@@ -70,7 +92,7 @@ export function directivePlugin(this: Processor): void {
   const fromMarkdownExtensions = (data.fromMarkdownExtensions ??= [])
   const toMarkdownExtensions = (data.toMarkdownExtensions ??= [])
 
-  micromarkExtensions.push(directive())
+  micromarkExtensions.push(blockDirectives())
   fromMarkdownExtensions.push(directiveFromMarkdown())
   toMarkdownExtensions.push(directiveToMarkdown({ preferShortcut: STRINGIFY_OPTIONS.preferShortcut }))
 }
