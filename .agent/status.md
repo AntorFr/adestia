@@ -94,6 +94,14 @@ mobile : pas de bandeau, liste à pastilles, dernier ouvert restauré. Piège de
 banc : `docker build .` depuis le checkout primaire reconstruit main, pas la
 worktree — builder par CHEMIN explicite.
 
+**Livré en 0.13.0 et déployé** sur homenode (image multi-arch amd64+arm64,
+manifeste bumpé dans k8s-home-lab, pod `ghcr.io/antorfr/golem:0.13.0` ready,
+« 8 of 8 plugin(s) active », skin alfred, 12 MCP, OIDC). Emporte les trois
+chantiers du 27/08 : indicateur immédiat + hold, tours possédés par le
+serveur (file/fusion/adoption), onglets de conversations. NB versions :
+0.11.0 → 0.12.2 avaient été livrées par l'autre session (posture ask, puis
+retour open) — d'où le saut depuis 0.10.2.
+
 **État :** Migration Alfred. Faits et vérifiés en navigateur : `todo`,
 `planif`, `collections`, `scan`, skin `alfred`. 1108 tests + 146 de plugins.
 Facette `blocks` CÂBLÉE : elle était chargée et narrowée depuis le début, et
