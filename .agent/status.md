@@ -75,6 +75,25 @@ désormais un méta sans id (une réponse `{}` devenait un onglet-clé
 `undefined`). Piège de test appris : `findByText` DANS un `act()` fige son
 polling. 5 tests d'onglets + 27 tabs.ts + 4 serveur.
 
+**Constaté au navigateur** (image Docker locale + Chrome 151 headless piloté
+en CDP, `shoot.mjs` de session — banc jetable : conteneur + conf vide, 3
+conversations semées par l'API, 13 captures bureau/sombre/mobile). Deux
+défauts que SEUL le navigateur montrait, corrigés dans la foulée :
+(1) `.golem-chat` était une grille `auto 1fr auto auto` — la barre d'onglets
+insérée devenait la rangée `1fr` et se dessinait en trois colonnes pleine
+hauteur qui avalaient le fil. Passé en flex-colonne : les bandeaux optionnels
+(onglets, liste, question) prennent leur hauteur naturelle, seul le fil
+grandit. (2) Les deux icônes d'onglet (archiver/fermer) réservaient leurs
+22 px même invisibles → « Plan du garage » tronquait en « Plan d… ». Largeur
+0 au repos, révélées au survol ET au `:focus-within` (clavier). Vu et
+validé : barre à 3 onglets titres lisibles, actif fusionné, outils au survol,
+drag & drop réordonne (DragEvents natifs), refresh restaure ordre + actif
+(`golem.tabs` constaté), croix ferme sans toucher la liste, pastilles 4 états
+(waiting/working forcées pour la CSS — pas de CLI dans le banc), sombre OK,
+mobile : pas de bandeau, liste à pastilles, dernier ouvert restauré. Piège de
+banc : `docker build .` depuis le checkout primaire reconstruit main, pas la
+worktree — builder par CHEMIN explicite.
+
 **État :** Migration Alfred. Faits et vérifiés en navigateur : `todo`,
 `planif`, `collections`, `scan`, skin `alfred`. 1108 tests + 146 de plugins.
 Facette `blocks` CÂBLÉE : elle était chargée et narrowée depuis le début, et

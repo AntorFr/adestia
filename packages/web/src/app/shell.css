@@ -34,9 +34,17 @@
 
 /* Chat -------------------------------------------------------------------- */
 
+/*
+ * A column, not a grid: the rows between header and composer are OPTIONAL
+ * (tab strip, thread list, permission prompt), and a grid that counts its
+ * rows hands `1fr` to whichever bar happens to land second — the tab strip
+ * rendered as three full-height columns and swallowed the thread, a defect
+ * only the browser could show. In a flex column every bar takes its natural
+ * height and only the thread grows.
+ */
 .golem-chat {
-  display: grid;
-  grid-template-rows: auto 1fr auto auto;
+  display: flex;
+  flex-direction: column;
   min-height: 0;
   background: var(--surface-raised);
   border-right: 1px solid var(--border);
@@ -106,6 +114,11 @@
 }
 
 .golem-chat__thread {
+  /* The one row that grows — see .golem-chat. min-height lets it SHRINK
+     below its content so overflow scrolls instead of pushing the composer
+     off screen. */
+  flex: 1 1 0;
+  min-height: 0;
   overflow-y: auto;
   padding: var(--space-4);
   display: flex;
@@ -1776,9 +1789,16 @@
   flex: none;
   display: grid;
   place-items: center;
-  width: 22px;
+  /* Collapsed at rest, not merely transparent: two invisible controls still
+     reserving 22px each were what truncated "Plan du garage" to "Plan d…" —
+     the browser showed it, jsdom never could. The title gets the width back
+     until a hover (or keyboard focus, which cannot hover) asks for the
+     controls. */
+  width: 0;
   height: 22px;
-  margin-right: 2px;
+  margin-right: 0;
+  padding: 0;
+  overflow: hidden;
   border: 0;
   border-radius: var(--radius-sm);
   background: none;
@@ -1792,7 +1812,11 @@
 .golem-tab__tool svg { width: 13px; height: 13px; }
 
 .golem-tab:hover .golem-tab__tool,
-.golem-tab__tool:focus-visible { opacity: 1; }
+.golem-tab:focus-within .golem-tab__tool {
+  width: 22px;
+  margin-right: 2px;
+  opacity: 1;
+}
 
 .golem-tab__tool:hover {
   color: var(--text);
