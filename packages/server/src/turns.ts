@@ -81,6 +81,7 @@ export class TurnJob {
   readonly #log: TurnEvent[] = []
   readonly #subscribers = new Set<Subscriber>()
   #ended = false
+  #pendingAsk: string | undefined
   #settle: () => void = () => {}
   /** Resolves when the job is over — what a response handler awaits. */
   readonly done = new Promise<void>((resolve) => {
@@ -89,6 +90,18 @@ export class TurnJob {
 
   get ended(): boolean {
     return this.#ended
+  }
+
+  /**
+   * Whether the engine sits blocked on a person right now.
+   *
+   * Tracked by the LATEST event, not by the ask desk: an answer arrives as a
+   * `scrubAsk`, but a timeout arrives as nothing at all — the driver just
+   * auto-denies and resumes — so any event after the question is the proof
+   * the turn moved on.
+   */
+  get waiting(): boolean {
+    return this.#pendingAsk !== undefined && !this.#ended
   }
 
   /** The replayable past of this turn. Read it BEFORE subscribing — same tick
@@ -107,6 +120,7 @@ export class TurnJob {
   }
 
   emit(event: TurnEvent): void {
+    this.#pendingAsk = event.type === 'permission-request' ? event.id : undefined
     const last = this.#log.at(-1)
     if (event.type === 'text-delta' && last?.type === 'text-delta') {
       this.#log[this.#log.length - 1] = { type: 'text-delta', text: last.text + event.text }
@@ -129,6 +143,7 @@ export class TurnJob {
     )
     if (index === -1) return false
     this.#log.splice(index, 1)
+    if (this.#pendingAsk === id) this.#pendingAsk = undefined
     return true
   }
 
@@ -168,6 +183,18 @@ export class TurnDesk {
   /** The running turn for a key, when there is one to re-attach to. */
   activeFor(key: string): TurnJob | undefined {
     return this.#chains.get(key)?.job
+  }
+
+  /**
+   * Every running chain, for status surfaces: key → running or waiting on a
+   * person. Loose jobs are not listed — a job without a key has no address a
+   * status dot could point at.
+   */
+  active(): readonly { readonly key: string; readonly state: 'running' | 'waiting' }[] {
+    return [...this.#chains].map(([key, chain]) => ({
+      key,
+      state: chain.job.waiting ? ('waiting' as const) : ('running' as const),
+    }))
   }
 
   /**

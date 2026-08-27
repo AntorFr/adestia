@@ -274,4 +274,120 @@ describe('the turn desk', () => {
     await vi.waitFor(() => expect(prompts).toEqual(['a', 'b']))
     await vi.waitFor(() => expect(desk.activeFor('u/c:1')).toBeUndefined())
   })
+
+  it('reports waiting while a question is pending, and not once it is answered', async () => {
+    const asked = gate()
+    const rest = gate()
+    const driver = {
+      async *runTurn(_request: TurnRequest): AsyncIterable<TurnEvent> {
+        yield {
+          type: 'permission-request',
+          id: 'q1',
+          tool: 'Bash',
+          title: 'Bash — rm -rf build',
+          remembering: true,
+        }
+        asked.open()
+        await rest.passed
+        yield RESULT
+      },
+    }
+    const desk = new TurnDesk(driver, meter())
+    const admission = desk.admit('u/c:1')
+    if (admission.mode !== 'run') throw new Error('expected a run')
+    const job = admission.start({ request: { prompt: 'x', cwd: '.' }, finish: async () => {} })
+
+    expect(job.waiting).toBe(false)
+    await asked.passed
+    expect(job.waiting).toBe(true)
+    // The answer travels through the ask desk, so the scrub is the only
+    // signal the desk gets that a person resolved the question.
+    desk.scrubAsk('q1')
+    expect(job.waiting).toBe(false)
+    rest.open()
+    await job.done
+    expect(job.waiting).toBe(false)
+  })
+
+  it('drops waiting when the turn moves on without a scrub — the timeout path', async () => {
+    // An ask that times out auto-denies inside the engine: no answer route is
+    // hit, no scrub happens, the driver simply resumes. The next event is the
+    // only proof the person is no longer being waited on.
+    const asked = gate()
+    const resumed = gate()
+    const rest = gate()
+    const driver = {
+      async *runTurn(_request: TurnRequest): AsyncIterable<TurnEvent> {
+        yield {
+          type: 'permission-request',
+          id: 'q1',
+          tool: 'Bash',
+          title: 'Bash — rm -rf build',
+          remembering: true,
+        }
+        asked.open()
+        await rest.passed
+        yield { type: 'text-delta', text: 'refusé, je continue' }
+        resumed.open()
+        yield RESULT
+      },
+    }
+    const desk = new TurnDesk(driver, meter())
+    const admission = desk.admit('u/c:1')
+    if (admission.mode !== 'run') throw new Error('expected a run')
+    const job = admission.start({ request: { prompt: 'x', cwd: '.' }, finish: async () => {} })
+
+    await asked.passed
+    expect(job.waiting).toBe(true)
+    rest.open()
+    await resumed.passed
+    expect(job.waiting).toBe(false)
+    await job.done
+  })
+
+  it('lists active chains with their state, and never a keyless job', async () => {
+    const keyedAsked = gate()
+    const keyedRest = gate()
+    const looseHold = gate()
+    const driver = {
+      async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
+        if (request.prompt === 'ask') {
+          yield {
+            type: 'permission-request',
+            id: 'q1',
+            tool: 'Bash',
+            title: 'Bash — rm -rf build',
+            remembering: true,
+          }
+          keyedAsked.open()
+          await keyedRest.passed
+        } else {
+          await looseHold.passed
+        }
+        yield RESULT
+      },
+    }
+    const desk = new TurnDesk(driver, meter())
+    expect(desk.active()).toEqual([])
+
+    const keyed = desk.admit('u/c:1')
+    if (keyed.mode !== 'run') throw new Error('expected a run')
+    const keyedJob = keyed.start({ request: { prompt: 'ask', cwd: '.' }, finish: async () => {} })
+    // A loose job holds a slot but has no address — no status dot to feed.
+    const loose = desk.admit()
+    if (loose.mode !== 'run') throw new Error('expected a run')
+    const looseJob = loose.start({ request: { prompt: 'free', cwd: '.' }, finish: async () => {} })
+
+    expect(desk.active()).toEqual([{ key: 'u/c:1', state: 'running' }])
+    await keyedAsked.passed
+    expect(desk.active()).toEqual([{ key: 'u/c:1', state: 'waiting' }])
+    desk.scrubAsk('q1')
+    expect(desk.active()).toEqual([{ key: 'u/c:1', state: 'running' }])
+
+    keyedRest.open()
+    looseHold.open()
+    await keyedJob.done
+    await looseJob.done
+    expect(desk.active()).toEqual([])
+  })
 })

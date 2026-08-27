@@ -542,6 +542,43 @@ describe('conversations', () => {
     await app.close()
   })
 
+  it('marks a conversation running in the list while its turn runs, and only then', async () => {
+    // The tab's status dot: `turn` is computed against the desk per request,
+    // so it appears with the turn and vanishes with it — nothing is stored.
+    let release: () => void = () => {}
+    const hold = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    let started = false
+    const driver = new ScriptedDriver([])
+    driver.runTurn = async function* (request) {
+      driver.requests.push(request)
+      started = true
+      await hold
+      yield RESULT
+    }
+    const app = await withStore({ driver })
+    const { id } = (await app.inject({ method: 'POST', url: '/api/conversations' })).json()
+
+    const idle = (await app.inject({ url: '/api/conversations' })).json()
+    expect(idle.conversations[0]).not.toHaveProperty('turn')
+
+    const first = app.inject({ method: 'POST', url: '/api/turn', payload: { prompt: 'a', conversationId: id } })
+    await vi.waitFor(() => expect(started).toBe(true))
+
+    const running = (await app.inject({ url: '/api/conversations' })).json()
+    expect(running.conversations[0]).toMatchObject({ id, turn: 'running' })
+
+    release()
+    await first
+    // Absent again, not 'idle': the field's absence IS the idle state.
+    await vi.waitFor(async () => {
+      const after = (await app.inject({ url: '/api/conversations' })).json()
+      expect(after.conversations[0]).not.toHaveProperty('turn')
+    })
+    await app.close()
+  })
+
   it('runs a turn without a conversation just as well', async () => {
     // Nothing forces a thread: an ephemeral question should not have to
     // create one to be answered.

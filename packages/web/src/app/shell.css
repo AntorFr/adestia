@@ -1708,6 +1708,130 @@
   background: var(--surface-sunken);
 }
 
+/* Tabs --------------------------------------------------------------------- */
+
+/*
+ * The tab strip, desktop only: parallel conversations side by side, like a
+ * browser's. On a phone the thread list carries the same dots and IS the
+ * navigation — a strip of truncated titles on 360px would name nothing.
+ */
+.golem-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: var(--space-1) var(--space-2) 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-raised);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.golem-tab {
+  flex: 0 1 180px;
+  min-width: 90px;
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-bottom: 0;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+}
+
+/* The active tab fuses with the surface below it, the browser idiom that
+   says "this one is open" without a label. */
+.golem-tab--active {
+  background: var(--surface);
+  color: var(--text);
+  border-bottom: 1px solid var(--surface);
+  margin-bottom: -1px;
+}
+
+.golem-tab__pick {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: none;
+  border: 0;
+  padding: var(--space-2);
+  color: inherit;
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.golem-tab__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The two exits, told apart by their glyphs: the box archives the
+   CONVERSATION, the cross only closes the TAB. Revealed on hover like the
+   list's archive control — a tab is read far more often than it is closed —
+   and always reachable by keyboard, which cannot hover. */
+.golem-tab__tool {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-right: 2px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-faint);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s, color 0.12s, background 0.12s;
+}
+
+.golem-tab__tool svg { width: 13px; height: 13px; }
+
+.golem-tab:hover .golem-tab__tool,
+.golem-tab__tool:focus-visible { opacity: 1; }
+
+.golem-tab__tool:hover {
+  color: var(--text);
+  background: var(--surface-sunken);
+}
+
+/*
+ * The status dot — one vocabulary for the tab strip and the thread list.
+ * Working pulses (something is happening), waiting pulses in the warning
+ * tint (someone is needed), unread is steady accent (done, and not yet
+ * seen), idle is a quiet mark that keeps the layout honest.
+ */
+.golem-dot {
+  flex: none;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border-strong);
+}
+
+.golem-dot--working {
+  background: var(--accent);
+  animation: golem-pulse 1.1s ease-in-out infinite;
+}
+
+.golem-dot--waiting {
+  background: var(--warning);
+  animation: golem-pulse 1.1s ease-in-out infinite;
+}
+
+.golem-dot--unread { background: var(--accent); }
+
+/* Inside the list's text button, which is not a flex row. */
+.golem-threads__item .golem-dot {
+  margin-right: var(--space-2);
+  vertical-align: 1px;
+}
+
 .golem-threads__item--current {
   background: var(--accent-quiet);
   color: var(--accent);

@@ -343,8 +343,19 @@ The v1 chat must be **at least** agent-gw's PWA, which sets the bar:
   indistinguishable from one never left. A queue is NOT re-dispatched across
   a server restart, deliberately: the texts are already in the thread, and a
   reboot firing week-old prompts unprompted would be worse than the gap.
-- **Context pill:** live weight of the next message, thresholds relative to the
-  model window, clickable (compaction/reset actions).
+- **Tabs (beyond the bar):** parallel conversations as a browser-like tab
+  strip on desktop — each tab its own session (thread, live turn, held
+  bubbles, context weight), so a running turn's dots and tool trace belong to
+  ONE tab instead of bleeding into whichever thread is on screen. A status
+  dot carries one vocabulary everywhere (`dotFor`): waiting on a person >
+  working > finished-unread > idle. Closing a tab never touches the
+  conversation (the list keeps it; archiving is the other, separate exit);
+  the strip is persisted like a browser's — order, membership, active tab —
+  and restored on refresh, tabs re-attaching to their running turns via the
+  desk. Drag to reorder. On a phone there is no strip: the thread list IS the
+  navigation and wears the same dots (client sessions where this browser
+  watches, the list's server-computed `turn` field and stored read-marks for
+  everything else), and a reload reopens only the last active conversation.
 - **Composer:** attachments (picker+paste+drag-drop, thumbnails pre- and post-send),
   ephemeral mode, Enter/Shift+Enter, mobile fold under "+". The model selector
   is the one control that did NOT stay here: which engine answers belongs to

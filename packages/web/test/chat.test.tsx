@@ -732,6 +732,214 @@ describe('chat', () => {
   })
 })
 
+describe('tabs', () => {
+  /** Serves two stored conversations, an idle desk, and a scripted turn. */
+  const tabsFetch = (options: {
+    metas?: readonly unknown[]
+    onTurn?: (body: { prompt: string }) => Response | undefined
+  } = {}) =>
+    vi.fn((url: string, init?: RequestInit) => {
+      const path = String(url)
+      if (path.startsWith('/api/turn/attach')) {
+        return Promise.resolve({ ok: true, status: 204, body: null } as unknown as Response)
+      }
+      if (path === '/api/turn') {
+        const custom = options.onTurn?.(JSON.parse(String(init?.body)) as { prompt: string })
+        if (custom) return Promise.resolve(custom)
+        const body = new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.enqueue(
+              new TextEncoder().encode(frame({ type: 'result', sessionId: 's1', stopped: false })),
+            )
+            controller.close()
+          },
+        })
+        return Promise.resolve({ ok: true, status: 200, body } as unknown as Response)
+      }
+      const conversation = /\/api\/conversations\/(c\d)$/.exec(path)?.[1]
+      if (conversation) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () =>
+            Promise.resolve({
+              id: conversation,
+              title: conversation === 'c1' ? 'Fil un' : 'Fil deux',
+              updatedAt: '',
+              messages: [
+                { id: 'm1', role: 'user', text: `question ${conversation}`, at: '' },
+                { id: 'm2', role: 'agent', text: `réponse ${conversation}`, at: '' },
+              ],
+            }),
+        } as unknown as Response)
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () =>
+          Promise.resolve(
+            init?.method === 'POST'
+              ? { id: 'c9', title: 'neuf', updatedAt: '' }
+              : {
+                  conversations:
+                    options.metas ?? [
+                      { id: 'c1', title: 'Fil un', updatedAt: '' },
+                      { id: 'c2', title: 'Fil deux', updatedAt: '' },
+                    ],
+                },
+          ),
+      } as unknown as Response)
+    }) as unknown as typeof fetch
+
+  it('opens conversations as tabs and keeps their threads apart', async () => {
+    render(<Chat fetchImpl={tabsFetch()} />)
+
+    fireEvent.click(screen.getByLabelText('Conversations'))
+    // findBy OUTSIDE act: its polling never observes renders from inside one.
+    const filUn = await screen.findByText('Fil un')
+    await act(async () => {
+      fireEvent.click(filUn)
+    })
+    expect(await screen.findByText('réponse c1')).toBeTruthy()
+
+    fireEvent.click(screen.getByLabelText('Conversations'))
+    const filDeux = await screen.findByText('Fil deux')
+    await act(async () => {
+      fireEvent.click(filDeux)
+    })
+    expect(await screen.findByText('réponse c2')).toBeTruthy()
+    // The other tab's thread is not painted over this one.
+    expect(screen.queryByText('réponse c1')).toBeNull()
+    expect(screen.getAllByRole('tab')).toHaveLength(2)
+
+    // Back by the strip: each tab holds its own transcript.
+    await act(async () => {
+      fireEvent.click(screen.getByTitle('Fil un'))
+    })
+    expect(screen.getByText('réponse c1')).toBeTruthy()
+    expect(screen.queryByText('réponse c2')).toBeNull()
+  })
+
+  it('marks a background tab working, then unread, then read on return', async () => {
+    let release: (() => void) | undefined
+    const fetchImpl = tabsFetch({
+      onTurn: () =>
+        ({
+          ok: true,
+          status: 200,
+          body: new ReadableStream<Uint8Array>({
+            start(controller) {
+              release = () => {
+                controller.enqueue(
+                  new TextEncoder().encode(
+                    frame({ type: 'text-delta', text: 'fini' }),
+                  ),
+                )
+                controller.enqueue(
+                  new TextEncoder().encode(frame({ type: 'result', sessionId: 's1', stopped: false })),
+                )
+                controller.close()
+              }
+            },
+          }),
+        }) as unknown as Response,
+    })
+    const { container } = render(<Chat fetchImpl={fetchImpl} />)
+
+    fireEvent.click(screen.getByLabelText('Conversations'))
+    // findBy OUTSIDE act: its polling never observes renders from inside one.
+    const filUn = await screen.findByText('Fil un')
+    await act(async () => {
+      fireEvent.click(filUn)
+    })
+    const input = screen.getByRole('textbox')
+    fireEvent.change(input, { target: { value: 'travaille' } })
+    await act(async () => {
+      fireEvent.keyDown(input, { key: 'Enter' })
+    })
+
+    // Elsewhere while the turn runs: the strip says the agent is working.
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText('New conversation'))
+    })
+    await waitFor(() => expect(container.querySelector('.golem-dot--working')).toBeTruthy())
+
+    // It settles in the background: done, and not yet seen.
+    await act(async () => {
+      release?.()
+    })
+    await waitFor(() => expect(container.querySelector('.golem-dot--unread')).toBeTruthy())
+
+    // Coming back reads it: the dot goes quiet and the answer is there.
+    await act(async () => {
+      fireEvent.click(screen.getByTitle('Fil un'))
+    })
+    expect(container.querySelector('.golem-dot--unread')).toBeNull()
+    expect(screen.getByText('fini')).toBeTruthy()
+  })
+
+  it('closes a tab without losing the conversation from the list', async () => {
+    render(<Chat fetchImpl={tabsFetch()} />)
+
+    fireEvent.click(screen.getByLabelText('Conversations'))
+    // findBy OUTSIDE act: its polling never observes renders from inside one.
+    const filUn = await screen.findByText('Fil un')
+    await act(async () => {
+      fireEvent.click(filUn)
+    })
+    expect(screen.getAllByRole('tab')).toHaveLength(1)
+
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText('Close tab — Fil un'))
+    })
+    expect(screen.queryAllByRole('tab')).toHaveLength(0)
+
+    // Closed is not archived: the thread still stands in the list.
+    fireEvent.click(screen.getByLabelText('Conversations'))
+    expect(await screen.findByText('Fil un')).toBeTruthy()
+  })
+
+  it('restores the open tabs of the last visit', async () => {
+    // The browser-tab contract: a refresh reopens what was open, in order.
+    const store = new Map<string, string>([
+      ['golem.tabs', JSON.stringify({ open: ['c2', 'c1'], active: 'c1' })],
+    ])
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => void store.set(key, value),
+      removeItem: (key: string) => void store.delete(key),
+    })
+    onTestFinished(() => {
+      vi.unstubAllGlobals()
+    })
+
+    render(<Chat fetchImpl={tabsFetch()} />)
+    await waitFor(() => expect(screen.getAllByRole('tab')).toHaveLength(2))
+    // In the persisted order, and the persisted active one shows its thread.
+    const titles = screen.getAllByRole('tab').map((tab) => tab.textContent)
+    expect(titles[0]).toContain('Fil deux')
+    expect(titles[1]).toContain('Fil un')
+    expect(await screen.findByText('réponse c1')).toBeTruthy()
+  })
+
+  it('dots the thread list from the desk state the server reports', async () => {
+    const { container } = render(
+      <Chat
+        fetchImpl={tabsFetch({
+          metas: [
+            { id: 'c1', title: 'Occupé', updatedAt: '', turn: 'running' },
+            { id: 'c2', title: 'Bloqué', updatedAt: '', turn: 'waiting' },
+          ],
+        })}
+      />,
+    )
+    fireEvent.click(screen.getByLabelText('Conversations'))
+    await screen.findByText('Occupé')
+    expect(container.querySelector('.golem-threads .golem-dot--working')).toBeTruthy()
+    expect(container.querySelector('.golem-threads .golem-dot--waiting')).toBeTruthy()
+  })
+})
+
 describe('the compose channel', () => {
   // How a plugin puts text in the field WITHOUT sending it — the distinction
   // that makes a barcode reader a keyboard rather than a scanner that

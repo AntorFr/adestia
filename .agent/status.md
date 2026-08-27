@@ -49,6 +49,32 @@ la réponse à a précèdent cette réponse dans le fil. 8 tests desk + 2 routes
 2 front (retenue serveur, adoption à l'ouverture). Chemins horloge/MCP
 inchangés (même limiteur).
 
+Chantier du 27/08 (3e volet) — **onglets de conversations** (demande de
+Monsieur ; 2 sous-agents en parallèle sur le serveur et le module pur, la
+refonte de Chat.tsx à la main). Le chat tenait UNE conversation en singleton
+— au passage, ça corrige le bug rapporté en cours de route : les « … » et la
+trace d'outils d'un tour apparaissaient dans TOUTES les conversations, la
+pompe écrivait dans un état que tous les fils dessinaient. Désormais chaque
+onglet porte sa SESSION (`TabSession` : fil, live, retenus, sessionId, poids
+de contexte, unread) dans une ref + redraw — les pompes survivent aux
+closures de rendu. Bandeau d'onglets sur DESKTOP (mobile : la liste, mêmes
+pastilles) ; pastille à 4 états, UNE précédence (`dotFor` dans `tabs.ts`,
+pur, 27 tests) : waiting (ambre, pulse) > working (accent, pulse) > unread
+(accent) > idle. Fermer un onglet ≠ archiver : deux icônes, la croix ne
+touche pas la conversation (toujours en liste), la boîte archive ET ferme.
+Persistance façon navigateur (`golem.tabs` : ordre + membres + actif) ; un
+refresh RESTAURE les onglets (desktop) ou le dernier actif (mobile), chacun
+se ré-attachant à son tour en cours via le desk. Drag & drop HTML5 pour
+réordonner (souris — pas le rail Pointer Events du mode Ranger, assumé :
+surface desktop). Onglet brouillon `draft` renommé EN PLACE vers l'id réel à
+la création du fil. Serveur : `TurnJob.waiting` (suivi par id de question),
+`TurnDesk.active()`, et `/api/conversations` porte `turn: running|waiting`
+calculé par requête — les pastilles de la liste lisent ça + les marques de
+lecture locales (`golem.read`, borné à 200). `createConversation` refuse
+désormais un méta sans id (une réponse `{}` devenait un onglet-clé
+`undefined`). Piège de test appris : `findByText` DANS un `act()` fige son
+polling. 5 tests d'onglets + 27 tabs.ts + 4 serveur.
+
 **État :** Migration Alfred. Faits et vérifiés en navigateur : `todo`,
 `planif`, `collections`, `scan`, skin `alfred`. 1108 tests + 146 de plugins.
 Facette `blocks` CÂBLÉE : elle était chargée et narrowée depuis le début, et

@@ -11,6 +11,15 @@ export interface ConversationMeta {
   readonly title: string
   readonly updatedAt: string
   readonly sessionId?: string
+  /**
+   * What the desk is doing for this thread right now, when anything.
+   *
+   * Computed by the server per request, never stored: 'running' feeds the
+   * working dot, 'waiting' the one that says the engine is blocked on a
+   * person. Absent means at rest — the honest default for a listing that
+   * mostly shows finished conversations.
+   */
+  readonly turn?: 'running' | 'waiting'
 }
 
 export interface StoredMessage {
@@ -61,11 +70,14 @@ export async function createConversation(
   fetchImpl: typeof fetch = fetch,
   title?: string,
 ): Promise<ConversationMeta | undefined> {
-  return json<ConversationMeta>(fetchImpl, '/api/conversations', {
+  const created = await json<ConversationMeta>(fetchImpl, '/api/conversations', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(title ? { title } : {}),
   })
+  // A body with no id is no conversation, whatever answered: an id-less meta
+  // would become a tab and a list row keyed on undefined.
+  return created?.id ? created : undefined
 }
 
 export async function renameConversation(

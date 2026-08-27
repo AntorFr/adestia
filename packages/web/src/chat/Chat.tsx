@@ -10,7 +10,7 @@
  * stored transcript and follow a live stream with no second code path.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 
 import {
   archiveConversation,
@@ -29,6 +29,18 @@ import {
   type ScreenView,
   type TurnState,
 } from './stream.js'
+import {
+  activateTab,
+  closeTab,
+  dotFor,
+  isUnread,
+  loadTabs,
+  markRead,
+  moveTab,
+  openTab,
+  saveTabs,
+  type TabsState,
+} from './tabs.js'
 import { SkinSlot } from '../app/SkinSlot.js'
 import type { SkinSlotRender } from '../app/skin.js'
 import { useMobile } from '../app/useMobile.js'
@@ -759,6 +771,50 @@ function toMessage(stored: StoredMessage): Message {
   }
 }
 
+/**
+ * The tab that is not a conversation yet.
+ *
+ * A fresh tab has nothing to address until its first message creates the
+ * thread; this sentinel is its name until then. It never reaches the server —
+ * the moment a conversation exists the tab is renamed to its real id, in
+ * place, so the tab keeps its position and its history of being "the one I
+ * just opened".
+ */
+const DRAFT = 'draft'
+
+/**
+ * Everything ONE open conversation carries while its tab lives.
+ *
+ * The chat used to hold exactly one of these, spread over half a dozen
+ * useStates; tabs make it a value, keyed by conversation id. Sessions live in
+ * a REF with an explicit redraw, because the pump loops that write them
+ * outlive any render's closure — the same reason the old code kept `turning`
+ * and `held` in refs.
+ */
+interface TabSession {
+  readonly messages: readonly Message[]
+  readonly live?: TurnState | undefined
+  readonly held: readonly HeldMessage[]
+  readonly sessionId?: string | undefined
+  readonly contextTokens: number
+  /** An answer landed while the reader was elsewhere. */
+  readonly unread: boolean
+  /** The stored transcript has been read into `messages`. */
+  readonly loaded: boolean
+  /** A pump is consuming this conversation's turn right now. */
+  readonly turning: boolean
+  readonly title?: string | undefined
+}
+
+const EMPTY_SESSION: TabSession = {
+  messages: [],
+  held: [],
+  contextTokens: 0,
+  unread: false,
+  loaded: false,
+  turning: false,
+}
+
 export function Chat({
   contextWindow,
   placeholder,
@@ -773,8 +829,19 @@ export function Chat({
   openPage,
   view,
 }: ChatProps) {
-  const [messages, setMessages] = useState<Message[]>([])
-  const [live, setLive] = useState<TurnState | undefined>()
+  const narrow = useMobile()
+  /**
+   * Which conversations are open as tabs, their order, and the active one —
+   * persisted like a browser's tab strip, so a refresh reopens what was open.
+   */
+  const [tabs, setTabs] = useState<TabsState>(() => loadTabs())
+  /**
+   * Per-conversation sessions (see TabSession). A ref plus an explicit redraw
+   * rather than a state map: the pump loops writing these outlive any
+   * render's closure, and a stale map snapshot would drop their updates.
+   */
+  const sessionsRef = useRef(new Map<string, TabSession>())
+  const [, redraw] = useReducer((count: number) => count + 1, 0)
   /**
    * Questions already answered, by id.
    *
@@ -788,10 +855,8 @@ export function Chat({
    * event will ever say so. So the interface remembers it.
    */
   const [answered, setAnswered] = useState<ReadonlySet<string>>(() => new Set())
-  const [contextTokens, setContextTokens] = useState(0)
   const [threads, setThreads] = useState<readonly ConversationMeta[]>([])
   const [threadsOpen, setThreadsOpen] = useState(false)
-  const [conversationId, setConversationId] = useState<string | undefined>()
   const [models, setModels] = useState<readonly ModelInfo[]>([])
   /**
    * The chosen model, `''` meaning the CLI's own default.
@@ -809,23 +874,14 @@ export function Chat({
       return ''
     }
   })
-  const sessionId = useRef<string | undefined>(undefined)
-  /**
-   * Mirror of `conversationId`, read by the send loop.
-   *
-   * A ref because the loop OUTLIVES the closure it was created in: the first
-   * message of a fresh thread creates the conversation, and a held message
-   * flushed by that same loop must land in it — read from state, the loop
-   * would still see the `undefined` it closed over and open a second thread.
-   */
-  const conversationRef = useRef<string | undefined>(undefined)
-  /** True from send to settle — unlike `live`, visible to the NEXT send. */
-  const turning = useRef(false)
-  /** Bubbles shown waiting — the real queue is the server's (see HeldMessage). */
-  const heldRef = useRef<readonly HeldMessage[]>([])
-  const [held, setHeld] = useState<readonly HeldMessage[]>([])
+  /** The tab everything composes into; DRAFT when none is open yet. */
+  const activeId = tabs.active ?? DRAFT
+  /** Mirror for the pump loops, which outlive any render's `tabs` closure. */
+  const activeRef = useRef(activeId)
   /** In-flight thread creation, so two rapid sends share ONE conversation. */
   const threadCreation = useRef<Promise<string | undefined> | undefined>(undefined)
+  /** Drag origin while a tab is being reordered. */
+  const dragFrom = useRef<number | undefined>(undefined)
   /** Latest `send`, for the channel published to plugins (see the effect). */
   const sendRef = useRef<(text: string, attachments?: readonly PendingAttachment[]) => Promise<void>>(
     async () => {},
@@ -839,36 +895,139 @@ export function Chat({
     void listConversations(fetchImpl).then(setThreads)
   }, [fetchImpl])
 
-  // Declared as FUNCTIONS, not useCallback: openThread, consume and pump call
-  // one another (adoption is recursive by nature — a turn's end looks for the
-  // next), and hoisting is what lets the cycle be written in reading order.
+  useEffect(() => {
+    // Persisted like a browser's tab strip — order, membership, activation —
+    // so a refresh reopens what was open. The ref keeps the pump loops honest
+    // about which tab the reader is looking at.
+    activeRef.current = tabs.active ?? DRAFT
+    saveTabs(tabs)
+  }, [tabs])
 
-  async function openThread(id: string): Promise<void> {
-    const conversation = await readConversation(id, fetchImpl)
-    if (!conversation) return
-    setConversationId(conversation.id)
-    conversationRef.current = conversation.id
-    // Replayed FAITHFULLY: tool trace, interruptions and all. The stored
-    // transcript is what the UI drew, so replaying it needs no second path.
-    setMessages(conversation.messages.map(toMessage))
-    sessionId.current = conversation.sessionId
-    setContextTokens(conversation.messages.at(-1)?.usage?.contextTokens ?? 0)
-    setThreadsOpen(false)
-    // Held bubbles belong to the thread they were sent in; the server is
-    // processing them regardless, and reopening that thread replays them
-    // from the store.
-    heldRef.current = []
-    setHeld([])
-    // Adoption: if this thread's turn is still running at the desk — a
-    // reload, a phone that slept — re-attach and pick it up mid-flight.
-    if (!turning.current) {
-      const running = await attachTurn(conversation.id, fetchImpl ?? fetch)
-      if (running) {
-        setLive(INITIAL_TURN)
-        void pump(running)
+  // Declared as FUNCTIONS, not useCallback: the session machinery below is a
+  // web of mutual calls (adoption is recursive by nature — a turn's end looks
+  // for the next), and hoisting lets the cycle be written in reading order.
+
+  function session(id: string): TabSession {
+    return sessionsRef.current.get(id) ?? EMPTY_SESSION
+  }
+
+  function patchSession(
+    id: string,
+    patch: Partial<TabSession> | ((current: TabSession) => Partial<TabSession>),
+  ): void {
+    const previous = session(id)
+    const delta = typeof patch === 'function' ? patch(previous) : patch
+    sessionsRef.current.set(id, { ...previous, ...delta })
+    redraw()
+  }
+
+  /** The draft tab becomes the conversation's tab — a rename, not a swap. */
+  function renameSession(from: string, to: string): void {
+    const moving = sessionsRef.current.get(from)
+    if (!moving) return
+    sessionsRef.current.delete(from)
+    sessionsRef.current.set(to, moving)
+    redraw()
+  }
+
+  /** Records that the reader has SEEN this thread, for the unread dots. */
+  function read(id: string): void {
+    if (id === DRAFT) return
+    markRead(id, new Date().toISOString())
+    if (session(id).unread) patchSession(id, { unread: false })
+  }
+
+  /**
+   * Loads a conversation into its session if needed, then re-attaches to its
+   * running turn if the desk has one — a reload, a phone that slept, a tab
+   * restored at mount. A tab pointing at a conversation that no longer
+   * answers closes itself rather than sitting there blank.
+   */
+  async function adopt(id: string): Promise<void> {
+    const current = session(id)
+    // A pump already consumes this conversation: attaching a second stream
+    // would apply every event twice.
+    if (current.turning) return
+    if (!current.loaded) {
+      const conversation = await readConversation(id, fetchImpl)
+      if (!conversation) {
+        setTabs((state) => closeTab(state, id))
+        return
       }
+      // Replayed FAITHFULLY: tool trace, interruptions and all. The stored
+      // transcript is what the UI drew, so replaying it needs no second path.
+      patchSession(id, {
+        messages: conversation.messages.map(toMessage),
+        sessionId: conversation.sessionId,
+        contextTokens: conversation.messages.at(-1)?.usage?.contextTokens ?? 0,
+        loaded: true,
+        title: conversation.title,
+      })
+    }
+    const running = await attachTurn(id, fetchImpl ?? fetch)
+    if (running) {
+      patchSession(id, { live: INITIAL_TURN })
+      void pump(id, running)
     }
   }
+
+  /** From the list: opening a thread opens it AS a tab, active. */
+  function openThread(id: string): void {
+    setTabs((state) => openTab(state, id))
+    setThreadsOpen(false)
+    read(id)
+    void adopt(id)
+  }
+
+  function activate(id: string): void {
+    setTabs((state) => activateTab(state, id))
+    read(id)
+    if (!session(id).loaded && id !== DRAFT) void adopt(id)
+  }
+
+  /**
+   * Closes the TAB — never the conversation. The thread stays in the list,
+   * the session stays warm (a running pump keeps feeding it, and its dot
+   * keeps meaning something if the tab is reopened).
+   */
+  function shut(id: string): void {
+    setTabs((state) => closeTab(state, id))
+  }
+
+  /** Put away, not deleted — and its tab goes with it. */
+  async function archiveThread(id: string): Promise<void> {
+    if (!(await archiveConversation(fetchImpl ?? fetch, id))) return
+    setThreads((current) => current.filter((entry) => entry.id !== id))
+    shut(id)
+  }
+
+  /**
+   * One dot vocabulary for the tab strip and the thread list. The session is
+   * the authority when this browser is watching the conversation; the list's
+   * server-computed `turn` field answers for everything else, and the stored
+   * read-marks answer "seen?" for threads with no session at all.
+   */
+  function dotOf(id: string, meta?: ConversationMeta) {
+    const s = sessionsRef.current.get(id)
+    return dotFor({
+      waiting:
+        (s?.live?.ask !== undefined && !answered.has(s.live.ask.id)) || meta?.turn === 'waiting',
+      working: (s?.live?.running ?? false) || meta?.turn === 'running',
+      unread: s?.unread || (meta ? isUnread(meta) : false),
+    })
+  }
+
+  useEffect(() => {
+    // Restore what the last visit left open: every tab on a desktop, only
+    // the last active one on a phone — the tab strip is a desktop surface,
+    // and a phone reopening everything would pay N fetches for one screen.
+    const restore = (narrow ? [tabs.active] : tabs.open).filter(
+      (id): id is string => typeof id === 'string' && id !== DRAFT,
+    )
+    for (const id of restore) void adopt(id)
+    // Run once, with the state the page loaded with.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     // A 404 is the honest answer for a driver that cannot enumerate models,
@@ -901,18 +1060,16 @@ export function Chat({
     }
   }, [])
 
-  const startThread = useCallback(() => {
-    setConversationId(undefined)
-    conversationRef.current = undefined
-    setMessages([])
-    setContextTokens(0)
-    sessionId.current = undefined
+  /** The ＋ of the strip and the header: a fresh tab, conversation-less
+      until its first message names one. Only ever one draft — reopening it
+      just activates it. */
+  function newDraft(): void {
+    setTabs((state) => openTab(state, DRAFT))
     setThreadsOpen(false)
-    // The display only: whatever was held is the server's to run, and lives
-    // on in its own thread.
-    heldRef.current = []
-    setHeld([])
-  }, [])
+  }
+
+  /** What the visible thread renders — everything below reads through this. */
+  const active = session(activeId)
 
   useEffect(() => {
     // Guarded because an exception thrown in an effect tears down the whole
@@ -920,7 +1077,7 @@ export function Chat({
     // chat because it lacks one DOM convenience.
     const anchor = bottom.current
     if (typeof anchor?.scrollIntoView === 'function') anchor.scrollIntoView({ block: 'end' })
-  }, [messages, live?.text, held])
+  }, [active.messages, active.live?.text, active.held])
 
   /** The user's half, as the thread shows it — attachments named after it. */
   function stamped(text: string, attachments: readonly PendingAttachment[]): string {
@@ -929,10 +1086,15 @@ export function Chat({
       : text
   }
 
-  function turnOptions(text: string, attachments: readonly PendingAttachment[], thread?: string) {
+  function turnOptions(
+    sid: string | undefined,
+    text: string,
+    attachments: readonly PendingAttachment[],
+    thread?: string,
+  ) {
     return {
       prompt: text,
-      ...(sessionId.current ? { sessionId: sessionId.current } : {}),
+      ...(sid ? { sessionId: sid } : {}),
       ...(model ? { model } : {}),
       ...(thread ? { conversationId: thread } : {}),
       ...(attachments.length > 0 ? { attachments: attachments.map((a) => a.id) } : {}),
@@ -944,16 +1106,28 @@ export function Chat({
    * A thread is created on the first message rather than on arrival: an
    * instance nobody has spoken to should not accumulate empty threads. The
    * creation is SHARED — a second send arriving before the first answer must
-   * join the same conversation, not open its own.
+   * join the same conversation, not open its own. The draft tab is renamed
+   * to the new id IN PLACE: same position, same activation, its session —
+   * user bubble included — moving with it.
    */
-  async function ensureThread(title: string): Promise<string | undefined> {
-    if (conversationRef.current) return conversationRef.current
+  async function ensureThread(tabId: string, title: string): Promise<string | undefined> {
+    if (tabId !== DRAFT) return tabId
     threadCreation.current ??= createConversation(fetchImpl, title)
       .then((created) => {
         if (!created) return undefined
-        conversationRef.current = created.id
-        setConversationId(created.id)
         setThreads((current) => [{ ...created, title }, ...current])
+        renameSession(DRAFT, created.id)
+        patchSession(created.id, { title, loaded: true })
+        setTabs((state) =>
+          state.open.includes(DRAFT)
+            ? {
+                open: state.open.map((id) => (id === DRAFT ? created.id : id)),
+                ...(state.active !== undefined
+                  ? { active: state.active === DRAFT ? created.id : state.active }
+                  : {}),
+              }
+            : openTab(state, created.id),
+        )
         return created.id
       })
       .finally(() => {
@@ -964,19 +1138,21 @@ export function Chat({
 
   /** What was held becomes ordinary user messages: their turn has begun, and
       this is the shape the store recorded them in — one each, never merged. */
-  function promoteHeld(): void {
-    const batch = heldRef.current
-    heldRef.current = []
-    setHeld([])
-    if (batch.length === 0) return
-    setMessages((current) => [
-      ...current,
-      ...batch.map((message, index) => ({
-        id: `u${current.length + index}`,
-        role: 'user' as const,
-        text: stamped(message.text, message.attachments),
-      })),
-    ])
+  function promoteHeld(tabId: string): void {
+    patchSession(tabId, (current) => ({
+      held: [],
+      messages:
+        current.held.length === 0
+          ? current.messages
+          : [
+              ...current.messages,
+              ...current.held.map((message, index) => ({
+                id: `u${current.messages.length + index}`,
+                role: 'user' as const,
+                text: stamped(message.text, message.attachments),
+              })),
+            ],
+    }))
   }
 
   /**
@@ -987,12 +1163,12 @@ export function Chat({
    * the old stream announces its end, so this attach finds it. A turn that
    * settles with nothing behind it answers 204 and the loop rests.
    */
-  async function consume(states: AsyncGenerator<TurnState>): Promise<void> {
+  async function consume(tabId: string, states: AsyncGenerator<TurnState>): Promise<void> {
     let last: TurnState | undefined
     try {
       for await (const state of states) {
         last = state
-        setLive(state)
+        patchSession(tabId, { live: state })
       }
     } catch (error) {
       // A fetch that REJECTS — network down, server gone — must land as the
@@ -1001,63 +1177,81 @@ export function Chat({
     }
 
     if (last) {
-      sessionId.current = last.sessionId ?? sessionId.current
-      if (last.contextTokens !== undefined) setContextTokens(last.contextTokens)
-      setMessages((current) => [
-        ...current,
-        {
-          id: `a${current.length}`,
-          role: 'agent',
-          text: last.text,
-          tools: last.tools,
-          stopped: last.stopped,
-          error: last.error,
-        },
-      ])
+      const settled = last
+      patchSession(tabId, (current) => ({
+        live: undefined,
+        sessionId: settled.sessionId ?? current.sessionId,
+        ...(settled.contextTokens !== undefined ? { contextTokens: settled.contextTokens } : {}),
+        messages: [
+          ...current.messages,
+          {
+            id: `a${current.messages.length}`,
+            role: 'agent' as const,
+            text: settled.text,
+            tools: settled.tools,
+            stopped: settled.stopped,
+            error: settled.error,
+          },
+        ],
+        // The dot that says "finished, and you have not seen it": only when
+        // the answer landed in a tab the reader was not looking at.
+        unread: tabId !== activeRef.current,
+      }))
+      if (tabId === activeRef.current) read(tabId)
+    } else {
+      patchSession(tabId, { live: undefined })
     }
-    setLive(undefined)
 
-    const thread = conversationRef.current
-    if (!thread) return
-
-    const follow = await attachTurn(thread, fetchImpl ?? fetch)
+    if (tabId === DRAFT) return
+    const follow = await attachTurn(tabId, fetchImpl ?? fetch)
     if (follow) {
-      promoteHeld()
-      setLive(INITIAL_TURN)
-      return consume(follow)
+      promoteHeld(tabId)
+      patchSession(tabId, { live: INITIAL_TURN })
+      return consume(tabId, follow)
     }
 
-    if (heldRef.current.length > 0) {
+    if (session(tabId).held.length > 0) {
       // Held, and nothing to attach to: the merged turn ran to completion
       // faster than this re-attach. The store has the whole exchange — read
       // it back rather than guess at it.
-      heldRef.current = []
-      setHeld([])
-      await openThread(thread)
+      patchSession(tabId, { held: [], loaded: false })
+      await adopt(tabId)
     }
   }
 
-  /** One consumer at a time — `turning` is what `send` reads to hold back. */
-  async function pump(states: AsyncGenerator<TurnState>): Promise<void> {
-    turning.current = true
+  /** One consumer per tab — its `turning` is what `send` reads to hold back. */
+  async function pump(tabId: string, states: AsyncGenerator<TurnState>): Promise<void> {
+    patchSession(tabId, { turning: true })
     try {
-      await consume(states)
+      await consume(tabId, states)
     } finally {
-      turning.current = false
+      patchSession(tabId, { turning: false })
     }
   }
 
   async function send(text: string, attachments: readonly PendingAttachment[] = []): Promise<void> {
-    // Sent DURING a turn: the SERVER holds it — POSTed at once, persisted on
-    // acceptance, dispatched as one merged turn when the running one settles.
-    // Losing this tab no longer loses the message; what is kept here is only
-    // the waiting bubble.
-    if (turning.current) {
-      heldRef.current = [...heldRef.current, { text, attachments }]
-      setHeld(heldRef.current)
+    // Into the tab the reader is looking at, read at send time: tabs can
+    // switch while a reply is being typed, and the words go where the eyes
+    // were.
+    const tabId = activeRef.current
+    const current = session(tabId)
+
+    // Sent DURING that tab's turn: the SERVER holds it — POSTed at once,
+    // persisted on acceptance, dispatched as one merged turn when the
+    // running one settles. What is kept here is only the waiting bubble.
+    if (current.turning) {
+      patchSession(tabId, { held: [...current.held, { text, attachments }] })
       const controller = new AbortController()
       const start = await startTurn(
-        { ...turnOptions(text, attachments, conversationRef.current), signal: controller.signal },
+        {
+          ...turnOptions(
+            current.sessionId,
+            text,
+            attachments,
+            tabId !== DRAFT ? tabId : undefined,
+          ),
+          signal: controller.signal,
+        },
         fetchImpl,
       )
       if (start.kind === 'stream') {
@@ -1071,36 +1265,42 @@ export function Chat({
       return
     }
 
-    setMessages((current) => [
-      ...current,
-      { id: `u${current.length}`, role: 'user', text: stamped(text, attachments) },
-    ])
-    // The dots go up BEFORE the server is asked anything: between here and
-    // the driver's first event stand a conversation write, the POST and a
-    // CLI spawn — seconds, sometimes, during which a silent screen reads as
-    // a swallowed message. The stream's first state replaces this one.
-    setLive(INITIAL_TURN)
+    patchSession(tabId, (previous) => ({
+      messages: [
+        ...previous.messages,
+        { id: `u${previous.messages.length}`, role: 'user' as const, text: stamped(text, attachments) },
+      ],
+      // The dots go up BEFORE the server is asked anything: between here and
+      // the driver's first event stand a conversation write, the POST and a
+      // CLI spawn — seconds, sometimes, during which a silent screen reads
+      // as a swallowed message. The stream's first state replaces this one.
+      live: INITIAL_TURN,
+    }))
 
     // Named from the first message, at creation: a title set in a second
     // call is a title lost whenever that call is.
-    const thread = await ensureThread(titleFrom(text))
-    const start = await startTurn(turnOptions(text, attachments, thread), fetchImpl)
+    const thread = await ensureThread(tabId, titleFrom(text))
+    const runId = thread ?? tabId
+    const start = await startTurn(
+      turnOptions(session(runId).sessionId, text, attachments, thread),
+      fetchImpl,
+    )
 
     if (start.kind === 'held') {
-      // Another tab is running this conversation's turn: adopt it, and this
-      // message rides the follow-up like any held one.
-      if (thread && !turning.current) {
+      // Another browser tab is running this conversation's turn: adopt it,
+      // and this message rides the follow-up like any held one.
+      if (thread && !session(runId).turning) {
         const running = await attachTurn(thread, fetchImpl ?? fetch)
         if (running) {
-          void pump(running)
+          void pump(runId, running)
           return
         }
       }
-      setLive(undefined)
+      patchSession(runId, { live: undefined })
       return
     }
 
-    void pump(start.states)
+    void pump(runId, start.states)
   }
   sendRef.current = send
 
@@ -1116,14 +1316,16 @@ export function Chat({
     })
   }, [onReady])
 
-  const stop = useCallback(() => {
-    if (!sessionId.current) return
+  /** Stops the ACTIVE tab's turn — the one whose ■ the user can see. */
+  function stop(): void {
+    const sid = session(activeRef.current).sessionId
+    if (!sid) return
     void (fetchImpl ?? fetch)('/api/turn/stop', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ sessionId: sessionId.current }),
+      body: JSON.stringify({ sessionId: sid }),
     })
-  }, [fetchImpl])
+  }
 
   return (
     <section className="golem-chat">
@@ -1138,17 +1340,23 @@ export function Chat({
             belongs to the conversation, not to the message being typed. */}
         <ModelPicker models={models} model={model} onModel={chooseModel} t={t} />
         <span className="golem-chat__spacer" />
-        <ContextPill tokens={contextTokens} {...(contextWindow ? { windowSize: contextWindow } : {})} />
+        <ContextPill tokens={active.contextTokens} {...(contextWindow ? { windowSize: contextWindow } : {})} />
         <button
           type="button"
           className="golem-ib"
-          onClick={() => setThreadsOpen(!threadsOpen)}
+          onClick={() => {
+            const opening = !threadsOpen
+            setThreadsOpen(opening)
+            // Reopened = refreshed: the dots read the desk's live state and
+            // the updatedAt the unread marks compare against.
+            if (opening) void listConversations(fetchImpl).then(setThreads)
+          }}
           aria-label={t('Conversations')}
           aria-expanded={threadsOpen}
         >
           ▤
         </button>
-        <button type="button" className="golem-ib" onClick={startThread} aria-label="New conversation">
+        <button type="button" className="golem-ib" onClick={newDraft} aria-label="New conversation">
           ＋
         </button>
         {onOpenCanvas && (
@@ -1158,6 +1366,71 @@ export function Chat({
         )}
       </header>
 
+      {/* The tab strip — a desktop surface. On a phone the thread list, with
+          the same dots, is the whole navigation. */}
+      {!narrow && tabs.open.length > 0 && (
+        <div className="golem-tabs" role="tablist">
+          {tabs.open.map((id, index) => {
+            const title =
+              id === DRAFT
+                ? t('New conversation')
+                : session(id).title ?? threads.find((thread) => thread.id === id)?.title ?? '…'
+            return (
+              <div
+                key={id}
+                className={`golem-tab${id === activeId ? ' golem-tab--active' : ''}`}
+                role="tab"
+                aria-selected={id === activeId}
+                draggable
+                onDragStart={() => {
+                  dragFrom.current = index
+                }}
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={(event) => {
+                  event.preventDefault()
+                  const from = dragFrom.current
+                  dragFrom.current = undefined
+                  if (from !== undefined) setTabs((state) => moveTab(state, from, index))
+                }}
+              >
+                <button
+                  type="button"
+                  className="golem-tab__pick"
+                  onClick={() => activate(id)}
+                  title={title}
+                >
+                  <span className={`golem-dot golem-dot--${dotOf(id)}`} aria-hidden="true" />
+                  <span className="golem-tab__title">{title}</span>
+                </button>
+                {/* Two exits, two meanings: the box puts the CONVERSATION
+                    away, the cross only closes the TAB — the thread stays in
+                    the list, dot and all. */}
+                {id !== DRAFT && (
+                  <button
+                    type="button"
+                    className="golem-tab__tool"
+                    aria-label={`${t('Archive')} — ${title}`}
+                    title={t('Archive')}
+                    onClick={() => void archiveThread(id)}
+                  >
+                    <ArchiveGlyph />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="golem-tab__tool"
+                  aria-label={`${t('Close tab')} — ${title}`}
+                  title={t('Close tab')}
+                  onClick={() => shut(id)}
+                >
+                  ×
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
       {threadsOpen && (
         <ul className="golem-threads">
           {threads.length === 0 && <li className="golem-threads__empty">No conversation yet.</li>}
@@ -1166,10 +1439,13 @@ export function Chat({
               <button
                 type="button"
                 className={`golem-threads__item${
-                  thread.id === conversationId ? ' golem-threads__item--current' : ''
+                  thread.id === activeId ? ' golem-threads__item--current' : ''
                 }`}
-                onClick={() => void openThread(thread.id)}
+                onClick={() => openThread(thread.id)}
               >
+                {/* The same dot vocabulary as the tab strip: on a phone this
+                    list IS the tab strip. */}
+                <span className={`golem-dot golem-dot--${dotOf(thread.id, thread)}`} aria-hidden="true" />
                 {thread.title}
               </button>
               {/* Put away, not deleted: the only tool for tidying up was a
@@ -1179,23 +1455,9 @@ export function Chat({
                 className="golem-threads__archive"
                 aria-label={`${t('Archive')} — ${thread.title}`}
                 title={t('Archive')}
-                onClick={() => {
-                  void (async () => {
-                    if (!(await archiveConversation(fetchImpl ?? fetch, thread.id))) return
-                    setThreads((current) => current.filter((entry) => entry.id !== thread.id))
-                    // Archiving the thread you are reading leaves you nowhere
-                    // in particular; a fresh one is the honest landing.
-                    if (thread.id === conversationId) startThread()
-                  })()
-                }}
+                onClick={() => void archiveThread(thread.id)}
               >
-                {/* A box with a lid, not a backspace: the previous glyph read
-                    as "delete", which is the one thing this does not do. */}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-                  <rect x="3" y="4" width="18" height="4" rx="1" />
-                  <path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8" />
-                  <path d="M10 12h4" />
-                </svg>
+                <ArchiveGlyph />
               </button>
             </li>
           ))}
@@ -1203,15 +1465,15 @@ export function Chat({
       )}
 
       <div className="golem-chat__thread">
-        {messages.map((message) => (
+        {active.messages.map((message) => (
           <Bubble key={message.id} message={message} {...(openPage ? { openPage } : {})} />
         ))}
 
-        {live && (
+        {active.live && (
           <article className="golem-bubble golem-bubble--agent golem-bubble--live">
-            <ToolTrace tools={live.tools} />
-            {live.text ? (
-              <LiveProse text={live.text} {...(openPage ? { openPage } : {})} />
+            <ToolTrace tools={active.live.tools} />
+            {active.live.text ? (
+              <LiveProse text={active.live.text} {...(openPage ? { openPage } : {})} />
             ) : (
               <div className="golem-bubble__working">
                 {busySlot ? (
@@ -1224,8 +1486,8 @@ export function Chat({
                   <span className="golem-dots" aria-label="Working" />
                 )}
                 {/* The climbing counter, when the driver can feed it. */}
-                {live.outputTokens > 0 && (
-                  <span className="golem-bubble__counter">{formatTokens(live.outputTokens)}</span>
+                {active.live.outputTokens > 0 && (
+                  <span className="golem-bubble__counter">{formatTokens(active.live.outputTokens)}</span>
                 )}
               </div>
             )}
@@ -1233,9 +1495,9 @@ export function Chat({
         )}
 
         {/* What was said while the agent was busy, visibly waiting its turn.
-            These leave as ONE merged turn when the running one settles; the
-            merged user bubble then replaces them. */}
-        {held.map((message, index) => (
+            The server holds the real queue; these leave as ONE merged turn
+            when the running one settles. */}
+        {active.held.map((message, index) => (
           <article key={`h${index}`} className="golem-bubble golem-bubble--user golem-bubble--held">
             <div className="golem-bubble__text">
               {message.text || `📎 ${message.attachments.map((a) => a.name).join(', ')}`}
@@ -1245,9 +1507,9 @@ export function Chat({
         <div ref={bottom} />
       </div>
 
-      {live?.ask && !answered.has(live.ask.id) && (
+      {active.live?.ask && !answered.has(active.live.ask.id) && (
         <AskPrompt
-          ask={live.ask}
+          ask={active.live.ask}
           t={t}
           onAnswer={(id, answer) => {
             // Recorded BEFORE the request goes out. The turn is blocked on
@@ -1277,11 +1539,22 @@ export function Chat({
         {...(extraButtons ? { extraButtons } : {})}
         onSend={(text, attachments) => void send(text, attachments)}
         onStop={stop}
-        busy={live?.running ?? false}
-        blocked={live?.ask !== undefined && !answered.has(live.ask.id)}
+        busy={active.live?.running ?? false}
+        blocked={active.live?.ask !== undefined && !answered.has(active.live.ask.id)}
         {...(placeholder ? { placeholder } : {})}
         t={t}
       />
     </section>
+  )
+}
+
+/** A box with a lid, not a backspace: "put away", the one thing this does. */
+function ArchiveGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      <rect x="3" y="4" width="18" height="4" rx="1" />
+      <path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8" />
+      <path d="M10 12h4" />
+    </svg>
   )
 }

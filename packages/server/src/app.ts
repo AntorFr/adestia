@@ -405,9 +405,19 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     }
   })
 
-  app.get('/api/conversations', async (request) => ({
-    conversations: await conversations.list(identityOf(request).userId),
-  }))
+  app.get('/api/conversations', async (request) => {
+    const userId = identityOf(request).userId
+    const list = await conversations.list(userId)
+    return {
+      // `turn` is computed against the desk per request, never stored: a
+      // status dot that survived a crash in a file would show a turn nobody
+      // is running. Absent means idle.
+      conversations: list.map((meta) => {
+        const job = desk.activeFor(`${userId}/c:${meta.id}`)
+        return job ? { ...meta, turn: job.waiting ? ('waiting' as const) : ('running' as const) } : meta
+      }),
+    }
+  })
 
   app.post<{ Body?: { title?: unknown } }>('/api/conversations', async (request) => {
     // The title comes with the creation rather than in a second call: a thread
