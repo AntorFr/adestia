@@ -20,6 +20,35 @@ par une ref : la boucle de vidage survit à sa closure, et lu depuis l'état
 elle aurait ouvert un second fil. 3 tests (points immédiats, retenue +
 fusion, bulle unique).
 
+Chantier du 27/08 (suite) — **les tours appartiennent au serveur** (`TurnDesk`,
+`server/src/turns.ts`). Le constat de Monsieur était juste : la file du matin
+vivait en RAM d'onglet — un refresh, un iOS qui endort la PWA, et pouf.
+Désormais un tour est un JOB détaché de la requête HTTP ; la réponse SSE n'est
+qu'un ABONNÉ (déconnexion = désabonnement, jamais la mort du tour, la
+transcription s'écrit même sans spectateur). Un message posté pendant un tour
+répond `202 held` : écrit dans le fil À L'ACCEPTATION (la garantie anti-void),
+mis en file côté serveur, expédié en UN tour fusionné à la fin du courant —
+la session reprise est CHAÎNÉE depuis le result du tour qui vient de finir,
+pas depuis le sessionId (périmé) que portaient les POST retenus. Adoption :
+`GET /api/turn/attach?conversation=` rejoue le journal d'événements coalescé
+(deltas de texte fusionnés) puis suit en direct — même réducteur front, zéro
+nouveau type d'événement ; une question déjà répondue est purgée du rejeu
+(`scrubAsk` branché sur `/api/permission`). Le front ne PORTE plus la file,
+il l'affiche (bulles retenues → promues en messages ordinaires quand leur
+tour démarre) et se ré-attache : après chaque tour (le desk installe le
+suivant AVANT d'annoncer la fin de l'ancien — c'est la garantie d'adoption,
+testée), et à l'ouverture d'un fil (reload en plein tour → on recolle en
+vol). Une course réelle attrapée par les tests : la chaîne s'enregistre à
+l'ADMISSION (synchrone), pas au start — un `await` d'écriture disque les
+sépare, et un POST glissé dans la fenêtre courait en parallèle. Cap global
+inchangé (429 pour un tour frais, jamais pour le backlog d'une conversation,
+qui tient sous UN slot). La file ne survit PAS à un restart serveur (choix :
+les textes sont déjà dans le fil ; rejouer des prompts vieux d'une semaine au
+boot serait pire). L'ordre du store est CHRONOLOGIQUE : b et c dits pendant
+la réponse à a précèdent cette réponse dans le fil. 8 tests desk + 2 routes +
+2 front (retenue serveur, adoption à l'ouverture). Chemins horloge/MCP
+inchangés (même limiteur).
+
 **État :** Migration Alfred. Faits et vérifiés en navigateur : `todo`,
 `planif`, `collections`, `scan`, skin `alfred`. 1108 tests + 146 de plugins.
 Facette `blocks` CÂBLÉE : elle était chargée et narrowée depuis le début, et

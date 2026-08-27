@@ -281,6 +281,17 @@ describe('the shell joins its screen to a message', () => {
     }) as unknown as typeof fetch
   }
 
+  // The chat re-attaches after every turn now; a fake that streams for any
+  // URL would make that attach look like a running turn, forever.
+  const attachIdle = (inner: typeof fetch): typeof fetch =>
+    ((url: RequestInfo | URL, init?: RequestInit) =>
+      String(url).startsWith('/api/turn/attach')
+        ? Promise.resolve({ ok: true, status: 204, body: null } as unknown as Response)
+        : (inner as (u: RequestInfo | URL, i?: RequestInit) => Promise<Response>)(
+            url,
+            init,
+          )) as unknown as typeof fetch
+
   it('names the section it is showing, and stops naming it at home', async () => {
     // The wiring the unit tests above cannot see: the shell's own route and
     // breadcrumb reaching the composer's turn.
@@ -288,12 +299,14 @@ describe('the shell joins its screen to a message', () => {
     location.hash = '#/section/notes'
     render(
       <App
-        fetchImpl={shellFetch(
-          [
-            { path: 'notes/INDEX.md', title: 'Notes', fields: {} },
-            { path: 'notes/one.md', title: 'One', fields: {} },
-          ],
-          (body) => bodies.push(body),
+        fetchImpl={attachIdle(
+          shellFetch(
+            [
+              { path: 'notes/INDEX.md', title: 'Notes', fields: {} },
+              { path: 'notes/one.md', title: 'One', fields: {} },
+            ],
+            (body) => bodies.push(body),
+          ),
         )}
       />,
     )

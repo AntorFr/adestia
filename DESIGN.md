@@ -331,7 +331,18 @@ The v1 chat must be **at least** agent-gw's PWA, which sets the bar:
 - **Tool trace ◇:** grouped under the turn, name + short target (≤78 chars, never
   the full input), opt-in per instance.
 - **Activity:** busy indicator with skin hook, pulsing status dot, single send↔stop
-  button, message queueing during a turn, turn adoption after reload.
+  button, message queueing during a turn, turn adoption after reload. Queueing
+  and adoption are SERVER-owned (the turn desk, `server/src/turns.ts`): a turn
+  runs detached from its HTTP request and an SSE response is merely a
+  subscriber, so a closed tab kills a subscription, never a turn. A message
+  posted mid-turn is answered `202 held`, written into the thread on
+  acceptance — the predecessor kept its queue in browser RAM, where a reload
+  erased it — and dispatched as ONE merged turn when the running one settles;
+  `GET /api/turn/attach` replays the running turn's coalesced event log then
+  follows live, through the same reducer, so an adopted turn is
+  indistinguishable from one never left. A queue is NOT re-dispatched across
+  a server restart, deliberately: the texts are already in the thread, and a
+  reboot firing week-old prompts unprompted would be worse than the gap.
 - **Context pill:** live weight of the next message, thresholds relative to the
   model window, clickable (compaction/reset actions).
 - **Composer:** attachments (picker+paste+drag-drop, thumbnails pre- and post-send),

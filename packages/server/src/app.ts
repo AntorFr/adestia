@@ -19,7 +19,7 @@ import type { AskAnswer, AskDesk, Driver, DriverDescriptor, TurnEvent } from '@a
 import { isPublicRoute, resolveIdentity, type Identity } from './auth.js'
 import { AttachmentInbox, frameAttachments, type StoredAttachment } from './attachments.js'
 import { frameView } from './screen.js'
-import { ConversationStore, type StoredMessage } from './conversations.js'
+import { ConversationStore } from './conversations.js'
 import type { GolemConfig } from './config.js'
 import { frontendPayload, type DiscoveredPlugin, type DiscoveryProblem } from './extensions.js'
 import {
@@ -37,6 +37,7 @@ import { registerPages } from './pages.js'
 import { mountPluginApis } from './plugin-host.js'
 import { ArmingSessions, SecretStore } from './secrets.js'
 import { registerStatic } from './static.js'
+import { TurnCapacityError, TurnDesk, type TurnJob, type TurnSpec } from './turns.js'
 import { baseManifest, withInstanceName, type WebManifest } from './webmanifest.js'
 
 /** What the shell needs to dress itself, before it renders anything. */
@@ -181,6 +182,9 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   const { config, driver, plugins, pluginProblems, userTokens, webRoot } = deps
   const app = Fastify({ logger: false })
   const limiter = new TurnLimiter(config.maxConcurrentTurns)
+  // The desk owns chat turns; the clock's and the MCP delegation's loops below
+  // stay as they are and share the same limiter, so the cap keeps one meaning.
+  const desk = new TurnDesk(driver, limiter)
   const conversations = new ConversationStore(config.dataDir)
   const secrets = deps.secrets ?? new SecretStore(config.dataDir)
   const inbox = new AttachmentInbox(config.dataDir, config.attachments)
@@ -476,23 +480,6 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
         await reply.code(400).send({ error: 'prompt is required' })
         return reply
       }
-      if (!limiter.tryAcquire()) {
-        // Refusing now beats queueing behind a lock that may not release for
-        // an hour: a refusal is information, a silent wait is not.
-        await reply.code(429).send({
-          error: 'too many turns running',
-          max: config.maxConcurrentTurns,
-        })
-        return reply
-      }
-
-      reply.raw.writeHead(200, {
-        'content-type': 'text/event-stream',
-        'cache-control': 'no-cache',
-        connection: 'keep-alive',
-        // Nginx and friends buffer SSE into uselessness without this.
-        'x-accel-buffering': 'no',
-      })
 
       // Resolved before the turn: an id that escapes the inbox is refused
       // rather than handed to the agent as a path to read.
@@ -506,92 +493,169 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
       const userId = identityOf(request).userId
       const conversationId =
         typeof body.conversationId === 'string' ? body.conversationId : undefined
+      const sessionId =
+        typeof body.sessionId === 'string' && body.sessionId !== '' ? body.sessionId : undefined
 
-      if (conversationId) {
-        await conversations.append(userId, conversationId, {
-          id: randomUUID(),
-          role: 'user',
-          text: body.prompt,
-          at: new Date().toISOString(),
-        })
-      }
-
-      // Accumulated as the turn streams, so what is stored is what the UI drew
-      // — tool calls, interruption, usage — not just the final text.
-      const tools: { name: string; target?: string; ok?: boolean }[] = []
-      let text = ''
-      let stopped = false
-      let failure: string | undefined
-      let usage: StoredMessage['usage']
-
-      try {
-        // The caller's own identity, for the servers that serve their own
-        // data. Resolved here because this is the only turn with a person at
-        // the other end: the clock's and a delegation's have none, and
-        // deliberately pass nothing.
-        const caller = (request as FastifyRequest & { identity?: Identity }).identity
-        const callerToken = caller?.userId
-          ? await userTokens?.accessToken(caller.userId)
+      // What serializes turns: the conversation when there is one, the CLI
+      // session otherwise. Both prefixed by the user — a key is an address,
+      // and two people must never share one. A first-ever message has
+      // neither, and two of those genuinely are independent turns.
+      const key = conversationId
+        ? `${userId}/c:${conversationId}`
+        : sessionId
+          ? `${userId}/s:${sessionId}`
           : undefined
 
-        const events = driver.runTurn({
-          // Framed here, not in the browser: what the thread stores above is
-          // the raw prompt, so a reload replays what the person typed rather
+      // The caller's own identity, for the servers that serve their own
+      // data. Resolved here because this is the only turn with a person at
+      // the other end: the clock's and a delegation's have none, and
+      // deliberately pass nothing.
+      const caller = (request as FastifyRequest & { identity?: Identity }).identity
+      const callerToken = caller?.userId
+        ? await userTokens?.accessToken(caller.userId)
+        : undefined
+
+      const spec: TurnSpec = {
+        request: {
+          // Framed here, not in the browser: what the thread stores is the
+          // raw prompt, so a reload replays what the person typed rather
           // than the gateway's own notes.
           prompt: frameView(frameAttachments(body.prompt, attachments), body.view),
           cwd: config.workspace.root,
-          ...(typeof body.sessionId === 'string' ? { sessionId: body.sessionId } : {}),
+          ...(sessionId ? { sessionId } : {}),
           ...(typeof body.model === 'string' ? { model: body.model } : {}),
           ...(callerToken ? { callerToken } : {}),
-        })
-        for await (const event of events) {
-          reply.raw.write(sseFrame(event))
-          if (event.type === 'text-delta') text += event.text
-          else if (event.type === 'tool-use') {
-            tools.push({ name: event.name, ...(event.target ? { target: event.target } : {}) })
-          } else if (event.type === 'tool-result') {
-            const pending = tools.findLast((tool) => tool.name === event.name && tool.ok === undefined)
-            if (pending) pending.ok = event.ok
-          } else if (event.type === 'error') failure = event.message
-          else if (event.type === 'result') {
-            stopped = event.stopped
-            usage = {
-              ...(event.usage?.contextTokens !== undefined
-                ? { contextTokens: event.usage.contextTokens }
-                : {}),
-              ...(event.usage?.outputTokens !== undefined
-                ? { outputTokens: event.usage.outputTokens }
-                : {}),
-            }
-            if (conversationId) await conversations.setSession(userId, conversationId, event.sessionId)
-          }
-        }
-      } catch (error) {
-        failure = (error as Error).message
-        reply.raw.write(sseFrame({ type: 'error', message: failure, fatal: true }))
-      } finally {
-        if (conversationId) {
-          // Written even when the turn failed: a thread that silently drops
-          // the answer it did produce is worse than one showing it broke.
+        },
+        // Written even when the turn failed: a thread that silently drops
+        // the answer it did produce is worse than one showing it broke. The
+        // desk calls this whether or not anybody is still watching — which
+        // is the whole point of the desk.
+        finish: async (outcome) => {
+          if (!conversationId) return
           await conversations
             .append(userId, conversationId, {
               id: randomUUID(),
               role: 'agent',
-              text,
+              text: outcome.text,
               at: new Date().toISOString(),
-              ...(tools.length > 0 ? { tools } : {}),
-              ...(stopped ? { stopped } : {}),
-              ...(failure ? { error: failure } : {}),
-              ...(usage ? { usage } : {}),
+              ...(outcome.tools.length > 0 ? { tools: [...outcome.tools] } : {}),
+              ...(outcome.stopped ? { stopped: outcome.stopped } : {}),
+              ...(outcome.failure ? { error: outcome.failure } : {}),
+              ...(outcome.usage ? { usage: outcome.usage } : {}),
             })
             .catch(() => undefined)
-        }
-        limiter.release()
-        reply.raw.end()
+          if (outcome.sessionId) {
+            await conversations
+              .setSession(userId, conversationId, outcome.sessionId)
+              .catch(() => undefined)
+          }
+        },
       }
+
+      let admission
+      try {
+        admission = desk.admit(key)
+      } catch (error) {
+        if (error instanceof TurnCapacityError) {
+          // Refusing now beats queueing behind a lock that may not release
+          // for an hour: a refusal is information, a silent wait is not.
+          // Only a conversation's OWN backlog ever queues, above.
+          await reply.code(429).send({
+            error: 'too many turns running',
+            max: config.maxConcurrentTurns,
+          })
+          return reply
+        }
+        throw error
+      }
+
+      if (conversationId) {
+        // Persisted the moment it is ACCEPTED — held or run alike. This line
+        // is why a queued message survives a reload: it is in the thread
+        // before the browser hears anything back.
+        try {
+          await conversations.append(userId, conversationId, {
+            id: randomUUID(),
+            role: 'user',
+            text: body.prompt,
+            at: new Date().toISOString(),
+          })
+        } catch (error) {
+          if (admission.mode === 'run') admission.abort()
+          await reply.code(500).send({ error: (error as Error).message })
+          return reply
+        }
+      }
+
+      if (admission.mode === 'queued') {
+        admission.enqueue(spec)
+        // 202: accepted, held. The browser shows it waiting and re-attaches
+        // for the merged turn once the running one settles.
+        await reply.code(202).send({ held: true })
+        return reply
+      }
+
+      await streamJob(admission.start(spec), request, reply)
       return reply
     },
   )
+
+  /**
+   * Re-attaching to the turn a conversation is running — turn adoption.
+   *
+   * A reload, a phone that slept, a second tab: the turn kept running at the
+   * desk, and this replays its whole event log then follows live. Same
+   * frames, same reducer in the browser — an adopted turn is
+   * indistinguishable from one never left. 204 says "nothing running", which
+   * is an answer, not an error.
+   */
+  app.get<{ Querystring: { conversation?: string } }>('/api/turn/attach', async (request, reply) => {
+    const conversationId = request.query.conversation
+    if (typeof conversationId !== 'string' || conversationId === '') {
+      await reply.code(400).send({ error: 'conversation is required' })
+      return reply
+    }
+    const job = desk.activeFor(`${identityOf(request).userId}/c:${conversationId}`)
+    if (!job) {
+      await reply.code(204).send()
+      return reply
+    }
+    await streamJob(job, request, reply)
+    return reply
+  })
+
+  /**
+   * One subscription of one response to one job. The job outlives the
+   * response by design: a client that goes away is unsubscribed and nothing
+   * else — the turn keeps running at the desk.
+   */
+  async function streamJob(job: TurnJob, request: FastifyRequest, reply: FastifyReply): Promise<void> {
+    reply.raw.writeHead(200, {
+      'content-type': 'text/event-stream',
+      'cache-control': 'no-cache',
+      connection: 'keep-alive',
+      // Nginx and friends buffer SSE into uselessness without this.
+      'x-accel-buffering': 'no',
+    })
+
+    // Snapshot and subscribe in the SAME tick: events are emitted from the
+    // driver's async loop, so nothing can land between the two.
+    for (const event of job.log) reply.raw.write(sseFrame(event))
+
+    await new Promise<void>((resolve) => {
+      const unsubscribe = job.subscribe({
+        event: (event) => reply.raw.write(sseFrame(event)),
+        end: () => {
+          reply.raw.end()
+          resolve()
+        },
+      })
+      request.raw.on('close', () => {
+        unsubscribe()
+        resolve()
+      })
+    })
+  }
 
   /**
    * Answering what the engine asked.
@@ -616,6 +680,9 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
       if (!deps.asks?.answer(id, answer as AskAnswer)) {
         return reply.code(409).send({ error: 'that question is no longer waiting' })
       }
+      // Out of the replay too: a re-attached stream must not resurrect a
+      // question that nothing can resolve any more.
+      desk.scrubAsk(id)
       return { answered: true }
     },
   )

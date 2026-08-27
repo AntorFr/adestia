@@ -410,6 +410,12 @@ function sseFetch(
             ({ ok: false, status: 404, json: () => Promise.resolve({}) } as unknown as Response),
       )
     }
+    if (String(url).startsWith('/api/turn/attach')) {
+      // Nothing running to adopt — the answer an idle desk gives, and what
+      // keeps the follow-up attach after every turn from looping forever
+      // against a fake that streams for any URL.
+      return Promise.resolve({ ok: true, status: 204, body: null } as unknown as Response)
+    }
     if (String(url).startsWith('/api/turn') && init?.body) {
       options.onTurn?.(JSON.parse(String(init.body)))
     }
@@ -583,21 +589,45 @@ describe('chat', () => {
     expect(container.querySelector('.golem-dots')).toBeTruthy()
   })
 
-  it('holds messages sent during a turn, then sends them as one merged turn', async () => {
-    // The predecessor's queue, ported: a second stream would fight the first
-    // over the live bubble and resume the same CLI session concurrently, so
-    // anything said during a turn waits — visibly — and leaves as ONE batch.
-    const prompts: string[] = []
-    const controllers: ReadableStreamDefaultController<Uint8Array>[] = []
+  it('POSTs a message sent during a turn at once, shows it held, then adopts the merged turn', async () => {
+    // The queue is the SERVER's now: a message typed during a turn is posted
+    // immediately (202 — held, already written into the thread), so a closed
+    // tab loses nothing. When the running turn settles, the chat re-attaches
+    // and picks up the merged follow-up the desk dispatched.
+    const posts: { prompt: string }[] = []
+    const encoder = new TextEncoder()
+    let turn: ReadableStreamDefaultController<Uint8Array> | undefined
+    let attach: ReadableStreamDefaultController<Uint8Array> | undefined
+    let attachCalls = 0
+
     const fetchImpl = vi.fn((url: string, init?: RequestInit) => {
-      if (String(url) === '/api/turn') {
-        prompts.push((JSON.parse(String(init?.body)) as { prompt: string }).prompt)
-        const body = new ReadableStream<Uint8Array>({
-          start(controller) {
-            controllers.push(controller)
-          },
-        })
-        return Promise.resolve(new Response(body, { status: 200 }))
+      const path = String(url)
+      if (path.startsWith('/api/turn/attach')) {
+        attachCalls += 1
+        if (attachCalls === 1) {
+          // The desk installed the merged turn before the first announced
+          // its end, so the first re-attach finds it running.
+          const body = new ReadableStream<Uint8Array>({
+            start(controller) {
+              attach = controller
+            },
+          })
+          return Promise.resolve({ ok: true, status: 200, body } as unknown as Response)
+        }
+        return Promise.resolve({ ok: true, status: 204, body: null } as unknown as Response)
+      }
+      if (path === '/api/turn') {
+        posts.push(JSON.parse(String(init?.body)) as { prompt: string })
+        if (posts.length === 1) {
+          const body = new ReadableStream<Uint8Array>({
+            start(controller) {
+              turn = controller
+            },
+          })
+          return Promise.resolve({ ok: true, status: 200, body } as unknown as Response)
+        }
+        // The conversation's turn is running: held, and already stored.
+        return Promise.resolve({ ok: true, status: 202, body: null } as unknown as Response)
       }
       return Promise.resolve(
         new Response(
@@ -609,15 +639,16 @@ describe('chat', () => {
       )
     }) as unknown as typeof fetch
 
-    render(<Chat fetchImpl={fetchImpl} />)
+    const { container } = render(<Chat fetchImpl={fetchImpl} />)
     const input = screen.getByRole('textbox')
     fireEvent.change(input, { target: { value: 'premier' } })
     await act(async () => {
       fireEvent.keyDown(input, { key: 'Enter' })
     })
-    await waitFor(() => expect(prompts).toEqual(['premier']))
+    await waitFor(() => expect(posts).toHaveLength(1))
 
-    // Two more while the turn still streams: shown as held, POSTed not at all.
+    // Two more while the turn still streams: POSTed AT ONCE — the server is
+    // what holds them — and shown waiting.
     fireEvent.change(input, { target: { value: 'deuxième' } })
     await act(async () => {
       fireEvent.keyDown(input, { key: 'Enter' })
@@ -626,26 +657,78 @@ describe('chat', () => {
     await act(async () => {
       fireEvent.keyDown(input, { key: 'Enter' })
     })
-    expect(prompts).toEqual(['premier'])
+    await waitFor(() => expect(posts).toHaveLength(3))
+    expect(posts.map((p) => p.prompt)).toEqual(['premier', 'deuxième', 'troisième'])
+    expect(container.querySelectorAll('.golem-bubble--held')).toHaveLength(2)
+
+    // The first turn settles; the chat re-attaches and finds the merged turn.
+    await act(async () => {
+      turn!.enqueue(encoder.encode(frame({ type: 'result', sessionId: 's1', stopped: false })))
+      turn!.close()
+    })
+    await waitFor(() => expect(attachCalls).toBe(1))
+
+    // The held bubbles became ordinary user messages — one each, the shape
+    // the store recorded — and the merged turn streams its answer.
+    await waitFor(() => expect(container.querySelectorAll('.golem-bubble--held')).toHaveLength(0))
     expect(screen.getByText('deuxième')).toBeTruthy()
     expect(screen.getByText('troisième')).toBeTruthy()
 
-    // The first turn settles; the held pair leaves as one merged turn.
     await act(async () => {
-      controllers[0]!.enqueue(
-        new TextEncoder().encode(frame({ type: 'result', sessionId: 's1', stopped: false })),
-      )
-      controllers[0]!.close()
+      attach!.enqueue(encoder.encode(frame({ type: 'text-delta', text: 'reçu cinq sur cinq' })))
+      attach!.enqueue(encoder.encode(frame({ type: 'result', sessionId: 's1', stopped: false })))
+      attach!.close()
     })
-    await waitFor(() => expect(prompts).toEqual(['premier', 'deuxième\n\ntroisième']))
-    // One user bubble for the batch — the held chips are gone into it. The
-    // matcher reads textContent raw: the default normalizer collapses the
-    // very newlines the merge exists to insert.
-    expect(
-      screen.getByText((_, element) => element?.textContent === 'deuxième\n\ntroisième', {
-        selector: '.golem-bubble__text',
-      }),
-    ).toBeTruthy()
+    await waitFor(() => expect(screen.getByText('reçu cinq sur cinq')).toBeTruthy())
+  })
+
+  it('adopts a running turn when a thread is opened', async () => {
+    // The reload story: the turn kept running at the desk; opening the
+    // thread replays the transcript from the store AND re-attaches to the
+    // live turn, mid-flight.
+    const encoder = new TextEncoder()
+    const fetchImpl = vi.fn((url: string) => {
+      const path = String(url)
+      if (path.startsWith('/api/turn/attach')) {
+        const body = new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.enqueue(encoder.encode(frame({ type: 'text-delta', text: 'déjà en route' })))
+            // Deliberately no close: the turn is still running.
+          },
+        })
+        return Promise.resolve({ ok: true, status: 200, body } as unknown as Response)
+      }
+      if (path === '/api/conversations/c9') {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () =>
+            Promise.resolve({
+              id: 'c9',
+              title: 'En cours',
+              updatedAt: '',
+              sessionId: 's9',
+              messages: [{ id: 'm1', role: 'user', text: 'longue mission', at: '' }],
+            }),
+        } as unknown as Response)
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () =>
+          Promise.resolve({ conversations: [{ id: 'c9', title: 'En cours', updatedAt: '' }] }),
+      } as unknown as Response)
+    }) as unknown as typeof fetch
+
+    render(<Chat fetchImpl={fetchImpl} />)
+    fireEvent.click(await screen.findByLabelText('Conversations'))
+    await act(async () => {
+      fireEvent.click(await screen.findByText('En cours'))
+    })
+
+    // The stored half and the live half, together.
+    expect(await screen.findByText('longue mission')).toBeTruthy()
+    await waitFor(() => expect(screen.getByText('déjà en route')).toBeTruthy())
   })
 })
 

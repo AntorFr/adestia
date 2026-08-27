@@ -462,6 +462,86 @@ describe('conversations', () => {
     await app.close()
   })
 
+  it('holds a message posted while the conversation runs, stores it at once, then merges the flush', async () => {
+    // The server-side queue: the second and third message answer 202 — held,
+    // and ALREADY in the thread, which is what survives a closed tab — then
+    // leave as ONE merged turn resuming the session the first turn created.
+    let release: () => void = () => {}
+    const hold = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const driver = new ScriptedDriver([{ type: 'text-delta', text: 'ok' }, RESULT], ['usageMetrics'], hold)
+    const app = await withStore({ driver })
+    const { id } = (await app.inject({ method: 'POST', url: '/api/conversations' })).json()
+
+    const first = app.inject({ method: 'POST', url: '/api/turn', payload: { prompt: 'a', conversationId: id } })
+    await new Promise((resolve) => setImmediate(resolve))
+
+    const second = await app.inject({ method: 'POST', url: '/api/turn', payload: { prompt: 'b', conversationId: id } })
+    expect(second.statusCode).toBe(202)
+    expect(second.json()).toEqual({ held: true })
+    // In the thread BEFORE anything answers: this is the reload guarantee.
+    const midway = (await app.inject({ url: `/api/conversations/${id}` })).json()
+    expect(midway.messages.map((m: { text: string }) => m.text)).toEqual(['a', 'b'])
+
+    const third = await app.inject({ method: 'POST', url: '/api/turn', payload: { prompt: 'c', conversationId: id } })
+    expect(third.statusCode).toBe(202)
+
+    release()
+    await first
+    // The store is CHRONOLOGICAL: b and c were said while the agent was
+    // still answering a, and that is when they were written — being in the
+    // thread before anything answers is the whole reload guarantee.
+    await vi.waitFor(async () => {
+      const conversation = (await app.inject({ url: `/api/conversations/${id}` })).json()
+      expect(conversation.messages.map((m: { role: string; text: string }) => [m.role, m.text])).toEqual([
+        ['user', 'a'],
+        ['user', 'b'],
+        ['user', 'c'],
+        ['agent', 'ok'],
+        ['agent', 'ok'],
+      ])
+    })
+    expect(driver.requests).toHaveLength(2)
+    expect(driver.requests[1]).toMatchObject({ prompt: 'b\n\nc', sessionId: 's1' })
+    await app.close()
+  })
+
+  it('re-attaches to a running turn, replay included, and 204s when idle', async () => {
+    let release: () => void = () => {}
+    const hold = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    let partialEmitted = false
+    const driver = new ScriptedDriver([])
+    driver.runTurn = async function* (request) {
+      driver.requests.push(request)
+      yield { type: 'text-delta', text: 'déjà écrit' } as TurnEvent
+      partialEmitted = true
+      await hold
+      yield RESULT
+    }
+    const app = await withStore({ driver })
+    const { id } = (await app.inject({ method: 'POST', url: '/api/conversations' })).json()
+
+    // Idle first: an honest "nothing running", not an error.
+    expect((await app.inject({ url: `/api/turn/attach?conversation=${id}` })).statusCode).toBe(204)
+
+    const first = app.inject({ method: 'POST', url: '/api/turn', payload: { prompt: 'a', conversationId: id } })
+    await vi.waitFor(() => expect(partialEmitted).toBe(true))
+
+    // Attached AFTER the delta went out: only the replayed log can carry it.
+    const attached = app.inject({ url: `/api/turn/attach?conversation=${id}` })
+    release()
+    await first
+    const replay = await attached
+    expect(replay.statusCode).toBe(200)
+    expect(replay.headers['content-type']).toContain('text/event-stream')
+    expect(replay.body).toContain('déjà écrit')
+    expect(replay.body).toContain('event: result')
+    await app.close()
+  })
+
   it('runs a turn without a conversation just as well', async () => {
     // Nothing forces a thread: an ephemeral question should not have to
     // create one to be answered.

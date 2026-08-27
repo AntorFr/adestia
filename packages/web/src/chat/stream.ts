@@ -207,16 +207,10 @@ export interface StreamOptions {
   readonly signal?: AbortSignal
 }
 
-/**
- * Drives one turn against the server, yielding the state after each event.
- * `fetchImpl` is injectable for the same reason the loader's environment is:
- * a stream client only testable against a running server is untested.
- */
-export async function* runTurn(
-  options: StreamOptions,
-  fetchImpl: typeof fetch = fetch,
-): AsyncGenerator<TurnState> {
-  const response = await fetchImpl('/api/turn', {
+/** POSTs the turn. Shared by `runTurn` and `startTurn` so the wire format
+    exists exactly once. */
+function postTurn(options: StreamOptions, fetchImpl: typeof fetch): Promise<Response> {
+  return fetchImpl('/api/turn', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
@@ -229,22 +223,25 @@ export async function* runTurn(
     }),
     ...(options.signal ? { signal: options.signal } : {}),
   })
+}
 
-  if (!response.ok || !response.body) {
-    const detail = await response.text().catch(() => '')
-    let message = `turn refused (${response.status})`
-    try {
-      const parsed = JSON.parse(detail) as { error?: string }
-      if (parsed.error) message = parsed.error
-    } catch {
-      /* keep the status-based message */
-    }
-    yield { ...INITIAL_TURN, running: false, error: message }
-    return
+async function refusalMessage(response: Response): Promise<string> {
+  const detail = await response.text().catch(() => '')
+  let message = `turn refused (${response.status})`
+  try {
+    const parsed = JSON.parse(detail) as { error?: string }
+    if (parsed.error) message = parsed.error
+  } catch {
+    /* keep the status-based message */
   }
+  return message
+}
 
+/** Follows one SSE response, yielding the state after each event. The caller
+    has already checked the body exists. */
+async function* streamStates(response: Response): AsyncGenerator<TurnState> {
   const parser = new SseParser()
-  const reader = response.body.pipeThrough(new TextDecoderStream()).getReader()
+  const reader = response.body!.pipeThrough(new TextDecoderStream()).getReader()
   let state = INITIAL_TURN
 
   try {
@@ -265,4 +262,80 @@ export async function* runTurn(
     // timeout. Saying so beats a bubble that spins forever.
     yield { ...state, running: false, error: state.error ?? 'the turn ended unexpectedly' }
   }
+}
+
+/**
+ * What sending a message started.
+ *
+ * `held` is the server saying "the conversation's turn is still running; this
+ * message is queued behind it, and already written into the thread". Nothing
+ * to stream yet: the merged follow-up turn is picked up with `attachTurn`
+ * once the running one settles.
+ */
+export type TurnStart =
+  | { readonly kind: 'stream'; readonly states: AsyncGenerator<TurnState> }
+  | { readonly kind: 'held' }
+
+/**
+ * Drives one turn against the server, yielding the state after each event.
+ * `fetchImpl` is injectable for the same reason the loader's environment is:
+ * a stream client only testable against a running server is untested.
+ */
+export async function* runTurn(
+  options: StreamOptions,
+  fetchImpl: typeof fetch = fetch,
+): AsyncGenerator<TurnState> {
+  const start = await startTurn(options, fetchImpl)
+  if (start.kind === 'held') {
+    // Held is not an error and not a stream: the turn will run, later, under
+    // its own attachment. A caller of this simpler interface just sees a
+    // turn that has nothing to say yet.
+    yield { ...INITIAL_TURN, running: false }
+    return
+  }
+  yield* start.states
+}
+
+/** Sends the message and says what became of it — a stream, or held. */
+export async function startTurn(
+  options: StreamOptions,
+  fetchImpl: typeof fetch = fetch,
+): Promise<TurnStart> {
+  const response = await postTurn(options, fetchImpl)
+
+  if (response.status === 202) return { kind: 'held' }
+
+  if (!response.ok || !response.body) {
+    const message = await refusalMessage(response)
+    return {
+      kind: 'stream',
+      states: (async function* () {
+        yield { ...INITIAL_TURN, running: false, error: message }
+      })(),
+    }
+  }
+
+  return { kind: 'stream', states: streamStates(response) }
+}
+
+/**
+ * Re-attaches to the turn a conversation is running, if one is.
+ *
+ * The server replays the whole event log then follows live, so the same
+ * reducer rebuilds the same state — an adopted turn is indistinguishable from
+ * one never left. `undefined` means nothing is running (or nothing answered),
+ * which the caller treats as "the thread is at rest".
+ */
+export async function attachTurn(
+  conversationId: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<AsyncGenerator<TurnState> | undefined> {
+  let response: Response
+  try {
+    response = await fetchImpl(`/api/turn/attach?conversation=${encodeURIComponent(conversationId)}`)
+  } catch {
+    return undefined
+  }
+  if (response.status !== 200 || !response.body) return undefined
+  return streamStates(response)
 }

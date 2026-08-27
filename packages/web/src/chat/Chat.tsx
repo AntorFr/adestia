@@ -21,7 +21,14 @@ import {
   type ConversationMeta,
   type StoredMessage,
 } from './conversations.js'
-import { INITIAL_TURN, runTurn, type PendingAsk, type ScreenView, type TurnState } from './stream.js'
+import {
+  INITIAL_TURN,
+  attachTurn,
+  startTurn,
+  type PendingAsk,
+  type ScreenView,
+  type TurnState,
+} from './stream.js'
 import { SkinSlot } from '../app/SkinSlot.js'
 import type { SkinSlotRender } from '../app/skin.js'
 import { useMobile } from '../app/useMobile.js'
@@ -729,10 +736,11 @@ export interface ComposerButton {
 /**
  * A message sent while a turn was still running.
  *
- * Held rather than raced: a second concurrent stream would fight the first
- * over the live bubble, and behind it over the CLI session itself. The
- * predecessor queued these and flushed them as ONE merged turn when the
- * running one settled; this is that behaviour, ported.
+ * The SERVER holds the real queue — each of these was POSTed at once, written
+ * into the thread on acceptance, and will leave as one merged turn when the
+ * running one settles. What lives here is only the display: the bubbles shown
+ * waiting, promoted to ordinary messages when their turn begins. A reload
+ * loses this list and nothing else — the thread already has the texts.
  */
 interface HeldMessage {
   readonly text: string
@@ -813,9 +821,15 @@ export function Chat({
   const conversationRef = useRef<string | undefined>(undefined)
   /** True from send to settle — unlike `live`, visible to the NEXT send. */
   const turning = useRef(false)
-  /** Messages sent during a turn, waiting to leave as one batch. */
+  /** Bubbles shown waiting — the real queue is the server's (see HeldMessage). */
   const heldRef = useRef<readonly HeldMessage[]>([])
   const [held, setHeld] = useState<readonly HeldMessage[]>([])
+  /** In-flight thread creation, so two rapid sends share ONE conversation. */
+  const threadCreation = useRef<Promise<string | undefined> | undefined>(undefined)
+  /** Latest `send`, for the channel published to plugins (see the effect). */
+  const sendRef = useRef<(text: string, attachments?: readonly PendingAttachment[]) => Promise<void>>(
+    async () => {},
+  )
   /** Set by the composer once it exists, so `compose` reaches its field. */
   const composeRef = useRef<((text: string) => void) | undefined>(undefined)
   const attachRef = useRef<((files: readonly File[]) => Promise<void>) | undefined>(undefined)
@@ -825,21 +839,36 @@ export function Chat({
     void listConversations(fetchImpl).then(setThreads)
   }, [fetchImpl])
 
-  const openThread = useCallback(
-    async (id: string) => {
-      const conversation = await readConversation(id, fetchImpl)
-      if (!conversation) return
-      setConversationId(conversation.id)
-      conversationRef.current = conversation.id
-      // Replayed FAITHFULLY: tool trace, interruptions and all. The stored
-      // transcript is what the UI drew, so replaying it needs no second path.
-      setMessages(conversation.messages.map(toMessage))
-      sessionId.current = conversation.sessionId
-      setContextTokens(conversation.messages.at(-1)?.usage?.contextTokens ?? 0)
-      setThreadsOpen(false)
-    },
-    [fetchImpl],
-  )
+  // Declared as FUNCTIONS, not useCallback: openThread, consume and pump call
+  // one another (adoption is recursive by nature — a turn's end looks for the
+  // next), and hoisting is what lets the cycle be written in reading order.
+
+  async function openThread(id: string): Promise<void> {
+    const conversation = await readConversation(id, fetchImpl)
+    if (!conversation) return
+    setConversationId(conversation.id)
+    conversationRef.current = conversation.id
+    // Replayed FAITHFULLY: tool trace, interruptions and all. The stored
+    // transcript is what the UI drew, so replaying it needs no second path.
+    setMessages(conversation.messages.map(toMessage))
+    sessionId.current = conversation.sessionId
+    setContextTokens(conversation.messages.at(-1)?.usage?.contextTokens ?? 0)
+    setThreadsOpen(false)
+    // Held bubbles belong to the thread they were sent in; the server is
+    // processing them regardless, and reopening that thread replays them
+    // from the store.
+    heldRef.current = []
+    setHeld([])
+    // Adoption: if this thread's turn is still running at the desk — a
+    // reload, a phone that slept — re-attach and pick it up mid-flight.
+    if (!turning.current) {
+      const running = await attachTurn(conversation.id, fetchImpl ?? fetch)
+      if (running) {
+        setLive(INITIAL_TURN)
+        void pump(running)
+      }
+    }
+  }
 
   useEffect(() => {
     // A 404 is the honest answer for a driver that cannot enumerate models,
@@ -879,6 +908,10 @@ export function Chat({
     setContextTokens(0)
     sessionId.current = undefined
     setThreadsOpen(false)
+    // The display only: whatever was held is the server's to run, and lives
+    // on in its own thread.
+    heldRef.current = []
+    setHeld([])
   }, [])
 
   useEffect(() => {
@@ -889,124 +922,199 @@ export function Chat({
     if (typeof anchor?.scrollIntoView === 'function') anchor.scrollIntoView({ block: 'end' })
   }, [messages, live?.text, held])
 
-  const runOne = useCallback(
-    async (text: string, attachments: readonly PendingAttachment[]) => {
+  /** The user's half, as the thread shows it — attachments named after it. */
+  function stamped(text: string, attachments: readonly PendingAttachment[]): string {
+    return attachments.length > 0
+      ? `${text}\n📎 ${attachments.map((a) => a.name).join(', ')}`.trim()
+      : text
+  }
+
+  function turnOptions(text: string, attachments: readonly PendingAttachment[], thread?: string) {
+    return {
+      prompt: text,
+      ...(sessionId.current ? { sessionId: sessionId.current } : {}),
+      ...(model ? { model } : {}),
+      ...(thread ? { conversationId: thread } : {}),
+      ...(attachments.length > 0 ? { attachments: attachments.map((a) => a.id) } : {}),
+      ...(view ? { view } : {}),
+    }
+  }
+
+  /**
+   * A thread is created on the first message rather than on arrival: an
+   * instance nobody has spoken to should not accumulate empty threads. The
+   * creation is SHARED — a second send arriving before the first answer must
+   * join the same conversation, not open its own.
+   */
+  async function ensureThread(title: string): Promise<string | undefined> {
+    if (conversationRef.current) return conversationRef.current
+    threadCreation.current ??= createConversation(fetchImpl, title)
+      .then((created) => {
+        if (!created) return undefined
+        conversationRef.current = created.id
+        setConversationId(created.id)
+        setThreads((current) => [{ ...created, title }, ...current])
+        return created.id
+      })
+      .finally(() => {
+        threadCreation.current = undefined
+      })
+    return threadCreation.current
+  }
+
+  /** What was held becomes ordinary user messages: their turn has begun, and
+      this is the shape the store recorded them in — one each, never merged. */
+  function promoteHeld(): void {
+    const batch = heldRef.current
+    heldRef.current = []
+    setHeld([])
+    if (batch.length === 0) return
+    setMessages((current) => [
+      ...current,
+      ...batch.map((message, index) => ({
+        id: `u${current.length + index}`,
+        role: 'user' as const,
+        text: stamped(message.text, message.attachments),
+      })),
+    ])
+  }
+
+  /**
+   * Follows one turn to its end, then looks for the next.
+   *
+   * The follow-up attach is the other half of the server's queue: when the
+   * desk dispatches what was held as a merged turn, it is installed BEFORE
+   * the old stream announces its end, so this attach finds it. A turn that
+   * settles with nothing behind it answers 204 and the loop rests.
+   */
+  async function consume(states: AsyncGenerator<TurnState>): Promise<void> {
+    let last: TurnState | undefined
+    try {
+      for await (const state of states) {
+        last = state
+        setLive(state)
+      }
+    } catch (error) {
+      // A fetch that REJECTS — network down, server gone — must land as the
+      // error it is, not leave the dots pulsing forever.
+      last = { ...(last ?? INITIAL_TURN), running: false, error: (error as Error).message }
+    }
+
+    if (last) {
+      sessionId.current = last.sessionId ?? sessionId.current
+      if (last.contextTokens !== undefined) setContextTokens(last.contextTokens)
       setMessages((current) => [
         ...current,
         {
-          id: `u${current.length}`,
-          role: 'user',
-          text: attachments.length > 0 ? `${text}\n📎 ${attachments.map((a) => a.name).join(', ')}`.trim() : text,
+          id: `a${current.length}`,
+          role: 'agent',
+          text: last.text,
+          tools: last.tools,
+          stopped: last.stopped,
+          error: last.error,
         },
       ])
-      // The dots go up BEFORE the server is asked anything: between here and
-      // the driver's first event stand a conversation write, the POST and a
-      // CLI spawn — seconds, sometimes, during which a silent screen reads as
-      // a swallowed message. The stream's first state replaces this one.
+    }
+    setLive(undefined)
+
+    const thread = conversationRef.current
+    if (!thread) return
+
+    const follow = await attachTurn(thread, fetchImpl ?? fetch)
+    if (follow) {
+      promoteHeld()
       setLive(INITIAL_TURN)
+      return consume(follow)
+    }
 
-      // A thread is created on the first message rather than on arrival: an
-      // instance nobody has spoken to should not accumulate empty threads.
-      let thread = conversationRef.current
-      if (!thread) {
-        // Named from the first message, at creation: a title set in a second
-        // call is a title lost whenever that call is.
-        const title = titleFrom(text)
-        const created = await createConversation(fetchImpl, title)
-        if (created) {
-          thread = created.id
-          conversationRef.current = thread
-          setConversationId(thread)
-          setThreads((current) => [{ ...created, title }, ...current])
-        }
+    if (heldRef.current.length > 0) {
+      // Held, and nothing to attach to: the merged turn ran to completion
+      // faster than this re-attach. The store has the whole exchange — read
+      // it back rather than guess at it.
+      heldRef.current = []
+      setHeld([])
+      await openThread(thread)
+    }
+  }
+
+  /** One consumer at a time — `turning` is what `send` reads to hold back. */
+  async function pump(states: AsyncGenerator<TurnState>): Promise<void> {
+    turning.current = true
+    try {
+      await consume(states)
+    } finally {
+      turning.current = false
+    }
+  }
+
+  async function send(text: string, attachments: readonly PendingAttachment[] = []): Promise<void> {
+    // Sent DURING a turn: the SERVER holds it — POSTed at once, persisted on
+    // acceptance, dispatched as one merged turn when the running one settles.
+    // Losing this tab no longer loses the message; what is kept here is only
+    // the waiting bubble.
+    if (turning.current) {
+      heldRef.current = [...heldRef.current, { text, attachments }]
+      setHeld(heldRef.current)
+      const controller = new AbortController()
+      const start = await startTurn(
+        { ...turnOptions(text, attachments, conversationRef.current), signal: controller.signal },
+        fetchImpl,
+      )
+      if (start.kind === 'stream') {
+        // The running turn settled in the instant this left, so the desk
+        // answered with a fresh stream instead of holding. Drop this
+        // duplicate subscription: the consumer's follow-up attach adopts the
+        // same job, replay included.
+        controller.abort()
+        void start.states.return?.(undefined)
       }
+      return
+    }
 
-      let last: TurnState | undefined
-      try {
-        for await (const state of runTurn(
-          {
-            prompt: text,
-            ...(sessionId.current ? { sessionId: sessionId.current } : {}),
-            ...(model ? { model } : {}),
-            ...(thread ? { conversationId: thread } : {}),
-            ...(attachments.length > 0 ? { attachments: attachments.map((a) => a.id) } : {}),
-            ...(view ? { view } : {}),
-          },
-          fetchImpl,
-        )) {
-          last = state
-          setLive(state)
+    setMessages((current) => [
+      ...current,
+      { id: `u${current.length}`, role: 'user', text: stamped(text, attachments) },
+    ])
+    // The dots go up BEFORE the server is asked anything: between here and
+    // the driver's first event stand a conversation write, the POST and a
+    // CLI spawn — seconds, sometimes, during which a silent screen reads as
+    // a swallowed message. The stream's first state replaces this one.
+    setLive(INITIAL_TURN)
+
+    // Named from the first message, at creation: a title set in a second
+    // call is a title lost whenever that call is.
+    const thread = await ensureThread(titleFrom(text))
+    const start = await startTurn(turnOptions(text, attachments, thread), fetchImpl)
+
+    if (start.kind === 'held') {
+      // Another tab is running this conversation's turn: adopt it, and this
+      // message rides the follow-up like any held one.
+      if (thread && !turning.current) {
+        const running = await attachTurn(thread, fetchImpl ?? fetch)
+        if (running) {
+          void pump(running)
+          return
         }
-      } catch (error) {
-        // A fetch that REJECTS — network down, server gone — used to leave
-        // nothing on screen at all; with the dots now up from the start it
-        // would leave them pulsing forever. Land it as the error it is.
-        last = { ...(last ?? INITIAL_TURN), running: false, error: (error as Error).message }
-      }
-
-      if (last) {
-        sessionId.current = last.sessionId ?? sessionId.current
-        if (last.contextTokens !== undefined) setContextTokens(last.contextTokens)
-        setMessages((current) => [
-          ...current,
-          {
-            id: `a${current.length}`,
-            role: 'agent',
-            text: last.text,
-            tools: last.tools,
-            stopped: last.stopped,
-            error: last.error,
-          },
-        ])
       }
       setLive(undefined)
-    },
-    [fetchImpl, model, view],
-  )
+      return
+    }
 
-  const send = useCallback(
-    async (text: string, attachments: readonly PendingAttachment[] = []) => {
-      // Sent DURING a turn, a message is held, not raced: two concurrent
-      // streams would interleave their states into the one live bubble, and
-      // behind it two CLI processes would resume the same session at once.
-      if (turning.current) {
-        heldRef.current = [...heldRef.current, { text, attachments }]
-        setHeld(heldRef.current)
-        return
-      }
-
-      turning.current = true
-      try {
-        let batchText = text
-        let batchAttachments = attachments
-        for (;;) {
-          await runOne(batchText, batchAttachments)
-          const batch = heldRef.current
-          if (batch.length === 0) break
-          heldRef.current = []
-          setHeld([])
-          // Merged into ONE turn rather than replayed one by one, as the
-          // predecessor did: messages typed at a busy agent are one growing
-          // instruction, and N turns would pay N round-trips to say it.
-          batchText = batch.map((message) => message.text).filter((part) => part !== '').join('\n\n')
-          batchAttachments = batch.flatMap((message) => message.attachments)
-        }
-      } finally {
-        turning.current = false
-      }
-    },
-    [runOne],
-  )
+    void pump(start.states)
+  }
+  sendRef.current = send
 
   useEffect(() => {
     // Published once the sender exists, so a plugin loaded before the chat
     // mounted still gets a working channel rather than a silent no-op.
+    // Through the ref, because `send` is a plain function remade each render:
+    // the channel is published once and always reaches the latest one.
     onReady?.({
-      ask: (prompt: string) => void send(prompt),
+      ask: (prompt: string) => void sendRef.current(prompt),
       compose: (text: string) => composeRef.current?.(text),
       attach: async (files: readonly File[]) => attachRef.current?.(files),
     })
-  }, [onReady, send])
+  }, [onReady])
 
   const stop = useCallback(() => {
     if (!sessionId.current) return
