@@ -58,12 +58,14 @@ describe('the turn desk', () => {
     })
     await job.done
 
-    expect(finished[0]).toMatchObject({
-      text: 'Bonjour singe',
-      tools: [{ name: 'Read', target: '/a.md', ok: true }],
-      sessionId: 's1',
-      stopped: false,
-    })
+    expect(finished[0]).toMatchObject({ sessionId: 's1', stopped: false })
+    // Cut where the reader sees the cut: the agent spoke, then went back to
+    // work, so the tool call belongs to a SECOND part and not above the first
+    // answer. The shell's reducer applies the same rule to the same stream.
+    expect(finished[0]?.parts).toEqual([
+      { tools: [], text: 'Bonjour singe' },
+      { tools: [{ name: 'Read', target: '/a.md', ok: true }], text: '' },
+    ])
     expect(limiter.state.releases).toBe(1)
   })
 
@@ -247,7 +249,8 @@ describe('the turn desk', () => {
     await job.done
 
     expect(seen.at(-1)).toEqual({ type: 'error', message: 'CLI died', fatal: true })
-    expect(finished[0]).toMatchObject({ text: 'partiel', failure: 'CLI died' })
+    expect(finished[0]).toMatchObject({ failure: 'CLI died' })
+    expect(finished[0]?.parts).toEqual([{ tools: [], text: 'partiel' }])
   })
 
   it('survives a finish that throws, and still runs the backlog', async () => {

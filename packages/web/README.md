@@ -9,7 +9,9 @@ their environment is injected:
   as deltas and the bubble grows, which is deficit #1 of the parity bar closed.
   The parser is incremental on purpose: a network chunk has no relationship to
   a frame boundary, and code that assumes otherwise works locally and corrupts
-  long answers in production.
+  long answers in production. The state is a list of PARTS, not one string: a
+  tool called after the agent has spoken opens the next one, which is what
+  makes a turn draw as the several messages it actually said.
 - **`chat/useCadence.ts`** — how often a growing answer is redrawn as markdown.
   Rendering the agent's half means re-parsing it from the top on every delta,
   because a `**` typed now decides what a `**` typed earlier meant; at a few

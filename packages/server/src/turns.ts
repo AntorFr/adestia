@@ -34,10 +34,28 @@ export interface TurnSlotLimiter {
   release(): void
 }
 
+/**
+ * One stretch of a turn: the tools it called, then what it said about them.
+ *
+ * A turn is not one answer — the agent speaks, works again, speaks again —
+ * and the transcript keeps those apart, because the browser draws them apart.
+ * The cut is the same rule the shell's reducer applies (`web/chat/stream.ts`,
+ * `TurnPart`): a tool called after the agent has spoken opens the next part.
+ *
+ * Written twice on purpose, the way `TurnEvent` is: the web package carries
+ * no server dependency, and a browser bundle must not reach in here. What
+ * keeps the two honest is the pair of tests that feed the same interleaving
+ * to each side and expect the same cut.
+ */
+export interface TurnPart {
+  readonly tools: readonly { name: string; target?: string; ok?: boolean }[]
+  readonly text: string
+}
+
 /** Everything a settled turn learned, for whoever persists it. */
 export interface TurnOutcome {
-  readonly text: string
-  readonly tools: readonly { name: string; target?: string; ok?: boolean }[]
+  /** In order. Empty when the turn produced nothing at all. */
+  readonly parts: readonly TurnPart[]
   readonly stopped: boolean
   readonly failure?: string | undefined
   readonly usage?: { contextTokens?: number; outputTokens?: number } | undefined
@@ -299,22 +317,40 @@ export class TurnDesk {
 
   /** One driver turn, accumulated the way the route used to accumulate it. */
   async #turn(job: TurnJob, spec: TurnSpec): Promise<TurnOutcome> {
-    const tools: { name: string; target?: string; ok?: boolean }[] = []
-    let text = ''
+    const parts: { tools: { name: string; target?: string; ok?: boolean }[]; text: string }[] = []
     let stopped = false
     let failure: string | undefined
     let usage: TurnOutcome['usage']
     let sessionId: string | undefined
 
+    /** The part being written — opened on demand, since a turn starts empty. */
+    const current = () => {
+      if (parts.length === 0) parts.push({ tools: [], text: '' })
+      return parts[parts.length - 1]!
+    }
+
     try {
       for await (const event of this.driver.runTurn(spec.request)) {
         job.emit(event)
-        if (event.type === 'text-delta') text += event.text
+        if (event.type === 'text-delta') current().text += event.text
         else if (event.type === 'tool-use') {
-          tools.push({ name: event.name, ...(event.target ? { target: event.target } : {}) })
+          const call = { name: event.name, ...(event.target ? { target: event.target } : {}) }
+          // Back to work after having spoken: that is the next message.
+          const last = parts[parts.length - 1]
+          if (last && last.text === '') last.tools.push(call)
+          else parts.push({ tools: [call], text: '' })
         } else if (event.type === 'tool-result') {
-          const pending = tools.findLast((tool) => tool.name === event.name && tool.ok === undefined)
-          if (pending) pending.ok = event.ok
+          // Searched back THROUGH the parts: a slow call can still be running
+          // when the agent has already opened the next one.
+          for (let index = parts.length - 1; index >= 0; index -= 1) {
+            const pending = parts[index]!.tools.findLast(
+              (tool) => tool.name === event.name && tool.ok === undefined,
+            )
+            if (pending) {
+              pending.ok = event.ok
+              break
+            }
+          }
         } else if (event.type === 'error') failure = event.message
         else if (event.type === 'result') {
           stopped = event.stopped
@@ -335,8 +371,7 @@ export class TurnDesk {
     }
 
     return {
-      text,
-      tools,
+      parts,
       stopped,
       ...(failure !== undefined ? { failure } : {}),
       ...(usage !== undefined ? { usage } : {}),

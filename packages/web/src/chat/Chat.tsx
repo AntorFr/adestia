@@ -27,6 +27,7 @@ import {
   startTurn,
   type PendingAsk,
   type ScreenView,
+  type TurnPart,
   type TurnState,
 } from './stream.js'
 import {
@@ -230,6 +231,18 @@ export function Bubble({
       {message.error && <p className="golem-bubble__error">{message.error}</p>}
     </article>
   )
+}
+
+/**
+ * The parts to DRAW for a live turn.
+ *
+ * A turn that has not produced anything yet has no parts at all, and the
+ * indicator has to hang somewhere: one empty part is that somewhere. It keeps
+ * "nothing has happened yet" and "the agent is between two answers" as the
+ * same shape, so the bubble is written once.
+ */
+export function livePartsOf(state: TurnState): readonly TurnPart[] {
+  return state.parts.length > 0 ? state.parts : [{ tools: [], text: '' }]
 }
 
 /**
@@ -1077,7 +1090,7 @@ export function Chat({
     // chat because it lacks one DOM convenience.
     const anchor = bottom.current
     if (typeof anchor?.scrollIntoView === 'function') anchor.scrollIntoView({ block: 'end' })
-  }, [active.messages, active.live?.text, active.held])
+  }, [active.messages, active.live?.parts, active.held])
 
   /** The user's half, as the thread shows it — attachments named after it. */
   function stamped(text: string, attachments: readonly PendingAttachment[]): string {
@@ -1178,20 +1191,35 @@ export function Chat({
 
     if (last) {
       const settled = last
+      // What was drawn as several bubbles is FILED as several messages. The
+      // alternative — one record holding the whole turn — would have made a
+      // reload merge back what the live view had just separated, and the
+      // thread on disk is the version that outlives the tab.
+      const settledParts = settled.parts.filter(
+        (part) => part.text !== '' || part.tools.length > 0,
+      )
       patchSession(tabId, (current) => ({
         live: undefined,
         sessionId: settled.sessionId ?? current.sessionId,
         ...(settled.contextTokens !== undefined ? { contextTokens: settled.contextTokens } : {}),
         messages: [
           ...current.messages,
-          {
-            id: `a${current.messages.length}`,
-            role: 'agent' as const,
-            text: settled.text,
-            tools: settled.tools,
-            stopped: settled.stopped,
-            error: settled.error,
-          },
+          // A turn that produced nothing still leaves a message: it is what
+          // carries the interruption marker and the error.
+          ...(settledParts.length > 0 ? settledParts : [{ tools: [], text: '' }]).map(
+            (part, index, parts) => ({
+              id: `a${current.messages.length + index}`,
+              role: 'agent' as const,
+              text: part.text,
+              tools: part.tools,
+              // How the TURN ended belongs to its last word, not to each of
+              // them: an interruption marker under every part would read as
+              // three interruptions.
+              ...(index === parts.length - 1
+                ? { stopped: settled.stopped, error: settled.error }
+                : {}),
+            }),
+          ),
         ],
         // The dot that says "finished, and you have not seen it": only when
         // the answer landed in a tab the reader was not looking at.
@@ -1469,30 +1497,51 @@ export function Chat({
           <Bubble key={message.id} message={message} {...(openPage ? { openPage } : {})} />
         ))}
 
-        {active.live && (
-          <article className="golem-bubble golem-bubble--agent golem-bubble--live">
-            <ToolTrace tools={active.live.tools} />
-            {active.live.text ? (
-              <LiveProse text={active.live.text} {...(openPage ? { openPage } : {})} />
-            ) : (
-              <div className="golem-bubble__working">
-                {busySlot ? (
-                  <SkinSlot
-                    render={busySlot}
-                    className="golem-busy-host"
-                    context={{ ask: () => {}, compose: () => {}, focusComposer: () => {} }}
-                  />
-                ) : (
-                  <span className="golem-dots" aria-label="Working" />
+        {/* A turn draws one bubble PER PART: the agent that answers, works
+            again and answers again said two things. Only the last is live —
+            the ones behind it are finished, and re-parsing them on every
+            delta would re-render the whole turn for each keystroke of it. */}
+        {active.live &&
+          livePartsOf(active.live).map((part, index, parts) => {
+            const last = index === parts.length - 1
+            return (
+              <article
+                key={`l${index}`}
+                className={`golem-bubble golem-bubble--agent${last ? ' golem-bubble--live' : ''}`}
+              >
+                <ToolTrace tools={part.tools} />
+                {part.text &&
+                  (last ? (
+                    <LiveProse text={part.text} {...(openPage ? { openPage } : {})} />
+                  ) : (
+                    <Prose markdown={part.text} {...(openPage ? { openPage } : {})} />
+                  ))}
+                {/* The indicator stays UP for as long as the turn runs, under
+                    whatever has been said so far. It used to be the ALTERNATIVE
+                    to the text, so the first sentence killed it: the agent then
+                    worked for minutes behind a bubble that looked finished. */}
+                {last && active.live!.running && (
+                  <div className="golem-bubble__working">
+                    {busySlot ? (
+                      <SkinSlot
+                        render={busySlot}
+                        className="golem-busy-host"
+                        context={{ ask: () => {}, compose: () => {}, focusComposer: () => {} }}
+                      />
+                    ) : (
+                      <span className="golem-dots" aria-label="Working" />
+                    )}
+                    {/* The climbing counter, when the driver can feed it. */}
+                    {active.live!.outputTokens > 0 && (
+                      <span className="golem-bubble__counter">
+                        {formatTokens(active.live!.outputTokens)}
+                      </span>
+                    )}
+                  </div>
                 )}
-                {/* The climbing counter, when the driver can feed it. */}
-                {active.live.outputTokens > 0 && (
-                  <span className="golem-bubble__counter">{formatTokens(active.live.outputTokens)}</span>
-                )}
-              </div>
-            )}
-          </article>
-        )}
+              </article>
+            )
+          })}
 
         {/* What was said while the agent was busy, visibly waiting its turn.
             The server holds the real queue; these leave as ONE merged turn

@@ -417,13 +417,20 @@ describe('conversations', () => {
     })
 
     const conversation = (await app.inject({ url: `/api/conversations/${id}` })).json()
+    // Two agent lines, not one: the agent spoke, then went back to its tools.
+    // The trace hangs under the SECOND, above the answer it would have led to
+    // — putting it above 'Bonjour' would credit it to work not yet done.
     expect(conversation.messages.map((m: { role: string; text: string }) => [m.role, m.text])).toEqual([
       ['user', 'salut'],
       ['agent', 'Bonjour'],
+      ['agent', ''],
     ])
 
-    expect(conversation.messages[1].tools).toEqual([{ name: 'Read', target: '/a.md', ok: true }])
-    expect(conversation.messages[1].usage.contextTokens).toBe(4200)
+    expect(conversation.messages[1].tools).toBeUndefined()
+    expect(conversation.messages[2].tools).toEqual([{ name: 'Read', target: '/a.md', ok: true }])
+    // The turn's own numbers hang on its last line, which is where the
+    // context pill reads them from.
+    expect(conversation.messages[2].usage.contextTokens).toBe(4200)
     // And the thread remembers which CLI session to resume.
     expect(conversation.sessionId).toBe('s1')
     await app.close()

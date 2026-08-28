@@ -589,6 +589,73 @@ describe('chat', () => {
     expect(container.querySelector('.golem-dots')).toBeTruthy()
   })
 
+  it('keeps the indicator up between two answers, and files them as two messages', async () => {
+    // Reported from the real interface: the agent answered, went back to its
+    // tools for a while, then answered again. The indicator vanished at the
+    // FIRST sentence — it was the alternative to the text, not its companion
+    // — so a bubble that looked finished sat there while work went on. And
+    // the second answer was glued to the bottom of the first.
+    const encoder = new TextEncoder()
+    let turn: ReadableStreamDefaultController<Uint8Array> | undefined
+
+    const fetchImpl = vi.fn((url: string, init?: RequestInit) => {
+      const path = String(url)
+      if (path.startsWith('/api/turn/attach')) {
+        return Promise.resolve({ ok: true, status: 204, body: null } as unknown as Response)
+      }
+      if (path === '/api/turn') {
+        const body = new ReadableStream<Uint8Array>({
+          start(controller) {
+            turn = controller
+          },
+        })
+        return Promise.resolve({ ok: true, status: 200, body } as unknown as Response)
+      }
+      return Promise.resolve(
+        new Response(
+          JSON.stringify(
+            init?.method === 'POST' ? { id: 'c1', title: 'salut', updatedAt: '' } : { conversations: [] },
+          ),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        ),
+      )
+    }) as unknown as typeof fetch
+
+    const { container } = render(<Chat fetchImpl={fetchImpl} />)
+    const input = screen.getByRole('textbox')
+    fireEvent.change(input, { target: { value: 'salut' } })
+    await act(async () => {
+      fireEvent.keyDown(input, { key: 'Enter' })
+    })
+
+    await act(async () => {
+      turn!.enqueue(encoder.encode(frame({ type: 'text-delta', text: 'Je regarde.' })))
+    })
+    await waitFor(() => expect(screen.getByText('Je regarde.')).toBeTruthy())
+    expect(container.querySelector('.golem-dots')).toBeTruthy()
+
+    await act(async () => {
+      turn!.enqueue(encoder.encode(frame({ type: 'tool-use', name: 'Read', target: '/a.md' })))
+      turn!.enqueue(encoder.encode(frame({ type: 'text-delta', text: 'Voilà.' })))
+    })
+    await waitFor(() => expect(screen.getByText('Voilà.')).toBeTruthy())
+    expect(container.querySelectorAll('.golem-bubble--agent')).toHaveLength(2)
+    // Still working, and the trace hangs above the answer it produced.
+    expect(container.querySelector('.golem-dots')).toBeTruthy()
+    expect(container.querySelectorAll('.golem-trace')).toHaveLength(1)
+
+    await act(async () => {
+      turn!.enqueue(encoder.encode(frame({ type: 'result', sessionId: 's1', stopped: false })))
+      turn!.close()
+    })
+    // Settled: the indicator goes, and what was drawn as two bubbles STAYS
+    // two — the thread keeps the shape the live view had.
+    await waitFor(() => expect(container.querySelector('.golem-dots')).toBeNull())
+    expect(container.querySelectorAll('.golem-bubble--agent')).toHaveLength(2)
+    expect(screen.getByText('Je regarde.')).toBeTruthy()
+    expect(screen.getByText('Voilà.')).toBeTruthy()
+  })
+
   it('POSTs a message sent during a turn at once, shows it held, then adopts the merged turn', async () => {
     // The queue is the SERVER's now: a message typed during a turn is posted
     // immediately (202 — held, already written into the thread), so a closed

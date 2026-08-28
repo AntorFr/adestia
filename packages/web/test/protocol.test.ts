@@ -27,7 +27,7 @@ describe('protocol alignment', () => {
     ]
 
     const state = (emitted as WebEvent[]).reduce(applyEvent, INITIAL_TURN)
-    expect(state.text).toBe('x')
+    expect(state.parts.map((part) => part.text).join('')).toBe('x')
     expect(state.running).toBe(false)
   })
 

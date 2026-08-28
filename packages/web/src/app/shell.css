@@ -267,6 +267,13 @@
   gap: var(--space-3);
 }
 
+/* The indicator stays up for the whole turn, so it now sits UNDER whatever
+   has been said so far rather than instead of it — and needs the air a first
+   child never did. */
+.golem-prose + .golem-bubble__working {
+  margin-block-start: var(--space-2);
+}
+
 .golem-bubble__counter {
   font-family: var(--font-mono);
   font-size: var(--text-sm);

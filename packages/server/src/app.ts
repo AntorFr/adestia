@@ -542,18 +542,32 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
         // is the whole point of the desk.
         finish: async (outcome) => {
           if (!conversationId) return
-          await conversations
-            .append(userId, conversationId, {
-              id: randomUUID(),
-              role: 'agent',
-              text: outcome.text,
-              at: new Date().toISOString(),
-              ...(outcome.tools.length > 0 ? { tools: [...outcome.tools] } : {}),
-              ...(outcome.stopped ? { stopped: outcome.stopped } : {}),
-              ...(outcome.failure ? { error: outcome.failure } : {}),
-              ...(outcome.usage ? { usage: outcome.usage } : {}),
-            })
-            .catch(() => undefined)
+          // ONE MESSAGE PER PART. An agent that answers, goes back to its
+          // tools and answers again said two things, and the thread records
+          // two — otherwise a reload would glue back together what the live
+          // view had just drawn apart. A turn that produced nothing still
+          // leaves a line: it is what carries the interruption and the error.
+          const parts = outcome.parts.filter(
+            (part) => part.text !== '' || part.tools.length > 0,
+          )
+          const written = parts.length > 0 ? parts : [{ tools: [], text: '' }]
+          for (const [index, part] of written.entries()) {
+            // How the TURN ended belongs to its last word only; the usage is
+            // the whole turn's, and hangs there too.
+            const last = index === written.length - 1
+            await conversations
+              .append(userId, conversationId, {
+                id: randomUUID(),
+                role: 'agent',
+                text: part.text,
+                at: new Date().toISOString(),
+                ...(part.tools.length > 0 ? { tools: [...part.tools] } : {}),
+                ...(last && outcome.stopped ? { stopped: outcome.stopped } : {}),
+                ...(last && outcome.failure ? { error: outcome.failure } : {}),
+                ...(last && outcome.usage ? { usage: outcome.usage } : {}),
+              })
+              .catch(() => undefined)
+          }
           if (outcome.sessionId) {
             await conversations
               .setSession(userId, conversationId, outcome.sessionId)

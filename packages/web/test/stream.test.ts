@@ -58,6 +58,13 @@ describe('SseParser', () => {
   })
 })
 
+/** Every word of a turn, its parts joined — what a single `text` used to be. */
+const said = (state: TurnState | undefined): string =>
+  (state?.parts ?? []).map((part) => part.text).join('')
+
+/** Every tool call of a turn, its parts flattened. */
+const calls = (state: TurnState | undefined) => (state?.parts ?? []).flatMap((part) => part.tools)
+
 describe('applyEvent', () => {
   const reduce = (events: readonly TurnEvent[]): TurnState =>
     events.reduce(applyEvent, INITIAL_TURN)
@@ -68,7 +75,7 @@ describe('applyEvent', () => {
       { type: 'text-delta', text: 'jour ' },
       { type: 'text-delta', text: 'singe' },
     ])
-    expect(state.text).toBe('Bonjour singe')
+    expect(said(state)).toBe('Bonjour singe')
     expect(state.running).toBe(true)
   })
 
@@ -77,7 +84,7 @@ describe('applyEvent', () => {
       { type: 'tool-use', name: 'Read', target: '/a.md' },
       { type: 'tool-result', name: 'Read', ok: true },
     ])
-    expect(state.tools).toEqual([{ name: 'Read', target: '/a.md', ok: true }])
+    expect(calls(state)).toEqual([{ name: 'Read', target: '/a.md', ok: true }])
   })
 
   it('resolves parallel calls of the same tool in order', () => {
@@ -87,11 +94,11 @@ describe('applyEvent', () => {
       { type: 'tool-use', name: 'Read', target: '/b.md' },
       { type: 'tool-result', name: 'Read', ok: false },
     ])
-    expect(state.tools.map((t) => t.ok)).toEqual([undefined, false])
+    expect(calls(state).map((t) => t.ok)).toEqual([undefined, false])
   })
 
   it('ignores a result for a tool that was never announced', () => {
-    expect(reduce([{ type: 'tool-result', name: 'Ghost', ok: true }]).tools).toEqual([])
+    expect(calls(reduce([{ type: 'tool-result', name: 'Ghost', ok: true }]))).toEqual([])
   })
 
   it('carries the climbing token counter', () => {
@@ -122,11 +129,58 @@ describe('applyEvent', () => {
       { type: 'error', message: 'a tool failed', fatal: false },
       { type: 'text-delta', text: 'carrying on' },
     ])
-    expect(state).toMatchObject({ error: 'a tool failed', running: true, text: 'carrying on' })
+    expect(state).toMatchObject({ error: 'a tool failed', running: true })
+    expect(said(state)).toBe('carrying on')
   })
 
   it('ends the turn on a fatal error', () => {
     expect(reduce([{ type: 'error', message: 'CLI died', fatal: true }]).running).toBe(false)
+  })
+})
+
+describe('a turn is cut into the messages it actually said', () => {
+  const reduce = (events: readonly TurnEvent[]): TurnState =>
+    events.reduce(applyEvent, INITIAL_TURN)
+
+  it('opens a new part when the agent goes back to work after speaking', () => {
+    // Reported from the real interface: the second answer was glued to the
+    // bottom of the first, and the second batch of tool calls hung above both.
+    const state = reduce([
+      { type: 'text-delta', text: 'Je regarde.' },
+      { type: 'tool-use', name: 'Read', target: '/a.md' },
+      { type: 'tool-result', name: 'Read', ok: true },
+      { type: 'text-delta', text: 'Voilà.' },
+    ])
+    expect(state.parts).toEqual([
+      { tools: [], text: 'Je regarde.' },
+      { tools: [{ name: 'Read', target: '/a.md', ok: true }], text: 'Voilà.' },
+    ])
+  })
+
+  it('keeps the tools called BEFORE a word with the answer they produced', () => {
+    const state = reduce([
+      { type: 'tool-use', name: 'Grep' },
+      { type: 'tool-use', name: 'Read' },
+      { type: 'text-delta', text: 'Trouvé.' },
+    ])
+    expect(state.parts).toHaveLength(1)
+    expect(state.parts[0]?.tools.map((tool) => tool.name)).toEqual(['Grep', 'Read'])
+  })
+
+  it('resolves a call that was still running when the next part opened', () => {
+    // A slow tool reports back after the agent has spoken and called another:
+    // the mark belongs to the call that is still open, wherever it sits.
+    const state = reduce([
+      { type: 'tool-use', name: 'Bash', target: 'npm test' },
+      { type: 'text-delta', text: 'Lancé.' },
+      { type: 'tool-use', name: 'Read' },
+      { type: 'tool-result', name: 'Bash', ok: true },
+    ])
+    expect(state.parts[0]?.tools[0]?.ok).toBe(true)
+  })
+
+  it('starts with no part at all — the state the dots are drawn for', () => {
+    expect(INITIAL_TURN.parts).toEqual([])
   })
 })
 
@@ -164,7 +218,7 @@ describe('runTurn', () => {
     )) {
       states.push(state)
     }
-    expect(states.map((s) => s.text)).toEqual(['Bon', 'Bonjour', 'Bonjour'])
+    expect(states.map(said)).toEqual(['Bon', 'Bonjour', 'Bonjour'])
     expect(states.at(-1)).toMatchObject({ running: false, sessionId: 's1' })
   })
 
@@ -177,7 +231,7 @@ describe('runTurn', () => {
     )) {
       states.push(state)
     }
-    expect(states[0]?.text).toBe('coupé en deux')
+    expect(said(states[0])).toBe('coupé en deux')
   })
 
   it('carries the screen being watched, and nothing when there is none', async () => {
@@ -231,7 +285,7 @@ describe('runTurn', () => {
     expect(states.at(-1)).toMatchObject({
       running: false,
       error: 'the turn ended unexpectedly',
-      text: 'half an ans',
     })
+    expect(said(states.at(-1))).toBe('half an ans')
   })
 })

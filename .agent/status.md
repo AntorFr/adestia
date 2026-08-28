@@ -1,5 +1,5 @@
 # Status — Golem
-> MàJ : 2026-08-27
+> MàJ : 2026-08-28
 
 Chantier du 27/08 — le retour immédiat du chat (2 bugs de la vague 1) :
 (1) les « … » n'apparaissaient qu'au PREMIER event SSE du serveur — entre
@@ -111,8 +111,27 @@ conteneur `:::` — donc la construction est retirée de la GRAMMAIRE plutôt
 qu'excusée dans le validateur : renderer, éditeur et validateur continuent de
 voir le même arbre. `:::` et `::` sont intacts. 3 tests d'épingle.
 
+Chantier du 28/08 — **un tour n'est pas UNE réponse.** Rapporté par Monsieur
+(soupçonné spécifique à Copilot ; il ne l'est pas — les deux drivers émettent
+le même entrelacement `text-delta`/`tool-use`, le défaut est dans la coque).
+Deux défauts d'un même endroit : (1) l'indicateur « … » était l'ALTERNATIVE au
+texte (`live.text ? prose : dots`) — la première phrase le tuait, et l'agent
+pouvait travailler des minutes derrière une bulle qui avait l'air finie ; il
+reste désormais levé tant que le tour court, SOUS ce qui a été dit. (2) tout
+le tour s'accumulait dans un seul `text` : la deuxième réponse se collait au
+bas de la première et le deuxième paquet d'outils se retrouvait au-dessus des
+DEUX. `TurnState` porte maintenant des PARTIES (`TurnPart`) — un outil appelé
+après que l'agent a parlé ouvre la suivante, c'est-à-dire exactement la césure
+que le lecteur voit. Une partie = une bulle, et une bulle = un `StoredMessage`
+(sinon un refresh recollait ce que le direct venait de séparer). La règle est
+écrite deux fois, coque et serveur, comme `TurnEvent` l'est déjà : le paquet
+web ne dépend pas du serveur ; deux tests, un de chaque côté, mangent le même
+entrelacement et attendent la même césure. Fin du tour (interruption, erreur,
+usage) portée par la DERNIÈRE partie — c'est là que la pastille de contexte
+lit `usage`. 12 tests remis au nouveau contrat, 5 nouveaux.
+
 **État :** Migration Alfred. Faits et vérifiés en navigateur : `todo`,
-`planif`, `collections`, `scan`, skin `alfred`. 1114 tests + 146 de plugins.
+`planif`, `collections`, `scan`, skin `alfred`. 1119 tests + 146 de plugins.
 Facette `blocks` CÂBLÉE : elle était chargée et narrowée depuis le début, et
 personne ne lisait le résultat. Un bloc se déclare en deux moitiés — le
 manifeste (`vocabulary`) dit ce qu'il EST, pour que le SERVEUR le valide sans

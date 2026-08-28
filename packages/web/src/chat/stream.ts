@@ -82,10 +82,31 @@ export interface ToolCall {
   readonly ok?: boolean | undefined
 }
 
+/**
+ * One stretch of a turn: what the agent did, then what it said about it.
+ *
+ * A turn is not one answer. The agent says a sentence, calls three tools,
+ * says another — and those are two things said, not one paragraph that
+ * happens to have a pause in it. Folding the whole turn into a single string
+ * (which is what this state used to hold) glued the second answer to the
+ * bottom of the first and hung the second batch of tool calls above BOTH.
+ *
+ * The rule that cuts them is the one the reader can see: a tool called after
+ * the agent has spoken opens the next part. So a part is a trace followed by
+ * the text it produced — exactly the order `Bubble` already drew.
+ */
+export interface TurnPart {
+  readonly tools: readonly ToolCall[]
+  readonly text: string
+}
+
 /** Everything the chat needs to render one turn while it happens. */
 export interface TurnState {
-  readonly text: string
-  readonly tools: readonly ToolCall[]
+  /**
+   * In order. Empty until the agent does anything at all, which is the state
+   * the working indicator is drawn for.
+   */
+  readonly parts: readonly TurnPart[]
   readonly outputTokens: number
   /**
    * Weight of the context the NEXT message re-pays, known only once the turn
@@ -102,32 +123,50 @@ export interface TurnState {
 }
 
 export const INITIAL_TURN: TurnState = {
-  text: '',
-  tools: [],
+  parts: [],
   outputTokens: 0,
   running: true,
   stopped: false,
 }
 
+/** The part being written, opened on demand — the turn starts with none. */
+function editLast(state: TurnState, edit: (part: TurnPart) => TurnPart): TurnState {
+  const parts = state.parts.length > 0 ? [...state.parts] : [{ tools: [], text: '' }]
+  parts[parts.length - 1] = edit(parts[parts.length - 1]!)
+  return { ...state, parts }
+}
+
 export function applyEvent(state: TurnState, event: TurnEvent): TurnState {
   switch (event.type) {
     case 'text-delta':
-      return { ...state, text: state.text + event.text }
+      return editLast(state, (part) => ({ ...part, text: part.text + event.text }))
 
-    case 'tool-use':
-      return { ...state, tools: [...state.tools, { name: event.name, target: event.target }] }
+    case 'tool-use': {
+      const call = { name: event.name, target: event.target }
+      const last = state.parts[state.parts.length - 1]
+      // Going back to work after having spoken starts the NEXT message. A
+      // tool called before a word was said belongs to the part being written.
+      if (last !== undefined && last.text === '') {
+        return editLast(state, (part) => ({ ...part, tools: [...part.tools, call] }))
+      }
+      return { ...state, parts: [...state.parts, { tools: [call], text: '' }] }
+    }
 
     case 'tool-result': {
-      // Mark the most recent unresolved call of that name: tool calls can
-      // overlap, and blindly marking the last one mislabels a parallel pair.
-      const index = findLastIndex(
-        state.tools,
-        (tool) => tool.name === event.name && tool.ok === undefined,
-      )
-      if (index === -1) return state
-      const tools = [...state.tools]
-      tools[index] = { ...tools[index]!, ok: event.ok }
-      return { ...state, tools }
+      // Mark the most recent unresolved call of that name, searching back
+      // THROUGH the parts: tool calls can overlap, and a slow one can still
+      // be running when the agent has already opened the next part.
+      for (let index = state.parts.length - 1; index >= 0; index -= 1) {
+        const tools = state.parts[index]!.tools
+        const at = findLastIndex(tools, (tool) => tool.name === event.name && tool.ok === undefined)
+        if (at === -1) continue
+        const marked = [...tools]
+        marked[at] = { ...marked[at]!, ok: event.ok }
+        const parts = [...state.parts]
+        parts[index] = { ...parts[index]!, tools: marked }
+        return { ...state, parts }
+      }
+      return state
     }
 
     case 'permission-request':

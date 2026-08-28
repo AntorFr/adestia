@@ -328,10 +328,17 @@ The v1 chat must be **at least** agent-gw's PWA, which sets the bar:
 - **Bubbles:** user right on accent, agent left on bordered surface, all colors via
   design tokens; sanitized markdown (agent side only); code/table overflow handling;
   dotted ephemeral bubbles; centered error bubble.
-- **Tool trace ◇:** grouped under the turn, name + short target (≤78 chars, never
-  the full input), opt-in per instance.
-- **Activity:** busy indicator with skin hook, pulsing status dot, single send↔stop
-  button, message queueing during a turn, turn adoption after reload. Queueing
+- **Tool trace ◇:** grouped under the PART of the turn it belongs to, name +
+  short target (≤78 chars, never the full input), opt-in per instance. A turn
+  is not one answer: an agent that speaks, goes back to its tools and speaks
+  again said two things, and the thread draws and stores two — a tool called
+  after a word opens the next message, so a trace always hangs above the
+  answer it produced rather than above one it had nothing to do with.
+- **Activity:** busy indicator with skin hook — up for as long as the turn
+  runs, UNDER whatever has been said so far rather than instead of it, so an
+  agent still working behind its first answer never looks finished —, pulsing
+  status dot, single send↔stop button, message queueing during a turn, turn
+  adoption after reload. Queueing
   and adoption are SERVER-owned (the turn desk, `server/src/turns.ts`): a turn
   runs detached from its HTTP request and an SSE response is merely a
   subscriber, so a closed tab kills a subscription, never a turn. A message
