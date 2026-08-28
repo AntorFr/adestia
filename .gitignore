@@ -12,3 +12,6 @@ dist/
 # Where development worktrees land (see CLAUDE.md). They are checkouts of this
 # same repository — committing one would nest the repo inside itself.
 .claude/worktrees/
+
+# Screenshots are evidence for one session, not artefacts of the repo.
+bench/shots/

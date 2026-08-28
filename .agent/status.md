@@ -130,6 +130,21 @@ entrelacement et attendent la même césure. Fin du tour (interruption, erreur,
 usage) portée par la DERNIÈRE partie — c'est là que la pastille de contexte
 lit `usage`. 12 tests remis au nouveau contrat, 5 nouveaux.
 
+Chantier du 28/08 (suite) — **le banc graphique n'est plus jetable.** Il était
+réinventé à chaque session (`shoot.mjs` de session, cf. le 27/08) ; il vit
+maintenant dans `bench/`, en une commande : `bench/run.sh [scénario]` construit
+l'image PAR CHEMIN, la démarre sur un `dataDir` jetable, pilote Chromium
+headless en conteneur, et démonte tout. Rien ne s'installe sur la machine.
+Ce qui est réel : l'image, le serveur, la coque, son réducteur, ses composants.
+Ce qui est faux : le MOTEUR seul — l'image n'embarque aucun CLI, donc un proxy
+répond aux deux routes de tour avec un flux SSE que le scénario cadence à la
+main. L'état que le STORE possède (fil rechargé) se sème en écrivant le JSONL
+dans le volume monté. `CLAUDE.md` porte désormais la consigne : si ça dessine,
+on le regarde avant de fusionner — et si Docker manque, on le DIT plutôt que de
+faire passer du vert pour du vu. Le chantier « parties de tour » est le premier
+constaté ainsi (7 captures : indicateur sous la première réponse, deuxième
+bulle avec sa trace, posé, depuis le store en clair/sombre/mobile).
+
 **État :** Migration Alfred. Faits et vérifiés en navigateur : `todo`,
 `planif`, `collections`, `scan`, skin `alfred`. 1119 tests + 146 de plugins.
 Facette `blocks` CÂBLÉE : elle était chargée et narrowée depuis le début, et

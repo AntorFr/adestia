@@ -38,7 +38,8 @@ In this order:
 1. **Green first.** `npm test`, `npm run typecheck`, `npm run build` — in the
    worktree, before anything moves. A red test that correctly pins the old
    contract is a decision to make, not a line to skip; this repo has pushed
-   red twice by treating it as noise.
+   red twice by treating it as noise. If the change touches what the shell
+   draws, green is not enough: look at it (below).
 2. **Merge into `main`.** From the primary checkout.
 3. **Delete the branch and remove the worktree.** `git worktree remove` then
    `git branch -d`. A branch that survives its merge is a second answer to
@@ -50,6 +51,33 @@ In this order:
 The order is the whole instruction. Tagging before the merge is the mistake
 this section exists to prevent — it is invisible until the day somebody tries
 to reproduce a running image.
+
+## If it draws something, look at it
+
+A change to the interface is not finished because the tests pass. Tests render
+components; they do not say where a thing SITS, whether it survives the dark,
+or whether a new strip eats the panel below it. This repository has shipped a
+tab strip that turned the thread into three empty columns and a title that
+truncated to "Plan d…", both green, both obvious in one screenshot.
+
+**So when Docker is available and the change touches the shell, run the bench
+before merging:**
+
+```sh
+bench/run.sh bench/scenarios/<your-change>.mjs
+```
+
+It builds the image by explicit path, boots it with a throwaway data
+directory, drives headless Chromium against it in a container, and removes
+everything it made. Write a scenario per change — a dozen lines: seed the
+thread, script the events the server would have sent, take a picture at each
+state worth a look. `bench/scenarios/turn-parts.mjs` is the worked example,
+and `bench/README.md` holds the traps (an attached turn never lets the network
+go idle; the container has no bold font; the engine is the one thing faked).
+
+Nothing installs on the machine: the browser lives in its own image. When
+Docker is NOT available, say so in the report rather than passing green off as
+seen — "the suite is green" and "I looked at it" are different claims.
 
 ## Committing
 
