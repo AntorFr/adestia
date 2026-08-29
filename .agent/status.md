@@ -1,5 +1,11 @@
 # Status — Golem
-> MàJ : 2026-08-28
+> MàJ : 2026-08-29
+
+Chantier du 29/08 — le skin skippy reprend le **blason d'agent-pods**
+(halo, double anneau, graduations) à la place du réticule simplifié :
+`icon.svg` transplanté (commentaires passés en anglais, repo public) et les
+trois rasters (180/192/512) re-rendus via le Chromium du bench — rien
+d'installé sur la machine, l'image n'embarque toujours pas de rastériseur.
 
 Chantier du 28/08 — **l'index des pages devient vivant** (le bus d'événements
 que DESIGN.md promettait depuis le début, jamais construit). Le bug : l'agent
