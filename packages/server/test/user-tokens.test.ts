@@ -20,7 +20,7 @@ const TOKEN_URL = 'https://auth.example/api/oidc/token'
 
 let dir: string
 beforeEach(async () => {
-  dir = await mkdtemp(join(tmpdir(), 'demeura-tokens-'))
+  dir = await mkdtemp(join(tmpdir(), 'adestia-tokens-'))
 })
 
 /** A provider that discovers, then answers each refresh in turn. */
@@ -51,7 +51,7 @@ function provider(answers: readonly (Record<string, unknown> | number)[]) {
 }
 
 const store = (fetchImpl: typeof fetch) =>
-  new UserTokens(dir, { issuer: ISSUER, clientId: 'demeura', clientSecret: 's3cret' }, fetchImpl)
+  new UserTokens(dir, { issuer: ISSUER, clientId: 'adestia', clientSecret: 's3cret' }, fetchImpl)
 
 describe('what a login leaves behind', () => {
   it('keeps the refresh token, and nothing about the browser', async () => {

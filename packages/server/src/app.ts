@@ -14,13 +14,13 @@ import { join } from 'node:path'
 
 import multipart from '@fastify/multipart'
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify'
-import type { AskAnswer, AskDesk, Driver, DriverDescriptor, TurnEvent } from '@antorfr/demeura-drivers'
+import type { AskAnswer, AskDesk, Driver, DriverDescriptor, TurnEvent } from '@antorfr/adestia-drivers'
 
 import { isPublicRoute, resolveIdentity, type Identity } from './auth.js'
 import { AttachmentInbox, frameAttachments, type StoredAttachment } from './attachments.js'
 import { frameView } from './screen.js'
 import { ConversationStore } from './conversations.js'
-import type { DemeuraConfig } from './config.js'
+import type { AdestiaConfig } from './config.js'
 import { frontendPayload, type DiscoveredPlugin, type DiscoveryProblem } from './extensions.js'
 import {
   describeInstructionPaths,
@@ -50,7 +50,7 @@ export interface SkinPayload {
 }
 
 export interface AppDependencies {
-  readonly config: DemeuraConfig
+  readonly config: AdestiaConfig
   readonly driver: Driver
   readonly plugins: readonly DiscoveredPlugin[]
   readonly pluginProblems: readonly DiscoveryProblem[]
@@ -215,7 +215,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
        * refusal as JSON.
        *
        * This path never ran while the instance sat behind a reverse proxy that
-       * authenticated for it: the proxy bounced the browser and Demeura only
+       * authenticated for it: the proxy bounced the browser and Adestia only
        * ever saw requests that already had an identity. Becoming an OIDC
        * client means owning that bounce — otherwise a person typing the
        * address lands on `{"error":"not signed in"}`, which is a correct
@@ -687,7 +687,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
    *
    * Three answers, no policy: `once` allows this call, `always` allows it and
    * hands the engine back its OWN suggestion so IT writes the rule into its
-   * own file in the workspace, `deny` refuses. Demeura stores no rule either
+   * own file in the workspace, `deny` refuses. Adestia stores no rule either
    * way — the durable allowlist belongs to the engine, in a file a person can
    * open and edit.
    */
@@ -857,7 +857,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
 
   // Exposed on the instance so `start()` can hand it to the clock without a
   // second construction path.
-  ;(app as FastifyInstance & { demeuraRunTurn?: unknown }).demeuraRunTurn = async (
+  ;(app as FastifyInstance & { adestiaRunTurn?: unknown }).adestiaRunTurn = async (
     prompt: string,
   ): Promise<void> => {
     if (!limiter.tryAcquire()) {

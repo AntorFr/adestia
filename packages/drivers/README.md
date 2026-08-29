@@ -1,4 +1,4 @@
-# @antorfr/demeura-drivers
+# @antorfr/adestia-drivers
 
 The driver contract and its adapters. A driver wraps one coding-agent CLI and
 declares what it can honour (`authManagement`, `usageMetrics`,

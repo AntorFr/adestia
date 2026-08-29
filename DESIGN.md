@@ -1,4 +1,4 @@
-# Demeura — founding design
+# Adestia — founding design
 
 > **Status: built and running.** Decisions taken 2026-08-20/21 with the product
 > owner, after a full review of the predecessor (`AntorFr/agent-pods/images/agent-gw`)
@@ -7,11 +7,11 @@
 >
 > Everything below is implemented unless marked **not built yet**.
 
-## What Demeura is
+## What Adestia is
 
 A self-hosted web product that pairs a **chat with an AI agent** and **Apps** — visual
 modules the agent can act on and the user can see and manipulate. The agent runtime is
-a **coding-agent CLI** (Claude Code, GitHub Copilot CLI, more later): Demeura builds
+a **coding-agent CLI** (Claude Code, GitHub Copilot CLI, more later): Adestia builds
 everything on top of a CLI so that a **monthly subscription** powers the whole product,
 never per-token API billing.
 
@@ -20,7 +20,7 @@ Humans who talk to that agent share its capacity.
 
 ## Lineage
 
-Demeura is a from-scratch rewrite of `agent-gw`, which was built for one homelab and
+Adestia is a from-scratch rewrite of `agent-gw`, which was built for one homelab and
 proved the concepts. What survives is philosophy, not code:
 
 - **Content / presentation / behaviour strictly separated.** Content is markdown +
@@ -46,7 +46,7 @@ agent only.
    edits the same files. Both are constrained by the **same closed block vocabulary**
    (schema-validated). Visual uniqueness is guaranteed because *nobody* can touch the
    pixel.
-3. **The CLI is a replaceable engine.** Demeura defines its own **driver interface**;
+3. **The CLI is a replaceable engine.** Adestia defines its own **driver interface**;
    each CLI gets an adapter. Anything a CLI may or may not offer (auth arming, usage
    metrics, MCP injection, permission events) is a **declared capability**: the UI
    renders what the driver declares, degrades honestly otherwise — never a lying zero.
@@ -66,8 +66,8 @@ agent only.
    where an act lands, and the person's instructions say what to check in chat
    first — a good-faith convention, honest about being one. On top of that,
    `permissions.mode` chooses between `open` (nothing is asked) and `ask`,
-   where the ENGINE's own judgement decides what needs a person and Demeura only
-   carries the question. Demeura never judges: no lists, no rules, no gates.
+   where the ENGINE's own judgement decides what needs a person and Adestia only
+   carries the question. Adestia never judges: no lists, no rules, no gates.
 8. **Extension schemas are designed first.** The plugin/skin manifests and every
    contribution point are formal, versioned JSON Schemas (`schemaVersion`) from day
    one. One source of truth, three consumers: the loader validates with it, the
@@ -81,7 +81,7 @@ agent only.
 ## Architecture overview
 
 ```
-┌────────────────────────── Demeura instance ──────────────────────────┐
+┌────────────────────────── Adestia instance ──────────────────────────┐
 │  web (React SPA/PWA)                                               │
 │   chat ▸ streamed turns, attachments,                              │
 │          quota surfaces (per driver capability)                    │
@@ -102,7 +102,7 @@ agent only.
 │  filesystem                                                          │
 │   workspace/ (agent home: content, memory, CLI config)             │
 │   data/ (server state, conversation index, inbox, secrets)         │
-│   plugins/  skins/  demeura.config.yaml                              │
+│   plugins/  skins/  adestia.config.yaml                              │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -122,14 +122,14 @@ agent only.
 | Layer | Choice | Why |
 |---|---|---|
 | Language | TypeScript everywhere (Node ≥ 22, **npm workspaces** monorepo) | one language for core, front and third-party plugins; Claude Agent SDK is first-class TS; Copilot CLI is itself npm. npm workspaces rather than pnpm: it ships with Node, so contributors and CI need nothing installed — the extra tool earned nothing here |
-| Server | Fastify | TS-native, fast, encapsulated plugin system that maps well to Demeura's plugin host |
+| Server | Fastify | TS-native, fast, encapsulated plugin system that maps well to Adestia's plugin host |
 | Frontend | React 18+ + Vite | the block-editor ecosystem and the plugin-author audience are there |
-| Block editor | **Milkdown** (ProseMirror + remark) — decided by spike 1, see `spikes/editor/VERDICT.md` | byte-identical round-trip proven; same remark grammar as the renderer (one grammar, two consumers — drift eliminated structurally); wrapped behind a Demeura editor interface, Tiptap spike kept as proven fallback |
+| Block editor | **Milkdown** (ProseMirror + remark) — decided by spike 1, see `spikes/editor/VERDICT.md` | byte-identical round-trip proven; same remark grammar as the renderer (one grammar, two consumers — drift eliminated structurally); wrapped behind a Adestia editor interface, Tiptap spike kept as proven fallback |
 | Content pipeline | unified/remark + directives (`:::block`) + wikilinks, schema-validated at the mdast level (shared by renderer, editor and agent skill); DOMPurify in depth | ONE parser both sides — two parsers means drift; replaces Markdoc from agent-gw |
 | Drivers v1 | `claude-code` (Agent SDK TS), `copilot-cli` (pinned binary, JSONL) | the two requested engines; Copilot's `--acp` (Agent Client Protocol) to evaluate as an alternative transport |
 | Testing | **Unit tests from the first package** (Vitest) + spike harnesses promoted to permanent suites: content-engine round-trip conformance, driver fake-binary suites (BYOK mock provider for Copilot), plugin DOM-mount tests | tests are scaffolding laid with the foundation, not retrofitted; every markdown/editor/driver dependency bump re-runs the conformance gates |
 | Packaging | Docker image + compose; `npx` for bare-metal local | the two self-hosting front doors; Helm stays in the deployer's own charts (out of the product) |
-| License / repo | MIT, public from day one (github.com/AntorFr/demeura), docs in English | early adopters follow from the first commit; npm scope `@antorfr` |
+| License / repo | MIT, public from day one (github.com/AntorFr/adestia), docs in English | early adopters follow from the first commit; npm scope `@antorfr` |
 
 ## Driver contract
 
@@ -164,7 +164,7 @@ different names, and their zones overlap without being identical.
   secret)`, `cancelAuth(sessionId)`.
 - `consent` is a sentence the user must tick before the flow may finish, for
   the case where the CLI itself stops on a human question mid-login (Copilot
-  asks whether it may store the token unencrypted, which is the only form Demeura
+  asks whether it may store the token unencrypted, which is the only form Adestia
   can harvest). A driver answering that on the user's behalf would be deciding
   for them; leaving it unanswered hangs the login until the code expires. So it
   is relayed, generically: the front shows the sentence and gates the button,
@@ -208,14 +208,14 @@ programmatic enumeration to verify in the hands-on spike.
 assumption: **one driver per workspace lifetime**. The user's instructions live in
 the **native dialect of the chosen CLI** (`CLAUDE.md` + `.claude/` for Claude
 Code; `AGENTS.md` / `.github/copilot-instructions.md` / `applyTo` files for
-Copilot CLI — which incidentally also reads `CLAUDE.md`) and Demeura never
+Copilot CLI — which incidentally also reads `CLAUDE.md`) and Adestia never
 normalizes or translates them: realistically nobody hand-writes instructions —
 people ask the agent to, and the agent writes its own dialect. Consequently,
 switching driver on an existing workspace is not a config flip but an **assisted
 migration**: the author of the files is also their translator — the new agent
-rewrites the instructions in its own dialect on request. `demeura init` scaffolds
+rewrites the instructions in its own dialect on request. `adestia init` scaffolds
 per driver (it lays down the files that driver's CLI actually reads). The one
-harness-neutral layer is Demeura's own: **plugin agent-contracts**, which the driver
+harness-neutral layer is Adestia's own: **plugin agent-contracts**, which the driver
 compiles into its best native form (Claude skills, Copilot instruction sections),
 degrading to plain instruction text as the guaranteed floor — a plugin must work
 on both engines without being rewritten.
@@ -247,14 +247,14 @@ on both engines without being rewritten.
 Outbound MCP servers (what the agent can call) come from **three sources, one
 materialization**:
 
-1. **Operator layer** — the `mcp:` block of `demeura.config.yaml`: stdio
+1. **Operator layer** — the `mcp:` block of `adestia.config.yaml`: stdio
    (`command`) or HTTP (`url`) servers, env with `${VAR}` secret interpolation
    resolved server-side. The product's canonical surface.
 2. **Plugin layer** — a plugin manifest may declare (or ship) MCP servers as a
    facet: active plugin = server wired, inactive = nothing, same rule as plugin
    APIs.
 3. **Workspace-native layer** — the CLI's own MCP config (`.mcp.json`, …) is the
-   user's and the agent's business: Demeura neither parses nor translates it (same
+   user's and the agent's business: Adestia neither parses nor translates it (same
    doctrine as instructions).
 
 **Materializing 1+2 is a core driver responsibility** (like instruction
@@ -284,7 +284,7 @@ rather than details:
 
 - **No relay process.** The predecessor needed one stdio subprocess per addon
   whose only job was to hold a mutable token, because a CLI config file can
-  only hold a constant. Demeura builds its map per turn, so the need disappears
+  only hold a constant. Adestia builds its map per turn, so the need disappears
   rather than the relay being ported. Copilot's file is rewritten per turn for
   the same reason.
 - **Cached by identity, not by server.** Addons of one hub share credentials;
@@ -563,10 +563,10 @@ Non-goals v1: desktop app, per-user CLI credentials, real-time collaborative edi
 
 The predecessor's "cockpit" pattern — a git repo mounted as the agent's workspace,
 carrying instructions, guard hooks and planif notes, co-edited by human and agent —
-resolves in Demeura as follows:
+resolves in Adestia as follows:
 
-- **Workspace convention + scaffold.** `demeura init` generates a documented layout;
-  every path is repointable in config. The convention covers the **Demeura-owned
+- **Workspace convention + scaffold.** `adestia init` generates a documented layout;
+  every path is repointable in config. The convention covers the **Adestia-owned
   zones** (pages, memory, planif, data); the instruction zone follows the chosen
   CLI's own conventions, scaffolded per driver. Three natures of content are explicit in the
   model because they have different lifecycles: **identity/persona** (one shared
@@ -632,7 +632,7 @@ resolves in Demeura as follows:
 - **Enforcement lives in the product layer first.** Harness-specific guard
   mechanisms (Claude hooks) do not port (Copilot only has allow/deny tool flags),
   so no security posture may rely on them alone: interactive permissions are
-  driver events surfaced by Demeura, the execution channel is env set by Demeura at
+  driver events surfaced by Adestia, the execution channel is env set by Adestia at
   the single spawn site, and a CLI-native guard is a declared *reinforcement*, its
   coverage stated per driver — never the wall itself.
 - **Generated layer vs workspace layer.** Plugin agent-contracts ship with the code
@@ -692,13 +692,13 @@ that opens to its own words when the network is gone.
 - **The `ask` posture, finished.** It ships and it works, and it is OUT of the
   MVP after a day on a real instance (2026-08-26): half-working on one engine,
   absent on the other. Where it breaks is a granularity the ENGINE owns and
-  Demeura deliberately does not second-guess — for `Bash` the CLI proposes a
+  Adestia deliberately does not second-guess — for `Bash` the CLI proposes a
   rule on the EXACT command (`Bash(ls -la /tmp)`), so every variation asks
   again, and for a composed one (`cd x && cat <<EOF`, any heredoc) it proposes
   nothing at all: its own parser will not cut the command up, so there is no
   durable answer to offer. `WebFetch` is the counter-example that shows the
   shape is right — `WebFetch(domain:…)` is exactly the rule a person wants.
-  The fix is known and is not more Demeura judgement: let the PERSON edit the
+  The fix is known and is not more Adestia judgement: let the PERSON edit the
   rule in the prompt (the engine proposes `Bash(ls -la /tmp)`, they write
   `Bash(ls:*)` or `Bash`), which also turns the no-suggestion dead end into
   something answerable. On copilot-cli the posture cannot exist at all —
@@ -718,7 +718,7 @@ that opens to its own words when the network is gone.
   `dataDir` rather than the config file — a deployment's config may be
   GitOps-managed and would be reverted — with a precedence to settle: is the
   config a floor a person may raise, or a ceiling they cannot exceed?
-- **`demeura init`** — the documented workspace scaffold.
+- **`adestia init`** — the documented workspace scaffold.
 
 ## Decision log
 
@@ -727,7 +727,7 @@ interactive permissions were a v1 pillar: a broker gating every tool call
 behind a human, content rules guarding the driver's authority paths and the
 planif zone, an unattended policy, a prompt in the chat. All of it is gone,
 and the reasoning deserves recording because every piece was individually
-sound. The layer ran in Demeura's process but enforced nothing: agent and
+sound. The layer ran in Adestia's process but enforced nothing: agent and
 server share one OS user, so every rule had a one-line bypass (`sed -i` for
 the file gates, a raw socket for any network rule, an env dump for the
 token) — and worse, LEGITIMATE work crossed it invisibly too: a granted
@@ -737,9 +737,9 @@ user with prompts while constraining nobody else. Each hole invited one
 more mechanism (pattern grammars, egress proxies) — the security-theater
 ratchet, recognized and stopped. What replaces it is walls that are walls
 and conventions that admit to being conventions: the CONTAINER bounds what
-exists (mounts, env, network — Docker's job, not Demeura code); MCP SERVERS
+exists (mounts, env, network — Docker's job, not Adestia code); MCP SERVERS
 carry their own authorization at the point where an act lands (the home
-automation server knows what "unlock" means; Demeura cannot); and the
+automation server knows what "unlock" means; Adestia cannot); and the
 person's INSTRUCTIONS tell the agent what to check in chat before acting —
 followed in good faith, bypassed by anything that isn't, and honest about
 that. The driver now runs `bypassPermissions` explicitly — removing the
@@ -755,7 +755,7 @@ the removal above was right about the WALL and wrong to leave nothing: running
 wide open felt, in the owner's words, like replacing a rickety wooden gate with
 an open invitation. So `permissions.mode: open | ask` — optional, `open` by
 default, and roll-back is a one-line config change rather than a revert. What
-makes `ask` different from what was torn out: **Demeura judges nothing.** No tool
+makes `ask` different from what was torn out: **Adestia judges nothing.** No tool
 lists, no patterns, no content gates. In `ask` the driver runs the SDK's
 `default` mode, so the CLI's own first line settles the harmless (a `Read`, an
 `echo` never come back — measured) and only its residue reaches the chat, worded
@@ -765,7 +765,7 @@ engine's OWN `suggestions` untouched: the CLI writes the rule into its own file
 in the workspace (`.claude/settings.local.json`) and reads it back on every
 later turn — a different thread, a different day, a restarted pod. So the
 durable allowlist is the ENGINE's, in a file a person can open, read and edit,
-and Demeura maintains no list at all. That file is also the honest answer to
+and Adestia maintains no list at all. That file is also the honest answer to
 "what is my agent allowed to do", which is the question that started this whole
 line of work.
 
@@ -776,7 +776,7 @@ button then read "for this conversation", so the first fix pinned them to
 half: session rules die with the turn's process (every turn is a fresh CLI), so
 the promise silently became "for this turn" and the answer had to be given
 again at the very next message. Carrying it in the server per conversation made
-it work and made Demeura the keeper of a permission list again, by accident,
+it work and made Adestia the keeper of a permission list again, by accident,
 having just removed one. The honest fix was the LABEL: say "always", let the
 engine persist it where it already wanted to, keep nothing here. The SDK's `'auto'` classifier
 mode was TESTED and rejected for this: it approved a `rm -rf` without ever
@@ -795,7 +795,7 @@ UID against a store it cannot reach.
 **2026-08-26 (a livery is what an install is called):** the manifest is
 GENERATED — the product's, with the active skin's `web.manifest` merged over
 it — rather than shipped as a file. Two instances are two origins, so they were
-never one install; but they were two icons both called "Demeura" on the same home
+never one install; but they were two icons both called "Adestia" on the same home
 screen, which is the same problem one layer up. The merge is a NAME-and-COLOUR
 allowlist: `start_url`, `scope`, `id` and `display` stay the product's, because
 a livery that could move the entry point changes what the app is — the line
@@ -819,7 +819,7 @@ cache — they cannot change meaning without changing name. `/api/` is not
 intercepted at all: an SSE turn is a body that never ends.
 
 A livery settles two instances wearing two liveries and settles nothing for two
-wearing the same one — which is the case an operator running a second Demeura
+wearing the same one — which is the case an operator running a second Adestia
 actually hits. So `name:` was added to the config, applied LAST, over the
 skin's. It is a file setting with no environment override, on the line this
 product already draws: the environment says where an instance runs, the file
@@ -848,7 +848,7 @@ thing forever.
 
 Which forces the other half, because "the shell keeps the mosaic" is only
 acceptable if a livery can still make the mosaic look like itself. That is
-paid in TOKENS, never in a rule against `.demeura-tile` — the moment a skin can
+paid in TOKENS, never in a rule against `.adestia-tile` — the moment a skin can
 move a box, the personalities stop being one product. The tile's colour mark
 became four knobs (`--tile-mark-inset/-width/-height/-tint`, and a hover that
 always restores it to full) and its name two (`--tile-label-font/-track`), so
@@ -928,7 +928,7 @@ already pays with one page per task.
 
 **2026-08-25 (the screen next to the chat):** a predecessor feature the parity
 audit had missed, found by the owner rather than by the review — agent-gw
-joined the open page's route and breadcrumb to every message, and Demeura sent
+joined the open page's route and breadcrumb to every message, and Adestia sent
 nothing. Ported with its three boundaries intact (route and trail only, hint
 not topic, snapshot at send time), and with one improvement the predecessor
 needed a stripper for: the note is applied where the driver is called rather
@@ -943,7 +943,7 @@ the predecessor did not have, found by comparing screen for screen.
 
 *Archiving became core knowledge rather than per-view knowledge.* The status
 vocabulary — which words mean a page is over, and the `acheté`-only-archives-a-
-purchase exception — moved from the web shell into `@antorfr/demeura-content`,
+purchase exception — moved from the web shell into `@antorfr/adestia-content`,
 and `GET /api/pages/index` now publishes `finished` for every page. The reason
 is the failure mode, not tidiness: a plugin may import nothing but React, so
 each one that wanted to archive had to transcribe the table, and `voyages`
@@ -998,8 +998,8 @@ author's pods migrate later). Shared-agent multi-user with OIDC plus a zero-auth
 local single-user mode. Files as source of truth. Engines: Claude Code + GitHub
 Copilot CLI behind an internal driver interface. TypeScript/Node + Fastify; React +
 Vite. Runtime plugin and skin loading from mounted directories. Auth:
-none/oidc/proxy. Docker+compose and npx as deployment targets. Name **Demeura**,
-public repo from the start (npm scope needed — `demeura` is taken).
+none/oidc/proxy. Docker+compose and npx as deployment targets. Name **Adestia**,
+public repo from the start (npm scope needed — `adestia` is taken).
 
 **2026-08-20 (second pass):** v1 additions — driver `authManagement` (arm/refresh
 from the UI) and `usageMetrics` as declared capabilities; chat parity bar + six
@@ -1007,7 +1007,7 @@ exceed items (streaming first); adjustable split view; mobile/PWA; scan-class pl
 portability; schema-first extension contracts with `plugin-author`/`skin-author`
 skills shipped in v1.
 
-**2026-08-20 (instructions):** workspace convention with `demeura init` scaffold,
+**2026-08-20 (instructions):** workspace convention with `adestia init` scaffold,
 paths repointable; instructions live as workspace markdown files, editable in the
 UI under risk-zoned gating (channel-gated agent self-edits, scheduled turns
 excluded); git optional but first-class — bare-files and git-backed workspaces are
@@ -1015,7 +1015,7 @@ BOTH supported from v1 (clean per-path commits when git is present); remote sync
 deferred to an optional module.
 
 **2026-08-20 (instruction dialect):** one driver per workspace lifetime; user
-instructions stay in the CLI's native dialect, agent-authored — Demeura neither
+instructions stay in the CLI's native dialect, agent-authored — Adestia neither
 normalizes nor translates them, and the UI is structure-agnostic (risk zoning by
 driver-declared path classification). Driver switch = assisted migration (the new
 agent translates). Only plugin agent-contracts are harness-neutral, compiled per
@@ -1028,7 +1028,7 @@ bubble joins as a capability-gated bonus (`liveTurnUsage`).
 
 **2026-08-20 (editor verdict + tests):** Milkdown chosen (spike 1) — remark
 grammar shared with the renderer, byte-identical round-trip; Tiptap kept as
-proven fallback behind Demeura's editor interface; BlockNote eliminated. Unit
+proven fallback behind Adestia's editor interface; BlockNote eliminated. Unit
 tests from the skeleton's first package; spike harnesses promoted to permanent
 conformance suites. Spike-3 corrections folded into the copilot driver section
 (`ghp_` loudly rejected; auto-update pinning; usage taps; `--acp` to evaluate).

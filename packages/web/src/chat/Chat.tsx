@@ -66,7 +66,7 @@ export interface ModelInfo {
 }
 
 /** Remembered per browser, like the predecessor's. */
-const MODEL_KEY = 'demeura.model'
+const MODEL_KEY = 'adestia.model'
 
 export interface Message {
   readonly id: string
@@ -111,7 +111,7 @@ export function ContextPill({
   return (
     <button
       type="button"
-      className={`demeura-pill demeura-pill--${level}`}
+      className={`adestia-pill adestia-pill--${level}`}
       onClick={onClick}
       title="Weight of the context your next message re-pays"
     >
@@ -135,7 +135,7 @@ export function ContextPill({
  * has no catalogue shows no empty control. AUTO is first and is the default:
  * it sends no model at all and lets the CLI choose, which is a real answer
  * rather than a placeholder — most turns do not care, and pinning one
- * silently would override a default the operator may have set outside Demeura.
+ * silently would override a default the operator may have set outside Adestia.
  */
 export function ModelPicker({
   models,
@@ -153,7 +153,7 @@ export function ModelPicker({
   if (models === undefined || models.length === 0) return null
   return (
     <select
-      className="demeura-model"
+      className="adestia-model"
       value={model ?? ''}
       onChange={(event) => onModel?.(event.target.value)}
       aria-label={t('Model')}
@@ -174,21 +174,21 @@ export function ToolTrace({ tools }: { tools: Message['tools'] }) {
   if (!tools || tools.length === 0) return null
 
   return (
-    <div className="demeura-trace">
-      <button type="button" className="demeura-trace__toggle" onClick={() => setOpen(!open)}>
+    <div className="adestia-trace">
+      <button type="button" className="adestia-trace__toggle" onClick={() => setOpen(!open)}>
         {open ? '▾' : '▸'} {tools.length} tool call{tools.length > 1 ? 's' : ''}
       </button>
       {open && (
-        <ul className="demeura-trace__list">
+        <ul className="adestia-trace__list">
           {tools.map((tool, index) => (
-            <li key={`${tool.name}-${index}`} className={`demeura-trace__item demeura-trace__item--${
+            <li key={`${tool.name}-${index}`} className={`adestia-trace__item adestia-trace__item--${
               tool.ok === false ? 'failed' : tool.ok ? 'done' : 'running'
             }`}>
-              <span className="demeura-trace__glyph">◇</span>
-              <span className="demeura-trace__name">{tool.name}</span>
+              <span className="adestia-trace__glyph">◇</span>
+              <span className="adestia-trace__name">{tool.name}</span>
               {/* The target only. Never the full input: it routinely holds a
                   file's contents or an entire command. */}
-              {tool.target && <span className="demeura-trace__target">{tool.target}</span>}
+              {tool.target && <span className="adestia-trace__target">{tool.target}</span>}
             </li>
           ))}
         </ul>
@@ -219,16 +219,16 @@ export function Bubble({
   openPage?: (path: string) => void
 }) {
   return (
-    <article className={`demeura-bubble demeura-bubble--${message.role}`}>
+    <article className={`adestia-bubble adestia-bubble--${message.role}`}>
       {message.role === 'agent' && <ToolTrace tools={message.tools} />}
       {message.text &&
         (message.role === 'agent' ? (
           <Prose markdown={message.text} {...(openPage ? { openPage } : {})} />
         ) : (
-          <div className="demeura-bubble__text">{message.text}</div>
+          <div className="adestia-bubble__text">{message.text}</div>
         ))}
-      {message.stopped && <p className="demeura-bubble__note">Turn interrupted.</p>}
-      {message.error && <p className="demeura-bubble__error">{message.error}</p>}
+      {message.stopped && <p className="adestia-bubble__note">Turn interrupted.</p>}
+      {message.error && <p className="adestia-bubble__error">{message.error}</p>}
     </article>
   )
 }
@@ -272,7 +272,7 @@ export function LiveProse({
  * an elided command is not consent.
  *
  * "Always" is the answer that makes asking bearable, and it is the ENGINE's
- * memory, not Demeura's: the CLI writes the rule into its own file in the
+ * memory, not Adestia's: the CLI writes the rule into its own file in the
  * workspace and reads it back on every later turn. So the durable allowlist
  * is a file a person can open, read and edit — which is also the honest
  * answer to "what is my agent allowed to do".
@@ -291,9 +291,9 @@ export function AskPrompt({
   t?: (key: string) => string
 }) {
   return (
-    <div className="demeura-ask" role="alertdialog" aria-label={t('Permission required')}>
-      <p className="demeura-ask__text">{ask.title}</p>
-      {ask.reason && <p className="demeura-ask__reason">{ask.reason}</p>}
+    <div className="adestia-ask" role="alertdialog" aria-label={t('Permission required')}>
+      <p className="adestia-ask__text">{ask.title}</p>
+      {ask.reason && <p className="adestia-ask__reason">{ask.reason}</p>}
       {/* Said out loud rather than left as a missing button. The engine
           declines to propose a rule for a command its own parser cannot cut
           up — a `cd x && cat <<EOF` among them — so there is nothing durable
@@ -301,11 +301,11 @@ export function AskPrompt({
           the tenth time deserves to know why rather than hunt for a button
           that was never there. */}
       {!ask.remembering && (
-        <p className="demeura-ask__reason">
+        <p className="adestia-ask__reason">
           {t('No lasting rule for this one — the engine proposed none.')}
         </p>
       )}
-      <div className="demeura-ask__actions">
+      <div className="adestia-ask__actions">
         <button type="button" onClick={() => onAnswer(ask.id, 'deny')}>
           {t('Refuse')}
         </button>
@@ -315,7 +315,7 @@ export function AskPrompt({
         {ask.remembering && (
           <button
             type="button"
-            className="demeura-ask__always"
+            className="adestia-ask__always"
             onClick={() => onAnswer(ask.id, 'always')}
           >
             {t('Always')}
@@ -371,10 +371,10 @@ export function ComposerFold({
   }, [open])
 
   return (
-    <div className="demeura-fold" ref={host}>
+    <div className="adestia-fold" ref={host}>
       <button
         type="button"
-        className="demeura-composer__attach"
+        className="adestia-composer__attach"
         aria-label={t('More')}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -383,17 +383,17 @@ export function ComposerFold({
         ＋
       </button>
       {open && (
-        <div className="demeura-fold__menu" role="menu">
+        <div className="adestia-fold__menu" role="menu">
           <button
             type="button"
             role="menuitem"
-            className="demeura-fold__item"
+            className="adestia-fold__item"
             onClick={() => {
               setOpen(false)
               onPick()
             }}
           >
-            <span className="demeura-fold__glyph" aria-hidden="true">
+            <span className="adestia-fold__glyph" aria-hidden="true">
               📎
             </span>
             {t('Attach files')}
@@ -405,13 +405,13 @@ export function ComposerFold({
               key={button.key}
               type="button"
               role="menuitem"
-              className="demeura-fold__item"
+              className="adestia-fold__item"
               onClick={() => {
                 setOpen(false)
                 button.onClick(button.api)
               }}
             >
-              <span className="demeura-fold__glyph" aria-hidden="true">
+              <span className="adestia-fold__glyph" aria-hidden="true">
                 {button.glyph}
               </span>
               {button.title}
@@ -565,7 +565,7 @@ export function Composer({
 
   return (
     <form
-      className={`demeura-composer${dropping ? ' demeura-composer--dropping' : ''}`}
+      className={`adestia-composer${dropping ? ' adestia-composer--dropping' : ''}`}
       onSubmit={(event) => {
         event.preventDefault()
         submit()
@@ -615,7 +615,7 @@ export function Composer({
         <>
           <button
             type="button"
-            className="demeura-composer__attach"
+            className="adestia-composer__attach"
             onClick={() => picker.current?.click()}
             aria-label={t('Attach files')}
           >
@@ -625,7 +625,7 @@ export function Composer({
             <button
               key={button.key}
               type="button"
-              className="demeura-composer__attach"
+              className="adestia-composer__attach"
               onClick={() => button.onClick(button.api)}
               aria-label={button.title}
               title={button.title}
@@ -637,7 +637,7 @@ export function Composer({
       )}
       <textarea
         ref={area}
-        className="demeura-composer__input"
+        className="adestia-composer__input"
         value={text}
         placeholder={placeholder ?? t('Ask the agent…')}
         rows={1}
@@ -662,13 +662,13 @@ export function Composer({
           send otherwise. Two buttons would put "stop" next to "send" for a
           user who is trying to queue a message. */}
       {busy && text.trim() === '' ? (
-        <button type="button" className="demeura-composer__stop" onClick={onStop} aria-label={t('Stop')}>
+        <button type="button" className="adestia-composer__stop" onClick={onStop} aria-label={t('Stop')}>
           ■
         </button>
       ) : (
         <button
           type="submit"
-          className="demeura-composer__send"
+          className="adestia-composer__send"
           disabled={(text.trim() === '' && attachments.length === 0) || blocked}
           aria-label={t('Send')}
         >
@@ -690,16 +690,16 @@ export function AttachmentTray({
 }) {
   if (attachments.length === 0 && !error) return null
   return (
-    <div className="demeura-attachments">
+    <div className="adestia-attachments">
       {attachments.map((attachment) => (
-        <span key={attachment.id} className="demeura-attachments__item">
+        <span key={attachment.id} className="adestia-attachments__item">
           {attachment.name}
           <button type="button" onClick={() => onRemove(attachment.id)} aria-label={`Remove ${attachment.name}`}>
             ×
           </button>
         </span>
       ))}
-      {error && <span className="demeura-attachments__error">{error}</span>}
+      {error && <span className="adestia-attachments__error">{error}</span>}
     </div>
   )
 }
@@ -1356,22 +1356,22 @@ export function Chat({
   }
 
   return (
-    <section className="demeura-chat">
-      <header className="demeura-chat__header">
+    <section className="adestia-chat">
+      <header className="adestia-chat__header">
         {/* The crest markup comes from the skin MODULE — code the instance
             already chose to run — never from a manifest. */}
         {crest && (
-          <span className="demeura-crest" aria-hidden="true" dangerouslySetInnerHTML={{ __html: crest }} />
+          <span className="adestia-crest" aria-hidden="true" dangerouslySetInnerHTML={{ __html: crest }} />
         )}
-        <span className="demeura-brandname">{brand ?? 'Demeura'}</span>
+        <span className="adestia-brandname">{brand ?? 'Adestia'}</span>
         {/* Next to the name of the thing about to speak: which engine answers
             belongs to the conversation, not to the message being typed. */}
         <ModelPicker models={models} model={model} onModel={chooseModel} t={t} />
-        <span className="demeura-chat__spacer" />
+        <span className="adestia-chat__spacer" />
         <ContextPill tokens={active.contextTokens} {...(contextWindow ? { windowSize: contextWindow } : {})} />
         <button
           type="button"
-          className="demeura-ib"
+          className="adestia-ib"
           onClick={() => {
             const opening = !threadsOpen
             setThreadsOpen(opening)
@@ -1384,11 +1384,11 @@ export function Chat({
         >
           ▤
         </button>
-        <button type="button" className="demeura-ib" onClick={newDraft} aria-label="New conversation">
+        <button type="button" className="adestia-ib" onClick={newDraft} aria-label="New conversation">
           ＋
         </button>
         {onOpenCanvas && (
-          <button type="button" className="demeura-ib" onClick={onOpenCanvas} aria-label="Open apps">
+          <button type="button" className="adestia-ib" onClick={onOpenCanvas} aria-label="Open apps">
             ▥
           </button>
         )}
@@ -1397,7 +1397,7 @@ export function Chat({
       {/* The tab strip — a desktop surface. On a phone the thread list, with
           the same dots, is the whole navigation. */}
       {!narrow && tabs.open.length > 0 && (
-        <div className="demeura-tabs" role="tablist">
+        <div className="adestia-tabs" role="tablist">
           {tabs.open.map((id, index) => {
             const title =
               id === DRAFT
@@ -1406,7 +1406,7 @@ export function Chat({
             return (
               <div
                 key={id}
-                className={`demeura-tab${id === activeId ? ' demeura-tab--active' : ''}`}
+                className={`adestia-tab${id === activeId ? ' adestia-tab--active' : ''}`}
                 role="tab"
                 aria-selected={id === activeId}
                 draggable
@@ -1423,12 +1423,12 @@ export function Chat({
               >
                 <button
                   type="button"
-                  className="demeura-tab__pick"
+                  className="adestia-tab__pick"
                   onClick={() => activate(id)}
                   title={title}
                 >
-                  <span className={`demeura-dot demeura-dot--${dotOf(id)}`} aria-hidden="true" />
-                  <span className="demeura-tab__title">{title}</span>
+                  <span className={`adestia-dot adestia-dot--${dotOf(id)}`} aria-hidden="true" />
+                  <span className="adestia-tab__title">{title}</span>
                 </button>
                 {/* Two exits, two meanings: the box puts the CONVERSATION
                     away, the cross only closes the TAB — the thread stays in
@@ -1436,7 +1436,7 @@ export function Chat({
                 {id !== DRAFT && (
                   <button
                     type="button"
-                    className="demeura-tab__tool"
+                    className="adestia-tab__tool"
                     aria-label={`${t('Archive')} — ${title}`}
                     title={t('Archive')}
                     onClick={() => void archiveThread(id)}
@@ -1446,7 +1446,7 @@ export function Chat({
                 )}
                 <button
                   type="button"
-                  className="demeura-tab__tool"
+                  className="adestia-tab__tool"
                   aria-label={`${t('Close tab')} — ${title}`}
                   title={t('Close tab')}
                   onClick={() => shut(id)}
@@ -1460,27 +1460,27 @@ export function Chat({
       )}
 
       {threadsOpen && (
-        <ul className="demeura-threads">
-          {threads.length === 0 && <li className="demeura-threads__empty">No conversation yet.</li>}
+        <ul className="adestia-threads">
+          {threads.length === 0 && <li className="adestia-threads__empty">No conversation yet.</li>}
           {threads.map((thread) => (
             <li key={thread.id}>
               <button
                 type="button"
-                className={`demeura-threads__item${
-                  thread.id === activeId ? ' demeura-threads__item--current' : ''
+                className={`adestia-threads__item${
+                  thread.id === activeId ? ' adestia-threads__item--current' : ''
                 }`}
                 onClick={() => openThread(thread.id)}
               >
                 {/* The same dot vocabulary as the tab strip: on a phone this
                     list IS the tab strip. */}
-                <span className={`demeura-dot demeura-dot--${dotOf(thread.id, thread)}`} aria-hidden="true" />
+                <span className={`adestia-dot adestia-dot--${dotOf(thread.id, thread)}`} aria-hidden="true" />
                 {thread.title}
               </button>
               {/* Put away, not deleted: the only tool for tidying up was a
                   delete that took every word with it. */}
               <button
                 type="button"
-                className="demeura-threads__archive"
+                className="adestia-threads__archive"
                 aria-label={`${t('Archive')} — ${thread.title}`}
                 title={t('Archive')}
                 onClick={() => void archiveThread(thread.id)}
@@ -1492,7 +1492,7 @@ export function Chat({
         </ul>
       )}
 
-      <div className="demeura-chat__thread">
+      <div className="adestia-chat__thread">
         {active.messages.map((message) => (
           <Bubble key={message.id} message={message} {...(openPage ? { openPage } : {})} />
         ))}
@@ -1507,7 +1507,7 @@ export function Chat({
             return (
               <article
                 key={`l${index}`}
-                className={`demeura-bubble demeura-bubble--agent${last ? ' demeura-bubble--live' : ''}`}
+                className={`adestia-bubble adestia-bubble--agent${last ? ' adestia-bubble--live' : ''}`}
               >
                 <ToolTrace tools={part.tools} />
                 {part.text &&
@@ -1521,19 +1521,19 @@ export function Chat({
                     to the text, so the first sentence killed it: the agent then
                     worked for minutes behind a bubble that looked finished. */}
                 {last && active.live!.running && (
-                  <div className="demeura-bubble__working">
+                  <div className="adestia-bubble__working">
                     {busySlot ? (
                       <SkinSlot
                         render={busySlot}
-                        className="demeura-busy-host"
+                        className="adestia-busy-host"
                         context={{ ask: () => {}, compose: () => {}, focusComposer: () => {} }}
                       />
                     ) : (
-                      <span className="demeura-dots" aria-label="Working" />
+                      <span className="adestia-dots" aria-label="Working" />
                     )}
                     {/* The climbing counter, when the driver can feed it. */}
                     {active.live!.outputTokens > 0 && (
-                      <span className="demeura-bubble__counter">
+                      <span className="adestia-bubble__counter">
                         {formatTokens(active.live!.outputTokens)}
                       </span>
                     )}
@@ -1547,8 +1547,8 @@ export function Chat({
             The server holds the real queue; these leave as ONE merged turn
             when the running one settles. */}
         {active.held.map((message, index) => (
-          <article key={`h${index}`} className="demeura-bubble demeura-bubble--user demeura-bubble--held">
-            <div className="demeura-bubble__text">
+          <article key={`h${index}`} className="adestia-bubble adestia-bubble--user adestia-bubble--held">
+            <div className="adestia-bubble__text">
               {message.text || `📎 ${message.attachments.map((a) => a.name).join(', ')}`}
             </div>
           </article>

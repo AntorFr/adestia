@@ -3,9 +3,9 @@
  *
  * Crepe ships its toolbar, slash menu, block handle and tooltips as STRUCTURE
  * (`theme/common/*.css`, which milkdown.ts imports) plus a PALETTE (a theme
- * file, which Demeura deliberately does not import — a second palette would
+ * file, which Adestia deliberately does not import — a second palette would
  * compete with the skin's). shell.css declares the `--crepe-*` set from
- * Demeura's own tokens instead.
+ * Adestia's own tokens instead.
  *
  * Miss one name and CSS fails silently: the property is invalid at
  * computed-value time, so `background: var(--crepe-color-surface)` becomes
@@ -14,7 +14,7 @@
  * — present, clickable, invisible. No component test can see it: the editor
  * suite injects a fake `mount`, and jsdom paints nothing.
  *
- * So the check is on the two files themselves. The names Demeura owes are the
+ * So the check is on the two files themselves. The names Adestia owes are the
  * ones Crepe's structure CONSUMES and one of Crepe's own themes DECLARES —
  * an intersection rather than a list, so a Crepe upgrade that adds a knob
  * fails here instead of on somebody's screen.
@@ -48,7 +48,7 @@ const consumed = names(
 const themeable = names(readFileSync(crepeTheme, 'utf8'), /^\s*(--crepe-[a-z0-9-]+)\s*:/gm)
 const declared = names(readFileSync(shell, 'utf8'), /^\s*(--crepe-[a-z0-9-]+)\s*:/gm)
 
-describe('the editing chrome reads a palette Demeura actually declares', () => {
+describe('the editing chrome reads a palette Adestia actually declares', () => {
   it('finds Crepe still asking for its palette through custom properties', () => {
     // Guards the guard: if a Crepe upgrade stopped using `--crepe-*`, the
     // intersection below would go empty and pass for the wrong reason.

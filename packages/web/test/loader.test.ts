@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { forgetContributedBlocks, isKnownBlock } from '@antorfr/demeura-content'
+import { forgetContributedBlocks, isKnownBlock } from '@antorfr/adestia-content'
 
 import {
   IMPORT_MAP_CONTRACT,

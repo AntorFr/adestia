@@ -2,7 +2,7 @@
  * The login round trip.
  *
  * Mounted only in `oidc` mode. Everything it does is stateless server-side —
- * two signed cookies, no session table — so restarting Demeura does not sign
+ * two signed cookies, no session table — so restarting Adestia does not sign
  * everyone out and two instances behind a load balancer need nothing shared
  * beyond the signing secret.
  */
@@ -11,7 +11,7 @@ import cookie from '@fastify/cookie'
 import type { FastifyInstance, FastifyRequest } from 'fastify'
 
 import type { Identity } from './auth.js'
-import type { DemeuraConfig } from './config.js'
+import type { AdestiaConfig } from './config.js'
 import {
   LOGIN_COOKIE,
   LOGIN_TTL_MS,
@@ -28,7 +28,7 @@ import {
 
 export async function registerOidc(
   app: FastifyInstance,
-  config: DemeuraConfig,
+  config: AdestiaConfig,
   /**
    * Where a login's refresh token is kept, when the instance wants a rebound.
    * Passed in rather than built here: this module speaks OIDC, and the store
@@ -145,7 +145,7 @@ export async function registerOidc(
     // Showing `{"signedOut":true}` to somebody who clicked a button is the
     // same mistake as showing them `{"error":"not signed in"}`.
     const wantsDocument = String(request.headers.accept ?? '').includes('text/html')
-    // ⚠️ This ends DEMEURA's session, not the identity provider's. The SSO
+    // ⚠️ This ends ADESTIA's session, not the identity provider's. The SSO
     // cookie outlives it, so the next visit signs them straight back in
     // without a password. That is what a single sign-on does, and saying so
     // in the interface is a separate piece of work from this fix.

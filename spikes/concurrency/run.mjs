@@ -38,7 +38,7 @@ const PROMPT = 'Reply with exactly: OK'
 const TURN_TIMEOUT_MS = 180_000
 
 /** A bare workdir: no skills, no plugins, nothing to load but the harness. */
-const workdir = mkdtempSync(join(tmpdir(), 'demeura-spike4-'))
+const workdir = mkdtempSync(join(tmpdir(), 'adestia-spike4-'))
 
 /** One measured turn. Returns everything the stream told us, with timings. */
 async function measuredTurn(label, model) {

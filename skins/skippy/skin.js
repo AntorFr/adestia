@@ -84,7 +84,7 @@ function core(px, speed) {
  * the arrange mode, and settings. A livery is a LOOK. The shell draws the
  * mosaics under this panel; what the HUD wants them to look like is a TOKEN,
  * which is why `skin.css` sets the plate knobs rather than a rule against
- * `.demeura-tile`.
+ * `.adestia-tile`.
  *
  * The module count stays, and now without a fetch: the slot is handed the
  * instance summary, the same one the console band reads.

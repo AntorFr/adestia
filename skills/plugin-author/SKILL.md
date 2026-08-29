@@ -1,11 +1,11 @@
 ---
 name: plugin-author
-description: Write a Demeura plugin — an app, a shell capability, an agent tool or a content contract. Use when asked to create, extend or debug an extension of this instance.
+description: Write a Adestia plugin — an app, a shell capability, an agent tool or a content contract. Use when asked to create, extend or debug an extension of this instance.
 ---
 
-# Writing a Demeura plugin
+# Writing a Adestia plugin
 
-A plugin is a folder with a manifest. Demeura discovers it by reading that
+A plugin is a folder with a manifest. Adestia discovers it by reading that
 manifest, never by knowing its name — which is what lets a plugin ship from
 anywhere and load with no rebuild.
 
@@ -17,7 +17,7 @@ with the field named.
 
 ```
 plugins/<id>/
-  demeura-plugin.json     REQUIRED — this file is what makes the folder a plugin
+  adestia-plugin.json     REQUIRED — this file is what makes the folder a plugin
   web/app.js            a launcher view
   web/blocks.js         content blocks for the editor and renderer
   web/chrome.js         composer buttons, settings entries
@@ -235,7 +235,7 @@ Which is why a screen made of several of them needs no code to do the obvious
 thing: render one per item and clicking one pencil puts THAT item into edit
 mode while the rest stay readable. `journal` is the whole app built this way.
 
-⚠️ **Do not restyle `.demeura-editor`.** It is the shell's, and a plugin that
+⚠️ **Do not restyle `.adestia-editor`.** It is the shell's, and a plugin that
 repaints it makes the same page look like two products depending on where it
 was opened.
 
@@ -432,10 +432,10 @@ skipped: a broken plugin costs its own view, never the server.
 
 ## Before you finish
 
-1. `demeura-plugin.json` parses and matches the schema above.
+1. `adestia-plugin.json` parses and matches the schema above.
 2. Every path it names exists.
 3. The view mounts — write a DOM test. A runtime-loaded plugin gets no build
    error to save it, so a typo in an import is found by a user otherwise.
 4. The id in the manifest equals the folder name.
-5. The plugin's id is added to the right list in `demeura.config.yaml`, or
+5. The plugin's id is added to the right list in `adestia.config.yaml`, or
    nothing will happen and nothing will say why.

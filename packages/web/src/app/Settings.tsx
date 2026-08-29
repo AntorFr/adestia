@@ -39,31 +39,31 @@ export function StatusLine({
   status: AuthStatus | undefined
   t?: (key: string) => string
 }) {
-  if (!status) return <span className="demeura-save">{t('Checking…')}</span>
+  if (!status) return <span className="adestia-save">{t('Checking…')}</span>
   switch (status.state) {
     case 'armed':
       return (
-        <span className="demeura-save demeura-save--ok">
+        <span className="adestia-save adestia-save--ok">
           {t('Armed')}
           {status.savedAt ? ` — ${new Date(status.savedAt).toLocaleDateString()}` : ''}
         </span>
       )
     case 'invalid':
       return (
-        <span className="demeura-save demeura-save--error">{status.reason ?? t('Refused upstream')}</span>
+        <span className="adestia-save adestia-save--error">{status.reason ?? t('Refused upstream')}</span>
       )
     case 'absent':
       return (
-        <span className="demeura-save">
+        <span className="adestia-save">
           {/* Not an error: the CLI may be living on credentials set up outside
-              Demeura, and saying "missing" would send someone fixing what works. */}
+              Adestia, and saying "missing" would send someone fixing what works. */}
           {status.source === 'cli-native'
             ? t('Using the CLI’s own credentials')
             : t('No token stored here')}
         </span>
       )
     default:
-      return <span className="demeura-save">{t('Unknown')}</span>
+      return <span className="adestia-save">{t('Unknown')}</span>
   }
 }
 
@@ -157,21 +157,21 @@ export function McpPanel({
   // says its name once. It carried its own heading back when it was stacked
   // under the credential panel in a dialog.
   return (
-    <section className="demeura-mcp">
+    <section className="adestia-mcp">
       <ul>
         {servers.map((server) => {
           const shown = MCP_STATES[server.state] ?? MCP_STATES.unknown
           return (
             <li key={server.name}>
-              <span className="demeura-mcp__name">{server.name}</span>
-              <span className={`demeura-stat demeura-stat--${shown.tone}`}>{t(shown.label)}</span>
+              <span className="adestia-mcp__name">{server.name}</span>
+              <span className={`adestia-stat adestia-stat--${shown.tone}`}>{t(shown.label)}</span>
               {/* Only ever what the CLI said. A reason is never invented. */}
-              {server.error && <span className="demeura-mcp__why">{server.error}</span>}
+              {server.error && <span className="adestia-mcp__why">{server.error}</span>}
             </li>
           )
         })}
       </ul>
-      <p className="demeura-mcp__note">
+      <p className="adestia-mcp__note">
         {t('Reported when a turn last ran — the CLI loads them with the session.')}
       </p>
     </section>
@@ -269,9 +269,9 @@ export function Settings({
 
   if (!supported) {
     return (
-      <section className="demeura-settings">
+      <section className="adestia-settings">
         <h2>{t('Agent credential')}</h2>
-        <p className="demeura-empty__hint">
+        <p className="adestia-empty__hint">
           This engine takes its credentials from the environment; there is nothing to arm here.
         </p>
       </section>
@@ -285,19 +285,19 @@ export function Settings({
   const consentPending = active?.consent !== undefined && !consented
 
   return (
-    <section className="demeura-settings">
-      <header className="demeura-settings__header">
+    <section className="adestia-settings">
+      <header className="adestia-settings__header">
         <StatusLine status={status} t={t} />
       </header>
 
       {phase.kind === 'failed' && (
-        <p className="demeura-save demeura-save--error" role="alert">
+        <p className="adestia-save adestia-save--error" role="alert">
           {phase.message}
         </p>
       )}
 
       {!active && (
-        <div className="demeura-settings__actions">
+        <div className="adestia-settings__actions">
           <button type="button" onClick={() => void begin()} disabled={phase.kind === 'starting'}>
             {status?.state === 'armed' ? t('Renew the token') : t('Arm a token')}
           </button>
@@ -310,7 +310,7 @@ export function Settings({
       )}
 
       {active && (
-        <ol className="demeura-arming">
+        <ol className="adestia-arming">
           <li>
             {active.mode === 'device-code' ? (
               <>
@@ -329,7 +329,7 @@ export function Settings({
           </li>
           <li>
             {active.consent !== undefined && (
-              <label className="demeura-arming__consent">
+              <label className="adestia-arming__consent">
                 <input
                   type="checkbox"
                   checked={consented}
@@ -339,7 +339,7 @@ export function Settings({
               </label>
             )}
             {active.mode === 'device-code' ? (
-              <div className="demeura-settings__actions">
+              <div className="adestia-settings__actions">
                 <button type="button" onClick={() => void cancel(active)}>
                   {t('Cancel')}
                 </button>
@@ -353,17 +353,17 @@ export function Settings({
               </div>
             ) : (
               <>
-                <label className="demeura-arming__label">
+                <label className="adestia-arming__label">
                   {active.inputLabel ?? t('Paste the code you were given')}
                   <input
-                    className="demeura-arming__input"
+                    className="adestia-arming__input"
                     value={code}
                     onChange={(event) => setCode(event.target.value)}
                     autoComplete="off"
                     spellCheck={false}
                   />
                 </label>
-                <div className="demeura-settings__actions">
+                <div className="adestia-settings__actions">
                   <button type="button" onClick={() => void cancel(active)}>
                     {t('Cancel')}
                   </button>

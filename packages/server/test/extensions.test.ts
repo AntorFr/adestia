@@ -4,14 +4,14 @@ import { join } from 'node:path'
 
 import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 
-import { parsePluginManifest } from '@antorfr/demeura-schemas'
+import { parsePluginManifest } from '@antorfr/adestia-schemas'
 
 import {
   forgetContributedBlocks,
   isKnownBlock,
   parse,
   validateDocument,
-} from '@antorfr/demeura-content'
+} from '@antorfr/adestia-content'
 
 import {
   claimedTypeCollisions,
@@ -30,13 +30,13 @@ async function plugin(id: string, manifest: unknown | string): Promise<void> {
   const dir = join(root, 'plugins', id)
   await mkdir(dir, { recursive: true })
   await writeFile(
-    join(dir, 'demeura-plugin.json'),
+    join(dir, 'adestia-plugin.json'),
     typeof manifest === 'string' ? manifest : JSON.stringify(manifest),
   )
 }
 
 beforeAll(async () => {
-  root = await mkdtemp(join(tmpdir(), 'demeura-ext-'))
+  root = await mkdtemp(join(tmpdir(), 'adestia-ext-'))
 
   await plugin('workbench', {
     schemaVersion: 1,
@@ -88,7 +88,7 @@ beforeAll(async () => {
   const skinDir = join(root, 'skins', 'amber')
   await mkdir(skinDir, { recursive: true })
   await writeFile(
-    join(skinDir, 'demeura-skin.json'),
+    join(skinDir, 'adestia-skin.json'),
     JSON.stringify({ schemaVersion: 1, id: 'amber', description: 'Amber and monospace.' }),
   )
 })
@@ -239,7 +239,7 @@ describe('unmatchedActivations', () => {
   })
 })
 
-describe('the plugins Demeura actually ships', () => {
+describe('the plugins Adestia actually ships', () => {
   /**
    * Every bundled manifest, parsed by the real validator.
    *
@@ -256,7 +256,7 @@ describe('the plugins Demeura actually ships', () => {
 
     expect(folders.length).toBeGreaterThan(0)
     for (const folder of folders) {
-      const raw = JSON.parse(await readFile(join(root, folder, 'demeura-plugin.json'), 'utf8'))
+      const raw = JSON.parse(await readFile(join(root, folder, 'adestia-plugin.json'), 'utf8'))
       expect(() => parsePluginManifest(raw, folder)).not.toThrow()
     }
   })

@@ -5,14 +5,14 @@
  * what makes a skin a declaration rather than a fork of this file.
  */
 
-.demeura-shell {
+.adestia-shell {
   display: grid;
   grid-template-columns: var(--rail) var(--gutter) 1fr;
   height: 100dvh;
   overflow: hidden;
 }
 
-.demeura-gutter {
+.adestia-gutter {
   background: var(--border);
   cursor: col-resize;
   /* The visual gutter is 6px; the grab area is not, or a precise pointer is a
@@ -20,14 +20,14 @@
   position: relative;
 }
 
-.demeura-gutter::after {
+.adestia-gutter::after {
   content: '';
   position: absolute;
   inset-block: 0;
   inset-inline: -5px;
 }
 
-.demeura-gutter:focus-visible {
+.adestia-gutter:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: -1px;
 }
@@ -42,7 +42,7 @@
  * only the browser could show. In a flex column every bar takes its natural
  * height and only the thread grows.
  */
-.demeura-chat {
+.adestia-chat {
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -50,7 +50,7 @@
   border-right: 1px solid var(--border);
 }
 
-.demeura-chat__header {
+.adestia-chat__header {
   display: flex;
   align-items: center;
   gap: 11px;
@@ -60,7 +60,7 @@
 
 /* The crest: the body's mark on an accent plate — the same plate the tiles
    wear, which is what makes it read as the same product. */
-.demeura-crest {
+.adestia-crest {
   display: grid;
   place-items: center;
   flex-shrink: 0;
@@ -78,18 +78,18 @@
     color-mix(in srgb, var(--accent) var(--plate-border-tint), transparent);
 }
 
-.demeura-crest svg { width: 18px; height: 18px; }
+.adestia-crest svg { width: 18px; height: 18px; }
 
-.demeura-brandname {
+.adestia-brandname {
   font: 600 20px/1 var(--font-title);
   letter-spacing: var(--title-track);
   color: var(--text);
 }
 
-.demeura-chat__spacer { margin-left: auto; }
+.adestia-chat__spacer { margin-left: auto; }
 
 /* Square icon buttons — the chrome's own controls, chat side and canvas side. */
-.demeura-ib {
+.adestia-ib {
   display: grid;
   place-items: center;
   flex-shrink: 0;
@@ -103,9 +103,9 @@
   cursor: pointer;
 }
 
-.demeura-ib:hover { border-color: var(--accent); color: var(--accent); }
+.adestia-ib:hover { border-color: var(--accent); color: var(--accent); }
 
-.demeura-chat__title {
+.adestia-chat__title {
   font-weight: 600;
   font-size: var(--text-sm);
   color: var(--text-muted);
@@ -113,8 +113,8 @@
   letter-spacing: 0.06em;
 }
 
-.demeura-chat__thread {
-  /* The one row that grows — see .demeura-chat. min-height lets it SHRINK
+.adestia-chat__thread {
+  /* The one row that grows — see .adestia-chat. min-height lets it SHRINK
      below its content so overflow scrolls instead of pushing the composer
      off screen. */
   flex: 1 1 0;
@@ -126,7 +126,7 @@
   gap: var(--space-3);
 }
 
-.demeura-bubble {
+.adestia-bubble {
   max-width: 90%;
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-bubble);
@@ -134,14 +134,14 @@
   overflow-wrap: anywhere;
 }
 
-.demeura-bubble--user {
+.adestia-bubble--user {
   align-self: flex-end;
   background: var(--bubble-user-bg);
   color: var(--bubble-user-text);
   border-end-end-radius: var(--radius-sm);
 }
 
-.demeura-bubble--agent {
+.adestia-bubble--agent {
   align-self: flex-start;
   background: var(--bubble-agent-bg);
   color: var(--bubble-agent-text);
@@ -149,14 +149,14 @@
   border-end-start-radius: var(--radius-sm);
 }
 
-.demeura-bubble--live {
+.adestia-bubble--live {
   border-style: dashed;
 }
 
 /* A message sent while a turn was running: held, and it must LOOK held — at
    half voice with a dashed edge, so "waiting" cannot be mistaken for "sent".
    It leaves as part of one merged turn when the running one settles. */
-.demeura-bubble--held {
+.adestia-bubble--held {
   opacity: 0.55;
   border: 1px dashed var(--bubble-user-text);
 }
@@ -168,25 +168,25 @@
    tight, and the last block does not add its own bottom to the padding the
    bubble already has.
 
-   `white-space` is reset because `.demeura-bubble` sets `pre-wrap` for the
+   `white-space` is reset because `.adestia-bubble` sets `pre-wrap` for the
    USER's half, where a typed newline is a newline. Here the grammar decides,
    and leaving pre-wrap on would print the source's own line breaks on top of
    the paragraphs it just made from them. */
-.demeura-prose {
+.adestia-prose {
   white-space: normal;
   line-height: 1.55;
 }
 
-.demeura-prose > :first-child { margin-top: 0; }
-.demeura-prose > :last-child { margin-bottom: 0; }
+.adestia-prose > :first-child { margin-top: 0; }
+.adestia-prose > :last-child { margin-bottom: 0; }
 
-.demeura-prose p { margin: 0 0 0.7em; }
+.adestia-prose p { margin: 0 0 0.7em; }
 
-.demeura-prose h2,
-.demeura-prose h3,
-.demeura-prose h4,
-.demeura-prose h5,
-.demeura-prose h6 {
+.adestia-prose h2,
+.adestia-prose h3,
+.adestia-prose h4,
+.adestia-prose h5,
+.adestia-prose h6 {
   font-family: var(--font-title);
   letter-spacing: var(--title-track);
   line-height: 1.25;
@@ -199,20 +199,20 @@
    bubble has no title of its own, and a thread full of competing H1s is a
    document outline nobody can use. So `##` — what an agent reaches for first
    — lands here, and has to earn its rank on size rather than on depth. */
-.demeura-prose h2 { font-size: 1.28em; }
-.demeura-prose h3 { font-size: 1.14em; }
-.demeura-prose h4 { font-size: 1.02em; }
+.adestia-prose h2 { font-size: 1.28em; }
+.adestia-prose h3 { font-size: 1.14em; }
+.adestia-prose h4 { font-size: 1.02em; }
 
-.demeura-prose ul,
-.demeura-prose ol { margin: 0 0 0.7em; padding-left: 1.3em; }
-.demeura-prose li { margin: 0.15em 0; }
-.demeura-prose li.demeura-task { list-style: none; margin-left: -1.3em; }
-.demeura-prose li.demeura-task input { margin-right: 0.5em; }
-.demeura-prose li > p { margin: 0; }
+.adestia-prose ul,
+.adestia-prose ol { margin: 0 0 0.7em; padding-left: 1.3em; }
+.adestia-prose li { margin: 0.15em 0; }
+.adestia-prose li.adestia-task { list-style: none; margin-left: -1.3em; }
+.adestia-prose li.adestia-task input { margin-right: 0.5em; }
+.adestia-prose li > p { margin: 0; }
 
-.demeura-prose a { color: var(--accent); text-underline-offset: 2px; }
+.adestia-prose a { color: var(--accent); text-underline-offset: 2px; }
 
-.demeura-prose blockquote {
+.adestia-prose blockquote {
   margin: 0 0 0.7em;
   padding: 0.1em 0 0.1em 0.9em;
   border-left: 3px solid var(--border-strong);
@@ -221,7 +221,7 @@
 
 /* The bubble's own background IS `--surface-soft`, so code has to sink
    further than it does on a page or it would draw a border around nothing. */
-.demeura-prose code {
+.adestia-prose code {
   font-family: var(--font-mono);
   font-size: 0.88em;
   background: var(--surface-sunken);
@@ -229,7 +229,7 @@
   padding: 0.1em 0.35em;
 }
 
-.demeura-prose pre {
+.adestia-prose pre {
   margin: 0 0 0.7em;
   padding: var(--space-2) var(--space-3);
   overflow-x: auto;
@@ -238,30 +238,30 @@
   border-radius: var(--radius-sm);
 }
 
-.demeura-prose pre code { background: none; padding: 0; font-size: 0.85em; }
+.adestia-prose pre code { background: none; padding: 0; font-size: 0.85em; }
 
-.demeura-prose img { max-width: 100%; height: auto; border-radius: var(--radius-sm); }
-.demeura-prose hr { border: 0; border-top: 1px solid var(--border); margin: 1.2em 0; }
+.adestia-prose img { max-width: 100%; height: auto; border-radius: var(--radius-sm); }
+.adestia-prose hr { border: 0; border-top: 1px solid var(--border); margin: 1.2em 0; }
 
-.demeura-prose .demeura-table-scroll { margin: 0 0 0.7em; }
-.demeura-prose table { border-collapse: collapse; font-size: 0.92em; }
-.demeura-prose td { border: 1px solid var(--border); padding: var(--space-1) var(--space-2); }
-.demeura-prose tr:first-child td { font-weight: 600; background: var(--surface-sunken); }
+.adestia-prose .adestia-table-scroll { margin: 0 0 0.7em; }
+.adestia-prose table { border-collapse: collapse; font-size: 0.92em; }
+.adestia-prose td { border: 1px solid var(--border); padding: var(--space-1) var(--space-2); }
+.adestia-prose tr:first-child td { font-weight: 600; background: var(--surface-sunken); }
 
-.demeura-bubble__note {
+.adestia-bubble__note {
   margin: var(--space-2) 0 0;
   font-size: var(--text-sm);
   color: var(--text-faint);
   font-style: italic;
 }
 
-.demeura-bubble__error {
+.adestia-bubble__error {
   margin: var(--space-2) 0 0;
   font-size: var(--text-sm);
   color: var(--danger);
 }
 
-.demeura-bubble__working {
+.adestia-bubble__working {
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -270,37 +270,37 @@
 /* The indicator stays up for the whole turn, so it now sits UNDER whatever
    has been said so far rather than instead of it — and needs the air a first
    child never did. */
-.demeura-prose + .demeura-bubble__working {
+.adestia-prose + .adestia-bubble__working {
   margin-block-start: var(--space-2);
 }
 
-.demeura-bubble__counter {
+.adestia-bubble__counter {
   font-family: var(--font-mono);
   font-size: var(--text-sm);
   color: var(--text-faint);
 }
 
-.demeura-dots {
+.adestia-dots {
   width: 28px;
   height: 8px;
   background:
     radial-gradient(circle 3px at 4px 4px, var(--text-faint) 96%, transparent) 0 0/12px 8px repeat-x;
-  animation: demeura-pulse 1.1s ease-in-out infinite;
+  animation: adestia-pulse 1.1s ease-in-out infinite;
 }
 
-@keyframes demeura-pulse {
+@keyframes adestia-pulse {
   0%, 100% { opacity: 0.35; }
   50% { opacity: 1; }
 }
 
 /* Tool trace -------------------------------------------------------------- */
 
-.demeura-trace {
+.adestia-trace {
   margin-bottom: var(--space-2);
   font-size: var(--text-sm);
 }
 
-.demeura-trace__toggle {
+.adestia-trace__toggle {
   background: none;
   border: 0;
   padding: 0;
@@ -309,7 +309,7 @@
   cursor: pointer;
 }
 
-.demeura-trace__list {
+.adestia-trace__list {
   list-style: none;
   margin: var(--space-2) 0 0;
   padding: 0;
@@ -318,7 +318,7 @@
   gap: 2px;
 }
 
-.demeura-trace__item {
+.adestia-trace__item {
   display: flex;
   gap: var(--space-2);
   align-items: baseline;
@@ -327,11 +327,11 @@
   color: var(--text-muted);
 }
 
-.demeura-trace__item--failed .demeura-trace__glyph { color: var(--danger); }
-.demeura-trace__item--done .demeura-trace__glyph { color: var(--success); }
-.demeura-trace__item--running .demeura-trace__glyph { color: var(--text-faint); }
+.adestia-trace__item--failed .adestia-trace__glyph { color: var(--danger); }
+.adestia-trace__item--done .adestia-trace__glyph { color: var(--success); }
+.adestia-trace__item--running .adestia-trace__glyph { color: var(--text-faint); }
 
-.demeura-trace__target {
+.adestia-trace__target {
   color: var(--text-faint);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -340,7 +340,7 @@
 
 /* Context pill ------------------------------------------------------------ */
 
-.demeura-pill {
+.adestia-pill {
   font-family: var(--font-mono);
   font-size: var(--text-sm);
   padding: 2px var(--space-2);
@@ -351,12 +351,12 @@
   cursor: pointer;
 }
 
-.demeura-pill--warn { border-color: var(--warning); color: var(--warning); }
-.demeura-pill--hot { border-color: var(--danger); color: var(--danger); }
+.adestia-pill--warn { border-color: var(--warning); color: var(--warning); }
+.adestia-pill--hot { border-color: var(--danger); color: var(--danger); }
 
 /* The engine's question --------------------------------------------------- */
 
-.demeura-ask {
+.adestia-ask {
   margin: 0 var(--space-4) var(--space-3);
   padding: var(--space-3);
   border: 1px solid var(--warning);
@@ -366,26 +366,26 @@
 
 /* Wraps rather than truncating: this is the thing being consented to, and a
    command cut at the fold is a command approved unseen. */
-.demeura-ask__text {
+.adestia-ask__text {
   margin: 0 0 var(--space-2);
   font-size: var(--text-sm);
   overflow-wrap: anywhere;
 }
 
-.demeura-ask__reason {
+.adestia-ask__reason {
   margin: 0 0 var(--space-3);
   font-size: var(--text-xs);
   color: var(--text-muted);
 }
 
-.demeura-ask__actions {
+.adestia-ask__actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
   justify-content: flex-end;
 }
 
-.demeura-ask button {
+.adestia-ask button {
   padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-strong);
@@ -395,7 +395,7 @@
   cursor: pointer;
 }
 
-.demeura-ask__always {
+.adestia-ask__always {
   background: var(--accent);
   color: var(--accent-text);
   border-color: var(--accent);
@@ -403,7 +403,7 @@
 
 /* Composer ---------------------------------------------------------------- */
 
-.demeura-composer {
+.adestia-composer {
   display: flex;
   gap: var(--space-2);
   align-items: flex-end;
@@ -412,7 +412,7 @@
   background: var(--surface-raised);
 }
 
-.demeura-composer__input {
+.adestia-composer__input {
   flex: 1;
   /* A floor, not a fixed height: the JS grows it up to COMPOSER_MAX_HEIGHT and
      the two numbers must agree, or the field jumps on the first keystroke. */
@@ -432,12 +432,12 @@
   font-size: max(16px, var(--text-base));
 }
 
-.demeura-composer__input:focus-visible {
+.adestia-composer__input:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: -1px;
 }
 
-.demeura-composer button {
+.adestia-composer button {
   /* 40px against a 48px field, and 44 on a phone below: the row reads as one
      control rather than as buttons parked next to a box. */
   width: 40px;
@@ -451,21 +451,21 @@
   cursor: pointer;
 }
 
-.demeura-composer button:disabled {
+.adestia-composer button:disabled {
   background: var(--surface-sunken);
   color: var(--text-faint);
   cursor: default;
 }
 
-.demeura-composer__stop { background: var(--danger); }
+.adestia-composer__stop { background: var(--danger); }
 
 /* Canvas ------------------------------------------------------------------ */
 
-.demeura-canvas {
+.adestia-canvas {
   overflow-y: auto;
 }
 
-.demeura-canvas__header {
+.adestia-canvas__header {
   position: sticky;
   top: 0;
   z-index: 5;
@@ -480,13 +480,13 @@
 }
 
 /* The canvas body gets the frame the sticky bar no longer provides. */
-.demeura-canvas__body {
+.adestia-canvas__body {
   max-width: 940px;
   margin: 0 auto;
   padding: 26px 30px 100px;
 }
 
-.demeura-crumbs {
+.adestia-crumbs {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -496,7 +496,7 @@
   color: var(--text-muted);
 }
 
-.demeura-crumbs button {
+.adestia-crumbs button {
   background: none;
   border: 0;
   padding: 0;
@@ -505,11 +505,11 @@
   cursor: pointer;
 }
 
-.demeura-crumbs button:hover { color: var(--accent); text-decoration: underline; }
-.demeura-crumbs__sep { color: var(--text-faint); }
-.demeura-crumbs b { color: var(--text); font-weight: 600; }
+.adestia-crumbs button:hover { color: var(--accent); text-decoration: underline; }
+.adestia-crumbs__sep { color: var(--text-faint); }
+.adestia-crumbs b { color: var(--text); font-weight: 600; }
 
-.demeura-canvas__driver { font-size: var(--text-sm); color: var(--text-faint); }
+.adestia-canvas__driver { font-size: var(--text-sm); color: var(--text-faint); }
 
 /* The landing canvas --------------------------------------------------
    The measurements below are the predecessor's, carried as-is: 33px serif
@@ -517,7 +517,7 @@
    11px mono chips. They were tuned over a year of daily use; re-deriving
    them by eye produced the prototype this replaced. */
 
-.demeura-home__greeting {
+.adestia-home__greeting {
   position: relative;
   margin: 0;
   font: 600 33px/1.1 var(--font-title);
@@ -526,12 +526,12 @@
 
 /* The quieter half of the greeting. One sentence, two weights: the address is
    the body speaking, the question is it waiting. */
-.demeura-home__aside { color: var(--text-faint); }
+.adestia-home__aside { color: var(--text-faint); }
 
 /* The ghost tag — a skin's monogram in outline behind the greeting
    (`--ghosttag: "SKIPPY"`). Empty, and therefore invisible, everywhere the
    skin does not claim it. */
-.demeura-home__greeting::before {
+.adestia-home__greeting::before {
   content: var(--ghosttag, "");
   position: absolute;
   top: -0.62em;
@@ -547,13 +547,13 @@
   white-space: nowrap;
 }
 
-.demeura-home__context {
+.adestia-home__context {
   margin: 7px 0 0;
   color: var(--text-muted);
   font-size: 15px;
 }
 
-.demeura-home__ask {
+.adestia-home__ask {
   display: flex;
   width: 100%;
   align-items: center;
@@ -571,31 +571,31 @@
   transition: border-color 0.15s;
 }
 
-.demeura-home__ask:hover { border-color: var(--accent); }
-.demeura-home__ask svg { width: 18px; height: 18px; opacity: 0.5; flex: none; }
+.adestia-home__ask:hover { border-color: var(--accent); }
+.adestia-home__ask svg { width: 18px; height: 18px; opacity: 0.5; flex: none; }
 
 /* The block caret: display is a TOKEN, so the terminal livery can turn it on
    without a rule. Off, it costs nothing. */
-.demeura-home__ask-caret {
+.adestia-home__ask-caret {
   display: var(--caret-display, none);
   width: 8px;
   height: 17px;
   background: var(--accent);
-  animation: demeura-caret 1.1s steps(1) infinite;
+  animation: adestia-caret 1.1s steps(1) infinite;
 }
 
-@keyframes demeura-caret {
+@keyframes adestia-caret {
   50% { opacity: 0; }
 }
 
-.demeura-home__ask-text {
+.adestia-home__ask-text {
   flex: 1;
   color: var(--text-faint);
   font-size: 15.5px;
   font-family: var(--font-input, var(--font));
 }
 
-.demeura-home__ask-kbd {
+.adestia-home__ask-kbd {
   font: 600 11px var(--font-mono);
   color: var(--text-faint);
   border: 1px solid var(--border);
@@ -604,7 +604,7 @@
 }
 
 /* Row labels: the apparatus voice — mono, uppercase, tracked. */
-.demeura-section {
+.adestia-section {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -615,13 +615,13 @@
   color: var(--text-faint);
 }
 
-.demeura-section__by {
+.adestia-section__by {
   font: 500 10px var(--font-mono);
   letter-spacing: 0.02em;
   text-transform: none;
 }
 
-.demeura-section__refresh {
+.adestia-section__refresh {
   display: grid;
   place-items: center;
   margin-left: auto;
@@ -635,16 +635,16 @@
   cursor: pointer;
 }
 
-.demeura-section__refresh:hover { color: var(--accent); border-color: var(--accent); }
+.adestia-section__refresh:hover { color: var(--accent); border-color: var(--accent); }
 
 /* The brief: at most four pills, each wearing its target's hue on hover. */
-.demeura-brief {
+.adestia-brief {
   display: flex;
   gap: 9px;
   flex-wrap: wrap;
 }
 
-.demeura-brief__item {
+.adestia-brief__item {
   display: inline-flex;
   gap: 9px;
   align-items: center;
@@ -660,12 +660,12 @@
   transition: transform 0.14s, border-color 0.14s;
 }
 
-.demeura-brief__item:hover {
+.adestia-brief__item:hover {
   transform: translateY(-1px);
   border-color: var(--u, var(--accent));
 }
 
-.demeura-brief__icon {
+.adestia-brief__icon {
   display: grid;
   place-items: center;
   flex-shrink: 0;
@@ -676,17 +676,17 @@
   background: var(--surface-soft);
 }
 
-.demeura-brief__text { font: 600 13.5px var(--font); }
+.adestia-brief__text { font: 600 13.5px var(--font); }
 
 /* A section's own header — the livery you arrived by, worn where you land. */
-.demeura-chead {
+.adestia-chead {
   display: flex;
   align-items: center;
   gap: 13px;
   margin: var(--space-3) 0 var(--space-4);
 }
 
-.demeura-chead__icon {
+.adestia-chead__icon {
   display: grid;
   place-items: center;
   flex-shrink: 0;
@@ -705,17 +705,17 @@
     color-mix(in srgb, var(--tile-color, var(--accent)) var(--plate-border-tint), transparent);
 }
 
-.demeura-chead__title {
+.adestia-chead__title {
   margin: 0;
   font: 600 26px/1.15 var(--font-title);
   letter-spacing: var(--title-track);
 }
 
-.demeura-chead__lede { margin: 2px 0 0; color: var(--text-muted); font-size: 14px; }
+.adestia-chead__lede { margin: 2px 0 0; color: var(--text-muted); font-size: 14px; }
 
 /* Pages as CARDS, not rows. Shorter than a tile — a page has no plate and no
    counters, it has a name and, when it declares one, a state. */
-.demeura-cards {
+.adestia-cards {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -724,7 +724,7 @@
   gap: 13px;
 }
 
-.demeura-card {
+.adestia-card {
   display: flex;
   flex-direction: column;
   gap: 9px;
@@ -742,15 +742,15 @@
   transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
 }
 
-.demeura-card:hover {
+.adestia-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow);
   border-color: color-mix(in srgb, var(--tile-color, var(--accent)) 45%, var(--border));
 }
 
-.demeura-card__title { font: 600 15.5px/1.2 var(--font-title); }
+.adestia-card__title { font: 600 15.5px/1.2 var(--font-title); }
 
-.demeura-card__foot {
+.adestia-card__foot {
   margin-top: auto;
   display: flex;
   flex-wrap: wrap;
@@ -761,7 +761,7 @@
 /* A status pill. The dot carries the colour and the WORD is always written
    out beside it: hue alone is not a label, and three families are three
    families whether or not somebody can tell them apart by colour. */
-.demeura-stat {
+.adestia-stat {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -770,7 +770,7 @@
   padding: 2px 9px 2px 8px;
 }
 
-.demeura-stat::before {
+.adestia-stat::before {
   content: '';
   width: 5px;
   height: 5px;
@@ -780,17 +780,17 @@
 
 /* Underway is the accent — a live page's normal state, so it wears the
    instance's own colour rather than a semantic one. */
-.demeura-stat--underway { color: var(--accent); background: var(--accent-quiet); }
-.demeura-stat--waiting {
+.adestia-stat--underway { color: var(--accent); background: var(--accent-quiet); }
+.adestia-stat--waiting {
   color: var(--warning);
   background: color-mix(in srgb, var(--warning) 13%, transparent);
 }
-.demeura-stat--settled {
+.adestia-stat--settled {
   color: var(--success);
   background: color-mix(in srgb, var(--success) 12%, transparent);
 }
 
-.demeura-tag {
+.adestia-tag {
   font: 600 10.5px/1.5 var(--font-mono);
   border-radius: var(--radius-sm);
   padding: 2px 8px;
@@ -800,7 +800,7 @@
 
 /* Search and facets ---------------------------------------------------- */
 
-.demeura-toolbar {
+.adestia-toolbar {
   display: flex;
   gap: 10px;
   align-items: center;
@@ -808,7 +808,7 @@
   margin-bottom: 18px;
 }
 
-.demeura-search {
+.adestia-search {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -820,10 +820,10 @@
   border-radius: var(--radius-ctl);
 }
 
-.demeura-search:focus-within { border-color: var(--tile-color, var(--accent)); }
-.demeura-search svg { width: 15px; height: 15px; opacity: 0.5; flex: none; }
+.adestia-search:focus-within { border-color: var(--tile-color, var(--accent)); }
+.adestia-search svg { width: 15px; height: 15px; opacity: 0.5; flex: none; }
 
-.demeura-search input {
+.adestia-search input {
   flex: 1;
   min-width: 0;
   border: 0;
@@ -833,9 +833,9 @@
   font: 14px var(--font);
 }
 
-.demeura-facets { display: flex; gap: 6px; flex-wrap: wrap; }
+.adestia-facets { display: flex; gap: 6px; flex-wrap: wrap; }
 
-.demeura-pill {
+.adestia-pill {
   font: 600 11.5px var(--font-mono);
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
@@ -845,20 +845,20 @@
   cursor: pointer;
 }
 
-.demeura-pill:hover { border-color: var(--text-faint); }
+.adestia-pill:hover { border-color: var(--text-faint); }
 
 /* The active pill takes the SECTION's colour, so the filter reads as part of
    the place rather than as generic chrome. */
-.demeura-pill--on {
+.adestia-pill--on {
   background: var(--tile-color, var(--accent));
   border-color: var(--tile-color, var(--accent));
   color: var(--accent-text);
 }
 
 /* What is over, folded away — still counted, one click from being read. */
-.demeura-archive { margin-top: var(--space-5); }
+.adestia-archive { margin-top: var(--space-5); }
 
-.demeura-archive > summary {
+.adestia-archive > summary {
   display: flex;
   align-items: center;
   gap: 9px;
@@ -870,7 +870,7 @@
   cursor: pointer;
 }
 
-.demeura-archive__count {
+.adestia-archive__count {
   font-family: var(--font-mono);
   letter-spacing: 0;
   padding: 2px 8px;
@@ -879,11 +879,11 @@
   background: var(--surface-soft);
 }
 
-.demeura-archive .demeura-card { opacity: 0.8; }
+.adestia-archive .adestia-card { opacity: 0.8; }
 
 /* Arranging the mosaics ------------------------------------------------- */
 
-.demeura-section__edit {
+.adestia-section__edit {
   margin-left: var(--space-3);
   padding: 2px var(--space-2);
   border: 1px solid var(--border);
@@ -897,32 +897,32 @@
   cursor: pointer;
 }
 
-.demeura-section__edit:hover { border-color: var(--accent); color: var(--accent); }
+.adestia-section__edit:hover { border-color: var(--accent); color: var(--accent); }
 
-.demeura-section__edit[aria-pressed='true'] {
+.adestia-section__edit[aria-pressed='true'] {
   border-color: var(--accent);
   background: var(--accent);
   color: var(--accent-text);
 }
 
-.demeura-tile-slot { position: relative; display: flex; }
+.adestia-tile-slot { position: relative; display: flex; }
 
 /* Inert, but still able to hear a pointer on the slot around it — which is
    what the drag listens to. `disabled` would swallow those events. */
-.demeura-tile-slot--editing .demeura-tile {
+.adestia-tile-slot--editing .adestia-tile {
   pointer-events: none;
   cursor: grab;
 }
 
-.demeura-tile-slot--editing { touch-action: none; cursor: grab; }
+.adestia-tile-slot--editing { touch-action: none; cursor: grab; }
 
 /* The tile being carried rides above the reflow it is causing. */
-.demeura-tile-slot--carried {
+.adestia-tile-slot--carried {
   z-index: 2;
   cursor: grabbing;
 }
 
-.demeura-tile-slot--carried .demeura-tile {
+.adestia-tile-slot--carried .adestia-tile {
   transform: scale(1.04);
   box-shadow: var(--shadow-lg);
 }
@@ -930,19 +930,19 @@
 /* The iOS tell: everything arrangeable is faintly restless. Suppressed with
    the rest of the motion under prefers-reduced-motion (see tokens.css), so
    the mode still reads by its outline and its Done button. */
-@keyframes demeura-restless {
+@keyframes adestia-restless {
   0% { transform: rotate(-0.6deg); }
   50% { transform: rotate(0.6deg); }
   100% { transform: rotate(-0.6deg); }
 }
 
-.demeura-tile-slot--editing:not(.demeura-tile-slot--carried) .demeura-tile {
-  animation: demeura-restless 0.28s ease-in-out infinite;
+.adestia-tile-slot--editing:not(.adestia-tile-slot--carried) .adestia-tile {
+  animation: adestia-restless 0.28s ease-in-out infinite;
   outline: 1px dashed var(--border-strong);
   outline-offset: 2px;
 }
 
-.demeura-tile-slot__arrows {
+.adestia-tile-slot__arrows {
   position: absolute;
   z-index: 3;
   top: var(--space-1);
@@ -951,7 +951,7 @@
   gap: 2px;
 }
 
-.demeura-tile-slot__arrows button {
+.adestia-tile-slot__arrows button {
   width: 26px;
   height: 26px;
   padding: 0;
@@ -964,9 +964,9 @@
   cursor: pointer;
 }
 
-.demeura-tile-slot__arrows button:hover { border-color: var(--accent); color: var(--accent); }
+.adestia-tile-slot__arrows button:hover { border-color: var(--accent); color: var(--accent); }
 
-.demeura-tiles {
+.adestia-tiles {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -975,7 +975,7 @@
   gap: 14px;
 }
 
-.demeura-tile {
+.adestia-tile {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -998,7 +998,7 @@
 
 /* The colour mark. Every dimension of it is a token: a livery moves the bar
    to the left edge or dims it, and never writes a rule against this class. */
-.demeura-tile::before {
+.adestia-tile::before {
   content: '';
   position: absolute;
   inset: var(--tile-mark-inset);
@@ -1012,7 +1012,7 @@
   transition: background 0.16s;
 }
 
-.demeura-tile:hover:not(:disabled) {
+.adestia-tile:hover:not(:disabled) {
   /* The mark answers the hover: a livery that keeps it quiet at rest still
      gets the full colour under the pointer, without a second rule. */
   --tile-mark-tint: 100%;
@@ -1021,12 +1021,12 @@
   border-color: color-mix(in srgb, var(--tile-color, var(--accent)) 45%, var(--border));
 }
 
-.demeura-tile:disabled { cursor: default; opacity: 0.6; }
+.adestia-tile:disabled { cursor: default; opacity: 0.6; }
 
 /* The plate — where the "app store" look lives. A saturated gradient of the
    tile's colour under a white glyph by default; the knobs are tokens, so a
    flat or bordered livery reshapes every plate without touching this rule. */
-.demeura-tile__icon {
+.adestia-tile__icon {
   display: grid;
   place-items: center;
   flex-shrink: 0;
@@ -1045,25 +1045,25 @@
     color-mix(in srgb, var(--tile-color, var(--accent)) var(--plate-border-tint), transparent);
 }
 
-.demeura-tile__icon svg { width: 22px; height: 22px; }
+.adestia-tile__icon svg { width: 22px; height: 22px; }
 
-.demeura-tile__label {
+.adestia-tile__label {
   font-family: var(--tile-label-font);
   font-weight: 600;
   font-size: 17px;
   line-height: 1.1;
   letter-spacing: var(--tile-label-track);
 }
-.demeura-tile__subtitle { color: var(--text-muted); font-size: 13px; margin-top: -4px; }
+.adestia-tile__subtitle { color: var(--text-muted); font-size: 13px; margin-top: -4px; }
 
-.demeura-tile__foot {
+.adestia-tile__foot {
   margin-top: auto;
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
 
-.demeura-chip {
+.adestia-chip {
   font: 600 11px var(--font-mono);
   padding: 2px 9px;
   border: 1px solid var(--border);
@@ -1074,16 +1074,16 @@
 
 /* Exactly one kind of figure earns the colour: the one somebody has to act
    on. A tile where every chip is hot has told the reader nothing. */
-.demeura-chip--hot {
+.adestia-chip--hot {
   color: var(--tile-color, var(--accent));
   border-color: color-mix(in srgb, var(--tile-color, var(--accent)) 40%, transparent);
   background: color-mix(in srgb, var(--tile-color, var(--accent)) 10%, transparent);
 }
 
-.demeura-empty { color: var(--text-muted); }
-.demeura-empty__hint { font-size: var(--text-sm); color: var(--text-faint); }
+.adestia-empty { color: var(--text-muted); }
+.adestia-empty__hint { font-size: var(--text-sm); color: var(--text-faint); }
 
-.demeura-problems {
+.adestia-problems {
   margin-bottom: var(--space-5);
   padding: var(--space-3) var(--space-4);
   border: 1px solid var(--warning);
@@ -1094,7 +1094,7 @@
 
 /* The instruction zone. A list on the left, the file on the right — the shape
    of every editor anybody has used, so nothing has to be learned. */
-.demeura-instructions__split {
+.adestia-instructions__split {
   display: grid;
   grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
   gap: var(--space-4);
@@ -1103,12 +1103,12 @@
 }
 
 @media (max-width: 760px) {
-  .demeura-instructions__split { grid-template-columns: minmax(0, 1fr); }
+  .adestia-instructions__split { grid-template-columns: minmax(0, 1fr); }
 }
 
-.demeura-instructions__list { list-style: none; margin: 0; padding: 0; }
+.adestia-instructions__list { list-style: none; margin: 0; padding: 0; }
 
-.demeura-instructions__list button {
+.adestia-instructions__list button {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -1123,38 +1123,38 @@
   cursor: pointer;
 }
 
-.demeura-instructions__list button:hover { background: var(--surface-sunken); }
+.adestia-instructions__list button:hover { background: var(--surface-sunken); }
 
-.demeura-instructions__list button.is-open {
+.adestia-instructions__list button.is-open {
   background: var(--accent-quiet);
   border-color: color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
-.demeura-instructions__name { font-weight: 600; font-size: var(--text-base); }
+.adestia-instructions__name { font-weight: 600; font-size: var(--text-base); }
 
 /* The full path under the name: two SKILL.md files are told apart by their
    folder, and hiding it would make the list ambiguous. */
-.demeura-instructions__path {
+.adestia-instructions__path {
   font: 11px var(--font-mono);
   color: var(--text-faint);
   overflow-wrap: anywhere;
 }
 
-.demeura-instructions__pane {
+.adestia-instructions__pane {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
   min-width: 0;
 }
 
-.demeura-instructions__bar {
+.adestia-instructions__bar {
   display: flex;
   align-items: center;
   gap: var(--space-2);
   flex-wrap: wrap;
 }
 
-.demeura-instructions__bar code {
+.adestia-instructions__bar code {
   font: 11.5px var(--font-mono);
   color: var(--text-muted);
   overflow-wrap: anywhere;
@@ -1162,7 +1162,7 @@
 
 /* Monospaced on purpose: frontmatter alignment and code fences are part of
    what these files mean, and a proportional face hides both. */
-.demeura-instructions__text {
+.adestia-instructions__text {
   min-height: 60vh;
   padding: var(--space-3);
   border: 1px solid var(--border);
@@ -1174,16 +1174,16 @@
   tab-size: 2;
 }
 
-.demeura-instructions__text:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.adestia-instructions__text:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-.demeura-instructions__new {
+.adestia-instructions__new {
   display: flex;
   gap: var(--space-2);
   flex-wrap: wrap;
   margin-top: var(--space-3);
 }
 
-.demeura-instructions__new button {
+.adestia-instructions__new button {
   padding: 6px 13px;
   border: 1px dashed var(--border);
   border-radius: var(--radius);
@@ -1193,9 +1193,9 @@
   cursor: pointer;
 }
 
-.demeura-instructions__new button:hover { border-color: var(--accent); color: var(--accent); }
+.adestia-instructions__new button:hover { border-color: var(--accent); color: var(--accent); }
 
-.demeura-instructions__empty {
+.adestia-instructions__empty {
   margin-top: var(--space-4);
   color: var(--text-faint);
 }
@@ -1207,7 +1207,7 @@
 /* A settings page is a screen of the canvas, so it gets the canvas's measure
    — but the list keeps a reading width: a row stretched to 940px puts its
    chevron a hand's width away from the words it belongs to. */
-.demeura-prefs__list {
+.adestia-prefs__list {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -1217,7 +1217,7 @@
   gap: var(--space-2);
 }
 
-.demeura-prefs__row {
+.adestia-prefs__row {
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -1232,8 +1232,8 @@
   cursor: pointer;
 }
 
-.demeura-prefs__row:hover { border-color: var(--tile-color, var(--accent)); }
-.demeura-prefs__row:focus-visible {
+.adestia-prefs__row:hover { border-color: var(--tile-color, var(--accent)); }
+.adestia-prefs__row:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
@@ -1241,7 +1241,7 @@
 /* The same saturated plate the app tiles wear, at the size a row can carry:
    two mosaics of settings and apps that dressed their icons differently
    would read as two products. */
-.demeura-prefs__plate {
+.adestia-prefs__plate {
   flex: none;
   display: grid;
   place-items: center;
@@ -1256,16 +1256,16 @@
   font-size: var(--text-base);
 }
 
-.demeura-prefs__body {
+.adestia-prefs__body {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
 }
 
-.demeura-prefs__title { font-weight: 600; }
+.adestia-prefs__title { font-weight: 600; }
 
-.demeura-prefs__lede {
+.adestia-prefs__lede {
   color: var(--text-muted);
   font-size: var(--text-sm);
   overflow: hidden;
@@ -1273,13 +1273,13 @@
   white-space: nowrap;
 }
 
-.demeura-prefs__chevron { flex: none; color: var(--text-faint); font-size: var(--text-lg); }
+.adestia-prefs__chevron { flex: none; color: var(--text-faint); font-size: var(--text-lg); }
 
-.demeura-prefs__note { margin: var(--space-4) 0 0; color: var(--text-faint); font-size: var(--text-sm); }
+.adestia-prefs__note { margin: var(--space-4) 0 0; color: var(--text-faint); font-size: var(--text-sm); }
 
 /* Named choices, as one segmented control. The header's cycling glyph can
    only be inferred; three buttons SAY which one is in force. */
-.demeura-choices {
+.adestia-choices {
   display: inline-flex;
   padding: 3px;
   gap: 3px;
@@ -1288,7 +1288,7 @@
   background: var(--surface-sunken);
 }
 
-.demeura-choices__choice {
+.adestia-choices__choice {
   padding: 7px var(--space-4);
   border: 0;
   border-radius: var(--radius-sm);
@@ -1298,21 +1298,21 @@
   cursor: pointer;
 }
 
-.demeura-choices__choice[aria-checked='true'] {
+.adestia-choices__choice[aria-checked='true'] {
   background: var(--surface-raised);
   color: var(--text);
   box-shadow: var(--shadow-sm);
   font-weight: 600;
 }
 
-.demeura-choices__choice:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.adestia-choices__choice:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 /* The MCP panel: a list of names and states, on its own settings page. Rows
    rather than cards — this is a status board, and a board is read down a
    column. */
-.demeura-mcp ul { list-style: none; margin: 0; padding: 0; }
+.adestia-mcp ul { list-style: none; margin: 0; padding: 0; }
 
-.demeura-mcp li {
+.adestia-mcp li {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -1321,9 +1321,9 @@
   border-bottom: 1px solid var(--border);
 }
 
-.demeura-mcp li:last-child { border-bottom: 0; }
+.adestia-mcp li:last-child { border-bottom: 0; }
 
-.demeura-mcp__name {
+.adestia-mcp__name {
   flex: 1;
   min-width: 0;
   font: 600 var(--text-sm) var(--font-mono);
@@ -1332,13 +1332,13 @@
 
 /* The reason takes the whole next line: it is a sentence from the CLI, and
    squeezing it beside a pill truncates the part that explains anything. */
-.demeura-mcp__why {
+.adestia-mcp__why {
   flex-basis: 100%;
   color: var(--text-muted);
   font-size: var(--text-sm);
 }
 
-.demeura-mcp__note {
+.adestia-mcp__note {
   margin: var(--space-3) 0 0;
   color: var(--text-faint);
   font-size: var(--text-sm);
@@ -1360,7 +1360,7 @@
  */
 /* The row keeps its own control, revealed on hover — a thread list is read
    far more often than it is tidied. */
-.demeura-problems--degraded {
+.adestia-problems--degraded {
   border: 0;
   border-left: 2px solid var(--border);
   border-radius: 0;
@@ -1370,7 +1370,7 @@
   margin-bottom: var(--space-4);
 }
 
-.demeura-problems--degraded h2 {
+.adestia-problems--degraded h2 {
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text-faint);
@@ -1379,29 +1379,29 @@
 
 /* Marked, so it reads as an aside rather than as a headline that lost its
    colour. */
-.demeura-problems--degraded h2::before {
+.adestia-problems--degraded h2::before {
   content: 'ⓘ';
   margin-right: 6px;
   font-weight: 400;
 }
 
-.demeura-problems--degraded ul { padding-left: var(--space-3); }
-.demeura-problems--degraded li { list-style: none; }
+.adestia-problems--degraded ul { padding-left: var(--space-3); }
+.adestia-problems--degraded li { list-style: none; }
 
-.demeura-problems h2 { margin: 0 0 var(--space-2); font-size: var(--text-base); }
-.demeura-problems ul { margin: 0; padding-left: var(--space-4); }
+.adestia-problems h2 { margin: 0 0 var(--space-2); font-size: var(--text-base); }
+.adestia-problems ul { margin: 0; padding-left: var(--space-4); }
 
-.demeura-loading,
-.demeura-fatal {
+.adestia-loading,
+.adestia-fatal {
   padding: var(--space-6);
   color: var(--text-muted);
 }
 
-.demeura-fatal h1 { color: var(--danger); font-size: var(--text-lg); }
+.adestia-fatal h1 { color: var(--danger); font-size: var(--text-lg); }
 
 /* Mobile: two full-width screens, the gutter is meaningless on a phone. ---- */
 
-.demeura-switch {
+.adestia-switch {
   background: none;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -1413,68 +1413,68 @@
 }
 
 @media (max-width: 820px) {
-  .demeura-shell {
+  .adestia-shell {
     grid-template-columns: 1fr;
     grid-template-rows: 1fr;
   }
 
-  .demeura-gutter { display: none; }
-  .demeura-chat { border-right: 0; }
+  .adestia-gutter { display: none; }
+  .adestia-chat { border-right: 0; }
 
   /* Folded: one screen at a time, and BOTH reachable. Hiding the canvas with
      no way back was the predecessor's mobile in miniature — the apps existed
      and no phone could open them. */
-  .demeura-shell[data-screen='chat'] .demeura-canvas { display: none; }
-  .demeura-shell[data-screen='canvas'] .demeura-chat { display: none; }
+  .adestia-shell[data-screen='chat'] .adestia-canvas { display: none; }
+  .adestia-shell[data-screen='canvas'] .adestia-chat { display: none; }
 
   /* The top bar has room for WHERE YOU ARE and the two controls, and that is
      all. The driver's name is diagnostics — it belongs on a screen wide
      enough to spare the space, not crushed against the breadcrumb. */
-  .demeura-canvas__driver { display: none; }
-  .demeura-canvas__header { padding: 11px var(--space-4); gap: var(--space-2); }
-  .demeura-crumbs { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .adestia-canvas__driver { display: none; }
+  .adestia-canvas__header { padding: 11px var(--space-4); gap: var(--space-2); }
+  .adestia-crumbs { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-  .demeura-canvas__body { padding: var(--space-4) var(--space-4) 80px; }
+  .adestia-canvas__body { padding: var(--space-4) var(--space-4) 80px; }
 
   /* A 33px serif greeting wraps to three lines on a phone and eats a third
      of the screen before anything useful. It scales; the rest does not. */
-  .demeura-home__greeting { font-size: clamp(22px, 7vw, 33px); }
-  .demeura-home__greeting::before { display: none; }
-  .demeura-home__context { font-size: 14px; }
-  .demeura-home__ask { margin: var(--space-4) 0 var(--space-2); padding: 12px 14px; }
-  .demeura-home__ask-text { font-size: 14px; }
-  .demeura-home__ask-kbd { display: none; }
+  .adestia-home__greeting { font-size: clamp(22px, 7vw, 33px); }
+  .adestia-home__greeting::before { display: none; }
+  .adestia-home__context { font-size: 14px; }
+  .adestia-home__ask { margin: var(--space-4) 0 var(--space-2); padding: 12px 14px; }
+  .adestia-home__ask-text { font-size: 14px; }
+  .adestia-home__ask-kbd { display: none; }
 
   /* Two up rather than one: at 210px minimum a 390px phone gets a single
      column of very tall cards, which is a list wearing a card's costume. */
-  .demeura-tiles { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-  .demeura-tile { min-height: 118px; padding: 13px; gap: 8px; }
-  .demeura-tile__icon { width: 36px; height: 36px; font-size: 17px; }
-  .demeura-tile__label { font-size: 15px; }
+  .adestia-tiles { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .adestia-tile { min-height: 118px; padding: 13px; gap: 8px; }
+  .adestia-tile__icon { width: 36px; height: 36px; font-size: 17px; }
+  .adestia-tile__label { font-size: 15px; }
 
-  .demeura-cards { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-  .demeura-card { min-height: 84px; padding: 13px; }
-  .demeura-card__title { font-size: 14.5px; }
+  .adestia-cards { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .adestia-card { min-height: 84px; padding: 13px; }
+  .adestia-card__title { font-size: 14.5px; }
 
   /* The brief goes full width: four pills of different lengths stacked
      ragged read worse than four rows that line up. */
-  .demeura-brief { flex-direction: column; }
-  .demeura-brief__item { width: 100%; }
+  .adestia-brief { flex-direction: column; }
+  .adestia-brief__item { width: 100%; }
 
   /* 44px is the smallest target a thumb hits reliably; below that the send
      button is a coin toss on the one control that must never miss. */
-  .demeura-composer button { width: 44px; height: 44px; }
-  .demeura-composer { padding: var(--space-3); gap: var(--space-2); }
+  .adestia-composer button { width: 44px; height: 44px; }
+  .adestia-composer { padding: var(--space-3); gap: var(--space-2); }
 
   /* The header holds the brand, the picker and three controls. The picker is
      the one that may shrink — the others are fixed glyphs. */
-  .demeura-model { max-width: 92px; }
+  .adestia-model { max-width: 92px; }
 
   /* Full width, anchored to the composer's left edge rather than to the
      button: a 200px card hanging off a 44px control on a 390px screen is a
      menu that hugs one margin and ignores the other. */
-  .demeura-fold { position: static; }
-  .demeura-fold__menu {
+  .adestia-fold { position: static; }
+  .adestia-fold__menu {
     left: var(--space-3);
     right: var(--space-3);
     min-width: 0;
@@ -1483,7 +1483,7 @@
 
 /* Pages and editor ------------------------------------------------------- */
 
-.demeura-pages {
+.adestia-pages {
   list-style: none;
   margin: 0 0 var(--space-5);
   padding: 0;
@@ -1492,7 +1492,7 @@
   gap: var(--space-1);
 }
 
-.demeura-pages__link {
+.adestia-pages__link {
   background: none;
   border: 0;
   padding: var(--space-2) var(--space-3);
@@ -1504,16 +1504,16 @@
   cursor: pointer;
 }
 
-.demeura-pages__link:hover { background: var(--surface-sunken); }
+.adestia-pages__link:hover { background: var(--surface-sunken); }
 
 /* A file let go over a page. The overlay is drawn INSIDE the page rather than
    over the whole window: what is being answered is "this page", and a
    full-screen veil would make it look like the instance was taking the file. */
-.demeura-editor { position: relative; }
+.adestia-editor { position: relative; }
 
-.demeura-editor--dropping { outline: 2px dashed var(--accent); outline-offset: var(--space-2); }
+.adestia-editor--dropping { outline: 2px dashed var(--accent); outline-offset: var(--space-2); }
 
-.demeura-editor__dropzone {
+.adestia-editor__dropzone {
   position: absolute;
   inset: 0;
   z-index: 2;
@@ -1531,7 +1531,7 @@
 }
 
 /* Actions only, pushed right: the header no longer carries a title. */
-.demeura-editor__header {
+.adestia-editor__header {
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -1540,15 +1540,15 @@
   min-height: 32px;
 }
 
-.demeura-editor__title { margin: 0; font-size: var(--text-lg); }
+.adestia-editor__title { margin: 0; font-size: var(--text-lg); }
 
-.demeura-editor__actions {
+.adestia-editor__actions {
   display: flex;
   align-items: center;
   gap: var(--space-3);
 }
 
-.demeura-editor__save {
+.adestia-editor__save {
   padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-sm);
   border: 1px solid var(--accent);
@@ -1558,19 +1558,19 @@
   cursor: pointer;
 }
 
-.demeura-editor__save:disabled {
+.adestia-editor__save:disabled {
   background: var(--surface-sunken);
   border-color: var(--border);
   color: var(--text-faint);
   cursor: default;
 }
 
-.demeura-save { font-size: var(--text-sm); color: var(--text-muted); }
-.demeura-save--ok { color: var(--success); }
-.demeura-save--warn { color: var(--warning); }
-.demeura-save--error { color: var(--danger); }
+.adestia-save { font-size: var(--text-sm); color: var(--text-muted); }
+.adestia-save--ok { color: var(--success); }
+.adestia-save--warn { color: var(--warning); }
+.adestia-save--error { color: var(--danger); }
 
-.demeura-editor__readonly {
+.adestia-editor__readonly {
   padding: var(--space-3);
   border: 1px solid var(--warning);
   border-radius: var(--radius);
@@ -1578,7 +1578,7 @@
   font-size: var(--text-sm);
 }
 
-.demeura-diagnostics {
+.adestia-diagnostics {
   list-style: none;
   margin: 0 0 var(--space-3);
   padding: 0;
@@ -1588,16 +1588,16 @@
   gap: var(--space-1);
 }
 
-.demeura-diagnostics__item--error { color: var(--danger); }
-.demeura-diagnostics__item--warning { color: var(--warning); }
+.adestia-diagnostics__item--error { color: var(--danger); }
+.adestia-diagnostics__item--warning { color: var(--warning); }
 
-.demeura-diagnostics__line {
+.adestia-diagnostics__line {
   font-family: var(--font-mono);
   color: var(--text-faint);
   margin-right: var(--space-2);
 }
 
-.demeura-editor__raw {
+.adestia-editor__raw {
   padding: var(--space-3);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -1607,7 +1607,7 @@
   font-size: var(--text-sm);
 }
 
-.demeura-editor__surface {
+.adestia-editor__surface {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface-raised);
@@ -1617,7 +1617,7 @@
 
 /* Typed blocks, as the editor shows them. A skin may recolour these; it may
    not change what they are. */
-.demeura-block {
+.adestia-block {
   margin: var(--space-3) 0;
   padding: var(--space-3);
   border-inline-start: 3px solid var(--accent);
@@ -1625,7 +1625,7 @@
   background: var(--surface-sunken);
 }
 
-.demeura-block--app {
+.adestia-block--app {
   font-family: var(--font-mono);
   font-size: var(--text-sm);
   color: var(--text-muted);
@@ -1633,7 +1633,7 @@
 }
 
 /* What a page says about itself, as chips — the same ones its card wore. */
-.demeura-editor__meta {
+.adestia-editor__meta {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -1641,10 +1641,10 @@
   margin-bottom: var(--space-4);
 }
 
-.demeura-editor__meta:empty,
-.demeura-editor__meta-empty { display: none; }
+.adestia-editor__meta:empty,
+.adestia-editor__meta-empty { display: none; }
 
-.demeura-wikilink {
+.adestia-wikilink {
   color: var(--accent);
   text-decoration: none;
   border-bottom: 1px dotted var(--accent);
@@ -1652,7 +1652,7 @@
 
 /* Threads ----------------------------------------------------------------- */
 
-.demeura-threads {
+.adestia-threads {
   list-style: none;
   margin: 0;
   padding: var(--space-2);
@@ -1662,7 +1662,7 @@
   overflow-y: auto;
 }
 
-.demeura-threads__item {
+.adestia-threads__item {
   display: block;
   width: 100%;
   text-align: left;
@@ -1679,23 +1679,23 @@
   white-space: nowrap;
 }
 
-.demeura-threads__item:hover { background: var(--surface-sunken); }
+.adestia-threads__item:hover { background: var(--surface-sunken); }
 
 /*
  * A row, not a button with something stuck beside it.
  *
  * These rules live HERE and not where they were written, three hundred lines
- * up: `.demeura-threads__item` below sets `display: block; width: 100%`, and at
+ * up: `.adestia-threads__item` below sets `display: block; width: 100%`, and at
  * equal specificity the later rule wins — so the flex layout was silently
  * undone and the control pushed out of the row.
  */
-.demeura-threads li {
+.adestia-threads li {
   display: flex;
   align-items: center;
   gap: var(--space-1, 4px);
 }
 
-.demeura-threads li > .demeura-threads__item {
+.adestia-threads li > .adestia-threads__item {
   flex: 1 1 auto;
   width: auto;
   min-width: 0;
@@ -1703,7 +1703,7 @@
 
 /* Revealed on hover: a thread list is read far more often than it is tidied.
    Always there for the keyboard, which cannot hover. */
-.demeura-threads__archive {
+.adestia-threads__archive {
   flex: none;
   display: grid;
   place-items: center;
@@ -1718,12 +1718,12 @@
   transition: opacity 0.12s, color 0.12s, background 0.12s;
 }
 
-.demeura-threads__archive svg { width: 15px; height: 15px; }
+.adestia-threads__archive svg { width: 15px; height: 15px; }
 
-.demeura-threads li:hover .demeura-threads__archive,
-.demeura-threads__archive:focus-visible { opacity: 1; }
+.adestia-threads li:hover .adestia-threads__archive,
+.adestia-threads__archive:focus-visible { opacity: 1; }
 
-.demeura-threads__archive:hover {
+.adestia-threads__archive:hover {
   color: var(--text);
   background: var(--surface-sunken);
 }
@@ -1735,7 +1735,7 @@
  * browser's. On a phone the thread list carries the same dots and IS the
  * navigation — a strip of truncated titles on 360px would name nothing.
  */
-.demeura-tabs {
+.adestia-tabs {
   display: flex;
   align-items: stretch;
   gap: 2px;
@@ -1746,7 +1746,7 @@
   scrollbar-width: thin;
 }
 
-.demeura-tab {
+.adestia-tab {
   flex: 0 1 180px;
   min-width: 90px;
   display: flex;
@@ -1760,14 +1760,14 @@
 
 /* The active tab fuses with the surface below it, the browser idiom that
    says "this one is open" without a label. */
-.demeura-tab--active {
+.adestia-tab--active {
   background: var(--surface);
   color: var(--text);
   border-bottom: 1px solid var(--surface);
   margin-bottom: -1px;
 }
 
-.demeura-tab__pick {
+.adestia-tab__pick {
   flex: 1 1 auto;
   min-width: 0;
   display: flex;
@@ -1782,7 +1782,7 @@
   cursor: pointer;
 }
 
-.demeura-tab__title {
+.adestia-tab__title {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1792,7 +1792,7 @@
    CONVERSATION, the cross only closes the TAB. Revealed on hover like the
    list's archive control — a tab is read far more often than it is closed —
    and always reachable by keyboard, which cannot hover. */
-.demeura-tab__tool {
+.adestia-tab__tool {
   flex: none;
   display: grid;
   place-items: center;
@@ -1816,16 +1816,16 @@
   transition: opacity 0.12s, color 0.12s, background 0.12s;
 }
 
-.demeura-tab__tool svg { width: 13px; height: 13px; }
+.adestia-tab__tool svg { width: 13px; height: 13px; }
 
-.demeura-tab:hover .demeura-tab__tool,
-.demeura-tab:focus-within .demeura-tab__tool {
+.adestia-tab:hover .adestia-tab__tool,
+.adestia-tab:focus-within .adestia-tab__tool {
   width: 22px;
   margin-right: 2px;
   opacity: 1;
 }
 
-.demeura-tab__tool:hover {
+.adestia-tab__tool:hover {
   color: var(--text);
   background: var(--surface-sunken);
 }
@@ -1836,7 +1836,7 @@
  * tint (someone is needed), unread is steady accent (done, and not yet
  * seen), idle is a quiet mark that keeps the layout honest.
  */
-.demeura-dot {
+.adestia-dot {
   flex: none;
   display: inline-block;
   width: 8px;
@@ -1845,50 +1845,50 @@
   background: var(--border-strong);
 }
 
-.demeura-dot--working {
+.adestia-dot--working {
   background: var(--accent);
-  animation: demeura-pulse 1.1s ease-in-out infinite;
+  animation: adestia-pulse 1.1s ease-in-out infinite;
 }
 
-.demeura-dot--waiting {
+.adestia-dot--waiting {
   background: var(--warning);
-  animation: demeura-pulse 1.1s ease-in-out infinite;
+  animation: adestia-pulse 1.1s ease-in-out infinite;
 }
 
-.demeura-dot--unread { background: var(--accent); }
+.adestia-dot--unread { background: var(--accent); }
 
 /* Inside the list's text button, which is not a flex row. */
-.demeura-threads__item .demeura-dot {
+.adestia-threads__item .adestia-dot {
   margin-right: var(--space-2);
   vertical-align: 1px;
 }
 
-.demeura-threads__item--current {
+.adestia-threads__item--current {
   background: var(--accent-quiet);
   color: var(--accent);
 }
 
-.demeura-threads__empty {
+.adestia-threads__empty {
   padding: var(--space-2) var(--space-3);
   font-size: var(--text-sm);
   color: var(--text-faint);
 }
 
-.demeura-chat__header { gap: var(--space-2); }
+.adestia-chat__header { gap: var(--space-2); }
 
 /* Settings ---------------------------------------------------------------- */
 
-.demeura-canvas__spacer { flex: 1; }
+.adestia-canvas__spacer { flex: 1; }
 
 /* The credential panel carries no box of its own: the settings page around
    it is the box, and its head already named it. */
-.demeura-settings {
+.adestia-settings {
   padding: 0;
   border: 0;
   background: none;
 }
 
-.demeura-settings__header {
+.adestia-settings__header {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -1896,15 +1896,15 @@
   margin-bottom: var(--space-3);
 }
 
-.demeura-settings h2 { margin: 0; font-size: var(--text-base); }
+.adestia-settings h2 { margin: 0; font-size: var(--text-base); }
 
-.demeura-settings__actions {
+.adestia-settings__actions {
   display: flex;
   gap: var(--space-2);
   margin-top: var(--space-3);
 }
 
-.demeura-settings__actions button {
+.adestia-settings__actions button {
   padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-strong);
@@ -1914,20 +1914,20 @@
   cursor: pointer;
 }
 
-.demeura-settings__actions button:last-child {
+.adestia-settings__actions button:last-child {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--accent-text);
 }
 
-.demeura-settings__actions button:disabled {
+.adestia-settings__actions button:disabled {
   background: var(--surface-sunken);
   border-color: var(--border);
   color: var(--text-faint);
   cursor: default;
 }
 
-.demeura-arming {
+.adestia-arming {
   margin: 0;
   padding-left: var(--space-5);
   display: flex;
@@ -1936,9 +1936,9 @@
   font-size: var(--text-sm);
 }
 
-.demeura-arming a { color: var(--accent); }
+.adestia-arming a { color: var(--accent); }
 
-.demeura-arming__label {
+.adestia-arming__label {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
@@ -1946,7 +1946,7 @@
 
 /* Deliberately not muted: this is what the user is agreeing to, so it reads at
    the same weight as the step it gates. */
-.demeura-arming__consent {
+.adestia-arming__consent {
   display: flex;
   align-items: flex-start;
   gap: var(--space-2);
@@ -1955,12 +1955,12 @@
   cursor: pointer;
 }
 
-.demeura-arming__consent input {
+.adestia-arming__consent input {
   margin-top: 0.2em;
   flex: none;
 }
 
-.demeura-arming__input {
+.adestia-arming__input {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: var(--space-2);
@@ -1970,7 +1970,7 @@
   font-size: max(16px, var(--text-sm));
 }
 
-.demeura-signin {
+.adestia-signin {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1980,10 +1980,10 @@
   text-align: center;
 }
 
-.demeura-signin h1 { margin: 0; font-size: 2rem; }
-.demeura-signin p { margin: 0; color: var(--text-muted); }
+.adestia-signin h1 { margin: 0; font-size: 2rem; }
+.adestia-signin p { margin: 0; color: var(--text-muted); }
 
-.demeura-signin__button {
+.adestia-signin__button {
   padding: var(--space-2) var(--space-5);
   border-radius: var(--radius);
   background: var(--accent);
@@ -1992,18 +1992,18 @@
   font-weight: 500;
 }
 
-.demeura-canvas__signout { display: inline; }
+.adestia-canvas__signout { display: inline; }
 
 /* Attachments ------------------------------------------------------------- */
 
-.demeura-composer { flex-wrap: wrap; }
+.adestia-composer { flex-wrap: wrap; }
 
-.demeura-composer--dropping {
+.adestia-composer--dropping {
   outline: 2px dashed var(--accent);
   outline-offset: var(--space-1);
 }
 
-.demeura-attachments {
+.adestia-attachments {
   flex-basis: 100%;
   display: flex;
   flex-wrap: wrap;
@@ -2012,7 +2012,7 @@
   font-size: var(--text-sm);
 }
 
-.demeura-attachments__item {
+.adestia-attachments__item {
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
@@ -2023,7 +2023,7 @@
   color: var(--text-muted);
 }
 
-.demeura-attachments__item button {
+.adestia-attachments__item button {
   background: none;
   border: 0;
   padding: 0 2px;
@@ -2034,9 +2034,9 @@
   height: auto;
 }
 
-.demeura-attachments__error { color: var(--danger); }
+.adestia-attachments__error { color: var(--danger); }
 
-.demeura-composer__attach {
+.adestia-composer__attach {
   background: none !important;
   border: 1px solid var(--border) !important;
   color: var(--text-muted) !important;
@@ -2049,7 +2049,7 @@
    and lost the argument on every phone. Up here it is a label beside the
    brand, so it may be sized to the name it actually holds — still truncated
    rather than allowed to push the header's controls off the end. */
-.demeura-model {
+.adestia-model {
   height: 26px;
   max-width: 130px;
   min-width: 0;
@@ -2064,14 +2064,14 @@
   cursor: pointer;
 }
 
-.demeura-model:hover { color: var(--text); border-color: var(--accent); }
-.demeura-model:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.adestia-model:hover { color: var(--text); border-color: var(--accent); }
+.adestia-model:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 /* The composer's folded controls ---------------------------------------- */
 
-.demeura-fold { position: relative; display: flex; }
+.adestia-fold { position: relative; display: flex; }
 
-.demeura-fold__menu {
+.adestia-fold__menu {
   position: absolute;
   /* Opens UPWARD: the composer is at the bottom of the screen, and a menu
      dropping from it would open off the viewport. */
@@ -2089,7 +2089,7 @@
 }
 
 /* Overrides the composer's square icon buttons: these are rows of text. */
-.demeura-fold__item {
+.adestia-fold__item {
   display: flex !important;
   align-items: center;
   gap: var(--space-3);
@@ -2105,13 +2105,13 @@
   cursor: pointer;
 }
 
-.demeura-fold__item:hover { background: var(--surface-sunken) !important; }
-.demeura-fold__glyph { font-size: var(--text-lg); line-height: 1; }
+.adestia-fold__item:hover { background: var(--surface-sunken) !important; }
+.adestia-fold__glyph { font-size: var(--text-lg); line-height: 1; }
 
 /* Section heading on the landing canvas. The pages list sits BELOW the app
    tiles and needs to announce itself as a second thing rather than reading as
    an unexplained wall of links. */
-.demeura-section {
+.adestia-section {
   margin: var(--space-5) 0 var(--space-2);
   font-size: var(--text-sm);
   font-weight: 600;
@@ -2124,17 +2124,17 @@
 
 /* A document, not a form. Measure capped near 70 characters: the canvas is
    940px wide and prose set that wide is prose nobody finishes a line of. */
-.demeura-reader {
+.adestia-reader {
   max-width: 68ch;
   font-size: 15.5px;
   line-height: 1.65;
 }
 
-.demeura-reader > :first-child { margin-top: 0; }
+.adestia-reader > :first-child { margin-top: 0; }
 
-.demeura-reader h2,
-.demeura-reader h3,
-.demeura-reader h4 {
+.adestia-reader h2,
+.adestia-reader h3,
+.adestia-reader h4 {
   font-family: var(--font-title);
   letter-spacing: var(--title-track);
   line-height: 1.2;
@@ -2142,27 +2142,27 @@
   text-wrap: balance;
 }
 
-.demeura-reader h2 { font-size: 1.5rem; }
-.demeura-reader h3 { font-size: 1.2rem; }
-.demeura-reader h4 { font-size: 1.05rem; }
+.adestia-reader h2 { font-size: 1.5rem; }
+.adestia-reader h3 { font-size: 1.2rem; }
+.adestia-reader h4 { font-size: 1.05rem; }
 
-.demeura-reader p { margin: 0 0 1em; }
-.demeura-reader ul,
-.demeura-reader ol { margin: 0 0 1em; padding-left: 1.4em; }
-.demeura-reader li { margin: 0.25em 0; }
-.demeura-reader li.demeura-task { list-style: none; margin-left: -1.4em; }
-.demeura-reader li.demeura-task input { margin-right: 0.5em; }
+.adestia-reader p { margin: 0 0 1em; }
+.adestia-reader ul,
+.adestia-reader ol { margin: 0 0 1em; padding-left: 1.4em; }
+.adestia-reader li { margin: 0.25em 0; }
+.adestia-reader li.adestia-task { list-style: none; margin-left: -1.4em; }
+.adestia-reader li.adestia-task input { margin-right: 0.5em; }
 
-.demeura-reader a { color: var(--accent); text-underline-offset: 2px; }
+.adestia-reader a { color: var(--accent); text-underline-offset: 2px; }
 
-.demeura-reader blockquote {
+.adestia-reader blockquote {
   margin: 0 0 1em;
   padding: 0.2em 0 0.2em 1em;
   border-left: 3px solid var(--border-strong);
   color: var(--text-muted);
 }
 
-.demeura-reader code {
+.adestia-reader code {
   font-family: var(--font-mono);
   font-size: 0.88em;
   background: var(--surface-soft);
@@ -2171,7 +2171,7 @@
   padding: 0.1em 0.35em;
 }
 
-.demeura-reader pre {
+.adestia-reader pre {
   margin: 0 0 1em;
   padding: var(--space-3) var(--space-4);
   overflow-x: auto;
@@ -2180,20 +2180,20 @@
   border-radius: var(--radius);
 }
 
-.demeura-reader pre code { background: none; border: 0; padding: 0; font-size: 0.85em; }
+.adestia-reader pre code { background: none; border: 0; padding: 0; font-size: 0.85em; }
 
-.demeura-reader img { max-width: 100%; height: auto; border-radius: var(--radius); }
-.demeura-reader hr { border: 0; border-top: 1px solid var(--border); margin: 2em 0; }
+.adestia-reader img { max-width: 100%; height: auto; border-radius: var(--radius); }
+.adestia-reader hr { border: 0; border-top: 1px solid var(--border); margin: 2em 0; }
 
 /* Wide content scrolls in its own box; the page never moves sideways. */
-.demeura-table-scroll { overflow-x: auto; margin: 0 0 1em; }
-.demeura-reader table { border-collapse: collapse; font-size: 0.94em; }
-.demeura-reader td { border: 1px solid var(--border); padding: var(--space-2) var(--space-3); }
-.demeura-reader tr:first-child td { font-weight: 600; background: var(--surface-soft); }
+.adestia-table-scroll { overflow-x: auto; margin: 0 0 1em; }
+.adestia-reader table { border-collapse: collapse; font-size: 0.94em; }
+.adestia-reader td { border: 1px solid var(--border); padding: var(--space-2) var(--space-3); }
+.adestia-reader tr:first-child td { font-weight: 600; background: var(--surface-soft); }
 
 /* A wikilink is a BUTTON, because it opens a page in place rather than
    navigating away — dressed as the link it is. */
-.demeura-wikilink {
+.adestia-wikilink {
   border: 0;
   padding: 0;
   background: none;
@@ -2204,7 +2204,7 @@
 }
 
 /* Callouts: the tone carries the colour, the left rule carries the weight. */
-.demeura-callout {
+.adestia-callout {
   margin: 0 0 1.2em;
   padding: var(--space-3) var(--space-4);
   border-left: 3px solid var(--accent);
@@ -2212,29 +2212,29 @@
   background: var(--accent-quiet);
 }
 
-.demeura-callout > :last-child { margin-bottom: 0; }
-.demeura-callout--warning { border-left-color: var(--warning); background: color-mix(in srgb, var(--warning) 9%, transparent); }
-.demeura-callout--tip { border-left-color: var(--success); background: color-mix(in srgb, var(--success) 9%, transparent); }
+.adestia-callout > :last-child { margin-bottom: 0; }
+.adestia-callout--warning { border-left-color: var(--warning); background: color-mix(in srgb, var(--warning) 9%, transparent); }
+.adestia-callout--tip { border-left-color: var(--success); background: color-mix(in srgb, var(--success) 9%, transparent); }
 
-.demeura-gallery {
+.adestia-gallery {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: var(--space-3);
   margin: 0 0 1.2em;
 }
 
-.demeura-gallery p { margin: 0; }
+.adestia-gallery p { margin: 0; }
 
 /* What the page carries besides its words: photos as a contact sheet, other
    documents as rows you can weigh before opening. Set apart by a rule rather
    than by a box — it belongs to the page, it is not a panel about it. */
-.demeura-page-files {
+.adestia-page-files {
   margin: var(--space-6) 0 0;
   padding-top: var(--space-4);
   border-top: 1px solid var(--border);
 }
 
-.demeura-page-files__title {
+.adestia-page-files__title {
   margin: 0 0 var(--space-3);
   font-size: var(--text-sm);
   font-weight: 600;
@@ -2243,14 +2243,14 @@
   color: var(--text-faint);
 }
 
-.demeura-page-files__grid {
+.adestia-page-files__grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: var(--space-3);
   margin-bottom: var(--space-3);
 }
 
-.demeura-page-files__thumb {
+.adestia-page-files__thumb {
   display: block;
   overflow: hidden;
   border: 1px solid var(--border);
@@ -2258,14 +2258,14 @@
   background: var(--surface);
 }
 
-.demeura-page-files__thumb img {
+.adestia-page-files__thumb img {
   display: block;
   width: 100%;
   aspect-ratio: 4 / 3;
   object-fit: cover;
 }
 
-.demeura-page-files__list {
+.adestia-page-files__list {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
@@ -2274,7 +2274,7 @@
   list-style: none;
 }
 
-.demeura-page-files__file {
+.adestia-page-files__file {
   display: flex;
   gap: var(--space-2);
   align-items: baseline;
@@ -2285,16 +2285,16 @@
   text-decoration: none;
 }
 
-.demeura-page-files__file:hover { border-color: var(--accent); }
-.demeura-page-files__name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
-.demeura-page-files__size {
+.adestia-page-files__file:hover { border-color: var(--accent); }
+.adestia-page-files__name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.adestia-page-files__size {
   font-size: var(--text-sm);
   color: var(--text-faint);
   font-variant-numeric: tabular-nums;
 }
 
-.demeura-unknown-block,
-.demeura-reader__raw {
+.adestia-unknown-block,
+.adestia-reader__raw {
   font-family: var(--font-mono);
   font-size: var(--text-sm);
   color: var(--text-faint);
@@ -2312,48 +2312,48 @@
    `.milkdown .ProseMirror h1` — the same specificity as the same rule without
    it — and its stylesheet arrives through a DYNAMIC import, so it lands last
    and wins every tie. One extra class is the whole fix. */
-.demeura-editor__surface .milkdown {
+.adestia-editor__surface .milkdown {
   font-family: var(--font);
   font-size: 15.5px;
   line-height: 1.65;
   color: var(--text);
 }
 
-.demeura-editor__surface .milkdown .ProseMirror {
+.adestia-editor__surface .milkdown .ProseMirror {
   max-width: 68ch;
   padding: 0;
 }
 
-.demeura-editor__surface .milkdown .ProseMirror h1,
-.demeura-editor__surface .milkdown .ProseMirror h2,
-.demeura-editor__surface .milkdown .ProseMirror h3,
-.demeura-editor__surface .milkdown .ProseMirror h4 {
+.adestia-editor__surface .milkdown .ProseMirror h1,
+.adestia-editor__surface .milkdown .ProseMirror h2,
+.adestia-editor__surface .milkdown .ProseMirror h3,
+.adestia-editor__surface .milkdown .ProseMirror h4 {
   font-family: var(--font-title);
   letter-spacing: var(--title-track);
   line-height: 1.2;
   margin: 1.8em 0 0.5em;
 }
 
-.demeura-editor__surface .milkdown .ProseMirror h1 { font-size: 1.85rem; }
-.demeura-editor__surface .milkdown .ProseMirror h2 { font-size: 1.5rem; }
-.demeura-editor__surface .milkdown .ProseMirror h3 { font-size: 1.2rem; }
-.demeura-editor__surface .milkdown .ProseMirror h4 { font-size: 1.05rem; }
-.demeura-editor__surface .milkdown .ProseMirror p { margin: 0 0 1em; }
-.demeura-editor__surface .milkdown .ProseMirror a { color: var(--accent); }
+.adestia-editor__surface .milkdown .ProseMirror h1 { font-size: 1.85rem; }
+.adestia-editor__surface .milkdown .ProseMirror h2 { font-size: 1.5rem; }
+.adestia-editor__surface .milkdown .ProseMirror h3 { font-size: 1.2rem; }
+.adestia-editor__surface .milkdown .ProseMirror h4 { font-size: 1.05rem; }
+.adestia-editor__surface .milkdown .ProseMirror p { margin: 0 0 1em; }
+.adestia-editor__surface .milkdown .ProseMirror a { color: var(--accent); }
 
 /* The frontmatter chips sit in the flow of both postures identically. */
-.demeura-editor__surface .demeura-editor__meta { margin-bottom: var(--space-4); }
+.adestia-editor__surface .adestia-editor__meta { margin-bottom: var(--space-4); }
 
 /* Crepe paints its own surface; ours is the canvas the page already sits on. */
-.demeura-editor__surface .milkdown,
-.demeura-editor__surface .milkdown .editor { background: none; }
+.adestia-editor__surface .milkdown,
+.adestia-editor__surface .milkdown .editor { background: none; }
 
 /* ------------------------------------------------------------------------ *
  * The editing chrome: Crepe's toolbar, block handle, slash menu, tooltips.
  *
  * Crepe ships its structure (`theme/common/style.css`, imported by
  * milkdown.ts) SEPARATELY from its palette: every colour, font and shadow in
- * that sheet is a `var(--crepe-*)` a theme file is expected to declare. Demeura
+ * that sheet is a `var(--crepe-*)` a theme file is expected to declare. Adestia
  * imports the structure and no theme — deliberately, so a second palette does
  * not compete with the skin's — which left the whole set UNDECLARED. An
  * undeclared custom property makes its property invalid at computed-value
@@ -2362,19 +2362,19 @@
  * black glyphs floating over the text, with no plate under it and no hover
  * state. The buttons were there and clickable — they were simply invisible.
  *
- * Declaring the set here IS the promised bridge. Values come from Demeura's
+ * Declaring the set here IS the promised bridge. Values come from Adestia's
  * tokens, so the chrome follows the skin and the theme without a second
  * source of truth. The names are Crepe's contract; keep all of them declared,
  * because a missing one fails silently and looks exactly like this bug.
  * ------------------------------------------------------------------------ */
-.demeura-editor__surface .milkdown {
+.adestia-editor__surface .milkdown {
   /* Type: the same three voices the document already speaks in. */
   --crepe-base-font-size: 15.5px;
   --crepe-font-default: var(--font);
   --crepe-font-title: var(--font-title);
   --crepe-font-code: var(--font-mono);
 
-  /* The page itself is painted by `.demeura-editor__surface`, above. */
+  /* The page itself is painted by `.adestia-editor__surface`, above. */
   --crepe-color-background: transparent;
   --crepe-color-on-background: var(--text);
 
@@ -2421,8 +2421,8 @@
    the card underneath are the same colour and only the shadow's edge says
    which is which. The shell's own raised things carry a hairline; so do
    these. */
-.demeura-editor__surface .milkdown .milkdown-toolbar,
-.demeura-editor__surface .milkdown .milkdown-slash-menu {
+.adestia-editor__surface .milkdown .milkdown-toolbar,
+.adestia-editor__surface .milkdown .milkdown-slash-menu {
   border: 1px solid var(--border);
 }
 
@@ -2433,12 +2433,12 @@
    hanging OUTSIDE the card over the page background, unreachable. The gutter
    comes back here — added to the measure rather than taken out of it, so the
    line length a page is written at does not depend on the posture reading it. */
-.demeura-editor__surface .milkdown .ProseMirror {
+.adestia-editor__surface .milkdown .ProseMirror {
   padding-inline-start: var(--editor-gutter);
   max-width: calc(68ch + var(--editor-gutter));
 }
 
-.demeura-editor__surface {
+.adestia-editor__surface {
   /* Wide enough for the handle's two 32px buttons and Crepe's own offset. */
   --editor-gutter: 84px;
 }
@@ -2449,22 +2449,22 @@
    would be shifted back into the viewport, on top of the words. Nothing is
    lost that typing cannot do: `+` only opens the slash menu. */
 @media (max-width: 640px) {
-  .demeura-editor__surface { --editor-gutter: 0px; }
-  .demeura-editor__surface .milkdown .milkdown-block-handle { display: none; }
+  .adestia-editor__surface { --editor-gutter: 0px; }
+  .adestia-editor__surface .milkdown .milkdown-block-handle { display: none; }
 }
 
 /* Crepe marks a quotation with the selection colour; the reader marks it with
    a quiet rule. The reader is right — an accent bar claims a quotation is
    important, which is the author's call and not the editor's. */
-.demeura-editor__surface .milkdown .ProseMirror blockquote::before {
+.adestia-editor__surface .milkdown .ProseMirror blockquote::before {
   background: var(--border-strong);
 }
 
 /* An embedded page editor — the one a plugin mounts through `api.PageEditor` —
    while it is fetching its page, or when it could not. Styled here rather than
    in the plugin because the shell is what renders these two lines. */
-.demeura-embed__loading,
-.demeura-embed__problem {
+.adestia-embed__loading,
+.adestia-embed__problem {
   color: var(--text-muted);
   font-size: var(--text-sm);
   margin: var(--space-2) 0;

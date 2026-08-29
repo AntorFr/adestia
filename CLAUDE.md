@@ -1,4 +1,4 @@
-# Working on Demeura
+# Working on Adestia
 
 Conventions for anyone — person or agent — writing code in this repository.
 `DESIGN.md` records why the product is shaped the way it is; this file records

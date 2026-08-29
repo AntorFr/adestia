@@ -18,11 +18,11 @@ import {
   CopilotDriver,
   createOAuthFlow,
   type Driver,
-} from '@antorfr/demeura-drivers'
+} from '@antorfr/adestia-drivers'
 import type { FastifyInstance } from 'fastify'
 
 import { buildApp } from './app.js'
-import { ConfigError, parseConfig, type DemeuraConfig } from './config.js'
+import { ConfigError, parseConfig, type AdestiaConfig } from './config.js'
 import { Clock, scheduleStatePath } from './clock.js'
 import {
   claimedTypeCollisions,
@@ -40,7 +40,7 @@ import { SecretStore } from './secrets.js'
 import { baseManifest, mergeSkinManifest, withInstanceName } from './webmanifest.js'
 import { collectSkills, deliverSkills } from './skills.js'
 
-export const DEFAULT_CONFIG_FILE = 'demeura.config.yaml'
+export const DEFAULT_CONFIG_FILE = 'adestia.config.yaml'
 
 export interface StartOptions {
   readonly configPath?: string
@@ -49,13 +49,13 @@ export interface StartOptions {
   /** Where relative config paths resolve from. */
   readonly cwd?: string
   /** Injected in tests; production builds the driver from the config. */
-  readonly driverFactory?: (config: DemeuraConfig) => Driver | Promise<Driver>
+  readonly driverFactory?: (config: AdestiaConfig) => Driver | Promise<Driver>
   readonly log?: (message: string) => void
 }
 
 export interface StartedInstance {
   readonly app: FastifyInstance
-  readonly config: DemeuraConfig
+  readonly config: AdestiaConfig
   readonly url: string
   readonly clock: Clock | undefined
   close(): Promise<void>
@@ -64,7 +64,7 @@ export interface StartedInstance {
 export async function loadConfigFile(
   path: string,
   env: NodeJS.ProcessEnv = process.env,
-): Promise<DemeuraConfig> {
+): Promise<AdestiaConfig> {
   try {
     return parseConfig(await readFile(path, 'utf8'), env)
   } catch (error) {
@@ -81,7 +81,7 @@ export async function loadConfigFile(
 const AVAILABLE_DRIVERS = ['claude-code', 'copilot-cli'] as const
 
 async function buildDriver(
-  config: DemeuraConfig,
+  config: AdestiaConfig,
   dataDir: string,
   mcpServers: readonly McpServer[],
   asks: AskDesk | undefined,
@@ -160,7 +160,7 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
     // Creating it is the friendlier default for a first run: the agent's home
-    // is Demeura's to own, unlike a plugins folder someone mounts deliberately.
+    // is Adestia's to own, unlike a plugins folder someone mounts deliberately.
     await mkdir(workspaceRoot, { recursive: true })
     log(`created workspace at ${workspaceRoot}`)
   }
@@ -314,14 +314,14 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
   // One resolved config from here on. The absolute workspace path means a turn
   // never depends on the server's cwd at spawn — and returning the same object
   // the app runs on keeps callers from reading a different truth.
-  const resolved: DemeuraConfig = {
+  const resolved: AdestiaConfig = {
     ...config,
     workspace: { ...config.workspace, root: workspaceRoot },
   }
 
   const webRoot = options.webRoot ?? (await findWebRoot())
   if (!webRoot) {
-    // Not fatal: `demeura` is useful as an API in development, where Vite serves
+    // Not fatal: `adestia` is useful as an API in development, where Vite serves
     // the shell. But an operator who expected a web page deserves to know why
     // they are looking at JSON.
     log('no built web shell found; serving the API only (run `npm run build:web`)')
@@ -389,7 +389,7 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
   const address = app.server.address()
   const port = typeof address === 'object' && address ? address.port : resolved.port
   const url = `http://${resolved.host}:${port}`
-  log(`Demeura listening on ${url} (auth: ${resolved.auth.mode})`)
+  log(`Adestia listening on ${url} (auth: ${resolved.auth.mode})`)
   if (
     resolved.auth.mode === 'none' &&
     resolved.host !== '127.0.0.1' &&
@@ -403,8 +403,8 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
   // The clock runs through the app's own turn function, never its own path.
   let clock: Clock | undefined
   if (resolved.schedule.enabled) {
-    const runTurn = (app as FastifyInstance & { demeuraRunTurn(prompt: string): Promise<void> })
-      .demeuraRunTurn
+    const runTurn = (app as FastifyInstance & { adestiaRunTurn(prompt: string): Promise<void> })
+      .adestiaRunTurn
     clock = new Clock({
       dir: join(workspaceRoot, resolved.workspace.planif),
       statePath: scheduleStatePath(dataDir),

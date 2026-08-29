@@ -24,7 +24,7 @@ import {
   serialize,
   validateDocument,
   type Diagnostic,
-} from '@antorfr/demeura-content'
+} from '@antorfr/adestia-content'
 import type { FastifyInstance } from 'fastify'
 
 export interface PagesOptions {

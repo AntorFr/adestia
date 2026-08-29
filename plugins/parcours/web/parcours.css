@@ -10,7 +10,7 @@
  * plugin pose lui-même.
  *
  * Ensuite les JETONS. Ils sont traduits une fois ci-dessous, vers ceux de
- * Demeura, plutôt que réécrits dans cent quatre-vingts lignes de règles. Ce qui
+ * Adestia, plutôt que réécrits dans cent quatre-vingts lignes de règles. Ce qui
  * compte n'est pas l'économie : c'est qu'un skin qui redéfinit `--accent`
  * repeigne la trace, le profil et les pastilles sans savoir que ce plugin
  * existe. Une couleur en dur ici serait le seul endroit du produit qu'un skin
@@ -45,7 +45,7 @@
   /* « Vous êtes ici », en mode balade. Une teinte à elle, pas `--accent` : le
      tracé porte déjà l'accent, et un point de position de la même couleur que
      le chemin est un point qu'on cherche sur la carte. */
-  --proj: var(--demeura-hue-indigo, #4c6fe0);
+  --proj: var(--adestia-hue-indigo, #4c6fe0);
 }
 
 /* La page d'un parcours seul — la même carte, sans la fiche autour. */
@@ -174,18 +174,18 @@
 
 /* Teintes libres : un repere peut porter une des 12 couleurs de domaine, comme
    un graphique. Meme table, meme repli sur l'accent si le jeton n'existe pas. */
-.parcours [data-teinte="rouge"] { --accent: var(--demeura-hue-rouge, var(--accent)); }
-.parcours [data-teinte="orange"] { --accent: var(--demeura-hue-orange, var(--accent)); }
-.parcours [data-teinte="ambre"] { --accent: var(--demeura-hue-ambre, var(--accent)); }
-.parcours [data-teinte="vert"] { --accent: var(--demeura-hue-vert, var(--accent)); }
-.parcours [data-teinte="emeraude"] { --accent: var(--demeura-hue-emeraude, var(--accent)); }
-.parcours [data-teinte="turquoise"] { --accent: var(--demeura-hue-turquoise, var(--accent)); }
-.parcours [data-teinte="bleu"] { --accent: var(--demeura-hue-bleu, var(--accent)); }
-.parcours [data-teinte="indigo"] { --accent: var(--demeura-hue-indigo, var(--accent)); }
-.parcours [data-teinte="violet"] { --accent: var(--demeura-hue-violet, var(--accent)); }
-.parcours [data-teinte="rose"] { --accent: var(--demeura-hue-rose, var(--accent)); }
-.parcours [data-teinte="gris"] { --accent: var(--demeura-hue-gris, var(--accent)); }
-.parcours [data-teinte="ardoise"] { --accent: var(--demeura-hue-ardoise, var(--accent)); }
+.parcours [data-teinte="rouge"] { --accent: var(--adestia-hue-rouge, var(--accent)); }
+.parcours [data-teinte="orange"] { --accent: var(--adestia-hue-orange, var(--accent)); }
+.parcours [data-teinte="ambre"] { --accent: var(--adestia-hue-ambre, var(--accent)); }
+.parcours [data-teinte="vert"] { --accent: var(--adestia-hue-vert, var(--accent)); }
+.parcours [data-teinte="emeraude"] { --accent: var(--adestia-hue-emeraude, var(--accent)); }
+.parcours [data-teinte="turquoise"] { --accent: var(--adestia-hue-turquoise, var(--accent)); }
+.parcours [data-teinte="bleu"] { --accent: var(--adestia-hue-bleu, var(--accent)); }
+.parcours [data-teinte="indigo"] { --accent: var(--adestia-hue-indigo, var(--accent)); }
+.parcours [data-teinte="violet"] { --accent: var(--adestia-hue-violet, var(--accent)); }
+.parcours [data-teinte="rose"] { --accent: var(--adestia-hue-rose, var(--accent)); }
+.parcours [data-teinte="gris"] { --accent: var(--adestia-hue-gris, var(--accent)); }
+.parcours [data-teinte="ardoise"] { --accent: var(--adestia-hue-ardoise, var(--accent)); }
 
 /* Teinte libre d'un callout : meme table que les graphiques et les reperes de
    parcours — une seule palette pour tout le systeme. */

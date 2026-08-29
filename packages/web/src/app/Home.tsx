@@ -130,12 +130,12 @@ const SHELL_APP = { icon: '⚙', hue: 'ardoise', route: '/settings' } as const
 /**
  * A tile's colour.
  *
- * A declared hue becomes `--demeura-hue-<name>`, which a skin may define and
+ * A declared hue becomes `--adestia-hue-<name>`, which a skin may define and
  * most will not — so the fallback is the accent rather than a colour invented
  * here. Inventing one would mean a palette the skin cannot reach.
  */
 function hueStyle(hue?: string): Record<string, string> {
-  return hue ? { '--tile-color': `var(--demeura-hue-${hue}, var(--accent))` } : {}
+  return hue ? { '--tile-color': `var(--adestia-hue-${hue}, var(--accent))` } : {}
 }
 
 function Tile(props: {
@@ -162,9 +162,9 @@ function Tile(props: {
   return (
     <li
       className={[
-        'demeura-tile-slot',
-        props.editing ? 'demeura-tile-slot--editing' : '',
-        props.carried ? 'demeura-tile-slot--carried' : '',
+        'adestia-tile-slot',
+        props.editing ? 'adestia-tile-slot--editing' : '',
+        props.carried ? 'adestia-tile-slot--carried' : '',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -174,7 +174,7 @@ function Tile(props: {
           people cannot reorder at all — and "hold and drag" is the hardest
           gesture to discover even for those who can. */}
       {props.editing && props.onNudge && (
-        <span className="demeura-tile-slot__arrows">
+        <span className="adestia-tile-slot__arrows">
           <button
             type="button"
             aria-label={`${t('Move earlier')} — ${props.label}`}
@@ -193,7 +193,7 @@ function Tile(props: {
       )}
       <button
         type="button"
-        className="demeura-tile"
+        className="adestia-tile"
         style={hueStyle(props.hue)}
         // Editing, the tile is being ARRANGED. Opening what you are trying to
         // pick up is the classic way an edit mode betrays the person in it.
@@ -212,22 +212,22 @@ function Tile(props: {
             manifest — which is what makes the injection safe. */}
         {drawn ? (
           <span
-            className="demeura-tile__icon"
+            className="adestia-tile__icon"
             aria-hidden="true"
             dangerouslySetInnerHTML={{ __html: drawn }}
           />
         ) : (
-          <span className="demeura-tile__icon" aria-hidden="true">
+          <span className="adestia-tile__icon" aria-hidden="true">
             {props.icon}
           </span>
         )}
-        <span className="demeura-tile__label">{props.label}</span>
-        {props.subtitle && <span className="demeura-tile__subtitle">{props.subtitle}</span>}
-        <span className="demeura-tile__foot">
+        <span className="adestia-tile__label">{props.label}</span>
+        {props.subtitle && <span className="adestia-tile__subtitle">{props.subtitle}</span>}
+        <span className="adestia-tile__foot">
           {(props.chips ?? []).map((chip) => (
             <span
               key={chip.text}
-              className={chip.hot ? 'demeura-chip demeura-chip--hot' : 'demeura-chip'}
+              className={chip.hot ? 'adestia-chip adestia-chip--hot' : 'adestia-chip'}
             >
               {chip.text}
             </span>
@@ -410,16 +410,16 @@ export function Home({
   })} — ${plural(pages, t('page'), t('pages'))}.`
 
   return (
-    <div className="demeura-home">
+    <div className="adestia-home">
       {hero ?? (
         <>
-          <h1 className="demeura-home__greeting">
+          <h1 className="adestia-home__greeting">
             {greeting}
             {skin.greetingAside && (
-              <span className="demeura-home__aside"> {skin.greetingAside}</span>
+              <span className="adestia-home__aside"> {skin.greetingAside}</span>
             )}
           </h1>
-          <p className="demeura-home__context">
+          <p className="adestia-home__context">
             {context.charAt(0).toUpperCase() + context.slice(1)}
           </p>
 
@@ -427,7 +427,7 @@ export function Home({
               the way in, and a second input that only looked like one would
               split the user's attention between two places that do different
               things. */}
-          <button type="button" className="demeura-home__ask" onClick={focusComposer}>
+          <button type="button" className="adestia-home__ask" onClick={focusComposer}>
             <svg
               aria-hidden="true"
               viewBox="0 0 24 24"
@@ -441,22 +441,22 @@ export function Home({
             {/* The block caret: invisible on most liveries, a beating amber
                 slab on the one whose whole identity is a terminal. CSS
                 decides. */}
-            <span className="demeura-home__ask-caret" aria-hidden="true" />
-            <span className="demeura-home__ask-text">{skin.placeholder ?? t('Ask…')}</span>
-            <kbd className="demeura-home__ask-kbd">⌘K</kbd>
+            <span className="adestia-home__ask-caret" aria-hidden="true" />
+            <span className="adestia-home__ask-text">{skin.placeholder ?? t('Ask…')}</span>
+            <kbd className="adestia-home__ask-kbd">⌘K</kbd>
           </button>
         </>
       )}
 
       {brief && (
         <>
-          <h2 className="demeura-section">
+          <h2 className="adestia-section">
             À la une
             {(() => {
               const age = briefAge(brief.generatedAt, clock, t)
               const by = skin.brand ?? t('the agent')
               return (
-                <span className="demeura-section__by">
+                <span className="adestia-section__by">
                   — {t('chosen by')} {by}
                   {age ? ` · ${age}` : ''}
                 </span>
@@ -465,7 +465,7 @@ export function Home({
             {ask && (
               <button
                 type="button"
-                className="demeura-section__refresh"
+                className="adestia-section__refresh"
                 title={t('Ask for a fresh brief')}
                 onClick={() => ask('Rafraîchis ma une')}
               >
@@ -473,7 +473,7 @@ export function Home({
               </button>
             )}
           </h2>
-          <div className="demeura-brief">
+          <div className="adestia-brief">
             {(brief.items ?? []).slice(0, 4).map((item) => {
               const label = item.title ?? item.titre ?? '…'
               const target = item.target ?? item.cible
@@ -482,15 +482,15 @@ export function Home({
                 <button
                   key={label}
                   type="button"
-                  className="demeura-brief__item"
-                  style={(hue ? { '--u': `var(--demeura-hue-${hue}, var(--accent))` } : {}) as Record<string, string>}
+                  className="adestia-brief__item"
+                  style={(hue ? { '--u': `var(--adestia-hue-${hue}, var(--accent))` } : {}) as Record<string, string>}
                   title={item.reason ?? item.raison ?? ''}
                   onClick={() => openTarget(target, label)}
                 >
-                  <span className="demeura-brief__icon" aria-hidden="true">
+                  <span className="adestia-brief__icon" aria-hidden="true">
                     {item.ico ?? '•'}
                   </span>
-                  <span className="demeura-brief__text">{label}</span>
+                  <span className="adestia-brief__text">{label}</span>
                 </button>
               )
             })}
@@ -501,15 +501,15 @@ export function Home({
       {/* Always drawn: even an instance with no plugin at all has the shell's
           own app on it, and on a fresh one that tile is the whole way in —
           the credential is armed from behind it. */}
-      <h2 className="demeura-section">
-        <span className="demeura-section__name">{t('Apps')}</span>
+      <h2 className="adestia-section">
+        <span className="adestia-section__name">{t('Apps')}</span>
         {/* One switch for both mosaics: two edit modes on one screen would
             be two states to keep track of for a gesture that is the same
             gesture. Only offered when there is something to arrange. */}
         {tiled.length + sections.length > 1 && (
           <button
             type="button"
-            className="demeura-section__edit"
+            className="adestia-section__edit"
             aria-pressed={editing}
             onClick={() => setEditing(!editing)}
           >
@@ -517,7 +517,7 @@ export function Home({
           </button>
         )}
       </h2>
-      <ul className="demeura-tiles" {...apps.listProps}>
+      <ul className="adestia-tiles" {...apps.listProps}>
         {apps.items.map((plugin, index) => (
           <Tile
             key={plugin.id}
@@ -553,14 +553,14 @@ export function Home({
 
       {sections.length > 0 && (
         <>
-          <h2 className="demeura-section">
-            <span className="demeura-section__name">{t('Sections')}</span>
+          <h2 className="adestia-section">
+            <span className="adestia-section__name">{t('Sections')}</span>
             {/* The switch lives on the Apps heading when there is one; here
                 only when this is the sole mosaic on the screen. */}
             {tiled.length === 0 && sections.length > 1 && (
               <button
                 type="button"
-                className="demeura-section__edit"
+                className="adestia-section__edit"
                 aria-pressed={editing}
                 onClick={() => setEditing(!editing)}
               >
@@ -568,7 +568,7 @@ export function Home({
               </button>
             )}
           </h2>
-          <ul className="demeura-tiles" {...shelves.listProps}>
+          <ul className="adestia-tiles" {...shelves.listProps}>
             {shelves.items.map((section, index) => (
               <Tile
                 key={section.path}
@@ -589,10 +589,10 @@ export function Home({
       )}
 
       {tiled.length === 0 && sections.length === 0 && (
-        <section className="demeura-empty">
+        <section className="adestia-empty">
           <p>{t('Nothing to show yet.')}</p>
-          <p className="demeura-empty__hint">
-            {t('Turn a plugin on in')} <code>demeura.config.yaml</code>,{' '}
+          <p className="adestia-empty__hint">
+            {t('Turn a plugin on in')} <code>adestia.config.yaml</code>,{' '}
             {t('or write a page — a folder holding one becomes a section on its own.')}
           </p>
         </section>

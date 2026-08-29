@@ -10,7 +10,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-const STORAGE_KEY = 'demeura.rail'
+const STORAGE_KEY = 'adestia.rail'
 const MIN_PX = 280
 const MAX_FRACTION = 0.6
 export const DEFAULT_RAIL = 33.333

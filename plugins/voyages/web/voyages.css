@@ -4,7 +4,7 @@
  * Three parts, and the split is the point.
  *
  * The FIRST is the shell's own visual language, reproduced: the icon plate,
- * the header, the cards, the status pills. A plugin cannot use `.demeura-*`
+ * the header, the cards, the status pills. A plugin cannot use `.adestia-*`
  * classes — those belong to the shell's markup and reaching into them would
  * make this plugin break the day the shell renames one — so the RULES are
  * written here against this plugin's own classes, in the shell's TOKENS. Which
@@ -26,12 +26,12 @@
 
 .voyages {
   /* The domain palette: what a card's colour means. */
-  --v-maison: var(--demeura-hue-ambre, #b8890f);
-  --v-cuisine: var(--demeura-hue-rouge, #d24b3e);
-  --v-diy: var(--demeura-hue-vert, #4fb05c);
-  --v-agenda: var(--demeura-hue-indigo, #4c6fe0);
-  --v-proj: var(--demeura-hue-violet, #7a5bd1);
-  --v-voyage: var(--demeura-hue-turquoise, #33b4a8);
+  --v-maison: var(--adestia-hue-ambre, #b8890f);
+  --v-cuisine: var(--adestia-hue-rouge, #d24b3e);
+  --v-diy: var(--adestia-hue-vert, #4fb05c);
+  --v-agenda: var(--adestia-hue-indigo, #4c6fe0);
+  --v-proj: var(--adestia-hue-violet, #7a5bd1);
+  --v-voyage: var(--adestia-hue-turquoise, #33b4a8);
   --tile-color: var(--v-voyage);
 
   color: var(--text);
@@ -518,7 +518,7 @@
    here rather than inherited — an unresolved colour on a scrim is a black
    card. Same lesson the workbench's overlays taught. */
 .vmodal {
-  --tile-color: var(--demeura-hue-turquoise, #33b4a8);
+  --tile-color: var(--adestia-hue-turquoise, #33b4a8);
 }
 
 .vmodal .vhead { display: flex; align-items: center; gap: 11px; }

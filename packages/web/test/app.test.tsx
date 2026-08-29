@@ -63,8 +63,8 @@ describe('the landing canvas', () => {
     ]
     const { container } = render(<App fetchImpl={apiFetch({ body: TILED }, pages)} />)
 
-    await waitFor(() => expect(container.querySelector('.demeura-tiles')).toBeTruthy())
-    expect(container.querySelector('.demeura-pages')).toBeNull()
+    await waitFor(() => expect(container.querySelector('.adestia-tiles')).toBeTruthy())
+    expect(container.querySelector('.adestia-pages')).toBeNull()
     // The forty pages are represented, as one section carrying its count.
     expect(screen.getByText('40 pages')).toBeTruthy()
   })
@@ -80,8 +80,8 @@ describe('the breadcrumb', () => {
 
   /** The crumbs, in order, and whether each is a way back. */
   function crumbs(container: HTMLElement): { label: string; walkable: boolean }[] {
-    return [...(container.querySelector('.demeura-crumbs')?.children ?? [])]
-      .filter((node) => !node.classList.contains('demeura-crumbs__sep'))
+    return [...(container.querySelector('.adestia-crumbs')?.children ?? [])]
+      .filter((node) => !node.classList.contains('adestia-crumbs__sep'))
       .map((node) => ({
         label: node.textContent ?? '',
         walkable: node.tagName === 'BUTTON',
@@ -167,7 +167,7 @@ describe('the trail over an open app', () => {
 describe('boot', () => {
   it('renders the shell once the instance answers', async () => {
     const { container } = render(<App fetchImpl={apiFetch()} />)
-    await waitFor(() => expect(container.querySelector('.demeura-shell')).toBeTruthy())
+    await waitFor(() => expect(container.querySelector('.adestia-shell')).toBeTruthy())
     expect(screen.getByText(/Test CLI/)).toBeTruthy()
   })
 
@@ -345,21 +345,21 @@ describe('settings, as an app of the shell', () => {
   const shell = async () => {
     const view = render(<App fetchImpl={apiFetch()} />)
     // The mosaic is there on any instance now — the shell's own tile is on it.
-    await waitFor(() => expect(view.container.querySelector('.demeura-tiles')).toBeTruthy())
+    await waitFor(() => expect(view.container.querySelector('.adestia-tiles')).toBeTruthy())
     return view.container
   }
 
   /** The crumbs, in order, and whether each is a way back. */
   const crumbs = (container: HTMLElement) =>
-    [...(container.querySelector('.demeura-crumbs')?.children ?? [])]
-      .filter((node) => !node.classList.contains('demeura-crumbs__sep'))
+    [...(container.querySelector('.adestia-crumbs')?.children ?? [])]
+      .filter((node) => !node.classList.contains('adestia-crumbs__sep'))
       .map((node) => ({ label: node.textContent ?? '', walkable: node.tagName === 'BUTTON' }))
 
   it('stands on the landing canvas as an app, on any instance', async () => {
     // Even with no plugin at all: on a fresh instance that tile is the whole
     // way in, since the credential is armed from behind it.
     const container = await shell()
-    const labels = [...container.querySelectorAll('.demeura-tile__label')].map((n) => n.textContent)
+    const labels = [...container.querySelectorAll('.adestia-tile__label')].map((n) => n.textContent)
     expect(labels).toEqual(['Settings'])
     location.hash = ''
   })
@@ -396,7 +396,7 @@ describe('settings, as an app of the shell', () => {
 
   it('opens the app from the gear rather than a dialog over the page', async () => {
     const container = await shell()
-    const gear = container.querySelector('.demeura-ib[aria-label="Settings"]') as HTMLElement
+    const gear = container.querySelector('.adestia-ib[aria-label="Settings"]') as HTMLElement
     await act(async () => {
       fireEvent.click(gear)
       window.dispatchEvent(new HashChangeEvent('hashchange'))

@@ -19,11 +19,11 @@ export default defineConfig({
   // a prior build, and a stale `dist/` would quietly test yesterday's code.
   resolve: {
     alias: {
-      '@antorfr/demeura-schemas': pkg('schemas'),
-      '@antorfr/demeura-content': pkg('content'),
-      '@antorfr/demeura-drivers': pkg('drivers'),
-      '@antorfr/demeura-server': pkg('server'),
-      '@antorfr/demeura-web': pkg('web'),
+      '@antorfr/adestia-schemas': pkg('schemas'),
+      '@antorfr/adestia-content': pkg('content'),
+      '@antorfr/adestia-drivers': pkg('drivers'),
+      '@antorfr/adestia-server': pkg('server'),
+      '@antorfr/adestia-web': pkg('web'),
     },
   },
   test: {

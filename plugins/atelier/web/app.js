@@ -31,14 +31,14 @@ import {
  * This is 1000 lines of debugged domain rendering — the cutting diagram, the
  * piece views, the lamello lines, the assembly scene — against a data contract
  * (`skills/workbook-json`) that took months to settle. Rewriting it in React to
- * match the rest of Demeura would have meant re-deriving every one of those
+ * match the rest of Adestia would have meant re-deriving every one of those
  * decisions from a document, with no real workbook to check the result
  * against. The adapter in `view.js` is fifty lines; that trade is not close.
  *
  * It renders with innerHTML into whatever element `api.page` is, which is why
  * it needed so little: it never knew what shell it lived in. Two changes only —
  * six URLs repointed at `/api/plugin/atelier/*`, and `page` bound explicitly
- * (see below), because agent-gw bundled this file with its launcher and Demeura
+ * (see below), because agent-gw bundled this file with its launcher and Adestia
  * does not.
  */
 export default function createAtelierApp(api) {
@@ -47,7 +47,7 @@ export default function createAtelierApp(api) {
 
      In agent-gw the engine was BUNDLED into the launcher, so a bare `page`
      resolved by scope to the launcher's own node — which is why a thousand
-     lines below reference a variable this file never declares. Demeura loads
+     lines below reference a variable this file never declares. Adestia loads
      plugins as separate ES modules, where no such binding exists, and the
      symptom is a blank screen with `page is not defined` in the console.
 

@@ -1,4 +1,4 @@
-# @antorfr/demeura-web
+# @antorfr/adestia-web
 
 The browser shell: the chat, the apps canvas, and the runtime plugin loader.
 

@@ -6,12 +6,12 @@
  * Where there is a system keychain it stores it THERE; where there is none
  * (every container, and WSL) it first asks whether to write the token into a
  * plaintext config file under `$COPILOT_HOME`, and only that second case is
- * one Demeura can harvest from.
+ * one Adestia can harvest from.
  *
  * Harvesting is the whole point. The `gho_` token works as
  * `COPILOT_GITHUB_TOKEN` (verified against 1.0.80), so the core can hold it as
  * the single managed secret every driver arms. "The CLI's own `login` writes
- * into its own store, not where Demeura reads from" was the objection to a
+ * into its own store, not where Adestia reads from" was the objection to a
  * relayed device flow; reading the token back out answers it, and the
  * interface reports "armed" right after a login that visibly succeeded.
  *
@@ -39,7 +39,7 @@
  *
  * So the login is spawned under util-linux `script`, which allocates a pty:
  * no native dependency (node cannot make one), and it is already in the
- * `node:22-slim` base Demeura's own image is built from. Everything the flow
+ * `node:22-slim` base Adestia's own image is built from. Everything the flow
  * reads then arrives on that one merged stream, cursor escapes included, which
  * is why the matchers below tolerate them.
  *
@@ -101,7 +101,7 @@ export interface StartLoginOptions {
  * that hides the cost is not one.
  */
 export const PLAINTEXT_CONSENT =
-  'Signing in writes GitHub’s token unencrypted into a file Demeura owns, because that is the only place Copilot leaves one Demeura can read. Demeura moves it into its own secret store and deletes the file as soon as the login ends.'
+  'Signing in writes GitHub’s token unencrypted into a file Adestia owns, because that is the only place Copilot leaves one Adestia can read. Adestia moves it into its own secret store and deletes the file as soon as the login ends.'
 
 const CODE_RE = /enter (?:the )?code ([A-Z0-9]{4,}-[A-Z0-9]{4,})/i
 const URL_RE = /(https?:\/\/\S*\/login\/device\S*)/i
@@ -224,7 +224,7 @@ export function startDeviceCodeLogin(options: StartLoginOptions): Promise<Device
         return 'the CLI never finished after its plaintext-storage question was answered'
       }
       if (signedIn) {
-        return 'the sign-in succeeded but the CLI is waiting on a question Demeura did not recognise — most likely where to store the token; it will not be answered blindly'
+        return 'the sign-in succeeded but the CLI is waiting on a question Adestia did not recognise — most likely where to store the token; it will not be answered blindly'
       }
       return 'the sign-in was not approved in time — approve it in the browser first, then finish here'
     }
@@ -303,13 +303,13 @@ export function startDeviceCodeLogin(options: StartLoginOptions): Promise<Device
         harvest(options.home).then(resolveCompleted, (error: Error) => {
           // A login that succeeded but left nothing readable is the keychain
           // case: the token went into the system credential store, which is
-          // not a file Demeura can read. Name that, rather than "stored no
+          // not a file Adestia can read. Name that, rather than "stored no
           // token", which reads like the login failed.
           rejectCompleted(
             questionSeen
               ? error
               : new Error(
-                  'the login stored its token where Demeura cannot read it — probably a system credential store rather than the plaintext config file it falls back to. Set COPILOT_GITHUB_TOKEN by hand on this machine.',
+                  'the login stored its token where Adestia cannot read it — probably a system credential store rather than the plaintext config file it falls back to. Set COPILOT_GITHUB_TOKEN by hand on this machine.',
                 ),
           )
         })

@@ -1,4 +1,4 @@
-# Demeura
+# Adestia
 
 **A self-hosted web interface that pairs a chat with an AI agent and visual Apps —
 built on top of coding-agent CLIs (Claude Code, GitHub Copilot CLI), so a monthly
@@ -14,7 +14,7 @@ directories — no rebuild to extend an instance.
 With Docker — copy the example config, then start:
 
 ```sh
-cp demeura.config.example.yaml demeura.config.yaml
+cp adestia.config.example.yaml adestia.config.yaml
 mkdir -p workspace data plugins skins
 docker compose up
 ```
@@ -23,18 +23,18 @@ Without Docker, from a clone:
 
 ```sh
 npm ci
-npm run build --workspace @antorfr/demeura-server
-npm run build:web --workspace @antorfr/demeura-web
-node packages/server/bin/demeura.js
+npm run build --workspace @antorfr/adestia-server
+npm run build:web --workspace @antorfr/adestia-web
+node packages/server/bin/adestia.js
 ```
 
-Either way, with no config file at all Demeura runs a single-user instance on
+Either way, with no config file at all Adestia runs a single-user instance on
 <http://127.0.0.1:8730> with no authentication. Every setting is documented in
-[demeura.config.example.yaml](demeura.config.example.yaml).
+[adestia.config.example.yaml](adestia.config.example.yaml).
 
 The agent CLI is **not** bundled: which engine runs is the operator's
 configuration, and its credentials come from the environment or are armed from
-Demeura's own interface.
+Adestia's own interface.
 
 ## What it does today
 
@@ -83,7 +83,7 @@ Demeura's own interface.
 - **Skins**: tokens and a few narrow hooks, one active at a time.
 - **Installs like an app.** The manifest is served, not shipped: `name:` in
   the config, or failing that the active skin, renames and recolours it — so
-  two instances are two icons under two names rather than two "Demeura"s on one
+  two instances are two icons under two names rather than two "Adestia"s on one
   home screen. A skin's raster icons are
   served the way its favicon already is — including the opaque 180×180 an
   iPhone demands and the manifest cannot give it. The service worker is
@@ -111,7 +111,7 @@ Two rules follow, and both bite in production:
 
 - **The cap and the memory limit must agree.** A cap of 8 behind a 1 GB limit
   is not a conservative deployment — it is a deployment that starts eight
-  processes and gets killed. Demeura refuses a turn past its cap cleanly, with a
+  processes and gets killed. Adestia refuses a turn past its cap cleanly, with a
   429 the interface explains; the kernel does not.
 - **An OOM kill loses the turn in flight**, along with anything the agent had
   not yet written to disk. There is no retry: the turn died with the process,
@@ -128,7 +128,7 @@ resources:
 ```
 
 Set the `limit` from the table, not from what the pod uses at rest: an idle
-Demeura is a few hundred megabytes, and it is the burst that kills it. Raise
+Adestia is a few hundred megabytes, and it is the burst that kills it. Raise
 `maxConcurrentTurns` and the memory limit together, never one alone.
 
 ## Status

@@ -1,4 +1,4 @@
-# @antorfr/demeura-schemas
+# @antorfr/adestia-schemas
 
 **The single source of truth for every extension contract.** Three consumers,
 one definition (DESIGN.md principle 8):

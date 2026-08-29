@@ -32,7 +32,7 @@ export class PluginBoundary extends Component<
   override render() {
     if (this.state.error) {
       return (
-        <section className="demeura-problems" role="status">
+        <section className="adestia-problems" role="status">
           <h2>
             The “{this.props.id}” {this.props.what ?? 'app'} stopped
           </h2>

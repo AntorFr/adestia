@@ -1,7 +1,7 @@
 /**
  * OIDC login — any standard issuer, no local accounts.
  *
- * Demeura never stores a password and never owns an account. It is an
+ * Adestia never stores a password and never owns an account. It is an
  * Authorization Code + PKCE client, and the roles it recognises come from a
  * groups claim resynchronised at every login, so the identity provider stays
  * the source of truth and anything kept here is a cache.
@@ -23,8 +23,8 @@ export const LOGIN_TTL_MS = 10 * 60 * 1000
 /** How long a session lasts before the user signs in again. */
 export const SESSION_TTL_MS = 12 * 60 * 60 * 1000
 
-export const SESSION_COOKIE = 'demeura_session'
-export const LOGIN_COOKIE = 'demeura_login'
+export const SESSION_COOKIE = 'adestia_session'
+export const LOGIN_COOKIE = 'adestia_login'
 
 export interface LoginState {
   readonly state: string
@@ -122,7 +122,7 @@ export class OidcClient {
   /**
    * Discovery happens on first use, not at boot, and a failure is remembered
    * without being fatal: an identity provider that is momentarily down must
-   * not stop Demeura from starting. The alternative — discovering eagerly — ties
+   * not stop Adestia from starting. The alternative — discovering eagerly — ties
    * every restart of the product to the availability of another service.
    */
   async #discover(): Promise<client.Configuration> {

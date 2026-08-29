@@ -231,7 +231,7 @@ export type TurnEvent =
    * Only with `interactivePermissions`, and only when the instance is in
    * `ask` posture: the ENGINE decided this call needs a person.
    *
-   * Demeura does not judge — no lists, no rules, no content gates. The CLI's own
+   * Adestia does not judge — no lists, no rules, no content gates. The CLI's own
    * first line already let the harmless through (a `Read`, an `echo` never
    * reach here); what surfaces is its residue, worded by the engine itself.
    */

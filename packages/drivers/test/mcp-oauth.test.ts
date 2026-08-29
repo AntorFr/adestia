@@ -13,7 +13,7 @@ import { McpTokens } from '../src/mcp-oauth.js'
 
 const IDENTITY = {
   tokenUrl: 'https://auth.example/api/oidc/token',
-  clientId: 'agent-demeura',
+  clientId: 'agent-adestia',
   clientSecret: 's3cret',
   scope: 'mcp',
   audience: 'https://hub.example',

@@ -1,4 +1,4 @@
-# Demeura — the gate every change passes.
+# Adestia — the gate every change passes.
 #
 # Runs what a contributor runs, in the same order, so a green local run and a
 # green CI mean the same thing. Nothing here needs a Claude or GitHub Copilot
@@ -38,14 +38,14 @@ jobs:
       # they read TypeScript sources, so a packaging mistake passes them all.
       - name: Build
         run: |
-          npm run build --workspace @antorfr/demeura-server
-          npm run build:web --workspace @antorfr/demeura-web
+          npm run build --workspace @antorfr/adestia-server
+          npm run build:web --workspace @antorfr/adestia-web
 
       - name: Boot the built server
         run: |
-          mkdir -p /tmp/demeura-ci
-          cd /tmp/demeura-ci
-          node "$GITHUB_WORKSPACE/packages/server/bin/demeura.js" &
+          mkdir -p /tmp/adestia-ci
+          cd /tmp/adestia-ci
+          node "$GITHUB_WORKSPACE/packages/server/bin/adestia.js" &
           for i in $(seq 1 30); do
             curl -sf http://127.0.0.1:8730/api/health && break
             sleep 1
@@ -61,4 +61,4 @@ jobs:
       # Built, not pushed. Publishing is a deliberate act by whoever owns the
       # registry, not a side effect of merging.
       - name: Build the container image
-        run: docker build -t demeura:ci .
+        run: docker build -t adestia:ci .

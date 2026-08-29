@@ -3,7 +3,7 @@ name: page-author
 description: How any page in this instance is structured — frontmatter conventions (`title`, `type`, `ico`), the three ways an app finds its own pages, and the closed block vocabulary for everyday writing. Read this before a plugin-specific skill (todo, collections, atelier…): they build on it and do not repeat it.
 ---
 
-# Writing a Demeura page
+# Writing a Adestia page
 
 A page is a markdown file. Nothing here is a database row — every app that
 reads pages reads THIS format, which is why a person editing a file in the
@@ -45,7 +45,7 @@ is silent — a page quietly misread, not an error anywhere.
 
 **Before writing an app that dispatches on `type`, check what already exists**
 (read the other plugins' manifests, or ask — this instance's set is usually
-small) **and declare your claim** in `demeura-plugin.json`:
+small) **and declare your claim** in `adestia-plugin.json`:
 
 ```json
 { "types": ["tache", "liste"] }

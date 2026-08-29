@@ -1,5 +1,5 @@
 /**
- * Instance configuration — one declarative file, `demeura.config.yaml`.
+ * Instance configuration — one declarative file, `adestia.config.yaml`.
  *
  * The predecessor was configured by some thirty environment variables, which
  * is how a homelab tool is configured, not a product: nothing could be read as
@@ -35,7 +35,7 @@ export interface OidcConfig {
    * Present means the login also requests `offline_access`, the refresh token
    * is kept per user, and a fresh access token carrying THEIR identity is
    * minted for each turn — which is what an MCP server serving somebody's own
-   * data requires. Absent means Demeura signs people in and holds nothing.
+   * data requires. Absent means Adestia signs people in and holds nothing.
    *
    * ⚠️ The audience is frozen into the grant at login: adding one here takes
    * effect at the next sign-in, never at a refresh.
@@ -121,7 +121,7 @@ export interface ExtensionsConfig {
  *   the MCP servers' own authorization, and the instructions somebody wrote.
  * - `ask` — the ENGINE's own first line decides (a `Read` is never asked
  *   about), and what it would have asked a terminal about reaches the chat
- *   instead. Demeura judges nothing; it carries the question and the answer.
+ *   instead. Adestia judges nothing; it carries the question and the answer.
  *
  * `ask` needs an engine that can be asked. On one that cannot, the instance
  * refuses to boot rather than turning every question into a silent refusal.
@@ -201,7 +201,7 @@ export interface McpInConfig {
   readonly ttlMs: number
 }
 
-export interface DemeuraConfig {
+export interface AdestiaConfig {
   readonly host: string
   readonly port: number
   readonly dataDir: string
@@ -212,7 +212,7 @@ export interface DemeuraConfig {
    * document title an iPhone proposes when someone adds the page to their home
    * screen. A skin can already rename an install, and that covers two
    * instances wearing two liveries; it does nothing for two wearing the same
-   * one, which is exactly the case an operator running a second Demeura hits.
+   * one, which is exactly the case an operator running a second Adestia hits.
    *
    * So it wins over the skin, and it is a FILE setting rather than an
    * environment one: the environment says where an instance runs, the file
@@ -401,12 +401,12 @@ function parseAuth(raw: unknown, issues: string[]): AuthConfig {
  * would carry that binding to a laptop.
  */
 const ENV_OVERRIDES = {
-  DEMEURA_HOST: 'host',
-  DEMEURA_PORT: 'port',
-  DEMEURA_DATA_DIR: 'dataDir',
-  DEMEURA_WORKSPACE: 'workspace.root',
-  DEMEURA_PLUGINS_DIR: 'extensions.pluginsDir',
-  DEMEURA_SKINS_DIR: 'extensions.skinsDir',
+  ADESTIA_HOST: 'host',
+  ADESTIA_PORT: 'port',
+  ADESTIA_DATA_DIR: 'dataDir',
+  ADESTIA_WORKSPACE: 'workspace.root',
+  ADESTIA_PLUGINS_DIR: 'extensions.pluginsDir',
+  ADESTIA_SKINS_DIR: 'extensions.skinsDir',
 } as const
 
 /**
@@ -425,8 +425,8 @@ export function interpolate(source: string, env: NodeJS.ProcessEnv): string {
 
 /**
  * Kubernetes injects `<SERVICE>_PORT=tcp://10.43.0.1:8730` for every service
- * in the namespace. A deployment whose service is named `demeura` therefore
- * hands us a `DEMEURA_PORT` nobody wrote, and the obvious name is the one
+ * in the namespace. A deployment whose service is named `adestia` therefore
+ * hands us a `ADESTIA_PORT` nobody wrote, and the obvious name is the one
  * everybody picks.
  *
  * Ignored rather than parsed: it is not an operator's intent, it is the
@@ -718,11 +718,11 @@ function applyOverrides(raw: Record<string, unknown>, env: NodeJS.ProcessEnv): v
     const key = segments.at(-1)!
     // Ports arrive as strings from the environment; everything else is a path
     // or a host, which is a string on both sides.
-    target[key] = variable === 'DEMEURA_PORT' ? Number.parseInt(value, 10) : value
+    target[key] = variable === 'ADESTIA_PORT' ? Number.parseInt(value, 10) : value
   }
 }
 
-export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env): DemeuraConfig {
+export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env): AdestiaConfig {
   const issues: string[] = []
   let raw: unknown
   try {
@@ -835,7 +835,7 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
   // Absent means `open`: the posture an instance already runs under, so an
   // upgrade never silently starts asking somebody questions they did not ask
   // for. Legacy keys (autoAllow, timeoutMs, whenUnattended) are ignored —
-  // tolerated on purpose, since a config written for an older Demeura must not
+  // tolerated on purpose, since a config written for an older Adestia must not
   // brick the instance over a block that no longer means anything.
   const permissionMode = permissionsRaw['mode'] ?? 'open'
   if (permissionMode !== 'open' && permissionMode !== 'ask') {

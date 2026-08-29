@@ -75,9 +75,9 @@ describe('mode: oidc', () => {
     mode: 'oidc',
     oidc: {
       issuer: 'https://id.example',
-      clientId: 'demeura',
+      clientId: 'adestia',
       clientSecret: 'shhh',
-      redirectUri: 'https://demeura.example/auth/callback',
+      redirectUri: 'https://adestia.example/auth/callback',
       groupsClaim: 'groups',
       allowedGroups,
     },

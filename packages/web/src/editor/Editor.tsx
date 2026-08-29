@@ -13,7 +13,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { parse, serialize } from '@antorfr/demeura-content'
+import { parse, serialize } from '@antorfr/adestia-content'
 
 import { Attachments } from './Attachments.js'
 import { carriesFiles, fileDropMessage } from './filedrop.js'
@@ -63,10 +63,10 @@ export async function savePage(
 export function Diagnostics({ items }: { items: PageDocument['diagnostics'] }) {
   if (items.length === 0) return null
   return (
-    <ul className="demeura-diagnostics">
+    <ul className="adestia-diagnostics">
       {items.map((item, index) => (
-        <li key={index} className={`demeura-diagnostics__item demeura-diagnostics__item--${item.severity}`}>
-          {item.line !== undefined && <span className="demeura-diagnostics__line">line {item.line}</span>}
+        <li key={index} className={`adestia-diagnostics__item adestia-diagnostics__item--${item.severity}`}>
+          {item.line !== undefined && <span className="adestia-diagnostics__line">line {item.line}</span>}
           {item.message}
         </li>
       ))}
@@ -79,10 +79,10 @@ export function SaveStatus({ state }: { state: SaveState }) {
     case 'idle':
       return null
     case 'saving':
-      return <span className="demeura-save">Saving…</span>
+      return <span className="adestia-save">Saving…</span>
     case 'saved':
       return (
-        <span className="demeura-save demeura-save--ok">
+        <span className="adestia-save adestia-save--ok">
           {/* Said out loud, because a silent reformat looks like the editor
               mangled something the user did not touch. */}
           {state.normalized ? 'Saved, tidied to house style' : 'Saved'}
@@ -90,18 +90,18 @@ export function SaveStatus({ state }: { state: SaveState }) {
       )
     case 'conflict':
       return (
-        <span className="demeura-save demeura-save--warn">
+        <span className="adestia-save adestia-save--warn">
           The agent changed this page. Reload to see its version.
         </span>
       )
     case 'rejected':
       return (
-        <span className="demeura-save demeura-save--error">
+        <span className="adestia-save adestia-save--error">
           Not saved: {state.diagnostics[0]?.message ?? 'the page breaks the vocabulary'}
         </span>
       )
     case 'failed':
-      return <span className="demeura-save demeura-save--error">{state.message}</span>
+      return <span className="adestia-save adestia-save--error">{state.message}</span>
   }
 }
 
@@ -247,7 +247,7 @@ export function Editor({
 
   return (
     <section
-      className={`demeura-editor${dropping ? ' demeura-editor--dropping' : ''}`}
+      className={`adestia-editor${dropping ? ' adestia-editor--dropping' : ''}`}
       {...(takesDrop
         ? {
             onDragEnter: (event: React.DragEvent) => {
@@ -275,17 +275,17 @@ export function Editor({
         : {})}
     >
       {dropping && (
-        <div className="demeura-editor__dropzone" role="status">
+        <div className="adestia-editor__dropzone" role="status">
           {t('Drop files to attach them to this page')}
         </div>
       )}
       {/* No title here: the breadcrumb names the page and the document's own
           heading opens it. Three of the same words is two too many. */}
-      <header className="demeura-editor__header">
-        <div className="demeura-editor__actions">
+      <header className="adestia-editor__header">
+        <div className="adestia-editor__actions">
           <SaveStatus state={status} />
           {page.editable && !editing && (
-            <button type="button" className="demeura-ib" onClick={() => setEditing(true)} title={t('Edit')}>
+            <button type="button" className="adestia-ib" onClick={() => setEditing(true)} title={t('Edit')}>
               ✎
             </button>
           )}
@@ -293,7 +293,7 @@ export function Editor({
             <>
               <button
                 type="button"
-                className="demeura-switch"
+                className="adestia-switch"
                 onClick={() => {
                   // Abandoning restores what was shown, so a half-typed
                   // sentence never survives as a "dirty" page.
@@ -305,7 +305,7 @@ export function Editor({
               </button>
               <button
                 type="button"
-                className="demeura-editor__save"
+                className="adestia-editor__save"
                 onClick={() => void save()}
                 disabled={!dirty || status.kind === 'saving'}
               >
@@ -317,8 +317,8 @@ export function Editor({
       </header>
 
       {!page.editable && (
-        <p className="demeura-editor__readonly" role="status">
-          This page uses blocks Demeura does not know, so it is open read-only.
+        <p className="adestia-editor__readonly" role="status">
+          This page uses blocks Adestia does not know, so it is open read-only.
           Fixing it is a change to the code, not to the file.
         </p>
       )}
@@ -329,9 +329,9 @@ export function Editor({
           is broken, the diagnostics above say where, and what somebody needs
           to see is exactly what is written — not our best guess at it. */}
       {!page.editable ? (
-        <pre className="demeura-editor__raw">{page.markdown}</pre>
+        <pre className="adestia-editor__raw">{page.markdown}</pre>
       ) : editing ? (
-        <div ref={host} className="demeura-editor__surface" />
+        <div ref={host} className="adestia-editor__surface" />
       ) : (
         <Reader
           markdown={markdown}

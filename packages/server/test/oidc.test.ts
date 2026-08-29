@@ -12,9 +12,9 @@ import {
 
 const config = (overrides: Partial<OidcConfig> = {}): OidcConfig => ({
   issuer: 'https://id.example',
-  clientId: 'demeura',
+  clientId: 'adestia',
   clientSecret: 'shhh',
-  redirectUri: 'https://demeura.example/auth/callback',
+  redirectUri: 'https://adestia.example/auth/callback',
   groupsClaim: 'groups',
   allowedGroups: [],
   ...overrides,

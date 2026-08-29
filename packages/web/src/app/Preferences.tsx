@@ -97,18 +97,18 @@ function Row({
     <li>
       <button
         type="button"
-        className="demeura-prefs__row"
-        style={{ '--tile-color': `var(--demeura-hue-${hue}, var(--accent))` } as Record<string, string>}
+        className="adestia-prefs__row"
+        style={{ '--tile-color': `var(--adestia-hue-${hue}, var(--accent))` } as Record<string, string>}
         onClick={onOpen}
       >
-        <span className="demeura-prefs__plate" aria-hidden="true">
+        <span className="adestia-prefs__plate" aria-hidden="true">
           {glyph}
         </span>
-        <span className="demeura-prefs__body">
-          <span className="demeura-prefs__title">{title}</span>
-          <span className="demeura-prefs__lede">{lede}</span>
+        <span className="adestia-prefs__body">
+          <span className="adestia-prefs__title">{title}</span>
+          <span className="adestia-prefs__lede">{lede}</span>
         </span>
-        <span className="demeura-prefs__chevron" aria-hidden="true">
+        <span className="adestia-prefs__chevron" aria-hidden="true">
           ›
         </span>
       </button>
@@ -130,15 +130,15 @@ function PageHead({
 }) {
   return (
     <header
-      className="demeura-chead"
-      style={{ '--tile-color': `var(--demeura-hue-${hue}, var(--accent))` } as Record<string, string>}
+      className="adestia-chead"
+      style={{ '--tile-color': `var(--adestia-hue-${hue}, var(--accent))` } as Record<string, string>}
     >
-      <span className="demeura-chead__icon" aria-hidden="true">
+      <span className="adestia-chead__icon" aria-hidden="true">
         {glyph}
       </span>
       <div>
-        <h1 className="demeura-chead__title">{title}</h1>
-        <p className="demeura-chead__lede">{lede}</p>
+        <h1 className="adestia-chead__title">{title}</h1>
+        <p className="adestia-chead__lede">{lede}</p>
       </div>
     </header>
   )
@@ -182,8 +182,8 @@ export function Preferences({
     // pressed is the plate at the top of the screen it landed on.
     return (
       <div
-        className="demeura-prefs demeura-prefs__page"
-        style={{ '--tile-color': 'var(--demeura-hue-bleu, var(--accent))' } as Record<string, string>}
+        className="adestia-prefs adestia-prefs__page"
+        style={{ '--tile-color': 'var(--adestia-hue-bleu, var(--accent))' } as Record<string, string>}
       >
         <Instructions fetchImpl={fetchImpl} t={t} />
       </div>
@@ -192,7 +192,7 @@ export function Preferences({
 
   if (page === 'credential') {
     return (
-      <div className="demeura-prefs demeura-prefs__page">
+      <div className="adestia-prefs adestia-prefs__page">
         <PageHead
           glyph="🔑"
           hue="ambre"
@@ -206,7 +206,7 @@ export function Preferences({
 
   if (page === 'mcp') {
     return (
-      <div className="demeura-prefs demeura-prefs__page">
+      <div className="adestia-prefs adestia-prefs__page">
         <PageHead
           glyph="🔌"
           hue="indigo"
@@ -220,7 +220,7 @@ export function Preferences({
 
   if (page === 'appearance') {
     return (
-      <div className="demeura-prefs demeura-prefs__page">
+      <div className="adestia-prefs adestia-prefs__page">
         <PageHead
           glyph="◐"
           hue="violet"
@@ -230,21 +230,21 @@ export function Preferences({
         {/* Named choices rather than the header's cycling button: three
             buttons SAY which one is in force, where a glyph that changes
             nothing visible until you click it can only be inferred. */}
-        <div className="demeura-choices" role="radiogroup" aria-label={t('Appearance')}>
+        <div className="adestia-choices" role="radiogroup" aria-label={t('Appearance')}>
           {THEMES.map((choice) => (
             <button
               key={choice.value || 'system'}
               type="button"
               role="radio"
               aria-checked={theme === choice.value}
-              className="demeura-choices__choice"
+              className="adestia-choices__choice"
               onClick={() => onTheme?.(choice.value)}
             >
               {t(choice.label)}
             </button>
           ))}
         </div>
-        <p className="demeura-prefs__note">
+        <p className="adestia-prefs__note">
           {t('Kept in this browser, like the model choice and the rail width.')}
         </p>
       </div>
@@ -252,14 +252,14 @@ export function Preferences({
   }
 
   return (
-    <div className="demeura-prefs">
+    <div className="adestia-prefs">
       <PageHead
         glyph="⚙"
         hue="ardoise"
         title={t('Settings')}
         lede={t('What this instance answers with, reaches, looks like and was told')}
       />
-      <ul className="demeura-prefs__list">
+      <ul className="adestia-prefs__list">
         <Row
           glyph="🔑"
           hue="ambre"

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { isCacheable, strategyFor } from '../src/sw/policy.js'
 
-const ORIGIN = 'https://demeura.example'
+const ORIGIN = 'https://adestia.example'
 const ask = (url: string, extra: { method?: string; mode?: string } = {}) =>
   strategyFor({
     method: extra.method ?? 'GET',

@@ -1,4 +1,4 @@
-# Demeura — a chat and apps interface on top of a coding-agent CLI.
+# Adestia — a chat and apps interface on top of a coding-agent CLI.
 #
 # Two stages: build the workspace, then ship only what runs. The CLI itself is
 # NOT baked in — a driver's binary is chosen by the operator's configuration,
@@ -19,8 +19,8 @@ COPY packages/web/package.json ./packages/web/
 RUN npm ci
 
 COPY packages ./packages
-RUN npm run build --workspace @antorfr/demeura-server \
- && npm run build:web --workspace @antorfr/demeura-web
+RUN npm run build --workspace @antorfr/adestia-server \
+ && npm run build:web --workspace @antorfr/adestia-web
 
 # Prune to production dependencies in place, so the runtime stage copies a tree
 # that is already correct rather than reinstalling and risking a different
@@ -65,7 +65,7 @@ COPY --from=build /build/packages/web/dist-web ./packages/web/dist-web
 # the same runtime path as any operator-mounted folder. Baked in because a
 # default install advertising "ships with todo, collections…" and starting
 # with none would be a box with a picture on it; an operator points
-# DEMEURA_PLUGINS_DIR/DEMEURA_SKINS_DIR elsewhere to replace them entirely.
+# ADESTIA_PLUGINS_DIR/ADESTIA_SKINS_DIR elsewhere to replace them entirely.
 COPY plugins ./plugins
 COPY skins ./skins
 COPY skills ./skills
@@ -83,13 +83,13 @@ USER node
 # Bound to every interface here, unlike the local default: inside a container
 # loopback would make the port unreachable from outside it. The config's own
 # default stays 127.0.0.1, where it is the right one.
-ENV DEMEURA_HOST=0.0.0.0
+ENV ADESTIA_HOST=0.0.0.0
 # The two volumes above ARE the defaults in here: without these, the config's
 # relative `./workspace` lands on /app — read-only to the runtime user — and
 # the container dies on its first mkdir. Found by running the image, not by
 # reading it.
-ENV DEMEURA_WORKSPACE=/workspace
-ENV DEMEURA_DATA_DIR=/data
+ENV ADESTIA_WORKSPACE=/workspace
+ENV ADESTIA_DATA_DIR=/data
 EXPOSE 8730
 
 # Sizing, because it is not obvious from the image: each CONCURRENT agent turn
@@ -101,4 +101,4 @@ EXPOSE 8730
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
   CMD node -e "fetch('http://127.0.0.1:8730/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
-ENTRYPOINT ["node", "packages/server/bin/demeura.js"]
+ENTRYPOINT ["node", "packages/server/bin/adestia.js"]

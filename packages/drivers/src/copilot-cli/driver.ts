@@ -49,7 +49,7 @@ export interface CopilotDriverOptions {
    * one session. Two things that buys, both deliberate:
    *
    * - `mcp-config.json` — the user's, written by `copilot mcp add` — is never
-   *   touched. Demeura does not own it, so Demeura does not rewrite it.
+   *   touched. Adestia does not own it, so Adestia does not rewrite it.
    * - the servers are not on argv. Inline JSON would have worked and would
    *   have put every `Authorization: Bearer …` header in `ps` output, readable
    *   by any process on the box.
@@ -109,7 +109,7 @@ export class CopilotDriver implements Driver {
         'usageMetrics',
         // Only when this instance actually wired servers: a panel offering to
         // report the health of nothing looks broken. The CLI's own config
-        // servers are the user's, and Demeura does not claim to report on what
+        // servers are the user's, and Adestia does not claim to report on what
         // it did not wire.
         ...(this.#mcpServers.length > 0 ? (['mcpStatus'] as const) : []),
         ...(this.#models.length > 0 ? (['modelSelection'] as const) : []),
@@ -180,7 +180,7 @@ export class CopilotDriver implements Driver {
   async beginAuth(): Promise<AuthPrompt> {
     // A relayed device code, not a paste-a-token page. The objection to this
     // was that `login --device-code` writes into the CLI's own store, not
-    // where Demeura reads from — but the CLI stores a `gho_` token, in plaintext,
+    // where Adestia reads from — but the CLI stores a `gho_` token, in plaintext,
     // under the COPILOT_HOME this driver owns, and that token works as
     // COPILOT_GITHUB_TOKEN. So completeAuth harvests it into the one managed
     // secret, and a login that visibly succeeds is one the interface reports
@@ -320,7 +320,7 @@ export class CopilotDriver implements Driver {
     // one, so the flag disappears too.
     if (Object.keys(mcpServers).length === 0) return undefined
 
-    const path = join(this.#home, 'demeura-mcp.json')
+    const path = join(this.#home, 'adestia-mcp.json')
     try {
       await mkdir(this.#home, { recursive: true })
       // 0600: this file holds whatever tokens the servers need.

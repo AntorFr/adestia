@@ -134,7 +134,7 @@ describe('the other shell’s spelling', () => {
     expect(validateDocument(parse(legacy))).toEqual([])
   })
 
-  it('serializes into Demeura’s spelling, never back', () => {
+  it('serializes into Adestia’s spelling, never back', () => {
     registerBlocks(PARCOURS)
     expect(serialize(parse(legacy))).toContain(':::parcours{source="assets/val.parcours.json"}')
   })

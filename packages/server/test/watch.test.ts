@@ -188,7 +188,7 @@ describe('/api/events', () => {
   })
 
   it('sees a real write land as a pages-changed event', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'demeura-watch-'))
+    const root = await mkdtemp(join(tmpdir(), 'adestia-watch-'))
     // Polling, so the test does not depend on which native backend this
     // machine has; production defaults to native events.
     const served = await serve({ root, watch: { ...WATCH, polling: true, intervalMs: 100 } })

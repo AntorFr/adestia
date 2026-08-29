@@ -1,4 +1,4 @@
-# @antorfr/demeura-content
+# @antorfr/adestia-content
 
 The content engine: **one remark/micromark grammar** shared by the renderer and
 the editor (spike 1's deciding criterion — see `spikes/editor/VERDICT.md`).

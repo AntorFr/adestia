@@ -13,7 +13,7 @@
  * - a plugin that throws loses its own contribution, never the page.
  */
 
-import { forgetContributedBlocks, registerBlocks, type ContributedBlock } from '@antorfr/demeura-content'
+import { forgetContributedBlocks, registerBlocks, type ContributedBlock } from '@antorfr/adestia-content'
 import { createElement, type ComponentType } from 'react'
 
 import {
@@ -247,7 +247,7 @@ export async function loadPlugins(
  * being broken, which is the wrong place to send somebody.
  */
 const noPageEditor: ComponentType<PageEditorProps> = () =>
-  createElement('p', { className: 'demeura-embed__problem' }, 'No page editor on this shell.')
+  createElement('p', { className: 'adestia-embed__problem' }, 'No page editor on this shell.')
 
 /**
  * The browser implementation.

@@ -20,7 +20,7 @@ const settle = (promise: Promise<unknown>) => promise.then(() => 'ok' as const, 
 
 describe('the refresh token store', () => {
   it('keeps what it was given, and reads it back', async () => {
-    const dataDir = await mkdtemp(join(tmpdir(), 'demeura-refresh-'))
+    const dataDir = await mkdtemp(join(tmpdir(), 'adestia-refresh-'))
     const store = new FileRefreshStore(dataDir)
 
     await store.save('https://idp|client', 'rotated-once')
@@ -30,7 +30,7 @@ describe('the refresh token store', () => {
   })
 
   it('writes the file readable by nobody else', async () => {
-    const dataDir = await mkdtemp(join(tmpdir(), 'demeura-refresh-'))
+    const dataDir = await mkdtemp(join(tmpdir(), 'adestia-refresh-'))
     await new FileRefreshStore(dataDir).save('k', 'v')
 
     const { mode } = await import('node:fs/promises').then((fs) =>
@@ -42,7 +42,7 @@ describe('the refresh token store', () => {
   })
 
   it('attempts the next write after one has failed', async () => {
-    const dataDir = await mkdtemp(join(tmpdir(), 'demeura-refresh-'))
+    const dataDir = await mkdtemp(join(tmpdir(), 'adestia-refresh-'))
     // `secrets` exists as a FILE, so the write cannot land.
     await writeFile(join(dataDir, 'secrets'), 'in the way')
     const said: string[] = []
@@ -59,7 +59,7 @@ describe('the refresh token store', () => {
   })
 
   it('says a failed write out loud', async () => {
-    const dataDir = await mkdtemp(join(tmpdir(), 'demeura-refresh-'))
+    const dataDir = await mkdtemp(join(tmpdir(), 'adestia-refresh-'))
     await writeFile(join(dataDir, 'secrets'), 'in the way')
     const said: string[] = []
     const store = new FileRefreshStore(dataDir, (message) => said.push(message))
@@ -73,7 +73,7 @@ describe('the refresh token store', () => {
   })
 
   it('does not lose one identity token while rotating another', async () => {
-    const dataDir = await mkdtemp(join(tmpdir(), 'demeura-refresh-'))
+    const dataDir = await mkdtemp(join(tmpdir(), 'adestia-refresh-'))
     const store = new FileRefreshStore(dataDir)
 
     await Promise.all([store.save('hub-a|c', 'a1'), store.save('hub-b|c', 'b1')])
@@ -97,7 +97,7 @@ describe('a file it cannot read', () => {
     // Root reads through any mode bit, so the case cannot be staged there.
     if (process.getuid?.() === 0) return
 
-    const dataDir = await mkdtemp(join(tmpdir(), 'demeura-refresh-'))
+    const dataDir = await mkdtemp(join(tmpdir(), 'adestia-refresh-'))
     const store = new FileRefreshStore(dataDir, () => {})
     await store.save('hub-a|c', 'a1')
     await store.save('hub-b|c', 'b1')
@@ -118,7 +118,7 @@ describe('a file it cannot read', () => {
   it('says the refusal out loud rather than failing in silence', async () => {
     if (process.getuid?.() === 0) return
 
-    const dataDir = await mkdtemp(join(tmpdir(), 'demeura-refresh-'))
+    const dataDir = await mkdtemp(join(tmpdir(), 'adestia-refresh-'))
     const said: string[] = []
     const store = new FileRefreshStore(dataDir, (message) => said.push(message))
     await store.save('hub-a|c', 'a1')
@@ -136,7 +136,7 @@ describe('a file it cannot read', () => {
 
 describe('a file holding something else', () => {
   it('sets it aside and starts anew, rather than flattening it', async () => {
-    const dataDir = await mkdtemp(join(tmpdir(), 'demeura-refresh-'))
+    const dataDir = await mkdtemp(join(tmpdir(), 'adestia-refresh-'))
     await mkdir(join(dataDir, 'secrets'), { recursive: true })
     const path = join(dataDir, 'secrets', 'mcp-refresh.json')
     await writeFile(path, 'this is not JSON at all')

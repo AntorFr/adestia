@@ -3,7 +3,7 @@
  *
  * The second half is not politeness. A worker registered once from a built
  * bundle keeps controlling that origin, and `localhost:8730` is the same
- * origin whether Demeura or Vite answers on it: without this, an afternoon of
+ * origin whether Adestia or Vite answers on it: without this, an afternoon of
  * "my change does not show up" is waiting for whoever built the image first.
  */
 export function registerServiceWorker(): void {

@@ -104,7 +104,7 @@ describe('settings', () => {
         mode: 'device-code',
         authorizeUrl: 'https://github.com/login/device',
         userCode: 'WXYZ-1234',
-        consent: 'Signing in writes the token unencrypted into a file Demeura owns.',
+        consent: 'Signing in writes the token unencrypted into a file Adestia owns.',
       },
     })
     render(<Settings fetchImpl={impl} />)
@@ -126,7 +126,7 @@ describe('settings', () => {
       sessionId: 's1',
       mode: 'device-code',
       userCode: 'WXYZ-1234',
-      consent: 'Signing in writes the token unencrypted into a file Demeura owns.',
+      consent: 'Signing in writes the token unencrypted into a file Adestia owns.',
     }
     const { impl } = armingFetch({ begin: prompt })
     render(<Settings fetchImpl={impl} />)

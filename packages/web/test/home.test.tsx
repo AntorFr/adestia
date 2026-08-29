@@ -52,7 +52,7 @@ describe('the landing canvas', () => {
     // launcher below all of them.
     const { container } = render(<Home {...props} />)
     // The name, not the whole heading: it also carries the Arrange switch.
-    expect([...container.querySelectorAll('.demeura-section__name')].map((h) => h.textContent)).toEqual([
+    expect([...container.querySelectorAll('.adestia-section__name')].map((h) => h.textContent)).toEqual([
       'Apps',
       'Sections',
     ])
@@ -60,7 +60,7 @@ describe('the landing canvas', () => {
 
   it('represents a body of pages as sections, never as a flat list', () => {
     const { container } = render(<Home {...props} />)
-    expect(container.querySelector('.demeura-pages')).toBeNull()
+    expect(container.querySelector('.adestia-pages')).toBeNull()
     expect(screen.getByText('DIY')).toBeTruthy()
     // The index page is not one of them: it IS the section.
     expect(screen.getByText('2 pages')).toBeTruthy()
@@ -238,7 +238,7 @@ describe('arranging the mosaics', () => {
     )
 
   const labels = () =>
-    [...document.querySelectorAll('.demeura-tiles .demeura-tile__label')].map((node) => node.textContent)
+    [...document.querySelectorAll('.adestia-tiles .adestia-tile__label')].map((node) => node.textContent)
 
   it('offers a way in to arranging, and a way out', () => {
     withStorage()
@@ -259,7 +259,7 @@ describe('arranging the mosaics', () => {
 
   it('lays the tiles out as they were last left', () => {
     const map = withStorage()
-    map.set('demeura.order.apps', JSON.stringify(['scan', 'todo', 'planif']))
+    map.set('adestia.order.apps', JSON.stringify(['scan', 'todo', 'planif']))
     home()
     // The shell's own tile closes the mosaic, whatever was arranged before it.
     expect(labels()).toEqual(['scan', 'todo', 'planif', 'Settings'])
@@ -273,7 +273,7 @@ describe('arranging the mosaics', () => {
     expect(labels()).toEqual(['planif', 'todo', 'scan', 'Settings'])
     // What is remembered is the arrangement of the APPS: the shell's tile is
     // not in the permutation, so it never lands in the stored order.
-    expect(JSON.parse(map.get('demeura.order.apps') as string)).toEqual(['planif', 'todo', 'scan'])
+    expect(JSON.parse(map.get('adestia.order.apps') as string)).toEqual(['planif', 'todo', 'scan'])
   })
 
   it('does nothing at the ends', () => {
@@ -290,7 +290,7 @@ describe('arranging the mosaics', () => {
     home({ openPlugin })
     fireEvent.click(screen.getByRole('button', { name: 'Arrange' }))
     // The classic way an edit mode betrays the person in it.
-    const tile = document.querySelector('.demeura-tiles .demeura-tile') as HTMLElement
+    const tile = document.querySelector('.adestia-tiles .adestia-tile') as HTMLElement
     fireEvent.click(tile)
     expect(openPlugin).not.toHaveBeenCalled()
   })
@@ -299,13 +299,13 @@ describe('arranging the mosaics', () => {
     withStorage()
     const openPlugin = vi.fn()
     home({ openPlugin })
-    fireEvent.click(document.querySelector('.demeura-tiles .demeura-tile') as HTMLElement)
+    fireEvent.click(document.querySelector('.adestia-tiles .adestia-tile') as HTMLElement)
     expect(openPlugin).toHaveBeenCalled()
   })
 
   it('keeps a newly enabled app rather than hiding it', () => {
     const map = withStorage()
-    map.set('demeura.order.apps', JSON.stringify(['scan', 'todo']))
+    map.set('adestia.order.apps', JSON.stringify(['scan', 'todo']))
     home({ plugins: [...three, plugin('voyages')] })
     // Unmentioned goes last; nothing is lost to a stale preference.
     expect(labels()).toEqual(['scan', 'todo', 'planif', 'voyages', 'Settings'])
@@ -313,7 +313,7 @@ describe('arranging the mosaics', () => {
 
   it('leaves no hole where a disabled app used to be', () => {
     const map = withStorage()
-    map.set('demeura.order.apps', JSON.stringify(['scan', 'planif', 'todo']))
+    map.set('adestia.order.apps', JSON.stringify(['scan', 'planif', 'todo']))
     home({ plugins: [plugin('scan'), plugin('todo')] })
     expect(labels()).toEqual(['scan', 'todo', 'Settings'])
   })
@@ -322,7 +322,7 @@ describe('arranging the mosaics', () => {
     const map = withStorage()
     // A stale order that names it — written by hand, or by a version that
     // did put it in the permutation — must not move it or duplicate it.
-    map.set('demeura.order.apps', JSON.stringify(['Settings', 'scan']))
+    map.set('adestia.order.apps', JSON.stringify(['Settings', 'scan']))
     home()
     expect(labels()).toEqual(['scan', 'todo', 'planif', 'Settings'])
   })

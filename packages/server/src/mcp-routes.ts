@@ -65,7 +65,7 @@ export function registerMcp(app: FastifyInstance, deps: McpDependencies): void {
         return rpcResult(id, {
           protocolVersion: '2024-11-05',
           capabilities: { tools: {} },
-          serverInfo: { name: `demeura-${config.agentName}`, version: '1' },
+          serverInfo: { name: `adestia-${config.agentName}`, version: '1' },
         })
 
       case 'tools/list':
@@ -81,7 +81,7 @@ export function registerMcp(app: FastifyInstance, deps: McpDependencies): void {
             return rpcResult(id, textResult('prompt is required', true))
           }
 
-          const from = String(request.headers['x-demeura-caller'] ?? 'another agent')
+          const from = String(request.headers['x-adestia-caller'] ?? 'another agent')
           const job = jobs.create(prompt, from)
           if ('refused' in job) return rpcResult(id, textResult(job.refused, true))
 

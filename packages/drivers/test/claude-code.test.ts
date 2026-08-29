@@ -1,7 +1,7 @@
 /**
  * Driver conformance for `claude-code`, against a fake SDK.
  *
- * This is the pattern every Demeura driver must follow: replay the message
+ * This is the pattern every Adestia driver must follow: replay the message
  * sequence the real CLI produces, and assert the events the UI receives. No
  * account, no network, no CLI binary — otherwise driver behaviour is only ever
  * tested by accident, in production, by a user.
@@ -409,7 +409,7 @@ describe('an MCP server that authenticates itself', () => {
     url: 'https://hub.example/maps',
     auth: {
       tokenUrl: 'https://auth.example/token',
-      clientId: 'agent-demeura',
+      clientId: 'agent-adestia',
       clientSecret: 's3cret',
       scope: 'mcp',
     },
@@ -561,7 +561,7 @@ describe('the two postures', () => {
   })
 
   it('hands the engine back its OWN suggestion, untouched, on "always"', async () => {
-    // How a durable answer is kept without Demeura keeping a list: the engine
+    // How a durable answer is kept without Adestia keeping a list: the engine
     // writes the rule into its own file in the workspace and reads it back on
     // every later turn. Untouched is deliberate — an earlier version pinned
     // these to `destination: 'session'`, which dies with the turn's process,

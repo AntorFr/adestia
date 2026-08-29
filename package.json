@@ -1,5 +1,5 @@
 {
-  "name": "@antorfr/demeura-workspace",
+  "name": "@antorfr/adestia-workspace",
   "private": true,
   "type": "module",
   "engines": {
@@ -14,7 +14,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc --build && tsc -p packages/web --noEmit",
     "lint": "eslint packages",
-    "build": "npm run build --workspace @antorfr/demeura-server && npm run build:web --workspace @antorfr/demeura-web",
+    "build": "npm run build --workspace @antorfr/adestia-server && npm run build:web --workspace @antorfr/adestia-web",
     "test:plugins": "node --test \"plugins/*/test/*.test.js\""
   },
   "devDependencies": {

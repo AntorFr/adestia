@@ -22,7 +22,7 @@ export default defineConfig({
     rollupOptions: { external: SHARED },
   },
   server: {
-    // Dev runs the shell on Vite and the API on Demeura; one origin keeps
+    // Dev runs the shell on Vite and the API on Adestia; one origin keeps
     // cookies and same-origin plugin imports behaving as in production.
     //
     // The manifest and the icons are proxied for the same reason they are

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { Driver, DriverDescriptor, TurnEvent, TurnRequest } from '@antorfr/demeura-drivers'
+import type { Driver, DriverDescriptor, TurnEvent, TurnRequest } from '@antorfr/adestia-drivers'
 
 import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -113,14 +113,14 @@ describe('authentication', () => {
   mode: oidc
   oidc:
     issuer: https://auth.example
-    clientId: demeura
+    clientId: adestia
     clientSecret: s3cret
-    redirectUri: https://demeura.example/auth/callback
+    redirectUri: https://adestia.example/auth/callback
 `
 
   it('sends a person to sign in instead of showing them JSON', async () => {
     // Never exercised while a reverse proxy authenticated on the instance's
-    // behalf: it bounced the browser and Demeura only saw requests that already
+    // behalf: it bounced the browser and Adestia only saw requests that already
     // had an identity. Becoming an OIDC client means owning that bounce.
     const app = await buildApp(deps({ config: parseConfig(OIDC) }))
     const response = await app.inject({
@@ -332,7 +332,7 @@ describe('/api/turn', () => {
 
 describe('conversations', () => {
   const withStore = async (overrides: Partial<AppDependencies> = {}) => {
-    const dataDir = await mkdtemp(join(tmpdir(), 'demeura-app-conv-'))
+    const dataDir = await mkdtemp(join(tmpdir(), 'adestia-app-conv-'))
     return buildApp({
       ...deps(overrides),
       config: { ...deps(overrides).config, dataDir },
@@ -646,7 +646,7 @@ describe('arming a driver token', () => {
   }
 
   const armable = async (driver: ArmableDriver) => {
-    const dataDir = await mkdtemp(join(tmpdir(), 'demeura-arm-'))
+    const dataDir = await mkdtemp(join(tmpdir(), 'adestia-arm-'))
     const app = await buildApp({
       ...deps({ driver }),
       config: { ...deps().config, dataDir },
@@ -667,7 +667,7 @@ describe('arming a driver token', () => {
   })
 
   it('reports an unarmed driver as absent, not broken', async () => {
-    // Living on credentials set up outside Demeura is legitimate.
+    // Living on credentials set up outside Adestia is legitimate.
     const { app } = await armable(new ArmableDriver())
     expect((await app.inject({ url: '/api/auth/driver' })).json()).toMatchObject({
       state: 'absent',

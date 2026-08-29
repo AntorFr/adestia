@@ -525,7 +525,7 @@ describe('chat', () => {
     const view = render(<Chat fetchImpl={sseFetch([], { models })} />)
 
     fireEvent.change(await screen.findByLabelText('Model'), { target: { value: 'claude-sonnet-5' } })
-    expect(store.get('demeura.model')).toBe('claude-sonnet-5')
+    expect(store.get('adestia.model')).toBe('claude-sonnet-5')
 
     // Back after a reload: the choice is still the one that was made.
     view.unmount()
@@ -537,7 +537,7 @@ describe('chat', () => {
     // no key mean the same thing, and only one of them survives a change of
     // default.
     fireEvent.change(picker, { target: { value: '' } })
-    expect(store.has('demeura.model')).toBe(false)
+    expect(store.has('adestia.model')).toBe(false)
   })
 
   it('draws no picker when the driver answers 404', async () => {
@@ -586,7 +586,7 @@ describe('chat', () => {
     await act(async () => {
       fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' })
     })
-    expect(container.querySelector('.demeura-dots')).toBeTruthy()
+    expect(container.querySelector('.adestia-dots')).toBeTruthy()
   })
 
   it('keeps the indicator up between two answers, and files them as two messages', async () => {
@@ -632,17 +632,17 @@ describe('chat', () => {
       turn!.enqueue(encoder.encode(frame({ type: 'text-delta', text: 'Je regarde.' })))
     })
     await waitFor(() => expect(screen.getByText('Je regarde.')).toBeTruthy())
-    expect(container.querySelector('.demeura-dots')).toBeTruthy()
+    expect(container.querySelector('.adestia-dots')).toBeTruthy()
 
     await act(async () => {
       turn!.enqueue(encoder.encode(frame({ type: 'tool-use', name: 'Read', target: '/a.md' })))
       turn!.enqueue(encoder.encode(frame({ type: 'text-delta', text: 'Voilà.' })))
     })
     await waitFor(() => expect(screen.getByText('Voilà.')).toBeTruthy())
-    expect(container.querySelectorAll('.demeura-bubble--agent')).toHaveLength(2)
+    expect(container.querySelectorAll('.adestia-bubble--agent')).toHaveLength(2)
     // Still working, and the trace hangs above the answer it produced.
-    expect(container.querySelector('.demeura-dots')).toBeTruthy()
-    expect(container.querySelectorAll('.demeura-trace')).toHaveLength(1)
+    expect(container.querySelector('.adestia-dots')).toBeTruthy()
+    expect(container.querySelectorAll('.adestia-trace')).toHaveLength(1)
 
     await act(async () => {
       turn!.enqueue(encoder.encode(frame({ type: 'result', sessionId: 's1', stopped: false })))
@@ -650,8 +650,8 @@ describe('chat', () => {
     })
     // Settled: the indicator goes, and what was drawn as two bubbles STAYS
     // two — the thread keeps the shape the live view had.
-    await waitFor(() => expect(container.querySelector('.demeura-dots')).toBeNull())
-    expect(container.querySelectorAll('.demeura-bubble--agent')).toHaveLength(2)
+    await waitFor(() => expect(container.querySelector('.adestia-dots')).toBeNull())
+    expect(container.querySelectorAll('.adestia-bubble--agent')).toHaveLength(2)
     expect(screen.getByText('Je regarde.')).toBeTruthy()
     expect(screen.getByText('Voilà.')).toBeTruthy()
   })
@@ -726,7 +726,7 @@ describe('chat', () => {
     })
     await waitFor(() => expect(posts).toHaveLength(3))
     expect(posts.map((p) => p.prompt)).toEqual(['premier', 'deuxième', 'troisième'])
-    expect(container.querySelectorAll('.demeura-bubble--held')).toHaveLength(2)
+    expect(container.querySelectorAll('.adestia-bubble--held')).toHaveLength(2)
 
     // The first turn settles; the chat re-attaches and finds the merged turn.
     await act(async () => {
@@ -737,7 +737,7 @@ describe('chat', () => {
 
     // The held bubbles became ordinary user messages — one each, the shape
     // the store recorded — and the merged turn streams its answer.
-    await waitFor(() => expect(container.querySelectorAll('.demeura-bubble--held')).toHaveLength(0))
+    await waitFor(() => expect(container.querySelectorAll('.adestia-bubble--held')).toHaveLength(0))
     expect(screen.getByText('deuxième')).toBeTruthy()
     expect(screen.getByText('troisième')).toBeTruthy()
 
@@ -929,19 +929,19 @@ describe('tabs', () => {
     await act(async () => {
       fireEvent.click(screen.getByLabelText('New conversation'))
     })
-    await waitFor(() => expect(container.querySelector('.demeura-dot--working')).toBeTruthy())
+    await waitFor(() => expect(container.querySelector('.adestia-dot--working')).toBeTruthy())
 
     // It settles in the background: done, and not yet seen.
     await act(async () => {
       release?.()
     })
-    await waitFor(() => expect(container.querySelector('.demeura-dot--unread')).toBeTruthy())
+    await waitFor(() => expect(container.querySelector('.adestia-dot--unread')).toBeTruthy())
 
     // Coming back reads it: the dot goes quiet and the answer is there.
     await act(async () => {
       fireEvent.click(screen.getByTitle('Fil un'))
     })
-    expect(container.querySelector('.demeura-dot--unread')).toBeNull()
+    expect(container.querySelector('.adestia-dot--unread')).toBeNull()
     expect(screen.getByText('fini')).toBeTruthy()
   })
 
@@ -969,7 +969,7 @@ describe('tabs', () => {
   it('restores the open tabs of the last visit', async () => {
     // The browser-tab contract: a refresh reopens what was open, in order.
     const store = new Map<string, string>([
-      ['demeura.tabs', JSON.stringify({ open: ['c2', 'c1'], active: 'c1' })],
+      ['adestia.tabs', JSON.stringify({ open: ['c2', 'c1'], active: 'c1' })],
     ])
     vi.stubGlobal('localStorage', {
       getItem: (key: string) => store.get(key) ?? null,
@@ -1002,8 +1002,8 @@ describe('tabs', () => {
     )
     fireEvent.click(screen.getByLabelText('Conversations'))
     await screen.findByText('Occupé')
-    expect(container.querySelector('.demeura-threads .demeura-dot--working')).toBeTruthy()
-    expect(container.querySelector('.demeura-threads .demeura-dot--waiting')).toBeTruthy()
+    expect(container.querySelector('.adestia-threads .adestia-dot--working')).toBeTruthy()
+    expect(container.querySelector('.adestia-threads .adestia-dot--waiting')).toBeTruthy()
   })
 })
 
@@ -1035,7 +1035,7 @@ describe('the compose channel', () => {
     const channel = capture()
     act(() => channel.compose?.('3017620422003'))
     expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe('3017620422003')
-    expect(screen.queryByText('3017620422003', { selector: '.demeura-bubble' })).toBeNull()
+    expect(screen.queryByText('3017620422003', { selector: '.adestia-bubble' })).toBeNull()
   })
 
   it('appends to what the user already typed, never replacing it', () => {
@@ -1121,7 +1121,7 @@ describe('attachments', () => {
     // the file — the worst possible answer to that gesture.
     const fetchImpl = withUpload({ attachments: [{ id: 'b/plan.pdf', name: 'plan.pdf' }] })
     const { container } = render(<Chat fetchImpl={fetchImpl} />)
-    const composer = container.querySelector('.demeura-composer')!
+    const composer = container.querySelector('.adestia-composer')!
 
     const file = new File(['x'], 'plan.pdf', { type: 'application/pdf' })
     await act(async () => {
@@ -1133,7 +1133,7 @@ describe('attachments', () => {
   it('ignores text dragged inside the page', async () => {
     const fetchImpl = withUpload({ attachments: [{ id: 'b/x', name: 'x' }] })
     const { container } = render(<Chat fetchImpl={fetchImpl} />)
-    const composer = container.querySelector('.demeura-composer')!
+    const composer = container.querySelector('.adestia-composer')!
 
     fireEvent.dragOver(composer, { dataTransfer: { types: ['text/plain'] } })
     expect(composer.className).not.toMatch(/dropping/)

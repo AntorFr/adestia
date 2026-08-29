@@ -1,11 +1,11 @@
 /**
  * Identity — three modes, no local user database, ever.
  *
- * Demeura never stores passwords and never owns accounts. Identity either comes
+ * Adestia never stores passwords and never owns accounts. Identity either comes
  * from outside (an OIDC issuer, a trusted reverse proxy) or nobody asks
  * (`none`, for a single-user machine). Roles are derived from group membership
  * at each request or login — the identity provider stays the source of truth,
- * and anything Demeura keeps is a cache.
+ * and anything Adestia keeps is a cache.
  *
  * This module resolves identity only. The OIDC login dance itself lives in its
  * own module; here is what every request goes through.

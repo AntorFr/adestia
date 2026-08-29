@@ -1,5 +1,5 @@
 /**
- * The `claude-code` driver — Claude Code behind Demeura's contract.
+ * The `claude-code` driver — Claude Code behind Adestia's contract.
  *
  * Everything Claude-specific stops at this file's edge. Above it, the core and
  * the UI see only `TurnEvent`s and a capability list; below it, the Agent SDK's
@@ -92,7 +92,7 @@ export interface ArmingFlow {
 }
 
 /**
- * Demeura's server shape, in the SDK's.
+ * Adestia's server shape, in the SDK's.
  *
  * Two transports and one discriminator: the SDK reads `type: 'http'` for a
  * URL and treats everything else as stdio. Written explicitly rather than
@@ -223,7 +223,7 @@ export class ClaudeCodeDriver implements Driver {
       })
     }
     // NOT an error: the CLI may perfectly well be living on credentials
-    // someone set up outside Demeura, and forcing an arming flow to start a
+    // someone set up outside Adestia, and forcing an arming flow to start a
     // session would make the product harder to use than the terminal.
     return Promise.resolve({ state: 'absent', source: 'cli-native' })
   }
@@ -277,7 +277,7 @@ export class ClaudeCodeDriver implements Driver {
         'liveTurnUsage',
         // Declared only when this instance actually wired servers: a panel
         // offering to report the health of nothing is a panel that looks
-        // broken. The CLI's own `.mcp.json` servers are the user's, and Demeura
+        // broken. The CLI's own `.mcp.json` servers are the user's, and Adestia
         // does not claim to report on what it did not wire.
         ...(this.#mcpServers.length > 0 ? (['mcpStatus'] as const) : []),
         // Declared only when the instance actually configured a catalogue:
@@ -353,13 +353,13 @@ export class ClaudeCodeDriver implements Driver {
      * Note what is NOT here: any judgement of our own. By the time this runs,
      * the CLI's own first line has already let the harmless through — a
      * `Read`, an `echo` never reach it (measured). What arrives is its
-     * residue, and the only thing Demeura adds is a person.
+     * residue, and the only thing Adestia adds is a person.
      *
      * `always` returns the engine's OWN suggestions, untouched, as
      * `updatedPermissions`. The CLI then writes the rule into its own file in
      * the workspace and reads it back on every later turn — so the durable
      * allowlist is the engine's, in a file a person can open and edit, and
-     * Demeura keeps no list of its own.
+     * Adestia keeps no list of its own.
      *
      * ⚠️ Untouched is deliberate, and was learned the hard way. An earlier
      * version pinned these to `destination: 'session'` so a button reading
@@ -435,7 +435,7 @@ export class ClaudeCodeDriver implements Driver {
         ...(request.sessionId ? { resume: request.sessionId } : {}),
         ...(request.model ? { model: request.model } : {}),
         // Only what this instance declared. The CLI's own MCP config still
-        // applies on top — it is the user's, and Demeura does not touch it.
+        // applies on top — it is the user's, and Adestia does not touch it.
         ...(Object.keys(mcpServers).length > 0 ? { mcpServers } : {}),
         // Credentials go ON TOP of the inherited environment, so a token
         // managed here wins over stale credentials in a shared home without

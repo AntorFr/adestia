@@ -7,7 +7,7 @@
 
 ## Le besoin
 
-Monsieur veut voir d'un coup d'œil, dans Demeura : ses projets (repos), leurs
+Monsieur veut voir d'un coup d'œil, dans Adestia : ses projets (repos), leurs
 lots, l'état de chacun, **ce qui est à lui** (lots à spécifier, questions à
 trancher), **dans quel ordre** traiter, et **ce qui est bloqué** — typiquement
 une question structurante découverte par un agent coder qui gèle toute une
@@ -41,7 +41,7 @@ branch: lot1         # branche du chantier dès que status ≥ code, sinon null
 updated: 2026-08-29
 ```
 
-## La règle de lecture — Demeura ne lit PAS toutes les branches
+## La règle de lecture — Adestia ne lit PAS toutes les branches
 
 1. **`main` d'abord, et seulement `main` comme index** : lire toutes les
    fiches de `.agent/lots/` sur `main` de chaque repo scanné.
@@ -73,12 +73,12 @@ updated: 2026-08-29
 
 - **Lecture seule, absolue** : le plugin ne modifie jamais les fiches ni quoi
   que ce soit dans les repos scannés. L'écriture appartient aux agents et à
-  Monsieur, par git — Demeura est une fenêtre, pas un stylo.
+  Monsieur, par git — Adestia est une fenêtre, pas un stylo.
 - Repos scannés **configurables** (chemins locaux ; `~/Dev/tessera` et
   `~/Dev/ostia` aujourd'hui — ostia n'a pas de remote, tout est local).
 - Parse du frontmatter sans dépendance lourde : YAML plat (scalaires + listes
   en ligne), un split sur `---` et quelques lignes suffisent.
-- Normes du repo : `CLAUDE.md` de demeura (worktree, green first, et « if it
+- Normes du repo : `CLAUDE.md` de adestia (worktree, green first, et « if it
   draws something, look at it » — ce plugin dessine, donc on le REGARDE).
 - Un repo sans `.agent/lots/`, une fiche au frontmatter invalide, une branche
   disparue : dégrader proprement et le DIRE dans l'UI, jamais planter ni

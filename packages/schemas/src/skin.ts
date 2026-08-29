@@ -1,5 +1,5 @@
 /**
- * The skin manifest — `demeura-skin.json`, schema version 1.
+ * The skin manifest — `adestia-skin.json`, schema version 1.
  *
  * A skin dresses; exactly ONE is active, chosen by a config value. That is why
  * it is not a fifth plugin kind: every plugin axis is a list, a skin's axis is

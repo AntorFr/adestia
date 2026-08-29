@@ -1,12 +1,12 @@
 /**
  * Reading `{% tag %}` — the predecessor's block syntax.
  *
- * Demeura writes `:::callout{type=warning}`. A body of pages written by the
+ * Adestia writes `:::callout{type=warning}`. A body of pages written by the
  * shell it shares its store with writes `{% callout type="attention" %}`, and
  * 27% of the real corpus carries one: 111 callouts, 25 enriched links. Read
  * as text, they land on screen as literal braces in the middle of a sentence.
  *
- * So Demeura LEARNS TO READ them. Not a migration — the other shell still reads
+ * So Adestia LEARNS TO READ them. Not a migration — the other shell still reads
  * its own syntax, and a store two products share cannot have its content
  * rewritten under one of them. Same doctrine as the frontmatter bridge: the
  * reader absorbs, the writing contract moves forward.
@@ -39,7 +39,7 @@ import { blockSpec } from './vocabulary.js'
 const TAG = /^\{%\s*(\/?)([a-zA-Z][\w-]*)((?:(?!%\}).)*)%\}$/s
 
 /**
- * The predecessor's callout types, in Demeura's closed vocabulary.
+ * The predecessor's callout types, in Adestia's closed vocabulary.
  *
  * Measured on the corpus rather than guessed: `attention` (68 uses) is the
  * one that matters and it means WARNING, not "note". `astuce` is French for
@@ -94,7 +94,7 @@ function tagOf(
  * An enriched link — `{% web url="…" titre="…" /%}`.
  *
  * Rendered as an ordinary link rather than invented as a new block: the
- * predecessor draws a card with the site's favicon, which Demeura has no
+ * predecessor draws a card with the site's favicon, which Adestia has no
  * mechanism for, and a link that WORKS beats a placeholder promising a card.
  * The title falls back to the URL, because a link with no text is a link
  * nobody can click on purpose.
@@ -301,7 +301,7 @@ function convert(input: RootContent[], source: string): RootContent[] {
  *
  * ⚠️ Read-only by nature: the tree it produces serializes as `:::callout`,
  * never back to `{% %}`. That is deliberate but it has a consequence worth
- * knowing — saving such a page in the editor rewrites its blocks into Demeura's
+ * knowing — saving such a page in the editor rewrites its blocks into Adestia's
  * syntax, which the other shell would then no longer render. Editing a shared
  * page converts it; reading one never does.
  */

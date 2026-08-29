@@ -641,7 +641,7 @@ describe('outbound MCP servers', () => {
   it('writes a side file and points the CLI at it, never at argv', async () => {
     // Inline JSON would have worked and would have put every
     // `Authorization: Bearer …` in `ps` output, readable by any process.
-    const home = await mkdtemp(join(tmpdir(), 'demeura-copilot-'))
+    const home = await mkdtemp(join(tmpdir(), 'adestia-copilot-'))
     const fake = fakeCopilot()
     const driver = new CopilotDriver({
       home,
@@ -657,7 +657,7 @@ describe('outbound MCP servers', () => {
     fake.child.emit('close', 0)
     await turn
 
-    const path = join(home, 'demeura-mcp.json')
+    const path = join(home, 'adestia-mcp.json')
     expect(fake.spawns[0]?.args).toContain('--additional-mcp-config')
     expect(fake.spawns[0]?.args).toContain(`@${path}`)
     // Nothing on argv carries the header.
@@ -676,9 +676,9 @@ describe('outbound MCP servers', () => {
   })
 
   it('leaves the user\'s own config alone', async () => {
-    // `mcp-config.json` is written by `copilot mcp add`. Demeura does not own it,
-    // so Demeura does not rewrite it.
-    const home = await mkdtemp(join(tmpdir(), 'demeura-copilot-'))
+    // `mcp-config.json` is written by `copilot mcp add`. Adestia does not own it,
+    // so Adestia does not rewrite it.
+    const home = await mkdtemp(join(tmpdir(), 'adestia-copilot-'))
     await writeFile(join(home, 'mcp-config.json'), '{"mcpServers":{"mine":{}}}')
     const fake = fakeCopilot()
     const driver = new CopilotDriver({
@@ -710,7 +710,7 @@ describe('MCP health', () => {
   const run = async (lines: readonly string[], servers: { name: string; command?: string; url?: string }[]) => {
     const fake = fakeCopilot()
     const driver = new CopilotDriver({
-      home: mkdtempSync(join(tmpdir(), 'demeura-copilot-')),
+      home: mkdtempSync(join(tmpdir(), 'adestia-copilot-')),
       spawnImpl: fake.spawnImpl,
       mcpServers: servers,
     })
@@ -776,7 +776,7 @@ describe('an MCP server that authenticates itself', () => {
     url: 'https://hub.example/maps',
     auth: {
       tokenUrl: 'https://auth.example/token',
-      clientId: 'agent-demeura',
+      clientId: 'agent-adestia',
       clientSecret: 's3cret',
       scope: 'mcp',
     },
@@ -805,7 +805,7 @@ describe('an MCP server that authenticates itself', () => {
   }
 
   it('writes the bearer into the side file, never onto argv', async () => {
-    const home = await mkdtemp(join(tmpdir(), 'demeura-copilot-'))
+    const home = await mkdtemp(join(tmpdir(), 'adestia-copilot-'))
     const fake = fakeCopilot()
     const driver = new CopilotDriver({
       home,
@@ -815,7 +815,7 @@ describe('an MCP server that authenticates itself', () => {
     })
     await turn(driver, fake)
 
-    const written = JSON.parse(await readFile(join(home, 'demeura-mcp.json'), 'utf8'))
+    const written = JSON.parse(await readFile(join(home, 'adestia-mcp.json'), 'utf8'))
     expect(written.mcpServers.maps).toMatchObject({
       type: 'http',
       url: 'https://hub.example/maps',
@@ -828,8 +828,8 @@ describe('an MCP server that authenticates itself', () => {
   it('rewrites the file on every turn, because the token rotates', async () => {
     // Written once was right until a server could carry a token: a file
     // produced at the first turn authenticates nothing by the second morning.
-    const home = await mkdtemp(join(tmpdir(), 'demeura-copilot-'))
-    const path = join(home, 'demeura-mcp.json')
+    const home = await mkdtemp(join(tmpdir(), 'adestia-copilot-'))
+    const path = join(home, 'adestia-mcp.json')
 
     const first = fakeCopilot()
     const driver = new CopilotDriver({
@@ -869,7 +869,7 @@ describe('an MCP server that authenticates itself', () => {
   it('drops the flag entirely when no server could be authenticated', async () => {
     // No file rather than an empty one: an empty `mcpServers` map would make
     // the CLI load nothing while looking configured.
-    const home = await mkdtemp(join(tmpdir(), 'demeura-copilot-'))
+    const home = await mkdtemp(join(tmpdir(), 'adestia-copilot-'))
     const fake = fakeCopilot()
     const driver = new CopilotDriver({
       home,
@@ -899,7 +899,7 @@ describe('a server that serves somebody’s own data', () => {
     ) as unknown as typeof fetch
 
   const runTurn = async (extra: Record<string, unknown>) => {
-    const home = mkdtempSync(join(tmpdir(), 'demeura-copilot-'))
+    const home = mkdtempSync(join(tmpdir(), 'adestia-copilot-'))
     const fake = fakeCopilot()
     const driver = new CopilotDriver({
       home,
@@ -912,7 +912,7 @@ describe('a server that serves somebody’s own data', () => {
     fake.stdout.write('{"type":"result","data":{"sessionId":"s1","exitCode":0}}\n')
     fake.child.emit('close', 0)
     await running
-    return JSON.parse(await readFile(join(home, 'demeura-mcp.json'), 'utf8')).mcpServers
+    return JSON.parse(await readFile(join(home, 'adestia-mcp.json'), 'utf8')).mcpServers
   }
 
   it('acts as the caller, and keeps the machine identity where it belongs', async () => {

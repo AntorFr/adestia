@@ -1,12 +1,12 @@
-# Demeura — a self-hosted instance.
+# Adestia — a self-hosted instance.
 #
 # Everything the container needs from outside lives in the three mounts below.
-# Copy demeura.config.example.yaml to demeura.config.yaml, adjust, and start.
+# Copy adestia.config.example.yaml to adestia.config.yaml, adjust, and start.
 
 services:
-  demeura:
+  adestia:
     build: .
-    # image: ghcr.io/antorfr/demeura:latest   # once published
+    # image: ghcr.io/antorfr/adestia:latest   # once published
     ports:
       - '127.0.0.1:8730:8730'
     volumes:
@@ -18,10 +18,10 @@ services:
       # Extensions, dropped in and discovered at startup — no image rebuild.
       - ./plugins:/plugins:ro
       - ./skins:/skins:ro
-      - ./demeura.config.yaml:/app/demeura.config.yaml:ro
+      - ./adestia.config.yaml:/app/adestia.config.yaml:ro
     environment:
       # The CLI's own credentials. Which variables matter depends on the
-      # configured driver; Demeura can also arm a token from its own UI.
+      # configured driver; Adestia can also arm a token from its own UI.
       - CLAUDE_CODE_OAUTH_TOKEN=${CLAUDE_CODE_OAUTH_TOKEN:-}
     # Each concurrent turn spawns a CLI process costing ~300 MB (measured, see
     # spikes/concurrency). This limit must agree with `maxConcurrentTurns` in

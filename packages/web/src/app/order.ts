@@ -13,8 +13,8 @@
  */
 
 /** The two mosaics on the landing canvas, each with its own order. */
-export const ORDER_KEY_APPS = 'demeura.order.apps'
-export const ORDER_KEY_SECTIONS = 'demeura.order.sections'
+export const ORDER_KEY_APPS = 'adestia.order.apps'
+export const ORDER_KEY_SECTIONS = 'adestia.order.sections'
 
 type Readable = Pick<Storage, 'getItem'>
 type Writable = Pick<Storage, 'getItem' | 'setItem'>

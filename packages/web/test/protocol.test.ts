@@ -7,7 +7,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import type { TurnEvent as DriverEvent } from '@antorfr/demeura-drivers'
+import type { TurnEvent as DriverEvent } from '@antorfr/adestia-drivers'
 
 import { applyEvent, INITIAL_TURN } from '../src/chat/stream.js'
 import type { TurnEvent as WebEvent } from '../src/chat/events.js'

@@ -30,7 +30,7 @@ import { argv, env } from 'node:process'
 import playwright from '/usr/lib/node_modules/playwright-core/index.js'
 
 const { chromium } = playwright
-const UPSTREAM = { host: env.APP_HOST ?? 'demeura-bench-app', port: Number(env.APP_PORT ?? 8730) }
+const UPSTREAM = { host: env.APP_HOST ?? 'adestia-bench-app', port: Number(env.APP_PORT ?? 8730) }
 const ORIGIN = 'http://127.0.0.1:8080'
 const SHOTS = '/shots'
 
@@ -96,13 +96,13 @@ const bench = {
     if (tab) {
       await page.addInitScript(
         ([key, id]) => window.localStorage.setItem(key, JSON.stringify({ open: [id], active: id })),
-        ['demeura.tabs', tab],
+        ['adestia.tabs', tab],
       )
     }
     // NOT `networkidle`: an attached turn holds its SSE connection open for
     // the whole turn, so the network is never idle — by design.
     await page.goto(`${ORIGIN}/`, { waitUntil: 'domcontentloaded' })
-    await page.waitForSelector('.demeura-chat', { timeout: 20_000 })
+    await page.waitForSelector('.adestia-chat', { timeout: 20_000 })
     await page.waitForTimeout(800)
     return page
   },

@@ -57,4 +57,4 @@ await build({
   },
 })
 
-console.log(`service worker built (cache demeura-${version}, ${precache.length} precached)`)
+console.log(`service worker built (cache adestia-${version}, ${precache.length} precached)`)

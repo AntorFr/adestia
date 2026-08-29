@@ -1,5 +1,5 @@
 {
-  "name": "@antorfr/demeura-server",
+  "name": "@antorfr/adestia-server",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -11,9 +11,9 @@
     }
   },
   "dependencies": {
-    "@antorfr/demeura-content": "*",
-    "@antorfr/demeura-drivers": "*",
-    "@antorfr/demeura-schemas": "*",
+    "@antorfr/adestia-content": "*",
+    "@antorfr/adestia-drivers": "*",
+    "@antorfr/adestia-schemas": "*",
     "@fastify/cookie": "^11.1.2",
     "@fastify/multipart": "^10.1.1",
     "@fastify/static": "^10.1.3",
@@ -23,7 +23,7 @@
     "yaml": "^2.9.0"
   },
   "bin": {
-    "demeura": "./bin/demeura.js"
+    "adestia": "./bin/adestia.js"
   },
   "scripts": {
     "build": "tsc --build"

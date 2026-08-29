@@ -10,7 +10,7 @@ let root: string
 let inbox: AttachmentInbox
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'demeura-inbox-'))
+  root = await mkdtemp(join(tmpdir(), 'adestia-inbox-'))
   inbox = new AttachmentInbox(root)
 })
 

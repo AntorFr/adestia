@@ -113,7 +113,7 @@ describe('editor', () => {
     const edits: string[] = []
     const { container } = render(<Editor page={page} mount={fakeMount(edits)} />)
     expect(container.querySelector('[data-mounted]')).toBeNull()
-    expect(container.querySelector('.demeura-reader')).toBeTruthy()
+    expect(container.querySelector('.adestia-reader')).toBeTruthy()
     expect(edits).toEqual([])
   })
 
@@ -198,7 +198,7 @@ describe('editor', () => {
     // The diagnostic names the block AND the raw source shows it, so the query
     // has to say which one it means.
     expect(screen.getByText(/Unknown block/)).toBeTruthy()
-    expect(document.querySelector('.demeura-editor__raw')?.textContent).toContain(':::mystery')
+    expect(document.querySelector('.adestia-editor__raw')?.textContent).toContain(':::mystery')
   })
 
   it('mounts the NEW document when writing resumes on another page', () => {

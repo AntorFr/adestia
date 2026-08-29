@@ -1,7 +1,7 @@
 /**
  * Round-trip conformance — the gate.
  *
- * Promoted from spike 1, where it decided which editor Demeura would use. It now
+ * Promoted from spike 1, where it decided which editor Adestia would use. It now
  * guards the pipeline itself: files are the source of truth, so a save that
  * rewrites bytes the user did not touch is a bug, however "equivalent" the
  * markdown may be.

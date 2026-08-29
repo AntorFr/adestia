@@ -1,15 +1,21 @@
-# Status — Demeura
+# Status — Adestia
 > MàJ : 2026-08-29
 
-Chantier du 29/08 — **le produit s'appelle Demeura** (ex-Golem, nom pris par
-Golem Network et Golem Cloud ; « demeura » : celle qui demeure — à demeure,
-self-hosted, clearance faite : aucune société/produit/registre homonyme).
-Renommage intégral : paquets `@antorfr/demeura-*`, binaire, env `DEMEURA_*`,
-manifestes de découverte `demeura-plugin.json`/`demeura-skin.json`, tokens CSS
-`--demeura-*`, config `demeura.config.example.yaml`, image
-`ghcr.io/antorfr/demeura`. Seuls les relevés bruts `spikes/*/raw/` gardent
-l'ancien nom (logs capturés, on ne réécrit pas). Le repo GitHub est renommé ;
-les versions < 0.14 sur GHCR restent publiées sous l'ancien nom d'image.
+Chantier du 29/08 — **le produit s'appelle Adestia** (ex-Golem, nom pris par
+Golem Network et Golem Cloud). Du latin *adest* — « elle est présente » — et
+une sonorité de prénom : l'instance prend le nom de son agent (Alfred,
+Skippy…), le produit nomme la classe. Choix du propriétaire en connaissance
+d'une homonymie ASSUMÉE : Adestia AB, société suédoise de tech de salles de
+réunion (rachetée par Reledo en 2025) — hors IA/agents, risque jugé
+acceptable ; registres de code tous libres. Le repo a porté « Demeura »
+pendant UN commit (c422f0f, repli proposé pendant la clearance) avant que le
+choix Adestia soit confirmé. Renommage intégral : paquets
+`@antorfr/adestia-*`, binaire, env `ADESTIA_*`, manifestes de découverte
+`adestia-plugin.json`/`adestia-skin.json`, tokens CSS `--adestia-*`, config
+`adestia.config.example.yaml`, image `ghcr.io/antorfr/adestia`. Seuls les
+relevés bruts `spikes/*/raw/` gardent « golem » (logs capturés, on ne
+réécrit pas). Le repo GitHub est renommé ; les versions < 0.14 sur GHCR
+restent publiées sous l'ancien nom d'image.
 
 Mission posée le 29/08 — **plugin « lots »** (visualisation des chantiers de
 la galaxie Tessera/Ostia) : lettre de mission dans
@@ -106,7 +112,7 @@ pastilles) ; pastille à 4 états, UNE précédence (`dotFor` dans `tabs.ts`,
 pur, 27 tests) : waiting (ambre, pulse) > working (accent, pulse) > unread
 (accent) > idle. Fermer un onglet ≠ archiver : deux icônes, la croix ne
 touche pas la conversation (toujours en liste), la boîte archive ET ferme.
-Persistance façon navigateur (`demeura.tabs` : ordre + membres + actif) ; un
+Persistance façon navigateur (`adestia.tabs` : ordre + membres + actif) ; un
 refresh RESTAURE les onglets (desktop) ou le dernier actif (mobile), chacun
 se ré-attachant à son tour en cours via le desk. Drag & drop HTML5 pour
 réordonner (souris — pas le rail Pointer Events du mode Ranger, assumé :
@@ -114,7 +120,7 @@ surface desktop). Onglet brouillon `draft` renommé EN PLACE vers l'id réel à
 la création du fil. Serveur : `TurnJob.waiting` (suivi par id de question),
 `TurnDesk.active()`, et `/api/conversations` porte `turn: running|waiting`
 calculé par requête — les pastilles de la liste lisent ça + les marques de
-lecture locales (`demeura.read`, borné à 200). `createConversation` refuse
+lecture locales (`adestia.read`, borné à 200). `createConversation` refuse
 désormais un méta sans id (une réponse `{}` devenait un onglet-clé
 `undefined`). Piège de test appris : `findByText` DANS un `act()` fige son
 polling. 5 tests d'onglets + 27 tabs.ts + 4 serveur.
@@ -123,7 +129,7 @@ polling. 5 tests d'onglets + 27 tabs.ts + 4 serveur.
 en CDP, `shoot.mjs` de session — banc jetable : conteneur + conf vide, 3
 conversations semées par l'API, 13 captures bureau/sombre/mobile). Deux
 défauts que SEUL le navigateur montrait, corrigés dans la foulée :
-(1) `.demeura-chat` était une grille `auto 1fr auto auto` — la barre d'onglets
+(1) `.adestia-chat` était une grille `auto 1fr auto auto` — la barre d'onglets
 insérée devenait la rangée `1fr` et se dessinait en trois colonnes pleine
 hauteur qui avalaient le fil. Passé en flex-colonne : les bandeaux optionnels
 (onglets, liste, question) prennent leur hauteur naturelle, seul le fil
@@ -132,14 +138,14 @@ grandit. (2) Les deux icônes d'onglet (archiver/fermer) réservaient leurs
 0 au repos, révélées au survol ET au `:focus-within` (clavier). Vu et
 validé : barre à 3 onglets titres lisibles, actif fusionné, outils au survol,
 drag & drop réordonne (DragEvents natifs), refresh restaure ordre + actif
-(`demeura.tabs` constaté), croix ferme sans toucher la liste, pastilles 4 états
+(`adestia.tabs` constaté), croix ferme sans toucher la liste, pastilles 4 états
 (waiting/working forcées pour la CSS — pas de CLI dans le banc), sombre OK,
 mobile : pas de bandeau, liste à pastilles, dernier ouvert restauré. Piège de
 banc : `docker build .` depuis le checkout primaire reconstruit main, pas la
 worktree — builder par CHEMIN explicite.
 
 **Livré en 0.13.0 et déployé** sur homenode (image multi-arch amd64+arm64,
-manifeste bumpé dans k8s-home-lab, pod `ghcr.io/antorfr/demeura:0.13.0` ready,
+manifeste bumpé dans k8s-home-lab, pod `ghcr.io/antorfr/adestia:0.13.0` ready,
 « 8 of 8 plugin(s) active », skin alfred, 12 MCP, OIDC). Emporte les trois
 chantiers du 27/08 : indicateur immédiat + hold, tours possédés par le
 serveur (file/fusion/adoption), onglets de conversations. NB versions :
@@ -150,7 +156,7 @@ Chantier du 27/08 (4e volet) — **une heure dans une page la passait en lecture
 seule.** `micromark-extension-directive` lit aussi `:nom` EN LIGNE : « 19:30:59 »
 se parsait en texte « 19:30 » suivi d'une directive nommée `59`, le validateur
 la signalait comme bloc inconnu, et la page se verrouillait pour avoir mentionné
-une heure. Le vocabulaire de Demeura n'a aucune forme en ligne — tout y est un
+une heure. Le vocabulaire de Adestia n'a aucune forme en ligne — tout y est un
 conteneur `:::` — donc la construction est retirée de la GRAMMAIRE plutôt
 qu'excusée dans le validateur : renderer, éditeur et validateur continuent de
 voir le même arbre. `:::` et `::` sont intacts. 3 tests d'épingle.
@@ -198,7 +204,7 @@ exécuter de code navigateur ; le module dit à quoi il ressemble. Le pont `{% %
 suit le vocabulaire, donc une fiche partagée rend un bloc de plugin sans être
 réécrite. Premier client : `parcours` porté (carte sans biblio, profil, mode
 balade, GPX octet-pour-octet identique au prédécesseur) — sauf le hors-ligne,
-qui demande un service worker que Demeura n'a pas. **Livré en 0.5.0 et déployé**
+qui demande un service worker que Adestia n'a pas. **Livré en 0.5.0 et déployé**
 sur homenode, `features: [scan, parcours]` : 7 plugins sur 7 actifs.
 Missions ajoutées à planif (`until:` → la note se termine seule, `done:` par
 l'agent, `expired:` par le produit), avec porte d'écriture par contenu sur la
@@ -207,7 +213,7 @@ Login Copilot : device-code relayé, sous pty (la question « stocker en clair ?
 n'est posée que sur un terminal), consentement explicite de l'utilisateur par
 case à cocher. Vérifié de bout en bout contre un vrai compte, en conteneur sans
 keychain — capture dans `spikes/copilot-cli/raw/login-device-code-plaintext.txt`.
-Chrome d'édition Crepe réparée : Demeura n'importait que la STRUCTURE du thème,
+Chrome d'édition Crepe réparée : Adestia n'importait que la STRUCTURE du thème,
 donc aucun `--crepe-*` n'était déclaré → barre d'outils, menu slash et poignée
 de bloc invisibles (transparents, sans ombre). Le jeu complet est maintenant
 dérivé des tokens dans `shell.css`, avec la gouttière que la poignée réclame ;
@@ -243,7 +249,7 @@ déclaré l'emporte sur le su. La une s'en sert : une cible qui porte un chemin
 va à qui le possède, et la coque a cessé d'épeler `workbook` avec la route de
 l'atelier en dur.
 **Livré en 0.6.0 et déployé** sur homenode (image multi-arch, manifeste bumpé,
-pod `ghcr.io/antorfr/demeura:0.6.0` ready, 7 plugins sur 7 actifs au boot).
+pod `ghcr.io/antorfr/adestia:0.6.0` ready, 7 plugins sur 7 actifs au boot).
 0.7.0 : le fil ne s'arrêtait plus au dossier mais s'arrêtait à l'APP — `#/voyages`
 et `#/voyages/baden-2026` écrivaient tous deux « Accueil / Voyages ». Une vue
 PUBLIE désormais où elle est (`api.trail`), la coque la dessine, et les deux
@@ -277,13 +283,13 @@ refaites au passage, parce que c'est `routeFor` qui décide le schéma d'URL :
 fois, et l'ancienne forme reste lue pour toujours — le décodage se fait
 segment par segment, donc un `%2F` d'un vieux favori redevient le chemin qu'il
 a toujours été. Règle dans `web/address.js`, pure et testée (15 tests).
-Décompte du Dockerfile passé à huit plugins ; le `demeura.config.example.yaml`,
+Décompte du Dockerfile passé à huit plugins ; le `adestia.config.example.yaml`,
 lui, ne nomme aucun plugin (listes vides par conception : « la présence est la
 découverte, jamais l'activation »), il n'y avait donc rien à y déclarer. Et
 `plugins/README.md` annonçait encore UNE skin alors que trois sont livrées
 depuis le portage de Nestor et Skippy — corrigé, les deux ont leur ligne.
 **Livré en 0.8.0 et déployé** sur homenode (image multi-arch, manifeste bumpé,
-pod `ghcr.io/antorfr/demeura:0.8.0` ready, « 8 of 8 plugin(s) active » au boot,
+pod `ghcr.io/antorfr/adestia:0.8.0` ready, « 8 of 8 plugin(s) active » au boot,
 `journal` ajouté à la liste `apps:` — la présence n'est pas l'activation).
 
 0.9.0 — MCP en OAuth utilisateur (branche `feat/mcp-user-oauth-and-driver-agent`,
@@ -334,7 +340,7 @@ skills restent dehors, délibérément : elles disent quoi FAIRE, jamais ce qu'o
 peut atteindre.
 
 **Livré en 0.10.0 et déployé** sur homenode (image multi-arch amd64+arm64,
-manifeste bumpé, pod `ghcr.io/antorfr/demeura:0.10.0` ready, « 8 of 8 plugin(s)
+manifeste bumpé, pod `ghcr.io/antorfr/adestia:0.10.0` ready, « 8 of 8 plugin(s)
 active », skin `alfred`). 0.9.0 avait déjà emporté les réglages-app ; celle-ci
 porte le contrat des skins, **cassant** : `home` est hors contrat, `hero` le
 remplace. Sans effet sur ce pod — il porte `alfred`, qui n'a pas de slot
@@ -374,7 +380,7 @@ blanc compte désormais pour absent. Les deux formes restent lues, la plate
 d'abord : aucune capture ne prouve que l'autre n'a jamais existé.
 
 
-Chantier UX du 26/08 (backlog dicté par Monsieur, fiche `demeura-evolutions`)
+Chantier UX du 26/08 (backlog dicté par Monsieur, fiche `adestia-evolutions`)
 — lot 1, le composer : le champ tenait sur une ligne de 34 px sur la surface
 dont c'est le métier, il part de 48 px et pousse jusqu'à 200 (`composerHeight`,
 plancher ET plafond, la CSS porte les deux mêmes nombres). Le sélecteur de
@@ -550,7 +556,7 @@ de l'`index.html` bâti — il tourne exactement quand la coque change.
 `name:` d'instance ajouté dans la foulée (demande de Monsieur, et elle
 comblait un vrai trou) : une livrée règle DEUX instances portant DEUX livrées
 et ne règle rien pour deux portant la même — le cas exact d'un opérateur qui
-monte un second Demeura. Appliqué EN DERNIER, par-dessus la skin ; réglage de
+monte un second Adestia. Appliqué EN DERNIER, par-dessus la skin ; réglage de
 FICHIER sans surcharge d'environnement, sur la ligne que ce produit trace
 déjà (l'environnement dit OÙ une instance tourne, le fichier dit ce qu'elle
 EST). Il atteint la coque autant que le manifeste, parce qu'**iOS propose le
@@ -563,9 +569,9 @@ skippy, manifeste `name`/`short_name` à « Atelier » et `theme_color` toujours
 celui de la livrée.
 
 **Constaté au navigateur** (Chrome 151 headless piloté en CDP) : worker
-`activated`, cache `demeura-<hash>` à 11 entrées, `Page.getAppManifest` rend
+`activated`, cache `adestia-<hash>` à 11 entrées, `Page.getAppManifest` rend
 `errors: []`, puis réseau coupé + rechargement → la coque BOOTE et affiche ses
-propres mots (« Demeura could not start / Failed to fetch ») au lieu de la page
+propres mots (« Adestia could not start / Failed to fetch ») au lieu de la page
 d'erreur du navigateur. L'`apple-touch-icon` servi est celui de la skippy,
 octet pour octet. Les trois livrées sont habillées (nom, couleurs, rasters
 rendus depuis leur `icon.svg`) ; les PNG sont COMMITÉS, pas générés au build —
@@ -602,11 +608,11 @@ aucun rasteriseur ajouté à l'image.
       worker ne met en cache ni `/api/` ni les données d'un plugin.
 - [ ] Backlog UX du 26/08, reste à traiter : 2 bugs de la vague 1 (pop-up
       d'autorisation qui ne se ferme pas au clic — posture « ask » encore
-      marquée inachevée —, la fiche `demeura-evolutions` absente de la nav) ;
+      marquée inachevée —, la fiche `adestia-evolutions` absente de la nav) ;
       l'indicateur « … » tardif est corrigé (27/08, avec la mise on hold
       combinatoire portée) ; les outils autorisés par défaut
       (décision de niveau de risque, pas un bug) ; la fusion apps/domaines
       (chantier d'archi, à cadrer — `sections.ts`/`owners.ts` viennent d'être
       refaits en 0.6/0.7 pour DISTINGUER ces deux notions) ; et Withings/mail/
       agenda « connectés mais muets », qui sent le 403 user-data côté rosetta
-      plutôt qu'un bug de Demeura
+      plutôt qu'un bug de Adestia

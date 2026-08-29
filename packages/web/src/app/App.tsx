@@ -466,7 +466,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
    */
   const [themePref, setThemePref] = useState<string>(() => {
     try {
-      return localStorage.getItem('demeura.theme') ?? ''
+      return localStorage.getItem('adestia.theme') ?? ''
     } catch {
       return ''
     }
@@ -474,8 +474,8 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
 
   useEffect(() => {
     try {
-      if (themePref) localStorage.setItem('demeura.theme', themePref)
-      else localStorage.removeItem('demeura.theme')
+      if (themePref) localStorage.setItem('adestia.theme', themePref)
+      else localStorage.removeItem('adestia.theme')
     } catch {
       /* a preference that cannot persist still applies to this visit */
     }
@@ -667,14 +667,14 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
 
   if (needsLogin === 'refused') {
     return (
-      <main className="demeura-fatal" role="alert">
+      <main className="adestia-fatal" role="alert">
         <h1>{t('Not allowed')}</h1>
         <p>
           You are signed in, but your account is not in a group this instance admits. Ask whoever
           runs it to add you.
         </p>
         <form method="post" action="/auth/logout">
-          <button type="submit" className="demeura-switch">
+          <button type="submit" className="adestia-switch">
             Sign out
           </button>
         </form>
@@ -684,10 +684,10 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
 
   if (needsLogin === 'signin') {
     return (
-      <main className="demeura-signin">
-        <h1>Demeura</h1>
+      <main className="adestia-signin">
+        <h1>Adestia</h1>
         <p>This instance requires you to sign in.</p>
-        <a className="demeura-signin__button" href={`/auth/login?returnTo=${encodeURIComponent(location.pathname + location.hash)}`}>
+        <a className="adestia-signin__button" href={`/auth/login?returnTo=${encodeURIComponent(location.pathname + location.hash)}`}>
           Sign in
         </a>
       </main>
@@ -696,14 +696,14 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
 
   if (fatal) {
     return (
-      <main className="demeura-fatal" role="alert">
-        <h1>{t('Demeura could not start')}</h1>
+      <main className="adestia-fatal" role="alert">
+        <h1>{t('Adestia could not start')}</h1>
         <p>{fatal}</p>
       </main>
     )
   }
 
-  if (!instance) return <main className="demeura-loading">Loading…</main>
+  if (!instance) return <main className="adestia-loading">Loading…</main>
 
   // Every refusal reaches the user: the server's (a malformed manifest) and
   // the browser's (a module that would not import). A plugin silently absent
@@ -721,7 +721,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
 
   return (
     <div
-      className="demeura-shell"
+      className="adestia-shell"
       data-skin={instance.skin.id}
       data-mobile={mobile ? 'true' : undefined}
       data-screen={mobile ? screen : undefined}
@@ -753,12 +753,12 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
         {...(mobile ? { onOpenCanvas: () => setScreen('canvas') } : {})}
         {...(view ? { view } : {})}
       />
-      <div className="demeura-gutter" {...split.gutterProps} />
-      <main className="demeura-canvas">
+      <div className="adestia-gutter" {...split.gutterProps} />
+      <main className="adestia-canvas">
         {skin.console && (
           <SkinSlot
             render={skin.console}
-            className="demeura-console-host"
+            className="adestia-console-host"
             context={{
               ask: (prompt) => askRef.current?.(prompt),
               compose: (text) => composeRef.current?.(text),
@@ -767,13 +767,13 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             }}
           />
         )}
-        <header className="demeura-canvas__header">
+        <header className="adestia-canvas__header">
           {/* Folded onto one screen, the canvas needs its own way back — the
               CSS alone would hide it with no route to it at all. */}
           {mobile && (
             <button
               type="button"
-              className="demeura-switch"
+              className="adestia-switch"
               onClick={() => setScreen('chat')}
               aria-label={t('Back to the chat')}
             >
@@ -782,7 +782,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           )}
           {/* Where you are, in the apparatus voice. The brand moved to the
               rail: this side of the gutter is about PLACE, not identity. */}
-          <nav className="demeura-crumbs" aria-label="Breadcrumb">
+          <nav className="adestia-crumbs" aria-label="Breadcrumb">
             <button
               type="button"
               onClick={goHome}
@@ -805,7 +805,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
                   : openSection(crumb.folder)
               return (
                 <Fragment key={`${leads ?? ''}-${index}`}>
-                  <span className="demeura-crumbs__sep">/</span>
+                  <span className="adestia-crumbs__sep">/</span>
                   {walkable ? (
                     <button type="button" onClick={walk}>
                       {crumb.label}
@@ -817,7 +817,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
               )
             })}
           </nav>
-          <span className="demeura-canvas__driver">
+          <span className="adestia-canvas__driver">
             {/* The version only becomes knowable once a session has announced
                 itself, so before the first turn there is nothing to show.
                 "Claude Code unknown" reads as a broken field; the name alone
@@ -829,7 +829,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           </span>
           <button
             type="button"
-            className="demeura-ib"
+            className="adestia-ib"
             onClick={cycleTheme}
             aria-label={t('Theme')}
             title={themePref === '' ? 'Theme: system' : `Theme: ${themePref}`}
@@ -843,7 +843,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
               not what that moment is for. */}
           <button
             type="button"
-            className="demeura-ib"
+            className="adestia-ib"
             onClick={() => {
               location.hash = '/settings'
             }}
@@ -853,15 +853,15 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             ⚙
           </button>
           {instance.auth.mode === 'oidc' && (
-            <form method="post" action="/auth/logout" className="demeura-canvas__signout">
-              <button type="submit" className="demeura-switch" title={instance.user?.displayName}>
+            <form method="post" action="/auth/logout" className="adestia-canvas__signout">
+              <button type="submit" className="adestia-switch" title={instance.user?.displayName}>
                 {t('Sign out')}
               </button>
             </form>
           )}
         </header>
 
-        <div className="demeura-canvas__body">
+        <div className="adestia-canvas__body">
 
         {/*
           Two different facts, and conflating them sends somebody hunting for a
@@ -873,7 +873,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           const listed = problems.filter((problem) => (problem.severity ?? 'refused') === severity)
           if (listed.length === 0) return null
           return (
-            <section key={severity} className={`demeura-problems demeura-problems--${severity}`} role="status">
+            <section key={severity} className={`adestia-problems adestia-problems--${severity}`} role="status">
               <h2>{t(severity === 'refused' ? 'Extensions refused' : 'Running with something missing')}</h2>
               <ul>
                 {listed.map((problem) => (
@@ -894,9 +894,9 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
               // a blank canvas: a bookmark outliving a config change must say
               // so instead of looking broken.
               return (
-                <section className="demeura-empty">
+                <section className="adestia-empty">
                   <p>{t('That app is not active on this instance.')}</p>
-                  <button type="button" className="demeura-switch" onClick={() => closeApp()}>
+                  <button type="button" className="adestia-switch" onClick={() => closeApp()}>
                     ‹ Back
                   </button>
                 </section>
@@ -905,7 +905,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             const View = plugin.view.component
             return (
               <>
-                <button type="button" className="demeura-switch" onClick={() => closeApp()}>
+                <button type="button" className="adestia-switch" onClick={() => closeApp()}>
                   ‹ Back
                 </button>
                 {/* Rendered inside a boundary: a plugin that throws mid-render
@@ -920,7 +920,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           <>
             <button
               type="button"
-              className="demeura-switch"
+              className="adestia-switch"
               onClick={() => {
                 location.hash = settingsPage === '' ? '' : '/settings'
               }}
@@ -975,7 +975,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
                   hero: (
                     <SkinSlot
                       render={skin.hero}
-                      className="demeura-home-host"
+                      className="adestia-home-host"
                       context={{
                         ask: (prompt) => askRef.current?.(prompt),
                         compose: (text) => composeRef.current?.(text),
