@@ -77,18 +77,18 @@
 
   /* No domain tints: tiles distinguish themselves by label. A code agent has
      no life domains anyway. */
-  --golem-hue-rouge: #f2a93b;
-  --golem-hue-orange: #f2a93b;
-  --golem-hue-ambre: #f2a93b;
-  --golem-hue-vert: #f2a93b;
-  --golem-hue-emeraude: #f2a93b;
-  --golem-hue-turquoise: #f2a93b;
-  --golem-hue-bleu: #f2a93b;
-  --golem-hue-indigo: #f2a93b;
-  --golem-hue-violet: #f2a93b;
-  --golem-hue-rose: #f2a93b;
-  --golem-hue-gris: #8e98a5;
-  --golem-hue-ardoise: #8e98a5;
+  --demeura-hue-rouge: #f2a93b;
+  --demeura-hue-orange: #f2a93b;
+  --demeura-hue-ambre: #f2a93b;
+  --demeura-hue-vert: #f2a93b;
+  --demeura-hue-emeraude: #f2a93b;
+  --demeura-hue-turquoise: #f2a93b;
+  --demeura-hue-bleu: #f2a93b;
+  --demeura-hue-indigo: #f2a93b;
+  --demeura-hue-violet: #f2a93b;
+  --demeura-hue-rose: #f2a93b;
+  --demeura-hue-gris: #8e98a5;
+  --demeura-hue-ardoise: #8e98a5;
 
   /* No ambient shadow — separation comes from borders. One DEEP shadow stays
      for the only things that float. */
@@ -122,18 +122,18 @@
   --warning: #b0731a;
   --success: #2e9e63;
 
-  --golem-hue-rouge: #b0731a;
-  --golem-hue-orange: #b0731a;
-  --golem-hue-ambre: #b0731a;
-  --golem-hue-vert: #b0731a;
-  --golem-hue-emeraude: #b0731a;
-  --golem-hue-turquoise: #b0731a;
-  --golem-hue-bleu: #b0731a;
-  --golem-hue-indigo: #b0731a;
-  --golem-hue-violet: #b0731a;
-  --golem-hue-rose: #b0731a;
-  --golem-hue-gris: #5a6370;
-  --golem-hue-ardoise: #5a6370;
+  --demeura-hue-rouge: #b0731a;
+  --demeura-hue-orange: #b0731a;
+  --demeura-hue-ambre: #b0731a;
+  --demeura-hue-vert: #b0731a;
+  --demeura-hue-emeraude: #b0731a;
+  --demeura-hue-turquoise: #b0731a;
+  --demeura-hue-bleu: #b0731a;
+  --demeura-hue-indigo: #b0731a;
+  --demeura-hue-violet: #b0731a;
+  --demeura-hue-rose: #b0731a;
+  --demeura-hue-gris: #5a6370;
+  --demeura-hue-ardoise: #5a6370;
 
   --shadow-sm: none;
   --shadow: 0 4px 14px rgb(20 28 45 / 10%);
@@ -279,6 +279,6 @@
 }
 
 .promptbox:hover { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
-.promptbox .caret { display: inline-block; width: 8px; height: 15px; background: var(--accent); animation: golem-caret 1.1s steps(1) infinite; }
+.promptbox .caret { display: inline-block; width: 8px; height: 15px; background: var(--accent); animation: demeura-caret 1.1s steps(1) infinite; }
 .promptbox kbd { margin-left: auto; border: 1px solid var(--border); border-radius: var(--radius-micro); padding: 3px 7px; font: 10px var(--font-mono); color: var(--text-faint); }
 

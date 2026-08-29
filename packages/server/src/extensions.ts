@@ -13,7 +13,7 @@
 import { readFile, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 
-import { forgetContributedBlocks, registerBlocks } from '@antorfr/golem-content'
+import { forgetContributedBlocks, registerBlocks } from '@antorfr/demeura-content'
 import {
   ManifestError,
   parsePluginManifest,
@@ -22,7 +22,7 @@ import {
   type PluginManifest,
   type PluginMcpServer,
   type SkinManifest,
-} from '@antorfr/golem-schemas'
+} from '@antorfr/demeura-schemas'
 
 /**
  * The shape a driver is handed lives in the driver contract; this layer only
@@ -35,7 +35,7 @@ import {
  * authenticated server asks the operator to declare it. The manifest schema
  * has no `headers`, so this is enforced rather than merely advised.
  */
-import type { McpServer } from '@antorfr/golem-drivers'
+import type { McpServer } from '@antorfr/demeura-drivers'
 export type { McpServer }
 
 export interface DiscoveredPlugin {
@@ -93,8 +93,8 @@ export interface ActivationConfig {
   readonly tools: readonly string[]
 }
 
-const MANIFEST = 'golem-plugin.json'
-const SKIN_MANIFEST = 'golem-skin.json'
+const MANIFEST = 'demeura-plugin.json'
+const SKIN_MANIFEST = 'demeura-skin.json'
 
 function isActive(manifest: PluginManifest, config: ActivationConfig): boolean {
   switch (manifest.kind) {
@@ -216,7 +216,7 @@ export function claimedTypeCollisions(
  * layers the product owns.
  *
  * The third layer — the CLI's own `.mcp.json` — is deliberately absent: it is
- * the user's and the agent's, and Golem neither parses nor translates it. Same
+ * the user's and the agent's, and Demeura neither parses nor translates it. Same
  * doctrine as instructions.
  *
  * The OPERATOR wins a name conflict. Not arbitrary: a plugin is something you

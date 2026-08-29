@@ -14,7 +14,7 @@ re-verified (SHA/cmp) before judgment.
 ## Decision: Milkdown. The deciding criterion
 
 DESIGN.md, written before the spike: *"ONE parser shared by renderer and editor —
-two parsers means drift."* Golem's renderer is unified/remark (directives are
+two parsers means drift."* Demeura's renderer is unified/remark (directives are
 native there). Milkdown's transformer **is** that same micromark/remark grammar —
 a page parses identically at render time and edit time because it is the same
 tokenizer. Tiptap's official markdown path is **marked**-based: a second grammar
@@ -41,12 +41,12 @@ would be maintained against marked forever).
 
 ## Flip conditions (watch these facts)
 
-1. Golem abandons remark for rendering (no reason in sight — directives).
+1. Demeura abandons remark for rendering (no reason in sight — directives).
 2. Milkdown maintenance collapses (last publish 2026-08-12 at verdict time).
 
 ## Adopted mitigations
 
-- **Editor behind a Golem interface, never bare** — the Tiptap spike is the
+- **Editor behind a Demeura interface, never bare** — the Tiptap spike is the
   proven fallback (one day of work to viability); keep it cheap to swap.
 - Fresh parser per document open; rebuild after any parse throw
   (shared-ParserState bug — report upstream).

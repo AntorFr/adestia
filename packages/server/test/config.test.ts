@@ -69,9 +69,9 @@ describe('auth modes', () => {
         '  mode: oidc',
         '  oidc:',
         '    issuer: https://id.example',
-        '    clientId: golem',
+        '    clientId: demeura',
         '    clientSecret: shhh',
-        '    redirectUri: https://golem.example/auth/callback',
+        '    redirectUri: https://demeura.example/auth/callback',
         '    allowedGroups: [staff]',
       ].join('\n'),
     )
@@ -154,10 +154,10 @@ describe('environment overrides', () => {
     // The FILE says what the instance IS; the ENVIRONMENT says where it runs.
     // A container cannot mount a different config for `host` alone.
     const config = parseConfig('auth:\n  mode: proxy\n', {
-      GOLEM_HOST: '0.0.0.0',
-      GOLEM_PORT: '9000',
-      GOLEM_DATA_DIR: '/data',
-      GOLEM_WORKSPACE: '/workspace',
+      DEMEURA_HOST: '0.0.0.0',
+      DEMEURA_PORT: '9000',
+      DEMEURA_DATA_DIR: '/data',
+      DEMEURA_WORKSPACE: '/workspace',
     })
     expect(config).toMatchObject({ host: '0.0.0.0', port: 9000, dataDir: '/data' })
     expect(config.workspace.root).toBe('/workspace')
@@ -166,12 +166,12 @@ describe('environment overrides', () => {
   })
 
   it('ignores an empty variable rather than blanking a setting', () => {
-    expect(parseConfig('host: 10.0.0.1\n', { GOLEM_HOST: '' }).host).toBe('10.0.0.1')
+    expect(parseConfig('host: 10.0.0.1\n', { DEMEURA_HOST: '' }).host).toBe('10.0.0.1')
   })
 
   it('works with no config file at all', () => {
     // How the container image runs before anyone writes a config.
-    expect(parseConfig('', { GOLEM_HOST: '0.0.0.0' }).host).toBe('0.0.0.0')
+    expect(parseConfig('', { DEMEURA_HOST: '0.0.0.0' }).host).toBe('0.0.0.0')
   })
 
   it('substitutes ${VAR} so a secret never lands in the file', () => {
@@ -181,9 +181,9 @@ describe('environment overrides', () => {
         '  mode: oidc',
         '  oidc:',
         '    issuer: https://id.example',
-        '    clientId: golem',
+        '    clientId: demeura',
         '    clientSecret: ${OIDC_SECRET}',
-        '    redirectUri: https://golem.example/auth/callback',
+        '    redirectUri: https://demeura.example/auth/callback',
       ].join('\n'),
       { OIDC_SECRET: 'from-the-environment' },
     )
@@ -198,31 +198,31 @@ describe('environment overrides', () => {
   })
 
   it('refuses a non-numeric port from the environment', () => {
-    expect(() => parseConfig('', { GOLEM_PORT: 'eight-thousand' })).toThrow(/port must be/)
+    expect(() => parseConfig('', { DEMEURA_PORT: 'eight-thousand' })).toThrow(/port must be/)
   })
 })
 
 describe('Kubernetes service links', () => {
   it('ignores a URL-shaped override the platform injected', () => {
-    // A deployment whose Service is named `golem` gets
-    // `GOLEM_PORT=tcp://10.43.0.1:8730` for free. Parsing it yielded NaN and
+    // A deployment whose Service is named `demeura` gets
+    // `DEMEURA_PORT=tcp://10.43.0.1:8730` for free. Parsing it yielded NaN and
     // the instance refused to boot, blaming the port — found in the cluster,
     // on the first deploy.
     const config = parseConfig('port: 8730\n', {
-      GOLEM_PORT: 'tcp://10.43.69.249:8730',
+      DEMEURA_PORT: 'tcp://10.43.69.249:8730',
     } as NodeJS.ProcessEnv)
     expect(config.port).toBe(8730)
   })
 
   it('still honours a port an operator actually set', () => {
-    const config = parseConfig('port: 8730\n', { GOLEM_PORT: '9000' } as NodeJS.ProcessEnv)
+    const config = parseConfig('port: 8730\n', { DEMEURA_PORT: '9000' } as NodeJS.ProcessEnv)
     expect(config.port).toBe(9000)
   })
 
   it('ignores service links on path overrides too', () => {
-    // `GOLEM_DATA_DIR` collides the same way for a service of that name.
+    // `DEMEURA_DATA_DIR` collides the same way for a service of that name.
     const config = parseConfig('dataDir: /data\n', {
-      GOLEM_DATA_DIR: 'tcp://10.43.0.9:8730',
+      DEMEURA_DATA_DIR: 'tcp://10.43.0.9:8730',
     } as NodeJS.ProcessEnv)
     expect(config.dataDir).toBe('/data')
   })
@@ -310,14 +310,14 @@ mcp:
       url: https://hub.example/maps
       auth:
         tokenUrl: https://auth.example/api/oidc/token
-        clientId: agent-golem
+        clientId: agent-demeura
         clientSecret: s3cret
         scope: mcp
         audience: https://hub.example
 `)
     expect(config.mcpServers[0]?.auth).toEqual({
       tokenUrl: 'https://auth.example/api/oidc/token',
-      clientId: 'agent-golem',
+      clientId: 'agent-demeura',
       clientSecret: 's3cret',
       scope: 'mcp',
       audience: 'https://hub.example',
@@ -335,9 +335,9 @@ mcp:
     // variable nobody set — so it is caught here instead.
     expect(
       issuesOf(
-        'mcp:\n  servers:\n    - name: m\n      url: https://h/m\n      auth:\n        tokenUrl: https://a/t\n        clientId: x\n        clientSecret: "${GOLEM_HUB_SECRET}"\n',
+        'mcp:\n  servers:\n    - name: m\n      url: https://h/m\n      auth:\n        tokenUrl: https://a/t\n        clientId: x\n        clientSecret: "${DEMEURA_HUB_SECRET}"\n',
       ),
-    ).toEqual(['mcp.servers[0].auth.clientSecret is still "${GOLEM_HUB_SECRET}" — that variable is not set'])
+    ).toEqual(['mcp.servers[0].auth.clientSecret is still "${DEMEURA_HUB_SECRET}" — that variable is not set'])
   })
 
   it('refuses credentials on a server that has nobody to present them to', () => {
@@ -402,7 +402,7 @@ describe('the instance name', () => {
 
   it('has no environment override, unlike where the instance runs', () => {
     // The environment says WHERE an instance runs; the file says what it IS.
-    expect(parseConfig('', { GOLEM_NAME: 'Atelier' }).name).toBeUndefined()
+    expect(parseConfig('', { DEMEURA_NAME: 'Atelier' }).name).toBeUndefined()
   })
 })
 

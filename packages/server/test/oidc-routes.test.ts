@@ -1,7 +1,7 @@
 /**
  * The login round trip, without an identity provider.
  *
- * What is exercised here is the half Golem owns: the cookies, the redirect
+ * What is exercised here is the half Demeura owns: the cookies, the redirect
  * safety, the session gate. The token exchange itself belongs to
  * `openid-client` and is not re-tested here — but everything around it, where
  * the mistakes actually live, is.
@@ -13,7 +13,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { buildApp, type AppDependencies } from '../src/app.js'
 import { parseConfig } from '../src/config.js'
 import { SESSION_COOKIE, SESSION_TTL_MS, signPayload } from '../src/oidc.js'
-import type { Driver, DriverDescriptor, TurnEvent } from '@antorfr/golem-drivers'
+import type { Driver, DriverDescriptor, TurnEvent } from '@antorfr/demeura-drivers'
 
 class StubDriver implements Driver {
   describe(): Promise<DriverDescriptor> {
@@ -38,9 +38,9 @@ const oidcConfig = (overrides = '') =>
     '  mode: oidc',
     '  oidc:',
     '    issuer: https://id.invalid',
-    '    clientId: golem',
+    '    clientId: demeura',
     '    clientSecret: shhh',
-    '    redirectUri: https://golem.example/auth/callback',
+    '    redirectUri: https://demeura.example/auth/callback',
     `    sessionSecret: ${SECRET}`,
     overrides,
   ]

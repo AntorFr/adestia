@@ -62,7 +62,7 @@ export interface ManifestBaseOptions {
  * The product's own manifest.
  *
  * `id` and `scope` are the origin's root: one instance is one origin, so two
- * Golems never collide as one install. The colours are the light palette's
+ * Demeuras never collide as one install. The colours are the light palette's
  * `--surface` — a manifest has no media query, and the splash screen a phone
  * paints before the shell boots is better light-and-right than dark-and-wrong.
  * A skin with a dark body overrides both.
@@ -70,8 +70,8 @@ export interface ManifestBaseOptions {
 export function baseManifest(options: ManifestBaseOptions = {}): WebManifest {
   return {
     id: '/',
-    name: 'Golem',
-    short_name: 'Golem',
+    name: 'Demeura',
+    short_name: 'Demeura',
     description: 'A workspace shared with an agent.',
     start_url: '/',
     scope: '/',

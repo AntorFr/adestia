@@ -15,7 +15,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ICI = dirname(fileURLToPath(import.meta.url))
-const manifeste = JSON.parse(await readFile(join(ICI, '..', 'golem-plugin.json'), 'utf8'))
+const manifeste = JSON.parse(await readFile(join(ICI, '..', 'demeura-plugin.json'), 'utf8'))
 
 test('le manifeste déclare le bloc que le module dessine, et rien d’autre', async () => {
   const { default: blocks } = await import('../web/blocks.js')

@@ -3,13 +3,13 @@
  *
  * This is where spike 1's verdict pays off: Milkdown parses with the same
  * remark/micromark grammar the renderer and the server use, so the nodes
- * declared here are the same structures `@antorfr/golem-content` validates.
+ * declared here are the same structures `@antorfr/demeura-content` validates.
  * A block is a first-class node in the document model — never text that
  * happens to look like a directive — which is what makes the vocabulary
  * genuinely closed rather than merely discouraged.
  */
 
-import { contributedBlocks, GRAMMAR, toneOf } from '@antorfr/golem-content'
+import { contributedBlocks, GRAMMAR, toneOf } from '@antorfr/demeura-content'
 import type { MilkdownPlugin } from '@milkdown/kit/ctx'
 import { $node, $remark } from '@milkdown/kit/utils'
 
@@ -30,7 +30,7 @@ type RemarkFactory = Parameters<typeof $remark>[1]
  */
 export const grammarRemarks: MilkdownPlugin[] = GRAMMAR.flatMap(([plugin, options], index) =>
   $remark(
-    `golem-grammar-${index}`,
+    `demeura-grammar-${index}`,
     (() => plugin) as unknown as RemarkFactory,
     options as never,
   ) as unknown as MilkdownPlugin[],
@@ -55,15 +55,15 @@ function frontmatterChips(yaml: string): unknown[] {
   const chips: unknown[] = []
   const status = fields.get('status') ?? fields.get('statut')
   if (status) {
-    chips.push(['span', { class: `golem-stat golem-stat--${toneOf(status)}` }, status])
+    chips.push(['span', { class: `demeura-stat demeura-stat--${toneOf(status)}` }, status])
   }
   for (const key of ['type', 'cat', 'role']) {
     const value = fields.get(key)
-    if (value) chips.push(['span', { class: 'golem-tag' }, value])
+    if (value) chips.push(['span', { class: 'demeura-tag' }, value])
   }
   const tags = (fields.get('tags') ?? '').replace(/^\[|\]$/g, '')
   for (const tag of tags.split(',').map((t) => t.trim()).filter(Boolean)) {
-    chips.push(['span', { class: 'golem-tag' }, `#${tag}`])
+    chips.push(['span', { class: 'demeura-tag' }, `#${tag}`])
   }
   return chips
 }
@@ -99,8 +99,8 @@ export const frontmatterNode = $node('frontmatter', () => ({
       'div',
       // The raw YAML rides along in the dataset: it is what `parseDOM` reads
       // back, so the round trip stays byte-exact whatever is drawn.
-      { 'data-frontmatter': value, class: 'golem-editor__meta' },
-      ...(chips.length > 0 ? chips : [['span', { class: 'golem-editor__meta-empty' }, '']]),
+      { 'data-frontmatter': value, class: 'demeura-editor__meta' },
+      ...(chips.length > 0 ? chips : [['span', { class: 'demeura-editor__meta-empty' }, '']]),
     ] as never
   },
   parseMarkdown: {
@@ -140,7 +140,7 @@ function containerNode(name: string) {
       {
         'data-block': name,
         'data-attributes': JSON.stringify(node.attrs['attributes']),
-        class: `golem-block golem-block--${name}`,
+        class: `demeura-block demeura-block--${name}`,
       },
       0,
     ],
@@ -192,7 +192,7 @@ function atomNode(name: string) {
         {
           'data-block': name,
           'data-attributes': JSON.stringify(attributes),
-          class: `golem-block golem-block--${name}`,
+          class: `demeura-block demeura-block--${name}`,
         },
         // Whatever the block is addressed BY — `id` for an app, `source` for
         // a file-backed one. A bare name would make three blocks of the same
@@ -256,7 +256,7 @@ export const wikiLinkNode = $node('wikiLink', () => ({
       {
         'data-wikilink': value,
         'data-alias': alias,
-        class: 'golem-wikilink',
+        class: 'demeura-wikilink',
         href: `#/pages/${value}`,
       },
       `[[${alias}]]`,
@@ -304,7 +304,7 @@ export const appNode = atomNode('app')
  * failure — loud, and naming the node — but it means a contributed block that
  * only had a component would break the editor on the first page holding one.
  */
-export function golemVocabulary(): MilkdownPlugin[] {
+export function demeuraVocabulary(): MilkdownPlugin[] {
   const contributed = contributedBlocks().map((spec) =>
     spec.content === 'flow' ? containerNode(spec.name) : atomNode(spec.name),
   )

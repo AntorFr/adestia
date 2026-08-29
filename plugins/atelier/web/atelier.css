@@ -6,7 +6,7 @@
  * The FIRST is a token bridge. The engine was written against agent-gw's names
  * (`--ink`, `--proj`, `--f-mono`) and carrying it over unchanged was the whole
  * point of the port — so the names are aliased here, scoped to this plugin,
- * rather than renamed across a thousand lines. Aliases mean a Golem skin still
+ * rather than renamed across a thousand lines. Aliases mean a Demeura skin still
  * dresses the workbench: change `--accent` and the cutting diagram follows.
  *
  * The SECOND is the layout rules the engine's markup needs, extracted from the
@@ -21,7 +21,7 @@
 .atelier,
 .atelier-full,
 .atelier-modal {
-  /* Bridge: agent-gw's vocabulary, in Golem's tokens. */
+  /* Bridge: agent-gw's vocabulary, in Demeura's tokens. */
   --ink: var(--text);
   --ink-soft: var(--text-muted);
   --ink-faint: var(--text-faint);

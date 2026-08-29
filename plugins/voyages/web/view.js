@@ -1,5 +1,5 @@
 /**
- * The adapter: Golem's view contract on one side, the ported engine on the
+ * The adapter: Demeura's view contract on one side, the ported engine on the
  * other.
  *
  * The engine renders with innerHTML into an element it is handed and asks its

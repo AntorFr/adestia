@@ -24,7 +24,7 @@ import {
 let root: string
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'golem-sched-'))
+  root = await mkdtemp(join(tmpdir(), 'demeura-sched-'))
 })
 
 const MINUTE = 60_000

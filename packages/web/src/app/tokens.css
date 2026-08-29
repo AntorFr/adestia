@@ -9,7 +9,7 @@
  * The VALUES are inherited from the predecessor too, and that is a decision,
  * not laziness (2026-08-24): its base sheet was refined over a year of daily
  * use — a cool paper canvas, white cards, three shadow depths, a serif voice
- * for titles and a mono voice for labels, saturated icon plates. Golem's first
+ * for titles and a mono voice for labels, saturated icon plates. Demeura's first
  * palette was invented in an afternoon and looked it. A product whose default
  * skin is a prototype does not have a default skin; it has an excuse. The
  * predecessor's own doctrine transfers with the values: the base sheet IS the
@@ -46,21 +46,21 @@
   --success: #2e9e63;
 
   /* The named hues. A page says `couleur: turquoise`; the shell turns that
-     into `--golem-hue-turquoise`; this table says what it means. Names in
+     into `--demeura-hue-turquoise`; this table says what it means. Names in
      pages, values here — a workspace that hardcoded a hex would be a
      workspace that looks wrong under the next livery. */
-  --golem-hue-rouge: #d24b3e;
-  --golem-hue-orange: #db7a45;
-  --golem-hue-ambre: #b8890f;
-  --golem-hue-vert: #4fb05c;
-  --golem-hue-emeraude: #1e9e86;
-  --golem-hue-turquoise: #33b4a8;
-  --golem-hue-bleu: #4f92d8;
-  --golem-hue-indigo: #4c6fe0;
-  --golem-hue-violet: #7a5bd1;
-  --golem-hue-rose: #c255a6;
-  --golem-hue-gris: #7e8aa6;
-  --golem-hue-ardoise: #5b6473;
+  --demeura-hue-rouge: #d24b3e;
+  --demeura-hue-orange: #db7a45;
+  --demeura-hue-ambre: #b8890f;
+  --demeura-hue-vert: #4fb05c;
+  --demeura-hue-emeraude: #1e9e86;
+  --demeura-hue-turquoise: #33b4a8;
+  --demeura-hue-bleu: #4f92d8;
+  --demeura-hue-indigo: #4c6fe0;
+  --demeura-hue-violet: #7a5bd1;
+  --demeura-hue-rose: #c255a6;
+  --demeura-hue-gris: #7e8aa6;
+  --demeura-hue-ardoise: #5b6473;
 
   /* Icon plates — the "app store" look. A tile's icon sits on a saturated
      gradient of the tile's colour with a white glyph, not on a pale tint.
@@ -76,7 +76,7 @@
 
   /* The tile's colour mark: a 3px bar across the top by default. A livery
      that wants it down the left edge, thinner, or quiet until hovered moves
-     these — the alternative was a rule against `.golem-tile`, and the moment
+     these — the alternative was a rule against `.demeura-tile`, and the moment
      a skin can move a box the liveries stop being one product. `auto` on one
      axis lets the inset stretch it: top bar = inset `0 0 auto` with a height,
      left bar = inset `0 auto 0 0` with a width. */
@@ -162,18 +162,18 @@
     --warning: #e0a64f;
     --success: #5cbe83;
 
-    --golem-hue-rouge: #ea6a5c;
-    --golem-hue-orange: #e08a55;
-    --golem-hue-ambre: #e4c25e;
-    --golem-hue-vert: #5cc06a;
-    --golem-hue-emeraude: #3fc7a8;
-    --golem-hue-turquoise: #4fc7c0;
-    --golem-hue-bleu: #5fa2e8;
-    --golem-hue-indigo: #7b96f2;
-    --golem-hue-violet: #a78bf0;
-    --golem-hue-rose: #de86c6;
-    --golem-hue-gris: #96a0b2;
-    --golem-hue-ardoise: #8b95a6;
+    --demeura-hue-rouge: #ea6a5c;
+    --demeura-hue-orange: #e08a55;
+    --demeura-hue-ambre: #e4c25e;
+    --demeura-hue-vert: #5cc06a;
+    --demeura-hue-emeraude: #3fc7a8;
+    --demeura-hue-turquoise: #4fc7c0;
+    --demeura-hue-bleu: #5fa2e8;
+    --demeura-hue-indigo: #7b96f2;
+    --demeura-hue-violet: #a78bf0;
+    --demeura-hue-rose: #de86c6;
+    --demeura-hue-gris: #96a0b2;
+    --demeura-hue-ardoise: #8b95a6;
 
     --shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
     --shadow: 0 6px 18px rgb(0 0 0 / 42%), 0 1px 3px rgb(0 0 0 / 30%);
@@ -196,18 +196,18 @@
   --danger: #ea6a5c;
   --warning: #e0a64f;
   --success: #5cbe83;
-  --golem-hue-rouge: #ea6a5c;
-  --golem-hue-orange: #e08a55;
-  --golem-hue-ambre: #e4c25e;
-  --golem-hue-vert: #5cc06a;
-  --golem-hue-emeraude: #3fc7a8;
-  --golem-hue-turquoise: #4fc7c0;
-  --golem-hue-bleu: #5fa2e8;
-  --golem-hue-indigo: #7b96f2;
-  --golem-hue-violet: #a78bf0;
-  --golem-hue-rose: #de86c6;
-  --golem-hue-gris: #96a0b2;
-  --golem-hue-ardoise: #8b95a6;
+  --demeura-hue-rouge: #ea6a5c;
+  --demeura-hue-orange: #e08a55;
+  --demeura-hue-ambre: #e4c25e;
+  --demeura-hue-vert: #5cc06a;
+  --demeura-hue-emeraude: #3fc7a8;
+  --demeura-hue-turquoise: #4fc7c0;
+  --demeura-hue-bleu: #5fa2e8;
+  --demeura-hue-indigo: #7b96f2;
+  --demeura-hue-violet: #a78bf0;
+  --demeura-hue-rose: #de86c6;
+  --demeura-hue-gris: #96a0b2;
+  --demeura-hue-ardoise: #8b95a6;
   --shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
   --shadow: 0 6px 18px rgb(0 0 0 / 42%), 0 1px 3px rgb(0 0 0 / 30%);
   --shadow-lg: 0 18px 46px rgb(0 0 0 / 55%);

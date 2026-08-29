@@ -1,6 +1,6 @@
 # Bundled plugins
 
-Golem ships eight plugins and three skins. None of them is active until you name it
+Demeura ships eight plugins and three skins. None of them is active until you name it
 in your config — discovery is not activation, and a folder sitting here costs
 nothing until you ask for it.
 
@@ -37,7 +37,7 @@ leaving you to wonder where the tile went.
 ## Their agent contracts
 
 A plugin that expects the agent to write a particular shape of file ships the
-contract that describes it, and Golem delivers those contracts to the agent
+contract that describes it, and Demeura delivers those contracts to the agent
 alongside its own. `atelier` ships `workbook-json`, `todo` ships `todo`,
 `collections` ships `collections`, `voyages` ships `voyage-json`,
 `parcours` ships `parcours-json` and `journal` ships `journal`.

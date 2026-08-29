@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import type { Driver, DriverDescriptor, TurnEvent } from '@antorfr/golem-drivers'
+import type { Driver, DriverDescriptor, TurnEvent } from '@antorfr/demeura-drivers'
 
 import { start, loadConfigFile, type StartedInstance } from '../src/start.js'
 
@@ -33,7 +33,7 @@ let started: StartedInstance | undefined
 let logs: string[]
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'golem-start-'))
+  root = await mkdtemp(join(tmpdir(), 'demeura-start-'))
   logs = []
 })
 
@@ -43,7 +43,7 @@ afterEach(async () => {
 })
 
 /** Port 0 lets the OS pick a free one, so tests never collide. */
-const boot = async (config: string, file = 'golem.config.yaml') => {
+const boot = async (config: string, file = 'demeura.config.yaml') => {
   await writeFile(join(root, file), `${config}\nport: 0\n`)
   started = await start({
     cwd: root,
@@ -144,7 +144,7 @@ describe('extensions at boot', () => {
     const dir = join(root, 'plugins', id)
     await mkdir(dir, { recursive: true })
     await writeFile(
-      join(dir, 'golem-plugin.json'),
+      join(dir, 'demeura-plugin.json'),
       typeof manifest === 'string' ? manifest : JSON.stringify(manifest),
     )
   }
@@ -183,7 +183,7 @@ describe('what the instance installs as', () => {
   const writeSkin = async (id: string, fragment: unknown) => {
     await mkdir(join(root, 'skins', id), { recursive: true })
     await writeFile(
-      join(root, 'skins', id, 'golem-skin.json'),
+      join(root, 'skins', id, 'demeura-skin.json'),
       JSON.stringify({ schemaVersion: 1, id, description: 'A body.', manifest: './web.manifest' }),
     )
     await writeFile(join(root, 'skins', id, 'web.manifest'), JSON.stringify(fragment))
@@ -204,7 +204,7 @@ describe('what the instance installs as', () => {
 
   it("keeps the product's own manifest when no skin is worn", async () => {
     const manifest = await manifestOf(await boot('auth:\n  mode: none'))
-    expect(manifest['name']).toBe('Golem')
+    expect(manifest['name']).toBe('Demeura')
     expect(manifest['start_url']).toBe('/')
   })
 
@@ -238,7 +238,7 @@ describe('what the instance installs as', () => {
     // costs its name, never the install.
     await mkdir(join(root, 'skins', 'amber'), { recursive: true })
     await writeFile(
-      join(root, 'skins', 'amber', 'golem-skin.json'),
+      join(root, 'skins', 'amber', 'demeura-skin.json'),
       JSON.stringify({
         schemaVersion: 1,
         id: 'amber',
@@ -248,7 +248,7 @@ describe('what the instance installs as', () => {
     )
     await writeFile(join(root, 'skins', 'amber', 'web.manifest'), '{ not json')
     const manifest = await manifestOf(await boot('extensions:\n  skin: amber'))
-    expect(manifest['name']).toBe('Golem')
+    expect(manifest['name']).toBe('Demeura')
     expect(logs.join('\n')).toContain('web manifest not read')
   })
 })
@@ -261,7 +261,7 @@ describe('the permission posture', () => {
     expect(logs.some((line) => line.startsWith('permissions: open'))).toBe(true)
   })
 
-  it('tolerates a permissions block written for an older Golem', async () => {
+  it('tolerates a permissions block written for an older Demeura', async () => {
     // autoAllow, timeoutMs, whenUnattended: keys of a layer that no longer
     // exists. A config that mentions them must not brick the instance.
     await boot('permissions:\n  autoAllow: [Read, Write]\n  whenUnattended: deny\n')

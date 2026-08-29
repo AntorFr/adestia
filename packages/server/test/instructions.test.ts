@@ -20,7 +20,7 @@ const ZONE = ['CLAUDE.md', '.claude/skills']
 let root: string
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'golem-instructions-'))
+  root = await mkdtemp(join(tmpdir(), 'demeura-instructions-'))
   await mkdir(join(root, '.claude/skills/page-author'), { recursive: true })
   await mkdir(join(root, '.claude/skills/mes-regles'), { recursive: true })
   await mkdir(join(root, 'pages'), { recursive: true })

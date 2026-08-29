@@ -466,7 +466,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
    */
   const [themePref, setThemePref] = useState<string>(() => {
     try {
-      return localStorage.getItem('golem.theme') ?? ''
+      return localStorage.getItem('demeura.theme') ?? ''
     } catch {
       return ''
     }
@@ -474,8 +474,8 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
 
   useEffect(() => {
     try {
-      if (themePref) localStorage.setItem('golem.theme', themePref)
-      else localStorage.removeItem('golem.theme')
+      if (themePref) localStorage.setItem('demeura.theme', themePref)
+      else localStorage.removeItem('demeura.theme')
     } catch {
       /* a preference that cannot persist still applies to this visit */
     }
@@ -667,14 +667,14 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
 
   if (needsLogin === 'refused') {
     return (
-      <main className="golem-fatal" role="alert">
+      <main className="demeura-fatal" role="alert">
         <h1>{t('Not allowed')}</h1>
         <p>
           You are signed in, but your account is not in a group this instance admits. Ask whoever
           runs it to add you.
         </p>
         <form method="post" action="/auth/logout">
-          <button type="submit" className="golem-switch">
+          <button type="submit" className="demeura-switch">
             Sign out
           </button>
         </form>
@@ -684,10 +684,10 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
 
   if (needsLogin === 'signin') {
     return (
-      <main className="golem-signin">
-        <h1>Golem</h1>
+      <main className="demeura-signin">
+        <h1>Demeura</h1>
         <p>This instance requires you to sign in.</p>
-        <a className="golem-signin__button" href={`/auth/login?returnTo=${encodeURIComponent(location.pathname + location.hash)}`}>
+        <a className="demeura-signin__button" href={`/auth/login?returnTo=${encodeURIComponent(location.pathname + location.hash)}`}>
           Sign in
         </a>
       </main>
@@ -696,14 +696,14 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
 
   if (fatal) {
     return (
-      <main className="golem-fatal" role="alert">
-        <h1>{t('Golem could not start')}</h1>
+      <main className="demeura-fatal" role="alert">
+        <h1>{t('Demeura could not start')}</h1>
         <p>{fatal}</p>
       </main>
     )
   }
 
-  if (!instance) return <main className="golem-loading">Loading…</main>
+  if (!instance) return <main className="demeura-loading">Loading…</main>
 
   // Every refusal reaches the user: the server's (a malformed manifest) and
   // the browser's (a module that would not import). A plugin silently absent
@@ -721,7 +721,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
 
   return (
     <div
-      className="golem-shell"
+      className="demeura-shell"
       data-skin={instance.skin.id}
       data-mobile={mobile ? 'true' : undefined}
       data-screen={mobile ? screen : undefined}
@@ -753,12 +753,12 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
         {...(mobile ? { onOpenCanvas: () => setScreen('canvas') } : {})}
         {...(view ? { view } : {})}
       />
-      <div className="golem-gutter" {...split.gutterProps} />
-      <main className="golem-canvas">
+      <div className="demeura-gutter" {...split.gutterProps} />
+      <main className="demeura-canvas">
         {skin.console && (
           <SkinSlot
             render={skin.console}
-            className="golem-console-host"
+            className="demeura-console-host"
             context={{
               ask: (prompt) => askRef.current?.(prompt),
               compose: (text) => composeRef.current?.(text),
@@ -767,13 +767,13 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             }}
           />
         )}
-        <header className="golem-canvas__header">
+        <header className="demeura-canvas__header">
           {/* Folded onto one screen, the canvas needs its own way back — the
               CSS alone would hide it with no route to it at all. */}
           {mobile && (
             <button
               type="button"
-              className="golem-switch"
+              className="demeura-switch"
               onClick={() => setScreen('chat')}
               aria-label={t('Back to the chat')}
             >
@@ -782,7 +782,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           )}
           {/* Where you are, in the apparatus voice. The brand moved to the
               rail: this side of the gutter is about PLACE, not identity. */}
-          <nav className="golem-crumbs" aria-label="Breadcrumb">
+          <nav className="demeura-crumbs" aria-label="Breadcrumb">
             <button
               type="button"
               onClick={goHome}
@@ -805,7 +805,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
                   : openSection(crumb.folder)
               return (
                 <Fragment key={`${leads ?? ''}-${index}`}>
-                  <span className="golem-crumbs__sep">/</span>
+                  <span className="demeura-crumbs__sep">/</span>
                   {walkable ? (
                     <button type="button" onClick={walk}>
                       {crumb.label}
@@ -817,7 +817,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
               )
             })}
           </nav>
-          <span className="golem-canvas__driver">
+          <span className="demeura-canvas__driver">
             {/* The version only becomes knowable once a session has announced
                 itself, so before the first turn there is nothing to show.
                 "Claude Code unknown" reads as a broken field; the name alone
@@ -829,7 +829,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           </span>
           <button
             type="button"
-            className="golem-ib"
+            className="demeura-ib"
             onClick={cycleTheme}
             aria-label={t('Theme')}
             title={themePref === '' ? 'Theme: system' : `Theme: ${themePref}`}
@@ -843,7 +843,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
               not what that moment is for. */}
           <button
             type="button"
-            className="golem-ib"
+            className="demeura-ib"
             onClick={() => {
               location.hash = '/settings'
             }}
@@ -853,15 +853,15 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             ⚙
           </button>
           {instance.auth.mode === 'oidc' && (
-            <form method="post" action="/auth/logout" className="golem-canvas__signout">
-              <button type="submit" className="golem-switch" title={instance.user?.displayName}>
+            <form method="post" action="/auth/logout" className="demeura-canvas__signout">
+              <button type="submit" className="demeura-switch" title={instance.user?.displayName}>
                 {t('Sign out')}
               </button>
             </form>
           )}
         </header>
 
-        <div className="golem-canvas__body">
+        <div className="demeura-canvas__body">
 
         {/*
           Two different facts, and conflating them sends somebody hunting for a
@@ -873,7 +873,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           const listed = problems.filter((problem) => (problem.severity ?? 'refused') === severity)
           if (listed.length === 0) return null
           return (
-            <section key={severity} className={`golem-problems golem-problems--${severity}`} role="status">
+            <section key={severity} className={`demeura-problems demeura-problems--${severity}`} role="status">
               <h2>{t(severity === 'refused' ? 'Extensions refused' : 'Running with something missing')}</h2>
               <ul>
                 {listed.map((problem) => (
@@ -894,9 +894,9 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
               // a blank canvas: a bookmark outliving a config change must say
               // so instead of looking broken.
               return (
-                <section className="golem-empty">
+                <section className="demeura-empty">
                   <p>{t('That app is not active on this instance.')}</p>
-                  <button type="button" className="golem-switch" onClick={() => closeApp()}>
+                  <button type="button" className="demeura-switch" onClick={() => closeApp()}>
                     ‹ Back
                   </button>
                 </section>
@@ -905,7 +905,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             const View = plugin.view.component
             return (
               <>
-                <button type="button" className="golem-switch" onClick={() => closeApp()}>
+                <button type="button" className="demeura-switch" onClick={() => closeApp()}>
                   ‹ Back
                 </button>
                 {/* Rendered inside a boundary: a plugin that throws mid-render
@@ -920,7 +920,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           <>
             <button
               type="button"
-              className="golem-switch"
+              className="demeura-switch"
               onClick={() => {
                 location.hash = settingsPage === '' ? '' : '/settings'
               }}
@@ -975,7 +975,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
                   hero: (
                     <SkinSlot
                       render={skin.hero}
-                      className="golem-home-host"
+                      className="demeura-home-host"
                       context={{
                         ask: (prompt) => askRef.current?.(prompt),
                         compose: (text) => composeRef.current?.(text),

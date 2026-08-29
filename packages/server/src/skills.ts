@@ -137,14 +137,14 @@ export async function collectSkills(
   return { skills: [...core, ...fromPlugins], problems }
 }
 
-/** Marks what Golem manages, so a hand-written skill is never touched. */
+/** Marks what Demeura manages, so a hand-written skill is never touched. */
 /**
  * Stamped on every delivered file, and the single source of truth about who
  * owns one. Withdrawal reads it before removing anything, and the instruction
  * zone reads it before offering anything for editing — both would otherwise
  * have to guess from a path.
  */
-export const MANAGED_MARKER = '<!-- managed by Golem: edits here are overwritten -->'
+export const MANAGED_MARKER = '<!-- managed by Demeura: edits here are overwritten -->'
 
 /**
  * Writes the contracts into the CLI's own skills directory.

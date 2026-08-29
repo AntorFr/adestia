@@ -1,5 +1,5 @@
 /**
- * The adapter: Golem's view contract on one side, the ported engine on the
+ * The adapter: Demeura's view contract on one side, the ported engine on the
  * other.
  *
  * `app.js` renders with innerHTML into an element it is handed, and asks its
@@ -7,7 +7,7 @@
  * thousand lines of debugged domain rendering could be carried across without
  * a single change to how it draws anything.
  *
- * The shim below is that host, rewritten for Golem. Each function is either
+ * The shim below is that host, rewritten for Demeura. Each function is either
  * the same job done differently (breadcrumbs, headers) or a job that does not
  * exist here and is honestly stubbed rather than faked.
  */

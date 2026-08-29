@@ -75,9 +75,9 @@ describe('mode: oidc', () => {
     mode: 'oidc',
     oidc: {
       issuer: 'https://id.example',
-      clientId: 'golem',
+      clientId: 'demeura',
       clientSecret: 'shhh',
-      redirectUri: 'https://golem.example/auth/callback',
+      redirectUri: 'https://demeura.example/auth/callback',
       groupsClaim: 'groups',
       allowedGroups,
     },

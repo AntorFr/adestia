@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { TurnEvent, TurnRequest } from '@antorfr/golem-drivers'
+import type { TurnEvent, TurnRequest } from '@antorfr/demeura-drivers'
 
 import { TurnCapacityError, TurnDesk, TurnJob, type TurnOutcome } from '../src/turns.js'
 

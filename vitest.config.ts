@@ -19,11 +19,11 @@ export default defineConfig({
   // a prior build, and a stale `dist/` would quietly test yesterday's code.
   resolve: {
     alias: {
-      '@antorfr/golem-schemas': pkg('schemas'),
-      '@antorfr/golem-content': pkg('content'),
-      '@antorfr/golem-drivers': pkg('drivers'),
-      '@antorfr/golem-server': pkg('server'),
-      '@antorfr/golem-web': pkg('web'),
+      '@antorfr/demeura-schemas': pkg('schemas'),
+      '@antorfr/demeura-content': pkg('content'),
+      '@antorfr/demeura-drivers': pkg('drivers'),
+      '@antorfr/demeura-server': pkg('server'),
+      '@antorfr/demeura-web': pkg('web'),
     },
   },
   test: {

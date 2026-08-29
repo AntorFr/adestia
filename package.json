@@ -1,5 +1,5 @@
 {
-  "name": "@antorfr/golem-workspace",
+  "name": "@antorfr/demeura-workspace",
   "private": true,
   "type": "module",
   "engines": {
@@ -14,7 +14,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc --build && tsc -p packages/web --noEmit",
     "lint": "eslint packages",
-    "build": "npm run build --workspace @antorfr/golem-server && npm run build:web --workspace @antorfr/golem-web",
+    "build": "npm run build --workspace @antorfr/demeura-server && npm run build:web --workspace @antorfr/demeura-web",
     "test:plugins": "node --test \"plugins/*/test/*.test.js\""
   },
   "devDependencies": {

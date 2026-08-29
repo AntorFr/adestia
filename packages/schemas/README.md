@@ -1,4 +1,4 @@
-# @antorfr/golem-schemas
+# @antorfr/demeura-schemas
 
 **The single source of truth for every extension contract.** Three consumers,
 one definition (DESIGN.md principle 8):

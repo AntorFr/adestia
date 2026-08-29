@@ -1,5 +1,5 @@
 /**
- * Le bloc `:::parcours` — l'adaptateur entre le contrat de Golem et le moteur.
+ * Le bloc `:::parcours` — l'adaptateur entre le contrat de Demeura et le moteur.
  *
  * LE CONTRAT, en deux moitiés qui ne se répètent pas. Le manifeste déclare ce
  * qu'un parcours EST — son nom, ses attributs, le fait qu'il n'a pas de corps —

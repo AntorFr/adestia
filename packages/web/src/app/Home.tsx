@@ -130,12 +130,12 @@ const SHELL_APP = { icon: '⚙', hue: 'ardoise', route: '/settings' } as const
 /**
  * A tile's colour.
  *
- * A declared hue becomes `--golem-hue-<name>`, which a skin may define and
+ * A declared hue becomes `--demeura-hue-<name>`, which a skin may define and
  * most will not — so the fallback is the accent rather than a colour invented
  * here. Inventing one would mean a palette the skin cannot reach.
  */
 function hueStyle(hue?: string): Record<string, string> {
-  return hue ? { '--tile-color': `var(--golem-hue-${hue}, var(--accent))` } : {}
+  return hue ? { '--tile-color': `var(--demeura-hue-${hue}, var(--accent))` } : {}
 }
 
 function Tile(props: {
@@ -162,9 +162,9 @@ function Tile(props: {
   return (
     <li
       className={[
-        'golem-tile-slot',
-        props.editing ? 'golem-tile-slot--editing' : '',
-        props.carried ? 'golem-tile-slot--carried' : '',
+        'demeura-tile-slot',
+        props.editing ? 'demeura-tile-slot--editing' : '',
+        props.carried ? 'demeura-tile-slot--carried' : '',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -174,7 +174,7 @@ function Tile(props: {
           people cannot reorder at all — and "hold and drag" is the hardest
           gesture to discover even for those who can. */}
       {props.editing && props.onNudge && (
-        <span className="golem-tile-slot__arrows">
+        <span className="demeura-tile-slot__arrows">
           <button
             type="button"
             aria-label={`${t('Move earlier')} — ${props.label}`}
@@ -193,7 +193,7 @@ function Tile(props: {
       )}
       <button
         type="button"
-        className="golem-tile"
+        className="demeura-tile"
         style={hueStyle(props.hue)}
         // Editing, the tile is being ARRANGED. Opening what you are trying to
         // pick up is the classic way an edit mode betrays the person in it.
@@ -212,22 +212,22 @@ function Tile(props: {
             manifest — which is what makes the injection safe. */}
         {drawn ? (
           <span
-            className="golem-tile__icon"
+            className="demeura-tile__icon"
             aria-hidden="true"
             dangerouslySetInnerHTML={{ __html: drawn }}
           />
         ) : (
-          <span className="golem-tile__icon" aria-hidden="true">
+          <span className="demeura-tile__icon" aria-hidden="true">
             {props.icon}
           </span>
         )}
-        <span className="golem-tile__label">{props.label}</span>
-        {props.subtitle && <span className="golem-tile__subtitle">{props.subtitle}</span>}
-        <span className="golem-tile__foot">
+        <span className="demeura-tile__label">{props.label}</span>
+        {props.subtitle && <span className="demeura-tile__subtitle">{props.subtitle}</span>}
+        <span className="demeura-tile__foot">
           {(props.chips ?? []).map((chip) => (
             <span
               key={chip.text}
-              className={chip.hot ? 'golem-chip golem-chip--hot' : 'golem-chip'}
+              className={chip.hot ? 'demeura-chip demeura-chip--hot' : 'demeura-chip'}
             >
               {chip.text}
             </span>
@@ -410,16 +410,16 @@ export function Home({
   })} — ${plural(pages, t('page'), t('pages'))}.`
 
   return (
-    <div className="golem-home">
+    <div className="demeura-home">
       {hero ?? (
         <>
-          <h1 className="golem-home__greeting">
+          <h1 className="demeura-home__greeting">
             {greeting}
             {skin.greetingAside && (
-              <span className="golem-home__aside"> {skin.greetingAside}</span>
+              <span className="demeura-home__aside"> {skin.greetingAside}</span>
             )}
           </h1>
-          <p className="golem-home__context">
+          <p className="demeura-home__context">
             {context.charAt(0).toUpperCase() + context.slice(1)}
           </p>
 
@@ -427,7 +427,7 @@ export function Home({
               the way in, and a second input that only looked like one would
               split the user's attention between two places that do different
               things. */}
-          <button type="button" className="golem-home__ask" onClick={focusComposer}>
+          <button type="button" className="demeura-home__ask" onClick={focusComposer}>
             <svg
               aria-hidden="true"
               viewBox="0 0 24 24"
@@ -441,22 +441,22 @@ export function Home({
             {/* The block caret: invisible on most liveries, a beating amber
                 slab on the one whose whole identity is a terminal. CSS
                 decides. */}
-            <span className="golem-home__ask-caret" aria-hidden="true" />
-            <span className="golem-home__ask-text">{skin.placeholder ?? t('Ask…')}</span>
-            <kbd className="golem-home__ask-kbd">⌘K</kbd>
+            <span className="demeura-home__ask-caret" aria-hidden="true" />
+            <span className="demeura-home__ask-text">{skin.placeholder ?? t('Ask…')}</span>
+            <kbd className="demeura-home__ask-kbd">⌘K</kbd>
           </button>
         </>
       )}
 
       {brief && (
         <>
-          <h2 className="golem-section">
+          <h2 className="demeura-section">
             À la une
             {(() => {
               const age = briefAge(brief.generatedAt, clock, t)
               const by = skin.brand ?? t('the agent')
               return (
-                <span className="golem-section__by">
+                <span className="demeura-section__by">
                   — {t('chosen by')} {by}
                   {age ? ` · ${age}` : ''}
                 </span>
@@ -465,7 +465,7 @@ export function Home({
             {ask && (
               <button
                 type="button"
-                className="golem-section__refresh"
+                className="demeura-section__refresh"
                 title={t('Ask for a fresh brief')}
                 onClick={() => ask('Rafraîchis ma une')}
               >
@@ -473,7 +473,7 @@ export function Home({
               </button>
             )}
           </h2>
-          <div className="golem-brief">
+          <div className="demeura-brief">
             {(brief.items ?? []).slice(0, 4).map((item) => {
               const label = item.title ?? item.titre ?? '…'
               const target = item.target ?? item.cible
@@ -482,15 +482,15 @@ export function Home({
                 <button
                   key={label}
                   type="button"
-                  className="golem-brief__item"
-                  style={(hue ? { '--u': `var(--golem-hue-${hue}, var(--accent))` } : {}) as Record<string, string>}
+                  className="demeura-brief__item"
+                  style={(hue ? { '--u': `var(--demeura-hue-${hue}, var(--accent))` } : {}) as Record<string, string>}
                   title={item.reason ?? item.raison ?? ''}
                   onClick={() => openTarget(target, label)}
                 >
-                  <span className="golem-brief__icon" aria-hidden="true">
+                  <span className="demeura-brief__icon" aria-hidden="true">
                     {item.ico ?? '•'}
                   </span>
-                  <span className="golem-brief__text">{label}</span>
+                  <span className="demeura-brief__text">{label}</span>
                 </button>
               )
             })}
@@ -501,15 +501,15 @@ export function Home({
       {/* Always drawn: even an instance with no plugin at all has the shell's
           own app on it, and on a fresh one that tile is the whole way in —
           the credential is armed from behind it. */}
-      <h2 className="golem-section">
-        <span className="golem-section__name">{t('Apps')}</span>
+      <h2 className="demeura-section">
+        <span className="demeura-section__name">{t('Apps')}</span>
         {/* One switch for both mosaics: two edit modes on one screen would
             be two states to keep track of for a gesture that is the same
             gesture. Only offered when there is something to arrange. */}
         {tiled.length + sections.length > 1 && (
           <button
             type="button"
-            className="golem-section__edit"
+            className="demeura-section__edit"
             aria-pressed={editing}
             onClick={() => setEditing(!editing)}
           >
@@ -517,7 +517,7 @@ export function Home({
           </button>
         )}
       </h2>
-      <ul className="golem-tiles" {...apps.listProps}>
+      <ul className="demeura-tiles" {...apps.listProps}>
         {apps.items.map((plugin, index) => (
           <Tile
             key={plugin.id}
@@ -553,14 +553,14 @@ export function Home({
 
       {sections.length > 0 && (
         <>
-          <h2 className="golem-section">
-            <span className="golem-section__name">{t('Sections')}</span>
+          <h2 className="demeura-section">
+            <span className="demeura-section__name">{t('Sections')}</span>
             {/* The switch lives on the Apps heading when there is one; here
                 only when this is the sole mosaic on the screen. */}
             {tiled.length === 0 && sections.length > 1 && (
               <button
                 type="button"
-                className="golem-section__edit"
+                className="demeura-section__edit"
                 aria-pressed={editing}
                 onClick={() => setEditing(!editing)}
               >
@@ -568,7 +568,7 @@ export function Home({
               </button>
             )}
           </h2>
-          <ul className="golem-tiles" {...shelves.listProps}>
+          <ul className="demeura-tiles" {...shelves.listProps}>
             {shelves.items.map((section, index) => (
               <Tile
                 key={section.path}
@@ -589,10 +589,10 @@ export function Home({
       )}
 
       {tiled.length === 0 && sections.length === 0 && (
-        <section className="golem-empty">
+        <section className="demeura-empty">
           <p>{t('Nothing to show yet.')}</p>
-          <p className="golem-empty__hint">
-            {t('Turn a plugin on in')} <code>golem.config.yaml</code>,{' '}
+          <p className="demeura-empty__hint">
+            {t('Turn a plugin on in')} <code>demeura.config.yaml</code>,{' '}
             {t('or write a page — a folder holding one becomes a section on its own.')}
           </p>
         </section>

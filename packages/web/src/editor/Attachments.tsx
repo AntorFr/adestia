@@ -113,18 +113,18 @@ export function Attachments({
   const others = rest.filter((file) => file.kind !== 'image')
 
   return (
-    <section className="golem-page-files">
-      <h2 className="golem-page-files__title">{t('Attached files')}</h2>
+    <section className="demeura-page-files">
+      <h2 className="demeura-page-files__title">{t('Attached files')}</h2>
 
       {images.length > 0 && (
-        <div className="golem-page-files__grid">
+        <div className="demeura-page-files__grid">
           {images.map((file) => (
             // Opened rather than downloaded: looking at a photo is what
             // somebody wants nine times out of ten, and the download is one
             // right-click away in every browser.
             <a
               key={file.path}
-              className="golem-page-files__thumb"
+              className="demeura-page-files__thumb"
               href={fileUrl(file.path)}
               target="_blank"
               rel="noreferrer"
@@ -137,20 +137,20 @@ export function Attachments({
       )}
 
       {others.length > 0 && (
-        <ul className="golem-page-files__list">
+        <ul className="demeura-page-files__list">
           {others.map((file) => (
             <li key={file.path}>
               <a
-                className="golem-page-files__file"
+                className="demeura-page-files__file"
                 href={fileUrl(file.path)}
                 target="_blank"
                 rel="noreferrer"
               >
-                <span className="golem-page-files__glyph" aria-hidden="true">
+                <span className="demeura-page-files__glyph" aria-hidden="true">
                   {GLYPHS[file.kind]}
                 </span>
-                <span className="golem-page-files__name">{file.name}</span>
-                <span className="golem-page-files__size">{humanSize(file.bytes, locale)}</span>
+                <span className="demeura-page-files__name">{file.name}</span>
+                <span className="demeura-page-files__size">{humanSize(file.bytes, locale)}</span>
               </a>
             </li>
           ))}

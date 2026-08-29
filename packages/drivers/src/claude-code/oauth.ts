@@ -2,7 +2,7 @@
  * Arming a Claude subscription token, over HTTP.
  *
  * `claude setup-token` is a terminal program wrapped around three HTTP calls.
- * Golem used to drive the program: a pty, a wide terminal, and regexes over
+ * Demeura used to drive the program: a pty, a wide terminal, and regexes over
  * what Ink painted. That reading broke on a CLI update in a way no test could
  * have caught — a successful authorization reported as a failure, because the
  * token arrived with holes in it — and it will break again, silently, on the

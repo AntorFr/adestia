@@ -3,7 +3,7 @@
  * A page's other files: the ones that are not markdown.
  *
  * Two questions this covers, and they are the ones the predecessor answered
- * and Golem did not: does a relative link written in a page reach the file
+ * and Demeura did not: does a relative link written in a page reach the file
  * next to it, and can somebody see the documents a page carries without
  * opening a terminal.
  */
@@ -141,7 +141,7 @@ describe('<Attachments>', () => {
     const { container } = render(
       <Attachments path="diy/garage.md" markdown="# Garage" fetchImpl={files([])} />,
     )
-    await waitFor(() => expect(container.querySelector('.golem-page-files')).toBeNull())
+    await waitFor(() => expect(container.querySelector('.demeura-page-files')).toBeNull())
   })
 })
 
@@ -179,7 +179,7 @@ describe('dropping a file on a page', () => {
       <Editor page={page} fetchImpl={files([])} attach={attach} compose={compose} />,
     )
 
-    const surface = container.querySelector('.golem-editor')!
+    const surface = container.querySelector('.demeura-editor')!
     const file = dropped('plan.pdf')
     await act(async () => {
       fireEvent.drop(surface, { dataTransfer: transfer([file]) })
@@ -197,25 +197,25 @@ describe('dropping a file on a page', () => {
     const { container } = render(
       <Editor page={page} fetchImpl={files([])} attach={vi.fn()} compose={vi.fn()} />,
     )
-    const surface = container.querySelector('.golem-editor')!
+    const surface = container.querySelector('.demeura-editor')!
 
     fireEvent.dragEnter(surface, { dataTransfer: { types: ['text/plain'] } })
-    expect(container.querySelector('.golem-editor__dropzone')).toBeNull()
+    expect(container.querySelector('.demeura-editor__dropzone')).toBeNull()
 
     fireEvent.dragEnter(surface, { dataTransfer: transfer([]) })
-    expect(container.querySelector('.golem-editor__dropzone')).toBeTruthy()
+    expect(container.querySelector('.demeura-editor__dropzone')).toBeTruthy()
 
     fireEvent.dragLeave(surface)
-    expect(container.querySelector('.golem-editor__dropzone')).toBeNull()
+    expect(container.querySelector('.demeura-editor__dropzone')).toBeNull()
   })
 
   it('does nothing at all where there is no chat to carry the file', async () => {
     // Accepting a drop nothing can deliver would be a file the person believes
     // the agent has.
     const { container } = render(<Editor page={page} fetchImpl={files([])} />)
-    const surface = container.querySelector('.golem-editor')!
+    const surface = container.querySelector('.demeura-editor')!
 
     fireEvent.dragEnter(surface, { dataTransfer: transfer([]) })
-    expect(container.querySelector('.golem-editor__dropzone')).toBeNull()
+    expect(container.querySelector('.demeura-editor__dropzone')).toBeNull()
   })
 })

@@ -3,7 +3,7 @@
  *
  * Spike 1's deciding criterion: the editor (Milkdown) runs this same
  * micromark/remark grammar, so a page cannot mean one thing when rendered and
- * another when edited. Everything that reads or writes a Golem page goes
+ * another when edited. Everything that reads or writes a Demeura page goes
  * through here — the renderer, the editor, the validator, the agent's skill
  * examples.
  *
@@ -59,7 +59,7 @@ const STRINGIFY_OPTIONS = {
  * Directive syntax with its INLINE construct removed.
  *
  * `micromark-extension-directive` also reads `:name` in the middle of a
- * paragraph, and Golem's vocabulary has no inline anything: every block in it
+ * paragraph, and Demeura's vocabulary has no inline anything: every block in it
  * is a `:::` container. Left enabled, that construct turns ordinary prose into
  * an unknown block — `19:30:59` parses as the text `19:30` followed by a
  * directive named `59`, the validator errors on it, and the page opens
@@ -101,7 +101,7 @@ export function directivePlugin(this: Processor): void {
  * The grammar, as a list.
  *
  * Every consumer registers THIS — the renderer, the server, and the editor
- * (Milkdown wraps each entry as a `$remark`). Golem's whole editor verdict
+ * (Milkdown wraps each entry as a `$remark`). Demeura's whole editor verdict
  * rests on one grammar, and a list one side can forget an entry from is not
  * one grammar: a wikilink the editor did not know about came back as
  * `\[\[wikilink]]` on the first save, corrupting a page nobody had touched.

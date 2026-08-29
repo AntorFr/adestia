@@ -1,5 +1,5 @@
 /**
- * The Copilot CLI's JSONL, translated into Golem's turn events.
+ * The Copilot CLI's JSONL, translated into Demeura's turn events.
  *
  * Every shape here was captured from the real binary (1.0.80) during spike 3 —
  * see `spikes/copilot-cli/REPORT.md` — but the schema is UNDOCUMENTED, so this

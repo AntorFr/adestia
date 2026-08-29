@@ -1,5 +1,5 @@
 /**
- * The plugin manifest — `golem-plugin.json`, schema version 1.
+ * The plugin manifest — `demeura-plugin.json`, schema version 1.
  *
  * Shaped by two things: the predecessor's six lived plugin classes (content
  * contract, API-only tool, full app, heavy chrome capability with a lazy
@@ -114,7 +114,7 @@ export interface PluginManifest {
    *
    * Only while it is ACTIVE: turning the plugin off takes the words back out,
    * and what a page holding one then does depends on how it was written. In
-   * Golem's own spelling it opens read-only with a diagnostic naming the
+   * Demeura's own spelling it opens read-only with a diagnostic naming the
    * block — the honest answer, not a blank where a map used to be. In the
    * predecessor's `{% %}` spelling it falls back to showing the tag as text,
    * because an unknown legacy tag is left verbatim: a store two products

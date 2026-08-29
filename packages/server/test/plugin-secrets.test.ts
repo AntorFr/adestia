@@ -52,7 +52,7 @@ describe('what a plugin actually receives', () => {
     manifests: { id: string; secrets?: string[] }[],
     secrets: Record<string, string>,
   ) => {
-    const root = await mkdtemp(join(tmpdir(), 'golem-secrets-'))
+    const root = await mkdtemp(join(tmpdir(), 'demeura-secrets-'))
     const seen: Record<string, unknown> = {}
     const plugins = []
     for (const entry of manifests) {

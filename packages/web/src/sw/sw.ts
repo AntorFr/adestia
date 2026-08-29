@@ -35,7 +35,7 @@ declare const self: {
   readonly location: { readonly origin: string }
 }
 
-const CACHE = `golem-${__SW_VERSION__}`
+const CACHE = `demeura-${__SW_VERSION__}`
 
 /** The address an offline navigation falls back to when nothing else matches. */
 const SHELL = '/'
@@ -67,7 +67,7 @@ self.addEventListener('activate', (event) => {
       // entries are immortal otherwise: nothing ever requests them again, so
       // nothing ever evicts them.
       for (const name of await caches.keys()) {
-        if (name.startsWith('golem-') && name !== CACHE) await caches.delete(name)
+        if (name.startsWith('demeura-') && name !== CACHE) await caches.delete(name)
       }
       /*
        * Taking control of the page that installed us, so the tab that just

@@ -5,7 +5,7 @@
  * The whole policy exists to buy ONE property and refuse one temptation:
  *
  * - **Opens offline.** The shell and its entry chunks answer from the cache
- *   when the network is gone, so an installed Golem opens to its own interface
+ *   when the network is gone, so an installed Demeura opens to its own interface
  *   and says the server is unreachable — instead of the browser's dinosaur,
  *   which says nothing about which of the two is down.
  * - **Never serves stale JavaScript.** A cache-first shell is how a PWA ends

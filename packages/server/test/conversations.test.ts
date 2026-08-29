@@ -10,7 +10,7 @@ let root: string
 let store: ConversationStore
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'golem-conv-'))
+  root = await mkdtemp(join(tmpdir(), 'demeura-conv-'))
   store = new ConversationStore(root)
 })
 
@@ -192,7 +192,7 @@ describe('archiving', () => {
   it('hides a thread from the list and keeps every word', async () => {
     // The only tool for tidying up was a delete that took the whole record
     // with it. A thread nobody needs today is not one nobody will want back.
-    const store = new ConversationStore(await mkdtemp(join(tmpdir(), 'golem-conv-')))
+    const store = new ConversationStore(await mkdtemp(join(tmpdir(), 'demeura-conv-')))
     const meta = await store.create('sebastien', 'Rails Festool')
     await store.append('sebastien', meta.id, {
       id: 'm1',
@@ -214,7 +214,7 @@ describe('archiving', () => {
   it('brings one back', async () => {
     // Reversible by construction, so putting a thread away is never a
     // decision somebody has to regret.
-    const store = new ConversationStore(await mkdtemp(join(tmpdir(), 'golem-conv-')))
+    const store = new ConversationStore(await mkdtemp(join(tmpdir(), 'demeura-conv-')))
     const meta = await store.create('sebastien', 'Corse')
     await store.archive('sebastien', meta.id)
     await store.archive('sebastien', meta.id, false)
@@ -222,7 +222,7 @@ describe('archiving', () => {
   })
 
   it('leaves other people’s threads alone', async () => {
-    const store = new ConversationStore(await mkdtemp(join(tmpdir(), 'golem-conv-')))
+    const store = new ConversationStore(await mkdtemp(join(tmpdir(), 'demeura-conv-')))
     const mine = await store.create('sebastien', 'À moi')
     const hers = await store.create('emilie', 'À elle')
     await store.archive('sebastien', mine.id)

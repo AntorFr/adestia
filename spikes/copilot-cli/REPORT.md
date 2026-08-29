@@ -149,7 +149,7 @@ Driver-critical facts:
 
 `total_nano_aiu` (AI-credit units, nano) + `request_multiplier` + per-call token counts = **per-turn usage is recorded locally per session**, far richer than the `result` line's `premiumRequests`. With a driver-owned `COPILOT_HOME`, reading this DB (read-only, after run) is a legitimate `usageMetrics` source without any billing-API token. Caveats: schema is undocumented for external use (pin binary version, tolerate drift via the `schema_version` table); token/credit fields were 0/empty under BYOK — populating them with real values needs an authenticated GitHub-routed run (§9).
 
-`sessions`/`turns` also store cwd, repository (`AntorFr/golem` was auto-detected from the git remote), branch, and full user/assistant message text — relevant to privacy expectations.
+`sessions`/`turns` also store cwd, repository (`AntorFr/demeura` was auto-detected from the git remote), branch, and full user/assistant message text — relevant to privacy expectations.
 
 ## 7. Models [HELP-TEXT — printed without auth, not validated against the API]
 
@@ -157,7 +157,7 @@ Driver-critical facts:
 
 This is the *client's* static catalog — per-plan availability, entitlement filtering, and per-model pricing/multipliers are only visible authenticated (`/model` picker). Client-side rejection of unknown model names could not be tested (auth check fires first, §3).
 
-## 8. Driver-contract implications (Golem `copilot-cli` driver)
+## 8. Driver-contract implications (Demeura `copilot-cli` driver)
 
 **authManagement**
 - Three distinguishable invalid states, all: exit 1, empty stdout, prose on stderr (§3). Detection = stderr matching on stable first lines: `Error: No authentication information found.` / `Error: Classic Personal Access Tokens (ghp_) are not supported` / `Error: Authentication token found but could not be validated.` Pin to binary 1.0.80; these strings are not a documented API.

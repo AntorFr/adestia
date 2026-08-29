@@ -4,7 +4,7 @@
  * Everything comes from the shell's design tokens, never a hex: a plugin that
  * hardcoded one would look wrong under the next skin. The embedded page
  * editors bring their own look with them — nothing here restyles
- * `.golem-editor`, which belongs to the shell.
+ * `.demeura-editor`, which belongs to the shell.
  */
 
 .journal {

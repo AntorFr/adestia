@@ -1,4 +1,4 @@
-# Golem — instance configuration
+# Demeura — instance configuration
 #
 # Every setting below is optional: an empty file gives a working single-user
 # instance on 127.0.0.1:8730 with no authentication. Unknown keys are refused
@@ -14,9 +14,9 @@ dataDir: ./data
 
 # What THIS instance is called — the household's, the workshop's.
 #
-# It names the browser tab and the INSTALL: Golem is an installable PWA, and
+# It names the browser tab and the INSTALL: Demeura is an installable PWA, and
 # without this every instance lands on a home screen as an icon called after
-# the skin it wears, or "Golem" under a bare one. Two instances then look like
+# the skin it wears, or "Demeura" under a bare one. Two instances then look like
 # the same app. A skin can rename itself, which settles two instances wearing
 # two liveries and does nothing for two wearing the same; this wins over it.
 #
@@ -56,7 +56,7 @@ maxConcurrentTurns: 3
 auth:
   # none  — single implicit local user. Pair with a loopback bind.
   # proxy — identity from a header set by an authenticating reverse proxy.
-  # oidc  — any standard issuer. Golem never stores passwords or owns accounts.
+  # oidc  — any standard issuer. Demeura never stores passwords or owns accounts.
   mode: none
 
   # proxy:
@@ -65,24 +65,24 @@ auth:
 
   # oidc:
   #   issuer: https://auth.example.org
-  #   clientId: golem
+  #   clientId: demeura
   #   clientSecret: ${OIDC_CLIENT_SECRET}
-  #   # Must match the client registration EXACTLY. Golem anchors every URL on
+  #   # Must match the client registration EXACTLY. Demeura anchors every URL on
   #   # this value rather than on the incoming request: behind a reverse proxy
   #   # the request carries the container's host, and a redirect built from it
   #   # sends the browser somewhere it cannot reach.
-  #   redirectUri: https://golem.example.org/auth/callback
+  #   redirectUri: https://demeura.example.org/auth/callback
   #   groupsClaim: groups
   #   allowedGroups: [staff]        # empty means any authenticated user
   #   # Signs session cookies. Omit it and one is generated per boot, which
   #   # signs everyone out on restart — fine for one instance, wrong the moment
   #   # there are two behind a load balancer.
-  #   sessionSecret: ${GOLEM_SESSION_SECRET}
+  #   sessionSecret: ${DEMEURA_SESSION_SECRET}
   #   # Audiences to ask for at login, so a turn can act as the person who
   #   # asked — what an MCP server declared `identity: user` requires. Present
   #   # means the login also requests `offline_access`, the refresh token is
   #   # kept per user (in dataDir, 0600), and a fresh access token carrying
-  #   # THEIR identity is minted per turn. Absent means Golem signs people in
+  #   # THEIR identity is minted per turn. Absent means Demeura signs people in
   #   # and holds nothing.
   #   #
   #   # ⚠️ Frozen into the grant at login: adding one takes effect at the next
@@ -93,7 +93,7 @@ auth:
 
 workspace:
   # The agent's home. Its instructions live here in its CLI's own dialect —
-  # Golem neither normalizes nor translates them.
+  # Demeura neither normalizes nor translates them.
   root: ./workspace
   pages: pages
   memory: memory
@@ -134,7 +134,7 @@ driver:
 permissions:
   # open (default) — nothing is ever asked. What bounds the agent is real:
   #   - this CONTAINER: what is mounted, what is in the env, what the network
-  #     reaches — docker-compose.yml, not Golem code;
+  #     reaches — docker-compose.yml, not Demeura code;
   #   - the MCP SERVERS: one that acts on the world (home automation,
   #     messages) carries its own authorization, at the point where the act
   #     lands. Security belongs outside this box;
@@ -152,20 +152,20 @@ permissions:
   # expect to click a lot. Use `open` unless you are working on this.
   #
   # ask — the ENGINE's own first line decides, and what it would have asked a
-  # terminal about surfaces in the chat instead. Golem judges nothing and
+  # terminal about surfaces in the chat instead. Demeura judges nothing and
   # keeps no rules: a `Read` or an `echo` is never asked about (the CLI
   # settles those), and answering "always" hands the engine back its own
   # suggestion, so IT writes the rule into `<workspace>/.claude/settings.local.json`
   # and stops asking — in every thread, after a restart, for good. That file
   # IS your allowlist: open it to see what the agent may do, edit it to take
-  # something back. Golem keeps no list of its own.
+  # something back. Demeura keeps no list of its own.
   #
   # ⚠️ `ask` needs an engine that can be asked. claude-code can; copilot-cli
   # in programmatic mode has no return channel and auto-denies what it would
   # have asked, so the instance REFUSES TO BOOT rather than turning every
   # question into a silent refusal mid-turn. Pick `open` there, knowingly.
   #
-  # A `permissions:` block written for an older Golem (autoAllow, autoDeny,
+  # A `permissions:` block written for an older Demeura (autoAllow, autoDeny,
   # timeoutMs, whenUnattended) is ignored without error.
   mode: open
 
@@ -208,7 +208,7 @@ mcp:
   # the plugin that lost is named at startup.
   #
   # The CLI's own MCP config (`.mcp.json`…) stays yours and the agent's:
-  # Golem neither reads it, translates it, nor rewrites it.
+  # Demeura neither reads it, translates it, nor rewrites it.
   #
   # servers:
   #   - name: home-assistant        # becomes the prefix of the tools exposed
@@ -222,7 +222,7 @@ mcp:
   #       LANG: fr
   #
   # A hub that validates short-lived OAuth tokens gets an identity instead of
-  # a header. Golem mints and refreshes it, and puts it in `Authorization`
+  # a header. Demeura mints and refreshes it, and puts it in `Authorization`
   # once per turn — which is what a token with an hour of life needs, and what
   # a config file cannot do. Do NOT paste a bearer into `headers`: it works
   # for one hour and then quietly stops.
@@ -231,8 +231,8 @@ mcp:
   #     url: https://hub.example/maps
   #     auth:
   #       tokenUrl: https://auth.example/api/oidc/token
-  #       clientId: agent-golem
-  #       clientSecret: ${GOLEM_HUB_SECRET}
+  #       clientId: agent-demeura
+  #       clientSecret: ${DEMEURA_HUB_SECRET}
   #       scope: mcp
   #       audience: https://hub.example   # a resource server checks this
   #
@@ -242,7 +242,7 @@ mcp:
   # A public OAuth hub (no client secret) that logs a PERSON in — dynamic
   # client registration + authorization_code + PKCE, as VS Code does — is
   # reached with a `refreshToken` minted once through that interactive flow.
-  # Golem then uses the refresh_token grant per turn and follows a rotated
+  # Demeura then uses the refresh_token grant per turn and follows a rotated
   # refresh token. Arm the refresh token as a secret; do not commit it.
   #
   #   - name: research
@@ -272,7 +272,7 @@ mcp:
 
   # ── INBOUND: the endpoint OTHER agents call here ────────────────────────
   enabled: false
-  # token: ${GOLEM_MCP_TOKEN}
+  # token: ${DEMEURA_MCP_TOKEN}
   # Becomes the tool name in the calling agent's list, so name the agent
   # rather than leaving it generic — two connected instances must be
   # distinguishable there.

@@ -70,7 +70,7 @@ Negative proofs (also executed, exact Chrome messages captured):
 - **Cross-origin plugins need CORS.** A module imported from another origin is
   blocked (*"No 'Access-Control-Allow-Origin' header is present"*) unless the
   plugin origin sends `Access-Control-Allow-Origin`. Same-origin (this spike's
-  layout, and Golem's `/plugins/<id>/web/*` design) needs nothing.
+  layout, and Demeura's `/plugins/<id>/web/*` design) needs nothing.
 
 ## Pitfalls hit (all reproduced, all fixed in `build/vendor.mjs`)
 
@@ -101,7 +101,7 @@ Negative proofs (also executed, exact Chrome messages captured):
    and the server keeps a `startsWith(root)` guard as second belt. Both
    behaviors verified with `curl --path-as-is` (404/403, never a file leak).
 
-## Implications for Golem's manifest contract
+## Implications for Demeura's manifest contract
 
 - **The spike's manifest shape is sufficient for views:** `view` (module URL
   relative to the plugin base) + `styles: [...]` (URLs the shell turns into

@@ -10,7 +10,7 @@ let root: string
 let store: SecretStore
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'golem-secrets-'))
+  root = await mkdtemp(join(tmpdir(), 'demeura-secrets-'))
   store = new SecretStore(root)
 })
 

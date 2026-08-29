@@ -19,8 +19,8 @@ export interface TabsState {
   readonly active?: string
 }
 
-export const TABS_KEY = 'golem.tabs'
-export const READ_KEY = 'golem.read'
+export const TABS_KEY = 'demeura.tabs'
+export const READ_KEY = 'demeura.read'
 
 /** Read marks beyond this are noise: prune so the map cannot grow forever. */
 const READ_CAP = 200

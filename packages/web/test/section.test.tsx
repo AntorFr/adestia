@@ -34,7 +34,7 @@ const props = {
 describe('the section screen', () => {
   it('leads with its rooms, then its pages', () => {
     const { container } = render(<Section {...props} />)
-    expect([...container.querySelectorAll('.golem-section')].map((h) => h.textContent)).toEqual([
+    expect([...container.querySelectorAll('.demeura-section')].map((h) => h.textContent)).toEqual([
       'Inside',
       'Pages',
     ])
@@ -43,7 +43,7 @@ describe('the section screen', () => {
   it('wears a page’s status as a coloured pill, with the word written out', () => {
     // Hue alone is not a label: the tone is a class, the word is text.
     const { container } = render(<Section {...props} />)
-    const pill = container.querySelector('.golem-stat')
+    const pill = container.querySelector('.demeura-stat')
     expect(pill?.textContent).toBe('en-cours')
     expect(pill?.className).toContain('underway')
   })
@@ -65,10 +65,10 @@ describe('the section screen', () => {
 
   it('gives a page that declares nothing a title and nothing invented', () => {
     const { container } = render(<Section {...props} />)
-    const card = [...container.querySelectorAll('.golem-card')].find((c) =>
+    const card = [...container.querySelectorAll('.demeura-card')].find((c) =>
       c.textContent?.startsWith('scie'),
     )
-    expect(card?.querySelector('.golem-card__foot')).toBeNull()
+    expect(card?.querySelector('.demeura-card__foot')).toBeNull()
   })
 
   it('filters by a facet the pages actually declare', () => {
@@ -81,7 +81,7 @@ describe('the section screen', () => {
     render(<Section {...props} path="d" entries={many} />)
     fireEvent.click(screen.getByRole('button', { name: 'veille' }))
     // Three of the six carry `veille`; the rest leave the grid.
-    expect(document.querySelectorAll('.golem-card').length).toBe(3)
+    expect(document.querySelectorAll('.demeura-card').length).toBe(3)
   })
 
   it('searches what a card actually shows', () => {
@@ -92,9 +92,9 @@ describe('the section screen', () => {
       ),
     ]
     const { container } = render(<Section {...props} path="d" entries={many} />)
-    const input = container.querySelector('.golem-search input') as HTMLInputElement
+    const input = container.querySelector('.demeura-search input') as HTMLInputElement
     fireEvent.change(input, { target: { value: 'urgent' } })
-    expect(container.querySelectorAll('.golem-card').length).toBe(1)
+    expect(container.querySelectorAll('.demeura-card').length).toBe(1)
     expect(screen.getByText('beta')).toBeTruthy()
   })
 
@@ -104,7 +104,7 @@ describe('the section screen', () => {
       ...['un', 'deux', 'trois', 'quatre', 'cinq', 'six'].map((n) => entry(`d/${n}.md`)),
     ]
     const { container } = render(<Section {...props} path="d" entries={many} />)
-    const input = container.querySelector('.golem-search input') as HTMLInputElement
+    const input = container.querySelector('.demeura-search input') as HTMLInputElement
     fireEvent.change(input, { target: { value: 'zzz' } })
     expect(screen.getByText('Nothing matches.')).toBeTruthy()
   })

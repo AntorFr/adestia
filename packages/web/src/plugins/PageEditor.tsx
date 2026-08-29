@@ -90,12 +90,12 @@ export function makePageEditor(host: PageEditorHost): ComponentType<PageEditorPr
 
     if (error) {
       return (
-        <p className="golem-embed__problem" role="status">
+        <p className="demeura-embed__problem" role="status">
           {error}
         </p>
       )
     }
-    if (!page) return <p className="golem-embed__loading">{host.t('Loading…')}</p>
+    if (!page) return <p className="demeura-embed__loading">{host.t('Loading…')}</p>
 
     return (
       <Editor

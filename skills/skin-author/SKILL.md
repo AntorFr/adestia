@@ -1,12 +1,12 @@
 ---
 name: skin-author
-description: Write a Golem skin — the tokens and narrow hooks that dress one instance. Use when asked to change how Golem looks, brand it, or create a theme.
+description: Write a Demeura skin — the tokens and narrow hooks that dress one instance. Use when asked to change how Demeura looks, brand it, or create a theme.
 ---
 
-# Writing a Golem skin
+# Writing a Demeura skin
 
 A skin **dresses** an instance. Exactly one is active, chosen by a value in
-`golem.config.yaml` — unlike plugins, which are lists and combine.
+`demeura.config.yaml` — unlike plugins, which are lists and combine.
 
 That difference is why a skin is not a kind of plugin: every plugin axis is a
 list, a skin's axis is a single value, and an exception like that empties a
@@ -16,7 +16,7 @@ rule of its meaning.
 
 ```
 skins/<id>/
-  golem-skin.json       REQUIRED
+  demeura-skin.json       REQUIRED
   skin.css              token overrides, and NOTHING else
   skin.js               narrow hooks (brand, crest, busy indicator, hero)
   web.manifest          what the instance INSTALLS as (name, colours)
@@ -71,7 +71,7 @@ Never this:
 
 ```css
 /* WRONG: a layout rule scoped to a skin */
-:root[data-skin='amber'] .golem-chat { grid-template-columns: 1fr 2fr; }
+:root[data-skin='amber'] .demeura-chat { grid-template-columns: 1fr 2fr; }
 ```
 
 The reason is not tidiness. Several personalities share one shell; the moment a
@@ -119,7 +119,7 @@ always brings it back to full, so a mark quiet at rest still answers a hover.
 `--tile-label-font`/`--tile-label-track` set the name: a body whose identity
 is a fixed pitch points the first at `var(--font-title)`.
 
-**Named hues.** `--golem-hue-rouge` … `--golem-hue-ardoise` — what pages and
+**Named hues.** `--demeura-hue-rouge` … `--demeura-hue-ardoise` — what pages and
 tiles mean when they say `couleur: turquoise` or `hue: "emeraude"`. A
 single-accent skin may point all twelve at its accent: tiles then distinguish
 themselves by label alone, which can be exactly the statement intended.
@@ -147,7 +147,7 @@ unless the skin genuinely has two looks.
 export default function skin(api) {
   return {
     brand: 'Atelier',
-    title: 'Atelier — Golem',
+    title: 'Atelier — Demeura',
     placeholder: 'Ask the workshop…',
     busyLabel: 'Thinking',
     idleLabel: 'At rest',
@@ -237,10 +237,10 @@ a skin omits.
 
 ## What the instance installs as
 
-Golem is an installable PWA, and the manifest it serves is the PRODUCT's with
+Demeura is an installable PWA, and the manifest it serves is the PRODUCT's with
 your `web.manifest` merged over it. This is the one place a livery is worth
 more than a look: two instances on two hosts otherwise land on a home screen
-as two icons both called "Golem".
+as two icons both called "Demeura".
 
 ```json
 {
@@ -252,7 +252,7 @@ as two icons both called "Golem".
 }
 ```
 
-An operator may overrule your name with `name:` in `golem.config.yaml`, and
+An operator may overrule your name with `name:` in `demeura.config.yaml`, and
 that is the intended order: you know what BODY the instance wears, they know
 that this one is the workshop's and the other the kitchen's.
 
@@ -292,12 +292,12 @@ chrome --headless --screenshot=icon-512.png --window-size=512,512 page.html
 
 ## Before you finish
 
-1. `golem-skin.json` parses, and its id equals the folder name.
+1. `demeura-skin.json` parses, and its id equals the folder name.
 2. `skin.css` contains token declarations and nothing else — no selectors
    naming shell classes.
 3. Every token you override exists in the shell's `tokens.css`; one that does
    not is dead weight that looks like it works.
-4. `extensions.skin` in `golem.config.yaml` names your folder. Golem warns at
+4. `extensions.skin` in `demeura.config.yaml` names your folder. Demeura warns at
    startup when it names a skin that is not installed, but it will run under
    the default and say so only in the log.
 5. If you ship a `web.manifest`, the startup log names no ignored field, and

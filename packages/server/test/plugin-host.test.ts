@@ -13,7 +13,7 @@ const logs: string[] = []
 const log = (message: string) => void logs.push(message)
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'golem-host-'))
+  root = await mkdtemp(join(tmpdir(), 'demeura-host-'))
   logs.length = 0
 })
 

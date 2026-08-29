@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { forgetContributedBlocks, isKnownBlock } from '@antorfr/golem-content'
+import { forgetContributedBlocks, isKnownBlock } from '@antorfr/demeura-content'
 
 import {
   IMPORT_MAP_CONTRACT,

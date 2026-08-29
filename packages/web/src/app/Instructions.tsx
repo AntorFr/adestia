@@ -145,7 +145,7 @@ export function Instructions({
 
   if (!supported) {
     return (
-      <section className="golem-empty">
+      <section className="demeura-empty">
         <p>{t('This engine keeps its instructions elsewhere.')}</p>
       </section>
     )
@@ -154,21 +154,21 @@ export function Instructions({
   const dirty = text !== onDisk
 
   return (
-    <section className="golem-instructions">
-      <header className="golem-chead">
-        <span className="golem-chead__icon" aria-hidden="true">
+    <section className="demeura-instructions">
+      <header className="demeura-chead">
+        <span className="demeura-chead__icon" aria-hidden="true">
           📓
         </span>
         <div>
-          <h1 className="golem-chead__title">{t('Instructions')}</h1>
-          <p className="golem-chead__lede">
+          <h1 className="demeura-chead__title">{t('Instructions')}</h1>
+          <p className="demeura-chead__lede">
             {t('What you have told the agent, in your words. Saved exactly as typed.')}
           </p>
         </div>
       </header>
 
       {files !== undefined && files.length === 0 && (
-        <p className="golem-instructions__empty">
+        <p className="demeura-instructions__empty">
           {t('Nothing here yet — write one, or ask the agent to.')}
         </p>
       )}
@@ -183,7 +183,7 @@ export function Instructions({
         takes a name first.
       */}
       {places.length > 0 && (
-        <div className="golem-instructions__new">
+        <div className="demeura-instructions__new">
           {places
             .filter((place) => place.kind === 'file' && !place.exists)
             .map((place) => (
@@ -213,8 +213,8 @@ export function Instructions({
         </div>
       )}
 
-      <div className="golem-instructions__split">
-        <ul className="golem-instructions__list">
+      <div className="demeura-instructions__split">
+        <ul className="demeura-instructions__list">
           {(files ?? []).map((file) => (
             <li key={file.path}>
               <button
@@ -222,11 +222,11 @@ export function Instructions({
                 className={file.path === open ? 'is-open' : undefined}
                 onClick={() => void load(file.path)}
               >
-                <span className="golem-instructions__name">{label(file.path)}</span>
+                <span className="demeura-instructions__name">{label(file.path)}</span>
                 {/* Only when it adds something: for a file at the workspace
                     root the path IS the name, and printing both is noise. */}
                 {file.path !== label(file.path) && (
-                  <span className="golem-instructions__path">{file.path}</span>
+                  <span className="demeura-instructions__path">{file.path}</span>
                 )}
               </button>
             </li>
@@ -234,22 +234,22 @@ export function Instructions({
         </ul>
 
         {open !== undefined && (
-          <div className="golem-instructions__pane">
-            <div className="golem-instructions__bar">
+          <div className="demeura-instructions__pane">
+            <div className="demeura-instructions__bar">
               <code>{open}</code>
               <span style={{ flex: 1 }} />
               {save.kind === 'failed' && (
-                <span className="golem-save golem-save--error" role="alert">
+                <span className="demeura-save demeura-save--error" role="alert">
                   {save.message}
                 </span>
               )}
-              {save.kind === 'saved' && !dirty && <span className="golem-save">{t('Saved')}</span>}
+              {save.kind === 'saved' && !dirty && <span className="demeura-save">{t('Saved')}</span>}
               <button type="button" onClick={() => void commit()} disabled={!dirty || save.kind === 'saving'}>
                 {save.kind === 'saving' ? t('Saving…') : t('Save')}
               </button>
             </div>
             <textarea
-              className="golem-instructions__text"
+              className="demeura-instructions__text"
               value={text}
               spellCheck={false}
               onChange={(event) => {

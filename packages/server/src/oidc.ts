@@ -1,7 +1,7 @@
 /**
  * OIDC login — any standard issuer, no local accounts.
  *
- * Golem never stores a password and never owns an account. It is an
+ * Demeura never stores a password and never owns an account. It is an
  * Authorization Code + PKCE client, and the roles it recognises come from a
  * groups claim resynchronised at every login, so the identity provider stays
  * the source of truth and anything kept here is a cache.
@@ -23,8 +23,8 @@ export const LOGIN_TTL_MS = 10 * 60 * 1000
 /** How long a session lasts before the user signs in again. */
 export const SESSION_TTL_MS = 12 * 60 * 60 * 1000
 
-export const SESSION_COOKIE = 'golem_session'
-export const LOGIN_COOKIE = 'golem_login'
+export const SESSION_COOKIE = 'demeura_session'
+export const LOGIN_COOKIE = 'demeura_login'
 
 export interface LoginState {
   readonly state: string
@@ -122,7 +122,7 @@ export class OidcClient {
   /**
    * Discovery happens on first use, not at boot, and a failure is remembered
    * without being fatal: an identity provider that is momentarily down must
-   * not stop Golem from starting. The alternative — discovering eagerly — ties
+   * not stop Demeura from starting. The alternative — discovering eagerly — ties
    * every restart of the product to the availability of another service.
    */
   async #discover(): Promise<client.Configuration> {

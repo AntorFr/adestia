@@ -17,7 +17,7 @@ const plugin = (id: string, active: boolean): DiscoveredPlugin => ({
 })
 
 beforeAll(async () => {
-  root = await mkdtemp(join(tmpdir(), 'golem-static-'))
+  root = await mkdtemp(join(tmpdir(), 'demeura-static-'))
   for (const id of ['on', 'off']) {
     await mkdir(join(root, 'plugins', id, 'web'), { recursive: true })
     await writeFile(join(root, 'plugins', id, 'web', 'app.js'), 'export default () => null\n')
@@ -26,7 +26,7 @@ beforeAll(async () => {
   await writeFile(join(root, 'secret.txt'), 'not yours\n')
 
   await mkdir(join(root, 'web', 'assets'), { recursive: true })
-  await writeFile(join(root, 'web', 'index.html'), '<!doctype html><title>Golem</title>')
+  await writeFile(join(root, 'web', 'index.html'), '<!doctype html><title>Demeura</title>')
   await writeFile(join(root, 'web', 'assets', 'app.js'), 'console.log(1)\n')
   await writeFile(join(root, 'web', 'icon.svg'), '<svg>PRODUCT-ICON</svg>')
 
@@ -138,7 +138,7 @@ describe('the shell', () => {
   it('serves index.html at the root', async () => {
     const app = await build()
     const response = await app.inject({ url: '/' })
-    expect(response.body).toContain('<title>Golem</title>')
+    expect(response.body).toContain('<title>Demeura</title>')
     await app.close()
   })
 
@@ -152,7 +152,7 @@ describe('the shell', () => {
     // A deep link must open the app, not a 404 the user cannot interpret.
     const app = await build()
     const response = await app.inject({ url: '/pages/garage' })
-    expect(response.body).toContain('<title>Golem</title>')
+    expect(response.body).toContain('<title>Demeura</title>')
     await app.close()
   })
 

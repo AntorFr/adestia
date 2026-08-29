@@ -11,7 +11,7 @@ import {
 import { commonmark } from '@milkdown/kit/preset/commonmark'
 import { gfm } from '@milkdown/kit/preset/gfm'
 
-import { golemPlugins } from './plugins.js'
+import { demeuraPlugins } from './plugins.js'
 
 export async function createRoundTripper() {
   const editor = await Editor.make()
@@ -27,7 +27,7 @@ export async function createRoundTripper() {
     })
     .use(commonmark)
     .use(gfm)
-    .use(golemPlugins)
+    .use(demeuraPlugins)
     .create()
 
   const roundTrip = (markdown) =>

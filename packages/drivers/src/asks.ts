@@ -3,17 +3,17 @@
  *
  * What this is NOT, because a predecessor was: a permission policy. There are
  * no allow lists here, no deny lists, no content rules, no unattended policy.
- * Golem judges nothing — the ENGINE decides a call needs a person, and this
- * holds that question until somebody answers it. Golem is the surface, never
+ * Demeura judges nothing — the ENGINE decides a call needs a person, and this
+ * holds that question until somebody answers it. Demeura is the surface, never
  * the wall (DESIGN.md, decision log 2026-08-26).
  *
  * Three answers, and the last one is why this is bearable: `once` for this
  * call, `always` to stop being asked at all, and `deny`.
  *
  * `always` is remembered by the ENGINE, in the engine's own rule file inside
- * the workspace — not by Golem. That is the whole point: the durable
+ * the workspace — not by Demeura. That is the whole point: the durable
  * allowlist is a file a person can open, read and edit, maintained by the CLI
- * that enforces it. Golem keeps no list, and never did after 2026-08-26.
+ * that enforces it. Demeura keeps no list, and never did after 2026-08-26.
  */
 
 import { randomUUID } from 'node:crypto'

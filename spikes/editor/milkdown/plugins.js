@@ -1,4 +1,4 @@
-// Custom Milkdown plugins for the Golem round-trip spike:
+// Custom Milkdown plugins for the Demeura round-trip spike:
 //  - YAML frontmatter as a dedicated block node (byte-perfect payload)
 //  - `:::name{attrs}` container directives as FIRST-CLASS nodes
 //    (closed vocabulary: `callout` with rich content, `app` as leaf)
@@ -207,7 +207,7 @@ export const wikiLinkSchema = $nodeSchema('wiki_link', () => ({
   },
 }))
 
-export const golemPlugins = [
+export const demeuraPlugins = [
   remarkFrontmatterPlugin,
   frontmatterSchema,
   remarkDirectivePlugin,

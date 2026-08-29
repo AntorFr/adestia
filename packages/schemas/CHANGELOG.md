@@ -1,6 +1,6 @@
 # Extension schema changelog
 
-Schemas will churn while Golem is young — that is them learning. Every version
+Schemas will churn while Demeura is young — that is them learning. Every version
 gets a line here, so nobody has to do archaeology later.
 
 ## Plugin manifest

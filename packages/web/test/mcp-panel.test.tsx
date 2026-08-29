@@ -46,9 +46,9 @@ describe('the MCP panel', () => {
       <McpPanel fetchImpl={answering(200, { servers: [{ name: 'notion', state: 'needs-auth' }] })} />,
     )
     await screen.findByText('notion')
-    expect(container.querySelector('.golem-stat--settled')).toBeNull()
+    expect(container.querySelector('.demeura-stat--settled')).toBeNull()
     // Waiting on the world — which is exactly what it is.
-    expect(container.querySelector('.golem-stat--waiting')).toBeTruthy()
+    expect(container.querySelector('.demeura-stat--waiting')).toBeTruthy()
   })
 
   it('shows the reason the CLI gave, and never invents one', async () => {
@@ -63,19 +63,19 @@ describe('the MCP panel', () => {
       />,
     )
     await screen.findByText('spawn ENOENT')
-    expect(container.querySelectorAll('.golem-mcp__why')).toHaveLength(1)
+    expect(container.querySelectorAll('.demeura-mcp__why')).toHaveLength(1)
   })
 
   it('renders nothing at all when the driver cannot report', async () => {
     // A 404 and an empty list are different facts, and one empty box cannot
     // say both.
     const { container } = render(<McpPanel fetchImpl={answering(404, { error: 'no' })} />)
-    await waitFor(() => expect(container.querySelector('.golem-mcp')).toBeNull())
+    await waitFor(() => expect(container.querySelector('.demeura-mcp')).toBeNull())
   })
 
   it('renders nothing when there is no server to report on', async () => {
     const { container } = render(<McpPanel fetchImpl={answering(200, { servers: [] })} />)
-    await waitFor(() => expect(container.querySelector('.golem-mcp')).toBeNull())
+    await waitFor(() => expect(container.querySelector('.demeura-mcp')).toBeNull())
   })
 
   it('speaks the instance’s language', async () => {

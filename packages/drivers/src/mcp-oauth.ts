@@ -8,7 +8,7 @@
  * HTTPS and minting tokens in memory, because the CLI's config file can only
  * hold a constant.
  *
- * Golem does not have that constraint and so does not need that relay. It
+ * Demeura does not have that constraint and so does not need that relay. It
  * hands the driver its MCP servers at the SPAWN SITE, once per turn, which is
  * the natural moment to put a fresh token in a header. No subprocess per
  * addon, no second language in the image, no relay to keep in sync.

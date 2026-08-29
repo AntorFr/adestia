@@ -1,7 +1,7 @@
 /**
  * The todo model, tested as plain JavaScript.
  *
- * Deliberately not a Golem package: a bundled plugin is an ordinary plugin,
+ * Deliberately not a Demeura package: a bundled plugin is an ordinary plugin,
  * and a plugin author has no monorepo. If this can only be tested from inside
  * the repository, the contract is not what it claims to be.
  */

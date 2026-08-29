@@ -13,8 +13,8 @@
  */
 
 /** The two mosaics on the landing canvas, each with its own order. */
-export const ORDER_KEY_APPS = 'golem.order.apps'
-export const ORDER_KEY_SECTIONS = 'golem.order.sections'
+export const ORDER_KEY_APPS = 'demeura.order.apps'
+export const ORDER_KEY_SECTIONS = 'demeura.order.sections'
 
 type Readable = Pick<Storage, 'getItem'>
 type Writable = Pick<Storage, 'getItem' | 'setItem'>

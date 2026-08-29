@@ -15,7 +15,7 @@ import { chmod, mkdir, readFile, rename, unlink, writeFile } from 'node:fs/promi
 import { randomUUID } from 'node:crypto'
 import { dirname, join } from 'node:path'
 
-import type { RefreshStore } from '@antorfr/golem-drivers'
+import type { RefreshStore } from '@antorfr/demeura-drivers'
 
 /** What the file turned out to be, when somebody went to read it. */
 type Held =

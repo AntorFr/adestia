@@ -24,7 +24,7 @@ import {
   serialize,
   validateDocument,
   type Diagnostic,
-} from '@antorfr/golem-content'
+} from '@antorfr/demeura-content'
 import type { FastifyInstance } from 'fastify'
 
 export interface PagesOptions {

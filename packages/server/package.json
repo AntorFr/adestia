@@ -1,5 +1,5 @@
 {
-  "name": "@antorfr/golem-server",
+  "name": "@antorfr/demeura-server",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -11,9 +11,9 @@
     }
   },
   "dependencies": {
-    "@antorfr/golem-content": "*",
-    "@antorfr/golem-drivers": "*",
-    "@antorfr/golem-schemas": "*",
+    "@antorfr/demeura-content": "*",
+    "@antorfr/demeura-drivers": "*",
+    "@antorfr/demeura-schemas": "*",
     "@fastify/cookie": "^11.1.2",
     "@fastify/multipart": "^10.1.1",
     "@fastify/static": "^10.1.3",
@@ -23,7 +23,7 @@
     "yaml": "^2.9.0"
   },
   "bin": {
-    "golem": "./bin/golem.js"
+    "demeura": "./bin/demeura.js"
   },
   "scripts": {
     "build": "tsc --build"

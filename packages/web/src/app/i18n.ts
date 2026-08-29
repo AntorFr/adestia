@@ -150,7 +150,7 @@ const FR: Readonly<Record<string, string>> = {
   // Failures, where clarity matters most
   'Not allowed': 'Accès refusé',
   'This instance requires you to sign in.': 'Cette instance demande une connexion.',
-  'Golem could not start': 'Golem n’a pas pu démarrer',
+  'Demeura could not start': 'Demeura n’a pas pu démarrer',
   'That app is not active on this instance.': 'Cette app n’est pas activée sur cette instance.',
   'Turn interrupted.': 'Tour interrompu.',
   'Agent credential': 'Jeton de l’agent',

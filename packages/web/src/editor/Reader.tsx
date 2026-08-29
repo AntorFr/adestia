@@ -19,7 +19,7 @@
 
 import { createElement as h, Fragment, type ComponentType, type ReactNode } from 'react'
 
-import { blockSpec, parse, toneOf } from '@antorfr/golem-content'
+import { blockSpec, parse, toneOf } from '@antorfr/demeura-content'
 
 import { PluginBoundary } from '../plugins/Boundary.js'
 import type { BlockProps } from '../plugins/contract.js'
@@ -138,15 +138,15 @@ function Meta({ yaml }: { readonly yaml: string }) {
   if (!status && kinds.length === 0 && tags.length === 0) return null
 
   return (
-    <div className="golem-editor__meta">
-      {status && <span className={`golem-stat golem-stat--${toneOf(status)}`}>{status}</span>}
+    <div className="demeura-editor__meta">
+      {status && <span className={`demeura-stat demeura-stat--${toneOf(status)}`}>{status}</span>}
       {kinds.map((kind) => (
-        <span key={kind} className="golem-tag">
+        <span key={kind} className="demeura-tag">
           {kind}
         </span>
       ))}
       {tags.map((tag) => (
-        <span key={tag} className="golem-tag">
+        <span key={tag} className="demeura-tag">
           #{tag}
         </span>
       ))}
@@ -240,7 +240,7 @@ function render(node: Node, ctx: Ctx): ReactNode {
       return node.ordered ? <ol>{children(node, ctx)}</ol> : <ul>{children(node, ctx)}</ul>
     case 'listItem':
       return (
-        <li className={node.checked === null || node.checked === undefined ? undefined : 'golem-task'}>
+        <li className={node.checked === null || node.checked === undefined ? undefined : 'demeura-task'}>
           {node.checked !== null && node.checked !== undefined && (
             <input type="checkbox" checked={node.checked} readOnly />
           )}
@@ -257,7 +257,7 @@ function render(node: Node, ctx: Ctx): ReactNode {
         return (
           <button
             type="button"
-            className="golem-wikilink"
+            className="demeura-wikilink"
             onClick={() => ctx.openPage?.(target.path)}
           >
             {children(node, ctx)}
@@ -289,7 +289,7 @@ function render(node: Node, ctx: Ctx): ReactNode {
       return (
         <button
           type="button"
-          className="golem-wikilink"
+          className="demeura-wikilink"
           onClick={() => ctx.openPage?.(`${target}.md`)}
         >
           {label}
@@ -298,7 +298,7 @@ function render(node: Node, ctx: Ctx): ReactNode {
     }
     case 'table':
       return (
-        <div className="golem-table-scroll">
+        <div className="demeura-table-scroll">
           <table>{children(node, ctx)}</table>
         </div>
       )
@@ -314,10 +314,10 @@ function render(node: Node, ctx: Ctx): ReactNode {
     case 'leafDirective': {
       if (node.type === 'containerDirective' && node.name === 'callout') {
         const tone = node.attributes?.['type'] ?? 'note'
-        return <aside className={`golem-callout golem-callout--${tone}`}>{children(node, ctx)}</aside>
+        return <aside className={`demeura-callout demeura-callout--${tone}`}>{children(node, ctx)}</aside>
       }
       if (node.type === 'containerDirective' && node.name === 'gallery') {
-        return <div className="golem-gallery">{children(node, ctx)}</div>
+        return <div className="demeura-gallery">{children(node, ctx)}</div>
       }
       return <Contributed node={node} ctx={ctx} />
     }
@@ -352,7 +352,7 @@ function Contributed({ node, ctx }: { readonly node: Node; readonly ctx: Ctx }) 
     // an ugly one — the same reason a refused page shows its raw source.
     return (
       <>
-        <p className="golem-unknown-block">
+        <p className="demeura-unknown-block">
           :::{name} — {`this block does not render yet`}
         </p>
         {body}
@@ -380,7 +380,7 @@ function Contributed({ node, ctx }: { readonly node: Node; readonly ctx: Ctx }) 
  * still gets their words, and the failure is visible rather than silent.
  */
 function raw(markdown: string): ReactNode {
-  return <pre className="golem-reader__raw">{markdown}</pre>
+  return <pre className="demeura-reader__raw">{markdown}</pre>
 }
 
 /**
@@ -420,7 +420,7 @@ export function Prose({
     return raw(markdown)
   }
   return (
-    <div className="golem-prose">
+    <div className="demeura-prose">
       {render(tree, { base: '', prose: true, ...(openPage ? { openPage } : {}) })}
     </div>
   )
@@ -454,7 +454,7 @@ export function Reader({
   // neighbours are the root's own files.
   const base = path === undefined ? undefined : path.slice(0, Math.max(path.lastIndexOf('/'), 0))
   return (
-    <article className="golem-reader">
+    <article className="demeura-reader">
       {render(tree, {
         ...(base === undefined ? {} : { base }),
         ...(openPage ? { openPage } : {}),

@@ -10,7 +10,7 @@ import {
 describe('the product manifest', () => {
   it('installs as one app per origin', () => {
     const manifest = baseManifest()
-    // `id` and `scope` at the root: one instance is one origin, so two Golems
+    // `id` and `scope` at the root: one instance is one origin, so two Demeuras
     // on two hosts are two installs and never collide as one.
     expect(manifest['id']).toBe('/')
     expect(manifest['scope']).toBe('/')
@@ -82,7 +82,7 @@ describe('a skin dressing the manifest', () => {
 
   it('drops a field whose type would cost the whole install', () => {
     const { manifest, ignored } = mergeSkinManifest(base, { name: 42, short_name: '' })
-    expect(manifest['name']).toBe('Golem')
+    expect(manifest['name']).toBe('Demeura')
     expect(ignored).toEqual(['name', 'short_name'])
   })
 
@@ -106,7 +106,7 @@ describe('the operator naming the instance', () => {
   it('overrules the livery, which is the whole point', () => {
     // A skin settles two instances wearing two liveries and does nothing for
     // two wearing the same — which is exactly the case an operator running a
-    // second Golem hits.
+    // second Demeura hits.
     const dressed = mergeSkinManifest(base, { name: 'Skippy', short_name: 'Skippy' }).manifest
     const named = withInstanceName(dressed, 'Atelier')
     expect(named['name']).toBe('Atelier')

@@ -1,4 +1,4 @@
-# @antorfr/golem-web
+# @antorfr/demeura-web
 
 The browser shell: the chat, the apps canvas, and the runtime plugin loader.
 

@@ -11,7 +11,7 @@ let root: string
 let app: FastifyInstance
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'golem-files-'))
+  root = await mkdtemp(join(tmpdir(), 'demeura-files-'))
   app = Fastify()
   registerFiles(app, { root })
   await app.ready()

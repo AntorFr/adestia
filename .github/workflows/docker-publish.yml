@@ -1,7 +1,7 @@
-# Publishes ghcr.io/antorfr/golem.
+# Publishes ghcr.io/antorfr/demeura.
 #
 # Tagging contract (the homelab convention, Renovate-friendly):
-#   git tag vX.Y.Z  ->  ghcr.io/antorfr/golem:X.Y.Z (+ :X.Y :X)
+#   git tag vX.Y.Z  ->  ghcr.io/antorfr/demeura:X.Y.Z (+ :X.Y :X)
 #   push on main    ->  :main (dev image)
 #   pull request    ->  build only, no push
 #

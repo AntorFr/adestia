@@ -39,31 +39,31 @@ export function StatusLine({
   status: AuthStatus | undefined
   t?: (key: string) => string
 }) {
-  if (!status) return <span className="golem-save">{t('Checking…')}</span>
+  if (!status) return <span className="demeura-save">{t('Checking…')}</span>
   switch (status.state) {
     case 'armed':
       return (
-        <span className="golem-save golem-save--ok">
+        <span className="demeura-save demeura-save--ok">
           {t('Armed')}
           {status.savedAt ? ` — ${new Date(status.savedAt).toLocaleDateString()}` : ''}
         </span>
       )
     case 'invalid':
       return (
-        <span className="golem-save golem-save--error">{status.reason ?? t('Refused upstream')}</span>
+        <span className="demeura-save demeura-save--error">{status.reason ?? t('Refused upstream')}</span>
       )
     case 'absent':
       return (
-        <span className="golem-save">
+        <span className="demeura-save">
           {/* Not an error: the CLI may be living on credentials set up outside
-              Golem, and saying "missing" would send someone fixing what works. */}
+              Demeura, and saying "missing" would send someone fixing what works. */}
           {status.source === 'cli-native'
             ? t('Using the CLI’s own credentials')
             : t('No token stored here')}
         </span>
       )
     default:
-      return <span className="golem-save">{t('Unknown')}</span>
+      return <span className="demeura-save">{t('Unknown')}</span>
   }
 }
 
@@ -157,21 +157,21 @@ export function McpPanel({
   // says its name once. It carried its own heading back when it was stacked
   // under the credential panel in a dialog.
   return (
-    <section className="golem-mcp">
+    <section className="demeura-mcp">
       <ul>
         {servers.map((server) => {
           const shown = MCP_STATES[server.state] ?? MCP_STATES.unknown
           return (
             <li key={server.name}>
-              <span className="golem-mcp__name">{server.name}</span>
-              <span className={`golem-stat golem-stat--${shown.tone}`}>{t(shown.label)}</span>
+              <span className="demeura-mcp__name">{server.name}</span>
+              <span className={`demeura-stat demeura-stat--${shown.tone}`}>{t(shown.label)}</span>
               {/* Only ever what the CLI said. A reason is never invented. */}
-              {server.error && <span className="golem-mcp__why">{server.error}</span>}
+              {server.error && <span className="demeura-mcp__why">{server.error}</span>}
             </li>
           )
         })}
       </ul>
-      <p className="golem-mcp__note">
+      <p className="demeura-mcp__note">
         {t('Reported when a turn last ran — the CLI loads them with the session.')}
       </p>
     </section>
@@ -269,9 +269,9 @@ export function Settings({
 
   if (!supported) {
     return (
-      <section className="golem-settings">
+      <section className="demeura-settings">
         <h2>{t('Agent credential')}</h2>
-        <p className="golem-empty__hint">
+        <p className="demeura-empty__hint">
           This engine takes its credentials from the environment; there is nothing to arm here.
         </p>
       </section>
@@ -285,19 +285,19 @@ export function Settings({
   const consentPending = active?.consent !== undefined && !consented
 
   return (
-    <section className="golem-settings">
-      <header className="golem-settings__header">
+    <section className="demeura-settings">
+      <header className="demeura-settings__header">
         <StatusLine status={status} t={t} />
       </header>
 
       {phase.kind === 'failed' && (
-        <p className="golem-save golem-save--error" role="alert">
+        <p className="demeura-save demeura-save--error" role="alert">
           {phase.message}
         </p>
       )}
 
       {!active && (
-        <div className="golem-settings__actions">
+        <div className="demeura-settings__actions">
           <button type="button" onClick={() => void begin()} disabled={phase.kind === 'starting'}>
             {status?.state === 'armed' ? t('Renew the token') : t('Arm a token')}
           </button>
@@ -310,7 +310,7 @@ export function Settings({
       )}
 
       {active && (
-        <ol className="golem-arming">
+        <ol className="demeura-arming">
           <li>
             {active.mode === 'device-code' ? (
               <>
@@ -329,7 +329,7 @@ export function Settings({
           </li>
           <li>
             {active.consent !== undefined && (
-              <label className="golem-arming__consent">
+              <label className="demeura-arming__consent">
                 <input
                   type="checkbox"
                   checked={consented}
@@ -339,7 +339,7 @@ export function Settings({
               </label>
             )}
             {active.mode === 'device-code' ? (
-              <div className="golem-settings__actions">
+              <div className="demeura-settings__actions">
                 <button type="button" onClick={() => void cancel(active)}>
                   {t('Cancel')}
                 </button>
@@ -353,17 +353,17 @@ export function Settings({
               </div>
             ) : (
               <>
-                <label className="golem-arming__label">
+                <label className="demeura-arming__label">
                   {active.inputLabel ?? t('Paste the code you were given')}
                   <input
-                    className="golem-arming__input"
+                    className="demeura-arming__input"
                     value={code}
                     onChange={(event) => setCode(event.target.value)}
                     autoComplete="off"
                     spellCheck={false}
                   />
                 </label>
-                <div className="golem-settings__actions">
+                <div className="demeura-settings__actions">
                   <button type="button" onClick={() => void cancel(active)}>
                     {t('Cancel')}
                   </button>

@@ -20,7 +20,7 @@ import { promisify } from 'node:util'
 import type { FastifyInstance } from 'fastify'
 
 import type { DiscoveredPlugin } from './extensions.js'
-import type { PluginManifest } from '@antorfr/golem-schemas'
+import type { PluginManifest } from '@antorfr/demeura-schemas'
 
 const execFileAsync = promisify(execFile)
 

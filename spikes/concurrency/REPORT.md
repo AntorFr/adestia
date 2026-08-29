@@ -60,7 +60,7 @@ perfect overlap.*
    instance that flip-flops models per message re-pays the system prompt on
    every switch — worth knowing before exposing the model selector as a toy.
 
-## What this changes in Golem
+## What this changes in Demeura
 
 - `maxConcurrentTurns: 3` default **confirmed**, with its justification now
   measured instead of guessed (memory-bound; API verified safe to 8).

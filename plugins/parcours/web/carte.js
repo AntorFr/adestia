@@ -18,10 +18,10 @@
 //   connaît, il le passe.
 //
 // CE QUI EST RESTÉ LÀ-BAS : « ⤓ Emporter », le hors-ligne. Il ne dépend pas de
-// ce fichier mais d'un service worker qui sert le cache d'abord, et Golem n'en
+// ce fichier mais d'un service worker qui sert le cache d'abord, et Demeura n'en
 // a pas. Un bouton qui remplirait un cache que personne ne lit mentirait sur ce
 // qu'il fait. Le code vit toujours dans le plugin du prédécesseur (`emporte`,
-// `tuilesDuCorridor`) et revient le jour où Golem devient une PWA.
+// `tuilesDuCorridor`) et revient le jour où Demeura devient une PWA.
 //
 // POURQUOI UNE PASSE DE MONTAGE, ALORS QUE `chart` DESSINE AU TRANSFORM. Un
 // graphique porte ses données dans son corps ; un parcours, non : sa géométrie

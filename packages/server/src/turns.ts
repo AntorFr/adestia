@@ -26,7 +26,7 @@
  */
 
 import { randomUUID } from 'node:crypto'
-import type { Driver, TurnEvent, TurnRequest } from '@antorfr/golem-drivers'
+import type { Driver, TurnEvent, TurnRequest } from '@antorfr/demeura-drivers'
 
 /** The slice of the app's concurrency limiter the desk needs. */
 export interface TurnSlotLimiter {

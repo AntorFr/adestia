@@ -10,7 +10,7 @@ import type { DiscoveredPlugin } from '../src/extensions.js'
 let root: string
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'golem-skills-'))
+  root = await mkdtemp(join(tmpdir(), 'demeura-skills-'))
 })
 
 const plugin = (

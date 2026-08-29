@@ -157,7 +157,7 @@ describe('the endpoint', () => {
   it('answers initialize and tools/list', async () => {
     const { app } = await build()
     expect((await call(app, { method: 'initialize', id: 1 })).json().result.serverInfo.name).toBe(
-      'golem-skippy',
+      'demeura-skippy',
     )
     expect((await call(app, { method: 'tools/list', id: 2 })).json().result.tools).toHaveLength(2)
     await app.close()

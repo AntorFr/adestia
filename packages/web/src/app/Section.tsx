@@ -17,7 +17,7 @@
 
 import { useMemo, useState } from 'react'
 
-import { isFinished, toneOf } from '@antorfr/golem-content'
+import { isFinished, toneOf } from '@antorfr/demeura-content'
 
 import type { IndexEntry, SectionTile } from './sections.js'
 import { pagesIn, subsectionsOf } from './sections.js'
@@ -63,7 +63,7 @@ function facetKeyOf(pages: readonly IndexEntry[]): string | undefined {
 }
 
 function hueVar(hue: string | undefined): Record<string, string> {
-  return hue ? { '--tile-color': `var(--golem-hue-${hue}, var(--accent))` } : {}
+  return hue ? { '--tile-color': `var(--demeura-hue-${hue}, var(--accent))` } : {}
 }
 
 /**
@@ -89,16 +89,16 @@ function PageCard({
 
   return (
     <li>
-      <button type="button" className="golem-card" onClick={onOpen}>
-        <span className="golem-card__title">{entry.title}</span>
+      <button type="button" className="demeura-card" onClick={onOpen}>
+        <span className="demeura-card__title">{entry.title}</span>
         {hasFoot && (
-          <span className="golem-card__foot">
+          <span className="demeura-card__foot">
             {status && (
-              <span className={`golem-stat golem-stat--${toneOf(status)}`}>{status}</span>
+              <span className={`demeura-stat demeura-stat--${toneOf(status)}`}>{status}</span>
             )}
-            {role && <span className="golem-tag">{role}</span>}
+            {role && <span className="demeura-tag">{role}</span>}
             {tags.map((tag) => (
-              <span key={tag} className="golem-tag">
+              <span key={tag} className="demeura-tag">
                 #{tag}
               </span>
             ))}
@@ -120,13 +120,13 @@ function RoomCard({
 }) {
   return (
     <li>
-      <button type="button" className="golem-tile" style={hueVar(room.hue)} onClick={onOpen}>
-        <span className="golem-tile__icon" aria-hidden="true">
+      <button type="button" className="demeura-tile" style={hueVar(room.hue)} onClick={onOpen}>
+        <span className="demeura-tile__icon" aria-hidden="true">
           {room.icon}
         </span>
-        <span className="golem-tile__label">{room.title}</span>
-        <span className="golem-tile__foot">
-          <span className="golem-chip">
+        <span className="demeura-tile__label">{room.title}</span>
+        <span className="demeura-tile__foot">
+          <span className="demeura-chip">
             {room.count} {room.count === 1 ? t('page') : t('pages')}
           </span>
         </span>
@@ -179,27 +179,27 @@ export function Section({
   const lede = rooms.length > 0 ? t('Rooms lead to pages.') : t('Cards open a page.')
 
   return (
-    <div className="golem-home" style={hueVar(tile?.hue)}>
+    <div className="demeura-home" style={hueVar(tile?.hue)}>
       {/* No back button: the breadcrumb in the top bar already says
           "Home / Maison" and its first crumb is the way back. Two controls
           for one move is one too many. */}
       {/* The section's own livery, worn where you land — the same plate the
           tile you came from was wearing, so the move reads as a descent
           rather than a jump to somewhere unrelated. */}
-      <header className="golem-chead">
-        <span className="golem-chead__icon" aria-hidden="true">
+      <header className="demeura-chead">
+        <span className="demeura-chead__icon" aria-hidden="true">
           {tile?.icon ?? '◆'}
         </span>
         <div>
-          <h1 className="golem-chead__title">{title}</h1>
-          <p className="golem-chead__lede">{lede}</p>
+          <h1 className="demeura-chead__title">{title}</h1>
+          <p className="demeura-chead__lede">{lede}</p>
         </div>
       </header>
 
       {rooms.length > 0 && (
         <>
-          <h2 className="golem-section">{t('Inside')}</h2>
-          <ul className="golem-tiles">
+          <h2 className="demeura-section">{t('Inside')}</h2>
+          <ul className="demeura-tiles">
             {rooms.map((room) => (
               <RoomCard key={room.path} room={room} t={t} onOpen={() => openSection(room.path)} />
             ))}
@@ -209,14 +209,14 @@ export function Section({
 
       {live.length > 0 && (
         <>
-          <h2 className="golem-section">{t('Pages')}</h2>
+          <h2 className="demeura-section">{t('Pages')}</h2>
 
           {/* The toolbar appears only where it earns its place: a handful of
               cards is faster to read than to filter, and facet pills for a
               single value would be a control with one setting. */}
           {(live.length > 5 || facetValues.length > 1) && (
-            <div className="golem-toolbar">
-              <label className="golem-search">
+            <div className="demeura-toolbar">
+              <label className="demeura-search">
                 <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="11" cy="11" r="7" />
                   <path d="M21 21l-4-4" />
@@ -229,10 +229,10 @@ export function Section({
                 />
               </label>
               {facetValues.length > 1 && (
-                <div className="golem-facets">
+                <div className="demeura-facets">
                   <button
                     type="button"
-                    className={facet === undefined ? 'golem-pill golem-pill--on' : 'golem-pill'}
+                    className={facet === undefined ? 'demeura-pill demeura-pill--on' : 'demeura-pill'}
                     onClick={() => setFacet(undefined)}
                   >
                     {t('All')}
@@ -241,7 +241,7 @@ export function Section({
                     <button
                       key={value}
                       type="button"
-                      className={facet === value ? 'golem-pill golem-pill--on' : 'golem-pill'}
+                      className={facet === value ? 'demeura-pill demeura-pill--on' : 'demeura-pill'}
                       onClick={() => setFacet(facet === value ? undefined : value)}
                     >
                       {value}
@@ -253,13 +253,13 @@ export function Section({
           )}
 
           {shown.length > 0 ? (
-            <ul className="golem-cards">
+            <ul className="demeura-cards">
               {shown.map((entry) => (
                 <PageCard key={entry.path} entry={entry} onOpen={() => openPage(entry.path)} />
               ))}
             </ul>
           ) : (
-            <p className="golem-empty">{t('Nothing matches.')}</p>
+            <p className="demeura-empty">{t('Nothing matches.')}</p>
           )}
         </>
       )}
@@ -267,11 +267,11 @@ export function Section({
       {/* Finished things leave the grid of living ones rather than the
           section: folded away, counted, one click from being read again. */}
       {finished.length > 0 && (
-        <details className="golem-archive">
+        <details className="demeura-archive">
           <summary>
-            {t('Finished')} <span className="golem-archive__count">{finished.length}</span>
+            {t('Finished')} <span className="demeura-archive__count">{finished.length}</span>
           </summary>
-          <ul className="golem-cards">
+          <ul className="demeura-cards">
             {finished.map((entry) => (
               <PageCard key={entry.path} entry={entry} onOpen={() => openPage(entry.path)} />
             ))}
@@ -280,7 +280,7 @@ export function Section({
       )}
 
       {rooms.length === 0 && all.length === 0 && (
-        <section className="golem-empty">
+        <section className="demeura-empty">
           <p>{t('This section holds nothing yet.')}</p>
         </section>
       )}
