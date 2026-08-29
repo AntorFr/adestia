@@ -23,6 +23,7 @@ import {
 import { PluginBoundary } from '../plugins/Boundary.js'
 import { routeMatches, type PluginApi } from '../plugins/contract.js'
 import { Home } from './Home.js'
+import { followChanges } from './live.js'
 import { resolveLocale, translator } from './i18n.js'
 import { SkinSlot } from './SkinSlot.js'
 import { Section } from './Section.js'
@@ -633,6 +634,36 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
       cancelled = true
     }
   }, [fetchImpl])
+
+  /**
+   * The index, kept live.
+   *
+   * The agent writes pages with its own file tools, so the fetch above is a
+   * snapshot the browser has no reason to retake — a page created mid-chat
+   * existed everywhere except on the screen of the person who asked for it.
+   * The server's change feed says when the set moved; the index is refetched
+   * whole rather than patched, because the endpoint is cheap and one source
+   * of truth beats a client-side merge.
+   *
+   * Only the index: the OPEN page is not reloaded from here, since the editor
+   * may hold words the person has not saved, and its revision check already
+   * arbitrates that conflict on save.
+   */
+  useEffect(() => {
+    if (!instance) return undefined
+    const controller = new AbortController()
+    void followChanges({
+      fetchImpl,
+      signal: controller.signal,
+      onChange: async () => {
+        const list = await fetchImpl('/api/pages/index').catch(() => undefined)
+        if (!list?.ok || controller.signal.aborted) return
+        const body = (await list.json()) as { entries?: IndexEntry[] }
+        setPages(Array.isArray(body.entries) ? body.entries : [])
+      },
+    })
+    return () => controller.abort()
+  }, [instance, fetchImpl])
 
   if (needsLogin === 'refused') {
     return (

@@ -69,6 +69,11 @@ const proxy = createServer((req, res) => {
     },
   )
   upstream.on('error', () => res.writeHead(502).end())
+  // An SSE subscription (`/api/events`) outlives the page that opened it, and
+  // `pipe` never destroys its source when the destination goes: without this,
+  // the upstream socket keeps receiving pings forever and the bench process
+  // survives its own `finally` block.
+  res.on('close', () => upstream.destroy())
   req.pipe(upstream)
 })
 

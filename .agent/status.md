@@ -1,6 +1,27 @@
 # Status — Golem
 > MàJ : 2026-08-28
 
+Chantier du 28/08 — **l'index des pages devient vivant** (le bus d'événements
+que DESIGN.md promettait depuis le début, jamais construit). Le bug : l'agent
+crée une page → invisible du front sans F5, car `/api/pages/index` n'était
+fetché qu'UNE fois au montage. Désormais : chokidar sur l'arbre des pages
+(`server/src/watch.ts`), démarré au PREMIER abonné seulement (serveur sans
+navigateur = zéro travail FS, avec un linger de 10 s), débounce en lots
+(250 ms de calme, plafond 1 s), filtré `.md` hors segments pointés →
+endpoint SSE permanent `GET /api/events` (pings 30 s, fermé proprement au
+shutdown). Côté front `app/live.ts` suit le flux (reconnexion avec backoff,
+resync après une coupure, 404 = feature éteinte → on s'arrête) et refetch
+l'index entier — la page OUVERTE n'est PAS rechargée (l'éditeur peut tenir
+des mots non sauvés ; son check de révision arbitre déjà au save). Config
+`workspace.watch` : `enabled` (défaut true), `polling` + `intervalMs` (défaut
+2000) pour les montages que les événements natifs ne traversent pas — le cas
+réel de Monsieur : workspace sur /mnt/c (NTFS via WSL, synchro OneDrive) ⇒
+`polling: true` recommandé chez lui. Scénario bench auto-vérifiant
+(`bench/scenarios/live-pages.mjs`) : la tuile doit apparaître SANS reload.
+Resterait un jour : pousser les changements aux plugins (ils refetchent
+l'index à leur montage seulement) et rafraîchir la page ouverte quand
+l'éditeur est propre.
+
 Chantier du 27/08 — le retour immédiat du chat (2 bugs de la vague 1) :
 (1) les « … » n'apparaissaient qu'au PREMIER event SSE du serveur — entre
 l'envoi et le spawn du CLI (création de conversation + POST + démarrage),

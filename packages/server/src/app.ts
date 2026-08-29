@@ -34,6 +34,7 @@ import { registerOidc } from './oidc-routes.js'
 import { registerMcp } from './mcp-routes.js'
 import { registerFiles } from './files.js'
 import { registerPages } from './pages.js'
+import { registerEvents } from './watch.js'
 import { mountPluginApis } from './plugin-host.js'
 import { ArmingSessions, SecretStore } from './secrets.js'
 import { registerStatic } from './static.js'
@@ -804,6 +805,9 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
 
   const pagesRoot = join(config.workspace.root, config.workspace.pages)
   registerPages(app, { root: pagesRoot })
+  // The agent writes these files with its own tools, past every route above;
+  // the feed is how a shell already on screen learns they changed.
+  registerEvents(app, { root: pagesRoot, watch: config.workspace.watch })
   // The same root: an attachment is a file sitting next to a page, and a
   // second configurable directory would be a second place to explain.
   registerFiles(app, { root: pagesRoot })

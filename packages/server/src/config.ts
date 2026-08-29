@@ -68,6 +68,23 @@ export interface WorkspaceConfig {
   readonly pages: string
   readonly memory: string
   readonly planif: string
+  readonly watch: WatchConfig
+}
+
+/**
+ * The change feed over the pages tree (`/api/events`).
+ *
+ * On by default: the whole point of the product is that both hands write the
+ * same files, and a shell that only notices the other hand on reload is
+ * half-blind. `polling` exists because native file events cannot cross some
+ * mount boundaries — WSL's `/mnt/c`, NFS, SMB, some Docker bind mounts — and
+ * only the operator knows their workspace sits on one.
+ */
+export interface WatchConfig {
+  readonly enabled: boolean
+  readonly polling: boolean
+  /** The scan period in polling mode; ignored with native events. */
+  readonly intervalMs: number
 }
 
 export interface DriverConfig {
@@ -745,11 +762,34 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
   const auth = parseAuth(raw['auth'], issues)
 
   const workspaceRaw = isObject(raw['workspace']) ? raw['workspace'] : {}
+  const watchRaw = isObject(workspaceRaw['watch']) ? workspaceRaw['watch'] : {}
+  for (const key of Object.keys(watchRaw)) {
+    if (key !== 'enabled' && key !== 'polling' && key !== 'intervalMs') {
+      // Same rule as the top level: a typo here is a live refresh the operator
+      // believes is configured and is not.
+      issues.push(`workspace.watch.${key} is not a setting — known keys: enabled, polling, intervalMs`)
+    }
+  }
+  for (const key of ['enabled', 'polling'] as const) {
+    if (watchRaw[key] !== undefined && typeof watchRaw[key] !== 'boolean') {
+      issues.push(`workspace.watch.${key} must be true or false`)
+    }
+  }
+  const watchIntervalMs = watchRaw['intervalMs'] ?? 2000
+  if (typeof watchIntervalMs !== 'number' || !Number.isInteger(watchIntervalMs) || watchIntervalMs < 100) {
+    // Below this, polling a big tree is a CPU spin dressed as a setting.
+    issues.push('workspace.watch.intervalMs must be an integer >= 100')
+  }
   const workspace: WorkspaceConfig = {
     root: typeof workspaceRaw['root'] === 'string' ? workspaceRaw['root'] : './workspace',
     pages: typeof workspaceRaw['pages'] === 'string' ? workspaceRaw['pages'] : 'pages',
     memory: typeof workspaceRaw['memory'] === 'string' ? workspaceRaw['memory'] : 'memory',
     planif: typeof workspaceRaw['planif'] === 'string' ? workspaceRaw['planif'] : 'planif',
+    watch: {
+      enabled: watchRaw['enabled'] !== false,
+      polling: watchRaw['polling'] === true,
+      intervalMs: typeof watchIntervalMs === 'number' ? watchIntervalMs : 2000,
+    },
   }
 
   const driverRaw = isObject(raw['driver']) ? raw['driver'] : {}

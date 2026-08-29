@@ -98,6 +98,15 @@ workspace:
   pages: pages
   memory: memory
   planif: planif
+  # Live refresh. The server watches the pages tree and tells every open shell
+  # when a page changed, so what the agent just wrote appears without a reload.
+  # Native file events by default; set `polling` when the workspace sits on a
+  # mount those events cannot cross — WSL's /mnt/c, NFS, SMB, some Docker bind
+  # mounts — at the price of a periodic scan of the tree.
+  # watch:
+  #   enabled: true
+  #   polling: false
+  #   intervalMs: 2000
 
 driver:
   # claude-code (Claude Code, via its SDK) or copilot-cli (the `copilot`

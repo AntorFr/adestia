@@ -18,18 +18,18 @@ import type { TurnEvent } from './events.js'
  * half an event, or three and a half. Anything that assumes otherwise works
  * perfectly against a local server and corrupts long answers in production.
  */
-export class SseParser {
+export class SseParser<T = TurnEvent> {
   #buffer = ''
 
-  push(chunk: string): readonly TurnEvent[] {
+  push(chunk: string): readonly T[] {
     this.#buffer += chunk
-    const events: TurnEvent[] = []
+    const events: T[] = []
 
     let boundary = this.#buffer.indexOf('\n\n')
     while (boundary !== -1) {
       const frame = this.#buffer.slice(0, boundary)
       this.#buffer = this.#buffer.slice(boundary + 2)
-      const event = parseFrame(frame)
+      const event = parseFrame<T>(frame)
       if (event) events.push(event)
       boundary = this.#buffer.indexOf('\n\n')
     }
@@ -42,7 +42,7 @@ export class SseParser {
   }
 }
 
-function parseFrame(frame: string): TurnEvent | undefined {
+function parseFrame<T>(frame: string): T | undefined {
   const data = frame
     .split('\n')
     .filter((line) => line.startsWith('data:'))
@@ -51,7 +51,7 @@ function parseFrame(frame: string): TurnEvent | undefined {
 
   if (data.length === 0) return undefined
   try {
-    return JSON.parse(data) as TurnEvent
+    return JSON.parse(data) as T
   } catch {
     // A malformed frame is dropped rather than killing the stream: losing one
     // event beats losing the rest of the answer.

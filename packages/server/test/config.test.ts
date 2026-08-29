@@ -405,3 +405,36 @@ describe('the instance name', () => {
     expect(parseConfig('', { GOLEM_NAME: 'Atelier' }).name).toBeUndefined()
   })
 })
+
+describe('workspace.watch', () => {
+  it('is on by default: both hands write, so the shell must see the other one', () => {
+    expect(parseConfig('').workspace.watch).toEqual({
+      enabled: true,
+      polling: false,
+      intervalMs: 2000,
+    })
+  })
+
+  it('takes the operator settings', () => {
+    const config = parseConfig(
+      'workspace:\n  watch:\n    enabled: false\n    polling: true\n    intervalMs: 500\n',
+    )
+    expect(config.workspace.watch).toEqual({ enabled: false, polling: true, intervalMs: 500 })
+  })
+
+  it('refuses what cannot mean anything', () => {
+    expect(() => parseConfig('workspace:\n  watch:\n    enabled: "yes"\n')).toThrow(
+      /watch.enabled must be true or false/,
+    )
+    // Below 100ms, polling a big tree is a CPU spin dressed as a setting.
+    expect(() => parseConfig('workspace:\n  watch:\n    intervalMs: 10\n')).toThrow(
+      /intervalMs must be an integer >= 100/,
+    )
+  })
+
+  it('refuses a typo rather than ignoring the setting it hides', () => {
+    expect(() => parseConfig('workspace:\n  watch:\n    poling: true\n')).toThrow(
+      /workspace.watch.poling is not a setting/,
+    )
+  })
+})
