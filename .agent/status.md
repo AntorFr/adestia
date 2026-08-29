@@ -1,6 +1,13 @@
 # Status — Golem
 > MàJ : 2026-08-29
 
+Mission posée le 29/08 — **plugin « lots »** (visualisation des chantiers de
+la galaxie Tessera/Ostia) : lettre de mission dans
+`.agent/mission-lots-plugin.md` — contrat de données, règle de lecture
+`main`/branches, dérivations à afficher. La lettre s'auto-détruit : à
+supprimer dans le commit final de l'implem (les READMEs des repos scannés
+restent l'unique contrat). Pas encore implémenté.
+
 Chantier du 29/08 — le skin skippy reprend le **blason d'agent-pods**
 (halo, double anneau, graduations) à la place du réticule simplifié :
 `icon.svg` transplanté (commentaires passés en anglais, repo public) et les
