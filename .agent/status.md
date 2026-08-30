@@ -1,6 +1,29 @@
 # Status — Adestia
 > MàJ : 2026-08-30
 
+Spike du 30/08 — **transport des outils shell** (`spikes/shell-tools-transport/`) :
+conception débattue sur plusieurs sessions pour « l'agent agit sur sa propre
+instance » (premier outil : renommer la conversation). Doctrine convergée :
+un REGISTRE unique (nom, schéma, handler, `stakes`) ; cible IMPLICITE — l'agent
+ne manipule jamais un id, le serveur résout user+conversation via un jeton de
+tour opaque ; TROIS surfaces jamais confondues (publique/ingress, MCP externe
+`mcp-in`, organes internes agent-only hors listener publié) ; MCP retenu comme
+famille de transport (réponse synchrone exigée par Monsieur : l'agent doit
+savoir si l'action a échoué pour le raconter ou réessayer — ce qui a éliminé
+le transport « signal dans la sortie », gardé en plan de contingence documenté).
+Spike EXÉCUTÉ (SDK 0.3.237, 5 tours haiku réels) : (1) un serveur MCP stdio est
+respawné À CHAQUE tour, `resume` compris → un jeton par tour dans son `env` est
+frais par construction ; (2) le pont générique stdio↔socket Unix (30 lignes,
+zéro logique MCP) fonctionne — noter : PLUSIEURS connexions socket par tour, et
+un socket mort dégrade proprement (`failed` au status, le tour finit sans
+erreur) ; (3) `createSdkMcpServer` tourne bien IN-PROCESS (état d'instance
+partagé entre tours — le contexte de tour doit être par closure), mais c'est
+asymétrique (copilot exige un vrai transport) et non sérialisable au contrat
+drivers. Le choix du transport n'est PAS arrêté — décision de Monsieur au vu
+du rapport ; ensuite : graver la doctrine dans DESIGN.md + lettre de mission
+(registre + premier outil + `compact()` orphelin à brancher + refetch UI fin
+de tour).
+
 Correctif du 30/08 après mise en prod — **trois plugins étaient aveugles hors
 layout de référence** (« Aucun workbook » sur le pod alfred). `atelier`,
 `voyages` et `parcours` calculaient leur racine en `join(workspaceRoot,
