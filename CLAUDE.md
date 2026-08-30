@@ -41,10 +41,17 @@ In this order:
    red twice by treating it as noise. If the change touches what the shell
    draws, green is not enough: look at it (below).
 2. **Merge into `main`.** From the primary checkout.
-3. **Delete the branch and remove the worktree.** `git worktree remove` then
+3. **Push `main` — and only ever `main`.** A working branch is local
+   scaffolding: it is born, used and deleted without the remote ever seeing
+   it, so `git push origin <subject>` has no reason to exist here. The
+   isolation this file asks for is for the *index on this disk*, not for
+   anybody to review; with one contributor the remote carries exactly one
+   line of life, and a branch pushed onto it is litter nobody comes back for.
+   No pull requests, for the same reason.
+4. **Delete the branch and remove the worktree.** `git worktree remove` then
    `git branch -d`. A branch that survives its merge is a second answer to
    "where does this code live", and the wrong one wins eventually.
-4. **Then version, tag, release.** Only once the commit is an ancestor of
+5. **Then version, tag, release.** Only once the commit is an ancestor of
    `main`. A tag cut on a side branch names a commit `main` does not contain:
    the image builds, it deploys, and no one can find the source it came from.
 
