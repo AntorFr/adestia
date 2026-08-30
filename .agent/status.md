@@ -31,8 +31,11 @@ drivers + 1 front), 1158 + 146 verts, typecheck/build OK, **banc constaté**
 mi-tour, suit au settle sans reload, liste d'accord, sombre OK). Piège de
 worktree appris : les symlinks workspace de `node_modules` pointent vers le
 checkout primaire → `npm ci` DANS la worktree avant `tsc --build`, sinon le
-typecheck lit les d.ts périmés du voisin. Reste : tag/release (non fait —
-décision de Monsieur), et le lecteur « shim exec » du registre si une
+typecheck lit les d.ts périmés du voisin. Tag **v0.17.0 posé en LOCAL
+seulement** (décision de Monsieur : « tag mais release pas ») : le workflow
+docker-publish.yml se déclenche sur tout tag `v*` poussé, donc `git push
+origin v0.17.0` EST la release — image GHCR publiée. Reste : cette release
+quand Monsieur la voudra, et le lecteur « shim exec » du registre si une
 instance interdit un jour exec+MCP.
 
 Spike du 30/08 — **transport des outils shell** (`spikes/shell-tools-transport/`) :
