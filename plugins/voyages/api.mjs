@@ -274,7 +274,9 @@ const MIME = {
 }
 
 export default async function api(app, opts) {
-  const root = join(opts.workspaceRoot, 'pages')
+  // The host says where the pages tree lives; its folder name is
+  // configuration, not `pages` everywhere.
+  const root = opts.pagesRoot
   // Declared in the manifest, granted by the instance — or absent, which is a
   // supported state rather than a broken one.
   const key = opts.secrets?.GOOGLE_MAPS_API_KEY ?? ''

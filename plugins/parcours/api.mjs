@@ -170,7 +170,9 @@ export function buildGpx(data) {
 }
 
 export default async function api(app, opts) {
-  const root = join(opts.workspaceRoot, 'pages')
+  // The host says where the pages tree lives; its folder name is
+  // configuration, not `pages` everywhere.
+  const root = opts.pagesRoot
 
   app.get('/gpx', async (request, reply) => {
     const target = safeParcoursPath(root, request.query?.f)
