@@ -963,7 +963,9 @@ export function Chat({
     if (current.turning) return
     if (!current.loaded) {
       const conversation = await readConversation(id, fetchImpl)
-      if (!conversation) {
+      // "No longer answers" includes answering with something that is not a
+      // conversation — an error body has no transcript to replay.
+      if (!conversation || !Array.isArray(conversation.messages)) {
         setTabs((state) => closeTab(state, id))
         return
       }
