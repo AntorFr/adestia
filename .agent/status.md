@@ -1,5 +1,14 @@
 # Status — Adestia
-> MàJ : 2026-08-29
+> MàJ : 2026-08-30
+
+Chantier du 30/08 — **le skin alfred reprend le blason de l'agent-pod**
+(dégradé accent `#12a7c0 → #075463`, plus évolué que l'aplat de la réécriture),
+même geste que le crest skippy en v0.15.0 : SVG repris de
+`agent-pods/images/agent-gw/app/static/icon.svg`, rasters re-rendus dans le
+Chromium du bench (plein bord, opaques, marque dans les 80 % centraux). Tag
+**v0.16.0** = première image publiée sous `ghcr.io/antorfr/adestia` — la mise
+en prod d'« Alfred Adestia » sur `alfred.berard.me` se joue côté `k8s-home-lab`
+(l'agent-pod alfred migre sur `alfred.homepod.berard.me`).
 
 Chantier du 29/08 — **le produit s'appelle Adestia** (ex-Golem, nom pris par
 Golem Network et Golem Cloud). Du latin *adest* — « elle est présente » — et
