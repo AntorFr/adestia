@@ -106,7 +106,10 @@ export function summarise(path, data, fait = {}) {
 }
 
 export default async function api(app, opts) {
-  const root = join(opts.workspaceRoot, 'pages')
+  // The host says where the pages tree lives; its folder name is
+  // configuration, so deriving it from workspaceRoot finds nothing on an
+  // instance that names it `memory`.
+  const root = opts.pagesRoot
 
   app.get('/workbooks', async () => {
     const paths = await findWorkbooks(root)

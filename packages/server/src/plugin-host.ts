@@ -107,6 +107,13 @@ export async function runSetups(
  */
 export interface PluginApiContext {
   readonly workspaceRoot: string
+  /**
+   * Where the pages tree actually lives. The folder's NAME is configuration
+   * (`workspace.pages`) — an instance may call it `memory` — so a plugin that
+   * derives it from `workspaceRoot` goes silently blind on every instance
+   * that is not the reference layout.
+   */
+  readonly pagesRoot: string
   readonly dataDir: string
   /** Whether scheduled turns are on — a plugin showing them must not lie. */
   readonly scheduleEnabled: boolean

@@ -1,6 +1,15 @@
 # Status — Adestia
 > MàJ : 2026-08-30
 
+Correctif du 30/08 après mise en prod — **trois plugins étaient aveugles hors
+layout de référence** (« Aucun workbook » sur le pod alfred). `atelier`,
+`voyages` et `parcours` calculaient leur racine en `join(workspaceRoot,
+'pages')` alors que le nom du dossier est de la config (`workspace.pages:
+memory` chez Alfred). Le contrat `PluginApiContext` expose désormais
+`pagesRoot` (résolu par la coque), les trois plugins le consomment, le test
+« aware » épingle la clé ET la valeur, et le skill plugin-author dit la règle.
+Livré en **v0.16.1**.
+
 Chantier du 30/08 — **le skin alfred reprend le blason de l'agent-pod**
 (dégradé accent `#12a7c0 → #075463`, plus évolué que l'aplat de la réécriture),
 même geste que le crest skippy en v0.15.0 : SVG repris de

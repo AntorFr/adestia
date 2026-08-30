@@ -101,6 +101,9 @@ describe('plugin APIs', () => {
     const app = Fastify()
     const problems = await mountPluginApis(app, plugins, {
       workspaceRoot: join(root, 'workspace'),
+      // Deliberately NOT `<workspace>/pages`: the folder name is configuration,
+      // and a plugin must take this value rather than guess it.
+      pagesRoot: join(root, 'workspace', 'memory'),
       dataDir: join(root, 'data'),
       scheduleEnabled: false,
     })
@@ -179,6 +182,7 @@ describe('plugin APIs', () => {
            id: opts.pluginId,
            keys: Object.keys(opts).filter((k) => k !== 'prefix').sort(),
            secrets: Object.keys(opts.secrets ?? {}),
+           pagesRoot: opts.pagesRoot,
          }))
        }`,
     )
@@ -188,12 +192,17 @@ describe('plugin APIs', () => {
     expect(body.id).toBe('aware')
     expect(body.keys).toEqual([
       'dataDir',
+      'pagesRoot',
       'pluginDir',
       'pluginId',
       'scheduleEnabled',
       'secrets',
       'workspaceRoot',
     ])
+    // The VALUE, not just the key: an instance may name its pages folder
+    // `memory`, and a plugin walking `<workspace>/pages` instead sees an
+    // empty tree — the regression behind "Aucun workbook" on a live pod.
+    expect(body.pagesRoot).toBe(join(root, 'workspace', 'memory'))
     // Present, and EMPTY. The field exists so an API can read it without
     // checking, and holds nothing for a plugin that declared nothing — which
     // is the boundary, not a convenience: the instance's other keys are not

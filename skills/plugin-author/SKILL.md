@@ -430,6 +430,14 @@ export default async function api(app, options) {
 An inactive plugin mounts nothing. An API that fails to import is reported and
 skipped: a broken plugin costs its own view, never the server.
 
+**Finding files: take `options.pagesRoot`, never derive it.** The pages
+folder's NAME is instance configuration (`workspace.pages`) — one instance
+calls it `pages`, another `memory` — so `join(options.workspaceRoot, 'pages')`
+walks an empty tree on every instance that is not the reference layout, and
+the failure looks like missing data, not like a bug. The host also hands you
+`workspaceRoot`, `dataDir`, `pluginDir`, `pluginId` and `scheduleEnabled`;
+paths, not objects — an API finds files, it does not reach the engine.
+
 ## Before you finish
 
 1. `adestia-plugin.json` parses and matches the schema above.

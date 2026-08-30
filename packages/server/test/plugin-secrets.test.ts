@@ -80,6 +80,7 @@ describe('what a plugin actually receives', () => {
     const app = Fastify()
     const problems = await mountPluginApis(app, plugins, {
       workspaceRoot: root,
+      pagesRoot: root,
       dataDir: root,
       scheduleEnabled: false,
       secrets,

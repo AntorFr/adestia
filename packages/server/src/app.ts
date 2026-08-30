@@ -817,6 +817,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   // everything else.
   const apiProblems = await mountPluginApis(app, plugins, {
     workspaceRoot: config.workspace.root,
+    pagesRoot,
     dataDir: config.dataDir,
     scheduleEnabled: config.schedule.enabled,
     secrets: config.secrets,
