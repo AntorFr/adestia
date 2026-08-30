@@ -17,6 +17,32 @@ relevés bruts `spikes/*/raw/` gardent « golem » (logs capturés, on ne
 réécrit pas). Le repo GitHub est renommé ; les versions < 0.14 sur GHCR
 restent publiées sous l'ancien nom d'image.
 
+Conception posée le 27–29/08 — **identité et références de fiche**. Une
+référence est aujourd'hui un CHEMIN (`refs: [taches/poncer-porte]`), et
+`resolveList` laisse tomber en silence celle qui ne résout plus : déplacer un
+fichier raccourcit la liste sans un mot. Décidé en trois couches, aucune ne
+connaissant le mot « tâche » : un `id:` par fiche (ULID par défaut, ou déclaré
+quand un référentiel extérieur le possède), une référence canonique
+`<type>/<slug>#<id>` écrite dans le wikilink QUI EXISTE DÉJÀ (mesuré : les trois
+formes font l'aller-retour octet pour octet, et `[[task:…]]` résoudrait
+faussement — `aliasDivider` vaut `:`), et une puce d'état tirée de `status.ts`,
+générique pour n'importe quelle page. Quatre arbitrages rendus par le
+propriétaire : pas de passe de scellage (sans id, une fiche est « pas encore
+liable », pas en faute) ; l'agent frappe l'id en tour de fond selon la politique
+de l'instance ; le même tour répare la référence qu'il vient d'écrire ; pas de
+migration de vocabulaire (un sens un mot, les nouveaux types en anglais).
+Journal de décisions à jour dans `DESIGN.md`. **Rien n'est codé.**
+
+Mission posée le 29/08 — **plugin « coproj »** (suivi de programme/projets/
+sujets, façon comité de projet), en ALPHA : `.agent/mission-coproj-plugin.md`.
+Les blocs y sont classés par PROVENANCE de la donnée — rédigé (le texte est dans
+la fiche, coût nul), requête (récupéré de l'index), asset voisin — parce que
+c'est la provenance qui décide du coût, pas l'apparence. Six blocs sur neuf sont
+rédigés, donc de la mécanique qui tourne déjà. Le plugin arrive en QUATRIÈME
+position : il présuppose l'identité, l'index côté lecteur et les références
+typées. Les données d'exemple sont inventées et Monsieur fournira des cas réels
+— ne rien figer dessus.
+
 Mission posée le 29/08 — **plugin « lots »** (visualisation des chantiers de
 la galaxie Tessera/Ostia) : lettre de mission dans
 `.agent/mission-lots-plugin.md` — contrat de données, règle de lecture
