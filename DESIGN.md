@@ -1056,3 +1056,84 @@ mounted plugin view — making it live is a rendering-architecture decision
 (interactivity, recursion, the security boundary of a plugin's component
 mounting inside another page) for a person to make, not something to wire
 silently while documenting the vocabulary around it.
+
+**2026-08-27/29 (page identity and typed references):** a curated todo list
+resolves its members with `list.refs.map((ref) => tasks[ref]).filter(Boolean)`,
+and the comment above it says a missing task is *dropped rather than shown as a
+broken row*. Since a ref is a path (`refs: [taches/poncer-porte]`), moving a
+file silently shortens the list — and the same flaw sits under `projet:`, `sub:`
+and every prose link. Resolved as three layers, none of which knows the word
+"task", because the thing pointed at is a REFERENCEABLE PAGE and nothing
+narrower.
+
+*Identity.* Every page carries `id:` — an opaque string unique **within its
+type**, a ULID by default (48 bits of clock in Crockford base32 + 80 bits of
+randomness; measured: two writers minting 50 000 each in the same millisecond
+collide zero times, and the clock is UTC by construction, so no timezone has to
+be imposed). A page may declare its own id instead, because a project in a
+company already has one in some referential — so the ULID is the MINTING
+POLICY, not the definition of identity. The core never overwrites a declared id;
+an id may not contain `/`, `#`, `:` or whitespace (the reference separators);
+two pages claiming the same `type/id` are named at boot, exactly like a
+block-name collision between two plugins.
+
+*Reference.* One canonical string, `<type>/<slug>#<id>`, in both containers: a
+flat YAML scalar in frontmatter (`parseFrontmatter` deliberately does not walk
+nested structures — *"a query language over deep structures is a database"*),
+and the EXISTING wikilink in prose, `[[task/poncer-porte#01M11K…:Poncer la
+porte]]`. Measured against the real pipeline: the target carries `#` through
+untouched and all three forms round-trip byte-identical, while
+`[[task:01M11K…]]` silently resolves to a page named "task" with the id as its
+label — `aliasDivider` defaults to `:` and this repo passes no options. Hence
+the slash. Resolution has four rungs and none is silent: exact `type/id`; then
+id alone across types (resolve when unique, and SAY so — that is what stops a
+changed `type:` from breaking every pointer at once); then slug, so references
+already written keep working; then a reference shown as LOST, which is the fix
+worth making on its own.
+
+*Rendering.* `status.ts` already answers for any page — `toneOf()` sorts every
+status into underway/waiting/settled, `isFinished()` says whether its life is
+over — so the generic chip is title + tone + status word, and it works for a
+walk, a gift, or a type nobody has invented yet. A plugin enriches that chip for
+the `types` it already claims, needing no new registry. An unknown reference
+type does NOT open the page read-only, unlike an unknown block: a block is a
+rendering contract the editor cannot round-trip, a typed wikilink is an ordinary
+node that round-trips either way.
+
+*The one prerequisite:* the reader must have the index, which it does not today.
+That single addition also unlocks the query blocks a tracking plugin needs, so
+it is paid once and spent several times — and it is the moment to pay the
+index's own debt (`/api/pages/index` re-reads every file, sequentially, with no
+cache: measured 10 ms at 200 pages, 226 ms at 5 000, where the real ceiling is
+the 1.1 MB payload rather than the disk).
+
+Rejected, each against a fact rather than a taste: an inline directive
+(`:task{id=…}`) — the grammar deletes `constructs.text` on purpose, because
+`19:30:59` parsed as a directive named `59` and put a page read-only for
+mentioning a time; `[task:xxx]` — a CommonMark shortcut reference link, so a
+squatted construct plus one more editor node, and this file already carries the
+scar of a node the editor did not know; an incremental id — a counter is shared
+mutable state, the one thing files do badly; a database — the numbers above say
+storage is not the problem, and the trigger to reopen is written down (past
+5 000 pages, or queries frontmatter cannot carry); and a proxy over the agent's
+`Write` — the hook exists (`canUseTool`) but lives only in the `ask` posture,
+which is out of the MVP, copilot-cli has no return channel for it, `Bash` and
+its `cat >` route around it anyway, and rewriting an agent's write without
+telling it is a door that lies. What survives from that last one: once `ask`
+ships, `canUseTool` is the right place to REFUSE LOUDLY a write that fails the
+closed vocabulary — a validator, never a proxy.
+
+Decided by the owner rather than derived: no sealing pass over the existing
+corpus — a page without an id is not at fault, it is *not yet linkable*, and it
+stops being so the moment someone links it (a background unattended turn asks
+the agent, which applies the instance's own id policy when it has one, the ULID
+otherwise). The same turn repairs the reference it has just written, since the
+mint is asynchronous and the reference leaves before the id exists. And no
+vocabulary migration: French type names are a leftover, not a breakage — what
+matters is that ONE MEANING HAS ONE WORD across an instance, which the index can
+check by confronting the types pages write with the types plugins claim; new
+types are named in English, a rule in `plugin-author` rather than a traversal of
+the corpus. Which is the doctrine this codebase already followed in three places
+without ever stating it — `done: true` still read, `statut` read as `status`,
+the predecessor's `{% %}` tags parsed: **the engine accepts history, the skill
+teaches the canon.**
