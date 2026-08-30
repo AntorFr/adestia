@@ -188,6 +188,54 @@ export interface ModelInfo {
   readonly label?: string
 }
 
+/**
+ * One parameter of a shell tool. Strings only, deliberately: the first tools
+ * need nothing else, and a widening here must be argued, not defaulted into.
+ */
+export interface ShellToolParam {
+  readonly name: string
+  readonly description: string
+  /** Absent means required — the common case reads shortest. */
+  readonly optional?: boolean
+}
+
+export interface ShellToolSpec {
+  readonly name: string
+  readonly description: string
+  readonly params: readonly ShellToolParam[]
+}
+
+export type ShellToolOutcome =
+  | { readonly ok: true; readonly text: string }
+  | { readonly ok: false; readonly error: string }
+
+/**
+ * The instance's OWN tools — the agent acting on the product that runs it
+ * (rename this conversation, mint an id) — handed to the driver for one turn.
+ *
+ * The shape is the whole doctrine. The agent never names its target: the
+ * handle was minted for one turn of one conversation, and the server resolves
+ * user and thread on its own side (`call` closes over them; the socket path
+ * resolves the token to the same context). Ids stay plumbing between server
+ * and driver; the model only ever handles meaning.
+ *
+ * Two ways in, one dispatch. A driver that can host tools in-process calls
+ * `call` directly; a driver whose engine is a separate binary points a stdio
+ * MCP server at `bridgePath` — a dumb pipe to `socketPath`, announcing
+ * `token` — and the server ends up in the same dispatch. Measured before
+ * committed (spikes/shell-tools-transport): the stdio server respawns on
+ * every turn, so a per-turn token in its env is fresh by construction.
+ */
+export interface ShellToolsHandle {
+  readonly socketPath: string
+  /** Valid for this turn only; revoked when the turn settles. */
+  readonly token: string
+  /** The generic stdio↔socket bridge, written by the server. Secret-free. */
+  readonly bridgePath: string
+  readonly tools: readonly ShellToolSpec[]
+  call(name: string, args: Readonly<Record<string, unknown>>): Promise<ShellToolOutcome>
+}
+
 /** Per-turn usage. Every field optional: drivers report what they actually know. */
 export interface TurnUsage {
   readonly inputTokens?: number
@@ -291,6 +339,12 @@ export interface TurnRequest {
   readonly sessionId?: string
   readonly model?: string
   readonly cwd: string
+  /**
+   * The instance's own tools for this turn. Absent on a turn with no
+   * conversation — a scheduled note, an inbound delegation — which therefore
+   * has nothing to rename and no reason to hold a turn token.
+   */
+  readonly tools?: ShellToolsHandle | undefined
 }
 
 /** The mandatory core every driver implements. */

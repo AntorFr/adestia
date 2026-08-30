@@ -905,7 +905,8 @@ export function Chat({
   const bottom = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    void listConversations(fetchImpl).then(setThreads)
+    void refreshThreads()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- plain function, stable per fetchImpl
   }, [fetchImpl])
 
   useEffect(() => {
@@ -922,6 +923,24 @@ export function Chat({
 
   function session(id: string): TabSession {
     return sessionsRef.current.get(id) ?? EMPTY_SESSION
+  }
+
+  /**
+   * Refetches the thread list AND pushes fresh titles into the open tabs.
+   *
+   * The second half is the point: a tab renders `session(id).title` first,
+   * a copy taken at adoption — so a title the AGENT changed mid-turn (its
+   * `rename_conversation` tool) would stay masked by the stale copy for as
+   * long as the tab lives. The list is the server's truth; the copies follow.
+   */
+  function refreshThreads(): Promise<void> {
+    return listConversations(fetchImpl).then((fresh) => {
+      setThreads(fresh)
+      for (const meta of fresh) {
+        const open = sessionsRef.current.get(meta.id)
+        if (open && open.title !== meta.title) patchSession(meta.id, { title: meta.title })
+      }
+    })
   }
 
   function patchSession(
@@ -1256,6 +1275,9 @@ export function Chat({
       await consume(tabId, states)
     } finally {
       patchSession(tabId, { turning: false })
+      // The turn may have changed what the LIST says — the agent renames its
+      // own conversation now — and nothing else redraws it mid-session.
+      void refreshThreads()
     }
   }
 
@@ -1379,7 +1401,7 @@ export function Chat({
             setThreadsOpen(opening)
             // Reopened = refreshed: the dots read the desk's live state and
             // the updatedAt the unread marks compare against.
-            if (opening) void listConversations(fetchImpl).then(setThreads)
+            if (opening) void refreshThreads()
           }}
           aria-label={t('Conversations')}
           aria-expanded={threadsOpen}

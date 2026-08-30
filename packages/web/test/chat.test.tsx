@@ -670,6 +670,75 @@ describe('chat', () => {
     expect(screen.getByText('Voilà.')).toBeTruthy()
   })
 
+  it('refetches the list when a turn settles, and the tab follows a title the agent changed', async () => {
+    // The agent can rename its own conversation now (`rename_conversation`),
+    // and nothing else redraws the list mid-session. The trap is the tab: it
+    // renders `session(id).title` first — a copy taken at creation — so a
+    // refetch alone would leave the fresh name masked by the stale copy.
+    const encoder = new TextEncoder()
+    let turn: ReadableStreamDefaultController<Uint8Array> | undefined
+    let lists = 0
+
+    const fetchImpl = vi.fn((url: string, init?: RequestInit) => {
+      const path = String(url)
+      if (path.startsWith('/api/turn/attach')) {
+        return Promise.resolve({ ok: true, status: 204, body: null } as unknown as Response)
+      }
+      if (path === '/api/turn') {
+        const body = new ReadableStream<Uint8Array>({
+          start(controller) {
+            turn = controller
+          },
+        })
+        return Promise.resolve({ ok: true, status: 200, body } as unknown as Response)
+      }
+      if (path === '/api/conversations' && init?.method === 'POST') {
+        return Promise.resolve(
+          new Response(JSON.stringify({ id: 'c1', title: 'renomme ce fil stp', updatedAt: '' }), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          }),
+        )
+      }
+      if (path === '/api/conversations') {
+        lists += 1
+        const title = turn ? 'Chauffe-eau du garage' : 'renomme ce fil stp'
+        return Promise.resolve(
+          new Response(JSON.stringify({ conversations: [{ id: 'c1', title, updatedAt: '' }] }), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          }),
+        )
+      }
+      return Promise.resolve(
+        new Response(JSON.stringify({}), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      )
+    }) as unknown as typeof fetch
+
+    render(<Chat fetchImpl={fetchImpl} />)
+    const input = screen.getByRole('textbox')
+    fireEvent.change(input, { target: { value: 'renomme ce fil stp' } })
+    await act(async () => {
+      fireEvent.keyDown(input, { key: 'Enter' })
+    })
+    const before = lists
+
+    await act(async () => {
+      turn!.enqueue(encoder.encode(frame({ type: 'result', sessionId: 's1', stopped: false })))
+      turn!.close()
+    })
+
+    await waitFor(() => expect(lists).toBeGreaterThan(before))
+    await waitFor(() =>
+      expect(screen.getAllByRole('tab').map((tab) => tab.textContent).join(' ')).toContain(
+        'Chauffe-eau du garage',
+      ),
+    )
+  })
+
   it('POSTs a message sent during a turn at once, shows it held, then adopts the merged turn', async () => {
     // The queue is the SERVER's now: a message typed during a turn is posted
     // immediately (202 — held, already written into the thread), so a closed

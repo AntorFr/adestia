@@ -16,13 +16,17 @@ import {
   AskDesk,
   ClaudeCodeDriver,
   CopilotDriver,
+  SHELL_TOOLS_SERVER_NAME,
   createOAuthFlow,
   type Driver,
+  type ShellToolsHandle,
 } from '@antorfr/adestia-drivers'
 import type { FastifyInstance } from 'fastify'
 
 import { buildApp } from './app.js'
 import { ConfigError, parseConfig, type AdestiaConfig } from './config.js'
+import { ConversationStore } from './conversations.js'
+import { ShellToolsService } from './shell-tools.js'
 import { Clock, scheduleStatePath } from './clock.js'
 import {
   claimedTypeCollisions,
@@ -93,9 +97,55 @@ async function buildDriver(
   const refreshStore = new FileRefreshStore(dataDir, log)
   switch (config.driver.id) {
     case 'claude-code': {
-      const { query } = await import('@anthropic-ai/claude-agent-sdk')
+      const sdk = await import('@anthropic-ai/claude-agent-sdk')
+      // Undeclared in package.json the way the SDK itself is: both belong to
+      // this branch alone, resolved from the SDK's own dependency tree.
+      const { z } = await import('zod')
+      // Loosened once, here: the SDK's `tool` wants a static zod shape, and
+      // ours is built from the registry at runtime. The values ARE zod
+      // schemas; only the generics cannot know it.
+      const tool = sdk.tool as unknown as (
+        name: string,
+        description: string,
+        schema: Record<string, unknown>,
+        handler: (args: Record<string, unknown>) => Promise<unknown>,
+      ) => never
+      /**
+       * Hosts a turn's shell tools inside THIS process: the handlers run
+       * beside the conversation store, the turn's context travels by closure,
+       * and no token exists on the path at all. Measured before relied on
+       * (spikes/shell-tools-transport): the SDK accepts a live instance among
+       * its `mcpServers`, and the handlers execute in the calling process.
+       */
+      const toolsHost = (handle: ShellToolsHandle): unknown =>
+        sdk.createSdkMcpServer({
+          name: SHELL_TOOLS_SERVER_NAME,
+          tools: handle.tools.map((spec) =>
+            tool(
+              spec.name,
+              spec.description,
+              Object.fromEntries(
+                spec.params.map((param) => [
+                  param.name,
+                  (param.optional ? z.string().optional() : z.string()).describe(
+                    param.description,
+                  ),
+                ]),
+              ),
+              async (args) => {
+                const outcome = await handle.call(spec.name, args)
+                return {
+                  content: [
+                    { type: 'text' as const, text: outcome.ok ? outcome.text : outcome.error },
+                  ],
+                  ...(outcome.ok ? {} : { isError: true }),
+                }
+              },
+            ),
+          ),
+        })
       return new ClaudeCodeDriver({
-        query: query as unknown as ConstructorParameters<typeof ClaudeCodeDriver>[0]['query'],
+        query: sdk.query as unknown as ConstructorParameters<typeof ClaudeCodeDriver>[0]['query'],
         models: config.driver.models,
         // Arming speaks the OAuth flow itself rather than driving the CLI's
         // terminal screen: same authorization, but every failure comes back
@@ -103,6 +153,7 @@ async function buildDriver(
         armingFlow: createOAuthFlow(),
         ...(asks ? { asks } : {}),
         mcpServers,
+        toolsHost,
         refreshStore,
       })
     }
@@ -264,6 +315,18 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     ? await options.driverFactory(config)
     : await buildDriver(config, dataDir, mcpServers, asks, log)
 
+  // The instance's own tools: one registry, hosted in-process by a driver
+  // that can and served over a unix socket to every other (shell-tools.ts).
+  // Started here, not in buildApp — the app is built bare in tests, and a
+  // unix socket must never open as a side effect of building routes.
+  const shellTools = new ShellToolsService({
+    dataDir,
+    conversations: new ConversationStore(dataDir),
+    log,
+  })
+  await shellTools.start()
+  log(`shell tools ready (${shellTools.socketPath})`)
+
   // `ask` on an engine that cannot be asked is refused OUT LOUD rather than
   // degraded. Copilot in programmatic mode has no return channel: every
   // question it raised would become a silent refusal mid-turn, which reads as
@@ -365,6 +428,7 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     ...(rebound ? { userTokens: rebound } : {}),
     secrets,
     ...(asks ? { asks } : {}),
+    shellTools,
     ...(activeSkin
       ? {
           skin: {
@@ -426,6 +490,7 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     close: async () => {
       clock?.stop()
       await app.close()
+      await shellTools.close()
     },
   }
 }

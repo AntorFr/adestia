@@ -23,9 +23,11 @@ import type {
   McpServer,
   McpServerHealth,
   ModelInfo,
+  ShellToolsHandle,
   TurnEvent,
   TurnRequest,
 } from '../contract.js'
+import { SHELL_TOOLS_SERVER_NAME, bridgeStdioConfig } from '../shell-tools-config.js'
 import { TOKEN_ENV_VAR, classifyAuthError, copilotEnv, explainAuthProblem, looksLikeToken } from './auth.js'
 import { McpTokens, type RefreshStore } from '../mcp-oauth.js'
 import { newTranslationState, parseLine, translate } from './events.js'
@@ -274,10 +276,20 @@ export class CopilotDriver implements Driver {
    * to write is swallowed on purpose: a turn that cannot reach one MCP server
    * is worth far more than a turn that refuses to start.
    */
-  async #mcpConfig(callerToken?: string): Promise<string | undefined> {
-    if (this.#mcpServers.length === 0) return undefined
+  async #mcpConfig(callerToken?: string, tools?: ShellToolsHandle): Promise<string | undefined> {
+    if (this.#mcpServers.length === 0 && !tools) return undefined
 
     const mcpServers: Record<string, unknown> = {}
+    if (tools) {
+      // The instance's own tools, over the generic bridge: for this driver it
+      // is one more stdio server, and the per-turn token is fresh by
+      // construction — this binary is spawned per turn, config and all.
+      mcpServers[SHELL_TOOLS_SERVER_NAME] = {
+        type: 'local',
+        ...bridgeStdioConfig(tools),
+        tools: ['*'],
+      }
+    }
     for (const server of this.#mcpServers) {
       if (server.url) {
         const headers: Record<string, string> = { ...server.headers }
@@ -337,7 +349,9 @@ export class CopilotDriver implements Driver {
     // real work only when there is a file to write, and deferring the spawn by
     // a microtask for everyone else is a behaviour change nobody asked for.
     const mcpConfig =
-      this.#mcpServers.length === 0 ? undefined : await this.#mcpConfig(request.callerToken)
+      this.#mcpServers.length === 0 && !request.tools
+        ? undefined
+        : await this.#mcpConfig(request.callerToken, request.tools)
     const args = [
       '--prompt',
       request.prompt,

@@ -1,6 +1,40 @@
 # Status — Adestia
 > MàJ : 2026-08-30
 
+Chantier du 30/08 — **outils shell LIVRÉS** (suite immédiate du spike
+ci-dessous, décision de Monsieur : in-process pour claude-code + pont pour
+copilot, le pont restant un bien commun du serveur). Livré : registre
+`server/src/shell-tools.ts` (un outil = nom + schéma string-only + handler +
+enjeu ; `rename_conversation` et `new_id` ULID maison), prise **socket Unix**
+(MCP en JSON-RPC ligne à ligne, repli tmpdir si le chemin dépasse ~100 octets,
+connexions multiples par tour assumées), pont générique **écrit par le
+serveur** dans le dataDir (source embarquée — aucun fichier à faire porter au
+build), jetons de tour opaques (SANS rotation : un message mis en file
+frapperait un jeton neuf et tuerait celui du tour en cours — TTL 6 h + purge à
+la frappe, révocation au settle), compaction du JSONL au settle d'un tour qui
+a renommé (le `compact()` orphelin enfin branché, hors course avec les appends
+du finish). Contrat drivers : `TurnRequest.tools?: ShellToolsHandle`
+(socketPath, token, bridgePath, specs, `call()` par closure) +
+`shell-tools-config.ts` partagé ; claude-code reçoit un `toolsHost` injecté au
+boot (instance `createSdkMcpServer` construite dans start.ts, zod importé
+dynamiquement comme le SDK — non déclaré, même précédent) avec repli pont si
+absent ; copilot ajoute l'entrée `local` pont dans son `adestia-mcp.json` par
+tour. Route `/api/turn` : frappe du handle si conversation, release dans le
+`finish` (et sur abort). Front : `refreshThreads()` au settle de chaque pompe
+— refetch de la liste ET patch de la copie locale `session(id).title` qui
+masquerait le titre frais dans l'onglet. Doctrine gravée dans DESIGN.md
+(section « Shell tools » + Decision log 30/08) : trois surfaces jamais
+confondues, cible implicite, l'auteur frappe l'id, outils qui répondent,
+signal = contingence documentée. 20 tests neufs (15 service + 2 app + 2
+drivers + 1 front), 1158 + 146 verts, typecheck/build OK, **banc constaté**
+(`bench/scenarios/agent-rename.mjs`, 4 captures : onglet encore périmé
+mi-tour, suit au settle sans reload, liste d'accord, sombre OK). Piège de
+worktree appris : les symlinks workspace de `node_modules` pointent vers le
+checkout primaire → `npm ci` DANS la worktree avant `tsc --build`, sinon le
+typecheck lit les d.ts périmés du voisin. Reste : tag/release (non fait —
+décision de Monsieur), et le lecteur « shim exec » du registre si une
+instance interdit un jour exec+MCP.
+
 Spike du 30/08 — **transport des outils shell** (`spikes/shell-tools-transport/`) :
 conception débattue sur plusieurs sessions pour « l'agent agit sur sa propre
 instance » (premier outil : renommer la conversation). Doctrine convergée :

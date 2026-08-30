@@ -381,6 +381,62 @@ describe('conversations', () => {
     await app.close()
   })
 
+  it('mints the turn\'s tool handle, hands it to the driver, releases it at settle', async () => {
+    const driver = new ScriptedDriver([RESULT])
+    const minted: { userId: string; conversationId: string }[] = []
+    const released: unknown[] = []
+    const handle = {
+      socketPath: '/s.sock',
+      token: 't-1',
+      bridgePath: '/b.mjs',
+      tools: [],
+      call: () => Promise.resolve({ ok: true as const, text: '' }),
+    }
+    const app = await withStore({
+      driver,
+      shellTools: {
+        handleFor: (ctx) => {
+          minted.push(ctx)
+          return handle
+        },
+        release: (released_) => {
+          released.push(released_)
+          return Promise.resolve()
+        },
+      },
+    })
+    const { id } = (await app.inject({ method: 'POST', url: '/api/conversations' })).json()
+    await app.inject({
+      method: 'POST',
+      url: '/api/turn',
+      payload: { prompt: 'renomme ce fil', conversationId: id },
+    })
+
+    // The model never sees an id: the handle closed over the target here.
+    expect(minted).toEqual([{ userId: expect.any(String), conversationId: id }])
+    expect(driver.requests[0]?.tools).toBe(handle)
+    // And the token dies with the turn — release ran inside finish.
+    expect(released).toEqual([handle])
+    await app.close()
+  })
+
+  it('carries no tool handle on a turn without a conversation', async () => {
+    const driver = new ScriptedDriver([RESULT])
+    const app = await withStore({
+      driver,
+      shellTools: {
+        handleFor: () => {
+          throw new Error('a conversationless turn has nothing to rename')
+        },
+        release: () => Promise.resolve(),
+      },
+    })
+    await app.inject({ method: 'POST', url: '/api/turn', payload: { prompt: 'hi' } })
+    expect(driver.requests[0]).toBeDefined()
+    expect(driver.requests[0]?.tools).toBeUndefined()
+    await app.close()
+  })
+
   it('refuses to rename a thread that is not there', async () => {
     const app = await withStore()
     const response = await app.inject({

@@ -322,6 +322,58 @@ describe('outbound MCP servers', () => {
     await collect(driver)
     expect('mcpServers' in optionsOf(seen)).toBe(false)
   })
+
+  const HANDLE = {
+    socketPath: '/data/shell-tools.sock',
+    token: 'turn-token-1',
+    bridgePath: '/data/shell-tools-bridge.mjs',
+    tools: [
+      {
+        name: 'rename_conversation',
+        description: 'rename',
+        params: [{ name: 'title', description: 'the new title' }],
+      },
+    ],
+    call: () => Promise.resolve({ ok: true as const, text: 'done' }),
+  }
+
+  it('rides the turn tools over the generic bridge when nothing hosts them', async () => {
+    const seen: { params?: unknown } = {}
+    const driver = new ClaudeCodeDriver({ query: fakeSdk([resultMessage], seen) })
+    await collect(driver, 'hi', { tools: HANDLE })
+
+    // The bridge is a stdio server like any other; the per-turn token rides
+    // its env, which the engine rebuilds at every spawn (measured,
+    // spikes/shell-tools-transport).
+    expect(optionsOf(seen)['mcpServers']).toEqual({
+      adestia: {
+        type: 'stdio',
+        command: process.execPath,
+        args: ['/data/shell-tools-bridge.mjs'],
+        env: {
+          ADESTIA_TOOLS_SOCKET: '/data/shell-tools.sock',
+          ADESTIA_TOOLS_TOKEN: 'turn-token-1',
+        },
+      },
+    })
+  })
+
+  it('prefers the injected in-process host, and hands it the turn handle', async () => {
+    const seen: { params?: unknown } = {}
+    const instance = { instance: 'live-mcp-server' }
+    const hosted: unknown[] = []
+    const driver = new ClaudeCodeDriver({
+      query: fakeSdk([resultMessage], seen),
+      toolsHost: (handle) => {
+        hosted.push(handle)
+        return instance
+      },
+    })
+    await collect(driver, 'hi', { tools: HANDLE })
+
+    expect(hosted).toEqual([HANDLE])
+    expect((optionsOf(seen)['mcpServers'] as Record<string, unknown>)['adestia']).toBe(instance)
+  })
 })
 
 describe('MCP health', () => {

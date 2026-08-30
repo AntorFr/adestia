@@ -321,6 +321,89 @@ Inbound MCP (the instance exposing `ask_<agent>`) is a separate subsystem, alrea
 in v1 scope — with no default allowed-hosts baked into the product (the
 predecessor's lesson: one deployment's DNS in a public image helps nobody).
 
+## Shell tools — the agent acting on its own instance
+
+The instance hands its agent tools that act on the PRODUCT itself — first
+`rename_conversation` and `new_id` (`server/src/shell-tools.ts`). The doctrine
+below was argued across several sessions and each piece carries the argument
+that forced it; a future tool gets designed by walking these rules, not by
+reopening them.
+
+**Three surfaces, never confused.** An instance is reachable three ways: the
+PUBLIC surface (UI + `/api/*`, through the ingress, user auth); the EXTERNAL
+MCP surface (`ask_<agent>`, through the ingress, deliberately — other agents
+are its audience); and the instance's OWN ORGANS, which only its agent may
+reach. The organs live on a **unix socket**, not on a port: the app's listener
+is published by an ingress, and an agent-only endpoint protected by nothing
+but a bearer token on a published listener is a service door on the façade.
+A socket cannot be mis-exposed; it does not exist on the network.
+
+**One registry, readers generated.** A tool is a name, a description, a
+string-typed schema, a handler — one entry. Every surface is derived from the
+registry (the MCP tool list, the schema validation, the in-process host), so
+a new tool is an entry, never a mechanism. Handlers never learn the transport.
+
+**The target is implicit — the agent expresses meaning, never addresses.**
+A tool call carries a title or nothing; WHICH conversation it lands on is
+resolved server-side, from context minted at the spawn site (the only place
+that holds `userId` and `conversationId` together). In-process the context
+travels by closure; over the socket it travels as an opaque per-turn token the
+bridge announces and the server resolves from its own table. `sessionId` plays
+no role anywhere: the session↔conversation mapping is "one current, sometimes
+none", stale under drift, absent on turn one — the token design bypasses it
+entirely. This is also why the model never needs to know any id exists.
+
+**Transports: hosted where possible, bridged everywhere else.** The
+claude-code driver is handed a LIVE MCP server instance (`toolsHost`,
+injected at boot like `query` is): handlers run in the server process, beside
+the store, no token on the path. Every external-binary engine gets the same
+tools as one more stdio MCP server: a generic ~40-line bridge (written by the
+server under its data dir, secret-free) that pipes stdio to the socket and
+announces the turn token from its env. The bridge belongs to the SERVER, not
+to a driver — a driver's translation layer only wraps it into its engine's
+config shape, which for copilot is five lines in a file it already writes.
+Measured before committed (spikes/shell-tools-transport, executed): engines
+respawn stdio servers on every turn, resumed ones included, so the env token
+is fresh by construction; engines open several socket connections per turn;
+a dead socket degrades to a failed server without hurting the turn; the SDK
+instance really runs handlers in the calling process, and it keeps state
+across turns — so per-turn context is closed over at spawn, never held on
+the instance.
+
+**Tools answer.** Every call returns synchronously — success text or a
+failure worded for the agent — because the agent is the conversational
+surface: "I could not rename it, the title was empty" must come from the
+agent in the same breath, not from a toast the shell shows nobody asked for.
+This requirement is what eliminated the tempting cheaper design (a structured
+"signal" block in the agent's output, parsed by the turn pipeline, which
+already holds the context): a signal cannot answer, and the event stream is
+one-way — there is no channel to inject a result into a running turn. The
+signal transport remains a documented contingency for an environment that
+forbids BOTH exec and MCP, and nothing else.
+
+**Tool or convention is a product decision, per capability.** A tool
+encapsulates an evolvable, server-authoritative behavior (`new_id`: the
+canonical ULID scheme can change without re-teaching any agent); a convention
+costs nothing and works everywhere (semantic slugs in a workbook stay
+hand-minted where the domain says so). The rule that falls out: **the author
+of an object mints its id** — server-created records get server UUIDs,
+agent-authored content uses the tool or the domain's own scheme.
+
+**Stakes are declared per tool.** Both current tools are benign — a rename is
+reversible by construction (append-only meta lines; the thread compacts when
+the turn settles). The registry's shape forces the question at registration;
+a destructive tool is where the posture and confirmation debate reopens, and
+not before.
+
+Rejected on the way, each against a fact: extending `TurnEvent` with action
+events (two drivers to change, and a one-way stream cannot carry replies);
+resolving the conversation from `sessionId` (mapping fragile, absent on turn
+one, and the server holds the conversationId at the exact place the tool is
+wired); the agent calling `/api/*` with `curl` (a durable allowlist for
+`curl` opens the whole web, the token lands on argv, and it only
+authenticates in `auth: none`); an HTTP MCP endpoint on the app's own
+listener (the surface confusion above).
+
 ## Chat experience — the parity bar
 
 The v1 chat must be **at least** agent-gw's PWA, which sets the bar:
@@ -1137,3 +1220,22 @@ the corpus. Which is the doctrine this codebase already followed in three places
 without ever stating it — `done: true` still read, `statut` read as `status`,
 the predecessor's `{% %}` tags parsed: **the engine accepts history, the skill
 teaches the canon.**
+
+**2026-08-30 (shell tools — the agent acts on its own instance):** argued
+across four sessions, and the argument is the asset: the design reversed
+itself three times before every piece carried a requirement. The need was
+small (rename a conversation whose title is the first 48 characters of its
+first message); the shape is a doctrine — see "Shell tools" above. What the
+detours settled, in order: a token-addressed handle beats teaching the agent
+any id (the session↔conversation mapping is fragile and the model never needs
+it); a write-only "signal" in the output stream beats nothing but cannot
+ANSWER, and the owner's requirement — the agent must be able to say "it
+failed, here is why" in the same breath — makes request/response
+non-negotiable; MCP is that request/response, natively, but NOT on the app's
+listener (three surfaces, never confused) — a unix socket plus a generic
+bridge for external binaries, a live in-process instance where the engine
+allows one. Every transport fact was executed before being relied on
+(spikes/shell-tools-transport). First tools: `rename_conversation` (benign,
+reversible, compacts on settle) and `new_id` (ULID, the author-mints-id rule
+made canonical). The MCP-forbidden-org case is a per-instance contingency the
+registry absorbs later, not a constraint the design bent for.

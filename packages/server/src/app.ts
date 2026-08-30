@@ -14,7 +14,14 @@ import { join } from 'node:path'
 
 import multipart from '@fastify/multipart'
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify'
-import type { AskAnswer, AskDesk, Driver, DriverDescriptor, TurnEvent } from '@antorfr/adestia-drivers'
+import type {
+  AskAnswer,
+  AskDesk,
+  Driver,
+  DriverDescriptor,
+  ShellToolsHandle,
+  TurnEvent,
+} from '@antorfr/adestia-drivers'
 
 import { isPublicRoute, resolveIdentity, type Identity } from './auth.js'
 import { AttachmentInbox, frameAttachments, type StoredAttachment } from './attachments.js'
@@ -74,6 +81,16 @@ export interface AppDependencies {
    * where nothing ever asks and the answer route is not mounted at all.
    */
   readonly asks?: AskDesk
+  /**
+   * The instance's own tools (`shell-tools.ts`), started by `start()` and
+   * injected: the service listens on a unix socket, and an app built bare —
+   * every test — must not open one as a side effect. Absent, a chat turn
+   * simply carries no tools, the way a scheduled turn always does.
+   */
+  readonly shellTools?: {
+    handleFor(ctx: { userId: string; conversationId: string }): ShellToolsHandle
+    release(handle: ShellToolsHandle): Promise<void>
+  }
   /** The active skin, when the configured one was found on disk. */
   readonly skin?: { readonly id: string; readonly dir: string; readonly manifest: SkinPayload }
   /**
@@ -526,6 +543,15 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
         ? await userTokens?.accessToken(caller.userId)
         : undefined
 
+      // The instance's own tools, minted for THIS turn of THIS conversation.
+      // The handle is how `rename_conversation` knows its target without the
+      // model ever seeing an id; a turn without a conversation carries none,
+      // because it has nothing to rename and no reason to hold a token.
+      const tools =
+        conversationId && deps.shellTools
+          ? deps.shellTools.handleFor({ userId, conversationId })
+          : undefined
+
       const spec: TurnSpec = {
         request: {
           // Framed here, not in the browser: what the thread stores is the
@@ -536,6 +562,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
           ...(sessionId ? { sessionId } : {}),
           ...(typeof body.model === 'string' ? { model: body.model } : {}),
           ...(callerToken ? { callerToken } : {}),
+          ...(tools ? { tools } : {}),
         },
         // Written even when the turn failed: a thread that silently drops
         // the answer it did produce is worse than one showing it broke. The
@@ -574,6 +601,10 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
               .setSession(userId, conversationId, outcome.sessionId)
               .catch(() => undefined)
           }
+          // Last, after this turn's own appends: the token dies with the
+          // turn, and a rename during it compacts the thread here — under
+          // the desk's serialization, so the rewrite races nothing.
+          if (tools) await deps.shellTools?.release(tools).catch(() => undefined)
         },
       }
 
@@ -607,6 +638,8 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
           })
         } catch (error) {
           if (admission.mode === 'run') admission.abort()
+          // The turn will never run, so its finish will never release this.
+          if (tools) await deps.shellTools?.release(tools).catch(() => undefined)
           await reply.code(500).send({ error: (error as Error).message })
           return reply
         }

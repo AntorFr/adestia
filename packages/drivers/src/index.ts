@@ -1,5 +1,6 @@
 export * from './contract.js'
 export * from './asks.js'
+export * from './shell-tools-config.js'
 
 export * from './conformance.js'
 export * from './claude-code/index.js'

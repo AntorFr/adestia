@@ -704,6 +704,47 @@ describe('outbound MCP servers', () => {
     await turn
     expect(fake.spawns[0]?.args).not.toContain('--additional-mcp-config')
   })
+
+  it('rides the turn tools over the generic bridge, even with no other server', async () => {
+    const home = await mkdtemp(join(tmpdir(), 'adestia-copilot-'))
+    const fake = fakeCopilot()
+    const driver = new CopilotDriver({ home, spawnImpl: fake.spawnImpl })
+    const turn = collect(driver, {
+      prompt: 'x',
+      cwd: '/w',
+      tools: {
+        socketPath: '/data/shell-tools.sock',
+        token: 'turn-token-1',
+        bridgePath: '/data/shell-tools-bridge.mjs',
+        tools: [],
+        call: () => Promise.resolve({ ok: true as const, text: 'unused on this transport' }),
+      },
+    })
+    await vi.waitFor(() => expect(fake.spawns.length).toBe(1))
+    fake.stdout.write('{"type":"result","data":{"sessionId":"s1","exitCode":0}}\n')
+    fake.child.emit('close', 0)
+    await turn
+
+    // One more stdio server for this driver; the per-turn token is fresh by
+    // construction — this binary and its config are made per turn.
+    expect(fake.spawns[0]?.args).toContain('--additional-mcp-config')
+    expect(JSON.parse(await readFile(join(home, 'adestia-mcp.json'), 'utf8'))).toEqual({
+      mcpServers: {
+        adestia: {
+          type: 'local',
+          command: process.execPath,
+          args: ['/data/shell-tools-bridge.mjs'],
+          env: {
+            ADESTIA_TOOLS_SOCKET: '/data/shell-tools.sock',
+            ADESTIA_TOOLS_TOKEN: 'turn-token-1',
+          },
+          tools: ['*'],
+        },
+      },
+    })
+    // Nothing on argv carries the token.
+    expect(fake.spawns[0]?.args.join(' ')).not.toContain('turn-token-1')
+  })
 })
 
 describe('MCP health', () => {

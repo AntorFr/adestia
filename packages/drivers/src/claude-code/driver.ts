@@ -18,10 +18,12 @@ import type {
   McpServer,
   McpServerHealth,
   ModelInfo,
+  ShellToolsHandle,
   TurnEvent,
   TurnRequest,
   TurnUsage,
 } from '../contract.js'
+import { SHELL_TOOLS_SERVER_NAME, bridgeStdioConfig } from '../shell-tools-config.js'
 import { AskDesk, type PendingAsk } from '../asks.js'
 import { McpTokens, type RefreshStore } from '../mcp-oauth.js'
 import { TOKEN_ENV_VAR, looksLikeToken } from './arming.js'
@@ -66,6 +68,17 @@ export interface ClaudeCodeOptions {
    * silently, on every start. Same doctrine as instructions.
    */
   readonly mcpServers?: readonly McpServer[]
+  /**
+   * Hosts the turn's shell tools INSIDE this process, when the embedding can.
+   *
+   * The SDK accepts a live MCP server instance among its `mcpServers`
+   * (measured, spikes/shell-tools-transport): the handlers then run where the
+   * conversation store lives, no socket, no token on the wire. The factory is
+   * injected — like `query` — because building the instance needs the SDK,
+   * and this driver deliberately never imports it. Absent, the tools ride the
+   * generic bridge exactly as they do on any external-binary engine.
+   */
+  readonly toolsHost?: (tools: ShellToolsHandle) => unknown
   /** Injected so the token exchange can be exercised without a network. */
   readonly fetchImpl?: typeof fetch
   /** Persists a rotated MCP refresh token across restarts. */
@@ -172,6 +185,7 @@ export class ClaudeCodeDriver implements Driver {
   readonly #armingFlow: ArmingFlow | undefined
   readonly #asks: AskDesk | undefined
   readonly #mcpServers: readonly McpServer[]
+  readonly #toolsHost: ((tools: ShellToolsHandle) => unknown) | undefined
   readonly #tokens: McpTokens
   /** What the last session said about them. Empty until a turn has run. */
   #mcpHealth: readonly McpServerHealth[] = []
@@ -192,6 +206,7 @@ export class ClaudeCodeDriver implements Driver {
     // Shaped once, at construction: the mapping is fixed for the process's
     // life, and doing it per turn would repeat the same work on every message.
     this.#mcpServers = options.mcpServers ?? []
+    this.#toolsHost = options.toolsHost
     this.#tokens = new McpTokens(options.fetchImpl ?? fetch, options.refreshStore)
   }
 
@@ -336,7 +351,17 @@ export class ClaudeCodeDriver implements Driver {
   async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
     // Resolved per turn, not per process: a hub's token lives about an hour,
     // and a map built at construction would be stale by the second morning.
-    const mcpServers = await toSdkServers(this.#mcpServers, this.#tokens, request.callerToken)
+    const mcpServers: Record<string, unknown> = {
+      ...(await toSdkServers(this.#mcpServers, this.#tokens, request.callerToken)),
+    }
+    if (request.tools) {
+      // The instance's own tools. In-process when the embedding provided a
+      // host; over the generic bridge otherwise — same registry either way,
+      // and the model sees the same server name.
+      mcpServers[SHELL_TOOLS_SERVER_NAME] = this.#toolsHost
+        ? this.#toolsHost(request.tools)
+        : { type: 'stdio', ...bridgeStdioConfig(request.tools) }
+    }
 
     const desk = this.#asks
     /**
