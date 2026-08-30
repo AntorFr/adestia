@@ -8,7 +8,7 @@
  */
 
 import { act, render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { describe, expect, it, onTestFinished, vi } from 'vitest'
+import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 
 import {
   Bubble,
@@ -27,6 +27,20 @@ import {
   formatTokens,
 } from '../src/chat/Chat.js'
 import { PROSE_CADENCE_MS } from '../src/chat/useCadence.js'
+
+// Whether this environment HAS a localStorage depends on the runtime, not on
+// jsdom: Node 22+ ships its own experimental one, live in memory unless
+// --localstorage-file redirects it. Where it lives, tabs and read marks
+// persist from one test into the next — which is how CI (Node 22) went red
+// while the same suite stayed green on a Node without it. Every test starts
+// from the empty storage it was written against.
+beforeEach(() => {
+  try {
+    localStorage.clear()
+  } catch {
+    /* a runtime with no storage has nothing to leak */
+  }
+})
 
 describe('model picker', () => {
   it('draws nothing when the driver enumerates none', () => {
@@ -987,6 +1001,30 @@ describe('tabs', () => {
     expect(titles[0]).toContain('Fil deux')
     expect(titles[1]).toContain('Fil un')
     expect(await screen.findByText('réponse c1')).toBeTruthy()
+  })
+
+  it('closes a restored tab the server answers with something else', async () => {
+    // A persisted tab can outlive its thread, and the server may answer its
+    // id with a body that is no conversation at all. That answer must close
+    // the tab the way a 404 does — not leave an unhandled rejection where
+    // the transcript replay should have been.
+    const store = new Map<string, string>([
+      ['adestia.tabs', JSON.stringify({ open: ['zz'], active: 'zz' })],
+    ])
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => void store.set(key, value),
+      removeItem: (key: string) => void store.delete(key),
+    })
+    onTestFinished(() => {
+      vi.unstubAllGlobals()
+    })
+
+    const fetchImpl = tabsFetch()
+    render(<Chat fetchImpl={fetchImpl} />)
+    // The tab WAS adopted — its conversation was asked for — and then closed.
+    await waitFor(() => expect(fetchImpl).toHaveBeenCalledWith('/api/conversations/zz', undefined))
+    await waitFor(() => expect(screen.queryAllByRole('tab')).toHaveLength(0))
   })
 
   it('dots the thread list from the desk state the server reports', async () => {
