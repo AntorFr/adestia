@@ -13,6 +13,7 @@ import type { ScreenView } from '../chat/stream.js'
 import { Editor, type PageDocument } from '../editor/Editor.js'
 import type { BlockComponents } from '../editor/Reader.js'
 import { Preferences, isPrefsPage, prefsTitle, type PrefsPage } from './Preferences.js'
+import { SettingsMenu } from './SettingsMenu.js'
 import {
   browserSkinEnvironment,
   loadSkin,
@@ -269,12 +270,21 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
    * sent back to `#/settings` below — a title over an empty screen would be a
    * frame lying about what it holds.
    */
-  const settingsPage = useMemo<PrefsPage | undefined>(() => {
-    if (route === '/settings') return ''
+  const settings = useMemo<{ page: PrefsPage; item?: string } | undefined>(() => {
+    if (route === '/settings') return { page: '' }
     if (!route.startsWith('/settings/')) return undefined
-    const wanted = route.slice('/settings/'.length)
-    return isPrefsPage(wanted) ? wanted : ''
+    const rest = route.slice('/settings/'.length)
+    const cut = rest.indexOf('/')
+    const wanted = cut === -1 ? rest : rest.slice(0, cut)
+    if (!isPrefsPage(wanted)) return { page: '' }
+    // What is open INSIDE the page — a server's name, an instruction's path,
+    // which is why the tail is taken whole and only then decoded. A path has
+    // slashes in it, and cutting on the first one would open `plugins` for
+    // `plugins/todo/SKILL.md`.
+    const item = cut === -1 ? undefined : decodePath(rest.slice(cut + 1))
+    return { page: wanted, ...(item ? { item } : {}) }
   }, [route])
+  const settingsPage = settings?.page
 
   const section = route.startsWith('/section/')
     ? decodePath(route.slice('/section/'.length))
@@ -300,11 +310,21 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
     // Settings is an app of the shell's own, so it wears an app's trail: its
     // name, then the page open under it, and its name becomes a way back only
     // once there is something below it.
-    if (settingsPage !== undefined) {
-      return appTrail(
-        { label: t('Settings'), root: '/settings' },
-        settingsPage === '' ? [] : [{ label: prefsTitle(settingsPage, t) }],
-      )
+    if (settings !== undefined) {
+      return appTrail({ label: t('Settings'), root: '/settings' }, [
+        ...(settings.page === ''
+          ? []
+          : [
+              {
+                label: prefsTitle(settings.page, t),
+                route: `/settings/${settings.page}`,
+              },
+            ]),
+        // The thing being read, named. A trail that stopped at "Instructions"
+        // while a file fills the screen is a trail that cannot say where the
+        // reader is — which is the one job it has.
+        ...(settings.item ? [{ label: settings.item.split('/').at(-1) as string }] : []),
+      ])
     }
     if (openApp) {
       const plugin = loaded.find((entry) => entry.id === openApp)
@@ -342,7 +362,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           (folder.split('/').at(-1) as string),
       }))
     return page ? [...crumbs, { label: page.title }] : crumbs
-  }, [openApp, loaded, page, pages, section, pluginTrail, settingsPage, t])
+  }, [openApp, loaded, page, pages, section, pluginTrail, settings, t])
 
   /**
    * Where the reader is, snapshotted onto each message.
@@ -421,9 +441,15 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
    */
   useEffect(() => {
     if (route === '/instructions') location.replace('#/settings/instructions')
-    // A settings segment naming no page: back to the list rather than a
-    // screen with nothing on it.
-    else if (route.startsWith('/settings/') && !isPrefsPage(route.slice('/settings/'.length))) {
+    // A settings segment naming no page: back to the mosaic rather than a
+    // screen with nothing on it. This also catches `credential` and
+    // `appearance`, which were pages of this app until the session-sized
+    // switches moved behind the cog — a bookmark to one lands on the mosaic
+    // rather than on a blank frame.
+    else if (
+      route.startsWith('/settings/') &&
+      !isPrefsPage(route.slice('/settings/'.length).split('/')[0] ?? '')
+    ) {
       location.replace('#/settings')
     }
   }, [route])
@@ -482,10 +508,6 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
     if (themePref) document.documentElement.dataset['theme'] = themePref
     else if (!skinScheme) delete document.documentElement.dataset['theme']
   }, [themePref, skinScheme])
-
-  const cycleTheme = useCallback(() => {
-    setThemePref((current) => (current === '' ? 'light' : current === 'light' ? 'dark' : ''))
-  }, [])
 
   const openPlugin = useCallback((plugin: LoadedPlugin) => {
     location.hash = plugin.view?.route ?? `/${plugin.id}`
@@ -827,38 +849,24 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
               ? ` ${instance.driver.cliVersion}`
               : ''}
           </span>
-          <button
-            type="button"
-            className="adestia-ib"
-            onClick={cycleTheme}
-            aria-label={t('Theme')}
-            title={themePref === '' ? 'Theme: system' : `Theme: ${themePref}`}
-          >
-            ◐
-          </button>
-          {/* A shortcut to the app, not a menu: the same screen the tile on
-              the landing canvas opens, at the same address. It stays in the
-              header because arming a credential is what somebody does when
-              something has just stopped working, and hunting for a tile is
-              not what that moment is for. */}
-          <button
-            type="button"
-            className="adestia-ib"
-            onClick={() => {
-              location.hash = '/settings'
-            }}
-            aria-label={t('Settings')}
-            {...(settingsPage !== undefined ? { 'aria-current': 'page' as const } : {})}
-          >
-            ⚙
-          </button>
-          {instance.auth.mode === 'oidc' && (
-            <form method="post" action="/auth/logout" className="adestia-canvas__signout">
-              <button type="submit" className="adestia-switch" title={instance.user?.displayName}>
-                {t('Sign out')}
-              </button>
-            </form>
-          )}
+          {/* A MENU, not a shortcut into a screen. What sits behind it is the
+              three things somebody settles without leaving the page they are
+              on: is the agent's token still good, is this light or dark, and
+              am I signing out. The cycling ◐ that used to stand beside it
+              went inside as three named choices — a glyph that changes
+              nothing visible until you press it can only be inferred.
+
+              What is NOT here is content: the servers and the instructions
+              are an app on the canvas, reached from its tile. */}
+          <SettingsMenu
+            theme={themePref}
+            onTheme={setThemePref}
+            {...(instance.auth.mode === 'oidc'
+              ? { signedIn: instance.user?.displayName ?? '' }
+              : {})}
+            fetchImpl={fetchImpl}
+            t={t}
+          />
         </header>
 
         <div className="adestia-canvas__body">
@@ -918,24 +926,46 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           })()
         ) : settingsPage !== undefined ? (
           <>
+            {/* ONE step up, never a jump to the top. Two back controls
+                appeared on screen the day the pages grew items of their own
+                — the shell's, which went to the mosaic, and the screen's,
+                which went to its own list — stacked one above the other and
+                reading as a bug. This is the survivor, so it has to be right
+                at every depth. */}
             <button
               type="button"
               className="adestia-switch"
               onClick={() => {
-                location.hash = settingsPage === '' ? '' : '/settings'
+                location.hash =
+                  settings?.item !== undefined
+                    ? `/settings/${settingsPage}`
+                    : settingsPage === ''
+                      ? ''
+                      : '/settings'
               }}
             >
-              ‹ {settingsPage === '' ? t('Home') : t('Settings')}
+              ‹{' '}
+              {settings?.item !== undefined
+                ? prefsTitle(settingsPage, t)
+                : settingsPage === ''
+                  ? t('Home')
+                  : t('Settings')}
             </button>
             <Preferences
               page={settingsPage}
               onPage={(next) => {
                 location.hash = next === '' ? '/settings' : `/settings/${next}`
               }}
-              theme={themePref}
-              onTheme={setThemePref}
+              {...(settings?.item !== undefined ? { item: settings.item } : {})}
+              onItem={(next) => {
+                location.hash =
+                  next === undefined
+                    ? `/settings/${settingsPage}`
+                    : `/settings/${settingsPage}/${encodePath(next)}`
+              }}
               fetchImpl={fetchImpl}
               t={t}
+              {...(locale ? { locale } : {})}
             />
           </>
         ) : page ? (

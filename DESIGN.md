@@ -86,7 +86,8 @@ agent only.
 │   chat ▸ streamed turns, attachments,                              │
 │          quota surfaces (per driver capability)                    │
 │   apps ▸ core views + plugin views (runtime ESM, import map),      │
-│          settings among them — credential, MCP, look, prose        │
+│          settings among them — MCP servers, instructions;          │
+│          the cog holds token / look / sign-out, in a menu          │
 │   editor ▸ Notion-like block editor over markdown files            │
 ├─────────────────────────────────────────────────────────────────────┤
 │  server (Node/TS)                                                  │
@@ -244,7 +245,7 @@ on both engines without being rewritten.
 
 ## MCP configuration
 
-Outbound MCP servers (what the agent can call) come from **three sources, one
+Outbound MCP servers (what the agent can call) come from **four sources, one
 materialization**:
 
 1. **Operator layer** — the `mcp:` block of `adestia.config.yaml`: stdio
@@ -253,18 +254,48 @@ materialization**:
 2. **Plugin layer** — a plugin manifest may declare (or ship) MCP servers as a
    facet: active plugin = server wired, inactive = nothing, same rule as plugin
    APIs.
-3. **Workspace-native layer** — the CLI's own MCP config (`.mcp.json`, …) is the
+3. **Shell layer** — `<dataDir>/mcp-servers.json`, written from the settings
+   app (`server/src/mcp-store.ts`). The one WRITABLE layer, and it exists
+   because wiring a server otherwise meant a text editor, a config file and a
+   restart: fine for the operator who deployed the instance, impossible for
+   anyone else. The obvious implementation — have the shell rewrite the YAML —
+   was refused twice over: a serializer hands the operator their file back
+   stripped of the comments explaining why a server is there, and in the
+   deployment this product targets that file is mounted, often read-only. So
+   the shell gets its own file and the operator keeps theirs.
+4. **Workspace-native layer** — the CLI's own MCP config (`.mcp.json`, …) is the
    user's and the agent's business: Adestia neither parses nor translates it (same
    doctrine as instructions).
 
-**Materializing 1+2 is a core driver responsibility** (like instruction
-delivery). The core merges the two layers before a driver exists and HANDS the
+**Materializing 1+2+3 is a core driver responsibility** (like instruction
+delivery). The core merges the layers before a driver exists and HANDS the
 result over: a driver is never given a discovery mechanism, so "where does this
 server come from" keeps one answer. Name conflicts are reported by name and the
 operator layer wins — a plugin is something you dropped in a folder, the config
 is something you wrote. `headers` is the operator's alone and absent from the
 manifest schema: a plugin carrying a bearer would put a credential in a folder
 anybody can drop into.
+
+Between the shell layer and the other two, **neither wins: a collision is
+refused** at the moment somebody tries to add the name, because precedence
+between "the file you wrote" and "the button you pressed" is a coin toss either
+way round. The config still takes the case that can only arise afterwards — a
+name added to the YAML behind a stored server — and the screen says so on the
+one it silenced, rather than leaving it quietly wired to nothing.
+
+Two properties make the writable layer safe to hand a browser. **The grammar is
+the config's own** (`readMcpServer`, shared with the YAML reader), so there is
+no looser second way into this instance's wiring. And **a secret never leaves
+the server**: every `env` and `header` value and the two `auth` credentials come
+back as a mask, and a value posted back still equal to that mask means "keep the
+one you are holding" — so a URL typo is fixable without re-typing a token
+nobody may still have. The file is written 0600 through a temporary file, like
+every other credential the product stores.
+
+The layer is **live, not boot-time**: both drivers build their server map at the
+spawn site, so they are handed a function rather than a list, and a server added
+from the settings screen is wired on the next turn. A button that needs a
+restart to do anything is a button that looks broken.
 
 Per driver, materialization differs and the asymmetry is load-bearing:
 
@@ -685,9 +716,12 @@ resolves in Adestia as follows:
   decide its authority), the way it already declares `skillsPath()`; the
   product hardcodes neither, because the two CLIs keep the same natures under
   different names and their zones overlap without matching. Prose that a PERSON
-  wrote is listed and editable from the interface — delivered files are
-  excluded, since offering to edit one would offer an edit that disappears at
-  the next restart. Authority is refused a write from a turn without a human
+  wrote is listed and editable from the interface; a delivered file is listed
+  too, flagged, and drawn without a Save — hiding it answered "what is this
+  agent reading?" with half the truth, and on an instance whose behaviour comes
+  mostly from plugin contracts the rule somebody was hunting for was invisible
+  because it was not theirs. The write is refused at the route in any case: an
+  edit that disappears at the next restart is worth refusing twice. Authority is refused a write from a turn without a human
   saying so. A configurable three-level taxonomy was deliberately dropped: a
   flat refusal is understood and testable, and the level in between can be
   added the day somebody actually wants to edit a hook from a browser.
@@ -821,6 +855,39 @@ that opens to its own words when the network is gone.
 - **`adestia init`** — the documented workspace scaffold.
 
 ## Decision log
+
+**2026-08-31 (settings was one word for two different things):** the app the
+previous entry built held four subjects, and measured against use they split
+cleanly in half. Two are SESSION-SIZED SWITCHES — is the agent's token still
+good, is this light or dark, am I signing out — answered in a second, from
+wherever somebody happens to be standing. Two are CONTENT — the servers this
+instance reaches, the prose it was told — browsed, searched, edited. Putting
+them on one screen made the first kind a navigation away from whatever you
+were reading, which is the classic way a preferences screen becomes a place
+people dread; and it made the second kind a list of ROWS, a preferences idiom,
+so two domains of this instance looked like options in a dialog.
+
+*Taken: the cog is a menu, the app is a canvas.* The cog holds the token flow
+(in place — the moment somebody opens it is the moment something has just
+stopped working, and sending them elsewhere to fix it is the wrong direction
+to move an already-annoyed person), the three named theme choices, and sign
+out. The app keeps its tile and its address and drops the rows for tiles, like
+every other way in. `#/settings/credential` and `#/settings/appearance` hand
+over to `#/settings` rather than surviving as blank frames.
+
+Two things that split unlocked, and both were the point rather than a bonus.
+**MCP servers became editable** — a tile each, a declaration behind each, an
+"add" button — which needed a writable fourth layer (`mcp-store.ts`, see *MCP
+configuration*), and needed the drivers to be handed a FUNCTION rather than a
+list so a server added from a browser is wired on the next turn. And
+**delivered instructions became visible**: hiding them answered "what is this
+agent reading?" with half the truth, so they are listed, flagged, and drawn
+without a Save.
+
+What did NOT change is the doctrine underneath. The config file is still the
+operator's, never rewritten by us. The grammar that judges a server is still
+the config's own. A secret still never leaves the server. And a name a plugin
+or the config already answers to is still refused rather than shadowed.
 
 **2026-08-26 (the permission layer was a doorbell sold as a wall — removed):**
 interactive permissions were a v1 pillar: a broker gating every tool call

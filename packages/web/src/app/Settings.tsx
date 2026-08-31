@@ -1,9 +1,14 @@
 /**
- * Settings: arming the driver's credential without a terminal.
+ * Arming the driver's credential without a terminal.
  *
  * The flow is rendered from the driver's `mode`, never from its name — the
  * same panel serves a paste-a-code flow and a device-code one, and a third
  * engine needs no change here.
+ *
+ * It draws inside the cog menu (`SettingsMenu`), which is why it heads
+ * nothing: the menu says what this block is, once. A person opens it because
+ * something has just stopped working, so it has to be answerable from
+ * wherever they were standing rather than behind a navigation.
  */
 
 import { useCallback, useEffect, useState } from 'react'
@@ -75,26 +80,6 @@ export interface McpServerHealth {
 }
 
 /**
- * How each state reads, and which of the three tones it wears.
- *
- * `needs-auth` is the one worth naming: it is not a failure, it is a job for a
- * person, and painting it red would send somebody debugging a network while a
- * server waits to be logged into. `unknown` is not red either — nothing has
- * been observed yet, which is a fact about this instance rather than about the
- * server.
- */
-const MCP_STATES: Readonly<
-  Record<McpServerHealth['state'], { readonly tone: string; readonly label: string }>
-> = {
-  connected: { tone: 'settled', label: 'connected' },
-  failed: { tone: 'waiting', label: 'failed' },
-  'needs-auth': { tone: 'waiting', label: 'needs a sign-in' },
-  pending: { tone: 'underway', label: 'starting' },
-  disabled: { tone: 'underway', label: 'disabled' },
-  unknown: { tone: 'underway', label: 'not observed yet' },
-}
-
-/**
  * What the driver says about its outbound MCP servers.
  *
  * `undefined` is a THIRD answer, distinct from the empty list: it means the
@@ -129,53 +114,6 @@ export function useMcpServers(
   }, [fetchImpl, enabled])
 
   return servers
-}
-
-/**
- * The outbound MCP servers this instance wired, and what they are doing.
- *
- * Absent entirely when the driver cannot report — a 404 — rather than shown
- * empty: "this engine does not report" and "you have no servers" are different
- * facts, and one box cannot say both.
- */
-export function McpPanel({
-  fetchImpl = fetch,
-  servers: given,
-  t = (key) => key,
-}: {
-  fetchImpl?: typeof fetch
-  /** Already fetched by the screen around it; asked for otherwise. */
-  servers?: readonly McpServerHealth[] | undefined
-  t?: (key: string) => string
-}) {
-  const fetched = useMcpServers(fetchImpl, given === undefined)
-  const servers = given ?? fetched
-
-  if (servers === undefined || servers.length === 0) return null
-
-  // Untitled on purpose: this is a whole page now, and the screen around it
-  // says its name once. It carried its own heading back when it was stacked
-  // under the credential panel in a dialog.
-  return (
-    <section className="adestia-mcp">
-      <ul>
-        {servers.map((server) => {
-          const shown = MCP_STATES[server.state] ?? MCP_STATES.unknown
-          return (
-            <li key={server.name}>
-              <span className="adestia-mcp__name">{server.name}</span>
-              <span className={`adestia-stat adestia-stat--${shown.tone}`}>{t(shown.label)}</span>
-              {/* Only ever what the CLI said. A reason is never invented. */}
-              {server.error && <span className="adestia-mcp__why">{server.error}</span>}
-            </li>
-          )
-        })}
-      </ul>
-      <p className="adestia-mcp__note">
-        {t('Reported when a turn last ran — the CLI loads them with the session.')}
-      </p>
-    </section>
-  )
 }
 
 export function Settings({
@@ -270,9 +208,8 @@ export function Settings({
   if (!supported) {
     return (
       <section className="adestia-settings">
-        <h2>{t('Agent credential')}</h2>
         <p className="adestia-empty__hint">
-          This engine takes its credentials from the environment; there is nothing to arm here.
+          {t('This engine takes its credentials from the environment; there is nothing to arm here.')}
         </p>
       </section>
     )

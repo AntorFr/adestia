@@ -1092,52 +1092,124 @@
   font-size: var(--text-sm);
 }
 
-/* The instruction zone. A list on the left, the file on the right — the shape
-   of every editor anybody has used, so nothing has to be learned. */
-.adestia-instructions__split {
-  display: grid;
-  grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
-  gap: var(--space-4);
-  align-items: start;
-  margin-top: var(--space-4);
-}
+/* The instruction zone: a card per instruction, a field to find one, and the
+   file itself on its own screen.
 
-@media (max-width: 760px) {
-  .adestia-instructions__split { grid-template-columns: minmax(0, 1fr); }
-}
-
-.adestia-instructions__list { list-style: none; margin: 0; padding: 0; }
-
-.adestia-instructions__list button {
+   The split pane this replaced was built for the four files a fresh instance
+   has. At thirty — a driver's conventions, a folder of skills, whatever
+   somebody asked the agent to write down — a 200px column of file names is
+   unreadable, and it was the only thing telling two SKILL.md files apart. */
+.adestia-instructions__tools {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  width: 100%;
-  padding: var(--space-2) var(--space-3);
-  text-align: left;
-  background: none;
-  border: 1px solid transparent;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  align-items: center;
+  margin: var(--space-4) 0 var(--space-3);
+}
+
+.adestia-instructions__search {
+  flex: 1 1 220px;
+  min-width: 0;
+  max-width: 360px;
+  padding: 7px var(--space-3);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
+  background: var(--surface-raised);
   color: var(--text);
   font: inherit;
+}
+
+.adestia-instructions__search:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* Dashed, like every other "make a new one" in this shell: it is an
+   invitation rather than a control acting on what is already there. */
+.adestia-instructions__tools button {
+  padding: 6px 13px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  background: none;
+  color: var(--text-muted);
+  font: 600 var(--text-sm) var(--font);
   cursor: pointer;
 }
 
-.adestia-instructions__list button:hover { background: var(--surface-sunken); }
+.adestia-instructions__tools button:hover { border-color: var(--accent); color: var(--accent); }
 
-.adestia-instructions__list button.is-open {
-  background: var(--accent-quiet);
-  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+/* Said once, at the top of a file nobody may save: the textarea is read-only
+   and looks it, but "why" is not something a greyed-out control can say. */
+.adestia-instructions__delivered {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--tile-color, var(--accent));
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
 }
 
-.adestia-instructions__name { font-weight: 600; font-size: var(--text-base); }
+/* A card carries what tells two instructions apart BEFORE either is opened:
+   the name, where it sits, how long it is, and whose it is. */
+.adestia-cards {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-3);
+}
 
-/* The full path under the name: two SKILL.md files are told apart by their
-   folder, and hiding it would make the list ambiguous. */
-.adestia-instructions__path {
+.adestia-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+  height: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.adestia-card:hover { border-color: var(--accent); }
+.adestia-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.adestia-card__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  justify-content: space-between;
+}
+
+.adestia-card__name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.adestia-card__badge {
+  flex: none;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--surface-sunken);
+  color: var(--text-faint);
+  font-size: 11px;
+}
+
+.adestia-card__path {
   font: 11px var(--font-mono);
   color: var(--text-faint);
   overflow-wrap: anywhere;
+}
+
+.adestia-card__foot {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  color: var(--text-faint);
+  font-size: var(--text-sm);
 }
 
 .adestia-instructions__pane {
@@ -1152,12 +1224,6 @@
   align-items: center;
   gap: var(--space-2);
   flex-wrap: wrap;
-}
-
-.adestia-instructions__bar code {
-  font: 11.5px var(--font-mono);
-  color: var(--text-muted);
-  overflow-wrap: anywhere;
 }
 
 /* Monospaced on purpose: frontmatter alignment and code fences are part of
@@ -1176,105 +1242,80 @@
 
 .adestia-instructions__text:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-.adestia-instructions__new {
-  display: flex;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-  margin-top: var(--space-3);
-}
-
-.adestia-instructions__new button {
-  padding: 6px 13px;
-  border: 1px dashed var(--border);
-  border-radius: var(--radius);
-  background: none;
-  color: var(--text-muted);
-  font: 600 var(--text-sm) var(--font);
-  cursor: pointer;
-}
-
-.adestia-instructions__new button:hover { border-color: var(--accent); color: var(--accent); }
-
 .adestia-instructions__empty {
   margin-top: var(--space-4);
   color: var(--text-faint);
 }
 
-/* A way OUT of the settings dialog, into a screen. Looks like a destination
-   rather than a control, because that is what it is. */
-/* The settings screen: one row per subject ------------------------------- */
+/* The cog menu -----------------------------------------------------------
 
-/* A settings page is a screen of the canvas, so it gets the canvas's measure
-   — but the list keeps a reading width: a row stretched to 940px puts its
-   chevron a hand's width away from the words it belongs to. */
-.adestia-prefs__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  max-width: 640px;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
+   A menu rather than a screen, because what is behind it is settled in a
+   second and from wherever you are standing: the agent's token, light or
+   dark, signing out. Anchored to the button, so it opens where the finger
+   already is; and it is the only floating panel in the shell, which is why
+   it can afford the biggest shadow in the file. */
+.adestia-cog { position: relative; display: inline-flex; }
 
-.adestia-prefs__row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  width: 100%;
+.adestia-cog__panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  /* Wide enough for the arming flow, which is the tallest thing in here and
+     the reason this is a panel rather than a list of three items. */
+  width: min(340px, calc(100vw - 2 * var(--space-4)));
+  max-height: min(70vh, 560px);
+  overflow-y: auto;
   padding: var(--space-3);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface-raised);
-  color: inherit;
+  box-shadow: var(--shadow-lg);
+  text-align: left;
+}
+
+.adestia-cog__block + .adestia-cog__block {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.adestia-cog__title {
+  margin: 0 0 var(--space-2);
+  color: var(--text-muted);
+  font: 600 var(--text-sm) var(--font);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.adestia-cog__note { margin: var(--space-2) 0 0; color: var(--text-faint); font-size: var(--text-sm); }
+
+/* Full width and quiet: the last thing in the menu, and never the thing a
+   finger reaches for by accident on the way to the theme buttons. */
+.adestia-cog__signout {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: none;
+  color: var(--text);
   font: inherit;
   text-align: left;
   cursor: pointer;
 }
 
-.adestia-prefs__row:hover { border-color: var(--tile-color, var(--accent)); }
-.adestia-prefs__row:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
+.adestia-cog__signout:hover { border-color: var(--accent); color: var(--accent); }
 
-/* The same saturated plate the app tiles wear, at the size a row can carry:
-   two mosaics of settings and apps that dressed their icons differently
-   would read as two products. */
-.adestia-prefs__plate {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius-sm);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--tile-color, var(--accent)) var(--plate-top), var(--plate-base)),
-    color-mix(in srgb, var(--tile-color, var(--accent)) var(--plate-mix), var(--plate-base))
-  );
-  font-size: var(--text-base);
-}
+.adestia-cog__who { color: var(--text-faint); font-size: var(--text-sm); }
 
-.adestia-prefs__body {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
+/* The settings app -------------------------------------------------------
 
-.adestia-prefs__title { font-weight: 600; }
-
-.adestia-prefs__lede {
-  color: var(--text-muted);
-  font-size: var(--text-sm);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.adestia-prefs__chevron { flex: none; color: var(--text-faint); font-size: var(--text-lg); }
-
+   No rows here any more. Rows were a preferences idiom, and they made two
+   domains of this instance — the servers it reaches, the prose it was told —
+   look like options in a dialog. They are tiles, like every other way in. */
 .adestia-prefs__note { margin: var(--space-4) 0 0; color: var(--text-faint); font-size: var(--text-sm); }
 
 /* Named choices, as one segmented control. The header's cycling glyph can
@@ -1307,28 +1348,55 @@
 
 .adestia-choices__choice:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-/* The MCP panel: a list of names and states, on its own settings page. Rows
-   rather than cards — this is a status board, and a board is read down a
-   column. */
-.adestia-mcp ul { list-style: none; margin: 0; padding: 0; }
+/* One MCP server, opened ------------------------------------------------- */
 
-.adestia-mcp li {
+.adestia-mcp__state {
   display: flex;
   align-items: center;
   gap: var(--space-2);
   flex-wrap: wrap;
-  padding: var(--space-2) 0;
-  border-bottom: 1px solid var(--border);
+  margin: var(--space-3) 0 0;
 }
 
-.adestia-mcp li:last-child { border-bottom: 0; }
-
-.adestia-mcp__name {
-  flex: 1;
-  min-width: 0;
-  font: 600 var(--text-sm) var(--font-mono);
-  overflow-wrap: anywhere;
+/* The declaration, edited AS a declaration. A form with a field per option
+   would have to know every option, and would drop the one it did not know
+   about — `auth`, which is the whole reason a hub works. */
+.adestia-mcp__config {
+  display: block;
+  width: 100%;
+  min-height: 40vh;
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: 13.5px/1.65 var(--font-mono);
+  resize: vertical;
+  tab-size: 2;
 }
+
+.adestia-mcp__config:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.adestia-mcp__config[readonly] { background: var(--surface-sunken); color: var(--text-muted); }
+
+.adestia-mcp__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-top: var(--space-2);
+}
+
+/* Destructive, and dressed as such — but not red until it is hovered: a
+   permanently red button in a row of ordinary ones is noise by the third
+   visit. */
+.adestia-mcp__drop {
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--text-muted);
+}
+
+.adestia-mcp__drop:hover { border-color: var(--danger); color: var(--danger); }
 
 /* The reason takes the whole next line: it is a sentence from the CLI, and
    squeezing it beside a pill truncates the part that explains anything. */
@@ -1992,7 +2060,6 @@
   font-weight: 500;
 }
 
-.adestia-canvas__signout { display: inline; }
 
 /* Attachments ------------------------------------------------------------- */
 

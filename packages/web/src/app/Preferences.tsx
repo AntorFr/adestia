@@ -1,45 +1,50 @@
 /**
- * Settings, as a SCREEN of the shell rather than a dialog over it.
+ * The settings APP — the half of settings that is content.
  *
- * Two moves, and the second is what the first was for.
+ * Three moves got here, and the third is a correction of the second.
  *
- * The dialog it first replaced stacked the credential panel, an Instructions
- * link and the MCP readout in the order they had been written: arming a token
- * pushed everything below it down, and the MCP list sat under a dozen rows of
- * status where nobody scrolled to find it. One row per subject, each opening
- * its own page, fixed the finding — a row can say something true before you
- * open it ("2 servers — 1 needs attention"), which a section header buried
- * mid-scroll never could.
+ * A dialog first: the credential panel, an Instructions link and the MCP
+ * readout stacked in the order they were written, so arming a token pushed
+ * everything below it down and the MCP list sat under a dozen rows of status
+ * where nobody scrolled to find it.
  *
- * Then the frame itself went. Settings is a DOMAIN of this instance — the
- * engine it answers with, the servers it reaches, what it looks like, what it
- * was told — not an accessory of the screen you happened to be on. So it is
- * an app: its own tile on the landing canvas, its own address (`#/settings`,
- * one per page below it), the shell's breadcrumb naming where you are, and
- * the whole width of the canvas to say it in. That last part is not comfort:
- * Instructions used to be a DOOR out of the dialog, because prose is not
- * edited in a box 520px wide. On a screen there is no box to leave, so it is
- * a page in here like the rest.
+ * Then a screen of rows, one per subject, each opening its own page — which
+ * fixed the stacking and went one step too far. It swept the session-sized
+ * switches onto the canvas with the rest: signing out, or checking whether
+ * the agent's token is still good, became a NAVIGATION away from whatever you
+ * were reading. Those belong behind the cog, answered where you stand, and
+ * that is where they now are (`SettingsMenu`).
+ *
+ * What is left here is what needed the canvas in the first place: the servers
+ * this instance reaches, and the prose it was told. Both are things you
+ * browse, search and edit — content, not switches — so this screen is what
+ * every other body of content in this product is, a mosaic of tiles. The rows
+ * went with the switches: a row is a preferences idiom, and it made two
+ * domains of this instance look like options in a dialog.
  *
  * Still controlled rather than self-navigating: the URL is the navigation
  * state of this product — all of it — and a screen keeping its own idea of
  * which page is open would be a second one to disagree with the address bar.
  */
 
-import { Instructions } from './Instructions.js'
-import { McpPanel, Settings, useMcpServers, type McpServerHealth } from './Settings.js'
+import { useEffect, useState } from 'react'
 
-/** Which settings page is open. `''` is the list itself. */
-export type PrefsPage = '' | 'credential' | 'mcp' | 'appearance' | 'instructions'
+import { Instructions } from './Instructions.js'
+import { McpServers } from './McpServers.js'
+import { Tile } from './Tile.js'
+import { useMcpServers, type McpServerHealth } from './Settings.js'
+
+/** Which settings page is open. `''` is the mosaic itself. */
+export type PrefsPage = '' | 'mcp' | 'instructions'
 
 /** The pages that have an address. A closed set: `#/settings/…` is public. */
-const PAGES = ['credential', 'mcp', 'appearance', 'instructions'] as const
+const PAGES = ['mcp', 'instructions'] as const
 
 /**
  * Whether a URL segment names a page.
  *
  * The address bar is user-writable, so `#/settings/whatever` has to resolve to
- * something. Answering here lets the shell send it back to the list rather
+ * something. Answering here lets the shell send it back to the mosaic rather
  * than render a screen with nothing on it under a title that lies.
  */
 export function isPrefsPage(value: string): value is Exclude<PrefsPage, ''> {
@@ -47,11 +52,12 @@ export function isPrefsPage(value: string): value is Exclude<PrefsPage, ''> {
 }
 
 /**
- * A row's lede, from what the driver actually reports.
+ * A tile's second line, from what this instance can actually check.
  *
- * Counted rather than described: "3 servers" is a fact this instance can
- * check, and a row that promised "manage your servers" would be a row that
- * says the same thing on an instance with none.
+ * Counted rather than described: "3 servers" is a fact, and a tile that
+ * promised "manage your servers" would say the same thing on an instance with
+ * none. The exception is what earns the rest of the sentence — a line that
+ * always ended "— all well" is a line nobody reads.
  */
 export function mcpLede(
   servers: readonly McpServerHealth[],
@@ -61,145 +67,87 @@ export function mcpLede(
     (server) => server.state === 'failed' || server.state === 'needs-auth',
   ).length
   const counted = `${servers.length} ${servers.length === 1 ? t('server') : t('servers')}`
-  // The exception is what earns the second half of the sentence: a row that
-  // always ended "— all well" would be a row nobody reads.
-  return attention > 0 ? `${counted} — ${t('%n need attention').replace('%n', String(attention))}` : counted
+  return attention > 0
+    ? `${counted} — ${t('%n need attention').replace('%n', String(attention))}`
+    : counted
 }
 
-/** The theme choices, in the order they are offered. `''` follows the device. */
-const THEMES = [
-  { value: '', label: 'System' },
-  { value: 'light', label: 'Light' },
-  { value: 'dark', label: 'Dark' },
-] as const
-
-/** What the appearance row says shut: the choice in force, not a description. */
-export function themeLede(theme: string, t: (key: string) => string): string {
-  const found = THEMES.find((choice) => choice.value === theme) ?? THEMES[0]
-  return found.value === '' ? t('Follows this device') : t(found.label)
+/** What the screen is called, for the page now open. */
+export function prefsTitle(page: PrefsPage, t: (key: string) => string): string {
+  if (page === 'mcp') return t('MCP servers')
+  if (page === 'instructions') return t('Instructions')
+  return t('Settings')
 }
 
-/** One row of the list. The plate's hue is a token name, never a colour. */
-function Row({
-  glyph,
-  hue,
-  title,
-  lede,
-  onOpen,
-}: {
-  glyph: string
-  hue: string
-  title: string
-  lede: string
-  onOpen: () => void
-}) {
-  return (
-    <li>
-      <button
-        type="button"
-        className="adestia-prefs__row"
-        style={{ '--tile-color': `var(--adestia-hue-${hue}, var(--accent))` } as Record<string, string>}
-        onClick={onOpen}
-      >
-        <span className="adestia-prefs__plate" aria-hidden="true">
-          {glyph}
-        </span>
-        <span className="adestia-prefs__body">
-          <span className="adestia-prefs__title">{title}</span>
-          <span className="adestia-prefs__lede">{lede}</span>
-        </span>
-        <span className="adestia-prefs__chevron" aria-hidden="true">
-          ›
-        </span>
-      </button>
-    </li>
-  )
-}
-
-/** The head of a page, dressed like every other screen of the canvas. */
-function PageHead({
-  glyph,
-  hue,
-  title,
-  lede,
-}: {
-  glyph: string
-  hue: string
-  title: string
-  lede: string
-}) {
-  return (
-    <header
-      className="adestia-chead"
-      style={{ '--tile-color': `var(--adestia-hue-${hue}, var(--accent))` } as Record<string, string>}
-    >
-      <span className="adestia-chead__icon" aria-hidden="true">
-        {glyph}
-      </span>
-      <div>
-        <h1 className="adestia-chead__title">{title}</h1>
-        <p className="adestia-chead__lede">{lede}</p>
-      </div>
-    </header>
-  )
+/**
+ * How many of a thing there are, for a tile that would otherwise say nothing.
+ *
+ * A failure is silence, never a zero: "0 instructions" on an engine that
+ * cannot report them is a lie a tile has no business telling.
+ */
+function useCount(
+  url: string,
+  field: string,
+  fetchImpl: typeof fetch,
+): number | undefined {
+  const [count, setCount] = useState<number | undefined>()
+  useEffect(() => {
+    let live = true
+    void (async () => {
+      try {
+        const response = await fetchImpl(url)
+        if (!response.ok) return
+        const body = (await response.json()) as Record<string, unknown>
+        const list = body[field]
+        if (live && Array.isArray(list)) setCount(list.length)
+      } catch {
+        /* no figure, no chip */
+      }
+    })()
+    return () => {
+      live = false
+    }
+  }, [fetchImpl, url, field])
+  return count
 }
 
 export interface PreferencesProps {
   readonly page: PrefsPage
   readonly onPage: (page: PrefsPage) => void
-  /** The theme in force: `''` follows the device, `light`/`dark` override it. */
-  readonly theme?: string
-  readonly onTheme?: (theme: string) => void
+  /** What is open INSIDE the page: a server's name, an instruction's path. */
+  readonly item?: string | undefined
+  readonly onItem: (item: string | undefined) => void
   readonly fetchImpl?: typeof fetch
   readonly t?: (key: string) => string
-}
-
-/** What the screen is called, for the page now open. */
-export function prefsTitle(page: PrefsPage, t: (key: string) => string): string {
-  if (page === 'credential') return t('Agent credential')
-  if (page === 'mcp') return t('MCP servers')
-  if (page === 'appearance') return t('Appearance')
-  if (page === 'instructions') return t('Instructions')
-  return t('Settings')
+  readonly locale?: string
 }
 
 export function Preferences({
   page,
   onPage,
-  theme = '',
-  onTheme,
+  item,
+  onItem,
   fetchImpl = fetch,
   t = (key) => key,
+  locale,
 }: PreferencesProps) {
-  // Fetched once, at the list: the row needs the count to describe itself,
-  // and the page needs the servers to draw them.
-  const servers = useMcpServers(fetchImpl)
+  const health = useMcpServers(fetchImpl, page === '')
+  const servers = useCount('/api/mcp/servers', 'servers', fetchImpl)
+  const written = useCount('/api/instructions', 'files', fetchImpl)
 
   if (page === 'instructions') {
-    // The one page that heads itself: the instruction zone is a screen in its
-    // own right and was one before settings became a screen at all. It is
-    // handed the hue of the row that opened it, so the plate a finger just
-    // pressed is the plate at the top of the screen it landed on.
     return (
       <div
         className="adestia-prefs adestia-prefs__page"
         style={{ '--tile-color': 'var(--adestia-hue-bleu, var(--accent))' } as Record<string, string>}
       >
-        <Instructions fetchImpl={fetchImpl} t={t} />
-      </div>
-    )
-  }
-
-  if (page === 'credential') {
-    return (
-      <div className="adestia-prefs adestia-prefs__page">
-        <PageHead
-          glyph="🔑"
-          hue="ambre"
-          title={t('Agent credential')}
-          lede={t('Arm or renew the token this instance answers with')}
+        <Instructions
+          {...(item !== undefined ? { open: item } : {})}
+          onOpen={onItem}
+          fetchImpl={fetchImpl}
+          t={t}
+          {...(locale ? { locale } : {})}
         />
-        <Settings fetchImpl={fetchImpl} t={t} />
       </div>
     )
   }
@@ -207,91 +155,52 @@ export function Preferences({
   if (page === 'mcp') {
     return (
       <div className="adestia-prefs adestia-prefs__page">
-        <PageHead
-          glyph="🔌"
-          hue="indigo"
-          title={t('MCP servers')}
-          lede={t('What this instance reaches, and what it is doing about it')}
+        <McpServers
+          {...(item !== undefined ? { open: item } : {})}
+          onOpen={onItem}
+          fetchImpl={fetchImpl}
+          t={t}
         />
-        <McpPanel fetchImpl={fetchImpl} servers={servers} t={t} />
-      </div>
-    )
-  }
-
-  if (page === 'appearance') {
-    return (
-      <div className="adestia-prefs adestia-prefs__page">
-        <PageHead
-          glyph="◐"
-          hue="violet"
-          title={t('Appearance')}
-          lede={t('Light or dark, or whatever this device is set to')}
-        />
-        {/* Named choices rather than the header's cycling button: three
-            buttons SAY which one is in force, where a glyph that changes
-            nothing visible until you click it can only be inferred. */}
-        <div className="adestia-choices" role="radiogroup" aria-label={t('Appearance')}>
-          {THEMES.map((choice) => (
-            <button
-              key={choice.value || 'system'}
-              type="button"
-              role="radio"
-              aria-checked={theme === choice.value}
-              className="adestia-choices__choice"
-              onClick={() => onTheme?.(choice.value)}
-            >
-              {t(choice.label)}
-            </button>
-          ))}
-        </div>
-        <p className="adestia-prefs__note">
-          {t('Kept in this browser, like the model choice and the rail width.')}
-        </p>
       </div>
     )
   }
 
   return (
     <div className="adestia-prefs">
-      <PageHead
-        glyph="⚙"
-        hue="ardoise"
-        title={t('Settings')}
-        lede={t('What this instance answers with, reaches, looks like and was told')}
-      />
-      <ul className="adestia-prefs__list">
-        <Row
-          glyph="🔑"
-          hue="ambre"
-          title={t('Agent credential')}
-          lede={t('Arm or renew the token this instance answers with')}
-          onOpen={() => onPage('credential')}
+      <header
+        className="adestia-chead"
+        style={{ '--tile-color': 'var(--adestia-hue-ardoise, var(--accent))' } as Record<string, string>}
+      >
+        <span className="adestia-chead__icon" aria-hidden="true">
+          ⚙
+        </span>
+        <div>
+          <h1 className="adestia-chead__title">{t('Settings')}</h1>
+          <p className="adestia-chead__lede">{t('What this instance reaches, and what it was told')}</p>
+        </div>
+      </header>
+      <ul className="adestia-tiles">
+        <Tile
+          icon="🔌"
+          hue="indigo"
+          label={t('MCP servers')}
+          {...(health && health.length > 0 ? { subtitle: mcpLede(health, t) } : {})}
+          {...(servers !== undefined
+            ? { chips: [{ text: `${servers} ${servers === 1 ? t('server') : t('servers')}` }] }
+            : {})}
+          onOpen={() => onPage('mcp')}
+          t={t}
         />
-        {/* Only when the driver reports at all. An MCP row on an engine that
-            cannot answer would open a page with nothing on it — the exact
-            failure the panel's own 404 handling exists to avoid. */}
-        {servers !== undefined && servers.length > 0 && (
-          <Row
-            glyph="🔌"
-            hue="indigo"
-            title={t('MCP servers')}
-            lede={mcpLede(servers, t)}
-            onOpen={() => onPage('mcp')}
-          />
-        )}
-        <Row
-          glyph="◐"
-          hue="violet"
-          title={t('Appearance')}
-          lede={themeLede(theme, t)}
-          onOpen={() => onPage('appearance')}
-        />
-        <Row
-          glyph="📓"
+        <Tile
+          icon="📓"
           hue="bleu"
-          title={t('Instructions')}
-          lede={t('Read and correct what you told the agent')}
+          label={t('Instructions')}
+          subtitle={t('Read and correct what you told the agent')}
+          {...(written !== undefined
+            ? { chips: [{ text: `${written} ${written === 1 ? t('file') : t('files')}` }] }
+            : {})}
           onOpen={() => onPage('instructions')}
+          t={t}
         />
       </ul>
     </div>

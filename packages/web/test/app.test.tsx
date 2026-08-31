@@ -199,9 +199,16 @@ describe('boot', () => {
     expect(screen.queryByText('Sign out')).toBeNull()
   })
 
-  it('offers sign-out in oidc mode', async () => {
+  it('offers sign-out in oidc mode, behind the cog', async () => {
+    // In the menu rather than on the header strip: signing out is a
+    // session-sized switch, and the strip is for where you ARE.
     const body = { ...INSTANCE, auth: { mode: 'oidc' } }
-    render(<App fetchImpl={apiFetch({ body })} />)
+    const { container } = render(<App fetchImpl={apiFetch({ body })} />)
+    await waitFor(() =>
+      expect(container.querySelector('.adestia-ib[aria-label="Settings"]')).toBeTruthy(),
+    )
+    expect(screen.queryByText('Sign out')).toBeNull()
+    fireEvent.click(container.querySelector('.adestia-ib[aria-label="Settings"]') as HTMLElement)
     await waitFor(() => expect(screen.getByText('Sign out')).toBeTruthy())
   })
 
@@ -371,8 +378,7 @@ describe('settings, as an app of the shell', () => {
     const container = await shell()
     await go('#/settings')
 
-    expect(await screen.findByText('Agent credential')).toBeTruthy()
-    expect(container.querySelector('[role="dialog"]')).toBeNull()
+    expect(await screen.findByText('MCP servers')).toBeTruthy()
     expect(crumbs(container)).toEqual([
       { label: 'Home', walkable: true },
       // Where the reader IS: named, never a link to the screen under their eyes.
@@ -381,28 +387,98 @@ describe('settings, as an app of the shell', () => {
     location.hash = ''
   })
 
-  it('names the page open under it, and leads back to the list', async () => {
+  it('names the page open under it, and leads back to the mosaic', async () => {
     const container = await shell()
-    await go('#/settings/credential')
+    await go('#/settings/instructions')
 
     await waitFor(() => expect(crumbs(container).length).toBe(3))
     expect(crumbs(container)).toEqual([
       { label: 'Home', walkable: true },
       { label: 'Settings', walkable: true },
-      { label: 'Agent credential', walkable: false },
+      { label: 'Instructions', walkable: false },
     ])
     location.hash = ''
   })
 
-  it('opens the app from the gear rather than a dialog over the page', async () => {
+  it('names the file open under the page, and leads back to it', async () => {
+    // A trail that stopped at "Instructions" while a file fills the screen
+    // cannot say where the reader is, which is the one job it has.
+    const container = await shell()
+    await go('#/settings/instructions/CLAUDE.md')
+
+    await waitFor(() => expect(crumbs(container).length).toBe(4))
+    expect(crumbs(container)).toEqual([
+      { label: 'Home', walkable: true },
+      { label: 'Settings', walkable: true },
+      { label: 'Instructions', walkable: true },
+      { label: 'CLAUDE.md', walkable: false },
+    ])
+    location.hash = ''
+  })
+
+  it('sends the addresses of the pages that moved behind the cog', async () => {
+    // `credential` and `appearance` were pages of this app until the
+    // session-sized switches moved into the menu. A bookmark to one lands on
+    // the mosaic rather than on a blank frame under a title that lies.
+    await shell()
+    await go('#/settings/credential')
+    await waitFor(() => expect(location.hash).toBe('#/settings'))
+    location.hash = ''
+  })
+
+  it('opens a MENU from the cog, not a navigation', async () => {
+    // What is behind it is settled without leaving the page you are on: the
+    // token, the theme, signing out. Sending somebody to another screen to
+    // flip one is what this move undid.
     const container = await shell()
     const gear = container.querySelector('.adestia-ib[aria-label="Settings"]') as HTMLElement
     await act(async () => {
       fireEvent.click(gear)
+    })
+    expect(location.hash).toBe('')
+    expect(container.querySelector('.adestia-cog__panel')).toBeTruthy()
+    expect(screen.getByRole('radio', { name: 'System' })).toBeTruthy()
+
+    // And it closes on Escape, like every menu owes a person.
+    await act(async () => {
+      fireEvent.keyDown(document, { key: 'Escape' })
+    })
+    expect(container.querySelector('.adestia-cog__panel')).toBeNull()
+    location.hash = ''
+  })
+
+  it('does not hover over a screen it was not opened on', async () => {
+    // Nothing in the menu navigates, so this only fires on a Back, a bookmark
+    // or a link elsewhere — and a panel left over a screen its owner never
+    // opened it on reads as one that is stuck. Seen on a phone, where it
+    // covers most of what it floats over.
+    const container = await shell()
+    await act(async () => {
+      fireEvent.click(container.querySelector('.adestia-ib[aria-label="Settings"]') as HTMLElement)
+    })
+    expect(container.querySelector('.adestia-cog__panel')).toBeTruthy()
+    await go('#/settings')
+    expect(container.querySelector('.adestia-cog__panel')).toBeNull()
+    location.hash = ''
+  })
+
+  it('climbs ONE level back, never straight to the top', async () => {
+    // Two back controls appeared the day the pages grew items of their own —
+    // the shell's, which jumped to the mosaic, and the screen's, which went
+    // to its own list. This is the survivor, so it has to be right at depth.
+    const container = await shell()
+    await go('#/settings/instructions/CLAUDE.md')
+    const back = await waitFor(() => {
+      const found = container.querySelector('.adestia-canvas__body .adestia-switch')
+      expect(found).toBeTruthy()
+      return found as HTMLElement
+    })
+    expect(back.textContent).toBe('‹ Instructions')
+    await act(async () => {
+      fireEvent.click(back)
       window.dispatchEvent(new HashChangeEvent('hashchange'))
     })
-    expect(location.hash).toBe('#/settings')
-    expect(container.querySelector('[role="dialog"]')).toBeNull()
+    expect(location.hash).toBe('#/settings/instructions')
     location.hash = ''
   })
 
