@@ -360,6 +360,11 @@ export default async function api(app, opts) {
    * whatever was already transcribed all work — so this is not a health check
    * but an honesty one: the screen must say "no transcriber here" rather than
    * offer a button that fails in a terminal nobody is watching.
+   *
+   * It answers about the BINARY on this instance and nothing else. An agent
+   * given a transcription tool over MCP transcribes perfectly well with this
+   * answering `null`, and the screen cannot know: it sees a PATH, not the
+   * agent's tool list. Hence "local" in what it says.
    */
   app.get('/health', async () => {
     const { execFile } = await import('node:child_process')

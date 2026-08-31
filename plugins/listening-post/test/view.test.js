@@ -162,7 +162,7 @@ test('the view mounts, draws what is kept, and says where it is', async () => {
   assert.match(text, /Une nouveauté du flux/, 'a feed candidate is in the queue')
   assert.match(text, /Underscore_ · 27 août 2026 · 18:42/, 'its meta line reads in the locale')
   assert.match(text, /Archive · 1/, 'a finished item is folded away rather than dropped')
-  assert.match(text, /pas de transcripteur/, 'an instance without yt-dlp says so')
+  assert.match(text, /pas de transcripteur local/, 'an instance without yt-dlp says so')
   assert.deepEqual(trail.at(-1), [], 'the hub says it is nowhere in particular')
 
   // The ✦ button talks to the agent rather than writing anything itself.

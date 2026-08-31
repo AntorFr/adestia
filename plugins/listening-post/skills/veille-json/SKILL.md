@@ -141,13 +141,39 @@ node {{plugin_dir}}/tools/listening-post.mjs etat
   de ta portée) : si on te dit qu'un truc avait été écarté, crois la personne.
 - **`etat`** dit si le transcripteur est là et ce que pèse le corpus.
 
+### Deux transcripteurs possibles — dis lequel tu as pris
+
+L'outil ci-dessus a besoin de `yt-dlp` **sur l'instance**. Une instance peut à la
+place (ou en plus) t'avoir donné les outils MCP **`verbatim`** du hub Rosetta —
+`verbatim`, `verbatim_cherche`, `verbatim_fiche` — qui font le même travail côté
+serveur, sans rien installer ici.
+
+- **Si tu as `verbatim`**, sers-t'en : il rend les lignes déjà horodatées
+  (`t`, `a`, `texte`, `lien`), par tranches (`depuis=<n>` pour la suite quand la
+  réponse le dit). C'est **toi** qui écris ensuite
+  `assets/<slug>.transcript.txt`, une ligne `[hh:mm:ss] texte` par ligne rendue,
+  exactement le format ci-dessus — l'écran et la recherche ne lisent que ce
+  fichier.
+- **Sinon**, l'outil local fait tout d'un coup, fichiers compris.
+- Pour répondre à « où a-t-il parlé de … ? » sur un média **pas encore gardé**,
+  `verbatim_cherche` évite de faire passer une heure de parole dans la
+  conversation. Sur le corpus **déjà gardé**, c'est `cherche` (ou un grep) qui
+  répond, sans réseau.
+
+⚠️ `verbatim` rend `origine` : `manuel` ou `auto`. **`auto` = reconnaissance
+vocale** — ponctuation approximative, noms propres et chiffres écorchés.
+Résumer, oui ; citer au mot près comme si l'auteur l'avait écrit, non. Quand une
+fiche cite une piste automatique, dis-le dans la fiche.
+
 ### Quand il n'y a pas de transcript
 
 Deux cas, et dans les deux la réponse est de **le dire**, jamais de combler :
 
 1. **`yt-dlp` n'est pas installé** sur l'instance → `transcris` sort en erreur et
-   l'explique. La veille continue de tourner (flux, file, fiches, recherche sur ce qui
-   est déjà transcrit) ; c'est seulement l'extraction qui est absente.
+   l'explique, et l'écran affiche « pas de transcripteur local ». La veille continue de
+   tourner (flux, file, fiches, recherche sur ce qui est déjà transcrit) ; c'est seulement
+   l'extraction locale qui est absente — si tu as `verbatim`, elle ne l'est pas du tout,
+   et l'écran ne peut pas le savoir : il ne voit que le binaire.
 2. **Le média n'a pas de sous-titres publiés** — le cas courant des podcasts. L'outil
    écrit quand même `media.json` (description, chapitres) et te rend `transcript: null`
    avec la raison. Tu peux écrire la fiche à partir de la description et des chapitres,
