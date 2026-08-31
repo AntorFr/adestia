@@ -98,6 +98,13 @@ export interface DriverConfig {
    * PATH" is not a version anyone can reason about.
    */
   readonly command?: string | undefined
+  /**
+   * How the driver hands the instance's own tools to the agent. `shell` is the
+   * escape hatch for a CLI whose MCP servers are filtered against a corporate
+   * registry: it delivers them over the socket via a small CLI on the execute
+   * tool instead of a stdio MCP server. Only the copilot driver honours it.
+   */
+  readonly shellToolsTransport?: 'mcp' | 'shell' | undefined
 }
 
 export interface ExtensionsConfig {
@@ -820,6 +827,13 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
     }
   }
 
+  const shellToolsTransportRaw = driverRaw['shellToolsTransport']
+  const shellToolsTransport =
+    shellToolsTransportRaw === 'shell' || shellToolsTransportRaw === 'mcp' ? shellToolsTransportRaw : undefined
+  if (shellToolsTransportRaw !== undefined && shellToolsTransport === undefined) {
+    issues.push('driver.shellToolsTransport must be "mcp" or "shell"')
+  }
+
   const extensionsRaw = isObject(raw['extensions']) ? raw['extensions'] : {}
   const extensions: ExtensionsConfig = {
     pluginsDir:
@@ -915,6 +929,7 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
       id: driverId,
       ...(agent ? { agent } : {}),
       models,
+      ...(shellToolsTransport ? { shellToolsTransport } : {}),
       ...(typeof driverRaw['command'] === 'string' ? { command: driverRaw['command'] } : {}),
     },
     extensions,

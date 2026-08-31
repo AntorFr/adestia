@@ -33,6 +33,66 @@ import { McpTokens, type RefreshStore } from '../mcp-oauth.js'
 import { newTranslationState, parseLine, translate } from './events.js'
 import { PLAINTEXT_CONSENT, startDeviceCodeLogin, type DeviceCodeLogin } from './login.js'
 
+/**
+ * The shell-transport CLI, embedded so it needs no build step or shipped
+ * asset: the driver writes it under its own home and points the agent's
+ * environment at it. It speaks the socket's newline-delimited JSON-RPC (the
+ * MCP subset the shell-tools server answers), announcing the turn's token
+ * with `bridge/hello` before a `tools/list` or `tools/call`. Secret-free: the
+ * socket path and token arrive in this process's env.
+ */
+const SHELL_TOOL_CLI_SOURCE = `import { connect } from 'node:net'
+
+const socket = process.env.ADESTIA_TOOLS_SOCKET
+const token = process.env.ADESTIA_TOOLS_TOKEN
+if (!socket || !token) {
+  process.stderr.write('adestia-tool: ADESTIA_TOOLS_SOCKET/ADESTIA_TOOLS_TOKEN not set\\n')
+  process.exit(2)
+}
+
+const [cmd, name, argsJson] = process.argv.slice(2)
+let args = {}
+if (argsJson) {
+  try { args = JSON.parse(argsJson) } catch { process.stderr.write('adestia-tool: arguments must be a JSON object\\n'); process.exit(2) }
+}
+const request =
+  cmd === 'list' ? { jsonrpc: '2.0', id: 1, method: 'tools/list' }
+  : cmd === 'call' ? { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args } }
+  : null
+if (!request) {
+  process.stderr.write("usage: adestia-tool <list|call> [name] ['<json-args>']\\n")
+  process.exit(2)
+}
+
+const conn = connect(socket)
+let buffer = ''
+const timer = setTimeout(() => { process.stderr.write('adestia-tool: timed out\\n'); process.exit(2) }, 15000)
+timer.unref?.()
+conn.on('connect', () => {
+  conn.write(JSON.stringify({ jsonrpc: '2.0', method: 'bridge/hello', params: { token } }) + '\\n')
+  conn.write(JSON.stringify(request) + '\\n')
+})
+conn.on('data', (chunk) => {
+  buffer += chunk.toString('utf8')
+  let nl = buffer.indexOf('\\n')
+  while (nl !== -1) {
+    const line = buffer.slice(0, nl); buffer = buffer.slice(nl + 1); nl = buffer.indexOf('\\n')
+    if (!line.trim()) continue
+    let msg; try { msg = JSON.parse(line) } catch { continue }
+    if (msg.id !== 1) continue
+    const result = msg.result ?? {}
+    if (cmd === 'list') {
+      process.stdout.write(JSON.stringify(result.tools ?? [], null, 2) + '\\n')
+      conn.end(); process.exit(0)
+    }
+    const text = result.content && result.content[0] ? result.content[0].text : ''
+    process.stdout.write((text ?? '') + '\\n')
+    conn.end(); process.exit(result.isError ? 1 : 0)
+  }
+})
+conn.on('error', (error) => { process.stderr.write('adestia-tool: ' + error.message + '\\n'); process.exit(2) })
+`
+
 export interface CopilotDriverOptions {
   /** The pinned binary. An absolute path in a container; `copilot` in dev. */
   readonly command?: string
@@ -62,6 +122,16 @@ export interface CopilotDriverOptions {
   /** Persists a rotated MCP refresh token across restarts. */
   readonly refreshStore?: RefreshStore
   readonly spawnImpl?: typeof spawn
+  /**
+   * How the instance's own shell tools reach the agent.
+   *
+   * `mcp` (default) hands them over as a stdio MCP server — the generic path.
+   * `shell` writes a tiny CLI and injects the socket path and per-turn token
+   * into the agent's environment instead, so the tools ride the ordinary
+   * execute tool. The escape hatch for a CLI whose MCP servers are filtered
+   * against a corporate registry: only that engine needs it, and only there.
+   */
+  readonly shellToolsTransport?: 'mcp' | 'shell'
   /** Injection point for the device-code login flow, for tests. */
   readonly startLoginImpl?: typeof startDeviceCodeLogin
 }
@@ -78,6 +148,7 @@ export class CopilotDriver implements Driver {
   readonly #spawn: typeof spawn
   readonly #startLogin: typeof startDeviceCodeLogin
   readonly #mcpServers: readonly McpServer[]
+  readonly #shellToolsTransport: 'mcp' | 'shell'
   readonly #tokens: McpTokens
   /** What the last session said about them. Empty until a turn has run. */
   #mcpHealth: readonly McpServerHealth[] = []
@@ -97,6 +168,7 @@ export class CopilotDriver implements Driver {
     this.#spawn = options.spawnImpl ?? spawn
     this.#startLogin = options.startLoginImpl ?? startDeviceCodeLogin
     this.#mcpServers = options.mcpServers ?? []
+    this.#shellToolsTransport = options.shellToolsTransport ?? 'mcp'
     this.#tokens = new McpTokens(options.fetchImpl ?? fetch, options.refreshStore)
     this.#credentials = { ...options.credentials }
   }
@@ -277,16 +349,19 @@ export class CopilotDriver implements Driver {
    * is worth far more than a turn that refuses to start.
    */
   async #mcpConfig(callerToken?: string, tools?: ShellToolsHandle): Promise<string | undefined> {
-    if (this.#mcpServers.length === 0 && !tools) return undefined
+    // Under the shell transport the instance's tools ride the execute tool,
+    // not an MCP server — so they never enter this file.
+    const bridgeTools = this.#shellToolsTransport === 'mcp' ? tools : undefined
+    if (this.#mcpServers.length === 0 && !bridgeTools) return undefined
 
     const mcpServers: Record<string, unknown> = {}
-    if (tools) {
+    if (bridgeTools) {
       // The instance's own tools, over the generic bridge: for this driver it
       // is one more stdio server, and the per-turn token is fresh by
       // construction — this binary is spawned per turn, config and all.
       mcpServers[SHELL_TOOLS_SERVER_NAME] = {
         type: 'local',
-        ...bridgeStdioConfig(tools),
+        ...bridgeStdioConfig(bridgeTools),
         tools: ['*'],
       }
     }
@@ -343,15 +418,43 @@ export class CopilotDriver implements Driver {
     }
   }
 
+  /**
+   * Writes the shell-transport CLI and returns the env that arms it. The
+   * socket path and per-turn token travel in the child's environment, which
+   * the agent's execute tool inherits; nothing lands on argv or in a registry.
+   */
+  async #writeShellToolCli(tools: ShellToolsHandle): Promise<Record<string, string>> {
+    const bin = join(this.#home, 'adestia-tool.mjs')
+    try {
+      await mkdir(this.#home, { recursive: true })
+      await writeFile(bin, SHELL_TOOL_CLI_SOURCE)
+    } catch {
+      // A missing CLI degrades to a tool the agent simply cannot call — the
+      // same shape of failure as a filtered MCP server, and never fatal.
+    }
+    return {
+      ADESTIA_TOOLS_SOCKET: tools.socketPath,
+      ADESTIA_TOOLS_TOKEN: tools.token,
+      ADESTIA_TOOL_BIN: bin,
+    }
+  }
+
   async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
     // Guarded rather than always awaited: an instance with no MCP servers must
     // reach `spawn` in the same tick it did before this existed. The await is
     // real work only when there is a file to write, and deferring the spawn by
     // a microtask for everyone else is a behaviour change nobody asked for.
+    const mcpRelevantTools = this.#shellToolsTransport === 'mcp' ? request.tools : undefined
     const mcpConfig =
-      this.#mcpServers.length === 0 && !request.tools
+      this.#mcpServers.length === 0 && !mcpRelevantTools
         ? undefined
         : await this.#mcpConfig(request.callerToken, request.tools)
+    // Shell transport: the CLI is written and the socket/token armed in the
+    // child's env, so the instance tools ride the execute tool instead of MCP.
+    const shellToolsEnv =
+      this.#shellToolsTransport === 'shell' && request.tools
+        ? await this.#writeShellToolCli(request.tools)
+        : undefined
     const args = [
       '--prompt',
       request.prompt,
@@ -368,7 +471,7 @@ export class CopilotDriver implements Driver {
 
     const child = this.#spawn(this.#command, args, {
       cwd: request.cwd,
-      env: copilotEnv({ ...this.#baseEnv, ...this.#credentials }, this.#home) as NodeJS.ProcessEnv,
+      env: copilotEnv({ ...this.#baseEnv, ...this.#credentials, ...shellToolsEnv }, this.#home) as NodeJS.ProcessEnv,
       stdio: ['ignore', 'pipe', 'pipe'],
     })
 

@@ -745,6 +745,40 @@ describe('outbound MCP servers', () => {
     // Nothing on argv carries the token.
     expect(fake.spawns[0]?.args.join(' ')).not.toContain('turn-token-1')
   })
+
+  it("under the shell transport, arms the CLI in the env and adds no MCP server", async () => {
+    // The corp MCP registry filters the shell-tools server; the tools ride the
+    // execute tool instead, reached by a CLI the socket path and turn token arm.
+    const home = await mkdtemp(join(tmpdir(), 'adestia-copilot-'))
+    const fake = fakeCopilot()
+    const driver = new CopilotDriver({ home, spawnImpl: fake.spawnImpl, shellToolsTransport: 'shell' })
+    const turn = collect(driver, {
+      prompt: 'x',
+      cwd: '/w',
+      tools: {
+        socketPath: '/data/shell-tools.sock',
+        token: 'turn-token-1',
+        bridgePath: '/data/shell-tools-bridge.mjs',
+        tools: [],
+        call: () => Promise.resolve({ ok: true as const, text: 'unused on this transport' }),
+      },
+    })
+    await vi.waitFor(() => expect(fake.spawns.length).toBe(1))
+    fake.stdout.write('{"type":"result","sessionId":"s1","exitCode":0}\n')
+    fake.child.emit('close', 0)
+    await turn
+
+    // No side file, no flag: nothing is handed to the filtered MCP layer.
+    expect(fake.spawns[0]?.args).not.toContain('--additional-mcp-config')
+    // The socket, the turn's token and the CLI path are armed in the env.
+    expect(fake.spawns[0]?.env).toMatchObject({
+      ADESTIA_TOOLS_SOCKET: '/data/shell-tools.sock',
+      ADESTIA_TOOLS_TOKEN: 'turn-token-1',
+      ADESTIA_TOOL_BIN: join(home, 'adestia-tool.mjs'),
+    })
+    // And the CLI it points at was actually written.
+    expect((await readFile(join(home, 'adestia-tool.mjs'), 'utf8')).length).toBeGreaterThan(0)
+  })
 })
 
 describe('MCP health', () => {
