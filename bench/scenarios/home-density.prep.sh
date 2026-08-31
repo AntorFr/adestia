@@ -35,7 +35,7 @@ page() {
 # ── domaines : le gros morceau, et le plus profond ────────────────────────
 # `domaines` ne porte PAS d'index — mesuré sur l'instance : c'est le cas réel,
 # et il change ce qui remonte en tuile, donc il ne s'invente pas.
-page 'memory/domaines/diy/INDEX.md' 'Bois & atelier' 'index' 'permanent' '🪚'
+page 'memory/domaines/diy/INDEX.md' "L'Atelier" 'index' 'permanent' '🪚'
 page 'memory/domaines/diy/machines/INDEX.md' 'Machines' 'index' 'permanent'
 page 'memory/domaines/diy/projets/INDEX.md' 'Projets' 'index' 'permanent'
 page 'memory/domaines/diy/savoir-faire/INDEX.md' 'Savoir-faire' 'index' 'permanent'

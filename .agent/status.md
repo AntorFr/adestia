@@ -1,6 +1,26 @@
 # Status — Adestia
 > MàJ : 2026-09-01
 
+Chantier du 01/09 (3) — **l'atelier rentre dans le rang : un domaine, une
+porte**. Il s'affichait DEUX fois — sa tuile de plugin à côté de la tuile du
+dossier `domaines/diy` dont il est une vue. Vérifié dans le pod agent-gw qui
+tourne encore : le prédécesseur avait ça juste, son manifeste disait
+`href: "#/dom/diy"` et `absorbe: ["atelier","diy"]` — **la tuile de l'app
+ouvrait le DOMAINE**, sous-titre « Machines et savoir-faire ». La régression
+est née à la traduction. Correctif : le plugin ne livre plus de `tile`
+(optionnel au schéma) ; il reste chargé, gardé, et surtout ROUTABLE — son
+`routeFor` réclame déjà tout dossier contenant un workbook, donc l'établi
+s'ouvre depuis un lien, un fil d'Ariane ou le brief exactement comme avant.
+Rien n'est perdu : l'atteignabilité ne venait pas de la tuile. Côté workspace
+d'Alfred, `domaines/diy/INDEX.md` reçoit son frontmatter (`title: L'Atelier`,
+`ico: 🪚`) — il n'en avait aucun, le nom de tuile tombait sur le H1. 1195
+verts, **banc constaté** : 14 tuiles, une par sujet, plus de doublon.
+⚠️ **Effet de bord vu à la capture, non corrigé** : « L'Atelier » se retrouve
+11ᵉ sur 14, parce que l'ordre par défaut reste « plugins d'abord, puis
+dossiers alphabétiques » — un tri qui n'a plus de justification maintenant
+que les deux sont la même espèce. À trancher : par poids, par récence, ou
+laisser Ranger faire.
+
 Chantier du 01/09 (2) — **la home n'a plus qu'UNE mosaïque** (1re des trois
 conséquences de la doctrine du jour). Les tuiles de plugins et celles de
 dossiers sont bâties dans une forme commune (`Domain`) et rendues par une

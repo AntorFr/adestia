@@ -246,9 +246,21 @@ export default function view(api) {
     return undefined
   }
 
-  // Declared, and not merely reachable from a tile: the engine's second screen
-  // is a workbook, addressed by its path under this route. The shell keeps the
-  // view open for everything below `/atelier`, so a bench can bookmark the
-  // exact workbook it is cutting and come back to it.
+  /* Declared, and not merely reachable from a tile: the engine's second screen
+     is a workbook, addressed by its path under this route. The shell keeps the
+     view open for everything below `/atelier`, so a bench can bookmark the
+     exact workbook it is cutting and come back to it.
+
+     WHICH IS WHY THIS PLUGIN SHIPS NO TILE (manifest, 2026-09-01). The bench is
+     a view OF a domain — `domaines/diy`, the one holding the workbooks — not a
+     domain beside it, and a tile made it look like one: two doors on one
+     subject, with the folder's own tile next to it. The predecessor had this
+     right and it was lost in translation; its manifest pointed the atelier's
+     tile at `#/dom/diy`, the domain itself.
+
+     Nothing is lost by dropping it, because reachability never came from the
+     tile: `routeFor` above claims every folder holding a workbook, from a link,
+     a crumb or the brief. `tileInfo` stays, dormant, so that restoring a tile
+     is a manifest edit and not an archaeology. */
   return { component: Atelier, route: '/atelier', routeFor, tileInfo }
 }
