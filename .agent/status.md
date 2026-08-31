@@ -86,6 +86,49 @@ instructions du workspace (AGENTS.md) de dire que le CLI existe. Le cœur
 n'écrit pas de prose d'instruction, et on n'a pas commencé pour une
 échappatoire.
 
+Chantier du 31/08 — **dev-flow EN PRODUCTION** sur la coque de Skippy
+(`skippy.golem.berard.me`) : image `0.19.0`, `apps: [..., dev-flow]`, et les
+deux dépôts lus **sur la forge** (`AntorFr/tessera,AntorFr/ostia`) — zéro
+clone, zéro fetch à programmer. Le jeton n'a pas été créé : c'est le PAT
+fine-grained lecture seule qui existait DÉJÀ (`apps/skippy` ·
+`gh_pat_readonly`), celui dont le tableau de flotte du pod coder se sert pour
+afficher des dépôts privés — même usage, mot pour mot. Il est lu depuis la
+coque bien qu'il soit rangé chez son voisin : assumé et transitoire, cette
+coque REMPLACERA `skippy.berard.me` et la clé déménagera avec le nom (ESO
+s'authentifie une fois comme rôle `eso`, donc rien à ouvrir côté policy).
+Constaté : pod `1/1 Running` sur 0.19.0, `DEV_FLOW_TOKEN` dans le secret,
+« 9 of 9 plugin(s) active ». Passerelle vers les clones de `skippy.berard.me`
+abandonnée en cours de route sur arbitrage de Monsieur — `adestia-skippy` est
+le futur coder, pas une vitrine sur l'ancien pod.
+
+⚠️ **Deux erreurs de ma part, consignées parce qu'elles coûtent du temps à qui
+les répète.** (1) Le build de `v0.18.0` s'est enlisé (~1 h contre 5 min
+d'habitude) et j'ai diagnostiqué deux fois avec assurance — d'abord l'ajout de
+`git` dans l'image, puis un cache GHA arm64 expiré. **Les deux étaient faux** :
+`v0.19.0`, poussé 25 min plus tard par une autre session avec le MÊME
+Dockerfile, a construit en 5 min. Le run était pathologique, point. (2) J'ai
+ensuite coupé `v0.18.1` sur un commit DESCENDANT de `v0.19.0` — un numéro plus
+bas pour un contenu plus récent, exactement ce qui piège Renovate ; tag
+supprimé (son build a échoué au checkout, aucune image publiée). **Tags morts à
+connaître : `v0.17.0` et `v0.18.0`** nomment de vrais commits sans image.
+
+Le correctif `--platform=$BUILDPLATFORM` (Dockerfile) reste, mais sur ses
+propres mérites et non comme remède : l'étage de build produit du JavaScript,
+identique quel que soit le CPU, donc l'émuler pour arm64 ne rapporte rien. Ne
+tient que tant que l'arbre de PRODUCTION est du JS pur — vérifié, pas supposé :
+une image amd64 dont le `node_modules` a été bâti sur arm64 démarre et rend
+`/api/health` vert. Le jour où une dépendance de prod embarque un `.node`,
+cette ligne expédie du binaire de la mauvaise architecture sans que rien
+n'échoue à la construction.
+
+Reste, et c'est à Monsieur : **pousser tessera** (9 commits d'avance) — la
+forge ne montre que ce qui est publié, donc le dépôt s'affiche vide et l'écran
+le dit mot pour mot. Et **le PAT de Nestor** : la moitié de sa justification
+est morte (`Home-AssistantConfig` est PUBLIC), l'autre tient (`AntorFr/nestor`
+est privé et son workspace est un dépôt git) — chantier distinct, il faut soit
+un `kubectl exec` autorisé, soit accepter de le retirer et de voir échouer le
+premier `pull`.
+
 Chantier du 31/08 — **dev-flow lit sans cloner** (faute de conception
 corrigée avant déploiement). Le premier lecteur supposait un clone local :
 vrai sur le Mac où il a été écrit, faux dans le pod, qui ne détient que les
