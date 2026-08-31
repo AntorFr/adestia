@@ -20,6 +20,37 @@ instructions du workspace (AGENTS.md) de dire que le CLI existe. Le cœur
 n'écrit pas de prose d'instruction, et on n'a pas commencé pour une
 échappatoire.
 
+Chantier du 31/08 — **dev-flow lit sans cloner** (faute de conception
+corrigée avant déploiement). Le premier lecteur supposait un clone local :
+vrai sur le Mac où il a été écrit, faux dans le pod, qui ne détient que les
+repos où il CODE. Monsieur a tranché : « les fiches doivent être rendues sans
+répliquer tous les repos et les branches en local, sinon notre mode de
+stockage est le mauvais ». Verdict : le **stockage est bon** (fiches dans le
+repo, commitées avec le travail) — c'était le **chemin d'accès** qui était
+faux. La règle de lecture est donc extraite dans `read.mjs` (`scanSource`) et
+ne connaît plus que quatre primitives ; deux sources l'implémentent :
+`git.mjs` (dépôt sur ce disque) et `forge.mjs` (API GitHub, **zéro clone,
+zéro fetch programmé**). Les deux suites de tests posent les MÊMES assertions
+sur la règle — deux lecteurs qui divergeraient sur ce que veut dire `main`
+seraient deux produits.
+
+⚠️ **Les deux ne voient pas la même chose, et l'écran le dit** (`⌁` forge,
+`▪` disque). Sur la forge, `main` = ce qui a été POUSSÉ, et les branches de
+chantier ne sont jamais poussées (doctrine de la galaxie) → un lot en `code`
+y montre l'état que sa branche périme. D'où deux diagnostics distincts :
+`no-lots-pushed` (≠ « pas de fiches ») et `branch-not-pushed` (≠ « branche
+disparue ») — annoncer une fin à quelqu'un dont le coder est en pleine phrase
+serait un mensonge. Constaté sur le réel : **ostia** remonte ses 8 fiches par
+l'API, graphe et timeline compris ; **tessera** revient vide parce que son
+`main` local est **9 commits en avance sur origin** — les fiches sont
+commitées, jamais poussées. L'outil a dit vrai du premier coup.
+
+Reste : le jeton GitHub lecture seule dans OpenBao, et le déploiement
+(v0.18.0 — `v0.17.0` est un tag local mort posé 8 commits en arrière ; les
+DEUX coques `golem` et `golem-skippy` épinglent la même image et se bumpent
+ensemble). Passerelle vers les clones de `skippy.berard.me` **abandonnée** :
+`adestia-skippy` est le futur coder, pas une vitrine sur l'ancien pod.
+
 Chantier du 30/08 — **plugin « dev-flow » LIVRÉ** (9e plugin embarqué) : les
 chantiers de la galaxie Tessera/Ostia dans une fenêtre. D'abord nommé `lots`
 (le dossier qu'il lit), renommé **`dev-flow`** sur arbitrage de Monsieur, avec

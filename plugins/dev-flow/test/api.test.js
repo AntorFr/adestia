@@ -10,7 +10,7 @@
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
 
-import { nameOf, readRepos } from '../api.mjs'
+import { kindOf, nameOf, readRepos } from '../api.mjs'
 
 test('colons, commas and newlines all separate; blanks are dropped', () => {
   assert.deepEqual(readRepos('/repos/tessera:/repos/ostia'), ['/repos/tessera', '/repos/ostia'])
@@ -27,4 +27,16 @@ test('an unset value is no repositories, not one empty one', () => {
 test('a repository goes by its folder on screen, not by its whole path', () => {
   assert.equal(nameOf('/home/berard/Dev/tessera'), 'tessera')
   assert.equal(nameOf('/repos/ostia/'), 'ostia')
+})
+
+test('an entry says which reader it wants by its shape alone', () => {
+  assert.equal(kindOf('/repos/tessera'), 'local')
+  assert.equal(kindOf('./tessera'), 'local')
+  assert.equal(kindOf('~/Dev/tessera'), 'local')
+  assert.equal(kindOf('AntorFr/tessera'), 'forge')
+  // Refused by name rather than guessed at: an entry nobody can classify is a
+  // line somebody meant something by, and picking a reader for it would answer
+  // the wrong question quietly.
+  assert.equal(kindOf('https://github.com/AntorFr/tessera'), 'unknown')
+  assert.equal(kindOf('tessera'), 'unknown')
 })

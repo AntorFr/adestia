@@ -68,6 +68,10 @@ export const WORDS = {
     '%s is not a git repository': '%s n’est pas un dépôt git',
     '%s has no local main branch to read': '%s n’a pas de branche main locale à lire',
     '%s carries no .agent/lots/ on main': '%s ne porte pas de .agent/lots/ sur main',
+    '%s has no .agent/lots/ on the main that reached the forge — committed elsewhere, perhaps':
+      '%s n’a pas de .agent/lots/ sur le main arrivé à la forge — commité ailleurs, peut-être',
+    '%s is in flight on a branch the forge never saw — what is shown is main’s':
+      '%s est en chantier sur une branche que la forge n’a jamais vue — ce qui est montré vient de main',
     '%s names a branch that no longer exists here':
       '%s nomme une branche qui n’existe plus ici',
     '%s names a branch git would read as an option':
@@ -198,6 +202,13 @@ export function problemWords(problem, t) {
       return fill(t('%s has no local main branch to read'), short(problem.repo))
     case 'no-lots':
       return fill(t('%s carries no .agent/lots/ on main'), short(problem.repo))
+    case 'no-lots-pushed':
+      return fill(
+        t('%s has no .agent/lots/ on the main that reached the forge — committed elsewhere, perhaps'),
+        short(problem.repo),
+      )
+    case 'branch-not-pushed':
+      return `${fill(t('%s is in flight on a branch the forge never saw — what is shown is main’s'), who)} (${problem.branch})`
     case 'branch-gone':
       return `${fill(t('%s names a branch that no longer exists here'), who)} (${problem.branch})`
     case 'bad-branch':

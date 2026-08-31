@@ -117,6 +117,12 @@ driver:
   id: claude-code
 secrets:
   DEV_FLOW_REPOS: /repos/tessera:/repos/ostia
+  # Unused here — these two are on disk, and only a private repository on a
+  # forge needs a credential. Set anyway so the run photographs an ordinary
+  # instance: a DECLARED secret an instance lacks earns the shell's "active,
+  # minus what that key bought" banner, which is correct and has nothing to do
+  # with what this scenario is looking at.
+  DEV_FLOW_TOKEN: unused-by-this-bench
 extensions:
   apps: [dev-flow]
   skin: default

@@ -10,6 +10,13 @@
  * The repositories, the config and the mounts come from `dev-flow.prep.sh` beside
  * this file — real git, real fiches, one of every awkward shape. Nothing here
  * is faked: this plugin has no engine to script, only a folder to read.
+ *
+ * It drives the LOCAL source, deliberately. The forge source would mean either
+ * a live token and somebody's private repositories inside a bench, or a fake
+ * GitHub in front of the container — the first is not something a screenshot
+ * run should hold, and the second would photograph the fake. What the forge
+ * source does is pinned in `test/forge.test.js` against the same rule; what
+ * only a browser can say is the same either way, since both end in one graph.
  */
 
 /** The app's own route; the tile is on the launcher, the screen is under it. */

@@ -46,7 +46,8 @@ dataDir: ./data
 # primitive anything with a pen could re-aim.
 # secrets:
 #   GOOGLE_MAPS_API_KEY: ${MAPS_KEY}
-#   DEV_FLOW_REPOS: /repos/tessera:/repos/ostia
+#   DEV_FLOW_REPOS: AntorFr/tessera,AntorFr/ostia
+#   DEV_FLOW_TOKEN: ${GH_READ_TOKEN}
 
 # Concurrent agent turns across all conversations — a refusal (429) at the
 # cap, never a silent queue. Measured, not guessed (spikes/concurrency):

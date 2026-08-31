@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "dev-flow",
   "kind": "app",
-  "description": "The work in flight across a galaxy of repositories: every .agent/lots/ fiche read from git, merged into one graph, and drawn as who has the hand, what is blocked, and which open question is freezing a chain. Read-only — it never writes a fiche.",
+  "description": "The work in flight across a galaxy of repositories: every .agent/lots/ fiche read at its source — a repository on this disk, or a forge over HTTP with nothing cloned — merged into one graph, and drawn as who has the hand, what is blocked, and which open question is freezing a chain. Read-only — it never writes a fiche.",
   "contract": 1,
   "view": "./web/app.js",
   "styles": [
@@ -10,7 +10,8 @@
   ],
   "api": "./api.mjs",
   "secrets": [
-    "DEV_FLOW_REPOS"
+    "DEV_FLOW_REPOS",
+    "DEV_FLOW_TOKEN"
   ],
   "tile": {
     "label": "Dev flow",
