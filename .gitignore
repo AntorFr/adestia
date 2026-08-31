@@ -15,3 +15,8 @@ dist/
 
 # Screenshots are evidence for one session, not artefacts of the repo.
 bench/shots/
+
+# Scratch. Material pulled out of a running instance to think with — session
+# transcripts, copies of an agent's pages — is evidence for one conversation,
+# not an artefact of the repository, and some of it is personal.
+tmp/
