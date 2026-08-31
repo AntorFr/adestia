@@ -19,7 +19,7 @@ import { Tile } from './Tile.js'
 import type { Skin } from './skin.js'
 import { sectionsOf, type IndexEntry, type SectionTile } from './sections.js'
 import { routeForPath } from './owners.js'
-import { ORDER_KEY_APPS, ORDER_KEY_SECTIONS } from './order.js'
+import { ORDER_KEY_DOMAINS } from './order.js'
 import { useReorder } from './useReorder.js'
 
 export interface HomeProps {
@@ -126,6 +126,26 @@ function plural(count: number, one: string, many: string): string {
  * on every instance is one nobody has to look for.
  */
 const SHELL_APP = { icon: '⚙', hue: 'ardoise', route: '/settings' } as const
+
+/**
+ * A door on the home screen: a plugin's, a folder's, the shell's own.
+ *
+ * What a `Tile` needs and nothing more. The differences between the three —
+ * who draws the domain, where it materialises — are settled before this point
+ * and never reach the grid.
+ */
+interface Domain {
+  readonly key: string
+  readonly icon: string
+  readonly glyph?: string
+  readonly hue?: string
+  readonly label: string
+  readonly subtitle?: string
+  readonly chips?: readonly { readonly text: string }[]
+  readonly disabled?: boolean
+  readonly title?: string
+  readonly open: () => void
+}
 
 /**
  * Live tile figures, gathered without ever blocking the render.
@@ -268,19 +288,70 @@ export function Home({
   ]
   const sections: readonly SectionTile[] = sectionsOf(entries, absorbed)
 
-  // One order per mosaic. An app cannot be dragged among the sections: that
-  // would be a request to MOVE A FOLDER, which is a different act entirely
-  // and not one a drag on the home screen should be able to perform.
-  const apps = useReorder({
-    source: tiled,
-    keyOf: (plugin: LoadedPlugin) => plugin.id,
-    storageKey: ORDER_KEY_APPS,
-    editing,
-  })
-  const shelves = useReorder({
-    source: sections,
-    keyOf: (section: SectionTile) => section.path,
-    storageKey: ORDER_KEY_SECTIONS,
+  /**
+   * Every door on this instance, in one list.
+   *
+   * A plugin's tile and a folder's tile are the same kind of thing — a domain
+   * — differing only in what draws it and in where it materialises. They are
+   * built into a common shape here rather than rendered from two branches, so
+   * that one order, one arrange mode and one grid can serve both.
+   *
+   * The previous split was defended on the grounds that dragging an app among
+   * the sections would be "a request to MOVE A FOLDER". It is not: this order
+   * is a permutation kept per browser — how one person likes to find their own
+   * screen, as `order.ts` says — and it moves nothing on disk. What the old
+   * arrangement said about the workspace, it said wrongly.
+   */
+  const domains: readonly Domain[] = [
+    ...tiled.map((plugin) => ({
+      key: plugin.id,
+      icon: plugin.tile?.icon ?? '▩',
+      ...(plugin.tile?.glyph ? { glyph: plugin.tile.glyph } : {}),
+      ...(plugin.tile?.hue ? { hue: plugin.tile.hue } : {}),
+      label: plugin.tile?.label ?? plugin.id,
+      ...(info[plugin.id]?.subtitle ? { subtitle: info[plugin.id]!.subtitle! } : {}),
+      ...(info[plugin.id]?.chips ? { chips: info[plugin.id]!.chips! } : {}),
+      ...(plugin.view ? {} : { disabled: true, title: 'This plugin ships no screen' }),
+      open: () => openPlugin(plugin),
+    })),
+    ...sections.map((section) => ({
+      key: section.path,
+      icon: section.icon,
+      ...(section.hue ? { hue: section.hue } : {}),
+      label: section.title,
+      chips: [{ text: plural(section.count, t('page'), t('pages')) }],
+      open: () => openSection(section.path),
+    })),
+  ]
+
+  /**
+   * The shell's own, and ONLY when nothing else is there.
+   *
+   * Settings is a domain whose matter is the instance's configuration rather
+   * than pages — the one motivated exception to "a domain is a body of pages".
+   * It has a permanent home behind the cog, so a tile for it among real
+   * subjects is a duplicate. On a fresh instance there is nothing else at all,
+   * and that tile is the way in: the credential is armed from behind it.
+   */
+  const shown: readonly Domain[] =
+    domains.length > 0
+      ? domains
+      : [
+          {
+            key: 'shell:settings',
+            icon: SHELL_APP.icon,
+            hue: SHELL_APP.hue,
+            label: t('Settings'),
+            open: () => {
+              location.hash = SHELL_APP.route
+            },
+          },
+        ]
+
+  const mosaic = useReorder({
+    source: shown,
+    keyOf: (domain: Domain) => domain.key,
+    storageKey: ORDER_KEY_DOMAINS,
     editing,
   })
 
@@ -387,66 +458,17 @@ export function Home({
         </>
       )}
 
-      {/* Always drawn: even an instance with no plugin at all has the shell's
-          own app on it, and on a fresh one that tile is the whole way in —
-          the credential is armed from behind it. */}
-      <h2 className="adestia-section">
-        <span className="adestia-section__name">{t('Apps')}</span>
-        {/* One switch for both mosaics: two edit modes on one screen would
-            be two states to keep track of for a gesture that is the same
-            gesture. Only offered when there is something to arrange. */}
-        {tiled.length + sections.length > 1 && (
-          <button
-            type="button"
-            className="adestia-section__edit"
-            aria-pressed={editing}
-            onClick={() => setEditing(!editing)}
-          >
-            {editing ? t('Done') : t('Arrange')}
-          </button>
-        )}
-      </h2>
-      <ul className="adestia-tiles" {...apps.listProps}>
-        {apps.items.map((plugin, index) => (
-          <Tile
-            key={plugin.id}
-            icon={plugin.tile?.icon ?? '▩'}
-            {...(plugin.tile?.glyph ? { glyph: plugin.tile.glyph } : {})}
-            {...(plugin.tile?.hue ? { hue: plugin.tile.hue } : {})}
-            label={plugin.tile?.label ?? plugin.id}
-            {...(info[plugin.id]?.subtitle
-              ? { subtitle: info[plugin.id]!.subtitle! }
-              : {})}
-            {...(info[plugin.id]?.chips ? { chips: info[plugin.id]!.chips! } : {})}
-            disabled={!plugin.view}
-            {...(plugin.view ? {} : { title: 'This plugin ships no screen' })}
-            onOpen={() => openPlugin(plugin)}
-            editing={editing}
-            carried={apps.carried === plugin.id}
-            onNudge={(by) => apps.nudge(index, by)}
-            drag={apps.tileProps(index)}
-            t={t}
-          />
-        ))}
-        <Tile
-          key="shell:settings"
-          icon={SHELL_APP.icon}
-          hue={SHELL_APP.hue}
-          label={t('Settings')}
-          onOpen={() => {
-            location.hash = SHELL_APP.route
-          }}
-          t={t}
-        />
-      </ul>
-
-      {sections.length > 0 && (
+      {/* ONE mosaic, because there is one kind of thing on it. The split into
+          "Apps" and "Sections" asked the reader to sort what the model does
+          not sort: a domain materialises as a folder, as a species of page,
+          as a reserved root or as nothing at all, and it is drawn by the core
+          or by a plugin — properties, not species. See the decision log,
+          2026-09-01. */}
+      {shown.length > 0 && (
         <>
           <h2 className="adestia-section">
-            <span className="adestia-section__name">{t('Sections')}</span>
-            {/* The switch lives on the Apps heading when there is one; here
-                only when this is the sole mosaic on the screen. */}
-            {tiled.length === 0 && sections.length > 1 && (
+            <span className="adestia-section__name">{t('Domains')}</span>
+            {shown.length > 1 && (
               <button
                 type="button"
                 className="adestia-section__edit"
@@ -457,19 +479,23 @@ export function Home({
               </button>
             )}
           </h2>
-          <ul className="adestia-tiles" {...shelves.listProps}>
-            {shelves.items.map((section, index) => (
+          <ul className="adestia-tiles" {...mosaic.listProps}>
+            {mosaic.items.map((domain, index) => (
               <Tile
-                key={section.path}
-                icon={section.icon}
-                label={section.title}
-                {...(section.hue ? { hue: section.hue } : {})}
-                chips={[{ text: plural(section.count, t('page'), t('pages')) }]}
-                onOpen={() => openSection(section.path)}
+                key={domain.key}
+                icon={domain.icon}
+                {...(domain.glyph ? { glyph: domain.glyph } : {})}
+                {...(domain.hue ? { hue: domain.hue } : {})}
+                label={domain.label}
+                {...(domain.subtitle ? { subtitle: domain.subtitle } : {})}
+                {...(domain.chips ? { chips: domain.chips } : {})}
+                disabled={domain.disabled ?? false}
+                {...(domain.title ? { title: domain.title } : {})}
+                onOpen={domain.open}
                 editing={editing}
-                carried={shelves.carried === section.path}
-                onNudge={(by) => shelves.nudge(index, by)}
-                drag={shelves.tileProps(index)}
+                carried={mosaic.carried === domain.key}
+                onNudge={(by) => mosaic.nudge(index, by)}
+                drag={mosaic.tileProps(index)}
                 t={t}
               />
             ))}

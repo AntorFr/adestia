@@ -23,7 +23,7 @@ describe('resolveLocale', () => {
 
 describe('translator', () => {
   it('translates what it knows', () => {
-    expect(translator('fr')('Sections')).toBe('Domaines')
+    expect(translator('fr')('Domains')).toBe('Domaines')
     expect(translator('fr')('Nothing matches.')).toBe('Aucun résultat.')
   })
 

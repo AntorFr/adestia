@@ -1,6 +1,30 @@
 # Status — Adestia
 > MàJ : 2026-09-01
 
+Chantier du 01/09 (2) — **la home n'a plus qu'UNE mosaïque** (1re des trois
+conséquences de la doctrine du jour). Les tuiles de plugins et celles de
+dossiers sont bâties dans une forme commune (`Domain`) et rendues par une
+seule grille, sous un seul titre `Domains` — dont la traduction française
+existait DÉJÀ (`Sections: 'Domaines'`) : le vocabulaire penchait de ce côté
+avant le code. Une seule clé d'ordre, `adestia.order.domains` ; les deux
+anciennes ne sont plus lues, **arrangement remis à zéro** (arbitrage de
+Monsieur), motif écrit dans `order.ts`. Le commentaire qui défendait la
+séparation (« glisser une app parmi les sections serait DÉPLACER UN DOSSIER »)
+est remplacé par la raison qui le réfute, pas supprimé : l'ordre est une
+permutation par navigateur, elle ne touche rien sur le disque. La tuile
+Réglages sort de la mosaïque **sauf sur une instance nue**, où elle reste la
+seule porte (le jeton s'arme derrière). 7 tests recalés — dont un dont le NOM
+portait la doctrine retirée — et 5 neufs, dont celui qui prouve ce que la
+fusion débloque : ranger un dossier PAR RAPPORT À un plugin. 1195 verts,
+typecheck/build OK, **banc constaté** (`bench/scenarios/home-density.mjs`,
+neuf : 207 fiches sur 5 dossiers, la densité réelle mesurée sur l'instance
+d'Alfred — l'instance vide du banc ne fait apparaître aucun de ces défauts).
+⚠️ **Ce que la fusion ne règle PAS** : la ligne de flottaison. 15 tuiles au
+même gabarit restent 15 tuiles, et les domaines viennent toujours après les
+apps dans l'ordre par défaut. La densité des tuiles est le chantier suivant,
+et il touche `Tile.tsx` — réécrit le 31/08 par l'autre session, d'où le refus
+de mélanger les deux commits.
+
 Chantier du 01/09 — **doctrine « tout est un domaine » posée** (théorie
 seule, aucun code touché, gravée au Decision log de DESIGN.md). Point de
 départ : « la distinction apps / domaines est floue » — et elle l'était dans

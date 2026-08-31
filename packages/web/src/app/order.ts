@@ -12,9 +12,18 @@
  * every reader of the instance would inherit.
  */
 
-/** The two mosaics on the landing canvas, each with its own order. */
-export const ORDER_KEY_APPS = 'adestia.order.apps'
-export const ORDER_KEY_SECTIONS = 'adestia.order.sections'
+/**
+ * The landing canvas's one mosaic.
+ *
+ * It replaced `adestia.order.apps` and `adestia.order.sections` on 2026-09-01,
+ * under a NEW key so that both old arrangements are dropped rather than
+ * spliced. Concatenating them would carry the apps-before-sections split
+ * forward as a stored preference — the very split the merge removes — and an
+ * arrangement is a minute of dragging, where the model is the thing that has
+ * to be right. The dead keys are left where they are: unread, inert, and not
+ * worth a migration that touches somebody's browser to delete two strings.
+ */
+export const ORDER_KEY_DOMAINS = 'adestia.order.domains'
 
 type Readable = Pick<Storage, 'getItem'>
 type Writable = Pick<Storage, 'getItem' | 'setItem'>

@@ -6,7 +6,7 @@
  * arrives as a flat list again.
  */
 
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, onTestFinished, vi } from 'vitest'
 
 import { Home } from '../src/app/Home.js'
@@ -46,16 +46,21 @@ const props = {
 }
 
 describe('the landing canvas', () => {
-  it('leads with the apps, then with what the workspace holds', () => {
-    // The order is the whole point: what this instance can DO comes before
-    // what it stores. The version this replaced put every page first and the
-    // launcher below all of them.
+  it('gathers every door into ONE mosaic', () => {
+    // Two mosaics asked the reader to sort what the model does not sort: an
+    // app and a folder are both domains, differing in who draws them and in
+    // where they materialise. One heading, one grid, one arrangement.
     const { container } = render(<Home {...props} />)
     // The name, not the whole heading: it also carries the Arrange switch.
     expect([...container.querySelectorAll('.adestia-section__name')].map((h) => h.textContent)).toEqual([
-      'Apps',
-      'Sections',
+      'Domains',
     ])
+    // And a plugin's tile and a folder's sit in the SAME list.
+    const grids = container.querySelectorAll('.adestia-tiles')
+    expect(grids.length).toBe(1)
+    const labels = [...grids[0]!.querySelectorAll('.adestia-tile__label')].map((n) => n.textContent)
+    expect(labels).toContain('todo')
+    expect(labels).toContain('DIY')
   })
 
   it('represents a body of pages as sections, never as a flat list', () => {
@@ -177,6 +182,17 @@ describe('the landing canvas', () => {
     // Everything below the head is still the shell's.
     expect(screen.getByText('todo')).toBeTruthy()
     expect(screen.getByText('DIY')).toBeTruthy()
+  })
+
+  it('keeps a Settings tile only where there is nothing else', () => {
+    // Settings has a permanent home behind the cog, so a tile for it beside
+    // real subjects is a duplicate. On a fresh instance there is nothing else
+    // at all, and that tile is the way in — the credential is armed behind it.
+    render(<Home {...props} />)
+    expect(screen.queryByText('Settings')).toBeNull()
+
+    cleanup()
+    render(<Home {...props} plugins={[]} entries={[]} />)
     expect(screen.getByText('Settings')).toBeTruthy()
   })
 
@@ -259,10 +275,20 @@ describe('arranging the mosaics', () => {
 
   it('lays the tiles out as they were last left', () => {
     const map = withStorage()
+    map.set('adestia.order.domains', JSON.stringify(['scan', 'todo', 'planif']))
+    home()
+    expect(labels()).toEqual(['scan', 'todo', 'planif'])
+  })
+
+  it('ignores what the two old mosaics had been arranged as', () => {
+    // The merge starts from zero on purpose: splicing the two permutations
+    // would carry the apps-before-folders split forward as a preference, which
+    // is the split it removes. A new key, and the dead ones stay unread.
+    const map = withStorage()
     map.set('adestia.order.apps', JSON.stringify(['scan', 'todo', 'planif']))
     home()
-    // The shell's own tile closes the mosaic, whatever was arranged before it.
-    expect(labels()).toEqual(['scan', 'todo', 'planif', 'Settings'])
+    expect(labels()).toEqual(['todo', 'planif', 'scan'])
+    expect(map.get('adestia.order.domains')).toBeUndefined()
   })
 
   it('moves a tile and remembers it', () => {
@@ -270,10 +296,34 @@ describe('arranging the mosaics', () => {
     home()
     fireEvent.click(screen.getByRole('button', { name: 'Arrange' }))
     fireEvent.click(screen.getByRole('button', { name: 'Move later — todo' }))
-    expect(labels()).toEqual(['planif', 'todo', 'scan', 'Settings'])
-    // What is remembered is the arrangement of the APPS: the shell's tile is
-    // not in the permutation, so it never lands in the stored order.
-    expect(JSON.parse(map.get('adestia.order.apps') as string)).toEqual(['planif', 'todo', 'scan'])
+    expect(labels()).toEqual(['planif', 'todo', 'scan'])
+    expect(JSON.parse(map.get('adestia.order.domains') as string)).toEqual([
+      'planif',
+      'todo',
+      'scan',
+    ])
+  })
+
+  it('arranges a folder against a plugin, which two mosaics could not', () => {
+    // The point of the merge. The old split defended itself by saying a drag
+    // across it would be "a request to move a folder" — it is not: this order
+    // is a permutation kept per browser and it moves nothing on disk.
+    const map = withStorage()
+    home({
+      entries: [
+        { path: 'diy/INDEX.md', title: 'DIY', fields: {} },
+        { path: 'diy/rabot.md', title: 'Rabot', fields: {} },
+      ],
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Arrange' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Move earlier — DIY' }))
+    expect(labels()).toEqual(['todo', 'planif', 'DIY', 'scan'])
+    expect(JSON.parse(map.get('adestia.order.domains') as string)).toEqual([
+      'todo',
+      'planif',
+      'diy',
+      'scan',
+    ])
   })
 
   it('does nothing at the ends', () => {
@@ -281,7 +331,7 @@ describe('arranging the mosaics', () => {
     home()
     fireEvent.click(screen.getByRole('button', { name: 'Arrange' }))
     fireEvent.click(screen.getByRole('button', { name: 'Move earlier — todo' }))
-    expect(labels()).toEqual(['todo', 'planif', 'scan', 'Settings'])
+    expect(labels()).toEqual(['todo', 'planif', 'scan'])
   })
 
   it('does not open a tile somebody is trying to pick up', () => {
@@ -305,25 +355,37 @@ describe('arranging the mosaics', () => {
 
   it('keeps a newly enabled app rather than hiding it', () => {
     const map = withStorage()
-    map.set('adestia.order.apps', JSON.stringify(['scan', 'todo']))
+    map.set('adestia.order.domains', JSON.stringify(['scan', 'todo']))
     home({ plugins: [...three, plugin('voyages')] })
     // Unmentioned goes last; nothing is lost to a stale preference.
-    expect(labels()).toEqual(['scan', 'todo', 'planif', 'voyages', 'Settings'])
+    expect(labels()).toEqual(['scan', 'todo', 'planif', 'voyages'])
   })
 
   it('leaves no hole where a disabled app used to be', () => {
     const map = withStorage()
-    map.set('adestia.order.apps', JSON.stringify(['scan', 'planif', 'todo']))
+    map.set('adestia.order.domains', JSON.stringify(['scan', 'planif', 'todo']))
     home({ plugins: [plugin('scan'), plugin('todo')] })
-    expect(labels()).toEqual(['scan', 'todo', 'Settings'])
+    expect(labels()).toEqual(['scan', 'todo'])
   })
 
-  it('never lets the shell’s own tile be arranged away', () => {
+  it('keeps a folder out of the mosaic once its app absorbs it', () => {
+    // The one de-duplication that survives the merge, and now for the stated
+    // reason: the app and the folder are the SAME domain, so there was never
+    // a second tile to draw — not a section being hidden.
+    withStorage()
+    home({
+      plugins: [{ ...plugin('todo'), absorbs: ['todo'] } as unknown as LoadedPlugin],
+      entries: [{ path: 'todo/courses.md', title: 'Courses', fields: {} }],
+    })
+    expect(labels()).toEqual(['todo'])
+  })
+
+  it('ignores a stale order that names the shell’s own tile', () => {
     const map = withStorage()
-    // A stale order that names it — written by hand, or by a version that
-    // did put it in the permutation — must not move it or duplicate it.
-    map.set('adestia.order.apps', JSON.stringify(['Settings', 'scan']))
+    // Written by hand, or by a version that put Settings in the permutation.
+    // It is not a domain of this instance and must not appear among them.
+    map.set('adestia.order.domains', JSON.stringify(['shell:settings', 'scan']))
     home()
-    expect(labels()).toEqual(['scan', 'todo', 'planif', 'Settings'])
+    expect(labels()).toEqual(['scan', 'todo', 'planif'])
   })
 })

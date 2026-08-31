@@ -27,8 +27,8 @@ export type Locale = 'en' | 'fr'
  */
 const FR: Readonly<Record<string, string>> = {
   // The landing canvas
-  Apps: 'Apps',
-  Sections: 'Domaines',
+  // One mosaic now: a plugin's tile and a folder's are both doors on a domain.
+  Domains: 'Domaines',
   Pages: 'Fiches',
   'Nothing to show yet.': 'Rien à afficher pour l’instant.',
   Arrange: 'Ranger',
