@@ -38,6 +38,7 @@ import {
   type McpServer,
 } from './extensions.js'
 import { FileRefreshStore } from './mcp-refresh.js'
+import { McpStore } from './mcp-store.js'
 import { runSetups } from './plugin-host.js'
 import { UserTokens } from './user-tokens.js'
 import { SecretStore } from './secrets.js'
@@ -87,7 +88,7 @@ const AVAILABLE_DRIVERS = ['claude-code', 'copilot-cli'] as const
 async function buildDriver(
   config: AdestiaConfig,
   dataDir: string,
-  mcpServers: readonly McpServer[],
+  mcpServers: () => readonly McpServer[],
   asks: AskDesk | undefined,
   log: (message: string) => void,
 ): Promise<Driver> {
@@ -298,13 +299,37 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
   if (config.name) log(`instance named "${config.name}"`)
 
   const dataDir = resolve(cwd, config.dataDir)
-  // The two layers the product owns, merged before the driver exists: a
-  // driver is HANDED its servers rather than going looking for them, which is
-  // what keeps "where does this server come from" a question with one answer.
-  const { servers: mcpServers, problems: mcpProblems } = mcpServersFor(config.mcpServers, plugins)
+  // The shell's own layer, primed before anything asks for it. Read here
+  // rather than lazily so a malformed file is a line in the boot log instead
+  // of a surprise on somebody's first turn.
+  const mcpStore = new McpStore(dataDir)
+  await mcpStore.list()
+
+  /**
+   * The layers the product owns, merged — and merged PER CALL rather than
+   * once.
+   *
+   * A driver is still HANDED its servers rather than going looking for them,
+   * which is what keeps "where does this server come from" a question with
+   * one answer. What changed is that the answer can now change while the
+   * process runs: a server added from the settings screen is written to
+   * `mcp-servers.json`, and both drivers build their map at the spawn site,
+   * so asking again per turn is what makes the button do something before the
+   * next restart.
+   *
+   * The shell's layer goes FIRST, so a name the operator also wrote in the
+   * config file wins — the file somebody edited by hand beats the one a
+   * screen wrote. The write path refuses that collision outright; this is
+   * what happens when the config gains the name afterwards.
+   */
+  const wiredMcpServers = () =>
+    mcpServersFor([...mcpStore.current(), ...config.mcpServers], plugins).servers
+
+  const { problems: mcpProblems } = mcpServersFor(config.mcpServers, plugins)
   for (const problem of mcpProblems) {
     log(`extension "${problem.id}" — ${problem.reason}`)
   }
+  const mcpServers = wiredMcpServers()
   if (mcpServers.length > 0) {
     log(`${mcpServers.length} MCP server(s) wired: ${mcpServers.map((s) => s.name).join(', ')}`)
   }
@@ -316,7 +341,7 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
 
   const driver = options.driverFactory
     ? await options.driverFactory(config)
-    : await buildDriver(config, dataDir, mcpServers, asks, log)
+    : await buildDriver(config, dataDir, wiredMcpServers, asks, log)
 
   // The instance's own tools: one registry, hosted in-process by a driver
   // that can and served over a unix socket to every other (shell-tools.ts).
@@ -430,6 +455,10 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     pluginProblems: [...problems, ...setupProblems],
     ...(rebound ? { userTokens: rebound } : {}),
     secrets,
+    // The very same instance the driver is asking: a server added over the
+    // API has to be the server the next turn is handed, and two stores
+    // reading one file would agree only by luck.
+    mcpStore,
     ...(asks ? { asks } : {}),
     shellTools,
     ...(activeSkin

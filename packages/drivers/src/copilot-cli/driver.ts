@@ -115,8 +115,13 @@ export interface CopilotDriverOptions {
    * - the servers are not on argv. Inline JSON would have worked and would
    *   have put every `Authorization: Bearer …` header in `ps` output, readable
    *   by any process on the box.
+   *
+   * A FUNCTION is accepted beside the list, and is what the shell hands over:
+   * the file is rewritten before every turn anyway, so asking afresh costs
+   * nothing and a server added from the settings screen is wired on the next
+   * message rather than on the next restart.
    */
-  readonly mcpServers?: readonly McpServer[]
+  readonly mcpServers?: readonly McpServer[] | (() => readonly McpServer[])
   /** Injected so the token exchange can be exercised without a network. */
   readonly fetchImpl?: typeof fetch
   /** Persists a rotated MCP refresh token across restarts. */
@@ -147,7 +152,7 @@ export class CopilotDriver implements Driver {
   readonly #cliVersion: string
   readonly #spawn: typeof spawn
   readonly #startLogin: typeof startDeviceCodeLogin
-  readonly #mcpServers: readonly McpServer[]
+  readonly #mcpServers: () => readonly McpServer[]
   readonly #shellToolsTransport: 'mcp' | 'shell'
   readonly #tokens: McpTokens
   /** What the last session said about them. Empty until a turn has run. */
@@ -167,7 +172,9 @@ export class CopilotDriver implements Driver {
     this.#cliVersion = options.cliVersion ?? 'unknown'
     this.#spawn = options.spawnImpl ?? spawn
     this.#startLogin = options.startLoginImpl ?? startDeviceCodeLogin
-    this.#mcpServers = options.mcpServers ?? []
+    // A question rather than an answer: see the option's own note.
+    const given = options.mcpServers ?? []
+    this.#mcpServers = typeof given === 'function' ? given : () => given
     this.#shellToolsTransport = options.shellToolsTransport ?? 'mcp'
     this.#tokens = new McpTokens(options.fetchImpl ?? fetch, options.refreshStore)
     this.#credentials = { ...options.credentials }
@@ -185,7 +192,7 @@ export class CopilotDriver implements Driver {
         // report the health of nothing looks broken. The CLI's own config
         // servers are the user's, and Adestia does not claim to report on what
         // it did not wire.
-        ...(this.#mcpServers.length > 0 ? (['mcpStatus'] as const) : []),
+        ...(this.#mcpServers().length > 0 ? (['mcpStatus'] as const) : []),
         ...(this.#models.length > 0 ? (['modelSelection'] as const) : []),
         // Deliberately NOT declared: `liveTurnUsage` (the stream carries no
         // running token count), `cost` (billing is AI credits, aggregated
@@ -332,7 +339,9 @@ export class CopilotDriver implements Driver {
    */
   mcpStatus(): Promise<readonly McpServerHealth[]> {
     if (this.#mcpHealth.length > 0) return Promise.resolve(this.#mcpHealth)
-    return Promise.resolve(this.#mcpServers.map((server) => ({ name: server.name, state: 'unknown' as const })))
+    return Promise.resolve(
+      this.#mcpServers().map((server) => ({ name: server.name, state: 'unknown' as const })),
+    )
   }
 
   /**
@@ -352,7 +361,8 @@ export class CopilotDriver implements Driver {
     // Under the shell transport the instance's tools ride the execute tool,
     // not an MCP server — so they never enter this file.
     const bridgeTools = this.#shellToolsTransport === 'mcp' ? tools : undefined
-    if (this.#mcpServers.length === 0 && !bridgeTools) return undefined
+    const declared = this.#mcpServers()
+    if (declared.length === 0 && !bridgeTools) return undefined
 
     const mcpServers: Record<string, unknown> = {}
     if (bridgeTools) {
@@ -365,7 +375,7 @@ export class CopilotDriver implements Driver {
         tools: ['*'],
       }
     }
-    for (const server of this.#mcpServers) {
+    for (const server of declared) {
       if (server.url) {
         const headers: Record<string, string> = { ...server.headers }
         if (server.identity === 'user') {
@@ -446,7 +456,7 @@ export class CopilotDriver implements Driver {
     // a microtask for everyone else is a behaviour change nobody asked for.
     const mcpRelevantTools = this.#shellToolsTransport === 'mcp' ? request.tools : undefined
     const mcpConfig =
-      this.#mcpServers.length === 0 && !mcpRelevantTools
+      this.#mcpServers().length === 0 && !mcpRelevantTools
         ? undefined
         : await this.#mcpConfig(request.callerToken, request.tools)
     // Shell transport: the CLI is written and the socket/token armed in the
