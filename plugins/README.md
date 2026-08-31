@@ -1,12 +1,13 @@
 # Bundled plugins
 
-Adestia ships nine plugins and three skins. None of them is active until you name it
+Adestia ships ten plugins and three skins. None of them is active until you name it
 in your config — discovery is not activation, and a folder sitting here costs
 nothing until you ask for it.
 
 ```yaml
 extensions:
-  apps: [todo, planif, collections, atelier, voyages, journal, dev-flow]  # tiles
+  apps: [todo, planif, collections, atelier, voyages, journal, dev-flow,
+         listening-post]                                    # tiles
   features: [scan, parcours]                                   # things that live in the shell
   tools: []                                             # agent-facing only
   skin: alfred
@@ -25,6 +26,7 @@ leaving you to wonder where the tile went.
 | [`journal`](journal/) | app | A journal is a folder, an entry is a page in it. The whole history reads on one screen and a single entry goes into edit mode — the shell's own page editor, one per entry. |
 | [`atelier`](atelier/) | app | The workbench. Reads a `workbook.json` a project carries in its own assets and draws the cutting diagram — sheets, bands, pieces, edges to band — plus a full-screen bench mode readable from across a workshop. |
 | [`voyages`](voyages/) | app | Trips: a per-day timeline and a tray of suggestions, read from a `voyage.json` a trip carries in its own assets. Weather and legs are derived on demand. |
+| [`listening-post`](listening-post/) | app | The video and audio worth your time. A queue fed by the feeds you follow (YouTube Atom, podcast RSS — no key, no quota) and by links you paste; a transcript of what was actually SAID filed beside each item you keep; and a search over all of it that answers with a timestamp and a link that seeks to it. It ranks nothing — the recommendation is a conversation with the agent, which is what its ✦ buttons start. |
 | [`dev-flow`](dev-flow/) | app | The work in flight across a galaxy of repositories. Reads every `.agent/lots/` fiche out of git — `main` as the index, a branch tip for its own fiche — merges the graphs and derives what nobody records: who has the hand, what is blocked, and which open question is freezing a whole chain. Never writes. |
 | [`scan`](scan/) | feature | A barcode reader in the composer. Uses the browser's own `BarcodeDetector` where it exists and only downloads a decoder where it does not. |
 | [`parcours`](parcours/) | feature | Walks and hikes. Adds the `:::parcours` block, which draws a `.parcours.json` as a map with numbered markers, an elevation profile and a walking mode, and assembles its GPX on demand. A feature rather than an app because a route has no domain and no tile: it hangs off whichever page has a reason to mention it. |
@@ -41,7 +43,8 @@ A plugin that expects the agent to write a particular shape of file ships the
 contract that describes it, and Adestia delivers those contracts to the agent
 alongside its own. `atelier` ships `workbook-json`, `todo` ships `todo`,
 `collections` ships `collections`, `voyages` ships `voyage-json`,
-`parcours` ships `parcours-json` and `journal` ships `journal`.
+`parcours` ships `parcours-json`, `journal` ships `journal` and
+`listening-post` ships `veille-json`.
 
 `dev-flow` deliberately ships none. The fiches it reads are written by agents in
 OTHER repositories, against a contract those repositories publish themselves
@@ -118,6 +121,24 @@ add. A repository that is missing, carries no `.agent/lots/`, has no local
 `main`, or names a branch that has since been deleted degrades to a line in the
 screen's own diagnostics — never to a blank list.
 
+## `listening-post` transcribes with `yt-dlp`, or says it cannot
+
+Feeds, queue, kept items and the search over whatever is already transcribed
+all work with nothing installed. The one act that needs a binary is pulling a
+media's published subtitles, and the image ships `yt-dlp` for it — the screen
+says "pas de transcripteur sur cette instance" where it is absent rather than
+offering a button that fails in a container nobody is watching.
+
+Two things follow. An instance built with `--build-arg YT_DLP_RELEASE=none`,
+or running from source on a machine without it, keeps everything but the
+extraction. And a transcriber that is months old does not degrade, it STOPS
+— so an instance that suddenly transcribes nothing wants a newer image before
+it wants a bug report.
+
+Nothing is downloaded at runtime and no key is involved anywhere: a YouTube
+channel publishes Atom at `videos.xml?channel_id=…` and a podcast publishes
+RSS.
+
 ## Adding your own
 
 Put the folder here — or anywhere you mount — and name it in the config. The
@@ -125,5 +146,5 @@ manifest schema, the facets a plugin may contribute, and the import map it can
 rely on are all described by the `plugin-author` contract that ships with the
 product. Ask the agent for a plugin and it reads that contract first.
 
-Nothing here is privileged. These nine are ordinary plugins that happen to live
+Nothing here is privileged. These ten are ordinary plugins that happen to live
 in the repository, and they load through exactly the same path as yours.
