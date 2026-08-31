@@ -1,5 +1,24 @@
 # Status — Adestia
-> MàJ : 2026-08-30
+> MàJ : 2026-08-31
+
+Chantier du 31/08 — **transport « shell » pour les outils d'instance** (revue
+et fusion de la proposition de l'instance copilote). Le besoin : une org
+verrouillée valide chaque serveur MCP du CLI contre son registre maison, donc
+le serveur shell-tools est jeté et l'agent perd `rename_conversation` /
+`new_id` sans que le tour le dise. Livré : `driver.shellToolsTransport`
+(`mcp` par défaut, `shell` en échappatoire), le driver copilot écrit un petit
+CLI sous son home et arme `ADESTIA_TOOLS_SOCKET` / `ADESTIA_TOOLS_TOKEN` /
+`ADESTIA_TOOL_BIN` dans l'env de l'enfant — les outils passent par l'outil
+execute ordinaire, plus rien à filtrer. Socket, dispatch unique et jeton par
+tour inchangés : c'est le dernier saut qui bouge, pas la doctrine. Ajouté à
+la revue : la doc qui manquait (DESIGN.md « Shell tools » + journal du 31/08,
+`adestia.config.example.yaml`) et le scénario de banc `editor-bullets.mjs`
+qui constate l'autre commit de la branche (la puce de l'éditeur ne double
+plus son interligne, clair et sombre). **Coût assumé et écrit : la
+DÉCOUVERTE.** Sous `shell` aucun moteur n'énumère les outils — c'est aux
+instructions du workspace (AGENTS.md) de dire que le CLI existe. Le cœur
+n'écrit pas de prose d'instruction, et on n'a pas commencé pour une
+échappatoire.
 
 Chantier du 30/08 — **outils shell LIVRÉS** (suite immédiate du spike
 ci-dessous, décision de Monsieur : in-process pour claude-code + pont pour
