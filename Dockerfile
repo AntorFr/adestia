@@ -65,6 +65,37 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates git \
  && rm -rf /var/lib/apt/lists/*
 
+# The transcriber, for the `listening-post` plugin — the one thing that turns
+# an hour of video into something a search can answer from. Baked in for the
+# same reason `git` above is: a plugin the image SHIPS whose central act needs
+# a binary the image lacks is a box with a picture on it. The plugin still
+# mounts without it and says so on screen, so an operator who does not want
+# 40 MB of Python here builds with `--build-arg YT_DLP_RELEASE=none`.
+#
+# ⚠️ Deliberately NOT pinned by default, against this file's own instincts. A
+# transcriber that is a few months old does not degrade, it STOPS: YouTube
+# changes its player and every yt-dlp older than the change fails on every
+# video at once. A pinned tag would freeze that failure into the image and
+# nobody would connect the two. Pass `--build-arg YT_DLP_RELEASE=2026.05.01`
+# to pin a build that must be reproducible, and accept it will age out.
+ARG TARGETARCH
+ARG YT_DLP_RELEASE=latest
+RUN set -eu; \
+    case "${TARGETARCH:-amd64}" in \
+      amd64) asset=yt-dlp_linux ;; \
+      arm64) asset=yt-dlp_linux_aarch64 ;; \
+      *) asset='' ;; \
+    esac; \
+    if [ -n "$asset" ] && [ "$YT_DLP_RELEASE" != none ]; then \
+      if [ "$YT_DLP_RELEASE" = latest ]; then \
+        url="https://github.com/yt-dlp/yt-dlp/releases/latest/download/$asset"; \
+      else \
+        url="https://github.com/yt-dlp/yt-dlp/releases/download/$YT_DLP_RELEASE/$asset"; \
+      fi; \
+      node -e "const [,u,o]=process.argv;fetch(u).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.arrayBuffer()}).then(b=>require('node:fs').writeFileSync(o,Buffer.from(b)))" "$url" /usr/local/bin/yt-dlp; \
+      chmod 0755 /usr/local/bin/yt-dlp; \
+    fi
+
 ENV NODE_ENV=production
 
 COPY --from=build /build/node_modules ./node_modules
@@ -81,7 +112,7 @@ COPY --from=build /build/packages/server/bin ./packages/server/bin
 COPY --from=build /build/packages/web/package.json ./packages/web/
 COPY --from=build /build/packages/web/dist-web ./packages/web/dist-web
 
-# The extensions the product SHIPS — nine plugins and three skins, loaded by
+# The extensions the product SHIPS — ten plugins and three skins, loaded by
 # the same runtime path as any operator-mounted folder. Baked in because a
 # default install advertising "ships with todo, collections…" and starting
 # with none would be a box with a picture on it; an operator points
