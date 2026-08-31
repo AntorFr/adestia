@@ -273,8 +273,20 @@ export interface QuotaReport {
 /** Events a turn emits. The UI is built from these and nothing else. */
 export type TurnEvent =
   | { readonly type: 'text-delta'; readonly text: string }
-  | { readonly type: 'tool-use'; readonly name: string; readonly target?: string }
-  | { readonly type: 'tool-result'; readonly name: string; readonly ok: boolean }
+  /**
+   * `id` pairs a result with its call. Names cannot: an agent calls `Read`
+   * five times in one breath, and two calls of the same name overlap often
+   * enough that "the most recent unresolved one" marks the wrong row. A
+   * driver that has no such id omits it and the consumer falls back to the
+   * name — correct for a driver whose calls never overlap.
+   */
+  | {
+      readonly type: 'tool-use'
+      readonly name: string
+      readonly target?: string
+      readonly id?: string
+    }
+  | { readonly type: 'tool-result'; readonly name: string; readonly ok: boolean; readonly id?: string }
   /**
    * Only with `interactivePermissions`, and only when the instance is in
    * `ask` posture: the ENGINE decided this call needs a person.

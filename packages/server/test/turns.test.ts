@@ -69,6 +69,85 @@ describe('the turn desk', () => {
     expect(limiter.state.releases).toBe(1)
   })
 
+  it('marks the call the result belongs to, not the last one of that name', async () => {
+    // Two Reads in flight at once, the FIRST one failing. Matched on the name,
+    // the failure lands on the second call and the transcript blames the wrong
+    // file — silently, since both rows look alike.
+    const driver = {
+      async *runTurn(_request: TurnRequest): AsyncIterable<TurnEvent> {
+        yield { type: 'tool-use', name: 'Read', target: '/a.md', id: 'a' }
+        yield { type: 'tool-use', name: 'Read', target: '/b.md', id: 'b' }
+        yield { type: 'tool-result', name: 'Read', ok: false, id: 'a' }
+        yield { type: 'tool-result', name: 'Read', ok: true, id: 'b' }
+        yield RESULT
+      },
+    }
+    const desk = new TurnDesk(driver, meter())
+    const finished: TurnOutcome[] = []
+    const admission = desk.admit('u/c:overlap')
+    if (admission.mode !== 'run') throw new Error('expected a run')
+    await admission.start({
+      request: { prompt: 'lis les deux', cwd: '.' },
+      finish: async (outcome) => void finished.push(outcome),
+    }).done
+
+    expect(finished[0]?.parts).toEqual([
+      {
+        tools: [
+          { name: 'Read', target: '/a.md', ok: false },
+          { name: 'Read', target: '/b.md', ok: true },
+        ],
+        text: '',
+      },
+    ])
+  })
+
+  it('still marks by name when the driver reports no id', async () => {
+    // A driver with no ids of its own stays on the old rule, which is right
+    // for one whose calls never overlap.
+    const driver = {
+      async *runTurn(_request: TurnRequest): AsyncIterable<TurnEvent> {
+        yield { type: 'tool-use', name: 'Bash', target: 'ls' }
+        yield { type: 'tool-result', name: 'Bash', ok: true }
+        yield RESULT
+      },
+    }
+    const desk = new TurnDesk(driver, meter())
+    const finished: TurnOutcome[] = []
+    const admission = desk.admit('u/c:noid')
+    if (admission.mode !== 'run') throw new Error('expected a run')
+    await admission.start({
+      request: { prompt: 'liste', cwd: '.' },
+      finish: async (outcome) => void finished.push(outcome),
+    }).done
+
+    expect(finished[0]?.parts).toEqual([
+      { tools: [{ name: 'Bash', target: 'ls', ok: true }], text: '' },
+    ])
+  })
+
+  it('never writes the driver id into what gets stored', async () => {
+    // The id is plumbing for matching. The transcript records what the UI
+    // drew, and an engine's internal handle is not that.
+    const driver = {
+      async *runTurn(_request: TurnRequest): AsyncIterable<TurnEvent> {
+        yield { type: 'tool-use', name: 'Read', target: '/a.md', id: 'toolu_01' }
+        yield { type: 'tool-result', name: 'Read', ok: true, id: 'toolu_01' }
+        yield RESULT
+      },
+    }
+    const desk = new TurnDesk(driver, meter())
+    const finished: TurnOutcome[] = []
+    const admission = desk.admit('u/c:plumbing')
+    if (admission.mode !== 'run') throw new Error('expected a run')
+    await admission.start({
+      request: { prompt: 'lis', cwd: '.' },
+      finish: async (outcome) => void finished.push(outcome),
+    }).done
+
+    expect(JSON.stringify(finished[0]?.parts)).not.toContain('toolu_01')
+  })
+
   it('queues behind the key, then dispatches ONE merged turn under the same slot', async () => {
     const first = gate()
     const requests: TurnRequest[] = []
