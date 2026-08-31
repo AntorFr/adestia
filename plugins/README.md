@@ -131,7 +131,10 @@ offering a button that fails in a container nobody is watching.
 
 Two things follow. An instance built with `--build-arg YT_DLP_RELEASE=none`,
 or running from source on a machine without it, keeps everything but the
-extraction. And a transcriber that is months old does not degrade, it STOPS
+extraction — unless its agent has a transcription tool of its own over MCP
+(`verbatim`, in the Rosetta hub, does exactly this job server-side), in which
+case the agent writes the same transcript file and only the SCREEN is in the
+dark: it reports the binary it can see, not the agent's tool list. And a transcriber that is months old does not degrade, it STOPS
 — so an instance that suddenly transcribes nothing wants a newer image before
 it wants a bug report.
 

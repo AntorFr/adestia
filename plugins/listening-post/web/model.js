@@ -47,7 +47,7 @@ const WORDS = {
     'passages': 'passages',
     'sheet': 'fiche',
     'sheets': 'fiches',
-    'no transcriber on this instance': 'pas de transcripteur sur cette instance',
+    'no transcriber on this instance': 'pas de transcripteur local ici',
   },
 }
 
