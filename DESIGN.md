@@ -370,6 +370,23 @@ instance really runs handlers in the calling process, and it keeps state
 across turns — so per-turn context is closed over at spawn, never held on
 the instance.
 
+**A third transport, when a registry filters MCP away.** A locked-down org
+validates every MCP server its CLI is handed against a corporate registry and
+drops the ones it does not know — the instance's own server included, so the
+agent never sees its tools and the turn is not even told why.
+`driver.shellToolsTransport: shell` (copilot only; claude-code hosts them
+in-process and has nothing to escape) writes a small CLI under the driver's
+home and arms the socket path and the turn's token in the CHILD'S ENVIRONMENT
+instead, so the tools ride the ordinary execute tool. The registry then has
+nothing to filter: no MCP server is declared at all. Everything above the last
+hop is unchanged — same socket, same one dispatch, same per-turn token, same
+handlers — which is why this is an escape hatch per instance and not a second
+design. What it costs is DISCOVERY: no engine enumerates the tools any more,
+so the workspace's own instructions have to say the CLI exists and how it is
+called (`node "$ADESTIA_TOOL_BIN" list`, then `call <name> '<json>'`). That
+prose belongs to the operator, like every other instruction: the core writes
+none.
+
 **Tools answer.** Every call returns synchronously — success text or a
 failure worded for the agent — because the agent is the conversational
 surface: "I could not rename it, the title was empty" must come from the
@@ -1239,3 +1256,19 @@ allows one. Every transport fact was executed before being relied on
 reversible, compacts on settle) and `new_id` (ULID, the author-mints-id rule
 made canonical). The MCP-forbidden-org case is a per-instance contingency the
 registry absorbs later, not a constraint the design bent for.
+
+**2026-08-31 (the MCP-forbidden org, absorbed):** the contingency above came
+due sooner than "later". An org filters the CLI's MCP servers against its own
+registry, so the shell-tools server is dropped and the instance's agent loses
+tools it is supposed to have. Answered where the day before said it would be —
+at the transport, not in the doctrine: `driver.shellToolsTransport: shell`
+swaps the stdio bridge for a small CLI on the execute tool, and the socket,
+the dispatch and the per-turn token do not move (see "Shell tools" above).
+Two things were deliberately NOT done. The option is not offered on
+claude-code, which hosts the tools in-process and has no registry to escape —
+a knob that exists everywhere teaches that it matters everywhere. And nothing
+is injected into the agent's prompt to announce the CLI: the core has never
+written a line of instruction prose, and starting for one escape hatch would
+buy discovery at the price of the rule. The operator writes it, and the cost
+is stated here rather than discovered in a turn where the agent simply never
+calls a tool nobody told it about.

@@ -127,6 +127,20 @@ driver:
   # command: /usr/local/bin/copilot
   # Optional custom agent profile, when supported by the selected driver.
   # agent: reviewer
+  # How the instance's OWN tools (rename_conversation, new_id) reach the agent.
+  # mcp (default) hands them over as a stdio MCP server. shell is the escape
+  # hatch for an org whose CLI validates every MCP server against a corporate
+  # registry: ours is unknown, so it is dropped and the agent silently loses
+  # its tools. Under shell the driver writes a small CLI and arms the socket
+  # and the turn's token in the agent's environment, so the tools ride the
+  # ordinary execute tool instead — nothing is declared for the registry to
+  # filter. Only copilot-cli honours it; claude-code hosts the tools in its
+  # own process and has nothing to escape.
+  # Discovery is then YOURS: no engine enumerates these tools any more, so
+  # the workspace's instructions (AGENTS.md) must say the CLI exists —
+  #   node "$ADESTIA_TOOL_BIN" list
+  #   node "$ADESTIA_TOOL_BIN" call rename_conversation '{"title":"…"}'
+  # shellToolsTransport: shell
   # Claude's catalogue is per-account and cannot be enumerated offline, so an
   # instance declares what it may use. Omit the list and the model selector
   # hides rather than showing a hardcoded catalogue that lies.

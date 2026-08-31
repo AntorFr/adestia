@@ -2339,6 +2339,10 @@
 .adestia-editor__surface .milkdown .ProseMirror h3 { font-size: 1.2rem; }
 .adestia-editor__surface .milkdown .ProseMirror h4 { font-size: 1.05rem; }
 .adestia-editor__surface .milkdown .ProseMirror p { margin: 0 0 1em; }
+/* A list item's paragraph is the item, not a paragraph: the 1em below every
+   other p would otherwise open a blank line between bullets. Matches the read
+   view's `.adestia-prose li > p`. */
+.adestia-editor__surface .milkdown .ProseMirror li p { margin: 0; }
 .adestia-editor__surface .milkdown .ProseMirror a { color: var(--accent); }
 
 /* The frontmatter chips sit in the flow of both postures identically. */

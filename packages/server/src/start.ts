@@ -165,6 +165,9 @@ async function buildDriver(
         home: join(dataDir, 'copilot-home'),
         models: config.driver.models,
         ...(config.driver.agent ? { agent: config.driver.agent } : {}),
+        ...(config.driver.shellToolsTransport
+          ? { shellToolsTransport: config.driver.shellToolsTransport }
+          : {}),
         mcpServers,
         refreshStore,
         ...(config.driver.command ? { command: config.driver.command } : {}),
