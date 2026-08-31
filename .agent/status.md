@@ -1,6 +1,26 @@
 # Status — Adestia
 > MàJ : 2026-08-31
 
+Chantier du 31/08 (soir, 2) — **les chemins d'un plugin, ancrés par qui sait
+où il est**. Le plugin ignore où l'opérateur l'a monté (`extensions.pluginsDir`)
+et l'agent ne tourne pas dedans (son cwd est le workspace) : tout chemin écrit
+par un plugin était vrai chez lui, faux à l'usage. La skill d'atelier disait
+`node plugins/atelier/tools/atelier.mjs` → `Cannot find module`, et Alfred en a
+conclu PAR ÉCRIT, dans deux fiches projet, que le validateur était « hors de
+portée de cet environnement ». Il était installé et fonctionnel. Corrigé aux
+deux endroits : `{{plugin_dir}}` dans une skill (substitué à la livraison, à
+côté de `nameForFolder` — même moment, même raison) et les entrées `./` des
+`mcpServers` d'un manifeste (résolues au câblage ; les serveurs de l'OPÉRATEUR
+ne sont jamais touchés, et un mot nu comme `node` reste un lookup PATH). Ce
+second volet était latent mais l'exemple de `plugin-author` enseignait
+exactement le geste qui casse — et c'est le mécanisme du futur plugin outil.
+5 tests neufs, 1170 + 190 verts, typecheck/build OK. Pas de banc : rien de ce
+qui est dessiné ne change. **Côté cockpit d'Alfred** (hors dépôt) : les deux
+fiches corrigées avec le VRAI verdict — dressing `✓ valide`, meuble à tiroirs
+`✗ 14 erreurs` dont 4 pièces jamais débitées (NE PAS COUPER) — et sa skill
+`menuiserie` recalée (annonçait le schéma 2.0, l'image livre le 3.0 ; ses trois
+`.mjs` locaux sont des reliques 2.0 signalées à ne plus exécuter).
+
 Chantier du 31/08 (soir) — **l'issue des appels d'outils, enfin écrite**.
 Depuis toujours `ok` n'était jamais renseigné : le driver claude-code lisait
 le nom d'un outil sur le bloc `tool_result`, qui n'en porte pas (seulement

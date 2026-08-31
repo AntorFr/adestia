@@ -822,6 +822,24 @@ that opens to its own words when the network is gone.
 
 ## Decision log
 
+**2026-08-31 (a plugin writes paths from where IT stands; the server anchors
+them):** a plugin cannot know where it was mounted — `extensions.pluginsDir`
+is the operator's — and the agent does not run from inside it: its working
+directory is the workspace. So every path a plugin wrote was true in the
+plugin and false in use. Atelier's skill said `node
+plugins/atelier/tools/atelier.mjs`; from the workspace that resolves to
+nothing, and the agent concluded the validator was "out of reach in this
+environment" — then wrote that conclusion into two project fiches, which
+carried a warning to re-validate against a tool that had been installed and
+working all along. Run afterwards, it found one of those two workbooks
+carrying fourteen errors, four of them pieces the cutting plan never placed.
+A wrong path does not fail loudly: it teaches the agent something false, and
+the agent writes it down. Both halves are now anchored by the layer that
+knows — `{{plugin_dir}}` in a skill, substituted at delivery, and `./`
+entries in a manifest's `mcpServers`, resolved when the server is wired. The
+operator's own servers are never touched: they wrote their paths from where
+they stand, and there is no plugin folder to anchor them to.
+
 **2026-08-31 (a result belongs to a CALL, not to a name):** the transcript
 promised the tool trace back on reload, and gave it back with every call drawn
 as still running — for months, in every thread. Three things had to line up.

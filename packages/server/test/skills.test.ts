@@ -52,6 +52,29 @@ describe('collecting', () => {
     expect(skills.find((s) => s.source === 'workbench')?.path).toBe('workbench-workbench/SKILL.md')
   })
 
+  it('resolves {{plugin_dir}} to where the plugin actually sits', async () => {
+    // The agent runs from the workspace, not from inside the plugin, and the
+    // plugin cannot know where an operator mounted it. Written unresolved,
+    // this line taught the agent a command that fails.
+    await writePluginSkill(
+      'atelier',
+      './skills/workbook/SKILL.md',
+      'Valide : `node {{plugin_dir}}/tools/atelier.mjs valide <fichier>`',
+    )
+    const { skills } = await collectSkills([plugin('atelier', ['./skills/workbook/SKILL.md'])])
+    const delivered = skills.find((s) => s.source === 'atelier')?.contents ?? ''
+    expect(delivered).toContain(`node ${join(root, 'plugins', 'atelier')}/tools/atelier.mjs`)
+    expect(delivered).not.toContain('{{plugin_dir}}')
+  })
+
+  it('leaves the placeholder alone in a core skill, which belongs to no plugin', async () => {
+    // Core contracts are the product's own: nothing to anchor them to, and
+    // silently blanking the token would corrupt the very page that documents it.
+    const { skills } = await collectSkills([])
+    const author = skills.find((s) => s.path === 'plugin-author/SKILL.md')
+    expect(author?.contents).toContain('{{plugin_dir}}')
+  })
+
   it('ignores an inactive plugin, which teaches nothing either', async () => {
     await writePluginSkill('off', './skills/off/SKILL.md', '# Off')
     const { skills } = await collectSkills([plugin('off', ['./skills/off/SKILL.md'], false)])
