@@ -1,5 +1,5 @@
 #!/bin/sh
-# What the `lots` scenario needs before the image boots: two repositories to
+# What the `dev-flow` scenario needs before the image boots: two repositories to
 # read, and a config that turns the plugin on and points it at them.
 #
 # Real repositories, built here and thrown away with the rest of the run —
@@ -116,9 +116,9 @@ auth:
 driver:
   id: claude-code
 secrets:
-  LOTS_REPOS: /repos/tessera:/repos/ostia
+  DEV_FLOW_REPOS: /repos/tessera:/repos/ostia
 extensions:
-  apps: [lots]
+  apps: [dev-flow]
   skin: default
 YAML
 

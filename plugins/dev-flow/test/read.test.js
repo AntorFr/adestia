@@ -223,7 +223,7 @@ const GIT_ENV = {
 }
 
 async function repository() {
-  const dir = await mkdtemp(join(tmpdir(), 'lots-'))
+  const dir = await mkdtemp(join(tmpdir(), 'dev-flow-'))
   const git = (...args) =>
     execFileAsync('git', ['-C', dir, ...args], { env: { ...process.env, ...GIT_ENV } })
   const commit = async (path, contents, message) => {

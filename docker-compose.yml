@@ -19,7 +19,7 @@ services:
       - ./plugins:/plugins:ro
       - ./skins:/skins:ro
       - ./adestia.config.yaml:/app/adestia.config.yaml:ro
-      # The `lots` plugin reads chantier fiches out of repositories that are
+      # The `dev-flow` plugin reads lot fiches out of repositories that are
       # not the workspace. Read-only, and named to the config by the path the
       # CONTAINER sees — the plugin never writes, and this mount says so twice.
       # - ~/Dev/tessera:/repos/tessera:ro

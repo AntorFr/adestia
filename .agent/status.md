@@ -1,8 +1,16 @@
 # Status — Adestia
 > MàJ : 2026-08-30
 
-Chantier du 30/08 — **plugin « lots » LIVRÉ** (9e plugin embarqué) : les
-chantiers de la galaxie Tessera/Ostia dans une fenêtre. Lecture par **git et
+Chantier du 30/08 — **plugin « dev-flow » LIVRÉ** (9e plugin embarqué) : les
+chantiers de la galaxie Tessera/Ostia dans une fenêtre. D'abord nommé `lots`
+(le dossier qu'il lit), renommé **`dev-flow`** sur arbitrage de Monsieur, avec
+la règle qui va avec, gravée dans `skills/plugin-author/SKILL.md` : **un id de
+plugin est ANGLAIS, PARLANT et DISCRIMINANT** — il vit dans les fichiers de
+config, les routes et les greps, bien après l'écran qu'il dessine. « lots »
+nommait la donnée, pas le métier ; « chantiers » aurait aussi bien nommé un
+suivi de travaux avec des artisans. Les plugins déjà embarqués (atelier,
+voyages, journal, parcours, planif) violent la règle et ne sont **pas**
+renommés : un id vit dans les configs et les marque-pages des gens. Lecture par **git et
 git seul** (`read.mjs`) — `main` est l'index, la pointe de branche fait foi
 pour SA fiche, les questions nées à cette pointe sont ramassées, aucune
 énumération de branches : un état non commité n'existe pas, donc l'arbre de
@@ -14,7 +22,7 @@ dépose une phrase dans le composeur et s'arrête là. Dérivations dans
 deux qui font le produit : la **racine** d'un blocage (une question `open` en
 amont, pas le lot juste devant) et le **nombre de lots qu'elle gèle**, qui
 trie le bandeau « à trancher en premier ». Dépôts scannés = config opérateur
-via le secret déclaré `LOTS_REPOS` (seul canal instance→plugin ; une page
+via le secret déclaré `DEV_FLOW_REPOS` (seul canal instance→plugin ; une page
 serait une primitive de lecture de fichiers ré-orientable). Dégradations
 dites à l'écran, jamais devinées : pas de dépôt configuré, pas de `main`, pas
 de `.agent/lots/`, branche disparue (info — c'est la fin normale d'un lot),
@@ -26,7 +34,7 @@ refuse « dubious ownership », ce qui serait arrivé à l'écran en « pas un d
 git ». **Aucune skill** : le contrat des fiches vit dans les
 `.agent/lots/README.md` des repos scannés, une copie ici dériverait. 29 tests
 neufs (1158 + 175 verts), typecheck/build OK, **banc constaté**
-(`bench/scenarios/lots.mjs` + son `lots.prep.sh` : run.sh sait désormais
+(`bench/scenarios/dev-flow.mjs` + son `dev-flow.prep.sh` : run.sh sait désormais
 qu'un scénario voisin d'un `<nom>.prep.sh` réclame des montages — deux vrais
 dépôts git jetables et une config qui allume le plugin). Lettre de mission
 détruite dans le même commit, comme elle le demandait.

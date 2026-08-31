@@ -31,6 +31,36 @@ plugins/<id>/
 different `id` is refused rather than silently re-mapped: the thing enabled in
 config must be the thing that loaded.
 
+### Naming it
+
+**An id is English, SPEAKING and DISCRIMINATING.** It is not a label — it is
+what an operator types in a config file, what a route is built from, what a
+CSS prefix repeats and what somebody greps for two years from now. It outlives
+every screen it draws.
+
+Three tests, and a name has to pass all three:
+
+- **English.** Not the instance's language: the id is written in config files
+  and read by whoever maintains the deployment, while the words a reader sees
+  are the tile's `label` and the plugin's own translations. The two are
+  separate fields precisely so an id never has to choose a language for a
+  screen.
+- **Speaking** — it says what the plugin does to somebody who has not read its
+  folder. A plugin named after the DATA it happens to read (`lots`, because it
+  parses `.agent/lots/`) makes every reader translate before they can think.
+- **Discriminating** — it could not equally name a different tool. This is the
+  test most names fail, and it fails quietly: `chantiers` reads perfectly and
+  would suit a builder's job tracker just as well; `tracking` would suit a
+  parcel, a bug, a habit. Ask what ELSE the name would fit. If the answer is
+  "quite a lot", it names a category rather than this thing.
+
+⚠️ The plugins this repository ships predate the rule and several break it
+(`atelier`, `voyages`, `journal`, `parcours`, `planif`): French, and named for
+a domain rather than for a job. They are NOT renamed — an id lives in people's
+config files and in their bookmarks, and churning that to satisfy a rule
+written afterwards costs more than the inconsistency. The rule governs what
+comes next.
+
 ## The manifest
 
 ```json

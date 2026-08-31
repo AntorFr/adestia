@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "dev-flow",
+  "kind": "app",
+  "description": "The work in flight across a galaxy of repositories: every .agent/lots/ fiche read from git, merged into one graph, and drawn as who has the hand, what is blocked, and which open question is freezing a chain. Read-only — it never writes a fiche.",
+  "contract": 1,
+  "view": "./web/app.js",
+  "styles": [
+    "./web/dev-flow.css"
+  ],
+  "api": "./api.mjs",
+  "secrets": [
+    "DEV_FLOW_REPOS"
+  ],
+  "tile": {
+    "label": "Dev flow",
+    "icon": "🚧",
+    "hue": "indigo"
+  }
+}

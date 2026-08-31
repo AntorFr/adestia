@@ -6,7 +6,7 @@ nothing until you ask for it.
 
 ```yaml
 extensions:
-  apps: [todo, planif, collections, atelier, voyages, journal, lots]  # tiles in the launcher
+  apps: [todo, planif, collections, atelier, voyages, journal, dev-flow]  # tiles
   features: [scan, parcours]                                   # things that live in the shell
   tools: []                                             # agent-facing only
   skin: alfred
@@ -25,7 +25,7 @@ leaving you to wonder where the tile went.
 | [`journal`](journal/) | app | A journal is a folder, an entry is a page in it. The whole history reads on one screen and a single entry goes into edit mode — the shell's own page editor, one per entry. |
 | [`atelier`](atelier/) | app | The workbench. Reads a `workbook.json` a project carries in its own assets and draws the cutting diagram — sheets, bands, pieces, edges to band — plus a full-screen bench mode readable from across a workshop. |
 | [`voyages`](voyages/) | app | Trips: a per-day timeline and a tray of suggestions, read from a `voyage.json` a trip carries in its own assets. Weather and legs are derived on demand. |
-| [`lots`](lots/) | app | The chantiers of a galaxy of repositories. Reads every `.agent/lots/` fiche out of git — `main` as the index, a branch tip for its own fiche — merges the graphs and derives what nobody records: who has the hand, what is blocked, and which open question is freezing a whole chain. Never writes. |
+| [`dev-flow`](dev-flow/) | app | The work in flight across a galaxy of repositories. Reads every `.agent/lots/` fiche out of git — `main` as the index, a branch tip for its own fiche — merges the graphs and derives what nobody records: who has the hand, what is blocked, and which open question is freezing a whole chain. Never writes. |
 | [`scan`](scan/) | feature | A barcode reader in the composer. Uses the browser's own `BarcodeDetector` where it exists and only downloads a decoder where it does not. |
 | [`parcours`](parcours/) | feature | Walks and hikes. Adds the `:::parcours` block, which draws a `.parcours.json` as a map with numbered markers, an elevation profile and a walking mode, and assembles its GPX on demand. A feature rather than an app because a route has no domain and no tile: it hangs off whichever page has a reason to mention it. |
 
@@ -43,7 +43,7 @@ alongside its own. `atelier` ships `workbook-json`, `todo` ships `todo`,
 `collections` ships `collections`, `voyages` ships `voyage-json`,
 `parcours` ships `parcours-json` and `journal` ships `journal`.
 
-`lots` deliberately ships none. The fiches it reads are written by agents in
+`dev-flow` deliberately ships none. The fiches it reads are written by agents in
 OTHER repositories, against a contract those repositories publish themselves
 (`.agent/lots/README.md`); a skill here would be a second copy of it, drifting
 from the day it was written.
@@ -64,15 +64,15 @@ claim in its manifest (`"types": ["tache", "liste"]`, `todo`'s own). Discovery
 checks this at boot: two active plugins claiming the same word produce a line
 naming both, rather than a page silently misread by whichever one ran last.
 
-## `lots` needs to be told where to look
+## `dev-flow` needs to be told where to look
 
-Every other plugin here reads the workspace, which it is given. `lots` reads
-repositories that are not part of it, so an instance names them — through the
-one channel it has for handing a plugin a named value:
+Every other plugin here reads the workspace, which it is given. `dev-flow`
+reads repositories that are not part of it, so an instance names them —
+through the one channel it has for handing a plugin a named value:
 
 ```yaml
 secrets:
-  LOTS_REPOS: /repos/tessera:/repos/ostia    # colon- or comma-separated
+  DEV_FLOW_REPOS: /repos/tessera:/repos/ostia    # colon- or comma-separated
 ```
 
 Not a secret in the credential sense, and the plugin's manifest says so. But a

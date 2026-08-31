@@ -1,5 +1,5 @@
 /**
- * The lots screen: one look, and you know whose move it is.
+ * The dev-flow screen: one look, and you know whose move it is.
  *
  * Three bands, in the order somebody actually needs them. What is FROZEN comes
  * first — the open questions holding chains up, biggest chain at the top — and
@@ -28,8 +28,8 @@ import {
   words,
 } from './model.js'
 
-/** `#/lots/<id>` — the hash tail this view owns below its own route. */
-const ROUTE = '/lots'
+/** `#/dev-flow/<id>` — the hash tail this view owns below its own route. */
+const ROUTE = '/dev-flow'
 const restOf = (hash) => {
   const path = String(hash ?? '').replace(/^#/, '')
   if (path !== ROUTE && !path.startsWith(`${ROUTE}/`)) return ''
@@ -75,7 +75,7 @@ export default function view(api) {
   const Pill = (item) =>
     h(
       'span',
-      { key: 's', className: `lots-pill lots-tone-${toneOf(item)}` },
+      { key: 's', className: `dev-flow-pill dev-flow-tone-${toneOf(item)}` },
       item.badStatus ? t('faulty status') : t(item.status),
     )
 
@@ -83,15 +83,15 @@ export default function view(api) {
   function Blockers({ item, byId }) {
     if (!item.blocked) return null
     const roots = item.rootBlockers.length > 0 ? item.rootBlockers : item.blockers
-    return h('span', { className: 'lots-blocked' }, [
-      h('span', { key: 'w', className: 'lots-blocked-word' }, `${t('blocked by')} `),
+    return h('span', { className: 'dev-flow-blocked' }, [
+      h('span', { key: 'w', className: 'dev-flow-blocked-word' }, `${t('blocked by')} `),
       ...roots.map((id, index) =>
         h(
           'button',
           {
             key: id,
             type: 'button',
-            className: 'lots-link',
+            className: 'dev-flow-link',
             // A dependency nobody holds has no fiche to open — it is named
             // rather than linked, which is the honest form of "we cannot see
             // this one".
@@ -113,26 +113,26 @@ export default function view(api) {
    * — and a list numbered 2, 4, 5, 8 is a list that looks like it lost rows.
    */
   function Row({ item, byId, place }) {
-    return h('li', { className: `lots-row${item.blocked ? ' is-blocked' : ''}` }, [
-      place ? h('span', { key: 'n', className: 'lots-rank' }, place) : null,
+    return h('li', { className: `dev-flow-row${item.blocked ? ' is-blocked' : ''}` }, [
+      place ? h('span', { key: 'n', className: 'dev-flow-rank' }, place) : null,
       h(
         'button',
-        { key: 't', type: 'button', className: 'lots-title', onClick: () => open(item.id) },
+        { key: 't', type: 'button', className: 'dev-flow-title', onClick: () => open(item.id) },
         item.title,
       ),
-      h('span', { key: 'm', className: 'lots-meta' }, [
-        h('span', { key: 'r', className: 'lots-repo' }, item.repo.split('/').pop()),
+      h('span', { key: 'm', className: 'dev-flow-meta' }, [
+        h('span', { key: 'r', className: 'dev-flow-repo' }, item.repo.split('/').pop()),
         Pill(item),
         item.owner
-          ? h('span', { key: 'o', className: 'lots-owner' }, ownerWord(item, t))
+          ? h('span', { key: 'o', className: 'dev-flow-owner' }, ownerWord(item, t))
           : null,
         item.priority != null
-          ? h('span', { key: 'p', className: 'lots-prio' }, fill(t('priority %n'), item.priority))
+          ? h('span', { key: 'p', className: 'dev-flow-prio' }, fill(t('priority %n'), item.priority))
           : null,
         item.source.startsWith('branch:')
           ? h(
               'span',
-              { key: 'b', className: 'lots-branch' },
+              { key: 'b', className: 'dev-flow-branch' },
               fill(t('on branch %s'), item.source.slice(7)),
             )
           : null,
@@ -142,13 +142,13 @@ export default function view(api) {
   }
 
   const Band = ({ title, items, byId, numbered = false, empty }) =>
-    h('section', { className: 'lots-band' }, [
-      h('h3', { key: 'h', className: 'lots-band-title' }, title),
+    h('section', { className: 'dev-flow-band' }, [
+      h('h3', { key: 'h', className: 'dev-flow-band-title' }, title),
       items.length === 0
-        ? h('p', { key: 'e', className: 'lots-muted' }, empty ?? '—')
+        ? h('p', { key: 'e', className: 'dev-flow-muted' }, empty ?? '—')
         : h(
             'ul',
-            { key: 'l', className: 'lots-list' },
+            { key: 'l', className: 'dev-flow-list' },
             items.map((item, index) =>
               h(Row, { key: item.id, item, byId, place: numbered ? index + 1 : 0 }),
             ),
@@ -165,27 +165,27 @@ export default function view(api) {
    */
   function Frozen({ items, byId }) {
     if (items.length === 0) return null
-    return h('section', { className: 'lots-frozen' }, [
-      h('h3', { key: 'h', className: 'lots-band-title' }, t('to decide first')),
+    return h('section', { className: 'dev-flow-frozen' }, [
+      h('h3', { key: 'h', className: 'dev-flow-band-title' }, t('to decide first')),
       h(
         'div',
-        { key: 'c', className: 'lots-cards' },
+        { key: 'c', className: 'dev-flow-cards' },
         items.map((item) =>
-          h('article', { key: item.id, className: 'lots-card' }, [
+          h('article', { key: item.id, className: 'dev-flow-card' }, [
             h(
               'button',
-              { key: 't', type: 'button', className: 'lots-card-title', onClick: () => open(item.id) },
+              { key: 't', type: 'button', className: 'dev-flow-card-title', onClick: () => open(item.id) },
               item.title,
             ),
-            h('p', { key: 'n', className: 'lots-card-count' }, fill(t('freezes %n'), item.blocks)),
+            h('p', { key: 'n', className: 'dev-flow-card-count' }, fill(t('freezes %n'), item.blocks)),
             h(
               'ul',
-              { key: 'd', className: 'lots-card-downstream' },
+              { key: 'd', className: 'dev-flow-card-downstream' },
               downstreamOf(item, byId).map((held) =>
                 h('li', { key: held.id }, [
                   h(
                     'button',
-                    { key: 'b', type: 'button', className: 'lots-link', onClick: () => open(held.id) },
+                    { key: 'b', type: 'button', className: 'dev-flow-link', onClick: () => open(held.id) },
                     held.title,
                   ),
                 ]),
@@ -196,7 +196,7 @@ export default function view(api) {
               {
                 key: 'a',
                 type: 'button',
-                className: 'lots-action',
+                className: 'dev-flow-action',
                 onClick: () => api.compose(draftFor(item, t)),
               },
               t('Draft a decision'),
@@ -225,16 +225,16 @@ export default function view(api) {
     const [shown, setShown] = useState(false)
     if (problems.length === 0) return null
     const loud = problems.filter((problem) => problem.severity !== 'info')
-    return h('div', { className: `lots-problems${loud.length > 0 ? ' is-loud' : ''}` }, [
+    return h('div', { className: `dev-flow-problems${loud.length > 0 ? ' is-loud' : ''}` }, [
       h(
         'button',
-        { key: 'b', type: 'button', className: 'lots-problems-toggle', onClick: () => setShown(!shown) },
+        { key: 'b', type: 'button', className: 'dev-flow-problems-toggle', onClick: () => setShown(!shown) },
         `${t('what the scan could not read')} (${problems.length})`,
       ),
       shown
         ? h(
             'ul',
-            { key: 'l', className: 'lots-problems-list' },
+            { key: 'l', className: 'dev-flow-problems-list' },
             problems.map((problem, index) =>
               h('li', { key: `${problem.code}-${index}` }, problemWords(problem, t)),
             ),
@@ -280,43 +280,43 @@ export default function view(api) {
       api.trail([{ label: detail?.item.title ?? id, route: `${ROUTE}/${encodeURIComponent(id)}` }])
     }, [id, detail?.item.title])
 
-    if (error) return h('p', { className: 'lots-problem' }, error)
-    if (!detail) return h('p', { className: 'lots-muted' }, '…')
+    if (error) return h('p', { className: 'dev-flow-problem' }, error)
+    if (!detail) return h('p', { className: 'dev-flow-muted' }, '…')
 
     const { item, body, timeline } = detail
     const held = downstreamOf(item, byId)
 
-    return h('article', { className: 'lots-detail' }, [
-      h('h2', { key: 'h', className: 'lots-detail-title' }, item.title),
-      h('p', { key: 'f', className: 'lots-facts' }, [
-        h('span', { key: 'i', className: 'lots-id' }, item.id),
-        h('span', { key: 'r', className: 'lots-repo' }, item.repo.split('/').pop()),
-        h('span', { key: 'y', className: 'lots-kind' }, t(item.type)),
+    return h('article', { className: 'dev-flow-detail' }, [
+      h('h2', { key: 'h', className: 'dev-flow-detail-title' }, item.title),
+      h('p', { key: 'f', className: 'dev-flow-facts' }, [
+        h('span', { key: 'i', className: 'dev-flow-id' }, item.id),
+        h('span', { key: 'r', className: 'dev-flow-repo' }, item.repo.split('/').pop()),
+        h('span', { key: 'y', className: 'dev-flow-kind' }, t(item.type)),
         Pill(item),
-        item.owner ? h('span', { key: 'o', className: 'lots-owner' }, ownerWord(item, t)) : null,
+        item.owner ? h('span', { key: 'o', className: 'dev-flow-owner' }, ownerWord(item, t)) : null,
         item.priority != null
-          ? h('span', { key: 'p', className: 'lots-prio' }, fill(t('priority %n'), item.priority))
+          ? h('span', { key: 'p', className: 'dev-flow-prio' }, fill(t('priority %n'), item.priority))
           : null,
-        item.updated ? h('span', { key: 'u', className: 'lots-muted' }, fill(t('updated %s'), item.updated)) : null,
-        item.spec ? h('span', { key: 's', className: 'lots-muted' }, `${t('spec:')} ${item.spec}`) : null,
+        item.updated ? h('span', { key: 'u', className: 'dev-flow-muted' }, fill(t('updated %s'), item.updated)) : null,
+        item.spec ? h('span', { key: 's', className: 'dev-flow-muted' }, `${t('spec:')} ${item.spec}`) : null,
         h(
           'span',
-          { key: 'w', className: 'lots-muted' },
+          { key: 'w', className: 'dev-flow-muted' },
           fill(t('read from %s'), item.source.startsWith('branch:') ? item.source.slice(7) : 'main'),
         ),
       ]),
 
       item.blocked
-        ? h('p', { key: 'x', className: 'lots-detail-blocked' }, h(Blockers, { item, byId }))
-        : h('p', { key: 'x', className: 'lots-detail-ready' }, item.finished ? '' : t('ready to go')),
+        ? h('p', { key: 'x', className: 'dev-flow-detail-blocked' }, h(Blockers, { item, byId }))
+        : h('p', { key: 'x', className: 'dev-flow-detail-ready' }, item.finished ? '' : t('ready to go')),
 
       held.length > 0
-        ? h('p', { key: 'd', className: 'lots-detail-holds' }, [
+        ? h('p', { key: 'd', className: 'dev-flow-detail-holds' }, [
             `${t('holds up')} `,
             ...held.map((other, index) =>
               h(
                 'button',
-                { key: other.id, type: 'button', className: 'lots-link', onClick: () => open(other.id) },
+                { key: other.id, type: 'button', className: 'dev-flow-link', onClick: () => open(other.id) },
                 index === held.length - 1 ? other.title : `${other.title}, `,
               ),
             ),
@@ -330,20 +330,20 @@ export default function view(api) {
       // these files are in another repository, not in the workspace.
       body.trim() === ''
         ? null
-        : h('pre', { key: 'p', className: 'lots-body' }, body.trim()),
+        : h('pre', { key: 'p', className: 'dev-flow-body' }, body.trim()),
 
-      h('section', { key: 'l', className: 'lots-timeline' }, [
-        h('h3', { key: 'h', className: 'lots-band-title' }, t('history')),
+      h('section', { key: 'l', className: 'dev-flow-timeline' }, [
+        h('h3', { key: 'h', className: 'dev-flow-band-title' }, t('history')),
         timeline.length === 0
-          ? h('p', { key: 'e', className: 'lots-muted' }, t('no history for this fiche'))
+          ? h('p', { key: 'e', className: 'dev-flow-muted' }, t('no history for this fiche'))
           : h(
               'ul',
-              { key: 'u', className: 'lots-list' },
+              { key: 'u', className: 'dev-flow-list' },
               timeline.map((entry) =>
-                h('li', { key: entry.sha, className: 'lots-commit' }, [
-                  h('span', { key: 'd', className: 'lots-commit-date' }, day(entry.date)),
-                  h('span', { key: 's', className: 'lots-commit-subject' }, entry.subject),
-                  h('span', { key: 'a', className: 'lots-muted' }, entry.author),
+                h('li', { key: entry.sha, className: 'dev-flow-commit' }, [
+                  h('span', { key: 'd', className: 'dev-flow-commit-date' }, day(entry.date)),
+                  h('span', { key: 's', className: 'dev-flow-commit-subject' }, entry.subject),
+                  h('span', { key: 'a', className: 'dev-flow-muted' }, entry.author),
                 ]),
               ),
             ),
@@ -354,7 +354,7 @@ export default function view(api) {
         {
           key: 'a',
           type: 'button',
-          className: 'lots-action',
+          className: 'dev-flow-action',
           onClick: () => api.compose(draftFor(item, t)),
         },
         item.type === 'question' ? t('Draft a decision') : t('Ask about this lot'),
@@ -393,17 +393,17 @@ export default function view(api) {
       if (openId === '') api.trail([])
     }, [openId])
 
-    if (error && !graph) return h('p', { className: 'lots-problem' }, error)
-    if (!graph) return h('p', { className: 'lots-muted' }, '…')
+    if (error && !graph) return h('p', { className: 'dev-flow-problem' }, error)
+    if (!graph) return h('p', { className: 'dev-flow-muted' }, '…')
 
     if (!graph.configured) {
-      return h('section', { className: 'lots' }, [
+      return h('section', { className: 'dev-flow' }, [
         h('h2', { key: 'h' }, t('no repository is configured')),
         h('p', { key: 'p' }, t('Name the repositories to scan in the instance configuration:')),
         h(
           'pre',
-          { key: 'c', className: 'lots-body' },
-          'secrets:\n  LOTS_REPOS: /repos/tessera:/repos/ostia',
+          { key: 'c', className: 'dev-flow-body' },
+          'secrets:\n  DEV_FLOW_REPOS: /repos/tessera:/repos/ostia',
         ),
       ])
     }
@@ -413,16 +413,16 @@ export default function view(api) {
     const bands = sections(items)
 
     if (openId !== '') {
-      return h('section', { className: 'lots' }, [
+      return h('section', { className: 'dev-flow' }, [
         h(Detail, { key: openId, id: openId, graph }),
       ])
     }
 
-    return h('section', { className: 'lots' }, [
-      h('header', { key: 'h', className: 'lots-head' }, [
+    return h('section', { className: 'dev-flow' }, [
+      h('header', { key: 'h', className: 'dev-flow-head' }, [
         h(
           'p',
-          { key: 'r', className: 'lots-muted' },
+          { key: 'r', className: 'dev-flow-muted' },
           `${graph.repos.map((repo) => `${repo.name} (${repo.items})`).join(' · ')} — ${fill(
             t('read at %s'),
             clock(graph.scannedAt),
@@ -430,13 +430,13 @@ export default function view(api) {
         ),
         h(
           'button',
-          { key: 'b', type: 'button', className: 'lots-action', onClick: () => void reload(true) },
+          { key: 'b', type: 'button', className: 'dev-flow-action', onClick: () => void reload(true) },
           t('refresh'),
         ),
       ]),
       h(Problems, { key: 'p', problems: graph.problems ?? [] }),
       items.length === 0
-        ? h('p', { key: 'e', className: 'lots-muted' }, t('Every scanned repository came back empty.'))
+        ? h('p', { key: 'e', className: 'dev-flow-muted' }, t('Every scanned repository came back empty.'))
         : null,
       h(Frozen, { key: 'f', items: bands.frozen, byId }),
       h(Band, {
@@ -454,7 +454,7 @@ export default function view(api) {
         numbered: true,
       }),
       bands.finished.length > 0
-        ? h('details', { key: 'd', className: 'lots-done' }, [
+        ? h('details', { key: 'd', className: 'dev-flow-done' }, [
             h(
               'summary',
               { key: 's' },
@@ -462,7 +462,7 @@ export default function view(api) {
             ),
             h(
               'ul',
-              { key: 'l', className: 'lots-list' },
+              { key: 'l', className: 'dev-flow-list' },
               bands.finished.map((item) => h(Row, { key: item.id, item, byId })),
             ),
           ])
@@ -480,7 +480,7 @@ export default function view(api) {
     }
   }
 
-  // A route owns its descendants, so `#/lots/<id>` reaches one fiche and a
+  // A route owns its descendants, so `#/dev-flow/<id>` reaches one fiche and a
   // bookmark to it survives a reload.
   return { component: Lots, route: ROUTE, tileInfo }
 }

@@ -42,7 +42,7 @@ WORKDIR /app
 # terminal, so the driver spawns it under a pty. Do not slim it away. (Claude's
 # arming needs no terminal — it speaks the OAuth exchange itself.)
 #
-# `git` is here for the plugins the image SHIPS: `lots` reads its fiches out of
+# `git` is here for the plugins the image SHIPS: `dev-flow` reads its fiches out of
 # repositories with `git show`, and refuses to fall back to the working tree —
 # a state that is not committed is a state nobody else can see. Without the
 # binary that plugin is a screen that says "git is not installed" on an

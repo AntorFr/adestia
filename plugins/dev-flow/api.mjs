@@ -1,5 +1,5 @@
 /**
- * The lots' server side: a window onto repositories, with the glass sealed.
+ * Dev flow's server side: a window onto repositories, with the glass sealed.
  *
  * One constraint governs every line here, and it is the plugin's whole reason
  * to exist in this shape: **it never writes**. Not the fiches, not a sibling
@@ -12,7 +12,7 @@
  *
  * WHERE it looks is operator configuration, arriving through the one channel
  * an instance has for handing a named value to a plugin: a declared secret,
- * `LOTS_REPOS`. Not a secret in the credential sense, and the manifest says
+ * `DEV_FLOW_REPOS`. Not a secret in the credential sense, and the manifest says
  * so — but a list of absolute paths a plugin may read IS the operator's
  * business rather than a document's, and a page in the workspace could be
  * rewritten by anything with a pen into a file-read primitive pointed at
@@ -45,7 +45,7 @@ export function readRepos(configured) {
 export const nameOf = (path) => path.replace(/\/+$/, '').split('/').pop() || path
 
 export default async function api(app, opts) {
-  const repos = readRepos(opts.secrets?.LOTS_REPOS)
+  const repos = readRepos(opts.secrets?.DEV_FLOW_REPOS)
   let cached
 
   async function scan() {
@@ -57,7 +57,7 @@ export default async function api(app, opts) {
     const git = await hasGit()
 
     if (!git) {
-      // Named, because the alternative is a screen that says "no lots" on an
+      // Named, because the alternative is a screen that says "no fiches" on an
       // instance whose repositories are perfectly fine. This plugin reads git
       // and will not fall back to the working tree — see `read.mjs`.
       problems.push({

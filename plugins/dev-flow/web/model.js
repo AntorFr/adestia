@@ -18,7 +18,6 @@
  */
 export const WORDS = {
   fr: {
-    Lots: 'Lots',
     'to decide first': 'à trancher en premier',
     'yours to specify': 'à vous de spécifier',
     'under way': 'en chantier',

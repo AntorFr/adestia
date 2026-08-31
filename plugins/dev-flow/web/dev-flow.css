@@ -1,5 +1,5 @@
 /*
- * The lots' own styles.
+ * Dev flow's own styles.
  *
  * Everything comes from the shell's design tokens, never a hex: a plugin that
  * hardcoded a colour would look wrong under the next skin — and this one is
@@ -7,26 +7,26 @@
  * its night. Four tones carry every state, and only one of them is loud.
  */
 
-.lots {
+.dev-flow {
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
   padding: var(--space-4) 0;
 }
 
-.lots-muted {
+.dev-flow-muted {
   color: var(--text-muted);
   font-size: var(--text-sm);
   margin: 0;
 }
 
-.lots-problem {
+.dev-flow-problem {
   color: var(--danger);
   font-size: var(--text-sm);
   margin: 0;
 }
 
-.lots-head {
+.dev-flow-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -34,7 +34,7 @@
   flex-wrap: wrap;
 }
 
-.lots-action {
+.dev-flow-action {
   align-self: flex-start;
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--border-strong);
@@ -46,25 +46,25 @@
   cursor: pointer;
 }
 
-.lots-action:hover {
+.dev-flow-action:hover {
   border-color: var(--accent);
   color: var(--accent);
 }
 
 /* What the scan could not read ------------------------------------------ */
 
-.lots-problems {
+.dev-flow-problems {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface-soft);
   padding: var(--space-2) var(--space-3);
 }
 
-.lots-problems.is-loud {
+.dev-flow-problems.is-loud {
   border-color: var(--warning);
 }
 
-.lots-problems-toggle {
+.dev-flow-problems-toggle {
   border: 0;
   background: none;
   padding: 0;
@@ -74,11 +74,11 @@
   cursor: pointer;
 }
 
-.lots-problems.is-loud .lots-problems-toggle {
+.dev-flow-problems.is-loud .dev-flow-problems-toggle {
   color: var(--warning);
 }
 
-.lots-problems-list {
+.dev-flow-problems-list {
   margin: var(--space-2) 0 0;
   padding-left: var(--space-4);
   font-size: var(--text-sm);
@@ -87,19 +87,19 @@
 
 /* The alarm ------------------------------------------------------------- */
 
-.lots-frozen {
+.dev-flow-frozen {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
 }
 
-.lots-cards {
+.dev-flow-cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
   gap: var(--space-3);
 }
 
-.lots-card {
+.dev-flow-card {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -111,7 +111,7 @@
   box-shadow: var(--shadow-sm);
 }
 
-.lots-card-title {
+.dev-flow-card-title {
   border: 0;
   background: none;
   padding: 0;
@@ -122,14 +122,14 @@
   cursor: pointer;
 }
 
-.lots-card-count {
+.dev-flow-card-count {
   margin: 0;
   font-family: var(--font-mono);
   font-size: var(--text-sm);
   color: var(--danger);
 }
 
-.lots-card-downstream {
+.dev-flow-card-downstream {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -141,13 +141,13 @@
 
 /* The bands ------------------------------------------------------------- */
 
-.lots-band {
+.dev-flow-band {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
 }
 
-.lots-band-title {
+.dev-flow-band-title {
   margin: 0;
   font-family: var(--font-mono);
   font-size: var(--label-size);
@@ -156,7 +156,7 @@
   color: var(--text-muted);
 }
 
-.lots-list {
+.dev-flow-list {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -164,7 +164,7 @@
   flex-direction: column;
 }
 
-.lots-row {
+.dev-flow-row {
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
@@ -173,22 +173,22 @@
   border-bottom: 1px solid var(--border);
 }
 
-.lots-row:last-child {
+.dev-flow-row:last-child {
   border-bottom: 0;
 }
 
-.lots-row.is-blocked .lots-title {
+.dev-flow-row.is-blocked .dev-flow-title {
   color: var(--text-muted);
 }
 
-.lots-rank {
+.dev-flow-rank {
   font-family: var(--font-mono);
   font-size: var(--text-sm);
   color: var(--text-faint);
   min-width: 1.5rem;
 }
 
-.lots-title {
+.dev-flow-title {
   border: 0;
   background: none;
   padding: 0;
@@ -198,11 +198,11 @@
   cursor: pointer;
 }
 
-.lots-title:hover {
+.dev-flow-title:hover {
   color: var(--accent);
 }
 
-.lots-meta {
+.dev-flow-meta {
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
@@ -211,17 +211,17 @@
   color: var(--text-muted);
 }
 
-.lots-repo,
-.lots-prio,
-.lots-branch,
-.lots-id {
+.dev-flow-repo,
+.dev-flow-prio,
+.dev-flow-branch,
+.dev-flow-id {
   font-family: var(--font-mono);
   font-size: var(--text-sm);
   color: var(--text-faint);
 }
 
 /* A status, in one word and one of four tones. */
-.lots-pill {
+.dev-flow-pill {
   padding: 1px var(--space-2);
   border-radius: var(--radius-pill);
   font-family: var(--font-mono);
@@ -231,31 +231,31 @@
   border: 1px solid currentcolor;
 }
 
-.lots-tone-waiting {
+.dev-flow-tone-waiting {
   color: var(--warning);
 }
 
-.lots-tone-underway {
+.dev-flow-tone-underway {
   color: var(--accent);
 }
 
-.lots-tone-settled {
+.dev-flow-tone-settled {
   color: var(--text-faint);
 }
 
-.lots-tone-fault {
+.dev-flow-tone-fault {
   color: var(--danger);
 }
 
-.lots-blocked {
+.dev-flow-blocked {
   color: var(--danger);
 }
 
-.lots-blocked-word {
+.dev-flow-blocked-word {
   color: var(--text-muted);
 }
 
-.lots-link {
+.dev-flow-link {
   border: 0;
   background: none;
   padding: 0;
@@ -267,13 +267,13 @@
   text-decoration: underline;
 }
 
-.lots-link:disabled {
+.dev-flow-link:disabled {
   color: var(--text-faint);
   cursor: default;
   text-decoration: line-through;
 }
 
-.lots-done > summary {
+.dev-flow-done > summary {
   cursor: pointer;
   font-family: var(--font-mono);
   font-size: var(--label-size);
@@ -284,19 +284,19 @@
 
 /* One fiche ------------------------------------------------------------- */
 
-.lots-detail {
+.dev-flow-detail {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
 }
 
-.lots-detail-title {
+.dev-flow-detail-title {
   margin: 0;
   font-family: var(--font-title);
   font-size: var(--text-lg);
 }
 
-.lots-facts {
+.dev-flow-facts {
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
@@ -306,20 +306,20 @@
   color: var(--text-muted);
 }
 
-.lots-detail-blocked,
-.lots-detail-holds,
-.lots-detail-ready {
+.dev-flow-detail-blocked,
+.dev-flow-detail-holds,
+.dev-flow-detail-ready {
   margin: 0;
   font-size: var(--text-sm);
 }
 
-.lots-detail-ready {
+.dev-flow-detail-ready {
   color: var(--success);
 }
 
 /* The fiche's prose, verbatim: it is a document somebody wrote, and this
    plugin does not own a second idea of what markdown looks like. */
-.lots-body {
+.dev-flow-body {
   margin: 0;
   padding: var(--space-3) var(--space-4);
   border: 1px solid var(--border);
@@ -332,13 +332,13 @@
   overflow-x: auto;
 }
 
-.lots-timeline {
+.dev-flow-timeline {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
 }
 
-.lots-commit {
+.dev-flow-commit {
   display: flex;
   align-items: baseline;
   gap: var(--space-3);
@@ -346,12 +346,12 @@
   font-size: var(--text-sm);
 }
 
-.lots-commit-date {
+.dev-flow-commit-date {
   font-family: var(--font-mono);
   color: var(--text-faint);
   min-width: 4.5rem;
 }
 
-.lots-commit-subject {
+.dev-flow-commit-subject {
   color: var(--text);
 }

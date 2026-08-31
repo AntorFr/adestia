@@ -1,5 +1,5 @@
 /**
- * The lots screen, photographed against two real repositories.
+ * The dev-flow screen, photographed against two real repositories.
  *
  * What a unit test cannot say here, and this can: whether the alarm band
  * actually reads as an alarm above the lists, whether a row of five metadata
@@ -7,19 +7,19 @@
  * and whether the whole thing fits a phone without the bands collapsing into
  * a wall of words.
  *
- * The repositories, the config and the mounts come from `lots.prep.sh` beside
+ * The repositories, the config and the mounts come from `dev-flow.prep.sh` beside
  * this file — real git, real fiches, one of every awkward shape. Nothing here
  * is faked: this plugin has no engine to script, only a folder to read.
  */
 
 /** The app's own route; the tile is on the launcher, the screen is under it. */
-const HUB = '#/lots'
+const HUB = '#/dev-flow'
 
 const go = async (page, hash) => {
   await page.evaluate((target) => {
     window.location.hash = target
   }, hash)
-  await page.waitForSelector('.lots', { timeout: 10_000 })
+  await page.waitForSelector('.dev-flow', { timeout: 10_000 })
   // The graph arrives on a fetch, so the section exists before it has rows.
   await page.waitForTimeout(600)
 }
@@ -36,7 +36,7 @@ export default async function scenario(bench) {
   // The alarm has to survive being one band among four. If "à trancher en
   // premier" reads as just another list here, the screen has failed at the
   // one thing it exists for.
-  await page.waitForSelector('.lots-card', { timeout: 10_000 })
+  await page.waitForSelector('.dev-flow-card', { timeout: 10_000 })
   await bench.shoot(page, '3-frozen-band')
 
   // The whole hub, fold and all: the bands below — what is under way, then
@@ -61,7 +61,7 @@ export default async function scenario(bench) {
   // What the scan could not read, unfolded: two merged branches that are gone
   // and one fiche with a status that is not a status.
   await go(page, HUB)
-  await page.click('.lots-problems-toggle')
+  await page.click('.dev-flow-problems-toggle')
   await page.waitForTimeout(200)
   await bench.shoot(page, '7-diagnostics')
 
@@ -78,6 +78,6 @@ export default async function scenario(bench) {
     window.location.hash = target
   }, HUB)
   await phone.click('[aria-label="Open apps"]')
-  await phone.waitForSelector('.lots-card', { timeout: 10_000 })
+  await phone.waitForSelector('.dev-flow-card', { timeout: 10_000 })
   await bench.shoot(phone, '9-hub-phone')
 }
