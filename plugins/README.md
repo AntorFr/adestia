@@ -1,12 +1,12 @@
 # Bundled plugins
 
-Adestia ships eight plugins and three skins. None of them is active until you name it
+Adestia ships nine plugins and three skins. None of them is active until you name it
 in your config — discovery is not activation, and a folder sitting here costs
 nothing until you ask for it.
 
 ```yaml
 extensions:
-  apps: [todo, planif, collections, atelier, voyages, journal]  # tiles in the launcher
+  apps: [todo, planif, collections, atelier, voyages, journal, lots]  # tiles in the launcher
   features: [scan, parcours]                                   # things that live in the shell
   tools: []                                             # agent-facing only
   skin: alfred
@@ -25,6 +25,7 @@ leaving you to wonder where the tile went.
 | [`journal`](journal/) | app | A journal is a folder, an entry is a page in it. The whole history reads on one screen and a single entry goes into edit mode — the shell's own page editor, one per entry. |
 | [`atelier`](atelier/) | app | The workbench. Reads a `workbook.json` a project carries in its own assets and draws the cutting diagram — sheets, bands, pieces, edges to band — plus a full-screen bench mode readable from across a workshop. |
 | [`voyages`](voyages/) | app | Trips: a per-day timeline and a tray of suggestions, read from a `voyage.json` a trip carries in its own assets. Weather and legs are derived on demand. |
+| [`lots`](lots/) | app | The chantiers of a galaxy of repositories. Reads every `.agent/lots/` fiche out of git — `main` as the index, a branch tip for its own fiche — merges the graphs and derives what nobody records: who has the hand, what is blocked, and which open question is freezing a whole chain. Never writes. |
 | [`scan`](scan/) | feature | A barcode reader in the composer. Uses the browser's own `BarcodeDetector` where it exists and only downloads a decoder where it does not. |
 | [`parcours`](parcours/) | feature | Walks and hikes. Adds the `:::parcours` block, which draws a `.parcours.json` as a map with numbered markers, an elevation profile and a walking mode, and assembles its GPX on demand. A feature rather than an app because a route has no domain and no tile: it hangs off whichever page has a reason to mention it. |
 
@@ -42,6 +43,11 @@ alongside its own. `atelier` ships `workbook-json`, `todo` ships `todo`,
 `collections` ships `collections`, `voyages` ships `voyage-json`,
 `parcours` ships `parcours-json` and `journal` ships `journal`.
 
+`lots` deliberately ships none. The fiches it reads are written by agents in
+OTHER repositories, against a contract those repositories publish themselves
+(`.agent/lots/README.md`); a skill here would be a second copy of it, drifting
+from the day it was written.
+
 This is why asking the agent for a cutting plan produces a workbook the
 workbench can actually draw: the format is not folklore passed between prompts,
 it is a document that travels with the plugin — and why asking it to note
@@ -58,6 +64,38 @@ claim in its manifest (`"types": ["tache", "liste"]`, `todo`'s own). Discovery
 checks this at boot: two active plugins claiming the same word produce a line
 naming both, rather than a page silently misread by whichever one ran last.
 
+## `lots` needs to be told where to look
+
+Every other plugin here reads the workspace, which it is given. `lots` reads
+repositories that are not part of it, so an instance names them — through the
+one channel it has for handing a plugin a named value:
+
+```yaml
+secrets:
+  LOTS_REPOS: /repos/tessera:/repos/ostia    # colon- or comma-separated
+```
+
+Not a secret in the credential sense, and the plugin's manifest says so. But a
+list of paths a plugin may read is the OPERATOR's business rather than a
+document's: declared in a page, it would be a file-read primitive that anything
+holding a pen could re-aim. Configuration that grants reach lives in the
+configuration.
+
+In a container, mount them read-only and name the paths as the container sees
+them — and note that the plugin reads through `git`, which the image installs
+for exactly this:
+
+```yaml
+volumes:
+  - ~/Dev/tessera:/repos/tessera:ro
+  - ~/Dev/ostia:/repos/ostia:ro
+```
+
+With nothing configured the plugin still mounts and its screen says what to
+add. A repository that is missing, carries no `.agent/lots/`, has no local
+`main`, or names a branch that has since been deleted degrades to a line in the
+screen's own diagnostics — never to a blank list.
+
 ## Adding your own
 
 Put the folder here — or anywhere you mount — and name it in the config. The
@@ -65,5 +103,5 @@ manifest schema, the facets a plugin may contribute, and the import map it can
 rely on are all described by the `plugin-author` contract that ships with the
 product. Ask the agent for a plugin and it reads that contract first.
 
-Nothing here is privileged. These six are ordinary plugins that happen to live
+Nothing here is privileged. These nine are ordinary plugins that happen to live
 in the repository, and they load through exactly the same path as yours.

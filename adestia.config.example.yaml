@@ -38,8 +38,15 @@ dataDir: ./data
 # Write `${VAR}` so the value stays in the environment: what you commit is the
 # wiring. A placeholder whose variable is unset is REFUSED at boot rather than
 # handed over as the literal string.
+#
+# It is also the only channel an instance has for handing a plugin a named
+# value, so a setting that is not a credential belongs here when it decides
+# what a plugin may REACH — `lots` is told which repositories to scan this way,
+# because a list of paths declared in a page would be a file-read primitive
+# anything with a pen could re-aim.
 # secrets:
 #   GOOGLE_MAPS_API_KEY: ${MAPS_KEY}
+#   LOTS_REPOS: /repos/tessera:/repos/ostia
 
 # Concurrent agent turns across all conversations — a refusal (429) at the
 # cap, never a silent queue. Measured, not guessed (spikes/concurrency):

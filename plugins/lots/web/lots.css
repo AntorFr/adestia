@@ -1,0 +1,357 @@
+/*
+ * The lots' own styles.
+ *
+ * Everything comes from the shell's design tokens, never a hex: a plugin that
+ * hardcoded a colour would look wrong under the next skin — and this one is
+ * most likely to be read under `skippy`, whose whole idea is that it imposes
+ * its night. Four tones carry every state, and only one of them is loud.
+ */
+
+.lots {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-4) 0;
+}
+
+.lots-muted {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  margin: 0;
+}
+
+.lots-problem {
+  color: var(--danger);
+  font-size: var(--text-sm);
+  margin: 0;
+}
+
+.lots-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.lots-action {
+  align-self: flex-start;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-ctl);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.lots-action:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* What the scan could not read ------------------------------------------ */
+
+.lots-problems {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-soft);
+  padding: var(--space-2) var(--space-3);
+}
+
+.lots-problems.is-loud {
+  border-color: var(--warning);
+}
+
+.lots-problems-toggle {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.lots-problems.is-loud .lots-problems-toggle {
+  color: var(--warning);
+}
+
+.lots-problems-list {
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+/* The alarm ------------------------------------------------------------- */
+
+.lots-frozen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.lots-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  gap: var(--space-3);
+}
+
+.lots-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-sm);
+}
+
+.lots-card-title {
+  border: 0;
+  background: none;
+  padding: 0;
+  text-align: left;
+  font: inherit;
+  font-size: var(--text-lg);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.lots-card-count {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--danger);
+}
+
+.lots-card-downstream {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+}
+
+/* The bands ------------------------------------------------------------- */
+
+.lots-band {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.lots-band-title {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--label-size);
+  letter-spacing: var(--label-track);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.lots-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.lots-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.lots-row:last-child {
+  border-bottom: 0;
+}
+
+.lots-row.is-blocked .lots-title {
+  color: var(--text-muted);
+}
+
+.lots-rank {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-faint);
+  min-width: 1.5rem;
+}
+
+.lots-title {
+  border: 0;
+  background: none;
+  padding: 0;
+  text-align: left;
+  font: inherit;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.lots-title:hover {
+  color: var(--accent);
+}
+
+.lots-meta {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.lots-repo,
+.lots-prio,
+.lots-branch,
+.lots-id {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-faint);
+}
+
+/* A status, in one word and one of four tones. */
+.lots-pill {
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: var(--label-size);
+  letter-spacing: var(--label-track);
+  text-transform: uppercase;
+  border: 1px solid currentcolor;
+}
+
+.lots-tone-waiting {
+  color: var(--warning);
+}
+
+.lots-tone-underway {
+  color: var(--accent);
+}
+
+.lots-tone-settled {
+  color: var(--text-faint);
+}
+
+.lots-tone-fault {
+  color: var(--danger);
+}
+
+.lots-blocked {
+  color: var(--danger);
+}
+
+.lots-blocked-word {
+  color: var(--text-muted);
+}
+
+.lots-link {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--danger);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.lots-link:disabled {
+  color: var(--text-faint);
+  cursor: default;
+  text-decoration: line-through;
+}
+
+.lots-done > summary {
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--label-size);
+  letter-spacing: var(--label-track);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* One fiche ------------------------------------------------------------- */
+
+.lots-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.lots-detail-title {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: var(--text-lg);
+}
+
+.lots-facts {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.lots-detail-blocked,
+.lots-detail-holds,
+.lots-detail-ready {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.lots-detail-ready {
+  color: var(--success);
+}
+
+/* The fiche's prose, verbatim: it is a document somebody wrote, and this
+   plugin does not own a second idea of what markdown looks like. */
+.lots-body {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-soft);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+.lots-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.lots-commit {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: var(--space-1) 0;
+  font-size: var(--text-sm);
+}
+
+.lots-commit-date {
+  font-family: var(--font-mono);
+  color: var(--text-faint);
+  min-width: 4.5rem;
+}
+
+.lots-commit-subject {
+  color: var(--text);
+}

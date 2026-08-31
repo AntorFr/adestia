@@ -19,6 +19,11 @@ services:
       - ./plugins:/plugins:ro
       - ./skins:/skins:ro
       - ./adestia.config.yaml:/app/adestia.config.yaml:ro
+      # The `lots` plugin reads chantier fiches out of repositories that are
+      # not the workspace. Read-only, and named to the config by the path the
+      # CONTAINER sees — the plugin never writes, and this mount says so twice.
+      # - ~/Dev/tessera:/repos/tessera:ro
+      # - ~/Dev/ostia:/repos/ostia:ro
     environment:
       # The CLI's own credentials. Which variables matter depends on the
       # configured driver; Adestia can also arm a token from its own UI.

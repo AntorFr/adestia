@@ -41,8 +41,15 @@ WORKDIR /app
 # device-code login only asks whether it may store its token when it is on a
 # terminal, so the driver spawns it under a pty. Do not slim it away. (Claude's
 # arming needs no terminal — it speaks the OAuth exchange itself.)
+#
+# `git` is here for the plugins the image SHIPS: `lots` reads its fiches out of
+# repositories with `git show`, and refuses to fall back to the working tree —
+# a state that is not committed is a state nobody else can see. Without the
+# binary that plugin is a screen that says "git is not installed" on an
+# instance whose repositories are perfectly fine, which is a box with a picture
+# on it. Coding CLIs an operator adds on top want it too.
 RUN apt-get update \
- && apt-get install -y --no-install-recommends ca-certificates \
+ && apt-get install -y --no-install-recommends ca-certificates git \
  && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
@@ -61,7 +68,7 @@ COPY --from=build /build/packages/server/bin ./packages/server/bin
 COPY --from=build /build/packages/web/package.json ./packages/web/
 COPY --from=build /build/packages/web/dist-web ./packages/web/dist-web
 
-# The extensions the product SHIPS — eight plugins and three skins, loaded by
+# The extensions the product SHIPS — nine plugins and three skins, loaded by
 # the same runtime path as any operator-mounted folder. Baked in because a
 # default install advertising "ships with todo, collections…" and starting
 # with none would be a box with a picture on it; an operator points

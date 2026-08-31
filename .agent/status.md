@@ -1,6 +1,36 @@
 # Status — Adestia
 > MàJ : 2026-08-30
 
+Chantier du 30/08 — **plugin « lots » LIVRÉ** (9e plugin embarqué) : les
+chantiers de la galaxie Tessera/Ostia dans une fenêtre. Lecture par **git et
+git seul** (`read.mjs`) — `main` est l'index, la pointe de branche fait foi
+pour SA fiche, les questions nées à cette pointe sont ramassées, aucune
+énumération de branches : un état non commité n'existe pas, donc l'arbre de
+travail n'est jamais lu. **Zéro écriture**, y compris pas d'overlay voisin à
+la façon d'atelier/voyages : le seul geste sortant est `api.compose`, qui
+dépose une phrase dans le composeur et s'arrête là. Dérivations dans
+`graph.mjs` (qui a la main, bloqué, actionnable, tri topologique départagé par
+`priority` puis id — seules les dépendances NON terminées gatent l'ordre) plus
+deux qui font le produit : la **racine** d'un blocage (une question `open` en
+amont, pas le lot juste devant) et le **nombre de lots qu'elle gèle**, qui
+trie le bandeau « à trancher en premier ». Dépôts scannés = config opérateur
+via le secret déclaré `LOTS_REPOS` (seul canal instance→plugin ; une page
+serait une primitive de lecture de fichiers ré-orientable). Dégradations
+dites à l'écran, jamais devinées : pas de dépôt configuré, pas de `main`, pas
+de `.agent/lots/`, branche disparue (info — c'est la fin normale d'un lot),
+frontmatter illisible, id dupliqué, dépendance inconnue, cycle. Deux pièges
+payés : `git` **ajouté à l'image** (le plugin ne sert à rien sans, et
+node:22-slim n'en a pas), et `safe.directory=*` + `core.fsmonitor=` dans l'env
+des appels git — un dépôt bind-monté appartient à l'uid de l'hôte et git
+refuse « dubious ownership », ce qui serait arrivé à l'écran en « pas un dépôt
+git ». **Aucune skill** : le contrat des fiches vit dans les
+`.agent/lots/README.md` des repos scannés, une copie ici dériverait. 29 tests
+neufs (1158 + 175 verts), typecheck/build OK, **banc constaté**
+(`bench/scenarios/lots.mjs` + son `lots.prep.sh` : run.sh sait désormais
+qu'un scénario voisin d'un `<nom>.prep.sh` réclame des montages — deux vrais
+dépôts git jetables et une config qui allume le plugin). Lettre de mission
+détruite dans le même commit, comme elle le demandait.
+
 Chantier du 30/08 — **outils shell LIVRÉS** (suite immédiate du spike
 ci-dessous, décision de Monsieur : in-process pour claude-code + pont pour
 copilot, le pont restant un bien commun du serveur). Livré : registre
@@ -120,13 +150,6 @@ rédigés, donc de la mécanique qui tourne déjà. Le plugin arrive en QUATRIÈ
 position : il présuppose l'identité, l'index côté lecteur et les références
 typées. Les données d'exemple sont inventées et Monsieur fournira des cas réels
 — ne rien figer dessus.
-
-Mission posée le 29/08 — **plugin « lots »** (visualisation des chantiers de
-la galaxie Tessera/Ostia) : lettre de mission dans
-`.agent/mission-lots-plugin.md` — contrat de données, règle de lecture
-`main`/branches, dérivations à afficher. La lettre s'auto-détruit : à
-supprimer dans le commit final de l'implem (les READMEs des repos scannés
-restent l'unique contrat). Pas encore implémenté.
 
 Chantier du 29/08 — le skin skippy reprend le **blason d'agent-pods**
 (halo, double anneau, graduations) à la place du réticule simplifié :

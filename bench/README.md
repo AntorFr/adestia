@@ -41,5 +41,10 @@ directory, which is the same thing the server would have written.
   no CLI means no model catalogue, and no mounted plugins means no brief. The
   proxy prints every upstream 4xx/5xx by name so a REAL missing asset cannot
   hide behind the browser's "Failed to load resource".
+- **`fullPage: true` photographs the fold and nothing below it.** The shell's
+  canvas scrolls inside ITSELF, so the document is never taller than the
+  viewport and playwright has nothing extra to capture. Open a tall viewport
+  (`bench.open({ height: 2400 })`) when the point of the shot is what sits
+  below the fold.
 - **A permanent stream loops.** `/api/turn/attach` is answered once and then
   `204`, because the shell re-attaches after every turn it finishes.
