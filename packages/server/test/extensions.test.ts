@@ -343,6 +343,32 @@ describe('mcpServersFor', () => {
       manifest: { schemaVersion: 1, id, kind: 'app', description: '', mcpServers: servers },
     }) as DiscoveredPlugin
 
+  it('anchors a plugin’s relative paths to the plugin folder', () => {
+    // The documented example is `"args": ["./bin/cutlist.js"]`, and the server
+    // is spawned from the workspace: passed through verbatim it resolves
+    // against the wrong directory and dies at startup.
+    const { servers } = mcpServersFor(
+      [],
+      [withServers('atelier', [{ name: 'cutlist', command: 'node', args: ['./bin/cutlist.js', '--strict'] }])],
+    )
+    expect(servers[0]).toMatchObject({
+      command: 'node',
+      args: ['/p/atelier/bin/cutlist.js', '--strict'],
+    })
+  })
+
+  it('leaves a bare command alone — it is a PATH lookup, not a file', () => {
+    const { servers } = mcpServersFor([], [withServers('a', [{ name: 's', command: 'python3' }])])
+    expect(servers[0]?.command).toBe('python3')
+  })
+
+  it('never anchors the operator’s own servers', () => {
+    // The operator writes paths from where THEY stand; no plugin folder to
+    // anchor them to, and guessing one would break a working configuration.
+    const { servers } = mcpServersFor([{ name: 's', command: './bin/x.js' }], [])
+    expect(servers[0]?.command).toBe('./bin/x.js')
+  })
+
   it('wires both layers when nothing collides', () => {
     const { servers, problems } = mcpServersFor(
       [{ name: 'home-assistant', url: 'https://ha/mcp' }],

@@ -487,6 +487,15 @@ export class ClaudeCodeDriver implements Driver {
      */
     let settledOutput = 0
     let currentOutput = 0
+    /**
+     * Tool name by `tool_use` id, for the results that come back.
+     *
+     * A `tool_result` block names no tool — it only carries `tool_use_id` —
+     * so the name has to be remembered from the call. Kept per turn: ids are
+     * unique within one, and a map that outlived the turn would grow for the
+     * life of the process.
+     */
+    const calledTools = new Map<string, string>()
 
     try {
       for await (const raw of query as AsyncIterable<RawMessage>) {
@@ -551,10 +560,13 @@ export class ClaudeCodeDriver implements Driver {
             for (const block of message.message?.content ?? []) {
               if (block.type === 'tool_use') {
                 const target = toolTarget(block.input)
+                const name = block.name ?? 'tool'
+                if (block.id) calledTools.set(block.id, name)
                 yield {
                   type: 'tool-use',
-                  name: block.name ?? 'tool',
+                  name,
                   ...(target === undefined ? {} : { target }),
+                  ...(block.id === undefined ? {} : { id: block.id }),
                 }
               }
             }
@@ -564,10 +576,17 @@ export class ClaudeCodeDriver implements Driver {
           case 'user': {
             for (const block of message.message?.content ?? []) {
               if (block.type === 'tool_result') {
+                // The name comes from the CALL, never from the result: a
+                // `tool_result` block has no name field, so reading one off it
+                // yielded the literal "tool" and matched no pending call.
+                const id = block.tool_use_id
+                const remembered = id === undefined ? undefined : calledTools.get(id)
+                if (id !== undefined) calledTools.delete(id)
                 yield {
                   type: 'tool-result',
-                  name: block.name ?? 'tool',
+                  name: remembered ?? 'tool',
                   ok: block.is_error !== true,
+                  ...(id === undefined ? {} : { id }),
                 }
               }
             }

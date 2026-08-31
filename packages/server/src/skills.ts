@@ -98,6 +98,25 @@ function nameForFolder(contents: string, folder: string): string {
   return contents.replace(frontmatter[1]!, renamed)
 }
 
+/**
+ * `{{plugin_dir}}`, resolved to where the plugin actually sits.
+ *
+ * A plugin that ships a tool has to tell the agent how to run it, and had no
+ * way to say WHERE: a path relative to the plugin folder does not resolve from
+ * the agent's working directory, which is the workspace, and the absolute one
+ * is an operator's choice (`extensions.pluginsDir`) the plugin cannot know.
+ * Atelier wrote `node plugins/atelier/tools/atelier.mjs`, the agent ran it
+ * from the workspace, got "Cannot find module", and concluded in writing — in
+ * two project fiches — that the validator was "out of reach in this
+ * environment". It was installed and working the whole time.
+ *
+ * Substituted at delivery because that is the only moment both halves are
+ * known: the plugin's text, and the path this instance put it at.
+ */
+function resolvePluginDir(contents: string, dir: string): string {
+  return contents.replaceAll('{{plugin_dir}}', dir)
+}
+
 /** Only ACTIVE plugins contribute: an inactive one teaches nothing either. */
 async function readPluginSkills(
   plugins: readonly DiscoveredPlugin[],
@@ -116,7 +135,7 @@ async function readPluginSkills(
         const folder = `${plugin.manifest.id}-${name}`
         skills.push({
           path: `${folder}/SKILL.md`,
-          contents: nameForFolder(contents, folder),
+          contents: resolvePluginDir(nameForFolder(contents, folder), plugin.dir),
           source: plugin.manifest.id,
         })
       } catch (error) {

@@ -11,7 +11,7 @@
  */
 
 import { readFile, readdir } from 'node:fs/promises'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 
 import { forgetContributedBlocks, registerBlocks } from '@antorfr/adestia-content'
 import {
@@ -228,6 +228,31 @@ export function claimedTypeCollisions(
  * Plugins are read only while ACTIVE, the same rule as their APIs: turning a
  * plugin off takes its server with it.
  */
+/**
+ * A plugin's `./relative` paths, anchored to the plugin folder.
+ *
+ * The plugin author writes what is true INSIDE the plugin — the documented
+ * example is `"args": ["./bin/cutlist.js"]` — but the server is spawned from
+ * the workspace, so a path passed through verbatim resolves against the wrong
+ * directory and the server dies at startup with a module-not-found nobody
+ * connects back to a manifest. Same defect the atelier skill had with its own
+ * tool: the plugin cannot know where an operator mounted it, so the layer that
+ * DOES know resolves it.
+ *
+ * Only explicitly relative entries (`./`, `../`) are touched: `node` and
+ * `python3` are looked up on PATH and must stay as they are, and a bare word
+ * is far more likely to be a subcommand than a file.
+ */
+function anchorToPlugin(server: McpServer, dir: string): McpServer {
+  const anchor = (value: string) =>
+    value.startsWith('./') || value.startsWith('../') ? resolve(dir, value) : value
+  return {
+    ...server,
+    ...(server.command === undefined ? {} : { command: anchor(server.command) }),
+    ...(server.args === undefined ? {} : { args: server.args.map(anchor) }),
+  }
+}
+
 export function mcpServersFor(
   operator: readonly McpServer[],
   plugins: readonly DiscoveredPlugin[],
@@ -253,7 +278,7 @@ export function mcpServersFor(
         })
         continue
       }
-      byName.set(server.name, server)
+      byName.set(server.name, anchorToPlugin(server, plugin.dir))
       owner.set(server.name, `the plugin "${plugin.manifest.id}"`)
     }
   }

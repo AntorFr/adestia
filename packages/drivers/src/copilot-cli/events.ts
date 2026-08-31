@@ -135,14 +135,16 @@ export function translate(event: CopilotEvent, state: TranslationState): readonl
       const name = String(data['toolName'] ?? 'tool')
       if (id) state.pending.set(id, name)
       const target = toolTargetOf(data)
-      return [{ type: 'tool-use', name, ...(target === undefined ? {} : { target }) }]
+      return [
+        { type: 'tool-use', name, ...(target === undefined ? {} : { target }), ...(id ? { id } : {}) },
+      ]
     }
 
     case 'tool.execution_complete': {
       const id = String(data['toolCallId'] ?? '')
       const name = state.pending.get(id) ?? String(data['toolName'] ?? 'tool')
       state.pending.delete(id)
-      return [{ type: 'tool-result', name, ok: data['success'] !== false }]
+      return [{ type: 'tool-result', name, ok: data['success'] !== false, ...(id ? { id } : {}) }]
     }
 
     case 'session.mcp_servers_loaded': {

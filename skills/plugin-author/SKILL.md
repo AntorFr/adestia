@@ -96,6 +96,30 @@ Every field beyond `schemaVersion`, `id`, `kind` and `description` is
 optional. Declare only what the plugin actually ships — a facet named but
 absent is a load failure the user sees.
 
+#### Paths: write them relative, they are anchored for you
+
+A plugin does not know where it was mounted — `extensions.pluginsDir` is the
+operator's choice — and the agent does not run from inside it: its working
+directory is the WORKSPACE. So a path that is true inside the plugin is false
+everywhere it gets used, and the failure is a module-not-found that nobody
+traces back to a manifest.
+
+- In `mcpServers`, write `command` and `args` entries relative to the plugin
+  (`"./bin/cutlist.js"`); the server resolves them against the plugin folder
+  when it wires the server up. Bare words (`node`, `python3`) are left alone —
+  they are PATH lookups, not files.
+- In a **skill**, write `{{plugin_dir}}` and it is replaced, at delivery, by
+  the absolute folder this instance put the plugin in:
+  `node {{plugin_dir}}/tools/atelier.mjs valide <fichier>`.
+
+This is not a convenience. Atelier told the agent to run
+`node plugins/atelier/tools/atelier.mjs`; from the workspace that resolves to
+nothing, so the agent concluded the validator was "out of reach in this
+environment" and wrote that conclusion into two project fiches, which then
+carried a warning to re-validate against a tool that had been installed and
+working all along. A wrong path does not fail loudly — it teaches the agent
+something false, and the agent writes it down.
+
 ### `kind` decides when the plugin is active
 
 | `kind` | Active when | For |

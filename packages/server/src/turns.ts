@@ -318,6 +318,12 @@ export class TurnDesk {
   /** One driver turn, accumulated the way the route used to accumulate it. */
   async #turn(job: TurnJob, spec: TurnSpec): Promise<TurnOutcome> {
     const parts: { tools: { name: string; target?: string; ok?: boolean }[]; text: string }[] = []
+    /**
+     * Calls awaiting their result, by driver id — the rows themselves, so
+     * marking one needs no search. Names alone mismarked overlapping calls of
+     * the same tool; a driver without ids still falls back to that search.
+     */
+    const pending = new Map<string, { name: string; target?: string; ok?: boolean }>()
     let stopped = false
     let failure: string | undefined
     let usage: TurnOutcome['usage']
@@ -335,20 +341,29 @@ export class TurnDesk {
         if (event.type === 'text-delta') current().text += event.text
         else if (event.type === 'tool-use') {
           const call = { name: event.name, ...(event.target ? { target: event.target } : {}) }
+          if (event.id !== undefined) pending.set(event.id, call)
           // Back to work after having spoken: that is the next message.
           const last = parts[parts.length - 1]
           if (last && last.text === '') last.tools.push(call)
           else parts.push({ tools: [call], text: '' })
         } else if (event.type === 'tool-result') {
-          // Searched back THROUGH the parts: a slow call can still be running
-          // when the agent has already opened the next one.
-          for (let index = parts.length - 1; index >= 0; index -= 1) {
-            const pending = parts[index]!.tools.findLast(
-              (tool) => tool.name === event.name && tool.ok === undefined,
-            )
-            if (pending) {
-              pending.ok = event.ok
-              break
+          const id = event.id
+          const known = id === undefined ? undefined : pending.get(id)
+          if (known && id !== undefined) {
+            known.ok = event.ok
+            pending.delete(id)
+          } else {
+            // No id from this driver: searched back THROUGH the parts, since a
+            // slow call can still be running when the agent has already opened
+            // the next one.
+            for (let index = parts.length - 1; index >= 0; index -= 1) {
+              const match = parts[index]!.tools.findLast(
+                (tool) => tool.name === event.name && tool.ok === undefined,
+              )
+              if (match) {
+                match.ok = event.ok
+                break
+              }
             }
           }
         } else if (event.type === 'error') failure = event.message

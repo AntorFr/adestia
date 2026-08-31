@@ -31,6 +31,15 @@ export interface ContentBlock {
   readonly name?: string
   readonly input?: unknown
   readonly is_error?: boolean
+  /**
+   * What ties a result back to its call. A `tool_use` block carries `id`, the
+   * matching `tool_result` carries `tool_use_id` — and a `tool_result` carries
+   * NO name at all. Leaving both undeclared is what let `block.name` be read
+   * off a result: it type-checked, returned undefined every time, and the
+   * outcome of every tool call was silently lost.
+   */
+  readonly id?: string
+  readonly tool_use_id?: string
 }
 
 export interface ModelUsageEntry {

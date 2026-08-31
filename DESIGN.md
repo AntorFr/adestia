@@ -889,6 +889,40 @@ operator's, never rewritten by us. The grammar that judges a server is still
 the config's own. A secret still never leaves the server. And a name a plugin
 or the config already answers to is still refused rather than shadowed.
 
+**2026-08-31 (a plugin writes paths from where IT stands; the server anchors
+them):** a plugin cannot know where it was mounted — `extensions.pluginsDir`
+is the operator's — and the agent does not run from inside it: its working
+directory is the workspace. So every path a plugin wrote was true in the
+plugin and false in use. Atelier's skill said `node
+plugins/atelier/tools/atelier.mjs`; from the workspace that resolves to
+nothing, and the agent concluded the validator was "out of reach in this
+environment" — then wrote that conclusion into two project fiches, which
+carried a warning to re-validate against a tool that had been installed and
+working all along. Run afterwards, it found one of those two workbooks
+carrying fourteen errors, four of them pieces the cutting plan never placed.
+A wrong path does not fail loudly: it teaches the agent something false, and
+the agent writes it down. Both halves are now anchored by the layer that
+knows — `{{plugin_dir}}` in a skill, substituted at delivery, and `./`
+entries in a manifest's `mcpServers`, resolved when the server is wired. The
+operator's own servers are never touched: they wrote their paths from where
+they stand, and there is no plugin folder to anchor them to.
+
+**2026-08-31 (a result belongs to a CALL, not to a name):** the transcript
+promised the tool trace back on reload, and gave it back with every call drawn
+as still running — for months, in every thread. Three things had to line up.
+The Claude Code driver read a tool's name off the `tool_result` block, which
+carries none (only `tool_use_id`), so it reported the literal "tool"; the
+server and the shell then looked for a pending call by NAME and found nothing;
+and the driver's own test fed a fixture with a `name` field the SDK never
+sends, so the suite agreed with the bug. Results now travel with the engine's
+id, and both consumers match on it — the name stays as a fallback for a driver
+that has none, and is the fallback ONLY: two calls of the same tool overlap
+routinely, and "the most recent unresolved one" marks the wrong row about as
+often as the right one. What this cost is worth writing down: nothing was red
+and nothing was green, so the interface looked calm while telling the operator
+nothing, and the JSONL kept no record of which tool call had failed — the one
+question a transcript exists to answer.
+
 **2026-08-26 (the permission layer was a doorbell sold as a wall — removed):**
 interactive permissions were a v1 pillar: a broker gating every tool call
 behind a human, content rules guarding the driver's authority paths and the

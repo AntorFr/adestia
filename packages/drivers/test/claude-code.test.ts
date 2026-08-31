@@ -187,18 +187,52 @@ describe('turn streaming', () => {
     expect(JSON.stringify(event)).not.toContain('SECRET')
   })
 
-  it('marks a failed tool result as failed', async () => {
+  it('marks a failed tool result as failed, naming it from the CALL', async () => {
+    // The shape the SDK actually sends: a `tool_result` block carries
+    // `tool_use_id` and NEVER a name. The fixture used to invent one, which
+    // is how a driver reading `block.name` off a result passed its test while
+    // labelling every result "tool" in production — and every outcome was
+    // then dropped, since no pending call is ever named that.
+    const driver = new ClaudeCodeDriver({
+      query: fakeSdk([
+        {
+          type: 'assistant',
+          session_id: SESSION,
+          message: { content: [{ type: 'tool_use', id: 'toolu_01', name: 'Bash', input: { command: 'ls' } }] },
+        },
+        {
+          type: 'user',
+          session_id: SESSION,
+          message: { content: [{ type: 'tool_result', tool_use_id: 'toolu_01', is_error: true }] },
+        },
+        resultMessage,
+      ]),
+    })
+    const events = await collect(driver)
+    expect(events[0]).toEqual({ type: 'tool-use', name: 'Bash', target: 'ls', id: 'toolu_01' })
+    expect(events[1]).toEqual({ type: 'tool-result', name: 'Bash', ok: false, id: 'toolu_01' })
+  })
+
+  it('still reports a result whose call it never saw', async () => {
+    // A resumed session can deliver a result for a call made in an earlier
+    // turn. Reporting it unnamed beats dropping it: the trace stays honest
+    // about something having finished.
     const driver = new ClaudeCodeDriver({
       query: fakeSdk([
         {
           type: 'user',
           session_id: SESSION,
-          message: { content: [{ type: 'tool_result', name: 'Bash', is_error: true }] },
+          message: { content: [{ type: 'tool_result', tool_use_id: 'toolu_stale', is_error: false }] },
         },
         resultMessage,
       ]),
     })
-    expect((await collect(driver))[0]).toEqual({ type: 'tool-result', name: 'Bash', ok: false })
+    expect((await collect(driver))[0]).toEqual({
+      type: 'tool-result',
+      name: 'tool',
+      ok: true,
+      id: 'toolu_stale',
+    })
   })
 })
 

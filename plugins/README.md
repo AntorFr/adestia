@@ -72,8 +72,30 @@ through the one channel it has for handing a plugin a named value:
 
 ```yaml
 secrets:
-  DEV_FLOW_REPOS: /repos/tessera:/repos/ostia    # colon- or comma-separated
+  # colon- or comma-separated; each entry says its own source by its SHAPE
+  DEV_FLOW_REPOS: AntorFr/tessera,AntorFr/ostia,/repos/adestia
+  DEV_FLOW_TOKEN: ${GH_READ_TOKEN}    # only for private repositories on a forge
 ```
+
+**`owner/repo` is read over HTTP, holding nothing** — no clone, no disk, no
+`git fetch` to schedule. **A path is read with git**, and is only worth using
+when the repository is on that disk ALREADY, for another reason: the pod that
+codes in it. Cloning repositories so a screen can read eight markdown files is
+replicating a whole history to look at its smallest file.
+
+They are not equivalent, and the screen says which is which (`⌁` forge, `▪`
+disk) rather than pretending:
+
+| | on disk | on a forge |
+|---|---|---|
+| `main` | as committed | as **pushed** |
+| a branch a fiche names | read at its tip | only if that branch was pushed |
+| a branch that is absent | merged and deleted — a lot's normal end | never pushed — the work is in flight and out of sight, and what is shown is `main`'s |
+
+That last row is the one to keep in mind under a doctrine where working
+branches stay local: over a forge, a lot in `code` shows the state its branch
+SUPERSEDES. The plugin says so, per fiche, rather than letting a stale line
+pass for a fresh one.
 
 Not a secret in the credential sense, and the plugin's manifest says so. But a
 list of paths a plugin may read is the OPERATOR's business rather than a

@@ -423,7 +423,9 @@ export default function view(api) {
         h(
           'p',
           { key: 'r', className: 'dev-flow-muted' },
-          `${graph.repos.map((repo) => `${repo.name} (${repo.items})`).join(' · ')} — ${fill(
+          `${graph.repos
+            .map((repo) => `${repo.kind === 'forge' ? '⌁' : '▪'} ${repo.name} (${repo.items})`)
+            .join(' · ')} — ${fill(
             t('read at %s'),
             clock(graph.scannedAt),
           )}`,

@@ -1,6 +1,72 @@
 # Status — Adestia
 > MàJ : 2026-08-31
 
+Chantier du 31/08 (soir, 3) — **les réglages coupés en deux**. Une seule
+app portait quatre sujets qui, à l'usage, se séparent net : deux **interrupteurs
+de session** (le jeton de l'agent est-il bon, clair ou sombre, je me déconnecte)
+qu'on règle en une seconde d'où qu'on soit, et deux **contenus** (les serveurs
+que l'instance atteint, la prose qu'on lui a dite) qui se parcourent, se
+cherchent et s'éditent. Les premiers sur le canvas faisaient de chaque bascule
+une navigation loin de ce qu'on lisait ; les seconds en RANGÉES faisaient
+passer deux domaines de l'instance pour des options de boîte de dialogue.
+Donc : **la roue crantée redevient un menu** (jetons — flux d'armement compris,
+sur place —, apparence en trois choix nommés, déconnexion) et **l'app garde le
+canvas**, en tuiles comme toute autre porte d'entrée. Ça a débloqué les deux
+vrais manques : les **serveurs MCP deviennent éditables** (une tuile chacun, la
+déclaration derrière, un bouton pour en ajouter) — ce qui a demandé une 4e
+couche ÉCRIVABLE (`mcp-store.ts`, `<dataDir>/mcp-servers.json` en 0600, grammaire
+du YAML réutilisée, secrets masqués dans les deux sens, collision de nom refusée)
+et de passer aux drivers une FONCTION au lieu d'une liste (serveur branché au
+tour suivant, pas au reboot suivant) ; et les **instructions fournies par le
+produit deviennent visibles**, badgées, sans Enregistrer — les cacher répondait
+à « que lit cet agent ? » avec la moitié de la vérité. Les instructions passent
+en cartes + moteur de recherche (la colonne de noms était taillée pour quatre
+fichiers, il y en a trente). 1178 + 179 verts, typecheck/build OK, **banc
+constaté** (`bench/scenarios/settings-split.mjs`, 12 captures) — il a attrapé
+deux défauts invisibles aux tests : deux boutons retour empilés (il n'en reste
+qu'un, qui remonte d'UN niveau) et le menu qui restait ouvert par-dessus un
+écran qu'on n'avait pas ouvert depuis lui.
+
+Chantier du 31/08 (soir, 2) — **les chemins d'un plugin, ancrés par qui sait
+où il est**. Le plugin ignore où l'opérateur l'a monté (`extensions.pluginsDir`)
+et l'agent ne tourne pas dedans (son cwd est le workspace) : tout chemin écrit
+par un plugin était vrai chez lui, faux à l'usage. La skill d'atelier disait
+`node plugins/atelier/tools/atelier.mjs` → `Cannot find module`, et Alfred en a
+conclu PAR ÉCRIT, dans deux fiches projet, que le validateur était « hors de
+portée de cet environnement ». Il était installé et fonctionnel. Corrigé aux
+deux endroits : `{{plugin_dir}}` dans une skill (substitué à la livraison, à
+côté de `nameForFolder` — même moment, même raison) et les entrées `./` des
+`mcpServers` d'un manifeste (résolues au câblage ; les serveurs de l'OPÉRATEUR
+ne sont jamais touchés, et un mot nu comme `node` reste un lookup PATH). Ce
+second volet était latent mais l'exemple de `plugin-author` enseignait
+exactement le geste qui casse — et c'est le mécanisme du futur plugin outil.
+5 tests neufs, 1170 + 190 verts, typecheck/build OK. Pas de banc : rien de ce
+qui est dessiné ne change. **Côté cockpit d'Alfred** (hors dépôt) : les deux
+fiches corrigées avec le VRAI verdict — dressing `✓ valide`, meuble à tiroirs
+`✗ 14 erreurs` dont 4 pièces jamais débitées (NE PAS COUPER) — et sa skill
+`menuiserie` recalée (annonçait le schéma 2.0, l'image livre le 3.0 ; ses trois
+`.mjs` locaux sont des reliques 2.0 signalées à ne plus exécuter).
+
+Chantier du 31/08 (soir) — **l'issue des appels d'outils, enfin écrite**.
+Depuis toujours `ok` n'était jamais renseigné : le driver claude-code lisait
+le nom d'un outil sur le bloc `tool_result`, qui n'en porte pas (seulement
+`tool_use_id`), donc il annonçait « tool » ; serveur et coque cherchaient
+ensuite l'appel en attente PAR NOM et ne trouvaient rien ; et la fixture du
+test inventait le champ `name` que le SDK n'envoie pas, donc la suite
+validait le bug. Conséquence visible : tous les appels d'outils de tous les
+fils, même vieux de dix jours, dessinés « en cours » (le style `--done` /
+`--failed` existait et n'était jamais atteint), et un JSONL incapable de dire
+quel appel avait échoué. Corrigé sur les 3 étages : `id` optionnel au contrat
+(`tool-use` / `tool-result`), les DEUX drivers le portent (copilot avait déjà
+l'id en interne et le jetait — son test s'appelait pourtant « pairs a tool
+call with its result by id »), et les deux consommateurs (turns.ts, stream.ts)
+apparient dessus, le nom ne restant qu'un repli pour un driver sans id. L'id
+ne va PAS au stockage : c'est de la plomberie, pas ce que la coque a dessiné.
+7 tests neufs, 1165 + 179 verts, typecheck/build OK, **banc constaté**
+(`bench/scenarios/tool-outcomes.mjs`) : deux Read en vol, le PREMIER échoue —
+losange rouge sur la bonne ligne, la seconde encore pâle, puis rouge+vert au
+règlement, et un fil rechargé qui porte ses issues, clair et sombre.
+
 Chantier du 31/08 — **transport « shell » pour les outils d'instance** (revue
 et fusion de la proposition de l'instance copilote). Le besoin : une org
 verrouillée valide chaque serveur MCP du CLI contre son registre maison, donc
@@ -19,6 +85,37 @@ DÉCOUVERTE.** Sous `shell` aucun moteur n'énumère les outils — c'est aux
 instructions du workspace (AGENTS.md) de dire que le CLI existe. Le cœur
 n'écrit pas de prose d'instruction, et on n'a pas commencé pour une
 échappatoire.
+
+Chantier du 31/08 — **dev-flow lit sans cloner** (faute de conception
+corrigée avant déploiement). Le premier lecteur supposait un clone local :
+vrai sur le Mac où il a été écrit, faux dans le pod, qui ne détient que les
+repos où il CODE. Monsieur a tranché : « les fiches doivent être rendues sans
+répliquer tous les repos et les branches en local, sinon notre mode de
+stockage est le mauvais ». Verdict : le **stockage est bon** (fiches dans le
+repo, commitées avec le travail) — c'était le **chemin d'accès** qui était
+faux. La règle de lecture est donc extraite dans `read.mjs` (`scanSource`) et
+ne connaît plus que quatre primitives ; deux sources l'implémentent :
+`git.mjs` (dépôt sur ce disque) et `forge.mjs` (API GitHub, **zéro clone,
+zéro fetch programmé**). Les deux suites de tests posent les MÊMES assertions
+sur la règle — deux lecteurs qui divergeraient sur ce que veut dire `main`
+seraient deux produits.
+
+⚠️ **Les deux ne voient pas la même chose, et l'écran le dit** (`⌁` forge,
+`▪` disque). Sur la forge, `main` = ce qui a été POUSSÉ, et les branches de
+chantier ne sont jamais poussées (doctrine de la galaxie) → un lot en `code`
+y montre l'état que sa branche périme. D'où deux diagnostics distincts :
+`no-lots-pushed` (≠ « pas de fiches ») et `branch-not-pushed` (≠ « branche
+disparue ») — annoncer une fin à quelqu'un dont le coder est en pleine phrase
+serait un mensonge. Constaté sur le réel : **ostia** remonte ses 8 fiches par
+l'API, graphe et timeline compris ; **tessera** revient vide parce que son
+`main` local est **9 commits en avance sur origin** — les fiches sont
+commitées, jamais poussées. L'outil a dit vrai du premier coup.
+
+Reste : le jeton GitHub lecture seule dans OpenBao, et le déploiement
+(v0.18.0 — `v0.17.0` est un tag local mort posé 8 commits en arrière ; les
+DEUX coques `golem` et `golem-skippy` épinglent la même image et se bumpent
+ensemble). Passerelle vers les clones de `skippy.berard.me` **abandonnée** :
+`adestia-skippy` est le futur coder, pas une vitrine sur l'ancien pod.
 
 Chantier du 30/08 — **plugin « dev-flow » LIVRÉ** (9e plugin embarqué) : les
 chantiers de la galaxie Tessera/Ostia dans une fenêtre. D'abord nommé `lots`

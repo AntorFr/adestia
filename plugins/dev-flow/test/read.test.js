@@ -1,7 +1,7 @@
 /**
  * The reading rule, which is the part somebody will be tempted to simplify.
  *
- * Two suites, and they answer different questions. The first drives `scanRepo`
+ * Two suites, and they answer different questions. The first drives the rule
  * against a SCRIPTED git — every ref and every file spelled out — so the rule
  * itself is pinned: main is the index, a branch wins for its own fiche, a new
  * question at a tip is picked up, and nothing else on that branch is. The
@@ -18,7 +18,8 @@ import { join } from 'node:path'
 import { test } from 'node:test'
 import { promisify } from 'node:util'
 
-import { gitIn, hasGit, parseFrontmatter, readFiche, scanRepo, timelineOf } from '../read.mjs'
+import { gitIn, gitSource, hasGit } from '../git.mjs'
+import { parseFrontmatter, readFiche, scanSource, timelineOf } from '../read.mjs'
 
 const execFileAsync = promisify(execFile)
 
@@ -149,7 +150,7 @@ const galaxy = () => ({
 
 test('main is the index, and the branch tip wins for its own fiche', async () => {
   const git = fakeGit(galaxy())
-  const { items, problems } = await scanRepo('/repos/tessera', git.run)
+  const { items, problems } = await scanSource(gitSource('/repos/tessera', git.run))
   const byId = new Map(items.map((item) => [item.id, item]))
 
   assert.equal(byId.get('t-1').status, 'design')
@@ -171,7 +172,7 @@ test('branches are never enumerated — only the ones main names are opened', as
   const tree = galaxy()
   tree.abandoned = { '.agent/lots/t-9.md': fiche({ id: 't-9', type: 'lot', status: 'code' }) }
   const git = fakeGit(tree)
-  const { items } = await scanRepo('/repos/tessera', git.run)
+  const { items } = await scanSource(gitSource('/repos/tessera', git.run))
 
   assert.equal(items.some((item) => item.id === 't-9'), false)
   assert.equal(git.calls.some((call) => call.startsWith('branch')), false)
@@ -181,7 +182,7 @@ test('branches are never enumerated — only the ones main names are opened', as
 test('a merged branch that has gone leaves main’s fiche standing, and says so', async () => {
   const tree = galaxy()
   delete tree.lot1
-  const { items, problems } = await scanRepo('/repos/tessera', fakeGit(tree).run)
+  const { items, problems } = await scanSource(gitSource('/repos/tessera', fakeGit(tree).run))
 
   assert.equal(items.find((item) => item.id === 't-1').status, 'code')
   const gone = problems.find((problem) => problem.code === 'branch-gone')
@@ -191,13 +192,15 @@ test('a merged branch that has gone leaves main’s fiche standing, and says so'
 })
 
 test('a repository with no main, and one that is no repository at all', async () => {
-  const { items: none, problems: noMain } = await scanRepo('/repos/x', fakeGit({ master: {} }).run)
+  const { items: none, problems: noMain } = await scanSource(gitSource('/repos/x', fakeGit({ master: {} }).run))
   assert.deepEqual(none, [])
   assert.equal(noMain[0].code, 'no-main')
 
-  const { problems: notRepo } = await scanRepo('/repos/y', async () => {
-    throw new Error('fatal: not a git repository')
-  })
+  const { problems: notRepo } = await scanSource(
+    gitSource('/repos/y', async () => {
+      throw new Error('fatal: not a git repository')
+    }),
+  )
   assert.equal(notRepo[0].code, 'not-a-repo')
 })
 
@@ -208,7 +211,7 @@ test('a branch name git would read as an option is refused, not handed over', as
     },
   }
   const git = fakeGit(tree)
-  const { problems } = await scanRepo('/repos/tessera', git.run)
+  const { problems } = await scanSource(gitSource('/repos/tessera', git.run))
   assert.equal(problems[0].code, 'bad-branch')
   assert.equal(git.calls.some((call) => call.includes('--upload-pack')), false)
 })
@@ -258,7 +261,7 @@ test('a real repository, read by the real git', { skip: !(await hasGit()) }, asy
   const { dir } = await repository()
   t.after(() => rm(dir, { recursive: true, force: true }))
 
-  const { items, bodies, problems } = await scanRepo(dir, gitIn(dir))
+  const { items, bodies, problems } = await scanSource(gitSource(dir, gitIn(dir)))
   const byId = new Map(items.map((item) => [item.id, item]))
 
   assert.equal(problems.length, 0)
@@ -271,7 +274,7 @@ test('a real repository, read by the real git', { skip: !(await hasGit()) }, asy
     join(dir, '.agent/lots/t-1.md'),
     fiche({ id: 't-1', type: 'lot', status: 'done', branch: 'lot1' }),
   )
-  const again = await scanRepo(dir, gitIn(dir))
+  const again = await scanSource(gitSource(dir, gitIn(dir)))
   assert.equal(again.items.find((item) => item.id === 't-1').status, 'design')
 })
 
@@ -279,9 +282,9 @@ test('a fiche’s history is its file’s log', { skip: !(await hasGit()) }, asy
   const { dir } = await repository()
   t.after(() => rm(dir, { recursive: true, force: true }))
 
-  const { items } = await scanRepo(dir, gitIn(dir))
+  const { items } = await scanSource(gitSource(dir, gitIn(dir)))
   const item = items.find((entry) => entry.id === 't-1')
-  const timeline = await timelineOf(item, gitIn(dir))
+  const timeline = await timelineOf(item, gitSource(dir, gitIn(dir)))
 
   assert.deepEqual(
     timeline.map((entry) => entry.subject),

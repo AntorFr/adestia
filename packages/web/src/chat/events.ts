@@ -17,8 +17,13 @@ export interface TurnUsageView {
 
 export type TurnEvent =
   | { readonly type: 'text-delta'; readonly text: string }
-  | { readonly type: 'tool-use'; readonly name: string; readonly target?: string }
-  | { readonly type: 'tool-result'; readonly name: string; readonly ok: boolean }
+  | { readonly type: 'tool-use'; readonly name: string; readonly target?: string; readonly id?: string }
+  | {
+      readonly type: 'tool-result'
+      readonly name: string
+      readonly ok: boolean
+      readonly id?: string
+    }
   | {
       readonly type: 'permission-request'
       readonly id: string

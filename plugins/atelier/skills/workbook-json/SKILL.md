@@ -5,7 +5,7 @@ description: >
   schéma 3.0 : UN repère par pièce, bandes en rectangle + axe, lamello en lignes typées,
   assemblage en scène. À consulter dès que tu produis ou modifies un workbook. Livré par
   l'image avec le moteur qui le lit ET l'outil qui le valide/migre
-  (`plugins/atelier/tools/atelier.mjs`). Le métier reste dans ton workspace.
+  (`{{plugin_dir}}/tools/atelier.mjs`). Le métier reste dans ton workspace.
 ---
 
 # `workbook.json` — le contrat 3.0
@@ -22,7 +22,7 @@ L'avancement (`workbook-state.json`) et le calepinage remanié à l'établi
 (`workbook-layout.json`) vivent À CÔTÉ, hors git — **le front n'écrit jamais ton JSON**, et
 c'est toi qui consolides les calques sur demande.
 
-**Valide TOUJOURS avant de commiter** : `node plugins/atelier/tools/atelier.mjs valide <fichier>`
+**Valide TOUJOURS avant de commiter** : `node {{plugin_dir}}/tools/atelier.mjs valide <fichier>`
 — c'est EXACTEMENT le code que l'établi exécute (une règle = un seul endroit). `migre`
 réécrit un vieux 2.0 en 3.0 (le front convertit aussi les 2.0 au chargement — les livres
 dormants restent lisibles sans migration).
