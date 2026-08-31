@@ -856,6 +856,63 @@ that opens to its own words when the network is gone.
 
 ## Decision log
 
+**2026-09-01 (everything with a tile is a DOMAIN; and a plugin is a way of
+DRAWING, not a way of owning):** the landing canvas offered two mosaics, Apps
+and Sections, and the operator could not say what put a thing in one rather
+than the other. Neither could the code: three apps stood for a folder
+(`absorbs`), two also claimed a species of page (`types`), one claimed a
+species and no place, one read a reserved root, one read git repositories, and
+`atelier` claimed nothing at all and so appeared TWICE — its own tile beside
+the folder it is a view of. Four relationships drawn as one binary.
+
+The binary was the error. **There is one kind of thing: a domain.** What
+varies is how it materialises and who draws it, and both are properties, not
+species:
+
+- **Where it materialises** — a folder (belonging is exclusive: it is where a
+  page LIVES), a species of page (`of:`/`types` — belonging is multiple, a
+  page falls into as many as match), a reserved root, a source outside the
+  workspace, or nothing at all. A domain can have several at once: todo is a
+  folder AND a species.
+- **Who draws it** — the core, or a plugin.
+
+**A plugin exists when it brings a display the core does not have.** Measured
+across the seven bundled ones, six do: ticking a task, an itinerary, a cutting
+diagram, a schedule with a clock. `collections` does not — a grid of grouped
+cards that folds finished things away is exactly what `Section` draws, which
+is why the two drifted: the plugin declares its facet (`groupBy`) while the
+core guesses it (status → role → cat). Two implementations of one idea.
+
+The criterion is NOT what a plugin writes, which was the first answer and was
+wrong. There is one page-writing route and it belongs to the core; todo's
+creation of a task is a path and a PUT, which anything could do. What earns
+todo its screen is TICKING — knowing that a `tache` has a done state. Creating
+is generic, meaning is not. So a set defined by species must also declare
+where its new members land (`into:`), the way todo files unattached tasks
+under its own folder.
+
+What this makes of `absorbs`: not a de-duplication hack that hides a section,
+but a domain saying where it materialises. Turning a plugin off therefore
+removes a DISPLAY, never a domain — it falls back to the core's, if it has a
+place to fall back to. A domain that materialises only through its plugin
+(dev-flow's git repositories) does disappear, and that is consistent rather
+than an exception.
+
+Not domains, by definition: a `feature` is a capability of the shell (a
+composer control, a block) and a `tool` is a capability of the agent with no
+interface at all — neither is a subject, neither earns a tile. **Settings is
+the one motivated exception**: it IS a domain, whose matter is the instance's
+configuration, deliberately stored apart from the workspace rather than as
+pages.
+
+Consequences, none of them done here: collections becomes a page type the core
+renders, with `into:` for creation; `atelier` showing two tiles for one domain
+is a bug, not an arbitration; and the home's two mosaics become one. That last
+one costs an arrangement: the two per-browser order keys are DROPPED rather
+than concatenated (decided 2026-09-01). Splicing two permutations would
+reproduce, as a stored preference, exactly the split this entry removes — and
+an arrangement is a minute of dragging, not a year of writing.
+
 **2026-08-31 (settings was one word for two different things):** the app the
 previous entry built held four subjects, and measured against use they split
 cleanly in half. Two are SESSION-SIZED SWITCHES — is the agent's token still

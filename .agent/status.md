@@ -1,5 +1,32 @@
 # Status — Adestia
-> MàJ : 2026-08-31
+> MàJ : 2026-09-01
+
+Chantier du 01/09 — **doctrine « tout est un domaine » posée** (théorie
+seule, aucun code touché, gravée au Decision log de DESIGN.md). Point de
+départ : « la distinction apps / domaines est floue » — et elle l'était dans
+le code, pas dans la tête de Monsieur. La home offrait deux mosaïques jumelles
+pour QUATRE relations différentes entre une app et le contenu, et `atelier`,
+qui ne déclare ni `absorbs` ni `types`, s'affichait DEUX FOIS (sa tuile à côté
+du dossier dont il est une vue). Ce qui est tranché : il n'y a qu'une espèce
+d'objet, le **domaine** ; « où il se matérialise » (dossier / espèce de page /
+racine réservée / hors workspace / rien) et « qui le dessine » (le cœur ou un
+plugin) sont des PROPRIÉTÉS, pas des espèces. **Un plugin existe quand il
+apporte un affichage que le cœur n'a pas** — 6 des 7 embarqués oui,
+`collections` non (il redessine `Section`, d'où leur dérive : facette déclarée
+d'un côté, devinée de l'autre). Le critère « ce qu'il écrit » a été essayé
+d'abord et abandonné : Monsieur l'a cassé en une phrase (rien n'empêche de
+créer depuis une collection), et le code lui donne raison — la route
+d'écriture est celle du cœur, la création de todo est générique, seul le
+COCHAGE est sémantique. D'où `into:` pour une collection. `absorbs` cesse
+d'être une rustine anti-doublon : c'est un domaine qui dit où il se
+matérialise, et éteindre un plugin retire un AFFICHAGE, jamais un domaine.
+Réglages est l'exception motivée (un domaine dont la matière est la config,
+rangée à part par conception) ; `feature` et `tool` ne sont pas des domaines
+par définition. **Reste à coder, pas commencé** : collections devient un type
+rendu par le cœur, les deux tuiles de l'atelier sont un bug, et les deux
+mosaïques n'en font plus qu'une — arrangement **remis à zéro** (arbitrage du
+01/09 : recoller deux permutations reconduirait en préférence le clivage
+qu'on supprime).
 
 Chantier du 31/08 (soir, 3) — **les réglages coupés en deux**. Une seule
 app portait quatre sujets qui, à l'usage, se séparent net : deux **interrupteurs
