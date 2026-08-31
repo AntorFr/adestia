@@ -96,19 +96,29 @@ const FR: Readonly<Record<string, string>> = {
   'What is this instruction about?': 'De quoi parle cette instruction ?',
   'This engine keeps its instructions elsewhere.':
     'Ce moteur garde ses instructions ailleurs.',
+  'Search instructions': 'Rechercher une instruction',
+  'Nothing matches that.': 'Aucun résultat.',
+  delivered: 'fournie',
+  'Delivered with the product and rewritten at every start — shown, not edited.':
+    'Fournie avec le produit et réécrite à chaque démarrage — affichée, pas modifiable.',
 
-  // The settings screen
-  'What this instance answers with, reaches, looks like and was told':
-    'Ce avec quoi cette instance répond, ce qu’elle atteint, son aspect, ce qu’on lui a dit',
+  // The cog menu — what is settled without leaving the page
+  Tokens: 'Jetons',
   Appearance: 'Apparence',
-  'Light or dark, or whatever this device is set to':
-    'Clair, sombre, ou ce que demande cet appareil',
   'Follows this device': 'Suit cet appareil',
   System: 'Système',
   Light: 'Clair',
   Dark: 'Sombre',
   'Kept in this browser, like the model choice and the rail width.':
     'Conservé dans ce navigateur, comme le choix du modèle et la largeur du rail.',
+  'This engine takes its credentials from the environment; there is nothing to arm here.':
+    'Ce moteur prend ses identifiants dans l’environnement ; il n’y a rien à armer ici.',
+
+  // The settings app — the half of settings that is content
+  'What this instance reaches, and what it was told':
+    'Ce que cette instance atteint, et ce qu’on lui a dit',
+  file: 'fichier',
+  files: 'fichiers',
 
   // MCP servers, on their settings page
   'MCP servers': 'Serveurs MCP',
@@ -127,6 +137,25 @@ const FR: Readonly<Record<string, string>> = {
   'not observed yet': 'pas encore observé',
   'Reported when a turn last ran — the CLI loads them with the session.':
     'Relevé au dernier tour — le CLI les charge avec la session.',
+  'Add a server': 'Ajouter un serveur',
+  'A new server': 'Un nouveau serveur',
+  'stdio or HTTP': 'stdio ou HTTP',
+  'over HTTP': 'en HTTP',
+  'a local process': 'un processus local',
+  'read-only': 'lecture seule',
+  'Declared in the instance configuration': 'Déclaré dans la configuration de l’instance',
+  'Brought by the plugin': 'Apporté par le plugin',
+  'Added from here': 'Ajouté depuis ici',
+  'Written here, kept beside the instance data — not in the configuration file.':
+    'Écrit ici, conservé à côté des données de l’instance — pas dans le fichier de configuration.',
+  'Read-only here: this one is declared elsewhere, and an edit would be undone at the next start.':
+    'Lecture seule ici : celui-ci est déclaré ailleurs, et une modification serait défaite au prochain démarrage.',
+  'The configuration file now declares this name too, and it wins — this one is not wired.':
+    'Le fichier de configuration déclare aussi ce nom, et c’est lui qui gagne — celui-ci n’est pas branché.',
+  'None wired yet — add one, or declare it in the configuration file.':
+    'Aucun branché — ajoutez-en un, ou déclarez-le dans le fichier de configuration.',
+  'Server declaration': 'Déclaration du serveur',
+  Remove: 'Supprimer',
 
   // The composer
   Model: 'Modèle',

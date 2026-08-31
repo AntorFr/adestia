@@ -37,11 +37,20 @@ beforeEach(async () => {
 })
 
 describe('what the zone offers', () => {
-  it('lists what a person wrote, and not what the product delivered', async () => {
+  it('lists what the product delivered too, and says which is which', async () => {
     // Both files sit in `.claude/skills`. Only the marker tells them apart,
     // which is why the listing reads them instead of pattern-matching names.
-    const files = (await listInstructions(root, ZONE)).map((file) => file.path)
-    expect(files).toEqual(['.claude/skills/mes-regles/SKILL.md', 'CLAUDE.md'])
+    //
+    // Delivered files used to be dropped here. That answered "what is this
+    // agent reading?" with half the truth: on an instance whose behaviour
+    // comes mostly from plugin contracts, the rule somebody was hunting for
+    // was invisible because it was not theirs. So they are listed, flagged,
+    // and refused a write further up.
+    const files = await listInstructions(root, ZONE)
+    const owned = Object.fromEntries(files.map((file) => [file.path, file.managed]))
+    expect(owned['CLAUDE.md']).toBe(false)
+    expect(owned['.claude/skills/mes-regles/SKILL.md']).toBe(false)
+    expect(Object.values(owned).some((managed) => managed === true)).toBe(true)
   })
 
   it('leaves the content surface alone', async () => {

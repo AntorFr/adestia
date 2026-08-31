@@ -1,6 +1,32 @@
 # Status — Adestia
 > MàJ : 2026-08-31
 
+Chantier du 31/08 (soir, 3) — **les réglages coupés en deux**. Une seule
+app portait quatre sujets qui, à l'usage, se séparent net : deux **interrupteurs
+de session** (le jeton de l'agent est-il bon, clair ou sombre, je me déconnecte)
+qu'on règle en une seconde d'où qu'on soit, et deux **contenus** (les serveurs
+que l'instance atteint, la prose qu'on lui a dite) qui se parcourent, se
+cherchent et s'éditent. Les premiers sur le canvas faisaient de chaque bascule
+une navigation loin de ce qu'on lisait ; les seconds en RANGÉES faisaient
+passer deux domaines de l'instance pour des options de boîte de dialogue.
+Donc : **la roue crantée redevient un menu** (jetons — flux d'armement compris,
+sur place —, apparence en trois choix nommés, déconnexion) et **l'app garde le
+canvas**, en tuiles comme toute autre porte d'entrée. Ça a débloqué les deux
+vrais manques : les **serveurs MCP deviennent éditables** (une tuile chacun, la
+déclaration derrière, un bouton pour en ajouter) — ce qui a demandé une 4e
+couche ÉCRIVABLE (`mcp-store.ts`, `<dataDir>/mcp-servers.json` en 0600, grammaire
+du YAML réutilisée, secrets masqués dans les deux sens, collision de nom refusée)
+et de passer aux drivers une FONCTION au lieu d'une liste (serveur branché au
+tour suivant, pas au reboot suivant) ; et les **instructions fournies par le
+produit deviennent visibles**, badgées, sans Enregistrer — les cacher répondait
+à « que lit cet agent ? » avec la moitié de la vérité. Les instructions passent
+en cartes + moteur de recherche (la colonne de noms était taillée pour quatre
+fichiers, il y en a trente). 1178 + 179 verts, typecheck/build OK, **banc
+constaté** (`bench/scenarios/settings-split.mjs`, 12 captures) — il a attrapé
+deux défauts invisibles aux tests : deux boutons retour empilés (il n'en reste
+qu'un, qui remonte d'UN niveau) et le menu qui restait ouvert par-dessus un
+écran qu'on n'avait pas ouvert depuis lui.
+
 Chantier du 31/08 (soir, 2) — **les chemins d'un plugin, ancrés par qui sait
 où il est**. Le plugin ignore où l'opérateur l'a monté (`extensions.pluginsDir`)
 et l'agent ne tourne pas dedans (son cwd est le workspace) : tout chemin écrit

@@ -66,8 +66,15 @@ export interface ClaudeCodeOptions {
    * to a file: the CLI's own `.mcp.json` belongs to the user and the agent,
    * and a product that rewrote it would be editing something it does not own —
    * silently, on every start. Same doctrine as instructions.
+   *
+   * A FUNCTION is accepted beside the list, and that is what the shell hands
+   * over. A server added from the settings screen is written to a file the
+   * core owns; asked for per turn, it is wired on the next message instead of
+   * on the next restart — which is the difference between an "add a server"
+   * button that works and one that looks broken until somebody reboots the
+   * instance.
    */
-  readonly mcpServers?: readonly McpServer[]
+  readonly mcpServers?: readonly McpServer[] | (() => readonly McpServer[])
   /**
    * Hosts the turn's shell tools INSIDE this process, when the embedding can.
    *
@@ -184,7 +191,7 @@ export class ClaudeCodeDriver implements Driver {
   readonly #models: readonly ModelInfo[]
   readonly #armingFlow: ArmingFlow | undefined
   readonly #asks: AskDesk | undefined
-  readonly #mcpServers: readonly McpServer[]
+  readonly #mcpServers: () => readonly McpServer[]
   readonly #toolsHost: ((tools: ShellToolsHandle) => unknown) | undefined
   readonly #tokens: McpTokens
   /** What the last session said about them. Empty until a turn has run. */
@@ -203,9 +210,10 @@ export class ClaudeCodeDriver implements Driver {
     this.#models = options.models ?? []
     this.#armingFlow = options.armingFlow
     this.#asks = options.asks
-    // Shaped once, at construction: the mapping is fixed for the process's
-    // life, and doing it per turn would repeat the same work on every message.
-    this.#mcpServers = options.mcpServers ?? []
+    // Kept as a question rather than an answer: a fixed list is wrapped, and
+    // a caller that has a live one is asked afresh every time it matters.
+    const given = options.mcpServers ?? []
+    this.#mcpServers = typeof given === 'function' ? given : () => given
     this.#toolsHost = options.toolsHost
     this.#tokens = new McpTokens(options.fetchImpl ?? fetch, options.refreshStore)
   }
@@ -294,7 +302,7 @@ export class ClaudeCodeDriver implements Driver {
         // offering to report the health of nothing is a panel that looks
         // broken. The CLI's own `.mcp.json` servers are the user's, and Adestia
         // does not claim to report on what it did not wire.
-        ...(this.#mcpServers.length > 0 ? (['mcpStatus'] as const) : []),
+        ...(this.#mcpServers().length > 0 ? (['mcpStatus'] as const) : []),
         // Declared only when the instance actually configured a catalogue:
         // an empty selector is worse than no selector.
         ...(this.#models.length > 0 ? (['modelSelection'] as const) : []),
@@ -344,7 +352,7 @@ export class ClaudeCodeDriver implements Driver {
   mcpStatus(): Promise<readonly McpServerHealth[]> {
     if (this.#mcpHealth.length > 0) return Promise.resolve(this.#mcpHealth)
     return Promise.resolve(
-      this.#mcpServers.map((server) => ({ name: server.name, state: 'unknown' as const })),
+      this.#mcpServers().map((server) => ({ name: server.name, state: 'unknown' as const })),
     )
   }
 
@@ -352,7 +360,7 @@ export class ClaudeCodeDriver implements Driver {
     // Resolved per turn, not per process: a hub's token lives about an hour,
     // and a map built at construction would be stale by the second morning.
     const mcpServers: Record<string, unknown> = {
-      ...(await toSdkServers(this.#mcpServers, this.#tokens, request.callerToken)),
+      ...(await toSdkServers(this.#mcpServers(), this.#tokens, request.callerToken)),
     }
     if (request.tools) {
       // The instance's own tools. In-process when the embedding provided a

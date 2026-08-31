@@ -27,7 +27,7 @@ import { isPublicRoute, resolveIdentity, type Identity } from './auth.js'
 import { AttachmentInbox, frameAttachments, type StoredAttachment } from './attachments.js'
 import { frameView } from './screen.js'
 import { ConversationStore } from './conversations.js'
-import type { AdestiaConfig } from './config.js'
+import { readMcpServer, type AdestiaConfig } from './config.js'
 import { frontendPayload, type DiscoveredPlugin, type DiscoveryProblem } from './extensions.js'
 import {
   describeInstructionPaths,
@@ -37,6 +37,7 @@ import {
   writeInstruction,
 } from './instructions.js'
 import { MANAGED_MARKER } from './skills.js'
+import { McpStore, maskServer, unmaskServer, type McpServerView } from './mcp-store.js'
 import { registerOidc } from './oidc-routes.js'
 import { registerMcp } from './mcp-routes.js'
 import { registerFiles } from './files.js'
@@ -76,6 +77,14 @@ export interface AppDependencies {
   readonly webRoot?: string | undefined
   /** Injected in tests; production stores secrets under the data directory. */
   readonly secrets?: SecretStore
+  /**
+   * The servers the shell itself wrote. Injected the way `secrets` is.
+   *
+   * Handed in rather than built here whenever the process already holds one:
+   * `start()` keeps the very same instance in the driver's hands, so a server
+   * added from a browser is wired on the next turn instead of the next boot.
+   */
+  readonly mcpStore?: McpStore
   /**
    * Where the engine's questions wait, in `ask` posture. Absent in `open`,
    * where nothing ever asks and the answer route is not mounted at all.
@@ -205,6 +214,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   const desk = new TurnDesk(driver, limiter)
   const conversations = new ConversationStore(config.dataDir)
   const secrets = deps.secrets ?? new SecretStore(config.dataDir)
+  const mcpStore = deps.mcpStore ?? new McpStore(config.dataDir)
   const inbox = new AttachmentInbox(config.dataDir, config.attachments)
   const arming = new ArmingSessions()
   const descriptor: DriverDescriptor = await driver.describe()
@@ -395,6 +405,134 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     }
     const mcpStatus = (driver as Driver & { mcpStatus(): Promise<unknown> }).mcpStatus
     return { servers: await mcpStatus.call(driver) }
+  })
+
+  /**
+   * Every outbound server this instance knows about, and who owns it.
+   *
+   * `/api/mcp/status` answers "what are they doing"; this answers "what are
+   * they, and which of them may I touch". Two routes rather than one because
+   * health is a driver CAPABILITY that legitimately 404s, while the wiring is
+   * always knowable — folding them together would have made a screen that can
+   * add a server disappear on an engine that cannot report on one.
+   */
+  const mcpViews = async (): Promise<readonly McpServerView[]> => {
+    const views: McpServerView[] = []
+    const declared = new Set<string>()
+
+    for (const server of config.mcpServers) {
+      declared.add(server.name)
+      views.push({
+        name: server.name,
+        source: 'config',
+        editable: false,
+        transport: server.url ? 'http' : 'stdio',
+        config: maskServer(server),
+      })
+    }
+    for (const plugin of plugins) {
+      if (!plugin.active) continue
+      for (const server of plugin.manifest.mcpServers ?? []) {
+        if (declared.has(server.name)) continue
+        declared.add(server.name)
+        views.push({
+          name: server.name,
+          source: 'plugin',
+          owner: plugin.manifest.id,
+          editable: false,
+          transport: server.url ? 'http' : 'stdio',
+          config: maskServer(server),
+        })
+      }
+    }
+    for (const server of await mcpStore.list()) {
+      views.push({
+        name: server.name,
+        source: 'ui',
+        editable: true,
+        transport: server.url ? 'http' : 'stdio',
+        config: maskServer(server),
+        // A name the config or a plugin took AFTER this one was added. The
+        // write path refuses a collision, so this can only happen when a
+        // file was edited behind us — and a row that quietly did nothing
+        // would be the worst possible way to find that out.
+        ...(declared.has(server.name) ? { shadowed: true } : {}),
+      })
+    }
+    return views
+  }
+
+  app.get('/api/mcp/servers', async () => ({ servers: await mcpViews() }))
+
+  /**
+   * Adding and editing, which only the shell's own layer allows.
+   *
+   * The proposal is unmasked against what is stored and then judged by the
+   * CONFIG's grammar — the same function the YAML goes through — so there is
+   * no second, looser way into this instance's wiring.
+   */
+  const acceptServer = async (
+    proposed: unknown,
+    replacing: string | undefined,
+    reply: FastifyReply,
+  ): Promise<FastifyReply | { server: Record<string, unknown> }> => {
+    if (proposed === null || typeof proposed !== 'object' || Array.isArray(proposed)) {
+      return reply.code(400).send({ error: 'a server declaration is required' })
+    }
+    const stored = await mcpStore.list()
+    const previous = replacing ? stored.find((server) => server.name === replacing) : undefined
+    if (replacing && !previous) {
+      return reply.code(404).send({ error: `no server named "${replacing}" was added here` })
+    }
+
+    const issues: string[] = []
+    const filled = unmaskServer(proposed as Record<string, unknown>, previous, issues)
+    const server = readMcpServer(filled, 'server', issues)
+    if (!server || issues.length > 0) {
+      return reply.code(400).send({ error: issues.join('; ') || 'that is not a server' })
+    }
+
+    // A name is where the agent's tools live. Two servers answering to one is
+    // a tool call going somewhere nobody chose, so a collision is refused
+    // here rather than resolved by precedence.
+    const taken =
+      config.mcpServers.some((other) => other.name === server.name) ||
+      plugins.some(
+        (plugin) =>
+          plugin.active &&
+          (plugin.manifest.mcpServers ?? []).some((other) => other.name === server.name),
+      ) ||
+      stored.some((other) => other.name === server.name && other.name !== replacing)
+    if (taken) {
+      return reply
+        .code(409)
+        .send({ error: `"${server.name}" is already declared on this instance` })
+    }
+
+    const kept = stored.filter((other) => other.name !== replacing)
+    await mcpStore.save([...kept, server])
+    return { server: maskServer(server) }
+  }
+
+  app.post<{ Body: unknown }>('/api/mcp/servers', async (request, reply) =>
+    acceptServer(request.body, undefined, reply),
+  )
+
+  app.put<{ Params: { name: string }; Body: unknown }>(
+    '/api/mcp/servers/:name',
+    async (request, reply) => acceptServer(request.body, request.params.name, reply),
+  )
+
+  app.delete<{ Params: { name: string } }>('/api/mcp/servers/:name', async (request, reply) => {
+    const stored = await mcpStore.list()
+    if (!stored.some((server) => server.name === request.params.name)) {
+      // 404 rather than a silent success: the only servers this route can
+      // remove are the ones it wrote, and "gone" would read as "removed" for
+      // a name that is actually still wired from the config.
+      return reply.code(404).send({ error: `no server named "${request.params.name}" was added here` })
+    }
+    await mcpStore.save(stored.filter((server) => server.name !== request.params.name))
+    return { removed: request.params.name }
   })
 
   await app.register(multipart, {

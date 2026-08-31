@@ -1,5 +1,5 @@
 /**
- * The instruction zone: the prose a person may read and correct.
+ * The instruction zone: the prose a person may read, and mostly correct.
  *
  * Two axes decide what belongs here, and conflating them was the mistake this
  * file exists to avoid.
@@ -9,14 +9,15 @@
  * is deliberately not served here. Only the first kind is.
  *
  * WHO WROTE IT. The core delivers plugin contracts into the very same folders,
- * rewriting them at EVERY start. Offering to edit one would offer an edit that
- * silently disappears on the next restart — so delivered files are excluded by
- * their marker, not by their path. Their absence is deliberate in the other
- * direction too: a plugin's data-format contract is a technical spec nobody
- * asked to read.
- *
- * What is left is exactly what somebody typed themselves, or asked the agent
- * to type for them: "read my email like this", "always answer in French".
+ * rewriting them at EVERY start. A delivered file is therefore told apart by
+ * its marker, never by its path — but it is REPORTED rather than hidden, and
+ * that is a correction. Hiding them meant the screen answered "what is the
+ * agent reading?" with half the truth: an instance whose behaviour comes
+ * largely from plugin contracts showed a near-empty list, and somebody
+ * hunting for the rule that made the agent do something could not find it
+ * because it was not theirs. So `managed` travels with every file, the shell
+ * draws those without a Save, and the route refuses the write anyway — an
+ * edit that disappears at the next restart is still worth refusing twice.
  */
 
 import { readFile, readdir, stat, writeFile, mkdir } from 'node:fs/promises'
@@ -29,6 +30,13 @@ export interface InstructionFile {
   readonly path: string
   readonly modified: string
   readonly bytes: number
+  /**
+   * Delivered by the product or by a plugin, and rewritten at every start.
+   *
+   * Read from the file's own marker rather than from where it sits, because
+   * the core writes its contracts into the very folders a person writes in.
+   */
+  readonly managed: boolean
 }
 
 /** Extensions a person edits as text. Anything else is not prose. */
@@ -40,10 +48,10 @@ const isProse = (name: string): boolean => {
 }
 
 /**
- * Everything under one declared path that a person may edit.
+ * Everything under one declared path, each carrying who owns it.
  *
- * A managed file is skipped after being READ, which costs an open per file and
- * is the point: the marker is the truth about who owns a file, and inferring
+ * Every file is READ, not stat-ed, which costs an open apiece and is the
+ * point: the marker is the truth about who owns a file, and inferring
  * ownership from its name would be exactly the guess that makes an edit
  * vanish.
  */
@@ -63,12 +71,12 @@ async function walk(root: string, path: string, depth = 0): Promise<InstructionF
   if (info.isFile()) {
     if (!isProse(absolute)) return []
     const contents = await readFile(absolute, 'utf8').catch(() => '')
-    if (contents.includes(MANAGED_MARKER)) return []
     return [
       {
         path: path.split(sep).join('/'),
         modified: new Date(info.mtimeMs).toISOString(),
         bytes: info.size,
+        managed: contents.includes(MANAGED_MARKER),
       },
     ]
   }

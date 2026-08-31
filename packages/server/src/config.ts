@@ -565,6 +565,111 @@ function readMcpAuth(
   }
 }
 
+/**
+ * One MCP server entry, validated.
+ *
+ * Split out of the list reader so ONE grammar governs the two places a server
+ * may now be declared: the operator's YAML, and the overlay the shell writes
+ * (`mcp-store.ts`). A looser second validator on the write path would be a way
+ * to store, from a browser, a server the config file itself would have refused.
+ */
+export function readMcpServer(
+  entry: unknown,
+  where: string,
+  issues: string[],
+): McpServerConfig | undefined {
+  if (!isObject(entry)) {
+    issues.push(`${where} must be a mapping`)
+    return undefined
+  }
+
+  const name = entry['name']
+  if (typeof name !== 'string' || !/^[a-zA-Z][\w-]{0,63}$/.test(name)) {
+    issues.push(`${where}.name is required (letters, digits, dashes and underscores)`)
+    return undefined
+  }
+
+  const command = typeof entry['command'] === 'string' ? entry['command'] : undefined
+  const url = typeof entry['url'] === 'string' ? entry['url'] : undefined
+  if (!command && !url) {
+    issues.push(`${where}: needs either "command" (stdio) or "url" (http)`)
+    return undefined
+  }
+  if (command && url) {
+    issues.push(`${where}: has both "command" and "url" — pick one transport`)
+    return undefined
+  }
+
+  const args = entry['args']
+  if (args !== undefined && !(Array.isArray(args) && args.every((a) => typeof a === 'string'))) {
+    issues.push(`${where}.args must be a list of strings`)
+    return undefined
+  }
+
+  const maps: Record<'env' | 'headers', Record<string, string> | undefined> = {
+    env: undefined,
+    headers: undefined,
+  }
+  let bad = false
+  for (const field of ['env', 'headers'] as const) {
+    const value = entry[field]
+    if (value === undefined) continue
+    if (!isObject(value)) {
+      issues.push(`${where}.${field} must be a mapping`)
+      bad = true
+      break
+    }
+    const table: Record<string, string> = {}
+    for (const [key, item] of Object.entries(value)) {
+      if (typeof item !== 'string') {
+        issues.push(`${where}.${field}.${key} must be a string`)
+        bad = true
+        break
+      }
+      if (/^\$\{[A-Za-z_][A-Za-z0-9_]*\}$/.test(item)) {
+        // Same rule as a secret: a literal "${TOKEN}" reaching a server
+        // fails later, in a call, blaming the server rather than the config.
+        issues.push(`${where}.${field}.${key} is still "${item}" — that variable is not set`)
+        bad = true
+        break
+      }
+      table[key] = item
+    }
+    maps[field] = table
+  }
+  if (bad) return undefined
+
+  const identity = entry['identity']
+  if (identity !== undefined && identity !== 'machine' && identity !== 'user') {
+    issues.push(`${where}.identity must be "machine" or "user"`)
+    return undefined
+  }
+
+  const auth = readMcpAuth(entry['auth'], where, issues)
+  if (auth === false) return undefined
+  if (identity === 'user' && !url) {
+    issues.push(`${where}.identity: user needs "url" — a local process has no caller to act as`)
+    return undefined
+  }
+  if (auth && !url) {
+    // A stdio server is a local process; there is nobody to present a bearer
+    // to. Accepting it would mint a token every turn and hand it to nothing.
+    issues.push(`${where}.auth needs "url" — a stdio server has nobody to authenticate to`)
+    return undefined
+  }
+
+  return {
+    name,
+    ...(identity ? { identity } : {}),
+    ...(auth ? { auth } : {}),
+    ...(command ? { command } : {}),
+    ...(args ? { args: args as readonly string[] } : {}),
+    ...(url ? { url } : {}),
+    ...(maps.env ? { env: maps.env } : {}),
+    ...(maps.headers ? { headers: maps.headers } : {}),
+  }
+}
+
 function readMcpServers(raw: unknown, issues: string[]): readonly McpServerConfig[] {
   if (raw === undefined) return []
   if (!Array.isArray(raw)) {
@@ -576,103 +681,15 @@ function readMcpServers(raw: unknown, issues: string[]): readonly McpServerConfi
   const seen = new Set<string>()
 
   for (const [index, entry] of raw.entries()) {
-    const where = `mcp.servers[${index}]`
-    if (!isObject(entry)) {
-      issues.push(`${where} must be a mapping`)
-      continue
-    }
-
-    const name = entry['name']
-    if (typeof name !== 'string' || !/^[a-zA-Z][\w-]{0,63}$/.test(name)) {
-      issues.push(`${where}.name is required (letters, digits, dashes and underscores)`)
-      continue
-    }
-    if (seen.has(name)) {
+    const server = readMcpServer(entry, `mcp.servers[${index}]`, issues)
+    if (!server) continue
+    if (seen.has(server.name)) {
       // Two servers with one name is a config whose meaning depends on order.
-      issues.push(`${where}: "${name}" is declared twice`)
+      issues.push(`mcp.servers[${index}]: "${server.name}" is declared twice`)
       continue
     }
-    seen.add(name)
-
-    const command = typeof entry['command'] === 'string' ? entry['command'] : undefined
-    const url = typeof entry['url'] === 'string' ? entry['url'] : undefined
-    if (!command && !url) {
-      issues.push(`${where}: needs either "command" (stdio) or "url" (http)`)
-      continue
-    }
-    if (command && url) {
-      issues.push(`${where}: has both "command" and "url" — pick one transport`)
-      continue
-    }
-
-    const args = entry['args']
-    if (args !== undefined && !(Array.isArray(args) && args.every((a) => typeof a === 'string'))) {
-      issues.push(`${where}.args must be a list of strings`)
-      continue
-    }
-
-    const maps: Record<'env' | 'headers', Record<string, string> | undefined> = {
-      env: undefined,
-      headers: undefined,
-    }
-    let bad = false
-    for (const field of ['env', 'headers'] as const) {
-      const value = entry[field]
-      if (value === undefined) continue
-      if (!isObject(value)) {
-        issues.push(`${where}.${field} must be a mapping`)
-        bad = true
-        break
-      }
-      const table: Record<string, string> = {}
-      for (const [key, item] of Object.entries(value)) {
-        if (typeof item !== 'string') {
-          issues.push(`${where}.${field}.${key} must be a string`)
-          bad = true
-          break
-        }
-        if (/^\$\{[A-Za-z_][A-Za-z0-9_]*\}$/.test(item)) {
-          // Same rule as a secret: a literal "${TOKEN}" reaching a server
-          // fails later, in a call, blaming the server rather than the config.
-          issues.push(`${where}.${field}.${key} is still "${item}" — that variable is not set`)
-          bad = true
-          break
-        }
-        table[key] = item
-      }
-      maps[field] = table
-    }
-    if (bad) continue
-
-    const identity = entry['identity']
-    if (identity !== undefined && identity !== 'machine' && identity !== 'user') {
-      issues.push(`${where}.identity must be "machine" or "user"`)
-      continue
-    }
-
-    const auth = readMcpAuth(entry['auth'], where, issues)
-    if (auth === false) continue
-    if (identity === 'user' && !url) {
-      issues.push(`${where}.identity: user needs "url" — a local process has no caller to act as`)
-      continue
-    }
-    if (auth && !url) {
-      // A stdio server is a local process; there is nobody to present a bearer
-      // to. Accepting it would mint a token every turn and hand it to nothing.
-      issues.push(`${where}.auth needs "url" — a stdio server has nobody to authenticate to`)
-      continue
-    }
-
-    servers.push({
-      name,
-      ...(identity ? { identity } : {}),
-      ...(auth ? { auth } : {}),
-      ...(command ? { command } : {}),
-      ...(args ? { args: args as readonly string[] } : {}),
-      ...(url ? { url } : {}),
-      ...(maps.env ? { env: maps.env } : {}),
-      ...(maps.headers ? { headers: maps.headers } : {}),
-    })
+    seen.add(server.name)
+    servers.push(server)
   }
 
   return servers
