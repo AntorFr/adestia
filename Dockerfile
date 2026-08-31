@@ -5,7 +5,20 @@
 # and freezing one into the image would make the engine an image property
 # rather than a configuration one.
 
-FROM node:22-slim AS build
+# Pinned to the BUILDER's architecture, not the target's, and that is what
+# keeps a multi-arch release cheap. Everything this stage produces is
+# JavaScript — `tsc` and `vite` emit the same bytes whatever CPU ran them — so
+# emulating it for arm64 buys nothing and costs everything: the v0.18.0 release
+# spent the best part of an hour running `npm ci` under QEMU, against five
+# minutes when the cache was warm.
+#
+# ⚠️ Safe only because the RUNTIME tree is pure JavaScript. The server's
+# production dependencies (fastify, chokidar, openid-client, yaml) ship no
+# native binding, and `npm prune --omit=dev` below removes the toolchain that
+# does (rollup, lightningcss). Add a production dependency with a `.node`
+# binary and this line starts shipping amd64 objects to arm64 machines —
+# silently, since nothing here would fail to build.
+FROM --platform=$BUILDPLATFORM node:22-slim AS build
 WORKDIR /build
 
 # Manifests first: dependencies change far less often than source, and this
