@@ -79,9 +79,12 @@ describe('translation', () => {
       ...translate({ type: 'tool.execution_complete', data: { toolCallId: '1', success: false } } as never, state),
     ]
     expect(events).toEqual([
-      { type: 'tool-use', name: 'bash', target: 'ls' },
-      { type: 'tool-use', name: 'bash', target: 'pwd' },
-      { type: 'tool-result', name: 'bash', ok: false },
+      { type: 'tool-use', name: 'bash', target: 'ls', id: '1' },
+      { type: 'tool-use', name: 'bash', target: 'pwd', id: '2' },
+      // The id travels WITH the event: recovering the name from it here and
+      // then dropping it left the consumer matching on "bash" alone, which is
+      // the mislabelling this test's name claims to prevent.
+      { type: 'tool-result', name: 'bash', ok: false, id: '1' },
     ])
   })
 

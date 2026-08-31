@@ -97,6 +97,28 @@ describe('applyEvent', () => {
     expect(calls(state).map((t) => t.ok)).toEqual([undefined, false])
   })
 
+  it('marks the call whose id the result carries, not the latest one', () => {
+    // Same two Reads, but the engine says WHICH one came back: the first.
+    // Falling back to "the most recent unresolved" here blames /b.md for a
+    // failure that belongs to /a.md, and both rows look identical on screen.
+    const state = reduce([
+      { type: 'tool-use', name: 'Read', target: '/a.md', id: 'a' },
+      { type: 'tool-use', name: 'Read', target: '/b.md', id: 'b' },
+      { type: 'tool-result', name: 'Read', ok: false, id: 'a' },
+    ])
+    expect(calls(state).map((t) => t.ok)).toEqual([false, undefined])
+  })
+
+  it('settles both calls when both results come back', () => {
+    const state = reduce([
+      { type: 'tool-use', name: 'Read', target: '/a.md', id: 'a' },
+      { type: 'tool-use', name: 'Read', target: '/b.md', id: 'b' },
+      { type: 'tool-result', name: 'Read', ok: false, id: 'a' },
+      { type: 'tool-result', name: 'Read', ok: true, id: 'b' },
+    ])
+    expect(calls(state).map((t) => t.ok)).toEqual([false, true])
+  })
+
   it('ignores a result for a tool that was never announced', () => {
     expect(calls(reduce([{ type: 'tool-result', name: 'Ghost', ok: true }]))).toEqual([])
   })

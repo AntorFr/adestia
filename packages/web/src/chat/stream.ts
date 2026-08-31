@@ -80,6 +80,11 @@ export interface ToolCall {
   readonly name: string
   readonly target?: string | undefined
   readonly ok?: boolean | undefined
+  /**
+   * The driver's own id for the call, when it has one: what lets a result
+   * mark the row it actually belongs to. Never drawn — matching only.
+   */
+  readonly id?: string | undefined
 }
 
 /**
@@ -142,7 +147,7 @@ export function applyEvent(state: TurnState, event: TurnEvent): TurnState {
       return editLast(state, (part) => ({ ...part, text: part.text + event.text }))
 
     case 'tool-use': {
-      const call = { name: event.name, target: event.target }
+      const call = { name: event.name, target: event.target, id: event.id }
       const last = state.parts[state.parts.length - 1]
       // Going back to work after having spoken starts the NEXT message. A
       // tool called before a word was said belongs to the part being written.
@@ -153,12 +158,19 @@ export function applyEvent(state: TurnState, event: TurnEvent): TurnState {
     }
 
     case 'tool-result': {
-      // Mark the most recent unresolved call of that name, searching back
-      // THROUGH the parts: tool calls can overlap, and a slow one can still
-      // be running when the agent has already opened the next part.
+      // Mark the call this result belongs to, searching back THROUGH the
+      // parts: tool calls can overlap, and a slow one can still be running
+      // when the agent has already opened the next part. Matched on the
+      // driver's id when there is one — the name alone marks the wrong row as
+      // soon as two calls of the same tool overlap — and on the most recent
+      // unresolved call of that name otherwise.
       for (let index = state.parts.length - 1; index >= 0; index -= 1) {
         const tools = state.parts[index]!.tools
-        const at = findLastIndex(tools, (tool) => tool.name === event.name && tool.ok === undefined)
+        const at = findLastIndex(tools, (tool) =>
+          event.id !== undefined && tool.id !== undefined
+            ? tool.id === event.id
+            : tool.name === event.name && tool.ok === undefined,
+        )
         if (at === -1) continue
         const marked = [...tools]
         marked[at] = { ...marked[at]!, ok: event.ok }
