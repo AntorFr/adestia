@@ -1,6 +1,20 @@
 # Status — Adestia
 > MàJ : 2026-09-01
 
+Chantier du 01/09 (4) — **correction de ma propre régression : la tuile
+Réglages revient**. En fusionnant les mosaïques j'avais rendu cette tuile
+conditionnelle (visible seulement sur une instance vide), au motif qu'elle
+doublonnait avec le cog. Faux, et `SettingsMenu.tsx` l'écrivait déjà : le cog
+tient les interrupteurs de SESSION (thème, connexion, jeton), tandis que le
+CONTENU — serveurs MCP, instructions — « est une app sur le canevas d'accueil,
+avec des tuiles comme tout le reste ». Sur une instance peuplée, les serveurs
+et les instructions n'avaient donc PLUS AUCUNE PORTE. Trouvé parce que
+Monsieur a demandé confirmation que la tuile restait visible en toute
+configuration — la question valait mieux que ma réponse. Rétabli à
+l'identique de l'origine : dessinée toujours, en clôture de mosaïque, HORS de
+la permutation (un arrangement porte sur les sujets, pas sur l'instance).
+1195 verts, banc constaté.
+
 Chantier du 01/09 (3) — **l'atelier rentre dans le rang : un domaine, une
 porte**. Il s'affichait DEUX fois — sa tuile de plugin à côté de la tuile du
 dossier `domaines/diy` dont il est une vue. Vérifié dans le pod agent-gw qui

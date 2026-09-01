@@ -184,12 +184,14 @@ describe('the landing canvas', () => {
     expect(screen.getByText('DIY')).toBeTruthy()
   })
 
-  it('keeps a Settings tile only where there is nothing else', () => {
-    // Settings has a permanent home behind the cog, so a tile for it beside
-    // real subjects is a duplicate. On a fresh instance there is nothing else
-    // at all, and that tile is the way in — the credential is armed behind it.
+  it('always closes the mosaic with the shell’s own tile', () => {
+    // Made conditional for one commit, on the grounds that the cog offers it
+    // already. It does not: the cog holds the switches about this SESSION,
+    // while the servers and the instructions are content on the canvas,
+    // reached from this tile. Without it they had no door at all on a
+    // populated instance.
     render(<Home {...props} />)
-    expect(screen.queryByText('Settings')).toBeNull()
+    expect(screen.getByText('Settings')).toBeTruthy()
 
     cleanup()
     render(<Home {...props} plugins={[]} entries={[]} />)
@@ -277,7 +279,8 @@ describe('arranging the mosaics', () => {
     const map = withStorage()
     map.set('adestia.order.domains', JSON.stringify(['scan', 'todo', 'planif']))
     home()
-    expect(labels()).toEqual(['scan', 'todo', 'planif'])
+    // The shell's own closes the mosaic, whatever was arranged before it.
+    expect(labels()).toEqual(['scan', 'todo', 'planif', 'Settings'])
   })
 
   it('ignores what the two old mosaics had been arranged as', () => {
@@ -287,7 +290,7 @@ describe('arranging the mosaics', () => {
     const map = withStorage()
     map.set('adestia.order.apps', JSON.stringify(['scan', 'todo', 'planif']))
     home()
-    expect(labels()).toEqual(['todo', 'planif', 'scan'])
+    expect(labels()).toEqual(['todo', 'planif', 'scan', 'Settings'])
     expect(map.get('adestia.order.domains')).toBeUndefined()
   })
 
@@ -296,7 +299,7 @@ describe('arranging the mosaics', () => {
     home()
     fireEvent.click(screen.getByRole('button', { name: 'Arrange' }))
     fireEvent.click(screen.getByRole('button', { name: 'Move later — todo' }))
-    expect(labels()).toEqual(['planif', 'todo', 'scan'])
+    expect(labels()).toEqual(['planif', 'todo', 'scan', 'Settings'])
     expect(JSON.parse(map.get('adestia.order.domains') as string)).toEqual([
       'planif',
       'todo',
@@ -317,7 +320,7 @@ describe('arranging the mosaics', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: 'Arrange' }))
     fireEvent.click(screen.getByRole('button', { name: 'Move earlier — DIY' }))
-    expect(labels()).toEqual(['todo', 'planif', 'DIY', 'scan'])
+    expect(labels()).toEqual(['todo', 'planif', 'DIY', 'scan', 'Settings'])
     expect(JSON.parse(map.get('adestia.order.domains') as string)).toEqual([
       'todo',
       'planif',
@@ -331,7 +334,7 @@ describe('arranging the mosaics', () => {
     home()
     fireEvent.click(screen.getByRole('button', { name: 'Arrange' }))
     fireEvent.click(screen.getByRole('button', { name: 'Move earlier — todo' }))
-    expect(labels()).toEqual(['todo', 'planif', 'scan'])
+    expect(labels()).toEqual(['todo', 'planif', 'scan', 'Settings'])
   })
 
   it('does not open a tile somebody is trying to pick up', () => {
@@ -358,14 +361,14 @@ describe('arranging the mosaics', () => {
     map.set('adestia.order.domains', JSON.stringify(['scan', 'todo']))
     home({ plugins: [...three, plugin('voyages')] })
     // Unmentioned goes last; nothing is lost to a stale preference.
-    expect(labels()).toEqual(['scan', 'todo', 'planif', 'voyages'])
+    expect(labels()).toEqual(['scan', 'todo', 'planif', 'voyages', 'Settings'])
   })
 
   it('leaves no hole where a disabled app used to be', () => {
     const map = withStorage()
     map.set('adestia.order.domains', JSON.stringify(['scan', 'planif', 'todo']))
     home({ plugins: [plugin('scan'), plugin('todo')] })
-    expect(labels()).toEqual(['scan', 'todo'])
+    expect(labels()).toEqual(['scan', 'todo', 'Settings'])
   })
 
   it('keeps a folder out of the mosaic once its app absorbs it', () => {
@@ -377,15 +380,16 @@ describe('arranging the mosaics', () => {
       plugins: [{ ...plugin('todo'), absorbs: ['todo'] } as unknown as LoadedPlugin],
       entries: [{ path: 'todo/courses.md', title: 'Courses', fields: {} }],
     })
-    expect(labels()).toEqual(['todo'])
+    expect(labels()).toEqual(['todo', 'Settings'])
   })
 
-  it('ignores a stale order that names the shell’s own tile', () => {
+  it('never lets the shell’s own tile be arranged away', () => {
     const map = withStorage()
-    // Written by hand, or by a version that put Settings in the permutation.
-    // It is not a domain of this instance and must not appear among them.
+    // A stale order that names it — written by hand, or by a version that did
+    // put it in the permutation — must not move it or duplicate it: it is not
+    // one of the subjects the arrangement is about.
     map.set('adestia.order.domains', JSON.stringify(['shell:settings', 'scan']))
     home()
-    expect(labels()).toEqual(['scan', 'todo', 'planif'])
+    expect(labels()).toEqual(['scan', 'todo', 'planif', 'Settings'])
   })
 })
