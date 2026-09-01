@@ -34,7 +34,7 @@ Un seul fichier, avec une frontière dedans.
   "schemaVersion": "4.0",
   "design": { … },     // LA SOURCE — hors-tout, matières, choix de montage
   "derive": {          // la signature de ce qui a produit le reste
-    "de": "sha256:…",  //   empreinte du design
+    "de": "fnv1a64:…", //   empreinte du design
     "moteur": "…"
   },
   "pieces": [ … ],     // DÉRIVÉ — recalculable, jamais édité à la main
@@ -147,8 +147,7 @@ pas l'envie d'aller vite »*. Ce n'était pas une exception, c'était une colonn
 
 ## Les cotes : des relations, pas des soustractions
 
-`derive/` résout un système de **contraintes linéaires** (Cassowary, porté —
-aucune dépendance externe, comme tout plugin ici) plutôt qu'il n'évalue des
+`derive/` résout un système de **relations linéaires** plutôt qu'il n'évalue des
 formules dirigées.
 
 ```
@@ -162,28 +161,40 @@ cote.h + bas.ep == meuble.H
 Trois propriétés en découlent :
 
 - **Le sur-contraint est refusé et nommé.** Poser en plus que le dessus
-  capture le côté rend le système contradictoire ; le solveur refuse la
-  relation fautive. La même erreur, écrite en formules, avait produit `832` —
-  un nombre parfaitement plausible, né d'une soustraction faite deux fois.
-- **Ça marche dans les deux sens.** Figer une cote qui était une conséquence
-  (« j'ai des côtés de 851 en chute ») demande de libérer une entrée en
-  échange, et le moteur dit lesquelles.
-- **Les préférences existent** : « les trois tiroirs d'égale hauteur » en
-  faible, « la somme fait la hauteur utile » en obligatoire.
+  capture le côté rend le système contradictoire ; la relation fautive est
+  refusée à son ajout, avec le nom de celles qu'elle contredit. La même
+  erreur, écrite en formules, avait produit `832` — un nombre parfaitement
+  plausible, né d'une soustraction faite deux fois.
+- **Ça marche dans les deux sens.** Fixer une cote qui était une conséquence
+  (« j'ai des côtés de 851 en chute ») remonte au hors-tout du meuble, sans
+  qu'aucune relation soit réécrite.
+- **Le redondant se voit aussi** : une relation qui n'apporte rien est une
+  règle que quelqu'un croit appliquer.
 
-**Le sous-contraint, lui, n'est pas détecté par le solveur** — il choisit une
-valeur, sans se plaindre. C'est le mode d'échec qu'on cherche justement à
-supprimer : une formule oubliée laisse un champ vide, une relation oubliée
-produit un nombre. Le compteur de degrés de liberté n'est donc pas une option :
-on résout deux fois avec des préférences différentes, et toute cote qui bouge
-est une cote non déterminée, listée par son nom. C'est le « fully constrained »
-d'un logiciel de CAO, et sans lui le solveur serait plus dangereux que les
-formules qu'il remplace.
+**Cassowary a été écarté en cours de route, et pour la raison qui comptait le
+plus.** Le plan disait de le porter — c'est l'algorithme d'Auto Layout, il gère
+les inégalités et les priorités, et son sur-contraint est nommé. Mais **il ne
+détecte pas le sous-contraint** : il choisit une valeur sans se plaindre,
+c'est-à-dire exactement le mode d'échec qu'on veut supprimer. Une formule
+oubliée laisse un champ vide et ça se voit ; une relation oubliée produirait un
+nombre. Il aurait fallu le doubler d'un compteur de degrés de liberté approché,
+par perturbation.
+
+Or les relations de menuiserie sont des **égalités**, et une élimination de
+Gauss les résout exactement — en donnant par construction ce que Cassowary ne
+donne pas : le rang, donc les degrés de liberté **exacts**, et le nom des cotes
+que rien ne détermine. Le « fully constrained » d'un logiciel de CAO, sans
+approximation et en cent cinquante lignes.
+
+Ce qui reste dehors : les inégalités et les préférences (« trois tiroirs
+d'égale hauteur » en faible contre « la somme fait la hauteur utile » en
+obligatoire). Le jour où un projet en demande, un simplexe s'ajoute par-dessus
+— le catalogue de relations, lui, ne bouge pas.
 
 **Frontière** : le solveur ne prend que les cotes. Les comptages (une charnière
 tous les 60 cm, les Tenso d'une jonction), les choix de méthode et le
-calepinage restent des fonctions et des tables — Cassowary ne fait que du
-linéaire continu.
+calepinage restent des fonctions et des tables — une élimination linéaire ne
+sait rien des entiers ni des arrondis.
 
 ## Les lots
 
@@ -191,7 +202,7 @@ linéaire continu.
    depuis le 3.0, les tables et l'évaluation métier. L'agent continue d'écrire
    les cotes ; le moteur les recalcule et refuse. Le lot est fini quand il
    rattrape les quatorze erreurs d'un workbook réel, versées au harnais.
-2. **La dérivation.** Le solveur, les ancrages, les degrés de liberté :
+2. **La dérivation.** Les relations, les ancrages, les degrés de liberté :
    l'agent cesse d'écrire des cotes. En fin de lot, la fiche projet perd les
    siennes — elle garde la narration, l'établi rend le workbook.
 3. **Le calepinage.** Les deux sens de plaque comparés, la chute consolidée,
