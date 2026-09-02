@@ -1,0 +1,21 @@
+{
+  "id": "dessus",
+  "titre": "Dessus de caisson — plaque pleine ou traverses",
+  "applique_a": ["caisson"],
+  "entrees": {
+    "plan_travail": ["aucun", "rapporte", "integre"]
+  },
+  "sorties": ["methode"],
+  "lignes": [
+    {
+      "quand": { "plan_travail": "aucun" },
+      "alors": { "methode": "dessus-plaque-pleine" },
+      "note": "Rien d'autre ne ferme le dessus ni n'assure sa rigidité en tête."
+    },
+    {
+      "quand": { "plan_travail": ["rapporte", "integre"] },
+      "alors": { "methode": "dessus-traverses" },
+      "note": "Le plan de travail posé par-dessus fait la rigidité, comme un caisson de cuisine."
+    }
+  ]
+}
