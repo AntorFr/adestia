@@ -64,13 +64,35 @@ mécanismes, et aucun des deux ne demande de dépôt :
 
 ```
 moteur/
-├── specs/      le figé : données constructeur, défauts chiffrés
-├── tables.mjs  les tables de décision — QUELLE règle s'applique
-├── modele/     les ancrages, et ce que fait chaque méthode nommée
-├── derive/     la résolution : contraintes → cotes + degrés de liberté
-├── eval/       les issues typées : géométrie, métier, non-tranché
-└── debit/      le calepinage, les deux sens de plaque comparés
+├── empreinte.mjs      la signature d'un design, canonique et portable
+├── design.mjs         l'enveloppe 4.0 : fraîcheur, dérogations, journal
+├── tables.mjs         les tables de décision — QUELLE règle s'applique
+├── diff.mjs           le delta d'une dérivation, rendu lisible
+├── modele/
+│   ├── ancrages.mjs   les deux repères, et les trois façons de tenir
+│   ├── methodes.mjs   ce que fait chaque méthode nommée par une table
+│   └── chants.mjs     le retrait d'une bande, là où quelque chose affleure
+└── derive/
+    ├── systeme.mjs    les relations, résolues + les degrés de liberté
+    └── index.mjs      le pipeline : design → pièces cotées + issues
 ```
+
+Reste à écrire : le calepinage (`debit/`), et les méthodes des tiroirs, des
+tablettes et du séparateur.
+
+### S'en servir
+
+```sh
+node tools/atelier.mjs derive <workbook.json> --regles <dossier> [--ecrit]
+node tools/atelier.mjs etat   <workbook.json>
+node tools/atelier.mjs valide <workbook.json>
+```
+
+`exemples/` porte un caisson complet et ses deux tables, pour voir la chaîne
+tourner sans rien préparer. Les tables sont PASSÉES, jamais cherchées : le
+moteur ne devine aucun chemin, parce que le jour où il en devine un de
+travers, il conclut qu'un outil est hors de portée — ce qui est déjà arrivé,
+et a coûté un week-end.
 
 ### Ce qui est une table, ce qui est du code
 
