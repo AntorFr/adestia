@@ -34,6 +34,9 @@ const dessusPlaqueEntre = {
     }
     return {
       pieces: [dessus],
+      // Ce qui ferme le haut : un séparateur vient buter dessous, et il n'a
+      // aucun moyen de le savoir tout seul.
+      ferme: [dessus.etiquette],
       relations: [
         // Entre les côtés : le dessus perd leurs deux épaisseurs.
         entre(dessus, 'x', cotes.map((c) => c.etiquette)),
@@ -135,6 +138,7 @@ const dessusTraverses = {
     }))
     return {
       pieces: traverses,
+      ferme: traverses.map((t) => t.etiquette),
       relations: [
         // Entre les deux côtés : la traverse perd leurs deux épaisseurs.
         ...traverses.map((t) => entre(t, 'x', cotes.map((c) => c.etiquette))),
@@ -343,7 +347,58 @@ const tabletteFixe = {
   },
 }
 
+/* ── Les séparateurs ─────────────────────────────────────────────────────────
+   Deux orientations, et elles ne se ressemblent pas.
+
+   LATÉRAL : il divise la largeur — une colonne porte à gauche, une colonne
+   tiroirs à droite. Sa rive avant donne sur la façade et se chante.
+
+   FRONTAL : il divise la profondeur, et sur un meuble ouvert des deux côtés
+   c'est LUI qui fait dos commun aux deux zones et tient le meuble au vrillage,
+   à la place du panneau de fond absent. Aucun de ses bords ne débouche — ils
+   sont pris entre le bas, les côtés et ce qui ferme le haut — d'où un
+   séparateur sans un seul chant, ce que le meuble poubelle confirme.
+
+   Les deux reposent sur le bas et s'arrêtent SOUS ce qui ferme le haut : 867
+   sur un meuble de 905, soit deux épaisseurs de panneau. */
+const separateur = (frontal) => ({
+  decrit: frontal
+    ? 'séparateur frontal, pleine largeur, fait dos aux deux zones'
+    : 'séparateur latéral, divise la largeur du caisson',
+  applique({ trigramme, module, cotes, design, ferme }) {
+    const sep = {
+      etiquette: etiquette(trigramme, module, 'SÉP', frontal ? 'MÉDIAN' : 'M'),
+      role: 'SÉPARATEUR',
+      orientation: frontal ? 'frontal' : 'lateral',
+      // Le latéral montre sa rive avant ; le frontal n'a rien qui sorte.
+      regardeVers: frontal ? {} : { 'rive-avant': 'avant' },
+    }
+    const passeDerriere = design?.fond === 'oui' && design?.pose === 'fixe'
+
+    return {
+      pieces: [sep],
+      relations: [
+        // Sur le bas, sous ce qui ferme le haut : deux épaisseurs de moins.
+        bute(sep, 'z', [etiquette(trigramme, module, 'BAS'), ...(ferme ?? [])].slice(0, 2)),
+        frontal
+          ? entre(sep, 'x', cotes.map((c) => c.etiquette))
+          : {
+            nom: `${sep.etiquette}/profondeur`,
+            termes: {
+              [v(sep.etiquette, 'y')]: 1,
+              'meuble.y': -1,
+              ...(passeDerriere ? { 'param.retrait_fond_dos': 1 } : {}),
+            },
+            egale: 0,
+          },
+      ],
+    }
+  },
+})
+
 export const METHODES = {
+  'separateur-lateral': separateur(false),
+  'separateur-frontal': separateur(true),
   'tablette-fixe': tabletteFixe,
   'dessus-plaque-entre': dessusPlaqueEntre,
   'dessus-plaque-entre-ramene': dessusPlaqueEntreRamene,

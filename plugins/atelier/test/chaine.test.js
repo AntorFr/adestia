@@ -159,7 +159,7 @@ test('la profondeur des traverses reste non déterminée, et le dit', () => {
 test('une table qui nomme une méthode que le moteur ignore est refusée, pas devinée', () => {
   const { erreur, pieces } = applique('dessus-en-toile-de-jute', { trigramme: 'X', module: 'A1', cotes: [] }, 'dessus ligne 3')
   assert.match(erreur, /méthode inconnue « dessus-en-toile-de-jute » \(dessus ligne 3\)/)
-  assert.match(erreur, /connues : tablette-fixe, dessus-plaque-entre/)
+  assert.match(erreur, /connues : separateur-lateral, separateur-frontal/)
   assert.deepEqual(pieces, [])
 })
 

@@ -107,6 +107,10 @@ export function derive(design, tables, moduleDemande) {
   const pieces = [...duSocle]
   const relations = [...relSocle]
   const parEtiquette = {}
+  /* Ce qui ferme le haut du caisson, déclaré par la méthode qui l'a posé et
+     passé aux suivantes : un séparateur bute dessous et ne peut pas deviner
+     si c'est un dessus plein ou deux traverses. */
+  let ferme = []
 
   /* Des faits DÉRIVÉS, calculés avant d'interroger les tables.
      Une table ne porte que des domaines énumérés — un seuil dans une cellule
@@ -152,9 +156,10 @@ export function derive(design, tables, moduleDemande) {
     // Les SORTIES de la table voyagent avec la méthode : une table peut dire
     // « tablette, en retrait » sans qu'il faille un nom de méthode par
     // combinaison — c'est ce qui garde le registre lisible.
-    const r = applique(alors.methode, { trigramme, module, cotes, design, sorties: alors }, ou)
+    const r = applique(alors.methode, { trigramme, module, cotes, design, sorties: alors, ferme }, ou)
     if (r.erreur) { issues.push(issue('erreur', 'methode-inconnue', r.erreur, { table: table.id })); continue }
     for (const p of r.pieces) parEtiquette[p.etiquette] = alors
+    if (r.ferme) ferme = r.ferme
     pieces.push(...r.pieces)
     relations.push(...r.relations)
   }
