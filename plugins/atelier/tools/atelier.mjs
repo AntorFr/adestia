@@ -14,6 +14,7 @@
      node atelier.mjs etat   <workbook.json>
      node atelier.mjs valide <workbook.json>
      node atelier.mjs migre  <workbook.json> [--ecrit]
+     node atelier.mjs migre  <workbook.json> --4 --famille <f> --regles <d> [--ecrit]
      node atelier.mjs derive <workbook.json> --regles <dossier> [--ecrit]
      node atelier.mjs chant  <workbook.json> --regles <dossier>
                              [--chante avant,arriere] [+ETIQ:bord] [-ETIQ:bord] [--ecrit]
@@ -24,8 +25,8 @@ import { join } from 'node:path'
 
 import { normalise } from '../web/convert.js'
 import { valide } from '../web/regles.js'
-import { fraicheur, signature } from '../moteur/design.mjs'
-import { litTable } from '../moteur/tables.mjs'
+import { fraicheur, signature, versQuatre } from '../moteur/design.mjs'
+import { litTable, pourFamille } from '../moteur/tables.mjs'
 import { derive } from '../moteur/derive/index.mjs'
 import { diff, rendu } from '../moteur/diff.mjs'
 
@@ -145,11 +146,20 @@ if (cmd === 'etat') {
   if (!wb.design) { console.error('derive : ce workbook n\'a pas de design — il n\'y a rien à dériver'); process.exit(1) }
   const r = derive(wb.design, tables)
 
+  /* Le moteur calcule des cotes, pas tout un workbook. Une pièce en porte
+     davantage — sa face du haut, ses préparations lamello, sa note — et rien
+     de cela ne se recalcule aujourd'hui. Écraser la pièce entière par ce qui
+     vient d'être calculé détruirait ce travail-là en silence, ce qui serait
+     une drôle de façon de migrer. On fusionne donc : le calcul l'emporte sur
+     ce qu'il produit, l'existant garde le reste. */
+  const dejaLa = new Map((wb.pieces ?? []).map((p) => [p.etiquette, p]))
+  const fusionnees = r.pieces.map((p) => ({ ...(dejaLa.get(p.etiquette) ?? {}), ...p }))
+
   console.log(`workbook ${wb.projet || '?'} — ${r.pieces.length} pièces, ${tables.length} table(s) lue(s)`)
   for (const j of r.journal) console.log(`  · ${j.table} ligne ${j.ligne} → ${j.methode ?? 'aucune méthode'}`)
   if (r.ecartees.length) console.log(`  · écartées (autre famille) : ${r.ecartees.join(', ')}`)
 
-  const suivant = { ...wb, pieces: r.pieces, derive: signature(wb.design, 'atelier@4.0') }
+  const suivant = { ...wb, pieces: fusionnees, derive: signature(wb.design, 'atelier@4.0') }
   const delta = diff(wb, suivant)
   console.log(`\n${rendu(delta)}`)
 
@@ -163,6 +173,53 @@ if (cmd === 'etat') {
     writeFileSync(chemin, `${JSON.stringify(suivant, null, 1)}\n`)
     console.log(`\n✓ ${chemin} réécrit, dérivé signé.`)
   } else console.log('\n✓ dérivation complète (--ecrit pour l\'enregistrer).')
+} else if (cmd === 'migre' && opts.includes('--4')) {
+  /* 3.0 → 4.0. La coquille est triviale ; la SOURCE, elle, ne se devine pas —
+     des cotes ne disent pas les décisions dont elles sont sorties. On ne
+     l'invente donc pas : on écrit le squelette des questions auxquelles ce
+     meuble doit répondre, en les tirant des tables qui s'appliquent à sa
+     famille, et on laisse quelqu'un y répondre.
+
+     Ce qui rend la migration SÛRE vient après : `derive` sans `--ecrit`
+     compare ce que le design produit aux pièces déjà là. On remplit, on
+     dérive, on regarde l'écart, on recommence — jusqu'à ce qu'il soit nul,
+     ou expliqué. Un écart qui reste n'est pas forcément une faute du design :
+     ce peut être le meuble qui avait tort, et c'est comme ça qu'on l'apprend. */
+  const famille = valeurDe('--famille')
+  if (!famille) { console.error('migre --4 : --famille <famille> est requis — c\'est elle qui dit quelles questions se posent'); process.exit(2) }
+  const tables = litRegles(valeurDe('--regles'))
+
+  const quatre = versQuatre(wb)
+  const { retenues, ecartees } = pourFamille(tables, famille)
+  const questions = [...new Set(retenues.flatMap((t) => Object.keys(t.entrees)))].sort()
+
+  const design = {
+    famille,
+    trigramme: wb.projet ?? null,
+    hors_tout: { l: null, p: null, h: null },
+    materiaux: { principal: { ep: null } },
+    faces_chantees: [],
+    parametres: {},
+    ...Object.fromEntries(questions.map((q) => [q, null])),
+  }
+
+  console.log(`workbook ${wb.projet || '?'} ${brut.schemaVersion} → 4.0 — ${(wb.pieces || []).length} pièces conservées`)
+  console.log(`  ${retenues.length} table(s) pour « ${famille} »${ecartees.length ? ` · ${ecartees.length} écartée(s)` : ''}`)
+  console.log('\nÀ répondre avant de pouvoir dériver :')
+  console.log('  · hors_tout (l, p, h) et l\'épaisseur du panneau')
+  console.log('  · faces_chantees — ce qu\'on chante, pas ce qu\'on voit')
+  for (const q of questions) {
+    const domaines = retenues.filter((t) => t.entrees[q]).map((t) => t.entrees[q].join(' | '))
+    console.log(`  · ${q} : ${[...new Set(domaines)].join('  ou  ')}`)
+  }
+  console.log('\nPuis : atelier.mjs derive <workbook> --regles <dossier>')
+  console.log('       — il compare ce que le design produit aux pièces déjà là.')
+
+  const sortie = { ...quatre, design }
+  if (opts.includes('--ecrit')) {
+    writeFileSync(chemin, `${JSON.stringify(sortie, null, 1)}\n`)
+    console.log(`\n✓ ${chemin} réécrit en 4.0, design à remplir.`)
+  } else process.stdout.write(`\n${JSON.stringify(sortie.design, null, 1)}\n`)
 } else if (cmd === 'migre') {
   // On n'écrit pas du faux : un converti qui ne valide pas ne remplace rien.
   const errs = valide(wb)

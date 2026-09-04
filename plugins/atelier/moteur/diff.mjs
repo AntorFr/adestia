@@ -11,21 +11,33 @@
    un `plan`, pas un `log`. C'est aussi ce qui remplace le versionnement que
    `memory/` n'a pas.
 
-   Les `note` sont exclues de la comparaison. Elles changent à chaque passe et
-   noieraient les six lignes qui comptent. */
+   Les `note` sont exclues de la comparaison — elles changent à chaque passe et
+   noieraient les six lignes qui comptent — et `de` avec elles : la provenance
+   d'une cote dit d'où elle vient, pas qu'elle a bougé.
 
-const CHAMPS_IGNORES = ['note']
+   Et les `chants` se comparent comme un ENSEMBLE. Deux fois les mêmes bords
+   dans un autre ordre ne sont pas un changement, et une migration qui
+   annoncerait ça sur chaque pièce noierait les deux lignes qui comptent. */
+
+const CHAMPS_IGNORES = ['note', 'de']
+/** Des champs dont l'ordre ne veut rien dire. */
+const CHAMPS_ENSEMBLE = ['chants']
 
 const parEtiquette = (pieces) => new Map((pieces ?? []).map((p) => [p.etiquette, p]))
 
 const memeValeur = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
+
+/** La valeur d'un champ, mise sous une forme comparable. */
+const pourComparer = (nom, v) =>
+  CHAMPS_ENSEMBLE.includes(nom) && Array.isArray(v) ? [...v].sort() : v
 
 /** Les champs d'une pièce qui ont changé, hors annotations. */
 function champsChanges(avant, apres) {
   const noms = new Set([...Object.keys(avant), ...Object.keys(apres)].filter((n) => !CHAMPS_IGNORES.includes(n)))
   const out = []
   for (const nom of [...noms].sort())
-    if (!memeValeur(avant[nom], apres[nom])) out.push({ champ: nom, avant: avant[nom] ?? null, apres: apres[nom] ?? null })
+    if (!memeValeur(pourComparer(nom, avant[nom]), pourComparer(nom, apres[nom])))
+      out.push({ champ: nom, avant: avant[nom] ?? null, apres: apres[nom] ?? null })
   return out
 }
 

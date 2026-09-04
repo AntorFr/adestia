@@ -73,7 +73,7 @@ const matiereDe = (piece, sorties, design) => {
  * lui-même — les tables viennent de la mémoire, et qui les charge est une
  * question de transport, pas de calcul.
  */
-export function derive(design, tables, module = 'A1') {
+export function derive(design, tables, moduleDemande) {
   const issues = []
   const journal = []
   const s = systeme()
@@ -85,6 +85,10 @@ export function derive(design, tables, module = 'A1') {
   }
 
   const trigramme = design.trigramme ?? 'XXX'
+  // Le module vient du design : un projet numérote ses caissons comme il veut
+  // (`C1` sur le meuble poubelle), et une étiquette qui ne correspond pas à
+  // celles déjà écrites rend toute comparaison illisible.
+  const module = moduleDemande ?? design.module ?? 'A1'
   const { pieces: duSocle, relations: relSocle, cotes } = socle(trigramme, module)
   const pieces = [...duSocle]
   const relations = [...relSocle]
