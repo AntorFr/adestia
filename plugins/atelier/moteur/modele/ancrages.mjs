@@ -39,6 +39,10 @@ export const axesDe = (orientation) => {
   return a
 }
 
+/** `BLT-A1-CÔTÉ-G` — la convention d'étiquetage, tenue en un seul endroit. */
+export const etiquette = (trigramme, module, role, repere) =>
+  [trigramme, module, role, repere].filter(Boolean).join('-')
+
 /** `BLT-A1-CÔTÉ-G.x` — une cote de pièce vue dans le repère du meuble. */
 export const v = (etiquette, quoi) => `${etiquette}.${quoi}`
 

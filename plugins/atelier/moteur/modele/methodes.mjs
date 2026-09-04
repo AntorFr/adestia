@@ -13,11 +13,7 @@
    même pièce, deux cotes, et rien dans un côté ne dit laquelle — il faut avoir
    posé la question du plan de travail. Elle ne l'avait pas été. */
 
-import { bute, entre, traverse } from './ancrages.mjs'
-
-/** `BLT-A1-CÔTÉ-G` — la convention d'étiquetage, tenue en un seul endroit. */
-export const etiquette = (trigramme, module, role, repere) =>
-  [trigramme, module, role, repere].filter(Boolean).join('-')
+import { bute, entre, etiquette, traverse, v } from './ancrages.mjs'
 
 /**
  * Le dessus est une plaque pleine : elle coiffe le meuble et CAPTURE les côtés.
@@ -72,9 +68,151 @@ const dessusTraverses = {
   },
 }
 
+/* ── Le fond ────────────────────────────────────────────────────────────────
+   Quatre méthodes pour une seule pièce, et c'est le sujet de la fiche
+   `fond-caisson-colonne` : ce qui les sépare n'est pas le goût mais deux
+   questions indépendantes — le meuble est-il mobile ou fixe, et jusqu'où va
+   le dessous. Se tromper de cas coûte un fond trop court, un jour au dos, et
+   un vissage en pied devenu impossible. C'est arrivé, et la fiche le date.
+
+   La largeur, elle, est commune aux trois fonds en rainure : le fond n'est
+   pas tenu par l'emboîtement mais par les vis, donc on ne cherche pas le
+   plein fond de rainure — un jeu généreux évite qu'un panneau ne rentre plus
+   dès qu'une rainure ressort moins profonde. */
+
+/**
+ * Le fond engagé dans les rainures des deux côtés, jeu latéral compris.
+ *
+ * La largeur intérieure (chaque côté retire SON épaisseur, une fois), plus ce
+ * que le fond gagne en entrant dans les deux rainures — l'engagement, qui est
+ * la profondeur de rainure moins le jeu volontaire.
+ */
+const largeurEnRainure = (fond, cotes) => ({
+  nom: `${fond.etiquette}/largeur-engagee`,
+  termes: {
+    [v(fond.etiquette, 'x')]: 1,
+    'meuble.x': -1,
+    ...Object.fromEntries(cotes.map((c) => [v(c.etiquette, 'ep'), 1])),
+    'param.rainure_prof': -2,
+    'param.fond_jeu': 2,
+  },
+  egale: 0,
+})
+
+const pieceFond = (trigramme, module) => ({
+  etiquette: etiquette(trigramme, module, 'FOND'),
+  role: 'FOND',
+  orientation: 'frontal',
+})
+
+/**
+ * Fond fin glissé dans une rainure traversante, que RIEN n'arrête en bas.
+ *
+ * Le dessous est ramené en profondeur : le fond passe derrière lui et descend
+ * à fleur de sa face inférieure. Sa hauteur vaut donc le hors-tout moins la
+ * marge, sans passer par la hauteur du côté — et c'est précisément l'erreur
+ * qui a coûté trois fonds trop courts sur un projet.
+ */
+const fondRainureTraversant = {
+  decrit: 'fond fin en rainure sur les 2 côtés, traversant de haut en bas',
+  applique({ trigramme, module, cotes }) {
+    const fond = pieceFond(trigramme, module)
+    return {
+      pieces: [fond],
+      relations: [
+        {
+          nom: `${fond.etiquette}/hauteur-traversante`,
+          termes: { [v(fond.etiquette, 'z')]: 1, 'meuble.z': -1, 'param.marge_fond': 1 },
+          egale: 0,
+        },
+        largeurEnRainure(fond, cotes),
+      ],
+    }
+  },
+}
+
+/** Le dessous file jusqu'au dos et ARRÊTE le fond : celui-ci part du côté. */
+const fondRainureArrete = {
+  decrit: 'fond fin en rainure, arrêté en bas par un dessous pleine profondeur',
+  applique({ trigramme, module, cotes }) {
+    const fond = pieceFond(trigramme, module)
+    return {
+      pieces: [fond],
+      relations: [
+        {
+          nom: `${fond.etiquette}/hauteur-arretee`,
+          termes: { [v(fond.etiquette, 'z')]: 1, [v(cotes[0].etiquette, 'z')]: -1, 'param.marge_fond': 1 },
+          egale: 0,
+        },
+        largeurEnRainure(fond, cotes),
+      ],
+    }
+  },
+}
+
+/**
+ * Rainure d'encastrement dans le dessous : c'est elle qui retient le fond.
+ *
+ * Le fond descend dans le dessous de la profondeur de la rainure, donc il perd
+ * l'épaisseur du bas MOINS ce qu'il y regagne.
+ *
+ * ⚠ Deux rainures, deux profondeurs, et les confondre coûte 4 mm sur la
+ * hauteur du fond : celle des CÔTÉS (~9 mm, où le fond coulisse) et celle
+ * d'ENCASTREMENT dans le bas (~5 mm, où il se loge). Elles sont relevées
+ * distinctes sur le projet d'où vient ce cas.
+ */
+const fondRainureEncastre = {
+  decrit: 'fond fin en rainure sur les côtés, encastré dans une rainure du bas',
+  applique({ trigramme, module, cotes }) {
+    const fond = pieceFond(trigramme, module)
+    return {
+      pieces: [fond],
+      relations: [
+        {
+          nom: `${fond.etiquette}/hauteur-encastree`,
+          termes: {
+            [v(fond.etiquette, 'z')]: 1,
+            'meuble.z': -1,
+            'param.marge_fond': 1,
+            [v(etiquette(trigramme, module, 'BAS'), 'ep')]: 1,
+            'param.rainure_encastrement': -1,
+          },
+          egale: 0,
+        },
+        largeurEnRainure(fond, cotes),
+      ],
+    }
+  },
+}
+
+/**
+ * Fond plein, de la même épaisseur que le reste, monté comme une pièce.
+ *
+ * Le cas mobile : le meuble encaisse le vrillage du déplacement à chaque
+ * roulage, et le fond y participe au même titre qu'un côté. Il n'est donc pas
+ * glissé en rainure — il passe entre les côtés et bute sur le bas.
+ */
+const fondStructurel = {
+  decrit: 'fond plein structurel, entre les côtés, posé sur le bas',
+  applique({ trigramme, module, cotes }) {
+    const fond = pieceFond(trigramme, module)
+    return {
+      pieces: [fond],
+      relations: [
+        entre(fond, 'x', cotes.map((c) => c.etiquette)),
+        bute(fond, 'z', [etiquette(trigramme, module, 'BAS')]),
+      ],
+    }
+  },
+}
+
 export const METHODES = {
   'dessus-plaque-pleine': dessusPlaquePleine,
   'dessus-traverses': dessusTraverses,
+  'fond-rainure-traversant': fondRainureTraversant,
+  'fond-rainure-arrete': fondRainureArrete,
+  'fond-rainure-encastre': fondRainureEncastre,
+  'fond-structurel': fondStructurel,
 }
 
 /**

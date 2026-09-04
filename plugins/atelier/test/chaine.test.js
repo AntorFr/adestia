@@ -18,7 +18,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 
-import { choisit, litTable } from '../moteur/methodes/tables.mjs'
+import { choisit, litTable } from '../moteur/tables.mjs'
 import { applique } from '../moteur/modele/methodes.mjs'
 import { systeme } from '../moteur/derive/systeme.mjs'
 import { constante, relationsDOrientation, relationsDuMeuble, traverse, v } from '../moteur/modele/ancrages.mjs'

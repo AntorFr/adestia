@@ -16,7 +16,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 
-import { litTable, verifieTable, choisit, pourFamille } from '../moteur/methodes/tables.mjs'
+import { litTable, verifieTable, choisit, pourFamille } from '../moteur/tables.mjs'
 
 const here = fileURLToPath(new URL('.', import.meta.url))
 const brut = () => JSON.parse(readFileSync(join(here, 'fixture-regles-fond.json'), 'utf8'))

@@ -65,8 +65,8 @@ mécanismes, et aucun des deux ne demande de dépôt :
 ```
 moteur/
 ├── specs/      le figé : données constructeur, défauts chiffrés
-├── methodes/   les tables de décision — QUELLE règle s'applique
-├── modele/     le squelette : ancrages → relations entre cotes
+├── tables.mjs  les tables de décision — QUELLE règle s'applique
+├── modele/     les ancrages, et ce que fait chaque méthode nommée
 ├── derive/     la résolution : contraintes → cotes + degrés de liberté
 ├── eval/       les issues typées : géométrie, métier, non-tranché
 └── debit/      le calepinage, les deux sens de plaque comparés
