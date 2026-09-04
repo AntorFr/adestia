@@ -765,6 +765,33 @@ contract:
   `feature`, not as an `app`.** `parcours` is one for exactly this reason —
   "a feature, not an app: a route has no domain and no tile".
 
+### What contextual resolution touches, and the one place it breaks
+
+`blockSpec` / `isKnownBlock` have four call sites, and making resolution
+contextual is not a signature change alone:
+
+| Call site | Has a page context? | What changes |
+|---|---|---|
+| `validate.ts` | will have — the server owns the path | takes the page's domain alongside the tree |
+| `Reader.tsx` | yes — `ctx` already carries `base` | and stops gating the body on `content`: the body is always handed over, the renderer decides whether to draw it or show a notice |
+| `editor/vocabulary.ts` | per page — the editor already remounts on `page.path` | rebuilds its node set per page, and loses the atom/container split, since every block must be able to hold a body it does not draw |
+| **`legacy-tags.ts`** | **no, and cannot have one** | see below |
+
+`legacy-tags.ts` runs inside the shared GRAMMAR, as a remark plugin over a tree
+and its source text. A grammar has no page. It cannot ask a question that needs
+one, and giving it a context would mean every caller of `parse()` supplies a
+path — which is the "one grammar, three consumers" property traded away.
+
+It does not need to. The bridge uses `content` twice, and in both places the
+LEGACY SOURCE already answers the question it is asking: `{% x … /%}` is
+self-closing and therefore body-less, `{% x %}…{% /x %}` is paired and
+therefore holds one. `content` was serving as a permission check — "is this
+name entitled to be body-less?" — and that check belongs to the validator,
+which has the context. So the bridge keeps only the context-free question it
+legitimately has, "is this name known to anybody", and takes the shape from the
+spelling in front of it. It ends up simpler, and stops reading a field whose
+meaning is no longer global.
+
 ## v1 scope (decided)
 
 Chat (streamed, multi-conversation, per-user) meeting the parity bar above; content
