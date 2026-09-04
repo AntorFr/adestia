@@ -92,13 +92,34 @@ const design = (plan_travail) => ({
   epaisseur: 19,
 })
 
-test('sans plan de travail : un dessus plein, et des côtés de 832', () => {
+test('sans plan de travail : un dessus plein ABOUTÉ, et des côtés de 851', () => {
   const r = derive(design('aucun'))
-  assert.deepEqual(r.journal, [{ table: 'dessus', ligne: 1, methode: 'dessus-plaque-pleine' }])
+  assert.deepEqual(r.journal, [{ table: 'dessus', ligne: 1, methode: 'dessus-plaque-entre' }])
   assert.deepEqual(r.pieces.map((p) => p.etiquette), [
     'BLT-A1-BAS', 'BLT-A1-CÔTÉ-G', 'BLT-A1-CÔTÉ-D', 'BLT-A1-DESSUS',
   ])
-  assert.equal(r.pieces.find((p) => p.role === 'CÔTÉ').longueur, 832)
+  // Le montage de la maison : le dessus s'aboute entre les côtés, il ne les
+  // coiffe pas. Le côté ne perd donc que le bas — 851, comme sous traverses.
+  assert.equal(r.pieces.find((p) => p.role === 'CÔTÉ').longueur, 851)
+  assert.equal(r.pieces.find((p) => p.role === 'DESSUS').longueur, 1082)
+})
+
+test('la plaque qui COIFFE existe, et c\'est elle qui donnait 832', () => {
+  // Possible, jamais appliquée ici. La garder nommée est ce qui permet de dire
+  // en quoi elle diffère : le côté y perd deux épaisseurs au lieu d'une.
+  const s = systeme()
+  const d = design('aucun')
+  const cotes = ['G', 'D'].map((r) => ({ etiquette: `BLT-A1-CÔTÉ-${r}`, role: 'CÔTÉ', orientation: 'lateral' }))
+  const bas = { etiquette: 'BLT-A1-BAS', role: 'BAS', orientation: 'horizontal' }
+  const { pieces: duDessus, relations } = applique('dessus-plaque-pleine', { trigramme: 'BLT', module: 'A1', cotes })
+  for (const r of relationsDuMeuble(d.hors_tout)) s.pose(r)
+  for (const piece of [bas, ...cotes, ...duDessus]) {
+    s.pose(constante(`ep-${piece.etiquette}`, v(piece.etiquette, 'ep'), 19))
+    for (const r of relationsDOrientation(piece)) s.pose(r)
+  }
+  s.pose(traverse(bas, 'x'))
+  for (const r of relations) s.pose(r)
+  assert.equal(s.resout().valeurs['BLT-A1-CÔTÉ-G.longueur'], 832)
 })
 
 test('avec plan de travail rapporté : deux traverses, et des côtés de 851', () => {
@@ -133,7 +154,7 @@ test('la profondeur des traverses reste non déterminée, et le dit', () => {
 test('une table qui nomme une méthode que le moteur ignore est refusée, pas devinée', () => {
   const { erreur, pieces } = applique('dessus-en-toile-de-jute', { trigramme: 'X', module: 'A1', cotes: [] }, 'dessus ligne 3')
   assert.match(erreur, /méthode inconnue « dessus-en-toile-de-jute » \(dessus ligne 3\)/)
-  assert.match(erreur, /connues : dessus-plaque-pleine, dessus-traverses/)
+  assert.match(erreur, /connues : dessus-plaque-entre, dessus-plaque-pleine, dessus-traverses/)
   assert.deepEqual(pieces, [])
 })
 

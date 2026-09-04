@@ -16,10 +16,42 @@
 import { bute, entre, etiquette, traverse, v } from './ancrages.mjs'
 
 /**
- * Le dessus est une plaque pleine : elle coiffe le meuble et CAPTURE les côtés.
+ * Le dessus est une plaque pleine ABOUTÉE : elle passe entre les côtés.
  *
- * Le cas sans plan de travail rapporté — rien d'autre ne vient fermer le
- * dessus ni assurer sa rigidité en tête, donc c'est lui qui la fait.
+ * C'est le montage de la maison, appliqué depuis toujours — le côté file
+ * jusqu'en haut et ne perd que l'épaisseur du bas sur lequel il repose. Une
+ * plaque qui coifferait le meuble est possible en théorie (voir plus bas) et
+ * n'a jamais été retenue.
+ */
+const dessusPlaqueEntre = {
+  decrit: 'dessus en plaque pleine, abouté entre les côtés',
+  applique({ trigramme, module, cotes }) {
+    const dessus = {
+      etiquette: etiquette(trigramme, module, 'DESSUS'),
+      role: 'DESSUS',
+      orientation: 'horizontal',
+      regardeVers: { 'rive-avant': 'avant', 'rive-arriere': 'arriere' },
+    }
+    return {
+      pieces: [dessus],
+      relations: [
+        // Entre les côtés : le dessus perd leurs deux épaisseurs.
+        entre(dessus, 'x', cotes.map((c) => c.etiquette)),
+        traverse(dessus, 'y'),
+        // Le côté ne perd que le bas : le dessus s'aboute, il ne coiffe pas.
+        ...cotes.map((c) => bute(c, 'z', [etiquette(trigramme, module, 'BAS')])),
+      ],
+    }
+  },
+}
+
+/**
+ * Le dessus est une plaque pleine qui COIFFE le meuble et capture les côtés.
+ *
+ * Possible, jamais appliqué ici : le montage retenu est l'about. Gardé parce
+ * qu'une table peut le nommer, et parce que c'est la seule façon de dire
+ * clairement en quoi il diffère — le côté y perd DEUX épaisseurs au lieu
+ * d'une, ce qui a fait sortir un côté à 832 quand il devait faire 851.
  */
 const dessusPlaquePleine = {
   decrit: 'dessus en plaque pleine, traversant, qui capture les côtés',
@@ -230,6 +262,7 @@ const fondStructurel = {
 }
 
 export const METHODES = {
+  'dessus-plaque-entre': dessusPlaqueEntre,
   'dessus-plaque-pleine': dessusPlaquePleine,
   'dessus-traverses': dessusTraverses,
   'fond-rainure-traversant': fondRainureTraversant,

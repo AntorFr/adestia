@@ -9,8 +9,8 @@
   "lignes": [
     {
       "quand": { "plan_travail": "aucun" },
-      "alors": { "methode": "dessus-plaque-pleine" },
-      "note": "Rien d'autre ne ferme le dessus ni n'assure sa rigidité en tête."
+      "alors": { "methode": "dessus-plaque-entre" },
+      "note": "Plaque pleine ABOUTÉE entre les côtés — le montage de la maison. Elle ferme le dessus et assure la rigidité en tête sans capturer les côtés."
     },
     {
       "quand": { "plan_travail": ["rapporte", "integre"] },
