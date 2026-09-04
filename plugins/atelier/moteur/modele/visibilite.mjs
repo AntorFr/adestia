@@ -4,17 +4,25 @@
    et deux meubles accolés ne montrent pas leurs côtés joints.
 
    La règle vaut pour le dedans comme pour le dehors, et c'est ce qui la rend
-   simple : **un bord se chante s'il DÉBOUCHE sur une face qu'on regarde.**
-   La rive arrière de la traverse avant ne débouche sur rien — elle regarde
-   l'intérieur du meuble — donc pas de chant, ce que l'atelier fait déjà sans
-   se le formuler. Les abouts de la traverse arrière sont pris entre les côtés,
-   pareil. La rive avant d'une tablette, elle, donne sur la façade et se chante
-   comme le reste.
+   simple : **un bord se chante s'il est TOURNÉ VERS une face regardée et que
+   rien ne l'occulte.**
 
-   Ce que le modèle ne peut PAS déduire seul : quel bord donne sur quelle face.
-   L'ancrage n'y suffit pas — une traverse avant ne traverse pas la profondeur
-   et débouche pourtant sur l'avant. C'est la méthode qui pose la pièce qui le
-   sait, donc c'est elle qui le déclare, dans `affleure`.
+   Le critère est le regard, jamais la géométrie. Une tablette EN RETRAIT de
+   quelques millimètres se chante exactement comme une tablette affleurante :
+   son bord avant est tourné vers l'avant et rien ne le cache, le retrait n'y
+   change rien. À l'inverse, la rive arrière de la traverse avant est tournée
+   vers l'arrière et a tout le meuble derrière elle : brute. Les abouts de la
+   traverse arrière sont bouchés par les côtés : bruts. Les bords d'un fond en
+   rainure sont pris dedans : bruts.
+
+   (Une version antérieure disait « débouche sur une face », ce qui suggérait
+   d'atteindre le nu du meuble — et aurait fait rater le chant d'une tablette
+   en retrait, qui est pourtant ce qu'on regarde le plus dans un meuble.)
+
+   Ce que le modèle ne peut PAS déduire seul : vers quoi un bord est tourné, et
+   ce qui le cache. L'ancrage n'y suffit pas — une traverse avant ne traverse
+   pas la profondeur et se voit pourtant de face. C'est la méthode qui pose la
+   pièce qui le sait, donc c'est elle qui le déclare, dans `regardeVers`.
 
    Et le défaut n'est qu'un défaut. On chante parfois un bord invisible pour
    STANDARDISER les coupes — trois meubles de dressing, les côtés plaqués en
@@ -34,7 +42,7 @@ export function chantsParDefaut(pieces, visible = []) {
   const vues = new Set(visible)
   const out = {}
   for (const p of pieces) {
-    const bords = Object.entries(p.affleure ?? {})
+    const bords = Object.entries(p.regardeVers ?? {})
       .filter(([, face]) => vues.has(face))
       .map(([bord]) => bord)
       .sort()

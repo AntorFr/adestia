@@ -32,7 +32,7 @@ function socle(trigramme, module) {
     role: 'BAS',
     orientation: 'horizontal',
     // Traversant sous tout le meuble : ses quatre bords en sortent.
-    affleure: {
+    regardeVers: {
       'about-gauche': 'gauche', 'about-droit': 'droite',
       'rive-avant': 'avant', 'rive-arriere': 'arriere',
     },
@@ -43,7 +43,7 @@ function socle(trigramme, module) {
     orientation: 'lateral',
     // Un côté montre ses RIVES (avant et arrière) ; sa face extérieure donne
     // sur le flanc du meuble, mais une face n'est pas un chant.
-    affleure: { 'rive-avant': 'avant', 'rive-arriere': 'arriere' },
+    regardeVers: { 'rive-avant': 'avant', 'rive-arriere': 'arriere' },
   }))
   return {
     pieces: [bas, ...cotes],

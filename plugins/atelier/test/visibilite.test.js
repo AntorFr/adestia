@@ -110,6 +110,24 @@ test('changer les faces regardées change les cotes de coupe', () => {
   assert.equal(piece(tout, 'BLT-A1-CÔTÉ-G').largeur, 598, 'les deux rives, cette fois')
 })
 
+test('une tablette EN RETRAIT se chante comme une affleurante', () => {
+  // Le critère est le regard, pas la géométrie : son bord avant est tourné
+  // vers l'avant et rien ne le cache. Reculé de 5 mm pour ne pas taper une
+  // porte, il reste ce qu'on voit le plus en ouvrant le meuble.
+  const affleurante = { etiquette: 'TAB-1', regardeVers: { 'rive-avant': 'avant' } }
+  const enRetrait = { etiquette: 'TAB-2', regardeVers: { 'rive-avant': 'avant' } }
+  assert.deepEqual(chantsParDefaut([affleurante, enRetrait], ['avant']), {
+    'TAB-1': ['rive-avant'],
+    'TAB-2': ['rive-avant'],
+  })
+})
+
+test('un bord tourné vers une face non regardée reste brut, où qu\'il soit', () => {
+  const dedans = { etiquette: 'TRAV', regardeVers: { 'rive-arriere': 'arriere' } }
+  assert.deepEqual(chantsParDefaut([dedans], ['avant']), {})
+  assert.deepEqual(chantsParDefaut([dedans], ['avant', 'arriere']), { TRAV: ['rive-arriere'] })
+})
+
 test('sans faces déclarées, rien n\'est chanté — on ne devine pas ce qui se voit', () => {
   const r = derive(design(), tables())
   assert.deepEqual(chantsParDefaut(r.pieces, []), {})
@@ -117,6 +135,6 @@ test('sans faces déclarées, rien n\'est chanté — on ne devine pas ce qui se
 })
 
 test('ecartsAuDefaut ne parle que de ce qui diffère', () => {
-  const pieces = [{ etiquette: 'X', affleure: { 'rive-avant': 'avant' } }]
+  const pieces = [{ etiquette: 'X', regardeVers: { 'rive-avant': 'avant' } }]
   assert.deepEqual(ecartsAuDefaut(pieces, ['avant'], { X: ['rive-avant'] }), [])
 })

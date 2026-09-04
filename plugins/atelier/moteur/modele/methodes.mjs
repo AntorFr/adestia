@@ -29,7 +29,7 @@ const dessusPlaquePleine = {
       role: 'DESSUS',
       orientation: 'horizontal',
       // Traversant : ses quatre bords sortent du meuble.
-      affleure: {
+      regardeVers: {
         'about-gauche': 'gauche', 'about-droit': 'droite',
         'rive-avant': 'avant', 'rive-arriere': 'arriere',
       },
@@ -63,11 +63,11 @@ const dessusTraverses = {
     const traverses = [
       ['AV', { 'rive-avant': 'avant' }],
       ['AR', { 'rive-arriere': 'arriere' }],
-    ].map(([repere, affleure]) => ({
+    ].map(([repere, regardeVers]) => ({
       etiquette: etiquette(trigramme, module, 'TRAV-HAUT', repere),
       role: 'TRAVERSE',
       orientation: 'horizontal',
-      affleure,
+      regardeVers,
     }))
     return {
       pieces: traverses,
@@ -121,11 +121,11 @@ const largeurEnRainure = (fond, cotes) => ({
 })
 
 /** En rainure, le fond n'a AUCUN bord dehors — d'où « pas de chant au fond ». */
-const pieceFond = (trigramme, module, affleure = {}) => ({
+const pieceFond = (trigramme, module, regardeVers = {}) => ({
   etiquette: etiquette(trigramme, module, 'FOND'),
   role: 'FOND',
   orientation: 'frontal',
-  affleure,
+  regardeVers,
 })
 
 /**

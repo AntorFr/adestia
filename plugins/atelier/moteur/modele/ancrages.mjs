@@ -102,9 +102,10 @@ const retranche = (piece, axe, voisines, verbe) => ({
     ...Object.fromEntries(voisines.map((n) => [v(n, 'ep'), 1])),
   },
   egale: 0,
-  // Gardé pour la règle des chants : une pièce qui TRAVERSE affleure
-  // l'extérieur du meuble, donc ses bords sur cet axe sont des cotes
-  // d'ajustement. L'information est dans l'ancrage, pas à redéclarer.
+  // Ce que l'ancrage dit du montage, gardé lisible pour qui veut l'inspecter.
+  // Il ne décide RIEN des chants : ce qu'une bande rend ne dépend que des
+  // chants de la pièce, et ce qui se chante ne dépend que de ce qu'on regarde.
+  // (Une version antérieure en déduisait le retrait, et se trompait.)
   ancre: { etiquette: piece.etiquette, axe, verbe, voisines },
 })
 
