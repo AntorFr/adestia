@@ -1,4 +1,4 @@
-# Mission — plugin « coproj » : suivre un programme, ses projets, ses sujets
+# Mission — plugin « project-management » : suivre un programme, ses projets, ses sujets
 
 > Lettre de mission pour l'agent qui implémentera le plugin. **⚠️ À SUPPRIMER
 > une fois l'implémentation terminée** (dans le commit final, avec le
@@ -50,7 +50,7 @@ l'ordre :
 3. **Références typées** — résolution à quatre étages, référence perdue
    affichée, puce générique tirée de `status.ts`.
 
-**Codé avant ça, coproj devrait inventer sa propre résolution — et ce serait la
+**Codé avant ça, le plugin devrait inventer sa propre résolution — et ce serait la
 mauvaise, comme le `.filter(Boolean)` de `todo` l'a montré.**
 
 ## Les blocs, classés par PROVENANCE de la donnée
@@ -85,7 +85,7 @@ Coût moyen : demande un langage de requête **minimal et fermé**.
 
 | Bloc | Attributs | Donnée |
 |---|---|---|
-| `:::progress` | `source` (requis) | un `./assets/coproj.json`, patron de `parcours`/`atelier`/`voyages` |
+| `:::progress` | `source` (requis) | un `./assets/project-management.json`, patron de `parcours`/`atelier`/`voyages` |
 
 **À n'ouvrir que si une courbe est réellement demandée** : pour quatre chiffres,
 `:::figures` suffit et ne coûte aucun contrat d'agent.

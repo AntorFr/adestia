@@ -393,8 +393,9 @@ de l'instance ; le même tour répare la référence qu'il vient d'écrire ; pas
 migration de vocabulaire (un sens un mot, les nouveaux types en anglais).
 Journal de décisions à jour dans `DESIGN.md`. **Rien n'est codé.**
 
-Mission posée le 29/08 — **plugin « coproj »** (suivi de programme/projets/
-sujets, façon comité de projet), en ALPHA : `.agent/mission-coproj-plugin.md`.
+Mission posée le 29/08 — **plugin « project-management »** (suivi de
+programme/projets/sujets, façon comité de projet), en ALPHA :
+`.agent/mission-project-management-plugin.md`.
 Les blocs y sont classés par PROVENANCE de la donnée — rédigé (le texte est dans
 la fiche, coût nul), requête (récupéré de l'index), asset voisin — parce que
 c'est la provenance qui décide du coût, pas l'apparence. Six blocs sur neuf sont
