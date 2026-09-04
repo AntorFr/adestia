@@ -293,7 +293,58 @@ const fondStructurel = {
   },
 }
 
+/* ── Les tablettes ───────────────────────────────────────────────────────────
+   Deux retraits INDÉPENDANTS, sur des bords opposés, et la fiche du dressing
+   insiste : ils « ne se recopient pas l'un sur l'autre ».
+
+   À l'ARRIÈRE, le même passage de fond que pour le dessus — une tablette dans
+   un caisson à fond glissé doit le laisser descendre.
+
+   À l'AVANT, un retrait qui ne regarde que les tablettes : il sert normalement
+   à dégager une porte, et le dessus comme le dessous restent pleine profondeur
+   en façade, affleurants avec les côtés. Un projet peut le vouloir sans porte
+   — c'est alors une dérogation, avec sa raison.
+
+   Une seule méthode pour les deux cas : c'est la TABLE qui dit s'il y a un
+   retrait avant, en sortie. Un nom de méthode par combinaison de retraits
+   ferait quatre noms pour une seule pièce. */
+const tabletteFixe = {
+  decrit: 'tablette fixe entre les côtés, retraits avant et arrière selon le cas',
+  applique({ trigramme, module, cotes, design, sorties }) {
+    const combien = design?.tablettes ?? 0
+    const enRetrait = sorties?.retrait_avant === 'oui'
+    // Le fond glissé en rainure passe derrière : cas fixe avec fond.
+    const passeDerriere = design?.fond === 'oui' && design?.pose === 'fixe'
+
+    const pieces = Array.from({ length: combien }, (_, i) => ({
+      etiquette: etiquette(trigramme, module, 'TAB', String(i + 1)),
+      role: 'TABLETTE',
+      orientation: 'horizontal',
+      // Une tablette en retrait se voit exactement comme une affleurante.
+      regardeVers: { 'rive-avant': 'avant' },
+    }))
+
+    return {
+      pieces,
+      relations: pieces.flatMap((t) => [
+        entre(t, 'x', cotes.map((c) => c.etiquette)),
+        {
+          nom: `${t.etiquette}/profondeur`,
+          termes: {
+            [v(t.etiquette, 'y')]: 1,
+            'meuble.y': -1,
+            ...(passeDerriere ? { 'param.retrait_fond_dos': 1 } : {}),
+            ...(enRetrait ? { 'param.retrait_tablette_avant': 1 } : {}),
+          },
+          egale: 0,
+        },
+      ]),
+    }
+  },
+}
+
 export const METHODES = {
+  'tablette-fixe': tabletteFixe,
   'dessus-plaque-entre': dessusPlaqueEntre,
   'dessus-plaque-entre-ramene': dessusPlaqueEntreRamene,
   'dessus-plaque-pleine': dessusPlaquePleine,

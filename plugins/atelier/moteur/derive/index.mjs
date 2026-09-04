@@ -104,12 +104,29 @@ export function derive(design, tables, moduleDemande) {
       issues.push(issue('bloquant', 'non-tranche', verdict.erreur, { table: table.id }))
       continue
     }
-    journal.push({ table: verdict.table, ligne: verdict.ligne, methode: verdict.alors.methode ?? null })
+    /* Une DÉROGATION passe après la table et remplace ce qu'elle nomme.
+       Le dressing en porte une : ses tablettes reculent de 3 mm alors que la
+       règle dit qu'une façade ouverte n'a rien à dégager — « pas de porte ici,
+       mais Monsieur veut quand même 3 mm ». Sans ce mécanisme il faudrait
+       mentir à la table (déclarer des portes qui n'existent pas) pour obtenir
+       la bonne cote, et le meuble suivant hériterait du mensonge. */
+    const deroge = (design.derogations ?? []).filter((x) => x.table === table.id)
+    const alors = deroge.reduce((acc, x) => ({ ...acc, ...(x.on_fait ?? {}) }), verdict.alors)
+
+    journal.push({
+      table: verdict.table,
+      ligne: verdict.ligne,
+      methode: alors.methode ?? null,
+      ...(deroge.length ? { deroge: deroge.map((x) => x.pourquoi) } : {}),
+    })
 
     const ou = `${verdict.table} ligne ${verdict.ligne}`
-    const r = applique(verdict.alors.methode, { trigramme, module, cotes, design }, ou)
+    // Les SORTIES de la table voyagent avec la méthode : une table peut dire
+    // « tablette, en retrait » sans qu'il faille un nom de méthode par
+    // combinaison — c'est ce qui garde le registre lisible.
+    const r = applique(alors.methode, { trigramme, module, cotes, design, sorties: alors }, ou)
     if (r.erreur) { issues.push(issue('erreur', 'methode-inconnue', r.erreur, { table: table.id })); continue }
-    for (const p of r.pieces) parEtiquette[p.etiquette] = verdict.alors
+    for (const p of r.pieces) parEtiquette[p.etiquette] = alors
     pieces.push(...r.pieces)
     relations.push(...r.relations)
   }

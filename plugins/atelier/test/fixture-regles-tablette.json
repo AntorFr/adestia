@@ -1,0 +1,21 @@
+{
+  "id": "tablette",
+  "titre": "Tablettes — affleurantes ou en léger retrait avant",
+  "applique_a": ["caisson"],
+  "entrees": {
+    "facade": ["ouverte", "portes"]
+  },
+  "sorties": ["methode", "retrait_avant"],
+  "lignes": [
+    {
+      "quand": { "facade": "ouverte" },
+      "alors": { "methode": "tablette-fixe", "retrait_avant": "non" },
+      "note": "Façade ouverte : la tablette affleure l'avant. Rien à dégager."
+    },
+    {
+      "quand": { "facade": "portes" },
+      "alors": { "methode": "tablette-fixe", "retrait_avant": "oui" },
+      "note": "Avec portes : quelques millimètres de retrait pour qu'une tablette qui dépasse ne vienne pas taper la porte."
+    }
+  ]
+}
