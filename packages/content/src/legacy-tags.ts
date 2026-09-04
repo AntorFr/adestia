@@ -111,6 +111,36 @@ function webLink(attributes: Record<string, string>): Paragraph | undefined {
   }
 }
 
+/**
+ * An attachment — `{% piece-jointe fichier="assets/…" /%}`.
+ *
+ * A link rather than a block, for the same reason `web` is one, and for a
+ * second: Adestia ALREADY lists what is attached to a page — the non-markdown
+ * files in its folder and under its `assets/`, served by `/api/files` — so the
+ * tag does by hand what the product does on its own. Inventing a block for it
+ * would add a vocabulary entry that duplicates a mechanism.
+ *
+ * The value goes into the href UNCHANGED. Measured on the corpus: all seven
+ * occurrences are `assets/<file>`, relative to the page, which is precisely
+ * what `resolveHref` already resolves against the page's folder. Rewriting the
+ * path would be the one way to break links that currently work.
+ *
+ * The label is the file name — the only readable part, and it keeps the
+ * extension, which is what tells a reader whether they are about to open a
+ * spreadsheet or a map.
+ */
+function attachmentLink(attributes: Record<string, string>): Paragraph | undefined {
+  const file = attributes['fichier'] ?? attributes['file']
+  if (!file) return undefined
+  const label = file.split('/').filter(Boolean).at(-1) ?? file
+  return {
+    type: 'paragraph',
+    children: [
+      { type: 'link', url: file, children: [{ type: 'text', value: label }] } as PhrasingContent,
+    ],
+  }
+}
+
 /** A complete tag at the very start of a text run, up to its line break. */
 const LEADING = /^\s*(\{%[^%]*%\})[ \t]*\n/
 /** …and one at the very end. */
@@ -225,6 +255,9 @@ function convert(input: RootContent[], source: string): RootContent[] {
     if (tag.self) {
       if (tag.name === 'web') {
         const link = webLink(tag.attributes)
+        out.push(link ?? node)
+      } else if (tag.name === 'piece-jointe') {
+        const link = attachmentLink(tag.attributes)
         out.push(link ?? node)
       } else if (blockSpec(tag.name)?.content === 'empty') {
         // A block the vocabulary knows — the core's own, or one a plugin

@@ -90,6 +90,21 @@ describe('what it refuses to guess', () => {
     expect(markdown).not.toContain('{% piece')
   })
 
+  it('turns an attachment tag into a link, path untouched', () => {
+    // The corpus writes `assets/<file>`, relative to the page — which is what
+    // `resolveHref` already resolves against the page's folder. Rewriting the
+    // path is the one way to break links that currently work.
+    const markdown = serialize(
+      parse('{% piece-jointe fichier="assets/carnet-de-voyage.pdf" /%}\n'),
+    )
+    expect(markdown).toContain('[carnet-de-voyage.pdf](assets/carnet-de-voyage.pdf)')
+  })
+
+  it('leaves an attachment tag alone when it names no file', () => {
+    // Nothing to point at: keeping the line beats emitting a link to nowhere.
+    expect(serialize(parse('{% piece-jointe /%}\n'))).toContain('{% piece-jointe /%}')
+  })
+
   it('does not touch braces that are merely prose', () => {
     expect(first('Le gain est de {% environ 3 %} sur la coupe.\n')?.type).toBe('paragraph')
     expect(serialize(parse('Le gain est de {% environ 3 %}.\n'))).toContain('{% environ 3 %}')
