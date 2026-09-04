@@ -122,7 +122,7 @@ export function derive(design, tables, module = 'A1') {
   const matieres = new Map(pieces.map((p) => [p.etiquette, matiereDe(p, parEtiquette, design)]))
   const chants = chantsRetenus(
     pieces.map((p) => ({ ...p, chante: matieres.get(p.etiquette).chante })),
-    design.visible ?? [],
+    design.faces_chantees ?? [],
     design.chants ?? {},
   )
 
@@ -154,9 +154,9 @@ export function derive(design, tables, module = 'A1') {
   return {
     journal,
     chant: lineaireDeChant(cotees, chants),
-    // Ce que le projet fait dire à ses chants au-delà des faces regardées :
+    // Ce que le projet fait dire à ses chants au-delà des faces chantées :
     // un côté plaqué bien qu'invisible, pour ne régler la bande qu'une fois.
-    ecartsChant: ecartsAuDefaut(pieces, design.visible ?? [], design.chants ?? {}),
+    ecartsChant: ecartsAuDefaut(pieces, design.faces_chantees ?? [], design.chants ?? {}),
     ecartees: ecartees.map((t) => t.id),
     issues,
     libres,

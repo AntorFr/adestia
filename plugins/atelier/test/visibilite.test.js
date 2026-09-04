@@ -44,7 +44,7 @@ const design = (sur = {}) => ({
 const piece = (r, e) => r.pieces.find((p) => p.etiquette === e)
 
 test('un meuble fixe contre un mur ne chante pas son dos', () => {
-  const r = derive(design({ visible: ['avant'] }), tables())
+  const r = derive(design({ faces_chantees: ['avant'] }), tables())
   assert.deepEqual(piece(r, 'BLT-A1-BAS').chants, ['rive-avant'])
   assert.deepEqual(piece(r, 'BLT-A1-CÔTÉ-G').chants, ['rive-avant'])
   // Et la traverse arrière non plus : elle ne se chante QUE si l'arrière du
@@ -54,21 +54,21 @@ test('un meuble fixe contre un mur ne chante pas son dos', () => {
 })
 
 test('un meuble à roulettes montre son dos, donc il le chante', () => {
-  const r = derive(design({ pose: 'mobile', visible: ['avant', 'arriere', 'gauche', 'droite'] }), tables())
+  const r = derive(design({ pose: 'mobile', faces_chantees: ['avant', 'arriere', 'gauche', 'droite'] }), tables())
   assert.deepEqual(piece(r, 'BLT-A1-CÔTÉ-G').chants, ['rive-arriere', 'rive-avant'])
   assert.deepEqual(piece(r, 'BLT-A1-BAS').chants,
     ['about-droit', 'about-gauche', 'rive-arriere', 'rive-avant'])
 })
 
 test('la traverse avant se chante devant, et rien d\'autre — quand le dos se chante aussi', () => {
-  const r = derive(design({ visible: ['avant', 'arriere'] }), tables())
+  const r = derive(design({ faces_chantees: ['avant', 'arriere'] }), tables())
   assert.deepEqual(piece(r, 'BLT-A1-TRAV-HAUT-AV').chants, ['rive-avant'],
     'sa rive arrière regarde l\'intérieur, ses abouts sont pris entre les côtés')
   assert.deepEqual(piece(r, 'BLT-A1-TRAV-HAUT-AR').chants, ['rive-arriere'])
 })
 
 test('un fond en rainure n\'a aucun bord dehors — donc aucun chant', () => {
-  const r = derive(design({ visible: ['avant', 'arriere', 'gauche', 'droite'] }), tables())
+  const r = derive(design({ faces_chantees: ['avant', 'arriere', 'gauche', 'droite'] }), tables())
   assert.deepEqual(piece(r, 'BLT-A1-FOND').chants, [])
 })
 
@@ -76,7 +76,7 @@ test('le cas du dressing : on chante un côté invisible pour standardiser', () 
   // Trois meubles accolés : les côtés joints ne se voient pas. On les plaque
   // quand même — une passe, un réglage — mais pas le fond.
   const d = design({
-    visible: ['avant'],
+    faces_chantees: ['avant'],
     chants: { 'BLT-A1-CÔTÉ-G': ['rive-avant', 'rive-arriere'] },
   })
   const r = derive(d, tables())
@@ -86,7 +86,7 @@ test('le cas du dressing : on chante un côté invisible pour standardiser', () 
 
 test('et cet écart est NOMMÉ, pas noyé dans une liste de chants', () => {
   const d = design({
-    visible: ['avant'],
+    faces_chantees: ['avant'],
     chants: { 'BLT-A1-CÔTÉ-G': ['rive-avant', 'rive-arriere'] },
   })
   assert.deepEqual(derive(d, tables()).ecartsChant, [
@@ -95,15 +95,15 @@ test('et cet écart est NOMMÉ, pas noyé dans une liste de chants', () => {
 })
 
 test('une surcharge remplace, elle ne s\'ajoute pas : [] retire tout', () => {
-  const d = design({ visible: ['avant', 'arriere'], chants: { 'BLT-A1-BAS': [] } })
+  const d = design({ faces_chantees: ['avant', 'arriere'], chants: { 'BLT-A1-BAS': [] } })
   const r = derive(d, tables())
   assert.deepEqual(piece(r, 'BLT-A1-BAS').chants, [])
   assert.deepEqual(r.ecartsChant[0].retires, ['rive-arriere', 'rive-avant'])
 })
 
-test('changer les faces regardées change les cotes de coupe', () => {
-  const devant = derive(design({ visible: ['avant'] }), tables())
-  const tout = derive(design({ visible: ['avant', 'arriere', 'gauche', 'droite'] }), tables())
+test('changer les faces chantées change les cotes de coupe', () => {
+  const devant = derive(design({ faces_chantees: ['avant'] }), tables())
+  const tout = derive(design({ faces_chantees: ['avant', 'arriere', 'gauche', 'droite'] }), tables())
   assert.equal(piece(devant, 'BLT-A1-BAS').longueur, 1120, 'aucun about chanté')
   assert.equal(piece(tout, 'BLT-A1-BAS').longueur, 1118, 'deux abouts chantés')
   assert.equal(piece(devant, 'BLT-A1-CÔTÉ-G').largeur, 599)
@@ -131,8 +131,8 @@ test('un bord tourné vers une face non regardée reste brut, où qu\'il soit', 
 test('des portes ne changent rien aux chants : on pense porte OUVERTE', () => {
   // L'économie de quelques mètres de bande se paierait au premier meuble
   // qu'on ouvre et dont tout l'intérieur est brut.
-  const ouverte = derive(design({ visible: ['avant'], facade: 'ouverte' }), tables())
-  const portes = derive(design({ visible: ['avant'], facade: 'portes' }), tables())
+  const ouverte = derive(design({ faces_chantees: ['avant'], facade: 'ouverte' }), tables())
+  const portes = derive(design({ faces_chantees: ['avant'], facade: 'portes' }), tables())
   for (const p of ouverte.pieces)
     assert.deepEqual(piece(portes, p.etiquette).chants, p.chants, p.etiquette)
   assert.deepEqual(piece(portes, 'BLT-A1-TRAV-HAUT-AV').chants, ['rive-avant'])
@@ -148,7 +148,7 @@ test('on ne chante que le panneau décoratif : ni MDF, ni massif', () => {
 })
 
 test('un matériau qui ne se chante pas laisse la pièce à sa cote ronde', () => {
-  const d = design({ visible: ['avant', 'arriere', 'gauche', 'droite'] })
+  const d = design({ faces_chantees: ['avant', 'arriere', 'gauche', 'droite'] })
   d.materiaux = { principal: { ep: 19, chante: false } }
   const r = derive(d, tables())
   assert.deepEqual(piece(r, 'BLT-A1-BAS').chants, [])

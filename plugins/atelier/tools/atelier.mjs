@@ -16,7 +16,7 @@
      node atelier.mjs migre  <workbook.json> [--ecrit]
      node atelier.mjs derive <workbook.json> --regles <dossier> [--ecrit]
      node atelier.mjs chant  <workbook.json> --regles <dossier>
-                             [--voit avant,arriere] [+ETIQ:bord] [-ETIQ:bord] [--ecrit]
+                             [--chante avant,arriere] [+ETIQ:bord] [-ETIQ:bord] [--ecrit]
 */
 
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
@@ -102,8 +102,8 @@ if (cmd === 'etat') {
   const design = { ...wb.design }
   const surcharge = { ...(wb.design.chants ?? {}) }
 
-  const voit = valeurDe('--voit')
-  if (voit !== undefined) design.visible = voit.split(',').map((f) => f.trim()).filter(Boolean)
+  const voit = valeurDe('--chante')
+  if (voit !== undefined) design.faces_chantees = voit.split(',').map((f) => f.trim()).filter(Boolean)
 
   // `+ÉTIQ:bord` ajoute, `-ÉTIQ:bord` retire — sur ce que la pièce porte
   // AUJOURD'HUI, pas sur la surcharge : on raisonne sur le meuble, pas sur ce
@@ -125,12 +125,12 @@ if (cmd === 'etat') {
   const apres = derive(design, tables)
   const delta = diff({ ...wb, pieces: avant.pieces }, { ...wb, design, pieces: apres.pieces })
 
-  console.log(`workbook ${wb.projet || '?'} — faces regardées : ${(design.visible ?? []).join(', ') || 'aucune'}`)
+  console.log(`workbook ${wb.projet || '?'} — faces chantées : ${(design.faces_chantees ?? []).join(', ') || 'aucune'}`)
   for (const p of apres.pieces)
     console.log(`  ${p.etiquette.padEnd(22)} ${String(p.longueur).padStart(5)} × ${String(p.largeur).padStart(4)}   ${(p.chants ?? []).join(', ') || '—'}`)
   console.log(`\n${rendu(delta)}`)
   for (const e of apres.ecartsChant ?? [])
-    console.log(`  ⚠ ${e.etiquette} s'écarte des faces regardées : ${[...e.ajoutes.map((b) => '+' + b), ...e.retires.map((b) => '-' + b)].join(', ')}`)
+    console.log(`  ⚠ ${e.etiquette} s'écarte des faces chantées : ${[...e.ajoutes.map((b) => '+' + b), ...e.retires.map((b) => '-' + b)].join(', ')}`)
 
   if (!apres.contraint) { console.log('\n✗ meuble non entièrement contraint — rien n\'est écrit.'); process.exit(1) }
   if (opts.includes('--ecrit')) {

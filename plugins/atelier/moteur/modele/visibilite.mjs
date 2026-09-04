@@ -42,17 +42,31 @@
    une seule passe même joints — et c'est une décision, pas une conséquence :
    elle s'écrit dans le design et se relit. */
 
+/**
+ * Le champ du design s'appelle `faces_chantees`, et pas `visible`.
+ *
+ * Parce qu'on y déclare ce qu'on CHANTE, ce qui ne coïncide pas toujours avec
+ * ce qu'on voit : sur un dressing de trois meubles accolés, les côtés joints
+ * ne se voient pas et se chantent quand même — une passe, un réglage, les
+ * trois meubles pareils. Le mot « visible » aurait laissé croire, six mois
+ * plus tard, que ces côtés étaient exposés.
+ *
+ * Le CRITÈRE, lui, reste le regard : un bord se chante s'il est tourné vers
+ * une de ces faces et que rien ne l'occulte. On déclare une intention de
+ * chant, le modèle en déduit quels bords elle atteint.
+ */
+
 /** Les faces d'un meuble. `dessous` y est : un meuble sur roulettes le montre. */
 export const FACES = ['avant', 'arriere', 'gauche', 'droite', 'dessus', 'dessous']
 
 /**
- * Les chants que les faces regardées imposent, pièce par pièce.
+ * Les chants que les faces chantées imposent, pièce par pièce.
  *
  * Rend ce que le design aurait à écrire — pas ce qu'il écrira : la surcharge
  * passe après, et c'est elle qui a le dernier mot.
  */
-export function chantsParDefaut(pieces, visible = []) {
-  const vues = new Set(visible)
+export function chantsParDefaut(pieces, facesChantees = []) {
+  const vues = new Set(facesChantees)
   const out = {}
   for (const p of pieces) {
     // Un panneau qui ne se chante pas ne se chante pas, si visible soit-il.
@@ -73,16 +87,16 @@ export function chantsParDefaut(pieces, visible = []) {
  * « ce meuble-ci porte ces chants-là » se relit, quand un jeu d'ajouts et de
  * retraits accumulés au fil des passes ne se relit plus. `[]` retire tout.
  */
-export function chantsRetenus(pieces, visible, surcharge = {}) {
-  const defaut = chantsParDefaut(pieces, visible)
+export function chantsRetenus(pieces, facesChantees, surcharge = {}) {
+  const defaut = chantsParDefaut(pieces, facesChantees)
   const retenus = { ...defaut }
   for (const [etiquette, declare] of Object.entries(surcharge)) retenus[etiquette] = declare
   return retenus
 }
 
 /** Ce qu'une surcharge change au défaut — pour que le projet dise POURQUOI. */
-export function ecartsAuDefaut(pieces, visible, surcharge = {}) {
-  const defaut = chantsParDefaut(pieces, visible)
+export function ecartsAuDefaut(pieces, facesChantees, surcharge = {}) {
+  const defaut = chantsParDefaut(pieces, facesChantees)
   const ecarts = []
   for (const [etiquette, declare] of Object.entries(surcharge)) {
     const avant = new Set(defaut[etiquette] ?? [])
