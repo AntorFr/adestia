@@ -218,6 +218,33 @@ tous les 60 cm, les Tenso d'une jonction), les choix de méthode et le
 calepinage restent des fonctions et des tables — une élimination linéaire ne
 sait rien des entiers ni des arrondis.
 
+## Ce que le moteur ne fait pas : proposer
+
+Il applique les cotes telles qu'elles sont, compte tenu des contraintes. Il
+n'arrondit pas, ne suggère pas d'agrandir le meuble d'un millimètre pour que
+les coupes tombent rondes, ne classe pas une cote comme « sale ».
+
+C'est tentant, et c'est non. Une profondeur de 600 avec une rive avant chantée
+donne une coupe à 599 ; qu'un meuble de 601 soit préférable est un arbitrage —
+il dépend d'une niche, d'un mur, d'un plan de travail déjà acheté, de choses
+que le fichier ne dit pas. Le moteur qui trancherait ça déciderait à la place
+de quelqu'un, et c'est exactement ce qu'on lui retire.
+
+Le cycle est ailleurs, et il est déjà là : l'humain lit les cotes, demande
+« on ne pourrait pas passer à 601 ? », **une entrée du design change**, on
+relance. Le diff dit ce qui a bougé — et rien d'autre n'a bougé.
+
+```
+600 demandé          → CÔTÉ-G débité à 599
+601 décidé           → ~ BLT-A1-BAS      largeur 599 → 600
+                       ~ BLT-A1-CÔTÉ-G   largeur 599 → 600
+                       ~ BLT-A1-CÔTÉ-D   largeur 599 → 600
+```
+
+Changer une contrainte et tout recalculer coûte une seconde. C'est ce qui rend
+inutile un moteur qui devine : on n'a pas besoin d'être conseillé quand on peut
+essayer.
+
 ## Les lots
 
 1. **La frontière et le contrôle.** Le schéma 4.0, la signature, la migration
