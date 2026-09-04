@@ -15,6 +15,8 @@
      node atelier.mjs valide <workbook.json>
      node atelier.mjs migre  <workbook.json> [--ecrit]
      node atelier.mjs derive <workbook.json> --regles <dossier> [--ecrit]
+     node atelier.mjs chant  <workbook.json> --regles <dossier>
+                             [--voit avant,arriere] [+ETIQ:bord] [-ETIQ:bord] [--ecrit]
 */
 
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
@@ -37,6 +39,18 @@ if (!cmd || !chemin) {
 const valeurDe = (nom) => {
   const i = opts.indexOf(nom)
   return i >= 0 ? opts[i + 1] : undefined
+}
+
+/** Les tables d'un dossier, ou rien : le moteur ne devine aucun chemin. */
+function litRegles(dossier) {
+  if (!dossier) { console.error('--regles <dossier> est requis — les tables vivent dans la mémoire'); process.exit(2) }
+  const tables = []
+  for (const f of readdirSync(dossier).filter((n) => n.endsWith('.json')).sort()) {
+    const { table, erreurs } = litTable(JSON.parse(readFileSync(join(dossier, f), 'utf8')), f)
+    if (erreurs.length) { console.error(`✗ ${f} :`); for (const e of erreurs) console.error('  •', e); process.exit(1) }
+    tables.push(table)
+  }
+  return tables
 }
 
 const brut = JSON.parse(readFileSync(chemin, 'utf8'))
@@ -77,18 +91,56 @@ if (cmd === 'etat') {
     process.exit(1)
   }
   console.log('\n✓ valide.')
+} else if (cmd === 'chant') {
+  // Rajouter ou retirer un chant et voir les cotes suivre, sans éditer du
+  // JSON à la main : c'est la manipulation la plus fréquente d'un projet, et
+  // la seule chose qui compte est qu'elle recalcule.
+  const tables = litRegles(valeurDe('--regles'))
+  if (!wb.design) { console.error('chant : ce workbook n\'a pas de design'); process.exit(1) }
+
+  const avant = derive(wb.design, tables)
+  const design = { ...wb.design }
+  const surcharge = { ...(wb.design.chants ?? {}) }
+
+  const voit = valeurDe('--voit')
+  if (voit !== undefined) design.visible = voit.split(',').map((f) => f.trim()).filter(Boolean)
+
+  // `+ÉTIQ:bord` ajoute, `-ÉTIQ:bord` retire — sur ce que la pièce porte
+  // AUJOURD'HUI, pas sur la surcharge : on raisonne sur le meuble, pas sur ce
+  // qui restait à en dire. La dérivation vient de le calculer, on le lui prend.
+  const effectifs = Object.fromEntries(avant.pieces.map((p) => [p.etiquette, p.chants ?? []]))
+  for (const opt of opts) {
+    const m = /^([+-])([^:]+):(.+)$/.exec(opt)
+    if (!m) continue
+    const [, signe, etiquette, bord] = m
+    const actuels = effectifs[etiquette] ?? []
+    surcharge[etiquette] = signe === '+'
+      ? [...new Set([...actuels, bord])].sort()
+      : actuels.filter((b) => b !== bord)
+  }
+  // Une clé `chants` vide n'est pas la même chose qu'une absence de clé : elle
+  // ferait bouger l'empreinte du design sans rien changer au meuble.
+  if (Object.keys(surcharge).length) design.chants = surcharge
+
+  const apres = derive(design, tables)
+  const delta = diff({ ...wb, pieces: avant.pieces }, { ...wb, design, pieces: apres.pieces })
+
+  console.log(`workbook ${wb.projet || '?'} — faces regardées : ${(design.visible ?? []).join(', ') || 'aucune'}`)
+  for (const p of apres.pieces)
+    console.log(`  ${p.etiquette.padEnd(22)} ${String(p.longueur).padStart(5)} × ${String(p.largeur).padStart(4)}   ${(p.chants ?? []).join(', ') || '—'}`)
+  console.log(`\n${rendu(delta)}`)
+  for (const e of apres.ecartsChant ?? [])
+    console.log(`  ⚠ ${e.etiquette} s'écarte des faces regardées : ${[...e.ajoutes.map((b) => '+' + b), ...e.retires.map((b) => '-' + b)].join(', ')}`)
+
+  if (!apres.contraint) { console.log('\n✗ meuble non entièrement contraint — rien n\'est écrit.'); process.exit(1) }
+  if (opts.includes('--ecrit')) {
+    writeFileSync(chemin, `${JSON.stringify({ ...wb, design, pieces: apres.pieces, derive: signature(design, 'atelier@4.0') }, null, 1)}\n`)
+    console.log(`\n✓ ${chemin} réécrit.`)
+  } else console.log('\n(--ecrit pour l\'enregistrer)')
 } else if (cmd === 'derive') {
   // Les tables viennent de la mémoire, jamais de l'image : le moteur ne les
   // cherche pas tout seul, on lui dit où elles sont.
-  const dossier = valeurDe('--regles')
-  if (!dossier) { console.error('derive : --regles <dossier> est requis — les tables vivent dans la mémoire'); process.exit(2) }
-
-  const tables = []
-  for (const f of readdirSync(dossier).filter((f) => f.endsWith('.json')).sort()) {
-    const { table, erreurs } = litTable(JSON.parse(readFileSync(join(dossier, f), 'utf8')), f)
-    if (erreurs.length) { console.error(`✗ ${f} :`); for (const e of erreurs) console.error('  •', e); process.exit(1) }
-    tables.push(table)
-  }
+  const tables = litRegles(valeurDe('--regles'))
 
   if (!wb.design) { console.error('derive : ce workbook n\'a pas de design — il n\'y a rien à dériver'); process.exit(1) }
   const r = derive(wb.design, tables)

@@ -90,7 +90,15 @@ export function diff(avant, apres) {
 }
 
 const cote = (p) => [p?.longueur, p?.largeur].filter((n) => n != null).join(' × ')
-const valeur = (v) => (Array.isArray(v) ? `[${v.join(', ')}]` : v === null ? '—' : String(v))
+const valeur = (v) => {
+  if (v === null || v === undefined) return '—'
+  if (Array.isArray(v)) return `[${v.join(', ')}]`
+  // Un objet rendu par `String()` donne « [object Object] », ce qui dit à la
+  // fois qu'il a changé et rien de ce qui a changé.
+  if (typeof v === 'object')
+    return `{ ${Object.entries(v).map(([k, x]) => `${k}: ${valeur(x)}`).join(', ')} }`
+  return String(v)
+}
 
 /** Le delta, tel qu'on le lit dans un terminal ou dans un tour d'agent. */
 export function rendu(delta) {

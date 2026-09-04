@@ -96,3 +96,52 @@ test('sans --regles, le moteur refuse plutôt que d\'aller chercher des tables t
   assert.equal(code, 2)
   assert.match(out, /les tables vivent dans la mémoire/)
 })
+
+/* ── `chant` : ajouter, retirer, et voir les cotes suivre ─────────────────── */
+
+test('ajouter un chant recoupe la pièce, et rien d\'autre', () => {
+  const { wb, regles } = bac()
+  const brut = JSON.parse(readFileSync(wb, 'utf8'))
+  brut.design.visible = ['avant']
+  delete brut.design.chants
+  writeFileSync(wb, JSON.stringify(brut))
+  lance(['chant', wb, '--regles', regles, '--ecrit'])
+
+  const { out, code } = lance(['chant', wb, '--regles', regles, '+BLT-A1-CÔTÉ-G:rive-arriere'])
+  assert.equal(code, 0)
+  assert.match(out, /~ BLT-A1-CÔTÉ-G {2}largeur 599 → 598/)
+  assert.doesNotMatch(out, /CÔTÉ-D {2}largeur/, 'l\'autre côté ne bouge pas')
+})
+
+test('un chant hors des faces regardées est signalé comme un écart', () => {
+  const { wb, regles } = bac()
+  const brut = JSON.parse(readFileSync(wb, 'utf8'))
+  brut.design.visible = ['avant']
+  delete brut.design.chants
+  writeFileSync(wb, JSON.stringify(brut))
+  const { out } = lance(['chant', wb, '--regles', regles, '+BLT-A1-CÔTÉ-G:rive-arriere'])
+  assert.match(out, /s'écarte des faces regardées : \+rive-arriere/)
+})
+
+test('changer les faces regardées suffit à rechanter tout le meuble', () => {
+  const { wb, regles } = bac()
+  const brut = JSON.parse(readFileSync(wb, 'utf8'))
+  brut.design.visible = ['avant']
+  delete brut.design.chants
+  writeFileSync(wb, JSON.stringify(brut))
+  lance(['chant', wb, '--regles', regles, '--ecrit'])
+
+  const { out } = lance(['chant', wb, '--regles', regles, '--voit', 'avant,arriere,gauche,droite'])
+  assert.match(out, /~ BLT-A1-BAS {2}longueur 1120 → 1118/)
+  assert.match(out, /BLT-A1-TRAV-HAUT-AR .*rive-arriere/)
+})
+
+test('sans surcharge, aucune clé `chants` n\'est écrite — l\'empreinte ne bouge pas pour rien', () => {
+  const { wb, regles } = bac()
+  const brut = JSON.parse(readFileSync(wb, 'utf8'))
+  brut.design.visible = ['avant']
+  delete brut.design.chants
+  writeFileSync(wb, JSON.stringify(brut))
+  lance(['chant', wb, '--regles', regles, '--ecrit'])
+  assert.equal(JSON.parse(readFileSync(wb, 'utf8')).design.chants, undefined)
+})
