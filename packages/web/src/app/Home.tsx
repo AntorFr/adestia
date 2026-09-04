@@ -325,31 +325,25 @@ export function Home({
   ]
 
   /**
-   * The shell's own, and ONLY when nothing else is there.
+   * The shell's own closes the mosaic, and is NOT in the permutation.
    *
    * Settings is a domain whose matter is the instance's configuration rather
-   * than pages — the one motivated exception to "a domain is a body of pages".
-   * It has a permanent home behind the cog, so a tile for it among real
-   * subjects is a duplicate. On a fresh instance there is nothing else at all,
-   * and that tile is the way in: the credential is armed from behind it.
+   * than pages — the one motivated exception to "a domain is a body of pages"
+   * — so it earns a tile. It is drawn after the arranged ones because it is
+   * the instance itself rather than one of its subjects, and an arrangement is
+   * about the subjects.
+   *
+   * It was briefly made conditional, on the grounds that the cog in the header
+   * already offers it. That was wrong, and `SettingsMenu` says why: the cog
+   * holds the switches ABOUT THIS SESSION (theme, sign-in, the agent's token)
+   * while the CONTENT — the servers this instance reaches, the prose it was
+   * told — "is an app on the landing canvas, with tiles like everything else".
+   * Removing it did not remove a duplicate; it removed the only door to the
+   * MCP servers and the instructions on any populated instance.
    */
-  const shown: readonly Domain[] =
-    domains.length > 0
-      ? domains
-      : [
-          {
-            key: 'shell:settings',
-            icon: SHELL_APP.icon,
-            hue: SHELL_APP.hue,
-            label: t('Settings'),
-            open: () => {
-              location.hash = SHELL_APP.route
-            },
-          },
-        ]
 
   const mosaic = useReorder({
-    source: shown,
+    source: domains,
     keyOf: (domain: Domain) => domain.key,
     storageKey: ORDER_KEY_DOMAINS,
     editing,
@@ -464,11 +458,12 @@ export function Home({
           as a reserved root or as nothing at all, and it is drawn by the core
           or by a plugin — properties, not species. See the decision log,
           2026-09-01. */}
-      {shown.length > 0 && (
+      {/* Always drawn: the shell's own tile is there even with nothing else. */}
+      {(
         <>
           <h2 className="adestia-section">
             <span className="adestia-section__name">{t('Domains')}</span>
-            {shown.length > 1 && (
+            {domains.length > 1 && (
               <button
                 type="button"
                 className="adestia-section__edit"
@@ -499,6 +494,16 @@ export function Home({
                 t={t}
               />
             ))}
+            <Tile
+              key="shell:settings"
+              icon={SHELL_APP.icon}
+              hue={SHELL_APP.hue}
+              label={t('Settings')}
+              onOpen={() => {
+                location.hash = SHELL_APP.route
+              }}
+              t={t}
+            />
           </ul>
         </>
       )}

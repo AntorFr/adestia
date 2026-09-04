@@ -11,11 +11,5 @@
   "api": "./api.mjs",
   "skills": [
     "./skills/workbook-json/SKILL.md"
-  ],
-  "tile": {
-    "label": "L'Atelier",
-    "icon": "🪚",
-    "glyph": "ic:shop",
-    "hue": "emeraude"
-  }
+  ]
 }
