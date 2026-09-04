@@ -53,14 +53,35 @@ export const v = (etiquette, quoi) => `${etiquette}.${quoi}`
  * z » sont deux noms de la même chose. C'est ce qui permet ensuite de raisonner
  * en axes (les sommes d'un montage) et de couper en cotes de débit.
  */
-export function relationsDOrientation(piece) {
+export function relationsDOrientation(piece, retraits = {}) {
   const { ep, longueur, largeur } = axesDe(piece.orientation)
   const e = piece.etiquette
   return [
-    { nom: `${e}/pose-longueur`, termes: { [v(e, longueur)]: 1, [v(e, 'longueur')]: -1 }, egale: 0 },
-    { nom: `${e}/pose-largeur`, termes: { [v(e, largeur)]: 1, [v(e, 'largeur')]: -1 }, egale: 0 },
+    // Zéro par défaut, et posé ici plutôt que laissé libre : un retrait absent
+    // est une cote qu'on ne coupe pas, alors qu'un retrait NUL est la réponse
+    // ordinaire — la plupart des bords ne tombent sur aucun ajustement.
+    constante(`${e}/retrait-longueur`, v(e, 'retrait_longueur'), retraits.longueur ?? 0),
+    constante(`${e}/retrait-largeur`, v(e, 'retrait_largeur'), retraits.largeur ?? 0),
+    // La cote de COUPE est la place occupée moins ce qu'un chant rendra : une
+    // bande plaquée ajoute son épaisseur, et sur une cote d'ajustement il faut
+    // la rendre d'avance. Le retrait vaut zéro par défaut, et la règle des
+    // chants le pose quand il y a lieu — d'où le terme, présent partout.
+    { nom: `${e}/pose-longueur`, termes: { [v(e, longueur)]: 1, [v(e, 'longueur')]: -1, [v(e, 'retrait_longueur')]: -1 }, egale: 0 },
+    { nom: `${e}/pose-largeur`, termes: { [v(e, largeur)]: 1, [v(e, 'largeur')]: -1, [v(e, 'retrait_largeur')]: -1 }, egale: 0 },
     { nom: `${e}/pose-epaisseur`, termes: { [v(e, ep)]: 1, [v(e, 'ep')]: -1 }, egale: 0 },
   ]
+}
+
+/**
+ * Les bords d'une pièce qui tombent sur chaque cote de débit.
+ *
+ * Le vocabulaire est celui du contrat : les ABOUTS ferment la longueur, les
+ * RIVES bordent la largeur. C'est ce qui permet de savoir quel chant pèse sur
+ * quelle cote.
+ */
+export const BORDS = {
+  longueur: ['about-gauche', 'about-droit'],
+  largeur: ['rive-avant', 'rive-arriere'],
 }
 
 /**
@@ -81,6 +102,10 @@ const retranche = (piece, axe, voisines, verbe) => ({
     ...Object.fromEntries(voisines.map((n) => [v(n, 'ep'), 1])),
   },
   egale: 0,
+  // Gardé pour la règle des chants : une pièce qui TRAVERSE affleure
+  // l'extérieur du meuble, donc ses bords sur cet axe sont des cotes
+  // d'ajustement. L'information est dans l'ancrage, pas à redéclarer.
+  ancre: { etiquette: piece.etiquette, axe, verbe, voisines },
 })
 
 /**

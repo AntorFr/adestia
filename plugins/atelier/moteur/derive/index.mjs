@@ -12,6 +12,7 @@
 import { choisit, pourFamille } from '../tables.mjs'
 import { applique } from '../modele/methodes.mjs'
 import { constante, etiquette, relationsDOrientation, relationsDuMeuble, traverse, v } from '../modele/ancrages.mjs'
+import { lineaireDeChant, retraitsDe } from '../modele/chants.mjs'
 import { systeme } from './systeme.mjs'
 
 const issue = (gravite, type, message, plus = {}) => ({ gravite, type, message, ...plus })
@@ -96,10 +97,27 @@ export function derive(design, tables, module = 'A1') {
   for (const [nom, valeur] of Object.entries(design.parametres ?? {}))
     pose(constante(`parametre/${nom}`, `param.${nom}`, valeur))
 
+  // Quel ancrage porte quelle pièce : c'est de là que se déduit ce qui est une
+  // cote d'AJUSTEMENT, donc ce qui doit se couper en retrait d'un chant.
+  // Une façade ouverte ne ferme pas la profondeur : rien n'y affleure, donc
+  // rien n'y ajuste. C'est une propriété du meuble, pas de chaque pièce.
+  const axesLibres = design.facade === 'portes' ? [] : ['y']
+
+  const ancresDe = new Map()
+  for (const r of relations)
+    if (r.ancre) ancresDe.set(r.ancre.etiquette, [...(ancresDe.get(r.ancre.etiquette) ?? []), r.ancre])
+
   for (const piece of pieces) {
     const ep = epaisseurDe(piece, parEtiquette, design)
     if (ep !== undefined) pose(constante(`materiau/ep-${piece.etiquette}`, v(piece.etiquette, 'ep'), ep))
-    for (const r of relationsDOrientation(piece)) pose(r)
+    const retraits = retraitsDe(
+      piece,
+      design.chants?.[piece.etiquette],
+      ancresDe.get(piece.etiquette) ?? [],
+      design.parametres?.retrait_chant,
+      axesLibres,
+    )
+    for (const r of relationsDOrientation(piece, retraits)) pose(r)
   }
   for (const r of relations) pose(r)
 
@@ -108,21 +126,25 @@ export function derive(design, tables, module = 'A1') {
   for (const l of libres)
     issues.push(issue('bloquant', 'cote-libre', `${l} : aucune règle ne la détermine`, { variable: l }))
 
+  const cotees = pieces.map((p) => ({
+    etiquette: p.etiquette,
+    role: p.role,
+    longueur: valeurs[v(p.etiquette, 'longueur')],
+    largeur: valeurs[v(p.etiquette, 'largeur')],
+    ep: valeurs[v(p.etiquette, 'ep')],
+    chants: design.chants?.[p.etiquette] ?? [],
+    de: s.origineDe(v(p.etiquette, 'longueur')),
+  }))
+
   return {
     journal,
+    chant: lineaireDeChant(cotees, design.chants ?? {}),
     ecartees: ecartees.map((t) => t.id),
     issues,
     libres,
     contraint,
     refuses,
-    pieces: pieces.map((p) => ({
-      etiquette: p.etiquette,
-      role: p.role,
-      longueur: valeurs[v(p.etiquette, 'longueur')],
-      largeur: valeurs[v(p.etiquette, 'largeur')],
-      ep: valeurs[v(p.etiquette, 'ep')],
-      de: s.origineDe(v(p.etiquette, 'longueur')),
-    })),
+    pieces: cotees,
   }
 }
 
