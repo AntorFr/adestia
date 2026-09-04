@@ -34,14 +34,18 @@ const lance = (args) => {
   }
 }
 
-test('l\'exemple livré se dérive entièrement, aux cotes du plan réel', () => {
+test('l\'exemple livré se dérive entièrement, aux cotes que la règle impose', () => {
   const { wb, regles } = bac()
   const { out, code } = lance(['derive', wb, '--regles', regles])
   assert.equal(code, 0)
   assert.match(out, /dessus ligne 2 → dessus-traverses/)
   assert.match(out, /fond ligne 5 → fond-rainure-encastre/)
-  assert.match(out, /BLT-A1-BAS \(1118 × 600\)/)
-  assert.match(out, /BLT-A1-CÔTÉ-G \(851 × 600\)/)
+  assert.match(out, /BLT-A1-BAS \(1118 × 599\)/)
+  assert.match(out, /BLT-A1-CÔTÉ-G \(851 × 599\)/)
+  // 599 et non 600 : le meuble fait 600 de profondeur FINIE, et ces deux
+  // pièces portent un chant sur leur rive avant. Le plan réel les a sorties à
+  // 600 — c'est l'écart, et c'est le plan qui a tort : plaquées, elles
+  // faisaient 601 pour une enveloppe de 600.
   assert.match(out, /BLT-A1-TRAV-HAUT-AV \(1082 × 100\)/)
   assert.match(out, /BLT-A1-FOND \(851 × 1094\)/)
 })

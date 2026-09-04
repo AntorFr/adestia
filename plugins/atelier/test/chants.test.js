@@ -7,11 +7,15 @@
  * dressing, celui-là je l'avais fait, juste oublié ici sur une pièce pourtant
  * identique dans son principe ».
  *
- * Ce que ces tests pinnent, plus que le nombre : que le retrait se DÉDUISE —
- * de l'ancrage de la pièce, et de ce que le meuble ferme. Une règle « retirer
- * 1 mm par bord chanté » appliquée partout rétrécirait des pièces qui n'ont
- * rien à ajuster ; celle-ci ne s'applique qu'aux bords qui affleurent
- * réellement quelque chose, sans qu'on ait à le déclarer pièce par pièce.
+ * La règle est celle de l'atelier, et elle ne souffre pas d'exception : on
+ * cote FINI, et pas de surépaisseur visible sur le meuble. Deux pièces qui
+ * doivent affleurer ont la même cote finie, quel que soit le nombre de chants
+ * que chacune porte — un côté chanté sur un bord et un dessous chanté sur ses
+ * deux abouts se rejoignent au même nu. La cote de coupe se déduit en dernier.
+ *
+ * Un débord d'un millimètre existe dans les projets, mais c'est une DÉROGATION
+ * assumée (« moche et assumé, moins pire que reprendre la pièce qui tient
+ * l'équerrage »), jamais un défaut du calcul.
  */
 
 import { strict as assert } from 'node:assert'
@@ -56,16 +60,17 @@ test('sans chant, la même pièce fait 1120 — le retrait n\'est pas un réflex
   assert.equal(piece(r, 'BLT-A1-BAS').longueur, 1120)
 })
 
-test('la rive avant est un bord LIBRE : elle ne retire rien sur la profondeur', () => {
+test('une rive avant chantée retire, elle aussi : il n\'y a pas de bord dispensé', () => {
   const r = derive(design({ 'BLT-A1-BAS': ['rive-avant'] }), tables())
   const bas = piece(r, 'BLT-A1-BAS')
   assert.equal(bas.longueur, 1120, 'aucun about chanté')
-  assert.equal(bas.largeur, 600, 'la façade ouverte est simplement repoussée d\'1 mm, uniformément')
+  assert.equal(bas.largeur, 599, 'le meuble fait 600 fini, donc on coupe à 599')
 })
 
-test('une traverse qui passe ENTRE les côtés n\'ajuste rien, même chantée', () => {
+test('une traverse chantée sur ses abouts se coupe en retrait comme les autres', () => {
   const r = derive(design({ 'BLT-A1-TRAV-HAUT-AV': ['about-gauche', 'about-droit'] }), tables())
-  assert.equal(piece(r, 'BLT-A1-TRAV-HAUT-AV').longueur, 1082, 'elle est déjà en retrait par construction')
+  // 1082 est sa place FINIE entre les côtés ; plaquée, elle doit y tenir.
+  assert.equal(piece(r, 'BLT-A1-TRAV-HAUT-AV').longueur, 1080)
 })
 
 test('un seul about chanté ne retire qu\'un millimètre', () => {
@@ -85,19 +90,27 @@ test('le retrait par bord se règle par le design, il n\'est pas gravé', () => 
   assert.equal(piece(derive(d, tables()), 'BLT-A1-BAS').longueur, 1116)
 })
 
-test('l\'ajustement se déduit de l\'ancrage et du meuble, sans rien déclarer par pièce', () => {
+test('le retrait ne dépend que des chants de la pièce, pas de sa façon de tenir', () => {
   const bas = { etiquette: 'BAS', orientation: 'horizontal' }
-  const chants = ['about-gauche', 'about-droit']
-  assert.deepEqual(retraitsDe(bas, chants, [traverse(bas, 'x').ancre]), { longueur: 2, largeur: 0 })
-  assert.deepEqual(retraitsDe(bas, chants, [entre(bas, 'x', ['A', 'B']).ancre]), { longueur: 0, largeur: 0 })
-  // Et un axe que le meuble ne ferme pas n'ajuste rien, même traversé.
-  assert.deepEqual(retraitsDe(bas, chants, [traverse(bas, 'x').ancre], 1, ['x']), { longueur: 0, largeur: 0 })
+  assert.deepEqual(retraitsDe(bas, ['about-gauche', 'about-droit']), { longueur: 2, largeur: 0 })
+  assert.deepEqual(retraitsDe(bas, ['rive-avant']), { longueur: 0, largeur: 1 })
+  assert.deepEqual(retraitsDe(bas, []), { longueur: 0, largeur: 0 })
 })
 
-test('des portes ferment la profondeur : la rive avant redevient une cote d\'ajustement', () => {
-  const d = design({ 'BLT-A1-BAS': ['rive-avant'] })
-  d.facade = 'portes'
-  assert.equal(piece(derive(d, tables()), 'BLT-A1-BAS').largeur, 599)
+test('un côté à UN chant et un dessous à DEUX se rejoignent au même nu', () => {
+  // 600 de profondeur finie pour les deux, deux cotes de coupe différentes.
+  const cote = { etiquette: 'CÔTÉ', orientation: 'lateral' }
+  const dessous = { etiquette: 'DESSOUS', orientation: 'horizontal' }
+  assert.equal(600 - retraitsDe(cote, ['rive-avant']).largeur, 599)
+  assert.equal(600 - retraitsDe(dessous, ['rive-avant', 'rive-arriere']).largeur, 598)
+})
+
+test('une bande de 2 mm retire 2 mm par bord', () => {
+  const bas = { etiquette: 'BAS', orientation: 'horizontal' }
+  assert.deepEqual(retraitsDe(bas, { bords: ['about-gauche', 'about-droit'], epaisseur: 2 }),
+    { longueur: 4, largeur: 0 })
+  const d = design({ 'BLT-A1-BAS': { bords: ['abouts'], epaisseur: 2 } })
+  assert.equal(piece(derive(d, tables()), 'BLT-A1-BAS').longueur, 1116)
 })
 
 test('le linéaire de chant se compte sur les cotes finies', () => {
@@ -112,5 +125,7 @@ test('le linéaire de chant se compte sur les cotes finies', () => {
 test('le workbook dérivé porte le linéaire de chant, prêt pour le BOM', () => {
   const r = derive(design({ 'BLT-A1-BAS': ['abouts', 'rive-avant'], 'BLT-A1-CÔTÉ-G': ['rive-avant'] }), tables())
   assert.equal(r.chant.detail.length, 2)
-  assert.equal(r.chant.total, 600 + 600 + 1118 + 851)
+  // Sur les cotes de COUPE : c'est le bord nu qu'il faut couvrir, et le bas
+  // chanté sur sa rive avant est débité à 599 de profondeur, pas 600.
+  assert.equal(r.chant.total, 599 + 599 + 1118 + 851)
 })
