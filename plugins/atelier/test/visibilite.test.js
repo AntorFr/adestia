@@ -138,6 +138,24 @@ test('des portes ne changent rien aux chants : on pense porte OUVERTE', () => {
   assert.deepEqual(piece(portes, 'BLT-A1-TRAV-HAUT-AV').chants, ['rive-avant'])
 })
 
+test('on ne chante que le panneau décoratif : ni MDF, ni massif', () => {
+  // Une bande couvre une âme laide. Un plan de travail MDF parfaitement
+  // visible n'a rien à couvrir : « à vernir ou huiler sur ses 4 champs avant
+  // pose », dit la fiche du meuble poubelle, et c'est ce que le réel fait.
+  const melamine = { etiquette: 'CÔTÉ', regardeVers: { 'rive-avant': 'avant' } }
+  const mdf = { etiquette: 'PLAN', regardeVers: { 'rive-avant': 'avant' }, chante: false }
+  assert.deepEqual(chantsParDefaut([melamine, mdf], ['avant']), { 'CÔTÉ': ['rive-avant'] })
+})
+
+test('un matériau qui ne se chante pas laisse la pièce à sa cote ronde', () => {
+  const d = design({ visible: ['avant', 'arriere', 'gauche', 'droite'] })
+  d.materiaux = { principal: { ep: 19, chante: false } }
+  const r = derive(d, tables())
+  assert.deepEqual(piece(r, 'BLT-A1-BAS').chants, [])
+  assert.equal(piece(r, 'BLT-A1-BAS').longueur, 1120, 'rien à rendre d\'avance')
+  assert.equal(piece(r, 'BLT-A1-CÔTÉ-G').largeur, 600)
+})
+
 test('sans faces déclarées, rien n\'est chanté — on ne devine pas ce qui se voit', () => {
   const r = derive(design(), tables())
   assert.deepEqual(chantsParDefaut(r.pieces, []), {})

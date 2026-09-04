@@ -31,6 +31,12 @@
    pas la profondeur et se voit pourtant de face. C'est la méthode qui pose la
    pièce qui le sait, donc c'est elle qui le déclare, dans `regardeVers`.
 
+   **Et on ne chante que ce qui se chante.** Une bande couvre la tranche d'un
+   panneau décoratif, dont l'âme est laide ; du MDF ou du bois massif n'a rien
+   à couvrir et se finit autrement — vernis, huilé, peint. Un plan de travail
+   MDF parfaitement visible ne prend donc aucun chant : « à vernir ou huiler
+   sur ses 4 champs avant pose ». C'est le MATÉRIAU qui décide, pas le regard.
+
    Et le défaut n'est qu'un défaut. On chante parfois un bord invisible pour
    STANDARDISER les coupes — trois meubles de dressing, les côtés plaqués en
    une seule passe même joints — et c'est une décision, pas une conséquence :
@@ -49,6 +55,8 @@ export function chantsParDefaut(pieces, visible = []) {
   const vues = new Set(visible)
   const out = {}
   for (const p of pieces) {
+    // Un panneau qui ne se chante pas ne se chante pas, si visible soit-il.
+    if (p.chante === false) continue
     const bords = Object.entries(p.regardeVers ?? {})
       .filter(([, face]) => vues.has(face))
       .map(([bord]) => bord)

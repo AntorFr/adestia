@@ -53,11 +53,17 @@ function socle(trigramme, module) {
   }
 }
 
-/** L'épaisseur d'une pièce : celle que la table a dite, ou celle du caisson. */
-const epaisseurDe = (piece, sorties, design) => {
-  const dit = sorties?.[piece.etiquette]?.epaisseur
-  if (dit === undefined || dit === 'caisson') return design.materiaux?.principal?.ep
-  return dit
+/** La matière d'une pièce : celle que la table a dite, ou celle du caisson. */
+const matiereDe = (piece, sorties, design) => {
+  const dit = sorties?.[piece.etiquette]
+  const nom = dit?.materiau ?? (dit?.epaisseur !== undefined && dit.epaisseur !== 'caisson' ? null : 'principal')
+  const mat = nom ? design.materiaux?.[nom] : undefined
+  return {
+    ep: dit?.epaisseur !== undefined && dit.epaisseur !== 'caisson' ? dit.epaisseur : mat?.ep,
+    // On ne chante que le panneau décoratif : le MDF et le massif se
+    // finissent autrement, et une bande n'y couvrirait rien.
+    chante: mat?.chante ?? design.materiaux?.principal?.chante ?? true,
+  }
 }
 
 /**
@@ -113,10 +119,15 @@ export function derive(design, tables, module = 'A1') {
   // Les faces qu'on regarde décident des chants ; le projet garde le dernier
   // mot, pièce par pièce — on chante parfois un bord invisible pour n'avoir
   // qu'un réglage de bande à faire.
-  const chants = chantsRetenus(pieces, design.visible ?? [], design.chants ?? {})
+  const matieres = new Map(pieces.map((p) => [p.etiquette, matiereDe(p, parEtiquette, design)]))
+  const chants = chantsRetenus(
+    pieces.map((p) => ({ ...p, chante: matieres.get(p.etiquette).chante })),
+    design.visible ?? [],
+    design.chants ?? {},
+  )
 
   for (const piece of pieces) {
-    const ep = epaisseurDe(piece, parEtiquette, design)
+    const { ep } = matieres.get(piece.etiquette)
     if (ep !== undefined) pose(constante(`materiau/ep-${piece.etiquette}`, v(piece.etiquette, 'ep'), ep))
     // Les ancrages posent des cotes FINIES ; le retrait ne dépend donc que des
     // chants de la pièce, jamais de la façon dont elle tient.
