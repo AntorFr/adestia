@@ -396,7 +396,77 @@ const separateur = (frontal) => ({
   },
 })
 
+/* ── Les tiroirs ─────────────────────────────────────────────────────────────
+   Deux pièces distinctes, et les confondre est l'erreur que la fiche
+   d'agencement interdit en toutes lettres : « façade vissée après pose, jamais
+   confondue avec le corps du tiroir ». Le corps a un montant avant
+   FONCTIONNEL ; la vraie façade se visse dessus, par l'intérieur, une fois le
+   tiroir posé et réglé.
+
+   La raison est mécanique : les coulisses n'ont aucun réglage. Si la façade
+   finie est directement la face avant du tiroir, le jeu de 2–3 mm entre
+   façades voisines dépend de la position de pose des rails — un enfer à
+   ajuster. Vissée après coup, on la cale contre ses voisines avant de fixer.
+
+   LES FAÇADES se partagent la hauteur utile : n hauteurs plus (n−1) jeux font
+   la zone. Trois façades de 229 et deux jeux de 3 font les 693 d'un meuble
+   réel — et c'est une relation linéaire, donc le solveur la prend telle quelle.
+
+   LE CORPS perd de chaque côté l'épaisseur d'une coulisse et son jeu : « ≥ 1 mm
+   de jeu de chaque côté pour que les rails coulissent ». */
+const tiroirs = {
+  decrit: 'façades de tiroir se partageant la hauteur utile, corps monté sur coulisses',
+  applique({ trigramme, module, design, ferme }) {
+    const combien = design?.tiroirs ?? 0
+    if (!combien) return { pieces: [], relations: [] }
+
+    const facades = Array.from({ length: combien }, (_, i) => ({
+      etiquette: etiquette(trigramme, module, 'FAÇADE', String(i + 1)),
+      role: 'FAÇADE',
+      orientation: 'frontal',
+      // Une façade en applique est exposée sur ses quatre bords.
+      regardeVers: {
+        'rive-avant': 'avant', 'rive-arriere': 'avant',
+        'about-gauche': 'avant', 'about-droit': 'avant',
+      },
+    }))
+
+    const premiere = facades[0].etiquette
+    const relations = [
+      // Toutes de même hauteur : n hauteurs + (n−1) jeux font la hauteur utile,
+      // laquelle est celle du caisson moins le bas et ce qui ferme le haut.
+      {
+        nom: `${trigramme}-${module}/repartition-facades`,
+        termes: {
+          [v(premiere, 'z')]: combien,
+          'meuble.z': -1,
+          [v(etiquette(trigramme, module, 'BAS'), 'ep')]: 1,
+          ...(ferme?.[0] ? { [v(ferme[0], 'ep')]: 1 } : {}),
+          'param.jeu_facade': combien - 1,
+        },
+        egale: 0,
+      },
+      // Les autres suivent la première : même hauteur, par construction.
+      ...facades.slice(1).map((f) => ({
+        nom: `${f.etiquette}/meme-hauteur`,
+        termes: { [v(f.etiquette, 'z')]: 1, [v(premiere, 'z')]: -1 },
+        egale: 0,
+      })),
+      // En applique : la façade couvre la largeur du meuble, moins le jeu
+      // qu'elle laisse de chaque côté.
+      ...facades.map((f) => ({
+        nom: `${f.etiquette}/largeur-en-applique`,
+        termes: { [v(f.etiquette, 'x')]: 1, 'meuble.x': -1, 'param.jeu_facade_lateral': 2 },
+        egale: 0,
+      })),
+    ]
+
+    return { pieces: facades, relations }
+  },
+}
+
 export const METHODES = {
+  'tiroirs-facades': tiroirs,
   'separateur-lateral': separateur(false),
   'separateur-frontal': separateur(true),
   'tablette-fixe': tabletteFixe,
