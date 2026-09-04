@@ -53,6 +53,20 @@ function socle(trigramme, module) {
   }
 }
 
+/**
+ * Ce que le moteur COMPTE pour les tables, à partir de ce que le design dit.
+ *
+ * `mutualise` : assez de pièces partagent-elles un même réglage pour qu'une
+ * largeur de refente de plus ne coûte rien ? C'est la seule chose qui fasse
+ * renoncer à un retrait de tablette, donc c'est elle qu'il faut compter. Le
+ * seuil est un paramètre — un arbitrage d'atelier, pas une constante.
+ */
+export function faitsDerives(design) {
+  const total = (design.tablettes ?? 0) * (design.modules_identiques ?? 1)
+  const seuil = design.parametres?.seuil_mutualisation ?? 3
+  return { tablettes_totales: total, mutualise: total >= seuil ? 'oui' : 'non' }
+}
+
 /** La matière d'une pièce : celle que la table a dite, ou celle du caisson. */
 const matiereDe = (piece, sorties, design) => {
   const dit = sorties?.[piece.etiquette]
@@ -94,10 +108,24 @@ export function derive(design, tables, moduleDemande) {
   const relations = [...relSocle]
   const parEtiquette = {}
 
+  /* Des faits DÉRIVÉS, calculés avant d'interroger les tables.
+     Une table ne porte que des domaines énumérés — un seuil dans une cellule
+     serait une cellule qui calcule, et une cellule qui calcule ne se relit
+     plus. Mais certaines décisions dépendent d'un COMPTE.
+
+     Celle du retrait de tablette en est une. Le retrait est le DÉFAUT — une
+     planche qui ressort d'un millimètre ne ressort pas — et on n'y renonce
+     que pour une raison : il coûte une largeur de refente de plus, ce qui ne
+     se justifie pas pour une ou deux tablettes. Neuf tablettes réparties en
+     trois meubles identiques partagent le même réglage, et il ne coûte plus
+     rien.
+
+     Le moteur compte donc, et la table décide sur le compte. */
+  const faits = { ...design, ...faitsDerives(design) }
   const { retenues, ecartees } = pourFamille(tables, design.famille)
 
   for (const table of retenues) {
-    const verdict = choisit(table, design)
+    const verdict = choisit(table, faits)
     if (verdict.erreur) {
       // Un fait absent du design n'est pas une panne : c'est une décision qui
       // n'a pas été prise, et elle doit se voir jusqu'à ce qu'elle le soit.

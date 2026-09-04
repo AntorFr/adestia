@@ -61,13 +61,27 @@ test('une tablette fait 722 de long : la largeur intérieure', () => {
   assert.equal(tab(derive(dressing(), tables())).longueur, 722)
 })
 
-test('façade ouverte : la tablette affleure, et ne recule que pour le fond', () => {
+test('le retrait avant est le DÉFAUT, même sans porte à dégager', () => {
+  // Trois tablettes ici, et trois meubles identiques : le réglage de largeur
+  // qu'un retrait coûte est partagé, donc il ne coûte rien.
   const t = tab(derive(dressing(), tables()))
-  // 600 − 20 de passage − 1 de chant avant. Pas de retrait avant.
-  assert.equal(t.largeur, 579)
+  assert.equal(t.largeur, 576, '600 − 20 de passage − 3 de retrait − 1 de chant')
 })
 
-test('avec des portes : les 3 mm de dégagement s\'ajoutent au passage du fond', () => {
+test('on n\'y renonce que pour une raison : trop peu de tablettes', () => {
+  // Une ou deux ne justifient pas une largeur de refente de plus. On les
+  // aligne sur le dessus et on ne s'embête pas.
+  const r = derive(dressing({ tablettes: 2, modules_identiques: 1 }), tables())
+  assert.equal(tab(r).largeur, 579, 'alignée sur le dessus')
+  assert.equal(r.journal.find((j) => j.table === 'tablette').ligne, 3)
+})
+
+test('trois meubles identiques suffisent à mutualiser deux tablettes chacun', () => {
+  const r = derive(dressing({ tablettes: 2, modules_identiques: 3 }), tables())
+  assert.equal(tab(r).largeur, 576, 'six tablettes partagent le réglage')
+})
+
+test('avec des portes, le retrait n\'est plus un choix : la tablette taperait', () => {
   const t = tab(derive(dressing({ facade: 'portes' }), tables()))
   assert.equal(t.largeur, 576, '600 − 20 − 3 − 1 de chant')
 })
@@ -79,30 +93,35 @@ test('le dessus, lui, ne prend JAMAIS le retrait avant', () => {
   assert.equal(tab(r).largeur, 576, 'la tablette, elle, recule')
 })
 
-test('sans fond glissé, une tablette ne recule pas de l\'arrière', () => {
+test('sans fond glissé, une tablette ne recule pas de l\'ARRIÈRE', () => {
   const t = tab(derive(dressing({ fond: 'non' }), tables()))
-  assert.equal(t.largeur, 599, 'seulement le chant avant')
+  assert.equal(t.largeur, 596, '600 − 3 de retrait avant − 1 de chant, rien à l\'arrière')
 })
 
-test('le dressing déroge : façade ouverte ET 3 mm de retrait, avec sa raison', () => {
-  // Le vrai cas. La règle dit qu'une façade ouverte n'a rien à dégager ; ce
-  // projet recule quand même ses tablettes. Sans dérogation il faudrait
-  // déclarer des portes qui n'existent pas — et le meuble suivant hériterait
-  // du mensonge.
+test('le dressing n\'a plus besoin de déroger : la règle le couvre', () => {
+  // Il en portait une, tant que la table croyait qu'une façade ouverte
+  // n'avait rien à dégager. Le vrai critère trouvé, le cas rentre dans la
+  // règle — « la dérogation d'aujourd'hui est la ligne de table de demain »,
+  // et c'est arrivé pour de bon.
+  const r = derive(dressing(), tables())
+  assert.equal(tab(r).largeur, 576)
+  assert.equal(r.journal.find((j) => j.table === 'tablette').deroge, undefined)
+})
+
+test('une dérogation reste possible, et se dit', () => {
   const d = dressing({
+    tablettes: 2,
+    modules_identiques: 1,
     derogations: [{
       table: 'tablette',
       on_fait: { retrait_avant: 'oui' },
-      pourquoi: 'pas de porte à dégager ici, mais 3 mm de retrait voulus sur ce projet',
+      pourquoi: 'deux tablettes seulement, mais la largeur est déjà réglée pour les portes',
     }],
   })
   const r = derive(d, tables())
-  assert.equal(tab(r).largeur, 576, '600 − 20 − 3 − 1 de chant')
-  assert.equal(r.pieces.find((p) => p.role === 'DESSUS').largeur, 579, 'le dessus ne déroge pas')
-
-  // Et la dérogation est DITE, pas dissoute dans une cote.
-  const ligne = r.journal.find((j) => j.table === 'tablette')
-  assert.deepEqual(ligne.deroge, ['pas de porte à dégager ici, mais 3 mm de retrait voulus sur ce projet'])
+  assert.equal(tab(r).largeur, 576)
+  assert.deepEqual(r.journal.find((j) => j.table === 'tablette').deroge,
+    ['deux tablettes seulement, mais la largeur est déjà réglée pour les portes'])
 })
 
 test('sans le millimètre de chant, on retrouve les 577 du meuble construit', () => {

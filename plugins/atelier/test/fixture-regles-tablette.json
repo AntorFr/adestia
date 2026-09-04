@@ -1,21 +1,27 @@
 {
   "id": "tablette",
-  "titre": "Tablettes — affleurantes ou en léger retrait avant",
+  "titre": "Tablettes — en retrait, sauf quand ça ne vaut pas une largeur de plus",
   "applique_a": ["caisson"],
   "entrees": {
-    "facade": ["ouverte", "portes"]
+    "facade": ["ouverte", "portes"],
+    "mutualise": ["oui", "non"]
   },
   "sorties": ["methode", "retrait_avant"],
   "lignes": [
     {
-      "quand": { "facade": "ouverte" },
-      "alors": { "methode": "tablette-fixe", "retrait_avant": "non" },
-      "note": "Façade ouverte : la tablette affleure l'avant. Rien à dégager."
-    },
-    {
       "quand": { "facade": "portes" },
       "alors": { "methode": "tablette-fixe", "retrait_avant": "oui" },
-      "note": "Avec portes : quelques millimètres de retrait pour qu'une tablette qui dépasse ne vienne pas taper la porte."
+      "note": "Le défaut, et ici il est obligatoire : une tablette qui dépasse vient taper la porte."
+    },
+    {
+      "quand": { "facade": "ouverte", "mutualise": "oui" },
+      "alors": { "methode": "tablette-fixe", "retrait_avant": "oui" },
+      "note": "Le défaut. Un retrait vaut toujours mieux — une planche qui ressort d'un millimètre ne ressort pas — et le réglage de largeur qu'il coûte est partagé par assez de pièces pour ne rien coûter."
+    },
+    {
+      "quand": { "facade": "ouverte", "mutualise": "non" },
+      "alors": { "methode": "tablette-fixe", "retrait_avant": "non" },
+      "note": "SAUF ici : une ou deux tablettes ne justifient pas une largeur de refente de plus. On les aligne sur le dessus et on ne s'embête pas. C'est la seule raison d'y renoncer."
     }
   ]
 }
