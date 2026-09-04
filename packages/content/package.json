@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "mdast-util-directive": "^3.1.0",
-    "micromark-extension-directive": "^4.0.0",
+    "micromark-extension-directive": "git+https://github.com/AntorFr/micromark-extension-directive.git#adestia",
     "remark-frontmatter": "^5.0.0",
     "remark-gfm": "^4.0.1",
     "remark-parse": "^11.0.0",

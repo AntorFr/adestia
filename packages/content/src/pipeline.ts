@@ -39,6 +39,110 @@ const textHandler: Handle = (node, parent, state, info) => {
   return value.replace(/(?<=[\p{L}\p{N}])\\_(?=[\p{L}\p{N}])/gu, '_')
 }
 
+/**
+ * How wide an opening line may get before its attributes go into a column.
+ *
+ * A block here is a RECORD a person maintains by hand, not prose decoration,
+ * and a record with a handful of fields is read down a column — which is why
+ * the grammar is forked to allow an end-of-line inside `{…}` at all (see
+ * DESIGN.md). The threshold is on the LINE, not on the number of attributes:
+ * it is length that makes a line unreadable, and three long attributes cost
+ * more than five short ones.
+ */
+const WRAP_AT = 72
+
+/**
+ * The directive serializer, built once.
+ *
+ * Shared with `directivePlugin` below rather than built twice: the wrapping
+ * handler DELEGATES to this one and only re-flows what it produced, so the
+ * output below the threshold stays byte-identical to what the extension
+ * writes — quoting and escaping included, which is exactly the part not worth
+ * reimplementing.
+ */
+const directiveDefaults = directiveToMarkdown({ preferShortcut: false })
+
+/** An attribute run, split on the spaces that are not inside a quoted value. */
+function attributesOf(run: string): string[] {
+  const found: string[] = []
+  let current = ''
+  let quoted = false
+  let escaped = false
+  for (const character of run) {
+    if (escaped) {
+      current += character
+      escaped = false
+      continue
+    }
+    if (character === '\\') {
+      current += character
+      escaped = true
+      continue
+    }
+    if (character === '"') quoted = !quoted
+    if (character === ' ' && !quoted) {
+      if (current !== '') found.push(current)
+      current = ''
+      continue
+    }
+    current += character
+  }
+  if (current !== '') found.push(current)
+  return found
+}
+
+/**
+ * A container directive, with its attributes put in a column when the opening
+ * line would be too long to read.
+ *
+ * Deliberately a RE-FLOW of the default handler's output rather than a second
+ * serializer: `:::name[label]{…}` is looked at from the right, so a label is
+ * never mistaken for the attribute block, and a single attribute is left alone
+ * because splitting it changes nothing.
+ */
+const containerHandler: Handle = (node, parent, state, info) => {
+  const written = (directiveDefaults.handlers?.['containerDirective'] as Handle)(
+    node,
+    parent,
+    state,
+    info,
+  )
+  const breakAt = written.indexOf('\n')
+  const opening = breakAt === -1 ? written : written.slice(0, breakAt)
+  if (opening.length <= WRAP_AT) return written
+
+  const open = opening.lastIndexOf('{')
+  const close = opening.lastIndexOf('}')
+  if (open === -1 || close < open) return written
+
+  const attributes = attributesOf(opening.slice(open + 1, close))
+  if (attributes.length < 2) return written
+
+  const wrapped = [
+    opening.slice(0, open + 1),
+    ...attributes.map((attribute) => `  ${attribute}`),
+    opening.slice(close),
+  ].join('\n')
+  return breakAt === -1 ? wrapped : wrapped + written.slice(breakAt)
+}
+
+/**
+ * The directive extension, carrying the wrapping handler.
+ *
+ * It rides HERE and not in `STRINGIFY_OPTIONS.handlers`, and the difference is
+ * load-bearing: the editor builds its own serializer and never sees this
+ * file's options, but it does register `GRAMMAR` — so anything an extension
+ * carries reaches both writers, and anything the options carry reaches only
+ * one. Put the wrap in the options and a long block would come back on one
+ * line the moment somebody saved a page in the editor, flipping between two
+ * spellings on every save. `preferShortcut` already worked for this reason;
+ * this joins it.
+ */
+const directiveMarkdown = {
+  ...directiveDefaults,
+  handlers: { ...directiveDefaults.handlers, containerDirective: containerHandler },
+}
+
 /** House style. Changing any of these rewrites every file on its next save. */
 const STRINGIFY_OPTIONS = {
   bullet: '-',
@@ -94,7 +198,7 @@ export function directivePlugin(this: Processor): void {
 
   micromarkExtensions.push(blockDirectives())
   fromMarkdownExtensions.push(directiveFromMarkdown())
-  toMarkdownExtensions.push(directiveToMarkdown({ preferShortcut: STRINGIFY_OPTIONS.preferShortcut }))
+  toMarkdownExtensions.push(directiveMarkdown)
 }
 
 /**
