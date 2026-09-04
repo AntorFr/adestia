@@ -52,7 +52,11 @@ export function litDesign(design) {
       design.derogations.forEach((d, i) => {
         const ou = `dérogation ${i + 1}`
         if (!estObjet(d)) return E(`${ou} : attendu un objet`)
-        if (!d.table) E(`${ou} : \`table\` manquante`)
+        // Une dérogation vise une TABLE (« sur ce meuble, cette règle donne
+        // autre chose ») ou une PIÈCE (« celle-ci, on n'y touche pas »). Le
+        // second cas est celui d'un panneau déjà débité : la décision porte
+        // sur lui seul et ne dit rien de la règle.
+        if (!d.table && !d.piece) E(`${ou} : \`table\` ou \`piece\` manquante`)
         if (!d.on_fait) E(`${ou} : \`on_fait\` manquant`)
         // Le `pourquoi` n'est pas de la politesse : une dérogation sans raison
         // ne peut pas devenir la ligne de table qu'elle annonce.

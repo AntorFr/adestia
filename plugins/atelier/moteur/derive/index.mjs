@@ -175,12 +175,26 @@ export function derive(design, tables, moduleDemande) {
     design.chants ?? {},
   )
 
+  /* Une pièce peut refuser de rendre d'avance ce que sa bande ajoutera : le
+     chant se pose alors EN SURÉPAISSEUR et la pièce déborde. Ce n'est jamais
+     le défaut — c'est ce qu'on décide devant un panneau déjà débité, quand
+     reprendre la pièce qui tient l'équerrage coûterait plus cher qu'un
+     millimètre visible. La décision porte sur cette pièce-là et ne dit rien
+     de la règle, d'où une dérogation de PIÈCE et non de table. */
+  const surepaisseur = new Set(
+    (design.derogations ?? [])
+      .filter((x) => x.piece && x.on_fait?.compense_chant === 'non')
+      .map((x) => x.piece),
+  )
+
   for (const piece of pieces) {
     const { ep } = matieres.get(piece.etiquette)
     if (ep !== undefined) pose(constante(`materiau/ep-${piece.etiquette}`, v(piece.etiquette, 'ep'), ep))
     // Les ancrages posent des cotes FINIES ; le retrait ne dépend donc que des
     // chants de la pièce, jamais de la façon dont elle tient.
-    const retraits = retraitsDe(piece, chants[piece.etiquette], design.parametres?.retrait_chant)
+    const retraits = surepaisseur.has(piece.etiquette)
+      ? { longueur: 0, largeur: 0 }
+      : retraitsDe(piece, chants[piece.etiquette], design.parametres?.retrait_chant)
     for (const r of relationsDOrientation(piece, retraits)) pose(r)
   }
   for (const r of relations) pose(r)
@@ -197,6 +211,7 @@ export function derive(design, tables, moduleDemande) {
     largeur: valeurs[v(p.etiquette, 'largeur')],
     ep: valeurs[v(p.etiquette, 'ep')],
     chants: chants[p.etiquette] ?? [],
+    ...(surepaisseur.has(p.etiquette) ? { chant_en_surepaisseur: true } : {}),
     de: s.origineDe(v(p.etiquette, 'longueur')),
   }))
 
