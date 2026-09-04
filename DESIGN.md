@@ -676,6 +676,95 @@ runtime; nothing is scanned by filename convention at build time.
   got the same treatment as `schedule-author`, having shipped with no
   authoring contract at all despite executing their body as a prompt.
 
+### Blocks: `:::` names a RENDERING, `{}` carries the meaning (decided 2026-09-04)
+
+The rule that governs every plugin's vocabulary, and the one this system had
+been following without ever writing down:
+
+> **A new `:::` is created when the REPRESENTATION differs. An attribute is
+> added when the MEANING differs.**
+
+The core already obeyed it — `callout` is one rendering whose kind rides in
+`type=note|tip|warning`, `app` is one rendering addressed by `id=`. Nothing in
+writing said so, which is how a plugin design drifted into declaring one block
+per subject: `summary`, `scope`, `risks`, `livrables`, each with a manifest
+entry and a component, when all four draw the same thing — a title and prose.
+They are one `:::content{type=…}`.
+
+What the rule buys is a border in the right place. **The set of renderings
+stays closed** — a typo on a rendering name draws an empty rectangle, which is
+exactly where validation earns its price. **The space of subjects is wide
+open** — `type` is declared `required` with no `values`, which an
+`AttributeSpec` already accepts, so inventing a kind of content costs no code,
+no manifest entry and no restart. The question "should the vocabulary be open
+or closed" was the wrong question: it is closed over one axis and open over the
+other.
+
+### Why a markdown engine is being diverted, and what follows from it
+
+Adestia does not use directives to decorate prose. **It uses them as an
+editable record format** — one a person edits by hand and a language model
+reads without a parser of its own. That single sentence decides several things
+that otherwise look arbitrary:
+
+- why the rendering vocabulary is closed and validated, while `type` is free;
+- why `type` is `required` — a missing attribute must be a visible refusal, not
+  a block that silently lost its subject;
+- why a block's attributes may span lines. Upstream's
+  `micromark-extension-directive` forbids an end-of-line inside a container's
+  `{…}` (`disallowEol: true`), which is the right call **for prose**, where a
+  block's opening must be decidable line by line. A record with fifteen fields
+  is read in a column, and no format a human maintains puts them on one line.
+  Measured on the upstream suite: flipping that flag for the CONTAINER
+  construct alone leaves 258 of 262 tests green, and the four failures are the
+  tests that assert the old rule. Nothing structural breaks — not lazy
+  containers, not lists holding attribute braces, not line endings in
+  containers. An unclosed `{` degrades to visible literal text and stops at the
+  blank line, damaging nothing after it.
+
+This is a permanent divergence, not a bridge: it will not be sent upstream,
+because upstream is right about prose and we are not writing prose.
+
+### Resolving a block name across plugins (decided 2026-09-04)
+
+Several plugins may claim the same block name, and nothing makes them agree on
+what it holds. Resolution is therefore CONTEXTUAL, and ranked:
+
+1. **The `app` of this page's domain.** An app is the domain level — an icon on
+   the home and a clear path under it. Ownership is `ownerOf`, which already
+   exists: the deepest declaration wins (`voyages/archives` takes the folder
+   from `voyages`) so the answer never depends on load order, and a plugin may
+   also own a folder by KNOWING it rather than declaring it, with declared
+   beating known.
+2. **`feature` plugins**, cross-domain by nature and therefore applicable
+   everywhere. When two features claim one name, **the first listed in the
+   instance's `features:` wins**; the other's claim is refused and named at
+   startup. The order is a line an operator wrote, so the tiebreak is a choice
+   rather than an accident, and it is fixed by swapping two lines.
+3. **The default behaviour** — the core's own `VOCABULARY`. Not a plugin.
+
+`tool` plugins contribute no vocabulary: they have no interface.
+
+**No agreement is required between plugins, on anything.** Not the attributes,
+not whether the block holds a body. Three consequences follow, and they are the
+contract:
+
+- **A body is always carried, even where it is not drawn.** A block declared
+  body-less in one domain and body-bearing in another must not lose someone's
+  text on the way. The editor node must keep a body it does not render, the way
+  the frontmatter node already keeps its YAML verbatim "because it carries
+  conventions this editor does not model". Without that, relaxing the server's
+  check would turn a locked page into silently eaten text.
+- **A mismatch is a warning and a visible notice on the block, never a locked
+  page.** Blocking a whole document because one block might draw poorly is the
+  wrong size of response.
+- **Moving a page between domains changes how it looks, and that is correct.**
+  The domain is part of a page's context; a travel page filed in an ordinary
+  folder should not get the travel treatment. Which is also the standing
+  instruction to plugin authors: **a block that must work everywhere ships as a
+  `feature`, not as an `app`.** `parcours` is one for exactly this reason —
+  "a feature, not an app: a route has no domain and no tile".
+
 ## v1 scope (decided)
 
 Chat (streamed, multi-conversation, per-user) meeting the parity bar above; content

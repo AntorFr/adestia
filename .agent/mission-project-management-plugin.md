@@ -34,6 +34,14 @@ le centre de cette lettre, et qui annulent la version précédente sur ces point
    représentation diffère ; on ajoute un attribut quand c'est le sens qui
    diffère. Douze blocs deviennent huit rendus, et créer une sorte de contenu
    ne coûte plus rien.
+8. **La résolution d'un nom de bloc est contextuelle et hiérarchisée** — l'app
+   du domaine, puis les features, puis le comportement par défaut. Aucun accord
+   n'est requis entre plugins.
+
+**Les points 7 et 8 ne sont PAS propres à ce plugin** : ils gouvernent le
+vocabulaire de tous les plugins, et vivent donc dans `DESIGN.md`, section
+« Extension system ». Cette lettre ne les répète pas — elle en hérite. Ce qui
+suit ne dit que ce qui est propre aux chantiers.
 
 **PAS ferme, et à retravailler avec le propriétaire avant de coder** : les noms
 de blocs, la liste exacte des attributs, et surtout **les données d'exemple**.
@@ -655,6 +663,13 @@ d'ajouter une portée à un rendu sans ajouter un rendu. Et `content`, `table` e
 bloc peut avoir du contenu et l'ignorer quand sa portée le dépasse ; l'inverse
 serait impossible.
 
+**`content` n'est pas une promesse structurelle.** Un même rendu peut porter du
+texte sur une fiche et rien sur une autre — c'est déjà le cas de `timeline`,
+rédigée en portée `self` et vide en portée `subtree`. Le champ déclare ce que
+le rendu FAIT d'un corps, pas ce qu'un corps a le droit d'être ; un corps
+présent là où ce domaine n'en dessine pas est un avertissement et une mention
+visible, jamais une page verrouillée. Cf. `DESIGN.md` pour le contrat complet.
+
 **`from` est fermé, lui.** Un `:::list` qui ne sait pas où regarder ne dessine
 rien du tout : c'est exactement le cas où une faute de frappe est un rectangle
 vide, donc exactement le cas où la validation vaut son prix.
@@ -684,6 +699,35 @@ Trois chantiers le précèdent, et chacun vaut le coup tout seul :
 
 **Codé avant ça, le plugin devrait inventer sa propre résolution — et ce serait
 la mauvaise, comme le `.filter(Boolean)` de `todo` l'a montré.**
+
+### Un quatrième préalable, matériel : les attributs sur plusieurs lignes
+
+Les blocs de ce plugin portent des attributs en nombre — `scope`, `pull`,
+`from`, `sort`, `closed`, `view`, plus le `type` qui porte le sujet. Les tenir
+sur une seule ligne d'ouverture est intenable, et l'amont l'interdit
+(`disallowEol: true` sur la construction conteneur).
+
+**Mesuré le 04/09, verdict GO** : retourner ce drapeau sur le conteneur seul
+laisse **258 des 262 tests amont verts**, et les 4 rouges sont exactement ceux
+qui affirmaient l'ancienne règle. Rien de structurel ne casse — conteneurs
+paresseux non fermés, listes portant des accolades d'attributs, fins de ligne
+dans les conteneurs : tous verts. Une accolade jamais refermée dégrade en texte
+littéral visible et **s'arrête à la ligne vide**, sans rien abîmer après elle.
+
+Ce que ça demande, et qui doit exister avant la première ligne du plugin :
+
+- un **fork** de `micromark-extension-directive` sur un dépôt à nous, branche
+  portant le drapeau retourné, les trois tests amont **inversés plutôt que
+  supprimés** (les effacer masquerait la divergence), un test neuf sur la borne
+  de l'accolade orpheline, et **le build commité** — le dépôt amont ne suit ni
+  `index.js` ni `lib/`, donc une dépendance git installerait sinon un paquet
+  vide ;
+- un **handler `containerDirective` maison** dans `STRINGIFY_OPTIONS`, à côté du
+  `textHandler` qui y est déjà. Mesuré : un handler passé en option gagne sur
+  celui de l'extension. Seuil de retour à la ligne sur la **longueur de la
+  ligne**, pas sur le nombre d'attributs ;
+- rien côté éditeur : il reçoit `serialize(parse(…))` et parse avec la même
+  grammaire.
 
 ## Voisinage — `dev-flow`, l'ancien `lots`
 
