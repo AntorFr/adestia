@@ -1,0 +1,47 @@
+{
+ "schemaVersion": "4.0",
+ "projet": "BLT",
+ "titre": "Meuble à tiroirs — bureau (caisson seul)",
+ "design": {
+  "famille": "caisson",
+  "trigramme": "BLT",
+  "hors_tout": { "l": 1120, "p": 600, "h": 870 },
+  "pose": "fixe",
+  "facade": "ouverte",
+  "plan_travail": "rapporte",
+  "fond": "oui",
+  "dessous": "encastre",
+  "materiaux": { "principal": { "ep": 19 } },
+  "parametres": {
+   "marge_fond": 5,
+   "rainure_prof": 9,
+   "rainure_encastrement": 5,
+   "fond_jeu": 3,
+   "profondeur_traverse": 100
+  },
+  "chants": {
+   "BLT-A1-BAS": ["abouts", "rive-avant"],
+   "BLT-A1-CÔTÉ-G": ["rive-avant"],
+   "BLT-A1-CÔTÉ-D": ["rive-avant"]
+  },
+  "journal": [
+   {
+    "le": "2026-08-30T17:32:00+02:00",
+    "champ": "dessous",
+    "avant": "ramene",
+    "apres": "encastre",
+    "pourquoi": "le dessous ira jusqu'au fond, avec une rainure pour l'encastrer"
+   },
+   {
+    "le": "2026-08-30T18:21:00+02:00",
+    "champ": "plan_travail",
+    "avant": "aucun",
+    "apres": "rapporte",
+    "pourquoi": "il y a un plan de travail par-dessus : dessus en traverses, comme imp3d"
+   }
+  ]
+ },
+ "materiaux": [{ "id": "MEL19", "ep": 19, "plaque": { "l": 2800, "h": 2070 } }],
+ "pieces": [],
+ "debit": []
+}

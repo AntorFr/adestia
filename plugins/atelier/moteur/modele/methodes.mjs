@@ -61,6 +61,14 @@ const dessusTraverses = {
       relations: [
         // Entre les deux côtés : la traverse perd leurs deux épaisseurs.
         ...traverses.map((t) => entre(t, 'x', cotes.map((c) => c.etiquette))),
+        // La profondeur, elle, ne se déduit de rien : c'est un choix, et la
+        // méthode dit d'où il vient. Le paramètre absent laisse une cote libre
+        // plutôt qu'un « 100 par défaut, PAS CALCULÉ » en note de bas de page.
+        ...traverses.map((t) => ({
+          nom: `${t.etiquette}/profondeur-choisie`,
+          termes: { [v(t.etiquette, 'y')]: 1, 'param.profondeur_traverse': -1 },
+          egale: 0,
+        })),
         // Le côté ne perd que le bas : les traverses se posent SUR lui.
         ...cotes.map((c) => bute(c, 'z', [etiquette(trigramme, module, 'BAS')])),
       ],

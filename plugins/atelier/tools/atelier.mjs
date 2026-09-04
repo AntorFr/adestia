@@ -14,18 +14,29 @@
      node atelier.mjs etat   <workbook.json>
      node atelier.mjs valide <workbook.json>
      node atelier.mjs migre  <workbook.json> [--ecrit]
+     node atelier.mjs derive <workbook.json> --regles <dossier> [--ecrit]
 */
 
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 import { normalise } from '../web/convert.js'
 import { valide } from '../web/regles.js'
-import { fraicheur } from '../moteur/design.mjs'
+import { fraicheur, signature } from '../moteur/design.mjs'
+import { litTable } from '../moteur/tables.mjs'
+import { derive } from '../moteur/derive/index.mjs'
+import { diff, rendu } from '../moteur/diff.mjs'
 
 const [cmd, chemin, ...opts] = process.argv.slice(2)
 if (!cmd || !chemin) {
-  console.error('usage: atelier.mjs etat <workbook.json> | valide <workbook.json> | migre <workbook.json> [--ecrit]')
+  console.error('usage: atelier.mjs etat|valide|migre|derive <workbook.json> [--regles <dossier>] [--ecrit]')
   process.exit(2)
+}
+
+/** L'option `--regles <dossier>` : d'où viennent les tables de décision. */
+const valeurDe = (nom) => {
+  const i = opts.indexOf(nom)
+  return i >= 0 ? opts[i + 1] : undefined
 }
 
 const brut = JSON.parse(readFileSync(chemin, 'utf8'))
@@ -66,6 +77,40 @@ if (cmd === 'etat') {
     process.exit(1)
   }
   console.log('\n✓ valide.')
+} else if (cmd === 'derive') {
+  // Les tables viennent de la mémoire, jamais de l'image : le moteur ne les
+  // cherche pas tout seul, on lui dit où elles sont.
+  const dossier = valeurDe('--regles')
+  if (!dossier) { console.error('derive : --regles <dossier> est requis — les tables vivent dans la mémoire'); process.exit(2) }
+
+  const tables = []
+  for (const f of readdirSync(dossier).filter((f) => f.endsWith('.json')).sort()) {
+    const { table, erreurs } = litTable(JSON.parse(readFileSync(join(dossier, f), 'utf8')), f)
+    if (erreurs.length) { console.error(`✗ ${f} :`); for (const e of erreurs) console.error('  •', e); process.exit(1) }
+    tables.push(table)
+  }
+
+  if (!wb.design) { console.error('derive : ce workbook n\'a pas de design — il n\'y a rien à dériver'); process.exit(1) }
+  const r = derive(wb.design, tables)
+
+  console.log(`workbook ${wb.projet || '?'} — ${r.pieces.length} pièces, ${tables.length} table(s) lue(s)`)
+  for (const j of r.journal) console.log(`  · ${j.table} ligne ${j.ligne} → ${j.methode ?? 'aucune méthode'}`)
+  if (r.ecartees.length) console.log(`  · écartées (autre famille) : ${r.ecartees.join(', ')}`)
+
+  const suivant = { ...wb, pieces: r.pieces, derive: signature(wb.design, 'atelier@4.0') }
+  const delta = diff(wb, suivant)
+  console.log(`\n${rendu(delta)}`)
+
+  if (r.issues.length) {
+    console.log(`\n${r.issues.length} point(s) à trancher :`)
+    for (const i of r.issues) console.log(`  ${i.gravite === 'bloquant' ? '✗' : '⚠'} ${i.message}`)
+  }
+
+  if (!r.contraint) { console.log('\n✗ le meuble n\'est pas entièrement contraint — rien n\'est écrit.'); process.exit(1) }
+  if (opts.includes('--ecrit')) {
+    writeFileSync(chemin, `${JSON.stringify(suivant, null, 1)}\n`)
+    console.log(`\n✓ ${chemin} réécrit, dérivé signé.`)
+  } else console.log('\n✓ dérivation complète (--ecrit pour l\'enregistrer).')
 } else if (cmd === 'migre') {
   // On n'écrit pas du faux : un converti qui ne valide pas ne remplace rien.
   const errs = valide(wb)
