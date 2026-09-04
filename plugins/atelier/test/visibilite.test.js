@@ -47,6 +47,10 @@ test('un meuble fixe contre un mur ne chante pas son dos', () => {
   const r = derive(design({ visible: ['avant'] }), tables())
   assert.deepEqual(piece(r, 'BLT-A1-BAS').chants, ['rive-avant'])
   assert.deepEqual(piece(r, 'BLT-A1-CÔTÉ-G').chants, ['rive-avant'])
+  // Et la traverse arrière non plus : elle ne se chante QUE si l'arrière du
+  // meuble se chante. Un bord qui débouche sur une face qu'on ne regarde pas
+  // reste brut, où qu'il soit dans le meuble.
+  assert.deepEqual(piece(r, 'BLT-A1-TRAV-HAUT-AR').chants, [])
 })
 
 test('un meuble à roulettes montre son dos, donc il le chante', () => {
@@ -56,7 +60,7 @@ test('un meuble à roulettes montre son dos, donc il le chante', () => {
     ['about-droit', 'about-gauche', 'rive-arriere', 'rive-avant'])
 })
 
-test('la traverse avant se chante devant, et rien d\'autre', () => {
+test('la traverse avant se chante devant, et rien d\'autre — quand le dos se chante aussi', () => {
   const r = derive(design({ visible: ['avant', 'arriere'] }), tables())
   assert.deepEqual(piece(r, 'BLT-A1-TRAV-HAUT-AV').chants, ['rive-avant'],
     'sa rive arrière regarde l\'intérieur, ses abouts sont pris entre les côtés')
