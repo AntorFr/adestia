@@ -260,13 +260,54 @@ contient. Le reste vient du statut : un item que `isFinished()` déclare fini es
 dessiné fait, sans qu'on lui ajoute un pourcentage à tenir à jour. C'est le
 workflow qui colore le planning, et il n'y a qu'une table.
 
-**Ce que la portée large exige, en revanche, c'est deux champs sur les items** :
-`start:` et `due:`. `due:` est déjà le mot de `todo` — le reprendre à
-l'identique, ne pas inventer `echeance:` à côté. C'est le seul endroit où ce
-plugin demande aux fiches de l'utilisateur de porter des champs qu'il nomme :
-les types sont libres, les dates ne peuvent pas l'être, sinon il n'y a pas de
-planning. Un item sans dates ne casse rien — il n'a pas de bande, et le bloc le
-dit plutôt que de deviner.
+### Où vivent les dates — la question du stockage, tranchée
+
+Deux modèles étaient possibles, et le choix décide de ce qu'une phase EST.
+
+**Le modèle fermé** : un `.md` de type `timeline` qui liste des phases, chacune
+avec ses deux dates. Explicite, mais une phase y est de la donnée morte — elle
+ne peut pas porter de statut, ni de tâches, ni de synthèse — et surtout ça
+ouvre un TROISIÈME endroit où le temps se déclare, à côté de l'entête des items
+et du bloc rédigé. Trois sources sur les mêmes dates, c'est le motif de dérive
+que ce dépôt a déjà payé deux fois.
+
+**Le modèle ouvert, retenu** : *n'importe quel item qui porte des dates entre
+dans le planning*. Il n'y a pas de type `timeline`, pas de fichier dédié, rien
+à déclarer. Et ce n'est pas une concession à l'ouverture pour elle-même : c'est
+la conséquence directe du modèle d'arbre — **une phase EST un item**. « Cadrage »
+est un sous-chantier avec un début, une fin, un statut, ses propres tâches et sa
+propre page ; sa bande sur le planning s'ouvre dessus. Le modèle fermé aurait
+dessiné un rectangle sur lequel il n'y a rien à cliquer.
+
+**Ce que ça coûte en vocabulaire : UN seul mot nouveau.**
+
+| Ce que la fiche porte | Ce que le planning dessine |
+|---|---|
+| `start:` et `due:` | une **phase**, une bande du premier au second |
+| `due:` seul | un **jalon**, un repère à cette date |
+| ni l'un ni l'autre | rien, et le bloc le dit — jamais une date devinée |
+
+`due:` est déjà le mot de `todo`, au même sens (« quand c'est dû »). Seul
+`start:` est nouveau. Un jalon n'est donc pas un troisième objet : c'est une
+phase sans commencement, ce qui est exactement ce qu'un jalon est.
+
+**Qui est éligible** : les items de la portée, c'est-à-dire — même règle que
+partout ailleurs dans cette lettre — les pages dont le `type:` a un workflow
+déclaré. Sans ce filtre, les deux cents tâches d'une instance atterriraient sur
+le planning ; elles ont déjà leur bloc, `:::actions`.
+
+**Le cas du modèle fermé reste couvert** par la portée `self` : une phasage qui
+n'est qu'un dessin — trois bandes sur un programme, sans page derrière — s'écrit
+dans le bloc et ne crée aucun fichier. Et si quelqu'un veut vraiment ce dessin
+dans un document à part, c'est une page de contenu du dossier portant le bloc.
+Rien de spécial à prévoir.
+
+**Reste ouvert, et c'est une question de MOTS, pas de modèle** : est-ce le
+plugin qui fixe `start:`/`due:`, ou `pm-config` qui mappe les mots de
+l'utilisateur (`dates: { start: debut, end: echeance }`) ? Les deux marchent
+avec le modèle ouvert ; la seconde coûte deux lignes de config et une
+indirection, et rend au propriétaire des fiches le dernier mot que le plugin
+lui prenait.
 
 **Non-buts, explicitement.** Pas de flèches de dépendance entre phases, pas de
 chemin critique, pas de charge ni d'allocation. Une dépendance est un GRAPHE, et
@@ -320,6 +361,33 @@ chaque type de l'utilisateur son gabarit — et son workflow, et son icône. Un
 `sujet` s'ouvre donc déjà disposé comme les autres sujets, sans que personne
 répète le réglage deux cents fois, et une fiche peut toujours le contredire
 dans son entête. Patron : `todo-config`.
+
+### Par quel geste on choisit, concrètement
+
+Trois gestes, et deux des trois existent déjà dans l'éditeur.
+
+| Ce qu'on choisit | Le geste | Ce qu'il écrit | État |
+|---|---|---|---|
+| **Quels blocs** | ajouter par le menu slash, supprimer le bloc | la directive apparaît ou disparaît du fichier | Crepe fournit le menu slash ; **à vérifier** : que les blocs contribués par un plugin y figurent |
+| **Dans quel ordre** | tirer la poignée du bloc | la directive change de place dans le fichier | **déjà là** — Crepe monte ses poignées de déplacement, et un bloc est un nœud de première classe du document, jamais du texte qui ressemble à une directive |
+| **Quelle ampleur** | un interrupteur pleine/demie sur le bloc | `w=demie` dans les attributs de la directive | **manquant** — les attributs vivent dans le modèle (`vocabulary.ts` les porte en `attrs` et les sérialise) mais rien ne les édite |
+
+Le troisième est donc le seul travail neuf, et il a deux formes possibles :
+
+1. **L'interrupteur appartient au bloc.** C'est déjà le plugin qui dessine ses
+   propres blocs, y compris dans l'éditeur (`Editor.tsx` passe les composants
+   contribués), donc il peut dessiner dans l'entête du bloc le bouton qui
+   écrit son propre attribut. Rien à changer dans le cœur, et chaque plugin
+   garde la main sur ce qui se règle chez lui. **Recommandé.**
+2. **Un formulaire d'attributs générique dans l'éditeur du cœur**, alimenté par
+   l'`AttributeSpec` que le manifeste déclare déjà — les valeurs fermées
+   deviendraient des menus, les libres des champs. Ça profiterait à TOUS les
+   plugins et c'est probablement la bonne chose un jour, mais c'est un chantier
+   de cœur, à ne pas faire passer en douce dans celui-ci.
+
+Et si rien n'est construit : l'ampleur reste éditable à la main dans le
+markdown, comme tout attribut. La disposition dégrade en une colonne, elle ne
+casse pas.
 
 **Question ouverte, à trancher avant de coder** : est-ce que la vue se contente
 de DESSINER les blocs que la fiche contient (recommandé : une source de vérité,
@@ -472,8 +540,10 @@ l'audit du 21/08 a nommée.
 5. **Le coût de la remontée de BLOCS** (par opposition aux entêtes) : N requêtes
    côté client, ou un champ de plus dans l'index. À trancher le jour où un
    `:::risks scope=subtree` est demandé, pas avant.
-6. **Les données réelles.** Ce sont elles qui trancheront les noms de blocs et
-   la liste d'attributs. Rien ne se fige avant.
+6. **Les données réelles — REPORTÉ** (04/09) : elles ne sont pas sur cette
+   machine. Ce sont elles qui trancheront les noms de blocs et la liste
+   d'attributs, donc ces deux-là restent ouverts jusqu'à ce qu'un corpus réel
+   soit lisible d'ici. La conception peut avancer sans ; le figeage, non.
 
 ## La maquette
 
