@@ -28,6 +28,11 @@ const dessusPlaquePleine = {
       etiquette: etiquette(trigramme, module, 'DESSUS'),
       role: 'DESSUS',
       orientation: 'horizontal',
+      // Traversant : ses quatre bords sortent du meuble.
+      affleure: {
+        'about-gauche': 'gauche', 'about-droit': 'droite',
+        'rive-avant': 'avant', 'rive-arriere': 'arriere',
+      },
     }
     return {
       pieces: [dessus],
@@ -51,10 +56,18 @@ const dessusPlaquePleine = {
 const dessusTraverses = {
   decrit: 'dessus en 2 traverses (avant + arrière) posées sur les côtés',
   applique({ trigramme, module, cotes }) {
-    const traverses = ['AV', 'AR'].map((repere) => ({
+    // Une traverse ne débouche que du côté où elle est posée : la rive
+    // opposée regarde l'intérieur du meuble, et ses abouts sont pris entre les
+    // côtés. C'est ce qui fait qu'on chante l'avant de la traverse avant, et
+    // rien d'autre — l'atelier le fait déjà sans se le formuler.
+    const traverses = [
+      ['AV', { 'rive-avant': 'avant' }],
+      ['AR', { 'rive-arriere': 'arriere' }],
+    ].map(([repere, affleure]) => ({
       etiquette: etiquette(trigramme, module, 'TRAV-HAUT', repere),
       role: 'TRAVERSE',
       orientation: 'horizontal',
+      affleure,
     }))
     return {
       pieces: traverses,
@@ -107,10 +120,12 @@ const largeurEnRainure = (fond, cotes) => ({
   egale: 0,
 })
 
-const pieceFond = (trigramme, module) => ({
+/** En rainure, le fond n'a AUCUN bord dehors — d'où « pas de chant au fond ». */
+const pieceFond = (trigramme, module, affleure = {}) => ({
   etiquette: etiquette(trigramme, module, 'FOND'),
   role: 'FOND',
   orientation: 'frontal',
+  affleure,
 })
 
 /**

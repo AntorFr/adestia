@@ -13,6 +13,7 @@ import { choisit, pourFamille } from '../tables.mjs'
 import { applique } from '../modele/methodes.mjs'
 import { constante, etiquette, relationsDOrientation, relationsDuMeuble, traverse, v } from '../modele/ancrages.mjs'
 import { lineaireDeChant, retraitsDe } from '../modele/chants.mjs'
+import { chantsRetenus, ecartsAuDefaut } from '../modele/visibilite.mjs'
 import { systeme } from './systeme.mjs'
 
 const issue = (gravite, type, message, plus = {}) => ({ gravite, type, message, ...plus })
@@ -26,11 +27,23 @@ const issue = (gravite, type, message, plus = {}) => ({ gravite, type, message, 
  * côté, et c'est une table qui le décide.
  */
 function socle(trigramme, module) {
-  const bas = { etiquette: etiquette(trigramme, module, 'BAS'), role: 'BAS', orientation: 'horizontal' }
+  const bas = {
+    etiquette: etiquette(trigramme, module, 'BAS'),
+    role: 'BAS',
+    orientation: 'horizontal',
+    // Traversant sous tout le meuble : ses quatre bords en sortent.
+    affleure: {
+      'about-gauche': 'gauche', 'about-droit': 'droite',
+      'rive-avant': 'avant', 'rive-arriere': 'arriere',
+    },
+  }
   const cotes = ['G', 'D'].map((repere) => ({
     etiquette: etiquette(trigramme, module, 'CÔTÉ', repere),
     role: 'CÔTÉ',
     orientation: 'lateral',
+    // Un côté montre ses RIVES (avant et arrière) ; sa face extérieure donne
+    // sur le flanc du meuble, mais une face n'est pas un chant.
+    affleure: { 'rive-avant': 'avant', 'rive-arriere': 'arriere' },
   }))
   return {
     pieces: [bas, ...cotes],
@@ -97,12 +110,17 @@ export function derive(design, tables, module = 'A1') {
   for (const [nom, valeur] of Object.entries(design.parametres ?? {}))
     pose(constante(`parametre/${nom}`, `param.${nom}`, valeur))
 
+  // Les faces qu'on regarde décident des chants ; le projet garde le dernier
+  // mot, pièce par pièce — on chante parfois un bord invisible pour n'avoir
+  // qu'un réglage de bande à faire.
+  const chants = chantsRetenus(pieces, design.visible ?? [], design.chants ?? {})
+
   for (const piece of pieces) {
     const ep = epaisseurDe(piece, parEtiquette, design)
     if (ep !== undefined) pose(constante(`materiau/ep-${piece.etiquette}`, v(piece.etiquette, 'ep'), ep))
     // Les ancrages posent des cotes FINIES ; le retrait ne dépend donc que des
     // chants de la pièce, jamais de la façon dont elle tient.
-    const retraits = retraitsDe(piece, design.chants?.[piece.etiquette], design.parametres?.retrait_chant)
+    const retraits = retraitsDe(piece, chants[piece.etiquette], design.parametres?.retrait_chant)
     for (const r of relationsDOrientation(piece, retraits)) pose(r)
   }
   for (const r of relations) pose(r)
@@ -118,13 +136,16 @@ export function derive(design, tables, module = 'A1') {
     longueur: valeurs[v(p.etiquette, 'longueur')],
     largeur: valeurs[v(p.etiquette, 'largeur')],
     ep: valeurs[v(p.etiquette, 'ep')],
-    chants: design.chants?.[p.etiquette] ?? [],
+    chants: chants[p.etiquette] ?? [],
     de: s.origineDe(v(p.etiquette, 'longueur')),
   }))
 
   return {
     journal,
-    chant: lineaireDeChant(cotees, design.chants ?? {}),
+    chant: lineaireDeChant(cotees, chants),
+    // Ce que le projet fait dire à ses chants au-delà des faces regardées :
+    // un côté plaqué bien qu'invisible, pour ne régler la bande qu'une fois.
+    ecartsChant: ecartsAuDefaut(pieces, design.visible ?? [], design.chants ?? {}),
     ecartees: ecartees.map((t) => t.id),
     issues,
     libres,
