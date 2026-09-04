@@ -79,6 +79,38 @@ const dessusPlaquePleine = {
 }
 
 /**
+ * Le même dessus abouté, mais RAMENÉ en profondeur pour laisser passer le fond.
+ *
+ * Un fond glissé en rainure descend derrière les horizontaux : il faut lui
+ * ménager le passage, sinon le dessus le barre. Le retrait vaut la distance à
+ * laquelle le fond est retenu du dos — 20 mm sur les projets, d'où les 580
+ * d'un dessus dans un meuble de 600.
+ *
+ * Le dessous, lui, ne suit pas forcément : il peut filer pleine profondeur et
+ * arrêter le fond, ou l'encastrer dans une rainure. C'est la table du fond qui
+ * en décide, et c'est pour ça que ce sont deux questions séparées.
+ */
+const dessusPlaqueEntreRamene = {
+  decrit: 'dessus en plaque pleine abouté, ramené en profondeur pour le fond',
+  applique(ctx) {
+    const { pieces, relations } = dessusPlaqueEntre.applique(ctx)
+    const dessus = pieces[0]
+    return {
+      pieces,
+      relations: [
+        // Tout sauf la profondeur traversante, qui barrerait le fond.
+        ...relations.filter((r) => r.nom !== `${dessus.etiquette}/traverse-y`),
+        {
+          nom: `${dessus.etiquette}/ramene-pour-le-fond`,
+          termes: { [v(dessus.etiquette, 'y')]: 1, 'meuble.y': -1, 'param.retrait_fond_dos': 1 },
+          egale: 0,
+        },
+      ],
+    }
+  },
+}
+
+/**
  * Le dessus est deux traverses, avant et arrière, qui REPOSENT sur les côtés.
  *
  * Le cas du plan de travail rapporté : c'est lui qui fait la rigidité, comme
@@ -263,6 +295,7 @@ const fondStructurel = {
 
 export const METHODES = {
   'dessus-plaque-entre': dessusPlaqueEntre,
+  'dessus-plaque-entre-ramene': dessusPlaqueEntreRamene,
   'dessus-plaque-pleine': dessusPlaquePleine,
   'dessus-traverses': dessusTraverses,
   'fond-rainure-traversant': fondRainureTraversant,

@@ -95,7 +95,7 @@ test('les deux rainures ne se confondent pas : 4 mm en dépendent', () => {
 
 test('le journal dit quelle table, quelle ligne, quelle méthode', () => {
   assert.deepEqual(avecTraverses(design()).journal, [
-    { table: 'dessus', ligne: 2, methode: 'dessus-traverses' },
+    { table: 'dessus', ligne: 1, methode: 'dessus-traverses' },
     { table: 'fond', ligne: 5, methode: 'fond-rainure-encastre' },
   ])
 })

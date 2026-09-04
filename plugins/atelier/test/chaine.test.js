@@ -50,7 +50,8 @@ function derive(design) {
   }))
 
   // La table est interrogée : c'est ELLE qui décide du montage du dessus.
-  const verdict = choisit(tableDessus(), { plan_travail: design.plan_travail })
+  // Le design ENTIER : la table décide de ses entrées, pas l'appelant.
+  const verdict = choisit(tableDessus(), design)
   assert.equal(verdict.erreur, undefined, verdict.erreur)
   journal.push({ table: verdict.table, ligne: verdict.ligne, methode: verdict.alors.methode })
 
@@ -88,13 +89,17 @@ function derive(design) {
 const design = (plan_travail) => ({
   famille: 'caisson',
   plan_travail,
+  // La table du dessus croise trois entrées : un fond en rainure derrière un
+  // dessus plein oblige à le ramener, ce qui n'est pas le sujet ici.
+  pose: 'fixe',
+  fond: 'non',
   hors_tout: { l: 1120, p: 600, h: 870 },
   epaisseur: 19,
 })
 
 test('sans plan de travail : un dessus plein ABOUTÉ, et des côtés de 851', () => {
   const r = derive(design('aucun'))
-  assert.deepEqual(r.journal, [{ table: 'dessus', ligne: 1, methode: 'dessus-plaque-entre' }])
+  assert.deepEqual(r.journal, [{ table: 'dessus', ligne: 2, methode: 'dessus-plaque-entre' }])
   assert.deepEqual(r.pieces.map((p) => p.etiquette), [
     'BLT-A1-BAS', 'BLT-A1-CÔTÉ-G', 'BLT-A1-CÔTÉ-D', 'BLT-A1-DESSUS',
   ])
@@ -124,7 +129,7 @@ test('la plaque qui COIFFE existe, et c\'est elle qui donnait 832', () => {
 
 test('avec plan de travail rapporté : deux traverses, et des côtés de 851', () => {
   const r = derive(design('rapporte'))
-  assert.deepEqual(r.journal, [{ table: 'dessus', ligne: 2, methode: 'dessus-traverses' }])
+  assert.deepEqual(r.journal, [{ table: 'dessus', ligne: 1, methode: 'dessus-traverses' }])
   assert.deepEqual(r.pieces.map((p) => p.etiquette), [
     'BLT-A1-BAS', 'BLT-A1-CÔTÉ-G', 'BLT-A1-CÔTÉ-D', 'BLT-A1-TRAV-HAUT-AV', 'BLT-A1-TRAV-HAUT-AR',
   ])
@@ -154,7 +159,7 @@ test('la profondeur des traverses reste non déterminée, et le dit', () => {
 test('une table qui nomme une méthode que le moteur ignore est refusée, pas devinée', () => {
   const { erreur, pieces } = applique('dessus-en-toile-de-jute', { trigramme: 'X', module: 'A1', cotes: [] }, 'dessus ligne 3')
   assert.match(erreur, /méthode inconnue « dessus-en-toile-de-jute » \(dessus ligne 3\)/)
-  assert.match(erreur, /connues : dessus-plaque-entre, dessus-plaque-pleine, dessus-traverses/)
+  assert.match(erreur, /connues : dessus-plaque-entre, dessus-plaque-entre-ramene/)
   assert.deepEqual(pieces, [])
 })
 
