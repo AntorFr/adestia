@@ -465,7 +465,116 @@ const tiroirs = {
   },
 }
 
+/* ── Le corps du tiroir ──────────────────────────────────────────────────────
+   Ce sur quoi la façade se visse, et qui n'est jamais elle.
+
+   Sa largeur perd de chaque côté l'épaisseur d'une coulisse et le jeu qu'elle
+   demande — « ≥ 1 mm de jeu de chaque côté pour que les rails coulissent ».
+   Sa profondeur est celle de la coulisse, pas celle du meuble : une 550 fait
+   un tiroir de 550, quel que soit le caisson qui la reçoit.
+
+   Le fond est en 6 mm dans une rainure de 7 (soit 1 mm de jeu), à 1 cm du bas.
+   Le tiroir a donc, sous cette rainure, une hauteur perdue qui ne sert à rien
+   — c'est pour ça que la fiche note l'espace utile à part.
+
+   Rien ici n'est deviné : chaque cote pend à un paramètre, et un paramètre
+   absent laisse une cote libre et nommée plutôt qu'un nombre plausible. */
+const corpsDeTiroir = {
+  decrit: 'corps de tiroir : 2 côtés, dos, montant avant, fond en rainure',
+  applique({ trigramme, module, design }) {
+    const combien = design?.tiroirs ?? 0
+    if (!combien) return { pieces: [], relations: [] }
+
+    const pieces = []
+    const relations = []
+
+    for (let i = 1; i <= combien; i++) {
+      const nom = (role, repere) => etiquette(trigramme, module, `T${i}`, repere ? `${role}-${repere}` : role)
+      const flancs = ['G', 'D'].map((r) => ({
+        etiquette: nom('CÔTÉ', r),
+        role: 'TIROIR-CÔTÉ',
+        orientation: 'lateral',
+        // Un côté de tiroir est plus profond que haut : sa longueur court
+        // dans la profondeur, à l'inverse d'un côté de caisson.
+        echange: true,
+      }))
+      // Le MONTANT avant est fonctionnel : ce n'est pas la façade, c'est ce
+      // sur quoi elle se vissera.
+      const bouts = [['MONTANT', 'TIROIR-MONTANT'], ['DOS', 'TIROIR-DOS']].map(([r, role]) => ({
+        etiquette: nom(r),
+        role,
+        orientation: 'frontal',
+        echange: true,
+      }))
+      // Le fond est en 6 mm quand le corps est en 19 : il nomme sa matière.
+      const fond = {
+        etiquette: nom('FOND'), role: 'TIROIR-FOND', orientation: 'horizontal',
+        materiau: 'fond_tiroir',
+      }
+
+      pieces.push(...flancs, ...bouts, fond)
+
+      const largeurHorsTout = `${nom('CÔTÉ', 'G')}.hors_tout`
+      relations.push(
+        // La largeur du tiroir : l'ouverture moins deux coulisses et leur jeu.
+        {
+          nom: `${nom('')}/largeur-entre-coulisses`,
+          termes: {
+            [largeurHorsTout]: 1, 'meuble.x': -1,
+            [v(etiquette(trigramme, module, 'CÔTÉ', 'G'), 'ep')]: 1,
+            [v(etiquette(trigramme, module, 'CÔTÉ', 'D'), 'ep')]: 1,
+            'param.ep_coulisse': 2, 'param.jeu_coulisse': 2,
+          },
+          egale: 0,
+        },
+        // Les flancs courent sur la profondeur de la coulisse.
+        ...flancs.map((f) => ({
+          nom: `${f.etiquette}/profondeur-de-coulisse`,
+          termes: { [v(f.etiquette, 'y')]: 1, 'param.profondeur_coulisse': -1 },
+          egale: 0,
+        })),
+        // Montant avant et dos passent ENTRE les flancs.
+        ...bouts.map((b) => ({
+          nom: `${b.etiquette}/entre-les-flancs`,
+          termes: {
+            [v(b.etiquette, 'x')]: 1, [largeurHorsTout]: -1,
+            ...Object.fromEntries(flancs.map((f) => [v(f.etiquette, 'ep'), 1])),
+          },
+          egale: 0,
+        })),
+        // Toutes les pièces du corps ont la même hauteur.
+        ...[...flancs, ...bouts].map((p) => ({
+          nom: `${p.etiquette}/hauteur-de-tiroir`,
+          termes: { [v(p.etiquette, 'z')]: 1, 'param.hauteur_tiroir': -1 },
+          egale: 0,
+        })),
+        // Le fond, engagé dans les rainures des quatre côtés.
+        {
+          nom: `${fond.etiquette}/largeur-en-rainure`,
+          termes: {
+            [v(fond.etiquette, 'x')]: 1, [largeurHorsTout]: -1,
+            ...Object.fromEntries(flancs.map((f) => [v(f.etiquette, 'ep'), 1])),
+            'param.rainure_tiroir_prof': -2,
+          },
+          egale: 0,
+        },
+        {
+          nom: `${fond.etiquette}/profondeur-en-rainure`,
+          termes: {
+            [v(fond.etiquette, 'y')]: 1, 'param.profondeur_coulisse': -1,
+            ...Object.fromEntries(bouts.map((b) => [v(b.etiquette, 'ep'), 1])),
+            'param.rainure_tiroir_prof': -2,
+          },
+          egale: 0,
+        },
+      )
+    }
+    return { pieces, relations }
+  },
+}
+
 export const METHODES = {
+  'tiroirs-corps': corpsDeTiroir,
   'tiroirs-facades': tiroirs,
   'separateur-lateral': separateur(false),
   'separateur-frontal': separateur(true),

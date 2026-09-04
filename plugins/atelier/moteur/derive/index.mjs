@@ -69,6 +69,13 @@ export function faitsDerives(design) {
 
 /** La matière d'une pièce : celle que la table a dite, ou celle du caisson. */
 const matiereDe = (piece, sorties, design) => {
+  // Une PIÈCE peut nommer sa matière : un fond de tiroir est en 6 mm dans un
+  // caisson en 19, et ce n'est pas la table qui le décide — c'est la méthode
+  // qui pose la pièce, parce qu'elle seule sait de quoi elle est faite.
+  if (piece.materiau) {
+    const mat = design.materiaux?.[piece.materiau]
+    return { ep: mat?.ep, chante: mat?.chante ?? design.materiaux?.principal?.chante ?? true }
+  }
   const dit = sorties?.[piece.etiquette]
   const nom = dit?.materiau ?? (dit?.epaisseur !== undefined && dit.epaisseur !== 'caisson' ? null : 'principal')
   const mat = nom ? design.materiaux?.[nom] : undefined

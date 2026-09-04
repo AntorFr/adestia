@@ -33,10 +33,19 @@ export const ORIENTATIONS = {
   frontal: { ep: 'y', longueur: 'z', largeur: 'x' },
 }
 
-export const axesDe = (orientation) => {
+/**
+ * L'orientation fixe l'axe de l'ÉPAISSEUR ; `echange` dit laquelle des deux
+ * dimensions restantes est la longueur.
+ *
+ * Un côté de caisson est plus haut que profond, un côté de tiroir plus profond
+ * que haut — même orientation, longueur sur un axe différent. Ce n'est pas
+ * déductible : c'est ce qu'on veut voir courir le long de la bande au débit, et
+ * ça se déclare.
+ */
+export const axesDe = (orientation, echange = false) => {
   const a = ORIENTATIONS[orientation]
   if (!a) throw new Error(`orientation inconnue « ${orientation} » (${Object.keys(ORIENTATIONS).join(', ')})`)
-  return a
+  return echange ? { ep: a.ep, longueur: a.largeur, largeur: a.longueur } : a
 }
 
 /** `BLT-A1-CÔTÉ-G` — la convention d'étiquetage, tenue en un seul endroit. */
@@ -54,7 +63,7 @@ export const v = (etiquette, quoi) => `${etiquette}.${quoi}`
  * en axes (les sommes d'un montage) et de couper en cotes de débit.
  */
 export function relationsDOrientation(piece, retraits = {}) {
-  const { ep, longueur, largeur } = axesDe(piece.orientation)
+  const { ep, longueur, largeur } = axesDe(piece.orientation, piece.echange)
   const e = piece.etiquette
   return [
     // Zéro par défaut, et posé ici plutôt que laissé libre : un retrait absent

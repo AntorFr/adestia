@@ -159,7 +159,11 @@ test('la profondeur des traverses reste non déterminée, et le dit', () => {
 test('une table qui nomme une méthode que le moteur ignore est refusée, pas devinée', () => {
   const { erreur, pieces } = applique('dessus-en-toile-de-jute', { trigramme: 'X', module: 'A1', cotes: [] }, 'dessus ligne 3')
   assert.match(erreur, /méthode inconnue « dessus-en-toile-de-jute » \(dessus ligne 3\)/)
-  assert.match(erreur, /connues : tiroirs-facades, separateur-lateral/)
+  // La LISTE des méthodes connues, pas son contenu : épingler les noms ferait
+  // casser ce test à chaque méthode ajoutée, pour une raison qui n'est pas la
+  // sienne. Ce qu'il protège, c'est qu'un nom inconnu soit refusé en disant
+  // où le chercher.
+  assert.match(erreur, /connues : .*dessus-plaque-entre/)
   assert.deepEqual(pieces, [])
 })
 
