@@ -19,6 +19,13 @@
    d'atteindre le nu du meuble — et aurait fait rater le chant d'une tablette
    en retrait, qui est pourtant ce qu'on regarde le plus dans un meuble.)
 
+   **Une porte ne cache rien : on pense toujours porte OUVERTE.** Un caisson
+   fermé se chante dedans exactement comme un caisson ouvert — l'économie de
+   quelques mètres de bande se paierait le jour où on ouvre le meuble et où
+   tout est brut. La présence de portes ne change donc pas les chants ; elle
+   change des cotes (une tablette en retrait pour ne pas la faire taper), ce
+   qui est une autre question.
+
    Ce que le modèle ne peut PAS déduire seul : vers quoi un bord est tourné, et
    ce qui le cache. L'ancrage n'y suffit pas — une traverse avant ne traverse
    pas la profondeur et se voit pourtant de face. C'est la méthode qui pose la

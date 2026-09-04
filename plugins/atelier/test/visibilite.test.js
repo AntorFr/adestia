@@ -128,6 +128,16 @@ test('un bord tourné vers une face non regardée reste brut, où qu\'il soit', 
   assert.deepEqual(chantsParDefaut([dedans], ['avant', 'arriere']), { TRAV: ['rive-arriere'] })
 })
 
+test('des portes ne changent rien aux chants : on pense porte OUVERTE', () => {
+  // L'économie de quelques mètres de bande se paierait au premier meuble
+  // qu'on ouvre et dont tout l'intérieur est brut.
+  const ouverte = derive(design({ visible: ['avant'], facade: 'ouverte' }), tables())
+  const portes = derive(design({ visible: ['avant'], facade: 'portes' }), tables())
+  for (const p of ouverte.pieces)
+    assert.deepEqual(piece(portes, p.etiquette).chants, p.chants, p.etiquette)
+  assert.deepEqual(piece(portes, 'BLT-A1-TRAV-HAUT-AV').chants, ['rive-avant'])
+})
+
 test('sans faces déclarées, rien n\'est chanté — on ne devine pas ce qui se voit', () => {
   const r = derive(design(), tables())
   assert.deepEqual(chantsParDefaut(r.pieces, []), {})
