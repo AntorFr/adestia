@@ -30,6 +30,10 @@ le centre de cette lettre, et qui annulent la version précédente sur ces point
    jointes ont chacune leur bloc.
 6. **Le temps a son bloc** : des phases, des jalons, et où l'on en est — au
    choix pour ce chantier seul ou consolidé sur ce qu'il contient.
+7. **Un `:::` nomme un RENDU, pas un sujet.** On crée un bloc quand la
+   représentation diffère ; on ajoute un attribut quand c'est le sens qui
+   diffère. Douze blocs deviennent huit rendus, et créer une sorte de contenu
+   ne coûte plus rien.
 
 **PAS ferme, et à retravailler avec le propriétaire avant de coder** : les noms
 de blocs, la liste exacte des attributs, et surtout **les données d'exemple**.
@@ -130,9 +134,9 @@ que comme trois inventaires est ce qui empêche le catalogue de tripler.
 | `children` | les enfants directs | leur entête (`fields` de l'index) |
 | `subtree` | tout ce qui est en dessous, à profondeur quelconque | idem, plus profond |
 
-Un `:::risks scope=subtree` sur un programme montre alors les risques écrits
-dans les projets ; un `:::decision scope=subtree state=open` montre ce qui
-attend un arbitrage n'importe où sous soi ; un `:::actions scope=subtree` sur un
+Un `:::table{type=risques scope=subtree}` sur un programme montre alors les risques écrits
+dans les projets ; un `:::decision{scope=subtree state=open}` montre ce qui
+attend un arbitrage n'importe où sous soi ; un `:::list{from=tasks scope=subtree}` sur un
 projet donne toutes ses tâches. **Un seul bloc par sujet, à toutes les
 hauteurs** — au lieu d'un `risks` et d'un `risks-consolidés`, qui divergeraient
 comme les tables de statut du prédécesseur.
@@ -150,7 +154,7 @@ vérité : le risque vit dans le projet qui le court, le programme le regarde.
   échéance d'un sous-projet) sont **gratuits** dès que l'index arrive au
   lecteur : c'est le préalable nº 2, rien de plus.
 - Une remontée qui lit des **blocs** dans les fiches enfants (les lignes d'un
-  `:::risks`, le texte d'un `:::decision`) demande le CORPS de chaque
+  `:::table{type=risques}`, le texte d'un `:::decision`) demande le CORPS de chaque
   descendant. Deux façons, et c'est une question ouverte : soit le client va
   chercher N pages (N requêtes, et un écran qui charge), soit l'index publie un
   résumé par bloc — le serveur parse déjà chaque page dans cet endpoint, donc
@@ -159,32 +163,188 @@ vérité : le risque vit dans le projet qui le court, le programme le regarde.
 **Recommandation : commencer par les portées d'entête**, qui couvrent « les
 statuts des sous-projets au niveau du programme » et « toutes les tâches d'un
 projet » — les deux cas que le propriétaire a cités — et ne payer la remontée
-de blocs que le jour où un `:::risks` consolidé est réellement demandé. La
+de blocs que le jour où un `:::table{type=risques}` consolidé est réellement demandé. La
 distinction à garder en tête : **une tâche est une PAGE** (`type: tache`), donc
-`:::actions scope=subtree` est une requête d'entêtes ; un risque est un BLOC,
-donc `:::risks scope=subtree` est la version chère.
+`:::list{from=tasks scope=subtree}` est une requête d'entêtes ; un risque est un BLOC,
+donc `:::table{type=risques scope=subtree}` est la version chère.
 
-### Rédigés — `content: flow`, le texte est dans la fiche
+### Un `:::` est un RENDU, jamais un sujet
+
+**La règle, et elle décide de tout le catalogue :**
+
+> On crée un `:::` nouveau quand on veut une **représentation différente**.
+> On ajoute un **attribut** quand on veut dire une **chose différente**.
+> Autrement dit : *ça se dessine autrement ? → un bloc. Ça veut juste dire
+> autre chose ? → un attribut.*
+
+Le premier jet de cette lettre confondait les deux et déclarait un bloc par
+sujet — `summary`, `scope`, `risks`, `livrables`… Neuf aujourd'hui, trente dans
+un an, chacun avec son entrée de manifeste et son composant. Or `:::summary` et
+`:::scope` se dessinent **exactement pareil** : un titre, de la prose. Leur
+différence n'est pas un rendu, c'est un sens.
+
+**Ce n'est pas une idée à inventer : le cœur l'applique déjà.**
+`:::callout{type=note|tip|warning}` est un rendu unique dont le sujet est un
+attribut ; `:::app{id=…}` de même. La dérive venait de cette lettre, pas du
+produit.
+
+Donc :
+
+```
+:::content{type=summary by=Antor on=2026-09-02}
+Huit lots sur treize ; l'identité de fiche reste le chemin critique.
+:::
+
+:::content{type=perimetre}
+Le socle de contenu et son shell, hors infra.
+:::
+```
+
+Un seul bloc, un seul composant, et **le sujet est une valeur d'attribut** —
+donc un mot qui appartient à l'utilisateur, exactement comme les types de fiche.
+
+#### Ce que ça change, et c'est considérable
+
+**Créer une nouvelle sorte de contenu ne coûte plus RIEN.** Ni code, ni entrée
+de manifeste, ni redémarrage : `:::content{type=lettre-au-pere-noel}` est valide
+le jour où on l'écrit, parce que le bloc `content` est déclaré une fois pour
+toutes et que `type` est une chaîne libre. Toute la discussion « ouvrir ou
+fermer le vocabulaire » **tombe** : le vocabulaire reste fermé — une poignée de
+rendus — et l'espace des sujets est ouvert. C'était le bon découpage depuis le
+début, et on le cherchait au mauvais endroit.
+
+**La remontée s'exprime dans le même vocabulaire.** Une fiche parente ne demande
+plus « le bloc `summary` de mes enfants » mais « le `content` dont le `type` est
+`summary` » — une valeur d'attribut, pas un nom de bloc. Un seul mécanisme
+d'adressage pour toutes les remontées.
+
+**`pm-config` gagne un troisième registre** : le libellé et l'icône de chaque
+sorte de contenu (`summary: Synthèse`, `perimetre: Périmètre`). Sans lui, le
+rendu retombe sur la valeur embellie — `prettify()` existe déjà dans
+`sections.ts` pour ça. Déclaré bat deviné, deviné bat disparu.
+
+### Le catalogue, réduit à des rendus
+
+| Rendu | Ce qu'il dessine | Le sujet vit dans |
+|---|---|---|
+| `:::content` | un titre et de la prose | `type=` — n'importe quel mot |
+| `:::figures` | des chiffres en tuiles | — |
+| `:::table` | un tableau, 1<sup>re</sup> colonne colorée par son ton | `type=risques`, `type=budget`… |
+| `:::options` | des cartes `+`/`−`, une retenue | `chosen=` |
+| `:::decision` | de la prose, une échéance, un état | `state=`, `due=` |
+| `:::list` | des lignes : icône, titre, puces, date | `from=children\|tasks\|pages\|files` |
+| `:::timeline` | des barres et des jalons dans le temps | `scope=` |
+| `:::progress` | une courbe, depuis un asset voisin | `source=` |
+
+**De douze noms à huit**, et surtout : les quatre premiers absorbent tout ce
+qu'on voudra écrire, sans jamais rouvrir le manifeste.
+
+**Ce qui reste à arbitrer, c'est la GRANULARITÉ**, et la règle ci-dessus est le
+seul juge :
+
+- `children`, `actions`, `pages` dessinent la même ligne → **un seul**
+  `:::list{from=…}`. Recommandé.
+- `attachments` dessine des cartes de fichiers, pas des lignes → soit
+  `:::list{from=files view=grid}`, soit son propre rendu. **À trancher en
+  regardant les deux dessins**, pas en raisonnant.
+- `decision` reste séparé de `content` parce qu'il dessine en plus une échéance
+  et un état ouvert/rendu. Si ce n'était qu'un titre différent, il fusionnerait.
+
+### Rédigés — le texte est dans la fiche
 
 Coût nul **en `scope=self`** : c'est la mécanique de `callout`, qui tourne déjà.
 Les deux mains écrivent, l'éditeur de blocs marche sans une ligne de plus. Les
 mêmes blocs en portée plus large deviennent des requêtes — cf. le coût ci-dessus.
 
-| Bloc | Contenu | Attributs |
+| Écrit | Rendu | Contenu markdown |
 |---|---|---|
-| `:::summary` | des paragraphes | `by`, `on` |
-| `:::figures` | une liste `- Avancement: 62 % — 8 lots sur 13` | — |
-| `:::risks` | un tableau markdown (gravité, risque, parade, porteur) | `view=table\|cards` |
-| `:::options` | un `###` par option, `+`/`−` en listes | `chosen` |
-| `:::decision` | des paragraphes | `due`, `by`, `state=open\|taken` |
+| `:::content{type=summary by= on=}` | `content` | des paragraphes |
+| `:::content{type=perimetre}` | `content` | des paragraphes — **rien à déclarer** |
+| `:::figures` | `figures` | une liste `- Avancement: 62 % — 8 lots sur 13` |
+| `:::table{type=risques}` | `table` | un tableau markdown |
+| `:::options{chosen=}` | `options` | un `###` par option, `+`/`−` en listes |
+| `:::decision{state= due= by=}` | `decision` | des paragraphes |
 
 ### Requête — `content: empty`, le bloc porte un critère
 
-| Bloc | Attributs | Ce qu'il interroge |
+| Écrit | Attributs | Ce qu'il interroge |
 |---|---|---|
-| `:::children` | `scope=children\|subtree`, `sort`, `view=rows\|cards`, `closed=fold\|hide\|show` | **le dossier de la fiche** — plus aucun `of` à écrire, la hiérarchie est là où le fichier est. |
-| `:::actions` | `scope`, `status`, `owner`, `since`, `view=feed\|list` | les tâches de `todo`. **Ne pas inventer un second jeu** — cocher d'un côté coche de l'autre. |
-| `:::contributors` | — | dérivé des fiches enfants et de leurs actions |
+| `:::list{from=children}` | `scope=children\|subtree`, `pull`, `sort`, `closed=fold\|hide\|show` | **le dossier de la fiche** — plus aucun `of` à écrire, la hiérarchie est là où le fichier est. |
+| `:::list{from=tasks}` | `scope`, `status`, `since` | les tâches de `todo`. **Ne pas inventer un second jeu** — cocher d'un côté coche de l'autre. |
+
+Les contributeurs ne sont pas une requête : voir la question ouverte qui leur
+est consacrée. Écrits, ils sont un `:::content{type=contributeurs}` — donc rien
+à déclarer.
+
+#### Remonter, dans une ligne d'enfant, ce que l'enfant dit de lui
+
+`pull=due,content:summary,content:perimetre` — une chaîne de noms séparés par
+des virgules, ce qui tient dans la contrainte des attributs. Un nom nu désigne
+un **champ d'entête** ; un nom préfixé désigne un **rendu et la valeur de son
+attribut** (`content:summary` = « le `content` dont le `type` est `summary` »).
+C'est cette différence qui décide du coût — pas le mot lui-même. Le défaut par
+type vit dans `pm-config`, pour ne pas le répéter deux cents fois.
+
+**Un champ d'entête est gratuit.** Vérifié : `parseFrontmatter`
+(`packages/server/src/pages.ts`) prend n'importe quelle clé de premier niveau,
+sans schéma ni liste blanche, et l'index la publie telle quelle. Trois limites,
+lues dans le code : seules les clés de **premier niveau** entrent (une structure
+indentée est délibérément ignorée, « deviner produirait un champ qui a l'air
+interrogeable et ne l'est pas ») ; le shell ne **dessine** qu'un jeu fixe de
+puces — `status`, `type`, `cat`, `role`, `tags` — donc un champ neuf est
+interrogeable mais invisible dans l'entête de page du cœur ; et le mot `scope`
+serait pris deux fois si un attribut de bloc le porte déjà (`depth=` dirait
+mieux ce que fait l'attribut, et libèrerait le mot).
+
+**Un bloc ne l'est pas, et le `type` n'y change rien.** Un
+`:::content{type=perimetre}`, un `:::content{type=summary}`, un
+`:::content{type=contexte}` sont le MÊME bloc : du texte dans le CORPS de la
+fiche enfant, que l'index ne publie pas. Remonter l'un ou l'autre coûte
+exactement pareil.
+
+#### Ce que la remontée de blocs exige vraiment
+
+C'est la conséquence à ne pas enterrer : **dès qu'une ligne d'enfant doit
+montrer un bloc, la remontée de blocs cesse d'être un « plus tard si on le
+demande » et devient une pièce du premier jet.** Trois façons :
+
+1. **L'index publie un digest des blocs rédigés** — pour chaque page, le
+   premier paragraphe de chaque bloc `flow`, tronqué. Le serveur lit déjà le
+   fichier entier dans cet endpoint : c'est un champ de plus, pas un nouveau
+   parcours de disque. Borné par construction (blocs `flow` seulement, un
+   paragraphe, une longueur maximale) — et c'est cette borne qui l'empêche de
+   devenir « l'index sert les pages ». **Recommandé.**
+2. **Le client va chercher les N enfants** — chargement, erreurs, cache, et un
+   écran qui clignote à cinquante enfants. C'est précisément ce que la famille
+   fermée refuse.
+3. **Un champ d'entête écrit à la main** (`resume:`) doublant le bloc — moins
+   cher et pire : la même phrase à deux endroits finit par dire deux choses.
+
+**Le préalable nº 2 change donc de contour** : ce n'est plus seulement « faire
+descendre l'index jusqu'au lecteur », c'est « et lui donner de quoi citer un
+bloc ». À décider AVANT de coder l'index, pas après.
+
+#### Créer une nouvelle sorte de contenu — le coût est nul
+
+La question se posait quand chaque sujet réclamait son bloc. Avec un rendu
+porteur d'un attribut, elle disparaît :
+
+- **Écrire `:::content{type=livrables}` suffit.** Le bloc `content` est déclaré
+  une fois ; `type` est une chaîne libre ; la page reste valide, éditable, et
+  le texte s'affiche dans une carte titrée. Ni code, ni manifeste, ni
+  redémarrage.
+- **Déclarer la sorte dans `pm-config` n'achète que du confort** : un libellé
+  propre (« Livrables » plutôt que le mot embelli), une icône, une place dans
+  le menu d'insertion. Rien de vital, donc rien de bloquant.
+- **Un rendu VRAIMENT nouveau reste une affaire de code** — et c'est sain :
+  ajouter une carte, un tableau ou une frise n'arrive que quand on veut voir
+  autre chose, pas quand on veut dire autre chose.
+- **Le vocabulaire peut donc rester fermé**, ce qui garde ses trois bénéfices
+  intacts : la faute de frappe sur un RENDU est refusée, les attributs d'un
+  rendu sont validés, et la skill a une liste courte à enseigner. La faute de
+  frappe sur un SUJET (`type=sumary`) reste possible — c'est le prix de la
+  liberté, et il se paie en visibilité : la vue signale les sorties de contenu
+  que personne ne demande, plutôt que de les interdire.
 
 **Le rattachement d'une tâche à un item a deux chemins, et il faut les deux** :
 la tâche vit sous le dossier de l'item, **ou** elle porte `projet: <id>`. La
@@ -201,10 +361,10 @@ Deux blocs de plus, et tous deux tombent de l'arborescence sans rien déclarer.
 
 | Bloc | Attributs | Ce qu'il montre |
 |---|---|---|
-| `:::pages` | `scope=self\|subtree`, `sort`, `view=rows\|cards` | les pages markdown du dossier qui ne sont **pas** des items et **pas** l'index — le contenu rédigé qui appartient à ce chantier |
-| `:::attachments` | `scope=self\|subtree`, `kind`, `view=rows\|grid` | les fichiers non-markdown du dossier et de son `assets/` |
+| `:::list{from=pages}` | `scope=self\|subtree`, `sort` | les pages markdown du dossier qui ne sont **pas** des items et **pas** l'index — le contenu rédigé qui appartient à ce chantier |
+| `:::list{from=files}` | `scope=self\|subtree`, `kind`, `view=rows\|grid` | les fichiers non-markdown du dossier et de son `assets/` |
 
-**`:::attachments` est déjà servi, et sa convention est déjà écrite** :
+**`:::list{from=files}` est déjà servi, et sa convention est déjà écrite** :
 `GET /api/files?page=<chemin>` (`packages/server/src/files.ts`) renvoie les
 fichiers non-markdown du dossier de la page **plus** tout ce qui vit sous son
 `assets/`, avec le type, la taille et la date. Le commentaire de la fonction dit
@@ -294,7 +454,7 @@ phase sans commencement, ce qui est exactement ce qu'un jalon est.
 **Qui est éligible** : les items de la portée, c'est-à-dire — même règle que
 partout ailleurs dans cette lettre — les pages dont le `type:` a un workflow
 déclaré. Sans ce filtre, les deux cents tâches d'une instance atterriraient sur
-le planning ; elles ont déjà leur bloc, `:::actions`.
+le planning ; elles ont déjà leur bloc, `:::list{from=tasks}`.
 
 **Le cas du modèle fermé reste couvert** par la portée `self` : une phasage qui
 n'est qu'un dessin — trois bandes sur un programme, sans page derrière — s'écrit
@@ -346,7 +506,7 @@ demander ; ce qu'il faut aller chercher au dehors, non.
 Deux questions distinctes, et les confondre est le piège.
 
 **QUELS blocs — la fiche décide, en les écrivant.** Une fiche qui n'a pas de
-risques n'écrit pas `:::risks`. C'est la mécanique existante, elle ne coûte
+risques n'écrit pas `:::table{type=risques}`. C'est la mécanique existante, elle ne coûte
 rien, et elle garde une seule source de vérité : ce qui est à l'écran est ce
 qui est dans le fichier.
 
@@ -441,7 +601,7 @@ gratuitement.
 
 ### Ce que le repli donne à la vue
 
-`:::children` sépare les vivants du reste et met les finis dans un pli — même
+`:::list{from=children}` sépare les vivants du reste et met les finis dans un pli — même
 geste que le shell, même verdict, même mot. L'attribut `closed=fold|hide|show`
 permet à une fiche de revue de tout montrer sans changer la donnée.
 
@@ -461,28 +621,46 @@ exécuter un module écrit pour un navigateur (patron `parcours`).
 
 ```json
 "vocabulary": {
-  "summary":  { "content": "flow",  "attributes": { "by": {}, "on": {} } },
-  "children": { "content": "empty", "attributes": {
-                  "scope":  { "values": ["children", "subtree"], "default": "children" },
-                  "view":   { "values": ["rows", "cards"], "default": "rows" },
+  "content":  { "content": "flow",  "attributes": {
+                  "type":   { "required": true },
+                  "scope":  { "values": ["self", "children", "subtree"], "default": "self" },
+                  "by": {}, "on": {} } },
+  "table":    { "content": "flow",  "attributes": {
+                  "type":   { "required": true },
+                  "scope":  { "values": ["self", "children", "subtree"], "default": "self" } } },
+  "list":     { "content": "empty", "attributes": {
+                  "from":   { "required": true,
+                              "values": ["children", "tasks", "pages", "files"] },
+                  "scope":  { "values": ["self", "children", "subtree"], "default": "children" },
+                  "pull":   {},
+                  "view":   { "values": ["rows", "cards", "grid"], "default": "rows" },
                   "closed": { "values": ["fold", "hide", "show"], "default": "fold" } } },
   "timeline": { "content": "flow",  "attributes": {
                   "scope":  { "values": ["self", "children", "subtree"], "default": "self" },
-                  "scale":  { "values": ["weeks", "months", "quarters"], "default": "months" } } },
-  "attachments": { "content": "empty", "attributes": {
-                  "scope":  { "values": ["self", "subtree"], "default": "self" },
-                  "view":   { "values": ["rows", "grid"], "default": "rows" } } }
+                  "scale":  { "values": ["weeks", "months", "quarters"], "default": "months" } } }
 }
 ```
 
-`scope` est le même mot partout, avec le même sens : c'est ce qui permet
-d'ajouter une portée à un bloc sans ajouter un bloc. `timeline` est
-`content: flow` **parce que sa portée `self` porte du texte** — un bloc peut
-avoir du contenu et l'ignorer quand sa portée le dépasse ; l'inverse serait
-impossible.
+Trois choses à lire dans ce bloc.
+
+**`type` est requis mais SANS `values`.** C'est là que passe la frontière : le
+nom du rendu est fermé et validé, la sorte de contenu est une chaîne libre qui
+appartient à l'utilisateur. Un `AttributeSpec` sans `values` accepte n'importe
+quelle chaîne non vide — le mécanisme existe déjà, il n'y a rien à ajouter au
+schéma.
+
+**`scope` est le même mot partout, avec le même sens** : c'est ce qui permet
+d'ajouter une portée à un rendu sans ajouter un rendu. Et `content`, `table` et
+`timeline` sont `flow` **parce que leur portée `self` porte du texte** — un
+bloc peut avoir du contenu et l'ignorer quand sa portée le dépasse ; l'inverse
+serait impossible.
+
+**`from` est fermé, lui.** Un `:::list` qui ne sait pas où regarder ne dessine
+rien du tout : c'est exactement le cas où une faute de frappe est un rectangle
+vide, donc exactement le cas où la validation vaut son prix.
 
 **Pas de champ `types`** (ils appartiennent à l'utilisateur) et **pas de
-`tile`** (la porte est le dossier). Le vocabulaire des blocs, lui, reste
+`tile`** (la porte est le dossier). Le vocabulaire des rendus, lui, reste
 réservé au démarrage comme celui de n'importe quel plugin.
 
 ## Le préalable — ne PAS commencer par ce plugin
@@ -492,12 +670,12 @@ Trois chantiers le précèdent, et chacun vaut le coup tout seul :
 1. **Identité** — `id:` sur les fiches, le tour de fond qui frappe et répare.
    Cf. `DESIGN.md`, journal du 27–29/08. **Rien n'est codé.** Le passage à une
    hiérarchie de fichiers en réduit l'urgence pour l'arbre lui-même (un dossier
-   se déplace tout entier) mais pas pour `:::actions` : `projet:` de `todo`
+   se déplace tout entier) mais pas pour `:::list{from=tasks}` : `projet:` de `todo`
    contient un **id**, pas un chemin, et c'est précisément une référence qui
    doit survivre au `mv`.
 2. **L'index au lecteur** — `/api/pages/index` sert déjà `path`, `title`,
    `fields` et `finished` pour chaque page (`packages/server/src/pages.ts`),
-   c'est-à-dire tout ce que `:::children` et `:::actions` demandent. Mais il ne
+   c'est-à-dire tout ce que `:::list{from=children}` et `:::list{from=tasks}` demandent. Mais il ne
    parvient PAS jusqu'au Reader, dont le contexte ne porte que `base`, `blocks`
    et `openPage`. C'est le seul ajout d'architecture du dossier, et il relit
    tout le disque à chaque appel : c'est aussi le moment de payer cette dette.
@@ -530,16 +708,20 @@ l'audit du 21/08 a nommée.
    elle-même.
 2. **Gabarit = rendu ou échafaudage ?** La vue dessine-t-elle ce que le fichier
    contient, ou compose-t-elle depuis le type (recommandation : échafaudage).
-3. **`:::contributors` est-il vraiment une requête ?** « Dernière contribution »
-   n'est dérivable que si les actions sont des fiches. Sinon c'est un bloc
-   rédigé déguisé — et il vaut mieux l'assumer que faire semblant de calculer.
+3. **Les contributeurs sont-ils un rendu, ou juste un contenu ?** « Dernière
+   contribution » n'est dérivable que si les tâches portent un porteur — et
+   **`todo` n'en définit aucun** (`done`, `due`, `pri`, `dom`, `projet`, `sub`,
+   rien d'autre : vérifié). Tant que c'est vrai, ce n'est pas une requête mais
+   un `:::content{type=contributeurs}`, qui ne coûte rien et ne ment pas. Un
+   rendu dédié — pastilles, dernière trace — ne se justifie que le jour où il y
+   a quelque chose à calculer.
 4. **Les deux champs de date.** `start:` et `due:` sur un item sont le seul
    vocabulaire que ce plugin impose aux fiches. Confirmer les mots — `due:`
    vient de `todo` et doit rester tel quel ; `start:` n'a pas de précédent dans
    ce dépôt et se décide maintenant, pas à l'implémentation.
 5. **Le coût de la remontée de BLOCS** (par opposition aux entêtes) : N requêtes
    côté client, ou un champ de plus dans l'index. À trancher le jour où un
-   `:::risks scope=subtree` est demandé, pas avant.
+   `:::table{type=risques scope=subtree}` est demandé, pas avant.
 6. **Les données réelles — REPORTÉ** (04/09) : elles ne sont pas sur cette
    machine. Ce sont elles qui trancheront les noms de blocs et la liste
    d'attributs, donc ces deux-là restent ouverts jusqu'à ce qu'un corpus réel
