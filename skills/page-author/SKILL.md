@@ -123,8 +123,9 @@ what makes a note a scheduled turn is *where it lives*, not what it claims to
 be. Right for content whose location IS its meaning. See `schedule-author` for
 that folder's own frontmatter contract.
 
-**By a sibling asset, found by convention.** `atelier` walks the pages tree
-for `**/assets/workbook.json` and treats whichever page sits in the same
+**By a sibling asset, found by convention.** `atelier` asks memory for
+`**/assets/workbook.json` — wherever it is, and across every store this
+instance composes — and treats whichever page sits in the same
 project folder as that workbook's owner — nothing declares the pairing, the
 folder layout IS the pairing. Right when an app's real data does not fit
 markdown at all (geometry, a timeline) but still belongs to one page's world.
