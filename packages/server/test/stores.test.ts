@@ -191,7 +191,7 @@ describe('listAll', () => {
     await write('perso/a.md')
     await write('perso/domaines/b.md')
     const single = resolveStores([{ id: 'perso', path: 'perso' }], workspace).stores
-    const { entries, collisions } = await listAll(single, { suffix: '.md' })
+    const { entries, collisions } = await listAll(single, { keep: (name) => name.endsWith('.md') })
     expect(entries.map((e) => e.path).sort()).toEqual(['a.md', 'domaines/b.md'])
     expect(collisions).toEqual([])
   })
@@ -201,7 +201,7 @@ describe('listAll', () => {
     await write('perso/voyages/lisbonne.md')
     await write('famille/voyages/italie.md')
     await write('famille/voyages/baden.md')
-    const { entries, collisions } = await listAll(two(), { suffix: '.md' })
+    const { entries, collisions } = await listAll(two(), { keep: (name) => name.endsWith('.md') })
     // One folder on screen, four cards, and the clash named rather than hidden.
     expect(entries.map((e) => `${e.path}@${e.store.id}`).sort()).toEqual([
       'voyages/baden.md@famille',
@@ -224,7 +224,7 @@ describe('listAll', () => {
       ],
       workspace,
     ).stores
-    const { entries } = await listAll(stores, { under: 'voyages', suffix: '.md' })
+    const { entries } = await listAll(stores, { under: 'voyages', keep: (name) => name.endsWith('.md') })
     expect(entries.map((e) => e.path).sort()).toEqual([
       'voyages/famille/italie.md',
       'voyages/lisbonne.md',
@@ -237,7 +237,7 @@ describe('listAll', () => {
     await write('perso/a.md')
     // `famille` is declared and its directory does not exist: one circle
     // unmounted must not take the others down.
-    const { entries } = await listAll(two(), { suffix: '.md' })
+    const { entries } = await listAll(two(), { keep: (name) => name.endsWith('.md') })
     expect(entries.map((e) => e.path)).toEqual(['a.md'])
   })
 })

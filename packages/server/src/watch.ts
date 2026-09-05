@@ -21,12 +21,13 @@
  *   only the operator knows their workspace sits on one.
  */
 
-import { isAbsolute, relative, sep } from 'node:path'
+import { isAbsolute, join, relative, sep } from 'node:path'
 
 import { watch } from 'chokidar'
 import type { FastifyInstance } from 'fastify'
 
 import type { WatchConfig } from './config.js'
+import { logicalOf, type Store } from './stores.js'
 
 /** What a subscriber is told: the pages whose files changed, batched. */
 export interface PagesChangedEvent {
@@ -101,12 +102,17 @@ export class ChangeFeed {
 }
 
 export interface EventsOptions {
-  /** Absolute path of the pages directory — the same root the pages API serves. */
-  readonly root: string
+  /**
+   * The stores the pages API composes. One watcher per store, and the event
+   * carries the LOGICAL path: a shell learns that `voyages/italie` changed,
+   * never which circle it changed in — the same page moved between stores must
+   * not read as two different pages appearing and disappearing.
+   */
+  readonly stores: readonly Store[]
   readonly watch: WatchConfig
   /** Injected in tests; production watches the disk with chokidar. */
   readonly watcherFactory?: (
-    root: string,
+    dir: string,
     onPath: (path: string) => void,
   ) => { close(): Promise<void> | void }
   /** How long the watcher survives its last subscriber. See `release`. */
@@ -117,8 +123,9 @@ export interface EventsOptions {
 
 function diskWatcher(
   options: EventsOptions,
-): (root: string, onPath: (path: string) => void) => { close(): Promise<void> } {
-  return (root, onPath) => {
+): (dir: string, onPath: (path: string) => void) => { close(): Promise<void> } {
+  return (dir, onPath) => {
+    const root = dir
     const watcher = watch(root, {
       ignoreInitial: true,
       // The tmp-then-rename dance both authors use must read as one change to
@@ -161,17 +168,26 @@ export function registerEvents(app: FastifyInstance, options: EventsOptions): vo
   const feed = new ChangeFeed(options.quietMs, options.maxWaitMs)
   const makeWatcher = options.watcherFactory ?? diskWatcher(options)
 
-  let watcher: { close(): Promise<void> | void } | undefined
+  let watchers: { close(): Promise<void> | void }[] = []
   let subscribers = 0
   let linger: NodeJS.Timeout | undefined
 
   const ensureWatcher = () => {
     if (linger) clearTimeout(linger)
     linger = undefined
-    watcher ??= makeWatcher(options.root, (path) => {
-      const page = pagePathOf(isAbsolute(path) ? relative(options.root, path) : path)
-      if (page) feed.report(page)
-    })
+    if (watchers.length > 0) return
+    // One per store. A single chokidar over several roots would report paths
+    // this module could not attribute, and the mount point would be lost.
+    watchers = options.stores.map((store) =>
+      makeWatcher(store.dir, (path) => {
+        // Back to the name the whole product speaks — mount point included.
+        // The watcher sees `/shared/famille/italie.md`; the shell is told
+        // `voyages/famille/italie.md`, which is the only name it knows.
+        const full = isAbsolute(path) ? path : join(store.dir, path)
+        const page = pagePathOf(logicalOf(options.stores, full) ?? '')
+        if (page) feed.report(page)
+      }),
+    )
   }
 
   const release = () => {
@@ -180,8 +196,8 @@ export function registerEvents(app: FastifyInstance, options: EventsOptions): vo
     // Lingering rather than closing on the spot: a reload reconnects within
     // seconds, and in polling mode every restart pays a full scan of the tree.
     linger = setTimeout(() => {
-      void watcher?.close()
-      watcher = undefined
+      for (const one of watchers) void one.close()
+      watchers = []
     }, options.lingerMs ?? 10_000)
     linger.unref?.()
   }
@@ -194,8 +210,8 @@ export function registerEvents(app: FastifyInstance, options: EventsOptions): vo
     feed.close()
     if (linger) clearTimeout(linger)
     for (const end of [...open]) end()
-    await watcher?.close()
-    watcher = undefined
+    for (const one of watchers) await one.close()
+    watchers = []
   })
 
   app.get('/api/events', async (request, reply) => {

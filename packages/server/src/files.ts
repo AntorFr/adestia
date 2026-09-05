@@ -30,14 +30,16 @@
  */
 
 import { createReadStream } from 'node:fs'
-import { readdir, stat } from 'node:fs/promises'
-import { dirname, extname, join, relative, resolve, sep } from 'node:path'
+import { stat } from 'node:fs/promises'
+import { dirname, extname, sep } from 'node:path'
 
 import type { FastifyInstance } from 'fastify'
 
+import { candidatesOf, fileIn, listAll, type Store } from './stores.js'
+
 export interface FilesOptions {
-  /** Absolute path of the pages directory — the same root pages are read from. */
-  readonly root: string
+  /** The same stores the pages API composes: an attachment is a file next to a page. */
+  readonly stores: readonly Store[]
   /**
    * The instance's language, used to order listings. Bare `localeCompare()`
    * was already used here, and it reads the HOST's locale: the same workspace
@@ -49,6 +51,8 @@ export interface FilesOptions {
 
 export interface WorkspaceFile {
   readonly path: string
+  /** Which store carries it — only when the instance has more than one. */
+  readonly store?: string
   readonly name: string
   readonly bytes: number
   readonly modified: string
@@ -110,51 +114,55 @@ export function kindOf(path: string): FileKind {
  * `.git/config` through an interface that browses attachments would be a way
  * to read a token out of a remote URL.
  */
-export function safeFilePath(root: string, requested: string): string | undefined {
-  if (requested.includes('\0')) return undefined
+export function safeFilePath(store: Store, requested: string): string | undefined {
   const cleaned = requested.replace(/^\/+/, '')
-  if (cleaned === '') return undefined
-  if (cleaned.split('/').some((segment) => segment.startsWith('.'))) return undefined
-
-  const target = resolve(root, `./${cleaned}`)
-  const rel = relative(root, target)
-  if (rel === '' || rel.startsWith('..') || rel.startsWith(`..${sep}`)) return undefined
-  return target
+  // `.git/config` carries the remote URL, and a token often rides in it. The
+  // dot rule is this workspace's whole boundary between content and plumbing,
+  // and it is checked on the LOGICAL name so a mount point cannot smuggle a
+  // dotted segment past it.
+  if (cleaned === '' || cleaned.split('/').some((segment) => segment.startsWith('.'))) {
+    return undefined
+  }
+  return fileIn(store, cleaned)
 }
 
-async function walk(
-  root: string,
-  prefix: string,
-  into: WorkspaceFile[],
-  recursive: boolean,
-): Promise<void> {
-  let entries
-  try {
-    entries = await readdir(join(root, prefix), { withFileTypes: true })
-  } catch {
-    return
+/** A listed file, as an interface needs it. */
+function described(path: string, file: string, info: { size: number; mtimeMs: number }, store: Store, multi: boolean): WorkspaceFile {
+  return {
+    path,
+    ...(multi ? { store: store.id } : {}),
+    name: path.split('/').pop() ?? path,
+    bytes: info.size,
+    modified: new Date(info.mtimeMs).toISOString(),
+    kind: kindOf(path),
   }
+}
+
+/**
+ * Everything that is not a page, under one folder of the composed tree.
+ *
+ * Markdown is a page, not an attachment: it has its own API, its own
+ * vocabulary and its own screen. Listing it here would make every page in a
+ * folder show up as a file dangling under its neighbours.
+ */
+async function collect(
+  stores: readonly Store[],
+  under: string,
+  deep: boolean,
+  multi: boolean,
+): Promise<WorkspaceFile[]> {
+  const { entries } = await listAll(stores, {
+    under,
+    deep,
+    keep: (name) => !name.toLowerCase().endsWith('.md'),
+  })
+  const out: WorkspaceFile[] = []
   for (const entry of entries) {
-    if (entry.name.startsWith('.')) continue
-    const rel = prefix ? `${prefix}/${entry.name}` : entry.name
-    if (entry.isDirectory()) {
-      if (recursive) await walk(root, rel, into, true)
-      continue
-    }
-    // Markdown is a page, not an attachment: it has its own API, its own
-    // vocabulary and its own screen. Listing it here would make every page in
-    // a folder show up as a file dangling under its neighbours.
-    if (entry.name.toLowerCase().endsWith('.md')) continue
-    const info = await stat(join(root, rel)).catch(() => undefined)
+    const info = await stat(entry.file).catch(() => undefined)
     if (!info) continue
-    into.push({
-      path: rel,
-      name: entry.name,
-      bytes: info.size,
-      modified: new Date(info.mtimeMs).toISOString(),
-      kind: kindOf(entry.name),
-    })
+    out.push(described(entry.path, entry.file, info, entry.store, multi))
   }
+  return out
 }
 
 /**
@@ -166,28 +174,32 @@ async function walk(
  * the layout IS the pairing — which is why an agent that drops a photo next to
  * a page has already attached it, with no frontmatter to remember.
  *
- * Files under any OTHER subfolder are left out: those belong to the pages that
- * live there, and a project folder would otherwise show its every child's
- * documents as its own.
+ * Composed like everything else: the photographs of one trip may sit in the
+ * shared circle while its notes sit in mine, and the page shows both.
  */
 export async function attachmentsOf(
-  root: string,
+  stores: readonly Store[],
   pagePath: string,
   order: Intl.Collator = new Intl.Collator(undefined, { numeric: true }),
 ): Promise<WorkspaceFile[]> {
   const folder = dirname(pagePath.replace(/^\/+/, ''))
   const prefix = folder === '.' || folder === '' ? '' : folder
+  const multi = stores.length > 1
 
-  const found: WorkspaceFile[] = []
-  await walk(root, prefix, found, false)
-  await walk(root, prefix ? `${prefix}/assets` : 'assets', found, true)
-
+  const found = [
+    // The page's own folder, and NOT what is under it: those files belong to
+    // the pages living there, and a project folder would otherwise show its
+    // every child's documents as its own.
+    ...(await collect(stores, prefix, false, multi)),
+    ...(await collect(stores, prefix ? `${prefix}/assets` : 'assets', true, multi)),
+  ]
   return found.sort((a, b) => order.compare(a.path, b.path))
 }
 
 export function registerFiles(app: FastifyInstance, options: FilesOptions): void {
-  const { root } = options
+  const { stores } = options
   const order = new Intl.Collator(options.locale, { numeric: true })
+  const multi = stores.length > 1
 
   /**
    * What is there, as data.
@@ -199,34 +211,53 @@ export function registerFiles(app: FastifyInstance, options: FilesOptions): void
   app.get<{ Querystring: { page?: string; under?: string } }>('/api/files', async (request) => {
     const page = request.query.page
     if (typeof page === 'string' && page !== '') {
-      if (!safeFilePath(root, page)) return { files: [] }
-      return { files: await attachmentsOf(root, page, order) }
+      if (!stores.some((store) => safeFilePath(store, page))) return { files: [] }
+      return { files: await attachmentsOf(stores, page, order) }
     }
 
     const under = typeof request.query.under === 'string' ? request.query.under : ''
-    if (under !== '' && !safeFilePath(root, under)) return { files: [] }
-    const files: WorkspaceFile[] = []
-    await walk(root, under.replace(/^\/+|\/+$/g, ''), files, true)
+    if (under !== '' && !stores.some((store) => safeFilePath(store, under))) return { files: [] }
+    const files = await collect(stores, under.replace(/^\/+|\/+$/g, ''), true, multi)
     return { files: files.sort((a, b) => order.compare(a.path, b.path)) }
   })
 
-  app.get<{ Params: { '*': string }; Querystring: { download?: string } }>(
+  app.get<{ Params: { '*': string }; Querystring: { download?: string; store?: string } }>(
     '/api/files/*',
     async (request, reply) => {
-      const path = safeFilePath(root, request.params['*'])
-      if (!path) return reply.code(400).send({ error: 'not a valid file path' })
+      const asked = request.params['*']
+      if (!stores.some((store) => safeFilePath(store, asked))) {
+        return reply.code(400).send({ error: 'not a valid file path' })
+      }
+
+      // The same qualifier the pages API takes, for the same reason: the bare
+      // address stays canonical and resolves by precedence, and this exists
+      // only so a view can point at the copy it does not designate.
+      const only =
+        typeof request.query.store === 'string' && request.query.store !== ''
+          ? stores.find((store) => store.id === request.query.store)
+          : undefined
+      if (request.query.store !== undefined && !only) {
+        return reply.code(404).send({ error: 'no such store' })
+      }
+
+      // Same fallback as a page's: a qualifier says where to look first, not
+      // where the file must be.
+      const named = only ? await candidatesOf([only], asked) : []
+      const found = named.length > 0 ? named : await candidatesOf(stores, asked)
+      const first = found[0]
+      if (!first) return reply.code(404).send({ error: 'no such file' })
 
       let info
       try {
-        info = await stat(path)
+        info = await stat(first.file)
         if (!info.isFile()) return reply.code(404).send({ error: 'no such file' })
       } catch {
         return reply.code(404).send({ error: 'no such file' })
       }
 
-      const inline = INLINE[extname(path).toLowerCase()]
+      const inline = INLINE[extname(first.file).toLowerCase()]
       const forced = request.query.download !== undefined && request.query.download !== '0'
-      const name = path.split(sep).pop() ?? 'file'
+      const name = first.file.split(sep).pop() ?? 'file'
 
       // Weak validator on purpose: mtime plus size is what the pages API
       // already calls a revision, and it costs no read of the bytes.
@@ -249,7 +280,7 @@ export function registerFiles(app: FastifyInstance, options: FilesOptions): void
         `${inline && !forced ? 'inline' : 'attachment'}; filename="${name.replace(/["\\]/g, '_')}"`,
       )
       reply.header('content-length', String(info.size))
-      return reply.send(createReadStream(path))
+      return reply.send(createReadStream(first.file))
     },
   )
 }

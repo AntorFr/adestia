@@ -6,14 +6,20 @@ import Fastify, { type FastifyInstance } from 'fastify'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { parseFrontmatter, registerPages, revisionOf, safePagePath, titleOf } from '../src/pages.js'
+import { resolveStores, type Store } from '../src/stores.js'
 
 let root: string
+let store: Store
 let app: FastifyInstance
+
+/** A store standing where the single root used to: same tree, one name for it. */
+const only = (dir: string): Store => resolveStores([{ id: 'perso', path: dir }], dir).stores[0]!
 
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'adestia-pages-'))
+  store = only(root)
   app = Fastify()
-  registerPages(app, { root })
+  registerPages(app, { stores: [store] })
   await app.ready()
 })
 
@@ -29,23 +35,23 @@ const read = async (path: string) => {
 
 describe('safePagePath', () => {
   it('accepts a markdown file in the tree', () => {
-    expect(safePagePath('/w/pages', 'notes/garage.md')).toBe('/w/pages/notes/garage.md')
+    expect(safePagePath(only('/w/pages'), 'notes/garage.md')).toBe('/w/pages/notes/garage.md')
   })
 
   it('refuses traversal', () => {
-    expect(safePagePath('/w/pages', '../../etc/passwd')).toBeUndefined()
-    expect(safePagePath('/w/pages', '/../.claude/settings.json')).toBeUndefined()
+    expect(safePagePath(only('/w/pages'), '../../etc/passwd')).toBeUndefined()
+    expect(safePagePath(only('/w/pages'), '/../.claude/settings.json')).toBeUndefined()
   })
 
   it('refuses anything that is not markdown', () => {
     // A general-purpose file writer behind a session cookie is a different and
     // far more dangerous thing than a page editor.
-    expect(safePagePath('/w/pages', 'notes/hook.sh')).toBeUndefined()
-    expect(safePagePath('/w/pages', '.claude/hooks/guard.py')).toBeUndefined()
+    expect(safePagePath(only('/w/pages'), 'notes/hook.sh')).toBeUndefined()
+    expect(safePagePath(only('/w/pages'), '.claude/hooks/guard.py')).toBeUndefined()
   })
 
   it('refuses the root itself', () => {
-    expect(safePagePath('/w/pages', '')).toBeUndefined()
+    expect(safePagePath(only('/w/pages'), '')).toBeUndefined()
   })
 })
 

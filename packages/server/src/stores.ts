@@ -201,7 +201,8 @@ async function walk(
   from: string,
   prefix: string,
   into: Listed[],
-  keep?: (name: string) => boolean,
+  keep: ((name: string) => boolean) | undefined,
+  deep: boolean,
 ): Promise<void> {
   let entries
   try {
@@ -219,7 +220,7 @@ async function walk(
     if (entry.isDirectory()) {
       // Two homonymous FOLDERS are not a collision: they merge. That is the
       // whole point of composing rather than filing.
-      await walk(store, next, prefix, into, keep)
+      if (deep) await walk(store, next, prefix, into, keep, deep)
       continue
     }
     if (keep && !keep(entry.name)) continue
@@ -245,10 +246,21 @@ async function walk(
  */
 export async function listAll(
   stores: readonly Store[],
-  options: { readonly under?: string | undefined; readonly suffix?: string | undefined } = {},
+  options: {
+    readonly under?: string | undefined
+    /** Which file names count. Absent, every file does. */
+    readonly keep?: ((name: string) => boolean) | undefined
+    /**
+     * Whether to descend. A page's own companions are the files in ITS folder
+     * and nothing below it — a project folder would otherwise show every
+     * child's documents as its own — while `assets/` is taken whole.
+     */
+    readonly deep?: boolean | undefined
+  } = {},
 ): Promise<{ entries: readonly Listed[]; collisions: readonly string[] }> {
   const wanted = clean(options.under ?? '')
-  const keep = options.suffix ? (name: string) => name.endsWith(options.suffix!) : undefined
+  const keep = options.keep
+  const deep = options.deep !== false
 
   const entries: Listed[] = []
   for (const store of stores) {
@@ -263,7 +275,7 @@ export async function listAll(
 
     // A traversal attempt is a miss for THIS store, not a shortcut into it.
     if (from !== '' && !fileIn(store, store.at === '' ? from : `${store.at}/${from}`)) continue
-    await walk(store, from, store.at, entries, keep)
+    await walk(store, from, store.at, entries, keep, deep)
   }
 
   const seen = new Set<string>()

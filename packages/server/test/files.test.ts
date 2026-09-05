@@ -6,14 +6,20 @@ import Fastify, { type FastifyInstance } from 'fastify'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { attachmentsOf, kindOf, registerFiles, safeFilePath } from '../src/files.js'
+import { resolveStores, type Store } from '../src/stores.js'
 
 let root: string
+let store: Store
 let app: FastifyInstance
+
+/** A store standing where the single root used to: same tree, one name for it. */
+const only = (dir: string): Store => resolveStores([{ id: 'perso', path: dir }], dir).stores[0]!
 
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'adestia-files-'))
+  store = only(root)
   app = Fastify()
-  registerFiles(app, { root })
+  registerFiles(app, { stores: [store] })
   await app.ready()
 })
 
@@ -24,24 +30,24 @@ const write = async (path: string, content = 'x') => {
 
 describe('safeFilePath', () => {
   it('accepts any file in the tree, markdown or not', () => {
-    expect(safeFilePath('/w/pages', 'diy/plan.pdf')).toBe('/w/pages/diy/plan.pdf')
-    expect(safeFilePath('/w/pages', 'diy/assets/photo.jpg')).toBe('/w/pages/diy/assets/photo.jpg')
+    expect(safeFilePath(only('/w/pages'), 'diy/plan.pdf')).toBe('/w/pages/diy/plan.pdf')
+    expect(safeFilePath(only('/w/pages'), 'diy/assets/photo.jpg')).toBe('/w/pages/diy/assets/photo.jpg')
   })
 
   it('refuses traversal', () => {
-    expect(safeFilePath('/w/pages', '../../etc/passwd')).toBeUndefined()
-    expect(safeFilePath('/w/pages', 'diy/../../secrets.env')).toBeUndefined()
+    expect(safeFilePath(only('/w/pages'), '../../etc/passwd')).toBeUndefined()
+    expect(safeFilePath(only('/w/pages'), 'diy/../../secrets.env')).toBeUndefined()
   })
 
   it('refuses the workspace plumbing', () => {
     // `.git/config` carries the remote URL, and a token often rides in it.
-    expect(safeFilePath('/w/pages', '.git/config')).toBeUndefined()
-    expect(safeFilePath('/w/pages', 'diy/.claude/settings.json')).toBeUndefined()
+    expect(safeFilePath(only('/w/pages'), '.git/config')).toBeUndefined()
+    expect(safeFilePath(only('/w/pages'), 'diy/.claude/settings.json')).toBeUndefined()
   })
 
   it('refuses the root itself', () => {
-    expect(safeFilePath('/w/pages', '')).toBeUndefined()
-    expect(safeFilePath('/w/pages', '/')).toBeUndefined()
+    expect(safeFilePath(only('/w/pages'), '')).toBeUndefined()
+    expect(safeFilePath(only('/w/pages'), '/')).toBeUndefined()
   })
 })
 
@@ -67,7 +73,7 @@ describe('attachmentsOf', () => {
     await write('diy/assets/avant.jpg')
     await write('diy/assets/deep/apres.jpg')
 
-    const files = await attachmentsOf(root, 'diy/garage.md')
+    const files = await attachmentsOf([store], 'diy/garage.md')
     expect(files.map((file) => file.path)).toEqual([
       'diy/assets/avant.jpg',
       'diy/assets/deep/apres.jpg',
@@ -79,14 +85,14 @@ describe('attachmentsOf', () => {
     await write('diy/garage.md', '# Garage')
     await write('diy/cuisine/devis.pdf')
 
-    expect(await attachmentsOf(root, 'diy/garage.md')).toEqual([])
+    expect(await attachmentsOf([store], 'diy/garage.md')).toEqual([])
   })
 
   it('works for a page at the root', async () => {
     await write('notes.md', '# Notes')
     await write('scan.png')
 
-    expect((await attachmentsOf(root, 'notes.md')).map((file) => file.path)).toEqual(['scan.png'])
+    expect((await attachmentsOf([store], 'notes.md')).map((file) => file.path)).toEqual(['scan.png'])
   })
 })
 

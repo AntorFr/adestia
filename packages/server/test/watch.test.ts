@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { ChangeFeed, pagePathOf, registerEvents, type EventsOptions } from '../src/watch.js'
 import type { WatchConfig } from '../src/config.js'
+import { resolveStores } from '../src/stores.js'
 
 const WATCH: WatchConfig = { enabled: true, polling: false, intervalMs: 2000 }
 
@@ -85,7 +86,7 @@ describe('ChangeFeed', () => {
 async function serve(options: Partial<EventsOptions> & { watch?: WatchConfig }) {
   const app = Fastify()
   registerEvents(app, {
-    root: join(tmpdir(), 'nowhere'),
+    stores: resolveStores([{ id: 'perso', path: join(tmpdir(), 'nowhere') }], tmpdir()).stores,
     watch: WATCH,
     quietMs: 10,
     maxWaitMs: 100,
@@ -191,7 +192,7 @@ describe('/api/events', () => {
     const root = await mkdtemp(join(tmpdir(), 'adestia-watch-'))
     // Polling, so the test does not depend on which native backend this
     // machine has; production defaults to native events.
-    const served = await serve({ root, watch: { ...WATCH, polling: true, intervalMs: 100 } })
+    const served = await serve({ stores: resolveStores([{ id: 'perso', path: root }], root).stores, watch: { ...WATCH, polling: true, intervalMs: 100 } })
     app = served.app
 
     controller.current = new AbortController()

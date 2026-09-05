@@ -32,6 +32,7 @@ import Fastify, { type FastifyInstance } from 'fastify'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { registerPages } from '../src/pages.js'
+import { resolveStores } from '../src/stores.js'
 import { registerFiles } from '../src/files.js'
 
 const witnessDir = join(dirname(fileURLToPath(import.meta.url)), 'witness')
@@ -106,11 +107,15 @@ beforeAll(async () => {
   }
   await stampAll(root)
 
+  // Exactly what an instance that never heard of stores gets: one store,
+  // built from `workspace.pages`, the default by default.
+  const { stores } = resolveStores([{ id: 'perso', path: root }], root)
+
   app = Fastify()
   // Named, never inherited: the golden must not depend on the machine's own
   // language settings.
-  registerPages(app, { root, locale: 'fr' })
-  registerFiles(app, { root, locale: 'fr' })
+  registerPages(app, { stores, locale: 'fr' })
+  registerFiles(app, { stores, locale: 'fr' })
   await app.ready()
 })
 
