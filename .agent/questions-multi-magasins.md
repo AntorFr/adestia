@@ -82,6 +82,16 @@ c'est un plugin qui continue d'appeler le FS. Les 4 plugins sont portés ici.
 d'environnement ne porterait que le chemin, pas le libellé ni la teinte — et
 `workspace.pages` n'a jamais été surchargeable par l'environnement.
 
+**R14 — Comment l'agent atteint-il des magasins hors de `root` ?** → **On les
+lui déclare**, il garde ses outils natifs. Capacité de pilote déclarée
+(`additionalDirectories` côté claude-code) ; repli « sous `root` » annoncé au
+boot sur un pilote qui ne l'a pas. Écarté : lui servir notre propre API de
+fichiers — ça lui coûterait `Grep` (chercher sa mémoire par le contenu) et
+`Edit`. Écarté aussi : imposer que tout soit sous `root`, qui rendrait à
+l'opérateur la disposition physique dont on vient de le décharger. La moitié
+POSIX du problème (dataset `2770`, gid 3002) ne dépend d'aucune des trois voies :
+c'est `supplementalGroups` dans le pod.
+
 ## Ouvertes
 
 **O3 — Le rouge préexistant sur `main`.** Le round-trip d'un bloc à attributs

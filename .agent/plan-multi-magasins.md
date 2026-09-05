@@ -63,12 +63,19 @@ seulement** (une variable d'environnement ne sait porter ni libellé ni teinte).
 maison (`safeParcoursPath`, `safePath`) disparaît au profit de
 `ctx.pages.resolve()`. Aucun `join(root, …)` ne doit survivre.
 
-## 5. Le contrat de l'agent — `skills.ts`
+## 5. L'accès de l'agent — pilote, puis contrat
 
-Contrat **généré** listant les magasins (id, libellé, chemin disque, montage)
-et la règle d'écriture. Livré seulement si plus d'un magasin. La mécanique
-existe : `SkillFile.contents` est une chaîne construite en code, et la
-livraison substitue déjà `{{plugin_dir}}`.
+**5a. La portée.** Nouvelle capacité de pilote déclarée (le contrat en déclare
+déjà une dizaine) : les racines de travail supplémentaires. `claude-code` la
+porte par `additionalDirectories` (option de lancement ET portée de
+permissions) ; `copilot-cli` ne l'a pas → repli sur « les magasins sous `root` »
+**annoncé au démarrage**. Ne mord qu'en posture `ask` : en posture `open` le
+pilote passe déjà `bypassPermissions`.
+
+**5b. Le contrat.** Contrat **généré** listant les magasins (id, libellé,
+chemin disque, montage) et la règle d'écriture. Livré seulement si plus d'un
+magasin. La mécanique existe : `SkillFile.contents` est une chaîne construite
+en code, et la livraison substitue déjà `{{plugin_dir}}`.
 
 ## 6. La coque
 

@@ -954,10 +954,26 @@ where they do not, the reversal is stated.
   store is where a peer writes, and what runs here must never come from there.
 - **A plugin never touches the filesystem** (see the decision log). The core
   serves logical paths carrying their store; `pagesRoot` leaves the contract.
-- **The agent is TOLD the mapping, because it is the one author that works on
-  files.** Its delivered contract becomes generated rather than static, listing
-  each store's id, label, disk path and mount point, plus the write rule above.
-  It appears only when there is more than one store.
+- **The agent keeps its native file tools, and the stores are declared to
+  them.** Each store's directory becomes an additional working root through a
+  DECLARED driver capability (`additionalDirectories` on the Claude Code SDK,
+  both as a launch option and as a permission scope); a driver that cannot do
+  it falls back to requiring the stores under `root`, and says so at boot
+  rather than being discovered mid-turn. Serving the agent a filesystem API of
+  our own was considered and refused: it would cost it `Grep` — searching its
+  own memory BY CONTENT is its most valuable primitive — and `Edit`, whose
+  exact-match-with-uniqueness is where silent corruption is born when
+  reimplemented. Plugins are barred from the filesystem because they can go
+  blind on it; the agent is the opposite case, and this product is founded on
+  it writing pages with its own tools.
+- **It is TOLD the mapping, because it is the one author that works on files.**
+  Its delivered contract becomes generated rather than static, listing each
+  store's id, label, disk path and mount point, plus the write rule above. It
+  appears only when there is more than one store. That rule is CARRIED by the
+  contract, not enforced by the tool surface — the doctrine everywhere else
+  here: both hands write, and the vocabulary keeps them honest. The day the
+  ambiguous case needs enforcing, it takes ONE tool ("where do I file this?"),
+  never a filesystem API.
 - **`store` appears in a response only when there is more than one.** Adding it
   to the single-store case would change the answer for nothing, and teach the
   shell a division that does not exist on its instance.
