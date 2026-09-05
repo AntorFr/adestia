@@ -46,7 +46,7 @@ const poubelle = (sur = {}) => ({
   fond: 'non',
   dessous: 'pleine-profondeur',
   facade: 'ouverte',
-  separateur: 'frontal',
+  separateurs: [{ type: 'frontal' }],
   tablettes: 1,
   faces_chantees: ['avant', 'arriere', 'gauche', 'droite'],
   materiaux: { principal: { id: 'MEL19', ep: 19 } },
@@ -78,7 +78,7 @@ test('et le moteur le DIT plutôt que de laisser passer', () => {
 })
 
 test('sans séparateur frontal, rien ne change : la tablette tient tout le meuble', () => {
-  const r = derive(poubelle({ separateur: 'aucun' }), tables())
+  const r = derive(poubelle({ separateurs: [] }), tables())
   assert.equal(tab(r).largeur, 649, '650 − 1 de chant ; une seule tablette, donc pas de retrait avant')
   assert.equal(r.contraint, true)
 })

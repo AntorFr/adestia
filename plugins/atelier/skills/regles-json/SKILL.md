@@ -101,8 +101,7 @@ Ce que chaque nom pose, et les entrées de design qu'il consomme.
 | `fond-rainure-arrete` | fond fin arrêté par un dessous pleine profondeur |
 | `fond-rainure-encastre` | fond fin encastré dans une rainure du dessous |
 | `tablette-fixe` | tablettes entre les côtés ; sortie `retrait_avant: oui\|non` |
-| `separateur-lateral` | divise la largeur ; sa rive avant donne sur la façade |
-| `separateur-frontal` | divise la profondeur, fait dos aux deux zones ; aucun bord dehors |
+| `separateurs` | pose les séparateurs que le design LISTE ; la table dit seulement s'il y en a |
 | `tiroirs-facades` | les façades, qui se partagent la hauteur utile |
 | `tiroirs-corps` | flancs, montant avant, dos, fond en rainure |
 
@@ -122,7 +121,7 @@ reste LIBRE, nommée, et bloque la dérivation.
   "hors_tout": { "l": 800, "p": 650, "h": 905 },
   "pose": "mobile", "plan_travail": "rapporte", "facade": "ouverte",
   "fond": "non", "dessous": "pleine-profondeur",
-  "separateur": "frontal", "tablettes": 0, "tiroirs": 0, "corps_tiroir": "plus-tard",
+  "separateurs": [{ "type": "frontal" }], "tablettes": 0, "tiroirs": 0, "corps_tiroir": "plus-tard",
   "faces_chantees": ["avant", "arriere", "gauche", "droite"],
   "materiaux": { "principal": { "id": "MEL19", "ep": 19, "chante": true } },
   "parametres": {

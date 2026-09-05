@@ -59,11 +59,11 @@
    "gauche",
    "droite"
   ],
-  "separateur": "aucun",
   "tablettes": 0,
   "tiroirs": 0,
   "corps_tiroir": "plus-tard",
-  "modules_identiques": 1
+  "modules_identiques": 1,
+  "separateurs": []
  },
  "materiaux": [
   {

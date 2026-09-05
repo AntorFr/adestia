@@ -329,7 +329,9 @@ const tabletteFixe = {
        Sans ça, cette méthode coterait sur toute la profondeur — faux,
        plausible, et muet. */
     const zone = zoneDe(design?.tablettes)
-    const zoneIndeterminee = design?.separateur === 'frontal' && !zone
+    const partageEnProfondeur = (design?.separateurs ?? [])
+      .some((c) => c.type === 'frontal' && !c.zone)
+    const zoneIndeterminee = partageEnProfondeur && !zone
     const dans = zone ? contenant(zone) : undefined
 
     const pieces = Array.from({ length: combien }, (_, i) => ({
@@ -374,75 +376,76 @@ const tabletteFixe = {
 }
 
 /* ── Les séparateurs ─────────────────────────────────────────────────────────
-   Deux orientations, et elles ne se ressemblent pas.
+   Un meuble en veut souvent PLUSIEURS, et pas au même endroit. Le meuble
+   poubelle porte un médian FRONTAL qui divise la profondeur et fait dos aux
+   deux zones, et un LATÉRAL entre les deux bacs — celui-là vivant DANS la zone
+   des bacs, pas dans le meuble. Il se cote donc sur la profondeur de sa zone :
+   349 pour finir à 350, l'étendue que le zonage déduit.
 
-   LATÉRAL : il divise la largeur — une colonne porte à gauche, une colonne
-   tiroirs à droite. Sa rive avant donne sur la façade et se chante.
+   Le design les LISTE — `separateurs: [{ type, zone?, repere? }]` — parce que
+   c'est une décision propre au meuble et non une règle générale. La table dit
+   seulement s'il y en a.
 
-   FRONTAL : il divise la profondeur, et sur un meuble ouvert des deux côtés
-   c'est LUI qui fait dos commun aux deux zones et tient le meuble au vrillage,
-   à la place du panneau de fond absent. Aucun de ses bords ne débouche — ils
-   sont pris entre le bas, les côtés et ce qui ferme le haut — d'où un
-   séparateur sans un seul chant, ce que le meuble poubelle confirme.
+   FRONTAL : divise la profondeur. Sur un meuble ouvert des deux côtés, c'est
+   lui qui fait dos commun et tient le meuble au vrillage, à la place du fond
+   absent. Aucun de ses bords ne débouche : il ne porte aucun chant.
+   LATÉRAL : divise la largeur. Sa rive avant donne sur la façade.
 
-   Les deux reposent sur le bas et s'arrêtent SOUS ce qui ferme le haut : 867
-   sur un meuble de 905, soit deux épaisseurs de panneau. */
-const separateur = (frontal) => ({
-  decrit: frontal
-    ? 'séparateur frontal, pleine largeur, fait dos aux deux zones'
-    : 'séparateur latéral, divise la largeur du caisson',
+   Les deux reposent sur le bas et s'arrêtent SOUS ce qui ferme le haut, soit
+   deux épaisseurs de panneau — 867 sur un meuble de 905. */
+const separateurs = {
+  decrit: 'les séparateurs déclarés par le design, dans le meuble ou dans une zone',
   applique({ trigramme, module, cotes, design, ferme }) {
-    const sep = {
-      etiquette: etiquette(trigramme, module, 'SÉP', frontal ? 'MÉDIAN' : 'M'),
-      role: 'SÉPARATEUR',
-      orientation: frontal ? 'frontal' : 'lateral',
-      // L'axe que ce séparateur PARTAGE : c'est par lui que les zones savent
-      // quelle épaisseur retirer du meuble.
-      partage: frontal ? 'y' : 'x',
-      // Le latéral montre sa rive avant ; le frontal n'a rien qui sorte.
-      regardeVers: frontal ? {} : { 'rive-avant': 'avant' },
-    }
-    const passeDerriere = design?.fond === 'oui' && design?.pose === 'fixe'
+    const declares = design?.separateurs ?? []
+    if (!declares.length) return { pieces: [], relations: [] }
 
-    return {
-      pieces: [sep],
-      relations: [
-        // Sur le bas, sous ce qui ferme le haut : deux épaisseurs de moins.
-        bute(sep, 'z', [etiquette(trigramme, module, 'BAS'), ...(ferme ?? [])].slice(0, 2)),
+    const pieces = []
+    const relations = []
+    const issues = []
+
+    declares.forEach((sep, i) => {
+      const frontal = sep.type === 'frontal'
+      if (!frontal && sep.type !== 'lateral') {
+        issues.push({
+          gravite: 'erreur',
+          type: 'separateur-inconnu',
+          message: `separateurs[${i}] : type « ${sep.type} » inconnu (frontal | lateral)`,
+        })
+        return
+      }
+      const dans = sep.zone ? contenant(sep.zone) : undefined
+      const piece = {
+        etiquette: etiquette(trigramme, module, 'SÉP', sep.repere ?? (frontal ? 'MÉDIAN' : String(i + 1))),
+        role: 'SÉPARATEUR',
+        orientation: frontal ? 'frontal' : 'lateral',
+        // L'axe qu'il PARTAGE, par lequel les zones savent quelle épaisseur
+        // retirer. Un séparateur posé DANS une zone ne partage pas le meuble.
+        ...(sep.zone ? {} : { partage: frontal ? 'y' : 'x' }),
+        regardeVers: frontal ? {} : { 'rive-avant': 'avant' },
+      }
+      pieces.push(piece)
+      relations.push(
+        bute(piece, 'z', [etiquette(trigramme, module, 'BAS'), ...(ferme ?? [])].slice(0, 2)),
         frontal
-          ? entre(sep, 'x', cotes.map((c) => c.etiquette))
+          ? entre(piece, 'x', cotes.map((c) => c.etiquette))
           : {
-            nom: `${sep.etiquette}/profondeur`,
+            nom: `${piece.etiquette}/profondeur`,
             termes: {
-              [v(sep.etiquette, 'y')]: 1,
-              'meuble.y': -1,
-              ...(passeDerriere ? { 'param.retrait_fond_dos': 1 } : {}),
+              [v(piece.etiquette, 'y')]: 1,
+              [`${dans ?? 'meuble'}.y`]: -1,
+              ...(!dans && design?.fond === 'oui' && design?.pose === 'fixe'
+                ? { 'param.retrait_fond_dos': 1 }
+                : {}),
             },
             egale: 0,
           },
-      ],
-    }
+      )
+    })
+
+    return { pieces, relations, ...(issues.length ? { issues } : {}) }
   },
-})
+}
 
-/* ── Les tiroirs ─────────────────────────────────────────────────────────────
-   Deux pièces distinctes, et les confondre est l'erreur que la fiche
-   d'agencement interdit en toutes lettres : « façade vissée après pose, jamais
-   confondue avec le corps du tiroir ». Le corps a un montant avant
-   FONCTIONNEL ; la vraie façade se visse dessus, par l'intérieur, une fois le
-   tiroir posé et réglé.
-
-   La raison est mécanique : les coulisses n'ont aucun réglage. Si la façade
-   finie est directement la face avant du tiroir, le jeu de 2–3 mm entre
-   façades voisines dépend de la position de pose des rails — un enfer à
-   ajuster. Vissée après coup, on la cale contre ses voisines avant de fixer.
-
-   LES FAÇADES se partagent la hauteur utile : n hauteurs plus (n−1) jeux font
-   la zone. Trois façades de 229 et deux jeux de 3 font les 693 d'un meuble
-   réel — et c'est une relation linéaire, donc le solveur la prend telle quelle.
-
-   LE CORPS perd de chaque côté l'épaisseur d'une coulisse et son jeu : « ≥ 1 mm
-   de jeu de chaque côté pour que les rails coulissent ». */
 const tiroirs = {
   decrit: 'façades de tiroir se partageant la hauteur utile, corps monté sur coulisses',
   applique({ trigramme, module, design, ferme }) {
@@ -605,8 +608,7 @@ const corpsDeTiroir = {
 export const METHODES = {
   'tiroirs-corps': corpsDeTiroir,
   'tiroirs-facades': tiroirs,
-  'separateur-lateral': separateur(false),
-  'separateur-frontal': separateur(true),
+  separateurs,
   'tablette-fixe': tabletteFixe,
   'dessus-plaque-entre': dessusPlaqueEntre,
   'dessus-plaque-entre-ramene': dessusPlaqueEntreRamene,

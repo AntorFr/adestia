@@ -63,9 +63,17 @@ function socle(trigramme, module) {
  * seuil est un paramètre — un arbitrage d'atelier, pas une constante.
  */
 export function faitsDerives(design) {
-  const total = (design.tablettes ?? 0) * (design.modules_identiques ?? 1)
+  const tablettes = typeof design.tablettes === 'object'
+    ? (design.tablettes.nombre ?? 0)
+    : (design.tablettes ?? 0)
+  const total = tablettes * (design.modules_identiques ?? 1)
   const seuil = design.parametres?.seuil_mutualisation ?? 3
-  return { tablettes_totales: total, mutualise: total >= seuil ? 'oui' : 'non' }
+  return {
+    tablettes_totales: total,
+    mutualise: total >= seuil ? 'oui' : 'non',
+    // Le design LISTE ses séparateurs ; la table ne décide que s'il y en a.
+    a_des_separateurs: (design.separateurs ?? []).length ? 'oui' : 'non',
+  }
 }
 
 /** La matière d'une pièce : celle que la table a dite, ou celle du caisson. */

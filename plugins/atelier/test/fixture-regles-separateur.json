@@ -1,26 +1,21 @@
 {
   "id": "separateur",
-  "titre": "Séparateur — dans la largeur ou dans la profondeur",
+  "titre": "Séparateurs — le meuble en a-t-il ?",
   "applique_a": ["caisson"],
   "entrees": {
-    "separateur": ["aucun", "lateral", "frontal"]
+    "a_des_separateurs": ["oui", "non"]
   },
   "sorties": ["methode"],
   "lignes": [
     {
-      "quand": { "separateur": "aucun" },
+      "quand": { "a_des_separateurs": "non" },
       "alors": { "methode": null },
-      "note": "Un caisson peut n'avoir aucun séparateur — c'est une décision, pas un oubli."
+      "note": "Un caisson peut n'en avoir aucun — c'est une décision, pas un oubli."
     },
     {
-      "quand": { "separateur": "lateral" },
-      "alors": { "methode": "separateur-lateral" },
-      "note": "Divise la largeur : une colonne d'un côté, une de l'autre. Sa rive avant donne sur la façade."
-    },
-    {
-      "quand": { "separateur": "frontal" },
-      "alors": { "methode": "separateur-frontal" },
-      "note": "Divise la profondeur. Sur un meuble ouvert des deux côtés, c'est lui qui fait dos commun et tient le meuble au vrillage, à la place du fond absent."
+      "quand": { "a_des_separateurs": "oui" },
+      "alors": { "methode": "separateurs" },
+      "note": "Le design les LISTE, avec leur type et leur zone : c'est propre au meuble, pas une règle générale. La table dit seulement qu'il y en a."
     }
   ]
 }
