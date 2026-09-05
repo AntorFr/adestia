@@ -138,3 +138,19 @@ test('elle dit toutes les étiquettes et tous les rôles de pièce que le moteur
     assert.ok(table.includes(`\`${p.role}\``), `rôle de pièce non documenté : ${p.role}`)
   }
 })
+
+test('les tables livrées posent toutes les pièces que l\'exemple annonce', () => {
+  /* La liste des pièces ANNONCÉES est tenue à la main : une ligne fausse
+     crierait au loup à chaque dérivation, et un cri permanent ne se lit plus —
+     il couvre celui qui compte. Ce test la tient contre ce qui est livré :
+     l'exemple du plugin, dérivé avec les tables du plugin, ne doit annoncer
+     aucune pièce que personne ne pose. */
+  const tables = readdirSync(join(here, '..', 'exemples', 'regles')).map((f) =>
+    litTable(JSON.parse(readFileSync(join(here, '..', 'exemples', 'regles', f), 'utf8')), f).table)
+  const exemple = JSON.parse(
+    readFileSync(join(here, '..', 'exemples', 'meuble-tiroirs.workbook.json'), 'utf8'))
+  const { issues } = derive(exemple.design, tables)
+  assert.deepEqual(
+    issues.filter((i) => i.type === 'piece-annoncee-absente').map((i) => i.role), [],
+  )
+})

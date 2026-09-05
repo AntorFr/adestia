@@ -110,3 +110,48 @@ test('le cas jamais construit se DIT hors portée, il ne rend pas un nombre', ()
   assert.match(dit.message, /INTÉGRÉ/, 'et la table dit POURQUOI elle ne répond pas')
   assert.equal(plan(r), undefined, 'surtout : aucune cote inventée')
 })
+
+/* ── Une règle qui manque ne se voit nulle part ailleurs ─────────────────────
+   Le défaut trouvé par l'agent en s'en servant pour de vrai, sur le meuble
+   dont le plan MDF est justement une pièce du débit. Ses tables vivent dans sa
+   mémoire, pas dans l'image : il a déclaré `materiaux.plan_travail` et n'avait
+   pas encore de table `plan-travail`. Sortie strictement identique avec et
+   sans la déclaration — pas de pièce, pas d'avertissement, `contraint: true`.
+
+   C'est le mode d'échec que ce moteur existe pour supprimer, remonté d'un
+   cran : le silence ne porte plus sur une COTE mais sur la RÈGLE qui aurait dû
+   la produire. Et c'est pire, parce qu'une cote absente se voit au moment de
+   couper, alors qu'une règle absente ne se voit jamais. */
+
+const sansLaTableDuPlan = () => [
+  lit('fixture-regles-dessus.json'), lit('fixture-regles-fond.json'),
+  lit('fixture-regles-tablette.json'), lit('fixture-regles-separateur.json'),
+]
+
+test('un design qui décide du plan sans table pour le lire ne passe plus en silence', () => {
+  const r = derive(poubelle(), sansLaTableDuPlan())
+  assert.equal(plan(r), undefined, 'aucune table ne peut poser la pièce')
+  const dit = r.issues.find((i) => i.type === 'piece-annoncee-absente' && i.role === 'PLAN')
+  assert.ok(
+    dit,
+    `le moteur doit DIRE que la règle manque, obtenu : ${r.issues.map((i) => i.type).join(' | ') || 'rien'}`,
+  )
+  assert.equal(dit.gravite, 'bloquant', 'un panneau manquerait au débit')
+})
+
+test('la table présente, plus personne ne crie', () => {
+  // Le contrôle ne doit pas devenir un cri permanent : un avertissement qu'on
+  // voit à chaque dérivation ne se lit plus, et couvre celui qui compte.
+  const r = derive(poubelle(), tables())
+  assert.deepEqual(r.issues.filter((i) => i.type === 'piece-annoncee-absente'), [])
+})
+
+test('un meuble qui ne débite pas son plan ne réclame rien', () => {
+  // La palette du projet n'oblige personne : c'est la DÉCLARATION du rôle
+  // `plan_travail` qui annonce la pièce, et ce meuble-là ne la fait pas.
+  const r = derive(
+    poubelle({ materiaux: { principal: { id: 'MEL19', ep: 19 } } }),
+    sansLaTableDuPlan(),
+  )
+  assert.deepEqual(r.issues.filter((i) => i.type === 'piece-annoncee-absente'), [])
+})

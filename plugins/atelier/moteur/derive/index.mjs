@@ -19,6 +19,40 @@ import { systeme } from './systeme.mjs'
 
 const issue = (gravite, type, message, plus = {}) => ({ gravite, type, message, ...plus })
 
+/* Les pièces que le design ANNONCE, et que quelqu'un doit donc poser.
+   Une pièce qu'aucune méthode ne pose ne laisse aucune trace : pas de cote
+   libre, pas de contradiction, un débit complet et entièrement contraint. Il
+   ne manque qu'un panneau, et rien ne le dit.
+
+   Le défaut trouvé en s'en servant : un meuble déclarait son plan de travail
+   en MDF, aucune table du projet ne décidait du plan, et la dérivation sortait
+   identique avec et sans la déclaration. Le silence ne portait plus sur une
+   cote mais sur la RÈGLE qui aurait dû la produire — pire, parce qu'une cote
+   absente se voit au moment de couper et qu'une règle absente ne se voit
+   jamais.
+
+   Chaque ligne dit : à quoi on reconnaît, DANS LE DESIGN, que la pièce doit
+   exister. Pas dans les tables — c'est justement leur absence qu'on cherche. */
+const ANNONCEES = [
+  {
+    role: 'FOND',
+    dit: (d) => d.fond === 'oui',
+    quoi: '`fond: "oui"` annonce un fond',
+  },
+  {
+    role: 'PLAN',
+    // Le meuble doit en porter un ET le débiter : `plan_travail: "aucun"` avec
+    // du MDF dans la palette du projet n'annonce rien du tout.
+    dit: (d) => d.plan_travail !== 'aucun' && Boolean(d.materiaux?.plan_travail),
+    quoi: '`materiaux.plan_travail` déclaré annonce un plan de travail à débiter',
+  },
+  {
+    role: 'TIROIR-CÔTÉ',
+    dit: (d) => (d.tiroirs ?? 0) > 0 && d.corps_tiroir === 'oui',
+    quoi: '`corps_tiroir: "oui"` annonce des corps de tiroir',
+  },
+]
+
 /**
  * Le socle d'un caisson : ce qui existe avant toute décision.
  *
@@ -239,6 +273,21 @@ export function derive(design, tables, moduleDemande) {
     for (const r of relationsDOrientation(piece, retraits)) pose(r)
   }
   for (const r of relations) pose(r)
+
+  /* Ce que le design annonce et que personne n'a posé : il manque une RÈGLE,
+     et son absence ne laisse aucune autre trace. */
+  const roles = new Set(pieces.map((p) => p.role))
+  for (const { role, dit, quoi } of ANNONCEES) {
+    if (!dit(design) || roles.has(role)) continue
+    issues.push(issue(
+      'bloquant',
+      'piece-annoncee-absente',
+      `${quoi}, et aucune méthode n'en pose : il manque la table qui décide `
+      + `de cette pièce. Le débit sortirait complet et faux — sans ${role}, `
+      + 'et sans rien qui le signale.',
+      { role },
+    ))
+  }
 
   const { valeurs, libres, contraint } = s.resout()
 

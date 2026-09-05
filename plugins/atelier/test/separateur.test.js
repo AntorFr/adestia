@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 
 import { litTable } from '../moteur/tables.mjs'
-import { derive } from '../moteur/derive/index.mjs'
+import { bloquantes, derive } from '../moteur/derive/index.mjs'
 
 const here = fileURLToPath(new URL('.', import.meta.url))
 const lit = (n) => {
@@ -118,5 +118,8 @@ test('deux séparateurs à la fois, dont un qui vit dans une zone', () => {
   assert.equal(entreBacs.longueur, 867)
   assert.equal(entreBacs.largeur, 349, 'coupé à 349 pour finir à 350 : la zone des bacs')
   assert.equal(r.zones.outils, 281, 'ce qui reste, séparateur déduit')
-  assert.deepEqual(r.issues, [])
+  // Rien qui arrête une coupe. Ce cas ne charge qu'une partie des tables, donc
+  // le moteur signale au passage les décisions que personne n'y lit — c'est
+  // exactement ce qu'on lui demande de faire.
+  assert.deepEqual(bloquantes(r.issues), [])
 })
