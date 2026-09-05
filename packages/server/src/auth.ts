@@ -103,7 +103,15 @@ export const PUBLIC_ROUTES = new Set([
   '/auth/logout',
   // Its own bearer token IS its authentication; a browser session means
   // nothing to the agent on the other end.
+  //
+  // Both spellings, and it is not a prefix rule — `/mcp/` IS `/mcp`, which has
+  // nothing to do with opening `/mcp/anything`. Listed because this hook runs
+  // BEFORE routing: without the second line, a caller who kept the trailing
+  // slash gets `401 not signed in`, an answer that accuses the token while the
+  // fault is a slash. The predecessor's gateway required `/mcp/` exactly, so
+  // that caller is every client carried over from it.
   '/mcp',
+  '/mcp/',
   /**
    * What a browser reads BEFORE, or beside, a session — and what carries
    * nothing about the workspace or its user.

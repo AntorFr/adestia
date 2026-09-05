@@ -38,6 +38,18 @@ const textResult = (text: string, isError = false) => ({
   ...(isError ? { isError: true } : {}),
 })
 
+/**
+ * The endpoint, both spellings.
+ *
+ * Fastify matches a trailing slash as a different path, and the predecessor's
+ * gateway required `/mcp/` exactly — so every client carried over from it keeps
+ * that spelling. Answering only one of the two turns a copied URL into a
+ * failure that names the wrong culprit; `auth.ts` exempts both for the same
+ * reason. Serving both is not a prefix rule: `/mcp/anything` still matches
+ * nothing here.
+ */
+const PATHS = ['/mcp', '/mcp/'] as const
+
 export function registerMcp(app: FastifyInstance, deps: McpDependencies): void {
   const { config } = deps
   if (!config.enabled) return
@@ -66,13 +78,16 @@ export function registerMcp(app: FastifyInstance, deps: McpDependencies): void {
    * and tries to read it as SSE. It then fails in a place that names neither the
    * page nor this endpoint. A 200 that lies costs more than a 405 that refuses.
    */
-  app.get('/mcp', async (_request, reply) =>
-    reply.code(405).header('allow', 'POST').send({
-      error: 'this endpoint speaks JSON-RPC over POST; it opens no server-to-client stream',
-    }),
-  )
+  for (const path of PATHS) {
+    app.get(path, async (_request, reply) =>
+      reply.code(405).header('allow', 'POST').send({
+        error: 'this endpoint speaks JSON-RPC over POST; it opens no server-to-client stream',
+      }),
+    )
+  }
 
-  app.post<{ Body: JsonRpcRequest }>('/mcp', async (request, reply) => {
+  for (const path of PATHS)
+  app.post<{ Body: JsonRpcRequest }>(path, async (request, reply) => {
     if (!tokenMatches(bearerOf(request.headers.authorization), config.token)) {
       return reply.code(401).send(rpcError(request.body?.id, -32001, 'unauthorized'))
     }

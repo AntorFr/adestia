@@ -176,6 +176,32 @@ describe('the endpoint', () => {
     await app.close()
   })
 
+  it('answers the trailing-slash spelling too, and gates it the same', async () => {
+    // The predecessor's gateway required `/mcp/` exactly, so a client carried
+    // over keeps that URL. Fastify treats it as a different path and the auth
+    // hook runs BEFORE routing: unlisted, it answered `401 not signed in` —
+    // accusing the token while the fault was a slash.
+    const { app } = await build()
+    const answered = await app.inject({
+      method: 'POST',
+      url: '/mcp/',
+      headers: { authorization: 'Bearer a-shared-secret', 'content-type': 'application/json' },
+      payload: { jsonrpc: '2.0', id: 1, method: 'tools/list' },
+    })
+    expect(answered.statusCode).toBe(200)
+    expect(answered.json().result.tools).toHaveLength(2)
+
+    // Et la garde reste entière sur les deux orthographes.
+    const refused = await app.inject({
+      method: 'POST',
+      url: '/mcp/',
+      headers: { 'content-type': 'application/json' },
+      payload: { jsonrpc: '2.0', id: 1, method: 'tools/list' },
+    })
+    expect(refused.json().error.message).toBe('unauthorized')
+    await app.close()
+  })
+
   it('returns a job id immediately and runs the turn behind it', async () => {
     // The whole reason this is asynchronous: a delegated task takes minutes,
     // and an MCP call held open that long times out between the two agents.
