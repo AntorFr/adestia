@@ -35,7 +35,10 @@
     background: color-mix(in srgb, var(--store-color) 15%, var(--surface-raised));
     border-left: 1px solid color-mix(in srgb, var(--store-color) 35%, transparent);
     border-bottom: 1px solid color-mix(in srgb, var(--store-color) 35%, transparent);
-    border-radius: 0 var(--radius-lg) 0 var(--radius-lg);
+    /* 13 px moins la bordure d'1 px : l'onglet est posé dans la boîte de
+       REMPLISSAGE, donc son coin externe doit épouser la courbe INTÉRIEURE de
+       la carte, pas l'extérieure. Avec --radius-lg (17 px) il la débordait. */
+    border-radius: 0 calc(var(--radius) - 1px) 0 var(--radius);
   }
 
   /* Le titre ne passe jamais sous l'onglet. */
@@ -81,7 +84,7 @@
     display: block;
     padding: 3px 9px;
     font: 700 10.5px/1.3 var(--font-mono);
-    border-radius: 0 var(--radius-lg) 0 var(--radius-lg);
+    border-radius: 0 var(--radius) 0 var(--radius);
     color: var(--store-color);
     background: color-mix(in srgb, var(--store-color) 15%, var(--surface-raised));
     border: 1px solid color-mix(in srgb, var(--store-color) 35%, transparent);

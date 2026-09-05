@@ -104,6 +104,12 @@ défaut ne porte rien — un liseré sur toutes les cartes n'est plus un signal,
 qui clôt aussi la question « faut-il marquer le défaut ». Vu en clair et en
 sombre avant d'être écrit.
 
+**O6 — `.adestia-card` est défini DEUX fois dans `shell.css`.** Ligne 737 avec
+`--radius-lg` (17 px), ligne 1168 avec `--radius` (13 px) ; la seconde gagne, la
+première est morte. Un bloc mort qui a l'air vivant a déjà coûté une erreur ici :
+l'onglet de magasin a été courbé sur le token du bloc mort et débordait de 4 px.
+Chantier séparé, mais à ne pas perdre.
+
 ## Ouvertes
 
 **O3 — Le rouge préexistant sur `main`.** Le round-trip d'un bloc à attributs
