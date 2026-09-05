@@ -1546,3 +1546,55 @@ written a line of instruction prose, and starting for one escape hatch would
 buy discovery at the price of the rule. The operator writes it, and the cost
 is stated here rather than discovered in a turn where the agent simply never
 calls a tool nobody told it about.
+
+**2026-09-05 (a reference drops its slug):** the form decided on 08-29 was
+`<type>/<slug>#<id>`, and the owner asked what the slug was for. Nothing that
+survives examination, it turns out, and the three arguments made for it each
+fail against a fact rather than a taste.
+
+*It makes the raw file readable* — the wikilink already carries a LABEL, and
+`[[fiche#01M1…:la boucle de la ville close]]` reads perfectly. *It keeps
+already-written references working* — those are PATHS (`refs:
+[taches/poncer-porte]`), resolved by their own rung; the new form's slug saves
+none of them. *It makes a lost reference repairable* — the label says the same
+thing, better. The one real gain was `grep`: finding, in raw files, what points
+at a page. And that is exactly where a slug turns harmful, because it goes
+stale on the first rename — the grep then finds nothing while the links exist,
+or worse, finds a name that now belongs to another page. **An identifier that
+lies is worse than one that cannot be read.**
+
+Measured against the real pipeline before deciding, because the alternatives
+fail in ways a reading would not reveal: `[fiche:01M1…]` parses as NOTHING (no
+link at all), `[[fiche:01M1…]]` silently resolves to a page named `fiche` with
+the id as its label (`aliasDivider` is `:`), while `[[fiche#01M1…]]` and
+`[[fiche/vannes-a-pied#01M1…]]` both carry the whole target and round-trip
+byte-identical. The grammar therefore never required the slug.
+
+So: **`[[<type>#<id>:<label>]]`**. What goes with it — resolution loses a rung
+and keeps three, none silent: exact `type/id`, then id alone across types
+(resolved when unique, and SAID), then shown as LOST. The authoring skill gains
+one rule, **always a label**, since it is now the only readable part of a
+reference; without one, an unresolved reference shows a bare id, which is the
+single case the slug covered.
+
+Measured on the corpus this serves, which is what turned an opinion into a
+decision: 214 pages, twelve types spread evenly (57 `tache`, 39 `fiche`, 34
+`projet`…) so the `type` segment does carry information — and **zero pages
+carry an id today**, which is the intended starting state: no sealing pass, a
+page is *not yet linkable* until someone links it. The slug rule would have
+needed an exception on its very first measurement: eight folder index pages,
+all named `INDEX.md` and all typed `espace`, collided on `espace/INDEX`. A rule
+that needs an exception before it has ever run is a rule to drop.
+
+*Noted, not built — a third level.* Now that pages hold addressable BLOCKS, a
+reference could reach one: `[[fiche#<page id>#<block id>]]`, one `#` per level
+down, with `[[#<block id>]]` as the short form since a ULID is unique on its
+own. All four candidate spellings were measured to parse and round-trip
+byte-identical, so nothing decided today closes that door — dropping the slug
+even frees the slash. The question it will raise is not notation but whether
+blocks get ids and when, and the coherent answer is the one already written for
+pages: a block is not yet linkable until someone links it, and the id lands in
+its attributes, which the grammar accepts without a schema change. That would
+give two complementary ways to address a block — by KIND (`pull=content:summary`,
+"each child's summary") and by IDENTITY (`#01M1…`, "that block") — serving
+consolidated views and cross-references respectively.
