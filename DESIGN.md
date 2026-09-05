@@ -889,6 +889,114 @@ resolves in Adestia as follows:
   that reads them (zero drift) and sit UNDER workspace instructions with a defined
   precedence: the product provides the generic, the workspace owns the specific.
 
+## Memory stores — one memory composed of several places (decided)
+
+A domain has shared parts and private ones. On disk that is two trees; on
+screen it must be ONE tile, with a mark saying where each card comes from.
+The predecessor (`agent-gw`) shipped this and most of its arbitrations stand;
+where they do not, the reversal is stated.
+
+- **A store is a place. A domain is not filed IN one — it COMPOSES by union of
+  what each store carries.** And the union of a one-element set is the identity,
+  which is not an intention but a TEST: the single-store case must serialize
+  byte for byte as it does today. That check is free and gets written FIRST.
+- **The logical path never contains the store.** `domaines/cadeaux/idee-x` is a
+  NAME; the store is a fact of LOCATION. This is what makes moving a card from
+  one circle to another break no wikilink, no favourite, no reference — a `mv`
+  is a promotion, not a migration. Without it everything else falls.
+- **Nor does it contain the filesystem.** A store declares WHERE its bytes are
+  (`path`) and WHERE it appears in the tree (`at`, the mount point, default:
+  the root). `/shared/famille/voyage` can appear as `voyages/famille`, and
+  nothing outside the resolver knows. The logical tree is authoritative; the
+  disk is an implementation detail it translates. Mounting at the root fuses
+  two stores into one folder — the founding case; mounting deeper segregates
+  them into a visible sub-tree. Both are legitimate, for different ends.
+- **The default store mounts at level 0**, and may not declare `at`: the tree
+  always has a root. `default:` names it, falling back to the only store, then
+  to the first declared.
+- **Precedence is the default store, then the rest** — which REPLACES the
+  predecessor's "declaration order wins". The default store is the one this
+  shell writes to: a card there is mine, I made it, it is the one I meant.
+  Between two shared circles no such claim exists, so deciding would be
+  guessing. Declaration order survives only as display order.
+- **A collision is never resolved in silence, in either direction.** READING:
+  when several non-default stores carry a path and the default does not, the
+  bare address is undecidable, and the shell NAVIGATES to the parent folder —
+  a real navigation, the address bar changes. DISPLAY: both cards are shown,
+  the losing one suffixed with its store's label. Hiding a card is a worse
+  failure than showing it twice under two names. (Two homonymous FOLDERS are
+  not a collision: they merge. That is the whole point.)
+- **`?store=` is a qualifier, never a name.** The bare URL is the only
+  canonical address — copied, favourited, written by a wikilink — and resolves
+  by precedence. The qualifier is produced in one place only, the folder view's
+  link to a card the bare URL does not designate, and falls BACK to the bare
+  resolution when the named store no longer carries the path. The suffix, by
+  contrast, is presentation: it exists only while the conflict does, which is
+  exactly why it must never reach an address.
+- **A URL carries no file extension.** `#/page/domaines/voyages/italie`
+  resolves to `italie.md` through the same translator. The `.md` stays on disk,
+  in the document — `resolveHref` tells a page from a file by it — and in the
+  API, whose markdown-only rule is a security boundary.
+- **Writing deduces, or asks.** An existing card → its own store. A new one in
+  a folder carried by a single store → that store. A new one in a folder
+  carried by several → refused, with the candidates named, and the question is
+  put (to the person by the shell, to the person by the agent). Never a silent
+  choice.
+- **Every store is writable.** A read-only store only moves the failure to a
+  refusal an end user cannot act on. What must be handled is the DISK refusing
+  (a dataset in `2770` with the wrong supplemental group): a 403 naming the
+  store, never an EACCES surfacing as a 500.
+- **What EXECUTES is not composed.** A scheduled note's body is the prompt of a
+  turn. It belongs to the INSTANCE, not to the memory: it lives beside `root`,
+  is never loaded from another store, never composed, never watched there.
+  `root` is therefore not a store and never becomes one — the agent's
+  instructions, its skills, its planif and its cwd all sit there. A shared
+  store is where a peer writes, and what runs here must never come from there.
+- **A plugin never touches the filesystem** (see the decision log). The core
+  serves logical paths carrying their store; `pagesRoot` leaves the contract.
+- **The agent keeps its native file tools, and the stores are declared to
+  them.** Each store's directory becomes an additional working root through a
+  DECLARED driver capability (`additionalDirectories` on the Claude Code SDK,
+  both as a launch option and as a permission scope); a driver that cannot do
+  it falls back to requiring the stores under `root`, and says so at boot
+  rather than being discovered mid-turn. Serving the agent a filesystem API of
+  our own was considered and refused: it would cost it `Grep` — searching its
+  own memory BY CONTENT is its most valuable primitive — and `Edit`, whose
+  exact-match-with-uniqueness is where silent corruption is born when
+  reimplemented. Plugins are barred from the filesystem because they can go
+  blind on it; the agent is the opposite case, and this product is founded on
+  it writing pages with its own tools.
+- **It is TOLD the mapping, because it is the one author that works on files.**
+  Its delivered contract becomes generated rather than static, listing each
+  store's id, label, disk path and mount point, plus the write rule above. It
+  appears only when there is more than one store. That rule is CARRIED by the
+  contract, not enforced by the tool surface — the doctrine everywhere else
+  here: both hands write, and the vocabulary keeps them honest. The day the
+  ambiguous case needs enforcing, it takes ONE tool ("where do I file this?"),
+  never a filesystem API.
+- **Provenance is drawn ON the card, never in its foot.** A rim in the store's
+  hue around the whole card — the colour formula the card hover already uses,
+  45% of the hue mixed into the border — plus a square tab pinned into the
+  top-right corner carrying the store's first two letters. The foot belongs to
+  status and tags, and a provenance chip filed among them stops being
+  distinguishable the moment a card carries three. The tab is square and
+  lettered deliberately: the round dot is the STATUS vocabulary
+  (`.adestia-stat::before`), so reusing it would make a mark about provenance
+  read as a mark about state, and two letters survive being read without the
+  colour — which this design system already requires of every pill, hue alone
+  being no label. A legend under the folder title teaches the mapping once,
+  carrying each store's FULL label cut to the tab's own shape,
+  at the CARD'S OWN radius rather than one scaled to the key — an echo is made
+  of equal curvature, and a neighbouring value breaks it instead of softening it — the label
+  written twice taught nothing, and the shared silhouette makes the pairing
+  visible before it is read. It is also the only place able to state what the
+  ABSENCE of a mark means. The default
+  store carries none: a rim on every card is not a signal. Seen in both themes
+  before being written down (`.agent/mockup-magasins.html`).
+- **`store` appears in a response only when there is more than one.** Adding it
+  to the single-store case would change the answer for nothing, and teach the
+  shell a division that does not exist on its instance.
+
 ## Spikes (validation record)
 
 1. **Editor round-trip — DONE, verdict Milkdown** (`spikes/editor/VERDICT.md`):
@@ -1613,3 +1721,43 @@ would warn on every page carrying one. Declaring `id` in all eight renderers
 would be the wrong fix, eight copies of one idea: an id is not an attribute OF
 the block, it is the block's identity, the way a page's `id:` is not a field of
 its type. The validator therefore skips it, in one place.
+
+**2026-09-05 (the title fallback, kept and measured):** the page-authoring
+entry above states that the core reads `title:` and NEVER the first heading.
+The code has read the heading since the commit BEFORE that entry was written,
+and a test pins it: the decision was recorded twice — contract and design —
+and never implemented. Resolved in favour of the CODE, on a measurement rather
+than on seniority: across the 40 pages of a real corpus 32 are titled by their
+first heading and NONE fall through to the file name, so applying the decision
+would have renamed four pages in five, three distinct `INDEX.md` among them,
+all reading "INDEX" in the same list. The concern behind it — a title that
+moves when somebody edits prose — stands, and its answer is the field itself:
+the contract now tells an author to set `title:` on any page whose name must
+not follow its heading. The lesson is the ordering rather than the rule. A
+contract written the same day as the code it describes, without running it,
+records an intention and reads like a fact — and the agent it is delivered to
+has no way to tell the two apart.
+
+**2026-09-05 (a plugin never touches the filesystem):** measured while
+designing multi-store. Three shipped plugins walk the pages tree themselves —
+`findVoyages`, `findWorkbooks`, `readSources` — each carrying its own copy of
+the same recursive walk, and two of them their own traversal guard
+(`safeParcoursPath`, `safePath`). The host handed them `pagesRoot` precisely so
+they would not GUESS the folder's name, which is instance configuration. That
+was the right answer while the tree was ONE directory. The moment it becomes
+several, the same kindness produces the blindness it was meant to prevent, and
+worse: a plugin reading only the primary store shows none of the shared one, on
+screen, in silence, with no error anywhere to find.
+
+So the rule is raised from a convenience to an ARCHITECTURE. **A plugin never
+calls the filesystem.** The core exposes what a plugin needs — list, resolve,
+read, write — over LOGICAL paths that carry their store, and keeps the physical
+organisation entirely to itself: how many roots there are, in what order they
+compose, and where the traversal guard applies. What a plugin cannot address,
+it cannot go blind to. And the guard gets written once instead of being
+re-derived, differently, in each plugin that needs one.
+
+`pagesRoot` therefore leaves the plugin contract. It was never a capability —
+only an absolute path, disclosed to spare a guess. Replacing a disclosed fact
+with a served answer is the whole move, and it is what makes every future
+change to the physical layout invisible to every plugin.

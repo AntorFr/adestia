@@ -42,6 +42,8 @@ import { registerOidc } from './oidc-routes.js'
 import { registerMcp } from './mcp-routes.js'
 import { registerFiles } from './files.js'
 import { registerPages } from './pages.js'
+import { ConfigError } from './config.js'
+import { foreignRoots, pagesService, resolveStores } from './stores.js'
 import { registerEvents } from './watch.js'
 import { mountPluginApis } from './plugin-host.js'
 import { ArmingSessions, SecretStore } from './secrets.js'
@@ -697,6 +699,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
           // than the gateway's own notes.
           prompt: frameView(frameAttachments(body.prompt, attachments), body.view),
           cwd: config.workspace.root,
+          ...(agentRoots.length > 0 ? { roots: agentRoots } : {}),
           ...(sessionId ? { sessionId } : {}),
           ...(typeof body.model === 'string' ? { model: body.model } : {}),
           ...(callerToken ? { callerToken } : {}),
@@ -974,21 +977,31 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     return cleared ? { cleared: true } : reply.code(404).send({ error: 'nothing stored' })
   })
 
-  const pagesRoot = join(config.workspace.root, config.workspace.pages)
-  registerPages(app, { root: pagesRoot })
+  // Memory, composed. One store or several, every route below sees the same
+  // shape — and a contradiction between declarations is refused here rather
+  // than repaired, because the repair would have to guess which half the
+  // operator meant.
+  const { stores, issues } = resolveStores(config.workspace.stores, config.workspace.root)
+  if (issues.length > 0) throw new ConfigError(issues)
+
+  // Declared to every turn: the agent edits pages with its OWN file tools, so
+  // a circle mounted outside its home has to be named or the CLI refuses it.
+  const agentRoots = foreignRoots(stores, config.workspace.root)
+
+  registerPages(app, { stores, locale: config.locale })
   // The agent writes these files with its own tools, past every route above;
   // the feed is how a shell already on screen learns they changed.
-  registerEvents(app, { root: pagesRoot, watch: config.workspace.watch })
-  // The same root: an attachment is a file sitting next to a page, and a
-  // second configurable directory would be a second place to explain.
-  registerFiles(app, { root: pagesRoot })
+  registerEvents(app, { stores, watch: config.workspace.watch })
+  // The same stores: an attachment is a file sitting next to a page, and a
+  // second configurable place would be a second thing to explain.
+  registerFiles(app, { stores, locale: config.locale })
 
   // Mounted before the static catch-all, so a plugin route always wins over
   // the shell's fallback; and after the auth hook, so it is gated like
   // everything else.
   const apiProblems = await mountPluginApis(app, plugins, {
     workspaceRoot: config.workspace.root,
-    pagesRoot,
+    pages: pagesService(stores),
     dataDir: config.dataDir,
     scheduleEnabled: config.schedule.enabled,
     secrets: config.secrets,
@@ -1005,6 +1018,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
         for await (const event of driver.runTurn({
           prompt,
           cwd: config.workspace.root,
+          ...(agentRoots.length > 0 ? { roots: agentRoots } : {}),
           // A delegating agent is not a person at a screen.
           unattended: true,
         })) {
@@ -1041,6 +1055,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
       for await (const event of driver.runTurn({
         prompt,
         cwd: config.workspace.root,
+        ...(agentRoots.length > 0 ? { roots: agentRoots } : {}),
         // The clock is nobody at a screen: a question raised here is refused
         // at once rather than holding a turn slot until it times out.
         unattended: true,

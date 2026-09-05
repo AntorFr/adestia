@@ -38,46 +38,29 @@ const HEURE = /^\d{1,2}[:h]\d{2}$/
 const LATLNG = /^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/
 
 /**
- * Walks for `**\/assets/voyage.json`.
+ * Le nom d'un voyage, validé sans toucher au disque.
  *
- * Convention rather than declaration, like workbooks: a trip is a folder that
- * carries its data in its own assets, so creating one is writing a file. There
- * is no registry to keep in sync and nothing to forget.
+ * Convention plutôt que déclaration, comme les workbooks : un voyage est un
+ * dossier qui porte ses données dans son propre `assets/`, donc en créer un
+ * c'est écrire un fichier. Aucun registre à tenir, rien à oublier.
+ *
+ * Un chemin venu d'une requête reste une entrée utilisateur, d'où le suffixe
+ * vérifié ici. Mais OÙ le fichier vit est l'affaire du noyau : la mémoire peut
+ * être composée de plusieurs magasins.
  */
-async function findVoyages(root, prefix = '', depth = 0) {
-  if (depth > 6) return []
-  let entries
-  try {
-    entries = await readdir(join(root, prefix), { withFileTypes: true })
-  } catch {
-    return []
-  }
-
-  const found = []
-  for (const entry of entries) {
-    if (entry.name.startsWith('.') || entry.name === 'node_modules') continue
-    const path = prefix ? `${prefix}/${entry.name}` : entry.name
-    if (entry.isDirectory()) {
-      found.push(...(await findVoyages(root, path, depth + 1)))
-    } else if (entry.name === VOYAGE && prefix.endsWith('/assets')) {
-      found.push(path)
-    }
-  }
-  return found
-}
-
-/** A path from a query string is user input, wherever it looks like it came from. */
-export function safeVoyagePath(root, requested) {
+export function safeVoyagePath(requested) {
   if (typeof requested !== 'string' || requested.includes('\0')) return undefined
-  const target = resolve(root, `./${requested.replace(/^\/+/, '')}`)
-  const rel = relative(root, target)
-  if (rel.startsWith('..') || rel.startsWith(`..${sep}`)) return undefined
-  if (!target.endsWith(`${sep}${VOYAGE}`)) return undefined
-  return target
+  const path = requested.replace(/^\/+/, '')
+  if (!path.endsWith(`/${VOYAGE}`) && path !== VOYAGE) return undefined
+  if (path.split('/').some((segment) => segment === '..' || segment.startsWith('.'))) {
+    return undefined
+  }
+  return path
 }
 
-/** `…/assets/voyage.json` → `…/assets/voyage-state.json`. Beside, never inside. */
-export const overlayPath = (voyage) => join(dirname(voyage), 'voyage-state.json')
+/** `…/assets/voyage.json` → `…/assets/voyage-state.json`. À côté, jamais dedans. */
+export const overlayPath = (voyage) =>
+  `${voyage.split('/').slice(0, -1).join('/')}/voyage-state.json`
 
 /**
  * A document a card points at, resolved against ITS OWN TRIP.
@@ -88,39 +71,44 @@ export const overlayPath = (voyage) => join(dirname(voyage), 'voyage-state.json'
  * under the workspace. A document is a thing a trip carries, and the boundary
  * says exactly that.
  */
-export function safeDocPath(root, voyage, requested) {
+export function safeDocPath(voyage, requested) {
   if (typeof requested !== 'string' || requested === '' || requested.includes('\0')) {
     return undefined
   }
-  // `assets/x.pdf` is written relative to the TRIP folder, which is the parent
-  // of the assets folder the voyage.json sits in.
-  const trip = dirname(dirname(voyage))
-  const target = resolve(trip, `./${requested.replace(/^\/+/, '')}`)
-  const rel = relative(trip, target)
-  if (rel === '' || rel.startsWith('..') || rel.startsWith(`..${sep}`)) return undefined
-  // And still inside the workspace, in case the trip folder is itself a link.
-  const outer = relative(root, target)
-  if (outer.startsWith('..') || outer.startsWith(`..${sep}`)) return undefined
-  return target
+  // `assets/x.pdf` s'écrit relativement au dossier du VOYAGE, qui est le parent
+  // du dossier assets où vit le voyage.json.
+  const trip = voyage.split('/').slice(0, -2)
+  const segments = []
+  for (const segment of requested.replace(/^\/+/, '').split('/')) {
+    if (segment === '' || segment === '.') continue
+    // Une sortie du dossier du voyage est refusée, jamais repliée : ce n'est
+    // pas une faute de frappe à réparer, c'est une demande à ne pas servir.
+    if (segment === '..' || segment.startsWith('.')) return undefined
+    segments.push(segment)
+  }
+  if (segments.length === 0) return undefined
+  return [...trip, ...segments].join('/')
 }
 
-async function readJson(path, fallback) {
+/** Lecture par le noyau, qui compose les magasins. */
+const readJson = async (pages, path, fallback) => {
+  const raw = await pages.read(path)
+  if (raw === undefined) return fallback
   try {
-    return JSON.parse(await readFile(path, 'utf8'))
+    return JSON.parse(raw)
   } catch {
     return fallback
   }
 }
 
-async function writeJson(path, value) {
-  await mkdir(dirname(path), { recursive: true })
-  // Atomic: the agent may be reading this while a drag writes it, and a
-  // half-written overlay is a trip that renders wrong rather than one that
-  // fails to load.
-  const temporary = `${path}.${randomUUID()}.tmp`
-  await writeFile(temporary, JSON.stringify(value, null, 1))
-  await rename(temporary, path)
-}
+/**
+ * Écriture par le noyau, qui décide du magasin.
+ *
+ * L'atomicité vivait ici en copie ; elle vit maintenant en un seul endroit —
+ * et elle en avait besoin, un `rename` n'étant atomique qu'à l'intérieur d'un
+ * système de fichiers alors que les magasins sont des montages.
+ */
+const writeJson = (pages, path, value) => pages.write(path, JSON.stringify(value, null, 1))
 
 const emptyState = () => ({ items: {} })
 
@@ -274,22 +262,23 @@ const MIME = {
 }
 
 export default async function api(app, opts) {
-  // The host says where the pages tree lives; its folder name is
-  // configuration, not `pages` everywhere.
-  const root = opts.pagesRoot
+  // La mémoire est servie par le noyau : chemins LOGIQUES, jamais de racine.
+  const pages = opts.pages
   // Declared in the manifest, granted by the instance — or absent, which is a
   // supported state rather than a broken one.
   const key = opts.secrets?.GOOGLE_MAPS_API_KEY ?? ''
   const cache = makeCache()
 
   app.get('/voyages', async () => {
-    const paths = await findVoyages(root)
+    const found = await pages.list({ keep: (name) => name === VOYAGE })
     const voyages = []
-    for (const path of paths.sort()) {
-      const file = join(root, path)
-      const data = await readJson(file, null)
+    for (const entry of found
+      .filter((one) => one.path.includes('/assets/'))
+      .sort((a, b) => a.path.localeCompare(b.path))) {
+      const data = await readJson(pages, entry.path, null)
       if (!data) continue
-      voyages.push(summarise(path, data, await readJson(overlayPath(file), emptyState())))
+      const state = await readJson(pages, overlayPath(entry.path), emptyState())
+      voyages.push({ ...summarise(entry.path, data, state), store: entry.store })
     }
     // The ones with dates first, in date order; the ideas after. A trip that
     // is happening outranks a trip somebody is dreaming about.
@@ -303,30 +292,30 @@ export default async function api(app, opts) {
   })
 
   app.get('/voyage', async (request, reply) => {
-    const path = safeVoyagePath(root, request.query.path)
+    const path = safeVoyagePath(request.query.path)
     if (!path) return reply.code(400).send({ error: 'not a voyage path' })
-    const data = await readJson(path, null)
+    const data = await readJson(pages, path, null)
     if (!data) return reply.code(404).send({ error: 'no voyage there' })
     return data
   })
 
   app.get('/state', async (request, reply) => {
-    const path = safeVoyagePath(root, request.query.v)
+    const path = safeVoyagePath(request.query.v)
     if (!path) return reply.code(400).send({ error: 'not a voyage path' })
-    return readJson(overlayPath(path), emptyState())
+    return readJson(pages, overlayPath(path), emptyState())
   })
 
   app.post('/state', async (request, reply) => {
-    const path = safeVoyagePath(root, request.body?.v)
+    const path = safeVoyagePath(request.body?.v)
     if (!path) return reply.code(400).send({ error: 'not a voyage path' })
-    const data = await readJson(path, null)
+    const data = await readJson(pages, path, null)
     if (!data) return reply.code(404).send({ error: 'no voyage there' })
 
     const { error, patch, replace } = readGesture(data, request.body)
     if (error) return reply.code(400).send({ error })
 
     const file = overlayPath(path)
-    const state = await readJson(file, emptyState())
+    const state = await readJson(pages, file, emptyState())
     state.items ??= {}
     const stamped = { ...patch, ts: new Date().toISOString().replace(/\.\d+Z$/, 'Z') }
     // Moving a card does not lose its annotations: a confirmation MERGES over
@@ -336,28 +325,24 @@ export default async function api(app, opts) {
       ? stamped
       : { ...(state.items[request.body.id] ?? {}), ...stamped }
 
-    await writeJson(file, state)
+    await writeJson(pages, file, state)
     return state
   })
 
   app.get('/doc', async (request, reply) => {
-    const voyage = safeVoyagePath(root, request.query.v)
+    const voyage = safeVoyagePath(request.query.v)
     if (!voyage) return reply.code(400).send({ error: 'not a voyage path' })
-    const file = safeDocPath(root, voyage, request.query.file)
+    const file = safeDocPath(voyage, request.query.file)
     if (!file) return reply.code(400).send({ error: 'not a document of this trip' })
-    try {
-      const info = await stat(file)
-      if (!info.isFile()) throw new Error('not a file')
-    } catch {
-      return reply.code(404).send({ error: 'no such document' })
-    }
-    const name = file.split(sep).at(-1)
+    const bytes = await pages.stream(file)
+    if (!bytes) return reply.code(404).send({ error: 'no such document' })
+    const name = file.split('/').at(-1)
     return reply
       .type(MIME[extname(file).toLowerCase()] ?? 'application/octet-stream')
       // Attachment: a boarding pass is something you keep, and a PDF rendered
       // inside the shell would replace the trip somebody was looking at.
       .header('content-disposition', `attachment; filename="${name.replace(/["\\]/g, '')}"`)
-      .send(createReadStream(file))
+      .send(bytes)
   })
 
   /**
@@ -368,14 +353,14 @@ export default async function api(app, opts) {
    * answer, which the front draws as "not yet" rather than inventing a sun.
    */
   app.get('/weather', async (request, reply) => {
-    const path = safeVoyagePath(root, request.query.v)
+    const path = safeVoyagePath(request.query.v)
     if (!path) return reply.code(400).send({ error: 'not a voyage path' })
     if (!key) return { available: false, days: {} }
     // The language a description comes back in. Asked for by the caller,
     // because the front is what knows the instance's locale — a plugin's API
     // is handed paths, not words.
     const lang = /^[a-z]{2}$/.test(request.query.lang ?? '') ? request.query.lang : 'en'
-    const data = await readJson(path, null)
+    const data = await readJson(pages, path, null)
     if (!data) return reply.code(404).send({ error: 'no voyage there' })
     if (!data.debut || !data.fin) return { available: true, days: {} }
 

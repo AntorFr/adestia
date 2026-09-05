@@ -438,3 +438,59 @@ describe('workspace.watch', () => {
     )
   })
 })
+
+describe('workspace.stores', () => {
+  it('an instance that never heard of stores still has exactly one', () => {
+    // Backwards-compatible BY CONSTRUCTION, not by care: the composition of a
+    // one-element set is that set, so this instance answers what it always
+    // answered.
+    const config = parseConfig('')
+    expect(config.workspace.stores).toEqual([{ id: 'perso', path: 'pages', default: true }])
+  })
+
+  it('the single store follows a renamed pages folder', () => {
+    const config = parseConfig('workspace:\n  pages: memory\n')
+    expect(config.workspace.stores[0]?.path).toBe('memory')
+  })
+
+  it('reads a declared list in order, with its labels and mount points', () => {
+    const config = parseConfig(
+      [
+        'workspace:',
+        '  stores:',
+        '    - { id: perso, path: pages, default: true }',
+        '    - { id: famille, path: /shared/famille, at: voyages/famille, label: Famille, hue: violet }',
+      ].join('\n'),
+    )
+    expect(config.workspace.stores).toEqual([
+      { id: 'perso', path: 'pages', default: true },
+      {
+        id: 'famille',
+        path: '/shared/famille',
+        at: 'voyages/famille',
+        label: 'Famille',
+        hue: 'violet',
+      },
+    ])
+  })
+
+  it('refuses a typo rather than ignoring it', () => {
+    // A misspelt key is a store the operator believes is labelled, or mounted,
+    // and is not — silence here is a wrong tree nobody can account for.
+    const issues = issuesOf('workspace:\n  stores:\n    - { id: perso, path: pages, mont: voyages }\n')
+    expect(issues.join(' ')).toContain('mont is not a setting')
+  })
+
+  it('refuses a store with no id and one with no path', () => {
+    expect(issuesOf('workspace:\n  stores:\n    - { path: pages }\n').join(' ')).toContain(
+      'id is required',
+    )
+    expect(issuesOf('workspace:\n  stores:\n    - { id: perso }\n').join(' ')).toContain(
+      'path is required',
+    )
+  })
+
+  it('refuses an empty list instead of reading it as "no memory"', () => {
+    expect(issuesOf('workspace:\n  stores: []\n').join(' ')).toContain('workspace.stores is empty')
+  })
+})

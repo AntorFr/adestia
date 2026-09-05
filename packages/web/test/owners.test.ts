@@ -19,6 +19,8 @@ import {
   folderRoute,
   ownerOf,
   routeForPath,
+  pageAddress,
+  pageRoute,
   sectionRoute,
 } from '../src/app/owners.js'
 
@@ -223,5 +225,29 @@ describe('two plugins over one folder', () => {
     expect(ownerOf([narrow, broad], 'voyages/archives/2019')?.id).toBe('narrow')
     // And the broad one still owns what the narrow one never claimed.
     expect(ownerOf([narrow, broad], 'voyages/corse')?.id).toBe('broad')
+  })
+})
+
+describe('a page address', () => {
+  it('drops the extension, because the address bar is not the disk', () => {
+    expect(pageRoute('domaines/sante/plan-75kg.md')).toBe('/page/domaines/sante/plan-75kg')
+  })
+
+  it('carries the store as a qualifier, never as a segment', () => {
+    // A name that contained its store would break every link the day a page
+    // moves from one circle to another — the one thing the composition exists
+    // to avoid. So the store rides beside the name, not inside it.
+    expect(pageRoute('voyages/italie.md', 'famille')).toBe('/page/voyages/italie?store=famille')
+  })
+
+  it('reads both spellings, so an old link still opens', () => {
+    expect(pageAddress('voyages/italie').path).toBe('voyages/italie.md')
+    expect(pageAddress('voyages/italie.md').path).toBe('voyages/italie.md')
+    expect(pageAddress('voyages/italie?store=famille').store).toBe('famille')
+    expect(pageAddress('voyages/italie').store).toBeUndefined()
+  })
+
+  it('still reads the escaped-slash form nobody writes any more', () => {
+    expect(pageAddress('domaines%2Fvoyages%2Fitalie').path).toBe('domaines/voyages/italie.md')
   })
 })

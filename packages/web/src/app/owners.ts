@@ -51,6 +51,45 @@ export function decodePath(rest: string): string {
     .join('/')
 }
 
+/**
+ * A page's address — its name, without the extension.
+ *
+ * `.md` is a fact about a FILE. It belongs on the disk, and in a document
+ * where a link's extension is what tells a page from an attachment; it has no
+ * business in the address bar, where it is a detail of storage leaking into
+ * something a person reads and shares.
+ *
+ * The store, when given, rides as a QUALIFIER rather than a segment. A name
+ * that contained its store would break every link the day a page moves from
+ * one circle to another — which is the one thing this whole composition is
+ * built to avoid. So the bare address stays canonical and resolves by
+ * precedence, and this qualifier is produced in exactly one place: a folder
+ * linking the copy the bare address does not designate.
+ */
+export function pageRoute(path: string, store?: string): string {
+  const bare = path.replace(/\.md$/i, '')
+  return `/page/${encodePath(bare)}${store ? `?store=${encodeURIComponent(store)}` : ''}`
+}
+
+/**
+ * The reverse: what a `/page/…` route names.
+ *
+ * Reads BOTH spellings — a link written before the extension was dropped
+ * still opens, the same courtesy `decodePath` already extends to the old
+ * escaped-slash form. An address is a promise, and promises are not withdrawn
+ * because the product got tidier.
+ */
+export function pageAddress(rest: string): { path: string; store?: string } {
+  const cut = rest.indexOf('?')
+  const raw = cut === -1 ? rest : rest.slice(0, cut)
+  const asked = cut === -1 ? null : new URLSearchParams(rest.slice(cut + 1)).get('store')
+  const decoded = decodePath(raw)
+  return {
+    path: /\.md$/i.test(decoded) ? decoded : `${decoded}.md`,
+    ...(asked ? { store: asked } : {}),
+  }
+}
+
 /** `#/section/<folder>` — the shell's own screen for a folder it owns. */
 export function sectionRoute(folder: string): string {
   return `/section/${encodePath(folder)}`

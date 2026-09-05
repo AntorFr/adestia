@@ -319,6 +319,11 @@ export class ClaudeCodeDriver implements Driver {
   }
 
   /** Claude Code reads skills from `.claude/skills/<name>/SKILL.md`. */
+  acceptsRoots(): boolean {
+    // `additionalDirectories`: a launch option AND a permission scope.
+    return true
+  }
+
   skillsPath(): string {
     return '.claude/skills'
   }
@@ -448,6 +453,12 @@ export class ClaudeCodeDriver implements Driver {
       prompt: request.prompt,
       options: {
         cwd: request.cwd,
+        // The stores that live outside the workspace. Both a working root and
+        // a permission scope in this SDK, which is exactly what is needed: the
+        // agent's own file tools reach them, and `ask` posture stops asking.
+        ...(request.roots && request.roots.length > 0
+          ? { additionalDirectories: [...request.roots] }
+          : {}),
         includePartialMessages: true,
         // The two postures, and the whole of the difference between them.
         //

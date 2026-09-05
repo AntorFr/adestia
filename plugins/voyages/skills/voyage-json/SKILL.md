@@ -15,8 +15,9 @@ en timeline (un flux par jour) et en tray de suggestions déplaçables. Ce fichi
 livré avec le moteur qui le lit : ils ne peuvent pas diverger.
 
 Voir `page-author` pour les trois façons dont une app retrouve ses propres pages —
-celle-ci utilise la troisième (fichier voisin trouvé par convention, `**/assets/voyage.json`
-sous `pages/`). Le dossier du voyage est **absorbé** par la tuile de l'app : il ne
+celle-ci utilise la troisième (fichier voisin trouvé par convention,
+`**/assets/voyage.json` n'importe où dans la mémoire — quel dossier la porte est un
+réglage de l'instance, et il peut y en avoir plusieurs). Le dossier du voyage est **absorbé** par la tuile de l'app : il ne
 paraît pas aussi en domaine, la timeline EST sa page d'accueil.
 
 ```json

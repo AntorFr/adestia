@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import type { DiscoveredPlugin } from '../src/extensions.js'
 import { mountPluginApis, runSetups } from '../src/plugin-host.js'
+import { pagesService, resolveStores } from '../src/stores.js'
 
 let root: string
 const logs: string[] = []
@@ -101,9 +102,11 @@ describe('plugin APIs', () => {
     const app = Fastify()
     const problems = await mountPluginApis(app, plugins, {
       workspaceRoot: join(root, 'workspace'),
-      // Deliberately NOT `<workspace>/pages`: the folder name is configuration,
-      // and a plugin must take this value rather than guess it.
-      pagesRoot: join(root, 'workspace', 'memory'),
+      // Deliberately NOT `<workspace>/pages`: where memory sits is this
+      // module's business, and a plugin is served answers rather than a path.
+      pages: pagesService(
+        resolveStores([{ id: 'perso', path: join(root, 'workspace', 'memory') }], root).stores,
+      ),
       dataDir: join(root, 'data'),
       scheduleEnabled: false,
     })
@@ -171,9 +174,10 @@ describe('plugin APIs', () => {
     expect(problems[0]?.reason).toContain('default-export a Fastify plugin')
   })
 
-  it('hands a plugin paths, and nothing that reaches the engine', async () => {
+  it('hands a plugin answers, and nothing that reaches the engine', async () => {
     // Enough to find files; nothing that reaches the driver, the secret store
-    // or another plugin's data.
+    // or another plugin's data — and, since memory may be composed of several
+    // stores, no path to the disk either.
     const p = await plugin('aware', { api: './api.mjs' })
     await writeApi(
       p.dir,
@@ -182,7 +186,7 @@ describe('plugin APIs', () => {
            id: opts.pluginId,
            keys: Object.keys(opts).filter((k) => k !== 'prefix').sort(),
            secrets: Object.keys(opts.secrets ?? {}),
-           pagesRoot: opts.pagesRoot,
+           pages: Object.keys(opts.pages ?? {}).sort(),
          }))
        }`,
     )
@@ -192,17 +196,21 @@ describe('plugin APIs', () => {
     expect(body.id).toBe('aware')
     expect(body.keys).toEqual([
       'dataDir',
-      'pagesRoot',
+      'pages',
       'pluginDir',
       'pluginId',
       'scheduleEnabled',
       'secrets',
       'workspaceRoot',
     ])
-    // The VALUE, not just the key: an instance may name its pages folder
-    // `memory`, and a plugin walking `<workspace>/pages` instead sees an
-    // empty tree — the regression behind "Aucun workbook" on a live pod.
-    expect(body.pagesRoot).toBe(join(root, 'workspace', 'memory'))
+    // Memory arrives as a SERVICE, not a directory. The old field was an
+    // absolute path, handed over so a plugin would not guess a folder name
+    // that is instance configuration — correct while the tree was one
+    // directory, and the cause of silent blindness the day it became several:
+    // a plugin reading one root shows nothing of the shared circle, on screen,
+    // with no error anywhere. What it can no longer address, it can no longer
+    // go blind to.
+    expect(body.pages).toEqual(['exists', 'list', 'read', 'stream', 'write'])
     // Present, and EMPTY. The field exists so an API can read it without
     // checking, and holds nothing for a plugin that declared nothing — which
     // is the boundary, not a convenience: the instance's other keys are not

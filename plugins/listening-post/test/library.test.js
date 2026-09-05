@@ -5,14 +5,14 @@
 
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
-import { mkdtemp, mkdir, writeFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join, sep } from 'node:path'
+import { join } from 'node:path'
 
 import { keyOf } from '../lib/feeds.mjs'
-import { assetsFor, frontmatterOf, readLibrary, readSources, safePath } from '../lib/library.mjs'
+import { assetsFor, frontmatterOf, pagesOverDirs, readLibrary, readSources, safePath } from '../lib/library.mjs'
 
-async function workspace() {
+async function workspaceDir() {
   const root = await mkdtemp(join(tmpdir(), 'lp-pages-'))
   await mkdir(join(root, 'veille/assets'), { recursive: true })
   await mkdir(join(root, 'domaines/audio/assets'), { recursive: true })
@@ -45,6 +45,9 @@ async function workspace() {
   return root
 }
 
+/** Le même corpus, servi comme le noyau le sert. */
+const workspace = async () => pagesOverDirs([await workspaceDir()])
+
 test('sources merge across files, and a feed declared twice is one source', async () => {
   const { sources, problems } = await readSources(await workspace())
   assert.deepEqual(
@@ -58,9 +61,9 @@ test('sources merge across files, and a feed declared twice is one source', asyn
 })
 
 test('a sources file that will not parse is a problem, never a silence', async () => {
-  const root = await workspace()
+  const root = await workspaceDir()
   await writeFile(join(root, 'veille/assets/veille.json'), '{ nope')
-  const { sources, problems } = await readSources(root)
+  const { sources, problems } = await readSources(pagesOverDirs([root]))
   assert.equal(sources.length, 1, 'the other file still counts')
   assert.equal(problems.length, 1)
   assert.equal(problems[0].file, 'veille/assets/veille.json')
@@ -113,9 +116,8 @@ test('frontmatter is read shallowly, and a page without one is not a crash', () 
 })
 
 test('a path from a query string cannot leave the pages tree', () => {
-  const root = `${sep}pages`
-  assert.equal(safePath(root, '../../etc/passwd', { suffix: '.md' }), undefined)
-  assert.equal(safePath(root, '/etc/passwd', { suffix: '.md' }), undefined)
-  assert.equal(safePath(root, 'veille/x.json', { suffix: '.md' }), undefined)
-  assert.equal(safePath(root, 'veille/x.md', { suffix: '.md' }), join(root, 'veille/x.md'))
+  assert.equal(safePath('../../etc/passwd', { suffix: '.md' }), undefined)
+  assert.equal(safePath('/etc/passwd', { suffix: '.md' }), undefined)
+  assert.equal(safePath('veille/x.json', { suffix: '.md' }), undefined)
+  assert.equal(safePath('veille/x.md', { suffix: '.md' }), 'veille/x.md')
 })

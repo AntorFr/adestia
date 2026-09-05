@@ -484,13 +484,41 @@ export default async function api(app, options) {
 An inactive plugin mounts nothing. An API that fails to import is reported and
 skipped: a broken plugin costs its own view, never the server.
 
-**Finding files: take `options.pagesRoot`, never derive it.** The pages
-folder's NAME is instance configuration (`workspace.pages`) — one instance
-calls it `pages`, another `memory` — so `join(options.workspaceRoot, 'pages')`
-walks an empty tree on every instance that is not the reference layout, and
-the failure looks like missing data, not like a bug. The host also hands you
-`workspaceRoot`, `dataDir`, `pluginDir`, `pluginId` and `scheduleEnabled`;
-paths, not objects — an API finds files, it does not reach the engine.
+**Finding files: ask `options.pages`, and never touch the filesystem.** An
+instance's memory may be composed of SEVERAL stores — a personal one, a shared
+circle — and which they are, in what order they take precedence and where the
+traversal guard applies is the core's business, not yours. You are handed a
+service over LOGICAL paths, and every answer says which store it came from:
+
+```js
+export default async function api(app, { pages }) {
+  // Every store, precedence order. `keep` filters on the file's own name.
+  const found = await pages.list({ keep: (name) => name === 'workbook.json' })
+  //  → [{ path: 'projets/garage/assets/workbook.json', store: 'perso' }, …]
+
+  const text = await pages.read(found[0].path)     // undefined if nobody has it
+  const there = await pages.exists('x/assets/y.json')
+  const bytes = await pages.stream('voyages/corse/billet.pdf')  // for what is
+                                                    // too big to read whole
+  await pages.write('x/assets/state.json', body)   // atomic; the core picks
+                                                   // the store, and REFUSES
+                                                   // when several could hold it
+}
+```
+
+A path is never joined, resolved or walked by a plugin. Three shipped plugins
+each carried their own copy of a recursive walk and two carried their own
+traversal guard; every one of them would have gone silently blind on a shared
+store — showing an empty list on screen, with no error to find. What you cannot
+address, you cannot go blind to.
+
+The host also hands you `workspaceRoot`, `dataDir`, `pluginDir`, `pluginId` and
+`scheduleEnabled` — nothing that reaches the driver, the secret store, or
+another plugin's data.
+
+**A tool you ship runs OUTSIDE the server**, so it gets no service: give it the
+store directories on its command line and build one over them, the way
+`listening-post`'s `pagesOverDirs` does. Do not re-derive a walk.
 
 ## Before you finish
 

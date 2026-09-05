@@ -158,6 +158,9 @@ describe('the section screen', () => {
     const openPage = vi.fn()
     render(<Section {...props} openPage={openPage} />)
     screen.getByText('etabli').closest('button')?.click()
-    expect(openPage).toHaveBeenCalledWith('domaines/diy/etabli.md')
+    // The store travels with the click: on an instance composing several,
+    // two cards can carry the same name, and the one that opens must be the
+    // one that was clicked. Undefined here — a single store marks nothing.
+    expect(openPage).toHaveBeenCalledWith('domaines/diy/etabli.md', undefined)
   })
 })

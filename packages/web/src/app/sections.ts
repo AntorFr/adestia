@@ -34,6 +34,20 @@ export interface IndexEntry {
   readonly path: string
   readonly title: string
   readonly fields: Readonly<Record<string, unknown>>
+  /**
+   * Which store carries this copy. Absent on an instance with a single one —
+   * there is no provenance to draw when everything comes from the same place.
+   */
+  readonly store?: string
+}
+
+/** A store, as the shell draws it: a name to write and a colour to wear. */
+export interface StoreInfo {
+  readonly id: string
+  readonly label: string
+  readonly hue?: string
+  /** Mine. Its cards carry no mark at all — absence IS the mark. */
+  readonly default?: boolean
 }
 
 const INDEX_FILE = /(^|\/)index\.md$/i

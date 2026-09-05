@@ -21,9 +21,12 @@ workspace tant que personne n'a décidé de garder.
 d'elle, ce qui a réellement été dit. C'est toi qui écris cette page : le transcript est
 de la matière première, la fiche est un jugement.
 
-> Les chemins ci-dessous sont ceux du **disque**, tels que tes outils fichiers les
-> épellent depuis le workspace (`pages/veille/…`). L'API des pages, elle, les écrit
-> sans le dossier des pages (`veille/…`) — c'est la même page.
+> Les chemins ci-dessous sont ceux que **le produit** épelle : `veille/…`, sans le
+> dossier qui les contient. Ce dossier est un réglage de l'instance — l'une l'appelle
+> `pages`, l'autre `memory` — et une instance peut composer sa mémoire de **plusieurs**
+> magasins, sur des disques différents. Le contrat `memory-stores` dit lesquels, et il
+> n'est livré que s'il y en a plus d'un. Tes outils fichiers travaillent sur le disque,
+> donc c'est là que tu vas chercher le préfixe, jamais dans cette page.
 
 ## Les sources qu'on suit — `**/assets/veille.json`
 
@@ -53,7 +56,7 @@ qu'une veille par domaine est une façon légitime de ranger.
 - `tags` et `pourquoi` sont pour **toi** — ils voyagent avec chaque nouveauté et te
   disent pourquoi cette source était dans la liste le jour où elle a publié.
 
-## Une fiche gardée — `pages/veille/<slug>.md`
+## Une fiche gardée — `veille/<slug>.md`
 
 ```markdown
 ---
@@ -103,7 +106,7 @@ Les règles qui mordent :
 - **Ne colle jamais le transcript dans la page.** Il vit à côté (ci-dessous) ; la page
   porte ce que TU en tires. Une fiche de 4 000 lignes n'est pas une fiche.
 
-## Ce qui a été dit — `pages/veille/assets/<slug>.transcript.txt`
+## Ce qui a été dit — `veille/assets/<slug>.transcript.txt`
 
 Un fichier texte, une ligne par phrase, horodatée :
 
@@ -123,7 +126,10 @@ fichiers, sinon l'écran ne trouve plus le transcript (et le dit).
 ## L'outil
 
 ```sh
-node {{plugin_dir}}/tools/listening-post.mjs transcris <url> --page pages/veille/<slug>.md
+# `--pages` prend LES dossiers de la mémoire, séparés par des virgules : sans lui
+# l'outil ne lit que `pages`, et il serait aveugle aux autres magasins.
+node {{plugin_dir}}/tools/listening-post.mjs transcris <url> \
+  --page veille/<slug>.md --pages <dossiers>
 node {{plugin_dir}}/tools/listening-post.mjs cherche "moteur audio" [--n 8]
 node {{plugin_dir}}/tools/listening-post.mjs flux [--jours 7]
 node {{plugin_dir}}/tools/listening-post.mjs etat

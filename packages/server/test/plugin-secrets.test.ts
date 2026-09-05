@@ -14,6 +14,7 @@ import Fastify from 'fastify'
 import { parseConfig } from '../src/config.js'
 import { mountPluginApis } from '../src/plugin-host.js'
 import type { DiscoveredPlugin } from '../src/extensions.js'
+import { pagesService, resolveStores } from '../src/stores.js'
 
 describe('the instance secret table', () => {
   it('holds a named value', () => {
@@ -80,7 +81,7 @@ describe('what a plugin actually receives', () => {
     const app = Fastify()
     const problems = await mountPluginApis(app, plugins, {
       workspaceRoot: root,
-      pagesRoot: root,
+      pages: pagesService(resolveStores([{ id: 'perso', path: root }], root).stores),
       dataDir: root,
       scheduleEnabled: false,
       secrets,

@@ -19,7 +19,22 @@ than merely unlikely.
 
 ```sh
 git worktree add .claude/worktrees/<subject> -b <subject>
+cd .claude/worktrees/<subject> && npm ci
 ```
+
+**The `npm ci` is not optional, and it is the step this file forgot.**
+`node_modules/` is not tracked, so a fresh worktree has the code and none of
+its dependencies. Some tools hide that: a worktree under `.claude/worktrees/`
+sits INSIDE the primary checkout, so Node walks up the parents and finds the
+primary's install — `npm test` passes with nothing installed at all. The build
+does not, twice over: `npm run build` looks for `node_modules/.bin/tsc` at the
+worktree root, and vite needs `@vitejs/plugin-react`, which lives in
+`packages/web/node_modules` — a SIBLING path no walk up the parents can reach.
+So the green this file demands below was, until it was written down here,
+unobtainable in the very place it demands it. `npm ci` rather than
+`npm install`: it installs exactly the lockfile and cannot rewrite it, so a
+build in a worktree can never quietly move a dependency. It takes about twenty
+seconds.
 
 `.claude/worktrees/` is where the harness puts them and is ignored by git.
 Anywhere outside the primary checkout works just as well — the isolation is

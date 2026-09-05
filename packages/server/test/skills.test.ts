@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { collectSkills, deliverSkills } from '../src/skills.js'
 import type { DiscoveredPlugin } from '../src/extensions.js'
+import { resolveStores } from '../src/stores.js'
 
 let root: string
 
@@ -169,5 +170,57 @@ describe('delivering', () => {
       { path: 'a/SKILL.md', contents: '# A', source: 'core' },
     ])
     expect(result.written).toBe(1)
+  })
+})
+
+describe('the stores contract', () => {
+  it('is not delivered at all on a single-store instance', async () => {
+    // Rule seven, applied to prose: a division that does not exist on this
+    // instance must not be taught to its agent, or every turn carries a page
+    // of noise about a shape it will never meet.
+    const { stores } = resolveStores([{ id: 'perso', path: 'pages' }], '/w')
+    const { skills } = await collectSkills([], stores)
+    expect(skills.some((skill) => skill.path === 'memory-stores/SKILL.md')).toBe(false)
+  })
+
+  it('names each store, its disk and its mount point, once there are several', async () => {
+    const { stores } = resolveStores(
+      [
+        { id: 'perso', path: '/w/pages' },
+        { id: 'famille', path: '/shared/voyage', at: 'voyages/famille', label: 'Famille' },
+      ],
+      '/w',
+    )
+    const { skills } = await collectSkills([], stores)
+    const contract = skills.find((skill) => skill.path === 'memory-stores/SKILL.md')
+    expect(contract).toBeDefined()
+
+    // The agent works on FILES: it is the one author here that needs the disk,
+    // and the only place where disclosing the layout is required rather than
+    // merely convenient.
+    expect(contract?.contents).toContain('/shared/voyage')
+    expect(contract?.contents).toContain('voyages/famille')
+    // And which store this shell writes to when nothing else decides.
+    expect(contract?.contents).toContain('this shell writes here by default')
+    // The rule it exists for: the one case nobody can deduce.
+    expect(contract?.contents).toContain('ASK which one')
+  })
+})
+
+describe('a tool that reads memory', () => {
+  it('is told every store, because the first one is not the whole of it', async () => {
+    // A tool handed one directory reports on one circle as if it were
+    // everything — and says so with a straight face, which is the failure
+    // this line exists to prevent.
+    const { stores } = resolveStores(
+      [
+        { id: 'perso', path: '/w/pages' },
+        { id: 'famille', path: '/shared/famille' },
+      ],
+      '/w',
+    )
+    const { skills } = await collectSkills([], stores)
+    const contract = skills.find((skill) => skill.path === 'memory-stores/SKILL.md')
+    expect(contract?.contents).toContain('--pages /w/pages,/shared/famille')
   })
 })

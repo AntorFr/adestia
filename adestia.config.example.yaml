@@ -106,6 +106,32 @@ workspace:
   pages: pages
   memory: memory
   planif: planif
+  # Memory can be composed of SEVERAL places — a personal one, a circle shared
+  # with other people. On screen they are one tree: a domain is not filed in a
+  # store, it is the union of what each one carries, and a page's name never
+  # says which holds it. That is what lets a page move from one circle to
+  # another without breaking a link.
+  #
+  # Leave this out and the instance has exactly one store, built from `pages`
+  # above — which is why nothing changes for an instance that never heard of
+  # this. Declared, it replaces `pages`.
+  #
+  # `path` is relative to `root`, or absolute. `at` is where the store appears
+  # in the tree: absent, it merges at the root, which is what makes one folder
+  # out of two. `label` is the word a card is suffixed with when two stores
+  # carry the same name, and `hue` colours its rim (see the closed table in
+  # `tokens.css`). The default store is the one this shell writes to, it is the
+  # root of the tree, and it therefore cannot declare `at`.
+  # stores:
+  #   - id: perso
+  #     path: pages
+  #     label: Perso
+  #     default: true
+  #   - id: famille
+  #     path: /shared/famille
+  #     label: Famille
+  #     hue: violet
+  #     # at: voyages/famille   # to keep it in its own sub-tree instead
   # Live refresh. The server watches the pages tree and tells every open shell
   # when a page changed, so what the agent just wrote appears without a reload.
   # Native file events by default; set `polling` when the workspace sits on a
