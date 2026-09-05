@@ -92,6 +92,18 @@ l'opérateur la disposition physique dont on vient de le décharger. La moitié
 POSIX du problème (dataset `2770`, gid 3002) ne dépend d'aucune des trois voies :
 c'est `supplementalGroups` dans le pod.
 
+**R15 — Comment se rend l'appartenance à un magasin ?** → **Liseré + onglet +
+légende.** Un liseré de la teinte du magasin sur tout le pourtour de la carte
+(formule du survol : 45 % mêlés à la bordure) ; un onglet CARRÉ collé dans le
+coin haut droit portant les DEUX premières lettres du magasin, coin interne au
+rayon de la carte ; une légende sous le titre du dossier, qui dit aussi ce que
+l'absence de marque signifie. Rien dans le pied de carte : il appartient au
+statut et aux tags, et une puce de provenance s'y confond dès qu'il y en a
+trois. Écarté : le point rond, qui est le vocabulaire du statut. Le magasin par
+défaut ne porte rien — un liseré sur toutes les cartes n'est plus un signal, ce
+qui clôt aussi la question « faut-il marquer le défaut ». Vu en clair et en
+sombre avant d'être écrit.
+
 ## Ouvertes
 
 **O3 — Le rouge préexistant sur `main`.** Le round-trip d'un bloc à attributs

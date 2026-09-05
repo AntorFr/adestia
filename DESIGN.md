@@ -974,6 +974,20 @@ where they do not, the reversal is stated.
   here: both hands write, and the vocabulary keeps them honest. The day the
   ambiguous case needs enforcing, it takes ONE tool ("where do I file this?"),
   never a filesystem API.
+- **Provenance is drawn ON the card, never in its foot.** A rim in the store's
+  hue around the whole card — the colour formula the card hover already uses,
+  45% of the hue mixed into the border — plus a square tab pinned into the
+  top-right corner carrying the store's first two letters. The foot belongs to
+  status and tags, and a provenance chip filed among them stops being
+  distinguishable the moment a card carries three. The tab is square and
+  lettered deliberately: the round dot is the STATUS vocabulary
+  (`.adestia-stat::before`), so reusing it would make a mark about provenance
+  read as a mark about state, and two letters survive being read without the
+  colour — which this design system already requires of every pill, hue alone
+  being no label. A legend under the folder title teaches the mapping once, and
+  is the only place able to state what the ABSENCE of a mark means. The default
+  store carries none: a rim on every card is not a signal. Seen in both themes
+  before being written down (`.agent/mockup-magasins.html`).
 - **`store` appears in a response only when there is more than one.** Adding it
   to the single-store case would change the answer for nothing, and teach the
   shell a division that does not exist on its instance.
