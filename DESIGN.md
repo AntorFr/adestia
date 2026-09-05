@@ -984,8 +984,11 @@ where they do not, the reversal is stated.
   (`.adestia-stat::before`), so reusing it would make a mark about provenance
   read as a mark about state, and two letters survive being read without the
   colour — which this design system already requires of every pill, hue alone
-  being no label. A legend under the folder title teaches the mapping once, and
-  is the only place able to state what the ABSENCE of a mark means. The default
+  being no label. A legend under the folder title teaches the mapping once,
+  carrying each store's FULL label cut to the tab's own shape — the label
+  written twice taught nothing, and the shared silhouette makes the pairing
+  visible before it is read. It is also the only place able to state what the
+  ABSENCE of a mark means. The default
   store carries none: a rim on every card is not a signal. Seen in both themes
   before being written down (`.agent/mockup-magasins.html`).
 - **`store` appears in a response only when there is more than one.** Adding it
