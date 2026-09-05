@@ -156,8 +156,10 @@ describe('the endpoint', () => {
 
   it('answers initialize and tools/list', async () => {
     const { app } = await build()
+    // The agent's name alone: what answers here is skippy, and the shell it
+    // happens to run on is not part of its identity.
     expect((await call(app, { method: 'initialize', id: 1 })).json().result.serverInfo.name).toBe(
-      'adestia-skippy',
+      'skippy',
     )
     expect((await call(app, { method: 'tools/list', id: 2 })).json().result.tools).toHaveLength(2)
     await app.close()

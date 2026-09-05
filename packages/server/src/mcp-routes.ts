@@ -65,7 +65,7 @@ export function registerMcp(app: FastifyInstance, deps: McpDependencies): void {
         return rpcResult(id, {
           protocolVersion: '2024-11-05',
           capabilities: { tools: {} },
-          serverInfo: { name: `adestia-${config.agentName}`, version: '1' },
+          serverInfo: { name: config.agentName, version: '1' },
         })
 
       case 'tools/list':
