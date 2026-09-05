@@ -126,8 +126,12 @@ reste LIBRE, nommée, et bloque la dérivation.
   "pose": "mobile", "plan_travail": "rapporte", "facade": "ouverte",
   "fond": "non", "dessous": "pleine-profondeur",
   "separateurs": [{ "type": "frontal" }], "tablettes": 0, "tiroirs": 0, "corps_tiroir": "plus-tard",
+  "zones": [],
   "faces_chantees": ["avant", "arriere", "gauche", "droite"],
-  "materiaux": { "principal": { "id": "MEL19", "ep": 19, "chante": true } },
+  "materiaux": {
+    "principal": { "id": "MEL19", "ep": 19, "chante": true },
+    "plan_travail": { "id": "MDF19", "ep": 19, "chante": false }
+  },
   "parametres": {
     "marge_fond": 5, "rainure_prof": 9, "rainure_encastrement": 5, "fond_jeu": 3,
     "retrait_fond_dos": 20, "retrait_tablette_avant": 3, "profondeur_traverse": 150,
@@ -143,6 +147,90 @@ meubles accolés, les côtés joints ne se voient pas et se chantent quand même
 pour n'avoir qu'un réglage de bande. Un bord se chante s'il est tourné vers une
 de ces faces et que rien ne l'occulte — dedans comme dehors, et **porte
 ouverte** : un caisson fermé se chante dedans comme un caisson ouvert.
+
+## Les rôles de matière
+
+Une pièce ne nomme pas une plaque, elle nomme un RÔLE — et le design dit
+quelle plaque tient ce rôle. C'est ce qui permet de refaire le même meuble en
+18 au lieu de 19 sans toucher une seule méthode.
+
+| rôle | qui le porte | absent ? |
+|---|---|---|
+| `principal` | tout ce que rien d'autre ne réclame : caisson, tablettes, séparateurs, façades | l'épaisseur reste LIBRE et bloque |
+| `fond` | le fond de caisson quand il est plus fin que le caisson | idem |
+| `fond_tiroir` | le fond de tiroir (6 mm dans un corps en 19) | idem |
+| `plan_travail` | le plan rapporté — et sa PRÉSENCE dit que le meuble le débite | pas d'erreur : le plan repose dessus sans être le sien (avertissement) |
+
+Chaque rôle porte `{ "id", "ep", "chante" }`. `chante: false` sur une matière
+qui ne se plaque pas — MDF, massif : une bande n'y couvrirait rien, on la
+vernit. Le moteur ne chante alors aucun de ses bords, et ne retire donc rien
+de ses cotes.
+
+## Les étiquettes que le moteur écrit
+
+Elles se composent `TRIGRAMME-MODULE-RÔLE[-REPÈRE]`, et elles ne sont pas
+libres : c'est par elles qu'une dérogation de pièce, une comparaison au débit
+déjà écrit ou un renvoi de fiche retrouvent la bonne planche. Les écrire
+autrement à la main rend le rapprochement muet.
+
+| pièce | étiquette | rôle |
+|---|---|---|
+| le dessous | `PBL-C1-BAS` | `BAS` |
+| les côtés | `PBL-C1-CÔTÉ-G` et `PBL-C1-CÔTÉ-D` | `CÔTÉ` |
+| le dessus plein | `PBL-C1-DESSUS` | `DESSUS` |
+| les traverses hautes | `PBL-C1-TRAV-HAUT-AV` et `PBL-C1-TRAV-HAUT-AR` | `TRAVERSE` |
+| le fond | `PBL-C1-FOND` | `FOND` |
+| les tablettes | `PBL-C1-TAB-1`, `PBL-C1-TAB-2`… | `TABLETTE` |
+| les séparateurs | `PBL-C1-SÉP-MÉDIAN` (frontal), `PBL-C1-SÉP-1` (latéral) ou le `repere` déclaré | `SÉPARATEUR` |
+| le plan de travail | `PBL-C1-PLAN` | `PLAN` |
+| les façades de tiroir | `PBL-C1-FAÇADE-1`, `PBL-C1-FAÇADE-2`… | `FAÇADE` |
+| un corps de tiroir (le n° du tiroir vient AVANT le rôle) | `PBL-C1-T1-CÔTÉ-G`, `PBL-C1-T1-CÔTÉ-D`, `PBL-C1-T1-MONTANT`, `PBL-C1-T1-DOS`, `PBL-C1-T1-FOND` | `TIROIR-CÔTÉ`, `TIROIR-MONTANT`, `TIROIR-DOS`, `TIROIR-FOND` |
+
+Le `repere` d'un séparateur se déclare quand le meuble lui donne un nom
+d'atelier — `{ "type": "lateral", "zone": "bacs", "repere": "POUB" }` donne
+`PBL-C1-SÉP-POUB`, qui est ce qui est écrit au crayon sur le panneau.
+
+## Les zones : un meuble partagé
+
+Un séparateur ne s'ajoute pas au meuble, il le PARTAGE. Une pièce posée
+derrière un séparateur frontal ne vit pas dans le meuble : elle vit dans une
+zone, et se cote sur l'étendue de cette zone. La coter sur le caisson donne un
+nombre plausible et faux — 649 pour un espace qui en fait 281.
+
+```jsonc
+"zones": [
+  { "id": "bacs", "axe": "y", "etendue": 350 },
+  { "id": "outils", "axe": "y" }
+],
+"separateurs": [
+  { "type": "frontal" },
+  { "type": "lateral", "zone": "bacs", "repere": "POUB" }
+],
+"tablettes": { "nombre": 1, "zone": "outils" }
+```
+
+**La dernière étendue ne se déclare pas.** Les zones d'un même axe et les
+séparateurs qui les séparent remplissent le meuble : 350 + 19 + `outils` = 650
+donne `outils = 281`, et le moteur le rend. Deux zones sans étendue laissent le
+système ouvert — et il le DIT plutôt que d'en inventer une.
+
+Un séparateur placé `dans` une zone ne partage pas le meuble : il partage sa
+zone. Il se cote donc dessus — 349 pour finir à 350.
+
+## Les faits que le moteur COMPTE
+
+Une table ne porte que des domaines énumérés : un seuil dans une cellule serait
+une cellule qui calcule, et une cellule qui calcule ne se relit plus. Mais
+certaines décisions dépendent d'un compte. Le moteur compte AVANT d'interroger,
+et la table décide sur le compte. Ces entrées sont donc disponibles sans être
+écrites dans le design :
+
+| fait | ce qu'il vaut |
+|---|---|
+| `tablettes_totales` | tablettes × `modules_identiques` |
+| `mutualise` | `oui` si ce total atteint `seuil_mutualisation` — le seul motif de renoncer au retrait de tablette |
+| `a_des_separateurs` | `oui` si `separateurs` n'est pas vide — le design LISTE, la table ne décide que s'il y en a |
+| `plan_au_debit` | `oui` si `materiaux.plan_travail` est déclaré — le meuble débite son plan, ou il ne fait que le porter |
 
 ## Déroger
 
