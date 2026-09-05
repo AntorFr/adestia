@@ -1586,7 +1586,7 @@ needed an exception on its very first measurement: eight folder index pages,
 all named `INDEX.md` and all typed `espace`, collided on `espace/INDEX`. A rule
 that needs an exception before it has ever run is a rule to drop.
 
-*Noted, not built — a third level.* Now that pages hold addressable BLOCKS, a
+*Allowed from today, minted on demand — a third level.* Now that pages hold addressable BLOCKS, a
 reference could reach one: `[[fiche#<page id>#<block id>]]`, one `#` per level
 down, with `[[#<block id>]]` as the short form since a ULID is unique on its
 own. All four candidate spellings were measured to parse and round-trip
@@ -1598,3 +1598,18 @@ its attributes, which the grammar accepts without a schema change. That would
 give two complementary ways to address a block — by KIND (`pull=content:summary`,
 "each child's summary") and by IDENTITY (`#01M1…`, "that block") — serving
 consolidated views and cross-references respectively.
+
+Decided by the owner the same day, on the second reading: **allow that third
+level NOW rather than noting it for later** — the form is legal, a block may
+carry an id, and nothing forces one. Not a single block in the corpus gets an
+id until something points at it, exactly as no page does. The doctrine is one
+sentence at two scales: *not yet linkable is not a fault.*
+
+Which surfaces the one thing to build for it, and it is small: `id` must be a
+RESERVED attribute, accepted on any block without being declared. Today an
+attribute a spec does not list is a WARNING — inert, deliberately, since "a
+document is not worth locking down over a typo in a hint" — so a linked block
+would warn on every page carrying one. Declaring `id` in all eight renderers
+would be the wrong fix, eight copies of one idea: an id is not an attribute OF
+the block, it is the block's identity, the way a page's `id:` is not a field of
+its type. The validator therefore skips it, in one place.
