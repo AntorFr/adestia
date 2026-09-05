@@ -1717,7 +1717,6 @@
   text-decoration: none;
   border-bottom: 1px dotted var(--accent);
 }
-
 /* Threads ----------------------------------------------------------------- */
 
 .adestia-threads {
@@ -2268,6 +2267,23 @@
   color: var(--accent);
   cursor: pointer;
   border-bottom: 1px dotted var(--accent);
+}
+
+/* A reference that leads nowhere certain — its page is gone, or several answer
+   to its id.
+   Told apart by COLOUR, not by the underline: the dotted rule is already what
+   a live wikilink wears, so reusing it for the dead one would make the two
+   indistinguishable. The LABEL stays readable, which is the whole point — the
+   row used to disappear entirely, and a gap nobody sees is a gap nobody
+   repairs.
+   Placed under the SECOND `.adestia-wikilink` above and not the first: the
+   class is declared twice in this sheet, equal specificity, so the later one
+   wins — above it, the dead link took the live link's accent straight back
+   and drew as perfectly alive. */
+.adestia-wikilink--lost {
+  color: var(--text-faint);
+  border-bottom-color: var(--text-faint);
+  cursor: default;
 }
 
 /* Callouts: the tone carries the colour, the left rule carries the weight. */

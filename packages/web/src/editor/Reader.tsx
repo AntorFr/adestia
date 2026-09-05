@@ -19,7 +19,14 @@
 
 import { createElement as h, Fragment, type ComponentType, type ReactNode } from 'react'
 
-import { blockSpec, parse, toneOf } from '@antorfr/adestia-content'
+import {
+  blockSpec,
+  parse,
+  parseReference,
+  resolveReference,
+  toneOf,
+  type Indexed,
+} from '@antorfr/adestia-content'
 
 import { PluginBoundary } from '../plugins/Boundary.js'
 import type { BlockProps } from '../plugins/contract.js'
@@ -162,6 +169,15 @@ type Ctx = {
   /** Blocks the active plugins draw, beyond the core's own. */
   readonly blocks?: BlockComponents
   /**
+   * The instance's pages, for resolving a `[[type#id]]` reference.
+   *
+   * UNDEFINED means "not known here", which is NOT the same as "the target is
+   * gone" — a chat bubble renders prose without the index, and declaring every
+   * reference in it dead would be a lie the reader cannot check. Absent, the
+   * link keeps the behaviour it had before ids existed.
+   */
+  readonly pages?: readonly Indexed[]
+  /**
    * The source is PROSE, not a document — see `Prose` below. Only the head of
    * the source tells the two apart, so only the head reads this.
    */
@@ -286,14 +302,40 @@ function render(node: Node, ctx: Ctx): ReactNode {
       // A link to another page of this instance, opened in place.
       const target = node.value ?? ''
       const label = node.data?.alias ?? target
-      return (
-        <button
-          type="button"
-          className="adestia-wikilink"
-          onClick={() => ctx.openPage?.(`${target}.md`)}
-        >
+      const open = (path: string) => (
+        <button type="button" className="adestia-wikilink" onClick={() => ctx.openPage?.(path)}>
           {label}
         </button>
+      )
+
+      // A PATH — how every reference in a corpus was written before ids
+      // existed. Left exactly as it behaved, because its own resolution is not
+      // this one's business.
+      const reference = parseReference(target)
+      if (!reference) return open(`${target}.md`)
+
+      // No index here (a chat bubble): "not known" is not "gone". Falling
+      // through keeps the old behaviour rather than calling a live link dead.
+      if (ctx.pages === undefined) return open(`${target}.md`)
+
+      const answer = resolveReference(ctx.pages, reference)
+      if (answer.kind === 'found') return open(answer.page.path)
+
+      // Lost, or answered by several pages — in both cases the link leads
+      // nowhere certain, and pretending otherwise is what the old
+      // `.filter(Boolean)` did by erasing the row entirely. The LABEL stays on
+      // screen: a reader who can still read what was meant can repair it.
+      return (
+        <span
+          className="adestia-wikilink adestia-wikilink--lost"
+          title={
+            answer.kind === 'ambiguous'
+              ? `${answer.candidates.length} pages carry this id`
+              : 'this page was not found'
+          }
+        >
+          {label}
+        </span>
       )
     }
     case 'table':
@@ -431,6 +473,7 @@ export function Reader({
   path,
   openPage,
   blocks,
+  pages,
 }: {
   readonly markdown: string
   /**
@@ -443,6 +486,8 @@ export function Reader({
   readonly openPage?: (path: string) => void
   /** What the active plugins draw. Absent means the core's vocabulary only. */
   readonly blocks?: BlockComponents
+  /** The instance's pages, so a `[[type#id]]` reference can find its target. */
+  readonly pages?: readonly Indexed[]
 }) {
   let tree: Node
   try {
@@ -459,6 +504,7 @@ export function Reader({
         ...(base === undefined ? {} : { base }),
         ...(openPage ? { openPage } : {}),
         ...(blocks ? { blocks } : {}),
+        ...(pages ? { pages } : {}),
       })}
     </article>
   )

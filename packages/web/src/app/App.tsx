@@ -979,6 +979,9 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             attach={(dropped) => attachRef.current?.(dropped)}
             compose={(text) => composeRef.current?.(text)}
             blocks={blocks}
+            // The shell already holds the index and keeps it live; the reader
+            // needs it to tell a reference that MOVED from one that is gone.
+            pages={pages}
             t={t}
             {...(mount ? { mount } : {})}
           />

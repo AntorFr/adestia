@@ -13,7 +13,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { parse, serialize } from '@antorfr/adestia-content'
+import { parse, serialize, type Indexed } from '@antorfr/adestia-content'
 
 import { Attachments } from './Attachments.js'
 import { carriesFiles, fileDropMessage } from './filedrop.js'
@@ -127,6 +127,8 @@ export interface EditorProps {
    * which is also what a test that mounts an Editor alone gets.
    */
   readonly blocks?: BlockComponents
+  /** The instance's pages, forwarded so a `[[type#id]]` link finds its page. */
+  readonly pages?: readonly Indexed[]
   /**
    * Draw the attachment strip under the page. On for the shell's own page
    * screen, where a page is the whole subject; a plugin embedding this inside
@@ -149,6 +151,7 @@ export function Editor({
   attach,
   compose,
   blocks,
+  pages,
   attachments = true,
   onSaved,
   t = (key) => key,
@@ -338,6 +341,7 @@ export function Editor({
           path={page.path}
           {...(openPage ? { openPage } : {})}
           {...(blocks ? { blocks } : {})}
+          {...(pages ? { pages } : {})}
         />
       )}
 
