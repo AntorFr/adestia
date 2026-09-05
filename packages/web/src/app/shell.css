@@ -748,6 +748,8 @@
   border-color: color-mix(in srgb, var(--tile-color, var(--accent)) 45%, var(--border));
 }
 
+.adestia-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
 .adestia-card__title { font: 600 15.5px/1.2 var(--font-title); }
 
 .adestia-card__foot {
@@ -1148,7 +1150,13 @@
 
 /* A card carries what tells two instructions apart BEFORE either is opened:
    the name, where it sits, how long it is, and whose it is. */
-.adestia-cards {
+/* Les fiches de la zone d'instructions. Elles ont porté le nom des cartes
+   de page pendant tout ce temps, et les deux composants se sont écrasés
+   l'un l'autre : ces fiches héritaient d'une hauteur minimale, d'une ombre
+   et d'un soulèvement au survol qu'elles n'avaient jamais demandés, et les
+   cartes de page perdaient leur rayon, leur remplissage et la disposition
+   de leur pied. Deux composants, deux noms. */
+.adestia-filecards {
   list-style: none;
   margin: var(--space-2) 0 0;
   padding: 0;
@@ -1157,7 +1165,7 @@
   gap: var(--space-3);
 }
 
-.adestia-card {
+.adestia-filecard {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -1173,22 +1181,22 @@
   cursor: pointer;
 }
 
-.adestia-card:hover { border-color: var(--accent); }
-.adestia-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.adestia-filecard:hover { border-color: var(--accent); }
+.adestia-filecard:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-.adestia-card__head {
+.adestia-filecard__head {
   display: flex;
   align-items: baseline;
   gap: var(--space-2);
   justify-content: space-between;
 }
 
-.adestia-card__name {
+.adestia-filecard__name {
   font-weight: 600;
   overflow-wrap: anywhere;
 }
 
-.adestia-card__badge {
+.adestia-filecard__badge {
   flex: none;
   padding: 1px 7px;
   border-radius: 999px;
@@ -1197,13 +1205,13 @@
   font-size: 11px;
 }
 
-.adestia-card__path {
+.adestia-filecard__path {
   font: 11px var(--font-mono);
   color: var(--text-faint);
   overflow-wrap: anywhere;
 }
 
-.adestia-card__foot {
+.adestia-filecard__foot {
   margin-top: auto;
   display: flex;
   justify-content: space-between;

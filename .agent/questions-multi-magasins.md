@@ -104,17 +104,24 @@ défaut ne porte rien — un liseré sur toutes les cartes n'est plus un signal,
 qui clôt aussi la question « faut-il marquer le défaut ». Vu en clair et en
 sombre avant d'être écrit.
 
-**O6 — `.adestia-card` est défini DEUX fois dans `shell.css`.** Ligne 737 avec
-`--radius-lg` (17 px), ligne 1168 avec `--radius` (13 px) ; la seconde gagne, la
-première est morte. Un bloc mort qui a l'air vivant a déjà coûté une erreur ici :
-l'onglet de magasin a été courbé sur le token du bloc mort et débordait de 4 px.
-Chantier séparé, mais à ne pas perdre.
+**R17 — La collision `.adestia-card`.** → **Corrigée.** Ce n'était pas un bloc
+mort mais DEUX composants portant le même nom : les cartes de page
+(`Section.tsx`) et les fiches d'instructions (`Instructions.tsx`), chacun
+écrasant l'autre. Les fiches deviennent `.adestia-filecard` ; les cartes de
+page retrouvent leur rayon, leur remplissage et le pied à retour à la ligne ;
+le `:focus-visible` qui vivait dans le bloc renommé est rendu aux deux. Vu au
+banc, les deux écrans, les deux thèmes (`bench/scenarios/card-families.mjs`).
 
 ## Ouvertes
 
-**O3 — Le rouge préexistant sur `main`.** Le round-trip d'un bloc à attributs
-multi-lignes échappe ses `:::` — corruption de page à chaque `PUT`. Chantier
-séparé : quand l'ouvre-t-on ?
+**R16 — Le « rouge préexistant sur `main` ».** → **Ne se reproduit pas, et
+l'alerte était infondée.** Le round-trip a échoué deux fois puis est repassé
+au vert dans les DEUX checkouts, au même commit et avec la même fixture ;
+relancé deux fois de plus, stable. Le test lit les sources TypeScript (alias
+vitest), donc l'hypothèse d'un `dist` périmé ne tient pas non plus. Cause non
+établie — le seul événement intercalé est le premier `npm run build` qui ait
+réussi de bout en bout. Ce qui est établi : l'annonce « corruption de page à
+chaque PUT » n'aurait pas dû être faite sur deux échecs non reproduits.
 
 **O4 — Feux verts en attente.** Pousser `main` ; pousser le dépôt de config
 `skippy` (3 commits locaux).

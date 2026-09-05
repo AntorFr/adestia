@@ -365,22 +365,22 @@ export function Instructions({
         <p className="adestia-instructions__empty">{t('Nothing matches that.')}</p>
       )}
 
-      <ul className="adestia-cards">
+      <ul className="adestia-filecards">
         {found.map((file) => (
           <li key={file.path}>
-            <button type="button" className="adestia-card" onClick={() => onOpen(file.path)}>
-              <span className="adestia-card__head">
-                <span className="adestia-card__name">{label(file.path)}</span>
+            <button type="button" className="adestia-filecard" onClick={() => onOpen(file.path)}>
+              <span className="adestia-filecard__head">
+                <span className="adestia-filecard__name">{label(file.path)}</span>
                 {file.managed && (
-                  <span className="adestia-card__badge">{t('delivered')}</span>
+                  <span className="adestia-filecard__badge">{t('delivered')}</span>
                 )}
               </span>
               {/* Only when it adds something: for a file at the workspace
                   root the path IS the name, and printing both is noise. */}
               {file.path !== label(file.path) && (
-                <span className="adestia-card__path">{file.path}</span>
+                <span className="adestia-filecard__path">{file.path}</span>
               )}
-              <span className="adestia-card__foot">
+              <span className="adestia-filecard__foot">
                 <span>{size(file.bytes)}</span>
                 <span>{new Date(file.modified).toLocaleDateString(locale)}</span>
               </span>
