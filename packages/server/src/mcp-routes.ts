@@ -53,6 +53,25 @@ export function registerMcp(app: FastifyInstance, deps: McpDependencies): void {
   const askName = tools[0]!.name
   const statusName = tools[1]!.name
 
+  /**
+   * A GET here is REFUSED, out loud.
+   *
+   * MCP's streamable HTTP transport lets a client open a GET on the endpoint to
+   * receive server-initiated messages. This server has no such stream — every
+   * answer rides the POST that asked for it — and the spec's answer for that is
+   * 405, a refusal a client can act on.
+   *
+   * Without this route the SPA's catch-all answers instead, and it answers
+   * `200 text/html`: a conforming client opens the stream, is handed a web page,
+   * and tries to read it as SSE. It then fails in a place that names neither the
+   * page nor this endpoint. A 200 that lies costs more than a 405 that refuses.
+   */
+  app.get('/mcp', async (_request, reply) =>
+    reply.code(405).header('allow', 'POST').send({
+      error: 'this endpoint speaks JSON-RPC over POST; it opens no server-to-client stream',
+    }),
+  )
+
   app.post<{ Body: JsonRpcRequest }>('/mcp', async (request, reply) => {
     if (!tokenMatches(bearerOf(request.headers.authorization), config.token)) {
       return reply.code(401).send(rpcError(request.body?.id, -32001, 'unauthorized'))

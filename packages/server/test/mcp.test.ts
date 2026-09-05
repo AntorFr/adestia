@@ -165,6 +165,17 @@ describe('the endpoint', () => {
     await app.close()
   })
 
+  it('refuses a GET with 405 rather than letting the page be served', async () => {
+    // A client opening MCP's server-to-client stream must get a refusal it can
+    // act on. Without this route the SPA catch-all answers `200 text/html`, the
+    // client parses a web page as SSE, and fails somewhere that names neither.
+    const { app } = await build()
+    const response = await app.inject({ method: 'GET', url: '/mcp' })
+    expect(response.statusCode).toBe(405)
+    expect(response.headers['allow']).toBe('POST')
+    await app.close()
+  })
+
   it('returns a job id immediately and runs the turn behind it', async () => {
     // The whole reason this is asynchronous: a delegated task takes minutes,
     // and an MCP call held open that long times out between the two agents.
