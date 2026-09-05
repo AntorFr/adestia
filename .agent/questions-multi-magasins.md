@@ -56,16 +56,33 @@ mission — « les plugins : rien à faire » — vraie du front, fausse des API
 plugins, qui marchent l'arbre elles-mêmes et deviendraient aveugles au
 magasin partagé, en silence.
 
+**R9 — Chemin FS et chemin dans l'arbre.** → **Séparés.** Un magasin déclare
+`path` (le disque) et `at` (le point de montage, défaut : la racine). Monté à
+la racine il FUSIONNE ; monté plus bas il ségrège dans un sous-arbre visible.
+Déplacer une fiche vers un magasin monté en profondeur est un déplacement dans
+l'arbre, pas une casse de la règle nº 1 — et un déplacement a toujours changé
+une adresse.
+
+**R10 — Où est monté le magasin par défaut ?** → **Au niveau 0**, et `at` lui
+est interdit : l'arbre a toujours une racine.
+
+**R11 — Comment le CLI sait-il où naviguer ?** → On le lui **dit**. Son contrat
+livré devient généré et porte la table (id, libellé, chemin disque, montage) et
+la règle d'écriture. C'est le seul endroit où divulguer la disposition physique
+est légitime : l'agent est le seul auteur qui travaille sur des fichiers. Note :
+le contrat statique écrit déjà `pages/` en dur, ce qui est faux sur une instance
+qui a renommé le dossier.
+
+**R12 — `pagesRoot` : remplacement ou cohabitation ?** → **Remplacement net**,
+déduit du « jamais » de la décision d'architecture : un `pagesRoot` déprécié,
+c'est un plugin qui continue d'appeler le FS. Les 4 plugins sont portés ici.
+
+**R13 — Où se déclarent les magasins ?** → **Dans le fichier de config seul**
+(réglé par la forme même de la config qu'on a écrite ensemble). Une variable
+d'environnement ne porterait que le chemin, pas le libellé ni la teinte — et
+`workspace.pages` n'a jamais été surchargeable par l'environnement.
+
 ## Ouvertes
-
-**O5 — `pagesRoot` : remplacement net ou cohabitation ?** Le service remplace-t-il
-`pagesRoot` d'un coup (les 4 plugins portés dans ce chantier), ou survit-il
-déprécié en pointant sur le magasin principal ? Reco : remplacement net — une
-dépréciation silencieuse produit une fiche qu'on ne voit pas du tout.
-
-**O2 — Où se déclarent les magasins ?** Fichier de config seul
-(`workspace.stores` + `workspace.primary`) ou aussi une surcharge
-d'environnement. *(posée trop tôt, mise en attente)*
 
 **O3 — Le rouge préexistant sur `main`.** Le round-trip d'un bloc à attributs
 multi-lignes échappe ses `:::` — corruption de page à chaque `PUT`. Chantier
