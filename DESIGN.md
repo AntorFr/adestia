@@ -1591,10 +1591,9 @@ closed vocabulary — a validator, never a proxy.
 
 Decided by the owner rather than derived: no sealing pass over the existing
 corpus — a page without an id is not at fault, it is *not yet linkable*, and it
-stops being so the moment someone links it (a background unattended turn asks
-the agent, which applies the instance's own id policy when it has one, the ULID
-otherwise). The same turn repairs the reference it has just written, since the
-mint is asynchronous and the reference leaves before the id exists. And no
+stops being so the moment someone links it — minted BY the turn that writes the
+link, in that same turn (the owner reversed the background pass this sentence
+first described; see the 09-05 entry below). And no
 vocabulary migration: French type names are a leftover, not a breakage — what
 matters is that ONE MEANING HAS ONE WORD across an instance, which the index can
 check by confronting the types pages write with the types plugins claim; new
@@ -1785,3 +1784,30 @@ shown it existed in the code and was never printed. What caught it was a proof
 from OUTSIDE the instrument: a byte-for-byte comparison against a backup taken
 first, which is also the only reason the repair was possible — the store is an
 NFS mount, not a git repository, and there is no revert.
+
+
+**2026-09-05 (the id is minted by the turn that needs it, not by a background
+pass):** the sealing question was settled — no pass over the corpus, a page is
+*not yet linkable* until someone links it — and the mechanism written for it
+was an unattended background turn that would mint the id and then repair the
+reference that had left before the id existed. The owner threw that out on
+reading it, and the argument is one sentence: **the agent is already opening
+the target page.** It has to, because a reference needs an id it cannot invent,
+and the only place to read one is the page itself. Finding none, it mints one,
+writes it, and carries on — no queue, no second turn, no repair, because
+nothing was ever written pointing at an id that did not exist.
+
+Which moves the whole feature out of the code and into the instructions. There
+is nothing to build: `new_id` already mints a ULID, `id` is already a reserved
+attribute, the resolver already answers in three rungs and draws a dead link
+when none of them does. What was missing was that **nothing told the agent any
+of it** — `page-author` did not mention references at all, so the mechanism was
+complete and no page would ever have carried the first id. Three things had to
+be said and now are: the grammar of a link, where an id lives and what shape it
+takes, and the tool that makes one.
+
+The general form, and it is the second time in one afternoon: a capability
+nothing teaches is a capability nobody uses. The `parcours` skill had the
+symmetrical failure — it still taught a spelling the code had stopped reading,
+and would have written it back. **A skill left behind is not documentation debt,
+it is behaviour.**

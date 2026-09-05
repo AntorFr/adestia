@@ -1,6 +1,6 @@
 ---
 name: page-author
-description: How any page in this instance is structured — frontmatter conventions (`title`, `type`, `ico`), the three ways an app finds its own pages, and the closed block vocabulary for everyday writing. Read this before a plugin-specific skill (todo, collections, atelier…): they build on it and do not repeat it.
+description: How any page in this instance is structured — frontmatter conventions (`title`, `type`, `id`, `ico`), how to link one page to another and mint the id that makes a link survive a move, the three ways an app finds its own pages, and the closed block vocabulary for everyday writing. Read this before a plugin-specific skill (todo, collections, atelier…): they build on it and do not repeat it.
 ---
 
 # Writing a Adestia page
@@ -72,6 +72,39 @@ page might use `type` for. `collections`' `of: projet` targets pages typed
 own vocabulary, chosen by whoever writes pages, and any number of collections
 can point at it.
 
+## `id` — how another page names this one
+
+A page may carry an `id:`, and that is what lets another page point at it by
+IDENTITY rather than by where it sits:
+
+```markdown
+---
+title: Vannes à pied
+type: fiche
+id: 01M1RXBTP8F57X5BY4N196XV1T
+---
+```
+
+The whole gain is that the page can then be renamed, moved to another folder,
+or moved to another store, and every link to it still lands. A link written as
+a path cannot do that — it names a location, and a location changes.
+
+**Unique within its `type`, not across the instance.** A `fiche` and a `tache`
+may legitimately carry the same id; that is why the full form of a reference
+says the type.
+
+**Mint it with the `new_id` tool** — a ULID, 26 characters, sortable by
+creation time. Never invent one by hand and never reuse one. If this instance's
+own instructions define a different scheme (a project already identified in
+some other system), follow that instead; the only hard rule is that the value
+carries no `/`, `#`, `:` and no whitespace, since those are what a reference is
+spelled with.
+
+**A page has no id until something links to it, and that is correct.** Do not
+walk the corpus adding ids to pages nobody points at. A page without one is not
+faulty, it is *not yet linkable* — and it stops being so at the moment someone
+links it, which is the next section.
+
 ## `ico` — a convention, not a mechanism
 
 Several apps show a page's `ico:` field as a glyph on a card. Nothing in the
@@ -108,6 +141,57 @@ French usually has both.
 `finished: true|false` next to every page's fields — that is the core's own
 verdict, and reading it is what keeps a plugin's archive and the shell's
 agreeing. A private table of statuses inside one app is the thing that drifts.
+
+## Linking to a page — and what to do when it has no id
+
+Two spellings, both live, and they answer different questions.
+
+```markdown
+[[diy/poncer-porte]]                          a PATH
+[[fiche#01M1RXBTP8F57X5BY4N196XV1T:la boucle de Vannes]]    a REFERENCE
+```
+
+**The path** is how this corpus is written today and it keeps working: the file
+name without its extension, opened in place. It says *where*, so it breaks the
+day the file moves.
+
+**The reference** says *what*, and survives the move. Prefer it for anything
+worth pointing at more than once.
+
+**Always write a label** — the part after the `:`. An id is unreadable, so the
+label is the only thing a human can make sense of in the raw file, and it is
+what stays on the screen when the link cannot be resolved. A reference without
+one shows a bare id to the reader who most needs to understand it.
+
+`[[#<id>:label]]` — no type — is the short form, resolved across types when the
+id turns out to be unique. Write it only when you genuinely do not know the
+type; the full form is the one that keeps working when a second page later
+takes the same id.
+
+**What the reader does when nothing answers.** The label stays on screen, in
+grey, underlined dotted, and it is not clickable — a link that died, visibly.
+Same for a reference several pages answer to, because choosing one would be
+correcting a page while reading another. Nothing is ever silently dropped: a
+gap nobody sees is a gap nobody repairs.
+
+### The one manoeuvre to know
+
+You are writing page A and want to link page B. You have to open B anyway, to
+read its id. So:
+
+1. **Read B's frontmatter.** It has `id:` — use it, done.
+2. **It has none** — call `new_id`, write `id:` into B's frontmatter (and
+   `type:` if B has none), save B, then write the link in A.
+
+Do it in the turn you are already in. It is one extra write, it needs nobody's
+permission, and it is exactly what "not yet linkable" was waiting for. What is
+NOT allowed is writing a reference to an id you have neither read nor just
+minted: a reference to an id that does not exist is a dead link the day it is
+written.
+
+**Blocks are not linkable yet.** `id` is accepted as an attribute on any block
+without being declared, so `:::callout{id=…}` is legal and will not warn — but
+nothing resolves a reference INTO a page yet. Do not write `[[…#…#…]]` links.
 
 ## Three ways an app finds its own pages
 
