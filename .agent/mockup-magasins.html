@@ -1,42 +1,76 @@
 <!doctype html>
 <meta charset="utf-8">
 <title>Adestia — appartenance à un magasin</title>
-<!-- Les DEUX vraies feuilles du produit, telles quelles. Rien n'est redessiné ici. -->
 <link rel="stylesheet" href="../packages/web/src/app/tokens.css">
 <link rel="stylesheet" href="../packages/web/src/app/shell.css">
 <style>
-  /* ── LA SEULE ADDITION PROPOSÉE ──────────────────────────────────────────
-     Un modificateur de la pastille EXISTANTE (.adestia-stat), pas un composant
-     neuf. Le point porte la teinte, le MOT est écrit à côté — la règle que
-     shell.css:761 pose déjà pour les statuts. */
-  .adestia-stat--store {
-    color: var(--store-color, var(--text-muted));
-    background: color-mix(in srgb, var(--store-color, var(--text-muted)) 12%, transparent);
-    /* Toujours au bout, toujours au même endroit. Le pied de carte est en
-       `space-between` : sans ça, la provenance change de côté selon le nombre
-       de puces, et un repère qu'on doit chercher n'en est plus un. */
-    margin-left: auto;
-    order: 99;
+  /* ── CE QUI EST PROPOSÉ ──────────────────────────────────────────────────
+     Deux marques, aucune dans le pied de carte : le pied appartient au statut
+     et aux tags, et une provenance qui s'y range se confond avec eux dès qu'il
+     y en a trois. */
+
+  /* 1. Le liseré. Même formule que le survol des cartes (shell.css:748) :
+        45 % de la teinte mêlés à la bordure, donc il se voit sans crier. */
+  .adestia-card--store {
+    position: relative;
+    border-color: color-mix(in srgb, var(--store-color) 45%, var(--border));
   }
+
+  /* 2. La pastille, en haut à droite. */
+  .adestia-card__store {
+    position: absolute;
+    top: 11px;
+    right: 11px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--store-color);
+  }
+
+  /* Variante : la pastille porte l'initiale, ce qui la sort de la teinte nue. */
+  .adestia-card__store--letter {
+    width: 17px;
+    height: 17px;
+    display: grid;
+    place-items: center;
+    font: 700 9.5px/1 var(--font-mono);
+    color: var(--store-color);
+    background: color-mix(in srgb, var(--store-color) 14%, var(--surface-raised));
+    border: 1px solid color-mix(in srgb, var(--store-color) 45%, transparent);
+  }
+
+  /* Le titre ne passe jamais sous la pastille. */
+  .adestia-card--store .adestia-card__title { padding-right: 26px; }
 
   /* ── échafaudage de la maquette, pas du produit ─────────────────────────── */
   body { margin: 0; background: var(--surface); color: var(--text); font-family: var(--font-body); }
-  .mk { max-width: 1080px; margin: 0 auto; padding: 32px 24px 56px; }
+  .mk { max-width: 1080px; margin: 0 auto; padding: 28px 24px 56px; }
   .mk h2 { font: 600 13px/1.4 var(--font-mono); text-transform: uppercase;
            letter-spacing: .09em; color: var(--text-faint); margin: 40px 0 6px; }
-  .mk h2:first-of-type { margin-top: 0; }
-  .mk p.note { margin: 0 0 16px; color: var(--text-muted); font-size: 13.5px; max-width: 68ch; }
+  .mk p.note { margin: 0 0 16px; color: var(--text-muted); font-size: 13.5px; max-width: 66ch; }
   .mk .rule { border: 0; border-top: 1px solid var(--border); margin: 44px 0 0; }
   .mk code { font: 500 12.5px var(--font-mono); color: var(--text-muted); }
+  .mk .bar { display: flex; gap: 8px; align-items: center; margin-bottom: 28px; }
+  .mk .bar button {
+    font: 600 11px var(--font-mono); padding: 5px 11px; cursor: pointer;
+    border: 1px solid var(--border); border-radius: var(--radius-pill);
+    background: var(--surface-raised); color: var(--text-muted);
+  }
+  .mk .bar button:hover { border-color: var(--accent); color: var(--accent); }
 </style>
 
 <div class="mk">
+  <div class="bar">
+    <button type="button" onclick="document.documentElement.setAttribute('data-theme','light')">clair</button>
+    <button type="button" onclick="document.documentElement.setAttribute('data-theme','dark')">sombre</button>
+    <button type="button" onclick="document.documentElement.removeAttribute('data-theme')">système</button>
+  </div>
 
   <h2>1 — Le domaine fusionné : le cas de 95 % des cartes</h2>
   <p class="note">Un seul dossier <code>voyages</code> à l'écran, deux magasins derrière.
     Le magasin par défaut ne porte <strong>rien</strong> : l'absence de marque veut dire
-    « à moi ». Seul ce qui vient d'ailleurs est marqué — même grammaire que le suffixe
-    de titre, qui n'apparaît lui aussi qu'en cas de conflit.</p>
+    « à moi ». Le liseré donne la provenance au coup d'œil, à distance de lecture ;
+    la pastille la confirme sur une carte précise. Le pied reste au statut et aux tags.</p>
 
   <header class="adestia-chead">
     <span class="adestia-chead__icon" aria-hidden="true">✈</span>
@@ -51,85 +85,103 @@
         <span class="adestia-stat adestia-stat--underway">en cours</span>
         <span class="adestia-tag">#ville</span></span></button></li>
 
-    <li><button type="button" class="adestia-card" style="--store-color: var(--adestia-hue-violet)">
+    <li><button type="button" class="adestia-card adestia-card--store" style="--store-color: var(--adestia-hue-violet)">
+      <span class="adestia-card__store" aria-hidden="true"></span>
       <span class="adestia-card__title">Baden 2026</span>
       <span class="adestia-card__foot">
         <span class="adestia-stat adestia-stat--settled">réservé</span>
-        <span class="adestia-stat adestia-stat--store">Famille</span></span></button></li>
+        <span class="adestia-tag">#lac</span></span></button></li>
 
     <li><button type="button" class="adestia-card">
       <span class="adestia-card__title">Week-end Vercors</span>
       <span class="adestia-card__foot">
-        <span class="adestia-tag">#rando</span></span></button></li>
+        <span class="adestia-tag">#rando</span>
+        <span class="adestia-tag">#court</span></span></button></li>
 
-    <li><button type="button" class="adestia-card" style="--store-color: var(--adestia-hue-violet)">
+    <li><button type="button" class="adestia-card adestia-card--store" style="--store-color: var(--adestia-hue-violet)">
+      <span class="adestia-card__store" aria-hidden="true"></span>
       <span class="adestia-card__title">Corse, été</span>
       <span class="adestia-card__foot">
         <span class="adestia-stat adestia-stat--waiting">à décider</span>
-        <span class="adestia-stat adestia-stat--store">Famille</span></span></button></li>
+        <span class="adestia-tag">#mer</span>
+        <span class="adestia-tag">#août</span></span></button></li>
   </ul>
 
   <hr class="rule">
-  <h2>2 — Le conflit : deux fiches, un seul chemin</h2>
+  <h2>2 — Trois magasins : le liseré porte la distinction</h2>
+  <p class="note">Ce que le pied ne savait pas faire : à trois cercles, les cartes se
+    trient à l'œil sans rien lire. <code>Famille</code> en violet, <code>Parents</code>
+    en ambre, le défaut sans liseré.</p>
+
+  <ul class="adestia-cards">
+    <li><button type="button" class="adestia-card">
+      <span class="adestia-card__title">Lisbonne, avril</span>
+      <span class="adestia-card__foot"><span class="adestia-tag">#ville</span></span></button></li>
+    <li><button type="button" class="adestia-card adestia-card--store" style="--store-color: var(--adestia-hue-violet)">
+      <span class="adestia-card__store" aria-hidden="true"></span>
+      <span class="adestia-card__title">Baden 2026</span>
+      <span class="adestia-card__foot"><span class="adestia-stat adestia-stat--settled">réservé</span></span></button></li>
+    <li><button type="button" class="adestia-card adestia-card--store" style="--store-color: var(--adestia-hue-ambre)">
+      <span class="adestia-card__store" aria-hidden="true"></span>
+      <span class="adestia-card__title">Maison de Sète</span>
+      <span class="adestia-card__foot"><span class="adestia-tag">#été</span></span></button></li>
+    <li><button type="button" class="adestia-card adestia-card--store" style="--store-color: var(--adestia-hue-violet)">
+      <span class="adestia-card__store" aria-hidden="true"></span>
+      <span class="adestia-card__title">Corse, été</span>
+      <span class="adestia-card__foot"><span class="adestia-stat adestia-stat--waiting">à décider</span></span></button></li>
+  </ul>
+
+  <hr class="rule">
+  <h2>3 — Variante : la pastille porte l'initiale</h2>
+  <p class="note"><code>shell.css:761</code> pose que « une teinte seule n'est pas une
+    étiquette » — la règle qui oblige les pastilles de statut à écrire le mot à côté du
+    point. Une pastille de couleur nue l'enfreint : deux magasins deviennent
+    indiscernables pour qui ne distingue pas les teintes. L'initiale la répare sans
+    reprendre de place. <strong>À trancher.</strong></p>
+
+  <ul class="adestia-cards">
+    <li><button type="button" class="adestia-card">
+      <span class="adestia-card__title">Lisbonne, avril</span>
+      <span class="adestia-card__foot"><span class="adestia-tag">#ville</span></span></button></li>
+    <li><button type="button" class="adestia-card adestia-card--store" style="--store-color: var(--adestia-hue-violet)">
+      <span class="adestia-card__store adestia-card__store--letter" title="Famille">F</span>
+      <span class="adestia-card__title">Baden 2026</span>
+      <span class="adestia-card__foot"><span class="adestia-stat adestia-stat--settled">réservé</span></span></button></li>
+    <li><button type="button" class="adestia-card adestia-card--store" style="--store-color: var(--adestia-hue-ambre)">
+      <span class="adestia-card__store adestia-card__store--letter" title="Parents">P</span>
+      <span class="adestia-card__title">Maison de Sète</span>
+      <span class="adestia-card__foot"><span class="adestia-tag">#été</span></span></button></li>
+    <li><button type="button" class="adestia-card adestia-card--store" style="--store-color: var(--adestia-hue-violet)">
+      <span class="adestia-card__store adestia-card__store--letter" title="Famille">F</span>
+      <span class="adestia-card__title">Corse, été</span>
+      <span class="adestia-card__foot"><span class="adestia-stat adestia-stat--waiting">à décider</span></span></button></li>
+  </ul>
+
+  <hr class="rule">
+  <h2>4 — Le conflit : deux fiches, un seul chemin</h2>
   <p class="note">Le prédécesseur cachait la perdante. Ici les deux s'affichent : celle du
-    magasin par défaut garde son titre nu, l'autre le porte suffixé de son libellé.
-    Le suffixe est <strong>contextuel</strong> — il n'existe que tant que le conflit
-    existe — et n'entre donc jamais dans une adresse ; c'est <code>?store=famille</code>
-    qui ouvre la seconde.</p>
+    magasin par défaut garde son titre nu, l'autre le porte suffixé de son libellé — c'est
+    le seul endroit où le magasin s'écrit en toutes lettres, et il n'apparaît qu'en cas de
+    conflit. Le suffixe est contextuel, donc il n'entre jamais dans une adresse :
+    <code>?store=famille</code> ouvre la seconde.</p>
 
   <ul class="adestia-cards">
     <li><button type="button" class="adestia-card">
       <span class="adestia-card__title">Voyage Italie</span>
-      <span class="adestia-card__foot">
-        <span class="adestia-stat adestia-stat--underway">en cours</span></span></button></li>
-
-    <li><button type="button" class="adestia-card" style="--store-color: var(--adestia-hue-violet)">
+      <span class="adestia-card__foot"><span class="adestia-stat adestia-stat--underway">en cours</span></span></button></li>
+    <li><button type="button" class="adestia-card adestia-card--store" style="--store-color: var(--adestia-hue-violet)">
+      <span class="adestia-card__store" aria-hidden="true"></span>
       <span class="adestia-card__title">Voyage Italie (Famille)</span>
-      <span class="adestia-card__foot">
-        <span class="adestia-stat adestia-stat--settled">réservé</span>
-        <span class="adestia-stat adestia-stat--store">Famille</span></span></button></li>
+      <span class="adestia-card__foot"><span class="adestia-stat adestia-stat--settled">réservé</span></span></button></li>
   </ul>
 
   <hr class="rule">
-  <h2>3 — Variante : marquer aussi le magasin par défaut</h2>
-  <p class="note">Le même dossier, si l'absence de marque ne suffit pas. Plus explicite,
-    et plus bruyant : sur une instance où presque tout vient de « Perso », la pastille
-    se répète sur chaque carte et cesse d'être un signal. <strong>À trancher.</strong></p>
+  <h2>5 — La tuile du domaine ne dit rien</h2>
+  <p class="note">Une tuile est une porte vers un domaine, et un domaine ne vit pas dans un
+    magasin — il se compose. Y coller une marque dirait quelque chose de faux : la fusion
+    est invisible à ce niveau, et c'est exactement ce qu'on veut.</p>
 
   <ul class="adestia-cards">
-    <li><button type="button" class="adestia-card" style="--store-color: var(--adestia-hue-ardoise)">
-      <span class="adestia-card__title">Lisbonne, avril</span>
-      <span class="adestia-card__foot">
-        <span class="adestia-stat adestia-stat--underway">en cours</span>
-        <span class="adestia-stat adestia-stat--store">Perso</span></span></button></li>
-
-    <li><button type="button" class="adestia-card" style="--store-color: var(--adestia-hue-violet)">
-      <span class="adestia-card__title">Baden 2026</span>
-      <span class="adestia-card__foot">
-        <span class="adestia-stat adestia-stat--settled">réservé</span>
-        <span class="adestia-stat adestia-stat--store">Famille</span></span></button></li>
-
-    <li><button type="button" class="adestia-card" style="--store-color: var(--adestia-hue-ardoise)">
-      <span class="adestia-card__title">Week-end Vercors</span>
-      <span class="adestia-card__foot">
-        <span class="adestia-stat adestia-stat--store">Perso</span>
-        <span class="adestia-tag">#rando</span></span></button></li>
-
-    <li><button type="button" class="adestia-card" style="--store-color: var(--adestia-hue-violet)">
-      <span class="adestia-card__title">Corse, été</span>
-      <span class="adestia-card__foot">
-        <span class="adestia-stat adestia-stat--waiting">à décider</span>
-        <span class="adestia-stat adestia-stat--store">Famille</span></span></button></li>
-  </ul>
-
-  <hr class="rule">
-  <h2>4 — La tuile du domaine ne dit rien</h2>
-  <p class="note">Une tuile est une porte d'entrée vers un domaine, et un domaine ne
-    vit pas dans un magasin — il se compose. Y coller une marque de magasin dirait
-    quelque chose de faux. La fusion est invisible à ce niveau : c'est exactement
-    ce qu'on veut.</p>
-
-  <ul class="adestia-cards" style="grid-template-columns: repeat(auto-fill, minmax(214px,1fr))">
     <li><button type="button" class="adestia-card">
       <span class="adestia-card__title">✈  Voyages</span>
       <span class="adestia-card__foot"><span class="adestia-chip">7 fiches</span></span></button></li>
@@ -137,5 +189,4 @@
       <span class="adestia-card__title">🛠  Atelier</span>
       <span class="adestia-card__foot"><span class="adestia-chip">12 fiches</span></span></button></li>
   </ul>
-
 </div>
