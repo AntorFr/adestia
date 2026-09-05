@@ -387,7 +387,23 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           ownerOf(loaded, folder)?.tile?.label ??
           (folder.split('/').at(-1) as string),
       }))
-    return page ? [...crumbs, { label: page.title }] : crumbs
+    /**
+     * The open page says which circle it came from — but only when another
+     * one carries the same name.
+     *
+     * The reader clicked a card that said "(Famille)"; landing on a screen
+     * that says nothing loses exactly what they used to choose it, and two
+     * copies of a name are indistinguishable the moment the folder is behind
+     * them. Same grammar as the card, for the same reason: silent everywhere
+     * a name is unambiguous.
+     */
+    if (!page) return crumbs
+    const from = stores.find((store) => store.id === page.store)
+    const twin =
+      from !== undefined &&
+      from.default !== true &&
+      pages.filter((entry) => entry.path === page.path).length > 1
+    return [...crumbs, { label: twin ? `${page.title} (${from.label})` : page.title }]
   }, [openApp, loaded, page, pages, section, pluginTrail, settings, t])
 
   /**
