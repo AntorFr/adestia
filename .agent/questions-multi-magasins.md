@@ -112,6 +112,23 @@ page retrouvent leur rayon, leur remplissage et le pied à retour à la ligne ;
 le `:focus-visible` qui vivait dans le bloc renommé est rendu aux deux. Vu au
 banc, les deux écrans, les deux thèmes (`bench/scenarios/card-families.mjs`).
 
+## Trouvé en posant le témoin (étape 0)
+
+Deux comportements d'aujourd'hui que le témoin **fige tels quels** — le figer
+n'est pas les approuver, c'est empêcher qu'ils changent en douce pendant le
+chantier. À traiter à part, et en régénérant le témoin sciemment.
+
+**T1 — Le fichier `.tmp` de sauvegarde est listé comme pièce jointe.**
+`pages.ts` écrit `<page>.<uuid>.tmp` puis renomme (écriture atomique). Or
+`files.ts` n'exclut que les points et le `.md`, donc pendant cette fenêtre
+`GET /api/files?page=…` rend le `.tmp`. `watch.ts` connaît déjà cette classe
+(« un `.tmp` en cours de sauvegarde n'est pas une page ») ; `files.ts` non.
+
+**T2 — Le tri de `/api/pages` n'est pas celui d'un corpus français.**
+`pages.ts` trie avec `paths.sort()`, donc par unités UTF-16 : `Ébène.md` arrive
+APRÈS `zinc.md`. `files.ts`, lui, trie avec `localeCompare`. Deux routes
+voisines, deux ordres.
+
 ## Ouvertes
 
 **R16 — Le « rouge préexistant sur `main` ».** → **Ne se reproduit pas, et
