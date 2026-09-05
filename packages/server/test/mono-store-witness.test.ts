@@ -101,8 +101,10 @@ beforeAll(async () => {
   await stampAll(root)
 
   app = Fastify()
-  registerPages(app, { root })
-  registerFiles(app, { root })
+  // Named, never inherited: the golden must not depend on the machine's own
+  // language settings.
+  registerPages(app, { root, locale: 'fr' })
+  registerFiles(app, { root, locale: 'fr' })
   await app.ready()
 })
 

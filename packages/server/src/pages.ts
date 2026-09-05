@@ -30,6 +30,16 @@ import type { FastifyInstance } from 'fastify'
 export interface PagesOptions {
   /** Absolute path of the pages directory. */
   readonly root: string
+  /**
+   * The instance's language, used to ORDER what it lists.
+   *
+   * `Array.sort()` compares UTF-16 code units, which is not an alphabet: on a
+   * French corpus it filed `Ébène` after `zinc`, and `fiche-10` before
+   * `fiche-2` — thirteen numbered pages shuffled in every folder, visible on
+   * screen and in no test. Absent, the host's own locale decides, which is
+   * what an instance that declared no language honestly means.
+   */
+  readonly locale?: string | undefined
 }
 
 export interface PageInfo {
@@ -154,6 +164,10 @@ async function listMarkdown(root: string, prefix = ''): Promise<string[]> {
 
 export function registerPages(app: FastifyInstance, options: PagesOptions): void {
   const { root } = options
+  // Built once: a collator is expensive to make and free to reuse. `numeric`
+  // is not a language question — no alphabet puts 10 before 2 — so it holds
+  // whatever the instance speaks.
+  const order = new Intl.Collator(options.locale, { numeric: true })
 
   /**
    * The curated brief — "À la une".
@@ -178,7 +192,7 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
   app.get('/api/pages', async () => {
     const paths = await listMarkdown(root)
     const pages: PageInfo[] = []
-    for (const path of paths.sort()) {
+    for (const path of paths.sort((a, b) => order.compare(a, b))) {
       const full = join(root, path)
       const [info, markdown] = await Promise.all([stat(full), readFile(full, 'utf8')])
       pages.push({
@@ -199,7 +213,7 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
       fields: Record<string, unknown>
       finished: boolean
     }[] = []
-    for (const path of paths.sort()) {
+    for (const path of paths.sort((a, b) => order.compare(a, b))) {
       const markdown = await readFile(join(root, path), 'utf8').catch(() => '')
       const fields = parseFrontmatter(markdown)
       entries.push({

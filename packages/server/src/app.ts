@@ -975,13 +975,13 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   })
 
   const pagesRoot = join(config.workspace.root, config.workspace.pages)
-  registerPages(app, { root: pagesRoot })
+  registerPages(app, { root: pagesRoot, locale: config.locale })
   // The agent writes these files with its own tools, past every route above;
   // the feed is how a shell already on screen learns they changed.
   registerEvents(app, { root: pagesRoot, watch: config.workspace.watch })
   // The same root: an attachment is a file sitting next to a page, and a
   // second configurable directory would be a second place to explain.
-  registerFiles(app, { root: pagesRoot })
+  registerFiles(app, { root: pagesRoot, locale: config.locale })
 
   // Mounted before the static catch-all, so a plugin route always wins over
   // the shell's fallback; and after the auth hook, so it is gated like

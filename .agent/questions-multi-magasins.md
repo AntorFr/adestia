@@ -124,10 +124,16 @@ chantier. À traiter à part, et en régénérant le témoin sciemment.
 `GET /api/files?page=…` rend le `.tmp`. `watch.ts` connaît déjà cette classe
 (« un `.tmp` en cours de sauvegarde n'est pas une page ») ; `files.ts` non.
 
-**T2 — Le tri de `/api/pages` n'est pas celui d'un corpus français.**
-`pages.ts` trie avec `paths.sort()`, donc par unités UTF-16 : `Ébène.md` arrive
-APRÈS `zinc.md`. `files.ts`, lui, trie avec `localeCompare`. Deux routes
-voisines, deux ordres.
+**T2 — Le tri n'était pas celui d'un corpus français. → CORRIGÉ.** Les deux
+routes prennent un `Intl.Collator` bâti sur `config.locale`, avec
+`numeric: true`. Corrigé AVANT le composeur, sciemment : c'est le seul moment
+où régénérer le témoin ne se confond pas avec le fait de le contourner, et le
+diff se lisait en trois lignes (l'ordre, rien d'autre). La locale n'est pas
+codée en dur — le produit suit celle de l'instance, à défaut celle de l'hôte ;
+le témoin, lui, nomme la sienne, sinon son or dépend de la machine. Ce n'était
+pas qu'une affaire d'accents : sur le corpus réel, treize fiches numérotées
+sortaient dans l'ordre 1, 10, 11, 12, 13, 2, 3… — visible au banc depuis le
+début.
 
 ## Ouvertes
 

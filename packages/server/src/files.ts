@@ -38,6 +38,13 @@ import type { FastifyInstance } from 'fastify'
 export interface FilesOptions {
   /** Absolute path of the pages directory — the same root pages are read from. */
   readonly root: string
+  /**
+   * The instance's language, used to order listings. Bare `localeCompare()`
+   * was already used here, and it reads the HOST's locale: the same workspace
+   * came back in two different orders on two machines, and a golden taken on
+   * one failed on the other.
+   */
+  readonly locale?: string | undefined
 }
 
 export interface WorkspaceFile {
@@ -163,7 +170,11 @@ async function walk(
  * live there, and a project folder would otherwise show its every child's
  * documents as its own.
  */
-export async function attachmentsOf(root: string, pagePath: string): Promise<WorkspaceFile[]> {
+export async function attachmentsOf(
+  root: string,
+  pagePath: string,
+  order: Intl.Collator = new Intl.Collator(undefined, { numeric: true }),
+): Promise<WorkspaceFile[]> {
   const folder = dirname(pagePath.replace(/^\/+/, ''))
   const prefix = folder === '.' || folder === '' ? '' : folder
 
@@ -171,11 +182,12 @@ export async function attachmentsOf(root: string, pagePath: string): Promise<Wor
   await walk(root, prefix, found, false)
   await walk(root, prefix ? `${prefix}/assets` : 'assets', found, true)
 
-  return found.sort((a, b) => a.path.localeCompare(b.path))
+  return found.sort((a, b) => order.compare(a.path, b.path))
 }
 
 export function registerFiles(app: FastifyInstance, options: FilesOptions): void {
   const { root } = options
+  const order = new Intl.Collator(options.locale, { numeric: true })
 
   /**
    * What is there, as data.
@@ -188,14 +200,14 @@ export function registerFiles(app: FastifyInstance, options: FilesOptions): void
     const page = request.query.page
     if (typeof page === 'string' && page !== '') {
       if (!safeFilePath(root, page)) return { files: [] }
-      return { files: await attachmentsOf(root, page) }
+      return { files: await attachmentsOf(root, page, order) }
     }
 
     const under = typeof request.query.under === 'string' ? request.query.under : ''
     if (under !== '' && !safeFilePath(root, under)) return { files: [] }
     const files: WorkspaceFile[] = []
     await walk(root, under.replace(/^\/+|\/+$/g, ''), files, true)
-    return { files: files.sort((a, b) => a.path.localeCompare(b.path)) }
+    return { files: files.sort((a, b) => order.compare(a.path, b.path)) }
   })
 
   app.get<{ Params: { '*': string }; Querystring: { download?: string } }>(
