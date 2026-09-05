@@ -750,6 +750,84 @@
 
 .adestia-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
+/* ── Where a card comes from ──────────────────────────────────────────────
+   Memory can be composed of several stores — a personal one, a shared circle
+   — and a card has to say which without joining the noise in its foot. Two
+   marks, and the default store wears neither: absence means "mine", the same
+   grammar as the title suffix, which appears only when another store claims
+   the same name. Marking everything would put a rim on every card, and a rim
+   everywhere is not a signal. */
+
+/* The rim, at reading distance: it sorts a grid at a glance. Its colour is
+   the formula the hover already uses — 45% of the hue mixed into the border —
+   so it shows without shouting. */
+.adestia-card--store {
+  position: relative;
+  border-color: color-mix(in srgb, var(--store-color) 45%, var(--border));
+}
+
+/* The tab, for one card in particular. Square and lettered on purpose: the
+   round dot is the STATUS vocabulary (`.adestia-stat::before`), so borrowing
+   it would make a mark about provenance read as a mark about state — and two
+   letters survive being read by somebody who cannot separate the hues, which
+   this design system already requires of every pill.
+
+   Its outer corner takes the card's radius MINUS the border: an absolutely
+   positioned child sits in the padding box, so it must follow the border's
+   inner curve rather than its outer one, or the rim shows through the corner. */
+.adestia-card__store {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: 27px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  padding: 0 5px;
+  font: 700 10px/1 var(--font-mono);
+  color: var(--store-color);
+  background: color-mix(in srgb, var(--store-color) 15%, var(--surface-raised));
+  border-left: 1px solid color-mix(in srgb, var(--store-color) 35%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--store-color) 35%, transparent);
+  border-radius: 0 calc(var(--radius) - 1px) 0 var(--radius);
+}
+
+/* The title never runs under the tab. */
+.adestia-card--store .adestia-card__title { padding-right: 34px; }
+
+/* The legend, under the folder's title — the one place that describes the
+   whole folder, and therefore the only one that can state what the ABSENCE of
+   a mark means. Each key carries the store's full label cut to the tab's own
+   silhouette, at the card's own radius: an echo is made of equal curvature,
+   and a neighbouring value breaks it instead of softening it. */
+.adestia-stores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.adestia-stores__key {
+  display: block;
+  padding: 3px 9px;
+  font: 700 10.5px/1.3 var(--font-mono);
+  border-radius: 0 var(--radius) 0 var(--radius);
+  color: var(--store-color);
+  background: color-mix(in srgb, var(--store-color) 15%, var(--surface-raised));
+  border: 1px solid color-mix(in srgb, var(--store-color) 35%, transparent);
+}
+
+/* Mine: dashed and quiet, because what it names is a card with no mark. */
+.adestia-stores__key--none {
+  color: var(--text-faint);
+  background: transparent;
+  border-style: dashed;
+  border-color: var(--border-strong);
+}
+
 .adestia-card__title { font: 600 15.5px/1.2 var(--font-title); }
 
 .adestia-card__foot {

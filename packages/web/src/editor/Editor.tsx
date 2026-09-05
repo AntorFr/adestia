@@ -21,6 +21,18 @@ import { Reader, type BlockComponents } from './Reader.js'
 
 export interface PageDocument {
   readonly path: string
+  /**
+   * Which store this copy came from — present only on an instance composing
+   * more than one, and carried back on save.
+   *
+   * Without it, saving a card opened from a shared circle would land in the
+   * default store: the server sends an existing page back to its own store,
+   * but two circles can carry the SAME name, and then it is the one the bare
+   * address resolves to that gets written. The reader would see their
+   * correction on a card they were not editing, and the card they were
+   * editing unchanged.
+   */
+  readonly store?: string
   readonly title: string
   readonly markdown: string
   readonly revision: string
@@ -41,7 +53,8 @@ export async function savePage(
   markdown: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<{ state: SaveState; revision?: string }> {
-  const response = await fetchImpl(`/api/pages/${page.path}`, {
+  const qualifier = page.store ? `?store=${encodeURIComponent(page.store)}` : ''
+  const response = await fetchImpl(`/api/pages/${page.path}${qualifier}`, {
     method: 'PUT',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ markdown, revision: page.revision }),

@@ -218,6 +218,14 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
   // every answer below is byte for byte what it was before stores existed —
   // which is not an intention but a committed witness.
   const multi = stores.length > 1
+  /** What the shell needs to draw provenance: a name, a hue, and which is mine. */
+  const table = () =>
+    stores.map((store) => ({
+      id: store.id,
+      label: store.label,
+      ...(store.hue ? { hue: store.hue } : {}),
+      ...(store.isDefault ? { default: true } : {}),
+    }))
 
   /**
    * The curated brief — "À la une".
@@ -258,17 +266,7 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
     // The stores travel with the list, once, rather than being guessed from
     // the entries: the shell needs the LABEL to suffix a card and the HUE to
     // draw its rim, and a store carrying nothing must still appear in a legend.
-    return multi
-      ? {
-          pages,
-          stores: stores.map((store) => ({
-            id: store.id,
-            label: store.label,
-            ...(store.hue ? { hue: store.hue } : {}),
-            ...(store.isDefault ? { default: true } : {}),
-          })),
-        }
-      : { pages }
+    return multi ? { pages, stores: table() } : { pages }
   })
 
   app.get('/api/pages/index', async () => {
@@ -302,7 +300,11 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
         finished: isFinished(fields),
       })
     }
-    return { entries: out }
+    // The store table travels with the listing the shell actually draws from,
+    // exactly as it does with the plain list: a card needs a LABEL to be
+    // suffixed and a HUE for its rim, and a store carrying nothing still has
+    // to reach the legend.
+    return multi ? { entries: out, stores: table() } : { entries: out }
   })
 
   app.get<{ Params: { '*': string }; Querystring: { store?: string } }>(

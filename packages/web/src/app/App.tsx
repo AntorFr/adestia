@@ -28,8 +28,18 @@ import { followChanges } from './live.js'
 import { resolveLocale, translator } from './i18n.js'
 import { SkinSlot } from './SkinSlot.js'
 import { Section } from './Section.js'
-import { holdsPages, sectionAt, type IndexEntry } from './sections.js'
-import { addressOf, decodePath, encodePath, folderRoute, ownerOf, routeForPath } from './owners.js'
+import { holdsPages, sectionAt, type IndexEntry, type StoreInfo } from './sections.js'
+import {
+  addressOf,
+  decodePath,
+  encodePath,
+  folderRoute,
+  ownerOf,
+  pageAddress,
+  pageRoute,
+  routeForPath,
+  sectionRoute,
+} from './owners.js'
 import { browserEnvironment, loadPlugins, type LoadedPlugin, type PluginDescriptor } from '../plugins/loader.js'
 import { makePageEditor } from '../plugins/PageEditor.js'
 import { useMobile } from './useMobile.js'
@@ -147,6 +157,11 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   const [needsLogin, setNeedsLogin] = useState<'signin' | 'refused' | undefined>()
   const [screen, setScreen] = useState<'chat' | 'canvas'>('chat')
   const [pages, setPages] = useState<readonly IndexEntry[]>([])
+  /**
+   * The stores this instance composes — empty when it has only one, which is
+   * how the shell knows there is no provenance to draw.
+   */
+  const [stores, setStores] = useState<readonly StoreInfo[]>([])
   /** The section being browsed, if any. Home when undefined. */
   const [page, setPage] = useState<PageDocument | undefined>()
   const [route, setRoute] = useState(() => location.hash.replace(/^#/, ''))
@@ -289,7 +304,18 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   const section = route.startsWith('/section/')
     ? decodePath(route.slice('/section/'.length))
     : undefined
-  const pagePath = route.startsWith('/page/') ? decodePath(route.slice('/page/'.length)) : undefined
+  /**
+   * The page the address names, and the copy it asks for.
+   *
+   * The store is a qualifier, never part of the name: without it the server
+   * resolves by precedence, which is what keeps a link alive when a page moves
+   * from one circle to another.
+   */
+  const address = route.startsWith('/page/')
+    ? pageAddress(route.slice('/page/'.length))
+    : undefined
+  const pagePath = address?.path
+  const pageStore = address?.store
 
   /**
    * The breadcrumb: every crumb, and the folder it leads back to.
@@ -388,8 +414,8 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
    * The editor module is fetched ALONGSIDE the page rather than at boot: it is
    * the heaviest thing the shell can load, and most sessions never open one.
    */
-  const openPage = useCallback((path: string) => {
-    location.hash = `/page/${encodePath(path)}`
+  const openPage = useCallback((path: string, store?: string) => {
+    location.hash = pageRoute(path, store)
   }, [])
 
   /**
@@ -470,10 +496,25 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
     let cancelled = false
     void (async () => {
       const [response, editor] = await Promise.all([
-        fetchImpl(`/api/pages/${pagePath}`),
+        fetchImpl(`/api/pages/${pagePath}${pageStore ? `?store=${encodeURIComponent(pageStore)}` : ''}`),
         import('../editor/milkdown.js'),
       ])
-      if (cancelled || !response.ok) return
+      if (cancelled) return
+      /**
+       * The one address this product cannot answer.
+       *
+       * Several shared circles carry the name and mine does not: nothing here
+       * has a claim to arbitrate with, so the server refuses rather than
+       * picking. The reader goes UP — a real navigation, the address bar
+       * changes — to the folder, where both cards are drawn side by side and
+       * can be told apart before one is opened.
+       */
+      if (response.status === 409) {
+        const folder = pagePath.split('/').slice(0, -1).join('/')
+        location.hash = folder ? sectionRoute(folder) : ''
+        return
+      }
+      if (!response.ok) return
       // Stored via a thunk: passing a function to setState directly would
       // have React call it as an updater.
       setMount(() => editor.mountMilkdown)
@@ -482,7 +523,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
     return () => {
       cancelled = true
     }
-  }, [pagePath, fetchImpl])
+  }, [pagePath, pageStore, fetchImpl])
 
   /**
    * The viewer's theme choice: '' follows the system (and the skin's own
@@ -643,8 +684,9 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           // and a shape the shell did not expect used to reach `sectionsOf`
           // and throw mid-render — blanking the whole app over a payload that
           // merely had no pages in it.
-          const body = (await list.json()) as { entries?: IndexEntry[] }
+          const body = (await list.json()) as { entries?: IndexEntry[]; stores?: StoreInfo[] }
           setPages(Array.isArray(body.entries) ? body.entries : [])
+          setStores(Array.isArray(body.stores) ? body.stores : [])
         }
       } catch (error) {
         // A shell that renders an empty page when the API is unreachable makes
@@ -680,8 +722,9 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
       onChange: async () => {
         const list = await fetchImpl('/api/pages/index').catch(() => undefined)
         if (!list?.ok || controller.signal.aborted) return
-        const body = (await list.json()) as { entries?: IndexEntry[] }
+        const body = (await list.json()) as { entries?: IndexEntry[]; stores?: StoreInfo[] }
         setPages(Array.isArray(body.entries) ? body.entries : [])
+        setStores(Array.isArray(body.stores) ? body.stores : [])
       },
     })
     return () => controller.abort()
@@ -988,6 +1031,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             title={sectionAt(pages, section)?.title ?? section}
             {...(sectionAt(pages, section) ? { tile: sectionAt(pages, section)! } : {})}
             entries={pages}
+            stores={stores}
             openSection={openSection}
             openPage={openPage}
             t={t}

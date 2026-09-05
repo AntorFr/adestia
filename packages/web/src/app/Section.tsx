@@ -15,11 +15,11 @@
  * leads somewhere else, then what is live, then what is done.
  */
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type CSSProperties } from 'react'
 
 import { isFinished, toneOf } from '@antorfr/adestia-content'
 
-import type { IndexEntry, SectionTile } from './sections.js'
+import type { IndexEntry, SectionTile, StoreInfo } from './sections.js'
 import { pagesIn, subsectionsOf } from './sections.js'
 
 export interface SectionProps {
@@ -28,8 +28,10 @@ export interface SectionProps {
   /** The section's own icon and hue, from its index page. */
   readonly tile?: SectionTile
   readonly entries: readonly IndexEntry[]
+  /** The stores this instance composes. Empty when there is only one. */
+  readonly stores?: readonly StoreInfo[]
   readonly openSection: (path: string) => void
-  readonly openPage: (path: string) => void
+  readonly openPage: (path: string, store?: string) => void
   /** The shell's translator; identity in English. */
   readonly t?: (key: string) => string
 }
@@ -77,9 +79,15 @@ function hueVar(hue: string | undefined): Record<string, string> {
  */
 function PageCard({
   entry,
+  store,
+  suffixed,
   onOpen,
 }: {
   readonly entry: IndexEntry
+  /** The store this copy comes from — absent when nothing needs marking. */
+  readonly store?: StoreInfo
+  /** True when another store carries the same name, so the title must say which. */
+  readonly suffixed?: boolean
   readonly onOpen: () => void
 }) {
   const status = statusOf(entry)
@@ -89,8 +97,24 @@ function PageCard({
 
   return (
     <li>
-      <button type="button" className="adestia-card" onClick={onOpen}>
-        <span className="adestia-card__title">{entry.title}</span>
+      <button
+        type="button"
+        className={`adestia-card${store ? ' adestia-card--store' : ''}`}
+        onClick={onOpen}
+        {...(store
+          ? { style: { '--store-color': `var(--adestia-hue-${store.hue ?? 'gris'})` } as CSSProperties }
+          : {})}
+      >
+        {/* Provenance is drawn ON the card, never in its foot: the foot
+            belongs to status and tags, and a chip filed among them stops
+            being distinguishable the moment a card carries three. Two letters
+            rather than a coloured dot — the dot is the status vocabulary, and
+            a hue alone is not a label. */}
+        {store && <span className="adestia-card__store">{store.label.slice(0, 2)}</span>}
+        <span className="adestia-card__title">
+          {entry.title}
+          {suffixed && store ? ` (${store.label})` : ''}
+        </span>
         {hasFoot && (
           <span className="adestia-card__foot">
             {status && (
@@ -140,6 +164,7 @@ export function Section({
   title,
   tile,
   entries,
+  stores = [],
   openSection,
   openPage,
   t = (key) => key,
@@ -148,6 +173,47 @@ export function Section({
   const all = pagesIn(entries, path)
   const live = all.filter((entry) => !isFinished(entry.fields))
   const finished = all.filter((entry) => isFinished(entry.fields))
+
+  /**
+   * Which store to mark a card with, and when the title has to say it.
+   *
+   * The default store carries NO mark: absence means "mine", which is the same
+   * grammar as the title suffix — it appears only when something else claims
+   * the same name. Marking every card would put a coloured rim on all of them,
+   * and a rim everywhere is not a signal.
+   */
+  const markOf = useMemo(() => {
+    const byId = new Map(stores.map((store) => [store.id, store]))
+    return (entry: IndexEntry) => {
+      const store = entry.store ? byId.get(entry.store) : undefined
+      return store && !store.default ? store : undefined
+    }
+  }, [stores])
+
+  /** The names two stores both carry — the only place a suffix is earned. */
+  const duplicated = useMemo(() => {
+    const seen = new Set<string>()
+    const twice = new Set<string>()
+    for (const entry of all) {
+      if (seen.has(entry.path)) twice.add(entry.path)
+      seen.add(entry.path)
+    }
+    return twice
+  }, [all])
+
+  /**
+   * The legend: only the stores this folder actually shows, plus mine.
+   *
+   * It is the one place that can say what the ABSENCE of a mark means, which
+   * no card can say about itself. Naming stores that put nothing here would be
+   * noise, so a folder entirely of my own draws no legend at all.
+   */
+  const legend = useMemo(() => {
+    const here = stores.filter(
+      (store) => store.default || all.some((entry) => entry.store === store.id),
+    )
+    return here.length > 1 ? here : []
+  }, [stores, all])
 
   const [query, setQuery] = useState('')
   const [facet, setFacet] = useState<string | undefined>(undefined)
@@ -193,6 +259,24 @@ export function Section({
         <div>
           <h1 className="adestia-chead__title">{title}</h1>
           <p className="adestia-chead__lede">{lede}</p>
+          {legend.length > 0 && (
+            <ul className="adestia-stores">
+              {legend.map((store) => (
+                <li key={store.id}>
+                  <span
+                    className={`adestia-stores__key${store.default ? ' adestia-stores__key--none' : ''}`}
+                    style={
+                      store.default
+                        ? undefined
+                        : ({ '--store-color': `var(--adestia-hue-${store.hue ?? 'gris'})` } as CSSProperties)
+                    }
+                  >
+                    {store.label}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </header>
 
@@ -255,7 +339,13 @@ export function Section({
           {shown.length > 0 ? (
             <ul className="adestia-cards">
               {shown.map((entry) => (
-                <PageCard key={entry.path} entry={entry} onOpen={() => openPage(entry.path)} />
+                <PageCard
+                  key={`${entry.path} ${entry.store ?? ''}`}
+                  entry={entry}
+                  {...(markOf(entry) ? { store: markOf(entry)! } : {})}
+                  suffixed={duplicated.has(entry.path)}
+                  onOpen={() => openPage(entry.path, entry.store)}
+                />
               ))}
             </ul>
           ) : (
@@ -273,7 +363,13 @@ export function Section({
           </summary>
           <ul className="adestia-cards">
             {finished.map((entry) => (
-              <PageCard key={entry.path} entry={entry} onOpen={() => openPage(entry.path)} />
+              <PageCard
+                key={`${entry.path} ${entry.store ?? ''}`}
+                entry={entry}
+                {...(markOf(entry) ? { store: markOf(entry)! } : {})}
+                suffixed={duplicated.has(entry.path)}
+                onOpen={() => openPage(entry.path, entry.store)}
+              />
             ))}
           </ul>
         </details>
