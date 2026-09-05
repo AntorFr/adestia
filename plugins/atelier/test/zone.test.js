@@ -82,3 +82,47 @@ test('sans séparateur frontal, rien ne change : la tablette tient tout le meubl
   assert.equal(tab(r).largeur, 649, '650 − 1 de chant ; une seule tablette, donc pas de retrait avant')
   assert.equal(r.contraint, true)
 })
+
+/* ── Le zonage : savoir répondre ─────────────────────────────────────────── */
+
+/** Le meuble poubelle tel qu'il est vraiment : deux zones dans la profondeur. */
+const zone = (sur = {}) => poubelle({
+  // 350 pour les bacs ; le reste pour les outils, que le solveur déduit.
+  zones: [
+    { id: 'bacs', axe: 'y', etendue: 350 },
+    { id: 'outils', axe: 'y' },
+  ],
+  tablettes: { nombre: 1, zone: 'outils' },
+  ...sur,
+})
+
+test('la zone qui ne dit pas son étendue prend ce qui reste', () => {
+  const r = derive(zone(), tables())
+  // 650 de profondeur − 350 de bacs − 19 de séparateur = 281, ce que le
+  // meuble construit porte effectivement.
+  assert.equal(r.zones.outils, 281)
+})
+
+test('la tablette se cote sur SA zone, plus sur le meuble', () => {
+  const t = tab(derive(zone(), tables()))
+  assert.equal(t.largeur, 280, '281 de zone − 1 de chant avant')
+  assert.equal(t.longueur, 762, 'sa longueur, elle, tient toujours du meuble')
+})
+
+test('et le meuble redevient entièrement déterminé', () => {
+  const r = derive(zone(), tables())
+  assert.equal(r.contraint, true)
+  assert.deepEqual(r.issues.filter((i) => i.type === 'zone-inconnue'), [])
+})
+
+test('deux zones sans étendue laissent le système ouvert, et le disent', () => {
+  const r = derive(zone({ zones: [{ id: 'bacs', axe: 'y' }, { id: 'outils', axe: 'y' }] }), tables())
+  assert.equal(r.contraint, false)
+  assert.ok(r.issues.some((i) => i.type === 'cote-libre' && i.message.includes('zone:')))
+  assert.equal(r.zones.bacs, undefined, 'aucune étendue inventée')
+})
+
+test('une zone mal déclarée est refusée en nommant ce qui cloche', () => {
+  const r = derive(zone({ zones: [{ id: 'bacs', axe: 'profondeur', etendue: 350 }] }), tables())
+  assert.ok(r.issues.some((i) => i.type === 'zone-mal-formee' && /axe/.test(i.message)))
+})

@@ -14,6 +14,7 @@ import { applique } from '../modele/methodes.mjs'
 import { constante, etiquette, relationsDOrientation, relationsDuMeuble, traverse, v } from '../modele/ancrages.mjs'
 import { lineaireDeChant, retraitsDe } from '../modele/chants.mjs'
 import { chantsRetenus, ecartsAuDefaut } from '../modele/visibilite.mjs'
+import { litZones, relationsDesZones } from '../modele/zones.mjs'
 import { systeme } from './systeme.mjs'
 
 const issue = (gravite, type, message, plus = {}) => ({ gravite, type, message, ...plus })
@@ -179,6 +180,15 @@ export function derive(design, tables, moduleDemande) {
   // Le hors-tout et les paramètres sont posés comme des relations ordinaires :
   // un paramètre absent laisse donc une cote libre, au lieu d'un défaut muet.
   for (const r of relationsDuMeuble(design.hors_tout ?? {})) pose(r)
+
+  // Les ZONES : un caisson partagé par un séparateur, et des pièces qui
+  // vivent dedans plutôt que dans le meuble entier.
+  const { erreurs: malZonees } = litZones(design)
+  for (const e of malZonees) issues.push(issue('erreur', 'zone-mal-formee', e))
+  const cloisons = pieces
+    .filter((p) => p.partage)
+    .map((p) => ({ etiquette: p.etiquette, axe: p.partage }))
+  for (const r of relationsDesZones(design, cloisons)) pose(r)
   for (const [nom, valeur] of Object.entries(design.parametres ?? {}))
     pose(constante(`parametre/${nom}`, `param.${nom}`, valeur))
 
@@ -237,6 +247,10 @@ export function derive(design, tables, moduleDemande) {
 
   return {
     journal,
+    // Les étendues résolues : une zone déduite est un résultat en soi, et
+    // c'est ce qu'on regarde quand une pièce sort à une cote surprenante.
+    zones: Object.fromEntries((design.zones ?? []).map((zn) =>
+      [zn.id, valeurs[`zone:${zn.id}.${zn.axe}`]])),
     chant: lineaireDeChant(cotees, chants),
     // Ce que le projet fait dire à ses chants au-delà des faces chantées :
     // un côté plaqué bien qu'invisible, pour ne régler la bande qu'une fois.

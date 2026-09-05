@@ -103,14 +103,18 @@ export const BORDS = {
  * cette liste, et une table la décide au lieu de quelqu'un qui se rappelle
  * s'il faut retrancher une fois ou deux.
  */
-const retranche = (piece, axe, voisines, verbe) => ({
-  nom: `${piece.etiquette}/${verbe}-${axe}`,
+const retranche = (piece, axe, voisines, verbe, dans = 'meuble') => ({
+  nom: `${piece.etiquette}/${verbe}-${axe}${dans === 'meuble' ? '' : `-dans-${dans}`}`,
   termes: {
     [v(piece.etiquette, axe)]: 1,
-    [`meuble.${axe}`]: -1,
+    [`${dans}.${axe}`]: -1,
     ...Object.fromEntries(voisines.map((n) => [v(n, 'ep'), 1])),
   },
   egale: 0,
+  // `dans` : le CONTENANT sur lequel la pièce court. Le meuble par défaut ;
+  // une ZONE quand le caisson est partagé — une pièce dans une zone se cote
+  // exactement comme une pièce dans un meuble, ce qui est la raison d'en faire
+  // un paramètre plutôt qu'un second jeu d'ancrages.
   // Ce que l'ancrage dit du montage, gardé lisible pour qui veut l'inspecter.
   // Il ne décide RIEN des chants : ce qu'une bande rend ne dépend que des
   // chants de la pièce, et ce qui se chante ne dépend que de ce qu'on regarde.
@@ -126,7 +130,7 @@ const retranche = (piece, axe, voisines, verbe) => ({
  * un bord chanté qui tombe sur une cote d'ajustement se retire ensuite, et
  * c'est une AUTRE relation, posée par la règle des chants. Chacune son fait.
  */
-export const traverse = (piece, axe) => retranche(piece, axe, [], 'traverse')
+export const traverse = (piece, axe, dans) => retranche(piece, axe, [], 'traverse', dans)
 
 /**
  * ENTRE deux voisines : la pièce perd les deux épaisseurs.
@@ -135,7 +139,7 @@ export const traverse = (piece, axe) => retranche(piece, axe, [], 'traverse')
  * n'est écrit nulle part — il tombe de « entre les deux côtés », et le jour où
  * l'épaisseur du panneau change, il suit.
  */
-export const entre = (piece, axe, voisines) => retranche(piece, axe, voisines, 'entre')
+export const entre = (piece, axe, voisines, dans) => retranche(piece, axe, voisines, 'entre', dans)
 
 /**
  * En BUTÉE sur des voisines d'un seul côté.
@@ -145,7 +149,7 @@ export const entre = (piece, axe, voisines) => retranche(piece, axe, voisines, '
  * SUR lui au lieu de le capturer. Le même côté sous un dessus en plaque pleine
  * perd les deux — d'où 832 quand la question n'a pas été posée.
  */
-export const bute = (piece, axe, voisines) => retranche(piece, axe, voisines, 'bute')
+export const bute = (piece, axe, voisines, dans) => retranche(piece, axe, voisines, 'bute', dans)
 
 /** Une cote donnée par le stock ou par une fiche : l'épaisseur d'un panneau. */
 export const constante = (nom, variable, valeur) => ({ nom, termes: { [variable]: 1 }, egale: valeur })

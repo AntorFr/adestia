@@ -14,6 +14,7 @@
    posé la question du plan de travail. Elle ne l'avait pas été. */
 
 import { bute, entre, etiquette, traverse, v } from './ancrages.mjs'
+import { contenant, zoneDe } from './zones.mjs'
 
 /**
  * Le dessus est une plaque pleine ABOUTÉE : elle passe entre les côtés.
@@ -315,18 +316,21 @@ const fondStructurel = {
 const tabletteFixe = {
   decrit: 'tablette fixe entre les côtés, retraits avant et arrière selon le cas',
   applique({ trigramme, module, cotes, design, sorties }) {
-    const combien = design?.tablettes ?? 0
+    const combien = typeof design?.tablettes === 'object'
+      ? (design.tablettes.nombre ?? 0)
+      : (design?.tablettes ?? 0)
     const enRetrait = sorties?.retrait_avant === 'oui'
     // Le fond glissé en rainure passe derrière : cas fixe avec fond.
     const passeDerriere = design?.fond === 'oui' && design?.pose === 'fixe'
 
-    /* Un séparateur FRONTAL coupe la profondeur en deux ZONES — poubelles
-       devant, outils derrière — et une tablette vit dans l'une des deux, pas
-       dans le meuble. Cette méthode ne connaît que `meuble.y` : elle coterait
-       la tablette sur toute la profondeur, ce qui est faux, plausible et muet.
-       Elle refuse donc, et le dit. Le zonage reste à écrire ; en attendant, ne
-       pas répondre est la seule réponse honnête. */
-    const zoneIndeterminee = design?.separateur === 'frontal'
+    /* Un séparateur FRONTAL coupe la profondeur en deux ZONES — bacs devant,
+       outils derrière — et une tablette vit dans l'une des deux, pas dans le
+       meuble. Elle doit donc dire laquelle : `tablettes: { nombre, zone }`.
+       Sans ça, cette méthode coterait sur toute la profondeur — faux,
+       plausible, et muet. */
+    const zone = zoneDe(design?.tablettes)
+    const zoneIndeterminee = design?.separateur === 'frontal' && !zone
+    const dans = zone ? contenant(zone) : undefined
 
     const pieces = Array.from({ length: combien }, (_, i) => ({
       etiquette: etiquette(trigramme, module, 'TAB', String(i + 1)),
@@ -358,7 +362,7 @@ const tabletteFixe = {
           nom: `${t.etiquette}/profondeur`,
           termes: {
             [v(t.etiquette, 'y')]: 1,
-            'meuble.y': -1,
+            [`${dans ?? 'meuble'}.y`]: -1,
             ...(passeDerriere ? { 'param.retrait_fond_dos': 1 } : {}),
             ...(enRetrait ? { 'param.retrait_tablette_avant': 1 } : {}),
           },
@@ -392,6 +396,9 @@ const separateur = (frontal) => ({
       etiquette: etiquette(trigramme, module, 'SÉP', frontal ? 'MÉDIAN' : 'M'),
       role: 'SÉPARATEUR',
       orientation: frontal ? 'frontal' : 'lateral',
+      // L'axe que ce séparateur PARTAGE : c'est par lui que les zones savent
+      // quelle épaisseur retirer du meuble.
+      partage: frontal ? 'y' : 'x',
       // Le latéral montre sa rive avant ; le frontal n'a rien qui sorte.
       regardeVers: frontal ? {} : { 'rive-avant': 'avant' },
     }
