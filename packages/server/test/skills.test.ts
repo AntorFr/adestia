@@ -206,3 +206,21 @@ describe('the stores contract', () => {
     expect(contract?.contents).toContain('ASK which one')
   })
 })
+
+describe('a tool that reads memory', () => {
+  it('is told every store, because the first one is not the whole of it', async () => {
+    // A tool handed one directory reports on one circle as if it were
+    // everything — and says so with a straight face, which is the failure
+    // this line exists to prevent.
+    const { stores } = resolveStores(
+      [
+        { id: 'perso', path: '/w/pages' },
+        { id: 'famille', path: '/shared/famille' },
+      ],
+      '/w',
+    )
+    const { skills } = await collectSkills([], stores)
+    const contract = skills.find((skill) => skill.path === 'memory-stores/SKILL.md')
+    expect(contract?.contents).toContain('--pages /w/pages,/shared/famille')
+  })
+})

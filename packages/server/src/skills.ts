@@ -206,6 +206,16 @@ somebody else's circle. Name the choices and let the person answer.
 Everything else — a new folder, a page at the root — goes to the default store
 named above.
 
+## Tools that ask for the memory folder
+
+A tool of this instance that takes a memory directory needs ALL of them, not the
+first — otherwise it reads one circle and reports on it as if it were
+everything. They are comma-separated, in the order above:
+
+\`\`\`sh
+--pages ${stores.map((store) => store.dir).join(',')}
+\`\`\`
+
 ## What never composes
 
 A scheduled note belongs to THIS instance, not to memory: it lives beside the

@@ -8,7 +8,8 @@
  * page itself: what a video is worth, and what is worth remembering from it,
  * is a judgement, and a judgement belongs to whoever is writing the page.
  *
- *   node <plugin>/tools/listening-post.mjs transcris <url> --page pages/veille/x.md
+ *   node <plugin>/tools/listening-post.mjs transcris <url> --page veille/x.md \
+ *     --pages <les dossiers de la memoire, separes par des virgules>
  *   node <plugin>/tools/listening-post.mjs cherche "moteur audio" [--n 8]
  *   node <plugin>/tools/listening-post.mjs flux [--jours 7]
  *   node <plugin>/tools/listening-post.mjs etat
@@ -43,7 +44,9 @@ function usage(code = 1) {
       '  flux [--jours 7]                     ce que les sources ont publié récemment',
       '  etat                                 transcripteur, corpus, sources',
       '',
-      '  --pages <dossier>   le dossier des pages (défaut: pages)',
+      '  --pages <dossiers>  la mémoire : un dossier, ou plusieurs séparés par des',
+      '                      virgules quand cette instance en compose plusieurs',
+      '                      (défaut: pages)',
       '',
     ].join('\n'),
   )
