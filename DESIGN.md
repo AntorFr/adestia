@@ -985,7 +985,9 @@ where they do not, the reversal is stated.
   read as a mark about state, and two letters survive being read without the
   colour — which this design system already requires of every pill, hue alone
   being no label. A legend under the folder title teaches the mapping once,
-  carrying each store's FULL label cut to the tab's own shape — the label
+  carrying each store's FULL label cut to the tab's own shape,
+  at the CARD'S OWN radius rather than one scaled to the key — an echo is made
+  of equal curvature, and a neighbouring value breaks it instead of softening it — the label
   written twice taught nothing, and the shared silhouette makes the pairing
   visible before it is read. It is also the only place able to state what the
   ABSENCE of a mark means. The default

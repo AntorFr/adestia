@@ -65,11 +65,10 @@
     display: block;
     padding: 3px 9px;
     font: 700 10.5px/1.3 var(--font-mono);
-    /* Le rayon de la carte, mais la clé fait 20 px de haut contre 96 px pour
-       une carte : à valeur égale la courbe y occupe cinq fois plus de place et
-       la clé tourne au pétale. On garde la DÉCOUPE (deux coins sur quatre) et
-       on met le rayon à l'échelle. */
-    border-radius: 0 var(--radius-sm) 0 var(--radius-sm);
+    /* EXACTEMENT le rayon de la carte, pas une mise à l'échelle : c'est
+       l'égalité de courbure qui fait le rappel, et une valeur voisine le
+       casse au lieu de l'assouplir. */
+    border-radius: 0 var(--radius) 0 var(--radius);
     color: var(--store-color);
     background: color-mix(in srgb, var(--store-color) 15%, var(--surface-raised));
     border: 1px solid color-mix(in srgb, var(--store-color) 35%, transparent);
