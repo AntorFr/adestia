@@ -267,8 +267,11 @@ telling them what is wrong with it.
 
 ## The home brief — "À la une"
 
-The landing screen shows up to four curated pointers when
-`pages/home/brief.json` exists. **You write this file**; the shell renders it
+The landing screen shows up to four curated pointers when `home/brief.json`
+exists in memory. Written WITHOUT the folder it sits in: what that folder is
+called is this instance's business — one calls it `pages`, another `memory` —
+and an instance may compose its memory from several, in which case
+`memory-stores` tells you which. **You write this file**; the shell renders it
 as-is — no model call happens at render time, so what you write is exactly
 what people see, and its age is displayed so a stale brief reads as stale.
 

@@ -239,7 +239,9 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
    *
    *   #/                      the landing canvas
    *   #/section/<folder>      a section
-   *   #/page/<path>.md        one page
+   *   #/page/<path>           one page — no extension: that is a fact about
+   *                            a file, not about an address. `?store=` names
+   *                            a copy when two circles carry the same name.
    *   #/<plugin route or id>  an app
    */
   useEffect(() => {
