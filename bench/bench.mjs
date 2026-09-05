@@ -83,11 +83,15 @@ const browser = await chromium.launch({ args: ['--no-sandbox'] })
 const bench = {
   dataDir: '/data',
 
-  async open({ theme = 'light', width = 1280, height = 900, tab } = {}) {
+  // `touch` is what makes `(pointer: coarse)` match — a narrow viewport alone
+  // is a small window, not a phone, and the rules that only fire on a touch
+  // screen are invisible without it.
+  async open({ theme = 'light', width = 1280, height = 900, tab, touch = false } = {}) {
     const context = await browser.newContext({
       viewport: { width, height },
       colorScheme: theme,
       locale: env.BENCH_LOCALE ?? 'fr-FR',
+      ...(touch ? { hasTouch: true, isMobile: true } : {}),
     })
     const page = await context.newPage()
     page.on('console', (message) => {

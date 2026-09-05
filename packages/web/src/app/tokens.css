@@ -229,6 +229,38 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/*
+ * Touch screens, and the zoom that strands the shell.
+ *
+ * iOS zooms the page when a field whose text is smaller than 16px takes
+ * focus, and it does not zoom back out when the field is left. Because the
+ * shell is a fixed `100dvh` that hides its overflow, whatever the zoom pushed
+ * off the visual viewport — the canvas header, the switch back to the chat —
+ * cannot be scrolled to afterwards: the phone is left on a screen with no way
+ * out. The base size is 15px, so plain `font: inherit` on a field is already
+ * enough to trigger it, and so is tapping into the editor.
+ *
+ * A floor rather than a size: a field that is deliberately bigger stays
+ * bigger. `!important` because it has to outrank the component rules — the
+ * plugins' as much as this shell's — that set the small size in the first
+ * place, and a rule that loses the cascade here is not a floor at all.
+ */
+@media (pointer: coarse) {
+  input,
+  textarea,
+  select,
+  [contenteditable]:not([contenteditable='false']) {
+    font-size: max(16px, 1em) !important;
+  }
+
+  /* Double-tap zoom strands the same interface for the same reason, and buys
+     nothing on a surface where every tap is a single one. Pinch is untouched
+     wherever the browser still allows it. */
+  body {
+    touch-action: manipulation;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
