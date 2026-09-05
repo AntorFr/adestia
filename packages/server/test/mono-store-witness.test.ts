@@ -80,7 +80,13 @@ const FILES: readonly (readonly [string, string])[] = [
   // Must stay out of every answer.
   ['.git/config', 'secret'],
   ['domaines/diy/.claude/settings.json', '{}'],
-  ['domaines/diy/projets/etabli.md.7f3a.tmp', 'partial'],
+  // Le fichier de travail d'une sauvegarde, tel que le serveur l'écrit
+  // AUJOURD'HUI : un point devant, donc invisible comme `.git`.
+  ['domaines/diy/projets/.etabli.md.7f3a.tmp', 'partial'],
+  // Le même, tel qu'une version ANTÉRIEURE le laissait derrière elle après un
+  // processus tué. Il reste listé comme pièce jointe, et le témoin l'épingle :
+  // le point protège les sauvegardes à venir, il ne balaie pas les résidus.
+  ['domaines/diy/projets/etabli.md.old-residue.tmp', 'partial'],
 ]
 
 let app: FastifyInstance

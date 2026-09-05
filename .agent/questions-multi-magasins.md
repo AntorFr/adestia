@@ -118,11 +118,15 @@ Deux comportements d'aujourd'hui que le témoin **fige tels quels** — le figer
 n'est pas les approuver, c'est empêcher qu'ils changent en douce pendant le
 chantier. À traiter à part, et en régénérant le témoin sciemment.
 
-**T1 — Le fichier `.tmp` de sauvegarde est listé comme pièce jointe.**
-`pages.ts` écrit `<page>.<uuid>.tmp` puis renomme (écriture atomique). Or
-`files.ts` n'exclut que les points et le `.md`, donc pendant cette fenêtre
-`GET /api/files?page=…` rend le `.tmp`. `watch.ts` connaît déjà cette classe
-(« un `.tmp` en cours de sauvegarde n'est pas une page ») ; `files.ts` non.
+**T1 — Le fichier de travail d'une sauvegarde était listé comme pièce jointe.
+→ CORRIGÉ**, par un point devant son nom. Ce produit saute déjà tout segment
+commençant par un point — liste des pages, liste des fichiers, veilleur — donc
+le fichier rejoint `.git` et `.claude` et sort des trois sans une règle de
+plus. Ce n'était pas qu'un clignotement de quelques millisecondes : le
+nettoyage ne tourne que si l'écriture échoue, pas si le processus est tué, et
+la fiche gardait alors une pièce jointe fantôme pour toujours. **Limite
+assumée et épinglée au témoin** : le point protège les sauvegardes à venir, il
+ne balaie pas les résidus déjà sur le disque, qui restent listés.
 
 **T2 — Le tri n'était pas celui d'un corpus français. → CORRIGÉ.** Les deux
 routes prennent un `Intl.Collator` bâti sur `config.locale`, avec

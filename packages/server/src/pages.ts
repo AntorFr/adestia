@@ -16,7 +16,7 @@
 
 import { randomUUID } from 'node:crypto'
 import { mkdir, readFile, readdir, rename, stat, unlink, writeFile } from 'node:fs/promises'
-import { dirname, extname, join, relative, resolve, sep } from 'node:path'
+import { basename, dirname, extname, join, relative, resolve, sep } from 'node:path'
 
 import {
   isFinished,
@@ -300,7 +300,20 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
 
       // Atomic: the agent may be reading this file right now, and a partial
       // write is a corrupted page rather than a failed save.
-      const temporary = `${path}.${randomUUID()}.tmp`
+      //
+      // Written beside the target, never in a temp directory: `rename` is only
+      // atomic WITHIN one filesystem, and across a mount it degrades to a copy
+      // — or fails outright.
+      //
+      // And named with a leading dot, which is not cosmetic. Everything here
+      // already skips a path segment beginning with a dot — the page listing,
+      // the file listing, the watcher — so the working file joins `.git` and
+      // `.claude` and disappears from all three without one new rule. Without
+      // the dot it is a non-markdown file sitting beside a page, which is this
+      // product's definition of an ATTACHMENT: a save interrupted by a killed
+      // process leaves the page carrying a ghost attachment nobody can explain,
+      // forever, since the cleanup below only runs when the write itself fails.
+      const temporary = join(dirname(path), `.${basename(path)}.${randomUUID()}.tmp`)
       try {
         await writeFile(temporary, canonical, 'utf8')
         await rename(temporary, path)
