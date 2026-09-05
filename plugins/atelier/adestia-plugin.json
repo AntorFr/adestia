@@ -11,5 +11,14 @@
   "api": "./api.mjs",
   "skills": [
     "./skills/workbook-json/SKILL.md"
+  ],
+  "mcpServers": [
+    {
+      "name": "atelier",
+      "command": "node",
+      "args": [
+        "./mcp/serveur.mjs"
+      ]
+    }
   ]
 }

@@ -9,7 +9,10 @@ const CHANT_RENOM = { avant: 'rive-avant', arriere: 'rive-arriere', gauche: 'abo
 const SUR_RENOM = { face: 'face', 'contre-face': 'contre-face', 'rive-avant': 'rive-avant', 'rive-arriere': 'rive-arriere' };
 
 export function normalise(wb) {
-  if (!wb || wb.schemaVersion === '3.0') return wb;
+  // Le 4.0 ajoute `design`/`derive` EN AMONT des pièces ; sa géométrie est
+  // celle du 3.0, mot pour mot. Le laisser entrer ici lui ferait traverser la
+  // conversion 2.0 → 3.0 et lui reprendrait sa version au passage.
+  if (!wb || wb.schemaVersion === '3.0' || wb.schemaVersion === '4.0') return wb;
   const out = JSON.parse(JSON.stringify(wb));
   out.schemaVersion = '3.0';
 

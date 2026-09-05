@@ -1,0 +1,21 @@
+{
+  "id": "tiroir-corps",
+  "titre": "Corps de tiroir — monté maintenant, ou laissé pour plus tard",
+  "applique_a": ["caisson"],
+  "entrees": {
+    "corps_tiroir": ["monte", "plus-tard"]
+  },
+  "sorties": ["methode"],
+  "lignes": [
+    {
+      "quand": { "corps_tiroir": "monte" },
+      "alors": { "methode": "tiroirs-corps" },
+      "note": "Deux flancs, un montant avant fonctionnel, un dos, un fond de 6 en rainure."
+    },
+    {
+      "quand": { "corps_tiroir": "plus-tard" },
+      "alors": { "methode": null },
+      "note": "Les façades peuvent être arrêtées avant les corps — la matière des corps se décide souvent après. C'est une décision, pas un oubli."
+    }
+  ]
+}

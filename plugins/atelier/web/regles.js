@@ -242,7 +242,11 @@ export function issuesPlaque(wb, pl, layout) {
 /* ── la validation complète d'un workbook 3.0 (structure + physique) ───── */
 export function valide(wb) {
   const E = [];
-  if (wb.schemaVersion !== '3.0') E.push(`schemaVersion « ${wb.schemaVersion} » — valider s'applique au 3.0 (passer par normalise/migre)`);
+  // 3.0 et 4.0 : le 4.0 n'ajoute qu'une SOURCE en amont (`design`, `derive`)
+  // et ne touche pas à la géométrie, donc les mêmes règles s'y appliquent —
+  // les redoubler ailleurs les ferait diverger d'une version à l'autre.
+  if (wb.schemaVersion !== '3.0' && wb.schemaVersion !== '4.0')
+    E.push(`schemaVersion « ${wb.schemaVersion} » — valider s'applique au 3.0 et au 4.0 (passer par normalise/migre)`);
   const etqs = new Set();
   for (const p of wb.pieces || []) {
     if (etqs.has(p.etiquette)) E.push(`pièce dupliquée : ${p.etiquette}`);

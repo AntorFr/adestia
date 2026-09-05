@@ -1,0 +1,16 @@
+{
+  "id": "tiroir",
+  "titre": "Tiroirs — façades en applique, corps sur coulisses",
+  "applique_a": ["caisson"],
+  "entrees": {
+    "facade": ["ouverte", "portes"]
+  },
+  "sorties": ["methode"],
+  "lignes": [
+    {
+      "quand": {},
+      "alors": { "methode": "tiroirs-facades" },
+      "note": "La façade est TOUJOURS une pièce à part, vissée après pose : les coulisses n'ont aucun réglage, et le jeu entre façades voisines ne peut pas dépendre de la position des rails."
+    }
+  ]
+}
