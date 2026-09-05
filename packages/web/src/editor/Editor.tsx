@@ -179,15 +179,18 @@ export function Editor({
   /**
    * What the editor is shown, which is not always what is on disk.
    *
-   * A page written by the shell this store is shared with carries `{% %}`
-   * blocks. The grammar knows how to READ them, but Milkdown runs the parser
-   * without its transformers — so the editor alone would show literal braces
-   * where every other surface shows a callout. Round-tripping through the
-   * shared pipeline here is what makes the two agree.
+   * The page is round-tripped through the shared pipeline before the editor
+   * sees it, and what comes back is also the BASELINE for `dirty`.
    *
-   * It is also the BASELINE for `dirty`: comparing against the file on disk
-   * would light up Save on the 51 pages that carry such a block, inviting a
-   * rewrite nobody asked for. Reading converts nothing; only an edit does.
+   * This began as a bridge: Milkdown runs the parser WITHOUT its transformers,
+   * so a page in the predecessor's `{% %}` spelling drew literal braces in the
+   * editor and a callout everywhere else. That spelling is gone (2026-09-05)
+   * and the grammar has no transformer left, so the two agree on their own
+   * today. What the round trip still does is normalise: a file whose markdown
+   * is merely UNUSUAL — spacing a human chose, a list marker the house style
+   * does not use — would otherwise light up Save the moment it was opened,
+   * inviting a rewrite nobody asked for. Reading still converts nothing on
+   * disk; only an edit does.
    */
   const shown = useMemo(() => {
     try {

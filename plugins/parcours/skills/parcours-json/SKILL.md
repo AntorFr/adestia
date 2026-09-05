@@ -138,8 +138,7 @@ ses attributs sont tout son sens.
 en lien depuis plusieurs fiches : **un fichier, plusieurs renvois**, jamais deux
 copies.
 
-⚠️ Une fiche écrite pour le shell prédécesseur porte `{% parcours source="…" /%}`.
-Adestia **lit** cette orthographe et la rend à l'identique — n'y touche pas pour
-la « migrer » : le magasin est partagé, et réécrire une fiche la rendrait
-illisible à l'autre shell. C'est l'ÉDITION d'une fiche qui la convertit, jamais
-sa lecture.
+⚠️ L'orthographe `{% parcours source="…" /%}` du shell prédécesseur **n'existe
+plus** : le corpus a été migré le 2026-09-05 et Adestia ne sait plus la lire.
+Écrite aujourd'hui, elle s'afficherait telle quelle, accolades comprises. Il n'y
+a qu'une graphie, celle du haut de cette fiche.

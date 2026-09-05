@@ -225,8 +225,8 @@ export interface BlockProps {
   /**
    * A path written in the page, turned into something fetchable.
    *
-   * `{% parcours source="assets/x.json" %}` means "next to the page that
-   * writes it", the way it reads on disk. Nothing in a document should have
+   * `:::parcours{source="assets/x.json"}` means "next to the page that writes
+   * it", the way it reads on disk. Nothing in a document should have
    * to know files are served under `/api/files`, and a plugin cannot resolve
    * it alone: only the shell knows which page is being read.
    */

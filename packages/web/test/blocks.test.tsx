@@ -44,19 +44,6 @@ describe('drawing one', () => {
     expect(screen.getByText('Après.')).toBeTruthy()
   })
 
-  it('reads the other shell’s spelling as the same block', () => {
-    registerBlocks(PARCOURS)
-    const Parcours = ({ attributes }: BlockProps) => <i>{attributes['source']}</i>
-    render(
-      <Reader
-        markdown={'{% parcours source="assets/val.parcours.json" /%}\n'}
-        path="voyages/val.md"
-        blocks={{ parcours: Parcours }}
-      />,
-    )
-    expect(screen.getByText('assets/val.parcours.json')).toBeTruthy()
-  })
-
   it('gives a flow block its body, and an empty one none', () => {
     registerBlocks({
       encadre: { content: 'flow', description: 'A framed aside.' },

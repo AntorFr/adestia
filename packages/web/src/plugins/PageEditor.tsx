@@ -43,8 +43,8 @@ export interface PageEditorHost {
    *
    * A function rather than a value because of when this is built: the editor
    * is handed to the loader before a single plugin has loaded, so a snapshot
-   * taken here would always be empty. An embedded page carrying `{% %}` would
-   * then show literal braces where the shell's own page screen shows the
+   * taken here would always be empty. An embedded page carrying a `:::` block
+   * would then show its source where the shell's own page screen draws the
    * block — the same page, two answers, depending on which screen opened it.
    */
   readonly blocks?: () => BlockComponents

@@ -12,7 +12,6 @@
  * file saved by a human are byte-identical.
  */
 
-import { legacyTags } from './legacy-tags.js'
 import remarkFrontmatter from 'remark-frontmatter'
 import remarkGfm from 'remark-gfm'
 import remarkParse from 'remark-parse'
@@ -216,10 +215,6 @@ export const GRAMMAR = [
   [remarkFrontmatter, ['yaml']],
   [remarkWikiLink, undefined],
   [directivePlugin, undefined],
-  // Reads the predecessor's `{% %}` blocks into the same nodes `:::` makes.
-  // Last, so it sees a tree the other plugins have already shaped. See
-  // legacy-tags.ts for why a shared store is read, never rewritten.
-  [legacyTags, undefined],
 ] as const
 
 export function createProcessor(): Processor<Root, undefined, undefined, Root, string> {
@@ -240,18 +235,21 @@ const processor = createProcessor()
  * Parse AND transform.
  *
  * `processor.parse()` alone runs the parser and nothing else — micromark
- * extensions apply, remark TRANSFORMERS do not. Every grammar entry was an
- * extension until `legacyTags` arrived, so the difference had never shown;
- * it showed as a plugin that silently did nothing at all.
+ * extensions apply, remark TRANSFORMERS do not. Every entry in GRAMMAR is an
+ * extension today, so the two are equivalent right now and the difference is
+ * invisible — which is exactly how it bit once already: the first transformer
+ * added here silently did nothing at all, and read as a bug in the transformer.
  *
- * `runSync` is what makes the returned tree the one the grammar describes,
- * which is what every caller already assumed it was getting.
+ * So `runSync` stays. It costs a walk over a tree nobody reshapes, and it
+ * makes the returned tree the one GRAMMAR describes rather than the one it
+ * happens to describe while every entry is an extension.
  */
 export function parse(markdown: string): Root {
-  // The source travels with the tree: `legacyTags` slices it by offset,
-  // because GFM has already rewritten some tags into several nodes by then.
-  // `runSync` is typed as returning the processor's generic output node; the
-  // grammar's transformers only ever reshape children, so it is the same Root
+  // The source travels with the tree because a transformer may need what was
+  // actually written: GFM rewrites some spans before a transformer ever sees
+  // them, and slicing the source by offset is the way around that.
+  // `runSync` is typed as returning the processor's generic output node; a
+  // grammar transformer only ever reshapes children, so it is the same Root
   // that went in.
   return processor.runSync(processor.parse(markdown), markdown) as Root
 }
