@@ -12,6 +12,8 @@
 
 import { parse as parseYaml } from 'yaml'
 
+import type { StoreDeclaration } from './stores.js'
+
 export type AuthMode = 'none' | 'oidc' | 'proxy'
 
 export interface OidcConfig {
@@ -65,7 +67,21 @@ export interface AuthConfig {
 export interface WorkspaceConfig {
   /** The agent's home: instructions in its CLI's own dialect, plus content. */
   readonly root: string
+  /**
+   * The single store's folder — the shape of every instance before memory
+   * could be composed of several. Kept, and kept meaningful: with no `stores`
+   * declared it IS the one store, which is what makes the composition
+   * backwards-compatible by construction rather than by care.
+   */
   readonly pages: string
+  /**
+   * The stores this instance composes its memory from, in declaration order.
+   *
+   * Always at least one. Absent from the file, it holds a single store built
+   * from `pages`, so an instance that never heard of stores answers exactly
+   * what it answered before — the union of a one-element set being that set.
+   */
+  readonly stores: readonly StoreDeclaration[]
   readonly memory: string
   readonly planif: string
   readonly watch: WatchConfig
@@ -333,6 +349,88 @@ function requireString(
     return ''
   }
   return value
+}
+
+/**
+ * `workspace.stores`, or the single store an instance without one still has.
+ *
+ * Absent, it yields one store built from `workspace.pages` — so the
+ * composition is backwards-compatible BY CONSTRUCTION, not by remembering to
+ * be. Present, it wins, and `pages` is reported as ignored rather than
+ * quietly obeyed or quietly dropped: an operator who left both in the file is
+ * owed the sentence saying which one the instance is actually reading.
+ *
+ * Shape is checked here and MEANING in `resolveStores` — a typo is a
+ * configuration error the operator fixes, while "two stores claim to be the
+ * default" is a contradiction between declarations that only makes sense once
+ * they are all read.
+ */
+const STORE_KEYS = new Set(['id', 'path', 'at', 'label', 'hue', 'default'])
+
+function parseStores(
+  raw: unknown,
+  pages: string,
+  issues: string[],
+): readonly StoreDeclaration[] {
+  const fallback: readonly StoreDeclaration[] = [{ id: 'perso', path: pages, default: true }]
+  if (raw === undefined) return fallback
+  if (!Array.isArray(raw)) {
+    issues.push('workspace.stores must be a list of stores')
+    return fallback
+  }
+  if (raw.length === 0) {
+    // An empty list is a mistake with a plausible reading — "no stores" — and
+    // that reading is an instance with no memory at all. Refused rather than
+    // interpreted.
+    issues.push('workspace.stores is empty: remove the key to keep the single store')
+    return fallback
+  }
+
+  const declared: StoreDeclaration[] = []
+  raw.forEach((entry, index) => {
+    if (!isObject(entry)) {
+      issues.push(`workspace.stores[${index}] must be an object`)
+      return
+    }
+    for (const key of Object.keys(entry)) {
+      if (!STORE_KEYS.has(key)) {
+        // Same rule as everywhere here: a typo is a setting the operator
+        // believes is applied and is not — a store silently unlabelled, or
+        // mounted at the root when they meant a subfolder.
+        issues.push(
+          `workspace.stores[${index}].${key} is not a setting — known keys: ${[...STORE_KEYS].join(', ')}`,
+        )
+      }
+    }
+    const id = entry['id']
+    const path = entry['path']
+    if (typeof id !== 'string' || id === '') {
+      issues.push(`workspace.stores[${index}].id is required`)
+      return
+    }
+    if (typeof path !== 'string' || path === '') {
+      issues.push(`workspace.stores.${id}.path is required`)
+      return
+    }
+    for (const key of ['at', 'label', 'hue'] as const) {
+      if (entry[key] !== undefined && typeof entry[key] !== 'string') {
+        issues.push(`workspace.stores.${id}.${key} must be text`)
+      }
+    }
+    if (entry['default'] !== undefined && typeof entry['default'] !== 'boolean') {
+      issues.push(`workspace.stores.${id}.default must be true or false`)
+    }
+    declared.push({
+      id,
+      path,
+      ...(typeof entry['at'] === 'string' ? { at: entry['at'] } : {}),
+      ...(typeof entry['label'] === 'string' ? { label: entry['label'] } : {}),
+      ...(typeof entry['hue'] === 'string' ? { hue: entry['hue'] } : {}),
+      ...(entry['default'] === true ? { default: true } : {}),
+    })
+  })
+
+  return declared.length > 0 ? declared : fallback
 }
 
 function parseAuth(raw: unknown, issues: string[]): AuthConfig {
@@ -804,9 +902,13 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
     // Below this, polling a big tree is a CPU spin dressed as a setting.
     issues.push('workspace.watch.intervalMs must be an integer >= 100')
   }
+  const pages = typeof workspaceRaw['pages'] === 'string' ? workspaceRaw['pages'] : 'pages'
+  const stores = parseStores(workspaceRaw['stores'], pages, issues)
+
   const workspace: WorkspaceConfig = {
     root: typeof workspaceRaw['root'] === 'string' ? workspaceRaw['root'] : './workspace',
-    pages: typeof workspaceRaw['pages'] === 'string' ? workspaceRaw['pages'] : 'pages',
+    pages,
+    stores,
     memory: typeof workspaceRaw['memory'] === 'string' ? workspaceRaw['memory'] : 'memory',
     planif: typeof workspaceRaw['planif'] === 'string' ? workspaceRaw['planif'] : 'planif',
     watch: {
