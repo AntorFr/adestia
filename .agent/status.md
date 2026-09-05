@@ -1,6 +1,48 @@
 # Status — Adestia
 > MàJ : 2026-09-05
 
+Chantier du 05/09 (3) — **une mémoire, plusieurs endroits**. Un domaine ne se
+range plus DANS un dossier : il se compose de ce que chaque magasin en porte,
+et le nom d'une fiche ne dit jamais lequel la détient — c'est ça qui fait
+qu'une fiche promue d'un cercle à l'autre ne casse aucun lien. Le magasin
+`famille`, sans lecteur depuis la sortie d'agent-gw, se monte maintenant à côté
+du magasin perso : un seul dossier `voyages` à l'écran, deux volumes derrière.
+Déclaré dans le fichier de config ; la clé absente donne exactement l'instance
+d'avant, et un **témoin octet à octet** écrit AVANT le composeur le prouve à
+chaque exécution.
+
+Ce que le produit refuse est la moitié porteuse. Deux cercles partagés portent
+le même nom et le mien non : rien n'a de titre à arbitrer, donc l'adresse nue
+n'est pas résolue — la coque remonte au dossier, où les deux fiches sont
+dessinées côte à côte. Une création dans un dossier que plusieurs magasins
+portent est refusée de la même façon, candidats nommés. Et une fiche éditée
+retourne dans SON magasin : l'écrire dans le principal la dupliquerait, et
+comme les deux copies s'affichent, l'auteur verrait deux cartes là où il en a
+corrigé une.
+
+Trois arbitrages renversent ceux du prédécesseur : la fiche perdante est
+**montrée suffixée** au lieu d'être cachée, la précédence se réduit à « le mien
+d'abord, puis le reste » (un rang entre deux cercles d'autrui est une devinette),
+et un magasin déclare séparément où sont ses octets et où il apparaît dans
+l'arbre. Décision d'architecture au passage : **un plugin ne touche plus jamais
+au système de fichiers** — trois d'entre eux portaient chacun leur copie du même
+parcours d'arbre, deux leur propre garde de traversée, et tous seraient devenus
+aveugles au cercle partagé sans une erreur nulle part.
+
+L'agent, lui, garde ses outils fichiers : les magasins hors de l'espace de
+travail sont déclarés à son CLI, et un contrat généré lui dit où ils sont et
+comment choisir — la seule question qu'il doit poser étant le dossier que
+plusieurs magasins portent.
+
+Récolté en chemin, sans rapport avec la fonctionnalité : le tri des listes
+suivait les codes UTF-16 (`Ébène` après `zinc`, et treize fiches numérotées
+dans l'ordre 1, 10, 11, 2…) et suit maintenant la langue de l'instance ; le
+fichier de travail d'une sauvegarde s'affichait comme pièce jointe ; deux
+composants différents partageaient la classe CSS `adestia-card` et s'écrasaient
+l'un l'autre ; le contrat livré à l'agent affirmait l'inverse de ce que le code
+fait d'un titre ; et `npm ci` manquait à la doctrine des worktrees, où le build
+n'avait donc jamais pu tourner.
+
 Chantier du 05/09 (2) — **fin du double run : agent-gw est débranché**. Les
 trois corps `agent-gw` du cluster (alfred, skippy, nestor) sont supprimés, plus
 le RBAC cluster de skippy — qu'ArgoCD n'aurait jamais nettoyé, son app `home`
@@ -24,7 +66,9 @@ Reste : la coque de Nestor n'existe pas (construction neuve, rien à reprendre �
 ce corps n'a jamais servi), et la passe unique de renommage `golem*` →
 `adestia*` (releases, clients OIDC, clés du coffre, copie de `/mnt/data/golem*`)
 le jour où on la fera. Les satellites `nestor-openwakeword` / `nestor-tts`
-tournent orphelins, et le magasin `famille` n'a plus d'écrivain.
+tournent orphelins ; le magasin `famille`, lui, a de nouveau un lecteur (voir
+le chantier ci-dessus) — reste à le déclarer sur les instances, avec le
+`supplementalGroups: [3002]` qu'exige son dataset en 2770.
 
 Chantier du 05/09 (1) — **les attributs d'un bloc tiennent en colonne**. Ces
 blocs sont un format d'enregistrement qu'une personne édite à la main, pas de
