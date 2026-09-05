@@ -44,25 +44,6 @@
   /* Le titre ne passe jamais sous l'onglet. */
   .adestia-card--store .adestia-card__title { padding-right: 34px; }
 
-  /* ALTERNATIVE — le marque-page. Même liseré, mêmes deux lettres, autre
-     géométrie : un ruban qui pend du bord haut, encoché en bas, et qui
-     DÉBORDE la carte de quelques pixels — c'est le débord qui fait lire
-     « marque-page » plutôt que « coin ». Fond plein, parce qu'un ruban en
-     teinte diluée n'a plus l'air posé sur la carte. */
-  .adestia-card__bookmark {
-    position: absolute;
-    top: -5px;
-    right: 16px;
-    width: 25px;
-    padding: 6px 0 10px;
-    text-align: center;
-    font: 700 9.5px/1 var(--font-mono);
-    color: var(--surface-raised);
-    background: var(--store-color);
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%);
-  }
-  .adestia-card--bookmark .adestia-card__title { padding-right: 48px; }
-
   /* 3. La légende, sous le titre du dossier — le seul endroit qui décrit le
         dossier ENTIER, donc le seul où la correspondance s'apprend. Elle dit
         aussi ce que l'ABSENCE de marque veut dire, ce qu'aucune carte ne peut
@@ -84,7 +65,11 @@
     display: block;
     padding: 3px 9px;
     font: 700 10.5px/1.3 var(--font-mono);
-    border-radius: 0 var(--radius) 0 var(--radius);
+    /* Le rayon de la carte, mais la clé fait 20 px de haut contre 96 px pour
+       une carte : à valeur égale la courbe y occupe cinq fois plus de place et
+       la clé tourne au pétale. On garde la DÉCOUPE (deux coins sur quatre) et
+       on met le rayon à l'échelle. */
+    border-radius: 0 var(--radius-sm) 0 var(--radius-sm);
     color: var(--store-color);
     background: color-mix(in srgb, var(--store-color) 15%, var(--surface-raised));
     border: 1px solid color-mix(in srgb, var(--store-color) 35%, transparent);
@@ -120,43 +105,6 @@
     <button type="button" onclick="document.documentElement.removeAttribute('data-theme')">système</button>
   </div>
 
-  <h2>0 — Alternative : le marque-page</h2>
-  <p class="note">Mêmes deux lettres, même liseré, autre géométrie. Le ruban déborde
-    le bord haut de quelques pixels — sans ce débord il redevient un coin. Comparer
-    avec le panneau 1 juste dessous, qui porte l'onglet.</p>
-
-  <ul class="adestia-stores" style="margin: 0 0 14px">
-    <li><span class="adestia-stores__key adestia-stores__key--none">Perso</span></li>
-    <li style="--store-color: var(--adestia-hue-violet)"><span class="adestia-stores__key">Famille</span></li>
-  </ul>
-
-  <ul class="adestia-cards">
-    <li><button type="button" class="adestia-card">
-      <span class="adestia-card__title">Lisbonne, avril</span>
-      <span class="adestia-card__foot">
-        <span class="adestia-stat adestia-stat--underway">en cours</span>
-        <span class="adestia-tag">#ville</span></span></button></li>
-    <li><button type="button" class="adestia-card adestia-card--store adestia-card--bookmark" style="--store-color: var(--adestia-hue-violet)">
-      <span class="adestia-card__bookmark">Fa</span>
-      <span class="adestia-card__title">Baden 2026</span>
-      <span class="adestia-card__foot">
-        <span class="adestia-stat adestia-stat--settled">réservé</span>
-        <span class="adestia-tag">#lac</span></span></button></li>
-    <li><button type="button" class="adestia-card">
-      <span class="adestia-card__title">Week-end Vercors</span>
-      <span class="adestia-card__foot">
-        <span class="adestia-tag">#rando</span>
-        <span class="adestia-tag">#court</span></span></button></li>
-    <li><button type="button" class="adestia-card adestia-card--store adestia-card--bookmark" style="--store-color: var(--adestia-hue-violet)">
-      <span class="adestia-card__bookmark">Fa</span>
-      <span class="adestia-card__title">Corse, été</span>
-      <span class="adestia-card__foot">
-        <span class="adestia-stat adestia-stat--waiting">à décider</span>
-        <span class="adestia-tag">#mer</span>
-        <span class="adestia-tag">#août</span></span></button></li>
-  </ul>
-
-  <hr class="rule">
   <h2>1 — Le domaine fusionné : le cas de 95 % des cartes</h2>
   <p class="note">Un seul dossier <code>voyages</code> à l'écran, deux magasins derrière.
     Le magasin par défaut ne porte <strong>rien</strong> : l'absence de marque veut dire
