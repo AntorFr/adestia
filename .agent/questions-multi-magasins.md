@@ -41,13 +41,27 @@ mémoire : `famille` est principal sur Nestor et annexe sur Alfred. Remplace la
 règle nº 3 du prédécesseur — la précédence par ordre de déclaration se réduit
 à « le principal, puis le reste », l'ordre ne servant plus qu'à l'affichage.
 
+**R7 — Que fait le cas 3, concrètement ?** → **On remonte toujours à l'URL du
+dossier parent**, sauf si on y est déjà. C'est une vraie navigation : l'adresse
+de la barre change, on n'affiche pas un autre contenu sous l'adresse demandée.
+L'objection du dossier absorbé par un plugin tombe avec R8 — l'app Voyages
+montrera les fiches de tous les magasins.
+
+**R8 — Un plugin voit-il le système de fichiers ?** → **Jamais.** Décision
+d'architecture : le noyau expose lister / résoudre / lire / écrire sur des
+chemins **logiques** portant leur `store`, et garde pour lui l'organisation
+physique (combien de racines, dans quel ordre, où s'applique la garde).
+`pagesRoot` quitte le contrat de plugin. Corrige une phrase de la lettre de
+mission — « les plugins : rien à faire » — vraie du front, fausse des API de
+plugins, qui marchent l'arbre elles-mêmes et deviendraient aveugles au
+magasin partagé, en silence.
+
 ## Ouvertes
 
-**O1 — Cas 3 quand le dossier parent appartient à un plugin.** *(la plus
-ancienne, signalée puis laissée en route)* « On remonte d'un cran, forcément un
-dossier, donc forcément affichable » a une exception : un dossier absorbé par
-un plugin (`owners.ts`) n'ouvre pas la mosaïque générique. `domaines/voyages`
-ouvre l'app Voyages, qui n'a aucune raison de montrer les deux jumelles.
+**O5 — `pagesRoot` : remplacement net ou cohabitation ?** Le service remplace-t-il
+`pagesRoot` d'un coup (les 4 plugins portés dans ce chantier), ou survit-il
+déprécié en pointant sur le magasin principal ? Reco : remplacement net — une
+dépréciation silencieuse produit une fiche qu'on ne voit pas du tout.
 
 **O2 — Où se déclarent les magasins ?** Fichier de config seul
 (`workspace.stores` + `workspace.primary`) ou aussi une surcharge

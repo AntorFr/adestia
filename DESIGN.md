@@ -1561,3 +1561,27 @@ not follow its heading. The lesson is the ordering rather than the rule. A
 contract written the same day as the code it describes, without running it,
 records an intention and reads like a fact — and the agent it is delivered to
 has no way to tell the two apart.
+
+**2026-09-05 (a plugin never touches the filesystem):** measured while
+designing multi-store. Three shipped plugins walk the pages tree themselves —
+`findVoyages`, `findWorkbooks`, `readSources` — each carrying its own copy of
+the same recursive walk, and two of them their own traversal guard
+(`safeParcoursPath`, `safePath`). The host handed them `pagesRoot` precisely so
+they would not GUESS the folder's name, which is instance configuration. That
+was the right answer while the tree was ONE directory. The moment it becomes
+several, the same kindness produces the blindness it was meant to prevent, and
+worse: a plugin reading only the primary store shows none of the shared one, on
+screen, in silence, with no error anywhere to find.
+
+So the rule is raised from a convenience to an ARCHITECTURE. **A plugin never
+calls the filesystem.** The core exposes what a plugin needs — list, resolve,
+read, write — over LOGICAL paths that carry their store, and keeps the physical
+organisation entirely to itself: how many roots there are, in what order they
+compose, and where the traversal guard applies. What a plugin cannot address,
+it cannot go blind to. And the guard gets written once instead of being
+re-derived, differently, in each plugin that needs one.
+
+`pagesRoot` therefore leaves the plugin contract. It was never a capability —
+only an absolute path, disclosed to spare a guess. Replacing a disclosed fact
+with a served answer is the whole move, and it is what makes every future
+change to the physical layout invisible to every plugin.
