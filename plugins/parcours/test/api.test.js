@@ -11,32 +11,35 @@ import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
 import { join, sep } from 'node:path'
 
-import { buildGpx, decode, safeParcoursPath } from '../api.mjs'
+import { buildGpx, decode, parcoursName } from '../api.mjs'
 
 const ROOT = `${sep}pages`
 
-test('un chemin de parcours ne sort pas de l’espace de travail', () => {
+test('un nom de parcours ne sort pas de l’espace de travail', () => {
+  // Un NOM logique entre, un nom logique sort : où le fichier vit est
+  // l'affaire du noyau, qui compose les magasins et applique la garde chez
+  // chacun. Ce plugin ne connaît plus de racine.
   assert.equal(
-    safeParcoursPath(ROOT, 'domaines/voyages/x/assets/val.parcours.json'),
-    join(ROOT, 'domaines/voyages/x/assets/val.parcours.json'),
+    parcoursName('domaines/voyages/x/assets/val.parcours.json'),
+    'domaines/voyages/x/assets/val.parcours.json',
   )
   // La traversée, sous toutes ses formes.
-  assert.equal(safeParcoursPath(ROOT, '../../etc/passwd.parcours.json'), undefined)
-  assert.equal(safeParcoursPath(ROOT, 'x/\0.parcours.json'), undefined)
-  assert.equal(safeParcoursPath(ROOT, ''), undefined)
-  assert.equal(safeParcoursPath(ROOT, 42), undefined)
+  assert.equal(parcoursName('../../etc/passwd.parcours.json'), undefined)
+  assert.equal(parcoursName('x/\0.parcours.json'), undefined)
+  assert.equal(parcoursName(''), undefined)
+  assert.equal(parcoursName(42), undefined)
   // Une barre de tête est RAMENÉE dans la racine plutôt que refusée — même
   // règle que chez les voyages : `/x.parcours.json` est une façon maladroite
   // d'écrire un chemin relatif, pas une tentative de sortir.
-  assert.equal(safeParcoursPath(ROOT, '/x.parcours.json'), join(ROOT, 'x.parcours.json'))
+  assert.equal(parcoursName('/x.parcours.json'), 'x.parcours.json')
 })
 
 test('le suffixe est vérifié, pas seulement le chemin', () => {
   // Sans ça, cette route servirait n'importe quel fichier de l'espace de
   // travail à qui sait écrire une chaîne de requête.
-  assert.equal(safeParcoursPath(ROOT, 'domaines/prive/salaires.json'), undefined)
-  assert.equal(safeParcoursPath(ROOT, 'domaines/prive/notes.md'), undefined)
-  assert.equal(safeParcoursPath(ROOT, 'x.parcours.json.bak'), undefined)
+  assert.equal(parcoursName('domaines/prive/salaires.json'), undefined)
+  assert.equal(parcoursName('domaines/prive/notes.md'), undefined)
+  assert.equal(parcoursName('x.parcours.json.bak'), undefined)
 })
 
 test('decode rend la trace et les altitudes avec le même algorithme', () => {

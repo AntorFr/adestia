@@ -24,8 +24,9 @@ import {
   summarise,
 } from '../api.mjs'
 
-const ROOT = `${sep}pages`
-const VOYAGE = join(ROOT, 'voyages/corse/assets/voyage.json')
+// Un nom LOGIQUE, plus un chemin de disque : ce plugin ne connaît plus de
+// racine, c'est le noyau qui compose les magasins et résout.
+const VOYAGE = 'voyages/corse/assets/voyage.json'
 
 const trip = {
   titre: 'Corse — été 2026',
@@ -43,11 +44,13 @@ const trip = {
   ],
 }
 
-test('a voyage path resolves under the pages root', () => {
-  assert.equal(safeVoyagePath(ROOT, 'voyages/corse/assets/voyage.json'), VOYAGE)
+test('a voyage name comes back as the name the product speaks', () => {
+  // A LOGICAL name in, a logical name out: where the file lives is the core's
+  // business now, since memory may be composed of several stores.
+  assert.equal(safeVoyagePath('voyages/corse/assets/voyage.json'), VOYAGE)
   // Leading slashes are stripped rather than refused: a path is relative here
   // whatever the caller believed it was writing.
-  assert.equal(safeVoyagePath(ROOT, '/voyages/corse/assets/voyage.json'), VOYAGE)
+  assert.equal(safeVoyagePath('/voyages/corse/assets/voyage.json'), VOYAGE)
 })
 
 test('nothing reaches outside the pages root', () => {
@@ -57,38 +60,35 @@ test('nothing reaches outside the pages root', () => {
     'a/\0/voyage.json',
     42,
   ]) {
-    assert.equal(safeVoyagePath(ROOT, attempt), undefined, String(attempt))
+    assert.equal(safeVoyagePath(attempt), undefined, String(attempt))
   }
 })
 
 test('only a file actually named voyage.json is addressable', () => {
   // The state route takes the VOYAGE path and derives the file it writes.
   // Without this, `?v=…/secrets.json` would name the file to be overwritten.
-  assert.equal(safeVoyagePath(ROOT, 'voyages/corse/assets/notes.json'), undefined)
-  assert.equal(safeVoyagePath(ROOT, 'voyages/corse/assets/voyage.json.bak'), undefined)
+  assert.equal(safeVoyagePath('voyages/corse/assets/notes.json'), undefined)
+  assert.equal(safeVoyagePath('voyages/corse/assets/voyage.json.bak'), undefined)
 })
 
 test('the overlay lands beside the trip, never inside it', () => {
-  assert.equal(overlayPath(VOYAGE), join(ROOT, 'voyages/corse/assets/voyage-state.json'))
+  assert.equal(overlayPath(VOYAGE), 'voyages/corse/assets/voyage-state.json')
 })
 
 test('a document is reachable only inside its own trip', () => {
-  assert.equal(
-    safeDocPath(ROOT, VOYAGE, 'assets/embarquement.pdf'),
-    join(ROOT, 'voyages/corse/assets/embarquement.pdf'),
-  )
+  assert.equal(safeDocPath(VOYAGE, 'assets/embarquement.pdf'), 'voyages/corse/assets/embarquement.pdf')
   // A page of the trip is a document too — the boundary is the folder, not an
   // extension list.
-  assert.equal(safeDocPath(ROOT, VOYAGE, 'balade.md'), join(ROOT, 'voyages/corse/balade.md'))
+  assert.equal(safeDocPath(VOYAGE, 'balade.md'), 'voyages/corse/balade.md')
 
   for (const attempt of ['../../autre/voyage.json', '../secrets.md', '', '.', 'a/\0/b']) {
-    assert.equal(safeDocPath(ROOT, VOYAGE, attempt), undefined, String(attempt))
+    assert.equal(safeDocPath(VOYAGE, attempt), undefined, String(attempt))
   }
 
   // An absolute-looking path is made relative rather than refused — the same
   // convention as a voyage path. It cannot escape, which is what matters: it
   // lands inside the trip and 404s there.
-  assert.equal(safeDocPath(ROOT, VOYAGE, '/etc/passwd'), join(ROOT, 'voyages/corse/etc/passwd'))
+  assert.equal(safeDocPath(VOYAGE, '/etc/passwd'), 'voyages/corse/etc/passwd')
 })
 
 test('a gesture is laid over the item it names, without its stamp', () => {

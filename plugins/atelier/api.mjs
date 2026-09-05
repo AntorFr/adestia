@@ -11,72 +11,55 @@
  * Which is why there are three routes and only two of them accept writes.
  */
 
-import { mkdir, readFile, readdir, rename, stat, writeFile } from 'node:fs/promises'
-import { randomUUID } from 'node:crypto'
 import { dirname, join, relative, resolve, sep } from 'node:path'
 
 const WORKBOOK = 'workbook.json'
 
 /**
- * Walks for `**\/assets/workbook.json`.
+ * Le nom d'un workbook, validé sans toucher au disque.
  *
- * Convention rather than declaration: a project holds its workbook in its own
- * assets folder and the app finds it. Nothing to register, so a new project is
- * a folder and a file.
+ * La convention plutôt que la déclaration : un projet range son workbook dans
+ * son propre `assets/` et l'app l'y trouve. Rien à enregistrer, donc un
+ * nouveau projet est un dossier et un fichier.
+ *
+ * Un chemin venu d'une requête reste une entrée utilisateur, d'où le suffixe
+ * vérifié ici. Mais OÙ le fichier vit n'est plus l'affaire de ce plugin : la
+ * mémoire peut être composée de plusieurs magasins, et c'est le noyau qui sait
+ * lesquels et où s'applique la garde de traversée.
  */
-async function findWorkbooks(root, prefix = '', depth = 0) {
-  if (depth > 6) return []
-  let entries
-  try {
-    entries = await readdir(join(root, prefix), { withFileTypes: true })
-  } catch {
-    return []
-  }
-
-  const found = []
-  for (const entry of entries) {
-    if (entry.name.startsWith('.') || entry.name === 'node_modules') continue
-    const path = prefix ? `${prefix}/${entry.name}` : entry.name
-    if (entry.isDirectory()) {
-      found.push(...(await findWorkbooks(root, path, depth + 1)))
-    } else if (entry.name === WORKBOOK && prefix.endsWith('/assets')) {
-      found.push(path)
-    }
-  }
-  return found
-}
-
-/** A path from a query string is user input, wherever it looks like it came from. */
-export function safeWorkbookPath(root, requested) {
+export function safeWorkbookPath(requested) {
   if (typeof requested !== 'string' || requested.includes('\0')) return undefined
-  const target = resolve(root, `./${requested.replace(/^\/+/, '')}`)
-  const rel = relative(root, target)
-  if (rel.startsWith('..') || rel.startsWith(`..${sep}`)) return undefined
-  if (!target.endsWith(`${sep}${WORKBOOK}`)) return undefined
-  return target
+  const path = requested.replace(/^\/+/, '')
+  if (!path.endsWith(`/${WORKBOOK}`) && path !== WORKBOOK) return undefined
+  if (path.split('/').some((segment) => segment === '..' || segment.startsWith('.'))) {
+    return undefined
+  }
+  return path
 }
 
-/** `…/workbook.json` → `…/workbook-state.json`. Beside, never inside. */
+/** `…/workbook.json` → `…/workbook-state.json`. À côté, jamais dedans. */
 export const overlayPath = (workbook, kind) =>
-  join(dirname(workbook), `workbook-${kind}.json`)
+  `${workbook.split('/').slice(0, -1).join('/')}/workbook-${kind}.json`
 
-async function readJson(path, fallback) {
+/** Lecture par le noyau, qui compose les magasins. */
+const readJson = async (pages, path, fallback) => {
+  const raw = await pages.read(path)
+  if (raw === undefined) return fallback
   try {
-    return JSON.parse(await readFile(path, 'utf8'))
+    return JSON.parse(raw)
   } catch {
     return fallback
   }
 }
 
-async function writeJson(path, value) {
-  await mkdir(dirname(path), { recursive: true })
-  // Atomic: the agent may be reading this while the bench writes it, and a
-  // half-written overlay is a workbook that renders wrong rather than one that
-  // fails to load.
-  const temporary = `${path}.${randomUUID()}.tmp`
-  await writeFile(temporary, JSON.stringify(value, null, 2))
-  await rename(temporary, path)
-}
+/**
+ * Écriture par le noyau, qui décide du magasin.
+ *
+ * L'atomicité vivait ici en copie ; elle vit maintenant en un seul endroit —
+ * et elle en avait besoin, puisqu'un `rename` n'est atomique qu'à l'intérieur
+ * d'un système de fichiers et que les magasins sont des montages.
+ */
+const writeJson = (pages, path, value) => pages.write(path, JSON.stringify(value, null, 2))
 
 /**
  * One card's worth of a workbook.
@@ -106,20 +89,19 @@ export function summarise(path, data, fait = {}) {
 }
 
 export default async function api(app, opts) {
-  // The host says where the pages tree lives; its folder name is
-  // configuration, so deriving it from workspaceRoot finds nothing on an
-  // instance that names it `memory`.
-  const root = opts.pagesRoot
+  // La mémoire est servie par le noyau : chemins LOGIQUES, jamais de racine.
+  // Composée de plusieurs magasins ou d'un seul, ce plugin ne voit aucune
+  // différence — sauf que chaque workbook dit d'où il vient.
+  const pages = opts.pages
 
   app.get('/workbooks', async () => {
-    const paths = await findWorkbooks(root)
+    const found = await pages.list({ keep: (name) => name === WORKBOOK })
     const workbooks = []
-    for (const path of paths.sort()) {
-      const file = join(root, path)
-      const data = await readJson(file, null)
+    for (const entry of found.filter((one) => one.path.includes('/assets/')).sort((a, b) => a.path.localeCompare(b.path))) {
+      const data = await readJson(pages, entry.path, null)
       if (!data) continue
-      const fait = (await readJson(overlayPath(file, 'state'), {})).fait ?? {}
-      workbooks.push(summarise(path, data, fait))
+      const fait = (await readJson(pages, overlayPath(entry.path, 'state'), {})).fait ?? {}
+      workbooks.push({ ...summarise(entry.path, data, fait), store: entry.store })
     }
     // Most recently worked on first — the bench comes back to what it left.
     workbooks.sort((a, b) => String(b.lastActivity ?? '').localeCompare(String(a.lastActivity ?? '')))
@@ -127,13 +109,15 @@ export default async function api(app, opts) {
   })
 
   app.get('/workbook', async (request, reply) => {
-    const path = safeWorkbookPath(root, request.query.path)
+    const path = safeWorkbookPath(request.query.path)
     if (!path) return reply.code(400).send({ error: 'not a workbook path' })
+    const raw = await pages.read(path)
+    if (raw === undefined) return reply.code(404).send({ error: 'no workbook there' })
     try {
-      // Returned raw, so the front converts a dormant 2.0 itself — the
-      // compatibility path lives in one place, next to the engine that reads
-      // it, rather than being duplicated server-side.
-      return JSON.parse(await readFile(path, 'utf8'))
+      // Rendu brut, pour que le front convertisse lui-même un 2.0 dormant : le
+      // chemin de compatibilité vit à un seul endroit, à côté du moteur qui le
+      // lit, plutôt que d'être dupliqué côté serveur.
+      return JSON.parse(raw)
     } catch {
       return reply.code(404).send({ error: 'no workbook there' })
     }
@@ -141,18 +125,18 @@ export default async function api(app, opts) {
 
   for (const kind of ['state', 'layout']) {
     app.get(`/${kind}`, async (request, reply) => {
-      const path = safeWorkbookPath(root, request.query.wb)
+      const path = safeWorkbookPath(request.query.wb)
       if (!path) return reply.code(400).send({ error: 'not a workbook path' })
-      return readJson(overlayPath(path, kind), kind === 'state' ? { fait: {} } : {})
+      return readJson(pages, overlayPath(path, kind), kind === 'state' ? { fait: {} } : {})
     })
 
     app.post(`/${kind}`, async (request, reply) => {
       const body = request.body ?? {}
-      const path = safeWorkbookPath(root, body.wb)
+      const path = safeWorkbookPath(body.wb)
       if (!path) return reply.code(400).send({ error: 'not a workbook path' })
 
       const file = overlayPath(path, kind)
-      const current = await readJson(file, kind === 'state' ? { fait: {} } : {})
+      const current = await readJson(pages, file, kind === 'state' ? { fait: {} } : {})
 
       if (kind === 'state') {
         // One step at a time, by key: the bench ticks a line, it does not
@@ -177,7 +161,7 @@ export default async function api(app, opts) {
         }
       }
 
-      await writeJson(file, current)
+      await writeJson(pages, file, current)
       return current
     })
   }

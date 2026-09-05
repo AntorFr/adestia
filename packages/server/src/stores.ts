@@ -30,8 +30,11 @@
  * of another.
  */
 
-import { readdir, stat } from 'node:fs/promises'
-import { isAbsolute, join, relative, resolve, sep } from 'node:path'
+import { createReadStream } from 'node:fs'
+import { randomUUID } from 'node:crypto'
+import { mkdir, readFile, readdir, rename, stat, unlink, writeFile } from 'node:fs/promises'
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
+import type { Readable } from 'node:stream'
 
 /** What an operator writes in the configuration. */
 export interface StoreDeclaration {
@@ -331,4 +334,90 @@ export async function targetFor(
   return target && file
     ? { kind: 'store', store: target, file }
     : { kind: 'ambiguous', stores: [] }
+}
+
+/**
+ * What a plugin is handed instead of a path.
+ *
+ * A plugin used to be given `pagesRoot` — an absolute directory — so that it
+ * would not have to GUESS the folder's name, which is instance configuration.
+ * That was the right answer while the tree was one directory. The moment it
+ * became several, the same kindness produced the blindness it was meant to
+ * prevent: a plugin reading one root shows nothing of the shared circle, on
+ * screen, in silence, with no error anywhere to find.
+ *
+ * So a plugin never calls the filesystem. It asks for LOGICAL paths and gets
+ * back the store each one came from, and how many roots there are, in what
+ * order they compose, and where the traversal guard applies all stay here.
+ * What a plugin cannot address, it cannot go blind to — and the guard gets
+ * written once rather than re-derived, differently, in each plugin needing one.
+ */
+export interface PagesService {
+  /** Logical paths across every store, precedence order, each with its store. */
+  list(options?: {
+    readonly under?: string
+    readonly keep?: (name: string) => boolean
+  }): Promise<readonly { readonly path: string; readonly store: string }[]>
+  /** The text of a page or companion file, or undefined if nobody carries it. */
+  read(path: string): Promise<string | undefined>
+  /** Whether any store carries it. */
+  exists(path: string): Promise<boolean>
+  /**
+   * The bytes, as a stream, for what must not be read whole — a boarding pass,
+   * a photograph, a recording. A stream rather than a path: the plugin sends
+   * it on and still never learns which disk it came from.
+   */
+  stream(path: string): Promise<Readable | undefined>
+  /**
+   * Writes, where the composition says it goes — its own store for an existing
+   * file, the only candidate for a new one. Refuses rather than choosing when
+   * several stores carry the folder, for the same reason the page API does.
+   *
+   * Atomic, and in the target store's own directory: `rename` is atomic only
+   * within one filesystem, and stores are mounts. Plugins each carried a copy
+   * of this dance; now none of them does.
+   */
+  write(path: string, contents: string): Promise<{ readonly store: string }>
+}
+
+export function pagesService(stores: readonly Store[]): PagesService {
+  return {
+    async list(options = {}) {
+      const { entries } = await listAll(stores, options)
+      return entries.map((entry) => ({ path: entry.path, store: entry.store.id }))
+    },
+    async read(path) {
+      const [found] = await candidatesOf(stores, path)
+      if (!found) return undefined
+      return readFile(found.file, 'utf8').catch(() => undefined)
+    },
+    async exists(path) {
+      return (await candidatesOf(stores, path)).length > 0
+    },
+    async stream(path) {
+      const [found] = await candidatesOf(stores, path)
+      return found ? createReadStream(found.file) : undefined
+    },
+    async write(path, contents) {
+      const target = await targetFor(stores, path)
+      if (target.kind !== 'store') {
+        throw new Error(
+          `several stores carry this folder — name one: ${target.stores.map((s) => s.id).join(', ')}`,
+        )
+      }
+      const temporary = join(
+        dirname(target.file),
+        `.${basename(target.file)}.${randomUUID()}.tmp`,
+      )
+      try {
+        await mkdir(dirname(target.file), { recursive: true })
+        await writeFile(temporary, contents, 'utf8')
+        await rename(temporary, target.file)
+      } catch (error) {
+        await unlink(temporary).catch(() => undefined)
+        throw error
+      }
+      return { store: target.store.id }
+    },
+  }
 }

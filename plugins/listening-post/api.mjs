@@ -23,7 +23,7 @@ import { readFile } from 'node:fs/promises'
 import { join, relative, sep } from 'node:path'
 
 import { byFreshness, clockOf, deepLink, keyOf, parseFeed } from './lib/feeds.mjs'
-import { assetsFor, exists, readLibrary, readSources, safePath } from './lib/library.mjs'
+import { assetsFor, readLibrary, readSources, safePath } from './lib/library.mjs'
 import { emptyState, readState, stamp, stateFile, writeState } from './lib/store.mjs'
 import { parseTranscript, search } from './lib/transcript.mjs'
 
@@ -160,7 +160,8 @@ export async function resolveLink(url, fetchImpl = fetch) {
 export default async function api(app, opts) {
   // The host says where the pages tree lives; its folder NAME is instance
   // configuration, not `pages` everywhere.
-  const root = opts.pagesRoot
+  // La mémoire est servie par le noyau : chemins LOGIQUES, jamais de racine.
+  const pages = opts.pages
   const file = stateFile(opts.dataDir, opts.pluginId ?? 'listening-post')
   const cache = makeCache()
 
@@ -194,22 +195,22 @@ export default async function api(app, opts) {
     const hit = cache.get(id)
     if (hit) return hit
     try {
-      return cache.set(id, 60_000, parseTranscript(await readFile(join(root, item.transcript), 'utf8')))
+      return cache.set(id, 60_000, parseTranscript((await pages.read(item.transcript)) ?? ''))
     } catch {
       return null
     }
   }
 
   app.get('/sources', async () => {
-    const { sources, problems, files } = await readSources(root)
+    const { sources, problems, files } = await readSources(pages)
     return { sources, problems, declaredIn: files }
   })
 
   app.get('/queue', async (request) => {
     const fresh = request.query.refresh === '1'
-    const { sources, problems } = await readSources(root)
+    const { sources, problems } = await readSources(pages)
     const state = await readState(file)
-    const library = await readLibrary(root, keyOf)
+    const library = await readLibrary(pages, keyOf)
 
     const pulled = await Promise.all(sources.map((source) => pull(source, { fresh })))
     const items = buildQueue({
@@ -236,7 +237,7 @@ export default async function api(app, opts) {
   })
 
   app.get('/library', async () => {
-    const items = await readLibrary(root, keyOf)
+    const items = await readLibrary(pages, keyOf)
     return {
       items: items.map((item) => ({ ...item, assets: assetsFor(item.path) })),
     }
@@ -301,7 +302,7 @@ export default async function api(app, opts) {
     if (query.length < 3) return reply.code(400).send({ error: 'query too short' })
     const limit = Math.min(Number(request.query.limit) || 20, 50)
 
-    const library = await readLibrary(root, keyOf)
+    const library = await readLibrary(pages, keyOf)
     const results = []
     for (const item of library) {
       const lines = await transcriptOf(item)
@@ -333,19 +334,19 @@ export default async function api(app, opts) {
   })
 
   app.get('/transcript', async (request, reply) => {
-    const page = safePath(root, request.query.page, { suffix: '.md' })
+    const page = safePath(request.query.page, { suffix: '.md' })
     if (!page) return reply.code(400).send({ error: 'not a page path' })
     // The path as the WORKSPACE spells it, not as the query string spelled
     // it: `veille/../veille/x.md` is the same page and must not become a
     // different assets folder.
-    const { transcript, media } = assetsFor(relative(root, page).split(sep).join('/'))
-    const path = join(root, transcript)
+    const { transcript, media } = assetsFor(page)
+    const path = transcript
     if (!(await exists(path))) return reply.code(404).send({ error: 'no transcript', expected: transcript })
     const lines = parseTranscript(await readFile(path, 'utf8'))
     let meta = null
-    if (await exists(join(root, media))) {
+    if (await pages.exists(media)) {
       try {
-        meta = JSON.parse(await readFile(join(root, media), 'utf8'))
+        meta = JSON.parse((await pages.read(media)) ?? '')
       } catch {
         meta = null
       }

@@ -28,21 +28,28 @@ import { join, relative, resolve, sep } from 'node:path'
 const SUFFIXE = '.parcours.json'
 
 /**
- * Résout un `*.parcours.json`, garde de traversée comprise.
+ * Valide le NOM d'un parcours, sans toucher au disque.
  *
- * Le SUFFIXE est vérifié, pas seulement le chemin : cette route ne doit pouvoir
+ * Le suffixe est vérifié, pas seulement la forme : cette route ne doit pouvoir
  * servir qu'un parcours, pas n'importe quel JSON de l'espace de travail. Sans
  * ça, un plugin qui assemble des GPX devient une façon de lire des fichiers.
+ *
+ * Où le fichier se trouve n'est plus l'affaire de ce plugin : la mémoire peut
+ * être composée de plusieurs magasins, et c'est le noyau qui sait lesquels,
+ * dans quel ordre, et où s'applique la garde de traversée.
  */
-export function safeParcoursPath(root, requested) {
+export function parcoursName(requested) {
   if (typeof requested !== 'string' || requested === '' || requested.includes('\0')) {
     return undefined
   }
-  const target = resolve(root, `./${requested.replace(/^\/+/, '')}`)
-  const rel = relative(root, target)
-  if (rel === '' || rel.startsWith('..') || rel.startsWith(`..${sep}`)) return undefined
-  if (!target.endsWith(SUFFIXE)) return undefined
-  return target
+  const path = requested.replace(/^\/+/, '')
+  if (path === '' || !path.endsWith(SUFFIXE)) return undefined
+  // Refusé ici AUSSI, alors que le noyau le refuse déjà : une fonction qui se
+  // teste seule vaut mieux qu'une garde qu'il faut monter un magasin pour voir.
+  if (path.split('/').some((segment) => segment === '..' || segment.startsWith('.'))) {
+    return undefined
+  }
+  return path
 }
 
 /**
@@ -170,24 +177,26 @@ export function buildGpx(data) {
 }
 
 export default async function api(app, opts) {
-  // The host says where the pages tree lives; its folder name is
-  // configuration, not `pages` everywhere.
-  const root = opts.pagesRoot
+  // La mémoire est servie par le noyau : chemins LOGIQUES, jamais de racine.
+  const pages = opts.pages
 
   app.get('/gpx', async (request, reply) => {
-    const target = safeParcoursPath(root, request.query?.f)
-    if (!target) return reply.code(404).send({ error: 'not a parcours' })
+    const path = parcoursName(request.query?.f)
+    if (!path) return reply.code(404).send({ error: 'not a parcours' })
+
+    const raw = await pages.read(path)
+    if (raw === undefined) return reply.code(404).send({ error: 'not a parcours' })
 
     let data
     try {
-      data = JSON.parse(await readFile(target, 'utf8'))
+      data = JSON.parse(raw)
     } catch {
       // Le fichier existe mais ne se lit pas : c'est une fiche à corriger, pas
       // une adresse fausse — 422 le dit, 404 mentirait.
       return reply.code(422).send({ error: 'unreadable parcours' })
     }
 
-    const nom = target.split(sep).pop().replace(SUFFIXE, '.gpx')
+    const nom = path.split('/').pop().replace(SUFFIXE, '.gpx')
     return reply
       .type('application/gpx+xml')
       .header('Content-Disposition', `attachment; filename="${nom}"`)

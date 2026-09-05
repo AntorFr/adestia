@@ -19,16 +19,19 @@ const here = fileURLToPath(new URL('.', import.meta.url))
 const fixture = JSON.parse(readFileSync(join(here, 'fixture-workbook.json'), 'utf8'))
 const ROOT = `${sep}pages`
 
-test('a workbook path resolves under the pages root', () => {
+test('a workbook name comes back as the name the product speaks', () => {
+  // A LOGICAL name in, a logical name out. Where the file lives is the core's
+  // business now — it composes the stores and applies the guard in each — so
+  // this plugin holds no root to resolve against.
   assert.equal(
-    safeWorkbookPath(ROOT, 'projets/garage/assets/workbook.json'),
-    join(ROOT, 'projets/garage/assets/workbook.json'),
+    safeWorkbookPath('projets/garage/assets/workbook.json'),
+    'projets/garage/assets/workbook.json',
   )
   // Leading slashes are stripped rather than refused: a path is relative here
   // whatever the caller believed it was writing.
   assert.equal(
-    safeWorkbookPath(ROOT, '/projets/garage/assets/workbook.json'),
-    join(ROOT, 'projets/garage/assets/workbook.json'),
+    safeWorkbookPath('/projets/garage/assets/workbook.json'),
+    'projets/garage/assets/workbook.json',
   )
 })
 
@@ -38,16 +41,16 @@ test('nothing reaches outside the pages root', () => {
     'projets/../../../workbook.json',
     'a/\0/workbook.json',
   ]) {
-    assert.equal(safeWorkbookPath(ROOT, attempt), undefined, attempt)
+    assert.equal(safeWorkbookPath(attempt), undefined, attempt)
   }
 })
 
 test('only a file actually named workbook.json is addressable', () => {
   // The overlay routes take the WORKBOOK path and derive the file they write.
   // Without this, `?wb=…/secrets.json` would name the file to be overwritten.
-  assert.equal(safeWorkbookPath(ROOT, 'projets/garage/assets/notes.json'), undefined)
-  assert.equal(safeWorkbookPath(ROOT, 'projets/garage/assets/workbook.json.bak'), undefined)
-  assert.equal(safeWorkbookPath(ROOT, 42), undefined)
+  assert.equal(safeWorkbookPath('projets/garage/assets/notes.json'), undefined)
+  assert.equal(safeWorkbookPath('projets/garage/assets/workbook.json.bak'), undefined)
+  assert.equal(safeWorkbookPath(42), undefined)
 })
 
 test('overlays land beside the workbook, never inside it', () => {

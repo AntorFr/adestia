@@ -20,6 +20,7 @@ import { promisify } from 'node:util'
 import type { FastifyInstance } from 'fastify'
 
 import type { DiscoveredPlugin } from './extensions.js'
+import type { PagesService } from './stores.js'
 import type { PluginManifest } from '@antorfr/adestia-schemas'
 
 const execFileAsync = promisify(execFile)
@@ -108,12 +109,18 @@ export async function runSetups(
 export interface PluginApiContext {
   readonly workspaceRoot: string
   /**
-   * Where the pages tree actually lives. The folder's NAME is configuration
-   * (`workspace.pages`) — an instance may call it `memory` — so a plugin that
-   * derives it from `workspaceRoot` goes silently blind on every instance
-   * that is not the reference layout.
+   * Memory, as a service rather than a path.
+   *
+   * A plugin used to be handed `pagesRoot`, an absolute directory, so it would
+   * not have to guess a folder name that is instance configuration. Correct
+   * while the tree was ONE directory; the day it became several, that same
+   * disclosure became the blindness it was meant to prevent — a plugin reading
+   * one root shows nothing of the shared circle, on screen, in silence.
+   *
+   * So the physical layout stops being disclosed and starts being answered.
+   * Logical paths in, logical paths out, each carrying its store.
    */
-  readonly pagesRoot: string
+  readonly pages: PagesService
   readonly dataDir: string
   /** Whether scheduled turns are on — a plugin showing them must not lie. */
   readonly scheduleEnabled: boolean

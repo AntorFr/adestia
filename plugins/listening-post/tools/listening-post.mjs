@@ -28,7 +28,7 @@ import { tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 
 import { byFreshness, clockOf, deepLink, keyOf, parseFeed } from '../lib/feeds.mjs'
-import { assetsFor, readLibrary, readSources } from '../lib/library.mjs'
+import { assetsFor, pagesOverDirs, readLibrary, readSources } from '../lib/library.mjs'
 import { formatTranscript, parseCaptions, parseTranscript, search, toStamp } from '../lib/transcript.mjs'
 
 const TRANSCRIBE_TIMEOUT = 600_000
@@ -209,7 +209,7 @@ async function transcris(url, { pageArg, pagesDir, langs }) {
 }
 
 async function cherche(query, { pagesDir, n }) {
-  const library = await readLibrary(pagesDir, keyOf)
+  const library = await readLibrary(pages, keyOf)
   const results = []
   for (const item of library) {
     if (!item.transcript) continue
@@ -239,8 +239,8 @@ async function cherche(query, { pagesDir, n }) {
 }
 
 async function flux({ pagesDir, jours }) {
-  const { sources, problems } = await readSources(pagesDir)
-  const library = await readLibrary(pagesDir, keyOf)
+  const { sources, problems } = await readSources(pages)
+  const library = await readLibrary(pages, keyOf)
   const filed = new Set(library.map((item) => item.key).filter(Boolean))
   const since = Date.now() - jours * 86_400_000
 
@@ -291,8 +291,8 @@ async function flux({ pagesDir, jours }) {
 
 async function etat({ pagesDir }) {
   const version = await transcriberVersion()
-  const { sources, problems } = await readSources(pagesDir)
-  const library = await readLibrary(pagesDir, keyOf)
+  const { sources, problems } = await readSources(pages)
+  const library = await readLibrary(pages, keyOf)
   say({
     transcripteur: version ? { nom: 'yt-dlp', version } : null,
     pages: pagesDir,
@@ -310,6 +310,10 @@ async function etat({ pagesDir }) {
 const { flags, bare } = parseArgs(process.argv.slice(2))
 const [command, ...rest] = bare
 const pagesDir = typeof flags.pages === 'string' ? flags.pages : 'pages'
+// Le même service que le serveur reçoit du noyau, adossé ici à des dossiers :
+// l'outil tourne hors du serveur et n'a que des chemins. Une liste séparée par
+// des virgules, pour le jour où l'agent travaille sur plusieurs magasins.
+const pages = pagesOverDirs(pagesDir.split(',').map((one) => one.trim()))
 
 switch (command) {
   case 'transcris':

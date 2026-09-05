@@ -43,7 +43,7 @@ import { registerMcp } from './mcp-routes.js'
 import { registerFiles } from './files.js'
 import { registerPages } from './pages.js'
 import { ConfigError } from './config.js'
-import { resolveStores } from './stores.js'
+import { pagesService, resolveStores } from './stores.js'
 import { registerEvents } from './watch.js'
 import { mountPluginApis } from './plugin-host.js'
 import { ArmingSessions, SecretStore } from './secrets.js'
@@ -996,7 +996,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   // everything else.
   const apiProblems = await mountPluginApis(app, plugins, {
     workspaceRoot: config.workspace.root,
-    pagesRoot: stores[0]!.dir,
+    pages: pagesService(stores),
     dataDir: config.dataDir,
     scheduleEnabled: config.schedule.enabled,
     secrets: config.secrets,
