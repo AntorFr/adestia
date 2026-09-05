@@ -1,0 +1,38 @@
+{
+  "id": "plan-travail",
+  "titre": "Plan de travail — la pièce qui coiffe le meuble, quand elle est la sienne",
+  "applique_a": ["caisson"],
+  "entrees": {
+    "plan_travail": ["aucun", "rapporte", "integre"],
+    "plan_au_debit": ["oui", "non"]
+  },
+  "sorties": ["methode", "pourquoi"],
+  "lignes": [
+    {
+      "quand": { "plan_travail": "rapporte", "plan_au_debit": "oui" },
+      "alors": { "methode": "plan-rapporte" },
+      "note": "Panneau posé sur le haut du caisson, affleurant l'enveloppe. Il ne dépend d'aucune reprise : sa cote est celle du meuble. Sa matière est la sienne (`materiaux.plan_travail`) — MDF hydrofuge sur le meuble poubelle, à vernir sur ses 4 champs avant pose."
+    },
+    {
+      "quand": { "plan_travail": "rapporte", "plan_au_debit": "non" },
+      "alors": {
+        "methode": "signale",
+        "pourquoi": "un plan de travail repose sur ce meuble, et il n'est pas à lui : rien dans `materiaux.plan_travail` ne dit en quoi il est. C'est le cas du caisson qui porte le plateau d'un bureau — il n'y a rien à débiter ici. Si le plan est bien celui du meuble, déclarer sa matière suffit à le faire exister."
+      },
+      "note": "La distinction se lit dans le design sans mot de plus : un meuble qui débite son plan dit en quoi il est. Mais elle se DIT, parce qu'une pièce absente ne se voit pas."
+    },
+    {
+      "quand": { "plan_travail": "aucun" },
+      "alors": { "methode": "neant" },
+      "note": "Le meuble se ferme par son dessus : il n'y a pas de pièce de plus à débiter."
+    },
+    {
+      "quand": { "plan_travail": "integre" },
+      "alors": {
+        "methode": "hors-portee",
+        "pourquoi": "plan de travail INTÉGRÉ : aucun meuble construit ici n'en porte, donc rien ne dit s'il affleure, déborde, ou de combien. Le coter comme un rapporté serait une supposition. Le construire une fois, mesurer, puis écrire la ligne."
+      },
+      "note": "Volontairement non couvert. Une ligne qui renvoie un nombre inventé coûte un panneau ; une ligne qui refuse coûte une question."
+    }
+  ]
+}

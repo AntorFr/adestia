@@ -102,6 +102,10 @@ Ce que chaque nom pose, et les entrées de design qu'il consomme.
 | `fond-rainure-encastre` | fond fin encastré dans une rainure du dessous |
 | `tablette-fixe` | tablettes entre les côtés ; sortie `retrait_avant: oui\|non` |
 | `separateurs` | pose les séparateurs que le design LISTE ; la table dit seulement s'il y en a |
+| `plan-rapporte` | le panneau qui coiffe le meuble, à l'emprise du hors-tout, dans SA matière |
+| `neant` | rien à poser : le cas existe et ne demande aucune pièce |
+| `signale` | rien à poser ICI, et la raison mérite d'être dite ; avertit sans bloquer, met `pourquoi` en sortie |
+| `hors-portee` | cas connu, jamais construit ici — le moteur refuse au lieu d'inventer ; met `pourquoi` en sortie |
 | `tiroirs-facades` | les façades, qui se partagent la hauteur utile |
 | `tiroirs-corps` | flancs, montant avant, dos, fond en rainure |
 

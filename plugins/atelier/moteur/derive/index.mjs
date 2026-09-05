@@ -73,6 +73,12 @@ export function faitsDerives(design) {
     mutualise: total >= seuil ? 'oui' : 'non',
     // Le design LISTE ses séparateurs ; la table ne décide que s'il y en a.
     a_des_separateurs: (design.separateurs ?? []).length ? 'oui' : 'non',
+    /* Un plan de travail repose sur beaucoup de meubles ; il n'appartient pas
+       à tous. Le plateau du bureau repose sur le caisson à tiroirs et c'est le
+       bureau qui le fournit, alors que le MDF du meuble poubelle est débité
+       avec lui. Ce qui les sépare est déjà écrit : un meuble qui débite son
+       plan dit en quoi il est. */
+    plan_au_debit: design.materiaux?.plan_travail ? 'oui' : 'non',
   }
 }
 

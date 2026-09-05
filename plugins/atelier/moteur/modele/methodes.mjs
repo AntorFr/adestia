@@ -446,6 +446,82 @@ const separateurs = {
   },
 }
 
+/* ── Le plan de travail ─────────────────────────────────────────────────────
+   Le meuble poubelle en porte un — MDF 19 hydrofuge, 800 × 650, affleurant
+   l'enveloppe — et aucune méthode ne le faisait exister. Il ne sortait pas
+   faux : il ne sortait pas du tout, sans un mot, alors que c'est une pièce
+   qu'on débite et qu'on vernit. Une pièce qui manque en silence est le même
+   défaut qu'une cote fausse, vue de l'atelier.
+
+   Il ne se cote sur rien d'autre que le hors-tout : il coiffe le meuble et
+   sa position ne dépend d'aucune reprise. Sa matière, elle, n'est pas celle
+   du caisson — d'où un rôle à lui dans `materiaux`. Le MDF ne se chante pas :
+   c'est la matière qui le dit (`chante: false`), pas la méthode, pour qu'un
+   plan en mélaminé se plaque tout seul le jour où il y en aura un. */
+const planRapporte = {
+  decrit: 'plan de travail rapporté, affleurant l\'enveloppe du meuble',
+  applique({ trigramme, module, design }) {
+    const plan = {
+      etiquette: etiquette(trigramme, module, 'PLAN'),
+      role: 'PLAN',
+      orientation: 'horizontal',
+      // Il coiffe le meuble : ses quatre bords sont dehors. Qu'on les plaque
+      // ou non est une question de matière, pas de montage.
+      regardeVers: {
+        'about-gauche': 'gauche', 'about-droit': 'droite',
+        'rive-avant': 'avant', 'rive-arriere': 'arriere',
+      },
+      materiau: 'plan_travail',
+    }
+    return { pieces: [plan], relations: [traverse(plan, 'x'), traverse(plan, 'y')] }
+  },
+}
+
+/* ── Trois façons de ne rien poser, et il faut les trois ─────────────────────
+   Une table doit répondre pour chaque combinaison de ses entrées, donc il faut
+   savoir répondre « aucune pièce ». Mais les confondre coûte un panneau :
+
+     `neant`       il n'y a rien à poser, et c'est normal — le meuble sans plan
+                   de travail se ferme par son dessus, point.
+     `signale`     il n'y a rien à poser ICI, et ça mérite un mot : le plateau
+                   du bureau repose bien sur le caisson à tiroirs, mais c'est
+                   le bureau qui le débite. Rien à couper, et personne ne doit
+                   croire que le moteur l'a oublié.
+     `hors-portee` je ne SAIS pas poser ça. Un trou, et un trou doit bloquer.
+
+   Les deux dernières disent `pourquoi`, que la table écrit. */
+const neant = {
+  decrit: 'rien à poser : le cas existe et ne demande aucune pièce',
+  applique: () => ({ pieces: [], relations: [] }),
+}
+
+const signale = {
+  decrit: 'rien à poser ici, et la raison mérite d\'être dite',
+  applique: ({ sorties }) => ({
+    pieces: [],
+    relations: [],
+    issues: [{
+      gravite: 'avertissement',
+      type: 'hors-lot',
+      message: sorties?.pourquoi ?? 'aucune pièce à poser pour ce cas',
+    }],
+  }),
+}
+
+const horsPortee = {
+  decrit: 'cas connu, jamais construit ici : le moteur ne sait pas le coter',
+  applique: ({ sorties }) => ({
+    pieces: [],
+    relations: [],
+    issues: [{
+      gravite: 'bloquant',
+      type: 'hors-portee',
+      message: sorties?.pourquoi
+        ?? 'la table nomme ce cas mais aucune méthode ne sait le coter',
+    }],
+  }),
+}
+
 const tiroirs = {
   decrit: 'façades de tiroir se partageant la hauteur utile, corps monté sur coulisses',
   applique({ trigramme, module, design, ferme }) {
@@ -606,6 +682,10 @@ const corpsDeTiroir = {
 }
 
 export const METHODES = {
+  'plan-rapporte': planRapporte,
+  neant,
+  signale,
+  'hors-portee': horsPortee,
   'tiroirs-corps': corpsDeTiroir,
   'tiroirs-facades': tiroirs,
   separateurs,
