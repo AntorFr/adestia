@@ -1,5 +1,6 @@
 export * from './pipeline.js'
 export * from './reference.js'
+export * from './resolve.js'
 export * from './status.js'
 export * from './validate.js'
 export * from './vocabulary.js'
