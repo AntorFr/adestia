@@ -10,7 +10,8 @@
   ],
   "api": "./api.mjs",
   "skills": [
-    "./skills/workbook-json/SKILL.md"
+    "./skills/workbook-json/SKILL.md",
+    "./skills/regles-json/SKILL.md"
   ],
   "mcpServers": [
     {
