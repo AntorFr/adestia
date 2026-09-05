@@ -71,8 +71,17 @@ en profitant de la présence d'une seconde racine.
 > « Une planification est **exécutée** — son corps est le prompt d'un tour. La
 > composer sur l'union laisserait un pair déposer du code qui tournerait ici. »
 
-`planif` reste sur le magasin principal. **Cette ligne est une décision de
-sécurité, pas un détail d'implémentation.**
+**Ratifié le 05/09, et dans des termes plus forts que « pas d'union »** : une
+planification est **propre à l'instance**, pas à la mémoire. Elle vit dans le
+magasin principal de CETTE coque, et n'est **jamais chargée** d'un autre — ni
+composée, ni lue, ni suivie par le veilleur. Ce n'est donc pas une exception à
+la règle d'union : c'est un objet qui n'appartient pas au domaine où l'union
+s'applique.
+
+La différence n'est pas rhétorique. « Pas d'union » se relâche un jour au
+motif qu'un affichage serait pratique ; « ça n'appartient pas à la mémoire »
+ferme la question. Un magasin partagé est un endroit où un pair écrit — et ce
+qui s'exécute ici ne doit jamais venir de là.
 
 ### 7. Le champ `store` n'apparaît que s'il y a plus d'un magasin
 
