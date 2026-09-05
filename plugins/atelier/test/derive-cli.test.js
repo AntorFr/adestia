@@ -38,7 +38,7 @@ test('l\'exemple livré se dérive entièrement, aux cotes que la règle impose'
   const { wb, regles } = bac()
   const { out, code } = lance(['derive', wb, '--regles', regles])
   assert.equal(code, 0)
-  assert.match(out, /dessus ligne 2 → dessus-traverses/)
+  assert.match(out, /dessus ligne 1 → dessus-traverses/)
   assert.match(out, /fond ligne 5 → fond-rainure-encastre/)
   assert.match(out, /BLT-A1-BAS \(1118 × 599\)/)
   assert.match(out, /BLT-A1-CÔTÉ-G \(851 × 599\)/)
@@ -57,6 +57,30 @@ test('sans --ecrit, rien n\'est touché', () => {
   const avant = readFileSync(wb, 'utf8')
   lance(['derive', wb, '--regles', regles])
   assert.equal(readFileSync(wb, 'utf8'), avant)
+})
+
+test('ce que l\'exemple produit passe le validateur — fond compris', () => {
+  // Le trou par lequel il est passé une fois : les tests dérivaient l'exemple
+  // sans jamais VALIDER le résultat. Ses tables avaient divergé des fixtures,
+  // le fond sortait sans matière, et le plan ne le débitait nulle part —
+  // « pièce jamais débitée », que rien ne regardait.
+  const { wb, regles } = bac()
+  assert.equal(lance(['derive', wb, '--regles', regles, '--ecrit']).code, 0)
+  const { out, code } = lance(['valide', wb])
+  assert.equal(code, 0, out)
+  assert.match(out, /✓ valide/)
+})
+
+test('les tables de l\'exemple sont celles des fixtures, pas une copie qui dérive', () => {
+  // Deux copies du même savoir concordent le jour où on les écrit et mentent
+  // au bump suivant. Celles-ci ont menti pendant un tag entier.
+  for (const nom of ['dessus', 'fond', 'tablette', 'separateur', 'tiroir', 'tiroir-corps']) {
+    assert.deepEqual(
+      JSON.parse(readFileSync(join(exemples, 'regles', `${nom}.json`), 'utf8')),
+      JSON.parse(readFileSync(join(here, `fixture-regles-${nom}.json`), 'utf8')),
+      `exemples/regles/${nom}.json a divergé de sa fixture`,
+    )
+  }
 })
 
 test('avec --ecrit, le dérivé est écrit ET signé de son design', () => {

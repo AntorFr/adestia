@@ -1,21 +1,33 @@
 {
   "id": "dessus",
-  "titre": "Dessus de caisson — plaque pleine ou traverses",
+  "titre": "Dessus de caisson — plaque aboutée, ramenée ou non, ou traverses",
   "applique_a": ["caisson"],
   "entrees": {
-    "plan_travail": ["aucun", "rapporte", "integre"]
+    "plan_travail": ["aucun", "rapporte", "integre"],
+    "pose": ["mobile", "fixe"],
+    "fond": ["oui", "non"]
   },
   "sorties": ["methode"],
   "lignes": [
     {
-      "quand": { "plan_travail": "aucun" },
-      "alors": { "methode": "dessus-plaque-pleine" },
-      "note": "Rien d'autre ne ferme le dessus ni n'assure sa rigidité en tête."
-    },
-    {
       "quand": { "plan_travail": ["rapporte", "integre"] },
       "alors": { "methode": "dessus-traverses" },
-      "note": "Le plan de travail posé par-dessus fait la rigidité, comme un caisson de cuisine."
+      "note": "Le plan de travail posé par-dessus fait la rigidité, comme un caisson de cuisine. Deux traverses laissent passer le fond entre elles, il n'y a rien à ramener."
+    },
+    {
+      "quand": { "plan_travail": "aucun", "fond": "non" },
+      "alors": { "methode": "dessus-plaque-entre" },
+      "note": "Plaque pleine ABOUTÉE entre les côtés — le montage de la maison. Rien à laisser passer."
+    },
+    {
+      "quand": { "plan_travail": "aucun", "fond": "oui", "pose": "mobile" },
+      "alors": { "methode": "dessus-plaque-entre" },
+      "note": "Le fond d'un meuble mobile est plein et structurel : il vient entre les côtés, pas en rainure derrière le dessus."
+    },
+    {
+      "quand": { "plan_travail": "aucun", "fond": "oui", "pose": "fixe" },
+      "alors": { "methode": "dessus-plaque-entre-ramene" },
+      "note": "Le fond glisse en rainure derrière les horizontaux : le dessus est ramené pour lui laisser le passage."
     }
   ]
 }

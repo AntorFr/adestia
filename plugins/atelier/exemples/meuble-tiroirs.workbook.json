@@ -32,7 +32,11 @@
    "rainure_prof": 9,
    "rainure_encastrement": 5,
    "fond_jeu": 3,
-   "profondeur_traverse": 100
+   "profondeur_traverse": 100,
+   "retrait_fond_dos": 20,
+   "retrait_tablette_avant": 3,
+   "jeu_facade": 3,
+   "jeu_facade_lateral": 2
   },
   "journal": [
    {
@@ -54,7 +58,12 @@
    "avant",
    "gauche",
    "droite"
-  ]
+  ],
+  "separateur": "aucun",
+  "tablettes": 0,
+  "tiroirs": 0,
+  "corps_tiroir": "plus-tard",
+  "modules_identiques": 1
  },
  "materiaux": [
   {

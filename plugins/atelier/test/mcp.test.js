@@ -78,7 +78,7 @@ test('expliquer une cote nomme les règles qui la déterminent', async () => {
   const texte = result.content[0].text
   assert.match(texte, /bute-z/)
   assert.match(texte, /meuble\/hauteur-hors-tout/)
-  assert.match(texte, /dessus ligne 2 → dessus-traverses/)
+  assert.match(texte, /dessus ligne 1 → dessus-traverses/)
 })
 
 test('une pièce inconnue revient en isError, avec la liste des vraies', async () => {
