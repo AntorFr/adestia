@@ -25,10 +25,21 @@ Two fields the core itself reads. Everything past them is convention.
 
 ## `title` — read by the core, never guessed
 
-The core takes `title:` verbatim if it is there; otherwise the page's title is
-its file name. **Not the first heading** — a page can open with any heading it
-wants, or none, without changing what it is called in a list. Set `title:`
-whenever a page should be named something other than its path.
+The core takes `title:` verbatim if it is there. Failing that it uses the
+page's first `#` heading, and failing that the file name.
+
+That middle step was nearly removed the day this contract was written, on the
+argument that a page should be able to open with any heading without changing
+what it is called in a list. Measured against a real corpus it would have
+renamed four pages in five: three different `INDEX.md` all reading "INDEX" in
+the same list, and "Etabli MFT maison" reading "etabli-mft". A fallback that
+carries most of the titles people actually see is not a guess — it is the
+convention they already write.
+
+The instability it worried about is real, though, and its cure is one line:
+**set `title:` on any page whose name must not move when somebody edits its
+first heading.** A list, a collection and a search all read the same title, so
+a heading rewritten in passing renames the page everywhere it is cited.
 
 ## `type` — the busiest word in the system, and the one nothing enforces
 

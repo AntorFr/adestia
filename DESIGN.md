@@ -1546,3 +1546,18 @@ written a line of instruction prose, and starting for one escape hatch would
 buy discovery at the price of the rule. The operator writes it, and the cost
 is stated here rather than discovered in a turn where the agent simply never
 calls a tool nobody told it about.
+**2026-09-05 (the title fallback, kept and measured):** the page-authoring
+entry above states that the core reads `title:` and NEVER the first heading.
+The code has read the heading since the commit BEFORE that entry was written,
+and a test pins it: the decision was recorded twice — contract and design —
+and never implemented. Resolved in favour of the CODE, on a measurement rather
+than on seniority: across the 40 pages of a real corpus 32 are titled by their
+first heading and NONE fall through to the file name, so applying the decision
+would have renamed four pages in five, three distinct `INDEX.md` among them,
+all reading "INDEX" in the same list. The concern behind it — a title that
+moves when somebody edits prose — stands, and its answer is the field itself:
+the contract now tells an author to set `title:` on any page whose name must
+not follow its heading. The lesson is the ordering rather than the rule. A
+contract written the same day as the code it describes, without running it,
+records an intention and reads like a fact — and the agent it is delivered to
+has no way to tell the two apart.
