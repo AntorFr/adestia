@@ -352,6 +352,25 @@ export interface TurnRequest {
   readonly model?: string
   readonly cwd: string
   /**
+   * Directories the agent may work in BESIDES `cwd`.
+   *
+   * Memory can be composed of several stores, and a shared circle lives on its
+   * own mount — outside the workspace, by design, since a circle a peer writes
+   * has no business inside this instance's home. The agent still edits pages
+   * with its own file tools, so those directories have to be declared to the
+   * CLI or its permission layer refuses them: it would ASK on every read of a
+   * store the operator deliberately mounted.
+   *
+   * Declared rather than obtained by relocating the stores under `cwd`, which
+   * would hand the physical layout back to the operator we just relieved of
+   * it; and rather than by serving the agent a filesystem API of our own,
+   * which would cost it `Grep` — searching its own memory by content — and
+   * `Edit`, whose exact-match rewrite is where silent corruption is born when
+   * reimplemented. A driver whose CLI has no such notion simply ignores this,
+   * and the boot log says so.
+   */
+  readonly roots?: readonly string[] | undefined
+  /**
    * The instance's own tools for this turn. Absent on a turn with no
    * conversation — a scheduled note, an inbound delegation — which therefore
    * has nothing to rename and no reason to hold a turn token.
@@ -371,6 +390,15 @@ export interface Driver {
    * and its contracts are delivered as instruction text instead.
    */
   skillsPath?(): string | undefined
+  /**
+   * Whether this CLI can be told to work in directories besides `cwd`.
+   *
+   * Asked at BOOT rather than discovered in a turn: on a driver that cannot,
+   * a store mounted outside the workspace is refused read by read, and the
+   * failure reads as an agent that has gone stupid. The operator is told the
+   * fallback — put the stores under the workspace — before anybody meets it.
+   */
+  acceptsRoots?(): boolean
   /**
    * Workspace paths holding the PROSE this CLI reads as instructions.
    *

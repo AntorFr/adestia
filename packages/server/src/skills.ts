@@ -16,6 +16,7 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import type { DiscoveredPlugin } from './extensions.js'
+import type { Store } from './stores.js'
 
 /**
  * Finds the product's own skills directory by walking up.
@@ -148,12 +149,80 @@ async function readPluginSkills(
   return { skills, problems }
 }
 
+/**
+ * The one contract this product WRITES rather than ships.
+ *
+ * Every other skill is a file next to the code that reads it. This one cannot
+ * be: it states where THIS instance's stores are, and that is configuration.
+ * The agent is the only author here that works on files directly — the shell
+ * goes through routes, plugins through a service — so it is the one place
+ * where disclosing the physical layout is not just legitimate but required.
+ *
+ * Delivered only when there is more than one store. On a single-store instance
+ * it would teach a division that does not exist, and every sentence in it
+ * would be noise the agent carries into every turn.
+ */
+function storesContract(stores: readonly Store[]): SkillFile {
+  const rows = stores
+    .map((store) => {
+      const where = store.at === '' ? 'the whole tree' : `\`${store.at}/\``
+      const mine = store.isDefault ? ' — **this shell writes here by default**' : ''
+      return `- **${store.label}** (\`${store.id}\`) — \`${store.dir}\` on disk, and it appears under ${where}${mine}`
+    })
+    .join('\n')
+
+  const contents = `---
+name: memory-stores
+description: This instance's memory is composed of several stores. Where each one is on disk, and how to choose one when writing.
+---
+
+# The stores this instance composes
+
+Memory here is not one folder. It is the union of several, and a page's name
+never says which one carries it: \`domaines/voyages/italie.md\` is a NAME, and
+the store is a fact of location. That is what lets a page move from one circle
+to another without breaking a single wikilink or reference.
+
+${rows}
+
+The interface shows one merged tree. You work on files, so you see the folders
+above — the same page may exist in two of them, and that is a real state, not
+a mistake to clean up.
+
+## Choosing where to write
+
+**Editing an existing page: write where it already is.** Never copy it into
+another store to edit it. The interface draws both copies, so a page written
+to the wrong store shows up as two cards, one of them the correction nobody
+asked for and the other the one the reader meant.
+
+**Creating a page in a folder that exists in only one store: use that store.**
+No question to ask — the answer is already on disk.
+
+**Creating a page in a folder several stores carry: ASK which one.** This is
+the only case nobody can deduce, and choosing silently files somebody's note in
+somebody else's circle. Name the choices and let the person answer.
+
+Everything else — a new folder, a page at the root — goes to the default store
+named above.
+
+## What never composes
+
+A scheduled note belongs to THIS instance, not to memory: it lives beside the
+workspace and is never read from a store. Its body is the prompt of a turn, and
+a shared store is a place where somebody else writes.
+`
+  return { path: 'memory-stores/SKILL.md', contents, source: 'core' }
+}
+
 export async function collectSkills(
   plugins: readonly DiscoveredPlugin[],
+  stores: readonly Store[] = [],
 ): Promise<{ skills: readonly SkillFile[]; problems: readonly string[] }> {
   const core = await readCoreSkills()
   const { skills: fromPlugins, problems } = await readPluginSkills(plugins)
-  return { skills: [...core, ...fromPlugins], problems }
+  const composed = stores.length > 1 ? [storesContract(stores)] : []
+  return { skills: [...core, ...fromPlugins, ...composed], problems }
 }
 
 /** Marks what Adestia manages, so a hand-written skill is never touched. */

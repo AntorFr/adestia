@@ -43,7 +43,7 @@ import { registerMcp } from './mcp-routes.js'
 import { registerFiles } from './files.js'
 import { registerPages } from './pages.js'
 import { ConfigError } from './config.js'
-import { pagesService, resolveStores } from './stores.js'
+import { foreignRoots, pagesService, resolveStores } from './stores.js'
 import { registerEvents } from './watch.js'
 import { mountPluginApis } from './plugin-host.js'
 import { ArmingSessions, SecretStore } from './secrets.js'
@@ -699,6 +699,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
           // than the gateway's own notes.
           prompt: frameView(frameAttachments(body.prompt, attachments), body.view),
           cwd: config.workspace.root,
+          ...(agentRoots.length > 0 ? { roots: agentRoots } : {}),
           ...(sessionId ? { sessionId } : {}),
           ...(typeof body.model === 'string' ? { model: body.model } : {}),
           ...(callerToken ? { callerToken } : {}),
@@ -983,6 +984,10 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   const { stores, issues } = resolveStores(config.workspace.stores, config.workspace.root)
   if (issues.length > 0) throw new ConfigError(issues)
 
+  // Declared to every turn: the agent edits pages with its OWN file tools, so
+  // a circle mounted outside its home has to be named or the CLI refuses it.
+  const agentRoots = foreignRoots(stores, config.workspace.root)
+
   registerPages(app, { stores, locale: config.locale })
   // The agent writes these files with its own tools, past every route above;
   // the feed is how a shell already on screen learns they changed.
@@ -1013,6 +1018,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
         for await (const event of driver.runTurn({
           prompt,
           cwd: config.workspace.root,
+          ...(agentRoots.length > 0 ? { roots: agentRoots } : {}),
           // A delegating agent is not a person at a screen.
           unattended: true,
         })) {
@@ -1049,6 +1055,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
       for await (const event of driver.runTurn({
         prompt,
         cwd: config.workspace.root,
+        ...(agentRoots.length > 0 ? { roots: agentRoots } : {}),
         // The clock is nobody at a screen: a question raised here is refused
         // at once rather than holding a turn slot until it times out.
         unattended: true,

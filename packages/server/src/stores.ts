@@ -142,6 +142,20 @@ export function resolveStores(
 }
 
 /**
+ * The store directories that do NOT live under the agent's home.
+ *
+ * Those are the ones a CLI has to be told about: its own working directory is
+ * the workspace, and a shared circle mounted elsewhere is refused — or asked
+ * about on every read — until it is declared. A store the operator did put
+ * inside the workspace needs no declaration and gets none, so the list stays
+ * empty on the instance that has one store.
+ */
+export function foreignRoots(stores: readonly Store[], home: string): readonly string[] {
+  const root = resolve(home)
+  return stores.map((store) => store.dir).filter((dir) => !inside(root, dir))
+}
+
+/**
  * The absolute file a logical path names inside ONE store, or undefined.
  *
  * The guard lives here, and it is per store: the mount prefix is stripped

@@ -44,6 +44,7 @@ import { UserTokens } from './user-tokens.js'
 import { SecretStore } from './secrets.js'
 import { baseManifest, mergeSkinManifest, withInstanceName } from './webmanifest.js'
 import { collectSkills, deliverSkills } from './skills.js'
+import { foreignRoots, resolveStores } from './stores.js'
 
 export const DEFAULT_CONFIG_FILE = 'adestia.config.yaml'
 
@@ -218,6 +219,19 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     // is Adestia's to own, unlike a plugins folder someone mounts deliberately.
     await mkdir(workspaceRoot, { recursive: true })
     log(`created workspace at ${workspaceRoot}`)
+  }
+
+  // Memory, resolved once at boot so the agent's contract and the boot log say
+  // the same thing the routes will serve. Refused here rather than repaired: a
+  // contradiction between declarations makes a tree nobody can predict.
+  const { stores, issues: storeIssues } = resolveStores(config.workspace.stores, workspaceRoot)
+  if (storeIssues.length > 0) throw new ConfigError([...storeIssues])
+  if (stores.length > 1) {
+    log(
+      `memory: ${stores.length} stores — ${stores
+        .map((store) => `${store.id} at ${store.dir}${store.at ? ` on ${store.at}/` : ''}`)
+        .join(', ')}`,
+    )
   }
 
   const { plugins, problems } = await discoverPlugins(
@@ -396,7 +410,19 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
   // version's instructions for code that has changed underneath it.
   const skillsPath = (driver as Driver & { skillsPath?(): string | undefined }).skillsPath?.()
   if (skillsPath) {
-    const { skills, problems: skillProblems } = await collectSkills(plugins)
+    // Said at BOOT, never discovered in a turn. On a CLI that cannot be told
+    // to work outside its working directory, a store mounted elsewhere is
+    // refused read by read — and that reads as an agent gone stupid rather
+    // than as a missing declaration.
+    const foreign = foreignRoots(stores, workspaceRoot)
+    if (foreign.length > 0 && driver.acceptsRoots?.() !== true) {
+      log(
+        `driver "${config.driver.id}" cannot be told to work outside the workspace: ` +
+          `${foreign.join(', ')} will be refused to the agent — mount those stores under ${workspaceRoot}`,
+      )
+    }
+
+    const { skills, problems: skillProblems } = await collectSkills(plugins, stores)
     for (const problem of skillProblems) log(`skill not delivered — ${problem}`)
     const { written, removed } = await deliverSkills(join(workspaceRoot, skillsPath), skills)
     log(`${written} agent contract(s) delivered${removed > 0 ? `, ${removed} withdrawn` : ''}`)
