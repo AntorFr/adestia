@@ -17,10 +17,32 @@ src=${ATELIER_BENCH_SRC:-/Users/berard/Dev/Adestia/tmp/alfred-weekend/artefacts/
 # `pages` : le workspace a un sous-dossier pour les pages, et c'est LUI que
 # l'établi parcourt. Poser les projets un cran trop haut donne un écran
 # « aucun workbook » parfaitement calme.
-w="$stage/workspace/pages/projets"
+# L'atelier n'a plus de tuile à lui : il EST la vue du domaine `diy`, dont
+# l'INDEX porte le titre. Un domaine, une porte — cf. le chantier du 01/09.
+w="$stage/workspace/pages/memory/domaines/diy/projets"
 mkdir -p "$w/en-3-0/assets" "$w/en-4-0/assets"
 
-cat >"$w/en-3-0.md" <<'MD'
+cat >"$stage/workspace/pages/memory/domaines/diy/INDEX.md" <<'MD'
+---
+title: L'Atelier
+type: index
+ico: 🪚
+---
+
+# L'Atelier
+MD
+cat >"$w/INDEX.md" <<'MD'
+---
+title: Projets
+type: index
+---
+
+# Projets
+MD
+
+# Un projet riche est un DOSSIER qui contient sa fiche ET ses assets (D15) :
+# c'est le dossier que l'établi réclame, pas la fiche posée à côté.
+cat >"$w/en-3-0/en-3-0.md" <<'MD'
 ---
 title: Meuble poubelle — schéma 3.0
 type: projet
@@ -30,34 +52,28 @@ type: projet
 
 Le workbook tel qu'il a été écrit et coupé.
 MD
-cat >"$w/en-4-0.md" <<'MD'
+cat >"$w/en-4-0/en-4-0.md" <<'MD'
 ---
-title: Meuble poubelle — schéma 4.0
+title: Meuble à tiroirs — dérivé par le moteur
 type: projet
 ---
 
-# Meuble poubelle — schéma 4.0
+# Meuble à tiroirs — dérivé par le moteur
 
-Le même workbook, avec sa source en amont. L'établi doit le dessiner à
-l'identique : le 4.0 n'ajoute rien à la géométrie.
+Pièces, cotes et calepinage sortent du calcul. L'établi doit le dessiner
+comme n'importe quel workbook écrit à la main.
 MD
 
 cp "$src" "$w/en-3-0/assets/workbook.json"
 
-# Le même, en 4.0 : un design par-dessus, les pièces et le débit inchangés.
-python3 - "$src" "$w/en-4-0/assets/workbook.json" <<'PY'
-import json, sys
-wb = json.load(open(sys.argv[1]))
-wb['schemaVersion'] = '4.0'
-wb['design'] = {
-    'famille': 'caisson',
-    'trigramme': wb.get('projet', 'XXX'),
-    'pose': 'mobile',
-    'note': "Design minimal : ce run regarde le RENDU, pas la dérivation.",
-}
-wb['derive'] = {'de': 'fnv1a64:0000000000000000', 'moteur': 'bench'}
-json.dump(wb, open(sys.argv[2], 'w'), ensure_ascii=False, indent=1)
-PY
+# Le second est DÉRIVÉ par le moteur : ses pièces, ses cotes et surtout son
+# calepinage sortent du calcul, pas d'une main. C'est ce plan-là qu'il faut
+# voir dessiné — un `debit[]` que le validateur accepte n'est pas encore un
+# plan qu'on peut lire sur une TV d'atelier.
+moteur=${ATELIER_MOTEUR:-$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)/plugins/atelier}
+cp "$moteur/exemples/meuble-tiroirs.workbook.json" "$w/en-4-0/assets/workbook.json"
+node "$moteur/tools/atelier.mjs" derive "$w/en-4-0/assets/workbook.json" \
+  --regles "$moteur/exemples/regles" --ecrit >/dev/null
 
 cat >"$stage/adestia.config.yaml" <<'YAML'
 name: Atelier
