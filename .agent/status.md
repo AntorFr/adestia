@@ -1,5 +1,52 @@
 # Status — Adestia
-> MàJ : 2026-09-01
+> MàJ : 2026-09-05
+
+Chantier du 05/09 (2) — **fin du double run : agent-gw est débranché**. Les
+trois corps `agent-gw` du cluster (alfred, skippy, nestor) sont supprimés, plus
+le RBAC cluster de skippy — qu'ArgoCD n'aurait jamais nettoyé, son app `home`
+étant en `automated` **sans `prune`** : supprimer un manifeste n'y supprime
+rien, il faut un `kubectl delete` explicite. Les deux coques Adestia prennent
+la suite : Alfred garde `alfred.berard.me`, Skippy quitte son adresse de rodage
+pour `skippy.berard.me` (client OIDC Authelia déplacé dans le même commit — une
+`redirect_uri` décalée sert un `invalid_request` à chaque login, sans autre
+symptôme). Les deux exposent leur canal MCP (`ask_alfred`, `ask_skippy`).
+
+**Le piège, trouvé avant la coupure et pas après** : le cockpit `/workspace`
+était bien partagé entre les deux corps, mais ce qui le POUSSE ne l'était pas —
+l'identité git et le credential helper vivaient dans le home d'agent-gw, que la
+coque ne monte pas. Débrancher sans rien faire aurait arrêté la publication du
+cerveau **en silence**, exactement ce que le manifeste d'agent-gw annonçait
+d'un home recréé de zéro. `GITHUB_TOKEN` tiré du coffre + `.gitconfig` posé
+dans le home de la coque, vérifié par un `git ls-remote origin` authentifié
+depuis le pod. Après coupure : cockpit intact, 22 skills, mémoire lisible.
+
+Reste : la coque de Nestor n'existe pas (construction neuve, rien à reprendre —
+ce corps n'a jamais servi), et la passe unique de renommage `golem*` →
+`adestia*` (releases, clients OIDC, clés du coffre, copie de `/mnt/data/golem*`)
+le jour où on la fera. Les satellites `nestor-openwakeword` / `nestor-tts`
+tournent orphelins, et le magasin `famille` n'a plus d'écrivain.
+
+Chantier du 05/09 (1) — **les attributs d'un bloc tiennent en colonne**. Ces
+blocs sont un format d'enregistrement qu'une personne édite à la main, pas de
+la décoration de prose : quinze champs se lisent en colonne. L'amont l'interdit
+sur les conteneurs (`disallowEol`), à raison pour de la prose — la grammaire
+vient donc d'un fork épinglé par commit (263/263 tests amont verts, accolade
+orpheline bornée à la ligne vide). L'écriture, elle, est maison et voyage dans
+l'**extension** `toMarkdown`, pas dans les options : l'éditeur construit son
+propre sérialiseur et n'aurait pas vu un handler posé dans les options — le
+fichier aurait oscillé entre deux orthographes à chaque sauvegarde. Le pont
+apprend au passage la dernière balise héritée qu'il ne savait pas lire,
+`piece-jointe`, rendue comme le lien qu'elle voulait être.
+
+Conception du 04/09 — **doctrine de vocabulaire, dans `DESIGN.md`** : un `:::`
+nomme un RENDU, un attribut nomme le SUJET. Le cœur l'appliquait déjà sans que
+rien ne l'écrive (`callout{type=…}`), et faute de l'avoir dit, une lettre de
+mission avait dérivé vers un bloc par sujet. Douze blocs deviennent huit rendus,
+et inventer une sorte de contenu ne coûte plus ni code, ni manifeste, ni
+redémarrage. La résolution entre plugins est contextuelle et hiérarchisée —
+l'app du domaine, puis les features, puis le défaut — sans qu'aucun accord ne
+soit requis entre eux. Lettre de mission du plugin de chantiers à jour dans
+`.agent/mission-project-management-plugin.md`.
 
 Chantier du 01/09 (4) — **correction de ma propre régression : la tuile
 Réglages revient**. En fusionnant les mosaïques j'avais rendu cette tuile
