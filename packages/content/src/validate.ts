@@ -103,6 +103,13 @@ export function validateDocument(tree: Root): readonly Diagnostic[] {
     }
 
     for (const key of Object.keys(attributes)) {
+      // `id` is RESERVED, on every block, without any spec declaring it: an id
+      // is not an attribute OF a block, it is the block's identity — the way a
+      // page's `id:` is not a field of its type. Declaring it in each spec
+      // would be one idea copied as many times as there are renderers, and a
+      // block that carries one would warn on every page until somebody
+      // remembered the ninth copy.
+      if (key === 'id') continue
       if (!Object.hasOwn(spec.attributes, key)) {
         // A warning, not an error: an unknown attribute is inert, and a
         // document is not worth locking down over a typo in a hint.

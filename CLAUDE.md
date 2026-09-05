@@ -25,6 +25,19 @@ git worktree add .claude/worktrees/<subject> -b <subject>
 Anywhere outside the primary checkout works just as well — the isolation is
 the point, not the path.
 
+**A fresh worktree needs its install checked, not assumed.** The grammar comes
+from a git dependency (a fork of `micromark-extension-directive`, pinned by
+commit), and a first `npm install` in a new worktree has twice announced "added
+525 packages" while leaving that one out. The symptom is a content test failing
+on `\:::` — colons escaped, because the grammar that parses `:::` is missing —
+which reads exactly like a serialiser bug and is not one. It is the same
+signature as the wikilink scar below: a grammar that does not know a construct
+neutralises it. So before believing a red in `packages/content`:
+
+```sh
+ls node_modules/micromark-extension-directive || npm install
+```
+
 The primary checkout stays on `main` and stays clean. Treat it as the place
 you merge into and release from, not the place you type in.
 
