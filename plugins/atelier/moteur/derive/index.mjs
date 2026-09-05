@@ -166,6 +166,10 @@ export function derive(design, tables, moduleDemande) {
     // combinaison — c'est ce qui garde le registre lisible.
     const r = applique(alors.methode, { trigramme, module, cotes, design, sorties: alors, ferme }, ou)
     if (r.erreur) { issues.push(issue('erreur', 'methode-inconnue', r.erreur, { table: table.id })); continue }
+    // Une méthode peut savoir qu'elle ne sait PAS. Mieux vaut qu'elle le dise
+    // que de poser une relation fausse : une cote absente se voit, une cote
+    // fausse et plausible ne se voit pas.
+    for (const i of r.issues ?? []) issues.push(issue(i.gravite ?? 'bloquant', i.type ?? 'hors-portee', i.message, i))
     for (const p of r.pieces) parEtiquette[p.etiquette] = alors
     if (r.ferme) ferme = r.ferme
     pieces.push(...r.pieces)

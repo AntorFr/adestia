@@ -320,6 +320,14 @@ const tabletteFixe = {
     // Le fond glissé en rainure passe derrière : cas fixe avec fond.
     const passeDerriere = design?.fond === 'oui' && design?.pose === 'fixe'
 
+    /* Un séparateur FRONTAL coupe la profondeur en deux ZONES — poubelles
+       devant, outils derrière — et une tablette vit dans l'une des deux, pas
+       dans le meuble. Cette méthode ne connaît que `meuble.y` : elle coterait
+       la tablette sur toute la profondeur, ce qui est faux, plausible et muet.
+       Elle refuse donc, et le dit. Le zonage reste à écrire ; en attendant, ne
+       pas répondre est la seule réponse honnête. */
+    const zoneIndeterminee = design?.separateur === 'frontal'
+
     const pieces = Array.from({ length: combien }, (_, i) => ({
       etiquette: etiquette(trigramme, module, 'TAB', String(i + 1)),
       role: 'TABLETTE',
@@ -327,6 +335,20 @@ const tabletteFixe = {
       // Une tablette en retrait se voit exactement comme une affleurante.
       regardeVers: { 'rive-avant': 'avant' },
     }))
+
+    if (zoneIndeterminee) {
+      return {
+        pieces,
+        relations: pieces.map((t) => entre(t, 'x', cotes.map((c) => c.etiquette))),
+        issues: pieces.map((t) => ({
+          gravite: 'bloquant',
+          type: 'zone-inconnue',
+          message: `${t.etiquette} : un séparateur frontal partage la profondeur en deux ZONES, `
+            + 'et rien ne dit dans laquelle cette tablette se pose — sa profondeur n\'est pas '
+            + 'celle du meuble.',
+        })),
+      }
+    }
 
     return {
       pieces,
