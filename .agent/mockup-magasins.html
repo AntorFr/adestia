@@ -37,6 +37,9 @@
     border-bottom: 1px solid color-mix(in srgb, var(--store-color) 35%, transparent);
     border-radius: 0 var(--radius-lg) 0 var(--radius-sm);
   }
+  /* les trois lectures, à comparer */
+  .r-b .adestia-card__store { border-radius: 0 var(--radius-lg) 0 var(--radius-lg); }
+  .r-c .adestia-card__store { border-radius: 0 var(--radius-lg) var(--radius-lg) var(--radius-lg); }
 
   /* Le titre ne passe jamais sous l'onglet. */
   .adestia-card--store .adestia-card__title { padding-right: 34px; }
@@ -100,6 +103,26 @@
     <button type="button" onclick="document.documentElement.removeAttribute('data-theme')">système</button>
   </div>
 
+  <h2>0 — Le coin de l'onglet : laquelle ?</h2>
+  <p class="note">Le coin haut droit suit déjà celui de la carte. Restent les deux
+    coins bas : celui qui pointe vers l'intérieur, et celui posé sur le bord droit.</p>
+
+  <ul class="adestia-cards">
+    <li><button type="button" class="adestia-card adestia-card--store" style="--store-color: var(--adestia-hue-violet)">
+      <span class="adestia-card__store">Fa</span>
+      <span class="adestia-card__title">a — actuel</span>
+      <span class="adestia-card__foot"><span class="adestia-tag">coin interne petit</span></span></button></li>
+    <li class="r-b"><button type="button" class="adestia-card adestia-card--store" style="--store-color: var(--adestia-hue-violet)">
+      <span class="adestia-card__store">Fa</span>
+      <span class="adestia-card__title">b — coin interne au rayon de la carte</span>
+      <span class="adestia-card__foot"><span class="adestia-tag">bas gauche = carte</span></span></button></li>
+    <li class="r-c"><button type="button" class="adestia-card adestia-card--store" style="--store-color: var(--adestia-hue-violet)">
+      <span class="adestia-card__store">Fa</span>
+      <span class="adestia-card__title">c — les deux coins bas au rayon de la carte</span>
+      <span class="adestia-card__foot"><span class="adestia-tag">bas droit = carte aussi</span></span></button></li>
+  </ul>
+
+  <hr class="rule">
   <h2>1 — Le domaine fusionné : le cas de 95 % des cartes</h2>
   <p class="note">Un seul dossier <code>voyages</code> à l'écran, deux magasins derrière.
     Le magasin par défaut ne porte <strong>rien</strong> : l'absence de marque veut dire
