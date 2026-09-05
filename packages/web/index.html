@@ -3,19 +3,15 @@
   <head>
     <meta charset="utf-8" />
     <!--
-      The scale clamps are half of a fix, not a preference. The shell is a
-      fixed `100dvh` with nothing scrollable behind it, so a page zoomed even
-      slightly puts the header and its way back to the other screen outside
-      the visual viewport with no gesture left to reach them — the interface
-      simply looks stuck. Safari honours these once an instance is installed
-      to the home screen; in a browser tab it ignores them, and what actually
-      keeps the zoom from happening is the 16px floor on every field over in
-      `tokens.css`. Both, because neither covers the other's case.
+      No `maximum-scale`/`user-scalable=no` here, deliberately. They were the
+      belt to the 16px floor's braces (`tokens.css`, which is what stops the
+      page zooming when a field takes focus and stranding a shell that hides
+      its own overflow) — but a browser tab ignores them anyway, so all they
+      really did was take pinch-to-zoom away from an installed instance, on a
+      screen someone may well want to magnify. Cheap to put back if the shell
+      turns out to strand itself some other way; not worth paying for now.
     -->
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Adestia</title>
     <!-- A skin may replace this; without one the browser still gets an icon
          instead of logging a 404 on every load. -->
