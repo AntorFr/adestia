@@ -4,88 +4,22 @@ Conventions for anyone — person or agent — writing code in this repository.
 `DESIGN.md` records why the product is shaped the way it is; this file records
 how work gets done to it.
 
-## Every change starts in its own worktree
+## A fresh worktree needs its install checked, not assumed
 
-Development happens in an **isolated git worktree**, never straight in the
-primary checkout sitting on `main`.
+The grammar comes from a git dependency — a fork of
+`micromark-extension-directive`, pinned by commit — and a first `npm install`
+in a new worktree has twice announced "added 525 packages" while leaving that
+one out.
 
-This repository has the scar that explains the rule. Two agent sessions worked
-here at the same time, and one of them committed the other's staged files:
-a git *index* belongs to the checkout, not to the session, so `git add -- <paths>`
-followed by a `git commit` with no paths swept up work nobody had reviewed and
-turned `main` red. A worktree gives each line of work its own index, its own
-HEAD and its own files, which makes that class of accident impossible rather
-than merely unlikely.
-
-```sh
-git worktree add .claude/worktrees/<subject> -b <subject>
-cd .claude/worktrees/<subject> && npm ci
-```
-
-**The `npm ci` is not optional, and it is the step this file forgot.**
-`node_modules/` is not tracked, so a fresh worktree has the code and none of
-its dependencies. Some tools hide that: a worktree under `.claude/worktrees/`
-sits INSIDE the primary checkout, so Node walks up the parents and finds the
-primary's install — `npm test` passes with nothing installed at all. The build
-does not, twice over: `npm run build` looks for `node_modules/.bin/tsc` at the
-worktree root, and vite needs `@vitejs/plugin-react`, which lives in
-`packages/web/node_modules` — a SIBLING path no walk up the parents can reach.
-So the green this file demands below was, until it was written down here,
-unobtainable in the very place it demands it. `npm ci` rather than
-`npm install`: it installs exactly the lockfile and cannot rewrite it, so a
-build in a worktree can never quietly move a dependency. It takes about twenty
-seconds.
-
-`.claude/worktrees/` is where the harness puts them and is ignored by git.
-Anywhere outside the primary checkout works just as well — the isolation is
-the point, not the path.
-
-**A fresh worktree needs its install checked, not assumed.** The grammar comes
-from a git dependency (a fork of `micromark-extension-directive`, pinned by
-commit), and a first `npm install` in a new worktree has twice announced "added
-525 packages" while leaving that one out. The symptom is a content test failing
-on `\:::` — colons escaped, because the grammar that parses `:::` is missing —
-which reads exactly like a serialiser bug and is not one. It is the same
-signature as the wikilink scar below: a grammar that does not know a construct
-neutralises it. So before believing a red in `packages/content`:
+The symptom does not look like a missing package. A content test fails on
+`\:::`, colons escaped, because the grammar that parses `:::` is absent and a
+grammar that does not know a construct neutralises it. It reads exactly like a
+serialiser bug, and it is not one. So before believing a red in
+`packages/content`:
 
 ```sh
 ls node_modules/micromark-extension-directive || npm install
 ```
-
-The primary checkout stays on `main` and stays clean. Treat it as the place
-you merge into and release from, not the place you type in.
-
-## A branch is scaffolding, not an address
-
-When the work is done it comes home. Do not leave a finished change living on
-a side branch, and do not release from one.
-
-In this order:
-
-1. **Green first.** `npm test`, `npm run typecheck`, `npm run build` — in the
-   worktree, before anything moves. A red test that correctly pins the old
-   contract is a decision to make, not a line to skip; this repo has pushed
-   red twice by treating it as noise. If the change touches what the shell
-   draws, green is not enough: look at it (below).
-2. **Merge into `main`.** From the primary checkout.
-3. **Push `main` — and only ever `main`.** A working branch is local
-   scaffolding: it is born, used and deleted without the remote ever seeing
-   it, so `git push origin <subject>` has no reason to exist here. The
-   isolation this file asks for is for the *index on this disk*, not for
-   anybody to review; with one contributor the remote carries exactly one
-   line of life, and a branch pushed onto it is litter nobody comes back for.
-   No pull requests, for the same reason.
-4. **Delete the branch and remove the worktree.** `git worktree remove` then
-   `git branch -d`. A branch that survives its merge is a second answer to
-   "where does this code live", and the wrong one wins eventually.
-5. **Then version, tag, release.** Only once the commit is an ancestor of
-   `main`. A tag cut on a side branch names a commit `main` does not contain:
-   the image builds, it deploys, and no one can find the source it came from.
-
-The order is the whole instruction. Tagging before the merge is the mistake
-this section exists to prevent — it is invisible until the day somebody tries
-to reproduce a running image.
 
 ## If it draws something, look at it
 
