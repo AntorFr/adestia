@@ -42,7 +42,7 @@ const dressing = (sur = {}) => ({
   facade: 'ouverte',
   tablettes: 3,
   faces_chantees: ['avant', 'gauche', 'droite'],
-  materiaux: { principal: { ep: 19 } },
+  materiaux: { principal: { id: 'MEL19', ep: 19 }, fond: { id: 'MEL8', ep: 8, chante: false } },
   parametres: {
     marge_fond: 2, rainure_prof: 9, rainure_encastrement: 5, fond_jeu: 3,
     retrait_fond_dos: 20, retrait_tablette_avant: 3,

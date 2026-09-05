@@ -36,7 +36,7 @@ const design = (sur = {}) => ({
   plan_travail: 'rapporte',
   fond: 'oui',
   dessous: 'encastre',
-  materiaux: { principal: { ep: 19 } },
+  materiaux: { principal: { id: 'MEL19', ep: 19 }, fond: { id: 'MEL8', ep: 8, chante: false } },
   parametres: {
     marge_fond: 5,
     rainure_prof: 9,
@@ -84,7 +84,7 @@ test('le fond encastré fait 851 × 1094, au millimètre du plan réel', () => {
   assert.equal(f.longueur, 851)
   // 1120 − 2×19 + 2×(9 − 3) : le fond n'est pas tenu par l'emboîtement
   assert.equal(f.largeur, 1094)
-  assert.equal(f.ep, 8, 'l\'épaisseur vient de la table, pas du caisson')
+  assert.equal(f.ep, 8, 'la MATIÈRE vient de la table, et son épaisseur avec')
 })
 
 test('les deux rainures ne se confondent pas : 4 mm en dépendent', () => {

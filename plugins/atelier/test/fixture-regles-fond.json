@@ -1,37 +1,83 @@
 {
   "id": "fond",
   "titre": "Fond de caisson — méthode et épaisseur",
-  "applique_a": ["caisson"],
+  "applique_a": [
+    "caisson"
+  ],
   "entrees": {
-    "pose": ["mobile", "fixe"],
-    "fond": ["oui", "non"],
-    "dessous": ["ramene", "pleine-profondeur", "encastre"]
+    "pose": [
+      "mobile",
+      "fixe"
+    ],
+    "fond": [
+      "oui",
+      "non"
+    ],
+    "dessous": [
+      "ramene",
+      "pleine-profondeur",
+      "encastre"
+    ]
   },
-  "sorties": ["methode", "epaisseur"],
+  "sorties": [
+    "methode",
+    "materiau"
+  ],
   "lignes": [
     {
-      "quand": { "fond": "non" },
-      "alors": { "methode": null },
+      "quand": {
+        "fond": "non"
+      },
+      "alors": {
+        "methode": null
+      },
       "note": "Un meuble peut n'avoir aucun fond — c'est une décision, pas un oubli."
     },
     {
-      "quand": { "pose": "mobile", "fond": "oui" },
-      "alors": { "methode": "fond-structurel", "epaisseur": "caisson" },
+      "quand": {
+        "pose": "mobile",
+        "fond": "oui"
+      },
+      "alors": {
+        "methode": "fond-structurel",
+        "materiau": "principal"
+      },
       "note": "Mobile : le fond encaisse le vrillage du déplacement, il est structurel et de la même épaisseur que le reste."
     },
     {
-      "quand": { "pose": "fixe", "fond": "oui", "dessous": "ramene" },
-      "alors": { "methode": "fond-rainure-traversant", "epaisseur": 8 },
+      "quand": {
+        "pose": "fixe",
+        "fond": "oui",
+        "dessous": "ramene"
+      },
+      "alors": {
+        "methode": "fond-rainure-traversant",
+        "materiau": "fond"
+      },
       "note": "Le dessous est ramené en profondeur : le fond passe derrière lui et traverse de haut en bas."
     },
     {
-      "quand": { "pose": "fixe", "fond": "oui", "dessous": "pleine-profondeur" },
-      "alors": { "methode": "fond-rainure-arrete", "epaisseur": 8 },
+      "quand": {
+        "pose": "fixe",
+        "fond": "oui",
+        "dessous": "pleine-profondeur"
+      },
+      "alors": {
+        "methode": "fond-rainure-arrete",
+        "materiau": "fond"
+      },
       "note": "Le dessous file jusqu'au dos : c'est lui qui arrête le fond en bas."
     },
     {
-      "quand": { "pose": "fixe", "fond": "oui", "dessous": "encastre" },
-      "alors": { "methode": "fond-rainure-encastre", "epaisseur": 8 },
+      "quand": {
+        "pose": "fixe",
+        "fond": "oui",
+        "dessous": "encastre"
+      },
+      "alors": {
+        "methode": "fond-rainure-encastre",
+        "materiau": "fond"
+      },
       "note": "Rainure d'encastrement dans le dessous : c'est elle qui retient le fond, pas des vis."
     }
   ]

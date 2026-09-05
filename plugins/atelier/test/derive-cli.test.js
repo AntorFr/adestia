@@ -46,7 +46,9 @@ test('l\'exemple livré se dérive entièrement, aux cotes que la règle impose'
   // pièces portent un chant sur leur rive avant. Le plan réel les a sorties à
   // 600 — c'est l'écart, et c'est le plan qui a tort : plaquées, elles
   // faisaient 601 pour une enveloppe de 600.
-  assert.match(out, /BLT-A1-TRAV-HAUT-AV \(1082 × 100\)/)
+  // 99 et non 100 : la traverse avant est chantée sur sa rive avant, comme
+  // tout ce qui donne sur la façade, et rend ce millimètre d'avance.
+  assert.match(out, /BLT-A1-TRAV-HAUT-AV \(1082 × 99\)/)
   assert.match(out, /BLT-A1-FOND \(851 × 1094\)/)
 })
 

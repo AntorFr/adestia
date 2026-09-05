@@ -29,6 +29,7 @@ import { fraicheur, signature, versQuatre } from '../moteur/design.mjs'
 import { litTable, pourFamille } from '../moteur/tables.mjs'
 import { derive } from '../moteur/derive/index.mjs'
 import { diff, rendu } from '../moteur/diff.mjs'
+import { calepine } from '../moteur/debit/calepine.mjs'
 
 const [cmd, chemin, ...opts] = process.argv.slice(2)
 if (!cmd || !chemin) {
@@ -155,13 +156,22 @@ if (cmd === 'etat') {
   const dejaLa = new Map((wb.pieces ?? []).map((p) => [p.etiquette, p]))
   const fusionnees = r.pieces.map((p) => ({ ...(dejaLa.get(p.etiquette) ?? {}), ...p }))
 
+  // Le calepinage vient APRÈS les cotes, et des cotes seules : un plan de
+  // débit est une conséquence, jamais une donnée qu'on garde d'une passe à
+  // l'autre. Les deux sens de plaque sont comparés à chaque fois.
+  const { debit, journal: plan } = calepine(fusionnees, wb.materiaux ?? [], wb.meta ?? {})
+
   console.log(`workbook ${wb.projet || '?'} — ${r.pieces.length} pièces, ${tables.length} table(s) lue(s)`)
   for (const j of r.journal) console.log(`  · ${j.table} ligne ${j.ligne} → ${j.methode ?? 'aucune méthode'}`)
   if (r.ecartees.length) console.log(`  · écartées (autre famille) : ${r.ecartees.join(', ')}`)
 
-  const suivant = { ...wb, pieces: fusionnees, derive: signature(wb.design, 'atelier@4.0') }
+  const suivant = { ...wb, pieces: fusionnees, debit, derive: signature(wb.design, 'atelier@4.0') }
   const delta = diff(wb, suivant)
   console.log(`\n${rendu(delta)}`)
+
+  for (const j of plan)
+    console.log(`  · ${j.materiau} : ${j.plaques} plaque(s) ${j.sens}, ${j.reglages} réglage(s), chute ${j.chute} mm`
+      + `  —  en ${j.autre.sens} : ${j.autre.plaques} plaque(s)`)
 
   if (r.issues.length) {
     console.log(`\n${r.issues.length} point(s) à trancher :`)

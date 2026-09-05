@@ -43,7 +43,7 @@ const meuble = (sur = {}) => ({
   tiroirs: 2,
   corps_tiroir: 'monte',
   faces_chantees: ['avant'],
-  materiaux: { principal: { ep: 19 }, fond_tiroir: { ep: 6, chante: false } },
+  materiaux: { principal: { id: 'MEL19', ep: 19 }, fond: { id: 'MEL8', ep: 8, chante: false }, fond_tiroir: { id: 'MEL6', ep: 6, chante: false } },
   parametres: {
     marge_fond: 5, rainure_prof: 9, rainure_encastrement: 5, fond_jeu: 3,
     profondeur_traverse: 100, jeu_facade: 3, jeu_facade_lateral: 2,

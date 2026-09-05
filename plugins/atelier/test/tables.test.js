@@ -54,9 +54,9 @@ test('une cellule hors domaine est refusée en nommant l\'entrée et son domaine
 
 test('une sortie inconnue est refusée — une faute de frappe ne devient pas une cote', () => {
   const faux = brut()
-  faux.lignes[1].alors.epaiseur = 8
+  faux.lignes[1].alors.materaiu = 'fond'
   const { erreurs } = litTable(faux, 'fixture')
-  assert.match(erreurs.join('\n'), /sortie inconnue « epaiseur »/)
+  assert.match(erreurs.join('\n'), /sortie inconnue « materaiu »/)
 })
 
 test('une entrée inconnue dans un `quand` est refusée', () => {
@@ -87,7 +87,7 @@ test('deux lignes pour le même cas sont un chevauchement, pas un ordre de prior
   const double = brut()
   double.lignes.push({
     quand: { pose: 'fixe', fond: 'oui', dessous: 'ramene' },
-    alors: { methode: 'fond-structurel', epaisseur: 8 },
+    alors: { methode: 'fond-structurel', materiau: 'fond' },
   })
   const { table: t } = litTable(double, 'fixture')
   const { chevauchements } = verifieTable(t)
@@ -105,7 +105,7 @@ test('« pas de fond » est une réponse, pas une absence de réponse', () => {
 test('un caisson fixe au dessous ramené prend le fond traversant', () => {
   const r = choisit(table(), { pose: 'fixe', fond: 'oui', dessous: 'ramene' })
   assert.equal(r.alors.methode, 'fond-rainure-traversant')
-  assert.equal(r.alors.epaisseur, 8)
+  assert.equal(r.alors.materiau, 'fond')
   assert.equal(r.table, 'fond')
 })
 

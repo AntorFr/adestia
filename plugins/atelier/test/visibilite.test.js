@@ -34,7 +34,7 @@ const design = (sur = {}) => ({
   plan_travail: 'rapporte',
   fond: 'oui',
   dessous: 'encastre',
-  materiaux: { principal: { ep: 19 } },
+  materiaux: { principal: { id: 'MEL19', ep: 19 }, fond: { id: 'MEL8', ep: 8, chante: false } },
   parametres: {
     marge_fond: 5, rainure_prof: 9, rainure_encastrement: 5, fond_jeu: 3, profondeur_traverse: 100,
   },

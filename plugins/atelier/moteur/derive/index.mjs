@@ -74,12 +74,13 @@ const matiereDe = (piece, sorties, design) => {
   // qui pose la pièce, parce qu'elle seule sait de quoi elle est faite.
   if (piece.materiau) {
     const mat = design.materiaux?.[piece.materiau]
-    return { ep: mat?.ep, chante: mat?.chante ?? design.materiaux?.principal?.chante ?? true }
+    return { id: mat?.id, ep: mat?.ep, chante: mat?.chante ?? design.materiaux?.principal?.chante ?? true }
   }
   const dit = sorties?.[piece.etiquette]
   const nom = dit?.materiau ?? (dit?.epaisseur !== undefined && dit.epaisseur !== 'caisson' ? null : 'principal')
   const mat = nom ? design.materiaux?.[nom] : undefined
   return {
+    id: mat?.id,
     ep: dit?.epaisseur !== undefined && dit.epaisseur !== 'caisson' ? dit.epaisseur : mat?.ep,
     // On ne chante que le panneau décoratif : le MDF et le massif se
     // finissent autrement, et une bande n'y couvrirait rien.
@@ -222,6 +223,9 @@ export function derive(design, tables, moduleDemande) {
     longueur: valeurs[v(p.etiquette, 'longueur')],
     largeur: valeurs[v(p.etiquette, 'largeur')],
     ep: valeurs[v(p.etiquette, 'ep')],
+    // L'id de la matière, pas seulement son épaisseur : c'est par lui que le
+    // calepinage sait sur quelle plaque une pièce se débite.
+    ...(matieres.get(p.etiquette).id ? { materiau: matieres.get(p.etiquette).id } : {}),
     chants: chants[p.etiquette] ?? [],
     ...(surepaisseur.has(p.etiquette) ? { chant_en_surepaisseur: true } : {}),
     de: s.origineDe(v(p.etiquette, 'longueur')),
