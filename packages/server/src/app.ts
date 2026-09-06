@@ -175,6 +175,25 @@ const FORBIDDEN_CREDENTIAL_VARS = new Set([
   'ENV',
 ])
 
+/**
+ * Which build of Adestia is running, when the build said so.
+ *
+ * Read from the environment rather than from a manifest because nothing in
+ * the tree carries the number: a release is cut as `git tag vX.Y.Z`, the
+ * package manifests all read `0.0.0`, and the thing an operator actually
+ * wants to match against is the IMAGE TAG they deployed. The publish workflow
+ * bakes exactly that tag into the image, so what the instance says and what
+ * the registry holds cannot drift apart.
+ *
+ * A local run therefore has no version, and says so by saying nothing: a
+ * checkout is not a release, and inventing `0.0.0-dev` for it would put a
+ * number on screen that answers no question anyone asked.
+ */
+export function buildVersion(env: NodeJS.ProcessEnv = process.env): string | undefined {
+  const raw = env['ADESTIA_VERSION']?.trim()
+  return raw === undefined || raw === '' ? undefined : raw
+}
+
 export function credentialVar(driver: { credentialVar?: string }, driverId: string): string {
   const variable = driver.credentialVar
   if (!variable) {
@@ -271,11 +290,20 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
 
   app.get('/api/health', () => ({ status: 'ok' }))
 
+  // Read once: the environment of a running process does not change, and a
+  // colophon is not worth an `env` lookup per request.
+  const version = buildVersion()
+
   /**
    * What the UI is built from. The driver's *name* never appears — the front
    * end renders from capabilities alone, so a second engine needs no UI change.
    */
   app.get('/api/instance', (request) => ({
+    /**
+     * Which build is answering. Absent from a checkout, and that absence is
+     * the honest answer rather than a gap — see `buildVersion`.
+     */
+    ...(version ? { version } : {}),
     driver: {
       label: descriptor.label,
       cliVersion: descriptor.cliVersion,

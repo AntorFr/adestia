@@ -38,7 +38,9 @@ fi
 # By explicit PATH. `docker build .` from the primary checkout builds `main`,
 # not the worktree the change lives in — an hour lost to photographing code
 # nobody had written yet.
-docker build -q -t adestia-bench-app:latest "$root" >/dev/null
+# `--build-arg` on the last ARG in the file, so it costs no rebuild: the shell
+# shows its version, and every shot then says which build it photographed.
+docker build -q --build-arg ADESTIA_VERSION=bench -t adestia-bench-app:latest "$root" >/dev/null
 docker build -q -t adestia-bench-browser:latest "$root/bench" >/dev/null
 
 docker network create adestia-bench >/dev/null 2>&1 || true

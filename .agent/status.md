@@ -1,6 +1,27 @@
 # Status — Adestia
 > MàJ : 2026-09-06
 
+Chantier du 06/09 (2) — **deux surfaces qu'agent-gw avait et que la migration
+n'avait pas reprises**. La **poignée de bord** : replié, l'écran ne disait
+nulle part qu'un second existait, et le swipe ne se découvrait que par
+accident. 6 px de la face cachée dépassent maintenant du bord où elle se
+trouve, une seule à la fois, et c'est un vrai bouton — l'affordance et le
+repli sont le même objet. Destinations CONSTANTES et non un bascule : un
+swipe parti de la poignée peut être suivi du clic que le navigateur
+synthétise pour le même doigt, et un bascule défaisait alors le swipe qu'il
+venait de faire. Le **numéro de version** : « est-ce que mon déploiement est
+passé ? » n'avait de réponse sur aucun écran (l'en-tête du canvas nomme le
+MOTEUR, et le téléphone laisse tomber cette ligne en premier). Il vient du
+TAG DE L'IMAGE, gravé par le workflow de publication dans l'artefact qu'il
+pousse (`ADESTIA_VERSION`) — rien dans l'arbre ne porte de numéro, les
+manifestes disent tous `0.0.0` — et s'affiche en colophon au pied du panneau
+de l'engrenage, joignable depuis les deux écrans repliés. Un checkout n'a pas
+de version et le dit en ne disant rien. 1325 verts + 466 plugins,
+typecheck/build OK, **banc constaté** (`edge-handles.mjs` 4 captures :
+poignée droite sur le chat, gauche sur le canvas, sombre, et zéro sur
+desktop ; `version-colophon.mjs` 3 captures, chaîne build-arg → env →
+`/api/instance` → coque vérifiée de bout en bout).
+
 Chantier du 06/09 — **le canal de délégation : ce que la migration avait
 perdu d'agent-gw, rendu au niveau cible**. Trois pertes silencieuses fermées
 d'un coup : la poignée de main MCP (`notifications/initialized` prenait un

@@ -5,7 +5,7 @@ import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { buildApp, sseFrame, type AppDependencies } from '../src/app.js'
+import { buildApp, buildVersion, sseFrame, type AppDependencies } from '../src/app.js'
 import { parseConfig } from '../src/config.js'
 
 import { SecretStore } from '../src/secrets.js'
@@ -98,6 +98,42 @@ describe('/api/instance', () => {
     const app = await buildApp(deps({ pluginProblems: problems }))
     expect((await app.inject({ url: '/api/instance' })).json().pluginProblems).toEqual(problems)
     await app.close()
+  })
+
+  it('names the build it is, when the image stamped one', async () => {
+    // The question this answers is "did my deployment land?", and it is only
+    // answerable if the number comes from the artefact rather than the tree.
+    const previous = process.env['ADESTIA_VERSION']
+    process.env['ADESTIA_VERSION'] = '0.32.0'
+    try {
+      const app = await buildApp(deps())
+      expect((await app.inject({ url: '/api/instance' })).json().version).toBe('0.32.0')
+      await app.close()
+    } finally {
+      if (previous === undefined) delete process.env['ADESTIA_VERSION']
+      else process.env['ADESTIA_VERSION'] = previous
+    }
+  })
+
+  it('says nothing rather than inventing a version for a checkout', async () => {
+    const previous = process.env['ADESTIA_VERSION']
+    delete process.env['ADESTIA_VERSION']
+    try {
+      const app = await buildApp(deps())
+      expect((await app.inject({ url: '/api/instance' })).json().version).toBeUndefined()
+      await app.close()
+    } finally {
+      if (previous !== undefined) process.env['ADESTIA_VERSION'] = previous
+    }
+  })
+
+  it('treats a stamp that says nothing as no stamp at all', () => {
+    // `docker build` with no `--build-arg` leaves the ARG empty, not unset:
+    // the variable exists and holds "". A shell that trusted mere presence
+    // would draw "Adestia" followed by a gap.
+    expect(buildVersion({ ADESTIA_VERSION: '  ' })).toBeUndefined()
+    expect(buildVersion({})).toBeUndefined()
+    expect(buildVersion({ ADESTIA_VERSION: ' main ' })).toBe('main')
   })
 })
 

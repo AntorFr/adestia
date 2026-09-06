@@ -557,7 +557,10 @@ The v1 chat must be **at least** agent-gw's PWA, which sets the bar:
 - **Mobile/PWA:** responsive breakpoint with swipe between chat and canvas
   (touch and pen only, refused inside a field or anything scrollable
   sideways, and always alongside the header button — a gesture nobody
-  discovers must never be the only route to a screen);
+  discovers must never be the only route to a screen), announced by an edge
+  handle: 6px of the pane you cannot see, against the side it sits on, one at
+  a time, and a button in its own right so the gesture is advertised without
+  being required;
   installable PWA, skin-merged manifest (N instances = N discernible installs),
   service worker with network-first shell (opens offline, never serves stale JS).
 
@@ -1155,6 +1158,32 @@ that opens to its own words when the network is gone.
 
 ## Decision log
 
+**2026-09-06 (the fold gets a seam; the build says its own name):** two
+surfaces the predecessor had and the migration had not carried over, both
+about a thing being TRUE but unsayable.
+
+*The seam.* Folded onto one screen the two panes stack perfectly, so nothing
+admitted the second one existed — the swipe was there and was discoverable
+only by accident. An edge handle now shows 6px of the pane you cannot see,
+against the side it sits on, one at a time. Two decisions inside a very small
+change. It is a BUTTON, not a decoration: the affordance and the fallback are
+the same object, so a person who never guesses the gesture still gets through.
+And the two handles carry CONSTANT destinations rather than one toggling —
+a swipe begun on a handle may be followed by the click the browser synthesises
+for the same finger, and a toggle would undo the swipe it had just made,
+leaving the screen exactly where it started.
+
+*The version.* "Did the deployment I just pushed land?" had no answer on any
+screen: the canvas header names the ENGINE, and a phone drops that line first.
+The number comes from the IMAGE TAG, baked by the publish workflow into the
+artefact it is about to push (`ADESTIA_VERSION`), because nothing in the tree
+carries one — a release is `git tag vX.Y.Z` and every manifest reads `0.0.0` —
+and because the string an operator needs to match is the one the registry
+holds. A checkout therefore has no version and says so by saying nothing: the
+product's name alone reads as a name, where "Adestia unknown" reads as a
+broken field. Same treatment the driver line already gives an engine that has
+not announced itself.
+
 **2026-09-06 (delegation is a channel; a callback is not an ask):** the
 migration from agent-gw had silently dropped three things nobody recorded:
 conversation resume over inbound MCP (`task_id`), the settled-job
@@ -1246,8 +1275,9 @@ so two domains of this instance looked like options in a dialog.
 *Taken: the cog is a menu, the app is a canvas.* The cog holds the token flow
 (in place — the moment somebody opens it is the moment something has just
 stopped working, and sending them elsewhere to fix it is the wrong direction
-to move an already-annoyed person), the three named theme choices, and sign
-out. The app keeps its tile and its address and drops the rows for tiles, like
+to move an already-annoyed person), the three named theme choices, sign out,
+and — at its foot, as a colophon rather than a setting — which build is
+answering. The app keeps its tile and its address and drops the rows for tiles, like
 every other way in. `#/settings/credential` and `#/settings/appearance` hand
 over to `#/settings` rather than surviving as blank frames.
 

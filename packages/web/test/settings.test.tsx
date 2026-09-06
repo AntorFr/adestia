@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { Settings, StatusLine } from '../src/app/Settings.js'
+import { SettingsMenu } from '../src/app/SettingsMenu.js'
 
 /** A fetch that answers the arming routes from a small script. */
 function armingFetch(script: {
@@ -196,5 +197,27 @@ describe('settings', () => {
     const { container } = render(<Settings fetchImpl={impl} />)
     await waitFor(() => expect(screen.getByText(/Armed/)).toBeTruthy())
     expect(container.textContent).not.toContain('sk-ant')
+  })
+})
+
+describe('the cog panel', () => {
+  const open = (props: Record<string, unknown> = {}) => {
+    const { impl } = armingFetch({ statusCode: 404 })
+    render(<SettingsMenu theme="" onTheme={() => {}} fetchImpl={impl} {...props} />)
+    fireEvent.click(screen.getByLabelText('Settings'))
+  }
+
+  it('says which build is answering', async () => {
+    // Read when a deployment may or may not have landed. Nowhere else in the
+    // shell says it, and on a phone the driver line is not even drawn.
+    open({ version: '0.32.0' })
+    await waitFor(() => expect(screen.getByText('0.32.0')).toBeTruthy())
+  })
+
+  it('shows the name alone rather than a version it does not have', async () => {
+    // A checkout has no release to name. "Adestia unknown" reads as a broken
+    // field; the name alone reads as a name.
+    open()
+    await waitFor(() => expect(screen.getByText('Adestia')).toBeTruthy())
   })
 })
