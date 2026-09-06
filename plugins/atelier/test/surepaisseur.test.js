@@ -41,7 +41,7 @@ const imp3d = (sur = {}) => ({
   // Meuble mobile : on voit son dos à chaque déplacement.
   faces_chantees: ['avant', 'arriere', 'gauche', 'droite'],
   materiaux: { principal: { ep: 19 } },
-  parametres: { marge_fond: 5, rainure_prof: 9, rainure_encastrement: 5, fond_jeu: 3, profondeur_traverse: 100 },
+  parametres: { marge_fond: 5, rainure_prof: 9, rainure_encastrement: 5, fond_jeu: 2, profondeur_traverse: 100 },
   ...sur,
 })
 

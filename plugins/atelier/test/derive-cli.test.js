@@ -49,7 +49,7 @@ test('l\'exemple livré se dérive entièrement, aux cotes que la règle impose'
   // 99 et non 100 : la traverse avant est chantée sur sa rive avant, comme
   // tout ce qui donne sur la façade, et rend ce millimètre d'avance.
   assert.match(out, /BLT-A1-TRAV-HAUT-AV \(1082 × 99\)/)
-  assert.match(out, /BLT-A1-FOND \(851 × 1094\)/)
+  assert.match(out, /BLT-A1-FOND \(851 × 1096\)/)
 })
 
 test('sans --ecrit, rien n\'est touché', () => {

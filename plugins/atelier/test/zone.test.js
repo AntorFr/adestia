@@ -51,7 +51,7 @@ const poubelle = (sur = {}) => ({
   faces_chantees: ['avant', 'arriere', 'gauche', 'droite'],
   materiaux: { principal: { id: 'MEL19', ep: 19 } },
   parametres: {
-    marge_fond: 5, rainure_prof: 9, rainure_encastrement: 5, fond_jeu: 3,
+    marge_fond: 5, rainure_prof: 9, rainure_encastrement: 5, fond_jeu: 2,
     profondeur_traverse: 150, retrait_fond_dos: 20, retrait_tablette_avant: 3,
     seuil_mutualisation: 3,
   },

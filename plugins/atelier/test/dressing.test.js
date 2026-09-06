@@ -41,7 +41,7 @@ const dressing = (sur = {}) => ({
   faces_chantees: ['avant', 'gauche', 'droite'],
   materiaux: { principal: { id: 'MEL19', ep: 19 }, fond: { id: 'MEL8', ep: 8, chante: false } },
   parametres: {
-    marge_fond: 2, rainure_prof: 9, rainure_encastrement: 5, fond_jeu: 3, retrait_fond_dos: 20,
+    marge_fond: 2, rainure_prof: 9, rainure_encastrement: 5, fond_jeu: 2, retrait_fond_dos: 20,
   },
   ...sur,
 })
@@ -71,11 +71,27 @@ test('le dessus sort à 722 de long et RAMENÉ à 579 pour laisser passer le fon
   assert.equal(largeur, 579, '600 − 20 de passage − 1 de chant avant')
 })
 
-test('le fond encastré sort à 2217 × 734, au millimètre du meuble construit', () => {
+test('le fond encastré sort à 2217 × 736, des deux formules et d\'aucun nombre écrit', () => {
   // 2233 − 2 de marge − (19 du dessous − 5 de rainure d'encastrement) = 2217.
-  // 760 − 2×19 + 2×(9 − 3) = 734. Deux formules, deux fiches, aucun nombre
+  // 760 − 2×19 + 2×(9 − 2) = 736. Deux formules, deux fiches, aucun nombre
   // écrit dans le design.
-  assert.deepEqual(cotes()['DRE-A1-FOND'], [2217, 734])
+  assert.deepEqual(cotes()['DRE-A1-FOND'], [2217, 736])
+})
+
+test('et le panneau POSÉ fait 734 : il a été coupé quand le jeu valait 3', () => {
+  /* Le jeu au fond de rainure est passé de 3 à 2 mm. La hauteur ne bouge pas
+     — elle ne dépend que de la rainure du dessous — mais la largeur gagne
+     2 mm, un de chaque côté, donc le fond entre un peu plus loin.
+
+     Ce test garde la preuve qui vaut : le moteur reproduit le panneau tel
+     qu'il est dans le meuble monté, à condition de lui donner le jeu avec
+     lequel il a été coupé. Sans lui, « le moteur reproduit trois meubles
+     construits au millimètre » deviendrait faux sans que rien ne le dise. */
+  const commeCoupe = dressing()
+  commeCoupe.parametres = { ...commeCoupe.parametres, fond_jeu: 3 }
+  const r = derive(commeCoupe, tables())
+  const f = r.pieces.find((p) => p.etiquette === 'DRE-A1-FOND')
+  assert.deepEqual([f.longueur, f.largeur], [2217, 734])
 })
 
 test('sans fond, le dessus n\'a plus rien à laisser passer et file pleine profondeur', () => {

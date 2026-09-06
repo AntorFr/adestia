@@ -41,7 +41,7 @@ const design = (sur = {}) => ({
     marge_fond: 5,
     rainure_prof: 9,
     rainure_encastrement: 5,
-    fond_jeu: 3,
+    fond_jeu: 2,
     profondeur_traverse: 100,
   },
   ...sur,
@@ -78,13 +78,21 @@ test('la traverse haute fait 1082 — la largeur intérieure, jamais écrite', (
   assert.equal(cote(avecTraverses(design()), 'BLT-A1-TRAV-HAUT-AV').longueur, 1082)
 })
 
-test('le fond encastré fait 851 × 1094, au millimètre du plan réel', () => {
+test('le fond encastré fait 851 × 1096, de deux rainures qui ne se ressemblent pas', () => {
   const f = cote(avecTraverses(design()), 'BLT-A1-FOND')
   // 870 − 5 de marge − (19 du bas − 5 de rainure d'encastrement)
   assert.equal(f.longueur, 851)
-  // 1120 − 2×19 + 2×(9 − 3) : le fond n'est pas tenu par l'emboîtement
-  assert.equal(f.largeur, 1094)
+  // 1120 − 2×19 + 2×(9 − 2) : le fond n'est pas tenu par l'emboîtement
+  assert.equal(f.largeur, 1096)
   assert.equal(f.ep, 8, 'la MATIÈRE vient de la table, et son épaisseur avec')
+})
+
+test('le panneau POSÉ fait 1094 : il a été coupé quand le jeu valait 3', () => {
+  // La preuve qui vaut, gardée explicite : le moteur reproduit le panneau du
+  // meuble réel dès qu'on lui donne le jeu avec lequel il a été coupé.
+  const commeCoupe = design()
+  commeCoupe.parametres = { ...commeCoupe.parametres, fond_jeu: 3 }
+  assert.equal(cote(avecTraverses(commeCoupe), 'BLT-A1-FOND').largeur, 1094)
 })
 
 test('les deux rainures ne se confondent pas : 4 mm en dépendent', () => {

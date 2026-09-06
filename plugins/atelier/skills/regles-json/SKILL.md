@@ -135,7 +135,7 @@ reste LIBRE, nommée, et bloque la dérivation.
     "plan_travail": { "id": "MDF19", "ep": 19, "chante": false }
   },
   "parametres": {
-    "marge_fond": 5, "rainure_prof": 9, "rainure_encastrement": 5, "fond_jeu": 3,
+    "marge_fond": 5, "rainure_prof": 9, "rainure_encastrement": 5, "fond_jeu": 2,
     "retrait_fond_dos": 20, "retrait_tablette_avant": 3, "profondeur_traverse": 150,
     "jeu_facade": 3, "jeu_facade_lateral": 2, "retrait_chant": 1,
     "ep_coulisse": 12.5, "jeu_coulisse": 1, "profondeur_coulisse": 550,
