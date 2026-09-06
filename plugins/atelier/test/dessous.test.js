@@ -102,3 +102,51 @@ test('sans table pour en décider, la profondeur du bas est une cote LIBRE', () 
     `attendu la cote libre nommée, obtenu : ${r.issues.map((i) => i.message).join(' | ')}`,
   )
 })
+
+/* ── Un fond ne se ménage pas au même endroit selon ce qui le tient ──────────
+   `marge_fond` sert à ce que le fond ne DÉPASSE PAS quand on l'a coupé un peu
+   large. C'est donc un jeu à une extrémité, pas un total — et le nombre de
+   fois qu'il s'applique dépend du montage, pas d'un chiffre écrit à la main :
+
+     tenu en bas (posé sur le dessous, ou engagé dans sa rainure) → il ne flotte
+       qu'en haut, un seul jeu ;
+     traversant, du sol du meuble à son plafond → il flotte aux deux bouts.
+
+   Écrire « 5 » sans dire de quel bout on parle était la même faute que décrire
+   une rainure par son engagement net : un nombre juste sur un meuble, faux sur
+   le suivant, et rien pour le dire. */
+
+test('le fond traversant se ménage aux DEUX bouts', () => {
+  const d = garage()
+  d.parametres = { ...d.parametres, marge_fond: 2, marge_fond_bas: 1 }
+  const f = derive(d, tables()).pieces.find((p) => p.role === 'FOND')
+  // 1919 de meuble, moins 2 en haut et 1 en bas.
+  assert.equal(f.longueur, 1916)
+})
+
+test('et sans le jeu du bas, la cote est LIBRE plutôt que devinée', () => {
+  /* Le montage traversant est le seul à en avoir besoin. Un design qui vient
+     des anciens meubles ne le porte pas — et il vaut mieux qu'il bloque en le
+     nommant que de retomber sur le jeu du haut par commodité : personne ne
+     saurait que le moteur a choisi à sa place. */
+  const d = garage()
+  d.parametres = { ...d.parametres, marge_fond: 2 }
+  const r = derive(d, tables())
+  assert.equal(r.pieces.find((p) => p.role === 'FOND').longueur, undefined)
+  assert.ok(
+    r.issues.some((i) => i.gravite === 'bloquant' && /marge_fond_bas/.test(i.message)),
+    `attendu le jeu du bas nommé, obtenu : ${r.issues.map((i) => i.message).join(' | ')}`,
+  )
+})
+
+test('tenu en bas, il ne se ménage qu\'en haut — et le jeu du bas ne lui manque pas', () => {
+  // Le dressing et le meuble à tiroirs sont dans ce cas : leur cote se
+  // reconstruit avec UN seul jeu, et c'est ce qui les fait tomber juste.
+  const d = garage({ dessous: 'encastre' })
+  d.parametres = { ...d.parametres, marge_fond: 2, rainure_bas_prof: 8 }
+  const r = derive(d, tables())
+  const f = r.pieces.find((p) => p.role === 'FOND')
+  assert.ok(f.longueur !== undefined, 'aucun jeu du bas n\'est réclamé ici')
+  // 1919 − 2 en haut − (19 du bas − (8 − 2 de rainure)) = 1904.
+  assert.equal(f.longueur, 1904)
+})

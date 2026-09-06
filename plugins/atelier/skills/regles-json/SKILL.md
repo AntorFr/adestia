@@ -135,7 +135,7 @@ reste LIBRE, nommée, et bloque la dérivation.
     "plan_travail": { "id": "MDF19", "ep": 19, "chante": false }
   },
   "parametres": {
-    "marge_fond": 2, "rainure_prof": 9, "rainure_bas_prof": 8, "fond_jeu": 2,
+    "marge_fond": 2, "marge_fond_bas": 1, "rainure_prof": 9, "rainure_bas_prof": 8, "fond_jeu": 2,
     "retrait_fond_dos": 20, "retrait_tablette_avant": 3, "profondeur_traverse": 150,
     "jeu_facade": 3, "jeu_facade_lateral": 2, "retrait_chant": 1,
     "ep_coulisse": 12.5, "jeu_coulisse": 1, "profondeur_coulisse": 550,
@@ -144,9 +144,13 @@ reste LIBRE, nommée, et bloque la dérivation.
 }
 ```
 
-`marge_fond` est le jeu EN L'AIR : 2, soit 1 en haut et 1 en bas, pour être sûr
-que le fond ne dépasse d'aucun côté. Il ne se confond pas avec le jeu de
-rainure ci-dessous — l'un ménage du vide, l'autre le fond d'un trait de scie.
+`marge_fond` est le jeu EN L'AIR, à **une** extrémité : il sert à ce que le fond
+ne dépasse pas du meuble quand on l'a coupé un peu large. Combien de fois il
+s'applique dépend du MONTAGE, pas d'un total qu'on écrirait — un fond tenu en
+bas (posé sur le dessous ou engagé dans sa rainure) ne flotte qu'en haut, un
+fond traversant flotte aux deux bouts et réclame alors `marge_fond_bas`.
+Ne pas le confondre avec `fond_jeu` : l'un ménage du vide, l'autre le fond d'un
+trait de scie.
 
 **Une rainure se décrit toujours de la même façon : une profondeur et un jeu.**
 `rainure_prof` est celle des côtés, `rainure_bas_prof` celle du dessous — deux

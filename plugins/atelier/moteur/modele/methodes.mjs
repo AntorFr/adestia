@@ -259,7 +259,21 @@ const fondRainureTraversant = {
       relations: [
         {
           nom: `${fond.etiquette}/hauteur-traversante`,
-          termes: { [v(fond.etiquette, 'z')]: 1, 'meuble.z': -1, 'param.marge_fond': 1 },
+          termes: {
+            [v(fond.etiquette, 'z')]: 1,
+            'meuble.z': -1,
+            /* Celui-là ne bute nulle part : il court du sol du meuble à son
+               plafond, donc il flotte AUX DEUX bouts et se ménage deux fois.
+               Les deux autres montages sont tenus en bas — posé sur le dessous,
+               ou engagé dans sa rainure — et ne se ménagent qu'en haut.
+
+               C'est le MONTAGE qui décide du nombre de jeux, et non un total
+               qu'on écrirait à la main : écrire « 5 » sans dire de quel bout on
+               parle, c'était la même faute que la rainure décrite en engagement
+               net — un nombre juste sur un meuble et faux sur le suivant. */
+            'param.marge_fond': 1,
+            'param.marge_fond_bas': 1,
+          },
           egale: 0,
         },
         largeurEnRainure(fond, cotes),
