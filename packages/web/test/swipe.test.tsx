@@ -1,9 +1,15 @@
 // @vitest-environment jsdom
 /**
- * Swiping between the folded panes.
+ * Dragging between the folded panes.
  *
- * What it guards is mostly the REFUSALS. A swipe that fires when it should
- * not is not a small bug: it moves the screen out from under someone who was
+ * Two families of guard, and the first is the one this file exists for. The
+ * gesture must be TAKEN — followed under the finger, and prevented so the
+ * browser cannot decide half-way through that it was a scroll after all. The
+ * version this replaced read a verdict only when the finger lifted, and lost
+ * about half of them to `pointercancel` with nothing on screen to say so.
+ *
+ * The second family is the refusals. A swipe that fires when it should not is
+ * not a small bug: it moves the screen out from under somebody who was
  * selecting text or reading a wide table, and it reads as the app changing
  * screen at random.
  */
@@ -11,34 +17,31 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import {
-  SWIPE_MAX_SLOPE,
-  SWIPE_MIN_DISTANCE,
-  swipeVerdict,
-  swipeable,
-  useSwipe,
-} from '../src/app/useSwipe.js'
+import { SWIPE_COMMIT, settleTo, swipeable, useSwipe } from '../src/app/useSwipe.js'
 
-describe('reading a gesture', () => {
-  it('names the direction the finger travelled', () => {
-    expect(swipeVerdict(-120, 0)).toBe('left')
-    expect(swipeVerdict(120, 0)).toBe('right')
+const WIDTH = 390
+
+describe('where a drag settles', () => {
+  it('crosses when the finger carried the track far enough', () => {
+    expect(settleTo('chat', -WIDTH * 0.5, WIDTH)).toBe('canvas')
+    expect(settleTo('canvas', -WIDTH * 0.5, WIDTH)).toBe('chat')
   })
 
-  it('ignores a tap that wandered', () => {
-    expect(swipeVerdict(SWIPE_MIN_DISTANCE - 1, 0)).toBeUndefined()
-    expect(swipeVerdict(0, 0)).toBeUndefined()
+  it('falls back to where it started when it did not', () => {
+    // A hesitation is not a navigation, and snapping back is how the gesture
+    // says so without anybody having to undo anything.
+    expect(settleTo('chat', -WIDTH * 0.1, WIDTH)).toBe('chat')
+    expect(settleTo('canvas', -WIDTH * 0.9, WIDTH)).toBe('canvas')
   })
 
-  it('leaves scrolling alone', () => {
-    // The reader is going down the page. Moving them sideways for it would be
-    // the single most resented thing this hook could do.
-    expect(swipeVerdict(80, 400)).toBeUndefined()
-    expect(swipeVerdict(80, 80 * SWIPE_MAX_SLOPE + 1)).toBeUndefined()
+  it('reads the same threshold in both directions', () => {
+    const just = WIDTH * SWIPE_COMMIT + 1
+    expect(settleTo('chat', -just, WIDTH)).toBe('canvas')
+    expect(settleTo('canvas', -WIDTH + just, WIDTH)).toBe('chat')
   })
 
-  it('tolerates the arc a thumb actually travels', () => {
-    expect(swipeVerdict(-140, 40)).toBe('left')
+  it('stays put on a viewport of no width, rather than dividing by it', () => {
+    expect(settleTo('chat', 0, 0)).toBe('chat')
   })
 })
 
@@ -97,89 +100,179 @@ describe('where a swipe may start', () => {
   })
 })
 
-/** A shell that reports what the hook decided. */
-function Surface({ enabled = true, onLeft = vi.fn(), onRight = vi.fn() }) {
-  const swipe = useSwipe({ enabled, onLeft, onRight })
+/** A shell the hook can drag, holding the two things it must not steal. */
+function Track({
+  screen: at = 'chat' as const,
+  onScreen = vi.fn(),
+  enabled = true,
+  mounted = true,
+}: {
+  screen?: 'chat' | 'canvas'
+  onScreen?: (screen: 'chat' | 'canvas') => void
+  enabled?: boolean
+  /** False stands in for the boot render, where the shell does not exist yet. */
+  mounted?: boolean
+}) {
+  const ref = useSwipe({ screen: at, onScreen, enabled })
+  if (!mounted) return <main>Loading…</main>
   return (
-    <div data-testid="shell" {...swipe}>
+    <div data-testid="shell" ref={ref}>
       <p>content</p>
       <textarea aria-label="field" />
     </div>
   )
 }
 
-const drag = (
-  element: Element,
-  from: { x: number; y: number },
-  to: { x: number; y: number },
-  init: Record<string, unknown> = {},
-) => {
-  fireEvent.pointerDown(element, { pointerId: 1, pointerType: 'touch', clientX: from.x, clientY: from.y, ...init })
-  fireEvent.pointerUp(element, { pointerId: 1, pointerType: 'touch', clientX: to.x, clientY: to.y, ...init })
+/** A phone-sized viewport: the thresholds are fractions of it. */
+function phone(): void {
+  Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: WIDTH })
 }
 
-describe('the swipe handlers', () => {
-  it('moves to the canvas on a leftward swipe, and back on a rightward one', () => {
-    const onLeft = vi.fn()
-    const onRight = vi.fn()
-    render(<Surface onLeft={onLeft} onRight={onRight} />)
+const finger = (target: Element, x: number, y: number) => [{ clientX: x, clientY: y, target }]
+const down = (el: Element, x: number, y: number) => fireEvent.touchStart(el, { touches: finger(el, x, y) })
+const to = (el: Element, x: number, y: number) => fireEvent.touchMove(el, { touches: finger(el, x, y) })
+const up = (el: Element) => fireEvent.touchEnd(el, { touches: [] })
+
+describe('the drag', () => {
+  it('follows the finger, and says so while it is happening', () => {
+    phone()
+    const onScreen = vi.fn()
+    render(<Track onScreen={onScreen} />)
     const shell = screen.getByTestId('shell')
 
-    drag(shell, { x: 300, y: 400 }, { x: 100, y: 410 })
-    expect(onLeft).toHaveBeenCalledTimes(1)
+    down(shell, 300, 400)
+    to(shell, 150, 405)
+    // The track is under the finger — 150px of it, past the 28% that commits
+    // on a 390px screen — and the easing is off for as long as it stays there.
+    expect(shell.style.transform).toBe('translateX(-150px)')
+    expect(shell.dataset['swiping']).toBe('true')
+    expect(onScreen).not.toHaveBeenCalled()
 
-    drag(shell, { x: 100, y: 400 }, { x: 300, y: 410 })
-    expect(onRight).toHaveBeenCalledTimes(1)
+    up(shell)
+    expect(shell.dataset['swiping']).toBeUndefined()
+    expect(onScreen).toHaveBeenCalledWith('canvas')
+    // Handed back to the stylesheet, which is what survives a rotation.
+    expect(shell.style.transform).toBe('')
+    expect(shell.dataset['screen']).toBe('canvas')
   })
 
-  it('never fires for a mouse', () => {
-    // Dragging to select text on a desktop is not a navigation — and the fold
-    // is reachable by narrowing a window.
-    const onLeft = vi.fn()
-    render(<Surface onLeft={onLeft} />)
-    drag(screen.getByTestId('shell'), { x: 300, y: 400 }, { x: 100, y: 400 }, { pointerType: 'mouse' })
-    expect(onLeft).not.toHaveBeenCalled()
+  it('binds when the shell mounts, not when the hook first runs', () => {
+    // The shell does not exist on the first render: the instance has not
+    // answered and the app is a "Loading…" line. A hook that bound once,
+    // against nothing, was dead on every real boot while every test that
+    // rendered the shell outright passed. Found at the bench, not here.
+    phone()
+    const onScreen = vi.fn()
+    const { rerender } = render(<Track mounted={false} onScreen={onScreen} />)
+    rerender(<Track mounted onScreen={onScreen} />)
+    const shell = screen.getByTestId('shell')
+
+    down(shell, 300, 400)
+    to(shell, 150, 405)
+    up(shell)
+    expect(onScreen).toHaveBeenCalledWith('canvas')
   })
 
-  it('does nothing at all on a desktop', () => {
-    const onLeft = vi.fn()
-    render(<Surface enabled={false} onLeft={onLeft} />)
-    drag(screen.getByTestId('shell'), { x: 300, y: 400 }, { x: 100, y: 400 })
-    expect(onLeft).not.toHaveBeenCalled()
+  it('claims the gesture, so the browser cannot cancel it half-way', () => {
+    // The whole defect: without this the browser starts scrolling behind the
+    // finger, fires pointercancel, and the swipe is lost with nothing on
+    // screen having moved.
+    phone()
+    render(<Track />)
+    const shell = screen.getByTestId('shell')
+    down(shell, 300, 400)
+    const move = createTouchMove(shell, 200, 405)
+    expect(move.defaultPrevented).toBe(true)
+  })
+
+  it('snaps back when the finger did not carry it far enough', () => {
+    phone()
+    const onScreen = vi.fn()
+    render(<Track onScreen={onScreen} />)
+    const shell = screen.getByTestId('shell')
+
+    down(shell, 300, 400)
+    to(shell, 260, 400)
+    up(shell)
+    expect(onScreen).toHaveBeenCalledWith('chat')
+    expect(shell.style.transform).toBe('')
+  })
+
+  it('comes back from the canvas the same way', () => {
+    phone()
+    const onScreen = vi.fn()
+    render(<Track screen="canvas" onScreen={onScreen} />)
+    const shell = screen.getByTestId('shell')
+
+    down(shell, 100, 400)
+    to(shell, 300, 410)
+    expect(shell.style.transform).toBe(`translateX(${-WIDTH + 200}px)`)
+    up(shell)
+    expect(onScreen).toHaveBeenCalledWith('chat')
+  })
+
+  it('releases a vertical gesture for good, and never takes it back', () => {
+    // Reconsidering mid-scroll is how a thread jumps sideways while somebody
+    // is reading it.
+    phone()
+    const onScreen = vi.fn()
+    render(<Track onScreen={onScreen} />)
+    const shell = screen.getByTestId('shell')
+
+    down(shell, 300, 400)
+    to(shell, 302, 340)
+    expect(shell.dataset['swiping']).toBeUndefined()
+    // Now the finger turns hard sideways — too late, the gesture is a scroll.
+    to(shell, 100, 340)
+    expect(shell.style.transform).toBe('')
+    up(shell)
+    expect(onScreen).not.toHaveBeenCalled()
   })
 
   it('ignores a drag that began in the composer', () => {
-    const onLeft = vi.fn()
-    render(<Surface onLeft={onLeft} />)
+    phone()
+    const onScreen = vi.fn()
+    render(<Track onScreen={onScreen} />)
+    const shell = screen.getByTestId('shell')
     const field = screen.getByLabelText('field')
-    fireEvent.pointerDown(field, { pointerId: 1, pointerType: 'touch', clientX: 300, clientY: 400 })
-    fireEvent.pointerUp(screen.getByTestId('shell'), {
-      pointerId: 1,
-      pointerType: 'touch',
-      clientX: 100,
-      clientY: 400,
-    })
-    expect(onLeft).not.toHaveBeenCalled()
+
+    fireEvent.touchStart(shell, { touches: finger(field, 300, 400) })
+    to(shell, 100, 400)
+    up(shell)
+    expect(onScreen).not.toHaveBeenCalled()
+    expect(shell.style.transform).toBe('')
   })
 
-  it('reads a release against the finger that started it', () => {
-    const onLeft = vi.fn()
-    render(<Surface onLeft={onLeft} />)
+  it('ignores a second finger, which is a pinch and not a page turn', () => {
+    phone()
+    const onScreen = vi.fn()
+    render(<Track onScreen={onScreen} />)
     const shell = screen.getByTestId('shell')
-    fireEvent.pointerDown(shell, { pointerId: 1, pointerType: 'touch', clientX: 300, clientY: 400 })
-    // A second finger lands and lifts: its release says nothing about the
-    // first one's journey.
-    fireEvent.pointerUp(shell, { pointerId: 2, pointerType: 'touch', clientX: 100, clientY: 400 })
-    expect(onLeft).not.toHaveBeenCalled()
+
+    fireEvent.touchStart(shell, { touches: [...finger(shell, 300, 400), ...finger(shell, 200, 500)] })
+    to(shell, 100, 400)
+    up(shell)
+    expect(onScreen).not.toHaveBeenCalled()
   })
 
-  it('forgets a gesture the system took away', () => {
-    const onLeft = vi.fn()
-    render(<Surface onLeft={onLeft} />)
+  it('does nothing at all on a desktop', () => {
+    phone()
+    const onScreen = vi.fn()
+    render(<Track enabled={false} onScreen={onScreen} />)
     const shell = screen.getByTestId('shell')
-    fireEvent.pointerDown(shell, { pointerId: 1, pointerType: 'touch', clientX: 300, clientY: 400 })
-    fireEvent.pointerCancel(shell, { pointerId: 1, pointerType: 'touch' })
-    fireEvent.pointerUp(shell, { pointerId: 1, pointerType: 'touch', clientX: 100, clientY: 400 })
-    expect(onLeft).not.toHaveBeenCalled()
+
+    down(shell, 300, 400)
+    to(shell, 100, 400)
+    up(shell)
+    expect(onScreen).not.toHaveBeenCalled()
+    expect(shell.style.transform).toBe('')
   })
 })
+
+/** Dispatch a move and hand back the event, to read whether it was claimed. */
+function createTouchMove(element: Element, x: number, y: number): Event {
+  const event = new Event('touchmove', { bubbles: true, cancelable: true })
+  Object.defineProperty(event, 'touches', { value: finger(element, x, y) })
+  fireEvent(element, event)
+  return event
+}
