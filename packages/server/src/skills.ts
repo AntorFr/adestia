@@ -196,15 +196,24 @@ another store to edit it. The interface draws both copies, so a page written
 to the wrong store shows up as two cards, one of them the correction nobody
 asked for and the other the one the reader meant.
 
-**Creating a page in a folder that exists in only one store: use that store.**
-No question to ask — the answer is already on disk.
+**Creating a page: walk UP to the nearest folder that already exists, and use
+its store.** The answer is on disk, one level up if not at hand.
 
-**Creating a page in a folder several stores carry: ASK which one.** This is
-the only case nobody can deduce, and choosing silently files somebody's note in
+That walk is the whole rule, and skipping it has a shape worth knowing.
+Writing \`voyages/baden-2026/vannes.md\` into a shared trip is easy — the folder
+is right there. Writing \`voyages/baden-2026/notes/carnet.md\` looks just as
+easy, and it is not: \`notes/\` exists nowhere yet, so a rule that only checks
+the immediate folder finds nothing and falls back to the default store. Half
+the trip is then in a shared circle and half in a private one, nothing failed,
+and the screen shows the reassuring half. One new sub-folder is all it takes.
+
+**When several stores carry that folder: ASK which one.** This is the only
+case nobody can deduce, and choosing silently files somebody's note in
 somebody else's circle. Name the choices and let the person answer.
 
-Everything else — a new folder, a page at the root — goes to the default store
-named above.
+**Only a page whose folders exist NOWHERE goes to the default store** — a new
+tree at the root. There, the default is a real answer rather than a shrug:
+nothing on disk has an opinion yet.
 
 ## Tools that ask for the memory folder
 

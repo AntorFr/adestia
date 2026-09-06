@@ -307,11 +307,24 @@ export async function listAll(
 /**
  * Where a write goes — deduced, or refused.
  *
- * An existing page goes back to its own store; a new one in a folder a single
- * store carries goes there; a new one in a folder several stores carry is
- * REFUSED with the candidates named. That last case is the only one nobody can
- * deduce, and a silent choice there is how a card lands in somebody else's
- * circle.
+ * An existing page goes back to its own store; a new one goes where its
+ * NEAREST EXISTING ANCESTOR lives; one whose nearest ancestor is carried by
+ * several stores is REFUSED with the candidates named. That last case is the
+ * only one nobody can deduce, and a silent choice there is how a card lands in
+ * somebody else's circle.
+ *
+ * The walk up the folders is the part that was missing, and its absence had a
+ * shape worth remembering. The rule looked at the IMMEDIATE folder only, so
+ * `voyages/baden-2026/vannes.md` landed correctly in the shared circle while
+ * `voyages/baden-2026/notes/carnet.md` — one new sub-folder deeper, the most
+ * ordinary thing an agent does to a trip — found no store carrying
+ * `…/notes/`, fell through to the default, and filed a piece of a shared trip
+ * in a private circle. Nothing failed. The trip simply became half shared, and
+ * the screen said the reassuring half.
+ *
+ * Only a path with no existing ancestor at all reaches the default store, and
+ * that is the one case where the default is a real answer rather than a
+ * shrug: nothing on disk has an opinion yet.
  */
 export type WriteTarget =
   | { readonly kind: 'store'; readonly store: Store; readonly file: string }
@@ -325,24 +338,24 @@ export async function targetFor(
   const carrier = existing[0]
   if (carrier) return { kind: 'store', store: carrier.store, file: carrier.file }
 
-  const folder = clean(logical).split('/').slice(0, -1).join('/')
-  const holders: Store[] = []
-  for (const store of stores) {
-    if (folder === '') {
-      // The tree's root belongs to the default store: it is the only one
-      // mounted there.
-      if (store.isDefault) holders.push(store)
-      continue
+  // Up the folders, nearest first: the closest one that exists ANYWHERE is the
+  // one with an opinion about where its contents belong.
+  const parts = clean(logical).split('/').slice(0, -1)
+  let holders: Store[] = []
+  for (let depth = parts.length; depth > 0 && holders.length === 0; depth -= 1) {
+    const folder = parts.slice(0, depth).join('/')
+    for (const store of stores) {
+      const dir = fileIn(store, folder)
+      if (!dir) continue
+      const info = await stat(dir).catch(() => undefined)
+      if (info?.isDirectory()) holders.push(store)
     }
-    const dir = fileIn(store, folder)
-    if (!dir) continue
-    const info = await stat(dir).catch(() => undefined)
-    if (info?.isDirectory()) holders.push(store)
   }
+  // The tree's root belongs to the default store: it is the only one mounted
+  // there. Reached only when no ancestor exists at all.
+  if (holders.length === 0) holders = stores.filter((store) => store.isDefault)
 
   if (holders.length > 1) return { kind: 'ambiguous', stores: holders }
-  // A folder nobody carries yet is a folder about to be created, and it is
-  // created where this shell writes.
   const target = holders[0] ?? stores.find((one) => one.isDefault) ?? stores[0]
   const file = target ? fileIn(target, logical) : undefined
   return target && file

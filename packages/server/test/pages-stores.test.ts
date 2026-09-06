@@ -189,6 +189,49 @@ describe('writing a page', () => {
     expect(saved.json().store).toBe('famille')
   })
 
+  it('walks UP to the nearest existing folder for a brand-new sub-folder', async () => {
+    // The defect this closes, and it is the ordinary gesture: adding a note
+    // inside a shared trip. `voyages/baden-2026/notes/` exists nowhere yet, so
+    // a rule that checks only the immediate folder finds no carrier and falls
+    // to the default store — half the trip shared, half private, nothing
+    // failing, and the screen showing the reassuring half.
+    await write('famille/voyages/baden-2026/baden-2026.md')
+    await mount()
+
+    const saved = await app.inject({
+      method: 'PUT',
+      url: '/api/pages/voyages/baden-2026/notes/carnet.md',
+      payload: { markdown: '---\ntitle: Carnet\n---\n\nCorps.\n' },
+    })
+    expect(saved.json().store).toBe('famille')
+  })
+
+  it('keeps walking up past several folders that do not exist yet', async () => {
+    await write('famille/voyages/baden-2026/baden-2026.md')
+    await mount()
+
+    const saved = await app.inject({
+      method: 'PUT',
+      url: '/api/pages/voyages/baden-2026/notes/photos/legendes.md',
+      payload: { markdown: '---\ntitle: Légendes\n---\n\nCorps.\n' },
+    })
+    expect(saved.json().store).toBe('famille')
+  })
+
+  it('reaches the default store only when NO folder above exists', async () => {
+    // A whole new tree at the root: there, the default is a real answer rather
+    // than a shrug, since nothing on disk has an opinion yet.
+    await write('famille/voyages/baden-2026/baden-2026.md')
+    await mount()
+
+    const saved = await app.inject({
+      method: 'PUT',
+      url: '/api/pages/recettes/lasagnes.md',
+      payload: { markdown: '---\ntitle: Lasagnes\n---\n\nCorps.\n' },
+    })
+    expect(saved.json().store).toBe('perso')
+  })
+
   it('refuses to choose when both circles carry the folder', async () => {
     await write('perso/voyages/lisbonne.md')
     await write('famille/voyages/baden.md')
