@@ -1,5 +1,5 @@
 /* ── La dérivation : d'un design à des pièces cotées ─────────────────────────
-   Le pipeline, et il tient en cinq temps : monter le socle du caisson,
+   Le pipeline, et il tient en cinq temps : monter le squelette de la famille,
    interroger chaque table applicable, appliquer les méthodes qu'elles
    nomment, résoudre, dire ce qui manque.
 
@@ -14,6 +14,7 @@ import { applique } from '../modele/methodes.mjs'
 import { constante, etiquette, relationsDOrientation, relationsDuMeuble, traverse, v } from '../modele/ancrages.mjs'
 import { lineaireDeChant, retraitsDe } from '../modele/chants.mjs'
 import { chantsRetenus, ecartsAuDefaut } from '../modele/visibilite.mjs'
+import { RESULTATS, squelette } from '../modele/familles.mjs'
 import { litZones, relationsDesZones } from '../modele/zones.mjs'
 import { systeme } from './systeme.mjs'
 
@@ -52,46 +53,6 @@ const ANNONCEES = [
     quoi: '`corps_tiroir: "oui"` annonce des corps de tiroir',
   },
 ]
-
-/**
- * Le socle d'un caisson : ce qui existe avant toute décision.
- *
- * Un bas qui porte et deux côtés qui reposent dessus — c'est le montage retenu
- * ici, et il est explicite plutôt que sous-entendu : le dessous reprend la
- * charge. Ce qui reste ouvert, c'est ce que font le HAUT du côté et la
- * PROFONDEUR du bas, et ce sont des tables qui le décident. La seconde était
- * posée en dur ici, traversante — d'où un dessous à 619 dans un meuble dont la
- * pièce posée fait 600.
- */
-function socle(trigramme, module) {
-  const bas = {
-    etiquette: etiquette(trigramme, module, 'BAS'),
-    role: 'BAS',
-    orientation: 'horizontal',
-    // Traversant sous tout le meuble : ses quatre bords en sortent.
-    regardeVers: {
-      'about-gauche': 'gauche', 'about-droit': 'droite',
-      'rive-avant': 'avant', 'rive-arriere': 'arriere',
-    },
-  }
-  const cotes = ['G', 'D'].map((repere) => ({
-    etiquette: etiquette(trigramme, module, 'CÔTÉ', repere),
-    role: 'CÔTÉ',
-    orientation: 'lateral',
-    // Un côté montre ses RIVES (avant et arrière) ; sa face extérieure donne
-    // sur le flanc du meuble, mais une face n'est pas un chant.
-    regardeVers: { 'rive-avant': 'avant', 'rive-arriere': 'arriere' },
-  }))
-  return {
-    pieces: [bas, ...cotes],
-    /* La profondeur du bas n'est PAS ici : c'est une décision, et une table
-       la prend. Le socle ne pose que ce qui ne se discute pas — le bas court
-       sur toute la largeur, les côtés sur toute la profondeur. */
-    relations: [traverse(bas, 'x'), ...cotes.map((c) => traverse(c, 'y'))],
-    bas,
-    cotes,
-  }
-}
 
 /**
  * Ce que le moteur COMPTE pour les tables, à partir de ce que le design dit.
@@ -165,7 +126,13 @@ export function derive(design, tables, moduleDemande) {
   // (`C1` sur le meuble poubelle), et une étiquette qui ne correspond pas à
   // celles déjà écrites rend toute comparaison illisible.
   const module = moduleDemande ?? design.module ?? 'A1'
-  const { pieces: duSocle, relations: relSocle, cotes } = socle(trigramme, module)
+  /* Le squelette dépend de la FAMILLE. Il était écrit en dur — un bas et deux
+     côtés quoi qu'on demande — alors que les tables, elles, savaient déjà de
+     quelle famille elles parlent. Un claustra passait donc au travers : ses
+     tables écartées proprement, et le moteur réclamant quand même un bas. */
+  const { pieces: duSocle, relations: relSocle, cotes, erreur: familleInconnue } =
+    squelette(design.famille, trigramme, module, design)
+  if (familleInconnue) issues.push(issue('bloquant', 'famille-inconnue', familleInconnue))
   const pieces = [...duSocle]
   const relations = [...relSocle]
   const parEtiquette = {}
@@ -319,6 +286,13 @@ export function derive(design, tables, moduleDemande) {
     // c'est ce qu'on regarde quand une pièce sort à une cote surprenante.
     zones: Object.fromEntries((design.zones ?? []).map((zn) =>
       [zn.id, valeurs[`zone:${zn.id}.${zn.axe}`]])),
+    /* Ce qu'une famille DÉDUIT au-delà de ses pièces : le jour entre deux
+       lames d'un claustra ne se déclare pas, il tombe de la largeur — et c'est
+       ce qu'on regarde sur le plan de perçage. */
+    ...(RESULTATS[design.famille]
+      ? { resultats: Object.fromEntries(RESULTATS[design.famille]
+          .map((nom) => [nom.split('.').pop(), valeurs[nom]])) }
+      : {}),
     chant: lineaireDeChant(cotees, chants),
     // Ce que le projet fait dire à ses chants au-delà des faces chantées :
     // un côté plaqué bien qu'invisible, pour ne régler la bande qu'une fois.

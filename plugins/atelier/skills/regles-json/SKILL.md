@@ -172,6 +172,27 @@ pour n'avoir qu'un réglage de bande. Un bord se chante s'il est tourné vers un
 de ces faces et que rien ne l'occulte — dedans comme dehors, et **porte
 ouverte** : un caisson fermé se chante dedans comme un caisson ouvert.
 
+## Les familles de meuble
+
+`applique_a` dit à quelle famille une table s'adresse — et le moteur sait
+engendrer le SQUELETTE de cette famille, c'est-à-dire les pièces qui existent
+toujours et les relations qui tiennent sans qu'on ait rien décidé.
+
+| famille | son squelette | ce qui reste aux tables |
+|---|---|---|
+| `caisson` | un bas qui porte, deux côtés qui reposent dessus | ce que fait le haut, jusqu'où va le dessous, tablettes, fond, séparateurs, tiroirs, plan de travail |
+| `claustra` | une semelle, une lisse, N lames sur chant entre les deux, K traverses de renfort au dos | presque rien : le meuble se construit de ses seules déclarations |
+
+Un claustra déclare `lames` et `traverses`, et **le jour ne se déclare jamais** :
+les lames et les jours remplissent la largeur, donc il tombe du calcul —
+`(1200 − 6 × 20) / 5 = 216`, entraxe `216 + 20 = 236`. Ils reviennent dans
+`resultats`, comme les étendues de zone. Écrire ces nombres à la main, c'est se
+condamner à ce qu'une lame de plus les laisse faux sans que rien ne le dise.
+
+**Une famille que le moteur ne sait pas engendrer est refusée en la nommant.**
+Elle n'est pas approchée par un caisson : déclarer « caisson » un meuble qui
+n'en est pas donnerait des cotes plausibles et fausses.
+
 ## Les rôles de matière
 
 Une pièce ne nomme pas une plaque, elle nomme un RÔLE — et le design dit
