@@ -43,6 +43,7 @@ import {
   type TabsState,
 } from './tabs.js'
 import { SkinSlot } from '../app/SkinSlot.js'
+import { beginSignIn, signInAsks, useConnections } from '../app/signin.js'
 import type { SkinSlotRender } from '../app/skin.js'
 import { useMobile } from '../app/useMobile.js'
 // The drag primitive is shared with the page screen: one answer to "is this
@@ -1105,6 +1106,15 @@ export function Chat({
   /** What the visible thread renders — everything below reads through this. */
   const active = session(activeId)
 
+  // The sign-in card's two halves: what this person is connected to, and
+  // whether a tool of THIS thread failed for want of a connection. Live
+  // parts count too — the failure is worth its card before the turn settles.
+  const connections = useConnections(fetchImpl ?? fetch)
+  const asks = signInAsks(
+    [...active.messages, ...(active.live ? livePartsOf(active.live) : [])],
+    connections,
+  )
+
   useEffect(() => {
     // Guarded because an exception thrown in an effect tears down the whole
     // render: scrolling is a courtesy, and no environment should lose the
@@ -1579,6 +1589,21 @@ export function Chat({
         ))}
         <div ref={bottom} />
       </div>
+
+      {/* A tool failed against a server this person never connected to: the
+          need and its remedy, in the conversation where the need arose. The
+          window closes itself after the passkey, and regaining focus
+          refreshes the state that hides this card. */}
+      {asks.map((name) => (
+        <div className="adestia-connect" key={name} role="status">
+          <span className="adestia-connect__text">
+            <strong>{name}</strong> {t('asks you to connect before it can act for you.')}
+          </span>
+          <button type="button" className="adestia-connect__go" onClick={() => beginSignIn(name)}>
+            {t('Connect')}
+          </button>
+        </div>
+      ))}
 
       {active.live?.ask && !answered.has(active.live.ask.id) && (
         <AskPrompt

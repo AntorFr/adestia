@@ -401,6 +401,40 @@
   border-color: var(--accent);
 }
 
+/* The sign-in card — a server wants THIS person connected ------------------ */
+
+/* Dressed like the engine's question above: both are the product asking the
+   person for a decision between the thread and the composer. */
+.adestia-connect {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0 var(--space-4) var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--accent-quiet);
+}
+
+.adestia-connect__text {
+  flex: 1 1 auto;
+  font-size: var(--text-sm);
+}
+
+.adestia-connect__go {
+  flex: none;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--accent-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+/* On the server page the row sits in the flow, not over a thread. */
+.adestia-connect--tile { margin: 0 0 var(--space-3); }
+
 /* Composer ---------------------------------------------------------------- */
 
 .adestia-composer {

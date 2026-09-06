@@ -131,6 +131,16 @@ const FR: Readonly<Record<string, string>> = {
   threads: 'fils',
   '%n running': '%n en cours',
 
+  // Signing in to an MCP server (the chat card, and the server page's row)
+  'asks you to connect before it can act for you.':
+    'demande une connexion avant de pouvoir agir pour vous.',
+  Connect: 'Se connecter',
+  Reconnect: 'Se reconnecter',
+  'Connected for you — your turns reach it as you.':
+    'Connecté pour vous — vos tours l’atteignent en votre nom.',
+  'Not connected for you yet — this server signs each person in.':
+    'Pas encore connecté pour vous — ce serveur connecte chaque personne séparément.',
+
   // MCP servers, on their settings page
   'MCP servers': 'Serveurs MCP',
   'What this instance reaches, and what it is doing about it':
