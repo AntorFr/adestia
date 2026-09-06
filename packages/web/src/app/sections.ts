@@ -97,14 +97,6 @@ function text(value: unknown): string | undefined {
 }
 
 /**
- * The sections a body of pages declares.
- *
- * Only the SHALLOWEST index-carrying folders surface: `domaines/diy` is a
- * section, `domaines/diy/machines` is one of its rooms. Flattening both onto
- * the same screen would show the same pages twice under two different names —
- * the reader is meant to descend, not to be handed every level at once.
- */
-/**
  * Whether a folder is covered by a plugin's `absorbs` declaration.
  *
  * Two things a plain equality check got wrong on a real corpus, both of which
@@ -130,38 +122,65 @@ export function absorbs(declared: string, folder: string): boolean {
   return false
 }
 
+/**
+ * The sections a body of pages declares: the store's FIRST LEVEL, whole.
+ *
+ * A folder is a folder. It surfaces because it exists, not because it happens
+ * to hold a page of its own — a folder holding only other folders is not empty,
+ * and hiding it was the rule this replaced.
+ *
+ * That rule tried to be clever about a folder that merely GROUPS: `domaines/`
+ * held no page, so its children surfaced instead. It worked, and it papered
+ * over a modelling mistake. The corpus it was written for has since dropped
+ * that level — a folder that only groups other folders is not content, it is
+ * the place content is filed, and that belongs in the STORE's path. Once it is
+ * gone, the first level is exactly the list of domains, and the shell has
+ * nothing left to guess.
+ *
+ * The failure that made this concrete: a shared circle carrying
+ * `voyages/baden-2026/…` and no page directly in `voyages/`. Under the old
+ * rule, `voyages` did not exist and each trip became a top-level tile — three
+ * loose cards on the home screen instead of one domain. The instance that also
+ * mounted the personal store never saw it, because that store supplied
+ * `voyages/INDEX.md` and the union hid the gap.
+ *
+ * What it costs, stated rather than discovered: an instance that KEEPS a
+ * grouping folder now shows that folder, one tile, with everything inside it.
+ * That is the honest answer under this rule — and the fix is the corpus, not
+ * a cleverness here.
+ */
 export function sectionsOf(
   entries: readonly IndexEntry[],
   /** Folders an app's tile already stands for — see `absorbs` in a manifest. */
   absorbed: readonly string[] = [],
 ): readonly SectionTile[] {
-  // Every folder that holds a page at all. Grouping folders (`domaines/`)
-  // hold none directly and so are not sections; their children are.
-  const holders = new Set<string>()
+  const top = new Set<string>()
   for (const entry of entries) {
     const folder = folderOf(entry.path)
-    if (folder === '' || NOT_A_SECTION.has(folder.split('/').at(-1) ?? '')) continue
-    if (isIndexPage(entry.path) && !entries.some((other) => folderOf(other.path) === folder && !isIndexPage(other.path))) {
-      // A folder whose ONLY page is its own index still counts: it may hold
-      // sub-folders, and an empty-looking room beats a hidden one.
-      holders.add(folder)
-      continue
-    }
-    holders.add(folder)
+    if (folder === '') continue
+    // Derived from the pages, since a folder holding none is only knowable
+    // through the path of a page deeper down.
+    const first = folder.split('/')[0]!
+    if (NOT_A_SECTION.has(first)) continue
+    top.add(first)
   }
 
-  const shallowest = [...holders].filter((folder) => {
-    if (absorbed.some((declared) => absorbs(declared, folder))) return false
-    // An ancestor that is itself a section owns this one: the reader
-    // descends into it rather than meeting both at once.
-    const parts = folder.split('/')
-    for (let depth = 1; depth < parts.length; depth += 1) {
-      if (holders.has(parts.slice(0, depth).join('/'))) return false
-    }
-    return true
-  })
-
-  return shallowest
+  return [...top]
+    .filter((folder) => {
+      if (absorbed.some((declared) => absorbs(declared, folder))) return false
+      // …or everything it holds is absorbed. A plugin cannot know how an
+      // operator files things: the trips app declares `voyages`, and the folder
+      // may sit one level down. Without this, its tile would stand beside a
+      // section holding exactly the same pages — the duplication `absorbs`
+      // exists to prevent, reappearing now that the first level is the section.
+      const held = entries.filter((entry) => entry.path.startsWith(`${folder}/`))
+      return !(
+        held.length > 0 &&
+        held.every((entry) =>
+          absorbed.some((declared) => absorbs(declared, folderOf(entry.path))),
+        )
+      )
+    })
     .map((folder) => tileFor(entries, folder, indexOf(entries, folder)))
     .sort((a, b) => a.title.localeCompare(b.title))
 }

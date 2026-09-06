@@ -28,9 +28,9 @@ const entry = (path: string, fields: Record<string, unknown> = {}) => ({
 })
 
 const CORPUS = [
-  entry('domaines/diy/INDEX.md', { title: 'DIY', ico: '🪚', couleur: 'ambre' }),
-  entry('domaines/diy/etabli.md'),
-  entry('domaines/diy/scie.md'),
+  entry('diy/INDEX.md', { title: 'DIY', ico: '🪚', couleur: 'ambre' }),
+  entry('diy/etabli.md'),
+  entry('diy/scie.md'),
 ]
 
 function noop() {}
@@ -122,7 +122,7 @@ describe('the landing canvas', () => {
         component: () => null,
         route: '/atelier',
         routeFor: (path: string) =>
-          path.startsWith('domaines/diy/projets/rangement-garage')
+          path.startsWith('diy/projets/rangement-garage')
             ? '/atelier/rangement-garage'
             : undefined,
       },
@@ -134,7 +134,7 @@ describe('the landing canvas', () => {
           title: 'Rangement garage',
           target: {
             type: 'workbook',
-            path: 'domaines/diy/projets/rangement-garage/assets/workbook.json',
+            path: 'diy/projets/rangement-garage/assets/workbook.json',
           },
         },
       ],

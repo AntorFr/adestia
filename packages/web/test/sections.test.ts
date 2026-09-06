@@ -16,25 +16,20 @@ const entry = (path: string, fields: Record<string, unknown> = {}): IndexEntry =
 
 /** Shaped like the real corpus this was built against. */
 const CORPUS: IndexEntry[] = [
-  entry('domaines/achats/INDEX.md', { title: 'Achats', ico: '🛍️', couleur: 'turquoise' }),
-  entry('domaines/achats/cnc.md'),
-  entry('domaines/achats/bateau.md'),
-  entry('domaines/diy/INDEX.md', { title: 'DIY', ico: '🪚' }),
-  entry('domaines/diy/projets/INDEX.md', { title: 'Projets' }),
-  entry('domaines/diy/projets/etabli.md'),
+  entry('achats/INDEX.md', { title: 'Achats', ico: '🛍️', couleur: 'turquoise' }),
+  entry('achats/cnc.md'),
+  entry('achats/bateau.md'),
+  entry('diy/INDEX.md', { title: 'DIY', ico: '🪚' }),
+  entry('diy/projets/INDEX.md', { title: 'Projets' }),
+  entry('diy/projets/etabli.md'),
   entry('sujets/INDEX.md', { title: 'Sujets', ico: '💬' }),
   entry('sujets/armee.md'),
   entry('todo/taches.md'),
 ]
 
 describe('sectionsOf', () => {
-  it('makes a section of every folder that holds pages', () => {
-    expect(sectionsOf(CORPUS).map((s) => s.path)).toEqual([
-      'domaines/achats',
-      'domaines/diy',
-      'sujets',
-      'todo',
-    ])
+  it('makes a section of every first-level folder', () => {
+    expect(sectionsOf(CORPUS).map((s) => s.path)).toEqual(['achats', 'diy', 'sujets', 'todo'])
   })
 
   it('surfaces a folder that declares NOTHING, named from itself', () => {
@@ -46,9 +41,31 @@ describe('sectionsOf', () => {
     expect(todo?.count).toBe(1)
   })
 
-  it('is not fooled by a grouping folder that holds no page itself', () => {
-    // `domaines/` contains only other folders; its children are the sections.
-    expect(sectionsOf(CORPUS).some((s) => s.path === 'domaines')).toBe(false)
+  it('surfaces a folder that holds only OTHER FOLDERS', () => {
+    // The reversal, and the failure it comes from: a shared circle carrying
+    // `voyages/baden-2026/…` with no page directly in `voyages/`. The old rule
+    // asked whether a folder held a page, so `voyages` did not exist and each
+    // trip became a top-level tile — three loose cards where one domain
+    // belonged. A folder holding folders is not empty.
+    const circle = [
+      entry('voyages/baden-2026/baden-2026.md'),
+      entry('voyages/broceliande-2026/val-sans-retour.md'),
+      entry('voyages/colo-ucpa-2026/colo-ucpa-2026.md'),
+    ]
+    expect(sectionsOf(circle).map((s) => s.path)).toEqual(['voyages'])
+    // One, not three: `baden-2026/baden-2026.md` and `colo-ucpa-2026/…` are
+    // homonymous, which makes them their folder's index rather than its
+    // contents — so only `val-sans-retour` counts as a page held.
+    expect(sectionsOf(circle)[0]?.count).toBe(1)
+  })
+
+  it('shows a grouping folder as itself, rather than guessing past it', () => {
+    // The cost of the rule above, and it is deliberate. A corpus that keeps a
+    // `domaines/` level gets one tile named for it — the honest answer, since
+    // the folder is real. The fix is the corpus: a folder that only files
+    // other folders belongs in the store's path, not in the tree.
+    const grouped = [entry('domaines/achats/cnc.md'), entry('domaines/diy/etabli.md')]
+    expect(sectionsOf(grouped).map((s) => s.path)).toEqual(['domaines'])
   })
 
   it('reads the sibling shell’s "space": a folder beside a page of its name', () => {
@@ -110,30 +127,30 @@ describe('sectionsOf', () => {
   })
 
   it('keeps a sub-section out of the top level', () => {
-    // `domaines/diy/projets` declares an index, but `domaines/diy` already
-    // owns it: surfacing both would show the same pages twice.
-    expect(sectionsOf(CORPUS).some((s) => s.path === 'domaines/diy/projets')).toBe(false)
+    // `diy/projets` declares an index, but `diy` already owns it: surfacing
+    // both would show the same pages twice.
+    expect(sectionsOf(CORPUS).some((s) => s.path === 'diy/projets')).toBe(false)
   })
 
   it('dresses a tile from the declaration, field by field', () => {
-    const achats = sectionsOf(CORPUS).find((s) => s.path === 'domaines/achats')
+    const achats = sectionsOf(CORPUS).find((s) => s.path === 'achats')
     expect(achats).toMatchObject({ title: 'Achats', icon: '🛍️', hue: 'turquoise' })
   })
 
   it('falls back per field rather than all at once', () => {
     // `diy` gives a title and an icon but no colour: it must keep both, not
     // lose them to an all-or-nothing rule.
-    const diy = sectionsOf(CORPUS).find((s) => s.path === 'domaines/diy')
+    const diy = sectionsOf(CORPUS).find((s) => s.path === 'diy')
     expect(diy).toMatchObject({ title: 'DIY', icon: '🪚' })
     expect(diy?.hue).toBeUndefined()
   })
 
   it('counts what a section holds, index pages excluded', () => {
-    const achats = sectionsOf(CORPUS).find((s) => s.path === 'domaines/achats')
+    const achats = sectionsOf(CORPUS).find((s) => s.path === 'achats')
     expect(achats?.count).toBe(2)
     // Everything below counts, not only the top level: a section's weight is
     // what it contains, however deep.
-    const diy = sectionsOf(CORPUS).find((s) => s.path === 'domaines/diy')
+    const diy = sectionsOf(CORPUS).find((s) => s.path === 'diy')
     expect(diy?.count).toBe(1)
   })
 
@@ -144,26 +161,26 @@ describe('sectionsOf', () => {
 
 describe('pagesIn', () => {
   it('returns the pages a section holds directly', () => {
-    expect(pagesIn(CORPUS, 'domaines/achats').map((e) => e.path)).toEqual([
-      'domaines/achats/cnc.md',
-      'domaines/achats/bateau.md',
+    expect(pagesIn(CORPUS, 'achats').map((e) => e.path)).toEqual([
+      'achats/cnc.md',
+      'achats/bateau.md',
     ])
   })
 
   it('does not reach into sub-folders, nor list the index page', () => {
-    expect(pagesIn(CORPUS, 'domaines/diy')).toEqual([])
+    expect(pagesIn(CORPUS, 'diy')).toEqual([])
   })
 })
 
 describe('subsectionsOf', () => {
   it('finds the rooms inside a section, with their full paths', () => {
-    expect(subsectionsOf(CORPUS, 'domaines/diy').map((s) => s.path)).toEqual([
-      'domaines/diy/projets',
+    expect(subsectionsOf(CORPUS, 'diy').map((s) => s.path)).toEqual([
+      'diy/projets',
     ])
   })
 
   it('finds none where a section has no rooms', () => {
-    expect(subsectionsOf(CORPUS, 'domaines/achats')).toEqual([])
+    expect(subsectionsOf(CORPUS, 'achats')).toEqual([])
   })
 })
 
@@ -172,8 +189,8 @@ describe('sectionAt', () => {
     // The screen that opens a room asks this: `sectionsOf` only knows the top
     // level, and printing `domaines/diy/projets` at a reader whose page says
     // "Projets" is the shell admitting it never read the declaration.
-    expect(sectionAt(CORPUS, 'domaines/diy/projets')?.title).toBe('Projets')
-    expect(sectionAt(CORPUS, 'domaines/achats')?.title).toBe('Achats')
+    expect(sectionAt(CORPUS, 'diy/projets')?.title).toBe('Projets')
+    expect(sectionAt(CORPUS, 'achats')?.title).toBe('Achats')
   })
 
   it('names a folder that declares nothing, from itself', () => {
