@@ -299,6 +299,18 @@ mcp:
   #     env:
   #       LANG: fr
   #
+  # A PEER Adestia (its `ask_<name>` tools) is just an http server — plus two
+  # headers of this instance's own: how it names itself over there, and where
+  # it can be knocked once a delegated job settles (see the inbound section).
+  # Leave the callback line out and the agent simply polls.
+  #
+  #   - name: alfred
+  #     url: https://alfred.example/mcp
+  #     headers:
+  #       Authorization: Bearer ${ALFRED_MCP_TOKEN}
+  #       x-adestia-caller: skippy
+  #       x-adestia-callback-url: https://skippy.example/callback
+  #
   # A hub that validates short-lived OAuth tokens gets an identity instead of
   # a header. Adestia mints and refreshes it, and puts it in `Authorization`
   # once per turn — which is what a token with an hour of life needs, and what
@@ -349,12 +361,29 @@ mcp:
   # blaming the server instead of the config.
 
   # ── INBOUND: the endpoint OTHER agents call here ────────────────────────
+  #
+  # A finished job's status answer carries a `task_id`: passed back to
+  # `ask_<agentName>`, it continues the SAME conversation. Those threads live
+  # under `dataDir/delegations`, per calling agent, and are readable in the
+  # PWA (Settings → Delegations) — a person watches, only agents write.
+  #
+  # A caller names itself with an `x-adestia-caller` header on its side of the
+  # wire. If it can RECEIVE too, it adds `x-adestia-callback-url` pointing at
+  # its own `/callback`, and this instance knocks there once a job settles —
+  # a content-free `{from, job_id}` ping; the caller verifies it against this
+  # instance's status tool and wakes its agent to come collect. No token
+  # travels: a callback is not an ask, and handing a caller this instance's
+  # own token just to be pinged back would collapse any asymmetry of trust
+  # between the two agents.
   enabled: false
   # token: ${ADESTIA_MCP_TOKEN}
   # Becomes the tool name in the calling agent's list, so name the agent
   # rather than leaving it generic — two connected instances must be
   # distinguishable there.
   agentName: agent
+  # What the ask tool SAYS it is for — how a calling model picks the right
+  # colleague. One sentence about THIS agent's trade.
+  # description: The household butler — filing, notes, workbooks.
   maxPending: 4
   ttlMs: 3600000
 

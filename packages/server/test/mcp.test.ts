@@ -4,12 +4,15 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   JobRegistry,
   bearerOf,
+  callbackUrlOf,
+  callerOf,
   frameDelegated,
+  pingBody,
   toolsFor,
   tokenMatches,
   type McpConfig,
 } from '../src/mcp-in.js'
-import { registerMcp } from '../src/mcp-routes.js'
+import { registerMcp, type DelegationPort } from '../src/mcp-routes.js'
 
 const config = (overrides: Partial<McpConfig> = {}): McpConfig => ({
   enabled: true,
@@ -17,6 +20,14 @@ const config = (overrides: Partial<McpConfig> = {}): McpConfig => ({
   agentName: 'skippy',
   maxPending: 2,
   ttlMs: 3_600_000,
+  ...overrides,
+})
+
+const seed = (overrides: Partial<Parameters<JobRegistry['create']>[0]> = {}) => ({
+  prompt: 'do a thing',
+  from: 'alfred',
+  taskId: 'thread-1',
+  notify: false,
   ...overrides,
 })
 
@@ -42,6 +53,47 @@ describe('the bearer', () => {
   })
 })
 
+describe('the caller name', () => {
+  it('accepts what the agent-name grammar accepts', () => {
+    expect(callerOf('alfred')).toBe('alfred')
+    expect(callerOf('agent_2')).toBe('agent_2')
+  })
+
+  it('falls back rather than echoing an unsafe spelling', () => {
+    // The name becomes a directory under the delegation store; an unvalidated
+    // one would poison it.
+    expect(callerOf('../etc')).toBe('agent')
+    expect(callerOf('Alfred')).toBe('agent')
+    expect(callerOf(undefined)).toBe('agent')
+    expect(callerOf(['alfred'])).toBe('agent')
+  })
+})
+
+describe('the callback address', () => {
+  it('keeps a plain https URL, normalized', () => {
+    expect(callbackUrlOf('https://skippy.example/callback')).toBe(
+      'https://skippy.example/callback',
+    )
+  })
+
+  it('refuses every scheme that is not http(s), and credentials in the URL', () => {
+    expect(callbackUrlOf('file:///etc/passwd')).toBeUndefined()
+    expect(callbackUrlOf('gopher://x')).toBeUndefined()
+    expect(callbackUrlOf('https://user:pass@host/x')).toBeUndefined()
+    expect(callbackUrlOf('not a url')).toBeUndefined()
+    expect(callbackUrlOf(`https://x/${'a'.repeat(600)}`)).toBeUndefined()
+    expect(callbackUrlOf(42)).toBeUndefined()
+  })
+})
+
+describe('the ping', () => {
+  it('carries the two identifiers and NOTHING else', () => {
+    // Content-free by design: nothing a receiving model could read raw, so a
+    // forged ping can at most make the receiver poll and find nothing.
+    expect(pingBody('skippy', 'job-1')).toEqual({ from: 'skippy', job_id: 'job-1' })
+  })
+})
+
 describe('the tools offered', () => {
   it('names the agent, so two connected instances are distinguishable', () => {
     // A generic `ask` would make them identical in a calling agent's tool list.
@@ -52,17 +104,33 @@ describe('the tools offered', () => {
     expect(toolsFor(config())[0]!.description).toContain('IMMEDIATELY')
     expect(toolsFor(config())[0]!.description).toContain('ask_skippy_status')
   })
+
+  it('teaches the resume contract on both tools', () => {
+    // The predecessor's client-facing promise: the status result carries a
+    // task_id, and passing it back continues the same conversation.
+    expect(toolsFor(config())[0]!.description).toContain('task_id')
+    expect(toolsFor(config())[1]!.description).toContain('task_id')
+    const properties = toolsFor(config())[0]!.inputSchema['properties'] as Record<string, unknown>
+    expect(Object.keys(properties)).toEqual(['prompt', 'task_id', 'notify'])
+  })
+
+  it('lets the operator say what the agent is FOR', () => {
+    // The description is how a calling model picks the right colleague.
+    const described = toolsFor(config({ description: 'The household butler.' }))
+    expect(described[0]!.description).toContain('The household butler.')
+    expect(described[0]!.description).not.toContain('Delegate a task to skippy')
+  })
 })
 
 describe('the job registry', () => {
   it('tracks a job through to its answer', () => {
     const jobs = new JobRegistry(config())
-    const job = jobs.create('do a thing', 'alfred')
+    const job = jobs.create(seed())
     if ('refused' in job) throw new Error('unexpected refusal')
 
     expect(jobs.pending()).toBe(1)
     jobs.finish(job.id, 'done that')
-    expect(jobs.get(job.id)).toMatchObject({ state: 'done', result: 'done that' })
+    expect(jobs.get(job.id)).toMatchObject({ state: 'done', result: 'done that', taskId: 'thread-1' })
     expect(jobs.pending()).toBe(0)
   })
 
@@ -70,24 +138,37 @@ describe('the job registry', () => {
     // A refusal is information the caller can act on; silence behind a lock
     // that may not release for an hour is not.
     const jobs = new JobRegistry(config({ maxPending: 1 }))
-    jobs.create('one', 'alfred')
-    expect(jobs.create('two', 'alfred')).toMatchObject({ refused: expect.stringContaining('busy') })
+    jobs.create(seed())
+    expect(jobs.create(seed())).toMatchObject({ refused: expect.stringContaining('busy') })
   })
 
   it('frees a slot when a job finishes', () => {
     const jobs = new JobRegistry(config({ maxPending: 1 }))
-    const first = jobs.create('one', 'alfred')
+    const first = jobs.create(seed())
     if ('refused' in first) throw new Error('unexpected refusal')
     jobs.finish(first.id, 'ok')
-    expect(jobs.create('two', 'alfred')).not.toHaveProperty('refused')
+    expect(jobs.create(seed())).not.toHaveProperty('refused')
   })
 
   it('records a failure as a failure, not an empty answer', () => {
     const jobs = new JobRegistry(config())
-    const job = jobs.create('x', 'alfred')
+    const job = jobs.create(seed())
     if ('refused' in job) throw new Error('unexpected refusal')
     jobs.fail(job.id, 'the CLI died')
     expect(jobs.get(job.id)).toMatchObject({ state: 'failed', error: 'the CLI died' })
+  })
+
+  it('keeps an undelivered ping beside the job, not instead of it', () => {
+    const jobs = new JobRegistry(config())
+    const job = jobs.create(seed())
+    if ('refused' in job) throw new Error('unexpected refusal')
+    jobs.finish(job.id, 'ok')
+    jobs.noteNotifyError(job.id, 'connection refused')
+    expect(jobs.get(job.id)).toMatchObject({
+      state: 'done',
+      result: 'ok',
+      notifyError: 'connection refused',
+    })
   })
 })
 
@@ -102,14 +183,38 @@ describe('the delegation frame', () => {
   })
 })
 
+/**
+ * A channel with no desk and no disk: fresh threads get counted ids, run() is
+ * whatever the test needs it to be.
+ */
+function fakeChannel(
+  run: DelegationPort['run'] = async () => ({ text: 'the answer' }),
+  overrides: Partial<DelegationPort> = {},
+): DelegationPort & { runs: { caller: string; threadId: string; request: string }[] } {
+  const runs: { caller: string; threadId: string; request: string }[] = []
+  let created = 0
+  return {
+    runs,
+    open: async (_caller, _request, taskId) =>
+      taskId === undefined ? { threadId: `thread-${++created}` } : { unknown: true as const },
+    busy: () => false,
+    run: async (caller, threadId, request) => {
+      runs.push({ caller, threadId, request })
+      return run(caller, threadId, request)
+    },
+    ...overrides,
+  }
+}
+
 const build = async (
   overrides: Partial<McpConfig> = {},
-  runTurn = vi.fn(async () => 'the answer'),
+  channel: DelegationPort = fakeChannel(),
+  fetchImpl?: typeof fetch,
 ) => {
   const app = Fastify()
-  registerMcp(app, { config: config(overrides), runTurn })
+  registerMcp(app, { config: config(overrides), channel, ...(fetchImpl ? { fetchImpl } : {}) })
   await app.ready()
-  return { app, runTurn }
+  return { app }
 }
 
 /**
@@ -121,19 +226,22 @@ async function call(
   app: FastifyInstance,
   body: Record<string, unknown>,
   token = 'a-shared-secret',
+  headers: Record<string, string> = {},
 ) {
   return app.inject({
     method: 'POST',
     url: '/mcp',
-    headers: { authorization: `Bearer ${token}` },
+    headers: { authorization: `Bearer ${token}`, ...headers },
     payload: body,
   })
 }
 
+const settle = () => new Promise((resolve) => setImmediate(resolve))
+
 describe('the endpoint', () => {
   it('is not mounted when disabled', async () => {
     const app = Fastify()
-    registerMcp(app, { config: config({ enabled: false }), runTurn: vi.fn(async () => '') })
+    registerMcp(app, { config: config({ enabled: false }), channel: fakeChannel() })
     await app.ready()
     expect((await call(app, { method: 'tools/list', id: 1 })).statusCode).toBe(404)
   })
@@ -141,10 +249,7 @@ describe('the endpoint', () => {
   it('refuses to mount without a token', () => {
     // An unauthenticated endpoint that runs agent turns is a remote shell.
     expect(() =>
-      registerMcp(Fastify(), {
-        config: config({ token: undefined }),
-        runTurn: vi.fn(async () => ''),
-      }),
+      registerMcp(Fastify(), { config: config({ token: undefined }), channel: fakeChannel() }),
     ).toThrow(/requires mcp.token/)
   })
 
@@ -162,6 +267,23 @@ describe('the endpoint', () => {
       'skippy',
     )
     expect((await call(app, { method: 'tools/list', id: 2 })).json().result.tools).toHaveLength(2)
+    await app.close()
+  })
+
+  it('accepts notifications/initialized in silence, per the spec', async () => {
+    // Every conforming client sends it right after initialize. Refusing it
+    // with -32601 broke the handshake of every stock MCP client — the
+    // predecessor's SDK had quietly swallowed it.
+    const { app } = await build()
+    const response = await call(app, { method: 'notifications/initialized' })
+    expect(response.statusCode).toBe(202)
+    expect(response.body).toBe('')
+    await app.close()
+  })
+
+  it('still gates notifications behind the token', async () => {
+    const { app } = await build()
+    expect((await call(app, { method: 'notifications/initialized' }, 'wrong')).statusCode).toBe(401)
     await app.close()
   })
 
@@ -205,14 +327,14 @@ describe('the endpoint', () => {
   it('returns a job id immediately and runs the turn behind it', async () => {
     // The whole reason this is asynchronous: a delegated task takes minutes,
     // and an MCP call held open that long times out between the two agents.
-    let release: (value: string) => void = () => {}
-    const runTurn = vi.fn(
+    let release: (value: { text: string }) => void = () => {}
+    const channel = fakeChannel(
       () =>
-        new Promise<string>((resolve) => {
+        new Promise((resolve) => {
           release = resolve
         }),
     )
-    const { app } = await build({}, runTurn)
+    const { app } = await build({}, channel)
 
     const started = await call(app, {
       method: 'tools/call',
@@ -232,47 +354,108 @@ describe('the endpoint', () => {
     })
     expect(polled.json().result.content[0].text).toContain('still running')
 
-    release('the review')
-    await new Promise((resolve) => setImmediate(resolve))
+    release({ text: 'the review' })
+    await settle()
 
     const collected = await call(app, {
       method: 'tools/call',
       id: 3,
       params: { name: 'ask_skippy_status', arguments: { job_id: jobId } },
     })
-    expect(collected.json().result.content[0].text).toBe('the review')
+    expect(collected.json().result.content[0].text).toContain('the review')
     await app.close()
   })
 
-  it('frames the prompt so the agent knows nobody is reading', async () => {
-    const prompts: string[] = []
-    const runTurn = vi.fn(async (prompt: string) => {
-      prompts.push(prompt)
-      return 'ok'
+  it('hands back a task_id with the answer, for the next ask to continue on', async () => {
+    const { app } = await build()
+    const started = await call(app, {
+      method: 'tools/call',
+      id: 1,
+      params: { name: 'ask_skippy', arguments: { prompt: 'step one' } },
     })
-    const { app } = await build({}, runTurn)
+    const jobId = /job_id "([^"]+)"/.exec(started.json().result.content[0].text as string)?.[1]
+    await settle()
+
+    const collected = await call(app, {
+      method: 'tools/call',
+      id: 2,
+      params: { name: 'ask_skippy_status', arguments: { job_id: jobId } },
+    })
+    const text = collected.json().result.content[0].text as string
+    expect(text).toContain('task_id: "thread-1"')
+    expect(text).toContain('ask_skippy')
+    await app.close()
+  })
+
+  it('refuses a task_id that names no conversation, before any job exists', async () => {
+    // Expired store, another caller's thread, a typo: all one answer, and no
+    // job to poll for it.
+    const { app } = await build()
+    const response = await call(app, {
+      method: 'tools/call',
+      id: 1,
+      params: { name: 'ask_skippy', arguments: { prompt: 'more', task_id: 'nope' } },
+    })
+    expect(response.json().result).toMatchObject({ isError: true })
+    expect(response.json().result.content[0].text).toContain('no such conversation')
+    await app.close()
+  })
+
+  it('refuses a second ask while the thread still works the first', async () => {
+    // One job per thread at a time: two asks merged into one turn would owe
+    // two answers and hold one.
+    const channel = fakeChannel(async () => ({ text: 'ok' }), {
+      open: async (_caller, _request, taskId) => ({ threadId: taskId ?? 'fresh' }),
+      busy: () => true,
+    })
+    const { app } = await build({}, channel)
+    const response = await call(app, {
+      method: 'tools/call',
+      id: 1,
+      params: { name: 'ask_skippy', arguments: { prompt: 'more', task_id: 'thread-9' } },
+    })
+    expect(response.json().result).toMatchObject({ isError: true })
+    expect(response.json().result.content[0].text).toContain('still working')
+    await app.close()
+  })
+
+  it('runs the raw request through the channel — framing is the channel’s', async () => {
+    const channel = fakeChannel()
+    const { app } = await build({}, channel)
     await call(app, {
       method: 'tools/call',
       id: 1,
       params: { name: 'ask_skippy', arguments: { prompt: 'do it' } },
     })
-    await new Promise((resolve) => setImmediate(resolve))
-    expect(prompts[0]).toContain('cannot answer questions')
+    await settle()
+    expect(channel.runs[0]).toMatchObject({ caller: 'agent', request: 'do it' })
+    await app.close()
+  })
+
+  it('names the caller from its header, sanitized', async () => {
+    const channel = fakeChannel()
+    const { app } = await build({}, channel)
+    await call(
+      app,
+      { method: 'tools/call', id: 1, params: { name: 'ask_skippy', arguments: { prompt: 'x' } } },
+      'a-shared-secret',
+      { 'x-adestia-caller': 'alfred' },
+    )
+    await settle()
+    expect(channel.runs[0]!.caller).toBe('alfred')
     await app.close()
   })
 
   it('reports a failed task as failed rather than as an empty answer', async () => {
-    const runTurn = vi.fn(async () => {
-      throw new Error('the CLI died')
-    })
-    const { app } = await build({}, runTurn)
+    const channel = fakeChannel(async () => ({ text: '', failure: 'the CLI died' }))
+    const { app } = await build({}, channel)
     const started = await call(app, {
       method: 'tools/call',
       id: 1,
       params: { name: 'ask_skippy', arguments: { prompt: 'x' } },
     })
     const jobId = /job_id "([^"]+)"/.exec(started.json().result.content[0].text as string)?.[1]
-    await new Promise((resolve) => setImmediate(resolve))
+    await settle()
 
     const collected = await call(app, {
       method: 'tools/call',
@@ -285,7 +468,8 @@ describe('the endpoint', () => {
   })
 
   it('refuses a task when it is already full', async () => {
-    const { app } = await build({ maxPending: 1 }, vi.fn(() => new Promise<string>(() => {})))
+    const channel = fakeChannel(() => new Promise(() => {}))
+    const { app } = await build({ maxPending: 1 }, channel)
     await call(app, {
       method: 'tools/call',
       id: 1,
@@ -320,6 +504,79 @@ describe('the endpoint', () => {
       params: { name: 'ask_skippy', arguments: {} },
     })
     expect(response.json().result).toMatchObject({ isError: true })
+    await app.close()
+  })
+})
+
+describe('the settled-job ping', () => {
+  const askWithCallback = (app: FastifyInstance, args: Record<string, unknown> = {}) =>
+    call(
+      app,
+      {
+        method: 'tools/call',
+        id: 1,
+        params: { name: 'ask_skippy', arguments: { prompt: 'x', ...args } },
+      },
+      'a-shared-secret',
+      { 'x-adestia-caller': 'alfred', 'x-adestia-callback-url': 'https://alfred.example/callback' },
+    )
+
+  it('knocks on the caller’s callback with the two identifiers, nothing more', async () => {
+    const sent: { url: string; body: unknown }[] = []
+    const fetchImpl = vi.fn(async (url: unknown, init?: RequestInit) => {
+      sent.push({ url: String(url), body: JSON.parse(String(init?.body)) })
+      return new Response('{}', { status: 202 })
+    }) as unknown as typeof fetch
+    const { app } = await build({}, fakeChannel(), fetchImpl)
+
+    const started = await askWithCallback(app)
+    const jobId = /job_id "([^"]+)"/.exec(started.json().result.content[0].text as string)?.[1]
+    await settle()
+    await settle()
+
+    expect(sent).toHaveLength(1)
+    expect(sent[0]!.url).toBe('https://alfred.example/callback')
+    expect(sent[0]!.body).toEqual({ from: 'skippy', job_id: jobId })
+    await app.close()
+  })
+
+  it('sends nothing when the caller declared no door, or said notify false', async () => {
+    const fetchImpl = vi.fn(async () => new Response('{}')) as unknown as typeof fetch
+    const { app } = await build({}, fakeChannel(), fetchImpl)
+
+    await call(app, {
+      method: 'tools/call',
+      id: 1,
+      params: { name: 'ask_skippy', arguments: { prompt: 'no door' } },
+    })
+    await askWithCallback(app, { notify: false })
+    await settle()
+    await settle()
+
+    expect(fetchImpl).not.toHaveBeenCalled()
+    await app.close()
+  })
+
+  it('is fail-soft: a dead door costs a status line, never the answer', async () => {
+    const fetchImpl = vi.fn(async () => {
+      throw new Error('connection refused')
+    }) as unknown as typeof fetch
+    const { app } = await build({}, fakeChannel(), fetchImpl)
+
+    const started = await askWithCallback(app)
+    const jobId = /job_id "([^"]+)"/.exec(started.json().result.content[0].text as string)?.[1]
+    await settle()
+    await settle()
+
+    const collected = await call(app, {
+      method: 'tools/call',
+      id: 2,
+      params: { name: 'ask_skippy_status', arguments: { job_id: jobId } },
+    })
+    const text = collected.json().result.content[0].text as string
+    expect(text).toContain('the answer')
+    expect(text).toContain('callback ping failed')
+    expect(text).toContain('connection refused')
     await app.close()
   })
 })

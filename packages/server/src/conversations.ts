@@ -61,10 +61,38 @@ export function isSafeId(id: string): boolean {
 }
 
 export class ConversationStore {
-  constructor(private readonly root: string) {}
+  /**
+   * @param naming `hashed` (the default) protects arbitrary user ids — OIDC
+   *   subjects hold slashes and colons. `plain` is for owners whose names the
+   *   caller has already validated to a filesystem-safe alphabet (the
+   *   delegation channel's agent names): the directory then stays readable and
+   *   ENUMERABLE, which a hash deliberately is not — the delegations screen
+   *   has to list callers nobody logged in as.
+   */
+  constructor(
+    private readonly root: string,
+    private readonly naming: 'hashed' | 'plain' = 'hashed',
+  ) {}
 
   #dir(userId: string): string {
-    return join(this.root, 'conversations', userDirectory(userId))
+    if (this.naming === 'plain' && !/^[a-z][a-z0-9_-]{0,31}$/.test(userId)) {
+      // The channel validates before calling; this is the last line, not the
+      // first — a plain name IS a directory name, and must never be one the
+      // caller composed.
+      throw new Error(`unsafe plain owner name: ${userId}`)
+    }
+    return join(this.root, 'conversations', this.naming === 'plain' ? userId : userDirectory(userId))
+  }
+
+  /** The owners that hold threads. Only a `plain` store can answer — a hashed
+      directory name cannot be walked back to who it belongs to. */
+  async owners(): Promise<readonly string[]> {
+    if (this.naming !== 'plain') return []
+    try {
+      return (await readdir(join(this.root, 'conversations'))).sort()
+    } catch {
+      return []
+    }
   }
 
   #file(userId: string, id: string): string {

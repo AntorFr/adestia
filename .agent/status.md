@@ -1,5 +1,35 @@
 # Status — Adestia
-> MàJ : 2026-09-05
+> MàJ : 2026-09-06
+
+Chantier du 06/09 — **le canal de délégation : ce que la migration avait
+perdu d'agent-gw, rendu au niveau cible**. Trois pertes silencieuses fermées
+d'un coup : la poignée de main MCP (`notifications/initialized` prenait un
+400 — tout client conforme échouait à se connecter, constaté en session), la
+reprise de conversation (`task_id` accepté par `ask_*`, rendu par
+`ask_*_status`, adossé au guichet et au store de conversations existants —
+pas un mécanisme parallèle), et la notification de fin de job. Les tours
+délégués deviennent un CANAL : mêmes machineries que le chat, mais fils
+possédés par l'appelant sous `dataDir/delegations` — le namespace EST la
+frontière d'autorisation, un `task_id` ne résout jamais vers un fil de chat.
+Le compte rendu quitte l'outil `ask` du pair (l'ancien schéma forçait A à
+tendre son propre token à B — l'asymétrie de droits mourait au premier appel,
+vu par Monsieur) pour une porte `/callback` sans token : ping vide
+`{from, job_id}`, vérifié par re-poll authentifié du status de l'émetteur,
+réveil sur gabarit local — l'injection ne passe pas, le forgeage achète un
+poll vide, et l'anti-boucle `notify: false` n'a plus rien à garder (un ping
+n'est pas un ask). Chaque agent porte sa propre URL de rappel en en-tête de
+connexion : zéro table de pairs. Côté PWA : tuile « Délégations » dans la
+mosaïque Réglages (la face entrante de « Serveurs MCP »), fils groupés par
+appelant, transcript en bulles du chat SANS composeur, fil d'Ariane au nom
+de l'appelant. `mcp.description` configurable au passage (l'outil dit son
+métier au modèle appelant). Doctrine gravée dans DESIGN.md (section + journal
+06/09). 1311 verts (39 mcp + 10 canal + 10 callback + 8 écran neufs),
+typecheck/build OK, **banc constaté** (`bench/scenarios/delegations.mjs`,
+7 captures : mosaïque à trois tuiles homogènes, étagères par appelant, fil
+ouvert clair/sombre, échec en bulle d'erreur, téléphone). Reste côté flotte
+(hors dépôt) : poser `x-adestia-caller` / `x-adestia-callback-url` dans les
+configs des trois instances et relancer les clients MCP qui figent leur
+config au démarrage.
 
 Chantier du 05/09 (3) — **une mémoire, plusieurs endroits**. Un domaine ne se
 range plus DANS un dossier : il se compose de ce que chaque magasin en porte,

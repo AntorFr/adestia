@@ -121,6 +121,16 @@ const FR: Readonly<Record<string, string>> = {
   file: 'fichier',
   files: 'fichiers',
 
+  // Delegations, on their settings page
+  Delegations: 'Délégations',
+  'What other agents asked this one to do': 'Ce que les autres agents lui ont demandé',
+  'Read-only — this conversation belongs to': 'Lecture seule — cette conversation appartient à',
+  'No delegated task yet — the threads other agents open here will appear by caller.':
+    'Aucune tâche déléguée pour l’instant — les fils ouverts par les autres agents apparaîtront ici, par demandeur.',
+  thread: 'fil',
+  threads: 'fils',
+  '%n running': '%n en cours',
+
   // MCP servers, on their settings page
   'MCP servers': 'Serveurs MCP',
   'What this instance reaches, and what it is doing about it':

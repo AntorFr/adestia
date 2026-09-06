@@ -29,16 +29,17 @@
 
 import { useEffect, useState } from 'react'
 
+import { Delegations, delegChips, useDelegationRows } from './Delegations.js'
 import { Instructions } from './Instructions.js'
 import { McpServers } from './McpServers.js'
 import { Tile } from './Tile.js'
 import { useMcpServers, type McpServerHealth } from './Settings.js'
 
 /** Which settings page is open. `''` is the mosaic itself. */
-export type PrefsPage = '' | 'mcp' | 'instructions'
+export type PrefsPage = '' | 'mcp' | 'instructions' | 'delegations'
 
 /** The pages that have an address. A closed set: `#/settings/…` is public. */
-const PAGES = ['mcp', 'instructions'] as const
+const PAGES = ['mcp', 'instructions', 'delegations'] as const
 
 /**
  * Whether a URL segment names a page.
@@ -76,6 +77,7 @@ export function mcpLede(
 export function prefsTitle(page: PrefsPage, t: (key: string) => string): string {
   if (page === 'mcp') return t('MCP servers')
   if (page === 'instructions') return t('Instructions')
+  if (page === 'delegations') return t('Delegations')
   return t('Settings')
 }
 
@@ -134,6 +136,7 @@ export function Preferences({
   const health = useMcpServers(fetchImpl, page === '')
   const servers = useCount('/api/mcp/servers', 'servers', fetchImpl)
   const written = useCount('/api/instructions', 'files', fetchImpl)
+  const delegated = useDelegationRows(fetchImpl, page === '')
 
   if (page === 'instructions') {
     return (
@@ -160,6 +163,23 @@ export function Preferences({
           onOpen={onItem}
           fetchImpl={fetchImpl}
           t={t}
+        />
+      </div>
+    )
+  }
+
+  if (page === 'delegations') {
+    return (
+      <div
+        className="adestia-prefs adestia-prefs__page"
+        style={{ '--tile-color': 'var(--adestia-hue-violet, var(--accent))' } as Record<string, string>}
+      >
+        <Delegations
+          {...(item !== undefined ? { open: item } : {})}
+          onOpen={onItem}
+          fetchImpl={fetchImpl}
+          t={t}
+          {...(locale ? { locale } : {})}
         />
       </div>
     )
@@ -200,6 +220,19 @@ export function Preferences({
             ? { chips: [{ text: `${written} ${written === 1 ? t('file') : t('files')}` }] }
             : {})}
           onOpen={() => onPage('instructions')}
+          t={t}
+        />
+        {/* The inbound face of the MCP tile above: that one is the agents
+            this instance reaches, this one is the agents that reach it. */}
+        <Tile
+          icon="🤝"
+          hue="violet"
+          label={t('Delegations')}
+          subtitle={t('What other agents asked this one to do')}
+          {...(delegated !== undefined && delegated.length > 0
+            ? { chips: delegChips(delegated, t) }
+            : {})}
+          onOpen={() => onPage('delegations')}
           t={t}
         />
       </ul>

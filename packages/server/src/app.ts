@@ -27,7 +27,9 @@ import { isPublicRoute, resolveIdentity, type Identity } from './auth.js'
 import { AttachmentInbox, frameAttachments, type StoredAttachment } from './attachments.js'
 import { frameView } from './screen.js'
 import { ConversationStore } from './conversations.js'
-import { readMcpServer, type AdestiaConfig } from './config.js'
+import { readMcpServer, type AdestiaConfig, type McpServerConfig } from './config.js'
+import { registerCallback } from './callback.js'
+import { DelegationChannel } from './delegations.js'
 import { frontendPayload, type DiscoveredPlugin, type DiscoveryProblem } from './extensions.js'
 import {
   describeInstructionPaths,
@@ -988,6 +990,31 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   // a circle mounted outside its home has to be named or the CLI refuses it.
   const agentRoots = foreignRoots(stores, config.workspace.root)
 
+  /**
+   * The loose unattended spawn path — the clock's and the callback wake's.
+   *
+   * Same limiter as everything else: a person typing must not find the
+   * instance busy with work nobody asked for right now, so a full house
+   * refuses rather than queues. Unattended, because nobody is at a screen: a
+   * question raised in such a turn is refused at once rather than holding a
+   * slot for five minutes waiting on a person who was never there.
+   */
+  const runUnattended = async (prompt: string): Promise<void> => {
+    if (!limiter.tryAcquire()) throw new Error('too many turns running')
+    try {
+      for await (const event of driver.runTurn({
+        prompt,
+        cwd: config.workspace.root,
+        ...(agentRoots.length > 0 ? { roots: agentRoots } : {}),
+        unattended: true,
+      })) {
+        if (event.type === 'error' && event.fatal) throw new Error(event.message)
+      }
+    } finally {
+      limiter.release()
+    }
+  }
+
   registerPages(app, { stores, locale: config.locale })
   // The agent writes these files with its own tools, past every route above;
   // the feed is how a shell already on screen learns they changed.
@@ -1007,29 +1034,68 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     secrets: config.secrets,
   })
 
-  registerMcp(app, {
-    config: config.mcp,
-    // Through the same spawn path as everything else, so the concurrency cap
-    // applies to delegated work exactly as it does to a typed message.
-    runTurn: async (prompt) => {
-      if (!limiter.tryAcquire()) throw new Error('too many turns running')
-      let text = ''
+  // The delegation channel: inbound MCP work runs through the SAME desk as
+  // chat — chaining, capacity, session resume — but in its own key family and
+  // its own thread store. The separation is the authorization boundary: a
+  // task_id resolves only in here, never to a person's chat thread.
+  const delegations = new DelegationChannel(desk, {
+    dataDir: config.dataDir,
+    cwd: config.workspace.root,
+    ...(agentRoots.length > 0 ? { roots: agentRoots } : {}),
+  })
+
+  registerMcp(app, { config: config.mcp, channel: delegations })
+
+  /**
+   * The delegations screen's two questions: what ran here, and what did it
+   * say. Read-only on purpose — these threads belong to the CALLING agents'
+   * conversations, and a person typing into one would inject a turn into a
+   * thread its owner believes it holds alone. Gated like every other /api
+   * route: any signed-in human may look, which is rather the point.
+   */
+  app.get('/api/delegations', async () => ({ delegations: await delegations.list() }))
+
+  app.get<{ Params: { caller: string; id: string } }>(
+    '/api/delegations/:caller/:id',
+    async (request, reply) => {
+      let thread
       try {
-        for await (const event of driver.runTurn({
-          prompt,
-          cwd: config.workspace.root,
-          ...(agentRoots.length > 0 ? { roots: agentRoots } : {}),
-          // A delegating agent is not a person at a screen.
-          unattended: true,
-        })) {
-          if (event.type === 'text-delta') text += event.text
-          if (event.type === 'error' && event.fatal) throw new Error(event.message)
-        }
-      } finally {
-        limiter.release()
+        thread = await delegations.read(request.params.caller, request.params.id)
+      } catch {
+        // An unsafe caller segment throws in the store's last-line guard;
+        // from this side it is the same answer as a thread that is not there.
+        thread = undefined
       }
-      return text
+      if (!thread) return reply.code(404).send({ error: 'no such delegation' })
+      return { caller: request.params.caller, ...thread }
     },
+  )
+
+  /**
+   * Every outbound server, credentials INCLUDED — the callback verifier's
+   * view, never a route's. Same precedence as `mcpViews`: config, then
+   * plugins, then the shell's own layer, first name wins.
+   */
+  const outboundServers = async (): Promise<readonly McpServerConfig[]> => {
+    const merged: McpServerConfig[] = []
+    const declared = new Set<string>()
+    for (const server of [
+      ...config.mcpServers,
+      ...plugins.flatMap((plugin) => (plugin.active ? (plugin.manifest.mcpServers ?? []) : [])),
+      ...(await mcpStore.list()),
+    ]) {
+      if (declared.has(server.name)) continue
+      declared.add(server.name)
+      merged.push(server)
+    }
+    return merged
+  }
+
+  registerCallback(app, {
+    servers: outboundServers,
+    // The clock's spawn path exactly: unattended, loose, capped. A callback
+    // wake is nobody at a screen either.
+    runTurn: (prompt) => runUnattended(prompt),
   })
 
   // Last, so an API route always wins over the shell's catch-all.
@@ -1043,29 +1109,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
 
   // Exposed on the instance so `start()` can hand it to the clock without a
   // second construction path.
-  ;(app as FastifyInstance & { adestiaRunTurn?: unknown }).adestiaRunTurn = async (
-    prompt: string,
-  ): Promise<void> => {
-    if (!limiter.tryAcquire()) {
-      // The cap applies to scheduled turns too: a person typing must not find
-      // the instance busy with work nobody asked for right now.
-      throw new Error('too many turns running')
-    }
-    try {
-      for await (const event of driver.runTurn({
-        prompt,
-        cwd: config.workspace.root,
-        ...(agentRoots.length > 0 ? { roots: agentRoots } : {}),
-        // The clock is nobody at a screen: a question raised here is refused
-        // at once rather than holding a turn slot until it times out.
-        unattended: true,
-      })) {
-        if (event.type === 'error' && event.fatal) throw new Error(event.message)
-      }
-    } finally {
-      limiter.release()
-    }
-  }
+  ;(app as FastifyInstance & { adestiaRunTurn?: unknown }).adestiaRunTurn = runUnattended
 
   return app
 }

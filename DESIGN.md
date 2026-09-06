@@ -348,9 +348,63 @@ and `TurnRequest` must carry a per-turn env. In `proxy` auth mode this is
 structurally impossible — the session lives with the reverse proxy, and the
 product holds no token to refresh.
 
-Inbound MCP (the instance exposing `ask_<agent>`) is a separate subsystem, already
-in v1 scope — with no default allowed-hosts baked into the product (the
-predecessor's lesson: one deployment's DNS in a public image helps nobody).
+Inbound MCP (the instance exposing `ask_<agent>`) is a separate subsystem — with
+no default allowed-hosts baked into the product (the predecessor's lesson: one
+deployment's DNS in a public image helps nobody). Its shape is the section
+below.
+
+## Inbound MCP — the delegation channel (decided 2026-09-06)
+
+Another agent delegating work here is a CHANNEL of the product, not a side
+door to `/api/turn`. The contract is asynchronous (`ask_<agent>` returns a
+job id at once, `ask_<agent>_status` collects the answer — a delegated task
+takes minutes and an MCP call held open that long times out between the two
+agents), and behind the job sits a real conversation.
+
+**Two identifiers, two lifetimes.** A `job_id` names one ask: in memory,
+forgotten an hour after it settles, dead with the process — the turn it
+carried died with the process too, and replaying it behind the caller's back
+would be worse than losing it. A `task_id` names the conversation the job ran
+in: on disk, it survives restarts, and passing it back to `ask` continues the
+same conversation — the predecessor's resume contract, rebuilt on this
+product's own conversation machinery (same turn desk, same thread store, same
+session line).
+
+**The channel separation is the authorization boundary.** Delegated threads
+belong to CALLERS (agent names from the `x-adestia-caller` header, validated
+against the agent-name grammar), in their own store under
+`dataDir/delegations` — plain directory names, enumerable, because the
+delegations screen must list callers nobody logged in as. A `task_id`
+resolves only inside its channel: an agent can never resume a person's chat
+thread, and the chat routes can never open a delegation. Behaviours that
+differ — unattended, the delegation frame, one-job-per-thread instead of the
+chat's queue-and-merge — are properties of the channel, not conditionals on a
+shared path. The thread stores the RAW request; the frame is applied at the
+driver boundary only (fuel, not transcript).
+
+**The callback is a door of its own, and it grants nothing.** When this
+instance delegates outward, the peer pings `POST /callback` once the job
+settles. The predecessor routed reports through the peer's own `ask` tool,
+which forced every caller to hand the callee its OWN ask token — collapsing
+any asymmetry of trust between two agents — and then needed an anti-loop flag
+(`notify: false`) so two polite agents would not report on each other's
+reports forever. A callback that is not an ask needs neither: the ping is
+content-free (`{from, job_id}`, both closed grammars — nothing a model will
+ever read raw arrives through the tokenless door), the receiver verifies the
+pair against the sender's own status tool using credentials it holds by
+definition (it delegated in the first place), and wakes its agent with a
+locally templated prompt to go COLLECT the answer over the authenticated pull
+path. A forged ping buys one poll that finds nothing; the loop is
+structurally impossible rather than flagged away. The caller declares its
+door per connection (`x-adestia-callback-url` — an URL, parsed and stripped
+of schemes and credentials, never a secret); no peer table exists anywhere,
+so a fourth agent joins by editing only its own config.
+
+**The person gets a window, not a desk.** The channel's threads are readable
+in the PWA (Settings → Delegations, beside "MCP servers": the agents this
+instance reaches, then the agents that reach it), read-only — typing into one
+would inject a turn into a conversation its owning agent believes it holds
+alone.
 
 ## Shell tools — the agent acting on its own instance
 
@@ -1063,6 +1117,26 @@ that opens to its own words when the network is gone.
 - **`adestia init`** — the documented workspace scaffold.
 
 ## Decision log
+
+**2026-09-06 (delegation is a channel; a callback is not an ask):** the
+migration from agent-gw had silently dropped three things nobody recorded:
+conversation resume over inbound MCP (`task_id`), the settled-job
+notification, and the MCP handshake itself (`notifications/initialized`
+answered -32601 — every stock client failed to connect while the
+predecessor's SDK had swallowed the notification for free). Rebuilt at target
+rather than at parity, and the owner's two design calls shaped it. First:
+resume is generic, channels are first-class — delegated turns ride the same
+desk and store as chat but in their own key family and their own caller-owned
+namespace, which is the authorization boundary, not a display choice. Second:
+the callback leaves the ask tool entirely. The predecessor's report-as-ask
+forced caller A to hand callee B its own token (B could then ASK A things —
+any asymmetry of rights died on the first delegation, spotted by the owner),
+and needed `notify: false` as an anti-loop guard. The replacement ping is
+content-free, verified by re-polling the sender's own status tool, and wakes
+the agent from a local template: injection cannot ride it, forgery buys one
+empty poll, and the loop is structurally impossible. No peer table: each
+agent declares its own callback URL per connection, tokenlessly. Full shape
+in "Inbound MCP — the delegation channel".
 
 **2026-09-01 (everything with a tile is a DOMAIN; and a plugin is a way of
 DRAWING, not a way of owning):** the landing canvas offered two mosaics, Apps

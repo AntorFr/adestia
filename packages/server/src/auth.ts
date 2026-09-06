@@ -112,6 +112,10 @@ export const PUBLIC_ROUTES = new Set([
   // that caller is every client carried over from it.
   '/mcp',
   '/mcp/',
+  // The peer-callback door. No session, no bearer: what guards it is the
+  // closed grammar of its payload and the verification re-poll behind it —
+  // see `callback.ts`, which is also why it is one spelling and one method.
+  '/callback',
   /**
    * What a browser reads BEFORE, or beside, a session — and what carries
    * nothing about the workspace or its user.

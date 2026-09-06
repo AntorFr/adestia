@@ -243,6 +243,8 @@ export interface McpInConfig {
   readonly enabled: boolean
   readonly token?: string | undefined
   readonly agentName: string
+  /** What the ask tool says it is for, in a calling agent's tool list. */
+  readonly description?: string | undefined
   readonly maxPending: number
   readonly ttlMs: number
 }
@@ -333,7 +335,15 @@ const KNOWN_KEYS = new Set([
  * is the endpoint other agents call HERE. Kept together because that is where
  * an operator looks for anything MCP, and told apart in the example config.
  */
-const MCP_KEYS = new Set(['servers', 'enabled', 'token', 'agentName', 'maxPending', 'ttlMs'])
+const MCP_KEYS = new Set([
+  'servers',
+  'enabled',
+  'token',
+  'agentName',
+  'description',
+  'maxPending',
+  'ttlMs',
+])
 
 const DEFAULTS = {
   /**
@@ -1065,6 +1075,7 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
     enabled: mcpEnabled,
     ...(typeof mcpRaw['token'] === 'string' ? { token: mcpRaw['token'] } : {}),
     agentName: typeof mcpRaw['agentName'] === 'string' ? mcpRaw['agentName'] : 'agent',
+    ...(typeof mcpRaw['description'] === 'string' ? { description: mcpRaw['description'] } : {}),
     maxPending: typeof mcpRaw['maxPending'] === 'number' ? mcpRaw['maxPending'] : 4,
     ttlMs: typeof mcpRaw['ttlMs'] === 'number' ? mcpRaw['ttlMs'] : 3_600_000,
   }
