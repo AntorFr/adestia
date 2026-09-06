@@ -219,15 +219,12 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   /**
    * The second way between the two screens, alongside the header buttons.
    *
-   * Laid out left-to-right the way the desktop lays them out — chat, then
-   * canvas — so the gesture agrees with the layout it replaces rather than
-   * being a mapping to memorise.
+   * The shell is a track two screens wide, laid out left-to-right the way the
+   * desktop lays them out — chat, then canvas — so the gesture agrees with the
+   * layout it replaces rather than being a mapping to memorise. The hook drags
+   * that track under the finger and hands back the screen it settled on.
    */
-  const swipe = useSwipe({
-    enabled: mobile,
-    onLeft: () => setScreen('canvas'),
-    onRight: () => setScreen('chat'),
-  })
+  const swipe = useSwipe({ screen, onScreen: setScreen, enabled: mobile })
 
   // Hash routing, deliberately minimal: a plugin declares `#/its-route` and the
   // shell opens it, keeping it open for anything BELOW that route — what the
@@ -819,14 +816,13 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   }[] = [...instance.pluginProblems, ...failures]
 
   return (
+    <>
     <div
       className="adestia-shell"
+      ref={swipe}
       data-skin={instance.skin.id}
       data-mobile={mobile ? 'true' : undefined}
       data-screen={mobile ? screen : undefined}
-      // On the shell rather than on each pane: the gesture belongs to the
-      // pair, and one listener sees a swipe that starts on either of them.
-      {...swipe}
     >
       <Chat
         fetchImpl={fetchImpl}
@@ -1114,7 +1110,14 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
         </div>
       </main>
 
-      {/* The gesture, given something to look at.
+    </div>
+
+      {/* The gesture, given something to look at — and kept OUT of the track.
+
+          A transformed element is the containing block for its `fixed`
+          descendants, so a handle left inside the shell would ride the drag
+          and leave the screen with it. Out here it stays against the glass,
+          which is also what a handle is for.
 
           A swipe nobody suspects is a swipe nobody makes. Folded, the two
           panes stack perfectly: nothing on screen says a second one is
@@ -1129,7 +1132,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           exactly where it started. Two handles that each name one screen
           make that second event a no-op instead of a bug. */}
       {mobile && (
-        <>
+        <div className="adestia-edges" data-screen={screen}>
           <button
             type="button"
             className="adestia-edge"
@@ -1144,8 +1147,8 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             onClick={() => setScreen('chat')}
             aria-label={t('Back to the chat')}
           />
-        </>
+        </div>
       )}
-    </div>
+    </>
   )
 }

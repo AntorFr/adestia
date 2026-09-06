@@ -1,45 +1,82 @@
 /**
- * Swiping between the chat and the canvas, when the shell is folded.
+ * Dragging between the chat and the canvas, when the shell is folded.
  *
- * The button in the header stays — this is a second way in, not a
- * replacement, and a gesture nobody discovers must never be the only route to
- * a screen. What it adds is the one interaction a phone user already expects
- * from two side-by-side panes: push the one you are reading aside.
+ * The button in the header stays, and so do the edge handles — this is a
+ * second way in, not a replacement, and a gesture nobody discovers must never
+ * be the only route to a screen.
  *
- * Three refusals do most of the work here, and each of them is a bug that
- * would otherwise be reported as "the app changes screen at random":
+ * WHY THIS FOLLOWS THE FINGER, rather than reading a verdict at the end.
+ * The first version did the latter: the panes were `display: none`, the
+ * gesture was measured from where it started to where it stopped, and the
+ * screen swapped if that line was long enough and flat enough. It failed
+ * about half the time, and the two reasons compound.
  *
- *   - a MOUSE never swipes. Dragging to select text on a desktop is not a
- *     navigation, and the fold can be reached with a narrow window open;
+ *   - Nothing moved during the gesture, so a refusal was INDISTINGUISHABLE
+ *     from a dead app. A drag that shows the next screen arriving says "taken"
+ *     while it is happening, and says how far there is left to go.
+ *   - Nothing CLAIMED the gesture, so the browser kept it. The moment it
+ *     decides a touch is a scroll it fires `pointercancel`, and a swipe that
+ *     started a few degrees off the horizontal was cancelled before it could
+ *     be read at all.
+ *
+ * So the gesture is claimed instead: the direction is locked after 8px, and
+ * from that instant `preventDefault` keeps the browser out of it. Deliberately
+ * NOT done with `touch-action: pan-y` on the shell, which would be the tidier
+ * CSS: that restriction applies to the whole subtree, so it would also kill
+ * sideways panning inside the wide tables and code blocks this file goes out
+ * of its way to leave alone.
+ *
+ * Three refusals do the rest of the work, and each is a bug that would
+ * otherwise be reported as "the app changes screen at random":
+ *
  *   - a gesture that started in a FIELD is not a swipe. Dragging across a
  *     textarea selects what you wrote;
  *   - a gesture that started in something scrollable SIDEWAYS is not a swipe
  *     either. A wide table and a code block are read by dragging them, and
- *     stealing that would make their content unreachable.
+ *     stealing that would make their content unreachable;
+ *   - a gesture the lock calls VERTICAL is released for good, so the thread
+ *     scrolls exactly as it did before.
  *
- * Nothing is prevented and nothing is captured: the verdict is read at the
- * END of the gesture, so vertical scrolling is untouched and a swipe that
- * turns out to be a scroll simply is one.
+ * Touch only. A mouse never swipes: dragging to select text on a desktop is
+ * not a navigation, and the fold is reachable by narrowing a window.
  */
 
-import { useCallback, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
-/** Below this, a gesture is a tap that wandered. */
-export const SWIPE_MIN_DISTANCE = 60
+export type Screen = 'chat' | 'canvas'
+
 /**
- * How diagonal a swipe may be before it counts as scrolling.
+ * How far the track must travel before the gesture counts as a crossing.
  *
- * Generous on purpose (a thumb travels in an arc, not on a rail) but well
- * under 1: at 45° the reader is scrolling and would resent being moved.
+ * A fraction of the screen rather than a distance in pixels: the same flick
+ * has to mean the same thing on a 360px phone and on a 820px tablet.
  */
-export const SWIPE_MAX_SLOPE = 0.7
+export const SWIPE_COMMIT = 0.28
 
-export type SwipeVerdict = 'left' | 'right' | undefined
+/** Below this, the gesture has not yet said what it is. */
+export const SWIPE_LOCK = 8
 
-export function swipeVerdict(dx: number, dy: number): SwipeVerdict {
-  if (Math.abs(dx) < SWIPE_MIN_DISTANCE) return undefined
-  if (Math.abs(dy) > Math.abs(dx) * SWIPE_MAX_SLOPE) return undefined
-  return dx < 0 ? 'left' : 'right'
+/**
+ * How much more horizontal than vertical a gesture must be to be taken.
+ *
+ * Generous on purpose — a thumb travels in an arc, not on a rail — but the
+ * bias is deliberately on the side of scrolling: a screen that moves under
+ * somebody reading is resented far more than a swipe that has to be repeated.
+ */
+export const SWIPE_BIAS = 1.3
+
+/**
+ * Where the track lands when the finger lifts.
+ *
+ * Measured as distance travelled AWAY from the screen the gesture started on,
+ * so the same threshold reads the same in both directions — the asymmetric
+ * form (28% one way, 72% the other) says the same thing and hides it.
+ */
+export function settleTo(from: Screen, offset: number, width: number): Screen {
+  if (width <= 0) return from
+  const travelled = from === 'chat' ? -offset : offset + width
+  if (travelled <= width * SWIPE_COMMIT) return from
+  return from === 'chat' ? 'canvas' : 'chat'
 }
 
 /**
@@ -63,45 +100,127 @@ export function swipeable(from: Element | null, host: Element | null): boolean {
 }
 
 export interface SwipeOptions {
-  /** The finger travelled leftward: bring in what sits to the right. */
-  readonly onLeft?: () => void
-  /** The finger travelled rightward: go back to what sits to the left. */
-  readonly onRight?: () => void
+  /** Which screen the shell is showing — where a gesture starts from. */
+  readonly screen: Screen
+  /** Where the finger left it. Called once, when the gesture settles. */
+  readonly onScreen: (screen: Screen) => void
   /** False on a desktop, where the two panes are side by side already. */
   readonly enabled?: boolean
 }
 
-export function useSwipe(options: SwipeOptions): Record<string, unknown> {
-  const { onLeft, onRight, enabled = true } = options
-  const from = useRef<{ x: number; y: number; id: number } | undefined>(undefined)
+/** The offset, in px, at which the track shows `screen`. */
+const restingAt = (screen: Screen, width: number): number => (screen === 'canvas' ? -width : 0)
 
-  const onPointerDown = useCallback(
-    (event: React.PointerEvent<HTMLElement>) => {
-      from.current = undefined
-      if (!enabled || event.pointerType === 'mouse') return
-      if (!swipeable(event.target as Element, event.currentTarget)) return
-      from.current = { x: event.clientX, y: event.clientY, id: event.pointerId }
-    },
-    [enabled],
-  )
+/**
+ * Returns the ref to put on the shell. The listeners are native and not
+ * React's, because React's touch handlers are passive: `preventDefault` in one
+ * does nothing, which is precisely the half of this that had to change.
+ *
+ * A ref CALLBACK held in state, not a ref object, and the bench is what
+ * insisted: the shell does not exist on the first render — the instance has
+ * not answered yet, and the app is a "Loading…" line. An effect keyed on
+ * anything else runs once against a null node, never runs again when the
+ * shell finally mounts, and the gesture is silently dead on every real boot
+ * while every test that renders the shell outright passes.
+ */
+export function useSwipe(options: SwipeOptions): (node: HTMLDivElement | null) => void {
+  const [host, setHost] = useState<HTMLDivElement | null>(null)
+  // Read at gesture time rather than closed over, so the listeners are bound
+  // once per fold instead of on every screen change.
+  const latest = useRef(options)
+  latest.current = options
 
-  const onPointerUp = useCallback(
-    (event: React.PointerEvent<HTMLElement>) => {
-      const start = from.current
-      from.current = undefined
-      // Matched by id: a second finger landing mid-gesture must not have its
-      // release read against the first one's start.
-      if (!start || start.id !== event.pointerId) return
-      const verdict = swipeVerdict(event.clientX - start.x, event.clientY - start.y)
-      if (verdict === 'left') onLeft?.()
-      else if (verdict === 'right') onRight?.()
-    },
-    [onLeft, onRight],
-  )
+  const enabled = options.enabled ?? true
 
-  const forget = useCallback(() => {
-    from.current = undefined
-  }, [])
+  useEffect(() => {
+    const el = host
+    if (!el || !enabled) return undefined
 
-  return { onPointerDown, onPointerUp, onPointerCancel: forget, onPointerLeave: forget }
+    /** The screen the gesture started on; unset means no gesture is live. */
+    let from: Screen | undefined
+    let axis: 'undecided' | 'across' = 'undecided'
+    let x0 = 0
+    let y0 = 0
+    let offset = 0
+
+    const width = () => window.innerWidth
+    const follow = (px: number) => {
+      el.style.transform = `translateX(${px}px)`
+    }
+
+    const onStart = (event: TouchEvent) => {
+      from = undefined
+      axis = 'undecided'
+      // A second finger is a pinch or a scroll, never a page turn.
+      if (event.touches.length !== 1) return
+      const touch = event.touches[0]!
+      if (!swipeable(touch.target as Element, el)) return
+      from = latest.current.screen
+      x0 = touch.clientX
+      y0 = touch.clientY
+      offset = restingAt(from, width())
+    }
+
+    const onMove = (event: TouchEvent) => {
+      if (from === undefined || event.touches.length !== 1) return
+      const touch = event.touches[0]!
+      const dx = touch.clientX - x0
+      const dy = touch.clientY - y0
+
+      if (axis === 'undecided') {
+        if (Math.abs(dx) < SWIPE_LOCK && Math.abs(dy) < SWIPE_LOCK) return
+        if (Math.abs(dx) <= Math.abs(dy) * SWIPE_BIAS) {
+          // Vertical, and released for the whole gesture: reconsidering it
+          // mid-scroll is how a thread jumps sideways while being read.
+          from = undefined
+          return
+        }
+        axis = 'across'
+        el.dataset['swiping'] = 'true'
+      }
+
+      // Taken. Without this the browser scrolls behind the finger and then
+      // cancels the touch, which is the defect this whole file exists for.
+      event.preventDefault()
+      const w = width()
+      offset = Math.min(0, Math.max(-w, restingAt(from, w) + dx))
+      follow(offset)
+    }
+
+    const onEnd = () => {
+      const started = from
+      from = undefined
+      if (started === undefined || axis !== 'across') return
+      axis = 'undecided'
+      delete el.dataset['swiping']
+
+      const settled = settleTo(started, offset, width())
+      // Written here, and not left to the render that `onScreen` triggers:
+      // the stylesheet holds the resting offset, so the attribute IS the
+      // animation's destination. Setting it now lets the inline px offset go
+      // in the same breath — the computed value does not change, so the
+      // transition runs from where the finger left off, and no stale pixel
+      // value survives to freeze the shell half-way after a rotation.
+      el.dataset['screen'] = settled
+      el.style.transform = ''
+      latest.current.onScreen(settled)
+    }
+
+    el.addEventListener('touchstart', onStart, { passive: true })
+    el.addEventListener('touchmove', onMove, { passive: false })
+    el.addEventListener('touchend', onEnd)
+    el.addEventListener('touchcancel', onEnd)
+    return () => {
+      el.removeEventListener('touchstart', onStart)
+      el.removeEventListener('touchmove', onMove)
+      el.removeEventListener('touchend', onEnd)
+      el.removeEventListener('touchcancel', onEnd)
+      // A window widened past the fold mid-gesture must not leave the desktop
+      // shell shifted by half a phone.
+      delete el.dataset['swiping']
+      el.style.transform = ''
+    }
+  }, [host, enabled])
+
+  return useCallback((node: HTMLDivElement | null) => setHost(node), [])
 }

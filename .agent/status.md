@@ -1,6 +1,30 @@
 # Status — Adestia
 > MàJ : 2026-09-06
 
+Chantier du 06/09 (3) — **le swipe suit le doigt**. Constaté sur un vrai
+téléphone : il marchait une fois sur deux. Les deux moitiés de la cause
+tenaient à la même décision — lire un VERDICT à la fin du geste au lieu de
+suivre le doigt pendant. Rien ne bougeait, donc un refus et une appli morte se
+ressemblaient ; et comme l'appli ne réclamait rien, le navigateur gardait le
+geste : dès qu'il décide que c'est un défilement il émet `pointercancel`, et un
+swipe à quelques degrés de l'horizontale mourait avant d'être mesuré. Les deux
+se composent, d'où l'impression d'aléatoire. Maintenant la coque est un RAIL
+de deux écrans, les deux panneaux restent montés, et le rail glisse 1:1 sous le
+pouce ; verrou de direction à 8 px puis `preventDefault` (pas `touch-action:
+pan-y`, qui vaut pour tout le sous-arbre et tuerait le défilement latéral des
+tableaux larges) ; on bascule au-delà de 28 % de l'écran, sinon ça revient en
+place — ce qui est la façon de dire « compris, pas assez » plutôt que de ne
+rien dire. Les poignées de bord SORTENT de la coque : un élément transformé est
+le bloc conteneur de ses descendants `fixed`, elles seraient parties avec le
+rail. **Un piège trouvé au banc et par rien d'autre** : la coque n'existe pas au
+premier rendu (l'instance n'a pas répondu, l'écran dit « Loading… »), donc un
+effet accroché à un `useRef` se liait une fois sur `null` et le geste était mort
+à chaque démarrage réel — pendant que tous les tests qui rendent la coque
+directement passaient. Corrigé par un ref-callback en état, avec le test de
+non-régression qui va avec. 1346 verts, typecheck/build OK, **banc constaté**
+(`swipe-follow.mjs` : vrai doigt via CDP, 5 captures dont les deux panneaux à
+l'écran en pleine traversée, doigt encore posé).
+
 Chantier du 06/09 (4) — **se connecter à un serveur MCP est le travail du
 produit, dans la conversation**. Né d'un vrai mur : Alfred n'atteignait pas
 Home Assistant parce que la porte (proxy mcp-auth) n'accepte que SES jetons

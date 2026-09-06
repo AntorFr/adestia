@@ -577,13 +577,14 @@ The v1 chat must be **at least** agent-gw's PWA, which sets the bar:
   the conversation, so it sits in the chat header where the brand is, and the
   composer keeps its width for the field.
 - **Split view:** chat rail | gutter | canvas, user-resizable and persisted.
-- **Mobile/PWA:** responsive breakpoint with swipe between chat and canvas
-  (touch and pen only, refused inside a field or anything scrollable
-  sideways, and always alongside the header button — a gesture nobody
-  discovers must never be the only route to a screen), announced by an edge
-  handle: 6px of the pane you cannot see, against the side it sits on, one at
-  a time, and a button in its own right so the gesture is advertised without
-  being required;
+- **Mobile/PWA:** responsive breakpoint, the two panes folded onto a TRACK two
+  screens wide that is dragged under the finger (touch only, direction locked
+  after 8px and then claimed with `preventDefault` so the browser cannot take
+  it back, committed past 28% of the screen and snapped back below it, refused
+  inside a field or anything scrollable sideways), announced by an edge handle:
+  6px of the pane you cannot see, against the side it sits on, one at a time,
+  and a button in its own right — so the gesture is advertised, has a visible
+  fallback, and is never the only route to a screen;
   installable PWA, skin-merged manifest (N instances = N discernible installs),
   service worker with network-first shell (opens offline, never serves stale JS).
 
@@ -1180,6 +1181,34 @@ that opens to its own words when the network is gone.
 - **`adestia init`** — the documented workspace scaffold.
 
 ## Decision log
+
+**2026-09-06 (a swipe that cannot be seen cannot be trusted):** the fold's
+gesture worked about one time in two, reported from a real phone. Both halves
+of the cause were in the same decision — reading a VERDICT at the end of the
+gesture rather than following the finger through it.
+
+Nothing moved while the finger did, so a refusal and a dead app looked
+identical; there was no way to learn what the gesture wanted, because the
+interface never said what it had understood. And because the app claimed
+nothing, the browser kept the gesture: the moment it decides a touch is a
+scroll it fires `pointercancel`, and a swipe a few degrees off the horizontal
+was cancelled before it could be measured at all. The two compound — the
+failures were invisible, so they read as randomness.
+
+*Taken: the shell is a track, not a pair of alternatives.* Both panes stay
+mounted side by side, the shell is two screens wide and slides between them,
+and the drag moves it 1:1 under the thumb. The direction is locked after 8px
+and from that instant `preventDefault` keeps the browser out; past 28% of the
+screen the crossing commits, below it the track snaps back — which is how the
+gesture says "understood, not enough" instead of saying nothing.
+
+Deliberately NOT `touch-action: pan-y` on the shell, which is the tidier CSS
+and the wrong tool: the restriction applies to the whole subtree, so it would
+also kill sideways panning inside the wide tables and code blocks the start
+guard goes out of its way to protect. And the edge handles moved OUT of the
+shell, because a transformed element is the containing block for its `fixed`
+descendants — left inside, the handle meant to stay against the glass would
+have ridden the track off the screen.
 
 **2026-09-06 (connecting to an MCP server is the product's job, in the
 conversation):** Alfred could not reach Home Assistant, and the first fix

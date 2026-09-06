@@ -1662,19 +1662,40 @@
 .adestia-edge { display: none; }
 
 @media (max-width: 820px) {
-  .adestia-shell {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr;
+  html,
+  body {
+    /* The track below is two screens wide. Without this the page itself
+       scrolls sideways and the fold degrades into a horizontal scrollbar. */
+    overflow: hidden;
   }
+
+  /* A TRACK, not a pair of alternatives.
+
+     Both panes stay mounted, side by side, and the shell slides between them.
+     That is what lets the next screen arrive UNDER THE FINGER instead of
+     appearing once the gesture is over — and showing the crossing as it
+     happens is most of what makes the gesture feel like it works. The
+     predecessor hid one pane with `display: none`, which cannot be dragged,
+     cannot be half-way, and cannot say it was understood. */
+  .adestia-shell {
+    width: 200vw;
+    grid-template-columns: 100vw 100vw;
+    grid-template-rows: 1fr;
+    transition: transform 0.28s ease;
+    will-change: transform;
+  }
+
+  /* Following a finger has to be 1:1, so the easing is suspended for exactly
+     as long as the finger is down. */
+  .adestia-shell[data-swiping] { transition: none; }
+
+  /* Where the track rests. -50% of 200vw is one screen: the canvas. The
+     stylesheet owns this, so a rotation recomputes it and no pixel offset
+     left behind by a gesture can freeze the shell half-way. */
+  .adestia-shell[data-screen='canvas'] { transform: translateX(-50%); }
 
   .adestia-gutter { display: none; }
   .adestia-chat { border-right: 0; }
-
-  /* Folded: one screen at a time, and BOTH reachable. Hiding the canvas with
-     no way back was the predecessor's mobile in miniature — the apps existed
-     and no phone could open them. */
-  .adestia-shell[data-screen='chat'] .adestia-canvas { display: none; }
-  .adestia-shell[data-screen='canvas'] .adestia-chat { display: none; }
 
   /* The seam. A bar of 6px against the edge the other pane sits behind —
      enough to be seen, too little to be read as a scrollbar or a border. */
@@ -1717,8 +1738,8 @@
   /* One at a time, and it points at where you can go: from the chat the
      canvas waits on the right, from the canvas the chat waits on the left.
      Both at once would be a promise of a third screen that does not exist. */
-  .adestia-shell[data-screen='canvas'] .adestia-edge[data-side='right'] { display: none; }
-  .adestia-shell[data-screen='chat'] .adestia-edge[data-side='left'] { display: none; }
+  .adestia-edges[data-screen='canvas'] .adestia-edge[data-side='right'] { display: none; }
+  .adestia-edges[data-screen='chat'] .adestia-edge[data-side='left'] { display: none; }
 
   /* The top bar has room for WHERE YOU ARE and the two controls, and that is
      all. The driver's name is diagnostics — it belongs on a screen wide
