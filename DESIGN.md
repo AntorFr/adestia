@@ -339,14 +339,37 @@ debug a network while a server waits to be logged into. `unknown` is the honest
 answer before a first turn, where an empty list would tell somebody who just
 configured three servers that they have none.
 
-**Not built: the per-user rebound.** A user-scoped addon (somebody's own
-calendar or mail) needs a token carrying the CALLER's identity, not the
-instance's. The insertion point is the same line that writes the header; only
-the token's source differs. What is missing sits earlier: the shell must be an
-OIDC client that requested `offline_access`, must keep per-user refresh tokens,
-and `TurnRequest` must carry a per-turn env. In `proxy` auth mode this is
-structurally impossible — the session lives with the reverse proxy, and the
-product holds no token to refresh.
+**The per-user rebound** (since built): a user-scoped addon (somebody's own
+calendar or mail) declares `identity: user` and is reached with a token
+carrying the CALLER's identity — minted per turn from that person's stored
+refresh token (`offline_access` requested at login, audiences frozen into the
+grant, see `reboundAudience`). A turn with no caller does not see such a
+server at all. In `proxy` auth mode this stays structurally impossible — the
+session lives with the reverse proxy, and the product holds no token to
+refresh.
+
+**Signing in to a server that is its own authorization server (decided
+2026-09-06).** An mcp-auth style proxy federates the household IdP and mints
+its OWN tokens after an interactive login: the rebound token is foreign
+currency at that door, whatever audience is stamped into it — the resource's
+RFC 9728 document names the proxy itself as its only authorization server.
+Such a server declares `identity: user` plus `signIn: oauth`, and CONNECTING
+is a person's gesture, done once, from the product: the instance reads the
+server's OAuth metadata, registers ONE client for itself (dynamic client
+registration), sends the person through authorization-code + PKCE, and keeps
+their rotating refresh key (`mcp-signin.ts`, one 0600 file, hashed user
+keys). Two surfaces raise the flow, one mechanism behind both: a card IN THE
+CONVERSATION when a tool call fails against a server this person never
+connected to — the need and its remedy at the same place, the owner's call —
+and a button on the server's settings page for connecting before the first
+demand or after a dead key. Per person exactly like the rebound: each turn is
+handed tokens minted from ITS caller's keys (`TurnRequest.serverTokens`), two
+people reach the same server as two different people, and a driver must
+NEVER fall back to the rebound token for a `signIn` server — a wrong-currency
+attempt reads as "failed" where the truthful, card-raising state is "not
+connected". The owner's arbitration, recorded: a user-login door stays
+per-user; a static multi-user token stays a `headers` entry — two natures,
+two wirings, no blending.
 
 Inbound MCP (the instance exposing `ask_<agent>`) is a separate subsystem — with
 no default allowed-hosts baked into the product (the predecessor's lesson: one
@@ -1157,6 +1180,19 @@ that opens to its own words when the network is gone.
 - **`adestia init`** — the documented workspace scaffold.
 
 ## Decision log
+
+**2026-09-06 (connecting to an MCP server is the product's job, in the
+conversation):** Alfred could not reach Home Assistant, and the first fix
+proposed was Skippy hand-carrying an OAuth enrollment — a human patching a
+missing feature. The owner named the real product in one sentence: "Alfred
+should handle it himself — oh, a new MCP server, here is the link, done" —
+and placed the button IN THE CONVERSATION at the first demand, not only on a
+settings tile. Second owner call: stay clean about identity — a user-login
+door (OIDC-federated proxy) stays PER USER like google/withings, never
+flattened into one instance-level key; a static multi-user token remains a
+config `headers` entry. Shape in "MCP configuration"; the drivers' rule (a
+`signIn` server never falls back to the rebound token) is what turns
+"not connected" into a card instead of a false "failed".
 
 **2026-09-06 (the fold gets a seam; the build says its own name):** two
 surfaces the predecessor had and the migration had not carried over, both

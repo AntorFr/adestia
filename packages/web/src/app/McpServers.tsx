@@ -33,6 +33,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { Tile } from './Tile.js'
+import { beginSignIn, useConnections } from './signin.js'
 import { useMcpServers, type McpServerHealth } from './Settings.js'
 
 /** Where a server was declared. Only `ui` is this screen's to change. */
@@ -113,6 +114,7 @@ export function McpServers({
   const [save, setSave] = useState<Save>({ kind: 'idle' })
 
   const health = useMcpServers(fetchImpl)
+  const connections = useConnections(fetchImpl)
 
   const refresh = useCallback(async () => {
     const response = await fetchImpl('/api/mcp/servers')
@@ -196,6 +198,7 @@ export function McpServers({
 
   if (adding || shown) {
     const state = health?.find((entry) => entry.name === shown?.name)
+    const connection = connections?.find((entry) => entry.name === shown?.name)
     const tone = state ? STATES[state.state] ?? STATES.unknown : undefined
     const editable = adding || shown?.editable === true
     const dirty = draft !== onServer
@@ -227,6 +230,26 @@ export function McpServers({
             <span className={`adestia-stat adestia-stat--${tone.tone}`}>{t(tone.label)}</span>
             {/* Only ever what the CLI said. A reason is never invented. */}
             {state?.error && <span className="adestia-mcp__why">{state.error}</span>}
+          </p>
+        )}
+
+        {/* The tile's half of the sign-in surface: connect BEFORE the first
+            demand, or reconnect after a key died. Per person — the state and
+            the button are the viewer's own, never the instance's. */}
+        {shown?.config['signIn'] === 'oauth' && (
+          <p className="adestia-mcp__state adestia-connect adestia-connect--tile">
+            <span className="adestia-connect__text">
+              {connection?.connected
+                ? t('Connected for you — your turns reach it as you.')
+                : t('Not connected for you yet — this server signs each person in.')}
+            </span>
+            <button
+              type="button"
+              className="adestia-connect__go"
+              onClick={() => beginSignIn(shown.name)}
+            >
+              {connection?.connected ? t('Reconnect') : t('Connect')}
+            </button>
           </p>
         )}
 

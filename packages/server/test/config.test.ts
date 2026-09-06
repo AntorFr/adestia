@@ -369,6 +369,27 @@ mcp:
     })
   })
 
+  it('accepts a sign-in server, which must be a user one', () => {
+    const config = parseConfig(
+      'mcp:\n  servers:\n    - name: ha\n      url: https://ha.example/\n      identity: user\n      signIn: oauth\n',
+    )
+    expect(config.mcpServers[0]).toMatchObject({ name: 'ha', identity: 'user', signIn: 'oauth' })
+
+    // Connecting is something a PERSON does; on a machine server the flag
+    // would mean nothing and silently behave as one more unauthenticated URL.
+    expect(
+      issuesOf('mcp:\n  servers:\n    - name: ha\n      url: https://ha.example/\n      signIn: oauth\n'),
+    ).toEqual(['mcp.servers[0].signIn needs identity: user — connecting is something a PERSON does'])
+
+    // One token source per server: enrolled sign-in and configured auth are
+    // two answers to the same header.
+    expect(
+      issuesOf(
+        'mcp:\n  servers:\n    - name: ha\n      url: https://ha.example/\n      identity: user\n      signIn: oauth\n      auth:\n        tokenUrl: https://a/t\n        clientId: x\n        clientSecret: s\n',
+      ),
+    ).toEqual(['mcp.servers[0]: has both "signIn" and "auth" — one token source per server'])
+  })
+
   it('refuses an identity with neither a secret nor a refresh token', () => {
     expect(
       issuesOf(

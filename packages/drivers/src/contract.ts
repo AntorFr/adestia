@@ -173,6 +173,21 @@ export interface McpServer {
    */
   readonly identity?: 'machine' | 'user' | undefined
   /**
+   * How a `user` server's token is OBTAINED.
+   *
+   * Absent (the default): the caller's rebound token — the identity provider
+   * the instance already trusts mints one per turn, and every user server
+   * shares it. `oauth`: the server is its OWN authorization server (an
+   * mcp-auth style proxy), a rebound token is foreign currency to it, and
+   * each person connects ONCE through its interactive flow. The core then
+   * hands the driver a per-turn token for this server (`serverTokens`); a
+   * caller who never connected simply does not see the server — which is the
+   * signal the shell's sign-in card is built on, so the driver must NEVER
+   * fall back to the rebound token here: a wrong-currency attempt would read
+   * as "failed" where the truthful state is "not connected".
+   */
+  readonly signIn?: 'oauth' | undefined
+  /**
    * Credentials for a server that wants a short-lived OAuth token rather than
    * a fixed header.
    *
@@ -338,6 +353,17 @@ export interface TurnRequest {
    * exactly as long as the turn.
    */
   readonly callerToken?: string | undefined
+  /**
+   * Per-server tokens for THIS turn's caller, keyed by server name.
+   *
+   * The `signIn: oauth` servers: the core minted each of these from the
+   * caller's own enrolled connection (their rotating refresh key), so two
+   * people's turns reach the same server as two different people. A server
+   * with no entry here is one this caller never connected to — omitted from
+   * the turn, never reached with somebody else's token. Same lifetime rule
+   * as `callerToken`: it belongs to the turn, not to the driver.
+   */
+  readonly serverTokens?: Readonly<Record<string, string>> | undefined
   /**
    * Nobody is watching this turn — a scheduled note, an inbound delegation.
    *

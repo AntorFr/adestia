@@ -122,6 +122,7 @@ async function toSdkServers(
   servers: readonly McpServer[],
   tokens: McpTokens,
   callerToken?: string,
+  serverTokens?: Readonly<Record<string, string>>,
 ): Promise<Readonly<Record<string, McpServerConfig>>> {
   const out: Record<string, McpServerConfig> = {}
   for (const server of servers) {
@@ -140,9 +141,13 @@ async function toSdkServers(
       // Somebody's own data. Without a caller there is nobody to act as, so
       // the server is absent from this turn rather than reached with the
       // instance's identity — which would be a different person's data, or a
-      // flat refusal read as a broken tool.
-      if (!callerToken) continue
-      headers['Authorization'] = `Bearer ${callerToken}`
+      // flat refusal read as a broken tool. A `signIn` server takes ONLY its
+      // own per-turn token: the rebound one is foreign currency there, and
+      // presenting it would read as "failed" where the truthful state is
+      // "this caller never connected".
+      const token = server.signIn ? serverTokens?.[server.name] : callerToken
+      if (!token) continue
+      headers['Authorization'] = `Bearer ${token}`
     } else if (server.auth) {
       const token = await tokens.for(server.auth)
       // A server whose token could not be minted is OMITTED rather than sent
@@ -365,7 +370,12 @@ export class ClaudeCodeDriver implements Driver {
     // Resolved per turn, not per process: a hub's token lives about an hour,
     // and a map built at construction would be stale by the second morning.
     const mcpServers: Record<string, unknown> = {
-      ...(await toSdkServers(this.#mcpServers(), this.#tokens, request.callerToken)),
+      ...(await toSdkServers(
+        this.#mcpServers(),
+        this.#tokens,
+        request.callerToken,
+        request.serverTokens,
+      )),
     }
     if (request.tools) {
       // The instance's own tools. In-process when the embedding provided a

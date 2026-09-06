@@ -357,7 +357,11 @@ export class CopilotDriver implements Driver {
    * to write is swallowed on purpose: a turn that cannot reach one MCP server
    * is worth far more than a turn that refuses to start.
    */
-  async #mcpConfig(callerToken?: string, tools?: ShellToolsHandle): Promise<string | undefined> {
+  async #mcpConfig(
+    callerToken?: string,
+    tools?: ShellToolsHandle,
+    serverTokens?: Readonly<Record<string, string>>,
+  ): Promise<string | undefined> {
     // Under the shell transport the instance's tools ride the execute tool,
     // not an MCP server — so they never enter this file.
     const bridgeTools = this.#shellToolsTransport === 'mcp' ? tools : undefined
@@ -380,9 +384,11 @@ export class CopilotDriver implements Driver {
         const headers: Record<string, string> = { ...server.headers }
         if (server.identity === 'user') {
           // See the other driver: no caller, no server. A turn the clock
-          // started has nobody to act as.
-          if (!callerToken) continue
-          headers['Authorization'] = `Bearer ${callerToken}`
+          // started has nobody to act as. And a `signIn` server takes only
+          // its own per-turn token — never the rebound one.
+          const token = server.signIn ? serverTokens?.[server.name] : callerToken
+          if (!token) continue
+          headers['Authorization'] = `Bearer ${token}`
         } else if (server.auth) {
           const token = await this.#tokens.for(server.auth)
           // Omitted rather than sent unauthenticated — same rule as the other
@@ -458,7 +464,7 @@ export class CopilotDriver implements Driver {
     const mcpConfig =
       this.#mcpServers().length === 0 && !mcpRelevantTools
         ? undefined
-        : await this.#mcpConfig(request.callerToken, request.tools)
+        : await this.#mcpConfig(request.callerToken, request.tools, request.serverTokens)
     // Shell transport: the CLI is written and the socket/token armed in the
     // child's env, so the instance tools ride the execute tool instead of MCP.
     const shellToolsEnv =
