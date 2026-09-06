@@ -502,3 +502,69 @@ describe('settings, as an app of the shell', () => {
     location.hash = ''
   })
 })
+
+
+describe('the folded shell', () => {
+  /**
+   * A phone. jsdom answers every media query with `false`, so a shell that
+   * asks whether it is folded is told "no" on a 390px window — the fold has
+   * to be stated, not merely sized.
+   */
+  function fold(width: number): () => void {
+    const previous = { width: window.innerWidth, matchMedia: window.matchMedia }
+    Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: width })
+    window.matchMedia = ((media: string) => ({
+      media,
+      matches: width <= 820,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    })) as unknown as typeof window.matchMedia
+    return () => {
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        writable: true,
+        value: previous.width,
+      })
+      window.matchMedia = previous.matchMedia
+    }
+  }
+
+  const shell = async (container: HTMLElement) =>
+    waitFor(() => {
+      const el = container.querySelector('.adestia-shell')
+      expect(el).toBeTruthy()
+      return el as HTMLElement
+    })
+
+  it('gives the gesture a handle, and each handle leads where it points', async () => {
+    // The swipe is invisible: nothing on a folded screen admits that a second
+    // one is waiting. These are that admission — and being buttons, they are
+    // also the way through for anyone who never discovers the gesture.
+    const restore = fold(390)
+    try {
+      const { container } = render(<App fetchImpl={apiFetch()} />)
+      const folded = await shell(container)
+      expect(folded.getAttribute('data-screen')).toBe('chat')
+
+      fireEvent.click(container.querySelector('.adestia-edge[data-side="right"]')!)
+      expect(folded.getAttribute('data-screen')).toBe('canvas')
+
+      fireEvent.click(container.querySelector('.adestia-edge[data-side="left"]')!)
+      expect(folded.getAttribute('data-screen')).toBe('chat')
+    } finally {
+      restore()
+    }
+  })
+
+  it('draws no handle on a desktop, where both panes are already in view', async () => {
+    const restore = fold(1200)
+    try {
+      const { container } = render(<App fetchImpl={apiFetch()} />)
+      const wide = await shell(container)
+      expect(wide.getAttribute('data-screen')).toBeNull()
+      expect(container.querySelectorAll('.adestia-edge')).toHaveLength(0)
+    } finally {
+      restore()
+    }
+  })
+})

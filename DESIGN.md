@@ -557,7 +557,10 @@ The v1 chat must be **at least** agent-gw's PWA, which sets the bar:
 - **Mobile/PWA:** responsive breakpoint with swipe between chat and canvas
   (touch and pen only, refused inside a field or anything scrollable
   sideways, and always alongside the header button — a gesture nobody
-  discovers must never be the only route to a screen);
+  discovers must never be the only route to a screen), announced by an edge
+  handle: 6px of the pane you cannot see, against the side it sits on, one at
+  a time, and a button in its own right so the gesture is advertised without
+  being required;
   installable PWA, skin-merged manifest (N instances = N discernible installs),
   service worker with network-first shell (opens offline, never serves stale JS).
 
@@ -1154,6 +1157,17 @@ that opens to its own words when the network is gone.
 - **`adestia init`** — the documented workspace scaffold.
 
 ## Decision log
+
+**2026-09-06 (the fold gets a seam):** folded onto one screen the two panes stack perfectly, so nothing
+admitted the second one existed — the swipe was there and was discoverable
+only by accident. An edge handle now shows 6px of the pane you cannot see,
+against the side it sits on, one at a time. Two decisions inside a very small
+change. It is a BUTTON, not a decoration: the affordance and the fallback are
+the same object, so a person who never guesses the gesture still gets through.
+And the two handles carry CONSTANT destinations rather than one toggling —
+a swipe begun on a handle may be followed by the click the browser synthesises
+for the same finger, and a toggle would undo the swipe it had just made,
+leaving the screen exactly where it started.
 
 **2026-09-06 (delegation is a channel; a callback is not an ask):** the
 migration from agent-gw had silently dropped three things nobody recorded:

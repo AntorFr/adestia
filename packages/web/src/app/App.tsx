@@ -1107,6 +1107,39 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
         )}
         </div>
       </main>
+
+      {/* The gesture, given something to look at.
+
+          A swipe nobody suspects is a swipe nobody makes. Folded, the two
+          panes stack perfectly: nothing on screen says a second one is
+          waiting, and the header buttons are the only admission that it
+          exists. These handles are the seam — the sliver of the pane you
+          cannot see, poking in from the side it sits on.
+
+          Their destinations are CONSTANT, and that is load-bearing rather
+          than tidy. A swipe that starts on a handle may be followed by the
+          click the browser synthesises for the same finger; a toggle would
+          then undo the swipe it had just made, and the screen would sit
+          exactly where it started. Two handles that each name one screen
+          make that second event a no-op instead of a bug. */}
+      {mobile && (
+        <>
+          <button
+            type="button"
+            className="adestia-edge"
+            data-side="right"
+            onClick={() => setScreen('canvas')}
+            aria-label={t('Open apps')}
+          />
+          <button
+            type="button"
+            className="adestia-edge"
+            data-side="left"
+            onClick={() => setScreen('chat')}
+            aria-label={t('Back to the chat')}
+          />
+        </>
+      )}
     </div>
   )
 }
