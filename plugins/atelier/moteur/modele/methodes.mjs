@@ -261,6 +261,39 @@ const largeurEnRainure = (fond, cotes) => ({
   egale: 0,
 })
 
+/* Ce qu'un fond MASQUE. Il est le panneau le plus au dos : tout ce qui se
+   trouve devant lui n'est plus vu de l'arrière, et ne se chante donc pas — la
+   règle a toujours dit « tourné vers une face regardée ET que rien ne
+   l'occulte », c'est la seconde moitié qui manquait.
+
+   Sauf ce qui le BORDE, et qui reste dehors : les côtés le prennent en
+   rainure ou l'encadrent, le dessous le porte ou l'arrête. Le seul cas où le
+   dessous passe derrière lui est le fond traversant, où le dessous est ramené
+   pour lui livrer passage — là, c'est le fond qu'on voit, pas le dessous. */
+/* De combien une pièce doit RECULER pour ne pas taper le fond.
+   Le séparateur latéral le devinait à partir de `pose`, ce qui marchait par
+   accident : un meuble mobile a un fond structurel de 19 mm posé entre les
+   côtés, et son séparateur vient buter dessus — 651 dans un meuble de 670,
+   là où le moteur en calculait 669. Un meuble fixe a un fond en rainure,
+   retenu du dos, et c'est ce retrait-là qu'il faut dégager.
+
+   Chaque méthode de fond pose donc la grandeur, et qui la consomme n'a pas
+   besoin de savoir laquelle a répondu — ni de tourner après elle. */
+const degagement = (termes) => ({
+  nom: 'meuble/degagement-du-fond',
+  termes: { 'meuble.degagement_fond': 1, ...termes },
+  egale: 0,
+})
+
+const masqueLArriere = (trigramme, module, avecLeBas = true) => ({
+  face: 'arriere',
+  sauf: [
+    etiquette(trigramme, module, 'CÔTÉ', 'G'),
+    etiquette(trigramme, module, 'CÔTÉ', 'D'),
+    ...(avecLeBas ? [etiquette(trigramme, module, 'BAS')] : []),
+  ],
+})
+
 /** En rainure, le fond n'a AUCUN bord dehors — d'où « pas de chant au fond ». */
 const pieceFond = (trigramme, module, regardeVers = {}) => ({
   etiquette: etiquette(trigramme, module, 'FOND'),
@@ -283,7 +316,9 @@ const fondRainureTraversant = {
     const fond = pieceFond(trigramme, module)
     return {
       pieces: [fond],
+      occulte: masqueLArriere(trigramme, module, false),
       relations: [
+        degagement({ 'param.retrait_fond_dos': -1 }),
         {
           nom: `${fond.etiquette}/hauteur-traversante`,
           termes: {
@@ -307,7 +342,9 @@ const fondRainureArrete = {
     const fond = pieceFond(trigramme, module)
     return {
       pieces: [fond],
+      occulte: masqueLArriere(trigramme, module, true),
       relations: [
+        degagement({ 'param.retrait_fond_dos': -1 }),
         {
           nom: `${fond.etiquette}/hauteur-arretee`,
           termes: { [v(fond.etiquette, 'z')]: 1, [v(cotes[0].etiquette, 'z')]: -1, 'param.marge_fond': 1 },
@@ -336,7 +373,9 @@ const fondRainureEncastre = {
     const fond = pieceFond(trigramme, module)
     return {
       pieces: [fond],
+      occulte: masqueLArriere(trigramme, module, true),
       relations: [
+        degagement({ 'param.retrait_fond_dos': -1 }),
         {
           nom: `${fond.etiquette}/hauteur-encastree`,
           termes: {
@@ -375,7 +414,9 @@ const fondStructurel = {
     const fond = pieceFond(trigramme, module)
     return {
       pieces: [fond],
+      occulte: masqueLArriere(trigramme, module, true),
       relations: [
+        degagement({ [v(fond.etiquette, 'ep')]: -1 }),
         entre(fond, 'x', cotes.map((c) => c.etiquette)),
         bute(fond, 'z', [etiquette(trigramme, module, 'BAS')]),
       ],
@@ -399,63 +440,99 @@ const fondStructurel = {
    retrait avant, en sortie. Un nom de méthode par combinaison de retraits
    ferait quatre noms pour une seule pièce. */
 const tabletteFixe = {
-  decrit: 'tablette fixe entre les côtés, retraits avant et arrière selon le cas',
+  decrit: 'tablettes fixes entre les côtés, retraits avant et arrière selon le cas',
   applique({ trigramme, module, cotes, design, sorties }) {
-    const { combien } = compte(design?.tablettes, 'tablettes')
+    /* Le design DÉCLARE ses tablettes, et il peut en poser dans plusieurs
+       endroits à la fois : le caisson de l'imprimante 3D a un séparateur
+       latéral et UNE tablette par colonne, 331,5 chacune. La déclaration ne
+       nommait qu'une zone pour toutes, donc ce meuble ne pouvait pas s'écrire.
 
+       Trois écritures, de la plus courte à la plus précise, et c'est la même
+       progression que pour les séparateurs :
+
+         tablettes: 2                          deux tablettes dans le meuble
+         tablettes: { nombre: 1, zone: 'x' }   une, dans la zone x
+         tablettes: [{ nombre: 1, zone: 'g' }, { nombre: 1, zone: 'd' }]
+
+       Le numéro reste continu d'un lot à l'autre : TAB-1, TAB-2… parce que
+       c'est ce qui est écrit au crayon sur les panneaux, et que l'atelier ne
+       compte pas par zone. */
+    const lots = Array.isArray(design?.tablettes) ? design.tablettes : [design?.tablettes]
     const enRetrait = sorties?.retrait_avant === 'oui'
-    // Le fond glissé en rainure passe derrière : cas fixe avec fond.
-    const passeDerriere = design?.fond === 'oui' && design?.pose === 'fixe'
 
     /* Un séparateur FRONTAL coupe la profondeur en deux ZONES — bacs devant,
        outils derrière — et une tablette vit dans l'une des deux, pas dans le
-       meuble. Elle doit donc dire laquelle : `tablettes: { nombre, zone }`.
-       Sans ça, cette méthode coterait sur toute la profondeur — faux,
-       plausible, et muet. */
-    const zone = zoneDe(design?.tablettes)
+       meuble. Elle doit donc dire laquelle. Sans ça, cette méthode coterait
+       sur toute la profondeur : faux, plausible, et muet. */
     const partageEnProfondeur = (design?.separateurs ?? [])
       .some((c) => c.type === 'frontal' && !c.zone)
-    const zoneIndeterminee = partageEnProfondeur && !zone
-    const dans = zone ? contenant(zone) : undefined
 
-    const pieces = Array.from({ length: combien }, (_, i) => ({
-      etiquette: etiquette(trigramme, module, 'TAB', String(i + 1)),
-      role: 'TABLETTE',
-      orientation: 'horizontal',
-      // Une tablette en retrait se voit exactement comme une affleurante.
-      regardeVers: { 'rive-avant': 'avant' },
-    }))
+    const pieces = []
+    const relations = []
+    const issues = []
+    let numero = 0
 
-    if (zoneIndeterminee) {
-      return {
-        pieces,
-        relations: pieces.map((t) => entre(t, 'x', cotes.map((c) => c.etiquette))),
-        issues: pieces.map((t) => ({
-          gravite: 'bloquant',
-          type: 'zone-inconnue',
-          message: `${t.etiquette} : un séparateur frontal partage la profondeur en deux ZONES, `
-            + 'et rien ne dit dans laquelle cette tablette se pose — sa profondeur n\'est pas '
-            + 'celle du meuble.',
-        })),
+    for (const lot of lots) {
+      const { combien } = compte(lot, 'tablettes')
+      const zone = zoneDe(lot)
+      const dans = zone ? contenant(zone) : undefined
+      /* Une zone ne divise qu'UN axe : la tablette y prend son étendue, et
+         garde celle du meuble sur l'autre. Le meuble poubelle partage la
+         profondeur — sa tablette tient toujours toute la largeur intérieure —
+         là où une colonne partage la largeur. */
+      const axeDeZone = (design?.zones ?? []).find((z) => z.id === zone)?.axe
+      for (let i = 0; i < combien; i++) {
+        numero += 1
+        const t = {
+          etiquette: etiquette(trigramme, module, 'TAB', String(numero)),
+          role: 'TABLETTE',
+          orientation: 'horizontal',
+          // Une tablette en retrait se voit exactement comme une affleurante.
+          regardeVers: { 'rive-avant': 'avant' },
+        }
+        pieces.push(t)
+
+        if (partageEnProfondeur && !zone) {
+          relations.push(entre(t, 'x', cotes.map((c) => c.etiquette)))
+          issues.push({
+            gravite: 'bloquant',
+            type: 'zone-inconnue',
+            message: `${t.etiquette} : un séparateur frontal partage la profondeur en deux ZONES, `
+              + 'et rien ne dit dans laquelle cette tablette se pose — sa profondeur '
+              + 'n\'est pas celle du meuble.',
+          })
+          continue
+        }
+
+        const partageLaLargeur = dans && axeDeZone === 'x'
+        const partageLaProfondeur = dans && axeDeZone === 'y'
+        relations.push(
+          partageLaLargeur
+            ? {
+              nom: `${t.etiquette}/largeur-de-zone`,
+              termes: { [v(t.etiquette, 'x')]: 1, [`${dans}.x`]: -1 },
+              egale: 0,
+            }
+            : entre(t, 'x', cotes.map((c) => c.etiquette)),
+          {
+            nom: `${t.etiquette}/profondeur`,
+            termes: {
+              [v(t.etiquette, 'y')]: 1,
+              [`${partageLaProfondeur ? dans : 'meuble'}.y`]: -1,
+              /* Elle recule de ce que le fond occupe, sans deviner son montage :
+                 son épaisseur s'il est structurel, son retrait s'il est en
+                 rainure. Ça se devinait à partir de `pose`, ce qui marchait par
+                 accident — une tablette de meuble mobile tapait le fond. */
+              ...(partageLaProfondeur ? {} : { 'meuble.degagement_fond': 1 }),
+              ...(enRetrait ? { 'param.retrait_tablette_avant': 1 } : {}),
+            },
+            egale: 0,
+          },
+        )
       }
     }
 
-    return {
-      pieces,
-      relations: pieces.flatMap((t) => [
-        entre(t, 'x', cotes.map((c) => c.etiquette)),
-        {
-          nom: `${t.etiquette}/profondeur`,
-          termes: {
-            [v(t.etiquette, 'y')]: 1,
-            [`${dans ?? 'meuble'}.y`]: -1,
-            ...(passeDerriere ? { 'param.retrait_fond_dos': 1 } : {}),
-            ...(enRetrait ? { 'param.retrait_tablette_avant': 1 } : {}),
-          },
-          egale: 0,
-        },
-      ]),
-    }
+    return { pieces, relations, ...(issues.length ? { issues } : {}) }
   },
 }
 
@@ -517,9 +594,10 @@ const separateurs = {
             termes: {
               [v(piece.etiquette, 'y')]: 1,
               [`${dans ?? 'meuble'}.y`]: -1,
-              ...(!dans && design?.fond === 'oui' && design?.pose === 'fixe'
-                ? { 'param.retrait_fond_dos': 1 }
-                : {}),
+              // Il recule de ce que le fond occupe — son épaisseur s'il est
+              // structurel, son retrait s'il est en rainure. Une pièce posée
+              // DANS une zone se cote sur sa zone et ne voit pas le fond.
+              ...(dans ? {} : { 'meuble.degagement_fond': 1 }),
             },
             egale: 0,
           },

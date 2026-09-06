@@ -31,7 +31,7 @@ export const contenant = (id) => `zone:${id}`
  * système sous-déterminé — et le solveur le nomme, plutôt que d'en inventer
  * une.
  */
-export function relationsDesZones(design, separateurs = []) {
+export function relationsDesZones(design, separateurs = [], bornes = {}) {
   const zones = design?.zones ?? []
   if (!zones.length) return []
 
@@ -49,14 +49,20 @@ export function relationsDesZones(design, separateurs = []) {
     }
   }
 
-  // Les zones d'un axe, plus les séparateurs qui les séparent, font le meuble.
+  /* Les zones d'un axe, plus les séparateurs qui les séparent, remplissent
+     l'INTÉRIEUR du meuble sur cet axe — pas son hors-tout. Sur la largeur, les
+     deux côtés prennent leur épaisseur d'abord : trois zones de 331,5 et un
+     séparateur ne font pas 720 mais 682. Sur la profondeur d'un meuble ouvert
+     des deux côtés, rien ne borne, et la somme vaut bien le hors-tout — c'est
+     ce qui a fait passer l'oubli inaperçu jusqu'ici. */
   for (const [axe, lot] of parAxe) {
     const cloisons = separateurs.filter((s) => s.axe === axe)
     relations.push({
-      nom: `zones/${axe}-remplissent-le-meuble`,
+      nom: `zones/${axe}-remplissent-l-interieur`,
       termes: {
         ...Object.fromEntries(lot.map((zone) => [z(zone.id, axe), 1])),
         ...Object.fromEntries(cloisons.map((s) => [`${s.etiquette}.ep`, 1])),
+        ...Object.fromEntries((bornes[axe] ?? []).map((v) => [v, 1])),
         [`meuble.${axe}`]: -1,
       },
       egale: 0,

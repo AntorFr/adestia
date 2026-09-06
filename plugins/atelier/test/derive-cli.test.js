@@ -159,7 +159,10 @@ test('changer les faces chantées suffit à rechanter tout le meuble', () => {
 
   const { out } = lance(['chant', wb, '--regles', regles, '--chante', 'avant,arriere,gauche,droite'])
   assert.match(out, /~ BLT-A1-BAS {2}longueur 1120 → 1118/)
-  assert.match(out, /BLT-A1-TRAV-HAUT-AR .*rive-arriere/)
+  assert.match(out, /BLT-A1-CÔTÉ-G .*rive-arriere/)
+  // Pas la traverse haute arrière : le fond la masque, et chanter l'arrière du
+  // meuble n'y change rien — on ne plaque pas un bord que personne ne voit.
+  assert.doesNotMatch(out, /BLT-A1-TRAV-HAUT-AR .*rive-arriere/)
 })
 
 test('sans surcharge, aucune clé `chants` n\'est écrite — l\'empreinte ne bouge pas pour rien', () => {

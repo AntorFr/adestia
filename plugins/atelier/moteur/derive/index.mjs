@@ -155,6 +155,9 @@ export function derive(design, tables, moduleDemande) {
      passé aux suivantes : un séparateur bute dessous et ne peut pas deviner
      si c'est un dessus plein ou deux traverses. */
   let ferme = []
+  /* Ce que les méthodes déclarent MASQUER : un fond cache l'arrière de tout ce
+     qui est devant lui, sauf des pièces qui le bordent et restent dehors. */
+  const occultations = []
 
   /* Des faits DÉRIVÉS, calculés avant d'interroger les tables.
      Une table ne porte que des domaines énumérés — un seuil dans une cellule
@@ -208,9 +211,16 @@ export function derive(design, tables, moduleDemande) {
     for (const i of r.issues ?? []) issues.push(issue(i.gravite ?? 'bloquant', i.type ?? 'hors-portee', i.message, i))
     for (const p of r.pieces) parEtiquette[p.etiquette] = alors
     if (r.ferme) ferme = r.ferme
+    if (r.occulte) occultations.push(r.occulte)
     pieces.push(...r.pieces)
     relations.push(...r.relations)
   }
+
+  /* Pas de fond, rien à dégager. C'est un FAIT tiré des pièces sorties, pas un
+     défaut de commodité : si une méthode de fond a répondu, c'est elle qui pose
+     la grandeur, et celle-ci n'est jamais choisie par le pipeline. */
+  if (!pieces.some((p) => p.role === 'FOND'))
+    pose({ nom: 'meuble/aucun-fond-a-degager', termes: { 'meuble.degagement_fond': 1 }, egale: 0 })
 
   // Le hors-tout et les paramètres sont posés comme des relations ordinaires :
   // un paramètre absent laisse donc une cote libre, au lieu d'un défaut muet.
@@ -223,7 +233,10 @@ export function derive(design, tables, moduleDemande) {
   const cloisons = pieces
     .filter((p) => p.partage)
     .map((p) => ({ etiquette: p.etiquette, axe: p.partage }))
-  for (const r of relationsDesZones(design, cloisons)) pose(r)
+  /* Ce qui BORNE le meuble sur chaque axe, et que les zones ne peuvent pas
+     occuper : sur la largeur, les deux côtés. */
+  const bornes = { x: cotes.map((c) => v(c.etiquette, 'ep')) }
+  for (const r of relationsDesZones(design, cloisons, bornes)) pose(r)
   for (const [nom, valeur] of Object.entries(design.parametres ?? {}))
     pose(constante(`parametre/${nom}`, `param.${nom}`, valeur))
 
@@ -235,6 +248,7 @@ export function derive(design, tables, moduleDemande) {
     pieces.map((p) => ({ ...p, chante: matieres.get(p.etiquette).chante })),
     design.faces_chantees ?? [],
     design.chants ?? {},
+    occultations,
   )
 
   /* Une pièce peut refuser de rendre d'avance ce que sa bande ajoutera : le

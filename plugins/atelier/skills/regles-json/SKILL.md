@@ -263,8 +263,24 @@ nombre plausible et faux — 649 pour un espace qui en fait 281.
 "tablettes": { "nombre": 1, "zone": "outils" }
 ```
 
+Une tablette par zone se déclare en LISTE, comme les séparateurs — le caisson
+de l'imprimante a un séparateur latéral et une tablette par colonne :
+
+```jsonc
+"zones": [
+  { "id": "gauche", "axe": "x", "etendue": 331.5 },
+  { "id": "droite", "axe": "x" }
+],
+"tablettes": [{ "nombre": 1, "zone": "gauche" }, { "nombre": 1, "zone": "droite" }]
+```
+
+Les numéros restent continus d'un lot à l'autre — `TAB-1`, `TAB-2`… — parce que
+c'est ce qui s'écrit au crayon sur les panneaux, et que l'atelier ne compte pas
+par zone. Une zone ne divise qu'UN axe : la tablette y prend son étendue et
+garde celle du meuble sur l'autre.
+
 **La dernière étendue ne se déclare pas.** Les zones d'un même axe et les
-séparateurs qui les séparent remplissent le meuble : 350 + 19 + `outils` = 650
+séparateurs qui les séparent remplissent l'INTÉRIEUR du meuble : 350 + 19 + `outils` = 650
 donne `outils = 281`, et le moteur le rend. Deux zones sans étendue laissent le
 système ouvert — et il le DIT plutôt que d'en inventer une.
 
