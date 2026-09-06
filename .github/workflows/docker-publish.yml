@@ -58,6 +58,12 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          # What the instance answers when asked which version it is. Taken
+          # from the metadata step rather than from `github.ref` so the string
+          # on screen is the tag that was actually pushed — `0.32.0` for a
+          # release, `main` for the dev image.
+          build-args: |
+            ADESTIA_VERSION=${{ steps.meta.outputs.version }}
           platforms: >-
             ${{ (startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, '-'))
                 && 'linux/amd64,linux/arm64' || 'linux/amd64' }}

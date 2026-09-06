@@ -1436,6 +1436,23 @@
 
 .adestia-cog__who { color: var(--text-faint); font-size: var(--text-sm); }
 
+/* The build, at the foot of the panel: a colophon, not a setting. Muted and
+   last, because it is read once — when somebody wants to know whether the
+   deployment they just pushed is the one answering. */
+.adestia-cog__build {
+  margin: var(--space-3) 0 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+  color: var(--text-faint);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+/* The number itself in the fixed pitch this shell uses for machine-written
+   strings: `0.32.0` is read digit by digit, and proportional figures make
+   that harder than it needs to be. */
+.adestia-cog__version { font-family: var(--font-mono); }
+
 /* The settings app -------------------------------------------------------
 
    No rows here any more. Rows were a preferences idiom, and they made two

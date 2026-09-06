@@ -67,6 +67,11 @@ function say(
 }
 
 export interface InstanceInfo {
+  /**
+   * Which build of Adestia is serving this page. Absent from a checkout —
+   * the server sends it only when the image was stamped with a tag.
+   */
+  readonly version?: string
   readonly driver: { label: string; cliVersion: string; capabilities: readonly string[] }
   readonly auth: { mode: string }
   /** What the operator called this instance. Set only when they called it anything. */
@@ -936,6 +941,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             {...(instance.auth.mode === 'oidc'
               ? { signedIn: instance.user?.displayName ?? '' }
               : {})}
+            {...(instance.version ? { version: instance.version } : {})}
             fetchImpl={fetchImpl}
             t={t}
           />

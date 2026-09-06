@@ -45,6 +45,11 @@ export interface SettingsMenuProps {
   readonly onTheme: (theme: string) => void
   /** Only an instance that signed somebody IN can sign them out. */
   readonly signedIn?: string | undefined
+  /**
+   * Which build is running. Absent from a checkout, where there is no
+   * release to name.
+   */
+  readonly version?: string | undefined
   readonly fetchImpl?: typeof fetch
   readonly t?: (key: string) => string
 }
@@ -53,6 +58,7 @@ export function SettingsMenu({
   theme,
   onTheme,
   signedIn,
+  version,
   fetchImpl = fetch,
   t = (key) => key,
 }: SettingsMenuProps) {
@@ -148,6 +154,20 @@ export function SettingsMenu({
               </form>
             </section>
           )}
+
+          {/* Which build is on screen — the one thing you come looking for
+              when a deployment may or may not have landed, and the one thing
+              no other surface says. Here rather than on the canvas header
+              beside the driver: that line is diagnostics about the ENGINE,
+              and it is the first thing a phone drops. The cog is reachable
+              from either screen at any width.
+
+              The number is omitted, never faked: a checkout has no release to
+              name, and the product's name alone reads as a name where
+              "Adestia unknown" reads as a broken field. */}
+          <p className="adestia-cog__build">
+            Adestia{version ? <span className="adestia-cog__version"> {version}</span> : null}
+          </p>
         </div>
       )}
     </div>

@@ -141,6 +141,16 @@ ENV ADESTIA_HOST=0.0.0.0
 # reading it.
 ENV ADESTIA_WORKSPACE=/workspace
 ENV ADESTIA_DATA_DIR=/data
+
+# Which build this is, so the running instance can say it out loud. Declared
+# last on purpose: changing it invalidates nothing above, so stamping a version
+# costs no rebuild. The publish workflow passes the very tag it is about to
+# push — the only number that answers "what is deployed", since nothing in the
+# tree carries one (a release is `git tag vX.Y.Z`, the manifests read 0.0.0).
+# Empty in a local build, and the shell then shows the name with no number
+# rather than a number it made up.
+ARG ADESTIA_VERSION=
+ENV ADESTIA_VERSION=${ADESTIA_VERSION}
 EXPOSE 8730
 
 # Sizing, because it is not obvious from the image: each CONCURRENT agent turn
