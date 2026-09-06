@@ -85,7 +85,7 @@ const meubleComplet = {
     plan_travail: { id: 'MDF19', ep: 19, chante: false },
   },
   parametres: {
-    marge_fond: 5, rainure_prof: 9, rainure_bas_prof: 8, fond_jeu: 2,
+    marge_fond: 2, rainure_prof: 9, rainure_bas_prof: 8, fond_jeu: 2,
     profondeur_traverse: 150, retrait_fond_dos: 20, retrait_tablette_avant: 3,
     seuil_mutualisation: 3, jeu_facade: 3, jeu_facade_lateral: 2,
     ep_coulisse: 12.5, jeu_coulisse: 1, profondeur_coulisse: 550,

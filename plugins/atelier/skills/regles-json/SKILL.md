@@ -135,7 +135,7 @@ reste LIBRE, nommée, et bloque la dérivation.
     "plan_travail": { "id": "MDF19", "ep": 19, "chante": false }
   },
   "parametres": {
-    "marge_fond": 5, "rainure_prof": 9, "rainure_bas_prof": 8, "fond_jeu": 2,
+    "marge_fond": 2, "rainure_prof": 9, "rainure_bas_prof": 8, "fond_jeu": 2,
     "retrait_fond_dos": 20, "retrait_tablette_avant": 3, "profondeur_traverse": 150,
     "jeu_facade": 3, "jeu_facade_lateral": 2, "retrait_chant": 1,
     "ep_coulisse": 12.5, "jeu_coulisse": 1, "profondeur_coulisse": 550,
@@ -143,6 +143,10 @@ reste LIBRE, nommée, et bloque la dérivation.
   }
 }
 ```
+
+`marge_fond` est le jeu EN L'AIR : 2, soit 1 en haut et 1 en bas, pour être sûr
+que le fond ne dépasse d'aucun côté. Il ne se confond pas avec le jeu de
+rainure ci-dessous — l'un ménage du vide, l'autre le fond d'un trait de scie.
 
 **Une rainure se décrit toujours de la même façon : une profondeur et un jeu.**
 `rainure_prof` est celle des côtés, `rainure_bas_prof` celle du dessous — deux

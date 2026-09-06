@@ -38,7 +38,7 @@ const design = (sur = {}) => ({
   dessous: 'encastre',
   materiaux: { principal: { id: 'MEL19', ep: 19 }, fond: { id: 'MEL8', ep: 8, chante: false } },
   parametres: {
-    marge_fond: 5,
+    marge_fond: 2,
     rainure_prof: 9,
     rainure_bas_prof: 8,
     fond_jeu: 2,
@@ -78,10 +78,10 @@ test('la traverse haute fait 1082 — la largeur intérieure, jamais écrite', (
   assert.equal(cote(avecTraverses(design()), 'BLT-A1-TRAV-HAUT-AV').longueur, 1082)
 })
 
-test('le fond encastré fait 852 × 1096, de deux rainures qui ne se ressemblent pas', () => {
+test('le fond encastré fait 855 × 1096, de deux rainures qui ne se ressemblent pas', () => {
   const f = cote(avecTraverses(design()), 'BLT-A1-FOND')
-  // 870 − 5 de marge − (19 du bas − (8 de rainure au bas − 2 de jeu))
-  assert.equal(f.longueur, 852)
+  // 870 − 2 de marge (1 en haut, 1 en bas) − (19 du bas − (8 de rainure au bas − 2 de jeu))
+  assert.equal(f.longueur, 855)
   // 1120 − 2×19 + 2×(9 − 2) : le fond n'est pas tenu par l'emboîtement
   assert.equal(f.largeur, 1096)
   assert.equal(f.ep, 8, 'la MATIÈRE vient de la table, et son épaisseur avec')
@@ -93,7 +93,8 @@ test('le panneau POSÉ fait 851 × 1094 : il a été coupé quand le jeu valait 
   // agit sur les deux axes — deux rainures en largeur, une seule en hauteur,
   // d'où 2 mm d'un côté et 1 mm de l'autre.
   const commeCoupe = design()
-  commeCoupe.parametres = { ...commeCoupe.parametres, fond_jeu: 3 }
+  // Les deux jeux d'alors : 5 en l'air (qui valait 2 × 2,5) et 3 en rainure.
+  commeCoupe.parametres = { ...commeCoupe.parametres, marge_fond: 5, fond_jeu: 3 }
   const f = cote(avecTraverses(commeCoupe), 'BLT-A1-FOND')
   assert.deepEqual([f.longueur, f.largeur], [851, 1094])
 })
@@ -104,7 +105,7 @@ test('les deux rainures ne se confondent pas : 4 mm en dépendent', () => {
   // profondeur, et les confondre coûte 4 mm sur le panneau.
   const avecUneAutreRainure = design()
   avecUneAutreRainure.parametres = { ...avecUneAutreRainure.parametres, rainure_bas_prof: 12 }
-  assert.equal(cote(avecTraverses(avecUneAutreRainure), 'BLT-A1-FOND').longueur, 856)
+  assert.equal(cote(avecTraverses(avecUneAutreRainure), 'BLT-A1-FOND').longueur, 859)
 })
 
 test('le journal dit quelle table, quelle ligne, quelle méthode', () => {

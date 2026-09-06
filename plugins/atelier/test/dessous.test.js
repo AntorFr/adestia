@@ -57,7 +57,7 @@ const garage = (sur = {}) => ({
     fond: { id: 'MEL8', ep: 8, chante: false },
   },
   parametres: {
-    marge_fond: 5, rainure_prof: 9, rainure_bas_prof: 8, fond_jeu: 2,
+    marge_fond: 2, rainure_prof: 9, rainure_bas_prof: 8, fond_jeu: 2,
     retrait_fond_dos: 20, retrait_chant: 1, seuil_mutualisation: 3,
   },
   ...sur,

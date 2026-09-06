@@ -18,7 +18,7 @@ const design = () => ({
   famille: 'caisson',
   hors_tout: { l: 1120, p: 600, h: 870 },
   pose: 'fixe',
-  parametres: { marge_fond: 5 },
+  parametres: { marge_fond: 2 },
 })
 
 /* ── l'empreinte ─────────────────────────────────────────────────────────── */
