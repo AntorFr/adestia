@@ -350,8 +350,19 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             ]),
         // The thing being read, named. A trail that stopped at "Instructions"
         // while a file fills the screen is a trail that cannot say where the
-        // reader is — which is the one job it has.
-        ...(settings.item ? [{ label: settings.item.split('/').at(-1) as string }] : []),
+        // reader is — which is the one job it has. A delegation's address ends
+        // in a thread UUID, which names nothing to a person: its caller — the
+        // FIRST segment — is the half of the address that does.
+        ...(settings.item
+          ? [
+              {
+                label:
+                  settings.page === 'delegations'
+                    ? (settings.item.split('/')[0] as string)
+                    : (settings.item.split('/').at(-1) as string),
+              },
+            ]
+          : []),
       ])
     }
     if (openApp) {

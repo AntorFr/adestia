@@ -1881,6 +1881,52 @@
   background: var(--surface-sunken);
 }
 
+/* Delegations (settings page) ---------------------------------------------- */
+
+/*
+ * The thread-list vocabulary, out of its dropdown. `.adestia-threads` above
+ * is dressed for the chat's overlay — raised, capped at 40vh, underlined —
+ * and on a settings canvas those clothes read as a panel that fell off
+ * something. Undressed here, not re-specified: the rows keep their behaviour.
+ */
+.adestia-deleg .adestia-threads {
+  max-height: none;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 8px);
+}
+
+.adestia-deleg__group { margin: var(--space-4) 0 0; }
+
+/* The caller as a shelf label: it names an agent, not a section of prose. */
+.adestia-deleg__caller {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+/* A row that carries a timestamp needs to BE a row; the block+ellipsis the
+   chat list sets would push the date out of sight instead of to the edge. */
+.adestia-deleg .adestia-threads__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.adestia-deleg__when {
+  margin-left: auto;
+  flex: none;
+  color: var(--text-faint);
+  font-size: var(--text-sm);
+}
+
+.adestia-deleg__empty { color: var(--text-muted); }
+
+.adestia-deleg__thread { margin-top: var(--space-4); }
+
 /* Tabs --------------------------------------------------------------------- */
 
 /*
