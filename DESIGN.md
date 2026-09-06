@@ -1136,6 +1136,22 @@ that opens to its own words when the network is gone.
   volume with the workspace, or a failed resume could be detected and the
   transcript re-fed). The first is owed in any case — whatever recovery
   exists, a person must never learn about amnesia by talking to it.
+- **The shell introduces itself to its agent.** Nobody tells the agent it is
+  running inside an Adestia shell, and it shows: asked how its own instance
+  is configured, an agent on a real deployment confidently described an
+  architecture it had guessed — fluent, wrong, and unaware the shell exists.
+  The delivery mechanism is already built: plugin contracts ship into the
+  workspace, stamped with the managed marker, rewritten at every start. The
+  core owes the same gesture about ITSELF — a delivered instruction generated
+  from the running instance's actual config: what Adestia is in broad
+  strokes, this instance's name and driver, the zones (pages, planif,
+  memory, the attachment inbox), the shell tools, which MCP servers the
+  instance declares — and, the part whose absence produced the confabulation,
+  what the agent can NOT see: the instance's config file lives outside the
+  workspace, so "how is this configured" is answered by the Settings screen
+  or by whoever manages the deployment, never by guessing. Generated rather
+  than hand-written, so it cannot drift from the config it describes.
+- **`adestia init`** — the documented workspace scaffold.
 
 ## Decision log
 
