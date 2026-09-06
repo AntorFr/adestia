@@ -1,6 +1,38 @@
 # Status — Adestia
 > MàJ : 2026-09-06
 
+Chantier du 06/09 (3) — **se connecter à un serveur MCP est le travail du
+produit, dans la conversation**. Né d'un vrai mur : Alfred n'atteignait pas
+Home Assistant parce que la porte (proxy mcp-auth) n'accepte que SES jetons
+frappés après login humain — le rebond Authelia y est une monnaie étrangère,
+quel que soit le `reboundAudience` (vérifié sur la porte réelle : son RFC 9728
+se nomme elle-même comme unique authorization server). Le premier plan était
+une rustine humaine (enrôlement via mon helper + coffre) ; Monsieur a nommé le
+produit en une phrase — « Alfred devrait savoir le faire tout seul : nouveau
+MCP, voilà le lien, pof » — et placé le bouton DANS le fil, à la première
+demande. Livré : `signIn: oauth` sur un serveur `identity: user` → l'instance
+lit les well-knowns (9728/8414), s'enregistre elle-même (DCR, UN client par
+serveur), fait passer la personne par authorization-code + PKCE
+(`/api/mcp/signin/<srv>` → passkey → `/api/mcp/signin/callback`), et garde SA
+clé de retour tournante (`mcp-signin.json` 0600, clés utilisateur hachées,
+rotation suivie — la fragilité qui a tué mon propre enrôlement `mcp-auth`).
+Deuxième arbitrage de Monsieur, gravé : porte à login utilisateur = PAR
+UTILISATEUR, comme google/withings — chaque tour frappe ses jetons depuis les
+clés de SON appelant (`TurnRequest.serverTokens`), l'horloge et les
+délégations ne voient rien, et un driver ne rabat JAMAIS un serveur `signIn`
+sur le jeton rebond : « pas connecté » doit rester un état vrai (c'est lui qui
+lève la carte), pas un « failed » de mauvaise monnaie. Deux surfaces, un
+mécanisme : la carte dans le fil (outil `mcp__<srv>__*` en échec + personne
+non connectée — collision de classe `.adestia-signin` avec l'écran de login
+attrapée AU BANC : la carte avalait le fil, renommée `.adestia-connect`) et le
+bouton sur la page du serveur (l'état « needs a sign-in » offre enfin un
+geste). 1343 + 9 + 5 + 7 verts, typecheck/build OK, **banc constaté**
+(`bench/scenarios/mcp-signin.mjs` + prep : carte clair/sombre/téléphone, page
+serveur). Reste, hors dépôt : redéployer, corriger l'entrée HA d'Alfred
+(`signIn: oauth`, URL à la racine — l'`identity: user` nu posé le 06/09 était
+ma mauvaise catégorie), et deux passkeys de Monsieur (Alfred-HA, et mon helper
+mort).
+
 Chantier du 06/09 (2) — **deux surfaces qu'agent-gw avait et que la migration
 n'avait pas reprises**. La **poignée de bord** : replié, l'écran ne disait
 nulle part qu'un second existait, et le swipe ne se découvrait que par

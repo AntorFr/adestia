@@ -355,6 +355,23 @@ mcp:
   #     url: https://hub.example/google/
   #     identity: user
   #
+  # A user server that is its OWN authorization server (an mcp-auth style
+  # proxy federating a household IdP) can take none of the above: it only
+  # accepts tokens IT minted after an interactive login — the rebound token
+  # is foreign currency at that door. Declare it `signIn: oauth` and each
+  # person connects ONCE from the product: the sign-in card in the chat when
+  # a call is first refused, or the button on the server's settings page.
+  # The instance registers itself (dynamic client registration), sends the
+  # person through authorization-code + PKCE, and keeps their ROTATING
+  # refresh key (<dataDir>/mcp-signin.json, 0600). Per person like every
+  # `identity: user` server: a turn with no caller, or a caller who never
+  # connected, does not see the server at all.
+  #
+  #   - name: home-assistant
+  #     url: https://ha.mcp.example/     # the proxy serves MCP at its ROOT
+  #     identity: user
+  #     signIn: oauth
+  #
   # `url` OR `command`, never both — they are two transports. A ${VAR} the
   # environment never filled is REFUSED at startup rather than passed through:
   # a literal "${HA_MCP_TOKEN}" reaching a server fails later, in a call,
