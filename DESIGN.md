@@ -1114,7 +1114,28 @@ that opens to its own words when the network is gone.
   `dataDir` rather than the config file — a deployment's config may be
   GitOps-managed and would be reverted — with a precedence to settle: is the
   config a floor a person may raise, or a ceiling they cannot exceed?
-- **`adestia init`** — the documented workspace scaffold.
+- **The turn cap, editable from the settings screen.** `maxConcurrentTurns`
+  lives in the config file, and on a GitOps-managed deployment changing it
+  means a commit, a sync and a pod for what is one number. The MCP servers
+  card already holds the answer's shape: a writable layer under `dataDir`
+  (`mcp-servers.json`) that the settings screen edits and that wins over the
+  file. Give the cap the same treatment on that page — with the sizing
+  coupling made visible where the number is changed: each concurrent turn
+  costs ~300 MB of RSS, and no browser control can raise a container's memory
+  limit, so a cap raised past what the deployment provides trades the polite
+  429 for an OOM kill. The screen must say so, next to the field.
+- **A restart that forgets looks like a thread that remembers.** Seen on a
+  real instance: the pod restarts, the shell replays the conversation
+  faithfully from its own store, and the screen shows nothing happened — but
+  the engine session the next turn would resume died with the container, so
+  "pick up where we left off" answers from nothing. History shown and context
+  held no longer agree, and the interface sides with the lie. Two directions,
+  not exclusive: make the discontinuity VISIBLE (the thread marks where the
+  engine's memory ends, the way it already marks other events in the stream),
+  and make it RARER (the CLI's session state could live on the persistent
+  volume with the workspace, or a failed resume could be detected and the
+  transcript re-fed). The first is owed in any case — whatever recovery
+  exists, a person must never learn about amnesia by talking to it.
 
 ## Decision log
 
