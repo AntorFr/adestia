@@ -222,6 +222,33 @@ const dessousTraversant = {
  * que le fond gagne en entrant dans les deux rainures — l'engagement, qui est
  * la profondeur de rainure moins le jeu volontaire.
  */
+/* ── Ce qui tient un fond, bout par bout ────────────────────────────────────
+   Une cote de fond ne dépend pas du « montage » pris en bloc : elle dépend de
+   ce qui tient CHAQUE bout, et les deux axes obéissent à la même règle. La
+   largeur n'est que le cas « rainure des deux côtés ».
+
+     rainure   il regagne ce qu'il entre : profondeur usinée moins le jeu qu'on
+               garde au fond du trait.
+     bute      rien. Le bout touche une pièce, c'est une référence, pas un vide
+               à ménager.
+     libre     il flotte : on retire `marge_fond`, pour qu'un panneau coupé un
+               peu large ne dépasse pas du meuble.
+
+   Écrit comme ça, un meuble rainuré en haut ET en bas se cote tout seul le jour
+   où il existera, et il n'y a qu'un seul jeu en l'air à connaître — c'est le
+   même des deux côtés, puisque c'est la même erreur de coupe qu'on rattrape. */
+const BOUT = {
+  rainure: (prof) => ({ [`param.${prof}`]: -1, 'param.fond_jeu': 1 }),
+  bute: () => ({}),
+  libre: () => ({ 'param.marge_fond': 1 }),
+}
+
+/** Additionne les termes de plusieurs bouts (les coefficients s'ajoutent). */
+const bouts = (...liste) => liste.reduce((acc, t) => {
+  for (const [k, x] of Object.entries(t)) acc[k] = (acc[k] ?? 0) + x
+  return acc
+}, {})
+
 const largeurEnRainure = (fond, cotes) => ({
   nom: `${fond.etiquette}/largeur-engagee`,
   termes: {
@@ -262,17 +289,8 @@ const fondRainureTraversant = {
           termes: {
             [v(fond.etiquette, 'z')]: 1,
             'meuble.z': -1,
-            /* Celui-là ne bute nulle part : il court du sol du meuble à son
-               plafond, donc il flotte AUX DEUX bouts et se ménage deux fois.
-               Les deux autres montages sont tenus en bas — posé sur le dessous,
-               ou engagé dans sa rainure — et ne se ménagent qu'en haut.
-
-               C'est le MONTAGE qui décide du nombre de jeux, et non un total
-               qu'on écrirait à la main : écrire « 5 » sans dire de quel bout on
-               parle, c'était la même faute que la rainure décrite en engagement
-               net — un nombre juste sur un meuble et faux sur le suivant. */
-            'param.marge_fond': 1,
-            'param.marge_fond_bas': 1,
+            // Il ne bute nulle part : libre en haut, libre en bas.
+            ...bouts(BOUT.libre(), BOUT.libre()),
           },
           egale: 0,
         },
