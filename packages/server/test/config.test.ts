@@ -494,3 +494,36 @@ describe('workspace.stores', () => {
     expect(issuesOf('workspace:\n  stores: []\n').join(' ')).toContain('workspace.stores is empty')
   })
 })
+
+describe('workspace.umask', () => {
+  it('is absent by default, leaving the environment alone', () => {
+    // The umask a container runtime or a systemd unit gives is a decision the
+    // operator already made. Overruling it without being asked would be this
+    // program deciding something it was not told about.
+    expect(parseConfig('').workspace.umask).toBeUndefined()
+  })
+
+  it('reads octal digits as octal', () => {
+    expect(parseConfig('workspace:\n  umask: "002"\n').workspace.umask).toBe(0o002)
+    expect(parseConfig('workspace:\n  umask: "0027"\n').workspace.umask).toBe(0o027)
+  })
+
+  it('refuses an UNQUOTED value, and says what to type', () => {
+    // The trap this message exists for: YAML reads `002` as the decimal
+    // number 2, which happens to be a valid umask — so it would be accepted
+    // in silence while meaning something else. `012` is worse: twelve, which
+    // is 0014. Nothing would fail; files would simply come out with
+    // permissions nobody chose.
+    const [issue] = issuesOf('workspace:\n  umask: 002\n')
+    expect(issue).toContain('must be QUOTED')
+    expect(issue).toContain('decimal number 2')
+  })
+
+  it('refuses a digit that is not octal', () => {
+    expect(issuesOf('workspace:\n  umask: "008"\n')[0]).toContain('octal digits')
+  })
+
+  it('refuses something that is not a mask at all', () => {
+    expect(issuesOf('workspace:\n  umask: "rw-rw-r--"\n')[0]).toContain('octal digits')
+  })
+})

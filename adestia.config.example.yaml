@@ -132,6 +132,36 @@ workspace:
   #     label: Famille
   #     hue: violet
   #     # at: voyages/famille   # to keep it in its own sub-tree instead
+
+  # Permission bits to WITHHOLD from everything this instance creates — the
+  # process umask, in octal, QUOTED. Absent, the environment's own umask is
+  # left alone, which is what you want unless a store above is SHARED with
+  # another instance.
+  #
+  # Why a shared store needs it. A folder two instances co-edit carries the
+  # setgid bit, so a file created there lands in the shared group by itself.
+  # But landing in the group is only half of it: the group also needs the
+  # WRITE bit, and the usual 0022 removes precisely that one. What you get is
+  # the cruelest kind of half-working — both sides can CREATE files, neither
+  # can EDIT the other's, and nothing anywhere says so until an edit is
+  # refused. `002` withholds write from "others" only, so a file is born 0664
+  # instead of 0644 and the circle can actually be co-edited.
+  #
+  # Why it cannot be fixed on the storage instead. The mode travels INSIDE the
+  # create request, already masked by the client. A server-side ACL can only
+  # remove bits further, never restore one the client withheld — measured over
+  # NFS on 2026-08-20: with a default ACL in place the file still came out
+  # 0640, the ACL having killed "other" without being able to give back group
+  # write. The fix belongs to whoever writes, on any storage.
+  #
+  # Why it is one value for the instance and not one per store. A umask is an
+  # attribute of the PROCESS, not of a path: there is no POSIX way to mask one
+  # folder differently from another. And a single turn routinely touches
+  # several stores, so there would be no moment at which to switch.
+  #
+  # Windows has no umask — permissions there are ACLs — so this key is inert
+  # on that platform, and says so at boot rather than pretending.
+  # umask: "002"
   # Live refresh. The server watches the pages tree and tells every open shell
   # when a page changed, so what the agent just wrote appears without a reload.
   # Native file events by default; set `polling` when the workspace sits on a

@@ -202,6 +202,28 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
 
   const config = await loadConfigFile(configPath)
 
+  // BEFORE the first mkdir, and that ordering is the whole point: a umask
+  // applies at CREATION and never retroactively, so a workspace created three
+  // lines earlier would keep the old mode forever.
+  //
+  // It reaches further than this process. A umask is inherited by every child,
+  // and almost nothing in a store is written by the server: the agent's CLI
+  // writes it, and the tools that CLI launches write it. They inherit this
+  // without knowing it exists — which is exactly why the setting belongs here
+  // and not at any of those spawn sites.
+  if (config.workspace.umask !== undefined) {
+    if (process.platform === 'win32') {
+      // Said out loud rather than ignored. Windows has no umask — permissions
+      // are ACLs there — so the key is inert, and a shared store on that
+      // platform needs a different answer. A setting that silently does
+      // nothing is the failure this whole feature exists to prevent.
+      log('workspace.umask has no effect on Windows: permissions there are ACLs, not mode bits')
+    } else {
+      process.umask(config.workspace.umask)
+      log(`umask ${config.workspace.umask.toString(8).padStart(4, '0')}`)
+    }
+  }
+
   // The workspace must exist before a turn is ever attempted. Spawning a CLI
   // into a missing directory fails with a message that blames the BINARY
   // ("native binary ... failed to launch ... does not match this system's

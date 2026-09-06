@@ -1811,3 +1811,45 @@ nothing teaches is a capability nobody uses. The `parcours` skill had the
 symmetrical failure — it still taught a spelling the code had stopped reading,
 and would have written it back. **A skill left behind is not documentation debt,
 it is behaviour.**
+
+**2026-09-06 (a store two instances co-edit needs the writer's umask, and
+nothing else can supply it):** composing memory from several stores made a
+shared circle possible; it did not make it CO-EDITABLE, and the gap is one
+permission bit.
+
+A shared folder carries the setgid bit, so a file created in it lands in the
+circle's group on its own — measured rather than assumed: with the folder at
+`2770`, a file arrives in group `3002` under any umask, and a sub-directory
+inherits the setgid too. What the group does not get is the WRITE bit, because
+the usual `0022` withholds exactly that one. The result is the cruelest kind of
+half-working: both bodies can CREATE, neither can EDIT the other's file, and
+nothing anywhere says so until an edit is refused.
+
+**It cannot be fixed on the storage, and that is not a limitation of this
+storage.** The mode travels INSIDE the create request, already masked by the
+client, so the server never sees what was wanted — it can only remove bits
+further. Measured over NFS on 2026-08-20 in the homelab this serves: with a
+default ACL in place the file still came out `0640`, the ACL having killed
+`other` without being able to give group write back. Which settles where the
+fix belongs: the defect is in what the WRITER asks for, so it is wrong on any
+storage, and repairing it at the writer repairs it everywhere.
+
+`workspace.umask`, then — and three shapes were rejected on the way. Not
+per-store: a umask is an attribute of the PROCESS, not of a path, and one turn
+routinely touches several stores, so there is no moment at which to switch. Not
+hard-wired to `002`: that would widen every instance whose primary group is
+shared between accounts, silently, including ones that share nothing. Not a
+shell wrapper at the spawn site, which is where the predecessor started and
+which it removed as an "assumed interim" — the umask is inherited by every
+descendant, so the one place that covers the CLI, and the tools the CLI
+launches, is the server's own boot.
+
+Two details carry more weight than their size. The call sits BEFORE the first
+`mkdir`, since a umask acts at creation and never retroactively — the test
+asserts on the workspace DIRECTORY for exactly that reason, because a file
+created later would pass either way. And an unquoted value is REFUSED with a
+message naming what to type: YAML reads `002` as the decimal number two, which
+happens to be a valid umask and would therefore be accepted in silence while
+meaning something else — `012` would arrive as `0014`. Nothing would fail;
+files would simply carry permissions nobody chose, which is the failure this
+whole feature exists to end.

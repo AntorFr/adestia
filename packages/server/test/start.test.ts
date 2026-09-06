@@ -298,3 +298,36 @@ describe('the workspace handed to the driver', () => {
     expect(instance.config.workspace.root.endsWith('/workspace')).toBe(true)
   })
 })
+
+describe('workspace.umask', () => {
+  // Windows has no umask; the key logs that it is inert instead of applying.
+  it.skipIf(process.platform === 'win32')(
+    'applies BEFORE the workspace is created, not after',
+    async () => {
+      // The ordering is the whole subtlety: a umask acts at creation and never
+      // retroactively, so a workspace made even one line too early would keep
+      // the old mode for the life of the instance. Asserting on the DIRECTORY
+      // is what pins that — the file below would pass either way.
+      const before = process.umask()
+      try {
+        await boot('workspace:\n  root: ws\n  umask: "002"')
+        expect((await stat(join(root, 'ws'))).mode & 0o777).toBe(0o775)
+
+        const page = join(root, 'ws', 'page.md')
+        await writeFile(page, '# x\n')
+        expect((await stat(page)).mode & 0o777).toBe(0o664)
+
+        expect(logs).toContain('umask 0002')
+      } finally {
+        process.umask(before)
+      }
+    },
+  )
+
+  it.skipIf(process.platform === 'win32')('leaves the environment alone when unset', async () => {
+    const before = process.umask()
+    await boot('workspace:\n  root: ws\n')
+    expect(process.umask()).toBe(before)
+    expect(logs.some((line) => line.startsWith('umask '))).toBe(false)
+  })
+})

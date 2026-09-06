@@ -84,6 +84,29 @@ export interface WorkspaceConfig {
   readonly stores: readonly StoreDeclaration[]
   readonly memory: string
   readonly planif: string
+  /**
+   * The permission bits to WITHHOLD from everything this instance creates —
+   * the process umask, in octal, as a string.
+   *
+   * Absent means "leave it alone", and that is the right default: the umask
+   * an operator's environment gives (0022 from a container runtime, whatever
+   * a systemd unit says) is a decision they already made, and overruling it
+   * silently is not this program's business.
+   *
+   * It exists for ONE situation, and it sits next to `stores` because that is
+   * the situation: a store shared by two instances. A shared folder carries
+   * the setgid bit, so a file created in it lands in the circle's group on its
+   * own — but the group still needs the WRITE bit, and the usual 0022 removes
+   * exactly that one. The result is the cruelest kind of half-working: both
+   * bodies can CREATE, neither can EDIT the other's file, and nothing says so
+   * until an edit is refused.
+   *
+   * `002` is the value that case wants. It cannot be fixed on the storage
+   * instead: the mode travels in the create request, already masked, so a
+   * server-side ACL can only remove bits further, never restore one the
+   * client withheld (measured over NFS, 2026-08-20 — the file came out 0640).
+   */
+  readonly umask?: number
   readonly watch: WatchConfig
 }
 
@@ -365,6 +388,31 @@ function requireString(
  * default" is a contradiction between declarations that only makes sense once
  * they are all read.
  */
+/**
+ * Reads `workspace.umask` — a string of octal digits, quoted.
+ *
+ * The quoting is not a style preference and it gets its own message. YAML
+ * reads an unquoted `002` as the DECIMAL number two, which is a valid umask
+ * (`0002`) and therefore would be accepted in silence while meaning something
+ * the author never wrote — `012` would arrive as twelve, that is `0014`. A
+ * number is refused here and told exactly what to type, because the failure it
+ * causes is invisible: files come out with permissions nobody chose.
+ */
+function parseUmask(raw: unknown, issues: string[]): number | undefined {
+  if (raw === undefined || raw === null) return undefined
+  if (typeof raw === 'number') {
+    issues.push(
+      `workspace.umask must be QUOTED ("002"): YAML reads an unquoted 002 as the decimal number ${raw}`,
+    )
+    return undefined
+  }
+  if (typeof raw !== 'string' || !/^[0-7]{3,4}$/.test(raw)) {
+    issues.push('workspace.umask must be three or four octal digits as a string, e.g. "002"')
+    return undefined
+  }
+  return Number.parseInt(raw, 8)
+}
+
 const STORE_KEYS = new Set(['id', 'path', 'at', 'label', 'hue', 'default'])
 
 function parseStores(
@@ -904,6 +952,7 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
   }
   const pages = typeof workspaceRaw['pages'] === 'string' ? workspaceRaw['pages'] : 'pages'
   const stores = parseStores(workspaceRaw['stores'], pages, issues)
+  const umask = parseUmask(workspaceRaw['umask'], issues)
 
   const workspace: WorkspaceConfig = {
     root: typeof workspaceRaw['root'] === 'string' ? workspaceRaw['root'] : './workspace',
@@ -911,6 +960,7 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
     stores,
     memory: typeof workspaceRaw['memory'] === 'string' ? workspaceRaw['memory'] : 'memory',
     planif: typeof workspaceRaw['planif'] === 'string' ? workspaceRaw['planif'] : 'planif',
+    ...(umask !== undefined ? { umask } : {}),
     watch: {
       enabled: watchRaw['enabled'] !== false,
       polling: watchRaw['polling'] === true,
