@@ -40,6 +40,7 @@ import {
 } from './instructions.js'
 import { MANAGED_MARKER } from './skills.js'
 import { McpStore, maskServer, unmaskServer, type McpServerView } from './mcp-store.js'
+import { McpSignIn } from './mcp-signin.js'
 import { registerOidc } from './oidc-routes.js'
 import { registerMcp } from './mcp-routes.js'
 import { registerFiles } from './files.js'
@@ -89,6 +90,7 @@ export interface AppDependencies {
    * added from a browser is wired on the next turn instead of the next boot.
    */
   readonly mcpStore?: McpStore
+  readonly mcpSignIn?: McpSignIn
   /**
    * Where the engine's questions wait, in `ask` posture. Absent in `open`,
    * where nothing ever asks and the answer route is not mounted at all.
@@ -238,6 +240,9 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   const conversations = new ConversationStore(config.dataDir)
   const secrets = deps.secrets ?? new SecretStore(config.dataDir)
   const mcpStore = deps.mcpStore ?? new McpStore(config.dataDir)
+  // Sign-in state for the servers that are their own authorization server:
+  // one client registration per server, one rotating refresh key per person.
+  const mcpSignIn = deps.mcpSignIn ?? new McpSignIn(config.dataDir)
   const inbox = new AttachmentInbox(config.dataDir, config.attachments)
   const arming = new ArmingSessions()
   const descriptor: DriverDescriptor = await driver.describe()
@@ -497,6 +502,85 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   app.get('/api/mcp/servers', async () => ({ servers: await mcpViews() }))
 
   /**
+   * The sign-in surface: which sign-in servers exist, and whether THIS person
+   * is connected. Its own route rather than a field on `/api/mcp/servers`
+   * because the chat polls it around the card, and the card has no business
+   * receiving every server's whole masked declaration each time.
+   */
+  app.get('/api/mcp/connections', async (request) => ({
+    connections: await mcpSignIn.stateFor(await outboundServers(), identityOf(request).userId),
+  }))
+
+  /**
+   * The instance's own origin, as the person's browser reached it.
+   *
+   * The redirect back from the authorization server must land on the SAME
+   * origin the person is browsing, and behind an ingress the socket knows
+   * nothing about it: the forwarded headers do. Derived per request rather
+   * than configured, because the person clicking IS on the right origin by
+   * construction.
+   */
+  const originOf = (request: FastifyRequest): string => {
+    const proto = (request.headers['x-forwarded-proto'] as string | undefined) ?? request.protocol
+    const host =
+      (request.headers['x-forwarded-host'] as string | undefined) ?? request.headers.host ?? ''
+    return `${proto}://${host}`
+  }
+
+  /** A tiny page for the end of the flow — the tab closes itself where the
+      browser allows it, and says what happened where it does not. */
+  const signinPage = (title: string, detail: string) =>
+    `<!doctype html><meta charset="utf-8"><title>${title}</title>` +
+    `<body style="font-family:system-ui;display:grid;place-items:center;height:90vh">` +
+    `<div style="text-align:center"><h1 style="font-size:1.2rem">${title}</h1>` +
+    `<p style="color:#666">${detail}</p></div>` +
+    `<script>setTimeout(()=>window.close(),1500)</script></body>`
+
+  // The way BACK from the authorization server. Registered before the
+  // parameterized route below only for the reader — Fastify ranks the static
+  // segment first regardless.
+  app.get<{ Querystring: { state?: string; code?: string; error?: string } }>(
+    '/api/mcp/signin/callback',
+    async (request, reply) => {
+      const { state, code, error } = request.query
+      if (error) {
+        return reply
+          .type('text/html')
+          .send(signinPage('Connexion refusée', String(error)))
+      }
+      if (typeof state !== 'string' || typeof code !== 'string') {
+        return reply.code(400).type('text/html').send(signinPage('Réponse incomplète', ''))
+      }
+      const outcome = await mcpSignIn.complete(state, code)
+      if ('problem' in outcome) {
+        return reply.type('text/html').send(signinPage('Connexion échouée', outcome.problem))
+      }
+      return reply
+        .type('text/html')
+        .send(
+          signinPage('Connecté', `${outcome.server} est maintenant relié à votre compte.`),
+        )
+    },
+  )
+
+  // Where the card and the tile send the person: a redirect into the
+  // server's own authorization flow, state and PKCE held on this side.
+  app.get<{ Params: { name: string } }>('/api/mcp/signin/:name', async (request, reply) => {
+    const server = (await outboundServers()).find((entry) => entry.name === request.params.name)
+    if (!server || server.signIn !== 'oauth') {
+      return reply.code(404).send({ error: 'no such sign-in server' })
+    }
+    const begun = await mcpSignIn.begin(
+      server,
+      identityOf(request).userId,
+      originOf(request),
+      config.name ?? 'Adestia',
+    )
+    if ('problem' in begun) return reply.code(502).send({ error: begun.problem })
+    return reply.redirect(begun.authorizeUrl)
+  })
+
+  /**
    * Adding and editing, which only the shell's own layer allows.
    *
    * The proposal is unmasked against what is stored and then judged by the
@@ -713,6 +797,14 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
         ? await userTokens?.accessToken(caller.userId)
         : undefined
 
+      // The signed-in servers' tokens, minted from THIS caller's own keys —
+      // the per-person half of `identity: user`, for the servers whose door
+      // the rebound token cannot open. A person who never connected yields no
+      // entry, and the driver then omits the server from their turn.
+      const serverTokens = caller?.userId
+        ? await mcpSignIn.tokensFor(await outboundServers(), caller.userId)
+        : {}
+
       // The instance's own tools, minted for THIS turn of THIS conversation.
       // The handle is how `rename_conversation` knows its target without the
       // model ever seeing an id; a turn without a conversation carries none,
@@ -733,6 +825,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
           ...(sessionId ? { sessionId } : {}),
           ...(typeof body.model === 'string' ? { model: body.model } : {}),
           ...(callerToken ? { callerToken } : {}),
+          ...(Object.keys(serverTokens).length > 0 ? { serverTokens } : {}),
           ...(tools ? { tools } : {}),
         },
         // Written even when the turn failed: a thread that silently drops

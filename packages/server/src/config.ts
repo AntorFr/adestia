@@ -216,6 +216,13 @@ export interface McpServerConfig {
   readonly name: string
   /** `user` for a server that serves somebody's own data. See the contract. */
   readonly identity?: 'machine' | 'user' | undefined
+  /**
+   * `oauth` for a `user` server that is its OWN authorization server: each
+   * person connects once through its interactive flow (the sign-in card, or
+   * the settings tile), and their rotating refresh key does the rest. See
+   * `mcp-signin.ts` and the driver contract's `signIn`.
+   */
+  readonly signIn?: 'oauth' | undefined
   readonly command?: string | undefined
   readonly args?: readonly string[] | undefined
   readonly url?: string | undefined
@@ -814,9 +821,26 @@ export function readMcpServer(
     return undefined
   }
 
+  const signIn = entry['signIn']
+  if (signIn !== undefined && signIn !== 'oauth') {
+    issues.push(`${where}.signIn must be "oauth"`)
+    return undefined
+  }
+  if (signIn && identity !== 'user') {
+    // The whole point of signIn is per-person tokens; on a machine server it
+    // would mean nothing and silently behave as one more unauthenticated URL.
+    issues.push(`${where}.signIn needs identity: user — connecting is something a PERSON does`)
+    return undefined
+  }
+  if (signIn && auth) {
+    issues.push(`${where}: has both "signIn" and "auth" — one token source per server`)
+    return undefined
+  }
+
   return {
     name,
     ...(identity ? { identity } : {}),
+    ...(signIn ? { signIn } : {}),
     ...(auth ? { auth } : {}),
     ...(command ? { command } : {}),
     ...(args ? { args: args as readonly string[] } : {}),

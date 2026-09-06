@@ -613,6 +613,47 @@ describe('a server that serves somebody’s own data', () => {
     await collect(driver, 'hi', { callerToken: 'jeton-de-sebastien' })
     expect(JSON.stringify(serversOf(seen))).not.toContain('jeton-de-sebastien')
   })
+
+  describe('a server the person signs in to (`signIn: oauth`)', () => {
+    const SIGNED = {
+      name: 'home-assistant',
+      url: 'https://ha.example/',
+      identity: 'user' as const,
+      signIn: 'oauth' as const,
+    }
+
+    it('takes its per-turn token, and only that', async () => {
+      const seen: { params?: unknown } = {}
+      const driver = new ClaudeCodeDriver({
+        query: fakeSdk([resultMessage], seen),
+        mcpServers: [SIGNED, HUB_USER],
+        fetchImpl: minting(),
+      })
+      await collect(driver, 'hi', {
+        callerToken: 'jeton-de-sebastien',
+        serverTokens: { 'home-assistant': 'jeton-du-proxy' },
+      })
+
+      const servers = serversOf(seen)
+      expect(servers['home-assistant']?.headers?.['Authorization']).toBe('Bearer jeton-du-proxy')
+      // The rebound server keeps the rebound token: two sources, one turn.
+      expect(servers['google']?.headers?.['Authorization']).toBe('Bearer jeton-de-sebastien')
+    })
+
+    it('NEVER falls back to the rebound token — absent means not connected', async () => {
+      // The rebound token is foreign currency at this door: presenting it
+      // would read as "failed" where the truthful state — the one the shell's
+      // sign-in card is built on — is "this caller never connected".
+      const seen: { params?: unknown } = {}
+      const driver = new ClaudeCodeDriver({
+        query: fakeSdk([resultMessage], seen),
+        mcpServers: [SIGNED],
+        fetchImpl: minting(),
+      })
+      await collect(driver, 'hi', { callerToken: 'jeton-de-sebastien' })
+      expect(serversOf(seen)['home-assistant']).toBeUndefined()
+    })
+  })
 })
 
 describe('the two postures', () => {
