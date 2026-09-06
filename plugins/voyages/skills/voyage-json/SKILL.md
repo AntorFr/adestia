@@ -53,6 +53,30 @@ paraît pas aussi en domaine, la timeline EST sa page d'accueil.
 }
 ```
 
+## Un voyage vit dans UN magasin, entier
+
+Si cette instance compose plusieurs magasins — un cercle perso et un cercle
+familial, par exemple — alors **un voyage appartient à un seul, tout entier** :
+son `voyage.json`, ses fiches, ses pièces jointes, ses sous-dossiers.
+
+Ce n'est pas une contrainte du moteur, qui accepterait très bien un voyage à
+cheval : c'est ce qui rend le partage lisible. Un séjour dont le carnet est
+resté dans le cercle privé pendant que le reste est partagé se lit comme un
+séjour partagé, parce que la moitié partagée est celle que l'écran montre
+d'abord. L'interface le signale — la tuile du dossier porte une marque
+« mélangé » au lieu de celle d'un cercle — mais un signalement est un pansement
+sur une décision qu'il valait mieux ne pas prendre.
+
+**En pratique** : avant d'écrire dans un voyage qui existe déjà, regarde où il
+est et écris là. Le contrat `memory-stores` dit la règle générale — un fichier
+neuf va dans le magasin de son plus proche dossier existant — et elle suffit
+tant que tu ne la contournes pas en choisissant toi-même un chemin.
+
+**En créant un voyage neuf**, la question « dans quel cercle ? » se pose une
+fois, au début, et une seule : après, tout le dossier suit. Si les deux cercles
+portent déjà `voyages/`, c'est une question à POSER, pas à trancher — un séjour
+de famille rangé dans le cercle privé est invisible à ceux qui partent avec.
+
 ## Les règles qui mordent
 
 - **Types d'item FERMÉS** : `hebergement | resto | activite | visite | trajet`.

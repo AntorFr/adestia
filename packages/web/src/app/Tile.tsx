@@ -13,6 +13,8 @@
  * the screens that only display would be the copy this move exists to avoid.
  */
 
+import type { CSSProperties } from 'react'
+
 import { glyphOf } from './glyphs.js'
 import type { TileInfo } from '../plugins/contract.js'
 
@@ -35,6 +37,16 @@ export function Tile(props: {
   readonly subtitle?: string
   readonly chips?: TileInfo['chips']
   readonly hue?: string
+  /**
+   * The store everything behind this tile comes from — its mark, exactly the
+   * one a card wears, because a folder is the unit people think in.
+   *
+   * The DEFAULT store passes nothing: absence is its mark, and a screen where
+   * every tile carries a badge has taught the reader nothing.
+   */
+  readonly store?: { readonly label: string; readonly hue?: string }
+  /** Several stores carry parts of it. A fact, and the one that misreads. */
+  readonly mixed?: boolean
   readonly disabled?: boolean
   readonly title?: string
   readonly onOpen: () => void
@@ -108,6 +120,28 @@ export function Tile(props: {
         ) : (
           <span className="adestia-tile__icon" aria-hidden="true">
             {props.icon}
+          </span>
+        )}
+        {/* Drawn ON the tile and not among the chips, for the reason the card
+            gives: the foot belongs to counts and status, and a mark filed
+            among them stops being distinguishable the moment there are three.
+            Two letters rather than a coloured dot — a hue alone is not a
+            label, and the legend teaches the pairing once. */}
+        {props.store && (
+          <span
+            className="adestia-tile__store"
+            style={{ '--store-color': `var(--adestia-hue-${props.store.hue ?? 'gris'})` } as CSSProperties}
+            title={props.store.label}
+          >
+            {props.store.label.slice(0, 2)}
+          </span>
+        )}
+        {props.mixed && (
+          <span
+            className="adestia-tile__store adestia-tile__store--mixed"
+            title={t('Split across several stores')}
+          >
+            ◐
           </span>
         )}
         <span className="adestia-tile__label">{props.label}</span>

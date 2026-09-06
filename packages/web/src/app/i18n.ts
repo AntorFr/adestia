@@ -52,6 +52,7 @@ const FR: Readonly<Record<string, string>> = {
   // Section screens
   Inside: 'À l’intérieur',
   'Rooms lead to pages.': 'Les sous-domaines mènent aux fiches.',
+  'Split across several stores': 'Réparti entre plusieurs magasins',
   'Cards open a page.': 'Chaque carte ouvre une fiche.',
   Finished: 'Terminé',
   'This section holds nothing yet.': 'Ce domaine ne contient rien pour l’instant.',

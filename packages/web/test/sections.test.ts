@@ -154,6 +154,39 @@ describe('sectionsOf', () => {
     expect(diy?.count).toBe(1)
   })
 
+  it('names the store a folder comes from, when it comes from one', () => {
+    // A folder is the unit people think in — a trip, a project — while
+    // provenance was drawn on cards, which are pages. A trip filed in a shared
+    // circle looked exactly like one filed in a private circle.
+    const circle: IndexEntry[] = [
+      { path: 'voyages/baden-2026/baden-2026.md', title: 'Baden', fields: {}, store: 'famille' },
+      { path: 'voyages/baden-2026/vannes.md', title: 'Vannes', fields: {}, store: 'famille' },
+    ]
+    const [tile] = sectionsOf(circle)
+    expect(tile?.store).toBe('famille')
+    expect(tile?.mixed).toBeUndefined()
+  })
+
+  it('says MIXED when several stores carry parts of it', () => {
+    // The state that reads wrong when unsaid: half shared, half private, and
+    // the screen shows the shared half first.
+    const split: IndexEntry[] = [
+      { path: 'voyages/baden-2026/baden-2026.md', title: 'Baden', fields: {}, store: 'famille' },
+      { path: 'voyages/baden-2026/notes/carnet.md', title: 'Carnet', fields: {}, store: 'perso' },
+    ]
+    const [tile] = sectionsOf(split)
+    expect(tile?.mixed).toBe(true)
+    expect(tile?.store).toBeUndefined()
+  })
+
+  it('marks nothing on an instance that composes a single store', () => {
+    // No store on an entry is not a store of its own: it is an instance with
+    // no provenance to draw at all.
+    const [tile] = sectionsOf(CORPUS)
+    expect(tile?.store).toBeUndefined()
+    expect(tile?.mixed).toBeUndefined()
+  })
+
   it('says nothing about an empty body of pages', () => {
     expect(sectionsOf([])).toEqual([])
   })

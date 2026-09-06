@@ -28,6 +28,27 @@ export interface SectionTile {
   readonly hue?: string
   /** Pages inside, the index page itself excluded. */
   readonly count: number
+  /**
+   * The single store everything inside comes from, when there is one.
+   *
+   * A folder is the unit people think in — a trip, a project — while
+   * provenance was drawn on CARDS, which is a page. So a trip filed in a
+   * shared circle looked exactly like a trip filed in a private one, and the
+   * only way to know was to open it.
+   *
+   * The default store's id is carried like any other and the drawing side
+   * decides: its cards wear no mark, and absence IS the mark.
+   */
+  readonly store?: string
+  /**
+   * Several stores carry parts of this folder.
+   *
+   * A fact, not an error — a circle may legitimately hold half of something.
+   * But it is the fact that reads WRONG when unsaid: a trip half shared and
+   * half private looks entirely shared, since the shared half is what the
+   * screen shows first.
+   */
+  readonly mixed?: boolean
 }
 
 export interface IndexEntry {
@@ -192,6 +213,11 @@ function tileFor(
   index: IndexEntry | undefined,
 ): SectionTile {
   const fields = index?.fields ?? {}
+  const held = entries.filter((entry) => entry.path.startsWith(`${folder}/`))
+  // An instance with one store marks nothing, so an entry without a store is
+  // not a store of its own — it is an instance with no provenance to draw.
+  const from = new Set(held.map((entry) => entry.store).filter((id) => id !== undefined))
+  const only = from.size === 1 ? [...from][0] : undefined
   return {
     path: folder,
     // The declaration wins FIELD BY FIELD: a page that only gives an icon
@@ -200,9 +226,9 @@ function tileFor(
     title: text(fields['title']) ?? index?.title ?? prettify(folder.split('/').at(-1) ?? folder),
     icon: text(fields['ico']) ?? '◆',
     ...(text(fields['couleur']) ? { hue: text(fields['couleur'])! } : {}),
-    count: entries.filter(
-      (entry) => entry.path.startsWith(`${folder}/`) && !isIndexPage(entry.path),
-    ).length,
+    count: held.filter((entry) => !isIndexPage(entry.path)).length,
+    ...(only !== undefined ? { store: only } : {}),
+    ...(from.size > 1 ? { mixed: true } : {}),
   }
 }
 

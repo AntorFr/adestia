@@ -795,6 +795,43 @@
 /* The title never runs under the tab. */
 .adestia-card--store .adestia-card__title { padding-right: 34px; }
 
+/* The same tab on a TILE, because a folder is the unit people think in — a
+   trip, a project — and provenance drawn only on cards left a shared trip
+   looking exactly like a private one. Same shape, same two letters, same
+   corner: one mark to learn, not two. */
+.adestia-tile__store {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: 27px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  padding: 0 5px;
+  font: 700 10px/1 var(--font-mono);
+  color: var(--store-color);
+  background: color-mix(in srgb, var(--store-color) 15%, var(--surface-raised));
+  border-left: 1px solid color-mix(in srgb, var(--store-color) 35%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--store-color) 35%, transparent);
+  border-radius: 0 calc(var(--radius) - 1px) 0 var(--radius);
+  /* UNDER the tile's colour mark, which a card has no equivalent of. Left on
+     top, the tab cut the mark in two and read as a sticker pressed onto the
+     tile rather than a corner of it. The mark now runs unbroken across it. */
+  z-index: 0;
+}
+
+/* Split across several stores. One state whatever the number of them: naming
+   the combination would be a palette that grows with the circles, and the
+   reader needs to know THAT it is split, not the arithmetic. Neutral on
+   purpose — it is not a store, so it must not wear a store's colour. */
+.adestia-tile__store--mixed {
+  --store-color: var(--text-muted);
+  font-size: 12px;
+}
+
+/* The label never runs under the tab. */
+.adestia-tile:has(.adestia-tile__store) .adestia-tile__label { padding-right: 30px; }
+
 /* The legend, under the folder's title — the one place that describes the
    whole folder, and therefore the only one that can state what the ABSENCE of
    a mark means. Each key carries the store's full label cut to the tab's own
@@ -1081,6 +1118,8 @@
 .adestia-tile::before {
   content: '';
   position: absolute;
+  /* Above the store tab, which tucks under it — see `.adestia-tile__store`. */
+  z-index: 1;
   inset: var(--tile-mark-inset);
   width: var(--tile-mark-width);
   height: var(--tile-mark-height);

@@ -135,19 +135,43 @@ function PageCard({
 
 function RoomCard({
   room,
+  stores,
   onOpen,
   t,
 }: {
   readonly room: SectionTile
+  /** To turn the room's store id into the mark a card would wear. */
+  readonly stores: readonly StoreInfo[]
   readonly onOpen: () => void
   readonly t: (key: string) => string
 }) {
+  // A room is a folder, and folders are where a trip or a project lives — so
+  // it wears provenance for the same reason a card does. The default store's
+  // rooms wear nothing: absence is its mark.
+  const from = stores.find((store) => store.id === room.store)
   return (
     <li>
       <button type="button" className="adestia-tile" style={hueVar(room.hue)} onClick={onOpen}>
         <span className="adestia-tile__icon" aria-hidden="true">
           {room.icon}
         </span>
+        {from && !from.default && (
+          <span
+            className="adestia-tile__store"
+            style={{ '--store-color': `var(--adestia-hue-${from.hue ?? 'gris'})` } as CSSProperties}
+            title={from.label}
+          >
+            {from.label.slice(0, 2)}
+          </span>
+        )}
+        {room.mixed && (
+          <span
+            className="adestia-tile__store adestia-tile__store--mixed"
+            title={t('Split across several stores')}
+          >
+            ◐
+          </span>
+        )}
         <span className="adestia-tile__label">{room.title}</span>
         <span className="adestia-tile__foot">
           <span className="adestia-chip">
@@ -285,7 +309,13 @@ export function Section({
           <h2 className="adestia-section">{t('Inside')}</h2>
           <ul className="adestia-tiles">
             {rooms.map((room) => (
-              <RoomCard key={room.path} room={room} t={t} onOpen={() => openSection(room.path)} />
+              <RoomCard
+                key={room.path}
+                room={room}
+                stores={stores}
+                t={t}
+                onOpen={() => openSection(room.path)}
+              />
             ))}
           </ul>
         </>

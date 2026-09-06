@@ -1083,6 +1083,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
               : {})}
             plugins={loaded}
             entries={pages}
+            stores={stores}
             openPlugin={openPlugin}
             openSection={openSection}
             openPage={openPage}

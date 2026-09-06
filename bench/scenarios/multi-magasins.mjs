@@ -20,8 +20,11 @@ export default async function scenario(bench) {
     const page = await bench.open({ theme, height: 1200 })
     await page.waitForSelector('.adestia-home')
 
-    // L'accueil : la fusion est INVISIBLE ici, et c'est voulu — une tuile est
-    // une porte vers un domaine, et un domaine ne vit pas dans un magasin.
+    // L'accueil : le domaine `voyages` est porté par les deux cercles, donc sa
+    // tuile porte la marque « mélangé ». Ce commentaire a d'abord dit
+    // l'inverse — que la fusion y était invisible et que c'était voulu. Ça
+    // l'était tant que la provenance ne vivait que sur les FICHES : un dossier
+    // partagé ressemblait alors exactement à un dossier privé.
     await bench.shoot(page, `1-accueil-${theme}`)
 
     // Le dossier fusionné : quatre fiches de deux cercles, la légende sous le

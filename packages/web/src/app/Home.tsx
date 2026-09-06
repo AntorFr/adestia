@@ -17,7 +17,7 @@ import type { LoadedPlugin } from '../plugins/loader.js'
 import type { TileInfo } from '../plugins/contract.js'
 import { Tile } from './Tile.js'
 import type { Skin } from './skin.js'
-import { sectionsOf, type IndexEntry, type SectionTile } from './sections.js'
+import { sectionsOf, type IndexEntry, type SectionTile, type StoreInfo } from './sections.js'
 import { routeForPath } from './owners.js'
 import { ORDER_KEY_DOMAINS } from './order.js'
 import { useReorder } from './useReorder.js'
@@ -36,6 +36,8 @@ export interface HomeProps {
   readonly hero?: ReactNode
   readonly plugins: readonly LoadedPlugin[]
   readonly entries: readonly IndexEntry[]
+  /** The stores this instance composes. Empty or absent when there is only one. */
+  readonly stores?: readonly StoreInfo[]
   readonly openPlugin: (plugin: LoadedPlugin) => void
   readonly openSection: (path: string) => void
   readonly openPage: (path: string) => void
@@ -142,6 +144,9 @@ interface Domain {
   readonly label: string
   readonly subtitle?: string
   readonly chips?: readonly { readonly text: string }[]
+  /** A section's provenance. A plugin's tile has none: an app is nobody's circle. */
+  readonly store?: { readonly label: string; readonly hue?: string }
+  readonly mixed?: boolean
   readonly disabled?: boolean
   readonly title?: string
   readonly open: () => void
@@ -184,6 +189,7 @@ export function Home({
   hero,
   plugins,
   entries,
+  stores = [],
   openPlugin,
   openSection,
   openPage,
@@ -314,14 +320,23 @@ export function Home({
       ...(plugin.view ? {} : { disabled: true, title: 'This plugin ships no screen' }),
       open: () => openPlugin(plugin),
     })),
-    ...sections.map((section) => ({
-      key: section.path,
-      icon: section.icon,
-      ...(section.hue ? { hue: section.hue } : {}),
-      label: section.title,
-      chips: [{ text: plural(section.count, t('page'), t('pages')) }],
-      open: () => openSection(section.path),
-    })),
+    ...sections.map((section) => {
+      // The default store's tiles carry nothing: absence is its mark, and a
+      // screen where every tile wears a badge has taught the reader nothing.
+      const from = stores.find((store) => store.id === section.store)
+      return {
+        key: section.path,
+        icon: section.icon,
+        ...(section.hue ? { hue: section.hue } : {}),
+        label: section.title,
+        chips: [{ text: plural(section.count, t('page'), t('pages')) }],
+        ...(from && !from.default
+          ? { store: { label: from.label, ...(from.hue ? { hue: from.hue } : {}) } }
+          : {}),
+        ...(section.mixed ? { mixed: true } : {}),
+        open: () => openSection(section.path),
+      }
+    }),
   ]
 
   /**
@@ -481,6 +496,8 @@ export function Home({
                 icon={domain.icon}
                 {...(domain.glyph ? { glyph: domain.glyph } : {})}
                 {...(domain.hue ? { hue: domain.hue } : {})}
+                {...(domain.store ? { store: domain.store } : {})}
+                {...(domain.mixed ? { mixed: true } : {})}
                 label={domain.label}
                 {...(domain.subtitle ? { subtitle: domain.subtitle } : {})}
                 {...(domain.chips ? { chips: domain.chips } : {})}
