@@ -19,7 +19,7 @@
    bloque. C'est la même règle que partout ailleurs — un plan qui se tait sur
    ce qu'il ignore vaut moins qu'un plan qui refuse de conclure. */
 
-import { bute, entre, etiquette, traverse, v } from './ancrages.mjs'
+import { compte, entre, etiquette, traverse, v } from './ancrages.mjs'
 
 /**
  * Le caisson : un bas qui porte, deux côtés qui reposent dessus.
@@ -75,8 +75,8 @@ function caisson(trigramme, module) {
  * rattraper en silence sur un jour qu'on aurait écrit à la main.
  */
 function claustra(trigramme, module, design) {
-  const combien = design?.lames ?? 0
-  const renforts = design?.traverses ?? 0
+  const { combien } = compte(design?.lames, 'lames')
+  const { combien: renforts } = compte(design?.traverses, 'traverses')
   const nom = (role, repere) => etiquette(trigramme, module, role, repere)
 
   const horizontale = (role, repere) => ({

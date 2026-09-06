@@ -42,12 +42,28 @@ const enTableau = (pieces) => pieces
     + `  ${p.ep ? `${p.ep} mm` : ''}  ${(p.chants ?? []).join(', ') || '—'}`)
   .join('\n')
 
+/* Ce que le moteur a DÉDUIT au-delà des pièces : l'étendue d'une zone que
+   personne n'a déclarée, le jour entre deux lames d'un claustra. Ce sont des
+   résultats en soi — c'est ce qu'on regarde quand une pièce sort à une cote
+   surprenante, et c'est ce qui va au plan de perçage. Ils étaient calculés
+   depuis le début et rendus par `derive()`, et affichés nulle part : la seule
+   façon de connaître le jour d'un claustra était de le recalculer à la main,
+   ce qui est exactement ce que ce moteur existe pour éviter. */
+const deduits = (r) => {
+  const lignes = []
+  for (const [id, etendue] of Object.entries(r.zones ?? {}))
+    lignes.push(`  zone ${id} : ${etendue ?? '—'}`)
+  for (const [nom, valeur] of Object.entries(r.resultats ?? {}))
+    lignes.push(`  ${nom} : ${valeur ?? '—'}`)
+  return lignes.length ? ['', 'déduit :', ...lignes] : []
+}
+
 const rapport = (wb, r, plan) => {
   const lignes = [`${r.pieces.length} pièces`]
   for (const j of r.journal)
     lignes.push(`  · ${j.table} ligne ${j.ligne} → ${j.methode ?? 'aucune méthode'}`
       + (j.deroge ? `  (dérogation : ${j.deroge.join(' ; ')})` : ''))
-  lignes.push('', enTableau(r.pieces))
+  lignes.push('', enTableau(r.pieces), ...deduits(r))
   for (const j of plan ?? [])
     lignes.push(`\n  ${j.materiau} : ${j.plaques} plaque(s) ${j.sens}, ${j.reglages} réglage(s),`
       + ` chute ${j.chute} mm — en ${j.autre.sens} : ${j.autre.plaques} plaque(s)`)

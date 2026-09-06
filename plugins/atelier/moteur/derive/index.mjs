@@ -11,7 +11,7 @@
 
 import { choisit, pourFamille } from '../tables.mjs'
 import { applique } from '../modele/methodes.mjs'
-import { constante, etiquette, relationsDOrientation, relationsDuMeuble, traverse, v } from '../modele/ancrages.mjs'
+import { compte, constante, etiquette, relationsDOrientation, relationsDuMeuble, traverse, v } from '../modele/ancrages.mjs'
 import { lineaireDeChant, retraitsDe } from '../modele/chants.mjs'
 import { chantsRetenus, ecartsAuDefaut } from '../modele/visibilite.mjs'
 import { RESULTATS, squelette } from '../modele/familles.mjs'
@@ -19,6 +19,18 @@ import { litZones, relationsDesZones } from '../modele/zones.mjs'
 import { systeme } from './systeme.mjs'
 
 const issue = (gravite, type, message, plus = {}) => ({ gravite, type, message, ...plus })
+
+/* Les champs du design qui portent un COMPTE de pièces.
+   Chacun était lu à la main, et pas de la même façon : `tablettes` acceptait
+   `{ nombre }`, `lames`, `traverses` et `tiroirs` non. Un claustra déclaré
+   `lames: { nombre: 6 }` sortait donc à deux pièces au lieu de dix, sans un
+   mot — `Array.from({ length: undefined })` rend un tableau vide.
+
+   Le contrôle vit ici plutôt que dans les méthodes : une méthode qui ne tourne
+   pas ne dit rien, et un compte illisible doit se voir même quand aucune table
+   ne réclame la pièce qu'il compte. */
+const COMPTES = ['tablettes', 'tiroirs', 'lames', 'traverses']
+
 
 /* Les pièces que le design ANNONCE, et que quelqu'un doit donc poser.
    Une pièce qu'aucune méthode ne pose ne laisse aucune trace : pas de cote
@@ -63,9 +75,7 @@ const ANNONCEES = [
  * seuil est un paramètre — un arbitrage d'atelier, pas une constante.
  */
 export function faitsDerives(design) {
-  const tablettes = typeof design.tablettes === 'object'
-    ? (design.tablettes.nombre ?? 0)
-    : (design.tablettes ?? 0)
+  const { combien: tablettes } = compte(design.tablettes, 'tablettes')
   const total = tablettes * (design.modules_identiques ?? 1)
   const seuil = design.parametres?.seuil_mutualisation ?? 3
   return {
@@ -119,6 +129,11 @@ export function derive(design, tables, moduleDemande) {
     const x = s.pose(r)
     if (!x.ok) { refuses.push(x); issues.push(issue('erreur', 'contradiction', x.message, { relation: x.nom, avec: x.avec })) }
     return x
+  }
+
+  for (const champ of COMPTES) {
+    const { erreur } = compte(design[champ], champ)
+    if (erreur) issues.push(issue('bloquant', 'compte-illisible', erreur, { champ }))
   }
 
   const trigramme = design.trigramme ?? 'XXX'

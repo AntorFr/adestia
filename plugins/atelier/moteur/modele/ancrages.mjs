@@ -160,3 +160,35 @@ export const relationsDuMeuble = ({ l, p, h }) => [
   constante('meuble/profondeur-hors-tout', 'meuble.y', p),
   constante('meuble/hauteur-hors-tout', 'meuble.z', h),
 ]
+
+/**
+ * Combien de pièces un design en demande — nombre nu ou `{ nombre, … }`.
+ *
+ * Les deux écritures existent parce qu'une déclaration finit souvent par
+ * porter autre chose que son compte : une tablette dit dans quelle zone elle
+ * vit. Mais lues à la main, elles ne se ressemblaient pas d'un endroit à
+ * l'autre : `tablettes` acceptait l'objet, `lames`, `traverses` et `tiroirs`
+ * non — et `Array.from({ length: undefined })` rend un tableau VIDE. Un
+ * claustra déclaré `lames: { nombre: 6 }` sortait donc à deux pièces au lieu
+ * de dix, sans un mot.
+ *
+ * Rendre `{ combien, erreur }` plutôt que de lever : un compte illisible est
+ * une réponse que le moteur doit donner, pas une panne.
+ */
+export function compte(declare, quoi) {
+  if (declare === undefined || declare === null) return { combien: 0 }
+  if (typeof declare === 'number') {
+    return Number.isInteger(declare) && declare >= 0
+      ? { combien: declare }
+      : { combien: 0, erreur: `\`${quoi}\` : ${declare} n'est pas un nombre de pièces` }
+  }
+  if (typeof declare === 'object' && typeof declare.nombre === 'number') {
+    return { combien: declare.nombre }
+  }
+  return {
+    combien: 0,
+    erreur: `\`${quoi}\` : ni un nombre ni un objet portant \`nombre\` `
+      + `(reçu ${JSON.stringify(declare)}) — aucune pièce ne serait posée, et rien `
+      + 'ne le dirait.',
+  }
+}

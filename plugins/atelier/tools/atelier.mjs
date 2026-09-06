@@ -165,6 +165,16 @@ if (cmd === 'etat') {
   for (const j of r.journal) console.log(`  · ${j.table} ligne ${j.ligne} → ${j.methode ?? 'aucune méthode'}`)
   if (r.ecartees.length) console.log(`  · écartées (autre famille) : ${r.ecartees.join(', ')}`)
 
+  /* Ce que le moteur a DÉDUIT au-delà des pièces — l'étendue d'une zone que
+     personne n'a déclarée, le jour entre deux lames. Calculé depuis le début
+     et affiché nulle part : le seul moyen de connaître le jour d'un claustra
+     était de le recalculer à la main. */
+  const deduits = [
+    ...Object.entries(r.zones ?? {}).map(([id, e]) => `  zone ${id} : ${e ?? '—'}`),
+    ...Object.entries(r.resultats ?? {}).map(([n, v]) => `  ${n} : ${v ?? '—'}`),
+  ]
+  if (deduits.length) console.log(['', 'déduit :', ...deduits].join('\n'))
+
   const suivant = { ...wb, pieces: fusionnees, debit, derive: signature(wb.design, 'atelier@4.0') }
   const delta = diff(wb, suivant)
   console.log(`\n${rendu(delta)}`)
