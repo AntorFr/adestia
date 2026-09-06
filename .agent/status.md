@@ -1,6 +1,27 @@
 # Status — Adestia
 > MàJ : 2026-09-06
 
+Chantier du 06/09 (3) — **le dossier d'un voyage, sous sa timeline**. Les
+fiches y étaient déjà listées ; les **pièces jointes** n'existaient pour
+personne. Une carte d'embarquement rangée dans `assets/` n'était atteignable
+que si une carte la DÉCLARE dans son `docs[]` — un champ écrit à la main, donc
+un champ qu'on oublie —, et le dossier n'a aucune autre porte : sa route rend
+la timeline et la tuile l'absorbe. Même filet anti-orphelines que les fiches,
+appliqué à ce qui n'est pas une page : le dossier dit ce qu'il contient, pointé
+ou non. La frontière est celle de la coque, transcrite et non importée (enfants
+directs + tout `assets/`, moins `voyage.json` et son overlay) — un voyage qui
+range ses journées en sous-dossiers ne montre pas les pièces de chaque page
+comme les siennes. Servi par la route du plugin plutôt que par `/api/files` :
+celle-ci répond pour une PAGE, or un voyage est un dossier dont la page peut ne
+pas exister, et `/docs` reste dans le dossier que `/doc` sert déjà. Au passage
+la vignette d'un document est devenue UN dessin au lieu de deux (la modale
+copiait le sien), et l'URL `/api/plugin/voyages/doc` codée en dur dans le
+moteur est remontée chez l'hôte, qui seul connaît le point de montage. 1325
+verts + 472 plugins, typecheck/build OK, **banc constaté**
+(`voyage-dossier.mjs` : les deux blocs alignés sur la même trame, clair et
+sombre, le piège du sous-dossier absent des deux listes, la vignette de la
+modale intacte).
+
 Chantier du 06/09 (2) — **deux surfaces qu'agent-gw avait et que la migration
 n'avait pas reprises**. La **poignée de bord** : replié, l'écran ne disait
 nulle part qu'un second existait, et le swipe ne se découvrait que par
