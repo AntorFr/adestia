@@ -40,7 +40,7 @@ const design = (sur = {}) => ({
   parametres: {
     marge_fond: 5,
     rainure_prof: 9,
-    rainure_encastrement: 5,
+    rainure_bas_prof: 8,
     fond_jeu: 2,
     profondeur_traverse: 100,
   },
@@ -78,27 +78,33 @@ test('la traverse haute fait 1082 — la largeur intérieure, jamais écrite', (
   assert.equal(cote(avecTraverses(design()), 'BLT-A1-TRAV-HAUT-AV').longueur, 1082)
 })
 
-test('le fond encastré fait 851 × 1096, de deux rainures qui ne se ressemblent pas', () => {
+test('le fond encastré fait 852 × 1096, de deux rainures qui ne se ressemblent pas', () => {
   const f = cote(avecTraverses(design()), 'BLT-A1-FOND')
-  // 870 − 5 de marge − (19 du bas − 5 de rainure d'encastrement)
-  assert.equal(f.longueur, 851)
+  // 870 − 5 de marge − (19 du bas − (8 de rainure au bas − 2 de jeu))
+  assert.equal(f.longueur, 852)
   // 1120 − 2×19 + 2×(9 − 2) : le fond n'est pas tenu par l'emboîtement
   assert.equal(f.largeur, 1096)
   assert.equal(f.ep, 8, 'la MATIÈRE vient de la table, et son épaisseur avec')
 })
 
-test('le panneau POSÉ fait 1094 : il a été coupé quand le jeu valait 3', () => {
+test('le panneau POSÉ fait 851 × 1094 : il a été coupé quand le jeu valait 3', () => {
   // La preuve qui vaut, gardée explicite : le moteur reproduit le panneau du
-  // meuble réel dès qu'on lui donne le jeu avec lequel il a été coupé.
+  // meuble réel dès qu'on lui donne le jeu avec lequel il a été coupé. Le jeu
+  // agit sur les deux axes — deux rainures en largeur, une seule en hauteur,
+  // d'où 2 mm d'un côté et 1 mm de l'autre.
   const commeCoupe = design()
   commeCoupe.parametres = { ...commeCoupe.parametres, fond_jeu: 3 }
-  assert.equal(cote(avecTraverses(commeCoupe), 'BLT-A1-FOND').largeur, 1094)
+  const f = cote(avecTraverses(commeCoupe), 'BLT-A1-FOND')
+  assert.deepEqual([f.longueur, f.largeur], [851, 1094])
 })
 
 test('les deux rainures ne se confondent pas : 4 mm en dépendent', () => {
-  const avec9 = design()
-  avec9.parametres = { ...avec9.parametres, rainure_encastrement: 9 }
-  assert.equal(cote(avecTraverses(avec9), 'BLT-A1-FOND').longueur, 855)
+  // Celle des côtés fait 9, celle du bas 8 : deux usinages, deux nombres. Elles
+  // partagent le JEU — c'est le même geste au fond de la rainure — mais pas la
+  // profondeur, et les confondre coûte 4 mm sur le panneau.
+  const avecUneAutreRainure = design()
+  avecUneAutreRainure.parametres = { ...avecUneAutreRainure.parametres, rainure_bas_prof: 12 }
+  assert.equal(cote(avecTraverses(avecUneAutreRainure), 'BLT-A1-FOND').longueur, 856)
 })
 
 test('le journal dit quelle table, quelle ligne, quelle méthode', () => {

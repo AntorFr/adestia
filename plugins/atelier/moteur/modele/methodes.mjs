@@ -312,7 +312,15 @@ const fondRainureEncastre = {
             'meuble.z': -1,
             'param.marge_fond': 1,
             [v(etiquette(trigramme, module, 'BAS'), 'ep')]: 1,
-            'param.rainure_encastrement': -1,
+            /* Il regagne ce qu'il entre dans la rainure du BAS : la profondeur
+               usinée moins le jeu qu'on garde au fond — le même jeu qu'en
+               largeur, parce que c'est le même geste. Ce terme valait un
+               engagement NET, qui ne mentionnait aucun jeu : le fond ne bougeait
+               donc pas d'un millimètre quand on resserrait le jeu, alors qu'il
+               entre bel et bien plus loin. Une rainure se décrit partout de la
+               même façon — une profondeur et un jeu — sinon l'une des deux ment. */
+            'param.rainure_bas_prof': -1,
+            'param.fond_jeu': 1,
           },
           egale: 0,
         },

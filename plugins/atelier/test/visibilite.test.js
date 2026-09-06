@@ -36,7 +36,7 @@ const design = (sur = {}) => ({
   dessous: 'encastre',
   materiaux: { principal: { id: 'MEL19', ep: 19 }, fond: { id: 'MEL8', ep: 8, chante: false } },
   parametres: {
-    marge_fond: 5, rainure_prof: 9, rainure_encastrement: 5, fond_jeu: 2, profondeur_traverse: 100,
+    marge_fond: 5, rainure_prof: 9, rainure_bas_prof: 8, fond_jeu: 2, profondeur_traverse: 100,
   },
   ...sur,
 })

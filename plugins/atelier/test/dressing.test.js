@@ -41,7 +41,7 @@ const dressing = (sur = {}) => ({
   faces_chantees: ['avant', 'gauche', 'droite'],
   materiaux: { principal: { id: 'MEL19', ep: 19 }, fond: { id: 'MEL8', ep: 8, chante: false } },
   parametres: {
-    marge_fond: 2, rainure_prof: 9, rainure_encastrement: 5, fond_jeu: 2, retrait_fond_dos: 20,
+    marge_fond: 2, rainure_prof: 9, rainure_bas_prof: 8, fond_jeu: 2, retrait_fond_dos: 20,
   },
   ...sur,
 })
@@ -71,17 +71,17 @@ test('le dessus sort à 722 de long et RAMENÉ à 579 pour laisser passer le fon
   assert.equal(largeur, 579, '600 − 20 de passage − 1 de chant avant')
 })
 
-test('le fond encastré sort à 2217 × 736, des deux formules et d\'aucun nombre écrit', () => {
-  // 2233 − 2 de marge − (19 du dessous − 5 de rainure d'encastrement) = 2217.
+test('le fond encastré sort à 2218 × 736, des deux formules et d\'aucun nombre écrit', () => {
+  // 2233 − 2 de marge − (19 du dessous − (8 de rainure au bas − 2 de jeu)) = 2218.
   // 760 − 2×19 + 2×(9 − 2) = 736. Deux formules, deux fiches, aucun nombre
   // écrit dans le design.
-  assert.deepEqual(cotes()['DRE-A1-FOND'], [2217, 736])
+  assert.deepEqual(cotes()['DRE-A1-FOND'], [2218, 736])
 })
 
 test('et le panneau POSÉ fait 734 : il a été coupé quand le jeu valait 3', () => {
-  /* Le jeu au fond de rainure est passé de 3 à 2 mm. La hauteur ne bouge pas
-     — elle ne dépend que de la rainure du dessous — mais la largeur gagne
-     2 mm, un de chaque côté, donc le fond entre un peu plus loin.
+  /* Le jeu au fond de rainure est passé de 3 à 2 mm, et il agit sur les DEUX
+     axes : deux rainures en largeur (+2 mm), une seule au dessous (+1 mm).
+     Le fond entre partout un peu plus loin.
 
      Ce test garde la preuve qui vaut : le moteur reproduit le panneau tel
      qu'il est dans le meuble monté, à condition de lui donner le jeu avec

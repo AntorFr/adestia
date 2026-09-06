@@ -135,7 +135,7 @@ reste LIBRE, nommée, et bloque la dérivation.
     "plan_travail": { "id": "MDF19", "ep": 19, "chante": false }
   },
   "parametres": {
-    "marge_fond": 5, "rainure_prof": 9, "rainure_encastrement": 5, "fond_jeu": 2,
+    "marge_fond": 5, "rainure_prof": 9, "rainure_bas_prof": 8, "fond_jeu": 2,
     "retrait_fond_dos": 20, "retrait_tablette_avant": 3, "profondeur_traverse": 150,
     "jeu_facade": 3, "jeu_facade_lateral": 2, "retrait_chant": 1,
     "ep_coulisse": 12.5, "jeu_coulisse": 1, "profondeur_coulisse": 550,
@@ -143,6 +143,13 @@ reste LIBRE, nommée, et bloque la dérivation.
   }
 }
 ```
+
+**Une rainure se décrit toujours de la même façon : une profondeur et un jeu.**
+`rainure_prof` est celle des côtés, `rainure_bas_prof` celle du dessous — deux
+usinages, deux nombres, et les confondre coûte 4 mm sur le panneau. Mais elles
+partagent `fond_jeu`, le jeu qu'on garde au fond de la rainure, parce que c'est
+le même geste. Ce qui entre vaut donc `profondeur − fond_jeu`, sur les deux
+axes : deux fois en largeur, une fois en hauteur.
 
 `faces_chantees` déclare **ce qu'on chante**, pas ce qu'on voit : sur trois
 meubles accolés, les côtés joints ne se voient pas et se chantent quand même,
