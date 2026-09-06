@@ -63,6 +63,16 @@ export const overlayPath = (voyage) =>
   `${voyage.split('/').slice(0, -1).join('/')}/voyage-state.json`
 
 /**
+ * A trip's own folder — the parent of the `assets/` its `voyage.json` sits in.
+ *
+ * Everything a trip carries is named relative to THIS, and it is the boundary
+ * both routes below enforce. Empty when the trip has no folder above it, which
+ * `safeVoyagePath` allows (`voyage.json` at the root of the memory): a caller
+ * that would then walk "everything under nothing" has to say so itself.
+ */
+export const tripFolder = (voyage) => voyage.split('/').slice(0, -2).join('/')
+
+/**
  * A document a card points at, resolved against ITS OWN TRIP.
  *
  * Two arguments rather than one path, deliberately. The caller names the trip
@@ -77,7 +87,7 @@ export function safeDocPath(voyage, requested) {
   }
   // `assets/x.pdf` s'écrit relativement au dossier du VOYAGE, qui est le parent
   // du dossier assets où vit le voyage.json.
-  const trip = voyage.split('/').slice(0, -2)
+  const trip = tripFolder(voyage).split('/').filter(Boolean)
   const segments = []
   for (const segment of requested.replace(/^\/+/, '').split('/')) {
     if (segment === '' || segment === '.') continue
@@ -88,6 +98,47 @@ export function safeDocPath(voyage, requested) {
   }
   if (segments.length === 0) return undefined
   return [...trip, ...segments].join('/')
+}
+
+/**
+ * The attachments of a trip's folder — the same anti-ORPHAN net as the pages,
+ * for what is not a page.
+ *
+ * A boarding pass reaches a reader today only if a card DECLARES it in its
+ * `docs[]`. A PDF the agent filed in `assets/` while answering a mail exists
+ * for nobody: no listing shows the folder, and this plugin's tile absorbs it.
+ * So the same rule the pages block already follows applies here — the folder
+ * says what it holds, pointed at or not — and a file that a card also declares
+ * stays listed. Hiding it would make the block's contents depend on a field
+ * somebody may not have written, which is the exact failure it exists to fix.
+ *
+ * The SHAPE of the boundary is the shell's own, transcribed rather than
+ * imported: the non-markdown children of the folder itself, plus everything
+ * under its `assets/`. A trip that files its days in subfolders would
+ * otherwise show every page's companions as its own.
+ *
+ * Takes the paths rather than reading them, so the rule can be read — and
+ * tested — without a disk.
+ */
+export function folderDocs(voyage, paths) {
+  const trip = tripFolder(voyage)
+  if (trip === '') return []
+  // The trip's own machinery is not a document: `voyage.json` is the trip, and
+  // the overlay beside it is the record of somebody's drags.
+  const machinery = new Set([voyage, overlayPath(voyage)])
+
+  const docs = []
+  for (const path of paths ?? []) {
+    if (!path.startsWith(`${trip}/`) || machinery.has(path)) continue
+    const fichier = path.slice(trip.length + 1)
+    if (fichier.includes('/') && !fichier.startsWith('assets/')) continue
+    // Markdown has its own block, its own screen and its own API.
+    if (/\.md$/i.test(fichier)) continue
+    docs.push({ fichier, titre: fichier.split('/').at(-1) })
+  }
+  // Compared by code point rather than by locale: this order reaches a screen
+  // and a witness, and `localeCompare` without a locale reads the HOST's.
+  return docs.sort((a, b) => (a.fichier < b.fichier ? -1 : a.fichier > b.fichier ? 1 : 0))
 }
 
 /** Lecture par le noyau, qui compose les magasins. */
@@ -343,6 +394,26 @@ export default async function api(app, opts) {
       // inside the shell would replace the trip somebody was looking at.
       .header('content-disposition', `attachment; filename="${name.replace(/["\\]/g, '')}"`)
       .send(bytes)
+  })
+
+  /**
+   * What the trip's folder holds, besides its pages.
+   *
+   * Served by the plugin rather than read off `/api/files`: the shell answers
+   * that question for a PAGE, and a trip is a folder whose page may not exist.
+   * Here the trip names itself the only way it can — by the `voyage.json` that
+   * IS it — and the answer stays inside the one folder `/doc` already serves
+   * from, so listing grants exactly the reach downloading already had.
+   */
+  app.get('/docs', async (request, reply) => {
+    const path = safeVoyagePath(request.query.v)
+    if (!path) return reply.code(400).send({ error: 'not a voyage path' })
+    const trip = tripFolder(path)
+    // A trip with no folder above it has no folder to list, and asking the
+    // core for "everything under nothing" would walk the whole memory.
+    if (trip === '') return { docs: [] }
+    const found = await pages.list({ under: trip })
+    return { docs: folderDocs(path, found.map((entry) => entry.path)) }
   })
 
   /**

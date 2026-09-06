@@ -118,9 +118,9 @@ de famille rangé dans le cercle privé est invisible à ceux qui partent avec.
   une pastille `📄 fiche`, pour qu'on sache qu'elle mène quelque part sans l'ouvrir. Une
   **URL y est ignorée** (aucun bouton) : l'externe, c'est `web`, et il le dit
   (« ↗ Ouvrir la page », nouvel onglet).
-  ⓘ Le dossier du voyage est de toute façon **listé** en bas de la timeline : une balade
-  que tu y rédiges reste atteignable même si aucune carte ne la pointe. `fiche` sert à
-  **rattacher** la page à la carte qui la concerne, pas à la rendre découvrable.
+  ⓘ Les fiches du dossier sont de toute façon **listées** en bas de la timeline : une
+  balade que tu y rédiges reste atteignable même si aucune carte ne la pointe. `fiche`
+  sert à **rattacher** la page à la carte qui la concerne, pas à la rendre découvrable.
 - **`ico`** : un emoji, qui remplace le glyphe du type partout où la carte se rend. Le
   `type` **classe** (couleur, facettes) mais ne doit pas dicter le dessin — son
   vocabulaire est fermé et grossier, si bien qu'un marché provençal tombe en `activite`
@@ -130,6 +130,10 @@ de famille rangé dans le cercle privé est invisible à ceux qui partent avec.
   un fichier de la mémoire, sous la main le jour J. Servi en téléchargement, et
   **uniquement depuis le dossier de ce voyage** — un `docs` qui pointe ailleurs ne
   s'ouvre pas.
+  ⓘ Comme les fiches, les pièces jointes du dossier sont de toute façon **listées** en
+  bas de la timeline : une carte d'embarquement rangée dans `assets/` reste sous la main
+  même si aucune carte ne la déclare. `docs` sert à **rattacher** le document à la carte
+  qui le concerne — et à lui donner un titre lisible —, pas à le rendre atteignable.
 - **`modes`** : moyens de déplacement du voyage, déclarés au cadrage (défaut
   `["marche", "voiture"]`), parmi `marche | voiture | velo | transport`. Ils bornent le
   choix de mode des liaisons.

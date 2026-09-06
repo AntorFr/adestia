@@ -589,6 +589,10 @@
   font-size: 12.5px;
 }
 
+/* A document, wherever it is offered: a card's own, in the dialog, and the
+   folder's, in the block under the timeline. One card, because they are the
+   same thing — a file this trip carries, downloaded rather than opened. */
+.voyages .vdoc,
 .vmodal .vdoc {
   display: flex;
   align-items: center;
@@ -600,8 +604,10 @@
   color: var(--text);
 }
 
+.voyages .vdoc:hover,
 .vmodal .vdoc:hover { border-color: var(--accent); }
 
+.voyages .vdoc .ext,
 .vmodal .vdoc .ext {
   font: 600 9.5px var(--font-mono);
   padding: 3px 6px;
@@ -610,8 +616,31 @@
   color: var(--accent);
 }
 
+.voyages .vdoc .fn,
 .vmodal .vdoc .fn { font: 600 13px var(--font); }
+.voyages .vdoc .fs,
 .vmodal .vdoc .fs { color: var(--text-faint); font: 11px var(--font-mono); }
+
+/* The folder's own, on the SAME column rhythm as the pages above them —
+   `.vhub`'s track and gap, to the pixel. Two blocks answering one question
+   ("what is in this folder") looked like two unrelated screens when their
+   columns disagreed; the cards stay different heights on purpose, because a
+   page and a ticket are not the same object. */
+.voyages .vdocs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 13px;
+  align-content: start;
+}
+
+/* A file name is not a title somebody shortened: it truncates rather than
+   pushing the card out of its column. */
+.voyages .vdocs .vdoc { background: var(--surface-raised); overflow: hidden; }
+.voyages .vdocs .vdoc > div { min-width: 0; }
+.voyages .vdoc .ext { flex: none; }
+
+.voyages .vdocs .fn,
+.voyages .vdocs .fs { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .vmodal .vhour {
   display: flex;

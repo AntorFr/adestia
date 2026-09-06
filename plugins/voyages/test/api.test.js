@@ -19,9 +19,11 @@ import {
   mergeItems,
   overlayPath,
   readGesture,
+  folderDocs,
   safeDocPath,
   safeVoyagePath,
   summarise,
+  tripFolder,
 } from '../api.mjs'
 
 // Un nom LOGIQUE, plus un chemin de disque : ce plugin ne connaît plus de
@@ -89,6 +91,56 @@ test('a document is reachable only inside its own trip', () => {
   // convention as a voyage path. It cannot escape, which is what matters: it
   // lands inside the trip and 404s there.
   assert.equal(safeDocPath(VOYAGE, '/etc/passwd'), 'voyages/corse/etc/passwd')
+})
+
+test('the folder of a trip is the parent of the assets its data sits in', () => {
+  assert.equal(tripFolder(VOYAGE), 'voyages/corse')
+  // A trip at the root of the memory has no folder above it, and says so
+  // rather than answering with a prefix that matches everything.
+  assert.equal(tripFolder('voyage.json'), '')
+})
+
+test('the folder lists what it holds, pointed at or not', () => {
+  const docs = folderDocs(VOYAGE, [
+    'voyages/corse/assets/voyage.json',
+    'voyages/corse/assets/voyage-state.json',
+    'voyages/corse/assets/embarquement.pdf',
+    'voyages/corse/assets/photos/calvi.jpg',
+    'voyages/corse/reservation.ics',
+    'voyages/corse/balade.md',
+    'voyages/corse/jours/mardi.md',
+    'voyages/corse/jours/plan-du-port.pdf',
+    'voyages/bretagne/assets/embarquement.pdf',
+  ])
+  assert.deepEqual(docs, [
+    // Everything under `assets/`, however deep — that folder is taken whole.
+    { fichier: 'assets/embarquement.pdf', titre: 'embarquement.pdf' },
+    { fichier: 'assets/photos/calvi.jpg', titre: 'calvi.jpg' },
+    // A direct child of the trip's own folder.
+    { fichier: 'reservation.ics', titre: 'reservation.ics' },
+  ])
+})
+
+test('the folder block never reaches past the trip it lists', () => {
+  const paths = [
+    // The trip's own machinery: the data IS the trip, the overlay is the
+    // record of somebody's drags. Neither is a document.
+    'voyages/corse/assets/voyage.json',
+    'voyages/corse/assets/voyage-state.json',
+    // Markdown has its own block, its own screen and its own API.
+    'voyages/corse/balade.md',
+    // A page filed in a subfolder brings its own companions, and they belong
+    // to IT — a trip that shows them as its own is the failure the shell's
+    // own attachment rule exists to avoid.
+    'voyages/corse/jours/plan-du-port.pdf',
+    // The neighbour's trip, which shares a prefix and nothing else.
+    'voyages/corse-2027/assets/billet.pdf',
+  ]
+  assert.deepEqual(folderDocs(VOYAGE, paths), [])
+
+  // And a trip with no folder above it lists nothing rather than the memory:
+  // an empty prefix would have matched every path handed in.
+  assert.deepEqual(folderDocs('voyage.json', paths), [])
 })
 
 test('a gesture is laid over the item it names, without its stamp', () => {

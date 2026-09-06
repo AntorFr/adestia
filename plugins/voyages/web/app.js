@@ -61,6 +61,9 @@ const FR = {
   'Take back into the suggestions': 'Reprendre dans les suggestions',
   'The pages of this trip': 'Les fiches de ce voyage',
   '— what the folder holds': '— ce que le dossier contient',
+  'The folder’s attachments': 'Les pièces jointes du dossier',
+  '— tickets, passes, everything the trip carries':
+    '— billets, cartes d’embarquement, ce que le voyage transporte',
   'Click: page · Drag: move': 'Clic : fiche · Glisser : déplacer',
   'Click: page · Drag: confirm': 'Clic : fiche · Glisser : confirmer',
   'to be placed on the timeline': 'à placer sur la timeline',
@@ -100,7 +103,7 @@ const FR = {
 }
 
 export default function createVoyagesApp(api) {
-  const { page, esc, crumbs, call, shellFetch, tone, finished, openPage, href, learn, locale } = api
+  const { page, esc, crumbs, call, url, shellFetch, tone, finished, openPage, href, learn, locale } = api
   const t = (key) => (locale === 'fr' ? (FR[key] ?? key) : key)
 
   const VTYPE = {
@@ -289,9 +292,15 @@ export default function createVoyagesApp(api) {
       page.innerHTML = `<div class="vwrap-outer"><div class="empty">${t('Unreadable trip')} (${esc(String(error))}).</div></div>`
       return
     }
-    voy = { path, data, state, filter: null, fiches: [] }
-    // The folder listing below. A failure costs the block, never the timeline.
-    voy.fiches = await folderPages(path).catch(() => [])
+    voy = { path, data, state, filter: null, fiches: [], docs: [] }
+    // The two folder blocks below, asked for together — neither waits on the
+    // other's answer. A failure costs its own block, never the timeline.
+    const [fiches, docs] = await Promise.all([
+      folderPages(path).catch(() => []),
+      folderDocs(path).catch(() => []),
+    ])
+    voy.fiches = fiches
+    voy.docs = docs
     crumbs([
       { label: t('Trips'), hash: '#/voyages' },
       { label: data.titre || t('Trip'), hash: href(path) },
@@ -307,6 +316,14 @@ export default function createVoyagesApp(api) {
     })
   }
   const vDir = () => voy.path.replace(/assets\/voyage\.json$/, '')
+
+  /** Where a document of THIS trip downloads from — bounded to its folder. */
+  const docHref = (fichier) =>
+    url(`/doc?v=${encodeURIComponent(voy.path)}&file=${encodeURIComponent(fichier)}`)
+
+  /** One document, as the card the dialog and the folder block both draw. */
+  const vdocHTML = (doc) =>
+    `<a class="vdoc" href="${esc(docHref(doc.fichier))}"><span class="ext">${esc((doc.fichier.split('.').pop() || 'doc').toUpperCase())}</span><div><div class="fn">${esc(doc.titre || doc.fichier)}</div><div class="fs">${esc(doc.fichier)}</div></div></a>`
 
   /**
    * A card's INTERNAL link — `fiche` in voyage.json.
@@ -343,6 +360,22 @@ export default function createVoyagesApp(api) {
       .filter((entry) => entry.path.startsWith(dir + '/') && !entry.path.slice(dir.length + 1).includes('/'))
       .map((entry) => ({ path: entry.path, nom: entry.title }))
       .sort((a, b) => a.nom.localeCompare(b.nom, locale))
+  }
+
+  /**
+   * The files the folder holds — the same net as the pages, for what is not
+   * one.
+   *
+   * A boarding pass the agent filed while answering a mail is reachable today
+   * only if a card DECLARES it, and a card is written by hand. This asks the
+   * folder instead, which cannot forget. The plugin's own route rather than
+   * the shell's `/api/files`: that one answers for a PAGE, and a trip is a
+   * folder whose page need not exist — see the route's own note.
+   */
+  async function folderDocs(voyagePath) {
+    const response = await call('/docs?v=' + encodeURIComponent(voyagePath))
+    if (!response.ok) return []
+    return (await response.json()).docs ?? []
   }
 
   async function vgesture(payload) {
@@ -438,8 +471,16 @@ export default function createVoyagesApp(api) {
       <div class="vhub vdoss">${voy.fiches.map((f) => `<button class="vhub-card" data-page="${esc(f.path)}"><div class="ct">📄 ${esc(f.nom)}</div><div class="foot"><span class="tag">${t('page')}</span></div></button>`).join('')}</div>`
       : ''
 
+    // Beside the pages rather than mixed in with them: a note somebody wrote
+    // is opened and a boarding pass is downloaded, and a block that offered
+    // both from the same card would be lying about one of them.
+    const jointes = voy.docs.length
+      ? `<div class="grouplabel">${t('The folder’s attachments')} <span class="hint">${t('— tickets, passes, everything the trip carries')}</span></div>
+      <div class="vdocs">${voy.docs.map(vdocHTML).join('')}</div>`
+      : ''
+
     const lede = `${days.length} ${t('days')}${(d.lieux || []).length ? ' · ' + d.lieux.map((l) => esc(l.nom)).join(' → ') : ''} · ${t('legs and weather derived as it draws')}`
-    page.innerHTML = `<div class="vwrap-outer">${head.replace('%LEDE%', lede)}${props}<div class="vsplit"><div class="vtl">${tl}</div>${tray}</div>${bloc}</div>`
+    page.innerHTML = `<div class="vwrap-outer">${head.replace('%LEDE%', lede)}${props}<div class="vsplit"><div class="vtl">${tl}</div>${tray}</div>${bloc}${jointes}</div>`
 
     // Cards (click), tray (filter, dismiss), drag & drop → the state API.
     page.querySelectorAll('[data-open]').forEach((b) => b.addEventListener('click', () => openVFiche(b.dataset.open)))
@@ -624,12 +665,7 @@ export default function createVoyagesApp(api) {
       it.gmail ? `<div class="vsrc">📧 ${t('Booking found in the mailbox — the thread stays the source of truth.')}</div>`
       : it.place_id ? `<div class="vsrc">📍 ${t('Maps entry — rating, hours, directions.')}</div>`
       : ''
-    const docs = (it.docs || [])
-      .map(
-        (doc) =>
-          `<a class="vdoc" href="/api/plugin/voyages/doc?v=${encodeURIComponent(voy.path)}&file=${encodeURIComponent(doc.fichier)}"><span class="ext">${esc((doc.fichier.split('.').pop() || 'doc').toUpperCase())}</span><div><div class="fn">${esc(doc.titre || doc.fichier)}</div><div class="fs">${esc(doc.fichier)}</div></div></a>`,
-      )
-      .join('')
+    const docs = (it.docs || []).map(vdocHTML).join('')
 
     const fiche = vfichePath(it.fiche)
     const body = vModal.querySelector('.vfiche')

@@ -142,6 +142,11 @@ export default function view(api) {
           // The plugin's own API, without the engine knowing where it is
           // mounted — a plugin that hardcoded its prefix could not be renamed.
           call: (path, init) => api.fetch(`/api/plugin/${api.id}${path}`, init),
+          // The same address, as a URL somebody's browser follows: an `<a
+          // href>` to a boarding pass cannot go through `fetch`. The engine
+          // spelled `/api/plugin/voyages/doc` in its own markup, which is the
+          // one line a rename of this plugin would have broken.
+          url: (path) => `/api/plugin/${api.id}${path}`,
           // The shell's routes, for the one thing a trip needs from it: the
           // index of pages, to list what its folder holds.
           shellFetch: (path, init) => api.fetch(path, init),
