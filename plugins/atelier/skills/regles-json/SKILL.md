@@ -96,6 +96,8 @@ Ce que chaque nom pose, et les entrées de design qu'il consomme.
 | `dessus-plaque-entre-ramene` | le même, ramené en profondeur pour laisser passer un fond en rainure |
 | `dessus-plaque-pleine` | dessus qui COIFFE et capture les côtés. Possible, jamais retenu ici : le côté y perd deux épaisseurs |
 | `dessus-traverses` | deux traverses avant/arrière posées SUR les côtés — le cas du plan de travail rapporté |
+| `dessous-ramene` | le dessous recule comme le dessus : tout l'horizontal à la même profondeur, une seule refente |
+| `dessous-traversant` | le dessous file pleine profondeur : il arrête le fond, ou le reçoit en rainure |
 | `fond-structurel` | fond plein entre les côtés, posé sur le bas — le cas mobile, il encaisse le vrillage |
 | `fond-rainure-traversant` | fond fin en rainure, que rien n'arrête en bas (dessous ramené) |
 | `fond-rainure-arrete` | fond fin arrêté par un dessous pleine profondeur |

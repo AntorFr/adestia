@@ -158,6 +158,51 @@ const dessusTraverses = {
   },
 }
 
+/* ── Le dessous : jusqu'où il va, et pourquoi c'est un choix ────────────────
+   Le bas porte : ça, c'est le montage, et le socle le pose sans le demander.
+   Mais sa PROFONDEUR est une décision, au même titre que ce que fait le haut —
+   et elle était posée en dur, traversante, par le socle. Un meuble monté l'a
+   dit : le rangement du garage a son dessous à 600 pour 620 de meuble, et le
+   moteur en calculait 619. Une cote fausse et plausible sur une pièce qu'on
+   débite, produite par la seule pièce que personne n'avait pensé à interroger.
+
+   Ce qui départage les deux montages n'est pas le goût, c'est un COMPTE — le
+   même arbitrage que le retrait de tablette :
+
+   RAMENÉ : le dessous recule comme le dessus, le fond passe derrière lui. Tout
+   ce qui est horizontal tombe alors à la même profondeur — dessus, tablettes,
+   dessous — donc une seule refente et un seul réglage. C'est le montage du
+   rangement du garage : peu de pièces, le temps gagné au débit compte.
+
+   TRAVERSANT : le dessous file pleine profondeur, et c'est une rainure qui
+   reçoit le fond. Trois réglages au lieu d'un, assumés. C'est le montage du
+   dressing : beaucoup de tablettes et le même meuble plusieurs fois, où le
+   gain d'un réglage unique ne justifie plus de raccourcir le dessous.
+
+   Les deux sont justes. C'est pour ça que ça vit dans une table. */
+const dessousRamene = {
+  decrit: 'dessous ramené en profondeur, comme le dessus : le fond passe derrière',
+  applique({ trigramme, module }) {
+    const bas = etiquette(trigramme, module, 'BAS')
+    return {
+      pieces: [],
+      relations: [{
+        nom: `${bas}/ramene-pour-le-fond`,
+        termes: { [v(bas, 'y')]: 1, 'meuble.y': -1, 'param.retrait_fond_dos': 1 },
+        egale: 0,
+      }],
+    }
+  },
+}
+
+const dessousTraversant = {
+  decrit: 'dessous pleine profondeur : il arrête le fond, ou le reçoit en rainure',
+  applique({ trigramme, module }) {
+    const bas = { etiquette: etiquette(trigramme, module, 'BAS'), orientation: 'horizontal' }
+    return { pieces: [], relations: [traverse(bas, 'y')] }
+  },
+}
+
 /* ── Le fond ────────────────────────────────────────────────────────────────
    Quatre méthodes pour une seule pièce, et c'est le sujet de la fiche
    `fond-caisson-colonne` : ce qui les sépare n'est pas le goût mais deux
@@ -682,6 +727,8 @@ const corpsDeTiroir = {
 }
 
 export const METHODES = {
+  'dessous-ramene': dessousRamene,
+  'dessous-traversant': dessousTraversant,
   'plan-rapporte': planRapporte,
   neant,
   signale,

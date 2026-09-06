@@ -27,7 +27,7 @@ const lit = (n) => {
   return table
 }
 const tables = () => [
-  lit('fixture-regles-dessus.json'), lit('fixture-regles-fond.json'),
+  lit('fixture-regles-dessus.json'), lit('fixture-regles-dessous.json'), lit('fixture-regles-fond.json'),
   lit('fixture-regles-separateur.json'),
 ]
 

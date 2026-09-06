@@ -24,7 +24,7 @@ import { chantsParDefaut, ecartsAuDefaut } from '../moteur/modele/visibilite.mjs
 
 const here = fileURLToPath(new URL('.', import.meta.url))
 const lit = (n) => litTable(JSON.parse(readFileSync(join(here, n), 'utf8')), n).table
-const tables = () => [lit('fixture-regles-dessus.json'), lit('fixture-regles-fond.json')]
+const tables = () => [lit('fixture-regles-dessus.json'), lit('fixture-regles-dessous.json'), lit('fixture-regles-fond.json')]
 
 const design = (sur = {}) => ({
   famille: 'caisson',

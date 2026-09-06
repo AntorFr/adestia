@@ -25,7 +25,7 @@ import { derive } from '../moteur/derive/index.mjs'
 
 const here = fileURLToPath(new URL('.', import.meta.url))
 const lit = (n) => litTable(JSON.parse(readFileSync(join(here, n), 'utf8')), n).table
-const tables = () => [lit('fixture-regles-dessus.json'), lit('fixture-regles-fond.json')]
+const tables = () => [lit('fixture-regles-dessus.json'), lit('fixture-regles-dessous.json'), lit('fixture-regles-fond.json')]
 
 /** Le meuble de l'imprimante : mobile, plan de travail, fond structurel. */
 const imp3d = (sur = {}) => ({

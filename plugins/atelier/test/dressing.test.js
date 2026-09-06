@@ -26,7 +26,7 @@ const lit = (n) => {
   assert.deepEqual(erreurs, [])
   return table
 }
-const tables = () => [lit('fixture-regles-dessus.json'), lit('fixture-regles-fond.json')]
+const tables = () => [lit('fixture-regles-dessus.json'), lit('fixture-regles-dessous.json'), lit('fixture-regles-fond.json')]
 
 /** Le dressing tel que sa fiche le décrit — des décisions, pas des cotes. */
 const dressing = (sur = {}) => ({

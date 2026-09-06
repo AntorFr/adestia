@@ -25,7 +25,7 @@ const lit = (nom) => {
   assert.deepEqual(erreurs, [])
   return table
 }
-const tables = () => [lit('fixture-regles-dessus.json'), lit('fixture-regles-fond.json')]
+const tables = () => [lit('fixture-regles-dessus.json'), lit('fixture-regles-dessous.json'), lit('fixture-regles-fond.json')]
 
 /** Le design du meuble à tiroirs — les décisions, rien que les décisions. */
 const design = (sur = {}) => ({
@@ -96,6 +96,7 @@ test('les deux rainures ne se confondent pas : 4 mm en dépendent', () => {
 test('le journal dit quelle table, quelle ligne, quelle méthode', () => {
   assert.deepEqual(avecTraverses(design()).journal, [
     { table: 'dessus', ligne: 1, methode: 'dessus-traverses' },
+    { table: 'dessous', ligne: 3, methode: 'dessous-traversant' },
     { table: 'fond', ligne: 5, methode: 'fond-rainure-encastre' },
   ])
 })
@@ -109,14 +110,14 @@ test('chaque cote dit de quelles règles elle vient', () => {
 test('un meuble sans fond ne reçoit aucune pièce de fond, et ce n\'est pas une erreur', () => {
   const r = avecTraverses(design({ fond: 'non' }))
   assert.ok(!r.pieces.some((p) => p.role === 'FOND'))
-  assert.deepEqual(r.journal[1], { table: 'fond', ligne: 1, methode: null })
+  assert.deepEqual(r.journal.find((j) => j.table === 'fond'), { table: 'fond', ligne: 1, methode: null })
   assert.deepEqual(r.issues.filter((i) => i.type !== 'cote-libre'), [])
 })
 
 test('un meuble mobile prend un fond structurel, plein et de la même épaisseur', () => {
   const r = avecTraverses(design({ pose: 'mobile' }))
   const f = cote(r, 'BLT-A1-FOND')
-  assert.equal(r.journal[1].methode, 'fond-structurel')
+  assert.equal(r.journal.find((j) => j.table === 'fond').methode, 'fond-structurel')
   assert.equal(f.ep, 19)
   assert.equal(f.largeur, 1082, 'entre les côtés, pas engagé en rainure')
   assert.equal(f.longueur, 851, 'posé sur le bas')

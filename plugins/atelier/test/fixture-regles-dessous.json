@@ -1,0 +1,26 @@
+{
+  "id": "dessous",
+  "titre": "Dessous — jusqu'où il va en profondeur, et ce que ça coûte au débit",
+  "applique_a": ["caisson"],
+  "entrees": {
+    "dessous": ["pleine-profondeur", "ramene", "encastre"]
+  },
+  "sorties": ["methode"],
+  "lignes": [
+    {
+      "quand": { "dessous": "ramene" },
+      "alors": { "methode": "dessous-ramene" },
+      "note": "Le dessous recule comme le dessus et le fond passe derrière lui. Tout ce qui est horizontal tombe alors à la MÊME profondeur — dessus, tablettes, dessous — donc une seule refente et un seul réglage. C'est le montage du rangement du garage : peu de pièces, le temps gagné au débit compte plus que le millimètre de fond gagné."
+    },
+    {
+      "quand": { "dessous": "pleine-profondeur" },
+      "alors": { "methode": "dessous-traversant" },
+      "note": "Le dessous file jusqu'au dos et c'est lui qui arrête le fond en bas."
+    },
+    {
+      "quand": { "dessous": "encastre" },
+      "alors": { "methode": "dessous-traversant" },
+      "note": "Le dessous file pleine profondeur et reçoit le fond dans une rainure. Profondeur identique au cas précédent — ce qui change est l'usinage, pas la coupe. C'est le montage du dressing : beaucoup de tablettes et le même meuble plusieurs fois, où le gain d'un réglage unique ne justifie plus de raccourcir le dessous."
+    }
+  ]
+}

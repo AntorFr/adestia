@@ -31,7 +31,7 @@ import { entre, traverse } from '../moteur/modele/ancrages.mjs'
 
 const here = fileURLToPath(new URL('.', import.meta.url))
 const lit = (nom) => litTable(JSON.parse(readFileSync(join(here, nom), 'utf8')), nom).table
-const tables = () => [lit('fixture-regles-dessus.json'), lit('fixture-regles-fond.json')]
+const tables = () => [lit('fixture-regles-dessus.json'), lit('fixture-regles-dessous.json'), lit('fixture-regles-fond.json')]
 
 const design = (chants) => ({
   famille: 'caisson',

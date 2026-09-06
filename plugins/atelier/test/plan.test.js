@@ -28,7 +28,7 @@ const lit = (n) => {
   return table
 }
 const tables = () => [
-  lit('fixture-regles-dessus.json'), lit('fixture-regles-fond.json'),
+  lit('fixture-regles-dessus.json'), lit('fixture-regles-dessous.json'), lit('fixture-regles-fond.json'),
   lit('fixture-regles-tablette.json'), lit('fixture-regles-separateur.json'),
   lit('fixture-regles-plan.json'),
 ]
@@ -124,7 +124,7 @@ test('le cas jamais construit se DIT hors portée, il ne rend pas un nombre', ()
    couper, alors qu'une règle absente ne se voit jamais. */
 
 const sansLaTableDuPlan = () => [
-  lit('fixture-regles-dessus.json'), lit('fixture-regles-fond.json'),
+  lit('fixture-regles-dessus.json'), lit('fixture-regles-dessous.json'), lit('fixture-regles-fond.json'),
   lit('fixture-regles-tablette.json'), lit('fixture-regles-separateur.json'),
 ]
 

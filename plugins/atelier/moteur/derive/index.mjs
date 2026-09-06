@@ -58,8 +58,10 @@ const ANNONCEES = [
  *
  * Un bas qui porte et deux côtés qui reposent dessus — c'est le montage retenu
  * ici, et il est explicite plutôt que sous-entendu : le dessous reprend la
- * charge, donc il traverse. Ce qui reste ouvert, c'est ce que fait le HAUT du
- * côté, et c'est une table qui le décide.
+ * charge. Ce qui reste ouvert, c'est ce que font le HAUT du côté et la
+ * PROFONDEUR du bas, et ce sont des tables qui le décident. La seconde était
+ * posée en dur ici, traversante — d'où un dessous à 619 dans un meuble dont la
+ * pièce posée fait 600.
  */
 function socle(trigramme, module) {
   const bas = {
@@ -82,7 +84,10 @@ function socle(trigramme, module) {
   }))
   return {
     pieces: [bas, ...cotes],
-    relations: [traverse(bas, 'x'), traverse(bas, 'y'), ...cotes.map((c) => traverse(c, 'y'))],
+    /* La profondeur du bas n'est PAS ici : c'est une décision, et une table
+       la prend. Le socle ne pose que ce qui ne se discute pas — le bas court
+       sur toute la largeur, les côtés sur toute la profondeur. */
+    relations: [traverse(bas, 'x'), ...cotes.map((c) => traverse(c, 'y'))],
     bas,
     cotes,
   }
