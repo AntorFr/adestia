@@ -100,3 +100,46 @@ test('une famille que le moteur ne sait pas engendrer est NOMMÉE, pas devinée'
   assert.match(dit.message, /verriere/)
   assert.deepEqual(r.pieces, [], 'et surtout aucune pièce inventée')
 })
+
+/* ── Deux silences trouvés en s'en servant ──────────────────────────────────
+   L'agent a écrit `lames: { nombre: 6 }` — l'écriture que `tablettes` accepte,
+   parce qu'une déclaration finit souvent par porter autre chose que son compte.
+   Le claustra est sorti à DEUX pièces au lieu de dix, sans un mot :
+   `Array.from({ length: undefined })` rend un tableau vide. Chaque compte était
+   lu à la main, et pas de la même façon d'un endroit à l'autre.
+
+   Puis il n'a pas pu lire le jour ni l'entraxe : calculés, rendus par le
+   moteur, affichés nulle part. La seule façon de les connaître était de les
+   recalculer à la main — exactement ce que ce moteur existe pour éviter. */
+
+test('un compte peut s\'écrire en objet, comme celui des tablettes', () => {
+  const r = derive(claustra({ lames: { nombre: 6 } }), [])
+  assert.equal(r.pieces.filter((x) => x.role === 'LAME').length, 6)
+  assert.equal(r.resultats.jour, 216)
+})
+
+test('et un compte illisible BLOQUE au lieu de rendre zéro pièce', () => {
+  const r = derive(claustra({ lames: 'six' }), [])
+  const dit = r.issues.find((i) => i.type === 'compte-illisible')
+  assert.ok(dit, `attendu un refus, obtenu : ${r.issues.map((i) => i.type).join(' | ')}`)
+  assert.match(dit.message, /lames/)
+})
+
+test('les tablettes et les tiroirs lisent leur compte de la même façon', () => {
+  // Le défaut venait de trois lectures à la main qui ne se ressemblaient pas.
+  // Elles passent maintenant par le même lecteur, donc elles refusent pareil.
+  for (const champ of ['tablettes', 'tiroirs']) {
+    const caisson = {
+      famille: 'caisson', trigramme: 'X', module: 'A1',
+      hors_tout: { l: 800, p: 600, h: 900 },
+      pose: 'fixe', plan_travail: 'aucun', facade: 'ouverte', fond: 'non',
+      dessous: 'ramene', separateurs: [], [champ]: 'trois',
+      faces_chantees: [], materiaux: { principal: { id: 'M', ep: 19 } }, parametres: {},
+    }
+    const { issues } = derive(caisson, [])
+    assert.ok(
+      issues.some((i) => i.type === 'compte-illisible' && i.message.includes(champ)),
+      `${champ} : attendu un refus nommé`,
+    )
+  }
+})

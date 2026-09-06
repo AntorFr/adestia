@@ -13,7 +13,7 @@
    même pièce, deux cotes, et rien dans un côté ne dit laquelle — il faut avoir
    posé la question du plan de travail. Elle ne l'avait pas été. */
 
-import { bute, entre, etiquette, traverse, v } from './ancrages.mjs'
+import { bute, compte, entre, etiquette, traverse, v } from './ancrages.mjs'
 import { contenant, zoneDe } from './zones.mjs'
 
 /**
@@ -401,9 +401,8 @@ const fondStructurel = {
 const tabletteFixe = {
   decrit: 'tablette fixe entre les côtés, retraits avant et arrière selon le cas',
   applique({ trigramme, module, cotes, design, sorties }) {
-    const combien = typeof design?.tablettes === 'object'
-      ? (design.tablettes.nombre ?? 0)
-      : (design?.tablettes ?? 0)
+    const { combien } = compte(design?.tablettes, 'tablettes')
+
     const enRetrait = sorties?.retrait_avant === 'oui'
     // Le fond glissé en rainure passe derrière : cas fixe avec fond.
     const passeDerriere = design?.fond === 'oui' && design?.pose === 'fixe'
@@ -610,7 +609,8 @@ const horsPortee = {
 const tiroirs = {
   decrit: 'façades de tiroir se partageant la hauteur utile, corps monté sur coulisses',
   applique({ trigramme, module, design, ferme }) {
-    const combien = design?.tiroirs ?? 0
+    const { combien } = compte(design?.tiroirs, 'tiroirs')
+
     if (!combien) return { pieces: [], relations: [] }
 
     const facades = Array.from({ length: combien }, (_, i) => ({
@@ -675,7 +675,8 @@ const tiroirs = {
 const corpsDeTiroir = {
   decrit: 'corps de tiroir : 2 côtés, dos, montant avant, fond en rainure',
   applique({ trigramme, module, design }) {
-    const combien = design?.tiroirs ?? 0
+    const { combien } = compte(design?.tiroirs, 'tiroirs')
+
     if (!combien) return { pieces: [], relations: [] }
 
     const pieces = []
