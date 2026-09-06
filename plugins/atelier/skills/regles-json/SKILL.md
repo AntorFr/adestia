@@ -144,6 +144,15 @@ reste LIBRE, nommée, et bloque la dérivation.
 }
 ```
 
+**Un retrait se mesure sur la pièce FINIE, bande comprise.**
+`retrait_tablette_avant: 3` veut dire qu'une fois plaquée, la tablette est 3 mm
+en arrière — donc elle se COUPE 4 mm en arrière si sa rive avant porte un chant
+d'1 mm. C'est ce qui fait qu'une tablette reculée ne crée aucune surépaisseur
+visible : son retrait absorbe déjà la bande, il n'y a rien à compenser en plus.
+La norme est **3, chant compris**. Un meuble dont les panneaux sont déjà débités
+garde le sien : une cote posée ne se renégocie pas, et c'est pourquoi le dressing
+porte 2.
+
 **Un fond se cote bout par bout**, et les deux axes obéissent à la même règle —
 la largeur n'est que le cas « rainure des deux côtés » :
 
