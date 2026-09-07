@@ -1,5 +1,26 @@
 # Status — Adestia
-> MàJ : 2026-09-06
+> MàJ : 2026-09-07
+
+Chantier du 07/09 — **la carte de connexion se lève enfin : son déclencheur
+était impossible**. Alfred l'a prouvé en production le soir même du
+déploiement : « home-assistant n'apparaît pas dans mes outils » — exact, et
+c'est le comportement voulu (serveur `signIn` non connecté = omis du tour).
+Or la carte guettait « un outil de ce serveur a échoué »… et un serveur omis
+n'a aucun outil à faire échouer. Le banc l'avait « prouvée » sur une
+transcription qu'aucun tour réel ne peut écrire — mon vert menteur à moi.
+Corrigé : le déclencheur est l'ÉTAT que la coque connaît déjà — un fil où la
+personne parle réellement (l'agent a répondu, ou répond) pendant qu'un
+serveur `signIn` n'a pas de clé pour elle — la carte se pose sous la réponse
+même où l'agent dit ne pas pouvoir, une croix la congédie (par navigateur,
+`adestia.connect.hidden`), et se connecter l'efface partout. La leçon au
+Decision log : un déclencheur « à la demande » doit nommer un événement que
+les règles du design LAISSENT se produire — l'omission qui rend « pas
+connecté » véridique est la même qui étouffe tout signal au niveau outil.
+1348 verts, typecheck/build OK, **banc constaté** (carte levée sur l'état,
+croix, sombre, téléphone). En attendant le déploiement, la deuxième porte
+marche déjà en prod : Réglages → Serveurs MCP → home-assistant → Se
+connecter. Et la théorie `reboundAudience` d'Alfred reste fausse — sa porte
+n'accepte pas les jetons Authelia, aucun déco/reco n'y changera rien.
 
 Chantier du 06/09 (3) — **le swipe suit le doigt**. Constaté sur un vrai
 téléphone : il marchait une fois sur deux. Les deux moitiés de la cause
