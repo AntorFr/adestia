@@ -1,5 +1,23 @@
 # Status — Adestia
-> MàJ : 2026-09-06
+> MàJ : 2026-09-07
+
+Chantier du 07/09 — **une attente qui compte des tours n'est pas une
+attente**. La CI de `main` est tombée en rouge sur `delegations.test.ts` :
+`expect(channel.busy(...)).toBe(true)`, une assertion qui nomme la file
+d'attente et ne dit rien de la véritable panne — le test attendait qu'un tour
+soit démarré en tournant jusqu'à 200 fois dans la boucle d'événements. Verte
+sur toute machine au repos ; un coureur GitHub n'est jamais au repos. Même
+famille dans `app.test.ts`, deux fois (`setImmediate` nu), dont une déjà vue
+tomber ici. Le signal existe pourtant : le guichet enregistre la chaîne
+**synchroniquement** dans `admit`, AVANT de tirer le driver — donc un driver
+factice qui résout une promesse à son premier `runTurn` dit « la chaîne est au
+comptoir » et ne peut pas le dire trop tôt. Les trois attentes sont
+remplacées par ça ; il ne reste **aucune primitive de temps** dans ces
+poignées de main, donc plus rien à perdre comme course. Convention gravée dans
+`CLAUDE.md` (section « A handshake waits for a SIGNAL »). À noter honnêtement :
+je n'ai pas su reproduire la panne à la demande (0 rouge sur 10 sous charge CPU
+artificielle, et il avait fallu 7 suites complètes pour en voir une), donc la
+preuve est de construction, pas statistique.
 
 Chantier du 06/09 (3) — **le swipe suit le doigt**. Constaté sur un vrai
 téléphone : il marchait une fois sur deux. Les deux moitiés de la cause

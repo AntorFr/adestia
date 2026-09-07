@@ -150,8 +150,19 @@ describe('the delegation channel', () => {
     const held = new Promise<void>((resolve) => {
       release = resolve
     })
+    // The run persists the request to disk before it reaches the desk, so the
+    // thread is not busy the instant `run` is called. Waited for by asking the
+    // DRIVER when it was pulled, rather than by spinning a fixed number of
+    // event-loop turns: the desk registers the chain before it pulls the
+    // driver, so this signal cannot arrive too early — and it cannot arrive
+    // too late either, which a counted wait can and did, once, on CI.
+    let pulled!: () => void
+    const running = new Promise<void>((resolve) => {
+      pulled = resolve
+    })
     const driver = {
       async *runTurn(): AsyncIterable<TurnEvent> {
+        pulled()
         await held
         yield* answer('enfin')
       },
@@ -161,11 +172,7 @@ describe('the delegation channel', () => {
     const opened = await channel.open('alfred', 'lent', undefined)
     if ('unknown' in opened) throw new Error('expected a thread')
     const first = channel.run('alfred', opened.threadId, 'lent')
-    // The run persists the request to disk before it reaches the desk; wait
-    // for the chain to actually be at the counter.
-    for (let i = 0; i < 200 && !channel.busy('alfred', opened.threadId); i += 1) {
-      await new Promise((resolve) => setImmediate(resolve))
-    }
+    await running
 
     expect(channel.busy('alfred', opened.threadId)).toBe(true)
     await expect(channel.run('alfred', opened.threadId, 'pressé')).rejects.toThrow(BusyThreadError)

@@ -15,11 +15,30 @@ class ScriptedDriver implements Driver {
   interrupted: string[] = []
   requests: TurnRequest[] = []
 
+  /**
+   * Resolves when the driver has actually been pulled for a turn.
+   *
+   * What the tests below need is the CHAIN to be registered at the desk — it
+   * is what makes a second post queue rather than race, and what makes a
+   * second turn hit the cap. The desk registers it before it pulls the
+   * driver, so a driver saying "I have been asked" cannot say it too early.
+   *
+   * They used to wait a fixed number of event-loop turns instead, which is a
+   * race dressed as a delay: green on an idle machine, lost on a loaded CI
+   * runner, and failing on an assertion that names something else entirely.
+   */
+  readonly running: Promise<void>
+  #pulled: () => void = () => {}
+
   constructor(
     private readonly script: readonly TurnEvent[],
     private readonly capabilities: DriverDescriptor['capabilities'] = ['usageMetrics'],
     private readonly hold?: Promise<void>,
-  ) {}
+  ) {
+    this.running = new Promise((resolve) => {
+      this.#pulled = resolve
+    })
+  }
 
   describe(): Promise<DriverDescriptor> {
     return Promise.resolve({
@@ -40,6 +59,7 @@ class ScriptedDriver implements Driver {
 
   async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
     this.requests.push(request)
+    this.#pulled()
     if (this.hold) await this.hold
     for (const event of this.script) yield event
   }
@@ -345,8 +365,8 @@ describe('/api/turn', () => {
     )
 
     const first = app.inject({ method: 'POST', url: '/api/turn', payload: { prompt: 'a' } })
-    // Let the first turn reach the driver before the second arrives.
-    await new Promise((resolve) => setImmediate(resolve))
+    // The first turn has to hold the only slot before the second asks for it.
+    await driver.running
     const second = await app.inject({ method: 'POST', url: '/api/turn', payload: { prompt: 'b' } })
 
     expect(second.statusCode).toBe(429)
@@ -574,7 +594,9 @@ describe('conversations', () => {
     const { id } = (await app.inject({ method: 'POST', url: '/api/conversations' })).json()
 
     const first = app.inject({ method: 'POST', url: '/api/turn', payload: { prompt: 'a', conversationId: id } })
-    await new Promise((resolve) => setImmediate(resolve))
+    // The chain has to be at the counter before the second message posts, or
+    // this tests a race instead of the queue.
+    await driver.running
 
     const second = await app.inject({ method: 'POST', url: '/api/turn', payload: { prompt: 'b', conversationId: id } })
     expect(second.statusCode).toBe(202)

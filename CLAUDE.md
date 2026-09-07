@@ -48,6 +48,32 @@ Nothing installs on the machine: the browser lives in its own image. When
 Docker is NOT available, say so in the report rather than passing green off as
 seen — "the suite is green" and "I looked at it" are different claims.
 
+## A handshake waits for a SIGNAL, never for a number of turns
+
+Two tests waited for a turn to be running by spinning the event loop — one a
+bare `setImmediate`, one a two-hundred-iteration loop — and both were green on
+every machine that was not busy. A GitHub runner is always busy: one of them
+took `main` red, on an assertion (`expect(channel.busy(…)).toBe(true)`) that
+names the queue and says nothing about the wait that had actually run out.
+
+The signal exists in every case here, because the fake driver belongs to the
+test. The desk registers a chain synchronously inside `admit`, BEFORE it pulls
+the driver, so a driver that resolves a promise on its first `runTurn` says
+"the chain is at the counter" and cannot say it too early:
+
+```ts
+let pulled!: () => void
+const running = new Promise<void>((resolve) => { pulled = resolve })
+const driver = { async *runTurn() { pulled(); await held; /* … */ } }
+
+const first = channel.run(caller, threadId, 'lent')
+await running // never `await new Promise(setImmediate)`
+expect(channel.busy(caller, threadId)).toBe(true)
+```
+
+Counting turns is a race dressed as a delay, and it fails where it is hardest
+to read: on someone else's machine, in a run nobody can reproduce.
+
 ## Committing
 
 - **Stage by explicit path, and commit by explicit path.** `git add -- <paths>`
