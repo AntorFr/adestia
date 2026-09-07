@@ -44,32 +44,27 @@ vocabulaire de tous les plugins, et vivent donc dans `DESIGN.md`, section
 suit ne dit que ce qui est propre aux chantiers.
 
 **Ferme, décidé par le propriétaire le 06/09** — et ces quatre-là déplacent le
-CHANTIER, pas seulement le catalogue :
+CHANTIER, pas seulement le catalogue. **Ils ne sont PAS propres à ce plugin**,
+donc ils vivent dans `DESIGN.md` comme les points 7 et 8, et cette lettre n'en
+garde que la conséquence :
 
-9. **La plupart de ces blocs appartiennent au CŒUR, pas à ce plugin.** Un titre
-   et de la prose, un tableau, des chiffres en tuiles, une décision en attente :
-   rien de tout cela ne parle de chantiers. Six rendus descendent donc dans le
-   vocabulaire du cœur — `content`, `figures`, `table`, `options`, `decision`,
-   `list` — plus les deux attributs transverses `w` et `depth`. Le plugin garde
-   ce qui suppose un modèle de chantier : `timeline`, `progress`, la vue dédiée,
-   `pm-config` et le workflow.
-10. **Le cœur fournit, un plugin surcharge.** Les blocs existent dans le cœur et
-    se reprennent tels quels ; un plugin les surcharge pour coller à son besoin,
-    ou en ajoute. C'est la hiérarchie du point 8 lue dans l'autre sens — le cœur
-    est le DÉFAUT, pas le vainqueur.
-11. **Un `:::` nouveau se justifie par ce qu'on peut y FAIRE, pas par ce dont il
-    parle.** Affinement du point 7, et il ne fuit pas là où « son propre format
-    de données » fuyait : une tâche est une page avec de la frontmatter comme
-    une fiche ou un voyage, donc ce n'est pas le format qui la distingue, c'est
-    la case à cocher et le bouton d'ajout. **Lire → `list`. Écrire → son propre
-    bloc**, chez celui qui possède la donnée. Donc `:::tasks` appartient à `todo`.
-12. **`from=` est une grammaire ouverte** à laquelle un plugin branche une source
-    EN LECTURE, en surchargeant `list` pour élargir les valeurs acceptées — pas
-    un mécanisme de plus. Là où ce plugin est éteint : avis visible sur le bloc,
-    corps conservé, page jamais verrouillée. **Le pari à connaître** : choisir
-    `from=` parie que la liste restera en lecture ; le jour où elle veut un
-    bouton, le passage à son propre bloc est une réécriture des PAGES, pas du
-    code. Si on sait déjà qu'il y aura une action, on commence par son bloc.
+9. **La plupart de ces blocs appartiennent au CŒUR** — `DESIGN.md`, « The core's
+   vocabulary is the GENERIC one ». Six rendus y descendent : `content`,
+   `figures`, `table`, `options`, `decision`, `list`, plus `w` et `depth`.
+   Il reste à ce plugin `timeline`, `progress`, la vue dédiée, `pm-config` et
+   le workflow.
+10. **Le cœur fournit, un plugin surcharge** — `DESIGN.md`, « The core PROVIDES,
+    a plugin OVERRIDES ». Le cœur est le défaut, pas le vainqueur, et la
+    surcharge est bornée au domaine.
+11. **Un `:::` nouveau se justifie par ce qu'on peut y FAIRE** — `DESIGN.md`,
+    « What actually separates two renderings ». Lire → `list`, écrire → son
+    propre bloc. Donc `:::tasks` appartient à `todo`, pas ici.
+12. **`from=` est une grammaire ouverte** — même section. Un plugin y branche
+    une source en lecture, avec le pari que la liste le restera.
+
+**La conséquence pour CE chantier, et elle est lourde** : ce qu'il y a à coder
+en premier n'est plus ce plugin, c'est le vocabulaire du cœur. Voir « Le
+préalable » plus bas.
 
 Et trois arbitrages de détail, tranchés le 06/09 en regardant la maquette :
 
@@ -297,18 +292,10 @@ qu'on voudra écrire, sans jamais rouvrir le manifeste.
 | `tasks` | **`todo`** | On y écrit : cocher modifie `done:` dans une AUTRE page. Point 11. |
 | `timeline` `progress` | **ce plugin** | `timeline` exige `start:`/`due:` sur les fiches ; `progress` lit un asset avec son contrat. |
 
-**Ce que ça change du chantier, et c'est considérable** : ce qu'il y a à coder
-en premier n'est plus ce plugin, c'est le **vocabulaire du cœur**. Il est borné,
-il sert tout le produit immédiatement — Alfred gagne `decision` et `table` sur
-ses achats sans attendre quoi que ce soit — et sans lui, ce plugin devrait
-inventer ses propres blocs génériques, c'est-à-dire exactement la dérive que le
-point 7 vient d'éteindre.
-
-**La raison qui tranche est mesurée, pas théorique** : un bloc contribué par un
-plugin disparaît quand le plugin est éteint, et depuis le 06/09 une page qui en
-porte un s'ouvre en LECTURE SEULE avec un diagnostic — constaté sur trois fiches
-de voyage de Nestor, dont le `parcours` n'était pas activé. Pour « un titre et de
-la prose », c'est absurde.
+**Ce que ça change du chantier** : ce qu'il y a à coder en premier n'est plus ce
+plugin, c'est le **vocabulaire du cœur** — borné, et utile à tout le produit
+immédiatement. Le raisonnement qui l'établit, et la mesure qui le tranche,
+vivent dans `DESIGN.md` (« The core's vocabulary is the GENERIC one »).
 
 **Ce qui reste à arbitrer, c'est la GRANULARITÉ**, et la règle ci-dessus est le
 seul juge :

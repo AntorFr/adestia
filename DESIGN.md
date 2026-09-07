@@ -895,6 +895,46 @@ no manifest entry and no restart. The question "should the vocabulary be open
 or closed" was the wrong question: it is closed over one axis and open over the
 other.
 
+#### What actually separates two renderings (refined 2026-09-06)
+
+The rule above says "when the REPRESENTATION differs", and a representation is
+easy to read as *what it looks like*. It is not. **What separates two renderings
+is what you can DO in them.**
+
+The owner sharpened it while deciding where a task list belongs, and the first
+answer offered — "a task is a technical object with its own data format" — is
+the one to avoid, because it leaks. A task is a page with frontmatter, exactly
+like a `fiche`, a `voyage` or an `achat`; every type has a format. Taking the
+format as the test would justify `:::voyages` and `:::achats` too, which is the
+one-block-per-subject drift this doctrine exists to stop.
+
+What genuinely distinguishes a task list is the checkbox and the add button. So:
+
+> **Reading is a `list`. WRITING is a block of its own**, belonging to whoever
+> owns the data.
+
+Ticking a box changes `done:` in ANOTHER page — that is a contract with the
+plugin that owns tasks, not a drawing. The line is the same one that keeps a
+fourth family of blocks deliberately closed: a block that calls a plugin's API
+turns "rendering is deterministic code" into "rendering depends on the network".
+
+The test predicts a block's future rather than describing its present, which is
+why it holds: `summary` and `scope` read the same and are handled the same
+today, and will be tomorrow; a list of tasks was always going to want a
+checkbox.
+
+**A source is extended, not a rendering duplicated.** `list` carries
+`from=children|pages|files`, and a plugin that has something to list READ-ONLY
+extends that attribute's accepted values rather than inventing its own list —
+which is the override of the section below, applied to an attribute instead of
+a name. Where that plugin is off, the value is unknown: a visible notice on the
+block, body kept, page never locked.
+
+**The bet is worth naming.** Choosing `from=` bets the list stays read-only. The
+day it wants a button, moving to its own block rewrites the PAGES that carry the
+old spelling — the cost lands in the corpus, not in the product. So a list known
+in advance to need an action starts as its own block.
+
 ### Why a markdown engine is being diverted, and what follows from it
 
 Adestia does not use directives to decorate prose. **It uses them as an
@@ -919,6 +959,33 @@ that otherwise look arbitrary:
 
 This is a permanent divergence, not a bridge: it will not be sent upstream,
 because upstream is right about prose and we are not writing prose.
+
+### The core's vocabulary is the GENERIC one (decided 2026-09-06)
+
+The core held three blocks — `callout`, `app`, `gallery` — and a plugin design
+was about to declare eight more that had nothing to do with its subject. A title
+and prose, a table, numbers as tiles, a decision awaiting an answer: a purchase
+wants a decision block, a walk wants a table. Those are not a worksite tracker's
+blocks, they are everyone's.
+
+So the generic renderings belong to the core: **`content`, `figures`, `table`,
+`options`, `decision`, `list`**, with two cross-cutting attributes — `depth`
+(`self` · `children` · `subtree`, how far down a block reads) and `w` (`1` ·
+`2/3` · `1/2` · `1/3`, how much of a line it takes; consecutive blocks fill a
+row until the widths reach 1, which is what stops a layout from becoming CSS
+written by hand in frontmatter). A plugin keeps what assumes its own model.
+
+Nine renderings rather than three sounds like the closed vocabulary giving way.
+It is the opposite: `content{type=…}` alone replaces the dozen subject-named
+blocks that were being declared. Closed over renderings, open over subjects —
+the same border, drawn once at the right level.
+
+**The argument that settles it was measured, not reasoned.** A block a plugin
+contributes disappears when that plugin is off, and a page holding one then
+opens READ-ONLY with a diagnostic — seen on 2026-09-06 on three trip pages of an
+instance whose `parcours` plugin was not enabled. For "a title and prose" that
+answer is absurd: a page must not become unreadable because an instance does not
+run a project tracker.
 
 ### Resolving a block name across plugins (decided 2026-09-04)
 
@@ -959,6 +1026,27 @@ contract:
   instruction to plugin authors: **a block that must work everywhere ships as a
   `feature`, not as an `app`.** `parcours` is one for exactly this reason —
   "a feature, not an app: a route has no domain and no tile".
+
+#### The core PROVIDES, a plugin OVERRIDES (stated 2026-09-06)
+
+The ranking above is usually read as "who wins". Read the other way round, it is
+the more useful statement: **the core is the DEFAULT, not the winner.** Its
+blocks exist to be reused as they are; a plugin overrides one to fit its own
+domain, or adds another.
+
+That does not reopen the guarantee the closed vocabulary buys, because an
+override is **bounded to the domain** the plugin owns. `callout` never quietly
+means something else everywhere — it means something else where a plugin owns
+the content, and moving a page out of that domain restores the core's drawing.
+Which is the consequence already accepted above, seen from its useful side.
+
+**The code still says the opposite, and that is a chantier.** `registerBlocks`
+(`packages/content/src/vocabulary.ts`) REFUSES a plugin that claims a name the
+core owns and reports it at startup, with a comment explaining that `callout`
+meaning something else on one instance is the failure a closed vocabulary
+prevents. That was right while resolution was global; it contradicts contextual
+resolution, and both cannot hold. Until it is settled, **no override is
+possible** and this section describes an intention rather than a behaviour.
 
 ### What contextual resolution touches
 
