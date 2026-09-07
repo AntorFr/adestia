@@ -127,7 +127,7 @@ export interface TileInfo {
 }
 
 /** A launcher view: one React component, optionally a route to reach it. */
-export interface ViewContribution {
+export interface ViewContribution extends HoldsFolder {
   readonly component: ComponentType<Record<string, never>>
   /**
    * Hash route this view answers to (`#/workbench`). Absent means the view is
@@ -271,6 +271,28 @@ export interface BlocksContribution {
  * other page is corrected, and a plugin cannot strand a document behind a
  * screen of its own.
  */
+export interface HoldsFolder {
+  /**
+   * Whether this plugin actually holds a folder its `absorbs` name matches.
+   *
+   * `absorbs` is a NAME and it matches wherever that run of segments sits —
+   * which is what lets an operator file trips under `domaines/voyages` without
+   * telling anybody. The cost is that a folder merely SHARING the word is
+   * claimed too, and the reader is sent to an app that has never heard of it:
+   * a meals period filed in `sante/dietetique/journal` became reachable by its
+   * direct link and by nothing else, because the section tile was gone and
+   * every link into the folder led to the journal shelf.
+   *
+   * The shell cannot tell the two apart. Only the plugin can, from its own
+   * listing — so it is asked, and a `false` hands the folder back to the
+   * shell's generic section rather than to a screen that will not show it.
+   *
+   * Optional: a plugin that does not implement it keeps the old behaviour,
+   * which is to be believed on the strength of the name alone.
+   */
+  holds?(folder: string): boolean
+}
+
 export interface LayoutProps {
   /** The page's logical path, as `/api/pages/…` spells it. */
   readonly path: string
@@ -340,6 +362,7 @@ export function narrowView(raw: unknown): { view?: ViewContribution; issue?: Con
   const route = record['route']
   const tileInfo = record['tileInfo']
   const routeFor = record['routeFor']
+  const holds = record['holds']
   return {
     view: {
       component: record['component'] as ComponentType<Record<string, never>>,
@@ -349,6 +372,13 @@ export function narrowView(raw: unknown): { view?: ViewContribution; issue?: Con
         : {}),
       ...(typeof tileInfo === 'function'
         ? { tileInfo: tileInfo as NonNullable<ViewContribution['tileInfo']> }
+        : {}),
+      // Carried through like the rest. This narrow builds a NEW object from
+      // the fields it knows, so a facet missing from this list is dropped in
+      // silence — `holds` was, and the plugin implementing it kept being
+      // believed on its name with nothing to show why.
+      ...(typeof holds === 'function'
+        ? { holds: holds as NonNullable<ViewContribution['holds']> }
         : {}),
     },
   }

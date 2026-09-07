@@ -480,3 +480,25 @@ describe('whole-page layouts', () => {
     expect(loaded).toEqual([])
   })
 })
+
+describe('a view that disowns a folder', () => {
+  it('carries `holds` through the narrow, like every other facet', async () => {
+    // The trap this pins: `narrowView` builds a NEW object from the fields it
+    // knows, so a facet missing from that list is dropped in SILENCE. `holds`
+    // was — the plugin implemented it, the shell never saw it, and the folder
+    // kept being claimed on the strength of its name with nothing to show why.
+    // Caught at the bench, not here, because a unit test that builds a plugin
+    // by hand never goes through this function.
+    const holds = (folder: string) => folder === 'journal'
+    const { env } = environment({
+      '/plugins/journal/web/app.js': {
+        default: () => ({ component: () => null, route: '/journal', holds }),
+      },
+    })
+    const { loaded } = await loadPlugins(
+      [{ id: 'journal', kind: 'app', base: '/plugins/journal/', view: './web/app.js' }],
+      env,
+    )
+    expect(loaded[0]?.view?.holds).toBe(holds)
+  })
+})

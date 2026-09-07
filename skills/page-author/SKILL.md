@@ -80,6 +80,25 @@ page might use `type` for. `collections`' `of: projet` targets pages typed
 own vocabulary, chosen by whoever writes pages, and any number of collections
 can point at it.
 
+## The address of a page — how you tell somebody where it is
+
+Linking one page to another is `[[…]]`, above. Telling a PERSON where a page is
+takes a URL, and it has exactly one shape:
+
+```
+#/page/<the page's path, WITHOUT the .md>
+```
+
+`sante/dietetique/semaines/2026-09-07.md` is announced as
+`#/page/sante/dietetique/semaines/2026-09-07`. The path is the one the MEMORY
+spells — the root the stores compose — never the one on disk, and the extension
+comes off. A folder is `#/section/<folder>` the same way.
+
+Say it whenever you have just written a page somebody asked for. This is
+written down because it was not: an agent that has to invent an address reaches
+for a plausible neighbour, and a neighbouring page opens perfectly — which is
+what makes the mistake slow to see rather than obvious.
+
 ## `id` — how another page names this one
 
 A page may carry an `id:`, and that is what lets another page point at it by

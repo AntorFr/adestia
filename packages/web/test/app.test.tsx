@@ -568,3 +568,61 @@ describe('the folded shell', () => {
     }
   })
 })
+
+describe('a page that will not load', () => {
+  /** Answers the instance, then refuses the page with the status given. */
+  function refusing(status: number): typeof fetch {
+    return ((url: string) => {
+      const target = String(url)
+      if (target.startsWith('/api/instance')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve(INSTANCE),
+        } as unknown as Response)
+      }
+      if (target.startsWith('/api/pages/') && !target.startsWith('/api/pages/index')) {
+        return Promise.resolve({ ok: false, status } as unknown as Response)
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ entries: [], conversations: [] }),
+      } as unknown as Response)
+    }) as unknown as typeof fetch
+  }
+
+  const open = async (status: number) => {
+    window.location.hash = '#/page/sante/dietetique/reperes-proteines'
+    await act(async () => {
+      render(<App fetchImpl={refusing(status)} />)
+    })
+  }
+
+  it('says the page is not there, and shows the address', async () => {
+    // It used to say nothing at all: the screen kept whatever was on it, which
+    // is the home, and every reader read that as a broken link.
+    await open(404)
+    await waitFor(() => expect(screen.getByText('There is no page at this address.')).toBeTruthy())
+    // Verbatim, because the address is the one thing that lets somebody see
+    // their own typo — or an agent's.
+    expect(screen.getByText('sante/dietetique/reperes-proteines.md')).toBeTruthy()
+  })
+
+  it('offers the folder above, which is where you look next', async () => {
+    await open(404)
+    const up = await waitFor(() => screen.getByText('Open the folder above'))
+    expect(up.getAttribute('href')).toBe('#/section/sante/dietetique')
+  })
+
+  it('tells a refusal apart from an absence', async () => {
+    // A status code is never an answer, and an expired session must not look
+    // like a page that was never written.
+    await open(401)
+    await waitFor(() =>
+      expect(
+        screen.getByText('This page is out of reach — the session may have expired.'),
+      ).toBeTruthy(),
+    )
+  })
+})

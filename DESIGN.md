@@ -750,6 +750,14 @@ runtime; nothing is scanned by filename convention at build time.
   cannot know how an operator files things, and a tile that stands for a folder
   stands for its contents. Segment boundaries only, and only while the plugin
   is ACTIVE — turning it off gives the folder back rather than hiding it.
+  **And only while the owner stands by it** (`holds`, 2026-09-07): matching a
+  name anywhere claims namesakes too, and a period of meals filed in
+  `sante/dietetique/journal` became reachable by its direct address and by
+  nothing else — the section tile gone, every link into the folder leading to a
+  shelf that had never heard of it. The shell cannot tell a namesake from the
+  real thing; the plugin's own listing can, so it is asked. Silence still means
+  yes, so a plugin that never implements it keeps the behaviour it shipped
+  with.
 - **Owning a folder is a ROUTING rule, not a launcher detail.** `absorbs` first
   shipped as a way to retrench a tile from the home, and every link INTO an
   absorbed folder kept ignoring it: the breadcrumb out of a trip's page walked

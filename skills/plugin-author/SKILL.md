@@ -234,6 +234,17 @@ return {
 }
 ```
 
+```js
+return {
+  component: Journal,
+  route: '/journal',
+  routeFor,
+  // Whether you stand by a folder your NAME matched. See below.
+  holds: (folder) =>
+    known.some((held) => held === folder || held.startsWith(`${folder}/`)),
+}
+```
+
 Three rules, each of which has a failure behind it:
 
 - **Synchronous.** It is called while a link is being drawn. Anything that
@@ -249,6 +260,28 @@ Three rules, each of which has a failure behind it:
 
 Nothing to implement for the folder ITSELF — the shell already sends it to
 your `route`, since that is what the tile means.
+
+### `holds` — and why a name is not enough
+
+`absorbs` is a name, and it matches wherever that run of segments sits. That is
+deliberate — an operator may file trips under `domaines/voyages` without
+telling anybody — and it has a cost nobody had paid until somebody did: a
+folder that merely SHARES the word is claimed just as hard.
+
+A period of meals was filed in `sante/dietetique/journal`. The journal app
+absorbs `journal`, so that folder became the app's: the section tile went away,
+every link into it led to the journal's shelf, and the shelf had never heard of
+the page. It was reachable by its direct `#/page/…` address and by nothing
+else — and nothing on any screen said why.
+
+The shell cannot tell a namesake from the real thing; your listing can. So
+answer `holds(folder)`: true when the folder is one you hold, or when one of
+yours sits underneath it. **Saying no gives the folder back to the shell's
+generic section**, which is the honest screen — better than one that will not
+show what is filed there.
+
+Optional, and its absence means yes: a plugin that never implements it keeps
+being believed on the strength of its name, exactly as before.
 
 **Say as little as an address can.** `routeFor` is where your URL scheme is
 decided, so decide it for a reader: a NAME your own listing resolves

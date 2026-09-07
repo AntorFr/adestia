@@ -193,6 +193,24 @@ function asks(plugin: LoadedPlugin, path: string): string | undefined {
  * `undefined` means "nobody has a screen for this", not "error": the caller
  * falls back to the shell's own section.
  */
+/**
+ * Whether a plugin stands by a folder its NAME matched.
+ *
+ * Silence is consent here, deliberately: `holds` is optional, and a plugin
+ * that never implements it must keep the behaviour it shipped with. A plugin
+ * that throws is believed too — a broken answer costs the link, never the
+ * screen drawing it.
+ */
+function holdsFolder(plugin: LoadedPlugin, folder: string): boolean {
+  const asked = plugin.view?.holds
+  if (!asked) return true
+  try {
+    return asked(folder) !== false
+  } catch {
+    return true
+  }
+}
+
 export function routeForPath(
   plugins: readonly LoadedPlugin[],
   path: string,
@@ -203,8 +221,21 @@ export function routeForPath(
     if (said) return said
     // The absorbed folder ITSELF still has an address even from an owner that
     // answered nothing: a tile that stands for a folder IS its address.
+    //
+    // But only when the owner actually HOLDS it. `absorbs` matches a name
+    // wherever that run of segments sits, so a folder merely sharing the word
+    // is claimed just as hard — and the reader is handed to an app that has
+    // never heard of it. A period of meals filed in `sante/dietetique/journal`
+    // was reachable by its direct link and by nothing else: the section tile
+    // was gone and every link into the folder led to the journal's shelf.
+    //
+    // The shell cannot tell the two apart; the plugin can, from its own
+    // listing. So it is asked, and only a plugin that says no gives the folder
+    // back — one that does not implement `holds` is believed on its name, as
+    // before.
     const route = addressOf(owner)
-    if (route && (owner.absorbs ?? []).some((declared) => isRoot(declared, path))) return route
+    const named = (owner.absorbs ?? []).some((declared) => isRoot(declared, path))
+    if (route && named && holdsFolder(owner, path)) return route
     return undefined
   }
   for (const plugin of plugins) {

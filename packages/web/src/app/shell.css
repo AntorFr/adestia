@@ -2861,3 +2861,33 @@
   font-size: var(--text-sm);
   margin: var(--space-2) 0;
 }
+
+/* A page that would not load ------------------------------------------------
+   Said rather than swallowed: a 404, an expired session and a server that fell
+   over used to leave the home on screen, which every reader reads as a broken
+   link. The address is shown verbatim because it is the one thing that lets
+   somebody see their own typo. */
+
+.adestia-missing {
+  max-width: 42rem;
+  margin: var(--space-5, 24px) auto;
+  padding: var(--space-4, 16px);
+}
+
+.adestia-missing__title {
+  margin: 0 0 var(--space-3, 12px);
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.adestia-missing__path {
+  margin: 0 0 var(--space-3, 12px);
+  padding: 8px 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--surface-sunken, var(--surface));
+  color: var(--text-muted);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.85em;
+  overflow-wrap: anywhere;
+}

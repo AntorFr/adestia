@@ -373,10 +373,27 @@ export default function view(api) {
     return undefined
   }
 
+
+  /**
+   * Whether this app stands by a folder its `absorbs` NAME matched.
+   *
+   * The name matches wherever that run of segments sits, so a folder that
+   * merely shares the word is claimed just as hard as the real one. Answered
+   * from the listing rather than from the name: a folder is this app's when it
+   * IS one of the ones we hold, or when one of them sits underneath it.
+   *
+   * Saying no hands the folder back to the shell's generic section, which is
+   * the honest answer — better than a screen that will not show what is filed
+   * there.
+   */
+  const holds = (folder) =>
+    known.some((held) => held === folder || held.startsWith(`${folder}/`))
+
   return {
     component: Journal,
     route: ROUTE,
     routeFor,
+    holds,
     /**
      * One figure on the tile: what was written last, and where.
      *

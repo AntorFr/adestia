@@ -263,5 +263,17 @@ export default function view(api) {
 
   // A route owns its descendants, so `/voyages/<path>` reaches one trip and a
   // bookmark survives a reload — the thing a screen full of state cannot do.
-  return { component: Voyages, route: '/voyages', routeFor, tileInfo }
+  /**
+   * Whether this app stands by a folder its `absorbs` NAME matched.
+   *
+   * The name matches wherever that run of segments sits, so a folder merely
+   * SHARING the word is claimed as hard as the real one, and its reader is
+   * handed to a screen that has never heard of it. Answered from the listing:
+   * a folder is ours when it is one we hold, or when one of ours sits under
+   * it. Saying no gives it back to the shell's generic section.
+   */
+  const holds = (folder) =>
+    [...trips.keys()].some((held) => held === folder || held.startsWith(`${folder}/`))
+
+  return { component: Voyages, route: '/voyages', routeFor, holds, tileInfo }
 }

@@ -571,6 +571,20 @@ export default function view(api) {
     component: Post,
     route: ROUTE,
     routeFor: (path) => addressOf(known, path),
+  /**
+   * Whether this app stands by a folder its `absorbs` NAME matched.
+   *
+   * The name matches wherever that run of segments sits, so a folder merely
+   * SHARING the word is claimed as hard as the real one, and its reader is
+   * handed to a screen that has never heard of it. Answered from the listing:
+   * a folder is ours when it is one we hold, or when one of ours sits under
+   * it. Saying no gives it back to the shell's generic section.
+   */
+    holds: (folder) =>
+      known.some((item) => {
+        const path = typeof item === 'string' ? item : (item?.path ?? '')
+        return path === folder || path.startsWith(`${folder}/`)
+      }),
     /**
      * The tile's own figures, from the page index alone — no feed is fetched
      * to draw a launcher. A number that costs a network round trip to three
