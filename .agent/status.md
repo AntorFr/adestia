@@ -1,5 +1,47 @@
 # Status — Adestia
-> MàJ : 2026-09-06
+> MàJ : 2026-09-07
+
+Chantier du 07/09 — **`meals`, 11e plugin : une frise de repas qui sert deux
+besoins opposés**. Demandé pour deux choses qui semblaient distinctes — planifier
+les menus d'une semaine de vacances pour faire les courses, et consigner tout ce
+qu'on mange pendant quinze jours pour en tirer une semaine type. Elles ne le sont
+pas : la flèche du temps s'inverse (une décision d'un côté, un constat de l'autre)
+mais le mécanisme est le MÊME — une période, des sections, des cartes calées, un
+tray. D'où **aucun champ `mode`** dans le format : ce qui change est ce qu'on écrit
+dedans, pas la mécanique, et le banc photographie les deux côte à côte pour que la
+prétention se vérifie à l'œil.
+
+`feature` et pas `app`, sur le même argument que `parcours` : une semaine de repas
+n'a pas de domaine ni de tuile, elle s'accroche à la fiche qui a une raison de la
+porter (la fiche d'un voyage, un carnet de santé) et reste adressable seule par
+`#/meals/<chemin>` — l'écran que veut le geste quotidien, parce que consigner un
+repas ne devrait pas obliger à ouvrir une page et à défiler jusqu'à un bloc.
+`vue="lien"` pose la carte compacte, pour citer sans empiler.
+
+**Le pari du plugin, c'est `props`** : un sac de clés LIBRES → valeurs texte, que le
+moteur ne lit pas, ne convertit pas et ne totalise pas. Le même champ porte les
+ingrédients d'un plat (`pâtes: 500 g`) et les nutriments d'un aliment scanné
+(`sel: 0,06 g`) — un seul contrat au lieu de deux, et pas de base de données à
+embarquer : l'agent remplit depuis le code-barres et fait lui-même les sommes.
+Corollaire assumé, écrit dans la fiche plutôt que dans un schéma : des clés libres
+DÉRIVENT (`kcal` lundi, `énergie` mercredi) et c'est le total qui ment sans que
+l'écran le signale. Le remède est une convention nommée dans le contrat et les
+instructions perso, pas une validation.
+
+La carte a une **face muette** — icône, titre, quantité — et tout le reste (`props`,
+`desc`, `source`) attend le clic : une carte de suivi porte six nutriments, si elle
+les affichait une journée ferait trois écrans. Frontière habituelle par ailleurs :
+le front n'écrit jamais la mémoire, les gestes vont dans un `.meals-state.json`
+voisin, l'agent consolide.
+
+22 tests du plugin (dont le montage DOM du bloc) ; 1346 verts côté vitest et 494
+côté plugins, typecheck OK. **Banc constaté** (`meals.mjs`, 9 captures) — et il a
+payé trois fois : un `:::` sans ligne de fermeture avale la suite de la page et le
+bloc ne se rend pas du tout (mon exemple de contrat ET mes pages de banc étaient
+faux) ; le tray partait au troisième jour faute de `sticky`, ce qui transforme
+chaque dépôt en aller-retour ; et la capture téléphone était blanche parce que sur
+écran plié la page est de l'autre côté du rail. `npm run lint` ne tourne toujours
+pas (eslint absent des devDependencies, cf. plus bas) — inchangé par ce chantier.
 
 Chantier du 06/09 (3) — **le swipe suit le doigt**. Constaté sur un vrai
 téléphone : il marchait une fois sur deux. Les deux moitiés de la cause

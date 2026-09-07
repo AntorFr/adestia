@@ -1,6 +1,6 @@
 # Bundled plugins
 
-Adestia ships ten plugins and three skins. None of them is active until you name it
+Adestia ships eleven plugins and three skins. None of them is active until you name it
 in your config — discovery is not activation, and a folder sitting here costs
 nothing until you ask for it.
 
@@ -8,7 +8,7 @@ nothing until you ask for it.
 extensions:
   apps: [todo, planif, collections, atelier, voyages, journal, dev-flow,
          listening-post]                                    # tiles
-  features: [scan, parcours]                                   # things that live in the shell
+  features: [scan, parcours, meals]                            # things that live in the shell
   tools: []                                             # agent-facing only
   skin: alfred
 ```
@@ -29,6 +29,7 @@ leaving you to wonder where the tile went.
 | [`listening-post`](listening-post/) | app | The video and audio worth your time. A queue fed by the feeds you follow (YouTube Atom, podcast RSS — no key, no quota) and by links you paste; a transcript of what was actually SAID filed beside each item you keep; and a search over all of it that answers with a timestamp and a link that seeks to it. It ranks nothing — the recommendation is a conversation with the agent, which is what its ✦ buttons start. |
 | [`dev-flow`](dev-flow/) | app | The work in flight across a galaxy of repositories. Reads every `.agent/lots/` fiche out of git — `main` as the index, a branch tip for its own fiche — merges the graphs and derives what nobody records: who has the hand, what is blocked, and which open question is freezing a whole chain. Never writes. |
 | [`scan`](scan/) | feature | A barcode reader in the composer. Uses the browser's own `BarcodeDetector` where it exists and only downloads a decoder where it does not. |
+| [`meals`](meals/) | feature | Meals over a period. The `:::meals` block draws a `.meals.json` as a day-by-day timeline split into sections — `matin`/`midi`/`soir` unless the file says otherwise — with a tray of cards the agent proposes and you drop. One mechanism for two uses, deliberately: a week of menus you DECIDE and a fortnight of what you ATE differ in what you write, not in how it works, so there is no mode field anywhere. The card's face stays quiet (an icon, a title, a quantity) and everything else — free `props` the plugin never reads, never converts and never totals — waits for a click. A feature rather than an app for the same reason as `parcours`: a period of meals has no domain and no tile. |
 | [`parcours`](parcours/) | feature | Walks and hikes. Adds the `:::parcours` block, which draws a `.parcours.json` as a map with numbered markers, an elevation profile and a walking mode, and assembles its GPX on demand. A feature rather than an app because a route has no domain and no tile: it hangs off whichever page has a reason to mention it. |
 
 | Skin | What it is |
@@ -43,8 +44,8 @@ A plugin that expects the agent to write a particular shape of file ships the
 contract that describes it, and Adestia delivers those contracts to the agent
 alongside its own. `atelier` ships `workbook-json`, `todo` ships `todo`,
 `collections` ships `collections`, `voyages` ships `voyage-json`,
-`parcours` ships `parcours-json`, `journal` ships `journal` and
-`listening-post` ships `veille-json`.
+`parcours` ships `parcours-json`, `meals` ships `meals-json`, `journal` ships
+`journal` and `listening-post` ships `veille-json`.
 
 `dev-flow` deliberately ships none. The fiches it reads are written by agents in
 OTHER repositories, against a contract those repositories publish themselves
@@ -149,5 +150,5 @@ manifest schema, the facets a plugin may contribute, and the import map it can
 rely on are all described by the `plugin-author` contract that ships with the
 product. Ask the agent for a plugin and it reads that contract first.
 
-Nothing here is privileged. These ten are ordinary plugins that happen to live
+Nothing here is privileged. These eleven are ordinary plugins that happen to live
 in the repository, and they load through exactly the same path as yours.

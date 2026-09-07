@@ -1,0 +1,280 @@
+/*
+ * The meals livery.
+ *
+ * Everything is namespaced under `.meals`, so this plugin's `.meals-card` can
+ * never restyle the shell's own markup — and so the shell renaming a class
+ * cannot break this screen. What is borrowed is the shell's TOKENS, never its
+ * classes, which is what lets a skin dress this screen too: change `--accent`
+ * and the frise follows.
+ *
+ * The layout is the one the ergonomics asked for: a vertical elevator of days
+ * on the left, the tray of ideas held on the right. It collapses to one column
+ * on a narrow screen rather than shrinking two — a tray squeezed to a third of
+ * a phone is a column of truncated titles, which is worse than a tray below.
+ */
+
+.meals {
+  --meals-hue: var(--adestia-hue-vert, #4fb05c);
+  color: var(--text);
+  font-family: var(--font);
+}
+
+/* The header ------------------------------------------------------------ */
+
+.meals-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3, 12px);
+  margin-bottom: var(--space-4, 16px);
+}
+
+.meals-head h2 {
+  margin: 0;
+  font-family: var(--font-title, inherit);
+  letter-spacing: var(--title-track, normal);
+}
+
+.meals-period {
+  color: var(--text-muted);
+  font-size: 0.85em;
+}
+
+.meals-failed {
+  margin: 0 0 var(--space-3, 12px);
+  color: var(--danger, #d24b3e);
+}
+
+/* The two columns ------------------------------------------------------- */
+
+.meals-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 17rem);
+  gap: var(--space-4, 16px);
+  align-items: start;
+}
+
+@media (max-width: 720px) {
+  .meals-split { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* The elevator ---------------------------------------------------------- */
+
+.meals-day {
+  margin-bottom: var(--space-4, 16px);
+  padding-bottom: var(--space-3, 12px);
+  border-bottom: 1px solid var(--border);
+}
+
+.meals-day:last-child { border-bottom: 0; }
+
+.meals-day-head {
+  margin: 0 0 var(--space-3, 12px);
+  font-size: var(--label-size, 0.75rem);
+  letter-spacing: var(--label-track, 0.06em);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.meals-sec {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  gap: var(--space-3, 12px);
+  align-items: start;
+  margin-bottom: 6px;
+}
+
+@media (max-width: 520px) {
+  .meals-sec { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+}
+
+.meals-sec-name {
+  padding-top: 7px;
+  color: var(--text-faint, var(--text-muted));
+  font-size: 0.8em;
+}
+
+/* A section the file no longer declares — kept, and visibly not one of the set. */
+.meals-sec.is-extra .meals-sec-name {
+  font-style: italic;
+  color: var(--warning, #b8890f);
+}
+
+.meals-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-height: 2.4rem;
+  padding: 3px;
+  border-radius: var(--radius-sm, 6px);
+  background: var(--surface-sunken, transparent);
+}
+
+.meals-drop {
+  padding: 6px 8px;
+  color: var(--text-faint, var(--text-muted));
+  font-size: 0.8em;
+}
+
+.meals-day.is-stray .meals-day-head { color: var(--warning, #b8890f); }
+
+/* A card ---------------------------------------------------------------- */
+
+.meals-card {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--meals-hue);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--surface-raised, var(--surface));
+  box-shadow: var(--shadow-sm, none);
+  cursor: grab;
+}
+
+.meals-card:hover { border-color: var(--accent, var(--meals-hue)); }
+
+.meals-ico { font-size: 1.1em; line-height: 1; }
+
+.meals-body { min-width: 0; flex: 1; }
+
+.meals-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The two lines that survive on the face. Everything else waits for a click. */
+.meals-qty { color: var(--text-muted); font-size: 0.8em; }
+.meals-hint { color: var(--text-faint, var(--text-muted)); font-size: 0.78em; }
+
+.meals-dismiss {
+  flex-shrink: 0;
+  padding: 2px 5px;
+  border: 0;
+  border-radius: var(--radius-pill, 99px);
+  background: transparent;
+  color: var(--text-faint, var(--text-muted));
+  cursor: pointer;
+  opacity: 0;
+}
+
+.meals-card:hover .meals-dismiss,
+.meals-dismiss:focus-visible { opacity: 1; }
+.meals-dismiss:hover { color: var(--danger, #d24b3e); }
+
+/* The tray -------------------------------------------------------------- */
+
+/*
+ * Held in view while the days scroll past. The tray is the half of the screen
+ * you drag FROM, and a tray that leaves at the third day turns every drop into
+ * a scroll up, a drag, and a scroll back.
+ */
+.meals-tray {
+  position: sticky;
+  top: var(--space-3, 12px);
+  max-height: calc(100vh - 6rem);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: var(--space-3, 12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 10px);
+  background: var(--surface-sunken, var(--surface));
+}
+
+.meals-tray-head {
+  margin: 0 0 4px;
+  font-size: var(--label-size, 0.75rem);
+  letter-spacing: var(--label-track, 0.06em);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.meals-empty {
+  margin: 0;
+  padding: 6px 2px;
+  color: var(--text-faint, var(--text-muted));
+  font-size: 0.85em;
+}
+
+/* The detail ------------------------------------------------------------ */
+
+.meals-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4, 16px);
+  background: color-mix(in srgb, #000 45%, transparent);
+}
+
+.meals-sheet {
+  width: min(32rem, 100%);
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: var(--space-4, 16px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 14px);
+  background: var(--surface);
+  box-shadow: var(--shadow, 0 8px 30px rgb(0 0 0 / 25%));
+}
+
+.meals-sheet-head {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  margin-bottom: var(--space-3, 12px);
+}
+
+.meals-sheet-head h3 { margin: 0; }
+
+.meals-desc { margin: 0 0 var(--space-3, 12px); color: var(--text); }
+
+/* `props` — free keys, in the order they were written. */
+.meals-props {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 3px var(--space-3, 12px);
+  margin: 0 0 var(--space-3, 12px);
+}
+
+.meals-props dt { color: var(--text-muted); }
+.meals-props dd { margin: 0; }
+
+.meals-source {
+  margin: 0 0 var(--space-3, 12px);
+  color: var(--text-faint, var(--text-muted));
+  font-family: var(--font-mono, monospace);
+  font-size: 0.8em;
+}
+
+.meals-close {
+  padding: 6px 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-ctl, 8px);
+  background: var(--surface-raised, var(--surface));
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* The compact form, and the screen of its own -------------------------- */
+
+.meals-lien {
+  display: block;
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--meals-hue);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--surface-raised, var(--surface));
+  color: inherit;
+  text-decoration: none;
+}
+
+.meals-lien:hover { border-color: var(--accent, var(--meals-hue)); }
+.meals-lien-body { display: flex; flex-wrap: wrap; gap: 9px; align-items: baseline; }
+
+.meals-in { margin: 0 0 var(--space-3, 12px); color: var(--text-muted); font-size: 0.85em; }

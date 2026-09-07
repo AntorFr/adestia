@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "meals",
+  "kind": "feature",
+  "description": "Meals over a period: a day-by-day timeline split into sections, and a tray of cards the agent proposes and you drop. Serves both a plan you decide and a log you record — the mechanism does not distinguish them. A feature rather than an app because a week of meals has no domain and no tile: it hangs off whichever page has a reason to hold it.",
+  "contract": 1,
+  "blocks": "./web/blocks.js",
+  "vocabulary": {
+    "meals": {
+      "content": "empty",
+      "description": "Meals over a period, drawn from the `.meals.json` that sits beside the page.",
+      "attributes": {
+        "source": { "required": true },
+        "vue": { "values": ["frise", "lien"], "default": "frise" }
+      }
+    }
+  },
+  "view": "./web/view.js",
+  "styles": ["./web/meals.css"],
+  "api": "./api.mjs",
+  "skills": ["./skills/json/SKILL.md"]
+}
