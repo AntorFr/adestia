@@ -391,6 +391,10 @@ export interface PluginPayload {
   /** Block specs, so the browser registers the same vocabulary the server did. */
   readonly vocabulary?: Readonly<Record<string, PluginBlockSpec>>
   readonly chrome?: string
+  /** Whole-page layouts module, for the frontmatter types below. */
+  readonly layouts?: string
+  /** The frontmatter `type` values this plugin claims — the shell matches on these. */
+  readonly types?: readonly string[]
   readonly styles?: readonly string[]
   readonly tile?: {
     readonly label: string
@@ -416,6 +420,10 @@ export function frontendPayload(plugins: readonly DiscoveredPlugin[]): readonly 
         ...(manifest.blocks ? { blocks: manifest.blocks } : {}),
         ...(manifest.vocabulary ? { vocabulary: manifest.vocabulary } : {}),
         ...(manifest.chrome ? { chrome: manifest.chrome } : {}),
+        ...(manifest.layouts ? { layouts: manifest.layouts } : {}),
+        // Sent because the shell matches a page's `type` against the CLAIM,
+        // never against what the layouts module happens to export.
+        ...(manifest.types ? { types: manifest.types } : {}),
         ...(manifest.styles ? { styles: manifest.styles } : {}),
         ...(manifest.tile ? { tile: manifest.tile } : {}),
       }

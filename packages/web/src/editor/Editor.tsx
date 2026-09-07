@@ -17,7 +17,8 @@ import { parse, serialize, type Indexed } from '@antorfr/adestia-content'
 
 import { Attachments } from './Attachments.js'
 import { carriesFiles, fileDropMessage } from './filedrop.js'
-import { Reader, type BlockComponents } from './Reader.js'
+import { PluginBoundary } from '../plugins/Boundary.js'
+import { Reader, type BlockComponents, type LayoutComponents } from './Reader.js'
 
 export interface PageDocument {
   readonly path: string
@@ -35,6 +36,12 @@ export interface PageDocument {
   readonly store?: string
   readonly title: string
   readonly markdown: string
+  /**
+   * The page's frontmatter, as the server parsed it. Absent on a shell talking
+   * to an older server, and on the fixtures of tests that predate it — which
+   * is why every read of it tolerates nothing being there.
+   */
+  readonly fields?: Readonly<Record<string, unknown>>
   readonly revision: string
   readonly editable: boolean
   readonly diagnostics: readonly { severity: string; message: string; line?: number }[]
@@ -140,6 +147,16 @@ export interface EditorProps {
    * which is also what a test that mounts an Editor alone gets.
    */
   readonly blocks?: BlockComponents
+  /**
+   * Whole-page layouts the active plugins draw, keyed by frontmatter `type`.
+   *
+   * Reading posture only: a page whose type is claimed is DRAWN by its plugin
+   * and still EDITED by the shell. That split is what keeps a document from
+   * being stranded behind a screen — the ✎ opens the same markdown surface as
+   * anywhere else, so a wrong date in a period's frontmatter is corrected on
+   * the page itself rather than by hunting for the file.
+   */
+  readonly layouts?: LayoutComponents
   /** The instance's pages, forwarded so a `[[type#id]]` link finds its page. */
   readonly pages?: readonly Indexed[]
   /**
@@ -164,6 +181,7 @@ export function Editor({
   attach,
   compose,
   blocks,
+  layouts,
   pages,
   attachments = true,
   onSaved,
@@ -240,6 +258,17 @@ export function Editor({
    * and its own drag handling, and two things claiming one drop is how a
    * paragraph ends up somewhere nobody asked for.
    */
+  /**
+   * The layout this page's own `type` asks for, if a plugin draws it.
+   *
+   * A type nobody claims — or whose plugin is switched off — falls through to
+   * the ordinary reader, which is the screen the page had before any of this.
+   * Never a guess and never an error: a layout is an offer, and a page must
+   * stay readable when nobody takes it up.
+   */
+  const type = page.fields?.['type']
+  const Layout = typeof type === 'string' ? layouts?.[type] : undefined
+
   const takesDrop = attach !== undefined && !editing
 
   const onDrop = useCallback(
@@ -351,6 +380,31 @@ export function Editor({
         <pre className="adestia-editor__raw">{page.markdown}</pre>
       ) : editing ? (
         <div ref={host} className="adestia-editor__surface" />
+      ) : Layout ? (
+        /* A page whose type a plugin claims is DRAWN by that plugin. Only the
+           reading posture: the ✎ above still opens the markdown, which is what
+           keeps the document reachable and the frontmatter correctable. */
+        <PluginBoundary id={String(type)} what="layout">
+          <Layout
+            path={page.path}
+            {...(page.store ? { store: page.store } : {})}
+            fields={page.fields ?? {}}
+            title={page.title}
+            markdown={markdown}
+            revision={page.revision}
+            {...(openPage ? { openPage } : {})}
+          >
+            {/* The page's own body, for the layout to place. Rendered here so
+                a plugin never has to know how this instance draws markdown. */}
+            <Reader
+              markdown={markdown}
+              path={page.path}
+              {...(openPage ? { openPage } : {})}
+              {...(blocks ? { blocks } : {})}
+              {...(pages ? { pages } : {})}
+            />
+          </Layout>
+        </PluginBoundary>
       ) : (
         <Reader
           markdown={markdown}

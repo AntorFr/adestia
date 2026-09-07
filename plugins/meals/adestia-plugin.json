@@ -2,21 +2,18 @@
   "schemaVersion": 1,
   "id": "meals",
   "kind": "feature",
-  "description": "Meals over a period: a day-by-day timeline split into sections, and a tray of cards the agent proposes and you drop. Serves both a plan you decide and a log you record — the mechanism does not distinguish them. A feature rather than an app because a week of meals has no domain and no tile: it hangs off whichever page has a reason to hold it.",
+  "description": "Meals over a period. A page typed `meals` IS the period: its frontmatter carries the shape (dates, sections, where its data sits) and the plugin draws it as a day-by-day frise with a tray of cards you drag. One file of data, written by the front and by the agent alike, guarded by a revision rather than a lock.",
   "contract": 1,
-  "blocks": "./web/blocks.js",
-  "vocabulary": {
-    "meals": {
-      "content": "empty",
-      "description": "Meals over a period, drawn from the `.meals.json` that sits beside the page.",
-      "attributes": {
-        "source": { "required": true },
-        "vue": { "values": ["frise", "lien"], "default": "frise" }
-      }
-    }
-  },
-  "view": "./web/view.js",
+  "types": ["meals"],
+  "layouts": "./web/layouts.js",
   "styles": ["./web/meals.css"],
   "api": "./api.mjs",
-  "skills": ["./skills/json/SKILL.md"]
+  "skills": ["./skills/json/SKILL.md"],
+  "mcpServers": [
+    {
+      "name": "meals",
+      "command": "node",
+      "args": ["./mcp/server.mjs"]
+    }
+  ]
 }

@@ -10,27 +10,22 @@
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
 
-import { daysOf, dropRank, layout, merge, sectionsOf } from '../web/model.js'
+import { daysOf, dropRank, layout, sectionsOf } from '../web/model.js'
 
-const PLAN = {
-  version: 1,
-  titre: 'Corse — la semaine',
-  debut: '2026-08-08',
-  fin: '2026-08-10',
-  items: [
-    { id: 'a', titre: 'Pâtes', statut: 'confirme', jour: '2026-08-09', section: 'soir', ordre: 2 },
-    { id: 'b', titre: 'Salade', statut: 'confirme', jour: '2026-08-09', section: 'soir', ordre: 1 },
-    { id: 'c', titre: 'Poulet', statut: 'suggestion' },
-    { id: 'd', titre: 'Refusé', statut: 'ecartee' },
-  ],
-}
+/** The shape comes from the PAGE now; the cards come from its data file. */
+const SHAPE = { titre: 'Corse — la semaine', debut: '2026-08-08', fin: '2026-08-10' }
 
-const empty = { items: {} }
+const ITEMS = [
+  { id: 'a', titre: 'Pâtes', statut: 'confirme', jour: '2026-08-09', section: 'soir', ordre: 2 },
+  { id: 'b', titre: 'Salade', statut: 'confirme', jour: '2026-08-09', section: 'soir', ordre: 1 },
+  { id: 'c', titre: 'Poulet', statut: 'suggestion' },
+  { id: 'd', titre: 'Refusé', statut: 'ecartee' },
+]
 
 test('a period covers every day between its bounds, inclusive', () => {
-  assert.deepEqual(daysOf(PLAN), ['2026-08-08', '2026-08-09', '2026-08-10'])
+  assert.deepEqual(daysOf(SHAPE), ['2026-08-08', '2026-08-09', '2026-08-10'])
   // No dates is not an error: it is a tray of ideas, and the screen says so.
-  assert.deepEqual(daysOf({ items: [] }), [])
+  assert.deepEqual(daysOf({}), [])
   // Backwards bounds would otherwise loop forever.
   assert.deepEqual(daysOf({ debut: '2026-08-10', fin: '2026-08-08' }), [])
 })
@@ -43,7 +38,7 @@ test('sections are declared per file, and fall back to the three', () => {
 })
 
 test('placed, waiting and set aside are told apart by the DATA', () => {
-  const view = layout(PLAN, empty)
+  const view = layout(SHAPE, ITEMS)
   assert.equal(view.dated, true)
   const soir = view.days[1].groups.find((group) => group.name === 'soir')
   // `ordre` decides the run of a section, not the order of the file.
@@ -54,12 +49,9 @@ test('placed, waiting and set aside are told apart by the DATA', () => {
 })
 
 test('a card whose section is no longer declared is shown, not dropped', () => {
-  const plan = {
-    ...PLAN,
-    sections: ['matin', 'soir'],
-    items: [{ id: 'x', titre: 'Café', statut: 'confirme', jour: '2026-08-08', section: 'goûter' }],
-  }
-  const day = layout(plan, empty).days[0]
+  const shape = { ...SHAPE, sections: ['matin', 'soir'] }
+  const cards = [{ id: 'x', titre: 'Café', statut: 'confirme', jour: '2026-08-08', section: 'goûter' }]
+  const day = layout(shape, cards).days[0]
   assert.deepEqual(day.groups.map((group) => group.name), ['matin', 'soir', 'goûter'])
   const extra = day.groups.at(-1)
   assert.equal(extra.known, false)
@@ -67,30 +59,10 @@ test('a card whose section is no longer declared is shown, not dropped', () => {
 })
 
 test('a card placed outside the period is held aside, never lost', () => {
-  const plan = {
-    ...PLAN,
-    items: [{ id: 'x', titre: 'Hors', statut: 'confirme', jour: '2026-09-01', section: 'soir' }],
-  }
-  const view = layout(plan, empty)
+  const cards = [{ id: 'x', titre: 'Hors', statut: 'confirme', jour: '2026-09-01', section: 'soir' }]
+  const view = layout(SHAPE, cards)
   assert.deepEqual(view.strays.map((card) => card.id), ['x'])
   assert.equal(view.days.every((day) => day.groups.every((group) => group.cards.length === 0)), true)
-})
-
-test('the overlay wins on what it carries, and is silent on the rest', () => {
-  const overlay = { items: { c: { statut: 'confirme', jour: '2026-08-10', section: 'midi', ordre: 1 } } }
-  const merged = merge(PLAN, overlay)
-  const card = merged.find((item) => item.id === 'c')
-  assert.equal(card.jour, '2026-08-10')
-  // The title came from the file and the overlay never mentioned it.
-  assert.equal(card.titre, 'Poulet')
-  // An overlay for an id the file no longer holds resurrects nothing.
-  assert.equal(merge(PLAN, { items: { ghost: { jour: '2026-08-08' } } }).length, PLAN.items.length)
-})
-
-test('null is how a gesture says "back to the tray"', () => {
-  const overlay = { items: { a: { statut: 'suggestion', jour: null, section: null } } }
-  const view = layout(PLAN, overlay)
-  assert.deepEqual(view.tray.map((card) => card.id).sort(), ['a', 'c'])
 })
 
 test('a drop between two cards renumbers nobody', () => {

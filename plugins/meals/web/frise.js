@@ -18,6 +18,7 @@
 import { createElement as h, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { dayLabel, dropRank, layout, words } from './model.js'
+import { apply } from './ops.js'
 
 /** Where a card dropped at height `y` belongs among the cards already there. */
 function indexAt(zone, y, draggedId) {
@@ -32,64 +33,96 @@ function indexAt(zone, y, draggedId) {
 }
 
 /**
- * The overlay, and the one way it is written.
+ * The document, and the one way it is written.
  *
- * Every gesture goes through here so the optimistic update and the request can
- * never disagree about what was asked. A refused write rolls the screen back
- * rather than leaving a card where the file does not have it — a card that
- * moved on screen and nowhere else is the failure nobody notices until the
- * shopping list is short.
+ * Three things have to hold at once, and they are what this hook is:
+ *
+ * - a drag must show INSTANTLY, so the operation is applied locally first —
+ *   with `apply`, the same function the server will run, so what the screen
+ *   predicts is what the file gets;
+ * - a write must not lose somebody else's, so every request states the
+ *   revision it was based on and one write is in flight at a time. Firing two
+ *   in parallel would have the second quoting a revision the first has already
+ *   replaced, and the server would refuse a perfectly good drag;
+ * - a refusal must not leave a lie on screen. A 409 means the period moved
+ *   under us: the server sends the current document back, we take it, and we
+ *   say so — because a card that snapped back with no explanation reads as a
+ *   bug rather than as somebody else's edit.
  */
-function useOverlay(api, path) {
-  const [overlay, setOverlay] = useState({ items: {} })
-  const [failed, setFailed] = useState(false)
+function usePeriod(api, page) {
+  const [state, setState] = useState({ loading: true })
+  const [note, setNote] = useState()
+  /** Writes wait their turn: the revision is a serial number, not a guess. */
+  const queue = useRef(Promise.resolve())
+  const revision = useRef(undefined)
+
+  const load = useCallback(async () => {
+    try {
+      const response = await api.fetch(
+        `/api/plugin/${api.id}/period?page=${encodeURIComponent(page)}`,
+      )
+      const body = await response.json().catch(() => undefined)
+      if (!response.ok) return setState({ error: body?.error ?? 'unreadable' })
+      revision.current = body.revision
+      setState({ shape: body.shape, items: body.items })
+    } catch {
+      setState({ error: 'unreadable' })
+    }
+  }, [api, page])
 
   useEffect(() => {
-    let alive = true
-    setOverlay({ items: {} })
-    if (!path) return undefined
-    void (async () => {
-      try {
-        const response = await api.fetch(
-          `/api/plugin/${api.id}/state?f=${encodeURIComponent(path)}`,
-        )
-        if (!response.ok || !alive) return
-        const body = await response.json()
-        if (alive) setOverlay({ items: body?.items ?? {} })
-      } catch {
-        // No overlay is a legitimate reading of a period nobody has touched.
-      }
-    })()
-    return () => {
-      alive = false
-    }
-  }, [api, path])
+    setState({ loading: true })
+    void load()
+  }, [load])
 
-  const gesture = useCallback(
-    async (id, fields) => {
-      const previous = overlay
-      const next = { items: { ...overlay.items, [id]: { ...overlay.items[id], ...fields } } }
-      setOverlay(next)
-      setFailed(false)
-      try {
-        const response = await api.fetch(
-          `/api/plugin/${api.id}/state?f=${encodeURIComponent(path)}`,
-          {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ id, ...fields }),
-          },
-        )
-        if (!response.ok) throw new Error(String(response.status))
-      } catch {
-        setOverlay(previous)
-        setFailed(true)
-      }
+  const run = useCallback(
+    (op) => {
+      // Predicted with the server's own rules: an operation the server would
+      // refuse is not drawn either, so the screen never shows a move that is
+      // about to be undone.
+      setState((current) => {
+        if (!current.items) return current
+        const result = apply(current.items, current.shape, op)
+        return result.error ? current : { ...current, items: result.items }
+      })
+      setNote(undefined)
+
+      queue.current = queue.current.then(async () => {
+        try {
+          const response = await api.fetch(
+            `/api/plugin/${api.id}/period?page=${encodeURIComponent(page)}`,
+            {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ revision: revision.current, op }),
+            },
+          )
+          const body = await response.json().catch(() => undefined)
+          if (response.ok) {
+            revision.current = body.revision
+            setState((current) => ({ ...current, items: body.items }))
+            return
+          }
+          if (response.status === 409 && body?.items) {
+            // Somebody else's write won. Take theirs, say so, and let the
+            // reader redo the one gesture rather than lose the document.
+            revision.current = body.revision
+            setState((current) => ({ ...current, items: body.items }))
+            setNote('moved')
+            return
+          }
+          setNote('refused')
+          await load()
+        } catch {
+          setNote('refused')
+          await load()
+        }
+      })
     },
-    [api, overlay, path],
+    [api, load, page],
   )
 
-  return { overlay, gesture, failed }
+  return { ...state, run, note }
 }
 
 /** The card as everybody sees it: quiet on its face, and everything else a click away. */
@@ -171,46 +204,24 @@ function Detail({ item, t, onClose }) {
 /**
  * The screen.
  *
- * `src` is where the file is READ from (a URL), `path` is what it is CALLED in
- * the workspace (what the state API is asked about). They are different
- * strings for the same file and both are needed: a block resolves the first
- * from the page it sits in, and only the second means anything to a server.
+ * Everything it draws comes from the server's answer about ONE page: the shape
+ * the page declares and the cards its data file holds. The layout hands it a
+ * path and nothing else — a second source for the same facts is how a screen
+ * ends up disagreeing with the file it is showing.
  */
-export default function Frise({ api, src, path }) {
+export default function Frise({ api, page }) {
   const t = useMemo(() => words(api.locale), [api.locale])
-  const [plan, setPlan] = useState()
-  const [error, setError] = useState(false)
   const [open, setOpen] = useState()
   const dragged = useRef(null)
-  const { overlay, gesture, failed } = useOverlay(api, path)
+  const { shape, items, loading, error, run, note } = usePeriod(api, page)
 
-  useEffect(() => {
-    let alive = true
-    setPlan(undefined)
-    setError(false)
-    if (!src) return undefined
-    void (async () => {
-      try {
-        const response = await api.fetch(src)
-        if (!response.ok) throw new Error(String(response.status))
-        const body = await response.json()
-        if (alive) setPlan(body)
-      } catch {
-        if (alive) setError(true)
-      }
-    })()
-    return () => {
-      alive = false
-    }
-  }, [api, src])
-
-  const view = useMemo(() => layout(plan, overlay), [plan, overlay])
+  const view = useMemo(() => layout(shape, items), [shape, items])
 
   const onDrag = useCallback((event, item) => {
     dragged.current = item.id
     event.dataTransfer.effectAllowed = 'move'
-    // Written even though it is never read back: a drag with an empty payload
-    // is cancelled outright by some browsers before any drop handler runs.
+    // Written though never read back: a drag with an empty payload is
+    // cancelled outright by some browsers before any drop handler runs.
     event.dataTransfer.setData('text/plain', item.id)
   }, [])
 
@@ -221,9 +232,9 @@ export default function Frise({ api, src, path }) {
       dragged.current = null
       if (!id) return
       const ordre = dropRank(cards, indexAt(event.currentTarget, event.clientY, id))
-      void gesture(id, { statut: 'confirme', jour, section, ordre })
+      run({ op: 'place', id, jour, section, ordre })
     },
-    [gesture],
+    [run],
   )
 
   const dropToTray = useCallback(
@@ -231,14 +242,13 @@ export default function Frise({ api, src, path }) {
       event.preventDefault()
       const id = dragged.current
       dragged.current = null
-      if (!id) return
-      void gesture(id, { statut: 'suggestion', jour: null, section: null, ordre: null })
+      if (id) run({ op: 'tray', id })
     },
-    [gesture],
+    [run],
   )
 
   if (error) return h('p', { className: 'meals-empty' }, t('This period cannot be read.'))
-  if (!plan) return h('p', { className: 'meals-empty' }, t('loading…'))
+  if (loading) return h('p', { className: 'meals-empty' }, t('loading…'))
 
   const allow = (event) => event.preventDefault()
 
@@ -259,7 +269,7 @@ export default function Frise({ api, src, path }) {
                 },
                 group.cards.length > 0
                   ? group.cards.map((item) =>
-                      h(Card, { key: item.id, item, t, onOpen: setOpen, onDrag, onDismiss: () => {} }),
+                      h(Card, { key: item.id, item, t, onOpen: setOpen, onDrag }),
                     )
                   : h('span', { className: 'meals-drop' }, t('Drop a card here')),
               ),
@@ -267,20 +277,35 @@ export default function Frise({ api, src, path }) {
           ),
         ]),
       )
-    : h('p', { className: 'meals-empty' }, t('An idea for now — the tray is live, the timeline waits for dates.'))
+    : h(
+        'p',
+        { className: 'meals-empty' },
+        t('An idea for now — the tray is live, the timeline waits for dates.'),
+      )
 
   return h('div', { className: 'meals' }, [
+    // The period says its own name and span. The shell puts the page's title
+    // in the breadcrumb and nowhere else, and a frise that opened on an
+    // undated grid with no heading leaves a reader guessing which week.
     h('header', { key: 'h', className: 'meals-head' }, [
-      h('h2', { key: 't' }, plan.titre || t('Ideas')),
+      h('h2', { key: 't' }, shape?.titre || t('Ideas')),
       view.dated
         ? h(
             'span',
             { key: 'p', className: 'meals-period' },
-            `${dayLabel(plan.debut, api.locale)} → ${dayLabel(plan.fin, api.locale)}`,
+            `${dayLabel(shape.debut, api.locale)} → ${dayLabel(shape.fin, api.locale)}`,
           )
         : null,
     ]),
-    failed ? h('p', { key: 'f', className: 'meals-failed' }, '⚠') : null,
+    note
+      ? h(
+          'p',
+          { key: 'n', className: 'meals-note', role: 'status' },
+          note === 'moved'
+            ? t('Someone changed this period while you were reading it. Reloaded.')
+            : t('That move was refused.'),
+        )
+      : null,
     h('div', { key: 's', className: 'meals-split' }, [
       h('div', { key: 'f', className: 'meals-frise' }, [
         frise,
@@ -291,7 +316,7 @@ export default function Frise({ api, src, path }) {
                 'div',
                 { key: 'z', className: 'meals-zone' },
                 view.strays.map((item) =>
-                  h(Card, { key: item.id, item, t, onOpen: setOpen, onDrag, onDismiss: () => {} }),
+                  h(Card, { key: item.id, item, t, onOpen: setOpen, onDrag }),
                 ),
               ),
             ])
@@ -299,12 +324,7 @@ export default function Frise({ api, src, path }) {
       ]),
       h(
         'aside',
-        {
-          key: 'y',
-          className: 'meals-tray',
-          onDragOver: allow,
-          onDrop: dropToTray,
-        },
+        { key: 'y', className: 'meals-tray', onDragOver: allow, onDrop: dropToTray },
         [
           h('h3', { key: 'h', className: 'meals-tray-head' }, t('Ideas')),
           view.tray.length > 0
@@ -316,7 +336,7 @@ export default function Frise({ api, src, path }) {
                   tray: true,
                   onOpen: setOpen,
                   onDrag,
-                  onDismiss: (card) => void gesture(card.id, { statut: 'ecartee' }),
+                  onDismiss: (card) => run({ op: 'dismiss', id: card.id }),
                 }),
               )
             : h(

@@ -39,9 +39,9 @@ export function dayValue(iso) {
   return Number.isNaN(time) ? undefined : time
 }
 
-/** The sections this file declares, or the three every file gets for free. */
-export function sectionsOf(plan) {
-  const declared = plan?.sections
+/** The sections the PAGE declares, or the three every period gets for free. */
+export function sectionsOf(shape) {
+  const declared = shape?.sections
   if (!Array.isArray(declared)) return SECTIONS
   const names = declared.filter((name) => typeof name === 'string' && name.trim() !== '')
   return names.length > 0 ? names : SECTIONS
@@ -54,9 +54,9 @@ export function sectionsOf(plan) {
  * an error state: a file with no dates is a tray of ideas, and the screen says
  * so rather than drawing an empty calendar.
  */
-export function daysOf(plan) {
-  const from = dayValue(plan?.debut)
-  const to = dayValue(plan?.fin)
+export function daysOf(shape) {
+  const from = dayValue(shape?.debut)
+  const to = dayValue(shape?.fin)
   if (from === undefined || to === undefined || to < from) return []
   const days = []
   const DAY = 86_400_000
@@ -64,34 +64,6 @@ export function daysOf(plan) {
     days.push(new Date(time).toISOString().slice(0, 10))
   }
   return days
-}
-
-/**
- * The items of the file, with the overlay's gestures applied over them.
- *
- * The overlay is the front's own scratchpad — a drag is not an edit of the
- * file — so it wins on the fields it carries and is silent on every other.
- * An overlay entry for an id the file no longer holds is ignored rather than
- * resurrected: the file is the truth about WHAT exists.
- */
-export function merge(plan, overlay) {
-  const gestures = overlay?.items ?? {}
-  const items = Array.isArray(plan?.items) ? plan.items : []
-  return items
-    .filter((item) => item && typeof item.id === 'string' && item.id !== '')
-    .map((item) => {
-      const over = gestures[item.id]
-      if (!over || typeof over !== 'object') return item
-      const merged = { ...item }
-      // `jour: null` is how the front says "back to the tray" — an absent key
-      // means the gesture had nothing to say about placement.
-      for (const field of ['statut', 'jour', 'section', 'ordre']) {
-        if (!(field in over)) continue
-        if (over[field] === null) delete merged[field]
-        else merged[field] = over[field]
-      }
-      return merged
-    })
 }
 
 /** A card is placed when it names a day. Nothing else decides it. */
@@ -110,11 +82,11 @@ const rankOf = (item, fallback) =>
  * `dated` is what tells the view whether to draw a timeline at all: a period
  * with no bounds is a live tray and an honest sentence, not an empty grid.
  */
-export function layout(plan, overlay) {
-  const items = merge(plan, overlay)
-  const ranked = items.map((item, index) => ({ item, rank: rankOf(item, index) }))
-  const days = daysOf(plan)
-  const declared = sectionsOf(plan)
+export function layout(shape, items) {
+  const cards = Array.isArray(items) ? items.filter((item) => item && typeof item.id === 'string') : []
+  const ranked = cards.map((item, index) => ({ item, rank: rankOf(item, index) }))
+  const days = daysOf(shape)
+  const declared = sectionsOf(shape)
   const known = new Set(days)
 
   const tray = ranked
@@ -180,6 +152,8 @@ const FR = {
   'Ask the agent for ideas — they land here.': 'Demande des idées à l’agent — elles arrivent ici.',
   'An idea for now — the tray is live, the timeline waits for dates.':
     'Une idée pour l’instant — le tray est vivant, la frise attend des dates.',
+  'Someone changed this period while you were reading it. Reloaded.':
+    'Quelqu’un a modifié cette période pendant que tu la lisais. Rechargée.',
   'Drop a card here': 'Déposez une carte ici',
   'Nothing here yet': 'Rien ici pour l’instant',
   'Out of the period': 'Hors période',

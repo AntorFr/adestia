@@ -428,3 +428,55 @@ describe('routeMatches', () => {
     expect(routeMatches(undefined, '/anything')).toBe(false)
   })
 })
+
+describe('whole-page layouts', () => {
+  const period: PluginDescriptor = {
+    id: 'meals',
+    kind: 'feature',
+    base: '/plugins/meals/',
+    layouts: './web/layouts.js',
+    types: ['meals'],
+  }
+
+  it('loads the layouts a plugin claims in its manifest', async () => {
+    const Frise = () => null
+    const { env } = environment({
+      '/plugins/meals/web/layouts.js': { default: () => ({ types: { meals: Frise } }) },
+    })
+    const { loaded, failures } = await loadPlugins([period], env)
+    expect(failures).toEqual([])
+    expect(loaded[0]?.layouts?.types['meals']).toBe(Frise)
+    // Carried through, because the shell matches a page's type against the
+    // CLAIM rather than against what the module happened to export.
+    expect(loaded[0]?.types).toEqual(['meals'])
+  })
+
+  it('refuses a layout the manifest never claimed', async () => {
+    // The trap is silent otherwise: the page keeps opening as ordinary prose
+    // and nothing on screen says a layout existed for it.
+    const { env } = environment({
+      '/plugins/meals/web/layouts.js': { default: () => ({ types: { meals: () => null, trips: () => null } }) },
+    })
+    const { failures } = await loadPlugins([period], env)
+    expect(failures).toEqual([
+      {
+        id: 'meals',
+        facet: 'layouts',
+        reason: 'layout for "type: trips" is not among the manifest\'s `types`',
+      },
+    ])
+  })
+
+  it('reports a layouts module that returns the wrong shape', async () => {
+    const { env } = environment({
+      '/plugins/meals/web/layouts.js': { default: () => ({ types: { meals: 'not a component' } }) },
+    })
+    const { loaded, failures } = await loadPlugins([period], env)
+    expect(failures[0]?.facet).toBe('layouts')
+    expect(failures[0]?.reason).toMatch(/must be React components/)
+    // Its only facet was the broken one, so there is nothing left to mount and
+    // the plugin is dropped — with its stylesheet, rather than leaving dead CSS
+    // restyling the page.
+    expect(loaded).toEqual([])
+  })
+})

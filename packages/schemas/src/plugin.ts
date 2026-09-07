@@ -106,6 +106,12 @@ export interface PluginManifest {
   readonly view?: string
   readonly blocks?: string
   readonly chrome?: string
+  /**
+   * Whole-page layouts: the module drawing pages whose frontmatter `type` this
+   * plugin claims in `types`. The claim stays in `types` — where the server can
+   * refuse two plugins over one word — and this is only where the drawing is.
+   */
+  readonly layouts?: string
   readonly styles?: readonly string[]
   readonly tile?: PluginTile
 

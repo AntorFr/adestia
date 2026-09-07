@@ -1,142 +1,96 @@
 /**
- * The server side of a period of meals: one frontier, one overlay.
+ * The server side of a period: one document, two authors, one revision.
  *
- * Two kinds of data live here and the whole design is about keeping them
- * apart — the same frontier the trips and the workbench draw, for the same
- * reason:
+ * Everything is addressed by the PAGE. A request names `sante/septembre.md`,
+ * the server reads its frontmatter, and follows the `data:` it declares. Which
+ * means the data file is reachable only through a page that claims it — a
+ * route taking the JSON path directly would be a way to read and write any
+ * `.json` under the memory, and no amount of suffix-checking makes that a
+ * boundary. Here the boundary closes itself.
  *
- * - the DATA (`<name>.meals.json`) is written by the agent and reviewed like
- *   any other file. Nothing in this module ever writes it.
- * - the GESTURES of the frise (confirm, move, set aside) land in a SIBLING
- *   `<name>.meals-state.json`. A drag is not an edit of your week;
- *   consolidating the overlay back into the file is a decision somebody makes.
- *
- * There is nothing else. No nutrition database, no totals, no unit
- * conversion — the file's `props` are free keys the agent writes and reads
- * back, and a plugin that started summing them would be inventing a
- * vocabulary the contract deliberately leaves open.
+ * The write is optimistic, never locked: a caller states the revision it read
+ * and a stale one is refused with the current document attached, so the loser
+ * of a race can redo its work instead of asking again. See `ops.mjs` for why
+ * a lock would have been the wrong instrument.
  */
 
-import { SECTIONS, STATUTS } from './web/model.js'
+import { apply } from './web/ops.js'
+import { revisionOf } from './revision.mjs'
+import { safePagePath, shapeOf } from './shape.mjs'
 
-const SUFFIX = '.meals.json'
-const ISO = /^\d{4}-\d{2}-\d{2}$/
-/** An overlay is a handful of gestures; anything larger is not one. */
-const MAX_BYTES = 256_000
+/** A period is a handful of cards; anything larger is not one. */
+const MAX_BYTES = 2_000_000
 
 /**
- * The name of a period, validated without touching the disk.
+ * The page, its shape, and the cards it points at — or the reason there are
+ * none.
  *
- * Convention rather than declaration, like the workbooks: a period is a file
- * beside the page that speaks of it, so creating one is writing a file. No
- * registry to keep, nothing to forget.
- *
- * A path from a request stays user input, hence the suffix checked here. But
- * WHERE the file lives is the core's business: the memory may be composed of
- * several stores.
+ * A missing data file is NOT an error: a page framed a minute ago has no cards
+ * yet, and the screen it deserves is an empty frise with a live tray, not a
+ * diagnostic.
  */
-export function safeMealsPath(requested) {
-  if (typeof requested !== 'string' || requested.includes('\0')) return undefined
-  const path = requested.replace(/^\/+/, '')
-  if (!path.endsWith(SUFFIX) || path === SUFFIX) return undefined
-  if (path.split('/').some((segment) => segment === '..' || segment.startsWith('.'))) {
-    return undefined
-  }
-  return path
-}
+async function readPeriod(pages, page) {
+  const markdown = await pages.read(page)
+  if (typeof markdown !== 'string') return { status: 404, error: 'no such page' }
 
-/** `…/x.meals.json` → `…/x.meals-state.json`. Beside it, never inside it. */
-export const overlayPath = (path) => `${path.slice(0, -SUFFIX.length)}.meals-state.json`
+  const shape = shapeOf(page, markdown)
+  if (!shape) return { status: 422, error: 'this page has no frontmatter' }
+  if (shape.type !== 'meals') return { status: 422, error: 'this page is not a period of meals' }
+  if (!shape.data) return { status: 422, error: 'its `data:` does not name a .meals.json beside it' }
 
-/**
- * One gesture, narrowed to what an overlay is allowed to say.
- *
- * `sections` comes from the file itself rather than from a table here: they
- * are declared per period, so the only honest source is the period. A gesture
- * naming a section the file does not declare is refused — an overlay cannot
- * invent a word — and `null` is kept as the way to say "back to the tray",
- * distinct from an absent key, which says nothing about placement.
- */
-export function cleanGesture(body, sections = SECTIONS) {
-  if (!body || typeof body !== 'object') return undefined
-  const { id } = body
-  if (typeof id !== 'string' || id === '' || id.length > 200) return undefined
-
-  const fields = {}
-  if ('statut' in body) {
-    if (!STATUTS.includes(body.statut)) return undefined
-    fields.statut = body.statut
-  }
-  if ('jour' in body) {
-    if (body.jour === null) fields.jour = null
-    else if (typeof body.jour === 'string' && ISO.test(body.jour)) fields.jour = body.jour
-    else return undefined
-  }
-  if ('section' in body) {
-    if (body.section === null) fields.section = null
-    else if (sections.includes(body.section)) fields.section = body.section
-    else return undefined
-  }
-  if ('ordre' in body) {
-    if (body.ordre === null) fields.ordre = null
-    else if (typeof body.ordre === 'number' && Number.isFinite(body.ordre)) fields.ordre = body.ordre
-    else return undefined
-  }
-  if (Object.keys(fields).length === 0) return undefined
-  return { id, fields }
-}
-
-/** The overlay as it is on disk, or an empty one — a period nobody touched has none. */
-async function readOverlay(pages, path) {
-  const raw = await pages.read(overlayPath(path))
-  if (typeof raw !== 'string' || raw.length > MAX_BYTES) return { items: {} }
+  const raw = await pages.read(shape.data)
+  if (typeof raw !== 'string') return { shape, revision: revisionOf(''), items: [] }
+  if (raw.length > MAX_BYTES) return { status: 413, error: 'that data file is too large to read' }
   try {
     const parsed = JSON.parse(raw)
-    return { items: parsed?.items && typeof parsed.items === 'object' ? parsed.items : {} }
+    return {
+      shape,
+      revision: revisionOf(raw),
+      items: Array.isArray(parsed?.items) ? parsed.items : [],
+    }
   } catch {
-    // A corrupted overlay is not a reason to lose the screen: the file is the
-    // truth, and the gestures over it are the part that can be rebuilt.
-    return { items: {} }
+    // Named rather than swallowed: an unreadable file is somebody's data, and
+    // silently treating it as empty is how a screen offers to overwrite it.
+    return { status: 422, error: 'that data file is not valid JSON' }
   }
 }
 
-/** The sections the period declares, read for validation only. */
-async function sectionsOfFile(pages, path) {
-  try {
-    const raw = await pages.read(path)
-    if (typeof raw !== 'string') return SECTIONS
-    const declared = JSON.parse(raw)?.sections
-    if (!Array.isArray(declared)) return SECTIONS
-    const names = declared.filter((name) => typeof name === 'string' && name !== '')
-    return names.length > 0 ? names : SECTIONS
-  } catch {
-    return SECTIONS
-  }
-}
+/** What goes on disk. One key, so the page stays the only place a shape lives. */
+const serialise = (items) => JSON.stringify({ version: 1, items }, null, 1)
 
 export default async function api(app, { pages }) {
-  app.get('/state', async (request, reply) => {
-    const path = safeMealsPath(request.query?.f)
-    if (!path) return reply.code(400).send({ error: 'bad path' })
-    return readOverlay(pages, path)
+  app.get('/period', async (request, reply) => {
+    const page = safePagePath(request.query?.page)
+    if (!page) return reply.code(400).send({ error: 'bad page path' })
+    const found = await readPeriod(pages, page)
+    if (found.status) return reply.code(found.status).send({ error: found.error })
+    const { shape, revision, items } = found
+    return { page, data: shape.data, revision, shape, items }
   })
 
-  app.post('/state', async (request, reply) => {
-    const path = safeMealsPath(request.query?.f)
-    if (!path) return reply.code(400).send({ error: 'bad path' })
-    // The period has to exist before it can be gestured over: an overlay
-    // written beside nothing is a file nobody will ever read or clean up.
-    if (!(await pages.exists(path))) return reply.code(404).send({ error: 'no such period' })
+  app.post('/period', async (request, reply) => {
+    const page = safePagePath(request.query?.page)
+    if (!page) return reply.code(400).send({ error: 'bad page path' })
+    const found = await readPeriod(pages, page)
+    if (found.status) return reply.code(found.status).send({ error: found.error })
+    const { shape, revision, items } = found
 
-    const gesture = cleanGesture(request.body, await sectionsOfFile(pages, path))
-    if (!gesture) return reply.code(400).send({ error: 'bad gesture' })
-
-    const overlay = await readOverlay(pages, path)
-    const items = {
-      ...overlay.items,
-      [gesture.id]: { ...overlay.items[gesture.id], ...gesture.fields },
+    // The revision is required, not merely honoured: a caller that omits it is
+    // one that never read the document, and letting it write would be exactly
+    // the lost update this whole design refuses.
+    if (request.body?.revision !== revision) {
+      return reply.code(409).send({
+        error: 'the period moved since you read it',
+        revision,
+        items,
+      })
     }
-    await pages.write(overlayPath(path), JSON.stringify({ items }, null, 1))
-    return { items }
+
+    const result = apply(items, shape, request.body?.op)
+    if (result.error) return reply.code(400).send({ error: result.error })
+
+    const text = serialise(result.items)
+    await pages.write(shape.data, text)
+    return { revision: revisionOf(text), items: result.items }
   })
 }

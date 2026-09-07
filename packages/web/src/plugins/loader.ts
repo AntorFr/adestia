@@ -19,9 +19,11 @@ import { createElement, type ComponentType } from 'react'
 import {
   narrowBlocks,
   narrowChrome,
+  narrowLayouts,
   narrowView,
   type BlocksContribution,
   type ChromeContribution,
+  type LayoutsContribution,
   type PageEditorProps,
   type PluginApi,
   type ViewContribution,
@@ -44,6 +46,14 @@ export interface PluginDescriptor {
   readonly base: string
   readonly view?: string
   readonly blocks?: string
+  /** Whole-page layouts, drawn for the frontmatter types the manifest claims. */
+  readonly layouts?: string
+  /**
+   * The frontmatter `type` values this plugin's own code dispatches on —
+   * declared in the manifest so the server can refuse two plugins claiming
+   * one word, and matched here to decide which pages a layout draws.
+   */
+  readonly types?: readonly string[]
   /**
    * The block specs the manifest declares — the same ones the server already
    * registered. Sent rather than re-derived: the browser must validate and
@@ -72,6 +82,8 @@ export interface LoadedPlugin {
   readonly view?: ViewContribution
   readonly blocks?: BlocksContribution
   readonly chrome?: ChromeContribution
+  readonly layouts?: LayoutsContribution
+  readonly types?: readonly string[]
 }
 
 export interface LoadFailure {
@@ -111,7 +123,7 @@ function resolve(base: string, path: string): string {
 async function loadFacet<T>(
   environment: LoaderEnvironment,
   plugin: PluginDescriptor,
-  facet: 'view' | 'blocks' | 'chrome',
+  facet: 'view' | 'blocks' | 'chrome' | 'layouts',
   narrow: (raw: unknown) => { issue?: { reason: string } } & Record<string, unknown>,
   failures: LoadFailure[],
 ): Promise<T | undefined> {
@@ -190,11 +202,26 @@ export async function loadPlugins(
       environment.addStylesheet(descriptor.id, resolve(descriptor.base, style))
     }
 
-    const [view, blocks, chrome] = await Promise.all([
+    const [view, blocks, chrome, layouts] = await Promise.all([
       loadFacet<ViewContribution>(environment, descriptor, 'view', narrowView, failures),
       loadFacet<BlocksContribution>(environment, descriptor, 'blocks', narrowBlocks, failures),
       loadFacet<ChromeContribution>(environment, descriptor, 'chrome', narrowChrome, failures),
+      loadFacet<LayoutsContribution>(environment, descriptor, 'layouts', narrowLayouts, failures),
     ])
+
+    // The same trap as an undeclared block, one level up: a layout the
+    // manifest does not claim is never reached, because the shell matches on
+    // the CLAIM. Said at load rather than left as a page that keeps opening
+    // as ordinary prose for a reason nobody can see.
+    for (const name of Object.keys(layouts?.types ?? {})) {
+      if (!(descriptor.types ?? []).includes(name)) {
+        failures.push({
+          id: descriptor.id,
+          facet: 'layouts',
+          reason: `layout for "type: ${name}" is not among the manifest's \`types\``,
+        })
+      }
+    }
 
     // A component with nothing declared for it in the manifest never draws:
     // the parser leaves the name as prose, so the block is inert in a way its
@@ -218,7 +245,12 @@ export async function loadPlugins(
       }
     }
 
-    if (view === undefined && blocks === undefined && chrome === undefined) {
+    if (
+      view === undefined &&
+      blocks === undefined &&
+      chrome === undefined &&
+      layouts === undefined
+    ) {
       // Nothing usable came back: drop the styles we just injected rather than
       // leaving a dead plugin's CSS restyling the page.
       environment.removeStylesheets(descriptor.id)
@@ -233,6 +265,8 @@ export async function loadPlugins(
       ...(view === undefined ? {} : { view }),
       ...(blocks === undefined ? {} : { blocks }),
       ...(chrome === undefined ? {} : { chrome }),
+      ...(layouts === undefined ? {} : { layouts }),
+      ...(descriptor.types ? { types: descriptor.types } : {}),
     })
   }
 

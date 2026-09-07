@@ -1,16 +1,21 @@
 /**
- * The frise, photographed on the two things it claims to be at once.
+ * A period of meals, photographed as what it now is: a PAGE.
  *
- * The plugin's whole argument is that planning a week of holiday meals and
- * logging what somebody actually ate are ONE screen — there is no mode field
- * anywhere in the format. That claim is not testable: it is a judgement about
- * whether the same frise reads right twice, and it is settled by looking.
+ * Three claims, and none of them is testable — each is settled by looking.
  *
- * The other thing only a browser can say here is whether the card stayed
- * QUIET. A logged meal carries six nutrients and a planned dish carries four
- * ingredients; both are behind a click, and the day a `props` line leaks onto
- * a face, a week of logging becomes three screens of scrolling. Shots 2 and 3
- * are that pair — the face, then the same card opened.
+ * That one screen serves two opposite jobs. Planning a holiday week and
+ * logging what somebody ate share a frise, a tray and a format with no mode
+ * field anywhere. Shots 1 and 3 are that pair, and if the second reads wrong
+ * the claim is wrong.
+ *
+ * That the card stayed QUIET. A logged meal carries six nutrients and a
+ * planned dish four ingredients; both are behind a click. Shots 2 and 4 are
+ * the face and the same card opened.
+ *
+ * And that a period is still a page. Shot 5 is the pencil: the plugin owns
+ * the reading posture and the shell still owns the document, so a wrong date
+ * in the frontmatter is corrected here rather than by hunting for a file.
+ * That one is the whole architecture in a single screenshot.
  *
  * Pages, files and config come from `meals.prep.sh` beside this file. Nothing
  * is faked: this plugin has no engine to script, only files to read.
@@ -18,16 +23,14 @@
 
 const WEEK = '#/page/voyages/corse/semaine.md'
 const LOG = '#/page/sante/semaine-type.md'
-const INDEX = '#/page/voyages/corse/INDEX.md'
-/** The period alone, by the address `vue="lien"` leads to. */
-const ALONE = '#/meals/sante/septembre.meals.json'
+const FOLDER = '#/section/voyages/corse'
 
 const go = async (page, hash, selector = '.meals-card') => {
   await page.evaluate((target) => {
     window.location.hash = target
   }, hash)
-  // The block resolves its file on a fetch, so the page exists before it has
-  // cards — waiting on the page alone would photograph an empty frise.
+  // The frise resolves its cards on a fetch, so the page exists before it has
+  // any — waiting on the page alone would photograph an empty grid.
   await page.waitForSelector(selector, { timeout: 10_000 })
   await page.waitForTimeout(400)
 }
@@ -35,25 +38,22 @@ const go = async (page, hash, selector = '.meals-card') => {
 export default async function scenario(bench) {
   const page = await bench.open({})
 
-  // A week of menus inside the fiche that holds it — the frise on the left,
-  // the tray of what the agent proposed on the right. No tile, no domain: the
-  // block is simply part of the page.
+  // A week of menus, filed in the trip it belongs to. No tile, no domain, no
+  // block in the body: the page's `type` is the whole declaration.
   await go(page, WEEK)
-  await bench.shoot(page, '1-week-in-a-page')
+  await bench.shoot(page, '1-week-is-a-page')
 
-  // The face of a card, then the same card opened. Everything that makes a
-  // shopping list — four ingredients and their quantities — is in the second
-  // shot and none of it in the first. That is the arbitration to look at.
+  // The face, then the same card opened. Everything a shopping list is made
+  // of is in the second shot and none of it in the first.
   await page.click('.meals-card')
   await page.waitForSelector('.meals-sheet', { timeout: 10_000 })
   await bench.shoot(page, '2-detail-open')
   await page.click('.meals-close')
   await page.waitForTimeout(200)
 
-  // The same screen used the other way: what was actually eaten, four
-  // sections because this file declares its own (the four o'clock biscuit is
-  // the whole reason a log exists), grams on the faces and six nutrients
-  // apiece hidden behind them.
+  // The same screen used the other way: what was actually eaten, four sections
+  // because THIS page declares four (the four o'clock biscuit is the whole
+  // reason a log exists), grams on the faces and six nutrients behind them.
   await go(page, LOG)
   await bench.shoot(page, '3-log-same-screen')
 
@@ -63,16 +63,23 @@ export default async function scenario(bench) {
   await page.click('.meals-close')
   await page.waitForTimeout(200)
 
-  // Addressable alone, which is what the daily gesture wants: logging a meal
-  // should not mean opening a page and scrolling to a block. Same component,
-  // no fiche around it, and a line saying where it is filed.
-  await go(page, ALONE)
-  await bench.shoot(page, '5-alone')
+  // The pencil. A layout owns the reading posture and nothing else, so the
+  // document is never stranded: this is where a date, a section or the prose
+  // gets fixed, in the editor every other page uses.
+  // By its glyph, not by its title: the title is translated, and this bench
+  // runs a French instance.
+  await page.click('.adestia-editor__actions .adestia-ib')
+  await page.waitForSelector('.adestia-editor__surface', { timeout: 10_000 })
+  await page.waitForTimeout(500)
+  await bench.shoot(page, '5-still-a-page')
 
-  // The compact form, so a fiche can cite a period without stacking a frise
-  // into the middle of its prose.
-  await go(page, INDEX, '.meals-lien')
-  await bench.shoot(page, '6-cited-compact')
+  // Filed among ordinary fiches, reached by an ordinary link. A period needs
+  // nothing from the plugin to be found. A FRESH page: the previous one is
+  // still in writing posture, and navigating out of it is not what this shot
+  // is about.
+  const folder = await bench.open({})
+  await go(folder, FOLDER, '.adestia-crumbs')
+  await bench.shoot(folder, '6-in-its-folder')
 
   // The whole week below the fold — a tall viewport rather than a fullPage
   // shot; see the bench README for why that does not work here.
@@ -86,14 +93,9 @@ export default async function scenario(bench) {
   await go(dark, LOG)
   await bench.shoot(dark, '8-log-dark')
 
-  // Folded onto one screen, the two columns must become one. A tray squeezed
-  // to a third of a phone is a column of truncated titles, which is worse
-  // than a tray below the days.
-  //
-  // The canvas is behind the header's own button on a folded screen: setting
-  // the hash alone mounts the page on the far side of the rail and
-  // photographs the chat. The scenario makes the gesture a person makes —
-  // and the first run of this bench photographed a blank phone for want of it.
+  // Folded onto one screen, the two columns must become one. The canvas is
+  // behind the header's own button there: setting the hash alone photographs
+  // the chat, which is what the first run of this bench did.
   const phone = await bench.open({ width: 420, height: 900 })
   await phone.evaluate((target) => {
     window.location.hash = target

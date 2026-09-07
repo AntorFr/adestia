@@ -2,6 +2,12 @@
 # What the `meals` scenario needs before the image boots: two periods that are
 # the SAME screen used two ways, and a config that turns the feature on.
 #
+# Both are PAGES — `type: meals` — filed in two unrelated folders, which is the
+# claim to look at: a period is an ordinary page of the memory, so it lives
+# wherever its subject lives (a trip, a health carnet) and needs no domain of
+# its own. Their frontmatter carries the shape; the `.meals.json` beside them
+# carries only the cards.
+#
 # The point of seeding both is the claim the plugin makes. A week of holiday
 # menus and a fortnight of what somebody actually ate share one file format,
 # one frise and one tray — there is no mode field anywhere — and if that is
@@ -34,24 +40,20 @@ json() {
 # ── the holiday week, on a trip's fiche ────────────────────────────────────
 page 'voyages/corse/semaine.md' <<'MD'
 ---
-title: La semaine — ce qu'on mange
-type: fiche
+title: Corse — la semaine
+type: meals
 ico: 🍽
+debut: 2026-08-08
+fin: 2026-08-12
+sections: [matin, midi, soir]
 ---
 
 On cale les dîners d'abord, le reste suit. Les courses se font le dimanche.
-
-:::meals{source="semaine.meals.json"}
-:::
 MD
 
-json 'voyages/corse/semaine.meals.json' <<'JSON'
+json 'voyages/corse/assets/semaine.meals.json' <<'JSON'
 {
   "version": 1,
-  "titre": "Corse — la semaine",
-  "debut": "2026-08-08",
-  "fin": "2026-08-12",
-  "sections": ["matin", "midi", "soir"],
   "items": [
     { "id": "cafe-1", "titre": "Café et pain frais", "ico": "☕",
       "statut": "confirme", "jour": "2026-08-08", "section": "matin", "ordre": 1,
@@ -105,24 +107,21 @@ JSON
 page 'sante/semaine-type.md' <<'MD'
 ---
 title: Semaine type — septembre
-type: fiche
+type: meals
 ico: 📊
+debut: 2026-09-01
+fin: 2026-09-04
+sections: [matin, midi, goûter, soir]
+data: assets/septembre.meals.json
 ---
 
 Deux semaines pesées, pour avoir de quoi en parler. Je scanne quand il y a un
 code-barres, je pèse sinon.
-
-:::meals{source="septembre.meals.json"}
-:::
 MD
 
-json 'sante/septembre.meals.json' <<'JSON'
+json 'sante/assets/septembre.meals.json' <<'JSON'
 {
   "version": 1,
-  "titre": "Semaine type — septembre",
-  "debut": "2026-09-01",
-  "fin": "2026-09-04",
-  "sections": ["matin", "midi", "goûter", "soir"],
   "items": [
     { "id": "yaourt", "titre": "Yaourt nature Malo", "ico": "🥛",
       "statut": "confirme", "jour": "2026-09-01", "section": "matin", "ordre": 1,
@@ -175,7 +174,10 @@ json 'sante/septembre.meals.json' <<'JSON'
 }
 JSON
 
-# ── a page that merely CITES a period, in the compact form ─────────────────
+# ── the folder around it, so the period is seen IN a domain ────────────────
+# The point of this page: a period is an ordinary page of the memory. It sits
+# in a trip's folder, it is listed beside the trip's other fiches, and a plain
+# link reaches it. Nothing about it needs the plugin to be findable.
 page 'voyages/corse/INDEX.md' <<'MD'
 ---
 title: Corse — été 2026
@@ -183,10 +185,7 @@ type: index
 ico: 🌴
 ---
 
-Le séjour se cale. Les repas ont leur propre page :
-
-:::meals{source="semaine.meals.json" vue="lien"}
-:::
+Le séjour se cale. Les repas ont leur propre page : [la semaine](semaine.md).
 
 Le reste (ferry, maison, plages) est dans les fiches à côté.
 MD
@@ -202,9 +201,9 @@ workspace:
   root: /workspace
   pages: memory
 extensions:
-  # A feature, not an app: no tile anywhere, and the frise appears only on the
-  # pages that call for it. Deliberately the ONLY extension here — a period of
-  # meals must stand on its own page without a domain app around it.
+  # A feature, not an app: no tile anywhere. A period is a PAGE, drawn by this
+  # plugin because its `type` says so. Deliberately the only extension here —
+  # a period must stand in an ordinary folder with no domain app around it.
   features: [meals]
   skin: default
 YAML

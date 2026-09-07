@@ -19,6 +19,11 @@
   font-family: var(--font);
 }
 
+/* The page's own words, above its days. Given room to breathe and then
+   stopped: this is an intro, not the subject. */
+.meals-prose { margin-bottom: var(--space-4, 16px); }
+.meals-prose:empty { display: none; }
+
 /* The header ------------------------------------------------------------ */
 
 .meals-head {
@@ -40,9 +45,15 @@
   font-size: 0.85em;
 }
 
-.meals-failed {
+/* Somebody else wrote while you were reading. Said, never silent: a card that
+   snaps back with no explanation reads as a bug rather than as an edit. */
+.meals-note {
   margin: 0 0 var(--space-3, 12px);
-  color: var(--danger, #d24b3e);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm, 6px);
+  background: var(--surface-sunken, transparent);
+  color: var(--text-muted);
+  font-size: 0.85em;
 }
 
 /* The two columns ------------------------------------------------------- */

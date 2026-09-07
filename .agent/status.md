@@ -1,47 +1,68 @@
 # Status — Adestia
 > MàJ : 2026-09-07
 
-Chantier du 07/09 — **`meals`, 11e plugin : une frise de repas qui sert deux
-besoins opposés**. Demandé pour deux choses qui semblaient distinctes — planifier
-les menus d'une semaine de vacances pour faire les courses, et consigner tout ce
-qu'on mange pendant quinze jours pour en tirer une semaine type. Elles ne le sont
-pas : la flèche du temps s'inverse (une décision d'un côté, un constat de l'autre)
-mais le mécanisme est le MÊME — une période, des sections, des cartes calées, un
-tray. D'où **aucun champ `mode`** dans le format : ce qui change est ce qu'on écrit
-dedans, pas la mécanique, et le banc photographie les deux côte à côte pour que la
-prétention se vérifie à l'œil.
+Chantier du 07/09 — **un TYPE de page peut être dessiné par son plugin**, et
+`meals` en est le pilote. Parti d'une demande de plugin (une frise de repas
+servant deux besoins opposés : planifier une semaine de vacances, et consigner
+ce qu'on mange). Livré une première fois en bloc `:::meals` posé dans une page
+— et repris entièrement sur une remarque juste : un bloc, c'est meals *à
+l'intérieur* d'une page, alors qu'une période devrait **être** une page.
 
-`feature` et pas `app`, sur le même argument que `parcours` : une semaine de repas
-n'a pas de domaine ni de tuile, elle s'accroche à la fiche qui a une raison de la
-porter (la fiche d'un voyage, un carnet de santé) et reste adressable seule par
-`#/meals/<chemin>` — l'écran que veut le geste quotidien, parce que consigner un
-repas ne devrait pas obliger à ouvrir une page et à défiler jusqu'à un bloc.
-`vue="lien"` pose la carte compacte, pour citer sans empiler.
+Ce que ça a débloqué au cœur : `types` dans un manifeste était un mécanisme à
+moitié construit — un plugin déclarait les valeurs de `type` sur lesquelles son
+code filtrait, le serveur vérifiait qu'aucun mot n'était revendiqué deux fois,
+et ça s'arrêtait là. `/page/` n'était jamais délégué, ligne tracée en résolvant
+un autre problème (quel plugin possède un DOSSIER), jamais pesée pour les
+types. Donc : un manifeste apparie `types` à un module `layouts`, et une page
+portant un type revendiqué s'ouvre **pour ce qu'elle est**. Deux garde-fous —
+le layout tient la posture de LECTURE et jamais le document (le ✎ ouvre
+toujours le markdown), et il **compose** avec le corps rendu qu'on lui passe en
+`children` plutôt que de l'effacer. Le second a été trouvé au banc : la
+première version escamotait les deux phrases d'intro de la page, présentes dans
+le fichier et invisibles à l'écran.
 
-**Le pari du plugin, c'est `props`** : un sac de clés LIBRES → valeurs texte, que le
-moteur ne lit pas, ne convertit pas et ne totalise pas. Le même champ porte les
-ingrédients d'un plat (`pâtes: 500 g`) et les nutriments d'un aliment scanné
-(`sel: 0,06 g`) — un seul contrat au lieu de deux, et pas de base de données à
-embarquer : l'agent remplit depuis le code-barres et fait lui-même les sommes.
-Corollaire assumé, écrit dans la fiche plutôt que dans un schéma : des clés libres
-DÉRIVENT (`kcal` lundi, `énergie` mercredi) et c'est le total qui ment sans que
-l'écran le signale. Le remède est une convention nommée dans le contrat et les
-instructions perso, pas une validation.
+Ce que ça règle au passage : il n'y a plus deux classes d'objets. Un voyage est
+un JSON invisible à l'index, à la recherche et aux collections, là où une tâche
+est une page qui a tout ça — et la différence ne suivait rien d'autre que la
+quantité de structure des données. Une période de repas est une page :
+`type: meals`, la forme en frontmatter, rangée dans le dossier d'un voyage ou
+d'un carnet de santé, listée parmi ses voisines, ouverte en frise.
 
-La carte a une **face muette** — icône, titre, quantité — et tout le reste (`props`,
-`desc`, `source`) attend le clic : une carte de suivi porte six nutriments, si elle
-les affichait une journée ferait trois écrans. Frontière habituelle par ailleurs :
-le front n'écrit jamais la mémoire, les gestes vont dans un `.meals-state.json`
-voisin, l'agent consolide.
+**Et l'overlay a sauté.** Voyages fait lire DEUX fichiers à l'agent
+(`voyage.json` + `voyage-state.json`) et lui fait fusionner de tête — donc rien
+ne l'empêche de ne lire que le premier et de répondre avec un planning périmé,
+avec aplomb. Ici : **un seul fichier, deux auteurs**, et chaque écriture annonce
+la RÉVISION sur laquelle elle s'appuie (un condensé du contenu ; une écriture
+partie d'une version périmée est refusée en 409 avec le document courant).
+Sémaphore écarté après discussion : un verrou empêche deux écritures
+simultanées, pas qu'un agent parti d'il y a trente secondes écrase proprement
+trois cartes qu'on vient de glisser. Les opérations sont **fines** (`place`,
+`tray`, `dismiss`, `set`, `add`, `remove`) et l'implémentation est **unique** —
+servie au navigateur, importée par l'API et par le serveur MCP —, si bien que
+ce que l'écran prédit est exactement ce que le fichier reçoit. L'agent écrit par
+`meals_read` / `meals_write` (deux outils, pas dix) : un outil de fichier ne
+peut pas annoncer de révision, c'est toute la raison du serveur MCP.
 
-22 tests du plugin (dont le montage DOM du bloc) ; 1346 verts côté vitest et 494
-côté plugins, typecheck OK. **Banc constaté** (`meals.mjs`, 9 captures) — et il a
-payé trois fois : un `:::` sans ligne de fermeture avale la suite de la page et le
-bloc ne se rend pas du tout (mon exemple de contrat ET mes pages de banc étaient
-faux) ; le tray partait au troisième jour faute de `sticky`, ce qui transforme
-chaque dépôt en aller-retour ; et la capture téléphone était blanche parce que sur
-écran plié la page est de l'autre côté du rail. `npm run lint` ne tourne toujours
-pas (eslint absent des devDependencies, cf. plus bas) — inchangé par ce chantier.
+Le pari du format tient : `props`, un sac de clés LIBRES → valeurs texte, que
+le moteur ne lit, ne convertit ni ne totalise. Le même champ porte les
+ingrédients d'un plat et les nutriments d'un aliment scanné — un contrat au lieu
+de deux, pas de base de données embarquée. La carte garde une face muette
+(icône, titre, quantité), tout le reste au clic.
+
+1353 verts côté vitest (dont le nouveau facet `layouts` : chargement,
+revendication non déclarée, module mal formé, et le layout dans l'éditeur avec
+son repli), 501 côté plugins, typecheck OK. **Banc constaté** (`meals.mjs`,
+9 captures) — et il a payé quatre fois : la prose escamotée, un `:::` sans
+fence de fermeture qui avale la suite de la page (avant la reprise), le tray qui
+partait au troisième jour faute de `sticky`, et la capture téléphone blanche
+parce que sur écran plié la page est de l'autre côté du rail. Un défaut du cœur
+attrapé par son propre test au passage : un plugin dont l'unique facet est
+`layouts` était jeté comme « rien d'utilisable ». `npm run lint` ne tourne
+toujours pas (eslint absent des devDependencies) — inchangé par ce chantier.
+
+**Reste à faire, si ça se confirme à l'usage :** appliquer le même principe à
+`voyages` — page `type: voyage`, un seul fichier, révision — et retirer son
+overlay.
 
 Chantier du 06/09 (3) — **le swipe suit le doigt**. Constaté sur un vrai
 téléphone : il marchait une fois sur deux. Les deux moitiés de la cause

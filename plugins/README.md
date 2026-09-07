@@ -29,7 +29,7 @@ leaving you to wonder where the tile went.
 | [`listening-post`](listening-post/) | app | The video and audio worth your time. A queue fed by the feeds you follow (YouTube Atom, podcast RSS — no key, no quota) and by links you paste; a transcript of what was actually SAID filed beside each item you keep; and a search over all of it that answers with a timestamp and a link that seeks to it. It ranks nothing — the recommendation is a conversation with the agent, which is what its ✦ buttons start. |
 | [`dev-flow`](dev-flow/) | app | The work in flight across a galaxy of repositories. Reads every `.agent/lots/` fiche out of git — `main` as the index, a branch tip for its own fiche — merges the graphs and derives what nobody records: who has the hand, what is blocked, and which open question is freezing a whole chain. Never writes. |
 | [`scan`](scan/) | feature | A barcode reader in the composer. Uses the browser's own `BarcodeDetector` where it exists and only downloads a decoder where it does not. |
-| [`meals`](meals/) | feature | Meals over a period. The `:::meals` block draws a `.meals.json` as a day-by-day timeline split into sections — `matin`/`midi`/`soir` unless the file says otherwise — with a tray of cards the agent proposes and you drop. One mechanism for two uses, deliberately: a week of menus you DECIDE and a fortnight of what you ATE differ in what you write, not in how it works, so there is no mode field anywhere. The card's face stays quiet (an icon, a title, a quantity) and everything else — free `props` the plugin never reads, never converts and never totals — waits for a click. A feature rather than an app for the same reason as `parcours`: a period of meals has no domain and no tile. |
+| [`meals`](meals/) | feature | Meals over a period. A page typed `meals` IS the period: its frontmatter carries the shape — dates, sections, where its cards are filed — and the plugin draws that page as a day-by-day frise with a tray you drag from. So it lives in whatever folder its subject lives in (a trip's, a health carnet's) and stays an ordinary page: indexed, searchable, edited with the same ✎. One mechanism for two uses, deliberately: a week of menus you DECIDE and a fortnight of what you ATE differ in what you write, not in how it works, so there is no mode field anywhere. The card's face stays quiet (an icon, a title, a quantity) and everything else — free `props` the plugin never reads, converts or totals — waits for a click. One data file, written by the front and the agent alike, guarded by a revision rather than a lock. |
 | [`parcours`](parcours/) | feature | Walks and hikes. Adds the `:::parcours` block, which draws a `.parcours.json` as a map with numbered markers, an elevation profile and a walking mode, and assembles its GPX on demand. A feature rather than an app because a route has no domain and no tile: it hangs off whichever page has a reason to mention it. |
 
 | Skin | What it is |
@@ -46,6 +46,12 @@ alongside its own. `atelier` ships `workbook-json`, `todo` ships `todo`,
 `collections` ships `collections`, `voyages` ships `voyage-json`,
 `parcours` ships `parcours-json`, `meals` ships `meals-json`, `journal` ships
 `journal` and `listening-post` ships `veille-json`.
+
+`meals` also ships the only MCP server among them, and for a reason worth
+stating: its data file has TWO authors — the screen somebody drags on, and the
+agent — so every write states the revision it was based on and a stale one is
+refused. A file tool cannot state a revision, which is exactly why the agent
+gets a writer instead of being told to be careful.
 
 `dev-flow` deliberately ships none. The fiches it reads are written by agents in
 OTHER repositories, against a contract those repositories publish themselves

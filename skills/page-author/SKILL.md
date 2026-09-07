@@ -66,6 +66,14 @@ Discovery checks this at boot: two ACTIVE plugins claiming the same `type`
 produce a boot-time line naming both, before anyone finds it by watching a
 page vanish into the wrong app. See `plugin-author` for the manifest shape.
 
+**A claim can also decide how the page is DRAWN.** A plugin that claims a type
+may ship a layout for it, and a page carrying that type then opens as what it
+is — a period of meals opens as a frise, not as the prose of a file. It stays
+an ordinary page in every other respect: indexed, searchable, filed where you
+filed it, and edited with the same ✎. Which means `type` is now the word that
+decides a page's SCREEN, and choosing it deserves a moment: see
+`plugin-author`, "Drawing a whole page".
+
 This is a claim on words YOUR OWN CODE pattern-matches, not on every value a
 page might use `type` for. `collections`' `of: projet` targets pages typed
 `projet` without collections owning that word — `projet` is the workspace's

@@ -11,7 +11,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { Chat } from '../chat/Chat.js'
 import type { ScreenView } from '../chat/stream.js'
 import { Editor, type PageDocument } from '../editor/Editor.js'
-import type { BlockComponents } from '../editor/Reader.js'
+import type { BlockComponents, LayoutComponents } from '../editor/Reader.js'
 import { Preferences, isPrefsPage, prefsTitle, type PrefsPage } from './Preferences.js'
 import { SettingsMenu } from './SettingsMenu.js'
 import {
@@ -600,6 +600,18 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   )
   blocksRef.current = blocks
 
+  /**
+   * Whole-page layouts, flattened by the frontmatter type they draw.
+   *
+   * Same shape as the blocks above and the same reason: a page says `type:
+   * meals` and must not have to say which plugin draws it. The loader already
+   * refused a type two active plugins both claim.
+   */
+  const layouts = useMemo(
+    () => Object.assign({}, ...loaded.map((plugin) => plugin.layouts?.types ?? {})) as LayoutComponents,
+    [loaded],
+  )
+
   /** Composer buttons every active plugin contributed, flattened once. */
   const composerButtons = loaded.flatMap((plugin) =>
     (plugin.chrome?.composer ?? []).map((entry) => ({
@@ -1053,6 +1065,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             attach={(dropped) => attachRef.current?.(dropped)}
             compose={(text) => composeRef.current?.(text)}
             blocks={blocks}
+            layouts={layouts}
             // The shell already holds the index and keeps it live; the reader
             // needs it to tell a reference that MOVED from one that is gone.
             pages={pages}

@@ -213,3 +213,45 @@ describe('editor', () => {
     )
   })
 })
+
+describe('a page drawn by its plugin', () => {
+  const period: PageDocument = {
+    ...page,
+    path: 'sante/septembre.md',
+    title: 'Semaine type',
+    markdown: '---\ntype: meals\n---\n\nDeux semaines pesées.\n',
+    fields: { type: 'meals' },
+  }
+
+  const Frise = ({ path, fields }: { path: string; fields: Record<string, unknown> }) => (
+    <p>{`frise for ${path} (${String(fields['type'])})`}</p>
+  )
+
+  it('draws the layout its type claims, instead of the prose', () => {
+    render(<Editor page={period} layouts={{ meals: Frise }} />)
+    expect(screen.getByText('frise for sante/septembre.md (meals)')).toBeTruthy()
+    // The body is the plugin's now; the prose underneath is not rendered twice.
+    expect(screen.queryByText('Deux semaines pesées.')).toBeNull()
+  })
+
+  it('still opens the markdown behind the pencil', () => {
+    // The half that keeps a document reachable. A layout owns the reading
+    // posture only, so a wrong date in the frontmatter is corrected on the
+    // page itself rather than by hunting for the file on disk.
+    const edits: string[] = []
+    render(<Editor page={period} layouts={{ meals: Frise }} mount={fakeMount(edits)} />)
+    fireEvent.click(screen.getByTitle('Edit'))
+    expect(edits).toEqual([period.markdown])
+  })
+
+  it('falls back to the ordinary reader when nobody claims the type', () => {
+    // A plugin switched off must leave a readable page behind, not a blank.
+    render(<Editor page={period} layouts={{}} />)
+    expect(screen.getByText('Deux semaines pesées.')).toBeTruthy()
+  })
+
+  it('leaves a page with no type to the reader', () => {
+    render(<Editor page={page} layouts={{ meals: Frise }} />)
+    expect(screen.getByText('Le garage')).toBeTruthy()
+  })
+})
