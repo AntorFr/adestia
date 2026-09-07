@@ -136,6 +136,7 @@ const FR: Readonly<Record<string, string>> = {
     'demande une connexion avant de pouvoir agir pour vous.',
   Connect: 'Se connecter',
   Reconnect: 'Se reconnecter',
+  'Not now': 'Pas maintenant',
   'Connected for you — your turns reach it as you.':
     'Connecté pour vous — vos tours l’atteignent en votre nom.',
   'Not connected for you yet — this server signs each person in.':

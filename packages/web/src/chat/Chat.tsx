@@ -43,7 +43,13 @@ import {
   type TabsState,
 } from './tabs.js'
 import { SkinSlot } from '../app/SkinSlot.js'
-import { beginSignIn, signInAsks, useConnections } from '../app/signin.js'
+import {
+  beginSignIn,
+  dismissSignIn,
+  loadDismissed,
+  signInAsks,
+  useConnections,
+} from '../app/signin.js'
 import type { SkinSlotRender } from '../app/skin.js'
 import { useMobile } from '../app/useMobile.js'
 // The drag primitive is shared with the page screen: one answer to "is this
@@ -1106,14 +1112,16 @@ export function Chat({
   /** What the visible thread renders — everything below reads through this. */
   const active = session(activeId)
 
-  // The sign-in card's two halves: what this person is connected to, and
-  // whether a tool of THIS thread failed for want of a connection. Live
-  // parts count too — the failure is worth its card before the turn settles.
+  // The sign-in card's three halves: what this person is connected to,
+  // whether THIS thread is actually a conversation (the agent answered, or
+  // is answering — a disconnected server is omitted from the turn, so an
+  // agent reply is the closest observable to "the demand arose here"), and
+  // what they already waved away.
   const connections = useConnections(fetchImpl ?? fetch)
-  const asks = signInAsks(
-    [...active.messages, ...(active.live ? livePartsOf(active.live) : [])],
-    connections,
-  )
+  const [dismissed, setDismissed] = useState<ReadonlySet<string>>(() => loadDismissed())
+  const engaged =
+    active.live !== undefined || active.messages.some((message) => message.role === 'agent')
+  const asks = signInAsks(engaged, connections, dismissed)
 
   useEffect(() => {
     // Guarded because an exception thrown in an effect tears down the whole
@@ -1590,10 +1598,12 @@ export function Chat({
         <div ref={bottom} />
       </div>
 
-      {/* A tool failed against a server this person never connected to: the
-          need and its remedy, in the conversation where the need arose. The
-          window closes itself after the passkey, and regaining focus
-          refreshes the state that hides this card. */}
+      {/* A server this person never connected to, raised where they are
+          actually talking to the agent — right under the reply where it says
+          it cannot act. The window closes itself after the passkey, and
+          regaining focus refreshes the state that hides this card; the cross
+          hides it for this browser without connecting, because a thread
+          about something else entirely owes nobody a nag. */}
       {asks.map((name) => (
         <div className="adestia-connect" key={name} role="status">
           <span className="adestia-connect__text">
@@ -1601,6 +1611,15 @@ export function Chat({
           </span>
           <button type="button" className="adestia-connect__go" onClick={() => beginSignIn(name)}>
             {t('Connect')}
+          </button>
+          <button
+            type="button"
+            className="adestia-connect__hide"
+            aria-label={`${t('Not now')} — ${name}`}
+            title={t('Not now')}
+            onClick={() => setDismissed(dismissSignIn(name))}
+          >
+            ✕
           </button>
         </div>
       ))}
