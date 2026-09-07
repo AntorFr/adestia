@@ -65,14 +65,24 @@ export const FACES = ['avant', 'arriere', 'gauche', 'droite', 'dessus', 'dessous
  * Rend ce que le design aurait à écrire — pas ce qu'il écrira : la surcharge
  * passe après, et c'est elle qui a le dernier mot.
  */
-export function chantsParDefaut(pieces, facesChantees = []) {
+export function chantsParDefaut(pieces, facesChantees = [], occultations = []) {
   const vues = new Set(facesChantees)
   const out = {}
   for (const p of pieces) {
     // Un panneau qui ne se chante pas ne se chante pas, si visible soit-il.
     if (p.chante === false) continue
+    /* Ce qui MASQUE cette pièce depuis telle face. La règle a toujours dit
+       « tourné vers une face regardée ET QUE RIEN NE L'OCCULTE » ; seule la
+       première moitié était écrite. Un meuble construit l'a montré : la
+       traverse haute arrière est derrière le fond, donc invisible, et elle
+       sortait chantée — alors que le dessous, qui file jusqu'au dos et passe
+       sous le fond, garde bien son chant. Ce n'est pas un choix de projet,
+       c'est de la géométrie. */
+    const masquees = new Set(occultations
+      .filter((o) => !o.sauf?.includes(p.etiquette))
+      .map((o) => o.face))
     const bords = Object.entries(p.regardeVers ?? {})
-      .filter(([, face]) => vues.has(face))
+      .filter(([, face]) => vues.has(face) && !masquees.has(face))
       .map(([bord]) => bord)
       .sort()
     if (bords.length) out[p.etiquette] = bords
@@ -87,8 +97,8 @@ export function chantsParDefaut(pieces, facesChantees = []) {
  * « ce meuble-ci porte ces chants-là » se relit, quand un jeu d'ajouts et de
  * retraits accumulés au fil des passes ne se relit plus. `[]` retire tout.
  */
-export function chantsRetenus(pieces, facesChantees, surcharge = {}) {
-  const defaut = chantsParDefaut(pieces, facesChantees)
+export function chantsRetenus(pieces, facesChantees, surcharge = {}, occultations = []) {
+  const defaut = chantsParDefaut(pieces, facesChantees, occultations)
   const retenus = { ...defaut }
   for (const [etiquette, declare] of Object.entries(surcharge)) retenus[etiquette] = declare
   return retenus

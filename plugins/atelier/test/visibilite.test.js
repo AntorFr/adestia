@@ -60,10 +60,27 @@ test('un meuble à roulettes montre son dos, donc il le chante', () => {
     ['about-droit', 'about-gauche', 'rive-arriere', 'rive-avant'])
 })
 
-test('la traverse avant se chante devant, et rien d\'autre — quand le dos se chante aussi', () => {
+test('la traverse arrière est DERRIÈRE le fond : elle ne se chante pas', () => {
+  /* La règle dit « tourné vers une face regardée ET QUE RIEN NE L'OCCULTE »,
+     et seule la première moitié était écrite. Ce test disait donc le contraire
+     de la règle, et un meuble construit l'a montré : sur imp3d la traverse
+     haute arrière ne porte aucun chant, parce que le fond la masque.
+
+     Le dessous, lui, garde le sien : il file jusqu'au dos et passe SOUS le
+     fond, donc sa rive arrière reste dehors. Ce n'est pas un choix de projet,
+     c'est de la géométrie — d'où une règle et non une déclaration. */
   const r = derive(design({ faces_chantees: ['avant', 'arriere'] }), tables())
   assert.deepEqual(piece(r, 'BLT-A1-TRAV-HAUT-AV').chants, ['rive-avant'],
     'sa rive arrière regarde l\'intérieur, ses abouts sont pris entre les côtés')
+  assert.deepEqual(piece(r, 'BLT-A1-TRAV-HAUT-AR').chants, [])
+  assert.deepEqual(piece(r, 'BLT-A1-BAS').chants, ['rive-arriere', 'rive-avant'],
+    'le dessous borde le fond : il reste vu de l\'arrière')
+})
+
+test('sans fond, plus rien ne la masque et elle se chante', () => {
+  // Le meuble poubelle est dans ce cas : ouvert des deux côtés, sa traverse
+  // arrière se voit et se chante. C'est la même règle, l'occultation en moins.
+  const r = derive(design({ fond: 'non', faces_chantees: ['avant', 'arriere'] }), tables())
   assert.deepEqual(piece(r, 'BLT-A1-TRAV-HAUT-AR').chants, ['rive-arriere'])
 })
 
