@@ -13,8 +13,11 @@
  *   most likely to melt into it.
  * - a phone: sentence + button on 390px.
  *
- * The engine is faked as always; the failed tool call is seeded as the
- * transcript a finished turn leaves, which is exactly what the card watches.
+ * The engine is faked as always; the transcript a finished turn leaves is
+ * seeded on disk. The card watches the STATE (a thread the agent answered
+ * in + a disconnected server), not a failed tool — a disconnected server is
+ * omitted from the turn, so no tool of it can ever fail; the first shipped
+ * trigger died on exactly that, in production.
  */
 
 import { writeFile } from 'node:fs/promises'
@@ -74,6 +77,11 @@ export default async function scenario(bench) {
   const page = await bench.open({ tab: id })
   await page.waitForTimeout(600)
   await bench.shoot(page, '1-signin-card')
+
+  // The cross: waved away without connecting, the thread owes no nag.
+  await page.click('.adestia-connect__hide')
+  await page.waitForTimeout(300)
+  await bench.shoot(page, '1b-signin-card-dismissed')
 
   const dark = await bench.open({ theme: 'dark', tab: id })
   await dark.waitForTimeout(600)

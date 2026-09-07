@@ -16,37 +16,70 @@ export interface McpConnection {
 }
 
 /**
- * Which sign-in servers a thread is ASKING for.
+ * Which sign-in cards a thread should raise.
  *
- * Demand-driven, as decided: the card appears when a tool call actually
- * failed against a server the current person never connected to — the need
- * and its remedy in the same place, at the same moment. A server nobody's
- * turn has touched raises no card, however disconnected it is.
+ * This shipped as "a tool call failed against a disconnected server" — a
+ * trigger that could never fire: a disconnected `signIn` server is OMITTED
+ * from the turn by design, so no tool of it exists to fail. Found in
+ * production, by the agent saying "I have no such tool" while the card
+ * stayed down.
+ *
+ * So the trigger is the STATE, scoped to where it matters: a thread the
+ * person is actually talking in (the agent has answered, or is answering)
+ * while a sign-in server has no key for them. That puts the card under the
+ * very reply where the agent says it cannot act — as close to "at the first
+ * demand" as an omitted server allows — and a dismissal keeps it from
+ * nagging the threads that never talk about that world. Once connected, the
+ * state clears and the card is gone everywhere for good.
  */
 export function signInAsks(
-  messages: readonly { tools?: readonly { name: string; ok?: boolean | undefined }[] }[],
+  engaged: boolean,
   connections: readonly McpConnection[] | undefined,
+  dismissed: ReadonlySet<string> = new Set(),
 ): readonly string[] {
-  if (!connections?.length) return []
-  const disconnected = new Map(
-    connections.filter((entry) => !entry.connected).map((entry) => [entry.name, true]),
-  )
-  if (disconnected.size === 0) return []
+  if (!engaged || !connections?.length) return []
+  return connections
+    .filter((entry) => !entry.connected && !dismissed.has(entry.name))
+    .map((entry) => entry.name)
+}
 
-  const asked = new Set<string>()
-  for (const message of messages) {
-    for (const tool of message.tools ?? []) {
-      if (tool.ok !== false) continue
-      // Matched against the KNOWN names, never parsed out of the tool name:
-      // a turn calls `mcp__<server>__<tool>`, and both halves may contain
-      // underscores — only the full declared name plus its separator is
-      // trustworthy as a prefix.
-      for (const name of disconnected.keys()) {
-        if (tool.name.startsWith(`mcp__${name}__`)) asked.add(name)
-      }
-    }
+/** Where a dismissal lives: this browser, like the read marks and the tabs. */
+const DISMISSED_KEY = 'adestia.connect.hidden'
+
+type Store = Pick<Storage, 'getItem' | 'setItem'>
+
+/** Same guard as the tab store's: private windows and blocked site data
+    throw on ACCESS, and tests run with no `window` storage at all. */
+function fallback(): Store | undefined {
+  try {
+    return window.localStorage
+  } catch {
+    return undefined
   }
-  return [...asked]
+}
+
+export function loadDismissed(storage: Store | undefined = fallback()): ReadonlySet<string> {
+  try {
+    const raw = storage?.getItem(DISMISSED_KEY)
+    const parsed: unknown = raw ? JSON.parse(raw) : []
+    return new Set(Array.isArray(parsed) ? parsed.filter((x) => typeof x === 'string') : [])
+  } catch {
+    return new Set()
+  }
+}
+
+export function dismissSignIn(
+  name: string,
+  storage: Store | undefined = fallback(),
+): ReadonlySet<string> {
+  const next = new Set(loadDismissed(storage))
+  next.add(name)
+  try {
+    storage?.setItem(DISMISSED_KEY, JSON.stringify([...next]))
+  } catch {
+    /* remembered for this page's lifetime only */
+  }
+  return next
 }
 
 /**

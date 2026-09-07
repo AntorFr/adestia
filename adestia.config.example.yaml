@@ -368,9 +368,15 @@ mcp:
   # connected, does not see the server at all.
   #
   #   - name: home-assistant
-  #     url: https://ha.mcp.example/     # the proxy serves MCP at its ROOT
+  #     url: https://ha.mcp.example/mcp
   #     identity: user
   #     signIn: oauth
+  #
+  # The url is wherever the BACKEND serves MCP (behind such a proxy the
+  # discovery documents live at the origin's root, but the endpoint itself
+  # need not — and Adestia's driver never discovers: it mints the token and
+  # posts to the url you wrote). A wrong path fails as a plain 404 after a
+  # successful sign-in, which is worth knowing before blaming the tokens.
   #
   # `url` OR `command`, never both — they are two transports. A ${VAR} the
   # environment never filled is REFUSED at startup rather than passed through:

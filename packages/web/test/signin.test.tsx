@@ -1,57 +1,74 @@
 // @vitest-environment jsdom
 /**
- * The sign-in card's judgement: demand-driven, per person, and matched
- * against KNOWN server names rather than trusting a tool-name split.
+ * The sign-in card's judgement: state-driven, scoped to real conversations,
+ * dismissible.
+ *
+ * The first trigger this shipped with — "a tool of that server failed" —
+ * could never fire: a disconnected `signIn` server is OMITTED from the turn,
+ * so no tool of it exists to fail. Production found it before this file did;
+ * these tests now pin the trigger that can.
  */
 
 import { render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { signInAsks, useConnections, type McpConnection } from '../src/app/signin.js'
-
-const failed = (tool: string) => ({ tools: [{ name: tool, ok: false }] })
-const fine = (tool: string) => ({ tools: [{ name: tool, ok: true }] })
+import {
+  dismissSignIn,
+  loadDismissed,
+  signInAsks,
+  useConnections,
+  type McpConnection,
+} from '../src/app/signin.js'
 
 const DISCONNECTED: McpConnection[] = [{ name: 'home-assistant', connected: false }]
 
 describe('what raises the card', () => {
-  it('a FAILED tool of a server this person never connected to', () => {
-    expect(signInAsks([failed('mcp__home-assistant__turn_on')], DISCONNECTED)).toEqual([
-      'home-assistant',
-    ])
+  it('a disconnected server, on a thread where the agent has spoken', () => {
+    expect(signInAsks(true, DISCONNECTED)).toEqual(['home-assistant'])
   })
 
-  it('nothing, when the tool succeeded or the server is connected', () => {
-    expect(signInAsks([fine('mcp__home-assistant__turn_on')], DISCONNECTED)).toEqual([])
-    expect(
-      signInAsks(
-        [failed('mcp__home-assistant__turn_on')],
-        [{ name: 'home-assistant', connected: true }],
-      ),
-    ).toEqual([])
+  it('nothing on a thread nobody is talking in — a blank tab owes no nag', () => {
+    expect(signInAsks(false, DISCONNECTED)).toEqual([])
   })
 
-  it('nothing, for a failed tool of some OTHER server', () => {
-    // A broken Read or a failing rosetta addon is not a sign-in problem, and
-    // a card that answered every failure would teach people to ignore it.
-    expect(signInAsks([failed('Read'), failed('mcp__meteo__forecast')], DISCONNECTED)).toEqual([])
+  it('nothing once connected: the state clears the card everywhere', () => {
+    expect(signInAsks(true, [{ name: 'home-assistant', connected: true }])).toEqual([])
   })
 
-  it('matches on the declared name, not on a naive underscore split', () => {
-    // `mcp__ha_local__x` must not raise the card of `ha`: prefixes are only
-    // trusted up to the full declared name plus its separator.
-    expect(
-      signInAsks([failed('mcp__ha_local__toggle')], [{ name: 'ha', connected: false }]),
-    ).toEqual([])
+  it('nothing when the state is unknown yet', () => {
+    expect(signInAsks(true, undefined)).toEqual([])
   })
 
-  it('asks once per server, however many tools failed', () => {
-    expect(
-      signInAsks(
-        [failed('mcp__home-assistant__turn_on'), failed('mcp__home-assistant__get_state')],
-        DISCONNECTED,
-      ),
-    ).toEqual(['home-assistant'])
+  it('a dismissal holds until the person connects some other way', () => {
+    expect(signInAsks(true, DISCONNECTED, new Set(['home-assistant']))).toEqual([])
+    // And only for the dismissed one.
+    const two: McpConnection[] = [...DISCONNECTED, { name: 'garage', connected: false }]
+    expect(signInAsks(true, two, new Set(['home-assistant']))).toEqual(['garage'])
+  })
+})
+
+describe('remembering a dismissal', () => {
+  const fakeStore = () => {
+    const held = new Map<string, string>()
+    return {
+      getItem: (key: string) => held.get(key) ?? null,
+      setItem: (key: string, value: string) => void held.set(key, value),
+    }
+  }
+
+  it('survives a reload, in this browser', () => {
+    const store = fakeStore()
+    expect(loadDismissed(store).size).toBe(0)
+    dismissSignIn('home-assistant', store)
+    expect(loadDismissed(store).has('home-assistant')).toBe(true)
+  })
+
+  it('yields the empty truth on garbage, and on no storage at all', () => {
+    const store = fakeStore()
+    store.setItem('adestia.connect.hidden', '{broken')
+    expect(loadDismissed(store).size).toBe(0)
+    expect(loadDismissed(undefined).size).toBe(0)
+    expect(dismissSignIn('x', undefined).has('x')).toBe(true)
   })
 })
 

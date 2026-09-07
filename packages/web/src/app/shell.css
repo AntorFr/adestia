@@ -432,6 +432,19 @@
   cursor: pointer;
 }
 
+/* Waving the card away is quieter than acting on it: a bare cross, muted
+   until hovered, never competing with the accent button beside it. */
+.adestia-connect__hide {
+  flex: none;
+  padding: var(--space-1);
+  border: 0;
+  background: none;
+  color: var(--text-faint);
+  font: inherit;
+  cursor: pointer;
+}
+.adestia-connect__hide:hover { color: var(--text); }
+
 /* On the server page the row sits in the flow, not over a thread. */
 .adestia-connect--tile { margin: 0 0 var(--space-3); }
 

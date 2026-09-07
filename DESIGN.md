@@ -359,10 +359,17 @@ server's OAuth metadata, registers ONE client for itself (dynamic client
 registration), sends the person through authorization-code + PKCE, and keeps
 their rotating refresh key (`mcp-signin.ts`, one 0600 file, hashed user
 keys). Two surfaces raise the flow, one mechanism behind both: a card IN THE
-CONVERSATION when a tool call fails against a server this person never
-connected to — the need and its remedy at the same place, the owner's call —
+CONVERSATION — the need and its remedy at the same place, the owner's call —
 and a button on the server's settings page for connecting before the first
-demand or after a dead key. Per person exactly like the rebound: each turn is
+demand or after a dead key. The card's trigger is the STATE, not a failure
+(corrected 2026-09-07): it shipped as "a tool of that server failed", which
+could never fire — a disconnected server is OMITTED from the turn, so no
+tool of it exists to fail, and production proved it within the day. The card
+now rises on a thread the person is actually talking in (the agent answered,
+or is answering) while a sign-in server has no key for them, sits under the
+very reply where the agent says it cannot act, and carries a dismissal (per
+browser) so a thread about something else owes nobody a nag; connecting
+clears it everywhere. Per person exactly like the rebound: each turn is
 handed tokens minted from ITS caller's keys (`TurnRequest.serverTokens`), two
 people reach the same server as two different people, and a driver must
 NEVER fall back to the rebound token for a `signIn` server — a wrong-currency
@@ -1181,6 +1188,17 @@ that opens to its own words when the network is gone.
 - **`adestia init`** — the documented workspace scaffold.
 
 ## Decision log
+
+**2026-09-07 (the sign-in card's trigger was impossible, and production said
+so first):** the card shipped watching for a failed tool of a disconnected
+server — but a disconnected `signIn` server is omitted from the turn, so no
+such tool exists to fail; the bench had "proved" the card by seeding a
+transcript no real turn can write. Corrected to the state the shell already
+knows: a thread the person is talking in + a server with no key for them,
+dismissible per browser, cleared everywhere by connecting. The lesson worth
+the log line: a demand-driven trigger must name an event that CAN occur
+under the design's own rules — the omission that makes "not connected"
+truthful is the same omission that silences every tool-level signal.
 
 **2026-09-06 (a swipe that cannot be seen cannot be trusted):** the fold's
 gesture worked about one time in two, reported from a real phone. Both halves
