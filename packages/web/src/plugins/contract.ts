@@ -262,7 +262,55 @@ export interface BlocksContribution {
   readonly tags: Readonly<Record<string, ComponentType<BlockProps>>>
 }
 
-export type Facet = 'view' | 'blocks' | 'chrome'
+/**
+ * What a whole-page layout is handed.
+ *
+ * A layout draws a page whose `type` its plugin claims — the reading posture
+ * only. Editing stays the shell's: the ✎ swaps to the markdown surface, so a
+ * period whose dates live in frontmatter is still corrected the way every
+ * other page is corrected, and a plugin cannot strand a document behind a
+ * screen of its own.
+ */
+export interface LayoutProps {
+  /** The page's logical path, as `/api/pages/…` spells it. */
+  readonly path: string
+  /** Which store carries it, when the instance composes more than one. */
+  readonly store?: string
+  /** The page's frontmatter, parsed by the server that served the page. */
+  readonly fields: Readonly<Record<string, unknown>>
+  /** What the page's title resolves to — frontmatter, first heading, or name. */
+  readonly title: string
+  /** The document itself, for a layout that draws part of the prose. */
+  readonly markdown: string
+  /** What the editor would send back to prove it read this copy. */
+  readonly revision: string
+  /** Follows a link to another page. */
+  openPage?(path: string): void
+  /**
+   * The page's own body, already rendered — prose, blocks and all.
+   *
+   * Handed over rather than replaced, so a layout COMPOSES with the document
+   * instead of hiding it. A period's page opens with two sentences saying how
+   * it is kept, and a layout that dropped them would leave content on the page
+   * that nobody can see without pressing the pencil. A layout that wants a
+   * bare screen simply does not render this.
+   */
+  readonly children?: ReactNode
+}
+
+/**
+ * Whole-page layouts a plugin draws, keyed by the frontmatter `type` it claims.
+ *
+ * Only the COMPONENTS, for the same reason as the blocks: which types a plugin
+ * claims is declared in the manifest (`types`), where the server can read it
+ * and refuse two plugins claiming one word. A type drawn here but absent from
+ * the manifest never reaches a page — the claim is what the shell matches on.
+ */
+export interface LayoutsContribution {
+  readonly types: Readonly<Record<string, ComponentType<LayoutProps>>>
+}
+
+export type Facet = 'view' | 'blocks' | 'chrome' | 'layouts'
 
 export interface ContractIssue {
   readonly facet: Facet
@@ -374,4 +422,36 @@ export function narrowBlocks(raw: unknown): { blocks?: BlocksContribution; issue
     return { issue: { facet: 'blocks', reason: '`tags` declared no block at all' } }
   }
   return { blocks: { tags: components } }
+}
+
+export function narrowLayouts(raw: unknown): {
+  layouts?: LayoutsContribution
+  issue?: ContractIssue
+} {
+  if (typeof raw !== 'object' || raw === null) {
+    return { issue: { facet: 'layouts', reason: 'must return { types }' } }
+  }
+  const types = (raw as Record<string, unknown>)['types']
+  if (typeof types !== 'object' || types === null) {
+    return { issue: { facet: 'layouts', reason: '`types` must be an object of components' } }
+  }
+
+  const components: Record<string, ComponentType<LayoutProps>> = {}
+  const wrong: string[] = []
+  for (const [name, value] of Object.entries(types)) {
+    if (typeof value === 'function') components[name] = value as ComponentType<LayoutProps>
+    else wrong.push(name)
+  }
+  if (wrong.length > 0) {
+    return {
+      issue: {
+        facet: 'layouts',
+        reason: `must be React components, got something else for: ${wrong.join(', ')}`,
+      },
+    }
+  }
+  if (Object.keys(components).length === 0) {
+    return { issue: { facet: 'layouts', reason: '`types` declared no layout at all' } }
+  }
+  return { layouts: { types: components } }
 }

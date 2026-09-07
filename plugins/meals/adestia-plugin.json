@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "meals",
+  "kind": "feature",
+  "description": "Meals over a period. A page typed `meals` IS the period: its frontmatter carries the shape (dates, sections, where its data sits) and the plugin draws it as a day-by-day frise with a tray of cards you drag. One file of data, written by the front and by the agent alike, guarded by a revision rather than a lock.",
+  "contract": 1,
+  "types": ["meals"],
+  "layouts": "./web/layouts.js",
+  "styles": ["./web/meals.css"],
+  "api": "./api.mjs",
+  "skills": ["./skills/json/SKILL.md"],
+  "mcpServers": [
+    {
+      "name": "meals",
+      "command": "node",
+      "args": ["./mcp/server.mjs"]
+    }
+  ]
+}

@@ -20,6 +20,7 @@ plugins/<id>/
   adestia-plugin.json     REQUIRED — this file is what makes the folder a plugin
   web/app.js            a launcher view
   web/blocks.js         content blocks for the editor and renderer
+  web/layouts.js        whole-page layouts, for the page types you claim
   web/chrome.js         composer buttons, settings entries
   web/app.css           styles, LISTED in the manifest (never imported)
   api.js                a Fastify plugin, mounted at startup
@@ -82,6 +83,8 @@ comes next.
     }
   },
   "chrome": "./web/chrome.js",
+  "layouts": "./web/layouts.js",
+  "types": ["workbook"],
   "styles": ["./web/app.css"],
   "tile": { "label": "Workbench", "icon": "🪚" },
 
@@ -292,6 +295,61 @@ mode while the rest stay readable. `journal` is the whole app built this way.
 ⚠️ **Do not restyle `.adestia-editor`.** It is the shell's, and a plugin that
 repaints it makes the same page look like two products depending on where it
 was opened.
+
+## Drawing a whole page
+
+A plugin can draw a page whose frontmatter `type` it claims — the reading
+posture of `#/page/…`, in place of the prose. That is what makes a KIND of
+page rather than a screen next to one: a period of meals, a workbook, a route
+is then an ordinary page of the memory — indexed, searchable, titled, filed in
+whatever folder its subject lives in — and it opens as the thing it is.
+
+Declared in two halves that never restate each other, the same split as the
+blocks. **The manifest claims the type**, because the server reads that claim
+to refuse two plugins over one word and cannot execute a browser module to
+find out:
+
+```json
+{ "types": ["meals"], "layouts": "./web/layouts.js" }
+```
+
+**The module says what it looks like**, keyed by the same names:
+
+```js
+// web/layouts.js
+export default function layouts(api) {
+  function MealsPage({ path, fields, children }) {
+    return h('div', null, [children, h(Frise, { api, page: path })])
+  }
+  return { types: { meals: MealsPage } }
+}
+```
+
+| | |
+|---|---|
+| `path` | the page's logical path, as `/api/pages/…` spells it |
+| `store` | which store carries it, when the instance composes several |
+| `fields` | the page's frontmatter, parsed by the server that served it |
+| `title` | what the page's title resolves to |
+| `markdown` | the document itself |
+| `revision` | what a write would send back to prove it read this copy |
+| `children` | **the page's own body, already rendered** |
+
+Two rules, and each has a failure behind it.
+
+**Render `children` unless you mean not to.** A page opens with a sentence or
+two saying what it is; a layout that dropped them leaves content on the page
+nobody can see without pressing the pencil. Compose with the document rather
+than replacing it.
+
+**The reading posture is yours; the document is not.** The ✎ still opens the
+markdown, and that is deliberate: a period whose dates live in frontmatter is
+corrected on its own page, in the editor every other page uses. A plugin
+cannot strand a document behind a screen of its own.
+
+A layout for a type the manifest does not claim never draws — the shell
+matches on the CLAIM — and that is reported at load rather than left as a page
+that keeps opening as prose for a reason nobody can see.
 
 ## Writing content blocks
 
@@ -526,6 +584,9 @@ store directories on its command line and build one over them, the way
 2. Every path it names exists.
 3. The view mounts — write a DOM test. A runtime-loaded plugin gets no build
    error to save it, so a typo in an import is found by a user otherwise.
-4. The id in the manifest equals the folder name.
-5. The plugin's id is added to the right list in `adestia.config.yaml`, or
+4. A `type` you draw a layout for is also listed in `types` — the shell
+   matches on the claim, so a layout the manifest never claimed silently never
+   draws.
+5. The id in the manifest equals the folder name.
+6. The plugin's id is added to the right list in `adestia.config.yaml`, or
    nothing will happen and nothing will say why.

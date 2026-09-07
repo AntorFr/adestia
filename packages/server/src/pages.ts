@@ -71,6 +71,16 @@ export interface PageInfo {
 
 export interface PageContent extends PageInfo {
   readonly markdown: string
+  /**
+   * The page's own frontmatter, parsed the same way the index parses it.
+   *
+   * Sent rather than left to the browser to re-derive: the index already
+   * carries these for every page, but a page just saved is read back before
+   * the index has caught up, and a screen chosen by `type` must not flicker
+   * through the wrong one. Same values, from the copy that is authoritative
+   * at this instant.
+   */
+  readonly fields: Readonly<Record<string, unknown>>
   readonly diagnostics: readonly Diagnostic[]
   /**
    * False when the document breaks the closed vocabulary. The editor opens it
@@ -363,6 +373,7 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
           modified: new Date(info.mtimeMs).toISOString(),
           revision: revisionOf(info),
           markdown,
+          fields: parseFrontmatter(markdown),
           diagnostics,
           editable: !diagnostics.some((d) => d.severity === 'error'),
         }

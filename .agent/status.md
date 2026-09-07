@@ -1,6 +1,69 @@
 # Status — Adestia
 > MàJ : 2026-09-07
 
+Chantier du 07/09 — **un TYPE de page peut être dessiné par son plugin**, et
+`meals` en est le pilote. Parti d'une demande de plugin (une frise de repas
+servant deux besoins opposés : planifier une semaine de vacances, et consigner
+ce qu'on mange). Livré une première fois en bloc `:::meals` posé dans une page
+— et repris entièrement sur une remarque juste : un bloc, c'est meals *à
+l'intérieur* d'une page, alors qu'une période devrait **être** une page.
+
+Ce que ça a débloqué au cœur : `types` dans un manifeste était un mécanisme à
+moitié construit — un plugin déclarait les valeurs de `type` sur lesquelles son
+code filtrait, le serveur vérifiait qu'aucun mot n'était revendiqué deux fois,
+et ça s'arrêtait là. `/page/` n'était jamais délégué, ligne tracée en résolvant
+un autre problème (quel plugin possède un DOSSIER), jamais pesée pour les
+types. Donc : un manifeste apparie `types` à un module `layouts`, et une page
+portant un type revendiqué s'ouvre **pour ce qu'elle est**. Deux garde-fous —
+le layout tient la posture de LECTURE et jamais le document (le ✎ ouvre
+toujours le markdown), et il **compose** avec le corps rendu qu'on lui passe en
+`children` plutôt que de l'effacer. Le second a été trouvé au banc : la
+première version escamotait les deux phrases d'intro de la page, présentes dans
+le fichier et invisibles à l'écran.
+
+Ce que ça règle au passage : il n'y a plus deux classes d'objets. Un voyage est
+un JSON invisible à l'index, à la recherche et aux collections, là où une tâche
+est une page qui a tout ça — et la différence ne suivait rien d'autre que la
+quantité de structure des données. Une période de repas est une page :
+`type: meals`, la forme en frontmatter, rangée dans le dossier d'un voyage ou
+d'un carnet de santé, listée parmi ses voisines, ouverte en frise.
+
+**Et l'overlay a sauté.** Voyages fait lire DEUX fichiers à l'agent
+(`voyage.json` + `voyage-state.json`) et lui fait fusionner de tête — donc rien
+ne l'empêche de ne lire que le premier et de répondre avec un planning périmé,
+avec aplomb. Ici : **un seul fichier, deux auteurs**, et chaque écriture annonce
+la RÉVISION sur laquelle elle s'appuie (un condensé du contenu ; une écriture
+partie d'une version périmée est refusée en 409 avec le document courant).
+Sémaphore écarté après discussion : un verrou empêche deux écritures
+simultanées, pas qu'un agent parti d'il y a trente secondes écrase proprement
+trois cartes qu'on vient de glisser. Les opérations sont **fines** (`place`,
+`tray`, `dismiss`, `set`, `add`, `remove`) et l'implémentation est **unique** —
+servie au navigateur, importée par l'API et par le serveur MCP —, si bien que
+ce que l'écran prédit est exactement ce que le fichier reçoit. L'agent écrit par
+`meals_read` / `meals_write` (deux outils, pas dix) : un outil de fichier ne
+peut pas annoncer de révision, c'est toute la raison du serveur MCP.
+
+Le pari du format tient : `props`, un sac de clés LIBRES → valeurs texte, que
+le moteur ne lit, ne convertit ni ne totalise. Le même champ porte les
+ingrédients d'un plat et les nutriments d'un aliment scanné — un contrat au lieu
+de deux, pas de base de données embarquée. La carte garde une face muette
+(icône, titre, quantité), tout le reste au clic.
+
+1353 verts côté vitest (dont le nouveau facet `layouts` : chargement,
+revendication non déclarée, module mal formé, et le layout dans l'éditeur avec
+son repli), 501 côté plugins, typecheck OK. **Banc constaté** (`meals.mjs`,
+9 captures) — et il a payé quatre fois : la prose escamotée, un `:::` sans
+fence de fermeture qui avale la suite de la page (avant la reprise), le tray qui
+partait au troisième jour faute de `sticky`, et la capture téléphone blanche
+parce que sur écran plié la page est de l'autre côté du rail. Un défaut du cœur
+attrapé par son propre test au passage : un plugin dont l'unique facet est
+`layouts` était jeté comme « rien d'utilisable ». `npm run lint` ne tourne
+toujours pas (eslint absent des devDependencies) — inchangé par ce chantier.
+
+**Reste à faire, si ça se confirme à l'usage :** appliquer le même principe à
+`voyages` — page `type: voyage`, un seul fichier, révision — et retirer son
+overlay.
+
 Chantier du 07/09 — **la coque se présente à son agent**. Rien ne lui
 disait qu'elle existait. Interrogé sur l'interface dans laquelle il tourne, un
 agent d'un vrai déploiement a répondu `agent-gw` — le produit PRÉCÉDENT — et a
@@ -92,6 +155,7 @@ poignées de main, donc plus rien à perdre comme course. Convention gravée dan
 je n'ai pas su reproduire la panne à la demande (0 rouge sur 10 sous charge CPU
 artificielle, et il avait fallu 7 suites complètes pour en voir une), donc la
 preuve est de construction, pas statistique.
+
 
 Chantier du 06/09 (3) — **le swipe suit le doigt**. Constaté sur un vrai
 téléphone : il marchait une fois sur deux. Les deux moitiés de la cause

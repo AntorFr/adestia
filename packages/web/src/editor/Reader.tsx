@@ -29,10 +29,13 @@ import {
 } from '@antorfr/adestia-content'
 
 import { PluginBoundary } from '../plugins/Boundary.js'
-import type { BlockProps } from '../plugins/contract.js'
+import type { BlockProps, LayoutProps } from '../plugins/contract.js'
 
 /** What a plugin contributed, by block name. */
 export type BlockComponents = Readonly<Record<string, ComponentType<BlockProps>>>
+
+/** Whole-page layouts, keyed by the frontmatter `type` their plugin claims. */
+export type LayoutComponents = Readonly<Record<string, ComponentType<LayoutProps>>>
 
 /**
  * Where a link written in a page actually points.

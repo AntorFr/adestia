@@ -690,10 +690,11 @@ narrow skin hooks (brand, crest, busy node, home).
 Everything a plugin contributes is **declared in its manifest** and loaded at
 runtime; nothing is scanned by filename convention at build time.
 
-- **Manifest facets:** `view`, `blocks`, `chrome` (composer buttons / settings
-  entries / modals as declarative data the shell renders), `styles: [...]`, lazy
-  entry points, server `api`, agent contract (skills), `mcpServers`, `bin`,
-  `setup`. Manifest and
+- **Manifest facets:** `view`, `blocks`, `layouts` (whole-page renderings for
+  the frontmatter `types` the manifest claims), `chrome` (composer buttons /
+  settings entries / modals as declarative data the shell renders),
+  `styles: [...]`, lazy entry points, server `api`, agent contract (skills),
+  `mcpServers`, `bin`, `setup`. Manifest and
   every facet validate against the versioned JSON Schemas (principle 8); a plugin
   declares `contract: N` and the shell refuses loudly what it cannot honour.
 - **Factory pattern kept:** `(api) => contribution` with the API injected — already
@@ -712,9 +713,10 @@ runtime; nothing is scanned by filename convention at build time.
 - **CSS contract:** stylesheets are listed in the manifest and injected/removed by
   the shell — never `import './x.css'` from a module. Design tokens are a published,
   linted API.
-- **Two bundle targets preserved, resolved at boot:** views/chrome load into the
-  launcher, block modules into the content engine, which waits for active plugins'
-  blocks before its first render.
+- **Three bundle targets, resolved at boot:** views/chrome load into the
+  launcher, block modules into the content engine, which waits for active
+  plugins' blocks before its first render, and layout modules into the page
+  screen, which matches a page's frontmatter `type` against the claims.
 - **Skins:** same discovery, one active (config value, not list). A skin is tokens +
   narrow hooks + assets (favicon/manifest served pre-boot).
 - **Authoring skills (v1):** `plugin-author` and `skin-author` ship with the
@@ -820,6 +822,46 @@ runtime; nothing is scanned by filename convention at build time.
   would fix a vocabulary this system deliberately leaves open. Scheduled notes
   got the same treatment as `schedule-author`, having shipped with no
   authoring contract at all despite executing their body as a prompt.
+
+### A page TYPE can be drawn by its plugin (decided 2026-09-07)
+
+`types` was a half-built mechanism. A plugin declared the frontmatter values
+its code dispatched on, the server checked two plugins were not claiming one
+word, and that was the entire consequence: the claim bought a boot-time
+warning and nothing else. Meanwhile the only way a plugin could draw anything
+inside a page was a `:::` block, and `/page/` was never delegated — a line
+drawn while solving a different problem (which plugin owns a FOLDER), never
+one considered for types.
+
+So a claim now decides a rendering. A manifest pairs `types` with a `layouts`
+module, and a page carrying a claimed type opens as **what it is** rather than
+as the prose of a file. Two halves that never restate each other, exactly as
+with blocks: the claim is data because the server reads it and cannot execute
+a browser module; the drawing is code because a manifest cannot hold a
+component.
+
+What this buys is one class of object where there were two. Before it, a trip
+was a JSON file invisible to the index, to search and to collections, while a
+task was a page with everything a page gets — and the difference tracked
+nothing but how much structure the data happened to have. A period of meals is
+now a page: `type: meals`, frontmatter carrying its shape, filed in a trip's
+folder or a health carnet, listed among its neighbours, opening as a frise.
+
+Two rules keep it from becoming a way to capture documents.
+
+**A layout owns the READING posture, never the document.** The ✎ still opens
+the markdown, so a wrong date in frontmatter is corrected on the page itself,
+in the editor every other page uses. A plugin cannot strand a file behind a
+screen of its own.
+
+**A layout composes with the body rather than replacing it** — it is handed
+the rendered page as `children`. The first version replaced it, and the bench
+showed the cost immediately: a page's opening sentences vanished from the
+screen while remaining in the file, visible only by pressing the pencil.
+
+A type nobody claims, or one whose plugin is switched off, falls through to
+the ordinary reader. Which is the screen the page had before any of this, and
+the property that makes the whole thing safe to turn off.
 
 ### Blocks: `:::` names a RENDERING, `{}` carries the meaning (decided 2026-09-04)
 
