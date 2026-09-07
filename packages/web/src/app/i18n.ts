@@ -74,6 +74,11 @@ const FR: Readonly<Record<string, string>> = {
     "Pas d'autorisation durable ici — le moteur n'a proposé aucune règle.",
   'New conversation': 'Nouvelle conversation',
   'Open apps': 'Ouvrir les apps',
+  'There is no page at this address.': 'Il n’y a aucune page à cette adresse.',
+  'This page is out of reach — the session may have expired.':
+    'Cette page est hors de portée — la session a peut-être expiré.',
+  'The server could not serve this page.': 'Le serveur n’a pas pu servir cette page.',
+  'Open the folder above': 'Ouvrir le dossier au-dessus',
   'Back to the chat': 'Revenir au chat',
   'Sign in': 'Se connecter',
   'Sign out': 'Se déconnecter',

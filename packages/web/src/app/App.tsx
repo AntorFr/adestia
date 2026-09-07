@@ -41,6 +41,7 @@ import {
   sectionRoute,
 } from './owners.js'
 import { browserEnvironment, loadPlugins, type LoadedPlugin, type PluginDescriptor } from '../plugins/loader.js'
+import { MissingPage } from './MissingPage.js'
 import { makePageEditor } from '../plugins/PageEditor.js'
 import { useMobile } from './useMobile.js'
 import { useSplit } from './useSplit.js'
@@ -169,6 +170,8 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   const [stores, setStores] = useState<readonly StoreInfo[]>([])
   /** The section being browsed, if any. Home when undefined. */
   const [page, setPage] = useState<PageDocument | undefined>()
+  /** Why the last page would not load — so the shell says it instead of nothing. */
+  const [pageProblem, setPageProblem] = useState<{ path: string; status: number } | undefined>()
   const [route, setRoute] = useState(() => location.hash.replace(/^#/, ''))
   /**
    * The editor is loaded on demand: ProseMirror and Milkdown weigh more than
@@ -522,6 +525,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   useEffect(() => {
     if (!pagePath) {
       setPage(undefined)
+      setPageProblem(undefined)
       return undefined
     }
     let cancelled = false
@@ -545,7 +549,15 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
         location.hash = folder ? sectionRoute(folder) : ''
         return
       }
-      if (!response.ok) return
+      if (!response.ok) {
+        // Said, not swallowed. A 404, a 401 and a 502 used to leave the screen
+        // exactly as it was — which is the home — and there was no way for a
+        // reader to tell a mistyped address from an expired session.
+        setPage(undefined)
+        setPageProblem({ path: pagePath, status: response.status })
+        return
+      }
+      setPageProblem(undefined)
       // Stored via a thunk: passing a function to setState directly would
       // have React call it as an updater.
       setMount(() => editor.mountMilkdown)
@@ -1072,6 +1084,8 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             t={t}
             {...(mount ? { mount } : {})}
           />
+        ) : pageProblem ? (
+          <MissingPage path={pageProblem.path} status={pageProblem.status} t={t} />
         ) : section ? (
           <Section
             path={section}

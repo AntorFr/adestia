@@ -1,6 +1,50 @@
 # Status — Adestia
 > MàJ : 2026-09-07
 
+Chantier du 07/09 (2) — **deux façons de rendre une page introuvable, les
+deux muettes**. Constatées à l'usage, une heure après la mise en production de
+`meals` : Alfred cadre une période, annonce une adresse, et l'écran affiche
+l'accueil. Deux causes distinctes, aucune des deux visible.
+
+**Un chargement de page qui échoue ne disait rien.** `if (!response.ok) return`
+laissait à l'écran ce qui y était — l'accueil — donc une page absente, une
+session expirée et un serveur tombé produisaient un silence identique, que tout
+le monde lit « le lien est cassé ». Il a fallu un shell dans le conteneur pour
+établir que l'adresse n'avait jamais existé. Maintenant l'écran nomme
+l'adresse **telle quelle** (c'est ce qui laisse voir sa propre coquille, ou
+celle d'un agent), dit laquelle des trois causes c'est, et propose le dossier
+au-dessus.
+
+**Et un dossier dont le NOM appartient à une app avalait ses pages.** `absorbs`
+matche un nom partout où il se trouve — voulu, un opérateur peut ranger ses
+voyages sous `domaines/voyages` — mais la période était rangée dans
+`sante/dietetique/journal`, donc l'app Journal prenait le dossier : plus de
+tuile de section, tous les liens entrants renvoyés à une étagère qui n'avait
+jamais entendu parler de cette page, et la page joignable par son adresse
+directe **et par rien d'autre**. Le shell ne peut pas distinguer un homonyme du
+vrai ; le listing du plugin, si. D'où `holds(folder)` : une app dit si elle
+tient un dossier que son nom a matché, et un « non » le rend à la section
+générique. Optionnel, et le silence vaut oui — un plugin qui ne l'implémente
+pas garde son comportement (todo). Implémenté dans journal, voyages et
+listening-post.
+
+**Et le contrat manquait le principal.** Aucune fiche ne disait à un agent
+comment s'écrit l'adresse d'une page (`#/page/<chemin sans .md>`) — les deux
+seules mentions du dépôt étaient dans `plugin-author`, jamais chargé pour du
+travail ordinaire. Donc l'agent inventait, et une adresse inventée tombe sur
+une page voisine qui s'affiche parfaitement. La règle est maintenant dans
+`page-author` (elle vaut pour toutes les pages), et le contrat `meals-json`
+ajoute où NE PAS ranger une période : les quatre noms de dossier déjà pris
+(`journal`, `voyages`, `todo`, `veille`).
+
+1405 verts, 510 côté plugins, typecheck OK. **Banc constaté**
+(`pages-injoignables.mjs`, 4 captures) — et il a payé deux fois, sur des choses
+qu'aucun test n'a vues : `narrowView` **jetait `holds` en silence** (il
+reconstruit un objet neuf à partir des champs qu'il connaît, et mon test
+unitaire fabriquait le plugin à la main, donc ne passait pas par là), et le
+nouvel écran s'affichait **en anglais** sur une instance française — le shell
+traduit le shell, encore fallait-il y écrire les phrases.
+
 Chantier du 07/09 — **un TYPE de page peut être dessiné par son plugin**, et
 `meals` en est le pilote. Parti d'une demande de plugin (une frise de repas
 servant deux besoins opposés : planifier une semaine de vacances, et consigner

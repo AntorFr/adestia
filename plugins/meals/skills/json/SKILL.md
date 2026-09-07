@@ -152,6 +152,46 @@ l'ingrédient en clé, la quantité en valeur.
 Si l'instance a d'autres habitudes, ce sont les siennes qui gagnent : écris-les dans tes
 propres instructions plutôt que d'attendre quelque chose de ce fichier.
 
+## Dire OÙ elle est — l'adresse d'une période
+
+Une période est une page, donc elle s'ouvre comme une page :
+
+```
+#/page/<chemin de la page, SANS le .md>
+```
+
+`sante/septembre.md` s'annonce `#/page/sante/septembre`. Le chemin est celui de
+la **mémoire** (la racine des magasins), jamais celui du disque, et l'extension
+tombe.
+
+**Dis-la à chaque fois que tu viens d'en cadrer une.** C'est la première chose
+qu'on te demandera, et une adresse inventée mène à une autre page du même
+dossier — qui s'affiche parfaitement, ce qui rend l'erreur longue à voir.
+
+## ⚠️ Où NE PAS ranger une période
+
+Une période vit dans le dossier de son sujet : le dossier d'un voyage, un
+carnet de santé, un domaine. Mais **quatre noms de dossier appartiennent déjà à
+une app**, où qu'ils se trouvent dans l'arbre :
+
+| nom | l'app qui le prend |
+|---|---|
+| `journal` | Journal |
+| `voyages` | Voyages |
+| `todo` | Todo |
+| `veille` | Listening-post |
+
+Une app qui « absorbe » un nom le prend **partout** où cette suite de segments
+se trouve — `sante/dietetique/journal` est le dossier de l'app Journal autant
+que `journal` à la racine — et tout ce qui est dessous avec. Conséquence pour
+une période rangée là : le dossier n'apparaît plus en section, la navigation y
+renvoie l'app propriétaire, et l'app en question ne connaît pas les périodes.
+La page reste ouvrable par son adresse directe et **par rien d'autre**.
+
+Donc : un journal de repas se range dans `sante/dietetique/repas/`,
+`sante/dietetique/semaines/`, ou simplement à côté des autres fiches — jamais
+dans un dossier `journal/`.
+
 ## Cadrer une période
 
 Écris la page — c'est du markdown ordinaire, tes outils suffisent. Le fichier de données

@@ -251,3 +251,55 @@ describe('a page address', () => {
     expect(pageAddress('domaines%2Fvoyages%2Fitalie').path).toBe('domaines/voyages/italie.md')
   })
 })
+
+describe('a folder that merely shares an absorbed name', () => {
+  /** The journal app: it absorbs the NAME, and holds two real journals. */
+  const journal = {
+    id: 'journal',
+    base: '/plugins/journal/',
+    absorbs: ['journal'],
+    tile: { label: 'Journal' },
+    view: {
+      component: () => null,
+      route: '/journal',
+      // Real journals, as its own listing knows them.
+      routeFor: (path: string) =>
+        ['journal/atelier', 'journal/perso'].includes(path) ? `/journal/${path}` : undefined,
+      holds: (folder: string) =>
+        ['journal/atelier', 'journal/perso'].some(
+          (held) => held === folder || held.startsWith(`${folder}/`),
+        ),
+    },
+  } as unknown as LoadedPlugin
+
+  it('gives a namesake folder back to the shell', () => {
+    // The defect this exists for: a period of meals filed in
+    // `sante/dietetique/journal` was reachable by its direct link and by
+    // nothing else — the section tile was gone and every link into the folder
+    // led to a shelf that had never heard of it.
+    expect(routeForPath([journal], 'sante/dietetique/journal')).toBeUndefined()
+    expect(folderRoute([journal], 'sante/dietetique/journal')).toBe(
+      '/section/sante/dietetique/journal',
+    )
+  })
+
+  it('still hands over the folder it really holds', () => {
+    // Whatever the operator's filing: the app's own root, and the journals in
+    // it, keep the screen the tile stands for.
+    expect(routeForPath([journal], 'journal')).toBe('/journal')
+    expect(routeForPath([journal], 'journal/atelier')).toBe('/journal/journal/atelier')
+  })
+
+  it('believes a plugin that does not answer at all', () => {
+    // `holds` is optional, so a plugin that never implements it must keep the
+    // behaviour it shipped with — believed on the strength of its name.
+    const todo = {
+      id: 'todo',
+      base: '/plugins/todo/',
+      absorbs: ['todo'],
+      tile: { label: 'Todo' },
+      view: { component: () => null, route: '/todo' },
+    } as unknown as LoadedPlugin
+    expect(routeForPath([todo], 'domaines/todo')).toBe('/todo')
+  })
+})
