@@ -16,6 +16,7 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import type { DiscoveredPlugin } from './extensions.js'
+import { type InstanceFacts, instanceContract } from './introduction.js'
 import type { Store } from './stores.js'
 
 /**
@@ -234,13 +235,26 @@ a shared store is a place where somebody else writes.
   return { path: 'memory-stores/SKILL.md', contents, source: 'core' }
 }
 
+/**
+ * Every contract this instance delivers: the product's, its plugins', and the
+ * two it composes from what the instance actually is.
+ *
+ * `facts` is optional so a caller that only wants the authoring contracts —
+ * every test that predates the introduction, and any host with no instance to
+ * describe — keeps working unchanged. Where it IS given, the shell introduces
+ * itself: see `introduction.ts` for why that is generated rather than written.
+ */
 export async function collectSkills(
   plugins: readonly DiscoveredPlugin[],
   stores: readonly Store[] = [],
+  facts?: InstanceFacts,
 ): Promise<{ skills: readonly SkillFile[]; problems: readonly string[] }> {
   const core = await readCoreSkills()
   const { skills: fromPlugins, problems } = await readPluginSkills(plugins)
-  const composed = stores.length > 1 ? [storesContract(stores)] : []
+  const composed = [
+    ...(facts ? [instanceContract(facts)] : []),
+    ...(stores.length > 1 ? [storesContract(stores)] : []),
+  ]
   return { skills: [...core, ...fromPlugins, ...composed], problems }
 }
 

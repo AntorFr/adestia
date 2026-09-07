@@ -4,7 +4,7 @@ import { join } from 'node:path'
 
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { collectSkills, deliverSkills } from '../src/skills.js'
+import { MANAGED_MARKER, collectSkills, deliverSkills } from '../src/skills.js'
 import type { DiscoveredPlugin } from '../src/extensions.js'
 import { resolveStores } from '../src/stores.js'
 
@@ -222,5 +222,52 @@ describe('a tool that reads memory', () => {
     const { skills } = await collectSkills([], stores)
     const contract = skills.find((skill) => skill.path === 'memory-stores/SKILL.md')
     expect(contract?.contents).toContain('--pages /w/pages,/shared/famille')
+  })
+})
+
+describe('the instance contract', () => {
+  const facts = () => {
+    const { stores } = resolveStores([{ id: 'perso', path: 'pages' }], '/w')
+    return {
+      driverId: 'claude-code',
+      workspaceRoot: '/w',
+      stores,
+      memory: 'memory',
+      planif: 'planif',
+      inbox: '/data/inbox',
+      tools: [],
+      mcpServers: [],
+      apps: [],
+    }
+  }
+
+  it('is absent when the caller has no instance to describe', async () => {
+    // Every host that only wants the authoring contracts — the tests that
+    // predate this, a bare app — must keep getting exactly what it got.
+    const { skills } = await collectSkills([])
+    expect(skills.some((skill) => skill.path === 'this-instance/SKILL.md')).toBe(false)
+  })
+
+  it('is delivered alongside the authoring contracts once the facts are known', async () => {
+    const { skills } = await collectSkills([], [], facts())
+    const contract = skills.find((skill) => skill.path === 'this-instance/SKILL.md')
+    expect(contract).toBeDefined()
+    expect(contract?.contents).toContain('Adestia')
+    // And it lands with the others, so the same delivery writes and withdraws
+    // it — no second mechanism for the one contract the core generates about
+    // itself.
+    expect(skills.some((skill) => skill.path === 'page-author/SKILL.md')).toBe(true)
+  })
+
+  it('is written where the CLI reads, and refreshed rather than accumulated', async () => {
+    await deliverSkills(root, (await collectSkills([], [], facts())).skills)
+    const first = await readFile(join(root, 'this-instance', 'SKILL.md'), 'utf8')
+    expect(first).toContain(MANAGED_MARKER)
+
+    // A second boot on a renamed instance must leave one file saying one thing.
+    await deliverSkills(root, (await collectSkills([], [], { ...facts(), name: 'Atelier' })).skills)
+    const second = await readFile(join(root, 'this-instance', 'SKILL.md'), 'utf8')
+    expect(second).toContain('Atelier')
+    expect(second).not.toContain('no name of its own')
   })
 })

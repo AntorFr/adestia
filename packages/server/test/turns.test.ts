@@ -473,3 +473,71 @@ describe('the turn desk', () => {
     expect(desk.active()).toEqual([])
   })
 })
+
+describe('the instance introducing itself', () => {
+  it('frames what the engine receives, and leaves the thread its raw prompt', async () => {
+    // Fuel, not transcript. The spec is what a merge, a re-attach and a reload
+    // all replay from, so a preamble baked into it would put the shell's own
+    // notes in a person's message.
+    const seen: TurnRequest[] = []
+    const driver = {
+      async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
+        seen.push(request)
+        yield RESULT
+      },
+    }
+    const desk = new TurnDesk(driver, meter(), (prompt) => `[shell]\n${prompt}`)
+    const spec = { request: { prompt: 'salut', cwd: '.' }, finish: async () => {} }
+
+    const admission = desk.admit('u/c:1')
+    if (admission.mode !== 'run') throw new Error('expected a run')
+    await admission.start(spec).done
+
+    expect(seen[0]?.prompt).toBe('[shell]\nsalut')
+    expect(spec.request.prompt).toBe('salut')
+  })
+
+  it('introduces a merged batch once, not once per message it merged', async () => {
+    const first = gate()
+    const seen: TurnRequest[] = []
+    const driver = {
+      async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
+        seen.push(request)
+        if (seen.length === 1) await first.passed
+        yield RESULT
+      },
+    }
+    const desk = new TurnDesk(driver, meter(), (prompt) => `[shell]\n${prompt}`)
+    const spec = (prompt: string) => ({ request: { prompt, cwd: '.' }, finish: async () => {} })
+
+    const admission = desk.admit('u/c:1')
+    if (admission.mode !== 'run') throw new Error('expected a run')
+    const job = admission.start(spec('a'))
+    const queued = desk.admit('u/c:1')
+    if (queued.mode === 'queued') queued.enqueue(spec('b'))
+
+    first.open()
+    await job.done
+    const merged = seen[1]
+    expect(merged?.prompt.match(/\[shell\]/g)).toHaveLength(1)
+    expect(merged?.prompt).toContain('b')
+  })
+
+  it('changes nothing at all when the instance has no introduction to make', async () => {
+    // A driver with no skills directory gets no contract delivered, so it must
+    // get no anchor either: a line citing a file nobody wrote reads as a lie.
+    const seen: TurnRequest[] = []
+    const driver = {
+      async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
+        seen.push(request)
+        yield RESULT
+      },
+    }
+    const desk = new TurnDesk(driver, meter())
+    const admission = desk.admit('u/c:1')
+    if (admission.mode !== 'run') throw new Error('expected a run')
+    await admission.start({ request: { prompt: 'salut', cwd: '.' }, finish: async () => {} }).done
+
+    expect(seen[0]?.prompt).toBe('salut')
+  })
+})

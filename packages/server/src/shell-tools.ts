@@ -170,6 +170,17 @@ export class ShellToolsService {
     this.#tools.set(tool.spec.name, tool)
   }
 
+  /**
+   * The registry, for a surface that describes it rather than calls it.
+   *
+   * The registry is already the single source every transport is derived from;
+   * the shell's self-introduction is one more reader, and reading it here is
+   * what keeps the prose from listing a tool this instance does not register.
+   */
+  specs(): readonly ShellToolSpec[] {
+    return [...this.#tools.values()].map((tool) => tool.spec)
+  }
+
   /** Opens the socket and writes the bridge. Idempotent per process life. */
   async start(): Promise<void> {
     if (this.#server) return

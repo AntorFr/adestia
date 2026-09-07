@@ -1,5 +1,41 @@
 # Status — Adestia
-> MàJ : 2026-09-06
+> MàJ : 2026-09-07
+
+Chantier du 07/09 — **la coque se présente à son agent**. Rien ne lui
+disait qu'elle existait. Interrogé sur l'interface dans laquelle il tourne, un
+agent d'un vrai déploiement a répondu `agent-gw` — le produit PRÉCÉDENT — et a
+même hésité sur le fait que ce soit son nom public ; il tourne sur Adestia, et
+ses propres skills livrées portent le marqueur qui le dit. Interrogé sur les
+outils qui agissent sur son instance, il a répondu « aucun » en tenant
+`rename_conversation` et `new_id`. Rien n'était cassé : personne ne le lui
+avait jamais dit. La seule prose qui parlait de son environnement était un
+brief de 40 Ko écrit à la main, dont un tiers TRANSCRIVAIT ce que la coque
+sait déjà (le cadre d'écran recopié à la main avec un numéro de version, les
+zones, le catalogue des serveurs MCP que la config déclare) — et une prose
+écrite à la main sur un système vivant ne prévient pas le jour où elle cesse
+d'être vraie.
+
+Deux des trois canaux possibles ont été écartés, et le second par la remarque
+de l'utilisateur : une skill seule n'est chargée qu'à la demande, or c'est
+justement la demande qui manquait ; le `systemPrompt.append` du SDK existe mais
+**seulement chez claude-code** — copilot est un binaire dont les drapeaux
+n'offrent aucune surface système, on aurait réparé le moteur qui a montré le
+bug et laissé l'autre aveugle. Retenu : un contrat GÉNÉRÉ
+(`this-instance/SKILL.md`), composé de ce que le boot a réellement fait — les
+outils vraiment enregistrés, les plugins vraiment actifs — et livré par le même
+mécanisme que les autres, donc rafraîchi, retiré et relisible dans la zone
+d'instructions sans machinerie neuve. Plus une ancre d'une ligne posée là où
+tous les tours passent (le desk, et le chemin non surveillé à côté), donc une
+planif et une délégation sont présentées comme un message de chat. Cadrée au
+dispatch, jamais stockée : fuel, pas transcript. Absente entièrement sur un
+driver sans dossier de skills — une ancre qui cite un fichier que personne n'a
+écrit est pire que le silence. Le contrat porte aussi la moitié négative : la
+config vit HORS du workspace, le fil est rejoué par la coque au-dessus d'une
+session moteur qui peut ne pas avoir survécu, et il prime sur un brief écrit à
+la main qui le contredirait. 1367 verts + 472 plugins, typecheck/build OK, et
+le fichier généré **relu à l'œil** (un vrai boot, pas un `toContain`) : c'est
+cette relecture qui a rattrapé un paragraphe mal coupé que tous les tests
+laissaient passer.
 
 Chantier du 06/09 (3) — **le swipe suit le doigt**. Constaté sur un vrai
 téléphone : il marchait une fois sur deux. Les deux moitiés de la cause
