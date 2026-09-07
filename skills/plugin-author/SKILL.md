@@ -20,6 +20,7 @@ plugins/<id>/
   adestia-plugin.json     REQUIRED — this file is what makes the folder a plugin
   web/app.js            a launcher view
   web/blocks.js         content blocks for the editor and renderer
+  web/layouts.js        whole-page layouts, for the page types you claim
   web/chrome.js         composer buttons, settings entries
   web/app.css           styles, LISTED in the manifest (never imported)
   api.js                a Fastify plugin, mounted at startup
@@ -82,6 +83,8 @@ comes next.
     }
   },
   "chrome": "./web/chrome.js",
+  "layouts": "./web/layouts.js",
+  "types": ["workbook"],
   "styles": ["./web/app.css"],
   "tile": { "label": "Workbench", "icon": "🪚" },
 
@@ -581,6 +584,9 @@ store directories on its command line and build one over them, the way
 2. Every path it names exists.
 3. The view mounts — write a DOM test. A runtime-loaded plugin gets no build
    error to save it, so a typo in an import is found by a user otherwise.
-4. The id in the manifest equals the folder name.
-5. The plugin's id is added to the right list in `adestia.config.yaml`, or
+4. A `type` you draw a layout for is also listed in `types` — the shell
+   matches on the claim, so a layout the manifest never claimed silently never
+   draws.
+5. The id in the manifest equals the folder name.
+6. The plugin's id is added to the right list in `adestia.config.yaml`, or
    nothing will happen and nothing will say why.

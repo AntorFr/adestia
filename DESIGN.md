@@ -626,10 +626,11 @@ narrow skin hooks (brand, crest, busy node, home).
 Everything a plugin contributes is **declared in its manifest** and loaded at
 runtime; nothing is scanned by filename convention at build time.
 
-- **Manifest facets:** `view`, `blocks`, `chrome` (composer buttons / settings
-  entries / modals as declarative data the shell renders), `styles: [...]`, lazy
-  entry points, server `api`, agent contract (skills), `mcpServers`, `bin`,
-  `setup`. Manifest and
+- **Manifest facets:** `view`, `blocks`, `layouts` (whole-page renderings for
+  the frontmatter `types` the manifest claims), `chrome` (composer buttons /
+  settings entries / modals as declarative data the shell renders),
+  `styles: [...]`, lazy entry points, server `api`, agent contract (skills),
+  `mcpServers`, `bin`, `setup`. Manifest and
   every facet validate against the versioned JSON Schemas (principle 8); a plugin
   declares `contract: N` and the shell refuses loudly what it cannot honour.
 - **Factory pattern kept:** `(api) => contribution` with the API injected — already
@@ -648,9 +649,10 @@ runtime; nothing is scanned by filename convention at build time.
 - **CSS contract:** stylesheets are listed in the manifest and injected/removed by
   the shell — never `import './x.css'` from a module. Design tokens are a published,
   linted API.
-- **Two bundle targets preserved, resolved at boot:** views/chrome load into the
-  launcher, block modules into the content engine, which waits for active plugins'
-  blocks before its first render.
+- **Three bundle targets, resolved at boot:** views/chrome load into the
+  launcher, block modules into the content engine, which waits for active
+  plugins' blocks before its first render, and layout modules into the page
+  screen, which matches a page's frontmatter `type` against the claims.
 - **Skins:** same discovery, one active (config value, not list). A skin is tokens +
   narrow hooks + assets (favicon/manifest served pre-boot).
 - **Authoring skills (v1):** `plugin-author` and `skin-author` ship with the
