@@ -271,3 +271,43 @@ describe('the instance contract', () => {
     expect(second).not.toContain('no name of its own')
   })
 })
+
+describe('where the managed marker sits', () => {
+  it('never pushes the frontmatter off the first byte', async () => {
+    // Measured on copilot-cli 1.0.83: a contract whose file opens with the
+    // marker is not registered at all — the agent asks for it by name and is
+    // told `Skill not found`. One line lower, the same file loads on the
+    // first call. claude-code tolerates either, so the placement that works
+    // everywhere is the only one worth writing.
+    await deliverSkills(root, [
+      { path: 'thing/SKILL.md', contents: '---\nname: thing\n---\n\n# Thing\n', source: 'core' },
+    ])
+    const written = await readFile(join(root, 'thing', 'SKILL.md'), 'utf8')
+
+    expect(written.startsWith('---\nname: thing\n---\n')).toBe(true)
+    expect(written).toContain(MANAGED_MARKER)
+    // And it lands where a reader looks: the first line of the body.
+    expect(written.indexOf(MANAGED_MARKER)).toBeLessThan(written.indexOf('# Thing'))
+  })
+
+  it('still marks a contract that has no frontmatter to protect', async () => {
+    // Nothing to push off the first byte, and a file with no frontmatter was
+    // never going to register as a skill anyway — but withdrawal still has to
+    // recognise it as ours.
+    await deliverSkills(root, [
+      { path: 'bare/SKILL.md', contents: '# Bare\n', source: 'core' },
+    ])
+    expect((await readFile(join(root, 'bare', 'SKILL.md'), 'utf8')).startsWith(MANAGED_MARKER)).toBe(
+      true,
+    )
+  })
+
+  it('still withdraws what it wrote, wherever the marker sits', async () => {
+    await deliverSkills(root, [
+      { path: 'gone/SKILL.md', contents: '---\nname: gone\n---\n\nbody\n', source: 'core' },
+    ])
+    const { removed } = await deliverSkills(root, [])
+    expect(removed).toBe(1)
+    await expect(readFile(join(root, 'gone', 'SKILL.md'), 'utf8')).rejects.toThrow()
+  })
+})

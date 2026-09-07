@@ -268,6 +268,32 @@ export async function collectSkills(
 export const MANAGED_MARKER = '<!-- managed by Adestia: edits here are overwritten -->'
 
 /**
+ * Stamps the marker where it cannot break the file it marks.
+ *
+ * Prefixing it to the whole file pushed the YAML frontmatter off the first
+ * byte, and an engine that registers skills by reading that frontmatter then
+ * registers NOTHING. Measured on copilot-cli 1.0.83, against a delivered
+ * contract sitting in `.github/skills`: the agent asked for it by name and got
+ * `Skill not found`, then spent five refused tool calls hunting the filesystem
+ * before finding the file by hand. Moved one line down, the same file answers
+ * `loaded successfully` on the first call.
+ *
+ * That was every contract this product delivers, not one of them — its own
+ * four and every plugin's.
+ *
+ * After the frontmatter is also where a reader looks for it: the first line of
+ * the body, before the prose it disclaims. Every consumer tests the marker with
+ * `includes`, so nothing else has to learn where it moved.
+ */
+export function stamped(contents: string): string {
+  const frontmatter = /^---\r?\n[\s\S]*?\r?\n---\r?\n/.exec(contents)
+  // No frontmatter to protect: the top is the only place left, and a file
+  // without one was never going to be registered as a skill anyway.
+  if (!frontmatter) return `${MANAGED_MARKER}\n${contents}`
+  return `${frontmatter[0]}${MANAGED_MARKER}\n${contents.slice(frontmatter[0].length)}`
+}
+
+/**
  * Writes the contracts into the CLI's own skills directory.
  *
  * Only files carrying the marker are removed on refresh. The workspace belongs
@@ -301,7 +327,7 @@ export async function deliverSkills(
   for (const skill of skills) {
     const target = join(root, skill.path)
     await mkdir(dirname(target), { recursive: true })
-    await writeFile(target, `${MANAGED_MARKER}\n${skill.contents}`, 'utf8')
+    await writeFile(target, stamped(skill.contents), 'utf8')
   }
 
   return { written: skills.length, removed }

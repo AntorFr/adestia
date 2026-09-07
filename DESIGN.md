@@ -1212,6 +1212,21 @@ stored: fuel, not transcript, so a merge, a re-attach and a reload still replay
 what the person typed. It is omitted entirely on a driver that declares no
 skills directory: an anchor citing a file nobody wrote is worse than silence.
 
+*Measured on both engines rather than reasoned about, and the measurement
+found an older bug.* Asked where its instance keeps chat attachments with no
+anchor, copilot-cli read nothing and described its own SQLite session store —
+the same confabulation, on the engine that had never shown it. With the
+anchor it asked for the contract by name and was told **`Skill not found`**,
+then spent five refused tool calls hunting the filesystem before finding the
+file by hand. The cause was delivery, not the contract: `deliverSkills` wrote
+the managed marker as the file's FIRST line, pushing the YAML frontmatter off
+the first byte, and copilot registers a skill by reading that frontmatter. It
+had never registered a single contract this product delivers — its own four,
+and every plugin's. claude-code tolerates the leading comment and loaded the
+same file either way, which is why nothing had ever surfaced it. The marker
+now goes after the frontmatter, where it is also where a reader looks for it;
+every consumer tests it with `includes`, so nothing else had to learn.
+
 **2026-09-06 (a swipe that cannot be seen cannot be trusted):** the fold's
 gesture worked about one time in two, reported from a real phone. Both halves
 of the cause were in the same decision — reading a VERDICT at the end of the
