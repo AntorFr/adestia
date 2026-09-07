@@ -175,12 +175,19 @@ describe('the socket — what an external-binary engine reaches through the brid
       result: { tools: { name: string; inputSchema: { required: string[] } }[] }
     }
     expect(list.result.tools.map((tool) => tool.name).sort()).toEqual([
+      'find_pages',
       'new_id',
       'rename_conversation',
     ])
     expect(
       list.result.tools.find((tool) => tool.name === 'rename_conversation')?.inputSchema.required,
     ).toEqual(['title'])
+    // Every parameter optional is not an oversight: asking a locator for
+    // nothing in particular is a legitimate first question, and the cap in the
+    // answer is what keeps it from becoming a corpus dump.
+    expect(list.result.tools.find((tool) => tool.name === 'find_pages')?.inputSchema.required).toEqual(
+      [],
+    )
 
     const call = (await mcp.request(3, 'tools/call', {
       name: 'rename_conversation',
