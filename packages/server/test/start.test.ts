@@ -1,10 +1,11 @@
-import { mkdtemp, mkdir, stat, writeFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { Driver, DriverDescriptor, TurnEvent } from '@antorfr/adestia-drivers'
 
+import { MANAGED_MARKER } from '../src/skills.js'
 import { start, loadConfigFile, type StartedInstance } from '../src/start.js'
 
 class StubDriver implements Driver {
@@ -43,12 +44,16 @@ afterEach(async () => {
 })
 
 /** Port 0 lets the OS pick a free one, so tests never collide. */
-const boot = async (config: string, file = 'adestia.config.yaml') => {
+const boot = async (
+  config: string,
+  file = 'adestia.config.yaml',
+  driverFactory: () => Driver = () => new StubDriver(),
+) => {
   await writeFile(join(root, file), `${config}\nport: 0\n`)
   started = await start({
     cwd: root,
     configPath: file,
-    driverFactory: () => new StubDriver(),
+    driverFactory,
     log: (message) => logs.push(message),
   })
   return started
@@ -329,5 +334,47 @@ describe('workspace.umask', () => {
     await boot('workspace:\n  root: ws\n')
     expect(process.umask()).toBe(before)
     expect(logs.some((line) => line.startsWith('umask '))).toBe(false)
+  })
+})
+
+describe('the shell introducing itself', () => {
+  /** A CLI that reads contracts, which is what makes delivery happen at all. */
+  class SkilledDriver extends StubDriver {
+    skillsPath(): string {
+      return '.claude/skills'
+    }
+  }
+
+  const contractPath = (workspace: string) =>
+    join(root, workspace, '.claude', 'skills', 'this-instance', 'SKILL.md')
+
+  it('writes a contract about THIS instance where the CLI reads', async () => {
+    // The end of the confabulation, tested where it actually happens: not that
+    // a function can compose prose, but that a booting instance leaves the
+    // prose on disk, naming itself.
+    await boot('name: Atelier\nworkspace:\n  root: ./ws\n', 'adestia.config.yaml', () => new SkilledDriver())
+    const contract = await readFile(contractPath('ws'), 'utf8')
+
+    expect(contract).toContain('Adestia')
+    expect(contract).toContain('Atelier')
+    // The engine as CONFIGURED, which is the fact a stale hand-written brief
+    // got wrong on a real deployment.
+    expect(contract).toContain('claude-code')
+    expect(contract).toContain(join(root, 'ws'))
+    expect(contract).toContain(MANAGED_MARKER)
+  })
+
+  it('lists the tools this boot really registered, never a hard-coded set', async () => {
+    await boot('workspace:\n  root: ./ws\n', 'adestia.config.yaml', () => new SkilledDriver())
+    const contract = await readFile(contractPath('ws'), 'utf8')
+    expect(contract).toContain('rename_conversation')
+    expect(contract).toContain('new_id')
+  })
+
+  it('says nothing at all on a driver that reads no contracts', async () => {
+    // No skills directory, no delivery — and therefore no anchor either. The
+    // absence has to be total or the turn cites a file nobody wrote.
+    await boot('workspace:\n  root: ./ws\n')
+    await expect(readFile(contractPath('ws'), 'utf8')).rejects.toThrow()
   })
 })

@@ -1,6 +1,59 @@
 # Status — Adestia
 > MàJ : 2026-09-07
 
+Chantier du 07/09 — **la coque se présente à son agent**. Rien ne lui
+disait qu'elle existait. Interrogé sur l'interface dans laquelle il tourne, un
+agent d'un vrai déploiement a répondu `agent-gw` — le produit PRÉCÉDENT — et a
+même hésité sur le fait que ce soit son nom public ; il tourne sur Adestia, et
+ses propres skills livrées portent le marqueur qui le dit. Interrogé sur les
+outils qui agissent sur son instance, il a répondu « aucun » en tenant
+`rename_conversation` et `new_id`. Rien n'était cassé : personne ne le lui
+avait jamais dit. La seule prose qui parlait de son environnement était un
+brief de 40 Ko écrit à la main, dont un tiers TRANSCRIVAIT ce que la coque
+sait déjà (le cadre d'écran recopié à la main avec un numéro de version, les
+zones, le catalogue des serveurs MCP que la config déclare) — et une prose
+écrite à la main sur un système vivant ne prévient pas le jour où elle cesse
+d'être vraie.
+
+Deux des trois canaux possibles ont été écartés, et le second par la remarque
+de l'utilisateur : une skill seule n'est chargée qu'à la demande, or c'est
+justement la demande qui manquait ; le `systemPrompt.append` du SDK existe mais
+**seulement chez claude-code** — copilot est un binaire dont les drapeaux
+n'offrent aucune surface système, on aurait réparé le moteur qui a montré le
+bug et laissé l'autre aveugle. Retenu : un contrat GÉNÉRÉ
+(`this-instance/SKILL.md`), composé de ce que le boot a réellement fait — les
+outils vraiment enregistrés, les plugins vraiment actifs — et livré par le même
+mécanisme que les autres, donc rafraîchi, retiré et relisible dans la zone
+d'instructions sans machinerie neuve. Plus une ancre d'une ligne posée là où
+tous les tours passent (le desk, et le chemin non surveillé à côté), donc une
+planif et une délégation sont présentées comme un message de chat. Cadrée au
+dispatch, jamais stockée : fuel, pas transcript. Absente entièrement sur un
+driver sans dossier de skills — une ancre qui cite un fichier que personne n'a
+écrit est pire que le silence. Le contrat porte aussi la moitié négative : la
+config vit HORS du workspace, le fil est rejoué par la coque au-dessus d'une
+session moteur qui peut ne pas avoir survécu, et il prime sur un brief écrit à
+la main qui le contredirait. 1367 verts + 472 plugins, typecheck/build OK, et
+le fichier généré **relu à l'œil** (un vrai boot, pas un `toContain`) : c'est
+cette relecture qui a rattrapé un paragraphe mal coupé que tous les tests
+laissaient passer.
+
+**Et la vérification sur copilot a trouvé un bug plus vieux que le chantier.**
+Licence GitHub à disposition, donc mesuré au lieu d'être supposé (CLI installé
+dans le scratchpad, rien sur la machine). Sans ancre, copilot ne lit rien et
+décrit son propre store SQLite — la même confabulation, sur le moteur qui ne
+l'avait jamais montrée. AVEC l'ancre, il demande le contrat par son nom et
+reçoit **`Skill not found`**, puis brûle cinq appels refusés à fouiller le
+disque avant de tomber sur le fichier à la main. La cause n'est pas le
+contrat, c'est la LIVRAISON : `deliverSkills` écrivait le marqueur en
+PREMIÈRE ligne, ce qui pousse le frontmatter hors du premier octet — et
+copilot enregistre une skill en lisant ce frontmatter. Il n'avait donc jamais
+enregistré AUCUN contrat livré par ce produit, ni les quatre du cœur ni ceux
+des plugins. claude-code, lui, tolère le commentaire en tête et chargeait le
+même fichier dans les deux cas : c'est pour ça que personne ne l'avait vu.
+Marqueur déplacé après le frontmatter, vérifié de bout en bout sur les deux
+moteurs (contrat généré par le vrai code, livré par le vrai `deliverSkills`,
+`Skill loaded successfully` au premier appel).
+
 Chantier du 07/09 — **la carte de connexion se lève enfin : son déclencheur
 était impossible**. Alfred l'a prouvé en production le soir même du
 déploiement : « home-assistant n'apparaît pas dans mes outils » — exact, et

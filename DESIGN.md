@@ -1172,7 +1172,11 @@ and shown under it as attachments; and the screen context the parity audit
 had missed. And the install: a served manifest a skin renames and recolours, an
 `apple-touch-icon` beside the icons it declares, and a network-first service
 worker — so an instance is an app on a home screen, under its own body's name,
-that opens to its own words when the network is gone.
+that opens to its own words when the network is gone. And the shell introduces
+itself: a `this-instance` contract generated from the running configuration and
+delivered with the authoring ones, plus one line on every dispatched turn
+saying it exists — so an agent asked what runs it reads the answer instead of
+composing one.
 
 **Not built yet**, and none of it blocked by a design question:
 
@@ -1227,24 +1231,65 @@ that opens to its own words when the network is gone.
   volume with the workspace, or a failed resume could be detected and the
   transcript re-fed). The first is owed in any case — whatever recovery
   exists, a person must never learn about amnesia by talking to it.
-- **The shell introduces itself to its agent.** Nobody tells the agent it is
-  running inside an Adestia shell, and it shows: asked how its own instance
-  is configured, an agent on a real deployment confidently described an
-  architecture it had guessed — fluent, wrong, and unaware the shell exists.
-  The delivery mechanism is already built: plugin contracts ship into the
-  workspace, stamped with the managed marker, rewritten at every start. The
-  core owes the same gesture about ITSELF — a delivered instruction generated
-  from the running instance's actual config: what Adestia is in broad
-  strokes, this instance's name and driver, the zones (pages, planif,
-  memory, the attachment inbox), the shell tools, which MCP servers the
-  instance declares — and, the part whose absence produced the confabulation,
-  what the agent can NOT see: the instance's config file lives outside the
-  workspace, so "how is this configured" is answered by the Settings screen
-  or by whoever manages the deployment, never by guessing. Generated rather
-  than hand-written, so it cannot drift from the config it describes.
 - **`adestia init`** — the documented workspace scaffold.
 
 ## Decision log
+
+**2026-09-07 (the shell says what it is, because prose about it goes stale):**
+an agent on a real deployment, asked what interface it ran in, named the
+PREDECESSOR product — `agent-gw` — and hedged about whether that was even its
+public name. It was running on Adestia, and its own delivered skills carried
+the managed marker that said so. Asked what tools acted on its own instance it
+answered "none", holding `rename_conversation` and `new_id` at that moment.
+Nothing was broken: nothing had ever told it. The only prose describing its
+environment was a 40 KB hand-written brief, and a third of that brief was
+transcription of what the shell already knew — the screen-context frame copied
+out by hand, citing a version number; the zones; a catalogue of the MCP servers
+the config declares. Hand-written prose about a running system does not
+announce the day it stops being true.
+
+Three channels could carry the correction, and two were refused. A skill body
+alone: an engine loads it on demand, and demand is exactly what the
+confabulating agent lacked. The SDK's `systemPrompt.append`: real, but
+claude-code only — copilot-cli is spawned as a binary whose flags hold no
+system surface, so it would have fixed the engine that happened to show the
+bug and left the other blind. The always-in-context files — `CLAUDE.md`,
+`AGENTS.md` — belong to the person on both engines and are not the product's
+to write.
+
+*Taken: a generated contract, plus an anchor at the turn desk.* The body is
+`this-instance/SKILL.md`, composed from what the boot actually did — the tools
+really registered, the plugins really active — and delivered by the same
+mechanism as every other contract, so it is refreshed, withdrawn and readable
+in the instruction zone with no second machinery. A generated document cannot
+drift from what it describes; that is the whole of why it is not written by
+hand. It carries the negative half too: the config file lives outside the
+workspace, and the transcript is replayed by the shell over an engine session
+that may not have survived a restart. And it claims precedence over a
+hand-written brief that contradicts it, because that contradiction is the
+observed failure and somebody has to win it.
+
+The anchor is one line, applied where every turn already passes — the desk, and
+the loose unattended path beside it — so a scheduled note and a delegated task
+are introduced as well as a chat message. It is framed at dispatch, never
+stored: fuel, not transcript, so a merge, a re-attach and a reload still replay
+what the person typed. It is omitted entirely on a driver that declares no
+skills directory: an anchor citing a file nobody wrote is worse than silence.
+
+*Measured on both engines rather than reasoned about, and the measurement
+found an older bug.* Asked where its instance keeps chat attachments with no
+anchor, copilot-cli read nothing and described its own SQLite session store —
+the same confabulation, on the engine that had never shown it. With the
+anchor it asked for the contract by name and was told **`Skill not found`**,
+then spent five refused tool calls hunting the filesystem before finding the
+file by hand. The cause was delivery, not the contract: `deliverSkills` wrote
+the managed marker as the file's FIRST line, pushing the YAML frontmatter off
+the first byte, and copilot registers a skill by reading that frontmatter. It
+had never registered a single contract this product delivers — its own four,
+and every plugin's. claude-code tolerates the leading comment and loaded the
+same file either way, which is why nothing had ever surfaced it. The marker
+now goes after the frontmatter, where it is also where a reader looks for it;
+every consumer tests it with `includes`, so nothing else had to learn.
 
 **2026-09-07 (the sign-in card's trigger was impossible, and production said
 so first):** the card shipped watching for a failed tool of a disconnected

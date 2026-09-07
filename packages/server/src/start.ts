@@ -24,6 +24,7 @@ import {
 import type { FastifyInstance } from 'fastify'
 
 import { buildApp } from './app.js'
+import { inboxDir } from './attachments.js'
 import { ConfigError, parseConfig, type AdestiaConfig } from './config.js'
 import { ConversationStore } from './conversations.js'
 import { ShellToolsService } from './shell-tools.js'
@@ -448,7 +449,35 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
       )
     }
 
-    const { skills, problems: skillProblems } = await collectSkills(plugins, stores)
+    /**
+     * What the instance tells its agent about itself.
+     *
+     * Read off what this boot actually DID — the tools really registered, the
+     * plugins really active — rather than off the config that asked for it.
+     * The whole value of a generated introduction is that it cannot describe
+     * an instance other than the one running it.
+     */
+    const { skills, problems: skillProblems } = await collectSkills(plugins, stores, {
+      ...(config.name ? { name: config.name } : {}),
+      ...(config.locale ? { locale: config.locale } : {}),
+      driverId: config.driver.id,
+      workspaceRoot,
+      stores,
+      memory: config.workspace.memory,
+      planif: config.workspace.planif,
+      inbox: inboxDir(dataDir),
+      tools: shellTools.specs().map(({ name, description }) => ({ name, description })),
+      mcpServers: mcpServers.map((server) => server.name),
+      ...(config.mcp.enabled ? { inboundName: config.mcp.agentName } : {}),
+      apps: plugins
+        .filter((plugin) => plugin.active)
+        .map((plugin) => ({
+          id: plugin.manifest.id,
+          label: plugin.manifest.tile?.label ?? plugin.manifest.id,
+          description: plugin.manifest.description,
+          types: plugin.manifest.types ?? [],
+        })),
+    })
     for (const problem of skillProblems) log(`skill not delivered — ${problem}`)
     const { written, removed } = await deliverSkills(join(workspaceRoot, skillsPath), skills)
     log(`${written} agent contract(s) delivered${removed > 0 ? `, ${removed} withdrawn` : ''}`)

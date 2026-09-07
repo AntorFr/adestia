@@ -16,6 +16,7 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import type { DiscoveredPlugin } from './extensions.js'
+import { type InstanceFacts, instanceContract } from './introduction.js'
 import type { Store } from './stores.js'
 
 /**
@@ -234,13 +235,26 @@ a shared store is a place where somebody else writes.
   return { path: 'memory-stores/SKILL.md', contents, source: 'core' }
 }
 
+/**
+ * Every contract this instance delivers: the product's, its plugins', and the
+ * two it composes from what the instance actually is.
+ *
+ * `facts` is optional so a caller that only wants the authoring contracts —
+ * every test that predates the introduction, and any host with no instance to
+ * describe — keeps working unchanged. Where it IS given, the shell introduces
+ * itself: see `introduction.ts` for why that is generated rather than written.
+ */
 export async function collectSkills(
   plugins: readonly DiscoveredPlugin[],
   stores: readonly Store[] = [],
+  facts?: InstanceFacts,
 ): Promise<{ skills: readonly SkillFile[]; problems: readonly string[] }> {
   const core = await readCoreSkills()
   const { skills: fromPlugins, problems } = await readPluginSkills(plugins)
-  const composed = stores.length > 1 ? [storesContract(stores)] : []
+  const composed = [
+    ...(facts ? [instanceContract(facts)] : []),
+    ...(stores.length > 1 ? [storesContract(stores)] : []),
+  ]
   return { skills: [...core, ...fromPlugins, ...composed], problems }
 }
 
@@ -252,6 +266,32 @@ export async function collectSkills(
  * have to guess from a path.
  */
 export const MANAGED_MARKER = '<!-- managed by Adestia: edits here are overwritten -->'
+
+/**
+ * Stamps the marker where it cannot break the file it marks.
+ *
+ * Prefixing it to the whole file pushed the YAML frontmatter off the first
+ * byte, and an engine that registers skills by reading that frontmatter then
+ * registers NOTHING. Measured on copilot-cli 1.0.83, against a delivered
+ * contract sitting in `.github/skills`: the agent asked for it by name and got
+ * `Skill not found`, then spent five refused tool calls hunting the filesystem
+ * before finding the file by hand. Moved one line down, the same file answers
+ * `loaded successfully` on the first call.
+ *
+ * That was every contract this product delivers, not one of them — its own
+ * four and every plugin's.
+ *
+ * After the frontmatter is also where a reader looks for it: the first line of
+ * the body, before the prose it disclaims. Every consumer tests the marker with
+ * `includes`, so nothing else has to learn where it moved.
+ */
+export function stamped(contents: string): string {
+  const frontmatter = /^---\r?\n[\s\S]*?\r?\n---\r?\n/.exec(contents)
+  // No frontmatter to protect: the top is the only place left, and a file
+  // without one was never going to be registered as a skill anyway.
+  if (!frontmatter) return `${MANAGED_MARKER}\n${contents}`
+  return `${frontmatter[0]}${MANAGED_MARKER}\n${contents.slice(frontmatter[0].length)}`
+}
 
 /**
  * Writes the contracts into the CLI's own skills directory.
@@ -287,7 +327,7 @@ export async function deliverSkills(
   for (const skill of skills) {
     const target = join(root, skill.path)
     await mkdir(dirname(target), { recursive: true })
-    await writeFile(target, `${MANAGED_MARKER}\n${skill.contents}`, 'utf8')
+    await writeFile(target, stamped(skill.contents), 'utf8')
   }
 
   return { written: skills.length, removed }

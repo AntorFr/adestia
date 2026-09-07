@@ -196,6 +196,17 @@ export class TurnDesk {
   constructor(
     private readonly driver: Pick<Driver, 'runTurn'>,
     private readonly limiter: TurnSlotLimiter,
+    /**
+     * The instance's own preamble, applied to every dispatched prompt.
+     *
+     * Here rather than at the three routes that build turns, because the desk
+     * is where all three meet: a chat message, a scheduled note and a
+     * delegated task are equally entitled to know what shell they are running
+     * in, and the last two are the ones where a guess is never contradicted by
+     * anybody. Injected rather than known, so the desk keeps running turns and
+     * stays ignorant of prose.
+     */
+    private readonly introduce?: (prompt: string) => string,
   ) {}
 
   /** The running turn for a key, when there is one to re-attach to. */
@@ -315,6 +326,19 @@ export class TurnDesk {
     }
   }
 
+  /**
+   * The request as the ENGINE sees it — never as the thread stores it.
+   *
+   * The preamble is fuel, not transcript: `spec.request` is left untouched, so
+   * a merge, a re-attach and a reload all still replay what the person
+   * actually typed. Framing at dispatch is also what keeps a queued batch from
+   * collecting one preamble per message it merged.
+   */
+  #dispatched(request: TurnRequest): TurnRequest {
+    if (!this.introduce) return request
+    return { ...request, prompt: this.introduce(request.prompt) }
+  }
+
   /** One driver turn, accumulated the way the route used to accumulate it. */
   async #turn(job: TurnJob, spec: TurnSpec): Promise<TurnOutcome> {
     const parts: { tools: { name: string; target?: string; ok?: boolean }[]; text: string }[] = []
@@ -336,7 +360,7 @@ export class TurnDesk {
     }
 
     try {
-      for await (const event of this.driver.runTurn(spec.request)) {
+      for await (const event of this.driver.runTurn(this.#dispatched(spec.request))) {
         job.emit(event)
         if (event.type === 'text-delta') current().text += event.text
         else if (event.type === 'tool-use') {

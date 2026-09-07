@@ -25,6 +25,7 @@ import type {
 
 import { isPublicRoute, resolveIdentity, type Identity } from './auth.js'
 import { AttachmentInbox, frameAttachments, type StoredAttachment } from './attachments.js'
+import { frameShell } from './introduction.js'
 import { frameView } from './screen.js'
 import { ConversationStore } from './conversations.js'
 import { readMcpServer, type AdestiaConfig, type McpServerConfig } from './config.js'
@@ -234,9 +235,18 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   const { config, driver, plugins, pluginProblems, userTokens, webRoot } = deps
   const app = Fastify({ logger: false })
   const limiter = new TurnLimiter(config.maxConcurrentTurns)
+  /**
+   * The shell's own preamble, decided once and applied on both spawn paths.
+   *
+   * Only where the engine has somewhere to READ the contract from: a driver
+   * declaring no skills directory gets none delivered, and an anchor citing a
+   * file that was never written is worse than saying nothing — it invites
+   * exactly the invention it exists to stop.
+   */
+  const introduce = driver.skillsPath?.() ? frameShell : undefined
   // The desk owns chat turns; the clock's and the MCP delegation's loops below
   // stay as they are and share the same limiter, so the cap keeps one meaning.
-  const desk = new TurnDesk(driver, limiter)
+  const desk = new TurnDesk(driver, limiter, introduce)
   const conversations = new ConversationStore(config.dataDir)
   const secrets = deps.secrets ?? new SecretStore(config.dataDir)
   const mcpStore = deps.mcpStore ?? new McpStore(config.dataDir)
@@ -1124,7 +1134,10 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     if (!limiter.tryAcquire()) throw new Error('too many turns running')
     try {
       for await (const event of driver.runTurn({
-        prompt,
+        // The same preamble the desk applies. A scheduled note and a callback
+        // wake are the turns nobody reads, so a guess made in one is a guess
+        // nobody is there to contradict.
+        prompt: introduce ? introduce(prompt) : prompt,
         cwd: config.workspace.root,
         ...(agentRoots.length > 0 ? { roots: agentRoots } : {}),
         unattended: true,

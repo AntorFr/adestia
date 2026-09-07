@@ -4,7 +4,7 @@ import { join } from 'node:path'
 
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { collectSkills, deliverSkills } from '../src/skills.js'
+import { MANAGED_MARKER, collectSkills, deliverSkills } from '../src/skills.js'
 import type { DiscoveredPlugin } from '../src/extensions.js'
 import { resolveStores } from '../src/stores.js'
 
@@ -222,5 +222,92 @@ describe('a tool that reads memory', () => {
     const { skills } = await collectSkills([], stores)
     const contract = skills.find((skill) => skill.path === 'memory-stores/SKILL.md')
     expect(contract?.contents).toContain('--pages /w/pages,/shared/famille')
+  })
+})
+
+describe('the instance contract', () => {
+  const facts = () => {
+    const { stores } = resolveStores([{ id: 'perso', path: 'pages' }], '/w')
+    return {
+      driverId: 'claude-code',
+      workspaceRoot: '/w',
+      stores,
+      memory: 'memory',
+      planif: 'planif',
+      inbox: '/data/inbox',
+      tools: [],
+      mcpServers: [],
+      apps: [],
+    }
+  }
+
+  it('is absent when the caller has no instance to describe', async () => {
+    // Every host that only wants the authoring contracts — the tests that
+    // predate this, a bare app — must keep getting exactly what it got.
+    const { skills } = await collectSkills([])
+    expect(skills.some((skill) => skill.path === 'this-instance/SKILL.md')).toBe(false)
+  })
+
+  it('is delivered alongside the authoring contracts once the facts are known', async () => {
+    const { skills } = await collectSkills([], [], facts())
+    const contract = skills.find((skill) => skill.path === 'this-instance/SKILL.md')
+    expect(contract).toBeDefined()
+    expect(contract?.contents).toContain('Adestia')
+    // And it lands with the others, so the same delivery writes and withdraws
+    // it — no second mechanism for the one contract the core generates about
+    // itself.
+    expect(skills.some((skill) => skill.path === 'page-author/SKILL.md')).toBe(true)
+  })
+
+  it('is written where the CLI reads, and refreshed rather than accumulated', async () => {
+    await deliverSkills(root, (await collectSkills([], [], facts())).skills)
+    const first = await readFile(join(root, 'this-instance', 'SKILL.md'), 'utf8')
+    expect(first).toContain(MANAGED_MARKER)
+
+    // A second boot on a renamed instance must leave one file saying one thing.
+    await deliverSkills(root, (await collectSkills([], [], { ...facts(), name: 'Atelier' })).skills)
+    const second = await readFile(join(root, 'this-instance', 'SKILL.md'), 'utf8')
+    expect(second).toContain('Atelier')
+    expect(second).not.toContain('no name of its own')
+  })
+})
+
+describe('where the managed marker sits', () => {
+  it('never pushes the frontmatter off the first byte', async () => {
+    // Measured on copilot-cli 1.0.83: a contract whose file opens with the
+    // marker is not registered at all — the agent asks for it by name and is
+    // told `Skill not found`. One line lower, the same file loads on the
+    // first call. claude-code tolerates either, so the placement that works
+    // everywhere is the only one worth writing.
+    await deliverSkills(root, [
+      { path: 'thing/SKILL.md', contents: '---\nname: thing\n---\n\n# Thing\n', source: 'core' },
+    ])
+    const written = await readFile(join(root, 'thing', 'SKILL.md'), 'utf8')
+
+    expect(written.startsWith('---\nname: thing\n---\n')).toBe(true)
+    expect(written).toContain(MANAGED_MARKER)
+    // And it lands where a reader looks: the first line of the body.
+    expect(written.indexOf(MANAGED_MARKER)).toBeLessThan(written.indexOf('# Thing'))
+  })
+
+  it('still marks a contract that has no frontmatter to protect', async () => {
+    // Nothing to push off the first byte, and a file with no frontmatter was
+    // never going to register as a skill anyway — but withdrawal still has to
+    // recognise it as ours.
+    await deliverSkills(root, [
+      { path: 'bare/SKILL.md', contents: '# Bare\n', source: 'core' },
+    ])
+    expect((await readFile(join(root, 'bare', 'SKILL.md'), 'utf8')).startsWith(MANAGED_MARKER)).toBe(
+      true,
+    )
+  })
+
+  it('still withdraws what it wrote, wherever the marker sits', async () => {
+    await deliverSkills(root, [
+      { path: 'gone/SKILL.md', contents: '---\nname: gone\n---\n\nbody\n', source: 'core' },
+    ])
+    const { removed } = await deliverSkills(root, [])
+    expect(removed).toBe(1)
+    await expect(readFile(join(root, 'gone', 'SKILL.md'), 'utf8')).rejects.toThrow()
   })
 })
