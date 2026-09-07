@@ -29,13 +29,15 @@
  */
 
 import { createHash, randomUUID, randomBytes } from 'node:crypto'
-import { chmod, mkdir, unlink, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, readFile, unlink, writeFile } from 'node:fs/promises'
 import { createServer, type Server, type Socket } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { ShellToolOutcome, ShellToolSpec, ShellToolsHandle } from '@antorfr/adestia-drivers'
 
 import type { ConversationStore } from './conversations.js'
+import { parseFrontmatter, titleOf } from './pages.js'
+import { listAll, type Store } from './stores.js'
 
 /** A failure worded for the AGENT — anything else is logged, not forwarded. */
 export class ShellToolError extends Error {}
@@ -71,6 +73,48 @@ export function ulid(now = Date.now()): string {
 /** Renders in a tab and in a list row; anything longer is a paragraph. */
 const MAX_TITLE = 120
 
+/**
+ * How many pages an answer carries before it becomes a corpus dump.
+ *
+ * The tool exists to REMOVE round trips, and an answer that costs more
+ * context than the hunt it replaced has failed at its one job. Past this, it
+ * says how many there are and what would narrow them — which is an answer.
+ */
+const MAX_ROWS = 60
+
+/** Named in the tool's own description, so the agent sees the canon. */
+const TYPE_HINT = 'fiche, projet, tache, machine, espace, achat, savoir-faire, contact'
+
+/** Case and accents removed — the corpus writes `idée`, the agent types `idee`. */
+const fold = (value: string): string =>
+  value
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .trim()
+
+const text = (value: unknown): string => (typeof value === 'string' ? value.trim() : '')
+
+const word = (value: string | undefined): string => fold(value ?? '')
+
+/** A comma-separated filter: any of these matches, none of them means no filter. */
+const alternatives = (value: string | undefined): string[] =>
+  (value ?? '')
+    .split(',')
+    .map((item) => fold(item))
+    .filter((item) => item !== '')
+
+const list = (value: unknown): string =>
+  Array.isArray(value) ? value.map((item) => text(item)).join(' ') : text(value)
+
+/** Echoes the question back, so a thin answer is legible without scrolling up. */
+const asked = (args: Readonly<Record<string, string>>): string => {
+  const said = (['what', 'type', 'domain', 'status', 'store'] as const)
+    .filter((key) => (args[key] ?? '').trim() !== '')
+    .map((key) => `${key}=${args[key]!.trim()}`)
+  return said.length > 0 ? ` for ${said.join(', ')}` : ''
+}
+
 interface RegisteredTool {
   readonly spec: ShellToolSpec
   /**
@@ -88,6 +132,14 @@ interface TokenEntry {
 export interface ShellToolsOptions {
   readonly dataDir: string
   readonly conversations: ConversationStore
+  /**
+   * The stores `find_pages` looks through, in precedence order. Absent — as
+   * in a test that only exercises dispatch — the tool is still registered and
+   * answers that this instance carries no memory, rather than throwing.
+   */
+  readonly stores?: readonly Store[]
+  /** Orders the answer the way the page list is ordered. */
+  readonly locale?: string | undefined
   readonly log?: (message: string) => void
   /** Safety net only — the primary revocation is the turn settling. */
   readonly tokenTtlMs?: number
@@ -95,6 +147,8 @@ export interface ShellToolsOptions {
 
 export class ShellToolsService {
   readonly #conversations: ConversationStore
+  readonly #stores: readonly Store[]
+  readonly #order: Intl.Collator
   readonly #log: (message: string) => void
   readonly #tokenTtlMs: number
   readonly #tools = new Map<string, RegisteredTool>()
@@ -108,6 +162,8 @@ export class ShellToolsService {
 
   constructor(options: ShellToolsOptions) {
     this.#conversations = options.conversations
+    this.#stores = options.stores ?? []
+    this.#order = new Intl.Collator(options.locale, { numeric: true })
     this.#log = options.log ?? (() => undefined)
     this.#tokenTtlMs = options.tokenTtlMs ?? 6 * 60 * 60 * 1000
 
@@ -164,6 +220,139 @@ export class ShellToolsService {
       },
       handler: () => Promise.resolve(ulid()),
     })
+
+    this.#register({
+      spec: {
+        name: 'find_pages',
+        description:
+          'Where a subject is written down. Searches the memory\'s INDEX — every page\'s '
+          + 'path, title, tags and frontmatter — and answers with a line per page: where it '
+          + 'sits, what it is called, its type, its domain and its status. Answers WHERE, '
+          + 'never what: it does not read a page and does not look inside one. To search '
+          + 'page BODIES, keep using Grep; this is what saves you from guessing the folder, '
+          + 'the store and the word a page happens to use before you can.',
+        params: [
+          {
+            name: 'what',
+            description:
+              'Words to find in a page\'s title, path or tags — accents and case ignored, '
+              + 'and EVERY word must match. Absent, every page is a candidate.',
+            optional: true,
+          },
+          {
+            name: 'type',
+            description:
+              `What the page IS, from its frontmatter: ${TYPE_HINT}… `
+              + 'Several, comma-separated, widen the answer.',
+            optional: true,
+          },
+          {
+            name: 'domain',
+            description:
+              'The `domaine` the page declares. Several, comma-separated, widen the answer.',
+            optional: true,
+          },
+          {
+            name: 'status',
+            description:
+              'Where the page stands: en-cours, veille, clos… '
+              + 'Several, comma-separated, widen the answer.',
+            optional: true,
+          },
+          {
+            name: 'store',
+            description: 'Restrict to one store by id, when this instance composes several.',
+            optional: true,
+          },
+        ],
+      },
+      handler: (_ctx, args) => this.#findPages(args),
+    })
+  }
+
+  /**
+   * The index, filtered and rendered flat.
+   *
+   * Every file is read on every call, exactly as `/api/pages/index` does — a
+   * measured 10 ms at 200 pages. Caching it is that index's debt to pay (see
+   * DESIGN.md), and paying it in a second place here is how two answers start
+   * disagreeing about the same corpus.
+   */
+  async #findPages(args: Readonly<Record<string, string>>): Promise<string> {
+    if (this.#stores.length === 0) return 'This instance carries no memory to search.'
+
+    const only = word(args['store'])
+    if (only !== '' && !this.#stores.some((store) => fold(store.id) === only)) {
+      throw new ShellToolError(
+        `no store named "${args['store']}" — this instance carries: `
+          + this.#stores.map((store) => store.id).join(', '),
+      )
+    }
+
+    const terms = fold(args['what'] ?? '')
+      .split(/\s+/)
+      .filter((term) => term !== '')
+    const types = alternatives(args['type'])
+    const domains = alternatives(args['domain'])
+    const states = alternatives(args['status'])
+    const { entries } = await listAll(this.#stores, { keep: (name) => name.endsWith('.md') })
+    const rows: { path: string; store: string; cells: string[] }[] = []
+    for (const entry of entries) {
+      if (only !== '' && fold(entry.store.id) !== only) continue
+
+      const markdown = await readFile(entry.file, 'utf8').catch(() => '')
+      const fields = parseFrontmatter(markdown)
+      const title = titleOf(markdown, entry.path)
+      const type = text(fields['type'])
+      // `domaine` is the corpus's word and `status` is already English: the
+      // engine accepts the history it has, the skill teaches the canon.
+      const domain = text(fields['domaine'] ?? fields['domain'])
+      const status = text(fields['status'] ?? fields['statut'])
+
+      if (types.length > 0 && !types.includes(fold(type))) continue
+      if (domains.length > 0 && !domains.includes(fold(domain))) continue
+      if (states.length > 0 && !states.includes(fold(status))) continue
+
+      if (terms.length > 0) {
+        const hay = fold([entry.path, title, list(fields['tags'])].join(' '))
+        if (!terms.every((term) => hay.includes(term))) continue
+      }
+
+      rows.push({
+        path: entry.path,
+        store: entry.store.id,
+        cells: [entry.path, title, type, domain, status].filter((cell) => cell !== ''),
+      })
+    }
+
+    if (rows.length === 0) {
+      return (
+        `No page matches${asked(args)}.`
+        + ' Nothing was searched INSIDE the pages — for that, Grep.'
+      )
+    }
+
+    rows.sort((a, b) => this.#order.compare(a.path, b.path))
+    const shown = rows.slice(0, MAX_ROWS)
+
+    // The store is named on every line only when the answer actually MIXES
+    // them. Repeating one id down eleven identical rows is the kind of column
+    // that costs the context this tool exists to save.
+    const stores = new Set(shown.map((row) => row.store))
+    const single = this.#stores.length > 1 && stores.size === 1 ? [...stores][0] : undefined
+    const from = single !== undefined ? ` in ${single}` : ''
+
+    const head =
+      rows.length > shown.length
+        ? `${rows.length} pages${asked(args)}${from}, first ${MAX_ROWS}`
+          + ' — narrow with type, domain or status.'
+        : `${rows.length} page${rows.length > 1 ? 's' : ''}${asked(args)}${from}.`
+    return [
+      head,
+      ...shown.map((row) =>
+        `${stores.size > 1 ? `[${row.store}] ` : ''}${row.cells.join(' · ')}`,
+      ),
+    ].join('\n')
   }
 
   #register(tool: RegisteredTool): void {

@@ -438,8 +438,9 @@ alone.
 
 ## Shell tools — the agent acting on its own instance
 
-The instance hands its agent tools that act on the PRODUCT itself — first
-`rename_conversation` and `new_id` (`server/src/shell-tools.ts`). The doctrine
+The instance hands its agent tools that act on the PRODUCT itself —
+`rename_conversation`, `new_id` and `find_pages` (`server/src/shell-tools.ts`).
+The doctrine
 below was argued across several sessions and each piece carries the argument
 that forced it; a future tool gets designed by walking these rules, not by
 reopening them.
@@ -526,6 +527,62 @@ reversible by construction (append-only meta lines; the thread compacts when
 the turn settles). The registry's shape forces the question at registration;
 a destructive tool is where the posture and confirmation debate reopens, and
 not before.
+
+### `find_pages` — where a subject is written down (decided 2026-09-07)
+
+**The measurement that opened it.** Fifty-five of Alfred's sessions, read from
+its own transcripts: 1 492 calls to the model, and 393 of them are a turn whose
+only tool call repeats the previous turn's — 22% of the bill spent re-sending
+context. Outside the workbench (whose own tools were still being built), those
+redundant turns are almost entirely `Bash`: 147 calls that are `grep`, `find`,
+`ls` or `cat` over memory. The shape of the queries says what is actually
+lost:
+
+```
+grep -ril "piscine\|chlore\|electrolys" /workspace/memory
+```
+
+An alternation of synonyms is the agent GUESSING which word a page happens to
+use, and `grep -l` answers with bare paths — so it greps again to learn which
+one to open, then reads. Three turns for "where do we write about the pool".
+
+**It is a locator, not a filesystem.** "Memory stores" refused an API of our
+own because it would cost the agent `Grep` — searching its own memory BY
+CONTENT is its most valuable primitive — and `Edit`, whose exact-match is
+where silent corruption is born when reimplemented. That refusal stands and
+this tool does not touch it: `find_pages` never reads a page and never looks
+inside one. It searches the INDEX — path, title, tags, frontmatter — and a
+search for a word that lives in a body answers, in those words, that nothing
+was searched inside the pages and that Grep is where that lives.
+
+**What it answers with is the point.** Not a list of paths, which `grep -l`
+already gives, but a line per page carrying what the page IS: where it sits,
+its title, its `type`, its `domaine`, its status. That is what makes the next
+step a `Read` rather than another search. Measured on the corpus that produced
+the transcripts above — 220 pages, whose entire index is 21.9 KB — the pool
+question is answered in one call and 218 tokens.
+
+**It rides the index the reader already needs**, rather than opening a second
+one: the same `listAll`, `parseFrontmatter` and `titleOf` the pages API uses,
+so the tool and the browser can never disagree about what memory contains.
+Re-reading every file per call is that index's known debt (10 ms at 200
+pages); paying it in a second place here is how two answers start drifting.
+
+**Cheaper than the hunt it replaces, or it has failed.** Hence a cap of 60
+rows that says how many there are and what would narrow them; hence a field
+the page never declared being omitted rather than printed as a hole; hence the
+store named on every line only when the answer actually mixes stores, and
+hoisted into the header when it does not. Filters take comma-separated
+alternatives so one call answers what two would.
+
+Rejected here, each against a fact: matching by content as a convenience
+(it is `Grep`, and a second search that reads bodies would be the filesystem
+API by another door); a cache of the index (the debt belongs to
+`/api/pages/index`, and a private copy is the predecessor's per-view status
+table again); a `finished` filter (`status` already carries it, and the
+contract says a widening must be argued, not defaulted into); nesting the
+answer as JSON (a table the agent reads once costs less than a structure it
+must parse).
 
 Rejected on the way, each against a fact: extending `TurnEvent` with action
 events (two drivers to change, and a one-way stream cannot carry replies);

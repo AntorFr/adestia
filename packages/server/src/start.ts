@@ -386,6 +386,10 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
   const shellTools = new ShellToolsService({
     dataDir,
     conversations: new ConversationStore(dataDir),
+    // The same stores the pages API answers for, so `find_pages` and the
+    // browser's index can never disagree about what memory contains.
+    stores,
+    ...(config.locale ? { locale: config.locale } : {}),
     log,
   })
   await shellTools.start()
