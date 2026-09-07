@@ -122,3 +122,26 @@ test('les numéros restent continus d\'un lot à l\'autre', () => {
     ['IMP-C1-TAB-1', 'IMP-C1-TAB-2', 'IMP-C1-TAB-3'],
   )
 })
+
+test('les deux validateurs lisent la liste pareil — sinon l\'un refuse ce que l\'autre calcule', () => {
+  /* Trouvé en s'en servant : `atelier_derive` calculait très bien une tablette
+     par colonne, et `atelier_questions` refusait le même design — « ni un
+     nombre ni un objet portant nombre ».
+
+     La forme LISTE avait été apprise à la méthode et pas au lecteur commun,
+     par celui-là même qui l'avait écrit pour supprimer les lectures
+     divergentes. Un meuble qui s'arrête au premier validateur croirait le
+     champ bloquant alors qu'il est bon. */
+  const d = imp({
+    zones: [{ id: 'gauche', axe: 'x', etendue: 331.5 }, { id: 'droite', axe: 'x' }],
+    tablettes: [{ nombre: 1, zone: 'gauche' }, { nombre: 1, zone: 'droite' }],
+  })
+  const r = derive(d, tables())
+  assert.deepEqual(r.issues.filter((i) => i.type === 'compte-illisible'), [])
+  assert.equal(r.pieces.filter((x) => x.role === 'TABLETTE').length, 2)
+})
+
+test('mais un lot illisible DANS la liste reste refusé', () => {
+  const r = derive(imp({ tablettes: [{ nombre: 1, zone: 'gauche' }, 'deux'] }), tables())
+  assert.ok(r.issues.some((i) => i.type === 'compte-illisible'))
+})

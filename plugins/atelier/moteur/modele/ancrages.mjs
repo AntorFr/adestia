@@ -172,11 +172,27 @@ export const relationsDuMeuble = ({ l, p, h }) => [
  * claustra déclaré `lames: { nombre: 6 }` sortait donc à deux pièces au lieu
  * de dix, sans un mot.
  *
+ * Une LISTE en est la troisième écriture : plusieurs lots, chacun dans sa zone
+ * — une tablette par colonne. Elle a été ajoutée à la méthode sans être
+ * apprise ici, si bien que `atelier_questions` refusait un design que
+ * `atelier_derive` calculait très bien. C'est exactement la divergence de
+ * lectures que ce lecteur unique existe pour supprimer, reproduite par celui
+ * qui l'avait écrit.
+ *
  * Rendre `{ combien, erreur }` plutôt que de lever : un compte illisible est
  * une réponse que le moteur doit donner, pas une panne.
  */
 export function compte(declare, quoi) {
   if (declare === undefined || declare === null) return { combien: 0 }
+  if (Array.isArray(declare)) {
+    let total = 0
+    for (const lot of declare) {
+      const { combien, erreur } = compte(lot, quoi)
+      if (erreur) return { combien: 0, erreur }
+      total += combien
+    }
+    return { combien: total }
+  }
   if (typeof declare === 'number') {
     return Number.isInteger(declare) && declare >= 0
       ? { combien: declare }
