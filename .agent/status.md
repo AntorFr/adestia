@@ -1,6 +1,52 @@
 # Status — Adestia
 > MàJ : 2026-09-08
 
+Chantier du 08/09 (2) — **le todo gagne un second niveau, trois champs et un
+bloc**. Les sept arbitrages ont été posés un par un au propriétaire et rendus
+un par un ; le contrat qui en sort tient dans `.agent/questions-todo-v2.md`.
+
+Deux des quatre enrichissements demandés n'ont coûté **aucun champ** : la note
+est le corps de la page, que toutes les tâches ont déjà, et les pièces jointes
+sont des LIENS (`files:`, des chemins logiques) — le fichier vit où il veut, en
+un exemplaire, et deux tâches peuvent citer le même. Ce qui manquait n'était
+pas du vocabulaire mais un **écran** : la fiche d'une tâche n'existait nulle
+part, et trois champs déjà au contrat (`pri`, `projet`, `sub`) n'étaient
+dessinés sur aucune surface.
+
+`start:` est le seul champ qui fait un vrai travail : une tâche différée QUITTE
+toutes les vues vivantes et attend dans la sienne, puis revient seule. Le mot
+est celui d'iCalendar et de Microsoft ; Taskwarrior l'emploie pour le contraire
+(« je m'y suis mis »), et la skill porte maintenant la phrase qui ferme le
+piège. `assignee:` est un seul porteur, sans annuaire à tenir : les handles se
+découvrent comme les domaines et la teinte se dérive du handle.
+
+Côté cœur, deux ajouts et pas un de plus. L'index publie un booléen « cette
+page a du texte », calculé là où le markdown est déjà lu — sans lui, marquer
+les lignes qui portent une note coûterait une requête par ligne. Et un bloc
+reçoit enfin **sa page** (`path`, `store`, `fields`), avec les mots du layout :
+`locate('.')` marchait mais rendait `.` pour une page à la racine, et le
+rattrapage par `projet:` était impossible sans les champs.
+
+Le bloc s'appelle `:::checklist` — nommé par ce qu'on y FAIT, puisque c'est le
+critère du 06/09. Il coche et il ajoute, donc il n'est pas un `list{from=…}` du
+cœur ; et il n'est pas `:::todo`, qui nommerait un sujet.
+
+**Vu au navigateur** (bench, deux magasins, les deux thèmes) : cinq états par
+thème, et le bench imprime ce qu'une photo ne prouve pas — zéro différée dans
+une vue vivante, quatre onglets de magasin, cinq pastilles « à prendre ». Il a
+trouvé un défaut que le vert n'aurait jamais montré : la fiche empilait son
+bouton retour sous celui du shell.
+
+**Reste :**
+- [ ] La puce `tache` et le crayon de l'éditeur embarqué s'affichent sous le
+      titre « Note » de la fiche : c'est le lecteur du shell qui pose le
+      frontmatter en puces sur toute page. Le masquer demanderait une prop sur
+      le contrat de l'éditeur — décision du propriétaire, pas prise ici
+- [ ] `‹ Back` du shell est en dur en anglais (`App.tsx`), sur une instance
+      française. Hors périmètre de ce chantier
+- [ ] `todo-config` « premier par ordre de chemin » est réparé pour `me:` (lu
+      dans le store par défaut) ; le même raisonnement vaudrait pour `folder:`
+
 Chantier du 08/09 — **six endroits où la prose ne dit plus ce que fait le
 code**, trouvés en préparant l'enrichissement du todo et corrigés avant lui.
 Deux d'entre eux avaient déjà produit leur dégât : ils ont fait écrire, dans

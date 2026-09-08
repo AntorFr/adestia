@@ -223,6 +223,40 @@ export interface BlockProps {
   /** Validated against the manifest's spec before this ever runs. */
   readonly attributes: Readonly<Record<string, string>>
   /**
+   * The page carrying this block — its LOGICAL path, as `/api/pages/…` spells
+   * it, exactly like a layout's.
+   *
+   * Logical means the memory's own name, the one composed from every store: it
+   * never carries which store holds the file, which is what lets a page move
+   * between circles without a block losing its bearings.
+   *
+   * Handed over because deriving it was possible and wrong. A block can ask
+   * `locate('.')` for its own folder, and that answers `.` for a page sitting
+   * at the root — a silently wrong scope rather than an error. And a folder is
+   * not enough anyway: a task captured for a worksite is filed in the todo
+   * folder and points back with `projet:`, so a block scoped only by location
+   * would miss precisely the tasks somebody added in a hurry.
+   *
+   * Absent when prose is rendered outside any page — a chat bubble — which is
+   * the same case that leaves relative links unresolved.
+   */
+  readonly path?: string
+  /**
+   * Which store carries that page. Present only where the instance composes
+   * more than one.
+   *
+   * A QUALIFIER, never part of a name: never join it to `path` to build an
+   * address. The bare path is the canonical one and resolves by precedence.
+   */
+  readonly store?: string
+  /**
+   * The page's frontmatter, as the server parsed it.
+   *
+   * What lets a block answer "the tasks of THIS worksite" rather than "the
+   * tasks filed under this folder" — the page's own `id` lives here.
+   */
+  readonly fields?: Readonly<Record<string, unknown>>
+  /**
    * A path written in the page, turned into something fetchable.
    *
    * `:::parcours{source="assets/x.json"}` means "next to the page that writes

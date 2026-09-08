@@ -20,10 +20,23 @@
 /** A page id is its path without the extension: stable, and readable. */
 export const idOf = (path) => path.replace(/\.md$/, '')
 
-export function buildModel(entries) {
+const str = (value) => (typeof value === 'string' && value !== '' ? value : null)
+
+/**
+ * A frontmatter list, however it was written.
+ *
+ * The index parses `[a, b]` into an array and a lone value into a scalar, and
+ * somebody writing one file will write `files: devis.pdf` sooner or later.
+ * Reading both costs a line and saves a page that looks empty for no reason
+ * anybody can see.
+ */
+const list = (value) =>
+  Array.isArray(value) ? value.map(String).filter(Boolean) : str(value) ? [String(value)] : []
+
+export function buildModel(entries, stores = []) {
   const tasks = {}
   const lists = {}
-  let config = null
+  const configs = []
 
   for (const entry of entries) {
     const fields = entry.fields ?? {}
@@ -34,6 +47,10 @@ export function buildModel(entries) {
         id,
         path: entry.path,
         title: entry.title,
+        // Which store carries it, on an instance composing several. Absent
+        // everywhere else, and the screen then draws no provenance at all —
+        // a mark on every row is not a mark.
+        store: entry.store,
         // `done` carries WHEN, not merely whether: the predecessor's corpus
         // writes `done: 2026-07-22`, which is strictly more information than
         // a boolean and costs nothing to honour. Truthy-but-not-"false" is
@@ -41,40 +58,117 @@ export function buildModel(entries) {
         // counts, so no page written either way reads wrong.
         done: fields.done === true || (typeof fields.done === 'string' && fields.done !== '' && fields.done !== 'false'),
         doneOn: typeof fields.done === 'string' ? fields.done : null,
-        due: typeof fields.due === 'string' ? fields.due : null,
+        due: str(fields.due),
+        /**
+         * The date before which the task is not to be thought about.
+         *
+         * `start` means PAS AVANT — never "I have begun". The word is
+         * iCalendar's `DTSTART` and Microsoft Graph's `startDateTime`;
+         * Taskwarrior uses the same five letters for the opposite idea, which
+         * is exactly why this sentence is written down rather than assumed.
+         */
+        start: str(fields.start),
+        /**
+         * Who carries it. One handle, never a list: a task with two owners
+         * has none, and that is the failure this field exists to end.
+         * Absent means UP FOR GRABS, which is a state and not a blank.
+         */
+        assignee: str(fields.assignee),
+        /**
+         * Documents, cited rather than copied — logical paths, resolved like
+         * a link. The file lives wherever it lives, in one copy, and two
+         * tasks may point at the same one.
+         *
+         * Deliberately NOT the files sitting in the page's folder, which is
+         * what the core calls a page's attachments: every task shares one
+         * folder, so a single PDF dropped there would show under all of them.
+         */
+        files: list(fields.files),
+        /**
+         * Whether the page says anything under its frontmatter — the core's
+         * own answer, published on the index. Never computed here: a body is
+         * not in the fields, and asking page by page would be one request per
+         * row.
+         */
+        body: entry.body === true,
         pri: typeof fields.pri === 'number' ? fields.pri : null,
-        dom: typeof fields.dom === 'string' ? fields.dom : null,
-        projet: typeof fields.projet === 'string' ? fields.projet : null,
+        dom: str(fields.dom),
+        projet: str(fields.projet),
         sub: Array.isArray(fields.sub) ? fields.sub.map(String) : [],
       }
-    } else if (fields.type === 'todo-config' && config === null) {
-      // The instance's own settings, read from the index like everything
-      // else: no second store, and the agent changes them with the file
-      // tools it already has. The FIRST one wins — the index is sorted by
-      // path, so two settings pages give the same answer on every reload
-      // rather than an answer that depends on how the folder was walked.
-      config = fields
+    } else if (fields.type === 'todo-config') {
+      // Collected rather than taken on sight: which one wins depends on its
+      // STORE, and that is decided once the whole listing is read.
+      configs.push({ store: entry.store, fields })
     } else if (fields.type === 'liste') {
       lists[id] = {
         id,
         title: entry.title,
-        icon: typeof fields.ico === 'string' ? fields.ico : '📋',
+        icon: str(fields.ico) ?? '📋',
         refs: Array.isArray(fields.refs) ? fields.refs.map(String) : [],
       }
     }
   }
 
-  return { tasks, lists, config: config ?? {} }
+  return { tasks, lists, config: settings(configs, stores), stores }
+}
+
+/**
+ * The instance's own settings, and WHICH copy of them counts.
+ *
+ * The default store wins. That is not a tidiness rule: a shared circle is
+ * mounted by several instances, so a `todo-config` written there would tell
+ * every one of them that it is the same person — the `me` below is precisely
+ * the field that must not travel. Reading it from the store this shell writes
+ * to is what keeps the answer personal.
+ *
+ * Failing that, the first by path, which is what the index's ordering makes
+ * stable: "last wins" would depend on how the folder happened to be walked.
+ */
+function settings(configs, stores) {
+  if (configs.length === 0) return {}
+  const home = stores.find((store) => store.default)?.id
+  const mine = home === undefined ? undefined : configs.find((config) => config.store === home)
+  return (mine ?? configs[0]).fields
+}
+
+/**
+ * Which handle is the person at this screen.
+ *
+ * Two mountings are supported and they answer differently. Several instances
+ * sharing a folder cannot tell who they are — `auth: none` yields a placeholder
+ * identity that names nobody — so the settings page says it. One instance with
+ * real accounts already knows, per visitor, and needs no configuration at all.
+ *
+ * So: the written answer wins where it exists, the session answers otherwise,
+ * and NEITHER means the "mine" facet is not offered. A wrong "mine" is worse
+ * than no "mine": it hides other people's work behind your name.
+ */
+export function meOf(config, identity) {
+  const declared = str(config?.me)
+  if (declared) return declared
+  const userId = str(identity?.userId)
+  // The ungated instance's placeholder names nobody, and taking it would file
+  // every task under a user called "local".
+  return userId && userId !== 'local' ? userId : null
 }
 
 const today = () => new Date().toISOString().slice(0, 10)
 
 /**
- * The dynamic lists.
+ * Whether a task is not yet to be thought about.
  *
- * Kept few and obvious on purpose. A view for every possible query is a view
- * nobody scans; these are the four questions a todo list actually gets asked.
+ * The whole value of `start:` is this predicate: a deferred task LEAVES the
+ * live views instead of adding to today's noise, and comes back on its own
+ * the morning it becomes doable. It is what OmniFocus calls deferring,
+ * todo.txt spells `t:` and Taskwarrior `wait` — all three hide.
+ *
+ * A closed task is never deferred: `done` has already answered.
  */
+export function isDeferred(task, day = today()) {
+  return !task.done && task.start !== null && task.start > day
+}
+
 /**
  * The plugin's own words.
  *
@@ -91,6 +185,8 @@ const WORDS = {
     'due within the week': 'dans la semaine',
     'Everything open': 'Tout ce qui reste',
     'the whole base, undone': 'toute la base, non faite',
+    Later: 'Plus tard',
+    'not before their start date': 'pas avant leur date de début',
     'No domain': 'Sans domaine',
     'to do': 'à faire',
     late: 'en retard',
@@ -101,24 +197,79 @@ const WORDS = {
     'Everything, by domain': 'Tout, par domaine',
     'New task': 'Nouvelle tâche',
     'Due date': 'Échéance',
+    'Start date': 'Date de début',
     Domain: 'Domaine',
     'New domain…': 'Nouveau domaine…',
     Add: 'Ajouter',
     Open: 'Ouvrir',
     'could not create that task': 'création impossible',
     'another author just took that name — try again': 'un autre auteur vient de prendre ce nom — réessayez',
+    // The six that shipped in English for want of an entry here.
+    Lists: 'Listes',
+    'Loading…': 'Chargement…',
+    'Nothing here.': 'Rien ici.',
+    'No curated list yet — ask the agent for one.':
+      "Aucune liste pour l'instant — demandez-en une à l'agent.",
+    Todo: 'Todo',
+    '%open open across %all tasks': '%open à faire sur %all tâches',
+    // v2
+    Who: 'Qui',
+    Mine: 'Pour moi',
+    Everyone: 'Tous',
+    Unassigned: 'À prendre',
+    Where: 'Où',
+    Assignee: 'Porteur',
+    'Not before': 'Dès le',
+    'Due on': 'Pour le',
+    Priority: 'Priorité',
+    Project: 'Chantier',
+    Note: 'Note',
+    Attachments: 'Pièces jointes',
+    Subtasks: 'Sous-tâches',
+    Back: 'Retour',
+    Details: 'Détail',
+    'from %n': 'de %n',
+    'Nobody yet': 'Personne',
+    'in %n days': 'dans %n jours',
+    Overdue: 'En retard',
+    'This week': 'Cette semaine',
+    Done: 'Fait',
+    'Done this week': 'Faites cette semaine',
+    'Add a task here…': 'Ajouter une tâche ici…',
+    'Tasks here': "Tâches d'ici",
+    'this folder and below': 'ce dossier et ses sous-dossiers',
+    'nothing to do here': 'rien à faire ici',
+    'Turn on the todo app to see this list.':
+      "Activez l'app todo pour voir cette liste.",
   },
 }
 
 export function words(locale) {
   const table = WORDS[String(locale ?? '').slice(0, 2)] ?? {}
-  return (key) => table[key] ?? key
+  return (key, values) => {
+    let text = table[key] ?? key
+    for (const [name, value] of Object.entries(values ?? {})) {
+      text = text.replace(`%${name}`, String(value))
+    }
+    return text
+  }
 }
 
-export function dynamicLists(tasks, t = (key) => key) {
+/**
+ * The dynamic lists.
+ *
+ * Kept few and obvious on purpose. A view for every possible query is a view
+ * nobody scans; these are the questions a todo list actually gets asked.
+ *
+ * Four of them are about what is DOABLE, so a deferred task appears in none of
+ * them — that is the point of a start date, not a side effect. The fifth
+ * exists so deferring is not the same as forgetting.
+ */
+export function dynamicLists(tasks, t = (key) => key, day = today()) {
   const all = Object.values(tasks)
   const open = all.filter((task) => !task.done)
-  const day = today()
+  const doable = open.filter((task) => !isDeferred(task, day))
+  const later = open.filter((task) => isDeferred(task, day))
 
   return [
     {
@@ -126,28 +277,35 @@ export function dynamicLists(tasks, t = (key) => key) {
       title: t('Late'),
       icon: '🔥',
       description: t('past its due date'),
-      tasks: open.filter((task) => task.due && task.due < day).sort(byDue),
+      tasks: doable.filter((task) => task.due && task.due < day).sort(byDue),
     },
     {
       id: 'today',
       title: t('Today'),
       icon: '📅',
       description: t('due today'),
-      tasks: open.filter((task) => task.due === day),
+      tasks: doable.filter((task) => task.due === day),
     },
     {
       id: 'soon',
       title: t('Next 7 days'),
       icon: '🗓',
       description: t('due within the week'),
-      tasks: open.filter((task) => task.due && task.due > day && task.due <= plusDays(day, 7)).sort(byDue),
+      tasks: doable.filter((task) => task.due && task.due > day && task.due <= plusDays(day, 7)).sort(byDue),
     },
     {
       id: 'open',
       title: t('Everything open'),
       icon: '📥',
       description: t('the whole base, undone'),
-      tasks: open.sort(byDue),
+      tasks: doable.slice().sort(byDue),
+    },
+    {
+      id: 'later',
+      title: t('Later'),
+      icon: '🌱',
+      description: t('not before their start date'),
+      tasks: later.slice().sort(byStart),
     },
   ]
 }
@@ -164,6 +322,14 @@ function byDue(a, b) {
   if (!a.due) return 1
   if (!b.due) return -1
   return a.due < b.due ? -1 : 1
+}
+
+/** Deferred tasks sort by when they wake up — the list reads as a calendar. */
+function byStart(a, b) {
+  if (a.start === b.start) return 0
+  if (!a.start) return 1
+  if (!b.start) return -1
+  return a.start < b.start ? -1 : 1
 }
 
 /** A curated list, resolved against the base. */
@@ -195,6 +361,69 @@ export function byDomain(tasks, t = (key) => key) {
   return [...groups.entries()]
     .sort(([a], [b]) => (a === '' ? 1 : b === '' ? -1 : a.localeCompare(b)))
     .map(([dom, items]) => ({ dom: dom || t('No domain'), tasks: items }))
+}
+
+/**
+ * The handles the base already uses.
+ *
+ * Discovered rather than declared, exactly as domains are. There is no roster
+ * page and no settings list: a name nobody has been given is a name nobody
+ * needs, and the day one deserves decoration it will be a page like everything
+ * else. Sorted so the same base always offers the same menu.
+ */
+export function assigneesOf(tasks) {
+  return [...new Set(tasks.map((task) => task.assignee).filter(Boolean))].sort((a, b) =>
+    a.localeCompare(b),
+  )
+}
+
+/**
+ * The twelve named hues, in the order a skin declares them.
+ *
+ * Named, never a hex: the skin decides what `indigo` looks like, and a plugin
+ * that hardcoded a colour would be a plugin that looks wrong under the next
+ * livery.
+ */
+const HUES = [
+  'indigo',
+  'rose',
+  'emeraude',
+  'ambre',
+  'violet',
+  'turquoise',
+  'orange',
+  'bleu',
+  'vert',
+  'rouge',
+  'gris',
+  'ardoise',
+]
+
+/**
+ * A stable colour for a handle.
+ *
+ * Derived rather than stored, so a base with no configuration still shows
+ * people apart — and derived from the HANDLE rather than from its position in
+ * a list, so adding somebody does not repaint everybody else.
+ */
+export function hueOf(handle) {
+  let sum = 0
+  for (const char of String(handle)) sum = (sum * 31 + char.codePointAt(0)) % 100000
+  return HUES[sum % HUES.length]
+}
+
+/**
+ * Two letters for a face.
+ *
+ * The colour alone is never the label — this design system requires every pill
+ * to survive being read by somebody who cannot separate the hues, and a plain
+ * dot would fail that. `jean-marc` gives JM, `antoine` gives AN.
+ */
+export function initialsOf(handle) {
+  const parts = String(handle).split(/[^\p{L}\p{N}]+/u).filter(Boolean)
+  const letters =
+    parts.length > 1 ? `${parts[0][0]}${parts[1][0]}` : (parts[0] ?? String(handle)).slice(0, 2)
+  return letters.toLocaleUpperCase()
 }
 
 /**
@@ -230,6 +459,34 @@ export function toggleDone(markdown, done) {
   // No `done` at all: added at the end of the frontmatter, where a human
   // adding one would put it.
   return markdown.replace(front, `${front}\ndone: ${stamp}`)
+}
+
+/**
+ * Sets, or clears, one scalar field of a page's frontmatter.
+ *
+ * The same surgery `toggleDone` performs, generalised for the fields the sheet
+ * lets a person change. In place, one line, nothing else moved — a form must
+ * not reformat a page the agent wrote.
+ *
+ * An empty value REMOVES the line rather than writing `field:` with nothing
+ * after it: absence is how this contract spells "not set", and an empty string
+ * would be a second way to say it that every reader would have to know about.
+ */
+export function setField(markdown, key, value) {
+  const match = /^---\n([\s\S]*?)\n---/.exec(markdown)
+  if (!match) return null
+
+  const front = match[1]
+  const line = new RegExp(`^${key}:.*$`, 'm')
+
+  if (value === '' || value === null || value === undefined) {
+    const cleared = front.replace(new RegExp(`\\n?^${key}:.*$`, 'm'), '')
+    return cleared === front ? markdown : markdown.replace(front, cleared)
+  }
+
+  const written = `${key}: ${Array.isArray(value) ? `[${value.map(yamlScalar).join(', ')}]` : yamlScalar(value)}`
+  const replaced = front.replace(line, written)
+  return markdown.replace(front, replaced !== front ? replaced : `${front}\n${written}`)
 }
 
 /**
@@ -309,17 +566,20 @@ function yamlScalar(raw) {
 /**
  * The page a captured task becomes.
  *
- * Deliberately the SHORTEST page the contract allows: type, title, and the
- * two fields the list itself displays. Everything else a task can carry —
- * `pri`, `projet`, `sub`, a body — is written in the page editor or by the
- * agent, because a form that asked for all of them would be a second copy of
- * the authoring contract, in JavaScript, drifting from the skill that states
- * it. No `done:` line either: absence means open, and this file must say the
- * same thing as the one a tick produces.
+ * Still the SHORTEST page the contract allows: type, title, and the fields the
+ * capture bar actually offers. Everything else a task can carry — `pri`,
+ * `projet`, `sub`, `files`, a body — is written on the sheet or by the agent,
+ * because a form asking for all of them would be a second copy of the
+ * authoring contract, in JavaScript, drifting from the skill that states it.
+ *
+ * No `done:` line either: absence means open, and this file must say the same
+ * thing as the one a tick produces.
  */
-export function taskMarkdown({ title, due, dom } = {}) {
+export function taskMarkdown({ title, due, start, dom, assignee } = {}) {
   const lines = ['type: tache', `title: ${yamlScalar(title)}`]
   if (due) lines.push(`due: ${yamlScalar(due)}`)
+  if (start) lines.push(`start: ${yamlScalar(start)}`)
+  if (assignee) lines.push(`assignee: ${yamlScalar(assignee)}`)
   if (dom) lines.push(`dom: ${yamlScalar(dom)}`)
   return `---\n${lines.join('\n')}\n---\n`
 }

@@ -404,6 +404,8 @@ export function Editor({
             <Reader
               markdown={markdown}
               path={page.path}
+              {...(page.store ? { store: page.store } : {})}
+              {...(page.fields ? { fields: page.fields } : {})}
               {...(openPage ? { openPage } : {})}
               {...(blocks ? { blocks } : {})}
               {...(pages ? { pages } : {})}
@@ -414,6 +416,8 @@ export function Editor({
         <Reader
           markdown={markdown}
           path={page.path}
+          {...(page.store ? { store: page.store } : {})}
+          {...(page.fields ? { fields: page.fields } : {})}
           {...(openPage ? { openPage } : {})}
           {...(blocks ? { blocks } : {})}
           {...(pages ? { pages } : {})}

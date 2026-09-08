@@ -168,6 +168,12 @@ function Meta({ yaml }: { readonly yaml: string }) {
 type Ctx = {
   /** The folder the page lives in — what a relative link is relative TO. */
   readonly base?: string
+  /**
+   * The page itself, for the blocks it carries: its logical path, its store,
+   * its frontmatter. `base` is derived from the first and is kept beside it
+   * rather than recomputed — a link needs the folder, a block needs the page.
+   */
+  readonly page?: { readonly path: string; readonly store?: string; readonly fields?: Readonly<Record<string, unknown>> }
   readonly openPage?: (path: string) => void
   /** Blocks the active plugins draw, beyond the core's own. */
   readonly blocks?: BlockComponents
@@ -410,6 +416,9 @@ function Contributed({ node, ctx }: { readonly node: Node; readonly ctx: Ctx }) 
         attributes={node.attributes ?? {}}
         resolve={(target) => assetUrl(target, ctx.base)}
         locate={(target) => workspacePath(target, ctx.base)}
+        {...(ctx.page ? { path: ctx.page.path } : {})}
+        {...(ctx.page?.store ? { store: ctx.page.store } : {})}
+        {...(ctx.page?.fields ? { fields: ctx.page.fields } : {})}
         {...(ctx.openPage ? { openPage: ctx.openPage } : {})}
       >
         {body}
@@ -474,6 +483,8 @@ export function Prose({
 export function Reader({
   markdown,
   path,
+  store,
+  fields,
   openPage,
   blocks,
   pages,
@@ -486,6 +497,10 @@ export function Reader({
    * them at a file that is not there.
    */
   readonly path?: string
+  /** Which store carries it, when the instance composes more than one. */
+  readonly store?: string
+  /** Its frontmatter, for the blocks it carries. See `BlockProps`. */
+  readonly fields?: Readonly<Record<string, unknown>>
   readonly openPage?: (path: string) => void
   /** What the active plugins draw. Absent means the core's vocabulary only. */
   readonly blocks?: BlockComponents
@@ -505,6 +520,9 @@ export function Reader({
     <article className="adestia-reader">
       {render(tree, {
         ...(base === undefined ? {} : { base }),
+        ...(path === undefined
+          ? {}
+          : { page: { path, ...(store ? { store } : {}), ...(fields ? { fields } : {}) } }),
         ...(openPage ? { openPage } : {}),
         ...(blocks ? { blocks } : {}),
         ...(pages ? { pages } : {}),

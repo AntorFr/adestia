@@ -1,31 +1,322 @@
-.todo { display: flex; flex-direction: column; gap: var(--space-3); }
-.todo__head { display: flex; align-items: baseline; gap: var(--space-3); }
-.todo__head h2 { margin: 0; font-size: var(--text-lg); }
-.todo-group { margin: var(--space-4) 0 0; font-size: var(--text-sm); text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); }
-.todo-cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--space-3); }
-.todo-card { display: flex; flex-direction: column; gap: var(--space-1); width: 100%; text-align: left; padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface-raised); color: var(--text); font: inherit; cursor: pointer; }
-.todo-card:hover { border-color: var(--border-strong); }
-.todo-card__icon { font-size: 1.4rem; }
-.todo-card__name { font-weight: 500; }
-.todo-card__count { font-size: var(--text-sm); color: var(--text-muted); }
-.todo-bar { display: block; height: 3px; border-radius: 2px; background: var(--surface-sunken); overflow: hidden; }
-.todo-bar i { display: block; height: 100%; background: var(--accent); }
-.todo-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
-.todo-task { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2); border-radius: var(--radius-sm); }
-.todo-task:hover { background: var(--surface-sunken); }
+/*
+ * The todo app, dressed in the shell's own vocabulary.
+ *
+ * The previous sheet was 31 lines and used a third of what the design system
+ * offers: no shadow, no serif, no mono, no plate, and the browser's native
+ * checkbox. Green tests, and a screen that read as a form pasted beside a
+ * product. Everything below is the shell's own tokens — a plugin that invents
+ * a colour is a plugin that looks wrong under the next livery.
+ */
+
+.todo { display: flex; flex-direction: column; gap: var(--space-4); --tile-color: var(--adestia-hue-rouge); }
+
+/* ── The head: a plate, a serif name, and what presses ─────────────────── */
+
+.todo__head { display: flex; align-items: center; gap: 13px; }
+.todo__plate {
+  display: grid; place-items: center; flex: none;
+  width: 46px; height: 46px; border-radius: var(--radius-ctl);
+  font-size: 22px; box-shadow: var(--shadow-sm); color: var(--plate-fg);
+  background: linear-gradient(145deg,
+    color-mix(in srgb, var(--tile-color) var(--plate-top), var(--plate-base)),
+    color-mix(in srgb, var(--tile-color) var(--plate-mix), var(--plate-base)));
+}
+.todo__head h2 { margin: 0; font: 600 26px/1.15 var(--font-title); letter-spacing: var(--title-track); }
+.todo__lede { margin: 2px 0 0; font-size: var(--text-sm); color: var(--text-muted); }
+.todo__lede em { font-style: normal; color: var(--danger); font-weight: 600; }
+
+/* ── Capture ───────────────────────────────────────────────────────────── */
+
+.todo-new {
+  display: flex; flex-direction: column; gap: var(--space-3);
+  background: var(--surface-raised); border: 1px solid var(--border);
+  border-radius: var(--radius-ctl); padding: 9px 12px; box-shadow: var(--shadow-sm);
+}
+.todo-new--open { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-quiet); }
+.todo-new__line { display: flex; align-items: center; gap: 10px; }
+.todo-new__plus { color: var(--accent); font-size: 17px; line-height: 1; }
+.todo-new__title {
+  flex: 1; min-width: 0; border: 0; background: none; color: var(--text);
+  font: inherit; padding: 2px 0;
+}
+.todo-new__title:focus-visible { outline: none; }
+.todo-new__title::placeholder { color: var(--text-faint); }
+.todo-new__more {
+  border: 0; background: none; cursor: pointer; padding: 2px 4px;
+  font: 600 var(--label-size)/1 var(--font-mono); letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text-faint);
+}
+.todo-new__more:hover { color: var(--accent); }
+.todo-new__row { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: flex-end; }
+.todo-ctl { display: flex; flex-direction: column; gap: 3px; }
+.todo-ctl em {
+  font-style: normal; font: 700 var(--label-size)/1.4 var(--font-mono);
+  letter-spacing: var(--label-track); text-transform: uppercase; color: var(--text-faint);
+}
+.todo-ctl input, .todo-ctl select, .todo-input {
+  padding: 5px 9px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface-soft); color: var(--text); font: inherit; font-size: var(--text-sm);
+}
+.todo-ctl input:focus-visible, .todo-ctl select:focus-visible, .todo-input:focus-visible {
+  outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-quiet);
+}
+.todo-new__add {
+  margin-left: auto; padding: 6px var(--space-4);
+  border: 1px solid var(--accent); border-radius: var(--radius-sm);
+  background: var(--accent); color: var(--accent-text);
+  font: inherit; font-weight: 640; cursor: pointer;
+}
+.todo-new__add:disabled { opacity: 0.45; cursor: default; }
+.todo-new__open { align-self: flex-start; font-size: var(--text-sm); color: var(--accent); }
+
+/* ── The rail: views are filters, not destinations ─────────────────────── */
+
+.todo-rail { display: flex; gap: 6px; flex-wrap: wrap; }
+.todo-rail__b {
+  display: inline-flex; align-items: baseline; gap: 6px;
+  padding: 6px 12px; border-radius: var(--radius-pill);
+  border: 1px solid var(--border); background: var(--surface-raised);
+  font: 600 12.5px/1 var(--font); color: var(--text-muted);
+  box-shadow: var(--shadow-sm); cursor: pointer;
+}
+.todo-rail__b:hover { border-color: var(--border-strong); color: var(--text); }
+.todo-rail__b i { font-style: normal; font: 600 10.5px/1 var(--font-mono); color: var(--text-faint); }
+.todo-rail__b--on { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+.todo-rail__b--on i { color: var(--accent-text); opacity: 0.7; }
+.todo-rail__b--hot { border-color: color-mix(in srgb, var(--danger) 50%, var(--border)); color: var(--danger); }
+.todo-rail__b--hot i { color: var(--danger); }
+.todo-rail__b--hot.todo-rail__b--on { background: var(--danger); border-color: var(--danger); color: #fff; }
+.todo-rail__b--hot.todo-rail__b--on i { color: #fff; }
+
+/* ── Facets: whose is this ─────────────────────────────────────────────── */
+
+.todo-facets { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.todo-facets > em {
+  font-style: normal; font: 700 var(--label-size)/1 var(--font-mono);
+  letter-spacing: var(--label-track); text-transform: uppercase; color: var(--text-faint);
+  margin-right: 2px;
+}
+.todo-chip {
+  padding: 3px 10px; border-radius: var(--radius-pill);
+  border: 1px solid var(--border); background: var(--surface-raised);
+  font: 600 11.5px/1.5 var(--font); color: var(--text-muted); cursor: pointer;
+}
+.todo-chip:hover { border-color: var(--border-strong); color: var(--text); }
+.todo-chip--on { border-color: transparent; background: var(--accent-quiet); color: var(--accent); }
+.todo-chip--dash { border-style: dashed; }
+
+/* ── Groups and rows ───────────────────────────────────────────────────── */
+
+.todo-group { display: flex; flex-direction: column; gap: 3px; }
+.todo-group__h {
+  display: flex; align-items: center; gap: 10px; margin: var(--space-2) 0 var(--space-1);
+  font: 700 var(--label-size)/1.4 var(--font-mono);
+  letter-spacing: var(--label-track); text-transform: uppercase; color: var(--text-faint);
+}
+.todo-group__h::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.todo-group__h--hot { color: var(--danger); }
+.todo-group__h--hot::after { background: color-mix(in srgb, var(--danger) 25%, var(--border)); }
+
+.todo-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+
+.todo-task {
+  position: relative;
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 11px; border-radius: var(--radius-sm);
+  background: var(--surface-raised); border: 1px solid transparent;
+  box-shadow: var(--shadow-sm);
+}
+.todo-task:hover { border-color: var(--border-strong); }
 .todo-task--done .todo-task__title { text-decoration: line-through; color: var(--text-faint); }
-.todo-task__title { flex: 1; }
-.todo-chip { font-size: var(--text-sm); padding: 0 var(--space-2); border-radius: 999px; border: 1px solid var(--border); color: var(--text-muted); }
-.todo-chip--late { border-color: var(--danger); color: var(--danger); }
-.todo-domain h4 { margin: var(--space-3) 0 var(--space-1); font-size: var(--text-base); }
+.todo-task--defer .todo-task__title { color: var(--text-muted); }
+
+.todo-task__title {
+  flex: 1; min-width: 0; text-align: left; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+  border: 0; background: none; padding: 0; cursor: pointer;
+  font: inherit; font-size: var(--text-base); color: var(--text);
+}
+.todo-task__title:hover { color: var(--accent); }
+.todo-task__title--flat { cursor: default; }
+.todo-task__title--flat:hover { color: inherit; }
+.todo-task__meta { display: flex; align-items: center; gap: 7px; flex: none; }
+
+/* The box, drawn: the native checkbox is what made this read as a form. */
+.todo-box {
+  flex: none; width: 17px; height: 17px; border-radius: 50%; padding: 0;
+  border: 1.5px solid var(--border-strong); background: var(--surface);
+  display: grid; place-items: center; cursor: pointer;
+  font-size: 10px; line-height: 1; color: transparent;
+}
+.todo-box:hover { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-quiet); }
+.todo-box:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.todo-box--on { border-color: var(--success); background: var(--success); color: #fff; }
+
+.todo-mark { font-size: 11px; color: var(--text-faint); display: inline-flex; align-items: center; gap: 2px; }
+.todo-mark b { font: 600 10px/1 var(--font-mono); }
+
+.todo-pri { font: 700 12px/1 var(--font-mono); color: var(--adestia-hue-orange); letter-spacing: -1px; }
+.todo-pri--hi { color: var(--danger); }
+
+.todo-tag {
+  font: 600 10.5px/1.5 var(--font-mono); border-radius: var(--radius-sm);
+  padding: 2px 8px; border: 1px solid var(--border); color: var(--text-muted);
+}
+.todo-date {
+  font: 600 11px/1.5 var(--font-mono); color: var(--text-muted);
+  min-width: 60px; text-align: right; font-variant-numeric: tabular-nums;
+}
+.todo-date--late { color: var(--danger); }
+.todo-date--today { color: var(--accent); }
+.todo-date--defer { color: var(--adestia-hue-violet); }
+
+/* A face: two letters on a derived hue — never colour alone. */
+.todo-who {
+  display: grid; place-items: center; flex: none;
+  width: 21px; height: 21px; border-radius: 50%;
+  font: 700 9.5px/1 var(--font-mono);
+  color: #fff; background: var(--who-color, var(--adestia-hue-gris));
+}
+.todo-who--lg { width: 26px; height: 26px; font-size: 11px; }
+.todo-who--free {
+  background: transparent; color: var(--text-faint);
+  border: 1.5px dashed var(--border-strong); font-size: 11px;
+}
+
+/* Provenance, in the shell's own grammar: the default store wears nothing. */
+.todo-task--store { border-color: color-mix(in srgb, var(--store-color) 45%, var(--border)); }
+.todo-task--store .todo-task__meta { padding-right: 22px; }
+.todo-task__store {
+  position: absolute; top: -1px; right: -1px;
+  min-width: 25px; height: 17px; display: grid; place-items: center; padding: 0 4px;
+  font: 700 9px/1 var(--font-mono); color: var(--store-color);
+  background: color-mix(in srgb, var(--store-color) 15%, var(--surface-raised));
+  border-left: 1px solid color-mix(in srgb, var(--store-color) 35%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--store-color) 35%, transparent);
+  border-radius: 0 var(--radius-sm) 0 var(--radius-sm);
+}
+
+/* ── Folds: what is finished leaves the grid, never the base ───────────── */
+
+.todo-fold { border-top: 1px solid var(--border); padding-top: var(--space-2); }
+.todo-fold > summary {
+  cursor: pointer; list-style: none;
+  font: 600 12px/1.6 var(--font); color: var(--text-faint);
+}
+.todo-fold > summary::-webkit-details-marker { display: none; }
+.todo-fold > summary::before { content: '▸ '; font-size: 10px; }
+.todo-fold[open] > summary::before { content: '▾ '; }
+.todo-fold > summary:hover { color: var(--text); }
+.todo-fold > ul { margin-top: var(--space-2); }
+
+/* ── The sheet: one task, in full ──────────────────────────────────────── */
+
+/* In the header, not above it: the shell already draws a Back in the canvas,
+   and two stacked buttons read as two of the same control. */
+.todo-back {
+  flex: none; width: 26px; height: 26px; margin-top: 3px; padding: 0;
+  display: grid; place-items: center;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface-raised); color: var(--text-muted);
+  font: inherit; font-size: 15px; line-height: 1; cursor: pointer;
+}
+.todo-back:hover { color: var(--accent); border-color: var(--accent); }
+.todo-back:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.todo-sheet__head { display: flex; align-items: flex-start; gap: 10px; }
+.todo-sheet__head .todo-box { margin-top: 8px; }
+.todo-sheet__head h2 {
+  margin: 0; flex: 1;
+  font: 600 24px/1.2 var(--font-title); letter-spacing: var(--title-track);
+}
+.todo-stat {
+  display: inline-flex; align-items: center; gap: 5px; flex: none;
+  font: 600 10.5px/1.5 var(--font-mono); border-radius: var(--radius-pill);
+  padding: 2px 9px 2px 8px;
+  color: var(--success); background: color-mix(in srgb, var(--success) 12%, transparent);
+}
+.todo-stat::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentcolor; }
+
+.todo-panel {
+  background: var(--surface-raised); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 14px 16px;
+}
+.todo-panel__h {
+  margin: 0 0 10px;
+  font: 700 var(--label-size)/1.4 var(--font-mono);
+  letter-spacing: var(--label-track); text-transform: uppercase; color: var(--text-faint);
+}
+.todo-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px 18px; }
+.todo-field { display: flex; flex-direction: column; gap: 4px; }
+.todo-field em {
+  font-style: normal; font: 700 var(--label-size)/1.4 var(--font-mono);
+  letter-spacing: var(--label-track); text-transform: uppercase; color: var(--text-faint);
+}
+.todo-field__v { display: flex; align-items: center; gap: 6px; }
+.todo-field__v .todo-input { width: 100%; }
+.todo-link { color: var(--accent); font-size: var(--text-sm); }
+
+.todo-files { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.todo-file {
+  display: flex; align-items: baseline; gap: 8px; padding: 5px 8px;
+  border-radius: var(--radius-sm); color: var(--text); text-decoration: none;
+  border: 1px dashed var(--border-strong);
+}
+.todo-file:hover { border-color: var(--accent); }
+.todo-file__n { font-size: var(--text-sm); }
+.todo-file__w { margin-left: auto; font: 500 10px/1.4 var(--font-mono); color: var(--text-faint); }
+
+.todo-subs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.todo-sub { display: flex; align-items: center; gap: 9px; }
+.todo-sub__t {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  font: inherit; font-size: var(--text-sm); color: var(--text); text-align: left;
+}
+.todo-sub__t:hover { color: var(--accent); }
+.todo-sub--done .todo-sub__t { text-decoration: line-through; color: var(--text-faint); }
+
+.todo-sheet__page { align-self: flex-start; font-size: var(--text-sm); color: var(--text-muted); }
+.todo-sheet__page:hover { color: var(--accent); }
+
+/* ── Shared with the block, and the quiet states ───────────────────────── */
+
 .todo-muted { color: var(--text-faint); font-size: var(--text-sm); }
 .todo-problem { color: var(--danger); font-size: var(--text-sm); }
-.todo-back { align-self: flex-start; padding: var(--space-1) var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font: inherit; font-size: var(--text-sm); cursor: pointer; }
-.todo-new { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
-.todo-new input, .todo-new select { padding: var(--space-2); border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font: inherit; }
-.todo-new input:focus-visible, .todo-new select:focus-visible { outline: none; border-color: var(--accent); }
-.todo-new__title { flex: 1 1 16rem; }
-.todo-new__field { flex: 0 1 9rem; min-width: 0; }
-.todo-new__add { padding: var(--space-2) var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface-raised); color: var(--text); font: inherit; cursor: pointer; }
-.todo-new__add:disabled { opacity: 0.5; cursor: default; }
-.todo-new__open { align-self: flex-start; font-size: var(--text-sm); color: var(--text-muted); }
+
+/*
+ * `:::checklist`, inside somebody's page.
+ *
+ * A rail down the left rather than a full card: it sits in prose, and a
+ * second box floating in a document reads as a widget bolted on. The rail is
+ * the accent, so it belongs to the instance's own colour rather than to this
+ * plugin's.
+ */
+.todo-block {
+  --tile-color: var(--adestia-hue-rouge);
+  margin: var(--space-4) 0;
+  padding: 12px 14px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border); border-left: 2px solid var(--accent);
+  border-radius: var(--radius-sm); box-shadow: var(--shadow-sm);
+  display: flex; flex-direction: column; gap: 4px;
+}
+.todo-block__h {
+  display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px;
+  font: 700 var(--label-size)/1.4 var(--font-mono);
+  letter-spacing: var(--label-track); text-transform: uppercase; color: var(--text-faint);
+}
+.todo-block__h span {
+  margin-left: auto; letter-spacing: 0; text-transform: none; font-weight: 500;
+}
+.todo-block .todo-task { background: none; box-shadow: none; padding: 5px 6px; }
+.todo-block .todo-task:hover { background: var(--surface-soft); border-color: transparent; }
+.todo-block__add {
+  display: flex; align-items: center; gap: 9px; padding: 5px 6px;
+  border: 0; background: none; cursor: pointer; width: 100%; text-align: left;
+  font: inherit; font-size: var(--text-sm); color: var(--text-faint);
+}
+.todo-block__add:hover { color: var(--accent); }
+.todo-block__add input {
+  flex: 1; border: 0; background: none; font: inherit; color: var(--text);
+}
+.todo-block__add input:focus-visible { outline: none; }

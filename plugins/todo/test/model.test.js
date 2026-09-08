@@ -10,12 +10,18 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
 import {
+  assigneesOf,
   buildModel,
   byDomain,
   dynamicLists,
+  hueOf,
+  initialsOf,
+  isDeferred,
+  meOf,
   newTaskPath,
   progressOf,
   resolveList,
+  setField,
   slugify,
   taskFolder,
   taskMarkdown,
@@ -207,4 +213,142 @@ test('a title that would break the frontmatter is quoted, and read back whole', 
   // Quoted only when it must be, so the file looks like one a person wrote.
   assert.equal(taskMarkdown({ title: "L'évier fuit" }), "---\ntype: tache\ntitle: L'évier fuit\n---\n")
   assert.equal(taskMarkdown({ title: '- ranger' }), "---\ntype: tache\ntitle: '- ranger'\n---\n")
+})
+
+
+// ── Ce que la v2 ajoute ──────────────────────────────────────────────────
+
+test('a task deferred to a future date leaves every live view', () => {
+  // The whole value of `start:`. Planning something for November must not add
+  // to the noise of today — otherwise the field is decoration.
+  const { tasks } = buildModel([
+    page('t/now.md', { type: 'tache', due: day(0) }),
+    page('t/later.md', { type: 'tache', due: day(1), start: day(20) }),
+  ])
+  const byId = Object.fromEntries(dynamicLists(tasks).map((l) => [l.id, l.tasks.map((t) => t.id)]))
+
+  assert.deepEqual(byId.open, ['t/now'])
+  assert.deepEqual(byId.soon, [])
+  assert.deepEqual(byId.later, ['t/later'])
+})
+
+test('a start date that has passed defers nothing — it is simply a normal task', () => {
+  const { tasks } = buildModel([page('t/a.md', { type: 'tache', due: day(-2), start: day(-9) })])
+  const byId = Object.fromEntries(dynamicLists(tasks).map((l) => [l.id, l.tasks.map((t) => t.id)]))
+  // And it can be LATE: it is `due` that decides that, never `start`.
+  assert.deepEqual(byId.late, ['t/a'])
+  assert.deepEqual(byId.later, [])
+})
+
+test('a closed task is never deferred — done has already answered', () => {
+  assert.equal(isDeferred({ done: true, start: day(30) }, day(0)), false)
+  assert.equal(isDeferred({ done: false, start: day(30) }, day(0)), true)
+  assert.equal(isDeferred({ done: false, start: null }, day(0)), false)
+})
+
+test('deferred tasks read as a calendar, earliest first', () => {
+  const { tasks } = buildModel([
+    page('t/b.md', { type: 'tache', start: day(40) }),
+    page('t/a.md', { type: 'tache', start: day(10) }),
+  ])
+  const later = dynamicLists(tasks).find((l) => l.id === 'later')
+  assert.deepEqual(later.tasks.map((t) => t.id), ['t/a', 't/b'])
+})
+
+test('who is "me": the written answer wins, then the session, then nobody', () => {
+  assert.equal(meOf({ me: 'antoine' }, { userId: 'a.berard' }), 'antoine')
+  assert.equal(meOf({}, { userId: 'a.berard' }), 'a.berard')
+  assert.equal(meOf({}, undefined), null)
+  // The ungated instance's placeholder names nobody: taking it would file
+  // every task under a user called "local".
+  assert.equal(meOf({}, { userId: 'local' }), null)
+})
+
+test('the settings that count are the DEFAULT store\'s', () => {
+  // A shared circle is mounted by several instances, so a `me` written there
+  // would tell every one of them it is the same person.
+  const shared = { path: 'famille/reglages.md', title: 'r', fields: { type: 'todo-config', me: 'celine' }, store: 'famille' }
+  const mine = { path: 'perso/reglages.md', title: 'r', fields: { type: 'todo-config', me: 'antoine' }, store: 'perso' }
+  const stores = [{ id: 'famille' }, { id: 'perso', default: true }]
+
+  // Whatever the order the listing happens to arrive in.
+  assert.equal(buildModel([shared, mine], stores).config.me, 'antoine')
+  assert.equal(buildModel([mine, shared], stores).config.me, 'antoine')
+  // With no store table at all — the single-store instance — nothing changes.
+  assert.equal(buildModel([shared, mine]).config.me, 'celine')
+})
+
+test('the people are discovered from the base, like the domains are', () => {
+  const { tasks } = buildModel([
+    page('t/a.md', { type: 'tache', assignee: 'celine' }),
+    page('t/b.md', { type: 'tache', assignee: 'antoine' }),
+    page('t/c.md', { type: 'tache', assignee: 'celine' }),
+    page('t/d.md', { type: 'tache' }),
+  ])
+  assert.deepEqual(assigneesOf(Object.values(tasks)), ['antoine', 'celine'])
+})
+
+test('a handle keeps its colour, and adding somebody repaints nobody', () => {
+  const before = hueOf('antoine')
+  assert.equal(hueOf('antoine'), before)
+  // Derived from the handle, not from a position in a list.
+  assert.equal(hueOf('antoine'), before)
+  assert.notEqual(hueOf('antoine'), null)
+  // Always a NAME from the closed table — never a hex a skin cannot restyle.
+  assert.match(hueOf('celine'), /^[a-z]+$/)
+})
+
+test('two letters survive being read without the colour', () => {
+  assert.equal(initialsOf('antoine'), 'AN')
+  assert.equal(initialsOf('jean-marc'), 'JM')
+  assert.equal(initialsOf('a'), 'A')
+})
+
+test('attachments are read as a list, however the one file was written', () => {
+  const { tasks } = buildModel([
+    page('t/a.md', { type: 'tache', files: ['admin/devis.pdf', 'diy/avant.jpg'] }),
+    page('t/b.md', { type: 'tache', files: 'admin/devis.pdf' }),
+    page('t/c.md', { type: 'tache' }),
+  ])
+  assert.deepEqual(tasks['t/a'].files, ['admin/devis.pdf', 'diy/avant.jpg'])
+  assert.deepEqual(tasks['t/b'].files, ['admin/devis.pdf'])
+  assert.deepEqual(tasks['t/c'].files, [])
+})
+
+test('whether a task carries a note is the index\'s answer, never a guess', () => {
+  const { tasks } = buildModel([
+    { path: 't/a.md', title: 'a', fields: { type: 'tache' }, body: true },
+    { path: 't/b.md', title: 'b', fields: { type: 'tache' }, body: false },
+    { path: 't/c.md', title: 'c', fields: { type: 'tache' } },
+  ])
+  assert.equal(tasks['t/a'].body, true)
+  assert.equal(tasks['t/b'].body, false)
+  // An older server that does not publish it: no marker, rather than a wrong one.
+  assert.equal(tasks['t/c'].body, false)
+})
+
+test('capture writes the two new fields, and only when they were given', () => {
+  assert.equal(
+    taskMarkdown({ title: 'Ramoner', start: '2026-11-03', assignee: 'antoine' }),
+    '---\ntype: tache\ntitle: Ramoner\nstart: 2026-11-03\nassignee: antoine\n---\n',
+  )
+  assert.equal(taskMarkdown({ title: 'Ramoner' }), '---\ntype: tache\ntitle: Ramoner\n---\n')
+})
+
+test('a field is set, replaced and cleared in place, moving nothing else', () => {
+  const page = '---\ntype: tache\ntitle: Poncer\ndom: atelier\n---\n\nGrain 120.\n'
+
+  // Added where a human adding one would put it, and the body is untouched.
+  const added = setField(page, 'assignee', 'antoine')
+  assert.match(added, /\ndom: atelier\nassignee: antoine\n---/)
+  assert.match(added, /\n\nGrain 120\.\n$/)
+
+  // Replaced in place: the line keeps its position.
+  assert.match(setField(added, 'assignee', 'celine'), /\nassignee: celine\n---/)
+
+  // Cleared entirely — absence is how this contract spells "not set", and an
+  // empty `assignee:` would be a second way to say it.
+  assert.equal(setField(added, 'assignee', ''), page)
+
+  assert.equal(setField('no frontmatter\n', 'assignee', 'x'), null)
 })
