@@ -1,17 +1,19 @@
-import { createElement as h, useCallback, useEffect, useState } from 'react'
+import { createElement as h, useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
+  assigneesOf,
   buildModel,
-  byDomain,
   dynamicLists,
+  isDeferred,
+  meOf,
   newTaskPath,
-  progressOf,
   resolveList,
   taskFolder,
   taskMarkdown,
-  toggleDone,
   words,
 } from './model.js'
+import { storeMarks, taskRow, todayISO, toggleTask } from './rows.js'
+import { makeSheet } from './sheet.js'
 
 /**
  * The domain menu's one non-domain entry.
@@ -23,26 +25,36 @@ import {
  */
 const NEW_DOMAIN = '::new'
 
+/** The facet values that are not a person's handle. */
+const ANYONE = '::all'
+const NOBODY = '::free'
+
 export default function view(api) {
   const t = words(api.locale)
 
   function Todo() {
     const [model, setModel] = useState(null)
-    const [openList, setOpenList] = useState(null)
+    const [me, setMe] = useState(null)
+    const [openList, setOpenList] = useState('open')
+    const [openTask, setOpenTask] = useState(null)
+    const [who, setWho] = useState(ANYONE)
     const [error, setError] = useState(null)
-    const [draft, setDraft] = useState({ title: '', due: '', dom: '' })
+    const [draft, setDraft] = useState({ title: '', due: '', start: '', dom: '', assignee: '' })
+    const [detailed, setDetailed] = useState(false)
     const [saving, setSaving] = useState(false)
     /** The last task captured here, kept only to offer its page. */
     const [created, setCreated] = useState(null)
     /** Typing a domain the base does not have yet. */
     const [naming, setNaming] = useState(false)
 
+    const day = todayISO()
+
     const reload = useCallback(async () => {
       try {
         const response = await api.fetch('/api/pages/index')
         if (!response.ok) throw new Error(`the page index answered ${response.status}`)
-        const { entries } = await response.json()
-        setModel(buildModel(entries))
+        const { entries, stores } = await response.json()
+        setModel(buildModel(entries, stores ?? []))
       } catch (cause) {
         setError(cause.message)
       }
@@ -53,30 +65,29 @@ export default function view(api) {
     }, [reload])
 
     /**
-     * Ticking a task rewrites its page.
+     * Who is at this screen.
      *
-     * Read-then-write with the revision, so the conflict machinery that
-     * protects a human editor also protects a checkbox: if the agent rewrote
-     * the task since the list was loaded, the tick is refused rather than
-     * silently overwriting its work.
+     * Asked of the shell rather than assumed, and only once. An instance with
+     * real accounts answers per visitor; an ungated one names nobody, and the
+     * settings page then has the last word — see `meOf`.
      */
+    useEffect(() => {
+      let cancelled = false
+      void (async () => {
+        const response = await api.fetch('/api/instance').catch(() => undefined)
+        if (!response?.ok || cancelled) return
+        const { user } = await response.json()
+        if (!cancelled) setMe(user ?? null)
+      })()
+      return () => {
+        cancelled = true
+      }
+    }, [])
+
     const toggle = useCallback(
       async (task) => {
         try {
-          const read = await api.fetch(`/api/pages/${task.path}`)
-          if (!read.ok) throw new Error('that task no longer exists')
-          const page = await read.json()
-
-          const markdown = toggleDone(page.markdown, !task.done)
-          if (!markdown) throw new Error('that task has no frontmatter to tick')
-
-          const write = await api.fetch(`/api/pages/${task.path}`, {
-            method: 'PUT',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ markdown, revision: page.revision }),
-          })
-          if (write.status === 409) throw new Error('the agent changed that task — reloading')
-          if (!write.ok) throw new Error(`could not save (${write.status})`)
+          await toggleTask(api, task)
           setError(null)
         } catch (cause) {
           setError(cause.message)
@@ -91,9 +102,9 @@ export default function view(api) {
      *
      * The other author is still the agent, and this does not compete with it:
      * it writes the shortest page the contract allows and stops. What it
-     * cannot say — a body, a priority, a parent project — is said in the page
-     * editor, which is the whole reason this form can exist now and could not
-     * before: a form is a poor author only when it is the LAST word.
+     * cannot say — a body, a priority, documents — is said on the sheet, which
+     * is the whole reason this form can exist: a form is a poor author only
+     * when it is the LAST word.
      *
      * The write carries no revision, which is precisely the guard: the server
      * refuses a PUT with no revision on a file that already exists, so a
@@ -111,7 +122,13 @@ export default function view(api) {
         setCreated(null)
 
         const folder = taskFolder(model.config, api.locale)
-        const markdown = taskMarkdown({ title, due: draft.due, dom: draft.dom.trim() })
+        const markdown = taskMarkdown({
+          title,
+          due: draft.due,
+          start: draft.start,
+          dom: draft.dom.trim(),
+          assignee: draft.assignee,
+        })
         const taken = Object.keys(model.tasks)
 
         const put = (path) =>
@@ -131,7 +148,7 @@ export default function view(api) {
           if (write.status === 409) throw new Error(t('another author just took that name — try again'))
           if (!write.ok) throw new Error(`${t('could not create that task')} (${write.status})`)
 
-          setDraft({ title: '', due: '', dom: '' })
+          setDraft({ title: '', due: '', start: '', dom: '', assignee: '' })
           setNaming(false)
           setCreated(path)
           setError(null)
@@ -144,205 +161,317 @@ export default function view(api) {
       [draft, model, reload, saving],
     )
 
+    const mine = useMemo(() => (model ? meOf(model.config, me) : null), [model, me])
+    const storeOf = useMemo(() => storeMarks(model?.stores), [model])
+
     if (error && !model) return h('p', { className: 'todo-problem' }, error)
-    if (!model) return h('p', { className: 'todo-muted' }, 'Loading…')
+    if (!model) return h('p', { className: 'todo-muted' }, t('Loading…'))
 
-    const dynamic = dynamicLists(model.tasks, t)
+    const Sheet = sheetOf(api, t)
+    if (openTask && model.tasks[openTask]) {
+      return h(Sheet, {
+        task: model.tasks[openTask],
+        model,
+        onBack: () => setOpenTask(null),
+        onChanged: reload,
+        onOpenTask: (child, how) => (how === 'toggle' ? void toggle(child) : setOpenTask(child.id)),
+      })
+    }
+
+    const all = Object.values(model.tasks)
+    const people = assigneesOf(all)
+
+    /** The facet, applied before anything is grouped or counted. */
+    const kept = (tasks) =>
+      who === ANYONE
+        ? tasks
+        : who === NOBODY
+          ? tasks.filter((task) => !task.assignee)
+          : tasks.filter((task) => task.assignee === who)
+
+    const dynamic = dynamicLists(model.tasks, t, day)
     const curated = Object.values(model.lists).map((list) => resolveList(list, model.tasks))
-    const current =
-      openList &&
-      [...curated, ...dynamic].find((list) => list.id === openList)
+    const current = [...dynamic, ...curated].find((list) => list.id === openList) ?? dynamic[3]
 
-    const taskRow = (task) =>
-      h('li', { key: task.id, className: `todo-task${task.done ? ' todo-task--done' : ''}` }, [
-        h('input', {
-          key: 'c',
-          type: 'checkbox',
-          checked: task.done,
-          onChange: () => void toggle(task),
-          'aria-label': task.title,
-        }),
-        h('span', { key: 't', className: 'todo-task__title' }, task.title),
-        task.due &&
-          h(
-            'span',
-            {
-              key: 'd',
-              className: `todo-chip${
-                !task.done && task.due < new Date().toISOString().slice(0, 10) ? ' todo-chip--late' : ''
-              }`,
-            },
-            task.due,
-          ),
-        task.dom && h('span', { key: 'm', className: 'todo-chip' }, task.dom),
-      ])
+    const row = (task) =>
+      taskRow(h, { task, t, locale: api.locale, day, onToggle: toggle, onOpen: (one) => setOpenTask(one.id), storeOf })
 
-    if (current) {
-      const { open } = progressOf(current.tasks)
-      return h('section', { className: 'todo' }, [
-        h('button', { key: 'b', className: 'todo-back', onClick: () => setOpenList(null) }, '‹ Lists'),
-        h('header', { key: 'h', className: 'todo__head' }, [
-          h('h2', { key: 't' }, `${current.icon ?? '⚙'} ${current.title}`),
-          h(
-            'span',
-            { key: 's', className: 'todo-muted' },
-            // Said on every list, because the two behave differently and a
-            // user who ticks something out of a dynamic view needs to know
-            // why it vanished.
-            current.curated
-              ? `${open} ${t('to do')} · ${t('curated by reference')}`
-              : `${open} ${t('to do')} · ${t('a live query, nothing to maintain')}`,
-          ),
-        ]),
-        error && h('p', { key: 'e', className: 'todo-problem' }, error),
-        current.tasks.length === 0
-          ? h('p', { key: 'z', className: 'todo-muted' }, 'Nothing here.')
-          : h('ul', { key: 'l', className: 'todo-list' }, current.tasks.map(taskRow)),
-      ])
-    }
+    const group = (title, tasks, hot) =>
+      tasks.length === 0
+        ? null
+        : h('div', { key: title, className: 'todo-group' }, [
+            h('h3', { key: 'h', className: `todo-group__h${hot ? ' todo-group__h--hot' : ''}` }, title),
+            h('ul', { key: 'l', className: 'todo-list' }, tasks.map(row)),
+          ])
 
-    const card = (list, isCurated) => {
-      const { open, percent } = progressOf(list.tasks)
-      return h(
-        'li',
-        { key: list.id },
-        h('button', { className: 'todo-card', onClick: () => setOpenList(list.id) }, [
-          h('span', { key: 'i', className: 'todo-card__icon' }, list.icon ?? '⚙'),
-          h('span', { key: 'n', className: 'todo-card__name' }, list.title),
-          h('span', { key: 'd', className: 'todo-muted' }, list.description ?? ''),
-          isCurated &&
-            h('span', { key: 'b', className: 'todo-bar' }, h('i', { style: { width: `${percent}%` } })),
-          h('span', { key: 'c', className: 'todo-card__count' }, `${open} ${t('to do')}`),
-        ]),
-      )
-    }
+    /**
+     * The default view reads as a day, not as a database.
+     *
+     * Grouped by urgency rather than listed flat, because "what is late" and
+     * "what is due Friday" are two different requests and a single ordered
+     * list makes the reader do the sorting. Any other view is flat: it was
+     * chosen precisely to be one thing.
+     */
+    const body =
+      current.id === 'open'
+        ? [
+            group(t('Overdue'), kept(current.tasks.filter((task) => task.due && task.due < day)), true),
+            group(t('Today'), kept(current.tasks.filter((task) => task.due === day))),
+            group(
+              t('This week'),
+              kept(current.tasks.filter((task) => task.due && task.due > day && task.due <= plusWeek(day))),
+            ),
+            group(
+              t('Beyond'),
+              kept(current.tasks.filter((task) => !task.due || task.due > plusWeek(day))),
+            ),
+          ]
+        : [
+            kept(current.tasks).length === 0
+              ? h('p', { key: 'z', className: 'todo-muted' }, t('Nothing here.'))
+              : h('ul', { key: 'l', className: 'todo-list' }, kept(current.tasks).map(row)),
+          ]
 
-    const allTasks = Object.values(model.tasks)
-    /** The domains the base already uses — its own vocabulary, sorted. */
-    const domains = [...new Set(allTasks.map((task) => task.dom).filter(Boolean))].sort((a, b) =>
+    const later = dynamic.find((list) => list.id === 'later').tasks
+    const closed = all.filter((task) => task.done && task.doneOn && task.doneOn >= minusWeek(day))
+
+    const openCount = kept(all.filter((task) => !task.done && !isDeferred(task, day))).length
+    const lateCount = kept(
+      all.filter((task) => !task.done && !isDeferred(task, day) && task.due && task.due < day),
+    ).length
+
+    const domains = [...new Set(all.map((task) => task.dom).filter(Boolean))].sort((a, b) =>
       a.localeCompare(b),
     )
 
+    const facet = (value, label, extra) =>
+      h(
+        'button',
+        {
+          key: value,
+          type: 'button',
+          className: `todo-chip${who === value ? ' todo-chip--on' : ''}${extra ?? ''}`,
+          'aria-pressed': who === value,
+          onClick: () => setWho(value),
+        },
+        label,
+      )
+
     return h('section', { className: 'todo' }, [
       h('header', { key: 'h', className: 'todo__head' }, [
-        h('h2', { key: 't' }, '☑ Todo'),
-        h(
-          'span',
-          { key: 's', className: 'todo-muted' },
-          `${allTasks.filter((t) => !t.done).length} open across ${allTasks.length} tasks`,
-        ),
+        h('span', { key: 'p', className: 'todo__plate' }, '☑'),
+        h('div', { key: 'n' }, [
+          h('h2', { key: 't' }, t('Todo')),
+          h('p', { key: 's', className: 'todo__lede' }, [
+            t('%open to do', { open: openCount }),
+            lateCount > 0 && h('em', { key: 'l' }, ` · ${t('%n late', { n: lateCount })}`),
+            later.length > 0 && ` · ${t('%n later', { n: later.length })}`,
+          ]),
+        ]),
       ]),
+
       /**
        * Quick capture.
        *
        * Title first and alone under the Enter key, because that is the
        * gesture: a task remembered on a staircase is a sentence, and asking
-       * for a date before it is written loses it. The two fields beside it
-       * are the two the list itself displays — a form that offered a field
-       * this screen cannot show would be promising something it does not
-       * keep.
+       * for a date before it is written loses it. The rest opens only when
+       * asked for — a form that shows five fields to capture one line is a
+       * form people stop using.
        */
-      h('form', { key: 'new', className: 'todo-new', onSubmit: capture }, [
-        h('input', {
-          key: 't',
-          className: 'todo-new__title',
-          value: draft.title,
-          placeholder: t('New task'),
-          'aria-label': t('New task'),
-          onChange: (event) => setDraft({ ...draft, title: event.target.value }),
-        }),
-        h('input', {
-          key: 'd',
-          type: 'date',
-          className: 'todo-new__field',
-          value: draft.due,
-          'aria-label': t('Due date'),
-          onChange: (event) => setDraft({ ...draft, due: event.target.value }),
-        }),
-        /**
-         * The domain, PICKED rather than typed.
-         *
-         * A domain is a vocabulary the base already has, and typing into a
-         * free field is how "atelier" acquires a twin called "Atelier" on a
-         * tired evening — two groups on the everything view for one place in
-         * the house. So the existing ones are a list, and inventing one is a
-         * deliberate choice at the bottom of it rather than the default
-         * gesture.
-         *
-         * A base with no domain yet has nothing to choose from, and a menu
-         * of one option that says "new…" is a worse text field: it falls
-         * back to typing until there is something to pick.
-         */
-        domains.length === 0 || naming
-          ? h('input', {
-              key: 'm',
-              className: 'todo-new__field',
-              value: draft.dom,
-              placeholder: t('Domain'),
-              'aria-label': t('Domain'),
-              autoFocus: naming,
-              onChange: (event) => setDraft({ ...draft, dom: event.target.value }),
-            })
-          : h(
-              'select',
+      h(
+        'form',
+        { key: 'new', className: `todo-new${detailed ? ' todo-new--open' : ''}`, onSubmit: capture },
+        [
+          h('div', { key: 'line', className: 'todo-new__line' }, [
+            h('span', { key: 'p', className: 'todo-new__plus', 'aria-hidden': 'true' }, '＋'),
+            h('input', {
+              key: 't',
+              className: 'todo-new__title',
+              value: draft.title,
+              placeholder: t('New task'),
+              'aria-label': t('New task'),
+              onChange: (event) => setDraft({ ...draft, title: event.target.value }),
+            }),
+            h(
+              'button',
               {
                 key: 'm',
-                className: 'todo-new__field',
-                value: draft.dom,
-                'aria-label': t('Domain'),
-                onChange: (event) => {
-                  if (event.target.value === NEW_DOMAIN) {
-                    setNaming(true)
-                    setDraft({ ...draft, dom: '' })
-                  } else setDraft({ ...draft, dom: event.target.value })
-                },
+                type: 'button',
+                className: 'todo-new__more',
+                'aria-expanded': detailed,
+                onClick: () => setDetailed(!detailed),
               },
-              [
-                // Undomained is a legitimate answer, not an empty field: the
-                // everything view has a group for it.
-                h('option', { key: '', value: '' }, t('No domain')),
-                ...domains.map((dom) => h('option', { key: dom, value: dom }, dom)),
-                h('option', { key: 'new', value: NEW_DOMAIN }, t('New domain…')),
-              ],
+              `${t('Details')} ${detailed ? '⌃' : '⌄'}`,
             ),
-        h(
-          'button',
-          { key: 'b', type: 'submit', className: 'todo-new__add', disabled: !draft.title.trim() || saving },
-          t('Add'),
-        ),
-      ]),
+          ]),
+
+          detailed &&
+            h('div', { key: 'row', className: 'todo-new__row' }, [
+              h('label', { key: 's', className: 'todo-ctl' }, [
+                h('em', { key: 'l' }, t('Not before')),
+                h('input', {
+                  key: 'i',
+                  type: 'date',
+                  value: draft.start,
+                  'aria-label': t('Start date'),
+                  onChange: (event) => setDraft({ ...draft, start: event.target.value }),
+                }),
+              ]),
+              h('label', { key: 'd', className: 'todo-ctl' }, [
+                h('em', { key: 'l' }, t('Due on')),
+                h('input', {
+                  key: 'i',
+                  type: 'date',
+                  value: draft.due,
+                  'aria-label': t('Due date'),
+                  onChange: (event) => setDraft({ ...draft, due: event.target.value }),
+                }),
+              ]),
+              h('label', { key: 'a', className: 'todo-ctl' }, [
+                h('em', { key: 'l' }, t('Assignee')),
+                h(
+                  'select',
+                  {
+                    key: 'i',
+                    value: draft.assignee,
+                    'aria-label': t('Assignee'),
+                    onChange: (event) => setDraft({ ...draft, assignee: event.target.value }),
+                  },
+                  [
+                    h('option', { key: '', value: '' }, t('Unassigned')),
+                    ...withMe(people, mine).map((one) => h('option', { key: one, value: one }, one)),
+                  ],
+                ),
+              ]),
+              /**
+               * The domain, PICKED rather than typed.
+               *
+               * A domain is a vocabulary the base already has, and typing into
+               * a free field is how "atelier" acquires a twin called "Atelier"
+               * on a tired evening — two groups on the everything view for one
+               * place in the house. A base with no domain yet has nothing to
+               * choose from, and a menu of one option saying "new…" is a worse
+               * text field: it falls back to typing until there is something
+               * to pick.
+               */
+              h('label', { key: 'm', className: 'todo-ctl' }, [
+                h('em', { key: 'l' }, t('Domain')),
+                domains.length === 0 || naming
+                  ? h('input', {
+                      key: 'i',
+                      value: draft.dom,
+                      placeholder: t('Domain'),
+                      'aria-label': t('Domain'),
+                      autoFocus: naming,
+                      onChange: (event) => setDraft({ ...draft, dom: event.target.value }),
+                    })
+                  : h(
+                      'select',
+                      {
+                        key: 'i',
+                        value: draft.dom,
+                        'aria-label': t('Domain'),
+                        onChange: (event) => {
+                          if (event.target.value === NEW_DOMAIN) {
+                            setNaming(true)
+                            setDraft({ ...draft, dom: '' })
+                          } else setDraft({ ...draft, dom: event.target.value })
+                        },
+                      },
+                      [
+                        h('option', { key: '', value: '' }, t('No domain')),
+                        ...domains.map((dom) => h('option', { key: dom, value: dom }, dom)),
+                        h('option', { key: 'new', value: NEW_DOMAIN }, t('New domain…')),
+                      ],
+                    ),
+              ]),
+              h(
+                'button',
+                {
+                  key: 'b',
+                  type: 'submit',
+                  className: 'todo-new__add',
+                  disabled: !draft.title.trim() || saving,
+                },
+                t('Add'),
+              ),
+            ]),
+        ],
+      ),
 
       // Offered, never forced: the task is already filed and shown below.
-      // This is only for the times the rest of it — a body, a priority — is
-      // in the writer's head right now.
+      // This is only for the times the rest of it is in the writer's head now.
       created &&
         h(
           'a',
-          { key: 'open', className: 'todo-new__open', href: `#/page/${encodeURIComponent(created)}` },
+          { key: 'open', className: 'todo-new__open', href: `#/page/${encodeURIComponent(created.replace(/\.md$/, ''))}` },
           `${t('Open')} ↗`,
         ),
 
       error && h('p', { key: 'e', className: 'todo-problem' }, error),
 
-      h('h3', { key: 'c', className: 'todo-group' }, t('Your lists')),
-      curated.length === 0
-        ? h(
-            'p',
-            { key: 'cz', className: 'todo-muted' },
-            'No curated list yet — ask the agent for one.',
-          )
-        : h('ul', { key: 'cl', className: 'todo-cards' }, curated.map((l) => card(l, true))),
-
-      h('h3', { key: 'd', className: 'todo-group' }, t('Live views')),
-      h('ul', { key: 'dl', className: 'todo-cards' }, dynamic.map((l) => card(l, false))),
-
-      h('h3', { key: 'g', className: 'todo-group' }, t('Everything, by domain')),
-      ...byDomain(allTasks.filter((task) => !task.done), t).map((group) =>
-        h('div', { key: group.dom, className: 'todo-domain' }, [
-          h('h4', { key: 'h' }, group.dom),
-          h('ul', { key: 'l', className: 'todo-list' }, group.tasks.map(taskRow)),
-        ]),
+      h(
+        'div',
+        { key: 'rail', className: 'todo-rail' },
+        [...dynamic, ...curated]
+          .filter((list) => list.id !== 'later')
+          .map((list) =>
+            h(
+              'button',
+              {
+                key: list.id,
+                type: 'button',
+                className: [
+                  'todo-rail__b',
+                  current.id === list.id ? 'todo-rail__b--on' : '',
+                  list.id === 'late' && list.tasks.length > 0 ? 'todo-rail__b--hot' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' '),
+                'aria-pressed': current.id === list.id,
+                onClick: () => setOpenList(list.id),
+              },
+              [
+                list.curated ? `${list.icon} ${list.title}` : list.title,
+                h('i', { key: 'n' }, String(kept(list.tasks).length)),
+              ],
+            ),
+          ),
       ),
+
+      // The facet exists because a shared circle makes "whose is this" the
+      // question the list cannot answer by itself.
+      (people.length > 0 || mine) &&
+        h('div', { key: 'facets', className: 'todo-facets' }, [
+          h('em', { key: 'l' }, t('Who')),
+          facet(ANYONE, t('Everyone')),
+          mine && facet(mine, t('Mine')),
+          ...people.filter((one) => one !== mine).map((one) => facet(one, one)),
+          facet(NOBODY, t('Unassigned'), ' todo-chip--dash'),
+        ]),
+
+      ...body,
+
+      later.length > 0 &&
+        h(
+          'details',
+          { key: 'later', className: 'todo-fold' },
+          [
+            h('summary', { key: 's' }, `${t('Later')} · ${kept(later).length}`),
+            h('ul', { key: 'l', className: 'todo-list' }, kept(later).map(row)),
+          ],
+        ),
+
+      closed.length > 0 &&
+        h(
+          'details',
+          { key: 'done', className: 'todo-fold' },
+          [
+            h('summary', { key: 's' }, `${t('Done this week')} · ${kept(closed).length}`),
+            h('ul', { key: 'l', className: 'todo-list' }, kept(closed).map(row)),
+          ],
+        ),
     ])
   }
 
@@ -350,25 +479,45 @@ export default function view(api) {
    * What the launcher tile says without opening the app.
    *
    * The same index the view reads, through the same model — so a tile can
-   * never disagree with the screen it opens. Overdue is the one figure worth
-   * colouring: it is the only one that is a request rather than a fact.
+   * never disagree with the screen it opens. Deferred tasks are not counted:
+   * a task nobody can start is not a request. Overdue is the one figure worth
+   * colouring, being the only one that IS a request rather than a fact.
    */
   async function tileInfo() {
     const response = await api.fetch('/api/pages/index')
     if (!response.ok) return undefined
-    const { entries } = await response.json()
-    const { tasks } = buildModel(entries)
-    const open = Object.values(tasks).filter((task) => !task.done)
-    const today = new Date().toISOString().slice(0, 10)
-    const late = open.filter((task) => task.due && task.due < today).length
+    const { entries, stores } = await response.json()
+    const { tasks } = buildModel(entries, stores ?? [])
+    const day = todayISO()
+    const open = Object.values(tasks).filter((task) => !task.done && !isDeferred(task, day))
+    const late = open.filter((task) => task.due && task.due < day).length
+    const free = open.filter((task) => !task.assignee).length
 
     return {
       chips: [
-        { text: `${open.length} ${t('to do')}` },
-        ...(late > 0 ? [{ text: `${late} ${t('late')}`, hot: true }] : []),
+        { text: t('%open to do', { open: open.length }) },
+        ...(late > 0 ? [{ text: t('%n late', { n: late }), hot: true }] : []),
+        ...(late === 0 && free > 0 ? [{ text: t('%n unassigned', { n: free }), hot: true }] : []),
       ],
     }
   }
 
   return { component: Todo, tileInfo }
+}
+
+/** Built once per view factory, not once per render. */
+let sheet
+const sheetOf = (api, t) => (sheet ??= makeSheet(api, t))
+
+/** "Me" belongs in the menu even before I have been given anything. */
+const withMe = (people, mine) =>
+  mine && !people.includes(mine) ? [mine, ...people].sort((a, b) => a.localeCompare(b)) : people
+
+const plusWeek = (iso) => shift(iso, 7)
+const minusWeek = (iso) => shift(iso, -7)
+
+function shift(iso, days) {
+  const date = new Date(`${iso}T00:00:00Z`)
+  date.setUTCDate(date.getUTCDate() + days)
+  return date.toISOString().slice(0, 10)
 }
