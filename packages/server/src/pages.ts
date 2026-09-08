@@ -179,6 +179,27 @@ function parseScalar(raw: string): unknown {
   return raw
 }
 
+/**
+ * Whether anything is written UNDER the frontmatter.
+ *
+ * A boolean rather than the text, and the difference is the whole reason this
+ * exists. The index answers for every page at once, so returning bodies would
+ * ship the entire corpus to draw a list — two hundred pages to decide where to
+ * put a small mark. The server already holds each body here, to parse the
+ * frontmatter and find the title, so saying whether there IS one costs
+ * nothing and travels in five bytes.
+ *
+ * What it buys: a list can show which of its rows carry an explanation,
+ * instead of every row looking equally bare until you open it.
+ *
+ * Whitespace is not a body. A page whose text is a single heading is one —
+ * a heading is what somebody wrote.
+ */
+export function hasBody(markdown: string): boolean {
+  const match = /^---\n[\s\S]*?\n---/.exec(markdown)
+  return (match ? markdown.slice(match[0].length) : markdown).trim() !== ''
+}
+
 /** The frontmatter title if there is one, else the file name. */
 export function titleOf(markdown: string, path: string): string {
   const match = /^---\n([\s\S]*?)\n---/.exec(markdown)
@@ -287,6 +308,7 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
       title: string
       fields: Record<string, unknown>
       finished: boolean
+      body: boolean
     }[] = []
     for (const entry of [...entries].sort((a, b) => order.compare(a.path, b.path))) {
       const markdown = await readFile(entry.file, 'utf8').catch(() => '')
@@ -308,6 +330,14 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
          * kept a copy of the table per view, and they drifted.
          */
         finished: isFinished(fields),
+        /**
+         * Whether the page says anything under its frontmatter — see
+         * `hasBody`. Published for every page rather than for the one app
+         * that asked: "does this row carry a note" is a question a journal, a
+         * collection and a task list all have, and answering it here is what
+         * keeps them from each fetching the corpus to find out.
+         */
+        body: hasBody(markdown),
       })
     }
     // The store table travels with the listing the shell actually draws from,

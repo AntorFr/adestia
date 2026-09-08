@@ -148,6 +148,27 @@ describe('the index', () => {
   it('is empty rather than failing on a fresh workspace', async () => {
     expect((await app.inject({ url: '/api/pages/index' })).json()).toEqual({ entries: [] })
   })
+
+  it('says whether a page has anything under its frontmatter', async () => {
+    // The point of the boolean: a list can mark the rows that carry an
+    // explanation without fetching two hundred bodies to find out.
+    await write('with.md', '---\ntype: tache\n---\n\nGrain 120 puis 240.\n')
+    await write('without.md', '---\ntype: tache\n---\n')
+    await write('blank.md', '---\ntype: tache\n---\n\n   \n\n')
+    await write('heading.md', '---\ntype: tache\n---\n\n## Ce qui reste\n')
+    await write('bare.md', 'No frontmatter at all.\n')
+
+    const { entries } = (await app.inject({ url: '/api/pages/index' })).json()
+    const body = (path: string) =>
+      entries.find((entry: { path: string }) => entry.path === path).body
+
+    expect(body('with.md')).toBe(true)
+    expect(body('without.md')).toBe(false)
+    // Whitespace is not something somebody wrote; a heading is.
+    expect(body('blank.md')).toBe(false)
+    expect(body('heading.md')).toBe(true)
+    expect(body('bare.md')).toBe(true)
+  })
 })
 
 describe('reading', () => {
