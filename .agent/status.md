@@ -1,5 +1,50 @@
 # Status — Adestia
-> MàJ : 2026-09-07
+> MàJ : 2026-09-08
+
+Chantier du 08/09 — **six endroits où la prose ne dit plus ce que fait le
+code**, trouvés en préparant l'enrichissement du todo et corrigés avant lui.
+Deux d'entre eux avaient déjà produit leur dégât : ils ont fait écrire, dans
+une note de conception livrée au propriétaire, qu'« un navigateur ne peut pas
+déposer de fichier » — alors que lâcher un fichier sur une page l'envoie, et
+remplit le composeur de la demande de classement. La skill `page-author`
+l'affirmait en toutes lettres, et le bloc de commentaire qui décrit ce dépôt
+dans `Editor.tsx` était posé au-dessus de la déclaration du LAYOUT, trois
+instructions avant le code qu'il documente. Ce qui est en lecture seule, c'est
+l'API des fichiers **du workspace** : la garde porte sur la destination, jamais
+sur le geste.
+
+Le plus coûteux n'est pourtant aucun des deux. **`:::app` est déclaré dans le
+vocabulaire du cœur, décrit comme « embeds a coded app module », et personne ne
+le dessine.** Le serveur le VALIDE — c'est cette table qui répond `editable` —
+donc une page peut l'écrire en toute confiance et récolter le diagnostic « bloc
+inconnu ». Ses seuls usages sont les fixtures du moteur. Marqué comme tel dans
+la table plutôt que retiré : choisir entre le dessiner et le sortir appartient
+au propriétaire, et un commentaire suffit à ce que personne n'en écrive un
+d'ici là.
+
+Reste `absorbs: ["todo"]`, qui ne couvrait pas `taches`, le dossier français par
+défaut : sur une instance française, le dossier des tâches s'affichait comme
+une section À CÔTÉ de la tuile qui le représente déjà — la même chose dite deux
+fois, dont un clic sur deux est le mauvais. Corrigé, avec sa limite écrite dans
+la skill du plugin : un manifeste est de la donnée statique et ne peut pas
+suivre un `folder` renommé par configuration.
+
+L'enrichissement lui-même — notes, pièces jointes, date de début, porteur,
+tâches dans une page — est **conçu et maquetté, pas codé**. Les notes et les
+pièces jointes n'ajoutent aucun champ : la note est le corps de la page, les
+pièces jointes sont les fichiers du dossier, et le cœur sert déjà les deux.
+Seuls `start:` et `assignee:` sont du vocabulaire neuf.
+
+**Reste :**
+- [ ] Huit arbitrages attendent le propriétaire, tenus dans
+      `.agent/questions-todo-v2.md` — dont deux qui bloquent l'implémentation :
+      la nature du store partagé (qui décide de `me:`), et si une liste de
+      tâches dans une page a le droit d'une case à cocher
+- [ ] La planche « des tâches dans une page » contredit la décision du 06/09
+      (« reading is a `list`, WRITING is a block of its own ») : à redessiner
+      une fois cet arbitrage rendu, pas avant
+- [ ] Les six phrases anglaises de `todo/web/app.js` — laissées ici exprès, ce
+      fichier étant réécrit par le chantier suivant
 
 Chantier du 07/09 (2) — **deux façons de rendre une page introuvable, les
 deux muettes**. Constatées à l'usage, une heure après la mise en production de
