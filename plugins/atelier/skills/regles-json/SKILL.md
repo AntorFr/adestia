@@ -274,6 +274,20 @@ de l'imprimante a un séparateur latéral et une tablette par colonne :
 "tablettes": [{ "nombre": 1, "zone": "gauche" }, { "nombre": 1, "zone": "droite" }]
 ```
 
+Une tablette **pleine largeur peut PARTAGER le meuble en hauteur** — elle ne
+s'y ajoute pas, elle le divise, exactement comme un séparateur le divise en
+largeur. Elle le déclare par `partage: "z"`, et un séparateur logé dans la zone
+du dessous y prend sa hauteur au lieu de monter jusqu'au toit :
+
+```jsonc
+"zones": [{ "id": "bas", "axe": "z", "etendue": 693 }, { "id": "tiroir", "axe": "z" }],
+"tablettes": [{ "nombre": 1, "partage": "z" }],
+"separateurs": [{ "type": "lateral", "zone": "bas" }]
+```
+
+`19 (bas) + 693 + 19 (tablette) + 120 (compartiment) + 19 (traverse) = 870` —
+et les 120 se déduisent, comme toute dernière étendue.
+
 Les numéros restent continus d'un lot à l'autre — `TAB-1`, `TAB-2`… — parce que
 c'est ce qui s'écrit au crayon sur les panneaux, et que l'atelier ne compte pas
 par zone. Une zone ne divise qu'UN axe : la tablette y prend son étendue et

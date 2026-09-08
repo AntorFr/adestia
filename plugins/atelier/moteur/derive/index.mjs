@@ -234,8 +234,15 @@ export function derive(design, tables, moduleDemande) {
     .filter((p) => p.partage)
     .map((p) => ({ etiquette: p.etiquette, axe: p.partage }))
   /* Ce qui BORNE le meuble sur chaque axe, et que les zones ne peuvent pas
-     occuper : sur la largeur, les deux côtés. */
-  const bornes = { x: cotes.map((c) => v(c.etiquette, 'ep')) }
+     occuper : sur la largeur les deux côtés, sur la hauteur le bas et ce qui
+     ferme le haut. Sur la profondeur d'un meuble ouvert devant, rien. */
+  const bornes = {
+    x: cotes.map((c) => v(c.etiquette, 'ep')),
+    /* Sur la hauteur : le bas qui porte, et ce qui ferme le haut — UNE seule
+       épaisseur. Deux traverses hautes sont côte à côte, pas empilées : les
+       compter toutes les deux volait 19 mm au compartiment qu'elles coiffent. */
+    z: [v(etiquette(trigramme, module, 'BAS'), 'ep'), ...ferme.slice(0, 1).map((e) => v(e, 'ep'))],
+  }
   for (const r of relationsDesZones(design, cloisons, bornes)) pose(r)
   for (const [nom, valeur] of Object.entries(design.parametres ?? {}))
     pose(constante(`parametre/${nom}`, `param.${nom}`, valeur))

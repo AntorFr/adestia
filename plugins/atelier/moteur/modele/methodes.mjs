@@ -489,6 +489,13 @@ const tabletteFixe = {
           orientation: 'horizontal',
           // Une tablette en retrait se voit exactement comme une affleurante.
           regardeVers: { 'rive-avant': 'avant' },
+          /* Une tablette pleine largeur ne s'AJOUTE pas au meuble : elle le
+             PARTAGE en hauteur, exactement comme un séparateur le partage en
+             largeur. Le meuble à tiroirs en porte une, et c'est elle qui borne
+             son séparateur à 693 au lieu de le laisser monter jusqu'en haut —
+             19 de bas + 693 + 19 de tablette + 120 de compartiment + 19 de
+             traverse font les 870 du meuble. */
+          ...(lot?.partage ? { partage: lot.partage } : {}),
         }
         pieces.push(t)
 
@@ -575,6 +582,7 @@ const separateurs = {
         return
       }
       const dans = sep.zone ? contenant(sep.zone) : undefined
+      const zoneVerticale = (design?.zones ?? []).find((z) => z.id === sep.zone)?.axe === 'z'
       const piece = {
         etiquette: etiquette(trigramme, module, 'SÉP', sep.repere ?? (frontal ? 'MÉDIAN' : String(i + 1))),
         role: 'SÉPARATEUR',
@@ -586,7 +594,16 @@ const separateurs = {
       }
       pieces.push(piece)
       relations.push(
-        bute(piece, 'z', [etiquette(trigramme, module, 'BAS'), ...(ferme ?? [])].slice(0, 2)),
+        /* Il monte du bas jusqu'à ce qui ferme le haut — sauf s'il vit dans
+           une ZONE de hauteur, auquel cas c'est elle qui le borne : sous la
+           tablette pleine largeur qui la ferme, et non sous le toit. */
+        dans && zoneVerticale
+          ? {
+            nom: `${piece.etiquette}/hauteur-de-zone`,
+            termes: { [v(piece.etiquette, 'z')]: 1, [`${dans}.z`]: -1 },
+            egale: 0,
+          }
+          : bute(piece, 'z', [etiquette(trigramme, module, 'BAS'), ...(ferme ?? [])].slice(0, 2)),
         frontal
           ? entre(piece, 'x', cotes.map((c) => c.etiquette))
           : {
