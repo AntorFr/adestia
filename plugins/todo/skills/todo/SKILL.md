@@ -86,3 +86,11 @@ folder: perso/taches
 found by its `type:` wherever it sits, so an existing base scattered over
 several folders keeps working and moving a task breaks nothing. Only one such
 page is read; a second one is redundancy waiting to disagree.
+
+One consequence worth knowing before you rename it. The manifest declares
+`absorbs: ["todo", "taches"]` — the two default names — so the launcher knows
+the Todo tile already stands for that folder and does not offer it a second
+time as a section. A manifest is static data and cannot read a config page, so
+**a `folder` renamed to anything else reappears on the home screen beside the
+tile**: the same thing said twice, one of the two always the wrong click.
+Nothing breaks, and it is not worth avoiding a name over — just expect it.

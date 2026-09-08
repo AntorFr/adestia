@@ -23,6 +23,7 @@
     "hue": "rouge"
   },
   "absorbs": [
-    "todo"
+    "todo",
+    "taches"
   ]
 }
