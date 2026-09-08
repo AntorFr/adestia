@@ -2,9 +2,10 @@
   "schemaVersion": 1,
   "id": "todo",
   "kind": "app",
-  "description": "Tasks as pages: one base, curated lists by reference, dynamic lists by query.",
+  "description": "Tasks as pages: one base, curated lists by reference, dynamic lists by query, and a checklist any page can carry.",
   "contract": 1,
   "view": "./web/app.js",
+  "blocks": "./web/blocks.js",
   "styles": [
     "./web/app.css"
   ],
@@ -16,6 +17,26 @@
     "liste",
     "todo-config"
   ],
+  "vocabulary": {
+    "checklist": {
+      "content": "empty",
+      "description": "The tasks of this page's folder, ticked and added where they are read.",
+      "attributes": {
+        "page": {},
+        "depth": {
+          "values": ["self", "children", "subtree"],
+          "default": "subtree"
+        },
+        "view": {
+          "values": ["open", "late", "today", "later", "all"],
+          "default": "open"
+        },
+        "assignee": {},
+        "dom": {},
+        "projet": {}
+      }
+    }
+  },
   "tile": {
     "label": "Todo",
     "icon": "☑",
