@@ -140,6 +140,10 @@ folder, so a task added from the app is never under the worksite's folder.
 | `view` | `open` (the default) · `late` · `today` · `later` · `all` |
 | `assignee`, `dom`, `projet` | the same filters the app offers, with the same words |
 
+`w` works here like on any block — `:::checklist{w="1/2"}` puts two lists side
+by side — and is not listed above because no block declares it. See
+`page-author`.
+
 There is only ever one task, so ticking a box here writes the same file the app
 writes: **never copy a task into a page.** The block also captures — a line at
 its foot files a new task into that folder — which is why it is a block of its

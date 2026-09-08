@@ -391,6 +391,34 @@ page and never gets silently dropped: it becomes a diagnostic, and the page
 opens read-only until it is fixed. Losing a person's content is worse than
 telling them what is wrong with it.
 
+### `w` — how much of a line a block takes
+
+Any block accepts it, whatever it is and whoever ships it. No spec declares it,
+the same way none declares `id`: it says how the block sits on the page, not
+what the block is.
+
+```markdown
+:::checklist{w="1/2"}
+:::
+
+:::checklist{page="../maison" w="1/2"}
+:::
+```
+
+Four values and no others — `1` (the default), `2/3`, `1/2`, `1/3`. **Blocks
+that follow each other fill a line until their widths reach one**, then a new
+line starts. So two halves sit side by side, three thirds do too, and a `2/3`
+followed by a `1/2` does not: the second takes its own line rather than being
+squeezed into a width nobody asked for. Anything between them — a paragraph, a
+heading — ends the run.
+
+The set is closed because it is a LAYOUT vocabulary, not a measurement. A page
+that could say `w="37%"` would be a page laying itself out in CSS written by
+hand in frontmatter, and a corpus where every author invents their own column.
+
+It is an intention, not a promise about pixels: a narrow canvas puts the blocks
+back one per line rather than shrinking them past reading.
+
 ## The home brief — "À la une"
 
 The landing screen shows up to four curated pointers when `home/brief.json`

@@ -455,6 +455,17 @@ is what lets a block say "the things belonging to THIS page" rather than "the
 things filed near it", which matters the moment a page is pointed at by
 frontmatter instead of by location.
 
+**Do not declare `id` or `w`.** They are RESERVED — accepted on every block
+without any spec listing them, because neither is an attribute OF a rendering:
+`id` is the block's identity, `w` is how much of a line it takes. Declaring
+them per block would be one idea copied as many times as there are renderers,
+and the copy somebody forgets makes a legitimate page warn on every load.
+
+`w` also needs nothing from you. The shell gathers consecutive narrow blocks
+onto a shared line itself — a component draws itself and never sees its
+neighbour, so it could only ever implement half of it, and the half it could
+do (narrowing) is the half that looks wrong alone.
+
 Declare both halves or neither: a component with no manifest entry never
 renders (the parser leaves the name as prose), and a manifest entry with no
 component draws the "does not render yet" placeholder. Both are reported at
