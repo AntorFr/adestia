@@ -432,14 +432,28 @@ export default function blocks(api) {
 }
 ```
 
-A block component is handed four things beyond its own plugin's `api`:
+A block component is handed these beyond its own plugin's `api`:
 
 | | |
 |---|---|
 | `attributes` | already validated against the spec above |
+| `path` | the page carrying the block, as its LOGICAL path — the name memory spells, composed from every store, never saying which one holds the file |
+| `store` | which store carries that page. Present only where the instance composes more than one, and a QUALIFIER — never join it to `path` to build an address |
+| `fields` | that page's frontmatter, as the server parsed it |
 | `resolve(path)` | a path written in the page → a URL to fetch. `source="assets/x.json"` means "next to the page", the way it reads on disk — nothing in a document should know files are served under `/api/files` |
 | `locate(path)` | the same path as the WORKSPACE spells it — what you name to your own API |
 | `children` | the block's body, already rendered. Only for a `flow` block |
+
+The last three are absent when prose is rendered outside any page — a chat
+bubble — which is the same answer relative links already give there.
+
+**Do not derive the page from `locate('.')`.** It looks equivalent and is not:
+a page sitting at the ROOT has an empty folder, so that call answers `.`, and a
+block scoped by it filters on a folder nobody has. The wrong answer arrives
+silently, with nothing to notice. And a folder is not the page anyway — `fields`
+is what lets a block say "the things belonging to THIS page" rather than "the
+things filed near it", which matters the moment a page is pointed at by
+frontmatter instead of by location.
 
 Declare both halves or neither: a component with no manifest entry never
 renders (the parser leaves the name as prose), and a manifest entry with no
