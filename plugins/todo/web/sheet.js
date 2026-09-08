@@ -14,11 +14,8 @@
 
 import { createElement as h, useCallback, useEffect, useState } from 'react'
 
-import { assigneesOf, hueOf, initialsOf, setField } from './model.js'
-import { avatar, check, shortDate, todayISO } from './rows.js'
-
-/** A field that is not set says so, rather than showing an empty box. */
-const EMPTY = '—'
+import { assigneesOf, setField } from './model.js'
+import { check, shortDate, todayISO } from './rows.js'
 
 export function makeSheet(api, t) {
   const PageEditor = api.PageEditor
@@ -126,13 +123,21 @@ export function makeSheet(api, t) {
     const files = task.files ?? []
 
     return h('section', { className: 'todo todo-sheet' }, [
-      h(
-        'button',
-        { key: 'b', type: 'button', className: 'todo-back', onClick: onBack },
-        `‹ ${t('Back')}`,
-      ),
-
+      /**
+       * The way back sits IN the header, not above it.
+       *
+       * The shell draws its own « Back » in the canvas, and a second button
+       * stacked under it read as two of the same control — seen in the bench
+       * before it was written down. They are not the same: the shell's walks
+       * the browser's history, which leaves the app entirely, while this one
+       * closes a screen the app holds in its own state.
+       */
       h('header', { key: 'h', className: 'todo-sheet__head' }, [
+        h(
+          'button',
+          { key: 'b', type: 'button', className: 'todo-back', onClick: onBack, 'aria-label': t('Back') },
+          '‹',
+        ),
         check(h, { done: task.done, onToggle: () => void edit('done', task.done ? '' : day), label: task.title }),
         h('h2', { key: 't' }, task.title),
         task.done &&
@@ -231,7 +236,3 @@ export function makeSheet(api, t) {
 
   return Sheet
 }
-
-/** Exported for the app's own use: the faces a picker offers. */
-export const faceOf = (handle) => ({ hue: hueOf(handle), initials: initialsOf(handle) })
-export { avatar }

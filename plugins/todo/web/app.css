@@ -211,16 +211,20 @@
 
 /* ── The sheet: one task, in full ──────────────────────────────────────── */
 
+/* In the header, not above it: the shell already draws a Back in the canvas,
+   and two stacked buttons read as two of the same control. */
 .todo-back {
-  align-self: flex-start; padding: 4px 10px;
+  flex: none; width: 26px; height: 26px; margin-top: 3px; padding: 0;
+  display: grid; place-items: center;
   border: 1px solid var(--border); border-radius: var(--radius-sm);
   background: var(--surface-raised); color: var(--text-muted);
-  font: inherit; font-size: var(--text-sm); cursor: pointer;
+  font: inherit; font-size: 15px; line-height: 1; cursor: pointer;
 }
 .todo-back:hover { color: var(--accent); border-color: var(--accent); }
+.todo-back:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-.todo-sheet__head { display: flex; align-items: flex-start; gap: 12px; }
-.todo-sheet__head .todo-box { margin-top: 7px; }
+.todo-sheet__head { display: flex; align-items: flex-start; gap: 10px; }
+.todo-sheet__head .todo-box { margin-top: 8px; }
 .todo-sheet__head h2 {
   margin: 0; flex: 1;
   font: 600 24px/1.2 var(--font-title); letter-spacing: var(--title-track);
