@@ -44,6 +44,45 @@ describe('drawing one', () => {
     expect(screen.getByText('Après.')).toBeTruthy()
   })
 
+  it('hands the block the page it sits in — logical path, store and fields', () => {
+    // What `locate('.')` could not answer honestly: a page at the ROOT has an
+    // empty folder, so deriving the scope from a relative path gives `.` and
+    // a filter that matches nothing. And a folder is not the page anyway —
+    // `fields` is what lets a block say "the tasks of THIS worksite".
+    registerBlocks({ jeton: { content: 'empty', description: 'A token.' } })
+    const seen: BlockProps[] = []
+    const Jeton = (props: BlockProps) => {
+      seen.push(props)
+      return <div data-testid="jeton" />
+    }
+    render(
+      <Reader
+        markdown={':::jeton\n:::\n'}
+        path="domaines/diy/garage.md"
+        store="famille"
+        fields={{ type: 'projet', id: '01M1RX' }}
+        blocks={{ jeton: Jeton }}
+      />,
+    )
+    expect(seen[0]?.path).toBe('domaines/diy/garage.md')
+    expect(seen[0]?.store).toBe('famille')
+    expect(seen[0]?.fields).toEqual({ type: 'projet', id: '01M1RX' })
+  })
+
+  it('leaves the page absent where there is no page — prose in a bubble', () => {
+    registerBlocks({ jeton: { content: 'empty', description: 'A token.' } })
+    const seen: BlockProps[] = []
+    const Jeton = (props: BlockProps) => {
+      seen.push(props)
+      return <div />
+    }
+    render(<Reader markdown={':::jeton\n:::\n'} blocks={{ jeton: Jeton }} />)
+    // Undefined rather than a guessed root: the same answer relative links
+    // already give, for the same reason.
+    expect(seen[0]?.path).toBeUndefined()
+    expect(seen[0]?.store).toBeUndefined()
+  })
+
   it('gives a flow block its body, and an empty one none', () => {
     registerBlocks({
       encadre: { content: 'flow', description: 'A framed aside.' },
