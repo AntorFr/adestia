@@ -843,17 +843,26 @@ que pour l'historique du raisonnement :
    elle-même.
 2. **Gabarit = rendu ou échafaudage ?** La vue dessine-t-elle ce que le fichier
    contient, ou compose-t-elle depuis le type (recommandation : échafaudage).
-3. **Les contributeurs sont-ils un rendu, ou juste un contenu ?** « Dernière
-   contribution » n'est dérivable que si les tâches portent un porteur — et
-   **`todo` n'en définit aucun** (`done`, `due`, `pri`, `dom`, `projet`, `sub`,
-   rien d'autre : vérifié). Tant que c'est vrai, ce n'est pas une requête mais
-   un `:::content{type=contributeurs}`, qui ne coûte rien et ne ment pas. Un
-   rendu dédié — pastilles, dernière trace — ne se justifie que le jour où il y
-   a quelque chose à calculer.
-4. **Les deux champs de date.** `start:` et `due:` sur un item sont le seul
-   vocabulaire que ce plugin impose aux fiches. Confirmer les mots — `due:`
-   vient de `todo` et doit rester tel quel ; `start:` n'a pas de précédent dans
-   ce dépôt et se décide maintenant, pas à l'implémentation.
+3. **Les contributeurs sont-ils un rendu, ou juste un contenu ? — LA PRÉMISSE
+   A CHANGÉ le 08/09.** Cette question reposait sur « `todo` ne définit aucun
+   porteur ». **Ce n'est plus vrai** : `assignee:` existe, un seul handle par
+   tâche, absent voulant dire « à prendre ». « Dernière contribution » devient
+   donc dérivable, et l'argument qui recommandait un simple
+   `:::content{type=contributeurs}` tombe avec sa prémisse.
+
+   Ce qui n'est PAS tranché pour autant : il n'y a **pas d'annuaire** — les
+   handles se découvrent en parcourant la base, comme les domaines, et la
+   teinte se dérive du handle. Donner un visage et un nom lisible à quelqu'un
+   demanderait une page `type: personne`, délibérément NON revendiquée par
+   `todo` parce que ce mot intéressera aussi ce plugin-ci. C'est le premier
+   arbitrage à rendre ici, et il est plus large qu'un rendu.
+4. **Les deux champs de date — TRANCHÉ le 08/09, ailleurs.** `due:` et
+   `start:` sont désormais tous deux du vocabulaire de `todo`, livré : reprendre
+   ces mots-là, sans les redéfinir. `start:` veut dire **pas avant**, jamais
+   « j'ai commencé » — Taskwarrior emploie le même mot pour l'idée inverse, et
+   la skill de `todo` porte la phrase qui ferme le piège. Une tâche dont le
+   `start:` est à venir quitte les vues vivantes ; à voir si un chantier doit
+   se comporter pareil, ce qui est une question de ce plugin-ci, pas du mot.
 5. **Le coût de la remontée de BLOCS** (par opposition aux entêtes) : N requêtes
    côté client, ou un champ de plus dans l'index. À trancher le jour où un
    `:::table{type=risques depth=subtree}` est demandé, pas avant.

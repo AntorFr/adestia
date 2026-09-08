@@ -935,6 +935,67 @@ day it wants a button, moving to its own block rewrites the PAGES that carry the
 old spelling — the cost lands in the corpus, not in the product. So a list known
 in advance to need an action starts as its own block.
 
+#### The prediction held, and the first block it produced (2026-09-08)
+
+`:::checklist`, shipped by `todo`. The criterion above chose it without an
+argument: this rendering ticks and adds, so it is not a `list` with a wider
+`from=`. Named by the ACTION, never by the subject — a `:::todo` would have
+named what the tasks are about, which is the drift the closed vocabulary
+exists to stop.
+
+The price named in the section above was accepted rather than discovered: a
+contributed block leaves with its plugin, so an instance with `todo` off opens
+a page carrying one read-only, with a diagnostic. That is the honest answer
+here, and the distinction is worth keeping — a checkbox that writes `done:`
+into ANOTHER page has nothing truthful to draw without the plugin that owns
+tasks, whereas "a title and prose" always does.
+
+### A block is handed the page it sits in (decided 2026-09-08)
+
+`BlockProps` gains `path`, `store` and `fields` — the same three a LAYOUT
+already receives, with the same words and the same meaning: the path is the
+LOGICAL one, composed across stores and carrying no trace of which holds the
+file, and `store` is a qualifier that is never joined to it.
+
+Two arguments, and the first is the one that generalises. **A block could
+already derive its folder, and the derivation is quietly wrong.** `locate('.')`
+answers the page's folder — except for a page at the ROOT, where the reader's
+own `base` is the empty string and the call returns `.`; a block scoped by that
+filters on a folder nobody has, with no error anywhere. A capability that is
+almost derivable is the worst kind: every plugin re-derives it, and each one
+gets the edge case wrong in its own way.
+
+The second is that a folder is not a page. What made this concrete was a task
+list: quick capture files into ONE folder, so a task captured for a worksite
+never sits under that worksite's folder — it points back through frontmatter.
+Answering "the things belonging to THIS page" therefore needs the page's own
+fields, not its location. Any plugin whose data can be attached by reference
+rather than by filing has the same need.
+
+What it does NOT open: a block still owns the reading posture only. Handing it
+the page's frontmatter is not handing it the document — there is no markdown
+and no revision in `BlockProps`, and writing stays where writing already is.
+
+### The index says whether a page has a body (decided 2026-09-08)
+
+`GET /api/pages/index` publishes one boolean per entry beside `finished`. A
+list can then mark the rows that carry an explanation; without it the only way
+to know is to open every page, which is one request per row and therefore a
+question nobody asks.
+
+A boolean rather than the text, and that IS the design. This index answers for
+every page at once — the DERIVED regime the content engine exists to serve — so
+returning bodies would ship the corpus to draw a list. An excerpt was
+considered and refused for the same reason at a smaller scale: it grows a
+response every plugin receives, to save a click on a screen that has to exist
+anyway.
+
+Published for every page rather than for the app that asked. "Does this row
+carry a note" is a question a journal and a collection have too, and answering
+it once is what stops each of them fetching the corpus to find out — the same
+argument that put `finished` here rather than in whichever view needed it
+first.
+
 ### Why a markdown engine is being diverted, and what follows from it
 
 Adestia does not use directives to decorate prose. **It uses them as an
