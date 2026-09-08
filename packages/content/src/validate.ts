@@ -12,7 +12,7 @@ import type { Root, RootContent } from 'mdast'
 import type { ContainerDirective, LeafDirective } from 'mdast-util-directive'
 import { visit } from 'unist-util-visit'
 
-import { blockSpec, isKnownBlock } from './vocabulary.js'
+import { blockSpec, isKnownBlock, RESERVED } from './vocabulary.js'
 
 export type DiagnosticSeverity = 'error' | 'warning'
 
@@ -103,13 +103,27 @@ export function validateDocument(tree: Root): readonly Diagnostic[] {
     }
 
     for (const key of Object.keys(attributes)) {
-      // `id` is RESERVED, on every block, without any spec declaring it: an id
-      // is not an attribute OF a block, it is the block's identity — the way a
-      // page's `id:` is not a field of its type. Declaring it in each spec
-      // would be one idea copied as many times as there are renderers, and a
-      // block that carries one would warn on every page until somebody
-      // remembered the ninth copy.
-      if (key === 'id') continue
+      // RESERVED attributes belong to the DOCUMENT, not to any one rendering —
+      // an id is the block's identity, `w` is how much of a line it takes —
+      // so no spec declares them and every block accepts them. See
+      // `vocabulary.ts`; declaring them per renderer would be one idea copied
+      // as many times as there are renderers, and the ninth copy is the one
+      // somebody forgets.
+      if (Object.hasOwn(RESERVED, key)) {
+        const accepted = RESERVED[key]
+        const given = attributes[key]
+        // Reserved does not mean unchecked: a closed set is still closed, and
+        // a typo in `w` would otherwise lay the page out silently wrong.
+        if (accepted && typeof given === 'string' && !accepted.includes(given)) {
+          diagnostics.push({
+            severity: 'error',
+            block: name,
+            line,
+            message: `":::${name}" attribute "${key}" is "${given}"; accepted: ${accepted.join(', ')}.`,
+          })
+        }
+        continue
+      }
       if (!Object.hasOwn(spec.attributes, key)) {
         // A warning, not an error: an unknown attribute is inert, and a
         // document is not worth locking down over a typo in a hint.

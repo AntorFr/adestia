@@ -32,6 +32,34 @@ export interface BlockSpec {
   readonly description: string
 }
 
+/**
+ * ── Attributes every block carries, without any spec declaring them ─────────
+ *
+ * The `id` case, generalised. An id is not an attribute OF a block, it is the
+ * block's identity; `w` is not one either, it is how much of a line the block
+ * takes. Both belong to the DOCUMENT rather than to any one rendering, so
+ * declaring them in each spec would be one idea copied as many times as there
+ * are renderers — and the ninth copy is the one somebody forgets, after which a
+ * legitimate page warns on every load.
+ *
+ * `null` accepts any value; a list is a closed set validated like any other.
+ * `w` is closed because it is a LAYOUT vocabulary and not a free measurement:
+ * a page that could say `w=37%` would be a page laying itself out in CSS
+ * written by hand in frontmatter, which is what the fractions exist to refuse.
+ */
+export const RESERVED: Readonly<Record<string, readonly string[] | null>> = {
+  id: null,
+  w: ['1', '2/3', '1/2', '1/3'],
+}
+
+/** How much of a line a `w` value asks for, as a fraction of one. */
+export const WIDTHS: Readonly<Record<string, number>> = {
+  '1': 1,
+  '2/3': 2 / 3,
+  '1/2': 1 / 2,
+  '1/3': 1 / 3,
+}
+
 export const VOCABULARY: Readonly<Record<string, BlockSpec>> = {
   callout: {
     name: 'callout',
