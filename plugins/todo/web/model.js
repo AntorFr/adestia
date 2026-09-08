@@ -188,13 +188,6 @@ const WORDS = {
     Later: 'Plus tard',
     'not before their start date': 'pas avant leur date de début',
     'No domain': 'Sans domaine',
-    'to do': 'à faire',
-    late: 'en retard',
-    'curated by reference': 'sélection par référence',
-    'a live query, nothing to maintain': 'une requête vivante, rien à tenir à jour',
-    'Your lists': 'Vos listes',
-    'Live views': 'Vues dynamiques',
-    'Everything, by domain': 'Tout, par domaine',
     'New task': 'Nouvelle tâche',
     'Due date': 'Échéance',
     'Start date': 'Date de début',
@@ -205,23 +198,17 @@ const WORDS = {
     'could not create that task': 'création impossible',
     'another author just took that name — try again': 'un autre auteur vient de prendre ce nom — réessayez',
     // The six that shipped in English for want of an entry here.
-    Lists: 'Listes',
     'Loading…': 'Chargement…',
     'Nothing here.': 'Rien ici.',
-    'No curated list yet — ask the agent for one.':
-      "Aucune liste pour l'instant — demandez-en une à l'agent.",
     Todo: 'Todo',
-    '%open open across %all tasks': '%open à faire sur %all tâches',
     // v2
     Who: 'Qui',
     Mine: 'Pour moi',
     Everyone: 'Tous',
     Unassigned: 'À prendre',
-    Where: 'Où',
     Assignee: 'Porteur',
     'Not before': 'Dès le',
     'Due on': 'Pour le',
-    Priority: 'Priorité',
     Project: 'Chantier',
     Note: 'Note',
     Attachments: 'Pièces jointes',
@@ -229,19 +216,39 @@ const WORDS = {
     Back: 'Retour',
     Details: 'Détail',
     'from %n': 'de %n',
-    'Nobody yet': 'Personne',
-    'in %n days': 'dans %n jours',
     Overdue: 'En retard',
     'This week': 'Cette semaine',
     Done: 'Fait',
     'Done this week': 'Faites cette semaine',
     'Add a task here…': 'Ajouter une tâche ici…',
+    '%open to do': '%open à faire',
+    '%n late': '%n en retard',
+    '%n later': '%n plus tard',
+    '%n unassigned': '%n à prendre',
+    Beyond: 'Plus loin',
+    'that task no longer exists': "cette tâche n'existe plus",
+    'that task has no frontmatter': "cette tâche n'a pas d'entête",
+    'the agent changed that task — reloading': "l'agent a modifié cette tâche — rechargement",
+    'could not save': 'enregistrement impossible',
+    today: 'auj.',
+    'from %d': 'dès le %d',
     'Tasks here': "Tâches d'ici",
     'this folder and below': 'ce dossier et ses sous-dossiers',
     'nothing to do here': 'rien à faire ici',
-    'Turn on the todo app to see this list.':
-      "Activez l'app todo pour voir cette liste.",
   },
+}
+
+/**
+ * The keys a locale actually answers.
+ *
+ * Exported for one reason: a test proves that every `t('…')` written in this
+ * plugin has an entry here. Eight of them shipped in English once — added to
+ * the code after the words file had been committed, so a review of the diff
+ * showed a screen full of French and a table that did not have it. The class
+ * is what is pinned, never the eight.
+ */
+export function known(locale) {
+  return Object.keys(WORDS[String(locale ?? '').slice(0, 2)] ?? {})
 }
 
 export function words(locale) {
