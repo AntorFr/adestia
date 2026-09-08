@@ -41,10 +41,26 @@ export const VOCABULARY: Readonly<Record<string, BlockSpec>> = {
       type: { values: ['note', 'tip', 'warning'], default: 'note' },
     },
   },
+  /**
+   * ⚠️ DECLARED HERE, DRAWN BY NOBODY.
+   *
+   * The reader has no branch for `app` and no plugin contributes one, so a
+   * page writing `:::app{id="…"}` is ACCEPTED by the validator — this table is
+   * what `editable` answers from — and then renders the unknown-block
+   * diagnostic. Legal and inert, which is the worst pair: an author has no
+   * reason to doubt a block the server just took.
+   *
+   * It survives because the content engine's own tests use it as their
+   * `empty`-with-a-required-attribute fixture (`typed-blocks.md`,
+   * `roundtrip`, `validate`). Nothing else in the repository writes one.
+   *
+   * So: draw it, or take it out of the vocabulary and give the tests a
+   * fixture that is not also a promise. Do not write one in a page meanwhile.
+   */
   app: {
     name: 'app',
     content: 'empty',
-    description: 'Embeds a coded app module, addressed by id.',
+    description: 'Embeds a coded app module, addressed by id. NOT DRAWN YET.',
     attributes: {
       id: { required: true },
       project: {},

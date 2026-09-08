@@ -252,13 +252,6 @@ export function Editor({
   }, [page.path])
 
   /**
-   * A file let go over the page.
-   *
-   * Only in reading posture: while editing, the surface belongs to the editor
-   * and its own drag handling, and two things claiming one drop is how a
-   * paragraph ends up somewhere nobody asked for.
-   */
-  /**
    * The layout this page's own `type` asks for, if a plugin draws it.
    *
    * A type nobody claims — or whose plugin is switched off — falls through to
@@ -269,6 +262,18 @@ export function Editor({
   const type = page.fields?.['type']
   const Layout = typeof type === 'string' ? layouts?.[type] : undefined
 
+  /**
+   * A file let go over the page.
+   *
+   * Only in reading posture: while editing, the surface belongs to the editor
+   * and its own drag handling, and two things claiming one drop is how a
+   * paragraph ends up somewhere nobody asked for.
+   *
+   * And only where `attach` was handed over. The shell's own page screen
+   * passes it; an editor EMBEDDED by a plugin currently does not, so a task
+   * or a journal entry takes no drop while the same document does on
+   * `#/page/…` — see `plugins/PageEditor.tsx`.
+   */
   const takesDrop = attach !== undefined && !editing
 
   const onDrop = useCallback(

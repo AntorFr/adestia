@@ -16,6 +16,13 @@
  *   with thirty entries imports the module once — the module system dedupes —
  *   and a reader who never clicks ✎ still pays for it, which is the same deal
  *   the shell already takes on `#/page/…` and not a new one.
+ *
+ * And one thing it WITHHOLDS, which reads as a bug until you know it: neither
+ * `attach` nor `compose` is passed on, so `Editor`'s `takesDrop` is false and
+ * an embedded page takes no dropped file. The same document accepts one on
+ * `#/page/…` and refuses one inside a plugin's screen. Nothing decided that —
+ * the props were simply never threaded through — so a plugin wanting the drop
+ * has to add them to `PageEditorHost` first, not work around their absence.
  */
 
 import { useEffect, useState, type ComponentType } from 'react'
