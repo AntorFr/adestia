@@ -1,8 +1,9 @@
 /**
  * Chat attachments.
  *
- * A file dropped in the composer lands OUTSIDE the workspace, in an inbox the
- * agent reads from with its own tools. Two consequences, both deliberate:
+ * A file dropped in the composer — or let go over a page, which sends it the
+ * same way — lands OUTSIDE the workspace, in an inbox the agent reads from
+ * with its own tools. Two consequences, both deliberate:
  *
  * - nothing a user drags in ever appears in the content the agent curates,
  *   until the agent itself decides to file it there;

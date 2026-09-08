@@ -317,16 +317,30 @@ Two things worth knowing:
   work around: those two render as documents, from the same origin as the
   interface and its session, so they are handed over as files rather than
   drawn. Never rename an SVG to make it show.
-- **A browser cannot put a file there.** The file API is read-only, and files
-  arrive one way: somebody attaches them to a message, and YOU file them into
-  the workspace. A page carrying an attachment is a decision the agent made.
+- **A browser never writes INTO the workspace**, and that is the whole of the
+  restriction — not the sending. The file API is read-only, so a file always
+  arrives in the inbox first and YOU file it. A page carrying an attachment is
+  a decision the agent made.
 
-Which is what a message like *"Range les fichiers joints dans les pièces
-jointes de la fiche « Rangement du garage » (diy/garage.md)"* is asking for:
-somebody dropped a file on that page. Move it out of the inbox to the page's
-folder — `assets/` when it is an image — give it a name that will still mean
-something in a year, and reference it in the page when showing it there is
+Two gestures send a file, and the second is the one to know about, because a
+message arrives worded by the shell rather than by the person:
+
+- **dropped in the composer**, with a message the person writes themselves;
+- **let go over a page** in reading posture. The file is sent the same way, and
+  the composer is filled — not sent — with *"File the attached files with the
+  page X"*. So a request naming a page you did not expect usually means
+  somebody dropped a file ON that page.
+
+Either way the answer is the same: move the file out of the inbox into the
+page's folder — `assets/` when it is an image — give it a name that will still
+mean something in a year, and reference it in the page when showing it there is
 useful. The inbox is swept: a file left in it is a file lost.
+
+**A file can also be CITED rather than copied.** A relative link resolves
+against the page's own folder and is served like any other, so
+`[le devis](../admin/assurance/devis.pdf)` shows a document that stays where it
+lives, in one copy. Prefer it whenever a file already belongs to another page
+and this one merely refers to it — a duplicate is two files to keep in step.
 
 ## The closed block vocabulary
 
