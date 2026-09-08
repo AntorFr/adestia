@@ -136,6 +136,28 @@ la porte soit poncée.
 :::
 MD
 
+# Deux blocs qui se partagent une ligne : le seul moyen de voir que `w` fait
+# ce qu'il dit, puisqu'un composant ne voit jamais son voisin.
+cat >"$w/memory/domaines/diy/atelier.md" <<'MD'
+---
+title: L'atelier cette semaine
+type: fiche
+---
+
+Ce qui reste ici, et ce que la maison attend.
+
+:::checklist{depth=self w="1/2"}
+:::
+
+:::checklist{page="../../taches" assignee=antoine w="1/2"}
+:::
+
+Et en dessous, pleine largeur, ce qui n'a pas de porteur.
+
+:::checklist{page="../../taches" w="1"}
+:::
+MD
+
 # Les documents cités existent vraiment : un lien mort se photographie mal.
 printf 'devis\n' >"$w/memory/domaines/admin/assurance/devis.pdf"
 printf 'photo\n' >"$w/memory/domaines/diy/assets/avant.jpg"

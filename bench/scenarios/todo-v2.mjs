@@ -83,5 +83,22 @@ export default async function scenario(bench) {
     const canAdd = await block.locator('.todo-block__add').count()
     console.log(`[todo-v2] ${theme} — tâches remontées par le bloc : ${inBlock}`)
     console.log(`[todo-v2] ${theme} — ligne d'ajout dans le bloc : ${canAdd}`)
+
+    // 6 — `w` : deux listes qui se PARTAGENT une ligne, et une pleine largeur
+    // en dessous. C'est la moitié qu'un composant ne peut pas faire seul, donc
+    // la seule qui mérite une photo.
+    const wide = await bench.open({ theme, height: 1200 })
+    await wide.evaluate(() => {
+      window.location.hash = '#/page/domaines/diy/atelier'
+    })
+    await wide.waitForSelector('.adestia-row', { timeout: 20_000 })
+    await wide.waitForTimeout(900)
+    await bench.shoot(wide, `6-largeurs-${theme}`)
+
+    const rows = await wide.locator('.adestia-row').count()
+    const cells = await wide.locator('.adestia-row .adestia-row__cell').count()
+    const alone = await wide.locator('.todo-block').count()
+    console.log(`[todo-v2] ${theme} — lignes partagées : ${rows} · cellules : ${cells}`)
+    console.log(`[todo-v2] ${theme} — blocs sur la page : ${alone} (2 partagés + 1 pleine largeur)`)
   }
 }
