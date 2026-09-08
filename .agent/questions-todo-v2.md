@@ -1,80 +1,105 @@
 # Questions — chantier todo v2
 
-> Fichier de travail. Une question par ligne d'état : **ouverte**, **répondue**,
-> ou **caduque**. Les maquettes qui les portent :
+> Fichier de travail. **Toutes tranchées le 08/09.** Ce qui suit est le contrat
+> à implémenter ; les maquettes qui le portent :
 > https://claude.ai/code/artifact/0b688c46-a21f-46df-8bc4-0c8bd0c3de30
 
-## Ouvertes — sept, dont une bloque l'implémentation
+## Ouvertes
 
-### Q1 — Le store partagé, c'est quoi exactement ?
-**Posée le 07/09, toujours sans réponse.** Plusieurs instances Adestia (une par
-personne, chacune son agent, un dossier commun) — ou une seule instance que
-plusieurs comptes ouvrent ?
+Aucune. Ce qui reste est du travail, plus des décisions.
 
-Ce qu'elle décide : la clé `me:` de `todo-config`. Sur une instance qui
-authentifie vraiment, `/api/instance` sert déjà l'identité et la clé ne sert à
-rien ; en `auth: none` l'identité vaut `local` et ne dit rien, donc la clé est
-la seule réponse. Les maquettes supposent la première hypothèse.
+## Tranchées
 
-### Q3 — Les deux mots neufs
-`start:` (recommandé — iCal `DTSTART`, MS Graph ; ferme la question ouverte nº 4
-de la lettre de mission chantiers) et `assignee:` (recommandé — GitHub, Jira ;
-`owner:` écarté parce qu'un store partagé parle déjà de propriétaire POSIX).
+### R1 — Qui est « moi » : les deux montages sont supportés
+Une instance par personne (le dossier commun, `workspace.umask`) **et** une
+instance à plusieurs comptes sont deux cas légitimes. La résolution est donc :
 
-### Q4 — Le mot `personne` appartient-il à `todo` ?
-Reco : livrer `assignee:` **sans** annuaire (handles découverts comme les
-domaines, teinte dérivée). La page `type: personne` attend la couche d'identité
-du plugin chantiers plutôt que d'être revendiquée ici.
+1. `me:` dans `todo-config` **s'il est écrit** — il l'emporte ;
+2. sinon l'identité de la session (OIDC, proxy) ;
+3. sinon rien, et la facette « Pour moi » ne s'affiche pas — mieux qu'une
+   fausse.
 
-### Q5 — Les marqueurs 📝 et 📎 dans la liste
-L'index publie le frontmatter, pas le corps ni les fichiers voisins. Reco : un
-booléen « cette page a un corps » sur l'entrée d'index (coût nul, le markdown y
-est déjà lu) ; pas de marqueur 📎 tant que ça coûterait N requêtes.
+⚠️ Conséquence obligatoire : `me:` se lit dans le store **par défaut**, pas
+« le premier `todo-config` par ordre de chemin ». Sans ça, un réglage posé dans
+le store famille imposerait son `me:` à toutes les instances qui le montent.
+C'est le septième défaut de l'audit, que cette décision rend bloquant.
 
-### Q6 — Qui crée le dossier d'une tâche qui porte des fichiers ?
-Reco : l'agent, au moment où il classe le premier fichier. La capture rapide
-continue d'écrire un fichier plat.
+### R2 — Les deux mots neufs, confirmés
+`start:` et `assignee:`.
 
-### Q7 — Une bande de pièces jointes, ou deux ?
-Fichiers du dossier et fichiers cités ailleurs. Reco : une seule bande, deux
-marques.
+La skill doit porter la phrase qui ferme le piège de `start` : **« pas avant »,
+jamais « j'ai commencé »** — Taskwarrior emploie le mot dans l'autre sens, et
+c'est le genre de confusion qu'on ne rattrape plus une fois le corpus écrit.
 
-### Q8 — Donner sa page au bloc ?
-`BlockProps` ne porte ni `path`, ni `store`, ni `fields` ; `LayoutProps` a les
-trois. Sans eux la portée par défaut passe par `locate('.')` — qui rend `.`
-pour une page à la racine — et le rattrapage par `projet:` est impossible.
-Reco : les ajouter, avec les mots du layout.
+Un seul porteur, pas une liste : une tâche à deux porteurs n'en a aucun.
+Absent = à prendre, qui est un état et non un vide.
 
-## Répondues
+### R3 — Un bloc dédié, pas `list{from=tasks}`
+Un rendu porté par `todo`, qui affiche ET coche ET ajoute : **`:::checklist`**.
+Nommé par ce qu'on y fait, puisque c'est le critère du 06/09 — « what separates
+two renderings is what you can DO in them ». Pas `:::todo`, qui nommerait un
+sujet.
 
-### R3 — Un bloc dédié, pas `list{from=tasks}` (08/09)
-Tranché par le propriétaire : **un rendu porté par `todo`**, qui affiche ET
-coche ET ajoute. Nommé par ce qu'on y fait, puisque c'est le critère écrit la
-veille — « what separates two renderings is what you can DO in them » :
-**`:::checklist`**. Pas `:::todo`, qui nommerait un sujet.
-
-Le prix est accepté d'avance : un bloc contribué disparaît avec son plugin,
-donc todo éteint, une page qui en porte un ouvre en lecture seule avec un
-diagnostic. C'est ce qui a été mesuré le 06/09 sur trois pages de voyage sans
-`parcours`, et c'est pour l'éviter que les rendus génériques sont restés dans
-le cœur. Ici il n'y a rien d'honnête à dessiner sans le plugin : une case qui
-écrit dans un autre fichier EST un contrat avec lui.
+Prix accepté d'avance : un bloc contribué disparaît avec son plugin, donc todo
+éteint, une page qui en porte un ouvre en lecture seule avec un diagnostic.
 
 Attributs : `page`, `view`, `assignee`, `dom`, `projet`, plus les deux
 transverses du cœur — `depth` (`self` · `children` · `subtree`, défaut
 `subtree`) et `w`. Ne pas réinventer `deep` : `depth` existe.
 
-### R1 — La portée du bloc (08/09)
+### R4 — Le bloc reçoit sa page
+`BlockProps` gagne `path`, `store` et `fields`, avec les mots ET la sémantique
+du layout : **`path` est le chemin LOGIQUE** — celui qui agrège les stores —
+et `store` est un qualificatif présent seulement en multi-store, qu'on ne colle
+jamais au chemin pour fabriquer une adresse.
+
+Sans `path`, la portée par défaut passerait par `locate('.')`, qui rend `.`
+pour une page à la racine. Sans `fields`, le rattrapage par `projet:` est
+impossible — la capture rapide classe dans un dossier unique, donc une tâche
+saisie au vol pour un chantier n'est jamais sous son dossier.
+
+### R5 — Pas d'annuaire de personnes en v1
+Les handles sont découverts en parcourant la base, comme les domaines le sont
+déjà, et la teinte est dérivée du handle de façon stable. **Pas de
+`type: personne`** : `type` est un espace de noms plat que rien n'arbitre, et
+un annuaire de gens intéressera aussi le plugin chantiers — `todo` ne prend pas
+ce mot pour tout le monde.
+
+### R6 — L'index dit si une page a du texte
+Un booléen par entrée, calculé là où le markdown est déjà lu pour en extraire
+le frontmatter. La liste pose alors un 📝 sur les lignes concernées.
+
+Pas un extrait : ça grossirait une réponse que tous les plugins reçoivent, et
+la note se lit sur la fiche.
+
+### R7 — Les pièces jointes sont des LIENS
+`files:` en frontmatter, une liste de chemins logiques résolus comme un lien.
+Le fichier vit où il veut, en un seul exemplaire, et n'est jamais copié.
+
+- **Pas d'ajout de fichier en v1.** On se limite à rattacher un fichier
+  existant, dans une section dédiée de la fiche.
+- La fiche affiche **`files:` et rien d'autre** : elle ignore les fichiers
+  posés dans le dossier de la page, sinon une base à plat ferait apparaître le
+  même PDF sous toutes les tâches.
+- Le 📎 de la liste devient gratuit : l'index porte déjà le frontmatter, donc
+  le compte se lit sans requête de plus.
+
+### R8 — Deux niveaux d'affichage, et le second n'existe pas
+**Synthèse** = la ligne dans la liste. **Détail** = la fiche d'une tâche, qui
+n'existe nulle part aujourd'hui : c'est elle qui porte les champs éditables, la
+note rendue par l'éditeur du shell, les sous-tâches et les fichiers liés. Sans
+elle, « des notes » et « des pièces jointes » n'ont nulle part où aller.
+
+### R9 — La portée du bloc
 Sans attribut : le dossier de la page qui porte le bloc, et ses sous-dossiers.
-Avec une référence de page : la même logique depuis le dossier de la page visée.
-**Chemin logique, pas système de fichiers** — donc le multi-store remonte.
+Avec une référence de page : la même logique depuis le dossier de la page
+visée. Chemin logique, donc le multi-store remonte.
 
 Vérifié : c'est gratuit. Un chemin logique ne contient jamais le store, et
-`/api/pages/index` rend les chemins logiques de tous les stores ; filtrer sur un
-préfixe donne l'union. `ctx.base` vaut déjà le dossier logique de la page. Rien
-à étendre de ce côté — l'extension nécessaire est Q8.
+`/api/pages/index` rend les chemins logiques de tous les stores ; filtrer sur
+un préfixe donne l'union. `ctx.base` vaut déjà le dossier logique de la page.
 
-### R2 — La langue des clés (08/09)
+### R10 — La langue des clés
 Une clé de frontmatter suit la langue du contrat de son plugin. La skill de
-`todo` est en anglais → `assignee:`, `me:`. Les *valeurs* restent le vocabulaire
-du corpus (`type: tache`, `dom: atelier`).
+`todo` est en anglais → `start:`, `assignee:`, `files:`, `me:`. Les *valeurs*
+restent le vocabulaire du corpus (`type: tache`, `dom: atelier`).
