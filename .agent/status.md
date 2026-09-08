@@ -35,14 +35,19 @@ pièces jointes n'ajoutent aucun champ : la note est le corps de la page, les
 pièces jointes sont les fichiers du dossier, et le cœur sert déjà les deux.
 Seuls `start:` et `assignee:` sont du vocabulaire neuf.
 
+Un arbitrage est déjà rendu, et il vaut d'être noté parce qu'il applique le
+critère du 06/09 plutôt que de le contourner : les tâches dans une page sont un
+bloc **porté par `todo`**, pas un `list{from=tasks}` du cœur. Ce qui sépare les
+deux rendus est ce qu'on peut y FAIRE — cocher, ajouter — donc le rendu se
+nomme par là : `:::checklist`. Le prix est accepté d'avance (plugin éteint,
+page en lecture seule), parce qu'une case qui écrit dans un autre fichier EST
+un contrat avec le plugin qui possède les tâches.
+
 **Reste :**
-- [ ] Huit arbitrages attendent le propriétaire, tenus dans
-      `.agent/questions-todo-v2.md` — dont deux qui bloquent l'implémentation :
-      la nature du store partagé (qui décide de `me:`), et si une liste de
-      tâches dans une page a le droit d'une case à cocher
-- [ ] La planche « des tâches dans une page » contredit la décision du 06/09
-      (« reading is a `list`, WRITING is a block of its own ») : à redessiner
-      une fois cet arbitrage rendu, pas avant
+- [ ] Sept arbitrages attendent le propriétaire, tenus dans
+      `.agent/questions-todo-v2.md` — dont un qui bloque l'implémentation : la
+      nature du store partagé (une instance par personne, ou plusieurs comptes
+      sur une seule), qui décide de `me:`
 - [ ] Les six phrases anglaises de `todo/web/app.js` — laissées ici exprès, ce
       fichier étant réécrit par le chantier suivant
 

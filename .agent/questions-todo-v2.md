@@ -4,7 +4,7 @@
 > ou **caduque**. Les maquettes qui les portent :
 > https://claude.ai/code/artifact/0b688c46-a21f-46df-8bc4-0c8bd0c3de30
 
-## Ouvertes
+## Ouvertes — sept, dont une bloque l'implémentation
 
 ### Q1 — Le store partagé, c'est quoi exactement ?
 **Posée le 07/09, toujours sans réponse.** Plusieurs instances Adestia (une par
@@ -15,28 +15,6 @@ Ce qu'elle décide : la clé `me:` de `todo-config`. Sur une instance qui
 authentifie vraiment, `/api/instance` sert déjà l'identité et la clé ne sert à
 rien ; en `auth: none` l'identité vaut `local` et ne dit rien, donc la clé est
 la seule réponse. Les maquettes supposent la première hypothèse.
-
-### Q2 — La liste de tâches dans une page : lecture seule, ou bloc à part ?
-**Née le 08/09, en lisant ce que `main` a gagné dans la nuit.** La planche 5 des
-maquettes dessine `:::list{from=tasks}` **avec des cases à cocher**, et ça
-contredit une décision écrite la veille au soir (DESIGN.md, « What actually
-separates two renderings ») :
-
-> Reading is a `list`. WRITING is a block of its own, belonging to whoever owns
-> the data. […] a list known in advance to need an action starts as its own
-> block.
-
-Une liste de tâches dans une page veut une case à cocher — donc par ce critère
-elle ne devrait PAS être `from=tasks`. Deux sorties :
-
-- **A.** `:::list{from=tasks}` reste en lecture seule (pas de case), et cocher
-  se fait dans l'app. `todo` étend seulement les valeurs de `from`.
-- **B.** un rendu propre à `todo`, qui affiche ET coche. Mais `registerBlocks`
-  refuse aujourd'hui qu'un plugin reprenne un nom du cœur, et DESIGN dit que
-  c'est un chantier non tranché — donc B ne peut pas s'appeler `list`.
-
-La maquette est à redessiner selon la réponse. Elle n'a pas été corrigée
-d'office : c'est un arbitrage produit, pas une erreur d'implémentation.
 
 ### Q3 — Les deux mots neufs
 `start:` (recommandé — iCal `DTSTART`, MS Graph ; ferme la question ouverte nº 4
@@ -68,6 +46,23 @@ pour une page à la racine — et le rattrapage par `projet:` est impossible.
 Reco : les ajouter, avec les mots du layout.
 
 ## Répondues
+
+### R3 — Un bloc dédié, pas `list{from=tasks}` (08/09)
+Tranché par le propriétaire : **un rendu porté par `todo`**, qui affiche ET
+coche ET ajoute. Nommé par ce qu'on y fait, puisque c'est le critère écrit la
+veille — « what separates two renderings is what you can DO in them » :
+**`:::checklist`**. Pas `:::todo`, qui nommerait un sujet.
+
+Le prix est accepté d'avance : un bloc contribué disparaît avec son plugin,
+donc todo éteint, une page qui en porte un ouvre en lecture seule avec un
+diagnostic. C'est ce qui a été mesuré le 06/09 sur trois pages de voyage sans
+`parcours`, et c'est pour l'éviter que les rendus génériques sont restés dans
+le cœur. Ici il n'y a rien d'honnête à dessiner sans le plugin : une case qui
+écrit dans un autre fichier EST un contrat avec lui.
+
+Attributs : `page`, `view`, `assignee`, `dom`, `projet`, plus les deux
+transverses du cœur — `depth` (`self` · `children` · `subtree`, défaut
+`subtree`) et `w`. Ne pas réinventer `deep` : `depth` existe.
 
 ### R1 — La portée du bloc (08/09)
 Sans attribut : le dossier de la page qui porte le bloc, et ses sous-dossiers.
