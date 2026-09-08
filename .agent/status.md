@@ -1,6 +1,35 @@
 # Status — Adestia
 > MàJ : 2026-09-08
 
+Chantier du 08/09 (3) — **`w` passe au cœur, parce qu'un bloc ne voit pas son
+voisin**. Remonté de l'usage : `:::checklist` n'avait aucun moyen d'être
+rétréci. Le manque était réel, et donner l'attribut au plugin ne l'aurait pas
+comblé.
+
+`depth` et `w` ont été décidés ensemble comme transverses, et ils ne se
+ressemblent pas. `depth` est un filtre — jusqu'où un bloc LIT — qu'un composant
+honore seul et entièrement. `w` est une règle de FLUX entre voisins : les blocs
+consécutifs remplissent une ligne jusqu'à ce que les largeurs fassent un. Un
+composant se dessine lui-même et ne voit jamais ce qui est à côté ; il ne peut
+donc en faire que la moitié, et c'est la moitié qui a l'air fausse toute seule
+— une colonne avec un trou à côté. C'est le lecteur qui tient la liste des
+frères, donc c'est lui qui groupe.
+
+`w` rejoint donc `id` comme attribut **réservé** : aucune spec ne le déclare,
+tous les blocs l'acceptent, la vérification vit en un seul endroit. Réservé ne
+veut pas dire non vérifié — contrairement à `id` il porte un ensemble fermé,
+parce que c'est un vocabulaire de mise en page et non une mesure. Une page
+capable d'écrire `w="37%"` serait une page qui se met en page en CSS écrit à la
+main dans son entête.
+
+**Vu au navigateur**, et c'est ce qui a payé : les compteurs prouvaient la
+structure (une ligne, deux cellules), la photo a montré ce qu'ils ne disaient
+pas — dans une colonne à moitié, le titre d'une tâche s'était réduit à
+« App… » puis avait **entièrement disparu**, huit marqueurs gardant leur taille
+à côté. C'est exactement le défaut que le `CLAUDE.md` de ce dépôt cite. La
+ligne passe le méta à la ligne suivante et garde un plancher au titre : ce qui
+cède est la ligne, jamais la phrase.
+
 Chantier du 08/09 (2) — **le todo gagne un second niveau, trois champs et un
 bloc**. Les sept arbitrages ont été posés un par un au propriétaire et rendus
 un par un ; le contrat qui en sort tient dans `.agent/questions-todo-v2.md`.
