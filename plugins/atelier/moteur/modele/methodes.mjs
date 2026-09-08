@@ -14,7 +14,7 @@
    posé la question du plan de travail. Elle ne l'avait pas été. */
 
 import { bute, compte, entre, etiquette, traverse, v } from './ancrages.mjs'
-import { contenant, zoneDe } from './zones.mjs'
+import { contenant, contraintesDeZone, zoneDe } from './zones.mjs'
 
 /**
  * Le dessus est une plaque pleine ABOUTÉE : elle passe entre les côtés.
@@ -582,14 +582,19 @@ const separateurs = {
         return
       }
       const dans = sep.zone ? contenant(sep.zone) : undefined
-      const zoneVerticale = (design?.zones ?? []).find((z) => z.id === sep.zone)?.axe === 'z'
+      const zonesDuSeparateur = contraintesDeZone(design, sep)
+      const zoneVerticale = Boolean(zonesDuSeparateur.z)
       const piece = {
         etiquette: etiquette(trigramme, module, 'SÉP', sep.repere ?? (frontal ? 'MÉDIAN' : String(i + 1))),
         role: 'SÉPARATEUR',
         orientation: frontal ? 'frontal' : 'lateral',
-        // L'axe qu'il PARTAGE, par lequel les zones savent quelle épaisseur
-        // retirer. Un séparateur posé DANS une zone ne partage pas le meuble.
-        ...(sep.zone ? {} : { partage: frontal ? 'y' : 'x' }),
+        /* L'axe qu'il PARTAGE, par lequel les zones savent quelle épaisseur
+           retirer. Vivre DANS une zone ne l'empêche pas de partager : le
+           séparateur du meuble à tiroirs prend sa hauteur de la zone sous la
+           tablette ET divise la largeur en deux colonnes. Seule une zone sur
+           l'axe qu'il diviserait le lui retire — on ne partage pas ce qui nous
+           contient déjà. */
+        ...(zonesDuSeparateur[frontal ? 'y' : 'x'] ? {} : { partage: frontal ? 'y' : 'x' }),
         regardeVers: frontal ? {} : { 'rive-avant': 'avant' },
       }
       pieces.push(piece)
@@ -610,11 +615,13 @@ const separateurs = {
             nom: `${piece.etiquette}/profondeur`,
             termes: {
               [v(piece.etiquette, 'y')]: 1,
-              [`${dans ?? 'meuble'}.y`]: -1,
+              /* Une zone ne contraint que SON axe : celle qui borne la hauteur
+                 ne dit rien de la profondeur, et le séparateur la prend alors
+                 du meuble comme n'importe quelle pièce. */
+              [`${zonesDuSeparateur.y ?? 'meuble'}.y`]: -1,
               // Il recule de ce que le fond occupe — son épaisseur s'il est
-              // structurel, son retrait s'il est en rainure. Une pièce posée
-              // DANS une zone se cote sur sa zone et ne voit pas le fond.
-              ...(dans ? {} : { 'meuble.degagement_fond': 1 }),
+              // structurel, son retrait s'il est en rainure.
+              ...(zonesDuSeparateur.y ? {} : { 'meuble.degagement_fond': 1 }),
             },
             egale: 0,
           },
@@ -702,54 +709,89 @@ const horsPortee = {
 }
 
 const tiroirs = {
-  decrit: 'façades de tiroir se partageant la hauteur utile, corps monté sur coulisses',
+  decrit: 'façades de tiroir se partageant la hauteur d\'une zone, ou celle du caisson',
   applique({ trigramme, module, design, ferme }) {
-    const { combien } = compte(design?.tiroirs, 'tiroirs')
+    /* Le design LISTE ses lots de façades, comme il liste ses tablettes. Le
+       meuble à tiroirs du bureau en a deux : une façade pleine largeur dans le
+       compartiment du haut, et trois dans la colonne de droite. Une seule
+       déclaration ne pouvait pas les décrire, et le meuble sortait sans AUCUNE
+       façade — quatre panneaux jamais débités, et le moteur muet.
 
-    if (!combien) return { pieces: [], relations: [] }
+       Une façade peut vivre à l'INTERSECTION de deux zones : les trois de
+       droite prennent leur largeur de la colonne et leur hauteur de la zone
+       sous la tablette pleine largeur. D'où un lot qui nomme autant de zones
+       qu'il en faut, chacune contraignant son axe.
 
-    const facades = Array.from({ length: combien }, (_, i) => ({
-      etiquette: etiquette(trigramme, module, 'FAÇADE', String(i + 1)),
-      role: 'FAÇADE',
-      orientation: 'frontal',
-      // Une façade en applique est exposée sur ses quatre bords.
-      regardeVers: {
-        'rive-avant': 'avant', 'rive-arriere': 'avant',
-        'about-gauche': 'avant', 'about-droit': 'avant',
-      },
-    }))
+       Ne concerne QUE les façades. Le corps du tiroir — flancs, dos, montant,
+       fond sur coulisses — dépend d'un montage qui n'est pas tranché, et
+       c'est `tiroirs-corps` qui s'en occupe le jour venu. */
+    const lots = Array.isArray(design?.tiroirs) ? design.tiroirs : [design?.tiroirs]
+    const pieces = []
+    const relations = []
+    let numero = 0
 
-    const premiere = facades[0].etiquette
-    const relations = [
-      // Toutes de même hauteur : n hauteurs + (n−1) jeux font la hauteur utile,
-      // laquelle est celle du caisson moins le bas et ce qui ferme le haut.
-      {
-        nom: `${trigramme}-${module}/repartition-facades`,
-        termes: {
-          [v(premiere, 'z')]: combien,
-          'meuble.z': -1,
-          [v(etiquette(trigramme, module, 'BAS'), 'ep')]: 1,
-          ...(ferme?.[0] ? { [v(ferme[0], 'ep')]: 1 } : {}),
-          'param.jeu_facade': combien - 1,
+    for (const lot of lots) {
+      const { combien } = compte(lot, 'tiroirs')
+      if (!combien) continue
+      const dans = contraintesDeZone(design, lot)
+
+      const façades = Array.from({ length: combien }, () => {
+        numero += 1
+        return {
+          etiquette: etiquette(trigramme, module, 'FAÇADE', String(numero)),
+          role: 'FAÇADE',
+          orientation: 'frontal',
+          // Une façade en applique est exposée sur ses quatre bords.
+          regardeVers: {
+            'rive-avant': 'avant', 'rive-arriere': 'avant',
+            'about-gauche': 'avant', 'about-droit': 'avant',
+          },
+        }
+      })
+      pieces.push(...façades)
+
+      const premiere = façades[0].etiquette
+      relations.push(
+        /* Toutes de même hauteur : n hauteurs et (n−1) jeux remplissent la
+           hauteur DISPONIBLE — celle de leur zone si elles en ont une, sinon
+           celle du caisson moins le bas et ce qui ferme le haut. */
+        {
+          nom: `${premiere}/repartition-du-lot`,
+          termes: dans.z
+            ? {
+              [v(premiere, 'z')]: combien,
+              [`${dans.z}.z`]: -1,
+              'param.jeu_facade': combien - 1,
+            }
+            : {
+              [v(premiere, 'z')]: combien,
+              'meuble.z': -1,
+              [v(etiquette(trigramme, module, 'BAS'), 'ep')]: 1,
+              ...(ferme?.[0] ? { [v(ferme[0], 'ep')]: 1 } : {}),
+              'param.jeu_facade': combien - 1,
+            },
+          egale: 0,
         },
-        egale: 0,
-      },
-      // Les autres suivent la première : même hauteur, par construction.
-      ...facades.slice(1).map((f) => ({
-        nom: `${f.etiquette}/meme-hauteur`,
-        termes: { [v(f.etiquette, 'z')]: 1, [v(premiere, 'z')]: -1 },
-        egale: 0,
-      })),
-      // En applique : la façade couvre la largeur du meuble, moins le jeu
-      // qu'elle laisse de chaque côté.
-      ...facades.map((f) => ({
-        nom: `${f.etiquette}/largeur-en-applique`,
-        termes: { [v(f.etiquette, 'x')]: 1, 'meuble.x': -1, 'param.jeu_facade_lateral': 2 },
-        egale: 0,
-      })),
-    ]
+        // Les autres suivent la première : même hauteur, par construction.
+        ...façades.slice(1).map((f) => ({
+          nom: `${f.etiquette}/meme-hauteur`,
+          termes: { [v(f.etiquette, 'z')]: 1, [v(premiere, 'z')]: -1 },
+          egale: 0,
+        })),
+        /* En applique : la façade couvre la largeur de ce qu'elle ferme, moins
+           le jeu qu'elle laisse de chaque côté. Une façade de colonne couvre
+           sa colonne, qui porte déjà ses propres bornes. */
+        ...façades.map((f) => ({
+          nom: `${f.etiquette}/largeur-en-applique`,
+          termes: dans.x
+            ? { [v(f.etiquette, 'x')]: 1, [`${dans.x}.x`]: -1 }
+            : { [v(f.etiquette, 'x')]: 1, 'meuble.x': -1, 'param.jeu_facade_lateral': 2 },
+          egale: 0,
+        })),
+      )
+    }
 
-    return { pieces: facades, relations }
+    return { pieces, relations }
   },
 }
 

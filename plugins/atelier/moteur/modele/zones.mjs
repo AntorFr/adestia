@@ -83,6 +83,27 @@ export const zoneDe = (declare) => {
   return declare?.zone
 }
 
+/**
+ * Les zones où vit une déclaration, et l'axe que chacune contraint.
+ *
+ * Une pièce peut vivre à l'INTERSECTION de plusieurs zones, sur des axes
+ * différents : les trois façades de tiroir du meuble à tiroirs prennent leur
+ * largeur de la colonne de droite et leur hauteur de la zone sous la tablette
+ * pleine largeur. Une seule zone ne suffisait pas à les décrire.
+ *
+ * `zone: "droite"` et `zone: ["droite", "bas"]` sont tous deux acceptés — la
+ * seconde écriture n'est que la première, répétée.
+ */
+export function contraintesDeZone(design, declare) {
+  const nommees = zoneDe(declare)
+  const out = {}
+  for (const id of nommees === undefined ? [] : [].concat(nommees)) {
+    const axe = (design?.zones ?? []).find((zn) => zn.id === id)?.axe
+    if (axe) out[axe] = contenant(id)
+  }
+  return out
+}
+
 /** Ce qu'un design déclare de travers sur ses zones. */
 export function litZones(design) {
   const zones = design?.zones ?? []

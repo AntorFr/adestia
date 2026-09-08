@@ -30,7 +30,7 @@ import { derive } from '../moteur/derive/index.mjs'
 
 const here = fileURLToPath(new URL('.', import.meta.url))
 const lit = (n) => litTable(JSON.parse(readFileSync(join(here, n), 'utf8')), n).table
-const tables = () => ['dessus', 'dessous', 'fond', 'tablette', 'separateur', 'plan']
+const tables = () => ['dessus', 'dessous', 'fond', 'tablette', 'separateur', 'plan', 'tiroir']
   .map((n) => lit(`fixture-regles-${n}.json`))
 
 /** Le caisson à tiroirs du bureau, tel qu'il est débité — 601 de profondeur. */
@@ -51,7 +51,7 @@ const blt = (sur = {}) => ({
   parametres: {
     retrait_chant: 1, profondeur_traverse: 100, marge_fond: 5,
     rainure_prof: 9, rainure_bas_prof: 8, fond_jeu: 3, retrait_fond_dos: 20,
-    seuil_mutualisation: 3,
+    seuil_mutualisation: 3, jeu_facade: 3, jeu_facade_lateral: 2,
   },
   ...sur,
 })
@@ -86,4 +86,83 @@ test('la tablette qui partage tient toute la largeur intérieure', () => {
   const r = derive(blt(), tables())
   // 1120 − 2 × 19 : elle porte le tiroir pleine largeur qui la surmonte.
   assert.equal(p(r, 'BLT-A1-TAB-1').longueur, 1082)
+})
+
+/* ── Des façades par lot, et à l'intersection de deux zones ──────────────────
+   Le meuble à tiroirs en porte deux lots : une façade pleine largeur dans le
+   compartiment du haut, et trois dans la colonne de droite. Une déclaration
+   unique ne pouvait pas les décrire, et le meuble sortait sans AUCUNE façade —
+   quatre panneaux jamais débités, et le moteur muet.
+
+   Les trois de droite vivent à l'intersection de deux zones : la colonne leur
+   donne leur largeur, la zone sous la tablette leur hauteur. C'est pour ça
+   qu'un lot nomme autant de zones qu'il en faut.
+
+   Rien ici ne touche au CORPS du tiroir : flancs, dos, montant et fond
+   dépendent d'un montage sur coulisses qui n'est pas tranché. Une façade est
+   un panneau qu'on débite sans savoir sur quoi le tiroir coulissera. */
+
+const avecTiroirs = (sur = {}) => blt({
+  zones: [
+    { id: 'bas', axe: 'z', etendue: 693 },
+    { id: 'tiroir', axe: 'z' },
+    { id: 'gauche', axe: 'x', etendue: 531 },
+    { id: 'droite', axe: 'x' },
+  ],
+  separateurs: [{ type: 'lateral', zone: 'bas', repere: 'MÉDIAN' }],
+  tablettes: [{ nombre: 1, partage: 'z' }],
+  tiroirs: [
+    { nombre: 1, zone: 'tiroir' },
+    { nombre: 3, zone: ['droite', 'bas'] },
+  ],
+  ...sur,
+})
+
+test('une façade prend sa hauteur de la zone qu\'elle ferme', () => {
+  /* Le compartiment du haut fait 120, déduit. La façade s'y cote — et non sur
+     la hauteur utile du caisson, qui est ce que le moteur faisait quand il ne
+     savait poser qu'un seul lot de façades pleine largeur. */
+  const r = derive(avecTiroirs(), tables())
+  const seule = p(r, 'BLT-A1-FAÇADE-1')
+  assert.equal(r.zones.tiroir, 120)
+  assert.ok(Math.abs(seule.longueur - 120) <= 2, `attendu ~120, obtenu ${seule.longueur}`)
+})
+
+test('et trois façades se partagent la colonne ET la zone sous la tablette', () => {
+  /* C'est le cas qui a demandé qu'un lot puisse nommer PLUSIEURS zones : leur
+     largeur vient de la colonne de droite, leur hauteur de la zone sous la
+     tablette pleine largeur. Une seule zone n'aurait donné que l'une des deux.
+
+     La colonne de droite vaut 532, déduite : 1120 − 2×19 de côtés − 19 de
+     séparateur − 531 déclarés pour la colonne gauche. */
+  const r = derive(avecTiroirs(), tables())
+  assert.equal(r.zones.droite, 532)
+  const trois = ['BLT-A1-FAÇADE-2', 'BLT-A1-FAÇADE-3', 'BLT-A1-FAÇADE-4'].map((e) => p(r, e))
+  for (const f of trois) assert.ok(Math.abs(f.largeur - 532) <= 2, `largeur ${f.largeur}`)
+  // Trois hauteurs et deux jeux remplissent les 693 de la zone : ~229 chacune.
+  for (const f of trois) assert.ok(Math.abs(f.longueur - 229) <= 2, `hauteur ${f.longueur}`)
+  assert.equal(trois[0].longueur, trois[2].longueur, 'et toutes de même hauteur')
+})
+
+/* Les tolérances de 2 mm ci-dessus ne sont pas de la paresse : une façade
+   perd ses chants sur ses quatre bords, donc 2 mm par axe, SI elle s'encastre
+   dans son ouverture. Si elle la RECOUVRE, elle ne les perd pas et gagne même
+   un recouvrement. Ce montage n'est pas tranché — « j'ai pas encore décidé sur
+   quoi partir en terme de montage de tiroir » — et les quatre panneaux ne sont
+   pas débités. Ces tests épinglent donc ce qui est décidé (quelle zone donne
+   quel axe) et laissent ouvert ce qui ne l'est pas. */
+
+test('les numéros sont continus, comme pour les tablettes', () => {
+  const r = derive(avecTiroirs(), tables())
+  assert.deepEqual(
+    r.pieces.filter((x) => x.role === 'FAÇADE').map((x) => x.etiquette),
+    ['BLT-A1-FAÇADE-1', 'BLT-A1-FAÇADE-2', 'BLT-A1-FAÇADE-3', 'BLT-A1-FAÇADE-4'],
+  )
+})
+
+test('le CORPS du tiroir n\'est pas posé pour autant', () => {
+  // Le montage sur coulisses n'est pas tranché : une façade se débite sans
+  // lui, et `tiroirs-corps` s'en occupera le jour où il le sera.
+  const r = derive(avecTiroirs(), tables())
+  assert.ok(!r.pieces.some((x) => String(x.role).startsWith('TIROIR-')))
 })

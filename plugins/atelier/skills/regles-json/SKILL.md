@@ -274,6 +274,20 @@ de l'imprimante a un séparateur latéral et une tablette par colonne :
 "tablettes": [{ "nombre": 1, "zone": "gauche" }, { "nombre": 1, "zone": "droite" }]
 ```
 
+Les **tiroirs se déclarent en lots**, comme les tablettes, et un lot peut vivre
+à l'**intersection de plusieurs zones** — chacune contraint son propre axe :
+
+```jsonc
+"tiroirs": [
+  { "nombre": 1, "zone": "tiroir" },
+  { "nombre": 3, "zone": ["droite", "bas"] }
+]
+```
+
+La colonne donne leur largeur, la zone sous la tablette leur hauteur. Ça ne
+concerne que les FAÇADES : le corps du tiroir dépend d'un montage sur
+coulisses, et c'est `tiroirs-corps` qui s'en occupe.
+
 Une tablette **pleine largeur peut PARTAGER le meuble en hauteur** — elle ne
 s'y ajoute pas, elle le divise, exactement comme un séparateur le divise en
 largeur. Elle le déclare par `partage: "z"`, et un séparateur logé dans la zone
