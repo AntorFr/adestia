@@ -976,6 +976,36 @@ What it does NOT open: a block still owns the reading posture only. Handing it
 the page's frontmatter is not handing it the document — there is no markdown
 and no revision in `BlockProps`, and writing stays where writing already is.
 
+### `w` is the core's, because a block cannot see its neighbour (decided 2026-09-08)
+
+Reported from use: `:::checklist` had no way to be narrowed. The gap was real
+and the fix was NOT to give the plugin the attribute, which is worth writing
+down because it is the general shape.
+
+`depth` and `w` were decided together as cross-cutting, and they are not alike.
+**`depth` is a filter — how far down a block READS — so a component honours it
+alone and completely.** `w` is a rule of FLOW between siblings: "consecutive
+blocks fill a row until the widths reach one". A component draws itself and
+never sees what is beside it, so it can implement exactly half of that — the
+narrowing — and the half it can do is the half that looks wrong on its own: a
+column with a hole next to it. Whoever holds the sibling list has to do it, and
+that is the reader.
+
+So `w` joins `id` as a RESERVED attribute: no spec declares it, every block
+accepts it, and the check lives in one place. Reserved does not mean unchecked
+— unlike `id` it carries a closed set, because it is a layout vocabulary and
+not a measurement. A page able to say `w="37%"` would be a page laying itself
+out in CSS written by hand in frontmatter, which is precisely what fractions
+refuse.
+
+Two details that decide how it behaves. **A run that does not fit is not
+shrunk**: `2/3` then `1/2` gives two lines, because squeezing the second into a
+width nobody asked for would make the attribute mean something different
+depending on its neighbours. And the wrapping floor is a `min-width`, not a
+breakpoint: the canvas is not the viewport — the chat rail takes a share of it,
+resizable — so a media query would narrow a column that is already narrow while
+leaving a wide one in two.
+
 ### The index says whether a page has a body (decided 2026-09-08)
 
 `GET /api/pages/index` publishes one boolean per entry beside `finished`. A

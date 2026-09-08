@@ -25,6 +25,71 @@ const page = 'Avant.\n\n:::parcours{source="assets/val.parcours.json"}\n:::\n\nA
 
 afterEach(() => forgetContributedBlocks())
 
+describe('blocks that share a line', () => {
+  const TWO = { note: { content: 'empty', description: 'A note.' } } as const
+  const Note = ({ attributes }: BlockProps) => <i data-testid="note">{attributes['w'] ?? 'full'}</i>
+
+  const rowsIn = (container: HTMLElement) => [...container.querySelectorAll('.adestia-row')]
+
+  it('gathers neighbours whose widths fit one line', () => {
+    registerBlocks(TWO)
+    const { container } = render(
+      <Reader
+        markdown={':::note{w="1/2"}\n:::\n\n:::note{w="1/2"}\n:::\n'}
+        path="p.md"
+        blocks={{ note: Note }}
+      />,
+    )
+    const rows = rowsIn(container)
+    expect(rows).toHaveLength(1)
+    expect(rows[0]?.querySelectorAll('.adestia-row__cell')).toHaveLength(2)
+    // The cell says the share; the block itself never has to know.
+    expect(rows[0]?.querySelector('.adestia-row__cell--1-2')).toBeTruthy()
+  })
+
+  it('starts a new line rather than shrinking one to fit', () => {
+    // 2/3 then 1/2 do not add up. The second is not squeezed into a width
+    // nobody asked for — it takes its own line.
+    registerBlocks(TWO)
+    const { container } = render(
+      <Reader
+        markdown={':::note{w="2/3"}\n:::\n\n:::note{w="1/2"}\n:::\n'}
+        path="p.md"
+        blocks={{ note: Note }}
+      />,
+    )
+    expect(rowsIn(container)).toHaveLength(2)
+  })
+
+  it('fits three thirds, which do not add to one in binary', () => {
+    registerBlocks(TWO)
+    const { container } = render(
+      <Reader
+        markdown={':::note{w="1/3"}\n:::\n\n:::note{w="1/3"}\n:::\n\n:::note{w="1/3"}\n:::\n'}
+        path="p.md"
+        blocks={{ note: Note }}
+      />,
+    )
+    expect(rowsIn(container)).toHaveLength(1)
+    expect(rowsIn(container)[0]?.querySelectorAll('.adestia-row__cell')).toHaveLength(3)
+  })
+
+  it('leaves a full-width block alone, and prose between two breaks the run', () => {
+    registerBlocks(TWO)
+    const { container } = render(
+      <Reader
+        markdown={':::note\n:::\n\n:::note{w="1/2"}\n:::\n\nDu texte.\n\n:::note{w="1/2"}\n:::\n'}
+        path="p.md"
+        blocks={{ note: Note }}
+      />,
+    )
+    // The full-width one is not in a row at all; the two halves are in two,
+    // because a paragraph came between them.
+    expect(rowsIn(container)).toHaveLength(2)
+    expect(container.textContent).toContain('Du texte.')
+  })
+})
+
 describe('drawing one', () => {
   it('hands the component its attributes and a fetchable URL', () => {
     registerBlocks(PARCOURS)

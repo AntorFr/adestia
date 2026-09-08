@@ -119,9 +119,16 @@
 
 .todo-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
 
+/* Wrapping, and it is not a nicety.
+   A row lives at whatever width it is given — the canvas is a fraction of the
+   window, and `w` can now halve it again. Held on one line, the title is the
+   only part that can yield, so it shrank to "App⋯" and then to nothing at all
+   while eight markers kept their full size beside it. Seen in the bench, on a
+   half-width block, exactly as this repository's own CLAUDE.md warns.
+   So the meta drops to a second line instead, and the title keeps a floor. */
 .todo-task {
   position: relative;
-  display: flex; align-items: center; gap: 10px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px;
   padding: 8px 11px; border-radius: var(--radius-sm);
   background: var(--surface-raised); border: 1px solid transparent;
   box-shadow: var(--shadow-sm);
@@ -131,7 +138,9 @@
 .todo-task--defer .todo-task__title { color: var(--text-muted); }
 
 .todo-task__title {
-  flex: 1; min-width: 0; text-align: left; overflow: hidden;
+  /* A floor, not a share: below this the words stop being a task and start
+     being a shape. What gives way is the line, never the sentence. */
+  flex: 1 1 9rem; min-width: 0; text-align: left; overflow: hidden;
   text-overflow: ellipsis; white-space: nowrap;
   border: 0; background: none; padding: 0; cursor: pointer;
   font: inherit; font-size: var(--text-base); color: var(--text);
@@ -139,7 +148,7 @@
 .todo-task__title:hover { color: var(--accent); }
 .todo-task__title--flat { cursor: default; }
 .todo-task__title--flat:hover { color: inherit; }
-.todo-task__meta { display: flex; align-items: center; gap: 7px; flex: none; }
+.todo-task__meta { display: flex; align-items: center; gap: 7px; flex: none; margin-left: auto; }
 
 /* The box, drawn: the native checkbox is what made this read as a form. */
 .todo-box {

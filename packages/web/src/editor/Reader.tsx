@@ -25,6 +25,7 @@ import {
   parseReference,
   resolveReference,
   toneOf,
+  WIDTHS,
   type Indexed,
 } from '@antorfr/adestia-content'
 
@@ -219,10 +220,75 @@ function withBreaks(value: string): ReactNode {
   ))
 }
 
+/**
+ * How much of a line a block asked for, when it asked for less than all of it.
+ *
+ * `undefined` for anything that is not a block, and for a block that wants the
+ * whole line — both are laid out the way everything else is, one after
+ * another, and must not be pulled into a row.
+ */
+function widthOf(node: Node): number | undefined {
+  if (node.type !== 'containerDirective' && node.type !== 'leafDirective') return undefined
+  const asked = node.attributes?.['w']
+  const share = asked === undefined ? undefined : WIDTHS[asked]
+  return share !== undefined && share < 1 ? share : undefined
+}
+
+/**
+ * Children, with narrow blocks gathered onto shared lines.
+ *
+ * `w` is the one attribute a block cannot honour by itself: a component draws
+ * itself and never sees its neighbour, so "half a line" drawn alone is a
+ * narrow block with a hole beside it. The grouping therefore belongs HERE,
+ * where the sibling list exists — which is also what keeps one rule for every
+ * block instead of each plugin inventing its own idea of a column.
+ *
+ * A run ends when the widths would pass one whole line, or when anything else
+ * comes along. So `1/2 1/2` share a line, `1/3 1/3 1/3` share one, and
+ * `2/3 1/2` do not: the second starts its own rather than being shrunk into a
+ * width nobody asked for.
+ */
 function children(node: Node, ctx: Ctx): ReactNode {
-  return (node.children ?? []).map((child, index) => (
-    <Fragment key={index}>{render(child, ctx)}</Fragment>
-  ))
+  const list = node.children ?? []
+  const out: ReactNode[] = []
+
+  for (let index = 0; index < list.length; index += 1) {
+    const first = list[index]
+    if (first === undefined) continue
+    if (widthOf(first) === undefined) {
+      out.push(<Fragment key={index}>{render(first, ctx)}</Fragment>)
+      continue
+    }
+
+    const run: Node[] = []
+    let filled = 0
+    let cursor = index
+    while (cursor < list.length) {
+      const next = list[cursor]
+      const share = next === undefined ? undefined : widthOf(next)
+      // A hair of tolerance, because three thirds do not add to one in binary.
+      if (next === undefined || share === undefined || filled + share > 1 + 1e-9) break
+      run.push(next)
+      filled += share
+      cursor += 1
+    }
+
+    out.push(
+      <div className="adestia-row" key={index}>
+        {run.map((one, seat) => (
+          <div
+            className={`adestia-row__cell adestia-row__cell--${(one.attributes?.['w'] ?? '1').replace('/', '-')}`}
+            key={seat}
+          >
+            {render(one, ctx)}
+          </div>
+        ))}
+      </div>,
+    )
+    index = cursor - 1
+  }
+
+  return out
 }
 
 function render(node: Node, ctx: Ctx): ReactNode {

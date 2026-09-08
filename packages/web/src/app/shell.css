@@ -2891,3 +2891,31 @@
   font-size: 0.85em;
   overflow-wrap: anywhere;
 }
+
+/* ── Blocks that share a line ─────────────────────────────────────────────
+   `w` is the one attribute a block cannot honour alone: a component draws
+   itself and never sees its neighbour. The Reader gathers a run of narrow
+   ones into this row, and the cell says how much of the line each asked for.
+
+   `min-width` rather than a media query, deliberately. The canvas is not the
+   viewport — the chat rail takes a third of it, and a resizable one at that —
+   so a breakpoint on the window would narrow a column that is already narrow
+   and leave a wide one in two. A floor makes the row wrap on its OWN width,
+   whatever the shell is doing beside it. */
+.adestia-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  align-items: flex-start;
+  margin: var(--space-4) 0;
+}
+
+.adestia-row__cell { flex: 1 1 0; min-width: min(100%, 15rem); }
+.adestia-row__cell > :first-child { margin-top: 0; }
+.adestia-row__cell > :last-child { margin-bottom: 0; }
+
+/* The share of the line. `flex-grow: 0` on anything but a full width, so a
+   half stays a half instead of eating the space a neighbour did not take. */
+.adestia-row__cell--2-3 { flex: 0 1 calc(66.666% - var(--space-4) * 0.34); }
+.adestia-row__cell--1-2 { flex: 0 1 calc(50% - var(--space-4) * 0.5); }
+.adestia-row__cell--1-3 { flex: 0 1 calc(33.333% - var(--space-4) * 0.67); }
