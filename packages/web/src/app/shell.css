@@ -3015,7 +3015,12 @@
   margin: var(--space-4) 0;
 }
 
-.adestia-row__cell { flex: 1 1 0; min-width: min(100%, 15rem); }
+/* The floor below which a cell wraps instead of being squeezed. MEASURED
+   rather than chosen: the reading column is ~630px wide with the chat pane
+   open, so a third of it is ~195px — under a 15rem floor, which silently
+   turned every deliberate `2/3 + 1/3` into two stacked blocks. A guard that
+   fires on the ordinary case is not a guard, it is the behaviour. */
+.adestia-row__cell { flex: 1 1 0; min-width: min(100%, 10rem); }
 .adestia-row__cell > :first-child { margin-top: 0; }
 .adestia-row__cell > :last-child { margin-bottom: 0; }
 
