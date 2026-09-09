@@ -171,6 +171,32 @@ describe('drawing one', () => {
     expect(seen).toEqual({ encadre: true, jeton: false })
     expect(screen.getByText('Du texte.')).toBeTruthy()
   })
+
+  it('hands a flow block its list items as text, and an empty one none', () => {
+    registerBlocks(
+      {
+        planning: { content: 'flow', description: 'Body as data.' },
+        jeton: { content: 'empty', description: 'A token.' },
+      },
+      { plugin: 'demo', kind: 'feature' },
+    )
+    const seen: Record<string, readonly string[] | undefined> = {}
+    const spy = (name: string) => ({ items }: BlockProps) => {
+      seen[name] = items
+      return <div />
+    }
+    render(
+      <Reader
+        markdown={':::planning\n- Cadrage: 2026-01-15 → 2026-03-01\n- Recette: 2026-06-01\n:::\n\n:::jeton\n:::\n'}
+        path="x.md"
+        blocks={{ demo: { planning: spy('planning'), jeton: spy('jeton') } }}
+      />,
+    )
+    // The exact strings the grammar read, label and dates in one piece —
+    // parsing them is the block's business, not the reader's.
+    expect(seen['planning']).toEqual(['Cadrage: 2026-01-15 → 2026-03-01', 'Recette: 2026-06-01'])
+    expect(seen['jeton']).toBeUndefined()
+  })
 })
 
 describe('when it cannot be drawn', () => {

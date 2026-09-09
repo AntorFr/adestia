@@ -618,6 +618,30 @@ function plain(node: Node): string {
 }
 
 /**
+ * A flow block's list items as plain text, one string per item.
+ *
+ * A contributed block receives its body as rendered React children — right
+ * for prose, opaque for a block that treats its body as DATA (a timeline
+ * reading phase lines). This is the same reading `figures` does for itself
+ * above: every list item, its text however deep. The body still travels as
+ * children too; a block that consumes items simply does not draw them.
+ */
+function listItems(node: Node): readonly string[] {
+  const out: string[] = []
+  const walk = (kids: readonly Node[] | undefined) => {
+    for (const kid of kids ?? []) {
+      if (kid.type === 'listItem') {
+        out.push(plain(kid))
+        continue
+      }
+      walk(kid.children)
+    }
+  }
+  walk(node.children)
+  return out
+}
+
+/**
  * `:::table` — a markdown table, scrolling, first column emphasised.
  *
  * Small on purpose. It scrolls in its own box so a wide grid never makes the
@@ -811,7 +835,8 @@ function Contributed({
   const Block = claim ? ctx.blocks?.[claim.plugin]?.[name] : undefined
   // A `flow` block gets its body; an `empty` one is its attributes and
   // nothing else, so it is not handed an empty fragment to wonder about.
-  const body = (claim?.spec ?? blockSpec(name))?.content === 'flow' ? children(node, ctx) : undefined
+  const flow = (claim?.spec ?? blockSpec(name))?.content === 'flow'
+  const body = flow ? children(node, ctx) : undefined
 
   if (!Block) {
     // Two ways to land here, and the reader cannot act on either: a block no
@@ -834,6 +859,7 @@ function Contributed({
     <PluginBoundary id={name} what="block">
       <Block
         attributes={node.attributes ?? {}}
+        {...(flow ? { items: listItems(node) } : {})}
         resolve={(target) => assetUrl(target, ctx.base)}
         locate={(target) => workspacePath(target, ctx.base)}
         {...(ctx.page ? { path: ctx.page.path } : {})}

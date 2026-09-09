@@ -979,6 +979,24 @@ What it does NOT open: a block still owns the reading posture only. Handing it
 the page's frontmatter is not handing it the document — there is no markdown
 and no revision in `BlockProps`, and writing stays where writing already is.
 
+### A flow block is handed its list items as text (decided 2026-09-09)
+
+`BlockProps` gains `items` — the body's list items as plain text, one string
+per item, set beside `children` and only on `flow` blocks.
+
+The gap appeared with the first data-bearing contributed block: `:::timeline`
+reads "Cadrage: 2026-01-15 → 2026-03-01" out of its own body, and a component
+receives that body as rendered React children — right for prose, opaque for
+parsing. The core's own `figures` already reads list items for itself; the
+contract extends the same reading to plugins rather than watching each one
+walk React elements, or re-fetch its page's source and guess which of two
+identical blocks it is.
+
+What it does NOT open: `items` is a READING of the body, not the body — no
+markdown, no node tree, no revision. A block wanting richer structure than
+"one item, one string" is asking to parse markdown, and that conversation is
+about a core rendering, not a bigger prop.
+
 ### `w` is the core's, because a block cannot see its neighbour (decided 2026-09-08)
 
 Reported from use: `:::checklist` had no way to be narrowed. The gap was real
