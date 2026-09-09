@@ -755,6 +755,16 @@ réservé au démarrage comme celui de n'importe quel plugin.
 **Codé avant ça, le plugin devrait inventer sa propre résolution — et ce serait
 la mauvaise, comme le `.filter(Boolean)` de `todo` l'a montré.**
 
+**Tombés à leur tour (09/09)** : la résolution est codée et enseignée
+(v0.51.0 — revendications, `from=`, l'app implicite dans son domaine) et les
+rendus génériques sont nés dans le cœur (v0.50.0 — `content`, `figures`,
+`table`, `list`, rejoignant `callout` et `gallery`). Le plugin a démarré le
+09/09 : **lot 1, `:::timeline` en portée rédigée seule** — pas d'attribut
+`depth` tant que l'éligibilité n'a pas `pm-config` (un attribut déclaré qui
+ne dessine rien est un mensonge documenté, cf. `table`). Le contrat des
+blocs a gagné `items` pour lire un corps en données (`BlockProps`, décision
+du 09/09 dans `DESIGN.md`).
+
 ### Pour mémoire, les trois d'origine tels qu'ils étaient écrits :
 
 1. **Identité** — `id:` sur les fiches, le tour de fond qui frappe et répare.

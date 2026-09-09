@@ -1,0 +1,107 @@
+/*
+ * `:::timeline`, dressed in the shell's own tokens — a plugin that invents
+ * a colour is a plugin that looks wrong under the next livery.
+ */
+
+.pm-timeline {
+  margin: 0 0 1.4em;
+}
+.pm-timeline__empty,
+.pm-timeline__unread {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+}
+.pm-timeline__unread {
+  margin: 8px 0 0;
+}
+
+/* The chart: bars stacked in rows, milestones and the today line across them. */
+.pm-timeline__chart {
+  position: relative;
+  padding: 30px 0 24px;
+}
+/* Two milestone-label rows need headroom; one row keeps the chart tight. */
+.pm-timeline__chart--tall {
+  padding-top: 48px;
+}
+.pm-timeline__bar {
+  position: relative;
+  height: 26px;
+  margin: 5px 0;
+}
+.pm-timeline__span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--accent) 55%, var(--surface-raised));
+  color: var(--text);
+  font-size: var(--text-sm);
+  line-height: 26px;
+  padding: 0 9px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 2px;
+}
+.pm-timeline__span--current {
+  background: var(--accent);
+  color: var(--surface-raised);
+}
+.pm-timeline__span--past {
+  background: color-mix(in srgb, var(--accent) 26%, var(--surface-raised));
+  color: var(--text-muted);
+}
+
+/* A milestone is a vertical rule with its name on top — nothing to click yet. */
+.pm-timeline__mile {
+  position: absolute;
+  top: 4px;
+  bottom: 24px;
+  border-left: 2px solid color-mix(in srgb, var(--accent) 70%, var(--border));
+}
+.pm-timeline__mile span {
+  position: absolute;
+  top: -22px;
+  left: -4px;
+  white-space: nowrap;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+/* The alternating row: same rule, its label one row higher, so neighbours clear. */
+.pm-timeline__mile--high span {
+  top: -40px;
+}
+.pm-timeline__mile--past {
+  border-left-color: var(--border);
+}
+
+/* Today: thin, full height, under the labels — the one line that moves alone. */
+.pm-timeline__today {
+  position: absolute;
+  top: 0;
+  bottom: 24px;
+  border-left: 1px dashed var(--text-faint);
+}
+
+.pm-timeline__axis {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 18px;
+  border-top: 1px solid var(--border);
+}
+.pm-timeline__tick {
+  position: absolute;
+  top: 3px;
+  transform: translateX(1px);
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-faint);
+  white-space: nowrap;
+}

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "project-management",
+  "kind": "feature",
+  "description": "Project phases and milestones: the `:::timeline` block draws bars and markers on a time axis from the lines written in its body. A feature, not an app: a planning hangs off whichever page has a reason to carry one.",
+  "contract": 1,
+  "blocks": "./web/blocks.js",
+  "styles": ["./web/pm.css"],
+  "skills": ["./skills/project-management/SKILL.md"],
+  "vocabulary": {
+    "timeline": {
+      "content": "flow",
+      "description": "Phases and milestones on a time axis, written as list lines in the block's body.",
+      "attributes": {
+        "scale": { "values": ["weeks", "months", "quarters"], "default": "months" }
+      }
+    }
+  }
+}
