@@ -100,6 +100,101 @@ export const VOCABULARY: Readonly<Record<string, BlockSpec>> = {
     description: 'A group of images laid out as a gallery.',
     attributes: {},
   },
+
+  /**
+   * ── The generic renderings ──────────────────────────────────────────────
+   *
+   * They are here rather than in a plugin because nothing about them is any
+   * one domain's: a purchase wants a decision, a walk wants a table, a project
+   * wants both. A block a plugin contributes disappears when that plugin is
+   * off, and a page holding one then opens read-only with a diagnostic — the
+   * right answer for a map nobody can draw, an absurd one for a title and
+   * prose. See DESIGN.md, "The core's vocabulary is the GENERIC one".
+   *
+   * Nine renderings rather than three is not the closed vocabulary giving way.
+   * `content{type=…}` alone replaces the dozen subject-named blocks a plugin
+   * design was about to declare — closed over renderings, open over subjects.
+   */
+
+  /**
+   * A title and prose. The subject rides in `type`, which is why one rendering
+   * covers a summary, a scope, a context and a letter to Father Christmas.
+   *
+   * `type` is REQUIRED for the reason the whole doctrine rests on: a block
+   * whose subject went missing must be a visible refusal, not a paragraph that
+   * quietly lost what it was about.
+   */
+  content: {
+    name: 'content',
+    content: 'flow',
+    description: 'A titled passage of prose. Its subject is `type`.',
+    attributes: {
+      type: { required: true },
+      by: {},
+      on: {},
+    },
+  },
+
+  /**
+   * Numbers as tiles, read from a markdown list the file keeps readable:
+   * `- Avancement: 62 % — 8 lots sur 13`. The label is what precedes the
+   * colon, the figure what follows it, and an em dash opens a caption.
+   *
+   * No attributes, deliberately: everything it needs is in the list, which is
+   * also what a person editing the file by hand can still read.
+   */
+  figures: {
+    name: 'figures',
+    content: 'flow',
+    description: 'Figures drawn as tiles, from a markdown list.',
+    attributes: {},
+  },
+
+  /**
+   * A markdown table, drawn with its first column read as a TONE — `moyen`,
+   * `levé`, `en cours` — so a grid of risks or of purchases can be scanned
+   * down its left edge.
+   *
+   * `type` is optional here where `content` requires it, and the difference is
+   * not an oversight: a table carries its own meaning in its header row, while
+   * a passage of prose carries none without its subject.
+   */
+  table: {
+    name: 'table',
+    content: 'flow',
+    description: 'A markdown table whose first column is read as a tone.',
+    attributes: {
+      type: {},
+    },
+  },
+
+  /**
+   * The pages under this one, as rows.
+   *
+   * `from` is the open slot of this rendering — a plugin that has something to
+   * list READ-ONLY widens its accepted values rather than inventing a second
+   * list. It is closed to `children` here because that is all the core can
+   * answer today, and declaring a value nobody draws is the `app` mistake two
+   * blocks above.
+   *
+   * `pull` names HEADER fields to show on each row, comma-separated. Header
+   * fields only: the index publishes `fields` for every page and pays nothing
+   * for it, while a block of a child's BODY is not published at all — see the
+   * letter's "what pulling blocks really demands".
+   */
+  list: {
+    name: 'list',
+    content: 'empty',
+    description: 'The pages under this one, as rows.',
+    attributes: {
+      from: { values: ['children'], default: 'children' },
+      depth: { values: ['self', 'children', 'subtree'], default: 'children' },
+      pull: {},
+      sort: {},
+      closed: { values: ['fold', 'hide', 'show'], default: 'fold' },
+      view: { values: ['rows', 'cards'], default: 'rows' },
+    },
+  },
 }
 
 /**

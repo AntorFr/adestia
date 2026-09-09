@@ -436,6 +436,18 @@ function render(node: Node, ctx: Ctx): ReactNode {
       if (node.type === 'containerDirective' && node.name === 'gallery') {
         return <div className="adestia-gallery">{children(node, ctx)}</div>
       }
+      if (node.type === 'containerDirective' && node.name === 'content') {
+        return <ContentBlock node={node} ctx={ctx} />
+      }
+      if (node.type === 'containerDirective' && node.name === 'figures') {
+        return <Figures node={node} />
+      }
+      if (node.type === 'containerDirective' && node.name === 'table') {
+        return <TableBlock node={node} ctx={ctx} />
+      }
+      if (node.type === 'containerDirective' && node.name === 'list') {
+        return <ListBlock node={node} ctx={ctx} />
+      }
       return <Contributed node={node} ctx={ctx} />
     }
     default:
@@ -443,6 +455,259 @@ function render(node: Node, ctx: Ctx): ReactNode {
       // can report, where a swallowed one is content that vanished.
       return node.value ? <p>{node.value}</p> : null
   }
+}
+
+/**
+ * `plan-travail-garage` → `Plan travail garage`. The fallback when nothing
+ * declares a label for a subject — declared beats guessed, guessed beats gone.
+ */
+function prettify(name: string): string {
+  const words = name.replace(/[-_]+/g, ' ').trim()
+  return words ? words.charAt(0).toUpperCase() + words.slice(1) : name
+}
+
+/**
+ * `:::content{type=…}` — a title and prose.
+ *
+ * The one rendering that makes the doctrine pay: a summary, a scope, a
+ * context and a letter to Father Christmas are the same drawing, so they are
+ * the same block and their difference is a word in `type`. Inventing a kind
+ * of content costs nothing — no code, no manifest entry, no restart.
+ *
+ * The title is the subject prettified, since nothing declares labels yet. A
+ * `pm-config` will one day say `summary: Synthèse`; until it does, the word
+ * the author wrote is a better answer than no title at all.
+ */
+function ContentBlock({ node, ctx }: { readonly node: Node; readonly ctx: Ctx }) {
+  const subject = node.attributes?.['type'] ?? ''
+  const by = node.attributes?.['by']
+  const on = node.attributes?.['on']
+  return (
+    <section className="adestia-content">
+      {subject && <h3 className="adestia-content__title">{prettify(subject)}</h3>}
+      {(by || on) && (
+        <p className="adestia-content__by">{[by, on].filter(Boolean).join(' · ')}</p>
+      )}
+      {children(node, ctx)}
+    </section>
+  )
+}
+
+/**
+ * `:::figures` — numbers as tiles, read from the markdown list inside it.
+ *
+ * `- Avancement: 62 % — 8 lots sur 13` gives a label, a figure and a caption.
+ * The list is walked rather than rendered, which is the whole point: the FILE
+ * stays a list somebody can read and edit by hand, and the tiles are what the
+ * shell makes of it. A line that does not split on a colon is kept as a
+ * caption-less tile rather than dropped — the reader never eats what it does
+ * not understand.
+ */
+function Figures({ node }: { readonly node: Node }) {
+  const tiles: { label: string; value: string; caption?: string }[] = []
+  const walk = (kids: readonly Node[] | undefined) => {
+    for (const kid of kids ?? []) {
+      if (kid.type === 'listItem') {
+        const text = plain(kid)
+        const cut = text.indexOf(':')
+        const label = cut === -1 ? '' : text.slice(0, cut).trim()
+        const rest = (cut === -1 ? text : text.slice(cut + 1)).trim()
+        const [value, ...tail] = rest.split(/\s+—\s+/)
+        tiles.push({
+          label,
+          value: value ?? '',
+          ...(tail.length > 0 ? { caption: tail.join(' — ') } : {}),
+        })
+        continue
+      }
+      walk(kid.children)
+    }
+  }
+  walk(node.children)
+  if (tiles.length === 0) return null
+  return (
+    <div className="adestia-figures">
+      {tiles.map((tile, index) => (
+        <div className="adestia-figure" key={`${tile.label}-${index}`}>
+          <b className="adestia-figure__value">{tile.value}</b>
+          <span className="adestia-figure__label">
+            {tile.label}
+            {tile.caption ? <em> · {tile.caption}</em> : null}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/** The text a node carries, however deep — labels, cells, titles. */
+function plain(node: Node): string {
+  if (typeof node.value === 'string') return node.value
+  return (node.children ?? []).map(plain).join('')
+}
+
+/**
+ * `:::table{type=…}` — a markdown table whose FIRST COLUMN is read as a tone.
+ *
+ * `Moyen`, `Levé`, `En cours`: the same vocabulary `status:` uses on a page,
+ * so a grid of risks is scanned down its left edge with the colours the rest
+ * of the product already taught. `toneOf` is the content engine's, not a
+ * second table that would drift from it.
+ *
+ * The body is rendered by the ordinary table branch; this only dresses it.
+ */
+function TableBlock({ node, ctx }: { readonly node: Node; readonly ctx: Ctx }) {
+  return (
+    <div className="adestia-table-scroll adestia-tableblock">{children(node, ctx)}</div>
+  )
+}
+
+/**
+ * `:::list{from=children}` — the pages under this one.
+ *
+ * It answers from the INDEX the shell already holds, which is why it costs
+ * nothing: `fields` is published for every page, so `pull=status,due` is a
+ * lookup rather than a fetch. A block of a child's BODY is not published, and
+ * this block deliberately cannot ask for one — see the letter.
+ *
+ * `closed=fold` is the default because a finished thing is exactly what
+ * somebody opens to see how the last one went. Hidden, it is gone; folded, it
+ * is out of the way and one click from being read.
+ */
+function ListBlock({ node, ctx }: { readonly node: Node; readonly ctx: Ctx }) {
+  const attrs = node.attributes ?? {}
+  const base = ctx.page?.path ? folderOf(ctx.page.path) : (ctx.base ?? '')
+  const depth = attrs['depth'] ?? 'children'
+  const closed = attrs['closed'] ?? 'fold'
+  const pull = (attrs['pull'] ?? '').split(',').map((one) => one.trim()).filter(Boolean)
+
+  // No index here — a chat bubble, a preview. Saying so beats drawing an
+  // empty list, which would read as "this folder holds nothing".
+  if (ctx.pages === undefined) {
+    return <p className="adestia-block-note">Cette liste a besoin de l’index des pages.</p>
+  }
+
+  const rows = ctx.pages.filter(
+    (page) => page.path !== ctx.page?.path && under(page.path, base, depth),
+  )
+  const live = rows.filter((page) => !finished(page))
+  const done = rows.filter((page) => finished(page))
+  const sort = attrs['sort']
+  const order = (a: Indexed, b: Indexed) =>
+    sort
+      ? String(a.fields[sort] ?? '').localeCompare(String(b.fields[sort] ?? ''))
+      : titleOf(a).localeCompare(titleOf(b))
+  live.sort(order)
+  done.sort(order)
+
+  const shown = closed === 'show' ? [...live, ...done] : live
+  if (shown.length === 0 && done.length === 0) {
+    return <p className="adestia-block-note">Rien sous cette page.</p>
+  }
+
+  return (
+    <div className="adestia-list">
+      {shown.map((page) => (
+        <Row key={page.path} page={page} pull={pull} ctx={ctx} />
+      ))}
+      {closed === 'fold' && done.length > 0 && (
+        <details className="adestia-list__fold">
+          <summary>
+            {done.length} {done.length === 1 ? 'page close' : 'pages closes'}
+          </summary>
+          {done.map((page) => (
+            <Row key={page.path} page={page} pull={pull} ctx={ctx} />
+          ))}
+        </details>
+      )}
+    </div>
+  )
+}
+
+function Row({
+  page,
+  pull,
+  ctx,
+}: {
+  readonly page: Indexed
+  readonly pull: readonly string[]
+  readonly ctx: Ctx
+}) {
+  const pulled = pull
+    .map((name) => ({ name, value: page.fields[name] }))
+    .filter((one) => one.value !== undefined && one.value !== '')
+  return (
+    <button
+      type="button"
+      className="adestia-list__row"
+      onClick={() => ctx.openPage?.(page.path)}
+    >
+      <span className="adestia-list__title">{titleOf(page)}</span>
+      {pulled.length > 0 && (
+        <span className="adestia-list__pulled">
+          {pulled.map((one) => (
+            <span key={one.name} className="adestia-tag">
+              {String(one.value)}
+            </span>
+          ))}
+        </span>
+      )}
+    </button>
+  )
+}
+
+/** `domaines/voyages/baden.md` → `domaines/voyages`. */
+function folderOf(path: string): string {
+  const cut = path.lastIndexOf('/')
+  return cut === -1 ? '' : path.slice(0, cut)
+}
+
+/**
+ * Whether a page belongs in the list, at the depth asked for.
+ *
+ * The subtlety is that **a child is not always a file**. This product files a
+ * sub-subject as a FOLDER — that is the whole hierarchy, decided 2026-09-04 —
+ * so the row standing for a child chantier is that folder's own index page,
+ * not a page beside it. A rule that only looked at files would list a project's
+ * loose notes and miss every one of its sub-projects.
+ *
+ * Hence three answers rather than a depth counter:
+ *
+ * - `self`     the pages filed directly here, and nothing that stands for a folder
+ * - `children` the same, PLUS the index of each direct sub-folder — the children
+ * - `subtree`  everything below, at any depth
+ *
+ * An index page is never listed as a content page of its own folder: it IS the
+ * folder. Which also keeps the page carrying the block out of its own list.
+ */
+function under(path: string, base: string, depth: string): boolean {
+  const folder = folderOf(path)
+  const inside = base === '' ? folder !== '' || true : folder === base || folder.startsWith(`${base}/`)
+  if (!inside) return false
+  if (depth === 'subtree') return true
+
+  const rest = base === '' ? folder : folder.slice(base.length + 1).replace(/^\//, '')
+  if (folder === base) return !isIndexPage(path)
+  if (depth === 'self') return false
+  // One folder down: only its index stands for it, the rest is that folder's business.
+  return !rest.includes('/') && isIndexPage(path)
+}
+
+/** A folder's own index page is the folder, not one of its contents. */
+function isIndexPage(path: string): boolean {
+  const parts = path.split('/')
+  const file = parts.at(-1)?.replace(/\.md$/i, '') ?? ''
+  return /^index$/i.test(file) || (parts.length > 1 && file === parts.at(-2))
+}
+
+function finished(page: Indexed): boolean {
+  return page.fields['finished'] === true || toneOf(page.fields['status']) === 'settled'
+}
+
+function titleOf(page: Indexed): string {
+  const declared = page.fields['title']
+  if (typeof declared === 'string' && declared !== '') return declared
+  return prettify(page.path.split('/').at(-1)?.replace(/\.md$/i, '') ?? page.path)
 }
 
 /**
