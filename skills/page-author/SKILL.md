@@ -1,6 +1,6 @@
 ---
 name: page-author
-description: How any page in this instance is structured — frontmatter conventions (`title`, `type`, `id`, `ico`), how to link one page to another and mint the id that makes a link survive a move, the three ways an app finds its own pages, and the closed block vocabulary for everyday writing. Read this before a plugin-specific skill (todo, collections, atelier…): they build on it and do not repeat it.
+description: How any page in this instance is structured — frontmatter conventions (`title`, `type`, `id`, `ico`), how to link one page to another and mint the id that makes a link survive a move, the three ways an app finds its own pages, and the closed block vocabulary for everyday writing (`content`, `figures`, `table`, `list`, `callout`…). Read this before a plugin-specific skill (todo, collections, atelier…): they build on it and do not repeat it.
 ---
 
 # Writing a Adestia page
@@ -361,6 +361,94 @@ Le guide de refente doit être reréglé après ce changement de lame.
 `type` is `note` (the default), `tip` or `warning` — nothing else. Anything
 else is a diagnostic, not a silently-accepted typo.
 
+**`content`** — a title and a passage of prose. **The one block to reach for
+first**, because its subject is an attribute rather than a name: a summary, a
+scope, a context and a letter to Father Christmas are the same drawing, so
+they are the same block.
+
+```markdown
+:::content{type=synthese by=Antor on=2026-09-09}
+Huit lots sur treize ; l'identité de fiche reste le chemin critique.
+:::
+
+:::content{type=perimetre}
+Le socle de contenu et son shell, hors infra.
+:::
+```
+
+`type` is **required and free** — any word. Inventing a kind of content costs
+nothing: no code, no manifest entry, no restart. It is required because a
+block that lost what it was about must be a visible refusal, not a paragraph
+that quietly forgot its subject. `by` and `on` are optional provenance.
+
+The title shown is the type, prettified — `perimetre` becomes "Perimetre". So
+**write the word you want read**, accents included, until an instance declares
+labels of its own.
+
+**`figures`** — numbers as tiles, read from a markdown list the file keeps
+readable:
+
+```markdown
+:::figures
+- Avancement: 62 % — 8 lots sur 13
+- Jalon: 12 sept. — dans 3 jours
+:::
+```
+
+The label is what precedes the colon, the figure what follows it, and an em
+dash opens a caption. A line that does not split is kept as a tile without a
+label rather than dropped. No attributes: everything it needs is in the list,
+which is also what somebody editing the file by hand can still read.
+
+**`table`** — a markdown table whose FIRST COLUMN is read as a tone, so a grid
+of risks or of purchases is scanned down its left edge:
+
+```markdown
+:::table{type=risques}
+| Gravité | Risque | Parade |
+|---|---|---|
+| Moyen | Le CLI change son contrat | Un test de contrat casse le build. |
+| Levé | Un onglet fermé perd le tour | Le tour est détaché de la requête. |
+:::
+```
+
+Same vocabulary as a page's `status:` — `en cours`, `bloqué`, `clos` and their
+families. `type` is optional here, unlike `content`: a table carries its own
+meaning in its header row, while prose carries none without its subject.
+
+**`list`** — the pages under this one, as rows that open in place:
+
+```markdown
+:::list{depth=children pull=status,due sort=due closed=fold}
+:::
+```
+
+- **`depth`** gives three answers, and the middle one matters. `self` is what
+  is filed directly here. `children` is that **plus the index page of each
+  direct sub-folder** — because a sub-subject is a FOLDER in this product, so
+  the row standing for it is that folder's index, not a page beside it. A rule
+  that only looked at files would list a project's loose notes and miss every
+  one of its sub-projects. `subtree` is everything below, at any depth.
+- **`pull`** names HEADER fields to show on each row, comma-separated. Header
+  fields only, and that is not an oversight: the index publishes every page's
+  frontmatter and pays nothing for it, while the BODY of a child — a `content`
+  block, say — is not published at all. Asking for one would be a request per
+  child.
+- **`closed`** decides what happens to what is over: `fold` (the default) puts
+  it behind a summary, `hide` drops it, `show` mixes it in. Folded rather than
+  hidden because a finished thing is exactly what somebody opens to see how the
+  last one went.
+- **`from`** accepts `children` and nothing else today. It is the slot a plugin
+  widens when it has something to list.
+
+A page that carries this block never lists itself, and a folder's index page is
+the folder rather than one of its contents.
+
+⚠️ **It needs the page index to answer.** Rendered where that index is not at
+hand — inside a chat bubble, a preview — it SAYS so instead of drawing an empty
+list, because an empty list reads as "this folder holds nothing" when the truth
+is "I could not look".
+
 **`gallery`** — a group of images shown as a set rather than as a run of
 inline images down the page:
 
@@ -377,7 +465,7 @@ live plugin** — a page holding one shows an inert placeholder rather than a
 mounted app. Do not write one expecting an embedded widget until this note is
 gone from the skill; ask a person before relying on it for anything real.
 
-**Blocks an active plugin adds.** The three above are the core's; a plugin may
+**Blocks an active plugin adds.** The seven above are the core's; a plugin may
 contribute more, and they are written exactly the same way. What a plugin
 contributes is documented in ITS OWN skill — `:::parcours` in `parcours-json`,
 and so on — so look there rather than guessing. Two consequences worth

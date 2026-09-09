@@ -56,6 +56,32 @@ describe(':::figures', () => {
   })
 })
 
+describe('`w` sur ces blocs', () => {
+  it('met deux blocs sur une ligne, quelle que soit leur nature', () => {
+    // `w` ne se déclare dans aucune spec, donc rien ne garantit par
+    // construction qu'il marche sur un bloc neuf. Le banc l'a montré ; ceci
+    // l'épingle, parce qu'un bandeau qui se casse ne casse rien d'autre et
+    // passe donc inaperçu.
+    const { container } = render(
+      <Reader
+        markdown={':::list{w=2/3}\n:::\n\n:::content{type=perimetre w=1/3}\nDu texte.\n:::\n'}
+        path={HERE}
+        pages={PAGES}
+      />,
+    )
+    const row = container.querySelector('.adestia-row')
+    expect(row).toBeTruthy()
+    expect(row?.querySelectorAll('.adestia-row__cell').length).toBe(2)
+  })
+
+  it('laisse un bloc pleine largeur hors des bandes', () => {
+    const { container } = render(
+      <Reader markdown={':::content{type=synthese}\nSeul.\n:::\n'} path={HERE} pages={PAGES} />,
+    )
+    expect(container.querySelector('.adestia-row')).toBeNull()
+  })
+})
+
 describe(':::list', () => {
   it('liste les pages sous celle-ci, sans son propre index', () => {
     render(<Reader markdown={':::list{from=children}\n:::\n'} path={HERE} pages={PAGES} />)
