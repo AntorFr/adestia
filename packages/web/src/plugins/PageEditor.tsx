@@ -65,7 +65,13 @@ export function makePageEditor(host: PageEditorHost): ComponentType<PageEditorPr
     host.loadMount ??
     (async () => (await import('../editor/milkdown.js')).mountMilkdown as EditorMount)
 
-  return function PluginPageEditor({ path, attachments = false, onSaved }: PageEditorProps) {
+  return function PluginPageEditor({
+    path,
+    attachments = false,
+    editing,
+    onEditing,
+    onSaved,
+  }: PageEditorProps) {
     const [page, setPage] = useState<PageDocument | undefined>()
     const [mount, setMount] = useState<EditorMount | undefined>()
     const [error, setError] = useState<string | undefined>()
@@ -111,6 +117,8 @@ export function makePageEditor(host: PageEditorHost): ComponentType<PageEditorPr
         locale={host.locale}
         t={host.t}
         attachments={attachments}
+        {...(editing ? { startEditing: true } : {})}
+        {...(onEditing ? { onEditing } : {})}
         {...(host.blocks ? { blocks: host.blocks() } : {})}
         {...(onSaved ? { onSaved: () => onSaved() } : {})}
         {...(host.openPage ? { openPage: host.openPage } : {})}

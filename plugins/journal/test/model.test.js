@@ -18,6 +18,7 @@ import {
   journalFolder,
   journalMarkdown,
   newEntryPath,
+  setField,
   slugify,
   sortEntries,
   stamp,
@@ -113,6 +114,41 @@ test('an entry is named after its minute, and never overwrites a neighbour', () 
     'journal/atelier/2026-08-25-1430-2.md',
   )
   assert.equal(stamp(when), '2026-08-25T14:30')
+})
+
+test('an entry named by its title takes that name, and keeps its date in the field', () => {
+  const when = new Date(2026, 7, 25, 14, 30)
+  // `gabarit-queues-droites.md` says what it holds; the stamp says only when.
+  assert.equal(
+    newEntryPath('journal/atelier', when, [], 'Le gabarit de queues droites'),
+    'journal/atelier/le-gabarit-de-queues-droites.md',
+  )
+  // Optional, so the two spellings live in one folder forever.
+  assert.equal(newEntryPath('journal/atelier', when, [], '   '), 'journal/atelier/2026-08-25-1430.md')
+  // And a title taken twice does not overwrite the first one either.
+  assert.equal(
+    newEntryPath('journal/atelier', when, ['journal/atelier/affutage.md'], 'Affûtage'),
+    'journal/atelier/affutage-2.md',
+  )
+  // What orders it is the FIELD, which the creation always writes — the file
+  // name is only read back when that field is missing.
+  assert.match(entryMarkdown({ when: stamp(when), title: 'Affûtage', body: '' }), /^date: 2026-08-25T14:30$/m)
+})
+
+test('a title is rewritten in place, and cleared away rather than blanked', () => {
+  const page = '---\ntype: entree\ndate: 2026-08-25T14:30\ntitle: Ancien\n---\n\nLe corps.\n'
+  assert.match(setField(page, 'title', 'Nouveau'), /^title: Nouveau$/m)
+  // Untouched neighbours: the frontmatter carries conventions this plugin
+  // does not model, and rewriting the block would reformat them.
+  assert.match(setField(page, 'title', 'Nouveau'), /^date: 2026-08-25T14:30$/m)
+  // Emptied means ABSENT: a title that is the empty string prints as a blank
+  // heading, which is worse than no heading.
+  assert.doesNotMatch(setField(page, 'title', '  '), /^title:/m)
+  // Added when it was never there.
+  const untitled = '---\ntype: entree\ndate: 2026-08-25T14:30\n---\n\nLe corps.\n'
+  assert.match(setField(untitled, 'title', 'Enfin'), /^title: Enfin$/m)
+  // And nothing to operate on is said, not guessed.
+  assert.equal(setField('Pas de frontmatter.\n', 'title', 'X'), null)
 })
 
 test('the shortest entry the contract allows, and not a line more', () => {

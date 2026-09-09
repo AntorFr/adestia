@@ -105,6 +105,23 @@ export interface PageEditorProps {
    * a document in its own right.
    */
   readonly attachments?: boolean
+  /**
+   * Open in writing posture instead of reading.
+   *
+   * For a page the person just created — a journal entry behind a `+`, a task
+   * captured a second ago. They have already said they want to write; making
+   * them press ✎ on the empty document they asked for is asking twice.
+   */
+  readonly editing?: boolean
+  /**
+   * Told when the embedded editor enters or leaves writing posture.
+   *
+   * A plugin drawing anything else about the same page — a title beside the
+   * body, a field of its own — must stop writing to that file while the
+   * editor holds it. Two writers on one document is a 409 on somebody's
+   * unsaved paragraph, and the person who loses is the one who typed most.
+   */
+  readonly onEditing?: (editing: boolean) => void
   /** Called after a save the server accepted — the moment to reload a list. */
   readonly onSaved?: () => void
 }

@@ -192,3 +192,58 @@
   font: inherit;
   cursor: pointer;
 }
+
+/* The `+` that opens the naming field, in the journal's own header. Sized off
+   the heading beside it rather than fixed, so it stays a sibling of the title
+   at every text size. */
+.journal__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.journal-add {
+  margin-inline-start: auto;
+  min-width: 2rem;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  color: var(--text);
+  font-size: var(--text-lg);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.journal-add:hover { border-color: var(--accent); color: var(--accent); }
+
+/* An entry's title is a control until its editor takes the file — see the
+   `rename` comment in app.js. Drawn as the heading it replaces, so pressing it
+   is a discovery rather than a decoration. */
+.journal-entry__title--set,
+.journal-entry__title--none {
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: text;
+  text-align: start;
+}
+
+.journal-entry__title--none { color: var(--text-faint); font-style: italic; }
+
+.journal-entry__title--set:hover,
+.journal-entry__title--none:hover { text-decoration: underline dotted; }
+
+.journal-entry__rename {
+  flex: 1 1 12rem;
+  min-width: 0;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}

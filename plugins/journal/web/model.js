@@ -173,14 +173,60 @@ export function stamp(date) {
  * tools. Two entries in the same minute get a suffix rather than one
  * overwriting the other.
  */
-export function newEntryPath(folder, date, taken = []) {
-  const base = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}-${pad(
+export function newEntryPath(folder, date, taken = [], title = '') {
+  /*
+   * Named after its title when it has one, after its moment when it does not.
+   *
+   * `gabarit-queues-droites.md` says what it holds; `2026-08-25-1430.md` says
+   * only when. Both are legal here and neither is a fallback for the other —
+   * the title field behind `+` is optional, so the two spellings live side by
+   * side in the same folder forever.
+   *
+   * What makes that safe is `date:` in the frontmatter, which the creation
+   * always writes. `entryWhen` reads the file NAME only when that field is
+   * missing, so a titled entry is ordered by the field and a dated one by
+   * either — and a page that loses its `date:` afterwards falls to the bottom
+   * of its journal, titled or not. The name is frozen at creation in both
+   * cases: the pages API can write and read, not move.
+   */
+  const stamp = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}-${pad(
     date.getHours(),
   )}${pad(date.getMinutes())}`
+  const base = title.trim() === '' ? stamp : slugify(title)
   const used = new Set(taken.map(idOf))
   let candidate = `${folder}/${base}`
   for (let suffix = 2; used.has(candidate); suffix += 1) candidate = `${folder}/${base}-${suffix}`
   return `${candidate}.md`
+}
+
+/**
+ * Rewrites one frontmatter field in place, or adds it.
+ *
+ * Surgery rather than a re-serialisation, and for the reason the todo plugin
+ * gives where the same function lives: the frontmatter carries conventions
+ * this plugin does not model, and rewriting the block would reformat keys it
+ * was only asked to leave alone. An empty value REMOVES the field — an entry
+ * whose title is cleared has no title, rather than one that is the empty
+ * string and prints as a blank heading.
+ *
+ * Returns null when there is no frontmatter at all, which is not this
+ * plugin's to invent: every entry it creates has one.
+ */
+export function setField(markdown, key, value) {
+  const match = /^---\n([\s\S]*?)\n---/.exec(markdown)
+  if (!match) return null
+
+  const front = match[1]
+  const line = new RegExp(`^${key}:.*$`, 'm')
+
+  if (value === undefined || value === null || String(value).trim() === '') {
+    const cleared = front.replace(new RegExp(`\\n?^${key}:.*$`, 'm'), '')
+    return cleared === front ? markdown : markdown.replace(front, cleared)
+  }
+
+  const written = `${key}: ${String(value).trim()}`
+  const replaced = front.replace(line, written)
+  return markdown.replace(front, replaced !== front ? replaced : `${front}\n${written}`)
 }
 
 /** The shortest entry the page contract allows, and not a line more. */
@@ -248,6 +294,13 @@ const WORDS = {
       'Un journal est un dossier d’entrées. Demande-le à l’agent, ou nomme-le ici.',
     'Name of the journal': 'Nom du journal',
     'Create': 'Créer',
+    'Rename': 'Renommer',
+    'Untitled': 'Sans titre',
+    'that entry no longer exists': 'cette entrée n’existe plus',
+    'that entry has no frontmatter': 'cette entrée n’a pas de frontmatter',
+    'could not save': 'impossible d’enregistrer',
+    'the agent changed that entry — reloading':
+      'l’agent a modifié cette entrée — rechargement',
   },
 }
 

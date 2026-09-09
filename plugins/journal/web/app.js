@@ -25,6 +25,7 @@ import {
   formatWhen,
   journalMarkdown,
   newEntryPath,
+  setField,
   slugify,
   stamp,
   words,
@@ -233,9 +234,17 @@ export default function view(api) {
 
   /** One journal: capture at the top, the history under it. */
   function One({ journal, reload, error, setError }) {
-    const [draft, setDraft] = useState({ title: '', body: '' })
+    const [draft, setDraft] = useState({ title: '' })
     const [saving, setSaving] = useState(false)
     const [shown, setShown] = useState(PAGE)
+    /** The `+` field, open or not. */
+    const [adding, setAdding] = useState(false)
+    /** The entry just created here — the one that opens in writing posture. */
+    const [opened, setOpened] = useState(null)
+    /** Which entry's editor holds its file, as that editor reports it. */
+    const [editing, setEditing] = useState(null)
+    /** The entry whose title is being typed. */
+    const [renaming, setRenaming] = useState(null)
 
     // A different journal starts at its own top rather than inheriting how far
     // somebody had scrolled into the last one.
@@ -245,35 +254,121 @@ export default function view(api) {
 
     const visible = useMemo(() => journal.entries.slice(0, shown), [journal.entries, shown])
 
-    const add = async (event) => {
+    /**
+     * A new entry: named, created, and opened in writing posture.
+     *
+     * The old form asked for the whole entry in a bare textarea before the
+     * page existed — the one screen in the product where writing meant
+     * writing WITHOUT the editor. It was that way for a good reason: a page
+     * created before anybody typed is a page that stays behind, empty, and
+     * the pages API can write and read but not delete.
+     *
+     * The `+` settles it by moving the act, not by removing it. Nothing is
+     * written until somebody presses it, and pressing it IS the decision to
+     * keep an entry. The title is optional and decides the file's name; the
+     * body is said in the shell's own editor, like everywhere else.
+     */
+    const create = async (event) => {
       event.preventDefault()
-      const body = draft.body.trim()
-      if (!body || saving) return
+      if (saving) return
       setSaving(true)
       try {
         const now = new Date()
         const taken = journal.entries.map((entry) => entry.path)
-        const path = newEntryPath(journal.folder, now, taken)
-        const markdown = entryMarkdown({ when: stamp(now), title: draft.title, body })
+        let path = newEntryPath(journal.folder, now, taken, draft.title)
+        const markdown = entryMarkdown({ when: stamp(now), title: draft.title, body: '' })
 
         let write = await put(path, markdown)
         if (write.status === 409) {
-          // Somebody — or something — wrote that minute while this form was
-          // open. Take the next name rather than the other author's entry.
-          write = await put(newEntryPath(journal.folder, now, [...taken, path]), markdown)
+          // Somebody — or something — took that name while the field was
+          // open. Take the next one rather than the other author's entry.
+          path = newEntryPath(journal.folder, now, [...taken, path], draft.title)
+          write = await put(path, markdown)
         }
         if (write.status === 409) {
           throw new Error(t('another author just took that name — try again'))
         }
         if (!write.ok) throw new Error(`${t('could not write that entry')} (${write.status})`)
 
-        setDraft({ title: '', body: '' })
+        setDraft({ title: '' })
+        setAdding(false)
         setError(null)
+        await reload()
+        // Straight into writing: they pressed `+`, asking them to press ✎ on
+        // the empty page they just asked for is asking twice.
+        setOpened(path)
       } catch (cause) {
         setError(cause.message)
       }
       setSaving(false)
+    }
+
+    /**
+     * Renaming an entry, read-then-write against its revision.
+     *
+     * Offered only while that entry's editor is CLOSED. The title lives in
+     * the frontmatter, the frontmatter lives in the file, and the file is
+     * held by the editor the moment somebody presses ✎ — writing to it from
+     * here would turn their next save into a 409 over an unsaved paragraph.
+     * So the two never hold the page at once: the editor owns it while it is
+     * open, this owns it the rest of the time.
+     */
+    const rename = async (entry, title) => {
+      setRenaming(null)
+      if ((title ?? '').trim() === (entry.title ?? '')) return
+      try {
+        const read = await api.fetch(`/api/pages/${entry.path}`)
+        if (!read.ok) throw new Error(t('that entry no longer exists'))
+        const page = await read.json()
+        const markdown = setField(page.markdown, 'title', title)
+        if (!markdown) throw new Error(t('that entry has no frontmatter'))
+        const write = await put(entry.path, markdown, page.revision)
+        if (write.status === 409) throw new Error(t('the agent changed that entry — reloading'))
+        if (!write.ok) throw new Error(`${t('could not save')} (${write.status})`)
+        setError(null)
+      } catch (cause) {
+        setError(cause.message)
+      }
       await reload()
+    }
+
+    /** An entry's title: a heading, a button to rename, or the field itself. */
+    const titleOf = (entry) => {
+      if (renaming === entry.path) {
+        return h('input', {
+          key: 't',
+          className: 'journal-entry__rename',
+          autoFocus: true,
+          defaultValue: entry.title ?? '',
+          placeholder: t('Title (optional)'),
+          'aria-label': t('Title (optional)'),
+          onBlur: (event) => void rename(entry, event.target.value),
+          onKeyDown: (event) => {
+            if (event.key === 'Enter') event.target.blur()
+            if (event.key === 'Escape') setRenaming(null)
+          },
+        })
+      }
+      // While the editor holds the file, the title is a heading and nothing
+      // more — see `rename` for why it stops being a control.
+      if (editing === entry.path) {
+        return entry.title
+          ? h('h3', { key: 't', className: 'journal-entry__title' }, entry.title)
+          : null
+      }
+      return h(
+        'button',
+        {
+          key: 't',
+          type: 'button',
+          className: entry.title
+            ? 'journal-entry__title journal-entry__title--set'
+            : 'journal-entry__title journal-entry__title--none',
+          title: t('Rename'),
+          onClick: () => setRenaming(entry.path),
+        },
+        entry.title ?? t('Untitled'),
+      )
     }
 
     return h('section', { className: 'journal' }, [
@@ -285,33 +380,38 @@ export default function view(api) {
       h('header', { key: 'h', className: 'journal__head' }, [
         h('h2', { key: 't' }, `${journal.ico ?? '📓'} ${journal.title}`),
         journal.description && h('p', { key: 'd', className: 'journal-muted' }, journal.description),
+        h(
+          'button',
+          {
+            key: 'a',
+            type: 'button',
+            className: 'journal-add',
+            'aria-label': t('New entry'),
+            title: t('New entry'),
+            onClick: () => setAdding(!adding),
+          },
+          adding ? '×' : '+',
+        ),
       ]),
       error && h('p', { key: 'e', className: 'journal-problem' }, error),
 
-      h('form', { key: 'f', className: 'journal-new', onSubmit: add }, [
-        h('input', {
-          key: 't',
-          className: 'journal-new__title',
-          value: draft.title,
-          placeholder: t('Title (optional)'),
-          'aria-label': t('Title (optional)'),
-          onChange: (event) => setDraft({ ...draft, title: event.target.value }),
-        }),
-        h('textarea', {
-          key: 'b',
-          className: 'journal-new__body',
-          value: draft.body,
-          rows: 3,
-          placeholder: t('What happened?'),
-          'aria-label': t('What happened?'),
-          onChange: (event) => setDraft({ ...draft, body: event.target.value }),
-        }),
-        h(
-          'button',
-          { key: 's', type: 'submit', className: 'journal-button', disabled: saving },
-          t('Add'),
-        ),
-      ]),
+      adding &&
+        h('form', { key: 'f', className: 'journal-new', onSubmit: create }, [
+          h('input', {
+            key: 't',
+            className: 'journal-new__title',
+            autoFocus: true,
+            value: draft.title,
+            placeholder: t('Title (optional)'),
+            'aria-label': t('Title (optional)'),
+            onChange: (event) => setDraft({ title: event.target.value }),
+          }),
+          h(
+            'button',
+            { key: 's', type: 'submit', className: 'journal-button', disabled: saving },
+            t('Create'),
+          ),
+        ]),
 
       journal.entries.length === 0
         ? h('p', { key: 'z', className: 'journal-muted' }, t('Nothing written yet.'))
@@ -326,12 +426,21 @@ export default function view(api) {
                     { key: 'w', className: 'journal-entry__when' },
                     formatWhen(entry.when, api.locale),
                   ),
-                  entry.title && h('h3', { key: 't', className: 'journal-entry__title' }, entry.title),
+                  titleOf(entry),
                 ]),
                 // The shell's editor, one per entry: reading posture until its
                 // own ✎ is pressed, and its own revision against an agent that
                 // writes without warning.
-                h(api.PageEditor, { key: 'e', path: entry.path, onSaved: reload }),
+                h(api.PageEditor, {
+                  key: 'e',
+                  path: entry.path,
+                  editing: entry.path === opened,
+                  onEditing: (open) =>
+                    setEditing((current) =>
+                      open ? entry.path : current === entry.path ? null : current,
+                    ),
+                  onSaved: reload,
+                }),
               ]),
             ),
           ),
