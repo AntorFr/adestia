@@ -441,8 +441,9 @@ means.
   it behind a summary, `hide` drops it, `show` mixes it in. Folded rather than
   hidden because a finished thing is exactly what somebody opens to see how the
   last one went.
-- **`from`** accepts `children` and nothing else today. It is the slot a plugin
-  widens when it has something to list.
+- **`source`** accepts `children` and nothing else today. It is the slot a
+  plugin widens when it has something to list. (`from=` is a different word on
+  purpose: reserved on EVERY block, it names which plugin draws it — see below.)
 
 A page that carries this block never lists itself, and a folder's index page is
 the folder rather than one of its contents.
@@ -509,6 +510,33 @@ hand in frontmatter, and a corpus where every author invents their own column.
 
 It is an intention, not a promise about pixels: a narrow canvas puts the blocks
 back one per line rather than shrinking them past reading.
+
+### `from` — which plugin draws a block
+
+Like `id` and `w`, any block accepts it and no spec declares it. Its value is a
+**plugin id**, or `core` for the plain rendering:
+
+```markdown
+:::table{from=core}
+| Gravité | Risque |
+|---|---|
+| Moyen | Le CLI change son contrat |
+:::
+```
+
+You almost never write it, because the default resolution is already what you
+mean: **the nearest definer draws the block**. On a page inside an app's
+domain, that app's version applies by itself — the page's location carries the
+choice. Elsewhere, the core's. An app's OWN block (`checklist`) works on every
+page of the instance, since nobody else claims its name.
+
+Write it in exactly two situations. **`from=core`** to get the plain rendering
+on a page whose app dresses a block differently. **`from=<plugin>`** to ask for
+a `feature` plugin's version of a core block — a feature is everywhere, so
+nothing carries that choice for you, and it never applies uninvited.
+
+A `from=` naming a plugin that is off or gone shows a visible notice with the
+body kept underneath — like a dead link: the words survive, the claim does not.
 
 ## The home brief — "À la une"
 

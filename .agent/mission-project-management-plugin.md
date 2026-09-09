@@ -59,8 +59,10 @@ garde que la conséquence :
 11. **Un `:::` nouveau se justifie par ce qu'on peut y FAIRE** — `DESIGN.md`,
     « What actually separates two renderings ». Lire → `list`, écrire → son
     propre bloc. Donc `:::tasks` appartient à `todo`, pas ici.
-12. **`from=` est une grammaire ouverte** — même section. Un plugin y branche
-    une source en lecture, avec le pari que la liste le restera.
+12. **`source=` est une grammaire ouverte** — même section. Un plugin y branche
+    une source en lecture, avec le pari que la liste le restera. (D'abord
+    épelée `from=` ; renommée le 09/09 quand `from=` est devenu le mot réservé
+    « quel plugin dessine ce bloc ».)
 
 **La conséquence pour CE chantier, et elle est lourde** : ce qu'il y a à coder
 en premier n'est plus ce plugin, c'est le vocabulaire du cœur. Voir « Le
@@ -76,7 +78,7 @@ Et trois arbitrages de détail, tranchés le 06/09 en regardant la maquette :
   Des blocs qui se suivent remplissent une ligne jusqu'à ce que la somme atteigne
   1 ; celui qui ne rentre plus commence la ligne suivante. Ni grille ni colonne à
   écrire — c'est ce qui garantit que la page ne positionne jamais un pixel.
-- **Les pièces jointes restent un `:::list{from=files view=grid}`**, sans rendu
+- **Les pièces jointes restent un `:::list{source=files view=grid}`**, sans rendu
   dédié. Tranché en regardant les deux dessins côte à côte. Ça se rouvrira le jour
   où la carte devra porter une vignette, un aperçu ou un bouton de dépôt — et ce
   jour-là, par le point 11, c'est le bloc qui change, pas l'attribut.
@@ -180,7 +182,7 @@ que comme trois inventaires est ce qui empêche le catalogue de tripler.
 
 Un `:::table{type=risques depth=subtree}` sur un programme montre alors les risques écrits
 dans les projets ; un `:::decision{depth=subtree state=open}` montre ce qui
-attend un arbitrage n'importe où sous soi ; un `:::list{from=tasks depth=subtree}` sur un
+attend un arbitrage n'importe où sous soi ; un `:::list{source=tasks depth=subtree}` sur un
 projet donne toutes ses tâches. **Un seul bloc par sujet, à toutes les
 hauteurs** — au lieu d'un `risks` et d'un `risks-consolidés`, qui divergeraient
 comme les tables de statut du prédécesseur.
@@ -209,7 +211,7 @@ statuts des sous-projets au niveau du programme » et « toutes les tâches d'un
 projet » — les deux cas que le propriétaire a cités — et ne payer la remontée
 de blocs que le jour où un `:::table{type=risques}` consolidé est réellement demandé. La
 distinction à garder en tête : **une tâche est une PAGE** (`type: tache`), donc
-`:::list{from=tasks depth=subtree}` est une requête d'entêtes ; un risque est un BLOC,
+`:::list{source=tasks depth=subtree}` est une requête d'entêtes ; un risque est un BLOC,
 donc `:::table{type=risques depth=subtree}` est la version chère.
 
 ### Un `:::` est un RENDU, jamais un sujet
@@ -276,7 +278,7 @@ rendu retombe sur la valeur embellie — `prettify()` existe déjà dans
 | `:::table` | un tableau, 1<sup>re</sup> colonne colorée par son ton | `type=risques`, `type=budget`… |
 | `:::options` | des cartes `+`/`−`, une retenue | `chosen=` |
 | `:::decision` | de la prose, une échéance, un état | `state=`, `due=` |
-| `:::list` | des lignes : icône, titre, puces, date | `from=children\|tasks\|pages\|files` |
+| `:::list` | des lignes : icône, titre, puces, date | `source=children\|tasks\|pages\|files` |
 | `:::timeline` | des barres et des jalons dans le temps | `depth=` |
 | `:::progress` | une courbe, depuis un asset voisin | `source=` |
 
@@ -288,7 +290,7 @@ qu'on voudra écrire, sans jamais rouvrir le manifeste.
 | Rendu | Fourni par | Pourquoi |
 |---|---|---|
 | `content` `figures` `table` `options` `decision` | **le cœur** | Rien n'y parle de chantiers. Une fiche d'achat veut `decision`, une balade veut `table`. |
-| `list` | **le cœur**, avec `from=children\|pages\|files` | Il interroge l'arborescence, que le cœur calcule déjà (`sectionsOf`, `subsectionsOf`). |
+| `list` | **le cœur**, avec `source=children\|pages\|files` | Il interroge l'arborescence, que le cœur calcule déjà (`sectionsOf`, `subsectionsOf`). |
 | `tasks` | **`todo`** | On y écrit : cocher modifie `done:` dans une AUTRE page. Point 11. |
 | `timeline` `progress` | **ce plugin** | `timeline` exige `start:`/`due:` sur les fiches ; `progress` lit un asset avec son contrat. |
 
@@ -301,9 +303,9 @@ vivent dans `DESIGN.md` (« The core's vocabulary is the GENERIC one »).
 seul juge :
 
 - `children`, `actions`, `pages` dessinent la même ligne → **un seul**
-  `:::list{from=…}`. Recommandé.
+  `:::list{source=…}`. Recommandé.
 - `attachments` dessine des cartes de fichiers, pas des lignes → soit
-  `:::list{from=files view=grid}`, soit son propre rendu. **À trancher en
+  `:::list{source=files view=grid}`, soit son propre rendu. **À trancher en
   regardant les deux dessins**, pas en raisonnant.
 - `decision` reste séparé de `content` parce qu'il dessine en plus une échéance
   et un état ouvert/rendu. Si ce n'était qu'un titre différent, il fusionnerait.
@@ -327,8 +329,8 @@ mêmes blocs en portée plus large deviennent des requêtes — cf. le coût ci-
 
 | Écrit | Attributs | Ce qu'il interroge |
 |---|---|---|
-| `:::list{from=children}` | `depth=children\|subtree`, `pull`, `sort`, `closed=fold\|hide\|show` | **le dossier de la fiche** — plus aucun `of` à écrire, la hiérarchie est là où le fichier est. |
-| `:::list{from=tasks}` | `depth`, `status`, `since` | les tâches de `todo`. **Ne pas inventer un second jeu** — cocher d'un côté coche de l'autre. |
+| `:::list{source=children}` | `depth=children\|subtree`, `pull`, `sort`, `closed=fold\|hide\|show` | **le dossier de la fiche** — plus aucun `of` à écrire, la hiérarchie est là où le fichier est. |
+| `:::list{source=tasks}` | `depth`, `status`, `since` | les tâches de `todo`. **Ne pas inventer un second jeu** — cocher d'un côté coche de l'autre. |
 
 Les contributeurs ne sont pas une requête : voir la question ouverte qui leur
 est consacrée. Écrits, ils sont un `:::content{type=contributeurs}` — donc rien
@@ -419,10 +421,10 @@ Deux blocs de plus, et tous deux tombent de l'arborescence sans rien déclarer.
 
 | Bloc | Attributs | Ce qu'il montre |
 |---|---|---|
-| `:::list{from=pages}` | `depth=self\|subtree`, `sort` | les pages markdown du dossier qui ne sont **pas** des items et **pas** l'index — le contenu rédigé qui appartient à ce chantier |
-| `:::list{from=files}` | `depth=self\|subtree`, `kind`, `view=rows\|grid` | les fichiers non-markdown du dossier et de son `assets/` |
+| `:::list{source=pages}` | `depth=self\|subtree`, `sort` | les pages markdown du dossier qui ne sont **pas** des items et **pas** l'index — le contenu rédigé qui appartient à ce chantier |
+| `:::list{source=files}` | `depth=self\|subtree`, `kind`, `view=rows\|grid` | les fichiers non-markdown du dossier et de son `assets/` |
 
-**`:::list{from=files}` est déjà servi, et sa convention est déjà écrite** :
+**`:::list{source=files}` est déjà servi, et sa convention est déjà écrite** :
 `GET /api/files?page=<chemin>` (`packages/server/src/files.ts`) renvoie les
 fichiers non-markdown du dossier de la page **plus** tout ce qui vit sous son
 `assets/`, avec le type, la taille et la date. Le commentaire de la fonction dit
@@ -512,7 +514,7 @@ phase sans commencement, ce qui est exactement ce qu'un jalon est.
 **Qui est éligible** : les items de la portée, c'est-à-dire — même règle que
 partout ailleurs dans cette lettre — les pages dont le `type:` a un workflow
 déclaré. Sans ce filtre, les deux cents tâches d'une instance atterriraient sur
-le planning ; elles ont déjà leur bloc, `:::list{from=tasks}`.
+le planning ; elles ont déjà leur bloc, `:::list{source=tasks}`.
 
 **Le cas du modèle fermé reste couvert** par la portée `self` : une phasage qui
 n'est qu'un dessin — trois bandes sur un programme, sans page derrière — s'écrit
@@ -659,7 +661,7 @@ gratuitement.
 
 ### Ce que le repli donne à la vue
 
-`:::list{from=children}` sépare les vivants du reste et met les finis dans un pli — même
+`:::list{source=children}` sépare les vivants du reste et met les finis dans un pli — même
 geste que le shell, même verdict, même mot. L'attribut `closed=fold|hide|show`
 permet à une fiche de revue de tout montrer sans changer la donnée.
 
@@ -758,12 +760,12 @@ la mauvaise, comme le `.filter(Boolean)` de `todo` l'a montré.**
 1. **Identité** — `id:` sur les fiches, le tour de fond qui frappe et répare.
    Cf. `DESIGN.md`, journal du 27–29/08. **Rien n'est codé.** Le passage à une
    hiérarchie de fichiers en réduit l'urgence pour l'arbre lui-même (un dossier
-   se déplace tout entier) mais pas pour `:::list{from=tasks}` : `projet:` de `todo`
+   se déplace tout entier) mais pas pour `:::list{source=tasks}` : `projet:` de `todo`
    contient un **id**, pas un chemin, et c'est précisément une référence qui
    doit survivre au `mv`.
 2. **L'index au lecteur** — `/api/pages/index` sert déjà `path`, `title`,
    `fields` et `finished` pour chaque page (`packages/server/src/pages.ts`),
-   c'est-à-dire tout ce que `:::list{from=children}` et `:::list{from=tasks}` demandent. Mais il ne
+   c'est-à-dire tout ce que `:::list{source=children}` et `:::list{source=tasks}` demandent. Mais il ne
    parvient PAS jusqu'au Reader, dont le contexte ne porte que `base`, `blocks`
    et `openPage`. C'est le seul ajout d'architecture du dossier, et il relit
    tout le disque à chaque appel : c'est aussi le moment de payer cette dette.
@@ -829,7 +831,7 @@ que pour l'historique du raisonnement :
   elle-même : dès qu'une ligne d'enfant doit montrer un bloc, la remontée cesse
   d'être un « plus tard » et devient une pièce du premier jet. **Recommandation
   1 retenue** : l'index publie un digest borné des blocs rédigés.
-- **les pièces jointes** — closes : `:::list{from=files view=grid}`, sans rendu
+- **les pièces jointes** — closes : `:::list{source=files view=grid}`, sans rendu
   dédié.
 
 **La nº 6 reste le seul verrou dur** : les données réelles.

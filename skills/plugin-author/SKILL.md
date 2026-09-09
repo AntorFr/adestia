@@ -390,6 +390,16 @@ Blocks extend the CLOSED vocabulary — the reason pages look like one product
 whoever wrote them. A block is a `:::name{attrs}` directive that becomes a
 first-class node, never text that happens to look like markup.
 
+**A core name may be claimed — that is OVERRIDING, and it is bounded.** Since
+2026-09-09 a plugin declaring `table` is not refused: its version applies on
+the pages of the domain it owns (an `app`), or where a page asks for it with
+`from=<your id>` (a `feature`), and the core keeps answering everywhere else.
+Two rules decide which to do. *Reading is a `list`, WRITING is a block of your
+own* — a checkbox that edits another page is a contract, not a drawing. And
+*bound a redefinition, never a definition*: your own name (`checklist`) carries
+across the whole instance, your version of a core name never leaves your
+domain.
+
 A block is declared in **two halves that never restate each other**.
 
 **The manifest says what the block IS** — data, under `vocabulary`:
