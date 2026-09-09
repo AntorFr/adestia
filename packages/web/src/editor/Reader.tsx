@@ -617,7 +617,7 @@ function TableBlock({ node, ctx }: { readonly node: Node; readonly ctx: Ctx }) {
 }
 
 /**
- * `:::list{from=children}` — the pages under this one.
+ * `:::list{source=children}` — the pages under this one.
  *
  * It answers from the INDEX the shell already holds, which is why it costs
  * nothing: `fields` is published for every page, so `pull=status,due` is a

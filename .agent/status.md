@@ -112,7 +112,7 @@ Seuls `start:` et `assignee:` sont du vocabulaire neuf.
 
 Un arbitrage est déjà rendu, et il vaut d'être noté parce qu'il applique le
 critère du 06/09 plutôt que de le contourner : les tâches dans une page sont un
-bloc **porté par `todo`**, pas un `list{from=tasks}` du cœur. Ce qui sépare les
+bloc **porté par `todo`**, pas un `list{source=tasks}` du cœur. Ce qui sépare les
 deux rendus est ce qu'on peut y FAIRE — cocher, ajouter — donc le rendu se
 nomme par là : `:::checklist`. Le prix est accepté d'avance (plugin éteint,
 page en lecture seule), parce qu'une case qui écrit dans un autre fichier EST
