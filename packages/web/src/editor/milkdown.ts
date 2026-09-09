@@ -38,11 +38,31 @@ export function mountMilkdown(
   })
 
   crepe.editor.use(adestiaVocabulary())
-  void crepe.create().then(() => {
-    crepe.on((listener) => {
-      listener.markdownUpdated((_ctx, next) => onChange(next))
+  void crepe
+    .create()
+    .then(() => {
+      crepe.on((listener) => {
+        listener.markdownUpdated((_ctx, next) => onChange(next))
+      })
     })
-  })
+    // Never silently. `create()` rejects when the document holds a node this
+    // editor has no parser for, and the rejection used to go nowhere: the
+    // surface stayed EMPTY, the page still readable underneath, and nothing
+    // on screen or in the console said why. Four core blocks shipped that way
+    // for a day (2026-09-09), and the `table` collision that `PM_ID` now
+    // settles was read off a blank rectangle with a fifteen-second wait in
+    // front of it. The parse failure is written where the editor would have
+    // been, so the next one is a sentence rather than a wait.
+    .catch((cause: unknown) => {
+      console.error('Adestia: the editor could not open this page', cause)
+      const problem = element.ownerDocument.createElement('p')
+      problem.className = 'adestia-editor__problem'
+      problem.setAttribute('role', 'status')
+      problem.textContent = `The editor could not open this page: ${
+        cause instanceof Error ? cause.message : String(cause)
+      }`
+      element.replaceChildren(problem)
+    })
 
   // A page switch must tear the editor down: two live instances on one host
   // leave the second reading the first's document.
