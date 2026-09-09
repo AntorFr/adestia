@@ -10,6 +10,7 @@
  */
 
 import { contributedBlocks, GRAMMAR, shapesOf, toneOf, VOCABULARY } from '@antorfr/adestia-content'
+import type { BlockSpec } from '@antorfr/adestia-content'
 import type { MilkdownPlugin } from '@milkdown/kit/ctx'
 import { $node, $remark } from '@milkdown/kit/utils'
 
@@ -128,7 +129,7 @@ export const frontmatterNode = $node('frontmatter', () => ({
  * only the schema id steps aside.
  */
 const PM_ID: Readonly<Record<string, string>> = { table: 'directive_table' }
-const pmId = (name: string) => PM_ID[name] ?? name
+export const pmId = (name: string) => PM_ID[name] ?? name
 
 function containerNode(name: string) {
   return $node(pmId(name), () => ({
@@ -320,6 +321,24 @@ export const appNode = atomNode('app')
  * failure — loud, and naming the node — but it means a contributed block that
  * only had a component would break the editor on the first page holding one.
  */
+/**
+ * The blocks the editor knows, ONE entry per name, core first.
+ *
+ * Pulled out of `adestiaVocabulary` so the slash menu offers exactly what the
+ * schema can hold. Two readings of the same list is how the four core
+ * renderings came to have nodes nowhere and a menu nowhere either; one list,
+ * read twice, cannot drift.
+ */
+export function editorBlocks(): readonly BlockSpec[] {
+  const seen = new Set<string>()
+  return [...Object.values(VOCABULARY), ...contributedBlocks()].filter((spec) =>
+    seen.has(spec.name) ? false : (seen.add(spec.name), true),
+  )
+}
+
+/** The three whose nodes are written out above rather than derived. */
+const HAND_WRITTEN = new Set(['callout', 'gallery', 'app'])
+
 export function adestiaVocabulary(): MilkdownPlugin[] {
   // ONE node per name, custom nodes first. Two ways a duplicate would arise,
   // and Milkdown throws on both: a core block that also needs a generic node
@@ -328,9 +347,8 @@ export function adestiaVocabulary(): MilkdownPlugin[] {
   // features declaring the same block. The node is per NAME, deliberately:
   // attributes are kept verbatim and the body is always carried, so the node
   // does not depend on which claim wins on a given page.
-  const seen = new Set(['callout', 'gallery', 'app'])
-  const generic = [...Object.values(VOCABULARY), ...contributedBlocks()]
-    .filter((spec) => (seen.has(spec.name) ? false : (seen.add(spec.name), true)))
+  const generic = editorBlocks()
+    .filter((spec) => !HAND_WRITTEN.has(spec.name))
     // A container as soon as ANY definition of the name takes a body. The
     // node is per name while definitions are per plugin, and an atom EATS a
     // body it cannot hold — the "silently eaten text" the design warns

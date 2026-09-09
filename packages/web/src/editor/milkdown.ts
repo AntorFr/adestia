@@ -19,6 +19,7 @@ import { Crepe, CrepeFeature } from '@milkdown/crepe'
 // came to be invisible rather than absent.
 import '@milkdown/crepe/theme/common/style.css'
 
+import { buildBlockMenu } from './slash.js'
 import { adestiaVocabulary } from './vocabulary.js'
 
 export function mountMilkdown(
@@ -34,6 +35,10 @@ export function mountMilkdown(
       // the page IS the assistant, and a second one that answers to nobody
       // would be a dead control.
       [CrepeFeature.AI]: false,
+    },
+    featureConfigs: {
+      // The vocabulary's blocks, in the `/` menu — see `slash.ts`.
+      [CrepeFeature.BlockEdit]: { buildMenu: buildBlockMenu },
     },
   })
 
