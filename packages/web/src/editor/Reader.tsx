@@ -21,6 +21,7 @@ import { createElement as h, Fragment, type ComponentType, type ReactNode } from
 
 import {
   blockSpec,
+  isFinished,
   parse,
   parseReference,
   resolveReference,
@@ -547,12 +548,12 @@ function plain(node: Node): string {
 }
 
 /**
- * `:::table{type=…}` — a markdown table whose FIRST COLUMN is read as a tone.
+ * `:::table` — a markdown table, scrolling, first column emphasised.
  *
- * `Moyen`, `Levé`, `En cours`: the same vocabulary `status:` uses on a page,
- * so a grid of risks is scanned down its left edge with the colours the rest
- * of the product already taught. `toneOf` is the content engine's, not a
- * second table that would drift from it.
+ * Small on purpose. It scrolls in its own box so a wide grid never makes the
+ * page move sideways, and it emphasises the first column as the key of its
+ * row. It does NOT colour anything: severities and scales belong to whoever
+ * has a domain, and a plugin that wants one overrides this block.
  *
  * The body is rendered by the ordinary table branch; this only dresses it.
  */
@@ -667,7 +668,7 @@ function folderOf(path: string): string {
  *
  * The subtlety is that **a child is not always a file**. This product files a
  * sub-subject as a FOLDER — that is the whole hierarchy, decided 2026-09-04 —
- * so the row standing for a child chantier is that folder's own index page,
+ * so the row standing for a child is that folder's own index page,
  * not a page beside it. A rule that only looked at files would list a project's
  * loose notes and miss every one of its sub-projects.
  *
@@ -700,8 +701,17 @@ function isIndexPage(path: string): boolean {
   return /^index$/i.test(file) || (parts.length > 1 && file === parts.at(-2))
 }
 
+/**
+ * Whether a page's life is over — asked of the content engine, never re-derived.
+ *
+ * The first version of this function was `toneOf(fields.status) === 'settled'`,
+ * which is the same idea and a different answer: `isFinished` also reads
+ * `statut`, the French spelling half this corpus uses, and knows that `acheté`
+ * closes a purchase and not a gift. A second table of statuses beside the
+ * engine's is precisely what drifts.
+ */
 function finished(page: Indexed): boolean {
-  return page.fields['finished'] === true || toneOf(page.fields['status']) === 'settled'
+  return isFinished(page.fields)
 }
 
 function titleOf(page: Indexed): string {

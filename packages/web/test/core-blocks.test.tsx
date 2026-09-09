@@ -56,6 +56,34 @@ describe(':::figures', () => {
   })
 })
 
+describe(':::table', () => {
+  it('dessine le tableau, et le fait défiler dans sa propre boîte', () => {
+    // Le bloc sans test était le bloc dont la doc mentait. Celui-ci dit ce que
+    // le cœur fait — et rien de plus.
+    const { container } = render(
+      <Reader markdown={':::table\n| Fournisseur | Prix |\n|---|---|\n| Dispano | 412 € |\n:::\n'} />,
+    )
+    expect(container.querySelector('.adestia-tableblock')).toBeTruthy()
+    expect(screen.getByText('Dispano')).toBeTruthy()
+    expect(screen.getByText('412 €')).toBeTruthy()
+  })
+
+  it('n’invente aucun ton sur la première colonne', () => {
+    // Ce que le cœur NE fait PAS, épinglé exprès : une gravité `moyen` n'a de
+    // sens que sur un registre de risques, et le cœur n'a pas de domaine. Un
+    // plugin qui en veut une surcharge ce bloc.
+    const { container } = render(
+      <Reader markdown={':::table\n| Gravité | Risque |\n|---|---|\n| Moyen | Le CLI bouge |\n:::\n'} />,
+    )
+    expect(container.querySelector('.adestia-stat')).toBeNull()
+  })
+
+  it('ne prend aucun attribut', () => {
+    const [issue] = validateDocument(parse(':::table{type=risques}\n| a | b |\n|---|---|\n:::\n'))
+    expect(issue?.message).toContain('type')
+  })
+})
+
 describe('`w` sur ces blocs', () => {
   it('met deux blocs sur une ligne, quelle que soit leur nature', () => {
     // `w` ne se déclare dans aucune spec, donc rien ne garantit par

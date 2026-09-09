@@ -151,21 +151,28 @@ export const VOCABULARY: Readonly<Record<string, BlockSpec>> = {
   },
 
   /**
-   * A markdown table, drawn with its first column read as a TONE — `moyen`,
-   * `levé`, `en cours` — so a grid of risks or of purchases can be scanned
-   * down its left edge.
+   * A markdown table, given a name so it can be styled and overridden.
    *
-   * `type` is optional here where `content` requires it, and the difference is
-   * not an oversight: a table carries its own meaning in its header row, while
-   * a passage of prose carries none without its subject.
+   * What the CORE does with it is deliberately small: it scrolls in its own
+   * box, so a wide grid never makes the page move sideways, and its first
+   * column is emphasised as the key of its row. Nothing else — no tone, no
+   * scale, no vocabulary of severities.
+   *
+   * It carried a `type` for one commit, described as colouring the first
+   * column by a risk's gravity. That was a project tracker's idea of a table
+   * living in everyone's vocabulary: `moyen` and `levé` mean something on a
+   * risk register and nothing on a price list, and `toneOf` — the core's own —
+   * knows neither. A domain that wants a scale OVERRIDES this block and brings
+   * its own; that is what overriding is for.
+   *
+   * No attributes at all, therefore. An attribute nothing reads is the `app`
+   * mistake above in miniature, and it was shipped here once already.
    */
   table: {
     name: 'table',
     content: 'flow',
-    description: 'A markdown table whose first column is read as a tone.',
-    attributes: {
-      type: {},
-    },
+    description: 'A markdown table, scrolling, with its first column emphasised.',
+    attributes: {},
   },
 
   /**
@@ -187,12 +194,16 @@ export const VOCABULARY: Readonly<Record<string, BlockSpec>> = {
     content: 'empty',
     description: 'The pages under this one, as rows.',
     attributes: {
+      // The slot a plugin widens. Closed to one value, so it cannot promise
+      // a source nobody answers: `from=children` gets exactly what it says.
       from: { values: ['children'], default: 'children' },
       depth: { values: ['self', 'children', 'subtree'], default: 'children' },
       pull: {},
       sort: {},
       closed: { values: ['fold', 'hide', 'show'], default: 'fold' },
-      view: { values: ['rows', 'cards'], default: 'rows' },
+      // NO `view` here. It was declared with `rows|cards` and read by nothing,
+      // in the same commit that refused `view=cards` on `table` for exactly
+      // that reason. Cards first, then the attribute.
     },
   },
 }

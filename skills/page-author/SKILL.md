@@ -400,21 +400,24 @@ dash opens a caption. A line that does not split is kept as a tile without a
 label rather than dropped. No attributes: everything it needs is in the list,
 which is also what somebody editing the file by hand can still read.
 
-**`table`** — a markdown table whose FIRST COLUMN is read as a tone, so a grid
-of risks or of purchases is scanned down its left edge:
+**`table`** — a markdown table, given a block so it can be dressed and, one
+day, specialised:
 
 ```markdown
-:::table{type=risques}
-| Gravité | Risque | Parade |
+:::table
+| Fournisseur | Délai | Prix |
 |---|---|---|
-| Moyen | Le CLI change son contrat | Un test de contrat casse le build. |
-| Levé | Un onglet fermé perd le tour | Le tour est détaché de la requête. |
+| Dispano | 5 jours | 412 € |
+| Leroy | le jour même | 448 € |
 :::
 ```
 
-Same vocabulary as a page's `status:` — `en cours`, `bloqué`, `clos` and their
-families. `type` is optional here, unlike `content`: a table carries its own
-meaning in its header row, while prose carries none without its subject.
+It **scrolls in its own box**, so a wide grid never makes the page move
+sideways, and its **first column is emphasised** as the key of its row. That is
+all it does — no attributes, no colours, no scale of severities. A domain that
+wants one (a risk register grading `moyen` and `fort`) OVERRIDES this block and
+brings its own vocabulary; the core has no opinion about what a first column
+means.
 
 **`list`** — the pages under this one, as rows that open in place:
 
