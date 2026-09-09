@@ -12,6 +12,7 @@
 import { contributedBlocks, GRAMMAR, shapesOf, toneOf, VOCABULARY } from '@antorfr/adestia-content'
 import type { BlockSpec } from '@antorfr/adestia-content'
 import type { MilkdownPlugin } from '@milkdown/kit/ctx'
+import { trailing } from '@milkdown/kit/plugin/trailing'
 import { $node, $remark } from '@milkdown/kit/utils'
 
 /** What `$remark` expects: a unified plugin factory. */
@@ -86,6 +87,21 @@ export const frontmatterNode = $node('frontmatter', () => ({
   group: 'block',
   atom: true,
   isolating: true,
+  /*
+   * Never selectable, and this is data loss rather than polish.
+   *
+   * An atom that takes a NodeSelection is an atom the next keystroke
+   * REPLACES. The frontmatter is drawn as a row of chips at the top of every
+   * page, so clicking those chips and typing wrote a page with no `type`, no
+   * `date` and no title — an entry that was no longer an entry, saved without
+   * a warning because the document was perfectly valid markdown. Found on a
+   * new journal entry, where the frontmatter is the ONLY node and any click
+   * lands on it; true on every page ever since.
+   *
+   * The value stays reachable: it is the file's first lines, and the agent
+   * writes them. What is refused here is only the gesture that destroys them.
+   */
+  selectable: false,
   attrs: { value: { default: '' } },
   parseDOM: [
     {
@@ -359,6 +375,20 @@ export function adestiaVocabulary(): MilkdownPlugin[] {
     )
   return [
     grammarRemarks,
+    /*
+     * A paragraph after a document that ends in something you cannot type in.
+     *
+     * Found by creating an entry: a new one is frontmatter and nothing else,
+     * so the whole document was ONE atom node. Clicking it selected it, the
+     * first keystroke replaced it, and the save wrote a page with no `type`,
+     * no `date` and no title — an entry that was no longer an entry. The same
+     * trap sits under any page ending in `:::list` or `:::app`.
+     *
+     * Milkdown's own rule: append when the last node is neither a heading nor
+     * a paragraph. The node is empty, so it costs nothing on disk — the
+     * serializer writes no line for a paragraph with no content.
+     */
+    trailing,
     frontmatterNode,
     wikiLinkNode,
     calloutNode,

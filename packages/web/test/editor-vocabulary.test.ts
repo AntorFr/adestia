@@ -25,12 +25,18 @@
  */
 
 import { VOCABULARY, forgetContributedBlocks, registerBlocks } from '@antorfr/adestia-content'
+import { trailing } from '@milkdown/kit/plugin/trailing'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { adestiaVocabulary, editorBlocks, grammarRemarks } from '../src/editor/vocabulary.js'
 
-/** Frontmatter and wikilinks: nodes the grammar needs that are not blocks. */
-const BEYOND_THE_BLOCKS = 2
+/**
+ * What `adestiaVocabulary` registers that is not a block: the frontmatter and
+ * wikilink nodes, plus Milkdown's trailing-paragraph plugin. Its size is read
+ * from the package rather than counted here — how many plugins a third party
+ * ships is not a fact this suite should hold an opinion about.
+ */
+const BEYOND_THE_BLOCKS = 2 + trailing.length
 
 const registered = () => adestiaVocabulary().length - grammarRemarks.length - BEYOND_THE_BLOCKS
 

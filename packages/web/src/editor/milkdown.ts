@@ -8,6 +8,7 @@
  */
 
 import { Crepe, CrepeFeature } from '@milkdown/crepe'
+import { editorViewCtx } from '@milkdown/kit/core'
 
 // Crepe's own chrome — its toolbar, slash menu, block handles and tooltips.
 // This sheet is STRUCTURE ONLY: every colour, font and shadow in it reads a
@@ -46,6 +47,21 @@ export function mountMilkdown(
   void crepe
     .create()
     .then(() => {
+      /*
+       * One empty transaction, so the trailing-paragraph plugin runs on the
+       * document the editor was HANDED. It only fires from `appendTransaction`
+       * — never on the initial state — and a page that opens ending in an atom
+       * has nowhere to put a caret: a new journal entry is frontmatter and
+       * nothing else, so the only thing a click could reach was the atom.
+       *
+       * Sent BEFORE the listener is wired, deliberately. The paragraph is
+       * empty and serialises to nothing, but a document event arriving before
+       * anybody typed would still light up Save on a page nobody touched.
+       */
+      crepe.editor.action((ctx) => {
+        const view = ctx.get(editorViewCtx)
+        view.dispatch(view.state.tr)
+      })
       crepe.on((listener) => {
         listener.markdownUpdated((_ctx, next) => onChange(next))
       })

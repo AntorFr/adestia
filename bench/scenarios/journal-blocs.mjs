@@ -41,6 +41,20 @@ export default async function scenario(bench) {
     await page.waitForTimeout(400)
   }
 
+  // Ouvrir n'est pas modifier : « Enregistrer » doit rester éteint tant que
+  // personne n'a tapé. Un éditeur qui s'annonce sale sur une page intacte
+  // invite à réécrire un fichier que son autre auteur vient peut-être d'écrire.
+  const intacte = page.locator('.journal-entry').last()
+  await intacte.locator('button[title="Modifier"]').click()
+  await page.waitForSelector('.adestia-editor__surface .ProseMirror', { timeout: 15_000 })
+  await page.waitForTimeout(1200)
+  console.log(
+    '[propre] « Enregistrer » désactivé sur une page non touchée :',
+    await intacte.locator('button:has-text("Enregistrer")').isDisabled(),
+  )
+  await intacte.locator('button:has-text("Terminé")').click()
+  await page.waitForTimeout(400)
+
   // ── Le menu « / » ────────────────────────────────────────────────────────
   // Ce que le menu OFFRE ne se lit dans aucun test unitaire : il faut le voir
   // posé sur la page, avec ses glyphes.
