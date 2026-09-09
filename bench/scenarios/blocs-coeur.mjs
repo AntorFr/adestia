@@ -13,7 +13,7 @@ export default async function scenario(bench) {
     await page.evaluate(() => {
       location.hash = '/page/chantiers/adestia/INDEX.md'
     })
-    await page.waitForSelector('text=Synthese', { timeout: 15_000 })
+    await page.waitForSelector('text=Synthèse', { timeout: 15_000 })
     await page.waitForTimeout(600)
     await bench.shoot(page, `1-la-page-${theme}`)
   }

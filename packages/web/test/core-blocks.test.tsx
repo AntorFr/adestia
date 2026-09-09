@@ -244,3 +244,30 @@ describe('la surcharge, de bout en bout', () => {
     expect(screen.getByText('gardé')).toBeTruthy()
   })
 })
+
+describe('titre et icône sur :::content', () => {
+  it('affiche le titre écrit, accents compris, devant le sujet deviné', () => {
+    // Le défaut vu au banc : « Perimetre », parce qu'un slug tenait lieu de
+    // mot. L'échelle des tuiles s'applique : l'occurrence bat le deviné.
+    render(
+      <Reader markdown={':::content{type=perimetre title="Périmètre du lot" ico=📐}\nCorps.\n:::\n'} />,
+    )
+    expect(screen.getByText('Périmètre du lot')).toBeTruthy()
+    expect(screen.getByText('📐')).toBeTruthy()
+    expect(screen.queryByText('Perimetre')).toBeNull()
+  })
+
+  it('retombe sur le type embelli quand rien n’est déclaré', () => {
+    render(<Reader markdown={':::content{type=perimetre}\nCorps.\n:::\n'} />)
+    expect(screen.getByText('Perimetre')).toBeTruthy()
+  })
+
+  it('exige toujours le sujet, titre ou pas', () => {
+    // `title=` est de l'affichage ; `type=` est ce que les requêtes, les
+    // remontées et la config adressent. L'un ne remplace pas l'autre, et un
+    // bloc qui a un titre mais plus de sujet est un bloc qui a perdu ce dont
+    // il parlait.
+    const [issue] = validateDocument(parse(':::content{title="Beau titre"}\nCorps.\n:::\n'))
+    expect(issue?.message).toContain('type')
+  })
+})
