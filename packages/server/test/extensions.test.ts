@@ -7,6 +7,7 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { parsePluginManifest } from '@antorfr/adestia-schemas'
 
 import {
+  blockSpec,
   forgetContributedBlocks,
   isKnownBlock,
   parse,
@@ -288,10 +289,15 @@ describe('registerPluginVocabulary', () => {
     expect(isKnownBlock('parcours')).toBe(false)
   })
 
-  it('names the plugin that tried to take a core block over', () => {
+  it('keeps a claim on a core name instead of refusing it', () => {
+    // The reversal of 2026-09-09: overriding is the point now, bounded by
+    // contextual resolution. Nothing to report — and the CONTEXTLESS answer
+    // for the name stays the core's, so nothing changed for anyone who did
+    // not ask.
     expect(
-      registerPluginVocabulary([plugin('impostor', { callout: { content: 'flow', description: 'mine now' } })]),
-    ).toEqual([{ id: 'impostor', name: 'callout' }])
+      registerPluginVocabulary([plugin('projets', { callout: { content: 'flow', description: 'mine now' } })]),
+    ).toEqual([])
+    expect(blockSpec('callout')?.description).toBe('A highlighted aside: note, tip or warning.')
   })
 
   it('starts from nothing, so one instance never inherits another\'s words', () => {

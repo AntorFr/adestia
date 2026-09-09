@@ -172,16 +172,19 @@ export function registerPluginVocabulary(
   plugins: readonly DiscoveredPlugin[],
 ): readonly { readonly id: string; readonly name: string }[] {
   forgetContributedBlocks()
-  const collisions: { id: string; name: string }[] = []
   for (const plugin of plugins) {
     if (!plugin.active) continue
     const vocabulary = plugin.manifest.vocabulary
     if (!vocabulary) continue
-    for (const name of registerBlocks(vocabulary)) {
-      collisions.push({ id: plugin.manifest.id, name })
-    }
+    registerBlocks(vocabulary, {
+      plugin: plugin.manifest.id,
+      kind: plugin.manifest.kind === 'feature' ? 'feature' : 'app',
+    })
   }
-  return collisions
+  // Claiming a core name is no longer a collision to report: resolution is
+  // contextual, and the claim only applies inside the claiming app's domain
+  // (or by explicit `from=`). See DESIGN.md, "Resolving a block name".
+  return []
 }
 
 /**

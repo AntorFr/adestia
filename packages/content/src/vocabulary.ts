@@ -50,6 +50,13 @@ export interface BlockSpec {
 export const RESERVED: Readonly<Record<string, readonly string[] | null>> = {
   id: null,
   w: ['1', '2/3', '1/2', '1/3'],
+  /**
+   * Which plugin draws this block — a plugin id, or `core` for the plain
+   * rendering. Open-valued here because the legal set is the INSTANCE's
+   * plugin list, which this closed table cannot know; a name nothing carries
+   * is a visible notice at render time, not a validation error.
+   */
+  from: null,
 }
 
 /** How much of a line a `w` value asks for, as a fraction of one. */
@@ -195,8 +202,10 @@ export const VOCABULARY: Readonly<Record<string, BlockSpec>> = {
     description: 'The pages under this one, as rows.',
     attributes: {
       // The slot a plugin widens. Closed to one value, so it cannot promise
-      // a source nobody answers: `from=children` gets exactly what it says.
-      from: { values: ['children'], default: 'children' },
+      // a source nobody answers: `source=children` gets exactly what it says.
+      // Named `source` and not `from`, because `from=` is the RESERVED word
+      // for "which plugin draws this block" — one word cannot carry both.
+      source: { values: ['children'], default: 'children' },
       depth: { values: ['self', 'children', 'subtree'], default: 'children' },
       pull: {},
       sort: {},
@@ -223,7 +232,22 @@ export const VOCABULARY: Readonly<Record<string, BlockSpec>> = {
  * server never has to execute a line of a browser module to know what is legal.
  */
 
-const contributed = new Map<string, BlockSpec>()
+/**
+ * A plugin's claim on a block name — the spec, and WHO makes it.
+ *
+ * The flat `Map<name, spec>` this replaces could not say who contributed a
+ * block or what kind of plugin they were, so no ranking was computable and
+ * `registerBlocks` had to refuse core collisions outright. Provenance is what
+ * turns "the core wins" into "the core is the default".
+ */
+export interface BlockClaim {
+  readonly spec: BlockSpec
+  readonly plugin: string
+  readonly kind: 'app' | 'feature'
+}
+
+/** Every claim, per name, in registration order. */
+const claims = new Map<string, BlockClaim[]>()
 
 /** A block spec as a MANIFEST spells it — same shape, attributes optional. */
 export type ContributedBlock = Omit<BlockSpec, 'name' | 'attributes'> & {
@@ -231,46 +255,121 @@ export type ContributedBlock = Omit<BlockSpec, 'name' | 'attributes'> & {
 }
 
 /**
- * Adds a plugin's blocks, and names the ones it could not have.
+ * Records a plugin's claims on block names — ALL of them, core names included.
  *
- * The core WINS a name collision, the loser is reported, and the caller says
- * so at startup — the same rule the instance's MCP servers follow. The other
- * direction was tempting (the plugin knows its own block best) and is wrong
- * here: `callout` quietly meaning something else on one instance is precisely
- * the failure the closed vocabulary exists to make impossible.
+ * This function refused core collisions for as long as resolution was global,
+ * and the comment defending that said `callout` quietly meaning something else
+ * on one instance is the failure a closed vocabulary exists to prevent. It
+ * still is — and it is prevented one level up now: resolution is contextual
+ * (see `resolveBlock`), so a redefinition of a core name only ever applies
+ * inside the claiming app's own domain. Refusing here would make overriding
+ * impossible, which for five days it did while the design said otherwise.
  *
- * @returns the names refused because the core already owns them.
+ * @param source who is claiming — absent in old callers and tests, read as an
+ *   anonymous app, which keeps the historic behaviour for a custom name.
  */
 export function registerBlocks(
   specs: Readonly<Record<string, ContributedBlock>>,
+  source?: { readonly plugin: string; readonly kind?: 'app' | 'feature' },
 ): readonly string[] {
-  const refused: string[] = []
   for (const [name, spec] of Object.entries(specs)) {
-    if (Object.hasOwn(VOCABULARY, name)) {
-      refused.push(name)
-      continue
-    }
-    // A block with no attributes writes no `attributes` key: the manifest is
-    // hand-written data, and `"attributes": {}` is ceremony, not information.
-    contributed.set(name, { attributes: {}, ...spec, name })
+    const row = claims.get(name) ?? []
+    row.push({
+      // A block with no attributes writes no `attributes` key: the manifest is
+      // hand-written data, and `"attributes": {}` is ceremony, not information.
+      spec: { attributes: {}, ...spec, name },
+      plugin: source?.plugin ?? 'plugin',
+      kind: source?.kind ?? 'app',
+    })
+    claims.set(name, row)
   }
-  return refused
+  // Nothing is refused any more; the empty array keeps old callers compiling
+  // while their refusal-reporting loops report nothing.
+  return []
 }
 
 /** Drops every contribution. For a plugin set being reloaded, and for tests. */
 export function forgetContributedBlocks(): void {
-  contributed.clear()
+  claims.clear()
 }
 
-/** What plugins have added — what the editor needs a node for, and the skill a line. */
+/**
+ * One spec per contributed NAME — what the editor needs a node for, and the
+ * skill a line. When several plugins claim a name, the first claim stands in:
+ * the editor keeps attributes verbatim and always carries a body, so the node
+ * does not depend on which claim wins on a given page.
+ */
 export function contributedBlocks(): readonly BlockSpec[] {
-  return [...contributed.values()]
+  return [...claims.values()].map((row) => row[0]!.spec)
+}
+
+/**
+ * ── Resolution: which definition applies HERE ──────────────────────────────
+ *
+ * `from=` on the block answers outright — a plugin id, or `core` for the plain
+ * rendering. Absent, the walk runs over the plugins that define this name,
+ * nearest first: the app owning this page's domain, then features in the
+ * instance's declared order, then the core, then a foreign app.
+ *
+ * Two lines carry the doctrine. A FEATURE is skipped when the core defines the
+ * name: an app owns a domain so the page's location carries the choice, a
+ * feature is everywhere so nothing does, and a feature specialising a core
+ * block must be asked for by name. And the foreign app comes LAST but comes:
+ * an app's own block works on every page of the instance, while its
+ * redefinition of a core name stays inside its domain — a redefinition is
+ * bounded, a definition never is, because bounding a name nobody else claims
+ * would protect nothing and break the block everywhere else.
+ */
+export interface BlockContext {
+  /** The plugin id owning this page's domain, when an app does. */
+  readonly owner?: string | undefined
+  /** Feature plugin ids, in the instance's declared order. */
+  readonly features?: readonly string[] | undefined
+  /** The block's own `from=`, when written. */
+  readonly from?: string | undefined
+}
+
+export interface ResolvedBlock {
+  readonly spec: BlockSpec
+  /** Who draws it: a plugin id, or `core`. */
+  readonly plugin: string
+}
+
+export function resolveBlock(name: string, ctx?: BlockContext): ResolvedBlock | undefined {
+  const core = VOCABULARY[name]
+  const row = claims.get(name) ?? []
+
+  if (ctx?.from !== undefined) {
+    if (ctx.from === 'core') return core ? { spec: core, plugin: 'core' } : undefined
+    const named = row.find((claim) => claim.plugin === ctx.from)
+    return named ? { spec: named.spec, plugin: named.plugin } : undefined
+  }
+
+  if (ctx?.owner !== undefined) {
+    const own = row.find((claim) => claim.plugin === ctx.owner)
+    if (own) return { spec: own.spec, plugin: own.plugin }
+  }
+
+  if (core === undefined) {
+    for (const id of ctx?.features ?? []) {
+      const feat = row.find((claim) => claim.plugin === id && claim.kind === 'feature')
+      if (feat) return { spec: feat.spec, plugin: feat.plugin }
+    }
+  }
+
+  if (core) return { spec: core, plugin: 'core' }
+
+  // The furthest definers, registration order. Reached only when nobody
+  // nearer defines the name — the sole-definer case, and the ordinary way an
+  // app's own block reaches every page of the instance.
+  const any = row[0]
+  return any ? { spec: any.spec, plugin: any.plugin } : undefined
 }
 
 export function isKnownBlock(name: string): boolean {
-  return Object.hasOwn(VOCABULARY, name) || contributed.has(name)
+  return Object.hasOwn(VOCABULARY, name) || claims.has(name)
 }
 
 export function blockSpec(name: string): BlockSpec | undefined {
-  return VOCABULARY[name] ?? contributed.get(name)
+  return resolveBlock(name)?.spec
 }

@@ -17,6 +17,7 @@ import {
   forgetContributedBlocks,
   isKnownBlock,
   registerBlocks,
+  resolveBlock,
 } from '../src/vocabulary.js'
 
 const PARCOURS = {
@@ -32,12 +33,91 @@ const PARCOURS = {
 
 afterEach(() => forgetContributedBlocks())
 
+/**
+ * La marche de résolution — la règle du 09/09, cas par cas.
+ *
+ * `from=` répond seul quand il est écrit. Absent, on parcourt les définisseurs
+ * du plus proche au plus lointain : l'app du domaine, les features dans l'ordre
+ * déclaré, le cœur, une app étrangère. Une feature est sautée quand le cœur
+ * définit aussi le nom. Et la phrase qui borne tout : on borne une
+ * REDÉFINITION, jamais une définition.
+ */
+describe('resolveBlock', () => {
+  it('donne au domaine son propre dessin, et le cœur partout ailleurs', () => {
+    registerBlocks(
+      { table: { content: 'flow', description: 'un tableau à gravités', attributes: { type: {} } } },
+      { plugin: 'projets', kind: 'app' },
+    )
+    expect(resolveBlock('table', { owner: 'projets' })?.plugin).toBe('projets')
+    expect(resolveBlock('table', { owner: 'voyages' })?.plugin).toBe('core')
+    expect(resolveBlock('table')?.plugin).toBe('core')
+  })
+
+  it('ne laisse JAMAIS une feature prendre un nom du cœur sans être nommée', () => {
+    // Une app possède un domaine : l'emplacement de la page porte le choix.
+    // Une feature est partout : rien ne le porte, donc elle s'écrit.
+    registerBlocks(
+      { table: { content: 'flow', description: 'tableau enrichi' } },
+      { plugin: 'stats', kind: 'feature' },
+    )
+    expect(resolveBlock('table', { features: ['stats'] })?.plugin).toBe('core')
+    expect(resolveBlock('table', { features: ['stats'], from: 'stats' })?.plugin).toBe('stats')
+  })
+
+  it("fait porter le bloc custom d'une app sur TOUTE l'instance", () => {
+    // « On borne une redéfinition, jamais une définition » : personne d'autre
+    // ne réclame `checklist`, donc le borner ne protégerait rien et le
+    // casserait partout ailleurs.
+    registerBlocks(
+      { checklist: { content: 'empty', description: 'les tâches du dossier' } },
+      { plugin: 'todo', kind: 'app' },
+    )
+    expect(resolveBlock('checklist', { owner: 'voyages' })?.plugin).toBe('todo')
+    expect(resolveBlock('checklist')?.plugin).toBe('todo')
+  })
+
+  it('départage deux features sur un nom sans cœur par l’ordre déclaré', () => {
+    registerBlocks(
+      { meteo: { content: 'empty', description: 'la météo, version A' } },
+      { plugin: 'meteo-a', kind: 'feature' },
+    )
+    registerBlocks(
+      { meteo: { content: 'empty', description: 'la météo, version B' } },
+      { plugin: 'meteo-b', kind: 'feature' },
+    )
+    expect(resolveBlock('meteo', { features: ['meteo-b', 'meteo-a'] })?.plugin).toBe('meteo-b')
+    expect(resolveBlock('meteo', { features: ['meteo-a', 'meteo-b'] })?.plugin).toBe('meteo-a')
+    // Et la page peut toujours nommer, contre l'ordre.
+    expect(resolveBlock('meteo', { features: ['meteo-a'], from: 'meteo-b' })?.plugin).toBe('meteo-b')
+  })
+
+  it('rend le tableau NU sur demande, dans un domaine qui le redessine', () => {
+    registerBlocks(
+      { table: { content: 'flow', description: 'à gravités' } },
+      { plugin: 'projets', kind: 'app' },
+    )
+    expect(resolveBlock('table', { owner: 'projets', from: 'core' })?.plugin).toBe('core')
+  })
+
+  it('ne résout PAS un `from=` que personne ne porte', () => {
+    // Un avis visible au rendu, pas une invention : nommer un plugin absent
+    // doit se voir, exactement comme un lien mort.
+    expect(resolveBlock('table', { from: 'disparu' })).toBeUndefined()
+  })
+})
+
+
 describe('the registry', () => {
-  it('refuses a name the core already owns, and says which', () => {
-    const refused = registerBlocks({ callout: { content: 'flow', description: 'mine now' } })
-    expect(refused).toEqual(['callout'])
-    // Unchanged: a plugin taking over `callout` is the one thing a closed
-    // vocabulary exists to prevent.
+  it('keeps a claim on a core name, and the core stays the CONTEXTLESS answer', () => {
+    // The reversal of five days: `registerBlocks` used to refuse this outright.
+    // What the closed vocabulary protects is protected one level up now —
+    // resolution is contextual, so the claim only ever wins inside the
+    // claiming app's own domain. Without a context, the core still answers.
+    const refused = registerBlocks(
+      { callout: { content: 'flow', description: 'mine now' } },
+      { plugin: 'projets', kind: 'app' },
+    )
+    expect(refused).toEqual([])
     expect(blockSpec('callout')?.description).toBe('A highlighted aside: note, tip or warning.')
   })
 

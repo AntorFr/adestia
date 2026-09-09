@@ -924,16 +924,19 @@ today, and will be tomorrow; a list of tasks was always going to want a
 checkbox.
 
 **A source is extended, not a rendering duplicated.** `list` carries
-`from=children|pages|files`, and a plugin that has something to list READ-ONLY
+`source=children|pages|files`, and a plugin that has something to list READ-ONLY
 extends that attribute's accepted values rather than inventing its own list —
 which is the override of the section below, applied to an attribute instead of
 a name. Where that plugin is off, the value is unknown: a visible notice on the
 block, body kept, page never locked.
 
-**The bet is worth naming.** Choosing `from=` bets the list stays read-only. The
+**The bet is worth naming.** Choosing `source=` bets the list stays read-only. The
 day it wants a button, moving to its own block rewrites the PAGES that carry the
 old spelling — the cost lands in the corpus, not in the product. So a list known
-in advance to need an action starts as its own block.
+in advance to need an action starts as its own block. (The attribute was
+first spelt `from=`; it moved to `source=` on 2026-09-09 when `from=` became
+the reserved word for which PLUGIN draws a block — one word cannot carry both,
+and the collision was caught by a test the day the reserved word landed.)
 
 #### The prediction held, and the first block it produced (2026-09-08)
 
@@ -1078,23 +1081,42 @@ instance whose `parcours` plugin was not enabled. For "a title and prose" that
 answer is absurd: a page must not become unreadable because an instance does not
 run a project tracker.
 
-### Resolving a block name across plugins (decided 2026-09-04)
+### Resolving a block name across plugins (decided 2026-09-04, completed 2026-09-09)
 
 Several plugins may claim the same block name, and nothing makes them agree on
-what it holds. Resolution is therefore CONTEXTUAL, and ranked:
+what it holds. Resolution is CONTEXTUAL, and the 09-09 completion gave it its
+final shape: **`from=` — which plugin draws this block** — a RESERVED attribute
+beside `id` and `w`, optional, valued with a plugin id or `core`.
 
-1. **The `app` of this page's domain.** An app is the domain level — an icon on
-   the home and a clear path under it. Ownership is `ownerOf`, which already
-   exists: the deepest declaration wins (`voyages/archives` takes the folder
-   from `voyages`) so the answer never depends on load order, and a plugin may
-   also own a folder by KNOWING it rather than declaring it, with declared
-   beating known.
-2. **`feature` plugins**, cross-domain by nature and therefore applicable
-   everywhere. When two features claim one name, **the first listed in the
-   instance's `features:` wins**; the other's claim is refused and named at
-   startup. The order is a line an operator wrote, so the tiebreak is a choice
-   rather than an accident, and it is fixed by swapping two lines.
-3. **The default behaviour** — the core's own `VOCABULARY`. Not a plugin.
+Written, it is the whole answer: `from=core` asks for the plain rendering on a
+page whose app dresses it differently, `from=parcours` asks for that plugin's,
+and a name nothing carries is a visible notice on the block. A page therefore
+never depends on configuration order to say what it means — the word is in the
+page.
+
+Absent, resolution walks **the plugins that define this name**, nearest first:
+
+1. **the app of this page's domain** — ownership is `ownerOf`, deepest
+   declaration wins, so the answer never depends on load order;
+2. **`feature` plugins, in the instance's declared order** — SKIPPED when the
+   core also defines the name: an app owns a domain, so the page's location
+   carries the choice; a feature is everywhere, so nothing does, and a feature
+   that specialises a core block must be asked for by name;
+3. **the core's own `VOCABULARY`**;
+4. **a foreign app** — the furthest definer, reachable only when nobody nearer
+   defines the name. This is what lets an app's own block (`checklist`) work on
+   any page of the instance while its REDEFINITION of a core name stays inside
+   its domain: **a redefinition is bounded, a definition never is** — bounding a
+   name nobody else claims would protect nothing and break the block
+   everywhere else.
+
+When two features define a name the core does not have, the instance's
+`features:` order decides — the one tiebreak that survives, because there is no
+nearer definer to prefer and no core to fall back on. It is a line an operator
+wrote, fixed by swapping two lines.
+
+This block-level rule does not replace the page-level one: which plugin draws a
+whole PAGE of a given `type` keeps its own app > feature > core ranking.
 
 `tool` plugins contribute no vocabulary: they have no interface.
 
@@ -1131,13 +1153,13 @@ means something else everywhere — it means something else where a plugin owns
 the content, and moving a page out of that domain restores the core's drawing.
 Which is the consequence already accepted above, seen from its useful side.
 
-**The code still says the opposite, and that is a chantier.** `registerBlocks`
-(`packages/content/src/vocabulary.ts`) REFUSES a plugin that claims a name the
-core owns and reports it at startup, with a comment explaining that `callout`
-meaning something else on one instance is the failure a closed vocabulary
-prevents. That was right while resolution was global; it contradicts contextual
-resolution, and both cannot hold. Until it is settled, **no override is
-possible** and this section describes an intention rather than a behaviour.
+**The code said the opposite for five days.** `registerBlocks` REFUSED a plugin
+claiming a core name, with a comment explaining that `callout` meaning
+something else on one instance is the failure a closed vocabulary prevents —
+right while resolution was global, wrong once it became contextual, and the gap
+sat unnoticed because the decision was recorded and the code never followed.
+Settled on 2026-09-09 with the `from=` rule above: claims are kept with their
+plugin and kind, nothing is refused, and the walk decides per page.
 
 ### What contextual resolution touches
 
