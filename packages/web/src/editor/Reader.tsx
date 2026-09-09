@@ -23,6 +23,8 @@ import {
   blockSpec,
   isFinished,
   parse,
+  resolveBlock,
+  type ResolvedBlock,
   parseReference,
   resolveReference,
   toneOf,
@@ -34,7 +36,25 @@ import { PluginBoundary } from '../plugins/Boundary.js'
 import type { BlockProps, LayoutProps } from '../plugins/contract.js'
 
 /** What a plugin contributed, by block name. */
-export type BlockComponents = Readonly<Record<string, ComponentType<BlockProps>>>
+/**
+ * The components plugins contribute, keyed by PLUGIN then by block name.
+ *
+ * The flat `Record<name, Component>` this replaces merged every plugin with
+ * `Object.assign`, so two plugins drawing one name silently overwrote each
+ * other — the exact situation overriding creates on purpose. Resolution now
+ * names the winning plugin, and the component is looked up under it.
+ */
+export type BlockComponents = Readonly<
+  Record<string, Readonly<Record<string, ComponentType<BlockProps>>>>
+>
+
+/** What block resolution needs to know about where this page sits. */
+export interface VocabularyContext {
+  /** The plugin id owning this page's domain, when an app does. */
+  readonly owner?: string | undefined
+  /** Feature plugin ids, in the instance's declared order. */
+  readonly features: readonly string[]
+}
 
 /** Whole-page layouts, keyed by the frontmatter `type` their plugin claims. */
 export type LayoutComponents = Readonly<Record<string, ComponentType<LayoutProps>>>
@@ -179,6 +199,12 @@ type Ctx = {
   readonly openPage?: (path: string) => void
   /** Blocks the active plugins draw, beyond the core's own. */
   readonly blocks?: BlockComponents
+  /**
+   * Who owns this page's domain and which features are on — what `from=`
+   * resolution walks. Absent (a chat bubble), resolution degrades to the
+   * contextless walk: the core, else the name's first claimant.
+   */
+  readonly vocabulary?: VocabularyContext
   /**
    * The instance's pages, for resolving a `[[type#id]]` reference.
    *
@@ -430,26 +456,53 @@ function render(node: Node, ctx: Ctx): ReactNode {
       return <br />
     case 'containerDirective':
     case 'leafDirective': {
-      if (node.type === 'containerDirective' && node.name === 'callout') {
-        const tone = node.attributes?.['type'] ?? 'note'
-        return <aside className={`adestia-callout adestia-callout--${tone}`}>{children(node, ctx)}</aside>
+      // WHO draws this block is decided before anything is drawn. The core's
+      // own branches used to come first unconditionally, which would have made
+      // every override invisible: an app redefining `table` would have written
+      // a claim nothing ever consulted.
+      const name = node.name ?? ''
+      const asked = node.attributes?.['from']
+      const resolved = resolveBlock(name, {
+        ...(ctx.vocabulary ?? {}),
+        ...(asked !== undefined ? { from: asked } : {}),
+      })
+
+      if (resolved === undefined && asked !== undefined) {
+        // `from=` named a plugin nothing answers for — off, renamed, or never
+        // here. Said like a dead link: visibly, with the body kept underneath.
+        return (
+          <>
+            <p className="adestia-block-note">
+              :::{name} — from={asked} : rien ne porte ce nom ici.
+            </p>
+            {children(node, ctx)}
+          </>
+        )
       }
-      if (node.type === 'containerDirective' && node.name === 'gallery') {
-        return <div className="adestia-gallery">{children(node, ctx)}</div>
+
+      if (resolved?.plugin === 'core') {
+        if (node.type === 'containerDirective' && name === 'callout') {
+          const tone = node.attributes?.['type'] ?? 'note'
+          return <aside className={`adestia-callout adestia-callout--${tone}`}>{children(node, ctx)}</aside>
+        }
+        if (node.type === 'containerDirective' && name === 'gallery') {
+          return <div className="adestia-gallery">{children(node, ctx)}</div>
+        }
+        if (node.type === 'containerDirective' && name === 'content') {
+          return <ContentBlock node={node} ctx={ctx} />
+        }
+        if (node.type === 'containerDirective' && name === 'figures') {
+          return <Figures node={node} />
+        }
+        if (node.type === 'containerDirective' && name === 'table') {
+          return <TableBlock node={node} ctx={ctx} />
+        }
+        if (node.type === 'containerDirective' && name === 'list') {
+          return <ListBlock node={node} ctx={ctx} />
+        }
       }
-      if (node.type === 'containerDirective' && node.name === 'content') {
-        return <ContentBlock node={node} ctx={ctx} />
-      }
-      if (node.type === 'containerDirective' && node.name === 'figures') {
-        return <Figures node={node} />
-      }
-      if (node.type === 'containerDirective' && node.name === 'table') {
-        return <TableBlock node={node} ctx={ctx} />
-      }
-      if (node.type === 'containerDirective' && node.name === 'list') {
-        return <ListBlock node={node} ctx={ctx} />
-      }
-      return <Contributed node={node} ctx={ctx} />
+
+      return <Contributed node={node} ctx={ctx} claim={resolved} />
     }
     default:
       // Never silently dropped: an unrendered node is a visible gap somebody
@@ -727,12 +780,21 @@ function titleOf(page: Indexed): string {
  * and a plugin that throws must cost its own rectangle rather than the text
  * around it. That is the same bargain the loader already makes for a factory.
  */
-function Contributed({ node, ctx }: { readonly node: Node; readonly ctx: Ctx }) {
+function Contributed({
+  node,
+  ctx,
+  claim,
+}: {
+  readonly node: Node
+  readonly ctx: Ctx
+  /** Who resolution decided draws this — undefined when nobody does. */
+  readonly claim?: ResolvedBlock | undefined
+}) {
   const name = node.name ?? ''
-  const Block = ctx.blocks?.[name]
+  const Block = claim ? ctx.blocks?.[claim.plugin]?.[name] : undefined
   // A `flow` block gets its body; an `empty` one is its attributes and
   // nothing else, so it is not handed an empty fragment to wonder about.
-  const body = blockSpec(name)?.content === 'flow' ? children(node, ctx) : undefined
+  const body = (claim?.spec ?? blockSpec(name))?.content === 'flow' ? children(node, ctx) : undefined
 
   if (!Block) {
     // Two ways to land here, and the reader cannot act on either: a block no
@@ -828,6 +890,7 @@ export function Reader({
   fields,
   openPage,
   blocks,
+  vocabulary,
   pages,
 }: {
   readonly markdown: string
@@ -845,6 +908,8 @@ export function Reader({
   readonly openPage?: (path: string) => void
   /** What the active plugins draw. Absent means the core's vocabulary only. */
   readonly blocks?: BlockComponents
+  /** Who owns this page's domain, and the features on — `from=` resolution. */
+  readonly vocabulary?: VocabularyContext
   /** The instance's pages, so a `[[type#id]]` reference can find its target. */
   readonly pages?: readonly Indexed[]
 }) {
@@ -866,6 +931,7 @@ export function Reader({
           : { page: { path, ...(store ? { store } : {}), ...(fields ? { fields } : {}) } }),
         ...(openPage ? { openPage } : {}),
         ...(blocks ? { blocks } : {}),
+        ...(vocabulary ? { vocabulary } : {}),
         ...(pages ? { pages } : {}),
       })}
     </article>

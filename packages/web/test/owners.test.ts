@@ -37,6 +37,7 @@ function plugin(shape: {
 }): LoadedPlugin {
   return {
     id: shape.id,
+    kind: 'app',
     base: `/plugins/${shape.id}/`,
     ...(shape.absorbs ? { absorbs: shape.absorbs } : {}),
     ...(shape.tile ? { tile: { label: shape.id } } : {}),

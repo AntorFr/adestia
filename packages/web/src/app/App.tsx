@@ -602,15 +602,30 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   /**
    * Every block the active plugins draw, flattened once and keyed by name.
    *
-   * Flat rather than per plugin because a page names a block, not its owner:
-   * `:::parcours` says nothing about which plugin brought it, and it must not
-   * have to. The loader already refused a name two plugins both claim.
+   * Keyed by PLUGIN then by name, because two plugins may now draw the same
+   * name on purpose — that is what overriding is. The flat merge this
+   * replaces silently kept whichever plugin loaded last; resolution names the
+   * winner per page, and the component is looked up under it.
    */
   const blocks = useMemo(
-    () => Object.assign({}, ...loaded.map((plugin) => plugin.blocks?.tags ?? {})) as BlockComponents,
+    () =>
+      Object.fromEntries(
+        loaded.map((plugin) => [plugin.id, plugin.blocks?.tags ?? {}]),
+      ) as BlockComponents,
     [loaded],
   )
   blocksRef.current = blocks
+
+  /**
+   * What `from=` resolution walks: features in their declared order, and per
+   * page the app owning its domain. Features here follow the loader's order,
+   * which follows the instance's `features:` list — the one tiebreak left for
+   * a custom name two features both define.
+   */
+  const featureOrder = useMemo(
+    () => loaded.filter((plugin) => plugin.kind === 'feature').map((plugin) => plugin.id),
+    [loaded],
+  )
 
   /**
    * Whole-page layouts, flattened by the frontmatter type they draw.
@@ -1077,6 +1092,15 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             attach={(dropped) => attachRef.current?.(dropped)}
             compose={(text) => composeRef.current?.(text)}
             blocks={blocks}
+            // Who owns this page's domain, and the features on — what the
+            // reader's `from=` resolution walks. Owner from the page's FOLDER:
+            // ownership is a claim on folders, and the deepest claim wins.
+            vocabulary={{
+              ...(ownerOf(loaded, page.path.slice(0, Math.max(page.path.lastIndexOf('/'), 0)))?.id
+                ? { owner: ownerOf(loaded, page.path.slice(0, Math.max(page.path.lastIndexOf('/'), 0)))!.id }
+                : {}),
+              features: featureOrder,
+            }}
             layouts={layouts}
             // The shell already holds the index and keeps it live; the reader
             // needs it to tell a reference that MOVED from one that is gone.

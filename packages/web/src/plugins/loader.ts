@@ -76,6 +76,8 @@ export interface PluginDescriptor {
 
 export interface LoadedPlugin {
   readonly id: string
+  /** `app`, `feature` or `tool` — what `from=` resolution ranks by. */
+  readonly kind: string
   readonly base: string
   readonly absorbs?: PluginDescriptor['absorbs']
   readonly tile?: PluginDescriptor['tile']
@@ -188,13 +190,13 @@ export async function loadPlugins(
   // nothing will ever draw.
   forgetContributedBlocks()
   for (const descriptor of usable) {
-    for (const name of registerBlocks(descriptor.vocabulary ?? {})) {
-      failures.push({
-        id: descriptor.id,
-        facet: 'vocabulary',
-        reason: `block ":::${name}" is the core's own and was not taken over`,
-      })
-    }
+    registerBlocks(descriptor.vocabulary ?? {}, {
+      plugin: descriptor.id,
+      kind: descriptor.kind === 'feature' ? 'feature' : 'app',
+    })
+    // A claim on a core name stopped being a failure the day resolution
+    // became contextual: it applies in the claiming app's own domain and by
+    // explicit `from=`, and the core keeps answering everywhere else.
   }
 
   for (const descriptor of usable) {
@@ -259,6 +261,7 @@ export async function loadPlugins(
 
     loaded.push({
       id: descriptor.id,
+      kind: descriptor.kind,
       base: descriptor.base,
       ...(descriptor.absorbs ? { absorbs: descriptor.absorbs } : {}),
       ...(descriptor.tile ? { tile: descriptor.tile } : {}),

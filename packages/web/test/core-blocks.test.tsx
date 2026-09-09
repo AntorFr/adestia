@@ -9,10 +9,12 @@
  * silence ce dont il parlait.
  */
 
-import { render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import type { ReactNode } from 'react'
 
-import { validateDocument, parse } from '@antorfr/adestia-content'
+import { render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+
+import { forgetContributedBlocks, registerBlocks, validateDocument, parse } from '@antorfr/adestia-content'
 
 import { Reader } from '../src/editor/Reader.js'
 
@@ -112,7 +114,7 @@ describe('`w` sur ces blocs', () => {
 
 describe(':::list', () => {
   it('liste les pages sous celle-ci, sans son propre index', () => {
-    render(<Reader markdown={':::list{from=children}\n:::\n'} path={HERE} pages={PAGES} />)
+    render(<Reader markdown={':::list{source=children}\n:::\n'} path={HERE} pages={PAGES} />)
     expect(screen.getByText('Socle de contenu')).toBeTruthy()
     expect(screen.getByText('Éditeur de blocs')).toBeTruthy()
     expect(screen.queryByText('Adestia')).toBeNull()
@@ -121,7 +123,7 @@ describe(':::list', () => {
   it('replie ce qui est clos plutôt que de le cacher', () => {
     // Un chantier fini est exactement ce qu'on ouvre pour voir comment le
     // précédent s'est passé : caché il est perdu, replié il est à un clic.
-    render(<Reader markdown={':::list{from=children}\n:::\n'} path={HERE} pages={PAGES} />)
+    render(<Reader markdown={':::list{source=children}\n:::\n'} path={HERE} pages={PAGES} />)
     expect(screen.getByText('1 page close')).toBeTruthy()
   })
 
@@ -173,5 +175,72 @@ describe(':::list', () => {
     // mensonge quand la vérité est « je n’ai pas pu regarder ».
     render(<Reader markdown={':::list{}\n:::\n'} path={HERE} />)
     expect(screen.getByText(/index des pages/)).toBeTruthy()
+  })
+})
+
+describe('la surcharge, de bout en bout', () => {
+  // La règle du 09/09, vue depuis l'écran : un plugin redéfinit `table` pour
+  // son domaine, et le MÊME markdown se dessine différemment selon où la page
+  // est rangée. C'est toute la promesse — et son garde-fou : ailleurs que chez
+  // lui, le cœur reprend la main.
+  const TABLEAU = ':::table\n| Gravité | Risque |\n|---|---|\n| Moyen | Le CLI bouge |\n:::\n'
+  const Grave = ({ children }: { children?: ReactNode }) => (
+    <div data-testid="table-projets">{children}</div>
+  )
+
+  const surcharge = () =>
+    registerBlocks(
+      { table: { content: 'flow', description: 'un tableau à gravités' } },
+      { plugin: 'projets', kind: 'app' },
+    )
+
+  afterEach(() => forgetContributedBlocks())
+
+  it('donne au domaine le dessin de son app, et au reste le cœur', () => {
+    surcharge()
+    const { container, unmount } = render(
+      <Reader
+        markdown={TABLEAU}
+        path="chantiers/adestia/INDEX.md"
+        vocabulary={{ owner: 'projets', features: [] }}
+        blocks={{ projets: { table: Grave } }}
+      />,
+    )
+    expect(screen.getByTestId('table-projets')).toBeTruthy()
+    expect(container.querySelector('.adestia-tableblock')).toBeNull()
+    unmount()
+
+    // La même page, hors du domaine : le cœur, sans une ligne de plus.
+    const ailleurs = render(
+      <Reader
+        markdown={TABLEAU}
+        path="recettes/lasagnes.md"
+        vocabulary={{ features: [] }}
+        blocks={{ projets: { table: Grave } }}
+      />,
+    )
+    expect(ailleurs.container.querySelector('.adestia-tableblock')).toBeTruthy()
+  })
+
+  it('rend le tableau NU sur `from=core`, même chez le plugin', () => {
+    surcharge()
+    const { container } = render(
+      <Reader
+        markdown={':::table{from=core}\n| a | b |\n|---|---|\n| 1 | 2 |\n:::\n'}
+        path="chantiers/x.md"
+        vocabulary={{ owner: 'projets', features: [] }}
+        blocks={{ projets: { table: Grave } }}
+      />,
+    )
+    expect(container.querySelector('.adestia-tableblock')).toBeTruthy()
+    expect(screen.queryByTestId('table-projets')).toBeNull()
+  })
+
+  it('dit visiblement qu’un `from=` ne mène nulle part, et garde le corps', () => {
+    const { container } = render(
+      <Reader markdown={':::table{from=disparu}\n| a |\n|---|\n| gardé |\n:::\n'} />,
+    )
+    expect(container.querySelector('.adestia-block-note')?.textContent).toContain('disparu')
+    expect(screen.getByText('gardé')).toBeTruthy()
   })
 })

@@ -32,12 +32,12 @@ describe('blocks that share a line', () => {
   const rowsIn = (container: HTMLElement) => [...container.querySelectorAll('.adestia-row')]
 
   it('gathers neighbours whose widths fit one line', () => {
-    registerBlocks(TWO)
+    registerBlocks(TWO, { plugin: 'demo', kind: 'feature' })
     const { container } = render(
       <Reader
         markdown={':::note{w="1/2"}\n:::\n\n:::note{w="1/2"}\n:::\n'}
         path="p.md"
-        blocks={{ note: Note }}
+        blocks={{ demo: { note: Note } }}
       />,
     )
     const rows = rowsIn(container)
@@ -50,24 +50,24 @@ describe('blocks that share a line', () => {
   it('starts a new line rather than shrinking one to fit', () => {
     // 2/3 then 1/2 do not add up. The second is not squeezed into a width
     // nobody asked for — it takes its own line.
-    registerBlocks(TWO)
+    registerBlocks(TWO, { plugin: 'demo', kind: 'feature' })
     const { container } = render(
       <Reader
         markdown={':::note{w="2/3"}\n:::\n\n:::note{w="1/2"}\n:::\n'}
         path="p.md"
-        blocks={{ note: Note }}
+        blocks={{ demo: { note: Note } }}
       />,
     )
     expect(rowsIn(container)).toHaveLength(2)
   })
 
   it('fits three thirds, which do not add to one in binary', () => {
-    registerBlocks(TWO)
+    registerBlocks(TWO, { plugin: 'demo', kind: 'feature' })
     const { container } = render(
       <Reader
         markdown={':::note{w="1/3"}\n:::\n\n:::note{w="1/3"}\n:::\n\n:::note{w="1/3"}\n:::\n'}
         path="p.md"
-        blocks={{ note: Note }}
+        blocks={{ demo: { note: Note } }}
       />,
     )
     expect(rowsIn(container)).toHaveLength(1)
@@ -75,12 +75,12 @@ describe('blocks that share a line', () => {
   })
 
   it('leaves a full-width block alone, and prose between two breaks the run', () => {
-    registerBlocks(TWO)
+    registerBlocks(TWO, { plugin: 'demo', kind: 'feature' })
     const { container } = render(
       <Reader
         markdown={':::note\n:::\n\n:::note{w="1/2"}\n:::\n\nDu texte.\n\n:::note{w="1/2"}\n:::\n'}
         path="p.md"
-        blocks={{ note: Note }}
+        blocks={{ demo: { note: Note } }}
       />,
     )
     // The full-width one is not in a row at all; the two halves are in two,
@@ -92,12 +92,12 @@ describe('blocks that share a line', () => {
 
 describe('drawing one', () => {
   it('hands the component its attributes and a fetchable URL', () => {
-    registerBlocks(PARCOURS)
+    registerBlocks(PARCOURS, { plugin: 'parcours', kind: 'feature' })
     const Parcours = ({ attributes, resolve }: BlockProps) => (
       <div data-testid="parcours">{resolve(attributes['source'] ?? '')}</div>
     )
     render(
-      <Reader markdown={page} path="domaines/voyages/broceliande-2026/val.md" blocks={{ parcours: Parcours }} />,
+      <Reader markdown={page} path="domaines/voyages/broceliande-2026/val.md" blocks={{ parcours: { parcours: Parcours } }} />,
     )
     // Relative to the PAGE's folder, and pointing at the file route: neither
     // is something the plugin could have worked out on its own.
@@ -114,7 +114,7 @@ describe('drawing one', () => {
     // empty folder, so deriving the scope from a relative path gives `.` and
     // a filter that matches nothing. And a folder is not the page anyway —
     // `fields` is what lets a block say "the tasks of THIS worksite".
-    registerBlocks({ jeton: { content: 'empty', description: 'A token.' } })
+    registerBlocks({ jeton: { content: 'empty', description: 'A token.' } }, { plugin: 'demo', kind: 'feature' })
     const seen: BlockProps[] = []
     const Jeton = (props: BlockProps) => {
       seen.push(props)
@@ -126,7 +126,7 @@ describe('drawing one', () => {
         path="domaines/diy/garage.md"
         store="famille"
         fields={{ type: 'projet', id: '01M1RX' }}
-        blocks={{ jeton: Jeton }}
+        blocks={{ demo: { jeton: Jeton } }}
       />,
     )
     expect(seen[0]?.path).toBe('domaines/diy/garage.md')
@@ -135,13 +135,13 @@ describe('drawing one', () => {
   })
 
   it('leaves the page absent where there is no page — prose in a bubble', () => {
-    registerBlocks({ jeton: { content: 'empty', description: 'A token.' } })
+    registerBlocks({ jeton: { content: 'empty', description: 'A token.' } }, { plugin: 'demo', kind: 'feature' })
     const seen: BlockProps[] = []
     const Jeton = (props: BlockProps) => {
       seen.push(props)
       return <div />
     }
-    render(<Reader markdown={':::jeton\n:::\n'} blocks={{ jeton: Jeton }} />)
+    render(<Reader markdown={':::jeton\n:::\n'} blocks={{ demo: { jeton: Jeton } }} />)
     // Undefined rather than a guessed root: the same answer relative links
     // already give, for the same reason.
     expect(seen[0]?.path).toBeUndefined()
@@ -149,10 +149,13 @@ describe('drawing one', () => {
   })
 
   it('gives a flow block its body, and an empty one none', () => {
-    registerBlocks({
-      encadre: { content: 'flow', description: 'A framed aside.' },
-      jeton: { content: 'empty', description: 'A token.' },
-    })
+    registerBlocks(
+      {
+        encadre: { content: 'flow', description: 'A framed aside.' },
+        jeton: { content: 'empty', description: 'A token.' },
+      },
+      { plugin: 'demo', kind: 'feature' },
+    )
     const seen: Record<string, boolean> = {}
     const spy = (name: string) => ({ children }: BlockProps) => {
       seen[name] = children !== undefined
@@ -162,7 +165,7 @@ describe('drawing one', () => {
       <Reader
         markdown={':::encadre\nDu texte.\n:::\n\n:::jeton\n:::\n'}
         path="x.md"
-        blocks={{ encadre: spy('encadre'), jeton: spy('jeton') }}
+        blocks={{ demo: { encadre: spy('encadre'), jeton: spy('jeton') } }}
       />,
     )
     expect(seen).toEqual({ encadre: true, jeton: false })
@@ -172,7 +175,7 @@ describe('drawing one', () => {
 
 describe('when it cannot be drawn', () => {
   it('says so where the block is, rather than drawing nothing', () => {
-    registerBlocks(PARCOURS)
+    registerBlocks(PARCOURS, { plugin: 'parcours', kind: 'feature' })
     // Registered but no component — the plugin's `blocks` module failed to
     // load. The page still reads; the gap is visible and reportable.
     render(<Reader markdown={page} path="x.md" />)
@@ -181,7 +184,10 @@ describe('when it cannot be drawn', () => {
   })
 
   it('keeps the words a flow block held, rather than losing them with it', () => {
-    registerBlocks({ encadre: { content: 'flow', description: 'A framed aside.' } })
+    registerBlocks(
+      { encadre: { content: 'flow', description: 'A framed aside.' } },
+      { plugin: 'demo', kind: 'feature' },
+    )
     // No component: the plugin is off, or its module failed. The frame is
     // gone; the prose inside it must not be.
     render(<Reader markdown={':::encadre\nDu texte encadré.\n:::\n'} path="x.md" />)
@@ -190,13 +196,13 @@ describe('when it cannot be drawn', () => {
   })
 
   it('keeps a throwing block from taking the page with it', () => {
-    registerBlocks(PARCOURS)
+    registerBlocks(PARCOURS, { plugin: 'parcours', kind: 'feature' })
     // React logs the caught error; the noise would drown the run's output.
     const quiet = vi.spyOn(console, 'error').mockImplementation(() => {})
     const Boom = () => {
       throw new Error('no such file')
     }
-    render(<Reader markdown={page} path="x.md" blocks={{ parcours: Boom }} />)
+    render(<Reader markdown={page} path="x.md" blocks={{ parcours: { parcours: Boom } }} />)
     expect(screen.getByText('no such file')).toBeTruthy()
     // The whole point: the text around the block survived.
     expect(screen.getByText('Avant.')).toBeTruthy()

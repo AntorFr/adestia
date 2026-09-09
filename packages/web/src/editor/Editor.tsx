@@ -18,7 +18,7 @@ import { parse, serialize, type Indexed } from '@antorfr/adestia-content'
 import { Attachments } from './Attachments.js'
 import { carriesFiles, fileDropMessage } from './filedrop.js'
 import { PluginBoundary } from '../plugins/Boundary.js'
-import { Reader, type BlockComponents, type LayoutComponents } from './Reader.js'
+import { Reader, type BlockComponents, type LayoutComponents, type VocabularyContext } from './Reader.js'
 
 export interface PageDocument {
   readonly path: string
@@ -147,6 +147,8 @@ export interface EditorProps {
    * which is also what a test that mounts an Editor alone gets.
    */
   readonly blocks?: BlockComponents
+  /** Who owns this page's domain, and the features on — `from=` resolution. */
+  readonly vocabulary?: VocabularyContext
   /**
    * Whole-page layouts the active plugins draw, keyed by frontmatter `type`.
    *
@@ -181,6 +183,7 @@ export function Editor({
   attach,
   compose,
   blocks,
+  vocabulary,
   layouts,
   pages,
   attachments = true,
@@ -408,6 +411,8 @@ export function Editor({
               {...(page.fields ? { fields: page.fields } : {})}
               {...(openPage ? { openPage } : {})}
               {...(blocks ? { blocks } : {})}
+          {...(vocabulary ? { vocabulary } : {})}
+              {...(vocabulary ? { vocabulary } : {})}
               {...(pages ? { pages } : {})}
             />
           </Layout>

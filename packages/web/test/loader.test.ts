@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { forgetContributedBlocks, isKnownBlock } from '@antorfr/adestia-content'
+import { blockSpec, forgetContributedBlocks, isKnownBlock } from '@antorfr/adestia-content'
 
 import {
   IMPORT_MAP_CONTRACT,
@@ -178,9 +178,11 @@ describe('loading', () => {
     expect(result.failures).toEqual([])
   })
 
-  it('registers the manifest\'s vocabulary, and refuses a core name', async () => {
+  it('registers the manifest\'s vocabulary, override included', async () => {
     const { env } = environment({
-      '/plugins/kit/web/blocks.js': { default: () => ({ tags: { cutlist: () => null } }) },
+      '/plugins/kit/web/blocks.js': {
+        default: () => ({ tags: { cutlist: () => null, callout: () => null } }),
+      },
     })
     const result = await loadPlugins(
       [
@@ -198,14 +200,11 @@ describe('loading', () => {
       env,
     )
     expect(isKnownBlock('cutlist')).toBe(true)
-    // The core keeps its own, and the operator is told rather than left with
-    // a `callout` that quietly means something else on this instance.
-    expect(result.failures).toContainEqual({
-      id: 'kit',
-      facet: 'vocabulary',
-      reason: 'block ":::callout" is the core\'s own and was not taken over',
-    })
-    // `callout` was refused, but the plugin\'s own block still loaded.
+    // A claim on a core name is NOT a failure any more: it is an override,
+    // bounded by contextual resolution to the domain the app owns. Contextless,
+    // the core still answers — nothing changed for anyone who did not ask.
+    expect(result.failures).toEqual([])
+    expect(blockSpec('callout')?.description).toBe('A highlighted aside: note, tip or warning.')
     expect(result.loaded[0]?.blocks?.tags).toHaveProperty('cutlist')
   })
 
