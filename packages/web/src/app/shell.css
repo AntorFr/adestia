@@ -2591,6 +2591,111 @@
   cursor: default;
 }
 
+/* ── The generic renderings ───────────────────────────────────────────────
+   They wear the shell's own tokens rather than a palette of their own: a
+   block is content in a page, not a widget visiting one. */
+
+/* `:::content` — a title and prose. The byline is quiet on purpose; it is
+   provenance, and provenance that shouts competes with what it introduces. */
+.adestia-content { margin: 0 0 1.4em; }
+.adestia-content__title {
+  margin: 0 0 0.25em;
+  font: 600 1.08em/1.3 var(--font-display, inherit);
+}
+.adestia-content__by {
+  margin: 0 0 0.6em;
+  color: var(--text-muted);
+  font-size: 0.86em;
+}
+.adestia-content > :last-child { margin-bottom: 0; }
+
+/* `:::figures` — the numbers first, because that is what the eye came for,
+   and the label under it. Tabular figures so a column of them lines up. */
+.adestia-figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-2);
+  margin: 0 0 1.4em;
+}
+.adestia-figure {
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-soft);
+}
+.adestia-figure__value {
+  display: block;
+  font: 600 1.35em/1.1 inherit;
+  font-variant-numeric: tabular-nums;
+}
+.adestia-figure__label {
+  display: block;
+  margin-top: 3px;
+  color: var(--text-muted);
+  font-size: 0.8em;
+}
+.adestia-figure__label em { font-style: normal; color: var(--text-faint); }
+
+/* `:::table` — the ordinary table, with its first column read as a tone.
+   Scrolls in its own box: a wide grid must never make the page move
+   sideways. */
+.adestia-tableblock { margin: 0 0 1.4em; }
+.adestia-tableblock table { width: 100%; }
+.adestia-tableblock td:first-child {
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+/* `:::list` — rows, and a fold for what is over.
+   A row is a BUTTON because it opens a page in place, dressed as the line it
+   is. Folded rather than hidden: a finished thing is exactly what somebody
+   opens to see how the last one went. */
+.adestia-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0 0 1.4em;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.adestia-list__row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  background: var(--surface-raised);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.adestia-list__row:hover { background: var(--accent-quiet); }
+.adestia-list__title { flex: 1; min-width: 0; font-weight: 600; font-size: 0.95em; }
+.adestia-list__pulled { display: flex; gap: 5px; flex-wrap: wrap; }
+.adestia-list__fold { background: var(--surface-raised); }
+.adestia-list__fold > summary {
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-muted);
+  font-size: 0.86em;
+  cursor: pointer;
+}
+
+/* What a block says when it cannot do its job — never an empty rectangle,
+   which reads as "there is nothing here" when the truth is "I could not
+   look". */
+.adestia-block-note {
+  margin: 0 0 1.4em;
+  padding: var(--space-2) var(--space-3);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  font-size: 0.9em;
+}
+
 /* Callouts: the tone carries the colour, the left rule carries the weight. */
 .adestia-callout {
   margin: 0 0 1.2em;
