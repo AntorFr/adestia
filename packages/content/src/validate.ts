@@ -12,7 +12,8 @@ import type { Root, RootContent } from 'mdast'
 import type { ContainerDirective, LeafDirective } from 'mdast-util-directive'
 import { visit } from 'unist-util-visit'
 
-import { blockSpec, isKnownBlock, RESERVED } from './vocabulary.js'
+import {
+  shapesOf, blockSpec, isKnownBlock, RESERVED } from './vocabulary.js'
 
 export type DiagnosticSeverity = 'error' | 'warning'
 
@@ -60,22 +61,32 @@ export function validateDocument(tree: Root): readonly Diagnostic[] {
     const spec = blockSpec(name)!
     const attributes = directive.attributes ?? {}
 
+    // Judged against EVERY definition of the name, not the contextless one.
+    // Definitions need not agree, and this validator has no page context: a
+    // body legal under the app's definition must not be an ERROR under the
+    // core's — "a mismatch is a warning, never a locked page". It stays an
+    // error only when every definition agrees the shape is wrong.
+    const shapes = shapesOf(name)
     if (spec.content === 'empty' && hasContent(directive)) {
-      // Guarded rather than tolerated: the serializer would drop the body, and
-      // a body silently lost is worse than a page that refuses to look normal.
+      const disputed = shapes.has('flow')
       diagnostics.push({
-        severity: 'error',
+        severity: disputed ? 'warning' : 'error',
         block: name,
         line,
-        message: `Block ":::${name}" takes no content — its attributes are its whole meaning.`,
+        message: disputed
+          ? `Block ":::${name}" holds a body only some of its definitions accept — it is kept, and drawn only where its definition takes one.`
+          : `Block ":::${name}" takes no content — its attributes are its whole meaning.`,
       })
     }
     if (spec.content === 'flow' && !hasContent(directive)) {
+      const disputed = shapes.has('empty')
       diagnostics.push({
-        severity: 'error',
+        severity: disputed ? 'warning' : 'error',
         block: name,
         line,
-        message: `Block ":::${name}" needs content.`,
+        message: disputed
+          ? `Block ":::${name}" is empty, which only some of its definitions allow.`
+          : `Block ":::${name}" needs content.`,
       })
     }
 

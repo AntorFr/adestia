@@ -400,6 +400,11 @@ own* — a checkbox that edits another page is a contract, not a drawing. And
 across the whole instance, your version of a core name never leaves your
 domain.
 
+**And state your plugin id in your own skill**, as the value a page writes in
+`from=` to ask for you. The skill's NAME is not it — `parcours-json` documents
+the plugin whose id is `parcours` — and an author who has to guess the id will
+write the file name and get a dead-`from=` notice for a plugin that is running.
+
 A block is declared in **two halves that never restate each other**.
 
 **The manifest says what the block IS** — data, under `vocabulary`:

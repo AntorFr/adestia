@@ -9,7 +9,7 @@
  * genuinely closed rather than merely discouraged.
  */
 
-import { contributedBlocks, GRAMMAR, toneOf, VOCABULARY } from '@antorfr/adestia-content'
+import { contributedBlocks, GRAMMAR, shapesOf, toneOf, VOCABULARY } from '@antorfr/adestia-content'
 import type { MilkdownPlugin } from '@milkdown/kit/ctx'
 import { $node, $remark } from '@milkdown/kit/utils'
 
@@ -132,7 +132,11 @@ const pmId = (name: string) => PM_ID[name] ?? name
 
 function containerNode(name: string) {
   return $node(pmId(name), () => ({
-    content: 'block+',
+    // `block*`, not `block+`: a body-less occurrence must survive the editor.
+    // A name whose definitions DISAGREE on shape gets a container node (see
+    // below), so an empty `:::list` opened for editing is a legal, empty
+    // container — not a parse failure on a page the reader renders fine.
+    content: 'block*',
     group: 'block',
     defining: true,
     attrs: { attributes: { default: {} as Record<string, string> } },
@@ -327,7 +331,14 @@ export function adestiaVocabulary(): MilkdownPlugin[] {
   const seen = new Set(['callout', 'gallery', 'app'])
   const generic = [...Object.values(VOCABULARY), ...contributedBlocks()]
     .filter((spec) => (seen.has(spec.name) ? false : (seen.add(spec.name), true)))
-    .map((spec) => (spec.content === 'flow' ? containerNode(spec.name) : atomNode(spec.name)))
+    // A container as soon as ANY definition of the name takes a body. The
+    // node is per name while definitions are per plugin, and an atom EATS a
+    // body it cannot hold — the "silently eaten text" the design warns
+    // relaxing the validator would cause. A body-less block in a container
+    // is merely empty; a body in an atom is gone.
+    .map((spec) =>
+      shapesOf(spec.name).has('flow') ? containerNode(spec.name) : atomNode(spec.name),
+    )
   return [
     grammarRemarks,
     frontmatterNode,

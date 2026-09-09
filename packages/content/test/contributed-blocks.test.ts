@@ -42,6 +42,31 @@ afterEach(() => forgetContributedBlocks())
  * définit aussi le nom. Et la phrase qui borne tout : on borne une
  * REDÉFINITION, jamais une définition.
  */
+describe('un désaccord de forme entre définitions', () => {
+  it("avertit au lieu de verrouiller, quand l'une des définitions accepte", () => {
+    // La promesse du 04/09, enfin tenue par le validateur : « a mismatch is a
+    // warning and a visible notice on the block, never a locked page ». Une
+    // app redéfinit `list` (vide au cœur) en bloc à corps ; une page de son
+    // domaine écrit ce corps ; le validateur sans contexte ne peut pas savoir
+    // qui gagne — il ne verrouille donc pas.
+    registerBlocks(
+      { list: { content: 'flow', description: 'une liste redessinée, à corps' } },
+      { plugin: 'projets', kind: 'app' },
+    )
+    const issues = validateDocument(parse(':::list\nUn corps.\n:::\n'))
+    const shape = issues.find((one) => one.block === 'list')
+    expect(shape?.severity).toBe('warning')
+  })
+
+  it('reste une ERREUR quand toutes les définitions refusent le corps', () => {
+    // Sans désaccord, la garde d'origine tient : le sérialiseur perdrait ce
+    // corps, et un corps perdu en silence est pire qu'une page verrouillée.
+    const issues = validateDocument(parse(':::app{id=x}\nUn corps.\n:::\n'))
+    const shape = issues.find((one) => one.block === 'app')
+    expect(shape?.severity).toBe('error')
+  })
+})
+
 describe('resolveBlock', () => {
   it('donne au domaine son propre dessin, et le cœur partout ailleurs', () => {
     registerBlocks(

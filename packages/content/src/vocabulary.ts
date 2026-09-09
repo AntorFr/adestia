@@ -366,6 +366,23 @@ export function resolveBlock(name: string, ctx?: BlockContext): ResolvedBlock | 
   return any ? { spec: any.spec, plugin: any.plugin } : undefined
 }
 
+/**
+ * Every shape this name is defined with, across the core and all claims.
+ *
+ * Definitions need not agree — that is the contract — so a shape check cannot
+ * judge a page against ONE spec: a body legal under the app's definition must
+ * not be an error under the core's. The validator errors only when every
+ * definition agrees the shape is wrong; a disagreement is a warning, and the
+ * winning renderer says the rest on screen.
+ */
+export function shapesOf(name: string): ReadonlySet<BlockContent> {
+  const shapes = new Set<BlockContent>()
+  const core = VOCABULARY[name]
+  if (core) shapes.add(core.content)
+  for (const claim of claims.get(name) ?? []) shapes.add(claim.spec.content)
+  return shapes
+}
+
 export function isKnownBlock(name: string): boolean {
   return Object.hasOwn(VOCABULARY, name) || claims.has(name)
 }
