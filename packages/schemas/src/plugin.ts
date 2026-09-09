@@ -122,9 +122,10 @@ export interface PluginManifest {
    * and a page holding one then opens read-only with a diagnostic naming the
    * block — the honest answer, not a blank where a map used to be.
    *
-   * A name the core already owns is REFUSED and named at startup. The other
-   * direction (the plugin wins) would let `callout` quietly mean something
-   * else on one instance, which is exactly what a closed vocabulary is for.
+   * A name the core already owns is a CLAIM, not a collision: resolution
+   * decides who draws it where — the domain-owning app inside its domain, a
+   * feature only when the page asks with `from=`, the core everywhere else.
+   * `packages/content/src/vocabulary.ts` holds the walk; DESIGN.md the rule.
    */
   readonly vocabulary?: Readonly<Record<string, PluginBlockSpec>>
 
