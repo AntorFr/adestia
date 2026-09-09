@@ -9,7 +9,7 @@
  * genuinely closed rather than merely discouraged.
  */
 
-import { contributedBlocks, GRAMMAR, toneOf } from '@antorfr/adestia-content'
+import { contributedBlocks, GRAMMAR, toneOf, VOCABULARY } from '@antorfr/adestia-content'
 import type { MilkdownPlugin } from '@milkdown/kit/ctx'
 import { $node, $remark } from '@milkdown/kit/utils'
 
@@ -118,8 +118,20 @@ export const frontmatterNode = $node('frontmatter', () => ({
 }))
 
 /** A container directive with editable content — `:::callout`, `:::gallery`. */
+/**
+ * The ProseMirror id for a directive's node — the directive's own name,
+ * except where the editor's grammar already OWNS that word. Milkdown's GFM
+ * preset defines a node named `table`, and registering a second one does not
+ * fail loudly: the schema silently misbuilds and the editor never mounts, a
+ * blank surface with a 15-second wait in front of it. The directive keeps its
+ * name everywhere a person sees one — the file, the DOM's `data-block` — and
+ * only the schema id steps aside.
+ */
+const PM_ID: Readonly<Record<string, string>> = { table: 'directive_table' }
+const pmId = (name: string) => PM_ID[name] ?? name
+
 function containerNode(name: string) {
-  return $node(name, () => ({
+  return $node(pmId(name), () => ({
     content: 'block+',
     group: 'block',
     defining: true,
@@ -153,7 +165,7 @@ function containerNode(name: string) {
       },
     },
     toMarkdown: {
-      match: (node) => node.type.name === name,
+      match: (node) => node.type.name === pmId(name),
       runner: (state, node) => {
         state.openNode('containerDirective', undefined, {
           name,
@@ -168,7 +180,7 @@ function containerNode(name: string) {
 
 /** A container directive that takes no content — `:::app`. */
 function atomNode(name: string) {
-  return $node(name, () => ({
+  return $node(pmId(name), () => ({
     content: '',
     group: 'block',
     atom: true,
@@ -207,7 +219,7 @@ function atomNode(name: string) {
       },
     },
     toMarkdown: {
-      match: (node) => node.type.name === name,
+      match: (node) => node.type.name === pmId(name),
       runner: (state, node) => {
         state.openNode('containerDirective', undefined, {
           name,
@@ -305,9 +317,17 @@ export const appNode = atomNode('app')
  * only had a component would break the editor on the first page holding one.
  */
 export function adestiaVocabulary(): MilkdownPlugin[] {
-  const contributed = contributedBlocks().map((spec) =>
-    spec.content === 'flow' ? containerNode(spec.name) : atomNode(spec.name),
-  )
+  // ONE node per name, custom nodes first. Two ways a duplicate would arise,
+  // and Milkdown throws on both: a core block that also needs a generic node
+  // (`content`, `figures`, `table`, `list` — none has a hand-written one), and
+  // a claim on a name already covered — a plugin overriding `table`, or two
+  // features declaring the same block. The node is per NAME, deliberately:
+  // attributes are kept verbatim and the body is always carried, so the node
+  // does not depend on which claim wins on a given page.
+  const seen = new Set(['callout', 'gallery', 'app'])
+  const generic = [...Object.values(VOCABULARY), ...contributedBlocks()]
+    .filter((spec) => (seen.has(spec.name) ? false : (seen.add(spec.name), true)))
+    .map((spec) => (spec.content === 'flow' ? containerNode(spec.name) : atomNode(spec.name)))
   return [
     grammarRemarks,
     frontmatterNode,
@@ -315,6 +335,6 @@ export function adestiaVocabulary(): MilkdownPlugin[] {
     calloutNode,
     galleryNode,
     appNode,
-    ...contributed,
+    ...generic,
   ].flat()
 }

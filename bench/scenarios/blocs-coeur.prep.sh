@@ -49,11 +49,16 @@ et le mode `ask`. Aucun des deux ne dépend d'un tiers.
 Le socle de contenu et son shell. Hors infra, hors déploiement.
 :::
 
-:::table{type=risques}
+:::table
 | Gravité | Risque | Parade |
 |---|---|---|
 | Moyen | Le CLI change son contrat de session | Un test de contrat casse le build avant la mise en production. |
 | Levé | Un onglet fermé perd le tour en cours | Le tour est un travail détaché de la requête. |
+:::
+
+:::content{type=note from=disparu}
+Ce bloc demande un plugin qui n'est pas là — l'avis doit se voir, et ce texte
+doit rester lisible dessous.
 :::
 MD
 

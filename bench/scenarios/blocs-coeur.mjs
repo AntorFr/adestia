@@ -27,4 +27,13 @@ export default async function scenario(bench) {
   await page.click('summary')
   await page.waitForTimeout(500)
   await bench.shoot(page, '2-le-repli-ouvert')
+
+  // L'ÉDITEUR sur ces mêmes blocs. C'est la photo qui manquait à v0.50.0 :
+  // le banc n'avait regardé que la lecture, et l'édition jetait « cannot
+  // match target parser » — quatre blocs sans nœud d'éditeur. Milkdown doit
+  // monter, avec le contenu à l'écran.
+  await page.click('button[title="Modifier"]')
+  await page.waitForSelector('.adestia-editor__surface .milkdown', { timeout: 15_000 })
+  await page.waitForTimeout(800)
+  await bench.shoot(page, '3-l-editeur-monte')
 }
