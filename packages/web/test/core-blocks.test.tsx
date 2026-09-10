@@ -19,10 +19,16 @@ import { forgetContributedBlocks, registerBlocks, validateDocument, parse } from
 import { Reader } from '../src/editor/Reader.js'
 
 const PAGES = [
-  { path: 'chantiers/adestia/socle.md', fields: { title: 'Socle de contenu', status: 'en cours' } },
-  { path: 'chantiers/adestia/editeur.md', fields: { title: 'Éditeur de blocs', status: 'en cours' } },
-  { path: 'chantiers/adestia/tours.md', fields: { title: 'Les tours', status: 'clos' } },
+  {
+    path: 'chantiers/adestia/socle.md',
+    fields: { title: 'Socle de contenu', status: 'en cours', type: 'chantier' },
+    blocks: { etat: 'Huit lots sur treize ; le parseur tient.', perimetre: 'Hors infra.' },
+  },
+  { path: 'chantiers/adestia/editeur.md', fields: { title: 'Éditeur de blocs', status: 'en cours', type: 'chantier' } },
+  { path: 'chantiers/adestia/tours.md', fields: { title: 'Les tours', status: 'clos', ico: '🌀' } },
   { path: 'chantiers/adestia/profond/loin.md', fields: { title: 'Plus bas' } },
+  { path: 'chantiers/adestia/v1.md', fields: { title: 'v1.0', type: 'jalon' } },
+  { path: 'chantiers/adestia/note.md', fields: { title: 'Note de lecture' } },
   { path: 'chantiers/adestia/INDEX.md', fields: { title: 'Adestia' } },
 ]
 const HERE = 'chantiers/adestia/INDEX.md'
@@ -39,6 +45,45 @@ describe(':::content', () => {
     // perdu ce dont il parlait, et ça doit se voir.
     const [issue] = validateDocument(parse(':::content\nDu texte.\n:::\n'))
     expect(issue?.message).toContain('type')
+  })
+  it('met la section dans une boîte en `view=cards`, et pas autrement', () => {
+    // « Une vision plus structurée en bloc » : la même section, encadrée, pour
+    // qu'une page de plusieurs se lise comme des blocs et non comme une seule
+    // colonne de prose.
+    const { container } = render(
+      <Reader
+        markdown={':::content{type=perimetre view=cards}\nDu texte.\n:::\n'}
+        path={HERE}
+        pages={PAGES}
+      />,
+    )
+    const section = container.querySelector('.adestia-content')
+    expect(section?.classList.contains('adestia-content--cards')).toBe(true)
+    // La boîte ne remplace rien : le sujet, le titre et la prose restent.
+    expect(screen.getByText('Perimetre')).toBeTruthy()
+    expect(screen.getByText('Du texte.')).toBeTruthy()
+  })
+
+  it('reste en prose sans le dire', () => {
+    const { container } = render(
+      <Reader markdown={':::content{type=perimetre}\nDu texte.\n:::\n'} path={HERE} pages={PAGES} />,
+    )
+    expect(container.querySelector('.adestia-content--cards')).toBeNull()
+  })
+
+  it('garde son titre, son icône et sa signature dans la boîte', () => {
+    // Une boîte n'est pas un callout : un callout est un aparté sans sujet ni
+    // signature, celle-ci est une SECTION encadrée et garde tout ce qu'elle a.
+    render(
+      <Reader
+        markdown={':::content{type=synthese title="Synthèse" ico=📋 by=Antor on=2026-09-10 view=cards}\nDu texte.\n:::\n'}
+        path={HERE}
+        pages={PAGES}
+      />,
+    )
+    expect(screen.getByText('Synthèse')).toBeTruthy()
+    expect(screen.getByText('📋')).toBeTruthy()
+    expect(screen.getByText('Antor · 2026-09-10')).toBeTruthy()
   })
 })
 
@@ -118,6 +163,140 @@ describe(':::list', () => {
     expect(screen.getByText('Socle de contenu')).toBeTruthy()
     expect(screen.getByText('Éditeur de blocs')).toBeTruthy()
     expect(screen.queryByText('Adestia')).toBeNull()
+  })
+
+  it('prend ses lignes dans son CORPS quand il en a un', () => {
+    // Une déclaration de rôles ne se dérive de rien : quelqu'un la décide.
+    // C'est écrit, et c'est quand même une liste — pas de la prose.
+    render(
+      <Reader
+        markdown={':::list\n- PM: Machine\n- BA: Truc\n:::\n'}
+        path={HERE}
+        pages={PAGES}
+      />,
+    )
+    expect(screen.getByText('Machine')).toBeTruthy()
+    expect(screen.getByText('PM')).toBeTruthy()
+    // Et il n'a pas interrogé l'index par-dessus les lignes écrites.
+    expect(screen.queryByText('Socle de contenu')).toBeNull()
+  })
+
+  it('ne fait rien ouvrir d’une ligne écrite — il n’y a pas de page derrière', () => {
+    const { container } = render(
+      <Reader markdown={':::list\n- PM: Machine\n:::\n'} path={HERE} pages={PAGES} />,
+    )
+    expect(container.querySelectorAll('button.adestia-list__row')).toHaveLength(0)
+  })
+
+  it('dessine des pastilles à initiales en `view=chips`', () => {
+    const { container } = render(
+      <Reader
+        markdown={':::list{view=chips}\n- arbitrage: Antor Berard\n- veille: Nestor\n:::\n'}
+        path={HERE}
+        pages={PAGES}
+      />,
+    )
+    const plates = [...container.querySelectorAll('.adestia-chip__plate')].map((p) => p.textContent)
+    // Dérivées, jamais déclarées : ce produit n'a pas d'annuaire, et demander
+    // à une page d'écrire les initiales à côté du nom, c'est lui demander de
+    // tenir deux choses en accord.
+    expect(plates).toEqual(['AB', 'N'])
+    expect(screen.getByText('Antor Berard')).toBeTruthy()
+    expect(screen.getByText('· arbitrage')).toBeTruthy()
+  })
+
+  it('donne aux pages une grille en `view=cards`', () => {
+    const { container } = render(
+      <Reader markdown={':::list{view=cards}\n:::\n'} path={HERE} pages={PAGES} />,
+    )
+    expect(container.querySelector('.adestia-list--cards')).toBeTruthy()
+    expect(screen.getByText('Socle de contenu')).toBeTruthy()
+  })
+
+  it('remonte ce que l’enfant DIT de lui, avec `pull=content:etat`', () => {
+    // La question à laquelle l'entête ne savait pas répondre : « où en est
+    // chaque sous-chantier » est écrit dans le CORPS de l'enfant. L'index en
+    // publie un digest borné, donc la ligne le montre sans une requête par
+    // enfant.
+    render(
+      <Reader markdown={':::list{pull=content:etat}\n:::\n'} path={HERE} pages={PAGES} />,
+    )
+    expect(screen.getByText('Huit lots sur treize ; le parseur tient.')).toBeTruthy()
+  })
+
+  it('met la phrase SOUS le titre, jamais dans une puce', () => {
+    // Une puce est faite pour un statut ou une date ; un paragraphe qu'on y
+    // comprime est un paragraphe que personne ne lit.
+    const { container } = render(
+      <Reader markdown={':::list{pull=status,content:etat}\n:::\n'} path={HERE} pages={PAGES} />,
+    )
+    const said = container.querySelector('.adestia-list__said')
+    expect(said?.textContent).toBe('Huit lots sur treize ; le parseur tient.')
+    // `status` reste une puce : deux sortes de remontée, deux dessins.
+    const chips = [...container.querySelectorAll('.adestia-tag')].map((c) => c.textContent)
+    expect(chips).toContain('en cours')
+    expect(chips).not.toContain('Huit lots sur treize ; le parseur tient.')
+  })
+
+  it('ne montre rien quand l’enfant ne porte pas ce bloc', () => {
+    const { container } = render(
+      <Reader markdown={':::list{pull=content:absent}\n:::\n'} path={HERE} pages={PAGES} />,
+    )
+    expect(container.querySelector('.adestia-list__said')).toBeNull()
+  })
+
+  it('porte le glyphe que l’enfant s’est donné, et sinon celui de la coque', () => {
+    // Rien n'est inventé ici : `ico:` est le champ que lisent déjà les tuiles
+    // et les cartes de section, et les deux replis — ◆ pour un sujet, • pour
+    // une page — sont les mots que la coque emploie ailleurs. La forme dit
+    // donc quelque chose de vrai : descend-on dedans, ou l'ouvre-t-on ?
+    const { container } = render(
+      <Reader markdown={':::list{closed=show}\n:::\n'} path={HERE} pages={PAGES} />,
+    )
+    const rows = [...container.querySelectorAll('.adestia-list__row')]
+    const glyph = (titre: string) =>
+      rows
+        .find((row) => row.querySelector('.adestia-list__title')?.textContent?.startsWith(titre))
+        ?.querySelector('.adestia-list__ico')?.textContent
+    expect(glyph('Les tours')).toBe('🌀')
+    expect(glyph('Socle de contenu')).toBe('•')
+  })
+
+  it('marque d’un losange la ligne qui tient pour un DOSSIER', () => {
+    const pages = [
+      ...PAGES,
+      { path: 'chantiers/adestia/editeur/INDEX.md', fields: { title: 'Éditeur' } },
+    ]
+    const { container } = render(
+      <Reader markdown={':::list{depth=children}\n:::\n'} path={HERE} pages={pages} />,
+    )
+    const row = [...container.querySelectorAll('.adestia-list__row')].find((r) =>
+      r.querySelector('.adestia-list__title')?.textContent?.startsWith('Éditeur'),
+    )
+    expect(row?.querySelector('.adestia-list__ico')?.textContent).toBe('◆')
+  })
+
+  it('garde le type demandé, et laisse le reste où il est', () => {
+    // `depth` dit jusqu'où regarder, `type` dit quoi garder — et les deux sont
+    // nécessaires : le dossier d'un chantier contient ses sous-chantiers ET
+    // les notes posées à côté. Sans ce filtre, la liste mélange les deux.
+    render(<Reader markdown={':::list{type=chantier}\n:::\n'} path={HERE} pages={PAGES} />)
+    expect(screen.getByText('Socle de contenu')).toBeTruthy()
+    expect(screen.queryByText('Note de lecture')).toBeNull()
+    expect(screen.queryByText('v1.0')).toBeNull()
+  })
+
+  it('en accepte plusieurs, séparés par des virgules', () => {
+    render(<Reader markdown={':::list{type=chantier,jalon}\n:::\n'} path={HERE} pages={PAGES} />)
+    expect(screen.getByText('Socle de contenu')).toBeTruthy()
+    expect(screen.getByText('v1.0')).toBeTruthy()
+    expect(screen.queryByText('Note de lecture')).toBeNull()
+  })
+
+  it('sans `type`, remonte tout ce que la position donne', () => {
+    render(<Reader markdown={':::list\n:::\n'} path={HERE} pages={PAGES} />)
+    expect(screen.getByText('Note de lecture')).toBeTruthy()
+    expect(screen.getByText('Socle de contenu')).toBeTruthy()
   })
 
   it('replie ce qui est clos plutôt que de le cacher', () => {

@@ -544,8 +544,9 @@ function ContentBlock({ node, ctx }: { readonly node: Node; readonly ctx: Ctx })
   const ico = node.attributes?.['ico']
   const by = node.attributes?.['by']
   const on = node.attributes?.['on']
+  const boxed = node.attributes?.['view'] === 'cards'
   return (
-    <section className="adestia-content">
+    <section className={`adestia-content${boxed ? ' adestia-content--cards' : ''}`}>
       {title && (
         <h3 className="adestia-content__title">
           {ico && (
@@ -618,6 +619,30 @@ function plain(node: Node): string {
 }
 
 /**
+ * A flow block's list items as plain text, one string per item.
+ *
+ * A contributed block receives its body as rendered React children — right
+ * for prose, opaque for a block that treats its body as DATA (a timeline
+ * reading phase lines). This is the same reading `figures` does for itself
+ * above: every list item, its text however deep. The body still travels as
+ * children too; a block that consumes items simply does not draw them.
+ */
+function listItems(node: Node): readonly string[] {
+  const out: string[] = []
+  const walk = (kids: readonly Node[] | undefined) => {
+    for (const kid of kids ?? []) {
+      if (kid.type === 'listItem') {
+        out.push(plain(kid))
+        continue
+      }
+      walk(kid.children)
+    }
+  }
+  walk(node.children)
+  return out
+}
+
+/**
  * `:::table` — a markdown table, scrolling, first column emphasised.
  *
  * Small on purpose. It scrolls in its own box so a wide grid never makes the
@@ -634,23 +659,46 @@ function TableBlock({ node, ctx }: { readonly node: Node; readonly ctx: Ctx }) {
 }
 
 /**
- * `:::list{source=children}` — the pages under this one.
+ * `:::list` — rows, from the pages under this one or from its own body.
  *
- * It answers from the INDEX the shell already holds, which is why it costs
- * nothing: `fields` is published for every page, so `pull=status,due` is a
- * lookup rather than a fetch. A block of a child's BODY is not published, and
- * this block deliberately cannot ask for one — see the letter.
+ * TWO provenances, and the same drawing. QUERIED, it answers from the INDEX
+ * the shell already holds, which is why it costs nothing: `fields` is
+ * published for every page, so `pull=status,due` is a lookup rather than a
+ * fetch. A block of a child's BODY is not published, and this block
+ * deliberately cannot ask for one — see the letter.
+ *
+ * WRITTEN, the body's lines are the rows: `Rôle: Personne`, split at the
+ * first colon like `figures` and `timeline`. This exists because some lists
+ * are DECLARATIONS — who holds which role on a project is decided by
+ * somebody, derivable from nothing — and they are still lists. Naming them
+ * `content` would have made that word mean "prose" on one page and "rows" on
+ * another, which is the collision the closed vocabulary exists to stop.
  *
  * `closed=fold` is the default because a finished thing is exactly what
  * somebody opens to see how the last one went. Hidden, it is gone; folded, it
- * is out of the way and one click from being read.
+ * is out of the way and one click from being read. It has nothing to say
+ * about written rows: a written line carries no status to be closed BY.
  */
 function ListBlock({ node, ctx }: { readonly node: Node; readonly ctx: Ctx }) {
   const attrs = node.attributes ?? {}
   const base = ctx.page?.path ? folderOf(ctx.page.path) : (ctx.base ?? '')
   const depth = attrs['depth'] ?? 'children'
   const closed = attrs['closed'] ?? 'fold'
+  const view = attrs['view'] ?? 'rows'
   const pull = (attrs['pull'] ?? '').split(',').map((one) => one.trim()).filter(Boolean)
+
+  // A body means the rows are WRITTEN, whatever `source` says: the lines are
+  // in front of us, and querying past them would drop somebody's words.
+  const written = listItems(node)
+  if (written.length > 0) {
+    const entries = written.map((text) => {
+      const cut = text.indexOf(':')
+      return cut === -1
+        ? { label: '', value: text.trim() }
+        : { label: text.slice(0, cut).trim(), value: text.slice(cut + 1).trim() }
+    })
+    return <Written entries={entries} view={view} />
+  }
 
   // No index here — a chat bubble, a preview. Saying so beats drawing an
   // empty list, which would read as "this folder holds nothing".
@@ -658,8 +706,15 @@ function ListBlock({ node, ctx }: { readonly node: Node; readonly ctx: Ctx }) {
     return <p className="adestia-block-note">Cette liste a besoin de l’index des pages.</p>
   }
 
+  // `depth` says how far to look; `type` says what to keep. Both are needed:
+  // a worksite's folder holds its sub-worksites AND the loose notes filed
+  // beside them, so a list scoped by position alone mixes the two.
+  const kinds = (attrs['type'] ?? '').split(',').map((one) => one.trim()).filter(Boolean)
   const rows = ctx.pages.filter(
-    (page) => page.path !== ctx.page?.path && under(page.path, base, depth),
+    (page) =>
+      page.path !== ctx.page?.path &&
+      under(page.path, base, depth) &&
+      (kinds.length === 0 || kinds.includes(String(page.fields['type'] ?? ''))),
   )
   const live = rows.filter((page) => !finished(page))
   const done = rows.filter((page) => finished(page))
@@ -677,9 +732,9 @@ function ListBlock({ node, ctx }: { readonly node: Node; readonly ctx: Ctx }) {
   }
 
   return (
-    <div className="adestia-list">
+    <div className={`adestia-list adestia-list--${view}`}>
       {shown.map((page) => (
-        <Row key={page.path} page={page} pull={pull} ctx={ctx} />
+        <Row key={page.path} page={page} pull={pull} view={view} ctx={ctx} />
       ))}
       {closed === 'fold' && done.length > 0 && (
         <details className="adestia-list__fold">
@@ -687,7 +742,7 @@ function ListBlock({ node, ctx }: { readonly node: Node; readonly ctx: Ctx }) {
             {done.length} {done.length === 1 ? 'page close' : 'pages closes'}
           </summary>
           {done.map((page) => (
-            <Row key={page.path} page={page} pull={pull} ctx={ctx} />
+            <Row key={page.path} page={page} pull={pull} view={view} ctx={ctx} />
           ))}
         </details>
       )}
@@ -695,25 +750,130 @@ function ListBlock({ node, ctx }: { readonly node: Node; readonly ctx: Ctx }) {
   )
 }
 
+/**
+ * The initials a chip wears — one letter per word, two at most.
+ *
+ * Derived rather than declared, for the same reason the tone of a status is:
+ * there is no directory of people in this product, and asking a page to spell
+ * out initials beside a name it already wrote is asking it to keep two things
+ * in step.
+ */
+function initials(text: string): string {
+  return text
+    .split(/[\s'’-]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => [...word][0]?.toUpperCase() ?? '')
+    .join('')
+}
+
+/**
+ * Rows the BODY wrote — `Rôle: Personne`, one per line.
+ *
+ * They are not pages, so nothing here opens, folds, or carries a status: a
+ * written line has no page behind it to have one. That is the whole
+ * difference between the two provenances, and it is why the same three views
+ * can draw both without either pretending to be the other.
+ */
+function Written({
+  entries,
+  view,
+}: {
+  readonly entries: readonly { label: string; value: string }[]
+  readonly view: string
+}) {
+  if (view === 'chips') {
+    return (
+      <div className="adestia-list adestia-list--chips">
+        {entries.map((entry, index) => (
+          <span className="adestia-chip" key={`${entry.value}-${index}`}>
+            <i className="adestia-chip__plate" aria-hidden="true">
+              {initials(entry.value)}
+            </i>
+            <span className="adestia-chip__text">
+              <b>{entry.value}</b>
+              {entry.label && <em> · {entry.label}</em>}
+            </span>
+          </span>
+        ))}
+      </div>
+    )
+  }
+  return (
+    <div className={`adestia-list adestia-list--${view === 'cards' ? 'cards' : 'rows'}`}>
+      {entries.map((entry, index) => (
+        <div className="adestia-list__row adestia-list__row--written" key={`${entry.value}-${index}`}>
+          <span className="adestia-list__title">{entry.value}</span>
+          {entry.label && (
+            <span className="adestia-list__pulled">
+              <span className="adestia-tag">{entry.label}</span>
+            </span>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function Row({
   page,
   pull,
+  view,
   ctx,
 }: {
   readonly page: Indexed
   readonly pull: readonly string[]
+  readonly view: string
   readonly ctx: Ctx
 }) {
+  // Two kinds of pull, and they draw differently because they ARE different.
+  // A bare name is a HEADER field — a status, a date — and reads as a chip.
+  // `content:etat` is a written BLOCK of the child, digested by the index,
+  // and it is a sentence: it reads as the row's description, under the title,
+  // because a paragraph squeezed into a chip is a paragraph nobody reads.
   const pulled = pull
+    .filter((name) => !name.startsWith('content:'))
     .map((name) => ({ name, value: page.fields[name] }))
     .filter((one) => one.value !== undefined && one.value !== '')
+  const said = pull
+    .filter((name) => name.startsWith('content:'))
+    .map((name) => page.blocks?.[name.slice('content:'.length)])
+    .find((text) => text !== undefined && text !== '')
+  const title = titleOf(page)
+  // The glyph a row wears, and none of it is invented here. A page that
+  // declares `ico:` wins — the same field the section cards and the tiles
+  // read, so a subject looks like itself wherever it appears. Failing that,
+  // the shell's own two words: `◆` for a row standing for a FOLDER, which is
+  // what `sections.ts` already draws for a subject, and `•` for a plain page,
+  // which is what the launcher already draws for an item. The shape then says
+  // something true that the list had already worked out — whether this row is
+  // a subject you descend into or a page you open.
+  const declared = page.fields['ico']
+  const glyph =
+    typeof declared === 'string' && declared !== ''
+      ? declared
+      : isIndexPage(page.path)
+        ? '◆'
+        : '•'
   return (
     <button
       type="button"
       className="adestia-list__row"
       onClick={() => ctx.openPage?.(page.path)}
     >
-      <span className="adestia-list__title">{titleOf(page)}</span>
+      {view === 'chips' ? (
+        <i className="adestia-chip__plate" aria-hidden="true">
+          {initials(title)}
+        </i>
+      ) : (
+        <i className="adestia-list__ico" aria-hidden="true">
+          {glyph}
+        </i>
+      )}
+      <span className="adestia-list__title">
+        {title}
+        {said && <em className="adestia-list__said">{said}</em>}
+      </span>
       {pulled.length > 0 && (
         <span className="adestia-list__pulled">
           {pulled.map((one) => (
@@ -811,7 +971,9 @@ function Contributed({
   const Block = claim ? ctx.blocks?.[claim.plugin]?.[name] : undefined
   // A `flow` block gets its body; an `empty` one is its attributes and
   // nothing else, so it is not handed an empty fragment to wonder about.
-  const body = (claim?.spec ?? blockSpec(name))?.content === 'flow' ? children(node, ctx) : undefined
+  const shape = (claim?.spec ?? blockSpec(name))?.content
+  const flow = shape === 'flow' || shape === 'optional'
+  const body = flow ? children(node, ctx) : undefined
 
   if (!Block) {
     // Two ways to land here, and the reader cannot act on either: a block no
@@ -834,6 +996,7 @@ function Contributed({
     <PluginBoundary id={name} what="block">
       <Block
         attributes={node.attributes ?? {}}
+        {...(flow ? { items: listItems(node) } : {})}
         resolve={(target) => assetUrl(target, ctx.base)}
         locate={(target) => workspacePath(target, ctx.base)}
         {...(ctx.page ? { path: ctx.page.path } : {})}

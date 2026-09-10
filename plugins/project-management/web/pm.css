@@ -1,0 +1,200 @@
+/*
+ * `:::timeline`, dressed in the shell's own tokens — a plugin that invents
+ * a colour is a plugin that looks wrong under the next livery.
+ */
+
+.pm-timeline {
+  margin: 0 0 1.4em;
+}
+.pm-timeline__empty,
+.pm-timeline__unread {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+}
+.pm-timeline__unread {
+  margin: 8px 0 0;
+}
+
+/* The chart: bars stacked in rows, milestones and the today line across them. */
+.pm-timeline__chart {
+  position: relative;
+  padding: 30px 0 24px;
+}
+/* Two milestone-label rows need headroom; one row keeps the chart tight. */
+.pm-timeline__chart--tall {
+  padding-top: 48px;
+}
+.pm-timeline__bar {
+  position: relative;
+  height: 26px;
+  margin: 5px 0;
+}
+.pm-timeline__span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: var(--radius-sm);
+  /* Plein, pas délavé : une barre est un objet, pas une ombre. Les états se
+     distinguent par la DENSITÉ de la même teinte, l'écart de retard mis à
+     part — un planning lu de loin doit rester un seul dessin.
+     Teinte de la SURFACE et texte du thème : `#fff` en dur était juste en
+     clair et illisible en sombre, où l'accent est un cyan pâle. */
+  background: color-mix(in srgb, var(--accent) 55%, var(--surface-sunken));
+  color: var(--text);
+  font-size: var(--text-sm);
+  line-height: 26px;
+  padding: 0 9px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 3px;
+}
+/* La phase courante est la seule PLAQUE — l'idiome de la coque : on assombrit
+   la teinte, puis on y pose du blanc, ce qui tient sur les deux fonds sans
+   qu'un thème ait à redéfinir quoi que ce soit. */
+.pm-timeline__span--current {
+  background: color-mix(in srgb, var(--accent) var(--plate-mix, 62%), var(--plate-base, #000));
+  color: var(--plate-fg, #fff);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.pm-timeline__span--past {
+  background: color-mix(in srgb, var(--accent) 28%, var(--surface-sunken));
+  color: var(--text-muted);
+}
+/* Closed by its WORKFLOW, whatever its dates say. Outlined and hollow rather
+   than hatched: stripes running under a label make the label the thing you
+   have to work to read, and the bench showed exactly that. */
+.pm-timeline__span--done {
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface-raised));
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--text-muted);
+}
+
+/* Its date has passed and its status says it is still open. The one state a
+   planning is actually read for, and both halves of it are already on file. */
+.pm-timeline__span--late {
+  background: color-mix(in srgb, var(--warning) 22%, var(--surface-raised));
+  box-shadow: inset 0 0 0 1px var(--warning);
+  color: var(--text);
+}
+
+/* A milestone is a DATE, not a duration — it has no width to carry weight,
+   so it earns its own colour instead. Grey ones read as chart furniture; the
+   whole point of a milestone is that you see it before you see the bars. */
+.pm-timeline__mile {
+  position: absolute;
+  top: 4px;
+  bottom: 24px;
+  border-left: 2px solid var(--warning);
+}
+.pm-timeline__mile::after {
+  content: '';
+  position: absolute;
+  left: -4px;
+  bottom: -3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--warning);
+}
+.pm-timeline__mile > span,
+.pm-timeline__mile > button {
+  position: absolute;
+  top: -22px;
+  left: -4px;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: var(--warning);
+}
+/* The alternating row: same rule, its label one row higher, so neighbours clear. */
+.pm-timeline__mile--high > span,
+.pm-timeline__mile--high > button {
+  top: -40px;
+}
+/* A milestone already behind us stops shouting, but stays legible. */
+.pm-timeline__mile--past,
+.pm-timeline__mile--done {
+  border-left-color: color-mix(in srgb, var(--warning) 35%, var(--border));
+}
+.pm-timeline__mile--past::after,
+.pm-timeline__mile--done::after {
+  background: color-mix(in srgb, var(--warning) 35%, var(--border));
+}
+.pm-timeline__mile--past > span,
+.pm-timeline__mile--past > button,
+.pm-timeline__mile--done > span,
+.pm-timeline__mile--done > button {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+/* A bar or a marker STANDING for a page is a button, and must not look like
+   one: the drawing is the affordance, the element is only what makes it
+   reachable by keyboard. Placed after the label rules so this reset wins. */
+button.pm-timeline__span,
+.pm-timeline__mile > button {
+  border: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+button.pm-timeline__span:hover {
+  filter: brightness(1.06);
+}
+.pm-timeline__mile > button {
+  background: none;
+  padding: 0;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+.pm-timeline__mile > button:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+/* TODAY — the one line that moves by itself, and the first thing anybody
+   looks for on a planning. It was 1px of `--text-faint`: present in the DOM,
+   invisible on screen, which is the same as absent. It is now a full-height
+   dashed rule in the text colour, named at the foot so it cannot be mistaken
+   for a milestone. */
+.pm-timeline__today {
+  position: absolute;
+  top: 0;
+  bottom: 18px;
+  border-left: 2px dashed color-mix(in srgb, var(--text) 55%, transparent);
+}
+.pm-timeline__today::after {
+  content: attr(data-label);
+  position: absolute;
+  left: 3px;
+  bottom: -17px;
+  font-size: 10px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.pm-timeline__axis {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 18px;
+  border-top: 1px solid var(--border);
+}
+.pm-timeline__tick {
+  position: absolute;
+  top: 3px;
+  transform: translateX(1px);
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-faint);
+  white-space: nowrap;
+}

@@ -305,6 +305,16 @@ export interface BlockProps {
   openPage?(path: string): void
   /** The block's body, already rendered. Only ever set on a `flow` block. */
   readonly children?: ReactNode
+  /**
+   * The body's list items as plain text, one string per item. Only ever set
+   * on a `flow` block, beside `children`.
+   *
+   * For the block that treats its body as DATA — a timeline reading phase
+   * lines — where `children` is right for prose and opaque for parsing. The
+   * same reading the core's `figures` does for itself; a block that consumes
+   * items simply does not draw its children.
+   */
+  readonly items?: readonly string[]
 }
 
 /**

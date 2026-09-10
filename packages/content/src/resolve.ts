@@ -31,6 +31,12 @@ export interface Indexed {
    * appears only when it means something.
    */
   readonly store?: string
+  /**
+   * What each written `:::content` block of the page says, bounded and keyed
+   * by its `type`. Present only where the page carries one — see
+   * `contentDigest`. A SUMMARY for a row, never the page.
+   */
+  readonly blocks?: Readonly<Record<string, string>>
 }
 
 export type Resolution =

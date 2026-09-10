@@ -46,21 +46,27 @@ describe('un désaccord de forme entre définitions', () => {
   it("avertit au lieu de verrouiller, quand l'une des définitions accepte", () => {
     // La promesse du 04/09, enfin tenue par le validateur : « a mismatch is a
     // warning and a visible notice on the block, never a locked page ». Une
-    // app redéfinit `list` (vide au cœur) en bloc à corps ; une page de son
+    // app redéfinit `app` (vide au cœur) en bloc à corps ; une page de son
     // domaine écrit ce corps ; le validateur sans contexte ne peut pas savoir
     // qui gagne — il ne verrouille donc pas.
+    //
+    // La fixture était `list` jusqu'au 10/09, où le cœur lui a donné les deux
+    // provenances : un corps y est désormais légal tout court, donc elle ne
+    // pouvait plus porter un désaccord. Le comportement gardé, lui, n'a pas
+    // bougé.
     registerBlocks(
-      { list: { content: 'flow', description: 'une liste redessinée, à corps' } },
+      { app: { content: 'flow', description: 'un embarqué redessiné, à corps', attributes: { id: {} } } },
       { plugin: 'projets', kind: 'app' },
     )
-    const issues = validateDocument(parse(':::list\nUn corps.\n:::\n'))
-    const shape = issues.find((one) => one.block === 'list')
+    const issues = validateDocument(parse(':::app{id=x}\nUn corps.\n:::\n'))
+    const shape = issues.find((one) => one.block === 'app')
     expect(shape?.severity).toBe('warning')
   })
 
   it('reste une ERREUR quand toutes les définitions refusent le corps', () => {
     // Sans désaccord, la garde d'origine tient : le sérialiseur perdrait ce
     // corps, et un corps perdu en silence est pire qu'une page verrouillée.
+    // (Aucun `registerBlocks` ici : le cœur seul définit `app`.)
     const issues = validateDocument(parse(':::app{id=x}\nUn corps.\n:::\n'))
     const shape = issues.find((one) => one.block === 'app')
     expect(shape?.severity).toBe('error')

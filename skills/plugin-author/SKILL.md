@@ -458,9 +458,11 @@ A block component is handed these beyond its own plugin's `api`:
 | `resolve(path)` | a path written in the page → a URL to fetch. `source="assets/x.json"` means "next to the page", the way it reads on disk — nothing in a document should know files are served under `/api/files` |
 | `locate(path)` | the same path as the WORKSPACE spells it — what you name to your own API |
 | `children` | the block's body, already rendered. Only for a `flow` block |
+| `items` | the body's list items as plain text, one string per item. Only for a `flow` block, beside `children` — for a block that treats its body as DATA (a timeline reading phase lines). A block that consumes `items` simply does not draw its `children` |
 
-The last three are absent when prose is rendered outside any page — a chat
-bubble — which is the same answer relative links already give there.
+`path`, `store` and `fields` are absent when prose is rendered outside any
+page — a chat bubble — which is the same answer relative links already give
+there.
 
 **Do not derive the page from `locate('.')`.** It looks equivalent and is not:
 a page sitting at the ROOT has an empty folder, so that call answers `.`, and a

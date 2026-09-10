@@ -171,6 +171,60 @@ describe('drawing one', () => {
     expect(seen).toEqual({ encadre: true, jeton: false })
     expect(screen.getByText('Du texte.')).toBeTruthy()
   })
+
+  it('hands a flow block its list items as text, and an empty one none', () => {
+    registerBlocks(
+      {
+        planning: { content: 'flow', description: 'Body as data.' },
+        jeton: { content: 'empty', description: 'A token.' },
+      },
+      { plugin: 'demo', kind: 'feature' },
+    )
+    const seen: Record<string, readonly string[] | undefined> = {}
+    const spy = (name: string) => ({ items }: BlockProps) => {
+      seen[name] = items
+      return <div />
+    }
+    render(
+      <Reader
+        markdown={':::planning\n- Cadrage: 2026-01-15 → 2026-03-01\n- Recette: 2026-06-01\n:::\n\n:::jeton\n:::\n'}
+        path="x.md"
+        blocks={{ demo: { planning: spy('planning'), jeton: spy('jeton') } }}
+      />,
+    )
+    // The exact strings the grammar read, label and dates in one piece —
+    // parsing them is the block's business, not the reader's.
+    expect(seen['planning']).toEqual(['Cadrage: 2026-01-15 → 2026-03-01', 'Recette: 2026-06-01'])
+    expect(seen['jeton']).toBeUndefined()
+  })
+
+  it('gives an optional block its body when it has one, and nothing when it does not', () => {
+    // One rendering, two provenances — a planning written in the block and
+    // one read from the pages below. The SAME component draws both, so it is
+    // handed a body only when the occurrence carries one.
+    registerBlocks(
+      { planning: { content: 'optional', description: 'Written or queried.' } },
+      { plugin: 'demo', kind: 'feature' },
+    )
+    const seen: { items: readonly string[] | undefined; body: boolean }[] = []
+    const Planning = ({ items, children }: BlockProps) => {
+      seen.push({ items, body: children !== undefined })
+      return <div />
+    }
+    render(
+      <Reader
+        markdown={':::planning\n- Cadrage: 2026-01-15 → 2026-03-01\n:::\n\n:::planning{depth=subtree}\n:::\n'}
+        path="x.md"
+        blocks={{ demo: { planning: Planning } }}
+      />,
+    )
+    expect(seen[0]?.items).toEqual(['Cadrage: 2026-01-15 → 2026-03-01'])
+    expect(seen[0]?.body).toBe(true)
+    // Body-less: no items to parse, and an empty fragment would be a body
+    // that is not there.
+    expect(seen[1]?.items).toEqual([])
+    expect(seen[1]?.body).toBe(true)
+  })
 })
 
 describe('when it cannot be drawn', () => {

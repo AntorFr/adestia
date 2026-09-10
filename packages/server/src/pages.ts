@@ -19,6 +19,7 @@ import { mkdir, readFile, readdir, rename, stat, unlink, writeFile } from 'node:
 import { basename, dirname, extname, join, relative, resolve, sep } from 'node:path'
 
 import {
+  contentDigest,
   isFinished,
   parse,
   serialize,
@@ -309,10 +310,12 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
       fields: Record<string, unknown>
       finished: boolean
       body: boolean
+      blocks?: Record<string, string>
     }[] = []
     for (const entry of [...entries].sort((a, b) => order.compare(a.path, b.path))) {
       const markdown = await readFile(entry.file, 'utf8').catch(() => '')
       const fields = parseFrontmatter(markdown)
+      const digest = contentDigest(markdown)
       out.push({
         path: entry.path,
         ...(multi ? { store: entry.store.id } : {}),
@@ -338,6 +341,13 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
          * keeps them from each fetching the corpus to find out.
          */
         body: hasBody(markdown),
+        /**
+         * What each written `:::content` block says, bounded — so a row can
+         * show a child's `type=etat` without a request per child. Omitted
+         * when there is none, which is most pages: a field that appears only
+         * when it means something, exactly like `store`.
+         */
+        ...(Object.keys(digest).length > 0 ? { blocks: digest } : {}),
       })
     }
     // The store table travels with the listing the shell actually draws from,

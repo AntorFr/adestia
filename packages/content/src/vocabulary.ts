@@ -17,6 +17,20 @@ export type BlockContent =
   | 'flow'
   /** No body at all — the block IS its attributes (an embedded app). */
   | 'empty'
+  /**
+   * A body when the body IS the data, none when the block queries for it.
+   *
+   * Not indecision: it is one rendering with two PROVENANCES, which is what
+   * a written planning and a consolidated one are — the same bars, read from
+   * the block or from the pages below. Declaring `flow` would lock the page
+   * that queries (a body it does not have), `empty` the page that writes
+   * (a body it must have), so the shape a name takes is decided by the
+   * occurrence's attributes, and the validator judges neither.
+   *
+   * The bar for using it: BOTH provenances draw the same thing. A name whose
+   * two forms draw differently is two renderings wearing one word.
+   */
+  | 'optional'
 
 export interface AttributeSpec {
   readonly required?: boolean
@@ -138,6 +152,23 @@ export const VOCABULARY: Readonly<Record<string, BlockSpec>> = {
     attributes: {
       type: { required: true },
       /**
+       * How much BOX the passage gets. `plain` is prose under a heading;
+       * `cards` puts it in a bordered panel, so a page of several sections
+       * reads as blocks rather than as one column of text.
+       *
+       * Same word as `list`'s, on purpose and despite the plural reading
+       * oddly on a single box: a closed set refuses an unknown value with an
+       * ERROR, so `view=card` written by muscle memory would lock the page.
+       * One word for "boxed", everywhere.
+       *
+       * Not a `callout`, and the line is worth holding: a callout is an
+       * ASIDE — a remark set apart from the flow, coloured by its tone, with
+       * no subject and no signature. This is a SECTION of the page that
+       * happens to be boxed, and it keeps everything a section has: `type`,
+       * `title`, `ico`, `by`, `on`.
+       */
+      view: { values: ['plain', 'cards'], default: 'plain' },
+      /**
        * Display, on the same ladder the tiles taught: the occurrence beats a
        * configured label, which beats the prettified `type`. Neither replaces
        * `type` — the SUBJECT is what queries, pulls and configs address, and
@@ -206,8 +237,14 @@ export const VOCABULARY: Readonly<Record<string, BlockSpec>> = {
    */
   list: {
     name: 'list',
-    content: 'empty',
-    description: 'The pages under this one, as rows.',
+    // TWO provenances, one drawing. Written — the body's lines ARE the rows,
+    // `Rôle: Personne`, the same first-colon cut `figures` and `timeline`
+    // make — or queried, from `source=`. A declaration of who does what on a
+    // project cannot be derived from anything: somebody decides it. That is
+    // still a list, not free prose, and calling it `content` would have made
+    // the name mean "text" on one page and "rows" on another.
+    content: 'optional',
+    description: 'Rows: the pages under this one, or the lines written in the block.',
     attributes: {
       // The slot a plugin widens. Closed to one value, so it cannot promise
       // a source nobody answers: `source=children` gets exactly what it says.
@@ -215,12 +252,31 @@ export const VOCABULARY: Readonly<Record<string, BlockSpec>> = {
       // for "which plugin draws this block" — one word cannot carry both.
       source: { values: ['children'], default: 'children' },
       depth: { values: ['self', 'children', 'subtree'], default: 'children' },
+      /**
+       * Which KIND of page to keep — the `type:` of the children, comma-separated
+       * for several. Free-valued, because page types belong to the user.
+       *
+       * `depth` says how far to look and this says what to keep, and the two
+       * are genuinely different questions: a worksite's folder holds its
+       * sub-worksites AND the loose notes filed beside them, so a list scoped
+       * by position alone mixes "Sortie mobile" with "Note de lecture".
+       *
+       * The same word as `content`'s, and that is right rather than a
+       * collision: `type` is this product's ONE word for "what kind of thing
+       * this is" — the field a page declares in its header, the values a
+       * manifest claims. What differs is only what it applies to, and no
+       * block is ambiguous about that: `content` has a subject of its own so
+       * its `type` describes itself, while `list` has none — every attribute
+       * it takes describes the pages it lists.
+       */
+      type: {},
       pull: {},
       sort: {},
       closed: { values: ['fold', 'hide', 'show'], default: 'fold' },
-      // NO `view` here. It was declared with `rows|cards` and read by nothing,
-      // in the same commit that refused `view=cards` on `table` for exactly
-      // that reason. Cards first, then the attribute.
+      // Every value here is DRAWN. `grid` is absent on purpose: it belongs to
+      // `source=files`, which nothing answers yet, and an attribute value
+      // that draws nothing is the documented lie this table paid for once.
+      view: { values: ['rows', 'cards', 'chips'], default: 'rows' },
     },
   },
 }
