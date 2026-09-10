@@ -1400,6 +1400,21 @@ where they do not, the reversal is stated.
    share the prompt cache perfectly, while switching models re-pays it. The
    binding constraint is ~300 MB of RSS per CLI process — `maxConcurrentTurns:
    3` is confirmed as memory-bound, and 8 is verified safe API-side.
+5. **Codex CLI hands-on — DONE** (`spikes/codex-cli/REPORT.md`): binary 0.154.0
+   pinned. `CODEX_HOME` isolates completely — the fake `$HOME` stayed empty —
+   but startup clones a plugin marketplace over the network; `-c marketplaces=[]`
+   stops it. Arming is a **file**, not an env var (`OPENAI_API_KEY` is ignored
+   for the built-in provider) and needs no pty, unlike Copilot's;
+   `login --with-api-key` accepts a bogus key without validating it, and the
+   failure only lands ~35 s into the first turn. The finding that decides the
+   design: `codex exec --json` forces `approval policy = Never`, while
+   `codex app-server` — JSON-RPC with a *generated schema* — carries the return
+   channel (`item/commandExecution/requestApproval`, answered `accept`/`decline`,
+   both proven), plus `model/list`, `mcpServer/startupStatus/updated` and
+   `thread/tokenUsage/updated`. All of it captured against a local mock provider
+   with no OpenAI account, so a driver would be CI-testable the way Copilot's is.
+   Blind spot found: a command the sandbox blocks emits **no event at all** on
+   either surface. Whether a `codex-cli` driver is built is not settled here.
 
 ## What is built, and what is not
 

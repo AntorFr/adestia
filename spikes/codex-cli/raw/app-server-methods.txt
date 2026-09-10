@@ -1,0 +1,297 @@
+===== ['initialize']
+{"$ref": "#/definitions/InitializeParams"}
+
+===== ['thread/start']
+{"$ref": "#/definitions/ThreadStartParams"}
+
+===== ['thread/resume']
+{"$ref": "#/definitions/ThreadResumeParams"}
+
+===== ['thread/fork']
+{"$ref": "#/definitions/ThreadForkParams"}
+
+===== ['thread/archive']
+{"$ref": "#/definitions/ThreadArchiveParams"}
+
+===== ['thread/delete']
+{"$ref": "#/definitions/ThreadDeleteParams"}
+
+===== ['thread/unsubscribe']
+{"$ref": "#/definitions/ThreadUnsubscribeParams"}
+
+===== ['thread/name/set']
+{"$ref": "#/definitions/ThreadSetNameParams"}
+
+===== ['thread/goal/set']
+{"$ref": "#/definitions/ThreadGoalSetParams"}
+
+===== ['thread/goal/get']
+{"$ref": "#/definitions/ThreadGoalGetParams"}
+
+===== ['thread/goal/clear']
+{"$ref": "#/definitions/ThreadGoalClearParams"}
+
+===== ['thread/metadata/update']
+{"$ref": "#/definitions/ThreadMetadataUpdateParams"}
+
+===== ['thread/section/move']
+{"$ref": "#/definitions/ThreadSectionMoveParams"}
+
+===== ['thread/unarchive']
+{"$ref": "#/definitions/ThreadUnarchiveParams"}
+
+===== ['thread/compact/start']
+{"$ref": "#/definitions/ThreadCompactStartParams"}
+
+===== ['thread/shellCommand']
+{"$ref": "#/definitions/ThreadShellCommandParams"}
+
+===== ['thread/approveGuardianDeniedAction']
+{"$ref": "#/definitions/ThreadApproveGuardianDeniedActionParams"}
+
+===== ['thread/rollback']
+{"$ref": "#/definitions/ThreadRollbackParams"}
+
+===== ['thread/revert']
+{"$ref": "#/definitions/ThreadRevertParams"}
+
+===== ['thread/list']
+{"$ref": "#/definitions/ThreadListParams"}
+
+===== ['threadSection/list']
+{"$ref": "#/definitions/ThreadSectionListParams"}
+
+===== ['threadSection/create']
+{"$ref": "#/definitions/ThreadSectionCreateParams"}
+
+===== ['threadSection/update']
+{"$ref": "#/definitions/ThreadSectionUpdateParams"}
+
+===== ['threadSection/delete']
+{"$ref": "#/definitions/ThreadSectionDeleteParams"}
+
+===== ['thread/loaded/list']
+{"$ref": "#/definitions/ThreadLoadedListParams"}
+
+===== ['thread/read']
+{"$ref": "#/definitions/ThreadReadParams"}
+
+===== ['thread/turns/list']
+{"$ref": "#/definitions/ThreadTurnsListParams"}
+
+===== ['thread/items/list']
+{"$ref": "#/definitions/ThreadItemsListParams"}
+
+===== ['thread/inject_items']
+{"$ref": "#/definitions/ThreadInjectItemsParams"}
+
+===== ['skills/list']
+{"$ref": "#/definitions/SkillsListParams"}
+
+===== ['skills/extraRoots/set']
+{"$ref": "#/definitions/SkillsExtraRootsSetParams"}
+
+===== ['hooks/list']
+{"$ref": "#/definitions/HooksListParams"}
+
+===== ['marketplace/add']
+{"$ref": "#/definitions/MarketplaceAddParams"}
+
+===== ['marketplace/remove']
+{"$ref": "#/definitions/MarketplaceRemoveParams"}
+
+===== ['marketplace/upgrade']
+{"$ref": "#/definitions/MarketplaceUpgradeParams"}
+
+===== ['plugin/list']
+{"$ref": "#/definitions/PluginListParams"}
+
+===== ['plugin/installed']
+{"$ref": "#/definitions/PluginInstalledParams"}
+
+===== ['plugin/reconcile']
+{"$ref": "#/definitions/PluginReconcileParams"}
+
+===== ['plugin/read']
+{"$ref": "#/definitions/PluginReadParams"}
+
+===== ['plugin/skill/read']
+{"$ref": "#/definitions/PluginSkillReadParams"}
+
+===== ['plugin/share/save']
+{"$ref": "#/definitions/PluginShareSaveParams"}
+
+===== ['plugin/share/updateTargets']
+{"$ref": "#/definitions/PluginShareUpdateTargetsParams"}
+
+===== ['plugin/share/list']
+{"$ref": "#/definitions/PluginShareListParams"}
+
+===== ['plugin/share/checkout']
+{"$ref": "#/definitions/PluginShareCheckoutParams"}
+
+===== ['plugin/share/delete']
+{"$ref": "#/definitions/PluginShareDeleteParams"}
+
+===== ['app/read']
+{"$ref": "#/definitions/AppsReadParams"}
+
+===== ['app/list']
+{"$ref": "#/definitions/AppsListParams"}
+
+===== ['app/installed']
+{"$ref": "#/definitions/AppsInstalledParams"}
+
+===== ['fs/readFile']
+{"$ref": "#/definitions/FsReadFileParams"}
+
+===== ['fs/writeFile']
+{"$ref": "#/definitions/FsWriteFileParams"}
+
+===== ['fs/createDirectory']
+{"$ref": "#/definitions/FsCreateDirectoryParams"}
+
+===== ['fs/getMetadata']
+{"$ref": "#/definitions/FsGetMetadataParams"}
+
+===== ['fs/readDirectory']
+{"$ref": "#/definitions/FsReadDirectoryParams"}
+
+===== ['fs/remove']
+{"$ref": "#/definitions/FsRemoveParams"}
+
+===== ['fs/copy']
+{"$ref": "#/definitions/FsCopyParams"}
+
+===== ['fs/watch']
+{"$ref": "#/definitions/FsWatchParams"}
+
+===== ['fs/unwatch']
+{"$ref": "#/definitions/FsUnwatchParams"}
+
+===== ['skills/config/write']
+{"$ref": "#/definitions/SkillsConfigWriteParams"}
+
+===== ['plugin/install']
+{"$ref": "#/definitions/PluginInstallParams"}
+
+===== ['plugin/uninstall']
+{"$ref": "#/definitions/PluginUninstallParams"}
+
+===== ['turn/start']
+{"$ref": "#/definitions/TurnStartParams"}
+
+===== ['turn/steer']
+{"$ref": "#/definitions/TurnSteerParams"}
+
+===== ['turn/interrupt']
+{"$ref": "#/definitions/TurnInterruptParams"}
+
+===== ['review/start']
+{"$ref": "#/definitions/ReviewStartParams"}
+
+===== ['model/list']
+{"$ref": "#/definitions/ModelListParams"}
+
+===== ['modelProvider/capabilities/read']
+{"$ref": "#/definitions/ModelProviderCapabilitiesReadParams"}
+
+===== ['experimentalFeature/list']
+{"$ref": "#/definitions/ExperimentalFeatureListParams"}
+
+===== ['permissionProfile/list']
+{"$ref": "#/definitions/PermissionProfileListParams"}
+
+===== ['experimentalFeature/enablement/set']
+{"$ref": "#/definitions/ExperimentalFeatureEnablementSetParams"}
+
+===== ['mcpServer/oauth/login']
+{"$ref": "#/definitions/McpServerOauthLoginParams"}
+
+===== ['config/mcpServer/reload']
+{"type": "null"}
+
+===== ['mcpServerStatus/list']
+{"$ref": "#/definitions/ListMcpServerStatusParams"}
+
+===== ['mcpServer/resource/read']
+{"$ref": "#/definitions/McpResourceReadParams"}
+
+===== ['mcpServer/tool/call']
+{"$ref": "#/definitions/McpServerToolCallParams"}
+
+===== ['windowsSandbox/setupStart']
+{"$ref": "#/definitions/WindowsSandboxSetupStartParams"}
+
+===== ['windowsSandbox/readiness']
+{"type": "null"}
+
+===== ['account/login/start']
+{"$ref": "#/definitions/LoginAccountParams"}
+
+===== ['account/login/cancel']
+{"$ref": "#/definitions/CancelLoginAccountParams"}
+
+===== ['account/logout']
+{"type": "null"}
+
+===== ['account/rateLimits/read']
+{"anyOf": [{"$ref": "#/definitions/GetAccountRateLimitsParams"}, {"type": "null"}]}
+
+===== ['account/rateLimitResetCredit/consume']
+{"$ref": "#/definitions/ConsumeAccountRateLimitResetCreditParams"}
+
+===== ['account/usage/read']
+{"anyOf": [{"$ref": "#/definitions/GetAccountTokenUsageParams"}, {"type": "null"}]}
+
+===== ['account/workspaceMessages/read']
+{"type": "null"}
+
+===== ['account/sendAddCreditsNudgeEmail']
+{"$ref": "#/definitions/SendAddCreditsNudgeEmailParams"}
+
+===== ['feedback/upload']
+{"$ref": "#/definitions/FeedbackUploadParams"}
+
+===== ['command/exec']
+{"$ref": "#/definitions/CommandExecParams"}
+
+===== ['command/exec/write']
+{"$ref": "#/definitions/CommandExecWriteParams"}
+
+===== ['command/exec/terminate']
+{"$ref": "#/definitions/CommandExecTerminateParams"}
+
+===== ['command/exec/resize']
+{"$ref": "#/definitions/CommandExecResizeParams"}
+
+===== ['config/read']
+{"$ref": "#/definitions/ConfigReadParams"}
+
+===== ['externalAgentConfig/detect']
+{"$ref": "#/definitions/ExternalAgentConfigDetectParams"}
+
+===== ['externalAgentConfig/import']
+{"$ref": "#/definitions/ExternalAgentConfigImportParams"}
+
+===== ['externalAgentConfig/import/recordHistory']
+{"$ref": "#/definitions/ExternalAgentConfigImportHistoryRecordParams"}
+
+===== ['externalAgentConfig/import/readHistories']
+{"type": "null"}
+
+===== ['config/value/write']
+{"$ref": "#/definitions/ConfigValueWriteParams"}
+
+===== ['config/batchWrite']
+{"$ref": "#/definitions/ConfigBatchWriteParams"}
+
+===== ['configRequirements/read']
+{"type": "null"}
+
+===== ['account/read']
+{"$ref": "#/definitions/GetAccountParams"}
+
+===== ['fuzzyFileSearch']
+{"$ref": "#/definitions/FuzzyFileSearchParams"}
+

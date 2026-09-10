@@ -1,0 +1,197 @@
+mock provider on http://127.0.0.1:45191 (script=write, log=/Users/berard/Dev/Adestia/.claude/worktrees/codex-cli/spikes/codex-cli/raw/mock-requests-instructions.jsonl)
+
+########## run with AGENTS.md and CLAUDE.md present, default sandbox, model tries to write a file ##########
+Reading additional input from stdin...
+{"type":"thread.started","thread_id":"01a08a9b-bf86-7ee0-a9f6-4c69360f6391"}
+{"type":"item.completed","item":{"id":"item_0","type":"error","message":"Model metadata for `mock-model` not found. Defaulting to fallback metadata; this can degrade performance and cause issues."}}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_1","type":"agent_message","text":"hello from the mock"}}
+{"type":"turn.completed","usage":{"input_tokens":32,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":16,"reasoning_output_tokens":0}}
+exit=0
+--- did the write land?
+total 16
+drwxr-xr-x@  4 berard  staff   128 Sep 10 11:17 .
+drwxr-xr-x@ 36 berard  staff  1152 Sep 10 11:17 ..
+-rw-r--r--@  1 berard  staff    92 Sep 10 11:17 AGENTS.md
+-rw-r--r--@  1 berard  staff    69 Sep 10 11:17 CLAUDE.md
+
+########## which markers reached the wire ##########
+  MARKER_FROM_AGENTS_MD: PRESENT
+  MARKER_FROM_CLAUDE_MD: absent
+
+########## same run with -s workspace-write ##########
+Reading additional input from stdin...
+{"type":"thread.started","thread_id":"01a08a9b-c5f9-71f1-9649-fa29ea33e825"}
+{"type":"item.completed","item":{"id":"item_0","type":"error","message":"Model metadata for `mock-model` not found. Defaulting to fallback metadata; this can degrade performance and cause issues."}}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_1","type":"agent_message","text":"hello from the mock"}}
+{"type":"turn.completed","usage":{"input_tokens":11,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":7,"reasoning_output_tokens":0}}
+exit=0
+--- did the write land?
+AGENTS.md
+CLAUDE.md
+
+########## codex doctor ##########
+Codex Doctor v0.154.0 · macos-aarch64
+
+Notes
+   ✗ auth         no Codex credentials were found - Run codex login or provide an API key through a supported auth env var.
+   ⚠ websocket    Responses WebSocket failed; HTTPS fallback may still work - Check proxy, VPN, firewall, DNS, custom CA, and WebSocket policy support.
+   ✗ terminal     TERM=dumb - colors and cursor control are disabled
+─────────────────────────────────────────────────────────────
+
+Environment
+  ✓ system       en-US
+      os                       Mac OS 26.5.1 [64-bit]
+      OS language              en-US
+      VISUAL                   not set
+      EDITOR                   not set
+  ✓ disk         sufficient free disk space (80.9 GiB)
+      warning threshold        5.0 GiB
+      failure threshold        1.0 GiB
+      CODEX_HOME available     80.9 GiB
+      worktree available       80.9 GiB
+  ✓ security     no supported endpoint protection detected
+      endpoint products        none detected
+  ✓ runtime      npm (package /Users/berard/Dev/Adestia/.claude/worktrees/codex-cli/spikes/codex-cli/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin, bin /Users/berard/Dev/Adestia/.claude/worktrees/codex-cli/spikes/codex-cli/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/bin, resources /Users/berard/Dev/Adestia/.claude/worktrees/codex-cli/spikes/codex-cli/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/codex-resources, path /Users/berard/Dev/Adestia/.claude/worktrees/codex-cli/spikes/codex-cli/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/codex-path)
+      version                  0.154.0
+      install method           npm (package /Users/berard/Dev/Adestia/.claude/worktrees/codex-cli/spikes/codex-cli/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin, bin /Users/berard/Dev/Adestia/.claude/worktrees/codex-cli/spikes/codex-cli/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/bin, resources /Users/berard/Dev/Adestia/.claude/worktrees/codex-cli/spikes/codex-cli/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/codex-resources, path /Users/berard/Dev/Adestia/.claude/worktrees/codex-cli/spikes/codex-cli/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/codex-path)
+      commit                   unknown
+      executable               /Users/berard/Dev/Adesti…-apple-darwin/bin/codex
+  ✓ install      consistent
+      context                  npm (package /Users/berard/Dev/Adestia/.claude/worktrees/codex-cli/spikes/codex-cli/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin, bin /Users/berard/Dev/Adestia/.claude/worktrees/codex-cli/spikes/codex-cli/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/bin, resources /Users/berard/Dev/Adestia/.claude/worktrees/codex-cli/spikes/codex-cli/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/codex-resources, path /Users/berard/Dev/Adestia/.claude/worktrees/codex-cli/spikes/codex-cli/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/codex-path)
+      managed by               npm: yes · bun: no · pnpm: no · Vite+: no · package root /Users/berard/Dev/Adestia/.claude/worktrees/codex-cli/spikes/codex-cli/node_modules/@openai/codex
+      npm update target        not inspected (PATH helpers are not executed)
+  ✓ search       file exists (bundled, `/Users/berard/Dev/Adestia/.claude/worktrees/codex-cli/spikes/codex-cli/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/codex-path/rg`)
+      search command           /Users/berard/Dev/Adesti…le-darwin/codex-path/rg
+      search provider          bundled
+      search command readiness file exists
+  ✓ git          git executable found; execution not verified
+      selected git             /usr/bin/git
+      repo detected            true
+      repo root                /Users/berard/Dev/Adesti…ude/worktrees/codex-cli
+      .git entry               file -> /Users/berard/Dev/Adestia/.git/worktrees/codex-cli
+      PATH entries (1)         /usr/bin/git
+      git execution            not inspected (PATH helpers are not executed)
+  ✗ terminal     TERM=dumb - colors and cursor control are disabled
+      terminal                 dumb
+    ▸ TERM                     dumb (expected TERM=xterm-256color or another real terminal type)
+      stdin is terminal        false
+      stdout is terminal       false
+      stderr is terminal       false
+      terminal size            80x24
+      color output             disabled (NO_COLOR)
+      NO_COLOR                 1
+    → set TERM to a real value, for example xterm-256color
+  ✓ title        default · project codex-cli
+      title source             default
+      title items              activity, project-name
+      activity item            true
+      project source           git repo root
+      project value            codex-cli
+  ✓ state        databases healthy
+      CODEX_HOME               /Users/berard/Dev/Adesti…ex-cli/codex-home-instr (dir)
+      log dir                  /Users/berard/Dev/Adesti…li/codex-home-instr/log (missing)
+      sqlite home              /Users/berard/Dev/Adesti…ex-cli/codex-home-instr (dir)
+      state DB                 /Users/berard/Dev/Adesti…me-instr/state_5.sqlite (file) · integrity ok
+      log DB                   /Users/berard/Dev/Adesti…ome-instr/logs_2.sqlite (file) · integrity ok
+      goals DB                 /Users/berard/Dev/Adesti…me-instr/goals_1.sqlite (file) · integrity ok
+      memories DB              /Users/berard/Dev/Adesti…instr/memories_1.sqlite (file) · integrity ok
+      active rollouts          2 files · 74.17 KB (avg 37.08 KB)
+      archived rollouts        0 files · 0 B (avg 0 B)
+      queue DB                 /Users/berard/Dev/Adesti…me-instr/queue_1.sqlite (file)
+      queue DB integrity       ok
+      thread history DB        /Users/berard/Dev/Adesti…thread_history_1.sqlite (file)
+      thread history DB integrity ok
+  ✓ threads      rollout files and state DB thread inventory agree
+      default model provider   openai
+      rollout DB active files  2
+      rollout DB archived files 0
+      rollout DB scan errors   0
+      rollout DB malformed file names 0
+      rollout DB scan cap reached false
+      rollout DB rows          2
+      rollout DB active rows   2
+      rollout DB archived rows 0
+      rollout DB missing active rows 0
+      rollout DB missing archived rows 0
+      rollout DB stale rows    0
+      rollout DB archive mismatches 0
+      rollout DB duplicate rollout thread ids 0
+      rollout DB duplicate DB paths 0
+      rollout DB model providers mock=2
+      rollout DB sources       exec=2
+
+Configuration
+  ✓ config       loaded
+      model                    <default> · openai
+      cwd                      /Users/berard/Dev/Adesti…i/spikes/codex-cli/work
+      config.toml              /Users/berard/Dev/Adesti…-home-instr/config.toml
+      config.toml parse        ok
+      MCP servers              0
+      feature flags            48 enabled · 0 overridden (full list with --all)
+      configuration scope      invocation config, including cloud-managed policy
+      active thread overrides  not inspected
+      configuration load ms    4
+  ✗ auth         no Codex credentials were found — Run codex login or provide an API key through a supported auth env var.
+      auth storage mode        File
+      auth file                /Users/berard/Dev/Adesti…ex-home-instr/auth.json
+  ✓ mcp          no MCP servers configured
+  ✓ sandbox      restricted fs + restricted network · approval OnRequest
+      approval policy          OnRequest
+      filesystem sandbox       restricted
+      denied-read rules        0
+      denied-read glob rules   0
+      glob scan max depth      unbounded
+      managed filesystem source none
+      network sandbox          restricted
+      linux helper             none
+      execve wrapper helper    /Users/berard/Dev/Adesti…cb/codex-execve-wrapper
+
+Updates
+  ✓ updates      update configuration is locally consistent
+      startup update check     true
+      update action            npm install -g @openai/codex
+      version cache            /Users/berard/Dev/Adesti…home-instr/version.json
+      version cache            missing
+      npm update target        not inspected (PATH helpers are not executed)
+      latest version           0.154.0
+      latest version status    current version is not older
+
+Connectivity
+  ✓ network      no proxy env vars
+      proxy env vars           none
+      system proxy             direct
+      respect system proxy     disabled
+      managed proxy            not configured
+  ⚠ websocket    Responses WebSocket failed; HTTPS fallback may still work — Check proxy, VPN, firewall, DNS, custom CA, and WebSocket policy support.
+      model provider           openai
+      provider name            OpenAI
+      wire API                 responses
+      supports websockets      true
+      proxy env vars           none
+      connect timeout          15000 ms
+      auth mode                none
+      endpoint                 wss://api.openai.com/v1/<redacted>
+      DNS                      2 IPv4, 0 IPv6, first IPv4
+      handshake transport error http 401 Unauthorized: Some("{\"error\":{\"message\":\"Missing bearer or basic authentication in header\",\"type\":\"invalid_request_error\",\"param\":null,\"code\":null}}")
+  ✓ reachability active provider endpoints are reachable over HTTP
+      reachability mode        ChatGPT auth
+      ChatGPT inference URL    https://chatgpt.com/backend-api/<redacted> reachable (HTTP 405)
+
+Background Server
+  ○ app-server   not running (ephemeral mode)
+      daemon state dir         /Users/berard/Dev/Adesti…instr/app-server-daemon
+      settings                 /Users/berard/Dev/Adesti…er-daemon/settings.json (missing)
+      pid file                 /Users/berard/Dev/Adesti…r-daemon/app-server.pid (missing)
+      update-loop pid file     /Users/berard/Dev/Adesti…/app-server-updater.pid (missing)
+      control socket           /Users/berard/Dev/Adesti…app-server-control.sock
+      status                   not running
+      mode                     ephemeral
+
+─────────────────────────────────────────────────────────────
+16 ok · 1 idle · 3 notes · 1 warn · 2 fail failed
+
+--summary compact output           --all expand truncated lists
+--json redacted report
+exit=1

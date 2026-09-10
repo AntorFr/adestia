@@ -1,0 +1,143 @@
+
+########## mcp add --help ##########
+Usage: codex mcp add [OPTIONS] <NAME> (--url <URL> | -- <COMMAND>...)
+
+Arguments:
+  <NAME>
+          Name for the MCP server configuration
+
+  [COMMAND]...
+          Command to launch the MCP server. Use --url for a streamable HTTP server
+
+Options:
+  -c, --config <key=value>
+          Override a configuration value that would otherwise be loaded from `~/.codex/config.toml`.
+          Use a dotted path (`foo.bar.baz`) to override nested values. The `value` portion is parsed
+          as TOML. If it fails to parse as TOML, the raw string is used as a literal.
+          
+          Examples: - `-c model="o3"` - `-c 'sandbox_permissions=["disk-full-read-access"]'` - `-c
+          shell_environment_policy.inherit=all`
+
+      --env <KEY=VALUE>
+          Environment variables to set when launching the server. Only valid with stdio servers
+
+      --enable <FEATURE>
+          Enable a feature (repeatable). Equivalent to `-c features.<name>=true`
+
+      --url <URL>
+          URL for a streamable HTTP MCP server
+
+      --bearer-token-env-var <ENV_VAR>
+          Optional environment variable to read for a bearer token. Only valid with streamable HTTP
+          servers
+
+      --disable <FEATURE>
+          Disable a feature (repeatable). Equivalent to `-c features.<name>=false`
+
+      --oauth-client-id <CLIENT_ID>
+          Optional OAuth client identifier to use for this MCP server
+
+      --oauth-client-registration <AUTO|CIMD|DCR>
+          OAuth client-registration strategy for the immediate login only
+          
+          [possible values: auto, cimd, dcr]
+
+      --oauth-resource <RESOURCE>
+          Optional OAuth resource parameter to include during MCP login
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+########## mcp list (empty) ##########
+[]
+exit=0
+
+########## mcp add a stdio server ##########
+Added global MCP server 'testsrv'.
+exit=0
+
+########## mcp add an http server ##########
+Added global MCP server 'remotesrv'.
+MCP server may or may not require login. Run `codex mcp login remotesrv` to login.
+exit=0
+
+########## mcp list --json ##########
+[
+  {
+    "name": "remotesrv",
+    "enabled": true,
+    "disabled_reason": null,
+    "transport": {
+      "type": "streamable_http",
+      "url": "https://example.invalid/mcp",
+      "bearer_token_env_var": null,
+      "http_headers": null,
+      "env_http_headers": null,
+      "http_headers_helper": null
+    },
+    "startup_timeout_sec": null,
+    "tool_timeout_sec": null,
+    "auth_status": "unknown"
+  },
+  {
+    "name": "testsrv",
+    "enabled": true,
+    "disabled_reason": null,
+    "transport": {
+      "type": "stdio",
+      "command": "/bin/echo",
+      "args": [
+        "hello"
+      ],
+      "env": null,
+      "env_vars": [],
+      "cwd": null
+    },
+    "startup_timeout_sec": null,
+    "tool_timeout_sec": null,
+    "auth_status": "unsupported"
+  }
+]
+exit=0
+
+########## what landed on disk ##########
+config.toml
+mcp-oauth-locks
+tmp
+--- config.toml
+[mcp_servers.testsrv]
+command = "/bin/echo"
+args = ["hello"]
+
+[mcp_servers.remotesrv]
+url = "https://example.invalid/mcp"
+
+########## mcp get testsrv ##########
+{
+  "name": "testsrv",
+  "enabled": true,
+  "disabled_reason": null,
+  "transport": {
+    "type": "stdio",
+    "command": "/bin/echo",
+    "args": [
+      "hello"
+    ],
+    "env": null,
+    "env_vars": [],
+    "cwd": null
+  },
+  "enabled_tools": null,
+  "disabled_tools": null,
+  "startup_timeout_sec": null,
+  "tool_timeout_sec": null
+}
+exit=0
+
+########## mcp remove remotesrv ##########
+Removed global MCP server 'remotesrv'.
+exit=0
+--- config.toml after removal
+[mcp_servers.testsrv]
+command = "/bin/echo"
+args = ["hello"]

@@ -1,0 +1,10 @@
+# Local spike artifacts — do not commit heavy/generated state
+node_modules/
+isolated-home/
+codex-home*/
+work/
+work-*/
+
+# 4.2 MB of schema regenerated in one command:
+#   ./run.sh -- app-server generate-json-schema --out ../raw/app-server-schema
+raw/app-server-schema/

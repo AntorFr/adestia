@@ -1,0 +1,10 @@
+{
+  "name": "adestia-spike-codex-cli",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Spike 5 — what the OpenAI Codex CLI exposes headlessly (flags, JSON events, auth states, sessions, MCP, usage).",
+  "type": "module",
+  "dependencies": {
+    "@openai/codex": "0.154.0"
+  }
+}

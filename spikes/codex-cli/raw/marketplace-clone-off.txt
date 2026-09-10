@@ -1,0 +1,2 @@
+  --disable remote_plugin: clone = PRESENT
+  -c marketplaces=[]  : clone = absent

@@ -10,4 +10,5 @@ was proven, what broke, and what remains uncertain.
 | `editor/` | Which ProseMirror-based editor round-trips our markdown losslessly (frontmatter + typed blocks included)? **The product's spine.** |
 | `esm-runtime/` | Can plugin views load at runtime as ESM from a mounted folder — shared React via import map, manifest-listed CSS, lazy heavy chunks — with zero rebuild? |
 | `copilot-cli/` | What does the Copilot CLI binary actually expose headlessly (flags, JSONL, models, usage)? |
+| `codex-cli/` | Same question for the OpenAI Codex CLI — and it has two surfaces: `exec --json`, and an `app-server` JSON-RPC protocol that answers every capability including the approval round trip. |
 | (deferred) concurrency | Parallel turns vs Claude subscription limits — runs against real quota, needs an explicit go. |

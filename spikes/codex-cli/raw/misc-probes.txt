@@ -1,0 +1,45 @@
+mock provider on http://127.0.0.1:45193 (script=simple, log=/Users/berard/Dev/Adestia/.claude/worktrees/codex-cli/spikes/codex-cli/raw/mock-requests-misc.jsonl)
+
+########## does project_doc_fallback_filenames pick up CLAUDE.md? ##########
+  MARKER_FROM_CLAUDE_MD: PRESENT
+
+########## --ephemeral: are session files still written? ##########
+{"type":"item.completed","item":{"id":"item_1","type":"agent_message","text":"hello from the mock"}}
+{"type":"turn.completed","usage":{"input_tokens":11,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":7,"reasoning_output_tokens":0}}
+  rollout files: 0
+  files at the root of that CODEX_HOME:
+    goals_1.sqlite
+    goals_1.sqlite-shm
+    goals_1.sqlite-wal
+    installation_id
+    logs_2.sqlite
+    logs_2.sqlite-shm
+    logs_2.sqlite-wal
+    memories_1.sqlite
+    memories_1.sqlite-shm
+    memories_1.sqlite-wal
+    queue_1.sqlite
+    queue_1.sqlite-shm
+    queue_1.sqlite-wal
+    shell_snapshots
+    skills
+    state_5.sqlite
+    state_5.sqlite-shm
+    state_5.sqlite-wal
+    tmp
+
+########## was the plugin marketplace cloned again into a fresh CODEX_HOME? ##########
+  no clone in this home
+
+########## doctor --json (keys only) ##########
+  schemaVersion: int
+  generatedAt: str
+  overallStatus: str
+  codexVersion: str
+  checks: dict
+
+########## resident memory of one idle app-server ##########
+  PID    RSS COMM
+  pid 2711  36 MB  node
+    PID    RSS COMM
+  pid 2712  47 MB  codex

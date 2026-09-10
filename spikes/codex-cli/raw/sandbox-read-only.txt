@@ -1,0 +1,13 @@
+mock provider on http://127.0.0.1:45192 (script=write, log=/Users/berard/Dev/Adestia/.claude/worktrees/codex-cli/spikes/codex-cli/raw/mock-requests-sandbox-read-only.jsonl)
+########## sandbox = read-only ##########
+Reading additional input from stdin...
+{"type":"thread.started","thread_id":"01a08a9c-397c-7610-bcc8-382f40027f19"}
+{"type":"item.completed","item":{"id":"item_0","type":"error","message":"Model metadata for `mock-model` not found. Defaulting to fallback metadata; this can degrade performance and cause issues."}}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_1","type":"agent_message","text":"hello from the mock"}}
+{"type":"turn.completed","usage":{"input_tokens":32,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":16,"reasoning_output_tokens":0}}
+exit=0
+--- files in the workspace:
+--- what the model was told:
+2 model calls
+  "Chunk ID: b69b9f\nWall time: 0.0000 seconds\nProcess exited with code 1\nOriginal token count: 13\nOutput:\nzsh:1: operation not permitted: mock-wrote-this.txt\n"
