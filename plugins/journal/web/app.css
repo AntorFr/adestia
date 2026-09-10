@@ -244,6 +244,16 @@
   position: relative;
 }
 
+/* The ✎ is placed against the CARD, so it lands on the date's line. It was
+   landing 62px down instead — and 31px BELOW a 63px card, over the entry
+   after it — because the shell positions `.adestia-editor` for the drop
+   overlay, which made that the box it measured from. An embedded editor takes
+   no drop (`attach` is not threaded through `PageEditor`), so the overlay
+   never renders here and the box can go back to being static. */
+.journal-entry .adestia-editor {
+  position: static;
+}
+
 .journal-entry .adestia-editor__header {
   position: absolute;
   inset-block-start: var(--space-4);
