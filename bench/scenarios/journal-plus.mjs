@@ -57,7 +57,7 @@ export default async function scenario(bench) {
    * pas le document tel qu'il avait été chargé (l'autre défaut du même jour).
    */
   await neuve.locator('button:has-text("Terminé")').click()
-  await page.waitForTimeout(1800)
+  await page.waitForTimeout(2200)
   await bench.shoot(page, 'p3b-termine-sans-enregistrer')
   console.log(
     '[plus] ce que l’entrée montre une fois fermée :',
@@ -77,14 +77,17 @@ export default async function scenario(bench) {
   const noms = index.entries.map((e) => e.path).filter((p) => !p.endsWith('INDEX.md'))
   console.log('[plus] fichiers du journal :', JSON.stringify(noms))
 
-  // ── Renommer une entrée qui existait déjà ────────────────────────────────
+  // ── Renommer, depuis le champ titre de l'éditeur ────────────────────────
+  // Le titre est le frontmatter de la page, donc il vit DANS l'éditeur : une
+  // seule main écrit le fichier, et il reste modifiable pendant l'écriture.
   const ancienne = page.locator('.journal-entry').last()
-  await ancienne.locator('.journal-entry__title').click()
+  await ancienne.locator('button[title="Modifier"]').click()
+  await page.waitForSelector('.adestia-editor__surface .ProseMirror', { timeout: 15_000 })
+  await ancienne.locator('.adestia-editor__title').fill('Affûtage des ciseaux')
   await page.waitForTimeout(400)
-  await bench.shoot(page, 'p4-renommage')
-  await page.locator('.journal-entry__rename').fill('Affûtage des ciseaux')
-  await page.keyboard.press('Enter')
-  await page.waitForTimeout(1800)
+  await bench.shoot(page, 'p4-titre-en-ecriture')
+  await ancienne.locator('button:has-text("Terminé")').click()
+  await page.waitForTimeout(2200)
 
   const renommee = await bench.api('/api/pages/journal/atelier/2026-09-01-0800.md')
   console.log('[plus] renommée —')

@@ -157,29 +157,28 @@
   gap: var(--space-3);
 }
 
+/* An entry is a CARD, not a row. It used to be 8px of padding with the date
+   and the title fighting over one baseline, which is what made a page of them
+   read as a form rather than as a journal. */
 .journal-entry {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface-raised);
-  padding: var(--space-2) var(--space-3) var(--space-1);
-}
-
-.journal-entry__head {
+  box-shadow: var(--shadow);
+  padding: var(--space-5) var(--space-5) var(--space-4);
   display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: var(--space-1);
 }
 
+/* The date sits ABOVE the title, quiet and in the label voice — a stamp, not
+   a heading competing with the one beside it. */
 .journal-entry__when {
-  color: var(--text-muted);
-  font-size: var(--text-sm);
-  text-transform: capitalize;
-}
-
-.journal-entry__title {
-  margin: 0;
-  font-size: var(--text-base);
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
 }
 
 .journal-more {
@@ -193,9 +192,6 @@
   cursor: pointer;
 }
 
-/* The `+` that opens the naming field, in the journal's own header. Sized off
-   the heading beside it rather than fixed, so it stays a sibling of the title
-   at every text size. */
 .journal__head {
   display: flex;
   align-items: baseline;
@@ -203,47 +199,61 @@
   flex-wrap: wrap;
 }
 
+/* Writing is the point of the screen, so it gets a LINE at the top of the
+   list rather than a lone `+` parked in the header. Dashed, because it is an
+   invitation and not yet an entry. */
 .journal-add {
-  margin-inline-start: auto;
-  min-width: 2rem;
-  padding: var(--space-1) var(--space-2);
-  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-4) var(--space-5);
+  border: 1px dashed var(--border-strong);
   border-radius: var(--radius);
-  background: var(--surface-raised);
-  color: var(--text);
-  font-size: var(--text-lg);
-  line-height: 1;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  text-align: start;
   cursor: pointer;
 }
 
-.journal-add:hover { border-color: var(--accent); color: var(--accent); }
-
-/* An entry's title is a control until its editor takes the file — see the
-   `rename` comment in app.js. Drawn as the heading it replaces, so pressing it
-   is a discovery rather than a decoration. */
-.journal-entry__title--set,
-.journal-entry__title--none {
-  border: 0;
-  padding: 0;
-  background: none;
-  font: inherit;
-  color: inherit;
-  cursor: text;
-  text-align: start;
+.journal-add:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
-.journal-entry__title--none { color: var(--text-faint); font-style: italic; }
+.journal-add__plus {
+  color: var(--accent);
+  font-size: var(--text-lg);
+  line-height: 1;
+}
 
-.journal-entry__title--set:hover,
-.journal-entry__title--none:hover { text-decoration: underline dotted; }
+/* What the shell's editor draws that a JOURNAL does not need ---------------
+   Nothing here restyles the editor; it hides two pieces of its furniture that
+   are furniture only in this context. */
 
-.journal-entry__rename {
-  flex: 1 1 12rem;
-  min-width: 0;
-  padding: var(--space-1) var(--space-2);
-  border: 1px solid var(--accent);
-  border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
+/* Every entry in a journal is an `entree`. A chip saying so on every card is
+   a column of the same word down the page. */
+.journal-entry .adestia-editor__meta {
+  display: none;
+}
+
+/* The ✎ took a row of its own above the title, which is where the gap in the
+   card came from. It belongs beside the date, on the line already there. */
+.journal-entry {
+  position: relative;
+}
+
+.journal-entry .adestia-editor__header {
+  position: absolute;
+  inset-block-start: var(--space-4);
+  inset-inline-end: var(--space-5);
+  margin: 0;
+}
+
+/* The entry being written says so, without the plugin having to track it: the
+   editing surface only exists in writing posture, so the card can ask. */
+.journal-entry:has(.adestia-editor__surface) {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-lg);
 }
