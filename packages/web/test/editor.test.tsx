@@ -31,6 +31,18 @@ function jsonFetch(status: number, body: unknown): typeof fetch {
     } as unknown as Response)) as unknown as typeof fetch
 }
 
+/** Takes every save and keeps its body, so a test can say what was WRITTEN. */
+function recordingFetch(saves: { body: unknown }[]): typeof fetch {
+  return ((_url: string, init?: RequestInit) => {
+    if (init?.method === 'PUT') saves.push({ body: JSON.parse(String(init.body)) })
+    return Promise.resolve({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ revision: '2000-20', normalized: false }),
+    } as unknown as Response)
+  }) as unknown as typeof fetch
+}
+
 /** A mount that just reports edits, standing in for Milkdown. */
 const fakeMount =
   (edits: string[]) =>
@@ -154,18 +166,59 @@ describe('editor', () => {
     expect(container.querySelector('[data-mounted]')).toBeNull()
   })
 
-  it('abandoning an edit restores what was there', () => {
-    // A half-typed sentence must not survive as a "dirty" page waiting to be
-    // saved by accident.
-    const { container } = render(<Editor page={page} mount={fakeMount([])} />)
+  it('closing an edit SAVES it, because that is what the button is called', async () => {
+    /*
+     * Reported from use, an hour after shipping: "Terminé ne sauve pas, si tu
+     * cliques dessus et que tu n'as pas sauvé tu perds tes modifs." It threw
+     * the text away, silently, under a label that reads as "I have finished".
+     * Next to a `Save` that greys out when there is nothing to save, nothing
+     * on that strip said one of the two buttons was a bin.
+     */
+    const saves: { body: unknown }[] = []
+    const { container } = render(
+      <Editor page={page} mount={fakeMount([])} fetchImpl={recordingFetch(saves)} />,
+    )
     startEditing()
     const host = container.querySelector('[data-mounted]') as HTMLElement & {
       edit: (md: string) => void
     }
     act(() => host.edit('# Half a thought\n'))
     fireEvent.click(screen.getByText('Done'))
+
+    await waitFor(() => expect(saves).toHaveLength(1))
+    expect((saves[0]?.body as { markdown: string }).markdown).toBe('# Half a thought\n')
+    // And it did leave writing posture, once the server had it.
+    await waitFor(() => expect(container.querySelector('[data-mounted]')).toBeNull())
+  })
+
+  it('stays open when the server refuses, rather than closing over the refusal', async () => {
+    // A conflict is exactly the moment somebody needs their paragraph still on
+    // screen: the message tells them to reconcile with text they can no longer
+    // see if the editor has closed on them.
+    const { container } = render(
+      <Editor page={page} mount={fakeMount([])} fetchImpl={jsonFetch(409, {})} />,
+    )
     startEditing()
-    expect(screen.getByText('Save').closest('button')?.disabled).toBe(true)
+    const host = container.querySelector('[data-mounted]') as HTMLElement & {
+      edit: (md: string) => void
+    }
+    act(() => host.edit('# Mine\n'))
+    fireEvent.click(screen.getByText('Done'))
+
+    await screen.findByText(/The agent changed this page/)
+    expect(container.querySelector('[data-mounted]')).toBeTruthy()
+  })
+
+  it('closing a page nobody changed writes nothing', async () => {
+    const saves: { body: unknown }[] = []
+    const { container } = render(
+      <Editor page={page} mount={fakeMount([])} fetchImpl={recordingFetch(saves)} />,
+    )
+    startEditing()
+    fireEvent.click(screen.getByText('Done'))
+
+    await waitFor(() => expect(container.querySelector('[data-mounted]')).toBeNull())
+    expect(saves).toHaveLength(0)
   })
 
   it('keeps what was SAVED when the edit is closed', async () => {

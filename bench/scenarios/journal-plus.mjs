@@ -50,18 +50,15 @@ export default async function scenario(bench) {
     await neuve.locator('.ProseMirror .adestia-editor__meta').count(),
   )
   await page.waitForTimeout(400)
-  await neuve.locator('button:has-text("Enregistrer")').click()
-  await page.waitForTimeout(1500)
-
   /*
-   * Enregistrer PUIS fermer : le geste que tout le monde fait, et celui qui
-   * ramenait une entrée vide. « Terminé » remettait à l'écran le document tel
-   * qu'il avait été CHARGÉ — pour une entrée neuve, un frontmatter et rien
-   * d'autre. Le fichier était bon, l'écran non, jusqu'au rechargement.
+   * « Terminé » SANS passer par « Enregistrer » — le geste rapporté à l'usage.
+   * Le bouton abandonnait en silence sous un nom qui dit le contraire ; il
+   * enregistre puis ferme. Et ce qui reste à l'écran doit être le texte écrit,
+   * pas le document tel qu'il avait été chargé (l'autre défaut du même jour).
    */
   await neuve.locator('button:has-text("Terminé")').click()
-  await page.waitForTimeout(800)
-  await bench.shoot(page, 'p3b-apres-enregistrer-et-fermer')
+  await page.waitForTimeout(1800)
+  await bench.shoot(page, 'p3b-termine-sans-enregistrer')
   console.log(
     '[plus] ce que l’entrée montre une fois fermée :',
     JSON.stringify((await neuve.locator('.adestia-reader').innerText()).replace(/\s+/g, ' ').trim()),

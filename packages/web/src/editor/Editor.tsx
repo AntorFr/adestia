@@ -347,7 +347,7 @@ export function Editor({
     if (result.revision) {
       setRevision(result.revision)
       // The baseline moves with the file: what was just written is what
-      // `Done` must restore, and what `dirty` must be measured against.
+      // `Done` restores, and what `dirty` is measured against.
       setSaved(markdown)
     }
     setStatus(result.state)
@@ -355,7 +355,35 @@ export function Editor({
     // would replace what the person is still holding with what beat them to
     // the file.
     if (result.revision) onSaved?.(result.revision)
+    return result.state
   }, [fetchImpl, markdown, onSaved, page, revision])
+
+  /**
+   * Leaving writing posture — which SAVES.
+   *
+   * It used to abandon, and it was called `Done`. Reported from use within an
+   * hour of shipping: "Terminé ne sauve pas, si tu cliques dessus tu perds tes
+   * modifs". Exactly so, and the label was the whole defect — a control that
+   * throws work away must not wear the name of the one that keeps it, and
+   * next to a `Save` that greys out when there is nothing to save, `Done`
+   * reads as "I have finished", never as "discard".
+   *
+   * The page stays open when the server refuses. A conflict or a rejected
+   * vocabulary is precisely the moment somebody needs their text still on
+   * screen — closing on a 409 would throw away the paragraph the message is
+   * telling them to reconcile.
+   *
+   * There is no discard button now, and that is deliberate rather than
+   * overlooked: undo is in the editor, and a page nobody meant to change is a
+   * page whose `Save` was never enabled anyway.
+   */
+  const done = useCallback(async () => {
+    if (!dirty) {
+      setEditing(false)
+      return
+    }
+    if ((await save()).kind === 'saved') setEditing(false)
+  }, [dirty, save])
 
   return (
     <section
@@ -406,13 +434,8 @@ export function Editor({
               <button
                 type="button"
                 className="adestia-switch"
-                onClick={() => {
-                  // Abandoning restores the last text the server took — so a
-                  // half-typed sentence never survives, and a SAVED one is
-                  // never thrown away with it.
-                  setMarkdown(saved)
-                  setEditing(false)
-                }}
+                onClick={() => void done()}
+                disabled={status.kind === 'saving'}
               >
                 {t('Done')}
               </button>
