@@ -87,9 +87,16 @@ même, pas de la prose.
 ## Les sous-chantiers
 
 Chaque ligne dit ce que l'ENFANT dit de lui — son `:::content{type=etat}`,
-remonté par l'index, sans une requête par enfant :
+remonté par l'index, sans une requête par enfant. Et `type=chantier` écarte
+ce qui est simplement rangé là : la note de lecture et le jalon restent chez
+eux.
 
-:::list{depth=children pull=status,content:etat}
+:::list{depth=children type=chantier pull=status,content:etat}
+:::
+
+Sans le filtre, la position seule remonte tout ce qui est dans le dossier :
+
+:::list{depth=children pull=status}
 :::
 
 ## Les mêmes, en cartes

@@ -252,6 +252,24 @@ export const VOCABULARY: Readonly<Record<string, BlockSpec>> = {
       // for "which plugin draws this block" — one word cannot carry both.
       source: { values: ['children'], default: 'children' },
       depth: { values: ['self', 'children', 'subtree'], default: 'children' },
+      /**
+       * Which KIND of page to keep — the `type:` of the children, comma-separated
+       * for several. Free-valued, because page types belong to the user.
+       *
+       * `depth` says how far to look and this says what to keep, and the two
+       * are genuinely different questions: a worksite's folder holds its
+       * sub-worksites AND the loose notes filed beside them, so a list scoped
+       * by position alone mixes "Sortie mobile" with "Note de lecture".
+       *
+       * The same word as `content`'s, and that is right rather than a
+       * collision: `type` is this product's ONE word for "what kind of thing
+       * this is" — the field a page declares in its header, the values a
+       * manifest claims. What differs is only what it applies to, and no
+       * block is ambiguous about that: `content` has a subject of its own so
+       * its `type` describes itself, while `list` has none — every attribute
+       * it takes describes the pages it lists.
+       */
+      type: {},
       pull: {},
       sort: {},
       closed: { values: ['fold', 'hide', 'show'], default: 'fold' },

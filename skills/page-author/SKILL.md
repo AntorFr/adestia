@@ -465,6 +465,12 @@ written in the block:
   the row standing for it is that folder's index, not a page beside it. A rule
   that only looked at files would list a project's loose notes and miss every
   one of its sub-projects. `subtree` is everything below, at any depth.
+- **`type`** keeps only the children whose own `type:` matches, comma-separated
+  for several (`type=chantier,lot`). **`depth` says how far to look, `type`
+  says what to keep**, and you usually want both: a worksite's folder holds
+  its sub-worksites AND the loose notes filed beside them, so a list scoped by
+  position alone mixes "Sortie mobile" with "Note de lecture". Free-valued —
+  page types belong to you.
 - **`pull`** names what each row shows of its child, comma-separated, and
   there are TWO kinds:
   - a bare name is a **header field** — `status`, `due` — drawn as a chip;

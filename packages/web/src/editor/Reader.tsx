@@ -706,8 +706,15 @@ function ListBlock({ node, ctx }: { readonly node: Node; readonly ctx: Ctx }) {
     return <p className="adestia-block-note">Cette liste a besoin de l’index des pages.</p>
   }
 
+  // `depth` says how far to look; `type` says what to keep. Both are needed:
+  // a worksite's folder holds its sub-worksites AND the loose notes filed
+  // beside them, so a list scoped by position alone mixes the two.
+  const kinds = (attrs['type'] ?? '').split(',').map((one) => one.trim()).filter(Boolean)
   const rows = ctx.pages.filter(
-    (page) => page.path !== ctx.page?.path && under(page.path, base, depth),
+    (page) =>
+      page.path !== ctx.page?.path &&
+      under(page.path, base, depth) &&
+      (kinds.length === 0 || kinds.includes(String(page.fields['type'] ?? ''))),
   )
   const live = rows.filter((page) => !finished(page))
   const done = rows.filter((page) => finished(page))

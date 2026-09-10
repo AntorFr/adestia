@@ -21,12 +21,14 @@ import { Reader } from '../src/editor/Reader.js'
 const PAGES = [
   {
     path: 'chantiers/adestia/socle.md',
-    fields: { title: 'Socle de contenu', status: 'en cours' },
+    fields: { title: 'Socle de contenu', status: 'en cours', type: 'chantier' },
     blocks: { etat: 'Huit lots sur treize ; le parseur tient.', perimetre: 'Hors infra.' },
   },
-  { path: 'chantiers/adestia/editeur.md', fields: { title: 'Éditeur de blocs', status: 'en cours' } },
+  { path: 'chantiers/adestia/editeur.md', fields: { title: 'Éditeur de blocs', status: 'en cours', type: 'chantier' } },
   { path: 'chantiers/adestia/tours.md', fields: { title: 'Les tours', status: 'clos', ico: '🌀' } },
   { path: 'chantiers/adestia/profond/loin.md', fields: { title: 'Plus bas' } },
+  { path: 'chantiers/adestia/v1.md', fields: { title: 'v1.0', type: 'jalon' } },
+  { path: 'chantiers/adestia/note.md', fields: { title: 'Note de lecture' } },
   { path: 'chantiers/adestia/INDEX.md', fields: { title: 'Adestia' } },
 ]
 const HERE = 'chantiers/adestia/INDEX.md'
@@ -272,6 +274,29 @@ describe(':::list', () => {
       r.querySelector('.adestia-list__title')?.textContent?.startsWith('Éditeur'),
     )
     expect(row?.querySelector('.adestia-list__ico')?.textContent).toBe('◆')
+  })
+
+  it('garde le type demandé, et laisse le reste où il est', () => {
+    // `depth` dit jusqu'où regarder, `type` dit quoi garder — et les deux sont
+    // nécessaires : le dossier d'un chantier contient ses sous-chantiers ET
+    // les notes posées à côté. Sans ce filtre, la liste mélange les deux.
+    render(<Reader markdown={':::list{type=chantier}\n:::\n'} path={HERE} pages={PAGES} />)
+    expect(screen.getByText('Socle de contenu')).toBeTruthy()
+    expect(screen.queryByText('Note de lecture')).toBeNull()
+    expect(screen.queryByText('v1.0')).toBeNull()
+  })
+
+  it('en accepte plusieurs, séparés par des virgules', () => {
+    render(<Reader markdown={':::list{type=chantier,jalon}\n:::\n'} path={HERE} pages={PAGES} />)
+    expect(screen.getByText('Socle de contenu')).toBeTruthy()
+    expect(screen.getByText('v1.0')).toBeTruthy()
+    expect(screen.queryByText('Note de lecture')).toBeNull()
+  })
+
+  it('sans `type`, remonte tout ce que la position donne', () => {
+    render(<Reader markdown={':::list\n:::\n'} path={HERE} pages={PAGES} />)
+    expect(screen.getByText('Note de lecture')).toBeTruthy()
+    expect(screen.getByText('Socle de contenu')).toBeTruthy()
   })
 
   it('replie ce qui est clos plutôt que de le cacher', () => {
