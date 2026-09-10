@@ -146,8 +146,8 @@ const done = (async () => {
 
   const thread = await request('thread/start', {
     cwd: path.join(here, 'work'),
-    approvalPolicy: 'on-request',
-    sandbox: 'read-only',
+    approvalPolicy: (process.env.SPIKE_APPROVAL ?? 'on-request'),
+    sandbox: (process.env.SPIKE_SANDBOX ?? 'read-only'),
     model: 'mock-model',
     modelProvider: 'mock',
     config: {

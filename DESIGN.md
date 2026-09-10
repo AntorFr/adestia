@@ -242,6 +242,24 @@ on both engines without being rewritten.
   AI Credits billing API stays the only quota source (daily aggregates,
   separate billing-scope token) — never promise real-time. Discovered: `--acp`
   (Agent Client Protocol server) — candidate transport to evaluate vs JSONL.
+- `codex-cli` — verified hands-on (spike 5, binary 0.154.0 pinned; full facts in
+  `spikes/codex-cli/REPORT.md`), and built on `codex app-server` rather than
+  `codex exec`: the exec surface forces `approval policy = Never`, so the
+  engine's own questions have nowhere to go, while the protocol carries them as
+  requests the turn waits on. **One app-server process per turn**, resuming the
+  thread — codex starts its MCP servers once per THREAD, so a longer-lived one
+  would hand turn 2 a shell-tools token the socket has already revoked
+  (measured). Arming is a FILE (`auth.json` under a driver-owned `CODEX_HOME`;
+  `OPENAI_API_KEY` in the environment is ignored), by relayed device flow —
+  no pty, nothing to consent to — or by pasted key, which the CLI itself does
+  not validate, so the driver shape-checks it. First driver to enumerate its
+  models for real (`model/list`, filtered by entitlement) and the first to
+  declare `subscriptionQuotas`: two windows with a percentage and a reset time,
+  **pushed after every turn**. In `open` posture it runs the CLI with
+  `danger-full-access` and lets the container be the bound, as that posture
+  already says — which also sidesteps the one defect found: a command codex's
+  own sandbox refuses emits **no event at all**, so a trace under a sandbox
+  cannot be trusted to show what was refused. That cost is confined to `ask`.
 
 ## MCP configuration
 

@@ -79,7 +79,7 @@ describe('configuration loading', () => {
     // indefensible: they would debug the wrong engine.
     await writeFile(join(root, 'other.yaml'), 'driver:\n  id: gemini-cli\nport: 0\n')
     await expect(start({ cwd: root, configPath: 'other.yaml' })).rejects.toThrow(
-      /is not available in this build \(have: claude-code, copilot-cli\)/,
+      /is not available in this build \(have: claude-code, copilot-cli, codex-cli\)/,
     )
   })
 
@@ -92,6 +92,27 @@ describe('configuration loading', () => {
     const instance = (await started.app.inject({ url: '/api/instance' })).json()
     expect(instance.driver.label).toBe('GitHub Copilot CLI')
     expect(instance.driver.capabilities).toContain('authManagement')
+  })
+
+  it('starts on the codex driver without needing its binary present', async () => {
+    await writeFile(join(root, 'codex.yaml'), 'driver:\n  id: codex-cli\nport: 0\n')
+    started = await start({ cwd: root, configPath: 'codex.yaml', log: () => undefined })
+    const instance = (await started.app.inject({ url: '/api/instance' })).json()
+    expect(instance.driver.label).toBe('Codex CLI')
+    // The one engine of the three that enumerates its own models and reports
+    // real subscription windows.
+    expect(instance.driver.capabilities).toEqual(
+      expect.arrayContaining(['authManagement', 'modelSelection', 'subscriptionQuotas', 'liveTurnUsage']),
+    )
+  })
+
+  it('refuses to boot in `ask` posture only on an engine that cannot ask', async () => {
+    // Copilot has no return channel in programmatic mode; codex does, so the
+    // same config that is refused there must be accepted here.
+    await writeFile(root + '/ask-codex.yaml', 'driver:\n  id: codex-cli\npermissions:\n  mode: ask\nport: 0\n')
+    started = await start({ cwd: root, configPath: 'ask-codex.yaml', log: () => undefined })
+    const instance = (await started.app.inject({ url: '/api/instance' })).json()
+    expect(instance.driver.capabilities).toContain('interactivePermissions')
   })
 })
 

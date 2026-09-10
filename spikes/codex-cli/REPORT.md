@@ -9,6 +9,12 @@ data. What is committed is this report, with those redacted.
 
 Everything below is labeled **[EXECUTED]** (proven by running the binary — raw output in `raw/`) or **[HELP-TEXT]** (stated by the CLI's own help or its generated protocol schema; existence is proven, behavior is not).
 
+> **Since written, the driver exists.** `packages/drivers/src/codex-cli/` was
+> built on the findings below and ships behind the capability contract; this
+> report stays as the record of what was measured and why the driver is shaped
+> the way it is. Where a section speaks in the conditional ("a driver would…"),
+> read it as the design note it became.
+
 **The headline:** `codex exec --json` is the poorer of two surfaces. `codex app-server`, a
 JSON-RPC protocol with a *generated schema*, answers every capability in the Adestia
 driver contract — including `interactivePermissions`, which `exec` structurally cannot
