@@ -84,7 +84,15 @@ même, pas de la prose.
 - BA: Machine Truc
 :::
 
-## Les sous-chantiers, en cartes
+## Les sous-chantiers
+
+Chaque ligne dit ce que l'ENFANT dit de lui — son `:::content{type=etat}`,
+remonté par l'index, sans une requête par enfant :
+
+:::list{depth=children pull=status,content:etat}
+:::
+
+## Les mêmes, en cartes
 
 :::list{depth=children view=cards pull=status}
 :::
@@ -114,6 +122,10 @@ due: 2026-08-20
 ---
 
 # Socle de contenu
+
+:::content{type=etat}
+Livré et tagué. Sept rendus dans le cœur, la résolution enseignée.
+:::
 MD
 
 cat >"$w/memory/chantiers/adestia/editeur/INDEX.md" <<'MD'
@@ -126,6 +138,11 @@ due: 2026-09-30
 ---
 
 # Éditeur de blocs
+
+:::content{type=etat}
+Le vocabulaire est fermé et validé ; reste le round-trip des attributs sur
+plusieurs lignes.
+:::
 MD
 
 cat >"$w/memory/chantiers/adestia/permissions/INDEX.md" <<'MD'
@@ -150,6 +167,10 @@ due: 2026-08-31
 ---
 
 # Sortie mobile
+
+:::content{type=etat}
+En veille : rien ne bouge tant que la v1.0 n'est pas sortie.
+:::
 MD
 
 cat >"$w/memory/chantiers/adestia/v1.md" <<'MD'

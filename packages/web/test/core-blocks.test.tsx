@@ -19,7 +19,11 @@ import { forgetContributedBlocks, registerBlocks, validateDocument, parse } from
 import { Reader } from '../src/editor/Reader.js'
 
 const PAGES = [
-  { path: 'chantiers/adestia/socle.md', fields: { title: 'Socle de contenu', status: 'en cours' } },
+  {
+    path: 'chantiers/adestia/socle.md',
+    fields: { title: 'Socle de contenu', status: 'en cours' },
+    blocks: { etat: 'Huit lots sur treize ; le parseur tient.', perimetre: 'Hors infra.' },
+  },
   { path: 'chantiers/adestia/editeur.md', fields: { title: 'Éditeur de blocs', status: 'en cours' } },
   { path: 'chantiers/adestia/tours.md', fields: { title: 'Les tours', status: 'clos' } },
   { path: 'chantiers/adestia/profond/loin.md', fields: { title: 'Plus bas' } },
@@ -205,6 +209,38 @@ describe(':::list', () => {
     )
     expect(container.querySelector('.adestia-list--cards')).toBeTruthy()
     expect(screen.getByText('Socle de contenu')).toBeTruthy()
+  })
+
+  it('remonte ce que l’enfant DIT de lui, avec `pull=content:etat`', () => {
+    // La question à laquelle l'entête ne savait pas répondre : « où en est
+    // chaque sous-chantier » est écrit dans le CORPS de l'enfant. L'index en
+    // publie un digest borné, donc la ligne le montre sans une requête par
+    // enfant.
+    render(
+      <Reader markdown={':::list{pull=content:etat}\n:::\n'} path={HERE} pages={PAGES} />,
+    )
+    expect(screen.getByText('Huit lots sur treize ; le parseur tient.')).toBeTruthy()
+  })
+
+  it('met la phrase SOUS le titre, jamais dans une puce', () => {
+    // Une puce est faite pour un statut ou une date ; un paragraphe qu'on y
+    // comprime est un paragraphe que personne ne lit.
+    const { container } = render(
+      <Reader markdown={':::list{pull=status,content:etat}\n:::\n'} path={HERE} pages={PAGES} />,
+    )
+    const said = container.querySelector('.adestia-list__said')
+    expect(said?.textContent).toBe('Huit lots sur treize ; le parseur tient.')
+    // `status` reste une puce : deux sortes de remontée, deux dessins.
+    const chips = [...container.querySelectorAll('.adestia-tag')].map((c) => c.textContent)
+    expect(chips).toContain('en cours')
+    expect(chips).not.toContain('Huit lots sur treize ; le parseur tient.')
+  })
+
+  it('ne montre rien quand l’enfant ne porte pas ce bloc', () => {
+    const { container } = render(
+      <Reader markdown={':::list{pull=content:absent}\n:::\n'} path={HERE} pages={PAGES} />,
+    )
+    expect(container.querySelector('.adestia-list__said')).toBeNull()
   })
 
   it('replie ce qui est clos plutôt que de le cacher', () => {

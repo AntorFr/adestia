@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { parse } from '../src/pipeline.js'
+import { contentDigest, parse } from '../src/pipeline.js'
 import { isEditable, validateDocument } from '../src/validate.js'
 import {
   VOCABULARY,
@@ -139,5 +139,40 @@ describe('editability gate', () => {
     // Verdict decision: never a hard refusal (loses the file), never a silent
     // rewrite (loses the content) — read-only plus a diagnostic.
     expect(isEditable(check(':::mystery\nx\n:::\n'))).toBe(false)
+  })
+})
+
+describe('le digest des blocs rédigés', () => {
+  it('rend ce que chaque `:::content` dit, par son sujet', () => {
+    const page = [
+      '---', 'title: Socle', '---', '',
+      ':::content{type=etat}', 'Huit lots sur treize.', ':::', '',
+      ':::content{type=perimetre}', 'Hors infra.', ':::', '',
+    ].join('\n')
+    expect(contentDigest(page)).toEqual({ etat: 'Huit lots sur treize.', perimetre: 'Hors infra.' })
+  })
+
+  it('borne le texte, parce qu’il voyage dans la liste de TOUTES les pages', () => {
+    const long = 'mot '.repeat(200)
+    const digest = contentDigest(`:::content{type=etat}\n${long}\n:::\n`, 40)
+    expect(digest['etat']?.length).toBeLessThanOrEqual(41)
+    expect(digest['etat']?.endsWith('…')).toBe(true)
+  })
+
+  it('garde le PREMIER quand une page en porte deux du même sujet', () => {
+    const page = ':::content{type=etat}\nUn.\n:::\n\n:::content{type=etat}\nDeux.\n:::\n'
+    expect(contentDigest(page)).toEqual({ etat: 'Un.' })
+  })
+
+  it('ignore un bloc sans sujet, et une page qui n’en porte aucun', () => {
+    expect(contentDigest(':::content\nSans sujet.\n:::\n')).toEqual({})
+    expect(contentDigest('# Titre\n\nDe la prose.\n')).toEqual({})
+  })
+
+  it('aplatit ce qui est écrit dedans, liens et gras compris', () => {
+    const page = ':::content{type=etat}\nUn **lot** et [un lien](x.md).\n:::\n'
+    // Et la ponctuation reste collée : une phrase est un seul flot de texte,
+    // pas une liste de morceaux à séparer.
+    expect(contentDigest(page)['etat']).toBe('Un lot et un lien.')
   })
 })

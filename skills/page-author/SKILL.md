@@ -465,11 +465,15 @@ written in the block:
   the row standing for it is that folder's index, not a page beside it. A rule
   that only looked at files would list a project's loose notes and miss every
   one of its sub-projects. `subtree` is everything below, at any depth.
-- **`pull`** names HEADER fields to show on each row, comma-separated. Header
-  fields only, and that is not an oversight: the index publishes every page's
-  frontmatter and pays nothing for it, while the BODY of a child — a `content`
-  block, say — is not published at all. Asking for one would be a request per
-  child.
+- **`pull`** names what each row shows of its child, comma-separated, and
+  there are TWO kinds:
+  - a bare name is a **header field** — `status`, `due` — drawn as a chip;
+  - `content:<type>` is what the child's own **`:::content{type=…}` block
+    says — `pull=content:etat` puts each sub-worksite's state under its title,
+    as a sentence. The index publishes a bounded digest of those blocks, so
+    this costs no request per child; it is a SUMMARY, truncated, never the
+    page. Only `content` blocks are digested — a table or a timeline is not
+    a sentence, and a row is not the place to redraw one.
 - **`closed`** decides what happens to what is over: `fold` (the default) puts
   it behind a summary, `hide` drops it, `show` mixes it in. Folded rather than
   hidden because a finished thing is exactly what somebody opens to see how the

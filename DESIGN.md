@@ -1027,6 +1027,29 @@ is the honest one — it comes from the data, not from the name.
 belongs to `source=files`, which nothing answers yet. Declaring a value that
 draws nothing is the mistake `table{type=risques}` already cost.
 
+### The index publishes what a page's written blocks SAY (decided 2026-09-10)
+
+`/api/pages/index` gains `blocks` — for each `:::content{type=…}` a page
+carries, a bounded digest of its text, keyed by that type. `:::list` reads it
+through `pull=content:etat`, and draws it as the row's description rather than
+as a chip.
+
+Reported from use: a band of sub-worksites showed a title and a status, and
+the question actually being asked was "where is each one" — which is written
+in the child's BODY. Until now `pull` could reach only the header, and the
+letter's open question was the cost: N requests from the client, or a field in
+the index. **Recommendation 1, the index**, and the deciding fact is that the
+route already reads every file from disk. The expensive half was paid; what is
+added is a parse, guarded on a substring so the pages carrying no such block
+cost one `includes`.
+
+Bounded is the whole design, not a precaution. This rides in a listing of
+every page in the instance, so a digest that carried whole bodies would turn
+one screen into a corpus download. It is truncated, first-occurrence-wins, and
+`content` only: a table or a timeline is not a sentence, and a row is not the
+place to redraw one. Whoever wants the rest opens the page — which the row
+already does.
+
 ### `w` is the core's, because a block cannot see its neighbour (decided 2026-09-08)
 
 Reported from use: `:::checklist` had no way to be narrowed. The gap was real

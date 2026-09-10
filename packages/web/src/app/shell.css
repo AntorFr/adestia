@@ -2754,6 +2754,16 @@ h2.adestia-editor__title { padding-bottom: 3px; }
 }
 .adestia-list__row:hover { background: var(--accent-quiet); }
 .adestia-list__title { flex: 1; min-width: 0; font-weight: 600; font-size: 0.95em; }
+/* What the child SAYS of itself, pulled from its own `:::content` block. A
+   sentence, so it sits under the title rather than in a chip beside it. */
+.adestia-list__said {
+  display: block;
+  margin-top: 2px;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 0.92em;
+  color: var(--text-muted);
+}
 .adestia-list__pulled { display: flex; gap: 5px; flex-wrap: wrap; }
 .adestia-list__fold { background: var(--surface-raised); }
 .adestia-list__fold > summary {

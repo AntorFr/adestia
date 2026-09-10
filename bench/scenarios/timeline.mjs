@@ -20,13 +20,14 @@
  */
 export default async function scenario(bench) {
   for (const theme of ['light', 'dark']) {
-    const page = await bench.open({ theme, height: 2300 })
+    const page = await bench.open({ theme, height: 2600 })
     await page.evaluate(() => {
       location.hash = '/page/chantiers/adestia/INDEX.md'
     })
     await page.waitForSelector('text=Cadrage', { timeout: 15_000 })
     await page.waitForTimeout(600)
     await page.waitForSelector('.adestia-content--cards', { timeout: 15_000 })
+    await page.waitForSelector('.adestia-list__said', { timeout: 15_000 })
     await page.waitForSelector('.adestia-chip__plate', { timeout: 15_000 })
     await page.waitForSelector('.adestia-list--cards', { timeout: 15_000 })
     await bench.shoot(page, `1-le-planning-${theme}`)

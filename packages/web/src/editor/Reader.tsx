@@ -819,9 +819,19 @@ function Row({
   readonly view: string
   readonly ctx: Ctx
 }) {
+  // Two kinds of pull, and they draw differently because they ARE different.
+  // A bare name is a HEADER field — a status, a date — and reads as a chip.
+  // `content:etat` is a written BLOCK of the child, digested by the index,
+  // and it is a sentence: it reads as the row's description, under the title,
+  // because a paragraph squeezed into a chip is a paragraph nobody reads.
   const pulled = pull
+    .filter((name) => !name.startsWith('content:'))
     .map((name) => ({ name, value: page.fields[name] }))
     .filter((one) => one.value !== undefined && one.value !== '')
+  const said = pull
+    .filter((name) => name.startsWith('content:'))
+    .map((name) => page.blocks?.[name.slice('content:'.length)])
+    .find((text) => text !== undefined && text !== '')
   const title = titleOf(page)
   return (
     <button
@@ -834,7 +844,10 @@ function Row({
           {initials(title)}
         </i>
       )}
-      <span className="adestia-list__title">{title}</span>
+      <span className="adestia-list__title">
+        {title}
+        {said && <em className="adestia-list__said">{said}</em>}
+      </span>
       {pulled.length > 0 && (
         <span className="adestia-list__pulled">
           {pulled.map((one) => (
