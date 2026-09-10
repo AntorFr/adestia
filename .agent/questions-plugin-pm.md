@@ -1,12 +1,41 @@
 # Questions en vol — chantier plugin-pm
 
+## 5. Ouvrir un dossier : le seuil de « la page dit quelque chose »
+- **État : POSÉE, en attente.** Seul point non tranché de la spec ci-dessous.
+- Le champ `body` que l'index publie dit « il y a quelque chose sous l'entête »,
+  **titre compris** : s'en contenter ferait basculer en vue page tout dossier
+  dont l'index est un simple `# Voyages`, qui perdrait son étagère pour
+  afficher un titre et rien d'autre.
+- Reco : seuil = **autre chose qu'un titre seul**. Alternative proposée : un
+  champ explicite dans l'entête de l'index.
+- Réponse : —
+
+## 4b. Spec validée le 10/09 — à coder d'un bloc (les deux ensemble)
+Échelle de résolution à l'ouverture d'un dossier :
+1. dossier revendiqué par un plugin → l'écran du plugin ;
+2. sinon, sa page d'index dit quelque chose → cette page ;
+3. sinon → l'étagère, comme aujourd'hui.
+
+La revendication : `app: <id>` dans l'entête de l'index du dossier.
+- **niveau 0 seulement** (enfant direct de la racine mémoire), **héréditaire** ;
+- une déclaration plus profonde → **avis visible**, jamais un silence ;
+- un `app:` nommant un plugin absent/éteint → avis visible + étagère ;
+- une déclaration **bat** un nom : `absorbs` survit pour les plugins qui
+  possèdent leur mot, et `holds` devient inutile sur un dossier déclaré.
+- Risque « niveau 0 » **écarté par le propriétaire** : `domaines/voyages`
+  n'était pas une imbrication mais une racine mal placée, depuis corrigée.
+
+Quel fichier lire : **ne rien réinventer** — `INDEX.md` ou la page homonyme,
+la réponse que `sections.ts` porte déjà (sa première version, plus
+principielle, cachait douze dossiers d'un vrai corpus).
+
 ## 1. Fusion de `blocs-en-tete` (title=/ico= sur content)
 - **État : posée, en attente.** Posée une première fois à la fin du chantier,
   reposée à l'ouverture de celui-ci (09/09).
 - Reco donnée : fusionner et pousser sans tag ; le commit montera dans la
   prochaine version. Les deux chantiers sont indépendants (le plugin n'est que
   des fichiers neufs + une extension du contrat des blocs contribués).
-- Réponse : —
+- **Réponse : fusionné, tagué v0.53.0 et poussé le 10/09**, branche rebasée.
 
 ## 2. Portée requête de la timeline — CLOSE le 10/09, et mal ouverte
 - **État : close.** Elle n'aurait jamais dû être une question : je l'ai posée
