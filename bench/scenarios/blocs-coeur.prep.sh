@@ -29,7 +29,7 @@ status: en cours
 
 # Adestia v1
 
-:::content{type=synthese by=Antor on=2026-09-09}
+:::content{type=synthese title="Synthèse" ico=📋 by=Antor on=2026-09-09}
 Le produit tourne : chat streamé, mémoire composée de plusieurs magasins, huit
 plugins livrés. Restent deux lots avant de taguer la v1.0 — l'éditeur de blocs
 et le mode `ask`. Aucun des deux ne dépend d'un tiers.
@@ -45,7 +45,7 @@ et le mode `ask`. Aucun des deux ne dépend d'un tiers.
 :::list{depth=children pull=status w=2/3}
 :::
 
-:::content{type=perimetre w=1/3}
+:::content{type=perimetre title="Périmètre" w=1/3}
 Le socle de contenu et son shell. Hors infra, hors déploiement.
 :::
 

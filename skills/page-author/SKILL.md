@@ -381,9 +381,21 @@ nothing: no code, no manifest entry, no restart. It is required because a
 block that lost what it was about must be a visible refusal, not a paragraph
 that quietly forgot its subject. `by` and `on` are optional provenance.
 
-The title shown is the type, prettified — `perimetre` becomes "Perimetre". So
-**write the word you want read**, accents included, until an instance declares
-labels of its own.
+**`title=` and `ico=`** dress the header, on the same words a PAGE declares
+(`title:`, `ico:`) and the same ladder the tiles taught — the occurrence beats
+a configured label, which beats the prettified type:
+
+```markdown
+:::content{type=perimetre title="Périmètre du lot" ico=📐}
+Le socle de contenu et son shell, hors infra.
+:::
+```
+
+Without them the title is the type, prettified — `perimetre` becomes
+"Perimetre", accents lost. ⚠️ **`title=` does not replace `type=`.** The title
+is display; the SUBJECT is what queries, `pull=content:…` and configuration
+address. A block with a title and no type is refused — it has lost what it
+was about, however nice the heading.
 
 **`figures`** — numbers as tiles, read from a markdown list the file keeps
 readable:

@@ -137,6 +137,14 @@ export const VOCABULARY: Readonly<Record<string, BlockSpec>> = {
     description: 'A titled passage of prose. Its subject is `type`.',
     attributes: {
       type: { required: true },
+      /**
+       * Display, on the same ladder the tiles taught: the occurrence beats a
+       * configured label, which beats the prettified `type`. Neither replaces
+       * `type` — the SUBJECT is what queries, pulls and configs address, and
+       * it stays required with or without these two.
+       */
+      title: {},
+      ico: {},
       by: {},
       on: {},
     },

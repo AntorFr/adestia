@@ -534,11 +534,28 @@ function prettify(name: string): string {
  */
 function ContentBlock({ node, ctx }: { readonly node: Node; readonly ctx: Ctx }) {
   const subject = node.attributes?.['type'] ?? ''
+  // The page convention, one level down: `ico:` and `title:` are what a PAGE
+  // declares, so a block declares the same words. The title ladder is the
+  // tiles' — the occurrence beats a configured label (pm-config, when it
+  // exists), which beats the prettified type. `title=` fixes what the bench
+  // showed: « Perimetre », accents lost, because a slug was standing in for
+  // a word someone meant to read.
+  const title = node.attributes?.['title'] ?? (subject ? prettify(subject) : '')
+  const ico = node.attributes?.['ico']
   const by = node.attributes?.['by']
   const on = node.attributes?.['on']
   return (
     <section className="adestia-content">
-      {subject && <h3 className="adestia-content__title">{prettify(subject)}</h3>}
+      {title && (
+        <h3 className="adestia-content__title">
+          {ico && (
+            <span className="adestia-content__ico" aria-hidden="true">
+              {ico}{' '}
+            </span>
+          )}
+          {title}
+        </h3>
+      )}
       {(by || on) && (
         <p className="adestia-content__by">{[by, on].filter(Boolean).join(' · ')}</p>
       )}
