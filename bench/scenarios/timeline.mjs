@@ -34,6 +34,21 @@ export default async function scenario(bench) {
   }
 
   const page = await bench.open({ height: 1500 })
+  // Suivre un LIEN vers le dossier — le fil d'Ariane depuis un sous-chantier.
+  // C'est là que la règle joue : `chantiers/adestia` ne tient qu'une fiche de
+  // type `project-management`, donc le lien mène à cette fiche et non à
+  // l'étagère. (Taper `/section/…` à la main donne toujours l'étagère : la
+  // résolution est dans le lien, pas dans la route.)
+  await page.evaluate(() => {
+    location.hash = '/page/chantiers/adestia/editeur/INDEX.md'
+  })
+  await page.waitForSelector('.adestia-crumbs', { timeout: 15_000 })
+  await page.click('.adestia-crumbs a:has-text("Adestia v1"), .adestia-crumbs button:has-text("Adestia v1")')
+  await page.waitForTimeout(1200)
+  console.log('LE LIEN MÈNE À', await page.evaluate(() => location.hash))
+  await page.waitForSelector('text=Cadrage', { timeout: 15_000 })
+  await bench.shoot(page, '5-le-dossier-ouvre-sa-fiche')
+
   await page.evaluate(() => {
     location.hash = '/page/chantiers/adestia/INDEX.md'
   })

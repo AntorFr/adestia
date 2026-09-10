@@ -4,17 +4,43 @@
   "kind": "feature",
   "description": "Project phases and milestones: the `:::timeline` block draws bars and markers on a time axis — phases written in the block, or the consolidated planning of the pages below. A feature, not an app: a planning hangs off whichever page has a reason to carry one.",
   "contract": 1,
+  "types": [
+    "project-management"
+  ],
   "blocks": "./web/blocks.js",
-  "styles": ["./web/pm.css"],
-  "skills": ["./skills/project-management/SKILL.md"],
+  "styles": [
+    "./web/pm.css"
+  ],
+  "skills": [
+    "./skills/project-management/SKILL.md"
+  ],
   "vocabulary": {
     "timeline": {
       "content": "optional",
       "description": "Phases and milestones on a time axis — written as list lines in the block, or read from the start:/due: of the pages below.",
       "attributes": {
-        "scale": { "values": ["weeks", "months", "quarters"], "default": "months" },
-        "depth": { "values": ["self", "children", "subtree"], "default": "self" },
-        "source": { "values": ["children"], "default": "children" }
+        "scale": {
+          "values": [
+            "weeks",
+            "months",
+            "quarters"
+          ],
+          "default": "months"
+        },
+        "depth": {
+          "values": [
+            "self",
+            "children",
+            "subtree"
+          ],
+          "default": "self"
+        },
+        "source": {
+          "values": [
+            "children"
+          ],
+          "default": "children"
+        }
       }
     }
   }

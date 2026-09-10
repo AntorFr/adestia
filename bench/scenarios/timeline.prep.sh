@@ -15,6 +15,7 @@ mkdir -p "$w/memory/chantiers/adestia"
 cat >"$w/memory/chantiers/INDEX.md" <<'MD'
 ---
 title: Chantiers
+app: project-management
 ---
 
 # Chantiers
@@ -23,7 +24,7 @@ MD
 cat >"$w/memory/chantiers/adestia/INDEX.md" <<'MD'
 ---
 title: Adestia v1
-type: projet
+type: project-management
 status: en cours
 ---
 
