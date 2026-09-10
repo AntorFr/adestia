@@ -62,12 +62,26 @@ export default async function scenario(bench) {
   // `:::timeline{depth=subtree}`, and an empty container is exactly the shape
   // a serialiser drops. If the consolidated planning still draws after a
   // save, it survived the round trip.
-  await page.click('button:has-text("Enregistrer")')
+  //
+  // One button now, `Terminé`, and it saves only a DIRTY document — so the
+  // document has to be dirtied for the serialiser to run at all. Typing one
+  // word does it, and round-trips the whole page, body-less blocks included.
+  await page.click('.adestia-editor__surface .milkdown')
+  await page.keyboard.type(' Retouché.')
+  await page.waitForTimeout(300)
+  await page.click('button:has-text("Terminé")')
   await page.waitForTimeout(1500)
   await page.evaluate(() => {
     location.reload()
   })
   await page.waitForSelector('.adestia-list--cards', { timeout: 20_000 })
+  // Le mot tapé doit être là, sinon l'enregistrement n'a pas eu lieu et la
+  // photo ne prouverait rien. Et le bloc SANS CORPS doit avoir survécu au
+  // sérialiseur — c'est la seule chose que cette étape existe pour prouver,
+  // donc on l'affirme au lieu de la regarder : une barre du planning
+  // consolidé, qu'aucune timeline rédigée de cette page ne porte.
+  await page.waitForSelector('text=Retouché.', { timeout: 20_000 })
+  await page.waitForSelector('.pm-timeline__span:has-text("Socle de contenu")', { timeout: 20_000 })
   await page.waitForTimeout(800)
   await bench.shoot(page, '4-apres-enregistrement')
 }
