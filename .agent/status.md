@@ -1,5 +1,94 @@
 # Status — Adestia
-> MàJ : 2026-09-08
+> MàJ : 2026-09-10
+
+Chantier du 09–10/09 — **l'éditeur : ce qui l'ouvrait vide, ce qu'il
+n'offrait pas, et ce qu'un clic détruisait**. Remonté de l'usage, en une
+phrase : « je n'arrive pas à éditer une note déjà écrite, ça ouvre une
+section vide et le contenu reste en dessous ».
+
+La cause première — les quatre renderings du cœur (`content`, `figures`,
+`table`, `list`) sans nœud d'éditeur — a été corrigée en parallèle sur `main`
+(`39210e3`), et la collision `:::table` / la `table` de GFM avec elle. Ce
+chantier a livré l'autre moitié, celle qui explique pourquoi ça a coûté une
+journée d'usage avant d'être signalé : **`crepe.create()` rejetait dans le
+vide**. `void … .then()` sans `.catch`, donc surface vide, page toujours
+lisible dessous, rien à l'écran ni en console. Un rectangle vide ne se
+distingue pas d'un éditeur qui n'a pas fini de charger : la seule chose qu'on
+puisse en faire, c'est attendre. Le message s'écrit maintenant là où
+l'éditeur aurait dû être — et c'est lui qui a rendu la collision `table`
+lisible en une phrase au lieu d'une attente de quinze secondes.
+
+**Le vocabulaire cessait d'être une forme pour devenir un secret** : l'éditeur
+savait DESSINER tous les blocs et n'en proposait aucun. Écrire un callout
+supposait de savoir que `:::callout` existe. Le groupe « Blocs » du menu `/`
+est lu dans `editorBlocks()` — la liste dont `adestiaVocabulary` tire déjà ses
+nœuds, sortie et exportée plutôt que recopiée. Le filtre à la frappe est celui
+de Crepe, donc une liste longue reste lisible : c'est la réponse à « on ne va
+pas finir avec 200 boutons ». Un seul libellé est réécrit, `bloc-table`, parce
+que Crepe a son propre « Table » deux groupes plus haut et que deux entrées du
+même nom sont un tirage au sort à chaque insertion. Ce que le menu n'offre pas
+est la partie discutable : un bloc dont un attribut obligatoire n'a pas de
+défaut est un bloc que le serveur refusera d'enregistrer, sans moyen de le
+corriger sur la page qu'on regarde — donc `content` et `app` restent dehors
+jusqu'à ce que les attributs soient éditables.
+
+**Et le défaut que personne n'avait demandé, trouvé au banc** : cliquer sur les
+pastilles du frontmatter — dessinées en haut de CHAQUE page — et taper
+effaçait les premières lignes du fichier. Un atome ProseMirror prend une
+`NodeSelection`, et la frappe suivante la remplace. La page enregistrée
+n'avait plus ni `type`, ni `date`, ni titre : une entrée qui n'en était plus
+une, en markdown parfaitement valide, donc ni le validateur ni la garde 409
+ni l'écran n'avaient un mot à dire. Deux moitiés : le nœud n'est plus
+sélectionnable, et le paragraphe de fin de Milkdown garantit que le curseur a
+où aller — il ne tourne que sur transaction, jamais sur le document qu'on lui
+donne, d'où la transaction vide envoyée après `create()`, AVANT le listener
+pour qu'un paragraphe de structure ne s'annonce pas comme une modification.
+
+**Le journal écrit enfin dans l'éditeur.** Son formulaire de capture était un
+textarea nu — le seul écran du produit où écrire voulait dire écrire sans
+l'éditeur, donc sans blocs, sans menu `/`, sans wikilinks, sur la surface dont
+c'est le métier. La raison d'origine tient toujours (une page créée avant que
+quiconque ait tapé reste là, vide, et l'API pages écrit et lit mais ne
+supprime pas) : ce qui change est QUAND le fichier est écrit. Rien avant le
+`+` et sa confirmation, et l'appuyer est déjà la décision de garder l'entrée.
+Le titre reste, facultatif, et nomme le FICHIER —
+`le-gabarit-de-queues-droites.md` dit ce qu'il contient là où
+`2026-09-08-1730.md` ne dit que quand ; les deux orthographes cohabitent dans
+un dossier, parce que `date:` est toujours écrit et que le nom n'est relu que
+si ce champ manque. Le renommer ensuite est un champ de l'en-tête, offert
+seulement quand l'éditeur de cette entrée est FERMÉ : deux mains sur un
+fichier, c'est un 409 sur le paragraphe non enregistré de quelqu'un, et le
+perdant est celui qui a le plus tapé. D'où `onEditing` au contrat des
+plugins.
+
+**Vu au navigateur**, et deux fois payant : le banc a trouvé la collision
+`table` (le tableau markdown DANS le bloc n'avait plus de parseur) et la
+disparition du frontmatter, aucune des deux visible dans un test. Trois
+scénarios (`journal-edition`, `journal-blocs`, `journal-plus`), clair et
+sombre, avec relecture du FICHIER après enregistrement — un
+`:::table{type="Risques"}` et son tableau intacts après le renommage du nœud.
+
+Noté au passage, sans rapport avec ce chantier : **`npm run lint` ne tourne
+nulle part**. Le script appelle `eslint packages`, eslint n'est ni dans les
+dépendances ni configuré (aucun `eslint.config.*`), et ça précède le
+renommage Adestia.
+
+- [ ] **Éditer les attributs d'un bloc.** Ils sont portés par le nœud et
+      dessinés par rien, donc ni le `type` d'un `:::content` ni le `title:`
+      du frontmatter ne peuvent être posés depuis l'interface. C'est ce qui
+      garde `content` et `app` hors du menu `/`, ce qui a obligé le journal à
+      sortir son propre champ titre, et le trou dont ces deux-là ne sont que
+      les symptômes visibles. Petite aspérité du même bord : insérer un bloc
+      vide et enregistrer aussitôt écrit `<br />` dedans (le paragraphe vide
+      sérialisé) — il disparaît dès qu'on tape, et on pourrait semer un corps
+      de départ par bloc (un tableau à deux lignes pour `bloc-table`, une
+      liste pour `figures`).
+- [ ] **L'éditeur embarqué dans un plugin est amputé.** `PageEditor` ne
+      transmet ni `attach`/`compose` (donc aucun dépôt de fichier), ni le
+      bandeau de pièces jointes, ni `pages` (donc un `[[type#id]]` ne
+      retrouve pas sa page), ni les layouts. Le même document accepte tout ça
+      sur `#/page/…` et rien dans la fiche todo, le journal ou la veille.
+      Rien ne l'a décidé : les props n'ont jamais été passées.
 
 Chantier du 08/09 (3) — **`w` passe au cœur, parce qu'un bloc ne voit pas son
 voisin**. Remonté de l'usage : `:::checklist` n'avait aucun moyen d'être
