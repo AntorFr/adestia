@@ -25,7 +25,7 @@ One rendering, TWO provenances. `depth` chooses which:
 The body is a list, one line per entry, and the line IS the data:
 
 ```markdown
-:::timeline{scale=months}
+:::timeline
 - Cadrage: 2026-01-15 → 2026-03-01
 - Réalisation: 2026-03-01 → 2026-09-30
 - Recette: 2026-06-01
@@ -55,7 +55,7 @@ instead. Either write the lines, or use the consolidated form below; an empty
 ### Consolidated — `depth=children` or `depth=subtree`
 
 ```markdown
-:::timeline{depth=subtree source=children}
+:::timeline{depth=subtree}
 :::
 ```
 
@@ -82,7 +82,11 @@ a page carrying neither simply does not appear.
   that is not an ISO date) is named under the chart, never guessed at.
 
 `source` exists for the day a planning reads something other than the pages
-below; today `children` is its only value, and its default.
+below; today `children` is its only value, and its default — so do not write
+it. **Never write a default**: `:::timeline` alone is the written form, and
+`scale` only earns its place when the months are wrong for the span. An
+attribute written at its default reads as a decision to the next person, who
+then wonders what it was for.
 
 A timeline usually wants the full reading line: leave `w` alone.
 
