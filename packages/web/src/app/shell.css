@@ -1999,6 +1999,17 @@ h2.adestia-editor__title { padding-bottom: 3px; }
   background: var(--surface-sunken);
 }
 
+/* A block with no body is legitimate — it queries instead of holding text —
+   but an empty div is INVISIBLE, and the bench caught a whole consolidated
+   planning missing from the editor while the reader drew it. So it says its
+   own name: something is here, and deleting it is now a decision. */
+.adestia-block:empty::before {
+  content: ':::' attr(data-block);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
 .adestia-block--app {
   font-family: var(--font-mono);
   font-size: var(--text-sm);

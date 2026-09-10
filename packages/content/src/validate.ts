@@ -66,8 +66,12 @@ export function validateDocument(tree: Root): readonly Diagnostic[] {
     // body legal under the app's definition must not be an ERROR under the
     // core's — "a mismatch is a warning, never a locked page". It stays an
     // error only when every definition agrees the shape is wrong.
+    // `optional` is a definition that accepts both, so it settles the dispute
+    // the same way a second plugin's disagreement does — nothing to complain
+    // about in either direction.
     const shapes = shapesOf(name)
-    if (spec.content === 'empty' && hasContent(directive)) {
+    const both = shapes.has('optional')
+    if (spec.content === 'empty' && hasContent(directive) && !both) {
       const disputed = shapes.has('flow')
       diagnostics.push({
         severity: disputed ? 'warning' : 'error',
@@ -78,7 +82,7 @@ export function validateDocument(tree: Root): readonly Diagnostic[] {
           : `Block ":::${name}" takes no content — its attributes are its whole meaning.`,
       })
     }
-    if (spec.content === 'flow' && !hasContent(directive)) {
+    if (spec.content === 'flow' && !hasContent(directive) && !both) {
       const disputed = shapes.has('empty')
       diagnostics.push({
         severity: disputed ? 'warning' : 'error',

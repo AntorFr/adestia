@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest'
 
 import { parse } from '../src/pipeline.js'
 import { isEditable, validateDocument } from '../src/validate.js'
-import { VOCABULARY, isKnownBlock } from '../src/vocabulary.js'
+import {
+  VOCABULARY,
+  forgetContributedBlocks,
+  isKnownBlock,
+  registerBlocks,
+} from '../src/vocabulary.js'
 
 const check = (markdown: string) => validateDocument(parse(markdown))
 const messages = (markdown: string) => check(markdown).map((d) => d.message)
@@ -45,6 +50,36 @@ describe('block content rules', () => {
 
   it('refuses an empty block that needs content', () => {
     expect(messages(':::callout{type="note"}\n:::\n')).toEqual(['Block ":::callout" needs content.'])
+  })
+
+  it('says nothing either way about a block whose body is optional', () => {
+    // One rendering, two provenances: the planning written in the block and
+    // the one read from the pages below. Either shape would be an error
+    // under a single declaration, and both are legal here.
+    registerBlocks(
+      {
+        planning: {
+          content: 'optional',
+          description: 'Written or queried.',
+          attributes: { depth: { values: ['self', 'subtree'], default: 'self' } },
+        },
+      },
+      { plugin: 'demo', kind: 'feature' },
+    )
+    expect(check(':::planning\n- Cadrage: 2026-01-15 → 2026-03-01\n:::\n')).toEqual([])
+    expect(check(':::planning{depth=subtree}\n:::\n')).toEqual([])
+    forgetContributedBlocks()
+  })
+
+  it('lets an optional definition settle the shape for a name the core fixes', () => {
+    // The core says `app` is empty; a plugin that takes a body sometimes must
+    // not turn every page holding one into a locked page.
+    registerBlocks(
+      { app: { content: 'optional', description: 'Sometimes bodied.' } },
+      { plugin: 'demo', kind: 'app' },
+    )
+    expect(check(':::app{id="workbench"}\nstray body\n:::\n')).toEqual([])
+    forgetContributedBlocks()
   })
 })
 

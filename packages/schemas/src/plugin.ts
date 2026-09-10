@@ -69,8 +69,13 @@ export interface PluginBlockAttribute {
  * draws it. One declaration, two readers, nothing restated.
  */
 export interface PluginBlockSpec {
-  /** `flow` holds nested markdown, `empty` IS its attributes. */
-  readonly content: 'flow' | 'empty'
+  /**
+   * `flow` holds nested markdown, `empty` IS its attributes, `optional`
+   * takes a body when the body is its data and none when it queries for it
+   * — one rendering, two provenances (see `BlockContent` in the content
+   * engine, which holds the bar for reaching for the third).
+   */
+  readonly content: 'flow' | 'empty' | 'optional'
   readonly description: string
   readonly attributes?: Readonly<Record<string, PluginBlockAttribute>>
 }

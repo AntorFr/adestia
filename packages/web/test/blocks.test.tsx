@@ -197,6 +197,34 @@ describe('drawing one', () => {
     expect(seen['planning']).toEqual(['Cadrage: 2026-01-15 → 2026-03-01', 'Recette: 2026-06-01'])
     expect(seen['jeton']).toBeUndefined()
   })
+
+  it('gives an optional block its body when it has one, and nothing when it does not', () => {
+    // One rendering, two provenances — a planning written in the block and
+    // one read from the pages below. The SAME component draws both, so it is
+    // handed a body only when the occurrence carries one.
+    registerBlocks(
+      { planning: { content: 'optional', description: 'Written or queried.' } },
+      { plugin: 'demo', kind: 'feature' },
+    )
+    const seen: { items?: readonly string[]; body: boolean }[] = []
+    const Planning = ({ items, children }: BlockProps) => {
+      seen.push({ items, body: children !== undefined })
+      return <div />
+    }
+    render(
+      <Reader
+        markdown={':::planning\n- Cadrage: 2026-01-15 → 2026-03-01\n:::\n\n:::planning{depth=subtree}\n:::\n'}
+        path="x.md"
+        blocks={{ demo: { planning: Planning } }}
+      />,
+    )
+    expect(seen[0]?.items).toEqual(['Cadrage: 2026-01-15 → 2026-03-01'])
+    expect(seen[0]?.body).toBe(true)
+    // Body-less: no items to parse, and an empty fragment would be a body
+    // that is not there.
+    expect(seen[1]?.items).toEqual([])
+    expect(seen[1]?.body).toBe(true)
+  })
 })
 
 describe('when it cannot be drawn', () => {

@@ -17,6 +17,20 @@ export type BlockContent =
   | 'flow'
   /** No body at all — the block IS its attributes (an embedded app). */
   | 'empty'
+  /**
+   * A body when the body IS the data, none when the block queries for it.
+   *
+   * Not indecision: it is one rendering with two PROVENANCES, which is what
+   * a written planning and a consolidated one are — the same bars, read from
+   * the block or from the pages below. Declaring `flow` would lock the page
+   * that queries (a body it does not have), `empty` the page that writes
+   * (a body it must have), so the shape a name takes is decided by the
+   * occurrence's attributes, and the validator judges neither.
+   *
+   * The bar for using it: BOTH provenances draw the same thing. A name whose
+   * two forms draw differently is two renderings wearing one word.
+   */
+  | 'optional'
 
 export interface AttributeSpec {
   readonly required?: boolean

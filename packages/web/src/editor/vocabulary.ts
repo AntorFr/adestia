@@ -371,7 +371,12 @@ export function adestiaVocabulary(): MilkdownPlugin[] {
     // relaxing the validator would cause. A body-less block in a container
     // is merely empty; a body in an atom is gone.
     .map((spec) =>
-      shapesOf(spec.name).has('flow') ? containerNode(spec.name) : atomNode(spec.name),
+      // A body-carrying node whenever ANY definition takes one — `optional`
+      // included, whose body is present or not per occurrence. An atom node
+      // would eat the text of the occurrences that do carry it.
+      shapesOf(spec.name).has('flow') || shapesOf(spec.name).has('optional')
+        ? containerNode(spec.name)
+        : atomNode(spec.name),
     )
   return [
     grammarRemarks,

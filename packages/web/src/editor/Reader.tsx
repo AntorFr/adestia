@@ -835,7 +835,8 @@ function Contributed({
   const Block = claim ? ctx.blocks?.[claim.plugin]?.[name] : undefined
   // A `flow` block gets its body; an `empty` one is its attributes and
   // nothing else, so it is not handed an empty fragment to wonder about.
-  const flow = (claim?.spec ?? blockSpec(name))?.content === 'flow'
+  const shape = (claim?.spec ?? blockSpec(name))?.content
+  const flow = shape === 'flow' || shape === 'optional'
   const body = flow ? children(node, ctx) : undefined
 
   if (!Block) {

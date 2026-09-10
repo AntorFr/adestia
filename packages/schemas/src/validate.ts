@@ -189,8 +189,11 @@ export function parsePluginManifest(input: unknown, folderName: string): PluginM
           continue
         }
         checkString(spec, 'description', issues, true)
-        if (spec['content'] !== 'flow' && spec['content'] !== 'empty') {
-          issues.push({ field: `${field}.content`, message: 'must be "flow" or "empty"' })
+        if (!['flow', 'empty', 'optional'].includes(spec['content'] as string)) {
+          issues.push({
+            field: `${field}.content`,
+            message: 'must be "flow", "empty" or "optional"',
+          })
         }
         const attributes = spec['attributes']
         if (attributes !== undefined && !isObject(attributes)) {
