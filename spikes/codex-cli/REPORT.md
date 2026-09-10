@@ -735,7 +735,118 @@ fix or an upstream answer.
 Seven of nine — one more than Copilot, one fewer than Claude Code. The work is a driver
 of roughly the Copilot driver's size, plus a JSON-RPC client, minus a JSONL parser.
 
-## 13. Annex — artifacts (all under `spikes/codex-cli/`)
+## 13. Every function we have, against this engine
+
+§12 answered "does the driver contract fit". This one answers the wider question:
+of everything DESIGN.md lists as **built**, what would still work on codex, what needs
+work, and what would not work at all. Read against the source and measured where reading
+was not enough.
+
+### 13.1 Works as-is — nothing to write
+
+| Function | Why it holds |
+|---|---|
+| Runtime plugin loading, skins, the web bundle | driver-independent; grepped: no engine name anywhere in `packages/web/src` |
+| Inbound MCP (agent-to-agent delegation) | server-side, the driver is not involved |
+| The authority gate, the instruction zone, workspace files served | server-side |
+| Conversations per user, replayed faithfully | `thread/resume` restores the whole history — proven **across separate processes**: turn 3's request carried turns 1 and 2 with their answers |
+| Model selector in the composer | `model/list` (entitlement-filtered) + `turn/start.model`, per turn |
+| Live token counter | `thread/tokenUsage/updated`, pushed mid-turn |
+| Scheduled and delegated turns (`unattended`) | `approvalPolicy: never`; a question that cannot be asked is refused, which is the existing behaviour |
+| Chat attachments (images) | `-i/--image`, and `ImageUserInput` in the protocol |
+| Authoring skills / plugin agent-contracts as FILES | **measured**: codex reads workspace skills from `.codex/skills/` and `.agents/skills/` (planted five candidates, those two were picked up). So `skillsPath()` returns `.codex/skills` and the "same markdown, different folder" promise holds |
+| The `this-instance` contract | delivered as one more skill file, same path |
+| Interrupting a turn | `turn/interrupt` |
+
+### 13.2 Works, but the driver has to do something
+
+| Function | What is needed |
+|---|---|
+| **The instance's own tools** (rename a conversation, …) | one app-server process **per turn** + `thread/resume`, or the per-turn token goes stale on turn 2 (§12.2a). ~100 ms |
+| **Outbound MCP with per-turn / per-caller tokens** | the same fix, for the same reason: `signIn: oauth` servers and `identity: user` servers get their token at **thread** start, so a caller who signs in mid-conversation would not be seen, and a rebound token would outlive its turn. One process per turn fixes both |
+| **Credential arming from the interface** | the secret is a FILE, not an env var: `env()` writes `auth.json` 0600 into the driver's own home and returns `CODEX_HOME`. No contract change; one honest rename (§12.2b) |
+| **MCP health reporting** | `mcpServer/startupStatus/updated` for thread-scoped servers, `mcpServerStatus/list` for config-file ones. Both shapes map onto `McpServerHealth`; `authStatus: unsupported/unknown` needs mapping to `needs-auth` |
+| **Usage and quota surfaces** | the data is richer than what exists (two windows pushed per turn) — but DESIGN already lists these surfaces as declared-and-unconsumed. Codex does not fix that; it makes it more worth fixing |
+
+### 13.3 Works differently — worth a decision, not a fix
+
+**The tool trace changes shape.** Codex 0.154.0 offers the model **nine** tools, and only
+one of them touches files: `exec_command` (a PTY shell). There is no `Read`, no `Edit`, no
+`Grep`, no `Glob` — searching is `rg` in the shell, and editing is `apply_patch` piped into
+the shell (its own system prompt: *"Always use apply_patch for manual code edits"*). Claude
+gives Read/Edit/Grep; Copilot gives view/create/edit/grep/glob.
+
+Two consequences:
+
+- the trace a user reads becomes a list of shell lines rather than named file operations.
+  The contract allows it (`tool-use.name` and `target` are free strings) — it is a
+  legibility change, not a breakage;
+- **it makes §8 much worse than a corner case.** If every read, search and edit is a shell
+  command, and a shell command the sandbox refuses emits **no event**, then the invisible
+  failures are on the main path, not the margins.
+
+**The startup marketplace clone** (§2) cannot be switched off: an instance running codex
+fetches a third-party plugin catalogue over the network at boot. Egress policy is the only
+lever; someone has to decide that is acceptable.
+
+**~15 k tokens of preamble per turn** (§11.5). Fine on a subscription, a real cost metered.
+
+### 13.4 One thing gets BETTER — and it is the feature currently out of the MVP
+
+DESIGN.md takes the `ask` posture out of the MVP for a precise reason: the rule the engine
+proposes is the wrong size. On Claude, `Bash` yields a rule on the EXACT command
+(`Bash(ls -la /tmp)`), so every variation asks again; a composed command yields nothing at
+all. On Copilot the posture cannot exist.
+
+Codex proposes a **reusable prefix**. Measured: a command `git pull --ff-only` produced
+
+```json
+"proposedExecpolicyAmendment": ["git", "pull"]
+```
+
+on the approval request, answerable with `acceptWithExecpolicyAmendment`, persisted by the
+engine in the execpolicy `.rules` file a person can open. That is exactly the
+`Bash(ls:*)` granularity DESIGN says is missing — and it comes from the engine, so Adestia
+still judges nothing.
+
+**Honest limit:** the channel is proven, the *habit* is not. In this spike the prefix came
+from a mock model that was told to send one. Whether real models supply `prefix_rule`
+routinely, and how well the prefix is chosen, needs an authenticated turn that actually
+triggers an escalation. Until then this is a strong lead, not a delivered feature.
+
+### 13.5 The container trap, and it is worse than Copilot's
+
+Copilot dies loudly in a `node:22-slim` image with no system CA store
+(`/etc/ssl/certs` empty): *"Login failed: request failed: builder error"*, before any
+request leaves the machine. Codex, same image, same A/B:
+
+| | result |
+|---|---|
+| `node:22-slim`, no `ca-certificates` | `--version` fine, `login status` fine, and a turn **hangs — 13 minutes with no output, no error, no timeout**, until killed |
+| same image + `apt-get install ca-certificates` | the turn completes normally (the expected 401 storm, ~35 s) |
+
+So the image needs `ca-certificates` exactly as Copilot's does — but the symptom of
+forgetting it is a **wedged turn** rather than an error, which is far harder to diagnose
+and would hold one of the instance's turn slots forever. Any driver must pair the CA
+package with a timeout of its own.
+
+### 13.6 Not answerable from here
+
+| Question | Why it matters |
+|---|---|
+| **Memory under load** | `maxConcurrentTurns: 3` is memory-bound on Copilot (~300 MB/process, measured under load in spike 4). Codex idles at ~83 MB; under load, unmeasured. The cap for this engine is unknown |
+| **Token refresh ownership** (§12.2c) | if the CLI rewrites `auth.json` and the core writes the old one back at restart, the instance silently loses its login |
+| **`app-server` is `[experimental]`** | the whole driver would sit on it. `generate-json-schema` makes drift detectable, which is the mitigation, not the answer |
+
+### 13.7 The blocker, restated
+
+Everything above has a fix, a decision, or a measurement in front of it. §8 has none: a
+command the sandbox refuses produces no event at all, on both surfaces, with a real model,
+while the agent goes on to talk about the refusal. On an engine where **all file work is
+shell**, that is not a detail. It needs an upstream fix or an upstream answer before a
+`codex-cli` driver could be trusted to render what it did.
+
+## 14. Annex — artifacts (all under `spikes/codex-cli/`)
 
 | File | Content |
 |---|---|
@@ -746,6 +857,8 @@ of roughly the Copilot driver's size, plus a JSON-RPC client, minus a JSONL pars
 | `raw-auth/real-exec.txt`, `raw-auth/real-appserver.json` | the authenticated pass (§11) — **local only**, carries account data |
 | `raw/mcp-spawns.jsonl`, `raw/mcp-spawns-fresh.jsonl` | one MCP spawn per thread vs one per turn (§12.2a) |
 | `raw/marketplace-clone-off.txt` | the five switches tried against the startup clone |
+| `raw/container.txt` | the CA-store A/B in `node:22-slim` (§13.5) |
+| `probe-skills-path.mjs` | where codex reads workspace skills (§13.1) |
 | `raw/mock-responses-simple.txt`, `-toolcall.txt` | exec JSONL: plain turn, tool-call turn |
 | `raw/mock-responses-escalate-onrequest.txt` | exec forces `approval policy = Never` |
 | `raw/mock-chat-simple.txt` | `wire_api = "chat"` refused in 0.154.0 |
@@ -783,6 +896,8 @@ node probe-mcp-status.mjs                   # MCP health, servers injected per t
 node probe-mcp-per-turn.mjs                 # the stale-token break (§12.2a)
 node probe-fresh-per-turn.mjs               # one process per turn fixes it, and what it costs
 node probe-clone-off.mjs                    # the marketplace switches that do not work
+node probe-skills-path.mjs                  # which workspace folder holds skills
+./probe-container.sh                        # the CA-store trap (needs Docker)
 # §11 needs a real account — ./login-real.sh, then:
 #   ./probe-real-exec.sh && node probe-real-appserver.mjs && python3 summarise-real.py
 ./probe-sessions.sh ./probe-sandbox-write.sh read-only ./probe-misc.sh

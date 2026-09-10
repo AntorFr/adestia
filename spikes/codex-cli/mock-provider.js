@@ -82,7 +82,7 @@ function responses(body, res) {
     const name = tool?.name ?? 'exec_command'
     const argv =
       script === 'escalate'
-        ? { cmd: 'echo escalated-command-ran', sandbox_permissions: 'require_escalated', justification: 'The spike wants to see the approval event.' }
+        ? { cmd: 'git pull --ff-only', sandbox_permissions: 'require_escalated', justification: 'The spike wants to see the approval event.', prefix_rule: ['git', 'pull'] }
         : script === 'write'
           ? { cmd: 'echo written > mock-wrote-this.txt' }
           : { cmd: 'echo mock-tool-ran' }

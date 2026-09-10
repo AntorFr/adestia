@@ -100,7 +100,7 @@ function request(method, params) {
 /** Server->client requests we answer, and how. */
 function handle(msg) {
   if (msg.id !== undefined && msg.method) {
-    log('<< SERVER REQUEST', msg.method, JSON.stringify(msg.params).slice(0, 400))
+    log('<< SERVER REQUEST', msg.method, JSON.stringify(msg.params))
     // Vocabulary from CommandExecutionRequestApprovalResponse.json:
     // accept | acceptForSession | decline | cancel (+ two amendment shapes).
     const decision = deny ? 'decline' : 'accept'
