@@ -8,13 +8,22 @@
   des fichiers neufs + une extension du contrat des blocs contribués).
 - Réponse : —
 
-## 2. Lot 2 de la timeline — portée requête (`depth=children|subtree`)
-- **État : pas encore posée.** Sera présentée à la fin du lot 1.
-- Le filtre d'éligibilité de la lettre (« les types qui ont un workflow
-  déclaré ») exige `pm-config` (racines + workflows par type), qui reste à
-  concevoir — question ouverte nº 1 de la lettre.
-- Décision prise en attendant (annoncée, pas demandée) : lot 1 sans attribut
-  `depth` du tout — pas d'attribut déclaré qui ne dessine rien.
+## 2. Portée requête de la timeline — CLOSE le 10/09, et mal ouverte
+- **État : close.** Elle n'aurait jamais dû être une question : je l'ai posée
+  comme un blocage alors que c'était une décision de produit que j'ai prise
+  seul. L'index publiait déjà `fields`, la marche vers les enfants existait,
+  et « une page sans date ne dessine rien » suffit comme filtre.
+- Livré : `depth=children|subtree`, barres cliquables, clos / en retard /
+  échu. Le filtre fin (`pm-config`, les types qui ont un workflow) reste à
+  faire et la skill le DIT plutôt que de le taire.
+
+## 4. Rôles et contributeurs — CLOSE le 10/09
+- `:::list{view=chips}`, écrite. Le raisonnement qui perdait était le mien :
+  j'ai défendu `content` pour du rédigé ; la règle est que `content` veut dire
+  texte NON STRUCTURÉ, et des lignes `Rôle: Personne` sont des rangées.
+- Reste ouvert et non demandé : il n'y a pas d'annuaire. Les initiales sont
+  dérivées du nom ; un vrai visage / une vraie fiche demanderait un
+  `type: personne`, que `todo` n'a délibérément pas revendiqué.
 
 ## 3. `kind` du plugin — feature ou app (dormante)
 - **État : non posée, ne bloque pas le lot 1.** `timeline` est un nom NEUF :
