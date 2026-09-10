@@ -1,14 +1,25 @@
 # Questions en vol — chantier plugin-pm
 
-## 5. Ouvrir un dossier : le seuil de « la page dit quelque chose »
-- **État : POSÉE, en attente.** Seul point non tranché de la spec ci-dessous.
-- Le champ `body` que l'index publie dit « il y a quelque chose sous l'entête »,
-  **titre compris** : s'en contenter ferait basculer en vue page tout dossier
-  dont l'index est un simple `# Voyages`, qui perdrait son étagère pour
-  afficher un titre et rien d'autre.
-- Reco : seuil = **autre chose qu'un titre seul**. Alternative proposée : un
-  champ explicite dans l'entête de l'index.
-- Réponse : —
+## 5. Ouvrir un dossier — CLOSE le 10/09, et par une meilleure règle
+- Ma question portait sur un SEUIL (« la page dit-elle quelque chose ? »), avec
+  une heuristique sur le contenu. Le propriétaire l'a remplacée par un
+  **compte**, qui ne demande aucun jugement :
+
+  | fiches `type: projet` **directement** dans le dossier | ce qui s'ouvre |
+  |---|---|
+  | 0 | la vue classique, en cartes |
+  | 1 | **la vue projet** — cette fiche |
+  | plus d'une | la vue classique : c'est une étagère DE projets, pas un projet |
+
+- Ce que ça achète : rien à déclarer sur le dossier, rien à juger sur le
+  contenu, et la distinction « un projet » / « un dossier de projets » tombe
+  toute seule.
+- Conséquence : le plugin déclare **un** type, `projet`, et **rien d'autre** —
+  pas de `layouts`. Son seul rôle est de décider la vue par défaut ; la fiche
+  reste dessinée par le lecteur du cœur avec ses blocs.
+- Reste `app:` (point 4b) pour la PROPRIÉTÉ du domaine — c'est ce qui fait
+  résoudre les blocs du plugin sans `from=`. Les deux ne font pas le même
+  travail et se composent.
 
 ## 4b. Spec validée le 10/09 — à coder d'un bloc (les deux ensemble)
 Échelle de résolution à l'ouverture d'un dossier :
