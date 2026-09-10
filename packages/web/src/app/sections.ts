@@ -87,8 +87,14 @@ function isHomonymous(path: string): boolean {
   return parts.length > 1 && file === parts.at(-2)
 }
 
-/** The index page of a folder, either spelling. */
-function indexOf(entries: readonly IndexEntry[], folder: string): IndexEntry | undefined {
+/**
+ * The index page of a folder, either spelling.
+ *
+ * Exported because routing needs the SAME answer: a folder's `app:` is read
+ * from its index, and a second copy of "which file is the index" is precisely
+ * what hid twelve folders of a real corpus the first time.
+ */
+export function indexOf(entries: readonly IndexEntry[], folder: string): IndexEntry | undefined {
   return entries.find(
     (entry) =>
       folderOf(entry.path) === folder &&

@@ -19,6 +19,7 @@ import {
   folderRoute,
   ownerOf,
   routeForPath,
+  strayApp,
   pageAddress,
   pageRoute,
   sectionRoute,
@@ -302,5 +303,111 @@ describe('a folder that merely shares an absorbed name', () => {
       view: { component: () => null, route: '/todo' },
     } as unknown as LoadedPlugin
     expect(routeForPath([todo], 'domaines/todo')).toBe('/todo')
+  })
+})
+
+/**
+ * Ownership a FOLDER declares, and the view a count decides.
+ *
+ * `absorbs` matches a name wherever it sits, which cannot work for a plugin
+ * whose root the user names — `chantiers` here, `projets` next door. So the
+ * folder says it, in the one place that survives a `mv`.
+ */
+const page = (path: string, fields: Record<string, unknown> = {}) => ({
+  path,
+  title: path.split('/').at(-1) ?? path,
+  fields,
+})
+
+/** A feature with no screen, one type, and no name it could ever absorb. */
+const suivi = {
+  id: 'project-management',
+  kind: 'feature' as const,
+  base: '/plugins/project-management/',
+  types: ['project-management'],
+}
+
+describe('un dossier qui DÉCLARE son plugin', () => {
+  const pages = [page('chantiers/INDEX.md', { app: 'project-management' })]
+
+  it('appartient au plugin nommé, à toute profondeur', () => {
+    expect(ownerOf([suivi], 'chantiers', pages)?.id).toBe('project-management')
+    // Héréditaire : rien à redéclarer plus bas.
+    expect(ownerOf([suivi], 'chantiers/adestia/socle', pages)?.id).toBe('project-management')
+  })
+
+  it('ne déborde pas sur un dossier voisin', () => {
+    expect(ownerOf([suivi], 'sante', pages)).toBeUndefined()
+  })
+
+  it('bat une revendication par NOM, qui ne peut pas se tromper de dossier', () => {
+    // Le nom happait `sante/dietetique/journal` ; une déclaration ne le peut pas.
+    const journal = plugin({ id: 'journal', absorbs: ['chantiers'], tile: true })
+    expect(ownerOf([journal, suivi], 'chantiers', pages)?.id).toBe('project-management')
+  })
+
+  it('ignore un plugin que cette instance ne fait pas tourner', () => {
+    expect(ownerOf([], 'chantiers', pages)).toBeUndefined()
+  })
+})
+
+describe('sur quoi un dossier s’ouvre', () => {
+  const racine = page('chantiers/INDEX.md', { app: 'project-management' })
+
+  it('sur SA fiche quand il en tient exactement une', () => {
+    const pages = [
+      racine,
+      page('chantiers/adestia/INDEX.md', { type: 'project-management' }),
+      page('chantiers/adestia/note.md'),
+    ]
+    expect(folderRoute([suivi], 'chantiers/adestia', pages)).toBe('/page/chantiers/adestia/INDEX')
+  })
+
+  it('sur l’étagère quand il n’en tient aucune', () => {
+    expect(folderRoute([suivi], 'chantiers/adestia', [racine, page('chantiers/adestia/note.md')])).toBe(
+      '/section/chantiers/adestia',
+    )
+  })
+
+  it('sur l’étagère quand il en tient plusieurs — c’est un dossier DE projets', () => {
+    const pages = [
+      racine,
+      page('chantiers/socle.md', { type: 'project-management' }),
+      page('chantiers/editeur.md', { type: 'project-management' }),
+    ]
+    expect(folderRoute([suivi], 'chantiers', pages)).toBe('/section/chantiers')
+  })
+
+  it('ne compte que ce qui est DIRECTEMENT là', () => {
+    // Une fiche un niveau plus bas ne fait pas du parent un projet.
+    const pages = [racine, page('chantiers/adestia/INDEX.md', { type: 'project-management' })]
+    expect(folderRoute([suivi], 'chantiers', pages)).toBe('/section/chantiers')
+  })
+
+  it('laisse l’ÉCRAN du plugin gagner quand il en a un', () => {
+    const pages = [
+      page('voyages/INDEX.md'),
+      page('voyages/baden.md', { type: 'project-management' }),
+    ]
+    // Un écran existe parce que le dossier n'est pas une liste de fichiers :
+    // il passe avant la fiche.
+    expect(folderRoute([voyages], 'voyages', pages)).toBe('/voyages')
+  })
+})
+
+describe('un `app:` écrit là où il ne sera jamais lu', () => {
+  it('est signalé plus bas que le premier niveau, jamais obéi', () => {
+    const pages = [page('chantiers/adestia/INDEX.md', { app: 'project-management' })]
+    expect(ownerOf([suivi], 'chantiers/adestia', pages)).toBeUndefined()
+    expect(strayApp([suivi], pages)[0]?.path).toBe('chantiers/adestia/INDEX.md')
+  })
+
+  it('est signalé quand il nomme un plugin absent', () => {
+    const pages = [page('chantiers/INDEX.md', { app: 'fantome' })]
+    expect(strayApp([suivi], pages)[0]?.reason).toContain('fantome')
+  })
+
+  it('ne dit rien quand tout va bien', () => {
+    expect(strayApp([suivi], [page('chantiers/INDEX.md', { app: 'project-management' })])).toEqual([])
   })
 })

@@ -11,6 +11,45 @@ page is laid out. This skill only covers what this plugin adds: `:::timeline`.
 If a page ever needs to address this plugin's rendering explicitly, the value
 `from=` takes is `project-management`.
 
+## Where a worksite lives, and what opens it
+
+Two declarations, and they do different jobs.
+
+**The ROOT says it belongs here**, in the frontmatter of its own index page:
+
+```yaml
+app: project-management
+```
+
+Top level only — the first folder under the memory root — and **hereditary**:
+everything beneath belongs to this plugin without redeclaring. That is what
+makes this plugin's blocks resolve on those pages without writing `from=` on
+each one. Written deeper, or naming a plugin the instance does not run, it is
+reported on screen and never obeyed.
+
+**A worksite's own page is typed:**
+
+```yaml
+type: project-management
+```
+
+The plugin claims exactly ONE type, and its id rather than a word like
+`projet` — a generic word declared in a manifest is a word taken away from
+everybody on the instance.
+
+Its only job today is to decide what a folder opens on, by a COUNT of the
+pages filed directly in it:
+
+| pages of this type, directly in the folder | what opens |
+|---|---|
+| none | the ordinary shelf, in cards |
+| exactly one | **that page** — the folder IS that worksite |
+| more than one | the shelf: a folder OF worksites is not a worksite |
+
+Nothing else follows from the type: the page is drawn by the ordinary reader
+with the ordinary blocks. There is no plugin layout, and a worksite page is a
+page like any other.
+
 ## `:::timeline` — phases and milestones on a time axis
 
 One rendering, TWO provenances. `depth` chooses which:

@@ -20,7 +20,7 @@
 
 import { routeMatches } from '../plugins/contract.js'
 import type { LoadedPlugin } from '../plugins/loader.js'
-import { absorbs } from './sections.js'
+import { absorbs, indexOf, type IndexEntry } from './sections.js'
 
 /**
  * How a workspace path is written into a route: segments escaped, slashes
@@ -127,6 +127,88 @@ export function addressOf(plugin: {
   return plugin.view?.route ?? (plugin.tile ? `/${plugin.id}` : undefined)
 }
 
+/**
+ * The plugin a folder DECLARES, read from its own index page.
+ *
+ * `absorbs` matches a NAME wherever that run of segments sits, which works for
+ * a plugin that owns a word — `todo`, `voyages` — and cannot work for one
+ * whose root the USER names: a project tracker's folder is `chantiers` here
+ * and `projets` next door, and no manifest can know that. So the folder says
+ * it, in the one place that travels with it across a `mv`.
+ *
+ * TOP LEVEL ONLY, and hereditary: the declaration is read from the first
+ * segment's index and covers everything beneath it. Written deeper it is NOT
+ * silently ignored — `strayApp` reports it — because an `app:` that does
+ * nothing is an hour spent wondering why.
+ *
+ * A declaration BEATS a name match, and that is the point: it cannot
+ * over-claim. Name matching once handed a period of meals filed under
+ * `sante/dietetique/journal` to the journal, and `holds` exists only to undo
+ * that — a declared folder needs no such rescue.
+ */
+export function declaredApp(
+  plugins: readonly LoadedPlugin[],
+  pages: readonly IndexEntry[],
+  folder: string,
+): LoadedPlugin | undefined {
+  const root = folder.split('/')[0]
+  if (!root) return undefined
+  const asked = indexOf(pages, root)?.fields['app']
+  if (typeof asked !== 'string' || asked === '') return undefined
+  return plugins.find((plugin) => plugin.id === asked)
+}
+
+/**
+ * An `app:` written where it will never be read — deeper than the top level,
+ * or naming a plugin this instance does not run. Reported, never obeyed.
+ */
+export function strayApp(
+  plugins: readonly LoadedPlugin[],
+  pages: readonly IndexEntry[],
+): readonly { readonly path: string; readonly reason: string }[] {
+  const out: { path: string; reason: string }[] = []
+  for (const page of pages) {
+    const asked = page.fields['app']
+    if (typeof asked !== 'string' || asked === '') continue
+    const folder = page.path.slice(0, Math.max(page.path.lastIndexOf('/'), 0))
+    if (folder.includes('/')) {
+      out.push({ path: page.path, reason: `"app" is only read on a top-level folder` })
+    } else if (!plugins.some((plugin) => plugin.id === asked)) {
+      out.push({ path: page.path, reason: `no active plugin is called "${asked}"` })
+    }
+  }
+  return out
+}
+
+/**
+ * The single page a folder is ABOUT, when it has exactly one.
+ *
+ * The owner's rule, and it needs no declaration on the folder at all: count
+ * the pages filed directly here whose `type:` the owning plugin claims. One,
+ * and the folder IS that thing — it opens on its page. None, or several, and
+ * it is a shelf: several worksites in a folder make a folder OF worksites,
+ * not a worksite, and that distinction falls out of the count rather than
+ * being written down.
+ *
+ * Scoped to the OWNER's types on purpose. A general "one typed page wins"
+ * would open a folder holding a single task on that task, which is not what a
+ * task list is for.
+ */
+export function faceOf(
+  owner: LoadedPlugin,
+  pages: readonly IndexEntry[],
+  folder: string,
+): string | undefined {
+  const kinds = owner.types ?? []
+  if (kinds.length === 0) return undefined
+  const held = pages.filter(
+    (page) =>
+      page.path.slice(0, Math.max(page.path.lastIndexOf('/'), 0)) === folder &&
+      kinds.includes(String(page.fields['type'] ?? '')),
+  )
+  return held.length === 1 ? held[0]?.path : undefined
+}
+
 /** How specifically a plugin claims this folder — 0 when it does not. */
 function claim(plugin: LoadedPlugin, folder: string): number {
   return (plugin.absorbs ?? [])
@@ -138,7 +220,12 @@ function claim(plugin: LoadedPlugin, folder: string): number {
 export function ownerOf(
   plugins: readonly LoadedPlugin[],
   folder: string,
+  pages: readonly IndexEntry[] = [],
 ): LoadedPlugin | undefined {
+  // A DECLARATION beats a name: the folder said so itself, and nothing the
+  // shell guesses should outrank that.
+  const declared = declaredApp(plugins, pages, folder)
+  if (declared) return declared
   // The most specific claim wins, mirroring route resolution: a plugin
   // declaring `voyages/archives` takes that folder from one declaring
   // `voyages`, rather than the answer depending on load order.
@@ -214,8 +301,9 @@ function holdsFolder(plugin: LoadedPlugin, folder: string): boolean {
 export function routeForPath(
   plugins: readonly LoadedPlugin[],
   path: string,
+  pages: readonly IndexEntry[] = [],
 ): string | undefined {
-  const owner = ownerOf(plugins, path)
+  const owner = ownerOf(plugins, path, pages)
   if (owner) {
     const said = asks(owner, path)
     if (said) return said
@@ -251,6 +339,18 @@ export function routeForPath(
  * The one call a link should make: whoever owns it, the shell's own section
  * otherwise.
  */
-export function folderRoute(plugins: readonly LoadedPlugin[], folder: string): string {
-  return routeForPath(plugins, folder) ?? sectionRoute(folder)
+export function folderRoute(
+  plugins: readonly LoadedPlugin[],
+  folder: string,
+  pages: readonly IndexEntry[] = [],
+): string {
+  // The ladder, in one place. A plugin's own SCREEN wins — it exists because
+  // the folder is not a list of files. Failing that, a folder holding exactly
+  // one page of its owner's kind IS that thing, and opens on its page.
+  // Failing both, the shelf, which is what the reader always had.
+  const owned = routeForPath(plugins, folder, pages)
+  if (owned) return owned
+  const owner = ownerOf(plugins, folder, pages)
+  const face = owner ? faceOf(owner, pages, folder) : undefined
+  return face ? pageRoute(face) : sectionRoute(folder)
 }

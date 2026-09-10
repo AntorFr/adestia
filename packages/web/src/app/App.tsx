@@ -39,6 +39,7 @@ import {
   pageRoute,
   routeForPath,
   sectionRoute,
+  strayApp,
 } from './owners.js'
 import { browserEnvironment, loadPlugins, type LoadedPlugin, type PluginDescriptor } from '../plugins/loader.js'
 import { MissingPage } from './MissingPage.js'
@@ -462,9 +463,9 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
    */
   const openSection = useCallback(
     (path: string) => {
-      location.hash = folderRoute(loaded, path)
+      location.hash = folderRoute(loaded, path, pages)
     },
-    [loaded],
+    [loaded, pages],
   )
 
   const goHome = useCallback(() => {
@@ -852,7 +853,19 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
     severity?: 'refused' | 'degraded'
     code?: string
     params?: Record<string, string>
-  }[] = [...instance.pluginProblems, ...failures]
+  }[] = [
+    ...instance.pluginProblems,
+    ...failures,
+    // An `app:` written where it will never be read — deeper than the top
+    // level, or naming a plugin this instance does not run. Reported HERE
+    // rather than left to be noticed: a declaration that does nothing is an
+    // hour spent wondering why the folder opens on the wrong screen.
+    ...strayApp(loaded, pages).map((stray) => ({
+      id: stray.path,
+      reason: stray.reason,
+      severity: 'degraded' as const,
+    })),
+  ]
 
   return (
     <>
