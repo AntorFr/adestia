@@ -1955,9 +1955,12 @@
   padding: 0;
 }
 
-/* The page's own title, editable in BOTH postures — the same line whether you
-   are reading it or writing under it. Drawn as the heading it replaces: the
-   field only shows itself when you point at it. */
+/* The page's own title: a heading while reading, a field while writing, and
+   the same LINE either way — same face, same size, same place, so entering
+   writing posture does not make the card jump. The field only shows itself
+   when you point at it. */
+h2.adestia-editor__title { padding-bottom: 3px; }
+
 .adestia-editor__title {
   width: 100%;
   margin: 0 0 var(--space-2);

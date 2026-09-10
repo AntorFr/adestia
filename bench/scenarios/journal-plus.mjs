@@ -36,6 +36,27 @@ export default async function scenario(bench) {
   const neuve = page.locator('.journal-entry').first()
   await neuve.locator('.ProseMirror').click()
   await page.keyboard.type('La cale de 8 mm était la bonne.')
+
+  /*
+   * L'enregistrement automatique, prouvé sur le disque et sans toucher un
+   * bouton : c'est lui qui rend un bouton unique honnête, et aucun test ne
+   * peut dire s'il part vraiment dans un vrai navigateur.
+   */
+  await page.waitForTimeout(3200)
+  const auto = await bench.api('/api/pages/journal/atelier/le-gabarit-de-queues-droites.md')
+  console.log(
+    '[plus] écrit tout seul, sans bouton :',
+    JSON.stringify(String(auto.markdown ?? '').includes('La cale de 8 mm était la bonne.')),
+  )
+
+  // Et le titre ne se tape pas hors écriture : la lecture lit.
+  const ancienneCarte = page.locator('.journal-entry').last()
+  console.log(
+    '[plus] champs titre en lecture :',
+    await ancienneCarte.locator('input.adestia-editor__title').count(),
+    '— titres en lecture :',
+    await ancienneCarte.locator('h2.adestia-editor__title').count(),
+  )
   /*
    * Le frontmatter est-il TOUJOURS là ?
    *
@@ -83,9 +104,18 @@ export default async function scenario(bench) {
   const ancienne = page.locator('.journal-entry').last()
   await ancienne.locator('button[title="Modifier"]').click()
   await page.waitForSelector('.adestia-editor__surface .ProseMirror', { timeout: 15_000 })
-  await ancienne.locator('.adestia-editor__title').fill('Affûtage des ciseaux')
+  await ancienne.locator('input.adestia-editor__title').fill('Affûtage des ciseaux')
   await page.waitForTimeout(400)
   await bench.shoot(page, 'p4-titre-en-ecriture')
+
+  // Le TITRE SEUL, sans une frappe dans le corps : est-ce que ça part ?
+  await page.waitForTimeout(3200)
+  const parTitre = await bench.api('/api/pages/journal/atelier/2026-09-01-0800.md')
+  console.log(
+    '[plus] le titre seul déclenche l’enregistrement :',
+    JSON.stringify(String(parTitre.markdown ?? '').includes('title: Affûtage des ciseaux')),
+  )
+
   await ancienne.locator('button:has-text("Terminé")').click()
   await page.waitForTimeout(2200)
 

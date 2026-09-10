@@ -118,6 +118,11 @@ describe('save status', () => {
   })
 })
 
+const titled = {
+  ...page,
+  markdown: '---\ntype: entree\ntitle: Le gabarit\n---\n\nLe corps.\n',
+}
+
 describe('editor', () => {
   it('opens a page for READING, mounting no editor at all', () => {
     // Opening a page to look at it used to mount ProseMirror, its toolbars
@@ -136,6 +141,41 @@ describe('editor', () => {
     expect(container.querySelector('[data-mounted]')?.getAttribute('data-mounted')).toBe(
       '# Le garage\n',
     )
+  })
+
+  it('offers the title as a field only while writing', () => {
+    // Reported from use: the title could be typed into on a card nobody had
+    // opened. Reading posture reads — here as everywhere else on this screen.
+    const { container } = render(<Editor page={titled} mount={fakeMount([])} titleField />)
+    expect(container.querySelector('input.adestia-editor__title')).toBeNull()
+    expect(screen.getByText('Le gabarit')).toBeTruthy()
+
+    startEditing()
+    expect(container.querySelector('input.adestia-editor__title')).toBeTruthy()
+  })
+
+  it('writes the title into the frontmatter, not beside it', async () => {
+    const saves: { body: unknown }[] = []
+    const { container } = render(
+      <Editor
+        page={titled}
+        mount={fakeMount([])}
+        titleField
+        fetchImpl={recordingFetch(saves)}
+      />,
+    )
+    startEditing()
+    const field = container.querySelector('input.adestia-editor__title') as HTMLInputElement
+    fireEvent.change(field, { target: { value: 'Le gabarit de queues droites' } })
+    fireEvent.click(screen.getByText('Done'))
+
+    await waitFor(() => expect(saves).toHaveLength(1))
+    const written = (saves[0]?.body as { markdown: string }).markdown
+    expect(written).toMatch(/^title: Le gabarit de queues droites$/m)
+    // Once. Renaming used to append a second line whenever the surgery could
+    // not tell "replaced with the same text" from "not found".
+    expect(written.match(/^title:/gm)).toHaveLength(1)
+    expect(written).toMatch(/^type: entree$/m)
   })
 
   it('writes on its own, a beat after the typing stops', async () => {

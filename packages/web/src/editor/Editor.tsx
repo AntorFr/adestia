@@ -494,19 +494,23 @@ export function Editor({
         </div>
       </header>
 
-      {/* The title, when the caller draws a list of pages and needs one. The
-          SAME element in both postures: a heading you can type in. It used to
-          be a button that vanished the moment the editor opened — which is
-          exactly when somebody wants to name what they are writing. */}
-      {titleField && page.editable && (
-        <input
-          className="adestia-editor__title"
-          value={title}
-          placeholder={t('Untitled')}
-          aria-label={t('Title')}
-          onChange={(event) => setTitle(event.target.value)}
-        />
-      )}
+      {/* The title, when the caller draws a list of pages and needs one.
+          A heading while reading, a field while writing — reading posture
+          reads, here as everywhere else. What it is NOT any more is a control
+          that vanishes the moment the editor opens, which was exactly when
+          somebody wanted to name what they were writing. */}
+      {titleField &&
+        (editing && page.editable ? (
+          <input
+            className="adestia-editor__title"
+            value={title}
+            placeholder={t('Untitled')}
+            aria-label={t('Title')}
+            onChange={(event) => setTitle(event.target.value)}
+          />
+        ) : (
+          title !== '' && <h2 className="adestia-editor__title">{title}</h2>
+        ))}
 
       {!page.editable && (
         <p className="adestia-editor__readonly" role="status">
