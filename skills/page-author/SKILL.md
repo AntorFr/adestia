@@ -480,11 +480,6 @@ written in the block:
     this costs no request per child; it is a SUMMARY, truncated, never the
     page. Only `content` blocks are digested — a table or a timeline is not
     a sentence, and a row is not the place to redraw one.
-**Never write a default.** `depth=children`, `closed=fold`, `source=children`
-and `view=rows` are what you already get; writing one reads as a decision to
-the next person, who then wonders what it was for. Write the attribute that
-changes something.
-
 - **`closed`** decides what happens to what is over: `fold` (the default) puts
   it behind a summary, `hide` drops it, `show` mixes it in. Folded rather than
   hidden because a finished thing is exactly what somebody opens to see how the
@@ -499,6 +494,11 @@ changes something.
   own `ico:` if it declares one — the same field the tiles and the section
   cards read — else `◆` when the row stands for a FOLDER and `•` when it is a
   plain page. So giving a page an `ico:` dresses it everywhere at once.
+
+**Never write a default.** `depth=children`, `closed=fold`, `source=children`
+and `view=rows` are what you already get; writing one reads as a decision to
+the next person, who then wonders what it was for. Write the attribute that
+changes something.
 
 **A list can also be WRITTEN.** Put lines in the body and they ARE the rows,
 split at the first colon, and nothing is queried:
