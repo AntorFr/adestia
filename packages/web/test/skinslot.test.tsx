@@ -58,7 +58,7 @@ describe('SkinSlot', () => {
   it('reaches the CURRENT context even from a handler bound at mount', () => {
     // The context object changes every shell render; remounting the slot on
     // each would restart animations mid-beat, so handlers read through a ref.
-    let clicked: string[] = []
+    const clicked: string[] = []
     const { container, rerender } = render(
       <SkinSlot
         context={{ ...context, ask: (p) => clicked.push(`v1:${p}`) }}

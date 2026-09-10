@@ -9,7 +9,7 @@
 
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { parse, serialize } from '../src/pipeline.js'
+import { parse } from '../src/pipeline.js'
 import { validateDocument } from '../src/validate.js'
 import {
   blockSpec,

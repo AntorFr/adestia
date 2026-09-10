@@ -15,8 +15,8 @@
  */
 
 import { randomUUID } from 'node:crypto'
-import { mkdir, readFile, readdir, rename, stat, unlink, writeFile } from 'node:fs/promises'
-import { basename, dirname, extname, join, relative, resolve, sep } from 'node:path'
+import { mkdir, readFile, rename, stat, unlink, writeFile } from 'node:fs/promises'
+import { basename, dirname, extname, join } from 'node:path'
 
 import {
   isFinished,
@@ -207,26 +207,6 @@ export function titleOf(markdown: string, path: string): string {
   if (title) return title.replace(/^["']|["']$/g, '')
   const heading = /^#\s+(.+)$/m.exec(markdown)?.[1]
   return heading ?? path.replace(/\.md$/, '').split('/').pop() ?? path
-}
-
-async function listMarkdown(root: string, prefix = ''): Promise<string[]> {
-  let entries
-  try {
-    entries = await readdir(join(root, prefix), { withFileTypes: true })
-  } catch {
-    return []
-  }
-
-  const found: string[] = []
-  for (const entry of entries) {
-    // Dotfiles are the agent's business (.claude, .git); the page list is the
-    // user's content, not the workspace's plumbing.
-    if (entry.name.startsWith('.')) continue
-    const rel = prefix ? `${prefix}/${entry.name}` : entry.name
-    if (entry.isDirectory()) found.push(...(await listMarkdown(root, rel)))
-    else if (entry.name.endsWith('.md')) found.push(rel)
-  }
-  return found
 }
 
 /** This API's whole contract, as a predicate: markdown, and nothing else. */

@@ -22,7 +22,7 @@ import {
   type SkinSlots,
 } from './skin.js'
 import { PluginBoundary } from '../plugins/Boundary.js'
-import { routeMatches, type PluginApi } from '../plugins/contract.js'
+import { routeMatches } from '../plugins/contract.js'
 import { Home } from './Home.js'
 import { followChanges } from './live.js'
 import { resolveLocale, translator } from './i18n.js'

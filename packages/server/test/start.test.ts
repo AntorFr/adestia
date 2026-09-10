@@ -20,7 +20,6 @@ class StubDriver implements Driver {
   env(): Promise<Readonly<Record<string, string>>> {
     return Promise.resolve({})
   }
-  // eslint-disable-next-line require-yield
   async *runTurn(): AsyncIterable<TurnEvent> {
     return
   }

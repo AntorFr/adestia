@@ -51,7 +51,6 @@ export interface StartLoginOptions {
 
 /** Escapes survive `NO_COLOR=1`, so nothing here may match on raw bytes. */
 export function stripAnsi(value: string): string {
-  // eslint-disable-next-line no-control-regex
   return value.replace(/\[[0-9;?]*[ -/]*[@-~]/g, '')
 }
 
