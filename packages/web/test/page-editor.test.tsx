@@ -160,7 +160,7 @@ describe('the page editor lent to plugins', () => {
       edit: (md: string) => void
     }
     act(() => surface.edit('Lame changée, et affûtée.\n'))
-    fireEvent.click(screen.getByText('Save'))
+    fireEvent.click(screen.getByText('Done'))
 
     await waitFor(() => expect(saves).toHaveLength(1))
     expect(saves[0]).toMatchObject({

@@ -138,22 +138,80 @@ describe('editor', () => {
     )
   })
 
-  it('keeps Save disabled until something changes', () => {
-    render(<Editor page={page} mount={fakeMount([])} />)
-    startEditing()
-    expect(screen.getByText('Save').closest('button')?.disabled).toBe(true)
+  it('writes on its own, a beat after the typing stops', async () => {
+    /*
+     * What makes ONE button honest. Two — `Save` beside `Done` — asked the
+     * person to know which of them kept their work; with nothing left to lose
+     * by pressing neither, `Done` can just mean "I have finished".
+     */
+    vi.useFakeTimers()
+    try {
+      const saves: { body: unknown }[] = []
+      const { container } = render(
+        <Editor page={page} mount={fakeMount([])} fetchImpl={recordingFetch(saves)} />,
+      )
+      startEditing()
+      const host = container.querySelector('[data-mounted]') as HTMLElement & {
+        edit: (md: string) => void
+      }
+      // Wrapped in act(): the editor reports changes through a callback, not a
+      // DOM event, so React has no reason to flush without being told.
+      act(() => host.edit('# Changed\n'))
+      expect(saves).toHaveLength(0)
+
+      await act(async () => {
+        vi.advanceTimersByTime(2000)
+      })
+      expect(saves).toHaveLength(1)
+      expect((saves[0]?.body as { markdown: string }).markdown).toBe('# Changed\n')
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
-  it('enables Save once the document is edited', () => {
-    const { container } = render(<Editor page={page} mount={fakeMount([])} />)
-    startEditing()
-    const host = container.querySelector('[data-mounted]') as HTMLElement & {
-      edit: (md: string) => void
+  it('writes nothing at all while nobody types', async () => {
+    vi.useFakeTimers()
+    try {
+      const saves: { body: unknown }[] = []
+      render(<Editor page={page} mount={fakeMount([])} fetchImpl={recordingFetch(saves)} />)
+      startEditing()
+      await act(async () => {
+        vi.advanceTimersByTime(5000)
+      })
+      expect(saves).toHaveLength(0)
+    } finally {
+      vi.useRealTimers()
     }
-    // Wrapped in act(): the editor reports changes through a callback, not a
-    // DOM event, so React has no reason to flush without being told.
-    act(() => host.edit('# Changed\n'))
-    expect(screen.getByText('Save').closest('button')?.disabled).toBe(false)
+  })
+
+  it('stops writing on its own once the server has refused', async () => {
+    // A 409 means the agent wrote underneath. Retrying every two seconds is a
+    // loop neither hand can win, hammering the file while the message telling
+    // somebody to reconcile scrolls past.
+    vi.useFakeTimers()
+    try {
+      const { container } = render(
+        <Editor page={page} mount={fakeMount([])} fetchImpl={jsonFetch(409, {})} />,
+      )
+      startEditing()
+      const host = container.querySelector('[data-mounted]') as HTMLElement & {
+        edit: (md: string) => void
+      }
+      act(() => host.edit('# Mine\n'))
+      await act(async () => {
+        vi.advanceTimersByTime(2000)
+      })
+      expect(screen.getByText(/The agent changed this page/)).toBeTruthy()
+
+      act(() => host.edit('# Mine again\n'))
+      await act(async () => {
+        vi.advanceTimersByTime(10_000)
+      })
+      // Still the conflict, not a fresh round of the same refusal.
+      expect(screen.getByText(/The agent changed this page/)).toBeTruthy()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('leaves writing posture behind when the reader moves on', () => {
@@ -244,16 +302,14 @@ describe('editor', () => {
       edit: (md: string) => void
     }
     act(() => host.edit('# Le gabarit\n\nLa cale de 8 mm était la bonne.\n'))
-    fireEvent.click(screen.getByText('Save'))
-    await screen.findByText('Saved')
-
     fireEvent.click(screen.getByText('Done'))
+    await waitFor(() => expect(container.querySelector('[data-mounted]')).toBeNull())
     // What the reader draws is what was written, not what was opened.
     expect(screen.getByText('La cale de 8 mm était la bonne.')).toBeTruthy()
 
-    // And reopening finds nothing left to save: the baseline moved with it.
+    // And reopening finds nothing left to write: the baseline moved with it.
     startEditing()
-    expect(screen.getByText('Save').closest('button')?.disabled).toBe(true)
+    expect(screen.getByText('Done').closest('button')?.disabled).toBe(false)
   })
 
   it('shows a conflict instead of overwriting the agent', async () => {
@@ -265,7 +321,7 @@ describe('editor', () => {
       edit: (md: string) => void
     }
     act(() => host.edit('# Mine\n'))
-    fireEvent.click(screen.getByText('Save'))
+    fireEvent.click(screen.getByText('Done'))
     await waitFor(() => expect(screen.getByText(/The agent changed this page/)).toBeTruthy())
   })
 

@@ -17,6 +17,7 @@ import { parse, serialize, type Indexed } from '@antorfr/adestia-content'
 
 import { Attachments } from './Attachments.js'
 import { carriesFiles, fileDropMessage } from './filedrop.js'
+import { readField, writeField } from './frontmatter.js'
 import { PluginBoundary } from '../plugins/Boundary.js'
 import { Reader, type BlockComponents, type LayoutComponents, type VocabularyContext } from './Reader.js'
 
@@ -179,6 +180,20 @@ export interface EditorProps {
    */
   readonly startEditing?: boolean
   /**
+   * Draw the page's `title:` as an editable line above the body.
+   *
+   * Off by default: the shell's own page screen names the page in the
+   * breadcrumb and the document opens with its own heading, so a third copy
+   * would be two too many. A plugin drawing a LIST of pages turns it on —
+   * there, the title is the only thing telling one card from the next.
+   *
+   * It lives here rather than in the plugin for one reason, learnt the hard
+   * way: the title is part of the frontmatter, the frontmatter is part of the
+   * document this editor holds, and a plugin writing it from outside would be
+   * a second author on an open file — a 409 on somebody's unsaved paragraph.
+   */
+  readonly titleField?: boolean
+  /**
    * Told when this editor enters or leaves writing posture.
    *
    * For a caller that draws something ELSE about the same page — a journal
@@ -207,6 +222,7 @@ export function Editor({
   pages,
   attachments = true,
   startEditing = false,
+  titleField = false,
   onEditing,
   onSaved,
   t = (key) => key,
@@ -253,7 +269,21 @@ export function Editor({
    * now, taken by a button.
    */
   const [editing, setEditing] = useState(startEditing)
-  const [markdown, setMarkdown] = useState(shown)
+  /**
+   * The BODY, which is what the mounted editor owns and reports.
+   *
+   * Held apart from the title because there are two writers on one document
+   * and they must not fight over it: Milkdown carries the frontmatter as an
+   * opaque node captured when it mounted, so a title typed in the field above
+   * would be overwritten by the editor's very next keystroke. The page that
+   * gets saved is composed from both, every render.
+   */
+  const [body, setBody] = useState(shown)
+  const [title, setTitle] = useState(() => readField(shown, 'title'))
+  const markdown = useMemo(
+    () => (titleField ? writeField(body, 'title', title) : body),
+    [body, title, titleField],
+  )
   /**
    * What is on the server, as far as this editor knows — and what `Done`
    * restores.
@@ -275,7 +305,8 @@ export function Editor({
   const dirty = markdown !== saved
 
   useEffect(() => {
-    setMarkdown(shown)
+    setBody(shown)
+    setTitle(readField(shown, 'title'))
     setSaved(shown)
     setRevision(page.revision)
     setStatus({ kind: 'idle' })
@@ -283,7 +314,7 @@ export function Editor({
 
   useEffect(() => {
     if (!editing || !mount || !host.current || !page.editable) return undefined
-    return mount(host.current, shown, setMarkdown)
+    return mount(host.current, shown, setBody)
   }, [editing, mount, page.editable, shown, page.path])
 
   /*
@@ -359,6 +390,27 @@ export function Editor({
   }, [fetchImpl, markdown, onSaved, page, revision])
 
   /**
+   * Saving on its own, a beat after the typing stops.
+   *
+   * This is what makes ONE button honest. Two — `Save` beside `Done` — asked
+   * the person to know which of them kept their work, and the answer used to
+   * be neither obvious nor even true. With nothing left to lose by not
+   * pressing anything, `Done` can simply mean "I have finished".
+   *
+   * It STOPS on a refusal and does not come back until the page is reopened.
+   * A 409 means the agent wrote underneath; retrying every two seconds would
+   * be a loop that neither hand can win, hammering the file while the message
+   * telling somebody to reconcile scrolls past. The explicit Done still tries,
+   * so nobody is stuck.
+   */
+  const held = status.kind === 'conflict' || status.kind === 'rejected'
+  useEffect(() => {
+    if (!dirty || !page.editable || held || status.kind === 'saving') return undefined
+    const timer = setTimeout(() => void save(), 1600)
+    return () => clearTimeout(timer)
+  }, [dirty, held, page.editable, save, status.kind])
+
+  /**
    * Leaving writing posture — which SAVES.
    *
    * It used to abandon, and it was called `Done`. Reported from use within an
@@ -430,27 +482,31 @@ export function Editor({
             </button>
           )}
           {page.editable && editing && (
-            <>
-              <button
-                type="button"
-                className="adestia-switch"
-                onClick={() => void done()}
-                disabled={status.kind === 'saving'}
-              >
-                {t('Done')}
-              </button>
-              <button
-                type="button"
-                className="adestia-editor__save"
-                onClick={() => void save()}
-                disabled={!dirty || status.kind === 'saving'}
-              >
-                {t('Save')}
-              </button>
-            </>
+            <button
+              type="button"
+              className="adestia-editor__save"
+              onClick={() => void done()}
+              disabled={status.kind === 'saving'}
+            >
+              {t('Done')}
+            </button>
           )}
         </div>
       </header>
+
+      {/* The title, when the caller draws a list of pages and needs one. The
+          SAME element in both postures: a heading you can type in. It used to
+          be a button that vanished the moment the editor opened — which is
+          exactly when somebody wants to name what they are writing. */}
+      {titleField && page.editable && (
+        <input
+          className="adestia-editor__title"
+          value={title}
+          placeholder={t('Untitled')}
+          aria-label={t('Title')}
+          onChange={(event) => setTitle(event.target.value)}
+        />
+      )}
 
       {!page.editable && (
         <p className="adestia-editor__readonly" role="status">
