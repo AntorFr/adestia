@@ -168,6 +168,25 @@ export interface EditorProps {
    * item is furniture — and a request per item.
    */
   readonly attachments?: boolean
+  /**
+   * Open in WRITING posture rather than reading.
+   *
+   * For the one case reading-by-default gets wrong: a page that was just
+   * created because somebody asked for it. Landing on an empty document with
+   * a ✎ to press is asking twice for the same decision — they already pressed
+   * `+`. Everywhere else the default stands, and it is the reason a reader
+   * never feels they might break something.
+   */
+  readonly startEditing?: boolean
+  /**
+   * Told when this editor enters or leaves writing posture.
+   *
+   * For a caller that draws something ELSE about the same page — a journal
+   * showing an entry's title beside the body. While the editor holds the
+   * file, that caller must not write to it: two hands on one document is a
+   * 409 on somebody's unsaved paragraph.
+   */
+  readonly onEditing?: (editing: boolean) => void
   /** Called after a save the server accepted, with the revision it returned. */
   readonly onSaved?: (revision: string) => void
   /** Injected in tests; the real one mounts Milkdown. */
@@ -187,6 +206,8 @@ export function Editor({
   layouts,
   pages,
   attachments = true,
+  startEditing = false,
+  onEditing,
   onSaved,
   t = (key) => key,
 }: EditorProps) {
@@ -231,7 +252,7 @@ export function Editor({
    * every reader feel like they might break something. Writing is a decision
    * now, taken by a button.
    */
-  const [editing, setEditing] = useState(false)
+  const [editing, setEditing] = useState(startEditing)
   const [markdown, setMarkdown] = useState(shown)
   const [revision, setRevision] = useState(page.revision)
   const [status, setStatus] = useState<SaveState>({ kind: 'idle' })
@@ -248,11 +269,24 @@ export function Editor({
     return mount(host.current, shown, setMarkdown)
   }, [editing, mount, page.editable, shown, page.path])
 
-  // Leaving a page leaves its edit mode behind: arriving somewhere new in
-  // writing posture is a posture nobody chose.
+  /*
+   * Announced on CHANGE, not on every render: the callback is written inline
+   * by its caller, so a plain dependency on it would fire this on each pass
+   * and put the caller in a loop of its own making.
+   */
+  const announced = useRef<boolean | undefined>(undefined)
   useEffect(() => {
-    setEditing(false)
-  }, [page.path])
+    if (announced.current === editing) return
+    announced.current = editing
+    onEditing?.(editing)
+  }, [editing, onEditing])
+
+  // Leaving a page leaves its edit mode behind: arriving somewhere new in
+  // writing posture is a posture nobody chose — unless the caller says this
+  // page is one somebody just asked to write.
+  useEffect(() => {
+    setEditing(startEditing)
+  }, [page.path, startEditing])
 
   /**
    * The layout this page's own `type` asks for, if a plugin draws it.

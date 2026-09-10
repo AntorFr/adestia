@@ -10,7 +10,9 @@
  */
 
 import { contributedBlocks, GRAMMAR, shapesOf, toneOf, VOCABULARY } from '@antorfr/adestia-content'
+import type { BlockSpec } from '@antorfr/adestia-content'
 import type { MilkdownPlugin } from '@milkdown/kit/ctx'
+import { trailing } from '@milkdown/kit/plugin/trailing'
 import { $node, $remark } from '@milkdown/kit/utils'
 
 /** What `$remark` expects: a unified plugin factory. */
@@ -85,6 +87,21 @@ export const frontmatterNode = $node('frontmatter', () => ({
   group: 'block',
   atom: true,
   isolating: true,
+  /*
+   * Never selectable, and this is data loss rather than polish.
+   *
+   * An atom that takes a NodeSelection is an atom the next keystroke
+   * REPLACES. The frontmatter is drawn as a row of chips at the top of every
+   * page, so clicking those chips and typing wrote a page with no `type`, no
+   * `date` and no title — an entry that was no longer an entry, saved without
+   * a warning because the document was perfectly valid markdown. Found on a
+   * new journal entry, where the frontmatter is the ONLY node and any click
+   * lands on it; true on every page ever since.
+   *
+   * The value stays reachable: it is the file's first lines, and the agent
+   * writes them. What is refused here is only the gesture that destroys them.
+   */
+  selectable: false,
   attrs: { value: { default: '' } },
   parseDOM: [
     {
@@ -128,7 +145,7 @@ export const frontmatterNode = $node('frontmatter', () => ({
  * only the schema id steps aside.
  */
 const PM_ID: Readonly<Record<string, string>> = { table: 'directive_table' }
-const pmId = (name: string) => PM_ID[name] ?? name
+export const pmId = (name: string) => PM_ID[name] ?? name
 
 function containerNode(name: string) {
   return $node(pmId(name), () => ({
@@ -320,6 +337,24 @@ export const appNode = atomNode('app')
  * failure — loud, and naming the node — but it means a contributed block that
  * only had a component would break the editor on the first page holding one.
  */
+/**
+ * The blocks the editor knows, ONE entry per name, core first.
+ *
+ * Pulled out of `adestiaVocabulary` so the slash menu offers exactly what the
+ * schema can hold. Two readings of the same list is how the four core
+ * renderings came to have nodes nowhere and a menu nowhere either; one list,
+ * read twice, cannot drift.
+ */
+export function editorBlocks(): readonly BlockSpec[] {
+  const seen = new Set<string>()
+  return [...Object.values(VOCABULARY), ...contributedBlocks()].filter((spec) =>
+    seen.has(spec.name) ? false : (seen.add(spec.name), true),
+  )
+}
+
+/** The three whose nodes are written out above rather than derived. */
+const HAND_WRITTEN = new Set(['callout', 'gallery', 'app'])
+
 export function adestiaVocabulary(): MilkdownPlugin[] {
   // ONE node per name, custom nodes first. Two ways a duplicate would arise,
   // and Milkdown throws on both: a core block that also needs a generic node
@@ -328,9 +363,8 @@ export function adestiaVocabulary(): MilkdownPlugin[] {
   // features declaring the same block. The node is per NAME, deliberately:
   // attributes are kept verbatim and the body is always carried, so the node
   // does not depend on which claim wins on a given page.
-  const seen = new Set(['callout', 'gallery', 'app'])
-  const generic = [...Object.values(VOCABULARY), ...contributedBlocks()]
-    .filter((spec) => (seen.has(spec.name) ? false : (seen.add(spec.name), true)))
+  const generic = editorBlocks()
+    .filter((spec) => !HAND_WRITTEN.has(spec.name))
     // A container as soon as ANY definition of the name takes a body. The
     // node is per name while definitions are per plugin, and an atom EATS a
     // body it cannot hold — the "silently eaten text" the design warns
@@ -341,6 +375,20 @@ export function adestiaVocabulary(): MilkdownPlugin[] {
     )
   return [
     grammarRemarks,
+    /*
+     * A paragraph after a document that ends in something you cannot type in.
+     *
+     * Found by creating an entry: a new one is frontmatter and nothing else,
+     * so the whole document was ONE atom node. Clicking it selected it, the
+     * first keystroke replaced it, and the save wrote a page with no `type`,
+     * no `date` and no title — an entry that was no longer an entry. The same
+     * trap sits under any page ending in `:::list` or `:::app`.
+     *
+     * Milkdown's own rule: append when the last node is neither a heading nor
+     * a paragraph. The node is empty, so it costs nothing on disk — the
+     * serializer writes no line for a paragraph with no content.
+     */
+    trailing,
     frontmatterNode,
     wikiLinkNode,
     calloutNode,

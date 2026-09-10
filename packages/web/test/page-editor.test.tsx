@@ -105,6 +105,47 @@ describe('the page editor lent to plugins', () => {
     expect(screen.getByText('Lame changée.')).toBeTruthy()
   })
 
+  it('opens in writing posture when the plugin says the page was just created', async () => {
+    // The `+` case. Somebody pressed a button that MADE this page; landing on
+    // an empty document with a ✎ to press is asking twice for one decision.
+    const PageEditor = editor(workspaceFetch())
+    render(<PageEditor path="journal/atelier/2026-08-25.md" editing />)
+
+    await waitFor(() => {
+      expect(document.querySelectorAll('[data-mounted]')).toHaveLength(1)
+    })
+    expect(screen.queryByTitle('Edit')).toBeNull()
+  })
+
+  it('reads by default, which is what every other page gets', async () => {
+    const PageEditor = editor(workspaceFetch())
+    render(<PageEditor path="journal/atelier/2026-08-25.md" />)
+
+    await screen.findByTitle('Edit')
+    expect(document.querySelectorAll('[data-mounted]')).toHaveLength(0)
+  })
+
+  it('tells the plugin when it takes the file, and when it gives it back', async () => {
+    // A plugin drawing anything else about the same page — a journal showing
+    // an entry's title beside the body — must stop writing to that file while
+    // the editor holds it. Two writers on one document is a 409 on somebody's
+    // unsaved paragraph.
+    const postures: boolean[] = []
+    const PageEditor = editor(workspaceFetch())
+    render(
+      <PageEditor path="journal/atelier/2026-08-25.md" onEditing={(open) => postures.push(open)} />,
+    )
+
+    fireEvent.click(await screen.findByTitle('Edit'))
+    await waitFor(() => expect(postures.at(-1)).toBe(true))
+    fireEvent.click(screen.getByText('Done'))
+    await waitFor(() => expect(postures.at(-1)).toBe(false))
+
+    // Announced on CHANGE: a callback written inline by its caller would
+    // otherwise fire on every render and put that caller in a loop.
+    expect(postures).toEqual([false, true, false])
+  })
+
   it('saves with the revision that page was read at', async () => {
     const saves: { url: string; body: unknown }[] = []
     const PageEditor = editor(workspaceFetch(saves))
