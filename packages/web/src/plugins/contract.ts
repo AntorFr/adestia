@@ -114,6 +114,16 @@ export interface PageEditorProps {
    */
   readonly editing?: boolean
   /**
+   * Draw the page's `title:` as an editable line above the body.
+   *
+   * For a plugin showing a LIST of pages, where the title is the only thing
+   * telling one card from the next. The field belongs to the editor because
+   * the title is part of the frontmatter, and the frontmatter is part of the
+   * document the editor holds: a plugin writing it from outside would be a
+   * second author on an open file.
+   */
+  readonly titleField?: boolean
+  /**
    * Told when the embedded editor enters or leaves writing posture.
    *
    * A plugin drawing anything else about the same page — a title beside the

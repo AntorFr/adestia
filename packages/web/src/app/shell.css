@@ -1876,7 +1876,7 @@
 }
 
 .adestia-editor__save {
-  padding: var(--space-1) var(--space-3);
+  padding: var(--space-1) var(--space-4);
   border-radius: var(--radius-sm);
   border: 1px solid var(--accent);
   background: var(--accent);
@@ -1945,12 +1945,48 @@
   font-size: var(--text-sm);
 }
 
+/* The writing surface is the PAGE, not a box drawn on it.
+   It used to be a bordered panel with a 320px floor, so an empty document —
+   a journal entry created a second ago — opened as a large grey rectangle
+   with a cursor lost in it. Reading and writing now occupy the same shape,
+   and the surface grows with what is in it. */
 .adestia-editor__surface {
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface-raised);
-  min-height: 320px;
-  padding: var(--space-3);
+  min-height: 5.5rem;
+  padding: 0;
+}
+
+/* The page's own title: a heading while reading, a field while writing, and
+   the same LINE either way — same face, same size, same place, so entering
+   writing posture does not make the card jump. The field only shows itself
+   when you point at it. */
+h2.adestia-editor__title { padding-bottom: 3px; }
+
+.adestia-editor__title {
+  width: 100%;
+  margin: 0 0 var(--space-2);
+  padding: 2px 0;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  background: none;
+  color: var(--text);
+  font-family: var(--font-title);
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.adestia-editor__title::placeholder {
+  color: var(--text-faint);
+  font-style: italic;
+  font-weight: 400;
+}
+
+.adestia-editor__title:hover { border-bottom-color: var(--border-strong); }
+
+.adestia-editor__title:focus {
+  outline: none;
+  border-bottom-color: var(--accent);
 }
 
 /* Typed blocks, as the editor shows them. A skin may recolour these; it may

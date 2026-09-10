@@ -36,6 +36,27 @@ export default async function scenario(bench) {
   const neuve = page.locator('.journal-entry').first()
   await neuve.locator('.ProseMirror').click()
   await page.keyboard.type('La cale de 8 mm était la bonne.')
+
+  /*
+   * L'enregistrement automatique, prouvé sur le disque et sans toucher un
+   * bouton : c'est lui qui rend un bouton unique honnête, et aucun test ne
+   * peut dire s'il part vraiment dans un vrai navigateur.
+   */
+  await page.waitForTimeout(3200)
+  const auto = await bench.api('/api/pages/journal/atelier/le-gabarit-de-queues-droites.md')
+  console.log(
+    '[plus] écrit tout seul, sans bouton :',
+    JSON.stringify(String(auto.markdown ?? '').includes('La cale de 8 mm était la bonne.')),
+  )
+
+  // Et le titre ne se tape pas hors écriture : la lecture lit.
+  const ancienneCarte = page.locator('.journal-entry').last()
+  console.log(
+    '[plus] champs titre en lecture :',
+    await ancienneCarte.locator('input.adestia-editor__title').count(),
+    '— titres en lecture :',
+    await ancienneCarte.locator('h2.adestia-editor__title').count(),
+  )
   /*
    * Le frontmatter est-il TOUJOURS là ?
    *
@@ -50,8 +71,19 @@ export default async function scenario(bench) {
     await neuve.locator('.ProseMirror .adestia-editor__meta').count(),
   )
   await page.waitForTimeout(400)
-  await neuve.locator('button:has-text("Enregistrer")').click()
-  await page.waitForTimeout(1500)
+  /*
+   * « Terminé » SANS passer par « Enregistrer » — le geste rapporté à l'usage.
+   * Le bouton abandonnait en silence sous un nom qui dit le contraire ; il
+   * enregistre puis ferme. Et ce qui reste à l'écran doit être le texte écrit,
+   * pas le document tel qu'il avait été chargé (l'autre défaut du même jour).
+   */
+  await neuve.locator('button:has-text("Terminé")').click()
+  await page.waitForTimeout(2200)
+  await bench.shoot(page, 'p3b-termine-sans-enregistrer')
+  console.log(
+    '[plus] ce que l’entrée montre une fois fermée :',
+    JSON.stringify((await neuve.locator('.adestia-reader').innerText()).replace(/\s+/g, ' ').trim()),
+  )
 
   const ecrit = await bench.api('/api/pages/journal/atelier/le-gabarit-de-queues-droites.md')
   console.log('[plus] nommée par son titre —')
@@ -66,14 +98,26 @@ export default async function scenario(bench) {
   const noms = index.entries.map((e) => e.path).filter((p) => !p.endsWith('INDEX.md'))
   console.log('[plus] fichiers du journal :', JSON.stringify(noms))
 
-  // ── Renommer une entrée qui existait déjà ────────────────────────────────
+  // ── Renommer, depuis le champ titre de l'éditeur ────────────────────────
+  // Le titre est le frontmatter de la page, donc il vit DANS l'éditeur : une
+  // seule main écrit le fichier, et il reste modifiable pendant l'écriture.
   const ancienne = page.locator('.journal-entry').last()
-  await ancienne.locator('.journal-entry__title').click()
+  await ancienne.locator('button[title="Modifier"]').click()
+  await page.waitForSelector('.adestia-editor__surface .ProseMirror', { timeout: 15_000 })
+  await ancienne.locator('input.adestia-editor__title').fill('Affûtage des ciseaux')
   await page.waitForTimeout(400)
-  await bench.shoot(page, 'p4-renommage')
-  await page.locator('.journal-entry__rename').fill('Affûtage des ciseaux')
-  await page.keyboard.press('Enter')
-  await page.waitForTimeout(1800)
+  await bench.shoot(page, 'p4-titre-en-ecriture')
+
+  // Le TITRE SEUL, sans une frappe dans le corps : est-ce que ça part ?
+  await page.waitForTimeout(3200)
+  const parTitre = await bench.api('/api/pages/journal/atelier/2026-09-01-0800.md')
+  console.log(
+    '[plus] le titre seul déclenche l’enregistrement :',
+    JSON.stringify(String(parTitre.markdown ?? '').includes('title: Affûtage des ciseaux')),
+  )
+
+  await ancienne.locator('button:has-text("Terminé")').click()
+  await page.waitForTimeout(2200)
 
   const renommee = await bench.api('/api/pages/journal/atelier/2026-09-01-0800.md')
   console.log('[plus] renommée —')
