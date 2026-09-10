@@ -758,12 +758,27 @@ la mauvaise, comme le `.filter(Boolean)` de `todo` l'a montré.**
 **Tombés à leur tour (09/09)** : la résolution est codée et enseignée
 (v0.51.0 — revendications, `from=`, l'app implicite dans son domaine) et les
 rendus génériques sont nés dans le cœur (v0.50.0 — `content`, `figures`,
-`table`, `list`, rejoignant `callout` et `gallery`). Le plugin a démarré le
-09/09 : **lot 1, `:::timeline` en portée rédigée seule** — pas d'attribut
-`depth` tant que l'éligibilité n'a pas `pm-config` (un attribut déclaré qui
-ne dessine rien est un mensonge documenté, cf. `table`). Le contrat des
-blocs a gagné `items` pour lire un corps en données (`BlockProps`, décision
-du 09/09 dans `DESIGN.md`).
+`table`, `list`, rejoignant `callout` et `gallery`). Le contrat des blocs a
+gagné `items` pour lire un corps en données (`BlockProps`, 09/09).
+
+**`:::timeline` est livré aux DEUX portées (10/09).** Rédigée — une ligne, une
+phase ou un jalon — et consolidée : `depth=children|subtree` lit `start:`/`due:`
+dans les entêtes des fiches en dessous, et **une barre ouvre la fiche qu'elle
+représente**. Le workflow colore : close est dessinée close, échue-et-ouverte
+est dessinée **en retard**, et une phase ÉCRITE n'a pas de statut donc jamais
+de retard.
+
+Le premier jet du 09/09 s'était arrêté à la portée rédigée, en inscrivant ici
+que la seconde attendait `pm-config`. **C'était faux, et ça n'était pas un
+blocage** : l'index publiait déjà `fields`, la marche vers les enfants existait
+(celle de `:::list{source=children}`), et le repli de cette lettre — « ni l'un
+ni l'autre : rien » — suffit comme filtre. Ce qui s'est passé est une décision
+de produit prise seul et habillée en contrainte technique. Le filtre fin par
+workflow reste à faire ; la skill du plugin le **dit** au lieu de le taire.
+
+**`:::list` a gagné la provenance écrite et ses vues (10/09)** : un corps, et
+les lignes sont les rangées ; `view=rows|cards|chips`. C'est ce qui a réglé la
+question nº 3 ci-dessous — les contributeurs sont une liste, pas du `content`.
 
 ### Pour mémoire, les trois d'origine tels qu'ils étaient écrits :
 
@@ -855,8 +870,18 @@ que pour l'historique du raisonnement :
    elle-même.
 2. **Gabarit = rendu ou échafaudage ?** La vue dessine-t-elle ce que le fichier
    contient, ou compose-t-elle depuis le type (recommandation : échafaudage).
-3. **Les contributeurs sont-ils un rendu, ou juste un contenu ? — LA PRÉMISSE
-   A CHANGÉ le 08/09.** Cette question reposait sur « `todo` ne définit aucun
+3. **Les contributeurs — TRANCHÉ le 10/09 : `:::list{view=chips}`, écrite.**
+   Ni un rendu dédié, ni du `content`. `content` veut dire texte NON
+   STRUCTURÉ ; des lignes `Rôle: Personne` sont des rangées, donc une liste.
+   Ce qui rend la double provenance légale est le précédent de `timeline` :
+   un nom porte deux provenances quand elles dessinent la même chose. Reste
+   entier l'arbitrage plus large ci-dessous — il n'y a pas d'annuaire, les
+   initiales sont dérivées du nom, et un vrai visage demanderait
+   `type: personne`.
+
+   *Ce qui suit est le raisonnement d'avant, conservé pour l'historique.*
+
+   **LA PRÉMISSE A CHANGÉ le 08/09.** Cette question reposait sur « `todo` ne définit aucun
    porteur ». **Ce n'est plus vrai** : `assignee:` existe, un seul handle par
    tâche, absent voulant dire « à prendre ». « Dernière contribution » devient
    donc dérivable, et l'argument qui recommandait un simple
