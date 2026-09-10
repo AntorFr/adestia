@@ -170,7 +170,15 @@ export default function createProjectBlocks(api) {
             ),
           ),
           today >= box.min && today <= box.max
-            ? h('div', { className: 'pm-timeline__today', style: { left: at(today) }, key: 'today' })
+            ? h('div', {
+                className: 'pm-timeline__today',
+                // Named at the foot, so the one line nobody drew cannot be
+                // mistaken for a milestone somebody did.
+                'data-label': fr ? "auj." : 'today',
+                title: `${fr ? "aujourd'hui" : 'today'} · ${today}`,
+                style: { left: at(today) },
+                key: 'today',
+              })
             : null,
           ...phases.map((phase, index) =>
             h(

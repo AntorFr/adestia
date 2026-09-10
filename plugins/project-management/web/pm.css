@@ -37,7 +37,12 @@
   top: 0;
   bottom: 0;
   border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--accent) 55%, var(--surface-raised));
+  /* Plein, pas délavé : une barre est un objet, pas une ombre. Les états se
+     distinguent par la DENSITÉ de la même teinte, l'écart de retard mis à
+     part — un planning lu de loin doit rester un seul dessin.
+     Teinte de la SURFACE et texte du thème : `#fff` en dur était juste en
+     clair et illisible en sombre, où l'accent est un cyan pâle. */
+  background: color-mix(in srgb, var(--accent) 55%, var(--surface-sunken));
   color: var(--text);
   font-size: var(--text-sm);
   line-height: 26px;
@@ -45,22 +50,26 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  min-width: 2px;
+  min-width: 3px;
 }
+/* La phase courante est la seule PLAQUE — l'idiome de la coque : on assombrit
+   la teinte, puis on y pose du blanc, ce qui tient sur les deux fonds sans
+   qu'un thème ait à redéfinir quoi que ce soit. */
 .pm-timeline__span--current {
-  background: var(--accent);
-  color: var(--surface-raised);
+  background: color-mix(in srgb, var(--accent) var(--plate-mix, 62%), var(--plate-base, #000));
+  color: var(--plate-fg, #fff);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 .pm-timeline__span--past {
-  background: color-mix(in srgb, var(--accent) 26%, var(--surface-raised));
+  background: color-mix(in srgb, var(--accent) 28%, var(--surface-sunken));
   color: var(--text-muted);
 }
-/* Closed by its WORKFLOW, whatever its dates say. Pale and outlined rather
+/* Closed by its WORKFLOW, whatever its dates say. Outlined and hollow rather
    than hatched: stripes running under a label make the label the thing you
    have to work to read, and the bench showed exactly that. */
 .pm-timeline__span--done {
-  background: color-mix(in srgb, var(--accent) 12%, var(--surface-raised));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface-raised));
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 45%, transparent);
   color: var(--text-muted);
 }
 
@@ -72,12 +81,24 @@
   color: var(--text);
 }
 
-/* A milestone is a vertical rule with its name on top. */
+/* A milestone is a DATE, not a duration — it has no width to carry weight,
+   so it earns its own colour instead. Grey ones read as chart furniture; the
+   whole point of a milestone is that you see it before you see the bars. */
 .pm-timeline__mile {
   position: absolute;
   top: 4px;
   bottom: 24px;
-  border-left: 2px solid color-mix(in srgb, var(--accent) 70%, var(--border));
+  border-left: 2px solid var(--warning);
+}
+.pm-timeline__mile::after {
+  content: '';
+  position: absolute;
+  left: -4px;
+  bottom: -3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--warning);
 }
 .pm-timeline__mile > span,
 .pm-timeline__mile > button {
@@ -86,16 +107,30 @@
   left: -4px;
   white-space: nowrap;
   font-size: 11px;
+  font-weight: 600;
   font-family: var(--font-mono);
-  color: var(--text-muted);
+  color: var(--warning);
 }
 /* The alternating row: same rule, its label one row higher, so neighbours clear. */
 .pm-timeline__mile--high > span,
 .pm-timeline__mile--high > button {
   top: -40px;
 }
-.pm-timeline__mile--past {
-  border-left-color: var(--border);
+/* A milestone already behind us stops shouting, but stays legible. */
+.pm-timeline__mile--past,
+.pm-timeline__mile--done {
+  border-left-color: color-mix(in srgb, var(--warning) 35%, var(--border));
+}
+.pm-timeline__mile--past::after,
+.pm-timeline__mile--done::after {
+  background: color-mix(in srgb, var(--warning) 35%, var(--border));
+}
+.pm-timeline__mile--past > span,
+.pm-timeline__mile--past > button,
+.pm-timeline__mile--done > span,
+.pm-timeline__mile--done > button {
+  color: var(--text-muted);
+  font-weight: 400;
 }
 
 /* A bar or a marker STANDING for a page is a button, and must not look like
@@ -123,12 +158,27 @@ button.pm-timeline__span:hover {
   text-decoration: underline;
 }
 
-/* Today: thin, full height, under the labels — the one line that moves alone. */
+/* TODAY — the one line that moves by itself, and the first thing anybody
+   looks for on a planning. It was 1px of `--text-faint`: present in the DOM,
+   invisible on screen, which is the same as absent. It is now a full-height
+   dashed rule in the text colour, named at the foot so it cannot be mistaken
+   for a milestone. */
 .pm-timeline__today {
   position: absolute;
   top: 0;
-  bottom: 24px;
-  border-left: 1px dashed var(--text-faint);
+  bottom: 18px;
+  border-left: 2px dashed color-mix(in srgb, var(--text) 55%, transparent);
+}
+.pm-timeline__today::after {
+  content: attr(data-label);
+  position: absolute;
+  left: 3px;
+  bottom: -17px;
+  font-size: 10px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: var(--text);
+  white-space: nowrap;
 }
 
 .pm-timeline__axis {
