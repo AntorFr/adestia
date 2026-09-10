@@ -131,6 +131,7 @@ MD
 cat >"$w/memory/chantiers/adestia/editeur/INDEX.md" <<'MD'
 ---
 title: Éditeur de blocs
+ico: ✎
 type: chantier
 status: en cours
 start: 2026-08-10

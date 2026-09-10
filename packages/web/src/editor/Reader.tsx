@@ -833,15 +833,34 @@ function Row({
     .map((name) => page.blocks?.[name.slice('content:'.length)])
     .find((text) => text !== undefined && text !== '')
   const title = titleOf(page)
+  // The glyph a row wears, and none of it is invented here. A page that
+  // declares `ico:` wins — the same field the section cards and the tiles
+  // read, so a subject looks like itself wherever it appears. Failing that,
+  // the shell's own two words: `◆` for a row standing for a FOLDER, which is
+  // what `sections.ts` already draws for a subject, and `•` for a plain page,
+  // which is what the launcher already draws for an item. The shape then says
+  // something true that the list had already worked out — whether this row is
+  // a subject you descend into or a page you open.
+  const declared = page.fields['ico']
+  const glyph =
+    typeof declared === 'string' && declared !== ''
+      ? declared
+      : isIndexPage(page.path)
+        ? '◆'
+        : '•'
   return (
     <button
       type="button"
       className="adestia-list__row"
       onClick={() => ctx.openPage?.(page.path)}
     >
-      {view === 'chips' && (
+      {view === 'chips' ? (
         <i className="adestia-chip__plate" aria-hidden="true">
           {initials(title)}
+        </i>
+      ) : (
+        <i className="adestia-list__ico" aria-hidden="true">
+          {glyph}
         </i>
       )}
       <span className="adestia-list__title">

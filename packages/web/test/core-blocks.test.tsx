@@ -25,7 +25,7 @@ const PAGES = [
     blocks: { etat: 'Huit lots sur treize ; le parseur tient.', perimetre: 'Hors infra.' },
   },
   { path: 'chantiers/adestia/editeur.md', fields: { title: 'Éditeur de blocs', status: 'en cours' } },
-  { path: 'chantiers/adestia/tours.md', fields: { title: 'Les tours', status: 'clos' } },
+  { path: 'chantiers/adestia/tours.md', fields: { title: 'Les tours', status: 'clos', ico: '🌀' } },
   { path: 'chantiers/adestia/profond/loin.md', fields: { title: 'Plus bas' } },
   { path: 'chantiers/adestia/INDEX.md', fields: { title: 'Adestia' } },
 ]
@@ -241,6 +241,37 @@ describe(':::list', () => {
       <Reader markdown={':::list{pull=content:absent}\n:::\n'} path={HERE} pages={PAGES} />,
     )
     expect(container.querySelector('.adestia-list__said')).toBeNull()
+  })
+
+  it('porte le glyphe que l’enfant s’est donné, et sinon celui de la coque', () => {
+    // Rien n'est inventé ici : `ico:` est le champ que lisent déjà les tuiles
+    // et les cartes de section, et les deux replis — ◆ pour un sujet, • pour
+    // une page — sont les mots que la coque emploie ailleurs. La forme dit
+    // donc quelque chose de vrai : descend-on dedans, ou l'ouvre-t-on ?
+    const { container } = render(
+      <Reader markdown={':::list{closed=show}\n:::\n'} path={HERE} pages={PAGES} />,
+    )
+    const rows = [...container.querySelectorAll('.adestia-list__row')]
+    const glyph = (titre: string) =>
+      rows
+        .find((row) => row.querySelector('.adestia-list__title')?.textContent?.startsWith(titre))
+        ?.querySelector('.adestia-list__ico')?.textContent
+    expect(glyph('Les tours')).toBe('🌀')
+    expect(glyph('Socle de contenu')).toBe('•')
+  })
+
+  it('marque d’un losange la ligne qui tient pour un DOSSIER', () => {
+    const pages = [
+      ...PAGES,
+      { path: 'chantiers/adestia/editeur/INDEX.md', fields: { title: 'Éditeur' } },
+    ]
+    const { container } = render(
+      <Reader markdown={':::list{depth=children}\n:::\n'} path={HERE} pages={pages} />,
+    )
+    const row = [...container.querySelectorAll('.adestia-list__row')].find((r) =>
+      r.querySelector('.adestia-list__title')?.textContent?.startsWith('Éditeur'),
+    )
+    expect(row?.querySelector('.adestia-list__ico')?.textContent).toBe('◆')
   })
 
   it('replie ce qui est clos plutôt que de le cacher', () => {

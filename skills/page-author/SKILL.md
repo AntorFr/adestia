@@ -484,6 +484,10 @@ written in the block:
 - **`view`** chooses the shape: `rows` (the default), `cards` — a grid, when
   each entry is meant to be scanned on its own rather than read down a column
   — and `chips`, a plate of initials beside a name.
+- Each row wears a **glyph**, and you never write it on the list: the child's
+  own `ico:` if it declares one — the same field the tiles and the section
+  cards read — else `◆` when the row stands for a FOLDER and `•` when it is a
+  plain page. So giving a page an `ico:` dresses it everywhere at once.
 
 **A list can also be WRITTEN.** Put lines in the body and they ARE the rows,
 split at the first colon, and nothing is queried:

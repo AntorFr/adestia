@@ -2753,6 +2753,17 @@ h2.adestia-editor__title { padding-bottom: 3px; }
   cursor: pointer;
 }
 .adestia-list__row:hover { background: var(--accent-quiet); }
+/* The row's glyph: a fixed slot, so titles line up whether the mark is a
+   declared emoji, a subject's diamond or a page's dot. */
+.adestia-list__ico {
+  flex: none;
+  width: 1.2em;
+  font-style: normal;
+  font-size: 0.9em;
+  line-height: 1.4;
+  color: var(--accent);
+  text-align: center;
+}
 .adestia-list__title { flex: 1; min-width: 0; font-weight: 600; font-size: 0.95em; }
 /* What the child SAYS of itself, pulled from its own `:::content` block. A
    sentence, so it sits under the title rather than in a chip beside it. */
