@@ -46,6 +46,7 @@ export default async function scenario(bench) {
   await page.click('.adestia-crumbs a:has-text("Adestia v1"), .adestia-crumbs button:has-text("Adestia v1")')
   await page.waitForTimeout(1200)
   console.log('LE LIEN MÈNE À', await page.evaluate(() => location.hash))
+  await page.waitForSelector('text=Cadrage', { timeout: 15_000 })
   await bench.shoot(page, '5-le-dossier-ouvre-sa-fiche')
 
   await page.evaluate(() => {

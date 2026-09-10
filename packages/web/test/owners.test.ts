@@ -360,7 +360,9 @@ describe('sur quoi un dossier s’ouvre', () => {
       page('chantiers/adestia/INDEX.md', { type: 'project-management' }),
       page('chantiers/adestia/note.md'),
     ]
-    expect(folderRoute([suivi], 'chantiers/adestia', pages)).toBe('/page/chantiers/adestia/INDEX')
+    // L'adresse est celle du DOSSIER : `INDEX` est un détail de stockage, et
+    // il n'a pas plus sa place dans un lien que `.md`.
+    expect(folderRoute([suivi], 'chantiers/adestia', pages)).toBe('/page/chantiers/adestia')
   })
 
   it('sur l’étagère quand il n’en tient aucune', () => {
@@ -409,5 +411,35 @@ describe('un `app:` écrit là où il ne sera jamais lu', () => {
 
   it('ne dit rien quand tout va bien', () => {
     expect(strayApp([suivi], [page('chantiers/INDEX.md', { app: 'project-management' })])).toEqual([])
+  })
+})
+
+
+describe('une adresse qui nomme un dossier', () => {
+  const pages = [
+    page('chantiers/adestia/INDEX.md', { type: 'project-management' }),
+    page('chantiers/adestia/note.md'),
+    page('voyages/baden/baden.md'),
+  ]
+
+  it('ouvre la page d’index du dossier, quelle que soit son orthographe', () => {
+    expect(pageAddress('chantiers/adestia', pages).path).toBe('chantiers/adestia/INDEX.md')
+    // L'autre convention : une page du nom de son dossier.
+    expect(pageAddress('voyages/baden', pages).path).toBe('voyages/baden/baden.md')
+  })
+
+  it('laisse une adresse de PAGE tranquille', () => {
+    expect(pageAddress('chantiers/adestia/note', pages).path).toBe('chantiers/adestia/note.md')
+  })
+
+  it('répond comme avant quand rien n’est connu — un lien reste un lien', () => {
+    expect(pageAddress('chantiers/adestia').path).toBe('chantiers/adestia.md')
+  })
+
+  it('garde le magasin demandé', () => {
+    expect(pageAddress('chantiers/adestia?store=famille', pages)).toEqual({
+      path: 'chantiers/adestia/INDEX.md',
+      store: 'famille',
+    })
   })
 })

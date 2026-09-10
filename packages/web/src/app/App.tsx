@@ -320,7 +320,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
    * from one circle to another.
    */
   const address = route.startsWith('/page/')
-    ? pageAddress(route.slice('/page/'.length))
+    ? pageAddress(route.slice('/page/'.length), pages)
     : undefined
   const pagePath = address?.path
   const pageStore = address?.store

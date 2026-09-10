@@ -20,7 +20,7 @@
 
 import { routeMatches } from '../plugins/contract.js'
 import type { LoadedPlugin } from '../plugins/loader.js'
-import { absorbs, indexOf, type IndexEntry } from './sections.js'
+import { absorbs, indexOf, isIndexPage, type IndexEntry } from './sections.js'
 
 /**
  * How a workspace path is written into a route: segments escaped, slashes
@@ -79,11 +79,20 @@ export function pageRoute(path: string, store?: string): string {
  * escaped-slash form. An address is a promise, and promises are not withdrawn
  * because the product got tidier.
  */
-export function pageAddress(rest: string): { path: string; store?: string } {
+export function pageAddress(
+  rest: string,
+  pages: readonly IndexEntry[] = [],
+): { path: string; store?: string } {
   const cut = rest.indexOf('?')
   const raw = cut === -1 ? rest : rest.slice(0, cut)
   const asked = cut === -1 ? null : new URLSearchParams(rest.slice(cut + 1)).get('store')
   const decoded = decodePath(raw)
+  // An address that names a FOLDER opens that folder's index page. `INDEX` is
+  // the same leak `.md` was: a fact about where the text is stored, surfacing
+  // in something a person reads, shares and bookmarks. The address of a
+  // worksite is its FOLDER — the index is merely how the folder speaks.
+  const folded = indexOf(pages, decoded)
+  if (folded) return { path: folded.path, ...(asked ? { store: asked } : {}) }
   return {
     path: /\.md$/i.test(decoded) ? decoded : `${decoded}.md`,
     ...(asked ? { store: asked } : {}),
@@ -352,5 +361,8 @@ export function folderRoute(
   if (owned) return owned
   const owner = ownerOf(plugins, folder, pages)
   const face = owner ? faceOf(owner, pages, folder) : undefined
-  return face ? pageRoute(face) : sectionRoute(folder)
+  if (!face) return sectionRoute(folder)
+  // The FOLDER's own address when its face is its index — `INDEX` never
+  // belongs in a link. Any other page keeps its own name.
+  return pageRoute(isIndexPage(face) ? folder : face)
 }

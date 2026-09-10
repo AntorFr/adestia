@@ -103,7 +103,7 @@ export function indexOf(entries: readonly IndexEntry[], folder: string): IndexEn
 }
 
 /** True for a page that IS its folder's index rather than one of its contents. */
-function isIndexPage(path: string): boolean {
+export function isIndexPage(path: string): boolean {
   return INDEX_FILE.test(path) || isHomonymous(path)
 }
 
