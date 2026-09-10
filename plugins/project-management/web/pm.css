@@ -55,15 +55,32 @@
   background: color-mix(in srgb, var(--accent) 26%, var(--surface-raised));
   color: var(--text-muted);
 }
+/* Closed by its WORKFLOW, whatever its dates say. Pale and outlined rather
+   than hatched: stripes running under a label make the label the thing you
+   have to work to read, and the bench showed exactly that. */
+.pm-timeline__span--done {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-raised));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
+  color: var(--text-muted);
+}
 
-/* A milestone is a vertical rule with its name on top — nothing to click yet. */
+/* Its date has passed and its status says it is still open. The one state a
+   planning is actually read for, and both halves of it are already on file. */
+.pm-timeline__span--late {
+  background: color-mix(in srgb, var(--warning) 22%, var(--surface-raised));
+  box-shadow: inset 0 0 0 1px var(--warning);
+  color: var(--text);
+}
+
+/* A milestone is a vertical rule with its name on top. */
 .pm-timeline__mile {
   position: absolute;
   top: 4px;
   bottom: 24px;
   border-left: 2px solid color-mix(in srgb, var(--accent) 70%, var(--border));
 }
-.pm-timeline__mile span {
+.pm-timeline__mile > span,
+.pm-timeline__mile > button {
   position: absolute;
   top: -22px;
   left: -4px;
@@ -73,11 +90,37 @@
   color: var(--text-muted);
 }
 /* The alternating row: same rule, its label one row higher, so neighbours clear. */
-.pm-timeline__mile--high span {
+.pm-timeline__mile--high > span,
+.pm-timeline__mile--high > button {
   top: -40px;
 }
 .pm-timeline__mile--past {
   border-left-color: var(--border);
+}
+
+/* A bar or a marker STANDING for a page is a button, and must not look like
+   one: the drawing is the affordance, the element is only what makes it
+   reachable by keyboard. Placed after the label rules so this reset wins. */
+button.pm-timeline__span,
+.pm-timeline__mile > button {
+  border: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+button.pm-timeline__span:hover {
+  filter: brightness(1.06);
+}
+.pm-timeline__mile > button {
+  background: none;
+  padding: 0;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+.pm-timeline__mile > button:hover {
+  color: var(--accent);
+  text-decoration: underline;
 }
 
 /* Today: thin, full height, under the labels — the one line that moves alone. */

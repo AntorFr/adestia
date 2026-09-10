@@ -1,6 +1,6 @@
 ---
 name: project-management
-description: How to write a project planning on a page — the :::timeline block, its phase and milestone lines. Use when asked to phase, plan or schedule a chantier.
+description: How to write a project planning on a page — the :::timeline block, written phases or the consolidated planning of the pages below. Use when asked to phase, plan or schedule a chantier.
 ---
 
 # Project management
@@ -12,6 +12,15 @@ If a page ever needs to address this plugin's rendering explicitly, the value
 `from=` takes is `project-management`.
 
 ## `:::timeline` — phases and milestones on a time axis
+
+One rendering, TWO provenances. `depth` chooses which:
+
+| `depth` | Where the bars come from |
+|---|---|
+| `self` (default) | the lines written in the block |
+| `children` · `subtree` | the `start:`/`due:` of the pages below — nothing to retype |
+
+### Written — `depth=self`
 
 The body is a list, one line per entry, and the line IS the data:
 
@@ -39,17 +48,47 @@ The block derives the rest by itself — do not write it:
   under the chart exactly as written, never guessed at. If you see your line
   there, fix the date, not the label.
 
-⚠️ **Never leave the block empty.** `:::timeline` holds content, and the
-validator refuses a page carrying an empty one — write at least one line
-when you insert it. A block whose lines carry no readable date is fine: it
-shows the grammar and the lines, and the page stays editable.
+⚠️ **A written timeline with no lines draws nothing** — it shows the grammar
+instead. Either write the lines, or use the consolidated form below; an empty
+`depth=self` block is a placeholder somebody forgot.
+
+### Consolidated — `depth=children` or `depth=subtree`
+
+```markdown
+:::timeline{depth=subtree source=children}
+:::
+```
+
+No body: the bars are the pages below, and each one OPENS the page it stands
+for. Write dates in the pages themselves, in their frontmatter:
+
+```yaml
+start: 2026-07-01   # not before — never "I have begun"
+due: 2026-08-15
+```
+
+Both are `todo`'s own words, at their own meaning. The rules are the ones
+above, unchanged: `due:` alone is a milestone, `start:` with it a phase, and
+a page carrying neither simply does not appear.
+
+- **`children` counts a sub-folder once**, by its index page — a worksite is
+  its folder, not the pages filed inside it. `subtree` reaches all the way
+  down. Same walk as `:::list{source=children}`, so a planning and a list of
+  sub-worksites never disagree about what "below" means.
+- **A page the workflow calls finished is drawn done**, hatched, whatever its
+  dates say. Never add a percentage or a "progress" field to keep in step —
+  `status:` is what colours the planning, and there is only one table.
+- A page whose dates cannot be read (a `start:` after its `due:`, a `due:`
+  that is not an ISO date) is named under the chart, never guessed at.
+
+`source` exists for the day a planning reads something other than the pages
+below; today `children` is its only value, and its default.
 
 A timeline usually wants the full reading line: leave `w` alone.
 
 ## What does NOT exist yet
 
-The consolidated planning — one bar per sub-page, read from `start:`/`due:`
-in their headers — is designed but not built, and `:::timeline` takes no
-`depth` attribute yet. Do not write one: the validator flags it as unknown
-and the block ignores it. Until then, a planning is written where it is
-read, in the block.
+`pm-config` — the file that will declare which page types are worksites — is
+not built. Until it is, the consolidated planning shows **every** page below
+that carries dates. If something you did not mean shows up, narrow `depth`
+rather than removing the dates.

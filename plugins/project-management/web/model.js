@@ -39,6 +39,86 @@ export function parseLine(text) {
   return { label, due: rest }
 }
 
+/**
+ * ── The queried scope: one bar per page below ───────────────────────────────
+ *
+ * The letter's open model: a phase IS an item. There is no `timeline` page
+ * type and no phase file — any page carrying dates enters the planning, which
+ * is what lets a bar be clicked into the sub-worksite it stands for. `due:`
+ * alone is a milestone, `start:` with it a phase: the SAME two rules the
+ * written lines follow, so one planning cannot mean two things.
+ *
+ * `start:` and `due:` are `todo`'s words, taken at their own meaning and not
+ * redefined — `start:` is "not before", never "I have begun".
+ */
+
+/** A folder's own index page IS the folder, never one of its contents. */
+function isIndexPage(path) {
+  const parts = path.split('/')
+  const file = parts.at(-1)?.replace(/\.md$/i, '') ?? ''
+  return /^index$/i.test(file) || (parts.length > 1 && file === parts.at(-2))
+}
+
+const folderOf = (path) => (path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '')
+
+/**
+ * Whether a page falls in the block's scope — the core's own walk for
+ * `:::list{source=children}`, so a planning and a list of sub-worksites never
+ * disagree about what "below" means. One folder down, only its index stands
+ * for it: a worksite is its folder, not the pages filed inside it.
+ */
+export function under(path, base, depth) {
+  const folder = folderOf(path)
+  const inside = base === '' ? true : folder === base || folder.startsWith(`${base}/`)
+  if (!inside) return false
+  if (depth === 'subtree') return true
+  const rest = base === '' ? folder : folder.slice(base.length + 1).replace(/^\//, '')
+  if (folder === base) return !isIndexPage(path)
+  if (depth === 'self') return false
+  return !rest.includes('/') && isIndexPage(path)
+}
+
+const DATE_FIELD = (value) => (typeof value === 'string' && DATE.test(value.trim()) ? value.trim() : undefined)
+
+/**
+ * The index's pages, as timeline entries — the eligible ones only.
+ *
+ * ELIGIBILITY, and it is deliberately the calendar's: a page carrying `due:`
+ * enters, a page carrying neither date does not. The letter's finer filter
+ * (only types with a declared workflow) needs `pm-config` to say which types
+ * those are; until it exists this is the honest approximation, and it is the
+ * letter's own fallback — "ni l'un ni l'autre : rien, et jamais une date
+ * devinée". A page whose `start:` sits after its `due:` is unreadable exactly
+ * like the written line that does, and comes back named rather than swapped.
+ */
+export function fromPages(pages, base, depth) {
+  const entries = []
+  const unread = []
+  for (const page of pages) {
+    if (!under(page.path, base, depth)) continue
+    const due = DATE_FIELD(page.fields?.due)
+    const start = DATE_FIELD(page.fields?.start)
+    const label = page.title || page.path
+    if (!due) {
+      if (start) unread.push(label)
+      continue
+    }
+    if (start && start > due) {
+      unread.push(label)
+      continue
+    }
+    entries.push({
+      label,
+      ...(start ? { start } : {}),
+      due,
+      path: page.path,
+      finished: page.finished === true,
+    })
+  }
+  entries.sort((a, b) => ((a.start ?? a.due) < (b.start ?? b.due) ? -1 : 1))
+  return { entries, unread }
+}
+
 const utc = (iso) => Date.parse(`${iso}T00:00:00Z`)
 const iso = (date) => date.toISOString().slice(0, 10)
 
@@ -89,13 +169,25 @@ export function fraction(date, box) {
 }
 
 /**
- * What the calendar alone can say about an entry — nothing here reads a
- * status, deliberately: a written phase has no page to carry one. `current`
- * is the phase containing today (the letter: "où l'on en est" costs no
- * field); a milestone is `current` only on its very day.
+ * Where an entry stands — the calendar and the workflow, and what their
+ * DISAGREEMENT means.
+ *
+ * The workflow wins when it has spoken: a worksite the content engine calls
+ * finished is `done` whatever its dates say, and nobody maintains a
+ * percentage beside it. What the calendar adds is the case worth seeing:
+ * an item whose `due` has passed while its status says it is still open is
+ * `late`. Both facts are already on file; drawing them as one state would
+ * hide the only thing a planning is read for.
+ *
+ * `finished` is absent — not false — on a WRITTEN phase, which has no page
+ * and therefore no status. So a written phase whose dates have elapsed is
+ * `past` and never `late`: nothing here knows whether it went well, and
+ * inventing lateness from a date alone would be exactly the guess this
+ * block refuses everywhere else.
  */
 export function classify(entry, today) {
-  if (entry.due < today) return 'past'
+  if (entry.finished === true) return 'done'
+  if (entry.due < today) return entry.finished === false ? 'late' : 'past'
   if ((entry.start ?? entry.due) > today) return 'ahead'
   return 'current'
 }

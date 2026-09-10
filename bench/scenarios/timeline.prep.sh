@@ -55,6 +55,86 @@ grammaire ET rendre les lignes par leur nom, jamais un axe autour de rien :
 - Sortie mobile: à caler
 - Idées en vrac
 :::
+
+## Le planning consolidé
+
+Rien de ressaisi : une barre par sous-chantier, lue dans leurs entêtes. Le
+socle est clos — il doit se voir fini malgré ses dates. La sortie mobile est
+échue et toujours ouverte : c'est un retard, et ça doit se voir. Les
+permissions ont un `start:` après leur `due:` : illisible, donc nommée
+dessous.
+
+:::timeline{depth=subtree source=children}
+:::
+MD
+
+mkdir -p "$w/memory/chantiers/adestia/socle" "$w/memory/chantiers/adestia/editeur" \
+  "$w/memory/chantiers/adestia/permissions" "$w/memory/chantiers/adestia/mobile"
+
+cat >"$w/memory/chantiers/adestia/socle/INDEX.md" <<'MD'
+---
+title: Socle de contenu
+type: chantier
+status: clos
+start: 2026-07-01
+due: 2026-08-20
+---
+
+# Socle de contenu
+MD
+
+cat >"$w/memory/chantiers/adestia/editeur/INDEX.md" <<'MD'
+---
+title: Éditeur de blocs
+type: chantier
+status: en cours
+start: 2026-08-10
+due: 2026-09-30
+---
+
+# Éditeur de blocs
+MD
+
+cat >"$w/memory/chantiers/adestia/permissions/INDEX.md" <<'MD'
+---
+title: Permissions
+type: chantier
+status: en cours
+start: 2026-10-01
+due: 2026-09-15
+---
+
+# Permissions
+MD
+
+cat >"$w/memory/chantiers/adestia/mobile/INDEX.md" <<'MD'
+---
+title: Sortie mobile
+type: chantier
+status: en cours
+start: 2026-07-15
+due: 2026-08-31
+---
+
+# Sortie mobile
+MD
+
+cat >"$w/memory/chantiers/adestia/v1.md" <<'MD'
+---
+title: v1.0
+type: jalon
+due: 2026-09-25
+---
+
+# v1.0
+MD
+
+cat >"$w/memory/chantiers/adestia/note.md" <<'MD'
+---
+title: Note de lecture
+---
+
+Une page sans date : elle ne doit apparaître nulle part sur le planning.
 MD
 
 cat >"$stage/adestia.config.yaml" <<'YAML'
