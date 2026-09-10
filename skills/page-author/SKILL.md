@@ -397,6 +397,26 @@ is display; the SUBJECT is what queries, `pull=content:…` and configuration
 address. A block with a title and no type is refused — it has lost what it
 was about, however nice the heading.
 
+**`view=cards`** puts the section in a box. Reach for it when a page is made
+of several sections that should read as **blocks** rather than as one column
+of prose — a status beside a scope, three panels across a band:
+
+```markdown
+:::content{type=perimetre title="Périmètre" view=cards w=1/2}
+Le socle de contenu et son shell, hors infra.
+:::
+```
+
+It changes nothing else: the subject, the title, the icon and the signature
+are all still there. Note the word is the plural `cards`, the same one `list`
+uses — an unknown value is an error that locks the page, so there is one word
+for "boxed" and no `view=card` to mistype.
+
+⚠️ **A boxed content is not a `callout`.** A callout is an ASIDE — a remark
+set apart from the flow, coloured by its tone, with no subject and no
+signature. Use it to interrupt. Use a boxed `content` when the thing IS a
+section of the page and you only want it framed.
+
 **`figures`** — numbers as tiles, read from a markdown list the file keeps
 readable:
 

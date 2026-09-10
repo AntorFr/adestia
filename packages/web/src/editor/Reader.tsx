@@ -544,8 +544,9 @@ function ContentBlock({ node, ctx }: { readonly node: Node; readonly ctx: Ctx })
   const ico = node.attributes?.['ico']
   const by = node.attributes?.['by']
   const on = node.attributes?.['on']
+  const boxed = node.attributes?.['view'] === 'cards'
   return (
-    <section className="adestia-content">
+    <section className={`adestia-content${boxed ? ' adestia-content--cards' : ''}`}>
       {title && (
         <h3 className="adestia-content__title">
           {ico && (

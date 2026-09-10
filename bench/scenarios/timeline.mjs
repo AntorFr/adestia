@@ -7,7 +7,11 @@
  * qui doit se voir FINIE malgré ses dates, et une aux dates inversées nommée
  * dessous. Les barres de la seconde s'ouvrent — la troisième photo le prouve.
  *
- * La page porte aussi les deux autres vues de `:::list` — des pastilles pour
+ * La page porte aussi deux `:::content{view=cards}` côte à côte, avec un
+ * `:::callout` juste dessous — la seule façon de vérifier que la section
+ * encadrée et l'aparté ne se ressemblent pas.
+ *
+ * Et les deux autres vues de `:::list` — des pastilles pour
  * des rôles ÉCRITS, des cartes pour les sous-chantiers requêtés — parce que
  * « ça tient sur une ligne » et « ça se lit » sont deux questions différentes.
  *
@@ -16,12 +20,13 @@
  */
 export default async function scenario(bench) {
   for (const theme of ['light', 'dark']) {
-    const page = await bench.open({ theme, height: 1900 })
+    const page = await bench.open({ theme, height: 2300 })
     await page.evaluate(() => {
       location.hash = '/page/chantiers/adestia/INDEX.md'
     })
     await page.waitForSelector('text=Cadrage', { timeout: 15_000 })
     await page.waitForTimeout(600)
+    await page.waitForSelector('.adestia-content--cards', { timeout: 15_000 })
     await page.waitForSelector('.adestia-chip__plate', { timeout: 15_000 })
     await page.waitForSelector('.adestia-list--cards', { timeout: 15_000 })
     await bench.shoot(page, `1-le-planning-${theme}`)

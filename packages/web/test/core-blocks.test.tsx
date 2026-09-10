@@ -40,6 +40,45 @@ describe(':::content', () => {
     const [issue] = validateDocument(parse(':::content\nDu texte.\n:::\n'))
     expect(issue?.message).toContain('type')
   })
+  it('met la section dans une boîte en `view=cards`, et pas autrement', () => {
+    // « Une vision plus structurée en bloc » : la même section, encadrée, pour
+    // qu'une page de plusieurs se lise comme des blocs et non comme une seule
+    // colonne de prose.
+    const { container } = render(
+      <Reader
+        markdown={':::content{type=perimetre view=cards}\nDu texte.\n:::\n'}
+        path={HERE}
+        pages={PAGES}
+      />,
+    )
+    const section = container.querySelector('.adestia-content')
+    expect(section?.classList.contains('adestia-content--cards')).toBe(true)
+    // La boîte ne remplace rien : le sujet, le titre et la prose restent.
+    expect(screen.getByText('Perimetre')).toBeTruthy()
+    expect(screen.getByText('Du texte.')).toBeTruthy()
+  })
+
+  it('reste en prose sans le dire', () => {
+    const { container } = render(
+      <Reader markdown={':::content{type=perimetre}\nDu texte.\n:::\n'} path={HERE} pages={PAGES} />,
+    )
+    expect(container.querySelector('.adestia-content--cards')).toBeNull()
+  })
+
+  it('garde son titre, son icône et sa signature dans la boîte', () => {
+    // Une boîte n'est pas un callout : un callout est un aparté sans sujet ni
+    // signature, celle-ci est une SECTION encadrée et garde tout ce qu'elle a.
+    render(
+      <Reader
+        markdown={':::content{type=synthese title="Synthèse" ico=📋 by=Antor on=2026-09-10 view=cards}\nDu texte.\n:::\n'}
+        path={HERE}
+        pages={PAGES}
+      />,
+    )
+    expect(screen.getByText('Synthèse')).toBeTruthy()
+    expect(screen.getByText('📋')).toBeTruthy()
+    expect(screen.getByText('Antor · 2026-09-10')).toBeTruthy()
+  })
 })
 
 describe(':::figures', () => {

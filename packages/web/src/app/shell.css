@@ -2668,6 +2668,26 @@ h2.adestia-editor__title { padding-bottom: 3px; }
 }
 .adestia-content > :last-child { margin-bottom: 0; }
 
+/* `view=cards` — the same section, given a box, so a page of several reads as
+   BLOCKS rather than as one column of prose. Not a callout: a callout is an
+   aside coloured by its tone, this is a section of the page that happens to
+   be framed, and it keeps its subject, its title and its signature. */
+.adestia-content--cards {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+}
+/* Boxed sections sharing a line end flush, whatever their length. Two panels
+   of different heights read as a mistake rather than as a band — the bench
+   showed exactly that, because `.adestia-row` aligns to `flex-start` and a
+   cell that does not stretch gives `height: 100%` nothing to fill.
+   Scoped with `:has` rather than by flipping the row's own alignment: every
+   other band — prose beside a list, tiles beside a table — was laid out
+   against `flex-start`, and none of them asked for this. */
+.adestia-row:has(> .adestia-row__cell > .adestia-content--cards) { align-items: stretch; }
+.adestia-row__cell > .adestia-content--cards { height: 100%; margin-bottom: 0; }
+
 /* `:::figures` — the numbers first, because that is what the eye came for,
    and the label under it. Tabular figures so a column of them lines up. */
 .adestia-figures {

@@ -152,6 +152,23 @@ export const VOCABULARY: Readonly<Record<string, BlockSpec>> = {
     attributes: {
       type: { required: true },
       /**
+       * How much BOX the passage gets. `plain` is prose under a heading;
+       * `cards` puts it in a bordered panel, so a page of several sections
+       * reads as blocks rather than as one column of text.
+       *
+       * Same word as `list`'s, on purpose and despite the plural reading
+       * oddly on a single box: a closed set refuses an unknown value with an
+       * ERROR, so `view=card` written by muscle memory would lock the page.
+       * One word for "boxed", everywhere.
+       *
+       * Not a `callout`, and the line is worth holding: a callout is an
+       * ASIDE — a remark set apart from the flow, coloured by its tone, with
+       * no subject and no signature. This is a SECTION of the page that
+       * happens to be boxed, and it keeps everything a section has: `type`,
+       * `title`, `ico`, `by`, `on`.
+       */
+      view: { values: ['plain', 'cards'], default: 'plain' },
+      /**
        * Display, on the same ladder the tiles taught: the occurrence beats a
        * configured label, which beats the prettified `type`. Neither replaces
        * `type` — the SUBJECT is what queries, pulls and configs address, and
