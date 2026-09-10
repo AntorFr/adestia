@@ -220,8 +220,14 @@ export const VOCABULARY: Readonly<Record<string, BlockSpec>> = {
    */
   list: {
     name: 'list',
-    content: 'empty',
-    description: 'The pages under this one, as rows.',
+    // TWO provenances, one drawing. Written — the body's lines ARE the rows,
+    // `Rôle: Personne`, the same first-colon cut `figures` and `timeline`
+    // make — or queried, from `source=`. A declaration of who does what on a
+    // project cannot be derived from anything: somebody decides it. That is
+    // still a list, not free prose, and calling it `content` would have made
+    // the name mean "text" on one page and "rows" on another.
+    content: 'optional',
+    description: 'Rows: the pages under this one, or the lines written in the block.',
     attributes: {
       // The slot a plugin widens. Closed to one value, so it cannot promise
       // a source nobody answers: `source=children` gets exactly what it says.
@@ -232,9 +238,10 @@ export const VOCABULARY: Readonly<Record<string, BlockSpec>> = {
       pull: {},
       sort: {},
       closed: { values: ['fold', 'hide', 'show'], default: 'fold' },
-      // NO `view` here. It was declared with `rows|cards` and read by nothing,
-      // in the same commit that refused `view=cards` on `table` for exactly
-      // that reason. Cards first, then the attribute.
+      // Every value here is DRAWN. `grid` is absent on purpose: it belongs to
+      // `source=files`, which nothing answers yet, and an attribute value
+      // that draws nothing is the documented lie this table paid for once.
+      view: { values: ['rows', 'cards', 'chips'], default: 'rows' },
     },
   },
 }

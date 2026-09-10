@@ -431,7 +431,8 @@ wants one (a risk register grading `moyen` and `fort`) OVERRIDES this block and
 brings its own vocabulary; the core has no opinion about what a first column
 means.
 
-**`list`** — the pages under this one, as rows that open in place:
+**`list`** — rows: the pages under this one, opening in place, or the lines
+written in the block:
 
 ```markdown
 :::list{depth=children pull=status,due sort=due closed=fold}
@@ -456,6 +457,29 @@ means.
 - **`source`** accepts `children` and nothing else today. It is the slot a
   plugin widens when it has something to list. (`from=` is a different word on
   purpose: reserved on EVERY block, it names which plugin draws it — see below.)
+- **`view`** chooses the shape: `rows` (the default), `cards` — a grid, when
+  each entry is meant to be scanned on its own rather than read down a column
+  — and `chips`, a plate of initials beside a name.
+
+**A list can also be WRITTEN.** Put lines in the body and they ARE the rows,
+split at the first colon, and nothing is queried:
+
+```markdown
+:::list{view=chips}
+- PM: Machine
+- IT PM: Bidule
+- BA: Truc
+:::
+```
+
+Reach for this whenever the list is a **declaration** — who holds which role,
+what the ground rules are — something decided by somebody and derivable from
+nothing. It is still a list, so it stays `list`; writing it as `content` would
+make that word mean "prose" on one page and "rows" on another.
+
+What a written row does NOT have is a page behind it: nothing opens, `pull`
+has nothing to pull, and `closed` has no status to close by. If the entries
+are pages, query them instead of retyping them.
 
 A page that carries this block never lists itself, and a folder's index page is
 the folder rather than one of its contents.

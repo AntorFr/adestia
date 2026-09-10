@@ -56,6 +56,22 @@ grammaire ET rendre les lignes par leur nom, jamais un axe autour de rien :
 - Idées en vrac
 :::
 
+## Les rôles
+
+Écrits, pas dérivés : personne ne calcule qui est PM. C'est une LISTE quand
+même, pas de la prose.
+
+:::list{view=chips}
+- PM: Antor Berard
+- IT PM: Nestor
+- BA: Machine Truc
+:::
+
+## Les sous-chantiers, en cartes
+
+:::list{depth=children view=cards pull=status}
+:::
+
 ## Le planning consolidé
 
 Rien de ressaisi : une barre par sous-chantier, lue dans leurs entêtes. Le

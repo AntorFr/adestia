@@ -997,6 +997,36 @@ markdown, no node tree, no revision. A block wanting richer structure than
 "one item, one string" is asking to parse markdown, and that conversation is
 about a core rendering, not a bigger prop.
 
+### A list is a list, written or queried (decided 2026-09-10)
+
+`:::list` gains the written provenance — lines in the body ARE the rows,
+`Rôle: Personne`, split at the first colon — and a `view` of `rows`, `cards`
+or `chips`.
+
+It arrived through a disagreement worth recording, because the reasoning that
+lost was mine. A declaration of who holds which role on a project is derivable
+from nothing: somebody decides it. I argued that made it `content` — the
+rendering that means "somebody wrote this" — and that a body which merely
+LOOKS like a list decides nothing, since `figures` holds written items too.
+The ruling: **`content` means unstructured text.** A set of `Rôle: Personne`
+lines is not prose that happens to have colons in it; it is rows, and the
+neighbouring block on the same mockup had already said so — `:::list{source=files
+view=grid}`, a list of files.
+
+What settles it without breaking the doctrine is `timeline`'s own precedent: a
+name may carry two provenances when it DRAWS THE SAME THING. Written phases
+and queried phases are both bars; written rows and queried rows are both rows.
+The bar stays "same drawing", and a name whose two forms draw differently is
+still two renderings wearing one word.
+
+What a written row does not get is what only a page can have: nothing opens,
+`pull` has nothing to pull, `closed` has no status to close by. That asymmetry
+is the honest one — it comes from the data, not from the name.
+
+`grid` is deliberately absent from `view`, though the mockup draws it: it
+belongs to `source=files`, which nothing answers yet. Declaring a value that
+draws nothing is the mistake `table{type=risques}` already cost.
+
 ### `w` is the core's, because a block cannot see its neighbour (decided 2026-09-08)
 
 Reported from use: `:::checklist` had no way to be narrowed. The gap was real

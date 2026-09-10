@@ -2742,6 +2742,82 @@ h2.adestia-editor__title { padding-bottom: 3px; }
   font-size: 0.86em;
   cursor: pointer;
 }
+/* A written row has no page behind it: nothing to hover, nothing to press. */
+.adestia-list__row--written { cursor: default; }
+.adestia-list__row--written:hover { background: var(--surface-raised); }
+
+/* `view=cards` — the same rows, given room to be scanned rather than read in
+   sequence. A grid of cards, not a denser list: the point is that each one
+   stands alone. */
+.adestia-list--cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
+  gap: var(--space-2);
+  background: none;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+}
+.adestia-list--cards .adestia-list__row {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-height: 4.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.adestia-list--cards .adestia-list__fold {
+  grid-column: 1 / -1;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+/* `view=chips` — a person, a plate of initials, and what they are here for.
+   Wraps like text because the set is read at a glance, not down a column. */
+.adestia-list--chips {
+  display: flex;
+  /* `.adestia-list` is a COLUMN — without this the chips stack full-width and
+     each rounded pill spans the reading line, which the bench duly showed. */
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  background: none;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+}
+.adestia-list--chips .adestia-list__row {
+  width: auto;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px var(--space-3) 5px 5px;
+}
+.adestia-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px var(--space-3) 5px 5px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-raised);
+}
+.adestia-chip__plate {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--accent-quiet);
+  color: var(--accent);
+  font-style: normal;
+  font-size: 0.72em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.adestia-chip__text { font-size: 0.92em; }
+.adestia-chip__text em { color: var(--text-muted); font-style: normal; }
 
 /* What a block says when it cannot do its job — never an empty rectangle,
    which reads as "there is nothing here" when the truth is "I could not

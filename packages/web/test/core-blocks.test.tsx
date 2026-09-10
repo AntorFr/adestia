@@ -120,6 +120,54 @@ describe(':::list', () => {
     expect(screen.queryByText('Adestia')).toBeNull()
   })
 
+  it('prend ses lignes dans son CORPS quand il en a un', () => {
+    // Une déclaration de rôles ne se dérive de rien : quelqu'un la décide.
+    // C'est écrit, et c'est quand même une liste — pas de la prose.
+    render(
+      <Reader
+        markdown={':::list\n- PM: Machine\n- BA: Truc\n:::\n'}
+        path={HERE}
+        pages={PAGES}
+      />,
+    )
+    expect(screen.getByText('Machine')).toBeTruthy()
+    expect(screen.getByText('PM')).toBeTruthy()
+    // Et il n'a pas interrogé l'index par-dessus les lignes écrites.
+    expect(screen.queryByText('Socle de contenu')).toBeNull()
+  })
+
+  it('ne fait rien ouvrir d’une ligne écrite — il n’y a pas de page derrière', () => {
+    const { container } = render(
+      <Reader markdown={':::list\n- PM: Machine\n:::\n'} path={HERE} pages={PAGES} />,
+    )
+    expect(container.querySelectorAll('button.adestia-list__row')).toHaveLength(0)
+  })
+
+  it('dessine des pastilles à initiales en `view=chips`', () => {
+    const { container } = render(
+      <Reader
+        markdown={':::list{view=chips}\n- arbitrage: Antor Berard\n- veille: Nestor\n:::\n'}
+        path={HERE}
+        pages={PAGES}
+      />,
+    )
+    const plates = [...container.querySelectorAll('.adestia-chip__plate')].map((p) => p.textContent)
+    // Dérivées, jamais déclarées : ce produit n'a pas d'annuaire, et demander
+    // à une page d'écrire les initiales à côté du nom, c'est lui demander de
+    // tenir deux choses en accord.
+    expect(plates).toEqual(['AB', 'N'])
+    expect(screen.getByText('Antor Berard')).toBeTruthy()
+    expect(screen.getByText('· arbitrage')).toBeTruthy()
+  })
+
+  it('donne aux pages une grille en `view=cards`', () => {
+    const { container } = render(
+      <Reader markdown={':::list{view=cards}\n:::\n'} path={HERE} pages={PAGES} />,
+    )
+    expect(container.querySelector('.adestia-list--cards')).toBeTruthy()
+    expect(screen.getByText('Socle de contenu')).toBeTruthy()
+  })
+
   it('replie ce qui est clos plutôt que de le cacher', () => {
     // Un chantier fini est exactement ce qu'on ouvre pour voir comment le
     // précédent s'est passé : caché il est perdu, replié il est à un clic.

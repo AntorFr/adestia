@@ -206,7 +206,7 @@ describe('drawing one', () => {
       { planning: { content: 'optional', description: 'Written or queried.' } },
       { plugin: 'demo', kind: 'feature' },
     )
-    const seen: { items?: readonly string[]; body: boolean }[] = []
+    const seen: { items: readonly string[] | undefined; body: boolean }[] = []
     const Planning = ({ items, children }: BlockProps) => {
       seen.push({ items, body: children !== undefined })
       return <div />

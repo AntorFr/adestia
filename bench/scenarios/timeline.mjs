@@ -7,18 +7,23 @@
  * qui doit se voir FINIE malgré ses dates, et une aux dates inversées nommée
  * dessous. Les barres de la seconde s'ouvrent — la troisième photo le prouve.
  *
+ * La page porte aussi les deux autres vues de `:::list` — des pastilles pour
+ * des rôles ÉCRITS, des cartes pour les sous-chantiers requêtés — parce que
+ * « ça tient sur une ligne » et « ça se lit » sont deux questions différentes.
+ *
  * Puis l'éditeur : un bloc `optional` doit avoir son nœud conteneur ET
  * survivre sans corps, ce qu'aucun test de rendu ne dit.
  */
 export default async function scenario(bench) {
   for (const theme of ['light', 'dark']) {
-    const page = await bench.open({ theme, height: 1500 })
+    const page = await bench.open({ theme, height: 1900 })
     await page.evaluate(() => {
       location.hash = '/page/chantiers/adestia/INDEX.md'
     })
     await page.waitForSelector('text=Cadrage', { timeout: 15_000 })
     await page.waitForTimeout(600)
-    await page.waitForSelector('text=Socle de contenu', { timeout: 15_000 })
+    await page.waitForSelector('.adestia-chip__plate', { timeout: 15_000 })
+    await page.waitForSelector('.adestia-list--cards', { timeout: 15_000 })
     await bench.shoot(page, `1-le-planning-${theme}`)
   }
 
@@ -40,7 +45,7 @@ export default async function scenario(bench) {
   await page.evaluate(() => {
     location.hash = '/page/chantiers/adestia/INDEX.md'
   })
-  await page.waitForSelector('text=Socle de contenu', { timeout: 15_000 })
+  await page.waitForSelector('.adestia-list--cards', { timeout: 15_000 })
   await page.click('button[title="Modifier"]')
   await page.waitForSelector('.adestia-editor__surface .milkdown', { timeout: 15_000 })
   await page.waitForTimeout(800)
@@ -56,7 +61,7 @@ export default async function scenario(bench) {
   await page.evaluate(() => {
     location.reload()
   })
-  await page.waitForSelector('text=Socle de contenu', { timeout: 20_000 })
+  await page.waitForSelector('.adestia-list--cards', { timeout: 20_000 })
   await page.waitForTimeout(800)
   await bench.shoot(page, '4-apres-enregistrement')
 }
