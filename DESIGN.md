@@ -1412,9 +1412,16 @@ where they do not, the reversal is stated.
    channel (`item/commandExecution/requestApproval`, answered `accept`/`decline`,
    both proven), plus `model/list`, `mcpServer/startupStatus/updated` and
    `thread/tokenUsage/updated`. All of it captured against a local mock provider
-   with no OpenAI account, so a driver would be CI-testable the way Copilot's is.
-   Blind spot found: a command the sandbox blocks emits **no event at all** on
-   either surface. Whether a `codex-cli` driver is built is not settled here.
+   with no OpenAI account — and a second pass on a real ChatGPT account confirmed
+   the mock's event stream is identical to the live one, so that CI story holds.
+   That pass also settled the quota question: `account/rateLimits/updated` is
+   **pushed after every turn** with two windows (5 h and 7 days, `usedPercent` +
+   `resetsAt`), which is a better `subscriptionQuotas` source than anything
+   Copilot offers, and `model/list` turns out to be entitlement-filtered once
+   authenticated. One blocker stands: a command the sandbox blocks emits **no
+   event at all** on either surface — verified with a real model, which then
+   *talks about* the refusal the interface never showed. Whether a `codex-cli`
+   driver is built is not settled here.
 
 ## What is built, and what is not
 

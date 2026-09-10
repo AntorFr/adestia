@@ -1,7 +1,11 @@
-# Spike 5 — OpenAI Codex CLI recon (hands-on, unauthenticated)
+# Spike 5 — OpenAI Codex CLI recon (hands-on)
 
 **Date:** 2026-09-10 · **Binary:** `@openai/codex` **0.154.0** (pinned exact) · **Platform:** macOS arm64, Node v26.0.0 / npm 11.12.1
-**Scope:** everything observable locally *without* an OpenAI account. No login was completed, no machine credential was read or written — every run used `env -i` with `HOME` and `CODEX_HOME` pointed inside this spike folder.
+**Scope:** the CLI's whole observable surface. Sections 1–10 were established *without* an account, on a mock provider; §11 is a second pass against a **real ChatGPT account**, armed on the owner's explicit go-ahead through the device flow. Every run used `env -i` with `HOME` and `CODEX_HOME` pointed inside this spike folder.
+
+**On the authenticated material:** the credential lives in `codex-home-real/` and the
+captures in `raw-auth/`, both gitignored — they carry an account id, an email and plan
+data. What is committed is this report, with those redacted.
 
 Everything below is labeled **[EXECUTED]** (proven by running the binary — raw output in `raw/`) or **[HELP-TEXT]** (stated by the CLI's own help or its generated protocol schema; existence is proven, behavior is not).
 
@@ -134,7 +138,7 @@ The three states, as the driver would see them:
 `auth error code: invalid_api_key` is a machine-usable marker inside the `turn.failed`
 message; the messages themselves are prose and not a documented API — pin the version.
 
-### 3d. The two login flows [EXECUTED, neither completed]
+### 3d. The two login flows [EXECUTED — the device one to completion]
 
 - **`codex login --device-auth` works with piped stdio, no pty.** Within a second it
   prints, **on stdout**, `https://auth.openai.com/codex/device` and a one-time code
@@ -142,6 +146,12 @@ message; the messages themselves are prose and not a documented API — pin the 
   (`raw/login-device-auth.txt`). This maps exactly onto Adestia's `device-code`
   AuthMode. **Trap:** the output carries ANSI escapes *even under `TERM=dumb` and
   `NO_COLOR=1`* — strip them before parsing.
+  **Driven to completion** (§11): on approval it prints `Successfully logged in` and
+  exits 0, having written `auth.json` **mode 0600 by itself**. Two traps a relaying
+  driver must respect: the code is on **stdout** while the sign-in URL line is too, and
+  **the process that printed the code is the one that polls for the token** — kill it
+  and the user's approval goes nowhere (learned the hard way here: a code approved
+  against a dead process produces no credential and no error, on either side).
 - **`codex login` (default)** starts a **local callback server on `http://localhost:1455`**
   and prints an OAuth PKCE URL on stderr, ending with: *"On a remote or headless
   machine? Use `codex login --device-auth` instead."* (`raw/login-default-flow.txt`).
@@ -275,7 +285,7 @@ Everything below was driven from `drive-app-server.mjs` / `probe-appserver-queri
 | `authManagement` | `account/read` → `{account, requiresOpenaiAuth}`; `account/login/start` / `cancel` / `logout`; `account/chatgptAuthTokens/refresh` as a server→client request | read **[EXECUTED]**, login **[HELP-TEXT]** |
 | `usageMetrics` | `thread/tokenUsage/updated` with `{total, last}` per turn | **[EXECUTED]** |
 | `liveTurnUsage` | same notification, pushed **during** the turn | **[EXECUTED]** |
-| `subscriptionQuotas` | `account/rateLimits/read` + `account/rateLimits/updated` (pushed automatically) | channel **[EXECUTED]**, content needs auth (§11) |
+| `subscriptionQuotas` | `account/rateLimits/read` + `account/rateLimits/updated`, **pushed after every turn** — two windows with `usedPercent` and `resetsAt` | **[EXECUTED, authenticated]** (§11) |
 | `mcpStatus` | `mcpServer/startupStatus/updated` (`starting` → `ready` / `failed` + full error) and `mcpServerStatus/list` (tools, resources, `authStatus`) | **[EXECUTED]** |
 | `interactivePermissions` | server→client `item/commandExecution/requestApproval` — **the turn waits for the answer** | **[EXECUTED]** |
 | streaming | `item/agentMessage/delta`, `item/reasoning/*Delta`, `item/commandExecution/outputDelta` | deltas **[EXECUTED]** |
@@ -349,9 +359,18 @@ With `-s read-only` and a model calling `echo written > file`:
   `item.started` + `item.completed` on both.
 
 So a trace rendered from the event stream silently omits blocked commands: the user
-sees the agent go quiet, not the agent being refused. Confirmed against 0.154.0 with a
-mock model; worth re-checking against a real one (§11) and, if it holds, worth an
-upstream issue.
+sees the agent go quiet, not the agent being refused.
+
+**Re-checked against a real model, and it is worse than the mock suggested (§11).** Asked
+to run `echo hi > sandbox-probe.txt` under `-s read-only`, gpt-6 announced *"I'll run the
+command exactly as provided"*, ran it, was refused by the sandbox, and reported
+*"The command failed because the sandbox denied writing to `sandbox-probe.txt`"*. The
+client stream — on **both** surfaces — carried nothing but those two agent messages: item
+types seen were `userMessage` and `agentMessage` only, zero `commandExecution`, zero
+approval request, while the token counter moved twice (15 359 → 30 801) proving a tool
+round trip happened. The agent talks about a command the interface never showed. That is
+a defect to report upstream, and until it is fixed a driver cannot render a faithful
+trace of refusals.
 
 ## 9. Config surface [EXECUTED — `config/read`, 101 keys]
 
@@ -388,29 +407,41 @@ away), and it fails with typed JSON-RPC errors instead of English sentences. Bui
 
 Concretely, per capability:
 
-- **`authManagement`** — `account/read` for status (or `login status`, exit code +
-  `Not logged in`). Arming: write `auth.json` yourself (`{auth_mode, OPENAI_API_KEY}`,
-  0600) for the `api-key` mode, or relay `login --device-auth` for `device-code` (URL +
-  code within a second, no pty, 15-minute TTL, **strip ANSI**). Do **not** offer the
-  default `codex login`: it needs a browser on the CLI's own machine. Remember that a
-  stored key is **never validated at arming** — `armed` after `--with-api-key` means
-  "a key is on disk", nothing more; real validity shows up ~35 s into the first turn.
+- **`authManagement`** — `account/read` answers armed-ness *and* the plan in 5 ms with
+  no network (§11.2); `login status` is the exec-side equivalent. Two arming modes, and
+  they store different things: `api-key` writes `{auth_mode: "apikey", OPENAI_API_KEY}`
+  (a driver can write that file itself, 0600, without spawning anything), while the
+  relayed `device-code` flow yields `{auth_mode: "chatgpt", tokens: {id_token,
+  access_token, refresh_token, account_id}, last_refresh}` — three tokens and a clock,
+  not one opaque string. Do **not** offer the default `codex login`: it wants a browser
+  on the CLI's own machine. Two things to respect: a pasted key is **never validated at
+  arming** (`armed` means "a key is on disk", and the truth arrives ~35 s into the first
+  turn), and the device-flow process **is** the poller — killing it silently voids the
+  user's approval.
 - **`usageMetrics` / `liveTurnUsage`** — `thread/tokenUsage/updated` (`total` + `last`)
   during the turn; `turn.completed.usage` on the exec surface. Fields are token counts
-  only: no currency, no credits. **`cost` should not be declared** — nothing observed
-  reports money.
+  only: no currency. **`cost` should not be declared** — nothing observed reports money,
+  and on a ChatGPT plan the meaningful number is a percentage of a window, not a price.
+  Budget for a **~15 k-token preamble on every turn** (§11.5) before showing anyone a
+  per-turn figure.
 - **`contextBreakdown`** — not observed. `model_context_window` and
   `model_auto_compact_token_limit` exist in config, and `thread/compacted` is a
   notification, but no live "weight of the next message" was seen. Leave undeclared
   until proven.
-- **`subscriptionQuotas`** — `account/rateLimits/read` + the pushed
-  `account/rateLimits/updated`; shape seen (`limitId`, `primary`, `secondary`,
-  `credits`, `planType`, `rateLimitReachedType`), values need an account (§11).
-- **`modelSelection`** — `model/list`, unauthenticated, with display names and per-model
-  reasoning efforts. The efforts are a second axis the contract does not have yet.
+- **`subscriptionQuotas`** — the strongest capability this engine offers. Two real
+  windows (5 h and 7 days) with `usedPercent` + `resetsAt`, **pushed after every turn**
+  as `account/rateLimits/updated` (§11.3) — no polling, no server-side TTL cache, no
+  `stale` flag to apologise with. `account/rateLimitResetCredit/consume` even lets a
+  product spend a granted reset.
+- **`modelSelection`** — `model/list`, with display names and per-model reasoning
+  efforts, and **entitlement-filtered once authenticated** (six models unauthenticated,
+  five on the tested plan — §11.4). An unavailable model is refused server-side with a
+  readable 400, so the driver need not police names, only surface the refusal. The
+  reasoning efforts are a second axis the contract does not have yet.
 - **`mcpStatus`** — the `mcpServer/startupStatus/updated` notification is the reliable
   tap (thread-scoped servers appear **only** there); `mcpServerStatus/list` covers
-  config-file servers with their tools and `authStatus`.
+  config-file servers with their tools and `authStatus`. Expect a server nobody
+  configured: authenticated threads start a built-in `codex_apps` (§11.5).
 - **`interactivePermissions`** — `item/commandExecution/requestApproval` +
   `accept | acceptForSession | decline | cancel`. Also
   `item/fileChange/requestApproval`, `item/permissions/requestApproval`,
@@ -426,30 +457,125 @@ running after the loader died. Signal the loader, or kill the process group.
 
 **Testability:** the whole path — events, sessions, approvals, MCP, sandbox denials —
 runs in CI against `mock-provider.js` with zero credentials. Same guarantee as the
-Copilot driver, obtained the same way.
+Copilot driver, obtained the same way — and §11.5 verified the mock's event stream is
+identical to the real one, so the guarantee is not a hope.
 
-## 11. Requires an authenticated session (user to-do, later)
+**The one thing that would block shipping** is §8: a command the sandbox refuses is
+absent from the stream, confirmed on the real path. A driver built today would show the
+agent saying "the command failed" over an empty trace. It needs an upstream fix, or a
+workaround nobody has found here.
 
-1. **Event schema on the real path** — confirm the exec JSONL and the app-server
-   notification set match what the mock produced, including reasoning items, plan
-   updates, auto-compaction and any quota-warning events.
-2. **`account/rateLimits/read` and `account/usage/read` populated** — the actual
-   windows, `planType`, credits; whether they refresh often enough to be worth showing.
-3. **Model availability per plan** — `model/list` unauthenticated returned six models;
-   check what an account actually gets, and what `--model <unavailable>` does.
-4. **Valid-auth probe** — the cheapest authenticated "am I armed?" call, and the
-   signature of an *expired* (vs malformed) credential. Today the only proof of validity
-   is a turn that costs money and 35 s.
-5. **The blocked-command blind spot (§8)** — reproduce with a real model; if it holds,
-   file it upstream.
-6. **`login --device-auth` to completion** — where the token lands, its shape in
-   `auth.json` (`auth_mode` for ChatGPT vs apikey), and whether refresh is automatic
-   (`account/chatgptAuthTokens/refresh` suggests the *client* is asked to refresh).
-7. **Concurrency and memory under load** — the 83 MB idle figure says nothing about a
+## 11. The authenticated pass [EXECUTED, real ChatGPT account, 2026-09-10]
+
+Armed through `codex login --device-auth` on the owner's explicit go-ahead. Three short
+exec turns and one app-server turn — about 60 k tokens total, 2 % of the 5-hour window.
+Raw captures in `raw-auth/` (gitignored).
+
+### 11.1 `auth.json` for a ChatGPT login — a different shape from an API key
+
+```json
+{ "auth_mode": "chatgpt",
+  "OPENAI_API_KEY": null,
+  "tokens": { "id_token": "<1796 chars>", "access_token": "<1684 chars>",
+              "refresh_token": "<196 chars>", "account_id": "<uuid>" },
+  "last_refresh": "2026-09-10T09:39:52Z" }
+```
+
+Written **0600 by the CLI itself**. `login status` → `Logged in using ChatGPT`, exit 0.
+So a driver managing this credential is managing *three* tokens with a refresh clock, not
+one opaque string — and `account/chatgptAuthTokens/refresh` on the protocol (a
+**server→client** request) says the CLI may ask its client to do the refreshing. Not
+exercised; the one thing in this section still open.
+
+### 11.2 The cheapest "am I armed?" call is free and instant
+
+`account/read` → **5 ms**, no network:
+
+```json
+{ "account": { "type": "chatgpt", "email": "<redacted>", "planType": "plus" },
+  "requiresOpenaiAuth": true }
+```
+
+It answers armed-ness *and* the plan in one call. Compare the unauthenticated form —
+`{"account": null, "requiresOpenaiAuth": true}` — and compare Copilot, where the only
+honest answer costs a network round trip and comes back as prose. **`authStatus` is a
+solved problem on this engine.** The remaining unknown is the signature of an *expired*
+credential, which needs a token left to rot.
+
+### 11.3 `subscriptionQuotas` arrives without being asked for
+
+`account/rateLimits/read` (670 ms) — and, better, `account/rateLimits/updated` is
+**pushed after every single turn**, no polling, no TTL cache to invent:
+
+```json
+{ "limitId": "codex",
+  "primary":   { "usedPercent": 1, "windowDurationMins": 300,   "resetsAt": 1789051222 },
+  "secondary": { "usedPercent": 0, "windowDurationMins": 10080, "resetsAt": 1789638022 },
+  "credits": { "hasCredits": false, "unlimited": false, "balance": "0" },
+  "planType": "plus", "spendControlReached": false, "rateLimitReachedType": null }
+```
+
+Two windows — **5 hours** (300 min) and **7 days** (10080 min) — each a percentage and a
+unix reset time. That maps onto Adestia's normalized `{id, label, utilizationPct,
+resetsAt}` with nothing left over, and `usedPercent` was observed climbing 1 → 2 across
+two turns. DESIGN.md's "never promise real-time" caution does **not** apply here the way
+it does to Copilot's daily-aggregate billing API: this is per-turn and free.
+
+Also present: `rateLimitResetCredits` — grantable "full reset" tokens with `status`,
+`grantedAt`, `expiresAt` and a human title, plus `account/rateLimitResetCredit/consume`
+to spend one. A product could offer that button; no other engine here has one.
+
+`account/usage/read` (923 ms) is a *history* source, not a quota one: `lifetimeTokens`,
+`peakDailyTokens`, `longestRunningTurnSec`, streak counts and per-day token buckets.
+
+### 11.4 `model/list` is entitlement-filtered once authenticated
+
+Unauthenticated it returned **six** models; authenticated on this plan, **five** —
+`gpt-5.2` is gone. So the list is not a static catalog the client ships: it is what the
+account may actually use, which is exactly what `modelSelection` needs to avoid lying.
+
+And a model the plan does not have fails **server-side, cleanly**:
+
+```
+{"type":"error","status":400,"error":{"type":"invalid_request_error",
+ "message":"The 'definitely-not-a-model' model is not supported when using Codex with a ChatGPT account."}}
+```
+
+surfaced as a JSONL `error` + `turn.failed`, exit 1. The client only *warns* first
+(`Model metadata for X not found`) and lets the server refuse — so a driver need not
+validate model names itself, but must surface a 400 as a user-readable refusal rather
+than a crash.
+
+### 11.5 The real event stream matches the mock — plus one built-in MCP server
+
+A simple turn on the real path emitted exactly what the mock produced: `thread.started`,
+`turn.started`, `item.completed(agent_message)`, `turn.completed(usage)` on exec; and on
+app-server `thread/started` → `turn/started` → `item/started|completed(userMessage,
+agentMessage)` → `item/agentMessage/delta` ×n → `thread/tokenUsage/updated` →
+`account/rateLimits/updated` → `turn/completed`. **The mock is a faithful stand-in**, which
+is what makes the CI story real.
+
+Two additions only an account reveals:
+- `mcpServer/startupStatus/updated` for **`codex_apps`**, a built-in MCP server that
+  appears (starting → ready) on an authenticated thread. A driver's MCP inventory will
+  see a server it did not configure.
+- **Every turn carries a ~15 k-token preamble** (`input_tokens: 15291`, of which
+  `cached_input_tokens: 12160`) for a prompt whose answer was the word "pong". Instructions,
+  skills and environment context are not free, and the cache absorbs about 80 % of it.
+  Worth knowing before promising anyone a cheap turn.
+
+### 11.6 Still open
+
+1. **Token refresh** — does the CLI renew `access_token` from `refresh_token` on its own,
+   or does `account/chatgptAuthTokens/refresh` mean the client must? The difference
+   decides whether a driver needs a refresh loop.
+2. **The signature of an expired credential** — distinguishable from a malformed one?
+3. **Concurrency and memory under load** — the 83 MB idle figure says nothing about a
    running turn; spike 4's method applied here would give the `maxConcurrentTurns`
    number for this engine.
-8. **`app-server` stability** — it is labeled experimental; how fast does the protocol
+4. **`app-server` stability** — it is labeled experimental; how fast does the protocol
    move between releases, and does `generate-json-schema` diffing catch it?
+5. **The blind spot (§8)** — confirmed real; needs filing upstream.
 
 ## 12. Annex — artifacts (all under `spikes/codex-cli/`)
 
@@ -458,7 +584,8 @@ Copilot driver, obtained the same way.
 | `raw/help.txt`, `raw/cmd-*.txt` | `--help` (134 lines) + all 25 subcommand help pages |
 | `raw/auth-probes.txt` | the three auth states, `auth.json` shape, logout |
 | `raw/envkey-exec.txt` | proof `OPENAI_API_KEY` alone does not arm the built-in provider |
-| `raw/login-device-auth.txt`, `raw/login-default-flow.txt` | both login flows, captured, never completed |
+| `raw/login-device-auth.txt`, `raw/login-default-flow.txt` | both login flows as a headless driver sees them |
+| `raw-auth/real-exec.txt`, `raw-auth/real-appserver.json` | the authenticated pass (§11) — **local only**, carries account data |
 | `raw/mock-responses-simple.txt`, `-toolcall.txt` | exec JSONL: plain turn, tool-call turn |
 | `raw/mock-responses-escalate-onrequest.txt` | exec forces `approval policy = Never` |
 | `raw/mock-chat-simple.txt` | `wire_api = "chat"` refused in 0.154.0 |
@@ -475,8 +602,9 @@ Copilot driver, obtained the same way.
 | `run.sh`, `probe-*.sh`, `probe-*.mjs`, `drive-app-server.mjs` | every probe, re-runnable |
 | `package.json` / `package-lock.json` | exact pin `@openai/codex@0.154.0` |
 
-`node_modules/`, `isolated-home/`, `codex-home*/`, `work*/` and the generated schema
-are gitignored (289 MB + 4.2 MB).
+`node_modules/`, `isolated-home/`, `codex-home*/`, `work*/`, `raw-auth/` and the
+generated schema are gitignored (289 MB + 4.2 MB, plus the real credential and the
+account data behind §11).
 
 ### How to reproduce
 
@@ -492,6 +620,8 @@ node drive-app-server.mjs --script escalate --deny
 node probe-login-device.mjs                 # device flow: URL + code, no pty, never completed
 node probe-appserver-queries.mjs            # model/list, account/read, config/read…
 node probe-mcp-status.mjs                   # MCP health, servers injected per thread
+# §11 needs a real account — ./login-real.sh, then:
+#   ./probe-real-exec.sh && node probe-real-appserver.mjs && python3 summarise-real.py
 ./probe-sessions.sh ./probe-sandbox-write.sh read-only ./probe-misc.sh
 ./run.sh -- app-server generate-json-schema --out ../raw/app-server-schema
 python3 dump-protocol-surface.py
