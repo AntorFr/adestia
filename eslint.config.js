@@ -28,6 +28,11 @@ export default tseslint.config(
       '**/dist/**',
       '**/dist-web/**',
       '**/node_modules/**',
+      // The shared React the import map publishes: third-party, minified, and
+      // written into the tree by `npm run build` — so it is absent from a
+      // fresh checkout and appears the first time anyone builds, which is a
+      // fine way for a green lint to turn red for no reason.
+      '**/public/vendor/**',
       'spikes/**',
       'bench/**',
       'plugins/**',

@@ -65,8 +65,16 @@ export function describeItem(item: Record<string, unknown>): { name: string; tar
  * every row, so keeping it would cost width on every line and say nothing.
  */
 function stripShellWrapper(command: string): string {
-  const match = /^\S*(?:sh|bash|zsh)\s+-l?c\s+(['"])([\s\S]*)\1\s*$/.exec(command.trim())
-  return match?.[2] ?? command
+  const trimmed = command.trim()
+  // Quoted is the common form; UNQUOTED is what a one-word command produces
+  // (`/bin/zsh -lc ls`), and the first version of this matched only the quoted
+  // one — so the shortest commands, the rows with the most room to show
+  // something useful, were the ones that showed the wrapper instead. Found by
+  // looking at a real turn, not by a test.
+  const quoted = /^\S*(?:sh|bash|zsh)\s+-[a-z]*c\s+(['"])([\s\S]*)\1\s*$/.exec(trimmed)
+  if (quoted?.[2] !== undefined) return quoted[2]
+  const bare = /^\S*(?:sh|bash|zsh)\s+-[a-z]*c\s+([\s\S]+)$/.exec(trimmed)
+  return bare?.[1] ?? trimmed
 }
 
 /** Items that are conversation, not action — they must never become trace rows. */

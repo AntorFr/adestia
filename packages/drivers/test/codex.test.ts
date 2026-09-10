@@ -235,6 +235,15 @@ describe('translation', () => {
     expect(run([{ method: 'remoteControl/status/changed', params: { status: 'disabled' } }])).toEqual([])
   })
 
+  it('strips the shell wrapper, quoted or not', () => {
+    // `/bin/zsh -lc ls` is what a one-word command produces, and it is the row
+    // with the most room to show something useful.
+    expect(describeItem({ type: 'commandExecution', command: "/bin/zsh -lc 'git status'" }).target).toBe('git status')
+    expect(describeItem({ type: 'commandExecution', command: '/bin/zsh -lc ls' }).target).toBe('ls')
+    // Something that is not a wrapper is left alone.
+    expect(describeItem({ type: 'commandExecution', command: 'rg --files' }).target).toBe('rg --files')
+  })
+
   it('describes an item without inventing structure the engine lacks', () => {
     expect(describeItem({ type: 'commandExecution', command: 'ls' })).toEqual({ name: 'shell', target: 'ls' })
     expect(describeItem({ type: 'mcpToolCall', tool: 'ping', server: 'spike' })).toEqual({
