@@ -254,12 +254,29 @@ export function Editor({
    */
   const [editing, setEditing] = useState(startEditing)
   const [markdown, setMarkdown] = useState(shown)
+  /**
+   * What is on the server, as far as this editor knows — and what `Done`
+   * restores.
+   *
+   * NOT `shown`, which is the document as it was FETCHED and never moves
+   * again: a plugin's embedded editor re-reads only when its path changes, so
+   * after a save `page.markdown` still holds the text from before the edit.
+   * Comparing against it made `Done` revert a change the server had already
+   * accepted — the file was correct and the screen was not, until a reload.
+   * A new journal entry is frontmatter and an empty body, so the revert looked
+   * like the entry had come back blank.
+   *
+   * It advances on every save the server takes, which is exactly what it
+   * means: the last text both hands agree on.
+   */
+  const [saved, setSaved] = useState(shown)
   const [revision, setRevision] = useState(page.revision)
   const [status, setStatus] = useState<SaveState>({ kind: 'idle' })
-  const dirty = markdown !== shown
+  const dirty = markdown !== saved
 
   useEffect(() => {
     setMarkdown(shown)
+    setSaved(shown)
     setRevision(page.revision)
     setStatus({ kind: 'idle' })
   }, [shown, page.path, page.revision])
@@ -327,7 +344,12 @@ export function Editor({
   const save = useCallback(async () => {
     setStatus({ kind: 'saving' })
     const result = await savePage({ ...page, revision }, markdown, fetchImpl)
-    if (result.revision) setRevision(result.revision)
+    if (result.revision) {
+      setRevision(result.revision)
+      // The baseline moves with the file: what was just written is what
+      // `Done` must restore, and what `dirty` must be measured against.
+      setSaved(markdown)
+    }
     setStatus(result.state)
     // Only on a save the server took: a caller reloading its list on a 409
     // would replace what the person is still holding with what beat them to
@@ -385,9 +407,10 @@ export function Editor({
                 type="button"
                 className="adestia-switch"
                 onClick={() => {
-                  // Abandoning restores what was shown, so a half-typed
-                  // sentence never survives as a "dirty" page.
-                  setMarkdown(shown)
+                  // Abandoning restores the last text the server took — so a
+                  // half-typed sentence never survives, and a SAVED one is
+                  // never thrown away with it.
+                  setMarkdown(saved)
                   setEditing(false)
                 }}
               >

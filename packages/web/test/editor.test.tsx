@@ -168,6 +168,41 @@ describe('editor', () => {
     expect(screen.getByText('Save').closest('button')?.disabled).toBe(true)
   })
 
+  it('keeps what was SAVED when the edit is closed', async () => {
+    /*
+     * Reported from use: write, save, press Done — and the entry came back
+     * empty. The file was correct; a reload showed it.
+     *
+     * `Done` restored `shown`, the document as it was FETCHED, and an
+     * embedded editor re-reads only when its path changes — so after a save
+     * `page.markdown` still held the text from before the edit. A brand-new
+     * journal entry is frontmatter and an empty body, which is why the revert
+     * looked like the content had vanished rather than merely gone stale.
+     */
+    const { container } = render(
+      <Editor
+        page={page}
+        mount={fakeMount([])}
+        fetchImpl={jsonFetch(200, { revision: '2000-20', normalized: false })}
+      />,
+    )
+    startEditing()
+    const host = container.querySelector('[data-mounted]') as HTMLElement & {
+      edit: (md: string) => void
+    }
+    act(() => host.edit('# Le gabarit\n\nLa cale de 8 mm était la bonne.\n'))
+    fireEvent.click(screen.getByText('Save'))
+    await screen.findByText('Saved')
+
+    fireEvent.click(screen.getByText('Done'))
+    // What the reader draws is what was written, not what was opened.
+    expect(screen.getByText('La cale de 8 mm était la bonne.')).toBeTruthy()
+
+    // And reopening finds nothing left to save: the baseline moved with it.
+    startEditing()
+    expect(screen.getByText('Save').closest('button')?.disabled).toBe(true)
+  })
+
   it('shows a conflict instead of overwriting the agent', async () => {
     const { container } = render(
       <Editor page={page} mount={fakeMount([])} fetchImpl={jsonFetch(409, {})} />,
