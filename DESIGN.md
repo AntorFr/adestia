@@ -1402,8 +1402,9 @@ where they do not, the reversal is stated.
    3` is confirmed as memory-bound, and 8 is verified safe API-side.
 5. **Codex CLI hands-on — DONE** (`spikes/codex-cli/REPORT.md`): binary 0.154.0
    pinned. `CODEX_HOME` isolates completely — the fake `$HOME` stayed empty —
-   but startup clones a plugin marketplace over the network; `-c marketplaces=[]`
-   stops it. Arming is a **file**, not an env var (`OPENAI_API_KEY` is ignored
+   but startup clones a plugin marketplace over the network and **no config
+   value found turns that off**, so egress policy is the only lever. Arming is a
+   **file**, not an env var (`OPENAI_API_KEY` is ignored
    for the built-in provider) and needs no pty, unlike Copilot's;
    `login --with-api-key` accepts a bogus key without validating it, and the
    failure only lands ~35 s into the first turn. The finding that decides the
@@ -1420,8 +1421,15 @@ where they do not, the reversal is stated.
    Copilot offers, and `model/list` turns out to be entitlement-filtered once
    authenticated. One blocker stands: a command the sandbox blocks emits **no
    event at all** on either surface — verified with a real model, which then
-   *talks about* the refusal the interface never showed. Whether a `codex-cli`
-   driver is built is not settled here.
+   *talks about* the refusal the interface never showed. Report §12 fits the
+   findings to this repository's own contract: seven of nine capabilities would
+   be declarable, the UI needs nothing (no engine name reaches it), and the one
+   functional break is that the per-turn shell-tools token goes stale — codex
+   starts an MCP server once per THREAD, so turn 2 of a conversation would
+   announce a revoked token. Measured fix: one app-server process per turn plus
+   `thread/resume`, which restores one token per turn, keeps the whole history
+   and costs ~100 ms — the shape the Copilot driver already has. Whether a
+   `codex-cli` driver is built is not settled here.
 
 ## What is built, and what is not
 

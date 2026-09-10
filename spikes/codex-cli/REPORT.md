@@ -70,8 +70,26 @@ turn running at all (`raw/marketplace-clone.txt`) — short `exec` runs simply e
 before it lands, which is why only the slow runs showed it. It happens *before and
 independently of* authentication, and it is third-party content arriving on disk.
 
-`-c marketplaces=[]` **stops it**; `--disable remote_plugin` does **not**
-(`raw/marketplace-clone-off.txt`). A server-side driver should pass `-c marketplaces=[]`.
+**Correction, and a lesson in how to measure.** This report first said
+`-c marketplaces=[]` stops the clone. It does not: that value makes codex refuse its own
+config (*"invalid type: sequence, expected a map"*), the process dies, and a dead process
+clones nothing. The probe had checked the disk without ever checking that codex was
+running. Re-measured with the server proven alive first (it must answer `initialize`
+before the disk is believed), **nothing tried turns it off**:
+
+| switch | result |
+|---|---|
+| *(none — control)* | server alive, clone PRESENT |
+| `-c marketplaces=[]` | **server does not start** |
+| `-c marketplaces={}` | server alive, clone PRESENT |
+| `--disable remote_plugin` | server alive, clone PRESENT |
+| `-c plugins={}` | server alive, clone PRESENT |
+
+So in 0.154.0 the clone is not configurable away. The two sources are named in the
+binary — `https://github.com/openai/plugins.git` and
+`https://chatgpt.com/backend-api/plugins/export/curated` — so the only lever a deployment
+has is **egress policy**, not config. Worth knowing before putting this CLI in a
+container that is supposed to talk to one API.
 
 `--ephemeral` suppresses the rollout transcript files (0 written) but still creates the
 sqlite state DBs and `installation_id` (`raw/misc-probes.txt`).
@@ -380,7 +398,7 @@ The ones a driver cares about, with their defaults on a fresh home:
 |---|---|---|
 | `cli_auth_credentials_store` | `"file"` | no keychain prompt, no pty (§3b) |
 | `check_for_update_on_startup` | null (doctor: true) | turn off for a pinned deployment |
-| `marketplaces` | — | `-c marketplaces=[]` stops the startup clone (§2) |
+| `marketplaces` | — | present, but **no value found that stops the startup clone** (§2) |
 | `project_doc_fallback_filenames` | `[]` | set to `["CLAUDE.md"]` to read the other dialect (§6) |
 | `shell_environment_policy` | all null | `inherit`, `exclude`, `include_only`, `set` — env filtering for spawned commands |
 | `sandbox_mode`, `approval_policy`, `permissions`, `default_permissions` | null | the permission posture |
@@ -448,7 +466,7 @@ Concretely, per capability:
   `mcpServer/elicitation/request` and `item/tool/requestUserInput` (Plan mode).
 
 **Process hygiene for the spawn site:** `CODEX_HOME=<driver dir>` (create it first),
-`-c marketplaces=[]`, `-c check_for_update_on_startup=false`, `--ignore-user-config`
+`-c check_for_update_on_startup=false`, `--ignore-user-config`
 where the operator's own config must not leak in, `NO_COLOR=1`, and `< /dev/null` on
 the exec path. Nothing lands outside `CODEX_HOME`. **On shutdown, do not SIGKILL:** the
 npm entry point is a node loader that forwards SIGINT/SIGTERM/SIGHUP to the rust binary
@@ -577,7 +595,147 @@ Two additions only an account reveals:
    move between releases, and does `generate-json-schema` diffing catch it?
 5. **The blind spot (§8)** — confirmed real; needs filing upstream.
 
-## 12. Annex — artifacts (all under `spikes/codex-cli/`)
+## 12. Fitting it to the contract we already have [EXECUTED against the source]
+
+The question this section answers: if `codex-cli` became the third driver beside
+`claude-code` and `copilot-cli`, what breaks? Read against `packages/drivers/src/contract.ts`,
+`conformance.ts`, `server/src/start.ts` and `server/src/shell-tools.ts`, and measured
+where reading was not enough.
+
+### 12.1 What needs no change at all
+
+- **The driver id is already a free string.** `config.ts` reads `driver.id` without an
+  enum; only `AVAILABLE_DRIVERS` in `start.ts` (a two-item list and a `switch`) and one
+  import would grow. No schema, no migration.
+- **No engine name reaches the front end.** Grepped: `packages/web/src` contains neither
+  `copilot` nor `claude-code`. The generated-from-capabilities design holds, so a third
+  engine costs the UI nothing.
+- **`interactivePermissions` maps cleanly, including "always".** `asks.ts` says the
+  durable allowlist must be remembered *by the engine, in a file a person can open*.
+  Codex's approval request carries `proposedExecpolicyAmendment` — "optional proposed
+  execpolicy amendment to allow similar commands without prompting" — and the decision
+  `acceptWithExecpolicyAmendment` writes it into the execpolicy `.rules` file the CLI
+  reads (`--ignore-rules` names them). So `PendingAsk.remembering` is exactly "did this
+  request carry a proposed amendment", and the three answers land as
+  `accept` / `acceptWithExecpolicyAmendment` / `decline`. `cancel` (deny *and* interrupt)
+  is a fourth the contract has no word for — a gain, not a gap.
+- **`acceptsRoots()` can be true.** `turn/start.sandboxPolicy` accepts
+  `{type: "workspaceWrite", writableRoots: [...]}` — per turn, which is finer than the
+  contract asks. (Reads looked unrestricted in the default profile; the write side is
+  what `roots` is for.)
+- **`skillsPath()` / `instructionPaths()`** — `AGENTS.md` is read (proven, §6), and
+  `project_doc_fallback_filenames` makes it read `CLAUDE.md` too. Skills have a protocol
+  method of their own (`skills/list`, `skills/extraRoots/set`).
+- **`interrupt()`** — `turn/interrupt` exists.
+- **Conformance** — `checkConformance` only compares declaration to method presence.
+  Nothing about codex trips it.
+
+### 12.2 What breaks — three, and the first is a functional break
+
+#### (a) The instance's own tools die on the second turn of a conversation
+
+`shell-tools.ts` mints a token per turn and **deletes it when the turn settles**
+(`release()`); the bridge carries that token in its env, and the comment in
+`shell-tools-config.ts` says the freshness is "true by construction for copilot, whose
+binary is spawned per turn". **On app-server it is not true**, and this is measured
+(`probe-mcp-per-turn.mjs`): the stdio MCP server is started **once per thread**, and
+
+- two turns on one thread → **1** server process,
+- a `thread/resume` carrying a *different* token in the server's env → still **1**.
+
+So turn 2 of a conversation would announce turn 1's token, which the socket has already
+revoked, and every Adestia tool call would come back `this turn's token is unknown or
+expired`. Rename-this-conversation would work once per conversation and then stop — the
+worst kind of bug, because it looks like the agent forgetting how to use a tool.
+
+**The fix is cheap and measured** (`probe-fresh-per-turn.mjs`): run **one app-server
+process per turn**, and `thread/resume` the thread. Then
+
+- 3 turns → **3** MCP server processes: one token per turn, the property restored;
+- the resumed thread carries the whole history (proven on the wire: turn 3's request
+  contained turns 1 and 2 with their answers);
+- it costs **~100 ms** to boot the process and ~1.4 s for a whole mock turn.
+
+Which is exactly the shape the Copilot driver already has — a process per turn — so the
+core needs no change at all. What it costs is the daemon's advantages (a warm process, a
+long-lived thread) that we were never using anyway.
+
+#### (b) The credential is a FILE, and the core only knows how to pass env vars
+
+`start.ts` and `app.ts` do `setCredentials({ [driver.credentialVar]: secret })`, and
+`credentialVar` is validated as an environment-variable name. Copilot's and Claude's
+credentials *are* env vars. Codex's is not: `OPENAI_API_KEY` in the environment is
+ignored for the built-in provider (§3b), and the CLI only reads `$CODEX_HOME/auth.json`.
+
+**No contract change is strictly required**, because `env()` is async and runs at the
+spawn site: the codex driver can write `auth.json` (0600) into its own `CODEX_HOME` from
+the secret it was handed, and return `{ CODEX_HOME: <its home> }`. The store of record
+stays the core's `SecretStore`, which is what the rule in the drivers README actually
+protects.
+
+What *is* wrong is the name: the driver would have to declare a `credentialVar` it never
+exports, purely to satisfy `credentialVar()`'s validation. The honest fix is small —
+let a driver declare **how** it takes its secret (`env` var vs file materialization)
+rather than assuming the first. One field, two call sites.
+
+Note also that the secret is no longer a token but a JSON document: for a ChatGPT login,
+`{auth_mode, tokens: {id_token, access_token, refresh_token, account_id}, last_refresh}`
+(§11.1). `SecretStore` stores an opaque string, so it fits — but see (c).
+
+#### (c) The CLI owns the credential file, and may rewrite it behind the core
+
+A ChatGPT credential carries a `refresh_token` and a `last_refresh` clock. If the CLI
+refreshes its own tokens, it rewrites `auth.json` inside the driver's home — and the
+core's stored copy is then stale. On the next restart, `start.ts` writes the OLD document
+back over the fresh one, and the instance loses its login for no visible reason.
+
+Unverified either way here: over the session's real turns `auth.json` was never rewritten
+(same mtime, same `last_refresh`), which proves nothing at a one-hour horizon. The
+protocol's `account/chatgptAuthTokens/refresh` is a **server→client** request, which
+hints the CLI may ask *its client* to refresh — in which case the driver must handle it
+and hand the new document back to the core.
+
+**Mitigation either way, and it is cheap:** after each turn, compare `auth.json` on disk
+with what the core stored, and re-persist when it moved. Whoever refreshes, the core's
+copy stays the truth. This is the one open risk worth resolving before shipping, and it
+is a day's work, not a redesign.
+
+### 12.3 What is a product decision rather than a defect
+
+- **The marketplace clone** (§2): not disableable, so an instance running codex fetches a
+  third-party plugin catalogue over the network at startup. Egress policy is the only
+  lever. Someone has to decide that is acceptable.
+- **~15 k tokens of preamble per turn** (§11.5): fine on a subscription, a real cost on
+  metered billing, and it makes "cheap turn" a phrase to avoid.
+- **`cost` stays undeclared** — nothing reports money; on a ChatGPT plan the meaningful
+  number is a percentage of a window, which is `subscriptionQuotas`, not `cost`.
+- **`contextBreakdown` stays undeclared** — not observed.
+
+### 12.4 The one thing that should block shipping
+
+§8: a command the sandbox refuses produces **no event at all**, confirmed with a real
+model on both surfaces, while the agent goes on to *talk about* the refusal. Every other
+finding here has a fix inside this repository; this one does not. It needs an upstream
+fix or an upstream answer.
+
+### 12.5 The descriptor a `codex-cli` driver would declare
+
+| capability | declare? | on what |
+|---|---|---|
+| `authManagement` | **yes** | `account/read` + device flow + api-key file |
+| `usageMetrics` | **yes** | `thread/tokenUsage/updated` |
+| `liveTurnUsage` | **yes** | same notification, mid-turn |
+| `subscriptionQuotas` | **yes** | `account/rateLimits/updated`, pushed |
+| `modelSelection` | **yes** | `model/list`, entitlement-filtered |
+| `mcpStatus` | **yes** | `mcpServer/startupStatus/updated` |
+| `interactivePermissions` | **yes** | the approval round trip |
+| `cost` | no | no money anywhere |
+| `contextBreakdown` | no | not observed |
+
+Seven of nine — one more than Copilot, one fewer than Claude Code. The work is a driver
+of roughly the Copilot driver's size, plus a JSON-RPC client, minus a JSONL parser.
+
+## 13. Annex — artifacts (all under `spikes/codex-cli/`)
 
 | File | Content |
 |---|---|
@@ -586,6 +744,8 @@ Two additions only an account reveals:
 | `raw/envkey-exec.txt` | proof `OPENAI_API_KEY` alone does not arm the built-in provider |
 | `raw/login-device-auth.txt`, `raw/login-default-flow.txt` | both login flows as a headless driver sees them |
 | `raw-auth/real-exec.txt`, `raw-auth/real-appserver.json` | the authenticated pass (§11) — **local only**, carries account data |
+| `raw/mcp-spawns.jsonl`, `raw/mcp-spawns-fresh.jsonl` | one MCP spawn per thread vs one per turn (§12.2a) |
+| `raw/marketplace-clone-off.txt` | the five switches tried against the startup clone |
 | `raw/mock-responses-simple.txt`, `-toolcall.txt` | exec JSONL: plain turn, tool-call turn |
 | `raw/mock-responses-escalate-onrequest.txt` | exec forces `approval policy = Never` |
 | `raw/mock-chat-simple.txt` | `wire_api = "chat"` refused in 0.154.0 |
@@ -620,6 +780,9 @@ node drive-app-server.mjs --script escalate --deny
 node probe-login-device.mjs                 # device flow: URL + code, no pty, never completed
 node probe-appserver-queries.mjs            # model/list, account/read, config/read…
 node probe-mcp-status.mjs                   # MCP health, servers injected per thread
+node probe-mcp-per-turn.mjs                 # the stale-token break (§12.2a)
+node probe-fresh-per-turn.mjs               # one process per turn fixes it, and what it costs
+node probe-clone-off.mjs                    # the marketplace switches that do not work
 # §11 needs a real account — ./login-real.sh, then:
 #   ./probe-real-exec.sh && node probe-real-appserver.mjs && python3 summarise-real.py
 ./probe-sessions.sh ./probe-sandbox-write.sh read-only ./probe-misc.sh
