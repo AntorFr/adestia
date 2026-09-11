@@ -400,11 +400,17 @@ function fakeCopilot() {
   const stderr = new PassThrough()
   const child = Object.assign(new EventEmitter(), { stdout, stderr, kill: vi.fn(() => true) })
   const spawns: { args: readonly string[]; env: NodeJS.ProcessEnv }[] = []
+  /** Resolves when the driver actually spawns — a signal, never a tick count. */
+  let started!: () => void
+  const spawned = new Promise<void>((resolve) => {
+    started = resolve
+  })
   const spawnImpl = ((_cmd: string, args: readonly string[], options: { env: NodeJS.ProcessEnv }) => {
     spawns.push({ args, env: options.env })
+    started()
     return child
   }) as unknown as typeof import('node:child_process').spawn
-  return { child, stdout, stderr, spawnImpl, spawns }
+  return { child, stdout, stderr, spawnImpl, spawns, spawned }
 }
 
 const collect = async (driver: CopilotDriver, request: TurnRequest = { prompt: 'hi', cwd: '/tmp' }) => {
@@ -634,9 +640,54 @@ describe('driver', () => {
     expect(await driver.authStatus()).toMatchObject({ state: 'armed', savedAt: '2026-06-01' })
   })
 
-  it('refuses to interrupt a session that is not running', async () => {
-    const driver = new CopilotDriver({ home: '/x' })
-    expect(() => driver.interrupt('ghost')).toThrow(/No running turn/)
+  it('stops a turn whose session id nobody knows yet', async () => {
+    // The regression this replaces: the child was findable only by the
+    // engine's session id, which this CLI states in its `result` — the END of
+    // the turn. A first turn was therefore unstoppable for the whole of its
+    // life, which is exactly the stretch somebody wants to stop.
+    const fake = fakeCopilot()
+    const driver = new CopilotDriver({ home: '/x', spawnImpl: fake.spawnImpl })
+    const stopper = new AbortController()
+
+    const turn = collect(driver, { prompt: 'hi', cwd: '/tmp', signal: stopper.signal })
+    await fake.spawned
+    stopper.abort()
+    expect(fake.child.kill).toHaveBeenCalledWith('SIGTERM')
+
+    // Killed mid-sentence, this CLI prints no `result` at all: the turn must
+    // still end as STOPPED rather than as "the CLI exited with code null".
+    fake.child.emit('close', null)
+    expect(await turn).toEqual([{ type: 'result', sessionId: '', stopped: true }])
+  })
+
+  it('stops a turn told to stop before it spawned', async () => {
+    // The desk admits a turn, writes the message to the thread, THEN starts
+    // it. A stop pressed inside that window must not fall through the floor.
+    const fake = fakeCopilot()
+    const driver = new CopilotDriver({ home: '/x', spawnImpl: fake.spawnImpl })
+
+    const turn = collect(driver, { prompt: 'hi', cwd: '/tmp', signal: AbortSignal.abort() })
+    await fake.spawned
+    expect(fake.child.kill).toHaveBeenCalledWith('SIGTERM')
+    fake.child.emit('close', null)
+    expect(await turn).toEqual([{ type: 'result', sessionId: '', stopped: true }])
+  })
+
+  it('keeps the session id it was given when a resumed turn is stopped', async () => {
+    const fake = fakeCopilot()
+    const driver = new CopilotDriver({ home: '/x', spawnImpl: fake.spawnImpl })
+    const stopper = new AbortController()
+
+    const turn = collect(driver, {
+      prompt: 'hi',
+      cwd: '/tmp',
+      sessionId: 'sess-7',
+      signal: stopper.signal,
+    })
+    await fake.spawned
+    stopper.abort()
+    fake.child.emit('close', null)
+    expect(await turn).toEqual([{ type: 'result', sessionId: 'sess-7', stopped: true }])
   })
 })
 

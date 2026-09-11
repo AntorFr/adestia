@@ -12,6 +12,21 @@ function gate() {
   return { open, passed }
 }
 
+/**
+ * Resolves when the turn is told to stop — the driver's half of the bargain.
+ *
+ * A real driver interrupts its engine here; a test one simply ends. What
+ * matters is that it listens to the REQUEST, which exists before the turn
+ * does, instead of waiting to be looked up by an id it has not stated yet.
+ */
+function told(signal: AbortSignal | undefined): Promise<void> {
+  return new Promise<void>((resolve) => {
+    if (!signal) return
+    if (signal.aborted) resolve()
+    else signal.addEventListener('abort', () => resolve(), { once: true })
+  })
+}
+
 /** A limiter that counts, so slot discipline is observable. */
 function meter(max = Number.POSITIVE_INFINITY) {
   let running = 0
@@ -305,6 +320,84 @@ describe('the turn desk', () => {
     admission.abort()
     // The slot is free again: the next admission succeeds.
     expect(desk.admit().mode).toBe('run')
+  })
+
+  it('stops the turn a key is running, and the driver hears it on the request', async () => {
+    const driver = {
+      async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
+        await told(request.signal)
+        yield { type: 'result', sessionId: 's1', stopped: true }
+      },
+    }
+    const desk = new TurnDesk(driver, meter())
+    const finished: TurnOutcome[] = []
+
+    const admission = desk.admit('u/c:1')
+    if (admission.mode !== 'run') throw new Error('expected a run')
+    const job = admission.start({
+      request: { prompt: 'long', cwd: '.' },
+      finish: async (outcome) => void finished.push(outcome),
+    })
+
+    // No handshake needed, and that is the point: the signal lives on the job,
+    // so a stop cannot arrive before there is something to receive it.
+    expect(desk.stop('u/c:1')).toBe(true)
+    await job.done
+    expect(finished[0]).toMatchObject({ stopped: true })
+  })
+
+  it('honours a stop that lands in the admission window', async () => {
+    // The route admits the turn, writes the message to the thread, and only
+    // THEN starts it. A stop pressed inside that window must not fall through
+    // the floor — the driver is handed a signal already aborted.
+    const driver = {
+      async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
+        await told(request.signal)
+        yield { type: 'result', sessionId: 's1', stopped: true }
+      },
+    }
+    const desk = new TurnDesk(driver, meter())
+    const finished: TurnOutcome[] = []
+
+    const admission = desk.admit('u/c:1')
+    if (admission.mode !== 'run') throw new Error('expected a run')
+    expect(desk.stop('u/c:1')).toBe(true)
+    const job = admission.start({
+      request: { prompt: 'long', cwd: '.' },
+      finish: async (outcome) => void finished.push(outcome),
+    })
+    await job.done
+    expect(finished[0]).toMatchObject({ stopped: true })
+  })
+
+  it('leaves the backlog alone — what was queued behind it still runs', async () => {
+    // Stopping means "stop what you are doing". The queued message is already
+    // in the thread, so dropping it would leave a question nothing answers.
+    const prompts: string[] = []
+    const driver = {
+      async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
+        prompts.push(request.prompt)
+        if (request.prompt === 'a') await told(request.signal)
+        yield RESULT
+      },
+    }
+    const desk = new TurnDesk(driver, meter())
+
+    const admission = desk.admit('u/c:1')
+    if (admission.mode !== 'run') throw new Error('expected a run')
+    const job = admission.start({ request: { prompt: 'a', cwd: '.' }, finish: async () => {} })
+    const queued = desk.admit('u/c:1')
+    if (queued.mode !== 'queued') throw new Error('expected a queue')
+    queued.enqueue({ request: { prompt: 'b', cwd: '.' }, finish: async () => {} })
+
+    desk.stop('u/c:1')
+    await job.done
+    await vi.waitFor(() => expect(prompts).toEqual(['a', 'b']))
+  })
+
+  it('says so when a key has nothing running', async () => {
+    const desk = new TurnDesk({ runTurn: async function* (): AsyncIterable<TurnEvent> {} }, meter())
+    expect(desk.stop('u/c:nobody')).toBe(false)
   })
 
   it('turns a driver crash into a fatal error event and a finish that says so', async () => {

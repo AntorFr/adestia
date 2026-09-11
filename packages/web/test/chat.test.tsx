@@ -670,6 +670,73 @@ describe('chat', () => {
     expect(screen.getByText('Voilà.')).toBeTruthy()
   })
 
+  it('stops the FIRST turn of a thread, naming the conversation', async () => {
+    // The regression, end to end. The ■ used to send the ENGINE's session id,
+    // which only comes back in the turn's `result` — its END. On a thread's
+    // first turn the browser held none, the handler returned on the spot, and
+    // the button posted nothing at all: pressed, and nothing happened.
+    const encoder = new TextEncoder()
+    let turn: ReadableStreamDefaultController<Uint8Array> | undefined
+    const stops: unknown[] = []
+    const fetchImpl = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const path = String(input)
+      if (path === '/api/turn') {
+        const body = new ReadableStream<Uint8Array>({
+          start(controller) {
+            turn = controller
+          },
+        })
+        return Promise.resolve({ ok: true, status: 200, body } as unknown as Response)
+      }
+      if (path === '/api/turn/stop') {
+        stops.push(JSON.parse(String(init?.body)))
+        return Promise.resolve(
+          new Response(JSON.stringify({ stopped: true }), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          }),
+        )
+      }
+      if (path.startsWith('/api/turn/attach')) {
+        return Promise.resolve(new Response(null, { status: 204 }))
+      }
+      return Promise.resolve(
+        new Response(
+          JSON.stringify(
+            init?.method === 'POST' ? { id: 'c1', title: 'salut', updatedAt: '' } : { conversations: [] },
+          ),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        ),
+      )
+    }) as unknown as typeof fetch
+
+    render(<Chat fetchImpl={fetchImpl} />)
+    const input = screen.getByRole('textbox')
+    fireEvent.change(input, { target: { value: 'salut' } })
+    await act(async () => {
+      fireEvent.keyDown(input, { key: 'Enter' })
+    })
+    await act(async () => {
+      turn!.enqueue(encoder.encode(frame({ type: 'text-delta', text: 'Je regarde.' })))
+    })
+
+    // Nothing has said a session id yet — and the button works anyway.
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText('Stop'))
+    })
+    await waitFor(() => expect(stops).toEqual([{ conversation: 'c1' }]))
+    // The press LEAVES A MARK: a spent button, until the engine lands.
+    expect((screen.getByLabelText('Stop') as HTMLButtonElement).disabled).toBe(true)
+
+    await act(async () => {
+      turn!.enqueue(encoder.encode(frame({ type: 'result', sessionId: 's1', stopped: true })))
+      turn!.close()
+    })
+    // Landed: the thread carries the interruption, and the composer sends again.
+    await waitFor(() => expect(screen.getByText('Turn interrupted.')).toBeTruthy())
+    expect(screen.queryByLabelText('Stop')).toBeNull()
+  })
+
   it('refetches the list when a turn settles, and the tab follows a title the agent changed', async () => {
     // The agent can rename its own conversation now (`rename_conversation`),
     // and nothing else redraws the list mid-session. The trap is the tab: it

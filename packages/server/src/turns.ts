@@ -98,6 +98,15 @@ export class TurnJob {
   readonly id = randomUUID()
   readonly #log: TurnEvent[] = []
   readonly #subscribers = new Set<Subscriber>()
+  /**
+   * How "stop" reaches the engine.
+   *
+   * It lives on the JOB, which exists from the moment the desk admits the
+   * turn — before the driver is asked for anything. So a stop can never
+   * arrive too early to be heard, and it addresses THIS turn rather than an
+   * engine session id nobody holds yet.
+   */
+  readonly #stopper = new AbortController()
   #ended = false
   #pendingAsk: string | undefined
   #settle: () => void = () => {}
@@ -108,6 +117,25 @@ export class TurnJob {
 
   get ended(): boolean {
     return this.#ended
+  }
+
+  /** Carried into the driver's request; aborted by `stop`. */
+  get signal(): AbortSignal {
+    return this.#stopper.signal
+  }
+
+  /**
+   * Somebody pressed stop.
+   *
+   * What it does NOT do: touch the chain's backlog. A message queued behind
+   * this turn is already IN the thread — persisted the moment it was accepted
+   * — so dropping it would leave a question in the conversation that nothing
+   * will ever answer. Stopping means "stop what you are doing"; the message
+   * waiting behind it is the next instruction, and it runs. Whoever wants
+   * that one stopped too presses stop again.
+   */
+  stop(): void {
+    this.#stopper.abort()
   }
 
   /**
@@ -280,6 +308,18 @@ export class TurnDesk {
     }
   }
 
+  /**
+   * Stops the turn a conversation is running. False means there was none —
+   * which is an answer, not a failure: a turn that settled between the press
+   * and the request is a turn that stopped.
+   */
+  stop(key: string): boolean {
+    const chain = this.#chains.get(key)
+    if (!chain) return false
+    chain.job.stop()
+    return true
+  }
+
   /** Scrubs an answered question from whatever job still replays it. */
   scrubAsk(id: string): void {
     for (const chain of this.#chains.values()) chain.job.scrubAsk(id)
@@ -333,10 +373,15 @@ export class TurnDesk {
    * a merge, a re-attach and a reload all still replay what the person
    * actually typed. Framing at dispatch is also what keeps a queued batch from
    * collecting one preamble per message it merged.
+   *
+   * The job's stop signal rides along for the same reason: what the thread
+   * stores is a message, what the engine gets is a message it can be told to
+   * abandon.
    */
-  #dispatched(request: TurnRequest): TurnRequest {
-    if (!this.introduce) return request
-    return { ...request, prompt: this.introduce(request.prompt) }
+  #dispatched(request: TurnRequest, signal: AbortSignal): TurnRequest {
+    const addressed = { ...request, signal }
+    if (!this.introduce) return addressed
+    return { ...addressed, prompt: this.introduce(request.prompt) }
   }
 
   /** One driver turn, accumulated the way the route used to accumulate it. */
@@ -360,7 +405,7 @@ export class TurnDesk {
     }
 
     try {
-      for await (const event of this.driver.runTurn(this.#dispatched(spec.request))) {
+      for await (const event of this.driver.runTurn(this.#dispatched(spec.request, job.signal))) {
         job.emit(event)
         if (event.type === 'text-delta') current().text += event.text
         else if (event.type === 'tool-use') {

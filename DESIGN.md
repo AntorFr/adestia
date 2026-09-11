@@ -138,9 +138,11 @@ The driver interface has a **mandatory core** and **optional capabilities**. The
 is generated from the capability descriptor — no driver name ever reaches the front.
 
 **Core:** session lifecycle (create/resume/expire), one streamed turn as an event
-sequence (`text-delta`, `tool-use`, `permission-request`, `result`), interrupt,
-`env()` → dict merged UNDER the turn's own env at the single spawn site, capability
-descriptor, version/capability probing at startup (never assume a flag set).
+sequence (`text-delta`, `tool-use`, `permission-request`, `result`), a stop carried
+as an abort signal ON the turn request (never a method looking a running turn up
+by a session id the caller cannot hold yet), `env()` → dict merged UNDER the turn's
+own env at the single spawn site, capability descriptor, version/capability probing
+at startup (never assume a flag set).
 
 **Core, and all of the same shape: the driver NAMES its own paths, the core
 does the writing.** `skillsPath()` (where agent contracts are delivered),

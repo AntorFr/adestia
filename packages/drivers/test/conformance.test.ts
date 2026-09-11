@@ -9,7 +9,6 @@ function coreDriver(): Record<string, unknown> {
     describe: () => Promise.resolve(descriptor([])),
     env: () => Promise.resolve({}),
     runTurn: () => ({ [Symbol.asyncIterator]: () => ({ next: () => Promise.resolve({ done: true, value: undefined }) }) }),
-    interrupt: () => Promise.resolve(),
   }
 }
 
@@ -52,7 +51,7 @@ describe('checkConformance', () => {
 
   it('reports every missing core method, not just the first', () => {
     const issues = checkConformance({ describe: () => {} }, descriptor([]))
-    expect(issues.map((i) => i.detail)).toEqual(['env', 'runTurn', 'interrupt'])
+    expect(issues.map((i) => i.detail)).toEqual(['env', 'runTurn'])
   })
 
   it('refuses an unknown capability instead of ignoring it', () => {

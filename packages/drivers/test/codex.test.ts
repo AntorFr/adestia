@@ -365,6 +365,32 @@ async function collect(driver: CodexDriver, request: TurnRequest): Promise<TurnE
   return events
 }
 
+describe('stopping', () => {
+  it('interrupts by protocol, naming the thread it started', async () => {
+    const dir = await home()
+    const calls: { method: string; params: Record<string, unknown> }[] = []
+    const stopper = new AbortController()
+    const fake = fakeServer({
+      // Answered 'completed' on purpose: a turn WE stopped is stopped
+      // whatever status comes back, and the marker must not depend on the
+      // engine agreeing about it.
+      notifications: [{ method: 'turn/completed', params: { turn: { status: 'completed' } } }],
+      onCall: (method, params) => {
+        calls.push({ method, params })
+        // The turn is at the counter — the moment somebody presses the button.
+        if (method === 'turn/start') stopper.abort()
+      },
+    })
+    const driver = new CodexDriver({ home: dir, spawnImpl: fake.spawnImpl })
+    const events = await collect(driver, { ...baseRequest(dir), signal: stopper.signal })
+
+    expect(calls.find((call) => call.method === 'turn/interrupt')?.params).toEqual({
+      threadId: 'thread-42',
+    })
+    expect(events.at(-1)).toMatchObject({ type: 'result', sessionId: 'thread-42', stopped: true })
+  })
+})
+
 describe('a turn', () => {
   it('runs, streams and closes with the thread id', async () => {
     const dir = await home()

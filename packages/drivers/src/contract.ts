@@ -375,6 +375,21 @@ export interface TurnRequest {
   readonly unattended?: boolean
   /** Resume this CLI session; absent means a fresh one. */
   readonly sessionId?: string
+  /**
+   * Aborted when somebody stops this turn. The driver stops the engine the
+   * way its own CLI understands — a protocol call, a signal, an SDK
+   * `interrupt()` — and lets `runTurn` end.
+   *
+   * Carried on the REQUEST rather than reached through a `interrupt(sessionId)`
+   * method, which is what this replaces. That method addressed a running turn
+   * by the ENGINE's session id, and nobody holds that id at the moment it is
+   * needed: it travels back in the `result` event, which is the END of the
+   * turn. The first turn of a thread was therefore unstoppable on every
+   * engine — the browser had no id to name, so the button posted nothing at
+   * all. A signal exists before the driver does, cannot be learned too late,
+   * and cannot name the wrong turn.
+   */
+  readonly signal?: AbortSignal
   readonly model?: string
   readonly cwd: string
   /**
@@ -446,7 +461,6 @@ export interface Driver {
    */
   env(): Promise<Readonly<Record<string, string>>>
   runTurn(request: TurnRequest): AsyncIterable<TurnEvent>
-  interrupt(sessionId: string): Promise<void>
 }
 
 export interface AuthManagement {

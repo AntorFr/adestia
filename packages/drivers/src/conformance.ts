@@ -17,7 +17,7 @@ import {
 } from './contract.js'
 
 /** Methods of the mandatory core — a driver missing any of them is not a driver. */
-const CORE_METHODS = ['describe', 'env', 'runTurn', 'interrupt'] as const
+const CORE_METHODS = ['describe', 'env', 'runTurn'] as const
 
 export interface ConformanceIssue {
   readonly kind: 'missing-core-method' | 'unknown-capability' | 'missing-method' | 'missing-prerequisite'
