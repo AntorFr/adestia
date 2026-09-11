@@ -31,6 +31,16 @@ import playwright from '/usr/lib/node_modules/playwright-core/index.js'
 
 const { chromium } = playwright
 const UPSTREAM = { host: env.APP_HOST ?? 'adestia-bench-app', port: Number(env.APP_PORT ?? 8730) }
+/**
+ * Let a REAL turn through.
+ *
+ * The bench fakes the engine because the image ships no agent CLI. But a
+ * driver's own output is exactly what a scenario cannot otherwise see, and a
+ * change to a driver is not looked at until somebody has watched a real turn
+ * arrive. With this set, `/api/turn/attach` is proxied like everything else
+ * and `emit`/`endTurn` are refused rather than quietly doing nothing.
+ */
+const PASSTHROUGH = env.BENCH_REAL_ENGINE === '1'
 const ORIGIN = 'http://127.0.0.1:8080'
 const SHOTS = '/shots'
 
@@ -40,7 +50,7 @@ const waiting = []
 
 const proxy = createServer((req, res) => {
   const url = new URL(req.url, 'http://bench')
-  if (url.pathname === '/api/turn/attach') {
+  if (url.pathname === '/api/turn/attach' && !PASSTHROUGH) {
     // ONCE. The shell re-attaches after every turn it finishes, so a stream
     // that always answers would loop for as long as the bench runs.
     if (served > 0 || turn) {
@@ -117,13 +127,18 @@ const bench = {
   },
 
   attached() {
+    if (PASSTHROUGH) return Promise.resolve()
     return turn ? Promise.resolve() : new Promise((resolve) => waiting.push(resolve))
   },
 
   emit(event) {
+    if (PASSTHROUGH) throw new Error('this run drives a real engine; nothing to script')
     if (!turn) throw new Error('nothing is attached yet — await bench.attached()')
     turn.write(`data: ${JSON.stringify(event)}\n\n`)
   },
+
+  /** Whether the engine behind this run is the real one. */
+  real: PASSTHROUGH,
 
   endTurn() {
     turn?.end()

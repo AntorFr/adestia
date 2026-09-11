@@ -1,0 +1,5 @@
+{"in":{"jsonrpc":"2.0","id":0,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{"experimental":{"codex/auth-change":{}},"elicitation":{"form":{},"url":{}}},"clientInfo":{"name":"codex-mcp-client","title":"Codex","version":"0.154.0"}}}}
+{"out":{"jsonrpc":"2.0","id":0,"result":{"protocolVersion":"2025-06-18","capabilities":{"tools":{}},"serverInfo":{"name":"adestia-spike-mcp","version":"0.0.1"}}}}
+{"in":{"jsonrpc":"2.0","method":"notifications/initialized"}}
+{"in":{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{"_meta":{"progressToken":0}}}}
+{"out":{"jsonrpc":"2.0","id":1,"result":{"tools":[{"name":"spike_ping","description":"Returns pong. Proof the MCP server was reached.","inputSchema":{"type":"object","properties":{"who":{"type":"string"}}}}]}}}

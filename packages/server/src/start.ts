@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url'
 import {
   AskDesk,
   ClaudeCodeDriver,
+  CodexDriver,
   CopilotDriver,
   SHELL_TOOLS_SERVER_NAME,
   createOAuthFlow,
@@ -85,7 +86,7 @@ export async function loadConfigFile(
   }
 }
 
-const AVAILABLE_DRIVERS = ['claude-code', 'copilot-cli'] as const
+const AVAILABLE_DRIVERS = ['claude-code', 'copilot-cli', 'codex-cli'] as const
 
 async function buildDriver(
   config: AdestiaConfig,
@@ -174,6 +175,28 @@ async function buildDriver(
         mcpServers,
         refreshStore,
         ...(config.driver.command ? { command: config.driver.command } : {}),
+      })
+
+    case 'codex-cli':
+      return new CodexDriver({
+        // Driver-owned: the credential, the sessions, the sqlite state. This
+        // CLI honours it completely — spike 5 ran a dozen turns and left the
+        // surrounding HOME empty.
+        home: join(dataDir, 'codex-home'),
+        models: config.driver.models,
+        ...(asks ? { asks } : {}),
+        mcpServers,
+        refreshStore,
+        ...(config.driver.command ? { command: config.driver.command } : {}),
+        // The CLI may rotate a ChatGPT credential behind us; without this the
+        // next restart would write the old document back over the fresh one
+        // and the instance would lose its login for no visible reason.
+        onCredentialRefreshed: (document) => {
+          void new SecretStore(dataDir)
+            .write('codex-cli', document)
+            .then(() => log('driver credential refreshed by the CLI, re-stored'))
+            .catch((error: Error) => log(`could not re-store the refreshed credential: ${error.message}`))
+        },
       })
 
     default:

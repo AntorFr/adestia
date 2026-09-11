@@ -13,4 +13,6 @@ export * from './claude-code/index.js'
  */
 export * as copilot from './copilot-cli/index.js'
 export { CopilotDriver, type CopilotDriverOptions } from './copilot-cli/driver.js'
+export * as codex from './codex-cli/index.js'
+export { CodexDriver, type CodexDriverOptions } from './codex-cli/driver.js'
 export * from './mcp-oauth.js'

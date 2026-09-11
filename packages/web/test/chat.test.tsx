@@ -1370,7 +1370,7 @@ describe("the engine's question", () => {
     // question, and re-yields it at the very next event.
     let answered = false
     let pushMore: (() => void) | undefined
-    const fetchImpl = vi.fn((url: string, init?: RequestInit) => {
+    const fetchImpl = vi.fn((url: string, _init?: RequestInit) => {
       const path = String(url)
       if (path === '/api/permission') {
         answered = true

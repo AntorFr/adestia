@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { Settings, StatusLine } from '../src/app/Settings.js'
 import { SettingsMenu } from '../src/app/SettingsMenu.js'

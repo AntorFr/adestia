@@ -1,0 +1,17 @@
+
+########## install the linux build inside a throwaway container, run it without CA certs ##########
+--- /etc/ssl/certs:
+(empty above = no system CA store)
+--- version:
+codex-cli 0.154.0
+--- login status (no network needed):
+Not logged in
+exit=1
+--- a turn with no credential (this is where a CA failure would show):
+
+########## outcome (recorded by hand — the probe was killed, not finished) ##########
+Without ca-certificates: `codex --version` and `codex login status` work, but a turn hung
+for 13 minutes with no output and no error — the session file frozen at its first write,
+the binary still resident — until the container was killed.
+With ca-certificates (same image, same command): the turn completed in ~35 s with the
+expected 401 retry storm and `turn.failed`.

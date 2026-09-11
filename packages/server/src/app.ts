@@ -10,7 +10,6 @@
 
 import { randomUUID } from 'node:crypto'
 import { readFile, stat } from 'node:fs/promises'
-import { join } from 'node:path'
 
 import multipart from '@fastify/multipart'
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify'

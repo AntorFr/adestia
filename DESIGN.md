@@ -242,6 +242,24 @@ on both engines without being rewritten.
   AI Credits billing API stays the only quota source (daily aggregates,
   separate billing-scope token) — never promise real-time. Discovered: `--acp`
   (Agent Client Protocol server) — candidate transport to evaluate vs JSONL.
+- `codex-cli` — verified hands-on (spike 5, binary 0.154.0 pinned; full facts in
+  `spikes/codex-cli/REPORT.md`), and built on `codex app-server` rather than
+  `codex exec`: the exec surface forces `approval policy = Never`, so the
+  engine's own questions have nowhere to go, while the protocol carries them as
+  requests the turn waits on. **One app-server process per turn**, resuming the
+  thread — codex starts its MCP servers once per THREAD, so a longer-lived one
+  would hand turn 2 a shell-tools token the socket has already revoked
+  (measured). Arming is a FILE (`auth.json` under a driver-owned `CODEX_HOME`;
+  `OPENAI_API_KEY` in the environment is ignored), by relayed device flow —
+  no pty, nothing to consent to — or by pasted key, which the CLI itself does
+  not validate, so the driver shape-checks it. First driver to enumerate its
+  models for real (`model/list`, filtered by entitlement) and the first to
+  declare `subscriptionQuotas`: two windows with a percentage and a reset time,
+  **pushed after every turn**. In `open` posture it runs the CLI with
+  `danger-full-access` and lets the container be the bound, as that posture
+  already says — which also sidesteps the one defect found: a command codex's
+  own sandbox refuses emits **no event at all**, so a trace under a sandbox
+  cannot be trusted to show what was refused. That cost is confined to `ask`.
 
 ## MCP configuration
 
@@ -1471,6 +1489,38 @@ where they do not, the reversal is stated.
    share the prompt cache perfectly, while switching models re-pays it. The
    binding constraint is ~300 MB of RSS per CLI process — `maxConcurrentTurns:
    3` is confirmed as memory-bound, and 8 is verified safe API-side.
+5. **Codex CLI hands-on — DONE** (`spikes/codex-cli/REPORT.md`): binary 0.154.0
+   pinned. `CODEX_HOME` isolates completely — the fake `$HOME` stayed empty —
+   but startup clones a plugin marketplace over the network and **no config
+   value found turns that off**, so egress policy is the only lever. Arming is a
+   **file**, not an env var (`OPENAI_API_KEY` is ignored
+   for the built-in provider) and needs no pty, unlike Copilot's;
+   `login --with-api-key` accepts a bogus key without validating it, and the
+   failure only lands ~35 s into the first turn. The finding that decides the
+   design: `codex exec --json` forces `approval policy = Never`, while
+   `codex app-server` — JSON-RPC with a *generated schema* — carries the return
+   channel (`item/commandExecution/requestApproval`, answered `accept`/`decline`,
+   both proven), plus `model/list`, `mcpServer/startupStatus/updated` and
+   `thread/tokenUsage/updated`. All of it captured against a local mock provider
+   with no OpenAI account — and a second pass on a real ChatGPT account confirmed
+   the mock's event stream is identical to the live one, so that CI story holds.
+   That pass also settled the quota question: `account/rateLimits/updated` is
+   **pushed after every turn** with two windows (5 h and 7 days, `usedPercent` +
+   `resetsAt`), which is a better `subscriptionQuotas` source than anything
+   Copilot offers, and `model/list` turns out to be entitlement-filtered once
+   authenticated. One blocker stands: a command the sandbox blocks emits **no
+   event at all** on either surface — verified with a real model, which then
+   *talks about* the refusal the interface never showed. Report §12 fits the
+   findings to this repository's own contract: seven of nine capabilities would
+   be declarable, the UI needs nothing (no engine name reaches it), and the one
+   functional break is that the per-turn shell-tools token goes stale — codex
+   starts an MCP server once per THREAD, so turn 2 of a conversation would
+   announce a revoked token. Measured fix: one app-server process per turn plus
+   `thread/resume`, which restores one token per turn, keeps the whole history
+   and costs ~100 ms — the shape the Copilot driver already has. Whether a
+   `codex-cli` driver is built was not settled here; the chantier that followed
+   built it, on app-server and one process per turn — see its entry among the
+   engines above.
 
 ## What is built, and what is not
 
@@ -1480,11 +1530,11 @@ posture (`open` / `ask`, the engine judging and the chat asking — decision log
 2026-08-26); conversations per user, replayed faithfully; pages edited by both
 the agent and a Notion-like editor over one shared grammar; runtime plugin
 loading from a mounted folder with a shared React through an import map;
-`claude-code` and `copilot-cli` drivers behind the capability contract;
-credential arming from the interface; auth in all three modes; authoring
-skills the agent uses to write conformant plugins; scheduled turns; skins;
-chat attachments; inbound MCP for agent-to-agent delegation; container image
-and CI.
+`claude-code`, `copilot-cli` and `codex-cli` drivers behind the capability
+contract; credential arming from the interface; auth in all three modes;
+authoring skills the agent uses to write conformant plugins; scheduled turns;
+skins; chat attachments; inbound MCP for agent-to-agent delegation; container
+image and CI.
 
 Since then: the trips app; a model selector in the composer; outbound MCP
 wired end to end with OAuth-authenticating servers and health reporting; the
@@ -1516,7 +1566,15 @@ composing one.
   `Bash(ls:*)` or `Bash`), which also turns the no-suggestion dead end into
   something answerable. On copilot-cli the posture cannot exist at all —
   no return channel in programmatic mode — so it refuses to boot there.
-  Instances run `open` until that is done.
+  `codex-cli` settles the transport half of that and none of the rest: its
+  app-server carries the return channel, and the driver declares
+  `interactivePermissions` in `ask` for real. But the granularity above belongs
+  to the ENGINE, not to the transport, and this one brings a defect of its own
+  — a command its sandbox refuses emits no event at all, so a trace under `ask`
+  cannot be trusted to show what was refused. So the third engine is given what
+  the other two are given and nothing less: the whole tool set,
+  `danger-full-access`, the container as the bound. Instances run `open` until
+  that is done.
 
 - **Remote instruction sync** (the optional git module).
 - **Usage, cost and quota surfaces.** The drivers declare `usageMetrics`,

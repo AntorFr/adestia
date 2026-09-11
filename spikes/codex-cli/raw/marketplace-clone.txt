@@ -1,0 +1,3 @@
+  after ~2s cumulative wait: marketplace clone = absent
+  after ~5s cumulative wait: marketplace clone = absent
+  after ~10s cumulative wait: marketplace clone = PRESENT

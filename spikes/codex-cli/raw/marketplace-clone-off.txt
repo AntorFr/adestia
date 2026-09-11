@@ -1,0 +1,5 @@
+  no switch (control)      : server alive, clone = PRESENT
+  -c marketplaces=[]       : SERVER DID NOT START — Error: error loading default config after config error: invalid type: sequence, expected a map
+  -c marketplaces={}       : server alive, clone = PRESENT
+  --disable remote_plugin  : server alive, clone = PRESENT
+  -c plugins={}            : server alive, clone = PRESENT

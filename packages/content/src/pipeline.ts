@@ -21,7 +21,7 @@ import { directiveFromMarkdown, directiveToMarkdown } from 'mdast-util-directive
 import { directive } from 'micromark-extension-directive'
 import { unified, type Processor } from 'unified'
 import type { Root, RootContent, Text } from 'mdast'
-import type { Handle, State } from 'mdast-util-to-markdown'
+import type { Handle } from 'mdast-util-to-markdown'
 
 /**
  * remark-stringify escapes every `_` in phrasing content, so `session_store`

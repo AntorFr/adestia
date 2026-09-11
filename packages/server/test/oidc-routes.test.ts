@@ -7,7 +7,7 @@
  * the mistakes actually live, is.
  */
 
-import Fastify, { type FastifyInstance } from 'fastify'
+import { type FastifyInstance } from 'fastify'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { buildApp, type AppDependencies } from '../src/app.js'

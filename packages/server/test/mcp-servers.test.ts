@@ -39,7 +39,6 @@ class Bare implements Driver {
   listModels(): Promise<readonly { id: string }[]> {
     return Promise.resolve([])
   }
-  // eslint-disable-next-line require-yield
   async *runTurn(): AsyncIterable<TurnEvent> {
     return
   }

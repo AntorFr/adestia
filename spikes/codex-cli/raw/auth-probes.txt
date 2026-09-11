@@ -1,0 +1,55 @@
+
+########## login status (nothing stored) ##########
+Not logged in
+exit=1
+
+########## login --with-api-key <bogus> ##########
+Reading API key from stdin...
+Successfully logged in
+exit=0
+
+########## login status (bogus key stored) ##########
+Logged in using an API key - sk-bogus***l-key
+exit=0
+
+########## auth.json shape ##########
+{
+  "auth_mode": "apikey",
+  "OPENAI_API_KEY": "<REDACTED>"
+}
+########## exec with the bogus key stored ##########
+Reading additional input from stdin...
+{"type":"thread.started","thread_id":"01a08a91-9087-7713-bd8f-ccb4f4830787"}
+{"type":"turn.started"}
+2026-09-10T09:06:31.555850Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: HTTP error: 401 Unauthorized, url: wss://api.openai.com/v1/responses
+2026-09-10T09:06:32.389761Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: HTTP error: 401 Unauthorized, url: wss://api.openai.com/v1/responses
+2026-09-10T09:06:33.178596Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: HTTP error: 401 Unauthorized, url: wss://api.openai.com/v1/responses
+{"type":"error","message":"Reconnecting... 2/5 (unexpected status 401 Unauthorized: {\n  \"error\": {\n    \"m, url: wss://api.openai.com/v1/responses, cf-ray: a38d46fb4927ee8e-MXP, request id: req_bd2dabbaa30242689d226197753812f4, auth error: 401, auth error code: invalid_api_key)"}
+2026-09-10T09:06:34.207715Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: HTTP error: 401 Unauthorized, url: wss://api.openai.com/v1/responses
+{"type":"error","message":"Reconnecting... 3/5 (unexpected status 401 Unauthorized: {\n  \"error\": {\n    \"m, url: wss://api.openai.com/v1/responses, cf-ray: a38d47018c4c59f5-MXP, request id: req_50a39fac15fd4c3fb76ebe510529760c, auth error: 401, auth error code: invalid_api_key)"}
+2026-09-10T09:06:35.506743Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: HTTP error: 401 Unauthorized, url: wss://api.openai.com/v1/responses
+{"type":"error","message":"Reconnecting... 4/5 (unexpected status 401 Unauthorized: {\n  \"error\": {\n    \"m, url: wss://api.openai.com/v1/responses, cf-ray: a38d4709ce9aee50-MXP, request id: req_4558745f831746d2847f92b06d35815f, auth error: 401, auth error code: invalid_api_key)"}
+2026-09-10T09:06:37.811135Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: HTTP error: 401 Unauthorized, url: wss://api.openai.com/v1/responses
+{"type":"error","message":"Reconnecting... 5/5 (unexpected status 401 Unauthorized: {\n  \"error\": {\n    \"m, url: wss://api.openai.com/v1/responses, cf-ray: a38d4718182bed1c-MXP, request id: req_783b1f2459b74e7980b4f6f793f2b9df, auth error: 401, auth error code: invalid_api_key)"}
+2026-09-10T09:06:41.861394Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: HTTP error: 401 Unauthorized, url: wss://api.openai.com/v1/responses
+{"type":"item.completed","item":{"id":"item_0","type":"error","message":"Falling back from WebSockets to HTTPS transport. unexpected status 401 Unauthorized: {\n  \"error\": {\n    \"m, url: wss://api.openai.com/v1/responses, cf-ray: a38d47317f68eda4-MXP, request id: req_90d406829e234a46b946f79cb2a6dbe8, auth error: 401, auth error code: invalid_api_key"}}
+{"type":"error","message":"Reconnecting... 1/5 (unexpected status 401 Unauthorized: Incorrect API key provided: sk-bogus***********-key. You can find your API key at https://platform.openai.com/account/api-keys., url: https://api.openai.com/v1/responses, cf-ray: a38d4734f95f4c3a-MXP, request id: req_50e0ee784dee41fb80726ccc8bcdd635, auth error: 401, auth error code: invalid_api_key)"}
+{"type":"error","message":"Reconnecting... 2/5 (unexpected status 401 Unauthorized: Incorrect API key provided: sk-bogus***********-key. You can find your API key at https://platform.openai.com/account/api-keys., url: https://api.openai.com/v1/responses, cf-ray: a38d47387810ee64-MXP, request id: req_16095396c7bd4bcc97c008d3cc094824, auth error: 401, auth error code: invalid_api_key)"}
+{"type":"error","message":"Reconnecting... 3/5 (unexpected status 401 Unauthorized: Incorrect API key provided: sk-bogus***********-key. You can find your API key at https://platform.openai.com/account/api-keys., url: https://api.openai.com/v1/responses, cf-ray: a38d473d4b60eda0-MXP, request id: req_613b3429d1fb4258b700d1c18c6fdf28, auth error: 401, auth error code: invalid_api_key)"}
+{"type":"error","message":"Reconnecting... 4/5 (unexpected status 401 Unauthorized: Incorrect API key provided: sk-bogus***********-key. You can find your API key at https://platform.openai.com/account/api-keys., url: https://api.openai.com/v1/responses, cf-ray: a38d47445c81cdef-MXP, request id: req_ecdfb8c0217c4b9bb2283448174dc964, auth error: 401, auth error code: invalid_api_key)"}
+{"type":"error","message":"Reconnecting... 5/5 (unexpected status 401 Unauthorized: Incorrect API key provided: sk-bogus***********-key. You can find your API key at https://platform.openai.com/account/api-keys., url: https://api.openai.com/v1/responses, cf-ray: a38d4750c9c1ed93-MXP, request id: req_4203b928b87f46d98dcfc41698042fc5, auth error: 401, auth error code: invalid_api_key)"}
+{"type":"error","message":"unexpected status 401 Unauthorized: Incorrect API key provided: sk-bogus***********-key. You can find your API key at https://platform.openai.com/account/api-keys., url: https://api.openai.com/v1/responses, cf-ray: a38d4765493bee7a-MXP, request id: req_6ea7efae20d646ed97311da36ef7a413, auth error: 401, auth error code: invalid_api_key"}
+{"type":"turn.failed","error":{"message":"unexpected status 401 Unauthorized: Incorrect API key provided: sk-bogus***********-key. You can find your API key at https://platform.openai.com/account/api-keys., url: https://api.openai.com/v1/responses, cf-ray: a38d4765493bee7a-MXP, request id: req_6ea7efae20d646ed97311da36ef7a413, auth error: 401, auth error code: invalid_api_key"}}
+exit=1
+
+########## logout ##########
+Successfully logged out
+exit=0
+
+########## login status after logout ##########
+Not logged in
+exit=1
+
+########## OPENAI_API_KEY in the environment, nothing stored ##########
+Not logged in
+exit=1

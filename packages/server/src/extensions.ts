@@ -20,7 +20,6 @@ import {
   parseSkinManifest,
   type PluginBlockSpec,
   type PluginManifest,
-  type PluginMcpServer,
   type SkinManifest,
 } from '@antorfr/adestia-schemas'
 

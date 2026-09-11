@@ -1,0 +1,9 @@
+mock provider on http://127.0.0.1:45188 (script=escalate, log=/Users/berard/Dev/Adestia/.claude/worktrees/codex-cli/spikes/codex-cli/raw/mock-requests-responses-escalate.jsonl)
+Reading additional input from stdin...
+{"type":"thread.started","thread_id":"01a08a94-baee-7db0-bde4-4d7ffa83b91a"}
+{"type":"item.completed","item":{"id":"item_0","type":"error","message":"Model metadata for `mock-model` not found. Defaulting to fallback metadata; this can degrade performance and cause issues."}}
+{"type":"turn.started"}
+2026-09-10T09:09:58.300197Z ERROR codex_core::tools::router: error=approval policy is Never; reject command — you cannot ask for escalated permissions if the approval policy is Never
+{"type":"item.completed","item":{"id":"item_1","type":"agent_message","text":"hello from the mock"}}
+{"type":"turn.completed","usage":{"input_tokens":32,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":16,"reasoning_output_tokens":0}}
+exit=0

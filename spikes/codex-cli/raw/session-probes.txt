@@ -1,0 +1,47 @@
+mock provider on http://127.0.0.1:45190 (script=simple, log=/Users/berard/Dev/Adestia/.claude/worktrees/codex-cli/spikes/codex-cli/raw/mock-requests-sessions.jsonl)
+
+########## first turn, last message written to a file ##########
+Reading additional input from stdin...
+{"type":"thread.started","thread_id":"01a08a9b-4851-7732-9ceb-18a739c46a02"}
+{"type":"item.completed","item":{"id":"item_0","type":"error","message":"Model metadata for `mock-model` not found. Defaulting to fallback metadata; this can degrade performance and cause issues."}}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_1","type":"agent_message","text":"hello from the mock"}}
+{"type":"turn.completed","usage":{"input_tokens":11,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":7,"reasoning_output_tokens":0}}
+exit=0
+--- last-message.txt:
+hello from the mock
+
+########## resume --last ##########
+{"type":"thread.started","thread_id":"01a08a9b-4851-7732-9ceb-18a739c46a02"}
+{"type":"item.completed","item":{"id":"item_0","type":"error","message":"Model metadata for `mock-model` not found. Defaulting to fallback metadata; this can degrade performance and cause issues."}}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_1","type":"agent_message","text":"hello from the mock"}}
+{"type":"turn.completed","usage":{"input_tokens":22,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":14,"reasoning_output_tokens":0}}
+exit=0
+
+########## what the model saw on the second call (history replayed?) ##########
+2 model calls
+  call 1: prompt_cache_key=01a08a9b-4851-7732-9ceb-18a739c46a02
+      developer:'<skills_instructions>\n## Skills\nA skill '
+      user:'<environment_context>\n  <cwd>/Users/bera'
+      user:'first question'
+  call 2: prompt_cache_key=01a08a9b-4851-7732-9ceb-18a739c46a02
+      developer:'<skills_instructions>\n## Skills\nA skill '
+      user:'<environment_context>\n  <cwd>/Users/bera'
+      user:'first question'
+      assistant:'hello from the mock'
+      user:'second question'
+
+########## sessions on disk ##########
+codex-home-sessions/sessions/2026/09/10/rollout-2026-09-10T11-17-07-01a08a9b-4851-7732-9ceb-18a739c46a02.jsonl
+
+########## structured output (--output-schema) ##########
+Reading additional input from stdin...
+{"type":"thread.started","thread_id":"01a08a9b-5026-7ef3-9895-1e3bdf3e33c7"}
+{"type":"item.completed","item":{"id":"item_0","type":"error","message":"Model metadata for `mock-model` not found. Defaulting to fallback metadata; this can degrade performance and cause issues."}}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_1","type":"agent_message","text":"hello from the mock"}}
+{"type":"turn.completed","usage":{"input_tokens":11,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":7,"reasoning_output_tokens":0}}
+exit=0
+--- did the schema reach the wire?
+text/format field: {"format": {"type": "json_schema", "strict": true, "schema": {"type": "object", "properties": {"answer": {"type": "string"}}, "required": ["answer"], "additionalProperties": false}, "name": "codex_output_schema"}}

@@ -1,0 +1,912 @@
+# Spike 5 — OpenAI Codex CLI recon (hands-on)
+
+**Date:** 2026-09-10 · **Binary:** `@openai/codex` **0.154.0** (pinned exact) · **Platform:** macOS arm64, Node v26.0.0 / npm 11.12.1
+**Scope:** the CLI's whole observable surface. Sections 1–10 were established *without* an account, on a mock provider; §11 is a second pass against a **real ChatGPT account**, armed on the owner's explicit go-ahead through the device flow. Every run used `env -i` with `HOME` and `CODEX_HOME` pointed inside this spike folder.
+
+**On the authenticated material:** the credential lives in `codex-home-real/` and the
+captures in `raw-auth/`, both gitignored — they carry an account id, an email and plan
+data. What is committed is this report, with those redacted.
+
+Everything below is labeled **[EXECUTED]** (proven by running the binary — raw output in `raw/`) or **[HELP-TEXT]** (stated by the CLI's own help or its generated protocol schema; existence is proven, behavior is not).
+
+> **Since written, the driver exists.** `packages/drivers/src/codex-cli/` was
+> built on the findings below and ships behind the capability contract; this
+> report stays as the record of what was measured and why the driver is shaped
+> the way it is. Where a section speaks in the conditional ("a driver would…"),
+> read it as the design note it became.
+
+**The headline:** `codex exec --json` is the poorer of two surfaces. `codex app-server`, a
+JSON-RPC protocol with a *generated schema*, answers every capability in the Adestia
+driver contract — including `interactivePermissions`, which `exec` structurally cannot
+(§7). Copilot's spike ended with "`--acp` discovered, worth its own spike"; here the
+equivalent is not only present, it is the one to build on. The recommendation is in §10.
+
+---
+
+## 1. Package identification [EXECUTED]
+
+```
+npm view @openai/codex version   → 0.154.0  (dist-tags: latest=0.154.0, alpha=0.154.0-alpha.6.1)
+bin: { "codex": "bin/codex.js" }   engines: node >=16   license: Apache-2.0
+```
+
+- `npm install --save-exact @openai/codex@0.154.0` → **2 packages, 289 MB**: a 20 kB
+  JS loader plus the platform package `@openai/codex-darwin-arm64` (one
+  optionalDependency per platform; linux ones are **musl** triples).
+- **Unlike Copilot, nothing is extracted at runtime.** The loader (`bin/codex.js`, read
+  in full) resolves `vendor/<triple>/bin/codex` inside the platform package, spawns it,
+  forwards SIGINT/SIGTERM/SIGHUP and mirrors the exit status. No cache directory, no
+  download, no self-replacement path in the loader. It only *detects* the package
+  manager to print the right update hint.
+- `codex --version` → `codex-cli 0.154.0`, exit 0, no auth, no network.
+- Two binaries ship in `vendor/`: `codex` and `codex-code-mode-host`.
+
+**Self-update.** `codex update` exists as a subcommand, and `codex doctor` reports
+`startup update check: true` with `update action: npm install -g @openai/codex`
+(`raw/instructions-sandbox.txt`). So the startup check exists, but the update action is
+a *command it tells you to run*, not an in-place swap of the npm-installed binary.
+Config key `check_for_update_on_startup` exists (§9) — a driver should set it false
+anyway, to avoid the network call. **Not verified:** whether a non-npm install path
+self-replaces. Weaker risk than Copilot's, where the binary genuinely replaces itself.
+
+## 2. Isolation — `CODEX_HOME` [EXECUTED]
+
+`CODEX_HOME` is honored **completely**, and this is the cleanest result of the spike:
+after twelve runs, `isolated-home/` (the fake `$HOME`) was **still empty**. No cache
+dir, no `~/.local/state`, nothing. Copilot needed ~173 MB under `$HOME/Library/Caches`;
+codex needs nothing outside `CODEX_HOME`.
+
+Layout observed after a first `exec` run:
+
+```
+auth.json                     # the credential, plain JSON (§3)
+config.toml                   # user config, incl. [mcp_servers.*] (§6)
+installation_id               # a UUID minted on first run
+sessions/YYYY/MM/DD/rollout-<ts>-<thread-id>.jsonl   # full transcript per thread
+state_5.sqlite  logs_2.sqlite  goals_1.sqlite  memories_1.sqlite  queue_1.sqlite
+thread_history_1.sqlite  thread-writer-locks/  shell_snapshots/  skills/.system/  tmp/
+.tmp/plugins/                 # a git CLONE of a plugin marketplace — see below
+```
+
+**One trap, and it is a network one [EXECUTED].** On startup codex **clones a curated
+plugin-marketplace git repository from the network** into `$CODEX_HOME/.tmp/plugins`
+(`openai-curated`, `.agents/plugins/marketplace.json`, commit `d416fd5`). It is a
+background fetch: absent at 2 s and 5 s, **present at 10 s** in a fresh home with no
+turn running at all (`raw/marketplace-clone.txt`) — short `exec` runs simply exit
+before it lands, which is why only the slow runs showed it. It happens *before and
+independently of* authentication, and it is third-party content arriving on disk.
+
+**Correction, and a lesson in how to measure.** This report first said
+`-c marketplaces=[]` stops the clone. It does not: that value makes codex refuse its own
+config (*"invalid type: sequence, expected a map"*), the process dies, and a dead process
+clones nothing. The probe had checked the disk without ever checking that codex was
+running. Re-measured with the server proven alive first (it must answer `initialize`
+before the disk is believed), **nothing tried turns it off**:
+
+| switch | result |
+|---|---|
+| *(none — control)* | server alive, clone PRESENT |
+| `-c marketplaces=[]` | **server does not start** |
+| `-c marketplaces={}` | server alive, clone PRESENT |
+| `--disable remote_plugin` | server alive, clone PRESENT |
+| `-c plugins={}` | server alive, clone PRESENT |
+
+So in 0.154.0 the clone is not configurable away. The two sources are named in the
+binary — `https://github.com/openai/plugins.git` and
+`https://chatgpt.com/backend-api/plugins/export/curated` — so the only lever a deployment
+has is **egress policy**, not config. Worth knowing before putting this CLI in a
+container that is supposed to talk to one API.
+
+`--ephemeral` suppresses the rollout transcript files (0 written) but still creates the
+sqlite state DBs and `installation_id` (`raw/misc-probes.txt`).
+
+**Resident memory [EXECUTED, indicative]:** one idle `app-server` = 36 MB (node loader)
++ 47 MB (rust binary) ≈ **83 MB** measured right after `initialize`
+(`measure-rss.mjs`). That is a floor, not a peak — Copilot's ~300 MB/process figure
+that set `maxConcurrentTurns: 3` was measured under load, so the two numbers are not
+comparable yet. Worth its own measurement before any concurrency claim.
+
+## 3. Authentication — three findings, all different from Copilot [EXECUTED]
+
+### 3a. The cheap probe is structured, not prose
+
+```
+codex login status        → exit 1, stdout empty, stderr: "Not logged in"
+codex login status        → exit 0, stderr: "Logged in using an API key - sk-bogus***l-key"
+```
+
+Instant, no network. And over the app-server, better still — `account/read` returns
+`{"account": null, "requiresOpenaiAuth": true}` as JSON (§7). Copilot's driver has to
+regex three English sentences off stderr; here there is a typed answer.
+
+### 3b. Arming is a file, and it needs no pty
+
+`codex login --with-api-key` reads the key **from stdin** and writes
+`$CODEX_HOME/auth.json`:
+
+```json
+{ "auth_mode": "apikey", "OPENAI_API_KEY": "<the key>" }
+```
+
+Default `cli_auth_credentials_store = "file"` (§9) — **there is no keychain question**,
+so none of Copilot's pty machinery (`script`, the TTY-gated plaintext consent, the
+"login succeeded but the token was not saved" trap) applies here. A driver can write
+that two-key JSON itself, 0600, and never spawn the CLI to arm it.
+
+**`OPENAI_API_KEY` in the environment is IGNORED** for the built-in `openai` provider:
+with the variable set and no `auth.json`, `login status` says "Not logged in" and a
+turn fails with *"Missing bearer or basic authentication in header"*
+(`raw/envkey-exec.txt`). Env-var arming *does* work for a **custom provider**, via
+`model_providers.<id>.env_key` — proven, the mock received `Authorization: Bearer
+mock-secret` from `MOCK_KEY` (§5). This inverts the Adestia driver README's assumption
+that "a driver says which environment variable hands its credential to the CLI": for
+codex the answer is a file.
+
+### 3c. `login --with-api-key` does not validate — and a bad key fails LATE
+
+A deliberately bogus key is accepted with **"Successfully logged in"**, exit 0, and
+`login status` then reports a healthy session. The failure only appears on the first
+turn, and it takes ~35 seconds: **5 websocket retries, a fallback to HTTPS, 5 more
+retries**, then `turn.failed` (`raw/auth-probes.txt`). Copilot fails in under a second
+with an empty stdout and a clean stderr sentence; codex talks to the network eleven
+times first.
+
+The three states, as the driver would see them:
+
+| state | `login status` | a turn |
+|---|---|---|
+| nothing stored | exit 1, `Not logged in` | JSONL `error` ×11 then `turn.failed`, `Missing bearer or basic authentication in header` |
+| bogus key stored | exit 0, "Logged in using an API key" | same shape, `auth error code: invalid_api_key`, `Incorrect API key provided: sk-…` |
+| valid key | exit 0 | — (needs an account, §11) |
+
+`auth error code: invalid_api_key` is a machine-usable marker inside the `turn.failed`
+message; the messages themselves are prose and not a documented API — pin the version.
+
+### 3d. The two login flows [EXECUTED — the device one to completion]
+
+- **`codex login --device-auth` works with piped stdio, no pty.** Within a second it
+  prints, **on stdout**, `https://auth.openai.com/codex/device` and a one-time code
+  (`56EN-GUNGD` in our run), stated to expire in **15 minutes**
+  (`raw/login-device-auth.txt`). This maps exactly onto Adestia's `device-code`
+  AuthMode. **Trap:** the output carries ANSI escapes *even under `TERM=dumb` and
+  `NO_COLOR=1`* — strip them before parsing.
+  **Driven to completion** (§11): on approval it prints `Successfully logged in` and
+  exits 0, having written `auth.json` **mode 0600 by itself**. Two traps a relaying
+  driver must respect: the code is on **stdout** while the sign-in URL line is too, and
+  **the process that printed the code is the one that polls for the token** — kill it
+  and the user's approval goes nowhere (learned the hard way here: a code approved
+  against a dead process produces no credential and no error, on either side).
+- **`codex login` (default)** starts a **local callback server on `http://localhost:1455`**
+  and prints an OAuth PKCE URL on stderr, ending with: *"On a remote or headless
+  machine? Use `codex login --device-auth` instead."* (`raw/login-default-flow.txt`).
+  Unusable from a server: it needs a browser that can reach *that machine's* port 1455.
+
+## 4. `codex exec` — the flag surface [EXECUTED for the marked ones]
+
+`codex exec [PROMPT]`, with `--json` (JSONL on stdout), `-o/--output-last-message
+<FILE>`, `--output-schema <FILE>`, `-m/--model`, `-s/--sandbox
+read-only|workspace-write|danger-full-access`, `-C/--cd`, `--add-dir`, `--worktree`,
+`--ephemeral`, `--skip-git-repo-check`, `--ignore-user-config`, `--ignore-rules`,
+`-c key=value` (dotted TOML override, repeatable), `-p/--profile`, `--enable/--disable
+<FEATURE>`, `--image`, `--oss`/`--local-provider`, `--color`, and the subcommands
+`exec resume [--last]`, `exec fork`, `exec review`.
+
+Proven by running: `--json`, `-o`, `--output-schema`, `-s`, `-C`, `-c`, `--ephemeral`,
+`--skip-git-repo-check`, `exec resume --last`.
+
+**Notably absent from `exec`: `-a/--ask-for-approval`.** It is a top-level flag and an
+`exec` run rejects it (`error: unexpected argument '-a' found`). See §7.
+
+**Two traps for a driver spawning it:**
+- With no `-` argument and a non-tty stdin, exec still announces *"Reading additional
+  input from stdin…"* on stderr and waits. `< /dev/null` is enough to make it proceed,
+  and adds nothing to the prompt (verified on the wire: exactly three input items).
+  Without it, a server that leaves the pipe open hangs.
+- Rust `tracing` lines (`2026-…Z ERROR codex_api::…`) are interleaved on **stderr**
+  while JSONL goes to **stdout**. The split is clean; the stderr is noisy.
+
+## 5. The mock provider — the whole path is CI-testable with no account [EXECUTED]
+
+Same method as spike 3, and it works:
+
+```
+-c model_provider=mock
+-c model_providers.mock.base_url=http://127.0.0.1:45188/v1
+-c model_providers.mock.wire_api=responses
+-c model_providers.mock.env_key=MOCK_KEY
+-c model=mock-model
+```
+
+drives a **complete turn against `mock-provider.js`** — no OpenAI account, no network
+(`raw/mock-responses-simple.txt`). Tool calls, sandbox denials, approvals, resume and
+MCP were all exercised this way. The driver's parser, session plumbing, permission
+handling and MCP materialization can all live in CI.
+
+**`wire_api = "chat"` is dead in 0.154.0:** the CLI refuses to load the config —
+*"`wire_api = \"chat\"` is no longer supported. set `wire_api = \"responses\"`"*. Only the
+Responses wire API remains, so a mock must speak Responses SSE (`mock-provider.js` does).
+
+The mock also captured **what codex puts on the wire**: `store: false`,
+`reasoning: {summary: "auto"}`, `include: ["reasoning.encrypted_content"]`,
+`prompt_cache_key` = the thread id, an `x-codex-turn-metadata` client-metadata header
+carrying `installation_id / session_id / thread_id / turn_id / window_id`, and 9 tools:
+`exec_command, write_stdin, request_user_input, view_image, multi_agent_v1, get_goal,
+create_goal, update_goal, web_search`. (`request_user_input` is described as *"only
+available in Plan mode"*.)
+
+### The `exec --json` event schema [EXECUTED]
+
+One JSON object per line on stdout. Observed set:
+
+| type | payload |
+|---|---|
+| `thread.started` | `thread_id` — **emitted first, before any model call** |
+| `turn.started` | — |
+| `item.started` / `item.completed` | `item: {id, type, …}` |
+| `item.completed` (`type: agent_message`) | `text` |
+| `item.completed` (`type: command_execution`) | `command`, `aggregated_output`, `exit_code`, `status` |
+| `item.completed` (`type: error`) | `message` (e.g. unknown-model metadata warning) |
+| `error` | `message` — retries and transport failures |
+| `turn.completed` | `usage: {input_tokens, cached_input_tokens, cache_write_input_tokens, output_tokens, reasoning_output_tokens}` |
+| `turn.failed` | `error.message` |
+
+Driver-relevant facts:
+- **The thread id arrives at the START** (`thread.started`), unlike Copilot where it is
+  harvested from the last line. Correlation is available before the work happens.
+- `turn.completed.usage` is the **turn total across model calls** (11/7 for one call,
+  32/16 for a two-call tool turn) — `usageMetrics` is satisfied by exec alone.
+- **No token deltas during the turn.** `liveTurnUsage` is not available on this surface
+  (it is on the other one, §7).
+- Auth failures **do** appear in the JSONL here (as `error` + `turn.failed`), unlike
+  Copilot's mute stdout — but only after the ~35 s retry storm.
+
+## 6. Sessions, MCP, instructions [EXECUTED]
+
+**Sessions.** `exec resume --last` reuses the same `thread_id` and **replays history**:
+the second model call carried `[developer, user(env), user("first question"),
+assistant("hello from the mock"), user("second question")]`
+(`raw/session-probes.txt`). One rollout file per thread, appended, under
+`sessions/YYYY/MM/DD/`. The rollout also stores cwd, originator, cli_version, the model
+provider and **the full base instructions and every message** — privacy-relevant.
+`prompt_cache_key` is the thread id, so cache locality follows the thread.
+There is **no `--session-id` to choose an id at creation** (Copilot has one); ids are
+UUIDv7 minted by the CLI and read from `thread.started`.
+
+**MCP.** `codex mcp add <name> -- <cmd>` / `--url <url>` writes `[mcp_servers.<name>]`
+into `$CODEX_HOME/config.toml` — a driver can write that TOML directly instead of
+shelling out. `mcp list --json` / `mcp get --json` return typed records with
+`transport` (`stdio` | `streamable_http`), `enabled`, `auth_status`
+(`unsupported` | `unknown`), and per-server timeouts. HTTP servers accept
+`bearer_token_env_var`, `http_headers`, `env_http_headers`, `http_headers_helper`, and
+`codex mcp login/logout` handles OAuth servers (`--oauth-client-id`,
+`--oauth-client-registration auto|cimd|dcr`, `--oauth-resource`) — which lines up with
+Adestia's `signIn: 'oauth'` servers.
+
+**Per-turn materialization is possible without touching config.toml**: servers passed in
+`thread/start.config.mcp_servers` were started and reported (§7). That is what the
+"core mints a token per turn" design needs.
+
+**Instructions.** `AGENTS.md` in the working root **reaches the model** (marker found on
+the wire); `CLAUDE.md` does **not** — *unless* `project_doc_fallback_filenames =
+["CLAUDE.md"]`, which makes it reach the model too (`raw/misc-probes.txt`). So a
+workspace written for Claude Code can be read by codex with **one config line**, which
+softens DESIGN.md's "assisted migration" story considerably for this direction.
+
+## 7. `codex app-server` — the surface the driver should be built on [EXECUTED]
+
+`codex app-server --stdio` speaks **newline-delimited JSON-RPC 2.0**. It ships its own
+schema: `codex app-server generate-json-schema --out <dir>` (39 files, 4.2 MB) and
+`generate-ts` for TypeScript bindings. Distilled method list:
+`raw/app-server-surface.txt` — **99 client requests, 10 server→client requests, 81
+notifications**.
+
+Everything below was driven from `drive-app-server.mjs` / `probe-appserver-queries.mjs`
+**with no account**:
+
+| Adestia capability | app-server answer | status |
+|---|---|---|
+| `modelSelection` | `model/list` returns the full catalog **unauthenticated** — id, displayName, description, `supportedReasoningEfforts`, `defaultReasoningEffort`, inputModalities, `hidden` | **[EXECUTED]** |
+| `authManagement` | `account/read` → `{account, requiresOpenaiAuth}`; `account/login/start` / `cancel` / `logout`; `account/chatgptAuthTokens/refresh` as a server→client request | read **[EXECUTED]**, login **[HELP-TEXT]** |
+| `usageMetrics` | `thread/tokenUsage/updated` with `{total, last}` per turn | **[EXECUTED]** |
+| `liveTurnUsage` | same notification, pushed **during** the turn | **[EXECUTED]** |
+| `subscriptionQuotas` | `account/rateLimits/read` + `account/rateLimits/updated`, **pushed after every turn** — two windows with `usedPercent` and `resetsAt` | **[EXECUTED, authenticated]** (§11) |
+| `mcpStatus` | `mcpServer/startupStatus/updated` (`starting` → `ready` / `failed` + full error) and `mcpServerStatus/list` (tools, resources, `authStatus`) | **[EXECUTED]** |
+| `interactivePermissions` | server→client `item/commandExecution/requestApproval` — **the turn waits for the answer** | **[EXECUTED]** |
+| streaming | `item/agentMessage/delta`, `item/reasoning/*Delta`, `item/commandExecution/outputDelta` | deltas **[EXECUTED]** |
+
+### The approval round trip, both ways [EXECUTED]
+
+With `approvalPolicy: 'on-request'` and a model asking for an escalated command, the
+server sends:
+
+```json
+{"method":"item/commandExecution/requestApproval",
+ "params":{"kind":"command","threadId":…,"turnId":…,"itemId":"call_mock_1",
+           "reason":"The spike wants to see the approval event.",
+           "command":"/bin/zsh -lc 'echo escalated-command-ran'","cwd":…}}
+```
+
+and blocks on the reply. Decision vocabulary (from
+`CommandExecutionRequestApprovalResponse.json`): **`accept` · `acceptForSession` ·
+`decline` · `cancel`** (+ `acceptWithExecpolicyAmendment` and
+`applyNetworkPolicyAmendment` object forms). Both proven end to end:
+
+- `{"decision":"accept"}` → the command runs, `item/completed` with `status: "completed"` and a real pid.
+- `{"decision":"decline"}` → `status: "declined"`, and the model is told
+  `exec_command failed: … Rejected("rejected by user")`; the turn continues.
+
+`cancel` (deny **and** interrupt the turn) and `acceptForSession` map onto product
+decisions Adestia already has words for. This is a real return channel — the thing
+DESIGN.md says "Copilot in programmatic mode has no return channel at all".
+
+### And `codex exec` structurally cannot do it [EXECUTED]
+
+`exec` rejects `-a`, and forcing the policy through config does not help:
+
+```
+$ codex exec -c approval_policy=on-request …
+ERROR codex_core::tools::router: error=approval policy is Never; reject command —
+  you cannot ask for escalated permissions if the approval policy is Never
+```
+
+The refusal appears **only as a stderr tracing line**, never as a JSONL event
+(`raw/mock-responses-escalate-onrequest.txt`). So on the exec surface,
+`interactivePermissions` must be declared absent — the same honest "absent" the Copilot
+driver declares.
+
+### Other useful protocol facts [EXECUTED]
+
+- `thread/start` accepts `cwd`, `model`, `modelProvider`, `approvalPolicy`, `sandbox`,
+  `baseInstructions`, `developerInstructions`, `ephemeral`, **and an arbitrary `config`
+  object** — per-thread overrides with no file on disk.
+- `turn/start` overrides model, effort, sandbox, `outputSchema`, service tier per turn;
+  `turn/interrupt` and `turn/steer` exist (steering a running turn).
+- `permissionProfile/list` → `:read-only`, `:workspace`, `:danger-full-access`.
+- `config/read` returns the whole effective config (101 keys, §9).
+- Unauthenticated calls fail **cleanly**: `{"code":-32600,"message":"codex account
+  authentication required to read rate limits"}` — a typed error, not prose.
+- **`CODEX_HOME` must already exist** for `app-server` (it refuses to start otherwise);
+  `exec` creates it. One `mkdir` in the driver.
+- `--listen` also offers `unix://` and `ws://` with capability-token or signed-JWT auth
+  — an out-of-process daemon shape, if that is ever wanted. **[HELP-TEXT]**
+
+## 8. The observability hole worth knowing about [EXECUTED]
+
+**A command the sandbox blocks produces no item event at all — on either surface.**
+
+With `-s read-only` and a model calling `echo written > file`:
+- the model is told, correctly: `Process exited with code 1 … zsh:1: operation not
+  permitted: mock-wrote-this.txt`;
+- the client stream shows **nothing**: no `command_execution` in `exec --json`
+  (`raw/sandbox-read-only.txt`), no `commandExecution` notification over app-server
+  (`raw/app-server-write.log`) — while the *same* command that succeeds emits
+  `item.started` + `item.completed` on both.
+
+So a trace rendered from the event stream silently omits blocked commands: the user
+sees the agent go quiet, not the agent being refused.
+
+**Re-checked against a real model, and it is worse than the mock suggested (§11).** Asked
+to run `echo hi > sandbox-probe.txt` under `-s read-only`, gpt-6 announced *"I'll run the
+command exactly as provided"*, ran it, was refused by the sandbox, and reported
+*"The command failed because the sandbox denied writing to `sandbox-probe.txt`"*. The
+client stream — on **both** surfaces — carried nothing but those two agent messages: item
+types seen were `userMessage` and `agentMessage` only, zero `commandExecution`, zero
+approval request, while the token counter moved twice (15 359 → 30 801) proving a tool
+round trip happened. The agent talks about a command the interface never showed. That is
+a defect to report upstream, and until it is fixed a driver cannot render a faithful
+trace of refusals.
+
+## 9. Config surface [EXECUTED — `config/read`, 101 keys]
+
+The ones a driver cares about, with their defaults on a fresh home:
+
+| key | default | why it matters |
+|---|---|---|
+| `cli_auth_credentials_store` | `"file"` | no keychain prompt, no pty (§3b) |
+| `check_for_update_on_startup` | null (doctor: true) | turn off for a pinned deployment |
+| `marketplaces` | — | present, but **no value found that stops the startup clone** (§2) |
+| `project_doc_fallback_filenames` | `[]` | set to `["CLAUDE.md"]` to read the other dialect (§6) |
+| `shell_environment_policy` | all null | `inherit`, `exclude`, `include_only`, `set` — env filtering for spawned commands |
+| `sandbox_mode`, `approval_policy`, `permissions`, `default_permissions` | null | the permission posture |
+| `mcp_servers`, `mcp_oauth_credentials_store`, `mcp_oauth_callback_port/url` | — | §6 |
+| `model`, `model_provider`, `model_providers`, `model_reasoning_effort`, `model_catalog_json` | null | §5, §7 |
+| `otel`, `analytics`, `notify`, `feedback` | null | telemetry taps, off by default |
+| `history` | `{persistence: "save-all"}` | what the rollout keeps |
+| `sqlite_home`, `log_dir` | null | where the state DBs land |
+| `features` | 8 flags, e.g. `remote_plugin: true`, `memories: false` | `--enable/--disable <FEATURE>` |
+
+`codex doctor` is a ready-made health check: `--json` emits a versioned report
+(`schemaVersion`, `overallStatus`, `codexVersion`, `checks`) covering auth, sandbox,
+MCP count, updates, connectivity, state-DB integrity and rollout inventory; exit 1 when
+a check fails. Raw human form in `raw/instructions-sandbox.txt`.
+
+## 10. Driver-contract implications (an Adestia `codex-cli` driver)
+
+**Build it on `app-server`, not on `exec`.** It is marked `[experimental]` in the help,
+and that is the one real argument against — but it is the only surface that can honour
+`interactivePermissions`, `liveTurnUsage`, `modelSelection` and `mcpStatus`, it ships a
+*generated schema* (so drift is detectable mechanically, and TS types are one command
+away), and it fails with typed JSON-RPC errors instead of English sentences. Building on
+`exec` means declaring four capabilities absent and parsing prose for the fifth.
+
+Concretely, per capability:
+
+- **`authManagement`** — `account/read` answers armed-ness *and* the plan in 5 ms with
+  no network (§11.2); `login status` is the exec-side equivalent. Two arming modes, and
+  they store different things: `api-key` writes `{auth_mode: "apikey", OPENAI_API_KEY}`
+  (a driver can write that file itself, 0600, without spawning anything), while the
+  relayed `device-code` flow yields `{auth_mode: "chatgpt", tokens: {id_token,
+  access_token, refresh_token, account_id}, last_refresh}` — three tokens and a clock,
+  not one opaque string. Do **not** offer the default `codex login`: it wants a browser
+  on the CLI's own machine. Two things to respect: a pasted key is **never validated at
+  arming** (`armed` means "a key is on disk", and the truth arrives ~35 s into the first
+  turn), and the device-flow process **is** the poller — killing it silently voids the
+  user's approval.
+- **`usageMetrics` / `liveTurnUsage`** — `thread/tokenUsage/updated` (`total` + `last`)
+  during the turn; `turn.completed.usage` on the exec surface. Fields are token counts
+  only: no currency. **`cost` should not be declared** — nothing observed reports money,
+  and on a ChatGPT plan the meaningful number is a percentage of a window, not a price.
+  Budget for a **~15 k-token preamble on every turn** (§11.5) before showing anyone a
+  per-turn figure.
+- **`contextBreakdown`** — not observed. `model_context_window` and
+  `model_auto_compact_token_limit` exist in config, and `thread/compacted` is a
+  notification, but no live "weight of the next message" was seen. Leave undeclared
+  until proven.
+- **`subscriptionQuotas`** — the strongest capability this engine offers. Two real
+  windows (5 h and 7 days) with `usedPercent` + `resetsAt`, **pushed after every turn**
+  as `account/rateLimits/updated` (§11.3) — no polling, no server-side TTL cache, no
+  `stale` flag to apologise with. `account/rateLimitResetCredit/consume` even lets a
+  product spend a granted reset.
+- **`modelSelection`** — `model/list`, with display names and per-model reasoning
+  efforts, and **entitlement-filtered once authenticated** (six models unauthenticated,
+  five on the tested plan — §11.4). An unavailable model is refused server-side with a
+  readable 400, so the driver need not police names, only surface the refusal. The
+  reasoning efforts are a second axis the contract does not have yet.
+- **`mcpStatus`** — the `mcpServer/startupStatus/updated` notification is the reliable
+  tap (thread-scoped servers appear **only** there); `mcpServerStatus/list` covers
+  config-file servers with their tools and `authStatus`. Expect a server nobody
+  configured: authenticated threads start a built-in `codex_apps` (§11.5).
+- **`interactivePermissions`** — `item/commandExecution/requestApproval` +
+  `accept | acceptForSession | decline | cancel`. Also
+  `item/fileChange/requestApproval`, `item/permissions/requestApproval`,
+  `mcpServer/elicitation/request` and `item/tool/requestUserInput` (Plan mode).
+
+**Process hygiene for the spawn site:** `CODEX_HOME=<driver dir>` (create it first),
+`-c check_for_update_on_startup=false`, `--ignore-user-config`
+where the operator's own config must not leak in, `NO_COLOR=1`, and `< /dev/null` on
+the exec path. Nothing lands outside `CODEX_HOME`. **On shutdown, do not SIGKILL:** the
+npm entry point is a node loader that forwards SIGINT/SIGTERM/SIGHUP to the rust binary
+but obviously cannot forward a KILL — observed once, leaving an orphaned `codex login`
+running after the loader died. Signal the loader, or kill the process group.
+
+**Testability:** the whole path — events, sessions, approvals, MCP, sandbox denials —
+runs in CI against `mock-provider.js` with zero credentials. Same guarantee as the
+Copilot driver, obtained the same way — and §11.5 verified the mock's event stream is
+identical to the real one, so the guarantee is not a hope.
+
+**The one thing that would block shipping** is §8: a command the sandbox refuses is
+absent from the stream, confirmed on the real path. A driver built today would show the
+agent saying "the command failed" over an empty trace. It needs an upstream fix, or a
+workaround nobody has found here.
+
+## 11. The authenticated pass [EXECUTED, real ChatGPT account, 2026-09-10]
+
+Armed through `codex login --device-auth` on the owner's explicit go-ahead. Three short
+exec turns and one app-server turn — about 60 k tokens total, 2 % of the 5-hour window.
+Raw captures in `raw-auth/` (gitignored).
+
+### 11.1 `auth.json` for a ChatGPT login — a different shape from an API key
+
+```json
+{ "auth_mode": "chatgpt",
+  "OPENAI_API_KEY": null,
+  "tokens": { "id_token": "<1796 chars>", "access_token": "<1684 chars>",
+              "refresh_token": "<196 chars>", "account_id": "<uuid>" },
+  "last_refresh": "2026-09-10T09:39:52Z" }
+```
+
+Written **0600 by the CLI itself**. `login status` → `Logged in using ChatGPT`, exit 0.
+So a driver managing this credential is managing *three* tokens with a refresh clock, not
+one opaque string — and `account/chatgptAuthTokens/refresh` on the protocol (a
+**server→client** request) says the CLI may ask its client to do the refreshing. Not
+exercised; the one thing in this section still open.
+
+### 11.2 The cheapest "am I armed?" call is free and instant
+
+`account/read` → **5 ms**, no network:
+
+```json
+{ "account": { "type": "chatgpt", "email": "<redacted>", "planType": "plus" },
+  "requiresOpenaiAuth": true }
+```
+
+It answers armed-ness *and* the plan in one call. Compare the unauthenticated form —
+`{"account": null, "requiresOpenaiAuth": true}` — and compare Copilot, where the only
+honest answer costs a network round trip and comes back as prose. **`authStatus` is a
+solved problem on this engine.** The remaining unknown is the signature of an *expired*
+credential, which needs a token left to rot.
+
+### 11.3 `subscriptionQuotas` arrives without being asked for
+
+`account/rateLimits/read` (670 ms) — and, better, `account/rateLimits/updated` is
+**pushed after every single turn**, no polling, no TTL cache to invent:
+
+```json
+{ "limitId": "codex",
+  "primary":   { "usedPercent": 1, "windowDurationMins": 300,   "resetsAt": 1789051222 },
+  "secondary": { "usedPercent": 0, "windowDurationMins": 10080, "resetsAt": 1789638022 },
+  "credits": { "hasCredits": false, "unlimited": false, "balance": "0" },
+  "planType": "plus", "spendControlReached": false, "rateLimitReachedType": null }
+```
+
+Two windows — **5 hours** (300 min) and **7 days** (10080 min) — each a percentage and a
+unix reset time. That maps onto Adestia's normalized `{id, label, utilizationPct,
+resetsAt}` with nothing left over, and `usedPercent` was observed climbing 1 → 2 across
+two turns. DESIGN.md's "never promise real-time" caution does **not** apply here the way
+it does to Copilot's daily-aggregate billing API: this is per-turn and free.
+
+Also present: `rateLimitResetCredits` — grantable "full reset" tokens with `status`,
+`grantedAt`, `expiresAt` and a human title, plus `account/rateLimitResetCredit/consume`
+to spend one. A product could offer that button; no other engine here has one.
+
+`account/usage/read` (923 ms) is a *history* source, not a quota one: `lifetimeTokens`,
+`peakDailyTokens`, `longestRunningTurnSec`, streak counts and per-day token buckets.
+
+### 11.4 `model/list` is entitlement-filtered once authenticated
+
+Unauthenticated it returned **six** models; authenticated on this plan, **five** —
+`gpt-5.2` is gone. So the list is not a static catalog the client ships: it is what the
+account may actually use, which is exactly what `modelSelection` needs to avoid lying.
+
+And a model the plan does not have fails **server-side, cleanly**:
+
+```
+{"type":"error","status":400,"error":{"type":"invalid_request_error",
+ "message":"The 'definitely-not-a-model' model is not supported when using Codex with a ChatGPT account."}}
+```
+
+surfaced as a JSONL `error` + `turn.failed`, exit 1. The client only *warns* first
+(`Model metadata for X not found`) and lets the server refuse — so a driver need not
+validate model names itself, but must surface a 400 as a user-readable refusal rather
+than a crash.
+
+### 11.5 The real event stream matches the mock — plus one built-in MCP server
+
+A simple turn on the real path emitted exactly what the mock produced: `thread.started`,
+`turn.started`, `item.completed(agent_message)`, `turn.completed(usage)` on exec; and on
+app-server `thread/started` → `turn/started` → `item/started|completed(userMessage,
+agentMessage)` → `item/agentMessage/delta` ×n → `thread/tokenUsage/updated` →
+`account/rateLimits/updated` → `turn/completed`. **The mock is a faithful stand-in**, which
+is what makes the CI story real.
+
+Two additions only an account reveals:
+- `mcpServer/startupStatus/updated` for **`codex_apps`**, a built-in MCP server that
+  appears (starting → ready) on an authenticated thread. A driver's MCP inventory will
+  see a server it did not configure.
+- **Every turn carries a ~15 k-token preamble** (`input_tokens: 15291`, of which
+  `cached_input_tokens: 12160`) for a prompt whose answer was the word "pong". Instructions,
+  skills and environment context are not free, and the cache absorbs about 80 % of it.
+  Worth knowing before promising anyone a cheap turn.
+
+### 11.6 Still open
+
+1. **Token refresh** — does the CLI renew `access_token` from `refresh_token` on its own,
+   or does `account/chatgptAuthTokens/refresh` mean the client must? The difference
+   decides whether a driver needs a refresh loop.
+2. **The signature of an expired credential** — distinguishable from a malformed one?
+3. **Concurrency and memory under load** — the 83 MB idle figure says nothing about a
+   running turn; spike 4's method applied here would give the `maxConcurrentTurns`
+   number for this engine.
+4. **`app-server` stability** — it is labeled experimental; how fast does the protocol
+   move between releases, and does `generate-json-schema` diffing catch it?
+5. **The blind spot (§8)** — confirmed real; needs filing upstream.
+
+## 12. Fitting it to the contract we already have [EXECUTED against the source]
+
+The question this section answers: if `codex-cli` became the third driver beside
+`claude-code` and `copilot-cli`, what breaks? Read against `packages/drivers/src/contract.ts`,
+`conformance.ts`, `server/src/start.ts` and `server/src/shell-tools.ts`, and measured
+where reading was not enough.
+
+### 12.1 What needs no change at all
+
+- **The driver id is already a free string.** `config.ts` reads `driver.id` without an
+  enum; only `AVAILABLE_DRIVERS` in `start.ts` (a two-item list and a `switch`) and one
+  import would grow. No schema, no migration.
+- **No engine name reaches the front end.** Grepped: `packages/web/src` contains neither
+  `copilot` nor `claude-code`. The generated-from-capabilities design holds, so a third
+  engine costs the UI nothing.
+- **`interactivePermissions` maps cleanly, including "always".** `asks.ts` says the
+  durable allowlist must be remembered *by the engine, in a file a person can open*.
+  Codex's approval request carries `proposedExecpolicyAmendment` — "optional proposed
+  execpolicy amendment to allow similar commands without prompting" — and the decision
+  `acceptWithExecpolicyAmendment` writes it into the execpolicy `.rules` file the CLI
+  reads (`--ignore-rules` names them). So `PendingAsk.remembering` is exactly "did this
+  request carry a proposed amendment", and the three answers land as
+  `accept` / `acceptWithExecpolicyAmendment` / `decline`. `cancel` (deny *and* interrupt)
+  is a fourth the contract has no word for — a gain, not a gap.
+- **`acceptsRoots()` can be true.** `turn/start.sandboxPolicy` accepts
+  `{type: "workspaceWrite", writableRoots: [...]}` — per turn, which is finer than the
+  contract asks. (Reads looked unrestricted in the default profile; the write side is
+  what `roots` is for.)
+- **`skillsPath()` / `instructionPaths()`** — `AGENTS.md` is read (proven, §6), and
+  `project_doc_fallback_filenames` makes it read `CLAUDE.md` too. Skills have a protocol
+  method of their own (`skills/list`, `skills/extraRoots/set`).
+- **`interrupt()`** — `turn/interrupt` exists.
+- **Conformance** — `checkConformance` only compares declaration to method presence.
+  Nothing about codex trips it.
+
+### 12.2 What breaks — three, and the first is a functional break
+
+#### (a) The instance's own tools die on the second turn of a conversation
+
+`shell-tools.ts` mints a token per turn and **deletes it when the turn settles**
+(`release()`); the bridge carries that token in its env, and the comment in
+`shell-tools-config.ts` says the freshness is "true by construction for copilot, whose
+binary is spawned per turn". **On app-server it is not true**, and this is measured
+(`probe-mcp-per-turn.mjs`): the stdio MCP server is started **once per thread**, and
+
+- two turns on one thread → **1** server process,
+- a `thread/resume` carrying a *different* token in the server's env → still **1**.
+
+So turn 2 of a conversation would announce turn 1's token, which the socket has already
+revoked, and every Adestia tool call would come back `this turn's token is unknown or
+expired`. Rename-this-conversation would work once per conversation and then stop — the
+worst kind of bug, because it looks like the agent forgetting how to use a tool.
+
+**The fix is cheap and measured** (`probe-fresh-per-turn.mjs`): run **one app-server
+process per turn**, and `thread/resume` the thread. Then
+
+- 3 turns → **3** MCP server processes: one token per turn, the property restored;
+- the resumed thread carries the whole history (proven on the wire: turn 3's request
+  contained turns 1 and 2 with their answers);
+- it costs **~100 ms** to boot the process and ~1.4 s for a whole mock turn.
+
+Which is exactly the shape the Copilot driver already has — a process per turn — so the
+core needs no change at all. What it costs is the daemon's advantages (a warm process, a
+long-lived thread) that we were never using anyway.
+
+#### (b) The credential is a FILE, and the core only knows how to pass env vars
+
+`start.ts` and `app.ts` do `setCredentials({ [driver.credentialVar]: secret })`, and
+`credentialVar` is validated as an environment-variable name. Copilot's and Claude's
+credentials *are* env vars. Codex's is not: `OPENAI_API_KEY` in the environment is
+ignored for the built-in provider (§3b), and the CLI only reads `$CODEX_HOME/auth.json`.
+
+**No contract change is strictly required**, because `env()` is async and runs at the
+spawn site: the codex driver can write `auth.json` (0600) into its own `CODEX_HOME` from
+the secret it was handed, and return `{ CODEX_HOME: <its home> }`. The store of record
+stays the core's `SecretStore`, which is what the rule in the drivers README actually
+protects.
+
+What *is* wrong is the name: the driver would have to declare a `credentialVar` it never
+exports, purely to satisfy `credentialVar()`'s validation. The honest fix is small —
+let a driver declare **how** it takes its secret (`env` var vs file materialization)
+rather than assuming the first. One field, two call sites.
+
+Note also that the secret is no longer a token but a JSON document: for a ChatGPT login,
+`{auth_mode, tokens: {id_token, access_token, refresh_token, account_id}, last_refresh}`
+(§11.1). `SecretStore` stores an opaque string, so it fits — but see (c).
+
+#### (c) The CLI owns the credential file, and may rewrite it behind the core
+
+A ChatGPT credential carries a `refresh_token` and a `last_refresh` clock. If the CLI
+refreshes its own tokens, it rewrites `auth.json` inside the driver's home — and the
+core's stored copy is then stale. On the next restart, `start.ts` writes the OLD document
+back over the fresh one, and the instance loses its login for no visible reason.
+
+Unverified either way here: over the session's real turns `auth.json` was never rewritten
+(same mtime, same `last_refresh`), which proves nothing at a one-hour horizon. The
+protocol's `account/chatgptAuthTokens/refresh` is a **server→client** request, which
+hints the CLI may ask *its client* to refresh — in which case the driver must handle it
+and hand the new document back to the core.
+
+**Mitigation either way, and it is cheap:** after each turn, compare `auth.json` on disk
+with what the core stored, and re-persist when it moved. Whoever refreshes, the core's
+copy stays the truth. This is the one open risk worth resolving before shipping, and it
+is a day's work, not a redesign.
+
+### 12.3 What is a product decision rather than a defect
+
+- **The marketplace clone** (§2): not disableable, so an instance running codex fetches a
+  third-party plugin catalogue over the network at startup. Egress policy is the only
+  lever. Someone has to decide that is acceptable.
+- **~15 k tokens of preamble per turn** (§11.5): fine on a subscription, a real cost on
+  metered billing, and it makes "cheap turn" a phrase to avoid.
+- **`cost` stays undeclared** — nothing reports money; on a ChatGPT plan the meaningful
+  number is a percentage of a window, which is `subscriptionQuotas`, not `cost`.
+- **`contextBreakdown` stays undeclared** — not observed.
+
+### 12.4 The one thing that should block shipping
+
+§8: a command the sandbox refuses produces **no event at all**, confirmed with a real
+model on both surfaces, while the agent goes on to *talk about* the refusal. Every other
+finding here has a fix inside this repository; this one does not. It needs an upstream
+fix or an upstream answer.
+
+### 12.5 The descriptor a `codex-cli` driver would declare
+
+| capability | declare? | on what |
+|---|---|---|
+| `authManagement` | **yes** | `account/read` + device flow + api-key file |
+| `usageMetrics` | **yes** | `thread/tokenUsage/updated` |
+| `liveTurnUsage` | **yes** | same notification, mid-turn |
+| `subscriptionQuotas` | **yes** | `account/rateLimits/updated`, pushed |
+| `modelSelection` | **yes** | `model/list`, entitlement-filtered |
+| `mcpStatus` | **yes** | `mcpServer/startupStatus/updated` |
+| `interactivePermissions` | **yes** | the approval round trip |
+| `cost` | no | no money anywhere |
+| `contextBreakdown` | no | not observed |
+
+Seven of nine — one more than Copilot, one fewer than Claude Code. The work is a driver
+of roughly the Copilot driver's size, plus a JSON-RPC client, minus a JSONL parser.
+
+## 13. Every function we have, against this engine
+
+§12 answered "does the driver contract fit". This one answers the wider question:
+of everything DESIGN.md lists as **built**, what would still work on codex, what needs
+work, and what would not work at all. Read against the source and measured where reading
+was not enough.
+
+### 13.1 Works as-is — nothing to write
+
+| Function | Why it holds |
+|---|---|
+| Runtime plugin loading, skins, the web bundle | driver-independent; grepped: no engine name anywhere in `packages/web/src` |
+| Inbound MCP (agent-to-agent delegation) | server-side, the driver is not involved |
+| The authority gate, the instruction zone, workspace files served | server-side |
+| Conversations per user, replayed faithfully | `thread/resume` restores the whole history — proven **across separate processes**: turn 3's request carried turns 1 and 2 with their answers |
+| Model selector in the composer | `model/list` (entitlement-filtered) + `turn/start.model`, per turn |
+| Live token counter | `thread/tokenUsage/updated`, pushed mid-turn |
+| Scheduled and delegated turns (`unattended`) | `approvalPolicy: never`; a question that cannot be asked is refused, which is the existing behaviour |
+| Chat attachments (images) | `-i/--image`, and `ImageUserInput` in the protocol |
+| Authoring skills / plugin agent-contracts as FILES | **measured**: codex reads workspace skills from `.codex/skills/` and `.agents/skills/` (planted five candidates, those two were picked up). So `skillsPath()` returns `.codex/skills` and the "same markdown, different folder" promise holds |
+| The `this-instance` contract | delivered as one more skill file, same path |
+| Interrupting a turn | `turn/interrupt` |
+
+### 13.2 Works, but the driver has to do something
+
+| Function | What is needed |
+|---|---|
+| **The instance's own tools** (rename a conversation, …) | one app-server process **per turn** + `thread/resume`, or the per-turn token goes stale on turn 2 (§12.2a). ~100 ms |
+| **Outbound MCP with per-turn / per-caller tokens** | the same fix, for the same reason: `signIn: oauth` servers and `identity: user` servers get their token at **thread** start, so a caller who signs in mid-conversation would not be seen, and a rebound token would outlive its turn. One process per turn fixes both |
+| **Credential arming from the interface** | the secret is a FILE, not an env var: `env()` writes `auth.json` 0600 into the driver's own home and returns `CODEX_HOME`. No contract change; one honest rename (§12.2b) |
+| **MCP health reporting** | `mcpServer/startupStatus/updated` for thread-scoped servers, `mcpServerStatus/list` for config-file ones. Both shapes map onto `McpServerHealth`; `authStatus: unsupported/unknown` needs mapping to `needs-auth` |
+| **Usage and quota surfaces** | the data is richer than what exists (two windows pushed per turn) — but DESIGN already lists these surfaces as declared-and-unconsumed. Codex does not fix that; it makes it more worth fixing |
+
+### 13.3 Works differently — worth a decision, not a fix
+
+**The tool trace changes shape.** Codex 0.154.0 offers the model **nine** tools, and only
+one of them touches files: `exec_command` (a PTY shell). There is no `Read`, no `Edit`, no
+`Grep`, no `Glob` — searching is `rg` in the shell, and editing is `apply_patch` piped into
+the shell (its own system prompt: *"Always use apply_patch for manual code edits"*). Claude
+gives Read/Edit/Grep; Copilot gives view/create/edit/grep/glob.
+
+Two consequences:
+
+- the trace a user reads becomes a list of shell lines rather than named file operations.
+  The contract allows it (`tool-use.name` and `target` are free strings) — it is a
+  legibility change, not a breakage;
+- **it makes §8 much worse than a corner case.** If every read, search and edit is a shell
+  command, and a shell command the sandbox refuses emits **no event**, then the invisible
+  failures are on the main path, not the margins.
+
+**The startup marketplace clone** (§2) cannot be switched off: an instance running codex
+fetches a third-party plugin catalogue over the network at boot. Egress policy is the only
+lever; someone has to decide that is acceptable.
+
+**~15 k tokens of preamble per turn** (§11.5). Fine on a subscription, a real cost metered.
+
+### 13.4 One thing gets BETTER — and it is the feature currently out of the MVP
+
+DESIGN.md takes the `ask` posture out of the MVP for a precise reason: the rule the engine
+proposes is the wrong size. On Claude, `Bash` yields a rule on the EXACT command
+(`Bash(ls -la /tmp)`), so every variation asks again; a composed command yields nothing at
+all. On Copilot the posture cannot exist.
+
+Codex proposes a **reusable prefix**. Measured: a command `git pull --ff-only` produced
+
+```json
+"proposedExecpolicyAmendment": ["git", "pull"]
+```
+
+on the approval request, answerable with `acceptWithExecpolicyAmendment`, persisted by the
+engine in the execpolicy `.rules` file a person can open. That is exactly the
+`Bash(ls:*)` granularity DESIGN says is missing — and it comes from the engine, so Adestia
+still judges nothing.
+
+**Honest limit:** the channel is proven, the *habit* is not. In this spike the prefix came
+from a mock model that was told to send one. Whether real models supply `prefix_rule`
+routinely, and how well the prefix is chosen, needs an authenticated turn that actually
+triggers an escalation. Until then this is a strong lead, not a delivered feature.
+
+### 13.5 The container trap, and it is worse than Copilot's
+
+Copilot dies loudly in a `node:22-slim` image with no system CA store
+(`/etc/ssl/certs` empty): *"Login failed: request failed: builder error"*, before any
+request leaves the machine. Codex, same image, same A/B:
+
+| | result |
+|---|---|
+| `node:22-slim`, no `ca-certificates` | `--version` fine, `login status` fine, and a turn **hangs — 13 minutes with no output, no error, no timeout**, until killed |
+| same image + `apt-get install ca-certificates` | the turn completes normally (the expected 401 storm, ~35 s) |
+
+So the image needs `ca-certificates` exactly as Copilot's does — but the symptom of
+forgetting it is a **wedged turn** rather than an error, which is far harder to diagnose
+and would hold one of the instance's turn slots forever. Any driver must pair the CA
+package with a timeout of its own.
+
+### 13.6 Not answerable from here
+
+| Question | Why it matters |
+|---|---|
+| **Memory under load** | `maxConcurrentTurns: 3` is memory-bound on Copilot (~300 MB/process, measured under load in spike 4). Codex idles at ~83 MB; under load, unmeasured. The cap for this engine is unknown |
+| **Token refresh ownership** (§12.2c) | if the CLI rewrites `auth.json` and the core writes the old one back at restart, the instance silently loses its login |
+| **`app-server` is `[experimental]`** | the whole driver would sit on it. `generate-json-schema` makes drift detectable, which is the mitigation, not the answer |
+
+### 13.7 The blocker, restated
+
+Everything above has a fix, a decision, or a measurement in front of it. §8 has none: a
+command the sandbox refuses produces no event at all, on both surfaces, with a real model,
+while the agent goes on to talk about the refusal. On an engine where **all file work is
+shell**, that is not a detail. It needs an upstream fix or an upstream answer before a
+`codex-cli` driver could be trusted to render what it did.
+
+## 14. Annex — artifacts (all under `spikes/codex-cli/`)
+
+| File | Content |
+|---|---|
+| `raw/help.txt`, `raw/cmd-*.txt` | `--help` (134 lines) + all 25 subcommand help pages |
+| `raw/auth-probes.txt` | the three auth states, `auth.json` shape, logout |
+| `raw/envkey-exec.txt` | proof `OPENAI_API_KEY` alone does not arm the built-in provider |
+| `raw/login-device-auth.txt`, `raw/login-default-flow.txt` | both login flows as a headless driver sees them |
+| `raw-auth/real-exec.txt`, `raw-auth/real-appserver.json` | the authenticated pass (§11) — **local only**, carries account data |
+| `raw/mcp-spawns.jsonl`, `raw/mcp-spawns-fresh.jsonl` | one MCP spawn per thread vs one per turn (§12.2a) |
+| `raw/marketplace-clone-off.txt` | the five switches tried against the startup clone |
+| `raw/container.txt` | the CA-store A/B in `node:22-slim` (§13.5) |
+| `probe-skills-path.mjs` | where codex reads workspace skills (§13.1) |
+| `raw/mock-responses-simple.txt`, `-toolcall.txt` | exec JSONL: plain turn, tool-call turn |
+| `raw/mock-responses-escalate-onrequest.txt` | exec forces `approval policy = Never` |
+| `raw/mock-chat-simple.txt` | `wire_api = "chat"` refused in 0.154.0 |
+| `raw/app-server-{simple,toolcall,escalate,escalate-denied,write}.log` | full JSON-RPC transcripts |
+| `raw/app-server-queries.json` | `model/list`, `account/read`, `config/read`, `skills/list`, … in full |
+| `raw/app-server-surface.txt` | 99 + 10 + 81 protocol method names |
+| `raw/mcp-probes.txt`, `raw/mcp-status.json` | MCP config surface and health reporting |
+| `raw/session-probes.txt` | resume, history replay, `-o`, `--output-schema` on the wire |
+| `raw/sandbox-read-only.txt` | the blocked write, and what the model was told |
+| `raw/instructions-sandbox.txt` | AGENTS.md vs CLAUDE.md, full `codex doctor` |
+| `raw/misc-probes.txt`, `raw/marketplace-clone*.txt` | fallback docs, `--ephemeral`, the startup clone |
+| `raw/doctor.json` | machine-readable health report |
+| `mock-provider.js`, `mock-mcp-server.js` | localhost mocks, no dependencies |
+| `run.sh`, `probe-*.sh`, `probe-*.mjs`, `drive-app-server.mjs` | every probe, re-runnable |
+| `package.json` / `package-lock.json` | exact pin `@openai/codex@0.154.0` |
+
+`node_modules/`, `isolated-home/`, `codex-home*/`, `work*/`, `raw-auth/` and the
+generated schema are gitignored (289 MB + 4.2 MB, plus the real credential and the
+account data behind §11).
+
+### How to reproduce
+
+```bash
+cd spikes/codex-cli && npm ci
+./run.sh -- --version                       # 0.154.0, no auth, no network
+./capture-help.sh                           # every help page into raw/
+./probe-auth.sh                             # the three auth states (bogus keys only)
+./probe-mock.sh responses simple            # a full turn against the local mock
+./probe-mock.sh responses toolcall          # …with a tool call
+node drive-app-server.mjs --script escalate # the approval round trip
+node drive-app-server.mjs --script escalate --deny
+node probe-login-device.mjs                 # device flow: URL + code, no pty, never completed
+node probe-appserver-queries.mjs            # model/list, account/read, config/read…
+node probe-mcp-status.mjs                   # MCP health, servers injected per thread
+node probe-mcp-per-turn.mjs                 # the stale-token break (§12.2a)
+node probe-fresh-per-turn.mjs               # one process per turn fixes it, and what it costs
+node probe-clone-off.mjs                    # the marketplace switches that do not work
+node probe-skills-path.mjs                  # which workspace folder holds skills
+./probe-container.sh                        # the CA-store trap (needs Docker)
+# §11 needs a real account — ./login-real.sh, then:
+#   ./probe-real-exec.sh && node probe-real-appserver.mjs && python3 summarise-real.py
+./probe-sessions.sh ./probe-sandbox-write.sh read-only ./probe-misc.sh
+./run.sh -- app-server generate-json-schema --out ../raw/app-server-schema
+python3 dump-protocol-surface.py
+```

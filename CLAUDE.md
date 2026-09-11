@@ -42,7 +42,8 @@ everything it made. Write a scenario per change — a dozen lines: seed the
 thread, script the events the server would have sent, take a picture at each
 state worth a look. `bench/scenarios/turn-parts.mjs` is the worked example,
 and `bench/README.md` holds the traps (an attached turn never lets the network
-go idle; the container has no bold font; the engine is the one thing faked).
+go idle; the container has no bold font; the engine is faked unless
+`BENCH_REAL_ENGINE=1`, and `bench/live-codex.sh` boots a real one).
 
 Nothing installs on the machine: the browser lives in its own image. When
 Docker is NOT available, say so in the report rather than passing green off as
