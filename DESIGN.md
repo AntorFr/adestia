@@ -1518,7 +1518,9 @@ where they do not, the reversal is stated.
    announce a revoked token. Measured fix: one app-server process per turn plus
    `thread/resume`, which restores one token per turn, keeps the whole history
    and costs ~100 ms — the shape the Copilot driver already has. Whether a
-   `codex-cli` driver is built is not settled here.
+   `codex-cli` driver is built was not settled here; the chantier that followed
+   built it, on app-server and one process per turn — see its entry among the
+   engines above.
 
 ## What is built, and what is not
 
@@ -1528,11 +1530,11 @@ posture (`open` / `ask`, the engine judging and the chat asking — decision log
 2026-08-26); conversations per user, replayed faithfully; pages edited by both
 the agent and a Notion-like editor over one shared grammar; runtime plugin
 loading from a mounted folder with a shared React through an import map;
-`claude-code` and `copilot-cli` drivers behind the capability contract;
-credential arming from the interface; auth in all three modes; authoring
-skills the agent uses to write conformant plugins; scheduled turns; skins;
-chat attachments; inbound MCP for agent-to-agent delegation; container image
-and CI.
+`claude-code`, `copilot-cli` and `codex-cli` drivers behind the capability
+contract; credential arming from the interface; auth in all three modes;
+authoring skills the agent uses to write conformant plugins; scheduled turns;
+skins; chat attachments; inbound MCP for agent-to-agent delegation; container
+image and CI.
 
 Since then: the trips app; a model selector in the composer; outbound MCP
 wired end to end with OAuth-authenticating servers and health reporting; the
@@ -1564,7 +1566,15 @@ composing one.
   `Bash(ls:*)` or `Bash`), which also turns the no-suggestion dead end into
   something answerable. On copilot-cli the posture cannot exist at all —
   no return channel in programmatic mode — so it refuses to boot there.
-  Instances run `open` until that is done.
+  `codex-cli` settles the transport half of that and none of the rest: its
+  app-server carries the return channel, and the driver declares
+  `interactivePermissions` in `ask` for real. But the granularity above belongs
+  to the ENGINE, not to the transport, and this one brings a defect of its own
+  — a command its sandbox refuses emits no event at all, so a trace under `ask`
+  cannot be trusted to show what was refused. So the third engine is given what
+  the other two are given and nothing less: the whole tool set,
+  `danger-full-access`, the container as the bound. Instances run `open` until
+  that is done.
 
 - **Remote instruction sync** (the optional git module).
 - **Usage, cost and quota surfaces.** The drivers declare `usageMetrics`,

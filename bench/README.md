@@ -24,6 +24,28 @@ paces by hand: exactly the events the server would have relayed. A scenario
 must therefore never be trusted about what the DRIVER does; it is trustworthy
 about everything the browser does with what a driver sends.
 
+**Unless you ask for the real engine.** `BENCH_REAL_ENGINE=1` stops the proxy
+from answering `/api/turn/attach` and lets it through, so the turn runs on
+whatever engine the server actually has; `emit` and `endTurn` then refuse
+rather than quietly doing nothing, and `bench.real` tells a scenario which
+world it is in. What that needs — a real CLI, a real credential — is what the
+image deliberately lacks, so the server is booted on the HOST instead and only
+the browser stays in its container:
+
+```sh
+bench/live-codex.sh [scenario] [out]   # the codex driver, watched in a browser
+bench/live-codex-api.sh                # the same instance, driven through the API
+```
+
+Both build a throwaway instance in a temp directory and copy the credential
+into it, 0600, reading the spike's own home and never writing back to it. The
+first removes everything on the way out; the second deliberately KEEPS its
+directory so the log survives the run, which also leaves that copy of the
+credential on disk — `WORK=… bench/live-codex-api.sh` if you want to know
+where. Use the first to look at a turn, the second when the question is "what
+did the driver do?" rather than "what does it look like?". A change to a driver
+is not looked at until somebody has watched a real turn arrive.
+
 State the store owns — a finished turn, a thread as it comes back after a
 reload — is seeded by writing the conversation JSONL into the mounted data
 directory, which is the same thing the server would have written.
