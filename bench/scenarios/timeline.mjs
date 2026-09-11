@@ -46,6 +46,30 @@ export default async function scenario(bench) {
   await page.click('.adestia-crumbs a:has-text("Adestia v1"), .adestia-crumbs button:has-text("Adestia v1")')
   await page.waitForTimeout(1200)
   console.log('LE LIEN MÈNE À', await page.evaluate(() => location.hash))
+
+  // L'ADRESSE tapée, pas le clic. Un signet, un lien collé, une cible écrite
+  // par l'agent : le dossier doit mener au même écran que le fil d'Ariane.
+  // Il menait à l'étagère, parce que la route résolvait sans l'index des
+  // pages — donc sans la déclaration `app:` du dossier.
+  await page.evaluate(() => {
+    location.hash = '/section/chantiers/adestia'
+  })
+  await page.waitForTimeout(1200)
+  console.log("L'ADRESSE MÈNE À", await page.evaluate(() => location.hash))
+  await page.waitForSelector('text=Cadrage', { timeout: 15_000 })
+
+  // Et l'étagère reste une étagère là où c'en est une.
+  await page.evaluate(() => {
+    location.hash = '/section/chantiers'
+  })
+  await page.waitForTimeout(1200)
+  console.log("L'ÉTAGÈRE RESTE", await page.evaluate(() => location.hash))
+  await page.waitForSelector('.adestia-section', { timeout: 15_000 })
+  await bench.shoot(page, '6-l-etagere-reste-une-etagere')
+
+  await page.evaluate(() => {
+    location.hash = '/section/chantiers/adestia'
+  })
   await page.waitForSelector('text=Cadrage', { timeout: 15_000 })
   await bench.shoot(page, '5-le-dossier-ouvre-sa-fiche')
 

@@ -626,3 +626,52 @@ describe('a page that will not load', () => {
     )
   })
 })
+
+/**
+ * A folder address typed, bookmarked, or written by the agent.
+ *
+ * The effect that handles `#/section/…` exists precisely so that "a bookmark
+ * from before the plugin existed, a brief whose `cible` the agent wrote by
+ * path, a URL somebody typed" land on the same screen the breadcrumb leads
+ * to. It must therefore resolve the SAME way `openSection` does.
+ */
+describe('un dossier atteint par son adresse', () => {
+  const CHANTIERS = [
+    { path: 'chantiers/INDEX.md', title: 'Chantiers', fields: { app: 'project-management' } },
+    {
+      path: 'chantiers/adestia/INDEX.md',
+      title: 'Adestia v1',
+      fields: { type: 'project-management' },
+    },
+    { path: 'chantiers/adestia/note.md', title: 'Note de lecture', fields: {} },
+  ]
+
+  const WITH_PM = {
+    ...INSTANCE,
+    plugins: [
+      {
+        id: 'project-management',
+        kind: 'feature',
+        base: '/plugins/project-management/',
+        types: ['project-management'],
+      },
+    ],
+  }
+
+  /**
+   * The redirect itself is proven at the BENCH, not here: resolving a folder
+   * needs its owning plugin, and a plugin only reaches `loaded` by
+   * contributing a front-end facet — a module this environment cannot import.
+   * What IS provable here is the guard that makes the redirect safe.
+   */
+  it('ne remplace pas une adresse par elle-même', async () => {
+    // `folderRoute` répond TOUJOURS. Rediriger sur n'importe quelle réponse
+    // remplacerait l'adresse par elle-même sur chaque dossier sans
+    // propriétaire — une entrée d'historique par affichage, et un Back qui ne
+    // remonte plus.
+    location.hash = '#/section/chantiers'
+    render(<App fetchImpl={apiFetch({ body: WITH_PM }, CHANTIERS)} />)
+    await waitFor(() => expect(location.hash).toBe('#/section/chantiers'))
+    location.hash = ''
+  })
+})

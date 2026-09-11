@@ -486,9 +486,20 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
    */
   useEffect(() => {
     if (section === undefined) return
-    const owned = routeForPath(loaded, section)
-    if (owned) location.replace(`#${owned}`)
-  }, [section, loaded])
+    // The SAME resolution a CLICK makes. This asked `routeForPath` alone,
+    // which knows a plugin's own screen and nothing else — not the folder's
+    // own `app:` declaration, and not the worksite it holds. So a link led to
+    // the worksite page while the identical address typed, bookmarked, or
+    // written by the agent stopped at the shelf: one folder, two answers,
+    // decided by how the reader arrived. `folderRoute` is the whole ladder,
+    // and it is what `openSection` calls.
+    //
+    // Compared against the plain section route rather than tested for truth:
+    // `folderRoute` always answers, so redirecting on any answer would
+    // replace the address with itself on every folder that has no owner.
+    const where = folderRoute(loaded, section, pages)
+    if (where !== sectionRoute(section)) location.replace(`#${where}`)
+  }, [section, loaded, pages])
 
   /**
    * The addresses settings used to have, handed over rather than kept.
