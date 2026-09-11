@@ -137,7 +137,6 @@ export class CodexDriver implements Driver {
   #models: readonly ModelInfo[] | undefined
   #quotas: QuotaReport | undefined
   #health = new Map<string, McpServerHealth>()
-  #running = new Map<string, AppServer>()
   #pending: { login: DeviceAuthLogin; home: string } | undefined
 
   constructor(options: CodexDriverOptions) {
@@ -407,6 +406,21 @@ export class CodexDriver implements Driver {
     })
 
     let threadId = request.sessionId ?? ''
+    /**
+     * Interrupting is a protocol call, not a signal — the turn stops where it
+     * is and the thread survives, which is what "stop" means to the person who
+     * pressed it.
+     *
+     * The engine reports the interrupted turn as one that did not complete, so
+     * the marker reaches the thread on its own; `state.stopped` is set anyway,
+     * because a turn WE stopped is stopped whatever status comes back.
+     */
+    const stop = () => {
+      state.stopped = true
+      if (threadId) void server.request('turn/interrupt', { threadId }).catch(() => undefined)
+    }
+    request.signal?.addEventListener('abort', stop, { once: true })
+
     try {
       await server.initialize('adestia', this.#cliVersion)
 
@@ -427,7 +441,9 @@ export class CodexDriver implements Driver {
       const id = typeof thread === 'object' && thread !== null ? (thread as Record<string, unknown>)['id'] : undefined
       threadId = typeof id === 'string' && id !== '' ? id : threadId
       state.threadId = threadId
-      if (threadId) this.#running.set(threadId, server)
+      // A stop pressed while the thread was still opening has nothing to name;
+      // honoured here, now that there is something.
+      if (request.signal?.aborted) stop()
 
       await server.request('turn/start', {
         threadId,
@@ -446,22 +462,11 @@ export class CodexDriver implements Driver {
       yield { type: 'error', message, fatal: true }
       yield { type: 'result', sessionId: threadId, stopped: true }
     } finally {
-      if (threadId) this.#running.delete(threadId)
+      request.signal?.removeEventListener('abort', stop)
       server.close()
       this.#health = state.mcp
       await this.#noteCredentialRefresh()
     }
-  }
-
-  /**
-   * Interrupting is a protocol call, not a signal — the turn stops where it
-   * is and the thread survives, which is what "stop" means to the person who
-   * pressed it.
-   */
-  async interrupt(sessionId: string): Promise<void> {
-    const server = this.#running.get(sessionId)
-    if (!server) return
-    await server.request('turn/interrupt', { threadId: sessionId }).catch(() => undefined)
   }
 
   /**

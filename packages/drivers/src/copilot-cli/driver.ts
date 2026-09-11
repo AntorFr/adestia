@@ -161,7 +161,6 @@ export class CopilotDriver implements Driver {
   #savedAt: string | undefined
   #invalidReason: string | undefined
   #pending: { login: DeviceCodeLogin; home: string } | undefined
-  readonly #running = new Map<string, { kill(signal?: NodeJS.Signals): boolean }>()
 
   constructor(options: CopilotDriverOptions) {
     this.#command = options.command ?? 'copilot'
@@ -492,6 +491,17 @@ export class CopilotDriver implements Driver {
     })
 
     const state = newTranslationState(request.sessionId ?? '')
+    // Armed HERE, next to the spawn: the predecessor registered the child in a
+    // map keyed by the engine's session id, which this CLI only states in its
+    // `result` — so a brand-new session was unreachable for the whole of the
+    // turn somebody might want to stop.
+    const stop = () => {
+      state.stopped = true
+      child.kill('SIGTERM')
+    }
+    if (request.signal?.aborted) stop()
+    request.signal?.addEventListener('abort', stop, { once: true })
+
     const queue: TurnEvent[] = []
     let stdoutBuffer = ''
     let stderr = ''
@@ -530,11 +540,23 @@ export class CopilotDriver implements Driver {
       // Fatal failures never reach the JSON stream: they are prose on stderr
       // with an empty stdout. A driver reading only JSONL reports nothing at
       // all for the single most common failure — a missing credential.
+      const answered = queue.some((event) => event.type === 'result')
+      // A turn somebody STOPPED is not a CLI that crashed. Killed mid-sentence
+      // it prints no `result` at all, and reading its exit code alone filed
+      // the interruption as "the CLI exited with code null" — an error where
+      // the thread should carry "Turn interrupted".
+      //
+      // The id is whatever was known going in: this CLI states its own only in
+      // the `result` that a stopped turn never reaches, so the FIRST turn of a
+      // thread, stopped, leaves the engine with no session to resume. The
+      // exchange stays in the thread; the engine's own memory of it does not.
       const problem = classifyAuthError(stderr)
-      if (problem) {
+      if (state.stopped && !answered) {
+        queue.push({ type: 'result', sessionId: state.sessionId, stopped: true })
+      } else if (problem) {
         this.#invalidReason = explainAuthProblem(problem)
         queue.push({ type: 'error', message: this.#invalidReason, fatal: true })
-      } else if (code !== 0 && !queue.some((event) => event.type === 'result')) {
+      } else if (code !== 0 && !answered) {
         queue.push({
           type: 'error',
           message: stderr.trim() || `the CLI exited with code ${String(code)}`,
@@ -545,17 +567,10 @@ export class CopilotDriver implements Driver {
       wake()
     })
 
-    if (state.sessionId) this.#running.set(state.sessionId, child)
-
     try {
       for (;;) {
         while (queue.length > 0) {
-          const event = queue.shift()!
-          if (event.type === 'result' && event.sessionId) {
-            this.#running.delete(state.sessionId)
-            this.#running.set(event.sessionId, child)
-          }
-          yield event
+          yield queue.shift()!
         }
         if (finished) break
         await new Promise<void>((resolve) => {
@@ -563,7 +578,7 @@ export class CopilotDriver implements Driver {
         })
       }
     } finally {
-      this.#running.delete(state.sessionId)
+      request.signal?.removeEventListener('abort', stop)
       child.kill('SIGTERM')
       // Kept from the session that just ended, INCLUDING when the turn was
       // interrupted: a server that failed to start is exactly what somebody
@@ -572,10 +587,4 @@ export class CopilotDriver implements Driver {
     }
   }
 
-  interrupt(sessionId: string): Promise<void> {
-    const child = this.#running.get(sessionId)
-    if (!child) throw new Error(`No running turn for session "${sessionId}"`)
-    child.kill('SIGTERM')
-    return Promise.resolve()
-  }
 }

@@ -220,10 +220,12 @@ export function ToolTrace({ tools }: { tools: Message['tools'] }) {
 export function Bubble({
   message,
   openPage,
+  t = (key) => key,
 }: {
   message: Message
   /** Lets a workspace path the agent named open the page. Absent, it is text. */
   openPage?: (path: string) => void
+  t?: (key: string) => string
 }) {
   return (
     <article className={`adestia-bubble adestia-bubble--${message.role}`}>
@@ -234,7 +236,10 @@ export function Bubble({
         ) : (
           <div className="adestia-bubble__text">{message.text}</div>
         ))}
-      {message.stopped && <p className="adestia-bubble__note">Turn interrupted.</p>}
+      {/* Said in the reader's language, like everything else they are told:
+          the dictionary has carried "Tour interrompu." all along, and the one
+          sentence that says what became of their turn reached them in English. */}
+      {message.stopped && <p className="adestia-bubble__note">{t('Turn interrupted.')}</p>}
       {message.error && <p className="adestia-bubble__error">{message.error}</p>}
     </article>
   )
@@ -455,6 +460,7 @@ export function Composer({
   onSend,
   onStop,
   busy,
+  stopping,
   blocked,
   placeholder,
   fetchImpl = fetch,
@@ -467,6 +473,8 @@ export function Composer({
   onSend: (text: string, attachments: readonly PendingAttachment[]) => void
   onStop: () => void
   busy: boolean
+  /** The stop was taken and the engine has not landed yet: the ■ is spent. */
+  stopping?: boolean
   /** A question is on screen: the turn is waiting on it, not on more text. */
   blocked?: boolean
   placeholder?: string
@@ -669,7 +677,13 @@ export function Composer({
           send otherwise. Two buttons would put "stop" next to "send" for a
           user who is trying to queue a message. */}
       {busy && text.trim() === '' ? (
-        <button type="button" className="adestia-composer__stop" onClick={onStop} aria-label={t('Stop')}>
+        <button
+          type="button"
+          className="adestia-composer__stop"
+          onClick={onStop}
+          disabled={stopping ?? false}
+          aria-label={t('Stop')}
+        >
           ■
         </button>
       ) : (
@@ -823,6 +837,12 @@ interface TabSession {
   readonly loaded: boolean
   /** A pump is consuming this conversation's turn right now. */
   readonly turning: boolean
+  /**
+   * Stop was pressed on the turn running now, and the engine has not landed
+   * yet. Drawn as a spent button: a press that leaves no trace is a press the
+   * user repeats, and this one takes a moment to bite.
+   */
+  readonly stopping: boolean
   readonly title?: string | undefined
 }
 
@@ -833,6 +853,7 @@ const EMPTY_SESSION: TabSession = {
   unread: false,
   loaded: false,
   turning: false,
+  stopping: false,
 }
 
 export function Chat({
@@ -1239,6 +1260,7 @@ export function Chat({
       )
       patchSession(tabId, (current) => ({
         live: undefined,
+        stopping: false,
         sessionId: settled.sessionId ?? current.sessionId,
         ...(settled.contextTokens !== undefined ? { contextTokens: settled.contextTokens } : {}),
         messages: [
@@ -1266,14 +1288,17 @@ export function Chat({
       }))
       if (tabId === activeRef.current) read(tabId)
     } else {
-      patchSession(tabId, { live: undefined })
+      patchSession(tabId, { live: undefined, stopping: false })
     }
 
     if (tabId === DRAFT) return
     const follow = await attachTurn(tabId, fetchImpl ?? fetch)
     if (follow) {
       promoteHeld(tabId)
-      patchSession(tabId, { live: INITIAL_TURN })
+      // A stop applies to the turn it was pressed on. The message waiting
+      // behind it is the next instruction, and stopping THAT one is another
+      // press — so the button comes back.
+      patchSession(tabId, { live: INITIAL_TURN, stopping: false })
       return consume(tabId, follow)
     }
 
@@ -1386,15 +1411,33 @@ export function Chat({
     })
   }, [onReady])
 
-  /** Stops the ACTIVE tab's turn — the one whose ■ the user can see. */
+  /**
+   * Stops the ACTIVE tab's turn — the one whose ■ the user can see.
+   *
+   * Named by the CONVERSATION, the same address the re-attach uses. The
+   * engine's session id, which this used to send, only comes back when the
+   * turn is OVER: on a thread's first turn the browser had none, the function
+   * returned here, and the button posted nothing at all.
+   *
+   * A tab with no thread yet has nothing running either — the thread is
+   * created before the turn is posted — so there is nothing to stop.
+   */
   function stop(): void {
-    const sid = session(activeRef.current).sessionId
-    if (!sid) return
+    const tabId = activeRef.current
+    if (tabId === DRAFT) return
+    patchSession(tabId, { stopping: true })
     void (fetchImpl ?? fetch)('/api/turn/stop', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ sessionId: sid }),
+      body: JSON.stringify({ conversation: tabId }),
     })
+      .then((response) => response.ok)
+      .catch(() => false)
+      .then((taken) => {
+        // Refused or never sent: give the button back. A turn that settled
+        // first clears this on its own, one line below in `consume`.
+        if (!taken) patchSession(tabId, { stopping: false })
+      })
   }
 
   return (
@@ -1536,7 +1579,7 @@ export function Chat({
 
       <div className="adestia-chat__thread">
         {active.messages.map((message) => (
-          <Bubble key={message.id} message={message} {...(openPage ? { openPage } : {})} />
+          <Bubble key={message.id} message={message} t={t} {...(openPage ? { openPage } : {})} />
         ))}
 
         {/* A turn draws one bubble PER PART: the agent that answers, works
@@ -1657,6 +1700,7 @@ export function Chat({
         onSend={(text, attachments) => void send(text, attachments)}
         onStop={stop}
         busy={active.live?.running ?? false}
+        stopping={active.stopping}
         blocked={active.live?.ask !== undefined && !answered.has(active.live.ask.id)}
         {...(placeholder ? { placeholder } : {})}
         t={t}

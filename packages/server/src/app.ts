@@ -136,6 +136,28 @@ function identityOf(request: FastifyRequest): Identity {
   }
 }
 
+/**
+ * The desk address of a conversation's turns.
+ *
+ * What serializes turns: the conversation when there is one, the CLI session
+ * otherwise. Both prefixed by the user — a key is an address, and two people
+ * must never share one. A first-ever message has neither, and two of those
+ * genuinely are independent turns.
+ *
+ * Written once because two routes need the SAME answer: the one that starts a
+ * turn and the one that stops it. A stop that computes its own key is a stop
+ * that misses.
+ */
+function turnKey(
+  userId: string,
+  conversationId: string | undefined,
+  sessionId: string | undefined,
+): string | undefined {
+  if (conversationId) return `${userId}/c:${conversationId}`
+  if (sessionId) return `${userId}/s:${sessionId}`
+  return undefined
+}
+
 /** Turn admission: subscription limits are real, so concurrency is bounded. */
 class TurnLimiter {
   #running = 0
@@ -787,15 +809,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
       const sessionId =
         typeof body.sessionId === 'string' && body.sessionId !== '' ? body.sessionId : undefined
 
-      // What serializes turns: the conversation when there is one, the CLI
-      // session otherwise. Both prefixed by the user — a key is an address,
-      // and two people must never share one. A first-ever message has
-      // neither, and two of those genuinely are independent turns.
-      const key = conversationId
-        ? `${userId}/c:${conversationId}`
-        : sessionId
-          ? `${userId}/s:${sessionId}`
-          : undefined
+      const key = turnKey(userId, conversationId, sessionId)
 
       // The caller's own identity, for the servers that serve their own
       // data. Resolved here because this is the only turn with a person at
@@ -1018,20 +1032,41 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     },
   )
 
-  app.post<{ Body: { sessionId?: unknown } }>('/api/turn/stop', async (request, reply) => {
-    const sessionId = request.body?.sessionId
-    if (typeof sessionId !== 'string') {
-      await reply.code(400).send({ error: 'sessionId is required' })
-      return reply
-    }
-    try {
-      await driver.interrupt(sessionId)
+  /**
+   * Stop the turn a conversation is running.
+   *
+   * Addressed by the CONVERSATION, like `/api/turn/attach` — never by the
+   * engine's session id, which is what this used to take. That id travels
+   * back in the turn's `result` event, so nobody holds it while the turn is
+   * still running: the browser posted nothing at all for the first turn of a
+   * thread, and the button looked broken because it WAS.
+   *
+   * A turn started before its thread could be created has no address at all,
+   * here as at the desk, and cannot be stopped — the same rule that keeps a
+   * loose job out of the status dots.
+   */
+  app.post<{ Body: { conversation?: unknown; sessionId?: unknown } }>(
+    '/api/turn/stop',
+    async (request, reply) => {
+      const body = request.body ?? {}
+      const conversationId = typeof body.conversation === 'string' ? body.conversation : undefined
+      const sessionId =
+        typeof body.sessionId === 'string' && body.sessionId !== '' ? body.sessionId : undefined
+      const key = turnKey(identityOf(request).userId, conversationId, sessionId)
+      if (!key) {
+        await reply.code(400).send({ error: 'conversation is required' })
+        return reply
+      }
+      // 409 rather than 404: the turn existed, it simply settled first — the
+      // press was a fraction of a second late, and the thread is already
+      // showing the end of it.
+      if (!desk.stop(key)) {
+        await reply.code(409).send({ error: 'no turn is running there' })
+        return reply
+      }
       return { stopped: true }
-    } catch (error) {
-      await reply.code(409).send({ error: (error as Error).message })
-      return reply
-    }
-  })
+    },
+  )
 
   const canArm = descriptor.capabilities.includes('authManagement')
   const authDriver = driver as unknown as AuthCapableDriver

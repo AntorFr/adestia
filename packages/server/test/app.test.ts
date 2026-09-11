@@ -12,7 +12,8 @@ import { SecretStore } from '../src/secrets.js'
 
 /** A driver reduced to a script, so the server is tested without any CLI. */
 class ScriptedDriver implements Driver {
-  interrupted: string[] = []
+  /** The prompts of the turns that were stopped mid-flight. */
+  stopped: string[] = []
   requests: TurnRequest[] = []
 
   /**
@@ -57,21 +58,40 @@ class ScriptedDriver implements Driver {
     return Promise.resolve([{ id: 'model-a' }])
   }
 
+  /**
+   * Stops the way a real driver does: on the request's own signal, not on a
+   * method somebody looks up by session id.
+   */
   async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
     this.requests.push(request)
     this.#pulled()
-    if (this.hold) await this.hold
+    if (this.hold) await Promise.race([this.hold, aborted(request.signal)])
+    if (request.signal?.aborted) {
+      this.stopped.push(request.prompt)
+      yield { type: 'result', sessionId: 's1', stopped: true }
+      return
+    }
     for (const event of this.script) yield event
-  }
-
-  interrupt(sessionId: string): Promise<void> {
-    if (sessionId === 'ghost') return Promise.reject(new Error('No running turn'))
-    this.interrupted.push(sessionId)
-    return Promise.resolve()
   }
 }
 
+/** Resolves when the turn is told to stop — never, when nothing can tell it. */
+function aborted(signal: AbortSignal | undefined): Promise<void> {
+  if (!signal) return new Promise<void>(() => {})
+  if (signal.aborted) return Promise.resolve()
+  return new Promise<void>((resolve) => signal.addEventListener('abort', () => resolve(), { once: true }))
+}
+
 const RESULT: TurnEvent = { type: 'result', sessionId: 's1', stopped: false }
+
+/** An app with a real conversation store behind it, in a throwaway directory. */
+const withStore = async (overrides: Partial<AppDependencies> = {}) => {
+  const dataDir = await mkdtemp(join(tmpdir(), 'adestia-app-conv-'))
+  return buildApp({
+    ...deps(overrides),
+    config: { ...deps(overrides).config, dataDir },
+  })
+}
 
 function deps(overrides: Partial<AppDependencies> = {}): AppDependencies {
   return {
@@ -387,14 +407,6 @@ describe('/api/turn', () => {
 })
 
 describe('conversations', () => {
-  const withStore = async (overrides: Partial<AppDependencies> = {}) => {
-    const dataDir = await mkdtemp(join(tmpdir(), 'adestia-app-conv-'))
-    return buildApp({
-      ...deps(overrides),
-      config: { ...deps(overrides).config, dataDir },
-    })
-  }
-
   it('creates, lists and reads a thread', async () => {
     const app = await withStore()
     const created = (await app.inject({ method: 'POST', url: '/api/conversations' })).json()
@@ -919,31 +931,83 @@ describe('arming a driver token', () => {
 })
 
 describe('/api/turn/stop', () => {
-  it('interrupts the named session', async () => {
-    const driver = new ScriptedDriver([RESULT])
-    const app = await buildApp(deps({ driver }))
-    const response = await app.inject({
-      method: 'POST',
-      url: '/api/turn/stop',
-      payload: { sessionId: 's1' },
+  it('stops the FIRST turn of a thread — the one nobody had an id for', async () => {
+    // The regression. This route used to take the engine's session id, which
+    // travels back in the turn's `result` — its END. On a thread's first turn
+    // the browser had none to send, so the button posted nothing at all and
+    // the turn ran to completion with a ■ on screen doing nothing.
+    let release: () => void = () => {}
+    const hold = new Promise<void>((resolve) => {
+      release = resolve
     })
-    expect(response.json()).toEqual({ stopped: true })
-    expect(driver.interrupted).toEqual(['s1'])
+    const driver = new ScriptedDriver([{ type: 'text-delta', text: 'ok' }, RESULT], ['usageMetrics'], hold)
+    const app = await withStore({ driver })
+    const { id } = (await app.inject({ method: 'POST', url: '/api/conversations' })).json()
+
+    const turn = app.inject({ method: 'POST', url: '/api/turn', payload: { prompt: 'a', conversationId: id } })
+    // At the counter before the stop: otherwise this tests a race, not a stop.
+    await driver.running
+
+    const stop = await app.inject({ method: 'POST', url: '/api/turn/stop', payload: { conversation: id } })
+    expect(stop.json()).toEqual({ stopped: true })
+
+    // Stopped for REAL: nothing released the driver, and the turn is over.
+    await turn
+    expect(driver.stopped).toEqual(['a'])
+    const conversation = (await app.inject({ url: `/api/conversations/${id}` })).json()
+    expect(conversation.messages.at(-1)).toMatchObject({ role: 'agent', stopped: true })
+    release()
     await app.close()
   })
 
-  it('reports a session that is not running', async () => {
+  it('lets the message waiting behind it run', async () => {
+    // Stopping means "stop what you are doing", not "forget what I just
+    // asked". The queued message is already IN the thread — persisted when it
+    // was accepted — so dropping it would leave a question nothing answers.
+    let release: () => void = () => {}
+    const hold = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const driver = new ScriptedDriver([{ type: 'text-delta', text: 'ok' }, RESULT], ['usageMetrics'], hold)
+    const app = await withStore({ driver })
+    const { id } = (await app.inject({ method: 'POST', url: '/api/conversations' })).json()
+
+    const first = app.inject({ method: 'POST', url: '/api/turn', payload: { prompt: 'a', conversationId: id } })
+    await driver.running
+    const second = await app.inject({ method: 'POST', url: '/api/turn', payload: { prompt: 'b', conversationId: id } })
+    expect(second.statusCode).toBe(202)
+
+    await app.inject({ method: 'POST', url: '/api/turn/stop', payload: { conversation: id } })
+    await first
+    // The follow-up runs on its own signal — unstopped, and answering 'b'.
+    release()
+    await vi.waitFor(() => {
+      expect(driver.requests.map((request) => request.prompt)).toEqual(['a', 'b'])
+    })
+    await vi.waitFor(async () => {
+      const conversation = (await app.inject({ url: `/api/conversations/${id}` })).json()
+      expect(conversation.messages.map((m: { role: string; text: string }) => [m.role, m.text])).toEqual([
+        ['user', 'a'],
+        ['user', 'b'],
+        ['agent', ''],
+        ['agent', 'ok'],
+      ])
+    })
+    await app.close()
+  })
+
+  it('reports a conversation with nothing running', async () => {
     const app = await buildApp(deps())
     const response = await app.inject({
       method: 'POST',
       url: '/api/turn/stop',
-      payload: { sessionId: 'ghost' },
+      payload: { conversation: 'ghost' },
     })
     expect(response.statusCode).toBe(409)
     await app.close()
   })
 
-  it('requires a session id', async () => {
+  it('requires an address', async () => {
     const app = await buildApp(deps())
     expect(
       (await app.inject({ method: 'POST', url: '/api/turn/stop', payload: {} })).statusCode,

@@ -204,9 +204,6 @@ export class ClaudeCodeDriver implements Driver {
   /** Set by the core after it stores a secret, so status can report it. */
   #savedAt: string | undefined
   #invalidReason: string | undefined
-  /** Live queries, so `interrupt()` can reach the right one. */
-  readonly #running = new Map<string, { interrupt(): Promise<unknown> }>()
-
   constructor(options: ClaudeCodeOptions) {
     this.#query = options.query
     this.#baseEnv = options.baseEnv ?? process.env
@@ -498,8 +495,15 @@ export class ClaudeCodeDriver implements Driver {
       },
     })
 
+    // `interrupt()` rather than tearing the query down: the SDK ends the turn
+    // itself and reports `error_during_execution`, which is what puts the
+    // interruption marker in the thread. Killing it would leave a turn that
+    // merely stops mid-sentence.
+    const stop = () => void query.interrupt().catch(() => undefined)
+    if (request.signal?.aborted) stop()
+    request.signal?.addEventListener('abort', stop, { once: true })
+
     let sessionId = request.sessionId ?? ''
-    let registered: string | undefined
     /**
      * Output tokens are reported as a running total per streamed message, but
      * a turn spans several assistant messages (one per tool step). Emitting
@@ -535,14 +539,7 @@ export class ClaudeCodeDriver implements Driver {
           }
         }
 
-        if (typeof raw.session_id === 'string') {
-          sessionId = raw.session_id
-          if (registered !== sessionId) {
-            if (registered) this.#running.delete(registered)
-            this.#running.set(sessionId, query)
-            registered = sessionId
-          }
-        }
+        if (typeof raw.session_id === 'string') sessionId = raw.session_id
         if (!isKnownMessage(raw)) continue
         const message: SdkMessage = raw
 
@@ -636,16 +633,8 @@ export class ClaudeCodeDriver implements Driver {
       // leaving it pending strands the composer behind a prompt nothing will
       // resolve.
       desk?.releaseAll()
-      if (registered) this.#running.delete(registered)
+      request.signal?.removeEventListener('abort', stop)
     }
-  }
-
-  async interrupt(sessionId: string): Promise<void> {
-    // Silently ignoring an unknown session would let a stuck turn look
-    // interrupted while it keeps burning subscription quota.
-    const query = this.#running.get(sessionId)
-    if (!query) throw new Error(`No running turn for session "${sessionId}"`)
-    await query.interrupt()
   }
 }
 
