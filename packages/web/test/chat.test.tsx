@@ -243,11 +243,18 @@ describe('tool trace', () => {
 })
 
 describe('bubble', () => {
-  it('marks an interrupted turn', () => {
+  it('marks an interrupted turn, in the language the reader is reading', () => {
     // The predecessor dropped this flag and interruptions vanished from the
-    // thread, leaving a truncated answer that looked complete.
-    render(<Bubble message={{ id: '1', role: 'agent', text: 'half', stopped: true }} />)
-    expect(screen.getByText('Turn interrupted.')).toBeTruthy()
+    // thread, leaving a truncated answer that looked complete. Then the flag
+    // came back and the SENTENCE stayed English in a French shell: the
+    // dictionary had the translation, the bubble was never handed one.
+    render(
+      <Bubble
+        message={{ id: '1', role: 'agent', text: 'half', stopped: true }}
+        t={(key) => (key === 'Turn interrupted.' ? 'Tour interrompu.' : key)}
+      />,
+    )
+    expect(screen.getByText('Tour interrompu.')).toBeTruthy()
   })
 
   it('shows an error alongside whatever text arrived', () => {

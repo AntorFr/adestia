@@ -196,7 +196,7 @@ export function Delegations({
         </header>
         <div className="adestia-chat__thread adestia-deleg__thread">
           {thread.messages.map((message) => (
-            <Bubble key={message.id} message={toMessage(message)} />
+            <Bubble key={message.id} message={toMessage(message)} t={t} />
           ))}
         </div>
       </div>

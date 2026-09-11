@@ -220,10 +220,12 @@ export function ToolTrace({ tools }: { tools: Message['tools'] }) {
 export function Bubble({
   message,
   openPage,
+  t = (key) => key,
 }: {
   message: Message
   /** Lets a workspace path the agent named open the page. Absent, it is text. */
   openPage?: (path: string) => void
+  t?: (key: string) => string
 }) {
   return (
     <article className={`adestia-bubble adestia-bubble--${message.role}`}>
@@ -234,7 +236,10 @@ export function Bubble({
         ) : (
           <div className="adestia-bubble__text">{message.text}</div>
         ))}
-      {message.stopped && <p className="adestia-bubble__note">Turn interrupted.</p>}
+      {/* Said in the reader's language, like everything else they are told:
+          the dictionary has carried "Tour interrompu." all along, and the one
+          sentence that says what became of their turn reached them in English. */}
+      {message.stopped && <p className="adestia-bubble__note">{t('Turn interrupted.')}</p>}
       {message.error && <p className="adestia-bubble__error">{message.error}</p>}
     </article>
   )
@@ -1574,7 +1579,7 @@ export function Chat({
 
       <div className="adestia-chat__thread">
         {active.messages.map((message) => (
-          <Bubble key={message.id} message={message} {...(openPage ? { openPage } : {})} />
+          <Bubble key={message.id} message={message} t={t} {...(openPage ? { openPage } : {})} />
         ))}
 
         {/* A turn draws one bubble PER PART: the agent that answers, works
