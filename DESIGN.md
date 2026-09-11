@@ -997,6 +997,77 @@ What it does NOT open: a block still owns the reading posture only. Handing it
 the page's frontmatter is not handing it the document — there is no markdown
 and no revision in `BlockProps`, and writing stays where writing already is.
 
+### A flow block is handed its list items as text (decided 2026-09-09)
+
+`BlockProps` gains `items` — the body's list items as plain text, one string
+per item, set beside `children` and only on `flow` blocks.
+
+The gap appeared with the first data-bearing contributed block: `:::timeline`
+reads "Cadrage: 2026-01-15 → 2026-03-01" out of its own body, and a component
+receives that body as rendered React children — right for prose, opaque for
+parsing. The core's own `figures` already reads list items for itself; the
+contract extends the same reading to plugins rather than watching each one
+walk React elements, or re-fetch its page's source and guess which of two
+identical blocks it is.
+
+What it does NOT open: `items` is a READING of the body, not the body — no
+markdown, no node tree, no revision. A block wanting richer structure than
+"one item, one string" is asking to parse markdown, and that conversation is
+about a core rendering, not a bigger prop.
+
+### A list is a list, written or queried (decided 2026-09-10)
+
+`:::list` gains the written provenance — lines in the body ARE the rows,
+`Rôle: Personne`, split at the first colon — and a `view` of `rows`, `cards`
+or `chips`.
+
+It arrived through a disagreement worth recording, because the reasoning that
+lost was mine. A declaration of who holds which role on a project is derivable
+from nothing: somebody decides it. I argued that made it `content` — the
+rendering that means "somebody wrote this" — and that a body which merely
+LOOKS like a list decides nothing, since `figures` holds written items too.
+The ruling: **`content` means unstructured text.** A set of `Rôle: Personne`
+lines is not prose that happens to have colons in it; it is rows, and the
+neighbouring block on the same mockup had already said so — `:::list{source=files
+view=grid}`, a list of files.
+
+What settles it without breaking the doctrine is `timeline`'s own precedent: a
+name may carry two provenances when it DRAWS THE SAME THING. Written phases
+and queried phases are both bars; written rows and queried rows are both rows.
+The bar stays "same drawing", and a name whose two forms draw differently is
+still two renderings wearing one word.
+
+What a written row does not get is what only a page can have: nothing opens,
+`pull` has nothing to pull, `closed` has no status to close by. That asymmetry
+is the honest one — it comes from the data, not from the name.
+
+`grid` is deliberately absent from `view`, though the mockup draws it: it
+belongs to `source=files`, which nothing answers yet. Declaring a value that
+draws nothing is the mistake `table{type=risques}` already cost.
+
+### The index publishes what a page's written blocks SAY (decided 2026-09-10)
+
+`/api/pages/index` gains `blocks` — for each `:::content{type=…}` a page
+carries, a bounded digest of its text, keyed by that type. `:::list` reads it
+through `pull=content:etat`, and draws it as the row's description rather than
+as a chip.
+
+Reported from use: a band of sub-worksites showed a title and a status, and
+the question actually being asked was "where is each one" — which is written
+in the child's BODY. Until now `pull` could reach only the header, and the
+letter's open question was the cost: N requests from the client, or a field in
+the index. **Recommendation 1, the index**, and the deciding fact is that the
+route already reads every file from disk. The expensive half was paid; what is
+added is a parse, guarded on a substring so the pages carrying no such block
+cost one `includes`.
+
+Bounded is the whole design, not a precaution. This rides in a listing of
+every page in the instance, so a digest that carried whole bodies would turn
+one screen into a corpus download. It is truncated, first-occurrence-wins, and
+`content` only: a table or a timeline is not a sentence, and a row is not the
+place to redraw one. Whoever wants the rest opens the page — which the row
+already does.
+
 ### `w` is the core's, because a block cannot see its neighbour (decided 2026-09-08)
 
 Reported from use: `:::checklist` had no way to be narrowed. The gap was real

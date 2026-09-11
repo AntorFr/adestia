@@ -20,7 +20,7 @@ import remarkWikiLink from 'remark-wiki-link'
 import { directiveFromMarkdown, directiveToMarkdown } from 'mdast-util-directive'
 import { directive } from 'micromark-extension-directive'
 import { unified, type Processor } from 'unified'
-import type { Root, Text } from 'mdast'
+import type { Root, RootContent, Text } from 'mdast'
 import type { Handle } from 'mdast-util-to-markdown'
 
 /**
@@ -256,4 +256,64 @@ export function parse(markdown: string): Root {
 
 export function serialize(tree: Root): string {
   return processor.stringify(tree)
+}
+
+/**
+ * What each written `:::content` block of a page says, in one bounded string.
+ *
+ * The index publishes a page's HEADER for free — it already parses the
+ * frontmatter — and until now that was all a row could show of a child. But
+ * "what is the state of each sub-worksite" is written in the child's BODY, in
+ * a `:::content{type=etat}`, and asking for it meant a request per child.
+ *
+ * So the digest: keyed by the block's `type`, bounded to `limit` characters,
+ * first occurrence winning when a page carries two of a kind. Bounded is the
+ * whole point — this rides in a listing of every page in the instance, and an
+ * index that carried whole bodies would be a corpus download on every load.
+ * It is a SUMMARY for a row, never the page: whoever wants the rest opens it.
+ *
+ * Guarded on a substring before parsing. The index route already re-reads the
+ * whole disk on every call; making it also parse every page would compound a
+ * debt this repository has already named. Most pages carry no such block, and
+ * those cost one `includes`.
+ */
+export function contentDigest(markdown: string, limit = 220): Record<string, string> {
+  if (!markdown.includes(':::content')) return {}
+  const out: Record<string, string> = {}
+  const walk = (nodes: readonly RootContent[] | undefined): void => {
+    for (const node of nodes ?? []) {
+      const directive = node as { type?: string; name?: string; attributes?: Record<string, string> | null; children?: RootContent[] }
+      if (directive.type === 'containerDirective' && directive.name === 'content') {
+        const subject = directive.attributes?.['type']
+        if (subject && !(subject in out)) {
+          const text = plainText(directive.children).replace(/\s+/g, ' ').trim()
+          if (text) out[subject] = text.length > limit ? `${text.slice(0, limit).trimEnd()}…` : text
+        }
+        continue
+      }
+      walk(directive.children)
+    }
+  }
+  walk(parse(markdown).children)
+  return out
+}
+
+/**
+ * Every string a subtree carries, in order.
+ *
+ * A separator after BLOCKS only. Putting one after every node glued a space
+ * in front of the punctuation that followed a link — "un lien ." — because a
+ * sentence's inline pieces are one run of text, not a list of things.
+ */
+const BLOCKS = new Set(['paragraph', 'heading', 'listItem', 'blockquote', 'tableCell', 'code'])
+
+function plainText(nodes: readonly RootContent[] | undefined): string {
+  let out = ''
+  for (const node of nodes ?? []) {
+    const one = node as { type?: string; value?: string; children?: RootContent[] }
+    if (typeof one.value === 'string') out += one.value
+    else out += plainText(one.children)
+    if (one.type && BLOCKS.has(one.type)) out += ' '
+  }
+  return out
 }

@@ -1,6 +1,57 @@
 # Status — Adestia
 > MàJ : 2026-09-10
 
+Chantier du 10/09 — **l'éditeur cesse d'avoir l'air d'un formulaire, et le
+journal cesse de tenir le titre d'une page qu'il n'écrit pas**. Remonté de
+l'usage, coup sur coup : « Terminé ne sauve pas, si tu cliques dessus tu perds
+tes modifs », « le titre n'est pas modifiable pour une carte créée », « on
+dirait un truc des années 80, avec de gros boutons », « le bouton edit est
+sous le bloc d'après ».
+
+**Un bouton, parce que rien ne peut plus se perdre.** `Enregistrer` à côté de
+`Terminé` demandait à la personne de savoir lequel des deux gardait son
+travail — et la réponse n'était ni évidente ni, jusqu'à la veille, vraie :
+`Terminé` abandonnait en silence sous un nom qui dit le contraire. La page
+s'écrit maintenant seule 1,6 s après la frappe, donc `Terminé` peut ne vouloir
+dire que « j'ai fini ». L'auto-enregistrement S'ARRÊTE à un refus et ne repart
+pas : un 409 veut dire que l'agent a écrit dessous, et réessayer toutes les
+deux secondes est une boucle qu'aucune des deux mains ne gagne.
+
+**Le titre change de propriétaire.** Le journal avait sorti son propre champ,
+offert seulement quand l'éditeur de l'entrée était FERMÉ — le seul moment où
+personne ne veut nommer quoi que ce soit. La restriction n'était pas
+arbitraire : c'était le prix d'un second auteur sur un fichier ouvert. Le
+titre vit donc DANS l'éditeur (`titleField`), qui compose la page à partir de
+deux moitiés tenues à part — le corps, que Milkdown possède et rapporte, et le
+titre — parce que Milkdown porte le frontmatter comme un nœud opaque capturé
+au montage : un titre tapé au-dessus serait écrasé à la frappe suivante. Champ
+en écriture, titre en lecture : la lecture lit.
+
+**Ce que le banc a trouvé et qu'aucun test n'aurait vu.** Un `title:` écrit
+deux fois, de deux erreurs du même genre — « du texte pris pour un motif » :
+la présence du champ était déduite du fait que la chaîne changeait, donc
+renommer par la même valeur passait pour « pas trouvé » et ajoutait une ligne ;
+et la valeur partait comme chaîne de remplacement, où un titre contenant `$&`
+est une référence arrière. Puis le ✎ 31 px SOUS une carte de 63 px, donc sur
+la carte suivante — mon propre restyling l'avait positionné en absolu pour le
+mettre sur la ligne de date, mais la référence était `.adestia-editor`, que le
+shell positionne pour son voile de dépôt. Un éditeur embarqué n'accepte aucun
+dépôt (`attach` n'est pas transmis), donc la boîte redevient statique là.
+
+**Et le défaut de la veille, gardé ici parce qu'il explique le reste** :
+fermer une édition restaurait le document tel qu'il avait été CHARGÉ, jamais
+rafraîchi après une sauvegarde. Sur une entrée neuve — un frontmatter et rien
+d'autre — ça rendait une entrée blanche à chaque fois.
+
+Le reste est de la composition : carte à 24 px au lieu de 8, date remontée
+au-dessus du titre en petite capitale mono, titre en serif à 1,35 rem, et la
+surface d'écriture qui n'est plus une boîte grise de 320 px mais la page
+elle-même. Maquette d'abord, sur les tokens existants, puis l'implémentation.
+
+- [ ] Le banc mesure maintenant en PIXELS ce qu'il photographiait (le
+      débordement du ✎, dans les deux thèmes). À généraliser : une capture
+      prouve ce qu'elle montre, un nombre prouve ce qu'on lui demande.
+
 Chantier du 09–10/09 — **l'éditeur : ce qui l'ouvrait vide, ce qu'il
 n'offrait pas, et ce qu'un clic détruisait**. Remonté de l'usage, en une
 phrase : « je n'arrive pas à éditer une note déjà écrite, ça ouvre une

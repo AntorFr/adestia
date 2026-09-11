@@ -194,6 +194,8 @@ const FR: Readonly<Record<string, string>> = {
   'Ask the agent…': 'Demandez à l’agent…',
   Edit: 'Modifier',
   Done: 'Terminé',
+  Title: 'Titre',
+  Untitled: 'Sans titre',
   'Saving…': 'Enregistrement…',
   Saved: 'Enregistré',
   'Loading…': 'Chargement…',

@@ -17,6 +17,7 @@ import { parse, serialize, type Indexed } from '@antorfr/adestia-content'
 
 import { Attachments } from './Attachments.js'
 import { carriesFiles, fileDropMessage } from './filedrop.js'
+import { readField, writeField } from './frontmatter.js'
 import { PluginBoundary } from '../plugins/Boundary.js'
 import { Reader, type BlockComponents, type LayoutComponents, type VocabularyContext } from './Reader.js'
 
@@ -179,6 +180,20 @@ export interface EditorProps {
    */
   readonly startEditing?: boolean
   /**
+   * Draw the page's `title:` as an editable line above the body.
+   *
+   * Off by default: the shell's own page screen names the page in the
+   * breadcrumb and the document opens with its own heading, so a third copy
+   * would be two too many. A plugin drawing a LIST of pages turns it on —
+   * there, the title is the only thing telling one card from the next.
+   *
+   * It lives here rather than in the plugin for one reason, learnt the hard
+   * way: the title is part of the frontmatter, the frontmatter is part of the
+   * document this editor holds, and a plugin writing it from outside would be
+   * a second author on an open file — a 409 on somebody's unsaved paragraph.
+   */
+  readonly titleField?: boolean
+  /**
    * Told when this editor enters or leaves writing posture.
    *
    * For a caller that draws something ELSE about the same page — a journal
@@ -207,6 +222,7 @@ export function Editor({
   pages,
   attachments = true,
   startEditing = false,
+  titleField = false,
   onEditing,
   onSaved,
   t = (key) => key,
@@ -253,20 +269,52 @@ export function Editor({
    * now, taken by a button.
    */
   const [editing, setEditing] = useState(startEditing)
-  const [markdown, setMarkdown] = useState(shown)
+  /**
+   * The BODY, which is what the mounted editor owns and reports.
+   *
+   * Held apart from the title because there are two writers on one document
+   * and they must not fight over it: Milkdown carries the frontmatter as an
+   * opaque node captured when it mounted, so a title typed in the field above
+   * would be overwritten by the editor's very next keystroke. The page that
+   * gets saved is composed from both, every render.
+   */
+  const [body, setBody] = useState(shown)
+  const [title, setTitle] = useState(() => readField(shown, 'title'))
+  const markdown = useMemo(
+    () => (titleField ? writeField(body, 'title', title) : body),
+    [body, title, titleField],
+  )
+  /**
+   * What is on the server, as far as this editor knows — and what `Done`
+   * restores.
+   *
+   * NOT `shown`, which is the document as it was FETCHED and never moves
+   * again: a plugin's embedded editor re-reads only when its path changes, so
+   * after a save `page.markdown` still holds the text from before the edit.
+   * Comparing against it made `Done` revert a change the server had already
+   * accepted — the file was correct and the screen was not, until a reload.
+   * A new journal entry is frontmatter and an empty body, so the revert looked
+   * like the entry had come back blank.
+   *
+   * It advances on every save the server takes, which is exactly what it
+   * means: the last text both hands agree on.
+   */
+  const [saved, setSaved] = useState(shown)
   const [revision, setRevision] = useState(page.revision)
   const [status, setStatus] = useState<SaveState>({ kind: 'idle' })
-  const dirty = markdown !== shown
+  const dirty = markdown !== saved
 
   useEffect(() => {
-    setMarkdown(shown)
+    setBody(shown)
+    setTitle(readField(shown, 'title'))
+    setSaved(shown)
     setRevision(page.revision)
     setStatus({ kind: 'idle' })
   }, [shown, page.path, page.revision])
 
   useEffect(() => {
     if (!editing || !mount || !host.current || !page.editable) return undefined
-    return mount(host.current, shown, setMarkdown)
+    return mount(host.current, shown, setBody)
   }, [editing, mount, page.editable, shown, page.path])
 
   /*
@@ -327,13 +375,67 @@ export function Editor({
   const save = useCallback(async () => {
     setStatus({ kind: 'saving' })
     const result = await savePage({ ...page, revision }, markdown, fetchImpl)
-    if (result.revision) setRevision(result.revision)
+    if (result.revision) {
+      setRevision(result.revision)
+      // The baseline moves with the file: what was just written is what
+      // `Done` restores, and what `dirty` is measured against.
+      setSaved(markdown)
+    }
     setStatus(result.state)
     // Only on a save the server took: a caller reloading its list on a 409
     // would replace what the person is still holding with what beat them to
     // the file.
     if (result.revision) onSaved?.(result.revision)
+    return result.state
   }, [fetchImpl, markdown, onSaved, page, revision])
+
+  /**
+   * Saving on its own, a beat after the typing stops.
+   *
+   * This is what makes ONE button honest. Two — `Save` beside `Done` — asked
+   * the person to know which of them kept their work, and the answer used to
+   * be neither obvious nor even true. With nothing left to lose by not
+   * pressing anything, `Done` can simply mean "I have finished".
+   *
+   * It STOPS on a refusal and does not come back until the page is reopened.
+   * A 409 means the agent wrote underneath; retrying every two seconds would
+   * be a loop that neither hand can win, hammering the file while the message
+   * telling somebody to reconcile scrolls past. The explicit Done still tries,
+   * so nobody is stuck.
+   */
+  const held = status.kind === 'conflict' || status.kind === 'rejected'
+  useEffect(() => {
+    if (!dirty || !page.editable || held || status.kind === 'saving') return undefined
+    const timer = setTimeout(() => void save(), 1600)
+    return () => clearTimeout(timer)
+  }, [dirty, held, page.editable, save, status.kind])
+
+  /**
+   * Leaving writing posture — which SAVES.
+   *
+   * It used to abandon, and it was called `Done`. Reported from use within an
+   * hour of shipping: "Terminé ne sauve pas, si tu cliques dessus tu perds tes
+   * modifs". Exactly so, and the label was the whole defect — a control that
+   * throws work away must not wear the name of the one that keeps it, and
+   * next to a `Save` that greys out when there is nothing to save, `Done`
+   * reads as "I have finished", never as "discard".
+   *
+   * The page stays open when the server refuses. A conflict or a rejected
+   * vocabulary is precisely the moment somebody needs their text still on
+   * screen — closing on a 409 would throw away the paragraph the message is
+   * telling them to reconcile.
+   *
+   * There is no discard button now, and that is deliberate rather than
+   * overlooked: undo is in the editor, and a page nobody meant to change is a
+   * page whose `Save` was never enabled anyway.
+   */
+  const done = useCallback(async () => {
+    if (!dirty) {
+      setEditing(false)
+      return
+    }
+    if ((await save()).kind === 'saved') setEditing(false)
+  }, [dirty, save])
 
   return (
     <section
@@ -380,31 +482,35 @@ export function Editor({
             </button>
           )}
           {page.editable && editing && (
-            <>
-              <button
-                type="button"
-                className="adestia-switch"
-                onClick={() => {
-                  // Abandoning restores what was shown, so a half-typed
-                  // sentence never survives as a "dirty" page.
-                  setMarkdown(shown)
-                  setEditing(false)
-                }}
-              >
-                {t('Done')}
-              </button>
-              <button
-                type="button"
-                className="adestia-editor__save"
-                onClick={() => void save()}
-                disabled={!dirty || status.kind === 'saving'}
-              >
-                {t('Save')}
-              </button>
-            </>
+            <button
+              type="button"
+              className="adestia-editor__save"
+              onClick={() => void done()}
+              disabled={status.kind === 'saving'}
+            >
+              {t('Done')}
+            </button>
           )}
         </div>
       </header>
+
+      {/* The title, when the caller draws a list of pages and needs one.
+          A heading while reading, a field while writing — reading posture
+          reads, here as everywhere else. What it is NOT any more is a control
+          that vanishes the moment the editor opens, which was exactly when
+          somebody wanted to name what they were writing. */}
+      {titleField &&
+        (editing && page.editable ? (
+          <input
+            className="adestia-editor__title"
+            value={title}
+            placeholder={t('Untitled')}
+            aria-label={t('Title')}
+            onChange={(event) => setTitle(event.target.value)}
+          />
+        ) : (
+          title !== '' && <h2 className="adestia-editor__title">{title}</h2>
+        ))}
 
       {!page.editable && (
         <p className="adestia-editor__readonly" role="status">

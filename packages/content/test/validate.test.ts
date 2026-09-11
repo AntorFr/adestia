@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import { parse } from '../src/pipeline.js'
+import { contentDigest, parse } from '../src/pipeline.js'
 import { isEditable, validateDocument } from '../src/validate.js'
-import { VOCABULARY, isKnownBlock } from '../src/vocabulary.js'
+import {
+  VOCABULARY,
+  forgetContributedBlocks,
+  isKnownBlock,
+  registerBlocks,
+} from '../src/vocabulary.js'
 
 const check = (markdown: string) => validateDocument(parse(markdown))
 const messages = (markdown: string) => check(markdown).map((d) => d.message)
@@ -45,6 +50,36 @@ describe('block content rules', () => {
 
   it('refuses an empty block that needs content', () => {
     expect(messages(':::callout{type="note"}\n:::\n')).toEqual(['Block ":::callout" needs content.'])
+  })
+
+  it('says nothing either way about a block whose body is optional', () => {
+    // One rendering, two provenances: the planning written in the block and
+    // the one read from the pages below. Either shape would be an error
+    // under a single declaration, and both are legal here.
+    registerBlocks(
+      {
+        planning: {
+          content: 'optional',
+          description: 'Written or queried.',
+          attributes: { depth: { values: ['self', 'subtree'], default: 'self' } },
+        },
+      },
+      { plugin: 'demo', kind: 'feature' },
+    )
+    expect(check(':::planning\n- Cadrage: 2026-01-15 → 2026-03-01\n:::\n')).toEqual([])
+    expect(check(':::planning{depth=subtree}\n:::\n')).toEqual([])
+    forgetContributedBlocks()
+  })
+
+  it('lets an optional definition settle the shape for a name the core fixes', () => {
+    // The core says `app` is empty; a plugin that takes a body sometimes must
+    // not turn every page holding one into a locked page.
+    registerBlocks(
+      { app: { content: 'optional', description: 'Sometimes bodied.' } },
+      { plugin: 'demo', kind: 'app' },
+    )
+    expect(check(':::app{id="workbench"}\nstray body\n:::\n')).toEqual([])
+    forgetContributedBlocks()
   })
 })
 
@@ -104,5 +139,40 @@ describe('editability gate', () => {
     // Verdict decision: never a hard refusal (loses the file), never a silent
     // rewrite (loses the content) — read-only plus a diagnostic.
     expect(isEditable(check(':::mystery\nx\n:::\n'))).toBe(false)
+  })
+})
+
+describe('le digest des blocs rédigés', () => {
+  it('rend ce que chaque `:::content` dit, par son sujet', () => {
+    const page = [
+      '---', 'title: Socle', '---', '',
+      ':::content{type=etat}', 'Huit lots sur treize.', ':::', '',
+      ':::content{type=perimetre}', 'Hors infra.', ':::', '',
+    ].join('\n')
+    expect(contentDigest(page)).toEqual({ etat: 'Huit lots sur treize.', perimetre: 'Hors infra.' })
+  })
+
+  it('borne le texte, parce qu’il voyage dans la liste de TOUTES les pages', () => {
+    const long = 'mot '.repeat(200)
+    const digest = contentDigest(`:::content{type=etat}\n${long}\n:::\n`, 40)
+    expect(digest['etat']?.length).toBeLessThanOrEqual(41)
+    expect(digest['etat']?.endsWith('…')).toBe(true)
+  })
+
+  it('garde le PREMIER quand une page en porte deux du même sujet', () => {
+    const page = ':::content{type=etat}\nUn.\n:::\n\n:::content{type=etat}\nDeux.\n:::\n'
+    expect(contentDigest(page)).toEqual({ etat: 'Un.' })
+  })
+
+  it('ignore un bloc sans sujet, et une page qui n’en porte aucun', () => {
+    expect(contentDigest(':::content\nSans sujet.\n:::\n')).toEqual({})
+    expect(contentDigest('# Titre\n\nDe la prose.\n')).toEqual({})
+  })
+
+  it('aplatit ce qui est écrit dedans, liens et gras compris', () => {
+    const page = ':::content{type=etat}\nUn **lot** et [un lien](x.md).\n:::\n'
+    // Et la ponctuation reste collée : une phrase est un seul flot de texte,
+    // pas une liste de morceaux à séparer.
+    expect(contentDigest(page)['etat']).toBe('Un lot et un lien.')
   })
 })

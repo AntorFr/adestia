@@ -114,6 +114,16 @@ export interface PageEditorProps {
    */
   readonly editing?: boolean
   /**
+   * Draw the page's `title:` as an editable line above the body.
+   *
+   * For a plugin showing a LIST of pages, where the title is the only thing
+   * telling one card from the next. The field belongs to the editor because
+   * the title is part of the frontmatter, and the frontmatter is part of the
+   * document the editor holds: a plugin writing it from outside would be a
+   * second author on an open file.
+   */
+  readonly titleField?: boolean
+  /**
    * Told when the embedded editor enters or leaves writing posture.
    *
    * A plugin drawing anything else about the same page — a title beside the
@@ -295,6 +305,16 @@ export interface BlockProps {
   openPage?(path: string): void
   /** The block's body, already rendered. Only ever set on a `flow` block. */
   readonly children?: ReactNode
+  /**
+   * The body's list items as plain text, one string per item. Only ever set
+   * on a `flow` block, beside `children`.
+   *
+   * For the block that treats its body as DATA — a timeline reading phase
+   * lines — where `children` is right for prose and opaque for parsing. The
+   * same reading the core's `figures` does for itself; a block that consumes
+   * items simply does not draw its children.
+   */
+  readonly items?: readonly string[]
 }
 
 /**

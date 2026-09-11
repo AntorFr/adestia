@@ -1876,7 +1876,7 @@
 }
 
 .adestia-editor__save {
-  padding: var(--space-1) var(--space-3);
+  padding: var(--space-1) var(--space-4);
   border-radius: var(--radius-sm);
   border: 1px solid var(--accent);
   background: var(--accent);
@@ -1945,12 +1945,48 @@
   font-size: var(--text-sm);
 }
 
+/* The writing surface is the PAGE, not a box drawn on it.
+   It used to be a bordered panel with a 320px floor, so an empty document —
+   a journal entry created a second ago — opened as a large grey rectangle
+   with a cursor lost in it. Reading and writing now occupy the same shape,
+   and the surface grows with what is in it. */
 .adestia-editor__surface {
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface-raised);
-  min-height: 320px;
-  padding: var(--space-3);
+  min-height: 5.5rem;
+  padding: 0;
+}
+
+/* The page's own title: a heading while reading, a field while writing, and
+   the same LINE either way — same face, same size, same place, so entering
+   writing posture does not make the card jump. The field only shows itself
+   when you point at it. */
+h2.adestia-editor__title { padding-bottom: 3px; }
+
+.adestia-editor__title {
+  width: 100%;
+  margin: 0 0 var(--space-2);
+  padding: 2px 0;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  background: none;
+  color: var(--text);
+  font-family: var(--font-title);
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.adestia-editor__title::placeholder {
+  color: var(--text-faint);
+  font-style: italic;
+  font-weight: 400;
+}
+
+.adestia-editor__title:hover { border-bottom-color: var(--border-strong); }
+
+.adestia-editor__title:focus {
+  outline: none;
+  border-bottom-color: var(--accent);
 }
 
 /* Typed blocks, as the editor shows them. A skin may recolour these; it may
@@ -1961,6 +1997,17 @@
   border-inline-start: 3px solid var(--accent);
   border-radius: var(--radius-sm);
   background: var(--surface-sunken);
+}
+
+/* A block with no body is legitimate — it queries instead of holding text —
+   but an empty div is INVISIBLE, and the bench caught a whole consolidated
+   planning missing from the editor while the reader drew it. So it says its
+   own name: something is here, and deleting it is now a decision. */
+.adestia-block:empty::before {
+  content: ':::' attr(data-block);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
 }
 
 .adestia-block--app {
@@ -2621,6 +2668,26 @@
 }
 .adestia-content > :last-child { margin-bottom: 0; }
 
+/* `view=cards` — the same section, given a box, so a page of several reads as
+   BLOCKS rather than as one column of prose. Not a callout: a callout is an
+   aside coloured by its tone, this is a section of the page that happens to
+   be framed, and it keeps its subject, its title and its signature. */
+.adestia-content--cards {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+}
+/* Boxed sections sharing a line end flush, whatever their length. Two panels
+   of different heights read as a mistake rather than as a band — the bench
+   showed exactly that, because `.adestia-row` aligns to `flex-start` and a
+   cell that does not stretch gives `height: 100%` nothing to fill.
+   Scoped with `:has` rather than by flipping the row's own alignment: every
+   other band — prose beside a list, tiles beside a table — was laid out
+   against `flex-start`, and none of them asked for this. */
+.adestia-row:has(> .adestia-row__cell > .adestia-content--cards) { align-items: stretch; }
+.adestia-row__cell > .adestia-content--cards { height: 100%; margin-bottom: 0; }
+
 /* `:::figures` — the numbers first, because that is what the eye came for,
    and the label under it. Tabular figures so a column of them lines up. */
 .adestia-figures {
@@ -2686,7 +2753,28 @@
   cursor: pointer;
 }
 .adestia-list__row:hover { background: var(--accent-quiet); }
+/* The row's glyph: a fixed slot, so titles line up whether the mark is a
+   declared emoji, a subject's diamond or a page's dot. */
+.adestia-list__ico {
+  flex: none;
+  width: 1.2em;
+  font-style: normal;
+  font-size: 0.9em;
+  line-height: 1.4;
+  color: var(--accent);
+  text-align: center;
+}
 .adestia-list__title { flex: 1; min-width: 0; font-weight: 600; font-size: 0.95em; }
+/* What the child SAYS of itself, pulled from its own `:::content` block. A
+   sentence, so it sits under the title rather than in a chip beside it. */
+.adestia-list__said {
+  display: block;
+  margin-top: 2px;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 0.92em;
+  color: var(--text-muted);
+}
 .adestia-list__pulled { display: flex; gap: 5px; flex-wrap: wrap; }
 .adestia-list__fold { background: var(--surface-raised); }
 .adestia-list__fold > summary {
@@ -2695,6 +2783,82 @@
   font-size: 0.86em;
   cursor: pointer;
 }
+/* A written row has no page behind it: nothing to hover, nothing to press. */
+.adestia-list__row--written { cursor: default; }
+.adestia-list__row--written:hover { background: var(--surface-raised); }
+
+/* `view=cards` — the same rows, given room to be scanned rather than read in
+   sequence. A grid of cards, not a denser list: the point is that each one
+   stands alone. */
+.adestia-list--cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
+  gap: var(--space-2);
+  background: none;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+}
+.adestia-list--cards .adestia-list__row {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-height: 4.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.adestia-list--cards .adestia-list__fold {
+  grid-column: 1 / -1;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+/* `view=chips` — a person, a plate of initials, and what they are here for.
+   Wraps like text because the set is read at a glance, not down a column. */
+.adestia-list--chips {
+  display: flex;
+  /* `.adestia-list` is a COLUMN — without this the chips stack full-width and
+     each rounded pill spans the reading line, which the bench duly showed. */
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  background: none;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+}
+.adestia-list--chips .adestia-list__row {
+  width: auto;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px var(--space-3) 5px 5px;
+}
+.adestia-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px var(--space-3) 5px 5px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-raised);
+}
+.adestia-chip__plate {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--accent-quiet);
+  color: var(--accent);
+  font-style: normal;
+  font-size: 0.72em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.adestia-chip__text { font-size: 0.92em; }
+.adestia-chip__text em { color: var(--text-muted); font-style: normal; }
 
 /* What a block says when it cannot do its job — never an empty rectangle,
    which reads as "there is nothing here" when the truth is "I could not

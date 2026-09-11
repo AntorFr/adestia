@@ -69,8 +69,13 @@ export interface PluginBlockAttribute {
  * draws it. One declaration, two readers, nothing restated.
  */
 export interface PluginBlockSpec {
-  /** `flow` holds nested markdown, `empty` IS its attributes. */
-  readonly content: 'flow' | 'empty'
+  /**
+   * `flow` holds nested markdown, `empty` IS its attributes, `optional`
+   * takes a body when the body is its data and none when it queries for it
+   * — one rendering, two provenances (see `BlockContent` in the content
+   * engine, which holds the bar for reaching for the third).
+   */
+  readonly content: 'flow' | 'empty' | 'optional'
   readonly description: string
   readonly attributes?: Readonly<Record<string, PluginBlockAttribute>>
 }
@@ -122,9 +127,10 @@ export interface PluginManifest {
    * and a page holding one then opens read-only with a diagnostic naming the
    * block — the honest answer, not a blank where a map used to be.
    *
-   * A name the core already owns is REFUSED and named at startup. The other
-   * direction (the plugin wins) would let `callout` quietly mean something
-   * else on one instance, which is exactly what a closed vocabulary is for.
+   * A name the core already owns is a CLAIM, not a collision: resolution
+   * decides who draws it where — the domain-owning app inside its domain, a
+   * feature only when the page asks with `from=`, the core everywhere else.
+   * `packages/content/src/vocabulary.ts` holds the walk; DESIGN.md the rule.
    */
   readonly vocabulary?: Readonly<Record<string, PluginBlockSpec>>
 

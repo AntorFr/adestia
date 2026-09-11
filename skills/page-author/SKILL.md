@@ -397,6 +397,26 @@ is display; the SUBJECT is what queries, `pull=content:…` and configuration
 address. A block with a title and no type is refused — it has lost what it
 was about, however nice the heading.
 
+**`view=cards`** puts the section in a box. Reach for it when a page is made
+of several sections that should read as **blocks** rather than as one column
+of prose — a status beside a scope, three panels across a band:
+
+```markdown
+:::content{type=perimetre title="Périmètre" view=cards w=1/2}
+Le socle de contenu et son shell, hors infra.
+:::
+```
+
+It changes nothing else: the subject, the title, the icon and the signature
+are all still there. Note the word is the plural `cards`, the same one `list`
+uses — an unknown value is an error that locks the page, so there is one word
+for "boxed" and no `view=card` to mistype.
+
+⚠️ **A boxed content is not a `callout`.** A callout is an ASIDE — a remark
+set apart from the flow, coloured by its tone, with no subject and no
+signature. Use it to interrupt. Use a boxed `content` when the thing IS a
+section of the page and you only want it framed.
+
 **`figures`** — numbers as tiles, read from a markdown list the file keeps
 readable:
 
@@ -431,10 +451,11 @@ wants one (a risk register grading `moyen` and `fort`) OVERRIDES this block and
 brings its own vocabulary; the core has no opinion about what a first column
 means.
 
-**`list`** — the pages under this one, as rows that open in place:
+**`list`** — rows: the pages under this one, opening in place, or the lines
+written in the block:
 
 ```markdown
-:::list{depth=children pull=status,due sort=due closed=fold}
+:::list{type=chantier pull=status,content:etat sort=due}
 :::
 ```
 
@@ -444,11 +465,21 @@ means.
   the row standing for it is that folder's index, not a page beside it. A rule
   that only looked at files would list a project's loose notes and miss every
   one of its sub-projects. `subtree` is everything below, at any depth.
-- **`pull`** names HEADER fields to show on each row, comma-separated. Header
-  fields only, and that is not an oversight: the index publishes every page's
-  frontmatter and pays nothing for it, while the BODY of a child — a `content`
-  block, say — is not published at all. Asking for one would be a request per
-  child.
+- **`type`** keeps only the children whose own `type:` matches, comma-separated
+  for several (`type=chantier,lot`). **`depth` says how far to look, `type`
+  says what to keep**, and you usually want both: a worksite's folder holds
+  its sub-worksites AND the loose notes filed beside them, so a list scoped by
+  position alone mixes "Sortie mobile" with "Note de lecture". Free-valued —
+  page types belong to you.
+- **`pull`** names what each row shows of its child, comma-separated, and
+  there are TWO kinds:
+  - a bare name is a **header field** — `status`, `due` — drawn as a chip;
+  - `content:<type>` is what the child's own **`:::content{type=…}` block
+    says — `pull=content:etat` puts each sub-worksite's state under its title,
+    as a sentence. The index publishes a bounded digest of those blocks, so
+    this costs no request per child; it is a SUMMARY, truncated, never the
+    page. Only `content` blocks are digested — a table or a timeline is not
+    a sentence, and a row is not the place to redraw one.
 - **`closed`** decides what happens to what is over: `fold` (the default) puts
   it behind a summary, `hide` drops it, `show` mixes it in. Folded rather than
   hidden because a finished thing is exactly what somebody opens to see how the
@@ -456,6 +487,38 @@ means.
 - **`source`** accepts `children` and nothing else today. It is the slot a
   plugin widens when it has something to list. (`from=` is a different word on
   purpose: reserved on EVERY block, it names which plugin draws it — see below.)
+- **`view`** chooses the shape: `rows` (the default), `cards` — a grid, when
+  each entry is meant to be scanned on its own rather than read down a column
+  — and `chips`, a plate of initials beside a name.
+- Each row wears a **glyph**, and you never write it on the list: the child's
+  own `ico:` if it declares one — the same field the tiles and the section
+  cards read — else `◆` when the row stands for a FOLDER and `•` when it is a
+  plain page. So giving a page an `ico:` dresses it everywhere at once.
+
+**Never write a default.** `depth=children`, `closed=fold`, `source=children`
+and `view=rows` are what you already get; writing one reads as a decision to
+the next person, who then wonders what it was for. Write the attribute that
+changes something.
+
+**A list can also be WRITTEN.** Put lines in the body and they ARE the rows,
+split at the first colon, and nothing is queried:
+
+```markdown
+:::list{view=chips}
+- PM: Machine
+- IT PM: Bidule
+- BA: Truc
+:::
+```
+
+Reach for this whenever the list is a **declaration** — who holds which role,
+what the ground rules are — something decided by somebody and derivable from
+nothing. It is still a list, so it stays `list`; writing it as `content` would
+make that word mean "prose" on one page and "rows" on another.
+
+What a written row does NOT have is a page behind it: nothing opens, `pull`
+has nothing to pull, and `closed` has no status to close by. If the entries
+are pages, query them instead of retyping them.
 
 A page that carries this block never lists itself, and a folder's index page is
 the folder rather than one of its contents.

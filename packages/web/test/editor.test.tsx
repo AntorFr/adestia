@@ -31,6 +31,18 @@ function jsonFetch(status: number, body: unknown): typeof fetch {
     } as unknown as Response)) as unknown as typeof fetch
 }
 
+/** Takes every save and keeps its body, so a test can say what was WRITTEN. */
+function recordingFetch(saves: { body: unknown }[]): typeof fetch {
+  return ((_url: string, init?: RequestInit) => {
+    if (init?.method === 'PUT') saves.push({ body: JSON.parse(String(init.body)) })
+    return Promise.resolve({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ revision: '2000-20', normalized: false }),
+    } as unknown as Response)
+  }) as unknown as typeof fetch
+}
+
 /** A mount that just reports edits, standing in for Milkdown. */
 const fakeMount =
   (edits: string[]) =>
@@ -106,6 +118,11 @@ describe('save status', () => {
   })
 })
 
+const titled = {
+  ...page,
+  markdown: '---\ntype: entree\ntitle: Le gabarit\n---\n\nLe corps.\n',
+}
+
 describe('editor', () => {
   it('opens a page for READING, mounting no editor at all', () => {
     // Opening a page to look at it used to mount ProseMirror, its toolbars
@@ -126,22 +143,115 @@ describe('editor', () => {
     )
   })
 
-  it('keeps Save disabled until something changes', () => {
-    render(<Editor page={page} mount={fakeMount([])} />)
+  it('offers the title as a field only while writing', () => {
+    // Reported from use: the title could be typed into on a card nobody had
+    // opened. Reading posture reads — here as everywhere else on this screen.
+    const { container } = render(<Editor page={titled} mount={fakeMount([])} titleField />)
+    expect(container.querySelector('input.adestia-editor__title')).toBeNull()
+    expect(screen.getByText('Le gabarit')).toBeTruthy()
+
     startEditing()
-    expect(screen.getByText('Save').closest('button')?.disabled).toBe(true)
+    expect(container.querySelector('input.adestia-editor__title')).toBeTruthy()
   })
 
-  it('enables Save once the document is edited', () => {
-    const { container } = render(<Editor page={page} mount={fakeMount([])} />)
+  it('writes the title into the frontmatter, not beside it', async () => {
+    const saves: { body: unknown }[] = []
+    const { container } = render(
+      <Editor
+        page={titled}
+        mount={fakeMount([])}
+        titleField
+        fetchImpl={recordingFetch(saves)}
+      />,
+    )
     startEditing()
-    const host = container.querySelector('[data-mounted]') as HTMLElement & {
-      edit: (md: string) => void
+    const field = container.querySelector('input.adestia-editor__title') as HTMLInputElement
+    fireEvent.change(field, { target: { value: 'Le gabarit de queues droites' } })
+    fireEvent.click(screen.getByText('Done'))
+
+    await waitFor(() => expect(saves).toHaveLength(1))
+    const written = (saves[0]?.body as { markdown: string }).markdown
+    expect(written).toMatch(/^title: Le gabarit de queues droites$/m)
+    // Once. Renaming used to append a second line whenever the surgery could
+    // not tell "replaced with the same text" from "not found".
+    expect(written.match(/^title:/gm)).toHaveLength(1)
+    expect(written).toMatch(/^type: entree$/m)
+  })
+
+  it('writes on its own, a beat after the typing stops', async () => {
+    /*
+     * What makes ONE button honest. Two — `Save` beside `Done` — asked the
+     * person to know which of them kept their work; with nothing left to lose
+     * by pressing neither, `Done` can just mean "I have finished".
+     */
+    vi.useFakeTimers()
+    try {
+      const saves: { body: unknown }[] = []
+      const { container } = render(
+        <Editor page={page} mount={fakeMount([])} fetchImpl={recordingFetch(saves)} />,
+      )
+      startEditing()
+      const host = container.querySelector('[data-mounted]') as HTMLElement & {
+        edit: (md: string) => void
+      }
+      // Wrapped in act(): the editor reports changes through a callback, not a
+      // DOM event, so React has no reason to flush without being told.
+      act(() => host.edit('# Changed\n'))
+      expect(saves).toHaveLength(0)
+
+      await act(async () => {
+        vi.advanceTimersByTime(2000)
+      })
+      expect(saves).toHaveLength(1)
+      expect((saves[0]?.body as { markdown: string }).markdown).toBe('# Changed\n')
+    } finally {
+      vi.useRealTimers()
     }
-    // Wrapped in act(): the editor reports changes through a callback, not a
-    // DOM event, so React has no reason to flush without being told.
-    act(() => host.edit('# Changed\n'))
-    expect(screen.getByText('Save').closest('button')?.disabled).toBe(false)
+  })
+
+  it('writes nothing at all while nobody types', async () => {
+    vi.useFakeTimers()
+    try {
+      const saves: { body: unknown }[] = []
+      render(<Editor page={page} mount={fakeMount([])} fetchImpl={recordingFetch(saves)} />)
+      startEditing()
+      await act(async () => {
+        vi.advanceTimersByTime(5000)
+      })
+      expect(saves).toHaveLength(0)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('stops writing on its own once the server has refused', async () => {
+    // A 409 means the agent wrote underneath. Retrying every two seconds is a
+    // loop neither hand can win, hammering the file while the message telling
+    // somebody to reconcile scrolls past.
+    vi.useFakeTimers()
+    try {
+      const { container } = render(
+        <Editor page={page} mount={fakeMount([])} fetchImpl={jsonFetch(409, {})} />,
+      )
+      startEditing()
+      const host = container.querySelector('[data-mounted]') as HTMLElement & {
+        edit: (md: string) => void
+      }
+      act(() => host.edit('# Mine\n'))
+      await act(async () => {
+        vi.advanceTimersByTime(2000)
+      })
+      expect(screen.getByText(/The agent changed this page/)).toBeTruthy()
+
+      act(() => host.edit('# Mine again\n'))
+      await act(async () => {
+        vi.advanceTimersByTime(10_000)
+      })
+      // Still the conflict, not a fresh round of the same refusal.
+      expect(screen.getByText(/The agent changed this page/)).toBeTruthy()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('leaves writing posture behind when the reader moves on', () => {
@@ -154,18 +264,92 @@ describe('editor', () => {
     expect(container.querySelector('[data-mounted]')).toBeNull()
   })
 
-  it('abandoning an edit restores what was there', () => {
-    // A half-typed sentence must not survive as a "dirty" page waiting to be
-    // saved by accident.
-    const { container } = render(<Editor page={page} mount={fakeMount([])} />)
+  it('closing an edit SAVES it, because that is what the button is called', async () => {
+    /*
+     * Reported from use, an hour after shipping: "Terminé ne sauve pas, si tu
+     * cliques dessus et que tu n'as pas sauvé tu perds tes modifs." It threw
+     * the text away, silently, under a label that reads as "I have finished".
+     * Next to a `Save` that greys out when there is nothing to save, nothing
+     * on that strip said one of the two buttons was a bin.
+     */
+    const saves: { body: unknown }[] = []
+    const { container } = render(
+      <Editor page={page} mount={fakeMount([])} fetchImpl={recordingFetch(saves)} />,
+    )
     startEditing()
     const host = container.querySelector('[data-mounted]') as HTMLElement & {
       edit: (md: string) => void
     }
     act(() => host.edit('# Half a thought\n'))
     fireEvent.click(screen.getByText('Done'))
+
+    await waitFor(() => expect(saves).toHaveLength(1))
+    expect((saves[0]?.body as { markdown: string }).markdown).toBe('# Half a thought\n')
+    // And it did leave writing posture, once the server had it.
+    await waitFor(() => expect(container.querySelector('[data-mounted]')).toBeNull())
+  })
+
+  it('stays open when the server refuses, rather than closing over the refusal', async () => {
+    // A conflict is exactly the moment somebody needs their paragraph still on
+    // screen: the message tells them to reconcile with text they can no longer
+    // see if the editor has closed on them.
+    const { container } = render(
+      <Editor page={page} mount={fakeMount([])} fetchImpl={jsonFetch(409, {})} />,
+    )
     startEditing()
-    expect(screen.getByText('Save').closest('button')?.disabled).toBe(true)
+    const host = container.querySelector('[data-mounted]') as HTMLElement & {
+      edit: (md: string) => void
+    }
+    act(() => host.edit('# Mine\n'))
+    fireEvent.click(screen.getByText('Done'))
+
+    await screen.findByText(/The agent changed this page/)
+    expect(container.querySelector('[data-mounted]')).toBeTruthy()
+  })
+
+  it('closing a page nobody changed writes nothing', async () => {
+    const saves: { body: unknown }[] = []
+    const { container } = render(
+      <Editor page={page} mount={fakeMount([])} fetchImpl={recordingFetch(saves)} />,
+    )
+    startEditing()
+    fireEvent.click(screen.getByText('Done'))
+
+    await waitFor(() => expect(container.querySelector('[data-mounted]')).toBeNull())
+    expect(saves).toHaveLength(0)
+  })
+
+  it('keeps what was SAVED when the edit is closed', async () => {
+    /*
+     * Reported from use: write, save, press Done — and the entry came back
+     * empty. The file was correct; a reload showed it.
+     *
+     * `Done` restored `shown`, the document as it was FETCHED, and an
+     * embedded editor re-reads only when its path changes — so after a save
+     * `page.markdown` still held the text from before the edit. A brand-new
+     * journal entry is frontmatter and an empty body, which is why the revert
+     * looked like the content had vanished rather than merely gone stale.
+     */
+    const { container } = render(
+      <Editor
+        page={page}
+        mount={fakeMount([])}
+        fetchImpl={jsonFetch(200, { revision: '2000-20', normalized: false })}
+      />,
+    )
+    startEditing()
+    const host = container.querySelector('[data-mounted]') as HTMLElement & {
+      edit: (md: string) => void
+    }
+    act(() => host.edit('# Le gabarit\n\nLa cale de 8 mm était la bonne.\n'))
+    fireEvent.click(screen.getByText('Done'))
+    await waitFor(() => expect(container.querySelector('[data-mounted]')).toBeNull())
+    // What the reader draws is what was written, not what was opened.
+    expect(screen.getByText('La cale de 8 mm était la bonne.')).toBeTruthy()
+
+    // And reopening finds nothing left to write: the baseline moved with it.
+    startEditing()
+    expect(screen.getByText('Done').closest('button')?.disabled).toBe(false)
   })
 
   it('shows a conflict instead of overwriting the agent', async () => {
@@ -177,7 +361,7 @@ describe('editor', () => {
       edit: (md: string) => void
     }
     act(() => host.edit('# Mine\n'))
-    fireEvent.click(screen.getByText('Save'))
+    fireEvent.click(screen.getByText('Done'))
     await waitFor(() => expect(screen.getByText(/The agent changed this page/)).toBeTruthy())
   })
 

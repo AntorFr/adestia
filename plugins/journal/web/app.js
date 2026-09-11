@@ -25,7 +25,6 @@ import {
   formatWhen,
   journalMarkdown,
   newEntryPath,
-  setField,
   slugify,
   stamp,
   words,
@@ -241,10 +240,6 @@ export default function view(api) {
     const [adding, setAdding] = useState(false)
     /** The entry just created here — the one that opens in writing posture. */
     const [opened, setOpened] = useState(null)
-    /** Which entry's editor holds its file, as that editor reports it. */
-    const [editing, setEditing] = useState(null)
-    /** The entry whose title is being typed. */
-    const [renaming, setRenaming] = useState(null)
 
     // A different journal starts at its own top rather than inheriting how far
     // somebody had scrolled into the last one.
@@ -303,74 +298,6 @@ export default function view(api) {
       setSaving(false)
     }
 
-    /**
-     * Renaming an entry, read-then-write against its revision.
-     *
-     * Offered only while that entry's editor is CLOSED. The title lives in
-     * the frontmatter, the frontmatter lives in the file, and the file is
-     * held by the editor the moment somebody presses ✎ — writing to it from
-     * here would turn their next save into a 409 over an unsaved paragraph.
-     * So the two never hold the page at once: the editor owns it while it is
-     * open, this owns it the rest of the time.
-     */
-    const rename = async (entry, title) => {
-      setRenaming(null)
-      if ((title ?? '').trim() === (entry.title ?? '')) return
-      try {
-        const read = await api.fetch(`/api/pages/${entry.path}`)
-        if (!read.ok) throw new Error(t('that entry no longer exists'))
-        const page = await read.json()
-        const markdown = setField(page.markdown, 'title', title)
-        if (!markdown) throw new Error(t('that entry has no frontmatter'))
-        const write = await put(entry.path, markdown, page.revision)
-        if (write.status === 409) throw new Error(t('the agent changed that entry — reloading'))
-        if (!write.ok) throw new Error(`${t('could not save')} (${write.status})`)
-        setError(null)
-      } catch (cause) {
-        setError(cause.message)
-      }
-      await reload()
-    }
-
-    /** An entry's title: a heading, a button to rename, or the field itself. */
-    const titleOf = (entry) => {
-      if (renaming === entry.path) {
-        return h('input', {
-          key: 't',
-          className: 'journal-entry__rename',
-          autoFocus: true,
-          defaultValue: entry.title ?? '',
-          placeholder: t('Title (optional)'),
-          'aria-label': t('Title (optional)'),
-          onBlur: (event) => void rename(entry, event.target.value),
-          onKeyDown: (event) => {
-            if (event.key === 'Enter') event.target.blur()
-            if (event.key === 'Escape') setRenaming(null)
-          },
-        })
-      }
-      // While the editor holds the file, the title is a heading and nothing
-      // more — see `rename` for why it stops being a control.
-      if (editing === entry.path) {
-        return entry.title
-          ? h('h3', { key: 't', className: 'journal-entry__title' }, entry.title)
-          : null
-      }
-      return h(
-        'button',
-        {
-          key: 't',
-          type: 'button',
-          className: entry.title
-            ? 'journal-entry__title journal-entry__title--set'
-            : 'journal-entry__title journal-entry__title--none',
-          title: t('Rename'),
-          onClick: () => setRenaming(entry.path),
-        },
-        entry.title ?? t('Untitled'),
-      )
-    }
-
     return h('section', { className: 'journal' }, [
       h(
         'a',
@@ -380,20 +307,25 @@ export default function view(api) {
       h('header', { key: 'h', className: 'journal__head' }, [
         h('h2', { key: 't' }, `${journal.ico ?? '📓'} ${journal.title}`),
         journal.description && h('p', { key: 'd', className: 'journal-muted' }, journal.description),
-        h(
-          'button',
-          {
-            key: 'a',
-            type: 'button',
-            className: 'journal-add',
-            'aria-label': t('New entry'),
-            title: t('New entry'),
-            onClick: () => setAdding(!adding),
-          },
-          adding ? '×' : '+',
-        ),
       ]),
       error && h('p', { key: 'e', className: 'journal-problem' }, error),
+
+      // Writing is the point of this screen, so it gets a line at the top of
+      // the list rather than a lone glyph parked in the header.
+      h(
+        'button',
+        {
+          key: 'a',
+          type: 'button',
+          className: 'journal-add',
+          'aria-label': t('New entry'),
+          onClick: () => setAdding(!adding),
+        },
+        [
+          h('span', { key: 'p', className: 'journal-add__plus' }, adding ? '×' : '+'),
+          h('span', { key: 'l' }, adding ? t('Cancel') : t('Write an entry')),
+        ],
+      ),
 
       adding &&
         h('form', { key: 'f', className: 'journal-new', onSubmit: create }, [
@@ -420,25 +352,24 @@ export default function view(api) {
             { key: 'l', className: 'journal-history' },
             visible.map((entry) =>
               h('li', { key: entry.id, className: 'journal-entry' }, [
-                h('header', { key: 'h', className: 'journal-entry__head' }, [
-                  h(
-                    'time',
-                    { key: 'w', className: 'journal-entry__when' },
-                    formatWhen(entry.when, api.locale),
-                  ),
-                  titleOf(entry),
-                ]),
+                h(
+                  'time',
+                  { key: 'w', className: 'journal-entry__when' },
+                  formatWhen(entry.when, api.locale),
+                ),
                 // The shell's editor, one per entry: reading posture until its
                 // own ✎ is pressed, and its own revision against an agent that
                 // writes without warning.
+                // The title rides IN the editor: it is this page's frontmatter,
+                // and a second author on an open file is a 409 on somebody's
+                // unsaved paragraph. It is also what makes it editable WHILE
+                // the entry is being written — which is when you want to name
+                // what you are writing.
                 h(api.PageEditor, {
                   key: 'e',
                   path: entry.path,
+                  titleField: true,
                   editing: entry.path === opened,
-                  onEditing: (open) =>
-                    setEditing((current) =>
-                      open ? entry.path : current === entry.path ? null : current,
-                    ),
                   onSaved: reload,
                 }),
               ]),

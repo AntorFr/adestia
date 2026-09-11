@@ -69,6 +69,7 @@ export function makePageEditor(host: PageEditorHost): ComponentType<PageEditorPr
     path,
     attachments = false,
     editing,
+    titleField,
     onEditing,
     onSaved,
   }: PageEditorProps) {
@@ -118,6 +119,7 @@ export function makePageEditor(host: PageEditorHost): ComponentType<PageEditorPr
         t={host.t}
         attachments={attachments}
         {...(editing ? { startEditing: true } : {})}
+        {...(titleField ? { titleField: true } : {})}
         {...(onEditing ? { onEditing } : {})}
         {...(host.blocks ? { blocks: host.blocks() } : {})}
         {...(onSaved ? { onSaved: () => onSaved() } : {})}
