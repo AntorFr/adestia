@@ -954,6 +954,173 @@ describe('chat', () => {
     expect(await screen.findByText('longue mission')).toBeTruthy()
     await waitFor(() => expect(screen.getByText('déjà en route')).toBeTruthy())
   })
+
+  /**
+   * A server whose turn streams dies under the page — the sleeping phone.
+   *
+   * The POST opens, says one tool call, then its connection fails; meanwhile
+   * the desk finishes the turn and writes it. `answers` says whether the
+   * store can be reached when the page wakes.
+   */
+  function sleepingPhone(answers: boolean) {
+    const posts: Record<string, unknown>[] = []
+    const reads = { count: 0 }
+    const stored = {
+      id: 'c1',
+      title: 'Tuyau Festool',
+      updatedAt: '',
+      sessionId: 'engine-1',
+      messages: [
+        { id: 'm1', role: 'user', text: 'retrouve la référence du tuyau', at: '' },
+        { id: 'm2', role: 'agent', text: 'Référence Festool : 200051', at: '', tools: [{ name: 'search_mail', ok: true }] },
+      ],
+    }
+    let die!: () => void
+    const fetchImpl = ((url: string, init?: RequestInit) => {
+      const path = String(url)
+      if (path.startsWith('/api/turn/attach')) {
+        // The turn finished while nobody watched: nothing left to adopt.
+        return Promise.resolve({ ok: true, status: 204, body: null } as unknown as Response)
+      }
+      if (path === '/api/turn') {
+        posts.push(JSON.parse(String(init?.body)) as Record<string, unknown>)
+        const body = new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode(frame({ type: 'tool-use', name: 'search_mail', id: 't1' })))
+            die = () => controller.error(new TypeError('Load failed'))
+          },
+        })
+        return Promise.resolve({ ok: true, status: 200, body } as unknown as Response)
+      }
+      if (path === '/api/conversations/c1') {
+        reads.count += 1
+        return answers
+          ? Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(stored) } as unknown as Response)
+          : Promise.reject(new TypeError('Load failed'))
+      }
+      return Promise.resolve(
+        new Response(
+          JSON.stringify(init?.method === 'POST' ? { id: 'c1', title: 'Tuyau Festool', updatedAt: '' } : { conversations: [] }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        ),
+      )
+    }) as unknown as typeof fetch
+    return { fetchImpl, posts, reads, die: () => die() }
+  }
+
+  async function ask(text: string): Promise<void> {
+    const input = screen.getByRole('textbox')
+    fireEvent.change(input, { target: { value: text } })
+    await act(async () => {
+      fireEvent.keyDown(input, { key: 'Enter' })
+    })
+  }
+
+  it('reads the thread back when its stream dies and the turn finishes without it', async () => {
+    // Seen on a real instance: the answer had landed at the desk, and the
+    // screen still showed a lone tool call over "Load failed".
+    const phone = sleepingPhone(true)
+    render(<Chat fetchImpl={phone.fetchImpl} />)
+    await ask('retrouve la référence du tuyau')
+    await waitFor(() => expect(phone.posts).toHaveLength(1))
+
+    await act(async () => phone.die())
+
+    expect(await screen.findByText('Référence Festool : 200051')).toBeTruthy()
+    expect(screen.queryByText('Load failed')).toBeNull()
+
+    // And the next message leaves naming the thread, never an engine session:
+    // which one it resumes is the server's to read.
+    await ask('Probablement D 32/22x10m-AS-GQ/CT')
+    await waitFor(() => expect(phone.posts).toHaveLength(2))
+    expect(phone.posts[1]).toMatchObject({ conversationId: 'c1' })
+    expect('sessionId' in phone.posts[1]!).toBe(false)
+  })
+
+  it('keeps the fragment, and the tab, when the store cannot be reached either', async () => {
+    // A phone that wakes before its network: re-reading fails too. The tab
+    // must not close over it, and the error must still say something broke.
+    const phone = sleepingPhone(false)
+    const { container } = render(<Chat fetchImpl={phone.fetchImpl} />)
+    await ask('retrouve la référence du tuyau')
+    await waitFor(() => expect(phone.posts).toHaveLength(1))
+
+    await act(async () => phone.die())
+
+    expect(await screen.findByText('Load failed')).toBeTruthy()
+    expect(phone.reads.count).toBeGreaterThan(0)
+    expect(container.querySelector('.adestia-tab--active .adestia-tab__title')?.textContent).toBe(
+      'retrouve la référence du tuyau',
+    )
+    expect(container.querySelector('.adestia-bubble--user')?.textContent).toContain(
+      'retrouve la référence du tuyau',
+    )
+  })
+
+  it('reads a held exchange back when the merged turn finished before the re-attach', async () => {
+    // The held message rode a merged turn that settled before the chat looked
+    // for it. The read-back went through `adopt`, which declines while a pump
+    // turns — from inside the pump — so the merged answer never appeared.
+    const encoder = new TextEncoder()
+    let turn: ReadableStreamDefaultController<Uint8Array> | undefined
+    let posts = 0
+    const stored = {
+      id: 'c1',
+      title: 'premier',
+      updatedAt: '',
+      sessionId: 's1',
+      messages: [
+        { id: 'm1', role: 'user', text: 'premier', at: '' },
+        { id: 'm2', role: 'user', text: 'deuxième', at: '' },
+        { id: 'm3', role: 'agent', text: 'réponse au premier', at: '' },
+        { id: 'm4', role: 'agent', text: 'réponse fusionnée', at: '' },
+      ],
+    }
+    const fetchImpl = ((url: string, init?: RequestInit) => {
+      const path = String(url)
+      if (path.startsWith('/api/turn/attach')) {
+        return Promise.resolve({ ok: true, status: 204, body: null } as unknown as Response)
+      }
+      if (path === '/api/turn') {
+        posts += 1
+        if (posts === 1) {
+          const body = new ReadableStream<Uint8Array>({
+            start(controller) {
+              turn = controller
+            },
+          })
+          return Promise.resolve({ ok: true, status: 200, body } as unknown as Response)
+        }
+        return Promise.resolve({ ok: true, status: 202, body: null } as unknown as Response)
+      }
+      if (path === '/api/conversations/c1') {
+        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(stored) } as unknown as Response)
+      }
+      return Promise.resolve(
+        new Response(
+          JSON.stringify(init?.method === 'POST' ? { id: 'c1', title: 'premier', updatedAt: '' } : { conversations: [] }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        ),
+      )
+    }) as unknown as typeof fetch
+
+    const { container } = render(<Chat fetchImpl={fetchImpl} />)
+    await ask('premier')
+    await waitFor(() => expect(posts).toBe(1))
+    await ask('deuxième')
+    await waitFor(() => expect(container.querySelectorAll('.adestia-bubble--held')).toHaveLength(1))
+
+    await act(async () => {
+      turn!.enqueue(encoder.encode(frame({ type: 'text-delta', text: 'réponse au premier' })))
+      turn!.enqueue(encoder.encode(frame({ type: 'result', sessionId: 's1', stopped: false })))
+      turn!.close()
+    })
+
+    expect(await screen.findByText('réponse fusionnée')).toBeTruthy()
+    expect(container.querySelectorAll('.adestia-bubble--held')).toHaveLength(0)
+    // Replaced by the store, not appended to: each message once.
+    expect(screen.getAllByText('réponse au premier')).toHaveLength(1)
+  })
 })
 
 describe('tabs', () => {

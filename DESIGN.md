@@ -645,7 +645,12 @@ The v1 chat must be **at least** agent-gw's PWA, which sets the bar:
   used to carry it, and a phone that slept through a first turn woke to a dead
   stream without it — the next message opened a fresh engine session whose id
   then replaced the thread's own, and the thread forgot its first turn for
-  good (seen on a real instance, 2026-09-14). A queue is NOT re-dispatched across
+  good (seen on a real instance, 2026-09-14). The same phone showed the other
+  half: the page woke to a lone tool call over a network error while the
+  answer sat in the thread. A stream that ends before its turn's result is
+  therefore never filed as the turn — the shell reads the thread back from the
+  store, which holds whatever finished, and the fragment stands with its error
+  only when the store cannot be reached either. A queue is NOT re-dispatched across
   a server restart, deliberately: the texts are already in the thread, and a
   reboot firing week-old prompts unprompted would be worse than the gap.
 - **Tabs (beyond the bar):** parallel conversations as a browser-like tab

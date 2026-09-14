@@ -19,6 +19,7 @@
  *   shoot(page, name)                    a screenshot into /shots
  *   attached()                           resolves when the shell has attached
  *   emit(event) / endTurn()              drive the scripted turn
+ *   cutTurn()                            kill its connection mid-turn
  *   api(path, init)                      fetch against the app, JSON in/out
  *   dataDir                              the app's data volume, mounted here
  *
@@ -142,6 +143,17 @@ const bench = {
 
   endTurn() {
     turn?.end()
+    turn = undefined
+  },
+
+  /**
+   * The connection dies under the turn — a phone that slept, a proxy that
+   * hung up. Not `endTurn`: the socket is destroyed, so the browser's read
+   * REJECTS the way it does on a real device, instead of seeing a clean end.
+   */
+  cutTurn() {
+    if (PASSTHROUGH) throw new Error('this run drives a real engine; nothing to cut')
+    turn?.destroy()
     turn = undefined
   },
 
