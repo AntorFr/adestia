@@ -18,6 +18,7 @@ import {
   listConversations,
   readConversation,
   titleFrom,
+  type Conversation,
   type ConversationMeta,
   type StoredMessage,
 } from './conversations.js'
@@ -806,6 +807,24 @@ function toMessage(stored: StoredMessage): Message {
 }
 
 /**
+ * A tab's session as the store has it — everything the thread REMEMBERS.
+ *
+ * Held bubbles go: the server writes a held message into the thread the moment
+ * it accepts it, so the stored transcript already carries them as the
+ * ordinary messages they became.
+ */
+function fromStore(conversation: Conversation): Partial<TabSession> {
+  return {
+    messages: conversation.messages.map(toMessage),
+    held: [],
+    sessionId: conversation.sessionId,
+    contextTokens: conversation.messages.at(-1)?.usage?.contextTokens ?? 0,
+    loaded: true,
+    title: conversation.title,
+  }
+}
+
+/**
  * The tab that is not a conversation yet.
  *
  * A fresh tab has nothing to address until its first message creates the
@@ -1018,19 +1037,30 @@ export function Chat({
       }
       // Replayed FAITHFULLY: tool trace, interruptions and all. The stored
       // transcript is what the UI drew, so replaying it needs no second path.
-      patchSession(id, {
-        messages: conversation.messages.map(toMessage),
-        sessionId: conversation.sessionId,
-        contextTokens: conversation.messages.at(-1)?.usage?.contextTokens ?? 0,
-        loaded: true,
-        title: conversation.title,
-      })
+      patchSession(id, fromStore(conversation))
     }
     const running = await attachTurn(id, fetchImpl ?? fetch)
     if (running) {
       patchSession(id, { live: INITIAL_TURN })
       void pump(id, running)
     }
+  }
+
+  /**
+   * Puts what the store holds in place of what a tab drew, for a tab whose
+   * live view lost track of its turn.
+   *
+   * Not `adopt`, for two reasons. It is called from inside the pump, where
+   * `adopt` declines because a pump is turning. And a store that does not
+   * answer changes NOTHING here — false, and the tab keeps what it drew —
+   * where `adopt` closes the tab: a phone waking from sleep may reach the
+   * server a moment after it needs to, and that is no reason to lose the tab.
+   */
+  async function reread(id: string): Promise<boolean> {
+    const conversation = await readConversation(id, fetchImpl)
+    if (!conversation || !Array.isArray(conversation.messages)) return false
+    patchSession(id, fromStore(conversation))
+    return true
   }
 
   /** From the list: opening a thread opens it AS a tab, active. */
@@ -1167,7 +1197,10 @@ export function Chat({
   ) {
     return {
       prompt: text,
-      ...(sid ? { sessionId: sid } : {}),
+      // A thread's engine session is the server's to read from the thread,
+      // and it ignores one named here; only a turn with no thread names its
+      // own.
+      ...(sid && !thread ? { sessionId: sid } : {}),
       ...(model ? { model } : {}),
       ...(thread ? { conversationId: thread } : {}),
       ...(attachments.length > 0 ? { attachments: attachments.map((a) => a.id) } : {}),
@@ -1238,18 +1271,36 @@ export function Chat({
    */
   async function consume(tabId: string, states: AsyncGenerator<TurnState>): Promise<void> {
     let last: TurnState | undefined
+    let lost = false
     try {
       for await (const state of states) {
         last = state
         patchSession(tabId, { live: state })
       }
+      lost = last?.lost === true
     } catch (error) {
       // A fetch that REJECTS — network down, server gone — must land as the
       // error it is, not leave the dots pulsing forever.
       last = { ...(last ?? INITIAL_TURN), running: false, error: (error as Error).message }
+      lost = true
     }
 
-    if (last) {
+    // The stream died before the turn did. Seen on a real instance: a phone
+    // slept through a thread's first turn, woke to "Load failed" under a lone
+    // tool call, and the answer — finished at the desk in the meantime — was
+    // nowhere on screen. The store holds everything that finished, so it is
+    // read back instead of filing the fragment; the fragment stands, error and
+    // all, only when the store cannot be reached either.
+    const recovered = lost && tabId !== DRAFT && (await reread(tabId))
+
+    if (recovered) {
+      patchSession(tabId, {
+        live: undefined,
+        stopping: false,
+        unread: tabId !== activeRef.current,
+      })
+      if (tabId === activeRef.current) read(tabId)
+    } else if (last) {
       const settled = last
       // What was drawn as several bubbles is FILED as several messages. The
       // alternative — one record holding the whole turn — would have made a
@@ -1305,9 +1356,11 @@ export function Chat({
     if (session(tabId).held.length > 0) {
       // Held, and nothing to attach to: the merged turn ran to completion
       // faster than this re-attach. The store has the whole exchange — read
-      // it back rather than guess at it.
-      patchSession(tabId, { held: [], loaded: false })
-      await adopt(tabId)
+      // it back rather than guess at it. This used to go through `adopt`,
+      // which declines while a pump is turning — and this IS the pump, so the
+      // read never happened and the merged answer stayed off screen until a
+      // reload. Unreadable, the tab is left for the next adoption to fill.
+      if (!(await reread(tabId))) patchSession(tabId, { held: [], loaded: false })
     }
   }
 

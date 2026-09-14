@@ -73,6 +73,19 @@ export interface TurnOutcome {
 export interface TurnSpec {
   readonly request: TurnRequest
   readonly finish: (outcome: TurnOutcome) => Promise<void>
+  /**
+   * Where the engine session this turn resumes is kept, when a store keeps
+   * one — the route's closure, like `finish`.
+   *
+   * Asked at DISPATCH, and only when the request names no session itself. By
+   * then every earlier turn of the chain has run its `finish`, so the store
+   * holds the session the last turn left — which the caller of a message
+   * cannot promise, and on a real instance did not: a phone slept through a
+   * thread's first turn, woke to a dead stream, and posted the next message
+   * with no session at all. The engine opened a fresh one, its id replaced
+   * the thread's own, and the thread forgot its first turn for good.
+   */
+  readonly session?: () => Promise<string | undefined>
 }
 
 interface Subscriber {
@@ -338,10 +351,11 @@ export class TurnDesk {
     let current: { job: TurnJob; spec: TurnSpec } | undefined = { job, spec }
     try {
       while (current) {
-        const outcome = await this.#turn(current.job, current.spec)
+        const spec = await resumed(current.spec)
+        const outcome = await this.#turn(current.job, spec)
         // Persistence must not kill the chain; the closure reports its own
         // failures. The turn's events already reached every subscriber.
-        await current.spec.finish(outcome).catch(() => undefined)
+        await spec.finish(outcome).catch(() => undefined)
 
         const chain = key ? this.#chains.get(key) : undefined
         let next: { job: TurnJob; spec: TurnSpec } | undefined
@@ -349,7 +363,7 @@ export class TurnDesk {
           const batch = chain.queue.splice(0)
           next = {
             job: new TurnJob(),
-            spec: mergeSpecs(batch, outcome.sessionId ?? current.spec.request.sessionId),
+            spec: mergeSpecs(batch, outcome.sessionId ?? spec.request.sessionId),
           }
           chain.job = next.job
         } else if (key) {
@@ -488,5 +502,20 @@ function mergeSpecs(batch: readonly TurnSpec[], sessionId: string | undefined): 
       ...(sessionId ? { sessionId } : {}),
     },
     finish: last.finish,
+    ...(last.session ? { session: last.session } : {}),
   }
+}
+
+/**
+ * The spec with the session it resumes, read from its store when the request
+ * names none.
+ *
+ * A resolver that throws yields no session rather than a failed turn: the
+ * message is already in the thread, and refusing to run it would lose the
+ * answer on top of the memory.
+ */
+async function resumed(spec: TurnSpec): Promise<TurnSpec> {
+  if (spec.request.sessionId !== undefined || !spec.session) return spec
+  const sessionId = await spec.session().catch(() => undefined)
+  return sessionId ? { ...spec, request: { ...spec.request, sessionId } } : spec
 }

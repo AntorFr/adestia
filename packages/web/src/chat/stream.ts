@@ -125,6 +125,14 @@ export interface TurnState {
   readonly ask?: PendingAsk | undefined
   readonly sessionId?: string | undefined
   readonly error?: string | undefined
+  /**
+   * The connection ended before the turn's result did.
+   *
+   * What was drawn is then a fragment of a turn that may well have gone on
+   * without anybody watching — the desk runs it detached — so the thread's
+   * store, not this state, holds how it ended.
+   */
+  readonly lost?: boolean | undefined
 }
 
 export const INITIAL_TURN: TurnState = {
@@ -311,7 +319,7 @@ async function* streamStates(response: Response): AsyncGenerator<TurnState> {
   if (state.running) {
     // The connection ended without a result event — a crashed server, a proxy
     // timeout. Saying so beats a bubble that spins forever.
-    yield { ...state, running: false, error: state.error ?? 'the turn ended unexpectedly' }
+    yield { ...state, running: false, lost: true, error: state.error ?? 'the turn ended unexpectedly' }
   }
 }
 

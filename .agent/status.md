@@ -1,5 +1,25 @@
 # Status — Adestia
-> MàJ : 2026-09-10
+> MàJ : 2026-09-14
+
+Chantier du 14/09 — **un fil ne perd plus la mémoire du moteur quand le
+téléphone s'endort pendant un tour**. Remonté de l'usage : « je recharge la
+page, j'enchaîne, et l'agent n'a aucun contexte sur le premier message ».
+Le rechargement était innocent : les logs de Traefik et les fichiers d'Alfred
+montrent un flux coupé à 9 s d'un tour de 63 s, une page qui se réveille sur
+« Load failed » sans la réponse, et le message suivant parti sans identifiant
+de session. Le moteur a ouvert une session neuve, dont l'id a remplacé celle
+du fil : la première demande est sortie de sa mémoire pour de bon.
+
+**La session est celle du fil, pas celle du navigateur.** La file d'attente
+des tours la lit dans le fichier du fil au moment de LANCER le tour — seul
+moment où chaque tour précédent a écrit la sienne — et ignore celle que la
+requête nomme. **Le navigateur relit le fil quand un flux meurt** avant la fin
+de son tour, au lieu d'archiver le fragment ; et le repli qui devait relire un
+échange mis en attente passait par `adopt`, qui refuse tant que la boucle
+tourne — depuis la boucle : il n'avait jamais rien relu.
+
+- [ ] Le fil « tuyau Festool » d'Alfred reste coupé en deux côté moteur : rien
+      à réparer sans perdre la seconde moitié.
 
 Chantier du 10/09 — **l'éditeur cesse d'avoir l'air d'un formulaire, et le
 journal cesse de tenir le titre d'une page qu'il n'écrit pas**. Remonté de
