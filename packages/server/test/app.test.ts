@@ -560,6 +560,28 @@ describe('conversations', () => {
     await app.close()
   })
 
+  it("resumes the thread's own session, whatever the browser holds", async () => {
+    // Seen on a real instance: a phone slept through a thread's first turn,
+    // woke to a dead stream, and the next message left with no session. The
+    // engine opened a fresh one, and the thread forgot its first turn. The
+    // session is the thread's — read from its file, never from the request.
+    const driver = new ScriptedDriver([{ type: 'text-delta', text: 'ok' }, RESULT])
+    const app = await withStore({ driver })
+    const { id } = (await app.inject({ method: 'POST', url: '/api/conversations' })).json()
+    const post = (payload: Record<string, unknown>) =>
+      app.inject({ method: 'POST', url: '/api/turn', payload: { conversationId: id, ...payload } })
+
+    // A first turn resumes nothing, even when the request names a session:
+    // a new thread must not pick up someone else's engine memory.
+    await post({ prompt: 'je cherche la référence', sessionId: 'foreign' })
+    // The browser that lost track sends none; a stale one sends the wrong one.
+    await post({ prompt: 'probablement celle-ci' })
+    await post({ prompt: 'et la facture ?', sessionId: 'stale' })
+
+    expect(driver.requests.map((request) => request.sessionId)).toEqual([undefined, 's1', 's1'])
+    await app.close()
+  })
+
   it('stores the partial answer of a turn that failed', async () => {
     // A thread that silently drops what the agent did produce is worse than
     // one that shows it broke.

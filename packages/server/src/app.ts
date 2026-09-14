@@ -845,12 +845,24 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
           prompt: frameView(frameAttachments(body.prompt, attachments), body.view),
           cwd: config.workspace.root,
           ...(agentRoots.length > 0 ? { roots: agentRoots } : {}),
-          ...(sessionId ? { sessionId } : {}),
+          // A thread's session is the THREAD's, read from its file when the
+          // turn is dispatched (`session` below) — never the browser's copy.
+          // The browser's copy is exactly what a stream dying under a sleeping
+          // phone loses, and a message posted without it opened a fresh engine
+          // session that then replaced the thread's own. Only a turn with no
+          // thread still names its session from the request.
+          ...(!conversationId && sessionId ? { sessionId } : {}),
           ...(typeof body.model === 'string' ? { model: body.model } : {}),
           ...(callerToken ? { callerToken } : {}),
           ...(Object.keys(serverTokens).length > 0 ? { serverTokens } : {}),
           ...(tools ? { tools } : {}),
         },
+        ...(conversationId
+          ? {
+              session: async () =>
+                (await conversations.read(userId, conversationId))?.sessionId,
+            }
+          : {}),
         // Written even when the turn failed: a thread that silently drops
         // the answer it did produce is worse than one showing it broke. The
         // desk calls this whether or not anybody is still watching — which

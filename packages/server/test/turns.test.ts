@@ -395,6 +395,74 @@ describe('the turn desk', () => {
     await vi.waitFor(() => expect(prompts).toEqual(['a', 'b']))
   })
 
+  it('resumes the session its store keeps when the request names none — and only then', async () => {
+    const requests: TurnRequest[] = []
+    const driver = {
+      async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
+        requests.push(request)
+        yield RESULT
+      },
+    }
+    const desk = new TurnDesk(driver, meter())
+    const kept = async () => 'from-the-thread'
+
+    const bare = desk.admit('u/c:1')
+    if (bare.mode !== 'run') throw new Error('expected a run')
+    await bare.start({ request: { prompt: 'a', cwd: '.' }, finish: async () => {}, session: kept }).done
+
+    // A turn with no thread names its session itself, and nothing overrides it.
+    const loose = desk.admit()
+    if (loose.mode !== 'run') throw new Error('expected a run')
+    await loose.start({
+      request: { prompt: 'b', cwd: '.', sessionId: 'named' },
+      finish: async () => {},
+      session: kept,
+    }).done
+
+    expect(requests.map((request) => request.sessionId)).toEqual(['from-the-thread', 'named'])
+  })
+
+  it('reads the store at DISPATCH — after the turn ahead has written what it left', async () => {
+    // The queued message was posted while the first turn ran, when the store
+    // held no session yet. The first turn dies without stating one, but its
+    // finish still records the session — a driver that knew it from an
+    // earlier event, say. Read at arrival, the follow-up would open a fresh
+    // engine session; read at dispatch, it continues the thread.
+    const first = gate()
+    const requests: TurnRequest[] = []
+    const driver = {
+      async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
+        requests.push(request)
+        if (requests.length === 1) {
+          await first.passed
+          throw new Error('CLI died')
+        }
+        yield RESULT
+      },
+    }
+    const desk = new TurnDesk(driver, meter())
+    let stored: string | undefined
+    const spec = (prompt: string) => ({
+      request: { prompt, cwd: '.' },
+      finish: async () => {
+        stored ??= 'written-by-finish'
+      },
+      session: async () => stored,
+    })
+
+    const admission = desk.admit('u/c:1')
+    if (admission.mode !== 'run') throw new Error('expected a run')
+    const job = admission.start(spec('a'))
+    const queued = desk.admit('u/c:1')
+    if (queued.mode === 'queued') queued.enqueue(spec('b'))
+
+    first.open()
+    await job.done
+    await vi.waitFor(() => expect(requests).toHaveLength(2))
+    expect(requests[0]?.sessionId).toBeUndefined()
+    expect(requests[1]?.sessionId).toBe('written-by-finish')
+  })
+
   it('says so when a key has nothing running', async () => {
     const desk = new TurnDesk({ runTurn: async function* (): AsyncIterable<TurnEvent> {} }, meter())
     expect(desk.stop('u/c:nobody')).toBe(false)
@@ -611,6 +679,11 @@ describe('the instance introducing itself', () => {
 
     first.open()
     await job.done
+    // The merged turn's END, not the first one's: the driver is pulled after
+    // the desk has looked up where the session comes from, so reading `seen`
+    // on the first job's end was counting on a tick that is not promised.
+    // The follow-up is installed before that end announces itself.
+    await desk.activeFor('u/c:1')?.done
     const merged = seen[1]
     expect(merged?.prompt.match(/\[shell\]/g)).toHaveLength(1)
     expect(merged?.prompt).toContain('b')
