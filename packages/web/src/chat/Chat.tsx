@@ -133,7 +133,7 @@ export function Chat({
     send,
     stop,
     moveTab,
-  } = useSessions({ fetchImpl, narrow, model, view })
+  } = useSessions({ fetchImpl, narrow, model, view, t })
   /** Drag origin while a tab is being reordered. */
   const dragFrom = useRef<number | undefined>(undefined)
   /** Latest `send`, for the channel published to plugins (see the effect). */

@@ -51,8 +51,12 @@ export interface TurnsDependencies {
  *
  * What serializes turns: the conversation when there is one, the CLI session
  * otherwise. Both prefixed by the user — a key is an address, and two people
- * must never share one. A first-ever message has neither, and two of those
- * genuinely are independent turns.
+ * must never share one. A turn with no conversation is an EPHEMERAL one —
+ * the parity bar's ephemeral mode, which the shell does not offer yet: the
+ * browser holds the engine session because no thread exists to hold it,
+ * and nothing can read such a turn back, adopt it or stop it by address.
+ * The shell never falls into this path by accident any more: a thread it
+ * could not create is said, not skipped.
  *
  * Written once because two routes need the SAME answer: the one that starts a
  * turn and the one that stops it. A stop that computes its own key is a stop

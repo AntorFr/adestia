@@ -255,10 +255,14 @@ export interface ScreenView {
 
 export interface StreamOptions {
   readonly prompt: string
-  readonly sessionId?: string
   readonly model?: string
-  /** The thread this turn belongs to; absent for an unrecorded question. */
-  readonly conversationId?: string
+  /**
+   * The thread this turn belongs to. The wire allows a turn without one — an
+   * ephemeral question, which the server answers without recording — but the
+   * shell always has a thread, and its engine session is the server's to
+   * read from it.
+   */
+  readonly conversationId: string
   /** Inbox ids the server resolves to paths the agent reads. */
   readonly attachments?: readonly string[]
   /** Where the reader is, snapshotted at send time. */
@@ -274,9 +278,8 @@ function postTurn(options: StreamOptions, fetchImpl: typeof fetch): Promise<Resp
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
       prompt: options.prompt,
-      ...(options.sessionId ? { sessionId: options.sessionId } : {}),
       ...(options.model ? { model: options.model } : {}),
-      ...(options.conversationId ? { conversationId: options.conversationId } : {}),
+      conversationId: options.conversationId,
       ...(options.attachments?.length ? { attachments: options.attachments } : {}),
       ...(options.view ? { view: options.view } : {}),
     }),

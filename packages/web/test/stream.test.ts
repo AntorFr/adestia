@@ -231,7 +231,7 @@ describe('runTurn', () => {
   it('yields a growing state as the stream arrives', async () => {
     const states: TurnState[] = []
     for await (const state of runTurn(
-      { prompt: 'hi' },
+      { prompt: 'hi', conversationId: 'c1' },
       fakeFetch([
         frame({ type: 'text-delta', text: 'Bon' }),
         frame({ type: 'text-delta', text: 'jour' }),
@@ -248,7 +248,7 @@ describe('runTurn', () => {
     const whole = frame({ type: 'text-delta', text: 'coupé en deux' })
     const states: TurnState[] = []
     for await (const state of runTurn(
-      { prompt: 'hi' },
+      { prompt: 'hi', conversationId: 'c1' },
       fakeFetch([whole.slice(0, 12), whole.slice(12), frame({ type: 'result', sessionId: 's', stopped: false })]),
     )) {
       states.push(state)
@@ -268,12 +268,12 @@ describe('runTurn', () => {
     const done = [frame({ type: 'result', sessionId: 's', stopped: false })]
 
     for await (const _ of runTurn(
-      { prompt: 'hi', view: { route: '/parcours', title: 'Parcours' } },
+      { prompt: 'hi', conversationId: 'c1', view: { route: '/parcours', title: 'Parcours' } },
       capture(done),
     )) {
       /* drained */
     }
-    for await (const _ of runTurn({ prompt: 'hi' }, capture(done))) {
+    for await (const _ of runTurn({ prompt: 'hi', conversationId: 'c1' }, capture(done))) {
       /* drained */
     }
 
@@ -286,7 +286,7 @@ describe('runTurn', () => {
     // waste the one useful thing the server said.
     const states: TurnState[] = []
     for await (const state of runTurn(
-      { prompt: 'hi' },
+      { prompt: 'hi', conversationId: 'c1' },
       fakeFetch(['{"error":"too many turns running","max":1}'], { ok: false, status: 429 }),
     )) {
       states.push(state)
@@ -299,7 +299,7 @@ describe('runTurn', () => {
     // spins forever.
     const states: TurnState[] = []
     for await (const state of runTurn(
-      { prompt: 'hi' },
+      { prompt: 'hi', conversationId: 'c1' },
       fakeFetch([frame({ type: 'text-delta', text: 'half an ans' })]),
     )) {
       states.push(state)

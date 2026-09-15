@@ -211,6 +211,7 @@ const FR: Readonly<Record<string, string>> = {
   'Adestia could not start': 'Adestia n’a pas pu démarrer',
   'That app is not active on this instance.': 'Cette app n’est pas activée sur cette instance.',
   'Turn interrupted.': 'Tour interrompu.',
+  'The conversation could not be created.': 'La conversation n’a pas pu être créée.',
   'Agent credential': 'Jeton de l’agent',
   'Checking…': 'Vérification…',
   Armed: 'Armé',

@@ -752,6 +752,59 @@ describe('conversations', () => {
   })
 })
 
+describe('the unattended path', () => {
+  // The clock's note and a callback's wake leave through the same desk as a
+  // chat message: same cap, same preamble, same event log. The app used to
+  // spawn them itself, and the preamble had to be added in two places.
+  const runTurn = (app: unknown) =>
+    (app as { adestiaRunTurn(prompt: string): Promise<void> }).adestiaRunTurn
+
+  /** A driver that ships skills, so the desk introduces the shell. */
+  class SkilledDriver extends ScriptedDriver {
+    skillsPath(): string {
+      return '/skills'
+    }
+  }
+
+  it('spawns through the desk: unattended, and introduced like any turn', async () => {
+    const driver = new SkilledDriver([RESULT])
+    const app = await withStore({ driver })
+    await runTurn(app)('note du matin')
+    expect(driver.requests).toHaveLength(1)
+    expect(driver.requests[0]).toMatchObject({ unattended: true })
+    expect(driver.requests[0]!.prompt).toMatch(/^\[You are running inside Adestia/)
+    expect(driver.requests[0]!.prompt).toContain('note du matin')
+    await app.close()
+  })
+
+  it('refuses rather than queues when the house is full', async () => {
+    // Nothing will ever attach to a loose turn, so a full house is the same
+    // refusal the chat gets — and the one the clock already logs.
+    let release!: () => void
+    const held = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const driver = new ScriptedDriver([RESULT], ['usageMetrics'], held)
+    const app = await withStore({
+      driver,
+      config: { ...parseConfig('auth:\n  mode: none\n'), maxConcurrentTurns: 1 },
+    })
+    const first = runTurn(app)('one')
+    await driver.running
+    await expect(runTurn(app)('two')).rejects.toThrow('too many turns running')
+    release()
+    await first
+    await app.close()
+  })
+
+  it('rejects with what the engine said when the turn fails', async () => {
+    const driver = new ScriptedDriver([{ type: 'error', message: 'engine down', fatal: true }])
+    const app = await withStore({ driver })
+    await expect(runTurn(app)('note')).rejects.toThrow('engine down')
+    await app.close()
+  })
+})
+
 describe('arming a driver token', () => {
   const TOKEN = 'sk-ant-oat01-supersecretvaluenobodyshouldsee'
 

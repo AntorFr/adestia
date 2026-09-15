@@ -80,7 +80,6 @@ function fromStore(conversation: Conversation): Partial<TabSession> {
   return {
     messages: conversation.messages.map(toMessage),
     held: [],
-    sessionId: conversation.sessionId,
     contextTokens: conversation.messages.at(-1)?.usage?.contextTokens ?? 0,
     loaded: true,
     title: conversation.title,
@@ -111,7 +110,6 @@ export interface TabSession {
   readonly messages: readonly Message[]
   readonly live?: TurnState | undefined
   readonly held: readonly HeldMessage[]
-  readonly sessionId?: string | undefined
   readonly contextTokens: number
   /** An answer landed while the reader was elsewhere. */
   readonly unread: boolean
@@ -140,6 +138,8 @@ const EMPTY_SESSION: TabSession = {
 
 export interface SessionsOptions {
   readonly fetchImpl?: typeof fetch | undefined
+  /** The shell's translator, for the one sentence this hook says itself. */
+  readonly t: (key: string) => string
   /** A phone: the tab strip is a desktop surface, and a restore reopens one tab. */
   readonly narrow: boolean
   /** The chosen model, `''` for the CLI's own default. */
@@ -148,7 +148,7 @@ export interface SessionsOptions {
   readonly view?: ScreenView | undefined
 }
 
-export function useSessions({ fetchImpl, narrow, model, view }: SessionsOptions) {
+export function useSessions({ fetchImpl, narrow, model, view, t }: SessionsOptions) {
   /**
    * Which conversations are open as tabs, their order, and the active one —
    * persisted like a browser's tab strip, so a refresh reopens what was open.
@@ -371,20 +371,11 @@ export function useSessions({ fetchImpl, narrow, model, view }: SessionsOptions)
       : text
   }
 
-  function turnOptions(
-    sid: string | undefined,
-    text: string,
-    attachments: readonly PendingAttachment[],
-    thread?: string,
-  ) {
+  function turnOptions(text: string, attachments: readonly PendingAttachment[], thread: string) {
     return {
       prompt: text,
-      // A thread's engine session is the server's to read from the thread,
-      // and it ignores one named here; only a turn with no thread names its
-      // own.
-      ...(sid && !thread ? { sessionId: sid } : {}),
       ...(model ? { model } : {}),
-      ...(thread ? { conversationId: thread } : {}),
+      conversationId: thread,
       ...(attachments.length > 0 ? { attachments: attachments.map((a) => a.id) } : {}),
       ...(view ? { view } : {}),
     }
@@ -502,16 +493,10 @@ export function useSessions({ fetchImpl, narrow, model, view }: SessionsOptions)
     if (current.turning) {
       patchSession(tabId, { held: [...current.held, { text, attachments }] })
       const controller = new AbortController()
+      // A turning tab has a thread: a draft never turns, its thread is made
+      // before its first turn leaves.
       const start = await startTurn(
-        {
-          ...turnOptions(
-            current.sessionId,
-            text,
-            attachments,
-            tabId !== DRAFT ? tabId : undefined,
-          ),
-          signal: controller.signal,
-        },
+        { ...turnOptions(text, attachments, tabId), signal: controller.signal },
         fetchImpl,
       )
       if (start.kind === 'stream') {
@@ -540,27 +525,33 @@ export function useSessions({ fetchImpl, narrow, model, view }: SessionsOptions)
     // Named from the first message, at creation: a title set in a second
     // call is a title lost whenever that call is.
     const thread = await ensureThread(tabId, titleFrom(text))
-    const runId = thread ?? tabId
-    const start = await startTurn(
-      turnOptions(session(runId).sessionId, text, attachments, thread),
-      fetchImpl,
-    )
+    if (!thread) {
+      // No thread, no turn. The message stays drawn with the refusal under
+      // it, and the next send tries the creation again. It used to leave
+      // anyway — keyed by nothing, carrying the browser's own idea of the
+      // engine session — as a turn nothing could read back, adopt or stop.
+      patchSession(tabId, {
+        live: { ...INITIAL_TURN, running: false, error: t('The conversation could not be created.') },
+      })
+      return
+    }
+    const start = await startTurn(turnOptions(text, attachments, thread), fetchImpl)
 
     if (start.kind === 'held') {
       // Another browser tab is running this conversation's turn: adopt it,
       // and this message rides the follow-up like any held one.
-      if (thread && !session(runId).turning) {
+      if (!session(thread).turning) {
         const running = await attachTurn(thread, fetchImpl ?? fetch)
         if (running) {
-          void pump(runId, running)
+          void pump(thread, running)
           return
         }
       }
-      patchSession(runId, { live: undefined })
+      patchSession(thread, { live: undefined })
       return
     }
 
-    void pump(runId, start.states)
+    void pump(thread, start.states)
   }
   /**
    * Stops the ACTIVE tab's turn — the one whose ■ the user can see.

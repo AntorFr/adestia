@@ -1053,6 +1053,39 @@ describe('chat', () => {
     expect('sessionId' in phone.posts[1]!).toBe(false)
   })
 
+  it('says it when the conversation cannot be created, and posts no turn', async () => {
+    // The wire allows a turn without a thread — an ephemeral question — and
+    // the shell used to take it whenever the thread creation failed: a turn
+    // keyed by nothing, carrying the browser's idea of the engine session,
+    // that nothing could read back, adopt or stop. A refusal that is said is
+    // better than an answer that is lost.
+    const posts: unknown[] = []
+    const fetchImpl = ((url: string, init?: RequestInit) => {
+      const path = String(url)
+      if (path === '/api/turn') {
+        posts.push(JSON.parse(String(init?.body)))
+        return Promise.resolve({ ok: true, status: 200, body: null } as unknown as Response)
+      }
+      if (path === '/api/conversations' && init?.method === 'POST') {
+        return Promise.resolve(new Response('{"error":"disk full"}', { status: 500 }))
+      }
+      if (path === '/api/models') return Promise.resolve(new Response('{}', { status: 404 }))
+      return Promise.resolve(
+        new Response(JSON.stringify({ conversations: [] }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      )
+    }) as unknown as typeof fetch
+    render(<Chat fetchImpl={fetchImpl} />)
+    await ask('où est le tuyau ?')
+
+    expect(await screen.findByText('The conversation could not be created.')).toBeTruthy()
+    // The message stays drawn: the next send tries the creation again.
+    expect(screen.getByText('où est le tuyau ?')).toBeTruthy()
+    expect(posts).toHaveLength(0)
+  })
+
   it('keeps the fragment, and the tab, when the store cannot be reached either', async () => {
     // A phone that wakes before its network: re-reading fails too. The tab
     // must not close over it, and the error must still say something broke.
@@ -1641,11 +1674,19 @@ describe("the engine's question", () => {
     // question, and re-yields it at the very next event.
     let answered = false
     let pushMore: (() => void) | undefined
-    const fetchImpl = vi.fn((url: string, _init?: RequestInit) => {
+    const fetchImpl = vi.fn((url: string, init?: RequestInit) => {
       const path = String(url)
       if (path === '/api/permission') {
         answered = true
         return Promise.resolve(new Response('{}', { status: 200 }))
+      }
+      if (path === '/api/conversations' && init?.method === 'POST') {
+        return Promise.resolve(
+          new Response(JSON.stringify({ id: 'c1', title: 'go', updatedAt: '' }), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          }),
+        )
       }
       if (path === '/api/turn') {
         const body = new ReadableStream<Uint8Array>({
@@ -1703,6 +1744,14 @@ describe("the engine's question", () => {
       if (path === '/api/permission') {
         answered = JSON.parse(String(init?.body))
         return new Promise<Response>(() => {})
+      }
+      if (path === '/api/conversations' && init?.method === 'POST') {
+        return Promise.resolve(
+          new Response(JSON.stringify({ id: 'c1', title: 'go', updatedAt: '' }), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          }),
+        )
       }
       if (path === '/api/turn') {
         const body = new ReadableStream<Uint8Array>({
