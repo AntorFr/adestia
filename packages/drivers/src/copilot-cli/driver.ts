@@ -29,6 +29,7 @@ import type {
 } from '../contract.js'
 import { SHELL_TOOLS_SERVER_NAME, bridgeStdioConfig } from '../shell-tools-config.js'
 import { TOKEN_ENV_VAR, classifyAuthError, copilotEnv, explainAuthProblem, looksLikeToken } from './auth.js'
+import { ManagedCredential } from '../managed-credential.js'
 import { McpTokens, type RefreshStore } from '../mcp-oauth.js'
 import { newTranslationState, parseLine, translate } from './events.js'
 import { PLAINTEXT_CONSENT, startDeviceCodeLogin, type DeviceCodeLogin } from './login.js'
@@ -157,9 +158,7 @@ export class CopilotDriver implements Driver {
   readonly #tokens: McpTokens
   /** What the last session said about them. Empty until a turn has run. */
   #mcpHealth: readonly McpServerHealth[] = []
-  #credentials: Record<string, string>
-  #savedAt: string | undefined
-  #invalidReason: string | undefined
+  readonly #credential: ManagedCredential
   #pending: { login: DeviceCodeLogin; home: string } | undefined
 
   constructor(options: CopilotDriverOptions) {
@@ -176,7 +175,7 @@ export class CopilotDriver implements Driver {
     this.#mcpServers = typeof given === 'function' ? given : () => given
     this.#shellToolsTransport = options.shellToolsTransport ?? 'mcp'
     this.#tokens = new McpTokens(options.fetchImpl ?? fetch, options.refreshStore)
-    this.#credentials = { ...options.credentials }
+    this.#credential = new ManagedCredential(TOKEN_ENV_VAR, options.credentials)
   }
 
   describe(): Promise<DriverDescriptor> {
@@ -202,7 +201,7 @@ export class CopilotDriver implements Driver {
   }
 
   env(): Promise<Readonly<Record<string, string>>> {
-    return Promise.resolve({ ...this.#credentials })
+    return Promise.resolve(this.#credential.values())
   }
 
   listModels(): Promise<readonly ModelInfo[]> {
@@ -233,28 +232,11 @@ export class CopilotDriver implements Driver {
   }
 
   setCredentials(credentials: Readonly<Record<string, string>>, savedAt?: string | undefined): void {
-    this.#credentials = { ...credentials }
-    this.#savedAt = savedAt
-    this.#invalidReason = undefined
+    this.#credential.set(credentials, savedAt)
   }
 
   authStatus(): Promise<AuthStatus> {
-    if (this.#invalidReason) {
-      return Promise.resolve({
-        state: 'invalid',
-        source: 'managed',
-        reason: this.#invalidReason,
-        ...(this.#savedAt ? { savedAt: this.#savedAt } : {}),
-      })
-    }
-    if (this.#credentials[TOKEN_ENV_VAR]) {
-      return Promise.resolve({
-        state: 'armed',
-        source: 'managed',
-        ...(this.#savedAt ? { savedAt: this.#savedAt } : {}),
-      })
-    }
-    return Promise.resolve({ state: 'absent', source: 'cli-native' })
+    return Promise.resolve(this.#credential.status())
   }
 
   async beginAuth(): Promise<AuthPrompt> {
@@ -486,7 +468,7 @@ export class CopilotDriver implements Driver {
 
     const child = this.#spawn(this.#command, args, {
       cwd: request.cwd,
-      env: copilotEnv({ ...this.#baseEnv, ...this.#credentials, ...shellToolsEnv }, this.#home) as NodeJS.ProcessEnv,
+      env: copilotEnv({ ...this.#baseEnv, ...this.#credential.values(), ...shellToolsEnv }, this.#home) as NodeJS.ProcessEnv,
       stdio: ['ignore', 'pipe', 'pipe'],
     })
 
@@ -554,8 +536,9 @@ export class CopilotDriver implements Driver {
       if (state.stopped && !answered) {
         queue.push({ type: 'result', sessionId: state.sessionId, stopped: true })
       } else if (problem) {
-        this.#invalidReason = explainAuthProblem(problem)
-        queue.push({ type: 'error', message: this.#invalidReason, fatal: true })
+        const reason = explainAuthProblem(problem)
+        this.#credential.invalidate(reason)
+        queue.push({ type: 'error', message: reason, fatal: true })
       } else if (code !== 0 && !answered) {
         queue.push({
           type: 'error',

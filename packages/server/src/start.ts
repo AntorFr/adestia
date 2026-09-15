@@ -14,6 +14,7 @@ import { fileURLToPath } from 'node:url'
 
 import {
   AskDesk,
+  type AuthManagement,
   ClaudeCodeDriver,
   CodexDriver,
   CopilotDriver,
@@ -441,10 +442,7 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
   // has to re-arm every deploy.
   const secrets = new SecretStore(dataDir)
   const stored = await secrets.read(config.driver.id)
-  const armable = driver as Driver & {
-    credentialVar?: string
-    setCredentials?(credentials: Record<string, string>, savedAt?: string): void
-  }
+  const armable = driver as Driver & AuthManagement
   if (stored && armable.credentialVar && armable.setCredentials) {
     armable.setCredentials({ [armable.credentialVar]: stored.value }, stored.savedAt)
     log(`driver credential loaded (armed ${stored.savedAt})`)

@@ -16,8 +16,11 @@ import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest }
 import type {
   AskAnswer,
   AskDesk,
+  AuthManagement,
   Driver,
   DriverDescriptor,
+  McpStatus,
+  ModelSelection,
   ShellToolsHandle,
   TurnEvent,
 } from '@antorfr/adestia-drivers'
@@ -114,17 +117,6 @@ export interface AppDependencies {
    * contract are reported there, with the rest of the extension problems.
    */
   readonly webManifest?: WebManifest | undefined
-}
-
-/** The optional slice of the driver contract that arms credentials. */
-interface AuthCapableDriver {
-  authStatus(): Promise<unknown>
-  beginAuth(): Promise<{ sessionId: string; [key: string]: unknown }>
-  completeAuth(sessionId: string, input: string): Promise<{ secret: string }>
-  cancelAuth(sessionId: string): Promise<void>
-  setCredentials?(credentials: Record<string, string>, savedAt?: string): void
-  /** The environment variable this driver's CLI reads its credential from. */
-  readonly credentialVar?: string
 }
 
 /** The identity every authenticated route can count on. */
@@ -375,8 +367,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
       await reply.code(404).send({ error: 'this driver does not enumerate models' })
       return reply
     }
-    const listModels = (driver as Driver & { listModels(): Promise<unknown> }).listModels
-    return { models: await listModels.call(driver) }
+    return { models: await (driver as Driver & ModelSelection).listModels() }
   })
 
   /**
@@ -459,8 +450,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
       await reply.code(404).send({ error: 'this driver does not report MCP health' })
       return reply
     }
-    const mcpStatus = (driver as Driver & { mcpStatus(): Promise<unknown> }).mcpStatus
-    return { servers: await mcpStatus.call(driver) }
+    return { servers: await (driver as Driver & McpStatus).mcpStatus() }
   })
 
   /**
@@ -857,37 +847,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
         // is the whole point of the desk.
         finish: async (outcome) => {
           if (!conversationId) return
-          // ONE MESSAGE PER PART. An agent that answers, goes back to its
-          // tools and answers again said two things, and the thread records
-          // two — otherwise a reload would glue back together what the live
-          // view had just drawn apart. A turn that produced nothing still
-          // leaves a line: it is what carries the interruption and the error.
-          const parts = outcome.parts.filter(
-            (part) => part.text !== '' || part.tools.length > 0,
-          )
-          const written = parts.length > 0 ? parts : [{ tools: [], text: '' }]
-          for (const [index, part] of written.entries()) {
-            // How the TURN ended belongs to its last word only; the usage is
-            // the whole turn's, and hangs there too.
-            const last = index === written.length - 1
-            await conversations
-              .append(userId, conversationId, {
-                id: randomUUID(),
-                role: 'agent',
-                text: part.text,
-                at: new Date().toISOString(),
-                ...(part.tools.length > 0 ? { tools: [...part.tools] } : {}),
-                ...(last && outcome.stopped ? { stopped: outcome.stopped } : {}),
-                ...(last && outcome.failure ? { error: outcome.failure } : {}),
-                ...(last && outcome.usage ? { usage: outcome.usage } : {}),
-              })
-              .catch(() => undefined)
-          }
-          if (outcome.sessionId) {
-            await conversations
-              .setSession(userId, conversationId, outcome.sessionId)
-              .catch(() => undefined)
-          }
+          await conversations.recordOutcome(userId, conversationId, outcome)
           // Last, after this turn's own appends: the token dies with the
           // turn, and a rename during it compacts the thread here — under
           // the desk's serialization, so the rewrite races nothing.
@@ -1069,7 +1029,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   )
 
   const canArm = descriptor.capabilities.includes('authManagement')
-  const authDriver = driver as unknown as AuthCapableDriver
+  const authDriver = driver as Driver & AuthManagement
 
   app.get('/api/auth/driver', async (_request, reply) => {
     if (!canArm) {
@@ -1132,7 +1092,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     const sessionId = request.body?.sessionId
     if (typeof sessionId === 'string') {
       arming.end(sessionId)
-      await authDriver.cancelAuth?.(sessionId).catch(() => undefined)
+      await authDriver.cancelAuth(sessionId).catch(() => undefined)
     }
     return { cancelled: true }
   })

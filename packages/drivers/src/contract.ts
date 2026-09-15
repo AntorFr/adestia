@@ -469,6 +469,16 @@ export interface AuthManagement {
   /** Returns the captured secret for the CORE to persist — never the driver. */
   completeAuth(sessionId: string, input: string): Promise<{ secret: string }>
   cancelAuth(sessionId: string): Promise<void>
+  /**
+   * The environment variable the engine reads the stored secret from — the
+   * name the core files the secret under when it hands it back.
+   */
+  readonly credentialVar?: string
+  /**
+   * Called by the core after it loads, stores or clears the secret, with
+   * everything the driver should now hold: an empty set means cleared.
+   */
+  setCredentials?(credentials: Readonly<Record<string, string>>, savedAt?: string): void
 }
 
 export interface ModelSelection {
