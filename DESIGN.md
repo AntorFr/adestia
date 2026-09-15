@@ -385,10 +385,10 @@ demand or after a dead key. The card's trigger is the STATE, not a failure
 (corrected 2026-09-07): it shipped as "a tool of that server failed", which
 could never fire — a disconnected server is OMITTED from the turn, so no
 tool of it exists to fail, and production proved it within the day. The card
-now rises on a thread the person is actually talking in (the agent answered,
+now rises on a conversation the person is actually talking in (the agent answered,
 or is answering) while a sign-in server has no key for them, sits under the
 very reply where the agent says it cannot act, and carries a dismissal (per
-browser) so a thread about something else owes nobody a nag; connecting
+browser) so a conversation about something else owes nobody a nag; connecting
 clears it everywhere. Per person exactly like the rebound: each turn is
 handed tokens minted from ITS caller's keys (`TurnRequest.serverTokens`), two
 people reach the same server as two different people, and a driver must
@@ -417,19 +417,19 @@ carried died with the process too, and replaying it behind the caller's back
 would be worse than losing it. A `task_id` names the conversation the job ran
 in: on disk, it survives restarts, and passing it back to `ask` continues the
 same conversation — the predecessor's resume contract, rebuilt on this
-product's own conversation machinery (same turn desk, same thread store, same
+product's own conversation machinery (same turn desk, same conversation store, same
 session line).
 
-**The channel separation is the authorization boundary.** Delegated threads
+**The channel separation is the authorization boundary.** Delegated conversations
 belong to CALLERS (agent names from the `x-adestia-caller` header, validated
 against the agent-name grammar), in their own store under
 `dataDir/delegations` — plain directory names, enumerable, because the
 delegations screen must list callers nobody logged in as. A `task_id`
 resolves only inside its channel: an agent can never resume a person's chat
-thread, and the chat routes can never open a delegation. Behaviours that
-differ — unattended, the delegation frame, one-job-per-thread instead of the
+conversation, and the chat routes can never open a delegation. Behaviours that
+differ — unattended, the delegation frame, one-job-per-conversation instead of the
 chat's queue-and-merge — are properties of the channel, not conditionals on a
-shared path. The thread stores the RAW request; the frame is applied at the
+shared path. The conversation stores the RAW request; the frame is applied at the
 driver boundary only (fuel, not transcript).
 
 **The callback is a door of its own, and it grants nothing.** When this
@@ -450,7 +450,7 @@ door per connection (`x-adestia-callback-url` — an URL, parsed and stripped
 of schemes and credentials, never a secret); no peer table exists anywhere,
 so a fourth agent joins by editing only its own config.
 
-**The person gets a window, not a desk.** The channel's threads are readable
+**The person gets a window, not a desk.** The channel's conversations are readable
 in the PWA (Settings → Delegations, beside "MCP servers": the agents this
 instance reaches, then the agents that reach it), read-only — typing into one
 would inject a turn into a conversation its owning agent believes it holds
@@ -543,7 +543,7 @@ of an object mints its id** — server-created records get server UUIDs,
 agent-authored content uses the tool or the domain's own scheme.
 
 **Stakes are declared per tool.** Both current tools are benign — a rename is
-reversible by construction (append-only meta lines; the thread compacts when
+reversible by construction (append-only meta lines; the conversation compacts when
 the turn settles). The registry's shape forces the question at registration;
 a destructive tool is where the posture and confirmation debate reopens, and
 not before.
@@ -623,7 +623,7 @@ The v1 chat must be **at least** agent-gw's PWA, which sets the bar:
 - **Tool trace ◇:** grouped under the PART of the turn it belongs to, name +
   short target (≤78 chars, never the full input), opt-in per instance. A turn
   is not one answer: an agent that speaks, goes back to its tools and speaks
-  again said two things, and the thread draws and stores two — a tool called
+  again said two things, and the conversation draws and stores two — a tool called
   after a word opens the next message, so a trace always hangs above the
   answer it produced rather than above one it had nothing to do with.
 - **Activity:** busy indicator with skin hook — up for as long as the turn
@@ -634,35 +634,35 @@ The v1 chat must be **at least** agent-gw's PWA, which sets the bar:
   and adoption are SERVER-owned (the turn desk, `server/src/turns.ts`): a turn
   runs detached from its HTTP request and an SSE response is merely a
   subscriber, so a closed tab kills a subscription, never a turn. A message
-  posted mid-turn is answered `202 held`, written into the thread on
+  posted mid-turn is answered `202 held`, written into the conversation on
   acceptance — the predecessor kept its queue in browser RAM, where a reload
   erased it — and dispatched as ONE merged turn when the running one settles;
   `GET /api/turn/attach` replays the running turn's coalesced event log then
   follows live, through the same reducer, so an adopted turn is
-  indistinguishable from one never left. The engine session a thread resumes
-  is the THREAD's: the desk reads it from the thread's file when it
+  indistinguishable from one never left. The engine session a conversation resumes
+  is the CONVERSATION's: the desk reads it from the conversation's file when it
   dispatches the turn, and a session the browser names is ignored. The browser
   used to carry it, and a phone that slept through a first turn woke to a dead
   stream without it — the next message opened a fresh engine session whose id
-  then replaced the thread's own, and the thread forgot its first turn for
+  then replaced the conversation's own, and the conversation forgot its first turn for
   good (seen on a real instance, 2026-09-14). The same phone showed the other
   half: the page woke to a lone tool call over a network error while the
-  answer sat in the thread. A stream that ends before its turn's result is
-  therefore never filed as the turn — the shell reads the thread back from the
+  answer sat in the conversation. A stream that ends before its turn's result is
+  therefore never filed as the turn — the shell reads the conversation back from the
   store, which holds whatever finished, and the fragment stands with its error
   only when the store cannot be reached either. A queue is NOT re-dispatched across
-  a server restart, deliberately: the texts are already in the thread, and a
+  a server restart, deliberately: the texts are already in the conversation, and a
   reboot firing week-old prompts unprompted would be worse than the gap.
 - **Tabs (beyond the bar):** parallel conversations as a browser-like tab
-  strip on desktop — each tab its own session (thread, live turn, held
+  strip on desktop — each tab its own state (conversation, live turn, held
   bubbles, context weight), so a running turn's dots and tool trace belong to
-  ONE tab instead of bleeding into whichever thread is on screen. A status
+  ONE tab instead of bleeding into whichever conversation is on screen. A status
   dot carries one vocabulary everywhere (`dotFor`): waiting on a person >
   working > finished-unread > idle. Closing a tab never touches the
   conversation (the list keeps it; archiving is the other, separate exit);
   the strip is persisted like a browser's — order, membership, active tab —
   and restored on refresh, tabs re-attaching to their running turns via the
-  desk. Drag to reorder. On a phone there is no strip: the thread list IS the
+  desk. Drag to reorder. On a phone there is no strip: the conversation list IS the
   navigation and wears the same dots (client sessions where this browser
   watches, the list's server-computed `turn` field and stored read-marks for
   everything else), and a reload reopens only the last active conversation.
@@ -689,10 +689,10 @@ And **exceed it** — the audit found what the predecessor never had:
    answers the user stares at a typing indicator). Deficit #1.
 2. **Rich transcript replay:** tool trace, attachment thumbnails and interruption
    markers survive reload (today `/api/history` replays text only).
-3. **Interruptions materialized** in the thread (the `stopped` flag exists and is
+3. **Interruptions materialized** in the conversation (the `stopped` flag exists and is
    dropped today).
-4. **Concurrent conversations** instead of a 409-and-retry single thread.
-5. **Incremental thread rendering** (no full re-render on resync; virtualize long
+4. **Concurrent conversations** instead of a 409-and-retry single conversation.
+5. **Incremental conversation rendering** (no full re-render on resync; virtualize long
    transcripts) and per-message actions (copy, re-ask).
 6. **Split-view drag on Pointer Events** + keyboard access + double-click reset
    (today: mouse-only, nothing on tablet).
@@ -709,7 +709,7 @@ and its breadcrumb only, never what the page renders: a page shows content the
 agent did not write, and pouring it in would strip the "untrusted" label the
 attachment framing exists to keep. It is a hint and says so — the question
 comes first. Nothing is sent from the landing canvas or from a folded shell
-showing the chat, and the note is applied server-side so the thread stores the
+showing the chat, and the note is applied server-side so the conversation stores the
 prompt as typed: a reload replays what the person wrote, never the framing.
 
 Kept as-is from the predecessor: the theme contract — *a skin is a declaration of
@@ -816,6 +816,24 @@ runtime; nothing is scanned by filename convention at build time.
   owns it, and the shell stopped spelling out `workbook` — one plugin known by
   name, and a new line of shell code owed to every app that ever wanted to be
   a target.
+- **A folder can DECLARE its app, and a declaration beats a name** (`app:`,
+  decided 2026-09-10 in a chantier's ledger, written here 2026-09-15). `absorbs`
+  matches a NAME wherever it sits, which serves a plugin that owns a word —
+  `todo`, `voyages` — and cannot serve one whose root the PERSON names: a
+  project tracker's folder is `chantiers` here and `projets` next door, and no
+  manifest can know that. So the folder says it: `app: <id>` in the
+  frontmatter of its index page, the one place that travels with it across a
+  `mv`. Read on a TOP-LEVEL folder only, and hereditary — everything beneath
+  is the app's. Written deeper, or naming a plugin this instance does not run,
+  it is reported (`strayApp`) and never obeyed: an `app:` that silently does
+  nothing is an hour spent wondering why, and the shelf is what the reader
+  had all along. The ladder on opening a folder is therefore: declared by
+  `app:`, else claimed by a plugin's `absorbs` (the most specific claim wins,
+  as with routes), else the folder's single page of a type the owner claims,
+  else the shelf. And a declaration cannot over-claim, which is the point:
+  `holds` exists to let a plugin refuse a NAMESAKE its `absorbs` matched by
+  accident, so a declared folder never needs it. `holds` stays, for the
+  folders that are still claimed by name; it is not read on a declared one.
 - **One breadcrumb, and the plugin finishes the sentence.** The shell can name
   an app and nothing under it — a trip's title lives in a JSON file it does not
   read — so `#/voyages` and `#/voyages/baden-2026` drew the same header. Both
@@ -1612,13 +1630,13 @@ composing one.
   costs ~300 MB of RSS, and no browser control can raise a container's memory
   limit, so a cap raised past what the deployment provides trades the polite
   429 for an OOM kill. The screen must say so, next to the field.
-- **A restart that forgets looks like a thread that remembers.** Seen on a
+- **A restart that forgets looks like a conversation that remembers.** Seen on a
   real instance: the pod restarts, the shell replays the conversation
   faithfully from its own store, and the screen shows nothing happened — but
   the engine session the next turn would resume died with the container, so
   "pick up where we left off" answers from nothing. History shown and context
   held no longer agree, and the interface sides with the lie. Two directions,
-  not exclusive: make the discontinuity VISIBLE (the thread marks where the
+  not exclusive: make the discontinuity VISIBLE (the conversation marks where the
   engine's memory ends, the way it already marks other events in the stream),
   and make it RARER (the CLI's session state could live on the persistent
   volume with the workspace, or a failed resume could be detected and the
@@ -1689,7 +1707,7 @@ so first):** the card shipped watching for a failed tool of a disconnected
 server — but a disconnected `signIn` server is omitted from the turn, so no
 such tool exists to fail; the bench had "proved" the card by seeding a
 transcript no real turn can write. Corrected to the state the shell already
-knows: a thread the person is talking in + a server with no key for them,
+knows: a conversation the person is talking in + a server with no key for them,
 dismissible per browser, cleared everywhere by connecting. The lesson worth
 the log line: a demand-driven trigger must name an event that CAN occur
 under the design's own rules — the omission that makes "not connected"
@@ -1893,7 +1911,7 @@ they stand, and there is no plugin folder to anchor them to.
 
 **2026-08-31 (a result belongs to a CALL, not to a name):** the transcript
 promised the tool trace back on reload, and gave it back with every call drawn
-as still running — for months, in every thread. Three things had to line up.
+as still running — for months, in every conversation. Three things had to line up.
 The Claude Code driver read a tool's name off the `tool_result` block, which
 carries none (only `tool_use_id`), so it reported the literal "tool"; the
 server and the shell then looked for a pending call by NAME and found nothing;
@@ -1948,7 +1966,7 @@ by the engine itself (`title`, `decisionReason` — no more consent to a string
 truncated at 78 characters). The third answer is **"always"**, and it returns the
 engine's OWN `suggestions` untouched: the CLI writes the rule into its own file
 in the workspace (`.claude/settings.local.json`) and reads it back on every
-later turn — a different thread, a different day, a restarted pod. So the
+later turn — a different conversation, a different day, a restarted pod. So the
 durable allowlist is the ENGINE's, in a file a person can open, read and edit,
 and Adestia maintains no list at all. That file is also the honest answer to
 "what is my agent allowed to do", which is the question that started this whole
@@ -2117,7 +2135,7 @@ joined the open page's route and breadcrumb to every message, and Adestia sent
 nothing. Ported with its three boundaries intact (route and trail only, hint
 not topic, snapshot at send time), and with one improvement the predecessor
 needed a stripper for: the note is applied where the driver is called rather
-than in the browser, so the thread stores the raw prompt and a reload has
+than in the browser, so the conversation stores the raw prompt and a reload has
 nothing to hide. Hostile input is treated as such — a hash is steerable by any
 link somebody is talked into clicking, so route and title arrive flattened to
 one printable line and capped, and a newline in a route cannot forge a line of
@@ -2589,3 +2607,44 @@ three a frontmatter reader, two a bounded cache — and they may import nothing
 from the shell but React, which is the contract that keeps a plugin a folder
 one drops in. A kit served by the shell would have removed five lines each and
 added a dependency every plugin author has to know; the copies stay.
+
+**2026-09-15 (the code is realigned with the concepts as this document states
+them today, not as they stood when each file was written):** a review of the
+whole repository (v0.58.0) had moved code without changing it, and the
+question that followed was whether the logic still matched the design. Read
+side by side, the glossary disagreed in four places, each the residue of a
+decision taken here and applied to one file only.
+
+*The shell is a projection of the store.* The chat re-filed a finished turn's
+parts into messages in the browser, promoted held bubbles by hand, and kept
+three fallbacks for the store — while the rule above (2026-09-14) already said
+the store holds whatever finished. One rule now: after every turn, finished
+or lost, the conversation is read back from the store and the shell re-attaches
+if another turn is running; the fragment stands, with its error, only when the
+store cannot be reached.
+
+*There is one spawn site.* The server's header promised it while the clock and
+a callback's wake called the driver themselves, which is how the shell's
+preamble had to be added twice. They are loose jobs at the desk now — same
+cap, same preamble, same event log — and a full house refuses rather than
+queues. The turn WITHOUT a conversation stays on the wire, named for what it
+is: the ephemeral question the parity bar lists and the shell does not offer
+yet. What went was the shell falling into it by accident: when a conversation
+could not be created, the tab used to leave anyway, keyed by nothing and
+carrying the browser's own idea of the engine session, as a turn nothing could
+read back, adopt or stop. It says so under the message instead, and never
+names an engine session — that is the conversation's, read by the desk.
+
+*One word per concept.* "Thread" was this document's word, "conversation" the
+API's, and the code used both; "session" named five things. Everything
+Adestia's is a conversation, here included; "session" is the engine's
+resumable session and nothing else — with one named exception, the sign-in
+session, whose cookie and config key are a contract with browsers and
+operators, and the engines' own words (Codex's thread, the CLI's session),
+which are theirs.
+
+*And the ledger caught up.* The `app:` rule above had been validated in a
+chantier's question file and coded, but not written here; it is now. What is
+deliberately NOT taken up: `collections` drawn by the core (2026-09-01) is a
+product chantier of its own, and the plugins — plain JS, no compiler to hold
+a rename — are out of this pass.

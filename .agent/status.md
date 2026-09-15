@@ -1,14 +1,18 @@
 # Status — Adestia
 > MàJ : 2026-09-15
 
-**État :** chantier `refonte` (worktree du même nom) — une passe de revue sur
-tout le dépôt : code mort retiré et gardé par le compilateur, doublons
-mutualisés (persistance d'un tour, frontmatter, jeton des pilotes, aides du
-banc), doc remise d'aplomb, serveur et web découpés en modules sans changer
-une ligne de corps, outillage rendu fiable en worktree (typecheck, tests et
-build lisent les sources d'à côté). Typecheck, lint, build et 2125 tests
-verts ; banc visuel passé sur les 35 scénarios (34 verts, voir ci-dessous). L'état reconstruit qui a servi de base est dans
-`mission-refonte.md`, les questions en suspens dans `questions-refonte.md`.
+**État :** chantier `concepts` (worktree du même nom) — le code rapproché de
+ce que `DESIGN.md` dit aujourd'hui, en quatre pas : le chat relit le fil au
+magasin après tout tour au lieu de le classer lui-même ; l'horloge et le
+rappel MCP passent par le bureau des tours (un seul point de lancement), le
+tour sans fil est nommé (question éphémère) et le web ne l'emprunte plus par
+accident ; un seul mot pour le fil (« conversation »), « session » réservé à
+la session moteur ; la règle `app:` du 10/09 et le récit du chantier écrits
+dans `DESIGN.md`. Typecheck, lint, 1568 + 566 tests verts ; banc visuel :
+les 5 scénarios du chat relancés et regardés après chaque pas, la passe
+complète (34 scénarios) lancée en fin de chantier. Le glossaire qui a servi
+de mesure est dans `mission-concepts.md`, les décisions prises par défaut
+dans `questions-concepts.md` (chacune réversible d'un mot).
 
 **Prochaines étapes :**
 - [ ] (décidé le 15/09 : PAS de kit d'aides porté par le cœur ; les plugins
@@ -26,7 +30,9 @@ verts ; banc visuel passé sur les 35 scénarios (34 verts, voir ci-dessous). L'
 - [ ] Le scénario de banc `journal-blocs` attend un bouton « Enregistrer »
       que l'éditeur n'a plus depuis le 10/09 (auto-enregistrement) : à
       réécrire pour la nouvelle mécanique, il échoue déjà sur `main`.
-- [x] Fusionné dans `main` le 15/09, tag `v0.58.0`.
+- [ ] `collections` rendu par le cœur (conception du 01/09) : chantier
+      produit à part, laissé hors du chantier `concepts` par défaut.
+- [x] Refonte structurelle fusionnée dans `main` le 15/09, tag `v0.58.0`.
 
 **Restes ouverts des chantiers passés** (relevés au dégraissage de ce fichier,
 non revérifiés un par un ; l'historique complet est dans git) :
