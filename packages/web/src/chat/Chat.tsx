@@ -222,7 +222,10 @@ export function Chat({
             belongs to the conversation, not to the message being typed. */}
         <ModelPicker models={models} model={model} onModel={chooseModel} t={t} />
         <span className="adestia-chat__spacer" />
-        <ContextPill tokens={active.contextTokens} {...(contextWindow ? { windowSize: contextWindow } : {})} />
+        <ContextPill
+          tokens={active.live?.contextTokens ?? active.contextTokens}
+          {...(contextWindow ? { windowSize: contextWindow } : {})}
+        />
         <button
           type="button"
           className="adestia-ib"
@@ -392,6 +395,15 @@ export function Chat({
                       </span>
                     )}
                   </div>
+                )}
+                {/* A fragment that stands — the stream ended and the thread
+                    could not be read back — says the end it saw, the way a
+                    filed message would. */}
+                {last && !active.live!.running && active.live!.stopped && (
+                  <p className="adestia-bubble__note">{t('Turn interrupted.')}</p>
+                )}
+                {last && !active.live!.running && active.live!.error && (
+                  <p className="adestia-bubble__error">{active.live!.error}</p>
                 )}
               </article>
             )

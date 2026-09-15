@@ -424,27 +424,18 @@ export function useSessions({ fetchImpl, narrow, model, view }: SessionsOptions)
     return threadCreation.current
   }
 
-  /** What was held becomes ordinary user messages: their turn has begun, and
-      this is the shape the store recorded them in — one each, never merged. */
-  function promoteHeld(tabId: string): void {
-    patchSession(tabId, (current) => ({
-      held: [],
-      messages:
-        current.held.length === 0
-          ? current.messages
-          : [
-              ...current.messages,
-              ...current.held.map((message, index) => ({
-                id: `u${current.messages.length + index}`,
-                role: 'user' as const,
-                text: stamped(message.text, message.attachments),
-              })),
-            ],
-    }))
-  }
-
   /**
-   * Follows one turn to its end, then looks for the next.
+   * Follows one turn to its end, reads the thread back, then looks for the
+   * next.
+   *
+   * The store is the truth about how a turn ended: the desk writes the
+   * outcome BEFORE it announces the end, whoever was watching. So whether the
+   * stream closed on its result or died under a sleeping phone, the same
+   * thing happens next — the thread is read back and what was drawn live is
+   * replaced by what was filed. This used to refile the live parts as
+   * messages itself, a second copy of the server's own rule that drifted
+   * from it; only when the store cannot be reached does the fragment stand,
+   * still, with the end it saw drawn on it, until the next read.
    *
    * The follow-up attach is the other half of the server's queue: when the
    * desk dispatches what was held as a merged turn, it is installed BEFORE
@@ -453,96 +444,35 @@ export function useSessions({ fetchImpl, narrow, model, view }: SessionsOptions)
    */
   async function consume(tabId: string, states: AsyncGenerator<TurnState>): Promise<void> {
     let last: TurnState | undefined
-    let lost = false
     try {
       for await (const state of states) {
         last = state
         patchSession(tabId, { live: state })
       }
-      lost = last?.lost === true
     } catch (error) {
       // A fetch that REJECTS — network down, server gone — must land as the
       // error it is, not leave the dots pulsing forever.
-      last = { ...(last ?? INITIAL_TURN), running: false, error: (error as Error).message }
-      lost = true
+      last = { ...(last ?? INITIAL_TURN), running: false, lost: true, error: (error as Error).message }
     }
 
-    // The stream died before the turn did. Seen on a real instance: a phone
-    // slept through a thread's first turn, woke to "Load failed" under a lone
-    // tool call, and the answer — finished at the desk in the meantime — was
-    // nowhere on screen. The store holds everything that finished, so it is
-    // read back instead of filing the fragment; the fragment stands, error and
-    // all, only when the store cannot be reached either.
-    const recovered = lost && tabId !== DRAFT && (await reread(tabId))
-
-    if (recovered) {
-      patchSession(tabId, {
-        live: undefined,
-        stopping: false,
-        unread: tabId !== activeRef.current,
-      })
-      if (tabId === activeRef.current) read(tabId)
-    } else if (last) {
-      const settled = last
-      // What was drawn as several bubbles is FILED as several messages. The
-      // alternative — one record holding the whole turn — would have made a
-      // reload merge back what the live view had just separated, and the
-      // thread on disk is the version that outlives the tab.
-      const settledParts = settled.parts.filter(
-        (part) => part.text !== '' || part.tools.length > 0,
-      )
-      patchSession(tabId, (current) => ({
-        live: undefined,
-        stopping: false,
-        sessionId: settled.sessionId ?? current.sessionId,
-        ...(settled.contextTokens !== undefined ? { contextTokens: settled.contextTokens } : {}),
-        messages: [
-          ...current.messages,
-          // A turn that produced nothing still leaves a message: it is what
-          // carries the interruption marker and the error.
-          ...(settledParts.length > 0 ? settledParts : [{ tools: [], text: '' }]).map(
-            (part, index, parts) => ({
-              id: `a${current.messages.length + index}`,
-              role: 'agent' as const,
-              text: part.text,
-              tools: part.tools,
-              // How the TURN ended belongs to its last word, not to each of
-              // them: an interruption marker under every part would read as
-              // three interruptions.
-              ...(index === parts.length - 1
-                ? { stopped: settled.stopped, error: settled.error }
-                : {}),
-            }),
-          ),
-        ],
-        // The dot that says "finished, and you have not seen it": only when
-        // the answer landed in a tab the reader was not looking at.
-        unread: tabId !== activeRef.current,
-      }))
-      if (tabId === activeRef.current) read(tabId)
-    } else {
-      patchSession(tabId, { live: undefined, stopping: false })
-    }
+    const filed = tabId !== DRAFT && (await reread(tabId))
+    patchSession(tabId, {
+      live: filed || !last ? undefined : { ...last, running: false },
+      stopping: false,
+      // The dot that says "finished, and you have not seen it": only when
+      // the answer landed in a tab the reader was not looking at.
+      unread: tabId !== activeRef.current,
+    })
+    if (tabId === activeRef.current) read(tabId)
 
     if (tabId === DRAFT) return
     const follow = await attachTurn(tabId, fetchImpl ?? fetch)
     if (follow) {
-      promoteHeld(tabId)
       // A stop applies to the turn it was pressed on. The message waiting
       // behind it is the next instruction, and stopping THAT one is another
       // press — so the button comes back.
       patchSession(tabId, { live: INITIAL_TURN, stopping: false })
       return consume(tabId, follow)
-    }
-
-    if (session(tabId).held.length > 0) {
-      // Held, and nothing to attach to: the merged turn ran to completion
-      // faster than this re-attach. The store has the whole exchange — read
-      // it back rather than guess at it. This used to go through `adopt`,
-      // which declines while a pump is turning — and this IS the pump, so the
-      // read never happened and the merged answer stayed off screen until a
-      // reload. Unreadable, the tab is left for the next adoption to fill.
-      if (!(await reread(tabId))) patchSession(tabId, { held: [], loaded: false })
     }
   }
 

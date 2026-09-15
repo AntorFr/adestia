@@ -819,6 +819,8 @@ describe('chat', () => {
     let turn: ReadableStreamDefaultController<Uint8Array> | undefined
     let attach: ReadableStreamDefaultController<Uint8Array> | undefined
     let attachCalls = 0
+    /** Set once the merged turn has answered: the store then holds its answer. */
+    let merged = false
 
     const fetchImpl = vi.fn((url: string, init?: RequestInit) => {
       const path = String(url)
@@ -848,6 +850,22 @@ describe('chat', () => {
         }
         // The conversation's turn is running: held, and already stored.
         return Promise.resolve({ ok: true, status: 202, body: null } as unknown as Response)
+      }
+      if (path === '/api/conversations/c1') {
+        // What the store holds once the first turn settled: the held texts
+        // were written on acceptance, before the answer that closed it.
+        const stored = {
+          id: 'c1',
+          title: 'premier',
+          updatedAt: '',
+          messages: [
+            { id: 'm1', role: 'user', text: 'premier', at: '' },
+            ...posts.slice(1).map((post, index) => ({ id: `h${index}`, role: 'user', text: post.prompt, at: '' })),
+            { id: 'a1', role: 'agent', text: '', at: '' },
+            ...(merged ? [{ id: 'a2', role: 'agent', text: 'reçu cinq sur cinq', at: '' }] : []),
+          ],
+        }
+        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(stored) } as unknown as Response)
       }
       return Promise.resolve(
         new Response(
@@ -888,8 +906,8 @@ describe('chat', () => {
     })
     await waitFor(() => expect(attachCalls).toBe(1))
 
-    // The held bubbles became ordinary user messages — one each, the shape
-    // the store recorded — and the merged turn streams its answer.
+    // The held bubbles gave way to the store's own messages — one each, read
+    // back rather than promoted by hand — and the merged turn streams its answer.
     await waitFor(() => expect(container.querySelectorAll('.adestia-bubble--held')).toHaveLength(0))
     expect(screen.getByText('deuxième')).toBeTruthy()
     expect(screen.getByText('troisième')).toBeTruthy()
@@ -897,6 +915,8 @@ describe('chat', () => {
     await act(async () => {
       attach!.enqueue(encoder.encode(frame({ type: 'text-delta', text: 'reçu cinq sur cinq' })))
       attach!.enqueue(encoder.encode(frame({ type: 'result', sessionId: 's1', stopped: false })))
+      // Filed before the end is announced, like the desk does.
+      merged = true
       attach!.close()
     })
     await waitFor(() => expect(screen.getByText('reçu cinq sur cinq')).toBeTruthy())
@@ -1124,6 +1144,8 @@ describe('tabs', () => {
   const tabsFetch = (options: {
     metas?: readonly unknown[]
     onTurn?: (body: { prompt: string }) => Response | undefined
+    /** What the desk filed into c1 since the store was first read: the chat reads it back after a turn. */
+    filed?: { current: readonly { role: string; text: string }[] }
   } = {}) =>
     vi.fn((url: string, init?: RequestInit) => {
       const path = String(url)
@@ -1156,6 +1178,11 @@ describe('tabs', () => {
               messages: [
                 { id: 'm1', role: 'user', text: `question ${conversation}`, at: '' },
                 { id: 'm2', role: 'agent', text: `réponse ${conversation}`, at: '' },
+                ...(conversation === 'c1' ? (options.filed?.current ?? []) : []).map((one, index) => ({
+                  id: `f${index}`,
+                  ...one,
+                  at: '',
+                })),
               ],
             }),
         } as unknown as Response)
@@ -1209,7 +1236,9 @@ describe('tabs', () => {
 
   it('marks a background tab working, then unread, then read on return', async () => {
     let release: (() => void) | undefined
+    const filed = { current: [] as readonly { role: string; text: string }[] }
     const fetchImpl = tabsFetch({
+      filed,
       onTurn: () =>
         ({
           ok: true,
@@ -1217,6 +1246,11 @@ describe('tabs', () => {
           body: new ReadableStream<Uint8Array>({
             start(controller) {
               release = () => {
+                // The desk files the exchange before it announces the end.
+                filed.current = [
+                  { role: 'user', text: 'travaille' },
+                  { role: 'agent', text: 'fini' },
+                ]
                 controller.enqueue(
                   new TextEncoder().encode(
                     frame({ type: 'text-delta', text: 'fini' }),
