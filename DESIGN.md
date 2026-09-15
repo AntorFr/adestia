@@ -221,7 +221,7 @@ per driver (it lays down the files that driver's CLI actually reads). The one
 harness-neutral layer is Adestia's own: **plugin agent-contracts**, which the driver
 compiles into its best native form (Claude skills, Copilot instruction sections),
 degrading to plain instruction text as the guaranteed floor — a plugin must work
-on both engines without being rewritten.
+on every engine without being rewritten.
 
 **v1 drivers:**
 - `claude-code` — Agent SDK TS. Arming: `setup-token` flow (url+code). Usage: full

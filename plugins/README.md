@@ -1,6 +1,6 @@
 # Bundled plugins
 
-Adestia ships eleven plugins and three skins. None of them is active until you name it
+Adestia ships twelve plugins and three skins. None of them is active until you name it
 in your config — discovery is not activation, and a folder sitting here costs
 nothing until you ask for it.
 
@@ -8,7 +8,7 @@ nothing until you ask for it.
 extensions:
   apps: [todo, planif, collections, atelier, voyages, journal, dev-flow,
          listening-post]                                    # tiles
-  features: [scan, parcours, meals]                            # things that live in the shell
+  features: [scan, parcours, meals, project-management]        # things that live in the shell
   tools: []                                             # agent-facing only
   skin: alfred
 ```
@@ -31,6 +31,7 @@ leaving you to wonder where the tile went.
 | [`scan`](scan/) | feature | A barcode reader in the composer. Uses the browser's own `BarcodeDetector` where it exists and only downloads a decoder where it does not. |
 | [`meals`](meals/) | feature | Meals over a period. A page typed `meals` IS the period: its frontmatter carries the shape — dates, sections, where its cards are filed — and the plugin draws that page as a day-by-day frise with a tray you drag from. So it lives in whatever folder its subject lives in (a trip's, a health carnet's) and stays an ordinary page: indexed, searchable, edited with the same ✎. One mechanism for two uses, deliberately: a week of menus you DECIDE and a fortnight of what you ATE differ in what you write, not in how it works, so there is no mode field anywhere. The card's face stays quiet (an icon, a title, a quantity) and everything else — free `props` the plugin never reads, converts or totals — waits for a click. One data file, written by the front and the agent alike, guarded by a revision rather than a lock. |
 | [`parcours`](parcours/) | feature | Walks and hikes. Adds the `:::parcours` block, which draws a `.parcours.json` as a map with numbered markers, an elevation profile and a walking mode, and assembles its GPX on demand. A feature rather than an app because a route has no domain and no tile: it hangs off whichever page has a reason to mention it. |
+| [`project-management`](project-management/) | feature | Project phases and milestones. Adds the `:::timeline` block, which draws bars and markers on a time axis — phases written in the block, or the consolidated planning of the pages below. A feature, not an app: a planning hangs off whichever page has a reason to carry one. |
 
 | Skin | What it is |
 |---|---|
@@ -45,7 +46,8 @@ contract that describes it, and Adestia delivers those contracts to the agent
 alongside its own. `atelier` ships `workbook-json`, `todo` ships `todo`,
 `collections` ships `collections`, `voyages` ships `voyage-json`,
 `parcours` ships `parcours-json`, `meals` ships `meals-json`, `journal` ships
-`journal` and `listening-post` ships `veille-json`.
+`journal`, `listening-post` ships `veille-json` and `project-management` ships
+`project-management`.
 
 `meals` also ships the only MCP server among them, and for a reason worth
 stating: its data file has TWO authors — the screen somebody drags on, and the
@@ -156,5 +158,5 @@ manifest schema, the facets a plugin may contribute, and the import map it can
 rely on are all described by the `plugin-author` contract that ships with the
 product. Ask the agent for a plugin and it reads that contract first.
 
-Nothing here is privileged. These eleven are ordinary plugins that happen to live
+Nothing here is privileged. These twelve are ordinary plugins that happen to live
 in the repository, and they load through exactly the same path as yours.

@@ -55,9 +55,9 @@ Adestia's own interface.
   restart. No image rebuild. Shared React comes from the page's import map;
   the shell owns the stylesheets; a broken plugin costs its own view and says
   why.
-- **Two engines** behind one contract — Claude Code and GitHub Copilot CLI.
-  The interface is built from declared capabilities and never from a driver's
-  name, so a second engine changed no UI code.
+- **Three engines** behind one contract — Claude Code, GitHub Copilot CLI and
+  Codex CLI. The interface is built from declared capabilities and never from
+  a driver's name, so the second and third engines changed no UI code.
 - **Settings as an app**, not a dialog over whatever you were reading: its own
   tile, its own address, one page per subject — the agent's credential (armed
   from the interface, held server-side at 0600 and never sent to a browser),
@@ -142,7 +142,7 @@ quota. See [DESIGN.md](DESIGN.md) for the principles and every decision taken.
 
 ```sh
 npm ci
-npm test          # 1045 tests, no account or network needed
+npm test          # no account or network needed
 npm run typecheck
 npm run build
 ```
