@@ -21,7 +21,6 @@ import { createElement as h, Fragment, type ComponentType, type ReactNode } from
 
 import {
   blockSpec,
-  isFinished,
   parse,
   resolveBlock,
   type ResolvedBlock,
@@ -34,6 +33,9 @@ import {
 
 import { PluginBoundary } from '../plugins/Boundary.js'
 import type { BlockProps, LayoutProps } from '../plugins/contract.js'
+import { assetUrl, resolveHref, workspacePath } from './links.js'
+import { finished, folderOf, initials, isIndexPage, titleOf, under } from './listing.js'
+import { listItems, plain, prettify, type Node } from './nodes.js'
 
 /** What a plugin contributed, by block name. */
 /**
@@ -58,97 +60,6 @@ export interface VocabularyContext {
 
 /** Whole-page layouts, keyed by the frontmatter `type` their plugin claims. */
 export type LayoutComponents = Readonly<Record<string, ComponentType<LayoutProps>>>
-
-/**
- * Where a link written in a page actually points.
- *
- * A page says `![Avant](assets/avant.jpg)` or `[Le devis](devis.pdf)`, and
- * means "next to me" — relative to the FOLDER the page lives in, the way it
- * reads on disk and the way the agent wrote it. Nothing in a document should
- * have to know that files are served under `/api/files`, so the translation
- * happens here, once, for images and links alike.
- *
- * Three destinations, because they behave differently: another page of this
- * instance opens IN PLACE (a document that made you leave and come back is a
- * document that lost your place), a workspace file is fetched from the file
- * route, and anything with a scheme of its own is left exactly as written.
- */
-export type Href =
-  | { readonly kind: 'external'; readonly href: string }
-  | { readonly kind: 'page'; readonly path: string }
-  | { readonly kind: 'file'; readonly href: string }
-
-export function resolveHref(url: string | undefined, base: string | undefined): Href {
-  const raw = url ?? ''
-  // A scheme, a fragment, a bare query or an absolute path is already an
-  // answer: rewriting it would break the one case where somebody knew exactly
-  // what they meant. No base at all means no page to be relative TO — a
-  // fragment rendered on its own keeps what was written rather than being
-  // pointed at the root, where the file is not.
-  if (base === undefined || raw === '' || /^[a-z][a-z0-9+.-]*:/i.test(raw) || /^[#?/]/.test(raw)) {
-    return { kind: 'external', href: raw }
-  }
-
-  const segments = base.split('/').filter(Boolean)
-  for (const segment of raw.split('/')) {
-    if (segment === '' || segment === '.') continue
-    // `..` climbing past the root is dropped rather than kept: the file route
-    // refuses it anyway, and a path that walks out of the workspace is a typo,
-    // not an intention worth transmitting.
-    if (segment === '..') segments.pop()
-    else segments.push(segment)
-  }
-  const path = segments.join('/')
-  if (path === '') return { kind: 'external', href: raw }
-  if (/\.md$/i.test(path)) return { kind: 'page', path }
-  return { kind: 'file', href: `/api/files/${path.split('/').map(encodeURIComponent).join('/')}` }
-}
-
-/**
- * The same resolution, but always ending in something fetchable.
- *
- * A block asks for a FILE — `source="assets/x.parcours.json"` — and does not
- * care that a neighbour ending in `.md` would have been a page to a link. It
- * wants bytes, so a page path is served as the file it also is.
- */
-function assetUrl(path: string, base: string | undefined): string {
-  const target = resolveHref(path, base)
-  if (target.kind !== 'page') return target.href
-  return `/api/files/${target.path.split('/').map(encodeURIComponent).join('/')}`
-}
-
-/**
- * The same path, as the workspace spells it — no route, no encoding.
- *
- * The companion of `assetUrl`, and both are needed: a block fetches its file
- * by URL, then has to NAME that same file to its own API ("assemble the GPX
- * of this one"). Deriving the second by peeling the first apart is what the
- * ported engine used to do, and it tied a plugin to the shell's route shape.
- */
-function workspacePath(path: string, base: string | undefined): string {
-  const target = resolveHref(path, base)
-  if (target.kind === 'page') return target.path
-  // Anything with a scheme of its own was never a workspace file; handing back
-  // what was written beats inventing a path that resolves to nothing.
-  return target.href.startsWith('/api/files/')
-    ? target.href.slice('/api/files/'.length).split('/').map(decodeURIComponent).join('/')
-    : path
-}
-
-type Node = {
-  type: string
-  value?: string
-  url?: string
-  alt?: string
-  lang?: string
-  depth?: number
-  ordered?: boolean
-  checked?: boolean | null
-  name?: string
-  attributes?: Record<string, string> | null
-  data?: { alias?: string }
-  children?: Node[]
-}
 
 /** Frontmatter chips — the same ones the card and the editor wear. */
 function Meta({ yaml }: { readonly yaml: string }) {
@@ -512,15 +423,6 @@ function render(node: Node, ctx: Ctx): ReactNode {
 }
 
 /**
- * `plan-travail-garage` → `Plan travail garage`. The fallback when nothing
- * declares a label for a subject — declared beats guessed, guessed beats gone.
- */
-function prettify(name: string): string {
-  const words = name.replace(/[-_]+/g, ' ').trim()
-  return words ? words.charAt(0).toUpperCase() + words.slice(1) : name
-}
-
-/**
  * `:::content{type=…}` — a title and prose.
  *
  * The one rendering that makes the doctrine pay: a summary, a scope, a
@@ -610,36 +512,6 @@ function Figures({ node }: { readonly node: Node }) {
       ))}
     </div>
   )
-}
-
-/** The text a node carries, however deep — labels, cells, titles. */
-function plain(node: Node): string {
-  if (typeof node.value === 'string') return node.value
-  return (node.children ?? []).map(plain).join('')
-}
-
-/**
- * A flow block's list items as plain text, one string per item.
- *
- * A contributed block receives its body as rendered React children — right
- * for prose, opaque for a block that treats its body as DATA (a timeline
- * reading phase lines). This is the same reading `figures` does for itself
- * above: every list item, its text however deep. The body still travels as
- * children too; a block that consumes items simply does not draw them.
- */
-function listItems(node: Node): readonly string[] {
-  const out: string[] = []
-  const walk = (kids: readonly Node[] | undefined) => {
-    for (const kid of kids ?? []) {
-      if (kid.type === 'listItem') {
-        out.push(plain(kid))
-        continue
-      }
-      walk(kid.children)
-    }
-  }
-  walk(node.children)
-  return out
 }
 
 /**
@@ -748,23 +620,6 @@ function ListBlock({ node, ctx }: { readonly node: Node; readonly ctx: Ctx }) {
       )}
     </div>
   )
-}
-
-/**
- * The initials a chip wears — one letter per word, two at most.
- *
- * Derived rather than declared, for the same reason the tone of a status is:
- * there is no directory of people in this product, and asking a page to spell
- * out initials beside a name it already wrote is asking it to keep two things
- * in step.
- */
-function initials(text: string): string {
-  return text
-    .split(/[\s'’-]+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => [...word][0]?.toUpperCase() ?? '')
-    .join('')
 }
 
 /**
@@ -885,69 +740,6 @@ function Row({
       )}
     </button>
   )
-}
-
-/** `domaines/voyages/baden.md` → `domaines/voyages`. */
-function folderOf(path: string): string {
-  const cut = path.lastIndexOf('/')
-  return cut === -1 ? '' : path.slice(0, cut)
-}
-
-/**
- * Whether a page belongs in the list, at the depth asked for.
- *
- * The subtlety is that **a child is not always a file**. This product files a
- * sub-subject as a FOLDER — that is the whole hierarchy, decided 2026-09-04 —
- * so the row standing for a child is that folder's own index page,
- * not a page beside it. A rule that only looked at files would list a project's
- * loose notes and miss every one of its sub-projects.
- *
- * Hence three answers rather than a depth counter:
- *
- * - `self`     the pages filed directly here, and nothing that stands for a folder
- * - `children` the same, PLUS the index of each direct sub-folder — the children
- * - `subtree`  everything below, at any depth
- *
- * An index page is never listed as a content page of its own folder: it IS the
- * folder. Which also keeps the page carrying the block out of its own list.
- */
-function under(path: string, base: string, depth: string): boolean {
-  const folder = folderOf(path)
-  const inside = base === '' ? folder !== '' || true : folder === base || folder.startsWith(`${base}/`)
-  if (!inside) return false
-  if (depth === 'subtree') return true
-
-  const rest = base === '' ? folder : folder.slice(base.length + 1).replace(/^\//, '')
-  if (folder === base) return !isIndexPage(path)
-  if (depth === 'self') return false
-  // One folder down: only its index stands for it, the rest is that folder's business.
-  return !rest.includes('/') && isIndexPage(path)
-}
-
-/** A folder's own index page is the folder, not one of its contents. */
-function isIndexPage(path: string): boolean {
-  const parts = path.split('/')
-  const file = parts.at(-1)?.replace(/\.md$/i, '') ?? ''
-  return /^index$/i.test(file) || (parts.length > 1 && file === parts.at(-2))
-}
-
-/**
- * Whether a page's life is over — asked of the content engine, never re-derived.
- *
- * The first version of this function was `toneOf(fields.status) === 'settled'`,
- * which is the same idea and a different answer: `isFinished` also reads
- * `statut`, the French spelling half this corpus uses, and knows that `acheté`
- * closes a purchase and not a gift. A second table of statuses beside the
- * engine's is precisely what drifts.
- */
-function finished(page: Indexed): boolean {
-  return isFinished(page.fields)
-}
-
-function titleOf(page: Indexed): string {
-  const declared = page.fields['title']
-  if (typeof declared === 'string' && declared !== '') return declared
-  return prettify(page.path.split('/').at(-1)?.replace(/\.md$/i, '') ?? page.path)
 }
 
 /**

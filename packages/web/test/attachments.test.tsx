@@ -14,7 +14,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { Attachments, humanSize, referencedNames } from '../src/editor/Attachments.js'
 import { Editor, type PageDocument } from '../src/editor/Editor.js'
 import { carriesFiles, fileDropMessage } from '../src/editor/filedrop.js'
-import { Reader, resolveHref } from '../src/editor/Reader.js'
+import { resolveHref } from '../src/editor/links.js'
+import { Reader } from '../src/editor/Reader.js'
 
 const files = (list: unknown): typeof fetch =>
   (() =>
