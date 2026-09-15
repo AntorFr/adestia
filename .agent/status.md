@@ -7,7 +7,7 @@ mutualisés (persistance d'un tour, frontmatter, jeton des pilotes, aides du
 banc), doc remise d'aplomb, serveur et web découpés en modules sans changer
 une ligne de corps, outillage rendu fiable en worktree (typecheck, tests et
 build lisent les sources d'à côté). Typecheck, lint, build et 2125 tests
-verts ; banc visuel passé. L'état reconstruit qui a servi de base est dans
+verts ; banc visuel passé sur les 35 scénarios (34 verts, voir ci-dessous). L'état reconstruit qui a servi de base est dans
 `mission-refonte.md`, les questions en suspens dans `questions-refonte.md`.
 
 **Prochaines étapes :**
@@ -20,6 +20,9 @@ verts ; banc visuel passé. L'état reconstruit qui a servi de base est dans
 - [ ] Retirer `@vitejs/plugin-react` de `packages/web` : déclaré, jamais
       chargé ; demande l'outil npm qui réécrit le lockfile, puis revérifier le
       fork du parseur.
+- [ ] Le scénario de banc `journal-blocs` attend un bouton « Enregistrer »
+      que l'éditeur n'a plus depuis le 10/09 (auto-enregistrement) : à
+      réécrire pour la nouvelle mécanique, il échoue déjà sur `main`.
 - [ ] Fusionner `refonte` dans `main`, une fois les questions closes.
 
 **Restes ouverts des chantiers passés** (relevés au dégraissage de ce fichier,
