@@ -1,0 +1,375 @@
+/* The mosaics: tiles, plates and the arranging gesture. */
+
+/* Arranging the mosaics ------------------------------------------------- */
+
+.adestia-section__edit {
+  margin-left: var(--space-3);
+  padding: 2px var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: var(--label-size);
+  letter-spacing: var(--label-track);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.adestia-section__edit:hover { border-color: var(--accent); color: var(--accent); }
+
+.adestia-section__edit[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.adestia-tile-slot { position: relative; display: flex; }
+
+/* Inert, but still able to hear a pointer on the slot around it — which is
+   what the drag listens to. `disabled` would swallow those events. */
+.adestia-tile-slot--editing .adestia-tile {
+  pointer-events: none;
+  cursor: grab;
+}
+
+.adestia-tile-slot--editing { touch-action: none; cursor: grab; }
+
+/* The tile being carried rides above the reflow it is causing. */
+.adestia-tile-slot--carried {
+  z-index: 2;
+  cursor: grabbing;
+}
+
+.adestia-tile-slot--carried .adestia-tile {
+  transform: scale(1.04);
+  box-shadow: var(--shadow-lg);
+}
+
+/* The iOS tell: everything arrangeable is faintly restless. Suppressed with
+   the rest of the motion under prefers-reduced-motion (see tokens.css), so
+   the mode still reads by its outline and its Done button. */
+@keyframes adestia-restless {
+  0% { transform: rotate(-0.6deg); }
+  50% { transform: rotate(0.6deg); }
+  100% { transform: rotate(-0.6deg); }
+}
+
+.adestia-tile-slot--editing:not(.adestia-tile-slot--carried) .adestia-tile {
+  animation: adestia-restless 0.28s ease-in-out infinite;
+  outline: 1px dashed var(--border-strong);
+  outline-offset: 2px;
+}
+
+.adestia-tile-slot__arrows {
+  position: absolute;
+  z-index: 3;
+  top: var(--space-1);
+  right: var(--space-1);
+  display: flex;
+  gap: 2px;
+}
+
+.adestia-tile-slot__arrows button {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-round);
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  font-size: var(--text-base);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.adestia-tile-slot__arrows button:hover { border-color: var(--accent); color: var(--accent); }
+
+.adestia-tiles {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 14px;
+}
+
+.adestia-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 11px;
+  width: 100%;
+  min-height: 146px;
+  padding: 17px;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-sm);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.16s, box-shadow 0.16s, border-color 0.16s;
+}
+
+/* The colour mark. Every dimension of it is a token: a livery moves the bar
+   to the left edge or dims it, and never writes a rule against this class. */
+.adestia-tile::before {
+  content: '';
+  position: absolute;
+  /* Above the store tab, which tucks under it — see `.adestia-tile__store`. */
+  z-index: 1;
+  inset: var(--tile-mark-inset);
+  width: var(--tile-mark-width);
+  height: var(--tile-mark-height);
+  background: color-mix(
+    in srgb,
+    var(--tile-color, var(--accent)) var(--tile-mark-tint),
+    transparent
+  );
+  transition: background 0.16s;
+}
+
+.adestia-tile:hover:not(:disabled) {
+  /* The mark answers the hover: a livery that keeps it quiet at rest still
+     gets the full colour under the pointer, without a second rule. */
+  --tile-mark-tint: 100%;
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+  border-color: color-mix(in srgb, var(--tile-color, var(--accent)) 45%, var(--border));
+}
+
+.adestia-tile:disabled { cursor: default; opacity: 0.6; }
+
+/* The plate — where the "app store" look lives. A saturated gradient of the
+   tile's colour under a white glyph by default; the knobs are tokens, so a
+   flat or bordered livery reshapes every plate without touching this rule. */
+.adestia-tile__icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-ctl);
+  font-size: 20px;
+  box-shadow: var(--shadow-sm);
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--tile-color, var(--accent)) var(--plate-top), var(--plate-base)),
+    color-mix(in srgb, var(--tile-color, var(--accent)) var(--plate-mix), var(--plate-base))
+  );
+  color: color-mix(in srgb, var(--tile-color, var(--accent)) var(--plate-fg-tint), var(--plate-fg));
+  border: var(--plate-border-width) solid
+    color-mix(in srgb, var(--tile-color, var(--accent)) var(--plate-border-tint), transparent);
+}
+
+.adestia-tile__icon svg { width: 22px; height: 22px; }
+
+.adestia-tile__label {
+  font-family: var(--tile-label-font);
+  font-weight: 600;
+  font-size: 17px;
+  line-height: 1.1;
+  letter-spacing: var(--tile-label-track);
+}
+.adestia-tile__subtitle { color: var(--text-muted); font-size: 13px; margin-top: -4px; }
+
+.adestia-tile__foot {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.adestia-chip {
+  font: 600 11px var(--font-mono);
+  padding: 2px 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-soft);
+  color: var(--text-muted);
+}
+
+/* Exactly one kind of figure earns the colour: the one somebody has to act
+   on. A tile where every chip is hot has told the reader nothing. */
+.adestia-chip--hot {
+  color: var(--tile-color, var(--accent));
+  border-color: color-mix(in srgb, var(--tile-color, var(--accent)) 40%, transparent);
+  background: color-mix(in srgb, var(--tile-color, var(--accent)) 10%, transparent);
+}
+
+.adestia-empty { color: var(--text-muted); }
+.adestia-empty__hint { font-size: var(--text-sm); color: var(--text-faint); }
+
+.adestia-problems {
+  margin-bottom: var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius);
+  background: var(--accent-quiet);
+  font-size: var(--text-sm);
+}
+
+/* The instruction zone: a card per instruction, a field to find one, and the
+   file itself on its own screen.
+
+   The split pane this replaced was built for the four files a fresh instance
+   has. At thirty — a driver's conventions, a folder of skills, whatever
+   somebody asked the agent to write down — a 200px column of file names is
+   unreadable, and it was the only thing telling two SKILL.md files apart. */
+.adestia-instructions__tools {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  align-items: center;
+  margin: var(--space-4) 0 var(--space-3);
+}
+
+.adestia-instructions__search {
+  flex: 1 1 220px;
+  min-width: 0;
+  max-width: 360px;
+  padding: 7px var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+}
+
+.adestia-instructions__search:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* Dashed, like every other "make a new one" in this shell: it is an
+   invitation rather than a control acting on what is already there. */
+.adestia-instructions__tools button {
+  padding: 6px 13px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  background: none;
+  color: var(--text-muted);
+  font: 600 var(--text-sm) var(--font);
+  cursor: pointer;
+}
+
+.adestia-instructions__tools button:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Said once, at the top of a file nobody may save: the textarea is read-only
+   and looks it, but "why" is not something a greyed-out control can say. */
+.adestia-instructions__delivered {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--tile-color, var(--accent));
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+/* A card carries what tells two instructions apart BEFORE either is opened:
+   the name, where it sits, how long it is, and whose it is. */
+/* Les fiches de la zone d'instructions. Elles ont porté le nom des cartes
+   de page pendant tout ce temps, et les deux composants se sont écrasés
+   l'un l'autre : ces fiches héritaient d'une hauteur minimale, d'une ombre
+   et d'un soulèvement au survol qu'elles n'avaient jamais demandés, et les
+   cartes de page perdaient leur rayon, leur remplissage et la disposition
+   de leur pied. Deux composants, deux noms. */
+.adestia-filecards {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-3);
+}
+
+.adestia-filecard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+  height: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.adestia-filecard:hover { border-color: var(--accent); }
+.adestia-filecard:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.adestia-filecard__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  justify-content: space-between;
+}
+
+.adestia-filecard__name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.adestia-filecard__badge {
+  flex: none;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--surface-sunken);
+  color: var(--text-faint);
+  font-size: 11px;
+}
+
+.adestia-filecard__path {
+  font: 11px var(--font-mono);
+  color: var(--text-faint);
+  overflow-wrap: anywhere;
+}
+
+.adestia-filecard__foot {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  color: var(--text-faint);
+  font-size: var(--text-sm);
+}
+
+.adestia-instructions__pane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.adestia-instructions__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* Monospaced on purpose: frontmatter alignment and code fences are part of
+   what these files mean, and a proportional face hides both. */
+.adestia-instructions__text {
+  min-height: 60vh;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: 13.5px/1.65 var(--font-mono);
+  resize: vertical;
+  tab-size: 2;
+}
+
+.adestia-instructions__text:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.adestia-instructions__empty {
+  margin-top: var(--space-4);
+  color: var(--text-faint);
+}

@@ -40,7 +40,7 @@ import { parseFrontmatter, titleOf } from './pages.js'
 import { listAll, type Store } from './stores.js'
 
 /** A failure worded for the AGENT — anything else is logged, not forwarded. */
-export class ShellToolError extends Error {}
+class ShellToolError extends Error {}
 
 export interface ShellToolContext {
   readonly userId: string

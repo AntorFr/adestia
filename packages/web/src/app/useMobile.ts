@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react'
 
 const FALLBACK = 820
 
-export function mobileBreakpoint(): number {
+function mobileBreakpoint(): number {
   if (typeof getComputedStyle === 'undefined') return FALLBACK
   const raw = getComputedStyle(document.documentElement)
     .getPropertyValue('--breakpoint-mobile')

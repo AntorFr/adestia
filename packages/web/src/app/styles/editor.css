@@ -1,0 +1,205 @@
+/* A page in the editor, and the file dropped on it. */
+
+/* Pages and editor ------------------------------------------------------- */
+
+/* A file let go over a page. The overlay is drawn INSIDE the page rather than
+   over the whole window: what is being answered is "this page", and a
+   full-screen veil would make it look like the instance was taking the file. */
+.adestia-editor { position: relative; }
+
+.adestia-editor--dropping { outline: 2px dashed var(--accent); outline-offset: var(--space-2); }
+
+.adestia-editor__dropzone {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  /* The overlay must not eat its own drop: the section below is what carries
+     the handlers, and a child intercepting the event would cancel the gesture
+     the moment it became visible. */
+  pointer-events: none;
+}
+
+/* Actions only, pushed right: the header no longer carries a title. */
+.adestia-editor__header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-3);
+  min-height: 32px;
+}
+
+.adestia-editor__title { margin: 0; font-size: var(--text-lg); }
+
+.adestia-editor__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.adestia-editor__save {
+  padding: var(--space-1) var(--space-4);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--accent-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.adestia-editor__save:disabled {
+  background: var(--surface-sunken);
+  border-color: var(--border);
+  color: var(--text-faint);
+  cursor: default;
+}
+
+.adestia-save { font-size: var(--text-sm); color: var(--text-muted); }
+.adestia-save--ok { color: var(--success); }
+.adestia-save--warn { color: var(--warning); }
+.adestia-save--error { color: var(--danger); }
+
+.adestia-editor__readonly {
+  padding: var(--space-3);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius);
+  background: var(--accent-quiet);
+  font-size: var(--text-sm);
+}
+
+/* The editor refusing to open, written where the editor would have been.
+   Only Milkdown's own parse failure lands here: a page whose vocabulary is
+   broken is caught earlier and shows `--readonly` above its raw source. */
+.adestia-editor__problem {
+  padding: var(--space-3);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+  color: var(--danger);
+  font-size: var(--text-sm);
+}
+
+.adestia-diagnostics {
+  list-style: none;
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  font-size: var(--text-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.adestia-diagnostics__item--error { color: var(--danger); }
+.adestia-diagnostics__item--warning { color: var(--warning); }
+
+.adestia-diagnostics__line {
+  font-family: var(--font-mono);
+  color: var(--text-faint);
+  margin-right: var(--space-2);
+}
+
+.adestia-editor__raw {
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-sunken);
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+/* The writing surface is the PAGE, not a box drawn on it.
+   It used to be a bordered panel with a 320px floor, so an empty document —
+   a journal entry created a second ago — opened as a large grey rectangle
+   with a cursor lost in it. Reading and writing now occupy the same shape,
+   and the surface grows with what is in it. */
+.adestia-editor__surface {
+  min-height: 5.5rem;
+  padding: 0;
+}
+
+/* The page's own title: a heading while reading, a field while writing, and
+   the same LINE either way — same face, same size, same place, so entering
+   writing posture does not make the card jump. The field only shows itself
+   when you point at it. */
+h2.adestia-editor__title { padding-bottom: 3px; }
+
+.adestia-editor__title {
+  width: 100%;
+  margin: 0 0 var(--space-2);
+  padding: 2px 0;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  background: none;
+  color: var(--text);
+  font-family: var(--font-title);
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.adestia-editor__title::placeholder {
+  color: var(--text-faint);
+  font-style: italic;
+  font-weight: 400;
+}
+
+.adestia-editor__title:hover { border-bottom-color: var(--border-strong); }
+
+.adestia-editor__title:focus {
+  outline: none;
+  border-bottom-color: var(--accent);
+}
+
+/* Typed blocks, as the editor shows them. A skin may recolour these; it may
+   not change what they are. */
+.adestia-block {
+  margin: var(--space-3) 0;
+  padding: var(--space-3);
+  border-inline-start: 3px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+}
+
+/* A block with no body is legitimate — it queries instead of holding text —
+   but an empty div is INVISIBLE, and the bench caught a whole consolidated
+   planning missing from the editor while the reader drew it. So it says its
+   own name: something is here, and deleting it is now a decision. */
+.adestia-block:empty::before {
+  content: ':::' attr(data-block);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.adestia-block--app {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  border-inline-start-style: dashed;
+}
+
+/* What a page says about itself, as chips — the same ones its card wore. */
+.adestia-editor__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: var(--space-4);
+}
+
+.adestia-editor__meta:empty,
+.adestia-editor__meta-empty { display: none; }
+
+.adestia-wikilink {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--accent);
+}

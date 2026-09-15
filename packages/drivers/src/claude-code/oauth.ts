@@ -34,12 +34,12 @@ import { createHash, randomBytes as nodeRandomBytes } from 'node:crypto'
 
 import type { ArmingFlow } from './driver.js'
 
-export const AUTHORIZE_URL = 'https://claude.com/cai/oauth/authorize'
+const AUTHORIZE_URL = 'https://claude.com/cai/oauth/authorize'
 export const TOKEN_URL = 'https://platform.claude.com/v1/oauth/token'
 export const REDIRECT_URI = 'https://platform.claude.com/oauth/code/callback'
 export const CLIENT_ID = '9d1c250a-e61b-44d9-88ed-5944d1962f5e'
 /** Inference on the user's subscription — the only scope this token needs. */
-export const SCOPE = 'user:inference'
+const SCOPE = 'user:inference'
 /** What makes the token long-lived; the CLI asks for exactly this. */
 export const ONE_YEAR_SECONDS = 31_536_000
 const EXCHANGE_TIMEOUT_MS = 30_000

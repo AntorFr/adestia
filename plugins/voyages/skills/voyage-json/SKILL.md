@@ -87,7 +87,8 @@ de famille rangé dans le cercle privé est invisible à ceux qui partent avec.
   rend le **tray seul**, sans timeline, et le serveur **refuse** toute confirmation.
   ⚠️ Le module se cale sur les **dates**, jamais sur ce champ : c'est à toi de les tenir
   d'accord — un `en-cours` sans dates rend une page qui annonce « à l'état d'idée ».
-  `clos` range le voyage dans le tiroir Archive ; tout le reste prend la teinte vivante.
+  `clos` (ou `terminé`) range le voyage dans le tiroir Archive ; tout le reste prend la
+  teinte vivante.
 - **La nature se déduit des champs, pas du type.** `jour` (+ `heure` optionnelle) ⇒
   **ponctuel**, carte dans le flux du jour. `debut` + `fin` ⇒ **continu**, bandeau qui
   court sur la plage. Un stage de voile de trois jours est une `activite` continue.
@@ -137,9 +138,9 @@ de famille rangé dans le cercle privé est invisible à ceux qui partent avec.
 - **`modes`** : moyens de déplacement du voyage, déclarés au cadrage (défaut
   `["marche", "voiture"]`), parmi `marche | voiture | velo | transport`. Ils bornent le
   choix de mode des liaisons.
-- **`lieux`** : géocodés **une fois**, à la création. `items[].lieu` référence un
-  `lieux[].id` — rattache la carte à une étape ; `lat`/`lng` sur un lieu servent à la
-  météo, `lat`/`lng` sur un item aux liaisons.
+- **`lieux`** : géocodés **une fois**, à la création. `lat`/`lng` sur un lieu servent à
+  la météo, `lat`/`lng` sur un item aux liaisons. `lieux[].id` et `items[].lieu` sont
+  acceptés mais rien ne les lit encore : n'y range pas une information que tu veux voir.
 
 ## Ce qui n'est pas garanti d'être là
 

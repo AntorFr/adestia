@@ -14,9 +14,9 @@ export const TOKEN_ENV_VAR = 'CLAUDE_CODE_OAUTH_TOKEN'
  * law: the string is minted by the service, and nothing promises its prefix
  * survives the next change.
  */
-export const TOKEN_PATTERN = /^sk-ant-oat\d*-[A-Za-z0-9_-]{20,}$/
+const TOKEN_PATTERN = /^sk-ant-oat\d*-[A-Za-z0-9_-]{20,}$/
 /** A credential, as opposed to a sentence: one long unbroken word. */
-export const OPAQUE_SECRET_PATTERN = /^[A-Za-z0-9._~+/=-]{24,}$/
+const OPAQUE_SECRET_PATTERN = /^[A-Za-z0-9._~+/=-]{24,}$/
 
 /**
  * What a stored subscription token looks like.

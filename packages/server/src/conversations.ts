@@ -15,36 +15,13 @@ import { createHash, randomUUID } from 'node:crypto'
 import { appendFile, mkdir, readFile, readdir, rename, stat, unlink, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-export interface StoredMessage {
-  readonly id: string
-  readonly role: 'user' | 'agent'
-  readonly text: string
-  readonly at: string
-  readonly tools?: readonly { name: string; target?: string; ok?: boolean }[]
-  readonly stopped?: boolean
-  readonly error?: string
-  readonly usage?: { contextTokens?: number; outputTokens?: number }
-}
+import type { Conversation, ConversationMeta, StoredMessage } from '@antorfr/adestia-schemas'
 
-export interface ConversationMeta {
-  readonly id: string
-  readonly title: string
-  readonly updatedAt: string
-  /** The CLI session this thread resumes; absent once it has expired. */
-  readonly sessionId?: string
-  /**
-   * Put away rather than deleted.
-   *
-   * A thread nobody needs today is not a thread nobody will want next month,
-   * and the only tool for that was a delete that took the whole record with
-   * it. Archiving hides it from the list and keeps every word.
-   */
-  readonly archived?: boolean
-}
+import type { TurnOutcome } from './turns.js'
 
-export interface Conversation extends ConversationMeta {
-  readonly messages: readonly StoredMessage[]
-}
+// The shapes that cross the wire live with the other schemas, declared once
+// for both sides; re-exported so this module stays the store's one address.
+export type { Conversation, ConversationMeta, StoredMessage } from '@antorfr/adestia-schemas'
 
 /**
  * A user id becomes a directory name, so it is hashed rather than sanitized:
@@ -114,6 +91,40 @@ export class ConversationStore {
   }
 
   /** Records which CLI session this thread resumes, so a reload can continue it. */
+  /**
+   * What a finished turn leaves in its thread: ONE MESSAGE PER PART, then the
+   * session line for the next ask.
+   *
+   * An agent that answers, goes back to its tools and answers again said two
+   * things, and the thread records two — otherwise a reload would glue back
+   * together what the live view had just drawn apart. A turn that produced
+   * nothing still leaves a line: it is what carries the interruption and the
+   * error. How the turn ended belongs to its last word only, and the usage is
+   * the whole turn's, so both hang there. Written even when the turn failed:
+   * a thread that silently drops the answer it did produce is worse than one
+   * showing it broke — which is why every write here swallows its own error.
+   */
+  async recordOutcome(userId: string, id: string, outcome: TurnOutcome): Promise<void> {
+    const parts = outcome.parts.filter((part) => part.text !== '' || part.tools.length > 0)
+    const written = parts.length > 0 ? parts : [{ tools: [], text: '' }]
+    for (const [index, part] of written.entries()) {
+      const last = index === written.length - 1
+      await this.append(userId, id, {
+        id: randomUUID(),
+        role: 'agent',
+        text: part.text,
+        at: new Date().toISOString(),
+        ...(part.tools.length > 0 ? { tools: [...part.tools] } : {}),
+        ...(last && outcome.stopped ? { stopped: outcome.stopped } : {}),
+        ...(last && outcome.failure ? { error: outcome.failure } : {}),
+        ...(last && outcome.usage ? { usage: outcome.usage } : {}),
+      }).catch(() => undefined)
+    }
+    if (outcome.sessionId) {
+      await this.setSession(userId, id, outcome.sessionId).catch(() => undefined)
+    }
+  }
+
   async setSession(userId: string, id: string, sessionId: string): Promise<void> {
     if (!isSafeId(id)) throw new Error(`unsafe conversation id: ${id}`)
     await appendFile(

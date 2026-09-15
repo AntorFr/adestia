@@ -1,7 +1,10 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "rootDir": ".",
+    // Not a build: nothing references this project, and it emits nothing.
+    // Off, so the workspace sources the base config maps in (see `paths`)
+    // are ordinary files of this program rather than a listing violation.
+    "composite": false,
     "lib": [
       "ES2023",
       "DOM",

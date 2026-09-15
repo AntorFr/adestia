@@ -54,7 +54,7 @@ export type Screen = 'chat' | 'canvas'
 export const SWIPE_COMMIT = 0.28
 
 /** Below this, the gesture has not yet said what it is. */
-export const SWIPE_LOCK = 8
+const SWIPE_LOCK = 8
 
 /**
  * How much more horizontal than vertical a gesture must be to be taken.
@@ -63,7 +63,7 @@ export const SWIPE_LOCK = 8
  * bias is deliberately on the side of scrolling: a screen that moves under
  * somebody reading is resented far more than a swipe that has to be repeated.
  */
-export const SWIPE_BIAS = 1.3
+const SWIPE_BIAS = 1.3
 
 /**
  * Where the track lands when the finger lifts.

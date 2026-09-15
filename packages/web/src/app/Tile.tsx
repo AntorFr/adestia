@@ -25,7 +25,7 @@ import type { TileInfo } from '../plugins/contract.js'
  * most will not — so the fallback is the accent rather than a colour invented
  * here. Inventing one would mean a palette the skin cannot reach.
  */
-export function hueStyle(hue?: string): Record<string, string> {
+function hueStyle(hue?: string): Record<string, string> {
   return hue ? { '--tile-color': `var(--adestia-hue-${hue}, var(--accent))` } : {}
 }
 

@@ -1,22 +1,20 @@
 /**
- * The web package declares its own `TurnEvent` so the shell carries no server
- * dependency: it talks HTTP to something that speaks this protocol, and never
- * needs to know what runs behind it.
+ * The browser's reducer against the driver contract's own events.
  *
- * Two declarations of one protocol drift — unless something checks. This does.
+ * There used to be two declarations of the turn events, and this test pinned
+ * them together. There is one now, the driver contract's, and what remains
+ * worth asking is that the reducer accepts every variant it can emit — a
+ * variant added to the contract with no reducer case fails to compile here.
  */
 
 import { describe, expect, it } from 'vitest'
-import type { TurnEvent as DriverEvent } from '@antorfr/adestia-drivers'
+import type { TurnEvent } from '@antorfr/adestia-drivers'
 
 import { applyEvent, INITIAL_TURN } from '../src/chat/stream.js'
-import type { TurnEvent as WebEvent } from '../src/chat/events.js'
 
-describe('protocol alignment', () => {
-  it('accepts every event the driver contract can emit', () => {
-    // Typed as the DRIVER's event and consumed as the WEB's: if either side
-    // adds, renames or retypes a variant, this stops compiling.
-    const emitted: DriverEvent[] = [
+describe('protocol', () => {
+  it('reduces every event the driver contract can emit', () => {
+    const emitted: TurnEvent[] = [
       { type: 'text-delta', text: 'x' },
       { type: 'tool-use', name: 'Read', target: '/a' },
       { type: 'tool-result', name: 'Read', ok: true },
@@ -26,24 +24,8 @@ describe('protocol alignment', () => {
       { type: 'error', message: 'boom', fatal: true },
     ]
 
-    const state = (emitted as WebEvent[]).reduce(applyEvent, INITIAL_TURN)
+    const state = emitted.reduce(applyEvent, INITIAL_TURN)
     expect(state.parts.map((part) => part.text).join('')).toBe('x')
     expect(state.running).toBe(false)
-  })
-
-  it('covers every variant the web side declares', () => {
-    // The reverse direction: a variant added to the web type with no reducer
-    // case would fail the exhaustive switch at compile time, but a variant the
-    // driver never sends is dead weight worth noticing.
-    const kinds: WebEvent['type'][] = [
-      'text-delta',
-      'tool-use',
-      'tool-result',
-      'permission-request',
-      'usage-delta',
-      'result',
-      'error',
-    ]
-    expect(new Set(kinds).size).toBe(kinds.length)
   })
 })

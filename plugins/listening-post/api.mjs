@@ -19,7 +19,6 @@
  * plugin declares no secret and works on an instance that holds none.
  */
 
-import { readFile } from 'node:fs/promises'
 import { join, relative, sep } from 'node:path'
 
 import { byFreshness, clockOf, deepLink, keyOf, parseFeed } from './lib/feeds.mjs'
@@ -340,9 +339,15 @@ export default async function api(app, opts) {
     // it: `veille/../veille/x.md` is the same page and must not become a
     // different assets folder.
     const { transcript, media } = assetsFor(page)
-    const path = transcript
-    if (!(await exists(path))) return reply.code(404).send({ error: 'no transcript', expected: transcript })
-    const lines = parseTranscript(await readFile(path, 'utf8'))
+    // Through the host's pages service, like every other read here: the
+    // path is the workspace's, and the service knows which store holds it.
+    // This used to call an `exists` nobody had defined and a bare readFile
+    // on the logical path — a ReferenceError, answered as a 500, on every
+    // transcript the screen asked for.
+    if (!(await pages.exists(transcript))) {
+      return reply.code(404).send({ error: 'no transcript', expected: transcript })
+    }
+    const lines = parseTranscript((await pages.read(transcript)) ?? '')
     let meta = null
     if (await pages.exists(media)) {
       try {

@@ -74,13 +74,6 @@ export interface McpConfig {
   readonly ttlMs: number
 }
 
-export const DEFAULT_MCP: McpConfig = {
-  enabled: false,
-  agentName: 'agent',
-  maxPending: 4,
-  ttlMs: 60 * 60 * 1000,
-}
-
 /** Constant-time, so a token is not guessable one byte at a time. */
 export function tokenMatches(given: string | undefined, expected: string | undefined): boolean {
   if (!expected || !given) return false

@@ -10,22 +10,18 @@
 import { act, render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 
+import { AskPrompt } from '../src/chat/AskPrompt.js'
+import { Bubble, LiveProse, ToolTrace } from '../src/chat/Bubble.js'
+import { Chat } from '../src/chat/Chat.js'
 import {
-  Bubble,
-  AskPrompt,
-  LiveProse,
   COMPOSER_MAX_HEIGHT,
   COMPOSER_MIN_HEIGHT,
-  Chat,
   Composer,
   ComposerFold,
-  ContextPill,
-  ModelPicker,
-  ToolTrace,
   composerHeight,
-  contextLevel,
-  formatTokens,
-} from '../src/chat/Chat.js'
+} from '../src/chat/Composer.js'
+import { ContextPill, contextLevel, formatTokens } from '../src/chat/ContextPill.js'
+import { ModelPicker } from '../src/chat/ModelPicker.js'
 import { PROSE_CADENCE_MS } from '../src/chat/useCadence.js'
 
 // Whether this environment HAS a localStorage depends on the runtime, not on

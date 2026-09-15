@@ -25,6 +25,7 @@ import type {
 } from '../contract.js'
 import { SHELL_TOOLS_SERVER_NAME, bridgeStdioConfig } from '../shell-tools-config.js'
 import { AskDesk, type PendingAsk } from '../asks.js'
+import { ManagedCredential } from '../managed-credential.js'
 import { McpTokens, type RefreshStore } from '../mcp-oauth.js'
 import { TOKEN_ENV_VAR, looksLikeToken } from './arming.js'
 import { toolTarget } from './events.js'
@@ -191,7 +192,7 @@ function readHealth(
 export class ClaudeCodeDriver implements Driver {
   readonly #query: QueryFn
   readonly #baseEnv: Readonly<Record<string, string | undefined>>
-  readonly #credentials: Readonly<Record<string, string>>
+  readonly #credential: ManagedCredential
   #cliVersion: string
   readonly #models: readonly ModelInfo[]
   readonly #armingFlow: ArmingFlow | undefined
@@ -201,13 +202,10 @@ export class ClaudeCodeDriver implements Driver {
   readonly #tokens: McpTokens
   /** What the last session said about them. Empty until a turn has run. */
   #mcpHealth: readonly McpServerHealth[] = []
-  /** Set by the core after it stores a secret, so status can report it. */
-  #savedAt: string | undefined
-  #invalidReason: string | undefined
   constructor(options: ClaudeCodeOptions) {
     this.#query = options.query
     this.#baseEnv = options.baseEnv ?? process.env
-    this.#credentials = options.credentials ?? {}
+    this.#credential = new ManagedCredential(TOKEN_ENV_VAR, options.credentials)
     this.#cliVersion = options.cliVersion ?? 'unknown'
     this.#models = options.models ?? []
     this.#armingFlow = options.armingFlow
@@ -220,37 +218,12 @@ export class ClaudeCodeDriver implements Driver {
     this.#tokens = new McpTokens(options.fetchImpl ?? fetch, options.refreshStore)
   }
 
-  /** Called by the core when it loads or stores this driver's credentials. */
-  setCredentials(
-    credentials: Readonly<Record<string, string>>,
-    savedAt?: string | undefined,
-  ): void {
-    Object.assign(this.#credentials as Record<string, string>, credentials)
-    this.#savedAt = savedAt
-    this.#invalidReason = undefined
+  setCredentials(credentials: Readonly<Record<string, string>>, savedAt?: string | undefined): void {
+    this.#credential.set(credentials, savedAt)
   }
 
   authStatus(): Promise<AuthStatus> {
-    const managed = this.#credentials[TOKEN_ENV_VAR]
-    if (this.#invalidReason) {
-      return Promise.resolve({
-        state: 'invalid',
-        source: 'managed',
-        reason: this.#invalidReason,
-        ...(this.#savedAt ? { savedAt: this.#savedAt } : {}),
-      })
-    }
-    if (managed) {
-      return Promise.resolve({
-        state: 'armed',
-        source: 'managed',
-        ...(this.#savedAt ? { savedAt: this.#savedAt } : {}),
-      })
-    }
-    // NOT an error: the CLI may perfectly well be living on credentials
-    // someone set up outside Adestia, and forcing an arming flow to start a
-    // session would make the product harder to use than the terminal.
-    return Promise.resolve({ state: 'absent', source: 'cli-native' })
+    return Promise.resolve(this.#credential.status())
   }
 
   async beginAuth(): Promise<AuthPrompt> {
@@ -317,7 +290,7 @@ export class ClaudeCodeDriver implements Driver {
   }
 
   env(): Promise<Readonly<Record<string, string>>> {
-    return Promise.resolve({ ...this.#credentials })
+    return Promise.resolve(this.#credential.values())
   }
 
   /** Claude Code reads skills from `.claude/skills/<name>/SKILL.md`. */
@@ -491,7 +464,7 @@ export class ClaudeCodeDriver implements Driver {
         // Credentials go ON TOP of the inherited environment, so a token
         // managed here wins over stale credentials in a shared home without
         // stripping everything the CLI needs to run.
-        env: { ...this.#baseEnv, ...this.#credentials },
+        env: { ...this.#baseEnv, ...this.#credential.values() },
       },
     })
 

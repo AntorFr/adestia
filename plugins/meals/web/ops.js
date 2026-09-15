@@ -63,7 +63,10 @@ function cleanCard(raw) {
   if (id === '' || id.length > 200) return undefined
   const titre = typeof raw.titre === 'string' ? raw.titre.trim() : ''
   if (titre === '') return undefined
-  const card = { id, titre, statut: STATUTS.includes(raw.statut) ? raw.statut : 'suggestion' }
+  // Born a suggestion, whatever the caller wrote: a card without a day is
+  // never confirmed, and `add` never gives one a day — `place` and `dismiss`
+  // are the only gestures that change a status.
+  const card = { id, titre, statut: 'suggestion' }
   for (const field of WRITABLE) {
     if (field === 'titre' || !(field in raw)) continue
     if (field === 'props') {

@@ -47,6 +47,7 @@ function usage(code = 1) {
       '  --pages <dossiers>  la mémoire : un dossier, ou plusieurs séparés par des',
       '                      virgules quand cette instance en compose plusieurs',
       '                      (défaut: pages)',
+      '  --langs <tags>      sous-titres préférés, dans l\'ordre (défaut: fr,fr-FR,fr-orig,en,en-US)',
       '',
     ].join('\n'),
   )
@@ -304,7 +305,15 @@ async function etat({ pagesDir }) {
     corpus: {
       items: library.length,
       transcrits: library.filter((item) => item.transcript).length,
-      aVoir: library.filter((item) => !/^(fait|clos|vu|terminé|termine)$/i.test(String(item.status ?? ''))).length,
+      // The core's own words for "settled" (packages/content/src/status.ts),
+      // copied because a tool run from the workspace has no node_modules to
+      // import them from — and the screen reads that list, so this count must.
+      aVoir: library.filter(
+        (item) =>
+          !/^(clos|fait|terminé|termine|réalisé|realise|choix fait|décidé|acheté|achete|offert|done|closed|archivé|archive)$/i.test(
+            String(item.status ?? '').trim(),
+          ),
+      ).length,
     },
     assets: assetsFor('pages/veille/exemple.md'),
   })

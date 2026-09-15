@@ -33,21 +33,11 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { Tile } from './Tile.js'
+import type { McpServerView } from '@antorfr/adestia-schemas'
+
 import { beginSignIn, useConnections } from './signin.js'
 import { useMcpServers, type McpServerHealth } from './Settings.js'
 
-/** Where a server was declared. Only `ui` is this screen's to change. */
-type McpSource = 'config' | 'plugin' | 'ui'
-
-export interface McpServerView {
-  readonly name: string
-  readonly source: McpSource
-  readonly owner?: string
-  readonly editable: boolean
-  readonly transport: 'stdio' | 'http'
-  readonly config: Readonly<Record<string, unknown>>
-  readonly shadowed?: boolean
-}
 
 /** How each state reads, and which of the three tones it wears. */
 const STATES: Readonly<

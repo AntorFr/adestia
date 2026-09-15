@@ -82,7 +82,7 @@ function frontmatterChips(yaml: string): unknown[] {
  * same chips the section cards wear say the same thing in one line, and the
  * source of truth underneath does not move.
  */
-export const frontmatterNode = $node('frontmatter', () => ({
+const frontmatterNode = $node('frontmatter', () => ({
   content: '',
   group: 'block',
   atom: true,
@@ -263,7 +263,7 @@ function atomNode(name: string) {
  * node — but it means sharing the grammar is only half the contract; this is
  * the other half.
  */
-export const wikiLinkNode = $node('wikiLink', () => ({
+const wikiLinkNode = $node('wikiLink', () => ({
   content: '',
   group: 'inline',
   inline: true,
@@ -319,9 +319,9 @@ export const wikiLinkNode = $node('wikiLink', () => ({
   },
 }))
 
-export const calloutNode = containerNode('callout')
-export const galleryNode = containerNode('gallery')
-export const appNode = atomNode('app')
+const calloutNode = containerNode('callout')
+const galleryNode = containerNode('gallery')
+const appNode = atomNode('app')
 
 /**
  * Everything the editor adds on top of the commonmark preset.

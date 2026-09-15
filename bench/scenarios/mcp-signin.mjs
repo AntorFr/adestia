@@ -21,14 +21,7 @@
  */
 
 import { writeFile } from 'node:fs/promises'
-import { readdir } from 'node:fs/promises'
 import { join } from 'node:path'
-
-async function threadsDir(dataDir) {
-  const root = join(dataDir, 'conversations')
-  const [user] = await readdir(root)
-  return join(root, user)
-}
 
 async function go(page, hash) {
   await page.evaluate((to) => {
@@ -45,7 +38,7 @@ export default async function scenario(bench) {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ title: 'Les volets du salon' }),
   })
-  const threads = await threadsDir(bench.dataDir)
+  const threads = await bench.threadsDir()
   const id = 'c1c1c1c1-0000-4000-8000-000000000001'
   await writeFile(
     join(threads, `${id}.jsonl`),

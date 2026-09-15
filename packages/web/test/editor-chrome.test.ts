@@ -4,7 +4,7 @@
  * Crepe ships its toolbar, slash menu, block handle and tooltips as STRUCTURE
  * (`theme/common/*.css`, which milkdown.ts imports) plus a PALETTE (a theme
  * file, which Adestia deliberately does not import — a second palette would
- * compete with the skin's). shell.css declares the `--crepe-*` set from
+ * compete with the skin's). styles/crepe.css declares the `--crepe-*` set from
  * Adestia's own tokens instead.
  *
  * Miss one name and CSS fails silently: the property is invalid at
@@ -33,7 +33,7 @@ import { describe, expect, it } from 'vitest'
 const resolve = createRequire(import.meta.url).resolve
 const crepeCommon = dirname(resolve('@milkdown/crepe/theme/common/style.css'))
 const crepeTheme = resolve('@milkdown/crepe/theme/frame.css')
-const shell = join(dirname(fileURLToPath(import.meta.url)), '../src/app/shell.css')
+const shell = join(dirname(fileURLToPath(import.meta.url)), '../src/app/styles/crepe.css')
 
 const names = (css: string, pattern: RegExp) =>
   new Set(Array.from(css.matchAll(pattern), (match) => match[1] as string))

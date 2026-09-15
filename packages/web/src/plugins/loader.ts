@@ -29,15 +29,13 @@ import {
   type ViewContribution,
 } from './contract.js'
 
-/** Bare specifiers a plugin may import. Anything else must be vendored. */
+/**
+ * The import map this shell provides, as a version a manifest may name.
+ *
+ * What the map holds — the bare specifiers a plugin may import, anything
+ * else being vendored — is written once, in `index.html`.
+ */
 export const IMPORT_MAP_CONTRACT = 1
-
-export const SHARED_SPECIFIERS = [
-  'react',
-  'react-dom',
-  'react-dom/client',
-  'react/jsx-runtime',
-] as const
 
 export interface PluginDescriptor {
   readonly id: string

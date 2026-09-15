@@ -27,7 +27,7 @@ export interface AttachmentLimits {
   readonly ttlMs: number
 }
 
-export const DEFAULT_LIMITS: AttachmentLimits = {
+const DEFAULT_LIMITS: AttachmentLimits = {
   maxBytes: 25 * 1024 * 1024,
   maxFiles: 8,
   ttlMs: 24 * 60 * 60 * 1000,

@@ -18,8 +18,20 @@ serialiser bug, and it is not one. So before believing a red in
 `packages/content`:
 
 ```sh
-ls node_modules/micromark-extension-directive || npm install
+ls node_modules/micromark-extension-directive || npm ci
 ```
+
+`npm ci`, never `npm install`: an install resolves the git dependency afresh
+and has replaced the fork with the registry's package without a word — the
+same symptom, a `\:::` in a content test, from the opposite cause.
+
+The same shared `node_modules` hides a second trap: its `@antorfr/*` links
+point at the PRIMARY checkout, so a resolver that follows them reads another
+branch's packages. None of the three resolvers here does any more — the
+typecheck (`tsconfig.base.json`), the tests (`vitest.config.ts`) and the web
+build (`packages/web/vite.config.ts`) each map every workspace package to the
+sources beside it. Anything else that resolves `@antorfr/*` from a worktree
+(a script run by hand, a new tool) reads `main` unless it is told the same.
 
 ## If it draws something, look at it
 

@@ -1,0 +1,237 @@
+/* The cog menu, the settings app and one MCP server opened. */
+
+/* The cog menu -----------------------------------------------------------
+
+   A menu rather than a screen, because what is behind it is settled in a
+   second and from wherever you are standing: the agent's token, light or
+   dark, signing out. Anchored to the button, so it opens where the finger
+   already is; and it is the only floating panel in the shell, which is why
+   it can afford the biggest shadow in the file. */
+.adestia-cog { position: relative; display: inline-flex; }
+
+.adestia-cog__panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  /* Wide enough for the arming flow, which is the tallest thing in here and
+     the reason this is a panel rather than a list of three items. */
+  width: min(340px, calc(100vw - 2 * var(--space-4)));
+  max-height: min(70vh, 560px);
+  overflow-y: auto;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-lg);
+  text-align: left;
+}
+
+.adestia-cog__block + .adestia-cog__block {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.adestia-cog__title {
+  margin: 0 0 var(--space-2);
+  color: var(--text-muted);
+  font: 600 var(--text-sm) var(--font);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.adestia-cog__note { margin: var(--space-2) 0 0; color: var(--text-faint); font-size: var(--text-sm); }
+
+/* Full width and quiet: the last thing in the menu, and never the thing a
+   finger reaches for by accident on the way to the theme buttons. */
+.adestia-cog__signout {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.adestia-cog__signout:hover { border-color: var(--accent); color: var(--accent); }
+
+.adestia-cog__who { color: var(--text-faint); font-size: var(--text-sm); }
+
+/* The build, at the foot of the panel: a colophon, not a setting. Muted and
+   last, because it is read once — when somebody wants to know whether the
+   deployment they just pushed is the one answering. */
+.adestia-cog__build {
+  margin: var(--space-3) 0 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+  color: var(--text-faint);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+/* The number itself in the fixed pitch this shell uses for machine-written
+   strings: `0.32.0` is read digit by digit, and proportional figures make
+   that harder than it needs to be. */
+.adestia-cog__version { font-family: var(--font-mono); }
+
+/* The settings app -------------------------------------------------------
+
+   No rows here any more. Rows were a preferences idiom, and they made two
+   domains of this instance — the servers it reaches, the prose it was told —
+   look like options in a dialog. They are tiles, like every other way in. */
+
+/* Named choices, as one segmented control. The header's cycling glyph can
+   only be inferred; three buttons SAY which one is in force. */
+.adestia-choices {
+  display: inline-flex;
+  padding: 3px;
+  gap: 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-sunken);
+}
+
+.adestia-choices__choice {
+  padding: 7px var(--space-4);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.adestia-choices__choice[aria-checked='true'] {
+  background: var(--surface-raised);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+  font-weight: 600;
+}
+
+.adestia-choices__choice:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* One MCP server, opened ------------------------------------------------- */
+
+.adestia-mcp__state {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin: var(--space-3) 0 0;
+}
+
+/* The declaration, edited AS a declaration. A form with a field per option
+   would have to know every option, and would drop the one it did not know
+   about — `auth`, which is the whole reason a hub works. */
+.adestia-mcp__config {
+  display: block;
+  width: 100%;
+  min-height: 40vh;
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: 13.5px/1.65 var(--font-mono);
+  resize: vertical;
+  tab-size: 2;
+}
+
+.adestia-mcp__config:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.adestia-mcp__config[readonly] { background: var(--surface-sunken); color: var(--text-muted); }
+
+.adestia-mcp__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-top: var(--space-2);
+}
+
+/* Destructive, and dressed as such — but not red until it is hovered: a
+   permanently red button in a row of ordinary ones is noise by the third
+   visit. */
+.adestia-mcp__drop {
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--text-muted);
+}
+
+.adestia-mcp__drop:hover { border-color: var(--danger); color: var(--danger); }
+
+/* The reason takes the whole next line: it is a sentence from the CLI, and
+   squeezing it beside a pill truncates the part that explains anything. */
+.adestia-mcp__why {
+  flex-basis: 100%;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.adestia-mcp__note {
+  margin: var(--space-3) 0 0;
+  color: var(--text-faint);
+  font-size: var(--text-sm);
+}
+
+/*
+ * A refusal and a degradation are two different pieces of news, and the
+ * SHAPE has to say which before the words do.
+ *
+ * The first attempt only made the degraded box quieter — same outline, paler
+ * colours — which produced the worst of both: a heading that announces
+ * something is amputated, sitting in a box that looks like nothing in
+ * particular. Read as a warning whose styling failed to load.
+ *
+ * So they stop sharing a shape. A refusal keeps the framed, tinted box: an
+ * extension is OFF and somebody has to act. A degradation becomes a rule and
+ * a mark in the margin — the typography of a footnote, which is what it is:
+ * true, worth knowing, and nothing to do right now.
+ */
+/* The row keeps its own control, revealed on hover — a thread list is read
+   far more often than it is tidied. */
+.adestia-problems--degraded {
+  border: 0;
+  border-left: 2px solid var(--border);
+  border-radius: 0;
+  background: none;
+  color: var(--text-muted);
+  padding: var(--space-2) 0 var(--space-2) var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.adestia-problems--degraded h2 {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-faint);
+  letter-spacing: 0.04em;
+}
+
+/* Marked, so it reads as an aside rather than as a headline that lost its
+   colour. */
+.adestia-problems--degraded h2::before {
+  content: 'ⓘ';
+  margin-right: 6px;
+  font-weight: 400;
+}
+
+.adestia-problems--degraded ul { padding-left: var(--space-3); }
+.adestia-problems--degraded li { list-style: none; }
+
+.adestia-problems h2 { margin: 0 0 var(--space-2); font-size: var(--text-base); }
+.adestia-problems ul { margin: 0; padding-left: var(--space-4); }
+
+.adestia-loading,
+.adestia-fatal {
+  padding: var(--space-6);
+  color: var(--text-muted);
+}
+
+.adestia-fatal h1 { color: var(--danger); font-size: var(--text-lg); }

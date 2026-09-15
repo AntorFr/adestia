@@ -6,36 +6,11 @@
  * list — are testable without rendering anything.
  */
 
-export interface ConversationMeta {
-  readonly id: string
-  readonly title: string
-  readonly updatedAt: string
-  readonly sessionId?: string
-  /**
-   * What the desk is doing for this thread right now, when anything.
-   *
-   * Computed by the server per request, never stored: 'running' feeds the
-   * working dot, 'waiting' the one that says the engine is blocked on a
-   * person. Absent means at rest — the honest default for a listing that
-   * mostly shows finished conversations.
-   */
-  readonly turn?: 'running' | 'waiting'
-}
+// Declared once, with the other schemas, and imported as TYPES only — the
+// compiler erases the import, so the bundle still carries no server code.
+import type { Conversation, ConversationMeta, StoredMessage } from '@antorfr/adestia-schemas'
 
-export interface StoredMessage {
-  readonly id: string
-  readonly role: 'user' | 'agent'
-  readonly text: string
-  readonly at: string
-  readonly tools?: readonly { name: string; target?: string; ok?: boolean }[]
-  readonly stopped?: boolean
-  readonly error?: string
-  readonly usage?: { contextTokens?: number; outputTokens?: number }
-}
-
-export interface Conversation extends ConversationMeta {
-  readonly messages: readonly StoredMessage[]
-}
+export type { Conversation, ConversationMeta, StoredMessage }
 
 /**
  * Every call here degrades instead of throwing.
@@ -78,23 +53,6 @@ export async function createConversation(
   // A body with no id is no conversation, whatever answered: an id-less meta
   // would become a tab and a list row keyed on undefined.
   return created?.id ? created : undefined
-}
-
-export async function renameConversation(
-  id: string,
-  title: string,
-  fetchImpl: typeof fetch = fetch,
-): Promise<boolean> {
-  try {
-    const response = await fetchImpl(`/api/conversations/${id}`, {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ title }),
-    })
-    return response.ok
-  } catch {
-    return false
-  }
 }
 
 export async function readConversation(

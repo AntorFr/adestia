@@ -19,7 +19,7 @@
 
 import { useEffect, useState } from 'react'
 
-import { Bubble, type Message } from '../chat/Chat.js'
+import { Bubble, type Message } from '../chat/Bubble.js'
 import type { StoredMessage } from '../chat/conversations.js'
 
 export interface DelegationRow {

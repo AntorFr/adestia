@@ -20,7 +20,7 @@ export interface Identity {
 }
 
 /** The implicit single user of an ungated instance. */
-export const LOCAL_USER: Identity = {
+const LOCAL_USER: Identity = {
   userId: 'local',
   displayName: 'Local user',
   groups: [],
@@ -96,7 +96,7 @@ export function resolveIdentity(request: RequestLike, config: AuthConfig): AuthO
  * public-path prefix rule ("anything under /public") is how an endpoint ends
  * up unauthenticated by accident.
  */
-export const PUBLIC_ROUTES = new Set([
+const PUBLIC_ROUTES = new Set([
   '/api/health',
   '/auth/login',
   '/auth/callback',

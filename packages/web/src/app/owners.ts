@@ -155,7 +155,7 @@ export function addressOf(plugin: {
  * `sante/dietetique/journal` to the journal, and `holds` exists only to undo
  * that — a declared folder needs no such rescue.
  */
-export function declaredApp(
+function declaredApp(
   plugins: readonly LoadedPlugin[],
   pages: readonly IndexEntry[],
   folder: string,
@@ -203,7 +203,7 @@ export function strayApp(
  * would open a folder holding a single task on that task, which is not what a
  * task list is for.
  */
-export function faceOf(
+function faceOf(
   owner: LoadedPlugin,
   pages: readonly IndexEntry[],
   folder: string,

@@ -44,6 +44,7 @@ import type {
   TurnEvent,
   TurnRequest,
 } from '../contract.js'
+import { ManagedCredential } from '../managed-credential.js'
 import { McpTokens, type RefreshStore } from '../mcp-oauth.js'
 import { SHELL_TOOLS_SERVER_NAME, bridgeStdioConfig } from '../shell-tools-config.js'
 import {
@@ -131,9 +132,7 @@ export class CodexDriver implements Driver {
   readonly #startLogin: typeof startDeviceAuthLogin
   readonly #onCredentialRefreshed: ((document: string) => void) | undefined
 
-  #credentials: Record<string, string>
-  #savedAt: string | undefined
-  #invalidReason: string | undefined
+  readonly #credential: ManagedCredential
   #models: readonly ModelInfo[] | undefined
   #quotas: QuotaReport | undefined
   #health = new Map<string, McpServerHealth>()
@@ -152,7 +151,7 @@ export class CodexDriver implements Driver {
     this.#spawnImpl = options.spawnImpl
     this.#startLogin = options.startLogin ?? startDeviceAuthLogin
     this.#onCredentialRefreshed = options.onCredentialRefreshed
-    this.#credentials = { ...options.credentials }
+    this.#credential = new ManagedCredential(CREDENTIAL_KEY, options.credentials)
   }
 
   describe(): Promise<DriverDescriptor> {
@@ -196,7 +195,7 @@ export class CodexDriver implements Driver {
    * environment is the home itself.
    */
   async env(): Promise<Readonly<Record<string, string>>> {
-    await materialize(this.#home, this.#credentials[CREDENTIAL_KEY])
+    await materialize(this.#home, this.#credential.secret())
     return { CODEX_HOME: this.#home }
   }
 
@@ -220,28 +219,11 @@ export class CodexDriver implements Driver {
   }
 
   setCredentials(credentials: Readonly<Record<string, string>>, savedAt?: string | undefined): void {
-    this.#credentials = { ...credentials }
-    this.#savedAt = savedAt
-    this.#invalidReason = undefined
+    this.#credential.set(credentials, savedAt)
   }
 
   authStatus(): Promise<AuthStatus> {
-    if (this.#invalidReason) {
-      return Promise.resolve({
-        state: 'invalid',
-        source: 'managed',
-        reason: this.#invalidReason,
-        ...(this.#savedAt ? { savedAt: this.#savedAt } : {}),
-      })
-    }
-    if (this.#credentials[CREDENTIAL_KEY]) {
-      return Promise.resolve({
-        state: 'armed',
-        source: 'managed',
-        ...(this.#savedAt ? { savedAt: this.#savedAt } : {}),
-      })
-    }
-    return Promise.resolve({ state: 'absent', source: 'cli-native' })
+    return Promise.resolve(this.#credential.status())
   }
 
   /**
@@ -382,7 +364,7 @@ export class CodexDriver implements Driver {
   }
 
   async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
-    await materialize(this.#home, this.#credentials[CREDENTIAL_KEY])
+    await materialize(this.#home, this.#credential.secret())
     await mkdir(this.#home, { recursive: true })
 
     const state = newTranslationState(request.sessionId ?? '')
@@ -458,7 +440,7 @@ export class CodexDriver implements Driver {
     } catch (error) {
       const message = (error as Error).message
       const problem = classifyAuthError(message)
-      if (problem) this.#invalidReason = explainAuthProblem(problem)
+      if (problem) this.#credential.invalidate(explainAuthProblem(problem))
       yield { type: 'error', message, fatal: true }
       yield { type: 'result', sessionId: threadId, stopped: true }
     } finally {
@@ -632,15 +614,15 @@ export class CodexDriver implements Driver {
     if (!this.#onCredentialRefreshed) return
     const current = await readMaterialized(this.#home)
     if (!current) return
-    const known = this.#credentials[CREDENTIAL_KEY]
+    const known = this.#credential.secret()
     if (known !== undefined && current.trim() === known.trim()) return
-    this.#credentials = { ...this.#credentials, [CREDENTIAL_KEY]: current }
+    this.#credential.refresh(current)
     this.#onCredentialRefreshed(current)
   }
 
   /** A short-lived process for one question. */
   async #withServer<T>(work: (server: AppServer) => Promise<T>): Promise<T> {
-    await materialize(this.#home, this.#credentials[CREDENTIAL_KEY])
+    await materialize(this.#home, this.#credential.secret())
     const server = new AppServer({
       command: this.#command,
       cwd: this.#home,

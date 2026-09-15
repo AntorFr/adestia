@@ -12,19 +12,11 @@ import { mkdir, readFile, stat } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import {
-  AskDesk,
-  ClaudeCodeDriver,
-  CodexDriver,
-  CopilotDriver,
-  SHELL_TOOLS_SERVER_NAME,
-  createOAuthFlow,
-  type Driver,
-  type ShellToolsHandle,
-} from '@antorfr/adestia-drivers'
+import { AskDesk, type AuthManagement, type Driver } from '@antorfr/adestia-drivers'
 import type { FastifyInstance } from 'fastify'
 
 import { buildApp } from './app.js'
+import { buildDriver } from './drivers.js'
 import { inboxDir } from './attachments.js'
 import { ConfigError, parseConfig, type AdestiaConfig } from './config.js'
 import { ConversationStore } from './conversations.js'
@@ -37,9 +29,7 @@ import {
   mcpServersFor,
   registerPluginVocabulary,
   unmatchedActivations,
-  type McpServer,
 } from './extensions.js'
-import { FileRefreshStore } from './mcp-refresh.js'
 import { McpStore } from './mcp-store.js'
 import { runSetups } from './plugin-host.js'
 import { UserTokens } from './user-tokens.js'
@@ -48,7 +38,7 @@ import { baseManifest, mergeSkinManifest, withInstanceName } from './webmanifest
 import { collectSkills, deliverSkills } from './skills.js'
 import { foreignRoots, resolveStores } from './stores.js'
 
-export const DEFAULT_CONFIG_FILE = 'adestia.config.yaml'
+const DEFAULT_CONFIG_FILE = 'adestia.config.yaml'
 
 export interface StartOptions {
   readonly configPath?: string
@@ -83,128 +73,6 @@ export async function loadConfigFile(
       return parseConfig('', env)
     }
     throw error
-  }
-}
-
-const AVAILABLE_DRIVERS = ['claude-code', 'copilot-cli', 'codex-cli'] as const
-
-async function buildDriver(
-  config: AdestiaConfig,
-  dataDir: string,
-  mcpServers: () => readonly McpServer[],
-  asks: AskDesk | undefined,
-  log: (message: string) => void,
-): Promise<Driver> {
-  // Rotated MCP refresh tokens outlive the process here, beside the credential.
-  // The log is threaded in because a write that fails costs nothing NOW — the
-  // turn runs on the token in memory — and everything after the next restart.
-  const refreshStore = new FileRefreshStore(dataDir, log)
-  switch (config.driver.id) {
-    case 'claude-code': {
-      const sdk = await import('@anthropic-ai/claude-agent-sdk')
-      // Undeclared in package.json the way the SDK itself is: both belong to
-      // this branch alone, resolved from the SDK's own dependency tree.
-      const { z } = await import('zod')
-      // Loosened once, here: the SDK's `tool` wants a static zod shape, and
-      // ours is built from the registry at runtime. The values ARE zod
-      // schemas; only the generics cannot know it.
-      const tool = sdk.tool as unknown as (
-        name: string,
-        description: string,
-        schema: Record<string, unknown>,
-        handler: (args: Record<string, unknown>) => Promise<unknown>,
-      ) => never
-      /**
-       * Hosts a turn's shell tools inside THIS process: the handlers run
-       * beside the conversation store, the turn's context travels by closure,
-       * and no token exists on the path at all. Measured before relied on
-       * (spikes/shell-tools-transport): the SDK accepts a live instance among
-       * its `mcpServers`, and the handlers execute in the calling process.
-       */
-      const toolsHost = (handle: ShellToolsHandle): unknown =>
-        sdk.createSdkMcpServer({
-          name: SHELL_TOOLS_SERVER_NAME,
-          tools: handle.tools.map((spec) =>
-            tool(
-              spec.name,
-              spec.description,
-              Object.fromEntries(
-                spec.params.map((param) => [
-                  param.name,
-                  (param.optional ? z.string().optional() : z.string()).describe(
-                    param.description,
-                  ),
-                ]),
-              ),
-              async (args) => {
-                const outcome = await handle.call(spec.name, args)
-                return {
-                  content: [
-                    { type: 'text' as const, text: outcome.ok ? outcome.text : outcome.error },
-                  ],
-                  ...(outcome.ok ? {} : { isError: true }),
-                }
-              },
-            ),
-          ),
-        })
-      return new ClaudeCodeDriver({
-        query: sdk.query as unknown as ConstructorParameters<typeof ClaudeCodeDriver>[0]['query'],
-        models: config.driver.models,
-        // Arming speaks the OAuth flow itself rather than driving the CLI's
-        // terminal screen: same authorization, but every failure comes back
-        // as a status code instead of a half-drawn frame.
-        armingFlow: createOAuthFlow(),
-        ...(asks ? { asks } : {}),
-        mcpServers,
-        toolsHost,
-        refreshStore,
-      })
-    }
-
-    case 'copilot-cli':
-      return new CopilotDriver({
-        // Driver-owned: config, MCP servers, session store and its SQLite all
-        // land here rather than in whatever HOME the process happens to have.
-        home: join(dataDir, 'copilot-home'),
-        models: config.driver.models,
-        ...(config.driver.agent ? { agent: config.driver.agent } : {}),
-        ...(config.driver.shellToolsTransport
-          ? { shellToolsTransport: config.driver.shellToolsTransport }
-          : {}),
-        mcpServers,
-        refreshStore,
-        ...(config.driver.command ? { command: config.driver.command } : {}),
-      })
-
-    case 'codex-cli':
-      return new CodexDriver({
-        // Driver-owned: the credential, the sessions, the sqlite state. This
-        // CLI honours it completely — spike 5 ran a dozen turns and left the
-        // surrounding HOME empty.
-        home: join(dataDir, 'codex-home'),
-        models: config.driver.models,
-        ...(asks ? { asks } : {}),
-        mcpServers,
-        refreshStore,
-        ...(config.driver.command ? { command: config.driver.command } : {}),
-        // The CLI may rotate a ChatGPT credential behind us; without this the
-        // next restart would write the old document back over the fresh one
-        // and the instance would lose its login for no visible reason.
-        onCredentialRefreshed: (document) => {
-          void new SecretStore(dataDir)
-            .write('codex-cli', document)
-            .then(() => log('driver credential refreshed by the CLI, re-stored'))
-            .catch((error: Error) => log(`could not re-store the refreshed credential: ${error.message}`))
-        },
-      })
-
-    default:
-      // Named loudly rather than falling back to the default engine: silently
-      // running a different CLI than the operator configured is indefensible.
-      throw new ConfigError([
-        `driver.id "${config.driver.id}" is not available in this build (have: ${AVAILABLE_DRIVERS.join(', ')})`,
-      ])
   }
 }
 
@@ -441,10 +309,7 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
   // has to re-arm every deploy.
   const secrets = new SecretStore(dataDir)
   const stored = await secrets.read(config.driver.id)
-  const armable = driver as Driver & {
-    credentialVar?: string
-    setCredentials?(credentials: Record<string, string>, savedAt?: string): void
-  }
+  const armable = driver as Driver & AuthManagement
   if (stored && armable.credentialVar && armable.setCredentials) {
     armable.setCredentials({ [armable.credentialVar]: stored.value }, stored.savedAt)
     log(`driver credential loaded (armed ${stored.savedAt})`)

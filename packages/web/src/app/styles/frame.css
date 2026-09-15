@@ -1,0 +1,28 @@
+/* The shell frame: the chat rail, the gutter and the canvas as one grid. */
+
+.adestia-shell {
+  display: grid;
+  grid-template-columns: var(--rail) var(--gutter) 1fr;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.adestia-gutter {
+  background: var(--border);
+  cursor: col-resize;
+  /* The visual gutter is 6px; the grab area is not, or a precise pointer is a
+     requirement rather than a convenience. */
+  position: relative;
+}
+
+.adestia-gutter::after {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline: -5px;
+}
+
+.adestia-gutter:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
