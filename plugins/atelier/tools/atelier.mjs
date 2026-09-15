@@ -26,7 +26,7 @@ import { join } from 'node:path'
 import { normalise } from '../web/convert.js'
 import { valide } from '../web/regles.js'
 import { fraicheur, signature, versQuatre } from '../moteur/design.mjs'
-import { litTable, pourFamille } from '../moteur/tables.mjs'
+import { litTable, pourFamille, verifieTable } from '../moteur/tables.mjs'
 import { derive } from '../moteur/derive/index.mjs'
 import { diff, rendu } from '../moteur/diff.mjs'
 import { calepine } from '../moteur/debit/calepine.mjs'
@@ -50,6 +50,15 @@ function litRegles(dossier) {
   for (const f of readdirSync(dossier).filter((n) => n.endsWith('.json')).sort()) {
     const { table, erreurs } = litTable(JSON.parse(readFileSync(join(dossier, f), 'utf8')), f)
     if (erreurs.length) { console.error(`✗ ${f} :`); for (const e of erreurs) console.error('  •', e); process.exit(1) }
+    // The two invariants the skill promises, checked on the WHOLE table and
+    // named, not only on the case the current design happens to visit. A
+    // warning rather than a refusal: the derivation still refuses its own
+    // case, and a hole on a combination nobody builds is a fact to fix, not a
+    // reason to stop today's cut.
+    const v = verifieTable(table)
+    for (const t of v.trous) console.error(`⚠ ${f} : trou — ${t}`)
+    for (const c of v.chevauchements) console.error(`⚠ ${f} : recouvrement — ${c}`)
+    if (!v.verifie) console.error(`⚠ ${f} : ${v.note}`)
     tables.push(table)
   }
   return tables

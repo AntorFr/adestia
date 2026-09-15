@@ -257,6 +257,11 @@ export function valide(wb) {
       if (pr.type !== 'lamello') continue;
       if (!SURFACES.includes(pr.sur)) E.push(`${p.etiquette} : lamello.sur « ${pr.sur} » hors vocabulaire (${SURFACES.join(', ')})`);
       const surFace = pr.sur === 'face' || pr.sur === 'contre-face';
+      // `appui` est la face couchée sur l'établi pour fraiser un CHANT : sur une
+      // face la question ne se pose pas, et une valeur hors vocabulaire est un
+      // décalage de fente qui attend son heure.
+      if (surFace && pr.appui != null) E.push(`${p.etiquette} : lamello sur ${pr.sur} — appui n'a pas de sens sur une face`);
+      if (!surFace && pr.appui != null && !APPUIS.includes(pr.appui)) E.push(`${p.etiquette} : appui « ${pr.appui} » (face|contre-face)`);
       if (surFace && !(pr.lignes || []).length) E.push(`${p.etiquette} : lamello sur ${pr.sur} sans lignes[]`);
       if (!surFace && !(pr.points || []).length) E.push(`${p.etiquette} : lamello sur ${pr.sur} sans points[]`);
       for (const l of pr.lignes || []) {

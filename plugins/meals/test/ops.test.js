@@ -97,9 +97,10 @@ test('adding a card puts it in the tray, never on a day', () => {
   const card = items.at(-1)
   assert.equal(card.id, 'soupe')
   // Inventing a card and deciding when it is eaten are two acts, and the
-  // format lets a write do only the first.
+  // format lets a write do only the first — which is also why the status
+  // written here does not survive: an unplaced card is never confirmed.
   assert.equal(card.jour, undefined)
-  assert.equal(card.statut, 'confirme')
+  assert.equal(card.statut, 'suggestion')
   assert.match(apply(ITEMS, SHAPE, { op: 'add', item: { id: 'x' } }).error, /titre/)
   assert.match(apply(ITEMS, SHAPE, { op: 'add', item: { id: 'yaourt', titre: 'Bis' } }).error, /already there/)
 })
@@ -109,4 +110,16 @@ test('an operation that names nothing changes nothing', () => {
   assert.match(apply(ITEMS, SHAPE, { op: 'tray' }).error, /needs an id/)
   assert.match(apply(ITEMS, SHAPE, { op: 'burn', id: 'yaourt' }).error, /unknown operation/)
   assert.equal(apply(ITEMS, SHAPE, { op: 'remove', id: 'yaourt' }).items.length, 1)
+})
+
+test('a card is born a suggestion, whatever the caller wrote', () => {
+  // The skill promises it: an unplaced card is never confirmed, and `add`
+  // never places. A statut in the payload used to slip through.
+  const { items } = apply(ITEMS, SHAPE, {
+    op: 'add',
+    item: { id: 'tarte', titre: 'Tarte aux pommes', statut: 'confirme' },
+  })
+  const card = items.find((one) => one.id === 'tarte')
+  assert.equal(card.statut, 'suggestion')
+  assert.equal(card.jour, undefined)
 })
