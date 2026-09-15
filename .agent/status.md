@@ -38,8 +38,16 @@ doc en retard, découpage du serveur, découpage du web (banc visuel), hygiène.
       (pilule de contexte, choix du modèle, bulle, question du moteur,
       composeur) quittent `Chat.tsx` pour leurs fichiers ; les attentes DOM
       des tests web passent à trois secondes.
-- [ ] Découpage web, 2e moitié (`Chat()` et `App()` en hooks, blocs du
-      lecteur) ; hygiène.
+- [x] Découpage web, 2e moitié : `Chat()` (900 lignes) rend ses onglets,
+      sessions et sa pompe à `useSessions`, mot pour mot ; `App()` (1100
+      lignes) rend le démarrage (`useInstance`), la route (`useRoute`), la
+      page (`usePage`), le thème (`useTheme`), le fil d'Ariane (`trail.ts`),
+      les écrans-barrières et la liste des refus ; le lecteur rend ses aides
+      pures (liens, nœuds, listing). Banc visuel passé sur le résultat.
+- [ ] Hygiène (`status.md` au format ultra-light, questions closes) — attend
+      la réponse à la question 3 ; kit d'aides pour les plugins — question 4 ;
+      types du protocole en un seul endroit — question 5 ; `npm ci` pour le
+      lint des hooks et le build web — question 2.
 
 Chantier du 14/09 — **un fil ne perd plus la mémoire du moteur quand le
 téléphone s'endort pendant un tour**. Remonté de l'usage : « je recharge la

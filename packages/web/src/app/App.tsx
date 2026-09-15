@@ -118,7 +118,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   /** The breadcrumb — derived once, drawn by the header and carried by every message. */
   const trail = useMemo(
     () => trailOf({ settings, openApp, loaded, pluginTrail, page, section, pages, stores, t }),
-    [openApp, loaded, page, pages, section, pluginTrail, settings, t],
+    [openApp, loaded, page, pages, section, pluginTrail, settings, stores, t],
   )
 
   /**
