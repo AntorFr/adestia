@@ -44,10 +44,13 @@ doc en retard, découpage du serveur, découpage du web (banc visuel), hygiène.
       page (`usePage`), le thème (`useTheme`), le fil d'Ariane (`trail.ts`),
       les écrans-barrières et la liste des refus ; le lecteur rend ses aides
       pures (liens, nœuds, listing). Banc visuel passé sur le résultat.
+- [x] Install réparée (`npm ci`) : lint vert sur tout le dépôt après une
+      seule liste de dépendances rendue honnête ; build web vert, et il lit
+      désormais les paquets du monorepo par leurs sources (alias Vite, comme
+      vitest et le typecheck).
 - [ ] Hygiène (`status.md` au format ultra-light, questions closes) — attend
       la réponse à la question 3 ; kit d'aides pour les plugins — question 4 ;
-      types du protocole en un seul endroit — question 5 ; `npm ci` pour le
-      lint des hooks et le build web — question 2.
+      types du protocole en un seul endroit — question 5.
 
 Chantier du 14/09 — **un fil ne perd plus la mémoire du moteur quand le
 téléphone s'endort pendant un tour**. Remonté de l'usage : « je recharge la

@@ -1,4 +1,14 @@
+import { fileURLToPath } from 'node:url'
+
 import { defineConfig } from 'vite'
+
+/**
+ * The workspace packages, by source — the same map vitest and the typecheck
+ * use. Without it the bundler follows the node_modules link, which points at
+ * the PRIMARY checkout: a worktree would ship main's content package under
+ * its own branch's shell.
+ */
+const pkg = (name: string) => fileURLToPath(new URL(`../${name}/src/index.ts`, import.meta.url))
 
 /**
  * The specifiers the page's import map publishes.
@@ -15,6 +25,12 @@ import { defineConfig } from 'vite'
 const SHARED = ['react', 'react-dom', 'react-dom/client', 'react/jsx-runtime']
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@antorfr/adestia-schemas': pkg('schemas'),
+      '@antorfr/adestia-content': pkg('content'),
+    },
+  },
   build: {
     outDir: 'dist-web',
     emptyOutDir: true,
