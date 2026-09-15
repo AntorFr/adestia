@@ -21,6 +21,14 @@ serialiser bug, and it is not one. So before believing a red in
 ls node_modules/micromark-extension-directive || npm install
 ```
 
+The same shared `node_modules` hides a second trap: its `@antorfr/*` links
+point at the PRIMARY checkout, so a resolver that follows them reads another
+branch's packages. The typecheck no longer does — `tsconfig.base.json` maps
+each workspace package to its sources, the way `vitest.config.ts` already did
+— but `vite build` still follows the links: a web build made in a worktree
+bundles `main`'s content package, and only CI, which installs into its own
+checkout, builds what the branch actually says.
+
 ## If it draws something, look at it
 
 A change to the interface is not finished because the tests pass. Tests render

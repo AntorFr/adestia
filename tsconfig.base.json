@@ -15,6 +15,18 @@
     "sourceMap": true,
     "composite": true,
     "skipLibCheck": true,
-    "verbatimModuleSyntax": true
+    "verbatimModuleSyntax": true,
+    // The workspace packages, by source. Without this the compiler follows the
+    // node_modules symlink, which points at the primary checkout: a worktree
+    // would then typecheck its server against the drivers of ANOTHER branch,
+    // and a contract changed here would read as unchanged. Relative to this
+    // file, like the aliases in vitest.config.ts.
+    "paths": {
+      "@antorfr/adestia-schemas": ["./packages/schemas/src/index.ts"],
+      "@antorfr/adestia-content": ["./packages/content/src/index.ts"],
+      "@antorfr/adestia-drivers": ["./packages/drivers/src/index.ts"],
+      "@antorfr/adestia-server": ["./packages/server/src/index.ts"],
+      "@antorfr/adestia-web": ["./packages/web/src/index.ts"]
+    }
   }
 }
