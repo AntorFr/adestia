@@ -26,7 +26,7 @@ verts ; banc visuel passé sur les 35 scénarios (34 verts, voir ci-dessous). L'
 - [ ] Le scénario de banc `journal-blocs` attend un bouton « Enregistrer »
       que l'éditeur n'a plus depuis le 10/09 (auto-enregistrement) : à
       réécrire pour la nouvelle mécanique, il échoue déjà sur `main`.
-- [ ] Fusionner `refonte` dans `main`, une fois les questions closes.
+- [x] Fusionné dans `main` le 15/09, tag `v0.58.0`.
 
 **Restes ouverts des chantiers passés** (relevés au dégraissage de ce fichier,
 non revérifiés un par un ; l'historique complet est dans git) :
