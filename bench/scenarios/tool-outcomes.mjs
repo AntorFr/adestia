@@ -16,16 +16,8 @@
  * SHELL's half: given the events, does it draw them. The driver's half is
  * pinned by the unit tests in packages/drivers/test.
  */
-import { readdir, writeFile } from 'node:fs/promises'
+import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-
-const line = (entry) => `${JSON.stringify(entry)}\n`
-
-async function threadsDir(dataDir) {
-  const root = join(dataDir, 'conversations')
-  const [user] = await readdir(root)
-  return join(root, user)
-}
 
 /** The trace is folded by default; the outcomes are the point, so open it. */
 async function unfold(page) {
@@ -40,7 +32,7 @@ export default async function scenario(bench) {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ title: 'Deux lectures, une qui rate' }),
   })
-  const threads = await threadsDir(bench.dataDir)
+  const threads = await bench.threadsDir()
 
   // The reload half: a settled turn whose tools carry their outcome. Before
   // the fix this record was unreachable — `ok` never reached the store.

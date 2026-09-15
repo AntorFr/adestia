@@ -26,7 +26,9 @@
  * Run it through `bench/run.sh <scenario>`; the traps that cost an hour are
  * in `bench/README.md`.
  */
+import { readdir } from 'node:fs/promises'
 import { createServer, request } from 'node:http'
+import { join } from 'node:path'
 import { argv, env } from 'node:process'
 import playwright from '/usr/lib/node_modules/playwright-core/index.js'
 
@@ -93,6 +95,21 @@ const browser = await chromium.launch({ args: ['--no-sandbox'] })
 
 const bench = {
   dataDir: '/data',
+
+  /**
+   * Where the store keeps this instance's threads — one user, one directory,
+   * found rather than named because its name is a hash of the user's id.
+   */
+  async threadsDir() {
+    const root = join(this.dataDir, 'conversations')
+    const [user] = await readdir(root)
+    return join(root, user)
+  },
+
+  /** One line of a thread file, as the store itself writes it. */
+  line(entry) {
+    return `${JSON.stringify(entry)}\n`
+  },
 
   // `touch` is what makes `(pointer: coarse)` match — a narrow viewport alone
   // is a small window, not a phone, and the rules that only fire on a touch

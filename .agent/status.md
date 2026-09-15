@@ -11,7 +11,19 @@ doc en retard, découpage du serveur, découpage du web (banc visuel), hygiène.
       les règles CSS d'un concept retiré ; 38 symboles que seul leur fichier
       lit ne sont plus exportés ; le compilateur refuse désormais un local ou
       un paramètre inutilisé (`noUnusedLocals`, `noUnusedParameters`).
-- [ ] Doublons ; doc ; découpage serveur ; découpage web ; hygiène.
+- [x] Doublons : la persistance d'un tour écrite une fois dans le magasin
+      de conversations ; le frontmatter coupé une fois pour l'index, le titre
+      et le planificateur ; les trois pilotes tiennent leur jeton par un même
+      objet — et le pilote Claude FUSIONNAIT au lieu de remplacer, donc
+      « effacer le jeton » ne l'effaçait pas en mémoire (corrigé en passant) ;
+      le serveur type ses appels optionnels au pilote avec les interfaces du
+      contrat au lieu de les réinventer ; les scénarios du banc reçoivent
+      leurs aides de fil au lieu de les recopier six fois.
+- [x] Doc : trois moteurs, douze plugins, plus de compte de tests figé.
+- [x] Outillage : dans une worktree, le typecheck lisait les types des
+      autres paquets dans le `dist` de `main` (liens `node_modules`) ; des
+      `paths` vers les sources corrigent ça, `vite build` reste piégé.
+- [ ] Découpage serveur ; découpage web (banc visuel) ; hygiène.
 
 Chantier du 14/09 — **un fil ne perd plus la mémoire du moteur quand le
 téléphone s'endort pendant un tour**. Remonté de l'usage : « je recharge la

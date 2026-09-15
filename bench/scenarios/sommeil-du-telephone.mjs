@@ -12,19 +12,11 @@
  * bench serves its scripted stream once per run, and a second page would wait
  * for an attachment that never comes.
  */
-import { appendFile, readdir } from 'node:fs/promises'
+import { appendFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-const line = (entry) => `${JSON.stringify(entry)}\n`
 const ANSWER = 'Référence Festool : 200051'
 const THEME = 'light'
-
-/** Where the store keeps this instance's threads — one user, one directory. */
-async function threadsDir(dataDir) {
-  const root = join(dataDir, 'conversations')
-  const [user] = await readdir(root)
-  return join(root, user)
-}
 
 export default async function scenario(bench) {
   const thread = await bench.api('/api/conversations', {
@@ -32,10 +24,10 @@ export default async function scenario(bench) {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ title: 'Tuyau Festool' }),
   })
-  const file = join(await threadsDir(bench.dataDir), `${thread.id}.jsonl`)
+  const file = join(await bench.threadsDir(), `${thread.id}.jsonl`)
   await appendFile(
     file,
-    line({
+    bench.line({
       type: 'message',
       id: 'u1',
       role: 'user',
@@ -54,14 +46,14 @@ export default async function scenario(bench) {
   // exactly the lines its finish closure would append.
   await appendFile(
     file,
-    line({
+    bench.line({
       type: 'message',
       id: 'a1',
       role: 'agent',
       text: `Monsieur, retrouvé — un seul achat dans Gmail.\n\n${ANSWER}`,
       at: '2026-09-14T18:33:35.000Z',
       tools: [{ name: 'search_mail', target: 'Festool', ok: true }],
-    }) + line({ type: 'session', sessionId: 'engine-1', at: '2026-09-14T18:33:35.001Z' }),
+    }) + bench.line({ type: 'session', sessionId: 'engine-1', at: '2026-09-14T18:33:35.001Z' }),
   )
   bench.cutTurn()
   await page.waitForTimeout(1200)

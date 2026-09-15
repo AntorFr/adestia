@@ -8,16 +8,8 @@
  * the tool would have performed lands through the same server route the
  * handler calls.
  */
-import { appendFile, readdir } from 'node:fs/promises'
+import { appendFile } from 'node:fs/promises'
 import { join } from 'node:path'
-
-const line = (entry) => `${JSON.stringify(entry)}\n`
-
-async function threadsDir(dataDir) {
-  const root = join(dataDir, 'conversations')
-  const [user] = await readdir(root)
-  return join(root, user)
-}
 
 export default async function scenario(bench) {
   // Named the way every thread is named today: the first 48 characters of
@@ -28,8 +20,8 @@ export default async function scenario(bench) {
     body: JSON.stringify({ title: 'donne un vrai nom à ce fil, on ne le retrouve …' }),
   })
   await appendFile(
-    join(await threadsDir(bench.dataDir), `${live.id}.jsonl`),
-    line({
+    join(await bench.threadsDir(), `${live.id}.jsonl`),
+    bench.line({
       type: 'message',
       id: 'u1',
       role: 'user',

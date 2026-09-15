@@ -9,17 +9,8 @@
  * Copy it for the next change: seed what the thread needs, script the events
  * the server would have sent, and take a picture at each state worth a look.
  */
-import { appendFile, readdir, writeFile } from 'node:fs/promises'
+import { appendFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-
-const line = (entry) => `${JSON.stringify(entry)}\n`
-
-/** Where the store keeps this instance's threads — one user, one directory. */
-async function threadsDir(dataDir) {
-  const root = join(dataDir, 'conversations')
-  const [user] = await readdir(root)
-  return join(root, user)
-}
 
 export default async function scenario(bench) {
   // A thread for the live turn, created through the API so the store writes
@@ -29,10 +20,10 @@ export default async function scenario(bench) {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ title: 'Fiche voyages' }),
   })
-  const threads = await threadsDir(bench.dataDir)
+  const threads = await bench.threadsDir()
   await appendFile(
     join(threads, `${live.id}.jsonl`),
-    line({
+    bench.line({
       type: 'message',
       id: 'u1',
       role: 'user',

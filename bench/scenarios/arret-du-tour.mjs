@@ -10,17 +10,8 @@
  * a moment to reach an engine, and a button that looks untouched for that
  * moment is a button somebody presses again.
  */
-import { appendFile, readdir, writeFile } from 'node:fs/promises'
+import { appendFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-
-const line = (entry) => `${JSON.stringify(entry)}\n`
-
-/** Where the store keeps this instance's threads — one user, one directory. */
-async function threadsDir(dataDir) {
-  const root = join(dataDir, 'conversations')
-  const [user] = await readdir(root)
-  return join(root, user)
-}
 
 export default async function scenario(bench) {
   const live = await bench.api('/api/conversations', {
@@ -28,10 +19,10 @@ export default async function scenario(bench) {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ title: 'Arrêter un tour' }),
   })
-  const threads = await threadsDir(bench.dataDir)
+  const threads = await bench.threadsDir()
   await appendFile(
     join(threads, `${live.id}.jsonl`),
-    line({
+    bench.line({
       type: 'message',
       id: 'u1',
       role: 'user',
