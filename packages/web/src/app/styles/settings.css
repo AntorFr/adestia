@@ -195,7 +195,7 @@
  * a mark in the margin — the typography of a footnote, which is what it is:
  * true, worth knowing, and nothing to do right now.
  */
-/* The row keeps its own control, revealed on hover — a thread list is read
+/* The row keeps its own control, revealed on hover — a conversation list is read
    far more often than it is tidied. */
 .adestia-problems--degraded {
   border: 0;

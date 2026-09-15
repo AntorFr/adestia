@@ -1,8 +1,8 @@
 /**
  * Talking to the conversation store from the browser.
  *
- * Kept apart from the components so the rules that matter — a thread is
- * created before a turn can join it, a failed load never blanks the thread
+ * Kept apart from the components so the rules that matter — a conversation is
+ * created before a turn can join it, a failed load never blanks the conversation
  * list — are testable without rendering anything.
  */
 
@@ -73,14 +73,14 @@ export async function deleteConversation(
   }
 }
 
-/** A thread's first words make a better name than "New conversation". */
+/** A conversation's first words make a better name than "New conversation". */
 export function titleFrom(text: string): string {
   const flat = text.replace(/\s+/g, ' ').trim()
   return flat.length <= 48 ? flat : `${flat.slice(0, 47)}…`
 }
 
 /**
- * Puts a thread away, or brings it back.
+ * Puts a conversation away, or brings it back.
  *
  * Reversible on purpose: the only tool for tidying up used to be a delete
  * that took every word with it.

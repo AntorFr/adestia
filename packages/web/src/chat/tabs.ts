@@ -6,7 +6,7 @@
  * END, closing the active tab falls to the RIGHT neighbour before the left,
  * dragging reorders by index. Kept apart from React so those rules are
  * testable without rendering anything, and shared so the tab bar and the
- * thread list cannot disagree about what a conversation's dot means.
+ * conversation list cannot disagree about what a conversation's dot means.
  *
  * Per browser, like the model choice and the mosaic order: which tabs *I*
  * have open is how one person finds their screen again, not a property of
@@ -67,7 +67,7 @@ export function loadTabs(storage: Store | undefined = fallback()): TabsState {
     const open: string[] = []
     for (const entry of shape.open) {
       if (typeof entry !== 'string' || entry === '') continue
-      if (open.includes(entry)) continue // a duplicate tab is two answers to one thread
+      if (open.includes(entry)) continue // a duplicate tab is two answers to one conversation
       open.push(entry)
     }
     return state(
@@ -158,7 +158,7 @@ function readMarks(storage: Store | undefined): Record<string, string> {
  * Records that the user has SEEN this conversation as of `at`.
  *
  * Pruned to the most recent entries by timestamp: a mark only matters while
- * its thread still shows up somewhere, and a map that grows by one key per
+ * its conversation still shows up somewhere, and a map that grows by one key per
  * conversation forever is a leak wearing a feature's clothes.
  */
 export function markRead(id: string, at: string, storage: Store | undefined = fallback()): void {
@@ -183,7 +183,7 @@ export function lastReadAt(id: string, storage: Store | undefined = fallback()):
  * Finished since the user last looked?
  *
  * Plain string comparison: both sides are ISO timestamps, which order
- * lexically. An empty `updatedAt` (a thread that never got a turn) is never
+ * lexically. An empty `updatedAt` (a conversation that never got a turn) is never
  * unread — there is nothing in it to have missed.
  */
 export function isUnread(
@@ -199,7 +199,7 @@ export type TabDot = 'waiting' | 'working' | 'unread' | 'idle'
 
 /**
  * The one place that decides what a conversation's dot shows, shared by the
- * tab bar and the thread list so they cannot drift apart.
+ * tab bar and the conversation list so they cannot drift apart.
  *
  * Waiting outranks everything: the engine is blocked on a person, and a
  * waiting turn IS also a running one — showing "working" would tell the user

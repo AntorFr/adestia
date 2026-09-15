@@ -119,7 +119,7 @@ export function trailOf({
       // The thing being read, named. A trail that stopped at "Instructions"
       // while a file fills the screen is a trail that cannot say where the
       // reader is — which is the one job it has. A delegation's address ends
-      // in a thread UUID, which names nothing to a person: its caller — the
+      // in a conversation UUID, which names nothing to a person: its caller — the
       // FIRST segment — is the half of the address that does.
       ...(settings.item
         ? [

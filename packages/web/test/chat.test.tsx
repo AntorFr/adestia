@@ -241,7 +241,7 @@ describe('tool trace', () => {
 describe('bubble', () => {
   it('marks an interrupted turn, in the language the reader is reading', () => {
     // The predecessor dropped this flag and interruptions vanished from the
-    // thread, leaving a truncated answer that looked complete. Then the flag
+    // conversation, leaving a truncated answer that looked complete. Then the flag
     // came back and the SENTENCE stayed English in a French shell: the
     // dictionary had the translation, the bubble was never handed one.
     render(
@@ -666,16 +666,16 @@ describe('chat', () => {
       turn!.close()
     })
     // Settled: the indicator goes, and what was drawn as two bubbles STAYS
-    // two — the thread keeps the shape the live view had.
+    // two — the conversation keeps the shape the live view had.
     await waitFor(() => expect(container.querySelector('.adestia-dots')).toBeNull())
     expect(container.querySelectorAll('.adestia-bubble--agent')).toHaveLength(2)
     expect(screen.getByText('Je regarde.')).toBeTruthy()
     expect(screen.getByText('Voilà.')).toBeTruthy()
   })
 
-  it('stops the FIRST turn of a thread, naming the conversation', async () => {
+  it('stops the FIRST turn of a conversation, naming the conversation', async () => {
     // The regression, end to end. The ■ used to send the ENGINE's session id,
-    // which only comes back in the turn's `result` — its END. On a thread's
+    // which only comes back in the turn's `result` — its END. On a conversation's
     // first turn the browser held none, the handler returned on the spot, and
     // the button posted nothing at all: pressed, and nothing happened.
     const encoder = new TextEncoder()
@@ -735,7 +735,7 @@ describe('chat', () => {
       turn!.enqueue(encoder.encode(frame({ type: 'result', sessionId: 's1', stopped: true })))
       turn!.close()
     })
-    // Landed: the thread carries the interruption, and the composer sends again.
+    // Landed: the conversation carries the interruption, and the composer sends again.
     await waitFor(() => expect(screen.getByText('Turn interrupted.')).toBeTruthy())
     expect(screen.queryByLabelText('Stop')).toBeNull()
   })
@@ -811,7 +811,7 @@ describe('chat', () => {
 
   it('POSTs a message sent during a turn at once, shows it held, then adopts the merged turn', async () => {
     // The queue is the SERVER's now: a message typed during a turn is posted
-    // immediately (202 — held, already written into the thread), so a closed
+    // immediately (202 — held, already written into the conversation), so a closed
     // tab loses nothing. When the running turn settles, the chat re-attaches
     // and picks up the merged follow-up the desk dispatched.
     const posts: { prompt: string }[] = []
@@ -922,9 +922,9 @@ describe('chat', () => {
     await waitFor(() => expect(screen.getByText('reçu cinq sur cinq')).toBeTruthy())
   })
 
-  it('adopts a running turn when a thread is opened', async () => {
+  it('adopts a running turn when a conversation is opened', async () => {
     // The reload story: the turn kept running at the desk; opening the
-    // thread replays the transcript from the store AND re-attaches to the
+    // conversation replays the transcript from the store AND re-attaches to the
     // live turn, mid-flight.
     const encoder = new TextEncoder()
     const fetchImpl = vi.fn((url: string) => {
@@ -1032,7 +1032,7 @@ describe('chat', () => {
     })
   }
 
-  it('reads the thread back when its stream dies and the turn finishes without it', async () => {
+  it('reads the conversation back when its stream dies and the turn finishes without it', async () => {
     // Seen on a real instance: the answer had landed at the desk, and the
     // screen still showed a lone tool call over "Load failed".
     const phone = sleepingPhone(true)
@@ -1045,7 +1045,7 @@ describe('chat', () => {
     expect(await screen.findByText('Référence Festool : 200051')).toBeTruthy()
     expect(screen.queryByText('Load failed')).toBeNull()
 
-    // And the next message leaves naming the thread, never an engine session:
+    // And the next message leaves naming the conversation, never an engine session:
     // which one it resumes is the server's to read.
     await ask('Probablement D 32/22x10m-AS-GQ/CT')
     await waitFor(() => expect(phone.posts).toHaveLength(2))
@@ -1054,8 +1054,8 @@ describe('chat', () => {
   })
 
   it('says it when the conversation cannot be created, and posts no turn', async () => {
-    // The wire allows a turn without a thread — an ephemeral question — and
-    // the shell used to take it whenever the thread creation failed: a turn
+    // The wire allows a turn without a conversation — an ephemeral question — and
+    // the shell used to take it whenever the conversation creation failed: a turn
     // keyed by nothing, carrying the browser's idea of the engine session,
     // that nothing could read back, adopt or stop. A refusal that is said is
     // better than an answer that is lost.
@@ -1238,7 +1238,7 @@ describe('tabs', () => {
       } as unknown as Response)
     }) as unknown as typeof fetch
 
-  it('opens conversations as tabs and keeps their threads apart', async () => {
+  it('opens conversations as tabs and keeps their conversations apart', async () => {
     render(<Chat fetchImpl={tabsFetch()} />)
 
     fireEvent.click(screen.getByLabelText('Conversations'))
@@ -1255,7 +1255,7 @@ describe('tabs', () => {
       fireEvent.click(filDeux)
     })
     expect(await screen.findByText('réponse c2')).toBeTruthy()
-    // The other tab's thread is not painted over this one.
+    // The other tab's conversation is not painted over this one.
     expect(screen.queryByText('réponse c1')).toBeNull()
     expect(screen.getAllByRole('tab')).toHaveLength(2)
 
@@ -1348,7 +1348,7 @@ describe('tabs', () => {
     })
     expect(screen.queryAllByRole('tab')).toHaveLength(0)
 
-    // Closed is not archived: the thread still stands in the list.
+    // Closed is not archived: the conversation still stands in the list.
     fireEvent.click(screen.getByLabelText('Conversations'))
     expect(await screen.findByText('Fil un')).toBeTruthy()
   })
@@ -1369,7 +1369,7 @@ describe('tabs', () => {
 
     render(<Chat fetchImpl={tabsFetch()} />)
     await waitFor(() => expect(screen.getAllByRole('tab')).toHaveLength(2))
-    // In the persisted order, and the persisted active one shows its thread.
+    // In the persisted order, and the persisted active one shows its conversation.
     const titles = screen.getAllByRole('tab').map((tab) => tab.textContent)
     expect(titles[0]).toContain('Fil deux')
     expect(titles[1]).toContain('Fil un')
@@ -1377,7 +1377,7 @@ describe('tabs', () => {
   })
 
   it('closes a restored tab the server answers with something else', async () => {
-    // A persisted tab can outlive its thread, and the server may answer its
+    // A persisted tab can outlive its conversation, and the server may answer its
     // id with a body that is no conversation at all. That answer must close
     // the tab the way a 404 does — not leave an unhandled rejection where
     // the transcript replay should have been.
@@ -1400,7 +1400,7 @@ describe('tabs', () => {
     await waitFor(() => expect(screen.queryAllByRole('tab')).toHaveLength(0))
   })
 
-  it('dots the thread list from the desk state the server reports', async () => {
+  it('dots the conversation list from the desk state the server reports', async () => {
     const { container } = render(
       <Chat
         fetchImpl={tabsFetch({
@@ -1413,8 +1413,8 @@ describe('tabs', () => {
     )
     fireEvent.click(screen.getByLabelText('Conversations'))
     await screen.findByText('Occupé')
-    expect(container.querySelector('.adestia-threads .adestia-dot--working')).toBeTruthy()
-    expect(container.querySelector('.adestia-threads .adestia-dot--waiting')).toBeTruthy()
+    expect(container.querySelector('.adestia-conversations .adestia-dot--working')).toBeTruthy()
+    expect(container.querySelector('.adestia-conversations .adestia-dot--waiting')).toBeTruthy()
   })
 })
 
@@ -1556,8 +1556,8 @@ describe('attachments', () => {
   })
 })
 
-describe('threads', () => {
-  /** A fetch that serves one stored thread with a rich transcript. */
+describe('conversations', () => {
+  /** A fetch that serves one stored conversation with a rich transcript. */
   const withThread = (): typeof fetch =>
     ((url: string) => {
       const body =
@@ -1584,13 +1584,13 @@ describe('threads', () => {
       return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(body) } as unknown as Response)
     }) as unknown as typeof fetch
 
-  it('lists the stored threads', async () => {
+  it('lists the stored conversations', async () => {
     render(<Chat fetchImpl={withThread()} />)
     fireEvent.click(screen.getByLabelText('Conversations'))
     await waitFor(() => expect(screen.getByText('Le garage')).toBeTruthy())
   })
 
-  it('replays a thread faithfully — tools, interruption and context', async () => {
+  it('replays a conversation faithfully — tools, interruption and context', async () => {
     // The predecessor replayed role and text only, so a truncated answer came
     // back looking complete. The stored transcript IS what the UI drew.
     render(<Chat fetchImpl={withThread()} />)
@@ -1601,11 +1601,11 @@ describe('threads', () => {
     expect(screen.getByText('range le garage')).toBeTruthy()
     expect(screen.getByText('Turn interrupted.')).toBeTruthy()
     expect(screen.getByText(/1 tool call/)).toBeTruthy()
-    // The pill picks up where the thread left off.
+    // The pill picks up where the conversation left off.
     expect(screen.getByText('4.2k')).toBeTruthy()
   })
 
-  it('starts a clean thread on demand', async () => {
+  it('starts a clean conversation on demand', async () => {
     render(<Chat fetchImpl={withThread()} />)
     fireEvent.click(screen.getByLabelText('Conversations'))
     fireEvent.click(await screen.findByText('Le garage'))

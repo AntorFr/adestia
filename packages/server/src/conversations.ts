@@ -6,8 +6,8 @@
  * back looking complete. What is written here is what the UI drew.
  *
  * One JSONL file per conversation, appended: a crash costs the last line, not
- * the thread, and the agent can read it with `cat` if it ever needs to.
- * Conversations belong to a USER, because multi-user means per-user threads —
+ * the conversation, and the agent can read it with `cat` if it ever needs to.
+ * Conversations belong to a USER, because multi-user means per-user conversations —
  * the workspace is shared, the conversations are not.
  */
 
@@ -61,7 +61,7 @@ export class ConversationStore {
     return join(this.root, 'conversations', this.naming === 'plain' ? userId : userDirectory(userId))
   }
 
-  /** The owners that hold threads. Only a `plain` store can answer — a hashed
+  /** The owners that hold conversations. Only a `plain` store can answer — a hashed
       directory name cannot be walked back to who it belongs to. */
   async owners(): Promise<readonly string[]> {
     if (this.naming !== 'plain') return []
@@ -90,18 +90,18 @@ export class ConversationStore {
     await appendFile(this.#file(userId, id), `${JSON.stringify({ type: 'message', ...message })}\n`)
   }
 
-  /** Records which CLI session this thread resumes, so a reload can continue it. */
+  /** Records which CLI session this conversation resumes, so a reload can continue it. */
   /**
-   * What a finished turn leaves in its thread: ONE MESSAGE PER PART, then the
+   * What a finished turn leaves in its conversation: ONE MESSAGE PER PART, then the
    * session line for the next ask.
    *
    * An agent that answers, goes back to its tools and answers again said two
-   * things, and the thread records two — otherwise a reload would glue back
+   * things, and the conversation records two — otherwise a reload would glue back
    * together what the live view had just drawn apart. A turn that produced
    * nothing still leaves a line: it is what carries the interruption and the
    * error. How the turn ended belongs to its last word only, and the usage is
    * the whole turn's, so both hang there. Written even when the turn failed:
-   * a thread that silently drops the answer it did produce is worse than one
+   * a conversation that silently drops the answer it did produce is worse than one
    * showing it broke — which is why every write here swallows its own error.
    */
   async recordOutcome(userId: string, id: string, outcome: TurnOutcome): Promise<void> {
@@ -153,7 +153,7 @@ export class ConversationStore {
         entry = JSON.parse(line) as Record<string, unknown>
       } catch {
         // A half-written last line is what a crash mid-append looks like.
-        // Losing it beats refusing to open the whole thread.
+        // Losing it beats refusing to open the whole conversation.
         continue
       }
       if (entry['type'] === 'meta') meta = { ...meta, ...(entry as unknown as ConversationMeta) }
@@ -173,7 +173,7 @@ export class ConversationStore {
 
   /**
    * @param includeArchived what a screen showing the archive would ask for.
-   *   The default answers what a chat panel wants: the live threads.
+   *   The default answers what a chat panel wants: the live conversations.
    */
   async list(userId: string, includeArchived = false): Promise<readonly ConversationMeta[]> {
     let files: string[]
@@ -192,7 +192,7 @@ export class ConversationStore {
         metas.push(meta)
       }
     }
-    // Most recent first: a thread list ordered by id is a list nobody scans.
+    // Most recent first: a conversation list ordered by id is a list nobody scans.
     return metas.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
   }
 
@@ -205,7 +205,7 @@ export class ConversationStore {
   }
 
   /**
-   * Hides a thread, or brings it back. Written as one more meta line, the way
+   * Hides a conversation, or brings it back. Written as one more meta line, the way
    * a rename is: the log stays append-only, and the last word wins.
    */
   async archive(userId: string, id: string, archived = true): Promise<void> {
@@ -228,7 +228,7 @@ export class ConversationStore {
 
   /**
    * Rewrites the file with only its current state. Append-only logs grow
-   * without bound, and a thread someone has renamed six times replays six
+   * without bound, and a conversation someone has renamed six times replays six
    * meta lines on every open.
    */
   async compact(userId: string, id: string): Promise<void> {

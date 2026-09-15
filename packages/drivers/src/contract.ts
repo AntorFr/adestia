@@ -230,7 +230,7 @@ export type ShellToolOutcome =
  *
  * The shape is the whole doctrine. The agent never names its target: the
  * handle was minted for one turn of one conversation, and the server resolves
- * user and thread on its own side (`call` closes over them; the socket path
+ * user and conversation on its own side (`call` closes over them; the socket path
  * resolves the token to the same context). Ids stay plumbing between server
  * and driver; the model only ever handles meaning.
  *
@@ -384,7 +384,7 @@ export interface TurnRequest {
    * method, which is what this replaces. That method addressed a running turn
    * by the ENGINE's session id, and nobody holds that id at the moment it is
    * needed: it travels back in the `result` event, which is the END of the
-   * turn. The first turn of a thread was therefore unstoppable on every
+   * turn. The first turn of a conversation was therefore unstoppable on every
    * engine — the browser had no id to name, so the button posted nothing at
    * all. A signal exists before the driver does, cannot be learned too late,
    * and cannot name the wrong turn.

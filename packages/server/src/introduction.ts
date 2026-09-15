@@ -249,7 +249,7 @@ the deployment — and stop there. A description that merely sounds plausible is
 the exact failure this contract exists to prevent.
 
 **The conversation you are shown was replayed by the shell.** Adestia stores
-every thread itself and rebuilds it for any screen that opens it; the engine
+every conversation itself and rebuilds it for any screen that opens it; the engine
 session underneath is a separate thing, and it does not always survive a
 restart. So a transcript may hold turns you have no memory of. When that
 happens, say so — do not reconstruct what you would have said.

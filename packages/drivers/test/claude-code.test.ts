@@ -297,12 +297,12 @@ describe('stopping', () => {
       if (event.type === 'text-delta') stopper.abort()
     }
     // `interrupt`, not a teardown: the SDK ends the turn itself and reports
-    // `error_during_execution`, which is what marks the thread.
+    // `error_during_execution`, which is what marks the conversation.
     expect(query.interrupts).toBe(1)
   })
 
   it('honours a stop that arrived before the turn started', async () => {
-    // The desk admits a turn, writes the message to the thread, THEN starts
+    // The desk admits a turn, writes the message to the conversation, THEN starts
     // it. A stop pressed inside that window must not fall through the floor.
     const query = fakeSdk([resultMessage])
     await collect(new ClaudeCodeDriver({ query }), 'hi', { signal: AbortSignal.abort() })

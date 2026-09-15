@@ -130,10 +130,10 @@ const FR: Readonly<Record<string, string>> = {
   Delegations: 'Délégations',
   'What other agents asked this one to do': 'Ce que les autres agents lui ont demandé',
   'Read-only — this conversation belongs to': 'Lecture seule — cette conversation appartient à',
-  'No delegated task yet — the threads other agents open here will appear by caller.':
+  'No delegated task yet — the conversations other agents open here will appear by caller.':
     'Aucune tâche déléguée pour l’instant — les fils ouverts par les autres agents apparaîtront ici, par demandeur.',
-  thread: 'fil',
-  threads: 'fils',
+  conversation: 'fil',
+  conversations: 'fils',
   '%n running': '%n en cours',
 
   // Signing in to an MCP server (the chat card, and the server page's row)

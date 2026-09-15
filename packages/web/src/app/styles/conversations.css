@@ -1,8 +1,8 @@
-/* The thread list, the delegations page and the tab strip. */
+/* The conversation list, the delegations page and the tab strip. */
 
-/* Threads ----------------------------------------------------------------- */
+/* Conversations ----------------------------------------------------------------- */
 
-.adestia-threads {
+.adestia-conversations {
   list-style: none;
   margin: 0;
   padding: var(--space-2);
@@ -12,7 +12,7 @@
   overflow-y: auto;
 }
 
-.adestia-threads__item {
+.adestia-conversations__item {
   display: block;
   width: 100%;
   text-align: left;
@@ -29,31 +29,31 @@
   white-space: nowrap;
 }
 
-.adestia-threads__item:hover { background: var(--surface-sunken); }
+.adestia-conversations__item:hover { background: var(--surface-sunken); }
 
 /*
  * A row, not a button with something stuck beside it.
  *
  * These rules live HERE and not where they were written, three hundred lines
- * up: `.adestia-threads__item` below sets `display: block; width: 100%`, and at
+ * up: `.adestia-conversations__item` below sets `display: block; width: 100%`, and at
  * equal specificity the later rule wins — so the flex layout was silently
  * undone and the control pushed out of the row.
  */
-.adestia-threads li {
+.adestia-conversations li {
   display: flex;
   align-items: center;
   gap: var(--space-1, 4px);
 }
 
-.adestia-threads li > .adestia-threads__item {
+.adestia-conversations li > .adestia-conversations__item {
   flex: 1 1 auto;
   width: auto;
   min-width: 0;
 }
 
-/* Revealed on hover: a thread list is read far more often than it is tidied.
+/* Revealed on hover: a conversation list is read far more often than it is tidied.
    Always there for the keyboard, which cannot hover. */
-.adestia-threads__archive {
+.adestia-conversations__archive {
   flex: none;
   display: grid;
   place-items: center;
@@ -68,12 +68,12 @@
   transition: opacity 0.12s, color 0.12s, background 0.12s;
 }
 
-.adestia-threads__archive svg { width: 15px; height: 15px; }
+.adestia-conversations__archive svg { width: 15px; height: 15px; }
 
-.adestia-threads li:hover .adestia-threads__archive,
-.adestia-threads__archive:focus-visible { opacity: 1; }
+.adestia-conversations li:hover .adestia-conversations__archive,
+.adestia-conversations__archive:focus-visible { opacity: 1; }
 
-.adestia-threads__archive:hover {
+.adestia-conversations__archive:hover {
   color: var(--text);
   background: var(--surface-sunken);
 }
@@ -81,12 +81,12 @@
 /* Delegations (settings page) ---------------------------------------------- */
 
 /*
- * The thread-list vocabulary, out of its dropdown. `.adestia-threads` above
+ * The conversation-list vocabulary, out of its dropdown. `.adestia-conversations` above
  * is dressed for the chat's overlay — raised, capped at 40vh, underlined —
  * and on a settings canvas those clothes read as a panel that fell off
  * something. Undressed here, not re-specified: the rows keep their behaviour.
  */
-.adestia-deleg .adestia-threads {
+.adestia-deleg .adestia-conversations {
   max-height: none;
   background: none;
   border: 1px solid var(--border);
@@ -107,7 +107,7 @@
 
 /* A row that carries a timestamp needs to BE a row; the block+ellipsis the
    chat list sets would push the date out of sight instead of to the edge. */
-.adestia-deleg .adestia-threads__item {
+.adestia-deleg .adestia-conversations__item {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -122,13 +122,13 @@
 
 .adestia-deleg__empty { color: var(--text-muted); }
 
-.adestia-deleg__thread { margin-top: var(--space-4); }
+.adestia-deleg__conversation { margin-top: var(--space-4); }
 
 /* Tabs --------------------------------------------------------------------- */
 
 /*
  * The tab strip, desktop only: parallel conversations side by side, like a
- * browser's. On a phone the thread list carries the same dots and IS the
+ * browser's. On a phone the conversation list carries the same dots and IS the
  * navigation — a strip of truncated titles on 360px would name nothing.
  */
 .adestia-tabs {
@@ -227,7 +227,7 @@
 }
 
 /*
- * The status dot — one vocabulary for the tab strip and the thread list.
+ * The status dot — one vocabulary for the tab strip and the conversation list.
  * Working pulses (something is happening), waiting pulses in the warning
  * tint (someone is needed), unread is steady accent (done, and not yet
  * seen), idle is a quiet mark that keeps the layout honest.
@@ -254,17 +254,17 @@
 .adestia-dot--unread { background: var(--accent); }
 
 /* Inside the list's text button, which is not a flex row. */
-.adestia-threads__item .adestia-dot {
+.adestia-conversations__item .adestia-dot {
   margin-right: var(--space-2);
   vertical-align: 1px;
 }
 
-.adestia-threads__item--current {
+.adestia-conversations__item--current {
   background: var(--accent-quiet);
   color: var(--accent);
 }
 
-.adestia-threads__empty {
+.adestia-conversations__empty {
   padding: var(--space-2) var(--space-3);
   font-size: var(--text-sm);
   color: var(--text-faint);

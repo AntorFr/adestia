@@ -4,7 +4,7 @@ import { join } from 'node:path'
 
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { ARMING_TTL_MS, ArmingSessions, SecretStore } from '../src/secrets.js'
+import { ARMING_TTL_MS, ArmingFlows, SecretStore } from '../src/secrets.js'
 
 let root: string
 let store: SecretStore
@@ -69,9 +69,9 @@ describe('secret storage', () => {
   })
 })
 
-describe('arming sessions', () => {
+describe('arming flows', () => {
   it('hands out a session', () => {
-    const sessions = new ArmingSessions()
+    const sessions = new ArmingFlows()
     const session = sessions.start('claude-code', 1000)
     expect(sessions.get(session.id, 1000)).toEqual(session)
   })
@@ -79,7 +79,7 @@ describe('arming sessions', () => {
   it('keeps only one alive at a time', () => {
     // Two overlapping flows produce two codes, and the user pastes whichever
     // they saw last into whichever is still waiting.
-    const sessions = new ArmingSessions()
+    const sessions = new ArmingFlows()
     const first = sessions.start('claude-code', 1000)
     const second = sessions.start('claude-code', 2000)
     expect(sessions.get(first.id, 2000)).toBeUndefined()
@@ -87,28 +87,28 @@ describe('arming sessions', () => {
   })
 
   it('expires', () => {
-    const sessions = new ArmingSessions()
+    const sessions = new ArmingFlows()
     const session = sessions.start('claude-code', 1000)
     expect(sessions.get(session.id, 1000 + ARMING_TTL_MS - 1)).toBeTruthy()
     expect(sessions.get(session.id, 1000 + ARMING_TTL_MS)).toBeUndefined()
   })
 
   it('forgets an expired session rather than keeping it around', () => {
-    const sessions = new ArmingSessions()
+    const sessions = new ArmingFlows()
     const session = sessions.start('claude-code', 1000)
     sessions.get(session.id, 1000 + ARMING_TTL_MS)
     expect(sessions.current).toBeUndefined()
   })
 
   it('ends on demand', () => {
-    const sessions = new ArmingSessions()
+    const sessions = new ArmingFlows()
     const session = sessions.start('claude-code', 1000)
     sessions.end(session.id)
     expect(sessions.get(session.id, 1000)).toBeUndefined()
   })
 
   it('ignores an end for someone else session', () => {
-    const sessions = new ArmingSessions()
+    const sessions = new ArmingFlows()
     const session = sessions.start('claude-code', 1000)
     sessions.end('not-a-session')
     expect(sessions.get(session.id, 1000)).toEqual(session)

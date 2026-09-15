@@ -1,14 +1,14 @@
-/* The chat column: thread, bubbles, tool trace, context pill, the engine's question, the sign-in card, the composer. */
+/* The chat column: conversation, bubbles, tool trace, context pill, the engine's question, the sign-in card, the composer. */
 
 /* Chat -------------------------------------------------------------------- */
 
 /*
  * A column, not a grid: the rows between header and composer are OPTIONAL
- * (tab strip, thread list, permission prompt), and a grid that counts its
+ * (tab strip, conversation list, permission prompt), and a grid that counts its
  * rows hands `1fr` to whichever bar happens to land second — the tab strip
- * rendered as three full-height columns and swallowed the thread, a defect
+ * rendered as three full-height columns and swallowed the conversation, a defect
  * only the browser could show. In a flex column every bar takes its natural
- * height and only the thread grows.
+ * height and only the conversation grows.
  */
 .adestia-chat {
   display: flex;
@@ -73,7 +73,7 @@
 
 .adestia-ib:hover { border-color: var(--accent); color: var(--accent); }
 
-.adestia-chat__thread {
+.adestia-chat__conversation {
   /* The one row that grows — see .adestia-chat. min-height lets it SHRINK
      below its content so overflow scrolls instead of pushing the composer
      off screen. */
@@ -154,9 +154,9 @@
   font-size: 1em;
 }
 
-/* A heading has to READ as one from across a scrolling thread, and these are
+/* A heading has to READ as one from across a scrolling conversation, and these are
    already shifted down a level (see the `heading` case in Reader.tsx): a
-   bubble has no title of its own, and a thread full of competing H1s is a
+   bubble has no title of its own, and a conversation full of competing H1s is a
    document outline nobody can use. So `##` — what an agent reaches for first
    — lands here, and has to earn its rank on size rather than on depth. */
 .adestia-prose h2 { font-size: 1.28em; }
@@ -364,7 +364,7 @@
 /* The sign-in card — a server wants THIS person connected ------------------ */
 
 /* Dressed like the engine's question above: both are the product asking the
-   person for a decision between the thread and the composer. */
+   person for a decision between the conversation and the composer. */
 .adestia-connect {
   display: flex;
   align-items: center;
@@ -405,7 +405,7 @@
 }
 .adestia-connect__hide:hover { color: var(--text); }
 
-/* On the server page the row sits in the flow, not over a thread. */
+/* On the server page the row sits in the flow, not over a conversation. */
 .adestia-connect--tile { margin: 0 0 var(--space-3); }
 
 /* Composer ---------------------------------------------------------------- */

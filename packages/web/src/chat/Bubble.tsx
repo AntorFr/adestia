@@ -1,5 +1,5 @@
 /**
- * One message in the thread, and the answer while it is still arriving.
+ * One message in the conversation, and the answer while it is still arriving.
  */
 
 import { useState } from 'react'
@@ -48,7 +48,7 @@ export function ToolTrace({ tools }: { tools: Message['tools'] }) {
 }
 
 /**
- * One message in the thread.
+ * One message in the conversation.
  *
  * The agent's half is rendered as MARKDOWN, because markdown is what it
  * writes: an answer that says `**important**` and `[la fiche](voyages/x.md)`

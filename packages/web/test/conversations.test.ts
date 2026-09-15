@@ -17,13 +17,13 @@ const respond = (status: number, body: unknown): typeof fetch =>
     } as unknown as Response)) as unknown as typeof fetch
 
 describe('listing', () => {
-  it('returns the threads', async () => {
-    const threads = [{ id: 'a', title: 'One', updatedAt: '2026-01-01T00:00:00Z' }]
-    expect(await listConversations(respond(200, { conversations: threads }))).toEqual(threads)
+  it('returns the conversations', async () => {
+    const conversations = [{ id: 'a', title: 'One', updatedAt: '2026-01-01T00:00:00Z' }]
+    expect(await listConversations(respond(200, { conversations: conversations }))).toEqual(conversations)
   })
 
   it('is empty rather than throwing when the store is unreachable', async () => {
-    // A thread list that throws takes the whole shell down with it, and the
+    // A conversation list that throws takes the whole shell down with it, and the
     // chat works perfectly well without its history.
     expect(await listConversations(respond(500, {}))).toEqual([])
   })
@@ -47,7 +47,7 @@ describe('resilience', () => {
 })
 
 describe('reading', () => {
-  it('returns the thread with its messages', async () => {
+  it('returns the conversation with its messages', async () => {
     const conversation = {
       id: 'a',
       title: 'One',
@@ -57,13 +57,13 @@ describe('reading', () => {
     expect(await readConversation('a', respond(200, conversation))).toEqual(conversation)
   })
 
-  it('returns nothing for a thread that is not ours', async () => {
+  it('returns nothing for a conversation that is not ours', async () => {
     expect(await readConversation('x', respond(404, {}))).toBeUndefined()
   })
 })
 
 describe('creating and deleting', () => {
-  it('returns the new thread', async () => {
+  it('returns the new conversation', async () => {
     const created = { id: 'new', title: 'New conversation', updatedAt: '' }
     expect(await createConversation(respond(200, created))).toEqual(created)
   })
@@ -78,7 +78,7 @@ describe('creating and deleting', () => {
 })
 
 describe('titles', () => {
-  it('uses the first words of the thread', () => {
+  it('uses the first words of the conversation', () => {
     expect(titleFrom('Comment ranger le garage ?')).toBe('Comment ranger le garage ?')
   })
 

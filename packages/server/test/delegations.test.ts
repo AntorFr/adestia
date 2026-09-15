@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { TurnEvent, TurnRequest } from '@antorfr/adestia-drivers'
 
-import { BusyThreadError, DelegationChannel, titleFor } from '../src/delegations.js'
+import { BusyConversationError, DelegationChannel, titleFor } from '../src/delegations.js'
 import { TurnDesk } from '../src/turns.js'
 
 let dataDir: string
@@ -38,7 +38,7 @@ function channelWith(driver: { runTurn(request: TurnRequest): AsyncIterable<Turn
   return new DelegationChannel(desk, { dataDir, cwd: '/workspace' })
 }
 
-describe('the thread title', () => {
+describe('the conversation title', () => {
   it('is the request’s first words, cut on a word', () => {
     expect(titleFor('Range les fiches du mois')).toBe('Range les fiches du mois')
     const long = titleFor(
@@ -60,47 +60,47 @@ describe('the delegation channel', () => {
     const channel = channelWith(driver)
 
     const opened = await channel.open('alfred', 'range les fiches', undefined)
-    if ('unknown' in opened) throw new Error('expected a thread')
-    const result = await channel.run('alfred', opened.threadId, 'range les fiches')
+    if ('unknown' in opened) throw new Error('expected a conversation')
+    const result = await channel.run('alfred', opened.conversationId, 'range les fiches')
 
     expect(result.text).toBe('fait.')
     // The engine saw the frame…
     expect(driver.requests[0]!.prompt).toContain('Delegated task from alfred')
     expect(driver.requests[0]!.unattended).toBe(true)
-    // …the thread did not.
-    const thread = await channel.read('alfred', opened.threadId)
-    expect(thread!.messages.map((message) => message.text)).toEqual(['range les fiches', 'fait.'])
-    expect(thread!.messages[0]!.role).toBe('user')
-    expect(thread!.title).toBe('range les fiches')
+    // …the conversation did not.
+    const conversation = await channel.read('alfred', opened.conversationId)
+    expect(conversation!.messages.map((message) => message.text)).toEqual(['range les fiches', 'fait.'])
+    expect(conversation!.messages[0]!.role).toBe('user')
+    expect(conversation!.title).toBe('range les fiches')
   })
 
-  it('resumes the stored session on the next ask of the same thread', async () => {
+  it('resumes the stored session on the next ask of the same conversation', async () => {
     const driver = scriptedDriver((_request, call) => answer(`réponse ${call}`, `session-${call}`))
     const channel = channelWith(driver)
 
     const opened = await channel.open('alfred', 'step one', undefined)
-    if ('unknown' in opened) throw new Error('expected a thread')
-    await channel.run('alfred', opened.threadId, 'step one')
+    if ('unknown' in opened) throw new Error('expected a conversation')
+    await channel.run('alfred', opened.conversationId, 'step one')
 
-    const reopened = await channel.open('alfred', 'step two', opened.threadId)
-    if ('unknown' in reopened) throw new Error('expected the same thread')
-    expect(reopened.threadId).toBe(opened.threadId)
-    await channel.run('alfred', opened.threadId, 'step two')
+    const reopened = await channel.open('alfred', 'step two', opened.conversationId)
+    if ('unknown' in reopened) throw new Error('expected the same conversation')
+    expect(reopened.conversationId).toBe(opened.conversationId)
+    await channel.run('alfred', opened.conversationId, 'step two')
 
     // The second turn carried the first turn's session: that IS the resume
     // contract task_id promises.
     expect(driver.requests[1]!.sessionId).toBe('session-1')
-    const thread = await channel.read('alfred', opened.threadId)
-    expect(thread!.messages).toHaveLength(4)
+    const conversation = await channel.read('alfred', opened.conversationId)
+    expect(conversation!.messages).toHaveLength(4)
   })
 
   it('says unknown for a task_id of another caller — the namespace IS the boundary', async () => {
     const driver = scriptedDriver(() => answer('ok'))
     const channel = channelWith(driver)
     const opened = await channel.open('alfred', 'secret des fiches', undefined)
-    if ('unknown' in opened) throw new Error('expected a thread')
+    if ('unknown' in opened) throw new Error('expected a conversation')
 
-    expect(await channel.open('nestor', 'continue', opened.threadId)).toEqual({ unknown: true })
+    expect(await channel.open('nestor', 'continue', opened.conversationId)).toEqual({ unknown: true })
   })
 
   it('retries once WITHOUT the session when a resumed turn died producing nothing', async () => {
@@ -116,10 +116,10 @@ describe('the delegation channel', () => {
     const channel = channelWith(driver)
 
     const opened = await channel.open('alfred', 'un', undefined)
-    if ('unknown' in opened) throw new Error('expected a thread')
-    await channel.run('alfred', opened.threadId, 'un')
+    if ('unknown' in opened) throw new Error('expected a conversation')
+    await channel.run('alfred', opened.conversationId, 'un')
 
-    const result = await channel.run('alfred', opened.threadId, 'deux')
+    const result = await channel.run('alfred', opened.conversationId, 'deux')
     expect(result.text).toBe('reparti de zéro')
     expect(result.failure).toBeUndefined()
     expect(driver.requests).toHaveLength(3)
@@ -137,21 +137,21 @@ describe('the delegation channel', () => {
     const channel = channelWith(driver)
 
     const opened = await channel.open('alfred', 'un', undefined)
-    if ('unknown' in opened) throw new Error('expected a thread')
-    await channel.run('alfred', opened.threadId, 'un')
+    if ('unknown' in opened) throw new Error('expected a conversation')
+    await channel.run('alfred', opened.conversationId, 'un')
 
-    const result = await channel.run('alfred', opened.threadId, 'deux')
+    const result = await channel.run('alfred', opened.conversationId, 'deux')
     expect(result.failure).toContain('died mid-flight')
     expect(driver.requests).toHaveLength(2)
   })
 
-  it('refuses a second run while the thread works — no merged asks', async () => {
+  it('refuses a second run while the conversation works — no merged asks', async () => {
     let release!: () => void
     const held = new Promise<void>((resolve) => {
       release = resolve
     })
     // The run persists the request to disk before it reaches the desk, so the
-    // thread is not busy the instant `run` is called. Waited for by asking the
+    // conversation is not busy the instant `run` is called. Waited for by asking the
     // DRIVER when it was pulled, rather than by spinning a fixed number of
     // event-loop turns: the desk registers the chain before it pulls the
     // driver, so this signal cannot arrive too early — and it cannot arrive
@@ -170,28 +170,28 @@ describe('the delegation channel', () => {
     const channel = channelWith(driver)
 
     const opened = await channel.open('alfred', 'lent', undefined)
-    if ('unknown' in opened) throw new Error('expected a thread')
-    const first = channel.run('alfred', opened.threadId, 'lent')
+    if ('unknown' in opened) throw new Error('expected a conversation')
+    const first = channel.run('alfred', opened.conversationId, 'lent')
     await running
 
-    expect(channel.busy('alfred', opened.threadId)).toBe(true)
-    await expect(channel.run('alfred', opened.threadId, 'pressé')).rejects.toThrow(BusyThreadError)
+    expect(channel.busy('alfred', opened.conversationId)).toBe(true)
+    await expect(channel.run('alfred', opened.conversationId, 'pressé')).rejects.toThrow(BusyConversationError)
 
     release()
     await first
-    expect(channel.busy('alfred', opened.threadId)).toBe(false)
+    expect(channel.busy('alfred', opened.conversationId)).toBe(false)
   })
 
-  it('lists every caller’s threads for the screen, newest first, dot included', async () => {
+  it('lists every caller’s conversations for the screen, newest first, dot included', async () => {
     const driver = scriptedDriver(() => answer('ok'))
     const channel = channelWith(driver)
 
     const one = await channel.open('alfred', 'les fiches', undefined)
-    if ('unknown' in one) throw new Error('expected a thread')
-    await channel.run('alfred', one.threadId, 'les fiches')
+    if ('unknown' in one) throw new Error('expected a conversation')
+    await channel.run('alfred', one.conversationId, 'les fiches')
     const two = await channel.open('nestor', 'la musique', undefined)
-    if ('unknown' in two) throw new Error('expected a thread')
-    await channel.run('nestor', two.threadId, 'la musique')
+    if ('unknown' in two) throw new Error('expected a conversation')
+    await channel.run('nestor', two.conversationId, 'la musique')
 
     const rows = await channel.list()
     expect(rows).toHaveLength(2)
@@ -200,19 +200,19 @@ describe('the delegation channel', () => {
     expect(rows[0]!.title).toBeTruthy()
   })
 
-  it('keeps the failure in the thread, on the last word', async () => {
+  it('keeps the failure in the conversation, on the last word', async () => {
     const driver = scriptedDriver(() => [
       { type: 'text-delta', text: 'à moitié' },
       { type: 'error', fatal: true, message: 'boom' } as TurnEvent,
     ])
     const channel = channelWith(driver)
     const opened = await channel.open('alfred', 'risqué', undefined)
-    if ('unknown' in opened) throw new Error('expected a thread')
+    if ('unknown' in opened) throw new Error('expected a conversation')
 
-    const result = await channel.run('alfred', opened.threadId, 'risqué')
+    const result = await channel.run('alfred', opened.conversationId, 'risqué')
     expect(result.failure).toContain('boom')
-    const thread = await channel.read('alfred', opened.threadId)
-    const last = thread!.messages.at(-1)!
+    const conversation = await channel.read('alfred', opened.conversationId)
+    const last = conversation!.messages.at(-1)!
     expect(last.role).toBe('agent')
     expect(last.error).toContain('boom')
   })

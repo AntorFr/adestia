@@ -53,9 +53,9 @@ export interface TurnsDependencies {
  * otherwise. Both prefixed by the user — a key is an address, and two people
  * must never share one. A turn with no conversation is an EPHEMERAL one —
  * the parity bar's ephemeral mode, which the shell does not offer yet: the
- * browser holds the engine session because no thread exists to hold it,
+ * browser holds the engine session because no conversation exists to hold it,
  * and nothing can read such a turn back, adopt it or stop it by address.
- * The shell never falls into this path by accident any more: a thread it
+ * The shell never falls into this path by accident any more: a conversation it
  * could not create is said, not skipped.
  *
  * Written once because two routes need the SAME answer: the one that starts a
@@ -144,18 +144,18 @@ export function registerTurns(app: FastifyInstance, deps: TurnsDependencies): vo
 
       const spec: TurnSpec = {
         request: {
-          // Framed here, not in the browser: what the thread stores is the
+          // Framed here, not in the browser: what the conversation stores is the
           // raw prompt, so a reload replays what the person typed rather
           // than the gateway's own notes.
           prompt: frameView(frameAttachments(body.prompt, attachments), body.view),
           cwd: config.workspace.root,
           ...(agentRoots.length > 0 ? { roots: agentRoots } : {}),
-          // A thread's session is the THREAD's, read from its file when the
+          // A conversation's session is the CONVERSATION's, read from its file when the
           // turn is dispatched (`session` below) — never the browser's copy.
           // The browser's copy is exactly what a stream dying under a sleeping
           // phone loses, and a message posted without it opened a fresh engine
-          // session that then replaced the thread's own. Only a turn with no
-          // thread still names its session from the request.
+          // session that then replaced the conversation's own. Only a turn with no
+          // conversation still names its session from the request.
           ...(!conversationId && sessionId ? { sessionId } : {}),
           ...(typeof body.model === 'string' ? { model: body.model } : {}),
           ...(callerToken ? { callerToken } : {}),
@@ -168,7 +168,7 @@ export function registerTurns(app: FastifyInstance, deps: TurnsDependencies): vo
                 (await conversations.read(userId, conversationId))?.sessionId,
             }
           : {}),
-        // Written even when the turn failed: a thread that silently drops
+        // Written even when the turn failed: a conversation that silently drops
         // the answer it did produce is worse than one showing it broke. The
         // desk calls this whether or not anybody is still watching — which
         // is the whole point of the desk.
@@ -176,7 +176,7 @@ export function registerTurns(app: FastifyInstance, deps: TurnsDependencies): vo
           if (!conversationId) return
           await conversations.recordOutcome(userId, conversationId, outcome)
           // Last, after this turn's own appends: the token dies with the
-          // turn, and a rename during it compacts the thread here — under
+          // turn, and a rename during it compacts the conversation here — under
           // the desk's serialization, so the rewrite races nothing.
           if (tools) await deps.shellTools?.release(tools).catch(() => undefined)
         },
@@ -201,7 +201,7 @@ export function registerTurns(app: FastifyInstance, deps: TurnsDependencies): vo
 
       if (conversationId) {
         // Persisted the moment it is ACCEPTED — held or run alike. This line
-        // is why a queued message survives a reload: it is in the thread
+        // is why a queued message survives a reload: it is in the conversation
         // before the browser hears anything back.
         try {
           await conversations.append(userId, conversationId, {
@@ -326,9 +326,9 @@ export function registerTurns(app: FastifyInstance, deps: TurnsDependencies): vo
    * engine's session id, which is what this used to take. That id travels
    * back in the turn's `result` event, so nobody holds it while the turn is
    * still running: the browser posted nothing at all for the first turn of a
-   * thread, and the button looked broken because it WAS.
+   * conversation, and the button looked broken because it WAS.
    *
-   * A turn started before its thread could be created has no address at all,
+   * A turn started before its conversation could be created has no address at all,
    * here as at the desk, and cannot be stopped — the same rule that keeps a
    * loose job out of the status dots.
    */
@@ -345,7 +345,7 @@ export function registerTurns(app: FastifyInstance, deps: TurnsDependencies): vo
         return reply
       }
       // 409 rather than 404: the turn existed, it simply settled first — the
-      // press was a fraction of a second late, and the thread is already
+      // press was a fraction of a second late, and the conversation is already
       // showing the end of it.
       if (!desk.stop(key)) {
         await reply.code(409).send({ error: 'no turn is running there' })

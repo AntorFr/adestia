@@ -184,7 +184,7 @@ export class ShellToolsService {
       spec: {
         name: 'rename_conversation',
         description:
-          'Rename the conversation this turn belongs to, so its title says what the thread is about. The target is implicit: pass only the new title.',
+          'Rename the conversation this turn belongs to, so its title says what the conversation is about. The target is implicit: pass only the new title.',
         params: [
           {
             name: 'title',

@@ -36,7 +36,7 @@ import { registerUpload } from './routes/upload.js'
 import { foreignRoots, pagesService, resolveStores } from './stores.js'
 import { registerEvents } from './watch.js'
 import { mountPluginApis } from './plugin-host.js'
-import { ArmingSessions, SecretStore } from './secrets.js'
+import { ArmingFlows, SecretStore } from './secrets.js'
 import { registerStatic } from './static.js'
 import { TurnDesk, type TurnOutcome } from './turns.js'
 import { baseManifest, withInstanceName, type WebManifest } from './webmanifest.js'
@@ -137,7 +137,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   // one client registration per server, one rotating refresh key per person.
   const mcpSignIn = deps.mcpSignIn ?? new McpSignIn(config.dataDir)
   const inbox = new AttachmentInbox(config.dataDir, config.attachments)
-  const arming = new ArmingSessions()
+  const arming = new ArmingFlows()
   const descriptor: DriverDescriptor = await driver.describe()
 
   app.decorateRequest('identity', null)
@@ -282,8 +282,8 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
 
   // The delegation channel: inbound MCP work runs through the SAME desk as
   // chat — chaining, capacity, session resume — but in its own key family and
-  // its own thread store. The separation is the authorization boundary: a
-  // task_id resolves only in here, never to a person's chat thread.
+  // its own conversation store. The separation is the authorization boundary: a
+  // task_id resolves only in here, never to a person's chat conversation.
   const delegations = new DelegationChannel(desk, {
     dataDir: config.dataDir,
     cwd: config.workspace.root,
@@ -294,9 +294,9 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
 
   /**
    * The delegations screen's two questions: what ran here, and what did it
-   * say. Read-only on purpose — these threads belong to the CALLING agents'
-   * conversations, and a person typing into one would inject a turn into a
-   * thread its owner believes it holds alone. Gated like every other /api
+   * say. Read-only on purpose — these conversations belong to the CALLING
+   * agents, and a person typing into one would inject a turn into a
+   * conversation its owner believes it holds alone. Gated like every other /api
    * route: any signed-in human may look, which is rather the point.
    */
   app.get('/api/delegations', async () => ({ delegations: await delegations.list() }))
@@ -304,16 +304,16 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   app.get<{ Params: { caller: string; id: string } }>(
     '/api/delegations/:caller/:id',
     async (request, reply) => {
-      let thread
+      let conversation
       try {
-        thread = await delegations.read(request.params.caller, request.params.id)
+        conversation = await delegations.read(request.params.caller, request.params.id)
       } catch {
         // An unsafe caller segment throws in the store's last-line guard;
-        // from this side it is the same answer as a thread that is not there.
-        thread = undefined
+        // from this side it is the same answer as a conversation that is not there.
+        conversation = undefined
       }
-      if (!thread) return reply.code(404).send({ error: 'no such delegation' })
-      return { caller: request.params.caller, ...thread }
+      if (!conversation) return reply.code(404).send({ error: 'no such delegation' })
+      return { caller: request.params.caller, ...conversation }
     },
   )
 

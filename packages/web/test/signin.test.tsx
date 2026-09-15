@@ -23,11 +23,11 @@ import {
 const DISCONNECTED: McpConnection[] = [{ name: 'home-assistant', connected: false }]
 
 describe('what raises the card', () => {
-  it('a disconnected server, on a thread where the agent has spoken', () => {
+  it('a disconnected server, on a conversation where the agent has spoken', () => {
     expect(signInAsks(true, DISCONNECTED)).toEqual(['home-assistant'])
   })
 
-  it('nothing on a thread nobody is talking in — a blank tab owes no nag', () => {
+  it('nothing on a conversation nobody is talking in — a blank tab owes no nag', () => {
     expect(signInAsks(false, DISCONNECTED)).toEqual([])
   })
 

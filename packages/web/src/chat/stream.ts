@@ -129,7 +129,7 @@ export interface TurnState {
    * The connection ended before the turn's result did.
    *
    * What was drawn is then a fragment of a turn that may well have gone on
-   * without anybody watching — the desk runs it detached — so the thread's
+   * without anybody watching — the desk runs it detached — so the conversation's
    * store, not this state, holds how it ended.
    */
   readonly lost?: boolean | undefined
@@ -244,7 +244,7 @@ function findLastIndex<T>(items: readonly T[], predicate: (item: T) => boolean):
  * shows content the agent did not write, and it does not enter a prompt
  * stripped of its "untrusted" label. The server turns this into one line of
  * framing (see the server's `screen.ts`); nothing of it is stored in the
- * thread, so a reload replays what the person typed.
+ * conversation, so a reload replays what the person typed.
  */
 export interface ScreenView {
   /** The hash route, without its `#`. */
@@ -257,9 +257,9 @@ export interface StreamOptions {
   readonly prompt: string
   readonly model?: string
   /**
-   * The thread this turn belongs to. The wire allows a turn without one — an
+   * The conversation this turn belongs to. The wire allows a turn without one — an
    * ephemeral question, which the server answers without recording — but the
-   * shell always has a thread, and its engine session is the server's to
+   * shell always has a conversation, and its engine session is the server's to
    * read from it.
    */
   readonly conversationId: string
@@ -330,7 +330,7 @@ async function* streamStates(response: Response): AsyncGenerator<TurnState> {
  * What sending a message started.
  *
  * `held` is the server saying "the conversation's turn is still running; this
- * message is queued behind it, and already written into the thread". Nothing
+ * message is queued behind it, and already written into the conversation". Nothing
  * to stream yet: the merged follow-up turn is picked up with `attachTurn`
  * once the running one settles.
  */
@@ -386,7 +386,7 @@ export async function startTurn(
  * The server replays the whole event log then follows live, so the same
  * reducer rebuilds the same state — an adopted turn is indistinguishable from
  * one never left. `undefined` means nothing is running (or nothing answered),
- * which the caller treats as "the thread is at rest".
+ * which the caller treats as "the conversation is at rest".
  */
 export async function attachTurn(
   conversationId: string,
