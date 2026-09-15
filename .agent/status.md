@@ -11,8 +11,10 @@ verts ; banc visuel passé. L'état reconstruit qui a servi de base est dans
 `mission-refonte.md`, les questions en suspens dans `questions-refonte.md`.
 
 **Prochaines étapes :**
-- [ ] Kit d'aides porté par le cœur pour les plugins (slug, frontmatter,
-      cache) — question 4, ouverte.
+- [ ] (décidé le 15/09 : PAS de kit d'aides porté par le cœur ; les plugins
+      gardent leurs copies de `slugOf`, `slugify`, du parseur de frontmatter
+      et de `makeCache` — cinq lignes chacune, et un plugin reste un dossier
+      autonome qui n'importe que React.)
 - [ ] Types du protocole (`TurnEvent`, conversations, `McpServerView`)
       déclarés une fois dans `schemas` — question 5, ouverte.
 - [ ] Retirer `@vitejs/plugin-react` de `packages/web` : déclaré, jamais
