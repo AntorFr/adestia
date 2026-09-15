@@ -587,7 +587,7 @@ const ENV_OVERRIDES = {
  * An undefined variable is left as written rather than blanked, so the error
  * names the placeholder instead of "invalid client".
  */
-export function interpolate(source: string, env: NodeJS.ProcessEnv): string {
+function interpolate(source: string, env: NodeJS.ProcessEnv): string {
   return source.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)\}/g, (whole, name: string) =>
     env[name] ?? whole,
   )

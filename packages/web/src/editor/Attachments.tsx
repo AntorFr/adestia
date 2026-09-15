@@ -36,7 +36,7 @@ const GLYPHS: Readonly<Record<Attachment['kind'], string>> = {
   file: '📎',
 }
 
-export const fileUrl = (path: string, download = false): string =>
+const fileUrl = (path: string, download = false): string =>
   `/api/files/${path.split('/').map(encodeURIComponent).join('/')}${download ? '?download=1' : ''}`
 
 /**

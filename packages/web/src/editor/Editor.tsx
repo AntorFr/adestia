@@ -81,7 +81,7 @@ export async function savePage(
   return { state: { kind: 'failed', message: body.error ?? `save failed (${response.status})` } }
 }
 
-export function Diagnostics({ items }: { items: PageDocument['diagnostics'] }) {
+function Diagnostics({ items }: { items: PageDocument['diagnostics'] }) {
   if (items.length === 0) return null
   return (
     <ul className="adestia-diagnostics">

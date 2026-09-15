@@ -254,7 +254,7 @@ export function Bubble({
  * "nothing has happened yet" and "the agent is between two answers" as the
  * same shape, so the bubble is written once.
  */
-export function livePartsOf(state: TurnState): readonly TurnPart[] {
+function livePartsOf(state: TurnState): readonly TurnPart[] {
   return state.parts.length > 0 ? state.parts : [{ tools: [], text: '' }]
 }
 
@@ -701,7 +701,7 @@ export function Composer({
   )
 }
 
-export function AttachmentTray({
+function AttachmentTray({
   attachments,
   error,
   onRemove,

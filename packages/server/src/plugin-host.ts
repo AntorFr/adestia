@@ -26,7 +26,7 @@ import type { PluginManifest } from '@antorfr/adestia-schemas'
 const execFileAsync = promisify(execFile)
 
 /** A setup script gets this long before it is killed, in ms. */
-export const SETUP_TIMEOUT_MS = 30_000
+const SETUP_TIMEOUT_MS = 30_000
 
 export interface HostProblem {
   readonly id: string

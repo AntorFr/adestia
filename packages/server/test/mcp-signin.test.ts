@@ -91,7 +91,7 @@ function fakeAuthServer() {
 }
 
 /** Runs one person through the whole flow and returns their state param. */
-async function connect(service: McpSignIn, fetchImpl: typeof fetch, userId: string) {
+async function connect(service: McpSignIn, userId: string) {
   const begun = await service.begin(HA, userId, 'https://alfred.example', 'Alfred')
   if ('problem' in begun) throw new Error(begun.problem)
   const state = new URL(begun.authorizeUrl).searchParams.get('state')!
@@ -142,7 +142,7 @@ describe('completing a sign-in', () => {
     const service = new McpSignIn(dataDir, fetchImpl)
 
     expect(await service.connected('home-assistant', 'sebastien')).toBe(false)
-    const done = await connect(service, fetchImpl, 'sebastien')
+    const done = await connect(service, 'sebastien')
     expect(done).toEqual({ server: 'home-assistant', userId: 'sebastien' })
     expect(await service.connected('home-assistant', 'sebastien')).toBe(true)
 
@@ -190,7 +190,7 @@ describe('per-turn tokens', () => {
   it('mints from the caller’s own key, and only for the connected', async () => {
     const { fetchImpl } = fakeAuthServer()
     const service = new McpSignIn(dataDir, fetchImpl)
-    await connect(service, fetchImpl, 'sebastien')
+    await connect(service, 'sebastien')
 
     const minted = await service.tokensFor([HA], 'sebastien')
     expect(Object.keys(minted)).toEqual(['home-assistant'])
@@ -205,7 +205,7 @@ describe('per-turn tokens', () => {
   it('follows the rotation: the next mint presents the rotated key, and a restart still can', async () => {
     const { fetchImpl, log } = fakeAuthServer()
     const service = new McpSignIn(dataDir, fetchImpl)
-    await connect(service, fetchImpl, 'sebastien')
+    await connect(service, 'sebastien')
 
     await service.tokensFor([HA], 'sebastien')
     expect(log.refreshes).toHaveLength(1)
@@ -226,8 +226,8 @@ describe('per-turn tokens', () => {
   it('keeps two people’s keys apart', async () => {
     const { fetchImpl } = fakeAuthServer()
     const service = new McpSignIn(dataDir, fetchImpl)
-    await connect(service, fetchImpl, 'sebastien')
-    await connect(service, fetchImpl, 'emilie')
+    await connect(service, 'sebastien')
+    await connect(service, 'emilie')
 
     const state = await service.stateFor([HA], 'sebastien')
     expect(state).toEqual([{ name: 'home-assistant', connected: true }])
@@ -241,7 +241,7 @@ describe('the file on disk', () => {
   it('is 0600 and never holds a user id in clear', async () => {
     const { fetchImpl } = fakeAuthServer()
     const service = new McpSignIn(dataDir, fetchImpl)
-    await connect(service, fetchImpl, 'https://id.example/users/sebastien')
+    await connect(service, 'https://id.example/users/sebastien')
 
     const path = join(dataDir, 'mcp-signin.json')
     expect(((await stat(path)).mode & 0o777).toString(8)).toBe('600')

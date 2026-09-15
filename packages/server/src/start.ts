@@ -48,7 +48,7 @@ import { baseManifest, mergeSkinManifest, withInstanceName } from './webmanifest
 import { collectSkills, deliverSkills } from './skills.js'
 import { foreignRoots, resolveStores } from './stores.js'
 
-export const DEFAULT_CONFIG_FILE = 'adestia.config.yaml'
+const DEFAULT_CONFIG_FILE = 'adestia.config.yaml'
 
 export interface StartOptions {
   readonly configPath?: string

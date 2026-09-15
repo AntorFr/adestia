@@ -127,7 +127,7 @@ export function safeFilePath(store: Store, requested: string): string | undefine
 }
 
 /** A listed file, as an interface needs it. */
-function described(path: string, file: string, info: { size: number; mtimeMs: number }, store: Store, multi: boolean): WorkspaceFile {
+function described(path: string, info: { size: number; mtimeMs: number }, store: Store, multi: boolean): WorkspaceFile {
   return {
     path,
     ...(multi ? { store: store.id } : {}),
@@ -160,7 +160,7 @@ async function collect(
   for (const entry of entries) {
     const info = await stat(entry.file).catch(() => undefined)
     if (!info) continue
-    out.push(described(entry.path, entry.file, info, entry.store, multi))
+    out.push(described(entry.path, info, entry.store, multi))
   }
   return out
 }

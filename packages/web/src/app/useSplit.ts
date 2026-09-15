@@ -13,9 +13,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 const STORAGE_KEY = 'adestia.rail'
 const MIN_PX = 280
 const MAX_FRACTION = 0.6
-export const DEFAULT_RAIL = 33.333
+const DEFAULT_RAIL = 33.333
 
-export function clampRail(percent: number, viewportWidth: number): number {
+function clampRail(percent: number, viewportWidth: number): number {
   const minPercent = viewportWidth > 0 ? (MIN_PX / viewportWidth) * 100 : 20
   const max = MAX_FRACTION * 100
   // A rail that cannot show a sentence is not a rail; a rail wider than the

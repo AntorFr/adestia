@@ -80,23 +80,6 @@ export async function createConversation(
   return created?.id ? created : undefined
 }
 
-export async function renameConversation(
-  id: string,
-  title: string,
-  fetchImpl: typeof fetch = fetch,
-): Promise<boolean> {
-  try {
-    const response = await fetchImpl(`/api/conversations/${id}`, {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ title }),
-    })
-    return response.ok
-  } catch {
-    return false
-  }
-}
-
 export async function readConversation(
   id: string,
   fetchImpl: typeof fetch = fetch,

@@ -27,17 +27,11 @@ import { useEffect, useRef, useState } from 'react'
 import { Settings } from './Settings.js'
 
 /** The theme choices, in the order they are offered. `''` follows the device. */
-export const THEMES = [
+const THEMES = [
   { value: '', label: 'System' },
   { value: 'light', label: 'Light' },
   { value: 'dark', label: 'Dark' },
 ] as const
-
-/** What the appearance line says: the choice in force, not a description. */
-export function themeLede(theme: string, t: (key: string) => string): string {
-  const found = THEMES.find((choice) => choice.value === theme) ?? THEMES[0]
-  return found.value === '' ? t('Follows this device') : t(found.label)
-}
 
 export interface SettingsMenuProps {
   /** The theme in force: `''` follows the device, `light`/`dark` override it. */

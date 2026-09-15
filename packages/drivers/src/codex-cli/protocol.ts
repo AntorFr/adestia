@@ -44,7 +44,7 @@ export type SpawnImpl = (
   options: { cwd: string; env: Record<string, string | undefined> },
 ) => SpawnedProcess
 
-export const defaultSpawn: SpawnImpl = (command, args, options) =>
+const defaultSpawn: SpawnImpl = (command, args, options) =>
   spawn(command, [...args], {
     cwd: options.cwd,
     env: options.env,
@@ -69,7 +69,7 @@ export interface AppServerOptions {
 }
 
 /** A JSON-RPC error the server answered with, kept typed rather than flattened. */
-export class AppServerError extends Error {
+class AppServerError extends Error {
   readonly code: number | undefined
 
   constructor(message: string, code?: number) {

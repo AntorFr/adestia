@@ -240,18 +240,6 @@ export function sseFrame(event: TurnEvent): string {
   return `event: ${event.type}\ndata: ${data}\n\n`
 }
 
-/**
- * What `buildApp` hands back besides the app: the one function that starts a
- * turn. The clock uses it rather than calling the driver, so the concurrency
- * cap, the transcript and the driver's env contract apply to a scheduled turn
- * exactly as they do to a typed one — a second spawn path is a second place
- * for all three to be forgotten.
- */
-export interface BuiltApp {
-  readonly app: FastifyInstance
-  runTurn(prompt: string, options?: { conversationId?: string }): Promise<void>
-}
-
 export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> {
   const { config, driver, plugins, pluginProblems, userTokens, webRoot } = deps
   const app = Fastify({ logger: false })

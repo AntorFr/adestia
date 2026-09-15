@@ -111,7 +111,7 @@ export function resolveHref(url: string | undefined, base: string | undefined): 
  * care that a neighbour ending in `.md` would have been a page to a link. It
  * wants bytes, so a page path is served as the file it also is.
  */
-export function assetUrl(path: string, base: string | undefined): string {
+function assetUrl(path: string, base: string | undefined): string {
   const target = resolveHref(path, base)
   if (target.kind !== 'page') return target.href
   return `/api/files/${target.path.split('/').map(encodeURIComponent).join('/')}`
@@ -125,7 +125,7 @@ export function assetUrl(path: string, base: string | undefined): string {
  * of this one"). Deriving the second by peeling the first apart is what the
  * ported engine used to do, and it tied a plugin to the shell's route shape.
  */
-export function workspacePath(path: string, base: string | undefined): string {
+function workspacePath(path: string, base: string | undefined): string {
   const target = resolveHref(path, base)
   if (target.kind === 'page') return target.path
   // Anything with a scheme of its own was never a workspace file; handing back

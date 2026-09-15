@@ -33,7 +33,7 @@ import type { Handle } from 'mdast-util-to-markdown'
  * The unescape is deliberately narrow: only a `_` with a word character on
  * BOTH sides, which is exactly the case CommonMark defines as literal.
  */
-const textHandler: Handle = (node, parent, state, info) => {
+const textHandler: Handle = (node, _parent, state, info) => {
   const value = state.safe((node as Text).value, { ...info })
   return value.replace(/(?<=[\p{L}\p{N}])\\_(?=[\p{L}\p{N}])/gu, '_')
 }
@@ -189,7 +189,7 @@ function blockDirectives(): ReturnType<typeof directive> {
  * one-grammar principle in practice: not "two pipelines configured the same
  * way", which drifts, but literally the same function.
  */
-export function directivePlugin(this: Processor): void {
+function directivePlugin(this: Processor): void {
   const data = this.data()
   const micromarkExtensions = (data.micromarkExtensions ??= [])
   const fromMarkdownExtensions = (data.fromMarkdownExtensions ??= [])
@@ -217,7 +217,7 @@ export const GRAMMAR = [
   [directivePlugin, undefined],
 ] as const
 
-export function createProcessor(): Processor<Root, undefined, undefined, Root, string> {
+function createProcessor(): Processor<Root, undefined, undefined, Root, string> {
   const processor = unified().use(remarkParse)
   for (const [plugin, options] of GRAMMAR) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

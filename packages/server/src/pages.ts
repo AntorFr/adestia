@@ -196,7 +196,7 @@ function parseScalar(raw: string): unknown {
  * Whitespace is not a body. A page whose text is a single heading is one —
  * a heading is what somebody wrote.
  */
-export function hasBody(markdown: string): boolean {
+function hasBody(markdown: string): boolean {
   const match = /^---\n[\s\S]*?\n---/.exec(markdown)
   return (match ? markdown.slice(match[0].length) : markdown).trim() !== ''
 }

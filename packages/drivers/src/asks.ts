@@ -37,7 +37,7 @@ export interface PendingAsk {
  * let a closed tab wedge the instance. Five minutes is long enough to walk
  * back to a screen; a refusal is recoverable — asking again costs a sentence.
  */
-export const ASK_TIMEOUT_MS = 5 * 60 * 1000
+const ASK_TIMEOUT_MS = 5 * 60 * 1000
 
 interface Waiting {
   readonly ask: PendingAsk

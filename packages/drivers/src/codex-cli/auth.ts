@@ -38,8 +38,6 @@ export const CREDENTIAL_KEY = 'CODEX_AUTH_JSON'
 
 export const AUTH_FILE = 'auth.json'
 
-export type CodexAuthMode = 'apikey' | 'chatgpt'
-
 export interface CodexAuthDocument {
   readonly auth_mode?: string
   readonly OPENAI_API_KEY?: string | null
@@ -70,7 +68,7 @@ export function looksLikeAuthDocument(value: string): boolean {
   return false
 }
 
-export function parseAuthDocument(value: string): CodexAuthDocument | undefined {
+function parseAuthDocument(value: string): CodexAuthDocument | undefined {
   try {
     const parsed: unknown = JSON.parse(value)
     if (typeof parsed !== 'object' || parsed === null) return undefined
@@ -126,12 +124,6 @@ export async function readMaterialized(home: string): Promise<string | undefined
   } catch {
     return undefined
   }
-}
-
-export function authModeOf(document: string | undefined): CodexAuthMode | undefined {
-  if (document === undefined) return undefined
-  const mode = parseAuthDocument(document)?.auth_mode
-  return mode === 'apikey' || mode === 'chatgpt' ? mode : undefined
 }
 
 /**

@@ -1,5 +1,17 @@
 # Status — Adestia
-> MàJ : 2026-09-14
+> MàJ : 2026-09-15
+
+Chantier du 15/09 — **refonte : une passe de revue sur tout le dépôt**, reprise
+d'une session morte sur plafond de dépense (ses six audits parallèles n'avaient
+rien rendu ; l'état reconstruit est dans `mission-refonte.md`, les questions en
+suspens dans `questions-refonte.md`). Lots dans l'ordre : code mort, doublons,
+doc en retard, découpage du serveur, découpage du web (banc visuel), hygiène.
+
+- [x] Code mort : cinq exports que rien n'appelle, cinq types, deux locaux,
+      les règles CSS d'un concept retiré ; 38 symboles que seul leur fichier
+      lit ne sont plus exportés ; le compilateur refuse désormais un local ou
+      un paramètre inutilisé (`noUnusedLocals`, `noUnusedParameters`).
+- [ ] Doublons ; doc ; découpage serveur ; découpage web ; hygiène.
 
 Chantier du 14/09 — **un fil ne perd plus la mémoire du moteur quand le
 téléphone s'endort pendant un tour**. Remonté de l'usage : « je recharge la

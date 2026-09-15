@@ -105,14 +105,6 @@
 
 .adestia-ib:hover { border-color: var(--accent); color: var(--accent); }
 
-.adestia-chat__title {
-  font-weight: 600;
-  font-size: var(--text-sm);
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
 .adestia-chat__thread {
   /* The one row that grows — see .adestia-chat. min-height lets it SHRINK
      below its content so overflow scrolls instead of pushing the composer
@@ -1505,7 +1497,6 @@
    No rows here any more. Rows were a preferences idiom, and they made two
    domains of this instance — the servers it reaches, the prose it was told —
    look like options in a dialog. They are tiles, like every other way in. */
-.adestia-prefs__note { margin: var(--space-4) 0 0; color: var(--text-faint); font-size: var(--text-sm); }
 
 /* Named choices, as one segmented control. The header's cycling glyph can
    only be inferred; three buttons SAY which one is in force. */
@@ -1809,29 +1800,6 @@
 }
 
 /* Pages and editor ------------------------------------------------------- */
-
-.adestia-pages {
-  list-style: none;
-  margin: 0 0 var(--space-5);
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.adestia-pages__link {
-  background: none;
-  border: 0;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-sm);
-  color: var(--text);
-  font: inherit;
-  text-align: left;
-  width: 100%;
-  cursor: pointer;
-}
-
-.adestia-pages__link:hover { background: var(--surface-sunken); }
 
 /* A file let go over a page. The overlay is drawn INSIDE the page rather than
    over the whole window: what is being answered is "this page", and a
@@ -2307,8 +2275,6 @@ h2.adestia-editor__title { padding-bottom: 3px; }
 .adestia-chat__header { gap: var(--space-2); }
 
 /* Settings ---------------------------------------------------------------- */
-
-.adestia-canvas__spacer { flex: 1; }
 
 /* The credential panel carries no box of its own: the settings page around
    it is the box, and its head already named it. */
