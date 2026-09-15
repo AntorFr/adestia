@@ -64,6 +64,8 @@ Un fichier JSON par table, dans un dossier que tu passes au moteur.
   déclarée est refusée.
 - **`quand`** — une entrée omise est un JOKER (tous les cas). Une cellule peut
   porter plusieurs valeurs : `{ "plan_travail": ["rapporte", "integre"] }`.
+- Les sorties que le moteur lit : `methode`, `materiau`, `epaisseur` (un nombre, ou
+  `"caisson"` pour l'épaisseur du panneau principal), `retrait_avant`, `pourquoi`.
 - **`note`** — le POURQUOI de la ligne. Elle ne sert à rien au calcul et à tout
   à la relecture : écris-la comme tu écris une fiche.
 
@@ -79,6 +81,11 @@ est toute la valeur d'une table.
 **Unicité.** Exactement une ligne par cas. Deux lignes qui se recouvrent sont
 une erreur, jamais une priorité : l'ordre des lignes d'un tableau que personne
 ne relit n'est pas un endroit où ranger une décision d'atelier.
+
+**Où c'est vérifié.** L'outil en ligne de commande, à chaque lecture de `--regles`,
+parcourt tout le produit des domaines et nomme les trous et les recouvrements,
+table par table, en avertissement. À la dérivation, le cas du meuble en cours est
+refusé net s'il tombe dans l'un ou l'autre — par l'outil comme par les outils MCP.
 
 **Pas de seuil dans une cellule.** Les domaines sont énumérés, point. Un
 critère qui dépend d'un COMPTE (« assez de tablettes pour qu'un réglage de plus
@@ -181,6 +188,13 @@ pour n'avoir qu'un réglage de bande. Un bord se chante s'il est tourné vers un
 de ces faces et que rien ne l'occulte — dedans comme dehors, et **porte
 ouverte** : un caisson fermé se chante dedans comme un caisson ouvert.
 
+Deux champs que le moteur écrit lui-même, à connaître sans les rédiger : `chants`, la
+surcharge par pièce — `{ "ÉTIQ": ["rive-avant"] }` ou `{ "ÉTIQ": { "bords": [...],
+"epaisseur": 2 } }` — tenue par `atelier_chant` et la commande `chant` ; et `journal`,
+`[{ le, champ, avant, apres, pourquoi }]`, une entrée par champ changé. Avec `note` et
+`titre`, `journal` n'entre pas dans l'empreinte : corriger une formulation ne périme
+pas un débit juste.
+
 ## Les familles de meuble
 
 `applique_a` dit à quelle famille une table s'adresse — et le moteur sait
@@ -239,6 +253,9 @@ autrement à la main rend le rapprochement muet.
 | le plan de travail | `PBL-C1-PLAN` | `PLAN` |
 | les façades de tiroir | `PBL-C1-FAÇADE-1`, `PBL-C1-FAÇADE-2`… | `FAÇADE` |
 | un corps de tiroir (le n° du tiroir vient AVANT le rôle) | `PBL-C1-T1-CÔTÉ-G`, `PBL-C1-T1-CÔTÉ-D`, `PBL-C1-T1-MONTANT`, `PBL-C1-T1-DOS`, `PBL-C1-T1-FOND` | `TIROIR-CÔTÉ`, `TIROIR-MONTANT`, `TIROIR-DOS`, `TIROIR-FOND` |
+
+Pour un **claustra**, le squelette est `SEMELLE`, `LISSE`, `LAME-1`, `LAME-2`… (rôle
+`LAME`) et `TRAV-1`… (rôle `TRAVERSE`).
 
 Le `repere` d'un séparateur se déclare quand le meuble lui donne un nom
 d'atelier — `{ "type": "lateral", "zone": "bacs", "repere": "POUB" }` donne
@@ -325,8 +342,8 @@ et la table décide sur le compte. Ces entrées sont donc disponibles sans être
 
 | fait | ce qu'il vaut |
 |---|---|
-| `tablettes_totales` | tablettes × `modules_identiques` |
-| `mutualise` | `oui` si ce total atteint `seuil_mutualisation` — le seul motif de renoncer au retrait de tablette |
+| `tablettes_totales` | tablettes × `modules_identiques` (à la racine du design, défaut 1) |
+| `mutualise` | `oui` si ce total atteint `parametres.seuil_mutualisation` (défaut 3) — le seul motif de renoncer au retrait de tablette |
 | `a_des_separateurs` | `oui` si `separateurs` n'est pas vide — le design LISTE, la table ne décide que s'il y en a |
 | `plan_au_debit` | `oui` si `materiaux.plan_travail` est déclaré — le meuble débite son plan, ou il ne fait que le porter |
 
@@ -362,3 +379,9 @@ de coter quoi que ce soit : une question non posée est une cote fausse.**
 `atelier_derive` dérive et compare aux pièces déjà là. Rien n'est écrit tant
 que tout n'est pas déterminé : un workbook à moitié dérivé est pire qu'un
 workbook pas dérivé, parce qu'il se dessine et qu'on coupe dessus.
+
+`atelier_chant` change ce qui est chanté — `faces` remplace les faces chantées du
+meuble, `ajoute` et `retire` visent une pièce (`ÉTIQUETTE:bord`) — et recalcule les
+cotes. `atelier_explique` dit d'où vient une cote, règles nommées : à appeler quand une
+cote surprend, plutôt que de la recalculer de tête. `atelier_etat` dit si le dérivé est
+encore d'accord avec son design — on ne coupe pas sur un plan que personne n'a recalculé.

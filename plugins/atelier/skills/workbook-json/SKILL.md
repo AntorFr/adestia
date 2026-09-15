@@ -27,6 +27,11 @@ c'est toi qui consolides les calques sur demande.
 réécrit un vieux 2.0 en 3.0 (le front convertit aussi les 2.0 au chargement — les livres
 dormants restent lisibles sans migration).
 
+Le même outil a quatre autres commandes : `etat <fichier>`, `migre <fichier> --4 --famille
+<f> --regles <dossier>` (vers le 4.0), `derive <fichier> --regles <dossier>` et `chant
+<fichier> --regles <dossier> [--chante avant,arriere] [+ETIQ:bord] [-ETIQ:bord]` — voir la
+skill `regles-json` ; `--ecrit` pour écrire le fichier.
+
 ## D1 — LE REPÈRE : une pièce, six surfaces, tout s'exprime dedans
 
 ```
@@ -47,9 +52,10 @@ Vocabulaire FERMÉ des surfaces, partagé par tout le contrat :
 `schemaVersion: "3.0"`, `projet`, `titre`, `note`, `materiaux[]`, `meta`, `pieces[]`,
 `debit[]`, `stations[]?`, `assemblage[]?`.
 
-**`materiaux[]`** : `{ id, label, ep, plaque: {l, h}, derasage, decorUni?, sensFil? }`.
-**`meta`** : `kerf` (mm), `tronconnage` (surcote), `chant` (résumé libre — la vérité pièce
-par pièce est `chants[]`), `installation`.
+**`materiaux[]`** : `{ id, label, ep, plaque: {l, h}, derasage }`.
+**`meta`** : `kerf` (mm), `tronconnage` (surcote), `decorUni?` et `sensFil?` (ce qui bride la
+rotation à l'établi — lus ICI, pour tout le livre, pas sur un matériau), `chant` (résumé
+libre — la vérité pièce par pièce est `chants[]`), `installation`.
 
 ## `pieces[]`
 
@@ -66,7 +72,8 @@ dit pas comment il se dresse — et c'est ce qui évite de fraiser une pièce à
 vues la signalent (liseré bleu « ▲ HAUT » sur l'arête, ou mention quand c'est une face).
 Déclare-la sur toute pièce qui n'est pas symétrique haut/bas.
 
-- `materiau` porte l'épaisseur (pas de `ep` recopié). Les champs 1.0 (`reglageFS`,
+- `materiau` porte l'épaisseur. Un `ep` sur la pièce l'emporte s'il est là — la dérivation
+  4.0 l'écrit, toi tu ne le recopies pas. Les champs 1.0 (`reglageFS`,
   `panneau`, `colonne`) **n'existent plus** — `debit[]` dit déjà tout ça.
 - `chants[]` : les arêtes plaquées, dans le vocabulaire des surfaces. Les vues les
   surlignent en orange ; deux colonnes aux chants différents ne se regroupent pas.
@@ -136,6 +143,9 @@ Déclare-la donc **ici**, et les préparations des deux pièces en **dérivent**
 ```
 
 - **`porte`** : la pièce qui reçoit **sur sa face**. `pos` + `depuis` = la cote au sabot.
+  `ep` (optionnel) fixe l'épaisseur de sa fente.
+- **`note`** sur la jonction (optionnelle) : reportée telle quelle sur les deux préparations
+  dérivées.
 - **`arrive`** : la pièce qui arrive **par son chant**. `appui` = la face couchée sur l'établi.
 - **`connecteurs[].a`** : la position le long de la jonction, **dans le repère de la
   porteuse**. Écrite une seule fois — les deux moitiés ne peuvent plus diverger.
@@ -193,8 +203,9 @@ Sans déclaration : barre historique moins les stations vides.
 
 ## `assemblage[]` — la scène, SEUL format
 
-Le contrat ouvert v0.2 (cadre mm, `noeuds[]` : piece/trait/cote/feature/note/repere,
-`sequence[]` cochable qui surligne ses `cible[]`). Les cotes se MESURENT depuis les ancres,
+Le contrat ouvert v0.2 (cadre mm, `noeuds[]` : piece/trait/cote/feature/note/repere/groupe,
+`sequence[]` cochable — `key`, `titre`, et `geste?` parmi `poser | coller | assembler |
+visser | serrer | verifier` — qui surligne ses `cible[]`). Les cotes se MESURENT depuis les ancres,
 jamais écrites. L'élévation héritée (module/niveaux) n'existe plus — le convertisseur en
 fait une scène minimale pour les vieux livres.
 

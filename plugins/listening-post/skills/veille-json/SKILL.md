@@ -128,8 +128,12 @@ fichiers, sinon l'écran ne trouve plus le transcript (et le dit).
 ```sh
 # `--pages` prend LES dossiers de la mémoire, séparés par des virgules : sans lui
 # l'outil ne lit que `pages`, et il serait aveugle aux autres magasins.
+# `--page` est un chemin DISQUE, préfixe du magasin inclus, comme pour tes outils
+# fichiers : `pages/veille/<slug>.md`, jamais `veille/<slug>.md`. Le transcript se
+# range à côté de cette page. `--langs` : sous-titres préférés, dans l'ordre
+# (défaut fr,fr-FR,fr-orig,en,en-US).
 node {{plugin_dir}}/tools/listening-post.mjs transcris <url> \
-  --page veille/<slug>.md --pages <dossiers>
+  --page pages/veille/<slug>.md --pages <dossiers> [--langs fr,en]
 node {{plugin_dir}}/tools/listening-post.mjs cherche "moteur audio" [--n 8]
 node {{plugin_dir}}/tools/listening-post.mjs flux [--jours 7]
 node {{plugin_dir}}/tools/listening-post.mjs etat

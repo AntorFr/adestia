@@ -36,6 +36,8 @@ rangées les cartes — et rien de tout ça n'est répété ailleurs. Corriger u
 éditer la page, dans l'éditeur habituel. Le `.meals.json` voisin ne porte **que** les
 cartes :
 
+Sans `sections:`, la période en a trois : `matin`, `midi`, `soir`.
+
 ```json
 { "version": 1, "items": [ … ] }
 ```
@@ -86,14 +88,16 @@ opération invalide, et **rien n'est écrit** — tu relis et tu refais.
 | `{op:"place", id, jour, section?, ordre?}` | la pose sur un jour (et la confirme) |
 | `{op:"tray", id}` | la renvoie au tray, calage effacé |
 | `{op:"dismiss", id}` | l'écarte : gardée, plus jamais proposée |
-| `{op:"set", id, fields:{…}}` | change `titre`, `ico`, `quantite`, `hint`, `desc`, `source`, `props` |
+| `{op:"set", id, fields:{…}}` | change `titre`, `ico`, `quantite`, `hint`, `desc`, `source`, `props` — une valeur `null` retire le champ |
 | `{op:"remove", id}` | la supprime |
 
 **Groupe tes écritures.** Proposer douze repas, c'est **un** appel avec douze `add`, pas
 douze appels — chacun ferait tourner la révision et le suivant serait refusé.
 
 `add` ne pose jamais de jour : inventer une carte et décider quand elle est mangée sont
-deux gestes, et le format ne laisse une écriture faire que le premier.
+deux gestes, et le format ne laisse une écriture faire que le premier. Ni de statut :
+une carte naît `suggestion`, quoi que dise `item.statut` — `place` et `dismiss` sont les
+gestes qui en changent.
 
 ## La carte : une face muette, un détail au clic
 
@@ -171,7 +175,7 @@ dossier — qui s'affiche parfaitement, ce qui rend l'erreur longue à voir.
 ## ⚠️ Où NE PAS ranger une période
 
 Une période vit dans le dossier de son sujet : le dossier d'un voyage, un
-carnet de santé, un domaine. Mais **quatre noms de dossier appartiennent déjà à
+carnet de santé, un domaine. Mais **cinq noms de dossier appartiennent déjà à
 une app**, où qu'ils se trouvent dans l'arbre :
 
 | nom | l'app qui le prend |
@@ -179,6 +183,7 @@ une app**, où qu'ils se trouvent dans l'arbre :
 | `journal` | Journal |
 | `voyages` | Voyages |
 | `todo` | Todo |
+| `taches` | Todo |
 | `veille` | Listening-post |
 
 Une app qui « absorbe » un nom le prend **partout** où cette suite de segments
