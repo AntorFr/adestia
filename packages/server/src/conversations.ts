@@ -15,38 +15,13 @@ import { createHash, randomUUID } from 'node:crypto'
 import { appendFile, mkdir, readFile, readdir, rename, stat, unlink, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
+import type { Conversation, ConversationMeta, StoredMessage } from '@antorfr/adestia-schemas'
+
 import type { TurnOutcome } from './turns.js'
 
-export interface StoredMessage {
-  readonly id: string
-  readonly role: 'user' | 'agent'
-  readonly text: string
-  readonly at: string
-  readonly tools?: readonly { name: string; target?: string; ok?: boolean }[]
-  readonly stopped?: boolean
-  readonly error?: string
-  readonly usage?: { contextTokens?: number; outputTokens?: number }
-}
-
-export interface ConversationMeta {
-  readonly id: string
-  readonly title: string
-  readonly updatedAt: string
-  /** The CLI session this thread resumes; absent once it has expired. */
-  readonly sessionId?: string
-  /**
-   * Put away rather than deleted.
-   *
-   * A thread nobody needs today is not a thread nobody will want next month,
-   * and the only tool for that was a delete that took the whole record with
-   * it. Archiving hides it from the list and keeps every word.
-   */
-  readonly archived?: boolean
-}
-
-export interface Conversation extends ConversationMeta {
-  readonly messages: readonly StoredMessage[]
-}
+// The shapes that cross the wire live with the other schemas, declared once
+// for both sides; re-exported so this module stays the store's one address.
+export type { Conversation, ConversationMeta, StoredMessage } from '@antorfr/adestia-schemas'
 
 /**
  * A user id becomes a directory name, so it is hashed rather than sanitized:

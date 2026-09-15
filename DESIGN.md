@@ -2572,3 +2572,20 @@ happens to be a valid umask and would therefore be accepted in silence while
 meaning something else — `012` would arrive as `0014`. Nothing would fail;
 files would simply carry permissions nobody chose, which is the failure this
 whole feature exists to end.
+
+**2026-09-15 (the shapes that cross the wire are declared once, and the
+plugins keep their five-line helpers):** the conversation records, the MCP
+server view and the turn events were each written twice, server and browser,
+so that the web package carried no server code; a test pinned the copies
+together. The two premises can both hold with one declaration: the records
+and the view now live with the other schemas, and the events stay what they
+always were — the driver contract's own, relayed frame by frame — with the
+browser importing both as TYPES, which the compiler erases. The bundle holds
+nothing of the server; there is nothing left to drift; the pinning test is
+gone.
+
+The opposite call on the plugins. Three of them carry the same slug helper,
+three a frontmatter reader, two a bounded cache — and they may import nothing
+from the shell but React, which is the contract that keeps a plugin a folder
+one drops in. A kit served by the shell would have removed five lines each and
+added a dependency every plugin author has to know; the copies stay.

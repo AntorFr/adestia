@@ -1,42 +1,11 @@
 /**
  * The turn events, as the browser sees them.
  *
- * Structurally identical to the driver contract's `TurnEvent`, and declared
- * here rather than imported so the web package carries no server dependency:
- * the shell talks HTTP to something that speaks this protocol, and never needs
- * to know what runs behind it. The shared shape is pinned by a test.
+ * They are the engine's own: the server relays each driver event as one SSE
+ * frame, and the browser reduces the same union the driver contract declares.
+ * Imported as a TYPE — erased at compile time — so the shell's bundle carries
+ * no engine code; declared once, so nothing can drift. A second copy used to
+ * live here, pinned to the first by a test.
  */
 
-export interface TurnUsageView {
-  readonly inputTokens?: number
-  readonly outputTokens?: number
-  readonly contextTokens?: number
-  readonly costUsd?: number | null
-  readonly durationMs?: number
-}
-
-export type TurnEvent =
-  | { readonly type: 'text-delta'; readonly text: string }
-  | { readonly type: 'tool-use'; readonly name: string; readonly target?: string; readonly id?: string }
-  | {
-      readonly type: 'tool-result'
-      readonly name: string
-      readonly ok: boolean
-      readonly id?: string
-    }
-  | {
-      readonly type: 'permission-request'
-      readonly id: string
-      readonly tool: string
-      readonly title: string
-      readonly reason?: string
-      readonly remembering: boolean
-    }
-  | { readonly type: 'usage-delta'; readonly outputTokens: number }
-  | {
-      readonly type: 'result'
-      readonly sessionId: string
-      readonly stopped: boolean
-      readonly usage?: TurnUsageView
-    }
-  | { readonly type: 'error'; readonly message: string; readonly fatal: boolean }
+export type { TurnEvent, TurnUsage } from '@antorfr/adestia-drivers'

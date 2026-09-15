@@ -44,27 +44,7 @@ import { readMcpServer, type McpServerConfig } from './config.js'
  */
 export const MCP_MASK = '••••••'
 
-/** Where a server was declared. Only `ui` is ours to change. */
-export type McpSource = 'config' | 'plugin' | 'ui'
-
-export interface McpServerView {
-  readonly name: string
-  readonly source: McpSource
-  /** The plugin that brought it, when one did. */
-  readonly owner?: string
-  readonly editable: boolean
-  readonly transport: 'stdio' | 'http'
-  /** The declaration itself, secrets masked. What the detail screen draws. */
-  readonly config: Readonly<Record<string, unknown>>
-  /**
-   * A `ui` server whose name the config or a plugin has since taken.
-   *
-   * The write path refuses a collision, so this only happens when a file was
-   * edited behind us — and a server silently doing nothing is exactly the
-   * failure the layered merge exists to make visible.
-   */
-  readonly shadowed?: boolean
-}
+export type { McpServerView, McpSource } from '@antorfr/adestia-schemas'
 
 /** The fields that are credentials, and therefore never leave as themselves. */
 function maskMap(
