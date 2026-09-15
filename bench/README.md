@@ -68,5 +68,12 @@ directory, which is the same thing the server would have written.
   viewport and playwright has nothing extra to capture. Open a tall viewport
   (`bench.open({ height: 2400 })`) when the point of the shot is what sits
   below the fold.
+- **The answer vanishes at settle.** The shell reads the thread back from the
+  store the moment a turn ends, and keeps only what the store holds — on a
+  real server the desk has filed the turn by then. The bench's engine is a
+  proxy in front of the server, so nothing files anything: a scenario that
+  ends its turn without appending the agent's lines to the thread file
+  photographs a bare question. Append them first, exactly as
+  `recordOutcome` would (`sommeil-du-telephone.mjs` shows the lines).
 - **A permanent stream loops.** `/api/turn/attach` is answered once and then
   `204`, because the shell re-attaches after every turn it finishes.

@@ -47,6 +47,26 @@ export default async function scenario(bench) {
   // old one — the stale copy is only allowed to survive until settle.
   await bench.shoot(page, '1-renamed-server-side-tab-still-stale')
 
+  // The desk files the turn BEFORE it ends the stream — exactly the lines its
+  // finish closure appends — and the shell reads them back at settle: what
+  // stays on screen after a turn is what the store holds, never the fragment.
+  await appendFile(
+    join(await bench.threadsDir(), `${live.id}.jsonl`),
+    [
+      { type: 'message', id: 'a1', role: 'agent', text: 'Bonne idée — je le renomme.', at: '2026-08-30T09:00:02.000Z' },
+      {
+        type: 'message',
+        id: 'a2',
+        role: 'agent',
+        text: 'Fait : « Chauffe-eau du garage ».',
+        at: '2026-08-30T09:00:04.000Z',
+        tools: [{ name: 'rename_conversation', ok: true }],
+      },
+      { type: 'session', sessionId: 's1', at: '2026-08-30T09:00:04.001Z' },
+    ]
+      .map(bench.line)
+      .join(''),
+  )
   bench.emit({ type: 'result', sessionId: 's1', stopped: false })
   bench.endTurn()
   await page.waitForTimeout(900)

@@ -92,6 +92,27 @@ export default async function scenario(bench) {
     throw new Error(`the stop must name the conversation, got ${JSON.stringify(stops)}`)
   }
 
+  // The desk files the turn BEFORE it ends the stream — exactly the lines its
+  // finish closure appends — and the shell reads them back at settle: what
+  // stays on screen after a turn is what the store holds, never the fragment.
+  await appendFile(
+    join(threads, `${live.id}.jsonl`),
+    [
+      { type: 'message', id: 'a1', role: 'agent', text: 'Je regarde les fiches.', at: '2026-08-29T09:00:03.000Z' },
+      {
+        type: 'message',
+        id: 'a2',
+        role: 'agent',
+        text: '',
+        at: '2026-08-29T09:00:05.000Z',
+        tools: [{ name: 'Read', target: 'voyages/baden.md' }],
+        stopped: true,
+      },
+      { type: 'session', sessionId: 's1', at: '2026-08-29T09:00:05.001Z' },
+    ]
+      .map(bench.line)
+      .join(''),
+  )
   bench.emit({ type: 'result', sessionId: 's1', stopped: true })
   bench.endTurn()
   await page.waitForTimeout(900)

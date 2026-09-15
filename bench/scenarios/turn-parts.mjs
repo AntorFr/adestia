@@ -78,6 +78,27 @@ export default async function scenario(bench) {
   await page.waitForTimeout(600)
   await bench.shoot(page, '3-second-answer-still-working')
 
+  // The desk files the turn BEFORE it ends the stream — exactly the lines its
+  // finish closure appends — and the shell reads them back at settle: what
+  // stays on screen after a turn is what the store holds, never the fragment.
+  await appendFile(
+    join(threads, `${live.id}.jsonl`),
+    [
+      { type: 'message', id: 'a1', role: 'agent', text: 'Je regarde la fiche.', at: '2026-08-28T09:00:03.000Z' },
+      {
+        type: 'message',
+        id: 'a2',
+        role: 'agent',
+        text: 'Le départ est à **19:30:59**, retour le 3 à 7:15.',
+        at: '2026-08-28T09:00:09.000Z',
+        tools: [{ name: 'Read', target: 'voyages/baden.md', ok: true }],
+        usage: { contextTokens: 4200 },
+      },
+      { type: 'session', sessionId: 's1', at: '2026-08-28T09:00:09.001Z' },
+    ]
+      .map(bench.line)
+      .join(''),
+  )
   bench.emit({ type: 'result', sessionId: 's1', stopped: false, usage: { contextTokens: 4200 } })
   bench.endTurn()
   await page.waitForTimeout(900)
