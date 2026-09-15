@@ -28,8 +28,11 @@ doc en retard, découpage du serveur, découpage du web (banc visuel), hygiène.
       assemblage de 335 lignes ; chaque famille vit dans `routes/*.ts` avec
       ses commentaires intacts, sur le motif que `mcp-routes.ts` et
       `oidc-routes.ts` avaient déjà posé.
-- [ ] Découpage serveur, 2e moitié (config, démarrage) ; découpage web
-      (banc visuel) ; hygiène.
+- [x] Découpage serveur, 2e moitié : `config.ts` (1146 lignes) garde le
+      parseur et rend ses déclarations (`config/types.ts`), ses lecteurs de
+      valeurs (`config/values.ts`) et ses lecteurs MCP (`config/mcp.ts`) ;
+      le démarrage rend la fabrique de pilotes (`drivers.ts`).
+- [ ] Découpage web (banc visuel) ; hygiène.
 
 Chantier du 14/09 — **un fil ne perd plus la mémoire du moteur quand le
 téléphone s'endort pendant un tour**. Remonté de l'usage : « je recharge la
