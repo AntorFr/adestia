@@ -82,6 +82,10 @@ auth:
   mode: none
 driver:
   id: claude-code
+# The domains are the FIRST level under the pages root — that is what the home
+# tiles. `diy` sits three folders down in this stage, so the root is named.
+workspace:
+  pages: pages/memory/domaines
 extensions:
   apps: [atelier]
   skin: default
