@@ -8,62 +8,42 @@
  * whole channel silently for days.
  */
 
-import { randomUUID } from 'node:crypto'
-import { readFile, stat } from 'node:fs/promises'
-
-import multipart from '@fastify/multipart'
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify'
-import type {
-  AskAnswer,
-  AskDesk,
-  AuthManagement,
-  Driver,
-  DriverDescriptor,
-  McpStatus,
-  ModelSelection,
-  ShellToolsHandle,
-  TurnEvent,
-} from '@antorfr/adestia-drivers'
+import type { AskDesk, Driver, DriverDescriptor } from '@antorfr/adestia-drivers'
 
 import { isPublicRoute, resolveIdentity, type Identity } from './auth.js'
-import { AttachmentInbox, frameAttachments, type StoredAttachment } from './attachments.js'
+import { AttachmentInbox } from './attachments.js'
 import { frameShell } from './introduction.js'
-import { frameView } from './screen.js'
 import { ConversationStore } from './conversations.js'
-import { readMcpServer, type AdestiaConfig, type McpServerConfig } from './config.js'
+import { ConfigError, type AdestiaConfig } from './config.js'
 import { registerCallback } from './callback.js'
 import { DelegationChannel } from './delegations.js'
-import { frontendPayload, type DiscoveredPlugin, type DiscoveryProblem } from './extensions.js'
-import {
-  describeInstructionPaths,
-  isManaged,
-  listInstructions,
-  safeInstructionPath,
-  writeInstruction,
-} from './instructions.js'
-import { MANAGED_MARKER } from './skills.js'
-import { McpStore, maskServer, unmaskServer, type McpServerView } from './mcp-store.js'
+import type { DiscoveredPlugin, DiscoveryProblem } from './extensions.js'
+import { McpStore } from './mcp-store.js'
 import { McpSignIn } from './mcp-signin.js'
 import { registerOidc } from './oidc-routes.js'
 import { registerMcp } from './mcp-routes.js'
 import { registerFiles } from './files.js'
 import { registerPages } from './pages.js'
-import { ConfigError } from './config.js'
+import { registerArming } from './routes/arming.js'
+import { registerConversations } from './routes/conversations.js'
+import { registerInstance, type SkinPayload } from './routes/instance.js'
+import { registerInstructions } from './routes/instructions.js'
+import { outboundServersOf, registerMcpServers } from './routes/mcp-servers.js'
+import { registerTurns, type ShellToolsPort, type UserTokens } from './routes/turns.js'
+import { registerUpload } from './routes/upload.js'
 import { foreignRoots, pagesService, resolveStores } from './stores.js'
 import { registerEvents } from './watch.js'
 import { mountPluginApis } from './plugin-host.js'
 import { ArmingSessions, SecretStore } from './secrets.js'
 import { registerStatic } from './static.js'
-import { TurnCapacityError, TurnDesk, type TurnJob, type TurnSpec } from './turns.js'
+import { TurnDesk } from './turns.js'
 import { baseManifest, withInstanceName, type WebManifest } from './webmanifest.js'
 
-/** What the shell needs to dress itself, before it renders anything. */
-export interface SkinPayload {
-  readonly styles?: string
-  readonly module?: string
-  readonly icon?: string
-  readonly scheme?: 'light' | 'dark' | 'auto'
-}
+// Two helpers the tests reach through this module, where they always lived.
+export { buildVersion } from './routes/instance.js'
+export { sseFrame } from './routes/turns.js'
+export type { SkinPayload } from './routes/instance.js'
 
 export interface AppDependencies {
   readonly config: AdestiaConfig
@@ -77,10 +57,7 @@ export interface AppDependencies {
    * absence is what makes a turn have no caller, and therefore no reach into
    * anybody's own data.
    */
-  readonly userTokens?: {
-    accessToken(subject: string): Promise<string | undefined>
-    remember(subject: string, refreshToken: string): Promise<void>
-  }
+  readonly userTokens?: UserTokens
   /** Built shell bundle. Absent in dev, where Vite serves it and proxies here. */
   readonly webRoot?: string | undefined
   /** Injected in tests; production stores secrets under the data directory. */
@@ -105,10 +82,7 @@ export interface AppDependencies {
    * every test — must not open one as a side effect. Absent, a chat turn
    * simply carries no tools, the way a scheduled turn always does.
    */
-  readonly shellTools?: {
-    handleFor(ctx: { userId: string; conversationId: string }): ShellToolsHandle
-    release(handle: ShellToolsHandle): Promise<void>
-  }
+  readonly shellTools?: ShellToolsPort
   /** The active skin, when the configured one was found on disk. */
   readonly skin?: { readonly id: string; readonly dir: string; readonly manifest: SkinPayload }
   /**
@@ -117,37 +91,6 @@ export interface AppDependencies {
    * contract are reported there, with the rest of the extension problems.
    */
   readonly webManifest?: WebManifest | undefined
-}
-
-/** The identity every authenticated route can count on. */
-function identityOf(request: FastifyRequest): Identity {
-  return (request as FastifyRequest & { identity?: Identity }).identity ?? {
-    userId: 'local',
-    displayName: 'Local user',
-    groups: [],
-  }
-}
-
-/**
- * The desk address of a conversation's turns.
- *
- * What serializes turns: the conversation when there is one, the CLI session
- * otherwise. Both prefixed by the user — a key is an address, and two people
- * must never share one. A first-ever message has neither, and two of those
- * genuinely are independent turns.
- *
- * Written once because two routes need the SAME answer: the one that starts a
- * turn and the one that stops it. A stop that computes its own key is a stop
- * that misses.
- */
-function turnKey(
-  userId: string,
-  conversationId: string | undefined,
-  sessionId: string | undefined,
-): string | undefined {
-  if (conversationId) return `${userId}/c:${conversationId}`
-  if (sessionId) return `${userId}/s:${sessionId}`
-  return undefined
 }
 
 /** Turn admission: subscription limits are real, so concurrency is bounded. */
@@ -168,68 +111,6 @@ class TurnLimiter {
   get running(): number {
     return this.#running
   }
-}
-
-/**
- * Variables a driver may NOT claim for its secret.
- *
- * The driver names the variable — a hardcoded map in the core would mean no
- * third-party engine could ever be armed — but the core VALIDATES it. Without
- * this list, a driver could ask for its token to be written into `PATH` and
- * turn an arming flow into arbitrary code execution at the next spawn.
- */
-const FORBIDDEN_CREDENTIAL_VARS = new Set([
-  'PATH',
-  'HOME',
-  'NODE_OPTIONS',
-  'LD_PRELOAD',
-  'LD_LIBRARY_PATH',
-  'DYLD_INSERT_LIBRARIES',
-  'SHELL',
-  'IFS',
-  'BASH_ENV',
-  'ENV',
-])
-
-/**
- * Which build of Adestia is running, when the build said so.
- *
- * Read from the environment rather than from a manifest because nothing in
- * the tree carries the number: a release is cut as `git tag vX.Y.Z`, the
- * package manifests all read `0.0.0`, and the thing an operator actually
- * wants to match against is the IMAGE TAG they deployed. The publish workflow
- * bakes exactly that tag into the image, so what the instance says and what
- * the registry holds cannot drift apart.
- *
- * A local run therefore has no version, and says so by saying nothing: a
- * checkout is not a release, and inventing `0.0.0-dev` for it would put a
- * number on screen that answers no question anyone asked.
- */
-export function buildVersion(env: NodeJS.ProcessEnv = process.env): string | undefined {
-  const raw = env['ADESTIA_VERSION']?.trim()
-  return raw === undefined || raw === '' ? undefined : raw
-}
-
-export function credentialVar(driver: { credentialVar?: string }, driverId: string): string {
-  const variable = driver.credentialVar
-  if (!variable) {
-    throw new Error(`driver "${driverId}" declares no credential variable`)
-  }
-  if (!/^[A-Z][A-Z0-9_]{1,63}$/.test(variable)) {
-    throw new Error(`driver "${driverId}" asks for an implausible variable name: ${variable}`)
-  }
-  if (FORBIDDEN_CREDENTIAL_VARS.has(variable)) {
-    // Loud, because this is either a bug or an attack, and both deserve to be
-    // read rather than swallowed.
-    throw new Error(`driver "${driverId}" may not store its secret in ${variable}`)
-  }
-  return variable
-}
-
-/** One SSE frame. Multi-line payloads must be prefixed per line or they break. */
-export function sseFrame(event: TurnEvent): string {
-  const data = JSON.stringify(event)
-  return `event: ${event.type}\ndata: ${data}\n\n`
 }
 
 export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> {
@@ -304,806 +185,6 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     return undefined
   })
 
-  app.get('/api/health', () => ({ status: 'ok' }))
-
-  // Read once: the environment of a running process does not change, and a
-  // colophon is not worth an `env` lookup per request.
-  const version = buildVersion()
-
-  /**
-   * What the UI is built from. The driver's *name* never appears — the front
-   * end renders from capabilities alone, so a second engine needs no UI change.
-   */
-  app.get('/api/instance', (request) => ({
-    /**
-     * Which build is answering. Absent from a checkout, and that absence is
-     * the honest answer rather than a gap — see `buildVersion`.
-     */
-    ...(version ? { version } : {}),
-    driver: {
-      label: descriptor.label,
-      cliVersion: descriptor.cliVersion,
-      capabilities: descriptor.capabilities,
-    },
-    auth: { mode: config.auth.mode },
-    /**
-     * What the operator called this instance, when they called it anything.
-     *
-     * The shell needs it, not just the manifest: iOS proposes the DOCUMENT
-     * TITLE when someone adds the page to their home screen, so a name that
-     * only reached the manifest would be ignored on the platform it was most
-     * wanted for.
-     */
-    ...(config.name ? { name: config.name } : {}),
-    /**
-     * Absent when the operator set none — the shell then asks the browser,
-     * which is what lets one instance answer two visitors in their own
-     * languages.
-     */
-    ...(config.locale ? { locale: config.locale } : {}),
-    user: (request as FastifyRequest & { identity?: Identity }).identity ?? null,
-    /**
-     * What the shell loads, not just a name. A skin named in config but absent
-     * from disk must not leave the front end fetching files that are not there
-     * — it renders the default, and the boot log already said why.
-     */
-    skin: deps.skin
-      ? { id: deps.skin.id, base: '/skin/', ...deps.skin.manifest }
-      : { id: 'default', base: '/skin/' },
-    plugins: frontendPayload(plugins),
-    /**
-     * Refused plugins are reported to the UI, not buried in a log nobody
-     * reads: a plugin you believe is loaded and is not costs far more than one
-     * that says out loud why it was rejected.
-     */
-    pluginProblems: [...pluginProblems, ...apiProblems],
-    turns: { max: config.maxConcurrentTurns, running: limiter.running },
-  }))
-
-  app.get('/api/models', async (_request, reply) => {
-    if (!descriptor.capabilities.includes('modelSelection')) {
-      // 404, not an empty list: "this instance cannot enumerate models" and
-      // "this instance has no models" are different facts.
-      await reply.code(404).send({ error: 'this driver does not enumerate models' })
-      return reply
-    }
-    return { models: await (driver as Driver & ModelSelection).listModels() }
-  })
-
-  /**
-   * The instruction zone: prose a person may read and correct.
-   *
-   * 404 when the driver declares none, the same shape as the other
-   * driver-gated routes: "this engine has no such concept" and "you have
-   * written none" are different facts.
-   */
-  app.get('/api/instructions', async (_request, reply) => {
-    const paths = driver.instructionPaths?.() ?? []
-    if (paths.length === 0) {
-      await reply.code(404).send({ error: 'this driver declares no instruction zone' })
-      return reply
-    }
-    return {
-      files: await listInstructions(config.workspace.root, paths),
-      // Where one may be CREATED. A zone with nothing in it and no way to put
-      // anything there is a dead end: the listing shows what exists, and a
-      // fresh instance has nothing. The client cannot guess these — only the
-      // driver knows where its CLI reads prose.
-      paths: await describeInstructionPaths(config.workspace.root, paths),
-    }
-  })
-
-  app.get<{ Params: { '*': string } }>('/api/instructions/*', async (request, reply) => {
-    const paths = driver.instructionPaths?.() ?? []
-    const file = safeInstructionPath(config.workspace.root, paths, request.params['*'])
-    if (!file) return reply.code(400).send({ error: 'not an instruction path' })
-    try {
-      const [info, markdown] = await Promise.all([stat(file), readFile(file, 'utf8')])
-      return {
-        path: request.params['*'],
-        markdown,
-        modified: new Date(info.mtimeMs).toISOString(),
-        // Reported rather than hidden: the listing already omits managed
-        // files, and a client that reached one anyway must not be told it can
-        // save over something the next restart will rewrite.
-        managed: markdown.includes(MANAGED_MARKER),
-      }
-    } catch {
-      return reply.code(404).send({ error: 'no such instruction' })
-    }
-  })
-
-  app.put<{ Params: { '*': string }; Body: { markdown?: unknown } }>(
-    '/api/instructions/*',
-    async (request, reply) => {
-      const paths = driver.instructionPaths?.() ?? []
-      const file = safeInstructionPath(config.workspace.root, paths, request.params['*'])
-      if (!file) return reply.code(400).send({ error: 'not an instruction path' })
-
-      const markdown = request.body?.markdown
-      if (typeof markdown !== 'string') {
-        return reply.code(400).send({ error: 'markdown is required' })
-      }
-      // Refused rather than accepted-then-lost: the core rewrites this file at
-      // every start, so saving it would be a change that disappears without
-      // anyone being told.
-      if (await isManaged(file)) {
-        return reply
-          .code(409)
-          .send({ error: 'this file is delivered with the product and is rewritten at every start' })
-      }
-
-      await writeInstruction(file, markdown)
-      return { path: request.params['*'], modified: new Date().toISOString() }
-    },
-  )
-
-  /**
-   * What the outbound MCP servers are doing.
-   *
-   * Same gate and same 404 as the models route: "this driver cannot report"
-   * and "this instance has no servers" are different facts, and a panel that
-   * cannot tell them apart shows an empty box for both.
-   */
-  app.get('/api/mcp/status', async (_request, reply) => {
-    if (!descriptor.capabilities.includes('mcpStatus')) {
-      await reply.code(404).send({ error: 'this driver does not report MCP health' })
-      return reply
-    }
-    return { servers: await (driver as Driver & McpStatus).mcpStatus() }
-  })
-
-  /**
-   * Every outbound server this instance knows about, and who owns it.
-   *
-   * `/api/mcp/status` answers "what are they doing"; this answers "what are
-   * they, and which of them may I touch". Two routes rather than one because
-   * health is a driver CAPABILITY that legitimately 404s, while the wiring is
-   * always knowable — folding them together would have made a screen that can
-   * add a server disappear on an engine that cannot report on one.
-   */
-  const mcpViews = async (): Promise<readonly McpServerView[]> => {
-    const views: McpServerView[] = []
-    const declared = new Set<string>()
-
-    for (const server of config.mcpServers) {
-      declared.add(server.name)
-      views.push({
-        name: server.name,
-        source: 'config',
-        editable: false,
-        transport: server.url ? 'http' : 'stdio',
-        config: maskServer(server),
-      })
-    }
-    for (const plugin of plugins) {
-      if (!plugin.active) continue
-      for (const server of plugin.manifest.mcpServers ?? []) {
-        if (declared.has(server.name)) continue
-        declared.add(server.name)
-        views.push({
-          name: server.name,
-          source: 'plugin',
-          owner: plugin.manifest.id,
-          editable: false,
-          transport: server.url ? 'http' : 'stdio',
-          config: maskServer(server),
-        })
-      }
-    }
-    for (const server of await mcpStore.list()) {
-      views.push({
-        name: server.name,
-        source: 'ui',
-        editable: true,
-        transport: server.url ? 'http' : 'stdio',
-        config: maskServer(server),
-        // A name the config or a plugin took AFTER this one was added. The
-        // write path refuses a collision, so this can only happen when a
-        // file was edited behind us — and a row that quietly did nothing
-        // would be the worst possible way to find that out.
-        ...(declared.has(server.name) ? { shadowed: true } : {}),
-      })
-    }
-    return views
-  }
-
-  app.get('/api/mcp/servers', async () => ({ servers: await mcpViews() }))
-
-  /**
-   * The sign-in surface: which sign-in servers exist, and whether THIS person
-   * is connected. Its own route rather than a field on `/api/mcp/servers`
-   * because the chat polls it around the card, and the card has no business
-   * receiving every server's whole masked declaration each time.
-   */
-  app.get('/api/mcp/connections', async (request) => ({
-    connections: await mcpSignIn.stateFor(await outboundServers(), identityOf(request).userId),
-  }))
-
-  /**
-   * The instance's own origin, as the person's browser reached it.
-   *
-   * The redirect back from the authorization server must land on the SAME
-   * origin the person is browsing, and behind an ingress the socket knows
-   * nothing about it: the forwarded headers do. Derived per request rather
-   * than configured, because the person clicking IS on the right origin by
-   * construction.
-   */
-  const originOf = (request: FastifyRequest): string => {
-    const proto = (request.headers['x-forwarded-proto'] as string | undefined) ?? request.protocol
-    const host =
-      (request.headers['x-forwarded-host'] as string | undefined) ?? request.headers.host ?? ''
-    return `${proto}://${host}`
-  }
-
-  /** A tiny page for the end of the flow — the tab closes itself where the
-      browser allows it, and says what happened where it does not. */
-  const signinPage = (title: string, detail: string) =>
-    `<!doctype html><meta charset="utf-8"><title>${title}</title>` +
-    `<body style="font-family:system-ui;display:grid;place-items:center;height:90vh">` +
-    `<div style="text-align:center"><h1 style="font-size:1.2rem">${title}</h1>` +
-    `<p style="color:#666">${detail}</p></div>` +
-    `<script>setTimeout(()=>window.close(),1500)</script></body>`
-
-  // The way BACK from the authorization server. Registered before the
-  // parameterized route below only for the reader — Fastify ranks the static
-  // segment first regardless.
-  app.get<{ Querystring: { state?: string; code?: string; error?: string } }>(
-    '/api/mcp/signin/callback',
-    async (request, reply) => {
-      const { state, code, error } = request.query
-      if (error) {
-        return reply
-          .type('text/html')
-          .send(signinPage('Connexion refusée', String(error)))
-      }
-      if (typeof state !== 'string' || typeof code !== 'string') {
-        return reply.code(400).type('text/html').send(signinPage('Réponse incomplète', ''))
-      }
-      const outcome = await mcpSignIn.complete(state, code)
-      if ('problem' in outcome) {
-        return reply.type('text/html').send(signinPage('Connexion échouée', outcome.problem))
-      }
-      return reply
-        .type('text/html')
-        .send(
-          signinPage('Connecté', `${outcome.server} est maintenant relié à votre compte.`),
-        )
-    },
-  )
-
-  // Where the card and the tile send the person: a redirect into the
-  // server's own authorization flow, state and PKCE held on this side.
-  app.get<{ Params: { name: string } }>('/api/mcp/signin/:name', async (request, reply) => {
-    const server = (await outboundServers()).find((entry) => entry.name === request.params.name)
-    if (!server || server.signIn !== 'oauth') {
-      return reply.code(404).send({ error: 'no such sign-in server' })
-    }
-    const begun = await mcpSignIn.begin(
-      server,
-      identityOf(request).userId,
-      originOf(request),
-      config.name ?? 'Adestia',
-    )
-    if ('problem' in begun) return reply.code(502).send({ error: begun.problem })
-    return reply.redirect(begun.authorizeUrl)
-  })
-
-  /**
-   * Adding and editing, which only the shell's own layer allows.
-   *
-   * The proposal is unmasked against what is stored and then judged by the
-   * CONFIG's grammar — the same function the YAML goes through — so there is
-   * no second, looser way into this instance's wiring.
-   */
-  const acceptServer = async (
-    proposed: unknown,
-    replacing: string | undefined,
-    reply: FastifyReply,
-  ): Promise<FastifyReply | { server: Record<string, unknown> }> => {
-    if (proposed === null || typeof proposed !== 'object' || Array.isArray(proposed)) {
-      return reply.code(400).send({ error: 'a server declaration is required' })
-    }
-    const stored = await mcpStore.list()
-    const previous = replacing ? stored.find((server) => server.name === replacing) : undefined
-    if (replacing && !previous) {
-      return reply.code(404).send({ error: `no server named "${replacing}" was added here` })
-    }
-
-    const issues: string[] = []
-    const filled = unmaskServer(proposed as Record<string, unknown>, previous, issues)
-    const server = readMcpServer(filled, 'server', issues)
-    if (!server || issues.length > 0) {
-      return reply.code(400).send({ error: issues.join('; ') || 'that is not a server' })
-    }
-
-    // A name is where the agent's tools live. Two servers answering to one is
-    // a tool call going somewhere nobody chose, so a collision is refused
-    // here rather than resolved by precedence.
-    const taken =
-      config.mcpServers.some((other) => other.name === server.name) ||
-      plugins.some(
-        (plugin) =>
-          plugin.active &&
-          (plugin.manifest.mcpServers ?? []).some((other) => other.name === server.name),
-      ) ||
-      stored.some((other) => other.name === server.name && other.name !== replacing)
-    if (taken) {
-      return reply
-        .code(409)
-        .send({ error: `"${server.name}" is already declared on this instance` })
-    }
-
-    const kept = stored.filter((other) => other.name !== replacing)
-    await mcpStore.save([...kept, server])
-    return { server: maskServer(server) }
-  }
-
-  app.post<{ Body: unknown }>('/api/mcp/servers', async (request, reply) =>
-    acceptServer(request.body, undefined, reply),
-  )
-
-  app.put<{ Params: { name: string }; Body: unknown }>(
-    '/api/mcp/servers/:name',
-    async (request, reply) => acceptServer(request.body, request.params.name, reply),
-  )
-
-  app.delete<{ Params: { name: string } }>('/api/mcp/servers/:name', async (request, reply) => {
-    const stored = await mcpStore.list()
-    if (!stored.some((server) => server.name === request.params.name)) {
-      // 404 rather than a silent success: the only servers this route can
-      // remove are the ones it wrote, and "gone" would read as "removed" for
-      // a name that is actually still wired from the config.
-      return reply.code(404).send({ error: `no server named "${request.params.name}" was added here` })
-    }
-    await mcpStore.save(stored.filter((server) => server.name !== request.params.name))
-    return { removed: request.params.name }
-  })
-
-  await app.register(multipart, {
-    limits: { fileSize: config.attachments.maxBytes, files: config.attachments.maxFiles },
-  })
-
-  app.post('/api/upload', async (request, reply) => {
-    const files: { name: string; data: Buffer }[] = []
-    try {
-      for await (const part of request.files()) {
-        files.push({ name: part.filename, data: await part.toBuffer() })
-      }
-    } catch (error) {
-      // The size limit surfaces here as a throw; saying which limit was hit
-      // beats a 500 that names nothing.
-      return reply.code(413).send({ error: (error as Error).message })
-    }
-    if (files.length === 0) return reply.code(400).send({ error: 'no file was sent' })
-
-    const { stored, refused } = await inbox.store(files)
-    return {
-      attachments: stored.map(({ id, name, bytes }) => ({ id, name, bytes })),
-      // Reported alongside what worked: a file silently dropped is a file the
-      // user believes the agent has.
-      refused,
-    }
-  })
-
-  app.get('/api/conversations', async (request) => {
-    const userId = identityOf(request).userId
-    const list = await conversations.list(userId)
-    return {
-      // `turn` is computed against the desk per request, never stored: a
-      // status dot that survived a crash in a file would show a turn nobody
-      // is running. Absent means idle.
-      conversations: list.map((meta) => {
-        const job = desk.activeFor(`${userId}/c:${meta.id}`)
-        return job ? { ...meta, turn: job.waiting ? ('waiting' as const) : ('running' as const) } : meta
-      }),
-    }
-  })
-
-  app.post<{ Body?: { title?: unknown } }>('/api/conversations', async (request) => {
-    // The title comes with the creation rather than in a second call: a thread
-    // that exists for one round trip under the name "New conversation" is a
-    // thread that keeps that name whenever the second call is lost.
-    const title = typeof request.body?.title === 'string' ? request.body.title.trim() : ''
-    return conversations.create(
-      identityOf(request).userId,
-      ...(title.length > 0 ? ([title] as const) : []),
-    )
-  })
-
-  app.patch<{ Params: { id: string }; Body?: { title?: unknown } }>(
-    '/api/conversations/:id',
-    async (request, reply) => {
-      const title = typeof request.body?.title === 'string' ? request.body.title.trim() : ''
-      if (title.length === 0) return reply.code(400).send({ error: 'title is required' })
-
-      const userId = identityOf(request).userId
-      if (!(await conversations.read(userId, request.params.id))) {
-        return reply.code(404).send({ error: 'no such conversation' })
-      }
-      await conversations.rename(userId, request.params.id, title)
-      return { renamed: true }
-    },
-  )
-
-  app.get<{ Params: { id: string } }>('/api/conversations/:id', async (request, reply) => {
-    const conversation = await conversations.read(identityOf(request).userId, request.params.id)
-    // 404 rather than an empty thread: "this conversation is not yours" and
-    // "this conversation is empty" must not look the same to the UI.
-    if (!conversation) return reply.code(404).send({ error: 'no such conversation' })
-    return conversation
-  })
-
-  app.post<{ Params: { id: string }; Body?: { archived?: unknown } }>(
-    '/api/conversations/:id/archive',
-    async (request, reply) => {
-      // Reversible by construction: the same route brings a thread back, so
-      // an archive is never a delete somebody has to regret.
-      const archived = request.body?.archived !== false
-      const userId = identityOf(request).userId
-      const existing = await conversations.read(userId, request.params.id)
-      if (!existing) return reply.code(404).send({ error: 'no such conversation' })
-      await conversations.archive(userId, request.params.id, archived)
-      return { id: request.params.id, archived }
-    },
-  )
-
-  app.delete<{ Params: { id: string } }>('/api/conversations/:id', async (request, reply) => {
-    const removed = await conversations.remove(identityOf(request).userId, request.params.id)
-    if (!removed) return reply.code(404).send({ error: 'no such conversation' })
-    return { deleted: true }
-  })
-
-  app.post<{
-    Body: {
-      prompt?: unknown
-      sessionId?: unknown
-      model?: unknown
-      conversationId?: unknown
-      attachments?: unknown
-      view?: unknown
-    }
-  }>(
-    '/api/turn',
-    async (request, reply) => {
-      const body = request.body ?? {}
-      if (typeof body.prompt !== 'string' || body.prompt.length === 0) {
-        await reply.code(400).send({ error: 'prompt is required' })
-        return reply
-      }
-
-      // Resolved before the turn: an id that escapes the inbox is refused
-      // rather than handed to the agent as a path to read.
-      const attachments: StoredAttachment[] = []
-      for (const id of Array.isArray(body.attachments) ? body.attachments : []) {
-        if (typeof id !== 'string') continue
-        const path = inbox.resolve(id)
-        if (path) attachments.push({ id, name: id.split('/').pop() ?? id, bytes: 0, path })
-      }
-
-      const userId = identityOf(request).userId
-      const conversationId =
-        typeof body.conversationId === 'string' ? body.conversationId : undefined
-      const sessionId =
-        typeof body.sessionId === 'string' && body.sessionId !== '' ? body.sessionId : undefined
-
-      const key = turnKey(userId, conversationId, sessionId)
-
-      // The caller's own identity, for the servers that serve their own
-      // data. Resolved here because this is the only turn with a person at
-      // the other end: the clock's and a delegation's have none, and
-      // deliberately pass nothing.
-      const caller = (request as FastifyRequest & { identity?: Identity }).identity
-      const callerToken = caller?.userId
-        ? await userTokens?.accessToken(caller.userId)
-        : undefined
-
-      // The signed-in servers' tokens, minted from THIS caller's own keys —
-      // the per-person half of `identity: user`, for the servers whose door
-      // the rebound token cannot open. A person who never connected yields no
-      // entry, and the driver then omits the server from their turn.
-      const serverTokens = caller?.userId
-        ? await mcpSignIn.tokensFor(await outboundServers(), caller.userId)
-        : {}
-
-      // The instance's own tools, minted for THIS turn of THIS conversation.
-      // The handle is how `rename_conversation` knows its target without the
-      // model ever seeing an id; a turn without a conversation carries none,
-      // because it has nothing to rename and no reason to hold a token.
-      const tools =
-        conversationId && deps.shellTools
-          ? deps.shellTools.handleFor({ userId, conversationId })
-          : undefined
-
-      const spec: TurnSpec = {
-        request: {
-          // Framed here, not in the browser: what the thread stores is the
-          // raw prompt, so a reload replays what the person typed rather
-          // than the gateway's own notes.
-          prompt: frameView(frameAttachments(body.prompt, attachments), body.view),
-          cwd: config.workspace.root,
-          ...(agentRoots.length > 0 ? { roots: agentRoots } : {}),
-          // A thread's session is the THREAD's, read from its file when the
-          // turn is dispatched (`session` below) — never the browser's copy.
-          // The browser's copy is exactly what a stream dying under a sleeping
-          // phone loses, and a message posted without it opened a fresh engine
-          // session that then replaced the thread's own. Only a turn with no
-          // thread still names its session from the request.
-          ...(!conversationId && sessionId ? { sessionId } : {}),
-          ...(typeof body.model === 'string' ? { model: body.model } : {}),
-          ...(callerToken ? { callerToken } : {}),
-          ...(Object.keys(serverTokens).length > 0 ? { serverTokens } : {}),
-          ...(tools ? { tools } : {}),
-        },
-        ...(conversationId
-          ? {
-              session: async () =>
-                (await conversations.read(userId, conversationId))?.sessionId,
-            }
-          : {}),
-        // Written even when the turn failed: a thread that silently drops
-        // the answer it did produce is worse than one showing it broke. The
-        // desk calls this whether or not anybody is still watching — which
-        // is the whole point of the desk.
-        finish: async (outcome) => {
-          if (!conversationId) return
-          await conversations.recordOutcome(userId, conversationId, outcome)
-          // Last, after this turn's own appends: the token dies with the
-          // turn, and a rename during it compacts the thread here — under
-          // the desk's serialization, so the rewrite races nothing.
-          if (tools) await deps.shellTools?.release(tools).catch(() => undefined)
-        },
-      }
-
-      let admission
-      try {
-        admission = desk.admit(key)
-      } catch (error) {
-        if (error instanceof TurnCapacityError) {
-          // Refusing now beats queueing behind a lock that may not release
-          // for an hour: a refusal is information, a silent wait is not.
-          // Only a conversation's OWN backlog ever queues, above.
-          await reply.code(429).send({
-            error: 'too many turns running',
-            max: config.maxConcurrentTurns,
-          })
-          return reply
-        }
-        throw error
-      }
-
-      if (conversationId) {
-        // Persisted the moment it is ACCEPTED — held or run alike. This line
-        // is why a queued message survives a reload: it is in the thread
-        // before the browser hears anything back.
-        try {
-          await conversations.append(userId, conversationId, {
-            id: randomUUID(),
-            role: 'user',
-            text: body.prompt,
-            at: new Date().toISOString(),
-          })
-        } catch (error) {
-          if (admission.mode === 'run') admission.abort()
-          // The turn will never run, so its finish will never release this.
-          if (tools) await deps.shellTools?.release(tools).catch(() => undefined)
-          await reply.code(500).send({ error: (error as Error).message })
-          return reply
-        }
-      }
-
-      if (admission.mode === 'queued') {
-        admission.enqueue(spec)
-        // 202: accepted, held. The browser shows it waiting and re-attaches
-        // for the merged turn once the running one settles.
-        await reply.code(202).send({ held: true })
-        return reply
-      }
-
-      await streamJob(admission.start(spec), request, reply)
-      return reply
-    },
-  )
-
-  /**
-   * Re-attaching to the turn a conversation is running — turn adoption.
-   *
-   * A reload, a phone that slept, a second tab: the turn kept running at the
-   * desk, and this replays its whole event log then follows live. Same
-   * frames, same reducer in the browser — an adopted turn is
-   * indistinguishable from one never left. 204 says "nothing running", which
-   * is an answer, not an error.
-   */
-  app.get<{ Querystring: { conversation?: string } }>('/api/turn/attach', async (request, reply) => {
-    const conversationId = request.query.conversation
-    if (typeof conversationId !== 'string' || conversationId === '') {
-      await reply.code(400).send({ error: 'conversation is required' })
-      return reply
-    }
-    const job = desk.activeFor(`${identityOf(request).userId}/c:${conversationId}`)
-    if (!job) {
-      await reply.code(204).send()
-      return reply
-    }
-    await streamJob(job, request, reply)
-    return reply
-  })
-
-  /**
-   * One subscription of one response to one job. The job outlives the
-   * response by design: a client that goes away is unsubscribed and nothing
-   * else — the turn keeps running at the desk.
-   */
-  async function streamJob(job: TurnJob, request: FastifyRequest, reply: FastifyReply): Promise<void> {
-    reply.raw.writeHead(200, {
-      'content-type': 'text/event-stream',
-      'cache-control': 'no-cache',
-      connection: 'keep-alive',
-      // Nginx and friends buffer SSE into uselessness without this.
-      'x-accel-buffering': 'no',
-    })
-
-    // Snapshot and subscribe in the SAME tick: events are emitted from the
-    // driver's async loop, so nothing can land between the two.
-    for (const event of job.log) reply.raw.write(sseFrame(event))
-
-    await new Promise<void>((resolve) => {
-      const unsubscribe = job.subscribe({
-        event: (event) => reply.raw.write(sseFrame(event)),
-        end: () => {
-          reply.raw.end()
-          resolve()
-        },
-      })
-      request.raw.on('close', () => {
-        unsubscribe()
-        resolve()
-      })
-    })
-  }
-
-  /**
-   * Answering what the engine asked.
-   *
-   * Three answers, no policy: `once` allows this call, `always` allows it and
-   * hands the engine back its OWN suggestion so IT writes the rule into its
-   * own file in the workspace, `deny` refuses. Adestia stores no rule either
-   * way — the durable allowlist belongs to the engine, in a file a person can
-   * open and edit.
-   */
-  app.post<{ Body: { id?: unknown; answer?: unknown } }>(
-    '/api/permission',
-    async (request, reply) => {
-      const { id, answer } = request.body ?? {}
-      const valid = answer === 'once' || answer === 'always' || answer === 'deny'
-      if (typeof id !== 'string' || !valid) {
-        return reply.code(400).send({ error: 'id and answer (once|always|deny) are required' })
-      }
-      // 409 rather than 404: the question existed, it simply timed out or was
-      // already answered — "unknown" would suggest the person clicked
-      // something that never was.
-      if (!deps.asks?.answer(id, answer as AskAnswer)) {
-        return reply.code(409).send({ error: 'that question is no longer waiting' })
-      }
-      // Out of the replay too: a re-attached stream must not resurrect a
-      // question that nothing can resolve any more.
-      desk.scrubAsk(id)
-      return { answered: true }
-    },
-  )
-
-  /**
-   * Stop the turn a conversation is running.
-   *
-   * Addressed by the CONVERSATION, like `/api/turn/attach` — never by the
-   * engine's session id, which is what this used to take. That id travels
-   * back in the turn's `result` event, so nobody holds it while the turn is
-   * still running: the browser posted nothing at all for the first turn of a
-   * thread, and the button looked broken because it WAS.
-   *
-   * A turn started before its thread could be created has no address at all,
-   * here as at the desk, and cannot be stopped — the same rule that keeps a
-   * loose job out of the status dots.
-   */
-  app.post<{ Body: { conversation?: unknown; sessionId?: unknown } }>(
-    '/api/turn/stop',
-    async (request, reply) => {
-      const body = request.body ?? {}
-      const conversationId = typeof body.conversation === 'string' ? body.conversation : undefined
-      const sessionId =
-        typeof body.sessionId === 'string' && body.sessionId !== '' ? body.sessionId : undefined
-      const key = turnKey(identityOf(request).userId, conversationId, sessionId)
-      if (!key) {
-        await reply.code(400).send({ error: 'conversation is required' })
-        return reply
-      }
-      // 409 rather than 404: the turn existed, it simply settled first — the
-      // press was a fraction of a second late, and the thread is already
-      // showing the end of it.
-      if (!desk.stop(key)) {
-        await reply.code(409).send({ error: 'no turn is running there' })
-        return reply
-      }
-      return { stopped: true }
-    },
-  )
-
-  const canArm = descriptor.capabilities.includes('authManagement')
-  const authDriver = driver as Driver & AuthManagement
-
-  app.get('/api/auth/driver', async (_request, reply) => {
-    if (!canArm) {
-      // 404 rather than a status saying "absent": "this engine cannot be armed
-      // from here" and "this engine has no token" are different facts, and an
-      // interface that confuses them offers a button that can never work.
-      await reply.code(404).send({ error: 'this driver cannot be armed from the interface' })
-      return reply
-    }
-    return authDriver.authStatus()
-  })
-
-  app.post('/api/auth/driver/begin', async (_request, reply) => {
-    if (!canArm) return reply.code(404).send({ error: 'this driver cannot be armed' })
-    try {
-      const prompt = await authDriver.beginAuth()
-      const session = arming.start(descriptor.id)
-      // The driver's own session id is replaced by ours: the browser holds a
-      // handle to OUR flow, and the driver never has to be trusted with
-      // session bookkeeping it does not own.
-      return { ...prompt, sessionId: session.id }
-    } catch (error) {
-      return reply.code(502).send({ error: (error as Error).message })
-    }
-  })
-
-  app.post<{ Body: { sessionId?: unknown; input?: unknown } }>(
-    '/api/auth/driver/complete',
-    async (request, reply) => {
-      if (!canArm) return reply.code(404).send({ error: 'this driver cannot be armed' })
-
-      const { sessionId, input } = request.body ?? {}
-      if (typeof sessionId !== 'string' || typeof input !== 'string' || input.trim() === '') {
-        return reply.code(400).send({ error: 'sessionId and input are required' })
-      }
-      const session = arming.get(sessionId)
-      if (!session) {
-        return reply.code(409).send({ error: 'that arming session has expired; start again' })
-      }
-
-      try {
-        const { secret } = await authDriver.completeAuth(sessionId, input)
-        // The CORE stores it: one policy for every engine, and the file never
-        // passes back through the driver.
-        const stored = await secrets.write(descriptor.id, secret)
-        authDriver.setCredentials?.(
-          { [credentialVar(authDriver, descriptor.id)]: stored.value },
-          stored.savedAt,
-        )
-        arming.end(sessionId)
-        return { armed: true, savedAt: stored.savedAt }
-      } catch (error) {
-        arming.end(sessionId)
-        return reply.code(502).send({ error: (error as Error).message })
-      }
-    },
-  )
-
-  app.post<{ Body: { sessionId?: unknown } }>('/api/auth/driver/cancel', async (request) => {
-    const sessionId = request.body?.sessionId
-    if (typeof sessionId === 'string') {
-      arming.end(sessionId)
-      await authDriver.cancelAuth(sessionId).catch(() => undefined)
-    }
-    return { cancelled: true }
-  })
-
-  app.delete('/api/auth/driver', async (_request, reply) => {
-    if (!canArm) return reply.code(404).send({ error: 'this driver cannot be armed' })
-    const cleared = await secrets.clear(descriptor.id)
-    authDriver.setCredentials?.({}, undefined)
-    return cleared ? { cleared: true } : reply.code(404).send({ error: 'nothing stored' })
-  })
-
   // Memory, composed. One store or several, every route below sees the same
   // shape — and a contradiction between declarations is refused here rather
   // than repaired, because the repair would have to guess which half the
@@ -1114,6 +195,38 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   // Declared to every turn: the agent edits pages with its OWN file tools, so
   // a circle mounted outside its home has to be named or the CLI refuses it.
   const agentRoots = foreignRoots(stores, config.workspace.root)
+
+  const outboundServers = outboundServersOf({ config, plugins, mcpStore })
+
+  // Reported by `/api/instance`, filled once the plugin APIs are mounted below.
+  let apiProblems: readonly DiscoveryProblem[] = []
+
+  registerInstance(app, {
+    config,
+    driver,
+    descriptor,
+    skin: deps.skin,
+    plugins,
+    problems: () => [...pluginProblems, ...apiProblems],
+    running: () => limiter.running,
+  })
+  registerInstructions(app, { driver, workspaceRoot: config.workspace.root })
+  registerMcpServers(app, { config, driver, descriptor, plugins, mcpStore, mcpSignIn, outboundServers })
+  await registerUpload(app, { config, inbox })
+  registerConversations(app, { conversations, desk })
+  registerTurns(app, {
+    config,
+    desk,
+    conversations,
+    inbox,
+    mcpSignIn,
+    outboundServers,
+    agentRoots,
+    userTokens,
+    shellTools: deps.shellTools,
+    asks: deps.asks,
+  })
+  registerArming(app, { driver, descriptor, secrets, arming })
 
   /**
    * The loose unattended spawn path — the clock's and the callback wake's.
@@ -1154,7 +267,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   // Mounted before the static catch-all, so a plugin route always wins over
   // the shell's fallback; and after the auth hook, so it is gated like
   // everything else.
-  const apiProblems = await mountPluginApis(app, plugins, {
+  apiProblems = await mountPluginApis(app, plugins, {
     workspaceRoot: config.workspace.root,
     pages: pagesService(stores),
     dataDir: config.dataDir,
@@ -1198,26 +311,6 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
       return { caller: request.params.caller, ...thread }
     },
   )
-
-  /**
-   * Every outbound server, credentials INCLUDED — the callback verifier's
-   * view, never a route's. Same precedence as `mcpViews`: config, then
-   * plugins, then the shell's own layer, first name wins.
-   */
-  const outboundServers = async (): Promise<readonly McpServerConfig[]> => {
-    const merged: McpServerConfig[] = []
-    const declared = new Set<string>()
-    for (const server of [
-      ...config.mcpServers,
-      ...plugins.flatMap((plugin) => (plugin.active ? (plugin.manifest.mcpServers ?? []) : [])),
-      ...(await mcpStore.list()),
-    ]) {
-      if (declared.has(server.name)) continue
-      declared.add(server.name)
-      merged.push(server)
-    }
-    return merged
-  }
 
   registerCallback(app, {
     servers: outboundServers,

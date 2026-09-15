@@ -23,7 +23,13 @@ doc en retard, découpage du serveur, découpage du web (banc visuel), hygiène.
 - [x] Outillage : dans une worktree, le typecheck lisait les types des
       autres paquets dans le `dist` de `main` (liens `node_modules`) ; des
       `paths` vers les sources corrigent ça, `vite build` reste piégé.
-- [ ] Découpage serveur ; découpage web (banc visuel) ; hygiène.
+- [x] Découpage serveur, 1re moitié : `app.ts` (1243 lignes, une fonction
+      de mille lignes qui déclarait douze familles de routes) devient un
+      assemblage de 335 lignes ; chaque famille vit dans `routes/*.ts` avec
+      ses commentaires intacts, sur le motif que `mcp-routes.ts` et
+      `oidc-routes.ts` avaient déjà posé.
+- [ ] Découpage serveur, 2e moitié (config, démarrage) ; découpage web
+      (banc visuel) ; hygiène.
 
 Chantier du 14/09 — **un fil ne perd plus la mémoire du moteur quand le
 téléphone s'endort pendant un tour**. Remonté de l'usage : « je recharge la
