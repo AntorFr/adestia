@@ -55,7 +55,7 @@ export default async function scenario(bench) {
         stopped: true,
       },
     ]
-      .map(line)
+      .map(bench.line)
       .join(''),
   )
 

@@ -54,7 +54,7 @@ export default async function scenario(bench) {
         usage: { contextTokens: 4200 },
       },
     ]
-      .map(line)
+      .map(bench.line)
       .join(''),
   )
 
