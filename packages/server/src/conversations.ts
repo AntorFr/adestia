@@ -15,6 +15,8 @@ import { createHash, randomUUID } from 'node:crypto'
 import { appendFile, mkdir, readFile, readdir, rename, stat, unlink, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
+import type { TurnOutcome } from './turns.js'
+
 export interface StoredMessage {
   readonly id: string
   readonly role: 'user' | 'agent'
@@ -114,6 +116,40 @@ export class ConversationStore {
   }
 
   /** Records which CLI session this thread resumes, so a reload can continue it. */
+  /**
+   * What a finished turn leaves in its thread: ONE MESSAGE PER PART, then the
+   * session line for the next ask.
+   *
+   * An agent that answers, goes back to its tools and answers again said two
+   * things, and the thread records two — otherwise a reload would glue back
+   * together what the live view had just drawn apart. A turn that produced
+   * nothing still leaves a line: it is what carries the interruption and the
+   * error. How the turn ended belongs to its last word only, and the usage is
+   * the whole turn's, so both hang there. Written even when the turn failed:
+   * a thread that silently drops the answer it did produce is worse than one
+   * showing it broke — which is why every write here swallows its own error.
+   */
+  async recordOutcome(userId: string, id: string, outcome: TurnOutcome): Promise<void> {
+    const parts = outcome.parts.filter((part) => part.text !== '' || part.tools.length > 0)
+    const written = parts.length > 0 ? parts : [{ tools: [], text: '' }]
+    for (const [index, part] of written.entries()) {
+      const last = index === written.length - 1
+      await this.append(userId, id, {
+        id: randomUUID(),
+        role: 'agent',
+        text: part.text,
+        at: new Date().toISOString(),
+        ...(part.tools.length > 0 ? { tools: [...part.tools] } : {}),
+        ...(last && outcome.stopped ? { stopped: outcome.stopped } : {}),
+        ...(last && outcome.failure ? { error: outcome.failure } : {}),
+        ...(last && outcome.usage ? { usage: outcome.usage } : {}),
+      }).catch(() => undefined)
+    }
+    if (outcome.sessionId) {
+      await this.setSession(userId, id, outcome.sessionId).catch(() => undefined)
+    }
+  }
+
   async setSession(userId: string, id: string, sessionId: string): Promise<void> {
     if (!isSafeId(id)) throw new Error(`unsafe conversation id: ${id}`)
     await appendFile(

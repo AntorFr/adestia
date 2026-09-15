@@ -24,6 +24,8 @@
 import { readFile, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 
+import { splitFrontmatter } from './pages.js'
+
 export interface ScheduledNote {
   /** File name without extension; also its id. */
   readonly id: string
@@ -100,13 +102,17 @@ function endOfDayMs(day: string): number {
   return new Date(year!, month! - 1, dayOfMonth! + 1).getTime()
 }
 
-/** Frontmatter, shallowly — a scheduled note has no nested settings. */
+/**
+ * Frontmatter as strings, shallowly — a scheduled note has no nested settings,
+ * and its values are read leniently rather than typed: `done: true` from a
+ * confused hand must still read as a closing.
+ */
 function frontmatterOf(source: string): { fields: Record<string, string>; body: string } {
-  const match = /^---\n([\s\S]*?)\n---\n?/.exec(source)
-  if (!match) return { fields: {}, body: source }
+  const { head, body } = splitFrontmatter(source)
+  if (head === undefined) return { fields: {}, body: source }
 
   const fields: Record<string, string> = {}
-  for (const line of (match[1] ?? '').split('\n')) {
+  for (const line of head.split('\n')) {
     const separator = line.indexOf(':')
     if (separator === -1) continue
     fields[line.slice(0, separator).trim()] = line
@@ -114,7 +120,7 @@ function frontmatterOf(source: string): { fields: Record<string, string>; body: 
       .trim()
       .replace(/^["']|["']$/g, '')
   }
-  return { fields, body: source.slice(match[0].length) }
+  return { fields, body }
 }
 
 export function parseNote(id: string, source: string): ScheduledNote {

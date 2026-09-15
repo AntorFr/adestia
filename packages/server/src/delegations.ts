@@ -147,14 +147,14 @@ export class DelegationChannel {
     const retriable =
       first.failure !== undefined && first.outcome.parts.length === 0 && sessionId !== undefined
     if (!retriable) {
-      await this.#persist(caller, threadId, first.outcome)
+      await this.#store.recordOutcome(caller, threadId, first.outcome)
       return { text: first.text, ...(first.failure ? { failure: first.failure } : {}) }
     }
 
     // The stored session is the prime suspect (expired, pruned, another
     // machine): nothing ran, so a fresh start repeats nothing.
     const second = await this.#turn(caller, threadId, key, request, undefined)
-    await this.#persist(caller, threadId, second.outcome)
+    await this.#store.recordOutcome(caller, threadId, second.outcome)
     return { text: second.text, ...(second.failure ? { failure: second.failure } : {}) }
   }
 
@@ -206,30 +206,6 @@ export class DelegationChannel {
     return { outcome, text, ...(outcome.failure ? { failure: outcome.failure } : {}) }
   }
 
-  /** The thread gets what the chat's finish gives its own: one message per
-      part, the failure on the last word, the session line for the next ask. */
-  async #persist(caller: string, threadId: string, outcome: TurnOutcome): Promise<void> {
-    const parts = outcome.parts.filter((part) => part.text !== '' || part.tools.length > 0)
-    const written = parts.length > 0 ? parts : [{ tools: [], text: '' }]
-    for (const [index, part] of written.entries()) {
-      const last = index === written.length - 1
-      await this.#store
-        .append(caller, threadId, {
-          id: randomUUID(),
-          role: 'agent',
-          text: part.text,
-          at: new Date().toISOString(),
-          ...(part.tools.length > 0 ? { tools: [...part.tools] } : {}),
-          ...(last && outcome.stopped ? { stopped: outcome.stopped } : {}),
-          ...(last && outcome.failure ? { error: outcome.failure } : {}),
-          ...(last && outcome.usage ? { usage: outcome.usage } : {}),
-        })
-        .catch(() => undefined)
-    }
-    if (outcome.sessionId) {
-      await this.#store.setSession(caller, threadId, outcome.sessionId).catch(() => undefined)
-    }
-  }
 
   /** Every caller's threads, flat, for the screen — which groups them itself.
       The status dot is computed against the desk per request, never stored. */

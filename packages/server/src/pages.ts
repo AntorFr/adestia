@@ -126,6 +126,20 @@ function qualified(stores: readonly Store[], asked: unknown): Store | undefined 
 }
 
 /**
+ * A page in its two halves: the YAML head, and the text under it.
+ *
+ * `head` is undefined when the file has no frontmatter, which is not the same
+ * as an empty one. Frontmatter must be the very first thing in the file, or
+ * it is not frontmatter — and the same rule, written once, is what every
+ * reader in this process applies.
+ */
+export function splitFrontmatter(markdown: string): { head?: string; body: string } {
+  const match = /^---\n([\s\S]*?)\n---\n?/.exec(markdown)
+  if (!match) return { body: markdown }
+  return { head: match[1] ?? '', body: markdown.slice(match[0].length) }
+}
+
+/**
  * The frontmatter of every page, in one request.
  *
  * This is what the design calls the DERIVED regime: a view computed live from
@@ -140,11 +154,11 @@ function qualified(stores: readonly Store[], asked: unknown): Store | undefined 
  * app with its own store rather than a page pretending.
  */
 export function parseFrontmatter(markdown: string): Record<string, unknown> {
-  const match = /^---\n([\s\S]*?)\n---/.exec(markdown)
-  if (!match?.[1]) return {}
+  const { head } = splitFrontmatter(markdown)
+  if (!head) return {}
 
   const fields: Record<string, unknown> = {}
-  for (const line of match[1].split('\n')) {
+  for (const line of head.split('\n')) {
     // Only top-level keys: an indented line belongs to a nested structure this
     // index does not model, and guessing at it would produce a field that
     // looks queryable and is not.
@@ -197,14 +211,13 @@ function parseScalar(raw: string): unknown {
  * a heading is what somebody wrote.
  */
 function hasBody(markdown: string): boolean {
-  const match = /^---\n[\s\S]*?\n---/.exec(markdown)
-  return (match ? markdown.slice(match[0].length) : markdown).trim() !== ''
+  return splitFrontmatter(markdown).body.trim() !== ''
 }
 
 /** The frontmatter title if there is one, else the file name. */
 export function titleOf(markdown: string, path: string): string {
-  const match = /^---\n([\s\S]*?)\n---/.exec(markdown)
-  const title = match?.[1] ? /^title:\s*(.+)$/m.exec(match[1])?.[1]?.trim() : undefined
+  const { head } = splitFrontmatter(markdown)
+  const title = head ? /^title:\s*(.+)$/m.exec(head)?.[1]?.trim() : undefined
   if (title) return title.replace(/^["']|["']$/g, '')
   const heading = /^#\s+(.+)$/m.exec(markdown)?.[1]
   return heading ?? path.replace(/\.md$/, '').split('/').pop() ?? path
