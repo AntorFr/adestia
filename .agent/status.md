@@ -15,8 +15,11 @@ verts ; banc visuel passé sur les 35 scénarios (34 verts, voir ci-dessous). L'
       gardent leurs copies de `slugOf`, `slugify`, du parseur de frontmatter
       et de `makeCache` — cinq lignes chacune, et un plugin reste un dossier
       autonome qui n'importe que React.)
-- [ ] Types du protocole (`TurnEvent`, conversations, `McpServerView`)
-      déclarés une fois dans `schemas` — question 5, ouverte.
+- [ ] (fait le 15/09 : conversations et vue MCP déclarées une fois dans
+      `schemas/src/protocol.ts` ; les événements de tour restent ceux du
+      contrat pilote, importés en type seulement par le web. Reste à
+      déclarer `@antorfr/adestia-schemas` dans `packages/web/package.json`,
+      avec le même geste npm que le retrait de `plugin-react`.)
 - [ ] Retirer `@vitejs/plugin-react` de `packages/web` : déclaré, jamais
       chargé ; demande l'outil npm qui réécrit le lockfile, puis revérifier le
       fork du parseur.
