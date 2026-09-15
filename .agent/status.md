@@ -32,7 +32,14 @@ doc en retard, découpage du serveur, découpage du web (banc visuel), hygiène.
       parseur et rend ses déclarations (`config/types.ts`), ses lecteurs de
       valeurs (`config/values.ts`) et ses lecteurs MCP (`config/mcp.ts`) ;
       le démarrage rend la fabrique de pilotes (`drivers.ts`).
-- [ ] Découpage web (banc visuel) ; hygiène.
+- [x] Découpage web, 1re moitié : `shell.css` (3200 lignes) devient un
+      index de quatorze feuilles par zone, importées dans l'ordre exact de
+      la cascade (concaténation vérifiée identique) ; les composants du chat
+      (pilule de contexte, choix du modèle, bulle, question du moteur,
+      composeur) quittent `Chat.tsx` pour leurs fichiers ; les attentes DOM
+      des tests web passent à trois secondes.
+- [ ] Découpage web, 2e moitié (`Chat()` et `App()` en hooks, blocs du
+      lecteur) ; hygiène.
 
 Chantier du 14/09 — **un fil ne perd plus la mémoire du moteur quand le
 téléphone s'endort pendant un tour**. Remonté de l'usage : « je recharge la
