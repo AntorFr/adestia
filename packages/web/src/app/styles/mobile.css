@@ -1,0 +1,153 @@
+/* Folded onto a phone: two full-width screens and the seam between them. */
+
+/* Mobile: two full-width screens, the gutter is meaningless on a phone. ---- */
+
+.adestia-switch {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 2px var(--space-2);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+/* The edge handles. Declared here at `display: none` so the shell's grid
+   never counts them as columns: unfolded, there is nothing to swipe between
+   and nothing to announce. */
+.adestia-edge { display: none; }
+
+@media (max-width: 820px) {
+  html,
+  body {
+    /* The track below is two screens wide. Without this the page itself
+       scrolls sideways and the fold degrades into a horizontal scrollbar. */
+    overflow: hidden;
+  }
+
+  /* A TRACK, not a pair of alternatives.
+
+     Both panes stay mounted, side by side, and the shell slides between them.
+     That is what lets the next screen arrive UNDER THE FINGER instead of
+     appearing once the gesture is over — and showing the crossing as it
+     happens is most of what makes the gesture feel like it works. The
+     predecessor hid one pane with `display: none`, which cannot be dragged,
+     cannot be half-way, and cannot say it was understood. */
+  .adestia-shell {
+    width: 200vw;
+    grid-template-columns: 100vw 100vw;
+    grid-template-rows: 1fr;
+    transition: transform 0.28s ease;
+    will-change: transform;
+  }
+
+  /* Following a finger has to be 1:1, so the easing is suspended for exactly
+     as long as the finger is down. */
+  .adestia-shell[data-swiping] { transition: none; }
+
+  /* Where the track rests. -50% of 200vw is one screen: the canvas. The
+     stylesheet owns this, so a rotation recomputes it and no pixel offset
+     left behind by a gesture can freeze the shell half-way. */
+  .adestia-shell[data-screen='canvas'] { transform: translateX(-50%); }
+
+  .adestia-gutter { display: none; }
+  .adestia-chat { border-right: 0; }
+
+  /* The seam. A bar of 6px against the edge the other pane sits behind —
+     enough to be seen, too little to be read as a scrollbar or a border. */
+  .adestia-edge {
+    display: block;
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    /* The BAR is 6px wide; the TARGET is not, or the handle is a control a
+       thumb misses. 16px is what it may take without stealing anything: the
+       canvas and the chat both keep that much padding against the edge, so
+       the strip covers margin and never a card. */
+    width: 16px;
+    height: 84px;
+    padding: 0;
+    border: 0;
+    background: none;
+    z-index: 10;
+    cursor: pointer;
+  }
+
+  .adestia-edge::before {
+    content: '';
+    position: absolute;
+    top: 16px;
+    bottom: 16px;
+    width: 6px;
+    border-radius: 3px;
+    background: var(--text-faint);
+  }
+
+  .adestia-edge:active::before { background: var(--accent); }
+  .adestia-edge:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .adestia-edge[data-side='right'] { right: 0; }
+  .adestia-edge[data-side='right']::before { right: 3px; }
+  .adestia-edge[data-side='left'] { left: 0; }
+  .adestia-edge[data-side='left']::before { left: 3px; }
+
+  /* One at a time, and it points at where you can go: from the chat the
+     canvas waits on the right, from the canvas the chat waits on the left.
+     Both at once would be a promise of a third screen that does not exist. */
+  .adestia-edges[data-screen='canvas'] .adestia-edge[data-side='right'] { display: none; }
+  .adestia-edges[data-screen='chat'] .adestia-edge[data-side='left'] { display: none; }
+
+  /* The top bar has room for WHERE YOU ARE and the two controls, and that is
+     all. The driver's name is diagnostics — it belongs on a screen wide
+     enough to spare the space, not crushed against the breadcrumb. */
+  .adestia-canvas__driver { display: none; }
+  .adestia-canvas__header { padding: 11px var(--space-4); gap: var(--space-2); }
+  .adestia-crumbs { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .adestia-canvas__body { padding: var(--space-4) var(--space-4) 80px; }
+
+  /* A 33px serif greeting wraps to three lines on a phone and eats a third
+     of the screen before anything useful. It scales; the rest does not. */
+  .adestia-home__greeting { font-size: clamp(22px, 7vw, 33px); }
+  .adestia-home__greeting::before { display: none; }
+  .adestia-home__context { font-size: 14px; }
+  .adestia-home__ask { margin: var(--space-4) 0 var(--space-2); padding: 12px 14px; }
+  .adestia-home__ask-text { font-size: 14px; }
+  .adestia-home__ask-kbd { display: none; }
+
+  /* Two up rather than one: at 210px minimum a 390px phone gets a single
+     column of very tall cards, which is a list wearing a card's costume. */
+  .adestia-tiles { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .adestia-tile { min-height: 118px; padding: 13px; gap: 8px; }
+  .adestia-tile__icon { width: 36px; height: 36px; font-size: 17px; }
+  .adestia-tile__label { font-size: 15px; }
+
+  .adestia-cards { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .adestia-card { min-height: 84px; padding: 13px; }
+  .adestia-card__title { font-size: 14.5px; }
+
+  /* The brief goes full width: four pills of different lengths stacked
+     ragged read worse than four rows that line up. */
+  .adestia-brief { flex-direction: column; }
+  .adestia-brief__item { width: 100%; }
+
+  /* 44px is the smallest target a thumb hits reliably; below that the send
+     button is a coin toss on the one control that must never miss. */
+  .adestia-composer button { width: 44px; height: 44px; }
+  .adestia-composer { padding: var(--space-3); gap: var(--space-2); }
+
+  /* The header holds the brand, the picker and three controls. The picker is
+     the one that may shrink — the others are fixed glyphs. */
+  .adestia-model { max-width: 92px; }
+
+  /* Full width, anchored to the composer's left edge rather than to the
+     button: a 200px card hanging off a 44px control on a 390px screen is a
+     menu that hugs one margin and ignores the other. */
+  .adestia-fold { position: static; }
+  .adestia-fold__menu {
+    left: var(--space-3);
+    right: var(--space-3);
+    min-width: 0;
+  }
+}

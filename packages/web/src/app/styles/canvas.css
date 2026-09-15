@@ -1,0 +1,53 @@
+/* The canvas: the frame everything on the right sits in. */
+
+/* Canvas ------------------------------------------------------------------ */
+
+.adestia-canvas {
+  overflow-y: auto;
+}
+
+.adestia-canvas__header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 11px 24px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  backdrop-filter: blur(6px);
+}
+
+/* The canvas body gets the frame the sticky bar no longer provides. */
+.adestia-canvas__body {
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 26px 30px 100px;
+}
+
+.adestia-crumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  font: 13px var(--font-mono);
+  color: var(--text-muted);
+}
+
+.adestia-crumbs button {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.adestia-crumbs button:hover { color: var(--accent); text-decoration: underline; }
+.adestia-crumbs__sep { color: var(--text-faint); }
+.adestia-crumbs b { color: var(--text); font-weight: 600; }
+
+.adestia-canvas__driver { font-size: var(--text-sm); color: var(--text-faint); }

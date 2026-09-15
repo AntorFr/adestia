@@ -1,0 +1,127 @@
+/* Attachments in the composer, and the composer's folded controls. */
+
+/* Attachments ------------------------------------------------------------- */
+
+.adestia-composer { flex-wrap: wrap; }
+
+.adestia-composer--dropping {
+  outline: 2px dashed var(--accent);
+  outline-offset: var(--space-1);
+}
+
+.adestia-attachments {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.adestia-attachments__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+}
+
+.adestia-attachments__item button {
+  background: none;
+  border: 0;
+  padding: 0 2px;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: var(--text-base);
+  width: auto;
+  height: auto;
+}
+
+.adestia-attachments__error { color: var(--danger); }
+
+.adestia-composer__attach {
+  background: none !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text-muted) !important;
+  font-size: var(--text-base) !important;
+}
+
+/* The model picker, in the chat header.
+
+   It used to sit in the composer, where it competed for width with the field
+   and lost the argument on every phone. Up here it is a label beside the
+   brand, so it may be sized to the name it actually holds — still truncated
+   rather than allowed to push the header's controls off the end. */
+.adestia-model {
+  height: 26px;
+  max-width: 130px;
+  min-width: 0;
+  flex: 0 1 auto;
+  text-overflow: ellipsis;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-ctl);
+  background: var(--surface);
+  color: var(--text-muted);
+  font: 600 var(--text-sm) var(--font-mono);
+  cursor: pointer;
+}
+
+.adestia-model:hover { color: var(--text); border-color: var(--accent); }
+.adestia-model:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* The composer's folded controls ---------------------------------------- */
+
+.adestia-fold { position: relative; display: flex; }
+
+.adestia-fold__menu {
+  position: absolute;
+  /* Opens UPWARD: the composer is at the bottom of the screen, and a menu
+     dropping from it would open off the viewport. */
+  bottom: calc(100% + var(--space-2));
+  left: 0;
+  z-index: 5;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow);
+}
+
+/* Overrides the composer's square icon buttons: these are rows of text. */
+.adestia-fold__item {
+  display: flex !important;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100% !important;
+  height: auto !important;
+  padding: 10px var(--space-3) !important;
+  border-radius: var(--radius-sm) !important;
+  background: none !important;
+  color: var(--text) !important;
+  font: inherit !important;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.adestia-fold__item:hover { background: var(--surface-sunken) !important; }
+.adestia-fold__glyph { font-size: var(--text-lg); line-height: 1; }
+
+/* Section heading on the landing canvas. The pages list sits BELOW the app
+   tiles and needs to announce itself as a second thing rather than reading as
+   an unexplained wall of links. */
+.adestia-section {
+  margin: var(--space-5) 0 var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}

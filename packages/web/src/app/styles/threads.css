@@ -1,0 +1,273 @@
+/* The thread list, the delegations page and the tab strip. */
+
+/* Threads ----------------------------------------------------------------- */
+
+.adestia-threads {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-raised);
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+.adestia-threads__item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adestia-threads__item:hover { background: var(--surface-sunken); }
+
+/*
+ * A row, not a button with something stuck beside it.
+ *
+ * These rules live HERE and not where they were written, three hundred lines
+ * up: `.adestia-threads__item` below sets `display: block; width: 100%`, and at
+ * equal specificity the later rule wins — so the flex layout was silently
+ * undone and the control pushed out of the row.
+ */
+.adestia-threads li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1, 4px);
+}
+
+.adestia-threads li > .adestia-threads__item {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+}
+
+/* Revealed on hover: a thread list is read far more often than it is tidied.
+   Always there for the keyboard, which cannot hover. */
+.adestia-threads__archive {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s, color 0.12s, background 0.12s;
+}
+
+.adestia-threads__archive svg { width: 15px; height: 15px; }
+
+.adestia-threads li:hover .adestia-threads__archive,
+.adestia-threads__archive:focus-visible { opacity: 1; }
+
+.adestia-threads__archive:hover {
+  color: var(--text);
+  background: var(--surface-sunken);
+}
+
+/* Delegations (settings page) ---------------------------------------------- */
+
+/*
+ * The thread-list vocabulary, out of its dropdown. `.adestia-threads` above
+ * is dressed for the chat's overlay — raised, capped at 40vh, underlined —
+ * and on a settings canvas those clothes read as a panel that fell off
+ * something. Undressed here, not re-specified: the rows keep their behaviour.
+ */
+.adestia-deleg .adestia-threads {
+  max-height: none;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 8px);
+}
+
+.adestia-deleg__group { margin: var(--space-4) 0 0; }
+
+/* The caller as a shelf label: it names an agent, not a section of prose. */
+.adestia-deleg__caller {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+/* A row that carries a timestamp needs to BE a row; the block+ellipsis the
+   chat list sets would push the date out of sight instead of to the edge. */
+.adestia-deleg .adestia-threads__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.adestia-deleg__when {
+  margin-left: auto;
+  flex: none;
+  color: var(--text-faint);
+  font-size: var(--text-sm);
+}
+
+.adestia-deleg__empty { color: var(--text-muted); }
+
+.adestia-deleg__thread { margin-top: var(--space-4); }
+
+/* Tabs --------------------------------------------------------------------- */
+
+/*
+ * The tab strip, desktop only: parallel conversations side by side, like a
+ * browser's. On a phone the thread list carries the same dots and IS the
+ * navigation — a strip of truncated titles on 360px would name nothing.
+ */
+.adestia-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: var(--space-1) var(--space-2) 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-raised);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.adestia-tab {
+  flex: 0 1 180px;
+  min-width: 90px;
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-bottom: 0;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+}
+
+/* The active tab fuses with the surface below it, the browser idiom that
+   says "this one is open" without a label. */
+.adestia-tab--active {
+  background: var(--surface);
+  color: var(--text);
+  border-bottom: 1px solid var(--surface);
+  margin-bottom: -1px;
+}
+
+.adestia-tab__pick {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: none;
+  border: 0;
+  padding: var(--space-2);
+  color: inherit;
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.adestia-tab__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The two exits, told apart by their glyphs: the box archives the
+   CONVERSATION, the cross only closes the TAB. Revealed on hover like the
+   list's archive control — a tab is read far more often than it is closed —
+   and always reachable by keyboard, which cannot hover. */
+.adestia-tab__tool {
+  flex: none;
+  display: grid;
+  place-items: center;
+  /* Collapsed at rest, not merely transparent: two invisible controls still
+     reserving 22px each were what truncated "Plan du garage" to "Plan d…" —
+     the browser showed it, jsdom never could. The title gets the width back
+     until a hover (or keyboard focus, which cannot hover) asks for the
+     controls. */
+  width: 0;
+  height: 22px;
+  margin-right: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-faint);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s, color 0.12s, background 0.12s;
+}
+
+.adestia-tab__tool svg { width: 13px; height: 13px; }
+
+.adestia-tab:hover .adestia-tab__tool,
+.adestia-tab:focus-within .adestia-tab__tool {
+  width: 22px;
+  margin-right: 2px;
+  opacity: 1;
+}
+
+.adestia-tab__tool:hover {
+  color: var(--text);
+  background: var(--surface-sunken);
+}
+
+/*
+ * The status dot — one vocabulary for the tab strip and the thread list.
+ * Working pulses (something is happening), waiting pulses in the warning
+ * tint (someone is needed), unread is steady accent (done, and not yet
+ * seen), idle is a quiet mark that keeps the layout honest.
+ */
+.adestia-dot {
+  flex: none;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border-strong);
+}
+
+.adestia-dot--working {
+  background: var(--accent);
+  animation: adestia-pulse 1.1s ease-in-out infinite;
+}
+
+.adestia-dot--waiting {
+  background: var(--warning);
+  animation: adestia-pulse 1.1s ease-in-out infinite;
+}
+
+.adestia-dot--unread { background: var(--accent); }
+
+/* Inside the list's text button, which is not a flex row. */
+.adestia-threads__item .adestia-dot {
+  margin-right: var(--space-2);
+  vertical-align: 1px;
+}
+
+.adestia-threads__item--current {
+  background: var(--accent-quiet);
+  color: var(--accent);
+}
+
+.adestia-threads__empty {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-faint);
+}
+
+.adestia-chat__header { gap: var(--space-2); }

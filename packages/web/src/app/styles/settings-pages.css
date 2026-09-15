@@ -1,0 +1,115 @@
+/* The settings pages: the credential panel and its kin. */
+
+/* Settings ---------------------------------------------------------------- */
+
+/* The credential panel carries no box of its own: the settings page around
+   it is the box, and its head already named it. */
+.adestia-settings {
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.adestia-settings__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.adestia-settings h2 { margin: 0; font-size: var(--text-base); }
+
+.adestia-settings__actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.adestia-settings__actions button {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.adestia-settings__actions button:last-child {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.adestia-settings__actions button:disabled {
+  background: var(--surface-sunken);
+  border-color: var(--border);
+  color: var(--text-faint);
+  cursor: default;
+}
+
+.adestia-arming {
+  margin: 0;
+  padding-left: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.adestia-arming a { color: var(--accent); }
+
+.adestia-arming__label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* Deliberately not muted: this is what the user is agreeing to, so it reads at
+   the same weight as the step it gates. */
+.adestia-arming__consent {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  line-height: 1.45;
+  cursor: pointer;
+}
+
+.adestia-arming__consent input {
+  margin-top: 0.2em;
+  flex: none;
+}
+
+.adestia-arming__input {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: max(16px, var(--text-sm));
+}
+
+.adestia-signin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  height: 100dvh;
+  text-align: center;
+}
+
+.adestia-signin h1 { margin: 0; font-size: 2rem; }
+.adestia-signin p { margin: 0; color: var(--text-muted); }
+
+.adestia-signin__button {
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--accent-text);
+  text-decoration: none;
+  font-weight: 500;
+}

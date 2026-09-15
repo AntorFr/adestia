@@ -1,0 +1,64 @@
+/* A page that would not load. */
+
+/* A page that would not load ------------------------------------------------
+   Said rather than swallowed: a 404, an expired session and a server that fell
+   over used to leave the home on screen, which every reader reads as a broken
+   link. The address is shown verbatim because it is the one thing that lets
+   somebody see their own typo. */
+
+.adestia-missing {
+  max-width: 42rem;
+  margin: var(--space-5, 24px) auto;
+  padding: var(--space-4, 16px);
+}
+
+.adestia-missing__title {
+  margin: 0 0 var(--space-3, 12px);
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.adestia-missing__path {
+  margin: 0 0 var(--space-3, 12px);
+  padding: 8px 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--surface-sunken, var(--surface));
+  color: var(--text-muted);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.85em;
+  overflow-wrap: anywhere;
+}
+
+/* ── Blocks that share a line ─────────────────────────────────────────────
+   `w` is the one attribute a block cannot honour alone: a component draws
+   itself and never sees its neighbour. The Reader gathers a run of narrow
+   ones into this row, and the cell says how much of the line each asked for.
+
+   `min-width` rather than a media query, deliberately. The canvas is not the
+   viewport — the chat rail takes a third of it, and a resizable one at that —
+   so a breakpoint on the window would narrow a column that is already narrow
+   and leave a wide one in two. A floor makes the row wrap on its OWN width,
+   whatever the shell is doing beside it. */
+.adestia-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  align-items: flex-start;
+  margin: var(--space-4) 0;
+}
+
+/* The floor below which a cell wraps instead of being squeezed. MEASURED
+   rather than chosen: the reading column is ~630px wide with the chat pane
+   open, so a third of it is ~195px — under a 15rem floor, which silently
+   turned every deliberate `2/3 + 1/3` into two stacked blocks. A guard that
+   fires on the ordinary case is not a guard, it is the behaviour. */
+.adestia-row__cell { flex: 1 1 0; min-width: min(100%, 10rem); }
+.adestia-row__cell > :first-child { margin-top: 0; }
+.adestia-row__cell > :last-child { margin-bottom: 0; }
+
+/* The share of the line. `flex-grow: 0` on anything but a full width, so a
+   half stays a half instead of eating the space a neighbour did not take. */
+.adestia-row__cell--2-3 { flex: 0 1 calc(66.666% - var(--space-4) * 0.34); }
+.adestia-row__cell--1-2 { flex: 0 1 calc(50% - var(--space-4) * 0.5); }
+.adestia-row__cell--1-3 { flex: 0 1 calc(33.333% - var(--space-4) * 0.67); }

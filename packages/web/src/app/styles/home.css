@@ -1,0 +1,488 @@
+/* The landing canvas: greeting, brief, sections, cards, search and facets. */
+
+/* The landing canvas --------------------------------------------------
+   The measurements below are the predecessor's, carried as-is: 33px serif
+   greeting, 210px tile columns, 146px tile height, 42px plates, 3px top bar,
+   11px mono chips. They were tuned over a year of daily use; re-deriving
+   them by eye produced the prototype this replaced. */
+
+.adestia-home__greeting {
+  position: relative;
+  margin: 0;
+  font: 600 33px/1.1 var(--font-title);
+  letter-spacing: var(--title-track);
+}
+
+/* The quieter half of the greeting. One sentence, two weights: the address is
+   the body speaking, the question is it waiting. */
+.adestia-home__aside { color: var(--text-faint); }
+
+/* The ghost tag — a skin's monogram in outline behind the greeting
+   (`--ghosttag: "SKIPPY"`). Empty, and therefore invisible, everywhere the
+   skin does not claim it. */
+.adestia-home__greeting::before {
+  content: var(--ghosttag, "");
+  position: absolute;
+  top: -0.62em;
+  left: -0.04em;
+  z-index: -1;
+  font: 800 2.4em/1 var(--font-mono);
+  letter-spacing: -0.05em;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--border);
+  opacity: 0.55;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.adestia-home__context {
+  margin: 7px 0 0;
+  color: var(--text-muted);
+  font-size: 15px;
+}
+
+.adestia-home__ask {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0 8px;
+  padding: 14px 17px;
+  text-align: left;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.adestia-home__ask:hover { border-color: var(--accent); }
+.adestia-home__ask svg { width: 18px; height: 18px; opacity: 0.5; flex: none; }
+
+/* The block caret: display is a TOKEN, so the terminal livery can turn it on
+   without a rule. Off, it costs nothing. */
+.adestia-home__ask-caret {
+  display: var(--caret-display, none);
+  width: 8px;
+  height: 17px;
+  background: var(--accent);
+  animation: adestia-caret 1.1s steps(1) infinite;
+}
+
+@keyframes adestia-caret {
+  50% { opacity: 0; }
+}
+
+.adestia-home__ask-text {
+  flex: 1;
+  color: var(--text-faint);
+  font-size: 15.5px;
+  font-family: var(--font-input, var(--font));
+}
+
+.adestia-home__ask-kbd {
+  font: 600 11px var(--font-mono);
+  color: var(--text-faint);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 3px 7px;
+}
+
+/* Row labels: the apparatus voice — mono, uppercase, tracked. */
+.adestia-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 32px 0 13px;
+  font: 600 var(--label-size) / 1 var(--font-mono);
+  letter-spacing: var(--label-track);
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.adestia-section__by {
+  font: 500 10px var(--font-mono);
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.adestia-section__refresh {
+  display: grid;
+  place-items: center;
+  margin-left: auto;
+  width: 26px;
+  height: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-faint);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.adestia-section__refresh:hover { color: var(--accent); border-color: var(--accent); }
+
+/* The brief: at most four pills, each wearing its target's hue on hover. */
+.adestia-brief {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.adestia-brief__item {
+  display: inline-flex;
+  gap: 9px;
+  align-items: center;
+  padding: 8px 13px 8px 9px;
+  text-align: left;
+  color: var(--text);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-ctl);
+  box-shadow: var(--shadow-sm);
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.14s, border-color 0.14s;
+}
+
+.adestia-brief__item:hover {
+  transform: translateY(-1px);
+  border-color: var(--u, var(--accent));
+}
+
+.adestia-brief__icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-micro);
+  font-size: 13px;
+  background: var(--surface-soft);
+}
+
+.adestia-brief__text { font: 600 13.5px var(--font); }
+
+/* A section's own header — the livery you arrived by, worn where you land. */
+.adestia-chead {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin: var(--space-3) 0 var(--space-4);
+}
+
+.adestia-chead__icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  border-radius: var(--radius-ctl);
+  font-size: 22px;
+  box-shadow: var(--shadow-sm);
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--tile-color, var(--accent)) var(--plate-top), var(--plate-base)),
+    color-mix(in srgb, var(--tile-color, var(--accent)) var(--plate-mix), var(--plate-base))
+  );
+  color: color-mix(in srgb, var(--tile-color, var(--accent)) var(--plate-fg-tint), var(--plate-fg));
+  border: var(--plate-border-width) solid
+    color-mix(in srgb, var(--tile-color, var(--accent)) var(--plate-border-tint), transparent);
+}
+
+.adestia-chead__title {
+  margin: 0;
+  font: 600 26px/1.15 var(--font-title);
+  letter-spacing: var(--title-track);
+}
+
+.adestia-chead__lede { margin: 2px 0 0; color: var(--text-muted); font-size: 14px; }
+
+/* Pages as CARDS, not rows. Shorter than a tile — a page has no plate and no
+   counters, it has a name and, when it declares one, a state. */
+.adestia-cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(214px, 1fr));
+  gap: 13px;
+}
+
+.adestia-card {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  width: 100%;
+  min-height: 96px;
+  padding: 15px 16px;
+  text-align: left;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+
+.adestia-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+  border-color: color-mix(in srgb, var(--tile-color, var(--accent)) 45%, var(--border));
+}
+
+.adestia-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* ── Where a card comes from ──────────────────────────────────────────────
+   Memory can be composed of several stores — a personal one, a shared circle
+   — and a card has to say which without joining the noise in its foot. Two
+   marks, and the default store wears neither: absence means "mine", the same
+   grammar as the title suffix, which appears only when another store claims
+   the same name. Marking everything would put a rim on every card, and a rim
+   everywhere is not a signal. */
+
+/* The rim, at reading distance: it sorts a grid at a glance. Its colour is
+   the formula the hover already uses — 45% of the hue mixed into the border —
+   so it shows without shouting. */
+.adestia-card--store {
+  position: relative;
+  border-color: color-mix(in srgb, var(--store-color) 45%, var(--border));
+}
+
+/* The tab, for one card in particular. Square and lettered on purpose: the
+   round dot is the STATUS vocabulary (`.adestia-stat::before`), so borrowing
+   it would make a mark about provenance read as a mark about state — and two
+   letters survive being read by somebody who cannot separate the hues, which
+   this design system already requires of every pill.
+
+   Its outer corner takes the card's radius MINUS the border: an absolutely
+   positioned child sits in the padding box, so it must follow the border's
+   inner curve rather than its outer one, or the rim shows through the corner. */
+.adestia-card__store {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: 27px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  padding: 0 5px;
+  font: 700 10px/1 var(--font-mono);
+  color: var(--store-color);
+  background: color-mix(in srgb, var(--store-color) 15%, var(--surface-raised));
+  border-left: 1px solid color-mix(in srgb, var(--store-color) 35%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--store-color) 35%, transparent);
+  border-radius: 0 calc(var(--radius) - 1px) 0 var(--radius);
+}
+
+/* The title never runs under the tab. */
+.adestia-card--store .adestia-card__title { padding-right: 34px; }
+
+/* The same tab on a TILE, because a folder is the unit people think in — a
+   trip, a project — and provenance drawn only on cards left a shared trip
+   looking exactly like a private one. Same shape, same two letters, same
+   corner: one mark to learn, not two. */
+.adestia-tile__store {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: 27px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  padding: 0 5px;
+  font: 700 10px/1 var(--font-mono);
+  color: var(--store-color);
+  background: color-mix(in srgb, var(--store-color) 15%, var(--surface-raised));
+  border-left: 1px solid color-mix(in srgb, var(--store-color) 35%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--store-color) 35%, transparent);
+  border-radius: 0 calc(var(--radius) - 1px) 0 var(--radius);
+  /* UNDER the tile's colour mark, which a card has no equivalent of. Left on
+     top, the tab cut the mark in two and read as a sticker pressed onto the
+     tile rather than a corner of it. The mark now runs unbroken across it. */
+  z-index: 0;
+}
+
+/* Split across several stores. One state whatever the number of them: naming
+   the combination would be a palette that grows with the circles, and the
+   reader needs to know THAT it is split, not the arithmetic. Neutral on
+   purpose — it is not a store, so it must not wear a store's colour. */
+.adestia-tile__store--mixed {
+  --store-color: var(--text-muted);
+  font-size: 12px;
+}
+
+/* The label never runs under the tab. */
+.adestia-tile:has(.adestia-tile__store) .adestia-tile__label { padding-right: 30px; }
+
+/* The legend, under the folder's title — the one place that describes the
+   whole folder, and therefore the only one that can state what the ABSENCE of
+   a mark means. Each key carries the store's full label cut to the tab's own
+   silhouette, at the card's own radius: an echo is made of equal curvature,
+   and a neighbouring value breaks it instead of softening it. */
+.adestia-stores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.adestia-stores__key {
+  display: block;
+  padding: 3px 9px;
+  font: 700 10.5px/1.3 var(--font-mono);
+  border-radius: 0 var(--radius) 0 var(--radius);
+  color: var(--store-color);
+  background: color-mix(in srgb, var(--store-color) 15%, var(--surface-raised));
+  border: 1px solid color-mix(in srgb, var(--store-color) 35%, transparent);
+}
+
+/* Mine: dashed and quiet, because what it names is a card with no mark. */
+.adestia-stores__key--none {
+  color: var(--text-faint);
+  background: transparent;
+  border-style: dashed;
+  border-color: var(--border-strong);
+}
+
+.adestia-card__title { font: 600 15.5px/1.2 var(--font-title); }
+
+.adestia-card__foot {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+/* A status pill. The dot carries the colour and the WORD is always written
+   out beside it: hue alone is not a label, and three families are three
+   families whether or not somebody can tell them apart by colour. */
+.adestia-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: 600 10.5px/1.5 var(--font-mono);
+  border-radius: var(--radius-pill);
+  padding: 2px 9px 2px 8px;
+}
+
+.adestia-stat::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentcolor;
+}
+
+/* Underway is the accent — a live page's normal state, so it wears the
+   instance's own colour rather than a semantic one. */
+.adestia-stat--underway { color: var(--accent); background: var(--accent-quiet); }
+.adestia-stat--waiting {
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 13%, transparent);
+}
+.adestia-stat--settled {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+}
+
+.adestia-tag {
+  font: 600 10.5px/1.5 var(--font-mono);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+/* Search and facets ---------------------------------------------------- */
+
+.adestia-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.adestia-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 200px;
+  padding: 8px 13px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-ctl);
+}
+
+.adestia-search:focus-within { border-color: var(--tile-color, var(--accent)); }
+.adestia-search svg { width: 15px; height: 15px; opacity: 0.5; flex: none; }
+
+.adestia-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  outline: none;
+  color: var(--text);
+  font: 14px var(--font);
+}
+
+.adestia-facets { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.adestia-pill {
+  font: 600 11.5px var(--font-mono);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 5px 11px;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.adestia-pill:hover { border-color: var(--text-faint); }
+
+/* The active pill takes the SECTION's colour, so the filter reads as part of
+   the place rather than as generic chrome. */
+.adestia-pill--on {
+  background: var(--tile-color, var(--accent));
+  border-color: var(--tile-color, var(--accent));
+  color: var(--accent-text);
+}
+
+/* What is over, folded away — still counted, one click from being read. */
+.adestia-archive { margin-top: var(--space-5); }
+
+.adestia-archive > summary {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 13px;
+  font: 600 var(--label-size) / 1 var(--font-mono);
+  letter-spacing: var(--label-track);
+  text-transform: uppercase;
+  color: var(--text-faint);
+  cursor: pointer;
+}
+
+.adestia-archive__count {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-soft);
+}
+
+.adestia-archive .adestia-card { opacity: 0.8; }

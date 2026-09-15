@@ -1,0 +1,467 @@
+/* The chat column: thread, bubbles, tool trace, context pill, the engine's question, the sign-in card, the composer. */
+
+/* Chat -------------------------------------------------------------------- */
+
+/*
+ * A column, not a grid: the rows between header and composer are OPTIONAL
+ * (tab strip, thread list, permission prompt), and a grid that counts its
+ * rows hands `1fr` to whichever bar happens to land second — the tab strip
+ * rendered as three full-height columns and swallowed the thread, a defect
+ * only the browser could show. In a flex column every bar takes its natural
+ * height and only the thread grows.
+ */
+.adestia-chat {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--surface-raised);
+  border-right: 1px solid var(--border);
+}
+
+.adestia-chat__header {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* The crest: the body's mark on an accent plate — the same plate the tiles
+   wear, which is what makes it read as the same product. */
+.adestia-crest {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-ctl);
+  box-shadow: var(--shadow-sm);
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--accent) var(--plate-top), var(--plate-base)),
+    color-mix(in srgb, var(--accent) var(--plate-mix), var(--plate-base))
+  );
+  color: color-mix(in srgb, var(--accent) var(--plate-fg-tint), var(--plate-fg));
+  border: var(--plate-border-width) solid
+    color-mix(in srgb, var(--accent) var(--plate-border-tint), transparent);
+}
+
+.adestia-crest svg { width: 18px; height: 18px; }
+
+.adestia-brandname {
+  font: 600 20px/1 var(--font-title);
+  letter-spacing: var(--title-track);
+  color: var(--text);
+}
+
+.adestia-chat__spacer { margin-left: auto; }
+
+/* Square icon buttons — the chrome's own controls, chat side and canvas side. */
+.adestia-ib {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 33px;
+  height: 31px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.adestia-ib:hover { border-color: var(--accent); color: var(--accent); }
+
+.adestia-chat__thread {
+  /* The one row that grows — see .adestia-chat. min-height lets it SHRINK
+     below its content so overflow scrolls instead of pushing the composer
+     off screen. */
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.adestia-bubble {
+  max-width: 90%;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-bubble);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.adestia-bubble--user {
+  align-self: flex-end;
+  background: var(--bubble-user-bg);
+  color: var(--bubble-user-text);
+  border-end-end-radius: var(--radius-sm);
+}
+
+.adestia-bubble--agent {
+  align-self: flex-start;
+  background: var(--bubble-agent-bg);
+  color: var(--bubble-agent-text);
+  border: 1px solid var(--border);
+  border-end-start-radius: var(--radius-sm);
+}
+
+.adestia-bubble--live {
+  border-style: dashed;
+}
+
+/* A message sent while a turn was running: held, and it must LOOK held — at
+   half voice with a dashed edge, so "waiting" cannot be mistaken for "sent".
+   It leaves as part of one merged turn when the running one settles. */
+.adestia-bubble--held {
+  opacity: 0.55;
+  border: 1px dashed var(--bubble-user-text);
+}
+
+/* Markdown in a bubble ---------------------------------------------------
+   The agent's answers ARE markdown, and were being read as their own source
+   code. Same renderer as a page (see Reader.tsx) — different measure: a
+   bubble is not a document, so headings stay near the body size, margins are
+   tight, and the last block does not add its own bottom to the padding the
+   bubble already has.
+
+   `white-space` is reset because `.adestia-bubble` sets `pre-wrap` for the
+   USER's half, where a typed newline is a newline. Here the grammar decides,
+   and leaving pre-wrap on would print the source's own line breaks on top of
+   the paragraphs it just made from them. */
+.adestia-prose {
+  white-space: normal;
+  line-height: 1.55;
+}
+
+.adestia-prose > :first-child { margin-top: 0; }
+.adestia-prose > :last-child { margin-bottom: 0; }
+
+.adestia-prose p { margin: 0 0 0.7em; }
+
+.adestia-prose h2,
+.adestia-prose h3,
+.adestia-prose h4,
+.adestia-prose h5,
+.adestia-prose h6 {
+  font-family: var(--font-title);
+  letter-spacing: var(--title-track);
+  line-height: 1.25;
+  margin: 1.1em 0 0.4em;
+  font-size: 1em;
+}
+
+/* A heading has to READ as one from across a scrolling thread, and these are
+   already shifted down a level (see the `heading` case in Reader.tsx): a
+   bubble has no title of its own, and a thread full of competing H1s is a
+   document outline nobody can use. So `##` — what an agent reaches for first
+   — lands here, and has to earn its rank on size rather than on depth. */
+.adestia-prose h2 { font-size: 1.28em; }
+.adestia-prose h3 { font-size: 1.14em; }
+.adestia-prose h4 { font-size: 1.02em; }
+
+.adestia-prose ul,
+.adestia-prose ol { margin: 0 0 0.7em; padding-left: 1.3em; }
+.adestia-prose li { margin: 0.15em 0; }
+.adestia-prose li.adestia-task { list-style: none; margin-left: -1.3em; }
+.adestia-prose li.adestia-task input { margin-right: 0.5em; }
+.adestia-prose li > p { margin: 0; }
+
+.adestia-prose a { color: var(--accent); text-underline-offset: 2px; }
+
+.adestia-prose blockquote {
+  margin: 0 0 0.7em;
+  padding: 0.1em 0 0.1em 0.9em;
+  border-left: 3px solid var(--border-strong);
+  color: var(--text-muted);
+}
+
+/* The bubble's own background IS `--surface-soft`, so code has to sink
+   further than it does on a page or it would draw a border around nothing. */
+.adestia-prose code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-micro);
+  padding: 0.1em 0.35em;
+}
+
+.adestia-prose pre {
+  margin: 0 0 0.7em;
+  padding: var(--space-2) var(--space-3);
+  overflow-x: auto;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.adestia-prose pre code { background: none; padding: 0; font-size: 0.85em; }
+
+.adestia-prose img { max-width: 100%; height: auto; border-radius: var(--radius-sm); }
+.adestia-prose hr { border: 0; border-top: 1px solid var(--border); margin: 1.2em 0; }
+
+.adestia-prose .adestia-table-scroll { margin: 0 0 0.7em; }
+.adestia-prose table { border-collapse: collapse; font-size: 0.92em; }
+.adestia-prose td { border: 1px solid var(--border); padding: var(--space-1) var(--space-2); }
+.adestia-prose tr:first-child td { font-weight: 600; background: var(--surface-sunken); }
+
+.adestia-bubble__note {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-sm);
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+.adestia-bubble__error {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-sm);
+  color: var(--danger);
+}
+
+.adestia-bubble__working {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* The indicator stays up for the whole turn, so it now sits UNDER whatever
+   has been said so far rather than instead of it — and needs the air a first
+   child never did. */
+.adestia-prose + .adestia-bubble__working {
+  margin-block-start: var(--space-2);
+}
+
+.adestia-bubble__counter {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-faint);
+}
+
+.adestia-dots {
+  width: 28px;
+  height: 8px;
+  background:
+    radial-gradient(circle 3px at 4px 4px, var(--text-faint) 96%, transparent) 0 0/12px 8px repeat-x;
+  animation: adestia-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes adestia-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+/* Tool trace -------------------------------------------------------------- */
+
+.adestia-trace {
+  margin-bottom: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.adestia-trace__toggle {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--text-faint);
+  font: inherit;
+  cursor: pointer;
+}
+
+.adestia-trace__list {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.adestia-trace__item {
+  display: flex;
+  gap: var(--space-2);
+  align-items: baseline;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.adestia-trace__item--failed .adestia-trace__glyph { color: var(--danger); }
+.adestia-trace__item--done .adestia-trace__glyph { color: var(--success); }
+.adestia-trace__item--running .adestia-trace__glyph { color: var(--text-faint); }
+
+.adestia-trace__target {
+  color: var(--text-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Context pill ------------------------------------------------------------ */
+
+.adestia-pill {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  padding: 2px var(--space-2);
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.adestia-pill--warn { border-color: var(--warning); color: var(--warning); }
+.adestia-pill--hot { border-color: var(--danger); color: var(--danger); }
+
+/* The engine's question --------------------------------------------------- */
+
+.adestia-ask {
+  margin: 0 var(--space-4) var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius);
+  background: var(--accent-quiet);
+}
+
+/* Wraps rather than truncating: this is the thing being consented to, and a
+   command cut at the fold is a command approved unseen. */
+.adestia-ask__text {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.adestia-ask__reason {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.adestia-ask__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
+
+.adestia-ask button {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.adestia-ask__always {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-color: var(--accent);
+}
+
+/* The sign-in card — a server wants THIS person connected ------------------ */
+
+/* Dressed like the engine's question above: both are the product asking the
+   person for a decision between the thread and the composer. */
+.adestia-connect {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0 var(--space-4) var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--accent-quiet);
+}
+
+.adestia-connect__text {
+  flex: 1 1 auto;
+  font-size: var(--text-sm);
+}
+
+.adestia-connect__go {
+  flex: none;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--accent-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+/* Waving the card away is quieter than acting on it: a bare cross, muted
+   until hovered, never competing with the accent button beside it. */
+.adestia-connect__hide {
+  flex: none;
+  padding: var(--space-1);
+  border: 0;
+  background: none;
+  color: var(--text-faint);
+  font: inherit;
+  cursor: pointer;
+}
+.adestia-connect__hide:hover { color: var(--text); }
+
+/* On the server page the row sits in the flow, not over a thread. */
+.adestia-connect--tile { margin: 0 0 var(--space-3); }
+
+/* Composer ---------------------------------------------------------------- */
+
+.adestia-composer {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-end;
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--border);
+  background: var(--surface-raised);
+}
+
+.adestia-composer__input {
+  flex: 1;
+  /* A floor, not a fixed height: the JS grows it up to COMPOSER_MAX_HEIGHT and
+     the two numbers must agree, or the field jumps on the first keystroke. */
+  min-height: 48px;
+  max-height: 200px;
+  resize: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  /* Was 8px/12px, which left the caret hard against the frame on a surface
+     people write paragraphs into. */
+  padding: 13px var(--space-4);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  line-height: 1.45;
+  /* 16px minimum, or iOS zooms the whole page when the field is focused. */
+  font-size: max(16px, var(--text-base));
+}
+
+.adestia-composer__input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.adestia-composer button {
+  /* 40px against a 48px field, and 44 on a phone below: the row reads as one
+     control rather than as buttons parked next to a box. */
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: var(--radius);
+  border: 0;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: var(--text-lg);
+  cursor: pointer;
+}
+
+.adestia-composer button:disabled {
+  background: var(--surface-sunken);
+  color: var(--text-faint);
+  cursor: default;
+}
+
+.adestia-composer__stop { background: var(--danger); }
