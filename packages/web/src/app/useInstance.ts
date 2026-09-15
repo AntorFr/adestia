@@ -177,7 +177,10 @@ export function useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef
     return () => {
       cancelled = true
     }
-  }, [fetchImpl])
+    // Every one of these is stable by construction — refs, a useCallback with
+    // no dependencies — so the list is honest and the effect still runs once
+    // per fetchImpl, as it did when it lived in the component.
+  }, [fetchImpl, openPage, askRef, composeRef, blocksRef, onTrail])
 
   /**
    * The index, kept live.

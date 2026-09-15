@@ -71,15 +71,14 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
     location.hash = pageRoute(path, store)
   }, [])
 
+  /** What the open plugin says about its screen, kept by id (see the state above). */
+  const onTrail = useCallback(
+    (id: string, crumbs: readonly { label: string; route?: string }[]) => setPluginTrail({ id, crumbs }),
+    [],
+  )
+
   const { instance, failures, fatal, needsLogin, pages, stores, skin, skinScheme, loaded } =
-    useInstance({
-      fetchImpl,
-      openPage,
-      askRef,
-      composeRef,
-      blocksRef,
-      onTrail: (id, crumbs) => setPluginTrail({ id, crumbs }),
-    })
+    useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef, onTrail })
 
   /**
    * The shell's words. Resolved once the instance answers, because the
