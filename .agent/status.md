@@ -21,14 +21,15 @@ dans `questions-concepts.md` (chacune réversible d'un mot).
       gardent leurs copies de `slugOf`, `slugify`, du parseur de frontmatter
       et de `makeCache` — cinq lignes chacune, et un plugin reste un dossier
       autonome qui n'importe que React.)
-- [ ] (fait le 15/09 : conversations et vue MCP déclarées une fois dans
+- [x] (fait le 15/09 : conversations et vue MCP déclarées une fois dans
       `schemas/src/protocol.ts` ; les événements de tour restent ceux du
-      contrat pilote, importés en type seulement par le web. Reste à
-      déclarer `@antorfr/adestia-schemas` dans `packages/web/package.json`,
-      avec le même geste npm que le retrait de `plugin-react`.)
-- [ ] Retirer `@vitejs/plugin-react` de `packages/web` : déclaré, jamais
-      chargé ; demande l'outil npm qui réécrit le lockfile, puis revérifier le
-      fork du parseur.
+      contrat pilote, importés en type seulement par le web. Déclaration de
+      `@antorfr/adestia-schemas` dans `packages/web/package.json` faite le
+      16/09, avec le retrait de `plugin-react`.)
+- [x] `@vitejs/plugin-react` retiré de `packages/web` le 16/09 : déclaré,
+      jamais chargé — le bundle sort avec la même empreinte qu'avant. Lockfile
+      mis à jour par `npm install --package-lock-only` (ne touche pas aux
+      paquets installés) : deux entrées changées, le fork du parseur intact.
 - [ ] Le scénario de banc `journal-blocs` attend un bouton « Enregistrer »
       que l'éditeur n'a plus depuis le 10/09 (auto-enregistrement) : à
       réécrire pour la nouvelle mécanique, il échoue déjà sur `main`.
