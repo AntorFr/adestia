@@ -24,6 +24,14 @@ import { identityOf } from './identity.js'
 export interface UserTokens {
   accessToken(subject: string): Promise<string | undefined>
   remember(subject: string, refreshToken: string): Promise<void>
+  /**
+   * Whether a grant is still alive for this person.
+   *
+   * Read by the session gate, not by a turn: an entry is dropped the moment
+   * the provider refuses its refresh token, so its absence is the provider
+   * saying the grant is over.
+   */
+  has(subject: string): Promise<boolean>
 }
 
 /** The instance's own tools, minted per turn and released with it. */

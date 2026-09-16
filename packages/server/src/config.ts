@@ -36,6 +36,25 @@ export class ConfigError extends Error {
   }
 }
 
+/**
+ * How long a session lasts when the operator names no duration: half a day.
+ *
+ * Long enough that a person working through an afternoon is not interrupted,
+ * short enough that a browser left open somewhere is not a standing door.
+ * An instance that wants otherwise says so — see `auth.oidc.sessionTtlMs`.
+ */
+export const DEFAULT_SESSION_TTL_MS = 12 * 60 * 60 * 1000
+
+/** Minutes, at least: a session shorter than the login round trip is a loop. */
+function sessionTtl(raw: unknown, issues: string[]): number {
+  if (raw === undefined) return DEFAULT_SESSION_TTL_MS
+  if (typeof raw !== 'number' || !Number.isFinite(raw) || raw < 60_000) {
+    issues.push('auth.oidc.sessionTtlMs must be a number of milliseconds, at least 60000')
+    return DEFAULT_SESSION_TTL_MS
+  }
+  return raw
+}
+
 const KNOWN_KEYS = new Set([
   'host',
   'port',
@@ -182,6 +201,7 @@ function parseAuth(raw: unknown, issues: string[]): AuthConfig {
         redirectUri: requireString(oidc, 'redirectUri', 'auth.oidc.redirectUri', issues),
         groupsClaim: typeof oidc['groupsClaim'] === 'string' ? oidc['groupsClaim'] : 'groups',
         allowedGroups: stringList(oidc['allowedGroups'], 'auth.oidc.allowedGroups', issues),
+        sessionTtlMs: sessionTtl(oidc['sessionTtlMs'], issues),
         ...(typeof oidc['sessionSecret'] === 'string'
           ? { sessionSecret: oidc['sessionSecret'] }
           : {}),

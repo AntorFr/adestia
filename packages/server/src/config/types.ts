@@ -24,6 +24,17 @@ export interface OidcConfig {
    */
   readonly sessionSecret?: string | undefined
   /**
+   * How long a session lasts before the person signs in again, in ms.
+   *
+   * A CEILING, not a promise. The identity provider does not tell a client
+   * how long its own session lasts — nothing in the discovery document says
+   * it, and what the token exchange hands back are token lifetimes, not
+   * session ones — so this number cannot be derived and has to be chosen.
+   * Where a login left a refresh token behind, the provider's verdict cuts
+   * the session short before this ceiling (see `SessionPayload.backed`).
+   */
+  readonly sessionTtlMs: number
+  /**
    * Audiences to ask for, so a turn can act as the person who asked.
    *
    * Present means the login also requests `offline_access`, the refresh token

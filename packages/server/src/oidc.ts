@@ -20,9 +20,6 @@ import type { OidcConfig } from './config.js'
 
 /** How long a login round trip may take before its state is stale. */
 export const LOGIN_TTL_MS = 10 * 60 * 1000
-/** How long a session lasts before the user signs in again. */
-export const SESSION_TTL_MS = 12 * 60 * 60 * 1000
-
 export const SESSION_COOKIE = 'adestia_session'
 export const LOGIN_COOKIE = 'adestia_login'
 
@@ -35,6 +32,21 @@ export interface LoginState {
 
 export interface SessionPayload extends Identity {
   readonly expiresAt: number
+  /**
+   * The login left a refresh token behind, so this session is BACKED by the
+   * provider's own grant and dies with it.
+   *
+   * The provider never tells a client how long its session lasts, so the
+   * cookie's own expiry is a ceiling chosen by the operator. But a refresh
+   * token that stops working is the provider saying the grant is over —
+   * revoked, or past its own lifetime — and that verdict is worth more than
+   * our ceiling. The store drops an entry the moment a refresh is refused,
+   * so its absence IS the verdict, and reading it costs nothing.
+   *
+   * Absent on an instance that keeps nothing: there is no verdict to read,
+   * and the ceiling is the whole of the answer.
+   */
+  readonly backed?: boolean
 }
 
 /**

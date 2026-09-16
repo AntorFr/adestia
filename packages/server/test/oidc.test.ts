@@ -9,6 +9,7 @@ import {
   signPayload,
   verifyPayload,
 } from '../src/oidc.js'
+import { DEFAULT_SESSION_TTL_MS } from '../src/config.js'
 
 const config = (overrides: Partial<OidcConfig> = {}): OidcConfig => ({
   issuer: 'https://id.example',
@@ -17,6 +18,7 @@ const config = (overrides: Partial<OidcConfig> = {}): OidcConfig => ({
   redirectUri: 'https://adestia.example/auth/callback',
   groupsClaim: 'groups',
   allowedGroups: [],
+  sessionTtlMs: DEFAULT_SESSION_TTL_MS,
   ...overrides,
 })
 

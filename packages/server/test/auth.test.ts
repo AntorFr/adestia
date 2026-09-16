@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { isPublicRoute, resolveIdentity, type Identity, type RequestLike } from '../src/auth.js'
-import type { AuthConfig } from '../src/config.js'
+import { DEFAULT_SESSION_TTL_MS, type AuthConfig } from '../src/config.js'
 
 const request = (headers: Record<string, string | string[]>, session?: RequestLike['session']) =>
   ({ headers, session }) as RequestLike
@@ -80,6 +80,7 @@ describe('mode: oidc', () => {
       redirectUri: 'https://adestia.example/auth/callback',
       groupsClaim: 'groups',
       allowedGroups,
+      sessionTtlMs: DEFAULT_SESSION_TTL_MS,
     },
   })
 
