@@ -147,9 +147,9 @@ export interface PluginManifest {
    * finding it in a screenshot.
    *
    * Absent for a plugin that dispatches some other way — a reserved workspace
-   * folder (`planif`), a sibling asset file (`atelier`) — or that reads
-   * `type` only to describe pages it does not own (`collections`' `of:`
-   * targets are a workspace's own vocabulary, not a claim this field makes).
+   * folder (`planif`), a sibling asset file (`atelier`). A `type` a page
+   * merely REFERS to (a collection's `of:`) is the workspace's own
+   * vocabulary, not a claim this field makes.
    */
   readonly types?: readonly string[]
 

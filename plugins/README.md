@@ -1,13 +1,12 @@
 # Bundled plugins
 
-Adestia ships twelve plugins and three skins. None of them is active until you name it
+Adestia ships eleven plugins and three skins. None of them is active until you name it
 in your config — discovery is not activation, and a folder sitting here costs
 nothing until you ask for it.
 
 ```yaml
 extensions:
-  apps: [todo, planif, collections, atelier, voyages, journal, dev-flow,
-         listening-post]                                    # tiles
+  apps: [todo, planif, atelier, voyages, journal, dev-flow, listening-post]  # tiles
   features: [scan, parcours, meals, project-management]        # things that live in the shell
   tools: []                                             # agent-facing only
   skin: alfred
@@ -21,7 +20,6 @@ leaving you to wonder where the tile went.
 | Plugin | Kind | What it is |
 |---|---|---|
 | [`todo`](todo/) | app | Tasks as pages. One base, curated lists that hold references, dynamic lists that are queries over frontmatter. Ticking a task anywhere ticks it everywhere, because there is only ever one task. |
-| [`collections`](collections/) | app | Enter a body of pages by a facet rather than by folders — projects by trade, gifts by person. The grouping is declared in a page, so a new collection is a page, not a code change. |
 | [`planif`](planif/) | app | What runs on its own, when, and whether the clock is ticking. Read-only by design: its buttons ask the agent rather than editing the schedule behind your back. |
 | [`journal`](journal/) | app | A journal is a folder, an entry is a page in it. The whole history reads on one screen and a single entry goes into edit mode — the shell's own page editor, one per entry. |
 | [`atelier`](atelier/) | app | The workbench. Reads a `workbook.json` a project carries in its own assets and draws the cutting diagram — sheets, bands, pieces, edges to band — plus a full-screen bench mode readable from across a workshop. |
@@ -32,6 +30,11 @@ leaving you to wonder where the tile went.
 | [`meals`](meals/) | feature | Meals over a period. A page typed `meals` IS the period: its frontmatter carries the shape — dates, sections, where its cards are filed — and the plugin draws that page as a day-by-day frise with a tray you drag from. So it lives in whatever folder its subject lives in (a trip's, a health carnet's) and stays an ordinary page: indexed, searchable, edited with the same ✎. One mechanism for two uses, deliberately: a week of menus you DECIDE and a fortnight of what you ATE differ in what you write, not in how it works, so there is no mode field anywhere. The card's face stays quiet (an icon, a title, a quantity) and everything else — free `props` the plugin never reads, converts or totals — waits for a click. One data file, written by the front and the agent alike, guarded by a revision rather than a lock. |
 | [`parcours`](parcours/) | feature | Walks and hikes. Adds the `:::parcours` block, which draws a `.parcours.json` as a map with numbered markers, an elevation profile and a walking mode, and assembles its GPX on demand. A feature rather than an app because a route has no domain and no tile: it hangs off whichever page has a reason to mention it. |
 | [`project-management`](project-management/) | feature | Project phases and milestones. Adds the `:::timeline` block, which draws bars and markers on a time axis — phases written in the block, or the consolidated planning of the pages below. A feature, not an app: a planning hangs off whichever page has a reason to carry one. |
+
+Collections — a body of pages entered by a facet, projects by trade or gifts
+by person — are not a plugin any more: the shell draws a page typed
+`collection` itself, so declaring one is writing a page and nothing to
+activate. The contract that teaches it is the core's own `collections` skill.
 
 | Skin | What it is |
 |---|---|
@@ -44,7 +47,7 @@ leaving you to wonder where the tile went.
 A plugin that expects the agent to write a particular shape of file ships the
 contract that describes it, and Adestia delivers those contracts to the agent
 alongside its own. `atelier` ships `workbook-json`, `todo` ships `todo`,
-`collections` ships `collections`, `voyages` ships `voyage-json`,
+`voyages` ships `voyage-json`,
 `parcours` ships `parcours-json`, `meals` ships `meals-json`, `journal` ships
 `journal`, `listening-post` ships `veille-json` and `project-management` ships
 `project-management`.
@@ -158,5 +161,5 @@ manifest schema, the facets a plugin may contribute, and the import map it can
 rely on are all described by the `plugin-author` contract that ships with the
 product. Ask the agent for a plugin and it reads that contract first.
 
-Nothing here is privileged. These twelve are ordinary plugins that happen to live
+Nothing here is privileged. These eleven are ordinary plugins that happen to live
 in the repository, and they load through exactly the same path as yours.

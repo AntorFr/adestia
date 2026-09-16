@@ -16,6 +16,7 @@ import { SettingsMenu } from './SettingsMenu.js'
 import { PluginBoundary } from '../plugins/Boundary.js'
 import { FatalGate, LoadingGate, RefusedGate, SignInGate } from './Gates.js'
 import { Home } from './Home.js'
+import { CollectionLayout, CollectionShell } from './Collection.js'
 import { resolveLocale, translator } from './i18n.js'
 import { SkinSlot } from './SkinSlot.js'
 import { Section } from './Section.js'
@@ -201,7 +202,13 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
    * refused a type two active plugins both claim.
    */
   const layouts = useMemo(
-    () => Object.assign({}, ...loaded.map((plugin) => plugin.layouts?.types ?? {})) as LayoutComponents,
+    () =>
+      Object.assign(
+        // The core's own first, so a plugin claiming the same type wins —
+        // a plugin exists when it brings a display the core does not have.
+        { collection: CollectionLayout },
+        ...loaded.map((plugin) => plugin.layouts?.types ?? {}),
+      ) as LayoutComponents,
     [loaded],
   )
 
@@ -434,32 +441,36 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             />
           </>
         ) : page ? (
-          <Editor
-            page={page}
-            fetchImpl={fetchImpl}
-            openPage={openPage}
-            locale={locale}
-            // Dropping a file on a page hands it to the chat and writes the
-            // filing request: the agent is still the one who moves it.
-            attach={(dropped) => attachRef.current?.(dropped)}
-            compose={(text) => composeRef.current?.(text)}
-            blocks={blocks}
-            // Who owns this page's domain, and the features on — what the
-            // reader's `from=` resolution walks. Owner from the page's FOLDER:
-            // ownership is a claim on folders, and the deepest claim wins.
-            vocabulary={{
-              ...(ownerOf(loaded, page.path.slice(0, Math.max(page.path.lastIndexOf('/'), 0)))?.id
-                ? { owner: ownerOf(loaded, page.path.slice(0, Math.max(page.path.lastIndexOf('/'), 0)))!.id }
-                : {}),
-              features: featureOrder,
-            }}
-            layouts={layouts}
-            // The shell already holds the index and keeps it live; the reader
-            // needs it to tell a reference that MOVED from one that is gone.
-            pages={pages}
-            t={t}
-            {...(mount ? { mount } : {})}
-          />
+          <CollectionShell.Provider
+            value={{ entries: pages, ask: (prompt) => askRef.current?.(prompt), t }}
+          >
+            <Editor
+              page={page}
+              fetchImpl={fetchImpl}
+              openPage={openPage}
+              locale={locale}
+              // Dropping a file on a page hands it to the chat and writes the
+              // filing request: the agent is still the one who moves it.
+              attach={(dropped) => attachRef.current?.(dropped)}
+              compose={(text) => composeRef.current?.(text)}
+              blocks={blocks}
+              // Who owns this page's domain, and the features on — what the
+              // reader's `from=` resolution walks. Owner from the page's FOLDER:
+              // ownership is a claim on folders, and the deepest claim wins.
+              vocabulary={{
+                ...(ownerOf(loaded, page.path.slice(0, Math.max(page.path.lastIndexOf('/'), 0)))?.id
+                  ? { owner: ownerOf(loaded, page.path.slice(0, Math.max(page.path.lastIndexOf('/'), 0)))!.id }
+                  : {}),
+                features: featureOrder,
+              }}
+              layouts={layouts}
+              // The shell already holds the index and keeps it live; the reader
+              // needs it to tell a reference that MOVED from one that is gone.
+              pages={pages}
+              t={t}
+              {...(mount ? { mount } : {})}
+            />
+          </CollectionShell.Provider>
         ) : pageProblem ? (
           <MissingPage path={pageProblem.path} status={pageProblem.status} t={t} />
         ) : section ? (

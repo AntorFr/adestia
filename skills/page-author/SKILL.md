@@ -44,7 +44,7 @@ a heading rewritten in passing renames the page everywhere it is cited.
 ## `type` — the busiest word in the system, and the one nothing enforces
 
 `GET /api/pages/index` returns every page's frontmatter in one query. That one
-query is what lets a todo app, a collections app and any app you write next
+query is what lets a todo app, the shell's collections and any app you write next
 each see only the pages that matter to them — by filtering on `type`. There is
 no second store: `fields.type === 'tache'` in one plugin's code is the entire
 mechanism.
@@ -75,10 +75,10 @@ decides a page's SCREEN, and choosing it deserves a moment: see
 `plugin-author`, "Drawing a whole page".
 
 This is a claim on words YOUR OWN CODE pattern-matches, not on every value a
-page might use `type` for. `collections`' `of: projet` targets pages typed
-`projet` without collections owning that word — `projet` is the workspace's
-own vocabulary, chosen by whoever writes pages, and any number of collections
-can point at it.
+page might use `type` for. A collection page's `of: projet` targets pages
+typed `projet` without the collection owning that word — `projet` is the
+workspace's own vocabulary, chosen by whoever writes pages, and any number of
+collections can point at it.
 
 ## The address of a page — how you tell somebody where it is
 

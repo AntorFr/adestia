@@ -86,7 +86,7 @@ workspace:
   pages: memory
   planif: planning
 extensions:
-  apps: [todo, planif, collections, atelier, voyages, journal]
+  apps: [todo, planif, atelier, voyages, journal]
   features: [scan, parcours]
   skin: default
 YAML

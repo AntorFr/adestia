@@ -1849,8 +1849,8 @@ the one motivated exception**: it IS a domain, whose matter is the instance's
 configuration, deliberately stored apart from the workspace rather than as
 pages.
 
-Consequences, none of them done here: collections becomes a page type the core
-renders, with `into:` for creation; `atelier` showing two tiles for one domain
+Consequences, none of them done here (the first was, on 2026-09-16):
+collections becomes a page type the core renders, with `into:` for creation; `atelier` showing two tiles for one domain
 is a bug, not an arbitration; and the home's two mosaics become one. That last
 one costs an arrangement: the two per-browser order keys are DROPPED rather
 than concatenated (decided 2026-09-01). Splicing two permutations would
@@ -2645,6 +2645,38 @@ which are theirs.
 
 *And the ledger caught up.* The `app:` rule above had been validated in a
 chantier's question file and coded, but not written here; it is now. What is
-deliberately NOT taken up: `collections` drawn by the core (2026-09-01) is a
-product chantier of its own, and the plugins — plain JS, no compiler to hold
-a rename — are out of this pass.
+deliberately NOT taken up: the plugins — plain JS, no compiler to hold a
+rename — are out of this pass. `collections` drawn by the core (2026-09-01)
+was first left out as a product chantier of its own; the owner took it up the
+next day (below).
+
+**2026-09-16 (a collection is a page the shell draws, and the plugin goes):**
+the criterion written on 2026-09-01 — a plugin exists when it brings a
+display the core does not have — had already found `collections` wanting: a
+grid of grouped cards that folds finished things away is what a section
+draws, and the two had drifted into two implementations of one idea. The
+consequence was written and not done. Done now: a page typed `collection`
+is drawn by the shell itself, in the section screen's own clothes (the same
+cards, chips and archive fold), with the page's own prose above the grid the
+way any layout composes with its document. The declaration does not change —
+`of:`, `groupBy:`, `labels:` mean what they meant — so nothing on any
+instance needs migrating; what an instance must do is stop naming
+`collections` under `extensions.apps`, which the server reports at boot
+rather than ignoring.
+
+Three things went with the plugin, deliberately. Its tile and its aggregate
+screen: a collection is a page of its DOMAIN, reached where it is filed — a
+collection of projects sits with the projects — and a drawer listing every
+collection across the workspace was the plugin's shape, not the concept's.
+Its second copy of the finished-status table: the shell's own verdict now
+serves the collection as it serves the section and the editor, which is the
+whole reason the two had drifted. And its contract, which becomes the core's
+own `collections` skill, delivered like `page-author`.
+
+One thing arrived: `into:`, the folder a new member is filed in. The
+2026-09-01 entry asked for it — a set defined by species must say where its
+members land, the way todo files unattached tasks under its own folder — and
+the page now offers a ＋ that ASKS the agent to create one there, rather than
+a form: a member is a page, and writing pages is the agent's job. Which facet
+is open is the screen's own state, not part of the address; a bookmark lands
+on the collection, and a facet is one press away.

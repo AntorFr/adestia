@@ -1,0 +1,9 @@
+/* A page typed `collection`: its own words, then its members by facet. It
+   borrows the section screen's cards, chips and archive fold — one idea, one
+   set of clothes — and adds only the little it needs of its own. */
+.adestia-collection { display: flex; flex-direction: column; gap: var(--space-3); }
+.adestia-collection__count { margin: 0; color: var(--text-faint); font-size: var(--text-sm); }
+.adestia-collection__problem { margin: 0; color: var(--danger); font-size: var(--text-sm); }
+.adestia-collection__nav { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.adestia-collection__nav h2 { margin: 0; }
+.adestia-collection__new { align-self: flex-start; }

@@ -61,6 +61,18 @@ const FR: Readonly<Record<string, string>> = {
   All: 'Tout',
   'Nothing matches.': 'Aucun résultat.',
 
+  // A collection page, drawn by the core
+  'nothing live': 'rien en cours',
+  Uncategorised: 'Sans catégorie',
+  '1 archived': '1 archivée',
+  '%n archived': '%n archivées',
+  'Everything here is finished.': 'Tout est terminé ici.',
+  'This collection declares no `of:` and collects nothing.':
+    'Cette collection ne déclare pas de `of:` et ne rassemble rien.',
+  'Ask for a new page': 'Demander une nouvelle fiche',
+  'Create a new page of type “%type” in %into, for this collection.':
+    'Crée une nouvelle fiche de type « %type » dans %into, pour cette collection.',
+
   // Chrome
   Home: 'Accueil',
   Settings: 'Réglages',

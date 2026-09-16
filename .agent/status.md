@@ -2,13 +2,14 @@
 > MàJ : 2026-09-16
 
 **État :** chantier `concepts` (worktree du même nom) — le code rapproché de
-ce que `DESIGN.md` dit aujourd'hui, en quatre pas : le chat relit le fil au
+ce que `DESIGN.md` dit aujourd'hui, en cinq pas : le chat relit le fil au
 magasin après tout tour au lieu de le classer lui-même ; l'horloge et le
 rappel MCP passent par le bureau des tours (un seul point de lancement), le
 tour sans fil est nommé (question éphémère) et le web ne l'emprunte plus par
 accident ; un seul mot pour le fil (« conversation »), « session » réservé à
 la session moteur ; la règle `app:` du 10/09 et le récit du chantier écrits
-dans `DESIGN.md`. Typecheck, lint, 1568 + 566 tests verts ; banc visuel :
+dans `DESIGN.md` ; les collections dessinées par le cœur (`type: collection`,
+`into:`), le plugin retiré. Typecheck, lint, 1568 + 566 tests verts ; banc visuel :
 les 5 scénarios du chat relancés et regardés après chaque pas, la passe
 complète faite le 16/09 — 33 verts, `journal-blocs` rouge comme sur `main`
 (bouton disparu), `live-codex` sauté (vrai moteur). Le glossaire qui a servi
@@ -31,8 +32,10 @@ dans `questions-concepts.md` (chacune réversible d'un mot).
 - [ ] Le scénario de banc `journal-blocs` attend un bouton « Enregistrer »
       que l'éditeur n'a plus depuis le 10/09 (auto-enregistrement) : à
       réécrire pour la nouvelle mécanique, il échoue déjà sur `main`.
-- [ ] `collections` rendu par le cœur (conception du 01/09) : chantier
-      produit à part, laissé hors du chantier `concepts` par défaut.
+- [ ] Au déploiement de cette version : retirer `collections` de
+      `extensions.apps` dans les configs d'Alfred, Nestor et Skippy (le
+      serveur signale un plugin inconnu au démarrage, la collection reste
+      dessinée par le cœur).
 - [x] Refonte structurelle fusionnée dans `main` le 15/09, tag `v0.58.0`.
 
 **Restes ouverts des chantiers passés** (relevés au dégraissage de ce fichier,
