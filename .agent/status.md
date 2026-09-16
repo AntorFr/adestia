@@ -1,5 +1,5 @@
 # Status — Adestia
-> MàJ : 2026-09-15
+> MàJ : 2026-09-16
 
 **État :** chantier `concepts` (worktree du même nom) — le code rapproché de
 ce que `DESIGN.md` dit aujourd'hui, en quatre pas : le chat relit le fil au
@@ -10,7 +10,8 @@ accident ; un seul mot pour le fil (« conversation »), « session » réservé
 la session moteur ; la règle `app:` du 10/09 et le récit du chantier écrits
 dans `DESIGN.md`. Typecheck, lint, 1568 + 566 tests verts ; banc visuel :
 les 5 scénarios du chat relancés et regardés après chaque pas, la passe
-complète (34 scénarios) lancée en fin de chantier. Le glossaire qui a servi
+complète faite le 16/09 — 33 verts, `journal-blocs` rouge comme sur `main`
+(bouton disparu), `live-codex` sauté (vrai moteur). Le glossaire qui a servi
 de mesure est dans `mission-concepts.md`, les décisions prises par défaut
 dans `questions-concepts.md` (chacune réversible d'un mot).
 
