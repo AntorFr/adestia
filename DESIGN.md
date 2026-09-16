@@ -2680,3 +2680,42 @@ the page now offers a ＋ that ASKS the agent to create one there, rather than
 a form: a member is a page, and writing pages is the agent's job. Which facet
 is open is the screen's own state, not part of the address; a bookmark lands
 on the collection, and a facet is one press away.
+
+**2026-09-16 (how long a session lasts is chosen, because the provider will
+not say — and a grant that dies cuts it short):** the session cookie lasted
+twelve hours, hard-coded, which is wrong in both directions: too short for a
+trusted machine at home, too long for nothing in particular. The obvious
+repair was to align it on the identity provider's own session, and that was
+investigated before being abandoned, which is the part worth recording.
+
+*Nothing hands a client that number.* The discovery document advertises no
+session lifetime — asked of the real provider, the set of fields naming one is
+empty. What the token exchange returns are TOKEN lifetimes: the access token's
+`expires_in`, the id token's `exp`, and `auth_time`, which says when the person
+authenticated, not for how long they may stay. Aligning a cookie on any of them
+would sign people out every hour. And there is no single duration to copy even
+in principle: this deployment's provider grants a short session by default and
+three months when the person ticks "remember me" at login, a per-login choice
+the client is never told about.
+
+*So the number is configured* — `auth.oidc.sessionTtlMs`, twelve hours when
+absent, which keeps every instance that says nothing exactly where it was.
+
+*And a second signal beats it where one exists.* An instance that asks for a
+rebound keeps a refresh token per person, and the store drops an entry the
+moment the provider refuses to refresh it — revoked, or past the provider's own
+refresh lifetime. That absence is the provider saying the grant is over, and it
+is worth more than a ceiling we chose: a session stamped as BACKED at login is
+refused once its entry is gone, and its cookie cleared on the way out. The
+ceiling remains the answer for an instance that keeps nothing, which is the
+majority and deliberately so — `offline_access` is asked for only when
+something is kept, because asking a person to grant standing access to prolong
+a cookie is a bad trade.
+
+Two consequences follow, both accepted. The verdict is read when a turn needs
+a token, so a revoked grant is noticed at the next turn rather than the next
+second; making it instant costs a round trip to the provider on every request,
+for a difference measured in minutes. And an operator who removes the rebound
+does not sign out everyone holding a cookie stamped from when it existed: with
+no store there is no verdict, and inventing one punishes a configuration change
+nobody's session asked for.

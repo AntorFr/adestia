@@ -1,21 +1,18 @@
 # Status — Adestia
 > MàJ : 2026-09-16
 
-**État :** `main`, **v0.59.0 déployée le 16/09** sur les trois corps (alfred,
-nestor, skippy — pods prêts, zéro redémarrage). Le chantier `concepts` y est
-fusionné : le code rapproché de ce que `DESIGN.md` dit aujourd'hui, en cinq
-pas — le chat relit la conversation au magasin après tout tour au lieu de la
-classer lui-même ; l'horloge et le rappel MCP passent par le bureau des tours
-(un seul point de lancement), le tour sans fil est nommé (question éphémère)
-et le web ne l'emprunte plus par accident ; un seul mot pour la conversation,
-« session » réservé à la session moteur ; la règle `app:` du 10/09 et le récit
-du chantier écrits dans `DESIGN.md` ; les collections dessinées par le cœur
-(`type: collection`, `into:`), le plugin retiré. 0.58.0 (la revue de code de
-tout le dépôt) monte avec, elle n'avait jamais été déployée. Typecheck, lint,
-1588 + 551 tests verts ; banc visuel : 35 scénarios verts, zéro rouge,
-`live-codex` sauté. Le glossaire qui a servi de mesure est dans
-`mission-concepts.md`, les décisions prises par défaut dans
-`questions-concepts.md` (chacune réversible d'un mot).
+**État :** chantier `session-ttl` (worktree du même nom) — la durée de vie
+d'une session devient un réglage, et un grant mort l'écourte. `main` est en
+v0.59.0, déployée le 16/09 sur les trois corps.
+
+Ce que le chantier fait : `auth.oidc.sessionTtlMs` (millisecondes, 12 h si la
+clé est absente, donc rien ne bouge pour qui ne dit rien) remplace la
+constante en dur ; et une session adossée à un jeton de rafraîchissement tombe
+quand Authelia refuse ce jeton, avant son plafond. L'alignement automatique sur
+la durée d'Authelia a été cherché puis écarté : rien dans le protocole ne la
+donne, et il n'y en a pas une seule à copier — c'est écrit dans `DESIGN.md` et
+dans `questions-session-ttl.md`. Typecheck, lint, 1594 + 551 tests verts. Pas
+de banc : le chantier ne dessine rien.
 
 **Prochaines étapes :**
 - [ ] (décidé le 15/09 : PAS de kit d'aides porté par le cœur ; les plugins
@@ -38,6 +35,9 @@ tout le dépôt) monte avec, elle n'avait jamais été déployée. Typecheck, li
       réel au passage : insérer une table depuis le menu « / » écrit
       `:::table` avec un `<br />` dedans, et un second enregistrement se fait
       refuser en 422. À traiter à part, c'est l'insertion, pas le scénario.
+- [ ] Au déploiement de ce chantier : `auth.oidc.sessionTtlMs: 2592000000`
+      (30 jours) dans les trois manifestes de `k8s-home-lab`. Sans la clé, une
+      instance garde ses 12 h — donc rien à faire pour les instances tierces.
 - [x] Fait au déploiement du 16/09 : `collections` retiré d'`extensions.apps`
       chez Alfred et Skippy (Nestor ne le portait pas), dans le même commit
       que le bump d'image — le pod reçoit image et conf d'un coup. Les trois

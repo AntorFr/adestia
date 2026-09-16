@@ -17,7 +17,6 @@ import {
   LOGIN_TTL_MS,
   OidcClient,
   SESSION_COOKIE,
-  SESSION_TTL_MS,
   safeReturnTo,
   sessionSecret,
   signPayload,
@@ -34,7 +33,11 @@ export async function registerOidc(
    * Passed in rather than built here: this module speaks OIDC, and the store
    * belongs to the instance's data directory.
    */
-  userTokens?: { remember(subject: string, refreshToken: string): Promise<void> },
+  userTokens?: {
+    remember(subject: string, refreshToken: string): Promise<void>
+    /** Whether this person's grant is still alive — see `SessionPayload.backed`. */
+    has(subject: string): Promise<boolean>
+  },
 ): Promise<void> {
   if (config.auth.mode !== 'oidc' || !config.auth.oidc) return
 
@@ -48,17 +51,34 @@ export async function registerOidc(
 
   await app.register(cookie)
 
-  app.addHook('onRequest', async (request: FastifyRequest) => {
+  app.addHook('onRequest', async (request: FastifyRequest, reply) => {
     const raw = request.cookies[SESSION_COOKIE]
     const payload = raw ? verifyPayload<SessionPayload>(raw, secret) : undefined
-    if (payload) {
-      ;(request as FastifyRequest & { session?: { identity: Identity } }).session = {
-        identity: {
-          userId: payload.userId,
-          displayName: payload.displayName,
-          groups: payload.groups,
-        },
-      }
+    if (!payload) return
+
+    /**
+     * A session the provider has disowned, before its ceiling.
+     *
+     * Only asked of a session that WAS backed, and only where the store is
+     * still there to answer: an instance that stopped keeping refresh tokens
+     * has no verdict to read, and guessing one would sign people out for a
+     * configuration change they did not make. The store answers from memory,
+     * so this costs no round trip and no disk read.
+     *
+     * The cookie is cleared as it is refused, or every later request pays the
+     * same check for a session that will never come back.
+     */
+    if (payload.backed && userTokens && !(await userTokens.has(payload.userId))) {
+      void reply.clearCookie(SESSION_COOKIE, { path: '/' })
+      return
+    }
+
+    ;(request as FastifyRequest & { session?: { identity: Identity } }).session = {
+      identity: {
+        userId: payload.userId,
+        displayName: payload.displayName,
+        groups: payload.groups,
+      },
     }
   })
 
@@ -110,14 +130,22 @@ export async function registerOidc(
         .catch(() => undefined)
     }
 
-    const payload: SessionPayload = { ...outcome.identity, expiresAt: Date.now() + SESSION_TTL_MS }
+    // Backed only when something was actually kept: the flag says "a verdict
+    // exists to read", not "a rebound was configured". They differ the day a
+    // provider grants the scope and returns no token.
+    const backed = Boolean(userTokens && outcome.refreshToken)
+    const payload: SessionPayload = {
+      ...outcome.identity,
+      expiresAt: Date.now() + oidc.sessionTtlMs,
+      ...(backed ? { backed: true } : {}),
+    }
     return reply
       .setCookie(SESSION_COOKIE, signPayload(payload, secret), {
         httpOnly: true,
         sameSite: 'lax',
         secure,
         path: '/',
-        maxAge: Math.floor(SESSION_TTL_MS / 1000),
+        maxAge: Math.floor(oidc.sessionTtlMs / 1000),
       })
       .redirect(login.returnTo)
   })
