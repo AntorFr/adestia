@@ -6,7 +6,7 @@
 import type { FastifyInstance } from 'fastify'
 import type { AuthManagement, Driver, DriverDescriptor } from '@antorfr/adestia-drivers'
 
-import type { ArmingSessions, SecretStore } from '../secrets.js'
+import type { ArmingFlows, SecretStore } from '../secrets.js'
 
 /**
  * Variables a driver may NOT claim for its secret.
@@ -56,7 +56,7 @@ export function registerArming(
     readonly driver: Driver
     readonly descriptor: DriverDescriptor
     readonly secrets: SecretStore
-    readonly arming: ArmingSessions
+    readonly arming: ArmingFlows
   },
 ): void {
   const canArm = descriptor.capabilities.includes('authManagement')
@@ -77,11 +77,11 @@ export function registerArming(
     if (!canArm) return reply.code(404).send({ error: 'this driver cannot be armed' })
     try {
       const prompt = await authDriver.beginAuth()
-      const session = arming.start(descriptor.id)
+      const flow = arming.start(descriptor.id)
       // The driver's own session id is replaced by ours: the browser holds a
       // handle to OUR flow, and the driver never has to be trusted with
       // session bookkeeping it does not own.
-      return { ...prompt, sessionId: session.id }
+      return { ...prompt, sessionId: flow.id }
     } catch (error) {
       return reply.code(502).send({ error: (error as Error).message })
     }
@@ -96,9 +96,9 @@ export function registerArming(
       if (typeof sessionId !== 'string' || typeof input !== 'string' || input.trim() === '') {
         return reply.code(400).send({ error: 'sessionId and input are required' })
       }
-      const session = arming.get(sessionId)
-      if (!session) {
-        return reply.code(409).send({ error: 'that arming session has expired; start again' })
+      const flow = arming.get(sessionId)
+      if (!flow) {
+        return reply.code(409).send({ error: 'that arming attempt has expired; start again' })
       }
 
       try {

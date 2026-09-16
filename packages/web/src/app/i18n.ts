@@ -61,6 +61,18 @@ const FR: Readonly<Record<string, string>> = {
   All: 'Tout',
   'Nothing matches.': 'Aucun résultat.',
 
+  // A collection page, drawn by the core
+  'nothing live': 'rien en cours',
+  Uncategorised: 'Sans catégorie',
+  '1 archived': '1 archivée',
+  '%n archived': '%n archivées',
+  'Everything here is finished.': 'Tout est terminé ici.',
+  'This collection declares no `of:` and collects nothing.':
+    'Cette collection ne déclare pas de `of:` et ne rassemble rien.',
+  'Ask for a new page': 'Demander une nouvelle fiche',
+  'Create a new page of type “%type” in %into, for this collection.':
+    'Crée une nouvelle fiche de type « %type » dans %into, pour cette collection.',
+
   // Chrome
   Home: 'Accueil',
   Settings: 'Réglages',
@@ -130,10 +142,10 @@ const FR: Readonly<Record<string, string>> = {
   Delegations: 'Délégations',
   'What other agents asked this one to do': 'Ce que les autres agents lui ont demandé',
   'Read-only — this conversation belongs to': 'Lecture seule — cette conversation appartient à',
-  'No delegated task yet — the threads other agents open here will appear by caller.':
+  'No delegated task yet — the conversations other agents open here will appear by caller.':
     'Aucune tâche déléguée pour l’instant — les fils ouverts par les autres agents apparaîtront ici, par demandeur.',
-  thread: 'fil',
-  threads: 'fils',
+  conversation: 'fil',
+  conversations: 'fils',
   '%n running': '%n en cours',
 
   // Signing in to an MCP server (the chat card, and the server page's row)
@@ -211,6 +223,7 @@ const FR: Readonly<Record<string, string>> = {
   'Adestia could not start': 'Adestia n’a pas pu démarrer',
   'That app is not active on this instance.': 'Cette app n’est pas activée sur cette instance.',
   'Turn interrupted.': 'Tour interrompu.',
+  'The conversation could not be created.': 'La conversation n’a pas pu être créée.',
   'Agent credential': 'Jeton de l’agent',
   'Checking…': 'Vérification…',
   Armed: 'Armé',

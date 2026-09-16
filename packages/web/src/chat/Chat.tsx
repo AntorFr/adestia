@@ -30,7 +30,7 @@ import { AskPrompt } from './AskPrompt.js'
 import { Bubble, LiveProse, ToolTrace, livePartsOf } from './Bubble.js'
 import { Composer, type ComposerButton, type PendingAttachment } from './Composer.js'
 import { ContextPill, formatTokens } from './ContextPill.js'
-import { DRAFT, useSessions } from './useSessions.js'
+import { DRAFT, useConversations } from './useConversations.js'
 import { ModelPicker, type ModelInfo } from './ModelPicker.js'
 
 /** Remembered per browser, like the predecessor's. */
@@ -61,7 +61,7 @@ export interface ChatProps {
   /**
    * Hands the shell a way to send a message, so a plugin's button can ask the
    * agent something. The chat owns this channel; nobody else may fabricate a
-   * turn behind its back and leave the thread out of step with the session.
+   * turn behind its back and leave the screen out of step with the conversation.
    */
   readonly onReady?: (channel: {
     ask: (prompt: string) => void
@@ -115,25 +115,25 @@ export function Chat({
   })
   const {
     tabs,
-    threads,
-    threadsOpen,
-    setThreadsOpen,
+    conversations,
+    listOpen,
+    setListOpen,
     activeId,
     active,
     answered,
     setAnswered,
-    session,
-    refreshThreads,
-    openThread,
+    conversation,
+    refreshConversations,
+    openConversation,
     activate,
     shut,
-    archiveThread,
+    archive,
     dotOf,
     newDraft,
     send,
     stop,
     moveTab,
-  } = useSessions({ fetchImpl, narrow, model, view })
+  } = useConversations({ fetchImpl, narrow, model, view, t })
   /** Drag origin while a tab is being reordered. */
   const dragFrom = useRef<number | undefined>(undefined)
   /** Latest `send`, for the channel published to plugins (see the effect). */
@@ -171,13 +171,13 @@ export function Chat({
       if (chosen === '') window.localStorage.removeItem(MODEL_KEY)
       else window.localStorage.setItem(MODEL_KEY, chosen)
     } catch {
-      // Storage refused: the choice still holds for this session, which is
+      // Storage refused: the choice still holds for this conversation, which is
       // the part the user is actually looking at.
     }
   }, [])
 
   // The sign-in card's three halves: what this person is connected to,
-  // whether THIS thread is actually a conversation (the agent answered, or
+  // whether THIS conversation is actually a dialogue (the agent answered, or
   // is answering — a disconnected server is omitted from the turn, so an
   // agent reply is the closest observable to "the demand arose here"), and
   // what they already waved away.
@@ -222,19 +222,22 @@ export function Chat({
             belongs to the conversation, not to the message being typed. */}
         <ModelPicker models={models} model={model} onModel={chooseModel} t={t} />
         <span className="adestia-chat__spacer" />
-        <ContextPill tokens={active.contextTokens} {...(contextWindow ? { windowSize: contextWindow } : {})} />
+        <ContextPill
+          tokens={active.live?.contextTokens ?? active.contextTokens}
+          {...(contextWindow ? { windowSize: contextWindow } : {})}
+        />
         <button
           type="button"
           className="adestia-ib"
           onClick={() => {
-            const opening = !threadsOpen
-            setThreadsOpen(opening)
+            const opening = !listOpen
+            setListOpen(opening)
             // Reopened = refreshed: the dots read the desk's live state and
             // the updatedAt the unread marks compare against.
-            if (opening) void refreshThreads()
+            if (opening) void refreshConversations()
           }}
           aria-label={t('Conversations')}
-          aria-expanded={threadsOpen}
+          aria-expanded={listOpen}
         >
           ▤
         </button>
@@ -248,7 +251,7 @@ export function Chat({
         )}
       </header>
 
-      {/* The tab strip — a desktop surface. On a phone the thread list, with
+      {/* The tab strip — a desktop surface. On a phone the conversation list, with
           the same dots, is the whole navigation. */}
       {!narrow && tabs.open.length > 0 && (
         <div className="adestia-tabs" role="tablist">
@@ -256,7 +259,7 @@ export function Chat({
             const title =
               id === DRAFT
                 ? t('New conversation')
-                : session(id).title ?? threads.find((thread) => thread.id === id)?.title ?? '…'
+                : conversation(id).title ?? conversations.find((meta) => meta.id === id)?.title ?? '…'
             return (
               <div
                 key={id}
@@ -285,7 +288,7 @@ export function Chat({
                   <span className="adestia-tab__title">{title}</span>
                 </button>
                 {/* Two exits, two meanings: the box puts the CONVERSATION
-                    away, the cross only closes the TAB — the thread stays in
+                    away, the cross only closes the TAB — the conversation stays in
                     the list, dot and all. */}
                 {id !== DRAFT && (
                   <button
@@ -293,7 +296,7 @@ export function Chat({
                     className="adestia-tab__tool"
                     aria-label={`${t('Archive')} — ${title}`}
                     title={t('Archive')}
-                    onClick={() => void archiveThread(id)}
+                    onClick={() => void archive(id)}
                   >
                     <ArchiveGlyph />
                   </button>
@@ -313,31 +316,31 @@ export function Chat({
         </div>
       )}
 
-      {threadsOpen && (
-        <ul className="adestia-threads">
-          {threads.length === 0 && <li className="adestia-threads__empty">No conversation yet.</li>}
-          {threads.map((thread) => (
-            <li key={thread.id}>
+      {listOpen && (
+        <ul className="adestia-conversations">
+          {conversations.length === 0 && <li className="adestia-conversations__empty">No conversation yet.</li>}
+          {conversations.map((meta) => (
+            <li key={meta.id}>
               <button
                 type="button"
-                className={`adestia-threads__item${
-                  thread.id === activeId ? ' adestia-threads__item--current' : ''
+                className={`adestia-conversations__item${
+                  meta.id === activeId ? ' adestia-conversations__item--current' : ''
                 }`}
-                onClick={() => openThread(thread.id)}
+                onClick={() => openConversation(meta.id)}
               >
                 {/* The same dot vocabulary as the tab strip: on a phone this
                     list IS the tab strip. */}
-                <span className={`adestia-dot adestia-dot--${dotOf(thread.id, thread)}`} aria-hidden="true" />
-                {thread.title}
+                <span className={`adestia-dot adestia-dot--${dotOf(meta.id, meta)}`} aria-hidden="true" />
+                {meta.title}
               </button>
               {/* Put away, not deleted: the only tool for tidying up was a
                   delete that took every word with it. */}
               <button
                 type="button"
-                className="adestia-threads__archive"
-                aria-label={`${t('Archive')} — ${thread.title}`}
+                className="adestia-conversations__archive"
+                aria-label={`${t('Archive')} — ${meta.title}`}
                 title={t('Archive')}
-                onClick={() => void archiveThread(thread.id)}
+                onClick={() => void archive(meta.id)}
               >
                 <ArchiveGlyph />
               </button>
@@ -346,7 +349,7 @@ export function Chat({
         </ul>
       )}
 
-      <div className="adestia-chat__thread">
+      <div className="adestia-chat__conversation">
         {active.messages.map((message) => (
           <Bubble key={message.id} message={message} t={t} {...(openPage ? { openPage } : {})} />
         ))}
@@ -393,6 +396,15 @@ export function Chat({
                     )}
                   </div>
                 )}
+                {/* A fragment that stands — the stream ended and the conversation
+                    could not be read back — says the end it saw, the way a
+                    filed message would. */}
+                {last && !active.live!.running && active.live!.stopped && (
+                  <p className="adestia-bubble__note">{t('Turn interrupted.')}</p>
+                )}
+                {last && !active.live!.running && active.live!.error && (
+                  <p className="adestia-bubble__error">{active.live!.error}</p>
+                )}
               </article>
             )
           })}
@@ -414,7 +426,7 @@ export function Chat({
           actually talking to the agent — right under the reply where it says
           it cannot act. The window closes itself after the passkey, and
           regaining focus refreshes the state that hides this card; the cross
-          hides it for this browser without connecting, because a thread
+          hides it for this browser without connecting, because a conversation
           about something else entirely owes nobody a nag. */}
       {asks.map((name) => (
         <div className="adestia-connect" key={name} role="status">

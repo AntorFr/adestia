@@ -16,9 +16,10 @@
 @import './styles/settings.css';
 @import './styles/mobile.css';
 @import './styles/editor.css';
-@import './styles/threads.css';
+@import './styles/conversations.css';
 @import './styles/settings-pages.css';
 @import './styles/attachments.css';
 @import './styles/reader.css';
+@import './styles/collection.css';
 @import './styles/crepe.css';
 @import './styles/missing-page.css';

@@ -14,13 +14,13 @@
  * same events, same reducer, no second protocol.
  *
  * Messages posted while a conversation's turn is running are QUEUED here, not
- * in the browser, and each one is persisted to the thread the moment it is
+ * in the browser, and each one is persisted to the conversation the moment it is
  * accepted. When the running turn settles the queue leaves as ONE merged turn
  * — texts joined as paragraphs — which is the predecessor's contract
  * (agent-gw's `flushQueue`), now owned by the side that survives a reload.
  *
  * What this deliberately does NOT do: re-dispatch a queue across a server
- * restart. The queued texts are already in the thread (nothing is lost, the
+ * restart. The queued texts are already in the conversation (nothing is lost, the
  * reader sees them), but firing prompts found on disk at boot would have an
  * instance rebooted a week later executing stale instructions unprompted.
  */
@@ -81,9 +81,9 @@ export interface TurnSpec {
    * then every earlier turn of the chain has run its `finish`, so the store
    * holds the session the last turn left — which the caller of a message
    * cannot promise, and on a real instance did not: a phone slept through a
-   * thread's first turn, woke to a dead stream, and posted the next message
+   * conversation's first turn, woke to a dead stream, and posted the next message
    * with no session at all. The engine opened a fresh one, its id replaced
-   * the thread's own, and the thread forgot its first turn for good.
+   * the conversation's own, and the conversation forgot its first turn for good.
    */
   readonly session?: () => Promise<string | undefined>
 }
@@ -141,7 +141,7 @@ export class TurnJob {
    * Somebody pressed stop.
    *
    * What it does NOT do: touch the chain's backlog. A message queued behind
-   * this turn is already IN the thread — persisted the moment it was accepted
+   * this turn is already IN the conversation — persisted the moment it was accepted
    * — so dropping it would leave a question in the conversation that nothing
    * will ever answer. Stopping means "stop what you are doing"; the message
    * waiting behind it is the next instruction, and it runs. Whoever wants
@@ -381,14 +381,14 @@ export class TurnDesk {
   }
 
   /**
-   * The request as the ENGINE sees it — never as the thread stores it.
+   * The request as the ENGINE sees it — never as the conversation stores it.
    *
    * The preamble is fuel, not transcript: `spec.request` is left untouched, so
    * a merge, a re-attach and a reload all still replay what the person
    * actually typed. Framing at dispatch is also what keeps a queued batch from
    * collecting one preamble per message it merged.
    *
-   * The job's stop signal rides along for the same reason: what the thread
+   * The job's stop signal rides along for the same reason: what the conversation
    * stores is a message, what the engine gets is a message it can be told to
    * abandon.
    */
@@ -511,7 +511,7 @@ function mergeSpecs(batch: readonly TurnSpec[], sessionId: string | undefined): 
  * names none.
  *
  * A resolver that throws yields no session rather than a failed turn: the
- * message is already in the thread, and refusing to run it would lose the
+ * message is already in the conversation, and refusing to run it would lose the
  * answer on top of the memory.
  */
 async function resumed(spec: TurnSpec): Promise<TurnSpec> {

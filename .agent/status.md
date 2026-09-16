@@ -1,32 +1,47 @@
 # Status — Adestia
-> MàJ : 2026-09-15
+> MàJ : 2026-09-16
 
-**État :** chantier `refonte` (worktree du même nom) — une passe de revue sur
-tout le dépôt : code mort retiré et gardé par le compilateur, doublons
-mutualisés (persistance d'un tour, frontmatter, jeton des pilotes, aides du
-banc), doc remise d'aplomb, serveur et web découpés en modules sans changer
-une ligne de corps, outillage rendu fiable en worktree (typecheck, tests et
-build lisent les sources d'à côté). Typecheck, lint, build et 2125 tests
-verts ; banc visuel passé sur les 35 scénarios (34 verts, voir ci-dessous). L'état reconstruit qui a servi de base est dans
-`mission-refonte.md`, les questions en suspens dans `questions-refonte.md`.
+**État :** chantier `concepts` (worktree du même nom) — le code rapproché de
+ce que `DESIGN.md` dit aujourd'hui, en cinq pas : le chat relit le fil au
+magasin après tout tour au lieu de le classer lui-même ; l'horloge et le
+rappel MCP passent par le bureau des tours (un seul point de lancement), le
+tour sans fil est nommé (question éphémère) et le web ne l'emprunte plus par
+accident ; un seul mot pour le fil (« conversation »), « session » réservé à
+la session moteur ; la règle `app:` du 10/09 et le récit du chantier écrits
+dans `DESIGN.md` ; les collections dessinées par le cœur (`type: collection`,
+`into:`), le plugin retiré. Typecheck, lint, 1588 + 551 tests verts ; banc
+visuel : passe complète sur l'état final le 16/09 — **35 scénarios verts**,
+zéro rouge, `live-codex` sauté (il lui faut un vrai moteur), aucune erreur
+navigateur inattendue dans les journaux. Le glossaire qui a servi
+de mesure est dans `mission-concepts.md`, les décisions prises par défaut
+dans `questions-concepts.md` (chacune réversible d'un mot).
 
 **Prochaines étapes :**
 - [ ] (décidé le 15/09 : PAS de kit d'aides porté par le cœur ; les plugins
       gardent leurs copies de `slugOf`, `slugify`, du parseur de frontmatter
       et de `makeCache` — cinq lignes chacune, et un plugin reste un dossier
       autonome qui n'importe que React.)
-- [ ] (fait le 15/09 : conversations et vue MCP déclarées une fois dans
+- [x] (fait le 15/09 : conversations et vue MCP déclarées une fois dans
       `schemas/src/protocol.ts` ; les événements de tour restent ceux du
-      contrat pilote, importés en type seulement par le web. Reste à
-      déclarer `@antorfr/adestia-schemas` dans `packages/web/package.json`,
-      avec le même geste npm que le retrait de `plugin-react`.)
-- [ ] Retirer `@vitejs/plugin-react` de `packages/web` : déclaré, jamais
-      chargé ; demande l'outil npm qui réécrit le lockfile, puis revérifier le
-      fork du parseur.
-- [ ] Le scénario de banc `journal-blocs` attend un bouton « Enregistrer »
-      que l'éditeur n'a plus depuis le 10/09 (auto-enregistrement) : à
-      réécrire pour la nouvelle mécanique, il échoue déjà sur `main`.
-- [x] Fusionné dans `main` le 15/09, tag `v0.58.0`.
+      contrat pilote, importés en type seulement par le web. Déclaration de
+      `@antorfr/adestia-schemas` dans `packages/web/package.json` faite le
+      16/09, avec le retrait de `plugin-react`.)
+- [x] `@vitejs/plugin-react` retiré de `packages/web` le 16/09 : déclaré,
+      jamais chargé — le bundle sort avec la même empreinte qu'avant. Lockfile
+      mis à jour par `npm install --package-lock-only` (ne touche pas aux
+      paquets installés) : deux entrées changées, le fork du parseur intact.
+- [x] Scénario de banc `journal-blocs` réécrit le 16/09 : il passe de bout en
+      bout (12 captures). Trois choses avaient vieilli — le bouton
+      « Enregistrer » (parti le 10/09), le sélecteur du titre d'une entrée, et
+      les attributs des blocs dans ses fiches d'exemple. Il RAPPORTE un défaut
+      réel au passage : insérer une table depuis le menu « / » écrit
+      `:::table` avec un `<br />` dedans, et un second enregistrement se fait
+      refuser en 422. À traiter à part, c'est l'insertion, pas le scénario.
+- [ ] Au déploiement de cette version : retirer `collections` de
+      `extensions.apps` dans les configs d'Alfred, Nestor et Skippy (le
+      serveur signale un plugin inconnu au démarrage, la collection reste
+      dessinée par le cœur).
+- [x] Refonte structurelle fusionnée dans `main` le 15/09, tag `v0.58.0`.
 
 **Restes ouverts des chantiers passés** (relevés au dégraissage de ce fichier,
 non revérifiés un par un ; l'historique complet est dans git) :

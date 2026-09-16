@@ -34,7 +34,7 @@
  *   - a gesture that started in something scrollable SIDEWAYS is not a swipe
  *     either. A wide table and a code block are read by dragging them, and
  *     stealing that would make their content unreachable;
- *   - a gesture the lock calls VERTICAL is released for good, so the thread
+ *   - a gesture the lock calls VERTICAL is released for good, so the conversation
  *     scrolls exactly as it did before.
  *
  * Touch only. A mouse never swipes: dragging to select text on a desktop is
@@ -171,7 +171,7 @@ export function useSwipe(options: SwipeOptions): (node: HTMLDivElement | null) =
         if (Math.abs(dx) < SWIPE_LOCK && Math.abs(dy) < SWIPE_LOCK) return
         if (Math.abs(dx) <= Math.abs(dy) * SWIPE_BIAS) {
           // Vertical, and released for the whole gesture: reconsidering it
-          // mid-scroll is how a thread jumps sideways while being read.
+          // mid-scroll is how a conversation jumps sideways while being read.
           from = undefined
           return
         }

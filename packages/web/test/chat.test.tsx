@@ -241,7 +241,7 @@ describe('tool trace', () => {
 describe('bubble', () => {
   it('marks an interrupted turn, in the language the reader is reading', () => {
     // The predecessor dropped this flag and interruptions vanished from the
-    // thread, leaving a truncated answer that looked complete. Then the flag
+    // conversation, leaving a truncated answer that looked complete. Then the flag
     // came back and the SENTENCE stayed English in a French shell: the
     // dictionary had the translation, the bubble was never handed one.
     render(
@@ -666,16 +666,16 @@ describe('chat', () => {
       turn!.close()
     })
     // Settled: the indicator goes, and what was drawn as two bubbles STAYS
-    // two — the thread keeps the shape the live view had.
+    // two — the conversation keeps the shape the live view had.
     await waitFor(() => expect(container.querySelector('.adestia-dots')).toBeNull())
     expect(container.querySelectorAll('.adestia-bubble--agent')).toHaveLength(2)
     expect(screen.getByText('Je regarde.')).toBeTruthy()
     expect(screen.getByText('Voilà.')).toBeTruthy()
   })
 
-  it('stops the FIRST turn of a thread, naming the conversation', async () => {
+  it('stops the FIRST turn of a conversation, naming the conversation', async () => {
     // The regression, end to end. The ■ used to send the ENGINE's session id,
-    // which only comes back in the turn's `result` — its END. On a thread's
+    // which only comes back in the turn's `result` — its END. On a conversation's
     // first turn the browser held none, the handler returned on the spot, and
     // the button posted nothing at all: pressed, and nothing happened.
     const encoder = new TextEncoder()
@@ -735,7 +735,7 @@ describe('chat', () => {
       turn!.enqueue(encoder.encode(frame({ type: 'result', sessionId: 's1', stopped: true })))
       turn!.close()
     })
-    // Landed: the thread carries the interruption, and the composer sends again.
+    // Landed: the conversation carries the interruption, and the composer sends again.
     await waitFor(() => expect(screen.getByText('Turn interrupted.')).toBeTruthy())
     expect(screen.queryByLabelText('Stop')).toBeNull()
   })
@@ -811,7 +811,7 @@ describe('chat', () => {
 
   it('POSTs a message sent during a turn at once, shows it held, then adopts the merged turn', async () => {
     // The queue is the SERVER's now: a message typed during a turn is posted
-    // immediately (202 — held, already written into the thread), so a closed
+    // immediately (202 — held, already written into the conversation), so a closed
     // tab loses nothing. When the running turn settles, the chat re-attaches
     // and picks up the merged follow-up the desk dispatched.
     const posts: { prompt: string }[] = []
@@ -819,6 +819,8 @@ describe('chat', () => {
     let turn: ReadableStreamDefaultController<Uint8Array> | undefined
     let attach: ReadableStreamDefaultController<Uint8Array> | undefined
     let attachCalls = 0
+    /** Set once the merged turn has answered: the store then holds its answer. */
+    let merged = false
 
     const fetchImpl = vi.fn((url: string, init?: RequestInit) => {
       const path = String(url)
@@ -848,6 +850,22 @@ describe('chat', () => {
         }
         // The conversation's turn is running: held, and already stored.
         return Promise.resolve({ ok: true, status: 202, body: null } as unknown as Response)
+      }
+      if (path === '/api/conversations/c1') {
+        // What the store holds once the first turn settled: the held texts
+        // were written on acceptance, before the answer that closed it.
+        const stored = {
+          id: 'c1',
+          title: 'premier',
+          updatedAt: '',
+          messages: [
+            { id: 'm1', role: 'user', text: 'premier', at: '' },
+            ...posts.slice(1).map((post, index) => ({ id: `h${index}`, role: 'user', text: post.prompt, at: '' })),
+            { id: 'a1', role: 'agent', text: '', at: '' },
+            ...(merged ? [{ id: 'a2', role: 'agent', text: 'reçu cinq sur cinq', at: '' }] : []),
+          ],
+        }
+        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(stored) } as unknown as Response)
       }
       return Promise.resolve(
         new Response(
@@ -888,8 +906,8 @@ describe('chat', () => {
     })
     await waitFor(() => expect(attachCalls).toBe(1))
 
-    // The held bubbles became ordinary user messages — one each, the shape
-    // the store recorded — and the merged turn streams its answer.
+    // The held bubbles gave way to the store's own messages — one each, read
+    // back rather than promoted by hand — and the merged turn streams its answer.
     await waitFor(() => expect(container.querySelectorAll('.adestia-bubble--held')).toHaveLength(0))
     expect(screen.getByText('deuxième')).toBeTruthy()
     expect(screen.getByText('troisième')).toBeTruthy()
@@ -897,14 +915,16 @@ describe('chat', () => {
     await act(async () => {
       attach!.enqueue(encoder.encode(frame({ type: 'text-delta', text: 'reçu cinq sur cinq' })))
       attach!.enqueue(encoder.encode(frame({ type: 'result', sessionId: 's1', stopped: false })))
+      // Filed before the end is announced, like the desk does.
+      merged = true
       attach!.close()
     })
     await waitFor(() => expect(screen.getByText('reçu cinq sur cinq')).toBeTruthy())
   })
 
-  it('adopts a running turn when a thread is opened', async () => {
+  it('adopts a running turn when a conversation is opened', async () => {
     // The reload story: the turn kept running at the desk; opening the
-    // thread replays the transcript from the store AND re-attaches to the
+    // conversation replays the transcript from the store AND re-attaches to the
     // live turn, mid-flight.
     const encoder = new TextEncoder()
     const fetchImpl = vi.fn((url: string) => {
@@ -1012,7 +1032,7 @@ describe('chat', () => {
     })
   }
 
-  it('reads the thread back when its stream dies and the turn finishes without it', async () => {
+  it('reads the conversation back when its stream dies and the turn finishes without it', async () => {
     // Seen on a real instance: the answer had landed at the desk, and the
     // screen still showed a lone tool call over "Load failed".
     const phone = sleepingPhone(true)
@@ -1025,12 +1045,45 @@ describe('chat', () => {
     expect(await screen.findByText('Référence Festool : 200051')).toBeTruthy()
     expect(screen.queryByText('Load failed')).toBeNull()
 
-    // And the next message leaves naming the thread, never an engine session:
+    // And the next message leaves naming the conversation, never an engine session:
     // which one it resumes is the server's to read.
     await ask('Probablement D 32/22x10m-AS-GQ/CT')
     await waitFor(() => expect(phone.posts).toHaveLength(2))
     expect(phone.posts[1]).toMatchObject({ conversationId: 'c1' })
     expect('sessionId' in phone.posts[1]!).toBe(false)
+  })
+
+  it('says it when the conversation cannot be created, and posts no turn', async () => {
+    // The wire allows a turn without a conversation — an ephemeral question — and
+    // the shell used to take it whenever the conversation creation failed: a turn
+    // keyed by nothing, carrying the browser's idea of the engine session,
+    // that nothing could read back, adopt or stop. A refusal that is said is
+    // better than an answer that is lost.
+    const posts: unknown[] = []
+    const fetchImpl = ((url: string, init?: RequestInit) => {
+      const path = String(url)
+      if (path === '/api/turn') {
+        posts.push(JSON.parse(String(init?.body)))
+        return Promise.resolve({ ok: true, status: 200, body: null } as unknown as Response)
+      }
+      if (path === '/api/conversations' && init?.method === 'POST') {
+        return Promise.resolve(new Response('{"error":"disk full"}', { status: 500 }))
+      }
+      if (path === '/api/models') return Promise.resolve(new Response('{}', { status: 404 }))
+      return Promise.resolve(
+        new Response(JSON.stringify({ conversations: [] }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      )
+    }) as unknown as typeof fetch
+    render(<Chat fetchImpl={fetchImpl} />)
+    await ask('où est le tuyau ?')
+
+    expect(await screen.findByText('The conversation could not be created.')).toBeTruthy()
+    // The message stays drawn: the next send tries the creation again.
+    expect(screen.getByText('où est le tuyau ?')).toBeTruthy()
+    expect(posts).toHaveLength(0)
   })
 
   it('keeps the fragment, and the tab, when the store cannot be reached either', async () => {
@@ -1124,6 +1177,8 @@ describe('tabs', () => {
   const tabsFetch = (options: {
     metas?: readonly unknown[]
     onTurn?: (body: { prompt: string }) => Response | undefined
+    /** What the desk filed into c1 since the store was first read: the chat reads it back after a turn. */
+    filed?: { current: readonly { role: string; text: string }[] }
   } = {}) =>
     vi.fn((url: string, init?: RequestInit) => {
       const path = String(url)
@@ -1156,6 +1211,11 @@ describe('tabs', () => {
               messages: [
                 { id: 'm1', role: 'user', text: `question ${conversation}`, at: '' },
                 { id: 'm2', role: 'agent', text: `réponse ${conversation}`, at: '' },
+                ...(conversation === 'c1' ? (options.filed?.current ?? []) : []).map((one, index) => ({
+                  id: `f${index}`,
+                  ...one,
+                  at: '',
+                })),
               ],
             }),
         } as unknown as Response)
@@ -1178,7 +1238,7 @@ describe('tabs', () => {
       } as unknown as Response)
     }) as unknown as typeof fetch
 
-  it('opens conversations as tabs and keeps their threads apart', async () => {
+  it('opens conversations as tabs and keeps their conversations apart', async () => {
     render(<Chat fetchImpl={tabsFetch()} />)
 
     fireEvent.click(screen.getByLabelText('Conversations'))
@@ -1195,7 +1255,7 @@ describe('tabs', () => {
       fireEvent.click(filDeux)
     })
     expect(await screen.findByText('réponse c2')).toBeTruthy()
-    // The other tab's thread is not painted over this one.
+    // The other tab's conversation is not painted over this one.
     expect(screen.queryByText('réponse c1')).toBeNull()
     expect(screen.getAllByRole('tab')).toHaveLength(2)
 
@@ -1209,7 +1269,9 @@ describe('tabs', () => {
 
   it('marks a background tab working, then unread, then read on return', async () => {
     let release: (() => void) | undefined
+    const filed = { current: [] as readonly { role: string; text: string }[] }
     const fetchImpl = tabsFetch({
+      filed,
       onTurn: () =>
         ({
           ok: true,
@@ -1217,6 +1279,11 @@ describe('tabs', () => {
           body: new ReadableStream<Uint8Array>({
             start(controller) {
               release = () => {
+                // The desk files the exchange before it announces the end.
+                filed.current = [
+                  { role: 'user', text: 'travaille' },
+                  { role: 'agent', text: 'fini' },
+                ]
                 controller.enqueue(
                   new TextEncoder().encode(
                     frame({ type: 'text-delta', text: 'fini' }),
@@ -1281,7 +1348,7 @@ describe('tabs', () => {
     })
     expect(screen.queryAllByRole('tab')).toHaveLength(0)
 
-    // Closed is not archived: the thread still stands in the list.
+    // Closed is not archived: the conversation still stands in the list.
     fireEvent.click(screen.getByLabelText('Conversations'))
     expect(await screen.findByText('Fil un')).toBeTruthy()
   })
@@ -1302,7 +1369,7 @@ describe('tabs', () => {
 
     render(<Chat fetchImpl={tabsFetch()} />)
     await waitFor(() => expect(screen.getAllByRole('tab')).toHaveLength(2))
-    // In the persisted order, and the persisted active one shows its thread.
+    // In the persisted order, and the persisted active one shows its conversation.
     const titles = screen.getAllByRole('tab').map((tab) => tab.textContent)
     expect(titles[0]).toContain('Fil deux')
     expect(titles[1]).toContain('Fil un')
@@ -1310,7 +1377,7 @@ describe('tabs', () => {
   })
 
   it('closes a restored tab the server answers with something else', async () => {
-    // A persisted tab can outlive its thread, and the server may answer its
+    // A persisted tab can outlive its conversation, and the server may answer its
     // id with a body that is no conversation at all. That answer must close
     // the tab the way a 404 does — not leave an unhandled rejection where
     // the transcript replay should have been.
@@ -1333,7 +1400,7 @@ describe('tabs', () => {
     await waitFor(() => expect(screen.queryAllByRole('tab')).toHaveLength(0))
   })
 
-  it('dots the thread list from the desk state the server reports', async () => {
+  it('dots the conversation list from the desk state the server reports', async () => {
     const { container } = render(
       <Chat
         fetchImpl={tabsFetch({
@@ -1346,8 +1413,8 @@ describe('tabs', () => {
     )
     fireEvent.click(screen.getByLabelText('Conversations'))
     await screen.findByText('Occupé')
-    expect(container.querySelector('.adestia-threads .adestia-dot--working')).toBeTruthy()
-    expect(container.querySelector('.adestia-threads .adestia-dot--waiting')).toBeTruthy()
+    expect(container.querySelector('.adestia-conversations .adestia-dot--working')).toBeTruthy()
+    expect(container.querySelector('.adestia-conversations .adestia-dot--waiting')).toBeTruthy()
   })
 })
 
@@ -1489,8 +1556,8 @@ describe('attachments', () => {
   })
 })
 
-describe('threads', () => {
-  /** A fetch that serves one stored thread with a rich transcript. */
+describe('conversations', () => {
+  /** A fetch that serves one stored conversation with a rich transcript. */
   const withThread = (): typeof fetch =>
     ((url: string) => {
       const body =
@@ -1517,13 +1584,13 @@ describe('threads', () => {
       return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(body) } as unknown as Response)
     }) as unknown as typeof fetch
 
-  it('lists the stored threads', async () => {
+  it('lists the stored conversations', async () => {
     render(<Chat fetchImpl={withThread()} />)
     fireEvent.click(screen.getByLabelText('Conversations'))
     await waitFor(() => expect(screen.getByText('Le garage')).toBeTruthy())
   })
 
-  it('replays a thread faithfully — tools, interruption and context', async () => {
+  it('replays a conversation faithfully — tools, interruption and context', async () => {
     // The predecessor replayed role and text only, so a truncated answer came
     // back looking complete. The stored transcript IS what the UI drew.
     render(<Chat fetchImpl={withThread()} />)
@@ -1534,11 +1601,11 @@ describe('threads', () => {
     expect(screen.getByText('range le garage')).toBeTruthy()
     expect(screen.getByText('Turn interrupted.')).toBeTruthy()
     expect(screen.getByText(/1 tool call/)).toBeTruthy()
-    // The pill picks up where the thread left off.
+    // The pill picks up where the conversation left off.
     expect(screen.getByText('4.2k')).toBeTruthy()
   })
 
-  it('starts a clean thread on demand', async () => {
+  it('starts a clean conversation on demand', async () => {
     render(<Chat fetchImpl={withThread()} />)
     fireEvent.click(screen.getByLabelText('Conversations'))
     fireEvent.click(await screen.findByText('Le garage'))
@@ -1607,11 +1674,19 @@ describe("the engine's question", () => {
     // question, and re-yields it at the very next event.
     let answered = false
     let pushMore: (() => void) | undefined
-    const fetchImpl = vi.fn((url: string, _init?: RequestInit) => {
+    const fetchImpl = vi.fn((url: string, init?: RequestInit) => {
       const path = String(url)
       if (path === '/api/permission') {
         answered = true
         return Promise.resolve(new Response('{}', { status: 200 }))
+      }
+      if (path === '/api/conversations' && init?.method === 'POST') {
+        return Promise.resolve(
+          new Response(JSON.stringify({ id: 'c1', title: 'go', updatedAt: '' }), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          }),
+        )
       }
       if (path === '/api/turn') {
         const body = new ReadableStream<Uint8Array>({
@@ -1669,6 +1744,14 @@ describe("the engine's question", () => {
       if (path === '/api/permission') {
         answered = JSON.parse(String(init?.body))
         return new Promise<Response>(() => {})
+      }
+      if (path === '/api/conversations' && init?.method === 'POST') {
+        return Promise.resolve(
+          new Response(JSON.stringify({ id: 'c1', title: 'go', updatedAt: '' }), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          }),
+        )
       }
       if (path === '/api/turn') {
         const body = new ReadableStream<Uint8Array>({

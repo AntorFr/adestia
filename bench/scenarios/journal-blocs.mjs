@@ -1,10 +1,51 @@
 /**
- * Quel bloc vide la zone d'édition.
+ * Chaque bloc du cœur s'ouvre-t-il encore au ✎, et en revient-il intact ?
  *
- * Six entrées, une par bloc du cœur plus un témoin. On ouvre le ✎ de chacune,
- * l'une après l'autre, et on relève ce que la surface contient VRAIMENT. Le
- * code annonce la panne ; seul le navigateur dit à quoi elle ressemble.
+ * Six entrées, une par bloc du cœur plus un témoin. Écrit pour une panne —
+ * les quatre renderings ajoutés le 2026-09-09 n'avaient pas de nœud
+ * d'éditeur et vidaient la zone d'édition — il en reste le garde-fou : on
+ * ouvre le ✎ de chacune, l'une après l'autre, et on relève ce que la surface
+ * contient VRAIMENT. Un test unitaire monte le composant ; lui seul ne dit
+ * pas qu'une surface est là mais vide.
+ *
+ * Puis trois questions que seul un navigateur tranche : ouvrir n'est pas
+ * modifier (le fichier ne doit pas bouger), le menu « / » offre bien les
+ * blocs du cœur et les filtre, et un bloc écrit à la main survit à un
+ * aller-retour dans l'éditeur.
  */
+/**
+ * Poser le curseur au bout du dernier paragraphe d'une entrée ouverte.
+ *
+ * Le curseur doit être au bout du BLOC : `shouldShow` refuse le menu « / »
+ * partout ailleurs (`isSelectionAtEndOfNode`). `End` ne va qu'au bout de la
+ * ligne VISIBLE et coupe un mot en deux sur un paragraphe replié ; `Ctrl+A`
+ * puis une flèche ne replie pas la sélection dans ProseMirror et la frappe
+ * suivante REMPLACE le document — les deux essais sont dans l'historique.
+ *
+ * Trois précautions, chacune payée par une passe perdue :
+ *
+ *  - la cible est CENTRÉE avant d'être mesurée. Le menu « / » s'ouvre SOUS le
+ *    curseur : une cible rendue visible au ras du bas de la fenêtre ouvre son
+ *    menu hors champ, et Playwright le dit comme il le voit — « element is
+ *    not visible » — ce qui ressemble à un menu cassé.
+ *  - on ATTEND que le défilement soit fini avant de mesurer. Une boîte relevée
+ *    pendant qu'il glisse donne des coordonnées périmées, et le clic tombe
+ *    dans le vide.
+ *  - le clic est un VRAI clic de souris aux coordonnées de la page, pas un
+ *    clic positionné sur le localisateur. Le second passe les vérifications de
+ *    Playwright sans déplacer le caret : le curseur reste au début du
+ *    document, la frappe suivante écrit « /Rien que de la prose… » en tête de
+ *    paragraphe, et le menu refuse de s'ouvrir puisqu'il n'est pas au bout
+ *    d'un nœud. Une capture l'a montré ; aucun message ne le disait.
+ */
+async function poserLeCurseurAuBout(page, entree) {
+  const cible = entree.locator('.ProseMirror p').last()
+  await cible.evaluate((node) => node.scrollIntoView({ block: 'center' }))
+  await page.waitForTimeout(400)
+  const box = await cible.boundingBox()
+  await page.mouse.click(box.x + box.width - 2, box.y + box.height - 4)
+}
+
 export default async function scenario(bench) {
   const page = await bench.open({ height: 2400 })
   await page.evaluate(() => {
@@ -14,8 +55,16 @@ export default async function scenario(bench) {
   await page.waitForTimeout(1500)
   await bench.shoot(page, 'b1-lecture')
 
-  const titres = await page.$$eval('.journal-entry__title', (nodes) => nodes.map((n) => n.textContent))
+  // Le titre d'une entrée n'a plus de classe à lui : depuis que le journal
+  // monte un éditeur par entrée, il EST le titre de la fiche et se dessine
+  // dans l'éditeur (`titleField`). Le sélectionner ailleurs ne rendait plus
+  // rien — et une boucle sur une liste vide ne dit rien non plus, sans jamais
+  // échouer, ce qui est la pire des deux façons de se taire.
+  const titres = await page.$$eval('.journal-entry .adestia-editor__title', (nodes) =>
+    nodes.map((n) => n.textContent),
+  )
   console.log('[blocs] entrées —', JSON.stringify(titres))
+  if (titres.length === 0) throw new Error('aucune entrée lisible : le sélecteur de titre a encore bougé')
 
   for (let index = 0; index < titres.length; index += 1) {
     const entree = page.locator('.journal-entry').nth(index)
@@ -41,16 +90,23 @@ export default async function scenario(bench) {
     await page.waitForTimeout(400)
   }
 
-  // Ouvrir n'est pas modifier : « Enregistrer » doit rester éteint tant que
-  // personne n'a tapé. Un éditeur qui s'annonce sale sur une page intacte
-  // invite à réécrire un fichier que son autre auteur vient peut-être d'écrire.
+  // Ouvrir n'est pas modifier. Il n'y a plus de bouton « Enregistrer » à
+  // trouver éteint — l'éditeur enregistre seul depuis le 10/09 — donc la
+  // question se pose au FICHIER : sa révision bouge-t-elle ? On relève avant,
+  // on ouvre le ✎, on attend plus longtemps que le délai d'auto-enregistrement,
+  // on recompare. Réécrire une page intacte, c'est écraser ce que son autre
+  // auteur vient peut-être d'y mettre.
+  const TEMOIN = '/api/pages/journal/atelier/2026-09-01-0800.md'
+  const avant = await bench.api(TEMOIN)
   const intacte = page.locator('.journal-entry').last()
   await intacte.locator('button[title="Modifier"]').click()
   await page.waitForSelector('.adestia-editor__surface .ProseMirror', { timeout: 15_000 })
-  await page.waitForTimeout(1200)
+  await page.waitForTimeout(3000)
+  const apres = await bench.api(TEMOIN)
   console.log(
-    '[propre] « Enregistrer » désactivé sur une page non touchée :',
-    await intacte.locator('button:has-text("Enregistrer")').isDisabled(),
+    '[propre] une entrée ouverte sans être touchée n’est pas réécrite :',
+    avant.revision === apres.revision,
+    `(${avant.revision} → ${apres.revision})`,
   )
   await intacte.locator('button:has-text("Terminé")').click()
   await page.waitForTimeout(400)
@@ -61,19 +117,30 @@ export default async function scenario(bench) {
   const temoin = page.locator('.journal-entry').last()
   await temoin.locator('button[title="Modifier"]').click()
   await page.waitForSelector('.adestia-editor__surface .ProseMirror', { timeout: 15_000 })
-  // Le curseur doit être au bout du BLOC : `shouldShow` refuse le menu partout
-  // ailleurs (`isSelectionAtEndOfNode`). `End` ne va qu'au bout de la ligne
-  // VISIBLE et coupe un mot en deux sur un paragraphe replié ; `Ctrl+A` puis
-  // une flèche ne replie pas la sélection dans ProseMirror et la frappe
-  // suivante REMPLACE le document — les deux essais sont dans l'historique.
-  // Un clic en bas à droite du dernier paragraphe fait ce qu'une main fait.
-  const fin = await temoin.locator('.ProseMirror p').last().boundingBox()
-  await page.mouse.click(fin.x + fin.width - 2, fin.y + fin.height - 4)
+  await poserLeCurseurAuBout(page, temoin)
   await page.keyboard.press('Enter')
   await page.keyboard.type('/')
   await page.waitForTimeout(900)
+  await bench.shoot(page, 'b2z-curseur-au-bout')
+  console.log(
+    '[curseur] au bout du dernier paragraphe, menu appelé —',
+    JSON.stringify(
+      await page.evaluate(() => {
+        const host = document.querySelector('.milkdown-slash-menu')
+        const r = host?.getBoundingClientRect()
+        const ouverts = [...document.querySelectorAll('.journal-entry')].map((li, i) =>
+          li.querySelector('.ProseMirror') ? i : null,
+        )
+        return {
+          menu: host ? { w: Math.round(r.width), h: Math.round(r.height), top: Math.round(r.top) } : null,
+          editeursOuverts: ouverts.filter((i) => i !== null),
+          dernierParagraphe: document.querySelector('.journal-entry:last-child .ProseMirror')?.innerText?.slice(-40),
+        }
+      }),
+    ),
+  )
   // Notre onglet, ouvert : c'est là que se voient les cinq glyphes ensemble.
-  await page.locator('.milkdown-slash-menu .tab-group li:has-text("Blocs")').click()
+  await page.locator('.milkdown-slash-menu .tab-group li:has-text("Blocs")').click({ timeout: 10_000 })
   await page.waitForTimeout(400)
   await bench.shoot(page, 'b3-menu-slash')
 
@@ -97,15 +164,17 @@ export default async function scenario(bench) {
   await bench.shoot(page, 'b4-menu-filtre')
   console.log('[menu filtré] ', JSON.stringify(await lire()))
 
-  // Insérer, enregistrer, relire le FICHIER. C'est la seule preuve que le nœud
-  // renommé se resérialise en `:::table` et pas en autre chose.
+  // Insérer, laisser l'éditeur enregistrer, relire le FICHIER. C'est la seule
+  // preuve que le nœud renommé se resérialise en `:::table` et pas en autre
+  // chose. On attend que l'éditeur le DISE plutôt qu'un délai au jugé : il
+  // part une seconde et demie après la frappe, et une attente fixe est une
+  // course déguisée en pause.
   await page.keyboard.press('Enter')
   await page.waitForTimeout(600)
   await bench.shoot(page, 'b5-bloc-insere')
-  await temoin.locator('button:has-text("Enregistrer")').click()
-  await page.waitForTimeout(1500)
+  await temoin.locator('.adestia-save--ok').waitFor({ timeout: 15_000 })
 
-  const ecrit = await bench.api('/api/pages/journal/atelier/2026-09-01-0800.md')
+  const ecrit = await bench.api(TEMOIN)
   console.log('[insertion] fichier après enregistrement —')
   console.log(String(ecrit.markdown ?? ecrit.error ?? JSON.stringify(ecrit)).trim())
 
@@ -114,12 +183,9 @@ export default async function scenario(bench) {
   const avecTable = page.locator('.journal-entry').nth(1)
   await avecTable.locator('button[title="Modifier"]').click()
   await page.waitForSelector('.adestia-editor__surface .ProseMirror', { timeout: 15_000 })
-  const bout = await avecTable.locator('.ProseMirror p').last().boundingBox()
-  await page.mouse.click(bout.x + bout.width - 2, bout.y + bout.height - 4)
+  await poserLeCurseurAuBout(page, avecTable)
   await page.keyboard.type(' Encore.')
-  await page.waitForTimeout(500)
-  await avecTable.locator('button:has-text("Enregistrer")').click()
-  await page.waitForTimeout(1500)
+  await avecTable.locator('.adestia-save--ok').waitFor({ timeout: 15_000 })
 
   const relu = await bench.api('/api/pages/journal/atelier/2026-09-05-0800.md')
   console.log('[aller-retour] fichier après enregistrement —')
@@ -136,12 +202,22 @@ export default async function scenario(bench) {
   const soir = nuit.locator('.journal-entry').last()
   await soir.locator('button[title="Modifier"]').click()
   await nuit.waitForSelector('.adestia-editor__surface .ProseMirror', { timeout: 15_000 })
-  const coin = await soir.locator('.ProseMirror p').last().boundingBox()
-  await nuit.mouse.click(coin.x + coin.width - 2, coin.y + coin.height - 4)
+  // Amenée à l'écran d'abord : la dernière entrée d'un journal de six est
+  // sous la ligne de flottaison, et un clic aux coordonnées d'un paragraphe
+  // qu'on n'a pas fait défiler tombe à côté — le menu ne s'ouvre pas, et
+  // l'attente qui suit expire trente secondes plus tard en accusant le menu.
+  await poserLeCurseurAuBout(nuit, soir)
   await nuit.keyboard.press('Enter')
   await nuit.keyboard.type('/')
   await nuit.waitForTimeout(900)
-  await nuit.locator('.milkdown-slash-menu .tab-group li:has-text("Blocs")').click()
+  // L'onglet, si on l'atteint — et sinon on photographie quand même ce que le
+  // noir donne, en le DISANT : une capture manquante n'apprend rien, et une
+  // panne tue qui se tait non plus.
+  try {
+    await nuit.locator('.milkdown-slash-menu .tab-group li:has-text("Blocs")').click({ timeout: 5000 })
+  } catch {
+    console.log('[sombre] onglet « Blocs » hors d’atteinte — capture du menu tel quel')
+  }
   await nuit.waitForTimeout(400)
   await bench.shoot(nuit, 'b6-menu-sombre')
 }

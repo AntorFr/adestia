@@ -100,7 +100,7 @@ export function identityFrom(
 
   return {
     // The SUBJECT, not the username: a username can be reassigned, and a
-    // conversation store keyed on one would hand someone else's threads to
+    // conversation store keyed on one would hand someone else's conversations to
     // whoever inherits the name.
     userId: subject,
     displayName: typeof name === 'string' ? name : subject,

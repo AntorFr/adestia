@@ -120,7 +120,7 @@ describe('translation', () => {
   })
 
   it('keeps the session id it already knows when the result states a blank one', () => {
-    // The failure was a thread with no past, and an empty string is how it
+    // The failure was a conversation with no past, and an empty string is how it
     // looked. `??` does not skip one, so a CLI sending the key empty would
     // overwrite a good id and bring the bug straight back.
     const events = run([
@@ -661,7 +661,7 @@ describe('driver', () => {
   })
 
   it('stops a turn told to stop before it spawned', async () => {
-    // The desk admits a turn, writes the message to the thread, THEN starts
+    // The desk admits a turn, writes the message to the conversation, THEN starts
     // it. A stop pressed inside that window must not fall through the floor.
     const fake = fakeCopilot()
     const driver = new CopilotDriver({ home: '/x', spawnImpl: fake.spawnImpl })

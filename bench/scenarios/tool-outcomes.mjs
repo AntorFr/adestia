@@ -16,7 +16,7 @@
  * SHELL's half: given the events, does it draw them. The driver's half is
  * pinned by the unit tests in packages/drivers/test.
  */
-import { writeFile } from 'node:fs/promises'
+import { appendFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 /** The trace is folded by default; the outcomes are the point, so open it. */
@@ -33,6 +33,16 @@ export default async function scenario(bench) {
     body: JSON.stringify({ title: 'Deux lectures, une qui rate' }),
   })
   const threads = await bench.threadsDir()
+  await appendFile(
+    join(threads, `${live.id}.jsonl`),
+    bench.line({
+      type: 'message',
+      id: 'u1',
+      role: 'user',
+      text: 'Relis les deux fiches du meuble.',
+      at: '2026-08-31T20:05:00.000Z',
+    }),
+  )
 
   // The reload half: a settled turn whose tools carry their outcome. Before
   // the fix this record was unreachable — `ok` never reached the store.
@@ -82,6 +92,30 @@ export default async function scenario(bench) {
   await page.waitForTimeout(500)
   await bench.shoot(page, '3-both-settled')
 
+  // The desk files the turn BEFORE it ends the stream — exactly the lines its
+  // finish closure appends — and the shell reads them back at settle: what
+  // stays on screen after a turn is what the store holds, never the fragment.
+  await appendFile(
+    join(threads, `${live.id}.jsonl`),
+    [
+      { type: 'message', id: 'a1', role: 'agent', text: 'Je lis les deux fiches.', at: '2026-08-31T20:05:02.000Z' },
+      {
+        type: 'message',
+        id: 'a2',
+        role: 'agent',
+        text: ' La seconde est introuvable.',
+        at: '2026-08-31T20:05:06.000Z',
+        tools: [
+          { name: 'Read', target: 'diy/meuble-tiroirs.md', ok: false },
+          { name: 'Read', target: 'diy/meuble-poubelle.md', ok: true },
+        ],
+        usage: { contextTokens: 5100 },
+      },
+      { type: 'session', sessionId: 's1', at: '2026-08-31T20:05:06.001Z' },
+    ]
+      .map(bench.line)
+      .join(''),
+  )
   bench.emit({ type: 'result', sessionId: 's1', stopped: false, usage: { contextTokens: 5100 } })
   bench.endTurn()
   await page.waitForTimeout(900)

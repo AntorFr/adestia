@@ -16,7 +16,7 @@ export interface McpConnection {
 }
 
 /**
- * Which sign-in cards a thread should raise.
+ * Which sign-in cards a conversation should raise.
  *
  * This shipped as "a tool call failed against a disconnected server" — a
  * trigger that could never fire: a disconnected `signIn` server is OMITTED
@@ -24,12 +24,12 @@ export interface McpConnection {
  * production, by the agent saying "I have no such tool" while the card
  * stayed down.
  *
- * So the trigger is the STATE, scoped to where it matters: a thread the
+ * So the trigger is the STATE, scoped to where it matters: a conversation the
  * person is actually talking in (the agent has answered, or is answering)
  * while a sign-in server has no key for them. That puts the card under the
  * very reply where the agent says it cannot act — as close to "at the first
  * demand" as an omitted server allows — and a dismissal keeps it from
- * nagging the threads that never talk about that world. Once connected, the
+ * nagging the conversations that never talk about that world. Once connected, the
  * state clears and the card is gone everywhere for good.
  */
 export function signInAsks(

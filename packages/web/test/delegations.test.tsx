@@ -3,7 +3,7 @@
  * The delegations screen — a window on the delegation channel, never a desk.
  *
  * What matters here: the grouping mirrors the server's namespace seam, the
- * counted lede follows the settings-tile doctrine, and the open thread is
+ * counted lede follows the settings-tile doctrine, and the open conversation is
  * READ-ONLY — no composer, no input, nothing to type into.
  */
 
@@ -20,7 +20,7 @@ import {
 
 const row = (overrides: Partial<DelegationRow> = {}): DelegationRow => ({
   caller: 'alfred',
-  id: 'thread-1',
+  id: 'conversation-1',
   title: 'Ranger les fiches',
   updatedAt: '2026-09-06T10:00:00.000Z',
   ...overrides,
@@ -40,12 +40,12 @@ describe('grouping', () => {
 
 describe('the tile chips', () => {
   it('counts, and mentions running only when something runs', () => {
-    // Chips like the neighbouring tiles' — "3 threads" is a fact; a chip
+    // Chips like the neighbouring tiles' — "3 conversations" is a fact; a chip
     // that always said "0 running" is a chip nobody reads.
     const t = (key: string) => key
-    expect(delegChips([row()], t)).toEqual([{ text: '1 thread' }])
+    expect(delegChips([row()], t)).toEqual([{ text: '1 conversation' }])
     expect(delegChips([row(), row({ id: 't2', turn: 'running' })], t)).toEqual([
-      { text: '2 threads' },
+      { text: '2 conversations' },
       { text: '1 running' },
     ])
   })
@@ -62,7 +62,7 @@ describe('the timestamp', () => {
 
 function apiFetch(
   rows: readonly DelegationRow[],
-  thread?: { caller: string; id: string; title: string; messages: unknown[] },
+  conversation?: { caller: string; id: string; title: string; messages: unknown[] },
 ): typeof fetch {
   return ((url: string) => {
     if (String(url) === '/api/delegations') {
@@ -73,15 +73,15 @@ function apiFetch(
       } as unknown as Response)
     }
     return Promise.resolve({
-      ok: thread !== undefined,
-      status: thread ? 200 : 404,
-      json: () => Promise.resolve(thread ?? { error: 'no such delegation' }),
+      ok: conversation !== undefined,
+      status: conversation ? 200 : 404,
+      json: () => Promise.resolve(conversation ?? { error: 'no such delegation' }),
     } as unknown as Response)
   }) as unknown as typeof fetch
 }
 
 describe('the list', () => {
-  it('shows each caller as a shelf with its threads', async () => {
+  it('shows each caller as a shelf with its conversations', async () => {
     render(
       <Delegations
         onOpen={() => {}}
@@ -99,7 +99,7 @@ describe('the list', () => {
     render(<Delegations onOpen={onOpen} fetchImpl={apiFetch([row()])} />)
     await waitFor(() => expect(screen.getByText('Ranger les fiches')).toBeTruthy())
     fireEvent.click(screen.getByText('Ranger les fiches'))
-    expect(onOpen).toHaveBeenCalledWith('alfred/thread-1')
+    expect(onOpen).toHaveBeenCalledWith('alfred/conversation-1')
   })
 
   it('says out loud when nothing has been delegated yet', async () => {
@@ -112,10 +112,10 @@ describe('the list', () => {
   })
 })
 
-describe('the open thread', () => {
-  const THREAD = {
+describe('the open conversation', () => {
+  const CONVERSATION = {
     caller: 'alfred',
-    id: 'thread-1',
+    id: 'conversation-1',
     title: 'Ranger les fiches',
     messages: [
       { id: 'm1', role: 'user', text: 'range les fiches', at: '2026-09-06T10:00:00Z' },
@@ -124,15 +124,15 @@ describe('the open thread', () => {
   }
 
   it('renders the transcript with the chat’s own bubbles, and says whose it is', async () => {
-    render(<Delegations open="alfred/thread-1" onOpen={() => {}} fetchImpl={apiFetch([], THREAD)} />)
+    render(<Delegations open="alfred/conversation-1" onOpen={() => {}} fetchImpl={apiFetch([], CONVERSATION)} />)
     await waitFor(() => expect(screen.getByText('range les fiches')).toBeTruthy())
     expect(screen.getByText('fait.')).toBeTruthy()
     expect(screen.getByText(/belongs to/)).toBeTruthy()
   })
 
-  it('offers NOTHING to type into — the thread belongs to the calling agent', async () => {
+  it('offers NOTHING to type into — the conversation belongs to the calling agent', async () => {
     const { container } = render(
-      <Delegations open="alfred/thread-1" onOpen={() => {}} fetchImpl={apiFetch([], THREAD)} />,
+      <Delegations open="alfred/conversation-1" onOpen={() => {}} fetchImpl={apiFetch([], CONVERSATION)} />,
     )
     await waitFor(() => expect(screen.getByText('fait.')).toBeTruthy())
     expect(container.querySelector('textarea')).toBeNull()

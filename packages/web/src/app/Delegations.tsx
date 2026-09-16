@@ -1,8 +1,8 @@
 /**
  * The delegations screen — what other agents asked this one to do.
  *
- * A window, not a desk. These threads belong to the CALLING agents'
- * conversations: a person typing into one would inject a turn into a thread
+ * A window, not a desk. These conversations belong to the CALLING agents: a
+ * person typing into one would inject a turn into a conversation
  * its owner believes it holds alone, so there is no composer here and never
  * will be. What a person gets is the half that was missing entirely — seeing
  * what alfred was asked, what it answered, and whether something is running
@@ -12,7 +12,7 @@
  * is the agents this instance REACHES, this one is the agents that reach IT —
  * two faces of the same wiring, side by side.
  *
- * Grouped by caller because the store is: the channel namespaces threads per
+ * Grouped by caller because the store is: the channel namespaces conversations per
  * calling agent (that separation is the server's authorization boundary, not
  * a display choice — this screen merely shows the seam that already exists).
  */
@@ -27,11 +27,11 @@ export interface DelegationRow {
   readonly id: string
   readonly title: string
   readonly updatedAt: string
-  /** Present only while the thread's turn runs — computed, never stored. */
+  /** Present only while the conversation's turn runs — computed, never stored. */
   readonly turn?: 'running' | 'waiting'
 }
 
-export interface DelegationThread {
+export interface Delegation {
   readonly caller: string
   readonly id: string
   readonly title: string
@@ -78,7 +78,7 @@ export function delegChips(
 ): { text: string }[] {
   const running = rows.filter((row) => row.turn !== undefined).length
   return [
-    { text: `${rows.length} ${rows.length === 1 ? t('thread') : t('threads')}` },
+    { text: `${rows.length} ${rows.length === 1 ? t('conversation') : t('conversations')}` },
     ...(running > 0 ? [{ text: t('%n running').replace('%n', String(running)) }] : []),
   ]
 }
@@ -110,7 +110,7 @@ export function useDelegationRows(
   return rows
 }
 
-/** When a thread last moved, in the reader's locale — date only once it is
+/** When a conversation last moved, in the reader's locale — date only once it is
     old news: the hour matters on the day itself and is noise a week later. */
 export function lastMoved(updatedAt: string, locale?: string, now = new Date()): string {
   const at = new Date(updatedAt)
@@ -121,7 +121,7 @@ export function lastMoved(updatedAt: string, locale?: string, now = new Date()):
 }
 
 export interface DelegationsProps {
-  /** The open thread, from the address: `<caller>/<id>`. */
+  /** The open conversation, from the address: `<caller>/<id>`. */
   readonly open?: string | undefined
   readonly onOpen: (item: string | undefined) => void
   readonly fetchImpl?: typeof fetch
@@ -137,7 +137,7 @@ export function Delegations({
   locale,
 }: DelegationsProps) {
   const [rows, setRows] = useState<readonly DelegationRow[] | undefined>()
-  const [thread, setThread] = useState<DelegationThread | undefined>()
+  const [delegation, setDelegation] = useState<Delegation | undefined>()
 
   useEffect(() => {
     let live = true
@@ -158,7 +158,7 @@ export function Delegations({
 
   useEffect(() => {
     if (!open) {
-      setThread(undefined)
+      setDelegation(undefined)
       return
     }
     let live = true
@@ -168,9 +168,9 @@ export function Delegations({
           `/api/delegations/${open.split('/').map(encodeURIComponent).join('/')}`,
         )
         if (!response.ok) return
-        if (live) setThread((await response.json()) as DelegationThread)
+        if (live) setDelegation((await response.json()) as Delegation)
       } catch {
-        /* stays on the list; the address still names the thread */
+        /* stays on the list; the address still names the conversation */
       }
     })()
     return () => {
@@ -178,7 +178,7 @@ export function Delegations({
     }
   }, [fetchImpl, open])
 
-  if (open && thread) {
+  if (open && delegation) {
     return (
       <div className="adestia-deleg">
         <header className="adestia-chead">
@@ -186,16 +186,16 @@ export function Delegations({
             🤝
           </span>
           <div>
-            <h1 className="adestia-chead__title">{thread.title}</h1>
-            {/* Why there is no composer under this thread, said where the
+            <h1 className="adestia-chead__title">{delegation.title}</h1>
+            {/* Why there is no composer under this conversation, said where the
                 composer would be looked for. */}
             <p className="adestia-chead__lede">
-              {t('Read-only — this conversation belongs to')} {thread.caller}
+              {t('Read-only — this conversation belongs to')} {delegation.caller}
             </p>
           </div>
         </header>
-        <div className="adestia-chat__thread adestia-deleg__thread">
-          {thread.messages.map((message) => (
+        <div className="adestia-chat__conversation adestia-deleg__conversation">
+          {delegation.messages.map((message) => (
             <Bubble key={message.id} message={toMessage(message)} t={t} />
           ))}
         </div>
@@ -217,19 +217,19 @@ export function Delegations({
 
       {rows !== undefined && rows.length === 0 && (
         <p className="adestia-deleg__empty">
-          {t('No delegated task yet — the threads other agents open here will appear by caller.')}
+          {t('No delegated task yet — the conversations other agents open here will appear by caller.')}
         </p>
       )}
 
       {groupByCaller(rows ?? []).map((group) => (
         <section key={group.caller} className="adestia-deleg__group">
           <h2 className="adestia-deleg__caller">{group.caller}</h2>
-          <ul className="adestia-threads">
+          <ul className="adestia-conversations">
             {group.rows.map((row) => (
               <li key={row.id}>
                 <button
                   type="button"
-                  className="adestia-threads__item"
+                  className="adestia-conversations__item"
                   onClick={() => onOpen(`${group.caller}/${row.id}`)}
                 >
                   {/* The chat's dot vocabulary: this list answers the same

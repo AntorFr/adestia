@@ -26,18 +26,18 @@ export interface ConversationMeta {
   readonly id: string
   readonly title: string
   readonly updatedAt: string
-  /** The CLI session this thread resumes; absent once it has expired. */
+  /** The CLI session this conversation resumes; absent once it has expired. */
   readonly sessionId?: string
   /**
    * Put away rather than deleted.
    *
-   * A thread nobody needs today is not a thread nobody will want next month,
+   * A conversation nobody needs today is not a conversation nobody will want next month,
    * and the only tool for that was a delete that took the whole record with
    * it. Archiving hides it from the list and keeps every word.
    */
   readonly archived?: boolean
   /**
-   * What the desk is doing for this thread right now, when anything.
+   * What the desk is doing for this conversation right now, when anything.
    *
    * Computed by the server per request, never stored: 'running' feeds the
    * working dot, 'waiting' the one that says the engine is blocked on a

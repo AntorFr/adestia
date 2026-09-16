@@ -15,7 +15,7 @@
  *    with the process too, and replaying it behind the caller's back would be
  *    worse than losing it.
  *  - a `task_id` names the CONVERSATION a job ran in. It lives on disk with
- *    the thread (see `delegations.ts`), survives restarts, and passing it
+ *    the conversation (see `delegations.ts`), survives restarts, and passing it
  *    back to `ask` continues the same conversation — the predecessor's
  *    resume contract (agent-gw's `task_id`), rebuilt on this product's own
  *    conversation machinery.
@@ -289,9 +289,9 @@ export function toolsFor(config: McpConfig): readonly McpTool[] {
  *
  * Same reasoning as a scheduled turn: without a frame the agent answers as
  * though a person were reading, and asks questions that will reach a machine
- * whose only job is to poll for a result. What the THREAD stores is the raw
+ * whose only job is to poll for a result. What the CONVERSATION stores is the raw
  * request — the frame is fuel for the engine, not transcript for the reader
- * (the delegations screen would otherwise open every thread on three lines of
+ * (the delegations screen would otherwise open every conversation on three lines of
  * liturgy).
  */
 export function frameDelegated(prompt: string, from: string): string {

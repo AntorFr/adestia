@@ -83,7 +83,7 @@ export class SecretStore {
  * waiting. The predecessor kept a single active session for exactly this
  * reason, and it was right.
  */
-export interface ArmingSession {
+export interface ArmingFlow {
   readonly id: string
   readonly driverId: string
   readonly startedAt: number
@@ -92,12 +92,12 @@ export interface ArmingSession {
 
 export const ARMING_TTL_MS = 10 * 60 * 1000
 
-export class ArmingSessions {
-  #active: ArmingSession | undefined
+export class ArmingFlows {
+  #active: ArmingFlow | undefined
 
   /** @param now injected so the expiry is testable without waiting ten minutes. */
-  start(driverId: string, now: number = Date.now()): ArmingSession {
-    const session: ArmingSession = {
+  start(driverId: string, now: number = Date.now()): ArmingFlow {
+    const flow: ArmingFlow = {
       id: randomUUID(),
       driverId,
       startedAt: now,
@@ -105,11 +105,11 @@ export class ArmingSessions {
     }
     // Replacing rather than refusing: a user who abandoned a flow and started
     // another should not have to wait ten minutes for the first to lapse.
-    this.#active = session
-    return session
+    this.#active = flow
+    return flow
   }
 
-  get(id: string, now: number = Date.now()): ArmingSession | undefined {
+  get(id: string, now: number = Date.now()): ArmingFlow | undefined {
     if (!this.#active || this.#active.id !== id) return undefined
     if (this.#active.expiresAt <= now) {
       this.#active = undefined
@@ -122,7 +122,7 @@ export class ArmingSessions {
     if (this.#active?.id === id) this.#active = undefined
   }
 
-  get current(): ArmingSession | undefined {
+  get current(): ArmingFlow | undefined {
     return this.#active
   }
 }

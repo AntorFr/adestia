@@ -8,7 +8,7 @@
 
 import type { FastifyInstance } from 'fastify'
 
-import { BusyThreadError, type DelegatedResult } from './delegations.js'
+import { BusyConversationError, type DelegatedResult } from './delegations.js'
 import {
   JobRegistry,
   bearerOf,
@@ -32,9 +32,9 @@ export interface DelegationPort {
     caller: string,
     request: string,
     taskId: string | undefined,
-  ): Promise<{ threadId: string } | { unknown: true }>
-  busy(caller: string, threadId: string): boolean
-  run(caller: string, threadId: string, request: string): Promise<DelegatedResult>
+  ): Promise<{ conversationId: string } | { unknown: true }>
+  busy(caller: string, conversationId: string): boolean
+  run(caller: string, conversationId: string, request: string): Promise<DelegatedResult>
 }
 
 export interface McpDependencies {
@@ -177,8 +177,8 @@ export function registerMcp(app: FastifyInstance, deps: McpDependencies): void {
           const from = callerOf(request.headers['x-adestia-caller'])
           const callbackUrl = callbackUrlOf(request.headers['x-adestia-callback-url'])
 
-          // The thread first: an unknown task_id must be refused before a job
-          // exists to poll, and a fresh thread's id is part of no answer until
+          // The conversation first: an unknown task_id must be refused before a job
+          // exists to poll, and a fresh conversation's id is part of no answer until
           // its first job settles.
           const opened = await channel.open(from, prompt, taskId)
           if ('unknown' in opened) {
@@ -191,8 +191,8 @@ export function registerMcp(app: FastifyInstance, deps: McpDependencies): void {
               ),
             )
           }
-          if (taskId && channel.busy(from, opened.threadId)) {
-            // One job per thread at a time: merging two asks into one turn
+          if (taskId && channel.busy(from, opened.conversationId)) {
+            // One job per conversation at a time: merging two asks into one turn
             // would owe two answers and hold one. Distinct from the global
             // `busy` below — this one clears when THIS conversation settles.
             return rpcResult(
@@ -208,7 +208,7 @@ export function registerMcp(app: FastifyInstance, deps: McpDependencies): void {
           const job = jobs.create({
             prompt,
             from,
-            taskId: opened.threadId,
+            taskId: opened.conversationId,
             notify,
             ...(callbackUrl ? { callbackUrl } : {}),
           })
@@ -219,7 +219,7 @@ export function registerMcp(app: FastifyInstance, deps: McpDependencies): void {
           // across a timeout neither side controls. The ping rides the same
           // detachment — settled first, delivered second, forgotten third.
           void channel
-            .run(from, opened.threadId, prompt)
+            .run(from, opened.conversationId, prompt)
             .then((result) => {
               if (result.failure) jobs.fail(job.id, result.failure)
               else jobs.finish(job.id, result.text)
@@ -227,7 +227,7 @@ export function registerMcp(app: FastifyInstance, deps: McpDependencies): void {
             .catch((error: Error) => {
               jobs.fail(
                 job.id,
-                error instanceof BusyThreadError
+                error instanceof BusyConversationError
                   ? 'the conversation was already working; try again once it settles'
                   : error.message,
               )

@@ -26,7 +26,7 @@ const config = (overrides: Partial<McpConfig> = {}): McpConfig => ({
 const seed = (overrides: Partial<Parameters<JobRegistry['create']>[0]> = {}) => ({
   prompt: 'do a thing',
   from: 'alfred',
-  taskId: 'thread-1',
+  taskId: 'conversation-1',
   notify: false,
   ...overrides,
 })
@@ -130,7 +130,7 @@ describe('the job registry', () => {
 
     expect(jobs.pending()).toBe(1)
     jobs.finish(job.id, 'done that')
-    expect(jobs.get(job.id)).toMatchObject({ state: 'done', result: 'done that', taskId: 'thread-1' })
+    expect(jobs.get(job.id)).toMatchObject({ state: 'done', result: 'done that', taskId: 'conversation-1' })
     expect(jobs.pending()).toBe(0)
   })
 
@@ -184,23 +184,23 @@ describe('the delegation frame', () => {
 })
 
 /**
- * A channel with no desk and no disk: fresh threads get counted ids, run() is
+ * A channel with no desk and no disk: fresh conversations get counted ids, run() is
  * whatever the test needs it to be.
  */
 function fakeChannel(
   run: DelegationPort['run'] = async () => ({ text: 'the answer' }),
   overrides: Partial<DelegationPort> = {},
-): DelegationPort & { runs: { caller: string; threadId: string; request: string }[] } {
-  const runs: { caller: string; threadId: string; request: string }[] = []
+): DelegationPort & { runs: { caller: string; conversationId: string; request: string }[] } {
+  const runs: { caller: string; conversationId: string; request: string }[] = []
   let created = 0
   return {
     runs,
     open: async (_caller, _request, taskId) =>
-      taskId === undefined ? { threadId: `thread-${++created}` } : { unknown: true as const },
+      taskId === undefined ? { conversationId: `conversation-${++created}` } : { unknown: true as const },
     busy: () => false,
-    run: async (caller, threadId, request) => {
-      runs.push({ caller, threadId, request })
-      return run(caller, threadId, request)
+    run: async (caller, conversationId, request) => {
+      runs.push({ caller, conversationId, request })
+      return run(caller, conversationId, request)
     },
     ...overrides,
   }
@@ -382,13 +382,13 @@ describe('the endpoint', () => {
       params: { name: 'ask_skippy_status', arguments: { job_id: jobId } },
     })
     const text = collected.json().result.content[0].text as string
-    expect(text).toContain('task_id: "thread-1"')
+    expect(text).toContain('task_id: "conversation-1"')
     expect(text).toContain('ask_skippy')
     await app.close()
   })
 
   it('refuses a task_id that names no conversation, before any job exists', async () => {
-    // Expired store, another caller's thread, a typo: all one answer, and no
+    // Expired store, another caller's conversation, a typo: all one answer, and no
     // job to poll for it.
     const { app } = await build()
     const response = await call(app, {
@@ -401,18 +401,18 @@ describe('the endpoint', () => {
     await app.close()
   })
 
-  it('refuses a second ask while the thread still works the first', async () => {
-    // One job per thread at a time: two asks merged into one turn would owe
+  it('refuses a second ask while the conversation still works the first', async () => {
+    // One job per conversation at a time: two asks merged into one turn would owe
     // two answers and hold one.
     const channel = fakeChannel(async () => ({ text: 'ok' }), {
-      open: async (_caller, _request, taskId) => ({ threadId: taskId ?? 'fresh' }),
+      open: async (_caller, _request, taskId) => ({ conversationId: taskId ?? 'fresh' }),
       busy: () => true,
     })
     const { app } = await build({}, channel)
     const response = await call(app, {
       method: 'tools/call',
       id: 1,
-      params: { name: 'ask_skippy', arguments: { prompt: 'more', task_id: 'thread-9' } },
+      params: { name: 'ask_skippy', arguments: { prompt: 'more', task_id: 'conversation-9' } },
     })
     expect(response.json().result).toMatchObject({ isError: true })
     expect(response.json().result.content[0].text).toContain('still working')

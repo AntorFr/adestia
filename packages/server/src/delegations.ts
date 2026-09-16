@@ -2,24 +2,24 @@
  * The delegation channel — inbound MCP work as a channel of its own.
  *
  * A delegated task and a chat message run through the SAME machinery — the
- * turn desk for chaining and capacity, the conversation store for the thread,
+ * turn desk for chaining and capacity, the conversation store for the record,
  * the session line for resume — but they are not the same kind of thing, and
  * this module is where the differences live rather than as conditionals
  * scattered around a shared path:
  *
- *  - the channel's threads belong to CALLERS (agent names), not to users, and
+ *  - the channel's conversations belong to CALLERS (agent names), not to users, and
  *    sit in their own store under `dataDir/delegations` — a task_id resolves
  *    only inside its channel, so an agent can never resume a person's chat
- *    thread and a person's client can never open a delegation by id through
+ *    conversation and a person's client can never open a delegation by id through
  *    the chat routes. The separation is the authorization boundary, not a
  *    display preference.
  *  - a delegated turn is unattended and framed (`frameDelegated`); a chat
  *    turn is neither.
- *  - two asks on one thread do not merge the way queued chat messages do:
- *    each ask is one job owing one answer, so a thread that is still working
+ *  - two asks on one conversation do not merge the way queued chat messages do:
+ *    each ask is one job owing one answer, so a conversation that is still working
  *    refuses the second ask instead of blending both into a single turn.
  *
- * Threads are stored raw: the request as the caller wrote it, the answer as
+ * Conversations are stored raw: the request as the caller wrote it, the answer as
  * the agent wrote it. The frame is applied at the driver boundary only — it
  * is fuel, not transcript (see `frameDelegated`).
  */
@@ -37,7 +37,7 @@ export interface DelegatedResult {
   readonly failure?: string | undefined
 }
 
-/** A thread row for the delegations screen: whose it is, and whether it runs. */
+/** A conversation row for the delegations screen: whose it is, and whether it runs. */
 export interface DelegationRow extends ConversationMeta {
   readonly caller: string
   readonly turn?: 'running' | 'waiting'
@@ -49,7 +49,7 @@ export interface DelegationChannelOptions {
   readonly roots?: readonly string[] | undefined
 }
 
-/** How a thread is named in the list: the request's first words, not a serial
+/** How a conversation is named in the list: the request's first words, not a serial
     number. Cut on a word so the tile never ends mid-syllable. */
 export function titleFor(request: string): string {
   const line = request.trim().split('\n', 1)[0] ?? ''
@@ -75,24 +75,24 @@ export class DelegationChannel {
     this.#roots = options.roots
   }
 
-  #key(caller: string, threadId: string): string {
+  #key(caller: string, conversationId: string): string {
     // The channel's own key family. Prefixed like the chat's `user/c:id` keys
     // but never colliding with them: a user id may be anything, but the desk
     // only ever sees `mcp:` from here.
-    return `mcp:${caller}/c:${threadId}`
+    return `mcp:${caller}/c:${conversationId}`
   }
 
-  /** Whether this thread is mid-turn — asked at the door, so a second ask on
-      a working thread is refused before a job is even minted. */
-  busy(caller: string, threadId: string): boolean {
-    return this.#desk.activeFor(this.#key(caller, threadId)) !== undefined
+  /** Whether this conversation is mid-turn — asked at the door, so a second ask on
+      a working conversation is refused before a job is even minted. */
+  busy(caller: string, conversationId: string): boolean {
+    return this.#desk.activeFor(this.#key(caller, conversationId)) !== undefined
   }
 
   /**
-   * The thread this ask will run in.
+   * The conversation this ask will run in.
    *
-   * No task_id: a fresh thread, titled after the request. A task_id that
-   * names nothing (expired store, other caller's thread, typo) is refused as
+   * No task_id: a fresh conversation, titled after the request. A task_id that
+   * names nothing (expired store, other caller's conversation, typo) is refused as
    * one thing — from the caller's side those are all "there is no such
    * conversation to continue".
    */
@@ -100,67 +100,67 @@ export class DelegationChannel {
     caller: string,
     request: string,
     taskId: string | undefined,
-  ): Promise<{ threadId: string } | { unknown: true }> {
+  ): Promise<{ conversationId: string } | { unknown: true }> {
     if (taskId === undefined) {
       const meta = await this.#store.create(caller, titleFor(request))
-      return { threadId: meta.id }
+      return { conversationId: meta.id }
     }
     const existing = await this.#store.read(caller, taskId)
     if (!existing) return { unknown: true }
-    return { threadId: taskId }
+    return { conversationId: taskId }
   }
 
   /**
    * One delegated turn, through the same desk as everything else.
    *
    * The desk gives this channel what the predecessor's global lock gave it —
-   * no two turns of one conversation at once — but per thread instead of per
+   * no two turns of one conversation at once — but per conversation instead of per
    * body. What it deliberately does NOT reuse is the chat's queueing: a
-   * second ask while the thread runs is refused (`busy`), because two jobs
+   * second ask while the conversation runs is refused (`busy`), because two jobs
    * merged into one turn would owe two answers and hold one.
    *
    * Resume is best-effort the way the design settled it: when a stored
-   * session has expired under the thread, the turn is retried ONCE with no
+   * session has expired under the conversation, the turn is retried ONCE with no
    * session — but only if the failed attempt produced nothing at all. A turn
    * that half-ran and died may have had side effects, and silently running it
    * again is the one thing worse than failing.
    */
-  async run(caller: string, threadId: string, request: string): Promise<DelegatedResult> {
-    const key = this.#key(caller, threadId)
+  async run(caller: string, conversationId: string, request: string): Promise<DelegatedResult> {
+    const key = this.#key(caller, conversationId)
     if (this.#desk.activeFor(key)) {
-      throw new BusyThreadError(threadId)
+      throw new BusyConversationError(conversationId)
     }
 
-    const thread = await this.#store.read(caller, threadId)
-    const sessionId = thread?.sessionId
+    const conversation = await this.#store.read(caller, conversationId)
+    const sessionId = conversation?.sessionId
 
-    await this.#store.append(caller, threadId, {
+    await this.#store.append(caller, conversationId, {
       id: randomUUID(),
       role: 'user',
       text: request,
       at: new Date().toISOString(),
     })
 
-    const first = await this.#turn(caller, threadId, key, request, sessionId)
+    const first = await this.#turn(caller, conversationId, key, request, sessionId)
     // No parts AT ALL — not merely no text: a turn that called tools without
     // speaking has side effects too, and must not run twice.
     const retriable =
       first.failure !== undefined && first.outcome.parts.length === 0 && sessionId !== undefined
     if (!retriable) {
-      await this.#store.recordOutcome(caller, threadId, first.outcome)
+      await this.#store.recordOutcome(caller, conversationId, first.outcome)
       return { text: first.text, ...(first.failure ? { failure: first.failure } : {}) }
     }
 
     // The stored session is the prime suspect (expired, pruned, another
     // machine): nothing ran, so a fresh start repeats nothing.
-    const second = await this.#turn(caller, threadId, key, request, undefined)
-    await this.#store.recordOutcome(caller, threadId, second.outcome)
+    const second = await this.#turn(caller, conversationId, key, request, undefined)
+    await this.#store.recordOutcome(caller, conversationId, second.outcome)
     return { text: second.text, ...(second.failure ? { failure: second.failure } : {}) }
   }
 
   async #turn(
     caller: string,
-    threadId: string,
+    conversationId: string,
     key: string,
     request: string,
     sessionId: string | undefined,
@@ -190,7 +190,7 @@ export class DelegationChannel {
     if (admission.mode === 'queued') {
       // `activeFor` said idle just above; a chain appearing in between means
       // another ask raced this one. Same answer as finding it running.
-      throw new BusyThreadError(threadId)
+      throw new BusyConversationError(conversationId)
     }
     const job = admission.start(spec)
     await settled
@@ -207,7 +207,7 @@ export class DelegationChannel {
   }
 
 
-  /** Every caller's threads, flat, for the screen — which groups them itself.
+  /** Every caller's conversations, flat, for the screen — which groups them itself.
       The status dot is computed against the desk per request, never stored. */
   async list(): Promise<readonly DelegationRow[]> {
     const rows: DelegationRow[] = []
@@ -224,14 +224,14 @@ export class DelegationChannel {
     return rows.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
   }
 
-  async read(caller: string, threadId: string): Promise<Conversation | undefined> {
-    return this.#store.read(caller, threadId)
+  async read(caller: string, conversationId: string): Promise<Conversation | undefined> {
+    return this.#store.read(caller, conversationId)
   }
 }
 
-/** Thrown when an ask lands on a thread already working its previous one. */
-export class BusyThreadError extends Error {
-  constructor(readonly threadId: string) {
-    super(`conversation ${threadId} is still working on its previous request`)
+/** Thrown when an ask lands on a conversation already working its previous one. */
+export class BusyConversationError extends Error {
+  constructor(readonly conversationId: string) {
+    super(`conversation ${conversationId} is still working on its previous request`)
   }
 }

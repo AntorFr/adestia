@@ -2,10 +2,11 @@
  * The Fastify application.
  *
  * One rule governs this file: **there is a single spawn site.** Every agent
- * turn — chat, scheduled, delegated over MCP — goes through `runTurn` here, so
- * the driver's env contract, the concurrency cap and the transcript are
- * applied once. The predecessor had two spawn paths and forgetting one broke a
- * whole channel silently for days.
+ * turn — chat, scheduled, delegated over MCP, a callback's wake — goes through
+ * the desk built here, so the driver's env contract, the concurrency cap, the
+ * preamble and the transcript are applied once. The predecessor had two spawn
+ * paths and forgetting one broke a whole channel silently for days; this
+ * file had two as well for a while, and the preamble had to be added twice.
  */
 
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify'
@@ -35,9 +36,9 @@ import { registerUpload } from './routes/upload.js'
 import { foreignRoots, pagesService, resolveStores } from './stores.js'
 import { registerEvents } from './watch.js'
 import { mountPluginApis } from './plugin-host.js'
-import { ArmingSessions, SecretStore } from './secrets.js'
+import { ArmingFlows, SecretStore } from './secrets.js'
 import { registerStatic } from './static.js'
-import { TurnDesk } from './turns.js'
+import { TurnDesk, type TurnOutcome } from './turns.js'
 import { baseManifest, withInstanceName, type WebManifest } from './webmanifest.js'
 
 // Two helpers the tests reach through this module, where they always lived.
@@ -136,7 +137,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   // one client registration per server, one rotating refresh key per person.
   const mcpSignIn = deps.mcpSignIn ?? new McpSignIn(config.dataDir)
   const inbox = new AttachmentInbox(config.dataDir, config.attachments)
-  const arming = new ArmingSessions()
+  const arming = new ArmingFlows()
   const descriptor: DriverDescriptor = await driver.describe()
 
   app.decorateRequest('identity', null)
@@ -238,22 +239,26 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
    * slot for five minutes waiting on a person who was never there.
    */
   const runUnattended = async (prompt: string): Promise<void> => {
-    if (!limiter.tryAcquire()) throw new Error('too many turns running')
-    try {
-      for await (const event of driver.runTurn({
-        // The same preamble the desk applies. A scheduled note and a callback
-        // wake are the turns nobody reads, so a guess made in one is a guess
-        // nobody is there to contradict.
-        prompt: introduce ? introduce(prompt) : prompt,
+    // Through the desk, like every other turn: same cap, same preamble, same
+    // event log. A LOOSE job — no key — because nothing will ever attach to
+    // it or queue behind it; a full house refuses (`TurnCapacityError`)
+    // rather than queues, which is the refusal the callers already log.
+    const admission = desk.admit()
+    if (admission.mode !== 'run') throw new Error('a loose turn is never queued')
+    let outcome: TurnOutcome | undefined
+    const job = admission.start({
+      request: {
+        prompt,
         cwd: config.workspace.root,
         ...(agentRoots.length > 0 ? { roots: agentRoots } : {}),
         unattended: true,
-      })) {
-        if (event.type === 'error' && event.fatal) throw new Error(event.message)
-      }
-    } finally {
-      limiter.release()
-    }
+      },
+      finish: async (done) => {
+        outcome = done
+      },
+    })
+    await job.done
+    if (outcome?.failure) throw new Error(outcome.failure)
   }
 
   registerPages(app, { stores, locale: config.locale })
@@ -277,8 +282,8 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
 
   // The delegation channel: inbound MCP work runs through the SAME desk as
   // chat — chaining, capacity, session resume — but in its own key family and
-  // its own thread store. The separation is the authorization boundary: a
-  // task_id resolves only in here, never to a person's chat thread.
+  // its own conversation store. The separation is the authorization boundary: a
+  // task_id resolves only in here, never to a person's chat conversation.
   const delegations = new DelegationChannel(desk, {
     dataDir: config.dataDir,
     cwd: config.workspace.root,
@@ -289,9 +294,9 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
 
   /**
    * The delegations screen's two questions: what ran here, and what did it
-   * say. Read-only on purpose — these threads belong to the CALLING agents'
-   * conversations, and a person typing into one would inject a turn into a
-   * thread its owner believes it holds alone. Gated like every other /api
+   * say. Read-only on purpose — these conversations belong to the CALLING
+   * agents, and a person typing into one would inject a turn into a
+   * conversation its owner believes it holds alone. Gated like every other /api
    * route: any signed-in human may look, which is rather the point.
    */
   app.get('/api/delegations', async () => ({ delegations: await delegations.list() }))
@@ -299,16 +304,16 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   app.get<{ Params: { caller: string; id: string } }>(
     '/api/delegations/:caller/:id',
     async (request, reply) => {
-      let thread
+      let conversation
       try {
-        thread = await delegations.read(request.params.caller, request.params.id)
+        conversation = await delegations.read(request.params.caller, request.params.id)
       } catch {
         // An unsafe caller segment throws in the store's last-line guard;
-        // from this side it is the same answer as a thread that is not there.
-        thread = undefined
+        // from this side it is the same answer as a conversation that is not there.
+        conversation = undefined
       }
-      if (!thread) return reply.code(404).send({ error: 'no such delegation' })
-      return { caller: request.params.caller, ...thread }
+      if (!conversation) return reply.code(404).send({ error: 'no such delegation' })
+      return { caller: request.params.caller, ...conversation }
     },
   )
 

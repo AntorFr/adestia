@@ -238,7 +238,7 @@ describe('the screen reported next to the chat', () => {
   })
 
   it('reports nothing from the landing canvas', () => {
-    // Home is every thread and no page: there is no screen to narrate.
+    // Home is every conversation and no page: there is no screen to narrate.
     expect(screenView({ route: '', watched: true, trail: [] })).toBeUndefined()
   })
 
