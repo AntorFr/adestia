@@ -1,20 +1,21 @@
 # Status — Adestia
 > MàJ : 2026-09-16
 
-**État :** chantier `concepts` (worktree du même nom) — le code rapproché de
-ce que `DESIGN.md` dit aujourd'hui, en cinq pas : le chat relit le fil au
-magasin après tout tour au lieu de le classer lui-même ; l'horloge et le
-rappel MCP passent par le bureau des tours (un seul point de lancement), le
-tour sans fil est nommé (question éphémère) et le web ne l'emprunte plus par
-accident ; un seul mot pour le fil (« conversation »), « session » réservé à
-la session moteur ; la règle `app:` du 10/09 et le récit du chantier écrits
-dans `DESIGN.md` ; les collections dessinées par le cœur (`type: collection`,
-`into:`), le plugin retiré. Typecheck, lint, 1588 + 551 tests verts ; banc
-visuel : passe complète sur l'état final le 16/09 — **35 scénarios verts**,
-zéro rouge, `live-codex` sauté (il lui faut un vrai moteur), aucune erreur
-navigateur inattendue dans les journaux. Le glossaire qui a servi
-de mesure est dans `mission-concepts.md`, les décisions prises par défaut
-dans `questions-concepts.md` (chacune réversible d'un mot).
+**État :** `main`, **v0.59.0 déployée le 16/09** sur les trois corps (alfred,
+nestor, skippy — pods prêts, zéro redémarrage). Le chantier `concepts` y est
+fusionné : le code rapproché de ce que `DESIGN.md` dit aujourd'hui, en cinq
+pas — le chat relit la conversation au magasin après tout tour au lieu de la
+classer lui-même ; l'horloge et le rappel MCP passent par le bureau des tours
+(un seul point de lancement), le tour sans fil est nommé (question éphémère)
+et le web ne l'emprunte plus par accident ; un seul mot pour la conversation,
+« session » réservé à la session moteur ; la règle `app:` du 10/09 et le récit
+du chantier écrits dans `DESIGN.md` ; les collections dessinées par le cœur
+(`type: collection`, `into:`), le plugin retiré. 0.58.0 (la revue de code de
+tout le dépôt) monte avec, elle n'avait jamais été déployée. Typecheck, lint,
+1588 + 551 tests verts ; banc visuel : 35 scénarios verts, zéro rouge,
+`live-codex` sauté. Le glossaire qui a servi de mesure est dans
+`mission-concepts.md`, les décisions prises par défaut dans
+`questions-concepts.md` (chacune réversible d'un mot).
 
 **Prochaines étapes :**
 - [ ] (décidé le 15/09 : PAS de kit d'aides porté par le cœur ; les plugins
@@ -37,10 +38,10 @@ dans `questions-concepts.md` (chacune réversible d'un mot).
       réel au passage : insérer une table depuis le menu « / » écrit
       `:::table` avec un `<br />` dedans, et un second enregistrement se fait
       refuser en 422. À traiter à part, c'est l'insertion, pas le scénario.
-- [ ] Au déploiement de cette version : retirer `collections` de
-      `extensions.apps` dans les configs d'Alfred, Nestor et Skippy (le
-      serveur signale un plugin inconnu au démarrage, la collection reste
-      dessinée par le cœur).
+- [x] Fait au déploiement du 16/09 : `collections` retiré d'`extensions.apps`
+      chez Alfred et Skippy (Nestor ne le portait pas), dans le même commit
+      que le bump d'image — le pod reçoit image et conf d'un coup. Les trois
+      démarrent proprement : 8, 2 et 8 plugins actifs sur 11, aucun avis.
 - [x] Refonte structurelle fusionnée dans `main` le 15/09, tag `v0.58.0`.
 
 **Restes ouverts des chantiers passés** (relevés au dégraissage de ce fichier,
