@@ -9,10 +9,10 @@ tour sans fil est nommé (question éphémère) et le web ne l'emprunte plus par
 accident ; un seul mot pour le fil (« conversation »), « session » réservé à
 la session moteur ; la règle `app:` du 10/09 et le récit du chantier écrits
 dans `DESIGN.md` ; les collections dessinées par le cœur (`type: collection`,
-`into:`), le plugin retiré. Typecheck, lint, 1568 + 566 tests verts ; banc visuel :
-les 5 scénarios du chat relancés et regardés après chaque pas, la passe
-complète faite le 16/09 — 33 verts, `journal-blocs` rouge comme sur `main`
-(bouton disparu), `live-codex` sauté (vrai moteur). Le glossaire qui a servi
+`into:`), le plugin retiré. Typecheck, lint, 1588 + 551 tests verts ; banc
+visuel : passe complète sur l'état final le 16/09 — **35 scénarios verts**,
+zéro rouge, `live-codex` sauté (il lui faut un vrai moteur), aucune erreur
+navigateur inattendue dans les journaux. Le glossaire qui a servi
 de mesure est dans `mission-concepts.md`, les décisions prises par défaut
 dans `questions-concepts.md` (chacune réversible d'un mot).
 
