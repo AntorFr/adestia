@@ -1,18 +1,18 @@
 # Status — Adestia
 > MàJ : 2026-09-16
 
-**État :** chantier `session-ttl` (worktree du même nom) — la durée de vie
-d'une session devient un réglage, et un grant mort l'écourte. `main` est en
-v0.59.0, déployée le 16/09 sur les trois corps.
+**État :** `main`, **v0.60.0 déployée le 16/09** sur les trois corps (pods
+prêts, zéro redémarrage, plafond de session à 30 jours vérifié dans leur
+configuration). La durée de vie d'une session est un réglage —
+`auth.oidc.sessionTtlMs`, 12 h quand la clé est absente — et une session
+adossée à un jeton de rafraîchissement tombe dès qu'Authelia refuse ce jeton,
+avant son plafond. L'alignement automatique sur la durée d'Authelia a été
+cherché et écarté : rien dans OIDC ne la donne, et il n'y en a pas une seule à
+copier. Le raisonnement est dans `DESIGN.md`.
 
-Ce que le chantier fait : `auth.oidc.sessionTtlMs` (millisecondes, 12 h si la
-clé est absente, donc rien ne bouge pour qui ne dit rien) remplace la
-constante en dur ; et une session adossée à un jeton de rafraîchissement tombe
-quand Authelia refuse ce jeton, avant son plafond. L'alignement automatique sur
-la durée d'Authelia a été cherché puis écarté : rien dans le protocole ne la
-donne, et il n'y en a pas une seule à copier — c'est écrit dans `DESIGN.md` et
-dans `questions-session-ttl.md`. Typecheck, lint, 1594 + 551 tests verts. Pas
-de banc : le chantier ne dessine rien.
+v0.59.0 (le 16/09 également) portait le chantier `concepts` : le code
+rapproché de ce que la conception dit aujourd'hui, en cinq pas, dont les
+collections dessinées par le cœur et le retrait de leur plugin.
 
 **Prochaines étapes :**
 - [ ] (décidé le 15/09 : PAS de kit d'aides porté par le cœur ; les plugins
@@ -35,9 +35,8 @@ de banc : le chantier ne dessine rien.
       réel au passage : insérer une table depuis le menu « / » écrit
       `:::table` avec un `<br />` dedans, et un second enregistrement se fait
       refuser en 422. À traiter à part, c'est l'insertion, pas le scénario.
-- [ ] Au déploiement de ce chantier : `auth.oidc.sessionTtlMs: 2592000000`
-      (30 jours) dans les trois manifestes de `k8s-home-lab`. Sans la clé, une
-      instance garde ses 12 h — donc rien à faire pour les instances tierces.
+- [x] Fait le 16/09 : `auth.oidc.sessionTtlMs: 2592000000` (30 jours) sur les
+      trois, dans le même commit cluster que le bump d'image.
 - [x] Fait au déploiement du 16/09 : `collections` retiré d'`extensions.apps`
       chez Alfred et Skippy (Nestor ne le portait pas), dans le même commit
       que le bump d'image — le pod reçoit image et conf d'un coup. Les trois
