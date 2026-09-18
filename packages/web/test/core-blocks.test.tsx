@@ -16,6 +16,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { forgetContributedBlocks, registerBlocks, validateDocument, parse } from '@antorfr/adestia-content'
 
+import { Editor } from '../src/editor/Editor.js'
 import { Reader } from '../src/editor/Reader.js'
 
 const PAGES = [
@@ -413,6 +414,32 @@ describe('la surcharge, de bout en bout', () => {
     )
     expect(container.querySelector('.adestia-tableblock')).toBeTruthy()
     expect(screen.queryByTestId('table-projets')).toBeNull()
+  })
+
+  it('s’applique aussi à une page ORDINAIRE, telle que l’éditeur la monte', () => {
+    // Le 09/09, `vocabulary` a été passé DEUX fois au lecteur des pages à
+    // mise en page et zéro fois à celui des pages ordinaires : partout
+    // ailleurs que sous une mise en page, la résolution retombait sur le cœur,
+    // et une surcharge d'app n'y était jamais dessinée. Latent tant qu'aucune
+    // app ne surcharge un bloc du cœur ; c'est la première qui le ferait qui
+    // l'aurait découvert.
+    surcharge()
+    render(
+      <Editor
+        page={{
+          path: 'chantiers/adestia/INDEX.md',
+          title: 'Adestia',
+          markdown: TABLEAU,
+          revision: '1-1',
+          editable: true,
+          diagnostics: [],
+        }}
+        attachments={false}
+        vocabulary={{ owner: 'projets', features: [] }}
+        blocks={{ projets: { table: Grave } }}
+      />,
+    )
+    expect(screen.getByTestId('table-projets')).toBeTruthy()
   })
 
   it('dit visiblement qu’un `from=` ne mène nulle part, et garde le corps', () => {

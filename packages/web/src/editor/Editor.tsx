@@ -551,7 +551,6 @@ export function Editor({
               {...(page.fields ? { fields: page.fields } : {})}
               {...(openPage ? { openPage } : {})}
               {...(blocks ? { blocks } : {})}
-          {...(vocabulary ? { vocabulary } : {})}
               {...(vocabulary ? { vocabulary } : {})}
               {...(pages ? { pages } : {})}
             />
@@ -565,6 +564,7 @@ export function Editor({
           {...(page.fields ? { fields: page.fields } : {})}
           {...(openPage ? { openPage } : {})}
           {...(blocks ? { blocks } : {})}
+          {...(vocabulary ? { vocabulary } : {})}
           {...(pages ? { pages } : {})}
         />
       )}
