@@ -83,11 +83,11 @@
    themes reserve that gutter with `padding: 60px 120px` on the editor; the
    rule above zeroes the padding to control the measure, which left the handle
    hanging OUTSIDE the card over the page background, unreachable. The gutter
-   comes back here — added to the measure rather than taken out of it, so the
-   line length a page is written at does not depend on the posture reading it. */
+   comes back here — outside the measure, which caps the prose INSIDE it, so
+   the line length a page is written at does not depend on the posture
+   reading it. */
 .adestia-editor__surface .milkdown .ProseMirror {
   padding-inline-start: var(--editor-gutter);
-  max-width: calc(68ch + var(--editor-gutter));
 }
 
 .adestia-editor__surface {

@@ -1,20 +1,23 @@
 # Status — Adestia
-> MàJ : 2026-09-16
+> MàJ : 2026-09-18
 
-**État :** `main`, **v0.60.0 déployée le 16/09** sur les trois corps (pods
-prêts, zéro redémarrage, plafond de session à 30 jours vérifié dans leur
-configuration). La durée de vie d'une session est un réglage —
-`auth.oidc.sessionTtlMs`, 12 h quand la clé est absente — et une session
-adossée à un jeton de rafraîchissement tombe dès qu'Authelia refuse ce jeton,
-avant son plafond. L'alignement automatique sur la durée d'Authelia a été
-cherché et écarté : rien dans OIDC ne la donne, et il n'y en a pas une seule à
-copier. Le raisonnement est dans `DESIGN.md`.
+**État :** `main`, **v0.61.0** : une page occupe un grand écran. Le canevas
+monte à 1400 px (940 avant) ; la prose garde une mesure, relevée à 89ch
+(~830 px, choix de l'utilisateur sur son écran, au-delà des 70 classiques),
+et tout ce qui se parcourt plutôt qu'il ne se lit — tableaux, bandeaux `w=`,
+chiffres, cartes, blocs de plugins — prend la largeur du canevas. Même
+partage dans l'éditeur. L'en-tête d'un bloc `:::content` est redessiné
+(pastille, titre serif, signature mono à droite, bandeau dans une carte), et
+le vide de 35 px en haut des cartes a disparu. Scénario de banc :
+`page-width`. Pas encore déployée.
 
-v0.59.0 (le 16/09 également) portait le chantier `concepts` : le code
-rapproché de ce que la conception dit aujourd'hui, en cinq pas, dont les
-collections dessinées par le cœur et le retrait de leur plugin.
+v0.60.0 (16/09, déployée sur les trois corps) : la durée de session est un
+réglage, `auth.oidc.sessionTtlMs`, et un grant mort l'écourte.
 
 **Prochaines étapes :**
+- [ ] Déployer v0.61.0 sur les trois corps (bump d'image dans `k8s-home-lab`).
+- [ ] Date d'un bloc `:::content` au format de la langue (« 9 sept. 2026 ») :
+      demande de passer la locale de l'instance jusqu'au `Reader`, pas fait.
 - [ ] (décidé le 15/09 : PAS de kit d'aides porté par le cœur ; les plugins
       gardent leurs copies de `slugOf`, `slugify`, du parseur de frontmatter
       et de `makeCache` — cinq lignes chacune, et un plugin reste un dossier

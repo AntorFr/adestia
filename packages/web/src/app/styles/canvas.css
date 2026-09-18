@@ -20,9 +20,13 @@
   backdrop-filter: blur(6px);
 }
 
-/* The canvas body gets the frame the sticky bar no longer provides. */
+/* The canvas body gets the frame the sticky bar no longer provides.
+   Its ceiling is for a wide screen, not a laptop: a row of tiles or a table
+   stretched across 2500px loses the eye as surely as a line of prose does, but
+   940px — the reference design's figure — left half of a large monitor empty.
+   The prose has its own, narrower measure (`reader.css`). */
 .adestia-canvas__body {
-  max-width: 940px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 26px 30px 100px;
 }

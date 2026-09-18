@@ -2,12 +2,45 @@
 
 /* Reading a page ------------------------------------------------------- */
 
-/* A document, not a form. Measure capped near 70 characters: the canvas is
-   940px wide and prose set that wide is prose nobody finishes a line of. */
+/* The measure: ~89 characters, about 830px in the reader's type. Wider than
+   the classic 70 on purpose — chosen on a large screen, where 68ch left the
+   prose a 632px strip in a canvas three times that wide. Still a cap: prose
+   set to the full canvas is prose nobody finishes a line of.
+   Registered as a LENGTH so it computes once, where it is declared, and
+   inherits as pixels — left a bare token, `89ch` would resolve against each
+   element's own font and give a heading at 1.5rem a line half as long again
+   as the paragraph under it. Declared twice, on the reader and on the editor,
+   because each sets its own type size; the two must agree. */
+@property --measure {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
+/* A document, not a form — but a document holds more than prose. The measure
+   caps what is READ line by line; what is SCANNED — a table, a band of
+   blocks, a grid of figures or photos, whatever a plugin draws — takes the
+   width the canvas has. On a wide screen a cutting list used to be wrapped
+   cell by cell into the prose column, beside a thousand empty pixels.
+   The prose is what gets listed, not the wide things: a block nobody listed —
+   a plugin's — gets the room a display probably wants, rather than a column
+   it was never designed for. */
 .adestia-reader {
-  max-width: 68ch;
+  --measure: 89ch;
   font-size: 15.5px;
   line-height: 1.65;
+}
+
+.adestia-reader > :is(p, h1, h2, h3, h4, h5, h6, ul, ol, blockquote, pre, hr),
+.adestia-reader > :is(.adestia-content:not(.adestia-content--cards), .adestia-callout),
+.adestia-reader > :is(.adestia-list--rows, .adestia-block-note, .adestia-unknown-block) {
+  max-width: var(--measure);
+}
+
+/* A boxed section is a BLOCK of the page, so its box lines up with the
+   figures and tables around it; the words inside it are still prose. */
+.adestia-content--cards > :is(p, ul, ol, blockquote, pre) {
+  max-width: var(--measure);
 }
 
 .adestia-reader > :first-child { margin-top: 0; }
@@ -104,20 +137,47 @@
    They wear the shell's own tokens rather than a palette of their own: a
    block is content in a page, not a widget visiting one. */
 
-/* `:::content` — a title and prose. The byline is quiet on purpose; it is
-   provenance, and provenance that shouts competes with what it introduces. */
-.adestia-content { margin: 0 0 1.4em; }
-.adestia-content__title {
-  margin: 0 0 0.25em;
-  font: 600 1.08em/1.3 var(--font-display, inherit);
-}
-.adestia-content__ico { font-size: 0.95em; }
-.adestia-content__by {
-  margin: 0 0 0.6em;
-  color: var(--text-muted);
-  font-size: 0.86em;
-}
+/* `:::content` — a title and prose, under a header that holds the three
+   voices of the shell: the glyph on the plate the tiles wear, the title in the
+   serif of address, the signature in the mono of apparatus. The byline is
+   quiet on purpose; it is provenance, and provenance that shouts competes
+   with what it introduces. The section spaces ITSELF, above and below: its
+   title no longer borrows the margin a page heading carries. */
+.adestia-content { margin: 1.4em 0; }
 .adestia-content > :last-child { margin-bottom: 0; }
+
+.adestia-content__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin: 0 0 var(--space-3);
+}
+.adestia-content__ico {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-quiet);
+  font-size: 15px;
+  line-height: 1;
+}
+/* Through the header, not on the class alone: `.adestia-reader h3` outranks a
+   single class, and gave every block title the 1.8em a page heading opens
+   with — an empty band at the top of every card. */
+.adestia-content__head > .adestia-content__title {
+  margin: 0;
+  font: 600 1.1rem/1.25 var(--font-title);
+  letter-spacing: var(--title-track);
+}
+.adestia-content__head > .adestia-content__by {
+  margin: 0 0 0 auto;
+  font: 500 11px/1.3 var(--font-mono);
+  letter-spacing: 0.02em;
+  color: var(--text-faint);
+}
 
 /* `view=cards` — the same section, given a box, so a page of several reads as
    BLOCKS rather than as one column of prose. Not a callout: a callout is an
@@ -128,6 +188,13 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface-raised);
+}
+/* In a box the header becomes the box's own band: edge to edge, a hairline
+   under it, so the title sits ON the card rather than floating in it. */
+.adestia-content--cards > .adestia-content__head {
+  margin: calc(-1 * var(--space-3)) calc(-1 * var(--space-4)) var(--space-3);
+  padding: 10px var(--space-4);
+  border-bottom: 1px solid var(--border);
 }
 /* Boxed sections sharing a line end flush, whatever their length. Two panels
    of different heights read as a mistake rather than as a band — the bench
@@ -433,15 +500,24 @@
    it — and its stylesheet arrives through a DYNAMIC import, so it lands last
    and wins every tie. One extra class is the whole fix. */
 .adestia-editor__surface .milkdown {
+  --measure: 89ch;
   font-family: var(--font);
   font-size: 15.5px;
   line-height: 1.65;
   color: var(--text);
 }
 
+/* The same split as the reader's: the prose keeps the measure, a table or a
+   block written into the page gets the width it will be read at. At ANY
+   depth, not only at the top: a `:::content` is a container whose paragraphs
+   are its children, and they are the same prose the reader caps inside a
+   card. A paragraph in a table cell is narrower than the measure anyway. */
 .adestia-editor__surface .milkdown .ProseMirror {
-  max-width: 68ch;
   padding: 0;
+}
+
+.adestia-editor__surface .milkdown .ProseMirror :is(p, h1, h2, h3, h4, h5, h6, ul, ol, blockquote, hr) {
+  max-width: var(--measure);
 }
 
 .adestia-editor__surface .milkdown .ProseMirror h1,
