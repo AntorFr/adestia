@@ -2,12 +2,45 @@
 
 /* Reading a page ------------------------------------------------------- */
 
-/* A document, not a form. Measure capped near 70 characters: the canvas is
-   940px wide and prose set that wide is prose nobody finishes a line of. */
+/* The measure: ~89 characters, about 830px in the reader's type. Wider than
+   the classic 70 on purpose — chosen on a large screen, where 68ch left the
+   prose a 632px strip in a canvas three times that wide. Still a cap: prose
+   set to the full canvas is prose nobody finishes a line of.
+   Registered as a LENGTH so it computes once, where it is declared, and
+   inherits as pixels — left a bare token, `89ch` would resolve against each
+   element's own font and give a heading at 1.5rem a line half as long again
+   as the paragraph under it. Declared twice, on the reader and on the editor,
+   because each sets its own type size; the two must agree. */
+@property --measure {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
+/* A document, not a form — but a document holds more than prose. The measure
+   caps what is READ line by line; what is SCANNED — a table, a band of
+   blocks, a grid of figures or photos, whatever a plugin draws — takes the
+   width the canvas has. On a wide screen a cutting list used to be wrapped
+   cell by cell into the prose column, beside a thousand empty pixels.
+   The prose is what gets listed, not the wide things: a block nobody listed —
+   a plugin's — gets the room a display probably wants, rather than a column
+   it was never designed for. */
 .adestia-reader {
-  max-width: 68ch;
+  --measure: 89ch;
   font-size: 15.5px;
   line-height: 1.65;
+}
+
+.adestia-reader > :is(p, h1, h2, h3, h4, h5, h6, ul, ol, blockquote, pre, hr),
+.adestia-reader > :is(.adestia-content:not(.adestia-content--cards), .adestia-callout),
+.adestia-reader > :is(.adestia-list--rows, .adestia-block-note, .adestia-unknown-block) {
+  max-width: var(--measure);
+}
+
+/* A boxed section is a BLOCK of the page, so its box lines up with the
+   figures and tables around it; the words inside it are still prose. */
+.adestia-content--cards > :is(p, ul, ol, blockquote, pre) {
+  max-width: var(--measure);
 }
 
 .adestia-reader > :first-child { margin-top: 0; }
@@ -433,15 +466,24 @@
    it — and its stylesheet arrives through a DYNAMIC import, so it lands last
    and wins every tie. One extra class is the whole fix. */
 .adestia-editor__surface .milkdown {
+  --measure: 89ch;
   font-family: var(--font);
   font-size: 15.5px;
   line-height: 1.65;
   color: var(--text);
 }
 
+/* The same split as the reader's: the prose keeps the measure, a table or a
+   block written into the page gets the width it will be read at. At ANY
+   depth, not only at the top: a `:::content` is a container whose paragraphs
+   are its children, and they are the same prose the reader caps inside a
+   card. A paragraph in a table cell is narrower than the measure anyway. */
 .adestia-editor__surface .milkdown .ProseMirror {
-  max-width: 68ch;
   padding: 0;
+}
+
+.adestia-editor__surface .milkdown .ProseMirror :is(p, h1, h2, h3, h4, h5, h6, ul, ol, blockquote, hr) {
+  max-width: var(--measure);
 }
 
 .adestia-editor__surface .milkdown .ProseMirror h1,
