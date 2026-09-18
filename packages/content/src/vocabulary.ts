@@ -71,6 +71,17 @@ export const RESERVED: Readonly<Record<string, readonly string[] | null>> = {
    * is a visible notice at render time, not a validation error.
    */
   from: null,
+  /**
+   * What a block is CALLED on the page, and the glyph beside it — the same two
+   * words a page declares in its header (`title:`, `ico:`). A heading is not a
+   * property of one rendering either: a list, a table, a plugin's timeline all
+   * deserve one, and the reader draws it for every block, so no component has
+   * to learn it. Declared per spec it lived on `content` alone, and
+   * `:::list{title="Sous-projets"}` validated with a warning and rendered
+   * without its title.
+   */
+  title: null,
+  ico: null,
 }
 
 /** How much of a line a `w` value asks for, as a fraction of one. */
@@ -168,14 +179,11 @@ export const VOCABULARY: Readonly<Record<string, BlockSpec>> = {
        * `title`, `ico`, `by`, `on`.
        */
       view: { values: ['plain', 'cards'], default: 'plain' },
-      /**
-       * Display, on the same ladder the tiles taught: the occurrence beats a
-       * configured label, which beats the prettified `type`. Neither replaces
-       * `type` — the SUBJECT is what queries, pulls and configs address, and
-       * it stays required with or without these two.
-       */
-      title: {},
-      ico: {},
+      // `title` and `ico` are RESERVED — every block carries them. What is
+      // particular here is the fallback: a section always has a title, the
+      // prettified `type` when none is written, on the ladder the tiles
+      // taught. Neither replaces `type`: the SUBJECT is what queries, pulls
+      // and configs address, and it stays required with or without them.
       by: {},
       on: {},
     },

@@ -11,6 +11,13 @@ partage dans l'éditeur. L'en-tête d'un bloc `:::content` est redessiné
 le vide de 35 px en haut des cartes a disparu. Scénario de banc :
 `page-width`. Pas encore déployée.
 
+Depuis (pas encore tagué) : `title=` et `ico=` sont RÉSERVÉS, comme `w` — tout
+bloc, du cœur ou d'un plugin, peut porter un titre et une icône, et le lecteur
+dessine l'en-tête : première ligne de la boîte d'une liste, première ligne d'un
+encadré, au-dessus du reste. Signalé à l'usage : un `:::list{title=…}` passait
+avec un simple avertissement et s'affichait sans titre. Scénario de banc :
+`block-titles`.
+
 v0.60.0 (16/09, déployée sur les trois corps) : la durée de session est un
 réglage, `auth.oidc.sessionTtlMs`, et un grant mort l'écourte.
 

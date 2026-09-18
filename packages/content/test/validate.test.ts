@@ -176,3 +176,18 @@ describe('le digest des blocs rédigés', () => {
     expect(contentDigest(page)['etat']).toBe('Un lot et un lien.')
   })
 })
+
+describe('title and ico are reserved', () => {
+  // `:::list{title=…}` used to validate with "has no attribute title; it will
+  // be ignored" — and it was: the list rendered without its heading. Every
+  // block carries a title and a glyph now, the way every block carries a `w`.
+  it('accepts them on any block without a warning', () => {
+    expect(check(':::list{title="Sous-projets" ico="🧱"}\n:::\n')).toEqual([])
+    expect(check(':::table{title="Débit"}\n| a |\n|---|\n| 1 |\n:::\n')).toEqual([])
+    expect(check(':::callout{type="tip" title="Astuce" ico="💡"}\nBody.\n:::\n')).toEqual([])
+  })
+
+  it('still requires the subject a section is about', () => {
+    expect(check(':::content{title="Beau titre"}\nBody.\n:::\n').map((d) => d.severity)).toContain('error')
+  })
+})
