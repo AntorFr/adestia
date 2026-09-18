@@ -32,14 +32,14 @@
 }
 
 .adestia-reader > :is(p, h1, h2, h3, h4, h5, h6, ul, ol, blockquote, pre, hr),
-.adestia-reader > :is(.adestia-content:not(.adestia-content--cards), .adestia-callout),
+.adestia-reader > :is(.adestia-content:not(.adestia-framed), .adestia-callout),
 .adestia-reader > :is(.adestia-list--rows, .adestia-block-note, .adestia-unknown-block) {
   max-width: var(--measure);
 }
 
-/* A boxed section is a BLOCK of the page, so its box lines up with the
+/* A block in a card is a BLOCK of the page, so its box lines up with the
    figures and tables around it; the words inside it are still prose. */
-.adestia-content--cards > :is(p, ul, ol, blockquote, pre) {
+.adestia-framed > :is(p, ul, ol, blockquote, pre) {
   max-width: var(--measure);
 }
 
@@ -183,17 +183,8 @@
 .adestia-titled { margin: 1.4em 0; }
 .adestia-titled > :last-child { margin-bottom: 0; }
 
-/* In a box, the header is the box's first row: edge to edge, over the same
-   hairline that separates the rows under it — the list's 1px gap on its
-   border-coloured ground draws it, as it does between two rows. */
-.adestia-list > .adestia-head {
-  margin: 0;
-  padding: 10px var(--space-3);
-  background: var(--surface-raised);
-}
-
-/* In a band, a header set ABOVE a block sits beside one that heads a box. The
-   box's title is pushed down by the box's border and its band's padding, so
+/* In a band, a header set ABOVE a block sits beside one that heads a card.
+   The card's title is pushed down by its border and its band's padding, so
    the loose one comes down by as much: two titles in one band, one line. */
 .adestia-row__cell > .adestia-titled > .adestia-head { padding-top: 11px; }
 
@@ -209,25 +200,22 @@
 .adestia-content { margin: 1.4em 0; }
 .adestia-content > :last-child { margin-bottom: 0; }
 
-/* `view=cards` — the same section, given a box, so a page of several reads as
-   BLOCKS rather than as one column of prose. Not a callout: a callout is an
-   aside coloured by its tone, this is a section of the page that happens to
-   be framed, and it keeps its subject, its title and its signature. */
-/* `.adestia-framed` is the same box around a PLUGIN's block that asked for
-   `view=cards` — the reader draws it, so a timeline and a checklist wear the
-   card a section wears, band and all. */
-.adestia-content--cards,
+/* `frame=card` — any block in a card, so a page of several reads as BLOCKS
+   rather than as one column. The reader draws it around whatever the block
+   draws — a section's own `<section>` wears the class itself, since it draws
+   its own header. A section in a card is not a callout: a callout is an
+   aside coloured by its tone, a card is a section of the page that happens
+   to be framed, and it keeps its subject, its title and its signature. */
 .adestia-framed {
   padding: var(--space-3) var(--space-4);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface-raised);
 }
-/* In a box the header becomes the box's own band: edge to edge, a hairline
-   under it, so the title sits ON the card rather than floating in it. */
 .adestia-framed { margin: 1.4em 0; }
 .adestia-framed > :last-child { margin-bottom: 0; }
-.adestia-content--cards > .adestia-head,
+/* In a card the header becomes the card's own band: edge to edge, a hairline
+   under it, so the title sits ON the card rather than floating in it. */
 .adestia-framed > .adestia-head {
   margin: calc(-1 * var(--space-3)) calc(-1 * var(--space-4)) var(--space-3);
   padding: 10px var(--space-4);
@@ -240,8 +228,8 @@
    Scoped with `:has` rather than by flipping the row's own alignment: every
    other band — prose beside a list, tiles beside a table — was laid out
    against `flex-start`, and none of them asked for this. */
-.adestia-row:has(> .adestia-row__cell > :is(.adestia-content--cards, .adestia-framed)) { align-items: stretch; }
-.adestia-row__cell > :is(.adestia-content--cards, .adestia-framed) { height: 100%; margin-bottom: 0; }
+.adestia-row:has(> .adestia-row__cell > .adestia-framed) { align-items: stretch; }
+.adestia-row__cell > .adestia-framed { height: 100%; margin-bottom: 0; }
 
 /* `:::figures` — the numbers first, because that is what the eye came for,
    and the label under it. Tabular figures so a column of them lines up. */
@@ -283,17 +271,19 @@
 /* `:::list` — rows, and a fold for what is over.
    A row is a BUTTON because it opens a page in place, dressed as the line it
    is. Folded rather than hidden: a finished thing is exactly what somebody
-   opens to see how the last one went. */
+   opens to see how the last one went.
+   BARE, like every block: rows under hairlines, no box around them. A box is
+   `frame=card`, and it used to come free with the rows — so a list looked
+   framed where nothing had asked, and `view=cards` read as asking for it. */
 .adestia-list {
   display: flex;
   flex-direction: column;
-  gap: 1px;
   margin: 0 0 1.4em;
-  background: var(--border);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
 }
+.adestia-list--rows > * + * { border-top: 1px solid var(--border); }
+/* Bare, its words line up with the prose and the title above it; the row's
+   padding — and its hover — reach into the margin instead. */
+.adestia-list--rows { margin-inline: calc(-1 * var(--space-3)); }
 .adestia-list__row {
   display: flex;
   align-items: baseline;
@@ -301,13 +291,23 @@
   width: 100%;
   padding: var(--space-2) var(--space-3);
   border: 0;
-  background: var(--surface-raised);
+  background: none;
   color: inherit;
   font: inherit;
   text-align: left;
   cursor: pointer;
 }
 .adestia-list__row:hover { background: var(--accent-quiet); }
+
+/* In a card the rows run edge to edge, under the band's hairline, and line
+   up with its title. */
+.adestia-framed > .adestia-list--rows {
+  margin: calc(-1 * var(--space-3)) calc(-1 * var(--space-4));
+}
+.adestia-framed > .adestia-list--rows .adestia-list__row,
+.adestia-framed > .adestia-list--rows .adestia-list__fold > summary {
+  padding-inline: var(--space-4);
+}
 /* The row's glyph: a fixed slot, so titles line up whether the mark is a
    declared emoji, a subject's diamond or a page's dot. */
 .adestia-list__ico {
@@ -331,7 +331,6 @@
   color: var(--text-muted);
 }
 .adestia-list__pulled { display: flex; gap: 5px; flex-wrap: wrap; }
-.adestia-list__fold { background: var(--surface-raised); }
 .adestia-list__fold > summary {
   padding: var(--space-2) var(--space-3);
   color: var(--text-muted);
@@ -340,19 +339,15 @@
 }
 /* A written row has no page behind it: nothing to hover, nothing to press. */
 .adestia-list__row--written { cursor: default; }
-.adestia-list__row--written:hover { background: var(--surface-raised); }
+.adestia-list__row--written:hover { background: none; }
 
-/* `view=cards` — the same rows, given room to be scanned rather than read in
-   sequence. A grid of cards, not a denser list: the point is that each one
-   stands alone. */
+/* `view=cards` — the ENTRIES as cards, given room to be scanned rather than
+   read in sequence. A grid, not a denser list: each one stands alone. It says
+   nothing about the block itself, which is bare unless `frame=card`. */
 .adestia-list--cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
   gap: var(--space-2);
-  background: none;
-  border: 0;
-  border-radius: 0;
-  overflow: visible;
 }
 .adestia-list--cards .adestia-list__row {
   flex-direction: column;
@@ -361,11 +356,14 @@
   min-height: 4.5rem;
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  background: var(--surface-raised);
 }
+.adestia-list--cards .adestia-list__row--written:hover { background: var(--surface-raised); }
 .adestia-list--cards .adestia-list__fold {
   grid-column: 1 / -1;
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  background: var(--surface-raised);
 }
 
 /* `view=chips` — a person, a plate of initials, and what they are here for.
@@ -377,10 +375,6 @@
   flex-direction: row;
   flex-wrap: wrap;
   gap: var(--space-2);
-  background: none;
-  border: 0;
-  border-radius: 0;
-  overflow: visible;
 }
 .adestia-list--chips .adestia-list__row {
   width: auto;
@@ -388,6 +382,7 @@
   border: 1px solid var(--border);
   border-radius: 999px;
   padding: 5px var(--space-3) 5px 5px;
+  background: var(--surface-raised);
 }
 .adestia-chip {
   display: inline-flex;

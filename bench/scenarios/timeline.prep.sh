@@ -59,12 +59,12 @@ grammaire ET rendre les lignes par leur nom, jamais un axe autour de rien :
 
 ## En blocs, pas en colonne
 
-:::content{type=perimetre title="Périmètre" ico=📐 view=cards w=1/2}
+:::content{type=perimetre title="Périmètre" ico=📐 frame=card w=1/2}
 Le socle de contenu et son shell. Hors infra, hors déploiement — et c'est ce
 qui rend la v1.0 tenable.
 :::
 
-:::content{type=risque title="L'aléa connu" ico=⚠️ view=cards w=1/2}
+:::content{type=risque title="L'aléa connu" ico=⚠️ frame=card w=1/2}
 Le contrat de session du CLI a déjà bougé une fois. Un test de contrat casse
 le build avant la mise en production.
 :::

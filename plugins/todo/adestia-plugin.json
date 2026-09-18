@@ -31,10 +31,6 @@
           "values": ["open", "late", "today", "later", "all"],
           "default": "open"
         },
-        "view": {
-          "values": ["plain", "cards", "open", "late", "today", "later", "all"],
-          "default": "plain"
-        },
         "assignee": {},
         "dom": {},
         "projet": {}

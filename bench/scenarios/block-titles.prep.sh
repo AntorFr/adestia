@@ -33,7 +33,7 @@ status: en cours
 :::list{title="Sous-projets" ico=🧱 w=2/3}
 :::
 
-:::content{type=perimetre title="Périmètre" ico=📐 w=1/3 view=cards}
+:::content{type=perimetre title="Périmètre" ico=📐 w=1/3 frame=card}
 Le caisson, ses tablettes et le plateau.
 :::
 

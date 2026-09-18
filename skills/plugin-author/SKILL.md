@@ -472,16 +472,29 @@ is what lets a block say "the things belonging to THIS page" rather than "the
 things filed near it", which matters the moment a page is pointed at by
 frontmatter instead of by location.
 
-**Do not declare `id` or `w`.** They are RESERVED — accepted on every block
-without any spec listing them, because neither is an attribute OF a rendering:
-`id` is the block's identity, `w` is how much of a line it takes. Declaring
-them per block would be one idea copied as many times as there are renderers,
-and the copy somebody forgets makes a legitimate page warn on every load.
+**Do not declare `id`, `w`, `from`, `title`, `ico` or `frame`.** They are
+RESERVED — accepted on every block without any spec listing them, because
+none is an attribute OF a rendering: `id` is the block's identity, `w` how
+much of a line it takes, `from` which plugin draws it, `title` and `ico` its
+heading, `frame` whether it sits in a card. Declaring them per block would be
+one idea copied as many times as there are renderers, and the copy somebody
+forgets makes a legitimate page warn on every load.
 
-`w` also needs nothing from you. The shell gathers consecutive narrow blocks
-onto a shared line itself — a component draws itself and never sees its
-neighbour, so it could only ever implement half of it, and the half it could
-do (narrowing) is the half that looks wrong alone.
+None of them needs anything from you, and that is the point. The shell
+gathers consecutive narrow blocks onto a shared line itself — a component
+draws itself and never sees its neighbour, so it could only ever implement
+half of `w`, and the half it could do (narrowing) is the half that looks
+wrong alone. It draws the heading, and the card, AROUND what you draw.
+
+So **draw no box and no heading of your own.** Your component is the inside
+of the block: no outer border, no panel background, no "My block" label on
+top. A page that wants a frame writes `frame=card` and gets the same card
+every other block gets; one you drew yourself would sit inside it as a box in
+a box. Nor draw OUTSIDE your own box — a label positioned above your top edge
+lands on the paragraph above, or on the band of the card around you. Your
+attributes still reach you: read `title` if a label of yours would repeat it,
+never to draw it yourself. And `view`, if you declare it, lays out your
+INSIDE — never whether the block is boxed.
 
 Declare both halves or neither: a component with no manifest entry never
 renders (the parser leaves the name as prose), and a manifest entry with no

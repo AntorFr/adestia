@@ -27,7 +27,7 @@ export default async function scenario(bench) {
       return {
         page: w('.adestia-reader'),
         prose: w('.adestia-reader > p'),
-        card: w('.adestia-reader > .adestia-content--cards'),
+        card: w('.adestia-reader > .adestia-framed'),
         table: w('.adestia-reader table'),
         band: w('.adestia-row'),
       }

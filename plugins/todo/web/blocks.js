@@ -168,11 +168,9 @@ export default function blocks(api) {
       })
       .sort((a, b) => (a.due ?? '9999').localeCompare(b.due ?? '9999'))
 
-    // In a card the READER draws the box and, when there is a `title=`, the
-    // heading: this block then draws neither, or it would sit in a box inside
-    // a box under two headings.
-    const carded = attributes.view === 'cards'
-    return h('div', { className: carded ? 'todo-block todo-block--carded' : 'todo-block' }, [
+    // A `title=` is drawn by the reader, and says more than "Tasks here":
+    // this block's own label steps aside rather than sit under it.
+    return h('div', { className: 'todo-block' }, [
       !attributes.title &&
         h('div', { key: 'h', className: 'todo-block__h' }, [
           t('Tasks here'),
