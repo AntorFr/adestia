@@ -449,18 +449,20 @@ function ContentBlock({ node, ctx }: { readonly node: Node; readonly ctx: Ctx })
   const boxed = node.attributes?.['view'] === 'cards'
   return (
     <section className={`adestia-content${boxed ? ' adestia-content--cards' : ''}`}>
-      {title && (
-        <h3 className="adestia-content__title">
+      {/* One row, so the glyph, the title and the signature read as the
+          block's header rather than three lines stacked above its prose. */}
+      {(title || ico || by || on) && (
+        <header className="adestia-content__head">
           {ico && (
             <span className="adestia-content__ico" aria-hidden="true">
-              {ico}{' '}
+              {ico}
             </span>
           )}
-          {title}
-        </h3>
-      )}
-      {(by || on) && (
-        <p className="adestia-content__by">{[by, on].filter(Boolean).join(' · ')}</p>
+          {title && <h3 className="adestia-content__title">{title}</h3>}
+          {(by || on) && (
+            <p className="adestia-content__by">{[by, on].filter(Boolean).join(' · ')}</p>
+          )}
+        </header>
       )}
       {children(node, ctx)}
     </section>
