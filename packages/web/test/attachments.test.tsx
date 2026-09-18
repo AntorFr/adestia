@@ -11,7 +11,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { Attachments, humanSize, referencedNames } from '../src/editor/Attachments.js'
+import { Attachments, humanSize, listedInBody, referencedNames } from '../src/editor/Attachments.js'
 import { Editor, type PageDocument } from '../src/editor/Editor.js'
 import { carriesFiles, fileDropMessage } from '../src/editor/filedrop.js'
 import { resolveHref } from '../src/editor/links.js'
@@ -218,5 +218,41 @@ describe('dropping a file on a page', () => {
 
     fireEvent.dragEnter(surface, { dataTransfer: transfer([]) })
     expect(container.querySelector('.adestia-editor__dropzone')).toBeNull()
+  })
+})
+
+describe('the strip and a files list in the body', () => {
+  // A page that places its files with `:::list{source=files}` has already
+  // shown them; the strip repeating them below would read as leftovers.
+  const pdf = { path: 'diy/plan.pdf', name: 'plan.pdf', bytes: 10, modified: '', kind: 'pdf' } as const
+  const photo = { path: 'diy/assets/a.jpg', name: 'a.jpg', bytes: 10, modified: '', kind: 'image' } as const
+
+  it('counts every kind as shown when the list names none', () => {
+    const listed = listedInBody(':::list{source=files}\n:::\n')
+    expect(listed(pdf)).toBe(true)
+    expect(listed(photo)).toBe(true)
+  })
+
+  it('counts only the kinds a filtered list names', () => {
+    const listed = listedInBody(':::list{source=files type=pdf}\n:::\n')
+    expect(listed(pdf)).toBe(true)
+    expect(listed(photo)).toBe(false)
+  })
+
+  it('counts nothing for a list of pages, or one with written rows', () => {
+    expect(listedInBody(':::list\n:::\n')(pdf)).toBe(false)
+    expect(listedInBody(':::list{source=files}\n- PM: Machine\n:::\n')(pdf)).toBe(false)
+  })
+
+  it('keeps out of the strip what the body lists', async () => {
+    render(
+      <Attachments
+        path="diy/garage.md"
+        markdown={':::list{source=files type=pdf}\n:::\n'}
+        fetchImpl={files([pdf, photo])}
+      />,
+    )
+    await waitFor(() => expect(screen.getByAltText('a.jpg')).toBeTruthy())
+    expect(screen.queryByText('plan.pdf')).toBeNull()
   })
 })

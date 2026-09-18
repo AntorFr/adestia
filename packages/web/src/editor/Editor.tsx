@@ -551,9 +551,10 @@ export function Editor({
               {...(page.fields ? { fields: page.fields } : {})}
               {...(openPage ? { openPage } : {})}
               {...(blocks ? { blocks } : {})}
-          {...(vocabulary ? { vocabulary } : {})}
               {...(vocabulary ? { vocabulary } : {})}
               {...(pages ? { pages } : {})}
+              fetchImpl={fetchImpl}
+              locale={locale}
             />
           </Layout>
         </PluginBoundary>
@@ -565,7 +566,10 @@ export function Editor({
           {...(page.fields ? { fields: page.fields } : {})}
           {...(openPage ? { openPage } : {})}
           {...(blocks ? { blocks } : {})}
+          {...(vocabulary ? { vocabulary } : {})}
           {...(pages ? { pages } : {})}
+          fetchImpl={fetchImpl}
+          locale={locale}
         />
       )}
 
