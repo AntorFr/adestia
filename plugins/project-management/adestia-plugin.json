@@ -40,6 +40,13 @@
             "children"
           ],
           "default": "children"
+        },
+        "view": {
+          "values": [
+            "plain",
+            "cards"
+          ],
+          "default": "plain"
         }
       }
     }

@@ -19,7 +19,7 @@
 
 import { createElement as h, useCallback, useEffect, useState } from 'react'
 
-import { buildModel, isDeferred, newTaskPath, taskMarkdown, words } from './model.js'
+import { buildModel, filterOf, isDeferred, newTaskPath, taskMarkdown, words } from './model.js'
 import { storeMarks, taskRow, todayISO, toggleTask } from './rows.js'
 
 /** The folder a logical page path sits in. A page at the root has none. */
@@ -155,7 +155,7 @@ export default function blocks(api) {
 
     const storeOf = storeMarks(model.stores)
     const found = scope({ tasks: model.tasks, page: target, attributes })
-    const view = attributes.view ?? 'open'
+    const view = filterOf(attributes)
     const shown = found
       .filter((task) => {
         if (view === 'all') return true
@@ -168,15 +168,20 @@ export default function blocks(api) {
       })
       .sort((a, b) => (a.due ?? '9999').localeCompare(b.due ?? '9999'))
 
-    return h('div', { className: 'todo-block' }, [
-      h('div', { key: 'h', className: 'todo-block__h' }, [
-        t('Tasks here'),
-        h(
-          'span',
-          { key: 's' },
-          attributes.page ? t('from %n', { n: attributes.page }) : t('this folder and below'),
-        ),
-      ]),
+    // In a card the READER draws the box and, when there is a `title=`, the
+    // heading: this block then draws neither, or it would sit in a box inside
+    // a box under two headings.
+    const carded = attributes.view === 'cards'
+    return h('div', { className: carded ? 'todo-block todo-block--carded' : 'todo-block' }, [
+      !attributes.title &&
+        h('div', { key: 'h', className: 'todo-block__h' }, [
+          t('Tasks here'),
+          h(
+            'span',
+            { key: 's' },
+            attributes.page ? t('from %n', { n: attributes.page }) : t('this folder and below'),
+          ),
+        ]),
       error && h('p', { key: 'e', className: 'todo-problem' }, error),
       ...(shown.length === 0
         ? [h('p', { key: 'z', className: 'todo-muted' }, t('nothing to do here'))]

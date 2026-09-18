@@ -6,6 +6,12 @@
 .pm-timeline {
   margin: 0 0 1.4em;
 }
+/* Inside the card the reader drew: its margin is the card's, and a milestone
+   label at the top of the chart is kept off the band's hairline. */
+.pm-timeline--carded {
+  margin: 0;
+  padding-top: 10px;
+}
 .pm-timeline__empty,
 .pm-timeline__unread {
   font-size: var(--text-sm);

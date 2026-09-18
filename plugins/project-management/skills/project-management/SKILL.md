@@ -129,6 +129,18 @@ then wonders what it was for.
 
 A timeline usually wants the full reading line: leave `w` alone.
 
+**`view=cards`** puts the planning in a card — the box a boxed `:::content`
+wears, its `title=` as the card's band. Reach for it when the page is made of
+blocks side by side, so the planning reads as one of them rather than as a
+drawing loose on the page:
+
+```markdown
+:::timeline{view=cards title="Planning" ico=🗓️}
+- Cadrage: 2026-07-01 → 2026-07-20
+- Recette: 2026-09-10 → 2026-09-25
+:::
+```
+
 ## What does NOT exist yet
 
 `pm-config` — the file that will declare which page types are worksites — is

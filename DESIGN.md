@@ -1156,6 +1156,26 @@ callout, above anything with no box of its own. `content` keeps drawing its
 own, because a section always has a title — its prettified `type` when none
 is written — and a signature.
 
+### `view` is the shape, on every block (decided 2026-09-18)
+
+Asked from use: a card for `:::timeline` and `:::checklist`, like the one a
+boxed `:::content` wears. The timeline was free to take `view=cards`. The
+checklist was not: its `view` was a FILTER — `open`, `late`, `today`… — so
+"late tasks, in a card" had no spelling, and the one word the vocabulary
+promises for "boxed" meant something else on one block.
+
+The word goes back to the shape. The checklist's filter is `show` now; its
+`view` is `plain` or `cards`, and still accepts the five old filter values
+and reads them as filters, so no page written before changes what it lists —
+the skill teaches `show` alone.
+
+The card is the READER's, like the header: a plugin block whose spec declares
+`view: cards` is set in the same box a boxed section wears, its `title=` as
+the band, and the plugin draws only what goes inside. The checklist, which
+always drew a box of its own, drops it in a card, and drops its "Tasks here"
+label whenever a title is given — a box in a box under two headings is the
+one arrangement nobody asked for.
+
 ### The index says whether a page has a body (decided 2026-09-08)
 
 `GET /api/pages/index` publishes one boolean per entry beside `finished`. A

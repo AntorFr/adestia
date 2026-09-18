@@ -60,6 +60,9 @@ export default function createProjectBlocks(api) {
   function Timeline({ attributes = {}, items = [], path, openPage }) {
     const scale = attributes.scale ?? 'months'
     const depth = attributes.depth ?? 'self'
+    // In a card the reader draws the box and its band; the chart only needs
+    // room under the band for a milestone label that sits at its very top.
+    const root = attributes.view === 'cards' ? 'pm-timeline pm-timeline--carded' : 'pm-timeline'
     const queried = depth !== 'self'
     const [index, setIndex] = useState(null)
     const [failure, setFailure] = useState(null)
@@ -133,7 +136,7 @@ export default function createProjectBlocks(api) {
             }${unread.join(' · ')}`,
           )
         : null
-    if (!box) return h('div', { className: 'pm-timeline' }, [grammar, leftover])
+    if (!box) return h('div', { className: root }, [grammar, leftover])
 
     const today = new Date().toISOString().slice(0, 10)
     const at = (date) => `${(fraction(date, box) * 100).toFixed(2)}%`
@@ -144,7 +147,7 @@ export default function createProjectBlocks(api) {
     const milestones = entries.filter((entry) => !entry.start).sort((a, b) => (a.due < b.due ? -1 : 1))
     const tall = milestones.length > 1
 
-    return h('div', { className: 'pm-timeline' }, [
+    return h('div', { className: root }, [
       h(
         'div',
         { className: `pm-timeline__chart${tall ? ' pm-timeline__chart--tall' : ''}`, key: 'chart' },
