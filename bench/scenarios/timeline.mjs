@@ -7,7 +7,7 @@
  * qui doit se voir FINIE malgré ses dates, et une aux dates inversées nommée
  * dessous. Les barres de la seconde s'ouvrent — la troisième photo le prouve.
  *
- * La page porte aussi deux `:::content{view=cards}` côte à côte, avec un
+ * La page porte aussi deux `:::content{frame=card}` côte à côte, avec un
  * `:::callout` juste dessous — la seule façon de vérifier que la section
  * encadrée et l'aparté ne se ressemblent pas.
  *
@@ -26,7 +26,7 @@ export default async function scenario(bench) {
     })
     await page.waitForSelector('text=Cadrage', { timeout: 15_000 })
     await page.waitForTimeout(600)
-    await page.waitForSelector('.adestia-content--cards', { timeout: 15_000 })
+    await page.waitForSelector('.adestia-framed', { timeout: 15_000 })
     await page.waitForSelector('.adestia-list__said', { timeout: 15_000 })
     await page.waitForSelector('.adestia-chip__plate', { timeout: 15_000 })
     await page.waitForSelector('.adestia-list--cards', { timeout: 15_000 })

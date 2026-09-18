@@ -354,16 +354,11 @@ test('a field is set, replaced and cleared in place, moving nothing else', () =>
   assert.equal(setField('no frontmatter\n', 'assignee', 'x'), null)
 })
 
-test('a checklist filters with `show`, and still reads the `view` it used to', () => {
-  // `view` went back to meaning the block's SHAPE on 2026-09-18 (`view=cards`,
-  // as on every other block). The filter moved to `show`; a page written
-  // before must not change what it lists.
+test('a checklist filters with `show`, open tasks when it says nothing', () => {
   assert.equal(filterOf({}), 'open')
   assert.equal(filterOf({ show: 'late' }), 'late')
-  assert.equal(filterOf({ view: 'late' }), 'late')
-  assert.equal(filterOf({ view: 'cards' }), 'open')
-  assert.equal(filterOf({ view: 'cards', show: 'today' }), 'today')
-  // Both written: the new word wins.
-  assert.equal(filterOf({ view: 'all', show: 'later' }), 'later')
   assert.equal(filterOf({ show: 'nonsense' }), 'open')
+  // `view` is not a filter: whether a block is boxed is `frame`, and a
+  // checklist has no layout of its own to choose.
+  assert.equal(filterOf({ view: 'late' }), 'open')
 })

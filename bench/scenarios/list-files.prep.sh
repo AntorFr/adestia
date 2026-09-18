@@ -30,7 +30,7 @@ status: en cours
 Le caisson bas, au standard de hauteur de l'établi. Les documents et les
 photos sont rangés à côté de cette page ; les listes ci-dessous les placent.
 
-:::list{source=files type=pdf,text,data title="Documents" ico=📎 w=1/2}
+:::list{source=files type=pdf,text,data title="Documents" ico=📎 frame=card w=1/2}
 :::
 
 :::list{source=files type=image view=cards title="Photos" ico=📷 w=1/2}

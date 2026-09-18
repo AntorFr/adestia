@@ -44,7 +44,7 @@ status: en cours
 
 # Servante d'atelier sur roulettes
 
-:::content{type=synthese title="Synthèse" ico=📋 by=Alfred on=2026-09-18 view=cards}
+:::content{type=synthese title="Synthèse" ico=📋 by=Alfred on=2026-09-18 frame=card}
 Caisson bas sur roulettes, au standard de hauteur de l'établi (1000 mm), plan
 de travail affleurant. Cotes arrêtées, workbook validé ; reste à choisir le
 chant des tablettes avant la coupe.
@@ -60,7 +60,7 @@ chant des tablettes avant la coupe.
 :::list{depth=children w=2/3}
 :::
 
-:::content{type=perimetre title="Périmètre" w=1/3 view=cards}
+:::content{type=perimetre title="Périmètre" w=1/3 frame=card}
 Le caisson, ses tablettes et le plateau. Les roulettes sont celles du meuble
 imprimante, déjà en stock.
 :::

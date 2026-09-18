@@ -47,19 +47,21 @@ describe(':::content', () => {
     const [issue] = validateDocument(parse(':::content\nDu texte.\n:::\n'))
     expect(issue?.message).toContain('type')
   })
-  it('met la section dans une boîte en `view=cards`, et pas autrement', () => {
+  it('met la section dans une carte en `frame=card`, et pas autrement', () => {
     // « Une vision plus structurée en bloc » : la même section, encadrée, pour
     // qu'une page de plusieurs se lise comme des blocs et non comme une seule
-    // colonne de prose.
+    // colonne de prose. La section porte la carte elle-même, puisqu'elle
+    // dessine son propre en-tête — qui devient le bandeau.
     const { container } = render(
       <Reader
-        markdown={':::content{type=perimetre view=cards}\nDu texte.\n:::\n'}
+        markdown={':::content{type=perimetre frame=card}\nDu texte.\n:::\n'}
         path={HERE}
         pages={PAGES}
       />,
     )
     const section = container.querySelector('.adestia-content')
-    expect(section?.classList.contains('adestia-content--cards')).toBe(true)
+    expect(section?.classList.contains('adestia-framed')).toBe(true)
+    expect(section?.querySelector(':scope > .adestia-head')?.textContent).toContain('Perimetre')
     // La boîte ne remplace rien : le sujet, le titre et la prose restent.
     expect(screen.getByText('Perimetre')).toBeTruthy()
     expect(screen.getByText('Du texte.')).toBeTruthy()
@@ -69,7 +71,15 @@ describe(':::content', () => {
     const { container } = render(
       <Reader markdown={':::content{type=perimetre}\nDu texte.\n:::\n'} path={HERE} pages={PAGES} />,
     )
-    expect(container.querySelector('.adestia-content--cards')).toBeNull()
+    expect(container.querySelector('.adestia-framed')).toBeNull()
+  })
+
+  it('ne connaît plus `view` : une section encadrée s’écrit `frame=card`', () => {
+    // Pas de seconde orthographe à entretenir : l'ancienne est un attribut
+    // que la section n'a pas, signalé, et sans effet.
+    const [issue] = validateDocument(parse(':::content{type=perimetre view=cards}\nDu texte.\n:::\n'))
+    expect(issue?.severity).toBe('warning')
+    expect(issue?.message).toContain('view')
   })
 
   it('garde son titre, son icône et sa signature dans la boîte', () => {
@@ -77,7 +87,7 @@ describe(':::content', () => {
     // signature, celle-ci est une SECTION encadrée et garde tout ce qu'elle a.
     render(
       <Reader
-        markdown={':::content{type=synthese title="Synthèse" ico=📋 by=Antor on=2026-09-10 view=cards}\nDu texte.\n:::\n'}
+        markdown={':::content{type=synthese title="Synthèse" ico=📋 by=Antor on=2026-09-10 frame=card}\nDu texte.\n:::\n'}
         path={HERE}
         pages={PAGES}
       />,
@@ -493,15 +503,22 @@ describe('titre et icône sur TOUS les blocs', () => {
     expect(validateDocument(parse(page))).toEqual([])
   })
 
-  it('met le titre d’une liste en PREMIÈRE ligne de sa boîte', () => {
-    const { container } = render(
+  it('pose le titre d’une liste AU-DESSUS, et en bandeau dans une carte', () => {
+    const { container, unmount } = render(
       <Reader markdown={':::list{title="Sous-projets" ico=🧱}\n:::\n'} path={HERE} pages={PAGES} />,
     )
-    const head = container.querySelector('.adestia-list--rows > .adestia-head')
-    expect(head?.textContent).toContain('Sous-projets')
-    expect(head?.textContent).toContain('🧱')
-    // Dans la boîte, donc pas d'enveloppe par-dessus.
-    expect(container.querySelector('.adestia-titled')).toBeNull()
+    const above = container.querySelector('.adestia-titled > .adestia-head')
+    expect(above?.textContent).toContain('Sous-projets')
+    expect(above?.textContent).toContain('🧱')
+    expect(container.querySelector('.adestia-framed')).toBeNull()
+    unmount()
+
+    const carded = render(
+      <Reader markdown={':::list{title="Sous-projets" frame=card}\n:::\n'} path={HERE} pages={PAGES} />,
+    )
+    const card = carded.container.querySelector('.adestia-framed')
+    expect(card?.querySelector(':scope > .adestia-head')?.textContent).toBe('Sous-projets')
+    expect(card?.querySelector(':scope > .adestia-list--rows')).toBeTruthy()
   })
 
   it('pose le titre AU-DESSUS d’une liste qui n’a pas de boîte', () => {
@@ -596,7 +613,7 @@ describe(':::list{source=files}', () => {
     expect(link?.getAttribute('target')).toBe('_blank')
     expect(screen.getByText('412 kB')).toBeTruthy()
     // Le titre, dans la boîte comme pour une liste de pages.
-    expect(container.querySelector('.adestia-list--rows > .adestia-head')?.textContent).toBe('Documents')
+    expect(container.querySelector('.adestia-titled > .adestia-head')?.textContent).toBe('Documents')
   })
 
   it('garde les sortes nommées, et met le plus récent devant', async () => {
@@ -644,30 +661,22 @@ describe(':::list{source=files}', () => {
   })
 })
 
-describe('`view=cards` sur un bloc de plugin', () => {
-  // La forme « en carte » est dessinée par le LECTEUR, comme le titre : un
-  // timeline, une checklist portent la carte d'une section, bandeau compris,
-  // sans que leur plugin ait rien à dessiner — il suffit qu'il déclare la
-  // valeur.
-  const frise = (values: [string, ...string[]]) =>
-    registerBlocks(
-      {
-        chrono: {
-          content: 'empty',
-          description: 'une frise',
-          attributes: { view: { values, default: values[0] } },
-        },
-      },
-      { plugin: 'frises', kind: 'feature' },
-    )
-  const Frise = () => <div data-testid="frise" />
+describe('`frame=card`, sur n’importe quel bloc', () => {
+  // Le cadre est dessiné par le LECTEUR, comme le titre : n'importe quel bloc,
+  // du cœur ou d'un plugin, porte la carte d'une section, bandeau compris,
+  // sans que son rendu ait rien à dessiner ni rien à déclarer. Et sans lui,
+  // un bloc est NU — une liste en lignes ne s'encadre plus toute seule.
   afterEach(() => forgetContributedBlocks())
 
-  it('met en carte, le titre en bandeau, le bloc qui déclare `cards`', () => {
-    frise(['plain', 'cards'])
+  it('encadre le bloc d’un plugin, le titre en bandeau, sans rien déclarer', () => {
+    registerBlocks(
+      { chrono: { content: 'empty', description: 'une frise' } },
+      { plugin: 'frises', kind: 'feature' },
+    )
+    const Frise = () => <div data-testid="frise" />
     const { container } = render(
       <Reader
-        markdown={':::chrono{view=cards title="Planning" ico=🗓️}\n:::\n'}
+        markdown={':::chrono{frame=card title="Planning" ico=🗓️}\n:::\n'}
         vocabulary={{ features: ['frises'] }}
         blocks={{ frises: { chrono: Frise } }}
       />,
@@ -678,18 +687,38 @@ describe('`view=cards` sur un bloc de plugin', () => {
     expect(container.querySelector('.adestia-titled')).toBeNull()
   })
 
-  it('ne met rien en carte pour un bloc dont le `view` veut dire autre chose', () => {
-    // Une valeur que le plugin ne déclare pas n'est pas une forme qu'il a
-    // promise : le lecteur ne l'invente pas.
-    frise(['open', 'late'])
+  it('encadre les blocs du cœur de la même façon', () => {
     const { container } = render(
       <Reader
-        markdown={':::chrono{view=cards}\n:::\n'}
-        vocabulary={{ features: ['frises'] }}
-        blocks={{ frises: { chrono: Frise } }}
+        markdown={
+          ':::figures{frame=card}\n- Pièces: 9\n:::\n\n' +
+          ':::table{frame=card}\n| a | b |\n|---|---|\n| 1 | 2 |\n:::\n\n' +
+          ':::callout{type=tip frame=card title="Astuce"}\nCorps.\n:::\n'
+        }
       />,
     )
+    const cards = [...container.querySelectorAll('.adestia-framed')]
+    expect(cards.map((one) => one.lastElementChild?.className)).toEqual([
+      'adestia-figures',
+      'adestia-table-scroll adestia-tableblock',
+      'adestia-callout adestia-callout--tip',
+    ])
+    // Encadré, le titre d'un aparté est le bandeau de la carte, plus sa
+    // première ligne.
+    expect(cards[2]?.querySelector(':scope > .adestia-head')?.textContent).toBe('Astuce')
+    expect(cards[2]?.querySelector('.adestia-callout > .adestia-head')).toBeNull()
+  })
+
+  it('laisse une liste nue quand rien ne le demande', () => {
+    const { container } = render(<Reader markdown={':::list\n:::\n'} path={HERE} pages={PAGES} />)
+    expect(container.querySelector('.adestia-list--rows')).toBeTruthy()
     expect(container.querySelector('.adestia-framed')).toBeNull()
-    expect(screen.getByTestId('frise')).toBeTruthy()
+  })
+
+  it('n’accepte que `card`, comme `w` n’accepte que ses fractions', () => {
+    expect(validateDocument(parse(':::list{frame=card}\n:::\n'))).toEqual([])
+    const [issue] = validateDocument(parse(':::list{frame=cards}\n:::\n'))
+    expect(issue?.severity).toBe('error')
+    expect(issue?.message).toContain('card')
   })
 })

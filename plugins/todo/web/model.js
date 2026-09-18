@@ -158,19 +158,9 @@ const today = () => new Date().toISOString().slice(0, 10)
 /** What a checklist can be asked to show, and the default. */
 export const FILTERS = ['open', 'late', 'today', 'later', 'all']
 
-/**
- * Which tasks a checklist shows: `show=`, or the word it used to be.
- *
- * `view=` said this until 2026-09-18, when `view` went back to meaning the
- * block's SHAPE, as it does on every other block (`view=cards`). A page
- * written before keeps working — an old filter in `view` is still read as
- * one — but `show` wins when both are written, and it is the only word the
- * skill teaches.
- */
+/** Which tasks a checklist shows: its `show=`, open ones when it says nothing. */
 export function filterOf(attributes = {}) {
-  if (FILTERS.includes(attributes.show)) return attributes.show
-  if (FILTERS.includes(attributes.view)) return attributes.view
-  return 'open'
+  return FILTERS.includes(attributes.show) ? attributes.show : 'open'
 }
 
 /**

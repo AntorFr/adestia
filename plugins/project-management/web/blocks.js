@@ -18,9 +18,9 @@
  * not the instance's, and `todo`'s checklist already reads it this way.
  */
 
-import { createElement as h, useEffect, useState } from 'react'
+import { createElement as h, useEffect, useRef, useState } from 'react'
 
-import { classify, fraction, fromPages, parseLine, span } from './model.js'
+import { classify, fraction, fromPages, labelRows, parseLine, span } from './model.js'
 
 /** The logical folder a page sits in. A page at the root has none. */
 const folderOf = (path) => (path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '')
@@ -60,12 +60,21 @@ export default function createProjectBlocks(api) {
   function Timeline({ attributes = {}, items = [], path, openPage }) {
     const scale = attributes.scale ?? 'months'
     const depth = attributes.depth ?? 'self'
-    // In a card the reader draws the box and its band; the chart only needs
-    // room under the band for a milestone label that sits at its very top.
-    const root = attributes.view === 'cards' ? 'pm-timeline pm-timeline--carded' : 'pm-timeline'
     const queried = depth !== 'self'
     const [index, setIndex] = useState(null)
     const [failure, setFailure] = useState(null)
+    // The chart's width, so milestone labels can be laid out in rows that
+    // really clear each other — a percentage says where a line is, not
+    // whether two labels fit side by side.
+    const chart = useRef(null)
+    const [width, setWidth] = useState(0)
+    useEffect(() => {
+      const node = chart.current
+      if (!node || typeof ResizeObserver === 'undefined') return undefined
+      const watch = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width))
+      watch.observe(node)
+      return () => watch.disconnect()
+    })
 
     // Only the queried scope pays for the index; a written planning draws
     // from what is already in the page.
@@ -136,21 +145,27 @@ export default function createProjectBlocks(api) {
             }${unread.join(' · ')}`,
           )
         : null
-    if (!box) return h('div', { className: root }, [grammar, leftover])
+    if (!box) return h('div', { className: 'pm-timeline' }, [grammar, leftover])
 
     const today = new Date().toISOString().slice(0, 10)
     const at = (date) => `${(fraction(date, box) * 100).toFixed(2)}%`
     const phases = entries.filter((entry) => entry.start)
-    // Sorted by date so neighbouring labels alternate between two rows —
-    // two milestones a week apart otherwise write over each other, which
-    // the first bench photo of this block duly showed.
+    // Sorted by date, then laid out in as many rows as it takes for no two
+    // labels to write over each other — the rows sit INSIDE the chart's top
+    // padding, so a label never climbs onto what is above the block.
     const milestones = entries.filter((entry) => !entry.start).sort((a, b) => (a.due < b.due ? -1 : 1))
-    const tall = milestones.length > 1
+    const words = milestones.map((mile) => `${mile.label} · ${short(mile.due, 'weeks')}`)
+    const placed = labelRows(
+      milestones.map((mile, index) => ({ at: fraction(mile.due, box), chars: words[index].length })),
+      width,
+    )
+    const rows = Math.max(1, ...placed.map((one) => one.row + 1))
+    const ROW = 18
 
-    return h('div', { className: root }, [
+    return h('div', { className: 'pm-timeline' }, [
       h(
         'div',
-        { className: `pm-timeline__chart${tall ? ' pm-timeline__chart--tall' : ''}`, key: 'chart' },
+        { className: 'pm-timeline__chart', style: { paddingTop: `${12 + rows * ROW}px` }, ref: chart, key: 'chart' },
         [
           ...milestones.map((mile, index) =>
             h(
@@ -158,17 +173,20 @@ export default function createProjectBlocks(api) {
               {
                 className:
                   `pm-timeline__mile pm-timeline__mile--${classify(mile, today)}` +
-                  (index % 2 === 1 ? ' pm-timeline__mile--high' : ''),
+                  // Near the right edge the label reads leftwards from its
+                  // line, or it runs past the chart into whatever is beside.
+                  (placed[index].end ? ' pm-timeline__mile--end' : ''),
                 title: spell(mile, today),
-                style: { left: at(mile.due) },
+                style: { left: at(mile.due), top: `${4 + rows * ROW}px` },
                 key: `mile-${index}`,
               },
               h(
                 mile.path && openPage ? 'button' : 'span',
-                mile.path && openPage
-                  ? { type: 'button', onClick: () => openPage(mile.path) }
-                  : null,
-                `${mile.label} · ${short(mile.due, 'weeks')}`,
+                {
+                  style: { top: `${-(placed[index].row + 1) * ROW}px` },
+                  ...(mile.path && openPage ? { type: 'button', onClick: () => openPage(mile.path) } : {}),
+                },
+                words[index],
               ),
             ),
           ),
@@ -179,7 +197,9 @@ export default function createProjectBlocks(api) {
                 // mistaken for a milestone somebody did.
                 'data-label': fr ? "auj." : 'today',
                 title: `${fr ? "aujourd'hui" : 'today'} · ${today}`,
-                style: { left: at(today) },
+                // Below the label rows, like a milestone's line: drawn
+                // through them, it cuts a label in two.
+                style: { left: at(today), top: `${4 + rows * ROW}px` },
                 key: 'today',
               })
             : null,

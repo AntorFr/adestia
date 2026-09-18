@@ -1150,31 +1150,35 @@ section does.
 
 So `title` and `ico` join `id`, `w` and `from` as RESERVED, and the READER
 draws the header — one drawing for every block, core or plugin, and nothing a
-component has to learn. Only its PLACE follows the block: the first row of a
-list's box (under the same hairline as its rows), the first line of a
-callout, above anything with no box of its own. `content` keeps drawing its
-own, because a section always has a title — its prettified `type` when none
-is written — and a signature.
+component has to learn. Only its PLACE follows the block: the band of a
+card, the first line of a callout, above anything else. `content` keeps
+drawing its own, because a section always has a title — its prettified
+`type` when none is written — and a signature.
 
-### `view` is the shape, on every block (decided 2026-09-18)
+### `frame` is the box, `view` is the inside (decided 2026-09-18)
 
-Asked from use: a card for `:::timeline` and `:::checklist`, like the one a
-boxed `:::content` wears. The timeline was free to take `view=cards`. The
-checklist was not: its `view` was a FILTER — `open`, `late`, `today`… — so
-"late tasks, in a card" had no spelling, and the one word the vocabulary
-promises for "boxed" meant something else on one block.
+Reported from use, and it took two passes the same day. `cards` meant two
+things: on `:::content` it put the BLOCK in a box, on `:::list` it laid the
+ENTRIES out as cards. And a list in rows was boxed with nothing asked,
+because its rows were drawn inside a border — so a list "was in cards" by
+default, and asking for `cards` changed something else entirely. A first
+pass gave `:::timeline` and `:::checklist` a `view=cards` card; it only
+spread the ambiguity to two more blocks.
 
-The word goes back to the shape. The checklist's filter is `show` now; its
-`view` is `plain` or `cards`, and still accepts the five old filter values
-and reads them as filters, so no page written before changes what it lists —
-the skill teaches `show` alone.
+Two ideas, two words. **`frame=card` — the block in a card** — is RESERVED
+like `title`: every block accepts it, the reader draws it around whatever the
+block draws, the block's title becomes the card's band, and no rendering
+boxes itself. **`view` is how a block lays out its inside**, where it has a
+choice: a list's `rows`, `cards` (a grid of entries) or `chips`. A block is
+bare unless `frame=card` says otherwise, so the rows of a list lost their
+border and the checklist lost the rail and box it used to draw for itself.
+`frame` is closed to its one value, like `w` to its fractions.
 
-The card is the READER's, like the header: a plugin block whose spec declares
-`view: cards` is set in the same box a boxed section wears, its `title=` as
-the band, and the plugin draws only what goes inside. The checklist, which
-always drew a box of its own, drops it in a card, and drops its "Tasks here"
-label whenever a title is given — a box in a box under two headings is the
-one arrangement nobody asked for.
+No second spelling was kept: `content{view=cards}` and a checklist's
+`view=late` are attributes their blocks no longer have — a warning, and no
+effect — and the pages that carry them are migrated rather than excused by
+code nobody would ever get to delete. The checklist's filter is `show`,
+since `view` is not a filter on any block.
 
 ### The index says whether a page has a body (decided 2026-09-08)
 

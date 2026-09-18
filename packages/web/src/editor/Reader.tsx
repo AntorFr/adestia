@@ -383,16 +383,26 @@ function render(node: Node, ctx: Ctx): ReactNode {
         ...(asked !== undefined ? { from: asked } : {}),
       })
 
-      // `title=` and `ico=` are RESERVED, so the header is drawn here, once,
-      // for whoever draws the block. Where it sits is the one thing that
-      // varies: IN the box of a block that has one, above any other.
+      // `title=`, `ico=` and `frame=` are RESERVED, so the header and the card
+      // are drawn here, once, for whoever draws the block: in a card the
+      // header is the card's band, without one it sits above the block. A
+      // rendering draws its inside and nothing around it.
       const head = headOf(node)
+      const framed = node.attributes?.['frame'] === 'card'
+      const place = (block: ReactNode): ReactNode =>
+        framed ? (
+          <section className="adestia-framed">
+            {head}
+            {block}
+          </section>
+        ) : (
+          titled(head, block)
+        )
 
       if (resolved === undefined && asked !== undefined) {
         // `from=` named a plugin nothing answers for — off, renamed, or never
         // here. Said like a dead link: visibly, with the body kept underneath.
-        return titled(
-          head,
+        return place(
           <>
             <p className="adestia-block-note">
               :::{name} — from={asked} : rien ne porte ce nom ici.
@@ -405,7 +415,11 @@ function render(node: Node, ctx: Ctx): ReactNode {
       if (resolved?.plugin === 'core') {
         if (node.type === 'containerDirective' && name === 'callout') {
           const tone = node.attributes?.['type'] ?? 'note'
-          return (
+          // Unframed, a callout's title is its first line: an aside is not a
+          // panel with a heading on top of it.
+          return framed ? (
+            place(<aside className={`adestia-callout adestia-callout--${tone}`}>{children(node, ctx)}</aside>)
+          ) : (
             <aside className={`adestia-callout adestia-callout--${tone}`}>
               {head}
               {children(node, ctx)}
@@ -413,36 +427,25 @@ function render(node: Node, ctx: Ctx): ReactNode {
           )
         }
         if (node.type === 'containerDirective' && name === 'gallery') {
-          return titled(head, <div className="adestia-gallery">{children(node, ctx)}</div>)
+          return place(<div className="adestia-gallery">{children(node, ctx)}</div>)
         }
         if (node.type === 'containerDirective' && name === 'content') {
-          // Draws its own: a section always has a title, and a signature.
+          // Draws its own header: a section always has a title, and a
+          // signature. Its card is the same one, on its own section.
           return <ContentBlock node={node} ctx={ctx} />
         }
         if (node.type === 'containerDirective' && name === 'figures') {
-          return titled(head, <Figures node={node} />)
+          return place(<Figures node={node} />)
         }
         if (node.type === 'containerDirective' && name === 'table') {
-          return titled(head, <TableBlock node={node} ctx={ctx} />)
+          return place(<TableBlock node={node} ctx={ctx} />)
         }
         if (node.type === 'containerDirective' && name === 'list') {
-          return <ListBlock node={node} ctx={ctx} head={head} />
+          return place(<ListBlock node={node} ctx={ctx} />)
         }
       }
 
-      // `view=cards` is a SHAPE, and the reader draws it — the card `content`
-      // wears, its title as the card's band — for any plugin block whose spec
-      // declares the value. The plugin draws what goes inside, nothing more.
-      if (node.attributes?.['view'] === 'cards' && resolved?.spec.attributes['view']?.values?.includes('cards')) {
-        return (
-          <section className="adestia-framed">
-            {head}
-            <Contributed node={node} ctx={ctx} claim={resolved} />
-          </section>
-        )
-      }
-
-      return titled(head, <Contributed node={node} ctx={ctx} claim={resolved} />)
+      return place(<Contributed node={node} ctx={ctx} claim={resolved} />)
     }
     default:
       // Never silently dropped: an unrendered node is a visible gap somebody
@@ -474,9 +477,9 @@ function ContentBlock({ node, ctx }: { readonly node: Node; readonly ctx: Ctx })
   const title = node.attributes?.['title'] ?? (subject ? prettify(subject) : '')
   const ico = node.attributes?.['ico']
   const signed = [node.attributes?.['by'], node.attributes?.['on']].filter(Boolean).join(' · ')
-  const boxed = node.attributes?.['view'] === 'cards'
+  const framed = node.attributes?.['frame'] === 'card'
   return (
-    <section className={`adestia-content${boxed ? ' adestia-content--cards' : ''}`}>
+    <section className={`adestia-content${framed ? ' adestia-framed' : ''}`}>
       {(title || ico || signed) && <BlockHead title={title} ico={ico} by={signed} />}
       {children(node, ctx)}
     </section>
@@ -519,8 +522,7 @@ function headOf(node: Node): ReactNode {
 }
 
 /**
- * The header set ABOVE a block that has no box of its own to carry it —
- * figures, a table, a gallery, whatever a plugin draws. A component is never
+ * The header set ABOVE a block that is not in a card. A component is never
  * asked to make room: it draws what it draws, and the heading sits on top.
  */
 function titled(head: ReactNode, block: ReactNode): ReactNode {
@@ -617,16 +619,7 @@ function TableBlock({ node, ctx }: { readonly node: Node; readonly ctx: Ctx }) {
  * is out of the way and one click from being read. It has nothing to say
  * about written rows: a written line carries no status to be closed BY.
  */
-function ListBlock({
-  node,
-  ctx,
-  head,
-}: {
-  readonly node: Node
-  readonly ctx: Ctx
-  /** Its header, if it asked for one: the top row of the box in `rows`, above the rest. */
-  readonly head?: ReactNode
-}) {
+function ListBlock({ node, ctx }: { readonly node: Node; readonly ctx: Ctx }) {
   const attrs = node.attributes ?? {}
   const base = ctx.page?.path ? folderOf(ctx.page.path) : (ctx.base ?? '')
   const depth = attrs['depth'] ?? 'children'
@@ -644,17 +637,17 @@ function ListBlock({
         ? { label: '', value: text.trim() }
         : { label: text.slice(0, cut).trim(), value: text.slice(cut + 1).trim() }
     })
-    return <Written entries={entries} view={view} head={head} />
+    return <Written entries={entries} view={view} />
   }
 
   if (attrs['source'] === 'files') {
-    return <FileList node={node} ctx={ctx} view={view} head={head} />
+    return <FileList node={node} ctx={ctx} view={view} />
   }
 
   // No index here — a chat bubble, a preview. Saying so beats drawing an
   // empty list, which would read as "this folder holds nothing".
   if (ctx.pages === undefined) {
-    return titled(head, <p className="adestia-block-note">Cette liste a besoin de l’index des pages.</p>)
+    return <p className="adestia-block-note">Cette liste a besoin de l’index des pages.</p>
   }
 
   // `depth` says how far to look; `type` says what to keep. Both are needed:
@@ -679,12 +672,11 @@ function ListBlock({
 
   const shown = closed === 'show' ? [...live, ...done] : live
   if (shown.length === 0 && done.length === 0) {
-    return titled(head, <p className="adestia-block-note">Rien sous cette page.</p>)
+    return <p className="adestia-block-note">Rien sous cette page.</p>
   }
 
-  const list = (
+  return (
     <div className={`adestia-list adestia-list--${view}`}>
-      {view === 'rows' && head}
       {shown.map((page) => (
         <Row key={page.path} page={page} pull={pull} view={view} ctx={ctx} />
       ))}
@@ -700,9 +692,6 @@ function ListBlock({
       )}
     </div>
   )
-  // `rows` is a box, and its header is the box's first row. The other views
-  // are loose cards or chips, with no box to put it in.
-  return view === 'rows' ? list : titled(head, list)
 }
 
 /**
@@ -715,17 +704,7 @@ function ListBlock({
  * keeps the kinds it names (`image`, `pdf`, `data`…), `sort=modified` puts the
  * newest first. A file OPENS, in a tab, as it does from the strip.
  */
-function FileList({
-  node,
-  ctx,
-  view,
-  head,
-}: {
-  readonly node: Node
-  readonly ctx: Ctx
-  readonly view: string
-  readonly head?: ReactNode
-}) {
+function FileList({ node, ctx, view }: { readonly node: Node; readonly ctx: Ctx; readonly view: string }) {
   const attrs = node.attributes ?? {}
   const path = ctx.page?.path
   const deep = attrs['depth'] === 'subtree'
@@ -753,12 +732,12 @@ function FileList({
 
   // No page — a chat bubble, a preview: nothing to list the files OF.
   if (path === undefined) {
-    return titled(head, <p className="adestia-block-note">Cette liste a besoin de la page dont elle montre les fichiers.</p>)
+    return <p className="adestia-block-note">Cette liste a besoin de la page dont elle montre les fichiers.</p>
   }
-  // Still asking. The heading holds the place; rows arrive under it.
-  if (files === undefined) return titled(head, null)
+  // Still asking. The heading, if any, holds the place; rows arrive under it.
+  if (files === undefined) return null
   if (files === 'failed') {
-    return titled(head, <p className="adestia-block-note">Les fichiers de cette page n’ont pas pu être listés.</p>)
+    return <p className="adestia-block-note">Les fichiers de cette page n’ont pas pu être listés.</p>
   }
 
   const kinds = (attrs['type'] ?? '').split(',').map((one) => one.trim()).filter(Boolean)
@@ -768,7 +747,7 @@ function FileList({
   } else if (attrs['sort'] === 'name') {
     shown.sort((a, b) => a.name.localeCompare(b.name, ctx.locale, { numeric: true }))
   }
-  if (shown.length === 0) return titled(head, <p className="adestia-block-note">Aucun fichier ici.</p>)
+  if (shown.length === 0) return <p className="adestia-block-note">Aucun fichier ici.</p>
 
   const size = (file: Attachment) => humanSize(file.bytes, ctx.locale)
   const opens = (file: Attachment) => ({
@@ -782,8 +761,7 @@ function FileList({
     // A contact sheet: every card the same shape, a photo filling its frame,
     // anything else its glyph in the same frame, so a PDF beside two photos
     // does not read as a hole.
-    return titled(
-      head,
+    return (
       <div className="adestia-list adestia-list--cards adestia-list--files">
         {shown.map((file) => (
           <a key={file.path} className="adestia-list__row" {...opens(file)}>
@@ -798,13 +776,12 @@ function FileList({
             <span className="adestia-list__size">{size(file)}</span>
           </a>
         ))}
-      </div>,
+      </div>
     )
   }
 
   if (view === 'chips') {
-    return titled(
-      head,
+    return (
       <div className="adestia-list adestia-list--chips adestia-list--files">
         {shown.map((file) => (
           <a key={file.path} className="adestia-list__row" {...opens(file)}>
@@ -814,13 +791,12 @@ function FileList({
             <span className="adestia-list__title">{file.name}</span>
           </a>
         ))}
-      </div>,
+      </div>
     )
   }
 
   return (
     <div className="adestia-list adestia-list--rows adestia-list--files">
-      {head}
       {shown.map((file) => (
         <a key={file.path} className="adestia-list__row" {...opens(file)}>
           <i className="adestia-list__ico" aria-hidden="true">
@@ -845,15 +821,12 @@ function FileList({
 function Written({
   entries,
   view,
-  head,
 }: {
   readonly entries: readonly { label: string; value: string }[]
   readonly view: string
-  readonly head?: ReactNode
 }) {
   if (view === 'chips') {
-    return titled(
-      head,
+    return (
       <div className="adestia-list adestia-list--chips">
         {entries.map((entry, index) => (
           <span className="adestia-chip" key={`${entry.value}-${index}`}>
@@ -866,13 +839,11 @@ function Written({
             </span>
           </span>
         ))}
-      </div>,
+      </div>
     )
   }
-  const boxed = view !== 'cards'
-  const list = (
-    <div className={`adestia-list adestia-list--${boxed ? 'rows' : 'cards'}`}>
-      {boxed && head}
+  return (
+    <div className={`adestia-list adestia-list--${view === 'cards' ? 'cards' : 'rows'}`}>
       {entries.map((entry, index) => (
         <div className="adestia-list__row adestia-list__row--written" key={`${entry.value}-${index}`}>
           <span className="adestia-list__title">{entry.value}</span>
@@ -885,7 +856,6 @@ function Written({
       ))}
     </div>
   )
-  return boxed ? list : titled(head, list)
 }
 
 function Row({

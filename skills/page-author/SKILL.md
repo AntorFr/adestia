@@ -401,31 +401,23 @@ is display; the SUBJECT is what queries, `pull=content:…` and configuration
 address. A block with a title and no type is refused — it has lost what it
 was about, however nice the heading.
 
-**`view=cards`** puts the section in a box. Reach for it when a page is made
-of several sections that should read as **blocks** rather than as one column
-of prose — a status beside a scope, three panels across a band:
+**In a card**, a section reads as a **block** rather than as one more stretch
+of prose — a status beside a scope, three panels across a band. That is
+`frame=card`, which any block takes (see below):
 
 ```markdown
-:::content{type=perimetre title="Périmètre" view=cards w=1/2}
+:::content{type=perimetre title="Périmètre" frame=card w=1/2}
 Le socle de contenu et son shell, hors infra.
 :::
 ```
 
 It changes nothing else: the subject, the title, the icon and the signature
-are all still there. Note the word is the plural `cards`, the same one `list`
-uses — an unknown value is an error that locks the page, so there is one word
-for "boxed" and no `view=card` to mistype.
+are all still there, the title as the card's band.
 
-A plugin's block can ask for the same card — `:::timeline{view=cards}`,
-`:::checklist{view=cards}` — when its plugin declares the value: the reader
-draws the box and puts the block's `title=` in its band, so a planning and a
-list of tasks sit beside a boxed section as three of a kind. `view` is always
-the SHAPE of a block; nothing else is allowed to borrow the word.
-
-⚠️ **A boxed content is not a `callout`.** A callout is an ASIDE — a remark
-set apart from the flow, coloured by its tone, with no subject and no
-signature. Use it to interrupt. Use a boxed `content` when the thing IS a
-section of the page and you only want it framed.
+⚠️ **A section in a card is not a `callout`.** A callout is an ASIDE — a
+remark set apart from the flow, coloured by its tone, with no subject and no
+signature. Use it to interrupt. Use `content` with `frame=card` when the thing
+IS a section of the page and you only want it framed.
 
 **`figures`** — numbers as tiles, read from a markdown list the file keeps
 readable:
@@ -498,9 +490,11 @@ written in the block:
   other files (below). It is the slot a plugin widens when it has something to
   list. (`from=` is a different word on purpose: reserved on EVERY block, it
   names which plugin draws it — see below.)
-- **`view`** chooses the shape: `rows` (the default), `cards` — a grid, when
-  each entry is meant to be scanned on its own rather than read down a column
-  — and `chips`, a plate of initials beside a name.
+- **`view`** lays out the ENTRIES: `rows` (the default), `cards` — a grid,
+  when each entry is meant to be scanned on its own rather than read down a
+  column — and `chips`, a plate of initials beside a name. It never boxes the
+  list itself: a list is bare, and `frame=card` puts it in a card — rows or
+  grid inside.
 - Each row wears a **glyph**, and you never write it on the list: the child's
   own `ico:` if it declares one — the same field the tiles and the section
   cards read — else `◆` when the row stands for a FOLDER and `•` when it is a
@@ -547,8 +541,8 @@ strip under the page:
 - **`type`** keeps the kinds it names, comma-separated: `image`, `pdf`,
   `audio`, `video`, `text`, `data`, `file`. The same word as for pages — the
   kind of the thing listed — asked of a file.
-- **`view=cards`** is a contact sheet: each file in the same frame, a photo
-  filling it, anything else its glyph. `rows` gives the name and the size;
+- **`view=cards`** is a contact sheet: each file in a tile of the same shape,
+  a photo filling it, anything else its glyph. `rows` gives the name and the size;
   `chips`, the name on a pill.
 - **`depth=subtree`** takes every file below the page's folder, the pages
   living there included. Otherwise it is the page's own files.
@@ -643,13 +637,42 @@ two words a PAGE declares in its header (`title:`, `ico:`), one level down:
 ```
 
 The reader draws the heading, so a block needs nothing to have one. Where it
-sits follows the block: the first row of a list's box, the first line of a
-callout, above anything with no box of its own. Write neither and the block
-stays bare — only `:::content` falls back on a title of its own.
+sits follows the block: the band of a card, the first line of a callout,
+above anything else. Write neither and the block stays bare — only
+`:::content` falls back on a title of its own.
+
+### `frame` — a block in a card
+
+Like `title`, any block accepts it and no spec declares it. **`frame=card`**
+puts the block in a card — a bordered box, its title as the card's band:
+
+```markdown
+:::list{type=chantier title="Sous-projets" frame=card w=2/3}
+:::
+
+:::content{type=perimetre title="Périmètre" frame=card w=1/3}
+Hors infra.
+:::
+
+:::timeline{frame=card title="Planning" ico=🗓️}
+- Débit: 2026-09-16 → 2026-09-30
+:::
+```
+
+**Every block is bare unless it says so** — a list's rows, a checklist, a
+table, a planning: none draws a box of its own. Reach for `frame=card` when a
+page is made of blocks side by side and should read as a set of panels; two
+cards in one band keep their titles on one line and their bottoms level.
+
+`card` is the only value, and a closed one, like `w`'s fractions: `frame=cards`
+is an error that opens the page read-only. Do not confuse it with `view`,
+which lays out what is INSIDE a block where it has a choice — a list's
+`view=cards` is a grid of entries, and `:::list{view=cards frame=card}` is that
+grid in a card.
 
 ### `from` — which plugin draws a block
 
-Like `id`, `w` and `title`, any block accepts it and no spec declares it. Its value is a
+Like `id`, `w`, `title` and `frame`, any block accepts it and no spec declares it. Its value is a
 **plugin id**, or `core` for the plain rendering:
 
 ```markdown

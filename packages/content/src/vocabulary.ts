@@ -82,6 +82,15 @@ export const RESERVED: Readonly<Record<string, readonly string[] | null>> = {
    */
   title: null,
   ico: null,
+  /**
+   * Whether the block sits in a card — a bordered box, its title as the
+   * box's band. The reader draws it, for every block, so no rendering boxes
+   * itself: a block is bare unless the page asks. Separate from `view`, which
+   * is how a block lays out what is INSIDE it — a list's `view=cards` is a
+   * grid of entries, and a list can be both in a card and a grid.
+   * Closed to its one value: there is nothing to say about "not boxed".
+   */
+  frame: ['card'],
 }
 
 /** How much of a line a `w` value asks for, as a fraction of one. */
@@ -162,23 +171,9 @@ export const VOCABULARY: Readonly<Record<string, BlockSpec>> = {
     description: 'A titled passage of prose. Its subject is `type`.',
     attributes: {
       type: { required: true },
-      /**
-       * How much BOX the passage gets. `plain` is prose under a heading;
-       * `cards` puts it in a bordered panel, so a page of several sections
-       * reads as blocks rather than as one column of text.
-       *
-       * Same word as `list`'s, on purpose and despite the plural reading
-       * oddly on a single box: a closed set refuses an unknown value with an
-       * ERROR, so `view=card` written by muscle memory would lock the page.
-       * One word for "boxed", everywhere.
-       *
-       * Not a `callout`, and the line is worth holding: a callout is an
-       * ASIDE — a remark set apart from the flow, coloured by its tone, with
-       * no subject and no signature. This is a SECTION of the page that
-       * happens to be boxed, and it keeps everything a section has: `type`,
-       * `title`, `ico`, `by`, `on`.
-       */
-      view: { values: ['plain', 'cards'], default: 'plain' },
+      // Boxed or not is `frame=card`, RESERVED like `title`: a section in a
+      // card is still a section, not a `callout` — an aside with a tone and no
+      // subject. It keeps `type`, `title`, `ico`, `by` and `on`.
       // `title` and `ico` are RESERVED — every block carries them. What is
       // particular here is the fallback: a section always has a title, the
       // prettified `type` when none is written, on the ladder the tiles
@@ -285,10 +280,9 @@ export const VOCABULARY: Readonly<Record<string, BlockSpec>> = {
       pull: {},
       sort: {},
       closed: { values: ['fold', 'hide', 'show'], default: 'fold' },
-      // Every value here is DRAWN, for both sources. No `grid` for files:
-      // `cards` already means "each one stands alone, scanned rather than
-      // read", which is exactly a contact sheet — a second word for it would
-      // be a value only one source draws.
+      // How the ENTRIES are laid out — rows, a grid of cards, chips — and
+      // never whether the block is boxed: that is `frame=card`. Every value is
+      // drawn for both sources; over files, `cards` is the contact sheet.
       view: { values: ['rows', 'cards', 'chips'], default: 'rows' },
     },
   },

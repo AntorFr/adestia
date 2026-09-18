@@ -26,16 +26,24 @@ bande du bas ne répète plus ce qu'une liste montre. Corrigé en passant : le
 lecteur d'une page ordinaire ne recevait pas `vocabulary` (latent, aucune app
 ne surcharge un bloc du cœur). Scénario de banc : `list-files`.
 
-Depuis (pas encore tagué) : `view` redevient la FORME sur tous les blocs.
-`:::timeline{view=cards}` et `:::checklist{view=cards}` sont mis en carte par
-le lecteur (la carte d'une section, le titre en bandeau) ; le filtre de la
-checklist s'appelle `show=` — l'ancien `view=late` reste lu comme filtre, le
-guide n'enseigne plus que `show`. Scénario de banc : `block-cards`.
+v0.64.0 : `view=cards` pour le planning et la checklist — REMPLACÉ avant tout
+déploiement par ce qui suit.
 
-v0.60.0 (16/09, déployée sur les trois corps) : la durée de session est un
-réglage, `auth.oidc.sessionTtlMs`, et un grant mort l'écourte.
+Depuis (pas encore tagué) : **`frame=card` encadre n'importe quel bloc**
+(réservé, dessiné par le lecteur, le titre en bandeau) ; **`view` ne dit plus
+que la disposition de l'intérieur** (liste : `rows`/`cards`/`chips`). Un bloc
+est nu par défaut : la liste en lignes a perdu sa bordure, la checklist son
+liseré. Sans rétrocompatibilité (choix de l'utilisateur) : `content{view=cards}`
+et `checklist{view=…}` ne sont plus que des avertissements sans effet. Le
+planning pose ses étiquettes de jalons en rangées mesurées, DANS le graphique
+(elles montaient sur le bloc du dessus). Scénario de banc : `block-cards`.
 
 **Prochaines étapes :**
+- [ ] **Migrer le contenu** des trois corps AVANT ou AVEC le déploiement de
+      cette version (sauvegarde hors NFS d'abord, `memory/` n'est pas
+      versionné) : `:::content{… view=cards}` → `frame=card` ;
+      `:::checklist{… view=<filtre>}` → `show=<filtre>` ; un `:::list` qui
+      comptait sur sa bordure par défaut → `frame=card`.
 - [ ] Déployer v0.61.0 sur les trois corps (bump d'image dans `k8s-home-lab`).
 - [ ] Date d'un bloc `:::content` au format de la langue (« 9 sept. 2026 ») :
       demande de passer la locale de l'instance jusqu'au `Reader`, pas fait.

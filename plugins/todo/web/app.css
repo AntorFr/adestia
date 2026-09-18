@@ -295,24 +295,14 @@
 /*
  * `:::checklist`, inside somebody's page.
  *
- * A rail down the left rather than a full card: it sits in prose, and a
- * second box floating in a document reads as a widget bolted on. The rail is
- * the accent, so it belongs to the instance's own colour rather than to this
- * plugin's.
+ * Bare, like every block: the rail and the box it used to draw were a frame
+ * nobody had asked for. A page that wants one writes `frame=card`, and the
+ * reader draws the same card for this block as for any other.
  */
 .todo-block {
   --tile-color: var(--adestia-hue-rouge);
-  margin: var(--space-4) 0;
-  padding: 12px 14px;
-  background: var(--surface-raised);
-  border: 1px solid var(--border); border-left: 2px solid var(--accent);
-  border-radius: var(--radius-sm); box-shadow: var(--shadow-sm);
+  margin: 0 0 1.4em;
   display: flex; flex-direction: column; gap: 4px;
-}
-/* Inside a card the reader drew: its box, not a second one inside it. */
-.todo-block--carded {
-  margin: 0; padding: 0;
-  background: none; border: 0; box-shadow: none;
 }
 .todo-block__h {
   display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px;
