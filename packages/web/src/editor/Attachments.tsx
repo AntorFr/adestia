@@ -16,7 +16,9 @@
  * strip read as a list of leftovers rather than as the page's documents.
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+
+import { parse } from '@antorfr/adestia-content'
 
 export interface Attachment {
   readonly path: string
@@ -26,7 +28,7 @@ export interface Attachment {
   readonly kind: 'image' | 'pdf' | 'audio' | 'video' | 'text' | 'data' | 'file'
 }
 
-const GLYPHS: Readonly<Record<Attachment['kind'], string>> = {
+export const GLYPHS: Readonly<Record<Attachment['kind'], string>> = {
   image: '🖼',
   pdf: '📕',
   audio: '🎵',
@@ -36,7 +38,7 @@ const GLYPHS: Readonly<Record<Attachment['kind'], string>> = {
   file: '📎',
 }
 
-const fileUrl = (path: string, download = false): string =>
+export const fileUrl = (path: string, download = false): string =>
   `/api/files/${path.split('/').map(encodeURIComponent).join('/')}${download ? '?download=1' : ''}`
 
 /**
@@ -56,6 +58,48 @@ export function referencedNames(markdown: string): ReadonlySet<string> {
     if (name !== '') names.add(name)
   }
   return names
+}
+
+/**
+ * Whether the body already lists a file, through `:::list{source=files}`.
+ *
+ * The strip's own rule, extended to the block: a file the page already
+ * displays is not shown again below it. A files list with no `type` shows
+ * every kind; one with `type=pdf,data` shows those two. A list with a BODY is
+ * not a files list, whatever its `source` says — its rows are written.
+ */
+export function listedInBody(markdown: string): (file: Attachment) => boolean {
+  let tree: Parent
+  try {
+    tree = parse(markdown) as Parent
+  } catch {
+    return () => false
+  }
+  const kinds = new Set<string>()
+  let every = false
+  const visit = (node: Parent): void => {
+    const attributes = node.attributes ?? {}
+    if (
+      node.type === 'containerDirective' &&
+      node.name === 'list' &&
+      attributes['source'] === 'files' &&
+      (node.children ?? []).length === 0
+    ) {
+      const named = (attributes['type'] ?? '').split(',').map((one) => one.trim()).filter(Boolean)
+      if (named.length === 0) every = true
+      for (const kind of named) kinds.add(kind)
+    }
+    for (const child of node.children ?? []) visit(child)
+  }
+  visit(tree)
+  return (file) => every || kinds.has(file.kind)
+}
+
+type Parent = {
+  readonly type: string
+  readonly name?: string
+  readonly attributes?: Readonly<Record<string, string | null | undefined>> | null
+  readonly children?: readonly Parent[]
 }
 
 /** "412 ko" — a size somebody can judge a download by, in their own locale. */
@@ -105,8 +149,9 @@ export function Attachments({
     }
   }, [path, fetchImpl])
 
-  const shown = referencedNames(markdown)
-  const rest = files.filter((file) => !shown.has(file.name))
+  const shown = useMemo(() => referencedNames(markdown), [markdown])
+  const listed = useMemo(() => listedInBody(markdown), [markdown])
+  const rest = files.filter((file) => !shown.has(file.name) && !listed(file))
   if (rest.length === 0) return null
 
   const images = rest.filter((file) => file.kind === 'image')

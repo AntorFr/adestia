@@ -17,7 +17,7 @@
  * when somebody actually decides to write.
  */
 
-import { createElement as h, Fragment, type ComponentType, type ReactNode } from 'react'
+import { createElement as h, Fragment, useEffect, useState, type ComponentType, type ReactNode } from 'react'
 
 import {
   blockSpec,
@@ -32,6 +32,7 @@ import {
 } from '@antorfr/adestia-content'
 
 import { PluginBoundary } from '../plugins/Boundary.js'
+import { fileUrl, GLYPHS, humanSize, type Attachment } from './Attachments.js'
 import type { BlockProps, LayoutProps } from '../plugins/contract.js'
 import { assetUrl, resolveHref, workspacePath } from './links.js'
 import { finished, folderOf, initials, isIndexPage, titleOf, under } from './listing.js'
@@ -125,6 +126,10 @@ type Ctx = {
    * link keeps the behaviour it had before ids existed.
    */
   readonly pages?: readonly Indexed[]
+  /** How a block that asks the server something asks it — `source=files`. */
+  readonly fetchImpl?: typeof fetch
+  /** The interface's language, for what a block formats: a file's size. */
+  readonly locale?: string
   /**
    * The source is PROSE, not a document — see `Prose` below. Only the head of
    * the source tells the two apart, so only the head reads this.
@@ -630,6 +635,10 @@ function ListBlock({
     return <Written entries={entries} view={view} head={head} />
   }
 
+  if (attrs['source'] === 'files') {
+    return <FileList node={node} ctx={ctx} view={view} head={head} />
+  }
+
   // No index here — a chat bubble, a preview. Saying so beats drawing an
   // empty list, which would read as "this folder holds nothing".
   if (ctx.pages === undefined) {
@@ -682,6 +691,135 @@ function ListBlock({
   // `rows` is a box, and its header is the box's first row. The other views
   // are loose cards or chips, with no box to put it in.
   return view === 'rows' ? list : titled(head, list)
+}
+
+/**
+ * `:::list{source=files}` — the page's other files, where the author put the
+ * block rather than in the strip under the page.
+ *
+ * The same files the strip shows, by the rule the server owns: the page's
+ * folder and its `assets/` (`/api/files?page=…`). `depth=subtree` widens it to
+ * everything below the folder, the one question the strip never asks. `type`
+ * keeps the kinds it names (`image`, `pdf`, `data`…), `sort=modified` puts the
+ * newest first. A file OPENS, in a tab, as it does from the strip.
+ */
+function FileList({
+  node,
+  ctx,
+  view,
+  head,
+}: {
+  readonly node: Node
+  readonly ctx: Ctx
+  readonly view: string
+  readonly head?: ReactNode
+}) {
+  const attrs = node.attributes ?? {}
+  const path = ctx.page?.path
+  const deep = attrs['depth'] === 'subtree'
+  const ask = ctx.fetchImpl ?? fetch
+  const [files, setFiles] = useState<readonly Attachment[] | 'failed' | undefined>(undefined)
+
+  useEffect(() => {
+    if (path === undefined) return
+    let cancelled = false
+    const query = deep ? `under=${encodeURIComponent(folderOf(path))}` : `page=${encodeURIComponent(path)}`
+    void (async () => {
+      try {
+        const response = await ask(`/api/files?${query}`)
+        if (!response.ok) throw new Error(`files: ${response.status}`)
+        const body = (await response.json()) as { files?: readonly Attachment[] }
+        if (!cancelled) setFiles(body.files ?? [])
+      } catch {
+        if (!cancelled) setFiles('failed')
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [path, deep, ask])
+
+  // No page — a chat bubble, a preview: nothing to list the files OF.
+  if (path === undefined) {
+    return titled(head, <p className="adestia-block-note">Cette liste a besoin de la page dont elle montre les fichiers.</p>)
+  }
+  // Still asking. The heading holds the place; rows arrive under it.
+  if (files === undefined) return titled(head, null)
+  if (files === 'failed') {
+    return titled(head, <p className="adestia-block-note">Les fichiers de cette page n’ont pas pu être listés.</p>)
+  }
+
+  const kinds = (attrs['type'] ?? '').split(',').map((one) => one.trim()).filter(Boolean)
+  const shown = files.filter((file) => kinds.length === 0 || kinds.includes(file.kind))
+  if (attrs['sort'] === 'modified') {
+    shown.sort((a, b) => b.modified.localeCompare(a.modified))
+  } else if (attrs['sort'] === 'name') {
+    shown.sort((a, b) => a.name.localeCompare(b.name, ctx.locale, { numeric: true }))
+  }
+  if (shown.length === 0) return titled(head, <p className="adestia-block-note">Aucun fichier ici.</p>)
+
+  const size = (file: Attachment) => humanSize(file.bytes, ctx.locale)
+  const opens = (file: Attachment) => ({
+    href: fileUrl(file.path),
+    target: '_blank',
+    rel: 'noreferrer',
+    title: file.path,
+  })
+
+  if (view === 'cards') {
+    // A contact sheet: every card the same shape, a photo filling its frame,
+    // anything else its glyph in the same frame, so a PDF beside two photos
+    // does not read as a hole.
+    return titled(
+      head,
+      <div className="adestia-list adestia-list--cards adestia-list--files">
+        {shown.map((file) => (
+          <a key={file.path} className="adestia-list__row" {...opens(file)}>
+            <span className="adestia-list__thumb">
+              {file.kind === 'image' ? (
+                <img src={fileUrl(file.path)} alt="" loading="lazy" />
+              ) : (
+                <i aria-hidden="true">{GLYPHS[file.kind]}</i>
+              )}
+            </span>
+            <span className="adestia-list__title">{file.name}</span>
+            <span className="adestia-list__size">{size(file)}</span>
+          </a>
+        ))}
+      </div>,
+    )
+  }
+
+  if (view === 'chips') {
+    return titled(
+      head,
+      <div className="adestia-list adestia-list--chips adestia-list--files">
+        {shown.map((file) => (
+          <a key={file.path} className="adestia-list__row" {...opens(file)}>
+            <i className="adestia-chip__plate" aria-hidden="true">
+              {GLYPHS[file.kind]}
+            </i>
+            <span className="adestia-list__title">{file.name}</span>
+          </a>
+        ))}
+      </div>,
+    )
+  }
+
+  return (
+    <div className="adestia-list adestia-list--rows adestia-list--files">
+      {head}
+      {shown.map((file) => (
+        <a key={file.path} className="adestia-list__row" {...opens(file)}>
+          <i className="adestia-list__ico" aria-hidden="true">
+            {GLYPHS[file.kind]}
+          </i>
+          <span className="adestia-list__title">{file.name}</span>
+          <span className="adestia-list__size">{size(file)}</span>
+        </a>
+      ))}
+    </div>
+  )
 }
 
 /**
@@ -932,6 +1070,8 @@ export function Reader({
   blocks,
   vocabulary,
   pages,
+  fetchImpl,
+  locale,
 }: {
   readonly markdown: string
   /**
@@ -952,6 +1092,9 @@ export function Reader({
   readonly vocabulary?: VocabularyContext
   /** The instance's pages, so a `[[type#id]]` reference can find its target. */
   readonly pages?: readonly Indexed[]
+  /** For the blocks that ask the server — `:::list{source=files}`. */
+  readonly fetchImpl?: typeof fetch
+  readonly locale?: string
 }) {
   let tree: Node
   try {
@@ -973,6 +1116,8 @@ export function Reader({
         ...(blocks ? { blocks } : {}),
         ...(vocabulary ? { vocabulary } : {}),
         ...(pages ? { pages } : {}),
+        ...(fetchImpl ? { fetchImpl } : {}),
+        ...(locale ? { locale } : {}),
       })}
     </article>
   )

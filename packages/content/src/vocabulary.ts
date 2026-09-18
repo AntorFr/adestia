@@ -234,9 +234,9 @@ export const VOCABULARY: Readonly<Record<string, BlockSpec>> = {
    *
    * `from` is the open slot of this rendering — a plugin that has something to
    * list READ-ONLY widens its accepted values rather than inventing a second
-   * list. It is closed to `children` here because that is all the core can
-   * answer today, and declaring a value nobody draws is the `app` mistake two
-   * blocks above.
+   * list. It is closed to what the core answers — `children`, and `files`
+   * since 2026-09-18 — because declaring a value nobody draws is the `app`
+   * mistake two blocks above.
    *
    * `pull` names HEADER fields to show on each row, comma-separated. Header
    * fields only: the index publishes `fields` for every page and pays nothing
@@ -252,13 +252,15 @@ export const VOCABULARY: Readonly<Record<string, BlockSpec>> = {
     // still a list, not free prose, and calling it `content` would have made
     // the name mean "text" on one page and "rows" on another.
     content: 'optional',
-    description: 'Rows: the pages under this one, or the lines written in the block.',
+    description: 'Rows: the pages under this one, the files beside it, or the lines written in the block.',
     attributes: {
-      // The slot a plugin widens. Closed to one value, so it cannot promise
-      // a source nobody answers: `source=children` gets exactly what it says.
+      // The slot a plugin widens. Closed to what somebody answers, so it
+      // cannot promise a source nobody draws: `children` gets the pages below,
+      // `files` the page's other files — the ones the strip under a page
+      // shows, placed where the author wants them instead.
       // Named `source` and not `from`, because `from=` is the RESERVED word
       // for "which plugin draws this block" — one word cannot carry both.
-      source: { values: ['children'], default: 'children' },
+      source: { values: ['children', 'files'], default: 'children' },
       depth: { values: ['self', 'children', 'subtree'], default: 'children' },
       /**
        * Which KIND of page to keep — the `type:` of the children, comma-separated
@@ -275,15 +277,18 @@ export const VOCABULARY: Readonly<Record<string, BlockSpec>> = {
        * manifest claims. What differs is only what it applies to, and no
        * block is ambiguous about that: `content` has a subject of its own so
        * its `type` describes itself, while `list` has none — every attribute
-       * it takes describes the pages it lists.
+       * it takes describes the pages it lists. Over `source=files` it is a
+       * file's kind (`image`, `pdf`, `data`…), the same question asked of a
+       * file.
        */
       type: {},
       pull: {},
       sort: {},
       closed: { values: ['fold', 'hide', 'show'], default: 'fold' },
-      // Every value here is DRAWN. `grid` is absent on purpose: it belongs to
-      // `source=files`, which nothing answers yet, and an attribute value
-      // that draws nothing is the documented lie this table paid for once.
+      // Every value here is DRAWN, for both sources. No `grid` for files:
+      // `cards` already means "each one stands alone, scanned rather than
+      // read", which is exactly a contact sheet — a second word for it would
+      // be a value only one source draws.
       view: { values: ['rows', 'cards', 'chips'], default: 'rows' },
     },
   },

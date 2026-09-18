@@ -1076,6 +1076,17 @@ is the honest one — it comes from the data, not from the name.
 belongs to `source=files`, which nothing answers yet. Declaring a value that
 draws nothing is the mistake `table{type=risques}` already cost.
 
+**2026-09-18 — `source=files` answered, and `grid` stays out.** A list of the
+page's files, placed where the author writes it: the same files as the strip
+under the page, by the rule the server already owns (`/api/files?page=…` —
+the folder and its `assets/`); `depth=subtree` widens it to everything below
+the folder. `type` filters by the file's kind, the same question asked of a
+file. And `view=cards` IS the contact sheet — each entry standing alone,
+scanned rather than read, which is what `cards` already meant — so `grid`
+would have been a second word for it that only one source draws. The strip
+then leaves out what a files list in the body shows: the rule it already had
+for a photo shown in place, extended to the block.
+
 ### The index publishes what a page's written blocks SAY (decided 2026-09-10)
 
 `/api/pages/index` gains `blocks` — for each `:::content{type=…}` a page

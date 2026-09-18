@@ -553,6 +553,8 @@ export function Editor({
               {...(blocks ? { blocks } : {})}
               {...(vocabulary ? { vocabulary } : {})}
               {...(pages ? { pages } : {})}
+              fetchImpl={fetchImpl}
+              locale={locale}
             />
           </Layout>
         </PluginBoundary>
@@ -566,6 +568,8 @@ export function Editor({
           {...(blocks ? { blocks } : {})}
           {...(vocabulary ? { vocabulary } : {})}
           {...(pages ? { pages } : {})}
+          fetchImpl={fetchImpl}
+          locale={locale}
         />
       )}
 

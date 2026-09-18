@@ -11,7 +11,7 @@
 
 import type { ReactNode } from 'react'
 
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { forgetContributedBlocks, registerBlocks, validateDocument, parse } from '@antorfr/adestia-content'
@@ -557,5 +557,89 @@ describe('titre et icône sur TOUS les blocs', () => {
     const { container } = render(<Reader markdown={':::figures\n- Pièces: 9\n:::\n'} />)
     expect(container.querySelector('.adestia-head')).toBeNull()
     expect(container.querySelector('.adestia-titled')).toBeNull()
+  })
+})
+
+describe(':::list{source=files}', () => {
+  // La bande « Fichiers joints » sous la page, mais placée où l'auteur le
+  // veut : dans une rangée, sous un titre, filtrée. Mêmes fichiers, même règle
+  // — celle du serveur, `/api/files?page=…`.
+  const FICHIERS = [
+    { path: 'chantiers/adestia/plan.pdf', name: 'plan.pdf', bytes: 412_000, modified: '2026-09-10T10:00:00Z', kind: 'pdf' },
+    { path: 'chantiers/adestia/assets/avant.jpg', name: 'avant.jpg', bytes: 2_300_000, modified: '2026-09-17T10:00:00Z', kind: 'image' },
+    { path: 'chantiers/adestia/debit.csv', name: 'debit.csv', bytes: 900, modified: '2026-09-12T10:00:00Z', kind: 'text' },
+  ]
+  const answering = (files: unknown, ok = true) => {
+    const asked: string[] = []
+    const fetchImpl = ((url: string) => {
+      asked.push(url)
+      return Promise.resolve({ ok, status: ok ? 200 : 500, json: () => Promise.resolve({ files }) } as unknown as Response)
+    }) as unknown as typeof fetch
+    return { fetchImpl, asked }
+  }
+
+  it('est accepté par le vocabulaire, et `source` reste fermé', () => {
+    expect(validateDocument(parse(':::list{source=files type=pdf sort=modified view=cards}\n:::\n'))).toEqual([])
+    const [issue] = validateDocument(parse(':::list{source=depot}\n:::\n'))
+    expect(issue?.message).toContain('children, files')
+  })
+
+  it('liste les fichiers de la page, qui s’ouvrent dans un onglet', async () => {
+    const { fetchImpl, asked } = answering(FICHIERS)
+    const { container } = render(
+      <Reader markdown={':::list{source=files title="Documents"}\n:::\n'} path={HERE} fetchImpl={fetchImpl} locale="fr" />,
+    )
+    await waitFor(() => expect(screen.getByText('plan.pdf')).toBeTruthy())
+    expect(asked).toEqual([`/api/files?page=${encodeURIComponent(HERE)}`])
+    const link = screen.getByText('plan.pdf').closest('a')
+    expect(link?.getAttribute('href')).toBe('/api/files/chantiers/adestia/plan.pdf')
+    expect(link?.getAttribute('target')).toBe('_blank')
+    expect(screen.getByText('412 kB')).toBeTruthy()
+    // Le titre, dans la boîte comme pour une liste de pages.
+    expect(container.querySelector('.adestia-list--rows > .adestia-head')?.textContent).toBe('Documents')
+  })
+
+  it('garde les sortes nommées, et met le plus récent devant', async () => {
+    const { fetchImpl } = answering(FICHIERS)
+    const { container } = render(
+      <Reader markdown={':::list{source=files type=pdf,image sort=modified}\n:::\n'} path={HERE} fetchImpl={fetchImpl} />,
+    )
+    await waitFor(() => expect(screen.getByText('avant.jpg')).toBeTruthy())
+    const names = [...container.querySelectorAll('.adestia-list__title')].map((one) => one.textContent)
+    expect(names).toEqual(['avant.jpg', 'plan.pdf'])
+  })
+
+  it('fait une planche en `view=cards` : la photo pour une image, le glyphe sinon', async () => {
+    const { fetchImpl } = answering(FICHIERS)
+    const { container } = render(
+      <Reader markdown={':::list{source=files view=cards}\n:::\n'} path={HERE} fetchImpl={fetchImpl} />,
+    )
+    await waitFor(() => expect(screen.getByText('avant.jpg')).toBeTruthy())
+    const thumbs = [...container.querySelectorAll('.adestia-list__thumb')]
+    expect(thumbs.length).toBe(3)
+    expect(container.querySelector('.adestia-list__thumb img')?.getAttribute('src')).toBe(
+      '/api/files/chantiers/adestia/assets/avant.jpg',
+    )
+  })
+
+  it('descend sous le dossier avec `depth=subtree`', async () => {
+    const { fetchImpl, asked } = answering([])
+    render(<Reader markdown={':::list{source=files depth=subtree}\n:::\n'} path={HERE} fetchImpl={fetchImpl} />)
+    await waitFor(() => expect(screen.getByText('Aucun fichier ici.')).toBeTruthy())
+    expect(asked).toEqual(['/api/files?under=chantiers%2Fadestia'])
+  })
+
+  it('DIT qu’il n’a pas pu lister, et qu’il lui faut une page', async () => {
+    const { fetchImpl } = answering([], false)
+    const { unmount } = render(<Reader markdown={':::list{source=files}\n:::\n'} path={HERE} fetchImpl={fetchImpl} />)
+    await waitFor(() => expect(screen.getByText(/n’ont pas pu être listés/)).toBeTruthy())
+    unmount()
+    render(<Reader markdown={':::list{source=files}\n:::\n'} />)
+    expect(screen.getByText(/a besoin de la page/)).toBeTruthy()
+  })
+
+  it('laisse des lignes ÉCRITES être écrites, quoi que dise `source`', () => {
+    render(<Reader markdown={':::list{source=files}\n- PM: Machine\n:::\n'} path={HERE} />)
+    expect(screen.getByText('Machine')).toBeTruthy()
   })
 })

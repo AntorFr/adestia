@@ -308,7 +308,10 @@ Relative links resolve against the page's own folder and are served from
 `/api/files/…`. A link to a neighbouring `.md` opens that page in place, like
 a `[[wikilink]]`. Whatever a page does not already show in its body appears
 under it as an attachment strip — photos as thumbnails, the rest as
-downloadable rows — so nothing you file next to a page is invisible.
+downloadable rows — so nothing you file next to a page is invisible. To place
+them yourself — in a band, under a title, only the PDFs — write
+`:::list{source=files}` (see the block vocabulary); what it lists leaves the
+strip.
 
 Two things worth knowing:
 
@@ -485,9 +488,10 @@ written in the block:
   it behind a summary, `hide` drops it, `show` mixes it in. Folded rather than
   hidden because a finished thing is exactly what somebody opens to see how the
   last one went.
-- **`source`** accepts `children` and nothing else today. It is the slot a
-  plugin widens when it has something to list. (`from=` is a different word on
-  purpose: reserved on EVERY block, it names which plugin draws it — see below.)
+- **`source`** is `children` — the pages, the default — or `files`, the page's
+  other files (below). It is the slot a plugin widens when it has something to
+  list. (`from=` is a different word on purpose: reserved on EVERY block, it
+  names which plugin draws it — see below.)
 - **`view`** chooses the shape: `rows` (the default), `cards` — a grid, when
   each entry is meant to be scanned on its own rather than read down a column
   — and `chips`, a plate of initials beside a name.
@@ -520,6 +524,34 @@ make that word mean "prose" on one page and "rows" on another.
 What a written row does NOT have is a page behind it: nothing opens, `pull`
 has nothing to pull, and `closed` has no status to close by. If the entries
 are pages, query them instead of retyping them.
+
+**A list can list FILES.** `source=files` lists the page's attachments — the
+non-markdown files in its folder and under its `assets/`, the rule described
+under *Files a page carries* — where you put the block, instead of only in the
+strip under the page:
+
+```markdown
+:::list{source=files type=pdf title="Documents" ico=📎}
+:::
+
+:::list{source=files type=image view=cards w=1/2}
+:::
+```
+
+- **`type`** keeps the kinds it names, comma-separated: `image`, `pdf`,
+  `audio`, `video`, `text`, `data`, `file`. The same word as for pages — the
+  kind of the thing listed — asked of a file.
+- **`view=cards`** is a contact sheet: each file in the same frame, a photo
+  filling it, anything else its glyph. `rows` gives the name and the size;
+  `chips`, the name on a pill.
+- **`depth=subtree`** takes every file below the page's folder, the pages
+  living there included. Otherwise it is the page's own files.
+- **`sort=modified`** puts the newest first; `sort=name` orders by name.
+  Without it, the order is the paths'.
+
+Every file opens in a tab, as it does from the strip. And the strip stops
+repeating what the body already lists: a files list with no `type` takes every
+attachment out of it, one with `type=pdf` only the PDFs.
 
 A page that carries this block never lists itself, and a folder's index page is
 the folder rather than one of its contents.
