@@ -18,13 +18,19 @@ encadré, au-dessus du reste. Signalé à l'usage : un `:::list{title=…}` pass
 avec un simple avertissement et s'affichait sans titre. Scénario de banc :
 `block-titles`.
 
-Depuis (pas encore tagué) : `:::list{source=files}` liste les fichiers d'une
+v0.63.0 : `:::list{source=files}` liste les fichiers d'une
 page (son dossier et son `assets/`, la règle de la bande « Pièces jointes »)
 là où l'auteur écrit le bloc ; `type=` filtre par sorte (`image`, `pdf`…),
 `view=cards` fait une planche, `depth=subtree` descend sous le dossier. La
 bande du bas ne répète plus ce qu'une liste montre. Corrigé en passant : le
 lecteur d'une page ordinaire ne recevait pas `vocabulary` (latent, aucune app
 ne surcharge un bloc du cœur). Scénario de banc : `list-files`.
+
+Depuis (pas encore tagué) : `view` redevient la FORME sur tous les blocs.
+`:::timeline{view=cards}` et `:::checklist{view=cards}` sont mis en carte par
+le lecteur (la carte d'une section, le titre en bandeau) ; le filtre de la
+checklist s'appelle `show=` — l'ancien `view=late` reste lu comme filtre, le
+guide n'enseigne plus que `show`. Scénario de banc : `block-cards`.
 
 v0.60.0 (16/09, déployée sur les trois corps) : la durée de session est un
 réglage, `auth.oidc.sessionTtlMs`, et un grant mort l'écourte.

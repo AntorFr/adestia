@@ -27,9 +27,13 @@
           "values": ["self", "children", "subtree"],
           "default": "subtree"
         },
-        "view": {
+        "show": {
           "values": ["open", "late", "today", "later", "all"],
           "default": "open"
+        },
+        "view": {
+          "values": ["plain", "cards", "open", "late", "today", "later", "all"],
+          "default": "plain"
         },
         "assignee": {},
         "dom": {},

@@ -430,6 +430,18 @@ function render(node: Node, ctx: Ctx): ReactNode {
         }
       }
 
+      // `view=cards` is a SHAPE, and the reader draws it — the card `content`
+      // wears, its title as the card's band — for any plugin block whose spec
+      // declares the value. The plugin draws what goes inside, nothing more.
+      if (node.attributes?.['view'] === 'cards' && resolved?.spec.attributes['view']?.values?.includes('cards')) {
+        return (
+          <section className="adestia-framed">
+            {head}
+            <Contributed node={node} ctx={ctx} claim={resolved} />
+          </section>
+        )
+      }
+
       return titled(head, <Contributed node={node} ctx={ctx} claim={resolved} />)
     }
     default:

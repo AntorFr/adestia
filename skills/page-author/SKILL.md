@@ -416,6 +416,12 @@ are all still there. Note the word is the plural `cards`, the same one `list`
 uses — an unknown value is an error that locks the page, so there is one word
 for "boxed" and no `view=card` to mistype.
 
+A plugin's block can ask for the same card — `:::timeline{view=cards}`,
+`:::checklist{view=cards}` — when its plugin declares the value: the reader
+draws the box and puts the block's `title=` in its band, so a planning and a
+list of tasks sit beside a boxed section as three of a kind. `view` is always
+the SHAPE of a block; nothing else is allowed to borrow the word.
+
 ⚠️ **A boxed content is not a `callout`.** A callout is an ASIDE — a remark
 set apart from the flow, coloured by its tone, with no subject and no
 signature. Use it to interrupt. Use a boxed `content` when the thing IS a

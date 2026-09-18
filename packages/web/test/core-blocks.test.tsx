@@ -643,3 +643,53 @@ describe(':::list{source=files}', () => {
     expect(screen.getByText('Machine')).toBeTruthy()
   })
 })
+
+describe('`view=cards` sur un bloc de plugin', () => {
+  // La forme « en carte » est dessinée par le LECTEUR, comme le titre : un
+  // timeline, une checklist portent la carte d'une section, bandeau compris,
+  // sans que leur plugin ait rien à dessiner — il suffit qu'il déclare la
+  // valeur.
+  const frise = (values: [string, ...string[]]) =>
+    registerBlocks(
+      {
+        chrono: {
+          content: 'empty',
+          description: 'une frise',
+          attributes: { view: { values, default: values[0] } },
+        },
+      },
+      { plugin: 'frises', kind: 'feature' },
+    )
+  const Frise = () => <div data-testid="frise" />
+  afterEach(() => forgetContributedBlocks())
+
+  it('met en carte, le titre en bandeau, le bloc qui déclare `cards`', () => {
+    frise(['plain', 'cards'])
+    const { container } = render(
+      <Reader
+        markdown={':::chrono{view=cards title="Planning" ico=🗓️}\n:::\n'}
+        vocabulary={{ features: ['frises'] }}
+        blocks={{ frises: { chrono: Frise } }}
+      />,
+    )
+    const card = container.querySelector('.adestia-framed')
+    expect(card?.querySelector(':scope > .adestia-head')?.textContent).toContain('Planning')
+    expect(card?.querySelector('[data-testid="frise"]')).toBeTruthy()
+    expect(container.querySelector('.adestia-titled')).toBeNull()
+  })
+
+  it('ne met rien en carte pour un bloc dont le `view` veut dire autre chose', () => {
+    // Une valeur que le plugin ne déclare pas n'est pas une forme qu'il a
+    // promise : le lecteur ne l'invente pas.
+    frise(['open', 'late'])
+    const { container } = render(
+      <Reader
+        markdown={':::chrono{view=cards}\n:::\n'}
+        vocabulary={{ features: ['frises'] }}
+        blocks={{ frises: { chrono: Frise } }}
+      />,
+    )
+    expect(container.querySelector('.adestia-framed')).toBeNull()
+    expect(screen.getByTestId('frise')).toBeTruthy()
+  })
+})

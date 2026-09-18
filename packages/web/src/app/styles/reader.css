@@ -213,7 +213,11 @@
    BLOCKS rather than as one column of prose. Not a callout: a callout is an
    aside coloured by its tone, this is a section of the page that happens to
    be framed, and it keeps its subject, its title and its signature. */
-.adestia-content--cards {
+/* `.adestia-framed` is the same box around a PLUGIN's block that asked for
+   `view=cards` — the reader draws it, so a timeline and a checklist wear the
+   card a section wears, band and all. */
+.adestia-content--cards,
+.adestia-framed {
   padding: var(--space-3) var(--space-4);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -221,7 +225,10 @@
 }
 /* In a box the header becomes the box's own band: edge to edge, a hairline
    under it, so the title sits ON the card rather than floating in it. */
-.adestia-content--cards > .adestia-head {
+.adestia-framed { margin: 1.4em 0; }
+.adestia-framed > :last-child { margin-bottom: 0; }
+.adestia-content--cards > .adestia-head,
+.adestia-framed > .adestia-head {
   margin: calc(-1 * var(--space-3)) calc(-1 * var(--space-4)) var(--space-3);
   padding: 10px var(--space-4);
   border-bottom: 1px solid var(--border);
@@ -233,8 +240,8 @@
    Scoped with `:has` rather than by flipping the row's own alignment: every
    other band — prose beside a list, tiles beside a table — was laid out
    against `flex-start`, and none of them asked for this. */
-.adestia-row:has(> .adestia-row__cell > .adestia-content--cards) { align-items: stretch; }
-.adestia-row__cell > .adestia-content--cards { height: 100%; margin-bottom: 0; }
+.adestia-row:has(> .adestia-row__cell > :is(.adestia-content--cards, .adestia-framed)) { align-items: stretch; }
+.adestia-row__cell > :is(.adestia-content--cards, .adestia-framed) { height: 100%; margin-bottom: 0; }
 
 /* `:::figures` — the numbers first, because that is what the eye came for,
    and the label under it. Tabular figures so a column of them lines up. */
