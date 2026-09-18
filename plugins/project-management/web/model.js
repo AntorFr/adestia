@@ -169,6 +169,39 @@ export function fraction(date, box) {
 }
 
 /**
+ * Where each milestone label goes: which row above the bars, and whether it
+ * reads leftwards from its line.
+ *
+ * `labels` are `{ at, chars }` — the position on the axis (0…1) and the
+ * label's length — in date order; `width` is the chart's, in pixels. Each
+ * label takes the LOWEST row where it clears the last label already there;
+ * one that would run past the right edge ends at its line instead of
+ * starting there. As many rows as that takes, so two labels never write over
+ * each other however close their dates — alternating rows only ever cleared
+ * immediate neighbours, and a third label landed on the first.
+ *
+ * Without a width — not measured yet — rows simply alternate, which is right
+ * for two neighbours and is replaced on the next frame.
+ */
+export function labelRows(labels, width, { charWidth = 6.8, gap = 8 } = {}) {
+  if (!width) return labels.map((_, index) => ({ row: index % 2, end: false }))
+  const edges = []
+  return labels.map(({ at, chars }) => {
+    const x = at * width
+    const w = chars * charWidth
+    const end = x - 4 + w > width
+    const left = end ? x + 2 - w : x - 4
+    let row = edges.findIndex((edge) => edge + gap <= left)
+    if (row === -1) {
+      row = edges.length
+      edges.push(0)
+    }
+    edges[row] = left + w
+    return { row, end }
+  })
+}
+
+/**
  * Where an entry stands — the calendar and the workflow, and what their
  * DISAGREEMENT means.
  *

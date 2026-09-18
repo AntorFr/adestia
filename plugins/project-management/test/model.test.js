@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { classify, fraction, fromPages, parseLine, span, under } from '../web/model.js'
+import { classify, fraction, fromPages, labelRows, parseLine, span, under } from '../web/model.js'
 
 // ── parseLine: one line, one entry, or null by name ─────────────────────────
 
@@ -243,4 +243,32 @@ test('under matches the core walk: a folder is its index, not its contents', () 
   assert.equal(under('a/page.md', 'a', 'children'), true)
   assert.equal(under('a/INDEX.md', 'a', 'children'), false)
   assert.equal(under('autre/x.md', 'a', 'subtree'), false)
+})
+
+test('milestone labels take the lowest row where they clear, and never overlap', () => {
+  // The bench's case: three milestones, the first two a few days apart, the
+  // third far enough to share the first row — but only if it truly clears.
+  const labels = [
+    { at: 0.5, chars: 16 },
+    { at: 0.52, chars: 22 },
+    { at: 0.8, chars: 19 },
+  ]
+  const wide = labelRows(labels, 1000)
+  assert.deepEqual(wide.map((one) => one.row), [0, 1, 0])
+  // Narrow: the third no longer clears the first, so it climbs a row — the
+  // alternation it replaced put it on the first one regardless.
+  const narrow = labelRows(labels, 400)
+  assert.equal(new Set(narrow.map((one) => one.row)).size, 3)
+})
+
+test('a label that would run past the right edge reads leftwards', () => {
+  const [late] = labelRows([{ at: 0.95, chars: 20 }], 500)
+  assert.equal(late.end, true)
+  const [early] = labelRows([{ at: 0.1, chars: 20 }], 500)
+  assert.equal(early.end, false)
+})
+
+test('before the chart is measured, labels alternate', () => {
+  const rows = labelRows([{ at: 0.1, chars: 5 }, { at: 0.2, chars: 5 }, { at: 0.3, chars: 5 }], 0)
+  assert.deepEqual(rows.map((one) => one.row), [0, 1, 0])
 })

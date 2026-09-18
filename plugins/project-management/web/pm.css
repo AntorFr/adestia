@@ -6,12 +6,6 @@
 .pm-timeline {
   margin: 0 0 1.4em;
 }
-/* Inside the card the reader drew: its margin is the card's, and a milestone
-   label at the top of the chart is kept off the band's hairline. */
-.pm-timeline--carded {
-  margin: 0;
-  padding-top: 10px;
-}
 .pm-timeline__empty,
 .pm-timeline__unread {
   font-size: var(--text-sm);
@@ -24,14 +18,15 @@
   margin: 8px 0 0;
 }
 
-/* The chart: bars stacked in rows, milestones and the today line across them. */
+/* The chart: bars stacked in rows, milestones and the today line across them.
+   Its top padding is headroom for the milestone labels — one 18px row per row
+   they need, set by the component, 30px until it has measured. The labels
+   live INSIDE it: the chart never draws above its own box, or a label lands
+   on whatever the page put there — the paragraph above, or the band of the
+   card the block sits in. */
 .pm-timeline__chart {
   position: relative;
   padding: 30px 0 24px;
-}
-/* Two milestone-label rows need headroom; one row keeps the chart tight. */
-.pm-timeline__chart--tall {
-  padding-top: 48px;
 }
 .pm-timeline__bar {
   position: relative;
@@ -92,7 +87,6 @@
    whole point of a milestone is that you see it before you see the bars. */
 .pm-timeline__mile {
   position: absolute;
-  top: 4px;
   bottom: 24px;
   border-left: 2px solid var(--warning);
 }
@@ -109,19 +103,23 @@
 .pm-timeline__mile > span,
 .pm-timeline__mile > button {
   position: absolute;
-  top: -22px;
   left: -4px;
   white-space: nowrap;
   font-size: 11px;
+  /* Its own line height, not the page's: the rows are 18px apart, and a label
+     as tall as a line of prose would reach into the row above. */
+  line-height: 14px;
   font-weight: 600;
   font-family: var(--font-mono);
   color: var(--warning);
 }
-/* The alternating row: same rule, its label one row higher, so neighbours clear. */
-.pm-timeline__mile--high > span,
-.pm-timeline__mile--high > button {
-  top: -40px;
+/* Near the right edge: the label ends at its line instead of starting there. */
+.pm-timeline__mile--end > span,
+.pm-timeline__mile--end > button {
+  left: auto;
+  right: -2px;
 }
+
 /* A milestone already behind us stops shouting, but stays legible. */
 .pm-timeline__mile--past,
 .pm-timeline__mile--done {
