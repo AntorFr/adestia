@@ -137,23 +137,22 @@
    They wear the shell's own tokens rather than a palette of their own: a
    block is content in a page, not a widget visiting one. */
 
-/* `:::content` — a title and prose, under a header that holds the three
-   voices of the shell: the glyph on the plate the tiles wear, the title in the
-   serif of address, the signature in the mono of apparatus. The byline is
-   quiet on purpose; it is provenance, and provenance that shouts competes
-   with what it introduces. The section spaces ITSELF, above and below: its
-   title no longer borrows the margin a page heading carries. */
-.adestia-content { margin: 1.4em 0; }
-.adestia-content > :last-child { margin-bottom: 0; }
-
-.adestia-content__head {
+/* A block's header — `title=` and `ico=`, which every block carries — in the
+   shell's three voices: the glyph on the tiles' tinted plate, the title in the
+   serif of address, a section's signature in the mono of apparatus, pushed
+   right. The byline is quiet on purpose; it is provenance, and provenance
+   that shouts competes with what it introduces.
+   The row is at least a plate tall, with a glyph or without, so two boxed
+   blocks sharing a band put their titles on one line. */
+.adestia-head {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px 10px;
+  min-height: 28px;
   margin: 0 0 var(--space-3);
 }
-.adestia-content__ico {
+.adestia-head__ico {
   display: grid;
   place-items: center;
   flex: none;
@@ -167,17 +166,43 @@
 /* Through the header, not on the class alone: `.adestia-reader h3` outranks a
    single class, and gave every block title the 1.8em a page heading opens
    with — an empty band at the top of every card. */
-.adestia-content__head > .adestia-content__title {
+.adestia-head > .adestia-head__title {
   margin: 0;
   font: 600 1.1rem/1.25 var(--font-title);
   letter-spacing: var(--title-track);
 }
-.adestia-content__head > .adestia-content__by {
+.adestia-head > .adestia-head__by {
   margin: 0 0 0 auto;
   font: 500 11px/1.3 var(--font-mono);
   letter-spacing: 0.02em;
   color: var(--text-faint);
 }
+
+/* A block with no box of its own wears its header ABOVE it. The block keeps
+   its own spacing below; the pair spaces itself as one. */
+.adestia-titled { margin: 1.4em 0; }
+.adestia-titled > :last-child { margin-bottom: 0; }
+
+/* In a box, the header is the box's first row: edge to edge, over the same
+   hairline that separates the rows under it — the list's 1px gap on its
+   border-coloured ground draws it, as it does between two rows. */
+.adestia-list > .adestia-head {
+  margin: 0;
+  padding: 10px var(--space-3);
+  background: var(--surface-raised);
+}
+
+/* In a callout, a first line and not a band: an aside is not a panel, and a
+   plate tinted like the callout's own ground would vanish into it. */
+.adestia-callout > .adestia-head { min-height: 0; margin-bottom: var(--space-2); }
+.adestia-callout .adestia-head__ico { width: auto; height: auto; background: none; }
+.adestia-callout .adestia-head > .adestia-head__title { font-size: 1rem; }
+
+/* `:::content` — a title and prose. It always has a header: its title falls
+   back on the prettified `type`. The section spaces ITSELF, above and below:
+   its title no longer borrows the margin a page heading carries. */
+.adestia-content { margin: 1.4em 0; }
+.adestia-content > :last-child { margin-bottom: 0; }
 
 /* `view=cards` — the same section, given a box, so a page of several reads as
    BLOCKS rather than as one column of prose. Not a callout: a callout is an
@@ -191,7 +216,7 @@
 }
 /* In a box the header becomes the box's own band: edge to edge, a hairline
    under it, so the title sits ON the card rather than floating in it. */
-.adestia-content--cards > .adestia-content__head {
+.adestia-content--cards > .adestia-head {
   margin: calc(-1 * var(--space-3)) calc(-1 * var(--space-4)) var(--space-3);
   padding: 10px var(--space-4);
   border-bottom: 1px solid var(--border);

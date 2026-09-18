@@ -381,9 +381,10 @@ nothing: no code, no manifest entry, no restart. It is required because a
 block that lost what it was about must be a visible refusal, not a paragraph
 that quietly forgot its subject. `by` and `on` are optional provenance.
 
-**`title=` and `ico=`** dress the header, on the same words a PAGE declares
-(`title:`, `ico:`) and the same ladder the tiles taught — the occurrence beats
-a configured label, which beats the prettified type:
+**`title=` and `ico=`** dress the header — any block takes them (see below),
+and a section is the one block that has a title WITHOUT them: the ladder the
+tiles taught, where the occurrence beats a configured label, which beats the
+prettified type:
 
 ```markdown
 :::content{type=perimetre title="Périmètre du lot" ico=📐}
@@ -586,9 +587,31 @@ hand in frontmatter, and a corpus where every author invents their own column.
 It is an intention, not a promise about pixels: a narrow canvas puts the blocks
 back one per line rather than shrinking them past reading.
 
+### `title` and `ico` — a heading on any block
+
+Like `id` and `w`, any block accepts them — a list, a table, figures, a
+callout, a plugin's timeline — and no spec declares them. They are the same
+two words a PAGE declares in its header (`title:`, `ico:`), one level down:
+
+```markdown
+:::list{type=chantier title="Sous-projets" ico=🧱}
+:::
+
+:::table{title="Liste de débit" ico=📐}
+| Pièce | Longueur |
+|---|---|
+| Côté | 721 |
+:::
+```
+
+The reader draws the heading, so a block needs nothing to have one. Where it
+sits follows the block: the first row of a list's box, the first line of a
+callout, above anything with no box of its own. Write neither and the block
+stays bare — only `:::content` falls back on a title of its own.
+
 ### `from` — which plugin draws a block
 
-Like `id` and `w`, any block accepts it and no spec declares it. Its value is a
+Like `id`, `w` and `title`, any block accepts it and no spec declares it. Its value is a
 **plugin id**, or `core` for the plain rendering:
 
 ```markdown

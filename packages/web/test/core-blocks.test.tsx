@@ -450,3 +450,85 @@ describe('titre et icône sur :::content', () => {
     expect(issue?.message).toContain('type')
   })
 })
+
+describe('titre et icône sur TOUS les blocs', () => {
+  // Signalé à l'usage : `:::list{title=…}` s'enregistrait avec un simple
+  // avertissement et s'affichait sans son titre. `title` et `ico` sont
+  // désormais réservés, comme `w` : le lecteur dessine l'en-tête pour n'importe
+  // quel bloc, et seule sa PLACE varie — dans la boîte de ceux qui en ont une,
+  // au-dessus des autres.
+  it('ne fait plus avertir le validateur, sur aucun bloc', () => {
+    const page =
+      ':::list{title="Sous-projets" ico=🧱}\n:::\n\n' +
+      ':::figures{title="En chiffres"}\n- Pièces: 9\n:::\n\n' +
+      ':::table{title="Débit" ico=📐}\n| a | b |\n|---|---|\n| 1 | 2 |\n:::\n\n' +
+      ':::callout{type=tip title="Astuce"}\nCorps.\n:::\n'
+    expect(validateDocument(parse(page))).toEqual([])
+  })
+
+  it('met le titre d’une liste en PREMIÈRE ligne de sa boîte', () => {
+    const { container } = render(
+      <Reader markdown={':::list{title="Sous-projets" ico=🧱}\n:::\n'} path={HERE} pages={PAGES} />,
+    )
+    const head = container.querySelector('.adestia-list--rows > .adestia-head')
+    expect(head?.textContent).toContain('Sous-projets')
+    expect(head?.textContent).toContain('🧱')
+    // Dans la boîte, donc pas d'enveloppe par-dessus.
+    expect(container.querySelector('.adestia-titled')).toBeNull()
+  })
+
+  it('pose le titre AU-DESSUS d’une liste qui n’a pas de boîte', () => {
+    const { container } = render(
+      <Reader markdown={':::list{title="Les gens" view=chips}\n- PM: Machine\n:::\n'} />,
+    )
+    expect(container.querySelector('.adestia-titled > .adestia-head')?.textContent).toBe('Les gens')
+    expect(container.querySelector('.adestia-titled > .adestia-list--chips')).toBeTruthy()
+  })
+
+  it('titre les chiffres et le tableau par-dessus', () => {
+    const { container } = render(
+      <Reader
+        markdown={
+          ':::figures{title="En chiffres"}\n- Pièces: 9\n:::\n\n' +
+          ':::table{title="Débit"}\n| a | b |\n|---|---|\n| 1 | 2 |\n:::\n'
+        }
+      />,
+    )
+    const heads = [...container.querySelectorAll('.adestia-titled > .adestia-head')].map((one) => one.textContent)
+    expect(heads).toEqual(['En chiffres', 'Débit'])
+    expect(container.querySelector('.adestia-titled > .adestia-figures')).toBeTruthy()
+    expect(container.querySelector('.adestia-titled > .adestia-tableblock')).toBeTruthy()
+  })
+
+  it('met le titre d’un encadré DANS l’encadré', () => {
+    const { container } = render(<Reader markdown={':::callout{type=tip title="Astuce"}\nCorps.\n:::\n'} />)
+    expect(container.querySelector('.adestia-callout > .adestia-head')?.textContent).toBe('Astuce')
+  })
+
+  it('titre aussi le bloc d’un plugin, sans que le plugin ait rien à apprendre', () => {
+    registerBlocks(
+      { chrono: { content: 'empty', description: 'une frise' } },
+      { plugin: 'frises', kind: 'feature' },
+    )
+    try {
+      const Frise = () => <div data-testid="frise" />
+      const { container } = render(
+        <Reader
+          markdown={':::chrono{title="Planning" ico=🗓️}\n:::\n'}
+          vocabulary={{ features: ['frises'] }}
+          blocks={{ frises: { chrono: Frise } }}
+        />,
+      )
+      expect(screen.getByTestId('frise')).toBeTruthy()
+      expect(container.querySelector('.adestia-titled > .adestia-head')?.textContent).toContain('Planning')
+    } finally {
+      forgetContributedBlocks()
+    }
+  })
+
+  it('laisse nu un bloc qui ne demande rien', () => {
+    const { container } = render(<Reader markdown={':::figures\n- Pièces: 9\n:::\n'} />)
+    expect(container.querySelector('.adestia-head')).toBeNull()
+    expect(container.querySelector('.adestia-titled')).toBeNull()
+  })
+})

@@ -1129,6 +1129,22 @@ breakpoint: the canvas is not the viewport — the chat rail takes a share of it
 resizable — so a media query would narrow a column that is already narrow while
 leaving a wide one in two.
 
+### `title` and `ico` are the document's too (decided 2026-09-18)
+
+Reported from use: a `:::list` written with `title=` showed no title. It could
+not — the attribute lived in `content`'s spec alone, so on a list it validated
+with a warning ("will be ignored") and was. A heading is not a property of
+one rendering: a list, a table, a plugin's timeline deserve one as much as a
+section does.
+
+So `title` and `ico` join `id`, `w` and `from` as RESERVED, and the READER
+draws the header — one drawing for every block, core or plugin, and nothing a
+component has to learn. Only its PLACE follows the block: the first row of a
+list's box (under the same hairline as its rows), the first line of a
+callout, above anything with no box of its own. `content` keeps drawing its
+own, because a section always has a title — its prettified `type` when none
+is written — and a signature.
+
 ### The index says whether a page has a body (decided 2026-09-08)
 
 `GET /api/pages/index` publishes one boolean per entry beside `finished`. A

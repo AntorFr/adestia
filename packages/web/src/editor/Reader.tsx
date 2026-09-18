@@ -378,42 +378,54 @@ function render(node: Node, ctx: Ctx): ReactNode {
         ...(asked !== undefined ? { from: asked } : {}),
       })
 
+      // `title=` and `ico=` are RESERVED, so the header is drawn here, once,
+      // for whoever draws the block. Where it sits is the one thing that
+      // varies: IN the box of a block that has one, above any other.
+      const head = headOf(node)
+
       if (resolved === undefined && asked !== undefined) {
         // `from=` named a plugin nothing answers for — off, renamed, or never
         // here. Said like a dead link: visibly, with the body kept underneath.
-        return (
+        return titled(
+          head,
           <>
             <p className="adestia-block-note">
               :::{name} — from={asked} : rien ne porte ce nom ici.
             </p>
             {children(node, ctx)}
-          </>
+          </>,
         )
       }
 
       if (resolved?.plugin === 'core') {
         if (node.type === 'containerDirective' && name === 'callout') {
           const tone = node.attributes?.['type'] ?? 'note'
-          return <aside className={`adestia-callout adestia-callout--${tone}`}>{children(node, ctx)}</aside>
+          return (
+            <aside className={`adestia-callout adestia-callout--${tone}`}>
+              {head}
+              {children(node, ctx)}
+            </aside>
+          )
         }
         if (node.type === 'containerDirective' && name === 'gallery') {
-          return <div className="adestia-gallery">{children(node, ctx)}</div>
+          return titled(head, <div className="adestia-gallery">{children(node, ctx)}</div>)
         }
         if (node.type === 'containerDirective' && name === 'content') {
+          // Draws its own: a section always has a title, and a signature.
           return <ContentBlock node={node} ctx={ctx} />
         }
         if (node.type === 'containerDirective' && name === 'figures') {
-          return <Figures node={node} />
+          return titled(head, <Figures node={node} />)
         }
         if (node.type === 'containerDirective' && name === 'table') {
-          return <TableBlock node={node} ctx={ctx} />
+          return titled(head, <TableBlock node={node} ctx={ctx} />)
         }
         if (node.type === 'containerDirective' && name === 'list') {
-          return <ListBlock node={node} ctx={ctx} />
+          return <ListBlock node={node} ctx={ctx} head={head} />
         }
       }
 
-      return <Contributed node={node} ctx={ctx} claim={resolved} />
+      return titled(head, <Contributed node={node} ctx={ctx} claim={resolved} />)
     }
     default:
       // Never silently dropped: an unrendered node is a visible gap somebody
@@ -444,27 +456,62 @@ function ContentBlock({ node, ctx }: { readonly node: Node; readonly ctx: Ctx })
   // a word someone meant to read.
   const title = node.attributes?.['title'] ?? (subject ? prettify(subject) : '')
   const ico = node.attributes?.['ico']
-  const by = node.attributes?.['by']
-  const on = node.attributes?.['on']
+  const signed = [node.attributes?.['by'], node.attributes?.['on']].filter(Boolean).join(' · ')
   const boxed = node.attributes?.['view'] === 'cards'
   return (
     <section className={`adestia-content${boxed ? ' adestia-content--cards' : ''}`}>
-      {/* One row, so the glyph, the title and the signature read as the
-          block's header rather than three lines stacked above its prose. */}
-      {(title || ico || by || on) && (
-        <header className="adestia-content__head">
-          {ico && (
-            <span className="adestia-content__ico" aria-hidden="true">
-              {ico}
-            </span>
-          )}
-          {title && <h3 className="adestia-content__title">{title}</h3>}
-          {(by || on) && (
-            <p className="adestia-content__by">{[by, on].filter(Boolean).join(' · ')}</p>
-          )}
-        </header>
-      )}
+      {(title || ico || signed) && <BlockHead title={title} ico={ico} by={signed} />}
       {children(node, ctx)}
+    </section>
+  )
+}
+
+/**
+ * A block's header: its glyph, its title, and — for a section — its signature,
+ * on ONE row, so they read as the block's heading rather than as lines stacked
+ * above it. The same drawing for every block, core or plugin: a list's heading
+ * and a section's are the same thing.
+ */
+function BlockHead({
+  title,
+  ico,
+  by,
+}: {
+  readonly title?: string | undefined
+  readonly ico?: string | undefined
+  readonly by?: string | undefined
+}) {
+  return (
+    <header className="adestia-head">
+      {ico && (
+        <span className="adestia-head__ico" aria-hidden="true">
+          {ico}
+        </span>
+      )}
+      {title && <h3 className="adestia-head__title">{title}</h3>}
+      {by && <p className="adestia-head__by">{by}</p>}
+    </header>
+  )
+}
+
+/** The header a block ASKED for, or nothing: a block with neither word stays bare. */
+function headOf(node: Node): ReactNode {
+  const title = node.attributes?.['title']
+  const ico = node.attributes?.['ico']
+  return title || ico ? <BlockHead title={title} ico={ico} /> : null
+}
+
+/**
+ * The header set ABOVE a block that has no box of its own to carry it —
+ * figures, a table, a gallery, whatever a plugin draws. A component is never
+ * asked to make room: it draws what it draws, and the heading sits on top.
+ */
+function titled(head: ReactNode, block: ReactNode): ReactNode {
+  if (!head) return block
+  return (
+    <section className="adestia-titled">
+      {head}
+      {block}
     </section>
   )
 }
@@ -553,7 +600,16 @@ function TableBlock({ node, ctx }: { readonly node: Node; readonly ctx: Ctx }) {
  * is out of the way and one click from being read. It has nothing to say
  * about written rows: a written line carries no status to be closed BY.
  */
-function ListBlock({ node, ctx }: { readonly node: Node; readonly ctx: Ctx }) {
+function ListBlock({
+  node,
+  ctx,
+  head,
+}: {
+  readonly node: Node
+  readonly ctx: Ctx
+  /** Its header, if it asked for one: the top row of the box in `rows`, above the rest. */
+  readonly head?: ReactNode
+}) {
   const attrs = node.attributes ?? {}
   const base = ctx.page?.path ? folderOf(ctx.page.path) : (ctx.base ?? '')
   const depth = attrs['depth'] ?? 'children'
@@ -571,13 +627,13 @@ function ListBlock({ node, ctx }: { readonly node: Node; readonly ctx: Ctx }) {
         ? { label: '', value: text.trim() }
         : { label: text.slice(0, cut).trim(), value: text.slice(cut + 1).trim() }
     })
-    return <Written entries={entries} view={view} />
+    return <Written entries={entries} view={view} head={head} />
   }
 
   // No index here — a chat bubble, a preview. Saying so beats drawing an
   // empty list, which would read as "this folder holds nothing".
   if (ctx.pages === undefined) {
-    return <p className="adestia-block-note">Cette liste a besoin de l’index des pages.</p>
+    return titled(head, <p className="adestia-block-note">Cette liste a besoin de l’index des pages.</p>)
   }
 
   // `depth` says how far to look; `type` says what to keep. Both are needed:
@@ -602,11 +658,12 @@ function ListBlock({ node, ctx }: { readonly node: Node; readonly ctx: Ctx }) {
 
   const shown = closed === 'show' ? [...live, ...done] : live
   if (shown.length === 0 && done.length === 0) {
-    return <p className="adestia-block-note">Rien sous cette page.</p>
+    return titled(head, <p className="adestia-block-note">Rien sous cette page.</p>)
   }
 
-  return (
+  const list = (
     <div className={`adestia-list adestia-list--${view}`}>
+      {view === 'rows' && head}
       {shown.map((page) => (
         <Row key={page.path} page={page} pull={pull} view={view} ctx={ctx} />
       ))}
@@ -622,6 +679,9 @@ function ListBlock({ node, ctx }: { readonly node: Node; readonly ctx: Ctx }) {
       )}
     </div>
   )
+  // `rows` is a box, and its header is the box's first row. The other views
+  // are loose cards or chips, with no box to put it in.
+  return view === 'rows' ? list : titled(head, list)
 }
 
 /**
@@ -635,12 +695,15 @@ function ListBlock({ node, ctx }: { readonly node: Node; readonly ctx: Ctx }) {
 function Written({
   entries,
   view,
+  head,
 }: {
   readonly entries: readonly { label: string; value: string }[]
   readonly view: string
+  readonly head?: ReactNode
 }) {
   if (view === 'chips') {
-    return (
+    return titled(
+      head,
       <div className="adestia-list adestia-list--chips">
         {entries.map((entry, index) => (
           <span className="adestia-chip" key={`${entry.value}-${index}`}>
@@ -653,11 +716,13 @@ function Written({
             </span>
           </span>
         ))}
-      </div>
+      </div>,
     )
   }
-  return (
-    <div className={`adestia-list adestia-list--${view === 'cards' ? 'cards' : 'rows'}`}>
+  const boxed = view !== 'cards'
+  const list = (
+    <div className={`adestia-list adestia-list--${boxed ? 'rows' : 'cards'}`}>
+      {boxed && head}
       {entries.map((entry, index) => (
         <div className="adestia-list__row adestia-list__row--written" key={`${entry.value}-${index}`}>
           <span className="adestia-list__title">{entry.value}</span>
@@ -670,6 +735,7 @@ function Written({
       ))}
     </div>
   )
+  return boxed ? list : titled(head, list)
 }
 
 function Row({
