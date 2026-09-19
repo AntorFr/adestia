@@ -309,6 +309,21 @@ h2.adestia-editor__title { padding-bottom: 3px; }
 .adestia-edblock__bar button:hover { color: var(--accent); background: var(--accent-quiet); }
 .adestia-edblock__gear { font-size: 13px; }
 .adestia-edblock__act { font-size: 12px; }
+.adestia-edblock__bar button.adestia-edblock__grip { cursor: grab; font-size: 13px; letter-spacing: -1px; }
+
+/* Dragging a block: the block itself fades, a line says where it will land. */
+.adestia-edblock--dragging { opacity: 0.4; }
+body.adestia-dragging-block,
+body.adestia-dragging-block * { cursor: grabbing !important; user-select: none; }
+.adestia-drop-line {
+  position: fixed;
+  z-index: 1000;
+  border-radius: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent);
+  pointer-events: none;
+}
+.adestia-drop-line[hidden] { display: none; }
 .adestia-edblock__act[hidden] { display: none; }
 .adestia-edblock__bar button.adestia-edblock__remove:hover { color: var(--danger); }
 

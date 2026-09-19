@@ -135,8 +135,16 @@ class DirectiveView implements NodeView {
       this.bar.append(button)
       return button
     }
-    action('↑', 'Monter le bloc', () => this.move(-1))
-    action('↓', 'Descendre le bloc', () => this.move(1))
+    const grip = make('button', 'adestia-edblock__grip')
+    grip.type = 'button'
+    grip.title = 'Déplacer le bloc'
+    grip.setAttribute('aria-label', 'Déplacer le bloc')
+    grip.textContent = '⠿'
+    grip.addEventListener('pointerdown', (event) => {
+      event.preventDefault()
+      this.startDrag(event)
+    })
+    this.bar.append(grip)
     this.lift = action('⤴', 'Sortir du bloc parent', () => this.liftOut(), 'adestia-edblock__lift')
     action('✕', 'Supprimer le bloc', () => this.remove(), 'adestia-edblock__remove')
     const gear = make('button', 'adestia-edblock__gear')
@@ -338,18 +346,71 @@ class DirectiveView implements NodeView {
     this.view.dispatch(this.view.state.tr.setNodeMarkup(at, undefined, { ...this.node.attrs, attributes }))
   }
 
-  /** One place up or down among its siblings, and still selected there. */
-  private move(direction: -1 | 1): void {
+  /**
+   * Dragging the block to where the pointer is — ALWAYS between two things
+   * at the top of the page, never inside a block: a block dropped into
+   * another is the accident Crepe's handle made possible, and it is also
+   * how a nested block gets out. A line shows where it will land:
+   * horizontal between full-width things, vertical inside a band.
+   */
+  private startDrag(start: PointerEvent): void {
+    const view = this.view
+    const doc = view.dom.ownerDocument
+    const line = doc.createElement('div')
+    line.className = 'adestia-drop-line'
+    doc.body.append(line)
+    this.dom.classList.add('adestia-edblock--dragging')
+    doc.body.classList.add('adestia-dragging-block')
+    const canvas = this.dom.closest('.adestia-canvas')
+    let target: number | undefined
+
+    const place = (x: number, y: number) => {
+      if (canvas) {
+        const edge = canvas.getBoundingClientRect()
+        if (y < edge.top + 48) canvas.scrollBy(0, -14)
+        else if (y > edge.bottom - 48) canvas.scrollBy(0, 14)
+      }
+      const found = dropTarget(view, x, y)
+      target = found?.pos
+      if (!found) {
+        line.hidden = true
+        return
+      }
+      line.hidden = false
+      Object.assign(line.style, found.line)
+    }
+    const stop = (commit: boolean) => {
+      doc.removeEventListener('pointermove', onMove)
+      doc.removeEventListener('pointerup', onUp)
+      doc.removeEventListener('keydown', onKey, true)
+      line.remove()
+      this.dom.classList.remove('adestia-edblock--dragging')
+      doc.body.classList.remove('adestia-dragging-block')
+      if (commit && target !== undefined) this.moveTo(target)
+    }
+    const onMove = (event: PointerEvent) => place(event.clientX, event.clientY)
+    const onUp = () => stop(true)
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      event.preventDefault()
+      stop(false)
+    }
+    doc.addEventListener('pointermove', onMove)
+    doc.addEventListener('pointerup', onUp)
+    doc.addEventListener('keydown', onKey, true)
+    place(start.clientX, start.clientY)
+  }
+
+  /** Moved to a top-level position of the document as it stood. */
+  private moveTo(target: number): void {
     const at = this.getPos()
     if (at === undefined) return
-    const { state } = this.view
-    const $at = state.doc.resolve(at)
-    const index = $at.index()
-    const neighbour = $at.parent.maybeChild(index + direction)
-    if (!neighbour) return
     const size = this.node.nodeSize
-    const to = direction < 0 ? at - neighbour.nodeSize : at + neighbour.nodeSize
-    const tr = state.tr.delete(at, at + size).insert(to, this.node)
+    // Dropped on itself or right beside itself: nothing moves.
+    if (target >= at && target <= at + size) return
+    const tr = this.view.state.tr.delete(at, at + size)
+    const to = tr.mapping.map(target)
+    tr.insert(to, this.node)
     tr.setSelection(NodeSelection.create(tr.doc, to))
     this.view.dispatch(tr.scrollIntoView())
   }
@@ -431,6 +492,64 @@ class DirectiveView implements NodeView {
     queueMicrotask(() => {
       for (const root of roots) root?.unmount()
     })
+  }
+}
+
+/**
+ * Where a dragged block would land under the pointer: a position between two
+ * top-level nodes, and the line that says so, in viewport coordinates.
+ * Inside a band the halves are left and right; anywhere else, top and bottom.
+ * Never before the frontmatter, which is the file's first lines.
+ */
+function dropTarget(
+  view: EditorView,
+  x: number,
+  y: number,
+): { pos: number; line: Partial<CSSStyleDeclaration> } | undefined {
+  type Slot = { pos: number; size: number; rect: DOMRect; banded: boolean; first: boolean }
+  const slots: Slot[] = []
+  view.state.doc.forEach((node, offset) => {
+    const element = view.nodeDOM(offset)
+    if (!(element instanceof HTMLElement)) return
+    slots.push({
+      pos: offset,
+      size: node.nodeSize,
+      rect: element.getBoundingClientRect(),
+      banded: Boolean(element.dataset['w']),
+      first: node.type.name === 'frontmatter',
+    })
+  })
+  const usable = slots.filter((slot) => !slot.first && slot.rect.height > 0)
+  if (usable.length === 0) return undefined
+  // The slot under the pointer, else the nearest one vertically.
+  const under =
+    usable.find((slot) => y >= slot.rect.top && y <= slot.rect.bottom && x >= slot.rect.left && x <= slot.rect.right) ??
+    usable.reduce((best, slot) => {
+      const distance = (one: Slot) => (y < one.rect.top ? one.rect.top - y : y > one.rect.bottom ? y - one.rect.bottom : 0)
+      return distance(slot) < distance(best) ? slot : best
+    })
+  const { rect } = under
+  if (under.banded) {
+    const before = x < rect.left + rect.width / 2
+    return {
+      pos: before ? under.pos : under.pos + under.size,
+      line: {
+        left: `${Math.round((before ? rect.left : rect.right) + (before ? -6 : 4))}px`,
+        top: `${Math.round(rect.top)}px`,
+        width: '3px',
+        height: `${Math.round(rect.height)}px`,
+      },
+    }
+  }
+  const before = y < rect.top + rect.height / 2
+  return {
+    pos: before ? under.pos : under.pos + under.size,
+    line: {
+      left: `${Math.round(rect.left)}px`,
+      top: `${Math.round((before ? rect.top : rect.bottom) + (before ? -5 : 3))}px`,
+      width: `${Math.round(rect.width)}px`,
+      height: '3px',
+    },
   }
 }
 
