@@ -261,6 +261,13 @@ h2.adestia-editor__title { padding-bottom: 3px; }
   color: var(--text-faint);
 }
 
+/* The caret. Crepe hides the native one and draws its own — an absolute
+   widget placed at the very START of the document. A block view is
+   positioned and comes later, so it painted over that caret, and a card's
+   opaque ground hid it entirely: typing worked, blind. Above the blocks,
+   below their bar and their settings. */
+.adestia-editor__surface .milkdown .ProseMirror .prosemirror-virtual-cursor { z-index: 2; }
+
 /* The bar: the block's name and ⚙. Out of the way until a block is pointed
    at, focused or selected — the page is what is being looked at. */
 .adestia-edblock__bar {
