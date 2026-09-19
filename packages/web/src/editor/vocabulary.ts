@@ -229,8 +229,12 @@ function atomNode(name: string) {
         },
         // Whatever the block is addressed BY — `id` for an app, `source` for
         // a file-backed one. A bare name would make three blocks of the same
-        // kind indistinguishable in a document being edited.
-        `${name}: ${attributes['id'] ?? Object.values(attributes)[0] ?? ''}`,
+        // kind indistinguishable in a document being edited. A block with no
+        // attribute at all — `:::row` — is its own syntax, as an empty
+        // container's placeholder is, rather than a name and a dangling colon.
+        Object.keys(attributes).length > 0
+          ? `${name}: ${attributes['id'] ?? Object.values(attributes)[0] ?? ''}`
+          : `:::${name}`,
       ]
     },
     parseMarkdown: {

@@ -51,6 +51,7 @@ const ICONS: Readonly<Record<string, string>> = {
   figures: '📊',
   table: '▦',
   list: '🗂',
+  row: '↵',
 }
 
 /** Anything the table gains before somebody chooses it a glyph. */

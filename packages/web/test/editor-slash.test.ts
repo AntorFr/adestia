@@ -49,7 +49,7 @@ afterEach(() => {
 
 describe('the block menu', () => {
   it('offers the blocks whose attributes it can satisfy', () => {
-    expect(items().map((item) => item.key)).toEqual(['callout', 'gallery', 'figures', 'table', 'list'])
+    expect(items().map((item) => item.key)).toEqual(['callout', 'row', 'gallery', 'figures', 'table', 'list'])
   })
 
   it('keeps out a block with a required attribute it cannot ask for', () => {

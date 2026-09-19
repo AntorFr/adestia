@@ -1180,6 +1180,22 @@ effect — and the pages that carry them are migrated rather than excused by
 code nobody would ever get to delete. The checklist's filter is `show`,
 since `view` is not a filter on any block.
 
+### `:::row` — a line break that draws nothing (decided 2026-09-19)
+
+Asked from use: a `2/3` alone on its line, then a `1/3` and a `2/3` on the
+next. Consecutive `w=` blocks fill a line until their widths reach one, so the
+`1/3` joined the `2/3`; only something written between them could end the
+line, and everything that can be written there shows — a heading, a
+paragraph, a `---` drawing a rule.
+
+Three spellings were weighed: a reserved attribute on the block that starts
+the new line (`break`), `---` repurposed to cut the line without its rule, and
+a block of its own. The owner chose the block, and it earns its place as one:
+it is a thing the author PUTS between two others, the editor can show it —
+`:::row` — to be seen and taken out, and `---` keeps meaning a rule. It is
+`empty` and draws nothing in a page; the reader's line-filling already ends a
+run at any block without a width, so the rendering is the absence of one.
+
 ### The index says whether a page has a body (decided 2026-09-08)
 
 `GET /api/pages/index` publishes one boolean per entry beside `finished`. A

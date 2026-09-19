@@ -135,6 +135,24 @@ export const VOCABULARY: Readonly<Record<string, BlockSpec>> = {
       project: {},
     },
   },
+  /**
+   * A line break between blocks that share lines. Consecutive `w=` blocks
+   * fill a line until their widths reach one; `:::row` ends the line early,
+   * so the next block starts a new one — a `2/3` alone, then a `1/3` beside
+   * a `2/3` under it.
+   *
+   * It draws NOTHING in a page. Anything visible between two blocks already
+   * ended their line — a heading, a paragraph, a `---` — and each of them
+   * leaves a mark where the author wanted none; that is the one case this
+   * block exists for. The editor still shows it, so it can be seen and taken
+   * out.
+   */
+  row: {
+    name: 'row',
+    content: 'empty',
+    description: 'A line break between blocks that share lines: the next block starts a new line.',
+    attributes: {},
+  },
   gallery: {
     name: 'gallery',
     content: 'flow',

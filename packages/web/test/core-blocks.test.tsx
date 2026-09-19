@@ -14,7 +14,7 @@ import type { ReactNode } from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { forgetContributedBlocks, registerBlocks, validateDocument, parse } from '@antorfr/adestia-content'
+import { forgetContributedBlocks, registerBlocks, validateDocument, parse, serialize } from '@antorfr/adestia-content'
 
 import { Editor } from '../src/editor/Editor.js'
 import { Reader } from '../src/editor/Reader.js'
@@ -158,6 +158,33 @@ describe('`w` sur ces blocs', () => {
     const row = container.querySelector('.adestia-row')
     expect(row).toBeTruthy()
     expect(row?.querySelectorAll('.adestia-row__cell').length).toBe(2)
+  })
+
+  it('coupe la ligne sur `:::row`, sans rien dessiner', () => {
+    // Un `2/3` puis un `1/3` partagent une ligne. `:::row` entre les deux
+    // envoie le second à la ligne suivante — où il retrouve un `2/3` — et
+    // ne laisse aucune trace dans la page, là où un `---` tracerait un trait.
+    const { container } = render(
+      <Reader
+        markdown={
+          ':::content{type=a w=2/3}\nUn.\n:::\n\n:::row\n:::\n\n' +
+          ':::content{type=b w=1/3}\nDeux.\n:::\n\n:::content{type=c w=2/3}\nTrois.\n:::\n'
+        }
+      />,
+    )
+    const rows = [...container.querySelectorAll('.adestia-row')]
+    expect(rows.map((row) => row.querySelectorAll(':scope > .adestia-row__cell').length)).toEqual([1, 2])
+    expect(container.querySelector('hr')).toBeNull()
+    expect(container.querySelector('.adestia-unknown-block')).toBeNull()
+    expect(container.textContent).not.toContain('row')
+  })
+
+  it('accepte `:::row` vide, et refuse qu’on y mette quelque chose', () => {
+    expect(validateDocument(parse(':::row\n:::\n'))).toEqual([])
+    // Et l'enregistrement le rend tel qu'il est venu.
+    expect(serialize(parse(':::row\n:::\n'))).toBe(':::row\n:::\n')
+    const [issue] = validateDocument(parse(':::row\nDu texte.\n:::\n'))
+    expect(issue?.severity).toBe('error')
   })
 
   it('laisse un bloc pleine largeur hors des bandes', () => {
