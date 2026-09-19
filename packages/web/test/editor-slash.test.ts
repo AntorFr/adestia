@@ -48,16 +48,12 @@ afterEach(() => {
 })
 
 describe('the block menu', () => {
-  it('offers the blocks whose attributes it can satisfy', () => {
-    expect(items().map((item) => item.key)).toEqual(['callout', 'row', 'gallery', 'figures', 'table', 'list'])
-  })
-
-  it('keeps out a block with a required attribute it cannot ask for', () => {
-    const keys = items().map((item) => item.key)
-    // `content` needs a `type` — its own title. `app` needs an `id`, and the
-    // core's table says it is drawn by nobody.
-    expect(keys).not.toContain('content')
-    expect(keys).not.toContain('app')
+  it('offers every block of the core but the one nothing draws', () => {
+    // A block's settings open where it is inserted now, so a required
+    // attribute is something to ASK for — `content` comes in on its `type`.
+    // `app` stays out: the core's own table says nothing draws it.
+    expect(items().map((item) => item.key)).toEqual(['callout', 'row', 'gallery', 'content', 'figures', 'table', 'list'])
+    expect(items().map((item) => item.key)).not.toContain('app')
   })
 
   it('names the container block so it cannot be taken for Crepe’s own table', () => {
@@ -71,7 +67,7 @@ describe('the block menu', () => {
     expect(walk?.icon).not.toBe('')
   })
 
-  it('keeps out a contributed block that requires an attribute', () => {
+  it('offers a contributed block that requires an attribute, to be asked for', () => {
     registerBlocks({
       carte: {
         content: 'empty',
@@ -79,7 +75,7 @@ describe('the block menu', () => {
         attributes: { source: { required: true } },
       },
     })
-    expect(items().map((item) => item.key)).not.toContain('carte')
+    expect(items().map((item) => item.key)).toContain('carte')
   })
 
   it('puts them in one group rather than loose among the commonmark ones', () => {

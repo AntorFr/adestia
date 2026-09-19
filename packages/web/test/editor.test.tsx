@@ -224,6 +224,32 @@ describe('editor', () => {
     }
   })
 
+  it('writes nothing when the editor only re-spells the page', async () => {
+    // Milkdown does not spell everything the house way. Opening a page and
+    // touching nothing used to count as an edit — the page saved itself and
+    // said "tidied to house style". Changed means changed as it would be
+    // STORED.
+    vi.useFakeTimers()
+    try {
+      const saves: { body: unknown }[] = []
+      const quoted = { ...page, markdown: ':::callout{type="note"}\nCorps.\n:::\n' }
+      const { container } = render(
+        <Editor page={quoted} mount={fakeMount([])} fetchImpl={recordingFetch(saves)} />,
+      )
+      startEditing()
+      const host = container.querySelector('[data-mounted]') as HTMLElement & {
+        edit: (md: string) => void
+      }
+      act(() => host.edit(':::callout{type=note}\nCorps.\n:::\n'))
+      await act(async () => {
+        vi.advanceTimersByTime(3000)
+      })
+      expect(saves).toHaveLength(0)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('stops writing on its own once the server has refused', async () => {
     // A 409 means the agent wrote underneath. Retrying every two seconds is a
     // loop neither hand can win, hammering the file while the message telling

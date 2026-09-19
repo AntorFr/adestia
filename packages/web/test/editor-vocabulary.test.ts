@@ -38,7 +38,11 @@ import { adestiaVocabulary, editorBlocks, grammarRemarks } from '../src/editor/v
  */
 const BEYOND_THE_BLOCKS = 2 + trailing.length
 
-const registered = () => adestiaVocabulary().length - grammarRemarks.length - BEYOND_THE_BLOCKS
+/**
+ * Blocks registered: each one brings TWO entries — its node, and the view that
+ * draws it the way it reads (`blockview.tsx`).
+ */
+const registered = () => (adestiaVocabulary().length - grammarRemarks.length - BEYOND_THE_BLOCKS) / 2
 
 afterEach(() => {
   forgetContributedBlocks()

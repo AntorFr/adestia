@@ -38,10 +38,20 @@ et `checklist{view=…}` ne sont plus que des avertissements sans effet. Le
 planning pose ses étiquettes de jalons en rangées mesurées, DANS le graphique
 (elles montaient sur le bloc du dessus). Scénario de banc : `block-cards`.
 
-Depuis (pas encore tagué) : **`:::row`**, un saut de ligne entre blocs `w=`
+v0.66.0 : **`:::row`**, un saut de ligne entre blocs `w=`
 qui ne dessine rien dans la page (l'éditeur le montre « :::row »). Choisi par
 l'utilisateur contre un attribut `break` et un `---` détourné. Scénario de
 banc : `row-break`.
+
+Chantier en cours (branche `edit-mode`, pas fusionné) : **l'édition dessine
+les blocs comme la lecture** — cartes, bandeaux, encadrés, rangées `w=`, et le
+vrai rendu des blocs de données (liste, chiffres, planning, checklist…) qui
+passent en lignes brutes au clic ; un panneau ⚙ par bloc règle ses attributs
+(les siens + titre, icône, carte, largeur) ; le menu « / » propose tous les
+blocs et ouvre leurs réglages. Corrigé en route : l'éditeur s'enregistrait à
+l'ouverture (texte re-orthographié par Milkdown), et la remise à zéro de Crepe
+passe en couche CSS. En attente des retours de l'utilisateur sur une instance
+Docker locale.
 
 **Prochaines étapes :**
 - [ ] **Migrer le contenu** des trois corps AVANT ou AVEC le déploiement de

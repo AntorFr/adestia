@@ -11,15 +11,33 @@ import { Crepe, CrepeFeature } from '@milkdown/crepe'
 import { editorViewCtx } from '@milkdown/kit/core'
 
 // Crepe's own chrome — its toolbar, slash menu, block handles and tooltips.
-// This sheet is STRUCTURE ONLY: every colour, font and shadow in it reads a
-// `var(--crepe-*)` that one of Crepe's theme files is meant to declare. Adestia
-// imports no theme on purpose — a second palette would compete with the
-// skin's — and declares the whole `--crepe-*` set from its own tokens in
-// shell.css instead. The two go together: importing this without that leaves
+// These sheets are STRUCTURE ONLY: every colour, font and shadow in them reads
+// a `var(--crepe-*)` that one of Crepe's theme files is meant to declare.
+// Adestia imports no theme on purpose — a second palette would compete with
+// the skin's — and declares the whole `--crepe-*` set from its own tokens in
+// shell.css instead. The two go together: importing these without that leaves
 // the toolbar transparent and unshadowed, which is how the editing controls
 // came to be invisible rather than absent.
-import '@milkdown/crepe/theme/common/style.css'
+//
+// One by one rather than `common/style.css`, so that `reset.css` can go into a
+// cascade layer — see `crepe-layer.css`, and why it has to.
+import '@milkdown/crepe/theme/common/prosemirror.css'
+import './crepe-layer.css'
+import '@milkdown/crepe/theme/common/block-edit.css'
+import '@milkdown/crepe/theme/common/code-mirror.css'
+import '@milkdown/crepe/theme/common/cursor.css'
+import '@milkdown/crepe/theme/common/image-block.css'
+import '@milkdown/crepe/theme/common/link-tooltip.css'
+import '@milkdown/crepe/theme/common/list-item.css'
+import '@milkdown/crepe/theme/common/placeholder.css'
+import '@milkdown/crepe/theme/common/toolbar.css'
+import '@milkdown/crepe/theme/common/table.css'
+import '@milkdown/crepe/theme/common/latex.css'
+import '@milkdown/crepe/theme/common/top-bar.css'
+import '@milkdown/crepe/theme/common/diff.css'
+import '@milkdown/crepe/theme/common/ai.css'
 
+import type { EditorEnv } from './blockview.js'
 import { buildBlockMenu } from './slash.js'
 import { adestiaVocabulary } from './vocabulary.js'
 
@@ -27,6 +45,7 @@ export function mountMilkdown(
   element: HTMLElement,
   markdown: string,
   onChange: (markdown: string) => void,
+  env: EditorEnv = {},
 ): () => void {
   const crepe = new Crepe({
     root: element,
@@ -43,7 +62,7 @@ export function mountMilkdown(
     },
   })
 
-  crepe.editor.use(adestiaVocabulary())
+  crepe.editor.use(adestiaVocabulary(env))
   void crepe
     .create()
     .then(() => {

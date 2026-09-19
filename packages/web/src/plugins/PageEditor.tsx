@@ -36,6 +36,8 @@ type EditorMount = (
   element: HTMLElement,
   markdown: string,
   onChange: (markdown: string) => void,
+  // What blocks drawn in the editor need of the page — see `blockview.tsx`.
+  env?: import('../editor/blockview.js').EditorEnv,
 ) => () => void
 
 /** What the shell knows and a plugin does not have to be told. */

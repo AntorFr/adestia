@@ -26,6 +26,7 @@ import {
   wrapInBlockTypeCommand,
 } from '@milkdown/kit/preset/commonmark'
 
+import { openSettingsOnNextBlock } from './blockview.js'
 import { editorBlocks, pmId } from './vocabulary.js'
 
 /** Crepe's builder, named through the config that receives it. */
@@ -58,31 +59,29 @@ const ICONS: Readonly<Record<string, string>> = {
 const FALLBACK = '❖'
 
 /**
- * Blocks whose attributes the menu can actually SATISFY.
+ * Every block the menu can offer — now that a block's settings can be edited
+ * where it is inserted, a required attribute is something to ASK for, not a
+ * reason to keep the block out. `content` comes in, and opens its settings on
+ * its `type`.
  *
- * A required attribute with no default is a value only a person can supply,
- * and the editor has nowhere to ask: a block's attributes are carried in the
- * node and drawn by nothing. Inserting one anyway would hand somebody a block
- * the server refuses to save (422, missing required attribute) with no way to
- * fix it on the page they are looking at — a dead end offered by a menu.
- *
- * A rule rather than a list of names, so a block declared tomorrow with a
- * required attribute is kept out by the same sentence. It keeps out `app`
- * (`id`, and the core's own table says it is drawn by nobody) and `content`
- * (`type`, which is its title). Both come back the day attributes are
- * editable — which is the missing half of this feature, not a detail of it.
+ * `app` stays out: the core's own table says nothing draws it, and offering a
+ * block that renders as a notice is a dead end in a menu.
  */
 function insertable(spec: BlockSpec): boolean {
-  return Object.values(spec.attributes).every(
-    (attribute) => !attribute.required || attribute.default !== undefined,
-  )
+  return spec.name !== 'app'
 }
 
-/** The attributes an inserted block carries: every declared default, and no more. */
+/**
+ * The attributes an inserted block carries: only what it cannot do without.
+ * A required attribute gets its default, else a word to replace — `section`
+ * for a section's subject — and the settings open on it. Nothing else is
+ * written: an attribute at its default reads as a decision nobody made.
+ */
 function seed(spec: BlockSpec): Record<string, string> {
   const attributes: Record<string, string> = {}
   for (const [name, attribute] of Object.entries(spec.attributes)) {
-    if (attribute.default !== undefined) attributes[name] = attribute.default
+    if (!attribute.required) continue
+    attributes[name] = attribute.default ?? attribute.values?.[0] ?? (name === 'type' ? 'section' : name)
   }
   return attributes
 }
@@ -111,6 +110,9 @@ export function buildBlockMenu(builder: MenuBuilder): void {
         if (!nodeType) return
 
         const commands = ctx.get(commandsCtx)
+        // The block about to exist opens its settings: it asks for what it
+        // needs instead of appearing bare.
+        openSettingsOnNextBlock()
         // Clears the `/table` the person just typed; without it the text stays
         // inside the block they asked for.
         commands.call(clearTextInCurrentBlockCommand.key)
