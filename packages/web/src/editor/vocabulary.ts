@@ -13,7 +13,10 @@ import { contributedBlocks, GRAMMAR, shapesOf, toneOf, VOCABULARY } from '@antor
 import type { BlockSpec } from '@antorfr/adestia-content'
 import type { MilkdownPlugin } from '@milkdown/kit/ctx'
 import { trailing } from '@milkdown/kit/plugin/trailing'
-import { $node, $remark } from '@milkdown/kit/utils'
+import { $node, $remark, $view } from '@milkdown/kit/utils'
+
+import { directiveView, type EditorEnv } from './blockview.js'
+import { isBlankBreak } from './nodes.js'
 
 /** What `$remark` expects: a unified plugin factory. */
 type RemarkFactory = Parameters<typeof $remark>[1]
@@ -359,7 +362,22 @@ export function editorBlocks(): readonly BlockSpec[] {
 /** The three whose nodes are written out above rather than derived. */
 const HAND_WRITTEN = new Set(['callout', 'gallery', 'app'])
 
-export function adestiaVocabulary(): MilkdownPlugin[] {
+/**
+ * Drops the `<br />` pages already carry, as they are parsed for editing.
+ * They came from Milkdown writing an empty paragraph that way; the editor no
+ * longer does (`milkdown.ts`), and this lets the next save clean up after it.
+ */
+type Tree = { type: string; value?: unknown; children?: Tree[] }
+export const dropBlankBreaks = $remark('adestia-drop-blank-breaks', () => () => (tree: unknown) => {
+  const walk = (node: Tree): void => {
+    if (!node.children) return
+    node.children = node.children.filter((child) => !isBlankBreak(child))
+    node.children.forEach(walk)
+  }
+  walk(tree as Tree)
+})
+
+export function adestiaVocabulary(env: EditorEnv = {}): MilkdownPlugin[] {
   // ONE node per name, custom nodes first. Two ways a duplicate would arise,
   // and Milkdown throws on both: a core block that also needs a generic node
   // (`content`, `figures`, `table`, `list` — none has a hand-written one), and
@@ -369,21 +387,32 @@ export function adestiaVocabulary(): MilkdownPlugin[] {
   // does not depend on which claim wins on a given page.
   const generic = editorBlocks()
     .filter((spec) => !HAND_WRITTEN.has(spec.name))
+    .map((spec) => {
+      const atom = !(shapesOf(spec.name).has('flow') || shapesOf(spec.name).has('optional'))
+      return { name: spec.name, atom }
+    })
     // A container as soon as ANY definition of the name takes a body. The
     // node is per name while definitions are per plugin, and an atom EATS a
     // body it cannot hold — the "silently eaten text" the design warns
     // relaxing the validator would cause. A body-less block in a container
     // is merely empty; a body in an atom is gone.
-    .map((spec) =>
+    .map(({ name, atom }) => ({
+      name,
+      atom,
       // A body-carrying node whenever ANY definition takes one — `optional`
       // included, whose body is present or not per occurrence. An atom node
       // would eat the text of the occurrences that do carry it.
-      shapesOf(spec.name).has('flow') || shapesOf(spec.name).has('optional')
-        ? containerNode(spec.name)
-        : atomNode(spec.name),
-    )
+      node: atom ? atomNode(name) : containerNode(name),
+    }))
+  const directives = [
+    { name: 'callout', atom: false, node: calloutNode },
+    { name: 'gallery', atom: false, node: galleryNode },
+    { name: 'app', atom: true, node: appNode },
+    ...generic,
+  ]
   return [
     grammarRemarks,
+    dropBlankBreaks,
     /*
      * A paragraph after a document that ends in something you cannot type in.
      *
@@ -400,9 +429,8 @@ export function adestiaVocabulary(): MilkdownPlugin[] {
     trailing,
     frontmatterNode,
     wikiLinkNode,
-    calloutNode,
-    galleryNode,
-    appNode,
-    ...generic,
+    ...directives.map(({ node }) => node),
+    // Each block drawn the way it READS — see `blockview.tsx`.
+    ...directives.map(({ name, atom, node }) => $view(node, directiveView(name, atom, env))),
   ].flat()
 }

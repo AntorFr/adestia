@@ -1180,6 +1180,45 @@ effect — and the pages that carry them are migrated rather than excused by
 code nobody would ever get to delete. The checklist's filter is `show`,
 since `view` is not a filter on any block.
 
+### Writing a page looks like reading it (decided 2026-09-19)
+
+The editor drew every `:::` block as one grey box with an accent rail, its body
+raw — figures as bullets, a list as the word `:::list`, a planning as lines of
+dates. A page changed shape the moment somebody pressed Edit, and a card, a
+title or a band could only be judged after saving. Nor could a block be told
+anything: its attributes were carried and drawn by nothing.
+
+**Each block is a node view wearing the reader's own classes** — the
+reader's stylesheet draws it, so there is one look to maintain, not two.
+Prose blocks (`content`, `callout`, `gallery`, `table`) keep their body
+editable in place, in their card, under their header. Data blocks show what
+the READER draws, from the same component, and switch to their raw lines on
+a click — lines are what they are written in. `w=` bands share lines on the
+editing surface as they do on the page.
+
+**A block is set up where it sits.** A ⚙ opens a form drawn from what the
+block declares plus the reserved attributes every block takes; an emptied
+field is an attribute removed, and the slash menu, which used to keep out
+any block with a required attribute, now offers it and opens its settings.
+
+**A block is moved from its own bar, by dragging, and always lands at the
+top of the page.** Crepe's block handle aims at the editor's horizontal
+middle, not the pointer, and from a block's first line climbs to the block:
+in a band it chose the wrong block, and dragging with it dropped one block
+inside another, out of its own reach. The handle now serves the page's text
+only; lists and headings inside a block are on the selection toolbar.
+
+Three things this made visible, each fixed at its cause rather than around
+it. Crepe's `reset.css` — its whole base typography, opening with
+`.milkdown * { margin: 0; padding: 0 }` — arrived last and won every tie
+with the reader's styles inside the editor; it sits in a cascade layer now,
+so any unlayered rule beats it. Milkdown wrote each empty paragraph as
+`<br />`, which the reader showed as text and which broke a band; the plugin
+is removed, the `<br />` pages carry is dropped on parse, and the reader
+draws nothing for one. And the editor saved a page nobody had touched,
+because Milkdown's serializer does not spell everything the house way:
+"changed" now compares the texts as they would be stored.
+
 ### `:::row` — a line break that draws nothing (decided 2026-09-19)
 
 Asked from use: a `2/3` alone on its line, then a `1/3` and a `2/3` on the

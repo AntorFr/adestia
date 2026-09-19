@@ -593,6 +593,9 @@
 .adestia-editor__surface .milkdown .ProseMirror h3,
 .adestia-editor__surface .milkdown .ProseMirror h4 {
   font-family: var(--font-title);
+  /* Bold, as a heading reads: Crepe's base sets 400, and a page's headings
+     turned thin the moment it was opened for writing. */
+  font-weight: 700;
   letter-spacing: var(--title-track);
   line-height: 1.2;
   margin: 1.8em 0 0.5em;

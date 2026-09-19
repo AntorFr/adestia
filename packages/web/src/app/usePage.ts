@@ -11,6 +11,8 @@ export type EditorMount = (
   element: HTMLElement,
   markdown: string,
   onChange: (markdown: string) => void,
+  // What blocks drawn in the editor need of the page — see `blockview.tsx`.
+  env?: import('../editor/blockview.js').EditorEnv,
 ) => () => void
 
 export function usePage({

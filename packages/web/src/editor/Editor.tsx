@@ -16,6 +16,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { parse, serialize, type Indexed } from '@antorfr/adestia-content'
 
 import { Attachments } from './Attachments.js'
+import type { EditorEnv } from './blockview.js'
 import { carriesFiles, fileDropMessage } from './filedrop.js'
 import { readField, writeField } from './frontmatter.js'
 import { PluginBoundary } from '../plugins/Boundary.js'
@@ -205,7 +206,21 @@ export interface EditorProps {
   /** Called after a save the server accepted, with the revision it returned. */
   readonly onSaved?: (revision: string) => void
   /** Injected in tests; the real one mounts Milkdown. */
-  readonly mount?: (element: HTMLElement, markdown: string, onChange: (md: string) => void) => () => void
+  readonly mount?: (
+    element: HTMLElement,
+    markdown: string,
+    onChange: (md: string) => void,
+    env?: EditorEnv,
+  ) => () => void
+}
+
+/** A page as the server would store it — see `dirty`. */
+function stored(markdown: string): string {
+  try {
+    return serialize(parse(markdown))
+  } catch {
+    return markdown
+  }
 }
 
 export function Editor({
@@ -302,7 +317,17 @@ export function Editor({
   const [saved, setSaved] = useState(shown)
   const [revision, setRevision] = useState(page.revision)
   const [status, setStatus] = useState<SaveState>({ kind: 'idle' })
-  const dirty = markdown !== saved
+  /*
+   * Changed means changed ON DISK — in the house style the server writes
+   * anyway. Milkdown's serializer does not spell everything the pipeline's
+   * way, so opening a page and touching nothing used to count as an edit:
+   * the page saved itself a second later and said "tidied to house style".
+   * The texts are compared as they would be stored, identical ones first.
+   */
+  const dirty = useMemo(
+    () => markdown !== saved && stored(markdown) !== stored(saved),
+    [markdown, saved],
+  )
 
   useEffect(() => {
     setBody(shown)
@@ -312,9 +337,27 @@ export function Editor({
     setStatus({ kind: 'idle' })
   }, [shown, page.path, page.revision])
 
+  /*
+   * What a block drawn in the editor needs to render the way it reads: the
+   * page it sits in, the plugins' blocks, the index. Read through a ref at
+   * MOUNT time and never a dependency — the index refreshing under an open
+   * editor must not remount it and throw away what is being typed.
+   */
+  const env = useRef<EditorEnv>({})
+  env.current = {
+    path: page.path,
+    store: page.store,
+    fields: page.fields,
+    blocks,
+    vocabulary,
+    pages,
+    fetchImpl,
+    locale,
+  }
+
   useEffect(() => {
     if (!editing || !mount || !host.current || !page.editable) return undefined
-    return mount(host.current, shown, setBody)
+    return mount(host.current, shown, setBody, env.current)
   }, [editing, mount, page.editable, shown, page.path])
 
   /*

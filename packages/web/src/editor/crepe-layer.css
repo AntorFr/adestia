@@ -1,0 +1,15 @@
+/*
+ * Crepe's base styles, in a cascade LAYER.
+ *
+ * `reset.css` is more than a reset — it is Crepe's whole base typography for
+ * the editor — but it opens with `.milkdown * { margin: 0; padding: 0 }`, and
+ * arriving last (the editor is a dynamic import) it won every tie. Inside the
+ * editor that took the padding off every card, the spacing off every tile and
+ * the margins off a planning's bars, once blocks started drawing themselves
+ * the way they read (`blockview.tsx`).
+ *
+ * A layered rule loses to any unlayered one, whatever its specificity or its
+ * order. So everything Crepe styles and nobody else does keeps Crepe's look,
+ * and wherever the reader's or a plugin's stylesheet says something, it wins.
+ */
+@import '@milkdown/crepe/theme/common/reset.css' layer(crepe);

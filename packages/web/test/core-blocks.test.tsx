@@ -187,6 +187,17 @@ describe('`w` sur ces blocs', () => {
     expect(issue?.severity).toBe('error')
   })
 
+  it('ne dessine rien d’un `<br />` seul, et ne coupe pas la ligne pour lui', () => {
+    // Ce que l'éditeur écrivait pour un paragraphe vide : affiché en texte, et
+    // posé entre deux blocs `w=`, il les renvoyait chacun sur sa ligne.
+    const { container } = render(
+      <Reader markdown={':::content{type=a w=2/3}\nUn.\n:::\n\n<br />\n\n:::content{type=b w=1/3}\nDeux.\n:::\n'} />,
+    )
+    expect(container.textContent).not.toContain('<br')
+    expect(container.querySelectorAll('.adestia-row').length).toBe(1)
+    expect(container.querySelectorAll('.adestia-row__cell').length).toBe(2)
+  })
+
   it('laisse un bloc pleine largeur hors des bandes', () => {
     const { container } = render(
       <Reader markdown={':::content{type=synthese}\nSeul.\n:::\n'} path={HERE} pages={PAGES} />,
