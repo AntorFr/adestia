@@ -38,6 +38,7 @@ import '@milkdown/crepe/theme/common/diff.css'
 import '@milkdown/crepe/theme/common/ai.css'
 
 import type { EditorEnv } from './blockview.js'
+import { assetUrl } from './links.js'
 import { buildBlockMenu } from './slash.js'
 import { adestiaVocabulary } from './vocabulary.js'
 
@@ -59,6 +60,13 @@ export function mountMilkdown(
     featureConfigs: {
       // The vocabulary's blocks, in the `/` menu — see `slash.ts`.
       [CrepeFeature.BlockEdit]: { buildMenu: buildBlockMenu },
+      // An image written relative to its page (`assets/avant.jpg`) resolved
+      // against the SHELL's address in the editor, and drew broken where the
+      // reader drew it fine. The editor now asks the reader's own resolver.
+      [CrepeFeature.ImageBlock]: {
+        proxyDomURL: (url: string) =>
+          assetUrl(url, env.path === undefined ? undefined : env.path.slice(0, Math.max(env.path.lastIndexOf('/'), 0))),
+      },
     },
   })
 
