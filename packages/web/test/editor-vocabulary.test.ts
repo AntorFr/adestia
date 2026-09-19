@@ -28,7 +28,7 @@ import { VOCABULARY, forgetContributedBlocks, registerBlocks } from '@antorfr/ad
 import { trailing } from '@milkdown/kit/plugin/trailing'
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { adestiaVocabulary, editorBlocks, grammarRemarks } from '../src/editor/vocabulary.js'
+import { adestiaVocabulary, dropBlankBreaks, editorBlocks, grammarRemarks } from '../src/editor/vocabulary.js'
 
 /**
  * What `adestiaVocabulary` registers that is not a block: the frontmatter and
@@ -36,7 +36,7 @@ import { adestiaVocabulary, editorBlocks, grammarRemarks } from '../src/editor/v
  * from the package rather than counted here — how many plugins a third party
  * ships is not a fact this suite should hold an opinion about.
  */
-const BEYOND_THE_BLOCKS = 2 + trailing.length
+const BEYOND_THE_BLOCKS = 2 + trailing.length + [dropBlankBreaks].flat().length
 
 /**
  * Blocks registered: each one brings TWO entries — its node, and the view that

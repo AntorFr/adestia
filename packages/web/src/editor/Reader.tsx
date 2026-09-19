@@ -36,7 +36,7 @@ import { fileUrl, GLYPHS, humanSize, type Attachment } from './Attachments.js'
 import type { BlockProps, LayoutProps } from '../plugins/contract.js'
 import { assetUrl, resolveHref, workspacePath } from './links.js'
 import { finished, folderOf, initials, isIndexPage, titleOf, under } from './listing.js'
-import { listItems, plain, prettify, type Node } from './nodes.js'
+import { isBlankBreak, listItems, plain, prettify, type Node } from './nodes.js'
 
 /** What a plugin contributed, by block name. */
 /**
@@ -192,7 +192,9 @@ function widthOf(node: Node): number | undefined {
  * width nobody asked for.
  */
 function children(node: Node, ctx: Ctx): ReactNode {
-  const list = node.children ?? []
+  // A lone `<br />` is an empty paragraph the editor used to save that way:
+  // nothing to draw, and nothing that should end a band of `w=` blocks.
+  const list = (node.children ?? []).filter((one) => !isBlankBreak(one))
   const out: ReactNode[] = []
 
   for (let index = 0; index < list.length; index += 1) {

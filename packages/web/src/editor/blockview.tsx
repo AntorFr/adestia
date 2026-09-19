@@ -281,6 +281,10 @@ class DirectiveView implements NodeView {
       return
     }
     this.panelRoot ??= createRoot(this.panel)
+    // Once drawn — React commits on its own schedule — kept inside the
+    // canvas: anchored to the block's right edge, a panel wider than a
+    // narrow block spilled off the page.
+    requestAnimationFrame(() => requestAnimationFrame(() => this.keepPanelInside()))
     const resolved = resolveBlock(this.name, this.env.vocabulary ?? {})
     this.panelRoot.render(
       <BlockSettings
@@ -291,6 +295,18 @@ class DirectiveView implements NodeView {
         onClose={() => this.setOpen(false)}
       />,
     )
+  }
+
+  private keepPanelInside(): void {
+    if (!this.open) return
+    this.panel.style.transform = ''
+    const bounds = (this.dom.closest('.adestia-canvas') ?? this.view.dom).getBoundingClientRect()
+    const box = this.panel.getBoundingClientRect()
+    const margin = 8
+    let shift = 0
+    if (box.right > bounds.right - margin) shift = bounds.right - margin - box.right
+    if (box.left + shift < bounds.left + margin) shift = bounds.left + margin - box.left
+    if (shift !== 0) this.panel.style.transform = `translateX(${Math.round(shift)}px)`
   }
 
   private write(attributes: Attributes): void {

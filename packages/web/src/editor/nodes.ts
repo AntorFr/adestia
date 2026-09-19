@@ -55,3 +55,11 @@ export function prettify(name: string): string {
   const words = name.replace(/[-_]+/g, ' ').trim()
   return words ? words.charAt(0).toUpperCase() + words.slice(1) : name
 }
+
+/**
+ * A `<br />` standing alone — what the editor used to save an empty paragraph
+ * as. The reader draws nothing for one, and the editor drops it on parse.
+ */
+export function isBlankBreak(node: { readonly type: string; readonly value?: unknown }): boolean {
+  return node.type === 'html' && typeof node.value === 'string' && /^<br\s*\/?>$/i.test(node.value.trim())
+}

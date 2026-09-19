@@ -16,6 +16,7 @@ import { trailing } from '@milkdown/kit/plugin/trailing'
 import { $node, $remark, $view } from '@milkdown/kit/utils'
 
 import { directiveView, type EditorEnv } from './blockview.js'
+import { isBlankBreak } from './nodes.js'
 
 /** What `$remark` expects: a unified plugin factory. */
 type RemarkFactory = Parameters<typeof $remark>[1]
@@ -361,6 +362,21 @@ export function editorBlocks(): readonly BlockSpec[] {
 /** The three whose nodes are written out above rather than derived. */
 const HAND_WRITTEN = new Set(['callout', 'gallery', 'app'])
 
+/**
+ * Drops the `<br />` pages already carry, as they are parsed for editing.
+ * They came from Milkdown writing an empty paragraph that way; the editor no
+ * longer does (`milkdown.ts`), and this lets the next save clean up after it.
+ */
+type Tree = { type: string; value?: unknown; children?: Tree[] }
+export const dropBlankBreaks = $remark('adestia-drop-blank-breaks', () => () => (tree: unknown) => {
+  const walk = (node: Tree): void => {
+    if (!node.children) return
+    node.children = node.children.filter((child) => !isBlankBreak(child))
+    node.children.forEach(walk)
+  }
+  walk(tree as Tree)
+})
+
 export function adestiaVocabulary(env: EditorEnv = {}): MilkdownPlugin[] {
   // ONE node per name, custom nodes first. Two ways a duplicate would arise,
   // and Milkdown throws on both: a core block that also needs a generic node
@@ -396,6 +412,7 @@ export function adestiaVocabulary(env: EditorEnv = {}): MilkdownPlugin[] {
   ]
   return [
     grammarRemarks,
+    dropBlankBreaks,
     /*
      * A paragraph after a document that ends in something you cannot type in.
      *

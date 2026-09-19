@@ -9,6 +9,7 @@
 
 import { Crepe, CrepeFeature } from '@milkdown/crepe'
 import { editorViewCtx } from '@milkdown/kit/core'
+import { remarkPreserveEmptyLinePlugin } from '@milkdown/kit/preset/commonmark'
 
 // Crepe's own chrome — its toolbar, slash menu, block handles and tooltips.
 // These sheets are STRUCTURE ONLY: every colour, font and shadow in them reads
@@ -40,6 +41,7 @@ import '@milkdown/crepe/theme/common/ai.css'
 import type { EditorEnv } from './blockview.js'
 import { assetUrl } from './links.js'
 import { buildBlockMenu } from './slash.js'
+import { buildBlockTypes } from './toolbar.js'
 import { adestiaVocabulary } from './vocabulary.js'
 
 export function mountMilkdown(
@@ -60,6 +62,9 @@ export function mountMilkdown(
     featureConfigs: {
       // The vocabulary's blocks, in the `/` menu — see `slash.ts`.
       [CrepeFeature.BlockEdit]: { buildMenu: buildBlockMenu },
+      // Lists, headings and quotes on the selection toolbar, so they are
+      // reachable inside a block — see `toolbar.ts`.
+      [CrepeFeature.Toolbar]: { buildToolbar: buildBlockTypes },
       // An image written relative to its page (`assets/avant.jpg`) resolved
       // against the SHELL's address in the editor, and drew broken where the
       // reader drew it fine. The editor now asks the reader's own resolver.
@@ -71,8 +76,17 @@ export function mountMilkdown(
   })
 
   crepe.editor.use(adestiaVocabulary(env))
-  void crepe
-    .create()
+  /*
+   * An empty paragraph is written as NOTHING. Milkdown's "preserve empty
+   * line" wrote each one as `<br />`, and a page is not a word processor:
+   * the reader showed the tag as text, and one left between two banded
+   * blocks broke their line. Removed before `create`, which `remove` must
+   * finish first — the `<br />` a page already carries is dropped on parse
+   * by `dropBlankBreaks` in the vocabulary, and gone at the next save.
+   */
+  void crepe.editor
+    .remove(remarkPreserveEmptyLinePlugin)
+    .then(() => crepe.create())
     .then(() => {
       /*
        * One empty transaction, so the trailing-paragraph plugin runs on the
