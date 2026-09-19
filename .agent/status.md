@@ -43,17 +43,21 @@ qui ne dessine rien dans la page (l'éditeur le montre « :::row »). Choisi par
 l'utilisateur contre un attribut `break` et un `---` détourné. Scénario de
 banc : `row-break`.
 
-Chantier en cours (branche `edit-mode`, pas fusionné) : **l'édition dessine
-les blocs comme la lecture** — cartes, bandeaux, encadrés, rangées `w=`, et le
-vrai rendu des blocs de données (liste, chiffres, planning, checklist…) qui
-passent en lignes brutes au clic ; un panneau ⚙ par bloc règle ses attributs
-(les siens + titre, icône, carte, largeur) ; le menu « / » propose tous les
-blocs et ouvre leurs réglages. Corrigé en route : l'éditeur s'enregistrait à
-l'ouverture (texte re-orthographié par Milkdown), et la remise à zéro de Crepe
-passe en couche CSS. En attente des retours de l'utilisateur sur une instance
-Docker locale.
+v0.67.0 : **l'édition dessine les blocs comme la lecture** — cartes,
+bandeaux, encadrés, rangées `w=`, vrai rendu des blocs de données (lignes
+brutes au clic) ; ⚙ règle chaque bloc (ses attributs + titre, icône, carte,
+largeur) ; le menu « / » propose tous les blocs ; la barre de sélection porte
+listes, titres et citation ; un bloc se glisse (⠿) là où on le veut, toujours
+au premier niveau, ⤴ sort un bloc imbriqué, ✕ le supprime. Corrigé en route :
+enregistrement à l'ouverture, `<br />` pour les paragraphes vides, curseur
+caché dans les cartes, reset de Crepe (en couche CSS). Construit sur les
+retours de l'utilisateur, instance d'essai locale (port 8744).
 
 **Prochaines étapes :**
+- [ ] Mode édition, suite (retours du 19/09) : libellés parlants dans ⚙
+      (« sujet » pour `type`…), même espacement vertical qu'en lecture sur
+      les pages à rangées, formulaires pour les blocs de données (chiffres,
+      lignes écrites d'une liste, planning) au lieu des lignes brutes.
 - [ ] **Migrer le contenu** des trois corps AVANT ou AVEC le déploiement de
       cette version (sauvegarde hors NFS d'abord, `memory/` n'est pas
       versionné) : `:::content{… view=cards}` → `frame=card` ;
