@@ -9,7 +9,9 @@
 
 import { Crepe, CrepeFeature } from '@milkdown/crepe'
 import { editorViewCtx } from '@milkdown/kit/core'
+import { blockConfig } from '@milkdown/kit/plugin/block'
 import { remarkPreserveEmptyLinePlugin } from '@milkdown/kit/preset/commonmark'
+import type { Node as ProseNode, ResolvedPos } from '@milkdown/kit/prose/model'
 
 // Crepe's own chrome — its toolbar, slash menu, block handles and tooltips.
 // These sheets are STRUCTURE ONLY: every colour, font and shadow in them reads
@@ -42,7 +44,30 @@ import type { EditorEnv } from './blockview.js'
 import { assetUrl } from './links.js'
 import { buildBlockMenu } from './slash.js'
 import { buildBlockTypes } from './toolbar.js'
-import { adestiaVocabulary } from './vocabulary.js'
+import { adestiaVocabulary, editorBlocks, pmId } from './vocabulary.js'
+
+/**
+ * What the block handle may aim at: text on the page, never a `:::` block nor
+ * anything inside one.
+ *
+ * The handle aims at whatever sits at the editor's horizontal MIDDLE — not
+ * under the pointer — and from a block's first line it climbs to the block.
+ * In a band it sat beside the wrong block or none, beside a block's first
+ * line it sat at the block's top, and dragging with it dropped one block
+ * INSIDE another, where it could not reach it again. A block is moved from
+ * its own bar instead (`blockview.tsx`); text inside a block is shaped from
+ * the selection toolbar (`toolbar.ts`). Crepe's own exclusions are kept.
+ */
+function handleTargets($pos: ResolvedPos, node: ProseNode): boolean {
+  const blocks = new Set(editorBlocks().map((spec) => pmId(spec.name)))
+  const refused = (one: ProseNode) =>
+    blocks.has(one.type.name) || ['table', 'blockquote', 'math_inline'].includes(one.type.name)
+  if (blocks.has(node.type.name)) return false
+  for (let depth = $pos.depth; depth > 0; depth -= 1) {
+    if (refused($pos.node(depth))) return false
+  }
+  return true
+}
 
 export function mountMilkdown(
   element: HTMLElement,
@@ -76,6 +101,11 @@ export function mountMilkdown(
   })
 
   crepe.editor.use(adestiaVocabulary(env))
+  // Crepe's block handle — the `+ ⠿` beside a line — kept to the page's own
+  // text. Set after Crepe's own config, which it replaces.
+  crepe.editor.config((ctx) => {
+    ctx.set(blockConfig.key, { filterNodes: handleTargets })
+  })
   /*
    * An empty paragraph is written as NOTHING. Milkdown's "preserve empty
    * line" wrote each one as `<br />`, and a page is not a word processor:

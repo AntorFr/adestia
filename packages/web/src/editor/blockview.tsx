@@ -27,7 +27,7 @@ import { resolveBlock, type Indexed } from '@antorfr/adestia-content'
 import { serializerCtx } from '@milkdown/kit/core'
 import type { Ctx } from '@milkdown/kit/ctx'
 import type { Node as ProseNode } from '@milkdown/kit/prose/model'
-import { TextSelection } from '@milkdown/kit/prose/state'
+import { NodeSelection, TextSelection } from '@milkdown/kit/prose/state'
 import type { EditorView, NodeView } from '@milkdown/kit/prose/view'
 import { createRoot, type Root } from 'react-dom/client'
 
@@ -81,6 +81,7 @@ class DirectiveView implements NodeView {
   private readonly preview?: HTMLElement
   private previewRoot?: Root
   private readonly head?: HTMLElement
+  private readonly lift: HTMLButtonElement
   /** A data block showing its raw lines rather than its rendering. */
   private raw = false
   private open: boolean
@@ -119,6 +120,25 @@ class DirectiveView implements NodeView {
       })
       this.bar.append(this.toggle)
     }
+    // Moving a block is done from here, not with Crepe's handle — which aims
+    // at the editor's middle and drops a block INSIDE another (`milkdown.ts`).
+    const action = (symbol: string, title: string, run: () => void, className = '') => {
+      const button = make('button', `adestia-edblock__act ${className}`.trim())
+      button.type = 'button'
+      button.title = title
+      button.setAttribute('aria-label', title)
+      button.textContent = symbol
+      button.addEventListener('mousedown', (event) => {
+        event.preventDefault()
+        run()
+      })
+      this.bar.append(button)
+      return button
+    }
+    action('↑', 'Monter le bloc', () => this.move(-1))
+    action('↓', 'Descendre le bloc', () => this.move(1))
+    this.lift = action('⤴', 'Sortir du bloc parent', () => this.liftOut(), 'adestia-edblock__lift')
+    action('✕', 'Supprimer le bloc', () => this.remove(), 'adestia-edblock__remove')
     const gear = make('button', 'adestia-edblock__gear')
     gear.type = 'button'
     gear.title = 'Réglages du bloc'
@@ -185,6 +205,9 @@ class DirectiveView implements NodeView {
     if (attributes['w']) this.dom.dataset['w'] = attributes['w']
     else delete this.dom.dataset['w']
     this.dom.classList.toggle('adestia-edblock--open', this.open)
+    // `⤴` only for a block that sits inside another.
+    const at = this.getPos()
+    this.lift.hidden = at === undefined || this.view.state.doc.resolve(at).depth === 0
 
     if (this.posture === 'prose') this.dressProse(attributes)
     else this.renderPreview()
@@ -313,6 +336,44 @@ class DirectiveView implements NodeView {
     const at = this.getPos()
     if (at === undefined) return
     this.view.dispatch(this.view.state.tr.setNodeMarkup(at, undefined, { ...this.node.attrs, attributes }))
+  }
+
+  /** One place up or down among its siblings, and still selected there. */
+  private move(direction: -1 | 1): void {
+    const at = this.getPos()
+    if (at === undefined) return
+    const { state } = this.view
+    const $at = state.doc.resolve(at)
+    const index = $at.index()
+    const neighbour = $at.parent.maybeChild(index + direction)
+    if (!neighbour) return
+    const size = this.node.nodeSize
+    const to = direction < 0 ? at - neighbour.nodeSize : at + neighbour.nodeSize
+    const tr = state.tr.delete(at, at + size).insert(to, this.node)
+    tr.setSelection(NodeSelection.create(tr.doc, to))
+    this.view.dispatch(tr.scrollIntoView())
+  }
+
+  /** Out of the block it sits in, just after it. */
+  private liftOut(): void {
+    const at = this.getPos()
+    if (at === undefined) return
+    const { state } = this.view
+    const $at = state.doc.resolve(at)
+    if ($at.depth === 0) return
+    const tr = state.tr.delete(at, at + this.node.nodeSize)
+    const to = tr.mapping.map($at.after($at.depth))
+    tr.insert(to, this.node)
+    tr.setSelection(NodeSelection.create(tr.doc, to))
+    this.view.dispatch(tr.scrollIntoView())
+  }
+
+  /** Gone — and back with Cmd+Z, like any other edit. */
+  private remove(): void {
+    const at = this.getPos()
+    if (at === undefined) return
+    this.view.dispatch(this.view.state.tr.delete(at, at + this.node.nodeSize))
+    this.view.focus()
   }
 
   private setOpen(open: boolean): void {

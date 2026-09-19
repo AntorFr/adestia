@@ -308,6 +308,9 @@ h2.adestia-editor__title { padding-bottom: 3px; }
 }
 .adestia-edblock__bar button:hover { color: var(--accent); background: var(--accent-quiet); }
 .adestia-edblock__gear { font-size: 13px; }
+.adestia-edblock__act { font-size: 12px; }
+.adestia-edblock__act[hidden] { display: none; }
+.adestia-edblock__bar button.adestia-edblock__remove:hover { color: var(--danger); }
 
 /* Which block the bar belongs to: a faint outline on the one pointed at. */
 .adestia-edblock:hover {
