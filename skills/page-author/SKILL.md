@@ -561,6 +561,9 @@ hand — inside a chat bubble, a preview — it SAYS so instead of drawing an em
 list, because an empty list reads as "this folder holds nothing" when the truth
 is "I could not look".
 
+**`row`** — a line break between blocks that share lines (`w=`), drawn as
+nothing. See *`w` — how much of a line a block takes*.
+
 **`gallery`** — a group of images shown as a set rather than as a run of
 inline images down the page:
 
@@ -611,6 +614,31 @@ line starts. So two halves sit side by side, three thirds do too, and a `2/3`
 followed by a `1/2` does not: the second takes its own line rather than being
 squeezed into a width nobody asked for. Anything between them — a paragraph, a
 heading — ends the run.
+
+**To end a line early without writing anything visible, put `:::row`
+between the two blocks.** It draws nothing in the page; the next block simply
+starts a new line:
+
+```markdown
+:::content{type=synthese frame=card w=2/3}
+La synthèse, seule sur sa ligne.
+:::
+
+:::row
+:::
+
+:::list{title="Sous-projets" w=1/3}
+:::
+
+:::content{type=planning title="Planning" frame=card w=2/3}
+Débit la semaine prochaine, finition la suivante.
+:::
+```
+
+The `2/3` stays alone on its line — a hole beside it, which is what was asked
+— and the `1/3` and the second `2/3` share the next one. A `---` would end the
+line too, and draw a rule nobody wanted. `:::row` holds nothing: a body in it
+is refused.
 
 The set is closed because it is a LAYOUT vocabulary, not a measurement. A page
 that could say `w="37%"` would be a page laying itself out in CSS written by

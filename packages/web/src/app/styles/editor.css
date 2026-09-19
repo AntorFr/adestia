@@ -179,7 +179,11 @@ h2.adestia-editor__title { padding-bottom: 3px; }
   color: var(--text-muted);
 }
 
-.adestia-block--app {
+/* Blocks that are only their syntax in the editor — an app not drawn yet, a
+   line break that draws nothing — read as apparatus, like an empty
+   container's placeholder above. */
+.adestia-block--app,
+.adestia-block--row {
   font-family: var(--font-mono);
   font-size: var(--text-sm);
   color: var(--text-muted);

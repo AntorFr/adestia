@@ -426,6 +426,11 @@ function render(node: Node, ctx: Ctx): ReactNode {
             </aside>
           )
         }
+        if (node.type === 'containerDirective' && name === 'row') {
+          // Ends the line of `w=` blocks it sits between, which `children`
+          // does by seeing a block with no width — and draws nothing itself.
+          return null
+        }
         if (node.type === 'containerDirective' && name === 'gallery') {
           return place(<div className="adestia-gallery">{children(node, ctx)}</div>)
         }

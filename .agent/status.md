@@ -1,5 +1,5 @@
 # Status — Adestia
-> MàJ : 2026-09-18
+> MàJ : 2026-09-19
 
 **État :** `main`, **v0.61.0** : une page occupe un grand écran. Le canevas
 monte à 1400 px (940 avant) ; la prose garde une mesure, relevée à 89ch
@@ -29,7 +29,7 @@ ne surcharge un bloc du cœur). Scénario de banc : `list-files`.
 v0.64.0 : `view=cards` pour le planning et la checklist — REMPLACÉ avant tout
 déploiement par ce qui suit.
 
-Depuis (pas encore tagué) : **`frame=card` encadre n'importe quel bloc**
+v0.65.0 : **`frame=card` encadre n'importe quel bloc**
 (réservé, dessiné par le lecteur, le titre en bandeau) ; **`view` ne dit plus
 que la disposition de l'intérieur** (liste : `rows`/`cards`/`chips`). Un bloc
 est nu par défaut : la liste en lignes a perdu sa bordure, la checklist son
@@ -37,6 +37,11 @@ liseré. Sans rétrocompatibilité (choix de l'utilisateur) : `content{view=card
 et `checklist{view=…}` ne sont plus que des avertissements sans effet. Le
 planning pose ses étiquettes de jalons en rangées mesurées, DANS le graphique
 (elles montaient sur le bloc du dessus). Scénario de banc : `block-cards`.
+
+Depuis (pas encore tagué) : **`:::row`**, un saut de ligne entre blocs `w=`
+qui ne dessine rien dans la page (l'éditeur le montre « :::row »). Choisi par
+l'utilisateur contre un attribut `break` et un `---` détourné. Scénario de
+banc : `row-break`.
 
 **Prochaines étapes :**
 - [ ] **Migrer le contenu** des trois corps AVANT ou AVEC le déploiement de
