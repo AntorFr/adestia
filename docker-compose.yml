@@ -19,11 +19,10 @@ services:
       - ./plugins:/plugins:ro
       - ./skins:/skins:ro
       - ./adestia.config.yaml:/app/adestia.config.yaml:ro
-      # The `dev-flow` plugin reads lot fiches out of repositories that are
-      # not the workspace. Only worth mounting for a repository this container
-      # ALREADY holds — one it codes in; anything else it reads over HTTP with
-      # nothing cloned. Read-only, because the plugin never writes and the
-      # mount should say so too.
+      # A plugin that reads repositories which are not the workspace needs
+      # them mounted — read-only, since nothing here writes to them. Only
+      # worth doing for a repository this container ALREADY holds, one it
+      # codes in.
       # - ~/Dev/tessera:/repos/tessera:ro
     environment:
       # The CLI's own credentials. Which variables matter depends on the

@@ -1,12 +1,12 @@
 # Bundled plugins
 
-Adestia ships eleven plugins and three skins. None of them is active until you name it
+Adestia ships ten plugins and three skins. None of them is active until you name it
 in your config — discovery is not activation, and a folder sitting here costs
 nothing until you ask for it.
 
 ```yaml
 extensions:
-  apps: [todo, planif, atelier, voyages, journal, dev-flow, listening-post]  # tiles
+  apps: [todo, planif, atelier, voyages, journal, listening-post]  # tiles
   features: [scan, parcours, meals, project-management]        # things that live in the shell
   tools: []                                             # agent-facing only
   skin: alfred
@@ -25,7 +25,6 @@ leaving you to wonder where the tile went.
 | [`atelier`](atelier/) | app | The workbench. Reads a `workbook.json` a project carries in its own assets and draws the cutting diagram — sheets, bands, pieces, edges to band — plus a full-screen bench mode readable from across a workshop. |
 | [`voyages`](voyages/) | app | Trips: a per-day timeline and a tray of suggestions, read from a `voyage.json` a trip carries in its own assets. Weather and legs are derived on demand. |
 | [`listening-post`](listening-post/) | app | The video and audio worth your time. A queue fed by the feeds you follow (YouTube Atom, podcast RSS — no key, no quota) and by links you paste; a transcript of what was actually SAID filed beside each item you keep; and a search over all of it that answers with a timestamp and a link that seeks to it. It ranks nothing — the recommendation is a conversation with the agent, which is what its ✦ buttons start. |
-| [`dev-flow`](dev-flow/) | app | The work in flight across a galaxy of repositories. Reads every `.agent/lots/` fiche out of git — `main` as the index, a branch tip for its own fiche — merges the graphs and derives what nobody records: who has the hand, what is blocked, and which open question is freezing a whole chain. Never writes. |
 | [`scan`](scan/) | feature | A barcode reader in the composer. Uses the browser's own `BarcodeDetector` where it exists and only downloads a decoder where it does not. |
 | [`meals`](meals/) | feature | Meals over a period. A page typed `meals` IS the period: its frontmatter carries the shape — dates, sections, where its cards are filed — and the plugin draws that page as a day-by-day frise with a tray you drag from. So it lives in whatever folder its subject lives in (a trip's, a health carnet's) and stays an ordinary page: indexed, searchable, edited with the same ✎. One mechanism for two uses, deliberately: a week of menus you DECIDE and a fortnight of what you ATE differ in what you write, not in how it works, so there is no mode field anywhere. The card's face stays quiet (an icon, a title, a quantity) and everything else — free `props` the plugin never reads, converts or totals — waits for a click. One data file, written by the front and the agent alike, guarded by a revision rather than a lock. |
 | [`parcours`](parcours/) | feature | Walks and hikes. Adds the `:::parcours` block, which draws a `.parcours.json` as a map with numbered markers, an elevation profile and a walking mode, and assembles its GPX on demand. A feature rather than an app because a route has no domain and no tile: it hangs off whichever page has a reason to mention it. |
@@ -58,11 +57,6 @@ agent — so every write states the revision it was based on and a stale one is
 refused. A file tool cannot state a revision, which is exactly why the agent
 gets a writer instead of being told to be careful.
 
-`dev-flow` deliberately ships none. The fiches it reads are written by agents in
-OTHER repositories, against a contract those repositories publish themselves
-(`.agent/lots/README.md`); a skill here would be a second copy of it, drifting
-from the day it was written.
-
 This is why asking the agent for a cutting plan produces a workbook the
 workbench can actually draw: the format is not folklore passed between prompts,
 it is a document that travels with the plugin — and why asking it to note
@@ -78,60 +72,6 @@ A plugin whose own code dispatches on a frontmatter `type:` value declares the
 claim in its manifest (`"types": ["tache", "liste"]`, `todo`'s own). Discovery
 checks this at boot: two active plugins claiming the same word produce a line
 naming both, rather than a page silently misread by whichever one ran last.
-
-## `dev-flow` needs to be told where to look
-
-Every other plugin here reads the workspace, which it is given. `dev-flow`
-reads repositories that are not part of it, so an instance names them —
-through the one channel it has for handing a plugin a named value:
-
-```yaml
-secrets:
-  # colon- or comma-separated; each entry says its own source by its SHAPE
-  DEV_FLOW_REPOS: AntorFr/tessera,AntorFr/ostia,/repos/adestia
-  DEV_FLOW_TOKEN: ${GH_READ_TOKEN}    # only for private repositories on a forge
-```
-
-**`owner/repo` is read over HTTP, holding nothing** — no clone, no disk, no
-`git fetch` to schedule. **A path is read with git**, and is only worth using
-when the repository is on that disk ALREADY, for another reason: the pod that
-codes in it. Cloning repositories so a screen can read eight markdown files is
-replicating a whole history to look at its smallest file.
-
-They are not equivalent, and the screen says which is which (`⌁` forge, `▪`
-disk) rather than pretending:
-
-| | on disk | on a forge |
-|---|---|---|
-| `main` | as committed | as **pushed** |
-| a branch a fiche names | read at its tip | only if that branch was pushed |
-| a branch that is absent | merged and deleted — a lot's normal end | never pushed — the work is in flight and out of sight, and what is shown is `main`'s |
-
-That last row is the one to keep in mind under a doctrine where working
-branches stay local: over a forge, a lot in `code` shows the state its branch
-SUPERSEDES. The plugin says so, per fiche, rather than letting a stale line
-pass for a fresh one.
-
-Not a secret in the credential sense, and the plugin's manifest says so. But a
-list of paths a plugin may read is the OPERATOR's business rather than a
-document's: declared in a page, it would be a file-read primitive that anything
-holding a pen could re-aim. Configuration that grants reach lives in the
-configuration.
-
-In a container, mount them read-only and name the paths as the container sees
-them — and note that the plugin reads through `git`, which the image installs
-for exactly this:
-
-```yaml
-volumes:
-  - ~/Dev/tessera:/repos/tessera:ro
-  - ~/Dev/ostia:/repos/ostia:ro
-```
-
-With nothing configured the plugin still mounts and its screen says what to
-add. A repository that is missing, carries no `.agent/lots/`, has no local
-`main`, or names a branch that has since been deleted degrades to a line in the
-screen's own diagnostics — never to a blank list.
 
 ## `listening-post` transcribes with `yt-dlp`, or says it cannot
 
@@ -161,7 +101,7 @@ manifest schema, the facets a plugin may contribute, and the import map it can
 rely on are all described by the `plugin-author` contract that ships with the
 product. Ask the agent for a plugin and it reads that contract first.
 
-Nothing here is privileged. These eleven are ordinary plugins that happen to live
+Nothing here is privileged. These ten are ordinary plugins that happen to live
 in the repository, and they load through exactly the same path as yours.
 
 ## From another repository
@@ -180,7 +120,7 @@ extensions:
 ```
 
 Each source becomes one more directory discovery reads, so a plugin from a
-repository is loaded by exactly the same path as the eleven above — and
+repository is loaded by exactly the same path as the ten above — and
 `apps:`/`features:`/`tools:` still decide what is on. The repository's root may
 BE the plugin (one plugin, one repo, `adestia-plugin.json` at the top) or hold
 a folder per plugin like this one does; Adestia looks rather than asking. A
@@ -201,3 +141,29 @@ refused, by name, and whatever it was bringing is simply absent.
 A plugin the image ships wins over one a source brings under the same id, and
 the loser is named at startup. An upgrade must never quietly change what `todo`
 means.
+
+**Worked example, and the first one: `dev-flow` used to be in this folder.** It
+reads the `.agent/lots/` fiches of a galaxy of repositories and derives who has
+the hand, what is blocked and which open question is freezing a chain — none of
+which has anything to do with Adestia's release cadence, which is precisely why
+it left. It now lives beside the tooling it reads, in a repository whose root
+is not a plugin at all:
+
+```yaml
+extensions:
+  sources:
+    - repo: https://github.com/AntorFr/homelab-sdlc-core
+      ref: v0.1.0
+      token: ${DEV_FLOW_TOKEN}      # a private repository
+  apps: [dev-flow]                  # `sdlc-console` rides along, unactivated
+secrets:
+  # A plugin from a source declares its secrets like any other, and the
+  # instance answers or it runs without them.
+  DEV_FLOW_REPOS: AntorFr/tessera,AntorFr/ostia
+  DEV_FLOW_TOKEN: ${GH_READ_TOKEN}
+```
+
+Two things that fall out of the rules above rather than out of a special case:
+that repository's `bin/`, `cmd/` and `internal/` are passed over in silence
+(no manifest, not a plugin), and one source brings BOTH plugins it carries
+while `apps:` decides which one is on.

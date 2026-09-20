@@ -5,6 +5,14 @@
 8, 8 et 2 plugins actifs sur 11, aucun avis au démarrage. Un plugin peut
 désormais venir d'un autre dépôt, déclaré dans la conf de l'instance.
 
+v0.69.0 : **`dev-flow` quitte l'image**. Il vit dans
+`AntorFr/homelab-sdlc-core` (tag `v0.1.0`), à côté de l'outillage dont il lit
+les fiches, et Skippy le récupère par `extensions.sources` — premier usage réel
+du mécanisme, et il valide une forme qui n'était que dessinée : une racine qui
+n'est PAS un plugin, dont `bin/`, `cmd/` et `internal/` sont ignorés sans un
+mot, et qui porte DEUX plugins (`sdlc-console` arrive avec, non allumé).
+L'image livre dix plugins, plus onze. Pas encore déployée.
+
 v0.61.0 : une page occupe un grand écran. Le canevas
 monte à 1400 px (940 avant) ; la prose garde une mesure, relevée à 89ch
 (~830 px, choix de l'utilisateur sur son écran, au-delà des 70 classiques),

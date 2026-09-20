@@ -930,6 +930,16 @@ Four things this deliberately does NOT become:
   startup. An upgrade that changed what `todo` means, because a repository
   somewhere claimed the word, is the failure this ordering exists to prevent.
 
+**The mechanism was used the day it shipped, which is the only validation
+worth having.** `dev-flow` left this repository on 2026-09-20 for
+`homelab-sdlc-core`, beside the tooling whose fiches it reads: it had nothing
+to do with Adestia's release cadence and had been waiting on it for every
+change. It also settled a shape that was designed for rather than tested — a
+repository whose root is NOT a plugin, whose `bin/`, `cmd/` and `internal/`
+are passed over in silence, and which carries two plugins where `apps:`
+decides which is on. Adestia ships ten plugins now, not eleven, and the
+eleventh is reached by address.
+
 One rule had to bend. A manifest may not lie about its id — the folder wins —
 which is right inside a directory of plugins, where a human chose the folder
 name. It cannot be right for a clone, whose folder is named after a repository:
