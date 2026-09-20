@@ -1,7 +1,11 @@
 # Status — Adestia
 > MàJ : 2026-09-20
 
-**État :** `main`, **v0.61.0** : une page occupe un grand écran. Le canevas
+**État :** `main`, **v0.68.0** déployée sur les trois corps le 20/09 —
+8, 8 et 2 plugins actifs sur 11, aucun avis au démarrage. Un plugin peut
+désormais venir d'un autre dépôt, déclaré dans la conf de l'instance.
+
+v0.61.0 : une page occupe un grand écran. Le canevas
 monte à 1400 px (940 avant) ; la prose garde une mesure, relevée à 89ch
 (~830 px, choix de l'utilisateur sur son écran, au-delà des 70 classiques),
 et tout ce qui se parcourt plutôt qu'il ne se lit — tableaux, bandeaux `w=`,
@@ -62,6 +66,7 @@ laquelle). La découverte lit plusieurs racines, l'image d'abord : un dépôt
 ajoute un plugin, il n'en remplace jamais un. Un dépôt dont la RACINE est le
 plugin est nommé par son manifeste (le dossier d'un clone porte le nom du
 dépôt, pas celui du plugin). Les skins suivent le même chemin.
+Scénario de banc : `plugins-externes`. Déployée le 20/09 sur les trois corps.
 
 **Prochaines étapes :**
 - [ ] Mode édition, suite (retours du 19/09) : libellés parlants dans ⚙
