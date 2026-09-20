@@ -41,9 +41,13 @@ dataDir: ./data
 #
 # It is also the only channel an instance has for handing a plugin a named
 # value, so a setting that is not a credential belongs here when it decides
-# what a plugin may REACH — `dev-flow` is told which repositories to scan this
-# way, because a list of paths declared in a page would be a file-read
-# primitive anything with a pen could re-aim.
+# what a plugin may REACH — the example below tells a plugin which
+# repositories it may scan, because a list of paths declared in a page would
+# be a file-read primitive anything with a pen could re-aim.
+#
+# A plugin fetched from its own repository (`extensions.sources`) declares and
+# receives its secrets exactly like a bundled one: where the code comes from
+# changes nothing about what the instance hands it.
 # secrets:
 #   GOOGLE_MAPS_API_KEY: ${MAPS_KEY}
 #   DEV_FLOW_REPOS: AntorFr/tessera,AntorFr/ostia

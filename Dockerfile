@@ -55,12 +55,13 @@ WORKDIR /app
 # terminal, so the driver spawns it under a pty. Do not slim it away. (Claude's
 # arming needs no terminal — it speaks the OAuth exchange itself.)
 #
-# `git` is here for the plugins the image SHIPS: `dev-flow` reads its fiches out of
-# repositories with `git show`, and refuses to fall back to the working tree —
-# a state that is not committed is a state nobody else can see. Without the
-# binary that plugin is a screen that says "git is not installed" on an
-# instance whose repositories are perfectly fine, which is a box with a picture
-# on it. Coding CLIs an operator adds on top want it too.
+# `git` is here because the PRODUCT uses it: `extensions.sources` fetches a
+# plugin from its own repository at boot, and without the binary an instance
+# that declares one starts with its extensions simply absent. It was first
+# installed for a bundled plugin that read repositories (`dev-flow`, which has
+# since moved to a repository of its own and is now fetched through that very
+# mechanism) — the reason changed, the need did not. Coding CLIs an operator
+# adds on top want it too.
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates git \
  && rm -rf /var/lib/apt/lists/*
