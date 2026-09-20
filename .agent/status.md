@@ -68,12 +68,11 @@ dépôt, pas celui du plugin). Les skins suivent le même chemin.
       (« sujet » pour `type`…), même espacement vertical qu'en lecture sur
       les pages à rangées, formulaires pour les blocs de données (chiffres,
       lignes écrites d'une liste, planning) au lieu des lignes brutes.
-- [ ] **Migrer le contenu** des trois corps AVANT ou AVEC le déploiement de
-      cette version (sauvegarde hors NFS d'abord, `memory/` n'est pas
-      versionné) : `:::content{… view=cards}` → `frame=card` ;
-      `:::checklist{… view=<filtre>}` → `show=<filtre>` ; un `:::list` qui
-      comptait sur sa bordure par défaut → `frame=card`.
-- [ ] Déployer v0.61.0 sur les trois corps (bump d'image dans `k8s-home-lab`).
+- [x] Migration du contenu : CLOSE le 20/09, on ne migre pas — le contenu
+      d'avant 0.65 reste en l'état (`view=cards` sans cadre, `checklist`
+      sans filtre). Le script attend le jour où la question se repose :
+      `.agent/questions-migration-contenu.md`.
+- [x] Les trois corps tournent en v0.67.0 depuis le 19/09.
 - [ ] Date d'un bloc `:::content` au format de la langue (« 9 sept. 2026 ») :
       demande de passer la locale de l'instance jusqu'au `Reader`, pas fait.
 - [ ] (décidé le 15/09 : PAS de kit d'aides porté par le cœur ; les plugins
