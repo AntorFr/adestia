@@ -1,5 +1,5 @@
 # Status — Adestia
-> MàJ : 2026-09-19
+> MàJ : 2026-09-20
 
 **État :** `main`, **v0.61.0** : une page occupe un grand écran. Le canevas
 monte à 1400 px (940 avant) ; la prose garde une mesure, relevée à 89ch
@@ -53,17 +53,26 @@ enregistrement à l'ouverture, `<br />` pour les paragraphes vides, curseur
 caché dans les cartes, reset de Crepe (en couche CSS). Construit sur les
 retours de l'utilisateur, instance d'essai locale (port 8744).
 
+v0.68.0 : **un plugin peut venir d'un AUTRE dépôt**. `extensions.sources`
+déclare une adresse git (`ref` obligatoire — pas de branche par défaut : tirer
+un dépôt, c'est exécuter son code) ou un dossier monté ; le clone vit dans
+`<dataDir>/extensions`, donc une forge injoignable coûte le rafraîchissement
+et jamais le démarrage (on repart du cache, la bande des problèmes dit
+laquelle). La découverte lit plusieurs racines, l'image d'abord : un dépôt
+ajoute un plugin, il n'en remplace jamais un. Un dépôt dont la RACINE est le
+plugin est nommé par son manifeste (le dossier d'un clone porte le nom du
+dépôt, pas celui du plugin). Les skins suivent le même chemin.
+
 **Prochaines étapes :**
 - [ ] Mode édition, suite (retours du 19/09) : libellés parlants dans ⚙
       (« sujet » pour `type`…), même espacement vertical qu'en lecture sur
       les pages à rangées, formulaires pour les blocs de données (chiffres,
       lignes écrites d'une liste, planning) au lieu des lignes brutes.
-- [ ] **Migrer le contenu** des trois corps AVANT ou AVEC le déploiement de
-      cette version (sauvegarde hors NFS d'abord, `memory/` n'est pas
-      versionné) : `:::content{… view=cards}` → `frame=card` ;
-      `:::checklist{… view=<filtre>}` → `show=<filtre>` ; un `:::list` qui
-      comptait sur sa bordure par défaut → `frame=card`.
-- [ ] Déployer v0.61.0 sur les trois corps (bump d'image dans `k8s-home-lab`).
+- [x] Migration du contenu : CLOSE le 20/09, on ne migre pas — le contenu
+      d'avant 0.65 reste en l'état (`view=cards` sans cadre, `checklist`
+      sans filtre). Le script attend le jour où la question se repose :
+      `.agent/questions-migration-contenu.md`.
+- [x] Les trois corps tournent en v0.67.0 depuis le 19/09.
 - [ ] Date d'un bloc `:::content` au format de la langue (« 9 sept. 2026 ») :
       demande de passer la locale de l'instance jusqu'au `Reader`, pas fait.
 - [ ] (décidé le 15/09 : PAS de kit d'aides porté par le cœur ; les plugins

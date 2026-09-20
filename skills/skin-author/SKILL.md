@@ -49,7 +49,11 @@ dark text — unreadable, and mystifying because each token looked right on its
 own. A skin declaring `dark` gets the shell's COMPLETE dark palette first, so
 overriding three tokens still leaves a coherent one.
 
-`<id>` is the folder name; a manifest claiming another is refused.
+`<id>` is the folder name; a manifest claiming another is refused. A skin in
+its OWN repository is the one exception: put `adestia-skin.json` at the
+repository root, declare the repo under `extensions.sources` (with a `ref`),
+and the manifest names itself — a clone's folder is named after the
+repository, not after an id.
 
 ## The rule that makes skins safe
 

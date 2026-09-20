@@ -119,6 +119,64 @@ describe('extensions', () => {
       'extensions.apps must be a list of strings',
     ])
   })
+
+  it('reads a source, and names its cache folder after the whole address', () => {
+    const config = parseConfig(
+      [
+        'extensions:',
+        '  sources:',
+        '    - repo: https://github.com/AntorFr/adestia-plugin-truc.git',
+        '      ref: v1.0.0',
+        '    - dir: /mnt/plugins-perso',
+        '  apps: [truc]',
+      ].join('\n'),
+    )
+    expect(config.extensions.sources).toEqual([
+      {
+        kind: 'git',
+        // Two forges can each hold a repository called `plugins`; a cache
+        // keyed on the last segment would have one overwrite the other.
+        name: 'github-com-antorfr-adestia-plugin-truc',
+        repo: 'https://github.com/AntorFr/adestia-plugin-truc.git',
+        ref: 'v1.0.0',
+      },
+      { kind: 'dir', name: 'mnt-plugins-perso', dir: '/mnt/plugins-perso' },
+    ])
+  })
+
+  it('requires a ref rather than following whatever the default branch does', () => {
+    expect(issuesOf('extensions:\n  sources:\n    - repo: https://example.org/x.git\n')).toEqual([
+      'extensions.sources[0].ref is required — the tag, branch or commit to fetch',
+    ])
+  })
+
+  it('refuses a source that is both a repository and a directory', () => {
+    expect(
+      issuesOf('extensions:\n  sources:\n    - repo: https://example.org/x.git\n      dir: /mnt/x\n'),
+    ).toEqual(['extensions.sources[0] declares both repo and dir — a source is one or the other'])
+  })
+
+  it('refuses a token whose variable was never set', () => {
+    // Same refusal as a secret: a literal ${…} reaching a forge comes back as
+    // a 401 that blames the credentials instead of the file.
+    expect(
+      issuesOf(
+        [
+          'extensions:',
+          '  sources:',
+          '    - repo: https://example.org/x.git',
+          '      ref: main',
+          '      token: ${GH_READ_TOKEN}',
+        ].join('\n'),
+      ),
+    ).toEqual(['extensions.sources[0].token is still "${GH_READ_TOKEN}" — that variable is not set'])
+  })
+
+  it('refuses a key nobody reads', () => {
+    expect(
+      issuesOf('extensions:\n  sources:\n    - repo: https://example.org/x.git\n      ref: v1\n      subdir: web\n'),
+    ).toEqual(['extensions.sources[0].subdir is not a setting — known keys: repo, ref, token, dir'])
+  })
 })
 
 describe('port', () => {

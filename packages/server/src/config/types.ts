@@ -149,9 +149,40 @@ export interface DriverConfig {
   readonly shellToolsTransport?: 'mcp' | 'shell' | undefined
 }
 
+/**
+ * An extension that lives somewhere this instance does not ship.
+ *
+ * Two transports, one meaning: a directory to read. `git` is fetched into the
+ * data directory and re-read from there at every boot; `dir` is a folder the
+ * operator mounted and Adestia only reads. Both become discovery roots beside
+ * `pluginsDir`, which is what keeps everything downstream — serving, APIs,
+ * skills, vocabulary — ignorant of where a plugin came from.
+ */
+export type ExtensionSource =
+  | {
+      readonly kind: 'git'
+      /** The clone's folder under `<dataDir>/extensions`, derived from `repo`. */
+      readonly name: string
+      readonly repo: string
+      /**
+       * A tag, a branch or a commit — required, never defaulted.
+       *
+       * Fetching a repository is running its code in this process: a plugin
+       * may carry an API, a setup script and an MCP server. A named ref makes
+       * that a decision somebody wrote down, where "whatever is on the default
+       * branch" would make every restart a silent upgrade.
+       */
+      readonly ref: string
+      /** For a private repository. Travels in the environment, never in argv. */
+      readonly token?: string
+    }
+  | { readonly kind: 'dir'; readonly name: string; readonly dir: string }
+
 export interface ExtensionsConfig {
   readonly pluginsDir: string
   readonly skinsDir: string
+  /** Where else to look, beyond the two directories above. */
+  readonly sources: readonly ExtensionSource[]
   /** Presence in a directory is discovery, never activation. */
   readonly apps: readonly string[]
   readonly features: readonly string[]

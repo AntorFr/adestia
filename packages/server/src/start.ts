@@ -34,6 +34,7 @@ import { McpStore } from './mcp-store.js'
 import { runSetups } from './plugin-host.js'
 import { UserTokens } from './user-tokens.js'
 import { SecretStore } from './secrets.js'
+import { fetchSources } from './sources.js'
 import { baseManifest, mergeSkinManifest, withInstanceName } from './webmanifest.js'
 import { collectSkills, deliverSkills } from './skills.js'
 import { foreignRoots, resolveStores } from './stores.js'
@@ -148,15 +149,29 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     )
   }
 
-  const { plugins, problems } = await discoverPlugins(
-    resolve(cwd, config.extensions.pluginsDir),
-    config.extensions,
-  )
-  const { skins, problems: skinProblems } = await discoverSkins(
-    resolve(cwd, config.extensions.skinsDir),
+  // Extensions from somewhere else, fetched BEFORE discovery reads anything:
+  // a source is a directory this instance did not ship, and by the time the
+  // folders are walked it has to be as ordinary as the bundled one. The clone
+  // lives in `dataDir` — the one place an instance can always write and always
+  // keeps, unlike a plugins folder that is part of a read-only image.
+  const { roots: sourceRoots, problems: sourceProblems } = await fetchSources(
+    config.extensions.sources,
+    join(resolve(cwd, config.dataDir), 'extensions'),
+    log,
   )
 
-  for (const problem of [...problems, ...skinProblems]) {
+  // The bundled directory FIRST: a fetched repository adds plugins, it never
+  // stands in for one the image ships. See `discoverPlugins`.
+  const { plugins, problems } = await discoverPlugins(
+    [resolve(cwd, config.extensions.pluginsDir), ...sourceRoots],
+    config.extensions,
+  )
+  const { skins, problems: skinProblems } = await discoverSkins([
+    resolve(cwd, config.extensions.skinsDir),
+    ...sourceRoots,
+  ])
+
+  for (const problem of [...sourceProblems, ...problems, ...skinProblems]) {
     // Refusals are loud, always: a plugin you believe is loaded and is not
     // costs far more than one that says why it was rejected.
     log(`extension "${problem.id}" refused: ${problem.reason}`)
@@ -421,7 +436,7 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     },
     driver,
     plugins,
-    pluginProblems: [...problems, ...setupProblems],
+    pluginProblems: [...sourceProblems, ...problems, ...setupProblems],
     ...(rebound ? { userTokens: rebound } : {}),
     secrets,
     // The very same instance the driver is asking: a server added over the

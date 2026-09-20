@@ -425,6 +425,41 @@ extensions:
   pluginsDir: ./plugins
   skinsDir: ./skins
 
+  # Extensions that live in ANOTHER repository, fetched at boot.
+  #
+  # The two directories above are what this instance was built with. A source
+  # is what it was not: a plugin (or a skin) developed on its own, released on
+  # its own, and named here by address. Each one becomes one more directory
+  # discovery reads — nothing downstream knows the difference — and a plugin
+  # it brings still has to be named in the lists below to do anything.
+  #
+  # The clone lives in `<dataDir>/extensions`, which is the one place an
+  # instance can always write and always keeps: a forge that is unreachable at
+  # boot costs the refresh, never the startup, and the instance says on screen
+  # which copy it is running.
+  #
+  # ⚠️ `ref` is REQUIRED and has no default. Fetching a repository is running
+  # its code in this process — a plugin may carry an API, a setup script, an
+  # MCP server — so which commit that is has to be something somebody wrote
+  # down. A branch is a fine answer; "whatever the default branch does today"
+  # is not one, and would make every restart a silent upgrade.
+  #
+  # The repository's ROOT may be the plugin (the usual shape: one plugin, one
+  # repo, its `adestia-plugin.json` at the top) or a folder of plugins laid
+  # out like `./plugins` here. Adestia looks rather than asking.
+  #
+  # A plugin the image already ships WINS over one a source brings under the
+  # same id, and the loser is named at startup: an upgrade must never quietly
+  # change what `todo` means.
+  # sources:
+  #   - repo: https://github.com/AntorFr/adestia-plugin-truc
+  #     ref: v1.0.0
+  #     # Private repository: a token, kept in the environment. It travels to
+  #     # git through its environment too, never on a command line anybody can
+  #     # read out of a process listing.
+  #     # token: ${GH_READ_TOKEN}
+  #   - dir: /mnt/plugins-perso   # a folder you mounted yourself
+
   # What is turned ON, by kind. A plugin absent from these lists ships no code
   # to the browser and mounts no API.
   apps: []       # launcher modules: a tile, a route

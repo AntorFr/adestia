@@ -1,5 +1,6 @@
 /**
- * Extension discovery — reading a mounted directory, refusing loudly.
+ * Extension discovery — reading the directories an instance was given,
+ * refusing loudly.
  *
  * Two properties this file exists to guarantee:
  *
@@ -10,8 +11,8 @@
  *    is collected and reported; nothing throws its way out of here.
  */
 
-import { readFile, readdir } from 'node:fs/promises'
-import { join, resolve } from 'node:path'
+import { access, constants, readFile, readdir } from 'node:fs/promises'
+import { basename, join, resolve } from 'node:path'
 
 import { forgetContributedBlocks, registerBlocks } from '@antorfr/adestia-content'
 import {
@@ -298,41 +299,98 @@ function describeError(error: unknown): string {
   return (error as Error).message
 }
 
+/**
+ * The folders of one root that might be extensions.
+ *
+ * Two shapes, and the difference is not a setting: a root that carries a
+ * manifest IS one extension — a repository whose whole point is that plugin —
+ * and any other root is a directory OF extensions, like the one this product
+ * ships. Told apart by looking rather than by asking, because an operator who
+ * has just declared a repository's address should not also have to describe
+ * its layout.
+ */
+async function extensionFolders(root: string, manifest: string): Promise<readonly string[]> {
+  try {
+    await access(join(root, manifest), constants.R_OK)
+    return [root]
+  } catch {
+    // Not a manifest at the top: read it as a directory of folders.
+  }
+  try {
+    return (await readdir(root, { withFileTypes: true }))
+      .filter((entry) => entry.isDirectory() || entry.isSymbolicLink())
+      .map((entry) => join(root, entry.name))
+      .sort()
+  } catch {
+    // A missing directory is a root with no extensions, not a fault.
+    return []
+  }
+}
+
+/**
+ * What a folder is called, for the rule that a manifest may not lie about its
+ * id.
+ *
+ * The folder wins inside a directory of plugins: somebody CHOSE that name, and
+ * a `todo` folder whose manifest says `taches` is a mistake worth refusing. It
+ * cannot win for a root that is itself one plugin: that folder is named after
+ * the repository it was cloned from — `adestia-plugin-todo`, or whatever the
+ * URL happened to end with — and nobody ever promised a repository's name and
+ * a plugin's id would agree. There, the manifest names itself, and the id
+ * stays checkable where it matters: it is the word the operator must also
+ * write in `apps:`, and two roots claiming it are reported below.
+ */
+function folderName(folder: string, root: string, raw: unknown): string {
+  if (folder !== root) return basename(folder)
+  const declared = (raw as { id?: unknown }).id
+  return typeof declared === 'string' ? declared : basename(folder)
+}
+
+/**
+ * Every extension of every root, in the order the roots were given.
+ *
+ * The FIRST root to provide an id keeps it. Not arbitrary: the bundled
+ * directory comes first, so a fetched repository can never quietly stand in
+ * for a plugin the image ships — an upgrade that changes what `todo` means
+ * without anybody writing it down is the failure worth spending a rule on.
+ * The loser is named rather than dropped in silence.
+ */
 export async function discoverPlugins(
-  dir: string,
+  roots: string | readonly string[],
   config: ActivationConfig,
 ): Promise<PluginDiscovery> {
   const plugins: DiscoveredPlugin[] = []
   const problems: DiscoveryProblem[] = []
+  const held = new Map<string, string>()
 
-  let entries: string[]
-  try {
-    entries = (await readdir(dir, { withFileTypes: true }))
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => entry.name)
-  } catch {
-    // A missing plugins directory is an instance with no plugins, not a fault.
-    return { plugins: [], problems: [] }
-  }
+  for (const root of typeof roots === 'string' ? [roots] : roots) {
+    for (const folder of await extensionFolders(root, MANIFEST)) {
+      let raw: unknown
+      try {
+        raw = await readManifest(join(folder, MANIFEST))
+      } catch (error) {
+        // A folder without a manifest is not a plugin — someone's notes, a
+        // leftover checkout. Only a malformed manifest is a problem.
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') continue
+        problems.push({ id: basename(folder), reason: describeError(error) })
+        continue
+      }
 
-  for (const name of entries.sort()) {
-    const folder = join(dir, name)
-    let raw: unknown
-    try {
-      raw = await readManifest(join(folder, MANIFEST))
-    } catch (error) {
-      // A folder without a manifest is not a plugin — someone's notes, a
-      // leftover checkout. Only a malformed manifest is a problem.
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT') continue
-      problems.push({ id: name, reason: describeError(error) })
-      continue
-    }
-
-    try {
-      const manifest = parsePluginManifest(raw, name)
-      plugins.push({ manifest, dir: folder, active: isActive(manifest, config) })
-    } catch (error) {
-      problems.push({ id: name, reason: describeError(error) })
+      try {
+        const manifest = parsePluginManifest(raw, folderName(folder, root, raw))
+        const first = held.get(manifest.id)
+        if (first !== undefined) {
+          problems.push({
+            id: manifest.id,
+            reason: `is already provided by ${first}; the copy in ${folder} is not loaded`,
+          })
+          continue
+        }
+        held.set(manifest.id, folder)
+        plugins.push({ manifest, dir: folder, active: isActive(manifest, config) })
+      } catch (error) {
+        problems.push({ id: basename(folder), reason: describeError(error) })
+      }
     }
   }
 
@@ -340,35 +398,38 @@ export async function discoverPlugins(
 }
 
 export async function discoverSkins(
-  dir: string,
+  roots: string | readonly string[],
 ): Promise<{ skins: readonly DiscoveredSkin[]; problems: readonly DiscoveryProblem[] }> {
   const skins: DiscoveredSkin[] = []
   const problems: DiscoveryProblem[] = []
+  const held = new Map<string, string>()
 
-  let entries: string[]
-  try {
-    entries = (await readdir(dir, { withFileTypes: true }))
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => entry.name)
-  } catch {
-    return { skins: [], problems: [] }
-  }
+  for (const root of typeof roots === 'string' ? [roots] : roots) {
+    for (const folder of await extensionFolders(root, SKIN_MANIFEST)) {
+      let raw: unknown
+      try {
+        raw = await readManifest(join(folder, SKIN_MANIFEST))
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') continue
+        problems.push({ id: basename(folder), reason: describeError(error) })
+        continue
+      }
 
-  for (const name of entries.sort()) {
-    const folder = join(dir, name)
-    let raw: unknown
-    try {
-      raw = await readManifest(join(folder, SKIN_MANIFEST))
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT') continue
-      problems.push({ id: name, reason: describeError(error) })
-      continue
-    }
-
-    try {
-      skins.push({ manifest: parseSkinManifest(raw, name), dir: folder })
-    } catch (error) {
-      problems.push({ id: name, reason: describeError(error) })
+      try {
+        const manifest = parseSkinManifest(raw, folderName(folder, root, raw))
+        const first = held.get(manifest.id)
+        if (first !== undefined) {
+          problems.push({
+            id: manifest.id,
+            reason: `is already provided by ${first}; the copy in ${folder} is not loaded`,
+          })
+          continue
+        }
+        held.set(manifest.id, folder)
+        skins.push({ manifest, dir: folder })
+      } catch (error) {
+        problems.push({ id: basename(folder), reason: describeError(error) })
+      }
     }
   }
 

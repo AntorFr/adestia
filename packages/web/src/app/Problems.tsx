@@ -17,14 +17,22 @@ import type { InstanceInfo } from './useInstance.js'
  * Anything else falls back to the prose — visibly untranslated beats
  * mistranslated, and beats a raw code by a mile.
  */
+const SAID: Readonly<Record<string, string>> = {
+  'missing-secret': 'runs without the secret %name, which this instance does not provide',
+  'source-unreachable': 'could not be fetched at %ref, and nothing is cached — what it brings is absent',
+  'source-stale': 'could not be refreshed at %ref — running on the cached copy (%head)',
+  'source-missing': 'is declared as an extension source but is not a directory on this instance',
+}
+
 function say(
   t: (key: string) => string,
   problem: { reason: string; code?: string; params?: Record<string, string> },
 ): string {
-  if (problem.code !== 'missing-secret' || !problem.params?.['name']) return problem.reason
-  return t('runs without the secret %name, which this instance does not provide').replace(
-    '%name',
-    problem.params['name'],
+  const key = problem.code === undefined ? undefined : SAID[problem.code]
+  if (key === undefined) return problem.reason
+  return Object.entries(problem.params ?? {}).reduce(
+    (said, [name, value]) => said.replaceAll(`%${name}`, value),
+    t(key),
   )
 }
 
