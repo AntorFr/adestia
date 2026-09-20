@@ -196,6 +196,54 @@ describe('frontend payload', () => {
   })
 })
 
+describe('several roots', () => {
+  it('reads every root, in the order they were given', async () => {
+    const elsewhere = await mkdtemp(join(tmpdir(), 'adestia-root-'))
+    await mkdir(join(elsewhere, 'extra'), { recursive: true })
+    await writeFile(
+      join(elsewhere, 'extra', 'adestia-plugin.json'),
+      JSON.stringify({ schemaVersion: 1, id: 'extra', kind: 'app', description: 'Extra.' }),
+    )
+
+    const { plugins } = await discoverPlugins([join(root, 'plugins'), elsewhere], activation)
+    expect(plugins.map((p) => p.manifest.id)).toContain('extra')
+    expect(plugins.map((p) => p.manifest.id)).toContain('workbench')
+  })
+
+  it('takes a root that IS one plugin, named by its manifest', async () => {
+    // A plugin repository's folder is named after the REPOSITORY — nobody
+    // promised `adestia-plugin-notes` and `notes` would agree, so the folder
+    // cannot be the authority here the way it is inside a plugins directory.
+    const repoLike = await mkdtemp(join(tmpdir(), 'adestia-plugin-notes-'))
+    await writeFile(
+      join(repoLike, 'adestia-plugin.json'),
+      JSON.stringify({ schemaVersion: 1, id: 'carnet', kind: 'app', description: 'Notes.' }),
+    )
+
+    const { plugins, problems } = await discoverPlugins([repoLike], activation)
+    expect(problems).toEqual([])
+    expect(plugins.map((p) => p.manifest.id)).toEqual(['carnet'])
+    expect(plugins[0]!.dir).toBe(repoLike)
+  })
+
+  it('keeps the first root that provides an id, and names the loser', async () => {
+    // The bundled directory is first at boot, so a fetched repository can add
+    // a plugin and never quietly replace one the image ships.
+    const shadow = await mkdtemp(join(tmpdir(), 'adestia-shadow-'))
+    await mkdir(join(shadow, 'workbench'), { recursive: true })
+    await writeFile(
+      join(shadow, 'workbench', 'adestia-plugin.json'),
+      JSON.stringify({ schemaVersion: 1, id: 'workbench', kind: 'app', description: 'Mine.' }),
+    )
+
+    const { plugins, problems } = await discoverPlugins([join(root, 'plugins'), shadow], activation)
+    const workbench = plugins.filter((p) => p.manifest.id === 'workbench')
+    expect(workbench).toHaveLength(1)
+    expect(workbench[0]!.dir).toBe(join(root, 'plugins', 'workbench'))
+    expect(problems.map((p) => p.reason).join(' ')).toContain('already provided by')
+  })
+})
+
 describe('skins', () => {
   it('discovers a skin folder', async () => {
     const { skins, problems } = await discoverSkins(join(root, 'skins'))

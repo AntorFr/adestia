@@ -163,3 +163,41 @@ product. Ask the agent for a plugin and it reads that contract first.
 
 Nothing here is privileged. These eleven are ordinary plugins that happen to live
 in the repository, and they load through exactly the same path as yours.
+
+## From another repository
+
+A plugin does not have to live in a folder this image was built with. Declare
+where it comes from and the instance fetches it at boot:
+
+```yaml
+extensions:
+  sources:
+    - repo: https://github.com/AntorFr/adestia-plugin-truc
+      ref: v1.0.0
+      # token: ${GH_READ_TOKEN}     # only for a private repository
+    - dir: /mnt/plugins-perso       # or a folder you mounted yourself
+  apps: [todo, truc]                # declaring it is still not activating it
+```
+
+Each source becomes one more directory discovery reads, so a plugin from a
+repository is loaded by exactly the same path as the eleven above — and
+`apps:`/`features:`/`tools:` still decide what is on. The repository's root may
+BE the plugin (one plugin, one repo, `adestia-plugin.json` at the top) or hold
+a folder per plugin like this one does; Adestia looks rather than asking. A
+skin repository works the same way.
+
+**`ref` is required and has no default.** Fetching a repository is running its
+code in this process — a plugin may carry an API, a setup script and an MCP
+server — so which commit that is has to be something somebody wrote down. A
+branch is a perfectly good answer; the absence of one would have made every
+restart a silent upgrade.
+
+The clone lives under `<dataDir>/extensions`, which is what makes a forge's bad
+morning cost a refresh instead of a boot: an instance that cannot reach the
+network starts on the copy it already has and says so in the problems band. The
+first boot is the exception — there is nothing to fall back on, so the source is
+refused, by name, and whatever it was bringing is simply absent.
+
+A plugin the image ships wins over one a source brings under the same id, and
+the loser is named at startup. An upgrade must never quietly change what `todo`
+means.

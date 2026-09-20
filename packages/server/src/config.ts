@@ -18,6 +18,7 @@ import type {
   AdestiaConfig,
   AttachmentsConfig,
   AuthConfig,
+  ExtensionSource,
   ExtensionsConfig,
   McpInConfig,
   PermissionsConfig,
@@ -171,6 +172,128 @@ function parseStores(
   })
 
   return declared.length > 0 ? declared : fallback
+}
+
+const SOURCE_KEYS = new Set(['repo', 'ref', 'token', 'dir'])
+
+/**
+ * The folder a clone lands in, from the URL it came from.
+ *
+ * Built from the whole address rather than its last segment: two forges can
+ * each hold a `plugins` repository, and a cache that named them both `plugins`
+ * would have one silently overwrite the other at every boot. Readable on
+ * disk on purpose — an operator looking at `<dataDir>/extensions` should be
+ * able to tell what each folder is without opening its `.git/config`.
+ */
+export function sourceName(repo: string): string {
+  return repo
+    .replace(/^[a-z+]+:\/\//i, '')
+    .replace(/^[^@/]*@/, '')
+    .replace(/\.git$/, '')
+    .replace(/[^a-zA-Z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase()
+}
+
+/**
+ * Where to look for extensions beyond the directories this instance ships.
+ *
+ * Refused rather than repaired, like every other block here: a source that
+ * names no ref, or names both a repository and a directory, is an operator
+ * who means two different things — and guessing which would be an extension
+ * quietly loaded from somewhere they did not choose.
+ */
+function parseSources(raw: unknown, issues: string[]): readonly ExtensionSource[] {
+  if (raw === undefined) return []
+  if (!Array.isArray(raw)) {
+    issues.push('extensions.sources must be a list')
+    return []
+  }
+
+  const sources: ExtensionSource[] = []
+  const seen = new Set<string>()
+
+  raw.forEach((entry, index) => {
+    const at = `extensions.sources[${index}]`
+    if (!isObject(entry)) {
+      issues.push(`${at} must be an object`)
+      return
+    }
+    for (const key of Object.keys(entry)) {
+      if (!SOURCE_KEYS.has(key)) {
+        issues.push(`${at}.${key} is not a setting — known keys: ${[...SOURCE_KEYS].join(', ')}`)
+      }
+    }
+
+    const repo = entry['repo']
+    const dir = entry['dir']
+    if (repo !== undefined && dir !== undefined) {
+      // Two transports, and an entry declaring both says nothing about which
+      // one wins. The same rule an MCP server obeys for `url` and `command`.
+      issues.push(`${at} declares both repo and dir — a source is one or the other`)
+      return
+    }
+
+    if (typeof dir === 'string' && dir !== '') {
+      const name = sourceName(dir)
+      if (seen.has(name)) {
+        issues.push(`${at} is declared more than once (${dir})`)
+        return
+      }
+      seen.add(name)
+      sources.push({ kind: 'dir', name, dir })
+      return
+    }
+
+    if (typeof repo !== 'string' || repo === '') {
+      issues.push(`${at} needs a repo (a git URL) or a dir (a folder on this machine)`)
+      return
+    }
+    if (/^\$\{[A-Za-z_][A-Za-z0-9_]*\}/.test(repo)) {
+      issues.push(`${at}.repo is still "${repo}" — that variable is not set`)
+      return
+    }
+
+    const ref = entry['ref']
+    if (typeof ref !== 'string' || ref === '') {
+      // No default, deliberately: see `ExtensionSource`. A branch is a fine
+      // answer, but it has to be one somebody typed.
+      issues.push(`${at}.ref is required — the tag, branch or commit to fetch`)
+      return
+    }
+
+    const token = entry['token']
+    if (token !== undefined && (typeof token !== 'string' || token === '')) {
+      issues.push(`${at}.token must be a non-empty string`)
+      return
+    }
+    if (typeof token === 'string' && /^\$\{[A-Za-z_][A-Za-z0-9_]*\}$/.test(token)) {
+      // Same refusal as a secret: a literal "${GH_READ_TOKEN}" reaching a
+      // forge fails as a 401 that blames the credentials rather than the file.
+      issues.push(`${at}.token is still "${token}" — that variable is not set`)
+      return
+    }
+
+    const name = sourceName(repo)
+    if (name === '') {
+      issues.push(`${at}.repo does not look like a repository address`)
+      return
+    }
+    if (seen.has(name)) {
+      issues.push(`${at} is declared more than once (${repo})`)
+      return
+    }
+    seen.add(name)
+    sources.push({
+      kind: 'git',
+      name,
+      repo,
+      ref,
+      ...(typeof token === 'string' ? { token } : {}),
+    })
+  })
+
+  return sources
 }
 
 function parseAuth(raw: unknown, issues: string[]): AuthConfig {
@@ -483,6 +606,7 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
     pluginsDir:
       typeof extensionsRaw['pluginsDir'] === 'string' ? extensionsRaw['pluginsDir'] : './plugins',
     skinsDir: typeof extensionsRaw['skinsDir'] === 'string' ? extensionsRaw['skinsDir'] : './skins',
+    sources: parseSources(extensionsRaw['sources'], issues),
     apps: stringList(extensionsRaw['apps'], 'extensions.apps', issues),
     features: stringList(extensionsRaw['features'], 'extensions.features', issues),
     tools: stringList(extensionsRaw['tools'], 'extensions.tools', issues),

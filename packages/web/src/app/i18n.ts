@@ -102,6 +102,12 @@ const FR: Readonly<Record<string, string>> = {
 
   'runs without the secret %name, which this instance does not provide':
     'tourne sans le secret %name, que cette instance ne fournit pas',
+  'could not be fetched at %ref, and nothing is cached — what it brings is absent':
+    'n’a pas pu être récupéré sur %ref, et rien n’est en cache — ce qu’il apporte est absent',
+  'could not be refreshed at %ref — running on the cached copy (%head)':
+    'n’a pas pu être rafraîchi sur %ref — on tourne sur la copie en cache (%head)',
+  'is declared as an extension source but is not a directory on this instance':
+    'est déclaré comme source d’extensions mais n’est pas un dossier sur cette instance',
 
   // The instruction zone
   Instructions: 'Instructions',

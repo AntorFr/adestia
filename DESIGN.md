@@ -880,6 +880,64 @@ runtime; nothing is scanned by filename convention at build time.
   got the same treatment as `schedule-author`, having shipped with no
   authoring contract at all despite executing their body as a prompt.
 
+### An extension can come from another repository (decided 2026-09-20)
+
+Discovery read exactly ONE directory, which made "a plugin shippable from
+another repository" true in the code and false in practice. The plugin was
+portable; getting it into a running instance was not. In Kubernetes — three
+bodies from one image — it meant an init container and a volume per instance,
+per plugin, written in the chart rather than in the instance's own
+configuration. The practical consequence is the one that decided this: every
+plugin lived in this repository, so every plugin shipped on the core's release
+cadence, and a plugin that had nothing to do with Adestia's version had to wait
+for one.
+
+So an instance may now DECLARE where else to look:
+
+```yaml
+extensions:
+  sources:
+    - repo: https://github.com/AntorFr/adestia-plugin-truc
+      ref: v1.0.0
+    - dir: /mnt/plugins-perso
+```
+
+A git source is fetched into `<dataDir>/extensions/<name>`; a `dir` source is a
+folder somebody mounted. Either way what comes out is a DIRECTORY, handed to
+discovery beside the bundled one — so serving, APIs, skills, vocabulary and
+activation are untouched, and nothing downstream can tell where a plugin came
+from. That is the same ignorance the extension system already depended on,
+used once more rather than extended.
+
+Four things this deliberately does NOT become:
+
+- **Not a marketplace.** There is no index, no search, no "install" verb and no
+  name resolution. A source is an address the operator wrote, which is the same
+  posture as `pluginsDir`: the product never learns a plugin's name.
+- **Not an auto-updater.** `ref` is required and has no default. Fetching a
+  repository is running its code in this process — a plugin may carry an API, a
+  setup script and an MCP server — and a default of "the default branch" would
+  have made every restart a silent upgrade of code nobody re-read. A branch is
+  a legitimate ref; it just has to be typed.
+- **Not a boot dependency on the network.** The checkout lives in `dataDir`
+  because that is the one place an instance can always write and always keeps.
+  A forge that is down costs the refresh: the instance starts on the copy it
+  has and reports it as degraded, naming the commit it is running. Only a
+  FIRST fetch can fail outright, and it is refused by name rather than leaving
+  an activation that quietly matched nothing.
+- **Not a way to replace what the image ships.** The bundled directory is read
+  first and the first root to provide an id keeps it; the loser is named at
+  startup. An upgrade that changed what `todo` means, because a repository
+  somewhere claimed the word, is the failure this ordering exists to prevent.
+
+One rule had to bend. A manifest may not lie about its id — the folder wins —
+which is right inside a directory of plugins, where a human chose the folder
+name. It cannot be right for a clone, whose folder is named after a repository:
+nobody ever promised `adestia-plugin-todo` and `todo` would agree. So a root
+that IS one plugin (its manifest at the top) is named BY that manifest, and the
+id stays checkable where it now matters — it is the word the operator writes in
+`apps:`, and two roots claiming it are reported.
+
 ### A page TYPE can be drawn by its plugin (decided 2026-09-07)
 
 `types` was a half-built mechanism. A plugin declared the frontmatter values

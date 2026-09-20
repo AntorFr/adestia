@@ -32,6 +32,23 @@ plugins/<id>/
 different `id` is refused rather than silently re-mapped: the thing enabled in
 config must be the thing that loaded.
 
+**A plugin may live in its own repository**, and then the folder is the clone's
+— named after the repository, which nobody promised would match the id. There,
+and only there, the manifest names itself: put `adestia-plugin.json` at the
+REPOSITORY ROOT (the rest of the layout below unchanged, `web/` and all) and
+call the repo whatever you like. An instance pulls it by address:
+
+```yaml
+extensions:
+  sources:
+    - repo: https://github.com/<owner>/<repo>
+      ref: v1.0.0          # required: a tag, a branch or a commit
+  apps: [<id>]             # still the id from your manifest
+```
+
+Everything else in this contract applies identically — the id is what the
+operator activates, so it is still the name that has to be right.
+
 ### Naming it
 
 **An id is English, SPEAKING and DISCRIMINATING.** It is not a label — it is

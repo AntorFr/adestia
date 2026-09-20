@@ -1,5 +1,5 @@
 # Status — Adestia
-> MàJ : 2026-09-19
+> MàJ : 2026-09-20
 
 **État :** `main`, **v0.61.0** : une page occupe un grand écran. Le canevas
 monte à 1400 px (940 avant) ; la prose garde une mesure, relevée à 89ch
@@ -52,6 +52,16 @@ au premier niveau, ⤴ sort un bloc imbriqué, ✕ le supprime. Corrigé en rout
 enregistrement à l'ouverture, `<br />` pour les paragraphes vides, curseur
 caché dans les cartes, reset de Crepe (en couche CSS). Construit sur les
 retours de l'utilisateur, instance d'essai locale (port 8744).
+
+v0.68.0 : **un plugin peut venir d'un AUTRE dépôt**. `extensions.sources`
+déclare une adresse git (`ref` obligatoire — pas de branche par défaut : tirer
+un dépôt, c'est exécuter son code) ou un dossier monté ; le clone vit dans
+`<dataDir>/extensions`, donc une forge injoignable coûte le rafraîchissement
+et jamais le démarrage (on repart du cache, la bande des problèmes dit
+laquelle). La découverte lit plusieurs racines, l'image d'abord : un dépôt
+ajoute un plugin, il n'en remplace jamais un. Un dépôt dont la RACINE est le
+plugin est nommé par son manifeste (le dossier d'un clone porte le nom du
+dépôt, pas celui du plugin). Les skins suivent le même chemin.
 
 **Prochaines étapes :**
 - [ ] Mode édition, suite (retours du 19/09) : libellés parlants dans ⚙
