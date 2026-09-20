@@ -20,7 +20,14 @@ blanc par défaut) : `migrate-frame.mjs`, dans le bac à sable de la session
 `46a2c1f6`. Après migration, le validateur ne rend plus aucun avertissement
 sur les blocs du cœur.
 
-## Q1 — Par quel chemin réécrire le contenu des trois corps ? OUVERTE
+## Q1 — Par quel chemin réécrire le contenu des trois corps ? CLOSE (20/09/2026)
+
+**Réponse : « laisse comme ça ».** On ne migre pas. Le contenu écrit avant 0.65
+reste en l'état, donc les sections `view=cards` s'affichent sans cadre, les
+checklists `view=<filtre>` ne filtrent plus, et les listes en lignes sont nues.
+Le script reste ici pour le jour où la question se reposera.
+
+Voies qui étaient sur la table :
 
 `kubectl exec` sur les pods est refusé par le classifieur (« Production
 Reads »), en lecture comme en écriture. Deux voies :
@@ -34,10 +41,12 @@ Reads »), en lecture comme en écriture. Deux voies :
 Rappel : `memory/` d'Alfred n'est pas versionné → sauvegarde hors NFS AVANT
 toute réécriture, quelle que soit la voie.
 
-## Q2 — Les listes reprennent-elles leur cadre ? PAS ENCORE POSÉE
+## Q2 — Les listes reprennent-elles leur cadre ? CLOSE avec Q1 (20/09/2026)
+
+Elles restent nues.
 
 Avant 0.65, une `:::list` en mode `rows` était encadrée d'office ; maintenant
 elle est nue sauf `frame=card`. Restaurer le rendu d'avant veut dire ajouter
 `frame=card` à toutes les listes en `rows` (le script sait le faire avec
 `--frame-lists`) ; ne rien faire les laisse nues, ce qui est le dessin que
-0.65 a voulu. À trancher une fois Q1 close.
+0.65 a voulu. C'est ce dessin-là qui l'emporte, par non-décision assumée.
