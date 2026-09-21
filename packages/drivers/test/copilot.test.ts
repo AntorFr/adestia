@@ -460,6 +460,30 @@ describe('driver', () => {
     ])
   })
 
+  it('declares each root with --add-dir so a mount outside cwd is readable', async () => {
+    const fake = fakeCopilot()
+    const driver = new CopilotDriver({ home: '/x', spawnImpl: fake.spawnImpl })
+    const turn = collect(driver, { prompt: 'salut', cwd: '/w', roots: ['/data/inbox/b1', '/mnt/store'] })
+
+    fake.stdout.write('{"type":"result","data":{"sessionId":"s1","exitCode":0}}\n')
+    fake.child.emit('close', 0)
+    await turn
+
+    expect(fake.spawns[0]?.args).toEqual([
+      '--prompt',
+      'salut',
+      '--output-format',
+      'json',
+      '--allow-all-tools',
+      '--no-auto-update',
+      '--add-dir',
+      '/data/inbox/b1',
+      '--add-dir',
+      '/mnt/store',
+    ])
+    expect(driver.acceptsRoots()).toBe(true)
+  })
+
   it('starts with the configured custom agent', async () => {
     const fake = fakeCopilot()
     const driver = new CopilotDriver({ home: '/x', agent: 'q', spawnImpl: fake.spawnImpl })
