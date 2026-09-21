@@ -219,6 +219,17 @@ export class CopilotDriver implements Driver {
   }
 
   /**
+   * This CLI takes `--add-dir`, so a store — or an attachment inbox — mounted
+   * outside the working directory is declared rather than refused read by
+   * read. Without it the agent sees a bare "Permission denied" on a path the
+   * instance itself handed it, which reads as a broken agent, not a missing
+   * flag.
+   */
+  acceptsRoots(): boolean {
+    return true
+  }
+
+  /**
    * Where this CLI reads prose — `copilot init` writes the second one, and
    * `.github/agents/*.agent.md` holds the custom agents `--agent` selects.
    *
@@ -459,6 +470,7 @@ export class CopilotDriver implements Driver {
       'json',
       '--allow-all-tools',
       '--no-auto-update',
+      ...(request.roots ?? []).flatMap((root) => ['--add-dir', root]),
       ...(request.sessionId ? ['--resume', request.sessionId] : []),
       ...(request.model ? ['--model', request.model] : []),
       ...(this.#agent ? ['--agent', this.#agent] : []),

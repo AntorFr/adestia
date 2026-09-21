@@ -7,6 +7,7 @@
  */
 
 import { randomUUID } from 'node:crypto'
+import { dirname } from 'node:path'
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import type { AskAnswer, AskDesk, ShellToolsHandle, TurnEvent } from '@antorfr/adestia-drivers'
@@ -157,7 +158,15 @@ export function registerTurns(app: FastifyInstance, deps: TurnsDependencies): vo
           // than the gateway's own notes.
           prompt: frameView(frameAttachments(body.prompt, attachments), body.view),
           cwd: config.workspace.root,
-          ...(agentRoots.length > 0 ? { roots: agentRoots } : {}),
+          // The inbox lives outside the workspace by design, so the batch
+          // directory of this turn's attachments is declared as a root — else
+          // a CLI that verifies read paths refuses the very file the prompt
+          // just told the agent to open.
+          ...(() => {
+            const attachmentRoots = [...new Set(attachments.map((a) => dirname(a.path)))]
+            const roots = [...agentRoots, ...attachmentRoots]
+            return roots.length > 0 ? { roots } : {}
+          })(),
           // A conversation's session is the CONVERSATION's, read from its file when the
           // turn is dispatched (`session` below) — never the browser's copy.
           // The browser's copy is exactly what a stream dying under a sleeping
