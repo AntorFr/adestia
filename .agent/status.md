@@ -1,5 +1,5 @@
 # Status — Adestia
-> MàJ : 2026-09-20
+> MàJ : 2026-09-23
 
 **État :** `main`, **v0.68.0** déployée sur les trois corps le 20/09 —
 8, 8 et 2 plugins actifs sur 11, aucun avis au démarrage. Un plugin peut
@@ -12,6 +12,20 @@ du mécanisme, et il valide une forme qui n'était que dessinée : une racine qu
 n'est PAS un plugin, dont `bin/`, `cmd/` et `internal/` sont ignorés sans un
 mot, et qui porte DEUX plugins (`sdlc-console` arrive avec, non allumé).
 L'image livre dix plugins, plus onze. Pas encore déployée.
+
+v0.70.0 : **le fil d'Ariane ne dit plus deux fois le même nom**. Un dossier
+qui ne tient qu'une fiche du type réclamé par son plugin s'ouvre SUR cette
+fiche — dossier et page sont un seul écran — et le bandeau dessinait les deux
+marches : le titre écrit deux fois, le premier exemplaire étant un lien vers
+l'écran déjà ouvert, donc un clic qui ne faisait rien. La marche du dossier
+saute (`opensOn`, qui interroge `folderRoute` et relit la réponse par
+`pageAddress` plutôt que de recopier la règle : `/page/<dossier>` et
+`/page/<page>` s'écrivent différemment et nomment le même fichier). Le cas
+jumeau — un dossier que personne ne possède, dont on lit l'aperçu — se corrige
+à l'envers : la marche mène à l'étagère, un vrai second écran, donc c'est le
+LIBELLÉ qui cède et le dossier porte son propre nom. Signalé par
+l'utilisateur sur une fiche `project-management`. Scénario de banc :
+`fil-ariane-fiche`. Pas encore déployée.
 
 v0.61.0 : une page occupe un grand écran. Le canevas
 monte à 1400 px (940 avant) ; la prose garde une mesure, relevée à 89ch

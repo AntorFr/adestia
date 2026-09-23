@@ -366,3 +366,30 @@ export function folderRoute(
   // belongs in a link. Any other page keeps its own name.
   return pageRoute(isIndexPage(face) ? folder : face)
 }
+
+/**
+ * Whether a folder's address opens exactly this page — folder and page being
+ * one screen rather than two.
+ *
+ * A folder with a single typed page IS that thing (see `faceOf`), so its
+ * address and the page's are the same door. The breadcrumb drew both and the
+ * reader got their title twice, the first copy a link back to the screen
+ * already under their eyes.
+ *
+ * Asked through `folderRoute` and read back through `pageAddress` rather than
+ * re-deciding it here: the two spellings of that door — `/page/<folder>` when
+ * the face is an index, `/page/<page>` otherwise — differ as STRINGS and name
+ * the same file, which is precisely the kind of detail a second copy of the
+ * rule gets wrong.
+ */
+export function opensOn(
+  plugins: readonly LoadedPlugin[],
+  folder: string,
+  path: string,
+  pages: readonly IndexEntry[] = [],
+): boolean {
+  const route = folderRoute(plugins, folder, pages)
+  const prefix = '/page/'
+  if (!route.startsWith(prefix)) return false
+  return pageAddress(route.slice(prefix.length), pages).path === path
+}

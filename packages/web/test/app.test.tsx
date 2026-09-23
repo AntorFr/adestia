@@ -11,6 +11,8 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { App, appTrail, screenView } from '../src/app/App.js'
+import type { LoadedPlugin } from '../src/plugins/loader.js'
+import { trailOf } from '../src/app/trail.js'
 
 const INSTANCE = {
   driver: { label: 'Test CLI', cliVersion: '1.0', capabilities: [] },
@@ -102,6 +104,159 @@ describe('the breadcrumb', () => {
       { label: 'Brocéliande 2026', walkable: false },
     ])
     location.hash = ''
+  })
+
+  it('names a folder and the page it OPENS ON once, not twice', () => {
+    // The defect: a folder holding a single typed page opens on that page —
+    // the two are one screen — and the trail drew both. The reader got
+    // "Chantiers / Rénovation cuisine / Rénovation cuisine", the middle copy
+    // a link back to the screen already under their eyes, which did nothing.
+    const suivi = {
+      id: 'project-management',
+      kind: 'feature',
+      base: '/plugins/project-management/',
+      types: ['project-management'],
+    } as unknown as LoadedPlugin
+    const pages = [
+      { path: 'chantiers/INDEX.md', title: 'Chantiers', fields: { app: 'project-management' } },
+      {
+        path: 'chantiers/cuisine/cuisine.md',
+        title: 'Rénovation cuisine',
+        fields: { type: 'project-management' },
+      },
+      { path: 'chantiers/cuisine/devis.md', title: 'Devis', fields: {} },
+    ]
+    const trail = trailOf({
+      settings: undefined,
+      openApp: undefined,
+      loaded: [suivi],
+      pluginTrail: { id: '', crumbs: [] },
+      page: {
+        path: 'chantiers/cuisine/cuisine.md',
+        title: 'Rénovation cuisine',
+        markdown: '',
+        fields: { type: 'project-management' },
+      },
+      section: undefined,
+      pages,
+      stores: [],
+      t: (key: string) => key,
+    })
+    expect(trail).toEqual([
+      // The folder above stays a way back — it leads somewhere else.
+      { folder: 'chantiers', label: 'Chantiers' },
+      { label: 'Rénovation cuisine' },
+    ])
+  })
+
+  it('keeps the folder when it opens on a DIFFERENT page', () => {
+    // Nothing is dropped for its own sake: from a sibling page, the worksite
+    // above is a real step, and a real way back.
+    const suivi = {
+      id: 'project-management',
+      kind: 'feature',
+      base: '/plugins/project-management/',
+      types: ['project-management'],
+    } as unknown as LoadedPlugin
+    const pages = [
+      { path: 'chantiers/INDEX.md', title: 'Chantiers', fields: { app: 'project-management' } },
+      {
+        path: 'chantiers/cuisine/cuisine.md',
+        title: 'Rénovation cuisine',
+        fields: { type: 'project-management' },
+      },
+      { path: 'chantiers/cuisine/devis.md', title: 'Devis', fields: {} },
+    ]
+    const trail = trailOf({
+      settings: undefined,
+      openApp: undefined,
+      loaded: [suivi],
+      pluginTrail: { id: '', crumbs: [] },
+      page: {
+        path: 'chantiers/cuisine/devis.md',
+        title: 'Devis',
+        markdown: '',
+        fields: {},
+      },
+      section: undefined,
+      pages,
+      stores: [],
+      t: (key: string) => key,
+    })
+    expect(trail).toEqual([
+      { folder: 'chantiers', label: 'Chantiers' },
+      { folder: 'chantiers/cuisine', label: 'Rénovation cuisine' },
+      { label: 'Devis' },
+    ])
+  })
+
+  it('lets a folder wear its OWN name when its overview is what you are reading', () => {
+    // The sibling defect, from a folder no app owns: the crumb borrowed the
+    // index page's title, and that title was about to be written again at the
+    // end of the trail. Here the two crumbs really are two screens — this one
+    // opens the shelf — so the name goes, not the step.
+    const pages = [
+      { path: 'chantiers/INDEX.md', title: 'Chantiers', fields: {} },
+      {
+        path: 'chantiers/cuisine/cuisine.md',
+        title: 'Rénovation de la cuisine',
+        fields: {},
+      },
+      { path: 'chantiers/cuisine/devis.md', title: 'Devis', fields: {} },
+    ]
+    const trail = trailOf({
+      settings: undefined,
+      openApp: undefined,
+      loaded: [],
+      pluginTrail: { id: '', crumbs: [] },
+      page: {
+        path: 'chantiers/cuisine/cuisine.md',
+        title: 'Rénovation de la cuisine',
+        markdown: '',
+        fields: {},
+      },
+      section: undefined,
+      pages,
+      stores: [],
+      t: (key: string) => key,
+    })
+    expect(trail).toEqual([
+      { folder: 'chantiers', label: 'Chantiers' },
+      // Its own name, prettified as the tiles already write it — and still a
+      // way in to the files filed beside the overview.
+      { folder: 'chantiers/cuisine', label: 'Cuisine' },
+      { label: 'Rénovation de la cuisine' },
+    ])
+  })
+
+  it('leaves the index page’s title on the crumb for every OTHER page', () => {
+    // Nothing is renamed for its own sake: from the page next door, the
+    // folder is the worksite, and the worksite has a title.
+    const pages = [
+      { path: 'chantiers/INDEX.md', title: 'Chantiers', fields: {} },
+      {
+        path: 'chantiers/cuisine/cuisine.md',
+        title: 'Rénovation de la cuisine',
+        fields: {},
+      },
+      { path: 'chantiers/cuisine/devis.md', title: 'Devis', fields: {} },
+    ]
+    const trail = trailOf({
+      settings: undefined,
+      openApp: undefined,
+      loaded: [],
+      pluginTrail: { id: '', crumbs: [] },
+      page: { path: 'chantiers/cuisine/devis.md', title: 'Devis', markdown: '', fields: {} },
+      section: undefined,
+      pages,
+      stores: [],
+      t: (key: string) => key,
+    })
+    expect(trail.map((crumb) => crumb.label)).toEqual([
+      'Chantiers',
+      'Rénovation de la cuisine',
+      'Devis',
+    ])
   })
 
   it('skips a grouping folder, which would lead to an empty screen', async () => {

@@ -17,6 +17,7 @@ import {
   decodePath,
   encodePath,
   folderRoute,
+  opensOn,
   ownerOf,
   routeForPath,
   strayApp,
@@ -384,6 +385,27 @@ describe('sur quoi un dossier s’ouvre', () => {
     // Une fiche un niveau plus bas ne fait pas du parent un projet.
     const pages = [racine, page('chantiers/adestia/INDEX.md', { type: 'project-management' })]
     expect(folderRoute([suivi], 'chantiers', pages)).toBe('/section/chantiers')
+  })
+
+  it('reconnaît la page QUI EST le dossier, quelle que soit l’orthographe du lien', () => {
+    const pages = [
+      racine,
+      page('chantiers/adestia/INDEX.md', { type: 'project-management' }),
+      page('chantiers/adestia/note.md'),
+    ]
+    // Le défaut : le fil d'Ariane dessinait le dossier PUIS sa fiche, soit le
+    // titre deux fois, la première copie renvoyant à l'écran déjà sous les
+    // yeux du lecteur. Les deux adresses s'écrivent différemment et nomment
+    // le même fichier — c'est là qu'une deuxième copie de la règle se trompe.
+    expect(opensOn([suivi], 'chantiers/adestia', 'chantiers/adestia/INDEX.md', pages)).toBe(true)
+    expect(opensOn([suivi], 'chantiers/adestia', 'chantiers/adestia/note.md', pages)).toBe(false)
+    // Une étagère n'ouvre sur aucune page : son crumb mène bien ailleurs.
+    expect(opensOn([suivi], 'chantiers', 'chantiers/INDEX.md', pages)).toBe(false)
+  })
+
+  it('vaut aussi pour une fiche qui n’est pas l’index du dossier', () => {
+    const pages = [racine, page('chantiers/adestia/fiche.md', { type: 'project-management' })]
+    expect(opensOn([suivi], 'chantiers/adestia', 'chantiers/adestia/fiche.md', pages)).toBe(true)
   })
 
   it('laisse l’ÉCRAN du plugin gagner quand il en a un', () => {
