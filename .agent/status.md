@@ -27,6 +27,32 @@ LIBELLÉ qui cède et le dossier porte son propre nom. Signalé par
 l'utilisateur sur une fiche `project-management`. Scénario de banc :
 `fil-ariane-fiche`. Pas encore déployée.
 
+v0.71.0 : **les réglages de l'instance s'éditent depuis le navigateur**
+(Réglages › Configuration). Le clic écrit `adestia.config.yaml` LUI-MÊME — pas
+de surcouche, le fichier reste la seule source de vérité — et garde tous les
+commentaires : l'API document de `yaml` réimprime ce qu'on ne lui a pas demandé
+de changer, et les `${VAR}` ne sont jamais substitués. Un catalogue dans
+`schemas` déclare chaque réglage (sorte de contrôle, libellé, aide, bornes,
+à chaud ou au redémarrage) ; le serveur valide contre lui et l'écran s'y
+dessine. Le champ dit si la valeur vient du fichier ou du défaut, et la
+sauvegarde n'envoie QUE ce qu'on a touché.
+
+Deux choses trouvées en cours de route. Le fichier est bind-monté à l'unité
+(compose, ConfigMap) : on ne peut pas lui renommer un frère par-dessus
+(EBUSY, mesuré sur `node:22-alpine`), donc écriture atomique quand c'est
+possible, en place quand le montage l'interdit, et jamais de repli sur une
+autre erreur. Et monté en lecture seule, l'écran le dit avant qu'on remplisse
+un formulaire, en continuant d'afficher toutes les valeurs — c'est la moitié
+qui manquait : rien ne disait dans quel mode tournait le guetteur de fichiers.
+
+Volontairement absents du catalogue : `driver.command` (un binaire que le
+serveur lance), `extensions.sources`/`apps` (cloner un dépôt et exécuter son
+script de setup), les secrets et le `clientSecret` OIDC. Sur une instance en
+`auth.mode: none`, les offrir reviendrait à les offrir à qui atteint le port.
+Premier groupe livré : le rafraîchissement vivant (`workspace.watch`), soit
+exactement le réglage qui manquait sur WSL/OneDrive. Scénario de banc :
+`editeur-config`. Pas encore déployée.
+
 v0.61.0 : une page occupe un grand écran. Le canevas
 monte à 1400 px (940 avant) ; la prose garde une mesure, relevée à 89ch
 (~830 px, choix de l'utilisateur sur son écran, au-delà des 70 classiques),
