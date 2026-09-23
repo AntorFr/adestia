@@ -53,6 +53,30 @@ Premier groupe livré : le rafraîchissement vivant (`workspace.watch`), soit
 exactement le réglage qui manquait sur WSL/OneDrive. Scénario de banc :
 `editeur-config`. Pas encore déployée.
 
+v0.72.0 : **un bouton « redémarrer » dans les réglages**, et il ne tue rien.
+Le serveur ferme son instance et en démarre une neuve DANS LE MÊME PROCESSUS
+(`start()` rendait déjà quelque chose qui se ferme ; c'est le lanceur qui tient
+désormais la boucle). Le conteneur ne bouge pas — compteur de redémarrages à
+zéro, vérifié — et ça se comporte pareil sous `npm start`, sous Docker et en
+k8s. Écarté au passage : le processus enfant supervisé (proposé par
+l'utilisateur), qui coûtait le suivi des signaux, un protocole de codes de
+sortie et la récolte des zombies en PID 1 — alors que la version en processus
+se vérifie dans la suite de tests. La conf est RELUE avant toute démolition :
+une conf cassée coûte le redémarrage, jamais l'instance qui sert. Un tour en
+cours refuse le redémarrage en disant combien ; `force` passe outre. Le bandeau
+n'apparaît que quand un réglage « effectif après redémarrage » vient d'être
+écrit, et l'écran attend le retour de la santé plutôt que d'échouer dans le
+trou.
+
+**Défaut ANTÉRIEUR trouvé en chemin, et corrigé : le serveur ne pouvait pas
+s'arrêter tant qu'une coque le regardait.** Fastify attend les requêtes en vol,
+et deux des nôtres ne finissent jamais seules (le flux de changements, un tour
+attaché). Mesuré sur l'image : avec un seul `/api/events` ouvert, `docker stop`
+n'y arrivait pas et le conteneur sortait en **code 137**, tué ; sans navigateur,
+le même stop prenait moins d'une seconde. `forceCloseConnections` règle ça —
+au prix d'une requête en vol qui perd sa RÉPONSE, jamais son travail.
+Scénario de banc : `editeur-config` (étendu). Pas encore déployée.
+
 v0.61.0 : une page occupe un grand écran. Le canevas
 monte à 1400 px (940 avant) ; la prose garde une mesure, relevée à 89ch
 (~830 px, choix de l'utilisateur sur son écran, au-delà des 70 classiques),
