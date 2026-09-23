@@ -31,15 +31,16 @@ import { useEffect, useState } from 'react'
 
 import { Delegations, delegChips, useDelegationRows } from './Delegations.js'
 import { Instructions } from './Instructions.js'
+import { Configuration } from './Configuration.js'
 import { McpServers } from './McpServers.js'
 import { Tile } from './Tile.js'
 import { useMcpServers, type McpServerHealth } from './Settings.js'
 
 /** Which settings page is open. `''` is the mosaic itself. */
-export type PrefsPage = '' | 'mcp' | 'instructions' | 'delegations'
+export type PrefsPage = '' | 'mcp' | 'instructions' | 'delegations' | 'config'
 
 /** The pages that have an address. A closed set: `#/settings/…` is public. */
-const PAGES = ['mcp', 'instructions', 'delegations'] as const
+const PAGES = ['mcp', 'instructions', 'delegations', 'config'] as const
 
 /**
  * Whether a URL segment names a page.
@@ -78,6 +79,7 @@ export function prefsTitle(page: PrefsPage, t: (key: string) => string): string 
   if (page === 'mcp') return t('MCP servers')
   if (page === 'instructions') return t('Instructions')
   if (page === 'delegations') return t('Delegations')
+  if (page === 'config') return t('Configuration')
   return t('Settings')
 }
 
@@ -168,6 +170,10 @@ export function Preferences({
     )
   }
 
+  if (page === 'config') {
+    return <Configuration fetchImpl={fetchImpl} t={t} />
+  }
+
   if (page === 'delegations') {
     return (
       <div
@@ -220,6 +226,18 @@ export function Preferences({
             ? { chips: [{ text: `${written} ${written === 1 ? t('file') : t('files')}` }] }
             : {})}
           onOpen={() => onPage('instructions')}
+          t={t}
+        />
+        {/* What the instance was told about ITSELF, as opposed to what it
+            was told about the world. Changing it meant a text editor, a file
+            on the machine and a restart — fine for whoever deployed it,
+            impossible from anywhere else. */}
+        <Tile
+          icon="🎛"
+          hue="ardoise"
+          label={t('Configuration')}
+          subtitle={t('Read and change this instance’s own settings')}
+          onOpen={() => onPage('config')}
           t={t}
         />
         {/* The inbound face of the MCP tile above: that one is the agents

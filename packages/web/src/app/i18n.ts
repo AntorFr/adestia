@@ -165,6 +165,43 @@ const FR: Readonly<Record<string, string>> = {
   'Not connected for you yet — this server signs each person in.':
     'Pas encore connecté pour vous — ce serveur connecte chaque personne séparément.',
 
+  // The configuration screen: the instance's own settings, as a form.
+  Configuration: 'Configuration',
+  'Read and change this instance\u2019s own settings':
+    'Lire et changer les r\u00e9glages de cette instance',
+  'Written straight into': '\u00c9crit directement dans',
+  default: 'par d\u00e9faut',
+  'not saved yet': 'pas encore enregistr\u00e9',
+  'applies after a restart': 'effectif apr\u00e8s red\u00e9marrage',
+  'Read-only.': 'Lecture seule.',
+  'this instance cannot write its configuration file':
+    'cette instance ne peut pas \u00e9crire son fichier de configuration',
+  'The values below are what it is running; changing them means changing the mount.':
+    'Les valeurs ci-dessous sont celles qu\u2019elle applique ; les changer passe par le montage.',
+  Discard: 'Annuler',
+  // `Save` is already in the chrome block above, and means the same thing.
+  'Saving\u2026': 'Enregistrement\u2026',
+  'Written to the file': '\u00c9crit dans le fichier',
+  'The settings could not be read.': 'Les r\u00e9glages n\u2019ont pas pu \u00eatre lus.',
+  'The settings could not be saved.': 'Les r\u00e9glages n\u2019ont pas pu \u00eatre enregistr\u00e9s.',
+  'This instance does not expose its configuration.':
+    'Cette instance n\u2019expose pas sa configuration.',
+  'The file changed on disk since this screen read it. Reload to see it.':
+    'Le fichier a chang\u00e9 sur le disque depuis que cet \u00e9cran l\u2019a lu. Rechargez pour le voir.',
+  // Its catalogue: the group, then one line per setting.
+  'Live refresh': 'Rafra\u00eechissement vivant',
+  'The agent writes pages with its own file tools, so the server only learns of them by watching the disk. Native file events cannot cross some mounts \u2014 WSL\u2019s /mnt/c, NFS, SMB, some Docker bind mounts \u2014 and scanning is the way through.':
+    'L\u2019agent \u00e9crit les fiches avec ses propres outils de fichiers : le serveur ne l\u2019apprend qu\u2019en surveillant le disque. Les \u00e9v\u00e9nements natifs ne traversent pas certains montages \u2014 le /mnt/c de WSL, NFS, SMB, certains bind mounts Docker \u2014 et le scan est le passage.',
+  'Announce changes to open shells': 'Annoncer les changements aux \u00e9crans ouverts',
+  'Off, a page the agent just wrote appears only after a reload.':
+    'D\u00e9sactiv\u00e9, une fiche que l\u2019agent vient d\u2019\u00e9crire n\u2019appara\u00eet qu\u2019apr\u00e8s un rechargement.',
+  'Scan instead of listening': 'Scanner au lieu d\u2019\u00e9couter',
+  'Turn on when the pages tree sits on a mount native file events cannot cross. It costs a periodic scan of the tree.':
+    '\u00c0 activer quand l\u2019arbre des fiches vit sur un montage que les \u00e9v\u00e9nements natifs ne traversent pas. Co\u00fbte un scan p\u00e9riodique de l\u2019arbre.',
+  'Scan period': 'P\u00e9riode du scan',
+  'How long between two scans. Ignored unless scanning is on.':
+    'D\u00e9lai entre deux scans. Sans effet si le scan est d\u00e9sactiv\u00e9.',
+
   // MCP servers, on their settings page
   'MCP servers': 'Serveurs MCP',
   'What this instance reaches, and what it is doing about it':

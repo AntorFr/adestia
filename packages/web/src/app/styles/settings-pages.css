@@ -113,3 +113,164 @@
   text-decoration: none;
   font-weight: 500;
 }
+
+/* ── The configuration screen ────────────────────────────────────────────
+   A form, not a file. The layout carries one claim: the LABEL and its
+   control sit on one line, and the sentence explaining the setting sits
+   under both — a help line squeezed beside a checkbox is a help line
+   nobody reads, and this screen exists so somebody can decide without
+   already knowing. */
+.adestia-config__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+}
+
+.adestia-config__group h2 {
+  margin: 0;
+  font-size: var(--text-base);
+}
+
+.adestia-config__lede {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  max-width: 70ch;
+}
+
+.adestia-config__fields {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.adestia-config__field {
+  display: grid;
+  /* The control takes what it needs and no more, so a checkbox does not
+     sit marooned at the far edge of a wide canvas. */
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.adestia-config__head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.adestia-config__label {
+  font-weight: 600;
+}
+
+/* Where the value comes from, and what it will cost. Both are small and
+   quiet: they answer a question somebody asked, they do not shout. */
+.adestia-config__from,
+.adestia-config__restart {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-1);
+}
+
+.adestia-config__from--edited {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.adestia-config__help {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  max-width: 70ch;
+}
+
+.adestia-config__number {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-1);
+}
+
+/* A field wears the product's own clothes. Left to the browser's default,
+   the number box came out as a white plate in the dark theme — seen on the
+   bench, invisible in every test that renders this component. `16px` is the
+   floor on purpose: below it iOS zooms the page on focus. */
+.adestia-config__field input[type='number'],
+.adestia-config__field input[type='text'],
+.adestia-config__field select {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: max(16px, var(--text-sm));
+}
+
+.adestia-config__field input:disabled,
+.adestia-config__field select:disabled {
+  color: var(--text-faint);
+  cursor: default;
+}
+
+.adestia-config__number input {
+  width: 9ch;
+  text-align: right;
+}
+
+.adestia-config__number em {
+  font-style: normal;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.adestia-config__toggle {
+  width: 1.15rem;
+  height: 1.15rem;
+  accent-color: var(--accent);
+}
+
+/* Read-only, said once and at the top. It is a fact about the mount, not a
+   failure, so it wears the muted surface rather than the error red. */
+.adestia-config__locked {
+  margin: var(--space-4) 0 0;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-soft, var(--surface));
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  max-width: 70ch;
+}
+
+.adestia-config__locked strong {
+  color: var(--text);
+}
+
+.adestia-config__bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+}
+
+@media (max-width: 640px) {
+  /* One column: a control pushed to the right of a long label wraps into a
+     sliver on a phone. */
+  .adestia-config__field {
+    grid-template-columns: 1fr;
+  }
+}
