@@ -80,6 +80,19 @@ export default async function scenario(bench) {
   console.log('  intervalle :', JSON.stringify((await surLeDisque(page)).valeurs))
   await bench.shoot(page, '4-un-nombre-borne')
 
+  // Le redémarrage. Il ne tue rien : le serveur ferme son instance et en
+  // démarre une neuve DANS LE MÊME PROCESSUS. Donc le conteneur ne bouge pas,
+  // et c'est ça qu'on vient vérifier — un conteneur qui redémarrerait aurait
+  // un compteur de redémarrages, et la page n'aurait pas survécu.
+  await page.waitForSelector('.adestia-config__restart-bar', { timeout: 5000 })
+  await bench.shoot(page, '5-un-redemarrage-est-du')
+
+  await page.getByRole('button', { name: 'Redémarrer', exact: true }).click()
+  await page.waitForSelector('.adestia-config__restart-bar', { state: 'detached', timeout: 30_000 })
+  await page.waitForTimeout(500)
+  console.log('  après redémarrage :', JSON.stringify((await surLeDisque(page)).valeurs))
+  await bench.shoot(page, '6-revenu')
+
   const sombre = await ouvre(bench, 'dark')
-  await bench.shoot(sombre, '5-en-sombre')
+  await bench.shoot(sombre, '7-en-sombre')
 }

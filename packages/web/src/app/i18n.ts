@@ -188,6 +188,18 @@ const FR: Readonly<Record<string, string>> = {
     'Cette instance n\u2019expose pas sa configuration.',
   'The file changed on disk since this screen read it. Reload to see it.':
     'Le fichier a chang\u00e9 sur le disque depuis que cet \u00e9cran l\u2019a lu. Rechargez pour le voir.',
+  // The restart bar, which only appears once something waits on one.
+  'Saved, and waiting for a restart.': 'Enregistré, en attente d’un redémarrage.',
+  'The instance is still running the values it booted with.':
+    'L’instance applique encore les valeurs de son démarrage.',
+  'Restart now': 'Redémarrer',
+  'Restart anyway': 'Redémarrer quand même',
+  'Coming back…': 'Retour en cours…',
+  '%n turn(s) running — restarting now would lose that work.':
+    '%n tour(s) en cours — redémarrer maintenant perdrait ce travail.',
+  'The instance could not be restarted.': 'L’instance n’a pas pu être redémarrée.',
+  'The instance did not come back. Check the logs where it runs.':
+    'L’instance n’est pas revenue. Regardez les journaux là où elle tourne.',
   // Its catalogue: the group, then one line per setting.
   'Live refresh': 'Rafra\u00eechissement vivant',
   'The agent writes pages with its own file tools, so the server only learns of them by watching the disk. Native file events cannot cross some mounts \u2014 WSL\u2019s /mnt/c, NFS, SMB, some Docker bind mounts \u2014 and scanning is the way through.':
