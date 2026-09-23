@@ -34,6 +34,7 @@ import { outboundServersOf, registerMcpServers } from './routes/mcp-servers.js'
 import { registerTurns, type ShellToolsPort, type UserTokens } from './routes/turns.js'
 import { registerUpload } from './routes/upload.js'
 import { foreignRoots, pagesService, resolveStores } from './stores.js'
+import { registerRestart } from './routes/restart.js'
 import { registerSettings } from './routes/settings.js'
 import { registerEvents } from './watch.js'
 import { mountPluginApis } from './plugin-host.js'
@@ -103,6 +104,15 @@ export interface AppDependencies {
    * behind it must not offer a form that writes somewhere invented.
    */
   readonly configPath?: string | undefined
+  /**
+   * Asks whoever owns the boot loop for a fresh instance.
+   *
+   * Absent everywhere the loop does not exist — `start()` on its own, and
+   * every test that builds the app bare — and the route is then not mounted
+   * at all. A button that promised a restart nobody would perform is worse
+   * than no button.
+   */
+  readonly restart?: (() => void) | undefined
 }
 
 /** Turn admission: subscription limits are real, so concurrency is bounded. */
@@ -127,7 +137,27 @@ class TurnLimiter {
 
 export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> {
   const { config, driver, plugins, pluginProblems, userTokens, webRoot } = deps
-  const app = Fastify({ logger: false })
+  /**
+   * `forceCloseConnections`, because this server holds streams that never end
+   * on their own.
+   *
+   * Fastify 5 defaults to `'idle'`: it drops idle keep-alive connections and
+   * WAITS for requests still in flight. Two of ours are in flight for as long
+   * as somebody is looking — the change feed (`/api/events`) and an attached
+   * turn — so the wait never ends, and `close()` never returns.
+   *
+   * That was not a theory. Measured 2026-09-23 against the image: with one
+   * `/api/events` stream open, `docker stop` could not shut the container down
+   * and it left with code 137, killed. With no browser watching, the same stop
+   * took under a second. It was already broken before anything restarted
+   * anything; the restart button is merely what made it impossible to miss.
+   *
+   * What it costs, stated rather than discovered: a request in flight loses
+   * its RESPONSE when the server goes down. It does not lose its work — a
+   * handler that has already written a page has written it — and a shutdown
+   * that cannot shut down is worse than a reply nobody receives.
+   */
+  const app = Fastify({ logger: false, forceCloseConnections: true })
   const limiter = new TurnLimiter(config.maxConcurrentTurns)
   /**
    * The shell's own preamble, decided once and applied on both spawn paths.
@@ -277,6 +307,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   // the feed is how a shell already on screen learns they changed.
   registerEvents(app, { stores, watch: config.workspace.watch })
   if (deps.configPath) registerSettings(app, { configPath: deps.configPath })
+  if (deps.restart) registerRestart(app, { running: () => limiter.running, restart: deps.restart })
   // The same stores: an attachment is a file sitting next to a page, and a
   // second configurable place would be a second thing to explain.
   registerFiles(app, { stores, locale: config.locale })
