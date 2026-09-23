@@ -422,6 +422,9 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
   }
 
   const app = await buildApp({
+    // The file this instance booted from, handed on so the settings screen
+    // edits the very same one — never a second copy resolved differently.
+    configPath,
     config: {
       ...resolved,
       dataDir: resolve(cwd, resolved.dataDir),
