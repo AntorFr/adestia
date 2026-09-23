@@ -11,6 +11,8 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { App, appTrail, screenView } from '../src/app/App.js'
+import type { LoadedPlugin } from '../src/plugins/loader.js'
+import { trailOf } from '../src/app/trail.js'
 
 const INSTANCE = {
   driver: { label: 'Test CLI', cliVersion: '1.0', capabilities: [] },
@@ -102,6 +104,90 @@ describe('the breadcrumb', () => {
       { label: 'Brocéliande 2026', walkable: false },
     ])
     location.hash = ''
+  })
+
+  it('names a folder and the page it OPENS ON once, not twice', () => {
+    // The defect: a folder holding a single typed page opens on that page —
+    // the two are one screen — and the trail drew both. The reader got
+    // "Chantiers / Rénovation cuisine / Rénovation cuisine", the middle copy
+    // a link back to the screen already under their eyes, which did nothing.
+    const suivi = {
+      id: 'project-management',
+      kind: 'feature',
+      base: '/plugins/project-management/',
+      types: ['project-management'],
+    } as unknown as LoadedPlugin
+    const pages = [
+      { path: 'chantiers/INDEX.md', title: 'Chantiers', fields: { app: 'project-management' } },
+      {
+        path: 'chantiers/cuisine/cuisine.md',
+        title: 'Rénovation cuisine',
+        fields: { type: 'project-management' },
+      },
+      { path: 'chantiers/cuisine/devis.md', title: 'Devis', fields: {} },
+    ]
+    const trail = trailOf({
+      settings: undefined,
+      openApp: undefined,
+      loaded: [suivi],
+      pluginTrail: { id: '', crumbs: [] },
+      page: {
+        path: 'chantiers/cuisine/cuisine.md',
+        title: 'Rénovation cuisine',
+        markdown: '',
+        fields: { type: 'project-management' },
+      },
+      section: undefined,
+      pages,
+      stores: [],
+      t: (key: string) => key,
+    })
+    expect(trail).toEqual([
+      // The folder above stays a way back — it leads somewhere else.
+      { folder: 'chantiers', label: 'Chantiers' },
+      { label: 'Rénovation cuisine' },
+    ])
+  })
+
+  it('keeps the folder when it opens on a DIFFERENT page', () => {
+    // Nothing is dropped for its own sake: from a sibling page, the worksite
+    // above is a real step, and a real way back.
+    const suivi = {
+      id: 'project-management',
+      kind: 'feature',
+      base: '/plugins/project-management/',
+      types: ['project-management'],
+    } as unknown as LoadedPlugin
+    const pages = [
+      { path: 'chantiers/INDEX.md', title: 'Chantiers', fields: { app: 'project-management' } },
+      {
+        path: 'chantiers/cuisine/cuisine.md',
+        title: 'Rénovation cuisine',
+        fields: { type: 'project-management' },
+      },
+      { path: 'chantiers/cuisine/devis.md', title: 'Devis', fields: {} },
+    ]
+    const trail = trailOf({
+      settings: undefined,
+      openApp: undefined,
+      loaded: [suivi],
+      pluginTrail: { id: '', crumbs: [] },
+      page: {
+        path: 'chantiers/cuisine/devis.md',
+        title: 'Devis',
+        markdown: '',
+        fields: {},
+      },
+      section: undefined,
+      pages,
+      stores: [],
+      t: (key: string) => key,
+    })
+    expect(trail).toEqual([
+      { folder: 'chantiers', label: 'Chantiers' },
+      { folder: 'chantiers/cuisine', label: 'Rénovation cuisine' },
+      { label: 'Devis' },
+    ])
   })
 
   it('skips a grouping folder, which would lead to an empty screen', async () => {

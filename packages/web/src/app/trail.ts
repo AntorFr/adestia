@@ -6,7 +6,7 @@
 import type { ScreenView } from '../chat/stream.js'
 import type { PageDocument } from '../editor/Editor.js'
 import type { LoadedPlugin } from '../plugins/loader.js'
-import { addressOf, ownerOf, routeForPath } from './owners.js'
+import { addressOf, opensOn, ownerOf, routeForPath } from './owners.js'
 import { prefsTitle, type PrefsPage } from './Preferences.js'
 import { holdsPages, sectionAt, type IndexEntry, type StoreInfo } from './sections.js'
 
@@ -179,10 +179,20 @@ export function trailOf({
    * a name is unambiguous.
    */
   if (!page) return crumbs
+  /**
+   * The folder this page IS gets no crumb of its own.
+   *
+   * A folder holding one typed page opens ON that page — the folder and the
+   * page are the same screen — so naming both printed the title twice, and
+   * the first copy was a link back to the screen already being read. Nothing
+   * is lost: the page's crumb names that place, with its own title and its
+   * circle, and every folder ABOVE it stays a way back.
+   */
+  const above = crumbs.filter((crumb) => !opensOn(loaded, crumb.folder, page.path, pages))
   const from = stores.find((store) => store.id === page.store)
   const twin =
     from !== undefined &&
     from.default !== true &&
     pages.filter((entry) => entry.path === page.path).length > 1
-  return [...crumbs, { label: twin ? `${page.title} (${from.label})` : page.title }]
+  return [...above, { label: twin ? `${page.title} (${from.label})` : page.title }]
 }
