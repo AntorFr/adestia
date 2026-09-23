@@ -16,6 +16,20 @@
  * mounted file, often read-only, so the button would fail on exactly the
  * instances that matter.
  *
+ * HALF OF THAT HAS SINCE BEEN DISPROVED, and saying so is cheaper than
+ * leaving a reason standing that a reader can check. `settings-file.ts` edits
+ * that same file from the browser and keeps every comment, because `yaml`'s
+ * document API re-prints what it was not asked to change — the serializer was
+ * the wrong tool, not the wrong idea. The read-only mount is unchanged and
+ * still real; that file reports it rather than pretending.
+ *
+ * What did NOT change is this store's own reason to exist. A settings FORM
+ * writes declared scalars a catalogue names one by one; an MCP server is a
+ * free-shaped declaration carrying credentials, and a name held by the config
+ * or by a plugin is refused rather than shadowed. Those are different
+ * problems, and merging them would put a bearer token in a screen built for
+ * checkboxes.
+ *
  * So the shell gets its own file, in the data directory, and the operator's
  * stays theirs. Which leaves precedence, and the answer here is NEITHER wins:
  * a name already held by the config or by a plugin is REFUSED, loudly, at the

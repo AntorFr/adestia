@@ -34,6 +34,7 @@ import { outboundServersOf, registerMcpServers } from './routes/mcp-servers.js'
 import { registerTurns, type ShellToolsPort, type UserTokens } from './routes/turns.js'
 import { registerUpload } from './routes/upload.js'
 import { foreignRoots, pagesService, resolveStores } from './stores.js'
+import { registerSettings } from './routes/settings.js'
 import { registerEvents } from './watch.js'
 import { mountPluginApis } from './plugin-host.js'
 import { ArmingFlows, SecretStore } from './secrets.js'
@@ -92,6 +93,16 @@ export interface AppDependencies {
    * contract are reported there, with the rest of the extension problems.
    */
   readonly webManifest?: WebManifest | undefined
+  /**
+   * The config file this instance booted from, so the settings screen can
+   * read and rewrite it.
+   *
+   * Absent in tests that build the app bare, and absent is a decision rather
+   * than a gap: no path, no settings route, and a shell that asks gets the
+   * same 404 the other capability-gated routes give. An app with no file
+   * behind it must not offer a form that writes somewhere invented.
+   */
+  readonly configPath?: string | undefined
 }
 
 /** Turn admission: subscription limits are real, so concurrency is bounded. */
@@ -265,6 +276,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   // The agent writes these files with its own tools, past every route above;
   // the feed is how a shell already on screen learns they changed.
   registerEvents(app, { stores, watch: config.workspace.watch })
+  if (deps.configPath) registerSettings(app, { configPath: deps.configPath })
   // The same stores: an attachment is a file sitting next to a page, and a
   // second configurable place would be a second thing to explain.
   registerFiles(app, { stores, locale: config.locale })

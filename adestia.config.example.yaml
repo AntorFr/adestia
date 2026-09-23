@@ -171,6 +171,12 @@ workspace:
   # Native file events by default; set `polling` when the workspace sits on a
   # mount those events cannot cross — WSL's /mnt/c, NFS, SMB, some Docker bind
   # mounts — at the price of a periodic scan of the tree.
+  #
+  # These three are also on screen, under Settings › Configuration, which
+  # writes them straight back into THIS file — comments and all. That screen
+  # shows the current mode whether or not it can write, which is the answer to
+  # "why is my page not refreshing" without an SSH session. Mounted read-only
+  # (a ConfigMap, a `:ro` bind mount), it says so and stays a read-only view.
   # watch:
   #   enabled: true
   #   polling: false
