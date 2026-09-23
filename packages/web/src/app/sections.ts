@@ -107,8 +107,14 @@ export function isIndexPage(path: string): boolean {
   return INDEX_FILE.test(path) || isHomonymous(path)
 }
 
-/** `plan-travail-garage` → `Plan travail garage`. */
-function prettify(name: string): string {
+/**
+ * `plan-travail-garage` → `Plan travail garage`.
+ *
+ * Exported because the breadcrumb needs the SAME answer: a folder that has to
+ * wear its own name there must wear the one the tiles already gave it, or the
+ * same folder is `Cuisine` on one screen and `cuisine` on the next.
+ */
+export function prettify(name: string): string {
   const words = name.replace(/[-_]+/g, ' ').trim()
   return words ? words.charAt(0).toUpperCase() + words.slice(1) : name
 }

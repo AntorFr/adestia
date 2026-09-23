@@ -7,11 +7,16 @@
  * Rénovation de la cuisine » — dont la première était un lien vers l'écran
  * déjà sous les yeux du lecteur, donc un clic qui ne faisait rien.
  *
+ * Le cas JUMEAU, sur `carnets/jardin`, se corrige autrement et c'est le point
+ * du run : là, personne ne possède le dossier, la marche mène à l'étagère —
+ * un vrai second écran — et la retirer coûterait une entrée. C'est le
+ * LIBELLÉ qui cède : le dossier porte son propre nom, la page garde son titre.
+ *
  * Ce qu'un test unitaire ne dit pas et qu'on vient chercher ici : à quoi
- * ressemble le bandeau une fois la marche retirée, et qu'il reste bien une
- * marche cliquable au-dessus. La contre-épreuve est la page voisine, d'où le
- * chantier est une vraie étape — si la correction mangeait la marche là
- * aussi, la capture 3 le dirait tout de suite.
+ * ressemblent les deux bandeaux côte à côte, et qu'il reste une marche
+ * cliquable au-dessus dans les deux cas. La contre-épreuve est la page
+ * voisine, d'où le chantier est une vraie étape — si la correction mangeait
+ * la marche là aussi, la capture 3 le dirait tout de suite.
  */
 
 const ouvre = async (bench, hash, theme = 'light') => {
@@ -51,7 +56,20 @@ export default async function scenario(bench) {
   console.log('  sur la voisine :', JSON.stringify(await bandeau(voisine)))
   await bench.shoot(voisine, '3-page-voisine')
 
+  // Le jumeau : un dossier que personne ne possède. La marche reste — elle
+  // ouvre l'étagère, qui est un autre écran — mais elle cesse d'emprunter le
+  // titre de la page qu'on est en train de lire.
+  const carnet = await ouvre(bench, '#/page/carnets/jardin')
+  console.log('  sur l\'aperçu  :', JSON.stringify(await bandeau(carnet)))
+  await bench.shoot(carnet, '4-apercu-d-un-dossier-sans-plugin')
+
+  // Et la marche mène bien quelque part : l'étagère du dossier, ses fichiers.
+  await carnet.locator('.adestia-crumbs button').last().click()
+  await carnet.waitForTimeout(800)
+  console.log('  sur l\'étagère :', JSON.stringify(await bandeau(carnet)))
+  await bench.shoot(carnet, '5-l-etagere-derriere-la-marche')
+
   // Et dans le noir, où le bandeau est la première chose qu'on lit.
   const sombre = await ouvre(bench, '#/page/chantiers/cuisine', 'dark')
-  await bench.shoot(sombre, '4-en-sombre')
+  await bench.shoot(sombre, '6-en-sombre')
 }

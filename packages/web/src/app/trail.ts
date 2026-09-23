@@ -8,7 +8,14 @@ import type { PageDocument } from '../editor/Editor.js'
 import type { LoadedPlugin } from '../plugins/loader.js'
 import { addressOf, opensOn, ownerOf, routeForPath } from './owners.js'
 import { prefsTitle, type PrefsPage } from './Preferences.js'
-import { holdsPages, sectionAt, type IndexEntry, type StoreInfo } from './sections.js'
+import {
+  holdsPages,
+  indexOf,
+  prettify,
+  sectionAt,
+  type IndexEntry,
+  type StoreInfo,
+} from './sections.js'
 
 /**
  * The screen the chat reports as open next to it.
@@ -160,13 +167,25 @@ export function trailOf({
     )
     .map((folder) => ({
       folder,
-      // The workspace's own word for the folder first — an index page's
-      // title is what the reader sees everywhere else. The owning app's
-      // tile is the fallback for a folder that carries no page at all.
+      /**
+       * The workspace's own word for the folder first — an index page's title
+       * is what the reader sees everywhere else. The owning app's tile is the
+       * fallback for a folder that carries no page at all.
+       *
+       * EXCEPT when the open page IS that index. Its title is about to be
+       * written at the end of the trail, and borrowing it here said one name
+       * twice — "Chantiers / Rénovation de la cuisine / Rénovation de la
+       * cuisine", from a reader who had opened the folder's own overview. The
+       * two crumbs are not the same screen (this one opens the shelf, the
+       * files filed beside the overview), so dropping it would cost a way in;
+       * what it costs to keep is a name, and the folder has one of its own.
+       */
       label:
-        sectionAt(pages, folder)?.title ??
+        (page !== undefined && indexOf(pages, folder)?.path === page.path
+          ? undefined
+          : sectionAt(pages, folder)?.title) ??
         ownerOf(loaded, folder)?.tile?.label ??
-        (folder.split('/').at(-1) as string),
+        prettify(folder.split('/').at(-1) as string),
     }))
   /**
    * The open page says which circle it came from — but only when another

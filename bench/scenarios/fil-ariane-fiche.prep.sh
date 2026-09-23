@@ -13,6 +13,12 @@
 # retour. Une correction qui supprimerait la marche dans les deux cas serait
 # invisible sans lui.
 #
+# `carnets/` monte le cas JUMEAU, celui d'un dossier que personne ne possède :
+# `jardin/jardin.md` est l'aperçu du dossier, et la marche au-dessus mène à
+# l'étagère — un AUTRE écran. Le nom y était écrit deux fois lui aussi, mais
+# retirer la marche coûterait une entrée. C'est le libellé qui cède, pas
+# l'étape, et c'est ce que la capture doit montrer côte à côte.
+#
 # Imprime ses volumes sur stdout, un `src:dst[:ro]` par ligne. Voir `run.sh`.
 set -eu
 
@@ -57,6 +63,41 @@ title: Devis
 # Devis
 
 Trois artisans, trois chiffres.
+MD
+
+# ── le jumeau : un dossier que personne ne possède ─────────────────────────
+mkdir -p "$w/carnets/jardin"
+
+cat >"$w/carnets/INDEX.md" <<'MD'
+---
+title: Carnets
+ico: 📒
+---
+
+# Carnets
+
+Ce qu'on note sans que ça devienne un chantier.
+MD
+
+cat >"$w/carnets/jardin/jardin.md" <<'MD'
+---
+title: Le jardin, saison par saison
+ico: 🌱
+---
+
+# Le jardin, saison par saison
+
+L'aperçu du dossier. Aucun plugin ne réclame ce type-là.
+MD
+
+cat >"$w/carnets/jardin/semis.md" <<'MD'
+---
+title: Semis
+---
+
+# Semis
+
+Tomates en février, courges en avril.
 MD
 
 cat >"$stage/adestia.config.yaml" <<'YAML'

@@ -190,6 +190,75 @@ describe('the breadcrumb', () => {
     ])
   })
 
+  it('lets a folder wear its OWN name when its overview is what you are reading', () => {
+    // The sibling defect, from a folder no app owns: the crumb borrowed the
+    // index page's title, and that title was about to be written again at the
+    // end of the trail. Here the two crumbs really are two screens — this one
+    // opens the shelf — so the name goes, not the step.
+    const pages = [
+      { path: 'chantiers/INDEX.md', title: 'Chantiers', fields: {} },
+      {
+        path: 'chantiers/cuisine/cuisine.md',
+        title: 'Rénovation de la cuisine',
+        fields: {},
+      },
+      { path: 'chantiers/cuisine/devis.md', title: 'Devis', fields: {} },
+    ]
+    const trail = trailOf({
+      settings: undefined,
+      openApp: undefined,
+      loaded: [],
+      pluginTrail: { id: '', crumbs: [] },
+      page: {
+        path: 'chantiers/cuisine/cuisine.md',
+        title: 'Rénovation de la cuisine',
+        markdown: '',
+        fields: {},
+      },
+      section: undefined,
+      pages,
+      stores: [],
+      t: (key: string) => key,
+    })
+    expect(trail).toEqual([
+      { folder: 'chantiers', label: 'Chantiers' },
+      // Its own name, prettified as the tiles already write it — and still a
+      // way in to the files filed beside the overview.
+      { folder: 'chantiers/cuisine', label: 'Cuisine' },
+      { label: 'Rénovation de la cuisine' },
+    ])
+  })
+
+  it('leaves the index page’s title on the crumb for every OTHER page', () => {
+    // Nothing is renamed for its own sake: from the page next door, the
+    // folder is the worksite, and the worksite has a title.
+    const pages = [
+      { path: 'chantiers/INDEX.md', title: 'Chantiers', fields: {} },
+      {
+        path: 'chantiers/cuisine/cuisine.md',
+        title: 'Rénovation de la cuisine',
+        fields: {},
+      },
+      { path: 'chantiers/cuisine/devis.md', title: 'Devis', fields: {} },
+    ]
+    const trail = trailOf({
+      settings: undefined,
+      openApp: undefined,
+      loaded: [],
+      pluginTrail: { id: '', crumbs: [] },
+      page: { path: 'chantiers/cuisine/devis.md', title: 'Devis', markdown: '', fields: {} },
+      section: undefined,
+      pages,
+      stores: [],
+      t: (key: string) => key,
+    })
+    expect(trail.map((crumb) => crumb.label)).toEqual([
+      'Chantiers',
+      'Rénovation de la cuisine',
+      'Devis',
+    ])
+  })
+
   it('skips a grouping folder, which would lead to an empty screen', async () => {
     // `domaines/` holds no page of its own — it is a filing detail, not a place.
     location.hash = '#/section/domaines%2Fvoyages%2Fbroceliande-2026'
