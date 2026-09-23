@@ -50,6 +50,14 @@ export interface StartOptions {
   /** Injected in tests; production builds the driver from the config. */
   readonly driverFactory?: (config: AdestiaConfig) => Driver | Promise<Driver>
   readonly log?: (message: string) => void
+  /**
+   * Asks the caller for a fresh instance, in this same process.
+   *
+   * `start()` deliberately does not own that loop: it builds ONE instance and
+   * hands back something that closes. Whoever called it decides whether a new
+   * one follows — the CLI does, a test may, and an embedder may refuse.
+   */
+  readonly restart?: (() => void) | undefined
 }
 
 export interface StartedInstance {
@@ -425,6 +433,7 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     // The file this instance booted from, handed on so the settings screen
     // edits the very same one — never a second copy resolved differently.
     configPath,
+    ...(options.restart ? { restart: options.restart } : {}),
     config: {
       ...resolved,
       dataDir: resolve(cwd, resolved.dataDir),
