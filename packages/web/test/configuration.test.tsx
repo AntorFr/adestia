@@ -163,6 +163,92 @@ describe('saving', () => {
   })
 })
 
+describe('the restart bar', () => {
+  /** A fetch that also answers the restart route and the health probe. */
+  function withRestart(restart: { status?: number; body: unknown }) {
+    const calls: string[] = []
+    const impl = vi.fn((input: unknown, init?: RequestInit) => {
+      const url = String(input)
+      calls.push(`${init?.method ?? 'GET'} ${url}`)
+      if (url === '/api/restart') {
+        const status = restart.status ?? 202
+        return Promise.resolve({
+          ok: status >= 200 && status < 300,
+          status,
+          json: () => Promise.resolve(restart.body),
+        } as unknown as Response)
+      }
+      if (url === '/api/health') {
+        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({}) } as unknown as Response)
+      }
+      if (init?.method === 'PUT') {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve({ revision: 'new', values: PAYLOAD.values }),
+        } as unknown as Response)
+      }
+      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(PAYLOAD) } as unknown as Response)
+    }) as unknown as typeof fetch
+    return { impl, calls }
+  }
+
+  async function savedSomethingSlow(impl: typeof fetch) {
+    const view = render(<Configuration fetchImpl={impl} />)
+    await waitFor(() => expect(view.container.querySelector('.adestia-config__field')).toBeTruthy())
+    fireEvent.click(
+      view.container.querySelector('#setting-workspace\\.watch\\.polling') as HTMLInputElement,
+    )
+    fireEvent.click(screen.getByText('Save'))
+    await waitFor(() =>
+      expect(view.container.querySelector('.adestia-config__restart-bar')).toBeTruthy(),
+    )
+    return view
+  }
+
+  it('stays away until a restart is actually owed', async () => {
+    // A button that is always there is a button nobody reads. It appears
+    // because something is pending, not because the setting exists.
+    const { impl } = withRestart({ body: { restarting: true } })
+    const { container } = render(<Configuration fetchImpl={impl} />)
+    await waitFor(() => expect(container.querySelector('.adestia-config__field')).toBeTruthy())
+    expect(container.querySelector('.adestia-config__restart-bar')).toBeNull()
+  })
+
+  it('appears once a restart-pending value has been written', async () => {
+    const { impl } = withRestart({ body: { restarting: true } })
+    const { container } = await savedSomethingSlow(impl)
+    expect(container.querySelector('.adestia-config__restart-bar')?.textContent).toMatch(
+      /waiting for a restart/,
+    )
+  })
+
+  it('waits for the instance to answer again, then re-reads it', async () => {
+    // The server answers 202 and only THEN closes, so the moment after the
+    // click is a gap where nothing is listening. Polling health is what turns
+    // that gap into a state rather than a failed fetch nobody can read.
+    const { impl, calls } = withRestart({ body: { restarting: true } })
+    const { container } = await savedSomethingSlow(impl)
+
+    fireEvent.click(screen.getByText('Restart now'))
+    await waitFor(() => expect(container.querySelector('.adestia-config__restart-bar')).toBeNull(), {
+      timeout: 5000,
+    })
+    expect(calls).toContain('POST /api/restart')
+    expect(calls).toContain('GET /api/health')
+  })
+
+  it('does not restart under a running turn, and offers to overrule', async () => {
+    const { impl } = withRestart({ status: 409, body: { error: '2 turns are running', running: 2 } })
+    await savedSomethingSlow(impl)
+
+    fireEvent.click(screen.getByText('Restart now'))
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toMatch(/2 turn/))
+    // The overrule is a second, deliberate press — never the first one.
+    expect(screen.getByText('Restart anyway')).toBeTruthy()
+  })
+})
+
 describe('an instance that does not offer the screen', () => {
   it('states the fact rather than rendering an empty form', async () => {
     const impl = vi.fn(() =>

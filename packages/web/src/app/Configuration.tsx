@@ -46,6 +46,22 @@ interface SaveState {
 }
 
 /**
+ * The restart, as the screen lives it.
+ *
+ * `waiting` is the half a naive implementation forgets: the server answers
+ * 202 and only THEN closes, so the moment after the click is a gap where
+ * nothing is listening. Polling health until it answers is what turns that
+ * gap into a state the screen can draw, instead of a spinner that ends on a
+ * failed fetch nobody can interpret.
+ */
+type RestartState =
+  | { readonly kind: 'none' }
+  | { readonly kind: 'asking' }
+  | { readonly kind: 'waiting' }
+  | { readonly kind: 'blocked'; readonly running: number }
+  | { readonly kind: 'failed'; readonly message: string }
+
+/**
  * One field, drawn from its declaration.
  *
  * The control comes from `kind` rather than from the key's name: a setting
@@ -156,6 +172,15 @@ export function Configuration({
   /** Only what the operator touched, so an untouched key is never rewritten. */
   const [edits, setEdits] = useState<Record<string, Value>>({})
   const [save, setSave] = useState<SaveState>({ kind: 'idle' })
+  const [restart, setRestart] = useState<RestartState>({ kind: 'none' })
+  /**
+   * Whether a value that only takes effect on a restart has been WRITTEN.
+   *
+   * Not "whether such a setting exists" — that is always true and would leave
+   * the button standing there forever, which is how a button stops being read.
+   * It appears because something is now pending, and goes when it is not.
+   */
+  const [pending, setPending] = useState(false)
 
   const load = useCallback(async () => {
     try {
@@ -228,12 +253,79 @@ export function Configuration({
         revision: body.revision ?? payload.revision,
         values: body.values ?? payload.values,
       })
+      const slow = changes.some((change) =>
+        payload.groups.some((group) =>
+          group.settings.some(
+            (spec) => keyOf(spec.path) === keyOf(change.path) && spec.applies === 'restart',
+          ),
+        ),
+      )
       setEdits({})
       setSave({ kind: 'saved' })
+      if (slow) setPending(true)
     } catch {
       setSave({ kind: 'failed', message: t('The settings could not be saved.') })
     }
   }, [dirty, edits, fetchImpl, payload, t])
+
+  /**
+   * Asks for a restart, then waits for the instance to answer again.
+   *
+   * Nothing exits: the server closes its instance and starts a new one in the
+   * same process, so the wait is short — but it is a real gap, and a fetch
+   * that lands inside it fails. Hence the poll, and hence `AbortSignal`-free
+   * plain retries: a failure here is EXPECTED for a moment, and only becomes
+   * news once it lasts.
+   */
+  const reboot = useCallback(
+    async (force: boolean) => {
+      setSave({ kind: 'idle' })
+      setRestart({ kind: 'asking' })
+      try {
+        const response = await fetchImpl('/api/restart', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(force ? { force: true } : {}),
+        })
+        if (response.status === 409) {
+          const body = (await response.json()) as { running?: number }
+          setRestart({ kind: 'blocked', running: body.running ?? 1 })
+          return
+        }
+        if (!response.ok) {
+          setRestart({ kind: 'failed', message: t('The instance could not be restarted.') })
+          return
+        }
+      } catch {
+        setRestart({ kind: 'failed', message: t('The instance could not be restarted.') })
+        return
+      }
+
+      setRestart({ kind: 'waiting' })
+      // Roughly fifteen seconds, which is far beyond the measured cycle and
+      // still short enough that a genuinely dead instance is reported rather
+      // than spun on forever.
+      for (let attempt = 0; attempt < 60; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 250))
+        try {
+          const health = await fetchImpl('/api/health')
+          if (health.ok) {
+            setPending(false)
+            setRestart({ kind: 'none' })
+            await load()
+            return
+          }
+        } catch {
+          // Still down. That is what waiting looks like.
+        }
+      }
+      setRestart({
+        kind: 'failed',
+        message: t('The instance did not come back. Check the logs where it runs.'),
+      })
+    },
+    [fetchImpl, load, t],
+  )
 
   if (failed) {
     return (
@@ -317,6 +409,45 @@ export function Configuration({
           </button>
           <button type="button" onClick={() => void commit()} disabled={!dirty || save.kind === 'saving'}>
             {save.kind === 'saving' ? t('Saving…') : t('Save')}
+          </button>
+        </div>
+      )}
+
+      {/* The restart, offered only once something is actually waiting on one.
+          It is not a quit button: the server closes its instance and starts a
+          new one in the same process, so what runs it — a container, a pod, a
+          terminal — never notices. */}
+      {pending && (
+        <div className="adestia-config__restart-bar" role="group">
+          <p>
+            <strong>{t('Saved, and waiting for a restart.')}</strong>{' '}
+            {t('The instance is still running the values it booted with.')}
+          </p>
+
+          {restart.kind === 'blocked' && (
+            <p className="adestia-save adestia-save--error" role="alert">
+              {t('%n turn(s) running — restarting now would lose that work.').replace(
+                '%n',
+                String(restart.running),
+              )}
+            </p>
+          )}
+          {restart.kind === 'failed' && (
+            <p className="adestia-save adestia-save--error" role="alert">
+              {restart.message}
+            </p>
+          )}
+
+          <button
+            type="button"
+            onClick={() => void reboot(restart.kind === 'blocked')}
+            disabled={restart.kind === 'asking' || restart.kind === 'waiting'}
+          >
+            {restart.kind === 'waiting'
+              ? t('Coming back…')
+              : restart.kind === 'blocked'
+                ? t('Restart anyway')
+                : t('Restart now')}
           </button>
         </div>
       )}
