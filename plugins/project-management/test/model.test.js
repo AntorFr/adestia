@@ -1,7 +1,20 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { classify, fraction, fromPages, labelRows, parseLine, span, under } from '../web/model.js'
+import {
+  badgeOf,
+  barState,
+  classify,
+  fraction,
+  fromPages,
+  gradeOf,
+  labelRows,
+  parseLine,
+  PROJECT_STATUSES,
+  span,
+  subprojectsOf,
+  under,
+} from '../web/model.js'
 
 // ── parseLine: one line, one entry, or null by name ─────────────────────────
 
@@ -271,4 +284,122 @@ test('a label that would run past the right edge reads leftwards', () => {
 test('before the chart is measured, labels alternate', () => {
   const rows = labelRows([{ at: 0.1, chars: 5 }, { at: 0.2, chars: 5 }, { at: 0.3, chars: 5 }], 0)
   assert.deepEqual(rows.map((one) => one.row), [0, 1, 0])
+})
+
+// ── project-status: the judgement, and when the page's life speaks first ────
+
+const project = (fields, extra = {}) => ({
+  path: 'chantiers/a/INDEX.md',
+  title: 'Un projet',
+  fields: { type: 'project-management', ...fields },
+  finished: false,
+  tone: 'underway',
+  ...extra,
+})
+
+test('a running project shows what its owner says about it', () => {
+  assert.deepEqual(badgeOf(project({ status: 'en cours', 'project-status': 'en danger' })), {
+    word: 'en danger',
+    tone: 'red',
+  })
+})
+
+test('a project nobody can advance says THAT, whatever grade it carries', () => {
+  // « nominal » à côté de « bloqué » serait un projet qui se dit bien portant
+  // pendant que personne ne peut y toucher.
+  const page = project({ status: 'bloqué', 'project-status': 'nominal' }, { tone: 'waiting' })
+  assert.deepEqual(badgeOf(page), { word: 'bloqué', tone: 'waiting' })
+})
+
+test('a closed project says it is closed — its last grade is stale', () => {
+  const page = project(
+    { status: 'clos', 'project-status': 'en danger' },
+    { finished: true, tone: 'settled' },
+  )
+  assert.deepEqual(badgeOf(page), { word: 'clos', tone: 'settled' })
+})
+
+test('a running project nobody has graded falls back to its status', () => {
+  assert.deepEqual(badgeOf(project({ status: 'en cours' })), { word: 'en cours', tone: 'underway' })
+})
+
+test('a page that says nothing about itself wears no badge at all', () => {
+  // Une pastille vide serait un état, et « personne n'a rien dit » n'en est pas un.
+  assert.equal(badgeOf(project({})), undefined)
+})
+
+test('the grade is read whatever its case and spacing', () => {
+  assert.equal(gradeOf({ 'project-status': '  En Danger ' }), 'red')
+  assert.equal(gradeOf({ 'project-status': 'excellent' }), undefined)
+  assert.equal(gradeOf({}), undefined)
+})
+
+test('the three words are disjoint from the lifecycle vocabulary', () => {
+  // Ce qui rend la précédence lisible dans le fichier : aucun mot ne peut être
+  // écrit dans les deux champs, donc on sait toujours lequel des deux parle.
+  const lifecycle = ['en cours', 'bloqué', 'en attente', 'clos', 'fait', 'terminé', 'idée']
+  for (const word of PROJECT_STATUSES) assert.equal(lifecycle.includes(word), false)
+})
+
+// ── subprojectsOf: what a list of sub-projects is a list OF ─────────────────
+
+const CORPUS = [
+  project(
+    { status: 'en cours', 'project-status': 'en danger' },
+    { path: 'chantiers/a/socle/INDEX.md', title: 'Socle' },
+  ),
+  project(
+    { status: 'clos' },
+    { path: 'chantiers/a/editeur/INDEX.md', title: 'Éditeur', finished: true, tone: 'settled' },
+  ),
+  { path: 'chantiers/a/note.md', title: 'Note de lecture', fields: {}, finished: false, tone: 'underway' },
+]
+
+test('a list of sub-projects lists sub-projects, not what is filed beside them', () => {
+  const rows = subprojectsOf(CORPUS, 'chantiers/a', 'children')
+  assert.deepEqual(rows.map((row) => row.label), ['Éditeur', 'Socle'])
+  assert.equal(rows.some((row) => row.label === 'Note de lecture'), false)
+})
+
+test('each row carries the one badge its page has earned', () => {
+  const rows = subprojectsOf(CORPUS, 'chantiers/a', 'children')
+  assert.deepEqual(rows.find((row) => row.label === 'Socle').badge, { word: 'en danger', tone: 'red' })
+  assert.equal(rows.find((row) => row.label === 'Éditeur').finished, true)
+})
+
+// ── barState: an assertion beats an inference ──────────────────────────────
+
+test('a graded bar is drawn as its owner graded it, not as the calendar reads it', () => {
+  // Sans note, la barre serait « late » : la date est passée et le statut est
+  // encore ouvert. C'est une déduction, et elle cède devant une affirmation.
+  const entry = { label: 'Socle', due: '2026-01-01', finished: false }
+  assert.equal(barState(entry, '2026-09-24'), 'late')
+  assert.equal(barState({ ...entry, grade: 'green' }, '2026-09-24'), 'green')
+})
+
+test('closed still wins over a grade — whatever it wore when it closed is stale', () => {
+  assert.equal(barState({ due: '2026-01-01', finished: true, grade: 'red' }, '2026-09-24'), 'done')
+})
+
+test('a blocked project drops its grade on the bar, as its row already did', () => {
+  // Trouvé au banc : la ligne disait « bloqué » et la barre, deux blocs plus
+  // bas, était verte. Une page qui dit deux choses d'un même projet est
+  // exactement ce que partager cette marche doit empêcher.
+  const entry = { label: 'Le mode ask', due: '2026-09-10', finished: false, grade: 'green', tone: 'waiting' }
+  assert.equal(barState(entry, '2026-09-24'), 'late')
+})
+
+test('an ungraded bar keeps exactly the calendar it had', () => {
+  const entry = { label: 'Socle', start: '2026-10-01', due: '2026-11-01', finished: false }
+  assert.equal(barState(entry, '2026-09-24'), classify(entry, '2026-09-24'))
+})
+
+test('the planning carries the grade onto its entries, from the same walk', () => {
+  const pages = [
+    project(
+      { status: 'en cours', 'project-status': 'à surveiller', due: '2026-11-01' },
+      { path: 'chantiers/a/socle/INDEX.md', title: 'Socle' },
+    ),
+  ]
+  assert.equal(fromPages(pages, 'chantiers/a', 'children').entries[0].grade, 'amber')
 })

@@ -141,6 +141,72 @@ rather than as a drawing loose on the page:
 :::
 ```
 
+## `project-status` — how the project is GOING
+
+A second word, beside `status:`, and it answers a different question. `status:`
+says where the page is in its life and whether it is over; `project-status:`
+is a judgement about a project that is RUNNING:
+
+```yaml
+status: en cours
+project-status: à surveiller
+```
+
+Three words, and they are the ones drawn — `nominal`, `à surveiller`,
+`en danger`. Never a colour's name: a pill reading "Rouge" says the hue out
+loud and teaches nothing, and the hue is there to make the row findable among
+twenty, not to be the label.
+
+**The page's life speaks first.** A project that is waiting or closed shows
+THAT, whatever grade is written on it — "nominal" beside "bloqué" would be a
+project claiming to be fine while nobody can touch it. So the grade is drawn
+only while the lifecycle status is under way, and a project nobody has graded
+simply shows its status. One badge, never two side by side.
+
+The value is kept when a project closes, not erased: it comes back if the
+project reopens, and nothing here throws away somebody's word.
+
+**Nothing to type as YAML.** The field is declared in this plugin's manifest,
+so the page editor draws it as a control in ⚙ Properties for any page typed
+`project-management`. That is also why it exists on those pages ONLY: the
+declaration is attached to the type this plugin claims.
+
+## `:::subproject` — the sub-projects below, and where each stands
+
+```markdown
+:::subproject
+:::
+```
+
+One row per sub-project: its name, and the one word for where it is. A row
+OPENS the project it stands for.
+
+- **`depth`** — `children` (the default) counts a sub-folder once, by its
+  index page; `subtree` reaches all the way down. Same walk as `:::timeline`
+  and `:::list{source=children}`, so nothing on the page disagrees about what
+  "below" means.
+- **`closed`** — `fold` (the default) puts closed projects behind a summary,
+  `hide` drops them, `show` mixes them in.
+
+**It lists projects, not pages.** A row is a page carrying
+`type: project-management`; the reading notes filed beside them are not
+sub-projects and do not appear. A folder whose projects are not typed gets a
+block saying so rather than a list of everything nearby — if you see that
+message, type the pages, do not change the block.
+
+Use `:::list{source=children}` instead when what you want is *the pages* under
+here, whatever they are: this block is narrower on purpose.
+
+## What the planning does with a grade
+
+A graded project's bar is drawn as its owner graded it. Without a grade the
+bar keeps the calendar it always had — including `late`, the one state a
+planning is read for. **An assertion beats an inference:** `late` is deduced
+from a date, a grade is somebody's word about that same question, and two
+colours meaning "something is wrong" on one chart could not be told apart.
+
+Closed still wins over both, on the bar as in the list.
+
 ## What does NOT exist yet
 
 `pm-config` — the file that will declare which page types are worksites — is

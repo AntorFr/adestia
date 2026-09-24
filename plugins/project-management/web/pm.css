@@ -202,3 +202,113 @@ button.pm-timeline__span:hover {
   color: var(--text-faint);
   white-space: nowrap;
 }
+
+/* ── `project-status` : ce que le porteur DIT, pas ce que les dates laissent
+   deviner ─────────────────────────────────────────────────────────────────
+
+   Les trois couleurs passent par les tokens SÉMANTIQUES, jamais par les
+   teintes nommées (`--adestia-hue-*`), et c'est mesuré plutôt que supposé :
+   les teintes sont décoratives, et un skin a le droit de les aplatir — Skippy
+   écrase les dix sur un seul ambre, parce que c'est son identité de HUD
+   monochrome. Un vert, un ambre et un rouge posés dessus y seraient TROIS
+   FOIS LA MÊME COULEUR. `--danger`, `--warning` et `--success` restent
+   distincts dans les trois skins livrés : un skin qui les aplatirait aurait
+   déjà cassé ses propres pastilles de statut.
+
+   Et la règle qui ne bouge pas : la teinte n'est jamais l'étiquette. Le mot
+   est écrit, la couleur ne fait que le rendre trouvable parmi vingt lignes. */
+.pm-timeline__span--green {
+  background: color-mix(in srgb, var(--success) 20%, var(--surface-raised));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--success) 60%, transparent);
+  color: var(--text);
+}
+.pm-timeline__span--amber {
+  background: color-mix(in srgb, var(--warning) 22%, var(--surface-raised));
+  box-shadow: inset 0 0 0 1px var(--warning);
+  color: var(--text);
+}
+.pm-timeline__span--red {
+  background: color-mix(in srgb, var(--danger) 24%, var(--surface-raised));
+  box-shadow: inset 0 0 0 1.5px var(--danger);
+  color: var(--text);
+}
+.pm-timeline__mile--red { border-left-color: var(--danger); }
+.pm-timeline__mile--green { border-left-color: var(--success); }
+
+/* ── `:::subproject` — une ligne par sous-projet ───────────────────────── */
+
+.pm-subproject {
+  display: flex;
+  flex-direction: column;
+}
+.pm-subproject__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pm-subproject__row:last-child { border-bottom: 0; }
+.pm-subproject__row:hover { background: var(--surface-sunken); }
+.pm-subproject__ico {
+  color: var(--accent);
+  font-style: normal;
+  font-size: 0.8em;
+}
+/* Le titre pousse la pastille au bout de la ligne : vingt lignes dont les
+   états sont alignés se lisent d'une colonne, ce qu'une pastille collée au
+   titre ne permet pas. */
+.pm-subproject__title { flex: 1; }
+.pm-subproject__empty {
+  color: var(--text-muted);
+  font-size: 0.9em;
+  margin: 0;
+}
+.pm-subproject__fold > summary {
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-muted);
+  font-size: 0.86em;
+  cursor: pointer;
+}
+
+/* La pastille est celle de la coque — même point, même graisse, même pas de
+   couleur sans le mot : un sous-projet doit se lire comme une page, pas comme
+   la trouvaille d'un plugin. */
+.pm-subproject__state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: 600 10.5px/1.5 var(--font-mono);
+  border-radius: var(--radius-pill);
+  padding: 2px 9px 2px 8px;
+  white-space: nowrap;
+}
+.pm-subproject__state::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentcolor;
+}
+.pm-subproject__state--underway { color: var(--accent); background: var(--accent-quiet); }
+.pm-subproject__state--waiting,
+.pm-subproject__state--amber {
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 13%, transparent);
+}
+.pm-subproject__state--settled,
+.pm-subproject__state--green {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+}
+.pm-subproject__state--red {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 13%, transparent);
+}

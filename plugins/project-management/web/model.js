@@ -113,6 +113,12 @@ export function fromPages(pages, base, depth) {
       due,
       path: page.path,
       finished: page.finished === true,
+      // What its owner SAYS about it, and which family its lifecycle status
+      // belongs to. Both carried here rather than looked up at drawing time,
+      // so one walk feeds both blocks: a planning and a list of sub-projects
+      // cannot disagree about a project if they read the same entry.
+      ...(gradeOf(page.fields) ? { grade: gradeOf(page.fields) } : {}),
+      ...(page.tone ? { tone: page.tone } : {}),
     })
   }
   entries.sort((a, b) => ((a.start ?? a.due) < (b.start ?? b.due) ? -1 : 1))
@@ -223,4 +229,119 @@ export function classify(entry, today) {
   if (entry.due < today) return entry.finished === false ? 'late' : 'past'
   if ((entry.start ?? entry.due) > today) return 'ahead'
   return 'current'
+}
+
+/**
+ * ── The project's OWN status: how it is going, not where it is in its life ──
+ *
+ * Two questions, two fields, and they are not the same question. `status:` is
+ * the word every page in the instance carries — where this one stands in its
+ * life, and whether it is over. `project-status:` is a judgement somebody
+ * makes about a project that is RUNNING: it is going fine, it wants watching,
+ * it is in trouble.
+ *
+ * Only projects have one, which is why the word is declared by this plugin
+ * for the type it claims rather than added to the engine's table. And only
+ * RUNNING projects show one — see `badgeOf`.
+ *
+ * The words are the ones drawn, never a colour's name. A pill reading "Red"
+ * says the colour out loud and teaches nothing; "en danger" is the thing
+ * itself, and the hue underneath only makes it findable among twenty rows.
+ */
+const GRADES = {
+  nominal: 'green',
+  'à surveiller': 'amber',
+  'en danger': 'red',
+}
+
+/** The words a project's own status is written with, in worsening order. */
+export const PROJECT_STATUSES = Object.keys(GRADES)
+
+const lower = (value) => (typeof value === 'string' ? value.toLowerCase().trim() : '')
+
+/** `'En Danger'` → `'red'`; anything this plugin has not declared → undefined. */
+export function gradeOf(fields) {
+  return GRADES[lower(fields?.['project-status'])]
+}
+
+/**
+ * The ONE badge a sub-project wears, and which of the two fields speaks.
+ *
+ * A precedence rather than an addition: the life of the page speaks first. A
+ * project nobody can advance, or one that is over, says THAT — "nominal"
+ * beside "bloqué" would be a project claiming to be fine while nobody can
+ * touch it. Only once the page's life has nothing urgent to say does the
+ * judgement get the pill.
+ *
+ * Two pills side by side were refused for the reason the core draws one: a
+ * row has space for a single state, and two of them make the reader ask which
+ * one wins instead of reading which one it is.
+ *
+ * `tone` and `finished` are the ENGINE's verdict, published by the page index
+ * — never re-derived here. A second copy of that table inside a plugin is
+ * exactly how `réalisé` came to close a page in one view and not in the next.
+ */
+export function badgeOf(page) {
+  const status = page?.fields?.['status'] ?? page?.fields?.['statut']
+  const word = typeof status === 'string' && status.trim() !== '' ? status.trim() : undefined
+  if (page?.finished === true) return word ? { word, tone: 'settled' } : undefined
+  if (page?.tone === 'waiting') return word ? { word, tone: 'waiting' } : undefined
+  const grade = gradeOf(page?.fields)
+  if (grade) return { word: lower(page.fields['project-status']), tone: grade }
+  return word ? { word, tone: 'underway' } : undefined
+}
+
+/**
+ * The sub-projects below a page — the rows `:::subproject` draws.
+ *
+ * Scoped by POSITION like everything else here (`under`, the core's own
+ * walk), then kept by TYPE: a project's folder holds its sub-projects AND the
+ * loose notes filed beside them, and a block named after sub-projects that
+ * listed a reading note would be lying in its own name.
+ *
+ * Which is the one place this block is stricter than `:::timeline`, and
+ * deliberately: a planning takes any page carrying a date because a date IS
+ * the eligibility it can check, while a list of sub-projects has a word for
+ * what it wants. A folder whose projects are not typed gets an empty block
+ * saying so, which is better than a list of everything filed nearby.
+ */
+export function subprojectsOf(pages, base, depth, type = 'project-management') {
+  return pages
+    .filter((page) => under(page.path, base, depth) && page.fields?.['type'] === type)
+    .map((page) => ({
+      path: page.path,
+      label: page.title || page.path,
+      badge: badgeOf(page),
+      finished: page.finished === true,
+      due: DATE_FIELD(page.fields?.due),
+      start: DATE_FIELD(page.fields?.start),
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label))
+}
+
+/**
+ * The state a BAR is drawn in — the calendar's, unless somebody has spoken.
+ *
+ * `classify` answers from the dates and the workflow, and one of its answers
+ * is an INFERENCE: `late` means "the due date has passed and the status is
+ * still open". A project whose owner has graded it carries an ASSERTION about
+ * that same question, and an assertion beats an inference — otherwise a
+ * planning draws two reds meaning different things, and neither can be told
+ * from the other.
+ *
+ * The page's life still speaks first, exactly as it does in a row — the bench
+ * caught the one case where it did not. A project blocked while wearing
+ * "nominal" drew a GREEN bar under a row that read "bloqué": one page saying
+ * two things about one project, which is precisely what sharing this walk
+ * between the two blocks exists to prevent. When the lifecycle has something
+ * to say, the grade is dropped and the bar keeps the calendar's own answer —
+ * that project really is late, and it really is blocked.
+ *
+ * Closed wins over everything: a finished project is finished, and whatever
+ * grade it wore when it closed is stale by definition.
+ */
+export function barState(entry, today) {
+  if (entry.finished === true) return 'done'
+  if (entry.tone === 'waiting') return classify(entry, today)
+  return entry.grade ?? classify(entry, today)
 }
