@@ -89,6 +89,34 @@ describe('what the form offers', () => {
     expect(screen.getByText('todo')).toBeTruthy()
   })
 
+  /**
+   * The defect this mechanism was built for: a French instance drawing an
+   * English form, while the plugin's own table three files away already knew
+   * the word. The manifest is read before the plugin's code runs, so the
+   * label arrives in English and the plugin's table is what translates it.
+   */
+  it('says a plugin’s labels in the plugin’s own words', () => {
+    setup(
+      { type: 'tache' },
+      {
+        contributions: {
+          tache: {
+            ...TODO.tache,
+            words: { Due: 'Échéance', todo: 'Tâches', 'When it is due.': 'Quand elle est due.' },
+          },
+        },
+        t: (key: string) => (key === 'Project' ? 'Projet' : key),
+      },
+    )
+
+    expect(row('Échéance')).toBeTruthy()
+    expect(row('Due')).toBeNull()
+    expect(screen.getByText('Tâches')).toBeTruthy()
+    // And the shell's own table still answers for what the plugin did not
+    // translate — the fallback, not a third rule.
+    expect(row('Projet')).toBeTruthy()
+  })
+
   it('does not lend one type’s fields to another', () => {
     setup({ type: 'projet' }, { contributions: TODO })
     expect(screen.queryByText('Due')).toBeNull()

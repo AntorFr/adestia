@@ -241,6 +241,34 @@ const WORDS = {
     today: 'auj.',
     'from %d': 'dès le %d',
     'Tasks here': "Tâches d'ici",
+    // ── What the MANIFEST declares, said by the shell ──────────────────────
+    // A field's form, the launcher's tile, the checklist's description in the
+    // editor: drawn by the shell from declared data, so these are the only
+    // words of this plugin it cannot reach any other way.
+    // `Todo` itself is left alone a few lines above: the tile says Todo on a
+    // French instance because that is what the operator chose to call it, and
+    // a translation that renamed somebody's launcher would be this mechanism
+    // overreaching on its first day. The plugin ID, drawn as the form's group
+    // heading, has no such excuse — nobody chose to read "todo" in a legend.
+    todo: 'Tâches',
+    Due: 'Échéance',
+    'Drives Late / Today / Next 7 days, all computed live.':
+      'Alimente En retard / Aujourd’hui / Sous 7 jours, tous recalculés en direct.',
+    'The day it becomes doable — never “I have begun”.':
+      'Le jour où elle devient faisable — jamais « j’ai commencé ».',
+    Priority: 'Priorité',
+    'Lower is more urgent.': 'Plus petit est plus urgent.',
+    'Carried by': 'Portée par',
+    'One handle. Empty means up for grabs.': 'Un nom. Vide veut dire à prendre.',
+    'Groups the “everything” view — atelier, maison, admin…':
+      'Regroupe la vue « tout » — atelier, maison, admin…',
+    'This task is one step of that project.': 'Cette tâche est une étape de ce chantier.',
+    'Closed on': 'Faite le',
+    'Empty means open. This is the line the checkbox writes.':
+      'Vide veut dire ouverte. C’est la ligne qu’écrit la case à cocher.',
+    'Which domain this list gathers.': 'Le domaine que cette liste rassemble.',
+    "The tasks of this page's folder, ticked and added where they are read.":
+      'Les tâches du dossier de cette fiche, cochées et ajoutées là où on les lit.',
     'this folder and below': 'ce dossier et ses sous-dossiers',
     'nothing to do here': 'rien à faire ici',
   },
@@ -256,13 +284,30 @@ const WORDS = {
  * is what is pinned, never the eight.
  */
 export function known(locale) {
-  return Object.keys(WORDS[String(locale ?? '').slice(0, 2)] ?? {})
+  return Object.keys(table(locale))
+}
+
+/**
+ * The raw table, for the SHELL.
+ *
+ * What this plugin declares in its manifest — a field's label and help, the
+ * tile's name, the checklist's description — is drawn by the shell, not by
+ * the screens below, so the plugin never gets to say those words itself. It
+ * hands the table over instead (`words:` in what the factory returns) and the
+ * shell says them in the reader's language.
+ *
+ * An object rather than the translator: the shell has to tell a sentence this
+ * plugin does not translate from one it translates to itself, and only a
+ * table can be asked whether it holds a key.
+ */
+export function table(locale) {
+  return WORDS[String(locale ?? '').slice(0, 2)] ?? {}
 }
 
 export function words(locale) {
-  const table = WORDS[String(locale ?? '').slice(0, 2)] ?? {}
+  const said = table(locale)
   return (key, values) => {
-    let text = table[key] ?? key
+    let text = said[key] ?? key
     for (const [name, value] of Object.entries(values ?? {})) {
       text = text.replace(`%${name}`, String(value))
     }

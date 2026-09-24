@@ -19,7 +19,7 @@
 
 import { createElement as h, useEffect, useRef, useState } from 'react'
 
-import createVoyagesApp from './app.js'
+import createVoyagesApp, { table } from './app.js'
 import { folderOf, resolve, restOf, routeOf } from './address.js'
 
 /** What the engine escapes with before putting anything in innerHTML. */
@@ -275,5 +275,5 @@ export default function view(api) {
   const holds = (folder) =>
     [...trips.keys()].some((held) => held === folder || held.startsWith(`${folder}/`))
 
-  return { component: Voyages, route: '/voyages', routeFor, holds, tileInfo }
+  return { component: Voyages, route: '/voyages', routeFor, holds, tileInfo, words: table(api.locale) }
 }

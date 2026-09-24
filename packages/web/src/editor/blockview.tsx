@@ -34,6 +34,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { BlockSettings } from './BlockSettings.js'
 import { prettify } from './nodes.js'
 import { Reader, type BlockComponents, type VocabularyContext } from './Reader.js'
+import type { Say } from '../plugins/words.js'
 
 /** What a block's rendering needs to know about the page it is written in. */
 export interface EditorEnv {
@@ -45,6 +46,12 @@ export interface EditorEnv {
   readonly pages?: readonly Indexed[] | undefined
   readonly fetchImpl?: typeof fetch | undefined
   readonly locale?: string | undefined
+  /**
+   * A word a PLUGIN declared, in the reader's language. A block's
+   * `description` is written in a manifest — read before the plugin's code
+   * runs — so the settings panel cannot get it translated any other way.
+   */
+  readonly say?: Say | undefined
 }
 
 type Posture = 'prose' | 'data' | 'atom'
@@ -317,10 +324,17 @@ class DirectiveView implements NodeView {
     // narrow block spilled off the page.
     requestAnimationFrame(() => requestAnimationFrame(() => this.keepPanelInside()))
     const resolved = resolveBlock(this.name, this.env.vocabulary ?? {})
+    // Said by whoever declared the block: the owning plugin for a contributed
+    // one, the shell for a core one (`plugin` is then `core`, which no table
+    // answers for, so it falls through to the shell's own words).
+    const about = resolved
+      ? (this.env.say?.(resolved.plugin, resolved.spec.description) ?? resolved.spec.description)
+      : undefined
     this.panelRoot.render(
       <BlockSettings
         name={this.name}
         spec={resolved?.spec}
+        {...(about ? { about } : {})}
         attributes={this.attributes}
         onChange={(next) => this.write(next)}
         onClose={() => this.setOpen(false)}

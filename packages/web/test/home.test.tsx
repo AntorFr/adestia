@@ -63,6 +63,25 @@ describe('the landing canvas', () => {
     expect(labels).toContain('DIY')
   })
 
+  /**
+   * A tile's name comes out of a MANIFEST, which the shell reads before the
+   * plugin's code runs — so the launcher is the one screen a plugin could
+   * never translate for itself. Its table is what says the word here.
+   */
+  it('says a tile’s name in the plugin’s own words', () => {
+    const { container } = render(
+      <Home
+        {...props}
+        plugins={[
+          plugin('planif', { tile: { label: 'Schedules' }, words: { Schedules: 'Planifications' } }),
+        ]}
+      />,
+    )
+    const labels = [...container.querySelectorAll('.adestia-tile__label')].map((n) => n.textContent)
+    expect(labels).toContain('Planifications')
+    expect(labels).not.toContain('Schedules')
+  })
+
   it('represents a body of pages as sections, never as a flat list', () => {
     const { container } = render(<Home {...props} />)
     expect(container.querySelector('.adestia-pages')).toBeNull()

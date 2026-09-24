@@ -117,10 +117,44 @@ passait plus son propre `npm run typecheck` (six erreurs,
 dont un `Saving…` traduit deux fois avec deux orthographes de points de
 suspension) — corrigé dans un commit à part.
 
-Reste ouvert : les libellés déclarés par un plugin s'affichent en anglais sur
-une instance française. La doctrine du dépôt dit qu'un plugin porte ses
-propres mots ; il n'a pas encore de quoi les traduire. Scénario de banc :
-`proprietes-fiche`. Pas encore déployée.
+Reste ouvert à la livraison, réglé depuis par la v0.74.0 : les libellés
+déclarés par un plugin s'affichaient en anglais sur une instance française.
+Scénario de banc : `proprietes-fiche`. Pas encore déployée.
+
+v0.74.0 : **un plugin traduit AUSSI les mots qu'il déclare**. Un facet rend
+sa table avec sa contribution (`words: table(api.locale)`), et la coque la
+consulte partout où elle dessine un mot venu du manifeste : le nom d'une
+tuile, le libellé et l'aide d'un champ, la description d'un bloc, le titre du
+groupe dans le formulaire. Trois tables répondent dans cet ordre — celle du
+plugin, celle de la coque (donc un champ nommé `Title` hérite d'une
+traduction que personne n'a réécrite), puis la phrase anglaise. Celle du
+plugin ne touche QUE ses propres déclarations : une app ne renomme pas
+« Réglages » pour tout le monde, même raison qu'un skin ne porte aucun mot.
+
+Ce qui l'a rendue possible, et que l'analyse de la veille avait manqué : tout
+plugin dont un mot atteint l'écran a déjà son code en mémoire. Le chargeur
+importe tous les facets avant de publier `loaded`, et un plugin dont aucun
+facet ne répond est jeté en entier — ni tuile, ni champs. Le fichier de
+langue à côté du manifeste, envisagé d'abord, aurait ajouté un fichier et une
+clé pour un tuyau qui existait déjà.
+
+Le ménage qui allait avec, trouvé au balayage des dix plugins : `meals`
+affichait un refus de glisser en anglais (« That move was refused. ») ;
+`scan` avait son info-bulle de composeur en dur ; trois tuiles étaient
+écrites en FRANÇAIS dans leur manifeste (`Veille`, `Planifications`,
+`Voyages`) — le même défaut en miroir, illisible pour un lecteur anglais —
+et sont repassées à l'anglais avec leur entrée de table ; quinze entrées que
+plus personne ne disait ont été retirées (8 chez `journal`, 5 chez `meals`,
+2 chez `voyages`). Les six phrases anglaises de `todo` notées le 23/09
+étaient DÉJÀ rentrées : la ligne avait vieilli.
+
+Le test de mots de `todo` devient celui des dix (`plugins/test/words.test.js`)
+et lit la table comme la coque la lit — les modules du manifeste, importés et
+appelés. Il échoue sur la classe dans les deux sens : une phrase sans
+traduction, une traduction que personne ne dit. Le banc ouvre DEUX lecteurs
+sur une même instance (elle ne déclare aucune langue, le navigateur tranche) :
+« Échéance / Dès le / Portée par » d'un côté, « Due / Not before / Carried
+by » de l'autre. Scénario de banc : `mots-de-plugin`. Pas encore déployée.
 
 v0.61.0 : une page occupe un grand écran. Le canevas
 monte à 1400 px (940 avant) ; la prose garde une mesure, relevée à 89ch
@@ -236,9 +270,17 @@ non revérifiés un par un ; l'historique complet est dans git) :
 - [ ] La puce `tache` et le crayon de l'éditeur embarqué s'affichent sous le
       titre « Note » d'une fiche.
 - [ ] `‹ Back` du shell est en dur en anglais (`App.tsx`).
+- [ ] `atelier` n'a AUCUNE i18n : tout son écran est écrit en français en
+      dur (« Plaques », « Tronçons », « Colonne à refaire »…). Le même défaut
+      que les tuiles françaises, mais à l'échelle d'une app entière — vu au
+      balayage du 24/09, laissé de côté : c'est un chantier, pas un oubli.
+      Il ne déclare ni tuile ni mot de manifeste, donc rien ne le signale au
+      nouveau test.
 - [ ] `todo-config` : le raisonnement « premier par ordre de chemin » réparé
       pour `me:` vaudrait aussi pour `folder:`.
-- [ ] Les six phrases anglaises de `todo/web/app.js`.
+- [x] Les six phrases anglaises de `todo/web/app.js` : déjà faites avant le
+      24/09 (le test du plugin passait), ligne périmée. Le balayage des dix
+      plugins qui l'a constaté a trouvé et corrigé le reste — voir v0.74.0.
 - [ ] `journal` : pas encore vérifié en navigateur ; `api.trail` sans test.
 - [ ] Pilote Copilot : pas de plomberie de permissions, la porte planif ne
       s'y applique pas.

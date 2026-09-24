@@ -9,6 +9,7 @@ import {
   newTaskPath,
   resolveList,
   taskFolder,
+  table,
   taskMarkdown,
   words,
 } from './model.js'
@@ -502,7 +503,7 @@ export default function view(api) {
     }
   }
 
-  return { component: Todo, tileInfo }
+  return { component: Todo, tileInfo, words: table(api.locale) }
 }
 
 /** Built once per view factory, not once per render. */

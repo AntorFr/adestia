@@ -21,12 +21,14 @@ import {
   narrowChrome,
   narrowLayouts,
   narrowView,
+  narrowWords,
   type BlocksContribution,
   type ChromeContribution,
   type LayoutsContribution,
   type PageEditorProps,
   type PluginApi,
   type ViewContribution,
+  type Words,
 } from './contract.js'
 
 /**
@@ -91,6 +93,11 @@ export interface LoadedPlugin {
   readonly types?: readonly string[]
   /** Declared frontmatter fields, by type — drawn by the page's properties form. */
   readonly fields?: PluginDescriptor['fields']
+  /**
+   * This plugin's own words, in the reader's language — what the shell says
+   * when it draws something the MANIFEST declared. See `Words`.
+   */
+  readonly words?: Words
 }
 
 export interface LoadFailure {
@@ -126,6 +133,10 @@ function resolve(base: string, path: string): string {
  * Calling it here rather than at use time is deliberate: a factory that throws
  * costs its own facet at load, when the shell can report it, instead of
  * exploding inside a render where React unmounts the tree around it.
+ *
+ * @param said where a facet's `words` are collected — every facet of one
+ *   plugin may return the same table, and taking them all means an author
+ *   never has to know which of their modules the shell asks.
  */
 async function loadFacet<T>(
   environment: LoaderEnvironment,
@@ -133,6 +144,7 @@ async function loadFacet<T>(
   facet: 'view' | 'blocks' | 'chrome' | 'layouts',
   narrow: (raw: unknown) => { issue?: { reason: string } } & Record<string, unknown>,
   failures: LoadFailure[],
+  said: Words[] = [],
 ): Promise<T | undefined> {
   const path = plugin[facet]
   if (!path) return undefined
@@ -151,6 +163,14 @@ async function loadFacet<T>(
     }
 
     const produced = (factory as (api: PluginApi) => unknown)(environment.makeApi(plugin))
+
+    // Read BEFORE the facet is narrowed, and kept even when the narrowing
+    // then refuses: a screen that will not draw is no reason for the tile
+    // above it to lose its language.
+    const words = narrowWords(produced, facet)
+    if (words.issue) failures.push({ id: plugin.id, facet, reason: words.issue.reason })
+    else if (words.words) said.push(words.words)
+
     const narrowed = narrow(produced)
     if (narrowed.issue) {
       failures.push({ id: plugin.id, facet, reason: narrowed.issue.reason })
@@ -209,12 +229,22 @@ export async function loadPlugins(
       environment.addStylesheet(descriptor.id, resolve(descriptor.base, style))
     }
 
+    // One table per plugin, however many of its facets hand one over.
+    const said: Words[] = []
     const [view, blocks, chrome, layouts] = await Promise.all([
-      loadFacet<ViewContribution>(environment, descriptor, 'view', narrowView, failures),
-      loadFacet<BlocksContribution>(environment, descriptor, 'blocks', narrowBlocks, failures),
-      loadFacet<ChromeContribution>(environment, descriptor, 'chrome', narrowChrome, failures),
-      loadFacet<LayoutsContribution>(environment, descriptor, 'layouts', narrowLayouts, failures),
+      loadFacet<ViewContribution>(environment, descriptor, 'view', narrowView, failures, said),
+      loadFacet<BlocksContribution>(environment, descriptor, 'blocks', narrowBlocks, failures, said),
+      loadFacet<ChromeContribution>(environment, descriptor, 'chrome', narrowChrome, failures, said),
+      loadFacet<LayoutsContribution>(
+        environment,
+        descriptor,
+        'layouts',
+        narrowLayouts,
+        failures,
+        said,
+      ),
     ])
+    const words = said.length > 0 ? Object.assign({}, ...said) : undefined
 
     // The same trap as an undeclared block, one level up: a layout the
     // manifest does not claim is never reached, because the shell matches on
@@ -276,6 +306,7 @@ export async function loadPlugins(
       ...(layouts === undefined ? {} : { layouts }),
       ...(descriptor.types ? { types: descriptor.types } : {}),
       ...(descriptor.fields ? { fields: descriptor.fields } : {}),
+      ...(words ? { words } : {}),
     })
   }
 

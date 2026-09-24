@@ -29,6 +29,7 @@ export type PluginKind = (typeof PLUGIN_KINDS)[number]
 
 /** A launcher tile. A view without one is legitimate — a detail screen. */
 export interface PluginTile {
+  /** In English, translated by the plugin's own `words` — see `PluginFieldSpec.label`. */
   readonly label: string
   /** An emoji, shown on the tile's plate. */
   readonly icon?: string
@@ -76,6 +77,8 @@ export interface PluginBlockSpec {
    * engine, which holds the bar for reaching for the third).
    */
   readonly content: 'flow' | 'empty' | 'optional'
+  /** In English; shown in the editor's settings panel, and translated by the
+   * plugin's own `words` — see `PluginFieldSpec.label`. */
   readonly description: string
   readonly attributes?: Readonly<Record<string, PluginBlockAttribute>>
 }
@@ -95,9 +98,18 @@ export interface PluginBlockSpec {
  */
 export interface PluginFieldSpec {
   readonly kind: 'text' | 'choice' | 'tags' | 'date' | 'number' | 'icon' | 'reference'
-  /** The field's name on screen, in English; the shell translates it. */
+  /**
+   * The field's name on screen, in ENGLISH.
+   *
+   * A manifest is read before a line of the plugin runs, so it cannot be
+   * written in the reader's language — and the shell's own table only knows
+   * the shell's sentences. The plugin translates it by handing its words over
+   * when it loads (`words:` in what a facet's factory returns), which is what
+   * makes a French instance say "Échéance" for `Due`. Untranslated, it stays
+   * in English, which is the honest failure.
+   */
   readonly label: string
-  /** One sentence: what it means, and when somebody would set it. */
+  /** One sentence: what it means, and when somebody would set it. Same rule as `label`. */
   readonly help?: string
   /** Values offered before the corpus is consulted. A suggestion, not a rule. */
   readonly values?: readonly string[]

@@ -19,6 +19,7 @@ import { FatalGate, LoadingGate, RefusedGate, SignInGate } from './Gates.js'
 import { Home } from './Home.js'
 import { CollectionLayout, CollectionShell } from './Collection.js'
 import { resolveLocale, translator } from './i18n.js'
+import { wordsFor } from '../plugins/words.js'
 import { SkinSlot } from './SkinSlot.js'
 import { Section } from './Section.js'
 import { sectionAt } from './sections.js'
@@ -95,6 +96,11 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
     [instance?.locale],
   )
   const t = useMemo(() => translator(locale), [locale])
+  /**
+   * A word a PLUGIN declared — a tile's name, a field's label, a block's
+   * description. Its own table first, the shell's second, English last.
+   */
+  const say = useMemo(() => wordsFor(loaded, t), [loaded, t])
   const split = useSplit()
   const mobile = useMobile()
   /**
@@ -118,8 +124,9 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
 
   /** The breadcrumb — derived once, drawn by the header and carried by every message. */
   const trail = useMemo(
-    () => trailOf({ settings, openApp, loaded, pluginTrail, page, section, pages, stores, t }),
-    [openApp, loaded, page, pages, section, pluginTrail, settings, stores, t],
+    () =>
+      trailOf({ settings, openApp, loaded, pluginTrail, page, section, pages, stores, t, say }),
+    [openApp, loaded, page, pages, section, pluginTrail, say, settings, stores, t],
   )
 
   /**
@@ -228,7 +235,10 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
         loaded.flatMap((plugin) =>
           Object.entries(plugin.fields ?? {}).map(([type, fields]) => [
             type,
-            { plugin: plugin.id, fields },
+            // The plugin's own words travel with its fields: the labels are
+            // declared in a manifest, which is read before the plugin's code
+            // runs and therefore cannot be written in the reader's language.
+            { plugin: plugin.id, fields, ...(plugin.words ? { words: plugin.words } : {}) },
           ]),
         ),
       ) as FieldContributions,
@@ -488,6 +498,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
               }}
               layouts={layouts}
               fieldContributions={fieldContributions}
+              say={say}
               // The shell already holds the index and keeps it live; the reader
               // needs it to tell a reference that MOVED from one that is gone.
               pages={pages}

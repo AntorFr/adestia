@@ -25,6 +25,23 @@ import { createElement as h, useEffect, useRef } from 'react'
 import { mountParcours } from './carte.js'
 import { routeDuParcours } from './route.js'
 
+/**
+ * The words this plugin DECLARES, for the shell to say.
+ *
+ * Its screens pick their language inline, which is fine for a handful of
+ * words — but the block's description lives in the manifest, drawn by the
+ * editor's settings panel, and the plugin never gets to say it. So it hands
+ * the table over instead (`words:` in what the factory returns).
+ */
+export function table(locale) {
+  return String(locale ?? '').slice(0, 2) === 'fr'
+    ? {
+        'A walk, drawn from the `.parcours.json` that sits beside the page.':
+          'Un parcours, dessiné depuis le `.parcours.json` posé à côté de la fiche.',
+      }
+    : {}
+}
+
 export default function createParcoursBlocks(api) {
   // Les deux URL de l'hôte, fabriquées ici et injectées dans le moteur : un
   // plugin qui écrirait `/api/plugin/parcours/` en dur ne pourrait plus être
@@ -64,5 +81,5 @@ export default function createParcoursBlocks(api) {
     )
   }
 
-  return { tags: { parcours: Parcours } }
+  return { tags: { parcours: Parcours }, words: table(api.locale) }
 }

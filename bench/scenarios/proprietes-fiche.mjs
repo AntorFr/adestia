@@ -81,9 +81,11 @@ export default async function scenario(bench) {
   await page.waitForTimeout(400)
   await bench.shoot(page, '4-une-tache-et-ses-champs-de-plugin')
 
+  // « Chantier » et non « Project » : le libellé vient du manifeste de `todo`,
+  // et c'est la table du plugin qui le dit dans la langue du lecteur.
   const projets = await page.evaluate(() => {
     const row = [...document.querySelectorAll('.adestia-blockset__field')].find(
-      (one) => one.querySelector('span')?.textContent === 'Project',
+      (one) => one.querySelector('span')?.textContent === 'Chantier',
     )
     return [...(row?.querySelector('select')?.options ?? [])].map((one) => one.textContent)
   })

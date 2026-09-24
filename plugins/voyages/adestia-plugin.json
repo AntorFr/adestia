@@ -19,7 +19,7 @@
     "voyages"
   ],
   "tile": {
-    "label": "Voyages",
+    "label": "Trips",
     "icon": "🌴",
     "hue": "turquoise"
   }

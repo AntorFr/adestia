@@ -24,6 +24,7 @@ import {
 import { Attachments } from './Attachments.js'
 import type { PropertiesEnv } from './frontmatterview.js'
 import type { FieldContributions } from './pageform.js'
+import type { Say } from '../plugins/words.js'
 import { carriesFiles, fileDropMessage } from './filedrop.js'
 import { PluginBoundary } from '../plugins/Boundary.js'
 import { Reader, type BlockComponents, type LayoutComponents, type VocabularyContext } from './Reader.js'
@@ -178,6 +179,13 @@ export interface EditorProps {
    */
   readonly fieldContributions?: FieldContributions
   /**
+   * A word a PLUGIN declared, in the reader's language — a block's
+   * `description` in its settings panel. The shell's own `t` answers for
+   * everything the core declares, so this is only ever consulted for a name
+   * that came out of a manifest.
+   */
+  readonly say?: Say
+  /**
    * Draw the attachment strip under the page. On for the shell's own page
    * screen, where a page is the whole subject; a plugin embedding this inside
    * a list of items turns it off, because a strip of documents under every
@@ -263,6 +271,7 @@ export function Editor({
   layouts,
   pages,
   fieldContributions,
+  say,
   attachments = true,
   startEditing = false,
   titleField = false,
@@ -390,6 +399,7 @@ export function Editor({
      */
     without: titleField ? ['title'] : undefined,
     t,
+    say,
   }
 
   useEffect(() => {

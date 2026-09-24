@@ -35,12 +35,21 @@ export interface BlockSettingsProps {
   readonly name: string
   /** What the block declares; absent for a name nothing defines any more. */
   readonly spec?: BlockSpec | undefined
+  /**
+   * The spec's `description`, already in the reader's language.
+   *
+   * Handed over rather than read off the spec, because a contributed block's
+   * description is a PLUGIN's word: it is declared in a manifest, so only the
+   * plugin that wrote it holds its translation, and only the caller knows
+   * which plugin the block resolved to.
+   */
+  readonly about?: string | undefined
   readonly attributes: Readonly<Record<string, string>>
   readonly onChange: (next: Record<string, string>) => void
   readonly onClose: () => void
 }
 
-export function BlockSettings({ name, spec, attributes, onChange, onClose }: BlockSettingsProps) {
+export function BlockSettings({ name, spec, about, attributes, onChange, onClose }: BlockSettingsProps) {
   const set = (key: string, value: string) => {
     const next: Record<string, string> = { ...attributes }
     if (value === '') delete next[key]
@@ -70,7 +79,9 @@ export function BlockSettings({ name, spec, attributes, onChange, onClose }: Blo
         </button>
       </div>
 
-      {spec?.description && <p className="adestia-blockset__about">{spec.description}</p>}
+      {(about ?? spec?.description) && (
+        <p className="adestia-blockset__about">{about ?? spec?.description}</p>
+      )}
 
       {own.length > 0 && (
         <fieldset className="adestia-blockset__group">

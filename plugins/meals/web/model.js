@@ -152,27 +152,35 @@ const FR = {
   'Ask the agent for ideas — they land here.': 'Demande des idées à l’agent — elles arrivent ici.',
   'An idea for now — the tray is live, the timeline waits for dates.':
     'Une idée pour l’instant — le tray est vivant, la frise attend des dates.',
+  'That move was refused.': 'Ce déplacement a été refusé.',
   'Someone changed this period while you were reading it. Reloaded.':
     'Quelqu’un a modifié cette période pendant que tu la lisais. Rechargée.',
   'Drop a card here': 'Déposez une carte ici',
-  'Nothing here yet': 'Rien ici pour l’instant',
   'Out of the period': 'Hors période',
-  'Set aside': 'Écartée',
   'Set this one aside': 'Écarter celle-ci',
-  'Back to the tray': 'Remettre au tray',
   'Ideas': 'Idées',
   'Close': 'Fermer',
   'loading…': 'chargement…',
   'This period cannot be read.': 'Cette période est illisible.',
-  'No period in this address.': 'Aucune période dans cette adresse.',
-  'In ': 'Dans ',
   'Click for the detail · Drag to move': 'Clic pour le détail · Glisser pour déplacer',
 }
 
 /** Keyed by the English sentence, so a missing translation degrades to English. */
+/**
+ * The raw table, for the SHELL.
+ *
+ * A plugin's manifest — its tile's name, a field's label, a block's
+ * description — is drawn by the shell from declared data, read before a line
+ * of this plugin runs. Handing the table over (`words:` in what the factory
+ * returns) is how those words reach the reader's language too.
+ */
+export function table(locale) {
+  return String(locale ?? '').slice(0, 2) === 'fr' ? FR : {}
+}
+
 export function words(locale) {
-  const fr = String(locale ?? '').slice(0, 2) === 'fr'
-  return (key) => (fr ? (FR[key] ?? key) : key)
+  const said = table(locale)
+  return (key) => said[key] ?? key
 }
 
 /** A day's heading, in the reader's own language. */

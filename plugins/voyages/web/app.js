@@ -17,9 +17,20 @@
  * sentences, and it is told which language to speak.
  */
 
+/**
+ * The raw table, for the SHELL.
+ *
+ * The tile's name is declared in the manifest, which the shell reads before a
+ * line of this plugin runs — so the only way that word reaches the reader's
+ * language is the plugin handing its table over (`words:` in what the view
+ * factory returns).
+ */
+export function table(locale) {
+  return String(locale ?? '').slice(0, 2) === 'fr' ? FR : {}
+}
+
 /** This plugin's vocabulary. Keyed by the English sentence, like the shell's. */
 const FR = {
-  Home: 'Accueil',
   Trips: 'Voyages',
   'loading…': 'chargement…',
   'Trips are unavailable.': 'Voyages indisponibles.',
@@ -91,8 +102,6 @@ const FR = {
     'hors fenêtre fiable (J+10) — le picto apparaît à l’approche du départ',
   'from the hotel · ': 'de l’hôtel · ',
   page: 'fiche',
-  route: 'parcours',
-  'this instance has no app to open a route': 'aucune app pour ouvrir un parcours ici',
   hebergement: 'hébergement',
   resto: 'resto',
   activite: 'activité',
@@ -104,7 +113,8 @@ const FR = {
 
 export default function createVoyagesApp(api) {
   const { page, esc, crumbs, call, url, shellFetch, tone, finished, openPage, href, learn, locale } = api
-  const t = (key) => (locale === 'fr' ? (FR[key] ?? key) : key)
+  const said = table(locale)
+  const t = (key) => said[key] ?? key
 
   const VTYPE = {
     hebergement: { ico: '🏠', c: '--v-maison', n: 'hebergement' },

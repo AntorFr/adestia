@@ -501,3 +501,69 @@ describe('a view that disowns a folder', () => {
     expect(loaded[0]?.view?.holds).toBe(holds)
   })
 })
+
+describe('the words a plugin declares', () => {
+  /**
+   * The gap this mechanism exists for.
+   *
+   * A plugin's manifest carries words the SHELL draws — a tile's name, a
+   * field's label — and the manifest is read before a line of the plugin
+   * runs, so those words cannot be written in the reader's language. The
+   * plugin hands its table over instead, and everything it declared is said
+   * from it.
+   */
+  it('travels from the factory onto the loaded plugin', async () => {
+    const { env } = environment({
+      '/plugins/workbench/web/app.js': {
+        default: () => ({ component: () => null, words: { Due: 'Échéance' } }),
+      },
+    })
+
+    const { loaded } = await loadPlugins([workbench], env)
+
+    expect(loaded[0]?.words).toEqual({ Due: 'Échéance' })
+  })
+
+  it('merges every facet that hands one over', async () => {
+    const { env } = environment({
+      '/plugins/workbench/web/app.js': {
+        default: () => ({ component: () => null, words: { Due: 'Échéance' } }),
+      },
+      '/plugins/workbench/web/blocks.js': {
+        default: () => ({ tags: { bench: () => null }, words: { Late: 'En retard' } }),
+      },
+    })
+
+    const { loaded } = await loadPlugins(
+      [{ ...workbench, blocks: './web/blocks.js', vocabulary: { bench: { content: 'empty', description: 'A bench.' } } }],
+      env,
+    )
+
+    expect(loaded[0]?.words).toEqual({ Due: 'Échéance', Late: 'En retard' })
+  })
+
+  it('reports a table that is not one, and loads the facet anyway', async () => {
+    const { env } = environment({
+      '/plugins/workbench/web/app.js': {
+        default: () => ({ component: () => null, words: { Due: 12 } }),
+      },
+    })
+
+    const { loaded, failures } = await loadPlugins([workbench], env)
+
+    // The screen still draws: a broken dictionary costs a language, not a view.
+    expect(loaded[0]?.view?.component).toBeTypeOf('function')
+    expect(loaded[0]?.words).toBeUndefined()
+    expect(failures[0]?.reason).toContain('Due')
+  })
+
+  it('leaves a plugin that says nothing without a table at all', async () => {
+    const { env } = environment({
+      '/plugins/workbench/web/app.js': { default: () => ({ component: () => null }) },
+    })
+
+    const { loaded } = await loadPlugins([workbench], env)
+
+    expect(loaded[0]).not.toHaveProperty('words')
+  })
+})

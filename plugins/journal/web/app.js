@@ -27,6 +27,7 @@ import {
   newEntryPath,
   slugify,
   stamp,
+  table,
   words,
 } from './model.js'
 
@@ -431,6 +432,8 @@ export default function view(api) {
 
   return {
     component: Journal,
+    // The manifest's words too — its tile is drawn by the shell.
+    words: table(api.locale),
     route: ROUTE,
     routeFor,
     holds,

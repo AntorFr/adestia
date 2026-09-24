@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { mkdtemp, mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -299,9 +300,18 @@ describe('the plugins Adestia actually ships', () => {
    */
   it('all parse', async () => {
     const root = join(import.meta.dirname, '..', '..', '..', 'plugins')
-    const folders = (await readdir(root, { withFileTypes: true }))
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => entry.name)
+    const folders = (
+      await Promise.all(
+        (await readdir(root, { withFileTypes: true }))
+          .filter((entry) => entry.isDirectory())
+          // A folder with no manifest is not a plugin — discovery passes over
+          // it in silence, and so does this. `plugins/test/` is one: the suite
+          // that reads every bundled plugin has to live beside them.
+          .map(async (entry) =>
+            existsSync(join(root, entry.name, 'adestia-plugin.json')) ? entry.name : undefined,
+          ),
+      )
+    ).filter((name): name is string => name !== undefined)
 
     expect(folders.length).toBeGreaterThan(0)
     for (const folder of folders) {

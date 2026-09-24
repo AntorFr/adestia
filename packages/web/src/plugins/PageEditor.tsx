@@ -31,6 +31,7 @@ import { Editor, type PageDocument } from '../editor/Editor.js'
 import type { BlockComponents } from '../editor/Reader.js'
 
 import type { PageEditorProps } from './contract.js'
+import type { Say } from './words.js'
 
 type EditorMount = (
   element: HTMLElement,
@@ -57,6 +58,15 @@ export interface PageEditorHost {
    * block — the same page, two answers, depending on which screen opened it.
    */
   readonly blocks?: () => BlockComponents
+  /**
+   * A word a PLUGIN declared, in the reader's language.
+   *
+   * A function for the same reason `blocks` is one: this host is built and
+   * handed to the loader BEFORE a single plugin has loaded, so a snapshot
+   * taken here would always be empty — and the words only exist once the
+   * plugins that own them have run.
+   */
+  readonly say?: () => Say
   /** Injected in tests; the real one imports Milkdown. */
   readonly loadMount?: () => Promise<EditorMount>
 }
@@ -124,6 +134,7 @@ export function makePageEditor(host: PageEditorHost): ComponentType<PageEditorPr
         {...(titleField ? { titleField: true } : {})}
         {...(onEditing ? { onEditing } : {})}
         {...(host.blocks ? { blocks: host.blocks() } : {})}
+        {...(host.say ? { say: host.say() } : {})}
         {...(onSaved ? { onSaved: () => onSaved() } : {})}
         {...(host.openPage ? { openPage: host.openPage } : {})}
         {...(mount ? { mount } : {})}
