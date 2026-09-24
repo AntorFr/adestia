@@ -7,6 +7,21 @@
   "types": [
     "project-management"
   ],
+  "fields": {
+    "project-management": {
+      "project-status": {
+        "kind": "choice",
+        "label": "Project status",
+        "help": "How the project is GOING, and only while it is under way \u2014 a project waiting or closed says that instead.",
+        "values": [
+          "Green",
+          "Amber",
+          "Red"
+        ],
+        "closed": true
+      }
+    }
+  },
   "blocks": "./web/blocks.js",
   "styles": [
     "./web/pm.css"
@@ -15,6 +30,27 @@
     "./skills/project-management/SKILL.md"
   ],
   "vocabulary": {
+    "subproject": {
+      "content": "empty",
+      "description": "The sub-projects below this page, each with where it stands \u2014 its `project-status` while it is under way, its lifecycle status when that has something more urgent to say.",
+      "attributes": {
+        "depth": {
+          "values": [
+            "children",
+            "subtree"
+          ],
+          "default": "children"
+        },
+        "closed": {
+          "values": [
+            "fold",
+            "hide",
+            "show"
+          ],
+          "default": "fold"
+        }
+      }
+    },
     "timeline": {
       "content": "optional",
       "description": "Phases and milestones on a time axis — written as list lines in the block, or read from the start:/due: of the pages below.",

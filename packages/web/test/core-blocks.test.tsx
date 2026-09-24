@@ -282,9 +282,25 @@ describe(':::list', () => {
     const said = container.querySelector('.adestia-list__said')
     expect(said?.textContent).toBe('Huit lots sur treize ; le parseur tient.')
     // `status` reste une puce : deux sortes de remontée, deux dessins.
-    const chips = [...container.querySelectorAll('.adestia-tag')].map((c) => c.textContent)
+    const chips = [...container.querySelectorAll('.adestia-stat')].map((c) => c.textContent)
     expect(chips).toContain('en cours')
     expect(chips).not.toContain('Huit lots sur treize ; le parseur tient.')
+  })
+
+  it('donne au statut remonté la pastille colorée, pas l’étiquette neutre', () => {
+    // Le même champ lu dans le même index répondait en gris dans une ligne et
+    // en couleur sur la carte d'à côté. Une seule table de tons, celle du
+    // moteur, et le MOT reste écrit à côté du point : une teinte n'est pas une
+    // étiquette.
+    const { container } = render(
+      <Reader markdown={':::list{pull=status,type}\n:::\n'} path={HERE} pages={PAGES} />,
+    )
+    const pill = container.querySelector('.adestia-stat')
+    expect(pill?.className).toContain('adestia-stat--underway')
+    expect(pill?.textContent).toBe('en cours')
+    // Les autres champs remontés gardent l'étiquette neutre : seul le statut
+    // porte un ton, parce que seul le statut en a un.
+    expect(container.querySelector('.adestia-list__pulled .adestia-tag')).toBeTruthy()
   })
 
   it('ne montre rien quand l’enfant ne porte pas ce bloc', () => {

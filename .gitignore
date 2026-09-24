@@ -14,7 +14,9 @@ dist/
 .claude/worktrees/
 
 # Screenshots are evidence for one session, not artefacts of the repo.
-bench/shots/
+# The glob rather than the one directory: a scenario replayed on a second skin
+# writes beside it (`bench/shots-skippy/`), and those are evidence too.
+bench/shots*/
 .agent/shots/
 
 # Scratch. Material pulled out of a running instance to think with — session

@@ -1,7 +1,8 @@
 # Status — Adestia
 > MàJ : 2026-09-24
 
-**État :** `main`, **v0.74.0** déployée sur les trois corps le 24/09 —
+**État :** `main`, **v0.75.0** taguée et non déployée ; **v0.74.0** déployée
+sur les trois corps le 24/09 —
 8 plugins actifs sur 10 chez Alfred, 9 sur 12 chez Skippy (dont `dev-flow` et
 `sdlc-console`, tirés de `homelab-sdlc-core` v0.4.1), 2 sur 10 chez Nestor,
 aucun avis au démarrage. Six versions d'un coup : les corps servaient encore
@@ -159,6 +160,58 @@ traduction, une traduction que personne ne dit. Le banc ouvre DEUX lecteurs
 sur une même instance (elle ne déclare aucune langue, le navigateur tranche) :
 « Échéance / Dès le / Portée par » d'un côté, « Due / Not before / Carried
 by » de l'autre. Scénario de banc : `mots-de-plugin`. Déployée le 24/09.
+
+v0.75.0 : **un projet dit AUSSI comment il va**. `status:` dit où une fiche en
+est dans sa vie ; il ne sait pas dire si un projet qui tourne va bien. Un
+second mot, `project-status: Green | Amber | Red`, déclaré par
+`project-management` pour le type qu'il revendique — donc il n'existe QUE sur
+ces fiches-là, et le déclarer suffit à le rendre modifiable : le formulaire de
+propriétés de la 0.73.0 le dessine, la table de mots de la 0.74.0 le nomme
+« Statut projet ». Zéro ligne d'interface pour le champ lui-même. Les VALEURS
+restent en anglais délibérément : c'est ce que le fichier porte, et un menu
+qui proposerait « Vert » en écrivant `Green` mentirait sur ce qu'il s'apprête
+à écrire.
+
+**La précédence est une substitution, pas une addition** : la vie de la fiche
+parle d'abord. Un projet en attente ou clos montre son statut de cycle de vie,
+quelle que soit la note écrite dessus — « Green » à côté de « bloqué » serait
+un projet qui se dit bien portant pendant que personne ne peut y toucher. Une
+seule pastille par ligne. Sur une BARRE, la même règle plus une : une note
+écrite l'emporte sur `late`, parce que `late` est déduit d'une date tandis
+qu'une note est la parole de quelqu'un sur la même question, et deux couleurs
+disant « ça ne va pas » ne se distingueraient pas.
+
+**`:::subproject`** dessine ça : une ligne par sous-projet, la pastille au
+bout, les projets clos derrière un repli. Un bloc À LUI plutôt qu'une prise
+dans la ligne du cœur — décision du propriétaire, et l'argument est qu'une
+prise est un contrat : un contrat qui traverse le dessin d'une carte oblige à
+tester l'évolution de cette carte contre tous les plugins, y compris ceux
+qu'on ne maîtrise pas. Le fork est petit ici parce que le plugin possédait
+déjà la marche, l'éligibilité et la machine à états de `:::timeline`.
+
+Deux choses mesurées plutôt que supposées. Les couleurs passent par
+`--danger` / `--warning` / `--success` et JAMAIS par les teintes nommées : un
+skin a le droit d'aplatir celles-ci, et Skippy écrase les dix sur un seul
+ambre — vert, ambre et rouge y auraient été la même tache. Et
+`/api/pages/index` publie `tone` à côté de `finished`, même raison qu'elle :
+un plugin peut n'importer que React, et `finished` ne distingue pas « en
+attente » de « en cours », qui est justement ce dont la précédence a besoin.
+
+Au passage, la ligne d'un `:::list{pull=status}` porte enfin la pastille
+colorée que la carte d'à côté portait déjà — le seul endroit où la coque se
+contredisait sur un même champ lu dans le même index.
+
+Ce qui est assumé : une carte d'étagère et les puces d'entête d'une fiche ne
+sont pas des blocs, donc un projet noté Red est en couleur dans son
+`:::subproject` et en statut de cycle de vie sur la carte qui ouvre son
+dossier. Le jour où ça gêne, c'est un chantier « prise à puces ».
+
+Ambre veut désormais dire deux choses sur un planning — « en retard » (déduit)
+et « Amber » (écrit) ; le survol écrit le mot, mais à l'œil deux barres ambre
+ne se distinguent pas. Sortie si ça gêne : donner à `late` un dessin plutôt
+qu'une teinte. Scénarios de banc : `statut-en-liste`, `statut-projet` (rejoué
+sur le skin Skippy, c'est lui qui prouve le choix des tokens). Pas encore
+déployée.
 
 v0.61.0 : une page occupe un grand écran. Le canevas
 monte à 1400 px (940 avant) ; la prose garde une mesure, relevée à 89ch

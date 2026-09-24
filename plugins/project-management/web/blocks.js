@@ -20,7 +20,7 @@
 
 import { createElement as h, useEffect, useRef, useState } from 'react'
 
-import { classify, fraction, fromPages, labelRows, parseLine, span } from './model.js'
+import { barState, fraction, fromPages, labelRows, parseLine, span, subprojectsOf } from './model.js'
 
 /** The logical folder a page sits in. A page at the root has none. */
 const folderOf = (path) => (path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '')
@@ -37,6 +37,17 @@ export function table(locale) {
     ? {
         'Phases and milestones on a time axis — written as list lines in the block, or read from the start:/due: of the pages below.':
           'Phases et jalons sur un axe de temps — écrits en lignes de liste dans le bloc, ou lus dans les start:/due: des fiches du dessous.',
+        'The sub-projects below this page, each with where it stands — its `project-status` while it is under way, its lifecycle status when that has something more urgent to say.':
+          'Les sous-projets sous cette fiche, chacun avec où il en est — son `project-status` tant qu’il tourne, son statut de cycle de vie quand celui-ci a quelque chose de plus urgent à dire.',
+        // The field's own name and its one sentence, drawn by the shell's
+        // properties form. The VALUES are not here and must not be: `Green`
+        // is what the file carries, and a menu offering a word the file does
+        // not contain is a menu that lies about what it is about to write.
+        'Project status': 'Statut projet',
+        'How the project is GOING, and only while it is under way — a project waiting or closed says that instead.':
+          'Où en est le projet, et seulement tant qu’il tourne — un projet en attente ou clos dit ça à la place.',
+        // The group the form files those fields under wears the plugin's id.
+        'project-management': 'Gestion de projet',
       }
     : {}
 }
@@ -55,9 +66,16 @@ export default function createProjectBlocks(api) {
     past: fr ? 'échu' : 'elapsed',
     current: fr ? 'en cours' : 'under way',
     ahead: fr ? 'à venir' : 'ahead',
+    // The three a project's owner writes themselves, and not translated: the
+    // domain's own words, the same ones the file carries and the pill shows.
+    // They sit in the same table as the calendar's because a bar wears ONE
+    // state — what the owner said, or failing that what the dates imply.
+    green: 'Green',
+    amber: 'Amber',
+    red: 'Red',
   }
   const spell = (entry, today) =>
-    [entry.label, entry.start ? `${entry.start} → ${entry.due}` : entry.due, STATES[classify(entry, today)]]
+    [entry.label, entry.start ? `${entry.start} → ${entry.due}` : entry.due, STATES[barState(entry, today)]]
       .filter(Boolean)
       .join(' · ')
 
@@ -188,7 +206,7 @@ export default function createProjectBlocks(api) {
               'div',
               {
                 className:
-                  `pm-timeline__mile pm-timeline__mile--${classify(mile, today)}` +
+                  `pm-timeline__mile pm-timeline__mile--${barState(mile, today)}` +
                   // Near the right edge the label reads leftwards from its
                   // line, or it runs past the chart into whatever is beside.
                   (placed[index].end ? ' pm-timeline__mile--end' : ''),
@@ -230,7 +248,7 @@ export default function createProjectBlocks(api) {
               h(
                 phase.path && openPage ? 'button' : 'div',
                 {
-                  className: `pm-timeline__span pm-timeline__span--${classify(phase, today)}`,
+                  className: `pm-timeline__span pm-timeline__span--${barState(phase, today)}`,
                   title: spell(phase, today),
                   style: {
                     left: at(phase.start),
@@ -257,5 +275,107 @@ export default function createProjectBlocks(api) {
     ])
   }
 
-  return { tags: { timeline: Timeline }, words: table(api.locale) }
+  /**
+   * `:::subproject` — the sub-projects below this page, and where each stands.
+   *
+   * A block of this plugin's own rather than a `:::list` with an attribute,
+   * and the reason is a contract rather than a drawing: a seam in the core's
+   * row — "ask the owning plugin for a chip" — would make the evolution of
+   * that row answerable to every plugin an instance runs, including the ones
+   * nobody here maintains. A block belongs to whoever writes it.
+   *
+   * What it costs is a second rendering of rows; what it saves is that the
+   * walk, the eligibility and the state machine are the ones `:::timeline`
+   * already runs on. A planning and a list of sub-projects that disagreed
+   * about what "below" means, or about how a project is doing, would be two
+   * answers to one question on the same page.
+   */
+  function Subproject({ attributes = {}, path, openPage }) {
+    const depth = attributes.depth ?? 'children'
+    const closed = attributes.closed ?? 'fold'
+    const [index, setIndex] = useState(null)
+    const [failure, setFailure] = useState(null)
+
+    useEffect(() => {
+      let live = true
+      void (async () => {
+        try {
+          const response = await api.fetch('/api/pages/index')
+          if (!response.ok) throw new Error(`l'index des pages a répondu ${response.status}`)
+          const { entries } = await response.json()
+          if (live) setIndex(entries ?? [])
+        } catch (cause) {
+          if (live) setFailure(cause.message)
+        }
+      })()
+      return () => {
+        live = false
+      }
+    }, [])
+
+    if (failure) return h('p', { className: 'pm-subproject__empty' }, failure)
+    if (index === null) return null
+
+    const rows = subprojectsOf(index, path === undefined ? '' : folderOf(path), depth).filter(
+      (row) => row.path !== path,
+    )
+    if (rows.length === 0) {
+      return h(
+        'p',
+        { className: 'pm-subproject__empty' },
+        fr
+          ? 'Aucun sous-projet sous cette page — un projet se déclare avec « type: project-management » dans son entête.'
+          : 'No sub-project below this page — a project declares `type: project-management` in its header.',
+      )
+    }
+
+    const live = rows.filter((row) => !row.finished)
+    const done = rows.filter((row) => row.finished)
+    const shown = closed === 'show' ? rows : live
+
+    /** One row: what it is called, and the single word for where it stands. */
+    const draw = (row) =>
+      h(
+        openPage ? 'button' : 'div',
+        {
+          key: row.path,
+          className: 'pm-subproject__row',
+          ...(openPage ? { type: 'button', onClick: () => openPage(row.path) } : {}),
+        },
+        [
+          h('i', { className: 'pm-subproject__ico', key: 'ico', 'aria-hidden': 'true' }, '◆'),
+          h('span', { className: 'pm-subproject__title', key: 'title' }, row.label),
+          // No badge at all when the page says nothing about itself. An empty
+          // pill would be a state, and "nobody has said" is not one.
+          row.badge
+            ? h(
+                'span',
+                { className: `pm-subproject__state pm-subproject__state--${row.badge.tone}`, key: 'state' },
+                row.badge.word,
+              )
+            : null,
+        ],
+      )
+
+    return h('div', { className: 'pm-subproject' }, [
+      ...shown.map(draw),
+      // Folded, never dropped: a finished project is exactly what somebody
+      // opens to see how the last one went. The same posture as the core's
+      // own list, because a reader should not have to learn two.
+      closed === 'fold' && done.length > 0
+        ? h('details', { className: 'pm-subproject__fold', key: 'fold' }, [
+            h(
+              'summary',
+              { key: 'summary' },
+              fr
+                ? `${done.length} ${done.length === 1 ? 'projet clos' : 'projets clos'}`
+                : `${done.length} closed ${done.length === 1 ? 'project' : 'projects'}`,
+            ),
+            ...done.map(draw),
+          ])
+        : null,
+    ])
+  }
+
+  return { tags: { timeline: Timeline, subproject: Subproject }, words: table(api.locale) }
 }
