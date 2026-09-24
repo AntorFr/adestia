@@ -56,6 +56,12 @@ directory, which is the same thing the server would have written.
   connection open for the whole turn. Wait for a selector instead.
 - **`docker build .` from the primary checkout builds `main`.** Worktrees are
   where changes live; build by explicit path (`run.sh` does).
+- **Two runs at once destroy each other.** Everything is named
+  `adestia-bench-*`, fixed — so the second run's container clashes with the
+  first's, and whichever exits first takes the other's container down with it
+  on the way out. It does not fail cleanly: the survivor's scenario keeps
+  going against a dead server and photographs empty blocks. One run at a time,
+  including two skins of the same scenario.
 - **No bold, no italic, in the screenshots?** The container has no font with
   those faces. Check `getComputedStyle` before believing your eyes: a
   `<strong>` at `font-weight: 700` is correct and will look right on a Mac.
