@@ -34,7 +34,7 @@ const PAYLOAD = {
 /** A fetch that records what was PUT, so the request itself can be asserted. */
 function serving(payload: unknown, onPut?: (body: unknown) => { status?: number; body: unknown }) {
   const sent: unknown[] = []
-  const impl = vi.fn((input: unknown, init?: RequestInit) => {
+  const impl = vi.fn((_input: unknown, init?: RequestInit) => {
     if (init?.method === 'PUT') {
       const body = JSON.parse(String(init.body))
       sent.push(body)

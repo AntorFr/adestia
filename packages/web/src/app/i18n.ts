@@ -179,8 +179,9 @@ const FR: Readonly<Record<string, string>> = {
   'The values below are what it is running; changing them means changing the mount.':
     'Les valeurs ci-dessous sont celles qu\u2019elle applique ; les changer passe par le montage.',
   Discard: 'Annuler',
-  // `Save` is already in the chrome block above, and means the same thing.
-  'Saving\u2026': 'Enregistrement\u2026',
+  // `Save` and `Saving…` are already in the editor block below, and mean the
+  // same thing. Said twice, the second spelling silently won — and the two
+  // were not even spelled alike, one escaping its ellipsis.
   'Written to the file': '\u00c9crit dans le fichier',
   'The settings could not be read.': 'Les r\u00e9glages n\u2019ont pas pu \u00eatre lus.',
   'The settings could not be saved.': 'Les r\u00e9glages n\u2019ont pas pu \u00eatre enregistr\u00e9s.',

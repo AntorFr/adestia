@@ -134,8 +134,6 @@ describe('the breadcrumb', () => {
       page: {
         path: 'chantiers/cuisine/cuisine.md',
         title: 'Rénovation cuisine',
-        markdown: '',
-        fields: { type: 'project-management' },
       },
       section: undefined,
       pages,
@@ -175,8 +173,6 @@ describe('the breadcrumb', () => {
       page: {
         path: 'chantiers/cuisine/devis.md',
         title: 'Devis',
-        markdown: '',
-        fields: {},
       },
       section: undefined,
       pages,
@@ -212,8 +208,6 @@ describe('the breadcrumb', () => {
       page: {
         path: 'chantiers/cuisine/cuisine.md',
         title: 'Rénovation de la cuisine',
-        markdown: '',
-        fields: {},
       },
       section: undefined,
       pages,
@@ -246,7 +240,7 @@ describe('the breadcrumb', () => {
       openApp: undefined,
       loaded: [],
       pluginTrail: { id: '', crumbs: [] },
-      page: { path: 'chantiers/cuisine/devis.md', title: 'Devis', markdown: '', fields: {} },
+      page: { path: 'chantiers/cuisine/devis.md', title: 'Devis' },
       section: undefined,
       pages,
       stores: [],
