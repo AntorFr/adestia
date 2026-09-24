@@ -21,6 +21,8 @@ import { basename, dirname, extname, join } from 'node:path'
 import {
   contentDigest,
   isFinished,
+  toneOf,
+  type StatusTone,
   parse,
   serialize,
   validateDocument,
@@ -302,6 +304,7 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
       title: string
       fields: Record<string, unknown>
       finished: boolean
+      tone: StatusTone
       body: boolean
       blocks?: Record<string, string>
     }[] = []
@@ -326,6 +329,18 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
          * kept a copy of the table per view, and they drifted.
          */
         finished: isFinished(fields),
+        /**
+         * WHICH family the status belongs to — under way, waiting on the
+         * world, or settled.
+         *
+         * Published for the same reason `finished` is, one line up: a plugin
+         * may import nothing but React, and the alternative to this field is
+         * a copy of the engine's table inside every plugin that wants to draw
+         * a state. `finished` does not answer it — "waiting" and "under way"
+         * are both unfinished, and they are the two a plugin most needs to
+         * tell apart, since one of them means nobody can advance the page.
+         */
+        tone: toneOf(fields['status'] ?? fields['statut']),
         /**
          * Whether the page says anything under its frontmatter — see
          * `hasBody`. Published for every page rather than for the one app
