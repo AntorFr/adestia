@@ -3,11 +3,12 @@
  * and the page index kept live after that.
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import type { BlockComponents } from '../editor/Reader.js'
 import { browserEnvironment, loadPlugins, type LoadedPlugin, type PluginDescriptor } from '../plugins/loader.js'
 import { makePageEditor } from '../plugins/PageEditor.js'
+import { wordsFor } from '../plugins/words.js'
 import { resolveLocale, translator } from './i18n.js'
 import { followChanges } from './live.js'
 import type { IndexEntry, StoreInfo } from './sections.js'
@@ -65,6 +66,14 @@ export function useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef
   const [skin, setSkin] = useState<Skin & SkinSlots>({})
   const [skinScheme, setSkinScheme] = useState<'light' | 'dark' | undefined>(undefined)
   const [loaded, setLoaded] = useState<readonly LoadedPlugin[]>([])
+  /**
+   * The same list, readable the instant it exists.
+   *
+   * The page editor lent to plugins is built BEFORE they load, and a plugin
+   * embedding it draws blocks its own manifest declared: the words for those
+   * have to be reachable without waiting for a re-render.
+   */
+  const loadedRef = useRef<readonly LoadedPlugin[]>([])
 
   useEffect(() => {
     let cancelled = false
@@ -148,10 +157,12 @@ export function useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef
             fetchImpl,
             openPage,
             blocks: () => blocksRef.current,
+            say: () => wordsFor(loadedRef.current, translator(pluginLocale)),
           }),
         )
         const result = await loadPlugins(info.plugins, environment)
         if (!cancelled) {
+          loadedRef.current = result.loaded
           setLoaded(result.loaded)
           setFailures((current) => [...current, ...result.failures])
         }

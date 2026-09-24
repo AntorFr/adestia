@@ -16,6 +16,13 @@
  * locale to do it. A SKIN never translates — a livery is a look, not a
  * language, and letting it carry words would mean the interface changed
  * language when you changed its colours.
+ *
+ * Where that line is not enough, and what `plugins/words.ts` answers: some of
+ * a plugin's words are DECLARED, not said — a field's label, a tile's name, a
+ * block's description all live in a manifest the shell draws itself. The
+ * plugin hands its table over when it loads, and the shell says those words
+ * from it, falling back to THIS table and then to the English key. A plugin's
+ * table never reaches the shell's own sentences.
  */
 
 export type Locale = 'en' | 'fr'

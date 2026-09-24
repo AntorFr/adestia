@@ -11,9 +11,10 @@
  * folders whose index page dresses them.
  */
 
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 
 import type { LoadedPlugin } from '../plugins/loader.js'
+import { wordsFor } from '../plugins/words.js'
 import type { TileInfo } from '../plugins/contract.js'
 import { Tile } from './Tile.js'
 import type { Skin } from './skin.js'
@@ -201,6 +202,12 @@ export function Home({
   locale = 'en',
 }: HomeProps) {
   const info = useTileInfo(plugins)
+  /**
+   * A tile's name is written in a MANIFEST, which the shell reads before the
+   * plugin's code runs — so it cannot be written in the reader's language,
+   * and the plugin's own table is what says it here.
+   */
+  const say = useMemo(() => wordsFor(plugins, t), [plugins, t])
   const clock = now ?? new Date()
   const [brief, setBrief] = useState<Brief | undefined>(undefined)
   /**
@@ -314,7 +321,7 @@ export function Home({
       icon: plugin.tile?.icon ?? '▩',
       ...(plugin.tile?.glyph ? { glyph: plugin.tile.glyph } : {}),
       ...(plugin.tile?.hue ? { hue: plugin.tile.hue } : {}),
-      label: plugin.tile?.label ?? plugin.id,
+      label: plugin.tile?.label ? say(plugin.id, plugin.tile.label) : plugin.id,
       ...(info[plugin.id]?.subtitle ? { subtitle: info[plugin.id]!.subtitle! } : {}),
       ...(info[plugin.id]?.chips ? { chips: info[plugin.id]!.chips! } : {}),
       ...(plugin.view ? {} : { disabled: true, title: 'This plugin ships no screen' }),

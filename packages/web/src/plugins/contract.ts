@@ -405,6 +405,68 @@ export interface LayoutsContribution {
 
 export type Facet = 'view' | 'blocks' | 'chrome' | 'layouts'
 
+/**
+ * A plugin's own words, in the READER's language — keyed by the English one.
+ *
+ * Returned by any facet's factory, which already holds `api.locale`:
+ *
+ * ```js
+ * export default function view(api) {
+ *   return { component: Screen, words: table(api.locale) }
+ * }
+ * ```
+ *
+ * Why the shell wants it, when a plugin has always translated its own screen:
+ * some of a plugin's words are not on its screen at all. A field's `label`, a
+ * tile's, a block's `description` live in the MANIFEST — data the shell draws
+ * itself, in the page editor and on the launcher — so the plugin never gets
+ * the chance to say them. The table is how it says them anyway, and the same
+ * one it already keeps for its own screen answers both.
+ *
+ * A TABLE rather than the translator the plugin already built, and the reason
+ * is the fallback: a translator answers the key itself for a sentence it does
+ * not know, which cannot be told from a deliberate identity translation. An
+ * object can be asked whether it holds a key, so the shell's own table can
+ * take over for the words it does know ("Save", "Cancel") and the English
+ * sentence remains the last resort.
+ *
+ * Scope is the plugin's own declarations, always: a plugin never gets to
+ * reword the shell around it. Same reason a skin carries no words at all.
+ */
+export type Words = Readonly<Record<string, string>>
+
+/**
+ * The words a factory returned, or nothing.
+ *
+ * Silently ignoring a malformed one would be the failure this whole contract
+ * is written against, so a `words` that is not an object of strings is
+ * reported against its facet — and the facet itself still loads, because a
+ * broken dictionary is a screen in English, not a screen missing.
+ */
+export function narrowWords(
+  raw: unknown,
+  facet: Facet,
+): { words?: Words; issue?: ContractIssue } {
+  if (typeof raw !== 'object' || raw === null) return {}
+  const declared = (raw as Record<string, unknown>)['words']
+  if (declared === undefined) return {}
+  if (typeof declared !== 'object' || declared === null || Array.isArray(declared)) {
+    return { issue: { facet, reason: '`words` must be an object of English sentence → translation' } }
+  }
+  const words: Record<string, string> = {}
+  const wrong: string[] = []
+  for (const [key, value] of Object.entries(declared)) {
+    if (typeof value === 'string') words[key] = value
+    else wrong.push(key)
+  }
+  if (wrong.length > 0) {
+    // Named, like a block that will not draw: "one of your translations is
+    // wrong" sends its author reading the whole table.
+    return { issue: { facet, reason: `\`words\` must translate to strings, got something else for: ${wrong.join(', ')}` } }
+  }
+  return { words }
+}
+
 export interface ContractIssue {
   readonly facet: Facet
   readonly reason: string

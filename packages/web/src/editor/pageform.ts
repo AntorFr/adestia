@@ -28,6 +28,16 @@ export interface DeclaredFields {
   /** Which plugin said so, for the group's own name on screen. */
   readonly plugin: string
   readonly fields: Readonly<Record<string, ContributedField>>
+  /**
+   * That plugin's own words, in the reader's language.
+   *
+   * Applied HERE, as the form is assembled, rather than where it renders —
+   * which is what leaves the shell's own table as the fallback it already
+   * was. A label the plugin translates arrives in French and passes through
+   * `t` untouched; one it does not arrives in English, where the shell may
+   * still know it (`Title`, `Tags`). Two tables, one pass, no third rule.
+   */
+  readonly words?: Readonly<Record<string, string>>
 }
 
 /** Page types and their declared fields, by type. */
@@ -52,7 +62,11 @@ export interface FormField {
 
 export interface FormGroup {
   readonly id: string
-  /** In English; the shell translates it. A plugin's group wears its own id. */
+  /**
+   * Already in the reader's language where a plugin translated it, English
+   * otherwise — the shell's own table is applied on top, at the render.
+   * A plugin's group wears its own id unless its table gives that id a name.
+   */
   readonly label: string
   readonly fields: readonly FormField[]
 }
@@ -163,10 +177,26 @@ export function formFor(options: {
   ]
 
   if (claimed) {
+    // The plugin's own words, for the words the plugin declared. A manifest
+    // is read before any of its code runs, so these labels cannot be written
+    // in the reader's language — they are written in English and translated
+    // here, by the table the plugin handed over when it loaded.
+    const said = (key: string): string =>
+      claimed.words !== undefined && Object.hasOwn(claimed.words, key) ? claimed.words[key]! : key
     const fields = Object.entries(claimed.fields)
       .filter(([key]) => !hidden.has(key))
-      .map(([key, spec]) => build({ ...spec, key, group: 'filing' }))
-    if (fields.length > 0) groups.push({ id: claimed.plugin, label: claimed.plugin, fields })
+      .map(([key, spec]) =>
+        build({
+          ...spec,
+          key,
+          group: 'filing',
+          label: said(spec.label),
+          ...(spec.help === undefined ? {} : { help: said(spec.help) }),
+        }),
+      )
+    if (fields.length > 0) {
+      groups.push({ id: claimed.plugin, label: said(claimed.plugin), fields })
+    }
   }
 
   /*

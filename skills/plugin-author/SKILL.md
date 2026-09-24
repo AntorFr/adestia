@@ -680,6 +680,57 @@ Key by the ENGLISH SENTENCE, not by an identifier: the call site then reads
 as what it renders, and a missing translation degrades to correct English
 instead of `todo.list.empty` on screen.
 
+### The words you never get to say
+
+Some of your words are not on your screen at all. A field's `label` and
+`help`, your tile's name, a block's `description`: those are declared in your
+**manifest**, and the SHELL draws them — in the page's properties form, on the
+launcher, in the editor's block settings. It reads that manifest before a line
+of your code runs, so those sentences cannot be written in the reader's
+language, and no amount of care inside your screens will translate them.
+
+So hand your table over. Any facet's factory may return it, beside what it
+already returns:
+
+```js
+export function table(locale) {
+  return WORDS[String(locale ?? '').slice(0, 2)] ?? {}
+}
+
+export default function view(api) {
+  return { component: Screen, words: table(api.locale) }
+}
+```
+
+A TABLE, not the translator you built from it: the shell has to tell a
+sentence you do not translate from one you translate to itself, and only an
+object can be asked whether it holds a key. Return it from as many facets as
+you like — they are merged.
+
+Then write the manifest in English and translate it like everything else:
+
+```json
+{ "tile": { "label": "Schedules" },
+  "fields": { "tache": { "due": { "kind": "date", "label": "Due" } } } }
+```
+
+```js
+const WORDS = { fr: { Schedules: 'Planifications', Due: 'Échéance' } }
+```
+
+Three tables answer, in order: yours, then the shell's — so a field you call
+`Title` or a button you call `Save` inherits a translation you never wrote —
+then the English sentence. Yours applies to YOUR declarations only: a plugin
+does not get to rename `Settings` for everybody.
+
+Two that follow from this, and both have shipped wrong here:
+
+- **a French label in a manifest is the same bug, mirrored.** A tile reading
+  `"label": "Veille"` shows French to an English reader and cannot be fixed
+  from the plugin's own screens either.
+- **your plugin's `id` is what heads your group in the properties form.** Give
+  it an entry (`todo: 'Tâches'`) unless you want a legend that reads `todo`.
+
 **A SKIN never translates.** A livery is a look, not a language — words there
 would mean the interface changed language when somebody changed its colours.
 

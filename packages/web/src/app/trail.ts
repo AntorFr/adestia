@@ -6,6 +6,7 @@
 import type { ScreenView } from '../chat/stream.js'
 import type { PageDocument } from '../editor/Editor.js'
 import type { LoadedPlugin } from '../plugins/loader.js'
+import type { Say } from '../plugins/words.js'
 import { addressOf, opensOn, ownerOf, routeForPath } from './owners.js'
 import { prefsTitle, type PrefsPage } from './Preferences.js'
 import {
@@ -99,6 +100,7 @@ export function trailOf({
   pages,
   stores,
   t,
+  say,
 }: {
   readonly settings: { page: PrefsPage; item?: string } | undefined
   readonly openApp: string | undefined
@@ -115,7 +117,15 @@ export function trailOf({
   readonly pages: readonly IndexEntry[]
   readonly stores: readonly StoreInfo[]
   readonly t: (key: string) => string
+  /**
+   * A word a plugin DECLARED, in the reader's language. A tile's label is
+   * written in a manifest — data read before the plugin's code runs — so the
+   * crumb that borrows it has to be translated the same way the tile is.
+   */
+  readonly say?: Say
 }): readonly Crumb[] {
+  /** A tile's name, as the plugin that owns it says it. */
+  const name = (plugin: string, label: string): string => say?.(plugin, label) ?? label
   // Settings is an app of the shell's own, so it wears an app's trail: its
   // name, then the page open under it, and its name becomes a way back only
   // once there is something below it.
@@ -150,7 +160,10 @@ export function trailOf({
     const plugin = loaded.find((entry) => entry.id === openApp)
     const root = plugin ? addressOf(plugin) : undefined
     return appTrail(
-      { label: plugin?.tile?.label ?? openApp, ...(root ? { root } : {}) },
+      {
+        label: plugin?.tile?.label ? name(plugin.id, plugin.tile.label) : openApp,
+        ...(root ? { root } : {}),
+      },
       // Read only for the plugin actually on the canvas: a view that
       // published a trail and was navigated away from must not keep
       // describing a screen nobody is looking at.
@@ -190,7 +203,10 @@ export function trailOf({
         (page !== undefined && indexOf(pages, folder)?.path === page.path
           ? undefined
           : sectionAt(pages, folder)?.title) ??
-        ownerOf(loaded, folder)?.tile?.label ??
+        (() => {
+          const owner = ownerOf(loaded, folder)
+          return owner?.tile?.label ? name(owner.id, owner.tile.label) : undefined
+        })() ??
         prettify(folder.split('/').at(-1) as string),
     }))
   /**
