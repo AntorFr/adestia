@@ -13,12 +13,18 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { parse, serialize, type Indexed } from '@antorfr/adestia-content'
+import {
+  parse,
+  readFrontmatter,
+  serialize,
+  writeFrontmatter,
+  type Indexed,
+} from '@antorfr/adestia-content'
 
 import { Attachments } from './Attachments.js'
-import type { EditorEnv } from './blockview.js'
+import type { PropertiesEnv } from './frontmatterview.js'
+import type { FieldContributions } from './pageform.js'
 import { carriesFiles, fileDropMessage } from './filedrop.js'
-import { readField, writeField } from './frontmatter.js'
 import { PluginBoundary } from '../plugins/Boundary.js'
 import { Reader, type BlockComponents, type LayoutComponents, type VocabularyContext } from './Reader.js'
 
@@ -164,6 +170,14 @@ export interface EditorProps {
   /** The instance's pages, forwarded so a `[[type#id]]` link finds its page. */
   readonly pages?: readonly Indexed[]
   /**
+   * The frontmatter fields the active plugins declare, by page type — what
+   * the properties form draws under the core's own.
+   *
+   * Absent means the core's fields only, which is also what a test mounting
+   * an Editor alone gets, and what an instance with no plugin on sees.
+   */
+  readonly fieldContributions?: FieldContributions
+  /**
    * Draw the attachment strip under the page. On for the shell's own page
    * screen, where a page is the whole subject; a plugin embedding this inside
    * a list of items turns it off, because a strip of documents under every
@@ -210,8 +224,21 @@ export interface EditorProps {
     element: HTMLElement,
     markdown: string,
     onChange: (md: string) => void,
-    env?: EditorEnv,
+    env?: PropertiesEnv,
   ) => () => void
+}
+
+/**
+ * The page's own `title:`, or none.
+ *
+ * Through the content engine's reader rather than a regex of this file's own:
+ * there was a second frontmatter writer here, and the two did not agree — the
+ * regex one wrote `title: Servante: le retour` verbatim, which is not YAML
+ * and which nothing in the pipeline would have reported.
+ */
+function titleOf(markdown: string): string {
+  const value = readFrontmatter(markdown).fields['title']
+  return typeof value === 'string' ? value : ''
 }
 
 /** A page as the server would store it — see `dirty`. */
@@ -235,6 +262,7 @@ export function Editor({
   vocabulary,
   layouts,
   pages,
+  fieldContributions,
   attachments = true,
   startEditing = false,
   titleField = false,
@@ -294,9 +322,9 @@ export function Editor({
    * gets saved is composed from both, every render.
    */
   const [body, setBody] = useState(shown)
-  const [title, setTitle] = useState(() => readField(shown, 'title'))
+  const [title, setTitle] = useState(() => titleOf(shown))
   const markdown = useMemo(
-    () => (titleField ? writeField(body, 'title', title) : body),
+    () => (titleField ? writeFrontmatter(body, { title }) : body),
     [body, title, titleField],
   )
   /**
@@ -331,7 +359,7 @@ export function Editor({
 
   useEffect(() => {
     setBody(shown)
-    setTitle(readField(shown, 'title'))
+    setTitle(titleOf(shown))
     setSaved(shown)
     setRevision(page.revision)
     setStatus({ kind: 'idle' })
@@ -343,7 +371,7 @@ export function Editor({
    * MOUNT time and never a dependency — the index refreshing under an open
    * editor must not remount it and throw away what is being typed.
    */
-  const env = useRef<EditorEnv>({})
+  const env = useRef<PropertiesEnv>({})
   env.current = {
     path: page.path,
     store: page.store,
@@ -353,6 +381,15 @@ export function Editor({
     pages,
     fetchImpl,
     locale,
+    contributions: fieldContributions,
+    /*
+     * The title is drawn ABOVE the document when a caller asks for it, and
+     * two controls writing one field is the 409 this editor spends its
+     * comments warning about. The properties form yields: the field is
+     * already on screen, three inches higher.
+     */
+    without: titleField ? ['title'] : undefined,
+    t,
   }
 
   useEffect(() => {

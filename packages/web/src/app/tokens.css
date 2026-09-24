@@ -144,6 +144,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
+    color-scheme: dark;
     --surface: #0b0d12;
     --surface-raised: #141821;
     --surface-soft: #1a1f29;
@@ -181,7 +182,17 @@
   }
 }
 
+:root[data-theme='light'] { color-scheme: light; }
+
 :root[data-theme='dark'] {
+  /*
+   * Said again, and not as a repetition: `color-scheme: light dark` at the
+   * top lets the BROWSER choose, and a theme chosen HERE has to tell it which
+   * one won. Without this, a reader on a light system who picks the dark
+   * livery gets every native control drawn light — a date picker as a white
+   * slab on a black card, which is how it was found.
+   */
+  color-scheme: dark;
   --surface: #0b0d12;
   --surface-raised: #141821;
   --surface-soft: #1a1f29;

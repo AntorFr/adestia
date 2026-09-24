@@ -179,8 +179,9 @@ const FR: Readonly<Record<string, string>> = {
   'The values below are what it is running; changing them means changing the mount.':
     'Les valeurs ci-dessous sont celles qu\u2019elle applique ; les changer passe par le montage.',
   Discard: 'Annuler',
-  // `Save` is already in the chrome block above, and means the same thing.
-  'Saving\u2026': 'Enregistrement\u2026',
+  // `Save` and `Saving…` are already in the editor block below, and mean the
+  // same thing. Said twice, the second spelling silently won — and the two
+  // were not even spelled alike, one escaping its ellipsis.
   'Written to the file': '\u00c9crit dans le fichier',
   'The settings could not be read.': 'Les r\u00e9glages n\u2019ont pas pu \u00eatre lus.',
   'The settings could not be saved.': 'Les r\u00e9glages n\u2019ont pas pu \u00eatre enregistr\u00e9s.',
@@ -266,6 +267,56 @@ const FR: Readonly<Record<string, string>> = {
   'Saving…': 'Enregistrement…',
   Saved: 'Enregistré',
   'Loading…': 'Chargement…',
+  // The page's own properties — the frontmatter, as a form. Field names and
+  // their one-line helps come from the catalogue in the content engine, which
+  // writes them in English for exactly this.
+  'Page properties': 'Propriétés de la fiche',
+  properties: 'propriétés',
+  'no properties': 'aucune propriété',
+  Close: 'Fermer',
+  'Remove tag': 'Retirer l’étiquette',
+  'add…': 'ajouter…',
+  'another value…': 'autre valeur…',
+  none: 'aucun',
+  'not found': 'introuvable',
+  'This page’s frontmatter does not parse, so nothing here is editable — fixing it is a change to the file.':
+    'Le frontmatter de cette fiche ne se lit pas : rien n’est modifiable ici, et le réparer passe par le fichier.',
+  'This page': 'La fiche',
+  Filing: 'Classement',
+  'Nobody reads these': 'Personne ne lit ceci',
+  'Kept as written': 'Gardé tel quel',
+  'The editor does not model these, so it leaves them exactly as they are.':
+    'L’éditeur ne sait pas les modéliser, donc il n’y touche pas.',
+  '+ add a field…': '+ ajouter un champ…',
+  Subject: 'Sujet',
+  Icon: 'Icône',
+  Identifier: 'Identifiant',
+  Colour: 'Couleur',
+  State: 'État',
+  Domain: 'Domaine',
+  Category: 'Catégorie',
+  Tags: 'Étiquettes',
+  Date: 'Date',
+  'What this page is called everywhere it is cited. Without it, the first heading is used, then the file name.':
+    'Le nom de la fiche partout où elle est citée. Sans lui, c’est le premier titre du texte, puis le nom du fichier.',
+  'The busiest word in the system: it is what an app filters on, and it can decide which screen the page opens as.':
+    'Le mot le plus chargé du système : c’est sur lui qu’une app filtre, et il peut décider de l’écran sur lequel la fiche s’ouvre.',
+  'One glyph, drawn beside the name on tiles and in lists.':
+    'Un seul signe, dessiné à côté du nom sur les tuiles et dans les listes.',
+  'How another page links here. Set one and the link survives a move; without it, a link travels by path.':
+    'Ce qui permet à une autre fiche de pointer ici. Avec, le lien survit à un déplacement ; sans, il voyage par le chemin.',
+  'The hue of the tile this page dresses, when it is a folder’s index.':
+    'La teinte de la tuile que cette fiche habille, quand elle est la fiche d’un dossier.',
+  'A finished page leaves the live grid for the fold at the bottom — it is never dropped.':
+    'Une fiche terminée quitte la grille des vivantes pour le repli du bas — elle n’est jamais perdue.',
+  'The corner of the workspace this belongs to. Searched on, and the usual first grid of a collection.':
+    'Le coin de l’espace de travail auquel ceci appartient. Cherché, et souvent la première grille d’une collection.',
+  'A finer filing than the domain — the trade, the course, the person.':
+    'Un classement plus fin que le domaine — le métier, le plat, la personne.',
+  'Words this page can be found by. Searched as written.':
+    'Les mots par lesquels on retrouve cette fiche. Cherchés tels qu’écrits.',
+  'The day this page is about, when that is not the day it was written.':
+    'Le jour dont parle la fiche, quand ce n’est pas celui où elle a été écrite.',
   'Attached files': 'Pièces jointes',
   'Drop files to attach them to this page':
     'Déposez des fichiers pour les joindre à cette fiche',

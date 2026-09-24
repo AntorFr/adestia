@@ -110,6 +110,42 @@ describe('plugin manifest', () => {
     })
   })
 
+  describe('declared fields', () => {
+    const withFields = (fields: unknown, types: unknown = ['tache']) => () =>
+      parsePluginManifest({ ...valid, types, fields }, 'workbench')
+
+    it('accepts fields for a type the plugin claims', () => {
+      const manifest = withFields({ tache: { due: { kind: 'date', label: 'Due' } } })()
+      expect(manifest.fields?.['tache']?.['due']?.kind).toBe('date')
+    })
+
+    it('refuses fields for a type the plugin does not claim', () => {
+      // Describing somebody else's type IS claiming it, and the claim is what
+      // lets discovery catch two plugins reaching for one word.
+      expect(issuesOf(withFields({ projet: { due: { kind: 'date', label: 'Due' } } }))).toEqual([
+        'fields.projet: describes a type this plugin does not claim — add "projet" to "types"',
+      ])
+    })
+
+    it('refuses a control it has no drawing for', () => {
+      expect(issuesOf(withFields({ tache: { due: { kind: 'colour', label: 'Due' } } }))).toEqual([
+        'fields.tache.due.kind: must be one of text, choice, tags, date, number, icon, reference',
+      ])
+    })
+
+    it('refuses a reference with nothing to point at', () => {
+      expect(issuesOf(withFields({ tache: { projet: { kind: 'reference', label: 'Project' } } }))).toEqual([
+        'fields.tache.projet.of: is required for a reference — name the type that answers',
+      ])
+    })
+
+    it('refuses a field with no name on screen', () => {
+      expect(issuesOf(withFields({ tache: { due: { kind: 'date' } } }))).toEqual([
+        'label: is required',
+      ])
+    })
+  })
+
   describe('mcpServers', () => {
     it('requires a transport', () => {
       expect(

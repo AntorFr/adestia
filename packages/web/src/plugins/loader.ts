@@ -13,7 +13,7 @@
  * - a plugin that throws loses its own contribution, never the page.
  */
 
-import { forgetContributedBlocks, registerBlocks, type ContributedBlock } from '@antorfr/adestia-content'
+import { forgetContributedBlocks, registerBlocks, type ContributedBlock, type ContributedField } from '@antorfr/adestia-content'
 import { createElement, type ComponentType } from 'react'
 
 import {
@@ -53,6 +53,11 @@ export interface PluginDescriptor {
    */
   readonly types?: readonly string[]
   /**
+   * The frontmatter fields this plugin reads, by the type they belong to —
+   * what the page editor's properties form draws for a page of that type.
+   */
+  readonly fields?: Readonly<Record<string, Readonly<Record<string, ContributedField>>>>
+  /**
    * The block specs the manifest declares — the same ones the server already
    * registered. Sent rather than re-derived: the browser must validate and
    * draw exactly what the server accepted, and two tables drift.
@@ -84,6 +89,8 @@ export interface LoadedPlugin {
   readonly chrome?: ChromeContribution
   readonly layouts?: LayoutsContribution
   readonly types?: readonly string[]
+  /** Declared frontmatter fields, by type — drawn by the page's properties form. */
+  readonly fields?: PluginDescriptor['fields']
 }
 
 export interface LoadFailure {
@@ -268,6 +275,7 @@ export async function loadPlugins(
       ...(chrome === undefined ? {} : { chrome }),
       ...(layouts === undefined ? {} : { layouts }),
       ...(descriptor.types ? { types: descriptor.types } : {}),
+      ...(descriptor.fields ? { fields: descriptor.fields } : {}),
     })
   }
 

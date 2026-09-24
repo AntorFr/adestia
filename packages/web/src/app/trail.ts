@@ -104,7 +104,13 @@ export function trailOf({
   readonly openApp: string | undefined
   readonly loaded: readonly LoadedPlugin[]
   readonly pluginTrail: { id: string; crumbs: readonly { label: string; route?: string }[] }
-  readonly page: PageDocument | undefined
+  /*
+   * Where the open page SITS and what it is CALLED — never the document.
+   * This module's whole contract is route and breadcrumb, and asking for a
+   * full `PageDocument` made every caller that only had those two build a
+   * revision and a diagnostics array to get a crumb.
+   */
+  readonly page: Pick<PageDocument, 'path' | 'title' | 'store'> | undefined
   readonly section: string | undefined
   readonly pages: readonly IndexEntry[]
   readonly stores: readonly StoreInfo[]

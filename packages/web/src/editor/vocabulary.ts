@@ -15,7 +15,8 @@ import type { MilkdownPlugin } from '@milkdown/kit/ctx'
 import { trailing } from '@milkdown/kit/plugin/trailing'
 import { $node, $remark, $view } from '@milkdown/kit/utils'
 
-import { directiveView, type EditorEnv } from './blockview.js'
+import { directiveView } from './blockview.js'
+import { frontmatterView, type PropertiesEnv } from './frontmatterview.js'
 import { isBlankBreak } from './nodes.js'
 
 /** What `$remark` expects: a unified plugin factory. */
@@ -132,7 +133,18 @@ const frontmatterNode = $node('frontmatter', () => ({
   toMarkdown: {
     match: (node) => node.type.name === 'frontmatter',
     runner: (state, node) => {
-      state.addNode('yaml', undefined, node.attrs['value'] as string)
+      const value = (node.attrs['value'] as string) ?? ''
+      /*
+       * An EMPTY one writes nothing at all.
+       *
+       * The editor inserts the node on a page that never had frontmatter, so
+       * that the properties are reachable there too (`milkdown.ts`). Writing
+       * `---\n\n---` for it would put an empty block at the top of every
+       * page somebody merely opened, and light up Save on a file nobody
+       * changed. The block appears with the first field, and not before.
+       */
+      if (value.trim() === '') return
+      state.addNode('yaml', undefined, value)
     },
   },
 }))
@@ -377,7 +389,7 @@ export const dropBlankBreaks = $remark('adestia-drop-blank-breaks', () => () => 
   walk(tree as Tree)
 })
 
-export function adestiaVocabulary(env: EditorEnv = {}): MilkdownPlugin[] {
+export function adestiaVocabulary(env: PropertiesEnv = {}): MilkdownPlugin[] {
   // ONE node per name, custom nodes first. Two ways a duplicate would arise,
   // and Milkdown throws on both: a core block that also needs a generic node
   // (`content`, `figures`, `table`, `list` — none has a hand-written one), and
@@ -432,5 +444,8 @@ export function adestiaVocabulary(env: EditorEnv = {}): MilkdownPlugin[] {
     ...directives.map(({ node }) => node),
     // Each block drawn the way it READS — see `blockview.tsx`.
     ...directives.map(({ name, atom, node }) => $view(node, directiveView(name, atom, env))),
+    // The page's own properties, reachable by the same gesture — see
+    // `frontmatterview.tsx`.
+    $view(frontmatterNode, frontmatterView(env)),
   ].flat()
 }

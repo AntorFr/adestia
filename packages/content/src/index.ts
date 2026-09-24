@@ -1,3 +1,5 @@
+export * from './fields.js'
+export * from './frontmatter.js'
 export * from './pipeline.js'
 export * from './reference.js'
 export * from './resolve.js'

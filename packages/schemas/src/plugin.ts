@@ -81,6 +81,33 @@ export interface PluginBlockSpec {
 }
 
 /**
+ * One frontmatter field a plugin's own code reads, for a type it claims.
+ *
+ * The task app knows what a task carries — `due`, `start`, `pri` — and the
+ * core does not, nor should it. Until this key existed that knowledge was
+ * written in prose, in the plugin's authoring skill: perfect for the agent
+ * and unreadable by a form, so a person editing the same page got raw YAML
+ * while the agent got a table. One declaration, two readers.
+ *
+ * Mirrors the core's own `FieldSpec` (see the content engine) minus the two
+ * things a manifest cannot decide: the key, which is the entry's name, and
+ * the group, which is always the plugin.
+ */
+export interface PluginFieldSpec {
+  readonly kind: 'text' | 'choice' | 'tags' | 'date' | 'number' | 'icon' | 'reference'
+  /** The field's name on screen, in English; the shell translates it. */
+  readonly label: string
+  /** One sentence: what it means, and when somebody would set it. */
+  readonly help?: string
+  /** Values offered before the corpus is consulted. A suggestion, not a rule. */
+  readonly values?: readonly string[]
+  /** No value outside `values`. Only for a vocabulary the plugin's CODE resolves. */
+  readonly closed?: boolean
+  /** `reference` only: the `type` of the pages that may answer. */
+  readonly of?: string
+}
+
+/**
  * An MCP server a plugin brings. Active plugin = wired; inactive = absent.
  * Materialized per driver at the single spawn site (DESIGN → MCP configuration).
  */
@@ -152,6 +179,25 @@ export interface PluginManifest {
    * vocabulary, not a claim this field makes.
    */
   readonly types?: readonly string[]
+
+  /**
+   * The frontmatter fields this plugin reads, BY THE TYPE they belong to.
+   *
+   * ```json
+   * { "fields": { "tache": { "due": { "kind": "date", "label": "Due" } } } }
+   * ```
+   *
+   * Only for a type this plugin CLAIMS in `types`: describing somebody else's
+   * type is claiming it, and the whole point of the claim is that discovery
+   * can see two plugins reaching for one word. A manifest that does it is
+   * refused by name rather than quietly merged.
+   *
+   * What it buys, and it is the reason the key exists: the page editor draws
+   * a guided form from these — a date picker for `due`, the instance's own
+   * projects in a list for `projet` — instead of asking a person to type YAML
+   * into a file an app will read.
+   */
+  readonly fields?: Readonly<Record<string, Readonly<Record<string, PluginFieldSpec>>>>
 
   /**
    * Page folders this plugin's TILE already stands for.

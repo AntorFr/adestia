@@ -1,5 +1,5 @@
 # Status — Adestia
-> MàJ : 2026-09-23
+> MàJ : 2026-09-24
 
 **État :** `main`, **v0.68.0** déployée sur les trois corps le 20/09 —
 8, 8 et 2 plugins actifs sur 11, aucun avis au démarrage. Un plugin peut
@@ -76,6 +76,51 @@ n'y arrivait pas et le conteneur sortait en **code 137**, tué ; sans navigateur
 le même stop prenait moins d'une seconde. `forceCloseConnections` règle ça —
 au prix d'une requête en vol qui perd sa RÉPONSE, jamais son travail.
 Scénario de banc : `editeur-config` (étendu). Pas encore déployée.
+
+v0.73.0 : **le frontmatter s'édite au formulaire**, par le ⚙ de la bande de
+pastilles en haut d'une fiche en écriture (option A, choisie par
+l'utilisateur sur maquette). Rien ne se tape en YAML : chaque champ est un
+contrôle, et ce que le formulaire ne sait pas modéliser — une structure
+imbriquée — est MONTRÉ tel quel et jamais réécrit. Le savoir vient de trois
+endroits, et c'est le dessin : le cœur déclare les dix champs qu'il lit
+(`content/fields.ts`), un plugin déclare ceux qu'il lit pour les types qu'il
+revendique (clé `fields` du manifeste — `todo` ouvre le bal avec `due`,
+`start`, `pri`, `assignee`, `dom`, `projet`, `done`), et les VALEURS sortent
+de l'index : `domaine: atelier` est un fait sur un espace de travail, pas sur
+Adestia, donc la liste propose ce que le corpus écrit déjà, le plus utilisé
+d'abord, et accepte un mot qu'elle n'a jamais vu. Un champ « référence »
+(`projet`) se choisit parmi les fiches du type visé, écrites par leur `id`.
+Aucune requête nouvelle : la coque tient déjà l'index.
+
+L'écriture passe par l'API document de `yaml`, comme l'éditeur de conf — ce
+qui règle ce que la chirurgie par expression régulière ne savait pas faire :
+les listes, les commentaires, et un titre qui contient un deux-points (`title:
+Servante: le retour` n'est pas du YAML, et rien ne l'aurait dit). Un bloc qui
+ne PARSE pas n'est jamais écrit : le panneau le dit et refuse, plutôt que de
+« réparer » ce qu'il a réussi à lire.
+
+Le second écrivain de frontmatter est retiré au passage : l'éditeur en avait
+un à lui, par expression régulière, pour le `title:` des plugins — deux
+écrivains qui ne s'accordaient pas, dont un écrivait du YAML invalide sans que
+rien ne le dise.
+
+Quatre choses trouvées en chemin. La bande se cachait quand elle était vide,
+donc la fiche qu'on vient de créer — celle qu'on veut justement nommer —
+n'avait aucun point d'entrée : le nœud est désormais inséré même absent, et un
+nœud vide s'écrit comme RIEN (le fichier ne gagne un `---` qu'au premier champ
+rempli). Les contrôles natifs ne suivaient pas le thème : `color-scheme`
+n'était déclaré qu'en `light dark` sur `:root`, jamais forcé sous
+`[data-theme]`, et un sélecteur de date était un bloc blanc sur une carte
+noire. La poignée `+ ⠿` de Crepe visait la bande : elle proposait de DÉPLACER
+les propriétés au milieu du document (vu au banc, corrigé). Et `main` ne
+passait plus son propre `npm run typecheck` (six erreurs,
+dont un `Saving…` traduit deux fois avec deux orthographes de points de
+suspension) — corrigé dans un commit à part.
+
+Reste ouvert : les libellés déclarés par un plugin s'affichent en anglais sur
+une instance française. La doctrine du dépôt dit qu'un plugin porte ses
+propres mots ; il n'a pas encore de quoi les traduire. Scénario de banc :
+`proprietes-fiche`. Pas encore déployée.
 
 v0.61.0 : une page occupe un grand écran. Le canevas
 monte à 1400 px (940 avant) ; la prose garde une mesure, relevée à 89ch
@@ -184,8 +229,8 @@ Scénario de banc : `plugins-externes`. Déployée le 20/09 sur les trois corps.
 non revérifiés un par un ; l'historique complet est dans git) :
 - [ ] Le fil « tuyau Festool » d'Alfred reste coupé en deux côté moteur.
 - [ ] Le banc mesure en pixels ce qu'il photographiait ; à généraliser.
-- [ ] Éditer les attributs d'un bloc depuis l'interface (le `type` d'un
-      `:::content`, le `title:` du frontmatter).
+- [x] Éditer les attributs d'un bloc depuis l'interface : fait pour les blocs
+      en v0.67.0 (⚙), et pour le frontmatter en v0.73.0 (le ⚙ de la bande).
 - [ ] L'éditeur embarqué dans un plugin est amputé : ni `attach`/`compose`,
       ni bandeau de pièces jointes, ni `pages` pour les `[[type#id]]`.
 - [ ] La puce `tache` et le crayon de l'éditeur embarqué s'affichent sous le

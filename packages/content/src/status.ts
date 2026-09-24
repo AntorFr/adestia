@@ -65,6 +65,36 @@ const TONES: Readonly<Record<string, StatusTone>> = {
   archive: 'settled',
 }
 
+/**
+ * The statuses a MENU offers — canonical spellings only.
+ *
+ * `TONES` above is the judge and keeps its aliases: it reads what a corpus
+ * already wrote, so `idee` sits beside `idée` and `commande` beside
+ * `commandé`. A menu must not offer both. A list where the same word appears
+ * twice, once with its accent, teaches nothing and doubles every facet a
+ * screen builds from it — so the spellings this instance PROPOSES are named
+ * here, while their tone is still asked of `toneOf` rather than restated.
+ *
+ * It is a suggestion and never a closed set: a workspace invents its own
+ * words, and a status this table has never met is drawn "underway", which is
+ * the safe direction because it keeps the page visible.
+ */
+export const SUGGESTED_STATUSES: readonly string[] = [
+  'en cours',
+  'idée',
+  'en réflexion',
+  'veille',
+  'bloqué',
+  'en attente',
+  'à acheter',
+  'commandé',
+  'terminé',
+  'réalisé',
+  'clos',
+  'fait',
+  'archivé',
+]
+
 const normalise = (status: unknown): string =>
   typeof status === 'string' ? status.toLowerCase().trim() : ''
 
