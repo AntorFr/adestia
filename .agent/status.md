@@ -1,9 +1,13 @@
 # Status — Adestia
 > MàJ : 2026-09-24
 
-**État :** `main`, **v0.68.0** déployée sur les trois corps le 20/09 —
-8, 8 et 2 plugins actifs sur 11, aucun avis au démarrage. Un plugin peut
-désormais venir d'un autre dépôt, déclaré dans la conf de l'instance.
+**État :** `main`, **v0.74.0** déployée sur les trois corps le 24/09 —
+8 plugins actifs sur 10 chez Alfred, 9 sur 12 chez Skippy (dont `dev-flow` et
+`sdlc-console`, tirés de `homelab-sdlc-core` v0.4.1), 2 sur 10 chez Nestor,
+aucun avis au démarrage. Six versions d'un coup : les corps servaient encore
+0.68.0 (0.69.0 pour Skippy), et tout ce qui a été taggé depuis le 20/09
+attendait dans `k8s-home-lab`. Aucune clé de configuration nouvelle sur le
+saut — les trois manifestes n'ont bougé que d'un numéro.
 
 v0.69.0 : **`dev-flow` quitte l'image**. Il vit dans
 `AntorFr/homelab-sdlc-core` (tag `v0.1.0`), à côté de l'outillage dont il lit
@@ -11,7 +15,7 @@ les fiches, et Skippy le récupère par `extensions.sources` — premier usage r
 du mécanisme, et il valide une forme qui n'était que dessinée : une racine qui
 n'est PAS un plugin, dont `bin/`, `cmd/` et `internal/` sont ignorés sans un
 mot, et qui porte DEUX plugins (`sdlc-console` arrive avec, non allumé).
-L'image livre dix plugins, plus onze. Pas encore déployée.
+L'image livre dix plugins, plus onze. Déployée le 24/09.
 
 v0.70.0 : **le fil d'Ariane ne dit plus deux fois le même nom**. Un dossier
 qui ne tient qu'une fiche du type réclamé par son plugin s'ouvre SUR cette
@@ -25,7 +29,7 @@ jumeau — un dossier que personne ne possède, dont on lit l'aperçu — se cor
 à l'envers : la marche mène à l'étagère, un vrai second écran, donc c'est le
 LIBELLÉ qui cède et le dossier porte son propre nom. Signalé par
 l'utilisateur sur une fiche `project-management`. Scénario de banc :
-`fil-ariane-fiche`. Pas encore déployée.
+`fil-ariane-fiche`. Déployée le 24/09.
 
 v0.71.0 : **les réglages de l'instance s'éditent depuis le navigateur**
 (Réglages › Configuration). Le clic écrit `adestia.config.yaml` LUI-MÊME — pas
@@ -51,7 +55,7 @@ script de setup), les secrets et le `clientSecret` OIDC. Sur une instance en
 `auth.mode: none`, les offrir reviendrait à les offrir à qui atteint le port.
 Premier groupe livré : le rafraîchissement vivant (`workspace.watch`), soit
 exactement le réglage qui manquait sur WSL/OneDrive. Scénario de banc :
-`editeur-config`. Pas encore déployée.
+`editeur-config`. Déployée le 24/09.
 
 v0.72.0 : **un bouton « redémarrer » dans les réglages**, et il ne tue rien.
 Le serveur ferme son instance et en démarre une neuve DANS LE MÊME PROCESSUS
@@ -75,7 +79,7 @@ attaché). Mesuré sur l'image : avec un seul `/api/events` ouvert, `docker stop
 n'y arrivait pas et le conteneur sortait en **code 137**, tué ; sans navigateur,
 le même stop prenait moins d'une seconde. `forceCloseConnections` règle ça —
 au prix d'une requête en vol qui perd sa RÉPONSE, jamais son travail.
-Scénario de banc : `editeur-config` (étendu). Pas encore déployée.
+Scénario de banc : `editeur-config` (étendu). Déployée le 24/09.
 
 v0.73.0 : **le frontmatter s'édite au formulaire**, par le ⚙ de la bande de
 pastilles en haut d'une fiche en écriture (option A, choisie par
@@ -119,7 +123,7 @@ suspension) — corrigé dans un commit à part.
 
 Reste ouvert à la livraison, réglé depuis par la v0.74.0 : les libellés
 déclarés par un plugin s'affichaient en anglais sur une instance française.
-Scénario de banc : `proprietes-fiche`. Pas encore déployée.
+Scénario de banc : `proprietes-fiche`. Déployée le 24/09.
 
 v0.74.0 : **un plugin traduit AUSSI les mots qu'il déclare**. Un facet rend
 sa table avec sa contribution (`words: table(api.locale)`), et la coque la
@@ -154,7 +158,7 @@ appelés. Il échoue sur la classe dans les deux sens : une phrase sans
 traduction, une traduction que personne ne dit. Le banc ouvre DEUX lecteurs
 sur une même instance (elle ne déclare aucune langue, le navigateur tranche) :
 « Échéance / Dès le / Portée par » d'un côté, « Due / Not before / Carried
-by » de l'autre. Scénario de banc : `mots-de-plugin`. Pas encore déployée.
+by » de l'autre. Scénario de banc : `mots-de-plugin`. Déployée le 24/09.
 
 v0.61.0 : une page occupe un grand écran. Le canevas
 monte à 1400 px (940 avant) ; la prose garde une mesure, relevée à 89ch
@@ -164,7 +168,8 @@ chiffres, cartes, blocs de plugins — prend la largeur du canevas. Même
 partage dans l'éditeur. L'en-tête d'un bloc `:::content` est redessiné
 (pastille, titre serif, signature mono à droite, bandeau dans une carte), et
 le vide de 35 px en haut des cartes a disparu. Scénario de banc :
-`page-width`. Pas encore déployée.
+`page-width`. Partie dans la 0.68.0, donc déployée le 20/09 — la mention
+« pas encore déployée » avait vieilli sur place.
 
 v0.62.0 : `title=` et `ico=` sont RÉSERVÉS, comme `w` — tout
 bloc, du cœur ou d'un plugin, peut porter un titre et une icône, et le lecteur
