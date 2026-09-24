@@ -9,7 +9,8 @@
 | 0 | La pastille colorée pour `pull=status` dans `:::list` | close | oui (24/09) — livrée, banc regardé clair + sombre |
 | 1 | ~~Qui porte le vocabulaire Vert/Ambre/Rouge~~ → reformulée en 1bis | close | v0.73.0 : le manifeste porte la **déclaration** (`fields`, par type revendiqué). Reste la couleur et la précédence. |
 | 1bis | Où vivent la couleur et la précédence : un mot connu du cœur, ou un mécanisme générique ? | close | **générique** (24/09) : « ce n'est pas un cas isolé, on peut avoir à gérer des status / états dans plein de situations » |
-| 1ter | Le rendu : le **bloc surchargé par le plugin** (proposition du propriétaire), ou le **cœur qui dessine tout champ noté déclaré** ? La surcharge marche (rung `owner` de `resolveBlock`) mais fourche ~100 lignes de `:::list` et ne touche ni les cartes d'étagère ni les puces d'entête, qui ne sont pas des blocs | **vivante** | — |
+| 1ter | Le cœur dessine-t-il tout champ noté déclaré ? | close | **non** (24/09) : « le status red green amber s'applique à des projets et QUE à des projets ». Le barème reste au plugin ; générique = le mécanisme, pas le vocabulaire |
+| 1quater | Puisque la surcharge de bloc est un fork pénible : une **prise** où le cœur demande au plugin la part qu'il est seul à savoir (l'idiome `tileInfo()` / `routeFor()` de ce dépôt), ou un **bloc `:::subproject`** assumé comme fork avec sa vie à part ? | **vivante** | — |
 | 2 | Une pastille ou deux ? Substitution (le cycle de vie parle, sinon la météo) ou les deux côte à côte sur la page du projet ? | en attente | — |
 | 3 | Les MOTS écrits à côté du point (`vert`/`ambre`/`rouge` se lisent mal en français pour un projet) | en attente | nom du champ tranché (24/09) : **`project-status`**, pas `health` |
 | 4 | La météo repeint-elle les barres de `:::timeline` ? Piège : le rouge y veut déjà dire « en retard » (`classify`), et deux sens pour une couleur sur un même dessin | en attente | — |
