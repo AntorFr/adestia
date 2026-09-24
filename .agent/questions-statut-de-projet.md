@@ -46,11 +46,21 @@ un `fields` sur un type non revendiqué est refusé au chargement.
 
 ## Trouvé en construisant, hors chantier
 
-- **Les libellés de champ d'un plugin restent en anglais** dans le panneau des
-  propriétés : la coque traduit sa propre table, et les mots d'un plugin n'y
-  sont pas. « Project status » s'affiche tel quel dans une instance française,
-  et `todo` a exactement le même écart depuis v0.73.0 (« Due », « Priority »).
-  Pas corrigé ici : c'est l'i18n du cœur, pas ce chantier.
+- ~~**Les libellés de champ d'un plugin restent en anglais**~~ — **réglé par
+  v0.74.0**, arrivée pendant ce chantier : la fabrique d'une facette rend
+  `words` à côté du reste, et la coque dit les mots déclarés par le plugin
+  avec. Le plugin traduit donc « Project status » → « Statut projet », sa
+  phrase d'aide, la description de `:::subproject` et le nom de son groupe
+  dans le formulaire. Le test croisé de `plugins/test/words.test.js` épingle
+  les deux sens : rien de déclaré sans traduction, rien de traduit que
+  personne ne dit.
+- **Les VALEURS d'un menu ne sont toujours pas traduites**, et c'est délibéré
+  ici plutôt qu'un manque : le formulaire rend les options telles quelles, et
+  `Green`/`Amber`/`Red` sont ce que le fichier porte. Un menu qui proposerait
+  « Vert » en écrivant `Green` mentirait sur ce qu'il s'apprête à écrire, et
+  il faudrait ensuite que la pastille et le survol de la barre tranchent aussi.
+  Le cœur n'a jamais eu le problème : ses propres vocabulaires de valeurs
+  (`en cours`, `bloqué`, `rouge`…) sont déjà dans la langue du corpus.
 - **Ambre veut deux choses sur un planning** : « en retard » (déduit d'une
   date) et « à surveiller » (écrit par le porteur). Le survol écrit le mot, ce
   qui tient la règle « la teinte n'est jamais l'étiquette » — mais à l'œil, sur
