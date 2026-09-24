@@ -17,6 +17,20 @@
     "liste",
     "todo-config"
   ],
+  "fields": {
+    "tache": {
+      "due": { "kind": "date", "label": "Due", "help": "Drives Late / Today / Next 7 days, all computed live." },
+      "start": { "kind": "date", "label": "Not before", "help": "The day it becomes doable \u2014 never \u201cI have begun\u201d." },
+      "pri": { "kind": "number", "label": "Priority", "help": "Lower is more urgent." },
+      "assignee": { "kind": "choice", "label": "Carried by", "help": "One handle. Empty means up for grabs." },
+      "dom": { "kind": "choice", "label": "Domain", "help": "Groups the \u201ceverything\u201d view \u2014 atelier, maison, admin\u2026" },
+      "projet": { "kind": "reference", "label": "Project", "of": "projet", "help": "This task is one step of that project." },
+      "done": { "kind": "date", "label": "Closed on", "help": "Empty means open. This is the line the checkbox writes." }
+    },
+    "liste": {
+      "dom": { "kind": "choice", "label": "Domain", "help": "Which domain this list gathers." }
+    }
+  },
   "vocabulary": {
     "checklist": {
       "content": "empty",

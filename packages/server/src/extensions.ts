@@ -20,6 +20,7 @@ import {
   parsePluginManifest,
   parseSkinManifest,
   type PluginBlockSpec,
+  type PluginFieldSpec,
   type PluginManifest,
   type SkinManifest,
 } from '@antorfr/adestia-schemas'
@@ -458,6 +459,8 @@ export interface PluginPayload {
   readonly layouts?: string
   /** The frontmatter `type` values this plugin claims — the shell matches on these. */
   readonly types?: readonly string[]
+  /** The frontmatter fields it reads, by type — what the page editor's form draws. */
+  readonly fields?: Readonly<Record<string, Readonly<Record<string, PluginFieldSpec>>>>
   readonly styles?: readonly string[]
   readonly tile?: {
     readonly label: string
@@ -487,6 +490,9 @@ export function frontendPayload(plugins: readonly DiscoveredPlugin[]): readonly 
         // Sent because the shell matches a page's `type` against the CLAIM,
         // never against what the layouts module happens to export.
         ...(manifest.types ? { types: manifest.types } : {}),
+        // Same reason as `vocabulary`: the form must offer exactly what the
+        // plugin reads, and two tables drift.
+        ...(manifest.fields ? { fields: manifest.fields } : {}),
         ...(manifest.styles ? { styles: manifest.styles } : {}),
         ...(manifest.tile ? { tile: manifest.tile } : {}),
       }

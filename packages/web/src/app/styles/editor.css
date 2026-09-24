@@ -403,7 +403,9 @@ body.adestia-dragging-block * { cursor: grabbing !important; user-select: none; 
 }
 .adestia-blockset__field > span { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
 .adestia-blockset__field em { color: var(--danger); font-style: normal; }
-.adestia-blockset__field input[type="text"],
+/* Every control but the checkbox, which draws its own box — a date and a
+   number are fields like any other and looked like neither before. */
+.adestia-blockset__field input:not([type="checkbox"]),
 .adestia-blockset__field select {
   min-width: 0;
   padding: 4px 8px;
@@ -427,6 +429,137 @@ body.adestia-dragging-block * { cursor: grabbing !important; user-select: none; 
   cursor: pointer;
 }
 .adestia-blockset__missing { margin: var(--space-1) 0 0; color: var(--danger); font-size: 12px; }
+
+/* ── The page's own properties, at the top of the document ────────────────
+   The frontmatter is drawn as chips in both postures. What writing adds is a
+   ⚙ beside them and the form behind it — the same object a block's settings
+   are, one level up. See `frontmatterview.tsx`. */
+
+.adestia-editor__meta--edit {
+  position: relative;
+  min-height: 26px;
+  margin-left: -6px;
+  padding: 3px 6px;
+  border-radius: var(--radius-sm);
+  cursor: default;
+}
+
+.adestia-editor__meta--edit:hover,
+.adestia-editor__meta--open { background: var(--surface-soft); }
+
+.adestia-editor__meta-chips { display: contents; }
+
+/* A page with no properties yet still has the row, and says so. It is the
+   page somebody is most likely to be naming, and a strip that hides itself
+   when empty hides the ⚙ on exactly that page. */
+.adestia-editor__meta-none { font: 500 11px/1.5 var(--font-mono); color: var(--text-faint); }
+
+.adestia-editor__meta-gear {
+  margin-left: 4px;
+  padding: 1px 6px;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  color: var(--text-faint);
+  font: 13px/1.5 var(--font-mono);
+  cursor: pointer;
+}
+
+.adestia-editor__meta--edit:hover .adestia-editor__meta-gear,
+.adestia-editor__meta--open .adestia-editor__meta-gear { color: var(--accent); }
+.adestia-editor__meta-gear:hover { background: var(--accent-quiet); }
+
+/* The form, under the strip rather than under a bar: the strip sits at the
+   very top of the document, so there is nothing above it to hang from. */
+.adestia-editor__meta-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 4;
+}
+.adestia-editor__meta-panel[hidden] { display: none; }
+
+/* A page has more to say than a block, and `groupBy` does not fit in 6.5rem
+   of label. Its form is also LONG — a task carries seven fields of its own —
+   so it scrolls inside itself rather than running off the bottom of a laptop
+   screen, where the last field and the "add a field" list were unreachable. */
+.adestia-blockset--page {
+  width: min(30rem, 92vw);
+  max-height: min(70vh, 40rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.adestia-blockset--page .adestia-blockset__field {
+  grid-template-columns: 8rem 1fr;
+  /* The help belongs to the control above it, not to the space between two
+     fields: with the group's own row gap it read as floating between them. */
+  row-gap: 0;
+  margin: 10px 0;
+}
+.adestia-blockset__hint {
+  grid-column: 2;
+  margin: 4px 0 0;
+  color: var(--text-faint);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.adestia-blockset__hint--wide { grid-column: 1 / -1; }
+
+/* Tags: pills that come off, and a field that completes on what the corpus
+   already writes. */
+.adestia-tagedit { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.adestia-tagedit .adestia-tag { display: inline-flex; align-items: center; gap: 5px; }
+.adestia-tagedit .adestia-tag button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-faint);
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+.adestia-tagedit .adestia-tag button:hover { color: var(--danger); }
+.adestia-tagedit input {
+  flex: 1;
+  min-width: 6rem;
+  padding: 3px 8px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+}
+
+/* What the editor does not model: shown as written, and left alone. */
+.adestia-blockset__kept {
+  margin: var(--space-1) 0 0;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--text-faint);
+  font: 11px/1.5 var(--font-mono);
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+/* Adding a field the page does not carry yet. */
+.adestia-blockset__add {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+}
+.adestia-blockset__add select {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-muted);
+  font: inherit;
+}
 
 /* Bands, as the reader lays them out: consecutive `w=` blocks share a line,
    a block that does not fit starts the next, `:::row` and any full-width

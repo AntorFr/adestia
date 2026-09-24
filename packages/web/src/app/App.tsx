@@ -11,6 +11,7 @@ import { Fragment, useCallback, useMemo, useRef, useState } from 'react'
 import { Chat } from '../chat/Chat.js'
 import { Editor } from '../editor/Editor.js'
 import type { BlockComponents, LayoutComponents } from '../editor/Reader.js'
+import type { FieldContributions } from '../editor/pageform.js'
 import { Preferences, prefsTitle } from './Preferences.js'
 import { SettingsMenu } from './SettingsMenu.js'
 import { PluginBoundary } from '../plugins/Boundary.js'
@@ -209,6 +210,28 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
         { collection: CollectionLayout },
         ...loaded.map((plugin) => plugin.layouts?.types ?? {}),
       ) as LayoutComponents,
+    [loaded],
+  )
+
+  /**
+   * The frontmatter fields the active plugins declare, flattened by the type
+   * they belong to.
+   *
+   * Same shape as the layouts above and the same reason: a page says
+   * `type: tache` and must not have to say which plugin knows what a task
+   * carries. The manifest already refused a plugin describing a type it does
+   * not claim, so the flattening cannot silently pick a winner.
+   */
+  const fieldContributions = useMemo(
+    () =>
+      Object.fromEntries(
+        loaded.flatMap((plugin) =>
+          Object.entries(plugin.fields ?? {}).map(([type, fields]) => [
+            type,
+            { plugin: plugin.id, fields },
+          ]),
+        ),
+      ) as FieldContributions,
     [loaded],
   )
 
@@ -464,6 +487,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
                 features: featureOrder,
               }}
               layouts={layouts}
+              fieldContributions={fieldContributions}
               // The shell already holds the index and keeps it live; the reader
               // needs it to tell a reference that MOVED from one that is gone.
               pages={pages}

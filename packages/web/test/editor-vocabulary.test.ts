@@ -31,12 +31,14 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { adestiaVocabulary, dropBlankBreaks, editorBlocks, grammarRemarks } from '../src/editor/vocabulary.js'
 
 /**
- * What `adestiaVocabulary` registers that is not a block: the frontmatter and
- * wikilink nodes, plus Milkdown's trailing-paragraph plugin. Its size is read
- * from the package rather than counted here — how many plugins a third party
- * ships is not a fact this suite should hold an opinion about.
+ * What `adestiaVocabulary` registers that is not a block: the frontmatter
+ * node AND the view that turns it into the page's properties strip
+ * (`frontmatterview.tsx`), the wikilink node, plus Milkdown's
+ * trailing-paragraph plugin. The last one's size is read from the package
+ * rather than counted here — how many plugins a third party ships is not a
+ * fact this suite should hold an opinion about.
  */
-const BEYOND_THE_BLOCKS = 2 + trailing.length + [dropBlankBreaks].flat().length
+const BEYOND_THE_BLOCKS = 3 + trailing.length + [dropBlankBreaks].flat().length
 
 /**
  * Blocks registered: each one brings TWO entries — its node, and the view that

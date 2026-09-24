@@ -40,7 +40,7 @@ import '@milkdown/crepe/theme/common/top-bar.css'
 import '@milkdown/crepe/theme/common/diff.css'
 import '@milkdown/crepe/theme/common/ai.css'
 
-import type { EditorEnv } from './blockview.js'
+import type { PropertiesEnv } from './frontmatterview.js'
 import { assetUrl } from './links.js'
 import { buildBlockMenu } from './slash.js'
 import { buildBlockTypes } from './toolbar.js'
@@ -61,8 +61,15 @@ import { adestiaVocabulary, editorBlocks, pmId } from './vocabulary.js'
 function handleTargets($pos: ResolvedPos, node: ProseNode): boolean {
   const blocks = new Set(editorBlocks().map((spec) => pmId(spec.name)))
   const refused = (one: ProseNode) =>
-    blocks.has(one.type.name) || ['table', 'blockquote', 'math_inline'].includes(one.type.name)
-  if (blocks.has(node.type.name)) return false
+    // `frontmatter` among them: the handle offered to MOVE the page's own
+    // properties into the middle of the document, and to insert a block
+    // above the first lines of the file. It is not a paragraph.
+    blocks.has(one.type.name) ||
+    ['table', 'blockquote', 'math_inline', 'frontmatter'].includes(one.type.name)
+  // The node the handle is AIMING at, judged by the same rule as its
+  // ancestors. It used to be judged by the block set alone, which is why the
+  // frontmatter strip kept its `+ ⠿` after being added to the list below.
+  if (refused(node)) return false
   for (let depth = $pos.depth; depth > 0; depth -= 1) {
     if (refused($pos.node(depth))) return false
   }
@@ -73,7 +80,7 @@ export function mountMilkdown(
   element: HTMLElement,
   markdown: string,
   onChange: (markdown: string) => void,
-  env: EditorEnv = {},
+  env: PropertiesEnv = {},
 ): () => void {
   const crepe = new Crepe({
     root: element,
@@ -131,7 +138,24 @@ export function mountMilkdown(
        */
       crepe.editor.action((ctx) => {
         const view = ctx.get(editorViewCtx)
-        view.dispatch(view.state.tr)
+        /*
+         * A page with NO frontmatter gets the node anyway.
+         *
+         * The strip is where a page's properties are reached, and it is a
+         * node of the document — so a page that has never carried a `---`
+         * block had nowhere to put the ⚙, which is exactly the page somebody
+         * is most likely to be naming. The node is inserted empty and an
+         * empty one SERIALISES TO NOTHING (`vocabulary.ts`), so the file on
+         * disk does not gain a block until somebody fills a field in. Same
+         * reasoning as the trailing paragraph above, and the same cost: none.
+         */
+        const kind = view.state.schema.nodes['frontmatter']
+        const first = view.state.doc.firstChild
+        const transaction =
+          kind && first?.type !== kind
+            ? view.state.tr.insert(0, kind.create({ value: '' }))
+            : view.state.tr
+        view.dispatch(transaction)
       })
       crepe.on((listener) => {
         listener.markdownUpdated((_ctx, next) => onChange(next))

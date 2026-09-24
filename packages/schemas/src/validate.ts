@@ -115,6 +115,9 @@ function checkSchemaVersion(
  * @param folderName the directory the manifest was found in. The folder wins:
  *   an `id` claiming otherwise is refused rather than silently re-mapped.
  */
+/** The controls a declared field may ask for — mirrors the content engine's `FieldKind`. */
+const FIELD_KINDS: readonly string[] = ['text', 'choice', 'tags', 'date', 'number', 'icon', 'reference']
+
 export function parsePluginManifest(input: unknown, folderName: string): PluginManifest {
   const issues: ValidationIssue[] = []
   if (!isObject(input)) {
@@ -198,6 +201,48 @@ export function parsePluginManifest(input: unknown, folderName: string): PluginM
         const attributes = spec['attributes']
         if (attributes !== undefined && !isObject(attributes)) {
           issues.push({ field: `${field}.attributes`, message: 'must be an object' })
+        }
+      }
+    }
+  }
+
+  const fields = input['fields']
+  if (fields !== undefined) {
+    if (!isObject(fields)) {
+      issues.push({ field: 'fields', message: 'must be an object of field specs, by page type' })
+    } else {
+      const claimed = new Set(Array.isArray(input['types']) ? (input['types'] as unknown[]) : [])
+      for (const [type, specs] of Object.entries(fields)) {
+        // Describing a type you do not claim IS claiming it, and the claim is
+        // what lets discovery catch two plugins reaching for one word. Refused
+        // by name rather than quietly merged.
+        if (!claimed.has(type)) {
+          issues.push({
+            field: `fields.${type}`,
+            message: `describes a type this plugin does not claim — add "${type}" to "types"`,
+          })
+        }
+        if (!isObject(specs)) {
+          issues.push({ field: `fields.${type}`, message: 'must be an object of field specs, by key' })
+          continue
+        }
+        for (const [key, spec] of Object.entries(specs)) {
+          const field = `fields.${type}.${key}`
+          if (!isObject(spec)) {
+            issues.push({ field, message: 'must be an object' })
+            continue
+          }
+          checkString(spec, 'label', issues, true)
+          if (!FIELD_KINDS.includes(spec['kind'] as string)) {
+            issues.push({ field: `${field}.kind`, message: `must be one of ${FIELD_KINDS.join(', ')}` })
+          }
+          // A reference with nothing to point at is a menu with no entries.
+          if (spec['kind'] === 'reference' && typeof spec['of'] !== 'string') {
+            issues.push({
+              field: `${field}.of`,
+              message: 'is required for a reference — name the type that answers',
+            })
+          }
         }
       }
     }

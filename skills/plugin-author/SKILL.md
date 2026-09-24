@@ -401,6 +401,54 @@ A layout for a type the manifest does not claim never draws — the shell
 matches on the CLAIM — and that is reported at load rather than left as a page
 that keeps opening as prose for a reason nobody can see.
 
+## Saying what your pages carry
+
+A type you claim is a type whose FRONTMATTER you read. `fields` says what
+those keys mean, so the page editor can draw a guided form for them instead
+of leaving a person to type YAML into a file your code parses:
+
+```json
+{
+  "types": ["tache"],
+  "fields": {
+    "tache": {
+      "due": { "kind": "date", "label": "Due", "help": "Drives Late / Today / Next 7 days." },
+      "pri": { "kind": "number", "label": "Priority", "help": "Lower is more urgent." },
+      "assignee": { "kind": "choice", "label": "Carried by" },
+      "projet": { "kind": "reference", "label": "Project", "of": "projet" }
+    }
+  }
+}
+```
+
+| `kind` | what the person gets |
+|---|---|
+| `text` | a line of prose |
+| `choice` | a list — what you declare in `values`, then **what the workspace already writes**, then a free word |
+| `tags` | a flat list of words, as pills |
+| `date` | a date picker, written `YYYY-MM-DD` |
+| `number` | a number |
+| `icon` | one glyph |
+| `reference` | the instance's pages of type `of`, written by their `id` |
+
+`label` is required; `help` is one sentence, shown under the control. `closed`
+refuses anything outside `values` — only for a vocabulary your own CODE
+resolves, never to keep somebody's word out of their own workspace.
+
+**You declare the field, never the values.** `dom: atelier` is a fact about
+one workspace and not about your plugin: the form reads the instance's own
+index for what to offer, most used first, and takes a word it has never seen.
+A `values` list is a starting point on an empty instance, not a gate.
+
+**Only for a type you claim.** Describing a type you merely read is claiming
+it, and the claim is what lets discovery catch two plugins reaching for one
+word — so a `fields` entry whose type is missing from `types` is refused by
+name, at load, rather than quietly merged.
+
+What you do NOT declare here is what your code needs to be given: this is a
+contract with the person editing the page, and the fields a person never sets
+(a cache, a computed id) have no business in a form.
+
 ## Writing content blocks
 
 Blocks extend the CLOSED vocabulary — the reason pages look like one product

@@ -132,6 +132,29 @@ walk the corpus adding ids to pages nobody points at. A page without one is not
 faulty, it is *not yet linkable* — and it stops being so at the moment someone
 links it, which is the next section.
 
+## The person editing this page sees a FORM over these fields
+
+Since the properties panel exists (the ⚙ on the strip of chips at the top of a
+page being written), `title`, `type`, `ico`, `id`, `couleur`, `status`,
+`domaine`, `cat`, `tags` and `date` are drawn as controls rather than as raw
+YAML, and a plugin adds the fields it reads for the types it claims. Two
+consequences worth knowing while you write:
+
+- **The values offered come from the corpus**, not from a table — whatever
+  pages already write for `domaine` or `cat` is what the list proposes, most
+  used first. So a synonym you introduce (`atelier` beside `menuiserie` for
+  the same idea) does not merely sit in one file: it becomes an option
+  everybody is offered from then on. Reuse the word that is already there.
+- **What the form cannot model, it keeps and says so.** A nested structure
+  under a key — a map, a list of maps — is shown as written and never
+  rewritten, so you may keep using one. What you should not do is put in a
+  nested structure something a flat key would carry, since only the flat one
+  is queryable through `/api/pages/index` anyway.
+
+A frontmatter block that does not PARSE takes the whole panel out: the form
+refuses to write rather than repair what it managed to read. If you leave a
+page in that state, nobody can fix it from the browser.
+
 ## `ico` — a convention, not a mechanism
 
 Several apps show a page's `ico:` field as a glyph on a card. Nothing in the
