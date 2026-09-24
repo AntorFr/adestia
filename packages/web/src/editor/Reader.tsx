@@ -865,6 +865,22 @@ function Written({
   )
 }
 
+/**
+ * The two names a status answers to, and the reason there are two: the content
+ * engine's own pair (`isFinished` reads `status` then `statut`), because half
+ * this corpus writes the French spelling. A pulled field under one of these
+ * names is drawn as the STATUS PILL the shell wears everywhere else — a
+ * section card, a collection's member, a page's own header — instead of the
+ * neutral tag every other pulled field gets.
+ *
+ * A row of sub-worksites was the one place the shell answered in grey while
+ * the cards beside it answered in colour, for the same field read from the
+ * same index. The tone is `toneOf`'s, never a second table here: three
+ * families, and the WORD stays written beside the dot, because hue alone is
+ * not a label.
+ */
+const STATUS_FIELDS = new Set(['status', 'statut'])
+
 function Row({
   page,
   pull,
@@ -927,7 +943,14 @@ function Row({
       {pulled.length > 0 && (
         <span className="adestia-list__pulled">
           {pulled.map((one) => (
-            <span key={one.name} className="adestia-tag">
+            <span
+              key={one.name}
+              className={
+                STATUS_FIELDS.has(one.name)
+                  ? `adestia-stat adestia-stat--${toneOf(one.value)}`
+                  : 'adestia-tag'
+              }
+            >
               {String(one.value)}
             </span>
           ))}

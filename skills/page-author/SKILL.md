@@ -498,7 +498,10 @@ written in the block:
   page types belong to you.
 - **`pull`** names what each row shows of its child, comma-separated, and
   there are TWO kinds:
-  - a bare name is a **header field** — `status`, `due` — drawn as a chip;
+  - a bare name is a **header field** — `status`, `due` — drawn as a chip.
+    `status` (or `statut`) gets the STATUS PILL, in the tone of its family,
+    the same one a section card and the page's own header wear — so a row of
+    sub-worksites and the cards beside it answer the same colour;
   - `content:<type>` is what the child's own **`:::content{type=…}` block
     says — `pull=content:etat` puts each sub-worksite's state under its title,
     as a sentence. The index publishes a bounded digest of those blocks, so
