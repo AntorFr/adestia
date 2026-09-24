@@ -25,6 +25,22 @@ import { classify, fraction, fromPages, labelRows, parseLine, span } from './mod
 /** The logical folder a page sits in. A page at the root has none. */
 const folderOf = (path) => (path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '')
 
+/**
+ * The words this plugin DECLARES, for the shell to say.
+ *
+ * The block's description is written in the manifest and drawn by the
+ * editor's settings panel, so no amount of care inside this module would put
+ * it in the reader's language: the table is how it gets there.
+ */
+export function table(locale) {
+  return String(locale ?? '').slice(0, 2) === 'fr'
+    ? {
+        'Phases and milestones on a time axis — written as list lines in the block, or read from the start:/due: of the pages below.':
+          'Phases et jalons sur un axe de temps — écrits en lignes de liste dans le bloc, ou lus dans les start:/due: des fiches du dessous.',
+      }
+    : {}
+}
+
 export default function createProjectBlocks(api) {
   const fr = api.locale === 'fr'
 
@@ -241,5 +257,5 @@ export default function createProjectBlocks(api) {
     ])
   }
 
-  return { tags: { timeline: Timeline } }
+  return { tags: { timeline: Timeline }, words: table(api.locale) }
 }

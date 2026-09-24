@@ -10,7 +10,7 @@
   ],
   "api": "./api.mjs",
   "tile": {
-    "label": "Planifications",
+    "label": "Schedules",
     "icon": "⏱",
     "hue": "violet"
   }

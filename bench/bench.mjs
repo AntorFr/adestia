@@ -15,7 +15,7 @@
  * What is faked is the engine, never the shell.
  *
  * A scenario module default-exports `async (bench) => {}` and gets:
- *   open({ theme, width, height, tab })  a page, with a tab restored
+ *   open({ theme, width, height, tab, locale })  a page, with a tab restored
  *   shoot(page, name)                    a screenshot into /shots
  *   attached()                           resolves when the shell has attached
  *   emit(event) / endTurn()              drive the scripted turn
@@ -114,11 +114,22 @@ const bench = {
   // `touch` is what makes `(pointer: coarse)` match — a narrow viewport alone
   // is a small window, not a phone, and the rules that only fire on a touch
   // screen are invisible without it.
-  async open({ theme = 'light', width = 1280, height = 900, tab, touch = false } = {}) {
+  async open({
+    theme = 'light',
+    width = 1280,
+    height = 900,
+    tab,
+    touch = false,
+    // The READER's language, per context. An instance that declares no
+    // `locale:` lets the browser decide, so two contexts in one run are two
+    // people reading the same instance in their own languages — which is the
+    // only way to look at what a translation actually did.
+    locale = env.BENCH_LOCALE ?? 'fr-FR',
+  } = {}) {
     const context = await browser.newContext({
       viewport: { width, height },
       colorScheme: theme,
-      locale: env.BENCH_LOCALE ?? 'fr-FR',
+      locale,
       ...(touch ? { hasTouch: true, isMobile: true } : {}),
     })
     const page = await context.newPage()

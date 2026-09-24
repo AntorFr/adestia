@@ -5,6 +5,8 @@ const fmt = (iso) =>
 
 const WORDS = {
   fr: {
+    // The manifest's own word, drawn by the shell on the launcher.
+    Schedules: 'Planifications',
     'clock off': 'horloge coupée',
     active: 'actives',
     invalid: 'invalides',
@@ -13,9 +15,21 @@ const WORDS = {
     'No scheduled note yet.': 'Aucune planification pour l’instant.',
   },
 }
+/**
+ * The raw table, for the SHELL.
+ *
+ * A plugin's manifest — its tile's name, a field's label, a block's
+ * description — is drawn by the shell from declared data, read before a line
+ * of this plugin runs. Handing the table over (`words:` in what the factory
+ * returns) is how those words reach the reader's language too.
+ */
+function table(locale) {
+  return WORDS[String(locale ?? '').slice(0, 2)] ?? {}
+}
+
 const words = (locale) => {
-  const table = WORDS[String(locale ?? '').slice(0, 2)] ?? {}
-  return (key) => table[key] ?? key
+  const said = table(locale)
+  return (key) => said[key] ?? key
 }
 
 export default function view(api) {
@@ -147,5 +161,5 @@ export default function view(api) {
     }
   }
 
-  return { component: Planif, tileInfo }
+  return { component: Planif, tileInfo, words: table(api.locale) }
 }

@@ -19,7 +19,15 @@
 
 import { createElement as h, useCallback, useEffect, useState } from 'react'
 
-import { buildModel, filterOf, isDeferred, newTaskPath, taskMarkdown, words } from './model.js'
+import {
+  buildModel,
+  filterOf,
+  isDeferred,
+  newTaskPath,
+  table,
+  taskMarkdown,
+  words,
+} from './model.js'
 import { storeMarks, taskRow, todayISO, toggleTask } from './rows.js'
 
 /** The folder a logical page path sits in. A page at the root has none. */
@@ -211,5 +219,5 @@ export default function blocks(api) {
     ])
   }
 
-  return { tags: { checklist: Checklist } }
+  return { tags: { checklist: Checklist }, words: table(api.locale) }
 }

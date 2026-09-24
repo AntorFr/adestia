@@ -274,15 +274,13 @@ export function formatWhen(when, locale) {
 
 const WORDS = {
   fr: {
+    // The manifest's own word, said by the shell on the launcher.
+    Journal: 'Journal',
     'Journals': 'Journaux',
     'No journal yet.': 'Aucun journal pour le moment.',
     'Nothing written yet.': 'Rien d’écrit pour le moment.',
     'New entry': 'Nouvelle entrée',
-    'Write': 'Écrire',
     'Title (optional)': 'Titre (facultatif)',
-    'What happened?': 'Qu’est-ce qui s’est passé ?',
-    'Add': 'Ajouter',
-    'Older entries': 'Entrées plus anciennes',
     'Show more': 'Voir plus',
     'entries': 'entrées',
     'entry': 'entrée',
@@ -296,15 +294,22 @@ const WORDS = {
     'Create': 'Créer',
     'Write an entry': 'Écrire une entrée',
     'Cancel': 'Annuler',
-    'that entry no longer exists': 'cette entrée n’existe plus',
-    'that entry has no frontmatter': 'cette entrée n’a pas de frontmatter',
-    'could not save': 'impossible d’enregistrer',
-    'the agent changed that entry — reloading':
-      'l’agent a modifié cette entrée — rechargement',
   },
 }
 
+/**
+ * The raw table, for the SHELL.
+ *
+ * A plugin's manifest — its tile's name, a field's label, a block's
+ * description — is drawn by the shell from declared data, read before a line
+ * of this plugin runs. Handing the table over (`words:` in what the factory
+ * returns) is how those words reach the reader's language too.
+ */
+export function table(locale) {
+  return WORDS[String(locale ?? '').slice(0, 2)] ?? {}
+}
+
 export const words = (locale) => {
-  const table = WORDS[String(locale ?? '').slice(0, 2)] ?? {}
-  return (key) => table[key] ?? key
+  const said = table(locale)
+  return (key) => said[key] ?? key
 }

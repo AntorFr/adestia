@@ -36,6 +36,7 @@ import {
   routeFor as addressOf,
   routeOf,
   stampOf,
+  table,
   words,
 } from './model.js'
 
@@ -569,6 +570,7 @@ export default function view(api) {
 
   return {
     component: Post,
+    words: table(api.locale),
     route: ROUTE,
     routeFor: (path) => addressOf(known, path),
   /**

@@ -17,6 +17,8 @@ export const ROUTE = '/listening-post'
 
 const WORDS = {
   fr: {
+    // The manifest's own word, drawn by the shell on the launcher.
+    Watchlist: 'Veille',
     'Loading…': 'Chargement…',
     'to watch': 'À voir',
     // Lowercase: this one lands mid-sentence, on the tile's chip.
@@ -51,9 +53,21 @@ const WORDS = {
   },
 }
 
+/**
+ * The raw table, for the SHELL.
+ *
+ * A plugin's manifest — its tile's name, a field's label, a block's
+ * description — is drawn by the shell from declared data, read before a line
+ * of this plugin runs. Handing the table over (`words:` in what the factory
+ * returns) is how those words reach the reader's language too.
+ */
+export function table(locale) {
+  return WORDS[String(locale ?? '').slice(0, 2)] ?? {}
+}
+
 export const words = (locale) => {
-  const table = WORDS[String(locale ?? '').slice(0, 2)] ?? {}
-  return (key) => table[key] ?? key
+  const said = table(locale)
+  return (key) => said[key] ?? key
 }
 
 /** `veille/underscore-ia.md` → `underscore-ia`. */

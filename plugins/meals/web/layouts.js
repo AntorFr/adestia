@@ -19,6 +19,7 @@
 import { createElement as h } from 'react'
 
 import Frise from './frise.js'
+import { table } from './model.js'
 
 export default function layouts(api) {
   function MealsPage({ path, children }) {
@@ -32,5 +33,5 @@ export default function layouts(api) {
     ])
   }
 
-  return { types: { meals: MealsPage } }
+  return { types: { meals: MealsPage }, words: table(api.locale) }
 }
