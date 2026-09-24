@@ -12,10 +12,10 @@
 | 1ter | Le cœur dessine-t-il tout champ noté déclaré ? | close | **non** (24/09) : « le status red green amber s'applique à des projets et QUE à des projets ». Le barème reste au plugin ; générique = le mécanisme, pas le vocabulaire |
 | 1quater | Une **prise** dans le dessin du cœur, ou un **bloc dédié** ? | close | **bloc dédié** (24/09) : une prise fait dépendre l'évolution d'une carte de tous les plugins, y compris ceux qu'on ne maîtrise pas ; et le bloc mutualise avec `:::timeline` |
 | 2 | Une pastille ou deux ? | close | **une** — tranchée dès ton premier message : « hold et clos prenant l'avantage » ; c'est une substitution, pas une addition |
-| 3 | Les MOTS écrits à côté du point (`vert`/`ambre`/`rouge` se lisent mal en français pour un projet) | en attente | nom du champ tranché (24/09) : **`project-status`**, pas `health` |
-| 4 | `project-status` repeint-il les barres de `:::timeline` ? Le rouge y dit déjà « en retard » (`classify`) | **vivante** | reco : la parole écrite gagne sur l'inférence — un `project-status` déclaré l'emporte, le calendrier ne colore que ce que personne n'a noté |
+| 3 | Les MOTS écrits à côté du point | **pris par défaut** (24/09) : `nominal` · `à surveiller` · `en danger` — et ce sont les valeurs ÉCRITES, pas seulement dessinées : un mot stocké et un autre affiché feraient deux vocabulaires pour une chose | à renverser d'un mot |
+| 4 | `project-status` repeint-il les barres de `:::timeline` ? | close | **oui** (24/09) : la parole écrite gagne sur l'inférence. Correction au passage : `late` était en `--warning` (ambre), pas en rouge — la collision était ambre/ambre, et elle demeure (le mot du survol distingue) |
 | 5 | Le contrôle en édition écrit-il à travers le document ou dans le fichier ? | close | v0.73.0 : par l'API document de `yaml`, comme l'éditeur de config ; ce qui n'est pas touché revient octet pour octet, un YAML illisible est refusé plutôt que « réparé » |
-| 6 | Quand le projet quitte « en cours » : la valeur écrite est **gardée** sur le fichier et simplement pas dessinée, ou effacée ? | en attente | — |
+| 6 | La valeur quand le projet se clôt | **pris par défaut** (24/09) : gardée sur le fichier, simplement pas dessinée | à renverser d'un mot |
 | 7 | Visible/modifiable en lecture aussi, ou en édition seulement ? | close | v0.73.0 : le ⚙ vit sur la bande de puces de l'ÉDITEUR — édition seulement, comme tu l'avais dit |
 
 ## Ce que v0.73.0 donne déjà, sans une ligne de code
@@ -43,3 +43,15 @@ un `fields` sur un type non revendiqué est refusé au chargement.
   pastille `health` dans une ligne, une carte ou un entête.
 - La précédence (hold et clos l'emportent) n'est écrite nulle part — et ce
   n'est pas du dessin, c'est la même nature de savoir qu'`isFinished`.
+
+## Trouvé en construisant, hors chantier
+
+- **Les libellés de champ d'un plugin restent en anglais** dans le panneau des
+  propriétés : la coque traduit sa propre table, et les mots d'un plugin n'y
+  sont pas. « Project status » s'affiche tel quel dans une instance française,
+  et `todo` a exactement le même écart depuis v0.73.0 (« Due », « Priority »).
+  Pas corrigé ici : c'est l'i18n du cœur, pas ce chantier.
+- **Ambre veut deux choses sur un planning** : « en retard » (déduit d'une
+  date) et « à surveiller » (écrit par le porteur). Le survol écrit le mot, ce
+  qui tient la règle « la teinte n'est jamais l'étiquette » — mais à l'œil, sur
+  le banc, deux barres ambre ne se distinguent pas.
