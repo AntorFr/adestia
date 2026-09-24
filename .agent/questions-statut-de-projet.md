@@ -8,9 +8,10 @@
 |---|---|---|---|
 | 0 | La pastille colorée pour `pull=status` dans `:::list` | close | oui (24/09) — livrée, banc regardé clair + sombre |
 | 1 | ~~Qui porte le vocabulaire Vert/Ambre/Rouge~~ → reformulée en 1bis | close | v0.73.0 : le manifeste porte la **déclaration** (`fields`, par type revendiqué). Reste la couleur et la précédence. |
-| 1bis | Où vivent la **couleur** et la **règle de précédence** : un mot `health` connu du cœur (`status.ts`, à côté de `isFinished`), ou un mécanisme générique de « champ noté » que n'importe quel plugin allume ? Le fait qui fait basculer : d'autres barèmes en vue (registre de risques, ops) ou cas isolé ? | **vivante** | — |
+| 1bis | Où vivent la couleur et la précédence : un mot connu du cœur, ou un mécanisme générique ? | close | **générique** (24/09) : « ce n'est pas un cas isolé, on peut avoir à gérer des status / états dans plein de situations » |
+| 1ter | Le rendu : le **bloc surchargé par le plugin** (proposition du propriétaire), ou le **cœur qui dessine tout champ noté déclaré** ? La surcharge marche (rung `owner` de `resolveBlock`) mais fourche ~100 lignes de `:::list` et ne touche ni les cartes d'étagère ni les puces d'entête, qui ne sont pas des blocs | **vivante** | — |
 | 2 | Une pastille ou deux ? Substitution (le cycle de vie parle, sinon la météo) ou les deux côte à côte sur la page du projet ? | en attente | — |
-| 3 | Le nom du champ et les MOTS écrits à côté du point (`vert`/`ambre`/`rouge` se lisent mal en français pour un projet ; `nominal` / `à surveiller` / `en danger` disent quelque chose) | en attente | — |
+| 3 | Les MOTS écrits à côté du point (`vert`/`ambre`/`rouge` se lisent mal en français pour un projet) | en attente | nom du champ tranché (24/09) : **`project-status`**, pas `health` |
 | 4 | La météo repeint-elle les barres de `:::timeline` ? Piège : le rouge y veut déjà dire « en retard » (`classify`), et deux sens pour une couleur sur un même dessin | en attente | — |
 | 5 | Le contrôle en édition écrit-il à travers le document ou dans le fichier ? | close | v0.73.0 : par l'API document de `yaml`, comme l'éditeur de config ; ce qui n'est pas touché revient octet pour octet, un YAML illisible est refusé plutôt que « réparé » |
 | 6 | Quand le projet quitte « en cours » : la valeur écrite est **gardée** sur le fichier et simplement pas dessinée, ou effacée ? | en attente | — |
