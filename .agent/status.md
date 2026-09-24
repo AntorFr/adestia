@@ -270,6 +270,12 @@ non revérifiés un par un ; l'historique complet est dans git) :
 - [ ] La puce `tache` et le crayon de l'éditeur embarqué s'affichent sous le
       titre « Note » d'une fiche.
 - [ ] `‹ Back` du shell est en dur en anglais (`App.tsx`).
+- [ ] `atelier` n'a AUCUNE i18n : tout son écran est écrit en français en
+      dur (« Plaques », « Tronçons », « Colonne à refaire »…). Le même défaut
+      que les tuiles françaises, mais à l'échelle d'une app entière — vu au
+      balayage du 24/09, laissé de côté : c'est un chantier, pas un oubli.
+      Il ne déclare ni tuile ni mot de manifeste, donc rien ne le signale au
+      nouveau test.
 - [ ] `todo-config` : le raisonnement « premier par ordre de chemin » réparé
       pour `me:` vaudrait aussi pour `folder:`.
 - [x] Les six phrases anglaises de `todo/web/app.js` : déjà faites avant le
