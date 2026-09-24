@@ -48,7 +48,11 @@ ligne de sous-projet est une ligne de sous-projet, pas une ligne de page.
 ## Le champ
 
 `project-status`, déclaré dans le manifeste pour le type `project-management`,
-valeurs `green` · `amber` · `red`, `closed: true`.
+valeurs `Green` · `Amber` · `Red`, `closed: true` — les termes du métier,
+choisis par le propriétaire contre une proposition écrite en toutes lettres.
+La règle de la maison n'est pas enfreinte : ce qu'elle interdit, c'est une
+teinte SANS mot à côté. Ici le mot est écrit ; il se trouve simplement que le
+mot de ce métier pour cet état est un nom de couleur.
 
 **La précédence, et c'est la règle du plugin, écrite dans son code** : le
 cycle de vie parle d'abord. Un projet en attente ou clos montre son statut de
@@ -116,17 +120,25 @@ Et la règle qui ne bouge pas : **la teinte n'est jamais l'étiquette**. La puce
 5. **La skill** du plugin : quand écrire `project-status`, et ce que le bloc
    montre.
 
-## Ce qui reste à décider
+## Tranché en construisant
 
-- **La timeline repeint-elle ?** `classify` rend déjà `late` — rouge — quand
-  une date est passée alors que le statut est encore ouvert. Si `project-status:
-  red` peint aussi en rouge, le rouge dit deux choses sur un même dessin.
-  *Recommandation : la parole écrite gagne sur l'inférence.* Un `project-status`
-  déclaré l'emporte sur ce que le calendrier déduit ; le calendrier ne colore
-  que ce que personne n'a noté. `late` était toujours une déduction, et une
-  déduction cède devant une affirmation.
-- **Les mots écrits à côté du point.** « Rouge » nomme la couleur et n'apprend
-  rien. *Recommandation : `nominal` · `à surveiller` · `en danger`.*
-- **La valeur quand le projet se clôt** : gardée sur le fichier, simplement pas
-  dessinée. *Recommandation : gardée* — on n'efface pas le mot de quelqu'un, et
-  il revient si le projet rouvre.
+- **La timeline repeint**, décidé par le propriétaire : la parole écrite gagne
+  sur l'inférence. Un `project-status` déclaré l'emporte sur ce que le
+  calendrier déduit ; le calendrier ne colore que ce que personne n'a noté.
+  *Correction au passage :* `late` était dessiné en `--warning`, donc en ambre
+  et pas en rouge comme je l'ai d'abord écrit. La collision existe quand même —
+  ambre contre ambre — et elle reste : le mot du survol distingue « en retard »
+  de « Amber », mais deux barres ambre ne se distinguent pas à l'œil.
+- **La valeur est gardée** quand le projet se clôt, simplement pas dessinée.
+- **Le cycle de vie l'emporte aussi sur la BARRE**, ce qui n'était pas dans le
+  plan : le banc a montré un projet bloqué portant « Green » dessiné en barre
+  verte sous une ligne disant « bloqué ». Une page qui dit deux choses d'un
+  même projet est exactement ce que partager la marche devait empêcher.
+
+## Ajouté au cœur, et pourquoi c'était nécessaire
+
+`/api/pages/index` publie `tone` à côté de `finished`. Même raison que celle
+déjà écrite pour `finished` : un plugin peut n'importer que React, et
+l'alternative est une copie de la table du moteur dans chaque plugin qui
+dessine un état. `finished` ne suffisait pas — « en attente » et « en cours »
+sont tous deux non finis, et c'est la distinction dont la précédence a besoin.

@@ -34,7 +34,7 @@ cat >"$w/memory/chantiers/adestia/INDEX.md" <<'MD'
 title: Adestia v1
 type: project-management
 status: en cours
-project-status: à surveiller
+project-status: Amber
 ---
 
 # Adestia v1
@@ -53,7 +53,7 @@ cat >"$w/memory/chantiers/adestia/socle/INDEX.md" <<'MD'
 title: Socle de contenu
 type: project-management
 status: en cours
-project-status: nominal
+project-status: Green
 start: 2026-08-01
 due: 2026-10-30
 ---
@@ -66,12 +66,16 @@ cat >"$w/memory/chantiers/adestia/mobile/INDEX.md" <<'MD'
 title: Sortie mobile
 type: project-management
 status: en cours
-project-status: à surveiller
+project-status: amber
 start: 2026-09-01
 due: 2026-11-15
 ---
 
 # Sortie mobile
+
+Écrit en minuscules à la main : la pastille doit quand même dire « Amber ».
+Vingt lignes dont l'une dit « amber » et la suivante « Amber » ont l'air
+cassées pour une raison que personne ne voit.
 MD
 
 cat >"$w/memory/chantiers/adestia/ask/INDEX.md" <<'MD'
@@ -79,14 +83,14 @@ cat >"$w/memory/chantiers/adestia/ask/INDEX.md" <<'MD'
 title: Le mode ask
 type: project-management
 status: bloqué
-project-status: nominal
+project-status: Green
 start: 2026-08-15
 due: 2026-09-10
 ---
 
 # Le mode ask
 
-Il porte « nominal » et il est bloqué : c'est la vie de la page qui parle.
+Il porte « Green » et il est bloqué : c'est la vie de la page qui parle.
 MD
 
 cat >"$w/memory/chantiers/adestia/infra/INDEX.md" <<'MD'
@@ -94,7 +98,7 @@ cat >"$w/memory/chantiers/adestia/infra/INDEX.md" <<'MD'
 title: Bascule infra
 type: project-management
 status: en cours
-project-status: en danger
+project-status: Red
 start: 2026-07-01
 due: 2026-09-01
 ---
@@ -102,7 +106,7 @@ due: 2026-09-01
 # Bascule infra
 
 Sa date est passée : sans note, la barre serait « en retard ». Elle porte
-« en danger », et une affirmation l'emporte sur une déduction.
+« Red », et une affirmation l'emporte sur une déduction.
 MD
 
 cat >"$w/memory/chantiers/adestia/editeur/INDEX.md" <<'MD'
@@ -110,14 +114,14 @@ cat >"$w/memory/chantiers/adestia/editeur/INDEX.md" <<'MD'
 title: Éditeur de blocs
 type: project-management
 status: clos
-project-status: en danger
+project-status: Red
 start: 2026-06-01
 due: 2026-08-20
 ---
 
 # Éditeur de blocs
 
-Clos, avec une vieille note « en danger » restée écrite : le repli doit le
+Clos, avec une vieille note « Red » restée écrite : le repli doit le
 prendre, et la pastille doit dire « clos ».
 MD
 

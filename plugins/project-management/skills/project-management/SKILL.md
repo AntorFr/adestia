@@ -149,16 +149,16 @@ is a judgement about a project that is RUNNING:
 
 ```yaml
 status: en cours
-project-status: à surveiller
+project-status: Amber
 ```
 
-Three words, and they are the ones drawn — `nominal`, `à surveiller`,
-`en danger`. Never a colour's name: a pill reading "Rouge" says the hue out
-loud and teaches nothing, and the hue is there to make the row findable among
-twenty, not to be the label.
+Three words, and they are the ones drawn — **`Green`, `Amber`, `Red`**, the
+terms project management already uses. Written in any case (`red` does as
+well as `Red`); the pill always shows the canonical spelling, so twenty rows
+never look broken for a reason nobody can see.
 
 **The page's life speaks first.** A project that is waiting or closed shows
-THAT, whatever grade is written on it — "nominal" beside "bloqué" would be a
+THAT, whatever grade is written on it — "Green" beside "bloqué" would be a
 project claiming to be fine while nobody can touch it. So the grade is drawn
 only while the lifecycle status is under way, and a project nobody has graded
 simply shows its status. One badge, never two side by side.

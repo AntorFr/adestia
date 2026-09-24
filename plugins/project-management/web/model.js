@@ -244,22 +244,35 @@ export function classify(entry, today) {
  * for the type it claims rather than added to the engine's table. And only
  * RUNNING projects show one — see `badgeOf`.
  *
- * The words are the ones drawn, never a colour's name. A pill reading "Red"
- * says the colour out loud and teaches nothing; "en danger" is the thing
- * itself, and the hue underneath only makes it findable among twenty rows.
+ * THE WORDS ARE THE DOMAIN'S, chosen by the owner: Green, Amber and Red are
+ * what project management calls these three states, and a person who runs
+ * projects reads "Amber" as a state rather than as a colour. Written-out
+ * alternatives were offered and refused, and the refusal is the right one for
+ * a vocabulary somebody already speaks.
+ *
+ * The shell's rule still holds, and it is worth being precise about which
+ * rule it is: what is forbidden is a hue with NO word beside it. The pill
+ * writes its word like every other pill in the product — it simply happens
+ * that this domain's word for the state is the name of a colour.
+ *
+ * Stored as written here; read whatever the case, because a person typing
+ * into the file will write `red` as readily as `Red`.
  */
 const GRADES = {
-  nominal: 'green',
-  'à surveiller': 'amber',
-  'en danger': 'red',
+  green: 'green',
+  amber: 'amber',
+  red: 'red',
 }
 
+/** What the file writes, and what the pill says — the manifest offers these. */
+const SPELLING = { green: 'Green', amber: 'Amber', red: 'Red' }
+
 /** The words a project's own status is written with, in worsening order. */
-export const PROJECT_STATUSES = Object.keys(GRADES)
+export const PROJECT_STATUSES = Object.values(SPELLING)
 
 const lower = (value) => (typeof value === 'string' ? value.toLowerCase().trim() : '')
 
-/** `'En Danger'` → `'red'`; anything this plugin has not declared → undefined. */
+/** `' RED '` → `'red'`; anything this plugin has not declared → undefined. */
 export function gradeOf(fields) {
   return GRADES[lower(fields?.['project-status'])]
 }
@@ -287,7 +300,7 @@ export function badgeOf(page) {
   if (page?.finished === true) return word ? { word, tone: 'settled' } : undefined
   if (page?.tone === 'waiting') return word ? { word, tone: 'waiting' } : undefined
   const grade = gradeOf(page?.fields)
-  if (grade) return { word: lower(page.fields['project-status']), tone: grade }
+  if (grade) return { word: SPELLING[grade], tone: grade }
   return word ? { word, tone: 'underway' } : undefined
 }
 

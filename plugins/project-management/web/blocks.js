@@ -66,12 +66,13 @@ export default function createProjectBlocks(api) {
     past: fr ? 'échu' : 'elapsed',
     current: fr ? 'en cours' : 'under way',
     ahead: fr ? 'à venir' : 'ahead',
-    // The three a project's owner writes themselves. They sit in the same
-    // table as the calendar's because a bar wears ONE state: what the owner
-    // said, or failing that what the dates imply — never both at once.
-    green: fr ? 'nominal' : 'nominal',
-    amber: fr ? 'à surveiller' : 'needs watching',
-    red: fr ? 'en danger' : 'in trouble',
+    // The three a project's owner writes themselves, and not translated: the
+    // domain's own words, the same ones the file carries and the pill shows.
+    // They sit in the same table as the calendar's because a bar wears ONE
+    // state — what the owner said, or failing that what the dates imply.
+    green: 'Green',
+    amber: 'Amber',
+    red: 'Red',
   }
   const spell = (entry, today) =>
     [entry.label, entry.start ? `${entry.start} → ${entry.due}` : entry.due, STATES[barState(entry, today)]]

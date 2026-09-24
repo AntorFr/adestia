@@ -14,9 +14,9 @@
         "label": "Project status",
         "help": "How the project is GOING, and only while it is under way \u2014 a project waiting or closed says that instead.",
         "values": [
-          "nominal",
-          "\u00e0 surveiller",
-          "en danger"
+          "Green",
+          "Amber",
+          "Red"
         ],
         "closed": true
       }

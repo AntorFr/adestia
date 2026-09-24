@@ -298,8 +298,8 @@ const project = (fields, extra = {}) => ({
 })
 
 test('a running project shows what its owner says about it', () => {
-  assert.deepEqual(badgeOf(project({ status: 'en cours', 'project-status': 'en danger' })), {
-    word: 'en danger',
+  assert.deepEqual(badgeOf(project({ status: 'en cours', 'project-status': 'Red' })), {
+    word: 'Red',
     tone: 'red',
   })
 })
@@ -307,13 +307,13 @@ test('a running project shows what its owner says about it', () => {
 test('a project nobody can advance says THAT, whatever grade it carries', () => {
   // « nominal » à côté de « bloqué » serait un projet qui se dit bien portant
   // pendant que personne ne peut y toucher.
-  const page = project({ status: 'bloqué', 'project-status': 'nominal' }, { tone: 'waiting' })
+  const page = project({ status: 'bloqué', 'project-status': 'Green' }, { tone: 'waiting' })
   assert.deepEqual(badgeOf(page), { word: 'bloqué', tone: 'waiting' })
 })
 
 test('a closed project says it is closed — its last grade is stale', () => {
   const page = project(
-    { status: 'clos', 'project-status': 'en danger' },
+    { status: 'clos', 'project-status': 'Red' },
     { finished: true, tone: 'settled' },
   )
   assert.deepEqual(badgeOf(page), { word: 'clos', tone: 'settled' })
@@ -329,23 +329,31 @@ test('a page that says nothing about itself wears no badge at all', () => {
 })
 
 test('the grade is read whatever its case and spacing', () => {
-  assert.equal(gradeOf({ 'project-status': '  En Danger ' }), 'red')
+  // Quelqu'un qui tape dans le fichier écrit « red » aussi volontiers que
+  // « Red » ; la pastille, elle, affiche toujours l'orthographe canonique,
+  // sinon vingt lignes dont l'une dit « red » et la suivante « Red » ont l'air
+  // cassées pour une raison que personne ne voit.
+  assert.equal(gradeOf({ 'project-status': '  RED ' }), 'red')
   assert.equal(gradeOf({ 'project-status': 'excellent' }), undefined)
   assert.equal(gradeOf({}), undefined)
+  assert.deepEqual(badgeOf(project({ status: 'en cours', 'project-status': 'red' })), {
+    word: 'Red',
+    tone: 'red',
+  })
 })
 
 test('the three words are disjoint from the lifecycle vocabulary', () => {
   // Ce qui rend la précédence lisible dans le fichier : aucun mot ne peut être
   // écrit dans les deux champs, donc on sait toujours lequel des deux parle.
   const lifecycle = ['en cours', 'bloqué', 'en attente', 'clos', 'fait', 'terminé', 'idée']
-  for (const word of PROJECT_STATUSES) assert.equal(lifecycle.includes(word), false)
+  for (const word of PROJECT_STATUSES) assert.equal(lifecycle.includes(word.toLowerCase()), false)
 })
 
 // ── subprojectsOf: what a list of sub-projects is a list OF ─────────────────
 
 const CORPUS = [
   project(
-    { status: 'en cours', 'project-status': 'en danger' },
+    { status: 'en cours', 'project-status': 'Red' },
     { path: 'chantiers/a/socle/INDEX.md', title: 'Socle' },
   ),
   project(
@@ -363,7 +371,7 @@ test('a list of sub-projects lists sub-projects, not what is filed beside them',
 
 test('each row carries the one badge its page has earned', () => {
   const rows = subprojectsOf(CORPUS, 'chantiers/a', 'children')
-  assert.deepEqual(rows.find((row) => row.label === 'Socle').badge, { word: 'en danger', tone: 'red' })
+  assert.deepEqual(rows.find((row) => row.label === 'Socle').badge, { word: 'Red', tone: 'red' })
   assert.equal(rows.find((row) => row.label === 'Éditeur').finished, true)
 })
 
@@ -397,7 +405,7 @@ test('an ungraded bar keeps exactly the calendar it had', () => {
 test('the planning carries the grade onto its entries, from the same walk', () => {
   const pages = [
     project(
-      { status: 'en cours', 'project-status': 'à surveiller', due: '2026-11-01' },
+      { status: 'en cours', 'project-status': 'Amber', due: '2026-11-01' },
       { path: 'chantiers/a/socle/INDEX.md', title: 'Socle' },
     ),
   ]
