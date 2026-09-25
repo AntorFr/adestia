@@ -402,3 +402,11 @@ non revérifiés un par un ; l'historique complet est dans git) :
       qui ne se ferme pas, fiche `adestia-evolutions` absente de la nav).
 - [ ] Plugin `project-management` : son `kind` (feature ou app) reste à
       arbitrer le jour des surcharges (`table{type=risques}`, contributeurs).
+- [ ] **Les valeurs d'état sont à retravailler** (dit acceptable en l'état le
+      25/09, remis à plus tard). Le défaut qui se voit déjà : `--warning`
+      porte DEUX sens — « en attente » du cycle de vie et « Amber » du
+      `project-status` — donc deux boulettes ambre côte à côte ne se
+      distinguent que par le mot à droite, et deux barres ambre d'un planning
+      par le survol. Le chantier n'est pas « ajouter une couleur » : c'est
+      reprendre l'ensemble des valeurs d'état, les trois familles de la coque
+      et les trois du projet, et décider ce que chaque teinte dit.
