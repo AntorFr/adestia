@@ -54,6 +54,11 @@ describe('the contract', () => {
     // sentence has to say so or the agent files a dropped photo into content.
     expect(contract.contents).toContain('/data/inbox')
     expect(contract.contents).toContain('OUTSIDE the workspace')
+    // And it cannot name ONE directory any more: there is a box per person,
+    // whose path the agent is handed with the message that carries the files.
+    // A contract generated at boot is the same for everybody, so this is the
+    // one zone it describes rather than points at.
+    expect(contract.contents).toContain('one box per person')
   })
 
   it('names the single store on a plain instance', () => {

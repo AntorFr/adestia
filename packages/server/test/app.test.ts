@@ -5,6 +5,7 @@ import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+import { AttachmentInbox } from '../src/attachments.js'
 import { buildApp, buildVersion, sseFrame, type AppDependencies } from '../src/app.js'
 import { parseConfig } from '../src/config.js'
 
@@ -324,6 +325,37 @@ describe('/api/turn', () => {
       model: 'model-a',
       cwd: './workspace',
     })
+    await app.close()
+  })
+
+  it('declares the sender’s inbox box, so the engine may read what they dropped', async () => {
+    // The inbox sits outside the workspace by design, and a CLI that verifies
+    // read paths refuses the very file the prompt just named. Their BOX, not
+    // the inbox: what is in there is unfiled, and an undecided pile is only
+    // tidyable when it is not mixed.
+    const dataDir = await mkdtemp(join(tmpdir(), 'adestia-app-inbox-'))
+    const driver = new ScriptedDriver([RESULT])
+    const config = { ...deps().config, dataDir }
+    const app = await buildApp({ ...deps({ driver }), config })
+
+    // No box yet: a root that does not exist is a launch flag pointing at
+    // nothing, and some CLIs refuse to start on one.
+    await app.inject({ method: 'POST', url: '/api/turn', payload: { prompt: 'hi' } })
+    expect(driver.requests[0]?.roots).toBeUndefined()
+
+    const { stored } = await new AttachmentInbox(dataDir).store(
+      { id: 'local', displayName: 'Local user' },
+      [{ name: 'plan.md', data: Buffer.from('hello') }],
+    )
+    await app.inject({
+      method: 'POST',
+      url: '/api/turn',
+      payload: { prompt: 'what is in this?', attachments: [stored[0]!.id] },
+    })
+
+    const box = await new AttachmentInbox(dataDir).box('local')
+    expect(driver.requests[1]?.roots).toEqual([box])
+    expect(driver.requests[1]?.prompt).toContain(stored[0]!.path)
     await app.close()
   })
 

@@ -2893,3 +2893,40 @@ for a difference measured in minutes. And an operator who removes the rebound
 does not sign out everyone holding a cookie stamped from when it existed: with
 no store there is no verdict, and inventing one punishes a configuration change
 nobody's session asked for.
+
+*A box per person in the attachment inbox, and the engine is told where it is.*
+The inbox holds what somebody dropped in the chat and nobody has yet decided
+the place of — which is precisely why it has to be separable: an undecided pile
+is only tidyable when you can tell whose it is. Each person therefore gets a
+box of their own under it, named by the hash of their user id (an OIDC subject
+holds slashes and colons, and a "sanitize" mapping two people onto one
+directory is a leak, not a formatting choice), with a one-line `owner.txt`
+beside the batches — a hash is unreadable BY DESIGN, and an unreadable pile is
+the very thing the boxes exist to prevent. The motive is housekeeping. That an
+id one person holds now names nothing at all in anybody else's box falls out of
+the same partition: a consequence worth having, never the reason for it. The
+sweep follows the shape — each batch expires on ITS own age, because a
+directory's mtime moves when a child is added, so a box aged as one unit would
+take an old batch out of an active person's hands and keep a quiet person's for
+ever.
+
+*And the box is declared to the engine as a working root.* A CLI that verifies
+read paths refuses a file outside its working directory, so the agent was
+handed a path by the instance itself and answered a bare "Permission denied" on
+it — which reads as an agent gone stupid rather than as a missing declaration.
+The driver contract already carried `roots` for the stores mounted outside the
+workspace; codex and Claude Code honoured it, the copilot driver ignored it and
+now declares each one with `--add-dir`. A chat turn adds the box of whoever is
+talking, on EVERY turn rather than only on the ones carrying files: the browser
+sends the attachment ids with the message they arrive on, while a person goes
+back two turns later to the file they sent. And only when the box exists,
+because a root that does not exist is a launch flag pointing at nothing.
+
+Two shapes refused on the way. Declaring the whole inbox is one constant and no
+bookkeeping, and it un-separates precisely what the boxes just separated — it
+would also hand every delegated turn, whose caller is a bearer token rather
+than a person, everybody's unfiled files. And deriving the root from the
+attachment ids the browser sent (the first shape of this fix) looks minimal and
+is not: the ids are user-controlled, `resolve` checks escape rather than shape,
+and an id of a single segment would have named the inbox itself — the maximal
+grant, reached through the parameter meant to keep it minimal.

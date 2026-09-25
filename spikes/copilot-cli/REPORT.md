@@ -105,7 +105,7 @@ Login mechanics [HELP-TEXT, `raw/cmd-login.txt`]: `copilot login` supports `--we
 
 ### Present in `--help` (existence proven, behavior not exercised)
 
-`--continue` · `-r/--resume` without value (interactive picker) · `--add-dir` (repeatable) · `--allow-tool[=…]` / `--deny-tool[=…]` (patterns `shell(cmd:*)`, `write(path?)`, `<mcp-server>(tool?)`, `url(…)`; deny always beats allow) · `--allow-url/--deny-url/--allow-all-urls` · `--allow-all-paths` / `--disallow-temp-dir` · `--allow-all` / `--yolo` (= all three allow-alls) · `--available-tools/--excluded-tools` (model-visible tool filter, distinct from permissions) · `--model <model>` (`auto` supported) · `--effort/--reasoning-effort` (none/minimal/low/medium/high/xhigh/max) · `--context default|long_context` · `--max-ai-credits` (min 30, soft cap) · `--attachment` · `--share[=path]` / `--share-gist` · `--stream on|off` · `--log-dir` (default `~/.copilot/logs/`) / `--log-level` · `--no-auto-update` · `--additional-mcp-config <json|@file>` (augments `~/.copilot/mcp-config.json` per-session) · `--disable-builtin-mcps` (currently: github-mcp-server) / `--disable-mcp-server <name>` · `--add-github-mcp-tool/-toolset`, `--enable-all-github-mcp-tools` · `--agent <agent>` · `--mode interactive|plan|autopilot`, `--plan`, `--autopilot`, `--max-autopilot-continues` (default 5) · `-C <dir>` · `-n/--name` · `--no-custom-instructions` · `--no-remote` / `--no-remote-export` · `--secret-env-vars` · `--acp` (Agent Client Protocol server!) · `-i/--interactive <prompt>` · subcommands `login/mcp/plugin/plugins/skill/update/init/completion`.
+`--continue` · `-r/--resume` without value (interactive picker) · `--allow-tool[=…]` / `--deny-tool[=…]` (patterns `shell(cmd:*)`, `write(path?)`, `<mcp-server>(tool?)`, `url(…)`; deny always beats allow) · `--allow-url/--deny-url/--allow-all-urls` · `--allow-all` / `--yolo` (= all three allow-alls) · `--available-tools/--excluded-tools` (model-visible tool filter, distinct from permissions) · `--model <model>` (`auto` supported) · `--effort/--reasoning-effort` (none/minimal/low/medium/high/xhigh/max) · `--context default|long_context` · `--max-ai-credits` (min 30, soft cap) · `--attachment` · `--share[=path]` / `--share-gist` · `--stream on|off` · `--log-dir` (default `~/.copilot/logs/`) / `--log-level` · `--no-auto-update` · `--additional-mcp-config <json|@file>` (augments `~/.copilot/mcp-config.json` per-session) · `--disable-builtin-mcps` (currently: github-mcp-server) / `--disable-mcp-server <name>` · `--add-github-mcp-tool/-toolset`, `--enable-all-github-mcp-tools` · `--agent <agent>` · `--mode interactive|plan|autopilot`, `--plan`, `--autopilot`, `--max-autopilot-continues` (default 5) · `-C <dir>` · `-n/--name` · `--no-custom-instructions` · `--no-remote` / `--no-remote-export` · `--secret-env-vars` · `--acp` (Agent Client Protocol server!) · `-i/--interactive <prompt>` · subcommands `login/mcp/plugin/plugins/skill/update/init/completion`.
 
 Env vars documented in `help environment` (`raw/help-topic-environment.txt`): `COPILOT_ALLOW_ALL`, `COPILOT_AUTO_UPDATE`, `COPILOT_HOME`, `COPILOT_MODEL`, `COPILOT_GITHUB_TOKEN`/`GH_TOKEN`/`GITHUB_TOKEN`, `COPILOT_OFFLINE`, the full `COPILOT_PROVIDER_*` BYOK family, `GH_HOST`/`COPILOT_GH_HOST`, proxy vars, `COPILOT_OTEL_*` + standard `OTEL_*` (OpenTelemetry exporters incl. a local JSONL file exporter — a second potential telemetry tap for the driver).
 
@@ -285,3 +285,32 @@ config file? (y/N) `; success as `Signed in successfully as <login>.`; refusal a
 Copilot binary reads the OS store and dies as `Login failed: Error: request failed:
 builder error` before any request leaves the machine. Any image running this CLI
 needs `ca-certificates`.
+
+## 12. Path permissions — measured, not read off the help [EXECUTED — BYOK mock, 2026-09-25]
+
+Run against `mock-provider`-style scripts that make the model call `view` (read)
+and `create` (write) on a path OUTSIDE the working directory, on 1.0.80, with
+the flags the Adestia driver actually passes. Three facts, all by execution:
+
+- **The refusal is exactly the reported symptom.** With path verification in
+  play, the tool result comes back `success: false`, `Permission denied and
+  could not request permission from user` — no path, no flag named, nothing
+  that points at a missing declaration. `--allow-all-tools` does NOT cover
+  this: tool permission and path verification are separate gates.
+- **`--add-dir <dir>` lifts it**, for read and write both, exactly as the help
+  claims and repeatably.
+- **A `--add-dir` on a directory that does not exist kills the whole run**:
+  `Error executing prompt: Error: Directory does not exist or cannot be
+  accessed: …`, exit 1, no `result` line, the turn never starts. Anything
+  computing a root per turn must therefore check it exists first.
+
+And the trap that cost this measurement two wrong readings: **the system
+temporary directory is readable and writable by DEFAULT** ("plus the system
+temporary directory", `help permissions`), so a fixture built under `/tmp` —
+where a test harness naturally puts one — proves nothing at all. `TMPDIR` is
+unset under `env -i`, which is how a scratch directory ends up there without
+anybody choosing it. Use `--disallow-temp-dir` to measure the real policy.
+
+Worth an Adestia decision, separately: the driver passes neither
+`--allow-all-paths` nor `--disallow-temp-dir`, so the agent reads and writes
+the container's `/tmp` freely today.

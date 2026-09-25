@@ -1,5 +1,5 @@
 # Status — Adestia
-> MàJ : 2026-09-24
+> MàJ : 2026-09-25
 
 **État :** `main`, **v0.75.0** taguée et non déployée ; **v0.74.0** déployée
 sur les trois corps le 24/09 —
@@ -212,6 +212,60 @@ ne se distinguent pas. Sortie si ça gêne : donner à `late` un dessin plutôt
 qu'une teinte. Scénarios de banc : `statut-en-liste`, `statut-projet` (rejoué
 sur le skin Skippy, c'est lui qui prouve le choix des tokens). Pas encore
 déployée.
+
+v0.76.0 : **chacun sa boîte dans l'inbox des pièces jointes, et le moteur
+sait où elle est**. L'inbox garde ce qu'on a déposé dans le chat et dont
+personne n'a encore décidé la place — c'est donc exactement ce qui doit se
+séparer : un tas indécis ne se range que si on peut dire à qui il est. Chaque
+personne a sa boîte, nommée par le hash de son identifiant (un `sub` OIDC
+contient des slashes et des deux-points ; « assainir » deux personnes vers un
+même dossier est une fuite, pas un choix de format), avec un `owner.txt` d'une
+ligne à côté des lots — un hash est illisible PAR CONSTRUCTION, et un tas
+illisible est précisément ce que les boîtes empêchent. Le balayage suit la
+forme : chaque lot vieillit sur SA propre date, parce que celle d'un dossier
+bouge quand on y ajoute un enfant — une boîte vieillie d'un bloc prendrait un
+vieux lot des mains d'un actif et garderait pour toujours celui d'un
+silencieux. Un lot resté à la racine d'avant les boîtes expire là où il est.
+
+**Et la boîte est déclarée au moteur comme répertoire de travail.** Une CLI
+qui vérifie les chemins de lecture refuse un fichier hors de son répertoire
+courant : l'agent recevait de l'instance elle-même le chemin d'une pièce
+jointe et répondait « Permission denied » dessus, ce qui se lit comme un agent
+devenu bête plutôt que comme une déclaration manquante. Le contrat pilote
+portait déjà `roots` pour les stores montés hors workspace ; codex et Claude
+Code l'honoraient, le pilote Copilot l'ignorait — il déclare désormais chaque
+racine en `--add-dir`. Déclarée à CHAQUE tour de chat, pas seulement à ceux
+qui portent des fichiers : le navigateur n'envoie les ids qu'avec le message
+qui les apporte, alors qu'on revient sur un fichier deux tours plus tard. Et
+seulement quand la boîte existe, un root inexistant étant un drapeau de
+lancement qui pointe vers rien.
+
+Deux formes écartées en chemin. Déclarer l'inbox ENTIÈRE : une constante, zéro
+comptabilité — mais ça défait ce que les boîtes viennent de séparer, et ça
+donne à un tour délégué, dont l'appelant est un jeton porteur et pas une
+personne, les fichiers non rangés de tout le monde. Et dériver le root des ids
+envoyés par le navigateur (la première forme du correctif), qui a l'air
+minimale sans l'être : les ids viennent du client, `resolve` vérifie l'évasion
+et pas la forme, et un id d'un seul segment nommait l'inbox entière — la
+permission maximale, obtenue par le paramètre censé la garder minimale.
+
+**Mesuré plutôt que supposé** (CLI 1.0.80, mock BYOK, sans credentials —
+spike §12). Le refus est mot pour mot celui rapporté sur l'instance :
+« Permission denied and could not request permission from user », sans
+nommer ni le chemin ni le drapeau qui manque. `--allow-all-tools` ne le
+couvre PAS : permission d'outil et vérification de chemin sont deux portes.
+`--add-dir` l'ouvre, en lecture comme en écriture. Et un `--add-dir` sur un
+dossier absent **tue le tour entier** (exit 1, aucune ligne `result`) — ce
+qui valide le choix de ne déclarer la boîte que lorsqu'elle existe.
+
+Piège trouvé en mesurant, et consigné pour la prochaine fois : le répertoire
+temporaire du système est autorisé PAR DÉFAUT, donc une fixture posée dans
+`/tmp` fait croire qu'aucune vérification n'existe. Deux lectures fausses
+avant de s'en apercevoir. À arbitrer séparément : le pilote ne passe ni
+`--allow-all-paths` ni `--disallow-temp-dir`, donc l'agent lit et écrit
+aujourd'hui librement dans le `/tmp` du conteneur.
+
+Pas encore déployée.
 
 v0.61.0 : une page occupe un grand écran. Le canevas
 monte à 1400 px (940 avant) ; la prose garde une mesure, relevée à 89ch
