@@ -424,6 +424,68 @@ export interface TurnRequest {
   readonly tools?: ShellToolsHandle | undefined
 }
 
+/**
+ * What a zone of prose holds, which is the same question as WHEN the engine
+ * reads it.
+ *
+ * Three kinds, because three is what the engines actually have, and because
+ * the difference a person needs is not the folder's name:
+ *
+ * - `instruction` — read at the start of every turn, whatever the turn is
+ *   about. `CLAUDE.md`, `AGENTS.md`, `.github/copilot-instructions.md`.
+ * - `skill` — read only when the task matches its description. A folder of
+ *   them costs nothing until one fits.
+ * - `agent` — a named helper the engine hands work to, with its own brief.
+ *
+ * A CLI with no such notion simply declares no zone of that kind, and the
+ * interface draws no group for it: Codex has skills and no agents, and a
+ * heading over an empty list reads as a feature that is broken rather than
+ * one that does not exist here.
+ */
+export type InstructionKind = 'instruction' | 'skill' | 'agent'
+
+/**
+ * One declared zone, and what it holds.
+ *
+ * The kind is DECLARED rather than inferred from the last folder's name, for
+ * the reason the core already applies to ownership: a guess off a path is
+ * right on the three engines that exist today and silently wrong on the
+ * fourth, where it would file a zone under a heading that lies about when its
+ * text reaches the model. Only the driver knows its harness.
+ */
+export interface InstructionZone {
+  /** Workspace-relative. A single file, or a folder holding many. */
+  readonly path: string
+  readonly kind: InstructionKind
+  /**
+   * Where a NEW one lands inside this folder, `<name>` standing for the slug
+   * somebody types. Absent on a zone that is a single file.
+   *
+   * Declared because the shape is the CLI's, not a convention: Claude reads a
+   * skill from `<name>/SKILL.md` and a subagent from `<name>.md`, Copilot
+   * wants `<name>.agent.md` for the latter. The interface used to write a
+   * `SKILL.md` into every folder it was given, which put a would-be subagent
+   * at `.claude/agents/relecteur/SKILL.md` — a file no engine ever opens, and
+   * a silent one: the save succeeded, the card appeared, and the agent it
+   * described never existed.
+   */
+  readonly entry?: string
+}
+
+/**
+ * A driver's zones, with bare strings read as `instruction`.
+ *
+ * The default is the always-read kind on purpose: an undeclared zone shown
+ * under "read every turn" overstates how often its text is used, which sends
+ * somebody to look at a file that was not to blame. The opposite default
+ * hides a standing rule inside a list nobody opens.
+ */
+export function instructionZones(driver: Driver): readonly InstructionZone[] {
+  return (driver.instructionPaths?.() ?? []).map((zone) =>
+    typeof zone === 'string' ? { path: zone, kind: 'instruction' as const } : zone,
+  )
+}
+
 /** The mandatory core every driver implements. */
 export interface Driver {
   describe(): Promise<DriverDescriptor>
@@ -446,7 +508,8 @@ export interface Driver {
    */
   acceptsRoots?(): boolean
   /**
-   * Workspace paths holding the PROSE this CLI reads as instructions.
+   * Workspace paths holding the PROSE this CLI reads as instructions, and
+   * what each of them holds.
    *
    * Declared for the same reason as the two above, and kept apart from them on
    * purpose: these are documents. Getting one wrong produces bad work, not a
@@ -458,8 +521,11 @@ export interface Driver {
    * rather than by their path: a plugin's data-format contract is a technical
    * spec nobody asked to read, and it is rewritten at every start, so offering
    * to edit it would offer an edit that silently disappears.
+   *
+   * A bare string still works and means `instruction` — see `InstructionZone`
+   * for why the kind is said here rather than read off the folder's name.
    */
-  instructionPaths?(): readonly string[]
+  instructionPaths?(): readonly (string | InstructionZone)[]
   /**
    * Environment merged UNDER the turn's own env at the single spawn site.
    * The core owns the secrets; the driver only says how to hand them over.

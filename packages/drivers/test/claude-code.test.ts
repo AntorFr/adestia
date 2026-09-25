@@ -103,10 +103,16 @@ describe('conformance', () => {
     expect(capabilities).toContain('usageMetrics')
   })
 
-  it('shows the subagent folder and skills as prose', () => {
+  it('shows the subagent folder and skills as prose, and says which is which', () => {
+    // The kind travels with the path because the interface groups by WHEN a
+    // file is read, and the folder's name is a guess that holds on exactly
+    // the engines somebody already thought about.
     const driver = new ClaudeCodeDriver({ query: fakeSdk([]) })
-    expect(driver.instructionPaths()).toContain('.claude/agents')
-    expect(driver.instructionPaths()).toContain('.claude/skills')
+    expect(driver.instructionPaths()).toEqual([
+      { path: 'CLAUDE.md', kind: 'instruction' },
+      { path: '.claude/agents', kind: 'agent', entry: '<name>.md' },
+      { path: '.claude/skills', kind: 'skill', entry: '<name>/SKILL.md' },
+    ])
   })
 
   it('spawns with the inherited environment, credentials on top', async () => {

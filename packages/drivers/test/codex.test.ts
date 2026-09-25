@@ -544,7 +544,14 @@ describe('what the driver says about itself', () => {
     // Measured against 0.154.0: five candidates planted, these are the ones
     // codex picked up.
     expect(driver.skillsPath()).toBe('.codex/skills')
-    expect(driver.instructionPaths()).toContain('AGENTS.md')
+    expect(driver.instructionPaths()).toEqual([
+      { path: 'AGENTS.md', kind: 'instruction' },
+      { path: '.codex/skills', kind: 'skill', entry: '<name>/SKILL.md' },
+      { path: '.agents/skills', kind: 'skill', entry: '<name>/SKILL.md' },
+    ])
+    // No agent zone at all, which the interface must render as an absent
+    // group rather than an empty one: a heading over nothing reads as broken.
+    expect(driver.instructionPaths().some((zone) => zone.kind === 'agent')).toBe(false)
     expect(driver.acceptsRoots()).toBe(true)
   })
 

@@ -6,10 +6,11 @@
 import { readFile, stat } from 'node:fs/promises'
 
 import type { FastifyInstance } from 'fastify'
-import type { Driver } from '@antorfr/adestia-drivers'
+import { type Driver, instructionZones } from '@antorfr/adestia-drivers'
 
 import {
   describeInstructionPaths,
+  instructionKindOf,
   isManaged,
   listInstructions,
   safeInstructionPath,
@@ -29,24 +30,24 @@ export function registerInstructions(
    * written none" are different facts.
    */
   app.get('/api/instructions', async (_request, reply) => {
-    const paths = driver.instructionPaths?.() ?? []
-    if (paths.length === 0) {
+    const zones = instructionZones(driver)
+    if (zones.length === 0) {
       await reply.code(404).send({ error: 'this driver declares no instruction zone' })
       return reply
     }
     return {
-      files: await listInstructions(workspaceRoot, paths),
+      files: await listInstructions(workspaceRoot, zones),
       // Where one may be CREATED. A zone with nothing in it and no way to put
       // anything there is a dead end: the listing shows what exists, and a
       // fresh instance has nothing. The client cannot guess these — only the
       // driver knows where its CLI reads prose.
-      paths: await describeInstructionPaths(workspaceRoot, paths),
+      paths: await describeInstructionPaths(workspaceRoot, zones),
     }
   })
 
   app.get<{ Params: { '*': string } }>('/api/instructions/*', async (request, reply) => {
-    const paths = driver.instructionPaths?.() ?? []
-    const file = safeInstructionPath(workspaceRoot, paths, request.params['*'])
+    const zones = instructionZones(driver)
+    const file = safeInstructionPath(workspaceRoot, zones, request.params['*'])
     if (!file) return reply.code(400).send({ error: 'not an instruction path' })
     try {
       const [info, markdown] = await Promise.all([stat(file), readFile(file, 'utf8')])
@@ -54,6 +55,10 @@ export function registerInstructions(
         path: request.params['*'],
         markdown,
         modified: new Date(info.mtimeMs).toISOString(),
+        // What this file IS, so a reader opening one by its address alone —
+        // a deep link, a reload — is told when the engine reads it without
+        // having to find its card again.
+        kind: instructionKindOf(workspaceRoot, zones, file),
         // Reported rather than hidden: the listing already omits managed
         // files, and a client that reached one anyway must not be told it can
         // save over something the next restart will rewrite.
@@ -67,8 +72,8 @@ export function registerInstructions(
   app.put<{ Params: { '*': string }; Body: { markdown?: unknown } }>(
     '/api/instructions/*',
     async (request, reply) => {
-      const paths = driver.instructionPaths?.() ?? []
-      const file = safeInstructionPath(workspaceRoot, paths, request.params['*'])
+      const zones = instructionZones(driver)
+      const file = safeInstructionPath(workspaceRoot, zones, request.params['*'])
       if (!file) return reply.code(400).send({ error: 'not an instruction path' })
 
       const markdown = request.body?.markdown
