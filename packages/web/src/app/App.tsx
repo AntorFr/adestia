@@ -424,7 +424,11 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
                 {/* Rendered inside a boundary: a plugin that throws mid-render
                     takes its own panel down, never the shell around it. */}
                 <PluginBoundary id={plugin.id}>
-                  <View />
+                  {/* The index the shell already holds and keeps live. An app
+                      that fetched it itself paid a round trip and a
+                      server-side re-read of every file before its first
+                      line — and then held a snapshot nobody refreshed. */}
+                  <View pages={pages} stores={stores} />
                 </PluginBoundary>
               </>
             )
@@ -502,6 +506,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
               // The shell already holds the index and keeps it live; the reader
               // needs it to tell a reference that MOVED from one that is gone.
               pages={pages}
+              stores={stores}
               t={t}
               {...(mount ? { mount } : {})}
             />

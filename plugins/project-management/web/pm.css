@@ -257,20 +257,79 @@ button.pm-timeline__span:hover {
 }
 .pm-subproject__row:last-child { border-bottom: 0; }
 .pm-subproject__row:hover { background: var(--surface-sunken); }
+/* LA BOULETTE PORTE L'ÉTAT. Elle est déjà à la marge gauche, là où l'œil
+   descend une liste, et elle ne portait rien ; une pastille en fin de ligne
+   faisait au contraire une seconde colonne de boîtes, plus lourde que ce
+   qu'elle rapporte et lue après le titre au lieu d'être lue avec lui.
+
+   DESSINÉE, pas écrite. C'était un losange `◆` pris dans la police : une
+   forme qu'on ne choisit pas vraiment (elle change d'un système à l'autre,
+   et elle n'a ni la taille ni le poids qu'on lui demande). Un rond en CSS
+   est l'idiome que ce produit emploie déjà partout — la pastille de statut
+   de la coque dessine son point exactement comme ça — et le halo est celui
+   du témoin de présence. Deux gestes empruntés, zéro invention. */
 .pm-subproject__ico {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: currentcolor;
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentcolor 16%, transparent);
   color: var(--accent);
-  font-style: normal;
-  font-size: 0.8em;
+  font-size: 0;
 }
-/* Le titre pousse la pastille au bout de la ligne : vingt lignes dont les
-   états sont alignés se lisent d'une colonne, ce qu'une pastille collée au
-   titre ne permet pas. */
+.pm-subproject__ico--underway { color: var(--accent); }
+.pm-subproject__ico--waiting,
+.pm-subproject__ico--amber { color: var(--warning); }
+.pm-subproject__ico--settled,
+.pm-subproject__ico--green { color: var(--success); }
+.pm-subproject__ico--red { color: var(--danger); }
+/* Le titre pousse le mot au bout de la ligne : vingt lignes dont les mots sont
+   alignés se lisent d'une colonne, ce qu'un mot collé au titre ne permet pas.
+   La couleur, elle, est déjà lue à gauche. */
 .pm-subproject__title { flex: 1; }
 .pm-subproject__empty {
   color: var(--text-muted);
   font-size: 0.9em;
   margin: 0;
 }
+/* ── `view=cards` — les mêmes entrées, en grille ───────────────────────────
+
+   La grille est celle des cartes de la coque : des colonnes qui se remplissent
+   d'elles-mêmes, jamais un nombre de colonnes écrit en dur — le canevas d'une
+   fiche change de largeur quand le rail de chat bouge, et un compte fixe
+   laisse un trou ou serre. */
+.pm-subproject__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+}
+.pm-subproject__card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pm-subproject__card:hover { border-color: var(--accent); }
+/* La boulette et le nom sur une ligne, le mot dessous : un nom de projet long
+   a besoin d'aller à la ligne, ce qu'une ligne de liste ne lui permettait pas
+   mais qu'une carte doit. */
+.pm-subproject__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.pm-subproject__card .pm-subproject__title { flex: initial; }
+
 .pm-subproject__fold > summary {
   padding: var(--space-2) var(--space-3);
   color: var(--text-muted);
@@ -278,37 +337,21 @@ button.pm-timeline__span:hover {
   cursor: pointer;
 }
 
-/* La pastille est celle de la coque — même point, même graisse, même pas de
-   couleur sans le mot : un sous-projet doit se lire comme une page, pas comme
-   la trouvaille d'un plugin. */
-.pm-subproject__state {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
+/* Le MOT, à droite du titre, et sans couleur : la teinte est déjà dite par la
+   boulette, et la redire ici ferait deux fois la même phrase. C'est
+   l'étiquette neutre de la coque (`.adestia-tag`), recopiée plutôt
+   qu'empruntée — un bloc de plugin ne vise pas une classe du cœur.
+
+   Elle reste là plutôt que de disparaître, et ce n'est pas de l'ornement :
+   une boulette colorée sans mot nulle part ferait de la teinte l'étiquette,
+   la seule règle que ce produit ne plie pas, et laisserait un lecteur
+   d'écran, une impression en gris et un lecteur daltonien devant une liste
+   de losanges identiques. */
+.pm-subproject__tag {
   font: 600 10.5px/1.5 var(--font-mono);
-  border-radius: var(--radius-pill);
-  padding: 2px 9px 2px 8px;
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
   white-space: nowrap;
-}
-.pm-subproject__state::before {
-  content: '';
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: currentcolor;
-}
-.pm-subproject__state--underway { color: var(--accent); background: var(--accent-quiet); }
-.pm-subproject__state--waiting,
-.pm-subproject__state--amber {
-  color: var(--warning);
-  background: color-mix(in srgb, var(--warning) 13%, transparent);
-}
-.pm-subproject__state--settled,
-.pm-subproject__state--green {
-  color: var(--success);
-  background: color-mix(in srgb, var(--success) 12%, transparent);
-}
-.pm-subproject__state--red {
-  color: var(--danger);
-  background: color-mix(in srgb, var(--danger) 13%, transparent);
 }

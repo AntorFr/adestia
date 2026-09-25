@@ -1,7 +1,8 @@
 # Status — Adestia
 > MàJ : 2026-09-25
 
-**État :** `main`, **v0.75.0** taguée et non déployée ; **v0.74.0** déployée
+**État :** `main`, **v0.77.0** taguée ; v0.75.0, v0.76.0 et v0.77.0 attendent
+toutes les trois un déploiement ; **v0.74.0** déployée
 sur les trois corps le 24/09 —
 8 plugins actifs sur 10 chez Alfred, 9 sur 12 chez Skippy (dont `dev-flow` et
 `sdlc-console`, tirés de `homelab-sdlc-core` v0.4.1), 2 sur 10 chez Nestor,
@@ -267,6 +268,62 @@ aujourd'hui librement dans le `/tmp` du conteneur.
 
 Pas encore déployée.
 
+v0.77.0 : **un plugin ne redemande plus ce que la coque tient déjà** — et
+une boulette dit où en est un sous-projet.
+
+Le gros morceau est le premier, et il vient d'un constat d'usage : le bloc
+`:::subproject` mettait une à deux secondes à apparaître là où le `:::list`
+du cœur était instantané, sur la même page, pour lire la même chose. La
+différence était **une requête**. La coque récupère `/api/pages/index` UNE
+fois au démarrage et le tient vivant par le surveillant de fichiers du
+serveur ; un bloc de plugin, lui, recevait sa page et son entête mais jamais
+le listing de l'instance, donc chaque bloc de requête le refaisait pour son
+compte — et cette route relit tous les fichiers markdown du serveur, sans
+cache. Deux blocs sur une page payaient deux fois.
+
+`pages` et `stores` voyagent donc désormais **ensemble**, aux blocs comme aux
+écrans (une vue ne recevait AUCUNE prop, ce qui explique que les quatre apps
+allaient chercher l'index elles-mêmes). Le couple est le point : la table des
+magasins vit sur le LISTING, pas sur ses entrées — une entrée dit quel magasin
+la porte, jamais comment il s'appelle, quelle teinte il porte ni lequel est
+celui de cette coque. Tendre une moitié sans l'autre coûtait à `todo` ses
+marques de provenance et pouvait faire répondre « à moi » avec le nom de
+quelqu'un d'autre, ce que le code appelle pire que pas de « à moi » du tout.
+
+Migrés : le planning et la liste de sous-projets, la checklist, et les écrans
+de `todo`, `journal`, `listening-post` et `voyages`. Ce qui garde un `fetch`
+est nommé plutôt que laissé : un `routeFor` qui dessine un lien sur le lanceur
+et un `tileInfo` qui compte pour une tuile tournent AVANT tout montage et ne
+voient aucune prop ; et chaque écran garde un repli pour un montage sans index
+et pour une instance dont le surveillant est éteint, où rien ne lui dirait que
+sa propre écriture a atterri. `voyages` reçoit une fonction et non le tableau :
+son moteur est impératif et survit à chaque voyage ouvert, donc un listing
+capturé à la création vieillirait dedans.
+
+**Et le sous-projet porte son état dans sa boulette.** Le rond à gauche de
+chaque ligne prend la couleur — là où l'œil descend une liste — et le mot
+reste à droite du titre en étiquette neutre : la teinte n'est jamais
+l'étiquette, et un rond coloré sans mot laisserait un lecteur d'écran, une
+impression en gris et un lecteur daltonien devant une liste de ronds
+identiques. Le rond est DESSINÉ, pas pris dans la police : un glyphe change
+d'un système à l'autre et n'a ni la taille ni le poids qu'on lui demande.
+`view=cards` lave la même liste en grille, au mot du cœur et à son sens
+(`view` range l'intérieur, `frame=card` met le bloc en carte).
+
+La règle de la boulette est celle du bloc, inchangée : un `project-status` ne
+colore que tant que le projet tourne ; en attente ou clos, le cycle de vie
+reprend la boulette et porte sa propre couleur — et « clos » est dit par le
+repli autant que par la teinte.
+
+Deux pièges payés au banc : la barre d'un bloc est à `opacity: 0` et
+`pointer-events: none` tant que le bloc n'est pas survolé, donc un clic direct
+sur son ⚙ expire sur un élément invisible ; et deux bancs lancés en parallèle
+partagent des noms de conteneurs fixes, celui qui sort le premier emportant le
+serveur de l'autre — sans échouer proprement, le survivant photographie des
+blocs vides. Scénarios de banc : `statut-projet` (rejoué sur le skin Skippy,
+et qui vérifie que le ⚙ du bloc offre bien `view`), `statut-en-liste`. Pas
+encore déployée.
+
 v0.61.0 : une page occupe un grand écran. Le canevas
 monte à 1400 px (940 avant) ; la prose garde une mesure, relevée à 89ch
 (~830 px, choix de l'utilisateur sur son écran, au-delà des 70 classiques),
@@ -402,3 +459,11 @@ non revérifiés un par un ; l'historique complet est dans git) :
       qui ne se ferme pas, fiche `adestia-evolutions` absente de la nav).
 - [ ] Plugin `project-management` : son `kind` (feature ou app) reste à
       arbitrer le jour des surcharges (`table{type=risques}`, contributeurs).
+- [ ] **Les valeurs d'état sont à retravailler** (dit acceptable en l'état le
+      25/09, remis à plus tard). Le défaut qui se voit déjà : `--warning`
+      porte DEUX sens — « en attente » du cycle de vie et « Amber » du
+      `project-status` — donc deux boulettes ambre côte à côte ne se
+      distinguent que par le mot à droite, et deux barres ambre d'un planning
+      par le survol. Le chantier n'est pas « ajouter une couleur » : c'est
+      reprendre l'ensemble des valeurs d'état, les trois familles de la coque
+      et les trois du projet, et décider ce que chaque teinte dit.

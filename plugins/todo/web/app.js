@@ -33,7 +33,7 @@ const NOBODY = '::free'
 export default function view(api) {
   const t = words(api.locale)
 
-  function Todo() {
+  function Todo({ pages, stores }) {
     const [model, setModel] = useState(null)
     const [me, setMe] = useState(null)
     const [openList, setOpenList] = useState('open')
@@ -61,9 +61,33 @@ export default function view(api) {
       }
     }, [])
 
+    /**
+     * The model, from the index the shell already holds.
+     *
+     * This screen used to fetch `/api/pages/index` at mount — the same
+     * listing the shell had already fetched at boot and keeps live from the
+     * server's file watcher. It cost a round trip AND a server-side re-read
+     * of every markdown file in the instance before a single row, and then
+     * held a snapshot that went stale on its own.
+     *
+     * Both halves or neither: the entries say which store carries a task, the
+     * TABLE says what that store is called and which one is this shell's own
+     * — and that last one decides which `todo-config` is yours, hence who
+     * `me` is.
+     */
     useEffect(() => {
+      if (!pages || !stores) return
+      setModel(buildModel(pages, stores))
+    }, [pages, stores])
+
+    // The fallback, and the belt: no index handed over (a mounting that gives
+    // none), and a re-read after this screen's own writes for the instances
+    // where the watcher is off — an operator's choice, on a mount that cannot
+    // carry native events.
+    useEffect(() => {
+      if (pages && stores) return
       void reload()
-    }, [reload])
+    }, [reload, pages, stores])
 
     /**
      * Who is at this screen.

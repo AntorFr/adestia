@@ -75,7 +75,7 @@ export default function blocks(api) {
     })
   }
 
-  function Checklist({ attributes, path, fields, locate }) {
+  function Checklist({ attributes, path, fields, locate, pages, stores }) {
     const [model, setModel] = useState(null)
     const [error, setError] = useState(null)
     const [title, setTitle] = useState('')
@@ -92,6 +92,32 @@ export default function blocks(api) {
         setError(cause.message)
       }
     }, [])
+
+    /**
+     * The model, from the index the shell already holds.
+     *
+     * It costs nothing and removes a wait nobody was getting anything for:
+     * the shell fetched that listing at boot and keeps it live from the
+     * server's file watcher, so a block that asked for it again paid a round
+     * trip AND a server-side re-read of every file in the instance before it
+     * could draw a single line.
+     *
+     * BOTH halves or neither. The entries say which store carries a task; the
+     * TABLE says what that store is called, what colour it wears, and which
+     * one is this shell's own — and that last one decides which `todo-config`
+     * is yours, hence who `me` is. Built from entries alone, the rows lost
+     * their provenance mark and "mine" could have answered with somebody
+     * else's name, which the model's own comment calls worse than no "mine"
+     * at all.
+     *
+     * The fetch below stays: a checklist writes, and where the watcher is off
+     * — an operator's choice, on a mount that cannot carry native events —
+     * nothing would tell this screen that its own write landed.
+     */
+    useEffect(() => {
+      if (!pages || !stores) return
+      setModel(buildModel(pages, stores))
+    }, [pages, stores])
 
     useEffect(() => {
       void reload()

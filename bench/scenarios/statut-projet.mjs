@@ -2,7 +2,9 @@
  * Le `project-status` : dans la liste des sous-projets, et sur le planning.
  *
  * Trois choses qu'aucun test ne dit. Les trois familles se distinguent-elles
- * dans une colonne de cinq lignes. La précédence se voit-elle — « Le mode
+ * quand la couleur tient dans une BOULETTE de quelques pixels au lieu d'une
+ * pastille — c'est la question que ce banc pose depuis que l'état a quitté la
+ * fin de ligne, et elle ne se règle qu'à l'œil, en clair comme en sombre. La précédence se voit-elle — « Le mode
  * ask » porte « nominal » et doit afficher « bloqué ». Et la barre d'un
  * projet noté doit avoir perdu la couleur que le calendrier lui donnait :
  * « Bascule infra » est en retard ET notée « en danger », et une seule des
@@ -14,11 +16,12 @@
  */
 export default async function scenario(bench) {
   for (const theme of ['light', 'dark']) {
-    const page = await bench.open({ theme, height: 1400 })
+    const page = await bench.open({ theme, height: 1700 })
     await page.evaluate(() => {
       location.hash = '/page/chantiers/adestia/INDEX.md'
     })
-    await page.waitForSelector('.pm-subproject__row', { timeout: 15_000 })
+    await page.waitForSelector('.pm-subproject__ico--red', { timeout: 15_000 })
+    await page.waitForSelector('.pm-subproject__card', { timeout: 15_000 })
     await page.waitForSelector('.pm-timeline__span', { timeout: 15_000 })
     await page.waitForTimeout(600)
     await bench.shoot(page, `1-les-sous-projets-${theme}`)
@@ -35,9 +38,10 @@ export default async function scenario(bench) {
   const rows = await page.evaluate(() =>
     [...document.querySelectorAll('.pm-subproject__row')].map((row) => ({
       titre: row.querySelector('.pm-subproject__title')?.textContent,
-      mot: row.querySelector('.pm-subproject__state')?.textContent ?? null,
-      ton:
-        row.querySelector('.pm-subproject__state')?.className.split('--').pop() ?? null,
+      mot: row.querySelector('.pm-subproject__tag')?.textContent ?? null,
+      // L'état est porté par la BOULETTE ; le mot à droite ne l'est plus.
+      ton: row.querySelector('.pm-subproject__ico')?.className.split('--').pop() ?? null,
+      boulette: row.querySelector('.pm-subproject__ico')?.getAttribute('aria-label') ?? null,
     })),
   )
   console.log('LES LIGNES', JSON.stringify(rows))
@@ -68,4 +72,31 @@ export default async function scenario(bench) {
   await page.waitForSelector('.adestia-editor__meta-panel', { timeout: 15_000 })
   await page.waitForTimeout(600)
   await bench.shoot(page, '3-le-champ-dans-les-proprietes')
+
+  // Et les réglages du BLOC, qui sont une autre porte : le ⚙ de la barre d'un
+  // `:::subproject` doit offrir `view` à côté de `depth` et `closed`. Rien
+  // n'est écrit pour lui — le panneau dessine ce que le manifeste déclare —
+  // donc c'est la déclaration qu'on vérifie ici, pas un formulaire.
+  const desk = await bench.open({ height: 1700 })
+  await desk.evaluate(() => {
+    location.hash = '/page/chantiers/adestia/INDEX.md'
+  })
+  await desk.waitForSelector('.pm-subproject__row', { timeout: 15_000 })
+  await desk.click('button[title="Modifier"]')
+  await desk.waitForSelector('.adestia-editor__surface .milkdown', { timeout: 15_000 })
+  // La barre d'un bloc est à `opacity: 0` et `pointer-events: none` tant que
+  // le bloc n'est pas survolé : sans ce hover, le clic sur le ⚙ expire sur un
+  // élément que Playwright voit invisible.
+  await desk.hover('.adestia-edblock[data-block="subproject"]')
+  await desk.click('.adestia-edblock[data-block="subproject"] .adestia-edblock__gear')
+  await desk.waitForSelector('.adestia-blockset', { timeout: 15_000 })
+  const offered = await desk.evaluate(() =>
+    [...document.querySelectorAll('.adestia-blockset__group')]
+      .filter((group) => group.querySelector('legend')?.textContent === 'Ce bloc')
+      .flatMap((group) => [...group.querySelectorAll('.adestia-blockset__field > span')])
+      .map((span) => span.textContent),
+  )
+  console.log('LE ⚙ DU BLOC OFFRE', JSON.stringify(offered))
+  await desk.waitForTimeout(400)
+  await bench.shoot(desk, '4-les-reglages-du-bloc')
 }

@@ -112,7 +112,7 @@ const FR = {
 }
 
 export default function createVoyagesApp(api) {
-  const { page, esc, crumbs, call, url, shellFetch, tone, finished, openPage, href, learn, locale } = api
+  const { page, esc, crumbs, call, url, shellFetch, tone, finished, openPage, href, learn, locale, index } = api
   const said = table(locale)
   const t = (key) => said[key] ?? key
 
@@ -363,9 +363,22 @@ export default function createVoyagesApp(api) {
   async function folderPages(voyagePath) {
     const dir = voyagePath.replace(/assets\/voyage\.json$/, '').replace(/\/$/, '')
     if (!dir) return []
-    const response = await shellFetch('/api/pages/index')
-    if (!response.ok) return []
-    const { entries } = await response.json()
+    /*
+     * The index the SHELL already holds, asked for as a function rather than
+     * taken once: this engine is created when the app opens and outlives
+     * every trip opened in it, so a listing captured at creation would age
+     * inside it. The shell keeps its copy live from the server's file
+     * watcher, so calling it here is always the current answer.
+     *
+     * The fetch stays underneath for the mounting that hands none.
+     */
+    const held = index?.()
+    const entries = held ?? (await (async () => {
+      const response = await shellFetch('/api/pages/index')
+      if (!response.ok) return null
+      return (await response.json()).entries
+    })())
+    if (!entries) return []
     return entries
       .filter((entry) => entry.path.startsWith(dir + '/') && !entry.path.slice(dir.length + 1).includes('/'))
       .map((entry) => ({ path: entry.path, nom: entry.title }))

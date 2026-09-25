@@ -56,6 +56,71 @@ export default function createProjectBlocks(api) {
   const fr = api.locale === 'fr'
 
   /**
+   * The page index, asked for ONCE however many blocks want it.
+   *
+   * Both of this plugin's query blocks read the same listing, so a page
+   * carrying a planning and a list of sub-projects fired TWO full requests
+   * for one answer — and `/api/pages/index` re-reads every markdown file in
+   * the instance, so the second one is not free anywhere.
+   *
+   * Only the IN-FLIGHT request is shared, never the answer: the agent writes
+   * pages while somebody reads them, and a cached listing would show a stale
+   * corpus with nothing to say it is stale. Two blocks mounting together make
+   * one call; a block mounting later asks again, and gets what is true then.
+   */
+  let flight
+  const askIndex = async () => {
+    if (!flight) {
+      flight = (async () => {
+        const response = await api.fetch('/api/pages/index')
+        if (!response.ok) throw new Error(`l'index des pages a répondu ${response.status}`)
+        const { entries } = await response.json()
+        return entries ?? []
+      })()
+      // Released once settled, success or failure: what is kept is the
+      // request, not its result.
+      void flight.catch(() => {}).finally(() => {
+        flight = undefined
+      })
+    }
+    return flight
+  }
+
+  /**
+   * The index a query block reads: the one the SHELL handed over, or one
+   * asked for when nobody handed any.
+   *
+   * Handed over is the normal case and the fast one — the shell fetched the
+   * listing once at boot and keeps it live, so there is nothing to wait for
+   * and the block draws on its first frame, like the core's own `:::list`.
+   * The fetch is the fallback for the case the contract names: prose rendered
+   * outside a shell, where `pages` is genuinely absent.
+   *
+   * `want` says whether this block needs an index at all — a written planning
+   * reads its own lines and must not pay for a listing it will not open.
+   */
+  function useIndex(given, want = true) {
+    const [asked, setAsked] = useState(null)
+    const [failure, setFailure] = useState(null)
+    useEffect(() => {
+      if (!want || given !== undefined) return undefined
+      let live = true
+      void (async () => {
+        try {
+          const entries = await askIndex()
+          if (live) setAsked(entries)
+        } catch (cause) {
+          if (live) setFailure(cause.message)
+        }
+      })()
+      return () => {
+        live = false
+      }
+    }, [given, want])
+    return { index: given ?? asked, failure }
+  }
+
+  /**
    * What a bar says when the colour cannot be seen — hovered, read aloud, or
    * printed in grey. The state is otherwise carried by hue alone, and the
    * dates are carried by position alone: neither survives a screen reader.
@@ -91,12 +156,11 @@ export default function createProjectBlocks(api) {
     return date.toLocaleDateString(api.locale, parts)
   }
 
-  function Timeline({ attributes = {}, items = [], path, openPage }) {
+  function Timeline({ attributes = {}, items = [], path, openPage, pages }) {
     const scale = attributes.scale ?? 'months'
     const depth = attributes.depth ?? 'self'
     const queried = depth !== 'self'
-    const [index, setIndex] = useState(null)
-    const [failure, setFailure] = useState(null)
+    const { index, failure } = useIndex(pages, queried)
     // The chart's width, so milestone labels can be laid out in rows that
     // really clear each other — a percentage says where a line is, not
     // whether two labels fit side by side.
@@ -110,32 +174,12 @@ export default function createProjectBlocks(api) {
       return () => watch.disconnect()
     })
 
-    // Only the queried scope pays for the index; a written planning draws
-    // from what is already in the page.
-    useEffect(() => {
-      if (!queried) return undefined
-      let live = true
-      void (async () => {
-        try {
-          const response = await api.fetch('/api/pages/index')
-          if (!response.ok) throw new Error(`l'index des pages a répondu ${response.status}`)
-          const { entries } = await response.json()
-          if (live) setIndex(entries ?? [])
-        } catch (cause) {
-          if (live) setFailure(cause.message)
-        }
-      })()
-      return () => {
-        live = false
-      }
-    }, [queried])
-
     const written = items.map((text) => ({ text, entry: parseLine(text) }))
     let entries
     let unread
     if (queried) {
       if (failure) return h('p', { className: 'pm-timeline__empty' }, failure)
-      if (index === null) {
+      if (!index) {
         return h('p', { className: 'pm-timeline__empty' }, fr ? 'Planning…' : 'Planning…')
       }
       const found = fromPages(index, path === undefined ? '' : folderOf(path), depth)
@@ -290,31 +334,17 @@ export default function createProjectBlocks(api) {
    * about what "below" means, or about how a project is doing, would be two
    * answers to one question on the same page.
    */
-  function Subproject({ attributes = {}, path, openPage }) {
+  function Subproject({ attributes = {}, path, openPage, pages }) {
     const depth = attributes.depth ?? 'children'
     const closed = attributes.closed ?? 'fold'
-    const [index, setIndex] = useState(null)
-    const [failure, setFailure] = useState(null)
-
-    useEffect(() => {
-      let live = true
-      void (async () => {
-        try {
-          const response = await api.fetch('/api/pages/index')
-          if (!response.ok) throw new Error(`l'index des pages a répondu ${response.status}`)
-          const { entries } = await response.json()
-          if (live) setIndex(entries ?? [])
-        } catch (cause) {
-          if (live) setFailure(cause.message)
-        }
-      })()
-      return () => {
-        live = false
-      }
-    }, [])
+    // `view` lays out the ENTRIES, never the block — the core's own word, at
+    // the core's own meaning, so a list of sub-projects and a `:::list` in
+    // cards on the same page are laid out by one idea and not two.
+    const view = attributes.view === 'cards' ? 'cards' : 'rows'
+    const { index, failure } = useIndex(pages)
 
     if (failure) return h('p', { className: 'pm-subproject__empty' }, failure)
-    if (index === null) return null
+    if (!index) return null
 
     const rows = subprojectsOf(index, path === undefined ? '' : folderOf(path), depth).filter(
       (row) => row.path !== path,
@@ -333,7 +363,27 @@ export default function createProjectBlocks(api) {
     const done = rows.filter((row) => row.finished)
     const shown = closed === 'show' ? rows : live
 
-    /** One row: what it is called, and the single word for where it stands. */
+    /**
+     * One row: what it is called, and the single word for where it stands.
+     *
+     * THE STATE IS THE BULLET, and the word rides quietly beside the title.
+     * A coloured pill at the end of each line made the state a second column
+     * of boxes — heavier than the thing it reports, and read after the title
+     * rather than with it. The glyph was already there, already at the left
+     * margin where the eye runs down a list, and it was carrying nothing.
+     *
+     * The WORD is still written. That is not decoration: a bullet in a colour
+     * with no word anywhere would make the hue the label, which is the one
+     * rule this product does not bend — and it would leave a screen reader,
+     * a grey print and a colour-blind reader with a list of identical dots.
+     * So the word stays, as a plain tag rather than a pill: the colour is
+     * said once, on the bullet, and the box around the word goes.
+     *
+     * The dot is DRAWN by the stylesheet, not written here: a glyph taken
+     * from the font is a shape nobody really chooses — it moves from one
+     * system to the next, and it has neither the size nor the weight it is
+     * asked for. The element is empty on purpose.
+     */
     const draw = (row) =>
       h(
         openPage ? 'button' : 'div',
@@ -343,22 +393,82 @@ export default function createProjectBlocks(api) {
           ...(openPage ? { type: 'button', onClick: () => openPage(row.path) } : {}),
         },
         [
-          h('i', { className: 'pm-subproject__ico', key: 'ico', 'aria-hidden': 'true' }, '◆'),
+          h(
+            'i',
+            {
+              className: row.badge
+                ? `pm-subproject__ico pm-subproject__ico--${row.badge.tone}`
+                : 'pm-subproject__ico',
+              key: 'ico',
+              // Not `aria-hidden` any more: it is the only thing carrying the
+              // state's colour, so it owes a reader the state's name.
+              ...(row.badge ? { title: row.badge.word, 'aria-label': row.badge.word } : { 'aria-hidden': 'true' }),
+            },
+          ),
           h('span', { className: 'pm-subproject__title', key: 'title' }, row.label),
-          // No badge at all when the page says nothing about itself. An empty
-          // pill would be a state, and "nobody has said" is not one.
+          // Nothing at all when the page says nothing about itself: an empty
+          // tag would be a state, and "nobody has said" is not one.
           row.badge
-            ? h(
-                'span',
-                { className: `pm-subproject__state pm-subproject__state--${row.badge.tone}`, key: 'state' },
-                row.badge.word,
-              )
+            ? h('span', { className: 'pm-subproject__tag', key: 'state' }, row.badge.word)
             : null,
         ],
       )
 
-    return h('div', { className: 'pm-subproject' }, [
-      ...shown.map(draw),
+    /**
+     * The same row, as a card — a grid entry rather than a line.
+     *
+     * Same three things in the same order, and deliberately: a card that
+     * reordered them would make the two views two drawings to learn instead
+     * of one drawing in two shapes. What changes is the BOX and where it
+     * breaks — the dot and the name on one line, the word under them, so a
+     * long project name has somewhere to go.
+     */
+    const card = (row) =>
+      h(
+        openPage ? 'button' : 'div',
+        {
+          key: row.path,
+          className: 'pm-subproject__card',
+          ...(openPage ? { type: 'button', onClick: () => openPage(row.path) } : {}),
+        },
+        [
+          h(
+            'span',
+            { className: 'pm-subproject__head', key: 'head' },
+            [
+              h(
+                'i',
+                {
+                  className: row.badge
+                    ? `pm-subproject__ico pm-subproject__ico--${row.badge.tone}`
+                    : 'pm-subproject__ico',
+                  key: 'ico',
+                  ...(row.badge
+                    ? { title: row.badge.word, 'aria-label': row.badge.word }
+                    : { 'aria-hidden': 'true' }),
+                },
+              ),
+              h('span', { className: 'pm-subproject__title', key: 'title' }, row.label),
+            ],
+          ),
+          row.badge
+            ? h('span', { className: 'pm-subproject__tag', key: 'state' }, row.badge.word)
+            : null,
+        ],
+      )
+
+    const entry = view === 'cards' ? card : draw
+
+    // In cards, the entries share a grid; in rows they stack. The FOLD keeps
+    // its own grid so what is closed is laid out like what is live — a
+    // reader who opens it should recognise what falls out.
+    const grid = (entries, key) =>
+      view === 'cards'
+        ? h('div', { className: 'pm-subproject__grid', key }, entries.map(entry))
+        : entries.map(entry)
+
+    return h('div', { className: `pm-subproject pm-subproject--${view}` }, [
+      grid(shown, 'live'),
       // Folded, never dropped: a finished project is exactly what somebody
       // opens to see how the last one went. The same posture as the core's
       // own list, because a reader should not have to learn two.
@@ -371,7 +481,7 @@ export default function createProjectBlocks(api) {
                 ? `${done.length} ${done.length === 1 ? 'projet clos' : 'projets clos'}`
                 : `${done.length} closed ${done.length === 1 ? 'project' : 'projects'}`,
             ),
-            ...done.map(draw),
+            grid(done, 'done'),
           ])
         : null,
     ])

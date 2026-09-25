@@ -102,9 +102,18 @@ export default function view(api) {
   /** A trip's address, in the shortest form that resolves back to it. */
   const href = (path) => `#${routeOf(trips, path)}`
 
-  function Voyages() {
+  function Voyages({ pages }) {
     const host = useRef(null)
     const engine = useRef(null)
+    /**
+     * The shell's live index, in a ref rather than in the engine.
+     *
+     * The engine is imperative and created once; it outlives every trip
+     * opened in it. Handing it the array would age inside it, so it is handed
+     * a FUNCTION and reads the current answer whenever it opens a folder.
+     */
+    const held = useRef(pages)
+    held.current = pages
     /** Bumped on every hash change, to re-route the engine. */
     const [tick, setTick] = useState(0)
 
@@ -126,6 +135,9 @@ export default function view(api) {
           page,
           esc,
           locale: api.locale,
+          // What the folder blocks read instead of fetching the whole listing
+          // again each time a trip is opened.
+          index: () => held.current,
           // The engine's trail goes to the SHELL's header, which is where a
           // breadcrumb belongs. It used to be drawn inside this panel — the
           // two competing ones this comment always warned about, one under the
