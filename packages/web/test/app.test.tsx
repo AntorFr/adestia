@@ -565,6 +565,18 @@ describe('settings, as an app of the shell', () => {
     location.hash = ''
   })
 
+  it('names a skill in the trail the way the screen beneath it does', async () => {
+    // Every skill's last segment is `SKILL.md`, so the trail read `SKILL.md`
+    // under a screen whose title read `page-author` — two names for the file
+    // you are looking at, one of them shared with every other skill.
+    const container = await shell()
+    await go('#/settings/instructions/.claude/skills/page-author/SKILL.md')
+
+    await waitFor(() => expect(crumbs(container).length).toBe(4))
+    expect(crumbs(container).at(-1)).toEqual({ label: 'page-author', walkable: false })
+    location.hash = ''
+  })
+
   it('sends the addresses of the pages that moved behind the cog', async () => {
     // `credential` and `appearance` were pages of this app until the
     // session-sized switches moved into the menu. A bookmark to one lands on
