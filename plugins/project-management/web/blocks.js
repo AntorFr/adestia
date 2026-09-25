@@ -333,7 +333,22 @@ export default function createProjectBlocks(api) {
     const done = rows.filter((row) => row.finished)
     const shown = closed === 'show' ? rows : live
 
-    /** One row: what it is called, and the single word for where it stands. */
+    /**
+     * One row: what it is called, and the single word for where it stands.
+     *
+     * THE STATE IS THE BULLET, and the word rides quietly beside the title.
+     * A coloured pill at the end of each line made the state a second column
+     * of boxes — heavier than the thing it reports, and read after the title
+     * rather than with it. The glyph was already there, already at the left
+     * margin where the eye runs down a list, and it was carrying nothing.
+     *
+     * The WORD is still written. That is not decoration: a bullet in a colour
+     * with no word anywhere would make the hue the label, which is the one
+     * rule this product does not bend — and it would leave a screen reader,
+     * a grey print and a colour-blind reader with a list of identical
+     * diamonds. So the word stays, as a plain tag rather than a pill: the
+     * colour is said once, on the bullet, and the box around the word goes.
+     */
     const draw = (row) =>
       h(
         openPage ? 'button' : 'div',
@@ -343,16 +358,24 @@ export default function createProjectBlocks(api) {
           ...(openPage ? { type: 'button', onClick: () => openPage(row.path) } : {}),
         },
         [
-          h('i', { className: 'pm-subproject__ico', key: 'ico', 'aria-hidden': 'true' }, '◆'),
+          h(
+            'i',
+            {
+              className: row.badge
+                ? `pm-subproject__ico pm-subproject__ico--${row.badge.tone}`
+                : 'pm-subproject__ico',
+              key: 'ico',
+              // Not `aria-hidden` any more: it is the only thing carrying the
+              // state's colour, so it owes a reader the state's name.
+              ...(row.badge ? { title: row.badge.word, 'aria-label': row.badge.word } : { 'aria-hidden': 'true' }),
+            },
+            '◆',
+          ),
           h('span', { className: 'pm-subproject__title', key: 'title' }, row.label),
-          // No badge at all when the page says nothing about itself. An empty
-          // pill would be a state, and "nobody has said" is not one.
+          // Nothing at all when the page says nothing about itself: an empty
+          // tag would be a state, and "nobody has said" is not one.
           row.badge
-            ? h(
-                'span',
-                { className: `pm-subproject__state pm-subproject__state--${row.badge.tone}`, key: 'state' },
-                row.badge.word,
-              )
+            ? h('span', { className: 'pm-subproject__tag', key: 'state' }, row.badge.word)
             : null,
         ],
       )

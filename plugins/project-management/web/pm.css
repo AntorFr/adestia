@@ -257,11 +257,31 @@ button.pm-timeline__span:hover {
 }
 .pm-subproject__row:last-child { border-bottom: 0; }
 .pm-subproject__row:hover { background: var(--surface-sunken); }
+/* LA BOULETTE PORTE L'ÉTAT. Elle est déjà à la marge gauche, là où l'œil
+   descend une liste, et elle ne portait rien ; une pastille en fin de ligne
+   faisait au contraire une seconde colonne de boîtes, plus lourde que ce
+   qu'elle rapporte et lue après le titre au lieu d'être lue avec lui.
+   Un cran plus grosse qu'avant : elle est maintenant un signal, plus une
+   puce de liste. */
 .pm-subproject__ico {
   color: var(--accent);
   font-style: normal;
-  font-size: 0.8em;
+  font-size: 0.95em;
+  line-height: 1;
 }
+.pm-subproject__ico--underway { color: var(--accent); }
+.pm-subproject__ico--waiting,
+.pm-subproject__ico--amber { color: var(--warning); }
+.pm-subproject__ico--green { color: var(--success); }
+.pm-subproject__ico--red { color: var(--danger); }
+/* CLOS se tait, et ne prend PAS le vert de la coque — c'est le seul endroit du
+   produit où la règle diverge, pour une raison qui lui est propre : ce bloc a
+   DEUX verts possibles là où la coque n'en a qu'un, « le projet va bien » et
+   « le projet est fini ». Dans une pastille le mot portait la différence ;
+   réduite à une boulette, elle disparaissait — au banc, un projet clos
+   ressemblait à un projet en bonne santé. Même geste que la barre `done` du
+   planning : ce qui est fini sort du jeu plutôt que d'y briller. */
+.pm-subproject__ico--settled { color: var(--text-faint); }
 /* Le titre pousse la pastille au bout de la ligne : vingt lignes dont les
    états sont alignés se lisent d'une colonne, ce qu'une pastille collée au
    titre ne permet pas. */
@@ -278,37 +298,21 @@ button.pm-timeline__span:hover {
   cursor: pointer;
 }
 
-/* La pastille est celle de la coque — même point, même graisse, même pas de
-   couleur sans le mot : un sous-projet doit se lire comme une page, pas comme
-   la trouvaille d'un plugin. */
-.pm-subproject__state {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
+/* Le MOT, à droite du titre, et sans couleur : la teinte est déjà dite par la
+   boulette, et la redire ici ferait deux fois la même phrase. C'est
+   l'étiquette neutre de la coque (`.adestia-tag`), recopiée plutôt
+   qu'empruntée — un bloc de plugin ne vise pas une classe du cœur.
+
+   Elle reste là plutôt que de disparaître, et ce n'est pas de l'ornement :
+   une boulette colorée sans mot nulle part ferait de la teinte l'étiquette,
+   la seule règle que ce produit ne plie pas, et laisserait un lecteur
+   d'écran, une impression en gris et un lecteur daltonien devant une liste
+   de losanges identiques. */
+.pm-subproject__tag {
   font: 600 10.5px/1.5 var(--font-mono);
-  border-radius: var(--radius-pill);
-  padding: 2px 9px 2px 8px;
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
   white-space: nowrap;
-}
-.pm-subproject__state::before {
-  content: '';
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: currentcolor;
-}
-.pm-subproject__state--underway { color: var(--accent); background: var(--accent-quiet); }
-.pm-subproject__state--waiting,
-.pm-subproject__state--amber {
-  color: var(--warning);
-  background: color-mix(in srgb, var(--warning) 13%, transparent);
-}
-.pm-subproject__state--settled,
-.pm-subproject__state--green {
-  color: var(--success);
-  background: color-mix(in srgb, var(--success) 12%, transparent);
-}
-.pm-subproject__state--red {
-  color: var(--danger);
-  background: color-mix(in srgb, var(--danger) 13%, transparent);
 }

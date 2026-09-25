@@ -2,7 +2,9 @@
  * Le `project-status` : dans la liste des sous-projets, et sur le planning.
  *
  * Trois choses qu'aucun test ne dit. Les trois familles se distinguent-elles
- * dans une colonne de cinq lignes. La précédence se voit-elle — « Le mode
+ * quand la couleur tient dans une BOULETTE de quelques pixels au lieu d'une
+ * pastille — c'est la question que ce banc pose depuis que l'état a quitté la
+ * fin de ligne, et elle ne se règle qu'à l'œil, en clair comme en sombre. La précédence se voit-elle — « Le mode
  * ask » porte « nominal » et doit afficher « bloqué ». Et la barre d'un
  * projet noté doit avoir perdu la couleur que le calendrier lui donnait :
  * « Bascule infra » est en retard ET notée « en danger », et une seule des
@@ -18,7 +20,7 @@ export default async function scenario(bench) {
     await page.evaluate(() => {
       location.hash = '/page/chantiers/adestia/INDEX.md'
     })
-    await page.waitForSelector('.pm-subproject__row', { timeout: 15_000 })
+    await page.waitForSelector('.pm-subproject__ico--red', { timeout: 15_000 })
     await page.waitForSelector('.pm-timeline__span', { timeout: 15_000 })
     await page.waitForTimeout(600)
     await bench.shoot(page, `1-les-sous-projets-${theme}`)
@@ -35,9 +37,10 @@ export default async function scenario(bench) {
   const rows = await page.evaluate(() =>
     [...document.querySelectorAll('.pm-subproject__row')].map((row) => ({
       titre: row.querySelector('.pm-subproject__title')?.textContent,
-      mot: row.querySelector('.pm-subproject__state')?.textContent ?? null,
-      ton:
-        row.querySelector('.pm-subproject__state')?.className.split('--').pop() ?? null,
+      mot: row.querySelector('.pm-subproject__tag')?.textContent ?? null,
+      // L'état est porté par la BOULETTE ; le mot à droite ne l'est plus.
+      ton: row.querySelector('.pm-subproject__ico')?.className.split('--').pop() ?? null,
+      boulette: row.querySelector('.pm-subproject__ico')?.getAttribute('aria-label') ?? null,
     })),
   )
   console.log('LES LIGNES', JSON.stringify(rows))
