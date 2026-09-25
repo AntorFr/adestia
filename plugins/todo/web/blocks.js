@@ -75,7 +75,7 @@ export default function blocks(api) {
     })
   }
 
-  function Checklist({ attributes, path, fields, locate }) {
+  function Checklist({ attributes, path, fields, locate, pages }) {
     const [model, setModel] = useState(null)
     const [error, setError] = useState(null)
     const [title, setTitle] = useState('')
@@ -92,6 +92,30 @@ export default function blocks(api) {
         setError(cause.message)
       }
     }, [])
+
+    /**
+     * The FIRST paint, from the index the shell already holds.
+     *
+     * It costs nothing and it removes a wait nobody was getting anything for:
+     * the shell fetched that listing at boot, so a block that asked for it
+     * again paid a round trip AND a server-side re-read of every file in the
+     * instance before it could draw a single line.
+     *
+     * Only where the instance has ONE store, and the test is the index's own
+     * convention: `store` appears on an entry only when it means something.
+     * The store table travels with the LISTING, not with the entries, so a
+     * model built from the entries alone would lose a task's provenance —
+     * visible, and worse than the wait. There, the fetch below still speaks
+     * first.
+     *
+     * The fetch stays in every case: a checklist writes, and what it reads
+     * after a write has to be what the server holds, not what the shell held
+     * when the page opened.
+     */
+    useEffect(() => {
+      if (!pages || pages.some((entry) => entry.store)) return
+      setModel(buildModel(pages, []))
+    }, [pages])
 
     useEffect(() => {
       void reload()
