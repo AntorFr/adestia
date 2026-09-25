@@ -267,6 +267,42 @@
   font-size: var(--text-sm);
 }
 
+/* One group per kind of prose, drawn in decreasing weight: what is read on
+   every turn, then what is read when it fits, then what another agent reads.
+   The heading keeps the engine's own word; the line under it says WHEN, which
+   is the part a person actually needs and the part that gets translated. */
+.adestia-igroup {
+  margin-top: var(--space-4);
+}
+
+.adestia-igroup__head {
+  /* Against the left edge of the cards below, not indented from them: a
+     heading that floats free of its grid reads as a page title. */
+  margin: 0 0 var(--space-2);
+}
+
+.adestia-igroup__title {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.adestia-igroup__lede {
+  margin: 2px 0 0;
+  color: var(--text-faint);
+  font-size: var(--text-sm);
+}
+
+/* Where the open file sits, under the line that says what it is. */
+.adestia-instructions__where {
+  margin: 2px 0 0;
+  color: var(--text-faint);
+  font-size: var(--text-sm);
+}
+
 /* A card carries what tells two instructions apart BEFORE either is opened:
    the name, where it sits, how long it is, and whose it is. */
 /* Les fiches de la zone d'instructions. Elles ont porté le nom des cartes
@@ -322,6 +358,21 @@
   background: var(--surface-sunken);
   color: var(--text-faint);
   font-size: 11px;
+}
+
+/* What it is FOR, in its author's words — and for a skill the very sentence
+   the engine matches a task against. Clamped rather than cut in the client:
+   a skill description runs to a paragraph, and truncating it in JavaScript
+   would throw away the text the browser's own search can still find. */
+.adestia-filecard__about {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
 }
 
 .adestia-filecard__path {

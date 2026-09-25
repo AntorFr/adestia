@@ -123,8 +123,23 @@ const FR: Readonly<Record<string, string>> = {
     'Ce que vous avez dit à l’agent, dans vos mots. Enregistré tel que tapé.',
   'Nothing here yet — write one, or ask the agent to.':
     'Rien ici pour l’instant — écrivez-en une, ou demandez à l’agent de le faire.',
-  'New instruction': 'Nouvelle instruction',
   'What is this instruction about?': 'De quoi parle cette instruction ?',
+  'What is this skill for?': 'À quoi sert cette skill ?',
+  'What is this agent for?': 'À quoi sert cet agent ?',
+  // The three kinds of prose, and when each is read.
+  //
+  // `Skills` and `Agent` are NOT translated, and that is the choice rather
+  // than an omission: the word is on the folder (`.claude/skills`) and in the
+  // file the reader is about to open (`SKILL.md`), so a heading reading
+  // « Compétences » over a path reading `skills` is one more thing to
+  // reconcile. The sentence under it carries the meaning, and that is what is
+  // said in French.
+  'Read at the start of every turn, whatever it is about.':
+    'Lues au début de chaque tour, quel que soit le sujet.',
+  'Read only when a task matches the description — free until one does.':
+    'Lue seulement quand une tâche correspond à sa description — gratuite tant qu’aucune ne correspond.',
+  'A named helper the agent hands a job to, working from its own brief.':
+    'Un assistant nommé à qui l’agent confie un travail, avec ses propres consignes.',
   'This engine keeps its instructions elsewhere.':
     'Ce moteur garde ses instructions ailleurs.',
   'Search instructions': 'Rechercher une instruction',
