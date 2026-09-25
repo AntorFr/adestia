@@ -75,7 +75,7 @@ export default function blocks(api) {
     })
   }
 
-  function Checklist({ attributes, path, fields, locate, pages }) {
+  function Checklist({ attributes, path, fields, locate, pages, stores }) {
     const [model, setModel] = useState(null)
     const [error, setError] = useState(null)
     const [title, setTitle] = useState('')
@@ -94,28 +94,30 @@ export default function blocks(api) {
     }, [])
 
     /**
-     * The FIRST paint, from the index the shell already holds.
+     * The model, from the index the shell already holds.
      *
-     * It costs nothing and it removes a wait nobody was getting anything for:
-     * the shell fetched that listing at boot, so a block that asked for it
-     * again paid a round trip AND a server-side re-read of every file in the
-     * instance before it could draw a single line.
+     * It costs nothing and removes a wait nobody was getting anything for:
+     * the shell fetched that listing at boot and keeps it live from the
+     * server's file watcher, so a block that asked for it again paid a round
+     * trip AND a server-side re-read of every file in the instance before it
+     * could draw a single line.
      *
-     * Only where the instance has ONE store, and the test is the index's own
-     * convention: `store` appears on an entry only when it means something.
-     * The store table travels with the LISTING, not with the entries, so a
-     * model built from the entries alone would lose a task's provenance —
-     * visible, and worse than the wait. There, the fetch below still speaks
-     * first.
+     * BOTH halves or neither. The entries say which store carries a task; the
+     * TABLE says what that store is called, what colour it wears, and which
+     * one is this shell's own — and that last one decides which `todo-config`
+     * is yours, hence who `me` is. Built from entries alone, the rows lost
+     * their provenance mark and "mine" could have answered with somebody
+     * else's name, which the model's own comment calls worse than no "mine"
+     * at all.
      *
-     * The fetch stays in every case: a checklist writes, and what it reads
-     * after a write has to be what the server holds, not what the shell held
-     * when the page opened.
+     * The fetch below stays: a checklist writes, and where the watcher is off
+     * — an operator's choice, on a mount that cannot carry native events —
+     * nothing would tell this screen that its own write landed.
      */
     useEffect(() => {
-      if (!pages || pages.some((entry) => entry.store)) return
-      setModel(buildModel(pages, []))
-    }, [pages])
+      if (!pages || !stores) return
+      setModel(buildModel(pages, stores))
+    }, [pages, stores])
 
     useEffect(() => {
       void reload()

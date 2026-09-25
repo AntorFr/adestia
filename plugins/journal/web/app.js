@@ -75,7 +75,7 @@ export default function view(api) {
       body: JSON.stringify(revision ? { markdown, revision } : { markdown }),
     })
 
-  function Journal() {
+  function Journal({ pages }) {
     const [journals, setJournals] = useState(null)
     const [error, setError] = useState(null)
     const [route, setRoute] = useState(() => location.hash.replace(/^#/, ''))
@@ -88,9 +88,33 @@ export default function view(api) {
       }
     }, [])
 
+    /**
+     * The journals, from the index the shell already holds.
+     *
+     * This screen used to fetch `/api/pages/index` at mount — the listing the
+     * shell had already fetched at boot and keeps live from the server's file
+     * watcher. It cost a round trip AND a server-side re-read of every file
+     * in the instance before a first entry.
+     *
+     * `known` above keeps its own priming fetch, and that is not a
+     * duplication: it answers `routeFor` for links drawn BEFORE this view
+     * ever mounts — on the launcher, in a breadcrumb, in a page the agent
+     * wrote. It is refreshed here too, so a journal created since boot is
+     * addressable by name rather than by path.
+     */
     useEffect(() => {
+      if (!pages) return
+      const model = buildModel(pages)
+      known = model.map((journal) => journal.folder)
+      setJournals(model)
+    }, [pages])
+
+    // The fallback: a mounting that hands no index, and the re-read this
+    // screen's own writes need where the watcher is off.
+    useEffect(() => {
+      if (pages) return
       void reload()
-    }, [reload])
+    }, [reload, pages])
 
     // The route owns everything below it, so this view reads its own tail:
     // `#/journal/atelier` opens that journal, and a bookmark to it resurrects

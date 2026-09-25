@@ -73,7 +73,7 @@ export default function view(api) {
   // than the path form an empty listing falls back to.
   void refresh().catch(() => {})
 
-  function Post() {
+  function Post({ pages }) {
     const [library, setLibrary] = useState(null)
     const [error, setError] = useState(null)
     const [route, setRoute] = useState(() => location.hash.replace(/^#/, ''))
@@ -86,9 +86,32 @@ export default function view(api) {
       }
     }, [])
 
+    /**
+     * The library, from the index the shell already holds.
+     *
+     * This screen used to fetch `/api/pages/index` at mount — the listing the
+     * shell had already fetched at boot and keeps live from the server's file
+     * watcher. It cost a round trip AND a server-side re-read of every file
+     * in the instance before a first item.
+     *
+     * `known` above keeps its own priming fetch, and that is not a
+     * duplication: it answers `routeFor` for links drawn BEFORE this view
+     * ever mounts — on the launcher, in a breadcrumb, in a page the agent
+     * wrote. It is refreshed here too, so a source added since boot is
+     * addressable in its short form rather than by path.
+     */
     useEffect(() => {
+      if (!pages) return
+      known = buildLibrary(pages)
+      setLibrary(known)
+    }, [pages])
+
+    // The fallback: a mounting that hands no index, and the re-read this
+    // screen's own writes need where the watcher is off.
+    useEffect(() => {
+      if (pages) return
       void reload()
-    }, [reload])
+    }, [reload, pages])
 
     useEffect(() => {
       const apply = () => setRoute(location.hash.replace(/^#/, ''))
