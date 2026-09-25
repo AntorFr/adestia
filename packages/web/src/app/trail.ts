@@ -7,6 +7,7 @@ import type { ScreenView } from '../chat/stream.js'
 import type { PageDocument } from '../editor/Editor.js'
 import type { LoadedPlugin } from '../plugins/loader.js'
 import type { Say } from '../plugins/words.js'
+import { label as instructionLabel } from './Instructions.js'
 import { addressOf, opensOn, ownerOf, routeForPath } from './owners.js'
 import { prefsTitle, type PrefsPage } from './Preferences.js'
 import {
@@ -143,14 +144,19 @@ export function trailOf({
       // while a file fills the screen is a trail that cannot say where the
       // reader is — which is the one job it has. A delegation's address ends
       // in a conversation UUID, which names nothing to a person: its caller — the
-      // FIRST segment — is the half of the address that does.
+      // FIRST segment — is the half of the address that does. And an
+      // instruction's last segment is `SKILL.md` on every skill there is: the
+      // trail said `SKILL.md` while the screen beneath it said `page-author`,
+      // so it names one the same way the screen does.
       ...(settings.item
         ? [
             {
               label:
                 settings.page === 'delegations'
                   ? (settings.item.split('/')[0] as string)
-                  : (settings.item.split('/').at(-1) as string),
+                  : settings.page === 'instructions'
+                    ? instructionLabel(settings.item)
+                    : (settings.item.split('/').at(-1) as string),
             },
           ]
         : []),

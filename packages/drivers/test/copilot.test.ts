@@ -426,9 +426,17 @@ describe('driver', () => {
   })
 
   it('reads its prose zones, including the custom-agent folder', () => {
-    const paths = new CopilotDriver({ home: '/x' }).instructionPaths()
-    expect(paths).toContain('.github/agents')
-    expect(paths).toContain('.github/copilot-instructions.md')
+    // Two standing briefs rather than one: `AGENTS.md` is the shared dialect
+    // and `copilot-instructions.md` is what `copilot init` writes, and both
+    // reach the model on every turn.
+    expect(new CopilotDriver({ home: '/x' }).instructionPaths()).toEqual([
+      { path: 'AGENTS.md', kind: 'instruction' },
+      { path: '.github/copilot-instructions.md', kind: 'instruction' },
+      // `.agent.md`, not `.md`: the shape is the CLI's, which is why the
+      // zone carries it instead of the interface guessing.
+      { path: '.github/agents', kind: 'agent', entry: '<name>.agent.md' },
+      { path: '.github/skills', kind: 'skill', entry: '<name>/SKILL.md' },
+    ])
   })
 
   it('promises no per-turn cost or live counter', async () => {

@@ -15,6 +15,7 @@ import type {
   AuthStatus,
   Driver,
   DriverDescriptor,
+  InstructionZone,
   McpServer,
   McpServerHealth,
   ModelInfo,
@@ -312,8 +313,12 @@ export class ClaudeCodeDriver implements Driver {
    * without showing the file would leave a person told "no" about a file
    * they cannot read.
    */
-  instructionPaths(): readonly string[] {
-    return ['CLAUDE.md', '.claude/agents', '.claude/skills']
+  instructionPaths(): readonly InstructionZone[] {
+    return [
+      { path: 'CLAUDE.md', kind: 'instruction' },
+      { path: '.claude/agents', kind: 'agent', entry: '<name>.md' },
+      { path: '.claude/skills', kind: 'skill', entry: '<name>/SKILL.md' },
+    ]
   }
 
   listModels(): Promise<readonly ModelInfo[]> {

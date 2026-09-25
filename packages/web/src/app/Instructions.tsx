@@ -9,14 +9,13 @@
  * grammar built for something else would quietly rewrite a file whose meaning
  * lives in bytes we do not own. So it is saved exactly as typed.
  *
- * Two things changed the day this stopped being a list beside a box.
+ * Three things changed the day this stopped being a list beside a box.
  *
  * **A card per instruction, and a field to search them.** The split pane was
  * built for the four files a fresh instance has. A real one has thirty — a
  * driver's own conventions, a folder of skills, whatever somebody asked the
  * agent to write down — and a column of file names is unreadable at thirty
- * and unusable at a hundred. A card can carry what tells two SKILL.md files
- * apart before you open either: the name, where it sits, how long it is.
+ * and unusable at a hundred.
  *
  * **What the product delivers is SHOWN, and cannot be saved.** It used to be
  * filtered out entirely, which meant the screen answered "what is this agent
@@ -25,9 +24,29 @@
  * something could not find it, because it was not theirs. So it is here, said
  * to be delivered, and drawn without a Save. The server refuses the write in
  * any case: an edit that the next restart throws away is worth refusing twice.
+ *
+ * **And the cards are GROUPED by when the engine reads them.** Thirty cards
+ * in one grid gave a standing brief, a skill nothing has matched yet and a
+ * subagent's charter exactly the same weight, when the difference between
+ * them is the first thing anybody needs: `CLAUDE.md` is in front of the model
+ * on every turn, a skill is not there until a task fits its description. The
+ * group headings keep the ENGINE's own words — `skills`, `agents` — because
+ * those words are on the folder and in the file the reader is about to open,
+ * and a translated heading over an untranslated path is one more thing to
+ * reconcile. The line under each heading carries the meaning, and it IS
+ * translated.
+ *
+ * A group with nothing in it does not draw: Codex has skills and no subagent
+ * folder, and a heading over an empty list reads as a feature that is broken
+ * rather than one this engine does not have. Neither do the headings when
+ * only one group has anything — on a fresh instance that is a lone
+ * `CLAUDE.md` under a heading repeating the screen's own title.
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+
+/** When the engine reads a file — which is the same question as what it is. */
+type Kind = 'instruction' | 'skill' | 'agent'
 
 interface InstructionFile {
   readonly path: string
@@ -35,14 +54,69 @@ interface InstructionFile {
   readonly bytes: number
   /** Delivered by the product or a plugin, and rewritten at every start. */
   readonly managed?: boolean
+  /** From the zone the driver declared. Absent on an engine that says nothing. */
+  readonly kind?: Kind
+  /** The frontmatter `name` — the identifier the engine itself uses. */
+  readonly name?: string
+  /** The frontmatter `description` — what it is for, in its author's words. */
+  readonly description?: string
 }
 
 /** A place an instruction may be written, as the driver declared it. */
 interface InstructionPath {
   readonly path: string
+  /** The shape on disk. */
   readonly kind: 'file' | 'folder'
+  /** What lives there. */
+  readonly holds?: Kind
+  /** Where a new one lands inside it, `<name>` standing for the slug. */
+  readonly entry?: string
   readonly exists: boolean
 }
+
+/**
+ * The order the groups are drawn in, which is the order of decreasing weight:
+ * what is always read, then what may be read, then what another agent reads.
+ */
+const KINDS: readonly Kind[] = ['instruction', 'skill', 'agent']
+
+/**
+ * What each group is called, and the one line that says when it is read.
+ *
+ * The heading is the engine's word; the line under it is the meaning, and the
+ * meaning is what gets translated.
+ */
+const GROUPS: Readonly<Record<Kind, { readonly title: string; readonly lede: string }>> = {
+  instruction: {
+    title: 'Instructions',
+    lede: 'Read at the start of every turn, whatever it is about.',
+  },
+  skill: {
+    title: 'Skills',
+    lede: 'Read only when a task matches the description — free until one does.',
+  },
+  agent: {
+    title: 'Agents',
+    lede: 'A named helper the agent hands a job to, working from its own brief.',
+  },
+}
+
+/**
+ * What a new one is called on the button that creates it, and what the prompt
+ * asks for.
+ *
+ * Singular, with the `+` doing the work "New" used to: "Nouvelle compétence"
+ * forces a translation of a word that is on the folder and in the filename,
+ * and "Nouveau skill" forces a gender onto a borrowed one. `+ Skill` sidesteps
+ * both and reads the same in either language.
+ */
+const NEW: Readonly<Record<Kind, { readonly label: string; readonly ask: string }>> = {
+  instruction: { label: 'Instruction', ask: 'What is this instruction about?' },
+  skill: { label: 'Skill', ask: 'What is this skill for?' },
+  agent: { label: 'Agent', ask: 'What is this agent for?' },
+}
+
+const kindOf = (file: InstructionFile): Kind => file.kind ?? 'instruction'
 
 /** A folder name from a title somebody typed. */
 const slug = (name: string) =>
@@ -64,12 +138,26 @@ export function label(path: string): string {
 }
 
 /**
+ * What to call a file on its card.
+ *
+ * The frontmatter `name` wins over the filename because it is the identifier
+ * the ENGINE uses: a subagent invoked as `code-reviewer` that happens to live
+ * in `reviewer.agent.md` must be findable under the name it answers to. The
+ * filename is the fallback, and for a plain `CLAUDE.md` it is the whole truth.
+ */
+export function title(file: InstructionFile): string {
+  return file.name?.trim() || label(file.path)
+}
+
+/**
  * Whether a query matches a file.
  *
- * Over the path as well as the name, because half of what distinguishes two
- * instructions is where they sit — a search that only read names would tell
- * somebody looking for "the todo plugin's" one that there is nothing there.
- * Accent-folded, so `dietetique` finds `diététique`.
+ * Over the path, the name and the description, because half of what
+ * distinguishes two instructions is where they sit and what they are for — a
+ * search that only read filenames would tell somebody looking for "the one
+ * about invoices" that there is nothing there, with the word sitting in a
+ * description three of them carry. Accent-folded, so `dietetique` finds
+ * `diététique`.
  */
 export function matches(file: InstructionFile, query: string): boolean {
   const fold = (value: string) =>
@@ -79,12 +167,25 @@ export function matches(file: InstructionFile, query: string): boolean {
       .toLowerCase()
   const wanted = fold(query.trim())
   if (wanted === '') return true
-  return fold(file.path).includes(wanted)
+  return fold(`${file.path} ${file.name ?? ''} ${file.description ?? ''}`).includes(wanted)
 }
 
 /** `1420` → `1.4 kB`. Enough to tell a stub from a chapter, and no more. */
 function size(bytes: number): string {
   return bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} kB`
+}
+
+/**
+ * The opening text of a new one.
+ *
+ * A skill and a subagent are found BY their frontmatter — an engine that
+ * cannot read a `description` never matches the thing to a task, so a new one
+ * without it is a file that exists and never runs. A standing instruction has
+ * no such contract and gets none: it is read whole, every turn.
+ */
+function seedFor(kind: Kind, id: string, name: string): string {
+  if (kind === 'instruction') return `# ${name}\n\n`
+  return `---\nname: ${id}\ndescription: ${name}\n---\n\n# ${name}\n\n`
 }
 
 export interface InstructionsProps {
@@ -119,7 +220,7 @@ export function Instructions({
    * a 404 on the way in would blank the very seed that makes a new skill a
    * skill instead of an empty box.
    */
-  const [seed, setSeed] = useState<{ path: string; text: string } | undefined>()
+  const [seed, setSeed] = useState<{ path: string; text: string; kind: Kind } | undefined>()
 
   useEffect(() => {
     void (async () => {
@@ -174,12 +275,12 @@ export function Instructions({
   }, [fetchImpl, open, seed])
 
   const start = useCallback(
-    (path: string, text = '') => {
-      setSeed({ path, text })
+    (path: string, kind: Kind, text = '') => {
+      setSeed({ path, text, kind })
       setFiles((current) =>
         current?.some((file) => file.path === path)
           ? current
-          : [...(current ?? []), { path, modified: new Date().toISOString(), bytes: 0 }],
+          : [...(current ?? []), { path, modified: new Date().toISOString(), bytes: 0, kind }],
       )
       onOpen(path)
     },
@@ -216,6 +317,15 @@ export function Instructions({
     [files, query],
   )
 
+  /** Only the groups that have something in them, in their settled order. */
+  const groups = useMemo(
+    () =>
+      KINDS.map((kind) => ({ kind, files: found.filter((file) => kindOf(file) === kind) })).filter(
+        (group) => group.files.length > 0,
+      ),
+    [found],
+  )
+
   if (!supported) {
     return (
       <section className="adestia-empty">
@@ -227,6 +337,7 @@ export function Instructions({
   if (open !== undefined) {
     const shown = files?.find((file) => file.path === open)
     const managed = shown?.managed === true
+    const kind = shown ? kindOf(shown) : 'instruction'
     const dirty = text !== onDisk
 
     return (
@@ -238,12 +349,15 @@ export function Instructions({
             📓
           </span>
           <div>
-            <h1 className="adestia-chead__title">{label(open)}</h1>
-            {/* Only when it adds something — for a file at the workspace root
-                the path IS the name, and printing both twice is noise. Same
-                rule as the card. */}
-            {open !== label(open) && (
-              <p className="adestia-chead__lede">
+            <h1 className="adestia-chead__title">{shown ? title(shown) : label(open)}</h1>
+            {/* What it is, and therefore when the engine reads it — said here
+                because somebody arriving by a link never saw the card that
+                would have told them. */}
+            <p className="adestia-chead__lede">{t(GROUPS[kind].lede)}</p>
+            {/* The address, only when it adds something: for a file at the
+                workspace root the path IS the name. Same rule as the card. */}
+            {open !== (shown ? title(shown) : label(open)) && (
+              <p className="adestia-instructions__where">
                 <code>{open}</code>
               </p>
             )}
@@ -280,7 +394,7 @@ export function Instructions({
             value={text}
             spellCheck={false}
             readOnly={managed}
-            aria-label={label(open)}
+            aria-label={shown ? title(shown) : label(open)}
             onChange={(event) => {
               setText(event.target.value)
               if (save.kind !== 'idle') setSave({ kind: 'idle' })
@@ -290,6 +404,18 @@ export function Instructions({
       </section>
     )
   }
+
+  /**
+   * Folders, in the order the groups below are drawn in.
+   *
+   * Not the driver's declaration order, which put `+ Agent` before `+ Skill`
+   * under a screen listing skills before agents — a small thing, and exactly
+   * the kind that makes a row of buttons feel unsorted.
+   */
+  const folders = places
+    .filter((place) => place.kind === 'folder')
+    .slice()
+    .sort((a, b) => KINDS.indexOf(a.holds ?? 'instruction') - KINDS.indexOf(b.holds ?? 'instruction'))
 
   return (
     <div className="adestia-instructions">
@@ -331,29 +457,49 @@ export function Instructions({
         {places
           .filter((place) => place.kind === 'file' && !place.exists)
           .map((place) => (
-            <button key={place.path} type="button" onClick={() => start(place.path)}>
+            <button
+              key={place.path}
+              type="button"
+              onClick={() => start(place.path, place.holds ?? 'instruction')}
+            >
               + {place.path}
             </button>
           ))}
-        {places
-          .filter((place) => place.kind === 'folder')
-          .map((place) => (
+        {folders.map((place) => {
+          const holds = place.holds ?? 'instruction'
+          // Codex declares TWO skill folders. One button per folder, both
+          // reading "+ Skill", would be two identical controls landing in
+          // different places — so the path joins the label when, and only
+          // when, it is what tells them apart. In ONE string rather than a
+          // styled span beside it: a name split across elements is read back
+          // without the space between them, by a screen reader and by the
+          // test that stands in for one.
+          const ambiguous = folders.filter((other) => (other.holds ?? 'instruction') === holds)
+          return (
             <button
               key={place.path}
               type="button"
               onClick={() => {
-                const name = window.prompt(t('What is this instruction about?'))
+                const name = window.prompt(t(NEW[holds].ask))
                 const id = slug(name ?? '')
                 if (!id) return
+                // The driver said where a new one goes; the client inventing
+                // it is how a subagent ended up at `agents/x/SKILL.md`, a
+                // file no engine opens.
+                const entry = place.entry ?? '<name>/SKILL.md'
                 start(
-                  `${place.path}/${id}/SKILL.md`,
-                  `---\nname: ${id}\ndescription: ${name}\n---\n\n# ${name}\n\n`,
+                  `${place.path}/${entry.replace('<name>', id)}`,
+                  holds,
+                  seedFor(holds, id, name ?? id),
                 )
               }}
             >
-              + {t('New instruction')}
+              {ambiguous.length > 1
+                ? `+ ${t(NEW[holds].label)} · ${place.path}`
+                : `+ ${t(NEW[holds].label)}`}
             </button>
-          ))}
+          )
+        })}
       </div>
 
       {files !== undefined && files.length === 0 && (
@@ -361,33 +507,57 @@ export function Instructions({
           {t('Nothing here yet — write one, or ask the agent to.')}
         </p>
       )}
-      {files !== undefined && files.length > 0 && found.length === 0 && (
+      {files !== undefined && files.length > 0 && groups.length === 0 && (
         <p className="adestia-instructions__empty">{t('Nothing matches that.')}</p>
       )}
 
-      <ul className="adestia-filecards">
-        {found.map((file) => (
-          <li key={file.path}>
-            <button type="button" className="adestia-filecard" onClick={() => onOpen(file.path)}>
-              <span className="adestia-filecard__head">
-                <span className="adestia-filecard__name">{label(file.path)}</span>
-                {file.managed && (
-                  <span className="adestia-filecard__badge">{t('delivered')}</span>
-                )}
-              </span>
-              {/* Only when it adds something: for a file at the workspace
-                  root the path IS the name, and printing both is noise. */}
-              {file.path !== label(file.path) && (
-                <span className="adestia-filecard__path">{file.path}</span>
-              )}
-              <span className="adestia-filecard__foot">
-                <span>{size(file.bytes)}</span>
-                <span>{new Date(file.modified).toLocaleDateString(locale)}</span>
-              </span>
-            </button>
-          </li>
-        ))}
-      </ul>
+      {groups.map((group) => (
+        <section key={group.kind} className="adestia-igroup">
+          {/* A lone group repeats the screen's own title and says nothing —
+              it earns its heading only once there is something to tell it
+              apart from. */}
+          {groups.length > 1 && (
+            <header className="adestia-igroup__head">
+              <h2 className="adestia-igroup__title">{t(GROUPS[group.kind].title)}</h2>
+              <p className="adestia-igroup__lede">{t(GROUPS[group.kind].lede)}</p>
+            </header>
+          )}
+          <ul className="adestia-filecards">
+            {group.files.map((file) => (
+              <li key={file.path}>
+                <button
+                  type="button"
+                  className="adestia-filecard"
+                  onClick={() => onOpen(file.path)}
+                >
+                  <span className="adestia-filecard__head">
+                    <span className="adestia-filecard__name">{title(file)}</span>
+                    {file.managed && (
+                      <span className="adestia-filecard__badge">{t('delivered')}</span>
+                    )}
+                  </span>
+                  {/* What it is FOR — the sentence its author wrote, and for
+                      a skill the very one the engine matches a task against.
+                      It is what tells two SKILL.md files apart before either
+                      is opened, which a byte count never did. */}
+                  {file.description && (
+                    <span className="adestia-filecard__about">{file.description}</span>
+                  )}
+                  {/* Only when it adds something: for a file at the workspace
+                      root the path IS the name, and printing both is noise. */}
+                  {file.path !== title(file) && (
+                    <span className="adestia-filecard__path">{file.path}</span>
+                  )}
+                  <span className="adestia-filecard__foot">
+                    <span>{size(file.bytes)}</span>
+                    <span>{new Date(file.modified).toLocaleDateString(locale)}</span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
     </div>
   )
 }

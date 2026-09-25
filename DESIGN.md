@@ -154,6 +154,19 @@ rather than the product assuming one CLI's layout is universal. This matters
 more than it looks: the two supported CLIs keep the same natures under
 different names, and their zones overlap without being identical.
 
+`instructionPaths()` says more than where: each zone carries its KIND —
+`instruction` (read at the start of every turn), `skill` (read when a task
+matches its description), `agent` (a named helper the engine hands work to) —
+and, for a folder, the shape a new one takes inside it (`<name>/SKILL.md`,
+`<name>.md`, `<name>.agent.md`). Declared rather than read off the folder's
+name for the reason the whole contract exists: `agents/` means the same thing
+on the three engines that exist today and will not on the fourth, and a guess
+there files a zone under a heading that lies about when its text reaches the
+model. The shape matters for the same reason — the interface wrote
+`<name>/SKILL.md` into every folder it was given, which put a would-be
+subagent at `.claude/agents/x/SKILL.md`: a file no engine opens, created
+silently.
+
 **`authManagement`** (arm / refresh the CLI's subscription token from the UI):
 - State machine, per driver, single active arming session:
   `idle → starting → awaiting-input → exchanging → armed | error`, with session TTL.
@@ -222,6 +235,16 @@ harness-neutral layer is Adestia's own: **plugin agent-contracts**, which the dr
 compiles into its best native form (Claude skills, Copilot instruction sections),
 degrading to plain instruction text as the guaranteed floor — a plugin must work
 on every engine without being rewritten.
+
+**Never translated, but SORTED.** The instruction screen groups what it lists
+by the kind of the zone it came from, and says under each heading when that
+kind is read — which is the one question thirty identical cards could not
+answer. The headings keep the engine's own words (`skills`, `agents`) because
+those words are on the folder and in the file about to be opened; the sentence
+under them is what carries the meaning, and that is what is translated. A kind
+this engine does not declare draws no group at all: Codex has skills and no
+subagent folder, and a heading over an empty list reads as broken rather than
+absent.
 
 **v1 drivers:**
 - `claude-code` — Agent SDK TS. Arming: `setup-token` flow (url+code). Usage: full

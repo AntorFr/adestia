@@ -20,6 +20,7 @@ import type {
   AuthStatus,
   Driver,
   DriverDescriptor,
+  InstructionZone,
   McpServer,
   McpServerHealth,
   ModelInfo,
@@ -238,8 +239,13 @@ export class CopilotDriver implements Driver {
    * be able to correct here, while its frontmatter grants tools and wires MCP
    * servers. Reading it is a person's business; rewriting it is a decision.
    */
-  instructionPaths(): readonly string[] {
-    return ['AGENTS.md', '.github/copilot-instructions.md', '.github/agents', '.github/skills']
+  instructionPaths(): readonly InstructionZone[] {
+    return [
+      { path: 'AGENTS.md', kind: 'instruction' },
+      { path: '.github/copilot-instructions.md', kind: 'instruction' },
+      { path: '.github/agents', kind: 'agent', entry: '<name>.agent.md' },
+      { path: '.github/skills', kind: 'skill', entry: '<name>/SKILL.md' },
+    ]
   }
 
   setCredentials(credentials: Readonly<Record<string, string>>, savedAt?: string | undefined): void {

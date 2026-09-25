@@ -35,6 +35,7 @@ import type {
   AuthStatus,
   Driver,
   DriverDescriptor,
+  InstructionZone,
   McpServer,
   McpServerHealth,
   ModelInfo,
@@ -209,8 +210,12 @@ export class CodexDriver implements Driver {
    * folders hold the contracts the core delivers, whose bodies are briefs a
    * person should be able to read and correct.
    */
-  instructionPaths(): readonly string[] {
-    return ['AGENTS.md', '.codex/skills', '.agents/skills']
+  instructionPaths(): readonly InstructionZone[] {
+    return [
+      { path: 'AGENTS.md', kind: 'instruction' },
+      { path: '.codex/skills', kind: 'skill', entry: '<name>/SKILL.md' },
+      { path: '.agents/skills', kind: 'skill', entry: '<name>/SKILL.md' },
+    ]
   }
 
   /** `sandboxPolicy.writableRoots`, per turn — finer than the contract asks. */

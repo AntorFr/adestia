@@ -15,12 +15,21 @@ import { describe, expect, it, vi } from 'vitest'
 import { Instructions, label, matches } from '../src/app/Instructions.js'
 
 const FILES = [
-  { path: 'CLAUDE.md', modified: '2026-08-25T10:00:00Z', bytes: 40, managed: false },
+  {
+    path: 'CLAUDE.md',
+    modified: '2026-08-25T10:00:00Z',
+    bytes: 40,
+    managed: false,
+    kind: 'instruction',
+  },
   {
     path: '.claude/skills/mes-regles/SKILL.md',
     modified: '2026-08-25T10:00:00Z',
     bytes: 80,
     managed: false,
+    kind: 'skill',
+    name: 'mes-regles',
+    description: 'Relire le courrier. À utiliser quand on parle d’e-mails.',
   },
 ]
 
@@ -208,14 +217,22 @@ describe('the instruction screen', () => {
         fetchImpl={server({
           files: [],
           paths: [
-            { path: 'CLAUDE.md', kind: 'file', exists: false },
-            { path: '.claude/skills', kind: 'folder', exists: true },
+            { path: 'CLAUDE.md', kind: 'file', holds: 'instruction', exists: false },
+            {
+              path: '.claude/skills',
+              kind: 'folder',
+              holds: 'skill',
+              entry: '<name>/SKILL.md',
+              exists: true,
+            },
           ],
         })}
       />,
     )
     expect(await screen.findByRole('button', { name: '+ CLAUDE.md' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: '+ New instruction' })).toBeTruthy()
+    // Named for what lands there, not for the zone in general: a button that
+    // says "instruction" and writes a SKILL.md describes neither.
+    expect(screen.getByRole('button', { name: '+ Skill' })).toBeTruthy()
   })
 
   it('does not offer to create a file that is already there', async () => {
@@ -284,5 +301,179 @@ describe('naming a file', () => {
     expect(label('.claude/skills/mes-regles/SKILL.md')).toBe('mes-regles')
     expect(label('CLAUDE.md')).toBe('CLAUDE.md')
     expect(label('notes/regles.md')).toBe('regles.md')
+  })
+})
+
+/**
+ * Telling the three kinds apart.
+ *
+ * The screen used to draw one grid: a standing brief, a skill nothing had
+ * matched yet and a subagent's charter, thirty cards, all the same weight.
+ * What a person needs first is WHEN each one reaches the model, and that is
+ * what these assert — including on the engines that do not have all three.
+ */
+describe('what kind of prose it is', () => {
+  const MIXED = [
+    { path: 'CLAUDE.md', modified: '', bytes: 40, kind: 'instruction' },
+    {
+      path: '.claude/skills/factures/SKILL.md',
+      modified: '',
+      bytes: 80,
+      kind: 'skill',
+      name: 'factures',
+      description: 'Classe les factures du mois.',
+    },
+    {
+      path: '.claude/agents/relecteur.md',
+      modified: '',
+      bytes: 60,
+      kind: 'agent',
+      name: 'relecteur',
+      description: 'Relit un diff et ne dit que ce qui casse.',
+    },
+  ]
+
+  it('heads a group with what it is and says when it is read', async () => {
+    render(<Zone fetchImpl={server({ files: MIXED })} />)
+    expect(await screen.findByRole('heading', { name: 'Skills' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Agents' })).toBeTruthy()
+    // The heading keeps the engine's word; the line under it is the meaning.
+    expect(screen.getByText('Read at the start of every turn, whatever it is about.')).toBeTruthy()
+  })
+
+  it('draws no group for a kind this engine does not have', async () => {
+    // Codex declares skills and no subagent folder. A heading over an empty
+    // list reads as a feature that is broken, not one that is absent here.
+    render(<Zone fetchImpl={server({ files: MIXED.filter((file) => file.kind !== 'agent') })} />)
+    await screen.findByRole('heading', { name: 'Skills' })
+    expect(screen.queryByRole('heading', { name: 'Agents' })).toBeNull()
+  })
+
+  it('does not head a lone group, which would only repeat the screen title', async () => {
+    render(<Zone fetchImpl={server({ files: [MIXED[0]] })} />)
+    await screen.findByText('CLAUDE.md')
+    expect(screen.queryByRole('heading', { name: 'Instructions', level: 2 })).toBeNull()
+  })
+
+  it('says what a skill is FOR, which is what tells two SKILL.md files apart', async () => {
+    render(<Zone fetchImpl={server({ files: MIXED })} />)
+    expect(await screen.findByText('Classe les factures du mois.')).toBeTruthy()
+  })
+
+  it('calls a file by the name the engine invokes it under', async () => {
+    // `relecteur.md` and `name: relecteur` agree here; a subagent named
+    // `code-reviewer` in `reviewer.agent.md` would not, and it is the name it
+    // answers to that somebody searches for.
+    render(<Zone fetchImpl={server({ files: MIXED })} />)
+    await screen.findByText('relecteur')
+    expect(screen.queryByText('relecteur.md')).toBeNull()
+  })
+
+  it('finds one by what it is for, not only by where it sits', async () => {
+    render(<Zone fetchImpl={server({ files: MIXED })} />)
+    await screen.findByText('CLAUDE.md')
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'diff' } })
+    await waitFor(() => expect(screen.queryByText('CLAUDE.md')).toBeNull())
+    expect(screen.getByText('relecteur')).toBeTruthy()
+  })
+
+  it('still says when it is read when opened straight from a link', async () => {
+    render(<Zone fetchImpl={server({ files: MIXED })} />)
+    fireEvent.click(await screen.findByText('relecteur'))
+    expect(
+      await screen.findByText('A named helper the agent hands a job to, working from its own brief.'),
+    ).toBeTruthy()
+  })
+})
+
+describe('writing a new one', () => {
+  /** Remembers where the save was addressed, which is the whole point here. */
+  function recorder(paths: readonly unknown[], sent: string[]) {
+    return vi.fn((url: string, init?: RequestInit) => {
+      if (String(url) === '/api/instructions') {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve({ files: [], paths }),
+        } as unknown as Response)
+      }
+      if (init?.method === 'PUT') {
+        sent.push(String(url))
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve({}),
+        } as unknown as Response)
+      }
+      return Promise.resolve({
+        ok: false,
+        status: 404,
+        json: () => Promise.resolve({}),
+      } as unknown as Response)
+    }) as unknown as typeof fetch
+  }
+
+  it('puts a new subagent where the engine reads one, not in a SKILL.md', async () => {
+    // The client used to write `<name>/SKILL.md` into every folder it was
+    // given. In the subagent folder that produced a file no engine opens —
+    // and silently: the save succeeded and the card appeared.
+    const sent: string[] = []
+    vi.spyOn(window, 'prompt').mockReturnValue('Relecteur')
+    render(
+      <Zone
+        fetchImpl={recorder(
+          [
+            {
+              path: '.claude/agents',
+              kind: 'folder',
+              holds: 'agent',
+              entry: '<name>.md',
+              exists: true,
+            },
+          ],
+          sent,
+        )}
+      />,
+    )
+    fireEvent.click(await screen.findByRole('button', { name: '+ Agent' }))
+    const area = (await screen.findByRole('textbox')) as HTMLTextAreaElement
+    // Frontmatter, because a subagent with no `description` is one the engine
+    // never matches to anything.
+    expect(area.value).toContain('name: relecteur')
+    fireEvent.change(area, { target: { value: 'x' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(() =>
+      expect(sent).toEqual(['/api/instructions/.claude/agents/relecteur.md']),
+    )
+  })
+
+  it('names the folder when two buttons would otherwise be the same control', async () => {
+    // Codex declares `.codex/skills` AND `.agents/skills`.
+    const sent: string[] = []
+    render(
+      <Zone
+        fetchImpl={recorder(
+          [
+            {
+              path: '.codex/skills',
+              kind: 'folder',
+              holds: 'skill',
+              entry: '<name>/SKILL.md',
+              exists: true,
+            },
+            {
+              path: '.agents/skills',
+              kind: 'folder',
+              holds: 'skill',
+              entry: '<name>/SKILL.md',
+              exists: true,
+            },
+          ],
+          sent,
+        )}
+      />,
+    )
+    expect(await screen.findByRole('button', { name: '+ Skill · .codex/skills' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '+ Skill · .agents/skills' })).toBeTruthy()
   })
 })
