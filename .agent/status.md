@@ -249,10 +249,23 @@ minimale sans l'être : les ids viennent du client, `resolve` vérifie l'évasio
 et pas la forme, et un id d'un seul segment nommait l'inbox entière — la
 permission maximale, obtenue par le paramètre censé la garder minimale.
 
-**Reste à vérifier sur l'instance Copilot avant de conclure** : `--add-dir`
-est dans le help de la CLI (répétable), mais son comportement n'a jamais été
-exercé — que le fichier soit réellement lu, et ce que la CLI fait d'un dossier
-absent. Pas encore déployée.
+**Mesuré plutôt que supposé** (CLI 1.0.80, mock BYOK, sans credentials —
+spike §12). Le refus est mot pour mot celui rapporté sur l'instance :
+« Permission denied and could not request permission from user », sans
+nommer ni le chemin ni le drapeau qui manque. `--allow-all-tools` ne le
+couvre PAS : permission d'outil et vérification de chemin sont deux portes.
+`--add-dir` l'ouvre, en lecture comme en écriture. Et un `--add-dir` sur un
+dossier absent **tue le tour entier** (exit 1, aucune ligne `result`) — ce
+qui valide le choix de ne déclarer la boîte que lorsqu'elle existe.
+
+Piège trouvé en mesurant, et consigné pour la prochaine fois : le répertoire
+temporaire du système est autorisé PAR DÉFAUT, donc une fixture posée dans
+`/tmp` fait croire qu'aucune vérification n'existe. Deux lectures fausses
+avant de s'en apercevoir. À arbitrer séparément : le pilote ne passe ni
+`--allow-all-paths` ni `--disallow-temp-dir`, donc l'agent lit et écrit
+aujourd'hui librement dans le `/tmp` du conteneur.
+
+Pas encore déployée.
 
 v0.61.0 : une page occupe un grand écran. Le canevas
 monte à 1400 px (940 avant) ; la prose garde une mesure, relevée à 89ch
