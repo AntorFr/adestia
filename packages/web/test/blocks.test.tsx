@@ -264,3 +264,40 @@ describe('when it cannot be drawn', () => {
     quiet.mockRestore()
   })
 })
+
+describe("the index a block is handed", () => {
+  const QUERY = { shelf: { content: 'empty', description: 'What is below.' } } as const
+  const Shelf = ({ pages }: BlockProps) => (
+    <i data-testid="shelf">{pages === undefined ? 'sans index' : pages.map((one) => one.path).join(', ')}</i>
+  )
+
+  it('hands over the listing the shell already holds', () => {
+    // Mesuré plutôt que supposé : la coque récupère `/api/pages/index` UNE
+    // fois au démarrage et le garde vivant. Un bloc qui le redemandait payait
+    // un aller-retour ET une relecture serveur de tous les fichiers de
+    // l'instance — une à deux secondes sur un vrai corpus, sur une page déjà
+    // dessinée.
+    registerBlocks(QUERY, { plugin: 'demo', kind: 'feature' })
+    render(
+      <Reader
+        markdown={':::shelf\n:::\n'}
+        path="chantiers/a/INDEX.md"
+        blocks={{ demo: { shelf: Shelf } }}
+        pages={[
+          { path: 'chantiers/a/un.md', fields: { type: 'chantier' } },
+          { path: 'chantiers/a/deux.md', fields: {} },
+        ]}
+      />,
+    )
+    expect(screen.getByTestId('shelf').textContent).toBe('chantiers/a/un.md, chantiers/a/deux.md')
+  })
+
+  it('says "not known here" rather than "nothing" where there is no index', () => {
+    // Une bulle de chat rend de la prose sans index. `undefined` y veut dire
+    // « on ne sait pas ici », jamais « il n'y a rien » — et c'est au bloc de
+    // faire la différence, donc il faut qu'il puisse la voir.
+    registerBlocks(QUERY, { plugin: 'demo', kind: 'feature' })
+    render(<Reader markdown={':::shelf\n:::\n'} blocks={{ demo: { shelf: Shelf } }} />)
+    expect(screen.getByTestId('shelf').textContent).toBe('sans index')
+  })
+})

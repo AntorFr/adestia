@@ -520,14 +520,22 @@ A block component is handed these beyond its own plugin's `api`:
 | `path` | the page carrying the block, as its LOGICAL path — the name memory spells, composed from every store, never saying which one holds the file |
 | `store` | which store carries that page. Present only where the instance composes more than one, and a QUALIFIER — never join it to `path` to build an address |
 | `fields` | that page's frontmatter, as the server parsed it |
+| `pages` | **the instance's page index, already in memory** — every page's `path`, `title`, `fields`, `finished` and `tone`. Query from THIS, never from a fetch of your own: the shell asks `/api/pages/index` once at boot and keeps it live, and a block that asks again pays a round trip AND a server-side re-read of every file in the instance, one to two seconds on a real corpus, on a page that was already drawn |
 | `resolve(path)` | a path written in the page → a URL to fetch. `source="assets/x.json"` means "next to the page", the way it reads on disk — nothing in a document should know files are served under `/api/files` |
 | `locate(path)` | the same path as the WORKSPACE spells it — what you name to your own API |
 | `children` | the block's body, already rendered. Only for a `flow` block |
 | `items` | the body's list items as plain text, one string per item. Only for a `flow` block, beside `children` — for a block that treats its body as DATA (a timeline reading phase lines). A block that consumes `items` simply does not draw its `children` |
 
-`path`, `store` and `fields` are absent when prose is rendered outside any
-page — a chat bubble — which is the same answer relative links already give
-there.
+`path`, `store`, `fields` and `pages` are absent when prose is rendered
+outside any page — a chat bubble — which is the same answer relative links
+already give there. A block that queries says so, or falls back to asking;
+what it must not do is draw an empty list as though the answer were "nothing".
+
+**`finished` and `tone` are the content engine's verdict, not a reading of
+`status`.** A view can read `status` itself; what it cannot do is know that
+`réalisé` closes a page and `acheté` closes only a purchase. Copying that
+table into a plugin is how the predecessor ended up archiving a trip in one
+view and not in the next.
 
 **Do not derive the page from `locate('.')`.** It looks equivalent and is not:
 a page sitting at the ROOT has an empty folder, so that call answers `.`, and a

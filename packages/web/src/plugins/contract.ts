@@ -246,9 +246,54 @@ export interface ChromeContribution {
  * twice what its own plugin knows. What IS here is the only thing the plugin
  * cannot know — where in the workspace this particular occurrence sits.
  */
+/**
+ * One page, as the instance's index publishes it.
+ *
+ * `path` and `fields` are what every entry carries; the rest is published for
+ * every page too but typed optional, because the shell hands this array over
+ * in places where it holds less — a preview, a test, a bubble that was never
+ * given an index at all. A block that needs `finished` treats its absence as
+ * "unknown" rather than as `false`.
+ */
+export interface IndexedPage {
+  /** The MEMORY's own path, composed across stores — never a disk path. */
+  readonly path: string
+  readonly fields: Readonly<Record<string, unknown>>
+  /** What the page is called: its `title:`, else its first heading, else its file name. */
+  readonly title?: string
+  /** Which store carries it. Present only where the instance composes several. */
+  readonly store?: string
+  /**
+   * Whether the page's life is over — the CONTENT ENGINE's verdict, not a
+   * reading of `status`. A view can read `status` itself; what it cannot do
+   * is know that `réalisé` closes a page and `acheté` closes only a purchase.
+   */
+  readonly finished?: boolean
+  /** Which family that status belongs to. Same reason as `finished`. */
+  readonly tone?: 'underway' | 'waiting' | 'settled'
+  /** What each written `:::content` block says, bounded and keyed by its `type`. */
+  readonly blocks?: Readonly<Record<string, string>>
+}
+
 export interface BlockProps {
   /** Validated against the manifest's spec before this ever runs. */
   readonly attributes: Readonly<Record<string, string>>
+  /**
+   * The instance's page index, when the shell holding this block has it.
+   *
+   * Handed over rather than fetched, and that is a measured difference rather
+   * than a tidiness: the shell asks `/api/pages/index` ONCE at boot and keeps
+   * it live, so the core's own `:::list` draws from memory and appears at
+   * once. A block that fetched the same listing for itself paid a round trip
+   * AND a server-side re-read of every markdown file in the instance — one to
+   * two seconds on a real corpus, on a page that had already been drawn.
+   *
+   * ABSENT is a real case, not a formality: prose rendered outside any shell
+   * — a chat bubble, a preview — has no index behind it. A block that queries
+   * says so, or falls back to asking, but never draws an empty list as though
+   * the answer were "nothing".
+   */
+  readonly pages?: readonly IndexedPage[]
   /**
    * The page carrying this block — its LOGICAL path, as `/api/pages/…` spells
    * it, exactly like a layout's.

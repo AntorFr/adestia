@@ -1002,6 +1002,11 @@ function Contributed({
       </>
     )
   }
+  // `pages` is the index the shell already holds. The core's own `:::list`
+  // reads it from memory; a plugin's query block used to fetch the same
+  // listing again for itself, which costs a round trip AND a server-side
+  // re-read of every markdown file in the instance. Same array, same
+  // reference, nothing copied.
   return (
     <PluginBoundary id={name} what="block">
       <Block
@@ -1012,6 +1017,7 @@ function Contributed({
         {...(ctx.page ? { path: ctx.page.path } : {})}
         {...(ctx.page?.store ? { store: ctx.page.store } : {})}
         {...(ctx.page?.fields ? { fields: ctx.page.fields } : {})}
+        {...(ctx.pages ? { pages: ctx.pages } : {})}
         {...(ctx.openPage ? { openPage: ctx.openPage } : {})}
       >
         {body}
