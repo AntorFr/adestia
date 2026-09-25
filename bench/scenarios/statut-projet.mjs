@@ -16,11 +16,12 @@
  */
 export default async function scenario(bench) {
   for (const theme of ['light', 'dark']) {
-    const page = await bench.open({ theme, height: 1400 })
+    const page = await bench.open({ theme, height: 1700 })
     await page.evaluate(() => {
       location.hash = '/page/chantiers/adestia/INDEX.md'
     })
     await page.waitForSelector('.pm-subproject__ico--red', { timeout: 15_000 })
+    await page.waitForSelector('.pm-subproject__card', { timeout: 15_000 })
     await page.waitForSelector('.pm-timeline__span', { timeout: 15_000 })
     await page.waitForTimeout(600)
     await bench.shoot(page, `1-les-sous-projets-${theme}`)

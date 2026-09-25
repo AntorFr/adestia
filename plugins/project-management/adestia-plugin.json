@@ -48,6 +48,13 @@
             "show"
           ],
           "default": "fold"
+        },
+        "view": {
+          "values": [
+            "rows",
+            "cards"
+          ],
+          "default": "rows"
         }
       }
     },

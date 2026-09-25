@@ -56,6 +56,37 @@ export default function createProjectBlocks(api) {
   const fr = api.locale === 'fr'
 
   /**
+   * The page index, asked for ONCE however many blocks want it.
+   *
+   * Both of this plugin's query blocks read the same listing, so a page
+   * carrying a planning and a list of sub-projects fired TWO full requests
+   * for one answer — and `/api/pages/index` re-reads every markdown file in
+   * the instance, so the second one is not free anywhere.
+   *
+   * Only the IN-FLIGHT request is shared, never the answer: the agent writes
+   * pages while somebody reads them, and a cached listing would show a stale
+   * corpus with nothing to say it is stale. Two blocks mounting together make
+   * one call; a block mounting later asks again, and gets what is true then.
+   */
+  let flight
+  const askIndex = async () => {
+    if (!flight) {
+      flight = (async () => {
+        const response = await api.fetch('/api/pages/index')
+        if (!response.ok) throw new Error(`l'index des pages a répondu ${response.status}`)
+        const { entries } = await response.json()
+        return entries ?? []
+      })()
+      // Released once settled, success or failure: what is kept is the
+      // request, not its result.
+      void flight.catch(() => {}).finally(() => {
+        flight = undefined
+      })
+    }
+    return flight
+  }
+
+  /**
    * What a bar says when the colour cannot be seen — hovered, read aloud, or
    * printed in grey. The state is otherwise carried by hue alone, and the
    * dates are carried by position alone: neither survives a screen reader.
@@ -117,10 +148,8 @@ export default function createProjectBlocks(api) {
       let live = true
       void (async () => {
         try {
-          const response = await api.fetch('/api/pages/index')
-          if (!response.ok) throw new Error(`l'index des pages a répondu ${response.status}`)
-          const { entries } = await response.json()
-          if (live) setIndex(entries ?? [])
+          const entries = await askIndex()
+          if (live) setIndex(entries)
         } catch (cause) {
           if (live) setFailure(cause.message)
         }
@@ -293,6 +322,10 @@ export default function createProjectBlocks(api) {
   function Subproject({ attributes = {}, path, openPage }) {
     const depth = attributes.depth ?? 'children'
     const closed = attributes.closed ?? 'fold'
+    // `view` lays out the ENTRIES, never the block — the core's own word, at
+    // the core's own meaning, so a list of sub-projects and a `:::list` in
+    // cards on the same page are laid out by one idea and not two.
+    const view = attributes.view === 'cards' ? 'cards' : 'rows'
     const [index, setIndex] = useState(null)
     const [failure, setFailure] = useState(null)
 
@@ -300,10 +333,8 @@ export default function createProjectBlocks(api) {
       let live = true
       void (async () => {
         try {
-          const response = await api.fetch('/api/pages/index')
-          if (!response.ok) throw new Error(`l'index des pages a répondu ${response.status}`)
-          const { entries } = await response.json()
-          if (live) setIndex(entries ?? [])
+          const entries = await askIndex()
+          if (live) setIndex(entries)
         } catch (cause) {
           if (live) setFailure(cause.message)
         }
@@ -384,8 +415,61 @@ export default function createProjectBlocks(api) {
         ],
       )
 
-    return h('div', { className: 'pm-subproject' }, [
-      ...shown.map(draw),
+    /**
+     * The same row, as a card — a grid entry rather than a line.
+     *
+     * Same three things in the same order, and deliberately: a card that
+     * reordered them would make the two views two drawings to learn instead
+     * of one drawing in two shapes. What changes is the BOX and where it
+     * breaks — the dot and the name on one line, the word under them, so a
+     * long project name has somewhere to go.
+     */
+    const card = (row) =>
+      h(
+        openPage ? 'button' : 'div',
+        {
+          key: row.path,
+          className: 'pm-subproject__card',
+          ...(openPage ? { type: 'button', onClick: () => openPage(row.path) } : {}),
+        },
+        [
+          h(
+            'span',
+            { className: 'pm-subproject__head', key: 'head' },
+            [
+              h(
+                'i',
+                {
+                  className: row.badge
+                    ? `pm-subproject__ico pm-subproject__ico--${row.badge.tone}`
+                    : 'pm-subproject__ico',
+                  key: 'ico',
+                  ...(row.badge
+                    ? { title: row.badge.word, 'aria-label': row.badge.word }
+                    : { 'aria-hidden': 'true' }),
+                },
+              ),
+              h('span', { className: 'pm-subproject__title', key: 'title' }, row.label),
+            ],
+          ),
+          row.badge
+            ? h('span', { className: 'pm-subproject__tag', key: 'state' }, row.badge.word)
+            : null,
+        ],
+      )
+
+    const entry = view === 'cards' ? card : draw
+
+    // In cards, the entries share a grid; in rows they stack. The FOLD keeps
+    // its own grid so what is closed is laid out like what is live — a
+    // reader who opens it should recognise what falls out.
+    const grid = (entries, key) =>
+      view === 'cards'
+        ? h('div', { className: 'pm-subproject__grid', key }, entries.map(entry))
+        : entries.map(entry)
+
+    return h('div', { className: `pm-subproject pm-subproject--${view}` }, [
+      grid(shown, 'live'),
       // Folded, never dropped: a finished project is exactly what somebody
       // opens to see how the last one went. The same posture as the core's
       // own list, because a reader should not have to learn two.
@@ -398,7 +482,7 @@ export default function createProjectBlocks(api) {
                 ? `${done.length} ${done.length === 1 ? 'projet clos' : 'projets clos'}`
                 : `${done.length} closed ${done.length === 1 ? 'project' : 'projects'}`,
             ),
-            ...done.map(draw),
+            grid(done, 'done'),
           ])
         : null,
     ])

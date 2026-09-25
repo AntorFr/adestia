@@ -199,6 +199,11 @@ go.
   "below" means.
 - **`closed`** — `fold` (the default) puts closed projects behind a summary,
   `hide` drops them, `show` mixes them in.
+- **`view`** — `rows` (the default) stacks them as lines; `cards` lays them
+  out as a grid, for when each project is meant to be scanned on its own
+  rather than read down a column. The core's own word at the core's own
+  meaning: `view` is how a block lays out its INSIDE, `frame=card` is the box
+  around the block itself, and the two compose.
 
 **It lists projects, not pages.** A row is a page carrying
 `type: project-management`; the reading notes filed beside them are not

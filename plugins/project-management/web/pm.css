@@ -293,6 +293,43 @@ button.pm-timeline__span:hover {
   font-size: 0.9em;
   margin: 0;
 }
+/* ── `view=cards` — les mêmes entrées, en grille ───────────────────────────
+
+   La grille est celle des cartes de la coque : des colonnes qui se remplissent
+   d'elles-mêmes, jamais un nombre de colonnes écrit en dur — le canevas d'une
+   fiche change de largeur quand le rail de chat bouge, et un compte fixe
+   laisse un trou ou serre. */
+.pm-subproject__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+}
+.pm-subproject__card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pm-subproject__card:hover { border-color: var(--accent); }
+/* La boulette et le nom sur une ligne, le mot dessous : un nom de projet long
+   a besoin d'aller à la ligne, ce qu'une ligne de liste ne lui permettait pas
+   mais qu'une carte doit. */
+.pm-subproject__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.pm-subproject__card .pm-subproject__title { flex: initial; }
+
 .pm-subproject__fold > summary {
   padding: var(--space-2) var(--space-3);
   color: var(--text-muted);

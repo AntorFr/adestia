@@ -42,6 +42,9 @@ project-status: Amber
 :::subproject{title="Sous-projets" ico=◆}
 :::
 
+:::subproject{view=cards title="Les mêmes, en cartes"}
+:::
+
 :::timeline{depth=children title="Le planning des mêmes"}
 :::
 MD
