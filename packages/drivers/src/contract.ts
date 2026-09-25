@@ -409,6 +409,11 @@ export interface TurnRequest {
    * `Edit`, whose exact-match rewrite is where silent corruption is born when
    * reimplemented. A driver whose CLI has no such notion simply ignores this,
    * and the boot log says so.
+   *
+   * Stores are not the only thing declared here any more: a chat turn adds the
+   * box holding the files the person talking has dropped, which sits outside
+   * the workspace for the same reason and is refused for the same reason. The
+   * list is therefore per TURN, not per boot.
    */
   readonly roots?: readonly string[] | undefined
   /**

@@ -8,6 +8,7 @@ import type { FastifyInstance } from 'fastify'
 
 import type { AttachmentInbox } from '../attachments.js'
 import type { AdestiaConfig } from '../config.js'
+import { identityOf } from './identity.js'
 
 export async function registerUpload(
   app: FastifyInstance,
@@ -30,7 +31,15 @@ export async function registerUpload(
     }
     if (files.length === 0) return reply.code(400).send({ error: 'no file was sent' })
 
-    const { stored, refused } = await inbox.store(files)
+    // Whose box these land in. Read here rather than at the turn, because the
+    // box is decided when the bytes are written: what the browser gets back is
+    // an id relative to it, and an id from one person's box names nothing in
+    // anybody else's.
+    const who = identityOf(request)
+    const { stored, refused } = await inbox.store(
+      { id: who.userId, displayName: who.displayName },
+      files,
+    )
     return {
       attachments: stored.map(({ id, name, bytes }) => ({ id, name, bytes })),
       // Reported alongside what worked: a file silently dropped is a file the

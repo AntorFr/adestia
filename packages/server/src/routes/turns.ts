@@ -7,7 +7,6 @@
  */
 
 import { randomUUID } from 'node:crypto'
-import { dirname } from 'node:path'
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import type { AskAnswer, AskDesk, ShellToolsHandle, TurnEvent } from '@antorfr/adestia-drivers'
@@ -108,16 +107,17 @@ export function registerTurns(app: FastifyInstance, deps: TurnsDependencies): vo
         return reply
       }
 
-      // Resolved before the turn: an id that escapes the inbox is refused
-      // rather than handed to the agent as a path to read.
+      const userId = identityOf(request).userId
+
+      // Resolved before the turn: an id that escapes this person's box is
+      // refused rather than handed to the agent as a path to read.
       const attachments: StoredAttachment[] = []
       for (const id of Array.isArray(body.attachments) ? body.attachments : []) {
         if (typeof id !== 'string') continue
-        const path = inbox.resolve(id)
+        const path = inbox.resolve(userId, id)
         if (path) attachments.push({ id, name: id.split('/').pop() ?? id, bytes: 0, path })
       }
 
-      const userId = identityOf(request).userId
       const conversationId =
         typeof body.conversationId === 'string' ? body.conversationId : undefined
       const sessionId =
@@ -151,6 +151,22 @@ export function registerTurns(app: FastifyInstance, deps: TurnsDependencies): vo
           ? deps.shellTools.handleFor({ userId, conversationId })
           : undefined
 
+      // The inbox sits outside the workspace by design, so this person's box
+      // is declared as a working root: a CLI that verifies read paths would
+      // otherwise refuse the very file the prompt just told the agent to open,
+      // and a bare "Permission denied" on a path the instance itself handed
+      // over reads as a broken agent rather than as a missing declaration.
+      //
+      // Their BOX, not the inbox — what sits in there is unfiled by
+      // definition, and an undecided pile is only tidyable when it is not
+      // mixed. Declared on every turn rather than on the ones carrying files:
+      // the browser sends the ids only with the message they arrive on, while
+      // the agent is sent back to a file somebody mentioned two turns ago.
+      // Absent until they have attached something, because a root that does
+      // not exist is a launch flag pointing at nothing.
+      const box = await inbox.box(userId)
+      const roots = [...agentRoots, ...(box ? [box] : [])]
+
       const spec: TurnSpec = {
         request: {
           // Framed here, not in the browser: what the conversation stores is the
@@ -158,15 +174,7 @@ export function registerTurns(app: FastifyInstance, deps: TurnsDependencies): vo
           // than the gateway's own notes.
           prompt: frameView(frameAttachments(body.prompt, attachments), body.view),
           cwd: config.workspace.root,
-          // The inbox lives outside the workspace by design, so the batch
-          // directory of this turn's attachments is declared as a root — else
-          // a CLI that verifies read paths refuses the very file the prompt
-          // just told the agent to open.
-          ...(() => {
-            const attachmentRoots = [...new Set(attachments.map((a) => dirname(a.path)))]
-            const roots = [...agentRoots, ...attachmentRoots]
-            return roots.length > 0 ? { roots } : {}
-          })(),
+          ...(roots.length > 0 ? { roots } : {}),
           // A conversation's session is the CONVERSATION's, read from its file when the
           // turn is dispatched (`session` below) — never the browser's copy.
           // The browser's copy is exactly what a stream dying under a sleeping

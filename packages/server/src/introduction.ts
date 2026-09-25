@@ -134,7 +134,7 @@ function zones(facts: InstanceFacts): string {
   rows.push(
     `| \`${facts.memory}/\` | \`${facts.workspaceRoot}/${facts.memory}\` | what you write down to remember it |`,
     `| \`${facts.planif}/\` | \`${facts.workspaceRoot}/${facts.planif}\` | scheduled notes, whose body IS the prompt of a turn — see \`schedule-author\` |`,
-    `| the attachment inbox | \`${facts.inbox}\` | files a person dropped in the chat. OUTSIDE the workspace, deliberately: nothing somebody sends you joins the content you curate until you file it there yourself |`,
+    `| the attachment inbox | one box per person under \`${facts.inbox}\` | files a person dropped in the chat; each one's path travels with the message carrying it, and you are given the box of whoever is talking to you. OUTSIDE the workspace, deliberately: nothing somebody sends you joins the content you curate until you file it there yourself |`,
   )
 
   return table('| Zone | Where | What it holds |\n|---|---|---|', rows)
