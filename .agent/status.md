@@ -1,8 +1,12 @@
 # Status — Adestia
 > MàJ : 2026-09-25
 
-**État :** `main`, **v0.75.0** taguée et non déployée ; **v0.74.0** déployée
-sur les trois corps le 24/09 —
+**État :** **v0.76.0** prête dans sa worktree `types-d-instruction`, ni
+fusionnée ni taguée — verte (1750 tests, typecheck, lint, build) et regardée
+au banc (`types-d-instruction`, 8 captures).
+
+`main` porte **v0.75.0**, taguée et non déployée ; **v0.74.0** est déployée
+sur les trois corps depuis le 24/09 —
 8 plugins actifs sur 10 chez Alfred, 9 sur 12 chez Skippy (dont `dev-flow` et
 `sdlc-console`, tirés de `homelab-sdlc-core` v0.4.1), 2 sur 10 chez Nestor,
 aucun avis au démarrage. Six versions d'un coup : les corps servaient encore
@@ -330,6 +334,38 @@ ajoute un plugin, il n'en remplace jamais un. Un dépôt dont la RACINE est le
 plugin est nommé par son manifeste (le dossier d'un clone porte le nom du
 dépôt, pas celui du plugin). Les skins suivent le même chemin.
 Scénario de banc : `plugins-externes`. Déployée le 20/09 sur les trois corps.
+
+v0.76.0 : **l'écran des instructions dit de quoi chaque fichier est fait**.
+Il listait tout à plat — une consigne permanente, une skill que rien n'a
+encore appelée et la charte d'un sous-agent, trente cartes du même poids, le
+nom du fichier et son nombre d'octets pour toute différence. La question que
+personne ne pouvait poser à cette grille : *lesquels de ces fichiers arrivent
+devant le modèle à CHAQUE tour ?*
+
+Le pilote le dit désormais. `instructionPaths()` ne rend plus des chaînes mais
+des zones qui portent leur **nature** — `instruction` (lue à chaque tour),
+`skill` (lue quand une tâche correspond), `agent` (un assistant nommé) — et,
+pour un dossier, la **forme** qu'y prend un nouveau venu (`<name>/SKILL.md`,
+`<name>.md`, `<name>.agent.md`). Déduire du nom de dossier marchait sur les
+trois moteurs d'aujourd'hui et aurait menti sur le quatrième ; c'est la même
+règle que le marqueur `managed`, qui se lit dans le fichier et jamais dans son
+chemin.
+
+L'écran groupe par nature, une ligne sous chaque titre disant **quand** c'est
+lu, et ne dessine pas un groupe vide (Codex a des skills et aucun sous-agent).
+Les titres gardent le mot du moteur — `skills`, `agents` — parce que ce mot est
+sur le dossier et dans le fichier qu'on s'apprête à ouvrir ; c'est la phrase
+en dessous qui est traduite. La carte porte enfin la `description` du
+frontmatter, c'est-à-dire la phrase même que le moteur compare à la tâche, et
+le titre vient du `name` plutôt que du nom de fichier. La recherche lit les
+deux.
+
+**Deux défauts corrigés en chemin**, tous deux vus au banc : le fil d'Ariane
+affichait `SKILL.md` sous un écran intitulé `page-author` (il nomme
+maintenant comme l'écran), et le bouton « + » écrivait un `<name>/SKILL.md`
+dans TOUS les dossiers déclarés — donc un sous-agent atterrissait à
+`.claude/agents/x/SKILL.md`, un fichier qu'aucun moteur n'ouvre, créé sans un
+mot. Scénario de banc : `types-d-instruction`.
 
 **Prochaines étapes :**
 - [ ] Mode édition, suite (retours du 19/09) : libellés parlants dans ⚙
