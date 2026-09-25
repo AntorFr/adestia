@@ -81,5 +81,10 @@ directory, which is the same thing the server would have written.
   ends its turn without appending the agent's lines to the thread file
   photographs a bare question. Append them first, exactly as
   `recordOutcome` would (`sommeil-du-telephone.mjs` shows the lines).
+- **A block's bar is invisible until its block is hovered.** `⚙`, `✕` and the
+  grip live on a bar at `opacity: 0; pointer-events: none` until
+  `:hover`/`:focus-within`. A bare `click` on the gear times out on an element
+  playwright reads as invisible, and the error says nothing about hovering:
+  `hover` the `.adestia-edblock` first.
 - **A permanent stream loops.** `/api/turn/attach` is answered once and then
   `204`, because the shell re-attaches after every turn it finishes.

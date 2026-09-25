@@ -72,4 +72,31 @@ export default async function scenario(bench) {
   await page.waitForSelector('.adestia-editor__meta-panel', { timeout: 15_000 })
   await page.waitForTimeout(600)
   await bench.shoot(page, '3-le-champ-dans-les-proprietes')
+
+  // Et les réglages du BLOC, qui sont une autre porte : le ⚙ de la barre d'un
+  // `:::subproject` doit offrir `view` à côté de `depth` et `closed`. Rien
+  // n'est écrit pour lui — le panneau dessine ce que le manifeste déclare —
+  // donc c'est la déclaration qu'on vérifie ici, pas un formulaire.
+  const desk = await bench.open({ height: 1700 })
+  await desk.evaluate(() => {
+    location.hash = '/page/chantiers/adestia/INDEX.md'
+  })
+  await desk.waitForSelector('.pm-subproject__row', { timeout: 15_000 })
+  await desk.click('button[title="Modifier"]')
+  await desk.waitForSelector('.adestia-editor__surface .milkdown', { timeout: 15_000 })
+  // La barre d'un bloc est à `opacity: 0` et `pointer-events: none` tant que
+  // le bloc n'est pas survolé : sans ce hover, le clic sur le ⚙ expire sur un
+  // élément que Playwright voit invisible.
+  await desk.hover('.adestia-edblock[data-block="subproject"]')
+  await desk.click('.adestia-edblock[data-block="subproject"] .adestia-edblock__gear')
+  await desk.waitForSelector('.adestia-blockset', { timeout: 15_000 })
+  const offered = await desk.evaluate(() =>
+    [...document.querySelectorAll('.adestia-blockset__group')]
+      .filter((group) => group.querySelector('legend')?.textContent === 'Ce bloc')
+      .flatMap((group) => [...group.querySelectorAll('.adestia-blockset__field > span')])
+      .map((span) => span.textContent),
+  )
+  console.log('LE ⚙ DU BLOC OFFRE', JSON.stringify(offered))
+  await desk.waitForTimeout(400)
+  await bench.shoot(desk, '4-les-reglages-du-bloc')
 }
