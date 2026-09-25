@@ -345,9 +345,14 @@ export default function createProjectBlocks(api) {
      * The WORD is still written. That is not decoration: a bullet in a colour
      * with no word anywhere would make the hue the label, which is the one
      * rule this product does not bend — and it would leave a screen reader,
-     * a grey print and a colour-blind reader with a list of identical
-     * diamonds. So the word stays, as a plain tag rather than a pill: the
-     * colour is said once, on the bullet, and the box around the word goes.
+     * a grey print and a colour-blind reader with a list of identical dots.
+     * So the word stays, as a plain tag rather than a pill: the colour is
+     * said once, on the bullet, and the box around the word goes.
+     *
+     * The dot is DRAWN by the stylesheet, not written here: a glyph taken
+     * from the font is a shape nobody really chooses — it moves from one
+     * system to the next, and it has neither the size nor the weight it is
+     * asked for. The element is empty on purpose.
      */
     const draw = (row) =>
       h(
@@ -369,7 +374,6 @@ export default function createProjectBlocks(api) {
               // state's colour, so it owes a reader the state's name.
               ...(row.badge ? { title: row.badge.word, 'aria-label': row.badge.word } : { 'aria-hidden': 'true' }),
             },
-            '◆',
           ),
           h('span', { className: 'pm-subproject__title', key: 'title' }, row.label),
           // Nothing at all when the page says nothing about itself: an empty

@@ -261,30 +261,32 @@ button.pm-timeline__span:hover {
    descend une liste, et elle ne portait rien ; une pastille en fin de ligne
    faisait au contraire une seconde colonne de boîtes, plus lourde que ce
    qu'elle rapporte et lue après le titre au lieu d'être lue avec lui.
-   Un cran plus grosse qu'avant : elle est maintenant un signal, plus une
-   puce de liste. */
+
+   DESSINÉE, pas écrite. C'était un losange `◆` pris dans la police : une
+   forme qu'on ne choisit pas vraiment (elle change d'un système à l'autre,
+   et elle n'a ni la taille ni le poids qu'on lui demande). Un rond en CSS
+   est l'idiome que ce produit emploie déjà partout — la pastille de statut
+   de la coque dessine son point exactement comme ça — et le halo est celui
+   du témoin de présence. Deux gestes empruntés, zéro invention. */
 .pm-subproject__ico {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: currentcolor;
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentcolor 16%, transparent);
   color: var(--accent);
-  font-style: normal;
-  font-size: 0.95em;
-  line-height: 1;
+  font-size: 0;
 }
 .pm-subproject__ico--underway { color: var(--accent); }
 .pm-subproject__ico--waiting,
 .pm-subproject__ico--amber { color: var(--warning); }
+.pm-subproject__ico--settled,
 .pm-subproject__ico--green { color: var(--success); }
 .pm-subproject__ico--red { color: var(--danger); }
-/* CLOS se tait, et ne prend PAS le vert de la coque — c'est le seul endroit du
-   produit où la règle diverge, pour une raison qui lui est propre : ce bloc a
-   DEUX verts possibles là où la coque n'en a qu'un, « le projet va bien » et
-   « le projet est fini ». Dans une pastille le mot portait la différence ;
-   réduite à une boulette, elle disparaissait — au banc, un projet clos
-   ressemblait à un projet en bonne santé. Même geste que la barre `done` du
-   planning : ce qui est fini sort du jeu plutôt que d'y briller. */
-.pm-subproject__ico--settled { color: var(--text-faint); }
-/* Le titre pousse la pastille au bout de la ligne : vingt lignes dont les
-   états sont alignés se lisent d'une colonne, ce qu'une pastille collée au
-   titre ne permet pas. */
+/* Le titre pousse le mot au bout de la ligne : vingt lignes dont les mots sont
+   alignés se lisent d'une colonne, ce qu'un mot collé au titre ne permet pas.
+   La couleur, elle, est déjà lue à gauche. */
 .pm-subproject__title { flex: 1; }
 .pm-subproject__empty {
   color: var(--text-muted);

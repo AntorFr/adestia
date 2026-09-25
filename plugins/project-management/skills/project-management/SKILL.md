@@ -181,11 +181,17 @@ declaration is attached to the type this plugin claims.
 One row per sub-project: its name, and the one word for where it is. A row
 OPENS the project it stands for.
 
-**The state is the BULLET.** The ◆ at the left of each row takes the colour —
-that is where the eye runs down a list, and it costs the line nothing. The
+**The state is the BULLET.** The dot at the left of each row takes the colour
+— that is where the eye runs down a list, and it costs the line nothing. The
 word still rides to the right of the title, as a plain tag: the colour is
 said once, and a bullet in a colour with no word anywhere would make the hue
 the label.
+
+The rule the dot follows is the one above, unchanged: **a `project-status`
+colours the dot only while the project is under way.** Waiting or closed, the
+lifecycle status takes the dot back and wears its own colour — and "closed" is
+said by the fold as much as by the colour, since that is where closed projects
+go.
 
 - **`depth`** — `children` (the default) counts a sub-folder once, by its
   index page; `subtree` reaches all the way down. Same walk as `:::timeline`
