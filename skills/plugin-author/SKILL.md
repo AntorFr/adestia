@@ -521,6 +521,7 @@ A block component is handed these beyond its own plugin's `api`:
 | `store` | which store carries that page. Present only where the instance composes more than one, and a QUALIFIER — never join it to `path` to build an address |
 | `fields` | that page's frontmatter, as the server parsed it |
 | `pages` | **the instance's page index, already in memory** — every page's `path`, `title`, `fields`, `finished` and `tone`. Query from THIS, never from a fetch of your own: the shell asks `/api/pages/index` once at boot and keeps it live, and a block that asks again pays a round trip AND a server-side re-read of every file in the instance, one to two seconds on a real corpus, on a page that was already drawn |
+| `stores` | the stores that listing composes — `id`, `label`, `hue`, and which one is `default`. It travels with the LISTING and not with its entries: an entry says WHICH store carries it, never what that store is called. Take both halves or neither |
 | `resolve(path)` | a path written in the page → a URL to fetch. `source="assets/x.json"` means "next to the page", the way it reads on disk — nothing in a document should know files are served under `/api/files` |
 | `locate(path)` | the same path as the WORKSPACE spells it — what you name to your own API |
 | `children` | the block's body, already rendered. Only for a `flow` block |
@@ -530,6 +531,26 @@ A block component is handed these beyond its own plugin's `api`:
 outside any page — a chat bubble — which is the same answer relative links
 already give there. A block that queries says so, or falls back to asking;
 what it must not do is draw an empty list as though the answer were "nothing".
+
+**A SCREEN gets the same two.** A view's component used to take no props at
+all, so every app fetched that listing for itself at mount; it now receives
+`pages` and `stores` like a block, and for the same reason. Two shapes to know
+about a screen, both learned the hard way:
+
+- it is **live**. The shell refetches on the server's file watcher, so the
+  array arrives again — after the agent writes, and after your own writes too.
+  Derive from it on each render rather than copying it into state at mount, or
+  your screen shows the corpus as it was when it opened.
+- it arrives **after the first render**, and code that runs outside React
+  never sees it at all. A `routeFor` drawing a link on the launcher, a
+  `tileInfo` counting for a tile: both run before any mount, so they keep
+  their own fetch. Refresh whatever they read from `pages` too, so a page
+  created since boot is addressable in its short form.
+
+And keep a fetch as the fallback, in two cases that are real: a mounting that
+hands no index, and an instance whose watcher is off — an operator's choice,
+on a mount that cannot carry native events — where nothing would tell your
+screen that its own write landed.
 
 **`finished` and `tone` are the content engine's verdict, not a reading of
 `status`.** A view can read `status` itself; what it cannot do is know that

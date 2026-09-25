@@ -24,6 +24,7 @@ import {
 import { Attachments } from './Attachments.js'
 import type { PropertiesEnv } from './frontmatterview.js'
 import type { FieldContributions } from './pageform.js'
+import type { StoreInfo } from '../plugins/contract.js'
 import type { Say } from '../plugins/words.js'
 import { carriesFiles, fileDropMessage } from './filedrop.js'
 import { PluginBoundary } from '../plugins/Boundary.js'
@@ -170,6 +171,8 @@ export interface EditorProps {
   readonly layouts?: LayoutComponents
   /** The instance's pages, forwarded so a `[[type#id]]` link finds its page. */
   readonly pages?: readonly Indexed[]
+  /** The stores they compose, forwarded for a block that draws provenance. */
+  readonly stores?: readonly StoreInfo[]
   /**
    * The frontmatter fields the active plugins declare, by page type — what
    * the properties form draws under the core's own.
@@ -270,6 +273,7 @@ export function Editor({
   vocabulary,
   layouts,
   pages,
+  stores,
   fieldContributions,
   say,
   attachments = true,
@@ -643,6 +647,7 @@ export function Editor({
               {...(blocks ? { blocks } : {})}
               {...(vocabulary ? { vocabulary } : {})}
               {...(pages ? { pages } : {})}
+          {...(stores ? { stores } : {})}
               fetchImpl={fetchImpl}
               locale={locale}
             />
@@ -658,6 +663,7 @@ export function Editor({
           {...(blocks ? { blocks } : {})}
           {...(vocabulary ? { vocabulary } : {})}
           {...(pages ? { pages } : {})}
+          {...(stores ? { stores } : {})}
           fetchImpl={fetchImpl}
           locale={locale}
         />

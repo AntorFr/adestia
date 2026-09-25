@@ -155,7 +155,17 @@ export interface TileInfo {
 
 /** A launcher view: one React component, optionally a route to reach it. */
 export interface ViewContribution extends HoldsFolder {
-  readonly component: ComponentType<Record<string, never>>
+  /**
+   * The screen itself, handed the instance's pages and stores.
+   *
+   * It took NO props until 2026-09-25, so every app that wanted to know what
+   * the workspace holds fetched `/api/pages/index` for itself at mount — the
+   * same listing the shell had already fetched and was already keeping live.
+   * Four apps did it, each paying a round trip and a server-side re-read of
+   * every file before drawing a line, and each holding its own snapshot that
+   * went stale in its own way.
+   */
+  readonly component: ComponentType<IndexProps>
   /**
    * Hash route this view answers to (`#/workbench`). Absent means the view is
    * reached only from its tile.
@@ -275,25 +285,54 @@ export interface IndexedPage {
   readonly blocks?: Readonly<Record<string, string>>
 }
 
-export interface BlockProps {
-  /** Validated against the manifest's spec before this ever runs. */
-  readonly attributes: Readonly<Record<string, string>>
+/**
+ * A store the instance composes, as the listing names it.
+ *
+ * Travels with the LISTING and not with the entries, which is the asymmetry
+ * worth knowing: an entry says WHICH store carries it (and only where several
+ * do), never what that store is called or what colour it wears. A screen that
+ * had the entries and not this table drew rows with no provenance at all, and
+ * picked the wrong `todo-config` for "mine" — a wrong "mine" hides other
+ * people's work behind your name.
+ */
+export interface StoreInfo {
+  readonly id: string
+  readonly label: string
+  readonly hue?: string
+  /** Where this shell writes. Its own rows wear no mark: absence IS the mark. */
+  readonly default?: boolean
+}
+
+/** What the shell hands anything that queries the instance's pages. */
+export interface IndexProps {
   /**
-   * The instance's page index, when the shell holding this block has it.
+   * The instance's page index, when the shell holding this has it.
    *
    * Handed over rather than fetched, and that is a measured difference rather
    * than a tidiness: the shell asks `/api/pages/index` ONCE at boot and keeps
-   * it live, so the core's own `:::list` draws from memory and appears at
-   * once. A block that fetched the same listing for itself paid a round trip
-   * AND a server-side re-read of every markdown file in the instance — one to
-   * two seconds on a real corpus, on a page that had already been drawn.
+   * it live from the server's change feed, so the core's own blocks draw from
+   * memory at once. Anything that fetched the same listing for itself paid a
+   * round trip AND a server-side re-read of every markdown file in the
+   * instance — one to two seconds on a real corpus, before a first line.
+   *
+   * LIVE, so it may arrive again: the feed is a file watcher, so a page the
+   * agent writes, or one this very screen writes, comes back here without
+   * anybody asking. Derive from it on each render rather than copying it into
+   * state at mount, or the screen will show the corpus as it was when it
+   * opened.
    *
    * ABSENT is a real case, not a formality: prose rendered outside any shell
-   * — a chat bubble, a preview — has no index behind it. A block that queries
-   * says so, or falls back to asking, but never draws an empty list as though
-   * the answer were "nothing".
+   * — a chat bubble, a preview — has no index behind it. Say so, or fall back
+   * to asking; never draw an empty list as though the answer were "nothing".
    */
   readonly pages?: readonly IndexedPage[]
+  /** The stores that listing composes. Present wherever `pages` is. */
+  readonly stores?: readonly StoreInfo[]
+}
+
+export interface BlockProps extends IndexProps {
+  /** Validated against the manifest's spec before this ever runs. */
+  readonly attributes: Readonly<Record<string, string>>
   /**
    * The page carrying this block — its LOGICAL path, as `/api/pages/…` spells
    * it, exactly like a layout's.
@@ -528,7 +567,7 @@ export function narrowView(raw: unknown): { view?: ViewContribution; issue?: Con
   if (typeof raw === 'function') {
     // A bare component is the obvious thing to return, so it is accepted:
     // refusing it would be pedantry over a shape that is unambiguous.
-    return { view: { component: raw as ComponentType<Record<string, never>> } }
+    return { view: { component: raw as ComponentType<IndexProps> } }
   }
   if (typeof raw !== 'object' || raw === null) {
     return { issue: { facet: 'view', reason: 'must return a component or { component }' } }
@@ -543,7 +582,7 @@ export function narrowView(raw: unknown): { view?: ViewContribution; issue?: Con
   const holds = record['holds']
   return {
     view: {
-      component: record['component'] as ComponentType<Record<string, never>>,
+      component: record['component'] as ComponentType<IndexProps>,
       ...(typeof route === 'string' ? { route } : {}),
       ...(typeof routeFor === 'function'
         ? { routeFor: routeFor as NonNullable<ViewContribution['routeFor']> }

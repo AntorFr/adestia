@@ -33,7 +33,7 @@ import {
 
 import { PluginBoundary } from '../plugins/Boundary.js'
 import { fileUrl, GLYPHS, humanSize, type Attachment } from './Attachments.js'
-import type { BlockProps, LayoutProps } from '../plugins/contract.js'
+import type { BlockProps, LayoutProps, StoreInfo } from '../plugins/contract.js'
 import { assetUrl, resolveHref, workspacePath } from './links.js'
 import { finished, folderOf, initials, isIndexPage, titleOf, under } from './listing.js'
 import { isBlankBreak, listItems, plain, prettify, type Node } from './nodes.js'
@@ -126,6 +126,12 @@ type Ctx = {
    * link keeps the behaviour it had before ids existed.
    */
   readonly pages?: readonly Indexed[]
+  /**
+   * The stores that index composes — the TABLE, which travels with the
+   * listing and not with its entries. An entry says which store carries it;
+   * only this says what that store is called and what colour it wears.
+   */
+  readonly stores?: readonly StoreInfo[]
   /** How a block that asks the server something asks it — `source=files`. */
   readonly fetchImpl?: typeof fetch
   /** The interface's language, for what a block formats: a file's size. */
@@ -1018,6 +1024,7 @@ function Contributed({
         {...(ctx.page?.store ? { store: ctx.page.store } : {})}
         {...(ctx.page?.fields ? { fields: ctx.page.fields } : {})}
         {...(ctx.pages ? { pages: ctx.pages } : {})}
+        {...(ctx.stores ? { stores: ctx.stores } : {})}
         {...(ctx.openPage ? { openPage: ctx.openPage } : {})}
       >
         {body}
@@ -1088,6 +1095,7 @@ export function Reader({
   blocks,
   vocabulary,
   pages,
+  stores,
   fetchImpl,
   locale,
 }: {
@@ -1110,6 +1118,8 @@ export function Reader({
   readonly vocabulary?: VocabularyContext
   /** The instance's pages, so a `[[type#id]]` reference can find its target. */
   readonly pages?: readonly Indexed[]
+  /** The stores it composes, for a block that draws a row's provenance. */
+  readonly stores?: readonly StoreInfo[]
   /** For the blocks that ask the server — `:::list{source=files}`. */
   readonly fetchImpl?: typeof fetch
   readonly locale?: string
@@ -1134,6 +1144,7 @@ export function Reader({
         ...(blocks ? { blocks } : {}),
         ...(vocabulary ? { vocabulary } : {}),
         ...(pages ? { pages } : {}),
+        ...(stores ? { stores } : {}),
         ...(fetchImpl ? { fetchImpl } : {}),
         ...(locale ? { locale } : {}),
       })}
