@@ -1,12 +1,12 @@
 # Status — Adestia
 > MàJ : 2026-09-25
 
-**État :** **v0.76.0** prête dans sa worktree `types-d-instruction`, ni
-fusionnée ni taguée — verte (1750 tests, typecheck, lint, build) et regardée
-au banc (`types-d-instruction`, 8 captures).
+**État :** `main` porte **v0.77.0**, taguée et non déployée. **v0.76.0** est
+dans `main` elle aussi mais n'a **jamais été taguée** — le dernier tag posé
+avant 0.77.0 est `v0.75.0`, et le trou est volontairement laissé tel quel en
+attendant un arbitrage.
 
-`main` porte **v0.75.0**, taguée et non déployée ; **v0.74.0** est déployée
-sur les trois corps depuis le 24/09 —
+**v0.74.0** est déployée sur les trois corps depuis le 24/09 —
 8 plugins actifs sur 10 chez Alfred, 9 sur 12 chez Skippy (dont `dev-flow` et
 `sdlc-console`, tirés de `homelab-sdlc-core` v0.4.1), 2 sur 10 chez Nestor,
 aucun avis au démarrage. Six versions d'un coup : les corps servaient encore
@@ -335,7 +335,7 @@ plugin est nommé par son manifeste (le dossier d'un clone porte le nom du
 dépôt, pas celui du plugin). Les skins suivent le même chemin.
 Scénario de banc : `plugins-externes`. Déployée le 20/09 sur les trois corps.
 
-v0.76.0 : **l'écran des instructions dit de quoi chaque fichier est fait**.
+v0.77.0 : **l'écran des instructions dit de quoi chaque fichier est fait**.
 Il listait tout à plat — une consigne permanente, une skill que rien n'a
 encore appelée et la charte d'un sous-agent, trente cartes du même poids, le
 nom du fichier et son nombre d'octets pour toute différence. La question que
