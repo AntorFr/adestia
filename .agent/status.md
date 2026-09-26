@@ -1,15 +1,22 @@
 # Status — Adestia
-> MàJ : 2026-09-25
+> MàJ : 2026-09-26
 
-**État :** `main`, **v0.78.0** taguée ; v0.75.0, v0.76.0, v0.77.0 et v0.78.0
-attendent toutes les quatre un déploiement ; **v0.74.0** déployée
-sur les trois corps le 24/09 —
-8 plugins actifs sur 10 chez Alfred, 9 sur 12 chez Skippy (dont `dev-flow` et
-`sdlc-console`, tirés de `homelab-sdlc-core` v0.4.1), 2 sur 10 chez Nestor,
-aucun avis au démarrage. Six versions d'un coup : les corps servaient encore
-0.68.0 (0.69.0 pour Skippy), et tout ce qui a été taggé depuis le 20/09
-attendait dans `k8s-home-lab`. Aucune clé de configuration nouvelle sur le
-saut — les trois manifestes n'ont bougé que d'un numéro.
+**État :** `main`, **v0.78.0** taguée et **déployée sur les trois corps le
+26/09** (0.75.0 → 0.78.0 d'un coup, les corps servaient encore 0.74.0) —
+8 plugins actifs sur 10 chez Alfred, 9 sur 12 chez Skippy, 2 sur 10 chez
+Nestor, aucun avis au démarrage, pods démarrés à 10:46:54Z. Aucune clé de
+configuration nouvelle sur le saut.
+
+⚠️ **Et on a trouvé POURQUOI ils traînaient.** Le `regexManager` de Renovate
+matche `image:` suivi de `repository:` à la ligne **suivante** ; un bloc de
+commentaire s'était glissé entre les deux dans `alfred-helm.yml` et
+`skippy-helm.yml`. Résultat : Renovate n'ouvrait de PR de bump que pour
+Nestor, et les deux autres sortaient du radar **sans erreur, sans PR, sans
+symptôme** — exactement ce que le commentaire juste en dessous prétendait
+empêcher (« on les bump ENSEMBLE »). Le commentaire est remonté au-dessus de
+`image:` dans les deux fichiers, avec un avertissement pour qu'il n'y
+redescende pas (`k8s-home-lab`, commit `cb067c76`). À surveiller au prochain
+tag : si les trois reçoivent leur PR, c'est réparé.
 
 v0.69.0 : **`dev-flow` quitte l'image**. Il vit dans
 `AntorFr/homelab-sdlc-core` (tag `v0.1.0`), à côté de l'outillage dont il lit
