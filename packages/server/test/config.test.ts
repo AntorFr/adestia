@@ -172,6 +172,22 @@ describe('extensions', () => {
     ).toEqual(['extensions.sources[0].token is still "${GH_READ_TOKEN}" — that variable is not set'])
   })
 
+  it('reads the signing façade, closed by default', () => {
+    expect(parseConfig('').signatures).toEqual({ origins: [], embed: false })
+    expect(
+      parseConfig('signatures:\n  origins: [https://tessera.example]\n  embed: true\n').signatures,
+    ).toEqual({ origins: ['https://tessera.example'], embed: true })
+  })
+
+  it('refuses a façade that is not an exact origin', () => {
+    // Compared as an origin: a path or a trailing slash would match nothing
+    // and leave every card silently undrawn.
+    expect(issuesOf('signatures:\n  origins: [https://tessera.example/]\n').join()).toContain(
+      'signatures.origins',
+    )
+    expect(issuesOf('signatures:\n  embed: yes please\n').join()).toContain('signatures.embed')
+  })
+
   it('refuses a key nobody reads', () => {
     expect(
       issuesOf('extensions:\n  sources:\n    - repo: https://example.org/x.git\n      ref: v1\n      subdir: web\n'),

@@ -174,7 +174,16 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   const introduce = driver.skillsPath?.() ? frameShell : undefined
   // The desk owns chat turns; the clock's and the MCP delegation's loops below
   // stay as they are and share the same limiter, so the cap keeps one meaning.
-  const desk = new TurnDesk(driver, limiter, introduce)
+  // A ceremony link becomes a card only on an origin the operator named.
+  const signatureOrigins = new Set(config.signatures.origins)
+  const signs = (url: string): boolean => {
+    try {
+      return signatureOrigins.has(new URL(url).origin)
+    } catch {
+      return false
+    }
+  }
+  const desk = new TurnDesk(driver, limiter, introduce, signs)
   const conversations = new ConversationStore(config.dataDir)
   const secrets = deps.secrets ?? new SecretStore(config.dataDir)
   const mcpStore = deps.mcpStore ?? new McpStore(config.dataDir)

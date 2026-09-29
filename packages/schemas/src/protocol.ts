@@ -11,12 +11,26 @@
  * declaration is the driver contract's.
  */
 
+/**
+ * A signature the hub's façade asked for during a turn — the card the thread
+ * keeps. The ceremony's page is the authority on what is being signed; this
+ * is only the way to it, and when it lapses.
+ */
+export interface StoredSignature {
+  readonly id: string
+  readonly kind: 'consent' | 'grant'
+  readonly url: string
+  readonly expiresAt?: string
+}
+
 export interface StoredMessage {
   readonly id: string
   readonly role: 'user' | 'agent'
   readonly text: string
   readonly at: string
   readonly tools?: readonly { name: string; target?: string; ok?: boolean }[]
+  /** Signatures its tools asked for, in the order they were asked. */
+  readonly signatures?: readonly StoredSignature[]
   readonly stopped?: boolean
   readonly error?: string
   readonly usage?: { contextTokens?: number; outputTokens?: number }

@@ -303,6 +303,29 @@ export interface McpInConfig {
   readonly ttlMs: number
 }
 
+/**
+ * Where signatures are given — the hub's façade (Tessera).
+ *
+ * A tool result that announces a ceremony becomes a card in the thread only
+ * when its link points at one of these origins: the words around a link are
+ * the engine's, the origin is the operator's. Empty (the default), no card is
+ * ever drawn and a link stays the plain link the agent wrote.
+ */
+export interface SignaturesConfig {
+  /** Exact origins, `https://tessera.example`. */
+  readonly origins: readonly string[]
+  /**
+   * Sign in a sheet over the chat rather than in a new tab.
+   *
+   * Only honest when the ceremony accepts to be framed by THIS instance —
+   * Tessera's `TESSERA_CEREMONY_EMBED=on` with this origin in
+   * `TESSERA_EMBED_ANCESTORS`. The shell cannot tell a refused frame from a
+   * slow one, so the operator says which it is; the sheet keeps a link to the
+   * tab either way.
+   */
+  readonly embed: boolean
+}
+
 export interface AdestiaConfig {
   readonly host: string
   readonly port: number
@@ -340,6 +363,7 @@ export interface AdestiaConfig {
   readonly extensions: ExtensionsConfig
   readonly permissions: PermissionsConfig
   readonly schedule: ScheduleConfig
+  readonly signatures: SignaturesConfig
   readonly attachments: AttachmentsConfig
   readonly mcp: McpInConfig
   /**

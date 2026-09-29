@@ -7,6 +7,7 @@ import { useState } from 'react'
 // Markdown in a bubble is the SAME renderer a page is read through — one
 // grammar, one switch, no second vocabulary and no new dependency.
 import { Prose } from '../editor/Reader.js'
+import { SignatureCards, type Signature, type SigningOptions } from './Signatures.js'
 import type { TurnPart, TurnState } from './stream.js'
 import { PROSE_CADENCE_MS, useCadence } from './useCadence.js'
 
@@ -15,6 +16,7 @@ export interface Message {
   readonly role: 'user' | 'agent'
   readonly text: string
   readonly tools?: readonly { name: string; target?: string | undefined; ok?: boolean | undefined }[]
+  readonly signatures?: readonly Signature[]
   readonly stopped?: boolean
   readonly error?: string | undefined
 }
@@ -63,11 +65,14 @@ export function ToolTrace({ tools }: { tools: Message['tools'] }) {
 export function Bubble({
   message,
   openPage,
+  signing,
   t = (key) => key,
 }: {
   message: Message
   /** Lets a workspace path the agent named open the page. Absent, it is text. */
   openPage?: (path: string) => void
+  /** How a signature card opens its ceremony. Absent, no card is drawn. */
+  signing?: SigningOptions
   t?: (key: string) => string
 }) {
   return (
@@ -82,6 +87,7 @@ export function Bubble({
       {/* Said in the reader's language, like everything else they are told:
           the dictionary has carried "Tour interrompu." all along, and the one
           sentence that says what became of their turn reached them in English. */}
+      <SignatureCards signatures={message.signatures} signing={signing} t={t} />
       {message.stopped && <p className="adestia-bubble__note">{t('Turn interrupted.')}</p>}
       {message.error && <p className="adestia-bubble__error">{message.error}</p>}
     </article>

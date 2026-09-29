@@ -361,6 +361,140 @@
   border-color: var(--accent);
 }
 
+/* A signature asked for at the hub's façade -------------------------------- */
+
+/* Under the message whose tools asked, dressed like the other decisions the
+   product puts to the person. Settled, it shrinks to a quiet line: a thread of
+   the day's signatures must not read as a wall of open demands. */
+.adestia-sign {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius);
+  background: var(--accent-quiet);
+}
+
+.adestia-sign--signed,
+.adestia-sign--denied,
+.adestia-sign--expired {
+  border-color: var(--border);
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.adestia-sign__glyph { flex: none; font-size: var(--text-lg); }
+
+.adestia-sign__text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--text-sm);
+}
+
+.adestia-sign__meta {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.adestia-sign__actions { flex: none; display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: flex-end; }
+
+.adestia-sign button {
+  white-space: nowrap;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.adestia-sign__go {
+  background: var(--accent) !important;
+  color: var(--accent-text) !important;
+  border-color: var(--accent) !important;
+}
+
+/* The ceremony, framed over the chat. A bottom sheet on a phone — the thumb
+   is there, and the thread stays visible above it — a centred panel wider up. */
+.adestia-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgb(0 0 0 / 0.45);
+}
+
+.adestia-sheet__panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: min(88vh, 720px);
+  background: var(--surface-raised);
+  border-radius: var(--radius) var(--radius) 0 0;
+  box-shadow: 0 -8px 32px rgb(0 0 0 / 0.25);
+  overflow: hidden;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@media (min-width: 720px) {
+  .adestia-sheet { align-items: center; }
+  .adestia-sheet__panel { width: 520px; border-radius: var(--radius); }
+}
+
+/* Without the portal's guarantee spelled out: the panel never outgrows the
+   screen it is drawn on, whatever the page around it does. */
+.adestia-sheet__panel { max-width: 100vw; }
+@media (min-width: 720px) {
+  .adestia-sheet__panel { max-width: calc(100vw - 2 * var(--space-4)); }
+}
+
+.adestia-sheet__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.adestia-sheet__origin {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.adestia-sheet__tab { font-size: var(--text-sm); color: var(--accent); white-space: nowrap; }
+
+.adestia-sheet__close {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: var(--text-lg);
+  cursor: pointer;
+}
+
+.adestia-sheet__hint {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--warning);
+}
+
+/* The ceremony page brings its own colours; white behind it keeps a slow load
+   from flashing the shell's dark through a frame that is still empty. */
+.adestia-sheet__frame { flex: 1 1 auto; width: 100%; border: 0; background: #fff; }
+
 /* The sign-in card — a server wants THIS person connected ------------------ */
 
 /* Dressed like the engine's question above: both are the product asking the

@@ -23,6 +23,7 @@ import type {
   McpInConfig,
   PermissionsConfig,
   ScheduleConfig,
+  SignaturesConfig,
   WorkspaceConfig,
 } from './config/types.js'
 import type { StoreDeclaration } from './stores.js'
@@ -72,6 +73,7 @@ const KNOWN_KEYS = new Set([
   // the instance over a block that no longer means anything.
   'permissions',
   'schedule',
+  'signatures',
   'attachments',
   'mcp',
   'maxConcurrentTurns',
@@ -635,6 +637,25 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
     ...(typeof scheduleRaw['tickMs'] === 'number' ? { tickMs: scheduleRaw['tickMs'] } : {}),
   }
 
+  const signaturesRaw = isObject(raw['signatures']) ? raw['signatures'] : {}
+  const signatureOrigins = stringList(signaturesRaw['origins'], 'signatures.origins', issues)
+  for (const origin of signatureOrigins) {
+    // An exact origin, because it is compared as one: a trailing slash or a
+    // path would match nothing and leave every card silently undrawn.
+    let parsed: URL | undefined
+    try {
+      parsed = new URL(origin)
+    } catch {
+      parsed = undefined
+    }
+    if (!parsed || parsed.origin !== origin || !/^https?:$/.test(parsed.protocol)) {
+      issues.push(`signatures.origins: "${origin}" is not an origin like https://tessera.example`)
+    }
+  }
+  const signaturesEmbed = signaturesRaw['embed'] ?? false
+  if (typeof signaturesEmbed !== 'boolean') issues.push('signatures.embed must be true or false')
+  const signatures: SignaturesConfig = { origins: signatureOrigins, embed: signaturesEmbed === true }
+
   const attachmentsRaw = isObject(raw['attachments']) ? raw['attachments'] : {}
   const attachments: AttachmentsConfig = {
     maxBytes:
@@ -704,6 +725,7 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
     extensions,
     permissions,
     schedule,
+    signatures,
     attachments,
     mcp,
     maxConcurrentTurns: maxConcurrentTurns as number,

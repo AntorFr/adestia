@@ -299,6 +299,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
         {...(skin.busy ? { busySlot: skin.busy } : {})}
         {...(mobile ? { onOpenCanvas: () => setScreen('canvas') } : {})}
         {...(view ? { view } : {})}
+        {...(instance.signatures ? { signatures: instance.signatures } : {})}
       />
       <div className="adestia-gutter" {...split.gutterProps} />
       <main className="adestia-canvas">

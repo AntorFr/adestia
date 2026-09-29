@@ -27,6 +27,7 @@
 
 import { randomUUID } from 'node:crypto'
 import type { Driver, TurnEvent, TurnRequest } from '@antorfr/adestia-drivers'
+import type { StoredSignature } from '@antorfr/adestia-schemas'
 
 /** The slice of the app's concurrency limiter the desk needs. */
 export interface TurnSlotLimiter {
@@ -50,6 +51,8 @@ export interface TurnSlotLimiter {
 export interface TurnPart {
   readonly tools: readonly { name: string; target?: string; ok?: boolean }[]
   readonly text: string
+  /** Signatures its tools asked for — see `signatures` on the desk. */
+  readonly signatures?: readonly StoredSignature[]
 }
 
 /** Everything a settled turn learned, for whoever persists it. */
@@ -248,6 +251,11 @@ export class TurnDesk {
      * stays ignorant of prose.
      */
     private readonly introduce?: (prompt: string) => string,
+    /**
+     * Whether a ceremony link is one the operator trusts to draw as a card —
+     * `signatures.origins`. Absent, none is: the default draws nothing new.
+     */
+    private readonly signs: (url: string) => boolean = () => false,
   ) {}
 
   /** The running turn for a key, when there is one to re-attach to. */
@@ -400,7 +408,11 @@ export class TurnDesk {
 
   /** One driver turn, accumulated the way the route used to accumulate it. */
   async #turn(job: TurnJob, spec: TurnSpec): Promise<TurnOutcome> {
-    const parts: { tools: { name: string; target?: string; ok?: boolean }[]; text: string }[] = []
+    const parts: {
+      tools: { name: string; target?: string; ok?: boolean }[]
+      text: string
+      signatures?: StoredSignature[]
+    }[] = []
     /**
      * Calls awaiting their result, by driver id — the rows themselves, so
      * marking one needs no search. Names alone mismarked overlapping calls of
@@ -420,6 +432,15 @@ export class TurnDesk {
 
     try {
       for await (const event of this.driver.runTurn(this.#dispatched(spec.request, job.signal))) {
+        if (event.type === 'signature-request') {
+          // Dropped before the browser sees it, not hidden after: an origin
+          // the operator did not name is a link in a tool result, nothing
+          // more, and the agent's own prose still carries it.
+          if (!this.signs(event.url)) continue
+          const { type: _type, ...signature } = event
+          const part = current()
+          part.signatures = [...(part.signatures ?? []), signature]
+        }
         job.emit(event)
         if (event.type === 'text-delta') current().text += event.text
         else if (event.type === 'tool-use') {

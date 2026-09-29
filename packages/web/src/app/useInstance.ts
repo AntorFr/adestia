@@ -48,6 +48,8 @@ export interface InstanceInfo {
     servers: readonly string[]
   }
   readonly turns: { max: number; running: number }
+  /** Present when the instance names a signing façade — see `signatures:`. */
+  readonly signatures?: { embed: boolean }
 }
 
 export interface InstanceOptions {

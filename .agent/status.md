@@ -1,5 +1,5 @@
 # Status — Adestia
-> MàJ : 2026-09-29
+> MàJ : 2026-09-30
 
 **État :** `main`, **v0.80.0** taguée et **déployée sur les trois corps le
 29/09 au soir** — deux marches dans la même soirée (0.79.0 la lecture en
@@ -562,3 +562,25 @@ non revérifiés un par un ; l'historique complet est dans git) :
       par le survol. Le chantier n'est pas « ajouter une couleur » : c'est
       reprendre l'ensemble des valeurs d'état, les trois familles de la coque
       et les trois du projet, et décider ce que chaque teinte dit.
+
+v0.81.0 (branche `worktree-signatures`, **pas mergée**) : **les signatures
+Tessera deviennent des cartes, et se donnent sans quitter le fil.** Le moteur
+lit la cérémonie dans le résultat d'un outil MCP (`CONSENT PENDING` ou
+`REQUEST OPENED`), le serveur ne la relaie que si son origine figure dans
+`signatures.origins`, et la carte s'accroche sous le message qui l'a
+demandée, en direct comme après rechargement. Avec `signatures.embed: true`,
+« Signer » ouvre la page de Tessera dans un volet (iframe
+`publickey-credentials-get`) ; sur `assertion_ok` d'un consentement immédiat,
+le fil envoie lui-même « Signé — reprends l'appel suspendu avec
+{"_consent": …} ». Sans `embed`, un onglet puis un bouton « C'est signé ». Une
+autorisation à l'avance (le cas des tâches planifiées) a la même carte, sans
+relance.
+
+À savoir avant de l'allumer : le mode embarqué de Tessera **refusait toute
+signature faite en iframe** (drapeau `crossOrigin` rejeté par la lib
+WebAuthn) — corrigé côté Tessera sur la branche `tessera-ceremony-embed`,
+pas mergée non plus. Déploiement : Tessera `TESSERA_CEREMONY_EMBED=on` +
+`TESSERA_EMBED_ANCESTORS` listant l'origine de chaque corps, puis le bloc
+`signatures:` dans chaque config Adestia. Reste non mesuré : la passkey dans
+l'iframe sur iPhone, en PWA installée — si elle ne monte pas,
+`embed: false` rabat tout sur l'onglet. Scénario de banc : `signatures`.

@@ -2974,3 +2974,45 @@ attachment ids the browser sent (the first shape of this fix) looks minimal and
 is not: the ids are user-controlled, `resolve` checks escape rather than shape,
 and an id of a single segment would have named the inbox itself — the maximal
 grant, reached through the parameter meant to keep it minimal.
+
+**2026-09-30 (a signature asked at the façade becomes a card, and can be given without leaving the chat):**
+since Tessera went live, a call the hub's façade holds answers the agent with
+a sentence carrying a ceremony link — and that link reached the person only if
+the model thought to repeat it, opened a new tab (Safari, from the installed
+PWA), and left the agent waiting on a message nobody knew to send: an
+immediate consent lives ten minutes, and the agent's turn was already over.
+
+So the DRIVER reads the ceremony out of the tool result (`signatures.ts`: the
+two shapes Tessera writes, `CONSENT PENDING` for an immediate consent and
+`REQUEST OPENED` for a grant asked ahead of time), from an MCP call only where
+the engine says which calls are MCP. The server relays and files it only when
+its origin is one the operator named (`signatures.origins`): the words around a
+link are the engine's, the origin is the operator's, and a page the agent
+fetched does not become a ceremony because it quotes the right sentence. The
+card hangs on the message whose tools asked, live and after a reload.
+
+`signatures.embed` opens the ceremony in a sheet over the chat — an iframe of
+Tessera's own page, `allow="publickey-credentials-get"`, the origin written on
+the sheet because the frame cannot show it. Nothing about the action is drawn
+by Adestia: the page is the authority on what is signed. What comes back is
+Tessera's neutral beacons (`loaded`, `assertion_ok`, `denied`), heard only from
+the frame's own window and origin; on `assertion_ok` for a consent, the chat
+sends the message the person would have had to type, naming the `_consent` to
+poll. A forged beacon is harmless by construction — it makes the agent call
+again, and the façade refuses a call nobody signed. Without `embed` the card
+opens a tab and then offers "I signed it", which sends the same message.
+
+A grant is the answer for what runs unattended (the clock's 06:30 brief): it is
+signed ahead of time, waits for hours, and nothing is relaunched when it is —
+the covered call simply stops suspending. The card is the same; only the
+relaunch is the consent's.
+
+Measured before relying on it, and it is what made the embed worth building:
+WebKit has accepted `credentials.get()` in a cross-origin frame since Safari
+15.5 (never `create()` — enrolment stays a top-level page, which Tessera never
+lets be framed anyway). And Tessera itself refused every framed assertion —
+its WebAuthn library rejects `crossOrigin: true` unless told otherwise — so
+its embed mode could not have worked on any browser; fixed on Tessera's side
+(`tessera-ceremony-embed`). What remains unmeasured is an iPhone, in the
+installed PWA: if the passkey does not rise in the frame, `embed: false` puts
+every card back on the tab path without touching anything else.

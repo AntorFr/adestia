@@ -341,6 +341,25 @@ export type TurnEvent =
        */
       readonly remembering: boolean
     }
+  /**
+   * A tool result announced a signature at the hub's façade (Tessera).
+   *
+   * Read out of the result by the driver (`signatures.ts`), never taken from
+   * the model's prose: the link reaches the person whether or not the agent
+   * repeats it. `consent` is immediate — the call is held for minutes and the
+   * agent must call again once it is signed; `grant` is asked ahead of time
+   * and waits for hours. The server relays only the origins its
+   * configuration names.
+   */
+  | {
+      readonly type: 'signature-request'
+      /** The consent or grant id — the last segment of the ceremony URL. */
+      readonly id: string
+      readonly kind: 'consent' | 'grant'
+      readonly url: string
+      /** When an unsigned request lapses, as Tessera wrote it (RFC 3339). */
+      readonly expiresAt?: string
+    }
   /** Only with `liveTurnUsage`: feeds the climbing counter on the busy bubble. */
   | { readonly type: 'usage-delta'; readonly outputTokens: number }
   | {

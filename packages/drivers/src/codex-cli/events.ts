@@ -9,6 +9,7 @@
  */
 
 import type { McpServerHealth, TurnEvent, TurnUsage } from '../contract.js'
+import { signatureRequests } from '../signatures.js'
 
 export interface Notification {
   readonly method?: string
@@ -178,7 +179,9 @@ export function translate(notification: Notification, state: TranslationState): 
           : typeof exitCode === 'number'
             ? exitCode === 0
             : true
-      return [{ type: 'tool-result', name, ok, ...(id ? { id } : {}) }]
+      const result: TurnEvent = { type: 'tool-result', name, ok, ...(id ? { id } : {}) }
+      // Only an MCP call can be held at the façade (see signatures.ts).
+      return type === 'mcpToolCall' ? [result, ...signatureRequests(record['result'])] : [result]
     }
 
     case 'thread/tokenUsage/updated': {

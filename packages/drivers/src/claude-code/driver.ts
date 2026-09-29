@@ -26,6 +26,7 @@ import type {
 } from '../contract.js'
 import { SHELL_TOOLS_SERVER_NAME, bridgeStdioConfig } from '../shell-tools-config.js'
 import { AskDesk, type PendingAsk } from '../asks.js'
+import { signatureRequests } from '../signatures.js'
 import { ManagedCredential } from '../managed-credential.js'
 import { McpTokens, type RefreshStore } from '../mcp-oauth.js'
 import { TOKEN_ENV_VAR, looksLikeToken } from './arming.js'
@@ -588,6 +589,9 @@ export class ClaudeCodeDriver implements Driver {
                   ok: block.is_error !== true,
                   ...(id === undefined ? {} : { id }),
                 }
+                // Only an MCP tool can be held at the façade; a file the agent
+                // read that happens to quote Tessera's words is not a ceremony.
+                if (remembered?.startsWith('mcp__')) yield* signatureRequests(block.content)
               }
             }
             break
