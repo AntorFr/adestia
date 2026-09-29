@@ -70,7 +70,7 @@ export default function view(api) {
               h('li', { key: note.id, className: 'planif__note' }, [
                 h('div', { key: 'r', className: 'planif__row' }, [
                   h('strong', { key: 'n' }, note.title),
-                  h('span', { key: 'e', className: 'planif-every' }, note.every ?? '—'),
+                  h('span', { key: 'e', className: 'planif-every' }, note.at ?? note.every ?? '—'),
                   // A mission's whole story, one badge at a time: a deadline
                   // ahead, or how it ended. An expired mission stays visible —
                   // an escalation nobody sees is an escalation that failed.

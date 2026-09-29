@@ -32,8 +32,13 @@ export interface ScheduledNote {
   readonly title: string
   /** The prompt, verbatim. */
   readonly body: string
-  /** Minutes past each hour, or every N minutes — see `parseEvery`. */
+  /** Period in minutes — see `parseEvery`. Zero on an `at:` note. */
   readonly everyMinutes: number
+  /**
+   * Fixed local times of day, as minutes since midnight, sorted — the
+   * wall-clock cadence. A note carries `at` or `every`, never both.
+   */
+  readonly atMinutes?: readonly number[]
   readonly enabled: boolean
   /**
    * Deadline day (YYYY-MM-DD) that makes the note a MISSION: a recurrence
@@ -69,10 +74,13 @@ export const GRACE_MINUTES = 5
  * A real cron expression was considered and refused for v1: the notes are
  * written by an agent and read by a person, and "every 30m" is unambiguous to
  * both. A cron field that nobody can read at a glance is a scheduled turn
- * nobody can predict.
+ * nobody can predict. `parseAt` below is the other readable shape — fixed
+ * wall-clock times, for a turn that must land at the same hours every day.
  */
 export function parseEvery(value: unknown): { minutes: number } | { problem: string } {
-  if (typeof value !== 'string') return { problem: 'missing "every" (e.g. every: 30m)' }
+  if (typeof value !== 'string') {
+    return { problem: 'missing a cadence — every: 30m, or at: 06:30, 12:30' }
+  }
   const match = /^(\d+)\s*(m|h|d)$/.exec(value.trim())
   if (!match) return { problem: `cannot read "${value}" — expected something like 30m, 2h or 1d` }
 
@@ -85,6 +93,56 @@ export function parseEvery(value: unknown): { minutes: number } | { problem: str
     return { problem: `every ${value} is below the ${MIN_PERIOD_MINUTES}-minute floor` }
   }
   return { minutes }
+}
+
+/**
+ * `at: 06:30, 12:30, 18:30` — fixed times of day, on the operator's wall
+ * clock like `until`.
+ *
+ * This is the readable half of what refusing cron left out: "at 06:30" is as
+ * predictable to a person as "every 30m", where a cron field is not. The
+ * anchor differs from `every` on purpose — these never drift with their runs.
+ */
+export function parseAt(value: unknown): { atMinutes: readonly number[] } | { problem: string } {
+  if (typeof value !== 'string' || value.trim() === '') {
+    return { problem: 'cannot read "at" — expected times like 06:30, 12:30, 18:30' }
+  }
+
+  const minutes: number[] = []
+  for (const part of value.split(',')) {
+    const match = /^(\d{1,2}):(\d{2})$/.exec(part.trim())
+    const hour = match ? Number.parseInt(match[1]!, 10) : Number.NaN
+    const minute = match ? Number.parseInt(match[2]!, 10) : Number.NaN
+    if (!match || hour > 23 || minute > 59) {
+      return { problem: `cannot read "${part.trim()}" — expected a time like 06:30` }
+    }
+    minutes.push(hour * 60 + minute)
+  }
+  minutes.sort((a, b) => a - b)
+
+  // The same floor as `every`, measured around the clock — 23:55 and 00:05
+  // are ten minutes apart. Two listed times closer than that (or one listed
+  // twice) are refused rather than silently thinned, like a 5m cadence.
+  for (let index = 0; index < minutes.length && minutes.length > 1; index++) {
+    const previous = index === 0 ? minutes[minutes.length - 1]! - 1440 : minutes[index - 1]!
+    if (minutes[index]! - previous < MIN_PERIOD_MINUTES) {
+      return { problem: `two of these times are under the ${MIN_PERIOD_MINUTES}-minute floor apart` }
+    }
+  }
+  return { atMinutes: minutes }
+}
+
+/** One cadence per note: `every` or `at`, and a note carrying both is a note that does not know what it means. */
+function parseCadence(
+  fields: Record<string, string>,
+): { minutes: number } | { atMinutes: readonly number[] } | { problem: string } {
+  const every = fields['every']
+  const at = fields['at']
+  if (every !== undefined && at !== undefined) {
+    return { problem: 'carries both "every" and "at" — keep the one the note means' }
+  }
+  if (at !== undefined) return parseAt(at)
+  return parseEvery(every)
 }
 
 /** Strict calendar day, the one shape `until`, `done` and `expired` carry. */
@@ -125,7 +183,7 @@ function frontmatterOf(source: string): { fields: Record<string, string>; body: 
 
 export function parseNote(id: string, source: string): ScheduledNote {
   const { fields, body } = frontmatterOf(source)
-  const every = parseEvery(fields['every'])
+  const cadence = parseCadence(fields)
   const title = fields['title'] ?? id
   const enabled = fields['enabled'] !== 'false'
 
@@ -137,7 +195,7 @@ export function parseNote(id: string, source: string): ScheduledNote {
     ...(fields['expired'] ? { expired: fields['expired'] } : {}),
   }
 
-  if ('problem' in every) {
+  if ('problem' in cadence) {
     return {
       id,
       title,
@@ -145,9 +203,14 @@ export function parseNote(id: string, source: string): ScheduledNote {
       everyMinutes: 0,
       enabled: false,
       ...closed,
-      problem: every.problem,
+      problem: cadence.problem,
     }
   }
+
+  const timing: Pick<ScheduledNote, 'everyMinutes' | 'atMinutes'> =
+    'minutes' in cadence
+      ? { everyMinutes: cadence.minutes }
+      : { everyMinutes: 0, atMinutes: cadence.atMinutes }
 
   const until = fields['until']
   if (until !== undefined && !DAY.test(until)) {
@@ -157,7 +220,7 @@ export function parseNote(id: string, source: string): ScheduledNote {
       id,
       title,
       body: body.trim(),
-      everyMinutes: every.minutes,
+      ...timing,
       enabled: false,
       ...closed,
       problem: `cannot read "until: ${until}" — expected a day like 2026-08-29`,
@@ -171,7 +234,7 @@ export function parseNote(id: string, source: string): ScheduledNote {
       id,
       title,
       body: '',
-      everyMinutes: every.minutes,
+      ...timing,
       enabled: false,
       ...closed,
       problem: 'the note is empty — its body is the prompt',
@@ -182,7 +245,7 @@ export function parseNote(id: string, source: string): ScheduledNote {
     id,
     title,
     body: body.trim(),
-    everyMinutes: every.minutes,
+    ...timing,
     enabled,
     ...(until ? { until } : {}),
     ...closed,
@@ -209,6 +272,31 @@ export async function readSchedule(dir: string): Promise<readonly ScheduledNote[
   return notes
 }
 
+/**
+ * The most recent listed time at or before `now` — today's when one has
+ * passed, yesterday's last otherwise. Built through the Date constructor so
+ * that on a DST day 06:30 means what the wall clock calls 06:30, not a fixed
+ * offset from midnight.
+ */
+function latestAtMs(atMinutes: readonly number[], now: number): number {
+  const date = new Date(now)
+  for (const daysBack of [0, 1]) {
+    for (let index = atMinutes.length - 1; index >= 0; index--) {
+      const minutesOfDay = atMinutes[index]!
+      const occurrence = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate() - daysBack,
+        Math.floor(minutesOfDay / 60),
+        minutesOfDay % 60,
+      ).getTime()
+      if (occurrence <= now) return occurrence
+    }
+  }
+  // Unreachable with a non-empty list — yesterday ends before now begins.
+  return Number.NEGATIVE_INFINITY
+}
+
 export function isDue(note: ScheduledNote, state: ScheduleState, now: number): boolean {
   if (!note.enabled || note.problem) return false
   // A closed mission never runs again — done or expired, the story is over.
@@ -218,13 +306,21 @@ export function isDue(note: ScheduledNote, state: ScheduleState, now: number): b
   if (note.until && now >= endOfDayMs(note.until)) return false
 
   const last = state.lastRun[note.id]
-  const period = note.everyMinutes * 60_000
 
   // A note never run before does NOT fire immediately: adding one would
   // otherwise run it the moment it is saved, which is rarely what "every day"
-  // was meant to say.
+  // was meant to say. An `at:` note waits for its next listed time instead.
   if (last === undefined) return false
 
+  if (note.atMinutes) {
+    // Anchored to the wall clock, not to the previous run — 06:30 means
+    // 06:30 every day, drift-free. Due while the latest listed time is
+    // inside the grace window and the note has not run since it.
+    const occurrence = latestAtMs(note.atMinutes, now)
+    return last < occurrence && now - occurrence <= GRACE_MINUTES * 60_000
+  }
+
+  const period = note.everyMinutes * 60_000
   const elapsed = now - last
   if (elapsed < period) return false
 
@@ -239,6 +335,12 @@ export function isMissed(note: ScheduledNote, state: ScheduleState, now: number)
   if (last === undefined || !note.enabled || note.problem) return false
   if (note.done || note.expired) return false
   if (note.until && now >= endOfDayMs(note.until)) return false
+  if (note.atMinutes) {
+    // One report however many listed times the outage covered: the latest
+    // occurrence speaks for them all, like a night down under `every`.
+    const occurrence = latestAtMs(note.atMinutes, now)
+    return last < occurrence && now - occurrence > GRACE_MINUTES * 60_000
+  }
   return now - last > note.everyMinutes * 60_000 + GRACE_MINUTES * 60_000
 }
 

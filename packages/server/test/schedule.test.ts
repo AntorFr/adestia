@@ -14,6 +14,7 @@ import {
   isDue,
   isExpiryDue,
   isMissed,
+  parseAt,
   parseEvery,
   parseNote,
   readSchedule,
@@ -57,6 +58,29 @@ describe('reading a cadence', () => {
   })
 })
 
+describe('reading fixed times', () => {
+  it('accepts a list of times and sorts it', () => {
+    expect(parseAt('06:30, 12:30, 18:30')).toEqual({ atMinutes: [390, 750, 1110] })
+    expect(parseAt('18:30, 06:30')).toEqual({ atMinutes: [390, 1110] })
+    expect(parseAt('9:05')).toEqual({ atMinutes: [545] })
+  })
+
+  it('says which time it cannot read', () => {
+    const result = parseAt('06:30, half past')
+    expect((result as { problem: string }).problem).toContain('half past')
+    expect(parseAt('25:00')).toHaveProperty('problem')
+    expect(parseAt('12:60')).toHaveProperty('problem')
+    expect(parseAt('')).toHaveProperty('problem')
+  })
+
+  it('measures the floor around the clock', () => {
+    // 23:55 and 00:05 are ten minutes apart; a time listed twice is zero.
+    expect(parseAt('23:55, 00:05')).toHaveProperty('problem')
+    expect(parseAt('12:30, 12:30')).toHaveProperty('problem')
+    expect(parseAt('00:00, 12:00')).toEqual({ atMinutes: [0, 720] })
+  })
+})
+
 describe('reading a note', () => {
   it('takes the body as the prompt, verbatim', () => {
     const parsed = parseNote(
@@ -87,6 +111,26 @@ describe('reading a note', () => {
 
   it('falls back to the file name for a title', () => {
     expect(parseNote('morning-brief', '---\nevery: 1d\n---\n\nBody.\n').title).toBe('morning-brief')
+  })
+
+  it('reads at as the cadence', () => {
+    const parsed = parseNote('brief', '---\nat: 06:30, 12:30, 18:30\n---\n\nBrief me.\n')
+    expect(parsed.atMinutes).toEqual([390, 750, 1110])
+    expect(parsed.enabled).toBe(true)
+    expect(parsed.problem).toBeUndefined()
+  })
+
+  it('refuses a note carrying both cadences', () => {
+    // Either guess would run at times nobody chose.
+    const parsed = parseNote('x', '---\nevery: 1h\nat: 06:30\n---\n\nBody.\n')
+    expect(parsed.enabled).toBe(false)
+    expect(parsed.problem).toContain('both')
+  })
+
+  it('names both shapes when a note has no cadence at all', () => {
+    const parsed = parseNote('x', '---\ntitle: X\n---\n\nBody.\n')
+    expect(parsed.problem).toContain('every')
+    expect(parsed.problem).toContain('at')
   })
 })
 
@@ -134,6 +178,57 @@ describe('when a note fires', () => {
     const past = { lastRun: { daily: now - 120 * MINUTE } }
     expect(isDue(note({ enabled: false }), past, now)).toBe(false)
     expect(isDue(note({ problem: 'bad cadence' }), past, now)).toBe(false)
+  })
+})
+
+describe('when a fixed-time note fires', () => {
+  // Local times built the way latestAtMs builds them, so the tests hold in
+  // any timezone the runner happens to use.
+  const t = (hour: number, minute: number, day = 28) => new Date(2026, 7, day, hour, minute).getTime()
+  const brief = (overrides: Partial<ScheduledNote> = {}): ScheduledNote =>
+    note({ id: 'brief', everyMinutes: 0, atMinutes: [390, 750, 1110], ...overrides })
+
+  it('does not fire a note that has never run', () => {
+    // Like an every-note: the clock dates it first, and it waits for the
+    // NEXT listed time rather than firing the moment it is saved.
+    expect(isDue(brief(), { lastRun: {} }, t(12, 30))).toBe(false)
+  })
+
+  it('fires at a listed time, not a period after the last run', () => {
+    // Ran at 06:31; due again at 12:30 sharp — the wall clock is the anchor,
+    // so the times never drift with the runs.
+    expect(isDue(brief(), { lastRun: { brief: t(6, 31) } }, t(12, 30))).toBe(true)
+    expect(isDue(brief(), { lastRun: { brief: t(6, 31) } }, t(12, 29))).toBe(false)
+  })
+
+  it('does not fire twice for one occurrence', () => {
+    expect(isDue(brief(), { lastRun: { brief: t(12, 31) } }, t(12, 33))).toBe(false)
+  })
+
+  it('loses an occurrence past the grace window instead of replaying it', () => {
+    const state = { lastRun: { brief: t(6, 31) } }
+    const late = t(12, 30 + GRACE_MINUTES + 1)
+    expect(isDue(brief(), state, late)).toBe(false)
+    expect(isMissed(brief(), state, late)).toBe(true)
+  })
+
+  it('reports a night down as one miss, not a queue', () => {
+    // Down over 18:30 and past the next 06:30: one report, no replay.
+    const state = { lastRun: { brief: t(12, 31) } }
+    expect(isMissed(brief(), state, t(6, 40, 29))).toBe(true)
+    expect(isDue(brief(), state, t(6, 40, 29))).toBe(false)
+  })
+
+  it('waits quietly between occurrences', () => {
+    const state = { lastRun: { brief: t(18, 31) } }
+    expect(isDue(brief(), state, t(5, 0, 29))).toBe(false)
+    expect(isMissed(brief(), state, t(5, 0, 29))).toBe(false)
+  })
+
+  it('a fixed-time mission still dies on its deadline', () => {
+    const mission = brief({ until: '2026-08-29' })
+    expect(isDue(mission, { lastRun: { brief: t(6, 31, 30) } }, t(12, 30, 30))).toBe(false)
+    expect(isExpiryDue(mission, t(12, 30, 30))).toBe(true)
   })
 })
 
@@ -239,6 +334,36 @@ describe('the clock', () => {
     const runTurn = vi.fn(async () => undefined)
     await new Clock({ dir, statePath, missionLogDir, runTurn }).tick(10 * 60 * MINUTE)
     expect(runTurn).not.toHaveBeenCalled()
+  })
+
+  it('runs a fixed-time note through the same turn function', async () => {
+    const { dir, statePath, missionLogDir } = await setup({
+      'brief.md': '---\nat: 06:30, 12:30, 18:30\n---\n\nBrief me.\n',
+    })
+    await writeState(statePath, { lastRun: { brief: new Date(2026, 7, 28, 6, 31).getTime() } })
+
+    const prompts: string[] = []
+    const runTurn = vi.fn(async (prompt: string) => {
+      prompts.push(prompt)
+    })
+    await new Clock({ dir, statePath, missionLogDir, runTurn }).tick(
+      new Date(2026, 7, 28, 12, 30).getTime(),
+    )
+
+    expect(runTurn).toHaveBeenCalledOnce()
+    expect(prompts[0]).toContain('Brief me.')
+  })
+
+  it('dates a new fixed-time note instead of running it', async () => {
+    const { dir, statePath, missionLogDir } = await setup({
+      'brief.md': '---\nat: 06:30\n---\n\nBrief me.\n',
+    })
+    const runTurn = vi.fn(async () => undefined)
+    const when = new Date(2026, 7, 28, 6, 30).getTime()
+    await new Clock({ dir, statePath, missionLogDir, runTurn }).tick(when)
+
+    expect(runTurn).not.toHaveBeenCalled()
+    expect((await readState(statePath)).lastRun['brief']).toBe(when)
   })
 
   it('survives a corrupted journal rather than refusing to tick', async () => {
