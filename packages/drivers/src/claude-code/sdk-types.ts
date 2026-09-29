@@ -40,6 +40,8 @@ export interface ContentBlock {
    */
   readonly id?: string
   readonly tool_use_id?: string
+  /** A `tool_result`'s payload: a string, or a list of text blocks. */
+  readonly content?: unknown
 }
 
 export interface ModelUsageEntry {

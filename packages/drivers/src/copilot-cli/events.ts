@@ -9,6 +9,7 @@
  */
 
 import type { McpServerHealth, TurnEvent, TurnUsage } from '../contract.js'
+import { signatureRequests } from '../signatures.js'
 
 /** The envelope every line shares. */
 export interface CopilotEvent {
@@ -144,7 +145,13 @@ export function translate(event: CopilotEvent, state: TranslationState): readonl
       const id = String(data['toolCallId'] ?? '')
       const name = state.pending.get(id) ?? String(data['toolName'] ?? 'tool')
       state.pending.delete(id)
-      return [{ type: 'tool-result', name, ok: data['success'] !== false, ...(id ? { id } : {}) }]
+      // Copilot names no MCP flag on the completion that we have measured,
+      // so every result is read; the server's origin allowlist is what keeps
+      // a quoted link from becoming a card (see signatures.ts).
+      return [
+        { type: 'tool-result', name, ok: data['success'] !== false, ...(id ? { id } : {}) },
+        ...signatureRequests(data['result']),
+      ]
     }
 
     case 'session.mcp_servers_loaded': {

@@ -84,6 +84,59 @@ describe('the turn desk', () => {
     expect(limiter.state.releases).toBe(1)
   })
 
+  it('relays a signature only from an origin the operator named, and files it on its part', async () => {
+    // A link in a tool result is the ENGINE's word; the origin is the
+    // operator's. One that was not named never reaches the browser, and the
+    // transcript keeps the card where the live view drew it.
+    const trusted = 'https://tessera.example/consent/c1'
+    const driver = {
+      async *runTurn(_request: TurnRequest): AsyncIterable<TurnEvent> {
+        yield { type: 'tool-use', name: 'mcp__g__send', id: 't' }
+        yield { type: 'tool-result', name: 'mcp__g__send', ok: true, id: 't' }
+        yield { type: 'signature-request', id: 'c1', kind: 'consent', url: trusted }
+        yield { type: 'signature-request', id: 'x', kind: 'consent', url: 'https://evil.example/consent/x' }
+        yield { type: 'text-delta', text: 'Signe, je reprends ensuite.' }
+        yield RESULT
+      },
+    }
+    const signs = (url: string) => new URL(url).origin === 'https://tessera.example'
+    const desk = new TurnDesk(driver, meter(), undefined, signs)
+    const finished: TurnOutcome[] = []
+    const admission = desk.admit('u/c:sig')
+    if (admission.mode !== 'run') throw new Error('expected a run')
+    const job = admission.start({
+      request: { prompt: 'envoie', cwd: '.' },
+      finish: async (outcome) => void finished.push(outcome),
+    })
+    await job.done
+
+    expect(job.log.filter((event) => event.type === 'signature-request')).toEqual([
+      { type: 'signature-request', id: 'c1', kind: 'consent', url: trusted },
+    ])
+    expect(finished[0]?.parts).toEqual([
+      {
+        tools: [{ name: 'mcp__g__send', ok: true }],
+        text: 'Signe, je reprends ensuite.',
+        signatures: [{ id: 'c1', kind: 'consent', url: trusted }],
+      },
+    ])
+  })
+
+  it('relays no signature at all when no origin is named', async () => {
+    const driver = {
+      async *runTurn(_request: TurnRequest): AsyncIterable<TurnEvent> {
+        yield { type: 'signature-request', id: 'c1', kind: 'consent', url: 'https://tessera.example/consent/c1' }
+        yield RESULT
+      },
+    }
+    const desk = new TurnDesk(driver, meter())
+    const admission = desk.admit('u/c:none')
+    if (admission.mode !== 'run') throw new Error('expected a run')
+    const job = admission.start({ request: { prompt: 'x', cwd: '.' }, finish: async () => {} })
+    await job.done
+    expect(job.log.some((event) => event.type === 'signature-request')).toBe(false)
+  })
+
   it('marks the call the result belongs to, not the last one of that name', async () => {
     // Two Reads in flight at once, the FIRST one failing. Matched on the name,
     // the failure lands on the second call and the transcript blames the wrong

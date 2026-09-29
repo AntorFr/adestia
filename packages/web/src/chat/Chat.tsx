@@ -28,6 +28,7 @@ import { useMobile } from '../app/useMobile.js'
 import { Prose } from '../editor/Reader.js'
 import { AskPrompt } from './AskPrompt.js'
 import { Bubble, LiveProse, ToolTrace, livePartsOf } from './Bubble.js'
+import { SignatureCards, type Signature, type SigningOptions } from './Signatures.js'
 import { Composer, type ComposerButton, type PendingAttachment } from './Composer.js'
 import { ContextPill, formatTokens } from './ContextPill.js'
 import { DRAFT, useConversations } from './useConversations.js'
@@ -79,6 +80,11 @@ export interface ChatProps {
    * it sticks to the next turn.
    */
   readonly view?: ScreenView
+  /**
+   * Signatures asked for at the hub's façade: drawn as cards, and opened in
+   * a sheet when `embed`. Absent when the instance names no façade.
+   */
+  readonly signatures?: { readonly embed: boolean }
 }
 
 export function Chat({
@@ -94,6 +100,7 @@ export function Chat({
   extraButtons,
   openPage,
   view,
+  signatures,
 }: ChatProps) {
   const narrow = useMobile()
   const [models, setModels] = useState<readonly ModelInfo[]>([])
@@ -196,6 +203,28 @@ export function Chat({
   }, [active.messages, active.live?.parts, active.held])
 
   sendRef.current = send
+
+  /**
+   * What a signature given here sets off.
+   *
+   * An immediate consent held a call the agent must make AGAIN — its turn is
+   * over, and nothing tells it the person signed — so the chat says it, as the
+   * person would have had to. It rides the ordinary send, queued behind a
+   * running turn like anything typed. A grant is asked ahead of time and
+   * nothing waits on it: signing it is the whole gesture.
+   */
+  const onSigned = useCallback(
+    (signature: Signature) => {
+      if (signature.kind !== 'consent') return
+      void sendRef.current(
+        `${t('Signed — resume the held call with')} {"_consent": "${signature.id}"}`,
+      )
+    },
+    [t],
+  )
+  const signing: SigningOptions | undefined = signatures
+    ? { embed: signatures.embed, onSigned }
+    : undefined
 
   useEffect(() => {
     // Published once the sender exists, so a plugin loaded before the chat
@@ -351,7 +380,13 @@ export function Chat({
 
       <div className="adestia-chat__conversation">
         {active.messages.map((message) => (
-          <Bubble key={message.id} message={message} t={t} {...(openPage ? { openPage } : {})} />
+          <Bubble
+            key={message.id}
+            message={message}
+            t={t}
+            {...(openPage ? { openPage } : {})}
+            {...(signing ? { signing } : {})}
+          />
         ))}
 
         {/* A turn draws one bubble PER PART: the agent that answers, works
@@ -373,6 +408,7 @@ export function Chat({
                   ) : (
                     <Prose markdown={part.text} {...(openPage ? { openPage } : {})} />
                   ))}
+                <SignatureCards signatures={part.signatures} signing={signing} t={t} />
                 {/* The indicator stays UP for as long as the turn runs, under
                     whatever has been said so far. It used to be the ALTERNATIVE
                     to the text, so the first sentence killed it: the agent then

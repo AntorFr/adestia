@@ -117,6 +117,12 @@ export function registerInstance(app: FastifyInstance, deps: InstanceDependencie
        */
       pluginProblems: deps.problems(),
       ...(backgroundTrouble ? { backgroundTrouble } : {}),
+      /**
+       * How a signature card opens its ceremony: in a sheet over the chat
+       * when the operator says the façade accepts to be framed here, in a new
+       * tab otherwise. Absent when no façade is configured.
+       */
+      ...(config.signatures.origins.length > 0 ? { signatures: { embed: config.signatures.embed } } : {}),
       turns: { max: config.maxConcurrentTurns, running: deps.running() },
     }
   })

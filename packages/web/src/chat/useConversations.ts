@@ -64,6 +64,7 @@ function toMessage(stored: StoredMessage): Message {
     role: stored.role,
     text: stored.text,
     ...(stored.tools ? { tools: stored.tools } : {}),
+    ...(stored.signatures ? { signatures: stored.signatures } : {}),
     ...(stored.stopped ? { stopped: stored.stopped } : {}),
     ...(stored.error ? { error: stored.error } : {}),
   }

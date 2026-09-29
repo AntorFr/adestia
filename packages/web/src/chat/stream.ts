@@ -9,6 +9,8 @@
  * be exercised through a live server is an SSE parser nobody tests.
  */
 
+import type { StoredSignature } from '@antorfr/adestia-schemas'
+
 import type { TurnEvent } from './events.js'
 
 /**
@@ -103,6 +105,8 @@ export interface ToolCall {
 export interface TurnPart {
   readonly tools: readonly ToolCall[]
   readonly text: string
+  /** Signatures its tools asked for at the hub's façade. */
+  readonly signatures?: readonly StoredSignature[]
 }
 
 /** Everything the chat needs to render one turn while it happens. */
@@ -200,6 +204,17 @@ export function applyEvent(state: TurnState, event: TurnEvent): TurnState {
           remembering: event.remembering,
         },
       }
+
+    case 'signature-request': {
+      // Hung on the part being written — the one whose tools asked — exactly
+      // where the server files it, so a reload draws the card in the same place.
+      const { type: _type, ...signature } = event
+      return editLast(state, (part) =>
+        part.signatures?.some((known) => known.id === signature.id)
+          ? part
+          : { ...part, signatures: [...(part.signatures ?? []), signature] },
+      )
+    }
 
     case 'usage-delta':
       // The driver guarantees this only grows; the UI never has to reconcile a

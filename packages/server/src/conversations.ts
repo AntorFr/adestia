@@ -105,7 +105,9 @@ export class ConversationStore {
    * showing it broke — which is why every write here swallows its own error.
    */
   async recordOutcome(userId: string, id: string, outcome: TurnOutcome): Promise<void> {
-    const parts = outcome.parts.filter((part) => part.text !== '' || part.tools.length > 0)
+    const parts = outcome.parts.filter(
+      (part) => part.text !== '' || part.tools.length > 0 || (part.signatures?.length ?? 0) > 0,
+    )
     const written = parts.length > 0 ? parts : [{ tools: [], text: '' }]
     for (const [index, part] of written.entries()) {
       const last = index === written.length - 1
@@ -115,6 +117,7 @@ export class ConversationStore {
         text: part.text,
         at: new Date().toISOString(),
         ...(part.tools.length > 0 ? { tools: [...part.tools] } : {}),
+        ...(part.signatures?.length ? { signatures: [...part.signatures] } : {}),
         ...(last && outcome.stopped ? { stopped: outcome.stopped } : {}),
         ...(last && outcome.failure ? { error: outcome.failure } : {}),
         ...(last && outcome.usage ? { usage: outcome.usage } : {}),

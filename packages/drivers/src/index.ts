@@ -1,5 +1,6 @@
 export * from './contract.js'
 export * from './asks.js'
+export * from './signatures.js'
 export * from './shell-tools-config.js'
 
 export * from './conformance.js'

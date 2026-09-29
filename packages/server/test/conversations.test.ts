@@ -85,6 +85,22 @@ describe('threads', () => {
     })
   })
 
+  it('files a signature card on the message whose tools asked for it', async () => {
+    // A reload must draw the card where the live view did — and a part that
+    // only asked for a signature, with nothing said yet, is still a message.
+    const { id } = await store.create('chloe')
+    const signature = { id: 'c1', kind: 'consent' as const, url: 'https://tessera.example/consent/c1' }
+    await store.recordOutcome('chloe', id, {
+      parts: [
+        { tools: [], text: 'Je tente.' },
+        { tools: [], text: '', signatures: [signature] },
+      ],
+      stopped: false,
+    })
+    const messages = (await store.read('chloe', id))!.messages
+    expect(messages.map((m) => m.signatures)).toEqual([undefined, [signature]])
+  })
+
   it('remembers which CLI session a thread resumes', async () => {
     const { id } = await store.create('chloe')
     await store.setSession('chloe', id, 'sess-9')

@@ -266,6 +266,21 @@ permissions:
   # timeoutMs, whenUnattended) is ignored without error.
   mode: open
 
+# Signatures asked for at the hub's façade (Tessera). A tool call the façade
+# holds answers with a ceremony link; with an origin listed here, the thread
+# draws it as a card under the message that asked, whatever the agent says.
+# Absent, nothing new is drawn and the link stays the agent's prose.
+#
+#   origins — exact origins, compared as such (no path, no trailing slash).
+#   embed   — sign in a sheet over the chat instead of a new tab. Only when
+#             the façade accepts to be framed by THIS instance: Tessera needs
+#             TESSERA_CEREMONY_EMBED=on and this origin in
+#             TESSERA_EMBED_ANCESTORS, or the sheet stays blank.
+#
+# signatures:
+#   origins: [https://tessera.example]
+#   embed: true
+
 # Scheduled turns: markdown notes under workspace/planif/ whose BODY is run
 # verbatim as a prompt, on a cadence they declare (`every: 1d`).
 #
