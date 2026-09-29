@@ -116,6 +116,18 @@ const FR: Readonly<Record<string, string>> = {
   'is declared as an extension source but is not a directory on this instance':
     'est déclaré comme source d’extensions mais n’est pas un dossier sur cette instance',
 
+  // The background reach's banner
+  'Background reading interrupted': 'Lecture en fond interrompue',
+  since: 'depuis',
+  'background reading of %servers has no key to act with — this instance keeps no user keys at all':
+    'la lecture en fond de %servers n’a aucune clé pour agir — cette instance ne garde aucune clé d’utilisateur',
+  'background reading of %servers waits for a first sign-in — there is no key to act with yet':
+    'la lecture en fond de %servers attend une première connexion — aucune clé pour agir',
+  'two people are signed in here, and background reading of %servers refuses to choose whose data to read':
+    'deux personnes sont connectées ici, et la lecture en fond de %servers refuse de choisir quelles données lire',
+  'the key behind background reading of %servers stopped working — signing in again renews it':
+    'la clé de la lecture en fond de %servers ne marche plus — se reconnecter la renouvelle',
+
   // The instruction zone
   Instructions: 'Instructions',
   'Read and correct what you told the agent': 'Relire et corriger ce que vous avez dit à l’agent',
