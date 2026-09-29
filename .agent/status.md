@@ -1,10 +1,12 @@
 # Status — Adestia
 > MàJ : 2026-09-26
 
-**État :** `main`, **v0.78.0** taguée et **déployée sur les trois corps le
-26/09** (0.75.0 → 0.78.0 d'un coup, les corps servaient encore 0.74.0) —
-8 plugins actifs sur 10 chez Alfred, 9 sur 12 chez Skippy, 2 sur 10 chez
-Nestor, aucun avis au démarrage, pods démarrés à 10:46:54Z. Aucune clé de
+**État :** **v0.79.0** prête dans sa worktree `heures-fixes` — l'horloge
+sait les heures fixes (`at:`), ce qui manquait pour rebrancher le briefing
+d'Alfred, mort avec l'agent-pod le 05/09. `main` porte **v0.78.0**, taguée et
+**déployée sur les trois corps le 26/09** (0.75.0 → 0.78.0 d'un coup, les
+corps servaient encore 0.74.0) — 8 plugins actifs sur 10 chez Alfred, 9 sur
+12 chez Skippy, 2 sur 10 chez Nestor, aucun avis au démarrage. Aucune clé de
 configuration nouvelle sur le saut.
 
 ⚠️ **Et on a trouvé POURQUOI ils traînaient.** Le `regexManager` de Renovate
@@ -426,6 +428,29 @@ maintenant comme l'écran), et le bouton « + » écrivait un `<name>/SKILL.md`
 dans TOUS les dossiers déclarés — donc un sous-agent atterrissait à
 `.claude/agents/x/SKILL.md`, un fichier qu'aucun moteur n'ouvre, créé sans un
 mot. Scénario de banc : `types-d-instruction`.
+
+v0.79.0 : **l'horloge sait les heures fixes**. `every:` compte depuis le
+dernier passage et dérive avec lui — dit trois fois par jour, jamais à la
+même heure. Le briefing d'Alfred veut 06:30, 12:30, 18:30, et c'est la
+moitié lisible de ce que le refus du cron avait écartée : `at: 06:30, 12:30,
+18:30`, une liste d'heures au mur, aussi prévisible qu'`every: 30m` là où un
+champ cron ne l'est pas.
+
+L'ancrage change avec la forme : une note `at:` est due quand la dernière
+heure listée est passée depuis moins que la grâce et n'a pas encore tourné —
+jamais « une période après le dernier run ». Tout le reste se transpose tel
+quel : une occurrence manquée est perdue (une nuit d'arrêt = UN signalement,
+pas une file), une note neuve attend sa prochaine heure au lieu de partir à
+l'enregistrement, le plancher des 15 minutes se mesure autour du cadran
+(23:55 et 00:05 sont à dix minutes), et une note qui porte les deux cadences
+est refusée plutôt que devinée. Les occurrences passent par le constructeur
+`Date` : un jour de changement d'heure, 06:30 reste le 06:30 du mur.
+
+La tuile Planifications suit : la liste d'heures s'affiche là où la période
+s'affiche, et le « next » d'une note `at:` se calcule sur l'horloge murale —
+visible avant même le premier passage, là où une note `every:` n'a de
+prochain qu'après avoir couru. `schedule-author` documente le choix entre
+les deux formes. Scénario de banc : `heures-fixes`.
 
 **Prochaines étapes :**
 - [ ] Mode édition, suite (retours du 19/09) : libellés parlants dans ⚙

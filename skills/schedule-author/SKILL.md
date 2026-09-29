@@ -33,21 +33,26 @@ Write it assuming that.
 |---|---|
 | `title` | shown in the planif view; falls back to the file name |
 | `every` | `30m`, `2h`, `1d` — amount plus one unit letter, nothing fancier. **Not cron.** A cadence nobody can read at a glance is a scheduled turn nobody can predict, and this instance never runs one finer than 15 minutes: that floor is enforced, not rounded — `every: 5m` is refused rather than silently coarsened to 15 |
+| `at` | `06:30, 12:30, 18:30` — fixed times of day, on the instance's wall clock, for a turn that must land at the same hours instead of drifting with its runs (a morning brief, not a poll). One `at` **or** one `every`, never both — a note carrying both is refused. The 15-minute floor applies between listed times too, measured around the clock: `23:55, 00:05` is ten minutes apart |
 | `enabled` | any value but the literal string `false` counts as enabled. Omit it to mean "on" |
 | `until` | a day, `2026-08-29` — makes the note a **mission** (see below). Live through that whole day; past it, one final turn runs and the note is stamped `expired` |
 | `done` | a day, `2026-08-25` — the mission is accomplished, the note never runs again. Absence means open. Ticked by YOU, from a scheduled turn |
 | `expired` | a day — the deadline fired. Written by the product only; never write it yourself |
 
-A note with no `every`, an `every` the parser cannot read, or an empty body
-does not fail loudly — it is reported as unable to run (missing `every`, or
-"the note is empty — its body is the prompt") and simply never fires. Fix the
-field and it resumes on its own.
+A note with no cadence at all, one the parser cannot read, both `every` and
+`at` at once, or an empty body does not fail loudly — it is reported as unable
+to run (missing a cadence, or "the note is empty — its body is the prompt")
+and simply never fires. Fix the field and it resumes on its own.
 
 ## What "due" actually means
 
 - **A brand-new note does not fire the moment it is saved.** Only a note that
   has already run once starts counting down from `every` — otherwise every
-  `every: 1d` note would go off the instant someone finished writing it.
+  `every: 1d` note would go off the instant someone finished writing it. A
+  brand-new `at:` note simply waits for its next listed time.
+- **`every` counts from the last run and drifts with it; `at` is anchored to
+  the wall clock and never drifts.** A brief that must land at 06:30 is an
+  `at:` note; a poll that wants "roughly every two hours" is an `every:` note.
 - **A missed occurrence is lost, never replayed**, past a short grace window.
   An instance that was down overnight wakes up and waits for the next
   scheduled time; it does not fire everything it missed. "Every day" describes
