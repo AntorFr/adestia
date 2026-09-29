@@ -391,6 +391,27 @@ server at all. In `proxy` auth mode this stays structurally impossible — the
 session lives with the reverse proxy, and the product holds no token to
 refresh.
 
+**The background reach (decided 2026-09-29).** A server may add
+`background: true`, which opens it to the CLOCK's turns and to callback
+wakes — never to inbound delegations: an agent allowed to delegate work here
+must not read anybody's mail by ricochet, and a third agent that ever needs
+the mail gets a grant signed at the hub's façade, not a wider flag. Such a
+turn acts as the ONE person whose rebound key the instance holds; two keys
+are a loud refusal, never a choice, and no subject is ever written into the
+config (the store is keyed by the IdP's opaque `sub`, which a storage reset
+can silently reassign — a config naming one would then lie without a sound).
+The old guarantee — nothing that runs while you sleep writes in your
+calendar — is still true and changed keeper: writes are held at the hub's
+façade (Tessera suspends every one until a signed matrix allows it), so the
+flag governs background VISIBILITY alone. The flag is binary on purpose: a
+per-tool allowlist declared in the config but unenforceable by the engine
+(claude-code has no per-server tool filter in `open` posture) would be a
+promise worn as a guardrail. And because the reach is now granted, losing it
+is SAID: a failed background mint logs at every affected turn and stands as
+a banner in the shell (`background.ts`, `backgroundTrouble` on
+`/api/instance`) — a background that quietly stopped reading the mail is
+indistinguishable from one that never ran.
+
 **Signing in to a server that is its own authorization server (decided
 2026-09-06).** An mcp-auth style proxy federates the household IdP and mints
 its OWN tokens after an interactive login: the rebound token is foreign

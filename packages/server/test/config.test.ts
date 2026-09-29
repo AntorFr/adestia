@@ -448,6 +448,39 @@ mcp:
     ).toEqual(['mcp.servers[0]: has both "signIn" and "auth" — one token source per server'])
   })
 
+  it('accepts background only where the runtime can honour it', () => {
+    const config = parseConfig(
+      'mcp:\n  servers:\n    - name: google\n      url: https://hub.example/google/\n      identity: user\n      background: true\n',
+    )
+    expect(config.mcpServers[0]).toMatchObject({ name: 'google', identity: 'user', background: true })
+
+    // A machine server never left the background: flagging it would promise
+    // something the flag does not govern.
+    expect(
+      issuesOf(
+        'mcp:\n  servers:\n    - name: maps\n      url: https://hub.example/maps/\n      background: true\n',
+      ),
+    ).toEqual([
+      'mcp.servers[0].background needs identity: user — a machine server never left the background',
+    ])
+
+    // A signIn server's keys are per person, not rebound; accepting the flag
+    // would declare a reach the runtime never grants.
+    expect(
+      issuesOf(
+        'mcp:\n  servers:\n    - name: ha\n      url: https://ha.example/\n      identity: user\n      signIn: oauth\n      background: true\n',
+      ),
+    ).toEqual([
+      'mcp.servers[0].background does not reach a signIn server — its keys are per-person, not rebound',
+    ])
+
+    // `background: false` parses as the default: absent from the shape.
+    const off = parseConfig(
+      'mcp:\n  servers:\n    - name: google\n      url: https://hub.example/google/\n      identity: user\n      background: false\n',
+    )
+    expect(off.mcpServers[0]).not.toHaveProperty('background')
+  })
+
   it('refuses an identity with neither a secret nor a refresh token', () => {
     expect(
       issuesOf(

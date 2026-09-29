@@ -14,6 +14,7 @@ import type { AskDesk, Driver, DriverDescriptor } from '@antorfr/adestia-drivers
 
 import { isPublicRoute, resolveIdentity, type Identity } from './auth.js'
 import { AttachmentInbox } from './attachments.js'
+import { BackgroundReach } from './background.js'
 import { frameShell } from './introduction.js'
 import { ConversationStore } from './conversations.js'
 import { ConfigError, type AdestiaConfig } from './config.js'
@@ -58,9 +59,12 @@ export interface AppDependencies {
    *
    * Present only in `oidc` mode with a rebound audience configured. Its
    * absence is what makes a turn have no caller, and therefore no reach into
-   * anybody's own data.
+   * anybody's own data — `background`-flagged servers excepted, which the
+   * background minter opens to the clock's and a callback's turns.
    */
   readonly userTokens?: UserTokens
+  /** Where the app says what deserves an operator's eye. Boot's logger. */
+  readonly log?: (message: string) => void
   /** Built shell bundle. Absent in dev, where Vite serves it and proxies here. */
   readonly webRoot?: string | undefined
   /** Injected in tests; production stores secrets under the data directory. */
@@ -240,6 +244,11 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
 
   const outboundServers = outboundServersOf({ config, plugins, mcpStore })
 
+  // The background reach: whose token, if anyone's, a caller-less turn
+  // carries to the servers flagged `background`. Built unconditionally so a
+  // flag the deployment cannot honour (no rebound) is SAID, not skipped.
+  const backgroundReach = new BackgroundReach(userTokens, deps.log)
+
   // Reported by `/api/instance`, filled once the plugin APIs are mounted below.
   let apiProblems: readonly DiscoveryProblem[] = []
 
@@ -250,6 +259,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     skin: deps.skin,
     plugins,
     problems: () => [...pluginProblems, ...apiProblems],
+    background: () => backgroundReach.trouble(),
     running: () => limiter.running,
   })
   registerInstructions(app, { driver, workspaceRoot: config.workspace.root })
@@ -286,12 +296,26 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     // rather than queues, which is the refusal the callers already log.
     const admission = desk.admit()
     if (admission.mode !== 'run') throw new Error('a loose turn is never queued')
+    // The `background` servers' tokens — this spawn path and no other: the
+    // delegation channel below deliberately never mints, so an agent that
+    // may delegate work here still cannot read anybody's mail by ricochet.
+    // Minted after admission: a full house should refuse before the identity
+    // provider is asked for anything. Minting never throws by design; the
+    // reads around it can, and a slot reserved by `admit` must go back.
+    let serverTokens: Readonly<Record<string, string>>
+    try {
+      serverTokens = await backgroundReach.tokensFor(await outboundServers())
+    } catch (error) {
+      admission.abort()
+      throw error
+    }
     let outcome: TurnOutcome | undefined
     const job = admission.start({
       request: {
         prompt,
         cwd: config.workspace.root,
         ...(agentRoots.length > 0 ? { roots: agentRoots } : {}),
+        ...(Object.keys(serverTokens).length > 0 ? { serverTokens } : {}),
         unattended: true,
       },
       finish: async (done) => {

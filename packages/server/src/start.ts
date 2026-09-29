@@ -450,6 +450,9 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     plugins,
     pluginProblems: [...sourceProblems, ...problems, ...setupProblems],
     ...(rebound ? { userTokens: rebound } : {}),
+    // The boot log, so what the app must say out loud (a background reach
+    // that failed to mint) lands where the clock's own refusals already do.
+    log,
     secrets,
     // The very same instance the driver is asking: a server added over the
     // API has to be the server the next turn is handed, and two stores

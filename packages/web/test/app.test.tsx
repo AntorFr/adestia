@@ -369,6 +369,23 @@ describe('boot', () => {
     render(<App fetchImpl={apiFetch({ body })} />)
     await waitFor(() => expect(screen.getByText(/not valid JSON/)).toBeTruthy())
   })
+
+  it('surfaces a broken background reach — the failure nobody was awake for', async () => {
+    // The background mint fails at 3 a.m.; the next person to open the shell
+    // is who it must reach, dated so they know how much went unread.
+    const body = {
+      ...INSTANCE,
+      backgroundTrouble: {
+        code: 'mint-failed',
+        since: Date.UTC(2026, 8, 28, 3, 0),
+        servers: ['google'],
+      },
+    }
+    render(<App fetchImpl={apiFetch({ body })} />)
+    await waitFor(() => expect(screen.getByText('Background reading interrupted')).toBeTruthy())
+    expect(screen.getByText(/google/)).toBeTruthy()
+    expect(screen.getByText(/stopped working/)).toBeTruthy()
+  })
 })
 
 describe('the screen reported next to the chat', () => {

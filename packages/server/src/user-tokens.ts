@@ -105,6 +105,16 @@ export class UserTokens {
   }
 
   /**
+   * Everyone whose key the instance holds — for the background minter, whose
+   * whole policy is "the one entry, or a loud refusal". Nothing else should
+   * enumerate people from here: a turn always knows who asked for it.
+   */
+  async subjects(): Promise<readonly string[]> {
+    const store = await this.#load()
+    return Object.keys(store).filter((subject) => store[subject]?.refreshToken)
+  }
+
+  /**
    * A live access token for this person, or `undefined`.
    *
    * Undefined covers three different situations on purpose, because the caller

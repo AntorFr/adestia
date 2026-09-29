@@ -177,7 +177,11 @@ export class DelegationChannel {
         cwd: this.#cwd,
         ...(this.#roots && this.#roots.length > 0 ? { roots: this.#roots } : {}),
         ...(sessionId ? { sessionId } : {}),
-        // A delegating agent is not a person at a screen.
+        // A delegating agent is not a person at a screen. And deliberately
+        // NO tokens of any kind — not even the `background` servers' (see
+        // `background.ts`): a caller allowed to delegate work here must not
+        // read anybody's mail by ricochet. If a third agent ever needs
+        // that, it is a grant the hub's façade signs, not a turn option.
         unattended: true,
       },
       finish: async (result) => {

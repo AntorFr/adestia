@@ -24,6 +24,21 @@ const SAID: Readonly<Record<string, string>> = {
   'source-missing': 'is declared as an extension source but is not a directory on this instance',
 }
 
+/**
+ * The background reach's troubles, one sentence each. Said like the plugin
+ * problems: what stopped, and what a person can do about it — never a code.
+ */
+const BACKGROUND_SAID: Readonly<Record<string, string>> = {
+  'no-rebound':
+    'background reading of %servers has no key to act with — this instance keeps no user keys at all',
+  'nobody-connected':
+    'background reading of %servers waits for a first sign-in — there is no key to act with yet',
+  'several-people':
+    'two people are signed in here, and background reading of %servers refuses to choose whose data to read',
+  'mint-failed':
+    'the key behind background reading of %servers stopped working — signing in again renews it',
+}
+
 function say(
   t: (key: string) => string,
   problem: { reason: string; code?: string; params?: Record<string, string> },
@@ -75,8 +90,29 @@ export function Problems({
     })),
   ]
 
+  const trouble = instance.backgroundTrouble
+
   return (
     <>
+      {/*
+        The background reach first: a scheduled turn that lost its reading is
+        the failure NOBODY is at a screen to see happen, so the next person
+        who opens the shell is the one it must reach. One sentence, dated —
+        "since when" is what tells a reader how much mail went unread.
+      */}
+      {trouble ? (
+        <section className="adestia-problems adestia-problems--degraded" role="status">
+          <h2>{t('Background reading interrupted')}</h2>
+          <p>
+            {(BACKGROUND_SAID[trouble.code]
+              ? t(BACKGROUND_SAID[trouble.code]!)
+              : trouble.code
+            ).replaceAll('%servers', trouble.servers.join(', '))}
+            {' — '}
+            {t('since')} {new Date(trouble.since).toLocaleString()}
+          </p>
+        </section>
+      ) : null}
       {/*
         Two different facts, and conflating them sends somebody hunting for a
         plugin that works: REFUSED means the extension is off, DEGRADED means

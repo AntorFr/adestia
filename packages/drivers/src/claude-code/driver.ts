@@ -140,14 +140,18 @@ async function toSdkServers(
 
     const headers: Record<string, string> = { ...server.headers }
     if (server.identity === 'user') {
-      // Somebody's own data. Without a caller there is nobody to act as, so
-      // the server is absent from this turn rather than reached with the
-      // instance's identity — which would be a different person's data, or a
-      // flat refusal read as a broken tool. A `signIn` server takes ONLY its
-      // own per-turn token: the rebound one is foreign currency there, and
-      // presenting it would read as "failed" where the truthful state is
-      // "this caller never connected".
-      const token = server.signIn ? serverTokens?.[server.name] : callerToken
+      // Somebody's own data. Without a person's token there is nobody to act
+      // as, so the server is absent from this turn rather than reached with
+      // the instance's identity — which would be a different person's data,
+      // or a flat refusal read as a broken tool. The caller's token when the
+      // turn has one; else the per-server token the core minted (only for
+      // `background` servers, only on clock and callback turns). A `signIn`
+      // server takes ONLY its own per-turn token: the rebound one is foreign
+      // currency there, and presenting it would read as "failed" where the
+      // truthful state is "this caller never connected".
+      const token = server.signIn
+        ? serverTokens?.[server.name]
+        : (callerToken ?? serverTokens?.[server.name])
       if (!token) continue
       headers['Authorization'] = `Bearer ${token}`
     } else if (server.auth) {

@@ -257,6 +257,19 @@ export interface McpServerConfig {
    * `mcp-signin.ts` and the driver contract's `signIn`.
    */
   readonly signIn?: 'oauth' | undefined
+  /**
+   * `true` opens a `user` server to turns that have NO caller — the clock's
+   * and a callback wake's, never an inbound delegation's (see
+   * `background.ts` for why that line is where it is). Such a turn acts as
+   * the ONE person whose rebound key the instance holds; two keys are a loud
+   * refusal, not a choice.
+   *
+   * Visibility only. What a background turn may DO at that server is the
+   * server's own gate to enforce — here, the Tessera façade holds every
+   * write until a signed matrix allows it. This flag never widens what a
+   * token can do; it only stops hiding the door.
+   */
+  readonly background?: boolean | undefined
   readonly command?: string | undefined
   readonly args?: readonly string[] | undefined
   readonly url?: string | undefined

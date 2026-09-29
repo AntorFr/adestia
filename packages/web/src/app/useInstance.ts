@@ -37,6 +37,16 @@ export interface InstanceInfo {
     /** Absent means refused — see the server's `DiscoveryProblem`. */
     severity?: 'refused' | 'degraded'
   }[]
+  /**
+   * The background reach in trouble: servers granted to caller-less turns
+   * whose token could not be minted. Absent means healthy — see the
+   * server's `BackgroundTrouble` for the codes.
+   */
+  readonly backgroundTrouble?: {
+    code: 'no-rebound' | 'nobody-connected' | 'several-people' | 'mint-failed'
+    since: number
+    servers: readonly string[]
+  }
   readonly turns: { max: number; running: number }
 }
 
