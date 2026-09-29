@@ -563,7 +563,7 @@ non revérifiés un par un ; l'historique complet est dans git) :
       reprendre l'ensemble des valeurs d'état, les trois familles de la coque
       et les trois du projet, et décider ce que chaque teinte dit.
 
-v0.81.0 (branche `worktree-signatures`, **pas mergée**) : **les signatures
+v0.81.0 (mergée et taguée le 30/09, avec Tessera v0.1.3) : **les signatures
 Tessera deviennent des cartes, et se donnent sans quitter le fil.** Le moteur
 lit la cérémonie dans le résultat d'un outil MCP (`CONSENT PENDING` ou
 `REQUEST OPENED`), le serveur ne la relaie que si son origine figure dans
@@ -578,8 +578,7 @@ relance.
 
 À savoir avant de l'allumer : le mode embarqué de Tessera **refusait toute
 signature faite en iframe** (drapeau `crossOrigin` rejeté par la lib
-WebAuthn) — corrigé côté Tessera sur la branche `tessera-ceremony-embed`,
-pas mergée non plus. Déploiement : Tessera `TESSERA_CEREMONY_EMBED=on` +
+WebAuthn) — corrigé côté Tessera en v0.1.3 (`tessera-ceremony-embed`). Déploiement : Tessera `TESSERA_CEREMONY_EMBED=on` +
 `TESSERA_EMBED_ANCESTORS` listant l'origine de chaque corps, puis le bloc
 `signatures:` dans chaque config Adestia. Reste non mesuré : la passkey dans
 l'iframe sur iPhone, en PWA installée — si elle ne monte pas,
