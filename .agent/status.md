@@ -427,6 +427,31 @@ dans TOUS les dossiers déclarés — donc un sous-agent atterrissait à
 `.claude/agents/x/SKILL.md`, un fichier qu'aucun moteur n'ouvre, créé sans un
 mot. Scénario de banc : `types-d-instruction`.
 
+v0.79.0 : **la lecture en fond — une connexion `identity: user` peut
+s'ouvrir aux tours sans appelant**. `background: true` sur la connexion
+l'ouvre à l'horloge et aux réveils de callback — JAMAIS aux délégations
+entrantes : un agent qui peut déléguer ici ne lit pas le courrier par
+ricochet, et si un tiers doit un jour le lire, ce sera un droit signé à la
+façade du hub, pas un drapeau élargi. Le tour de fond agit comme la SEULE
+personne du magasin de rebond — deux clés font un refus bruyant, jamais un
+choix, et aucun sujet ne s'écrit au manifeste (le magasin est clé par le
+`sub` Authelia, qu'un reset du storage réassigne en silence). Binaire
+exprès : une allowlist par outil que le moteur n'applique pas (claude-code
+n'a aucun filtre par serveur en posture `open`) serait une promesse portée
+en garde-fou. L'ancienne garantie — rien n'écrit pendant qu'on dort — reste
+vraie et change de gardien : Tessera suspend toute écriture à la porte
+jusqu'à signature ; le drapeau ne gouverne que la VISIBILITÉ en fond.
+
+Et parce que la portée est désormais accordée, la perdre se DIT : chaque
+frappe manquée journalise, `/api/instance` porte `backgroundTrouble`, et la
+coque l'affiche en bannière datée (quatre causes : pas de rebond du tout,
+personne de connecté, deux personnes, clé morte ou fournisseur injoignable).
+Un fond qui cesse de lire en silence est indiscernable d'un fond qui n'a
+jamais tourné. Un manifeste qui déclare le champ sur une coque plus vieille
+le voit ignoré sans un mot (la connexion reste invisible en fond, l'ancien
+comportement) : déployer la coque avant le manifeste. Scénario de banc :
+`lecture-en-fond`.
+
 **Prochaines étapes :**
 - [ ] Mode édition, suite (retours du 19/09) : libellés parlants dans ⚙
       (« sujet » pour `type`…), même espacement vertical qu'en lecture sur
