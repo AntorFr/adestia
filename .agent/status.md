@@ -1,14 +1,19 @@
 # Status — Adestia
-> MàJ : 2026-09-26
+> MàJ : 2026-09-29
 
-**État :** `main` porte **v0.80.0** (les heures fixes), taguée, sur
-**v0.79.0** (la lecture en fond), taguée aussi — les deux non déployées, et
-faites l'une pour l'autre : ensemble elles rebranchent le briefing d'Alfred,
-mort avec l'agent-pod le 05/09. **v0.78.0** reste la version **déployée sur
-les trois corps le 26/09** (0.75.0 → 0.78.0 d'un coup, les corps servaient
-encore 0.74.0) — 8 plugins actifs sur 10 chez Alfred, 9 sur 12 chez Skippy,
-2 sur 10 chez Nestor, aucun avis au démarrage. Aucune clé de configuration
-nouvelle sur le saut.
+**État :** `main`, **v0.80.0** taguée et **déployée sur les trois corps le
+29/09 au soir** — deux marches dans la même soirée (0.79.0 la lecture en
+fond, 0.80.0 les heures fixes), faites l'une pour l'autre : ensemble elles
+rebranchent le briefing d'Alfred, mort avec l'agent-gw le 05/09. L'horloge
+d'Alfred tourne (`schedule.enabled: true`, k8s-home-lab `01081c5e` puis
+`57c1d465`), sa note `planif/briefing.md` porte `at: 06:30, 12:30, 18:30`
+(prompt agent-gw repris verbatim, originaux sauvegardés en `.md.agent-gw` à
+côté, `sncf-scan` converti mais toujours éteint). Vérifié sur le POD, pas au
+gabarit : boot propre, `scheduled turns enabled (notes in planif/)`, note
+datée au premier tick dans `schedule-state.json` — premier briefing le 30/09
+à 06:30. Entre les deux marches, la 0.79.0 a tourné une demi-heure avec la
+note `at:` signalée « missing every » : refusée sans tour ni dégât, comme
+prévu par le commit `01081c5e`.
 
 ⚠️ **Et on a trouvé POURQUOI ils traînaient.** Le `regexManager` de Renovate
 matche `image:` suivi de `repository:` à la ligne **suivante** ; un bloc de
