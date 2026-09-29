@@ -454,10 +454,37 @@ describe('a turn', () => {
       spawnImpl: fake.spawnImpl,
       mcpServers: [{ name: 'calendar', url: 'https://example.test/mcp', identity: 'user' }],
     })
-    // A scheduled turn has nobody to act as, so it must not reach a server
-    // that serves somebody's own data.
+    // A scheduled turn with nothing minted for it has nobody to act as, so
+    // it must not reach a server that serves somebody's own data.
     await collect(driver, baseRequest(dir))
     expect(config?.['mcp_servers']).toBeUndefined()
+  })
+
+  it('takes the per-server token the core minted for a background turn', async () => {
+    const dir = await home()
+    let config: Record<string, unknown> | undefined
+    const fake = fakeServer({
+      notifications: DONE,
+      onCall: (method, params) => {
+        if (method === 'thread/start') config = params['config'] as Record<string, unknown>
+      },
+    })
+    const driver = new CodexDriver({
+      home: dir,
+      spawnImpl: fake.spawnImpl,
+      mcpServers: [
+        { name: 'google', url: 'https://hub.example/google/', identity: 'user' },
+        { name: 'withings', url: 'https://hub.example/withings/', identity: 'user' },
+      ],
+    })
+    // The core minted for `google` alone (the `background` grant): the other
+    // user server stays out of the turn exactly as before.
+    await collect(driver, { ...baseRequest(dir), serverTokens: { google: 'jeton-de-fond' } })
+    const servers = config?.['mcp_servers'] as Record<string, Record<string, unknown>>
+    expect(servers['google']).toMatchObject({
+      http_headers: { Authorization: 'Bearer jeton-de-fond' },
+    })
+    expect(servers['withings']).toBeUndefined()
   })
 })
 

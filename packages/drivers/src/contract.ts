@@ -165,13 +165,26 @@ export interface McpServer {
    *
    * `machine` (the default) — the instance's own credentials answer for it.
    * `user` — it serves somebody's OWN data (their calendar, their mail) and
-   * refuses anything else, so it is reachable only on a turn that has a
-   * caller. A scheduled or delegated turn has none, and therefore cannot
-   * reach it at all: that is a property worth having, not a limitation to
-   * work around — nothing that runs while you sleep should be able to write
-   * in your calendar.
+   * refuses anything else, so it needs a person's token on every turn: the
+   * caller's, or on a caller-less turn a per-server one the core chose to
+   * mint (`serverTokens` — the core mints one only for servers the operator
+   * marked `background`, and only for the clock's and a callback's turns,
+   * never a delegation's). A turn holding neither token simply does not see
+   * the server.
+   *
+   * The old guarantee here — nothing that runs while you sleep writes in
+   * your calendar — is still true and has changed keeper: writes are held at
+   * the hub's façade (Tessera), which suspends every one of them until a
+   * signed matrix allows it. What the flag governs is background VISIBILITY
+   * alone; a driver never widens what any token can do.
    */
   readonly identity?: 'machine' | 'user' | undefined
+  /**
+   * Whether a caller-less turn may see this `user` server. The driver never
+   * reads it — the core decides at the spawn site by minting (or not) a
+   * per-server token — but it is part of what a server declaration carries.
+   */
+  readonly background?: boolean | undefined
   /**
    * How a `user` server's token is OBTAINED.
    *
@@ -344,8 +357,8 @@ export interface TurnRequest {
    * An access token asserting WHO asked for this turn.
    *
    * Handed to MCP servers declared `identity: user`, and to nothing else.
-   * Absent on a turn with no caller — the clock, an inbound delegation — and
-   * those turns simply do not see user-scoped servers.
+   * Absent on a turn with no caller — the clock, an inbound delegation —
+   * which then sees only the user-scoped servers `serverTokens` names.
    *
    * Carried on the REQUEST rather than held by the driver, deliberately: a
    * driver holds the instance's credentials, never a person's. This one
@@ -354,12 +367,14 @@ export interface TurnRequest {
    */
   readonly callerToken?: string | undefined
   /**
-   * Per-server tokens for THIS turn's caller, keyed by server name.
+   * Per-server tokens for THIS turn, keyed by server name.
    *
-   * The `signIn: oauth` servers: the core minted each of these from the
-   * caller's own enrolled connection (their rotating refresh key), so two
-   * people's turns reach the same server as two different people. A server
-   * with no entry here is one this caller never connected to — omitted from
+   * Two mints, one shape. On a chat turn: the `signIn: oauth` servers, each
+   * minted from the caller's own enrolled connection (their rotating refresh
+   * key), so two people's turns reach the same server as two different
+   * people. On a caller-less turn: the servers the operator marked
+   * `background`, minted from the ONE rebound key the instance holds. A
+   * server with no entry here and no usable `callerToken` is omitted from
    * the turn, never reached with somebody else's token. Same lifetime rule
    * as `callerToken`: it belongs to the turn, not to the driver.
    */

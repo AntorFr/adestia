@@ -78,6 +78,14 @@ describe('what a login leaves behind', () => {
     expect(await tokens.accessToken('inconnu')).toBeUndefined()
     expect(await tokens.has('inconnu')).toBe(false)
   })
+
+  it('enumerates whose keys it holds, for the background minter alone', async () => {
+    const tokens = store(provider([]).fetchImpl)
+    expect(await tokens.subjects()).toEqual([])
+    await tokens.remember('sebastien', 'refresh-1')
+    await tokens.remember('invitee', 'refresh-2')
+    expect([...(await tokens.subjects())].sort()).toEqual(['invitee', 'sebastien'])
+  })
 })
 
 describe('minting a token for a turn', () => {

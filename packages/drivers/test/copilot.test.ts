@@ -1082,11 +1082,18 @@ describe('a server that serves somebody’s own data', () => {
     expect(servers.maps.headers.Authorization).toBe('Bearer machine-tok')
   })
 
-  it('is absent from a turn that has no caller', async () => {
-    // A scheduled turn has nobody to act as; it must not reach into an
-    // account on the instance's own authority.
+  it('is absent from a turn that has no caller and no minted token', async () => {
+    // A scheduled turn with nothing minted for it has nobody to act as; it
+    // must not reach into an account on the instance's own authority.
     const servers = await runTurn({})
     expect(servers.google).toBeUndefined()
     expect(servers.maps).toBeDefined()
+  })
+
+  it('takes the per-server token the core minted for a background turn', async () => {
+    // The `background` grant: the core minted for this server alone, and the
+    // driver honours the map without ever widening it.
+    const servers = await runTurn({ serverTokens: { google: 'jeton-de-fond' } })
+    expect(servers.google.headers.Authorization).toBe('Bearer jeton-de-fond')
   })
 })

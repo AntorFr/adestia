@@ -577,10 +577,14 @@ export class CodexDriver implements Driver {
       if (server.url) {
         const headers: Record<string, string> = { ...server.headers }
         if (server.identity === 'user') {
-          // No caller, no server: a turn the clock started has nobody to act
-          // as. And a `signIn` server takes only its own per-turn token —
-          // never the rebound one, which would be foreign currency to it.
-          const token = server.signIn ? serverTokens?.[server.name] : callerToken
+          // No person's token, no server: the caller's, or the per-server
+          // one the core minted for a `background` server on a clock or
+          // callback turn. And a `signIn` server takes only its own per-turn
+          // token — never the rebound one, which would be foreign currency
+          // to it.
+          const token = server.signIn
+            ? serverTokens?.[server.name]
+            : (callerToken ?? serverTokens?.[server.name])
           if (!token) continue
           headers['Authorization'] = `Bearer ${token}`
         } else if (server.auth) {

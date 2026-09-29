@@ -199,10 +199,31 @@ export function readMcpServer(
     return undefined
   }
 
+  const background = entry['background']
+  if (background !== undefined && background !== true && background !== false) {
+    issues.push(`${where}.background must be true or false`)
+    return undefined
+  }
+  if (background && identity !== 'user') {
+    // A machine server is already reachable from every turn; flagging it
+    // would promise something the flag does not govern.
+    issues.push(`${where}.background needs identity: user — a machine server never left the background`)
+    return undefined
+  }
+  if (background && signIn) {
+    // A signed-in server's keys live per person in `mcp-signin.json`, and the
+    // background minter reads only the rebound store. Accepting this would
+    // declare a reach the runtime never grants — a promise is a guardrail
+    // only while it is kept.
+    issues.push(`${where}.background does not reach a signIn server — its keys are per-person, not rebound`)
+    return undefined
+  }
+
   return {
     name,
     ...(identity ? { identity } : {}),
     ...(signIn ? { signIn } : {}),
+    ...(background ? { background } : {}),
     ...(auth ? { auth } : {}),
     ...(command ? { command } : {}),
     ...(args ? { args: args as readonly string[] } : {}),

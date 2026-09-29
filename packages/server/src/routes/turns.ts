@@ -24,6 +24,8 @@ import { identityOf } from './identity.js'
 export interface UserTokens {
   accessToken(subject: string): Promise<string | undefined>
   remember(subject: string, refreshToken: string): Promise<void>
+  /** Whose keys are held — the background minter's whole policy reads it. */
+  subjects(): Promise<readonly string[]>
   /**
    * Whether a grant is still alive for this person.
    *

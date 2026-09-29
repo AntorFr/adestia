@@ -381,10 +381,13 @@ export class CopilotDriver implements Driver {
       if (server.url) {
         const headers: Record<string, string> = { ...server.headers }
         if (server.identity === 'user') {
-          // See the other driver: no caller, no server. A turn the clock
-          // started has nobody to act as. And a `signIn` server takes only
-          // its own per-turn token — never the rebound one.
-          const token = server.signIn ? serverTokens?.[server.name] : callerToken
+          // See the other driver: no person's token, no server — the
+          // caller's, or the per-server one the core minted for a
+          // `background` server on a clock or callback turn. And a `signIn`
+          // server takes only its own per-turn token — never the rebound one.
+          const token = server.signIn
+            ? serverTokens?.[server.name]
+            : (callerToken ?? serverTokens?.[server.name])
           if (!token) continue
           headers['Authorization'] = `Bearer ${token}`
         } else if (server.auth) {

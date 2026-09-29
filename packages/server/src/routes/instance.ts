@@ -7,6 +7,7 @@ import type { FastifyInstance, FastifyRequest } from 'fastify'
 import type { Driver, DriverDescriptor, ModelSelection } from '@antorfr/adestia-drivers'
 
 import type { Identity } from '../auth.js'
+import type { BackgroundTrouble } from '../background.js'
 import type { AdestiaConfig } from '../config.js'
 import { frontendPayload, type DiscoveredPlugin, type DiscoveryProblem } from '../extensions.js'
 
@@ -26,6 +27,8 @@ export interface InstanceDependencies {
   readonly plugins: readonly DiscoveredPlugin[]
   /** Read per request: the plugin APIs report theirs only once mounted. */
   readonly problems: () => readonly DiscoveryProblem[]
+  /** The background reach's standing trouble, when a mint keeps failing. */
+  readonly background?: (() => BackgroundTrouble | undefined) | undefined
   /** Turns running at this instant. */
   readonly running: () => number
 }
@@ -62,51 +65,61 @@ export function registerInstance(app: FastifyInstance, deps: InstanceDependencie
    * What the UI is built from. The driver's *name* never appears — the front
    * end renders from capabilities alone, so a second engine needs no UI change.
    */
-  app.get('/api/instance', (request) => ({
+  app.get('/api/instance', (request) => {
     /**
-     * Which build is answering. Absent from a checkout, and that absence is
-     * the honest answer rather than a gap — see `buildVersion`.
+     * A background reach that keeps failing to mint — the shell shows it as
+     * a banner, because a background that quietly stopped reading the mail
+     * is indistinguishable from one that never ran. Absent means healthy,
+     * including "nothing is flagged": no banner for a granted nothing.
      */
-    ...(version ? { version } : {}),
-    driver: {
-      label: descriptor.label,
-      cliVersion: descriptor.cliVersion,
-      capabilities: descriptor.capabilities,
-    },
-    auth: { mode: config.auth.mode },
-    /**
-     * What the operator called this instance, when they called it anything.
-     *
-     * The shell needs it, not just the manifest: iOS proposes the DOCUMENT
-     * TITLE when someone adds the page to their home screen, so a name that
-     * only reached the manifest would be ignored on the platform it was most
-     * wanted for.
-     */
-    ...(config.name ? { name: config.name } : {}),
-    /**
-     * Absent when the operator set none — the shell then asks the browser,
-     * which is what lets one instance answer two visitors in their own
-     * languages.
-     */
-    ...(config.locale ? { locale: config.locale } : {}),
-    user: (request as FastifyRequest & { identity?: Identity }).identity ?? null,
-    /**
-     * What the shell loads, not just a name. A skin named in config but absent
-     * from disk must not leave the front end fetching files that are not there
-     * — it renders the default, and the boot log already said why.
-     */
-    skin: deps.skin
-      ? { id: deps.skin.id, base: '/skin/', ...deps.skin.manifest }
-      : { id: 'default', base: '/skin/' },
-    plugins: frontendPayload(plugins),
-    /**
-     * Refused plugins are reported to the UI, not buried in a log nobody
-     * reads: a plugin you believe is loaded and is not costs far more than one
-     * that says out loud why it was rejected.
-     */
-    pluginProblems: deps.problems(),
-    turns: { max: config.maxConcurrentTurns, running: deps.running() },
-  }))
+    const backgroundTrouble = deps.background?.()
+    return {
+      /**
+       * Which build is answering. Absent from a checkout, and that absence is
+       * the honest answer rather than a gap — see `buildVersion`.
+       */
+      ...(version ? { version } : {}),
+      driver: {
+        label: descriptor.label,
+        cliVersion: descriptor.cliVersion,
+        capabilities: descriptor.capabilities,
+      },
+      auth: { mode: config.auth.mode },
+      /**
+       * What the operator called this instance, when they called it anything.
+       *
+       * The shell needs it, not just the manifest: iOS proposes the DOCUMENT
+       * TITLE when someone adds the page to their home screen, so a name that
+       * only reached the manifest would be ignored on the platform it was most
+       * wanted for.
+       */
+      ...(config.name ? { name: config.name } : {}),
+      /**
+       * Absent when the operator set none — the shell then asks the browser,
+       * which is what lets one instance answer two visitors in their own
+       * languages.
+       */
+      ...(config.locale ? { locale: config.locale } : {}),
+      user: (request as FastifyRequest & { identity?: Identity }).identity ?? null,
+      /**
+       * What the shell loads, not just a name. A skin named in config but absent
+       * from disk must not leave the front end fetching files that are not there
+       * — it renders the default, and the boot log already said why.
+       */
+      skin: deps.skin
+        ? { id: deps.skin.id, base: '/skin/', ...deps.skin.manifest }
+        : { id: 'default', base: '/skin/' },
+      plugins: frontendPayload(plugins),
+      /**
+       * Refused plugins are reported to the UI, not buried in a log nobody
+       * reads: a plugin you believe is loaded and is not costs far more than one
+       * that says out loud why it was rejected.
+       */
+      pluginProblems: deps.problems(),
+      ...(backgroundTrouble ? { backgroundTrouble } : {}),
+      turns: { max: config.maxConcurrentTurns, running: deps.running() },
+    }
+  })
 
   app.get('/api/models', async (_request, reply) => {
     if (!descriptor.capabilities.includes('modelSelection')) {

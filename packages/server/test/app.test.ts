@@ -8,6 +8,7 @@ import { join } from 'node:path'
 import { AttachmentInbox } from '../src/attachments.js'
 import { buildApp, buildVersion, sseFrame, type AppDependencies } from '../src/app.js'
 import { parseConfig } from '../src/config.js'
+import { UserTokens } from '../src/user-tokens.js'
 
 import { SecretStore } from '../src/secrets.js'
 
@@ -834,6 +835,146 @@ describe('the unattended path', () => {
     const app = await withStore({ driver })
     await expect(runTurn(app)('note')).rejects.toThrow('engine down')
     await app.close()
+  })
+
+  describe('the background reach', () => {
+    // Two user servers, ONE flagged: what separates "granted to the clock"
+    // from "still invisible while nobody is asking".
+    const SERVERS = `
+auth:
+  mode: none
+mcp:
+  servers:
+    - name: google
+      url: https://hub.example/google/
+      identity: user
+      background: true
+    - name: withings
+      url: https://hub.example/withings/
+      identity: user
+`
+
+    /** An identity provider: discovery, then the same answer to every mint. */
+    const minting = (answer: Record<string, unknown> | number) =>
+      vi.fn((url: unknown) => {
+        if (String(url).includes('.well-known')) {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve({ token_endpoint: 'https://auth.example/token' }),
+          } as unknown as Response)
+        }
+        if (typeof answer === 'number') {
+          return Promise.resolve({
+            ok: false,
+            status: answer,
+            json: () => Promise.resolve({}),
+          } as unknown as Response)
+        }
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve(answer),
+        } as unknown as Response)
+      }) as unknown as typeof fetch
+
+    const rebound = async (answer: Record<string, unknown> | number) => {
+      const tokens = new UserTokens(
+        await mkdtemp(join(tmpdir(), 'adestia-bg-')),
+        { issuer: 'https://auth.example', clientId: 'adestia', clientSecret: 's' },
+        minting(answer),
+      )
+      await tokens.remember('sebastien', 'refresh-1')
+      return tokens
+    }
+
+    it('hands a clock turn the flagged servers’ token, and only theirs', async () => {
+      const driver = new ScriptedDriver([RESULT])
+      const app = await withStore({
+        driver,
+        config: parseConfig(SERVERS),
+        userTokens: await rebound({ access_token: 'jeton-de-fond', expires_in: 3600 }),
+      })
+      await runTurn(app)('lis les mails')
+
+      // The flagged server reads; the unflagged one stays invisible in the
+      // background, exactly as before the flag existed.
+      expect(driver.requests[0]!.serverTokens).toEqual({ google: 'jeton-de-fond' })
+      expect(driver.requests[0]!.callerToken).toBeUndefined()
+      await app.close()
+    })
+
+    it('says a failed mint out loud instead of reading nothing in silence', async () => {
+      const driver = new ScriptedDriver([RESULT])
+      const log = vi.fn()
+      const app = await withStore({
+        driver,
+        config: parseConfig(SERVERS),
+        // The provider refuses: a grant purged while nobody was at a screen.
+        userTokens: await rebound(400),
+        log,
+      })
+      await runTurn(app)('lis les mails')
+
+      // The turn still ran — degraded, with the reach absent...
+      expect(driver.requests[0]!.serverTokens).toBeUndefined()
+      // ...and the loss is SAID: in the journal, and to the next person who
+      // opens the shell.
+      expect(log).toHaveBeenCalledWith(expect.stringContaining('background reach refused'))
+      const instance = (await app.inject({ url: '/api/instance' })).json()
+      expect(instance.backgroundTrouble).toMatchObject({
+        code: 'mint-failed',
+        servers: ['google'],
+      })
+      await app.close()
+    })
+
+    it('refuses loudly to choose between two people’s keys', async () => {
+      const driver = new ScriptedDriver([RESULT])
+      const tokens = await rebound({ access_token: 'jeton', expires_in: 3600 })
+      await tokens.remember('invitee', 'refresh-2')
+      const app = await withStore({ driver, config: parseConfig(SERVERS), userTokens: tokens })
+      await runTurn(app)('lis les mails')
+
+      expect(driver.requests[0]!.serverTokens).toBeUndefined()
+      const instance = (await app.inject({ url: '/api/instance' })).json()
+      expect(instance.backgroundTrouble).toMatchObject({ code: 'several-people' })
+      await app.close()
+    })
+
+    it('still hands an inbound delegation nothing, flag or no flag', async () => {
+      // THE boundary this feature must not move: an agent allowed to
+      // delegate work here must not read anybody's mail by ricochet. If a
+      // third agent ever needs the mail, that is a grant signed at the
+      // hub's façade — never a wider flag.
+      const driver = new ScriptedDriver([RESULT])
+      const app = await withStore({
+        driver,
+        config: parseConfig(
+          `${SERVERS}  enabled: true\n  token: a-shared-secret\n  agentName: alfred\n`,
+        ),
+        userTokens: await rebound({ access_token: 'jeton-de-fond', expires_in: 3600 }),
+      })
+
+      const asked = await app.inject({
+        method: 'POST',
+        url: '/mcp',
+        headers: { authorization: 'Bearer a-shared-secret', 'content-type': 'application/json' },
+        payload: {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: { name: 'ask_alfred', arguments: { prompt: 'lis les mails' } },
+        },
+      })
+      expect(asked.statusCode).toBe(200)
+
+      await vi.waitFor(() => expect(driver.requests).toHaveLength(1))
+      expect(driver.requests[0]).toMatchObject({ unattended: true })
+      expect(driver.requests[0]!.serverTokens).toBeUndefined()
+      expect(driver.requests[0]!.callerToken).toBeUndefined()
+      await app.close()
+    })
   })
 })
 

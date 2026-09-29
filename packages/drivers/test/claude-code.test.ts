@@ -597,10 +597,11 @@ describe('a server that serves somebody’s own data', () => {
     expect(servers['maps']?.headers?.['Authorization']).toBe('Bearer machine-tok')
   })
 
-  it('is absent from a turn that has no caller', async () => {
-    // THE property this exists for: the clock and an inbound delegation have
-    // nobody to act as, so nothing that runs while you sleep can write in
-    // your calendar. Not a limitation — the point.
+  it('is absent from a turn that has no caller and no minted token', async () => {
+    // THE property this exists for: a caller-less turn sees a user server
+    // only when the core CHOSE to mint for it (a `background` grant); with
+    // nothing minted, nothing that runs while you sleep can even read. What
+    // a minted turn may DO is the hub façade's gate, not this filter's.
     const seen: { params?: unknown } = {}
     const driver = new ClaudeCodeDriver({
       query: fakeSdk([resultMessage], seen),
@@ -612,6 +613,28 @@ describe('a server that serves somebody’s own data', () => {
     const servers = serversOf(seen)
     expect(servers['google']).toBeUndefined()
     expect(servers['maps']).toBeDefined()
+  })
+
+  it('takes the per-server token the core minted for a background turn', async () => {
+    // The core mints one only for servers the operator flagged `background`,
+    // and only on clock and callback turns — the driver just honours the map.
+    const seen: { params?: unknown } = {}
+    const driver = new ClaudeCodeDriver({
+      query: fakeSdk([resultMessage], seen),
+      mcpServers: [HUB_USER, HUB_MACHINE],
+      fetchImpl: minting(),
+    })
+    await collect(driver, 'hi', { serverTokens: { google: 'jeton-de-fond' } })
+
+    const servers = serversOf(seen)
+    expect(servers['google']?.headers?.['Authorization']).toBe('Bearer jeton-de-fond')
+    // And when the turn HAS a caller, the caller wins: acting as the person
+    // who asked is the whole meaning of `identity: user`.
+    await collect(driver, 'hi', {
+      callerToken: 'jeton-de-sebastien',
+      serverTokens: { google: 'jeton-de-fond' },
+    })
+    expect(serversOf(seen)['google']?.headers?.['Authorization']).toBe('Bearer jeton-de-sebastien')
   })
 
   it('never sends the caller’s token to a machine server', async () => {
