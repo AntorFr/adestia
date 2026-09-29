@@ -1,13 +1,15 @@
 # Status — Adestia
 > MàJ : 2026-09-26
 
-**État :** **v0.79.0** prête dans sa worktree `heures-fixes` — l'horloge
+**État :** **v0.80.0** prête dans sa worktree `heures-fixes` — l'horloge
 sait les heures fixes (`at:`), ce qui manquait pour rebrancher le briefing
-d'Alfred, mort avec l'agent-pod le 05/09. `main` porte **v0.78.0**, taguée et
-**déployée sur les trois corps le 26/09** (0.75.0 → 0.78.0 d'un coup, les
-corps servaient encore 0.74.0) — 8 plugins actifs sur 10 chez Alfred, 9 sur
-12 chez Skippy, 2 sur 10 chez Nestor, aucun avis au démarrage. Aucune clé de
-configuration nouvelle sur le saut.
+d'Alfred, mort avec l'agent-pod le 05/09. `main` a pris **v0.79.0** (la
+lecture en fond) pendant que ce chantier travaillait, taguée et non
+déployée ; **v0.78.0** reste la version **déployée sur les trois corps le
+26/09** (0.75.0 → 0.78.0 d'un coup, les corps servaient encore 0.74.0) —
+8 plugins actifs sur 10 chez Alfred, 9 sur 12 chez Skippy, 2 sur 10 chez
+Nestor, aucun avis au démarrage. Aucune clé de configuration nouvelle sur le
+saut.
 
 ⚠️ **Et on a trouvé POURQUOI ils traînaient.** Le `regexManager` de Renovate
 matche `image:` suivi de `repository:` à la ligne **suivante** ; un bloc de
@@ -429,7 +431,7 @@ dans TOUS les dossiers déclarés — donc un sous-agent atterrissait à
 `.claude/agents/x/SKILL.md`, un fichier qu'aucun moteur n'ouvre, créé sans un
 mot. Scénario de banc : `types-d-instruction`.
 
-v0.79.0 : **l'horloge sait les heures fixes**. `every:` compte depuis le
+v0.80.0 : **l'horloge sait les heures fixes**. `every:` compte depuis le
 dernier passage et dérive avec lui — dit trois fois par jour, jamais à la
 même heure. Le briefing d'Alfred veut 06:30, 12:30, 18:30, et c'est la
 moitié lisible de ce que le refus du cron avait écartée : `at: 06:30, 12:30,
