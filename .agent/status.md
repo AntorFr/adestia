@@ -563,7 +563,7 @@ non revérifiés un par un ; l'historique complet est dans git) :
       reprendre l'ensemble des valeurs d'état, les trois familles de la coque
       et les trois du projet, et décider ce que chaque teinte dit.
 
-v0.81.0 (mergée et taguée le 30/09, avec Tessera v0.1.3) : **les signatures
+v0.81.0 (**déployée sur les trois corps le 30/09**, avec Tessera Seal v0.1.3 en mode embarqué — k8s-home-lab `8d9f451f`, pods vérifiés) : **les signatures
 Tessera deviennent des cartes, et se donnent sans quitter le fil.** Le moteur
 lit la cérémonie dans le résultat d'un outil MCP (`CONSENT PENDING` ou
 `REQUEST OPENED`), le serveur ne la relaie que si son origine figure dans
