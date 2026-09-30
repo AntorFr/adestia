@@ -7,6 +7,7 @@ import { join } from 'node:path'
 
 import { AttachmentInbox } from '../src/attachments.js'
 import { buildApp, buildVersion, sseFrame, type AppDependencies } from '../src/app.js'
+import { ConversationStore } from '../src/conversations.js'
 import { parseConfig } from '../src/config.js'
 import { UserTokens } from '../src/user-tokens.js'
 
@@ -671,27 +672,83 @@ describe('conversations', () => {
     // In the thread BEFORE anything answers: this is the reload guarantee.
     const midway = (await app.inject({ url: `/api/conversations/${id}` })).json()
     expect(midway.messages.map((m: { text: string }) => m.text)).toEqual(['a', 'b'])
+    // Naming the turn it waits behind, which is still running: that is how a
+    // reloaded tab knows to draw it held, below an answer not filed yet.
+    expect(midway.turn).toBe('running')
+    expect(midway.messages[1].after).toEqual(expect.any(String))
 
     const third = await app.inject({ method: 'POST', url: '/api/turn', payload: { prompt: 'c', conversationId: id } })
     expect(third.statusCode).toBe(202)
 
     release()
     await first
-    // The store is CHRONOLOGICAL: b and c were said while the agent was
-    // still answering a, and that is when they were written — being in the
-    // thread before anything answers is the whole reload guarantee.
+    // b and c were FILED while the agent was still answering a — being in the
+    // thread before anything answers is the whole reload guarantee — but they
+    // READ after that answer, the order they were said in: a conversation that
+    // stacks both questions over both answers is not the one that happened.
     await vi.waitFor(async () => {
       const conversation = (await app.inject({ url: `/api/conversations/${id}` })).json()
       expect(conversation.messages.map((m: { role: string; text: string }) => [m.role, m.text])).toEqual([
         ['user', 'a'],
+        ['agent', 'ok'],
         ['user', 'b'],
         ['user', 'c'],
         ['agent', 'ok'],
-        ['agent', 'ok'],
       ])
+      expect(conversation.turn).toBeUndefined()
     })
     expect(driver.requests).toHaveLength(2)
     expect(driver.requests[1]).toMatchObject({ prompt: 'b\n\nc', sessionId: 's1' })
+    await app.close()
+  })
+
+  it('runs a held message whose turn settled while it was being filed', async () => {
+    // Held, then filed — and filing awaits a write. A turn that settles in
+    // that window finds an empty backlog and closes its chain; a message
+    // queued afterwards landed on a chain nobody drains any more: in the
+    // thread, answered 202, and never run.
+    let release: () => void = () => {}
+    const hold = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const driver = new ScriptedDriver([{ type: 'text-delta', text: 'ok' }, RESULT], ['usageMetrics'], hold)
+    const app = await withStore({ driver })
+    const { id } = (await app.inject({ method: 'POST', url: '/api/conversations' })).json()
+
+    const first = app.inject({ method: 'POST', url: '/api/turn', payload: { prompt: 'a', conversationId: id } })
+    await driver.running
+
+    // The follow-up's own write is where the first turn settles.
+    const append = ConversationStore.prototype.append
+    const spy = vi.spyOn(ConversationStore.prototype, 'append').mockImplementation(async function (
+      this: ConversationStore,
+      ...args: Parameters<ConversationStore['append']>
+    ) {
+      if (args[2].text === 'b') {
+        release()
+        await first
+      }
+      return append.apply(this, args)
+    })
+    try {
+      const second = await app.inject({ method: 'POST', url: '/api/turn', payload: { prompt: 'b', conversationId: id } })
+      expect(second.statusCode).toBe(202)
+    } finally {
+      spy.mockRestore()
+    }
+
+    await vi.waitFor(() => {
+      expect(driver.requests.map((request) => request.prompt)).toEqual(['a', 'b'])
+    })
+    await vi.waitFor(async () => {
+      const conversation = (await app.inject({ url: `/api/conversations/${id}` })).json()
+      expect(conversation.messages.map((m: { role: string; text: string }) => [m.role, m.text])).toEqual([
+        ['user', 'a'],
+        ['agent', 'ok'],
+        ['user', 'b'],
+        ['agent', 'ok'],
+      ])
+    })
     await app.close()
   })
 
@@ -1236,8 +1293,8 @@ describe('/api/turn/stop', () => {
       const conversation = (await app.inject({ url: `/api/conversations/${id}` })).json()
       expect(conversation.messages.map((m: { role: string; text: string }) => [m.role, m.text])).toEqual([
         ['user', 'a'],
-        ['user', 'b'],
         ['agent', ''],
+        ['user', 'b'],
         ['agent', 'ok'],
       ])
     })

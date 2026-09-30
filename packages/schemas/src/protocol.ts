@@ -34,6 +34,16 @@ export interface StoredMessage {
   readonly stopped?: boolean
   readonly error?: string
   readonly usage?: { contextTokens?: number; outputTokens?: number }
+  /** An agent message: the desk turn that wrote it. */
+  readonly turn?: string
+  /**
+   * A user message posted while a turn was running: that turn's id.
+   *
+   * The message is filed the moment it is accepted, the answer it waited
+   * behind only when that turn ends — so the file holds them in the wrong
+   * order, and the store puts this one back after the answer when it reads.
+   */
+  readonly after?: string
 }
 
 export interface ConversationMeta {

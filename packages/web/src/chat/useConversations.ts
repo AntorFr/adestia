@@ -75,12 +75,17 @@ function toMessage(stored: StoredMessage): Message {
  *
  * Held bubbles go: the server writes a held message into the conversation the moment
  * it accepts it, so the stored transcript already carries them as the
- * ordinary messages they became.
+ * ordinary messages they became. Except while the turn they wait behind is
+ * still running: its answer is not filed yet, so they would sit ABOVE it —
+ * they stay held, below the live turn, until that answer lands.
  */
 function fromStore(stored: Conversation): Partial<OpenConversation> {
+  const answered = new Set(stored.messages.map((message) => message.turn))
+  const waiting = (message: StoredMessage): boolean =>
+    stored.turn !== undefined && message.after !== undefined && !answered.has(message.after)
   return {
-    messages: stored.messages.map(toMessage),
-    held: [],
+    messages: stored.messages.filter((message) => !waiting(message)).map(toMessage),
+    held: stored.messages.filter(waiting).map((message) => ({ text: message.text, attachments: [] })),
     contextTokens: stored.messages.at(-1)?.usage?.contextTokens ?? 0,
     loaded: true,
     title: stored.title,

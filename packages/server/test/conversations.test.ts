@@ -101,6 +101,38 @@ describe('threads', () => {
     expect(messages.map((m) => m.signatures)).toEqual([undefined, [signature]])
   })
 
+  it('reads a message posted during a turn after that turn’s answer', async () => {
+    // Filed on arrival, the follow-up lands in the file before the answer it
+    // waited behind. Read back, it must come after that answer's LAST part —
+    // and read the same once compacted, and stay put while its turn has filed
+    // nothing (still running, or lost).
+    const { id } = await store.create('chloe')
+    const user = (text: string, extra: Record<string, unknown> = {}) =>
+      message(text, { role: 'user', ...extra })
+    await store.append('chloe', id, user('q1'))
+    await store.append('chloe', id, user('q2', { after: 't1' }))
+    await store.append('chloe', id, user('q3', { after: 't1' }))
+    const texts = async () => (await store.read('chloe', id))!.messages.map((m) => m.text)
+    expect(await texts()).toEqual(['q1', 'q2', 'q3'])
+
+    await store.recordOutcome('chloe', id, {
+      turn: 't1',
+      parts: [
+        { tools: [], text: 'a1' },
+        { tools: [{ name: 'Read' }], text: 'a1 bis' },
+      ],
+      stopped: false,
+    })
+    await store.append('chloe', id, user('q4', { after: 't2' }))
+    await store.recordOutcome('chloe', id, { turn: 't2', parts: [{ tools: [], text: 'a2' }], stopped: false })
+    await store.append('chloe', id, user('q5', { after: 'lost' }))
+
+    const said = ['q1', 'a1', 'a1 bis', 'q2', 'q3', 'a2', 'q4', 'q5']
+    expect(await texts()).toEqual(said)
+    await store.compact('chloe', id)
+    expect(await texts()).toEqual(said)
+  })
+
   it('remembers which CLI session a thread resumes', async () => {
     const { id } = await store.create('chloe')
     await store.setSession('chloe', id, 'sess-9')

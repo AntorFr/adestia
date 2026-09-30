@@ -37,6 +37,36 @@ export function isSafeId(id: string): boolean {
   return /^[A-Za-z0-9_-]{1,64}$/.test(id)
 }
 
+/**
+ * The transcript in the order it was SAID, not the order it was filed.
+ *
+ * A message posted during a turn is filed on arrival, and the answer it waited
+ * behind only when that turn ends: the file reads "question, follow-up,
+ * answer, answer to the follow-up". Each such message names the turn it waited
+ * behind (`after`), and goes back right after that turn's last word. One whose
+ * turn filed nothing — still running, or lost in a crash — stays where it was
+ * filed, which is the end for a running turn and the honest place for a lost one.
+ *
+ * Moves nothing already in place, so a compacted file reads the same twice.
+ */
+export function inTurnOrder(messages: readonly StoredMessage[]): StoredMessage[] {
+  const lastWord = new Map<string, number>()
+  for (const [index, message] of messages.entries()) {
+    if (message.role === 'agent' && message.turn) lastWord.set(message.turn, index)
+  }
+  const waiting = new Map<number, StoredMessage[]>()
+  const ordered: StoredMessage[] = []
+  for (const [index, message] of messages.entries()) {
+    const answered = message.after === undefined ? undefined : lastWord.get(message.after)
+    if (answered !== undefined && answered > index) {
+      waiting.set(answered, [...(waiting.get(answered) ?? []), message])
+      continue
+    }
+    ordered.push(message, ...(waiting.get(index) ?? []))
+  }
+  return ordered
+}
+
 export class ConversationStore {
   /**
    * @param naming `hashed` (the default) protects arbitrary user ids — OIDC
@@ -116,6 +146,7 @@ export class ConversationStore {
         role: 'agent',
         text: part.text,
         at: new Date().toISOString(),
+        ...(outcome.turn ? { turn: outcome.turn } : {}),
         ...(part.tools.length > 0 ? { tools: [...part.tools] } : {}),
         ...(part.signatures?.length ? { signatures: [...part.signatures] } : {}),
         ...(last && outcome.stopped ? { stopped: outcome.stopped } : {}),
@@ -170,7 +201,7 @@ export class ConversationStore {
       id,
       ...(sessionId ? { sessionId } : {}),
       updatedAt: last?.at ?? meta.updatedAt,
-      messages,
+      messages: inTurnOrder(messages),
     }
   }
 

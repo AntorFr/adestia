@@ -226,28 +226,44 @@ export function registerTurns(app: FastifyInstance, deps: TurnsDependencies): vo
         throw error
       }
 
-      if (conversationId) {
-        // Persisted the moment it is ACCEPTED — held or run alike. This line
-        // is why a queued message survives a reload: it is in the conversation
-        // before the browser hears anything back.
-        try {
-          await conversations.append(userId, conversationId, {
+      // Persisted the moment it is ACCEPTED — held or run alike. This write
+      // is why a queued message survives a reload: it is in the conversation
+      // before the browser hears anything back.
+      const filed = conversationId
+        ? conversations.append(userId, conversationId, {
             id: randomUUID(),
             role: 'user',
             text: body.prompt,
             at: new Date().toISOString(),
+            ...(admission.mode === 'queued' ? { after: admission.behind } : {}),
           })
-        } catch (error) {
-          if (admission.mode === 'run') admission.abort()
-          // The turn will never run, so its finish will never release this.
-          if (tools) await deps.shellTools?.release(tools).catch(() => undefined)
-          await reply.code(500).send({ error: (error as Error).message })
+        : Promise.resolve()
+      // Queued in the SAME tick as the admission, not after the write: a
+      // running turn that settles during the write closes its chain on an
+      // empty backlog, and a message queued then joined a queue nobody drains
+      // any more — filed, answered "held", never run. It carries its write
+      // instead, so the merged turn waits for the question to be filed before
+      // it can file an answer.
+      const queued = admission.mode === 'queued' ? { ...spec, filed } : undefined
+      if (admission.mode === 'queued') admission.enqueue(queued!)
+
+      try {
+        await filed
+      } catch (error) {
+        if (admission.mode === 'run') admission.abort()
+        // Already dispatched, it runs: its answer is filed, and saying
+        // "refused" about a message the agent is answering would be false.
+        if (admission.mode === 'queued' && !admission.withdraw(queued!)) {
+          await reply.code(202).send({ held: true })
           return reply
         }
+        // The turn will never run, so its finish will never release this.
+        if (tools) await deps.shellTools?.release(tools).catch(() => undefined)
+        await reply.code(500).send({ error: (error as Error).message })
+        return reply
       }
 
       if (admission.mode === 'queued') {
-        admission.enqueue(spec)
         // 202: accepted, held. The browser shows it waiting and re-attaches
         // for the merged turn once the running one settles.
         await reply.code(202).send({ held: true })

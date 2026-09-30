@@ -53,11 +53,15 @@ export function registerConversations(
   )
 
   app.get<{ Params: { id: string } }>('/api/conversations/:id', async (request, reply) => {
-    const conversation = await conversations.read(identityOf(request).userId, request.params.id)
+    const userId = identityOf(request).userId
+    const conversation = await conversations.read(userId, request.params.id)
     // 404 rather than an empty conversation: "this conversation is not yours" and
     // "this conversation is empty" must not look the same to the UI.
     if (!conversation) return reply.code(404).send({ error: 'no such conversation' })
-    return conversation
+    // Same per-request `turn` as the list: it is what tells the browser that a
+    // message waiting behind an unfiled answer is still held, not stranded.
+    const job = desk.activeFor(`${userId}/c:${conversation.id}`)
+    return job ? { ...conversation, turn: job.waiting ? ('waiting' as const) : ('running' as const) } : conversation
   })
 
   app.post<{ Params: { id: string }; Body?: { archived?: unknown } }>(

@@ -57,6 +57,8 @@ export interface TurnPart {
 
 /** Everything a settled turn learned, for whoever persists it. */
 export interface TurnOutcome {
+  /** The job that ran it — what a message queued behind it names (`after`). */
+  readonly turn?: string
   /** In order. Empty when the turn produced nothing at all. */
   readonly parts: readonly TurnPart[]
   readonly stopped: boolean
@@ -89,6 +91,14 @@ export interface TurnSpec {
    * the conversation's own, and the conversation forgot its first turn for good.
    */
   readonly session?: () => Promise<string | undefined>
+  /**
+   * The write that files this turn's question, when it is still under way.
+   *
+   * A held message is queued before it is filed (see the route), so the
+   * merged turn it rides waits for it: an answer filed before its question
+   * would read back above it. A failed write does not hold the turn.
+   */
+  readonly filed?: Promise<unknown>
 }
 
 interface Subscriber {
@@ -231,7 +241,15 @@ export type Admission =
       /** Gives the reserved slot back — for a caller whose own step failed. */
       abort(): void
     }
-  | { readonly mode: 'queued'; enqueue(spec: TurnSpec): void }
+  | {
+      readonly mode: 'queued'
+      /** The running turn this one waits behind — its answer comes first. */
+      readonly behind: string
+      /** Call it in the tick `admit` answered: the chain may close at any await. */
+      enqueue(spec: TurnSpec): void
+      /** Takes back a spec not dispatched yet. False: too late, it runs. */
+      withdraw(spec: TurnSpec): boolean
+    }
 
 export class TurnDesk {
   readonly #chains = new Map<string, Chain>()
@@ -293,7 +311,17 @@ export class TurnDesk {
     if (key) {
       const chain = this.#chains.get(key)
       if (chain) {
-        return { mode: 'queued', enqueue: (spec) => chain.queue.push(spec) }
+        return {
+          mode: 'queued',
+          behind: chain.job.id,
+          enqueue: (spec) => chain.queue.push(spec),
+          withdraw: (spec) => {
+            const index = chain.queue.indexOf(spec)
+            if (index < 0) return false
+            chain.queue.splice(index, 1)
+            return true
+          },
+        }
       }
     }
     if (!this.limiter.tryAcquire()) throw new TurnCapacityError()
@@ -359,6 +387,7 @@ export class TurnDesk {
     let current: { job: TurnJob; spec: TurnSpec } | undefined = { job, spec }
     try {
       while (current) {
+        await current.spec.filed?.catch(() => undefined)
         const spec = await resumed(current.spec)
         const outcome = await this.#turn(current.job, spec)
         // Persistence must not kill the chain; the closure reports its own
@@ -490,6 +519,7 @@ export class TurnDesk {
     }
 
     return {
+      turn: job.id,
       parts,
       stopped,
       ...(failure !== undefined ? { failure } : {}),
@@ -524,6 +554,7 @@ function mergeSpecs(batch: readonly TurnSpec[], sessionId: string | undefined): 
     },
     finish: last.finish,
     ...(last.session ? { session: last.session } : {}),
+    filed: Promise.all(batch.map((spec) => spec.filed?.catch(() => undefined))),
   }
 }
 
