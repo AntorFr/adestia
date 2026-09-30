@@ -671,24 +671,30 @@ describe('conversations', () => {
     // In the thread BEFORE anything answers: this is the reload guarantee.
     const midway = (await app.inject({ url: `/api/conversations/${id}` })).json()
     expect(midway.messages.map((m: { text: string }) => m.text)).toEqual(['a', 'b'])
+    // Naming the turn it waits behind, which is still running: that is how a
+    // reloaded tab knows to draw it held, below an answer not filed yet.
+    expect(midway.turn).toBe('running')
+    expect(midway.messages[1].after).toEqual(expect.any(String))
 
     const third = await app.inject({ method: 'POST', url: '/api/turn', payload: { prompt: 'c', conversationId: id } })
     expect(third.statusCode).toBe(202)
 
     release()
     await first
-    // The store is CHRONOLOGICAL: b and c were said while the agent was
-    // still answering a, and that is when they were written — being in the
-    // thread before anything answers is the whole reload guarantee.
+    // b and c were FILED while the agent was still answering a — being in the
+    // thread before anything answers is the whole reload guarantee — but they
+    // READ after that answer, the order they were said in: a conversation that
+    // stacks both questions over both answers is not the one that happened.
     await vi.waitFor(async () => {
       const conversation = (await app.inject({ url: `/api/conversations/${id}` })).json()
       expect(conversation.messages.map((m: { role: string; text: string }) => [m.role, m.text])).toEqual([
         ['user', 'a'],
+        ['agent', 'ok'],
         ['user', 'b'],
         ['user', 'c'],
         ['agent', 'ok'],
-        ['agent', 'ok'],
       ])
+      expect(conversation.turn).toBeUndefined()
     })
     expect(driver.requests).toHaveLength(2)
     expect(driver.requests[1]).toMatchObject({ prompt: 'b\n\nc', sessionId: 's1' })
@@ -1236,8 +1242,8 @@ describe('/api/turn/stop', () => {
       const conversation = (await app.inject({ url: `/api/conversations/${id}` })).json()
       expect(conversation.messages.map((m: { role: string; text: string }) => [m.role, m.text])).toEqual([
         ['user', 'a'],
-        ['user', 'b'],
         ['agent', ''],
+        ['user', 'b'],
         ['agent', 'ok'],
       ])
     })

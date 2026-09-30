@@ -57,6 +57,8 @@ export interface TurnPart {
 
 /** Everything a settled turn learned, for whoever persists it. */
 export interface TurnOutcome {
+  /** The job that ran it — what a message queued behind it names (`after`). */
+  readonly turn?: string
   /** In order. Empty when the turn produced nothing at all. */
   readonly parts: readonly TurnPart[]
   readonly stopped: boolean
@@ -231,7 +233,12 @@ export type Admission =
       /** Gives the reserved slot back — for a caller whose own step failed. */
       abort(): void
     }
-  | { readonly mode: 'queued'; enqueue(spec: TurnSpec): void }
+  | {
+      readonly mode: 'queued'
+      /** The running turn this one waits behind — its answer comes first. */
+      readonly behind: string
+      enqueue(spec: TurnSpec): void
+    }
 
 export class TurnDesk {
   readonly #chains = new Map<string, Chain>()
@@ -293,7 +300,11 @@ export class TurnDesk {
     if (key) {
       const chain = this.#chains.get(key)
       if (chain) {
-        return { mode: 'queued', enqueue: (spec) => chain.queue.push(spec) }
+        return {
+          mode: 'queued',
+          behind: chain.job.id,
+          enqueue: (spec) => chain.queue.push(spec),
+        }
       }
     }
     if (!this.limiter.tryAcquire()) throw new TurnCapacityError()
@@ -490,6 +501,7 @@ export class TurnDesk {
     }
 
     return {
+      turn: job.id,
       parts,
       stopped,
       ...(failure !== undefined ? { failure } : {}),

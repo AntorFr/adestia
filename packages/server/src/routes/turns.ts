@@ -236,6 +236,7 @@ export function registerTurns(app: FastifyInstance, deps: TurnsDependencies): vo
             role: 'user',
             text: body.prompt,
             at: new Date().toISOString(),
+            ...(admission.mode === 'queued' ? { after: admission.behind } : {}),
           })
         } catch (error) {
           if (admission.mode === 'run') admission.abort()

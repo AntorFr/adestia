@@ -852,17 +852,20 @@ describe('chat', () => {
         return Promise.resolve({ ok: true, status: 202, body: null } as unknown as Response)
       }
       if (path === '/api/conversations/c1') {
-        // What the store holds once the first turn settled: the held texts
-        // were written on acceptance, before the answer that closed it.
+        // What the store reads once the first turn settled: the held texts
+        // after the answer they waited behind, the merged turn still running.
         const stored = {
           id: 'c1',
           title: 'premier',
           updatedAt: '',
+          ...(merged ? {} : { turn: 'running' }),
           messages: [
             { id: 'm1', role: 'user', text: 'premier', at: '' },
-            ...posts.slice(1).map((post, index) => ({ id: `h${index}`, role: 'user', text: post.prompt, at: '' })),
-            { id: 'a1', role: 'agent', text: '', at: '' },
-            ...(merged ? [{ id: 'a2', role: 'agent', text: 'reçu cinq sur cinq', at: '' }] : []),
+            { id: 'a1', role: 'agent', text: '', at: '', turn: 't1' },
+            ...posts
+              .slice(1)
+              .map((post, index) => ({ id: `h${index}`, role: 'user', text: post.prompt, at: '', after: 't1' })),
+            ...(merged ? [{ id: 'a2', role: 'agent', text: 'reçu cinq sur cinq', at: '', turn: 't2' }] : []),
           ],
         }
         return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(stored) } as unknown as Response)
@@ -969,6 +972,59 @@ describe('chat', () => {
     // The stored half and the live half, together.
     expect(await screen.findByText('longue mission')).toBeTruthy()
     await waitFor(() => expect(screen.getByText('déjà en route')).toBeTruthy())
+  })
+
+  it('keeps a message sent during a turn held below it when the conversation is reopened mid-turn', async () => {
+    // Filed on arrival, the follow-up reads before an answer not filed yet.
+    // Drawn as a message it would sit ABOVE the live turn — the order the
+    // reader never said things in — so it stays held until that answer lands.
+    const encoder = new TextEncoder()
+    const fetchImpl = vi.fn((url: string) => {
+      const path = String(url)
+      if (path.startsWith('/api/turn/attach')) {
+        const body = new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.enqueue(encoder.encode(frame({ type: 'text-delta', text: 'déjà en route' })))
+          },
+        })
+        return Promise.resolve({ ok: true, status: 200, body } as unknown as Response)
+      }
+      if (path === '/api/conversations/c9') {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () =>
+            Promise.resolve({
+              id: 'c9',
+              title: 'En cours',
+              updatedAt: '',
+              turn: 'running',
+              messages: [
+                { id: 'm1', role: 'user', text: 'longue mission', at: '' },
+                { id: 'm2', role: 'user', text: 'et ensuite ?', at: '', after: 't1' },
+              ],
+            }),
+        } as unknown as Response)
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () =>
+          Promise.resolve({ conversations: [{ id: 'c9', title: 'En cours', updatedAt: '' }] }),
+      } as unknown as Response)
+    }) as unknown as typeof fetch
+
+    const { container } = render(<Chat fetchImpl={fetchImpl} />)
+    fireEvent.click(await screen.findByLabelText('Conversations'))
+    await act(async () => {
+      fireEvent.click(await screen.findByText('En cours'))
+    })
+
+    await waitFor(() => expect(screen.getByText('déjà en route')).toBeTruthy())
+    const held = container.querySelectorAll('.adestia-bubble--held')
+    expect([...held].map((bubble) => bubble.textContent)).toEqual(['et ensuite ?'])
+    const live = screen.getByText('déjà en route')
+    expect(live.compareDocumentPosition(held[0]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   /**
