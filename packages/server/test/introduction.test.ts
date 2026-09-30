@@ -151,6 +151,13 @@ describe('the contract', () => {
     expect(instanceContract(facts()).contents).toContain('language you are addressed in')
     expect(instanceContract(facts({ locale: 'fr' })).contents).toContain('`fr`')
   })
+
+  it('says where it answers when the operator declared an address, and nothing otherwise', () => {
+    expect(instanceContract(facts()).contents).not.toContain('It answers at')
+    expect(instanceContract(facts({ url: 'https://adestia.example.org' })).contents).toContain(
+      'It answers at `https://adestia.example.org`.',
+    )
+  })
 })
 
 describe('the anchor', () => {
