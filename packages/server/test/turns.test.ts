@@ -49,6 +49,40 @@ function meter(max = Number.POSITIVE_INFINITY) {
 const RESULT: TurnEvent = { type: 'result', sessionId: 's1', stopped: false }
 
 describe('the turn desk', () => {
+  it('takes back a queued spec only while it has not left', async () => {
+    // A held message whose filing failed is refused — unless the merged turn
+    // already carries it, in which case refusing it would be a lie.
+    const held = gate()
+    const requests: TurnRequest[] = []
+    const driver = {
+      async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
+        requests.push(request)
+        if (requests.length === 1) await held.passed
+        yield RESULT
+      },
+    }
+    const desk = new TurnDesk(driver, meter())
+    const spec = (prompt: string) => ({ request: { prompt, cwd: '.' }, finish: async () => {} })
+
+    const admission = desk.admit('u/c:1')
+    if (admission.mode !== 'run') throw new Error('expected a run')
+    const job = admission.start(spec('a'))
+    const kept = desk.admit('u/c:1')
+    const dropped = desk.admit('u/c:1')
+    if (kept.mode !== 'queued' || dropped.mode !== 'queued') throw new Error('expected a queue')
+    const b = spec('b')
+    const c = spec('c')
+    kept.enqueue(b)
+    dropped.enqueue(c)
+    expect(dropped.withdraw(c)).toBe(true)
+
+    held.open()
+    await job.done
+    expect(kept.withdraw(b)).toBe(false)
+    await desk.activeFor('u/c:1')?.done
+    expect(requests.map((request) => request.prompt)).toEqual(['a', 'b'])
+  })
+
   it('runs a turn with nobody watching and still hands finish the outcome', async () => {
     // The whole point of the desk: the turn is not the HTTP request's. No
     // subscriber ever attaches here, and the transcript closure still runs.

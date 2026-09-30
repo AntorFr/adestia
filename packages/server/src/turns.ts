@@ -91,6 +91,14 @@ export interface TurnSpec {
    * the conversation's own, and the conversation forgot its first turn for good.
    */
   readonly session?: () => Promise<string | undefined>
+  /**
+   * The write that files this turn's question, when it is still under way.
+   *
+   * A held message is queued before it is filed (see the route), so the
+   * merged turn it rides waits for it: an answer filed before its question
+   * would read back above it. A failed write does not hold the turn.
+   */
+  readonly filed?: Promise<unknown>
 }
 
 interface Subscriber {
@@ -237,7 +245,10 @@ export type Admission =
       readonly mode: 'queued'
       /** The running turn this one waits behind — its answer comes first. */
       readonly behind: string
+      /** Call it in the tick `admit` answered: the chain may close at any await. */
       enqueue(spec: TurnSpec): void
+      /** Takes back a spec not dispatched yet. False: too late, it runs. */
+      withdraw(spec: TurnSpec): boolean
     }
 
 export class TurnDesk {
@@ -304,6 +315,12 @@ export class TurnDesk {
           mode: 'queued',
           behind: chain.job.id,
           enqueue: (spec) => chain.queue.push(spec),
+          withdraw: (spec) => {
+            const index = chain.queue.indexOf(spec)
+            if (index < 0) return false
+            chain.queue.splice(index, 1)
+            return true
+          },
         }
       }
     }
@@ -370,6 +387,7 @@ export class TurnDesk {
     let current: { job: TurnJob; spec: TurnSpec } | undefined = { job, spec }
     try {
       while (current) {
+        await current.spec.filed?.catch(() => undefined)
         const spec = await resumed(current.spec)
         const outcome = await this.#turn(current.job, spec)
         // Persistence must not kill the chain; the closure reports its own
@@ -536,6 +554,7 @@ function mergeSpecs(batch: readonly TurnSpec[], sessionId: string | undefined): 
     },
     finish: last.finish,
     ...(last.session ? { session: last.session } : {}),
+    filed: Promise.all(batch.map((spec) => spec.filed?.catch(() => undefined))),
   }
 }
 
