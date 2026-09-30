@@ -583,3 +583,18 @@ WebAuthn) — corrigé côté Tessera en v0.1.3 (`tessera-ceremony-embed`). Dép
 `signatures:` dans chaque config Adestia. Reste non mesuré : la passkey dans
 l'iframe sur iPhone, en PWA installée — si elle ne monte pas,
 `embed: false` rabat tout sur l'onglet. Scénario de banc : `signatures`.
+
+v0.81.1 (mergée et taguée le 30/09, **pas déployée**) : **un message envoyé
+pendant un tour se relit après la réponse qu'il attendait, et part toujours.**
+Signalé par l'utilisateur : à la fin du tour, le fil montrait les deux
+questions puis les deux réponses. Le message en attente est écrit dès son
+arrivée, la réponse seulement à la fin du tour — le fichier reste dans cet
+ordre, mais chaque réponse porte désormais son tour (`turn`) et le message en
+attente le tour derrière lequel il patiente (`after`) ; le magasin le replace à
+la lecture, et le navigateur le garde « en attente » tant que ce tour court
+(rechargement en plein tour). Les échanges enregistrés avant restent dans
+l'ancien ordre. Au passage, une course confirmée par test : un tour qui se
+terminait pendant l'écriture du message en attente fermait sa file, et le
+message ne partait jamais ; il entre désormais dans la file avant d'être
+écrit, et le tour suivant attend son écriture. Scénario de banc :
+`ordre-file-attente`.
