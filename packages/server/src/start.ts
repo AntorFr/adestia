@@ -371,6 +371,7 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     const { skills, agents, problems: skillProblems } = await collectSkills(plugins, stores, {
       ...(config.name ? { name: config.name } : {}),
       ...(config.locale ? { locale: config.locale } : {}),
+      ...(config.url ? { url: config.url } : {}),
       driverId: config.driver.id,
       workspaceRoot,
       stores,

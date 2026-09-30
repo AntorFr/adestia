@@ -534,6 +534,42 @@ describe('the instance name', () => {
   })
 })
 
+describe('the instance url', () => {
+  it('is absent unless the operator writes one', () => {
+    expect(parseConfig('').url).toBeUndefined()
+  })
+
+  it('accepts http or https, with an optional path', () => {
+    expect(parseConfig('url: https://adestia.example.org').url).toBe('https://adestia.example.org')
+    expect(parseConfig('url: http://192.168.1.10:8730').url).toBe('http://192.168.1.10:8730')
+    // A path is allowed — an instance mounted under an ingress prefix.
+    expect(parseConfig('url: https://host/adestia').url).toBe('https://host/adestia')
+  })
+
+  it('drops a trailing slash for a stable display', () => {
+    expect(parseConfig('url: https://host/adestia/').url).toBe('https://host/adestia')
+    expect(parseConfig('url: https://host/').url).toBe('https://host')
+  })
+
+  it('refuses a protocol other than http or https', () => {
+    expect(issuesOf('url: ftp://host/')).toEqual(['url must be http or https, not "ftp"'])
+  })
+
+  it('refuses a query or a fragment', () => {
+    expect(issuesOf('url: https://host/?tab=1')).toEqual([
+      'url: "https://host/?tab=1" must not carry a query or a fragment',
+    ])
+    expect(issuesOf('url: https://host/#section')).toEqual([
+      'url: "https://host/#section" must not carry a query or a fragment',
+    ])
+  })
+
+  it('refuses what does not even parse as a URL', () => {
+    expect(issuesOf('url: not a url')).toEqual(['url: "not a url" is not a valid URL'])
+    expect(() => parseConfig('url: 12')).toThrow(/url must be a string/)
+  })
+})
+
 describe('workspace.watch', () => {
   it('is on by default: both hands write, so the shell must see the other one', () => {
     expect(parseConfig('').workspace.watch).toEqual({

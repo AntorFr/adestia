@@ -30,6 +30,20 @@ dataDir: ./data
 # that. A plugin is handed the same value and translates its own words.
 # locale: fr
 
+# This instance's public address — what a browser or another agent actually
+# reaches, behind whatever ingress or reverse proxy terminates TLS in front of
+# it. Set it and the agent can answer "what is your address?" instead of
+# saying it does not know; leave it out and nothing changes.
+#
+# Never derived from `host`/`port` above: those are this process's BIND
+# address (often 127.0.0.1 or 0.0.0.0), not the public one — there is no
+# request to read a forwarded header from at the moment this is used (boot,
+# once), so it has to be declared, like `name`.
+#
+# A path is allowed, for an instance mounted under an ingress prefix
+# (https://host/adestia); a query or a fragment is refused.
+# url: https://adestia.example.org
+
 # Named secrets, available to the plugins that DECLARE them (`secrets:` in a
 # manifest). A plugin receives only what it named, so the declaration is a
 # boundary rather than a comment — and two plugins naming the same key get the
