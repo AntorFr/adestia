@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "dobby",
+  "description": "A college library after dark: waxed walnut, vellum text, binding gilt, oxblood leather, Garamond for address and a typewriter for the apparatus. A sock on a wax seal for a crest, and a candle that flickers while it works. It imposes its evening; light is a parchment day, on explicit request only.",
+  "scheme": "dark",
+  "module": "./skin.js",
+  "styles": "./skin.css",
+  "icon": "./assets/icon.svg",
+  "manifest": "./web.manifest"
+}
