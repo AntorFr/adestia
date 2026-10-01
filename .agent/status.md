@@ -620,3 +620,15 @@ demande explicite. Les polices sont embarquées (OFL), pour qu'une instance du
 LAN n'ait pas besoin d'internet. Elle s'adresse à « Madame », comme Alfred dit
 « Monsieur » : pas de prénom dans un dépôt public. Scénario de banc :
 `skin-dobby`.
+
+v0.84.0 (mergée et taguée le 01/10) : **une skill du cœur, `persona-author`,
+pour qu'une instance neuve demande qui elle est au lieu de se l'inventer.**
+L'agent mène l'entretien — une question à la fois, en proposant plutôt qu'en
+interrogeant, sans jamais se nommer lui-même — sur le squelette commun à Alfred
+et Skippy : rôle et ce qu'il n'est pas, nom et figure empruntée, adresse,
+registre sur quatre axes, traits avec une phrase chacun, tics dosés,
+initiative, garde-fous proposés par défaut. Trois réponses d'essai avant
+d'écrire, puis une section dans le fichier d'instructions de la personne
+(`CLAUDE.md` / `AGENTS.md`), et les mots d'écran passés à `skin-author`.
+Rédigée en anglais comme les autres skills du cœur. Pas d'interface, donc pas
+de scénario de banc ; jamais jouée en vrai sur une instance.
