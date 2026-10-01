@@ -153,8 +153,17 @@ export function parsePluginManifest(input: unknown, folderName: string): PluginM
   for (const field of ['view', 'blocks', 'chrome', 'api', 'setup']) {
     checkRelativePath(input, field, issues, 'plugin folder')
   }
-  for (const field of ['styles', 'bin', 'skills', 'types', 'absorbs', 'secrets']) {
+  for (const field of ['styles', 'bin', 'skills', 'agents', 'types', 'absorbs', 'secrets']) {
     checkStringArray(input, field, issues)
+  }
+  for (const [index, agent] of (Array.isArray(input['agents']) ? input['agents'] : []).entries()) {
+    // Read by the server and written into the workspace: the same traversal
+    // a style path is held to, and a definition is markdown, nothing else.
+    if (typeof agent !== 'string') continue
+    checkRelativePath({ [`agents[${index}]`]: agent }, `agents[${index}]`, issues, 'plugin folder')
+    if (!agent.endsWith('.md')) {
+      issues.push({ field: `agents[${index}]`, message: 'must name a markdown file (`.md`)' })
+    }
   }
   for (const [index, style] of (Array.isArray(input['styles']) ? input['styles'] : []).entries()) {
     if (typeof style === 'string') {

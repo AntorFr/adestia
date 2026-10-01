@@ -391,6 +391,46 @@ describe('the shell introducing itself', () => {
     expect(contract).toContain('new_id')
   })
 
+  it('delivers a plugin’s subagents where the CLI reads them, or says it cannot', async () => {
+    // The skill names its envelope with `agent:`; booting is where that name
+    // has to start resolving to a file — or where the operator learns it won't.
+    const dir = join(root, 'plugins', 'sdlc')
+    await mkdir(join(dir, 'skills', 'relire'), { recursive: true })
+    await mkdir(join(dir, 'agents'), { recursive: true })
+    await writeFile(
+      join(dir, 'adestia-plugin.json'),
+      JSON.stringify({
+        schemaVersion: 1,
+        id: 'sdlc',
+        kind: 'tool',
+        description: 'x',
+        skills: ['./skills/relire/SKILL.md'],
+        agents: ['./agents/relecteur.md'],
+      }),
+    )
+    await writeFile(join(dir, 'skills', 'relire', 'SKILL.md'), '---\nname: relire\nagent: relecteur\n---\n')
+    await writeFile(join(dir, 'agents', 'relecteur.md'), '---\nname: relecteur\n---\n\nRelis.\n')
+
+    class AgentDriver extends SkilledDriver {
+      agentsPath(): string {
+        return '.claude/agents'
+      }
+    }
+    const config = 'workspace:\n  root: ./ws\nextensions:\n  tools: [sdlc]\n'
+    await boot(config, 'adestia.config.yaml', () => new AgentDriver())
+    const agent = await readFile(join(root, 'ws', '.claude', 'agents', 'sdlc-relecteur.md'), 'utf8')
+    expect(agent).toContain('name: sdlc-relecteur')
+    const skill = await readFile(join(root, 'ws', '.claude', 'skills', 'sdlc-relire', 'SKILL.md'), 'utf8')
+    expect(skill).toContain('agent: sdlc-relecteur')
+    expect(logs).toContain('1 subagent(s) delivered')
+
+    await started?.close()
+    started = undefined
+    logs.length = 0
+    await boot(config.replace('./ws', './ws2'), 'adestia.config.yaml', () => new SkilledDriver())
+    expect(logs.join('\n')).toContain('reads no subagents: sdlc-relecteur.md not delivered')
+  })
+
   it('says nothing at all on a driver that reads no contracts', async () => {
     // No skills directory, no delivery — and therefore no anchor either. The
     // absence has to be total or the turn cites a file nobody wrote.
