@@ -611,3 +611,12 @@ d'agents du pilote (`.claude/agents/` pour Claude Code) sous le nom
 réécrites en `agent: <plugin>-relecteur`. Un pilote sans dossier d'agents le
 signale au démarrage. Pas de changement d'interface, donc pas de scénario de
 banc.
+
+v0.83.0 (mergée et taguée le 01/10) : **une quatrième livrée, `dobby`** — une
+bibliothèque de collège le soir : noyer, vélin, dorure, cuir sang-de-bœuf,
+Garamond pour lire, machine à écrire pour l'appareil (et le code). Un ex-libris
+en tête d'accueil, une chandelle pendant les tours, un jour « parchemin » sur
+demande explicite. Les polices sont embarquées (OFL), pour qu'une instance du
+LAN n'ait pas besoin d'internet. Elle s'adresse à « Madame », comme Alfred dit
+« Monsieur » : pas de prénom dans un dépôt public. Scénario de banc :
+`skin-dobby`.
