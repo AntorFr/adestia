@@ -3042,3 +3042,32 @@ shows it. What a livery lacked was the right to read it — and the slot mount
 rebuilt its context without it, which no type caught and the bench did. The
 `hero` and `console` slots now receive `user`, under OIDC only: a local
 instance answers "Local user", and greeting that is worse than greeting nobody.
+
+**2026-10-01 (an instance's address is declared, like its name, and only
+reaches a contract written once):** an agent asked its own public address
+answered "I don't know the domain of this instance" — true of the shell,
+which had never been told one, and false of the operator, who already knew
+it. The `this-instance` contract already carries `name`/`locale` for exactly
+this family of question, so `url:` joins them in `adestia.config.yaml`, read
+once at boot the same way.
+
+Not derived from `host`/`port`: those are the process's BIND address (often
+`127.0.0.1` or `0.0.0.0`), not the public one behind an ingress with TLS
+terminated upstream — the same gap `originOf(request)` already closes
+elsewhere (`routes/mcp-signin.ts`, `routes/mcp-servers.ts`, reading
+`x-forwarded-*`), but PER REQUEST, for the OAuth return path. `this-instance`
+is written once at boot, with no request in hand: nothing to derive from, so
+a declared value it is — the same choice already made for `name`, and no
+outbound network call either (a DNS lookup or an IP-service ping would trade
+a string the operator already knows for false positives behind any VPN,
+proxy or container).
+
+Validated like `signatures.origins` (`new URL` plus an http(s) protocol
+check) but without its bare-origin rule: this value is only ever displayed,
+never compared bit for bit against another origin, so a path is allowed — an
+instance mounted under an ingress prefix (`https://host/adestia`) still has
+one address. A query or a fragment is refused instead of kept, since neither
+has a use on an instance address and either smells of a URL copied from one
+specific place in the interface. Absent, the contract says nothing new about
+where the instance answers — no guess, no detection, the same silence as
+before for an operator who has not set one.
