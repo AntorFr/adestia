@@ -14,11 +14,14 @@
  * The explicit light variant is the same room by day — parchment and iron-gall
  * ink — not an inversion.
  *
- * `--font-mono` is a TYPEWRITER, not small capitals: the shell uses that voice
- * for code blocks and raw sources as well as for labels, and small caps would
- * make a shell command unreadable. Courier Prime is the archivist's machine,
- * which carries the look AND stays a real fixed pitch. The catalogue-card small
- * capitals live where only names go: the tile labels.
+ * The apparatus — labels, counts, chips — speaks in a catalogue card's SMALL
+ * CAPITALS (`--font-mono`), and code keeps a real fixed pitch through its own
+ * voice (`--font-code`): Courier Prime, the archivist's typewriter, so a shell
+ * command stays readable while a label stays a card.
+ *
+ * Two marks are a WAX SEAL: the crest and the send button, each through its
+ * own knobs (`--crest-*`, `--send-*`), with the quill as the send glyph.
+ * Every other control keeps its corners.
  */
 
 /* ── The faces. Bundled under assets/ (served from /skin/, resolved against
@@ -59,6 +62,19 @@
   font-style: normal;
   font-display: swap;
 }
+/* The same small capitals for the APPARATUS, set larger. The shell sizes its
+   chips and counts for a mono with a tall x-height (10.5px and the like), and
+   Cormorant's small capitals sit so low that at those sizes a count reads as
+   a smudge. `size-adjust` scales the face, not a box: the declaration stays a
+   declaration, and the tile names keep the face at its own size. */
+@font-face {
+  font-family: 'Dobby Fiche';
+  src: url('./assets/fonts/CormorantSC-600.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 128%;
+}
 @font-face {
   font-family: 'Dobby Typewriter';
   src: url('./assets/fonts/CourierPrime.woff2') format('woff2');
@@ -71,7 +87,8 @@
 :root[data-skin='dobby'] {
   --font: 'Dobby Garamond', 'EB Garamond', Garamond, 'Iowan Old Style', Palatino, Georgia, serif;
   --font-title: 'Dobby Cormorant', 'Cormorant Garamond', 'Iowan Old Style', Palatino, Georgia, serif;
-  --font-mono: 'Dobby Typewriter', 'Courier Prime', 'Courier New', ui-monospace, monospace;
+  --font-mono: 'Dobby Fiche', 'Cormorant SC', var(--font-title);
+  --font-code: 'Dobby Typewriter', 'Courier Prime', 'Courier New', ui-monospace, monospace;
   --font-input: var(--font);
 
   /* Garamond sets small on its body: the same 15px as the base reads a size
@@ -87,7 +104,7 @@
   --radius: 3px;
   --radius-lg: 4px;
   --radius-pill: 2px;
-  --radius-round: 50%; /* the send button stays a wax seal */
+  --radius-round: 50%;
   --radius-bubble: 3px;
 
   /* Tooled leather: a flat tinted slab, a gilt-like rim, the glyph in the
@@ -109,6 +126,7 @@
   --tile-label-font: 'Dobby Catalogue', 'Cormorant SC', var(--font-title);
   --tile-label-track: 0.08em;
 
+  /* Already enlarged by the face's own `size-adjust` (above). */
   --label-size: 11px;
   --label-track: 0.12em;
   --title-track: 0;
@@ -120,7 +138,28 @@
   --bubble-agent-bg: var(--surface-raised);
   --bubble-agent-text: var(--text);
 
-  /* Body-specific tokens, consumed by the bookplate and the candle. */
+  /* The two seals: red wax, pressed, the metal glyph raised in it. */
+  --send-radius: 50%;
+  --send-bg: radial-gradient(circle at 35% 30%, var(--dby-cire-hi), var(--dby-cire) 70%);
+  --send-text: var(--dby-sceau);
+  --send-shadow: inset 0 0 0 2px rgb(0 0 0 / 22%), 0 2px 5px rgb(0 0 0 / 45%);
+  --crest-radius: 50%;
+  --crest-bg: var(--send-bg);
+  --crest-fg: var(--dby-sceau);
+  --crest-border: 0 none;
+  --crest-shadow: var(--send-shadow);
+
+  /* A gilt initial opens each answer, as on a printed chapter. */
+  --drop-cap-float: left;
+  --drop-cap-size: 2.7em;
+  --drop-cap-font: var(--font-title);
+  --drop-cap-color: var(--accent);
+  --drop-cap-leading: 0.8;
+  --drop-cap-pad: 0.12em 0.14em 0 0;
+
+  /* Body-specific tokens, consumed by the bookplate, the seals and the
+     candle. */
+  --dby-sceau: #e9c98a;
   --dby-cire: #7a2420;
   --dby-cire-hi: #9a3a30;
   --dby-flamme: #f0b54a;

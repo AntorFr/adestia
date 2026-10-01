@@ -1,5 +1,6 @@
 /**
- * Dobby — the library's familiar, a personal body that answers to Madame.
+ * Dobby — the library's familiar, a personal body. It greets the person the
+ * identity provider names, and Madame when there is nobody to name.
  *
  * A college library after dark. Dobby speaks of himself in the third person,
  * as the house-elf does, and that is the whole of the borrowing: the sock on
@@ -31,8 +32,13 @@ const PLUME =
 
 /** The bookplate and the greeting — the head of the landing. */
 function hero(host, context) {
+  // The bookplate carries the whole name, as a bookplate does; the greeting
+  // only the first, as one speaks to a person. `user` is there only under
+  // OIDC — a local instance has nobody to name.
+  const nom = context.user?.displayName?.trim() || 'Madame'
+  const prenom = nom.split(/\s+/)[0]
   const h = new Date().getHours()
-  const salut = h >= 5 && h < 18 ? 'Bonjour, Madame.' : 'Bonsoir, Madame.'
+  const salut = h >= 5 && h < 18 ? `Bonjour, ${prenom}.` : `Bonsoir, ${prenom}.`
   const aparte =
     h >= 22 || h < 5
       ? 'Dobby garde la chandelle allumée. Que doit-il chercher ?'
@@ -42,7 +48,7 @@ function hero(host, context) {
     <div class="dby-exlibris" aria-hidden="true">
       <small>EX LIBRIS</small>
       <svg viewBox="0 0 100 100" fill="currentColor">${CHAUSSETTE}</svg>
-      <b>Madame</b>
+      <b>${esc(nom)}</b>
     </div>
     <div class="dby-salut">
       <h1>${esc(salut)}</h1>
@@ -75,9 +81,11 @@ export default function dobby() {
     greetingDay: 'Bonjour, Madame.',
     greetingEvening: 'Bonsoir, Madame.',
     greetingAside: 'Dobby est à votre service.',
-    // Worn on the rail's accent plate: the silhouette alone, so it holds in
+    // Pressed into the wax seal: the silhouette alone, so it holds in
     // monochrome.
     crest: `<svg viewBox="0 0 100 100" fill="currentColor">${CHAUSSETTE}</svg>`,
+    // The quill on the send seal: Dobby writes the answer down.
+    sendIcon: PLUME,
     hero,
     busy,
   }
