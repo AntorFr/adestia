@@ -3054,7 +3054,7 @@ once at boot the same way.
 Not derived from `host`/`port`: those are the process's BIND address (often
 `127.0.0.1` or `0.0.0.0`), not the public one behind an ingress with TLS
 terminated upstream — the same gap `originOf(request)` already closes
-elsewhere (`routes/mcp-signin.ts`, `routes/mcp-servers.ts`, reading
+elsewhere (`routes/mcp-servers.ts`, reading
 `x-forwarded-*`), but PER REQUEST, for the OAuth return path. `this-instance`
 is written once at boot, with no request in hand: nothing to derive from, so
 a declared value it is — the same choice already made for `name`, and no
