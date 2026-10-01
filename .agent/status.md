@@ -598,3 +598,16 @@ terminait pendant l'écriture du message en attente fermait sa file, et le
 message ne partait jamais ; il entre désormais dans la file avant d'être
 écrit, et le tour suivant attend son écriture. Scénario de banc :
 `ordre-file-attente`.
+
+v0.82.0 (mergée et taguée le 01/10, **pas déployée**) : **un plugin livre
+désormais le dossier entier de ses skills, et ses sous-agents.** Avant, seul
+`SKILL.md` était copié : une skill qui disait « lis `references/x.md` » ou
+« lance `scripts/y.py` » pointait vers des fichiers absents. Tout le dossier
+voyage maintenant (fichiers cachés et liens symboliques exceptés) ; un dossier
+géré est vidé avant réécriture, un dossier écrit à la main n'est jamais touché.
+Le manifeste gagne une liste `agents` (fichiers `.md`), livrés dans le dossier
+d'agents du pilote (`.claude/agents/` pour Claude Code) sous le nom
+`<plugin>-<nom>.md` ; les skills du plugin qui disent `agent: relecteur` sont
+réécrites en `agent: <plugin>-relecteur`. Un pilote sans dossier d'agents le
+signale au démarrage. Pas de changement d'interface, donc pas de scénario de
+banc.
