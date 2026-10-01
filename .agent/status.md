@@ -648,7 +648,7 @@ chantier, non corrigé : le ■ d'arrêt n'est jamais rouge (`.adestia-composer
 button` l'emporte sur `.adestia-composer__stop`). Scénario de banc :
 `dobby-sceau`.
 
-v0.82.0 (branche `feature/adestia-instance-url`, **pas mergée**) : **l'instance
+v0.86.0 (mergée et taguée le 01/10, **pas déployée**) : **l'instance
 connaît sa propre adresse, quand l'opérateur l'a déclarée.** Déclencheur : un
 agent interrogé sur sa propre adresse répondait ne pas la connaître, alors que
 l'opérateur, lui, la connaît déjà. Nouveau réglage `url:` dans
@@ -662,4 +662,5 @@ pour un affichage stable. Le contrat `this-instance` porte la phrase « It
 answers at `<url>` » quand elle est renseignée, rien de plus sinon — pas de
 détection automatique, pas de dérivation depuis `host`/`port` (l'adresse de
 BIND interne du process, pas l'adresse publique derrière un ingress/reverse
-proxy). PR ouverte, en attente de recette.
+proxy). Recette sautée sur décision de Monsieur (vérification seule : besoin,
+sécurité, qualité au vert après correction d'un chemin faux dans `DESIGN.md`).
