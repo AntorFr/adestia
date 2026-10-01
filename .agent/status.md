@@ -598,3 +598,19 @@ terminait pendant l'écriture du message en attente fermait sa file, et le
 message ne partait jamais ; il entre désormais dans la file avant d'être
 écrit, et le tour suivant attend son écriture. Scénario de banc :
 `ordre-file-attente`.
+
+v0.82.0 (branche `feature/adestia-instance-url`, **pas mergée**) : **l'instance
+connaît sa propre adresse, quand l'opérateur l'a déclarée.** Déclencheur : un
+agent interrogé sur sa propre adresse répondait ne pas la connaître, alors que
+l'opérateur, lui, la connaît déjà. Nouveau réglage `url:` dans
+`adestia.config.yaml`, à côté de `name`/`locale` — fichier seul comme eux,
+l'écran Réglages n'est pas touché. Validé comme `signatures.origins`
+(`new URL` + protocole http(s)) mais sans son exigence d'origin nu : cette
+valeur n'est jamais comparée bit à bit, seulement affichée, donc un chemin est
+autorisé (`https://host/adestia`, pour une instance derrière un préfixe
+d'ingress) ; une query ou un fragment sont refusés, un `/` final est retiré
+pour un affichage stable. Le contrat `this-instance` porte la phrase « It
+answers at `<url>` » quand elle est renseignée, rien de plus sinon — pas de
+détection automatique, pas de dérivation depuis `host`/`port` (l'adresse de
+BIND interne du process, pas l'adresse publique derrière un ingress/reverse
+proxy). PR ouverte, en attente de recette.
