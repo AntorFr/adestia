@@ -12,7 +12,7 @@
  */
 
 import { chmod, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises'
-import { dirname, join, resolve } from 'node:path'
+import { basename, dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import type { DiscoveredPlugin } from './extensions.js'
@@ -152,6 +152,38 @@ function nameForFolder(contents: string, folder: string): string {
 }
 
 /**
+ * A skill's `agent:` field, pointed at the name its envelope is delivered as.
+ *
+ * Agents are namespaced like skills — `sdlc-relecteur`, not `relecteur` —
+ * because the agents folder is shared exactly as the skills folder is: two
+ * plugins may both ship a `relecteur`, and the workspace's owner may have
+ * written one by hand. Unprefixed, the second delivery would overwrite the
+ * first, or the core would be writing over somebody's own file under a name
+ * it happened to pick too.
+ *
+ * Prefixing the file means the plugin's skills must follow, or `agent:
+ * relecteur` names nothing and the skill silently runs without its envelope.
+ * Only a name THIS plugin ships is rewritten: `agent: Explore` names the
+ * engine's own, and another plugin's agent is not this plugin's to claim.
+ */
+function agentForPlugin(contents: string, plugin: string, shipped: ReadonlySet<string>): string {
+  const frontmatter = /^---\r?\n([\s\S]*?)\r?\n---/.exec(contents)
+  if (!frontmatter) return contents
+  const renamed = frontmatter[1]!.replace(
+    /^agent:([ \t]*)(["']?)([^"'\r\n]*?)\2[ \t]*$/m,
+    (line, space: string, quote: string, name: string) =>
+      shipped.has(name) ? `agent:${space}${quote}${plugin}-${name}${quote}` : line,
+  )
+  if (renamed === frontmatter[1]) return contents
+  return contents.replace(frontmatter[1]!, renamed)
+}
+
+/** `./agents/relecteur.md` → `relecteur`: the name a skill's `agent:` uses. */
+function agentStem(relative: string): string {
+  return basename(relative).replace(/\.md$/, '')
+}
+
+/**
  * `{{plugin_dir}}`, resolved to where the plugin actually sits.
  *
  * A plugin that ships a tool has to tell the agent how to run it, and had no
@@ -179,6 +211,7 @@ async function readPluginSkills(
 
   for (const plugin of plugins) {
     if (!plugin.active) continue
+    const shipped = new Set((plugin.manifest.agents ?? []).map(agentStem))
     for (const relative of plugin.manifest.skills ?? []) {
       try {
         const file = join(plugin.dir, relative)
@@ -187,13 +220,16 @@ async function readPluginSkills(
         // "author" without one quietly overwriting the other.
         const name = relative.replace(/^\.\//, '').split('/').slice(-2, -1)[0] ?? 'skill'
         const folder = `${plugin.manifest.id}-${name}`
-        // The rename and `{{plugin_dir}}` touch `SKILL.md` only: the assets are
+        // The renames and `{{plugin_dir}}` touch `SKILL.md` only: the assets are
         // the plugin's files, copied as they are.
         skills.push(
           await withAssets(
             {
               path: `${folder}/SKILL.md`,
-              contents: resolvePluginDir(nameForFolder(contents, folder), plugin.dir),
+              contents: resolvePluginDir(
+                agentForPlugin(nameForFolder(contents, folder), plugin.manifest.id, shipped),
+                plugin.dir,
+              ),
               source: plugin.manifest.id,
             },
             dirname(file),
@@ -207,6 +243,45 @@ async function readPluginSkills(
     }
   }
   return { skills, problems }
+}
+
+/** A subagent definition, as delivered: `<plugin>-<name>.md`. */
+export interface AgentFile {
+  /** The file name under the agents directory. */
+  readonly path: string
+  readonly contents: string
+  /** Which plugin brought it. The core ships no agents. */
+  readonly source: string
+}
+
+/**
+ * Every active plugin's subagent definitions, renamed as their skills name them.
+ *
+ * The frontmatter `name` follows the file for the reason a skill's does: an
+ * engine may key on either, and the two must not disagree.
+ */
+async function readPluginAgents(
+  plugins: readonly DiscoveredPlugin[],
+): Promise<{ agents: readonly AgentFile[]; problems: readonly string[] }> {
+  const agents: AgentFile[] = []
+  const problems: string[] = []
+  for (const plugin of plugins) {
+    if (!plugin.active) continue
+    for (const relative of plugin.manifest.agents ?? []) {
+      try {
+        const contents = await readFile(join(plugin.dir, relative), 'utf8')
+        const name = `${plugin.manifest.id}-${agentStem(relative)}`
+        agents.push({
+          path: `${name}.md`,
+          contents: resolvePluginDir(nameForFolder(contents, name), plugin.dir),
+          source: plugin.manifest.id,
+        })
+      } catch (error) {
+        problems.push(`${plugin.manifest.id}: ${(error as Error).message}`)
+      }
+    }
+  }
+  return { agents, problems }
 }
 
 /**
@@ -307,14 +382,19 @@ export async function collectSkills(
   plugins: readonly DiscoveredPlugin[],
   stores: readonly Store[] = [],
   facts?: InstanceFacts,
-): Promise<{ skills: readonly SkillFile[]; problems: readonly string[] }> {
+): Promise<{
+  skills: readonly SkillFile[]
+  agents: readonly AgentFile[]
+  problems: readonly string[]
+}> {
   const core = await readCoreSkills()
   const { skills: fromPlugins, problems } = await readPluginSkills(plugins)
+  const { agents, problems: agentProblems } = await readPluginAgents(plugins)
   const composed = [
     ...(facts ? [instanceContract(facts)] : []),
     ...(stores.length > 1 ? [storesContract(stores)] : []),
   ]
-  return { skills: [...core, ...fromPlugins, ...composed], problems }
+  return { skills: [...core, ...fromPlugins, ...composed], agents, problems: [...problems, ...agentProblems] }
 }
 
 /** Marks what Adestia manages, so a hand-written skill is never touched. */
@@ -403,4 +483,44 @@ export async function deliverSkills(
   }
 
   return { written: skills.length, removed }
+}
+
+/**
+ * Writes plugin subagents into the CLI's own agents directory.
+ *
+ * The same ownership rule as skills, one level flatter: an agent is a file,
+ * not a folder, and only a file carrying the marker is ever replaced or
+ * removed. A hand-written agent that shares a delivered name is left alone and
+ * reported, rather than overwritten — it is somebody's brief.
+ */
+export async function deliverAgents(
+  agentsRoot: string,
+  agents: readonly AgentFile[],
+): Promise<{ written: number; removed: number; kept: readonly string[] }> {
+  const root = resolve(agentsRoot)
+  await mkdir(root, { recursive: true })
+
+  const wanted = new Set(agents.map((agent) => agent.path))
+  let removed = 0
+  for (const entry of await readdir(root, { withFileTypes: true }).catch(() => [])) {
+    if (!entry.isFile() || !entry.name.endsWith('.md') || wanted.has(entry.name)) continue
+    const existing = await readFile(join(root, entry.name), 'utf8').catch(() => '')
+    if (!existing.includes(MANAGED_MARKER)) continue
+    await rm(join(root, entry.name), { force: true })
+    removed += 1
+  }
+
+  let written = 0
+  const kept: string[] = []
+  for (const agent of agents) {
+    const target = join(root, agent.path)
+    const existing = await readFile(target, 'utf8').catch(() => undefined)
+    if (existing !== undefined && !existing.includes(MANAGED_MARKER)) {
+      kept.push(agent.path)
+      continue
+    }
+    await writeFile(target, stamped(agent.contents), 'utf8')
+    written += 1
+  }
+  return { written, removed, kept }
 }

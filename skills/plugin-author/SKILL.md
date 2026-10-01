@@ -27,6 +27,7 @@ plugins/<id>/
   setup                 an idempotent executable, run at startup
   skills/<name>/SKILL.md  what the agent is told this plugin offers
   skills/<name>/…        its references and scripts, delivered with it
+  agents/<name>.md      a subagent a skill names with `agent:`, LISTED in the manifest
 ```
 
 `<id>` is the FOLDER NAME, and the folder wins. A manifest claiming a
@@ -109,6 +110,7 @@ comes next.
   "api": "./api.js",
   "setup": "./setup",
   "skills": ["./skills/workbench/SKILL.md"],
+  "agents": ["./agents/relecteur.md"],
   "mcpServers": [{ "name": "cutlist", "command": "node", "args": ["./bin/cutlist.js"] }]
 }
 ```
@@ -150,6 +152,19 @@ Only `SKILL.md` is rewritten on the way — its `name`, `{{plugin_dir}}` and the
 managed marker; the other files are copied as they are. The delivered folder
 is emptied and rewritten at every boot: a file dropped from the plugin is gone
 from the agent's side too.
+
+#### A skill that runs in a fresh context names its agent
+
+`context: fork` with `agent: relecteur` runs the skill inside a subagent, and
+that subagent is a file the plugin ships: list it under `"agents"`
+(`./agents/relecteur.md`, the engine's own agent format — frontmatter `name`,
+`description`, `tools`…, then the brief). It is delivered beside the skills
+(`.claude/agents/` on Claude Code) as `<id>-relecteur.md`, its `name` rewritten
+to match, and every skill of YOUR plugin saying `agent: relecteur` is delivered
+saying `agent: <id>-relecteur`. Write the bare name; the prefix is what keeps
+two plugins' `relecteur` apart and a hand-written one untouched. A name you do
+not ship (`Explore`) is left alone. A driver with no agents folder gets none,
+and the boot log says so.
 
 ### `kind` decides when the plugin is active
 

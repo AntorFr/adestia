@@ -4,7 +4,7 @@ import { join } from 'node:path'
 
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { MANAGED_MARKER, collectSkills, deliverSkills } from '../src/skills.js'
+import { MANAGED_MARKER, collectSkills, deliverAgents, deliverSkills } from '../src/skills.js'
 import type { DiscoveredPlugin } from '../src/extensions.js'
 import { resolveStores } from '../src/stores.js'
 
@@ -18,6 +18,7 @@ const plugin = (
   id: string,
   skills: string[] | undefined,
   active = true,
+  agents?: string[],
 ): DiscoveredPlugin => ({
   manifest: {
     schemaVersion: 1,
@@ -25,6 +26,7 @@ const plugin = (
     kind: 'app',
     description: 'x',
     ...(skills ? { skills } : {}),
+    ...(agents ? { agents } : {}),
   },
   dir: join(root, 'plugins', id),
   active,
@@ -240,6 +242,81 @@ describe('delivering', () => {
       { path: 'a/SKILL.md', contents: '# A', source: 'core' },
     ])
     expect(result.written).toBe(1)
+  })
+})
+
+describe('subagents', () => {
+  const relire =
+    '---\nname: relire-plan\ncontext: fork\nagent: relecteur\n---\n\nRelis.\n'
+  const relecteur = '---\nname: relecteur\ntools: Read\n---\n\nTu relis {{plugin_dir}}.\n'
+
+  it('delivers an agent namespaced like a skill, its name following the file', async () => {
+    await writePluginSkill('sdlc', './agents/relecteur.md', relecteur)
+    const { agents } = await collectSkills([plugin('sdlc', [], true, ['./agents/relecteur.md'])])
+    expect(agents).toHaveLength(1)
+    expect(agents[0]!.path).toBe('sdlc-relecteur.md')
+    expect(agents[0]!.contents).toContain('name: sdlc-relecteur')
+    expect(agents[0]!.contents).toContain('tools: Read')
+    expect(agents[0]!.contents).toContain(`Tu relis ${join(root, 'plugins', 'sdlc')}.`)
+  })
+
+  it('points a skill’s `agent:` at the delivered name, so the envelope is found', async () => {
+    // The file is prefixed; a skill still saying `agent: relecteur` would name
+    // nothing, and run without its envelope without a word.
+    await writePluginSkill('sdlc', './skills/relire-plan/SKILL.md', relire)
+    await writePluginSkill('sdlc', './agents/relecteur.md', relecteur)
+    const { skills } = await collectSkills([
+      plugin('sdlc', ['./skills/relire-plan/SKILL.md'], true, ['./agents/relecteur.md']),
+    ])
+    const delivered = skills.find((s) => s.source === 'sdlc')!.contents
+    expect(delivered).toContain('agent: sdlc-relecteur')
+    expect(delivered).toContain('context: fork')
+  })
+
+  it('leaves an `agent:` the plugin does not ship alone', async () => {
+    // `Explore` is the engine's own; another plugin's agent is not this one's.
+    await writePluginSkill('sdlc', './skills/x/SKILL.md', '---\nname: x\nagent: Explore\n---\n')
+    const { skills } = await collectSkills([
+      plugin('sdlc', ['./skills/x/SKILL.md'], true, ['./agents/relecteur.md']),
+    ])
+    expect(skills.find((s) => s.source === 'sdlc')!.contents).toContain('agent: Explore')
+  })
+
+  it('reports a missing agent file and ignores an inactive plugin', async () => {
+    const { agents, problems } = await collectSkills([
+      plugin('ghost', [], true, ['./agents/nobody.md']),
+      plugin('off', [], false, ['./agents/nobody.md']),
+    ])
+    expect(agents).toEqual([])
+    expect(problems).toHaveLength(1)
+    expect(problems[0]).toContain('ghost')
+  })
+
+  it('writes, refreshes and withdraws only what it marked', async () => {
+    const dir = join(root, '.claude', 'agents')
+    await mkdir(dir, { recursive: true })
+    await writeFile(join(dir, 'mine.md'), '# my own agent')
+    await writeFile(join(dir, 'sdlc-hand.md'), '# hand-written, same name')
+
+    const first = await deliverAgents(dir, [
+      { path: 'sdlc-relecteur.md', contents: '---\nname: sdlc-relecteur\n---\nv1\n', source: 'sdlc' },
+      { path: 'sdlc-hand.md', contents: 'ours', source: 'sdlc' },
+    ])
+    // A hand-written file sharing a delivered name is somebody's brief: kept.
+    expect(first.kept).toEqual(['sdlc-hand.md'])
+    expect(await readFile(join(dir, 'sdlc-hand.md'), 'utf8')).toBe('# hand-written, same name')
+    const written = await readFile(join(dir, 'sdlc-relecteur.md'), 'utf8')
+    expect(written.startsWith('---\nname: sdlc-relecteur\n---\n')).toBe(true)
+    expect(written).toContain(MANAGED_MARKER)
+
+    await deliverAgents(dir, [
+      { path: 'sdlc-relecteur.md', contents: '---\nname: sdlc-relecteur\n---\nv2\n', source: 'sdlc' },
+    ])
+    expect(await readFile(join(dir, 'sdlc-relecteur.md'), 'utf8')).toContain('v2')
+
+    const last = await deliverAgents(dir, [])
+    expect(last.removed).toBe(1)
+    expect((await readdir(dir)).sort()).toEqual(['mine.md', 'sdlc-hand.md'])
   })
 })
 
