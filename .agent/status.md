@@ -647,3 +647,20 @@ voyait : le montage du slot reconstruisait le contexte sans `user`. Hors
 chantier, non corrigé : le ■ d'arrêt n'est jamais rouge (`.adestia-composer
 button` l'emporte sur `.adestia-composer__stop`). Scénario de banc :
 `dobby-sceau`.
+
+v0.86.0 (mergée et taguée le 01/10, **pas déployée**) : **l'instance
+connaît sa propre adresse, quand l'opérateur l'a déclarée.** Déclencheur : un
+agent interrogé sur sa propre adresse répondait ne pas la connaître, alors que
+l'opérateur, lui, la connaît déjà. Nouveau réglage `url:` dans
+`adestia.config.yaml`, à côté de `name`/`locale` — fichier seul comme eux,
+l'écran Réglages n'est pas touché. Validé comme `signatures.origins`
+(`new URL` + protocole http(s)) mais sans son exigence d'origin nu : cette
+valeur n'est jamais comparée bit à bit, seulement affichée, donc un chemin est
+autorisé (`https://host/adestia`, pour une instance derrière un préfixe
+d'ingress) ; une query ou un fragment sont refusés, un `/` final est retiré
+pour un affichage stable. Le contrat `this-instance` porte la phrase « It
+answers at `<url>` » quand elle est renseignée, rien de plus sinon — pas de
+détection automatique, pas de dérivation depuis `host`/`port` (l'adresse de
+BIND interne du process, pas l'adresse publique derrière un ingress/reverse
+proxy). Recette sautée sur décision de Monsieur (vérification seule : besoin,
+sécurité, qualité au vert après correction d'un chemin faux dans `DESIGN.md`).

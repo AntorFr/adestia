@@ -63,6 +63,7 @@ const KNOWN_KEYS = new Set([
   'dataDir',
   'name',
   'locale',
+  'url',
   'secrets',
   'auth',
   'workspace',
@@ -473,6 +474,43 @@ function readInstanceName(value: unknown, issues: string[]): string | undefined 
   return name
 }
 
+/**
+ * The instance's public address, when the operator has declared one.
+ *
+ * Calqued on `signatures.origins` below (`new URL` + an http(s) protocol
+ * check), but not on its exact-origin rule: that value is compared bit for
+ * bit against another origin, and this one is only ever displayed, so a path
+ * is allowed — an instance mounted under an ingress prefix still has one
+ * address. A query or a fragment is refused: an instance address has no use
+ * for either, and their presence smells of a URL copied from one specific
+ * place in the interface rather than a deployment's address.
+ */
+function readInstanceUrl(value: unknown, issues: string[]): string | undefined {
+  if (value === undefined || value === null) return undefined
+  if (typeof value !== 'string') {
+    issues.push('url must be a string')
+    return undefined
+  }
+  const url = value.trim()
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    issues.push(`url: "${url}" is not a valid URL`)
+    return undefined
+  }
+  if (!/^https?:$/.test(parsed.protocol)) {
+    issues.push(`url must be http or https, not "${parsed.protocol.replace(/:$/, '')}"`)
+    return undefined
+  }
+  if (parsed.search !== '' || parsed.hash !== '') {
+    issues.push(`url: "${url}" must not carry a query or a fragment`)
+    return undefined
+  }
+  // A trailing slash is a display detail, not a different address.
+  return url.replace(/\/+$/, '')
+}
+
 function applyOverrides(raw: Record<string, unknown>, env: NodeJS.ProcessEnv): void {
   for (const [variable, path] of Object.entries(ENV_OVERRIDES)) {
     const value = env[variable]
@@ -702,6 +740,7 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
   // which is how a bad secret name reached a plugin with no complaint.
   const secrets = readSecrets(raw['secrets'], issues)
   const name = readInstanceName(raw['name'], issues)
+  const url = readInstanceUrl(raw['url'], issues)
 
   if (issues.length > 0) throw new ConfigError(issues)
 
@@ -712,6 +751,7 @@ export function parseConfig(source: string, env: NodeJS.ProcessEnv = process.env
     dataDir: typeof raw['dataDir'] === 'string' ? raw['dataDir'] : DEFAULTS.dataDir,
     ...(name ? { name } : {}),
     ...(typeof raw['locale'] === 'string' ? { locale: raw['locale'] } : {}),
+    ...(url ? { url } : {}),
     secrets,
     auth,
     workspace,

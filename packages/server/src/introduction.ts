@@ -61,6 +61,8 @@ export interface InstanceFacts {
   /** What the operator called this instance, when they called it anything. */
   readonly name?: string | undefined
   readonly locale?: string | undefined
+  /** The public address the operator declared, when they declared one. */
+  readonly url?: string | undefined
   /** The engine id as configured — `claude-code`, `copilot-cli`. */
   readonly driverId: string
   readonly workspaceRoot: string
@@ -212,6 +214,7 @@ export function instanceContract(facts: InstanceFacts): SkillFile {
   const speaks = facts.locale
     ? ` Its language is \`${facts.locale}\`.`
     : ' Its language follows whoever is reading, so answer in the language you are addressed in.'
+  const reachableAt = facts.url ? ` It answers at \`${facts.url}\`.` : ''
 
   const contents = `---
 name: ${CONTRACT_NAME}
@@ -225,7 +228,7 @@ self-hosted web interface that pairs a chat with visual apps over one workspace
 of markdown files. Somebody reads your answers in a browser, and the files you
 write are drawn there as pages, beside the conversation.
 
-${called}${speaks}
+${called}${speaks}${reachableAt}
 
 It runs you through the \`${facts.driverId}\` engine: the shell spawns that CLI
 for every turn, and you are the agent it starts.
