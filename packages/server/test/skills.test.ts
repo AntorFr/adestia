@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -120,6 +120,32 @@ describe('collecting', () => {
     expect(skills.find((s) => s.source === 'plain')?.contents).toBe('# Just prose\n')
   })
 
+  it('carries the whole skill folder, not only SKILL.md', async () => {
+    // The body says "read `references/x.md` when…"; delivered alone, the
+    // skill pointed at a file that was never there.
+    await writePluginSkill('sdlc', './skills/ux/SKILL.md', '---\nname: ux\n---\n\nLis `references/etats.md`.\n')
+    await writePluginSkill('sdlc', './skills/ux/references/etats.md', '# États {{plugin_dir}}\n')
+    await writePluginSkill('sdlc', './skills/ux/scripts/deep/contraste.py', 'print(1)\n')
+    await writePluginSkill('sdlc', './skills/ux/.swap', 'editor junk')
+    await writePluginSkill('sdlc', './skills/ux/.cache/x.md', 'hidden folder')
+    const { skills } = await collectSkills([plugin('sdlc', ['./skills/ux/SKILL.md'])])
+    const delivered = skills.find((s) => s.source === 'sdlc')!
+
+    expect(delivered.assets?.map((a) => a.path)).toEqual([
+      'references/etats.md',
+      'scripts/deep/contraste.py',
+    ])
+    // Only SKILL.md is rewritten: the assets are the plugin's files, as they are.
+    expect(delivered.contents).toContain('name: sdlc-ux')
+    expect(delivered.assets?.[0]?.contents.toString('utf8')).toBe('# États {{plugin_dir}}\n')
+  })
+
+  it('leaves the assets field out of a skill that has none', async () => {
+    await writePluginSkill('solo', './skills/solo/SKILL.md', '# Solo')
+    const { skills } = await collectSkills([plugin('solo', ['./skills/solo/SKILL.md'])])
+    expect(skills.find((s) => s.source === 'solo')).not.toHaveProperty('assets')
+  })
+
   it('reports a missing contract without failing the boot', async () => {
     // The plugin still works; the agent just will not know it exists, and
     // that is worth saying out loud.
@@ -163,6 +189,50 @@ describe('delivering', () => {
     await deliverSkills(target(), [{ path: 'a/SKILL.md', contents: '# v1', source: 'x' }])
     await deliverSkills(target(), [{ path: 'a/SKILL.md', contents: '# v2', source: 'x' }])
     expect(await readFile(join(target(), 'a', 'SKILL.md'), 'utf8')).toContain('# v2')
+  })
+
+  it('writes a skill’s assets beside it, marker on SKILL.md only', async () => {
+    await deliverSkills(target(), [
+      {
+        path: 'p-ux/SKILL.md',
+        contents: '---\nname: p-ux\n---\n\n# UX\n',
+        source: 'p',
+        assets: [
+          { path: 'references/etats.md', contents: Buffer.from('# États\n'), mode: 0o644 },
+          { path: 'scripts/run.py', contents: Buffer.from('print(1)\n'), mode: 0o755 },
+        ],
+      },
+    ])
+    expect(await readFile(join(target(), 'p-ux', 'SKILL.md'), 'utf8')).toContain(MANAGED_MARKER)
+    expect(await readFile(join(target(), 'p-ux', 'references', 'etats.md'), 'utf8')).toBe('# États\n')
+    // A script shipped executable is still runnable where the agent finds it.
+    expect((await stat(join(target(), 'p-ux', 'scripts', 'run.py'))).mode & 0o111).not.toBe(0)
+  })
+
+  it('drops an asset the new version no longer ships', async () => {
+    // Idempotent means the folder says what THIS version says: a reference
+    // left over from the last one would be read as current.
+    const skill = (assets: { path: string; contents: Buffer; mode: number }[]) => ({
+      path: 'p-ux/SKILL.md',
+      contents: '# UX',
+      source: 'p',
+      assets,
+    })
+    await deliverSkills(target(), [
+      skill([{ path: 'references/old.md', contents: Buffer.from('old'), mode: 0o644 }]),
+    ])
+    await deliverSkills(target(), [
+      skill([{ path: 'references/new.md', contents: Buffer.from('new'), mode: 0o644 }]),
+    ])
+    expect(await readdir(join(target(), 'p-ux', 'references'))).toEqual(['new.md'])
+  })
+
+  it('never wipes a hand-written folder that happens to share a name', async () => {
+    await mkdir(join(target(), 'p-ux'), { recursive: true })
+    await writeFile(join(target(), 'p-ux', 'SKILL.md'), '# Mine')
+    await writeFile(join(target(), 'p-ux', 'notes.md'), 'my notes')
+    await deliverSkills(target(), [{ path: 'p-ux/SKILL.md', contents: '# UX', source: 'p' }])
+    expect(await readFile(join(target(), 'p-ux', 'notes.md'), 'utf8')).toBe('my notes')
   })
 
   it('creates the directory when the workspace is new', async () => {

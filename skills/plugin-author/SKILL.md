@@ -26,6 +26,7 @@ plugins/<id>/
   api.js                a Fastify plugin, mounted at startup
   setup                 an idempotent executable, run at startup
   skills/<name>/SKILL.md  what the agent is told this plugin offers
+  skills/<name>/…        its references and scripts, delivered with it
 ```
 
 `<id>` is the FOLDER NAME, and the folder wins. A manifest claiming a
@@ -139,6 +140,16 @@ environment" and wrote that conclusion into two project fiches, which then
 carried a warning to re-validate against a tool that had been installed and
 working all along. A wrong path does not fail loudly — it teaches the agent
 something false, and the agent writes it down.
+
+#### A skill is its whole folder
+
+Everything under the folder holding a skill's `SKILL.md` is delivered with it
+(hidden files and symbolic links excepted), so a body may say "read
+`references/grille.md` when…" or run `scripts/check.py` relative to itself.
+Only `SKILL.md` is rewritten on the way — its `name`, `{{plugin_dir}}` and the
+managed marker; the other files are copied as they are. The delivered folder
+is emptied and rewritten at every boot: a file dropped from the plugin is gone
+from the agent's side too.
 
 ### `kind` decides when the plugin is active
 

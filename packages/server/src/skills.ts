@@ -11,7 +11,7 @@
  * anywhere.
  */
 
-import { mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -43,12 +43,61 @@ async function findCoreSkills(): Promise<string | undefined> {
   return undefined
 }
 
+/** A file a skill carries beside its `SKILL.md`: a reference, a script. */
+export interface SkillAsset {
+  /** Relative to the skill's folder, `/`-separated: `references/grille.md`. */
+  readonly path: string
+  /** Copied byte for byte — a script is not text to rewrite. */
+  readonly contents: Buffer
+  /** Kept so a script shipped executable is still executable once delivered. */
+  readonly mode: number
+}
+
 export interface SkillFile {
   /** `<name>/SKILL.md`, the path under the skills directory. */
   readonly path: string
   readonly contents: string
   /** Which plugin brought it, or `core` for the product's own. */
   readonly source: string
+  /** Everything else in the skill's folder, delivered next to it. */
+  readonly assets?: readonly SkillAsset[]
+}
+
+/**
+ * Every file under a skill's folder except `SKILL.md` itself.
+ *
+ * A skill is a FOLDER, not a file: its body says "read `references/x.md`
+ * when…" and runs `scripts/y.py`, relative to where it sits. Delivering the
+ * `SKILL.md` alone handed the agent a page pointing at files that were never
+ * there — the skill looked whole and failed only at the moment it was needed.
+ *
+ * Hidden entries stay behind (an editor's swap file, a `.DS_Store` are not
+ * part of any contract), and so do symbolic links: a link is not a file of the
+ * plugin's, and following one would let a plugin copy anything readable on the
+ * host into the workspace.
+ */
+async function readSkillAssets(dir: string, prefix = '', depth = 0): Promise<SkillAsset[]> {
+  if (depth > 8) return []
+  const assets: SkillAsset[] = []
+  const entries = await readdir(dir, { withFileTypes: true }).catch(() => [])
+  for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+    if (entry.name.startsWith('.')) continue
+    const path = prefix ? `${prefix}/${entry.name}` : entry.name
+    const full = join(dir, entry.name)
+    if (entry.isDirectory()) {
+      assets.push(...(await readSkillAssets(full, path, depth + 1)))
+    } else if (entry.isFile() && path !== 'SKILL.md') {
+      const [contents, info] = await Promise.all([readFile(full), stat(full)])
+      assets.push({ path, contents, mode: info.mode & 0o777 })
+    }
+  }
+  return assets
+}
+
+/** Leaves the field out entirely when there is nothing to carry. */
+async function withAssets(skill: SkillFile, dir: string): Promise<SkillFile> {
+  const assets = await readSkillAssets(dir)
+  return assets.length > 0 ? { ...skill, assets } : skill
 }
 
 async function readCoreSkills(): Promise<readonly SkillFile[]> {
@@ -70,7 +119,9 @@ async function readCoreSkills(): Promise<readonly SkillFile[]> {
   for (const name of entries.sort()) {
     try {
       const contents = await readFile(join(root, name, 'SKILL.md'), 'utf8')
-      skills.push({ path: `${name}/SKILL.md`, contents, source: 'core' })
+      skills.push(
+        await withAssets({ path: `${name}/SKILL.md`, contents, source: 'core' }, join(root, name)),
+      )
     } catch {
       continue
     }
@@ -130,16 +181,24 @@ async function readPluginSkills(
     if (!plugin.active) continue
     for (const relative of plugin.manifest.skills ?? []) {
       try {
-        const contents = await readFile(join(plugin.dir, relative), 'utf8')
+        const file = join(plugin.dir, relative)
+        const contents = await readFile(file, 'utf8')
         // Namespaced by plugin id so two plugins may both ship a skill called
         // "author" without one quietly overwriting the other.
         const name = relative.replace(/^\.\//, '').split('/').slice(-2, -1)[0] ?? 'skill'
         const folder = `${plugin.manifest.id}-${name}`
-        skills.push({
-          path: `${folder}/SKILL.md`,
-          contents: resolvePluginDir(nameForFolder(contents, folder), plugin.dir),
-          source: plugin.manifest.id,
-        })
+        // The rename and `{{plugin_dir}}` touch `SKILL.md` only: the assets are
+        // the plugin's files, copied as they are.
+        skills.push(
+          await withAssets(
+            {
+              path: `${folder}/SKILL.md`,
+              contents: resolvePluginDir(nameForFolder(contents, folder), plugin.dir),
+              source: plugin.manifest.id,
+            },
+            dirname(file),
+          ),
+        )
       } catch (error) {
         // Reported, not fatal: a plugin whose contract is missing still works,
         // but the agent will not know it exists — and that is worth saying.
@@ -326,8 +385,21 @@ export async function deliverSkills(
 
   for (const skill of skills) {
     const target = join(root, skill.path)
-    await mkdir(dirname(target), { recursive: true })
+    const folder = dirname(target)
+    // A managed folder is emptied before it is written, so a reference the
+    // plugin dropped in its new version does not linger beside the skill that
+    // stopped citing it. Ownership is read off `SKILL.md`, as for withdrawal:
+    // a folder somebody wrote by hand is overwritten file by file, never wiped.
+    const existing = await readFile(target, 'utf8').catch(() => '')
+    if (existing.includes(MANAGED_MARKER)) await rm(folder, { recursive: true, force: true })
+    await mkdir(folder, { recursive: true })
     await writeFile(target, stamped(skill.contents), 'utf8')
+    for (const asset of skill.assets ?? []) {
+      const path = join(folder, asset.path)
+      await mkdir(dirname(path), { recursive: true })
+      await writeFile(path, asset.contents)
+      await chmod(path, asset.mode)
+    }
   }
 
   return { written: skills.length, removed }
