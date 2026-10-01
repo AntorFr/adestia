@@ -397,4 +397,39 @@ describe('the shell introducing itself', () => {
     await boot('workspace:\n  root: ./ws\n')
     await expect(readFile(contractPath('ws'), 'utf8')).rejects.toThrow()
   })
+
+  it('carries the declared instance address, so the agent can answer "what is your URL"', async () => {
+    // The need this proves: an operator who filled in the public address gets
+    // an agent able to hand it back verbatim when asked — "quelle est
+    // l'adresse de cette instance ?" — instead of guessing one or saying it
+    // does not know. Exercised through the REAL path — a YAML file on disk,
+    // parsed by the same `parseConfig` the server boots with, assembled into
+    // facts and delivered to the file a CLI actually reads — not a contract
+    // built from a hand-written `InstanceFacts` object.
+    await boot(
+      'name: Atelier\nurl: https://atelier.example/\nworkspace:\n  root: ./ws\n',
+      'adestia.config.yaml',
+      () => new SkilledDriver(),
+    )
+    const contract = await readFile(contractPath('ws'), 'utf8')
+    // The trailing slash is a display detail the config layer strips (see
+    // `readInstanceUrl`); the fact the agent is handed is the address itself.
+    expect(contract).toContain('It answers at `https://atelier.example`.')
+  })
+
+  it('says nothing about an address when none was declared, and keeps pointing to Settings', async () => {
+    // No regression: this feature only ever ADDS a fact. An instance whose
+    // operator never filled in `url` must keep behaving exactly as it does
+    // today — no guess, no invented host, the same redirection to whoever
+    // would actually know.
+    await boot(
+      'name: Atelier\nworkspace:\n  root: ./ws\n',
+      'adestia.config.yaml',
+      () => new SkilledDriver(),
+    )
+    const contract = await readFile(contractPath('ws'), 'utf8')
+    expect(contract).not.toContain('It answers at')
+    expect(contract).toContain('Settings screen')
+    expect(contract).toMatch(/whoever runs\s+the deployment/)
+  })
 })
