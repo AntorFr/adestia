@@ -42,6 +42,7 @@ export function SkinSlot({
         compose: (text) => current.current.compose(text),
         focusComposer: () => current.current.focusComposer(),
         ...(current.current.instance ? { instance: current.current.instance } : {}),
+        ...(current.current.user ? { user: current.current.user } : {}),
       })
     } catch (error) {
       console.error('skin slot failed to render:', error)

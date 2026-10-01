@@ -110,7 +110,7 @@
   border-radius: var(--radius);
   background: var(--surface-sunken);
   overflow-x: auto;
-  font-family: var(--font-mono);
+  font-family: var(--font-code);
   font-size: var(--text-sm);
 }
 
@@ -174,7 +174,7 @@ h2.adestia-editor__title { padding-bottom: 3px; }
    own name: something is here, and deleting it is now a decision. */
 .adestia-block:empty::before {
   content: ':::' attr(data-block);
-  font-family: var(--font-mono);
+  font-family: var(--font-code);
   font-size: var(--text-sm);
   color: var(--text-muted);
 }
@@ -184,7 +184,7 @@ h2.adestia-editor__title { padding-bottom: 3px; }
    container's placeholder above. */
 .adestia-block--app,
 .adestia-block--row {
-  font-family: var(--font-mono);
+  font-family: var(--font-code);
   font-size: var(--text-sm);
   color: var(--text-muted);
   border-inline-start-style: dashed;
@@ -346,7 +346,7 @@ body.adestia-dragging-block * { cursor: grabbing !important; user-select: none; 
   border: 1px dashed var(--border-strong);
   border-radius: var(--radius);
   background: var(--surface-sunken);
-  font-family: var(--font-mono);
+  font-family: var(--font-code);
   font-size: 0.9em;
 }
 

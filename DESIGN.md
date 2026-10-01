@@ -3016,3 +3016,29 @@ its embed mode could not have worked on any browser; fixed on Tessera's side
 (`tessera-ceremony-embed`). What remains unmeasured is an iPhone, in the
 installed PWA: if the passkey does not rise in the frame, `embed: false` puts
 every card back on the tab path without touching anything else.
+
+**2026-10-01 (a livery signs with two marks, and its labels are not its code):**
+the Dobby livery was drawn with a wax seal for its crest and its send, small
+capitals for its apparatus, a gilt initial on each answer and the reader's
+name on its bookplate — and shipped without four of the five, each refused by
+the contract rather than by taste. The doctrine says what to do then: *if a
+look is not reachable through a token, the contract gets extended*.
+
+`--font-mono` was carrying two roles that only coincide in a terminal: the
+apparatus (labels, chips, counts) and code (blocks, raw sources, paths). A
+livery whose labels are small capitals turned every shell command unreadable,
+so code got its own voice, `--font-code`, which FOLLOWS the apparatus unless a
+livery splits them — the three existing ones see no change.
+
+The send button and the crest are the two marks a body signs with. Each has
+its own knobs now (`--send-*`, `--crest-*`), defaulting to exactly what they
+were — the accent square, the tile plate — so a seal costs no other control
+its corners. The send's glyph is a hook like the crest (`sendIcon`), markup
+from the module the instance already runs. The drop cap is six inert tokens
+on the first letter of an answer.
+
+The name was never missing: OIDC's `name` reaches `/api/instance` and the menu
+shows it. What a livery lacked was the right to read it — and the slot mount
+rebuilt its context without it, which no type caught and the bench did. The
+`hero` and `console` slots now receive `user`, under OIDC only: a local
+instance answers "Local user", and greeting that is worse than greeting nobody.

@@ -47,6 +47,13 @@ export interface Skin {
    * reach it did not have.
    */
   readonly crest?: string
+  /**
+   * SVG markup for the send button's glyph, in `currentColor` — the `↑`
+   * otherwise. Same reasoning as `crest`. Only the glyph: the button's shape
+   * and colour are tokens (`--send-*`), because the composer is the shell's
+   * box and stays one product whatever wears it.
+   */
+  readonly sendIcon?: string
 }
 
 const ALLOWED_FIELDS = [
@@ -59,6 +66,7 @@ const ALLOWED_FIELDS = [
   'greetingEvening',
   'greetingAside',
   'crest',
+  'sendIcon',
 ] as const
 
 /**
@@ -89,6 +97,26 @@ export interface SkinSlotContext {
     readonly turns: { readonly max: number; readonly running: number }
     readonly plugins: readonly { readonly id: string }[]
   }
+  /**
+   * For `hero` and `console`: who is signed in, as the identity provider
+   * names them. Present only under OIDC — a local instance has no person
+   * behind it, and greeting "Local user" would be worse than greeting nobody.
+   */
+  readonly user?: { readonly displayName: string }
+}
+
+/**
+ * Who a livery may greet: the person the identity provider named, and only
+ * under OIDC — the settings menu draws the same rule. Spread into a slot's
+ * context, so "nobody" is an absent key rather than an empty name.
+ */
+export function skinUser(instance: {
+  readonly auth: { readonly mode: string }
+  readonly user: { readonly displayName: string } | null
+}): { readonly user?: { readonly displayName: string } } {
+  return instance.auth.mode === 'oidc' && instance.user
+    ? { user: { displayName: instance.user.displayName } }
+    : {}
 }
 
 /** The three living slots a skin may fill. All optional, like everything else. */

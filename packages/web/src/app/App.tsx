@@ -28,6 +28,7 @@ import type { LoadedPlugin } from '../plugins/loader.js'
 import { MissingPage } from './MissingPage.js'
 import { Problems } from './Problems.js'
 import { screenView, trailOf } from './trail.js'
+import { skinUser } from './skin.js'
 import { useInstance } from './useInstance.js'
 import { useMobile } from './useMobile.js'
 import { usePage } from './usePage.js'
@@ -267,6 +268,8 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   if (fatal) return <FatalGate t={t} message={fatal} />
   if (!instance) return <LoadingGate />
 
+  const slotUser = skinUser(instance)
+
   return (
     <>
     <div
@@ -296,6 +299,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
         {...(skin.placeholder ? { placeholder: skin.placeholder } : {})}
         {...(skin.brand ? { brand: skin.brand } : {})}
         {...(skin.crest ? { crest: skin.crest } : {})}
+        {...(skin.sendIcon ? { sendIcon: skin.sendIcon } : {})}
         {...(skin.busy ? { busySlot: skin.busy } : {})}
         {...(mobile ? { onOpenCanvas: () => setScreen('canvas') } : {})}
         {...(view ? { view } : {})}
@@ -312,6 +316,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
               compose: (text) => composeRef.current?.(text),
               focusComposer: () => composeRef.current?.(''),
               instance,
+              ...slotUser,
             }}
           />
         )}
@@ -544,6 +549,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
                         compose: (text) => composeRef.current?.(text),
                         focusComposer: () => composeRef.current?.(''),
                         instance,
+                        ...slotUser,
                       }}
                     />
                   ),

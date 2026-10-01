@@ -24,6 +24,21 @@ describe('SkinSlot', () => {
     expect(container.querySelector('.mascot')).toBeTruthy()
   })
 
+  it('passes the signed-in person through to the livery', () => {
+    // The shell built `user` and the slot rebuilt the context without it:
+    // green on every type, and a livery greeting Madame under OIDC.
+    const seen = vi.fn()
+    render(
+      <SkinSlot
+        context={{ ...context, user: { displayName: 'Jeanne Martin' } }}
+        render={(_host, slot) => {
+          seen(slot.user)
+        }}
+      />,
+    )
+    expect(seen).toHaveBeenCalledWith({ displayName: 'Jeanne Martin' })
+  })
+
   it('runs the teardown on unmount, then empties the host regardless', () => {
     const teardown = vi.fn()
     const { container, unmount } = render(
