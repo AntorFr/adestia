@@ -105,6 +105,35 @@
   --radius-round: 50%;
   --radius-bubble: 15px;
 
+  /* The send button and the crest are the two marks a body signs with, so
+     each has its own knobs rather than borrowing a scale step: a livery can
+     make them a wax seal without making every control round. The defaults
+     ARE the base look — the accent square, the accent plate. */
+  --send-radius: var(--radius);
+  --send-bg: var(--accent);
+  --send-text: var(--accent-text);
+  --send-shadow: none;
+  --crest-radius: var(--radius-ctl);
+  --crest-bg: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--accent) var(--plate-top), var(--plate-base)),
+    color-mix(in srgb, var(--accent) var(--plate-mix), var(--plate-base))
+  );
+  --crest-fg: color-mix(in srgb, var(--accent) var(--plate-fg-tint), var(--plate-fg));
+  --crest-border: var(--plate-border-width) solid
+    color-mix(in srgb, var(--accent) var(--plate-border-tint), transparent);
+  --crest-shadow: var(--shadow-sm);
+
+  /* A drop cap on the first paragraph of an answer. Inert in the base: not
+     floated, the body's size, face and colour — a letter like the others.
+     The leading matches the prose's, so an unset cap moves nothing. */
+  --drop-cap-float: none;
+  --drop-cap-size: 1em;
+  --drop-cap-font: var(--font);
+  --drop-cap-color: currentColor;
+  --drop-cap-leading: 1.55;
+  --drop-cap-pad: 0;
+
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -114,10 +143,13 @@
 
   /* Three voices: system for reading, serif for address, mono for apparatus
      (labels, chips, counts). The serif is what makes a greeting a greeting
-     rather than a heading. */
+     rather than a heading. Code — a block, a raw source, a path — has a
+     fourth that FOLLOWS the apparatus by default: a livery may dress its
+     labels in small capitals, but a shell command has to stay a fixed pitch. */
   --font: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
   --font-title: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --font-code: var(--font-mono);
   --text-sm: 0.8125rem;
   --text-base: 0.9375rem;
   --text-lg: 1.125rem;

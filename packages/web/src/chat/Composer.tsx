@@ -145,6 +145,7 @@ export function Composer({
   stopping,
   blocked,
   placeholder,
+  sendIcon,
   fetchImpl = fetch,
   extraButtons,
   onFill,
@@ -160,6 +161,8 @@ export function Composer({
   /** A question is on screen: the turn is waiting on it, not on more text. */
   blocked?: boolean
   placeholder?: string
+  /** The livery's send glyph, as SVG markup (see skin.ts). */
+  sendIcon?: string
   fetchImpl?: typeof fetch
   extraButtons?: readonly ComposerButton[]
   onFill?: (fill: (text: string) => void) => void
@@ -375,7 +378,17 @@ export function Composer({
           disabled={(text.trim() === '' && attachments.length === 0) || blocked}
           aria-label={t('Send')}
         >
-          ↑
+          {/* The livery's glyph comes from the skin MODULE, code the
+              instance already runs — inlining it adds no reach. */}
+          {sendIcon ? (
+            <span
+              className="adestia-composer__glyph"
+              aria-hidden="true"
+              dangerouslySetInnerHTML={{ __html: sendIcon }}
+            />
+          ) : (
+            '↑'
+          )}
         </button>
       )}
     </form>

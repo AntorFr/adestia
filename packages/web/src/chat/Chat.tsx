@@ -44,6 +44,8 @@ export interface ChatProps {
   readonly brand?: string
   /** SVG markup for the crest plate, from the skin module (see skin.ts). */
   readonly crest?: string
+  /** SVG markup for the send glyph, from the skin module (see skin.ts). */
+  readonly sendIcon?: string
   /** The livery's working indicator, replacing the three dots. */
   readonly busySlot?: SkinSlotRender
   readonly fetchImpl?: typeof fetch
@@ -92,6 +94,7 @@ export function Chat({
   placeholder,
   brand,
   crest,
+  sendIcon,
   busySlot,
   fetchImpl,
   t = (key) => key,
@@ -520,6 +523,7 @@ export function Chat({
         stopping={active.stopping}
         blocked={active.live?.ask !== undefined && !answered.has(active.live.ask.id)}
         {...(placeholder ? { placeholder } : {})}
+        {...(sendIcon ? { sendIcon } : {})}
         t={t}
       />
     </section>

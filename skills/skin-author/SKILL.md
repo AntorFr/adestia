@@ -94,13 +94,22 @@ groups, and the gesture each one carries:
 
 **Voices.** `--font` is for reading, `--font-title` for address (the greeting,
 the brand), `--font-mono` for apparatus (labels, chips, counts),
-`--font-input` for the composer. Named by ROLE so a terminal-like skin can set
+`--font-code` for code (blocks, raw sources, paths), `--font-input` for the
+composer. Named by ROLE so a terminal-like skin can set
 `--font-title: var(--font-mono)` and a soft one can go rounded — no rule ever
-says "monospace".
+says "monospace". `--font-code` follows `--font-mono` unless you split them:
+do, the moment your apparatus is not a fixed pitch (small capitals, a serif),
+or every shell command in a reply turns unreadable.
 
-**Radii, the whole scale.** `--radius-micro/-sm/-ctl/…/-pill/-round` — and
-`--radius-round` matters: a hard-edged skin sets it to `2px` and the send
-button stops being a circle. One token, one identity decision.
+**Radii, the whole scale.** `--radius-micro/-sm/-ctl/…/-pill/-round`. One
+token, one identity decision: a hard-edged skin lowers them all.
+
+**The two signatures: send and crest.** The send button and the crest each
+have their own knobs, so a livery can make them a seal without rounding every
+control. `--send-radius/-bg/-text/-shadow` (default: the accent, at
+`--radius`) and `--crest-radius/-bg/-fg/-border/-shadow` (default: the tile
+plate below). `-bg` takes any background, a gradient included. The glyphs are
+hooks: `crest` and `sendIcon` (see below).
 
 **Shadows, three depths.** `--shadow-sm/--shadow/--shadow-lg`. A skin that
 separates by borders instead of depth sets `--shadow-sm: none` and keeps only
@@ -131,7 +140,9 @@ themselves by label alone, which can be exactly the statement intended.
 **Signature.** `--ghosttag: "NAME"` paints an outline monogram behind the
 greeting. `--caret-display: inline-block` turns on a beating block caret in
 the ask bar. `--label-size`/`--label-track` tighten or loosen every apparatus
-label; `--title-track` does the same for titles. All inert in the base.
+label; `--title-track` does the same for titles. `--drop-cap-float/-size/-font/-color/-leading/-pad` dress the first letter
+of an answer (`left`, `2.7em`, the title face, the accent, `0.8` gives a
+printed chapter's initial). All inert in the base.
 
 ## Both themes, or one on purpose
 
@@ -161,6 +172,9 @@ export default function skin(api) {
     greetingAside: 'What needs doing?',
     // The rail's mark, inline SVG in currentColor, worn on an accent plate.
     crest: '<svg viewBox="0 0 100 100" fill="currentColor">…</svg>',
+    // The send button's glyph in place of the ↑, same format. Its shape and
+    // colour are the `--send-*` tokens, never this.
+    sendIcon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor">…</svg>',
   }
 }
 ```
@@ -177,7 +191,9 @@ export default function skin() {
     // What sits under it (the brief, the app and section mosaics, their
     // counts, arranging them) stays the shell's whatever the livery is, and
     // what you want THOSE to look like is a token. `context.instance` carries
-    // the driver and the active plugins, so a count needs no fetch.
+    // the driver and the active plugins, so a count needs no fetch, and
+    // `context.user?.displayName` the signed-in person's name — under OIDC
+    // only, so always keep a greeting for nobody.
     hero(host, context) {
       host.innerHTML = '<h1>…</h1>'
       host.querySelector('button')?.addEventListener('click', () => context.focusComposer())
@@ -193,7 +209,7 @@ export default function skin() {
 ```
 
 Each receives a host element the shell owns and a context (`ask`, `compose`,
-`focusComposer`, plus `instance` for `hero` and `console`), and may return a
+`focusComposer`, plus `instance` and `user` for `hero` and `console`), and may return a
 teardown.
 
 **`hero` replaced a `home` slot that handed over the whole canvas**, and the

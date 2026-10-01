@@ -112,6 +112,20 @@ describe('the composer fold', () => {
     onClick: vi.fn(),
   })
 
+  it('wears the livery\'s send glyph in place of the arrow', () => {
+    render(
+      <Composer
+        onSend={vi.fn()}
+        onStop={vi.fn()}
+        busy={false}
+        sendIcon='<svg data-testid="plume"></svg>'
+      />,
+    )
+    const send = screen.getByLabelText('Send')
+    expect(send.textContent).not.toContain('↑')
+    expect(send.querySelector('[data-testid="plume"]')).toBeTruthy()
+  })
+
   it('lays the controls out in a row when there is room', () => {
     const scan = button('scan')
     render(
