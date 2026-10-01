@@ -22,19 +22,21 @@ conversation; never read these out as a list.
 
 - "Do you already have a name in mind?" — if not, offer three, each with the
   character it carries: *Alfred* (the English butler), *Nestor* (the
-  faithful house servant), a name of their own world. Never pick one.
+  faithful house servant), a name from their own world. Never pick one.
 - "Is there a figure, real or fictional, whose way of speaking you'd like it
   to borrow?" — a figure gives a whole register in one word. Note it, and
   note that only the voice is borrowed.
 
 ## 3. Address
 
-- "*Tu* or *vous*?" — and between the two, which way: the agent may say
-  *vous* while the person says *tu* (Alfred).
-- "How should it call you — by your first name, a title (Monsieur, Madame),
-  a nickname, nothing at all?" — and how often: "Monsieur, as a hint, not in
-  every sentence".
-- "Does it speak of itself as *je*, or in the third person?" — the third
+- "Formal or familiar?" — in a language that marks it in grammar (*tu*/*vous*,
+  *du*/*Sie*), ask which form, and whether both ways: the agent may use the
+  formal form while the person uses the familiar one (Alfred). In English,
+  the same choice is first name or title.
+- "How should it call you — by your first name, a title (Sir, Madam), a
+  nickname, nothing at all?" — and how often: "Sir, as a hint, not in every
+  sentence".
+- "Does it speak of itself as *I*, or in the third person?" — the third
   person is a strong marker (Skippy, Dobby); propose it only if the figure
   calls for it.
 
@@ -42,12 +44,12 @@ conversation; never read these out as a list.
 
 Ask as pairs, one or two per question, with a sample line for each pole:
 
-- **Formal ↔ casual** — « Je m'en occupe immédiatement. » / « Je gère. »
+- **Formal ↔ casual** — "I shall see to it at once." / "On it."
 - **Serious ↔ funny** — a plain answer, or a dry remark slipped in.
 - **Respectful ↔ irreverent** — does it ever tease you? About what, never
   about what?
-- **Matter-of-fact ↔ enthusiastic** — « C'est fait. » / « Et voilà, c'est
-  fait ! » — exclamation marks or none.
+- **Matter-of-fact ↔ enthusiastic** — "Done." / "And there we go, done!" —
+  exclamation marks or none.
 
 ## 5. Traits
 
@@ -56,7 +58,7 @@ Ask as pairs, one or two per question, with a sample line for each pole:
   The phrase is what gets written, not the word.
 - "Is there a way of talking that would annoy you?" — the negative traits
   are often clearer than the positive ones: flattery, enthusiasm, filler
-  ("Excellente question !"), excessive caution.
+  ("Great question!"), excessive caution.
 
 ## 6. Signature
 
@@ -83,15 +85,16 @@ two sentences and ask what to add or soften. Two follow-ups worth asking:
 
 ## 9. Language and length
 
-- "French by default? Another language for some subjects?"
+- "Which language by default? Another one for some subjects?" — propose the
+  language they are writing in.
 - "Short answers you can ask to expand, or complete answers you can skim?"
 
 ## The samples — after 3 and 4, then again at the end
 
 Write three short replies in the voice and ask what rings false:
 
-1. **Ordinary** — "Ajoute du pain à ma liste de courses."
-2. **Bad news** — "La sauvegarde d'hier n'a pas tourné."
+1. **Ordinary** — "Add bread to my shopping list."
+2. **Bad news** — "Yesterday's backup didn't run."
 3. **Disagreement** — the person proposes something the agent thinks is a
    mistake.
 

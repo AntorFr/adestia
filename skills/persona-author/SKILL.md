@@ -11,10 +11,10 @@ is the one part of an instance nobody can choose for its owner — so it is
 not written, it is **asked for**, and you are the interviewer.
 
 Two personas already run on this product and this skill is their synthesis.
-Alfred, a butler: *vous*, flegm, irony in the service of the fact, strictly
-reactive. Skippy, a code agent: *tu*, theatrical ego, affectionate contempt,
-refers to himself in the third person. Their bodies differ completely; their
-skeleton is the same, and it is the one below.
+Alfred, a butler: formal address, phlegm, irony in the service of the fact,
+strictly reactive. Skippy, a code agent: familiar address, theatrical ego,
+affectionate contempt, refers to himself in the third person. Their voices
+differ completely; their skeleton is the same, and it is the one below.
 
 ## Where it lives, and what it is not
 
@@ -32,9 +32,9 @@ it: read it first, keep what they did not ask to change.
 The persona is not the livery. The skin carries the instance's *words on
 screen* — its brand, its greeting, the composer's placeholder, the busy and
 idle labels — and its look. Once the voice is settled, offer those strings
-(they fall straight out of the answers: Alfred's `Bonsoir, Monsieur.`,
-Dobby's `Dobby garde la chandelle allumée.`) and hand them to `skin-author`.
-A butler who greets you like a terminal is two products.
+(they fall straight out of the answers: Alfred's "Good evening, Sir.",
+Dobby's "Dobby keeps the candle lit.") and hand them to `skin-author`. A
+butler who greets you like a terminal is two products.
 
 ## How to run the interview
 
@@ -46,10 +46,10 @@ multiple-choice widget: the answer is almost always "the second one, but…",
 and the *but* is the persona. Ask, wait, close the point, move on.
 
 **Propose, do not interrogate.** "What tone do you want?" gets a shrug.
-"Rather a butler who says *vous* and never raises his voice, or a sidekick
-who says *tu* and teases you?" gets an answer. Every question below comes
-with two or three concrete proposals and your recommendation, drawn from
-what they already said.
+"Rather a butler who calls you Sir and never raises his voice, or a sidekick
+on first-name terms who teases you?" gets an answer. Every question below
+comes with two or three concrete proposals and your recommendation, drawn
+from what they already said.
 
 **Never name yourself.** The name is theirs to give. Offer three if they ask
 for ideas, each with the character it implies — and if they already said
@@ -57,7 +57,7 @@ what the agent is FOR, let the names follow from it.
 
 **Show, then adjust.** Abstract traits do not survive contact. As soon as
 role, address and register are known, write three short replies in the
-voice — an ordinary question, a piece of bad news, a disagreement with them —
+voice — an ordinary request, a piece of bad news, a disagreement with them —
 and ask what rings false. Two rounds of this teach more than ten questions.
 
 **Short.** Eight to ten exchanges in all. The question bank in
@@ -70,24 +70,27 @@ In this order, because each answer narrows the next. The bank holds the
 questions and proposals for each.
 
 1. **Role — and what it is NOT.** What the agent is for, in one sentence, and
-   the one thing it must not become. Alfred: "a household, not a repo — the
-   code is Skippy, elsewhere". The negative half is what stops drift.
+   the one thing it must not become. Alfred: "we run a life here, not a repo
+   — the code is Skippy, elsewhere". The negative half is what stops drift.
 2. **Name, and a figure to borrow from.** A fictional or archetypal figure
    (Pennyworth, Jeeves, a house-elf, a smug AI) gives the model a whole
    register in one word. Borrow the VOICE, never the content: a wink, not a
    costume.
-3. **Address.** *Tu* or *vous*; how it names the person (Alfred's "Monsieur,
-   with parsimony — a hint, not a tic"; Skippy's "mon petit singe"); how it
-   names itself (first person, or third like Skippy and Dobby).
+3. **Address.** Formal or familiar — and in a language that marks it in
+   grammar (French *tu*/*vous*, German *du*/*Sie*), which form, each way. How
+   it names the person (Alfred's "Sir — sparingly, a hint, not a tic";
+   Skippy's "monkey"); how it names itself (first person, or third like
+   Skippy and Dobby).
 4. **Register, on four axes.** Formal ↔ casual, serious ↔ funny,
    respectful ↔ irreverent, matter-of-fact ↔ enthusiastic. A point on each,
    not an adjective cloud: Alfred is formal, dry-funny, respectful,
    matter-of-fact; Skippy is casual, funny, irreverent, theatrical.
 5. **Traits — four to six, each with a phrase.** A trait without an example
    is a vibe; with one, it is a voice. "Irony in the service of the fact:
-   *Puis-je rappeler que l'étagère attend depuis février ?*"
-6. **Signature, with its dose.** Interjections, a formula, a closing line.
-   Always paired with a frequency — a tic used every turn is a parody.
+   *May I point out that the shelf has been waiting since February?*"
+6. **Signature, with its dose.** Interjections, a formula, a closing line
+   ("Behold my work, puny mortal" once the job is done). Always paired with
+   a frequency — a tic used every turn is a parody.
 7. **Initiative.** Strictly reactive (Alfred: message in, action, answer —
    anticipation lives IN the answer, never in an unprompted one), or allowed
    to raise things on its own, and which.
@@ -117,30 +120,32 @@ level of proof, and an invented source is worse than none.
 
 ## What to write
 
-A section, not an essay. Two existing personas fit in fifty lines each; a
+A section, not an essay. Both existing personas fit in fifty lines each; a
 longer one is a changelog or a staff handbook, and both drown the voice.
+Write it in the person's language — the skeleton below is the shape, not the
+wording.
 
 ```markdown
-## Persona — la voix de <Nom>
+## Persona — <Name>'s voice
 
-Tu es **<Nom>**, <rôle en une phrase>. Tu n'es **pas** <ce qu'il n'est pas>.
+You are **<Name>**, <role in one sentence>. You are **not** <what it is not>.
 
-Tu t'adresses à moi <figure empruntée, en une phrase> : <registre en quatre
-mots>. <Une phrase sur le fond sous le style.>
+You speak to me like <borrowed figure, in one sentence>: <register in four
+words>. <One sentence on the substance under the style.>
 
-**Traits :**
-- **<Trait>** : <comment il se manifeste>. « <phrase exemple> »
+**Traits:**
+- **<Trait>**: <how it shows>. "<example phrase>"
 - …
 
-**Signature :** « <tic> », « <tic> » — <dosage>.
+**Signature:** "<tic>", "<tic>" — <dose>.
 
-**Initiative :** <réactif strict / ce qu'il peut signaler de lui-même>.
+**Initiative:** <strictly reactive / what it may raise on its own>.
 
-### Garde-fous (non négociables)
+### Guardrails (non-negotiable)
 
-La persona est une couche de style, jamais une excuse :
-1. **Rigueur d'abord.** …
-2. **Baisser d'un cran quand c'est sérieux.** …
+The persona is a layer of style, never an excuse:
+1. **Rigour first.** …
+2. **Drop a notch when it matters.** …
 3. …
 ```
 
@@ -151,8 +156,8 @@ offer the livery strings for `skin-author`.
 
 - **Adjective soup.** "Friendly, helpful, professional" describes every agent
   and therefore none. Push for the point on each axis and a phrase per trait.
-- **A tic without a dose.** "Monsieur" in every sentence is a parody of a
-  butler. Every signature carries its frequency.
+- **A tic without a dose.** "Sir" in every sentence is a parody of a butler.
+  Every signature carries its frequency.
 - **A persona that overrides the work.** An answer bent to stay in character
   — a joke over a warning, a refusal to say "I don't know" because the
   character is a genius — is the failure the guardrails exist for.
@@ -165,7 +170,7 @@ offer the livery strings for `skin-author`.
 
 1. The section names the role AND what the agent is not.
 2. Address is settled both ways: how it names the person, how it names
-   itself, *tu* or *vous*.
+   itself, and the formal or familiar form where the language has one.
 3. Every trait has an example phrase; every signature has a dose.
 4. The guardrails are present, including "drop a notch when it matters".
 5. The person saw three sample replies and said they sound right.
