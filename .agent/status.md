@@ -632,3 +632,18 @@ d'écrire, puis une section dans le fichier d'instructions de la personne
 (`CLAUDE.md` / `AGENTS.md`), et les mots d'écran passés à `skin-author`.
 Rédigée en anglais comme les autres skills du cœur. Pas d'interface, donc pas
 de scénario de banc ; jamais jouée en vrai sur une instance.
+
+v0.85.0 (mergée et taguée le 01/10) : **le contrat des livrées s'élargit pour
+que Dobby soit ce qu'il était dessiné.** Le code a sa propre voix
+(`--font-code`, qui suit `--font-mono` par défaut — les trois autres corps ne
+bougent pas), ce qui laisse l'appareil de Dobby passer en petites capitales.
+Le bouton d'envoi et l'écusson ont chacun leurs jetons (`--send-*`,
+`--crest-*`) et l'envoi un glyphe (`sendIcon`) : chez Dobby, deux sceaux de
+cire, la chaussette et la plume. Une lettrine en jetons inertes
+(`--drop-cap-*`), dorée chez Dobby. Et les slots `hero`/`console` reçoivent
+`user` sous OIDC : l'ex-libris porte le nom, le salut le prénom, « Madame »
+sinon — aucun prénom dans le dépôt. Le banc a trouvé ce qu'aucun type ne
+voyait : le montage du slot reconstruisait le contexte sans `user`. Hors
+chantier, non corrigé : le ■ d'arrêt n'est jamais rouge (`.adestia-composer
+button` l'emporte sur `.adestia-composer__stop`). Scénario de banc :
+`dobby-sceau`.
