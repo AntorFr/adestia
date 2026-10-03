@@ -1,17 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <!-- Walnut ground edge to edge (iOS paints a transparent corner black), an
-       oxblood wax seal, the gilt sock — all inside the central 80%. -->
-  <defs>
-    <radialGradient id="cire" cx="38%" cy="32%" r="70%">
-      <stop offset="0" stop-color="#9a3a30"/>
-      <stop offset="1" stop-color="#5c1f1a"/>
-    </radialGradient>
-  </defs>
-  <rect width="100" height="100" fill="#17130f"/>
-  <circle cx="50" cy="50" r="36" fill="url(#cire)"/>
-  <circle cx="50" cy="50" r="30.5" fill="none" stroke="#c8a25a" stroke-opacity=".45" stroke-width="1"/>
-  <g transform="translate(24 28) scale(.44)" fill="#c8a25a">
-    <path d="M33 10h32a2 2 0 0 1 2 2v12H31V12a2 2 0 0 1 2-2z"/>
-    <path d="M33 28h32v28c0 4 2 6.5 5.5 8.5l13 7.5c8 4.6 4.8 17.5-4.5 17L49 87.5C38.5 86.8 31.5 78 33 67.5z"/>
-  </g>
+  <!-- The favicon: a green wax seal alone, round and without a ground, so it
+       holds on a light tab bar as on a dark one. The installed PNGs beside it
+       are the same seal filling an opaque square (iOS paints a transparent
+       corner black), rendered from assets/plate.svg. -->
+  <defs><radialGradient id="cire" cx="38%" cy="32%" r="72%"><stop offset="0" stop-color="#4a7a5c"/><stop offset="1" stop-color="#1c3628"/></radialGradient></defs>
+  <circle cx="50" cy="50" r="48" fill="url(#cire)"/>
+  <circle cx="50" cy="50" r="41" fill="none" stroke="#e0bd72" stroke-width="3"/>
+  <g transform="translate(14.3 20.3) scale(.6)" fill="#e8c77e"><path d="M33 10h32a2 2 0 0 1 2 2v12H31V12a2 2 0 0 1 2-2z"/><path d="M33 28h32v28c0 4 2 6.5 5.5 8.5l13 7.5c8 4.6 4.8 17.5-4.5 17L49 87.5C38.5 86.8 31.5 78 33 67.5z"/></g>
 </svg>
