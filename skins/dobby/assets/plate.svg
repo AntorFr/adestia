@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Source of icon-180/192/512: the seal's wax filling the square edge to
+       edge, the fillet and the sock inside the central 80% (the 512 is
+       offered as maskable and may be cropped to a circle). -->
+  <defs><radialGradient id="cire" cx="38%" cy="32%" r="72%"><stop offset="0" stop-color="#4a7a5c"/><stop offset="1" stop-color="#1c3628"/></radialGradient></defs>
+  <rect width="100" height="100" fill="url(#cire)"/>
+  <circle cx="50" cy="50" r="36" fill="none" stroke="#e0bd72" stroke-opacity=".75" stroke-width="1.5"/>
+  <g transform="translate(20.25 25.25) scale(.5)" fill="#e8c77e"><path d="M33 10h32a2 2 0 0 1 2 2v12H31V12a2 2 0 0 1 2-2z"/><path d="M33 28h32v28c0 4 2 6.5 5.5 8.5l13 7.5c8 4.6 4.8 17.5-4.5 17L49 87.5C38.5 86.8 31.5 78 33 67.5z"/></g>
+</svg>
