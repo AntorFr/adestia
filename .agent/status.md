@@ -664,3 +664,11 @@ détection automatique, pas de dérivation depuis `host`/`port` (l'adresse de
 BIND interne du process, pas l'adresse publique derrière un ingress/reverse
 proxy). Recette sautée sur décision de Monsieur (vérification seule : besoin,
 sécurité, qualité au vert après correction d'un chemin faux dans `DESIGN.md`).
+
+v0.87.0 (mergée et taguée le 04/10) : **l'icône de Dobby devient un sceau de
+cire VERT qui remplit son carré**, et son favicon perd le fond presque noir qui
+disparaissait dans un onglet sombre et tachait un onglet clair. Le favicon est
+le sceau seul, rond et sans fond ; les PNG installés sont la même cire en
+carré opaque, rendus depuis `assets/plate.svg`, chaussette dans les 80 %
+centraux pour la découpe ronde. Les sceaux de l'interface (envoi, écusson)
+restent rouges. Pas de scénario de banc : seules les icônes changent.
