@@ -129,6 +129,18 @@ const FR: Readonly<Record<string, string>> = {
     'la clé de la lecture en fond de %servers ne marche plus — se reconnecter la renouvelle',
 
   // The instruction zone
+  Catalogues: 'Catalogues',
+  'No catalogue yet — add a repository of instructions.':
+    'Aucun catalogue — ajoutez un dépôt d’instructions.',
+  imported: 'importé(s)',
+  'Repository address': 'Adresse du dépôt',
+  Ref: 'Réf',
+  'Token (optional)': 'Jeton (facultatif)',
+  Add: 'Ajouter',
+  'Reading the repository…': 'Lecture du dépôt…',
+  'Nothing importable found here.': 'Rien d’importable ici.',
+  'The active engine has no place for this kind.': 'Le moteur actif n’a pas d’emplacement pour ce type.',
+  Import: 'Importer',
   Instructions: 'Instructions',
   'Read and correct what you told the agent': 'Relire et corriger ce que vous avez dit à l’agent',
   'What you have told the agent, in your words. Saved exactly as typed.':

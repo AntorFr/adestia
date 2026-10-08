@@ -45,6 +45,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { CataloguePopin } from './CataloguePopin'
+
 /** When the engine reads a file — which is the same question as what it is. */
 type Kind = 'instruction' | 'skill' | 'agent'
 
@@ -224,25 +226,30 @@ export function Instructions({
    */
   const [seed, setSeed] = useState<{ path: string; text: string; kind: Kind } | undefined>()
 
-  useEffect(() => {
-    void (async () => {
-      const response = await fetchImpl('/api/instructions')
-      // 404 means this engine has no such concept — a different fact from
-      // "you have written none", and the screen must not offer an editor for
-      // a zone that does not exist.
-      if (response.status === 404) {
-        setSupported(false)
-        return
-      }
-      if (!response.ok) return
-      const body = (await response.json()) as {
-        files?: readonly InstructionFile[]
-        paths?: readonly InstructionPath[]
-      }
-      setFiles(body.files ?? [])
-      setPlaces(body.paths ?? [])
-    })()
+  const [catalogues, setCatalogues] = useState(false)
+
+  /** Read the list; also what an import calls, so a new card appears unprompted. */
+  const reload = useCallback(async () => {
+    const response = await fetchImpl('/api/instructions')
+    // 404 means this engine has no such concept — a different fact from
+    // "you have written none", and the screen must not offer an editor for
+    // a zone that does not exist.
+    if (response.status === 404) {
+      setSupported(false)
+      return
+    }
+    if (!response.ok) return
+    const body = (await response.json()) as {
+      files?: readonly InstructionFile[]
+      paths?: readonly InstructionPath[]
+    }
+    setFiles(body.files ?? [])
+    setPlaces(body.paths ?? [])
   }, [fetchImpl])
+
+  useEffect(() => {
+    void reload()
+  }, [reload])
 
   /** The text of whatever the address names, seeded or fetched. */
   useEffect(() => {
@@ -467,6 +474,9 @@ export function Instructions({
               + {place.path}
             </button>
           ))}
+        <button type="button" onClick={() => setCatalogues(true)}>
+          {t('Catalogues')}
+        </button>
         {folders.map((place) => {
           const holds = place.holds ?? 'instruction'
           // Codex declares TWO skill folders. One button per folder, both
@@ -503,6 +513,15 @@ export function Instructions({
           )
         })}
       </div>
+
+      {catalogues && (
+        <CataloguePopin
+          fetchImpl={fetchImpl}
+          t={t}
+          onClose={() => setCatalogues(false)}
+          onChanged={() => void reload()}
+        />
+      )}
 
       {files !== undefined && files.length === 0 && (
         <p className="adestia-instructions__empty">
