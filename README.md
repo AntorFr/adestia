@@ -63,6 +63,15 @@ Adestia's own interface.
   from the interface, held server-side at 0600 and never sent to a browser),
   the MCP servers and what each is doing, the theme, and the instructions you
   gave the agent, edited on a screen rather than in a box.
+- **Instruction catalogues**: declare a git repository of skills, agents or
+  instructions from Instructions › Catalogues, browse what it holds (found by
+  the shape of the files, wherever they sit), and import item by item. An
+  import is a copy in the folder the active engine reads, marked as delivered
+  and read-only, with its repository and ref shown on its card. *Refresh*
+  re-fetches a repository and re-copies what was imported from it; removing an
+  item removes only its copy. An item whose kind the active engine has no
+  folder for is listed but cannot be imported. The list lives in
+  `<dataDir>/instruction-catalogues.json`, not in the config file.
 - **Three ways in**: none (local), a trusted proxy header, or any OIDC issuer.
   No local accounts, ever.
 - **Contracts the agent reads**: `plugin-author` and `skin-author` ship with
