@@ -60,6 +60,8 @@ interface InstructionFile {
   readonly name?: string
   /** The frontmatter `description` — what it is for, in its author's words. */
   readonly description?: string
+  /** Imported from an instruction catalogue; absent on a local or plugin-delivered file. */
+  readonly source?: { readonly catalogue: string; readonly repo: string; readonly ref: string }
 }
 
 /** A place an instruction may be written, as the driver declared it. */
@@ -547,6 +549,13 @@ export function Instructions({
                       root the path IS the name, and printing both is noise. */}
                   {file.path !== title(file) && (
                     <span className="adestia-filecard__path">{file.path}</span>
+                  )}
+                  {/* Where an imported item came from. A file a plugin delivers
+                      has no source, and so no line. */}
+                  {file.source && (
+                    <span className="adestia-filecard__source" title={file.source.repo}>
+                      {file.source.catalogue} @ {file.source.ref}
+                    </span>
                   )}
                   <span className="adestia-filecard__foot">
                     <span>{size(file.bytes)}</span>

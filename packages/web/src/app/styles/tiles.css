@@ -381,6 +381,12 @@
   overflow-wrap: anywhere;
 }
 
+.adestia-filecard__source {
+  font: 11px var(--font-code);
+  color: var(--text-faint);
+  overflow-wrap: anywhere;
+}
+
 .adestia-filecard__foot {
   margin-top: auto;
   display: flex;
