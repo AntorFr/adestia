@@ -309,6 +309,11 @@ export class ClaudeCodeDriver implements Driver {
     return '.claude/skills'
   }
 
+  /** Project subagents: `.claude/agents/<name>.md`, beside the skills. */
+  agentsPath(): string {
+    return '.claude/agents'
+  }
+
   /**
    * Where this CLI reads prose: the project brief, skills, and subagents.
    *

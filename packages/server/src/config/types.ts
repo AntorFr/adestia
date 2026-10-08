@@ -349,6 +349,17 @@ export interface AdestiaConfig {
   /** `fr`, `en`… Absent means: let the browser decide. */
   readonly locale?: string | undefined
   /**
+   * The instance's public address, when the operator has declared one — the
+   * URL a browser or another agent actually reaches, behind whatever
+   * ingress or reverse proxy terminates TLS in front of this process.
+   *
+   * Never derived from `host`/`port`: those are this process's BIND
+   * address (often `127.0.0.1` or `0.0.0.0`), not the public one. Absent,
+   * the `this-instance` contract simply says nothing about where the
+   * instance answers — no guess, no detection.
+   */
+  readonly url?: string | undefined
+  /**
    * Named secrets available to plugins that DECLARE them.
    *
    * Written as `NAME: ${ENV_VAR}` so the value stays in the environment and

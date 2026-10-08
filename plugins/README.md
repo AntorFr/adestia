@@ -68,6 +68,24 @@ being repeated in each one. Read it first; a plugin-specific skill builds on
 it rather than restating it. `schedule-author` is the same idea for
 `planif`'s scheduled notes.
 
+A contract is its skill's whole folder: whatever sits beside `SKILL.md` —
+`references/*.md` it says to read, `scripts/*.py` it says to run — is
+delivered with it, so a body pointing at `references/grille.md` points at a
+file that is there.
+
+A skill that runs in a fresh context (`context: fork`) names its envelope with
+`agent: <name>`, and the envelope is a subagent definition the plugin ships:
+`"agents": ["./agents/relecteur.md"]` in the manifest, a markdown file in the
+engine's own agent format. It is delivered into the driver's agents folder
+(`.claude/agents/` for Claude Code, beside `.claude/skills/`) namespaced like a
+skill — `<plugin>-<name>.md`, its `name:` rewritten to match — so two plugins
+may both ship a `relecteur` and neither overwrites a hand-written one. The
+plugin's own skills follow: `agent: relecteur` is delivered as
+`agent: sdlc-relecteur`. An `agent:` naming something the plugin does not ship
+(`Explore`, another plugin's) is left as written. On a driver with no agents
+folder the boot says the agents were not delivered, rather than letting the
+skill run without its envelope.
+
 A plugin whose own code dispatches on a frontmatter `type:` value declares the
 claim in its manifest (`"types": ["tache", "liste"]`, `todo`'s own). Discovery
 checks this at boot: two active plugins claiming the same word produce a line

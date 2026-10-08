@@ -36,6 +36,7 @@ describe('plugin manifest', () => {
       api: './api.js',
       setup: './setup',
       skills: ['./skills/workbench/SKILL.md'],
+      agents: ['./agents/relecteur.md'],
       types: ['pièce', 'plaque'],
       mcpServers: [{ name: 'cutlist', command: 'node', args: ['./bin/cutlist.js'] }],
     }
@@ -107,6 +108,17 @@ describe('plugin manifest', () => {
       expect(
         issuesOf(() => parsePluginManifest({ ...valid, styles: ['../secrets.css'] }, 'workbench')),
       ).toEqual(['styles[0]: must not escape the plugin folder ("..")'])
+    })
+
+    it('checks agent paths, and that they name a markdown definition', () => {
+      // Read by the server and written into the workspace: an escaping path
+      // would copy any readable file to where the agent reads its briefs.
+      expect(
+        issuesOf(() => parsePluginManifest({ ...valid, agents: ['../x.md'] }, 'workbench')),
+      ).toEqual(['agents[0]: must not escape the plugin folder ("..")'])
+      expect(
+        issuesOf(() => parsePluginManifest({ ...valid, agents: ['./agents/relecteur'] }, 'workbench')),
+      ).toEqual(['agents[0]: must name a markdown file (`.md`)'])
     })
   })
 

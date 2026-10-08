@@ -115,6 +115,16 @@ describe('conformance', () => {
     ])
   })
 
+  it('reads subagents beside its skills, where plugin agents are delivered', () => {
+    // The same folder `instructionPaths` shows as `agent`: a definition the
+    // core writes must land where the CLI resolves a skill's `agent:` field.
+    const driver = new ClaudeCodeDriver({ query: fakeSdk([]) })
+    expect(driver.agentsPath()).toBe('.claude/agents')
+    expect(driver.instructionPaths().find((zone) => zone.kind === 'agent')?.path).toBe(
+      driver.agentsPath(),
+    )
+  })
+
   it('spawns with the inherited environment, credentials on top', async () => {
     // The SDK REPLACES the subprocess environment with what it is given, so
     // passing credentials alone strips PATH and the CLI cannot launch — the

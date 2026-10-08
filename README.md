@@ -66,7 +66,9 @@ Adestia's own interface.
 - **Three ways in**: none (local), a trusted proxy header, or any OIDC issuer.
   No local accounts, ever.
 - **Contracts the agent reads**: `plugin-author` and `skin-author` ship with
-  the product, so asking the agent for a plugin produces a valid one.
+  the product, so asking the agent for a plugin produces a valid one; and
+  `persona-author` has it interview you for its own name and voice on a fresh
+  instance, instead of guessing one.
 
 - **Scheduled turns**: notes whose body runs as a prompt on a cadence, with a
   missed occurrence lost rather than replayed. Give one a deadline and it

@@ -24,7 +24,7 @@
   --crepe-base-font-size: 15.5px;
   --crepe-font-default: var(--font);
   --crepe-font-title: var(--font-title);
-  --crepe-font-code: var(--font-mono);
+  --crepe-font-code: var(--font-code);
 
   /* The page itself is painted by `.adestia-editor__surface`, above. */
   --crepe-color-background: transparent;

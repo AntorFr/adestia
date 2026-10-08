@@ -27,23 +27,21 @@
 }
 
 /* The crest: the body's mark on an accent plate — the same plate the tiles
-   wear, which is what makes it read as the same product. */
+   wear unless the livery signs differently, which is what makes it read as
+   the same product. */
 .adestia-crest {
   display: grid;
   place-items: center;
   flex-shrink: 0;
   width: 32px;
   height: 32px;
-  border-radius: var(--radius-ctl);
-  box-shadow: var(--shadow-sm);
-  background: linear-gradient(
-    145deg,
-    color-mix(in srgb, var(--accent) var(--plate-top), var(--plate-base)),
-    color-mix(in srgb, var(--accent) var(--plate-mix), var(--plate-base))
-  );
-  color: color-mix(in srgb, var(--accent) var(--plate-fg-tint), var(--plate-fg));
-  border: var(--plate-border-width) solid
-    color-mix(in srgb, var(--accent) var(--plate-border-tint), transparent);
+  /* Every knob defaults to the tile plate (tokens.css): a livery that
+     signs with a seal re-dresses the crest without touching the tiles. */
+  border-radius: var(--crest-radius);
+  box-shadow: var(--crest-shadow);
+  background: var(--crest-bg);
+  color: var(--crest-fg);
+  border: var(--crest-border);
 }
 
 .adestia-crest svg { width: 18px; height: 18px; }
@@ -138,6 +136,17 @@
 }
 
 .adestia-prose > :first-child { margin-top: 0; }
+
+/* The answer's opening letter, every knob a token (tokens.css): a bookish
+   livery floats it large and gilt, the base leaves it a letter. */
+.adestia-bubble--agent .adestia-prose > p:first-child::first-letter {
+  float: var(--drop-cap-float);
+  font-family: var(--drop-cap-font);
+  font-size: var(--drop-cap-size);
+  line-height: var(--drop-cap-leading);
+  color: var(--drop-cap-color);
+  padding: var(--drop-cap-pad);
+}
 .adestia-prose > :last-child { margin-bottom: 0; }
 
 .adestia-prose p { margin: 0 0 0.7em; }
@@ -182,7 +191,7 @@
 /* The bubble's own background IS `--surface-soft`, so code has to sink
    further than it does on a page or it would draw a border around nothing. */
 .adestia-prose code {
-  font-family: var(--font-mono);
+  font-family: var(--font-code);
   font-size: 0.88em;
   background: var(--surface-sunken);
   border-radius: var(--radius-micro);
@@ -282,7 +291,7 @@
   display: flex;
   gap: var(--space-2);
   align-items: baseline;
-  font-family: var(--font-mono);
+  font-family: var(--font-code);
   font-size: var(--text-sm);
   color: var(--text-muted);
 }
@@ -468,7 +477,7 @@
 .adestia-sheet__origin {
   flex: 1 1 auto;
   min-width: 0;
-  font-family: var(--font-mono);
+  font-family: var(--font-code);
   font-size: var(--text-sm);
   overflow-wrap: anywhere;
 }
@@ -591,6 +600,22 @@
   font-size: var(--text-lg);
   cursor: pointer;
 }
+
+/* The send is the body's signature on every message: its own knobs, so a
+   livery can make it a seal without rounding the stop or the attach.
+   Qualified by the composer to outrank `.adestia-composer button` above;
+   `:disabled` below still outranks this, so an empty field greys the seal. */
+.adestia-composer .adestia-composer__send {
+  display: grid;
+  place-items: center;
+  border-radius: var(--send-radius);
+  background: var(--send-bg);
+  color: var(--send-text);
+  box-shadow: var(--send-shadow);
+}
+
+.adestia-composer__glyph { display: contents; }
+.adestia-composer__glyph svg { width: 18px; height: 18px; }
 
 .adestia-composer button:disabled {
   background: var(--surface-sunken);

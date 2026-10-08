@@ -36,7 +36,7 @@ import { UserTokens } from './user-tokens.js'
 import { SecretStore } from './secrets.js'
 import { fetchSources } from './sources.js'
 import { baseManifest, mergeSkinManifest, withInstanceName } from './webmanifest.js'
-import { collectSkills, deliverSkills } from './skills.js'
+import { collectSkills, deliverAgents, deliverSkills } from './skills.js'
 import { foreignRoots, resolveStores } from './stores.js'
 
 const DEFAULT_CONFIG_FILE = 'adestia.config.yaml'
@@ -368,9 +368,10 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
      * The whole value of a generated introduction is that it cannot describe
      * an instance other than the one running it.
      */
-    const { skills, problems: skillProblems } = await collectSkills(plugins, stores, {
+    const { skills, agents, problems: skillProblems } = await collectSkills(plugins, stores, {
       ...(config.name ? { name: config.name } : {}),
       ...(config.locale ? { locale: config.locale } : {}),
+      ...(config.url ? { url: config.url } : {}),
       driverId: config.driver.id,
       workspaceRoot,
       stores,
@@ -392,6 +393,29 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     for (const problem of skillProblems) log(`skill not delivered — ${problem}`)
     const { written, removed } = await deliverSkills(join(workspaceRoot, skillsPath), skills)
     log(`${written} agent contract(s) delivered${removed > 0 ? `, ${removed} withdrawn` : ''}`)
+
+    // Subagents ride with the skills that name them. Run even when no plugin
+    // ships one, so an agent whose plugin was turned off is withdrawn.
+    const agentsPath = driver.agentsPath?.()
+    if (agentsPath) {
+      const delivered = await deliverAgents(join(workspaceRoot, agentsPath), agents)
+      for (const path of delivered.kept) {
+        log(`subagent not delivered — ${path} exists and was not written by Adestia`)
+      }
+      if (delivered.written > 0 || delivered.removed > 0) {
+        log(
+          `${delivered.written} subagent(s) delivered` +
+            (delivered.removed > 0 ? `, ${delivered.removed} withdrawn` : ''),
+        )
+      }
+    } else if (agents.length > 0) {
+      // A skill naming its envelope with `agent:` would then run without it:
+      // said at boot, rather than discovered as a review that was not one.
+      log(
+        `driver "${config.driver.id}" reads no subagents: ` +
+          `${agents.map((agent) => agent.path).join(', ')} not delivered`,
+      )
+    }
   }
 
   // One resolved config from here on. The absolute workspace path means a turn

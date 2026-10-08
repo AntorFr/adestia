@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { loadSkin, narrowSkin, type SkinEnvironment } from '../src/app/skin.js'
+import { loadSkin, narrowSkin, skinUser, type SkinEnvironment } from '../src/app/skin.js'
 
 function environment(modules: Record<string, Record<string, unknown> | Error> = {}) {
   const stylesheets: string[] = []
@@ -40,6 +40,24 @@ describe('the contract', () => {
   it('drops anything off-contract rather than passing it through', () => {
     const { rejected } = narrowSkin({ css: 'body{}', onLoad: 'alert(1)' })
     expect([...rejected].sort()).toEqual(['css', 'onLoad'])
+  })
+
+  it('keeps a send glyph, as markup like the crest', () => {
+    const glyph = '<svg viewBox="0 0 24 24"><path d="M4 20 20 4"/></svg>'
+    const { skin, rejected } = narrowSkin({ sendIcon: glyph })
+    expect(skin).toEqual({ sendIcon: glyph })
+    expect(rejected).toEqual([])
+  })
+
+  it('hands a livery the signed-in name under OIDC, and nobody otherwise', () => {
+    const named = { userId: 'sub-1', displayName: 'Jeanne Martin' }
+    expect(skinUser({ auth: { mode: 'oidc' }, user: named })).toEqual({
+      user: { displayName: 'Jeanne Martin' },
+    })
+    // A local instance answers "Local user": greeting THAT would be worse
+    // than the livery's own word for nobody.
+    expect(skinUser({ auth: { mode: 'none' }, user: named })).toEqual({})
+    expect(skinUser({ auth: { mode: 'oidc' }, user: null })).toEqual({})
   })
 
   it('reports a factory that returned nothing usable', () => {

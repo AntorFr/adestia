@@ -253,5 +253,12 @@ export interface PluginManifest {
 
   /** Agent-facing facets. */
   readonly skills?: readonly string[]
+  /**
+   * Subagent definitions (`./agents/<name>.md`, the engine's own format) that
+   * a skill names with `agent:` to run in a fresh context. Delivered as
+   * `<id>-<name>`, and the skills of the same plugin that name one are
+   * rewritten to match.
+   */
+  readonly agents?: readonly string[]
   readonly mcpServers?: readonly PluginMcpServer[]
 }

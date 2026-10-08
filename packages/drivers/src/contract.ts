@@ -533,6 +533,16 @@ export interface Driver {
    */
   skillsPath?(): string | undefined
   /**
+   * Where this CLI reads subagent definitions, relative to the workspace.
+   *
+   * Same split as `skillsPath`: the driver names the folder, the core writes
+   * the files. A plugin skill that runs in a fresh context names its envelope
+   * with `agent:`, and on a CLI without this folder that name resolves to
+   * nothing — so a driver that has none returns undefined and the boot says
+   * the plugin's agents were not delivered.
+   */
+  agentsPath?(): string | undefined
+  /**
    * Whether this CLI can be told to work in directories besides `cwd`.
    *
    * Asked at BOOT rather than discovered in a turn: on a driver that cannot,

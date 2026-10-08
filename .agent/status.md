@@ -598,3 +598,77 @@ terminait pendant l'écriture du message en attente fermait sa file, et le
 message ne partait jamais ; il entre désormais dans la file avant d'être
 écrit, et le tour suivant attend son écriture. Scénario de banc :
 `ordre-file-attente`.
+
+v0.82.0 (mergée et taguée le 01/10, **pas déployée**) : **un plugin livre
+désormais le dossier entier de ses skills, et ses sous-agents.** Avant, seul
+`SKILL.md` était copié : une skill qui disait « lis `references/x.md` » ou
+« lance `scripts/y.py` » pointait vers des fichiers absents. Tout le dossier
+voyage maintenant (fichiers cachés et liens symboliques exceptés) ; un dossier
+géré est vidé avant réécriture, un dossier écrit à la main n'est jamais touché.
+Le manifeste gagne une liste `agents` (fichiers `.md`), livrés dans le dossier
+d'agents du pilote (`.claude/agents/` pour Claude Code) sous le nom
+`<plugin>-<nom>.md` ; les skills du plugin qui disent `agent: relecteur` sont
+réécrites en `agent: <plugin>-relecteur`. Un pilote sans dossier d'agents le
+signale au démarrage. Pas de changement d'interface, donc pas de scénario de
+banc.
+
+v0.83.0 (mergée et taguée le 01/10) : **une quatrième livrée, `dobby`** — une
+bibliothèque de collège le soir : noyer, vélin, dorure, cuir sang-de-bœuf,
+Garamond pour lire, machine à écrire pour l'appareil (et le code). Un ex-libris
+en tête d'accueil, une chandelle pendant les tours, un jour « parchemin » sur
+demande explicite. Les polices sont embarquées (OFL), pour qu'une instance du
+LAN n'ait pas besoin d'internet. Elle s'adresse à « Madame », comme Alfred dit
+« Monsieur » : pas de prénom dans un dépôt public. Scénario de banc :
+`skin-dobby`.
+
+v0.84.0 (mergée et taguée le 01/10) : **une skill du cœur, `persona-author`,
+pour qu'une instance neuve demande qui elle est au lieu de se l'inventer.**
+L'agent mène l'entretien — une question à la fois, en proposant plutôt qu'en
+interrogeant, sans jamais se nommer lui-même — sur le squelette commun à Alfred
+et Skippy : rôle et ce qu'il n'est pas, nom et figure empruntée, adresse,
+registre sur quatre axes, traits avec une phrase chacun, tics dosés,
+initiative, garde-fous proposés par défaut. Trois réponses d'essai avant
+d'écrire, puis une section dans le fichier d'instructions de la personne
+(`CLAUDE.md` / `AGENTS.md`), et les mots d'écran passés à `skin-author`.
+Rédigée en anglais comme les autres skills du cœur. Pas d'interface, donc pas
+de scénario de banc ; jamais jouée en vrai sur une instance.
+
+v0.85.0 (mergée et taguée le 01/10) : **le contrat des livrées s'élargit pour
+que Dobby soit ce qu'il était dessiné.** Le code a sa propre voix
+(`--font-code`, qui suit `--font-mono` par défaut — les trois autres corps ne
+bougent pas), ce qui laisse l'appareil de Dobby passer en petites capitales.
+Le bouton d'envoi et l'écusson ont chacun leurs jetons (`--send-*`,
+`--crest-*`) et l'envoi un glyphe (`sendIcon`) : chez Dobby, deux sceaux de
+cire, la chaussette et la plume. Une lettrine en jetons inertes
+(`--drop-cap-*`), dorée chez Dobby. Et les slots `hero`/`console` reçoivent
+`user` sous OIDC : l'ex-libris porte le nom, le salut le prénom, « Madame »
+sinon — aucun prénom dans le dépôt. Le banc a trouvé ce qu'aucun type ne
+voyait : le montage du slot reconstruisait le contexte sans `user`. Hors
+chantier, non corrigé : le ■ d'arrêt n'est jamais rouge (`.adestia-composer
+button` l'emporte sur `.adestia-composer__stop`). Scénario de banc :
+`dobby-sceau`.
+
+v0.86.0 (mergée et taguée le 01/10, **pas déployée**) : **l'instance
+connaît sa propre adresse, quand l'opérateur l'a déclarée.** Déclencheur : un
+agent interrogé sur sa propre adresse répondait ne pas la connaître, alors que
+l'opérateur, lui, la connaît déjà. Nouveau réglage `url:` dans
+`adestia.config.yaml`, à côté de `name`/`locale` — fichier seul comme eux,
+l'écran Réglages n'est pas touché. Validé comme `signatures.origins`
+(`new URL` + protocole http(s)) mais sans son exigence d'origin nu : cette
+valeur n'est jamais comparée bit à bit, seulement affichée, donc un chemin est
+autorisé (`https://host/adestia`, pour une instance derrière un préfixe
+d'ingress) ; une query ou un fragment sont refusés, un `/` final est retiré
+pour un affichage stable. Le contrat `this-instance` porte la phrase « It
+answers at `<url>` » quand elle est renseignée, rien de plus sinon — pas de
+détection automatique, pas de dérivation depuis `host`/`port` (l'adresse de
+BIND interne du process, pas l'adresse publique derrière un ingress/reverse
+proxy). Recette sautée sur décision de Monsieur (vérification seule : besoin,
+sécurité, qualité au vert après correction d'un chemin faux dans `DESIGN.md`).
+
+v0.87.0 (mergée et taguée le 04/10) : **l'icône de Dobby devient un sceau de
+cire VERT qui remplit son carré**, et son favicon perd le fond presque noir qui
+disparaissait dans un onglet sombre et tachait un onglet clair. Le favicon est
+le sceau seul, rond et sans fond ; les PNG installés sont la même cire en
+carré opaque, rendus depuis `assets/plate.svg`, chaussette dans les 80 %
+centraux pour la découpe ronde. Les sceaux de l'interface (envoi, écusson)
+restent rouges. Pas de scénario de banc : seules les icônes changent.
