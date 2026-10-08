@@ -140,25 +140,51 @@ export class InstructionCataloguesStore {
 
   /** Replaces the whole list, atomically and at 0600. */
   async save(catalogues: readonly InstructionCatalogue[]): Promise<void> {
-    const write = this.#queue.then(async () => {
-      await mkdir(dirname(this.#path), { recursive: true })
-      const temporary = `${this.#path}.${randomUUID()}.tmp`
-      try {
-        // The mode is set at creation rather than after: a file created 0644
-        // and chmod-ed is world-readable for as long as that takes, and it
-        // can hold a bearer token.
-        await writeFile(temporary, `${JSON.stringify({ catalogues }, null, 2)}\n`, { mode: 0o600 })
-        await chmod(temporary, 0o600)
-        await rename(temporary, this.#path)
-      } catch (error) {
-        await unlink(temporary).catch(() => undefined)
-        throw error
-      }
-      // Only once it is on disk: a cache updated before the write would hand
-      // a caller a catalogue that a failed rename never actually stored.
-      this.#cache = catalogues
+    await this.#enqueue(() => this.#persist(catalogues))
+  }
+
+  /**
+   * Read-modify-write as ONE step in the write chain.
+   *
+   * `list()` then `save()` leaves a gap in which a second caller reads the
+   * same list, and whichever saves last erases the other's change. Here the
+   * read, the mutation (which may touch the disk itself, as an import does)
+   * and the write all happen before the next caller starts.
+   */
+  async update<T>(
+    mutate: (
+      catalogues: readonly InstructionCatalogue[],
+    ) => Promise<{ catalogues: readonly InstructionCatalogue[]; result: T }>,
+  ): Promise<T> {
+    return this.#enqueue(async () => {
+      const { catalogues, result } = await mutate(await this.list())
+      await this.#persist(catalogues)
+      return result
     })
-    this.#queue = write.catch(() => undefined)
-    await write
+  }
+
+  async #enqueue<T>(task: () => Promise<T>): Promise<T> {
+    const run = this.#queue.then(task)
+    this.#queue = run.catch(() => undefined)
+    return run
+  }
+
+  async #persist(catalogues: readonly InstructionCatalogue[]): Promise<void> {
+    await mkdir(dirname(this.#path), { recursive: true })
+    const temporary = `${this.#path}.${randomUUID()}.tmp`
+    try {
+      // The mode is set at creation rather than after: a file created 0644
+      // and chmod-ed is world-readable for as long as that takes, and it
+      // can hold a bearer token.
+      await writeFile(temporary, `${JSON.stringify({ catalogues }, null, 2)}\n`, { mode: 0o600 })
+      await chmod(temporary, 0o600)
+      await rename(temporary, this.#path)
+    } catch (error) {
+      await unlink(temporary).catch(() => undefined)
+      throw error
+    }
+    // Only once it is on disk: a cache updated before the write would hand
+    // a caller a catalogue that a failed rename never actually stored.
+    this.#cache = catalogues
   }
 }

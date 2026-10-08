@@ -188,6 +188,19 @@ async function chooseLandedAt(
   item: CatalogueItem,
   catalogueId: string,
 ): Promise<string> {
+  // A zone with no `entry` is ONE file (CLAUDE.md, AGENTS.md): there is no
+  // `<name>` to substitute, so no namespaced fallback can exist. An existing
+  // file is the normal case and is never ours to overwrite on a first import.
+  if (zone.entry === undefined) {
+    const single = landedPathFor(zone, '')
+    if (await pathExists(resolve(workspaceRoot, single))) {
+      throw new Error(
+        `cannot import "${item.itemPath}": the active driver keeps its ${item.kind} in a single file, "${single}", which already exists — remove or merge it by hand first`,
+      )
+    }
+    return single
+  }
+
   const slug = slugFor(item)
   const primary = landedPathFor(zone, slug)
   if (!(await pathExists(resolve(workspaceRoot, primary)))) return primary
@@ -295,21 +308,20 @@ export async function importCatalogueItem(
   zones: readonly InstructionZone[],
   item: CatalogueItem,
 ): Promise<CatalogueImport> {
-  const catalogues = await store.list()
-  const catalogue = catalogues.find((candidate) => candidate.id === catalogueId)
-  if (!catalogue) throw new Error(`no catalogue declared with id "${catalogueId}"`)
+  return store.update(async (catalogues) => {
+    const catalogue = catalogues.find((candidate) => candidate.id === catalogueId)
+    if (!catalogue) throw new Error(`no catalogue declared with id "${catalogueId}"`)
 
-  const { landedAt } = await materializeItem({ workspaceRoot, zones, catalogueRoot, item, catalogueId })
-  const imported: CatalogueImport = { itemPath: item.itemPath, kind: item.kind, landedAt }
+    const { landedAt } = await materializeItem({ workspaceRoot, zones, catalogueRoot, item, catalogueId })
+    const imported: CatalogueImport = { itemPath: item.itemPath, kind: item.kind, landedAt }
 
-  const updated: InstructionCatalogue[] = catalogues.map((candidate) =>
-    candidate.id === catalogueId
-      ? { ...candidate, imports: [...candidate.imports.filter((entry) => entry.itemPath !== item.itemPath), imported] }
-      : candidate,
-  )
-  await store.save(updated)
-
-  return imported
+    const updated: InstructionCatalogue[] = catalogues.map((candidate) =>
+      candidate.id === catalogueId
+        ? { ...candidate, imports: [...candidate.imports.filter((entry) => entry.itemPath !== item.itemPath), imported] }
+        : candidate,
+    )
+    return { catalogues: updated, result: imported }
+  })
 }
 
 /** Retires one item: cleans what it had copied, and drops it from the store. */
@@ -319,17 +331,18 @@ export async function withdrawCatalogueItem(
   catalogueId: string,
   itemPath: string,
 ): Promise<void> {
-  const catalogues = await store.list()
-  const catalogue = catalogues.find((candidate) => candidate.id === catalogueId)
-  const entry = catalogue?.imports.find((candidate) => candidate.itemPath === itemPath)
-  if (!catalogue || !entry) return
+  await store.update(async (catalogues) => {
+    const catalogue = catalogues.find((candidate) => candidate.id === catalogueId)
+    const entry = catalogue?.imports.find((candidate) => candidate.itemPath === itemPath)
+    if (!catalogue || !entry) return { catalogues, result: undefined }
 
-  await withdrawItem(workspaceRoot, entry.landedAt)
+    await withdrawItem(workspaceRoot, entry.landedAt)
 
-  const updated: InstructionCatalogue[] = catalogues.map((candidate) =>
-    candidate.id === catalogueId
-      ? { ...candidate, imports: candidate.imports.filter((kept) => kept.itemPath !== itemPath) }
-      : candidate,
-  )
-  await store.save(updated)
+    const updated: InstructionCatalogue[] = catalogues.map((candidate) =>
+      candidate.id === catalogueId
+        ? { ...candidate, imports: candidate.imports.filter((kept) => kept.itemPath !== itemPath) }
+        : candidate,
+    )
+    return { catalogues: updated, result: undefined }
+  })
 }
