@@ -144,7 +144,8 @@ async function pathExists(path: string): Promise<boolean> {
 /** Safe for a path segment, and never empty — a blank slug would land nowhere. */
 function sanitizeSlug(raw: string): string {
   const cleaned = raw.replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/^-+|-+$/g, '')
-  return cleaned === '' ? 'item' : cleaned
+  // A slug made only of dots ('.', '..') would climb out of the zone once joined.
+  return cleaned === '' || /^\.+$/.test(cleaned) ? 'item' : cleaned
 }
 
 /** The frontmatter name wins — it is what the engine will call the thing. */
@@ -312,7 +313,17 @@ export async function importCatalogueItem(
     const catalogue = catalogues.find((candidate) => candidate.id === catalogueId)
     if (!catalogue) throw new Error(`no catalogue declared with id "${catalogueId}"`)
 
-    const { landedAt } = await materializeItem({ workspaceRoot, zones, catalogueRoot, item, catalogueId })
+    // Importing again is a refresh of our own copy: keep its path rather than
+    // seeing it as a collision and writing a second one beside it.
+    const previous = catalogue.imports.find((entry) => entry.itemPath === item.itemPath)
+    const { landedAt } = await materializeItem({
+      workspaceRoot,
+      zones,
+      catalogueRoot,
+      item,
+      catalogueId,
+      ...(previous ? { landedAt: previous.landedAt } : {}),
+    })
     const imported: CatalogueImport = { itemPath: item.itemPath, kind: item.kind, landedAt }
 
     const updated: InstructionCatalogue[] = catalogues.map((candidate) =>
