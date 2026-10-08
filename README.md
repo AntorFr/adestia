@@ -19,7 +19,11 @@ mkdir -p workspace data plugins skins
 docker compose up
 ```
 
-Without Docker, from a clone:
+The first `up` builds the image from the `Dockerfile`; the agent needs
+`CLAUDE_CODE_OAUTH_TOKEN` (see `docker-compose.yml`).
+
+Without Docker, from a clone (`data/` and `workspace/` are created in the
+current directory; `-c <path>` points at another config file):
 
 ```sh
 npm ci
@@ -145,8 +149,9 @@ Adestia is a few hundred megabytes, and it is the burst that kills it. Raise
 ## Status
 
 **Early, and running.** Everything above is verified against a real browser and
-real CLIs, not only by tests. What is deliberately not built: remote git sync
-for instructions, and the concurrency measurements that need real subscription
+real CLIs, not only by tests. What is deliberately not built: pushing and pulling the
+workspace's own instructions to a remote (catalogues above only read
+repositories), and the concurrency measurements that need real subscription
 quota. See [DESIGN.md](DESIGN.md) for the principles and every decision taken.
 
 ## Contributing

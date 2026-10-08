@@ -1,7 +1,8 @@
 # Status — Adestia
 > MàJ : 2026-10-08
 
-**État :** `main`, **v0.80.0** taguée et **déployée sur les trois corps le
+**État :** `main` est à **v0.87.0** (entrées v0.69 à v0.87 ci-dessous, pas dans
+l'ordre) ; la **v0.80.0** était taguée et **déployée sur les trois corps le
 29/09 au soir** — deux marches dans la même soirée (0.79.0 la lecture en
 fond, 0.80.0 les heures fixes), faites l'une pour l'autre : ensemble elles
 rebranchent le briefing d'Alfred, mort avec l'agent-gw le 05/09. L'horloge
