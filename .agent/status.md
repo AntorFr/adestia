@@ -1,7 +1,8 @@
 # Status — Adestia
-> MàJ : 2026-09-30
+> MàJ : 2026-10-08
 
-**État :** `main`, **v0.80.0** taguée et **déployée sur les trois corps le
+**État :** `main` est à **v0.87.0** (entrées v0.69 à v0.87 ci-dessous, pas dans
+l'ordre) ; la **v0.80.0** était taguée et **déployée sur les trois corps le
 29/09 au soir** — deux marches dans la même soirée (0.79.0 la lecture en
 fond, 0.80.0 les heures fixes), faites l'une pour l'autre : ensemble elles
 rebranchent le briefing d'Alfred, mort avec l'agent-gw le 05/09. L'horloge
@@ -672,3 +673,20 @@ le sceau seul, rond et sans fond ; les PNG installés sont la même cire en
 carré opaque, rendus depuis `assets/plate.svg`, chaussette dans les 80 %
 centraux pour la découpe ronde. Les sceaux de l'interface (envoi, écusson)
 restent rouges. Pas de scénario de banc : seules les icônes changent.
+
+**En cours (feature `homelab-sdlc-maj-consignes`, PR vers `main`, pas encore
+fusionnée) : catalogues d'instructions.** Instructions › Catalogues déclare des
+dépôts git, scanne leurs items par forme de fichier, importe item par item dans
+la zone du driver actif, rafraîchit par dépôt. Serveur :
+`instruction-catalogues{,-store}.ts`, `routes/instruction-catalogues.ts` ;
+écran : `CataloguePopin.tsx`, provenance sur la carte. Scénario de banc :
+`catalogue-popin` (non joué : pas de docker dans le pod d'assemblage).
+Raisonné dans `DESIGN.md` (Instructions & workspace).
+
+Reste / pièges encore vrais : pas de rafraîchissement au boot (seulement le
+bouton) ; retirer un dépôt supprime ses copies ; un import que le dépôt ne
+propose plus est laissé en place et signalé, jamais supprimé ; le clone d'un
+dépôt privé passe par un jeton stocké en clair (0600) dans le fichier d'état ;
+le clone est lu sans réseau tant qu'il existe (un `GET items` ne rafraîchit
+pas). Recette : déclarer un dépôt, importer un skill, le voir en carte avec
+`dépôt @ réf`, modifier la source, Rafraîchir, Supprimer.

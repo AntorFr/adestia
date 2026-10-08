@@ -173,6 +173,44 @@ describe('the instruction screen', () => {
     ).toBeTruthy()
   })
 
+  it('shows where an imported item came from, next to its delivered badge', async () => {
+    render(
+      <Zone
+        fetchImpl={server({
+          files: [
+            {
+              path: '.claude/skills/revue/SKILL.md',
+              modified: '',
+              bytes: 10,
+              managed: true,
+              kind: 'skill',
+              source: { catalogue: 'homelab', repo: 'https://git.example/homelab.git', ref: 'v1.2' },
+            },
+          ],
+        })}
+      />,
+    )
+    const line = await screen.findByText('homelab @ v1.2')
+    expect(line.getAttribute('title')).toBe('https://git.example/homelab.git')
+    expect(screen.getByText('delivered')).toBeTruthy()
+  })
+
+  it('draws no provenance line for a plugin-delivered or local file', async () => {
+    render(
+      <Zone
+        fetchImpl={server({
+          files: [
+            { path: '.claude/skills/todo/SKILL.md', modified: '', bytes: 900, managed: true, kind: 'skill' },
+            { path: 'CLAUDE.md', modified: '', bytes: 4, managed: false, kind: 'instruction' },
+          ],
+        })}
+      />,
+    )
+    await screen.findByText('todo')
+    expect(screen.getByText('delivered')).toBeTruthy()
+    expect(screen.queryByText(/@/)).toBeNull()
+  })
+
   it('says what went wrong instead of pretending it saved', async () => {
     const fetchImpl = server({
       onPut: () =>

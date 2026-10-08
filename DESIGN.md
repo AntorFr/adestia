@@ -1571,6 +1571,27 @@ resolves in Adestia as follows:
   what this closes and no content rule can shut it again. The real wall there
   is an agent running as another user against a store it cannot reach — a
   feature in its own right, never obtained sideways.
+- **Instruction catalogues: items copied from a git repository, never linked.**
+  Instructions › Catalogues (a pop-in) declares repositories (address, ref,
+  optional token that is never sent back to the browser) and lists what a
+  scan finds in each. The scan goes by FILE SHAPE — any `SKILL.md` is a skill
+  whose folder is the unit — not by folder convention: the repository that
+  motivated this keeps its skills outside `.claude/`, `.codex/` and `.github/`.
+  An import copies into the zone the ACTIVE driver declares for the item's
+  kind, stamped with `MANAGED_MARKER`; a kind with no zone (an agent on
+  `codex-cli`) is shown, greyed, and refused with 422. State lives in
+  `<dataDir>/instruction-catalogues.json` (0600, atomic write), keyed by item
+  with `landedAt`, because the catalogue name and the landed name can differ.
+  Provenance is joined to the listing from that store and is never written
+  into the copy (it would break bit-for-bit identity with the origin).
+  Refresh is per catalogue and leaves in place an import the repository no
+  longer offers, reporting it. Clones sit in `<dataDir>/catalogues`, apart
+  from plugin sources: a catalogue is files, never a manifest, setup script or
+  server code. Rejected: a catalogue as `extensions.sources`; folder-convention
+  scanning; provenance in the frontmatter; the state in `adestia.config.yaml`
+  (it changes at every import, and the file may be mounted read-only).
+  Not built: a refresh at boot (imports stay as copied until *Refresh*), and a
+  section in Réglages — the screen is Instructions.
 - **Instructions are saved byte for byte**, in plain text, never through the
   page grammar. Pages go through a closed vocabulary with a validator because
   this product renders them; an instruction is read by a CLI, and its

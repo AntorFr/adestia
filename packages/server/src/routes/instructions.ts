@@ -16,11 +16,21 @@ import {
   safeInstructionPath,
   writeInstruction,
 } from '../instructions.js'
+import type { InstructionCataloguesStore } from '../instruction-catalogues-store.js'
 import { MANAGED_MARKER } from '../skills.js'
 
 export function registerInstructions(
   app: FastifyInstance,
-  { driver, workspaceRoot }: { readonly driver: Driver; readonly workspaceRoot: string },
+  {
+    driver,
+    workspaceRoot,
+    catalogues,
+  }: {
+    readonly driver: Driver
+    readonly workspaceRoot: string
+    /** Where imported items are remembered; absent, no file carries a source. */
+    readonly catalogues?: InstructionCataloguesStore
+  },
 ): void {
   /**
    * The instruction zone: prose a person may read and correct.
@@ -35,8 +45,26 @@ export function registerInstructions(
       await reply.code(404).send({ error: 'this driver declares no instruction zone' })
       return reply
     }
+    const files = await listInstructions(workspaceRoot, zones)
+    // Provenance lives in the store, not in the file (see technique.md): a
+    // file is an import's when it IS its landing path, or sits inside it for
+    // a skill's folder. A local file matches nothing and carries no `source`.
+    const declared = catalogues ? await catalogues.list() : []
+    const owners = declared.flatMap((catalogue) =>
+      catalogue.imports.map((entry) => ({ landedAt: entry.landedAt, catalogue })),
+    )
     return {
-      files: await listInstructions(workspaceRoot, zones),
+      files: files.map((file) => {
+        const owner = owners.find(
+          ({ landedAt }) => file.path === landedAt || file.path.startsWith(`${landedAt}/`),
+        )
+        return owner
+          ? {
+              ...file,
+              source: { catalogue: owner.catalogue.id, repo: owner.catalogue.repo, ref: owner.catalogue.ref },
+            }
+          : file
+      }),
       // Where one may be CREATED. A zone with nothing in it and no way to put
       // anything there is a dead end: the listing shows what exists, and a
       // fresh instance has nothing. The client cannot guess these — only the

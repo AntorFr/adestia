@@ -31,6 +31,8 @@ import { registerArming } from './routes/arming.js'
 import { registerConversations } from './routes/conversations.js'
 import { registerInstance, type SkinPayload } from './routes/instance.js'
 import { registerInstructions } from './routes/instructions.js'
+import { registerInstructionCatalogues } from './routes/instruction-catalogues.js'
+import { InstructionCataloguesStore } from './instruction-catalogues-store.js'
 import { outboundServersOf, registerMcpServers } from './routes/mcp-servers.js'
 import { registerTurns, type ShellToolsPort, type UserTokens } from './routes/turns.js'
 import { registerUpload } from './routes/upload.js'
@@ -77,6 +79,8 @@ export interface AppDependencies {
    * added from a browser is wired on the next turn instead of the next boot.
    */
   readonly mcpStore?: McpStore
+  /** Declared instruction catalogues; injected in tests like `mcpStore`. */
+  readonly instructionCatalogues?: InstructionCataloguesStore
   readonly mcpSignIn?: McpSignIn
   /**
    * Where the engine's questions wait, in `ask` posture. Absent in `open`,
@@ -271,7 +275,19 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     background: () => backgroundReach.trouble(),
     running: () => limiter.running,
   })
-  registerInstructions(app, { driver, workspaceRoot: config.workspace.root })
+  const instructionCatalogues =
+    deps.instructionCatalogues ?? new InstructionCataloguesStore(config.dataDir)
+  registerInstructions(app, {
+    driver,
+    workspaceRoot: config.workspace.root,
+    catalogues: instructionCatalogues,
+  })
+  registerInstructionCatalogues(app, {
+    driver,
+    workspaceRoot: config.workspace.root,
+    dataDir: config.dataDir,
+    store: instructionCatalogues,
+  })
   registerMcpServers(app, { config, driver, descriptor, plugins, mcpStore, mcpSignIn, outboundServers })
   await registerUpload(app, { config, inbox })
   registerConversations(app, { conversations, desk })

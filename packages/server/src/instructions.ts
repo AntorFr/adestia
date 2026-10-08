@@ -67,6 +67,12 @@ export interface InstructionFile {
    * either is opened, which a byte count never did.
    */
   readonly description?: string
+  /**
+   * Where an IMPORTED item came from. Absent for a file written locally or
+   * delivered by a plugin. Added by the route from the catalogue store, never
+   * read off the file: the provenance is not written into it.
+   */
+  readonly source?: { readonly catalogue: string; readonly repo: string; readonly ref: string }
 }
 
 /** Extensions a person edits as text. Anything else is not prose. */
