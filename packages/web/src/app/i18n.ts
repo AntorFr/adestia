@@ -141,6 +141,8 @@ const FR: Readonly<Record<string, string>> = {
   'Nothing importable found here.': 'Rien d’importable ici.',
   'The active engine has no place for this kind.': 'Le moteur actif n’a pas d’emplacement pour ce type.',
   Import: 'Importer',
+  Refresh: 'Rafraîchir',
+  'No longer offered upstream, left as is:': 'Plus proposé en amont, laissé tel quel :',
   Instructions: 'Instructions',
   'Read and correct what you told the agent': 'Relire et corriger ce que vous avez dit à l’agent',
   'What you have told the agent, in your words. Saved exactly as typed.':

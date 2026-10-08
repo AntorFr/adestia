@@ -113,6 +113,26 @@ export function CataloguePopin({
     void loadItems(catalogue)
   }
 
+  /** Re-fetch the repository and re-copy what was imported from it, then re-read. */
+  const refresh = async (catalogue: Catalogue) => {
+    setError(undefined)
+    setBusy('refresh')
+    try {
+      const response = await fetchImpl(`${urlOf(catalogue.id)}/refresh`, { method: 'POST' })
+      if (!response.ok) return setError(await failure(response))
+      const body = (await response.json()) as { missing?: readonly string[] }
+      if (body.missing && body.missing.length > 0) {
+        setError(`${t('No longer offered upstream, left as is:')} ${body.missing.join(', ')}`)
+      }
+      await loadItems(catalogue)
+      onChanged()
+    } catch (cause) {
+      setError((cause as Error).message)
+    } finally {
+      setBusy(undefined)
+    }
+  }
+
   const toggle = async (catalogue: Catalogue, item: Item) => {
     setError(undefined)
     setBusy(item.itemPath)
@@ -228,6 +248,9 @@ export function CataloguePopin({
 
           {entered && (
             <>
+              <button type="button" disabled={busy === 'refresh'} onClick={() => void refresh(entered)}>
+                {t('Refresh')}
+              </button>
               {items === undefined && <p className="adestia-instructions__empty">{t('Reading the repository…')}</p>}
               {items?.length === 0 && !error && (
                 <p className="adestia-instructions__empty">{t('Nothing importable found here.')}</p>

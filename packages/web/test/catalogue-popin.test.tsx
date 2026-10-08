@@ -39,6 +39,7 @@ function world() {
       state.catalogues.push({ id: 'new', repo: body.repo, ref: body.ref, imports: [] })
       return json({}, 201)
     }
+    if (url === '/api/instruction-catalogues/homelab/refresh') return json({ refreshed: [], missing: ['skills/gone'] })
     if (url === '/api/instruction-catalogues/homelab/items') return json({ items: items() })
     if (url === '/api/instruction-catalogues/homelab/items/skills/mail') {
       if (method === 'PUT') {
@@ -124,5 +125,14 @@ describe('the catalogue pop-in', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: /Import mail/ }))
     expect((await within(dialog).findByRole('alert')).textContent).toContain('collision')
     expect(state.files).toEqual([])
+  })
+
+  it('refreshes the repository on demand and reports what upstream no longer offers', async () => {
+    const { fetchImpl, state } = world()
+    screenWith(fetchImpl)
+    const dialog = await enter()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Refresh' }))
+    expect((await within(dialog).findByRole('alert')).textContent).toContain('skills/gone')
+    expect(state.calls).toContain('POST /api/instruction-catalogues/homelab/refresh')
   })
 })
