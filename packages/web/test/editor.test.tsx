@@ -378,6 +378,54 @@ describe('editor', () => {
     expect(screen.getByText('Done').closest('button')?.disabled).toBe(false)
   })
 
+  it('reopens on what was SAVED, not on what was fetched', async () => {
+    /*
+     * The same stale baseline as above, from the other end. After a save the
+     * reader showed the new text, but the pencil mounted the editor on the
+     * text fetched before it — an entry written and closed opened EMPTY, and
+     * the first keystroke auto-saved that emptiness over the file.
+     */
+    const opened: string[] = []
+    const { container } = render(
+      <Editor
+        page={page}
+        mount={fakeMount(opened)}
+        fetchImpl={jsonFetch(200, { revision: '2000-20', normalized: false })}
+      />,
+    )
+    startEditing()
+    const host = container.querySelector('[data-mounted]') as HTMLElement & {
+      edit: (md: string) => void
+    }
+    act(() => host.edit('# Le gabarit\n\nLa cale de 8 mm était la bonne.\n'))
+    fireEvent.click(screen.getByText('Done'))
+    await waitFor(() => expect(container.querySelector('[data-mounted]')).toBeNull())
+
+    startEditing()
+    expect(opened).toHaveLength(2)
+    expect(opened[1]).toContain('La cale de 8 mm était la bonne.')
+  })
+
+  it('does not remount the editor under the cursor when an auto-save lands', async () => {
+    // `saved` moves on every save; if it were a dependency of the mount, the
+    // surface would be rebuilt mid-sentence each time.
+    const opened: string[] = []
+    const { container } = render(
+      <Editor
+        page={page}
+        mount={fakeMount(opened)}
+        fetchImpl={jsonFetch(200, { revision: '2000-20', normalized: false })}
+      />,
+    )
+    startEditing()
+    const host = container.querySelector('[data-mounted]') as HTMLElement & {
+      edit: (md: string) => void
+    }
+    act(() => host.edit('# Un\n'))
+    await waitFor(() => expect(screen.getByText('Saved')).toBeTruthy(), { timeout: 4000 })
+    expect(opened).toHaveLength(1)
+  })
+
   it('shows a conflict instead of overwriting the agent', async () => {
     const { container } = render(
       <Editor page={page} mount={fakeMount([])} fetchImpl={jsonFetch(409, {})} />,

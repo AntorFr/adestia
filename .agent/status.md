@@ -672,3 +672,14 @@ le sceau seul, rond et sans fond ; les PNG installés sont la même cire en
 carré opaque, rendus depuis `assets/plate.svg`, chaussette dans les 80 %
 centraux pour la découpe ronde. Les sceaux de l'interface (envoi, écusson)
 restent rouges. Pas de scénario de banc : seules les icônes changent.
+
+v0.87.1 (mergée et taguée le 13/10) : **rouvrir une entrée qu'on vient d'écrire
+ne la vide plus.** L'éditeur monté par le ✎ partait du texte CHARGÉ à l'ouverture
+de l'écran et non du dernier texte sauvegardé : après un enregistrement et un
+Terminé, le lecteur montrait le nouveau texte mais l'éditeur rouvrait sur
+l'ancien — vide pour une entrée de journal créée avec `+` — et la première
+frappe sauvegardait cette version par-dessus le fichier. Il part maintenant de
+`saved`, lu par une ref pour qu'une sauvegarde automatique ne remonte jamais
+l'éditeur sous le curseur. Deux tests (la réouverture, et l'absence de remontage),
+et le scénario de banc `journal-sauvegarde` rejoue le cycle édition → Terminé →
+✎ → frappe contre le vrai Milkdown.
