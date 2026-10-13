@@ -406,9 +406,26 @@ export function Editor({
     say,
   }
 
+  /*
+   * What the surface opens ON is `saved`, not `shown`.
+   *
+   * `shown` is the document as it was fetched and never moves again, so
+   * reopening the editor after a save handed Milkdown the text from BEFORE
+   * that save — while the reader, fed by `markdown`, drew the new one. The
+   * first keystroke then reported "stale text plus a letter" and the
+   * auto-save wrote it over the file: a journal entry written and closed came
+   * back empty at the next ✎, and the empty version was kept.
+   *
+   * Read through a ref and never a dependency, like `env`: `saved` advances
+   * on every save, and remounting the editor under a cursor on each one
+   * would throw away what is being typed.
+   */
+  const opening = useRef(saved)
+  opening.current = saved
+
   useEffect(() => {
     if (!editing || !mount || !host.current || !page.editable) return undefined
-    return mount(host.current, shown, setBody, env.current)
+    return mount(host.current, opening.current, setBody, env.current)
   }, [editing, mount, page.editable, shown, page.path])
 
   /*
