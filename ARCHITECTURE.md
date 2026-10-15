@@ -297,6 +297,72 @@ Each target: what, where, why it costs, the tranche that owns it, and its outcom
 | R-14 | `server/test/catalogues-ui-ensemble.test.ts` skips itself without Playwright or a built web shell, so it never runs in a plain `npm test` | a suite that looks green and never ran | tests | |
 | R-15 | `zod` imported dynamically by `server/src/drivers.ts` but declared in no `package.json` | works only by hoisting | serveur | |
 
+## Detail of R-9, R-10 and R-14 (tests tranche)
+
+The tranche changes no production file (B-1): everything below lives in `packages/*/test`.
+
+**Shared support (R-9).** One directory, `packages/server/test/support/`, never matched by
+vitest's `include` (no `.test.` in the names), imported by relative path:
+
+| Module | Exports | Replaces |
+|---|---|---|
+| `support/driver.ts` | `ScriptedDriver` (events, capabilities and `instructionPaths` as constructor options; `describe()` and `runTurn()` as the existing `ScriptedDriver` of `app.test.ts`), `RESULT`, and `driverWith(overrides)` returning a `Driver` from a partial one | the fake `Driver` of `app`, `oidc-routes`, `start` (and its `SkilledDriver` / `AgentDriver` subclasses), `instruction-catalogue-materialize`, `instruction-catalogue-materialize-review`, `mcp-servers`, `settings-route`, `restart` tests |
+| `support/git.ts` | `git(cwd, ...args)` with the fixed author and committer (`T <t@example.org>`), and `gitRepo(dir, files)`: `git init -b main`, write the files, one commit, return the HEAD sha | the `git()` of `catalogues-ensemble`, `catalogues-ui-ensemble`, `instruction-catalogues-api`, `instruction-catalogues`, `sources` tests, and their repository set-up |
+| `support/tmp.ts` | `tmpDir(prefix)`: `mkdtemp` under `os.tmpdir()`, remembered; `cleanTmp()`: removes everything remembered (`rm -rf`, force); each file registers `afterEach(cleanTmp)` | the 37 test files that call `mkdtemp` and each their own `rm` |
+
+A test that needs a fake behaviour the module lacks extends the module (an option), never
+re-declares a driver. `packages/drivers/test` keeps its own fakes: R-9 aims at the server.
+A file whose fake is genuinely not a `Driver` stays as it is and is named in this table's
+outcome (`kept: reason`) if its name matched the grep of the tranche's exit.
+
+**Signals, not delays (R-10).** The rule is `CLAUDE.md`'s « A handshake waits for a SIGNAL »,
+applied file by file:
+
+- `callback.test.ts`: `runTurn` is a `vi.fn` owned by the test; it resolves a deferred
+  (`woke`) on its first call, and the test awaits `woke` instead of `settle()`. An assertion
+  that the wake did **not** happen awaits the last step the handler takes before that branch
+  (the `fetchImpl` stub resolving its own deferred), then asserts.
+- `mcp.test.ts`: the fake channel resolves a deferred when it is pulled (`runTurn`), the test
+  awaits it. Same rule for the negative cases.
+- `restart.test.ts`: the `restart` stub resolves a deferred; the guard's refusal (409) has no
+  later step to signal, so the negative cases assert on the response and then on
+  `await app.close()` having completed, which flushes what the app scheduled.
+- A case where no signal can exist without touching production is not turned into a longer
+  delay: it keeps its wait, and R-10's outcome says `kept: <file>, <why>`.
+- Clock waits become a clock the test owns: `background.test.ts` (5 ms), `shell-tools.test.ts`
+  (10 ms, `tokenTtlMs: 1`) use `vi.useFakeTimers()` and `vi.setSystemTime` /
+  `vi.advanceTimersByTime`; `pages.test.ts` (10 ms, so the revision differs) sets the file's
+  mtime explicitly with `utimes`; `watch.test.ts` (`wait(500)`) waits on the stream's own
+  frames, and a "nothing arrives" case writes a sentinel after and asserts the sentinel is
+  the next frame. The `deadline` timer of `nextBatch` bounds a wait, it is not a wait, and
+  stays.
+- `web/test/page-editor.test.tsx` › "tells the plugin when it takes the file…": the cause of
+  the flake is found first (run the test file under CPU load, thirty times; the suspect is
+  `waitFor`'s default one-second budget on an editor that mounts lazily). The fix waits on the
+  cause (`[data-mounted]`, as its neighbour test does), not on a longer budget; the cause is
+  written in R-10's outcome.
+
+**The catalogue screens suite (R-14).** `catalogues-ui-ensemble.test.ts` keeps its two
+conditions and gains a way to meet them:
+
+- Playwright is found by the places it already tries, plus `npm root -g` (the pod keeps it in
+  `/usr/lib/node_modules`; the bench resolves it the same way, and the two stay separate
+  copies: the bench is `.mjs` outside the packages).
+- A missing built shell is no longer a reason to skip when Playwright is there: a `beforeAll`
+  runs `npm run build:web --workspace @antorfr/adestia-web` once (generous timeout) when
+  `packages/web/dist-web/index.html` is absent. *Rejected*: building in the `test` script
+  (every run pays, including those that never reach this suite) and a vitest `globalSetup`
+  (hides the cost from the file that needs it). *Reversed if*: the build exceeds a minute in
+  the pod, then a `pretest` is the honest place.
+- Without Playwright the suite still skips, and now says it twice: in the title, as today,
+  and with one `console.warn` line at collection naming the missing piece. A skipped run is
+  not a seen screen.
+- `catalogues-ensemble.test.ts` has no such condition and is unchanged but for the support
+  imports.
+
+**Five greens.** `npm test` runs five times in a row in the pod (a shell loop, output kept
+outside the tree); a red names the flake, which is fixed by signal, never retried.
+
 ## Known defects (found, not fixed by this epic)
 
 - **Catalogue ref or repo starting with `-`** reaches git as an option: `sources.ts` passes
