@@ -22,6 +22,10 @@ export interface ScriptedDriverOptions {
   /** Holds every turn until it resolves, or until the turn is told to stop. */
   readonly hold?: Promise<void>
   readonly instructionPaths?: readonly (string | InstructionZone)[]
+  /** A CLI that ships skills: the desk and the boot introduce the shell to it. */
+  readonly skillsPath?: string
+  /** A CLI with an agent zone: the boot delivers subagents there. */
+  readonly agentsPath?: string
 }
 
 /** A driver reduced to a script, so the server is tested without any CLI. */
@@ -54,9 +58,14 @@ export class ScriptedDriver implements Driver {
     })
     const paths = options.instructionPaths
     if (paths) this.instructionPaths = () => paths
+    const { skillsPath, agentsPath } = options
+    if (skillsPath !== undefined) this.skillsPath = () => skillsPath
+    if (agentsPath !== undefined) this.agentsPath = () => agentsPath
   }
 
   instructionPaths?: () => readonly (string | InstructionZone)[]
+  skillsPath?: () => string
+  agentsPath?: () => string
 
   describe(): Promise<DriverDescriptor> {
     return Promise.resolve({
@@ -127,4 +136,50 @@ export function scriptedDriver(script: (request: TurnRequest, call: number) => T
     }),
     requests,
   }
+}
+
+export const ARM_TOKEN = 'sk-ant-oat01-supersecretvaluenobodyshouldsee'
+
+/**
+ * A scripted driver that can be armed, standing in for the real terminal flow.
+ * `outcome: 'refuse'` makes the upstream reject the code; `credentialVar` is
+ * the variable the secret would be stored in.
+ */
+export function armableDriver(options: { outcome?: 'ok' | 'refuse'; credentialVar?: string } = {}) {
+  const outcome = options.outcome ?? 'ok'
+  const driver = new ScriptedDriver([RESULT], { capabilities: ['usageMetrics', 'authManagement'] })
+  // The test reads these back off the driver, so they live on it.
+  const state = Object.assign(driver, {
+    credentialVar: options.credentialVar ?? 'SCRIPTED_TOKEN',
+    credentials: {} as Record<string, string>,
+    savedAt: undefined as string | undefined,
+    cancelled: 0,
+  })
+  return Object.assign(state, {
+    authStatus: () =>
+      Promise.resolve(
+        Object.keys(state.credentials).length > 0
+          ? { state: 'armed', source: 'managed', savedAt: state.savedAt }
+          : { state: 'absent', source: 'cli-native' },
+      ),
+    beginAuth: () =>
+      Promise.resolve({
+        sessionId: 'driver-side-id',
+        mode: 'url+code',
+        authorizeUrl: 'https://claude.ai/oauth/authorize?x=1',
+        ttl: 600,
+      }),
+    completeAuth: (_id: string, input: string) =>
+      outcome === 'refuse'
+        ? Promise.reject(new Error('code rejected upstream'))
+        : Promise.resolve({ secret: `${ARM_TOKEN}-${input}` }),
+    cancelAuth: () => {
+      state.cancelled += 1
+      return Promise.resolve()
+    },
+    setCredentials: (credentials: Record<string, string>, savedAt?: string) => {
+      state.credentials = credentials
+      state.savedAt = savedAt
+    },
+  })
 }

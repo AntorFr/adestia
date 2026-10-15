@@ -342,11 +342,7 @@ describe('workspace.umask', () => {
 
 describe('the shell introducing itself', () => {
   /** A CLI that reads contracts, which is what makes delivery happen at all. */
-  class SkilledDriver extends ScriptedDriver {
-    skillsPath(): string {
-      return '.claude/skills'
-    }
-  }
+  const skilled = () => new ScriptedDriver([], { skillsPath: '.claude/skills' })
 
   const contractPath = (workspace: string) =>
     join(root, workspace, '.claude', 'skills', 'this-instance', 'SKILL.md')
@@ -355,7 +351,7 @@ describe('the shell introducing itself', () => {
     // The end of the confabulation, tested where it actually happens: not that
     // a function can compose prose, but that a booting instance leaves the
     // prose on disk, naming itself.
-    await boot('name: Atelier\nworkspace:\n  root: ./ws\n', 'adestia.config.yaml', () => new SkilledDriver())
+    await boot('name: Atelier\nworkspace:\n  root: ./ws\n', 'adestia.config.yaml', () => skilled())
     const contract = await readFile(contractPath('ws'), 'utf8')
 
     expect(contract).toContain('Adestia')
@@ -368,7 +364,7 @@ describe('the shell introducing itself', () => {
   })
 
   it('lists the tools this boot really registered, never a hard-coded set', async () => {
-    await boot('workspace:\n  root: ./ws\n', 'adestia.config.yaml', () => new SkilledDriver())
+    await boot('workspace:\n  root: ./ws\n', 'adestia.config.yaml', () => skilled())
     const contract = await readFile(contractPath('ws'), 'utf8')
     expect(contract).toContain('rename_conversation')
     expect(contract).toContain('new_id')
@@ -394,13 +390,8 @@ describe('the shell introducing itself', () => {
     await writeFile(join(dir, 'skills', 'relire', 'SKILL.md'), '---\nname: relire\nagent: relecteur\n---\n')
     await writeFile(join(dir, 'agents', 'relecteur.md'), '---\nname: relecteur\n---\n\nRelis.\n')
 
-    class AgentDriver extends SkilledDriver {
-      agentsPath(): string {
-        return '.claude/agents'
-      }
-    }
     const config = 'workspace:\n  root: ./ws\nextensions:\n  tools: [sdlc]\n'
-    await boot(config, 'adestia.config.yaml', () => new AgentDriver())
+    await boot(config, 'adestia.config.yaml', () => new ScriptedDriver([], { skillsPath: '.claude/skills', agentsPath: '.claude/agents' }))
     const agent = await readFile(join(root, 'ws', '.claude', 'agents', 'sdlc-relecteur.md'), 'utf8')
     expect(agent).toContain('name: sdlc-relecteur')
     const skill = await readFile(join(root, 'ws', '.claude', 'skills', 'sdlc-relire', 'SKILL.md'), 'utf8')
@@ -410,7 +401,7 @@ describe('the shell introducing itself', () => {
     await started?.close()
     started = undefined
     logs.length = 0
-    await boot(config.replace('./ws', './ws2'), 'adestia.config.yaml', () => new SkilledDriver())
+    await boot(config.replace('./ws', './ws2'), 'adestia.config.yaml', () => skilled())
     expect(logs.join('\n')).toContain('reads no subagents: sdlc-relecteur.md not delivered')
   })
 
@@ -432,7 +423,7 @@ describe('the shell introducing itself', () => {
     await boot(
       'name: Atelier\nurl: https://atelier.example/\nworkspace:\n  root: ./ws\n',
       'adestia.config.yaml',
-      () => new SkilledDriver(),
+      () => skilled(),
     )
     const contract = await readFile(contractPath('ws'), 'utf8')
     // The trailing slash is a display detail the config layer strips (see
@@ -448,7 +439,7 @@ describe('the shell introducing itself', () => {
     await boot(
       'name: Atelier\nworkspace:\n  root: ./ws\n',
       'adestia.config.yaml',
-      () => new SkilledDriver(),
+      () => skilled(),
     )
     const contract = await readFile(contractPath('ws'), 'utf8')
     expect(contract).not.toContain('It answers at')

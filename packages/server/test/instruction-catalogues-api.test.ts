@@ -14,12 +14,12 @@ import { join } from 'node:path'
 import Fastify, { type FastifyInstance } from 'fastify'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import type { Driver } from '@antorfr/adestia-drivers'
 
 import { InstructionCataloguesStore } from '../src/instruction-catalogues-store.js'
 import { registerInstructionCatalogues } from '../src/routes/instruction-catalogues.js'
 import { registerInstructions } from '../src/routes/instructions.js'
 import { MANAGED_MARKER } from '../src/skills.js'
+import { ScriptedDriver } from './support/driver.js'
 import { git } from './support/git.js'
 import { cleanTmp, tmpDir } from './support/tmp.js'
 
@@ -34,8 +34,8 @@ const exists = (path: string) => stat(path).then(() => true, () => false)
 
 /** A driver that reads skills and the root instruction, but has no agent zone. */
 type Zone = { path: string; kind: 'instruction' | 'skill' | 'agent'; entry?: string }
-function driverWith(zones: Zone[]): Driver {
-  return { instructionPaths: () => zones } as unknown as Driver
+function driverFor(zones: Zone[]) {
+  return new ScriptedDriver([], { instructionPaths: zones })
 }
 const NO_AGENT: Zone[] = [
   { path: 'CLAUDE.md', kind: 'instruction' as const },
@@ -49,7 +49,7 @@ let app: FastifyInstance
 
 async function boot(zones: Zone[] = NO_AGENT): Promise<void> {
   const store = new InstructionCataloguesStore(dataDir)
-  const driver = driverWith(zones)
+  const driver = driverFor(zones)
   app = Fastify()
   registerInstructions(app, { driver, workspaceRoot: workspace, catalogues: store })
   registerInstructionCatalogues(app, { driver, workspaceRoot: workspace, dataDir, store })
