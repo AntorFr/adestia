@@ -264,7 +264,7 @@ read-only for everyone.
 **State strings and icons.** Every text of a loading, empty, refused or error state is
 today's, through `t()`; only its drawing changes. Icons by state: ok / connected / done /
 saved = `check`; working / connecting / waiting / asking / pending = `loader-circle`;
-failed / refused / blocked = `circle-alert`; needs auth / degraded = `triangle-alert`;
+failed / refused / blocked = `circle-alert`; restart pending (E-14) = `rotate-ccw`; no token (E-15) = `key-round`; needs auth / degraded = `triangle-alert`;
 unreachable / offline = `wifi-off`; delivered / read-only = `lock`. Refusals keep today's
 visibility: E-14 without `configPath` shows its tile and says it does not expose its
 configuration; E-10 not connected shows the needs-auth tone; E-11 delivered files are shown
@@ -275,9 +275,14 @@ above are proposed.
 
 **E-11 name sheet.** The prompt's text is the sheet's title (today's string), its field
 starts empty, and the prompt's native OK / Cancel become the sheet's two buttons (same
-meaning, not a new control). Confirm with an empty or slug-less name closes the sheet and
-does nothing, as OK on an empty prompt does today; Escape and Cancel close it; a name that
+meaning, not a new control). Confirm with an empty name (or one the existing `slug()` reduces to nothing) closes
+the sheet without creating anything, as OK on an empty prompt does today; Escape and Cancel close it; a name that
 exists is handled by what `start()` does today.
+
+**E-21** is seen by everyone, before any sign-in. The theme switch's three icons carry
+today's words as accessible name and tooltip (System / Light / Dark). The agent's effects
+visible on these screens are those of the matrix above (E-10, E-11 files it writes, E-13,
+E-19).
 
 **Developer** (runs the bench): no screen of its own here; it sees these through the bench
 captures.

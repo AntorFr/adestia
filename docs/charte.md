@@ -88,7 +88,7 @@ them in the shell; the other tranches use them.
 - **Sheet / dialog**: as in Usages; replaces `adestia-sheet`, and is the one the plugins use.
 - **Popover**: anchored panel (cog menu E-15 in this tranche; block settings E-6 and page properties E-5 adopt it in the pages tranche).
 - **Theme switch**: three icon buttons in a radiogroup (§ 7.4).
-- **Spinner**: the `loader-circle` icon, rotating, still under reduced motion; the loading mark of a row or a card.
+- **Spinner**: the `loader-circle` icon, rotating, static under reduced motion; the loading mark of a row or a card.
 - **Empty state**: icon, one sentence, the action that fills it when there is one.
 - **Field**: input, select, textarea, toggle; label, help, error.
 - **Focus ring**: one global `:focus-visible` rule; no `outline: none` without a
