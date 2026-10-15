@@ -8,11 +8,8 @@
  * (technique.md §Contrats d'interface), not read back from the routes.
  */
 
-import { execFile } from 'node:child_process'
-import { mkdtemp, mkdir, readFile, stat, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { promisify } from 'node:util'
 
 import Fastify, { type FastifyInstance } from 'fastify'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -23,21 +20,12 @@ import { InstructionCataloguesStore } from '../src/instruction-catalogues-store.
 import { registerInstructionCatalogues } from '../src/routes/instruction-catalogues.js'
 import { registerInstructions } from '../src/routes/instructions.js'
 import { MANAGED_MARKER } from '../src/skills.js'
+import { git } from './support/git.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
 
-const execFileAsync = promisify(execFile)
+afterEach(cleanTmp)
 
-async function git(cwd: string, ...args: string[]): Promise<void> {
-  await execFileAsync('git', args, {
-    cwd,
-    env: {
-      ...process.env,
-      GIT_AUTHOR_NAME: 'Test',
-      GIT_AUTHOR_EMAIL: 'test@example.org',
-      GIT_COMMITTER_NAME: 'Test',
-      GIT_COMMITTER_EMAIL: 'test@example.org',
-    },
-  })
-}
+
 async function commitAll(dir: string): Promise<void> {
   await git(dir, 'add', '--', '.')
   await git(dir, 'commit', '--quiet', '--no-gpg-sign', '-m', 'change')
@@ -78,9 +66,9 @@ async function declare(): Promise<void> {
 }
 
 beforeEach(async () => {
-  repo = await mkdtemp(join(tmpdir(), 'adestia-cat-api-repo-'))
-  workspace = await mkdtemp(join(tmpdir(), 'adestia-cat-api-ws-'))
-  dataDir = await mkdtemp(join(tmpdir(), 'adestia-cat-api-data-'))
+  repo = await tmpDir('adestia-cat-api-repo-')
+  workspace = await tmpDir('adestia-cat-api-ws-')
+  dataDir = await tmpDir('adestia-cat-api-data-')
   await git(repo, 'init', '--quiet', '-b', 'main')
   await mkdir(join(repo, 'dev-flow/skills/tri'), { recursive: true })
   await writeFile(
@@ -365,7 +353,7 @@ describe('what a refresh and a removal leave alone', () => {
   it('refreshing one catalogue does not touch another catalogue\'s import', async () => {
     await declare()
     await app.inject({ method: 'PUT', url: '/api/instruction-catalogues/core/items/dev-flow/skills/tri' })
-    const other = await mkdtemp(join(tmpdir(), 'adestia-cat-api-other-'))
+    const other = await tmpDir('adestia-cat-api-other-')
     await git(other, 'init', '--quiet', '-b', 'main')
     await mkdir(join(other, 'skills/zed'), { recursive: true })
     await writeFile(join(other, 'skills/zed/SKILL.md'), '---\nname: zed\ndescription: z\n---\n# zed\n')

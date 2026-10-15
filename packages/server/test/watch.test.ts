@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, sep } from 'node:path'
 import type { AddressInfo } from 'node:net'
@@ -9,6 +9,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ChangeFeed, pagePathOf, registerEvents, type EventsOptions } from '../src/watch.js'
 import type { WatchConfig } from '../src/config.js'
 import { resolveStores } from '../src/stores.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
+
+afterEach(cleanTmp)
 
 const WATCH: WatchConfig = { enabled: true, polling: false, intervalMs: 2000 }
 
@@ -189,7 +192,7 @@ describe('/api/events', () => {
   })
 
   it('sees a real write land as a pages-changed event', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'adestia-watch-'))
+    const root = await tmpDir('adestia-watch-')
     // Polling, so the test does not depend on which native backend this
     // machine has; production defaults to native events.
     const served = await serve({ stores: resolveStores([{ id: 'perso', path: root }], root).stores, watch: { ...WATCH, polling: true, intervalMs: 100 } })

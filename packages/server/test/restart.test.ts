@@ -13,42 +13,26 @@
  * discovered by somebody running containers by hand.
  */
 
-import { mkdtemp, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import Fastify from 'fastify'
-import { describe, expect, it } from 'vitest'
-import type { Driver, DriverDescriptor, TurnEvent } from '@antorfr/adestia-drivers'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import { buildApp, type AppDependencies } from '../src/app.js'
 import { registerRestart } from '../src/routes/restart.js'
 import { parseConfig } from '../src/config.js'
 import { start } from '../src/start.js'
+import { ScriptedDriver } from './support/driver.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
 
-class Bare implements Driver {
-  describe(): Promise<DriverDescriptor> {
-    return Promise.resolve({ id: 'bare', label: 'Bare', cliVersion: '0', capabilities: [] })
-  }
-  env(): Promise<Readonly<Record<string, string>>> {
-    return Promise.resolve({})
-  }
-  listModels(): Promise<readonly { id: string }[]> {
-    return Promise.resolve([])
-  }
-  async *runTurn(): AsyncIterable<TurnEvent> {
-    return
-  }
-  interrupt(): Promise<void> {
-    return Promise.resolve()
-  }
-}
+afterEach(cleanTmp)
 
 async function instance(extra: Partial<AppDependencies> = {}) {
   const asked: { count: number } = { count: 0 }
   const deps: AppDependencies = {
-    config: { ...parseConfig('auth:\n  mode: none\n'), dataDir: await mkdtemp(join(tmpdir(), 'adestia-restart-')) },
-    driver: new Bare(),
+    config: { ...parseConfig('auth:\n  mode: none\n'), dataDir: await tmpDir('adestia-restart-') },
+    driver: new ScriptedDriver([], { capabilities: [] }),
     plugins: [],
     pluginProblems: [],
     restart: () => {
@@ -144,7 +128,7 @@ describe('closing while somebody is watching', () => {
     // and Fastify waits for requests in flight — so `close()` never returned,
     // the new instance never booted, and `docker stop` left with code 137,
     // killed. Measured against the image on 2026-09-23.
-    const dir = await mkdtemp(join(tmpdir(), 'adestia-close-'))
+    const dir = await tmpDir('adestia-close-')
     const file = join(dir, 'adestia.config.yaml')
     await writeFile(
       file,
@@ -154,7 +138,7 @@ describe('closing while somebody is watching', () => {
     const running = await start({
       configPath: file,
       cwd: dir,
-      driverFactory: () => new Bare(),
+      driverFactory: () => new ScriptedDriver([], { capabilities: [] }),
       log: () => undefined,
     })
 
@@ -180,7 +164,7 @@ describe('the boot loop, which is the whole claim', () => {
     // second boot would fail with EADDRINUSE and the button would be a quit
     // button. Three cycles rather than one: a leak that only bites on the
     // second reuse is the kind that ships.
-    const dir = await mkdtemp(join(tmpdir(), 'adestia-reboot-'))
+    const dir = await tmpDir('adestia-reboot-')
     const file = join(dir, 'adestia.config.yaml')
     await writeFile(
       file,
@@ -191,7 +175,7 @@ describe('the boot loop, which is the whole claim', () => {
       'utf8',
     )
     const boot = () =>
-      start({ configPath: file, cwd: dir, driverFactory: () => new Bare(), log: () => undefined })
+      start({ configPath: file, cwd: dir, driverFactory: () => new ScriptedDriver([], { capabilities: [] }), log: () => undefined })
 
     for (let cycle = 0; cycle < 3; cycle += 1) {
       const running = await boot()
@@ -205,14 +189,14 @@ describe('the boot loop, which is the whole claim', () => {
     // The point of the button: a value written by the settings screen is
     // what the next instance runs. Read back through the running server
     // rather than from the file, which would prove nothing.
-    const dir = await mkdtemp(join(tmpdir(), 'adestia-reboot-conf-'))
+    const dir = await tmpDir('adestia-reboot-conf-')
     const file = join(dir, 'adestia.config.yaml')
     const conf = (polling: boolean) =>
       `host: 127.0.0.1\nport: 0\ndataDir: ${dir}/data\nauth:\n  mode: none\nworkspace:\n  root: ${dir}/ws\n  watch:\n    polling: ${polling}\n`
 
     await writeFile(file, conf(false), 'utf8')
     const boot = () =>
-      start({ configPath: file, cwd: dir, driverFactory: () => new Bare(), log: () => undefined })
+      start({ configPath: file, cwd: dir, driverFactory: () => new ScriptedDriver([], { capabilities: [] }), log: () => undefined })
 
     let running = await boot()
     expect(running.config.workspace.watch.polling).toBe(false)

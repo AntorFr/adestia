@@ -1,39 +1,22 @@
-import { mkdtemp, mkdir, readFile, stat, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import type { Driver, DriverDescriptor, TurnEvent } from '@antorfr/adestia-drivers'
+import type { Driver } from '@antorfr/adestia-drivers'
 
 import { MANAGED_MARKER } from '../src/skills.js'
 import { start, loadConfigFile, type StartedInstance } from '../src/start.js'
+import { ScriptedDriver } from './support/driver.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
 
-class StubDriver implements Driver {
-  describe(): Promise<DriverDescriptor> {
-    return Promise.resolve({
-      id: 'stub',
-      label: 'Stub',
-      cliVersion: '0',
-      capabilities: [],
-    })
-  }
-  env(): Promise<Readonly<Record<string, string>>> {
-    return Promise.resolve({})
-  }
-  async *runTurn(): AsyncIterable<TurnEvent> {
-    return
-  }
-  interrupt(): Promise<void> {
-    return Promise.resolve()
-  }
-}
+afterEach(cleanTmp)
 
 let root: string
 let started: StartedInstance | undefined
 let logs: string[]
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'adestia-start-'))
+  root = await tmpDir('adestia-start-')
   logs = []
 })
 
@@ -46,7 +29,7 @@ afterEach(async () => {
 const boot = async (
   config: string,
   file = 'adestia.config.yaml',
-  driverFactory: () => Driver = () => new StubDriver(),
+  driverFactory: () => Driver = () => new ScriptedDriver([], { capabilities: [] }),
 ) => {
   await writeFile(join(root, file), `${config}\nport: 0\n`)
   started = await start({
@@ -69,7 +52,7 @@ describe('configuration loading', () => {
   it('surfaces a malformed config instead of starting half-configured', async () => {
     await writeFile(join(root, 'bad.yaml'), 'prt: 8080\n')
     await expect(
-      start({ cwd: root, configPath: 'bad.yaml', driverFactory: () => new StubDriver() }),
+      start({ cwd: root, configPath: 'bad.yaml', driverFactory: () => new ScriptedDriver([], { capabilities: [] }) }),
     ).rejects.toThrow(/unknown setting "prt"/)
   })
 
@@ -299,14 +282,14 @@ describe('the permission posture', () => {
     // broken" by everyone including the agent. Loud beats degraded.
     await writeFile(join(root, 'ask.yaml'), 'permissions:\n  mode: ask\nport: 0\n')
     await expect(
-      start({ cwd: root, configPath: 'ask.yaml', driverFactory: () => new StubDriver() }),
+      start({ cwd: root, configPath: 'ask.yaml', driverFactory: () => new ScriptedDriver([], { capabilities: [] }) }),
     ).rejects.toThrow(/cannot ask/)
   })
 
   it('refuses a posture it does not know', async () => {
     await writeFile(join(root, 'bogus.yaml'), 'permissions:\n  mode: sometimes\nport: 0\n')
     await expect(
-      start({ cwd: root, configPath: 'bogus.yaml', driverFactory: () => new StubDriver() }),
+      start({ cwd: root, configPath: 'bogus.yaml', driverFactory: () => new ScriptedDriver([], { capabilities: [] }) }),
     ).rejects.toThrow(/permissions.mode/)
   })
 })
@@ -359,7 +342,7 @@ describe('workspace.umask', () => {
 
 describe('the shell introducing itself', () => {
   /** A CLI that reads contracts, which is what makes delivery happen at all. */
-  class SkilledDriver extends StubDriver {
+  class SkilledDriver extends ScriptedDriver {
     skillsPath(): string {
       return '.claude/skills'
     }

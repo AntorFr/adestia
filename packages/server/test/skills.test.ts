@@ -1,17 +1,19 @@
-import { mkdtemp, mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { MANAGED_MARKER, collectSkills, deliverAgents, deliverSkills } from '../src/skills.js'
 import type { DiscoveredPlugin } from '../src/extensions.js'
 import { resolveStores } from '../src/stores.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
+
+afterEach(cleanTmp)
 
 let root: string
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'adestia-skills-'))
+  root = await tmpDir('adestia-skills-')
 })
 
 const plugin = (

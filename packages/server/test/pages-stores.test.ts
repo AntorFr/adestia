@@ -10,17 +10,19 @@
  * the other.
  */
 
-import { mkdtemp, mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { readFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import Fastify, { type FastifyInstance } from 'fastify'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { registerFiles } from '../src/files.js'
 import { registerPages } from '../src/pages.js'
 import { resolveStores, type Store } from '../src/stores.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
+
+afterEach(cleanTmp)
 
 let workspace: string
 let stores: readonly Store[]
@@ -41,7 +43,7 @@ const mount = async (declared = [{ id: 'perso', path: 'perso' }, { id: 'famille'
 }
 
 beforeEach(async () => {
-  workspace = await mkdtemp(join(tmpdir(), 'adestia-multi-'))
+  workspace = await tmpDir('adestia-multi-')
 })
 
 describe('what a second store adds to a listing', () => {
