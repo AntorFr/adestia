@@ -40,6 +40,10 @@ node bench/launch.mjs --engine fake    # prints `listening on <url>`; <url>/api/
 node bench/sweep.mjs                   # every screen, light and dark, desk and phone
 ```
 
+The sweep takes Playwright and Chromium from the environment (`npm root -g`); do not
+add them to the repo. The launcher runs until SIGTERM (`kill <pid>`, or Ctrl-C), which
+removes its throwaway data; in a script, start it in the background and keep its pid.
+
 `--engine claude` runs a real turn instead (needs `CLAUDE_CODE_OAUTH_TOKEN`).
 See [bench/README.md](bench/README.md).
 

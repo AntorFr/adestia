@@ -5,7 +5,7 @@
 `bench/launch.mjs` (moteur factice ou vrai Claude), `bench/seed/*` (base, empty,
 config-writable, config-readonly, oidc, plugins ; contrôle `bench/seed/check.mjs`),
 `bench/sweep.mjs` (124 captures E-1 à E-31, `--skin`). Vérifié dans le pod : `/api/health`
-répond `ok`, SIGTERM retire le répertoire de données, balayage 124/124 en ~2 min, refus net
+répond `ok`, SIGTERM retire le répertoire de données, balayage 124/124 en ~2 min (2 à 4 min selon la machine), refus net
 de `--engine claude` sans jeton. **Pas vérifié** : un tour réel `--engine claude` (pas de
 jeton dans le pod d'intégration) — à jouer à la recette. Piège encore vrai :
 `catalogues-ui-ensemble.test.ts` (section « Catalogues » des réglages) est rouge sur
