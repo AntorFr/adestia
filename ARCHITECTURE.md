@@ -274,6 +274,43 @@ module. AD-8 is about JS helpers: the shell's tokens and component classes (AD-4
 the plugin reads by name, not code it imports. *Reversed if*: the plugin contract grows a
 helper surface in `PluginApi`.
 
+### AD-14 — The plugins' tranche: tokens by name, a copied sheet, tables per plugin, a lint and a CSS test
+(a) **No second vocabulary.** A plugin stylesheet reads the shell's tokens by name; an alias is a
+custom property whose whole value is `var(--<shell token>)` and none survives. A parameter that
+carries a meaning (a type colour, a hue, a derived mix) is defined once in the sheet that uses it,
+from tokens or hues, never from a literal. `plugins/test/css.test.js` (node:test, run by
+`npm run test:plugins`) holds the rules of the plugins' tokens section of `docs/ecrans.md` (« Target of the plugins tranche », folded by the last task of the tranche into the screens' own rows of `docs/ecrans.md`, the rules themselves living on in the header of `css.test.js`; `docs/charte.md` is not touched by it):
+an undefined token, an alias, a literal colour outside a `var()` fallback, `999px`, an
+`outline: none` without a ring. It reads the token list from `tokens.css`, so a token removed
+there fails here. *Rejected*: a lint plugin for CSS (a dependency for six rules a test states).
+(b) **The sheet is a copy, by classes.** The shared dialog reaches plugins as CSS classes and a
+three-line contract (AD-4); each plugin that opens a sheet carries its own ~30 lines of behaviour
+(`web/sheet.js`; an effect in meals' React view) — AD-8's rule, applied: a plugin loads from its own
+folder or another repository and imports no shell code. *Rejected*: a `data-adestia-sheet` helper
+shipped by the shell (a second contract, AD-8; the charter tranche also declines it). The two
+full-screen modes (atelier's step mode, the scan camera) are not sheets: they keep their full
+screen and take the sheet's behaviour contract and z-index family.
+(c) **Words: one table per plugin, English keys.** Atelier gets the table it lacked
+(`web/words.js`), `t` injected into its engine like `crumbs` and `href`; its `fr` values are
+today's French, so a French instance reads the same words (B-1). Parcours and project-management
+get the same. Messages of `regles.js` / `convert.js` go to the CLI and MCP tools, not to the
+screen, and stay French; the agent prompts stay as written. The class test `plugins/test/words.test.js` (it already
+reads the tables the way the shell does, the atelier's included once it has one) gains the *tu* rule, with a short list of the plugins still to correct that each task empties.
+(d) **Lint.** `eslint.config.js` (the serveur tranche's file, extended here) drops `plugins/**` from
+`ignores` and gains a block for `plugins/**/web/**/*.js` (browser globals; the `react-hooks` rules apply, since
+journal, todo, listening-post and meals call hooks through `createElement`) and one for the
+plugins' other `.mjs`/`.js` (node globals); the vendored `plugins/scan/web/decoder.js` (448 KB, third-party) joins the ignores with
+the reason. `npm run lint` covers `plugins`. A finding is fixed, or turned off for the rule with
+its reason written beside it (the file's own convention); no `eslint-disable` without a reason.
+(e) **Kept.** The native `confirm()` of the atelier (resetting a layout) and the `window.alert` of
+voyages (a refused gesture) stay: a sheet would make the answer asynchronous, a change of flow (Q-20,
+*kept: the flow would change*; written under Known defects). In plugin sheets only `820px` is a breakpoint; 520, 560, 640, 720 and 900 px are kept
+(*kept: moving a width changes the layout between phone and desktop, a redesign the mandate does
+not ask for*). Plugin buttons, fields and empty states do not adopt the charter's classes, except
+backs, exits and the sheet's close button.
+*Rejected*: moving the aids copied on purpose (`address.js`, word tables) into a shared module —
+AD-8. *Reversed if*: the plugin contract grows a helper surface in `PluginApi`.
+
 ## Refactoring targets
 
 Each target: what, where, why it costs, the tranche that owns it, and its outcome
@@ -307,6 +344,10 @@ Each target: what, where, why it costs, the tranche that owns it, and its outcom
 - **Delegations drop signatures**: `app/Delegations.tsx` › `toMessage` omits
   `stored.signatures`, which `chat/useConversations.ts` › `toMessage` keeps. To be confirmed
   that a delegation transcript can carry signatures.
+- **Native dialogs in plugins**: `plugins/atelier/web/app.js` asks `confirm()` before resetting a
+  layout and `plugins/voyages/web/app.js` shows `window.alert` for a refused gesture; unstyled,
+  unlocalised by the browser's own words, not closeable like a sheet. Replacing them changes the flow
+  (the answer is asynchronous), so it is a feature, not part of the mise à niveau (Q-20).
 - **Frontmatter CRLF divergence**: `content` accepts `\r\n` fences, `pages.ts` and
   `schedule.ts` only `\n` — a CRLF page has fields in the editor and none in the index or the
   schedule. Seen in the code; behaviour not yet reproduced.
