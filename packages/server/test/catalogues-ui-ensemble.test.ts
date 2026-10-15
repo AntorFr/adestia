@@ -187,17 +187,21 @@ async function newPage(): Promise<void> {
 }
 
 describe.skipIf(!canDrive)(`catalogues on screen${canDrive ? '' : ` (SKIPPED: ${SKIP_REASON})`}`, () => {
-  it('the Settings screen offers Catalogues as a section beside MCP servers, Instructions, Configuration and Delegations', async () => {
-    // The need: "une section de plus à côté de MCP servers, Instructions,
-    // Configuration, Delegations — pas un écran isolé ailleurs".
+  it('Catalogues is a button of the Instructions page (P-9, E-11), beside the other Settings sections', async () => {
+    // The product moved Catalogues from a Settings tile into E-11 (E-12 opens over it).
     await boot()
     await newPage()
     await page.goto(`${instance.url}#/settings`)
     await page.getByText('Delegations').first().waitFor({ timeout: 8000 })
     await shot('settings-home')
-    for (const section of ['MCP servers', 'Instructions', 'Configuration', 'Delegations', 'Catalogues']) {
+    for (const section of ['MCP servers', 'Instructions', 'Configuration', 'Delegations']) {
       expect(await page.getByText(section, { exact: true }).count(), `section ${section}`).toBeGreaterThan(0)
     }
+    // Not a tile of the Settings home any more.
+    expect(await page.getByRole('button', { name: 'Catalogues' }).count()).toBe(0)
+    await page.goto(`${instance.url}#/settings/instructions`)
+    await page.getByRole('button', { name: 'Catalogues' }).waitFor({ timeout: 8000 })
+    await shot('instructions-catalogues-button')
   })
 
   it('a first visit shows an empty list and the form to add a repository with its ref', async () => {
