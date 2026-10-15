@@ -297,6 +297,45 @@ Each target: what, where, why it costs, the tranche that owns it, and its outcom
 | R-14 | `server/test/catalogues-ui-ensemble.test.ts` skips itself without Playwright or a built web shell, so it never runs in a plain `npm test` | a suite that looks green and never ran | tests | |
 | R-15 | `zod` imported dynamically by `server/src/drivers.ts` but declared in no `package.json` | works only by hoisting | serveur | |
 
+### How the server tranche meets its targets (R-1 to R-8, R-13, R-15)
+
+Written before the code, so that each task of `adestia-qualite-serveur` is held to the same
+rules. The outcome column above stays blank until the documentation tranche fills it.
+
+- **Same bytes, one home.** A shared helper takes the strictest copy's behaviour only if the
+  copies are identical; where two copies differ (R-2's `truncate` ×3, `usageOf` ×3, `health` ×2
+  are suspects), the helper takes the difference as a parameter and each engine passes its own.
+  A difference found is written in "Known defects", never harmonised (AD-1).
+- **A characterization test before a move, when none exists.** R-1 (the Bearer rule: which
+  servers get the user's token, which get the instance's, which get none) and R-3 (the boot
+  order that `start.ts` comments carry) have thin cover today: each gets a test that pins
+  today's behaviour first, run green before the move and unchanged after it.
+- **R-3, what "mounted" means.** Every route is registered from a module under `routes/`;
+  `buildApp` only calls them, in today's order. `buildApp` keeps its signature (the tests call
+  it). `adestiaRunTurn` stops being an untyped property: a typed decoration the boot reads, the
+  same behaviour. `TurnLimiter` and `runUnattended` move to their own modules; `start()` becomes
+  a sequence of named steps whose order is the order of today's code, and no step function
+  exceeds 150 lines.
+- **R-5, a move, not a merge.** `splitFrontmatter` and `parseFrontmatter` move out of `pages.ts`
+  into their own module with their bodies untouched; `instructions.ts`, `instruction-catalogues.ts`,
+  `schedule.ts` and `shell-tools.ts` import from it. The CRLF divergence stays (AD-7).
+- **R-6, how exports are counted.** `scripts/unused-exports.mjs` lists every named export of
+  `packages/*/src` that no other file under `packages/*/src` imports, re-exports through an
+  index, or names; it prints `file:name`. A name used only by `test/` counts as unused by
+  production. What remains after the tranche is a type that is part of a package's public
+  contract (the `index.ts` of a package), each named in this section when it is known; every
+  other hit is un-exported or deleted.
+- **R-8, a claim the gate keeps.** `eslint.config.js` is rewritten to say what its rules do
+  (no type-aware rule, so no floating-promise check; `caughtErrors: 'none'`, so an ignored caught
+  error is allowed). Turning on type-aware rules would fire on deliberate fire-and-forget
+  calls and is **kept: a cost out of proportion to a quality pass**, noted for the
+  recommendations. `npm run lint` joins the CI job beside `typecheck` and `test`.
+- **R-13, a real file.** The Copilot shell-tool CLI becomes a real `.mjs` file beside the driver;
+  the driver writes the same bytes it writes today, found whether it runs from `src/` (tests) or
+  from `dist/` (the image). The program is linted with the rest.
+- **R-15.** `zod` is declared in `packages/server/package.json` at the version the lockfile
+  already resolves, and the lockfile is edited to match; no other package moves.
+
 ## Known defects (found, not fixed by this epic)
 
 - **Catalogue ref or repo starting with `-`** reaches git as an option: `sources.ts` passes
