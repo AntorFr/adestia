@@ -29,7 +29,12 @@ import { cleanTmp, tmpDir } from './support/tmp.js'
 afterEach(cleanTmp)
 
 async function instance(extra: Partial<AppDependencies> = {}) {
-  const asked: { count: number } = { count: 0 }
+  // `called` is the stub's own signal: it resolves when the launcher is asked.
+  let notify!: () => void
+  const called = new Promise<void>((resolve) => {
+    notify = resolve
+  })
+  const asked: { count: number; called: Promise<void> } = { count: 0, called }
   const deps: AppDependencies = {
     config: { ...parseConfig('auth:\n  mode: none\n'), dataDir: await tmpDir('adestia-restart-') },
     driver: new ScriptedDriver([], { capabilities: [] }),
@@ -37,6 +42,7 @@ async function instance(extra: Partial<AppDependencies> = {}) {
     pluginProblems: [],
     restart: () => {
       asked.count += 1
+      notify()
     },
     ...extra,
   }
@@ -61,7 +67,7 @@ describe('who may ask for a restart', () => {
     expect(response.statusCode).toBe(202)
     expect(response.json()).toEqual({ restarting: true })
 
-    await new Promise((resolve) => setImmediate(resolve))
+    await asked.called
     expect(asked.count).toBe(1)
   })
 })
@@ -77,9 +83,19 @@ describe('a turn in flight', () => {
   async function guarded(running: () => number) {
     const app = Fastify({ logger: false })
     let asked = 0
-    registerRestart(app, { running, restart: () => { asked += 1 } })
+    let notify!: () => void
+    const called = new Promise<void>((resolve) => {
+      notify = resolve
+    })
+    registerRestart(app, {
+      running,
+      restart: () => {
+        asked += 1
+        notify()
+      },
+    })
     await app.ready()
-    return { app, asked: () => asked }
+    return { app, asked: () => asked, called }
   }
 
   it('refuses, and says how many are running', async () => {
@@ -90,9 +106,11 @@ describe('a turn in flight', () => {
     expect(response.statusCode).toBe(409)
     expect(response.json()).toEqual({ error: '2 turns are running', running: 2 })
 
-    await new Promise((resolve) => setImmediate(resolve))
-    expect(asked()).toBe(0)
+    // A refusal schedules nothing, so there is no later step to signal: closing
+    // the app flushes whatever it had scheduled, and only then is "never asked"
+    // an observation rather than a hope.
     await app.close()
+    expect(asked()).toBe(0)
   })
 
   it('counts in the singular when there is one', async () => {
@@ -106,7 +124,7 @@ describe('a turn in flight', () => {
   it('goes ahead when the operator overrules it, and says what it cut', async () => {
     // `force` is how somebody overrules the guard deliberately, rather than
     // by not knowing it was there.
-    const { app, asked } = await guarded(() => 3)
+    const { app, asked, called } = await guarded(() => 3)
     const response = await app.inject({
       method: 'POST',
       url: '/api/restart',
@@ -115,7 +133,7 @@ describe('a turn in flight', () => {
     expect(response.statusCode).toBe(202)
     expect(response.json()).toEqual({ restarting: true, interrupted: 3 })
 
-    await new Promise((resolve) => setImmediate(resolve))
+    await called
     expect(asked()).toBe(1)
     await app.close()
   })

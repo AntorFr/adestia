@@ -1,4 +1,4 @@
-import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, stat, unlink, utimes, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import Fastify, { type FastifyInstance } from 'fastify'
@@ -281,8 +281,12 @@ describe('writing', () => {
     await write('a.md', '# One\n')
     const { revision } = await read('a.md')
 
-    await new Promise((resolve) => setTimeout(resolve, 10))
+    // The agent's write lands on a different mtime by construction, not by
+    // having let the clock tick between the two.
+    const before = await stat(join(root, 'a.md'))
     await write('a.md', '# The agent was here\n')
+    const later = new Date(before.mtimeMs + 10_000)
+    await utimes(join(root, 'a.md'), later, later)
 
     const response = await save('a.md', '# My edit\n', revision)
     expect(response.statusCode).toBe(409)
