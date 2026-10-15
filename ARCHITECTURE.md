@@ -209,7 +209,7 @@ as one. *Reversed if*: a defect blocks a refactoring outright; it then becomes i
 
 ### AD-2 — A launcher on the fake engine, outside the product
 One term: **the fake engine**, a scripted fake driver handed to the server through
-`start({ driverFactory })`. A script under `bench/` starts the server on the fake engine
+`start({ driverFactory })`. **TARGET** (B-2, not built): a script under `bench/` starts the server on the fake engine
 with a seeded workspace and data directory; the real-Claude mode is the plain binary with
 `CLAUDE_CODE_OAUTH_TOKEN` in the environment.
 *Rejected*: a `fake` driver id in the configuration (a product surface added for tests);
