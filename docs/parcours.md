@@ -31,9 +31,9 @@ Form of the `exigences` skill; each need names the journeys it serves.
 ### Unchanged behaviour
 - **B-1** — Every journey `P-1` to `P-14` behaves after the epic as it did at v0.88.0: same
   routes, same API, same configuration keys, same files on disk and their formats, same MCP
-  tools, same words where a word is not corrected by `B-8`. A visible change is limited to the
-  look (`B-6`, `B-7`, `B-9`), to the language of a string (`B-8`) and to the loading states
-  below. The one contract change the epic allows is additive and only for words: the shell
+  tools, same words where a word is not corrected by `B-8` or `B-9`. A visible change is limited to
+  the look (`B-6`, `B-7`, `B-9`), to the language of a string (`B-8`), to the labels of back
+  controls, which name their destination (`B-9`), and to the loading states below. The one contract change the epic allows is additive and only for words: the shell
   hands a skin's module the instance's locale as an extra, optional input (AD-5); a skin that
   ignores it works unchanged, including skins from `extensions.skinsDir` or
   `extensions.sources`. The "Lacks" column of `docs/ecrans.md` › States is an observation, not
