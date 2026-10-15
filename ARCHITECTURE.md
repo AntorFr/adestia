@@ -256,6 +256,60 @@ the state only; `.agent` mission and questions files of closed work removed (git
 *Rejected*: rewriting `DESIGN.md` into ADR files — 3000 lines of reasons for no reader
 gain. *Reversed if*: `DESIGN.md` stops being read as a whole.
 
+#### Detail of the documentation tranche (AD-6, B-4, B-5)
+
+The tranche changes no code: it only writes and deletes Markdown, plus the dead comments
+nobody else owns (none: R-7 belongs to serveur and plugins). It runs last, on the final
+screens, and carries four things.
+
+**1. `.agent/status.md` says the state, and nothing else.** Under 150 lines, in this order:
+the current version and what it is (tag, deployed or not, per body); *Known defects* (the
+section of this file is the source; status points at it and adds only what is not yet
+there); *Half-built* (functions that exist and are reached by no screen, written as one
+line each); *Traps still true* (each in two lines: the symptom, the cause); *Where to
+look* (pointers to the docs above, to `CHANGELOG.md`, to `bench/README.md`). A version
+paragraph leaves status.md for `CHANGELOG.md` whole, its "Reste / pièges encore vrais" tail
+too when the trap is gone; a trap still true (checked against the code, not recopied) is
+rewritten short in *Traps*. status.md stays in French (`.agent` is French).
+
+**2. `CHANGELOG.md` is the history.** English, one `## vX.Y.Z — date` per version from the
+oldest the status file knows (v0.61.0) to the current one, oldest first; each entry keeps
+the paragraph's first sentence (what changed for the user) and the *why* it carried, and
+drops the recipe and the deployment chatter. Versions with no entry (tagged by mistake, e.g.
+v0.87.3) get a line saying so. The paragraphs are moved, not re-derived: a version whose date
+or content is not in status.md is not invented. The epic's own changes enter as one
+`## Unreleased — adestia-qualite` entry, written from the merged tranches' commit messages.
+
+**3. `DESIGN.md` is ranged, not rewritten.** (a) *Decision log*: entries in one order,
+oldest first, by the date each opens with; entries with no date keep their place after the
+dated entry they follow. Reordering moves blocks whole. (b) *What is built, and what is
+not*, *Spikes* and the header line "implemented unless marked not built yet" are replaced
+by a short pointer to `docs/parcours.md`, `docs/ecrans.md`, `ARCHITECTURE.md` and
+`CHANGELOG.md`, each *not built yet* item that is built now deleted and each that is not
+moved to *Half-built* in status.md. Reasons stay: nothing in the principles and the
+per-subject sections is cut (AD-6, rejected: ADR files).
+
+**4. The rest is read against the code.** README (what it is, launch, test, launch on the
+fake engine, capture screens: the commands the banc tranche documented), CLAUDE.md (package
+map and commands, as built), this file (map, every R-n *Outcome* filled, defects), the four
+`docs/` files (every Q-n `closed` or `kept: reason`), `plugins/README.md`, `spikes/README.md`
+(the "Open spikes" pointer goes: DESIGN.md's *Spikes* is a record, not a list of open
+work), `packages/*/README.md`, `packages/schemas/CHANGELOG.md`. Closed work leaves
+`.agent`: a `mission-*.md` and its `questions-*.md` go when the work shipped (the chantier
+is in status.md or CHANGELOG), `migrate-frame.mjs` stays only if the migration it did is
+still undone (`questions-migration-contenu.md` says), else goes with them. Git keeps them.
+
+**What counts as a contradiction** (the `relire-doc` bar): a command that does not run, a
+file or symbol the text names and the repository lacks, a number (count of skins, of
+plugins, of tests) the code contradicts, a "not built" the code builds, a decision and its
+reversal both standing. Style is not one.
+
+**Verification, by search:** `git grep -n "three skins\|Open spikes" -- '*.md'` empty;
+`git grep -n "not built" -- DESIGN.md` empty outside quoted history; every `docs/*.md` and
+`*.md` link target exists (a one-line `node` script written in the task, not committed);
+the tokens check of the charter tranche run once more over `packages/web/src` and
+`plugins/*/web`.
+
 ### AD-7 — Out of this epic, because they change behaviour
 Unifying the frontmatter parsers (`content/src/frontmatter.ts` accepts CRLF; `pages.ts`
 › `splitFrontmatter`, its `parseScalar`, and `schedule.ts` › `frontmatterOf` /
