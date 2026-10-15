@@ -4,26 +4,29 @@
  * on disk — the need's gestures: declare a repository, browse it, import an
  * item, see where it came from, refresh, remove.
  *
- * Needs: `git`, the built shell (`npm run build:web --workspace
- * @antorfr/adestia-web`), and Playwright with Chromium (global install, or
- * NODE_PATH). When either browser piece is missing the file SKIPS and says so
- * in the skip reason — a skipped run is not a seen screen.
+ * Needs: `git` and Playwright with Chromium (local, global — `npm root -g`
+ * included — or NODE_PATH). The web shell is built here, once, when
+ * `packages/web/dist-web/index.html` is absent. Without Playwright the file
+ * SKIPS and says so twice (title and a console.warn) — a skipped run is not
+ * a seen screen.
  *
  * Screenshots go to $ADESTIA_SHOTS or the OS temp directory, never the tree.
  */
 
+import { execFile, execFileSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { promisify } from 'node:util'
 
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // A real browser against a real server: slower than a unit, and a failed
 // wait should name its selector (Playwright's own 8 s) before the test dies.
-vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 })
+vi.setConfig({ testTimeout: 60_000, hookTimeout: 180_000 })
 
 import { type StartedInstance, start } from '../src/start.js'
 import { git } from './support/git.js'
@@ -33,20 +36,54 @@ afterEach(cleanTmp)
 
 const requireFrom = createRequire(import.meta.url)
 
-function loadPlaywright(): any {
-  for (const base of [undefined, '/usr/lib/node_modules', '/usr/local/lib/node_modules']) {
-    try {
-      return base === undefined ? requireFrom('playwright') : createRequire(`${base}/`)('playwright')
-    } catch {
-      /* try the next place */
-    }
+/** Where `npm root -g` says global packages live ('' when npm is not there). */
+function npmGlobalRoot(): string {
+  try {
+    return execFileSync('npm', ['root', '-g'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()
+  } catch {
+    return ''
   }
-  return undefined
+}
+
+/**
+ * Playwright from the packages' own node_modules or NODE_PATH (what a plain
+ * `require` sees), then from where npm keeps global installs. No place is
+ * hard-coded: a PATH and a NODE_PATH that hide it must be able to hide it.
+ */
+function loadPlaywright(): any {
+  try {
+    return requireFrom('playwright')
+  } catch {
+    /* try the global root */
+  }
+  const global = npmGlobalRoot()
+  if (global === '') return undefined
+  try {
+    return createRequire(`${global}/`)('playwright')
+  } catch {
+    return undefined
+  }
 }
 const playwright = loadPlaywright()
-const shellBuilt = existsSync(new URL('../../web/dist-web/index.html', import.meta.url))
-const canDrive = playwright !== undefined && shellBuilt
-const SKIP_REASON = `${playwright === undefined ? 'no playwright ' : ''}${shellBuilt ? '' : 'no built web shell'}`
+const shellIndex = new URL('../../web/dist-web/index.html', import.meta.url)
+// A missing shell is built in beforeAll; only a missing Playwright skips.
+const canDrive = playwright !== undefined
+const SKIP_REASON = 'no playwright'
+if (!canDrive) console.warn(`catalogues-ui-ensemble: SKIPPED (${SKIP_REASON}): the screens were not driven`)
+
+async function buildShell(): Promise<void> {
+  if (existsSync(shellIndex)) return
+  const repoRoot = fileURLToPath(new URL('../../../', import.meta.url))
+  await promisify(execFile)('npm', ['run', 'build:web', '--workspace', '@antorfr/adestia-web'], {
+    cwd: repoRoot,
+    // Vitest runs with NODE_ENV=test, and the child would inherit it: vite then
+    // compiles JSX to react/jsx-dev-runtime, which is not one of the shell's
+    // external specifiers, so React lands in the bundle as a CJS `require`
+    // that throws in the page. The shell is a production build.
+    env: { ...process.env, NODE_ENV: 'production' },
+    maxBuffer: 64 * 1024 * 1024,
+  })
+}
 
 async function commitFiles(dir: string, files: Record<string, string>, message: string): Promise<void> {
   for (const [path, content] of Object.entries(files)) {
@@ -116,6 +153,7 @@ async function shot(name: string): Promise<void> {
 
 beforeAll(async () => {
   if (!canDrive) return
+  await buildShell()
   browser = await playwright.chromium.launch()
 })
 afterAll(async () => {

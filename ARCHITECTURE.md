@@ -294,7 +294,7 @@ Each target: what, where, why it costs, the tranche that owns it, and its outcom
 | R-11 | Web: about 40 `fetchImpl(` call sites and 14 hand-rolled live guards, `failure()` (`CataloguePopin.tsx`) and `json()` (`chat/conversations.ts`) local to one file; `toMessage` duplicated in `useConversations.ts` and `Delegations.tsx`, drifted (the second drops `signatures`, kept as defect); `prettify` ×3, `folderOf` ×2, `isIndexPage` ×2 with different rules (`app/sections.ts`, `app/collections.ts`, `editor/nodes.ts`, `editor/listing.ts`) | one idea, several answers | charte (the shared request helper), pages, chat for `chat/` | |
 | R-12 | Giant components: `App` 571 lines, `useConversations` 456; files `Reader.tsx` 1153, `Editor.tsx` 703, `Instructions.tsx` 591, `Home.tsx` 546, `Chat.tsx` 542, `Configuration.tsx` 456 | unreadable, untestable in parts | pages (App, Reader, Editor, Home); chat (Chat, useConversations, Composer); charte (Instructions, Configuration, McpServers) | |
 | R-13 | `copilot-cli/driver.ts` › `SHELL_TOOL_CLI_SOURCE`, a whole JS program in a template string | untyped, unlinted | serveur (real file read at build, behaviour kept) | |
-| R-14 | `server/test/catalogues-ui-ensemble.test.ts` skips itself without Playwright or a built web shell, so it never runs in a plain `npm test` | a suite that looks green and never ran | tests | |
+| R-14 | `server/test/catalogues-ui-ensemble.test.ts` skips itself without Playwright or a built web shell, so it never runs in a plain `npm test` | a suite that looks green and never ran | tests | kept: the suite now runs in `npm test` (the shell is built in its `beforeAll`, without Playwright it skips and says `no playwright` twice), but its first case asserts a `Catalogues` card on the Settings home, which the product moved into a pop-in of Instructions (E-12): that test is stale, red, and the tester's to rule on |
 | R-15 | `zod` imported dynamically by `server/src/drivers.ts` but declared in no `package.json` | works only by hoisting | serveur | |
 
 ## Detail of R-9, R-10 and R-14 (tests tranche)
@@ -345,14 +345,18 @@ applied file by file:
 **The catalogue screens suite (R-14).** `catalogues-ui-ensemble.test.ts` keeps its two
 conditions and gains a way to meet them:
 
-- Playwright is found by the places it already tries, plus `npm root -g` (the pod keeps it in
-  `/usr/lib/node_modules`; the bench resolves it the same way, and the two stay separate
-  copies: the bench is `.mjs` outside the packages).
+- Playwright is found by a plain `require` (the packages' `node_modules`, `NODE_PATH`), then
+  through `npm root -g` (the pod keeps it in `/usr/lib/node_modules`); the hard-coded
+  `/usr/lib` and `/usr/local/lib` are gone, so a `PATH` and `NODE_PATH` that hide it do hide it.
+  The bench resolves it the same way, and the two stay separate copies: the bench is `.mjs`
+  outside the packages.
 - A missing built shell is no longer a reason to skip when Playwright is there: a `beforeAll`
   runs `npm run build:web --workspace @antorfr/adestia-web` once (generous timeout) when
   `packages/web/dist-web/index.html` is absent. *Rejected*: building in the `test` script
   (every run pays, including those that never reach this suite) and a vitest `globalSetup`
-  (hides the cost from the file that needs it). *Reversed if*: the build exceeds a minute in
+  (hides the cost from the file that needs it). The build child gets `NODE_ENV=production`:
+  under vitest it would inherit `test`, vite would emit `react/jsx-dev-runtime`, which the
+  shell does not keep external, and the page would die on a CJS `require("react")`. *Reversed if*: the build exceeds a minute in
   the pod, then a `pretest` is the honest place.
 - Without Playwright the suite still skips, and now says it twice: in the title, as today,
   and with one `console.warn` line at collection naming the missing piece. A skipped run is
