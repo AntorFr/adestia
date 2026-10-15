@@ -1,18 +1,21 @@
 /**
- * The smallest seed: an instance with its configuration and nothing else.
- *
- * The seed format (ARCHITECTURE.md, « Detail of AD-2 and AD-3 »): a module that
- * default-exports `async ({ workspace, dataDir }) => config`. It writes whatever
- * the screens need — pages, thread files, plugin data — into those two
- * directories the way the product itself stores them (docs/donnees.md), and
- * returns the instance configuration as YAML text. The launcher then sets the
- * port, the directories, the locale and the skin on top; a seed never names them.
- *
- * It may also export `scripts`, the fake engine's scripted answers for this seed.
+ * The populated instance without a visible configuration: pages, sections,
+ * a collection, conversations in every state, MCP servers in every health,
+ * instructions and catalogues, delegations, a stored credential, a refused
+ * plugin. Started by the launcher without a settings route (E-14 « n'expose
+ * pas sa configuration »). See `_base.mjs` for the content.
  */
-export default async function seed() {
-  return `name: Adestia bench
-auth:
-  mode: none
-`
+import { MCP_HEALTH, configFor, populate, storeToken } from './_base.mjs'
+import { chatScripts } from './_scripts.mjs'
+
+export { ready } from './_base.mjs'
+export const scripts = chatScripts
+export const engine = { mcp: MCP_HEALTH, auth: 'armed' }
+/** `none`: no `configPath` — the launcher hides `/api/settings`. */
+export const config = { file: 'none' }
+
+export default async function seed(ctx) {
+  await populate(ctx)
+  await storeToken(ctx.dataDir)
+  return configFor(ctx)
 }

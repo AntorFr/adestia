@@ -16,10 +16,20 @@
  *                   `CLAUDE_CODE_OAUTH_TOKEN` from the environment; refused
  *                   without it, before anything is created.
  *
+ * A seed (bench/seed/<name>.mjs) is `default(ctx) => yamlText`, with
+ * optional exports: `scripts` (the engine's answers), `engine`
+ * (what it reports: mcp health, credential, models), `config`
+ * (`{ file: 'writable' | 'readonly' | 'none' }`: the config file
+ * the settings screen sees; `none` hides `/api/settings`, as an
+ * instance started without `configPath` would) and
+ * `ready({ url })` (called once it answers, to start the turns
+ * that must be running). `ctx` is `{ workspace, dataDir, base,
+ * port, onClose(fn) }`.
+ *
  * Nothing here is part of the product: no configuration key, no driver id.
  */
 import { spawn } from 'node:child_process'
-import { access, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { access, chmod, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
@@ -90,10 +100,12 @@ await mkdir(dataDir, { recursive: true })
 let instance
 let child
 let cleaning = false
+const closers = []
 const cleanup = async (code) => {
   if (cleaning) return
   cleaning = true
   try {
+    for (const close of closers.reverse()) await close().catch(() => undefined)
     if (instance) await instance.close()
     if (child && child.exitCode === null) {
       child.kill('SIGTERM')
@@ -117,10 +129,13 @@ for (const signal of ['SIGTERM', 'SIGINT']) process.on(signal, () => void cleanu
 
 try {
   const seedModule = await import(pathToFileURL(seedFile).href)
-  const seeded = await seedModule.default({ workspace, dataDir })
+  // The port is chosen before the seed runs: a seed that signs people in needs
+  // its own redirect address in the configuration it returns.
+  const port = options.port || (await freePort())
+  const seeded = await seedModule.default({ workspace, dataDir, base, port, onClose: (close) => closers.push(close) })
   const config = yaml.parse(seeded) ?? {}
   config.host = '127.0.0.1'
-  config.port = options.port
+  config.port = port
   config.dataDir = dataDir
   config.workspace = { ...(config.workspace ?? {}), root: workspace }
   config.extensions = { ...(config.extensions ?? {}), skinsDir: join(root, 'skins') }
@@ -128,12 +143,15 @@ try {
   if (options.locale) config.locale = options.locale
   const configPath = join(base, 'adestia.config.yaml')
   await writeFile(configPath, yaml.stringify(config))
+  const configFile = seedModule.config?.file ?? 'writable'
+  if (!['writable', 'readonly', 'none'].includes(configFile)) throw new Error(`seed ${options.seed}: config.file must be writable, readonly or none`)
+  if (configFile === 'readonly') await chmod(configPath, 0o444)
 
   let url
   if (options.engine === 'fake') {
     const { start } = await import(pathToFileURL(serverEntry).href)
     const { createFakeEngine } = await import(pathToFileURL(join(here, 'fake-engine.mjs')).href)
-    const engine = createFakeEngine({ scripts: seedModule.scripts ?? [] })
+    const engine = createFakeEngine({ scripts: seedModule.scripts ?? [], ...(seedModule.engine ?? {}) })
     instance = await start({
       configPath,
       cwd: base,
@@ -141,11 +159,9 @@ try {
       log: (message) => console.error(message),
     })
     url = instance.url
+    if (configFile === 'none') hideSettings(instance.app.server)
   } else {
-    // Port 0 cannot be learned from a child; ask for a free one first.
-    const port = config.port || (await freePort())
-    config.port = port
-    await writeFile(configPath, yaml.stringify(config))
+    if (configFile === 'none') console.error('launch: the plain binary always has a configuration file — /api/settings stays exposed')
     child = spawn(process.execPath, [join(root, 'packages/server/bin/adestia.js'), '--config', configPath], {
       cwd: base,
       env: env,
@@ -161,10 +177,29 @@ try {
   }
 
   await waitForHealth(url)
+  await seedModule.ready?.({ url })
   console.log(`listening on ${url}`)
 } catch (error) {
   console.error(`launch: ${error instanceof Error ? (error.stack ?? error.message) : error}`)
   await cleanup(1)
+}
+
+/**
+ * An instance started without `configPath` has no settings route (E-14 says so
+ * itself); `start()` always has one, so the route is answered 404 before the
+ * product sees the request. The product is not touched.
+ */
+function hideSettings(server) {
+  const listeners = server.listeners('request')
+  server.removeAllListeners('request')
+  server.on('request', (request, response) => {
+    if (/^\/api\/settings(\?|$)/.test(request.url ?? '')) {
+      response.writeHead(404, { 'content-type': 'application/json' })
+      response.end('{"error":"this instance does not expose its configuration"}')
+      return
+    }
+    for (const listener of listeners) listener.call(server, request, response)
+  })
 }
 
 async function freePort() {

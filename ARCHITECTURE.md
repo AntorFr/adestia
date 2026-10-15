@@ -247,6 +247,11 @@ stops shipping Playwright.
   configuration the screens need (`docs/ecrans.md`, "Seeded data for captures"): `base`,
   `empty`, `config-writable`, `config-readonly`, `oidc` (with a stub identity provider,
   `bench/oidc-stub.mjs`, so E-1's sign-in and refused gates are real), and `plugins`.
+  A seed may also export `scripts` (fake-engine answers, `bench/seed/_scripts.mjs`), `engine`
+  (MCP health and credential state the fake engine reports), `config` (`file: writable |
+  readonly | none` — `none` is answered 404 on `/api/settings` by the launcher, since `start()`
+  always has a `configPath`) and `ready({ url })` (the turns that must be running). The seeds
+  are checked by `bench/seed/check.mjs`, which names each measure in default.
 - **Sweep.** `node bench/sweep.mjs [--skin <id>] [--locale en|fr] [--out <dir>] [--only E-n]`
   runs, for each seed it needs, the launcher in-process, and drives Chromium from the
   environment: Playwright is imported from the global npm root (`npm root -g`), never from the

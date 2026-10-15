@@ -37,11 +37,46 @@ which stops it and removes its data. Browse the URL, or drive it by API
 - **`--engine claude`** starts the plain `packages/server/bin/adestia.js` with the
   token from the environment and refuses without `CLAUDE_CODE_OAUTH_TOKEN`.
 - **Seeds**: `bench/seed/<name>.mjs` default-exports
-  `async ({ workspace, dataDir }) => configYaml`. It writes pages, threads and
-  plugin data the way the product stores them (`docs/donnees.md`) and returns the
-  instance configuration as YAML; the launcher sets port, directories, locale and
-  skin over it. A seed may also export `scripts` (fake-engine scripts). `base` is
-  the configuration alone.
+  `async ({ workspace, dataDir, base, port, onClose }) => configYaml`. It writes
+  pages, threads and plugin data the way the product stores them
+  (`docs/donnees.md`) and returns the instance configuration as YAML; the
+  launcher sets port, directories, locale and skin over it. Optional exports:
+  `scripts` (fake-engine answers), `engine` (what the fake engine reports: MCP
+  health, the credential `armed|absent|invalid`), `config` (`{ file:
+  'writable'|'readonly'|'none' }`, below) and `ready({ url })` (runs once it
+  answers, to start the turns that must be *running*). A file starting with `_`
+  is shared code, not a seed.
+
+| `--seed` | What it shows |
+|---|---|
+| `base` | The populated instance: 20+ pages in two stores (every core block, a lost and an ambiguous wikilink, a vocabulary the product refuses to save, an unreadable frontmatter, a stray `app:`, files, two collections), conversations (running, unread, idle, archived, long, medium, a thread with every bubble state), six MCP servers in every health, instructions and three catalogues (importable, empty, unreachable), four delegations from two callers, a brief, a stored credential, a refused plugin and a plugin delivering a skill. No settings route: E-14 says it does not expose its configuration. |
+| `config-writable` | `base`, with the configuration file the screen reads and writes. |
+| `config-readonly` | `base`, with the file read-only and the credential refused upstream. A process running as root can write a `0444` file: the screen then shows it writable. |
+| `oidc` | `base` behind a sign-in; the provider is `bench/oidc-stub.mjs`. |
+| `empty` | Nothing: no plugin, page, conversation, server, catalogue or credential. |
+
+The chat states are asked for by typing their word (`bench/seed/_scripts.mjs`):
+`fini`, `outil`, `erreur`, `permission` (waits), `signature`, `en cours`
+(waits), `long contexte`, `contexte moyen`. A waiting turn ends when you stop it
+(`POST /api/turn/stop`). `base` starts two of them itself: the conversation
+« Conversation en cours » and a delegation from `courrier`.
+
+`--engine claude` always has a configuration file (the binary reads one), so
+`base` exposes `/api/settings` there. Seeds, not engines, decide the credential:
+with `--engine claude` the real token is the one in the environment.
+
+**`oidc`** is real: `/auth/login` goes to the stub, which signs `alice` (group
+`famille`, allowed) in; `GET <issuer>/__as?user=visiteur` makes the next
+sign-in the visitor's, whom `allowedGroups` refuses. The product only talks to
+an issuer over HTTPS, so the stub serves a self-signed certificate made by
+`openssl` and the launcher sets `NODE_TLS_REJECT_UNAUTHORIZED=0` (a browser
+following the redirect must ignore certificate errors). The session secret is
+fixed in the seed so a session of a refused group can be forged to reach the
+« refused » gate.
+
+**Checking the seeds**: `node bench/seed/check.mjs [--seed base,empty,…]` starts
+each seed, reads the screens' data through the API, sends every trigger message
+and exits non-zero naming each measure that failed (`check: base › mcp: …`).
 
 `bench/bench.mjs` finds Playwright under `/usr/lib/node_modules`, or else under
 `npm root -g`.
