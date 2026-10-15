@@ -121,3 +121,100 @@ already does for text on the accent).
 
 None yet. A pair left under its threshold is written here with its reason and who accepted
 it.
+
+## 7. Build specification — tranche `adestia-qualite-charte`
+
+What the tranche builds, in enough detail that nothing is left to choose. Decisions are
+numbered `AD-9` to `AD-11` in `ARCHITECTURE.md`; this section is the visual and behavioural
+side. When the tranche is done, the **TARGET** marks above are removed and this section is
+folded into them.
+
+### 7.1 Tokens
+
+- **Dark palette once** (AD-10): every colour token of the base palette is written once, as
+  `light-dark(<light>, <dark>)`, driven by `color-scheme`. `:root` sets `color-scheme: light
+  dark`; `:root[data-theme='light']` and `[data-theme='dark']` force one. The two pasted dark
+  blocks go; no hue or value changes except the contrast corrections of § 7.2. Skins keep
+  redefining tokens in their own `:root[data-skin=<id>]` blocks, with plain values or
+  `light-dark()`.
+- **Type scale**: `--text-2xs` 11px, `--text-xs` 12px, `--text-sm` 13px, `--text-base` 15px,
+  `--text-lg` 18px, `--text-xl` 22px, `--text-2xl` 28px. A literal size in the 17 distinct
+  values of today maps to the nearest step; the visible change is at most 1 px.
+- **Radii**: `--radius-sm` 6px, `--radius` 10px (as inherited), `--radius-lg` 14px,
+  `--radius-pill` 999px. `--radius-md` is not defined (its three uses take `--radius-sm`).
+- **Previously undefined tokens** are defined or replaced: `--text-xs` (above), `--on-accent`
+  (text on a filled accent, white in both themes), `--lc` (not used by any markup: the rule
+  goes with the plugin tranche).
+- **Focus ring**: one rule, `:focus-visible { outline: 2px solid var(--accent-text);
+  outline-offset: 2px }`, on `:root`-level selectors; `outline: none` stays only where the same
+  rule paints a visible replacement (a 2 px `box-shadow` ring). Mouse clicks show nothing.
+- **Reduced motion**: `@media (prefers-reduced-motion: reduce)` sets `--motion: 0ms`; every
+  transition of the tranche's components uses `var(--motion-quick)` (150 ms) or
+  `var(--motion-slow)` (250 ms), both 0 under reduced motion.
+
+### 7.2 Contrast, measured by a test
+
+A test in `packages/web/test` (`contrast.test.ts`) reads `tokens.css` and the four
+`skins/*/skin.css`, resolves each theme (evaluating `light-dark()` and `var()`), and
+computes the WCAG ratio of every **declared pair**: `--text`, `--text-muted`, `--text-faint`,
+`--accent-text`, `--danger`, `--warning`, `--success`, `--accent` (as text and as a non-text
+3:1 edge) over `--surface`, `--surface-raised`, `--surface-soft`, `--surface-sunken`, and
+`--accent-text` over `--accent`, plus each skin's own text tokens over its surfaces. It fails
+for a pair under its threshold that is not listed in § 6, and it prints the table that § 5
+holds (the file is regenerated from the test's output, not typed). The list of pairs is data
+in the test, so a pair added to the palette is a line to add.
+
+Corrections keep the hue (HSL h) and move lightness only (AD-4). Method per token: if the
+token is a **fill** somewhere (accent, danger, success, warning as a dot, a bar or a button),
+keep it and add a `*-text` twin for text uses (`--danger-text`, `--success-text`,
+`--warning-text`; `--accent-text` exists); if it is only ever text (`--text-faint`), move
+it. Call sites that use `--accent`, `--danger`, `--success`, `--warning` as a text colour
+switch to the twin. `--text-faint` is for decoration and placeholders **at 4.5:1**, there is
+no tier below.
+
+A skin pair that reaches AA only by redrawing the persona is written in § 6 with the reason
+and "accepted by the mandate holder, to be shown to Monsieur" — never silently left.
+
+### 7.3 Icons — Lucide
+
+Lucide (ISC licence) vendored as an inline sprite (AD-9): `packages/web/src/app/icons.ts`
+holds the path data of the subset used, `main.tsx` mounts it once as a hidden `<svg>` at
+boot. Name `adestia-i-<lucide-name>`; used as `<svg class="adestia-icon" aria-hidden="true"><use
+href="#adestia-i-plus"/></svg>`; size `1em`, stroke `currentColor`, stroke width 2 (1.75
+on the compact size). The React wrapper `<Icon name="plus" />`. The subset is the closed list
+the tranche's screens need, and the types make a name outside it a compile error: plus,
+x, chevron-left, chevron-right, settings, pencil, rotate-ccw, save, trash-2, search, folder,
+file-text, sparkles, plug, book-open, sliders-horizontal, handshake, monitor, sun, moon,
+log-out, key-round, lock, users, check, circle-alert, triangle-alert, info, wifi-off, refresh-cw, copy,
+external-link, loader-circle (spinner, static under reduced motion). The pre-epic glyphs
+(`▤ ＋ ▥ ⚙ ✎ ↺ ✕ ×`, tile emoji `🔌 📓 🎛 🤝`) leave the screens of this tranche. The manifest
+`ic:` glyphs (`glyphs.ts`) and a plugin's declared tile icon are untouched.
+
+### 7.4 Components
+
+Classes first (AD-4), React wrappers second. Variants by modifier, sizes `--sm`, default.
+
+| Component | Class | Wrapper | Spec |
+|---|---|---|---|
+| Button | `.adestia-btn`, `--accent`, `--danger`, `--ghost`, `--icon` | `<Button variant icon busy>` | Height 32 px (`--sm` 28), radius `--radius-sm`, padding 0 12 px, label `--text-sm` medium; neutral = `--surface-raised` + `--border-strong`; accent = `--accent` fill + `--on-accent`; danger = `--danger` fill, white label (or outline at rest, fill on hover when the design says so); ghost = transparent, hover `--surface-soft`; icon = square 32 px, `aria-label` required (typed). States: hover darkens 6 %, active 10 %, disabled 45 % opacity and `cursor: not-allowed`, busy = spinner replaces the icon, label kept, `aria-busy`. A destructive button's label names the verb **and** the object ("Remove server"). |
+| Sheet | `.adestia-sheet` (scrim), `.adestia-sheet__panel`, `__head`, `__body`, `__foot` | `<Sheet open title onClose>` | One scrim `--scrim`, one z-index (`--z-sheet` 100); the panel is centred, 520 px wide, from a `max-width: var(--breakpoint-mobile)` query a bottom sheet (full width, top radii, safe-area padding). `role="dialog"`, `aria-modal`, `aria-labelledby` the title; Escape and a click on the scrim close; focus goes to the first focusable on open, is trapped (Tab wraps), and returns to the opener on close. A plugin without React uses the classes and the three-line contract in `skills/plugin-author` (a `data-adestia-sheet` helper is *not* shipped: AD-8). |
+| Popover | `.adestia-popover` | `<Popover anchor open>` | Panel of `--surface-raised`, `--shadow`, `--radius`, 8 px from its anchor, flips above when there is no room below; Escape closes and returns focus; click outside closes. The cog menu (E-15) uses it. E-5 and E-6 keep their `.adestia-blockset` until the pages tranche. |
+| Empty state | `.adestia-empty` (existing), `__icon`, `__text`, `__action` | `<EmptyState icon text action>` | Icon 28 px in `--text-muted`, one sentence in `--text-muted`, optional ghost or neutral button. Replaces `.adestia-instructions__empty` and `.adestia-deleg__empty` in this tranche's screens. |
+| Field | `.adestia-field`, `__label`, `__help`, `__error`, `.adestia-input`, `-select`, `-textarea`, `.adestia-toggle` | `<Field label help error>` around a control | Control height 32 px (textarea auto), `--surface-raised`, `--border-strong`, radius `--radius-sm`; focus ring as § 7.1; error = border `--danger`, message `--danger-text` with an alert icon (colour never alone); a toggle is a real `<input type=checkbox role=switch>`. Browser-native selects stay native elements but drawn (`appearance` reset + chevron icon). |
+| Theme switch | `.adestia-segmented` | in the cog menu | Three icon buttons in a `radiogroup`: monitor (System), sun (Light), moon (Dark); each has `aria-label` and `title`; the chosen one is `aria-checked`. |
+
+### 7.5 Voice and language
+
+The shell and plugins say *vous* in French; the table of `i18n.ts` loses its two *tu* lines
+(the signature lines, E-18's words). Each skin's words (placeholder, busy label, three
+greetings, and what its hero says) exist in `en` and `fr`, **in its persona's voice**:
+Skippy teases ("Back already, little monkey." / "Encore toi, petit singe."), Alfred is a
+butler ("Good morning, Sir." / "What may I do for you?"), Nestor is a warm caretaker,
+Dobby is a devoted servant ("Dobby is at your service."). The skin module receives
+`{ locale: 'en' | 'fr' }` (AD-5) and picks; a skin that ignores it still works (its
+French stays).
+
+## 8. Reading order for a builder
+
+`ARCHITECTURE.md` AD-4, AD-5, AD-9 to AD-11 → § 7 here → `docs/ecrans.md` "Target of the
+charter tranche" for the screens → `skills/plugin-author` for the contract text to update.

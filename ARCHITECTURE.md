@@ -274,6 +274,41 @@ module. AD-8 is about JS helpers: the shell's tokens and component classes (AD-4
 the plugin reads by name, not code it imports. *Reversed if*: the plugin contract grows a
 helper surface in `PluginApi`.
 
+### AD-9 — Lucide as an inline sprite, vendored
+The icons are Lucide (ISC), the subset the screens use, vendored in
+`packages/web/src/app/icons.ts` as path data and mounted once at boot as a hidden `<svg>`
+sprite; any markup of the page — the shell's React or a plugin's vanilla JS — draws one with
+`<svg class="adestia-icon"><use href="#adestia-i-<name>"/></svg>`. No runtime dependency, no
+file to fetch (the instance may be offline, or behind a strict CSP; the service worker
+needs nothing more), no base-path trap. The data is copied from the `lucide-static` package
+at build-of-the-task time, with its licence in the header of the file.
+*Rejected*: `lucide-react` (React only; plugins are not React); an external `icons.svg`
+(`<use>` of an external file is subject to the base path and the cache, and fails offline
+the first time); a CDN. *Reversed if*: the subset grows past a hundred icons (then a
+build-time sprite from `lucide-static`).
+
+### AD-10 — The dark palette is written once, with `light-dark()`
+Each colour token of the base palette is one declaration, `light-dark(<light>, <dark>)`,
+and `color-scheme` (`light dark`, or forced by `data-theme`) picks. This removes the
+duplicate dark block (Q-19) without JavaScript: the media query and the attribute cannot
+share one selector list, but a function of the scheme can. *Rejected*: a script that
+always writes `data-theme` (a first paint in the wrong theme, a behaviour change); a CSS
+preprocessor (a build step for one file). *Reversed if*: the supported browsers (the
+service worker's audience: current evergreen) lose `light-dark()`.
+
+### AD-11 — One request helper for the web
+`packages/web/src/app/request.ts` exports `requestJson<T>(fetchImpl, path, init?)` →
+`{ ok: true, status, data: T } | { ok: false, status, error }` and `jsonInit(method,
+body)`. It never throws (a network error is `{ ok: false, status: 0 }`); `error` is the
+server's `error` field or a **translated** fallback (`request failed (404)` in the locale, Q-4).
+It is what every `fetchImpl(` call site of the web becomes; a call site keeps its own
+meaning for failure (silent, inline message), only the plumbing moves. `fetchImpl` stays
+the injected dependency (tests). The 14 live guards stay in each effect (they belong to the
+component's lifetime); a `useRequest`-style hook is *not* introduced (a new abstraction,
+none of the sites share a shape).
+*Rejected*: a hook layer over every fetch (a new abstraction); a client class. *Reversed
+if*: the charte tranche finds a third of the sites sharing one loading/error shape.
+
 ## Refactoring targets
 
 Each target: what, where, why it costs, the tranche that owns it, and its outcome
