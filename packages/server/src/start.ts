@@ -36,6 +36,7 @@ import { UserTokens } from './user-tokens.js'
 import { SecretStore } from './secrets.js'
 import { fetchSources } from './sources.js'
 import { baseManifest, mergeSkinManifest, withInstanceName } from './webmanifest.js'
+import { InstructionCataloguesStore } from './instruction-catalogues-store.js'
 import { collectSkills, deliverAgents, deliverSkills } from './skills.js'
 import { foreignRoots, resolveStores } from './stores.js'
 
@@ -391,14 +392,22 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
         })),
     })
     for (const problem of skillProblems) log(`skill not delivered — ${problem}`)
-    const { written, removed } = await deliverSkills(join(workspaceRoot, skillsPath), skills)
+    // Copies a catalogue import wrote carry the same marker as a delivered
+    // contract, so the sweep below would take them for stale ones and delete
+    // them at every restart while the state file still lists them.
+    const imported = new Set(
+      (await new InstructionCataloguesStore(dataDir).list()).flatMap((catalogue) =>
+        catalogue.imports.map((entry) => resolve(workspaceRoot, entry.landedAt)),
+      ),
+    )
+    const { written, removed } = await deliverSkills(join(workspaceRoot, skillsPath), skills, imported)
     log(`${written} agent contract(s) delivered${removed > 0 ? `, ${removed} withdrawn` : ''}`)
 
     // Subagents ride with the skills that name them. Run even when no plugin
     // ships one, so an agent whose plugin was turned off is withdrawn.
     const agentsPath = driver.agentsPath?.()
     if (agentsPath) {
-      const delivered = await deliverAgents(join(workspaceRoot, agentsPath), agents)
+      const delivered = await deliverAgents(join(workspaceRoot, agentsPath), agents, imported)
       for (const path of delivered.kept) {
         log(`subagent not delivered — ${path} exists and was not written by Adestia`)
       }
