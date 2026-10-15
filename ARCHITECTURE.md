@@ -273,7 +273,9 @@ too when the trap is gone; a trap still true (checked against the code, not reco
 rewritten short in *Traps*. status.md stays in French (`.agent` is French).
 
 **2. `CHANGELOG.md` is the history.** English, one `## vX.Y.Z — date` per version from the
-oldest the status file knows (v0.61.0) to the current one, oldest first; each entry keeps
+oldest the status file knows (v0.61.0) to the current one (the latest git tag: no `package.json`
+carries a version), oldest first; what status.md names from before v0.61.0 sits in an
+"Earlier than v0.61.0" section at the top; each entry keeps
 the paragraph's first sentence (what changed for the user) and the *why* it carried, and
 drops the recipe and the deployment chatter. Versions with no entry (tagged by mistake, e.g.
 v0.87.3) get a line saying so. The paragraphs are moved, not re-derived: a version whose date
@@ -293,18 +295,18 @@ per-subject sections is cut (AD-6, rejected: ADR files).
 fake engine, capture screens: the commands the banc tranche documented), CLAUDE.md (package
 map and commands, as built), this file (map, every R-n *Outcome* filled, defects), the four
 `docs/` files (every Q-n `closed` or `kept: reason`), `plugins/README.md`, `spikes/README.md`
-(the "Open spikes" pointer goes: DESIGN.md's *Spikes* is a record, not a list of open
+(the pointer to the list of open spikes goes: DESIGN.md's *Spikes* is a record, not a list of open
 work), `packages/*/README.md`, `packages/schemas/CHANGELOG.md`. Closed work leaves
 `.agent`: a `mission-*.md` and its `questions-*.md` go when the work shipped (the chantier
 is in status.md or CHANGELOG), `migrate-frame.mjs` stays only if the migration it did is
 still undone (`questions-migration-contenu.md` says), else goes with them. Git keeps them.
 
-**What counts as a contradiction** (the `relire-doc` bar): a command that does not run, a
+**What counts as a contradiction** (the bar of the fresh-context documentation pass, made by a `relecteur-depot` agent that reads the code): a command that does not run, a
 file or symbol the text names and the repository lacks, a number (count of skins, of
 plugins, of tests) the code contradicts, a "not built" the code builds, a decision and its
 reversal both standing. Style is not one.
 
-**Verification, by search:** `git grep -n "three skins\|Open spikes" -- '*.md'` empty;
+**Verification, by search:** a search for the stale phrases about the number of skins and about open spikes, over every `*.md`, empty;
 `git grep -n "not built" -- DESIGN.md` empty outside quoted history; every `docs/*.md` and
 `*.md` link target exists (a one-line `node` script written in the task, not committed);
 the tokens check of the charter tranche run once more over `packages/web/src` and
