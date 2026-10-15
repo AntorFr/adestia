@@ -696,7 +696,7 @@ aucune date : toute modification, quel qu'en soit l'auteur, se voit à l'appel
 suivant. Tests : le plafond, l'ordre des listes, l'invalidation après édition
 ou suppression. Pas de scénario de banc : aucun rendu ne change.
 
-v0.87.3 : **un
+v0.87.4 : **un
 serveur MCP peut déclarer `cliName`**, la clé que le CLI Copilot reçoit à la
 place de `name` — un registre d'entreprise filtre par ce nom (ex.
 `io.modelcontextprotocol.aitechlab/microsoft-mcp`). L'interface continue de
@@ -706,3 +706,7 @@ Ajouté à la revue : deux serveurs qui arriveraient chez le CLI sous la même c
 lecture de la config, car l'un écraserait l'autre en silence ; et l'option est
 documentée dans `adestia.config.example.yaml`. Seul le pilote Copilot la lit ;
 le pilote Claude l'ignore. Pas de scénario de banc : aucun rendu ne change.
+
+(La v0.87.3 a été taguée par erreur sur le commit de la v0.87.2, avant le
+merge de `cliName` : son image ne contient rien de plus que la 0.87.2. Ne pas
+la déployer.)
