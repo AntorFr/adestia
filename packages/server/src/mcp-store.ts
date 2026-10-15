@@ -77,9 +77,10 @@ function maskMap(
  * stay — a server is unreadable without them, and a key is wiring.
  */
 export function maskServer(server: McpServerConfig): Record<string, unknown> {
-  const { name, identity, signIn, command, args, url, env, headers, auth } = server
+  const { name, cliName, identity, signIn, command, args, url, env, headers, auth } = server
   return {
     name,
+    ...(cliName ? { cliName } : {}),
     ...(identity ? { identity } : {}),
     ...(signIn ? { signIn } : {}),
     ...(command ? { command } : {}),

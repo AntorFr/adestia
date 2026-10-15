@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, readFile, unlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -143,6 +143,45 @@ describe('the index', () => {
       fields: { type: 'tache', done: false, dom: 'atelier' },
     })
     expect(entries.find((e: { path: string }) => e.path === 'note.md').fields).toEqual({})
+  })
+
+  it('lists pages in path order, however many are read at once', async () => {
+    // Reading concurrently must not let the slowest file decide the order.
+    for (let i = 0; i < 80; i++) await write(`d${i % 4}/p${String(i).padStart(2, '0')}.md`, `# Page ${i}\n`)
+
+    const paths = (list: { path: string }[]) => list.map((entry) => entry.path)
+    const index = (await app.inject({ url: '/api/pages/index' })).json().entries
+    const listing = (await app.inject({ url: '/api/pages' })).json().pages
+
+    expect(index).toHaveLength(80)
+    expect(paths(index)).toEqual([...paths(index)].sort(new Intl.Collator('fr', { numeric: true }).compare))
+    expect(paths(listing)).toEqual(paths(index))
+  })
+
+  it('follows a page edited, or removed, between two calls', async () => {
+    // The digest is remembered; what it is remembered AGAINST is the text, so
+    // a change made by anyone — the agent, a sync, a checkout — shows at once.
+    const page = (text: string) => `---\ntype: fiche\n---\n\n:::content{type="resume"}\n${text}\n:::\n`
+    await write('a.md', page('Premier état.'))
+    await write('b.md', page('Autre page.'))
+    const read = async () =>
+      (await app.inject({ url: '/api/pages/index' })).json().entries as {
+        path: string
+        blocks?: Record<string, string>
+      }[]
+
+    expect((await read()).find((e) => e.path === 'a.md')?.blocks).toEqual({ resume: 'Premier état.' })
+    // Same text again: still right (and served without a parse).
+    expect((await read()).find((e) => e.path === 'a.md')?.blocks).toEqual({ resume: 'Premier état.' })
+
+    await write('a.md', page('Second état.'))
+    expect((await read()).find((e) => e.path === 'a.md')?.blocks).toEqual({ resume: 'Second état.' })
+
+    await unlink(join(root, 'b.md'))
+    expect((await read()).map((e) => e.path)).toEqual(['a.md'])
+    // Back under the same name with other text: not the forgotten digest.
+    await write('b.md', page('Revenue.'))
+    expect((await read()).find((e) => e.path === 'b.md')?.blocks).toEqual({ resume: 'Revenue.' })
   })
 
   it('is empty rather than failing on a fresh workspace', async () => {

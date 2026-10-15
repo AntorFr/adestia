@@ -398,7 +398,7 @@ export class CopilotDriver implements Driver {
           if (!token) continue
           headers['Authorization'] = `Bearer ${token}`
         }
-        mcpServers[server.name] = {
+        mcpServers[server.cliName ?? server.name] = {
           type: 'http',
           url: server.url,
           ...(Object.keys(headers).length > 0 ? { headers } : {}),
@@ -408,7 +408,7 @@ export class CopilotDriver implements Driver {
         continue
       }
 
-      mcpServers[server.name] = {
+      mcpServers[server.cliName ?? server.name] = {
         // The CLI's own word for stdio, captured from what `copilot mcp add`
         // actually writes — not guessed from the flag's vocabulary, which
         // calls the same thing "stdio".
@@ -587,7 +587,11 @@ export class CopilotDriver implements Driver {
       // Kept from the session that just ended, INCLUDING when the turn was
       // interrupted: a server that failed to start is exactly what somebody
       // wants to see after a turn went wrong.
-      if (state.mcp.size > 0) this.#mcpHealth = [...state.mcp.values()]
+      if (state.mcp.size > 0) {
+        // The CLI reports servers under the key it was given; the panel knows them by `name`.
+        const byCliName = new Map(this.#mcpServers().flatMap((s) => (s.cliName ? [[s.cliName, s.name] as const] : [])))
+        this.#mcpHealth = [...state.mcp.values()].map((h) => ({ ...h, name: byCliName.get(h.name) ?? h.name }))
+      }
     }
   }
 
