@@ -305,7 +305,7 @@ rules. The outcome column above stays blank until the documentation tranche fill
 - **Same bytes, one home.** A shared helper takes the strictest copy's behaviour only if the
   copies are identical; where two copies differ (R-2's `truncate` ×3, `usageOf` ×3, `health` ×2
   are suspects), the helper takes the difference as a parameter and each engine passes its own.
-  A difference found is written in "Known defects", never harmonised (AD-1).
+  A difference found is written in the "Known defects" section of this file, never harmonised (AD-1).
 - **A characterization test before a move, when none exists.** R-1 (the Bearer rule: which
   servers get the user's token, which get the instance's, which get none) and R-3 (the boot
   order that `start.ts` comments carry) have thin cover today: each gets a test that pins
@@ -320,7 +320,7 @@ rules. The outcome column above stays blank until the documentation tranche fill
   into their own module with their bodies untouched; `instructions.ts`, `instruction-catalogues.ts`,
   `schedule.ts` and `shell-tools.ts` import from it. The CRLF divergence stays (AD-7).
 - **R-6, how exports are counted.** `scripts/unused-exports.mjs` lists every named export of
-  `packages/*/src` that no other file under `packages/*/src` imports, re-exports through an
+  `packages/*/src` except `packages/web` (the web exports belong to the screen tranches) that no other file under those sources imports, re-exports through an
   index, or names; it prints `file:name`. A name used only by `test/` counts as unused by
   production. What remains after the tranche is a type that is part of a package's public
   contract (the `index.ts` of a package), each named in this section when it is known; every
