@@ -109,6 +109,13 @@ export function registerInstructionCatalogues(
       if (typeof ref !== 'string' || ref.trim() === '') {
         return reply.code(400).send({ error: 'ref is required' })
       }
+      // Git would take either as an option (`--upload-pack=<cmd>` runs one).
+      if (repo.trim().startsWith('-')) {
+        return reply.code(400).send({ error: 'repo must not begin with "-"' })
+      }
+      if (ref.trim().startsWith('-')) {
+        return reply.code(400).send({ error: 'ref must not begin with "-"' })
+      }
       if (token !== undefined && (typeof token !== 'string' || token === '')) {
         return reply.code(400).send({ error: 'token must be a non-empty string' })
       }
