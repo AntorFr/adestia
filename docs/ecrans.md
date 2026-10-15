@@ -236,8 +236,8 @@ signature words are the charte tranche's (Q-6). A skin's words are the charte tr
 
 **Phone.** The header keeps one row (brand, model picker, context pill, three icon
 buttons); at 360 px the model picker and the pill truncate with an ellipsis and a `title`,
-never push the buttons out. The conversation list is full width; the composer's targets are
-44 px high (`pointer: coarse`).
+never push the buttons out. The conversation list is full width; every target is at least 24 × 24 px
+(`docs/charte.md` § 5).
 
 ## Seeded data for captures
 
