@@ -224,6 +224,41 @@ The bench's Playwright is resolved from the environment (the runner image ships 
 installed, and it downloads browsers on every dev machine. *Reversed if*: the runner image
 stops shipping Playwright.
 
+#### Detail of AD-2 and AD-3 — the bench launcher (tranche `adestia-qualite-banc`)
+
+- **Launcher.** `node bench/launch.mjs [--engine fake|claude] [--skin <id>] [--locale en|fr]
+  [--seed <name>] [--port <n>] [--data <dir>]`. It needs a built server (`npm run build`) and
+  prints `listening on <url>` once `/api/health` answers `ok`; it runs until SIGTERM and removes
+  its throwaway workspace and data directory (under `os.tmpdir()`, unless `--data` is given).
+  `--engine fake` calls `start({ configPath, cwd, driverFactory })` with the fake engine;
+  `--engine claude` starts the plain binary (`packages/server/bin/adestia.js`) with
+  `CLAUDE_CODE_OAUTH_TOKEN` taken from the environment, and refuses to start without it.
+  Nothing is added to the product: no configuration key, no driver id (AD-1, AD-2).
+- **Fake engine.** `bench/fake-engine.mjs` is a `Driver` (`packages/drivers/src/contract.ts`)
+  whose `runTurn` answers by script: the last user message is matched against an ordered list
+  of `{ when, events }`, the events being `TurnEvent`s (text deltas, tool use and result,
+  permission request, error); no match echoes the message. Deterministic: no clock, no random
+  id, no delay unless a script asks for one. The scripts that seed the chat states of
+  `docs/ecrans.md` live beside the seeds.
+- **Seeds.** `bench/seed/<name>.mjs` default-exports `async ({ workspace, dataDir }) => config`:
+  it writes pages, thread files, plugin data and `.mcp` entries the way the product itself
+  stores them (`docs/donnees.md`), and returns the YAML of the instance configuration. Seeds are
+  data written to disk, never a route added or a mock of a module. One seed per instance
+  configuration the screens need (`docs/ecrans.md`, "Seeded data for captures"): `base`,
+  `empty`, `config-writable`, `config-readonly`, `oidc` (with a stub identity provider,
+  `bench/oidc-stub.mjs`, so E-1's sign-in and refused gates are real), and `plugins`.
+- **Sweep.** `node bench/sweep.mjs [--skin <id>] [--locale en|fr] [--out <dir>] [--only E-n]`
+  runs, for each seed it needs, the launcher in-process, and drives Chromium from the
+  environment: Playwright is imported from the global npm root (`npm root -g`), never from the
+  repository (AD-3). It captures each screen at 1440×900 and at a 390×844 touch viewport, in
+  `light` and `dark`, to `<out>/<skin>/<E-n>-<name>-<theme>-<viewport>.png` (default `<out>` is
+  `bench/shots-sweep`, ignored by git). A screen table in the script lists, per `E-n`, the
+  route, the gesture that opens it and the **selector that proves it is that screen**; a capture
+  whose selector is absent, or that shows `.adestia-fatal` or a loading state, fails the sweep
+  and names the screen. The sweep exits non-zero on any failure and prints a count.
+- **docker.** `bench/run.sh` and `bench/bench.mjs` are untouched except that the Playwright
+  import falls back from `/usr/lib/node_modules` to the global root. Scenarios keep working.
+
 ### AD-4 — The charter extends the inherited livery
 The base palette is the one inherited in `tokens.css` (decision of 2026-08-24). Failing
 contrasts are fixed by lightness only, or by a `*-text` twin token; the dark palette is
