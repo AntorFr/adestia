@@ -929,6 +929,26 @@ describe('MCP health', () => {
     const bare = new CopilotDriver({ home: '/x' })
     expect((await bare.describe()).capabilities).not.toContain('mcpStatus')
   })
+
+  it('hands the CLI the cliName and reports health under the name', async () => {
+    const home = mkdtempSync(join(tmpdir(), 'adestia-copilot-'))
+    const fake = fakeCopilot()
+    const driver = new CopilotDriver({
+      home,
+      spawnImpl: fake.spawnImpl,
+      mcpServers: [{ name: 'ms', cliName: 'io.example/ms', url: 'https://ms/mcp' }],
+    })
+    const turn = collect(driver, { prompt: 'x', cwd: '/w' })
+    await vi.waitFor(() => expect(fake.spawns.length).toBe(1))
+    fake.stdout.write('{"type":"session.mcp_servers_loaded","data":{"servers":[{"name":"io.example/ms","status":"connected"}]}}\n')
+    fake.stdout.write('{"type":"result","data":{"sessionId":"s1","exitCode":0}}\n')
+    fake.child.emit('close', 0)
+    await turn
+
+    const written = JSON.parse(await readFile(join(home, 'adestia-mcp.json'), 'utf8'))
+    expect(Object.keys(written.mcpServers)).toEqual(['io.example/ms'])
+    expect(await driver.mcpStatus()).toEqual([{ name: 'ms', state: 'connected' }])
+  })
 })
 
 describe('an MCP server that authenticates itself', () => {

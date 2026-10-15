@@ -358,6 +358,16 @@ mcp:
     ])
   })
 
+  it('carries a registry-style cliName next to the plain name', () => {
+    const config = parseConfig(
+      'mcp:\n  servers:\n    - name: microsoft-mcp\n      cliName: io.modelcontextprotocol.aitechlab/microsoft-mcp\n      url: https://x/mcp\n',
+    )
+    expect(config.mcpServers[0]?.cliName).toBe('io.modelcontextprotocol.aitechlab/microsoft-mcp')
+    expect(issuesOf('mcp:\n  servers:\n    - name: ha\n      cliName: "a b"\n      url: https://x/mcp\n')).toEqual([
+      'mcp.servers[0].cliName must be letters, digits, dashes, underscores, dots and slashes',
+    ])
+  })
+
   it('refuses a placeholder the environment never filled', () => {
     // A literal "${TOKEN}" reaching a server fails later, in a call, blaming
     // the server rather than the config that never resolved.

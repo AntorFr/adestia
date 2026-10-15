@@ -114,6 +114,12 @@ export function readMcpServer(
     return undefined
   }
 
+  const cliName = entry['cliName']
+  if (cliName !== undefined && (typeof cliName !== 'string' || !/^[a-zA-Z][\w./-]{0,127}$/.test(cliName))) {
+    issues.push(`${where}.cliName must be letters, digits, dashes, underscores, dots and slashes`)
+    return undefined
+  }
+
   const command = typeof entry['command'] === 'string' ? entry['command'] : undefined
   const url = typeof entry['url'] === 'string' ? entry['url'] : undefined
   if (!command && !url) {
@@ -221,6 +227,7 @@ export function readMcpServer(
 
   return {
     name,
+    ...(cliName ? { cliName } : {}),
     ...(identity ? { identity } : {}),
     ...(signIn ? { signIn } : {}),
     ...(background ? { background } : {}),

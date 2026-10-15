@@ -248,6 +248,8 @@ export interface AttachmentsConfig {
  */
 export interface McpServerConfig {
   readonly name: string
+  /** The key handed to the agent CLI instead of `name` — a corp registry may allowlist by it. */
+  readonly cliName?: string | undefined
   /** `user` for a server that serves somebody's own data. See the contract. */
   readonly identity?: 'machine' | 'user' | undefined
   /**
