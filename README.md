@@ -35,7 +35,7 @@ node packages/server/bin/adestia.js
 To look at the app without an agent or Docker (a scripted engine, seeded data):
 
 ```sh
-npm run build
+npm ci && npm run build               # npm run build also builds the web shell
 node bench/launch.mjs --engine fake    # prints `listening on <url>`; <url>/api/health answers ok
 node bench/sweep.mjs                   # every screen, light and dark, desk and phone
 ```

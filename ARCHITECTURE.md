@@ -45,7 +45,9 @@ Outside `packages/`:
 - `skills/` — the product's authoring contracts (`plugin-author`, `skin-author`,
   `page-author`, `persona-author`, `schedule-author`, `collections`), delivered to the agent.
 - `bench/` — screenshot bench: `run.sh` builds the image and drives Chromium in docker,
-  `bench.mjs` and `scenarios/`; `live-codex.sh` boots a real Codex engine.
+  `bench.mjs` and `scenarios/`; `live-codex.sh` boots a real Codex engine. Without docker:
+  `launch.mjs` (fake or real engine), `fake-engine.mjs`, `seed/`, `oidc-stub.mjs` and `sweep.mjs`
+  (see the AD-2 and AD-3 detail below).
 - `spikes/` — validation record (editor, concurrency, copilot-cli, codex-cli, esm-runtime,
   shell-tools-transport); not linted, not shipped.
 
@@ -240,7 +242,7 @@ stops shipping Playwright.
   permission request, error); no match echoes the message. Deterministic: no clock, no random
   id, no delay unless a script asks for one. The scripts that seed the chat states of
   `docs/ecrans.md` live beside the seeds.
-- **Seeds.** `bench/seed/<name>.mjs` default-exports `async ({ workspace, dataDir }) => config`:
+- **Seeds.** `bench/seed/<name>.mjs` default-exports `async ({ workspace, dataDir, base, port, onClose }) => config`:
   it writes pages, thread files, plugin data and `.mcp` entries the way the product itself
   stores them (`docs/donnees.md`), and returns the YAML of the instance configuration. Seeds are
   data written to disk, never a route added or a mock of a module. One seed per instance
