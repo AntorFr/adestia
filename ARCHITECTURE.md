@@ -274,6 +274,54 @@ module. AD-8 is about JS helpers: the shell's tokens and component classes (AD-4
 the plugin reads by name, not code it imports. *Reversed if*: the plugin contract grows a
 helper surface in `PluginApi`.
 
+### AD-13 — The pages' code: one paths module, one ready signal, cuts by lifetime
+Four decisions of the pages tranche; none changes a behaviour.
+(a) `app/paths.ts` holds `prettify` and `folderOf` once (the three `prettify` bodies and the
+two `folderOf` are identical, checked). The two `isIndexPage` are **not** the same rule —
+`app/sections.ts` requires the `.md` extension (`/(^|\/)index\.md$/i`, or a homonymous
+folder), `editor/listing.ts` strips an optional `.md` first — and a path without extension
+is the only input where they differ. Both rules are kept, **named for what they answer**:
+`isIndexFile(path)` (sections, routing, owners: the file of an index) and
+`isIndexPath(path)` (the reader's listings: the address of an index, extension or not), both
+in `paths.ts`, each with a test pinning its rule on `index.md`, `INDEX.MD`, `a/index`,
+`a/a.md`, `a/a`, `a/b.md`. *Rejected*: one `isIndexPage` with the wider rule (a path without
+extension would start counting as an index in sections: a behaviour change); one with the
+narrower (the reader's lists would change). *Reversed if*: a test over the real corpus shows
+no path where they differ, then they merge.
+(b) Home's loading state needs a signal the shell does not give: `useInstance` returns
+`ready`, false until the plugins are loaded **and** the first index request has answered
+(answer or failure — a failed index is "ready, empty", as today). It is additive; nothing else
+of the hook changes. E-2 draws the shared spinner row in place of the mosaic and the empty
+state while `ready` is false; the greeting, the hero and the ask bar do not wait.
+(c) The giants split by lifetime, as AD-12 does for the chat. `App` into `App` (gates, state,
+wiring), `CanvasHeader` (the phone's back to the chat, the breadcrumb, the driver label, the
+cog slot) and `Canvas` (the dispatch order of `docs/ecrans.md` › Navigation, kept readable as
+one function and tested as one). `Home` into `Home` (composition), `Brief` (the brief, its
+age and its refresh) and `Domains` (the mosaic and Arrange). `Editor` into `Editor` (wiring),
+`useAutosave` (the 1.6 s cadence, the revision, the 409 conflict, the refusal) and the
+status line. `Reader` is not one giant function (its longest is 114 lines) but a 1153-line
+file: its blocks leave for `editor/reader/` by kind (list and file list, table, figures,
+written and contributed rows), `Reader.tsx` keeping the page frame. Exports that tests import
+keep their names and paths (re-exported from the old file when the code moves).
+*Rejected*: a reducer or a state library for the editor (a new abstraction on the save path);
+cutting by line count. *Reversed if*: a hook cannot be cut without moving state two of them
+write — then that state stays in the first and the target R-12 reads "kept: reason".
+(d) Three additions to the charter, additive and written here because the pages are their
+first user: a **chip** (`.adestia-chip`, a toggle button with `aria-pressed`, pill radius,
+for the facet pills of E-3 and E-7), an **inline empty state** (`.adestia-empty--inline`: the
+empty state's icon at 16 px beside its sentence, for a note inside a block of a page), and
+the icon names the screens need beyond `docs/charte.md` § 7.3 (`grip-vertical`, `eye`, `code`,
+`file-question`, `folder-open`, `search-x`, `arrow-right`). The editor's block bars are built
+by Milkdown as DOM, not React: `editor/dom-icon.ts` draws a sprite icon from its name (the
+AD-9 markup) so the bars use the same set. *Rejected*: restyling the facet pills as
+`.adestia-btn` (a pressed state the button does not have); a chip owned by the charter tranche
+(it is already built — AD-13 adds, never edits, its files).
+(e) A word is moved, never invented, by `B-8`: where today's string is French the French
+table keeps it **byte for byte** and the English key is a literal translation; where it is
+English the English stays and the French is a literal translation. The one string sent to the
+agent (`Rafraîchis ma une`) keeps its French form on a French instance. *Reversed if*: Monsieur
+wants the voice of the agent prompts changed — that is a behaviour of the conversation.
+
 ## Refactoring targets
 
 Each target: what, where, why it costs, the tranche that owns it, and its outcome

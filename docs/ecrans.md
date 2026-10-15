@@ -220,6 +220,113 @@ What a capture sweep (target of B-3) needs so every state above shows; what to s
   stream; a route of a plugin that is loaded without a view (E-20).
 - **Network**: the shell cached by the service worker, then the network cut (E-21).
 
+## Target of the pages tranche
+
+Screens E-2 to E-8 and E-20, and the shell's own chrome (`App.tsx`: the phone's back to the
+chat, the breadcrumb, the back above a plugin, settings' back), after
+`adestia-qualite-pages`. The tranche uses what `adestia-qualite-charte` built: the components
+of `docs/charte.md` § 7.4, the icons of § 7.3, the request helper (AD-11), the type scale and
+the focus ring; and AD-13 for its own additions. **B-1 binds this section**: the words of today
+stay (a string changes only by `B-8`'s language rule or `B-9`'s back labels), no control, gesture
+or route is added or removed, no state is added except E-2's loading (Q-23). Where
+`docs/charte.md` or the plan says otherwise, this section wins.
+
+**Icons** (names of § 7.3; the additions are AD-13 d). `✎` (open the editor) → `pencil`; the
+block bar's grip → `grip-vertical`, its `⚙` → `settings`, its remove → `trash-2`, its raw/preview
+switch → `code` / `eye` with the same words; every `×` and `✕` of these screens → `x` (Q-11);
+the brief's `↺` → `rotate-ccw`; the ask bar → `search`; every `‹` → `chevron-left`; the
+Settings tile and the other tiles are the charte tranche's. `⌘K` on the ask bar is printed
+`Ctrl K` off a Mac and `⌘K` on one (Q-14; a label, the key already works). An icon-only
+control keeps its `aria-label` and `title`, both through `t()`.
+
+**Backs (B-9).** One component, `<BackButton label onClick>` in `app/`: a ghost small
+`.adestia-btn` that keeps the class `adestia-switch` (skins restyle it), `chevron-left` and the
+destination's name. Three uses, three destinations, no target changed. Above a plugin's view:
+`Home` (it goes home: `closeApp = goHome`). On the phone, in the canvas header: `Chat`
+(aria-label `Back to the chat`, as today). In settings: one level up, `Home` / `Settings` /
+the page's title, as today. E-20's back is the first of these. A plugin's own back (`‹ Journals`,
+the task sheet's `‹`) is the plugins tranche's.
+
+**E-2 Home.** Greeting (or the skin's `hero`), the ask bar (`search` icon, today's words, the
+shortcut label above), the brief, Domains, Arrange. *Loading* (new, Q-23): while `ready` is false
+(AD-13 b) the place of the brief and of Domains shows the shared spinner row with the word
+`Loading…` (today's key), the greeting and the ask bar already drawn; neither "Nothing to show
+yet." nor the Settings tile is drawn before the index and the plugins have answered. *Empty*
+(`ready`, no tile, no section): `<EmptyState>` with `folder-open`, today's sentence and its
+hint, as one form. *Brief*: the heading `À la une` is `Highlights` in English; the refresh
+button is the icon `rotate-ccw` with its label; the prompt it sends is `Refresh my highlights`
+in English and `Rafraîchis ma une` in French (AD-13 e). Entry rows keep age and chooser. *Arrange*:
+`Arrange` / `Done` are `.adestia-btn` (`Done` accent); a tile being dragged keeps today's
+affordance, plus a visible focus ring on every tile. *Phone*: the mosaic keeps its columns; every
+target is at least 24 × 24 px.
+
+**E-3 Section.** Header with the folder's icon; stores and sub-rooms as today; the search is a
+`.adestia-input` with a `search` icon (shown past five pages, as today) and a visible ring (the
+`outline: none` of `home.css` goes); facet pills are `.adestia-chip` with `aria-pressed`;
+cards keep their content; `Finished` stays a `<details>` whose summary is a ghost button row with
+a chevron. *States*, today's, in one form: no match → `<EmptyState>` `search-x`, "Nothing
+matches."; empty → `folder-open`, "This section holds nothing yet.". No loading state is added
+(Lacks column).
+
+**E-4 Page, reading.** The page frame, the title, the `✎` button (`pencil`, `aria-label` and
+`title` through `t()`), the metadata strip, the attachments strip (file icons by kind, name
+truncated with a `title`), blocks. The notes inside blocks — no file here, nothing under this
+page, nothing carries this name here, this page was not found, this block does not render
+yet — are the **inline empty state**, one form, all through `t()`. A block's frame, title,
+`ico` and width are drawn as today (the `ico` is the page author's data and stays what they
+wrote). Conflict, rejected, read-only (raw source, diagnostics) keep their words, each with its
+icon (`triangle-alert`, `circle-alert`, `lock`).
+
+**E-4 Page, editing.** The editor surface and Milkdown's menus (toolbar, slash menu, block
+handles) are restyled with tokens (`crepe.css`); toolbar and slash labels through `t()`
+(`Bullet list`, `Numbered list`, `Title`, `Subtitle`, `Quote`, `Plain text`, `Text blocks`,
+each with its French of today). Block bar: grip, `:::name`, raw/preview toggle, settings, remove —
+`.adestia-btn --icon --sm`, each with a translated `aria-label` and `title`; the bar is built as
+DOM and takes its words from the editor's translator (the page editor is handed `t` and the
+locale at construction). Save status: `Saving…` (`loader-circle`), `Saved` / `Saved, tidied to
+house style` (`check`), conflict "The agent changed this page. Reload to see its version."
+(`triangle-alert`, the existing `.adestia-save--warn` becomes a token pair), refusal and failure
+(`circle-alert`); the title field keeps a visible ring; `Done` is the accent button. The drop
+zone keeps its words.
+
+**E-5 Page properties** and **E-6 Block settings.** Both are `<Popover>`s anchored to their
+⚙ (the old `.adestia-blockset` goes), closing on Escape and an outside click, focus returned to
+the anchor; the close control is `x`. Every field is a `.adestia-field` (label, help, error)
+with the shared control classes; the required mark keeps its `*` and gains a text alternative
+(colour never alone); the unknown-attribute list keeps its remove buttons (`trash-2`, named
+verb and object). E-6's whole form speaks the locale (today it is French on an English
+instance): `Réglages du bloc <name>`, `Ce bloc`, `titre`, `dans une carte`, `largeur`, `Inconnus
+de ce bloc`, `choisir…`, `obligatoire`, `la moitié` and the other widths, `Fermer`. The `ico`
+placeholders (`📋`, `◆`) are example data for the author, not icons of the product, and stay.
+
+**E-7 Collection.** The page's text, then members as cards (facet cards when grouped) with
+`.adestia-chip` facets; `New` is a small `.adestia-btn` with `plus` (it asks the agent, as
+today); all finished → `<EmptyState>` `check`, "Everything here is finished.". No empty-collection
+state is added (Lacks).
+
+**E-8 Missing page.** `<EmptyState>`: `file-question` for no page here (404), `lock` for out of
+reach (401/403), `circle-alert` for a server error; it names the address, says which case, and
+the link to the folder above is a ghost button with `folder-open`. No retry is added (Lacks).
+
+**E-20 Inactive app.** `<EmptyState>` `plug`, "That app is not active on this instance.", and
+the `<BackButton>` (`Home`) beside it as today.
+
+**Strings.** Every visible string, `aria-label`, `title`, `alt` and placeholder of the files of
+the tranche goes through `t()` (AD-13 e) — including the editor's, which today mix French and
+English (Q-3): `BlockSettings`, `blockview`, `toolbar`, `Editor` (`SaveStatus`, the read-only
+notice), `Reader` (its notes), `Attachments`, `PageSettings`; and the shell's `‹ Back`,
+`‹ Chat`, `Breadcrumb` (aria-label), `Highlights`. A page author's own text (titles, `ico`,
+frontmatter values, block names such as `:::callout`) is data and is never translated.
+
+**Roles.** Unchanged, as in § Roles: every signed-in person reads, edits and saves; the agent
+edits the same files (the conflict state is how a person meets it); the calling agent sees none
+of these screens.
+
+**Phone.** E-4's block bar and the toolbar wrap rather than overflow at 360 px; the popovers of
+E-5 and E-6 are at most the screen's width minus 16 px on each side and scroll inside
+themselves (a popover is not turned into a sheet: that would be a second form for one screen);
+targets are at least 24 × 24 px (`docs/charte.md` § 5).
+
 ## Known incoherences (input for the epic, to be emptied by its tranches)
 
 1. **Q-1 — Native unstyled buttons.** Save/Discard/`Restart now` in `Configuration.tsx`
