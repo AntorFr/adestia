@@ -77,4 +77,29 @@ describe.skipIf(!built)('bench launcher, fake engine', () => {
     expect(await exited).toBe(0)
     expect(leftovers()).toEqual([])
   }, 60_000)
+
+  it('boots the plugins seed with the ten bundled plugins loaded and no plugin problem', async () => {
+    const child = spawn(process.execPath, [launch, '--engine', 'fake', '--seed', 'plugins'], { stdio: ['ignore', 'pipe', 'ignore'] })
+    const exited = new Promise<number | null>((done) => child.once('exit', done))
+    try {
+      const url = await new Promise<string>((resolve, reject) => {
+        let out = ''
+        child.stdout!.on('data', (d) => {
+          out += d
+          const m = /listening on (\S+)/.exec(out)
+          if (m) resolve(m[1]!)
+        })
+        child.once('exit', () => reject(new Error('exited early')))
+      })
+      expect(await (await fetch(`${url}/api/health`)).json()).toEqual({ status: 'ok' })
+      const instance = (await (await fetch(`${url}/api/instance`)).json()) as { plugins: { id: string }[]; pluginProblems: unknown[] }
+      const ids = instance.plugins.map((p) => p.id)
+      for (const id of ['todo', 'planif', 'journal', 'atelier', 'voyages', 'listening-post', 'scan', 'parcours', 'meals', 'project-management'])
+        expect(ids).toContain(id)
+      expect(instance.pluginProblems).toEqual([])
+    } finally {
+      child.kill('SIGTERM')
+    }
+    expect(await exited).toBe(0)
+  }, 60_000)
 })
