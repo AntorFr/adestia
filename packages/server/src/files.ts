@@ -156,11 +156,11 @@ async function collect(
     deep,
     keep: (name) => !name.toLowerCase().endsWith('.md'),
   })
+  const infos = await Promise.all(entries.map((entry) => stat(entry.file).catch(() => undefined)))
   const out: WorkspaceFile[] = []
-  for (const entry of entries) {
-    const info = await stat(entry.file).catch(() => undefined)
-    if (!info) continue
-    out.push(described(entry.path, info, entry.store, multi))
+  for (const [i, entry] of entries.entries()) {
+    const info = infos[i]
+    if (info) out.push(described(entry.path, info, entry.store, multi))
   }
   return out
 }

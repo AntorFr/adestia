@@ -229,24 +229,26 @@ async function walk(
     // breaks nothing: one circle unmounted must not take the others down.
     return
   }
-  for (const entry of entries) {
-    // Dotfiles are the workspace's plumbing and the agent's business, not the
-    // content this composes.
-    if (entry.name.startsWith('.')) continue
-    const next = from ? `${from}/${entry.name}` : entry.name
-    if (entry.isDirectory()) {
-      // Two homonymous FOLDERS are not a collision: they merge. That is the
-      // whole point of composing rather than filing.
-      if (deep) await walk(store, next, prefix, into, keep, deep)
-      continue
-    }
-    if (keep && !keep(entry.name)) continue
-    into.push({
-      path: prefix ? `${prefix}/${next}` : next,
-      store,
-      file: join(store.dir, next),
-    })
-  }
+  // Sub-folders are read concurrently — on a network or 9p mount each readdir
+  // is a round trip — then spliced back in readdir order.
+  const parts = await Promise.all(
+    entries.map(async (entry): Promise<Listed[]> => {
+      // Dotfiles are the workspace's plumbing and the agent's business, not the
+      // content this composes.
+      if (entry.name.startsWith('.')) return []
+      const next = from ? `${from}/${entry.name}` : entry.name
+      if (entry.isDirectory()) {
+        // Two homonymous FOLDERS are not a collision: they merge. That is the
+        // whole point of composing rather than filing.
+        const below: Listed[] = []
+        if (deep) await walk(store, next, prefix, below, keep, deep)
+        return below
+      }
+      if (keep && !keep(entry.name)) return []
+      return [{ path: prefix ? `${prefix}/${next}` : next, store, file: join(store.dir, next) }]
+    }),
+  )
+  for (const part of parts) into.push(...part)
 }
 
 /**
