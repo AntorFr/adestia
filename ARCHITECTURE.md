@@ -274,6 +274,32 @@ module. AD-8 is about JS helpers: the shell's tokens and component classes (AD-4
 the plugin reads by name, not code it imports. *Reversed if*: the plugin contract grows a
 helper surface in `PluginApi`.
 
+### AD-12 — The chat's code: one message conversion, one request path, three hooks
+Three decisions of the chat tranche, none changing a behaviour.
+(a) `toMessage` lives once, in `chat/messages.ts`, as `toMessage(stored, { signatures })`
+with `signatures` defaulting to `true` (the chat's behaviour). `Delegations.tsx` imports it
+and passes `{ signatures: false }`, which keeps today's drift as a written defect (AD-7:
+whether a delegated conversation should show signature cards is a behaviour).
+(b) Every `fetchImpl(` of `chat/` goes through `app/request.ts` (AD-11). Two sites cannot
+use `requestJson`: the turn POST and the attach GET, which hand the caller a `Response` to
+stream. `request.ts` gains one additive function, `requestRaw(fetchImpl, path, init?)` →
+`{ ok: true, response } | { ok: false, error }` (never throws; any HTTP status is a
+`response`), and nothing else about it changes. The upload keeps its two messages
+(server `error`, refusals) and loses only the raw `Error.message` of a thrown network
+failure, which becomes the helper's translated fallback (Q-4).
+(c) The three giants split by lifetime, not by line count: `useConversations` into the
+store of open conversations (`useOpenConversations`: state, load, reconcile), the live turn
+(`useTurn`: send, stop, hold, attach, cadence) and the tab/list actions (`useTabActions`:
+open, shut, archive, reorder, drafts) behind the same returned object, so `Chat` and the
+tests see no change; `Chat` into `Chat` (state and wiring), `ChatHeader`, `TabStrip`,
+`ConversationList`, `Thread`; `Composer` into `Composer`, `useUploads` and the existing
+`ComposerFold` and `AttachmentTray`. Exports that tests import keep their names and paths.
+*Rejected*: a state library or a reducer rewrite (a new abstraction, a risk to the live
+turn); extending `requestJson` to streams (its result type is JSON by contract); leaving
+`stream.ts` on bare `fetchImpl` (the criterion says one path). *Reversed if*: a hook cannot
+be cut without moving state that two of them write, then that state stays in the first and
+the target R-12 reads "kept: reason" for that hook.
+
 ## Refactoring targets
 
 Each target: what, where, why it costs, the tranche that owns it, and its outcome

@@ -181,6 +181,64 @@ columns are the same except where the instance's configuration decides what exis
 | E-30 | camera live, codes listed; camera failure said in the composer | in-overlay error state |
 | E-31 | timeline, status, no dated page, no sub-project | — |
 
+## Target of the chat tranche
+
+Screens E-16, E-17, E-18 (and the thread of E-13 where it shares `Bubble`), after
+`adestia-qualite-chat`. The tranche uses what `adestia-qualite-charte` built: the
+components of `docs/charte.md` § 7.4, the icons of § 7.3, the request helper (AD-11) and
+the type scale. **B-1 binds this section**: words of today stay (a string is changed only
+by `B-8`'s language rule), no state, control or gesture is added or removed, the
+conversation gestures stay the five of P-2 step 9 (create, archive, open, reorder, close).
+Where `docs/charte.md` says otherwise, this line wins.
+
+**Icons** (names from § 7.3; the tranche adds to the closed list, additively, the names
+below that the list lacks). `▤` → `list`, `＋` (header and composer fold) → `plus`, `▥` →
+`panel-right-open`, tab close `×` and the connect-hide `✕` and the attachment-remove `×` and
+the sheet `✕` → `x` (one form of close, Q-11), `ArchiveGlyph` → `archive`, `📎` (composer and
+the held bubble) → `paperclip`, tool trace `▸/▾` → `chevron-right` / `chevron-down`, stop `■`
+→ `square`, signature glyphs `✓ ✕ ⌛ ✍` → `check`, `x`, `clock`, `pen-line`, the sheet's `🔒`
+→ `lock`, its `↗` → `external-link`. The send icon stays the skin's slot (`sendIcon`), the
+default arrow stays what the composer draws today, now an `arrow-up` icon. An icon-only
+control keeps its `aria-label` and `title`, both through `t()`.
+
+**Buttons and fields.** Every `adestia-ib` icon button, the tab tools, `adestia-connect__go`,
+the signature actions and the three answers of E-17 are `.adestia-btn` (icon-only for the
+tools, neutral for "Refuse" and "Just this once", accent for "Always" which keeps its place
+and its absence when the engine offered no rule); the composer's textarea keeps its
+auto-grow and takes the field's border and focus ring. Skins keep restyling these through
+tokens; a skin that restyles `.adestia-ib` (it exists today) keeps working because the
+class stays on the icon buttons beside `.adestia-btn--icon`.
+
+**Dialog.** E-18 uses `<Sheet>` (scrim `--scrim`, Escape, focus trap and return, bottom
+sheet below `--breakpoint-mobile`): the signature ceremony iframe is its body, the origin
+(`lock` + host) and "Open in a tab" its head. The close control is the sheet's. The rules
+`.adestia-sheet*` leave `chat.css` (the charte tranche already moved them); `chat.css` keeps
+only the signature-specific ones (`.adestia-sheet__frame`, `__hint`).
+
+**States, today's redrawn.** E-16: the empty list says "No conversation yet." through `t()`
+in an `<EmptyState>`; the empty thread keeps its blank; the working indicator is the skin's
+`busy` slot or the shared spinner icon with the counters; the interrupted note, the error
+line, the held bubble (`paperclip` + names when the message is attachments only), the
+unread/running/idle dots (colour and a shape, not colour alone), the MCP connect prompt, the
+composer busy/stopping/blocked and the upload error keep their words and places. **No
+loading or offline state is added** for the list or the thread (Lacks column of E-16: listed
+for the end-of-epic recommendations). E-17: the question card keeps its three answers and
+the "No lasting rule" line; it takes `triangle-alert`. E-18: pending, signed, denied,
+expired, open-in-a-tab keep their words; each gets its icon above.
+
+**Strings.** Every visible string, `aria-label`, `title` and `alt` under `chat/` goes
+through `t()`: "New conversation", "Open apps", "Working", `Remove <name>`, the context
+pill's title, "tool call(s)" in the trace summary (plural by the locale's table, one key
+per form), "until", "Open in a tab", "No conversation yet.". The two *tu* lines of the
+signature words are the charte tranche's (Q-6). A skin's words are the charte tranche's.
+
+**Roles.** Same as E-16 to E-18 in § Roles: nothing changes.
+
+**Phone.** The header keeps one row (brand, model picker, context pill, three icon
+buttons); at 360 px the model picker and the pill truncate with an ellipsis and a `title`,
+never push the buttons out. The conversation list is full width; the composer's targets are
+44 px high (`pointer: coarse`).
+
 ## Seeded data for captures
 
 What a capture sweep (target of B-3) needs so every state above shows; what to seed, not how.
