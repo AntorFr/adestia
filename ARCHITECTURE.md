@@ -207,10 +207,9 @@ test around it gets a characterization test first. A defect found on the way is 
 *Rejected*: "fix while we're there" — it mixes a behaviour change into a diff nobody reviews
 as one. *Reversed if*: a defect blocks a refactoring outright; it then becomes its own feature.
 
-### AD-2 — A launcher in bouchon mode, outside the product
-Two terms, used everywhere: **the fake engine** is a scripted fake driver, handed to the
-server through `start({ driverFactory })`; **bouchon mode** is Adestia launched by the bench
-launcher on the fake engine. A script under `bench/` starts the server on the fake engine
+### AD-2 — A launcher on the fake engine, outside the product
+One term: **the fake engine**, a scripted fake driver handed to the server through
+`start({ driverFactory })`. A script under `bench/` starts the server on the fake engine
 with a seeded workspace and data directory; the real-Claude mode is the plain binary with
 `CLAUDE_CODE_OAUTH_TOKEN` in the environment.
 *Rejected*: a `fake` driver id in the configuration (a product surface added for tests);

@@ -145,7 +145,8 @@ a user (see Rules of access).
   `/api/plugin/<id>/` and receives `workspaceRoot`, `dataDir`, `pages` (a `PagesService`),
   `scheduleEnabled` and only the secrets it declared. Its data lives in pages (most
   plugins, through `PagesService`) or in `<dataDir>/<plugin id>/` (`listening-post`:
-  `queue.json`); the bundled plugins' files are listed in Files on disk. The planif plugin (E-23 Planif) reads `<workspace>/planif` (hard-coded, not
+  `queue.json`), and atelier and voyages keep the state of their screens' gestures beside the
+  file they draw (`workbook-state.json`, `workbook-layout.json`, `voyage-state.json`); the bundled plugins' files are listed in Files on disk. The planif plugin (E-23 Planif) reads `<workspace>/planif` (hard-coded, not
   `workspace.planif`) and `schedule-state.json`.
 
 ## Files on disk

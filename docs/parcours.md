@@ -78,9 +78,11 @@ Form of the `exigences` skill; each need names the journeys it serves.
   French speaks with one register (*vous*); a skin keeps its persona's own register and
   voice (`B-10`) — Skippy may say *tu*. *(all journeys with a screen)*
 - **B-9** — A plugin screen looks like the shell: it reads the shell's tokens (no second
-  vocabulary) and uses the shared dialog. Two back controls that lead to the same place
-  become one; a plugin's back that leads somewhere else (one level up inside the plugin)
-  stays; each back is labelled by its destination. No navigation target changes (`B-1`).
+  vocabulary) and uses the shared dialog. Every back control is labelled by its destination —
+  the shell's `‹ Back` above a plugin goes home and says so; a plugin's own back (one level up
+  inside the plugin, `‹ Journals`, the task sheet's `‹`) stays and names where it leads. No back
+  is removed and no navigation target changes (`B-1`): at v0.88.0 no two backs lead to the
+  same place.
   *(P-11)*
 - **B-10** — Each skin keeps its identity — palette, fonts, hero, crest, scheme, and its
   persona's voice and register in its own words — and every
@@ -234,8 +236,8 @@ A user works in an app or meets a feature plugin the owner turned on.
 
 1. The owner names plugins in `extensions.apps` and `extensions.features`. Each active app with a `tile` shows a tile on E-2 and opens at `#/<route>` (default `#/<id>`), with a **‹ Back** above the plugin's view. A plugin that crashes takes down only its own panel (`PluginBoundary`), which says why in its place.
 2. **todo** (E-22): tasks are pages (`type: tache`), and lists are curated (`liste`) or dynamic. Ticking a task writes its `done:`. Opening a task shows the task sheet (`sheet.js`), whose note is the shell's own page editor. The `:::checklist` block lets any page carry tasks.
-3. **planif** (E-23): see P-12. **journal** (E-24): a folder is a journal and each page in it an entry; the history reads on one screen and each entry is edited in place. **atelier** (E-25, no tile, reached at `#/atelier/<path>` or from a path it claims): draws the cutting diagram from a project's `workbook.json`, with a bench mode.
-4. **voyages** (E-26): a per-day timeline and suggestions from a trip's `voyage.json` (secret `GOOGLE_MAPS_API_KEY`). **listening-post** (E-27, folder `veille`): a queue fed by feeds and pasted links, transcripts with `yt-dlp`, and a search; its ✦ buttons ask the agent.
+3. **planif** (E-23): see P-12. **journal** (E-24): a folder is a journal and each page in it an entry; the history reads on one screen and each entry is edited in place. **atelier** (E-25, no tile, reached at `#/atelier/<path>` or from a path it claims): draws the cutting diagram from a project's `workbook.json`, with a bench mode; ticking a step or moving a band writes `workbook-state.json` or `workbook-layout.json` beside the workbook, through the plugin's API.
+4. **voyages** (E-26): a per-day timeline and suggestions from a trip's `voyage.json` (secret `GOOGLE_MAPS_API_KEY`); confirming, moving or dismissing a card writes `voyage-state.json` beside the trip, through the plugin's API. **listening-post** (E-27, folder `veille`): a queue fed by feeds and pasted links (dropping a link, dismissing or restoring a candidate writes `<dataDir>/listening-post/queue.json`), transcripts with `yt-dlp`, and a search; its ✦ buttons ask the agent.
 5. **parcours** is a feature, not an app: the `:::parcours` block draws a `.parcours.json` as a map with markers, an elevation profile and a walking mode (E-28).
 6. **meals** draws a page with `type: meals` as a day-by-day strip with a tray to drag from (E-29). The agent writes through the plugin's `meals` MCP server, guarded by a revision.
 7. **scan** adds a button to the composer that opens a camera overlay (E-30) and drops the codes it reads into the composer.

@@ -278,9 +278,9 @@ What a capture sweep (target of B-3) needs so every state above shows; what to s
 12. **Q-12 — Two ways back.** The shell's `‹ Back` above every plugin view goes home, and
     plugins add their own: `journal-back` `‹ Journals` (E-24), `todo-back` `‹` in the task
     sheet (E-22). The shell's back goes home while settings' back goes one level up.
-    `‹ Back` is untranslated (Q-4). The rule (`B-9`): two backs that lead to the same place
-    become one; a plugin's back that leads elsewhere (one level up inside the plugin) stays;
-    each back is labelled by its destination; no target changes.
+    `‹ Back` is untranslated (Q-4). No two backs lead to the same place. The rule (`B-9`): each
+    back is labelled by its destination (the shell's says home); none is removed; no target
+    changes.
 13. **Q-13 — Contrast.** `--text-faint` is used as text colour about 100 times and reaches
     2.3–2.6:1 in light, 2.6–3.1:1 in dark. In light, `--accent` (3.4–3.8:1), `--success`
     (3.0–3.4:1), `--warning` (3.3–3.8:1) and `--danger` (3.9–4.4:1) used as text are under
@@ -322,3 +322,8 @@ What a capture sweep (target of B-3) needs so every state above shows; what to s
     inactive app (E-20), the parcours map (E-28), the scan overlay (E-30), the offline
     start (E-21), nor any run under the nestor or skippy skins (only default, alfred,
     dobby).
+23. **Q-23 — Home looks empty while it loads.** Until the plugins and the page index arrive,
+    E-2 shows its empty state (`.adestia-empty` "Nothing to show yet.") instead of a loading
+    state; E-14 Configuration has no loading state either (Q-21). Closed by a loading state in
+    the charter's form (the one exception of `B-1`): E-2 by `adestia-qualite-pages`, E-14 by
+    `adestia-qualite-charte`.

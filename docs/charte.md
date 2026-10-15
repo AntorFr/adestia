@@ -65,10 +65,9 @@ reason.
 - **Account and theme** in the cog menu (E-15): credential, theme switch System / Light /
   Dark, sign out, version. **TARGET**: the theme switch is a three-icon toggle (monitor,
   sun, moon), not three text buttons.
-- **Navigation**: the breadcrumb is the location. **TARGET** (`B-9`): two back controls that
-  lead to the same place become one; a plugin's back that leads somewhere else (one level up
-  inside the plugin, as `‹ Journals`) stays; each back is labelled by its destination. No
-  navigation target changes.
+- **Navigation**: the breadcrumb is the location; every back control names its destination
+  (**TARGET**: the shell's `‹ Back` above a plugin says it goes home; a plugin's own back that
+  goes one level up keeps its place and its name). No back is removed (`B-9`).
 - **Feedback**: save status inline where the edit happens (editor, settings forms), as
   today. **Departure kept**: no toast system — every action of the product happens in a
   form or a page that shows its own state; a toast would duplicate it.
