@@ -1,19 +1,23 @@
 import { spawn, spawnSync } from 'node:child_process'
-import { existsSync } from 'node:fs'
-import { readdirSync } from 'node:fs'
+import { existsSync, mkdtempSync, readdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
 
 const launch = fileURLToPath(new URL('../../../bench/launch.mjs', import.meta.url))
 const built = existsSync(fileURLToPath(new URL('../dist/src/start.js', import.meta.url)))
-const leftovers = () => readdirSync(tmpdir()).filter((n) => n.startsWith('adestia-launch-'))
+// A private TMPDIR for the launchers this file starts: other test files start
+// launchers of their own in parallel, and counting the shared tmpdir would
+// count their directories.
+const sandbox = mkdtempSync(join(tmpdir(), 'bench-launcher-test-'))
+const leftovers = () => readdirSync(sandbox).filter((n) => n.startsWith('adestia-launch-'))
 
 const run = (args: string[], env: Record<string, string | undefined> = {}) =>
   spawnSync(process.execPath, [launch, ...args], {
     encoding: 'utf8',
-    env: { ...process.env, CLAUDE_CODE_OAUTH_TOKEN: undefined, ...env },
+    env: { ...process.env, TMPDIR: sandbox, CLAUDE_CODE_OAUTH_TOKEN: undefined, ...env },
   })
 
 describe('bench launcher refusals', () => {
@@ -45,7 +49,7 @@ describe('bench launcher refusals', () => {
 
 describe.skipIf(!built)('bench launcher, fake engine', () => {
   it('answers by script, identically twice, and removes its data on SIGTERM', async () => {
-    const child = spawn(process.execPath, [launch, '--engine', 'fake'], { stdio: ['ignore', 'pipe', 'ignore'] })
+    const child = spawn(process.execPath, [launch, '--engine', 'fake'], { stdio: ['ignore', 'pipe', 'ignore'], env: { ...process.env, TMPDIR: sandbox } })
     const exited = new Promise<number | null>((done) => child.once('exit', done))
     try {
       const url = await new Promise<string>((resolve, reject) => {
@@ -79,7 +83,7 @@ describe.skipIf(!built)('bench launcher, fake engine', () => {
   }, 60_000)
 
   it('boots the plugins seed with the ten bundled plugins loaded and no plugin problem', async () => {
-    const child = spawn(process.execPath, [launch, '--engine', 'fake', '--seed', 'plugins'], { stdio: ['ignore', 'pipe', 'ignore'] })
+    const child = spawn(process.execPath, [launch, '--engine', 'fake', '--seed', 'plugins'], { stdio: ['ignore', 'pipe', 'ignore'], env: { ...process.env, TMPDIR: sandbox } })
     const exited = new Promise<number | null>((done) => child.once('exit', done))
     try {
       const url = await new Promise<string>((resolve, reject) => {
