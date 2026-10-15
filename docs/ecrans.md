@@ -318,6 +318,39 @@ notice), `Reader` (its notes), `Attachments`, `PageSettings`; and the shell's `�
 `‹ Chat`, `Breadcrumb` (aria-label), `Highlights`. A page author's own text (titles, `ico`,
 frontmatter values, block names such as `:::callout`) is data and is never translated.
 
+**States, for every screen of the tranche.** The six states, with the word each shows. Error,
+offline and extreme content are *today's*, redrawn with the shared components; a state a screen
+lacks today is not added (B-1), except E-2's loading. The offline state exists only at the first
+start (E-21, the charter tranche's); an open shell that loses the network keeps today's
+behaviour. Extreme content never wraps a control out of its row: a long title, folder name,
+address or card name truncates with an ellipsis and a `title`; the page title in the canvas
+header and the breadcrumb truncate in the middle of the trail, never the last crumb to "Plan d…".
+
+| E-n | Loading | Empty | Error / refused | Extreme content |
+|---|---|---|---|---|
+| E-2 | **new**: spinner row + `Loading…` while `ready` is false; `ready` turns true when the plugins have loaded and the index request has settled, answer or failure, so the spinner lasts exactly as long as the requests and no timeout is invented | `<EmptyState>` once `ready` | a failed index is an empty Home, as today | 60 tiles wrap; a long folder name truncates; a brief of four long entries wraps to two lines each |
+| E-3 | none (as today, accepted): on a deep link opened cold the section says "This section holds nothing yet." until the index arrives — kept: a loading state here widens `B-1`'s one exception (E-2, E-14); listed for the end-of-epic recommendations | "This section holds nothing yet." / "Nothing matches." | none | long card titles clamp to two lines; hundreds of pages scroll, the search stays reachable |
+| E-4 | none: the previous screen stays until the page arrives (kept: Lacks) | a page with no body draws its title and the editor's empty surface | E-8 for a refusal; saving failed / refused / conflict inline | long title truncates in the header, wraps in the page |
+| E-5, E-6 | none (instant) | "—" no attribute: only the shared fields | a refused save shows in E-4's status line | a long value scrolls inside its field; the unknown-attribute list scrolls |
+| E-7 | none | "Everything here is finished." (no member at all shows nothing more: Lacks, kept) | — | long member names clamp |
+| E-8 | none | — | 404 / 401-403 / other, each its sentence | a long address breaks anywhere and stays inside the card |
+| E-20 | none | — | the one state, "That app is not active on this instance." | — |
+| Shell chrome (backs, crumbs) | none | — | — | the trail truncates its middle crumbs |
+
+**Shell chrome** (the backs and the breadcrumb of `App.tsx`) has no E-n of its own — it is the
+frame of E-2 to E-9, `docs/ecrans.md` › Navigation — and no state beyond its table row. It is
+seen by everyone (no role, no refusal): the same frame for the owner, the user and the person on
+a phone. The phone's `Chat` back is a step of P-4 step 6 once the doc task writes it.
+
+**Not this tranche's.** Q-6 and Q-7 on E-2 (a skin's greetings and their voice) are closed by the
+charter tranche's skin module; E-2 draws what that module returns, in the instance's locale, and
+the captures of this tranche (four skins, both languages) are where it is seen. E-20 is reached
+by an active plugin loaded without a view (its view module refused to import) — seed it so;
+`docs/parcours.md` P-11 step 10 says the same thing in other words and is aligned by the doc
+task, which also rewrites the glyphs and the back label that P-4 to P-6 and P-11 still carry.
+**Developer**: no screen of its own, he sees these through the bench captures. **Refused** is
+E-8's 401/403 and nothing else on these screens: no control is hidden by a role.
+
 **Roles.** Unchanged, as in § Roles: every signed-in person reads, edits and saves; the agent
 edits the same files (the conflict state is how a person meets it); the calling agent sees none
 of these screens.
