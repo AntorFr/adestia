@@ -61,6 +61,7 @@ export function CataloguePopin({
   const [items, setItems] = useState<readonly Item[] | undefined>()
   const [error, setError] = useState<string | undefined>()
   const [busy, setBusy] = useState<string | undefined>()
+  const [removing, setRemoving] = useState<string | undefined>()
   const [repo, setRepo] = useState('')
   const [ref, setRef] = useState('main')
   const [token, setToken] = useState('')
@@ -111,6 +112,22 @@ export function CataloguePopin({
     setError(undefined)
     setEntered(catalogue)
     void loadItems(catalogue)
+  }
+
+  const removeCatalogue = async (catalogue: Catalogue) => {
+    setError(undefined)
+    setRemoving(catalogue.id)
+    try {
+      const response = await fetchImpl(urlOf(catalogue.id), { method: 'DELETE' })
+      if (!response.ok) return setError(await failure(response))
+      setCatalogues((current) => current?.filter((entry) => entry.id !== catalogue.id))
+      // Removing a repository also withdraws the instructions it delivered.
+      onChanged()
+    } catch (cause) {
+      setError((cause as Error).message)
+    } finally {
+      setRemoving(undefined)
+    }
   }
 
   const toggle = async (catalogue: Catalogue, item: Item) => {
@@ -177,8 +194,13 @@ export function CataloguePopin({
               )}
               <ul className="adestia-catalogues__list">
                 {(catalogues ?? []).map((catalogue) => (
-                  <li key={catalogue.id}>
-                    <button type="button" className="adestia-filecard" onClick={() => enter(catalogue)}>
+                  <li key={catalogue.id} className="adestia-catalogues__repository">
+                    <button
+                      type="button"
+                      className="adestia-filecard"
+                      disabled={removing === catalogue.id}
+                      onClick={() => enter(catalogue)}
+                    >
                       <span className="adestia-filecard__name">{catalogue.id}</span>
                       <span className="adestia-filecard__path">
                         {catalogue.repo} @ {catalogue.ref}
@@ -188,6 +210,16 @@ export function CataloguePopin({
                           {catalogue.imports.length} {t('imported')}
                         </span>
                       </span>
+                    </button>
+                    <button
+                      type="button"
+                      className="adestia-catalogues__remove"
+                      disabled={removing !== undefined}
+                      aria-label={`${t('Remove catalogue')} ${catalogue.id}`}
+                      title={t('Remove this catalogue and its imported instructions')}
+                      onClick={() => void removeCatalogue(catalogue)}
+                    >
+                      {t('Remove catalogue')}
                     </button>
                   </li>
                 ))}
