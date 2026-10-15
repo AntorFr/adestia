@@ -339,6 +339,10 @@ mcp:
   # servers:
   #   - name: home-assistant        # becomes the prefix of the tools exposed
   #     url: https://ha.example/mcp
+  #     # cliName: io.example/home-assistant   # optional: the key the Copilot CLI is
+  #     #   handed instead of `name`, for a corporate registry that allowlists by
+  #     #   it. Adestia keeps showing `name`; letters, digits, - _ . / only, and
+  #     #   unique among the servers' keys. Other agent CLIs ignore it.
   #     headers:
   #       Authorization: Bearer ${HA_MCP_TOKEN}
   #   - name: cutlist

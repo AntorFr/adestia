@@ -684,7 +684,7 @@ l'éditeur sous le curseur. Deux tests (la réouverture, et l'absence de remonta
 et le scénario de banc `journal-sauvegarde` rejoue le cycle édition → Terminé →
 ✎ → frappe contre le vrai Milkdown.
 
-Branche `perf/parallel-io` (pas encore mergée, en attente de feu vert) : **l'index
+v0.87.2 (mergée, taguée et déployée le 15/10) : **l'index
 des pages se lit en parallèle**, pour un espace de travail sur WSL `/mnt/c`
 (OneDrive) où chaque `readdir`/`stat`/`readFile` est un aller-retour 9p
 (`/api/pages/index` ~1,3 s → ~0,15 s sur 147 pages, sortie identique). Deux
@@ -695,3 +695,14 @@ texte (la mémoire ne copie plus l'espace de travail). Le cache ne repose sur
 aucune date : toute modification, quel qu'en soit l'auteur, se voit à l'appel
 suivant. Tests : le plafond, l'ordre des listes, l'invalidation après édition
 ou suppression. Pas de scénario de banc : aucun rendu ne change.
+
+v0.87.3 : **un
+serveur MCP peut déclarer `cliName`**, la clé que le CLI Copilot reçoit à la
+place de `name` — un registre d'entreprise filtre par ce nom (ex.
+`io.modelcontextprotocol.aitechlab/microsoft-mcp`). L'interface continue de
+montrer `name` : la santé remontée par le CLI est ramenée de `cliName` à `name`.
+Ajouté à la revue : deux serveurs qui arriveraient chez le CLI sous la même clé
+(un `cliName` égal à un autre `name`, ou à un autre `cliName`) sont refusés à la
+lecture de la config, car l'un écraserait l'autre en silence ; et l'option est
+documentée dans `adestia.config.example.yaml`. Seul le pilote Copilot la lit ;
+le pilote Claude l'ignore. Pas de scénario de banc : aucun rendu ne change.
