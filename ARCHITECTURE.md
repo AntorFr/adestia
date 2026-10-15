@@ -194,7 +194,7 @@ and every turn — chat, scheduled, delegated, callback wake — goes through th
   checks every bundled plugin's French entries. Skins have no words through the locale today.
 - **Tests** — `vitest.config.ts` runs `packages/*/test`, aliasing every `@antorfr/*` to its
   `src/index.ts`; `npm run test:plugins` runs `node --test` over the plugins; `bench/` is the
-  visual check (docker). CI (`.github/workflows/ci.yml`) runs typecheck and tests.
+  visual check (docker). CI (`.github/workflows/ci.yml`) runs typecheck, tests, the build, a start of the built server and a docker image build (not lint).
 
 ## Decisions of adestia-qualite
 

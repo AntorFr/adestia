@@ -157,7 +157,10 @@ quota. See [DESIGN.md](DESIGN.md) for the principles and every decision taken.
 
 ## Contributing
 
-Node 22 or later (`engines` in `package.json`).
+Node 22 or later (`engines` in `package.json`). After `npm ci`, check that
+`node_modules/micromark-extension-directive` exists: a missing grammar shows as
+escaped `\:::` in the content tests, and looks like a serialiser bug
+(`CLAUDE.md`).
 
 ```sh
 npm ci
