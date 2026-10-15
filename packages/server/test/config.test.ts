@@ -368,6 +368,21 @@ mcp:
     ])
   })
 
+  it('refuses two servers that would reach the CLI under one key', () => {
+    // A cliName equal to another server's name, or to another cliName, would
+    // have one entry silently overwrite the other in the CLI's own config.
+    expect(
+      issuesOf(
+        'mcp:\n  servers:\n    - name: a\n      url: https://x/mcp\n    - name: b\n      cliName: a\n      url: https://y/mcp\n',
+      ),
+    ).toEqual(['mcp.servers[1]: "a" is already the CLI key of another server'])
+    expect(
+      issuesOf(
+        'mcp:\n  servers:\n    - name: a\n      cliName: io.x/s\n      url: https://x/mcp\n    - name: b\n      cliName: io.x/s\n      url: https://y/mcp\n',
+      ),
+    ).toEqual(['mcp.servers[1]: "io.x/s" is already the CLI key of another server'])
+  })
+
   it('refuses a placeholder the environment never filled', () => {
     // A literal "${TOKEN}" reaching a server fails later, in a call, blaming
     // the server rather than the config that never resolved.

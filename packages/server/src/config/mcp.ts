@@ -249,6 +249,9 @@ export function readMcpServers(raw: unknown, issues: string[]): readonly McpServ
 
   const servers: McpServerConfig[] = []
   const seen = new Set<string>()
+  // The key the CLI is handed, which is `cliName` when there is one. Two
+  // servers sharing it would overwrite each other in the CLI's own config.
+  const keys = new Set<string>()
 
   for (const [index, entry] of raw.entries()) {
     const server = readMcpServer(entry, `mcp.servers[${index}]`, issues)
@@ -258,7 +261,13 @@ export function readMcpServers(raw: unknown, issues: string[]): readonly McpServ
       issues.push(`mcp.servers[${index}]: "${server.name}" is declared twice`)
       continue
     }
+    const key = server.cliName ?? server.name
+    if (keys.has(key)) {
+      issues.push(`mcp.servers[${index}]: "${key}" is already the CLI key of another server`)
+      continue
+    }
     seen.add(server.name)
+    keys.add(key)
     servers.push(server)
   }
 

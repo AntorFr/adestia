@@ -683,3 +683,14 @@ frappe sauvegardait cette version par-dessus le fichier. Il part maintenant de
 l'éditeur sous le curseur. Deux tests (la réouverture, et l'absence de remontage),
 et le scénario de banc `journal-sauvegarde` rejoue le cycle édition → Terminé →
 ✎ → frappe contre le vrai Milkdown.
+
+Branche `feat/mcp-cli-name` (pas encore mergée, en attente de feu vert) : **un
+serveur MCP peut déclarer `cliName`**, la clé que le CLI Copilot reçoit à la
+place de `name` — un registre d'entreprise filtre par ce nom (ex.
+`io.modelcontextprotocol.aitechlab/microsoft-mcp`). L'interface continue de
+montrer `name` : la santé remontée par le CLI est ramenée de `cliName` à `name`.
+Ajouté à la revue : deux serveurs qui arriveraient chez le CLI sous la même clé
+(un `cliName` égal à un autre `name`, ou à un autre `cliName`) sont refusés à la
+lecture de la config, car l'un écraserait l'autre en silence ; et l'option est
+documentée dans `adestia.config.example.yaml`. Seul le pilote Copilot la lit ;
+le pilote Claude l'ignore. Pas de scénario de banc : aucun rendu ne change.
