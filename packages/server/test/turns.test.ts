@@ -398,10 +398,7 @@ describe('the turn desk', () => {
   })
 
   it('gives the slot back when the caller aborts before starting', () => {
-    const desk = new TurnDesk(
-      { runTurn: async function* (): AsyncIterable<TurnEvent> {} },
-      meter(1),
-    )
+    const desk = new TurnDesk(driverWith(), meter(1))
     const admission = desk.admit()
     if (admission.mode !== 'run') throw new Error('expected a run')
     admission.abort()
@@ -551,7 +548,7 @@ describe('the turn desk', () => {
   })
 
   it('says so when a key has nothing running', async () => {
-    const desk = new TurnDesk({ runTurn: async function* (): AsyncIterable<TurnEvent> {} }, meter())
+    const desk = new TurnDesk(driverWith(), meter())
     expect(desk.stop('u/c:nobody')).toBe(false)
   })
 
