@@ -32,6 +32,17 @@ npm run build:web --workspace @antorfr/adestia-web
 node packages/server/bin/adestia.js
 ```
 
+To look at the app without an agent or Docker (a scripted engine, seeded data):
+
+```sh
+npm run build
+node bench/launch.mjs --engine fake    # prints `listening on <url>`; <url>/api/health answers ok
+node bench/sweep.mjs                   # every screen, light and dark, desk and phone
+```
+
+`--engine claude` runs a real turn instead (needs `CLAUDE_CODE_OAUTH_TOKEN`).
+See [bench/README.md](bench/README.md).
+
 Either way, with no config file at all Adestia runs a single-user instance on
 <http://127.0.0.1:8730> with no authentication. Every setting is documented in
 [adestia.config.example.yaml](adestia.config.example.yaml).
