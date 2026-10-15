@@ -23,7 +23,6 @@ import type { ExtensionSource } from '../config/types.js'
 import {
   type CatalogueItem,
   importCatalogueItem,
-  materializeItem,
   scanCatalogue,
   withdrawCatalogueItem,
   withdrawItem,
@@ -32,6 +31,7 @@ import type {
   InstructionCatalogue,
   InstructionCataloguesStore,
 } from '../instruction-catalogues-store.js'
+import { refreshCatalogue } from '../instruction-catalogues-refresh.js'
 import { fetchSources } from '../sources.js'
 
 export interface CatalogueRoutesOptions {
@@ -235,32 +235,8 @@ export function registerInstructionCatalogues(
     const catalogue = (await store.list()).find((candidate) => candidate.id === request.params.id)
     if (!catalogue) return reply.code(404).send({ error: 'no such catalogue' })
 
-    const failure = await fetchClone(catalogue)
-    if (failure !== undefined) return reply.code(502).send({ error: failure })
-
-    const items = await scanCatalogue(cloneOf(catalogue.id))
-    const zones = instructionZones(driver)
-    const refreshed: string[] = []
-    // An import the new tree no longer offers is left where it is and
-    // reported: deleting a person's working copy because upstream moved a
-    // folder is not a refresh.
-    const missing: string[] = []
-    for (const entry of catalogue.imports) {
-      const item = items.find((candidate) => candidate.itemPath === entry.itemPath)
-      if (!item) {
-        missing.push(entry.itemPath)
-        continue
-      }
-      await materializeItem({
-        workspaceRoot,
-        zones,
-        catalogueRoot: cloneOf(catalogue.id),
-        item,
-        catalogueId: catalogue.id,
-        landedAt: entry.landedAt,
-      })
-      refreshed.push(entry.itemPath)
-    }
-    return { refreshed, missing }
+    const result = await refreshCatalogue(catalogue, { driver, workspaceRoot, dataDir, log })
+    if ('failure' in result) return reply.code(502).send({ error: result.failure })
+    return result
   })
 }

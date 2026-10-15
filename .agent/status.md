@@ -721,8 +721,8 @@ la zone du driver actif, rafraîchit par dépôt. Serveur :
 `catalogue-popin` (non joué : pas de docker dans le pod d'assemblage).
 Raisonné dans `DESIGN.md` (Instructions & workspace).
 
-Reste / pièges encore vrais : pas de rafraîchissement au boot (seulement le
-bouton) ; retirer un dépôt supprime ses copies ; un import que le dépôt ne
+Reste / pièges encore vrais : le rechargement au boot est borné à 20 s (au-delà
+le démarrage continue avec les copies d'hier) ; retirer un dépôt supprime ses copies ; un import que le dépôt ne
 propose plus est laissé en place et signalé, jamais supprimé ; le clone d'un
 dépôt privé passe par un jeton stocké en clair (0600) dans le fichier d'état ;
 le clone est lu sans réseau tant qu'il existe (un `GET items` ne rafraîchit

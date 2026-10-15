@@ -1590,8 +1590,12 @@ resolves in Adestia as follows:
   server code. Rejected: a catalogue as `extensions.sources`; folder-convention
   scanning; provenance in the frontmatter; the state in `adestia.config.yaml`
   (it changes at every import, and the file may be mounted read-only).
-  Not built: a refresh at boot (imports stay as copied until *Refresh*), and a
-  section in Réglages — the screen is Instructions.
+  At boot every catalogue with imports is reloaded by the same gesture as the
+  button, one after the other and within a 20 s ceiling: a repository that does
+  not answer leaves yesterday's copies and a log line, never a held-up boot.
+  The boot sweep of delivered contracts spares the paths an import landed at —
+  they carry the managed marker too, and were deleted at every restart before.
+  Not built: a section in Réglages — the screen is Instructions.
 - **Instructions are saved byte for byte**, in plain text, never through the
   page grammar. Pages go through a closed vocabulary with a validator because
   this product renders them; an instruction is read by a CLI, and its

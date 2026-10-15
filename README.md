@@ -72,7 +72,8 @@ Adestia's own interface.
   the shape of the files, wherever they sit), and import item by item. An
   import is a copy in the folder the active engine reads, marked as delivered
   and read-only, with its repository and ref shown on its card. *Refresh*
-  re-fetches a repository and re-copies what was imported from it; removing an
+  re-fetches a repository and re-copies what was imported from it (the same
+  happens at boot, within a 20 s ceiling); removing an
   item removes only its copy. An item whose kind the active engine has no
   folder for is listed but cannot be imported. The list lives in
   `<dataDir>/instruction-catalogues.json`, not in the config file.
