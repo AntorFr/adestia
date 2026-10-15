@@ -32,11 +32,19 @@ Form of the `exigences` skill; each need names the journeys it serves.
 - **B-1** — Every journey `P-1` to `P-14` behaves after the epic as it did at v0.88.0: same
   routes, same API, same configuration keys, same files on disk and their formats, same MCP
   tools, same words where a word is not corrected by `B-8`. A visible change is limited to the
-  look (`B-6`, `B-7`, `B-9`) and to the language of a string (`B-8`). *(all)*
+  look (`B-6`, `B-7`, `B-9`), to the language of a string (`B-8`) and to the loading states
+  below. The one contract change the epic allows is additive and only for words: the shell
+  hands a skin's module the instance's locale as an extra, optional input (AD-5); a skin that
+  ignores it works unchanged, including skins from `extensions.skinsDir` or
+  `extensions.sources`. The "Lacks" column of `docs/ecrans.md` › States is an observation, not
+  a target: the epic builds no new state, except a loading state where a screen shows a wrong
+  state while it loads today (E-2 shows "Nothing to show yet.", E-14 an empty page) — that is
+  coherence, not behaviour. Every `Q-n` of `docs/ecrans.md` is either closed by its tranche or
+  written "kept: <reason>". *(all)*
 
 ### The developer's journey
 - **B-2** — A developer launches Adestia locally with one documented command and no docker,
-  either on a **fake engine** (scripted, deterministic turns) or on the **real Claude engine**
+  either on the **fake engine** (a scripted fake driver, deterministic turns; AD-2) or on the **real Claude engine**
   with only `CLAUDE_CODE_OAUTH_TOKEN`; the Copilot and Codex engines keep their existing fakes
   in the tests, and their real runs stay manual. *(P-15)*
 - **B-3** — A developer captures every screen of `docs/ecrans.md` in light and dark, at desk
@@ -57,8 +65,8 @@ Form of the `exigences` skill; each need names the journeys it serves.
   token source (`packages/web/src/app/tokens.css`) that every shell and plugin stylesheet
   reads; no token used and never defined; no colour written outside the token and skin
   files; one type scale and one radius set actually used; every text and non-text pair of
-  the base palette at WCAG 2.2 AA in both themes, measured and listed. *(all journeys with a
-  screen)*
+  the base palette and of each skin's palette at WCAG 2.2 AA in both themes, measured and
+  listed (`docs/charte.md` § 5). *(all journeys with a screen)*
 - **B-7** — The shell's controls are drawn by shared components: one button family
   (neutral, accent, danger, ghost, icon), one dialog/sheet with one scrim, Escape and focus
   return, one empty state, one icon set served by the product next to every navigation item
@@ -66,12 +74,16 @@ Form of the `exigences` skill; each need names the journeys it serves.
   one is expected. *(all journeys with a screen)*
 - **B-8** — Every string of the interface goes through the locale, in the shell, in the
   editor, in the plugins and in the skins' words: an `en` instance shows no French and an
-  `fr` instance no English, outside the user's own content; French speaks with one register
-  (*vous*). *(all journeys with a screen)*
+  `fr` instance no English, outside the user's own content. The shell's and the plugins'
+  French speaks with one register (*vous*); a skin keeps its persona's own register and
+  voice (`B-10`) — Skippy may say *tu*. *(all journeys with a screen)*
 - **B-9** — A plugin screen looks like the shell: it reads the shell's tokens (no second
-  vocabulary), uses the shared dialog and the shell's back, and shows one way back, not two.
+  vocabulary) and uses the shared dialog. Two back controls that lead to the same place
+  become one; a plugin's back that leads somewhere else (one level up inside the plugin)
+  stays; each back is labelled by its destination. No navigation target changes (`B-1`).
   *(P-11)*
-- **B-10** — Each skin keeps its identity — palette, fonts, hero, crest, scheme — and every
+- **B-10** — Each skin keeps its identity — palette, fonts, hero, crest, scheme, and its
+  persona's voice and register in its own words — and every
   screen is legible and unbroken under each of the four skins. *(all journeys with a screen)*
 
 ### The code
@@ -110,7 +122,7 @@ A user talks to the agent in the chat rail, beside whatever the canvas shows (on
 6. On a desktop (or on a phone with the canvas showing), each message carries the open route and its breadcrumb as a hint (`screenView` in `trail.ts`, `frameView` in `screen.ts`). It is never sent from the home screen, and never what the page shows.
 7. The user drops or picks files in the composer (**More** › **Attach files**, or drag and drop) — `POST /api/upload`. The files go to an inbox under `dataDir`, outside the workspace, in a box per person (not per conversation), and are cleared after `attachments.ttlMs`. The prompt tells the agent that their contents are data, and the agent reads them with its own tools.
 8. The agent names the conversation with its `rename_conversation` tool (it also has `new_id` and `find_pages`). The new title shows on the tab and in the list.
-9. The user manages conversations from E-16. Tabs are desktop only; the browser remembers which are open (`adestia.tabs`) and which have been read (`adestia.read`). The user drags tabs to reorder them, closes one with × or archives it with the box icon (`POST /api/conversations/:id/archive`). **▤** opens the conversation list, which is the only navigation on a phone, and **＋** starts a new draft.
+9. The user manages conversations from E-16. Tabs are desktop only; the browser remembers which are open (`adestia.tabs`) and which have been read (`adestia.read`). The user drags tabs to reorder them, closes one with × or archives it with the box icon, on the tab or on its list entry (`POST /api/conversations/:id/archive`). **▤** opens the conversation list, which is the only navigation on a phone, and **＋** starts a new draft. From the screen the user creates and archives, nothing more: renaming is the agent's (step 8), and the server's rename (`PATCH /api/conversations/:id`), unarchive (`archived: false`) and delete (`DELETE /api/conversations/:id`) are reached by no screen. An archived conversation leaves the list, which never asks for archived ones.
 10. When a reply arrives while the user is reading something else, the dot on the tab or list entry marks the conversation as unread.
 
 Needs: B-1, B-6, B-7, B-8, B-10
@@ -196,7 +208,7 @@ Needs: B-1, B-6, B-7, B-8, B-10
 ### P-9 — Edit the agent's instructions and import from catalogues
 The owner reads and corrects what the agent is told, and imports skills from git repositories.
 
-1. The owner opens **Instructions** (E-11, `#/settings/instructions`; the old `#/instructions` redirects there). It shows one card per file in the engine's own folders (`GET /api/instructions`), grouped by when the engine reads them (standing instructions, `skills`, `agents`), with a search field.
+1. The owner opens **Instructions** (E-11, `#/settings/instructions`, a tile of the Settings mosaic E-9; the old `#/instructions` redirects there). It shows one card per file in the engine's own folders (`GET /api/instructions`), grouped by when the engine reads them (standing instructions, `skills`, `agents`), with a search field.
 2. Opening a card (`#/settings/instructions/<path>`) shows the plain text, which is saved byte for byte (**Save**, `PUT /api/instructions/<path>`). A button per place creates a new instruction there.
 3. Files delivered by the product (core skills, plugin skills, the generated `this-instance`, catalogue imports) carry a **delivered** badge and have no Save; the server refuses writing them too. They are rewritten at every start.
 4. **Catalogues** opens E-12 (`CataloguePopin`). The owner declares a repository (address, required ref, optional token — `POST /api/instruction-catalogues`), then opens it to list what it holds (`GET …/:id/items`).
@@ -208,7 +220,7 @@ Needs: B-1, B-6, B-7, B-8, B-10
 ### P-10 — Edit the configuration from the browser and restart
 The owner changes a setting of the instance without a shell on the machine.
 
-1. The owner opens **Configuration** (E-14, `#/settings/config`; `GET /api/settings`). It names the file it writes to.
+1. The owner opens **Configuration** (E-14, `#/settings/config`, a tile of the Settings mosaic E-9; `GET /api/settings`). It names the file it writes to.
 2. The form is built from `SETTING_GROUPS` in `packages/schemas/src/settings.ts`; today that is `workspace.watch.enabled`, `workspace.watch.polling` and `workspace.watch.intervalMs`. Each field says whether its value is written in the file or is the default, and that it "applies after a restart".
 3. On a read-only file (a ConfigMap, a `:ro` mount), a banner says so; the values stay visible and nothing can be edited.
 4. **Save** (`PUT /api/settings` with the revision it read) writes `adestia.config.yaml` in place and keeps its comments. If the file changed on disk, the save is refused and asks for a reload. **Discard** throws the changes away.
@@ -220,7 +232,7 @@ Needs: B-1, B-6, B-7, B-8, B-10
 ### P-11 — Use a plugin
 A user works in an app or meets a feature plugin the owner turned on.
 
-1. The owner names plugins in `extensions.apps` and `extensions.features`. Each active app with a `tile` shows a tile on E-2 and opens at `#/<route>` (default `#/<id>`), with a **‹ Back** above the plugin's view. A plugin that crashes takes down only its own panel (`PluginBoundary`), and E-19 says why.
+1. The owner names plugins in `extensions.apps` and `extensions.features`. Each active app with a `tile` shows a tile on E-2 and opens at `#/<route>` (default `#/<id>`), with a **‹ Back** above the plugin's view. A plugin that crashes takes down only its own panel (`PluginBoundary`), which says why in its place.
 2. **todo** (E-22): tasks are pages (`type: tache`), and lists are curated (`liste`) or dynamic. Ticking a task writes its `done:`. Opening a task shows the task sheet (`sheet.js`), whose note is the shell's own page editor. The `:::checklist` block lets any page carry tasks.
 3. **planif** (E-23): see P-12. **journal** (E-24): a folder is a journal and each page in it an entry; the history reads on one screen and each entry is edited in place. **atelier** (E-25, no tile, reached at `#/atelier/<path>` or from a path it claims): draws the cutting diagram from a project's `workbook.json`, with a bench mode.
 4. **voyages** (E-26): a per-day timeline and suggestions from a trip's `voyage.json` (secret `GOOGLE_MAPS_API_KEY`). **listening-post** (E-27, folder `veille`): a queue fed by feeds and pasted links, transcripts with `yt-dlp`, and a search; its ✦ buttons ask the agent.
@@ -229,7 +241,7 @@ A user works in an app or meets a feature plugin the owner turned on.
 7. **scan** adds a button to the composer that opens a camera overlay (E-30) and drops the codes it reads into the composer.
 8. **project-management** adds the `:::timeline` block (phases and milestones on a time axis) and the `:::subproject` block (sub-projects with their `project-status`) (E-31).
 9. Many plugin buttons send a prompt to the agent (`api.ask`) instead of writing anything themselves.
-10. An address whose app is not active (a bookmark, a plugin turned off) shows E-20 ("That app is not active on this instance.") with **‹ Back**.
+10. An address whose app is not active (a bookmark, a plugin turned off) matches no loaded plugin and falls through to Home (E-2). E-20 ("That app is not active on this instance.", with **‹ Back**) shows only for an active plugin with a tile whose view did not load (its module would not import); E-19 lists that refusal under "Extensions refused".
 
 Needs: B-1, B-6, B-7, B-8, B-9, B-10
 
@@ -237,7 +249,7 @@ Needs: B-1, B-6, B-7, B-8, B-9, B-10
 The owner has the agent act on a schedule, with nobody watching.
 
 1. The owner sets `schedule.enabled: true` in `adestia.config.yaml`; it is off by default.
-2. The user asks the agent, or writes themselves, a note in `workspace/planif/` (the `workspace.planif` key) whose body is the prompt. Its frontmatter carries either `every:` (`30m`, `2h`, `1d`, at least 15 min) or `at:` (fixed local times), and `enabled:`. The `schedule-author` skill describes the format.
+2. A note in `workspace/planif/` (the `workspace.planif` key) holds the schedule; its body is the prompt. No screen writes one: the owner writes it in the workspace by hand, or asks the agent to write it (skill `schedule-author`); E-23 only reads. Its frontmatter carries either `every:` (`30m`, `2h`, `1d`, at least 15 min) or `at:` (fixed local times), and `enabled:`. The `schedule-author` skill describes the format.
 3. The clock (`clock.ts`, `schedule.ts`) runs each note when it is due, as an unattended turn framed as scheduled. An occurrence missed by more than 5 minutes is lost, never replayed. Under `permissions: ask`, any question the engine asks is refused straight away.
 4. A note with `until: YYYY-MM-DD` is a mission. The agent writes `done:` when the goal is met, and the note stops. Past the deadline the product stamps `expired:` and runs one last turn to escalate, even if the instance was down at the time.
 5. The user opens the **planif** app (E-23, tile "Schedules"). It lists the notes with their next and last runs, invalid ones with their problem, and says when the clock is off. It is read-only: its buttons ask the agent to create or change a note.
@@ -254,7 +266,7 @@ A calling agent (often another Adestia) hands this instance a task over MCP and 
 4. The task runs as a turn in a conversation kept under `dataDir/delegations`, one folder per caller.
 5. The calling agent polls `ask_<agentName>_status` with the `job_id` until the answer comes back with a `task_id`. A job is forgotten `mcp.ttlMs` after it ends.
 6. If the caller gave a callback URL, this instance sends a `{from, job_id}` ping to it when the job ends. On the receiving side, `POST /callback` accepts only a `from` naming one of its own outbound servers, checks the job with that peer's status tool, and then wakes its own agent with an unattended turn.
-7. A user opens **Delegations** (E-13, `#/settings/delegations`; `GET /api/delegations`): threads grouped by caller, with running/waiting markers. Opening one (`GET /api/delegations/:caller/:id`) shows it read-only, with no composer.
+7. A user opens **Delegations** (E-13, `#/settings/delegations`, a tile of the Settings mosaic E-9; `GET /api/delegations`): threads grouped by caller, with running/waiting markers. Opening one (`GET /api/delegations/:caller/:id`) shows it read-only, with no composer.
 
 Needs: B-1, B-6, B-7, B-8, B-10
 
@@ -263,7 +275,7 @@ The owner deploys an instance and makes it their own.
 
 1. The owner runs the image (`Dockerfile`, `docker-compose.yml`): `/workspace` and `/data` as volumes, `adestia.config.yaml` mounted at `/app/adestia.config.yaml`, extra `plugins/` and `skins/` folders mounted, and `CLAUDE_CODE_OAUTH_TOKEN` in the environment (or the credential armed in P-7). Port 8730, health at `/api/health`. Without docker: `npm ci`, the two builds, then `node packages/server/bin/adestia.js [-c <path>]`.
 2. The owner writes `adestia.config.yaml`. Every key is optional, unknown keys are refused at boot, and `${VAR}` placeholders whose variable is unset are refused (`adestia.config.example.yaml`).
-3. The owner turns plugins on by kind in `extensions.apps`, `extensions.features` and `extensions.tools`, and picks one skin in `extensions.skin` (`alfred`, `dobby`, `nestor`, `skippy`, or `default`). Plugins and skins are found in `extensions.pluginsDir` and `extensions.skinsDir`; being present is not being active. A restart applies the change.
+3. The owner turns plugins on by kind in `extensions.apps`, `extensions.features` and `extensions.tools`, and picks one skin in `extensions.skin` (`alfred`, `dobby`, `nestor`, `skippy`, or `default`). Plugins and skins are found in `extensions.pluginsDir` and `extensions.skinsDir`; being present is not being active. A restart applies the change. A plugin refused at boot (an invalid manifest, for instance) or in the browser (a module that would not import) is listed on E-19 under "Extensions refused"; a refused skin is only logged.
 4. The owner adds `extensions.sources` (a `repo` with a required `ref` and an optional `token`, or a mounted `dir`). The repositories are cloned into `<dataDir>/extensions` at boot. A bundled plugin wins over one from a source with the same id. Problems such as an unreachable or stale source or a missing secret show on E-19.
 5. At boot, the product delivers its skills (`skills/`: `page-author`, `collections`, `plugin-author`, `skin-author`, `schedule-author`, `persona-author`), each active plugin's skills and subagents, and the generated `this-instance` contract (`introduction.ts`) into the engine's folders. Every turn carries a line pointing at that contract.
 6. On a fresh instance whose instructions do not say who the agent is, the user talks to the agent in the chat (E-16). The `persona-author` skill has it ask for a name, a role and a voice, then write them into the instructions.
@@ -277,7 +289,7 @@ A developer, a person or a night agent without docker, changes Adestia's code, c
 1. **Today.** Install and check the install: `npm ci` (never `npm install`), then `ls node_modules/micromark-extension-directive` (`CLAUDE.md`).
 2. **Today.** Build, typecheck, lint and test: `npm run build`, `npm run typecheck`, `npm run lint` (`eslint packages`), and `npm test` (vitest, then `npm run test:plugins` with `node --test`). Today CI (`.github/workflows/ci.yml`) runs typecheck, tests and a docker build, but not lint (**TARGET**, B-12).
 3. **Today.** Run from source on the real engine: build, then `node packages/server/bin/adestia.js`, with `CLAUDE_CODE_OAUTH_TOKEN` in the environment for claude-code. For the shell's hot reload, `npm run dev --workspace @antorfr/adestia-web` (Vite, which proxies `/api`, `/plugins` and `/manifest.webmanifest` to `127.0.0.1:8730`).
-4. **TARGET (B-2).** Launch locally with one documented command and no docker, either on a fake engine (scripted, repeatable turns) or on real Claude with only `CLAUDE_CODE_OAUTH_TOKEN`. No fake engine can be run outside the tests today. The Copilot and Codex engines keep their fakes in the tests.
+4. **TARGET (B-2).** Launch locally with one documented command and no docker, either on the fake engine (AD-2) or on real Claude with only `CLAUDE_CODE_OAUTH_TOKEN`. No fake engine can be run outside the tests today. The Copilot and Codex engines keep their fakes in the tests.
 5. **Today, docker only.** Look at a change: `bench/run.sh bench/scenarios/<change>.mjs` builds the image, fakes the engine (unless `BENCH_REAL_ENGINE=1`), drives headless Chromium in a container and drops screenshots in `bench/shots/`; `bench/live-codex.sh` runs a real codex engine.
 6. **TARGET (B-3).** Capture every screen of `docs/ecrans.md`, in light and dark, at desk and phone width, for a chosen skin, with seeded data and one command that needs no docker (Playwright and Chromium from the environment).
 7. **TARGET (B-4, B-5).** Find what the product does in `docs/parcours.md`, `docs/ecrans.md`, `docs/donnees.md`, `ARCHITECTURE.md`, `docs/charte.md`, `README.md` and `CLAUDE.md`, and the current state in `.agent/status.md` (under 150 lines) with the history in `CHANGELOG.md`.

@@ -8,6 +8,11 @@
 >
 > The night agents who make screens coherent and the visual reviewers check each screen
 > against this file. Components, classes and routes are named so they can be searched.
+>
+> The "Lacks" column of States is an observation, not a target: the epic builds no new
+> state, except a loading state where a screen shows a wrong state while it loads today
+> (E-2, E-14) — coherence, not behaviour (`B-1`). Every `Q-n` is either closed by its tranche
+> or written "kept: <reason>".
 
 ## Format
 
@@ -84,24 +89,24 @@ is labelled with the destination. Plugins with sub-screens add their own back (E
 |---|---|---|---|---|---|
 | E-1 | Gates | instead of the shell, before `/api/instance` answers or when it refuses | `app/Gates.tsx` (`RefusedGate`, `SignInGate`, `FatalGate`, `LoadingGate`), `useInstance.ts` | Say why the shell is not there: loading, sign in (OIDC 401), not allowed (403), could not start | P-1 |
 | E-2 | Home | `#/` | `app/Home.tsx`, `Tile.tsx`, `useReorder.ts`, `SkinSlot.tsx` (hero), `styles/home.css`, `tiles.css` | Greeting and "ask" button (focuses the composer), the agent's brief (« À la une »), the Domains mosaic (plugin tiles, folder tiles, the Settings tile), Arrange mode | P-4, P-11 |
-| E-3 | Section | `#/section/<folder>` | `app/Section.tsx`, `sections.ts`, `styles/home.css` | A folder: header, stores, sub-rooms (`Inside`), searchable and facetable page cards, `Finished` archive | P-4, P-5 |
+| E-3 | Section | `#/section/<folder>` | `app/Section.tsx`, `sections.ts`, `styles/home.css` | A folder: header, stores, sub-rooms (`Inside`), searchable and facetable page cards, `Finished` archive | P-4 |
 | E-4 | Page (reader and editor) | `#/page/<path>` | `editor/Editor.tsx`, `Reader.tsx`, `milkdown.ts`, `toolbar.ts`, `slash.ts`, `blockview.tsx`, `frontmatterview.tsx`, `Attachments.tsx`, `usePage.ts`, `styles/editor.css`, `reader.css`, `crepe.css` | Read a page (rendered blocks, wikilinks, attachments strip); ✎ opens the Milkdown editor with toolbar, slash menu, block bars; autosave; `Done` | P-5, P-6 |
 | E-5 | Page properties popover | ⚙ on the frontmatter strip in the editor | `editor/PageSettings.tsx`, `pageform.ts`, `frontmatterview.tsx` | Edit frontmatter as a form drawn from declared fields | P-6 |
 | E-6 | Block settings popover | ⚙ on a block bar in the editor | `editor/BlockSettings.tsx`, `blockview.tsx` | Edit a `:::block`'s attributes, title, icon, frame, width; remove stray attributes | P-6 |
-| E-7 | Collection page | a page with `type: collection` | `app/Collection.tsx` (`CollectionLayout`, `CollectionShell`), `collections.ts`, `styles/collection.css` | A page listing its members as cards with facets, a `New` pill, `Everything here is finished.` | P-5, P-6 |
+| E-7 | Collection page | a page with `type: collection` | `app/Collection.tsx` (`CollectionLayout`, `CollectionShell`), `collections.ts`, `styles/collection.css` | A page listing its members as cards with facets, a `New` pill, `Everything here is finished.` | P-5 |
 | E-8 | Missing page | `#/page/<path>` refused (404, 401/403, other) | `app/MissingPage.tsx`, `styles/missing-page.css` | Name the address, say which refusal, link to the folder above | P-5 |
 | E-9 | Settings mosaic | `#/settings` | `app/Preferences.tsx`, `Tile.tsx` | Four tiles: MCP servers, Instructions, Configuration, Delegations, with counts | P-8, P-9, P-10, P-13 |
 | E-10 | MCP servers | `#/settings/mcp[/<name>]` | `app/McpServers.tsx`, `Settings.tsx` (`useMcpServers`), `styles/settings.css` | List servers with health; open one: state, per-person OAuth connect, JSON declaration editor, Save, Remove, add | P-8 |
 | E-11 | Instructions | `#/settings/instructions[/<path>]` | `app/Instructions.tsx`, `styles/tiles.css` | Grouped file cards (instructions, skills, agents), search, `+` create buttons, open one in a monospace textarea, Save; delivered files read-only | P-9 |
 | E-12 | Catalogue pop-in | `Catalogues` button in E-11 | `app/CataloguePopin.tsx` (`.adestia-sheet`) | Add a git repository of instructions, list its items, import, Refresh | P-9 |
 | E-13 | Delegations | `#/settings/delegations[/<id>]` | `app/Delegations.tsx` | Tasks other agents delegated, grouped by caller, with state chips; open one | P-13 |
-| E-14 | Configuration and restart | `#/settings/config` | `app/Configuration.tsx`, `styles/settings-pages.css` | Form of `adestia.config.yaml` from the settings catalogue; read-only notice; Save/Discard; restart bar once a restart-bound value is written | P-10, P-14 |
+| E-14 | Configuration and restart | `#/settings/config` | `app/Configuration.tsx`, `styles/settings-pages.css` | Form of `adestia.config.yaml` from the settings catalogue; read-only notice; Save/Discard; restart bar once a restart-bound value is written | P-10 |
 | E-15 | Cog menu | ⚙ in the canvas header, any screen | `app/SettingsMenu.tsx`, `Settings.tsx` (credential panel), `styles/settings.css` | Agent token state and arming flow, theme (System/Light/Dark), sign out (OIDC), build version | P-1, P-7 |
-| E-16 | Chat rail | always (left; full screen on a phone) | `chat/Chat.tsx`, `Composer.tsx`, `ModelPicker.tsx`, `ContextPill.tsx`, `Bubble.tsx`, `tabs.ts`, `useConversations.ts`, `styles/chat.css`, `conversations.css`, `attachments.css` | Header (crest, brand, model picker, context pill, `▤` list, `＋` new, `▥` apps), tab strip (desktop), conversation list, thread of bubbles with live turn, MCP connect prompts, composer (attach, plugin buttons in the `More` fold, send/stop) | P-2 |
+| E-16 | Chat rail | always (left; full screen on a phone) | `chat/Chat.tsx`, `Composer.tsx`, `ModelPicker.tsx`, `ContextPill.tsx`, `Bubble.tsx`, `tabs.ts`, `useConversations.ts`, `styles/chat.css`, `conversations.css`, `attachments.css` | Header (crest, brand, model picker, context pill, `▤` list, `＋` new, `▥` apps), tab strip (desktop), conversation list, thread of bubbles with live turn, MCP connect prompts, composer (attach, plugin buttons in the `More` fold, send/stop) | P-2, P-3, P-14 |
 | E-17 | Permission question | above the composer while a turn waits on a permission | `chat/AskPrompt.tsx` (`.adestia-ask`) | Allow once / always / deny a tool call | P-2 |
 | E-18 | Signature sheet | a signature card in the thread, opened | `chat/Signatures.tsx` (`SignatureCards`, `.adestia-sheet`) | Sign a held action or a standing grant in an embedded ceremony (or in a tab) | P-3 |
-| E-19 | Problems band | top of the canvas body, any screen | `app/Problems.tsx` (`.adestia-problems--refused`, `--degraded`) | Background reading interrupted; extensions refused; running with something missing; stray `app:` | P-1, P-11, P-14 |
-| E-20 | Inactive app | a plugin route whose plugin has no view | `App.tsx` (`.adestia-empty`) | Say the app is not active, `‹ Back` | P-11, P-14 |
+| E-19 | Problems band | top of the canvas body, any screen | `app/Problems.tsx` (`.adestia-problems--refused`, `--degraded`) | Background reading interrupted; extensions refused; running with something missing; stray `app:` | P-11, P-14 |
+| E-20 | Inactive app | a plugin route whose plugin has no view | `App.tsx` (`.adestia-empty`) | Say the app is not active, `‹ Back` | P-11 |
 | E-21 | Offline screen | the cached shell opened without network | `sw/sw.ts`, then `FatalGate` | Today: "Adestia could not start" with the browser's network error | P-1 |
 | E-22 | Todo (and task sheet) | `#/todo`, folders `todo`, `taches` | `plugins/todo/web/app.js`, `rows.js`, `sheet.js`, `blocks.js`, `app.css` | Lists and tasks, capture field, assignees; the task sheet (`.todo-sheet`) with its own `‹`; `:::todo` blocks | P-11 |
 | E-23 | Planif | `#/planif` | `plugins/planif/web/app.js`, `app.css` | Scheduled notes, clock state, last/next run | P-11, P-12 |
@@ -109,10 +114,10 @@ is labelled with the destination. Plugins with sub-screens add their own back (E
 | E-25 | Atelier | `#/atelier…` (no tile; reached from a folder) | `plugins/atelier/web/view.js`, `app.js` (innerHTML engine), `atelier.css` | Workbooks: cut lists, blueprints, full-screen step mode (`.atelier-full`), piece modal (`.atelier-modal`) | P-11 |
 | E-26 | Voyages | `#/voyages…`, folder `voyages` | `plugins/voyages/web/view.js`, `app.js`, `voyages.css` | Trips: day plan, suggestion tray, drag to confirm, card detail (`.vmodal`) | P-11 |
 | E-27 | Listening post | `#/listening-post…`, folder `veille` | `plugins/listening-post/web/app.js`, `app.css` | Watchlist: sources, passages, dismiss | P-11 |
-| E-28 | Parcours map | `#/parcours/<path>`, and the `:::parcours` block | `plugins/parcours/web/view.js`, `carte.js`, `blocks.js`, `parcours.css` | A walk as a map, markers, elevation profile, walking mode (HUD), GPX | P-5, P-11 |
+| E-28 | Parcours map | `#/parcours/<path>`, and the `:::parcours` block | `plugins/parcours/web/view.js`, `carte.js`, `blocks.js`, `parcours.css` | A walk as a map, markers, elevation profile, walking mode (HUD), GPX | P-11 |
 | E-29 | Meals page layout | a page with `type: meals` | `plugins/meals/web/layouts.js`, `frise.js`, `meals.css` | Meal timeline (frise), drag to reorder, dish detail (`.meals-modal`) | P-5, P-11 |
-| E-30 | Scan overlay | composer button "Scan barcodes" | `plugins/scan/web/chrome.js`, `scanner.js`, `scan.css` | Full-screen camera, decoded codes list, send to the composer | P-2, P-11 |
-| E-31 | Project-management blocks | `:::` timeline and status blocks in a page | `plugins/project-management/web/blocks.js`, `model.js`, `pm.css` | Timeline of dated sub-pages, project status pills | P-5 |
+| E-30 | Scan overlay | composer button "Scan barcodes" | `plugins/scan/web/chrome.js`, `scanner.js`, `scan.css` | Full-screen camera, decoded codes list, send to the composer | P-11 |
+| E-31 | Project-management blocks | `:::` timeline and status blocks in a page | `plugins/project-management/web/blocks.js`, `model.js`, `pm.css` | Timeline of dated sub-pages, project status pills | P-11 |
 
 ## Roles × screens × actions
 
@@ -135,7 +140,7 @@ columns are the same except where the instance's configuration decides what exis
 | E-13 | read | same | runs the delegated turns | creates the rows through inbound MCP `ask_<name>` |
 | E-14 | edit, save, restart — only when the server got a `configPath`; else "does not expose its configuration" (the tile is still shown) | same | — | — |
 | E-15 | arm the token, theme, sign out | same (token is the instance's) | — | — |
-| E-16 | talk, keep conversations | same, own conversations under OIDC | answers, renames conversations (`rename_conversation`) | its conversations appear in the list |
+| E-16 | talk, create and archive conversations | same, own conversations under OIDC | answers, renames conversations (`rename_conversation`) | — (its threads are not in this list; they show on E-13 only, `DelegationChannel`) |
 | E-17, E-18 | answer, sign | same | asks permission, holds actions | may hold actions for signature |
 | E-19 | read | same | background trouble from its scheduled turns | — |
 | E-20–E-31 | use | same | writes the plugin's files (tasks, trips, journals, workbooks) | — |
@@ -247,7 +252,8 @@ What a capture sweep (target of B-3) needs so every state above shows; what to s
    refresh prompt `Rafraîchis ma une`, shown on an `en` instance. E-2.
 6. **Q-6 — Two registers.** `i18n.ts` speaks *vous* everywhere except the signature lines
    (`Une action attend ta signature.`); skin words use *toi* (skippy) and *vous* (dobby).
-   E-18, E-2.
+   The rule (`B-8`, `B-10`): the shell's and plugins' words say *vous*, so the signature
+   lines change; a skin keeps its persona's register, so skippy's *toi* stays. E-18, E-2.
 7. **Q-7 — Skins carry words.** All four `skins/*/skin.js` hard-code French (placeholder,
    greetings, busy label), against `i18n.ts`'s own rule that a skin never translates. E-2,
    E-16.
@@ -272,7 +278,9 @@ What a capture sweep (target of B-3) needs so every state above shows; what to s
 12. **Q-12 — Two ways back.** The shell's `‹ Back` above every plugin view goes home, and
     plugins add their own: `journal-back` `‹ Journals` (E-24), `todo-back` `‹` in the task
     sheet (E-22). The shell's back goes home while settings' back goes one level up.
-    `‹ Back` is untranslated (Q-4).
+    `‹ Back` is untranslated (Q-4). The rule (`B-9`): two backs that lead to the same place
+    become one; a plugin's back that leads elsewhere (one level up inside the plugin) stays;
+    each back is labelled by its destination; no target changes.
 13. **Q-13 — Contrast.** `--text-faint` is used as text colour about 100 times and reaches
     2.3–2.6:1 in light, 2.6–3.1:1 in dark. In light, `--accent` (3.4–3.8:1), `--success`
     (3.0–3.4:1), `--warning` (3.3–3.8:1) and `--danger` (3.9–4.4:1) used as text are under
@@ -280,7 +288,9 @@ What a capture sweep (target of B-3) needs so every state above shows; what to s
 14. **Q-14 — No icon set.** Emoji on tiles and headers (`🔌 📓 🎛 🤝 ⚙`), Unicode glyphs
     in controls (`▤ ＋ ▥ ⚙ ✎ ↺ ■ ↑ ‹`), `glyphs.ts` with two SVGs, inline SVG in
     `Chat.tsx` (`ArchiveGlyph`) and `Home.tsx`. `⌘K` is printed on the home ask button on
-    every platform though Ctrl+K is what works off a Mac. E-2, E-9, E-16.
+    every platform though Ctrl+K is what works off a Mac; Ctrl+K already works everywhere
+    (`Home.tsx` accepts `metaKey` or `ctrlKey`), so showing Ctrl+K off a Mac is a label, not a
+    behaviour. E-2, E-9, E-16.
 15. **Q-15 — Five empty-state styles in the shell.** `.adestia-empty` (E-2, E-3, E-7,
     E-20), `.adestia-instructions__empty` (E-11, E-10, E-12, and E-14's error),
     `.adestia-deleg__empty` (E-13), `.adestia-conversations__empty` (E-16),
@@ -304,8 +314,9 @@ What a capture sweep (target of B-3) needs so every state above shows; what to s
     `Instructions.tsx` (E-11); `confirm()` in atelier (E-25).
 21. **Q-21 — Configuration offered where it cannot open.** The Configuration tile in E-9 is
     always drawn; without `configPath` it leads to "This instance does not expose its
-    configuration." E-14 also has no loading state and, unlike its siblings, no
-    `--tile-color` wrapper on its error and empty renders.
+    configuration." Hiding the tile would change what the screen offers: **kept: behaviour**
+    (`B-1`). E-14 also has no loading state and, unlike its siblings, no `--tile-color`
+    wrapper on its error and empty renders; those two are coherence and stay in the epic.
 22. **Q-22 — Bench gaps.** `bench/scenarios` has no scenario for the gates (E-1), the
     permission question (E-17), the model picker or the composer's `More` fold (E-16), the
     inactive app (E-20), the parcours map (E-28), the scan overlay (E-30), the offline

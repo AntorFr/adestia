@@ -42,7 +42,7 @@
 - **Fonts**: `--font` (system stack), `--font-title` (serif), `--font-mono`, `--font-code`;
   a skin may serve its own (Dobby does). Kept as inherited.
 - **Type scale — TARGET**: today three steps (`--text-sm` 13px, `--text-base` 15px,
-  `--text-lg` 18px) and about sixty literal sizes over twelve values. The tranche writes the
+  `--text-lg` 18px) and about sixty literal sizes over 17 distinct values (`Q-16`). The tranche writes the
   scale every stylesheet uses (proposal: 11 / 12 / 13 / 15 / 18 / 22 / 28, named), and no
   literal size remains outside `tokens.css` and skins.
 - **Spacing**: the six steps of `tokens.css` (4 to 32 px) on a 4 px grid.
@@ -65,13 +65,15 @@ reason.
 - **Account and theme** in the cog menu (E-15): credential, theme switch System / Light /
   Dark, sign out, version. **TARGET**: the theme switch is a three-icon toggle (monitor,
   sun, moon), not three text buttons.
-- **Navigation**: the breadcrumb is the location; one way back per screen (**TARGET**: the
-  shell's back on plugin apps, and the plugins' own back links removed where they double
-  it).
+- **Navigation**: the breadcrumb is the location. **TARGET** (`B-9`): two back controls that
+  lead to the same place become one; a plugin's back that leads somewhere else (one level up
+  inside the plugin, as `‹ Journals`) stays; each back is labelled by its destination. No
+  navigation target changes.
 - **Feedback**: save status inline where the edit happens (editor, settings forms), as
   today. **Departure kept**: no toast system — every action of the product happens in a
   form or a page that shows its own state; a toast would duplicate it.
-- **Dialogs**: one sheet (centred on desktop, bottom sheet under 720 px) with one scrim,
+- **Dialogs**: one sheet (centred on desktop, bottom sheet from the phone breakpoint
+  `--breakpoint-mobile`, 820 px, down) with one scrim,
   Escape closes, focus is trapped and returns to the opener.
 - **Editing**: in place (page title, blocks), Milkdown's own menus restyled with tokens.
 

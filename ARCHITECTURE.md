@@ -141,6 +141,10 @@ and every turn — chat, scheduled, delegated, callback wake — goes through th
   module draws (hero, crest, console band). Stated, not enforced by code.
 - **A plugin is self-contained.** It receives the shell through `PluginApi` and imports
   nothing of the shell; its helpers (`address.js`, word tables) are copied on purpose (AD-8).
+  Since this epic, the shell's tokens and a small documented set of component classes
+  (button, sheet, empty state, field) are part of the plugin contract, additive and
+  versionless like the tokens already are (AD-4); a plugin uses them by class name, still
+  without importing shell code.
 - **No route distinguishes owner from user.** No role check exists in the server: every
   identity the auth hook resolves may call every `/api` route.
 - **The config file is the single source of truth.** The settings screen writes it in
@@ -168,7 +172,8 @@ and every turn — chat, scheduled, delegated, callback wake — goes through th
   `plugin-host.ts` mounts each plugin's `api.mjs` under `/api/plugin/<id>/`, behind the
   same auth hook, and hands it only the secrets its manifest declares (`secretsFor`).
 - **Shell / skin** — CSS custom properties on `:root[data-skin=<id>]`, plus an optional
-  module mounted in `SkinSlot`.
+  module mounted in `SkinSlot`. **TARGET** (AD-5): the shell also hands that module the
+  instance's locale, an extra optional input; a skin that ignores it works unchanged.
 - **Instance / calling agent** — `/mcp`, mounted only when `mcp.enabled` and `mcp.token` are
   set, gated by that bearer; delegations run in their own `DelegationChannel`, never in a
   person's conversations. `/callback` grants nothing and verifies with the peer.
@@ -202,10 +207,12 @@ test around it gets a characterization test first. A defect found on the way is 
 *Rejected*: "fix while we're there" — it mixes a behaviour change into a diff nobody reviews
 as one. *Reversed if*: a defect blocks a refactoring outright; it then becomes its own feature.
 
-### AD-2 — A launcher in bouchon outside the product
-A script under `bench/` starts the server through `start({ driverFactory })` with a scripted
-fake driver and a seeded workspace and data directory; the real-Claude mode is the plain
-binary with `CLAUDE_CODE_OAUTH_TOKEN` in the environment.
+### AD-2 — A launcher in bouchon mode, outside the product
+Two terms, used everywhere: **the fake engine** is a scripted fake driver, handed to the
+server through `start({ driverFactory })`; **bouchon mode** is Adestia launched by the bench
+launcher on the fake engine. A script under `bench/` starts the server on the fake engine
+with a seeded workspace and data directory; the real-Claude mode is the plain binary with
+`CLAUDE_CODE_OAUTH_TOKEN` in the environment.
 *Rejected*: a `fake` driver id in the configuration (a product surface added for tests);
 the docker bench only (night agents have no docker). *Reversed if*: `start()` stops
 accepting `driverFactory`.
@@ -223,13 +230,21 @@ The base palette is the one inherited in `tokens.css` (decision of 2026-08-24). 
 contrasts are fixed by lightness only, or by a `*-text` twin token; the dark palette is
 written once; one type scale, one radius set; icons are Lucide, bundled; shared components
 are first CSS classes of the shell (so vanilla-JS plugins can use them), with thin React
-wrappers in the shell.
+wrappers in the shell. The tokens and a small documented set of these classes (button,
+sheet, empty state, field) become part of the plugin contract, additive and versionless like
+the tokens already are; a plugin still imports no shell code. The `plugin-author` skill
+(`skills/plugin-author`) documents these classes — tranche charte.
 *Rejected*: a new palette (two products under one name); CSS-in-JS or a third-party
 component library (a new dependency for what classes do). *Reversed if*: a measured
 contrast cannot reach AA by lightness or a twin token.
 
 ### AD-5 — Every word through the locale, skins included
-The skin owns its words in both languages and the shell hands it the locale.
+The skin owns its words in both languages and the shell hands it the locale: an additional,
+optional input to the skin module, the one contract change of this epic, and only for words
+(`B-1`). It is additive: a skin that ignores it works unchanged, including skins from
+`extensions.skinsDir` or `extensions.sources`. The skin keeps its persona's register and voice
+(`B-8`, `B-10`). Today skins speak French whatever the locale (`nestor`, `dobby` greetings)
+because the shell hands a skin no locale; the epic fixes it by `B-8`.
 *Rejected*: leaving skin words out of i18n — an `en` instance greets in French
 (`skins/nestor/skin.js`, `skins/dobby/skin.js`). *Reversed if*: skins stop drawing text.
 
@@ -256,7 +271,9 @@ Monsieur schedules them into this epic.
 `address.js` (journal, voyages, atelier) and the per-plugin word tables (`WORDS` / `FR`)
 stay copies. *Why*: a plugin is self-contained and loads from its own folder or another
 repository; a shared helper would be a second contract. *Rejected*: a shared plugin helper
-module. *Reversed if*: the plugin contract grows a helper surface in `PluginApi`.
+module. AD-8 is about JS helpers: the shell's tokens and component classes (AD-4) are CSS
+the plugin reads by name, not code it imports. *Reversed if*: the plugin contract grows a
+helper surface in `PluginApi`.
 
 ## Refactoring targets
 
@@ -296,8 +313,6 @@ Each target: what, where, why it costs, the tranche that owns it, and its outcom
   schedule. Seen in the code; behaviour not yet reproduced.
 - **Conformance never asserted at boot**: `checkConformance` runs only in
   `drivers/test/conformance.test.ts`; `start()` trusts the descriptor.
-- **Skins speak French whatever the locale** (`nestor`, `dobby` greetings): the shell hands a
-  skin no locale. Fixed by AD-5, `B-8`.
 - **`deleteConversation`** exists in `chat/conversations.ts` and is reached by no screen.
 - **Saving the configuration loosens its mode**: `settings-file.ts` writes through a temporary
   file and a rename, so a config file kept at 0600 comes back in the umask's default mode.
