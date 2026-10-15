@@ -721,7 +721,10 @@ la zone du driver actif, rafraîchit par dépôt. Serveur :
 import, clair, sombre, téléphone ; le bouton Rafraîchir y était un bouton natif
 non stylé, corrigé). À l'audit avant merge : les imports étaient supprimés à
 chaque redémarrage (la livraison des contrats balayait tout dossier marqué) —
-corrigé, et le rechargement au boot ajouté.
+corrigé, et le rechargement au boot ajouté. Audit de sécurité suivant : un `ref`/`repo`
+commençant par `-` (option git, `--upload-pack`) est refusé (400 / `source-invalid`,
+`--` dans `sources.ts`) et les liens symboliques d'un skill ne sont plus suivis
+à la copie (listés dans `skipped` à la réponse d'import, pas affichés à l'écran).
 Raisonné dans `DESIGN.md` (Instructions & workspace).
 
 Reste / pièges encore vrais : le rechargement au boot est borné à 20 s (au-delà

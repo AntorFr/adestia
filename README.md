@@ -74,7 +74,8 @@ Adestia's own interface.
   and read-only, with its repository and ref shown on its card. *Refresh*
   re-fetches a repository and re-copies what was imported from it (the same
   happens at boot, within a 20 s ceiling); removing an
-  item removes only its copy. An item whose kind the active engine has no
+  item removes only its copy. A skill's links and special files are never
+  copied, and a repository address or ref starting with `-` is refused. An item whose kind the active engine has no
   folder for is listed but cannot be imported. The list lives in
   `<dataDir>/instruction-catalogues.json`, not in the config file.
 - **Three ways in**: none (local), a trusted proxy header, or any OIDC issuer.
