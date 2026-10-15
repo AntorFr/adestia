@@ -248,7 +248,12 @@ export function CataloguePopin({
 
           {entered && (
             <>
-              <button type="button" disabled={busy === 'refresh'} onClick={() => void refresh(entered)}>
+              <button
+                type="button"
+                className="adestia-catalogues__refresh"
+                disabled={busy === 'refresh'}
+                onClick={() => void refresh(entered)}
+              >
                 {t('Refresh')}
               </button>
               {items === undefined && <p className="adestia-instructions__empty">{t('Reading the repository…')}</p>}

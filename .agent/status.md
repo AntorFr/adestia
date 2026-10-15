@@ -712,13 +712,16 @@ le pilote Claude l'ignore. Pas de scénario de banc : aucun rendu ne change.
 merge de `cliName` : son image ne contient rien de plus que la 0.87.2. Ne pas
 la déployer.)
 
-**En cours (feature `homelab-sdlc-maj-consignes`, PR vers `main`, pas encore
-fusionnée) : catalogues d'instructions.** Instructions › Catalogues déclare des
+v0.88.0 (mergée et taguée le 15/10) : **catalogues d'instructions.** Instructions › Catalogues déclare des
 dépôts git, scanne leurs items par forme de fichier, importe item par item dans
 la zone du driver actif, rafraîchit par dépôt. Serveur :
 `instruction-catalogues{,-store}.ts`, `routes/instruction-catalogues.ts` ;
 écran : `CataloguePopin.tsx`, provenance sur la carte. Scénario de banc :
-`catalogue-popin` (non joué : pas de docker dans le pod d'assemblage).
+`catalogue-popin` (joué le 15/10 contre un dépôt local monté par `.prep.sh` : liste,
+import, clair, sombre, téléphone ; le bouton Rafraîchir y était un bouton natif
+non stylé, corrigé). À l'audit avant merge : les imports étaient supprimés à
+chaque redémarrage (la livraison des contrats balayait tout dossier marqué) —
+corrigé, et le rechargement au boot ajouté.
 Raisonné dans `DESIGN.md` (Instructions & workspace).
 
 Reste / pièges encore vrais : le rechargement au boot est borné à 20 s (au-delà

@@ -461,7 +461,8 @@
 }
 .adestia-catalogues__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .adestia-catalogues__item button,
-.adestia-catalogues__add button {
+.adestia-catalogues__add button,
+.adestia-catalogues__refresh {
   padding: 6px 13px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -470,8 +471,10 @@
   font: 600 var(--text-sm) var(--font);
   cursor: pointer;
 }
+.adestia-catalogues__refresh { align-self: flex-end; }
 .adestia-catalogues__item button:disabled,
-.adestia-catalogues__add button:disabled { opacity: 0.5; cursor: not-allowed; }
+.adestia-catalogues__add button:disabled,
+.adestia-catalogues__refresh:disabled { opacity: 0.5; cursor: not-allowed; }
 .adestia-catalogues__add { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .adestia-catalogues__add input {
   flex: 1 1 140px;
