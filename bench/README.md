@@ -14,6 +14,38 @@ It builds the image from an explicit path, boots it with a throwaway data
 directory, drives headless Chromium in a container against it, and removes
 everything it made. Screenshots land in `bench/shots/` (git-ignored).
 
+## Without Docker: `bench/launch.mjs`
+
+```sh
+npm run build
+node bench/launch.mjs --engine fake                               # the scripted engine
+CLAUDE_CODE_OAUTH_TOKEN=… node bench/launch.mjs --engine claude   # a real Claude turn
+```
+
+Options: `--skin <id>`, `--locale en|fr`, `--seed <name>` (default `base`),
+`--port <n>` (default: a free one), `--data <dir>` (default: a throwaway
+directory under `os.tmpdir()`; a directory you name is kept). It prints
+`listening on <url>` once `/api/health` answers `ok`, and runs until SIGTERM,
+which stops it and removes its data. Browse the URL, or drive it by API
+(`POST /api/conversations`, then `POST /api/turn`).
+
+- **`--engine fake`** calls `start({ driverFactory })` with `bench/fake-engine.mjs`,
+  a `Driver` that answers by script: the last message is matched against an
+  ordered list of `{ when, events }` (events are `TurnEvent`s); no match echoes
+  the message, `ping` answers `pong`. Same message, same events, every time.
+  It is a bench tool only — the product has no fake mode and no config key for it.
+- **`--engine claude`** starts the plain `packages/server/bin/adestia.js` with the
+  token from the environment and refuses without `CLAUDE_CODE_OAUTH_TOKEN`.
+- **Seeds**: `bench/seed/<name>.mjs` default-exports
+  `async ({ workspace, dataDir }) => configYaml`. It writes pages, threads and
+  plugin data the way the product stores them (`docs/donnees.md`) and returns the
+  instance configuration as YAML; the launcher sets port, directories, locale and
+  skin over it. A seed may also export `scripts` (fake-engine scripts). `base` is
+  the configuration alone.
+
+`bench/bench.mjs` finds Playwright under `/usr/lib/node_modules`, or else under
+`npm root -g`.
+
 ## What is real and what is not
 
 Everything is the real product — the image, the server, the shell, its

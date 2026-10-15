@@ -61,6 +61,20 @@ Nothing installs on the machine: the browser lives in its own image. When
 Docker is NOT available, say so in the report rather than passing green off as
 seen — "the suite is green" and "I looked at it" are different claims.
 
+**Without Docker** (a pod, a plain host), the same instance runs on the host after
+`npm run build`:
+
+```sh
+node bench/launch.mjs --engine fake                          # scripted engine, deterministic
+CLAUDE_CODE_OAUTH_TOKEN=… node bench/launch.mjs --engine claude   # the plain binary, a real turn
+```
+
+Each prints `listening on <url>` and runs until SIGTERM, which removes its
+throwaway data. `--engine claude` refuses to start without the token. Flags
+(`--skin`, `--locale`, `--seed`, `--port`, `--data`) and the format of a seed are
+in `bench/README.md`. This is how you LOOK at a change without Docker; say which
+you used.
+
 ## A handshake waits for a SIGNAL, never for a number of turns
 
 Two tests waited for a turn to be running by spinning the event loop — one a
