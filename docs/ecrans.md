@@ -185,68 +185,83 @@ columns are the same except where the instance's configuration decides what exis
 
 Screens E-1, E-9 to E-15, E-19, E-21, after `adestia-qualite-charte`. Every screen: the
 components of `docs/charte.md` § 7.4, icons of § 7.3, words through `t()` in the instance's
-locale, a visible focus ring, both themes, the four skins. No route, request or option
-changes (B-1); the three allowed exceptions of the epic are marked **(B-1 exception)**.
+locale, a visible focus ring, both themes, the four skins. **B-1 binds this section**: the
+words of today stay (a label is renamed only by `B-8`'s language rule), no state is added
+except the loading state of E-14 (Q-23; E-2 is the pages tranche's), no control is added
+or removed. Where `docs/charte.md` or the plan says otherwise, this line wins. Screens
+whose today-state is richer than this section (E-4 …) are not here.
+
+**States, for every screen of the tranche.** Loading, empty, error, offline and
+extreme content are *today's*, redrawn: a state the screen has today is drawn with the
+shared components (spinner, empty state, alert icon, `--tile-color`); a state it lacks
+today (E-9 counts loading, E-10/E-11/E-13 loading, E-13 error, E-15 token loading) stays
+absent and is listed in the epic's improvement recommendations. Long content (a very long
+server name, instruction path, caller name) truncates with an ellipsis and a `title`,
+never wraps a control out of its row. Offline: only the first start (E-21); an open shell
+that loses the network keeps today's behaviour.
 
 **E-1 Gates.** One centred card (`--surface-raised`, `--shadow`, 420 px max, 24 px
-padding) on the canvas: an icon above a title, one sentence, the actions.
-- *Loading*: spinner icon + "Loading…" (translated). Nothing else. **(B-1 exception: a styled loading state, no new behaviour.)**
-- *Sign in (OIDC 401)*: lock icon, "Sign in to continue", primary button "Sign in" (the
-  same link as today).
-- *Refused (403)*: alert icon, the server's reason, ghost button "Sign out".
-- *Fatal*: alert icon, "Adestia could not start", the error text in `--text-muted`. No
-  retry control: adding one would be a new behaviour (kept for the improvement list).
-Roles: the same for everyone. Phone: the card is full width with 16 px margin.
+padding): an icon above the title, the sentence, the actions that exist today.
+- *Loading* (exists): spinner icon + "Loading…" (translated).
+- *Sign in (OIDC 401)*: lock icon, today's sentence, today's sign-in link drawn as an
+  accent button, strings translated.
+- *Refused (403)*: alert icon, the server's reason, today's "Sign out" as a ghost button,
+  strings translated.
+- *Fatal*: alert icon, "Adestia could not start", the error text in `--text-muted`.
+Roles: the same for everyone. Phone: the card is full width with 16 px margin. No retry
+control is added.
 
-**E-21 Offline.** The cached shell opened with no network reaches the Fatal gate with a
-network error; it is drawn as its own state, wording only: wifi-off icon, "You are offline",
-"Adestia needs the network to reach your agent." Detected from the error the first
-`/api/instance` call already throws (a network failure, not an HTTP status; the 4xx/5xx paths
-are untouched). No control is added, no offline banner once the shell is open (kept: a
-feature, for the improvement list).
+**E-21 Offline.** The cached shell opened with no network reaches the Fatal gate with the
+browser's network error; it is drawn as that gate, with a wifi-off icon when the failure
+is a network failure (a thrown fetch, not an HTTP status). Same words. A dedicated offline
+screen and an offline banner are recommendations, not this tranche.
 
-**E-9 Settings mosaic.** The four tiles keep their order; tile emoji become Lucide icons
-(plug, book-open, sliders-horizontal, handshake) on the tile plate; counts as today; a
-loading state is the tiles rendered with their counts as a short skeleton bar for the
-duration of the counts request (Q: "tiles first render without counts" becomes an inline
-placeholder, not a state of its own).
+**E-9 Settings mosaic.** The four tiles keep their order, labels and counts; tile emoji
+become Lucide icons (plug, book-open, sliders-horizontal, handshake) on the tile plate.
+Counts absent when unreadable, as today. The Configuration tile stays (Q-21).
 
-**E-10 MCP servers.** Buttons are `.adestia-btn`: Save (accent), Remove (danger, labelled with
-verb and object, "Remove server"; no confirmation step is added: kept, a behaviour), Connect (neutral), `+` (icon
-button "Add server", `plus`). The JSON declaration is a `.adestia-textarea`, monospace. Empty
-state: the shared one ("None wired yet…"). Health tones keep colour **and** an icon (check,
-circle-alert, loader-circle, wifi-off): colour never alone. Loading: spinner row before the list.
-Fallback errors translated (Q-4).
+**E-10 MCP servers.** Buttons are `.adestia-btn`, labels unchanged: "Save" (accent),
+"Remove" (danger), connect (neutral), "Add a server" (icon `plus` beside its label); no
+confirmation step is added. The JSON declaration is a `.adestia-textarea`, monospace.
+Empty state shared (today's sentence). Health tones keep colour **and** gain an icon
+(check, circle-alert, loader-circle, wifi-off). Fallback errors translated (Q-4).
+Roles: any signed-in person; "connect" is per person, as today.
 
-**E-11 Instructions.** Group headers with an icon each (file-text, sparkles, users…); search
-is a `.adestia-input` with a `search` icon; the three `+` buttons become ghost buttons
-"New instruction", "New skill", "New agent" with `plus`; the name for a new skill or agent
-is asked in a small sheet with a field (replaces `window.prompt`, Q-20), Enter confirms,
-Escape cancels. The editor textarea is `.adestia-textarea`; Save accent; delivered files show a lock
-icon and a "Read-only" note. Loading: spinner row.
+**E-11 Instructions.** Group headers with an icon each; search is a `.adestia-input` with
+a `search` icon; the three `+` create buttons keep their labels and gain a `plus` icon;
+the name asked for a new skill or agent is asked in a small sheet with a field instead of
+`window.prompt` (Q-20): same question, same answer rule — Enter confirms, Escape or an
+empty/slug-less name does nothing, as a cancelled prompt does today; no new validation
+state. The editor textarea is `.adestia-textarea`; "Save" accent; delivered files keep
+their read-only mark and gain a lock icon.
 
 **E-12 Catalogue pop-in.** `<Sheet>` (Escape, focus trap and return, bottom sheet on a
-phone); the repository field is a `.adestia-field`; Import and Refresh are buttons; items are
-rows with a checkbox-less "Import" button as today; error in the field's error slot.
+phone); the repository field is a `.adestia-field`; "Import" and "Refresh" are buttons;
+error in the field's error slot, translated.
 
-**E-13 Delegations.** Grouped by caller as today; state chips keep colour and gain an icon;
-empty state shared; a loading row and an error row (spinner; alert icon + the translated
-failure) — **(B-1 exception: Q "E-13 lacks loading, error" is closed by the charter's form.)**
+**E-13 Delegations.** Grouped by caller as today; state chips keep their words and
+colours and gain an icon; empty state shared. Nothing else is added.
 
 **E-14 Configuration.** Wrapped like its siblings (`--tile-color` on loading, error and
-empty renders, Q-21). A loading state (spinner row inside `.adestia-prefs__page`) before the
-form (Q-23). Save / Discard / `Restart now` are `.adestia-btn` (accent / ghost / danger). The
-restart bar keeps its states (pending, asking, waiting, blocked, failed) and each gets an
-icon. Fields are `.adestia-field`s; the "edited" and "default" badges keep their text.
+empty renders, Q-21). A loading state (a spinner row inside `.adestia-prefs__page`) before
+the form (Q-23) — the one state this tranche adds. "Save" accent / "Discard" ghost /
+"Restart now" danger. The restart bar keeps its states (pending, asking, waiting, blocked,
+failed) and each gets an icon. Fields are `.adestia-field`s; badges keep their text.
 
-**E-15 Cog menu.** `<Popover>` anchored to a `settings` icon button (aria-label "Settings").
-Content top to bottom: the agent credential block (state line with an icon, the arming flow's
-buttons), the theme switch (§ 7.4, three icons), "Sign out" (ghost, `log-out`, only under
-OIDC), the build version in `--text-muted`.
+**E-15 Cog menu.** `<Popover>` anchored to a `settings` icon button (aria-label as the
+cog's today). Content top to bottom, as today: the agent credential block (today's state
+lines with an icon; "Arm a token" / "Renew the token" flow; the `Armed` state), the theme
+switch (three icons; accessible names System / Light / Dark as the text buttons had), "Sign
+out" (ghost, `log-out`, only under OIDC; hidden otherwise as today), the build version.
 
 **E-19 Problems band.** Icon per kind (circle-alert refused, triangle-alert degraded), text
-colours from the `*-text` tokens, band background a 12 % tint, the dismissal controls (if
-any today) as icon buttons with labels.
+in the `*-text` tokens, band background a 12 % tint; present only when there is a problem.
+
+**Roles.** Owner and user see the same on these screens (no role check exists); the agent
+and any other peer see none of them; E-13 is read-only for everyone.
+
+**B-9** (back labels) belongs to the pages and plugins tranches, which own the backs;
+E-17 and E-18 to the chat tranche.
 
 ## Seeded data for captures
 
