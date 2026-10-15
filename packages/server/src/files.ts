@@ -35,6 +35,7 @@ import { dirname, extname, sep } from 'node:path'
 
 import type { FastifyInstance } from 'fastify'
 
+import { gated } from './io.js'
 import { candidatesOf, fileIn, listAll, type Store } from './stores.js'
 
 export interface FilesOptions {
@@ -156,7 +157,7 @@ async function collect(
     deep,
     keep: (name) => !name.toLowerCase().endsWith('.md'),
   })
-  const infos = await Promise.all(entries.map((entry) => stat(entry.file).catch(() => undefined)))
+  const infos = await Promise.all(entries.map((entry) => gated(() => stat(entry.file)).catch(() => undefined)))
   const out: WorkspaceFile[] = []
   for (const [i, entry] of entries.entries()) {
     const info = infos[i]

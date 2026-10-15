@@ -36,6 +36,8 @@ import { mkdir, readFile, readdir, rename, stat, unlink, writeFile } from 'node:
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import type { Readable } from 'node:stream'
 
+import { gated } from './io.js'
+
 /** What an operator writes in the configuration. */
 export interface StoreDeclaration {
   readonly id: string
@@ -223,7 +225,7 @@ async function walk(
 ): Promise<void> {
   let entries
   try {
-    entries = await readdir(join(store.dir, from), { withFileTypes: true })
+    entries = await gated(() => readdir(join(store.dir, from), { withFileTypes: true }))
   } catch {
     // A store whose directory is missing or unreadable contributes nothing and
     // breaks nothing: one circle unmounted must not take the others down.

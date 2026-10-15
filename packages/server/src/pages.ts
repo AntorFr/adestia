@@ -14,7 +14,7 @@
  * - writes are atomic, since the agent may be reading the file at that moment.
  */
 
-import { randomUUID } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 import { mkdir, readFile, rename, stat, unlink, writeFile } from 'node:fs/promises'
 import { basename, dirname, extname, join } from 'node:path'
 
@@ -30,6 +30,7 @@ import {
 } from '@antorfr/adestia-content'
 import type { FastifyInstance } from 'fastify'
 
+import { gated } from './io.js'
 import {
   candidatesOf,
   fileIn,
@@ -254,14 +255,17 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
       ...(store.isDefault ? { default: true } : {}),
     }))
 
-  // A full markdown parse per page per index request was most of its CPU; the
-  // text itself is the key, so any change — whoever made it — invalidates.
-  const digests = new Map<string, { markdown: string; digest: Record<string, string> }>()
+  // A full markdown parse per page per index request was most of its CPU. The
+  // key is a hash of the text, not the text: any change — whoever made it —
+  // invalidates, and the cache holds a few bytes per page rather than a copy
+  // of the workspace.
+  const digests = new Map<string, { hash: string; digest: Record<string, string> }>()
   const digestOf = (file: string, markdown: string): Record<string, string> => {
+    const hash = createHash('sha256').update(markdown).digest('hex')
     const known = digests.get(file)
-    if (known?.markdown === markdown) return known.digest
+    if (known?.hash === hash) return known.digest
     const digest = contentDigest(markdown)
-    digests.set(file, { markdown, digest })
+    digests.set(file, { hash, digest })
     return digest
   }
   /**
@@ -292,7 +296,10 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
     const sorted = [...entries].sort((a, b) => order.compare(a.path, b.path))
     const pages: PageInfo[] = await Promise.all(
       sorted.map(async (entry) => {
-        const [info, markdown] = await Promise.all([stat(entry.file), readFile(entry.file, 'utf8')])
+        const [info, markdown] = await Promise.all([
+          gated(() => stat(entry.file)),
+          gated(() => readFile(entry.file, 'utf8')),
+        ])
         return {
           path: entry.path,
           ...(multi ? { store: entry.store.id } : {}),
@@ -322,7 +329,7 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
     }[] = []
     const sorted = [...entries].sort((a, b) => order.compare(a.path, b.path))
     const texts = await Promise.all(
-      sorted.map((entry) => readFile(entry.file, 'utf8').catch(() => '')),
+      sorted.map((entry) => gated(() => readFile(entry.file, 'utf8')).catch(() => '')),
     )
     const listed = new Set(sorted.map((entry) => entry.file))
     for (const file of digests.keys()) if (!listed.has(file)) digests.delete(file)

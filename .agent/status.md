@@ -683,3 +683,15 @@ frappe sauvegardait cette version par-dessus le fichier. Il part maintenant de
 l'éditeur sous le curseur. Deux tests (la réouverture, et l'absence de remontage),
 et le scénario de banc `journal-sauvegarde` rejoue le cycle édition → Terminé →
 ✎ → frappe contre le vrai Milkdown.
+
+Branche `perf/parallel-io` (pas encore mergée, en attente de feu vert) : **l'index
+des pages se lit en parallèle**, pour un espace de travail sur WSL `/mnt/c`
+(OneDrive) où chaque `readdir`/`stat`/`readFile` est un aller-retour 9p
+(`/api/pages/index` ~1,3 s → ~0,15 s sur 147 pages, sortie identique). Deux
+garde-fous ajoutés à la revue : un plafond de 32 appels disque simultanés
+(`io.ts`, sur les seuls appels feuilles, pour ne pas épuiser les descripteurs
+sur un gros espace) et un cache de digests clé par le HASH du texte, non par le
+texte (la mémoire ne copie plus l'espace de travail). Le cache ne repose sur
+aucune date : toute modification, quel qu'en soit l'auteur, se voit à l'appel
+suivant. Tests : le plafond, l'ordre des listes, l'invalidation après édition
+ou suppression. Pas de scénario de banc : aucun rendu ne change.
