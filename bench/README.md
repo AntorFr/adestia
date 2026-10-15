@@ -54,6 +54,7 @@ which stops it and removes its data. Browse the URL, or drive it by API
 | `config-readonly` | `base`, with the file read-only and the credential refused upstream. A process running as root can write a `0444` file: the screen then shows it writable. |
 | `oidc` | `base` behind a sign-in; the provider is `bench/oidc-stub.mjs`. |
 | `empty` | Nothing: no plugin, page, conversation, server, catalogue or credential. |
+| `plugins` | The ten bundled plugins active, each with data in its own format (`bench/seed/_plugins.mjs`): tasks and lists (late, today, later, closed, unassigned), planif notes (valid, disabled, invalid, with a last run; the clock stays off), journals (with entries, empty), a derived atelier workbook, trips (confirmed, suggested, dismissed, an idea without dates, a closed one), a watchlist (sources, a local feed the seed serves, a source that fails, kept items with transcripts, a pasted link, a dismissed one), a route with its trace, meals periods (with and without dates), a project planning (dated sub-pages, statuses, an unreadable date, an undated folder) and a page for the scan feature. `bench-noview` is an app with a tile and no view: `#/bench-noview` is E-20. The camera of E-30 is the browser's: launch Chromium with `--use-fake-device-for-media-stream --use-fake-ui-for-media-stream`. No MCP server and no refused plugin, so no band sits over a screen; the trips' map key is a placeholder. |
 
 The chat states are asked for by typing their word (`bench/seed/_scripts.mjs`):
 `fini`, `outil`, `erreur`, `permission` (waits), `signature`, `en cours`
@@ -75,7 +76,7 @@ fixed in the seed so a session of a refused group can be forged to reach the
 « refused » gate.
 
 **Checking the seeds**: `node bench/seed/check.mjs [--seed base,empty,…]` starts
-each seed, reads the screens' data through the API, sends every trigger message
+each seed (for `plugins`, one measure per plugin — `plugins › voyages: …` — reading what its API answers), reads the screens' data through the API, sends every trigger message
 and exits non-zero naming each measure that failed (`check: base › mcp: …`).
 
 `bench/bench.mjs` finds Playwright under `/usr/lib/node_modules`, or else under

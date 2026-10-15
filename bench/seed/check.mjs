@@ -19,7 +19,7 @@ import { SESSION_SECRET, CONVERSATIONS } from './_base.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const launcher = join(here, '..', 'launch.mjs')
-const SEEDS = ['base', 'empty', 'config-writable', 'config-readonly', 'oidc']
+const SEEDS = ['base', 'empty', 'config-writable', 'config-readonly', 'oidc', 'plugins']
 
 class Failure extends Error {}
 const expect = (condition, message) => {
@@ -254,6 +254,107 @@ const oidcMeasures = {
   },
 }
 
+
+/**
+ * One measure per bundled plugin of E-22 to E-31, each reading what the
+ * plugin's own API (or, for the three without one, the page index it draws
+ * from) answers — a plugin the seed forgot fails by name.
+ */
+const plugin = (base, id, path) => get(base, `/api/plugin/${id}/${path}`)
+const indexOf = async (base, type) => {
+  const rows = (await get(base, '/api/pages/index')).body.entries
+  return rows.filter((row) => row.fields?.type === type)
+}
+const pluginMeasures = {
+  'every plugin of E-22 to E-31 is loaded': async (base) => {
+    const loaded = (await get(base, '/api/instance')).body.plugins.map((p) => p.id)
+    for (const id of ['todo', 'planif', 'journal', 'atelier', 'voyages', 'listening-post', 'scan', 'parcours', 'meals', 'project-management'])
+      expect(loaded.includes(id), `plugin ${id} is not loaded (loaded: ${loaded})`)
+  },
+  'no plugin problem sits over the screens': async (base) => {
+    const instance = (await get(base, '/api/instance')).body
+    expect(instance.pluginProblems.length === 0, `problems: ${JSON.stringify(instance.pluginProblems)}`)
+  },
+  'todo: open, late, closed and assigned tasks, and two lists': async (base) => {
+    const tasks = await indexOf(base, 'tache')
+    expect(tasks.length >= 6, `${tasks.length} task(s) in the index`)
+    const lists = await indexOf(base, 'liste')
+    expect(lists.length >= 2, `${lists.length} list(s) in the index`)
+    expect((await get(base, '/api/pages/taches/poncer-porte.md')).status === 200, 'the task with a body is not readable')
+  },
+  'planif: valid, disabled and invalid notes, one with a last run': async (base) => {
+    const { notes } = (await plugin(base, 'planif', 'notes')).body
+    expect(notes?.length >= 6, `${notes?.length} note(s)`)
+    expect(notes.some((n) => !n.problem && n.nextRun), 'no valid note with a next run')
+    expect(notes.some((n) => n.problem), 'no invalid note')
+    expect(notes.some((n) => !n.enabled), 'no disabled note')
+    expect(notes.some((n) => n.lastRun), 'no note with a last run')
+  },
+  'journal: a journal with entries and an empty one': async (base) => {
+    const covers = await indexOf(base, 'journal')
+    const entries = await indexOf(base, 'entree')
+    expect(covers.length >= 3, `${covers.length} journal cover(s)`)
+    expect(entries.length >= 3, `${entries.length} entr(ies)`)
+    expect(covers.length > new Set(entries.map((e) => e.path.split('/').slice(0, -1).join('/'))).size, 'no journal without an entry')
+  },
+  'atelier: a workbook with progress': async (base) => {
+    const { workbooks } = (await plugin(base, 'atelier', 'workbooks')).body
+    expect(workbooks?.length >= 1, `${workbooks?.length} workbook(s)`)
+    expect(workbooks[0].pieces > 0 && workbooks[0].done > 0, `workbook: ${JSON.stringify(workbooks[0])}`)
+  },
+  'voyages: confirmed, suggested and dismissed items, and an idea without dates': async (base) => {
+    const { voyages } = (await plugin(base, 'voyages', 'voyages')).body
+    expect(voyages?.length >= 3, `${voyages?.length} trip(s)`)
+    expect(voyages.some((v) => !v.debut), 'no trip without dates')
+    const corse = voyages.find((v) => /corse/i.test(v.titre))
+    const data = (await plugin(base, 'voyages', `voyage?path=${encodeURIComponent(corse?.path ?? '')}`)).body
+    const statuts = new Set((data.items ?? []).map((i) => i.statut))
+    for (const statut of ['confirme', 'suggestion', 'ecartee']) expect(statuts.has(statut), `no ${statut} item in the Corsican trip`)
+  },
+  'listening-post: sources, a queue, a failing source, kept items with passages': async (base) => {
+    const { sources } = (await plugin(base, 'listening-post', 'sources')).body
+    expect(sources?.length >= 3, `${sources?.length} source(s)`)
+    const queue = (await plugin(base, 'listening-post', 'queue')).body
+    expect(queue.items?.length >= 4, `${queue.items?.length} queued item(s)`)
+    expect(queue.items.some((i) => i.origine === 'depose'), 'no pasted link in the queue')
+    expect(queue.sources.some((s) => !s.ok), 'no source reports a failure')
+    expect(queue.dismissed >= 1, 'nothing dismissed')
+    expect((await plugin(base, 'listening-post', 'library')).body.items?.length >= 2, 'fewer than two kept items')
+    const found = (await plugin(base, 'listening-post', 'search?q=filtre')).body
+    expect(JSON.stringify(found).includes('passe-bas'), `the search found ${JSON.stringify(found).slice(0, 120)}`)
+  },
+  'parcours: a route with a trace, and its GPX': async (base) => {
+    const response = await fetch(`${base}/api/plugin/parcours/gpx?f=${encodeURIComponent('balades/assets/val-sans-retour.parcours.json')}`)
+    const gpx = await response.text()
+    expect(response.status === 200 && gpx.includes('<trkpt') && gpx.includes('<wpt'), `GPX answered ${response.status}`)
+    expect(JSON.stringify((await get(base, '/api/pages/balades/val-sans-retour.md')).body).includes(':::parcours'), 'no page cites the route')
+  },
+  'meals: a period with placed, tray and dismissed cards, and one without dates': async (base) => {
+    const period = (await plugin(base, 'meals', 'period?page=sante/septembre.md')).body
+    const statuts = new Set((period.items ?? []).map((i) => i.statut))
+    for (const statut of ['confirme', 'suggestion', 'ecartee']) expect(statuts.has(statut), `no ${statut} card`)
+    expect(period.shape?.debut && period.shape?.fin, 'the period has no dates')
+    const open = (await plugin(base, 'meals', 'period?page=sante/idees.md')).body
+    expect(open.shape && !open.shape.debut, 'the second period is not an undated one')
+  },
+  'project-management: dated sub-pages, a status, an undated folder, ': async (base) => {
+    const dated = (await indexOf(base, 'project-management')).filter((p) => p.path.startsWith('renovation/'))
+    expect(dated.length >= 3, `${dated.length} planned page(s)`)
+    const statuses = new Set(dated.map((p) => p.fields?.['project-status']).filter(Boolean))
+    expect(statuses.size >= 3, `project-status values: ${[...statuses]}`)
+    expect((await get(base, '/api/pages/petit-chantier/notes.md')).status === 200, 'the folder without dates is missing')
+  },
+  'scan: the feature is on, with a page to scan into': async (base) => {
+    const scan = (await get(base, '/api/instance')).body.plugins.find((p) => p.id === 'scan')
+    expect(scan, 'scan is not loaded')
+    expect((await get(base, '/api/pages/courses/liste.md')).status === 200, 'no shopping page')
+  },
+  'a plugin without a view is loaded (E-20)': async (base) => {
+    const bare = (await get(base, '/api/instance')).body.plugins.find((p) => p.id === 'bench-noview')
+    expect(bare && !bare.view && bare.tile, `bench-noview is ${JSON.stringify(bare)}`)
+  },
+}
+
 const MEASURES = {
   base: { ...common, ...populated, ...chat, ...credential('armed'), 'no configuration is exposed (404)': async (base) => expect((await get(base, '/api/settings')).status === 404, '/api/settings answered') },
   empty: {
@@ -274,6 +375,7 @@ const MEASURES = {
   'config-writable': { ...common, ...populated, ...credential('armed'), ...exposes(true) },
   'config-readonly': { ...common, ...populated, ...credential('invalid'), ...exposes(false) },
   oidc: { ...common, ...oidcMeasures },
+  plugins: { ...common, ...pluginMeasures },
 }
 
 // ── running ─────────────────────────────────────────────────────────────────
