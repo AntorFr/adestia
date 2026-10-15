@@ -188,7 +188,7 @@ components of `docs/charte.md` § 7.4, icons of § 7.3, words through `t()` in t
 locale, a visible focus ring, both themes, the four skins. **B-1 binds this section**: the
 words of today stay (a label is renamed only by `B-8`'s language rule), no state is added
 except the loading state of E-14 (Q-23; E-2 is the pages tranche's), no control is added
-or removed. Where `docs/charte.md` or the plan says otherwise, this line wins. Screens
+or removed (the E-11 name sheet takes over the prompt's two buttons). Where `docs/charte.md` or the plan says otherwise, this line wins. Screens
 whose today-state is richer than this section (E-4 …) are not here.
 
 **States, for every screen of the tranche.** Loading, empty, error, offline and
@@ -258,7 +258,29 @@ out" (ghost, `log-out`, only under OIDC; hidden otherwise as today), the build v
 in the `*-text` tokens, band background a 12 % tint; present only when there is a problem.
 
 **Roles.** Owner and user see the same on these screens (no role check exists); the agent
-and any other peer see none of them; E-13 is read-only for everyone.
+(a peer) sees none of them as a page — its work shows on E-13 and E-19; E-13 is
+read-only for everyone.
+
+**State strings and icons.** Every text of a loading, empty, refused or error state is
+today's, through `t()`; only its drawing changes. Icons by state: ok / connected / done /
+saved = `check`; working / connecting / waiting / asking / pending = `loader-circle`;
+failed / refused / blocked = `circle-alert`; needs auth / degraded = `triangle-alert`;
+unreachable / offline = `wifi-off`; delivered / read-only = `lock`. Refusals keep today's
+visibility: E-14 without `configPath` shows its tile and says it does not expose its
+configuration; E-10 not connected shows the needs-auth tone; E-11 delivered files are shown
+read-only; "Sign out" is hidden outside OIDC. An open shell that loses the network keeps
+today's behaviour (no banner). "The recommendations" are the list the epic's mandate
+writes at its end (discussion of `adestia-qualite`), where the absent states and controls
+above are proposed.
+
+**E-11 name sheet.** The prompt's text is the sheet's title (today's string), its field
+starts empty, and the prompt's native OK / Cancel become the sheet's two buttons (same
+meaning, not a new control). Confirm with an empty or slug-less name closes the sheet and
+does nothing, as OK on an empty prompt does today; Escape and Cancel close it; a name that
+exists is handled by what `start()` does today.
+
+**Developer** (runs the bench): no screen of its own here; it sees these through the bench
+captures.
 
 **B-9** (back labels) belongs to the pages and plugins tranches, which own the backs;
 E-17 and E-18 to the chat tranche.

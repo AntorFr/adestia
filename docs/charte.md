@@ -86,7 +86,9 @@ them in the shell; the other tranches use them.
 - **Button**: variants neutral, accent, danger, ghost, icon-only (with `aria-label`); one
   height per size; a destructive button's label names the verb and the object where today's label does (no label is renamed by the charter: B-1).
 - **Sheet / dialog**: as in Usages; replaces `adestia-sheet`, and is the one the plugins use.
-- **Popover**: anchored panel (block settings E-6, page properties E-5, cog menu E-15).
+- **Popover**: anchored panel (cog menu E-15 in this tranche; block settings E-6 and page properties E-5 adopt it in the pages tranche).
+- **Theme switch**: three icon buttons in a radiogroup (§ 7.4).
+- **Spinner**: the `loader-circle` icon, rotating, still under reduced motion; the loading mark of a row or a card.
 - **Empty state**: icon, one sentence, the action that fills it when there is one.
 - **Field**: input, select, textarea, toggle; label, help, error.
 - **Focus ring**: one global `:focus-visible` rule; no `outline: none` without a
@@ -196,7 +198,7 @@ Classes first (AD-4), React wrappers second. Variants by modifier, sizes `--sm`,
 
 | Component | Class | Wrapper | Spec |
 |---|---|---|---|
-| Button | `.adestia-btn`, `--accent`, `--danger`, `--ghost`, `--icon` | `<Button variant icon busy>` | Height 32 px (`--sm` 28), radius `--radius-sm`, padding 0 12 px, label `--text-sm` medium; neutral = `--surface-raised` + `--border-strong`; accent = `--accent` fill + `--on-accent`; danger = `--danger` fill, white label (or outline at rest, fill on hover when the design says so); ghost = transparent, hover `--surface-soft`; icon = square 32 px, `aria-label` required (typed). States: hover darkens 6 %, active 10 %, disabled 45 % opacity and `cursor: not-allowed`, busy = spinner replaces the icon, label kept, `aria-busy`. |
+| Button | `.adestia-btn`, `--accent`, `--danger`, `--ghost`, `--icon` | `<Button variant icon busy>` | Height 32 px (`--sm` 28), radius `--radius-sm`, padding 0 12 px, label `--text-sm` medium; neutral = `--surface-raised` + `--border-strong`; accent = `--accent` fill + `--on-accent`; danger = `--danger` fill, `--on-accent` label, one rendering everywhere; ghost = transparent, hover `--surface-soft`; icon = square 32 px, `aria-label` required (typed). States: hover darkens 6 %, active 10 %, disabled 45 % opacity and `cursor: not-allowed`, busy = spinner replaces the icon, label kept, `aria-busy`. |
 | Sheet | `.adestia-sheet` (scrim), `.adestia-sheet__panel`, `__head`, `__body`, `__foot` | `<Sheet open title onClose>` | One scrim `--scrim`, one z-index (`--z-sheet` 100); the panel is centred, 520 px wide, from a `max-width: var(--breakpoint-mobile)` query a bottom sheet (full width, top radii, safe-area padding). `role="dialog"`, `aria-modal`, `aria-labelledby` the title; Escape and a click on the scrim close; focus goes to the first focusable on open, is trapped (Tab wraps), and returns to the opener on close. The shared sheet **takes over** the `.adestia-sheet*` rules now in `chat.css` (moved, not copied; the class names are kept so E-18's markup in `Signatures.tsx` renders unchanged — the chat tranche then adopts `<Sheet>`). A plugin without React uses the classes and the three-line contract in `skills/plugin-author` (a `data-adestia-sheet` helper is *not* shipped: AD-8). |
 | Popover | `.adestia-popover` | `<Popover anchor open>` | Panel of `--surface-raised`, `--shadow`, `--radius`, 8 px from its anchor, flips above when there is no room below; Escape closes and returns focus; click outside closes. The cog menu (E-15) uses it. E-5 and E-6 keep their `.adestia-blockset` until the pages tranche. |
 | Empty state | `.adestia-empty` (existing), `__icon`, `__text`, `__action` | `<EmptyState icon text action>` | Icon 28 px in `--text-muted`, one sentence in `--text-muted`, optional ghost or neutral button. Replaces `.adestia-instructions__empty` and `.adestia-deleg__empty` in this tranche's screens. |
