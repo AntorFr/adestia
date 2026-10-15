@@ -82,6 +82,38 @@ and exits non-zero naming each measure that failed (`check: base › mcp: …`).
 `bench/bench.mjs` finds Playwright under `/usr/lib/node_modules`, or else under
 `npm root -g`.
 
+## Every screen, both themes, both sizes: `bench/sweep.mjs`
+
+```sh
+npm run build
+node bench/sweep.mjs [--skin <id>] [--locale en|fr] [--out <dir>] [--only E-4,E-9]
+```
+
+One command, no docker: Playwright and its Chromium come from the environment
+(`npm root -g`, never from the repository). For each seed the screens need
+(`base`, `config-writable`, `oidc`, `plugins`) it starts the launcher on the
+scripted engine, then captures each screen of `docs/ecrans.md` (E-1 to E-31) in
+`light` and `dark`, at 1440×900 and at a 390×844 touch viewport:
+31 × 2 × 2 = 124 files in `<out>/<skin>/<E-n>-<name>-<theme>-<desk|phone>.png`
+(`<skin>` is `default` without `--skin`; `--out` defaults to `bench/shots-sweep`,
+ignored by git). About four minutes.
+
+The table at the top of the script is the one place that knows a screen: its
+seed, route, the gesture that opens it and the **selector that proves it is that
+screen**. A capture whose selector never shows, or that shows `.adestia-loading`
+or `.adestia-fatal` where the screen is not one (E-21 is: offline, the cached
+shell opens on the fatal gate), is a failure: the sweep goes on, prints
+`FAIL E-n name theme size: why`, and exits 1 naming each. A new screen is a new
+row; a screen whose markup changes is a selector to update.
+
+How the states that have no file to live in are reached: E-1 is the sign-in gate
+of a shell whose session has ended (a fresh visit is bounced to the provider, which
+signs Alice straight back in), so the shell is loaded signed in and its one
+`/api/instance` request is answered with what the server answers without a session;
+E-17 types `permission` and stops the turn afterwards; E-21 waits for the service
+worker to cache the shell, then cuts the network and reloads; E-30 runs Chromium on a
+fake camera (`--use-fake-device-for-media-stream`).
+
 ## What is real and what is not
 
 Everything is the real product — the image, the server, the shell, its

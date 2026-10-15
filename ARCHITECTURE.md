@@ -253,7 +253,7 @@ stops shipping Playwright.
   always has a `configPath`) and `ready({ url })` (the turns that must be running). The seeds
   are checked by `bench/seed/check.mjs`, which names each measure in default.
 - **Sweep.** `node bench/sweep.mjs [--skin <id>] [--locale en|fr] [--out <dir>] [--only E-n]`
-  runs, for each seed it needs, the launcher in-process, and drives Chromium from the
+  starts, for each seed it needs, the launcher as a child process, and drives Chromium from the
   environment: Playwright is imported from the global npm root (`npm root -g`), never from the
   repository (AD-3). It captures each screen at 1440×900 and at a 390×844 touch viewport, in
   `light` and `dark`, to `<out>/<skin>/<E-n>-<name>-<theme>-<viewport>.png` (default `<out>` is
