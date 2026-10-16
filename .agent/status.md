@@ -733,4 +733,5 @@ propose plus est laissé en place et signalé, jamais supprimé ; le clone d'un
 dépôt privé passe par un jeton stocké en clair (0600) dans le fichier d'état ;
 le clone est lu sans réseau tant qu'il existe (un `GET items` ne rafraîchit
 pas). Recette : déclarer un dépôt, importer un skill, le voir en carte avec
-`dépôt @ réf`, modifier la source, Rafraîchir, Supprimer.
+`dépôt @ réf`, modifier la source, Rafraîchir, Supprimer l'item, puis Retirer le catalogue
+(bouton de la liste des dépôts du pop-in : ses copies disparaissent aussi).
