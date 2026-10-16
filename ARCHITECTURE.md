@@ -196,7 +196,7 @@ and every turn — chat, scheduled, delegated, callback wake — goes through th
   checks every bundled plugin's French entries. Skins have no words through the locale today.
 - **Tests** — `vitest.config.ts` runs `packages/*/test`, aliasing every `@antorfr/*` to its
   `src/index.ts`; `npm run test:plugins` runs `node --test` over the plugins; `bench/` is the
-  visual check (docker). CI (`.github/workflows/ci.yml`) runs typecheck, tests, the build, a start of the built server and a docker image build (not lint).
+  visual check (`bench/run.sh` with docker; `bench/launch.mjs` and `bench/sweep.mjs` without). CI (`.github/workflows/ci.yml`) runs typecheck, tests, the build, a start of the built server and a docker image build (not lint).
 
 ## Decisions of adestia-qualite
 
@@ -204,14 +204,14 @@ and every turn — chat, scheduled, delegated, callback wake — goes through th
 Every refactoring keeps routes, API shapes, configuration keys, file formats
 (`docs/donnees.md`) and MCP tools. The existing suite is the witness; a refactoring with no
 test around it gets a characterization test first. A defect found on the way is written in
-`.agent/status.md` › Known defects, not fixed.
+this file's « Known defects », not fixed.
 *Why*: a quality pass is reviewable only if its diff means "same thing, written better".
 *Rejected*: "fix while we're there" — it mixes a behaviour change into a diff nobody reviews
 as one. *Reversed if*: a defect blocks a refactoring outright; it then becomes its own feature.
 
 ### AD-2 — A launcher on the fake engine, outside the product
 One term: **the fake engine**, a scripted fake driver handed to the server through
-`start({ driverFactory })`. **TARGET** (B-2, not built): a script under `bench/` starts the server on the fake engine
+`start({ driverFactory })`. Built (B-2): a script under `bench/` (`bench/launch.mjs`) starts the server on the fake engine
 with a seeded workspace and data directory; the real-Claude mode is the plain binary with
 `CLAUDE_CODE_OAUTH_TOKEN` in the environment.
 *Rejected*: a `fake` driver id in the configuration (a product surface added for tests);
@@ -392,8 +392,8 @@ conditions and gains a way to meet them:
 - Playwright is found by a plain `require` (the packages' `node_modules`, `NODE_PATH`), then
   through `npm root -g` (the pod keeps it in `/usr/lib/node_modules`); the hard-coded
   `/usr/lib` and `/usr/local/lib` are gone, so a `PATH` and `NODE_PATH` that hide it do hide it.
-  The bench (`bench/bench.mjs`, still a hard-coded `/usr/lib` import today) is outside this
-  tranche; its own tranche resolves Playwright, and the two stay separate copies: the bench is
+  The bench (`bench/bench.mjs`, `bench/sweep.mjs`) resolves it the same way (`/usr/lib/node_modules`, then `npm root -g`)
+  in its own code, and the two stay separate copies: the bench is
   `.mjs` outside the packages.
 - A missing built shell is no longer a reason to skip when Playwright is there: a `beforeAll`
   runs `npm run build:web --workspace @antorfr/adestia-web` once (generous timeout) when
