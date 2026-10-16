@@ -18,6 +18,7 @@ const leftovers = () => readdirSync(sandbox).filter((n) => n.startsWith('adestia
 const run = (args: string[], env: Record<string, string | undefined> = {}) =>
   spawnSync(process.execPath, [launch, ...args], {
     encoding: 'utf8',
+    timeout: 20_000, // a launcher that wrongly starts must fail the test, not hang it
     env: { ...process.env, TMPDIR: sandbox, CLAUDE_CODE_OAUTH_TOKEN: undefined, ...env },
   })
 
@@ -40,6 +41,16 @@ describe('bench launcher refusals', () => {
     [['--seed', '../x']],
   ])('rejects %j with a non-zero exit', (args) => {
     expect(run(args).status).not.toBe(0)
+  })
+  it('refuses --engine claude with --seed oidc, with the token present, before creating anything', () => {
+    // The OIDC stub switches TLS verification off in the launcher's process; a
+    // real Claude CLI must never inherit that, even with a valid token.
+    const before = leftovers().length
+    const r = run(['--engine', 'claude', '--seed', 'oidc'], { CLAUDE_CODE_OAUTH_TOKEN: 'sk-test-not-real' })
+    expect(r.status).toBe(1)
+    expect(r.stderr).toContain('--engine fake')
+    expect(r.stdout).not.toContain('listening on')
+    expect(leftovers().length).toBe(before)
   })
   it('rejects an unknown seed without leaving a directory', () => {
     const before = leftovers().length
