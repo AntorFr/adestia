@@ -12,7 +12,7 @@
 - R-14 : `catalogues-ui-ensemble.test.ts` trouve Playwright par `npm root -g`,
   construit le shell dans son `beforeAll` si `dist-web` manque (avec
   `NODE_ENV=production`), et se saute en disant `no playwright` sinon.
-- Recette : `npm ci`, `npm run typecheck`, `npm run lint`, `npm test` (1970 tests
+- Recette : `npm ci`, `npm run typecheck`, `npm run lint`, `npm test` (1977 tests
   vitest + 543 `node --test`, aucun sauté) ; lancement `node packages/server/bin/adestia.js`
   → 200 sur `/`. Le build du shell est payé une fois, au premier passage de la suite
   des catalogues sans `dist-web`.
