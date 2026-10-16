@@ -78,7 +78,7 @@ you used.
 To see EVERY screen — light and dark, desk and phone — in one go:
 
 ```sh
-node bench/sweep.mjs [--skin <id>] [--only E-4,E-9]   # 124 PNGs in bench/shots-sweep/<skin>/
+node bench/sweep.mjs [--skin <id>] [--only E-4,E-9]   # 124 PNGs (31 screens x 2 themes x desk/phone) in bench/shots-sweep/<skin>/
 ```
 
 It needs the build and Playwright from the environment (`npm root -g`), nothing
