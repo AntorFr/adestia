@@ -348,8 +348,9 @@ conditions and gains a way to meet them:
 - Playwright is found by a plain `require` (the packages' `node_modules`, `NODE_PATH`), then
   through `npm root -g` (the pod keeps it in `/usr/lib/node_modules`); the hard-coded
   `/usr/lib` and `/usr/local/lib` are gone, so a `PATH` and `NODE_PATH` that hide it do hide it.
-  The bench resolves it the same way, and the two stay separate copies: the bench is `.mjs`
-  outside the packages.
+  The bench (`bench/bench.mjs`, still a hard-coded `/usr/lib` import today) is outside this
+  tranche; its own tranche resolves Playwright, and the two stay separate copies: the bench is
+  `.mjs` outside the packages.
 - A missing built shell is no longer a reason to skip when Playwright is there: a `beforeAll`
   runs `npm run build:web --workspace @antorfr/adestia-web` once (generous timeout) when
   `packages/web/dist-web/index.html` is absent. *Rejected*: building in the `test` script
