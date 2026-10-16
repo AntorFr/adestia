@@ -165,15 +165,14 @@ const outDir = join(resolve(options.out), options.skin ?? 'default')
 
 // ── Playwright, from the environment ────────────────────────────────────────
 function loadPlaywright() {
-  const roots = []
+  const roots = ['/usr/lib/node_modules']
   try {
     roots.push(execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim())
   } catch {
-    // no npm on the path
+    // no npm on the path: the fixed root is all there is
   }
-  roots.push('/usr/lib/node_modules')
   for (const dir of roots) {
-    for (const name of ['playwright', 'playwright-core']) {
+    for (const name of ['playwright-core', 'playwright']) {
       try {
         return createRequire(`${dir}/`)(name)
       } catch {
