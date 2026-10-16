@@ -64,7 +64,9 @@ The chat states are asked for by typing their word (`bench/seed/_scripts.mjs`):
 
 `--engine claude` always has a configuration file (the binary reads one), so
 `base` exposes `/api/settings` there. Seeds, not engines, decide the credential:
-with `--engine claude` the real token is the one in the environment.
+with `--engine claude` the real token is the one in the environment: the launcher
+deletes the placeholder credential a seed stored (the Claude driver prefers a stored
+credential to the environment, so it would answer `401 Invalid bearer token`).
 
 **`oidc`** is real: `/auth/login` goes to the stub, which signs `alice` (group
 `famille`, allowed) in; `GET <issuer>/__as?user=visiteur` makes the next

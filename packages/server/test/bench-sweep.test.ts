@@ -1,10 +1,11 @@
 import { execFile, spawnSync } from 'node:child_process'
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { existsSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
+
+import { tmpDir } from './support/tmp.js'
 
 const bench = fileURLToPath(new URL('../../../bench/', import.meta.url))
 const sweep = join(bench, 'sweep.mjs')
@@ -38,7 +39,7 @@ describe('bench sweep refusals', () => {
 
 describe.skipIf(!built || !playwright)('bench sweep, real browser', () => {
   it('writes 4 non-empty captures for one screen, under the skin directory', async () => {
-    const out = mkdtempSync(join(tmpdir(), 'sweep-test-'))
+    const out = await tmpDir('sweep-test-')
     try {
       const r = await runAsync(sweep, ['--only', 'E-8', '--skin', 'skippy', '--out', out])
       expect(r.status, r.stderr).toBe(0)
@@ -51,7 +52,7 @@ describe.skipIf(!built || !playwright)('bench sweep, real browser', () => {
   }, 120_000)
 
   it('exits non-zero and names the screen when its proof selector is broken', async () => {
-    const out = mkdtempSync(join(tmpdir(), 'sweep-test-'))
+    const out = await tmpDir('sweep-test-')
     const broken = join(bench, `sweep-broken-${process.pid}.mjs`)
     try {
       const source = readFileSync(sweep, 'utf8')

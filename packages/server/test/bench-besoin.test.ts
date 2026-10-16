@@ -7,13 +7,14 @@
 // taken from the need (docs/parcours.md B-2, B-3; docs/ecrans.md E-1..E-31).
 import { execFileSync, spawn, spawnSync, type ChildProcess } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { existsSync, mkdtempSync, mkdirSync, readdirSync, readFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs'
 import { createServer } from 'node:net'
-import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { afterAll, describe, expect, it } from 'vitest'
+
+import { cleanTmp, tmpDir } from './support/tmp.js'
 
 const launch = fileURLToPath(new URL('../../../bench/launch.mjs', import.meta.url))
 const sweep = fileURLToPath(new URL('../../../bench/sweep.mjs', import.meta.url))
@@ -31,12 +32,13 @@ const hasPlaywright = globalRoot !== '' && existsSync(join(globalRoot, 'playwrig
 
 // A private TMPDIR: the launcher's throwaway directories land here, so the
 // tests can say whether one was left behind without seeing other files' runs.
-const sandbox = mkdtempSync(join(tmpdir(), 'bench-besoin-'))
+const sandbox = await tmpDir('bench-besoin-')
 const leftovers = () => readdirSync(sandbox).filter((n) => n.startsWith('adestia-launch-'))
 
 const running = new Set<ChildProcess>()
-afterAll(() => {
+afterAll(async () => {
   for (const p of running) p.kill('SIGKILL')
+  await cleanTmp()
 })
 
 interface Instance {
@@ -188,7 +190,7 @@ describe.skipIf(!built)('B-2 · launch on the fake engine, no docker', () => {
   }, 60_000)
 
   it('keeps a data directory the developer names', async () => {
-    const data = join(mkdtempSync(join(sandbox, 'named-')), 'mine')
+    const data = join(await tmpDir('bench-named-'), 'mine')
     mkdirSync(data)
     const inst = await start(['--data', data])
     await inst.stop()
@@ -228,7 +230,7 @@ const sha = (file: string) => createHash('sha256').update(readFileSync(file)).di
 // Asynchronous on purpose: a blocking spawn for two minutes starves vitest's
 // worker of its heartbeat and fails the run with an unrelated RPC timeout.
 const runSweep = async (args: string[]) => {
-  const out = mkdtempSync(join(sandbox, 'sweep-'))
+  const out = await tmpDir('bench-sweep-')
   const child = spawn(process.execPath, [sweep, ...args, '--out', out], {
     env: { ...process.env, TMPDIR: sandbox, CLAUDE_CODE_OAUTH_TOKEN: undefined },
     stdio: ['ignore', 'pipe', 'pipe'],

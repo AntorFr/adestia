@@ -1,6 +1,5 @@
 import { spawn, spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -13,7 +12,7 @@ const built = existsSync(fileURLToPath(new URL('../dist/src/start.js', import.me
 // A private TMPDIR for the launchers this file starts: other test files start
 // launchers of their own in parallel, and counting the shared tmpdir would
 // count their directories.
-const sandbox = mkdtempSync(join(tmpdir(), 'bench-launcher-test-'))
+const sandbox = await tmpDir('bench-launcher-test-')
 const leftovers = () => readdirSync(sandbox).filter((n) => n.startsWith('adestia-launch-'))
 
 const run = (args: string[], env: Record<string, string | undefined> = {}) =>

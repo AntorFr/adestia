@@ -234,7 +234,9 @@ stops shipping Playwright.
   its throwaway workspace and data directory (under `os.tmpdir()`, unless `--data` is given).
   `--engine fake` calls `start({ configPath, cwd, driverFactory })` with the fake engine;
   `--engine claude` starts the plain binary (`packages/server/bin/adestia.js`) with
-  `CLAUDE_CODE_OAUTH_TOKEN` taken from the environment, and refuses to start without it.
+  `CLAUDE_CODE_OAUTH_TOKEN` taken from the environment, and refuses to start without it. It also
+  deletes the placeholder credential the seed stored (`secrets/claude-code.token`): the Claude
+  driver prefers a stored credential to the environment.
   Nothing is added to the product: no configuration key, no driver id (AD-1, AD-2).
 - **Fake engine.** `bench/fake-engine.mjs` is a `Driver` (`packages/drivers/src/contract.ts`)
   whose `runTurn` answers by script: the last user message is matched against an ordered list
