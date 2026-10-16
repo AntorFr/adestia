@@ -75,6 +75,17 @@ throwaway data. `--engine claude` refuses to start without the token. Flags
 in `bench/README.md`. This is how you LOOK at a change without Docker; say which
 you used.
 
+To see EVERY screen — light and dark, desk and phone — in one go:
+
+```sh
+node bench/sweep.mjs [--skin <id>] [--only E-4,E-9]   # 124 PNGs in bench/shots-sweep/<skin>/
+```
+
+It needs the build and Playwright from the environment (`npm root -g`), nothing
+else; it exits non-zero naming each screen whose proof selector is missing or that
+shows a loading or error screen. Pictures are for LOOKING at: open the few that
+your change touches.
+
 ## A handshake waits for a SIGNAL, never for a number of turns
 
 Two tests waited for a turn to be running by spinning the event loop — one a
