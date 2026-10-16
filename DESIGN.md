@@ -1595,6 +1595,14 @@ resolves in Adestia as follows:
   not answer leaves yesterday's copies and a log line, never a held-up boot.
   The boot sweep of delivered contracts spares the paths an import landed at —
   they carry the managed marker too, and were deleted at every restart before.
+  A third party's repository is hostile input twice over. A repo or ref that
+  begins with `-` would reach git as an option (`--upload-pack=<cmd>` runs a
+  command): the route answers 400, `fetchSources` refuses it without calling
+  git (a declaration saved earlier included), and every positional git
+  argument follows `--` — for `extensions.sources` too. A link or special file
+  inside a skill is never followed or copied (it could carry a host file into
+  the workspace); the import answer lists what was `skipped`, and a link as the
+  item itself is refused.
   Not built: a section in Réglages — the screen is Instructions.
 - **Instructions are saved byte for byte**, in plain text, never through the
   page grammar. Pages go through a closed vocabulary with a validator because

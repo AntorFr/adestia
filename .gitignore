@@ -6,6 +6,9 @@ out/
 .env
 .env.*
 data/
+# The working directory a server started from the repository root creates (the
+# default `workspace.root`): running Adestia in a stub must leave the clone clean.
+workspace/
 dist/
 *.tsbuildinfo
 

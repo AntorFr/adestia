@@ -1,7 +1,7 @@
 # Status — Adestia
-> MàJ : 2026-10-08
+> MàJ : 2026-10-16
 
-**État :** `main` est à **v0.87.0** (entrées v0.69 à v0.87 ci-dessous, pas dans
+**État :** `main` est à **v0.88.0** (catalogues d'instructions, entrée v0.88.0 plus bas ; entrées v0.69 à v0.87 pas dans
 l'ordre) ; la **v0.80.0** était taguée et **déployée sur les trois corps le
 29/09 au soir** — deux marches dans la même soirée (0.79.0 la lecture en
 fond, 0.80.0 les heures fixes), faites l'une pour l'autre : ensemble elles
@@ -721,7 +721,10 @@ la zone du driver actif, rafraîchit par dépôt. Serveur :
 import, clair, sombre, téléphone ; le bouton Rafraîchir y était un bouton natif
 non stylé, corrigé). À l'audit avant merge : les imports étaient supprimés à
 chaque redémarrage (la livraison des contrats balayait tout dossier marqué) —
-corrigé, et le rechargement au boot ajouté.
+corrigé, et le rechargement au boot ajouté. Audit de sécurité suivant : un `ref`/`repo`
+commençant par `-` (option git, `--upload-pack`) est refusé (400 / `source-invalid`,
+`--` dans `sources.ts`) et les liens symboliques d'un skill ne sont plus suivis
+à la copie (listés dans `skipped` à la réponse d'import, pas affichés à l'écran).
 Raisonné dans `DESIGN.md` (Instructions & workspace).
 
 Reste / pièges encore vrais : le rechargement au boot est borné à 20 s (au-delà
@@ -730,4 +733,5 @@ propose plus est laissé en place et signalé, jamais supprimé ; le clone d'un
 dépôt privé passe par un jeton stocké en clair (0600) dans le fichier d'état ;
 le clone est lu sans réseau tant qu'il existe (un `GET items` ne rafraîchit
 pas). Recette : déclarer un dépôt, importer un skill, le voir en carte avec
-`dépôt @ réf`, modifier la source, Rafraîchir, Supprimer.
+`dépôt @ réf`, modifier la source, Rafraîchir, Supprimer l'item, puis Retirer le catalogue
+(bouton de la liste des dépôts du pop-in : ses copies disparaissent aussi).

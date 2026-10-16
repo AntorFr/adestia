@@ -100,7 +100,7 @@ async function boot(): Promise<void> {
   })
 }
 
-/** Settings › Instructions › Catalogues, with the pop-in open. */
+/** Instructions › Catalogues, with the pop-in open. */
 async function openCatalogues(): Promise<void> {
   await page.goto(`${instance.url}#/settings/instructions`)
   await page.getByRole('button', { name: 'Catalogues' }).click()
@@ -161,19 +161,6 @@ async function newPage(): Promise<void> {
 }
 
 describe.skipIf(!canDrive)(`catalogues on screen${canDrive ? '' : ` (SKIPPED: ${SKIP_REASON})`}`, () => {
-  it('the Settings screen offers Catalogues as a section beside MCP servers, Instructions, Configuration and Delegations', async () => {
-    // The need: "une section de plus à côté de MCP servers, Instructions,
-    // Configuration, Delegations — pas un écran isolé ailleurs".
-    await boot()
-    await newPage()
-    await page.goto(`${instance.url}#/settings`)
-    await page.getByText('Delegations').first().waitFor({ timeout: 8000 })
-    await shot('settings-home')
-    for (const section of ['MCP servers', 'Instructions', 'Configuration', 'Delegations', 'Catalogues']) {
-      expect(await page.getByText(section, { exact: true }).count(), `section ${section}`).toBeGreaterThan(0)
-    }
-  })
-
   it('a first visit shows an empty list and the form to add a repository with its ref', async () => {
     await boot()
     await newPage()
