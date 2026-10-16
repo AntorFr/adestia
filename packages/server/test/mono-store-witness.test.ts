@@ -22,18 +22,20 @@
  *     UPDATE_WITNESS=1 npx vitest run packages/server/test/mono-store-witness.test.ts
  */
 
-import { mkdtemp, mkdir, writeFile, utimes, readdir } from 'node:fs/promises'
+import { mkdir, writeFile, utimes, readdir } from 'node:fs/promises'
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs'
-import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import Fastify, { type FastifyInstance } from 'fastify'
-import { beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { registerPages } from '../src/pages.js'
 import { resolveStores } from '../src/stores.js'
 import { registerFiles } from '../src/files.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
+
+afterAll(cleanTmp)
 
 const witnessDir = join(dirname(fileURLToPath(import.meta.url)), 'witness')
 
@@ -93,7 +95,7 @@ const FILES: readonly (readonly [string, string])[] = [
 let app: FastifyInstance
 
 beforeAll(async () => {
-  const root = await mkdtemp(join(tmpdir(), 'adestia-witness-'))
+  const root = await tmpDir('adestia-witness-')
   for (const [path, content] of FILES) {
     await mkdir(join(root, dirname(path)), { recursive: true })
     await writeFile(join(root, path), content, 'utf8')

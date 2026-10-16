@@ -172,10 +172,16 @@ quota. See [DESIGN.md](DESIGN.md) for the principles and every decision taken.
 
 ## Contributing
 
+Node 22 or later (`engines` in `package.json`). After `npm ci`, check that
+`node_modules/micromark-extension-directive` exists: a missing grammar shows as
+escaped `\:::` in the content tests, and looks like a serialiser bug
+(`CLAUDE.md`).
+
 ```sh
 npm ci
 npm test          # no account or network needed
 npm run typecheck
+npm run lint      # not yet run by CI
 npm run build
 ```
 
@@ -184,7 +190,8 @@ driver contract rather than a convenience: a driver whose behaviour is only
 testable against a live account is a driver tested by its first user.
 
 Work happens in an isolated git worktree and comes back to `main` before it is
-tagged — `CLAUDE.md` has the workflow and the reasons behind it.
+tagged. `CLAUDE.md` covers the install traps of a worktree, how to commit, and
+when to look at the interface.
 
 ## License
 

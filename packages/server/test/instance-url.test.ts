@@ -11,19 +11,21 @@
  * same one the CLI and the Docker image build). The only thing never spawned
  * is the agent CLI subprocess, because no test here runs a turn.
  */
-import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { start, type StartedInstance } from '../src/start.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
+
+afterEach(cleanTmp)
 
 let root: string
 let started: StartedInstance | undefined
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'adestia-instance-url-'))
+  root = await tmpDir('adestia-instance-url-')
 })
 
 afterEach(async () => {

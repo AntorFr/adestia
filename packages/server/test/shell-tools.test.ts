@@ -1,19 +1,21 @@
-import { mkdtemp, readFile, stat } from 'node:fs/promises'
+import { readFile, stat } from 'node:fs/promises'
 import { connect } from 'node:net'
-import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ConversationStore } from '../src/conversations.js'
 import { ShellToolsService, ulid } from '../src/shell-tools.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
+
+afterEach(cleanTmp)
 
 let root: string
 let store: ConversationStore
 let service: ShellToolsService
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'adestia-tools-'))
+  root = await tmpDir('adestia-tools-')
   store = new ConversationStore(root)
   service = new ShellToolsService({ dataDir: root, conversations: store })
 })
@@ -225,14 +227,21 @@ describe('the socket — what an external-binary engine reaches through the brid
     await brief.start()
     const meta = await store.create('chloe')
     const handle = brief.handleFor(CTX(meta.id))
-    await new Promise((resolve) => setTimeout(resolve, 10))
+    // The test owns the date: only `Date` is faked, the socket runs for real.
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.advanceTimersByTime(10)
 
     const mcp = client(brief.socketPath)
     mcp.hello(handle.token)
-    const call = (await mcp.request(1, 'tools/call', {
-      name: 'new_id',
-      arguments: {},
-    })) as { result: { isError?: boolean } }
+    let call: { result: { isError?: boolean } }
+    try {
+      call = (await mcp.request(1, 'tools/call', {
+        name: 'new_id',
+        arguments: {},
+      })) as { result: { isError?: boolean } }
+    } finally {
+      vi.useRealTimers()
+    }
     expect(call.result.isError).toBe(true)
     mcp.end()
     await brief.close()

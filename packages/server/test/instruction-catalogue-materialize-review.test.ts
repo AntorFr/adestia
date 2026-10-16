@@ -3,12 +3,11 @@
  * exit criterion and the design (technique.md), not from the implementation.
  */
 
-import { mkdtemp, mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import { instructionZones, type Driver } from '@antorfr/adestia-drivers'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import {
   importCatalogueItem,
@@ -18,20 +17,19 @@ import {
 } from '../src/instruction-catalogues.js'
 import { InstructionCataloguesStore, type InstructionCatalogue } from '../src/instruction-catalogues-store.js'
 import { MANAGED_MARKER } from '../src/skills.js'
+import { ScriptedDriver } from './support/driver.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
 
-const driverWith = (paths: ReturnType<NonNullable<Driver['instructionPaths']>>): Driver =>
-  ({
-    describe: () => Promise.resolve({ id: 'test', label: 'Test', cliVersion: '0', capabilities: [] }),
-    env: () => Promise.resolve({}),
-    instructionPaths: () => paths,
-    runTurn: async function* () {},
-  }) as Driver
+afterEach(cleanTmp)
+
+const driverWith = (paths: ReturnType<NonNullable<Driver['instructionPaths']>>) =>
+  new ScriptedDriver([], { capabilities: [], instructionPaths: paths })
 
 const SKILL = driverWith([{ path: '.claude/skills', kind: 'skill', entry: '<name>/SKILL.md' }])
 const CLAUDE_MD = driverWith([{ path: 'CLAUDE.md', kind: 'instruction' }])
 const AGENTS = driverWith([{ path: '.claude/agents', kind: 'agent', entry: '<name>.md' }])
 
-const tmp = (prefix: string) => mkdtemp(join(tmpdir(), prefix))
+const tmp = (prefix: string) => tmpDir(prefix)
 const cat = (id: string): InstructionCatalogue => ({ id, repo: `https://example.org/${id}`, ref: 'main', imports: [] })
 
 async function clone(files: Record<string, string>): Promise<string> {

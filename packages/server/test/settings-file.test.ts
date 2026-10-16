@@ -16,8 +16,7 @@
  * made in a terminal since.
  */
 
-import { chmod, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { chmod, readFile, readdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -31,6 +30,9 @@ import {
   valueIn,
   writability,
 } from '../src/settings-file.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
+
+afterEach(cleanTmp)
 
 const FILE = `# The instance, as its operator wrote it.
 name: Adestia
@@ -53,14 +55,13 @@ let dir: string
 let file: string
 
 beforeEach(async () => {
-  dir = await mkdtemp(join(tmpdir(), 'adestia-settings-'))
+  dir = await tmpDir('adestia-settings-')
   file = join(dir, 'adestia.config.yaml')
   await writeFile(file, FILE, 'utf8')
 })
 
 afterEach(async () => {
   await chmod(dir, 0o700).catch(() => undefined)
-  await rm(dir, { recursive: true, force: true })
 })
 
 const polling = settingAt(['workspace', 'watch', 'polling'])!

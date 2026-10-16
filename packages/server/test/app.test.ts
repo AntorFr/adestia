@@ -1,9 +1,5 @@
-import { describe, expect, it, vi } from 'vitest'
-import type { Driver, DriverDescriptor, TurnEvent, TurnRequest } from '@antorfr/adestia-drivers'
-
-import { mkdtemp } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { TurnEvent } from '@antorfr/adestia-drivers'
 
 import { AttachmentInbox } from '../src/attachments.js'
 import { buildApp, buildVersion, sseFrame, type AppDependencies } from '../src/app.js'
@@ -12,84 +8,14 @@ import { parseConfig } from '../src/config.js'
 import { UserTokens } from '../src/user-tokens.js'
 
 import { SecretStore } from '../src/secrets.js'
+import { RESULT, ScriptedDriver, armableDriver } from './support/driver.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
 
-/** A driver reduced to a script, so the server is tested without any CLI. */
-class ScriptedDriver implements Driver {
-  /** The prompts of the turns that were stopped mid-flight. */
-  stopped: string[] = []
-  requests: TurnRequest[] = []
-
-  /**
-   * Resolves when the driver has actually been pulled for a turn.
-   *
-   * What the tests below need is the CHAIN to be registered at the desk — it
-   * is what makes a second post queue rather than race, and what makes a
-   * second turn hit the cap. The desk registers it before it pulls the
-   * driver, so a driver saying "I have been asked" cannot say it too early.
-   *
-   * They used to wait a fixed number of event-loop turns instead, which is a
-   * race dressed as a delay: green on an idle machine, lost on a loaded CI
-   * runner, and failing on an assertion that names something else entirely.
-   */
-  readonly running: Promise<void>
-  #pulled: () => void = () => {}
-
-  constructor(
-    private readonly script: readonly TurnEvent[],
-    private readonly capabilities: DriverDescriptor['capabilities'] = ['usageMetrics'],
-    private readonly hold?: Promise<void>,
-  ) {
-    this.running = new Promise((resolve) => {
-      this.#pulled = resolve
-    })
-  }
-
-  describe(): Promise<DriverDescriptor> {
-    return Promise.resolve({
-      id: 'scripted',
-      label: 'Scripted CLI',
-      cliVersion: '1.2.3',
-      capabilities: this.capabilities,
-    })
-  }
-
-  env(): Promise<Readonly<Record<string, string>>> {
-    return Promise.resolve({})
-  }
-
-  listModels(): Promise<readonly { id: string }[]> {
-    return Promise.resolve([{ id: 'model-a' }])
-  }
-
-  /**
-   * Stops the way a real driver does: on the request's own signal, not on a
-   * method somebody looks up by session id.
-   */
-  async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
-    this.requests.push(request)
-    this.#pulled()
-    if (this.hold) await Promise.race([this.hold, aborted(request.signal)])
-    if (request.signal?.aborted) {
-      this.stopped.push(request.prompt)
-      yield { type: 'result', sessionId: 's1', stopped: true }
-      return
-    }
-    for (const event of this.script) yield event
-  }
-}
-
-/** Resolves when the turn is told to stop — never, when nothing can tell it. */
-function aborted(signal: AbortSignal | undefined): Promise<void> {
-  if (!signal) return new Promise<void>(() => {})
-  if (signal.aborted) return Promise.resolve()
-  return new Promise<void>((resolve) => signal.addEventListener('abort', () => resolve(), { once: true }))
-}
-
-const RESULT: TurnEvent = { type: 'result', sessionId: 's1', stopped: false }
+afterEach(cleanTmp)
 
 /** An app with a real conversation store behind it, in a throwaway directory. */
 const withStore = async (overrides: Partial<AppDependencies> = {}) => {
-  const dataDir = await mkdtemp(join(tmpdir(), 'adestia-app-conv-'))
+  const dataDir = await tmpDir('adestia-app-conv-')
   return buildApp({
     ...deps(overrides),
     config: { ...deps(overrides).config, dataDir },
@@ -282,7 +208,7 @@ describe('/api/models', () => {
   })
 
   it('lists models when the capability is declared', async () => {
-    const driver = new ScriptedDriver([], ['usageMetrics', 'modelSelection'])
+    const driver = new ScriptedDriver([], { capabilities: ['usageMetrics', 'modelSelection'] })
     const app = await buildApp(deps({ driver }))
     expect((await app.inject({ url: '/api/models' })).json()).toEqual({
       models: [{ id: 'model-a' }],
@@ -335,7 +261,7 @@ describe('/api/turn', () => {
     // read paths refuses the very file the prompt just named. Their BOX, not
     // the inbox: what is in there is unfiled, and an undecided pile is only
     // tidyable when it is not mixed.
-    const dataDir = await mkdtemp(join(tmpdir(), 'adestia-app-inbox-'))
+    const dataDir = await tmpDir('adestia-app-inbox-')
     const driver = new ScriptedDriver([RESULT])
     const config = { ...deps().config, dataDir }
     const app = await buildApp({ ...deps({ driver }), config })
@@ -413,7 +339,7 @@ describe('/api/turn', () => {
     const hold = new Promise<void>((resolve) => {
       release = resolve
     })
-    const driver = new ScriptedDriver([RESULT], ['usageMetrics'], hold)
+    const driver = new ScriptedDriver([RESULT], { hold })
     const app = await buildApp(
       deps({ driver, config: parseConfig('maxConcurrentTurns: 1\n') }),
     )
@@ -657,7 +583,7 @@ describe('conversations', () => {
     const hold = new Promise<void>((resolve) => {
       release = resolve
     })
-    const driver = new ScriptedDriver([{ type: 'text-delta', text: 'ok' }, RESULT], ['usageMetrics'], hold)
+    const driver = new ScriptedDriver([{ type: 'text-delta', text: 'ok' }, RESULT], { hold })
     const app = await withStore({ driver })
     const { id } = (await app.inject({ method: 'POST', url: '/api/conversations' })).json()
 
@@ -711,7 +637,7 @@ describe('conversations', () => {
     const hold = new Promise<void>((resolve) => {
       release = resolve
     })
-    const driver = new ScriptedDriver([{ type: 'text-delta', text: 'ok' }, RESULT], ['usageMetrics'], hold)
+    const driver = new ScriptedDriver([{ type: 'text-delta', text: 'ok' }, RESULT], { hold })
     const app = await withStore({ driver })
     const { id } = (await app.inject({ method: 'POST', url: '/api/conversations' })).json()
 
@@ -849,15 +775,9 @@ describe('the unattended path', () => {
   const runTurn = (app: unknown) =>
     (app as { adestiaRunTurn(prompt: string): Promise<void> }).adestiaRunTurn
 
-  /** A driver that ships skills, so the desk introduces the shell. */
-  class SkilledDriver extends ScriptedDriver {
-    skillsPath(): string {
-      return '/skills'
-    }
-  }
 
   it('spawns through the desk: unattended, and introduced like any turn', async () => {
-    const driver = new SkilledDriver([RESULT])
+    const driver = new ScriptedDriver([RESULT], { skillsPath: '/skills' }) // ships skills, so the desk introduces the shell
     const app = await withStore({ driver })
     await runTurn(app)('note du matin')
     expect(driver.requests).toHaveLength(1)
@@ -874,7 +794,7 @@ describe('the unattended path', () => {
     const held = new Promise<void>((resolve) => {
       release = resolve
     })
-    const driver = new ScriptedDriver([RESULT], ['usageMetrics'], held)
+    const driver = new ScriptedDriver([RESULT], { hold: held })
     const app = await withStore({
       driver,
       config: { ...parseConfig('auth:\n  mode: none\n'), maxConcurrentTurns: 1 },
@@ -937,7 +857,7 @@ mcp:
 
     const rebound = async (answer: Record<string, unknown> | number) => {
       const tokens = new UserTokens(
-        await mkdtemp(join(tmpdir(), 'adestia-bg-')),
+        await tmpDir('adestia-bg-'),
         { issuer: 'https://auth.example', clientId: 'adestia', clientSecret: 's' },
         minting(answer),
       )
@@ -1036,48 +956,9 @@ mcp:
 })
 
 describe('arming a driver token', () => {
-  const TOKEN = 'sk-ant-oat01-supersecretvaluenobodyshouldsee'
 
-  /** A driver that can be armed, standing in for the real terminal flow. */
-  class ArmableDriver extends ScriptedDriver {
-    readonly credentialVar: string = 'SCRIPTED_TOKEN'
-    credentials: Record<string, string> = {}
-    savedAt: string | undefined
-    cancelled = 0
-    constructor(private readonly outcome: 'ok' | 'refuse' = 'ok') {
-      super([RESULT], ['usageMetrics', 'authManagement'])
-    }
-    authStatus() {
-      return Promise.resolve(
-        Object.keys(this.credentials).length > 0
-          ? { state: 'armed', source: 'managed', savedAt: this.savedAt }
-          : { state: 'absent', source: 'cli-native' },
-      )
-    }
-    beginAuth() {
-      return Promise.resolve({
-        sessionId: 'driver-side-id',
-        mode: 'url+code',
-        authorizeUrl: 'https://claude.ai/oauth/authorize?x=1',
-        ttl: 600,
-      })
-    }
-    completeAuth(_id: string, input: string) {
-      if (this.outcome === 'refuse') return Promise.reject(new Error('code rejected upstream'))
-      return Promise.resolve({ secret: `${TOKEN}-${input}` })
-    }
-    cancelAuth() {
-      this.cancelled += 1
-      return Promise.resolve()
-    }
-    setCredentials(credentials: Record<string, string>, savedAt?: string) {
-      this.credentials = credentials
-      this.savedAt = savedAt
-    }
-  }
-
-  const armable = async (driver: ArmableDriver) => {
-    const dataDir = await mkdtemp(join(tmpdir(), 'adestia-arm-'))
+  const armable = async (driver: ReturnType<typeof armableDriver>) => {
+    const dataDir = await tmpDir('adestia-arm-')
     const app = await buildApp({
       ...deps({ driver }),
       config: { ...deps().config, dataDir },
@@ -1099,7 +980,7 @@ describe('arming a driver token', () => {
 
   it('reports an unarmed driver as absent, not broken', async () => {
     // Living on credentials set up outside Adestia is legitimate.
-    const { app } = await armable(new ArmableDriver())
+    const { app } = await armable(armableDriver())
     expect((await app.inject({ url: '/api/auth/driver' })).json()).toMatchObject({
       state: 'absent',
       source: 'cli-native',
@@ -1108,7 +989,7 @@ describe('arming a driver token', () => {
   })
 
   it('walks the whole flow and stores the token', async () => {
-    const driver = new ArmableDriver()
+    const driver = armableDriver()
     const { app, dataDir } = await armable(driver)
 
     const begun = (await app.inject({ method: 'POST', url: '/api/auth/driver/begin' })).json()
@@ -1134,7 +1015,7 @@ describe('arming a driver token', () => {
   it('never sends the secret back to the browser', async () => {
     // The whole point of holding it server-side: no XSS in a plugin's view can
     // exfiltrate what the browser was never given.
-    const { app } = await armable(new ArmableDriver())
+    const { app } = await armable(armableDriver())
     const begun = (await app.inject({ method: 'POST', url: '/api/auth/driver/begin' })).json()
     const completed = await app.inject({
       method: 'POST',
@@ -1149,7 +1030,7 @@ describe('arming a driver token', () => {
   })
 
   it('refuses a code for a session that expired or never existed', async () => {
-    const { app } = await armable(new ArmableDriver())
+    const { app } = await armable(armableDriver())
     const response = await app.inject({
       method: 'POST',
       url: '/api/auth/driver/complete',
@@ -1160,7 +1041,7 @@ describe('arming a driver token', () => {
   })
 
   it('reports an upstream refusal and ends the session', async () => {
-    const { app } = await armable(new ArmableDriver('refuse'))
+    const { app } = await armable(armableDriver({ outcome: 'refuse' }))
     const begun = (await app.inject({ method: 'POST', url: '/api/auth/driver/begin' })).json()
     const response = await app.inject({
       method: 'POST',
@@ -1182,7 +1063,7 @@ describe('arming a driver token', () => {
   })
 
   it('cancels a flow the user abandoned', async () => {
-    const driver = new ArmableDriver()
+    const driver = armableDriver()
     const { app } = await armable(driver)
     const begun = (await app.inject({ method: 'POST', url: '/api/auth/driver/begin' })).json()
     await app.inject({
@@ -1195,7 +1076,7 @@ describe('arming a driver token', () => {
   })
 
   it('clears a stored token', async () => {
-    const { app, dataDir } = await armable(new ArmableDriver())
+    const { app, dataDir } = await armable(armableDriver())
     const begun = (await app.inject({ method: 'POST', url: '/api/auth/driver/begin' })).json()
     await app.inject({
       method: 'POST',
@@ -1210,10 +1091,7 @@ describe('arming a driver token', () => {
   it('refuses a driver that asks for a dangerous variable', async () => {
     // A token written into PATH turns an arming flow into arbitrary code
     // execution at the next spawn.
-    class GreedyDriver extends ArmableDriver {
-      override readonly credentialVar: string = 'PATH'
-    }
-    const { app } = await armable(new GreedyDriver())
+    const { app } = await armable(armableDriver({ credentialVar: 'PATH' }))
     const begun = (await app.inject({ method: 'POST', url: '/api/auth/driver/begin' })).json()
     const response = await app.inject({
       method: 'POST',
@@ -1226,7 +1104,7 @@ describe('arming a driver token', () => {
   })
 
   it('requires both a session and a code', async () => {
-    const { app } = await armable(new ArmableDriver())
+    const { app } = await armable(armableDriver())
     expect(
       (await app.inject({ method: 'POST', url: '/api/auth/driver/complete', payload: {} }))
         .statusCode,
@@ -1245,7 +1123,7 @@ describe('/api/turn/stop', () => {
     const hold = new Promise<void>((resolve) => {
       release = resolve
     })
-    const driver = new ScriptedDriver([{ type: 'text-delta', text: 'ok' }, RESULT], ['usageMetrics'], hold)
+    const driver = new ScriptedDriver([{ type: 'text-delta', text: 'ok' }, RESULT], { hold })
     const app = await withStore({ driver })
     const { id } = (await app.inject({ method: 'POST', url: '/api/conversations' })).json()
 
@@ -1273,7 +1151,7 @@ describe('/api/turn/stop', () => {
     const hold = new Promise<void>((resolve) => {
       release = resolve
     })
-    const driver = new ScriptedDriver([{ type: 'text-delta', text: 'ok' }, RESULT], ['usageMetrics'], hold)
+    const driver = new ScriptedDriver([{ type: 'text-delta', text: 'ok' }, RESULT], { hold })
     const app = await withStore({ driver })
     const { id } = (await app.inject({ method: 'POST', url: '/api/conversations' })).json()
 

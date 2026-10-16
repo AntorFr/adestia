@@ -7,11 +7,10 @@
  * the same folders, which is exactly why guessing would fail.
  */
 
-import { mkdtemp, mkdir, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import type { InstructionZone } from '@antorfr/adestia-drivers'
 
@@ -22,6 +21,9 @@ import {
   safeInstructionPath,
 } from '../src/instructions.js'
 import { MANAGED_MARKER } from '../src/skills.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
+
+afterEach(cleanTmp)
 
 const ZONE: readonly InstructionZone[] = [
   { path: 'CLAUDE.md', kind: 'instruction' },
@@ -31,7 +33,7 @@ const ZONE: readonly InstructionZone[] = [
 let root: string
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'adestia-instructions-'))
+  root = await tmpDir('adestia-instructions-')
   await mkdir(join(root, '.claude/skills/page-author'), { recursive: true })
   await mkdir(join(root, '.claude/skills/mes-regles'), { recursive: true })
   await mkdir(join(root, '.claude/agents'), { recursive: true })
