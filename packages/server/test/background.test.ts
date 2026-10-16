@@ -84,12 +84,20 @@ describe('a reach that fails is said, never silent', () => {
   })
 
   it('dates the trouble from its FIRST occurrence, not the last tick', async () => {
-    const reach = new BackgroundReach(keysOf(['sebastien'], undefined))
-    await reach.tokensFor([GOOGLE])
-    const first = reach.trouble()!.since
-    await new Promise((resolve) => setTimeout(resolve, 5))
-    await reach.tokensFor([GOOGLE])
-    expect(reach.trouble()!.since).toBe(first)
+    // The test owns the date: only `Date` is faked, so promises and I/O run as
+    // usual, and the second failure is certain to be later than the first.
+    vi.useFakeTimers({ toFake: ['Date'] })
+    try {
+      const reach = new BackgroundReach(keysOf(['sebastien'], undefined))
+      await reach.tokensFor([GOOGLE])
+      const first = reach.trouble()!.since
+      vi.advanceTimersByTime(5)
+      await reach.tokensFor([GOOGLE])
+      expect(Date.now()).toBeGreaterThan(first)
+      expect(reach.trouble()!.since).toBe(first)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('clears the banner the moment the reach works again', async () => {

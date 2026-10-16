@@ -12,40 +12,18 @@
  *   looser second way into this instance's wiring.
  */
 
-import { describe, expect, it } from 'vitest'
-import type { Driver, DriverDescriptor, TurnEvent } from '@antorfr/adestia-drivers'
+import { afterEach, describe, expect, it } from 'vitest'
 
-import { mkdtemp, readFile, stat } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { readFile, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import { buildApp, type AppDependencies } from '../src/app.js'
 import { parseConfig } from '../src/config.js'
 import { McpStore, MCP_MASK, maskServer, unmaskServer } from '../src/mcp-store.js'
+import { ScriptedDriver } from './support/driver.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
 
-/** A driver reduced to nothing: these routes never touch one. */
-class Bare implements Driver {
-  describe(): Promise<DriverDescriptor> {
-    return Promise.resolve({
-      id: 'bare',
-      label: 'Bare',
-      cliVersion: '0',
-      capabilities: [],
-    })
-  }
-  env(): Promise<Readonly<Record<string, string>>> {
-    return Promise.resolve({})
-  }
-  listModels(): Promise<readonly { id: string }[]> {
-    return Promise.resolve([])
-  }
-  async *runTurn(): AsyncIterable<TurnEvent> {
-    return
-  }
-  interrupt(): Promise<void> {
-    return Promise.resolve()
-  }
-}
+afterEach(cleanTmp)
 
 const CONFIG = `auth:
   mode: none
@@ -58,11 +36,11 @@ mcp:
 `
 
 async function instance(source = CONFIG) {
-  const dataDir = await mkdtemp(join(tmpdir(), 'adestia-mcp-'))
+  const dataDir = await tmpDir('adestia-mcp-')
   const store = new McpStore(dataDir)
   const deps: AppDependencies = {
     config: { ...parseConfig(source), dataDir },
-    driver: new Bare(),
+    driver: new ScriptedDriver([], { capabilities: [] }),
     plugins: [
       {
         dir: '/nowhere',
@@ -253,7 +231,7 @@ describe('the store on its own', () => {
   it('yields the entries that parse rather than throwing', async () => {
     // An instance must boot. A server that cannot be read is a server that is
     // absent, which the screen can say; an exception is a screen that is not.
-    const dataDir = await mkdtemp(join(tmpdir(), 'adestia-mcp-'))
+    const dataDir = await tmpDir('adestia-mcp-')
     const store = new McpStore(dataDir)
     await store.save([{ name: 'good', command: 'node' }])
     const { writeFile } = await import('node:fs/promises')
@@ -265,7 +243,7 @@ describe('the store on its own', () => {
   })
 
   it('reads an absent file as an empty list', async () => {
-    const dataDir = await mkdtemp(join(tmpdir(), 'adestia-mcp-'))
+    const dataDir = await tmpDir('adestia-mcp-')
     expect(await new McpStore(dataDir).list()).toEqual([])
   })
 })

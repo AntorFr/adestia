@@ -1,32 +1,20 @@
-import { mkdtemp } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
-
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { TurnEvent, TurnRequest } from '@antorfr/adestia-drivers'
 
 import { BusyConversationError, DelegationChannel, titleFor } from '../src/delegations.js'
 import { TurnDesk } from '../src/turns.js'
+import { driverWith, scriptedDriver } from './support/driver.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
+
+afterEach(cleanTmp)
 
 let dataDir: string
 
 beforeEach(async () => {
-  dataDir = await mkdtemp(join(tmpdir(), 'adestia-deleg-'))
+  dataDir = await tmpDir('adestia-deleg-')
 })
 
 const limiter = () => ({ tryAcquire: () => true, release: () => {} })
-
-/** A driver whose turns the test scripts, one requests[] entry per call. */
-function scriptedDriver(script: (request: TurnRequest, call: number) => TurnEvent[]) {
-  const requests: TurnRequest[] = []
-  return {
-    requests,
-    async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
-      requests.push(request)
-      yield* script(request, requests.length)
-    },
-  }
-}
 
 const answer = (text: string, sessionId = 's1'): TurnEvent[] => [
   { type: 'text-delta', text },
@@ -160,13 +148,13 @@ describe('the delegation channel', () => {
     const running = new Promise<void>((resolve) => {
       pulled = resolve
     })
-    const driver = {
-      async *runTurn(): AsyncIterable<TurnEvent> {
+    const driver = driverWith({
+      runTurn: async function* (): AsyncIterable<TurnEvent> {
         pulled()
         await held
         yield* answer('enfin')
       },
-    }
+    })
     const channel = channelWith(driver)
 
     const opened = await channel.open('alfred', 'lent', undefined)

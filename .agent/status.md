@@ -1,5 +1,24 @@
 # Status — Adestia
-> MàJ : 2026-10-08
+> MàJ : 2026-10-15
+
+**Tranche `adestia-qualite-tests` (epic adestia-qualite) — assemblée, PR vers
+`epic/adestia-qualite`, pas fusionnée.** Aucun fichier de production touché.
+- R-9 : `packages/server/test/support/` (`driver.ts`, `git.ts`, `tmp.ts`) porte le
+  pilote factice, le dépôt git de test et l'espace temporaire ; les fichiers de
+  `packages/server/test` l'importent. `packages/drivers/test` garde ses faux.
+- R-10 : callback, mcp, restart n'attendent plus par `setImmediate` ; watch, pages,
+  shell-tools, background n'ont plus de `setTimeout` d'attente ; cause du test
+  instable de page-editor écrite dans ARCHITECTURE.md (R-10).
+- R-14 : `catalogues-ui-ensemble.test.ts` trouve Playwright par `npm root -g`,
+  construit le shell dans son `beforeAll` si `dist-web` manque (avec
+  `NODE_ENV=production`), et se saute en disant `no playwright` sinon.
+- Recette : `npm ci`, `npm run typecheck`, `npm run lint`, `npm test` (1977 tests
+  vitest + 543 `node --test`, aucun sauté) ; lancement `node packages/server/bin/adestia.js`
+  → 200 sur `/`. Le build du shell est payé une fois, au premier passage de la suite
+  des catalogues sans `dist-web`.
+- Reste / pièges : `ci.yml` ne lance toujours pas lint (B-12, hors tranche) ; le
+  lancement local sur moteur factice (B-2) n'existe pas encore ; si le build du shell
+  dépasse la minute, passer à un `pretest`.
 
 **État :** `main` est à **v0.87.0** (entrées v0.69 à v0.87 ci-dessous, pas dans
 l'ordre) ; la **v0.80.0** était taguée et **déployée sur les trois corps le

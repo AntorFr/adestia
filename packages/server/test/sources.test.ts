@@ -10,39 +10,26 @@
  * other to git.
  */
 
-import { execFile } from 'node:child_process'
-import { mkdtemp, mkdir, rename, writeFile } from 'node:fs/promises'
+import { mkdir, rename, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { promisify } from 'node:util'
 
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import { discoverPlugins } from '../src/extensions.js'
 import { fetchSources } from '../src/sources.js'
 import type { ExtensionSource } from '../src/config/types.js'
+import { git } from './support/git.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
 
-const execFileAsync = promisify(execFile)
+afterEach(cleanTmp)
+
 const silent = () => {}
 const activation = { apps: ['truc'], features: [], tools: [] }
 
-async function git(cwd: string, ...args: string[]): Promise<void> {
-  await execFileAsync('git', args, {
-    cwd,
-    // A runner has no identity configured, and a commit without one fails.
-    env: {
-      ...process.env,
-      GIT_AUTHOR_NAME: 'Test',
-      GIT_AUTHOR_EMAIL: 'test@example.org',
-      GIT_COMMITTER_NAME: 'Test',
-      GIT_COMMITTER_EMAIL: 'test@example.org',
-    },
-  })
-}
-
 /** A repository whose ROOT is the plugin, which is what a plugin repo is. */
 async function pluginRepo(id: string, description: string): Promise<string> {
-  const dir = await mkdtemp(join(tmpdir(), 'adestia-src-repo-'))
+  const dir = await tmpDir('adestia-src-repo-')
   await git(dir, 'init', '--quiet', '-b', 'main')
   await writeFile(
     join(dir, 'adestia-plugin.json'),
@@ -55,7 +42,7 @@ async function pluginRepo(id: string, description: string): Promise<string> {
 }
 
 async function cache(): Promise<string> {
-  return mkdtemp(join(tmpdir(), 'adestia-src-cache-'))
+  return tmpDir('adestia-src-cache-')
 }
 
 function source(repo: string, ref: string): ExtensionSource {
@@ -140,7 +127,7 @@ describe('fetchSources', () => {
   })
 
   it('reads a mounted directory without touching git', async () => {
-    const mounted = await mkdtemp(join(tmpdir(), 'adestia-src-dir-'))
+    const mounted = await tmpDir('adestia-src-dir-')
     await mkdir(join(mounted, 'truc'), { recursive: true })
     await writeFile(
       join(mounted, 'truc', 'adestia-plugin.json'),

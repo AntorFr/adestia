@@ -1,16 +1,18 @@
-import { mkdtemp, readFile, stat } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { readFile, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { McpSignIn } from '../src/mcp-signin.js'
 import type { McpServerConfig } from '../src/config.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
+
+afterEach(cleanTmp)
 
 let dataDir: string
 
 beforeEach(async () => {
-  dataDir = await mkdtemp(join(tmpdir(), 'adestia-signin-'))
+  dataDir = await tmpDir('adestia-signin-')
 })
 
 const HA: McpServerConfig = {
