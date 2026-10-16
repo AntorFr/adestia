@@ -106,19 +106,6 @@ async function openCatalogues(): Promise<void> {
   await page.getByRole('button', { name: 'Catalogues' }).click()
   await page.getByRole('dialog').waitFor()
 }
-async function declareThroughScreen(): Promise<void> {
-  const dialog = page.getByRole('dialog')
-  await dialog.getByPlaceholder('Repository address').fill(`file://${repo}`)
-  await dialog.getByRole('button', { name: 'Add', exact: true }).click()
-  await dialog.getByText(`file://${repo} @ main`).waitFor()
-}
-async function openCatalogue(): Promise<void> {
-  await page.getByRole('dialog').getByText(`file://${repo} @ main`).click()
-  await page.getByRole('dialog').getByRole('button', { name: 'Refresh' }).waitFor()
-}
-const dialogOf = () => page.getByRole('dialog')
-const importOf = (name: string) => dialogOf().getByRole('button', { name: `Import ${name}`, exact: true })
-const removeOf = (name: string) => dialogOf().getByRole('button', { name: `Remove ${name}`, exact: true })
 async function shot(name: string): Promise<void> {
   await mkdir(shots, { recursive: true })
   await page.screenshot({ path: join(shots, `${name}.png`) })
