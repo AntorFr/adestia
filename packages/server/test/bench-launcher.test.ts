@@ -1,10 +1,12 @@
 import { spawn, spawnSync } from 'node:child_process'
-import { existsSync } from 'node:fs'
-import { readdirSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
+
+import { cleanTmp, tmpDir } from './support/tmp.js'
 
 const launch = fileURLToPath(new URL('../../../bench/launch.mjs', import.meta.url))
 const built = existsSync(fileURLToPath(new URL('../dist/src/start.js', import.meta.url)))
@@ -76,5 +78,45 @@ describe.skipIf(!built)('bench launcher, fake engine', () => {
     }
     expect(await exited).toBe(0)
     expect(leftovers()).toEqual([])
+  }, 60_000)
+})
+
+describe.skipIf(!built)('bench launcher, stored credential', () => {
+  afterEach(cleanTmp)
+  // Panne visée : le pilote Claude préfère la crédential rangée à la variable
+  // d'environnement ; un jeton factice rangé par un semis masque celui du pod
+  // (401). Le lanceur doit donc le retirer en --engine claude, et le laisser
+  // en --engine fake (les écrans qui montrent la crédential).
+  const launched = async (args: string[], env: Record<string, string>) => {
+    const parent = await tmpDir('bench-cred-')
+    const data = join(parent, 'inst')
+    const stored = join(data, 'data', 'secrets', 'claude-code.token')
+    mkdirSync(join(data, 'data', 'secrets'), { recursive: true })
+    writeFileSync(stored, 'placeholder-token')
+    const child = spawn(process.execPath, [launch, ...args, '--data', data], {
+      stdio: ['ignore', 'pipe', 'ignore'],
+      env: { ...process.env, ...env },
+    })
+    const exited = new Promise<number | null>((done) => child.once('exit', done))
+    try {
+      await new Promise<void>((resolve, reject) => {
+        let out = ''
+        child.stdout!.on('data', (d) => {
+          out += d
+          if (/listening on \S+/.test(out)) resolve()
+        })
+        child.once('exit', () => reject(new Error('exited early')))
+      })
+      return existsSync(stored)
+    } finally {
+      child.kill('SIGTERM')
+      await exited
+    }
+  }
+  it('drops a stored credential in claude mode, so the environment token is used', async () => {
+    expect(await launched(['--engine', 'claude'], { CLAUDE_CODE_OAUTH_TOKEN: 'sk-test-not-real' })).toBe(false)
+  }, 60_000)
+  it('keeps a stored credential in fake mode', async () => {
+    expect(await launched(['--engine', 'fake'], {})).toBe(true)
   }, 60_000)
 })
