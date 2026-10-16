@@ -118,6 +118,10 @@ for (const signal of ['SIGTERM', 'SIGINT']) process.on(signal, () => void cleanu
 try {
   const seedModule = await import(pathToFileURL(seedFile).href)
   const seeded = await seedModule.default({ workspace, dataDir })
+  // The Claude driver prefers a stored credential to the environment. A seed
+  // stores a placeholder one (for screens that show the credential); a real
+  // turn must use the pod's token, so the stored one is dropped.
+  if (options.engine === 'claude') await rm(join(dataDir, 'secrets', 'claude-code.token'), { force: true })
   const config = yaml.parse(seeded) ?? {}
   config.host = '127.0.0.1'
   config.port = options.port
