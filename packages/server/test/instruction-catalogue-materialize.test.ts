@@ -8,12 +8,11 @@
  * same `instructionZones()` the real drivers go through is the honest double.
  */
 
-import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import { instructionZones, type Driver } from '@antorfr/adestia-drivers'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import {
   importCatalogueItem,
@@ -24,22 +23,20 @@ import {
 } from '../src/instruction-catalogues.js'
 import { InstructionCataloguesStore, type InstructionCatalogue } from '../src/instruction-catalogues-store.js'
 import { MANAGED_MARKER } from '../src/skills.js'
+import { ScriptedDriver } from './support/driver.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
 
-/** Declares only what the materializer reads: `instructionPaths`. */
-const testDriver = (paths: ReturnType<NonNullable<Driver['instructionPaths']>>): Driver =>
-  ({
-    describe: () => Promise.resolve({ id: 'test', label: 'Test', cliVersion: '0', capabilities: [] }),
-    env: () => Promise.resolve({}),
-    instructionPaths: () => paths,
-    runTurn: async function* () {},
-  }) as Driver
+afterEach(cleanTmp)
+
+const testDriver = (paths: ReturnType<NonNullable<Driver['instructionPaths']>>) =>
+  new ScriptedDriver([], { capabilities: [], instructionPaths: paths })
 
 // Declares a skill zone and no agent zone — the second fact is what the
 // "refused" test below exercises, the same shape `codex-cli` has in reality.
 const SKILL_ZONE = testDriver([{ path: '.claude/skills', kind: 'skill', entry: '<name>/SKILL.md' }])
 
 async function catalogueFixture(): Promise<string> {
-  const root = await mkdtemp(join(tmpdir(), 'adestia-catalogue-clone-'))
+  const root = await tmpDir('adestia-catalogue-clone-')
   await mkdir(join(root, 'dev-flow/skills/tri'), { recursive: true })
   await writeFile(
     join(root, 'dev-flow/skills/tri/SKILL.md'),
@@ -58,7 +55,7 @@ const TRI_ITEM: CatalogueItem = {
 
 describe('materializeItem', () => {
   it('writes a skill into the zone the driver declares, stamped and whole', async () => {
-    const workspaceRoot = await mkdtemp(join(tmpdir(), 'adestia-workspace-'))
+    const workspaceRoot = await tmpDir('adestia-workspace-')
     const catalogueRoot = await catalogueFixture()
 
     const { landedAt } = await materializeItem({
@@ -81,7 +78,7 @@ describe('materializeItem', () => {
   })
 
   it('namespaces by catalogue rather than clobbering a same-named local skill', async () => {
-    const workspaceRoot = await mkdtemp(join(tmpdir(), 'adestia-workspace-'))
+    const workspaceRoot = await tmpDir('adestia-workspace-')
     await mkdir(join(workspaceRoot, '.claude/skills/tri'), { recursive: true })
     await writeFile(join(workspaceRoot, '.claude/skills/tri/SKILL.md'), '# Mine, hand-written\n')
     const catalogueRoot = await catalogueFixture()
@@ -99,7 +96,7 @@ describe('materializeItem', () => {
   })
 
   it('refuses an item whose kind has no zone on the active driver, with a readable error', async () => {
-    const workspaceRoot = await mkdtemp(join(tmpdir(), 'adestia-workspace-'))
+    const workspaceRoot = await tmpDir('adestia-workspace-')
     const catalogueRoot = await catalogueFixture()
 
     await expect(
@@ -116,7 +113,7 @@ describe('materializeItem', () => {
 
 describe('withdrawItem', () => {
   it('removes exactly what was landed, and nothing else in the folder', async () => {
-    const workspaceRoot = await mkdtemp(join(tmpdir(), 'adestia-workspace-'))
+    const workspaceRoot = await tmpDir('adestia-workspace-')
     await mkdir(join(workspaceRoot, '.claude/skills/other'), { recursive: true })
     await writeFile(join(workspaceRoot, '.claude/skills/other/SKILL.md'), '# A neighbour\n')
     const catalogueRoot = await catalogueFixture()
@@ -136,7 +133,7 @@ describe('withdrawItem', () => {
   })
 
   it('leaves a folder alone when it was never stamped as managed', async () => {
-    const workspaceRoot = await mkdtemp(join(tmpdir(), 'adestia-workspace-'))
+    const workspaceRoot = await tmpDir('adestia-workspace-')
     await mkdir(join(workspaceRoot, '.claude/skills/tri'), { recursive: true })
     await writeFile(join(workspaceRoot, '.claude/skills/tri/SKILL.md'), '# Hand-written, not ours\n')
 
@@ -155,9 +152,9 @@ describe('importCatalogueItem / withdrawCatalogueItem', () => {
   })
 
   it('lands the item and records landedAt in the store', async () => {
-    const workspaceRoot = await mkdtemp(join(tmpdir(), 'adestia-workspace-'))
+    const workspaceRoot = await tmpDir('adestia-workspace-')
     const catalogueRoot = await catalogueFixture()
-    const dataDir = await mkdtemp(join(tmpdir(), 'adestia-store-'))
+    const dataDir = await tmpDir('adestia-store-')
     const store = new InstructionCataloguesStore(dataDir)
     await store.save([catalogue()])
 
@@ -169,9 +166,9 @@ describe('importCatalogueItem / withdrawCatalogueItem', () => {
   })
 
   it('removes the file and the store entry together', async () => {
-    const workspaceRoot = await mkdtemp(join(tmpdir(), 'adestia-workspace-'))
+    const workspaceRoot = await tmpDir('adestia-workspace-')
     const catalogueRoot = await catalogueFixture()
-    const dataDir = await mkdtemp(join(tmpdir(), 'adestia-store-'))
+    const dataDir = await tmpDir('adestia-store-')
     const store = new InstructionCataloguesStore(dataDir)
     await store.save([catalogue()])
     await importCatalogueItem(store, 'homelab-sdlc-core', catalogueRoot, workspaceRoot, instructionZones(SKILL_ZONE), TRI_ITEM)

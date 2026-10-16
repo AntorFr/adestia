@@ -1,12 +1,14 @@
-import { mkdtemp, mkdir, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-import { beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import Fastify from 'fastify'
 
 import { mimeFor, registerStatic, safeJoin } from '../src/static.js'
 import type { DiscoveredPlugin } from '../src/extensions.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
+
+afterAll(cleanTmp)
 
 let root: string
 
@@ -17,7 +19,7 @@ const plugin = (id: string, active: boolean): DiscoveredPlugin => ({
 })
 
 beforeAll(async () => {
-  root = await mkdtemp(join(tmpdir(), 'adestia-static-'))
+  root = await tmpDir('adestia-static-')
   for (const id of ['on', 'off']) {
     await mkdir(join(root, 'plugins', id, 'web'), { recursive: true })
     await writeFile(join(root, 'plugins', id, 'web', 'app.js'), 'export default () => null\n')

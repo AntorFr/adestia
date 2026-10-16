@@ -3,10 +3,9 @@
  * something.
  */
 
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
-import { mkdtemp, mkdir, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import Fastify from 'fastify'
@@ -15,6 +14,9 @@ import { parseConfig } from '../src/config.js'
 import { mountPluginApis } from '../src/plugin-host.js'
 import type { DiscoveredPlugin } from '../src/extensions.js'
 import { pagesService, resolveStores } from '../src/stores.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
+
+afterEach(cleanTmp)
 
 describe('the instance secret table', () => {
   it('holds a named value', () => {
@@ -53,7 +55,7 @@ describe('what a plugin actually receives', () => {
     manifests: { id: string; secrets?: string[] }[],
     secrets: Record<string, string>,
   ) => {
-    const root = await mkdtemp(join(tmpdir(), 'adestia-secrets-'))
+    const root = await tmpDir('adestia-secrets-')
     const seen: Record<string, unknown> = {}
     const plugins = []
     for (const entry of manifests) {

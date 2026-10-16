@@ -194,7 +194,7 @@ and every turn — chat, scheduled, delegated, callback wake — goes through th
   checks every bundled plugin's French entries. Skins have no words through the locale today.
 - **Tests** — `vitest.config.ts` runs `packages/*/test`, aliasing every `@antorfr/*` to its
   `src/index.ts`; `npm run test:plugins` runs `node --test` over the plugins; `bench/` is the
-  visual check (docker). CI (`.github/workflows/ci.yml`) runs typecheck and tests.
+  visual check (docker). CI (`.github/workflows/ci.yml`) runs typecheck, tests, the build, a start of the built server and a docker image build (not lint).
 
 ## Decisions of adestia-qualite
 
@@ -209,7 +209,7 @@ as one. *Reversed if*: a defect blocks a refactoring outright; it then becomes i
 
 ### AD-2 — A launcher on the fake engine, outside the product
 One term: **the fake engine**, a scripted fake driver handed to the server through
-`start({ driverFactory })`. A script under `bench/` starts the server on the fake engine
+`start({ driverFactory })`. **TARGET** (B-2, not built): a script under `bench/` starts the server on the fake engine
 with a seeded workspace and data directory; the real-Claude mode is the plain binary with
 `CLAUDE_CODE_OAUTH_TOKEN` in the environment.
 *Rejected*: a `fake` driver id in the configuration (a product surface added for tests);
@@ -289,13 +289,84 @@ Each target: what, where, why it costs, the tranche that owns it, and its outcom
 | R-6 | Dead or test-only exports: `SubscriptionQuotas` (no implementer), `assertConformance` in the production index, `formatReference`, `isValidId`, `isEditable` (tests only); about 140 exports used only in their own file | surface nobody uses | serveur | |
 | R-7 | Comments pointing to absent documents: `technique.md` (server sources and tests), `ATELIER-3.md` (`plugins/atelier/web`), `PARCOURS.md` and "D44 côté cerveau" (`plugins/parcours/web`) | dead references | serveur (server), plugins (plugins) | |
 | R-8 | `eslint.config.js` claims floating promises and thrown-away errors are caught, which its rules cannot do (no type-aware rule, `caughtErrors: 'none'`); `plugins/` not linted; lint not in CI | a claim the gate does not keep | serveur (CI, claim), plugins (plugins lint) | |
-| R-9 | Test support rewritten per file: the fake `Driver` in 9 test files, `git()` in 5, `mkdtemp` in 39 | each new test copies one | tests | |
-| R-10 | `web/test/page-editor.test.tsx` "tells the plugin when it takes the file…" reported flaky; turn-counting waits (`setImmediate`) in `callback.test.ts`, `mcp.test.ts`, `restart.test.ts`; fixed sleeps in `watch`, `pages`, `shell-tools`, `background` tests | races dressed as delays (CLAUDE.md) | tests | |
+| R-9 | Test support rewritten per file: the fake `Driver` in 10 test files, `git()` in 5, `mkdtemp` in 39 | each new test copies one | tests | closed: `packages/server/test/support/` holds the three, and every file that rewrote them imports them |
+| R-10 | `web/test/page-editor.test.tsx` "tells the plugin when it takes the file…" reported flaky; turn-counting waits (`setImmediate`) in `callback.test.ts`, `mcp.test.ts`, `restart.test.ts`; fixed sleeps in `watch`, `pages`, `shell-tools`, `background` tests | races dressed as delays (CLAUDE.md) | tests | closed: no `setImmediate` is left in `callback`, `mcp`, `restart` tests (a wake or a call is a deferred the fake resolves; a negative case is proved by a sentinel that does wake, or by `app.close()`), and the sleeps of `watch` (chokidar's own `ready`, through the test's watcher factory), `pages` (`utimes`), `shell-tools` and `background` (a faked `Date`) are gone. Page-editor flake: its waits (`findBy*`, `waitFor`) spend a one-second wall-clock budget on a chain of promises the test resolves itself, and a loaded machine runs it out; reproduced under `yes` load on the neighbour test "saves with the revision…" (`[data-mounted]` not there in time). The file now drains the chain with an async `act`, no budget left |
 | R-11 | Web: about 40 `fetchImpl(` call sites and 14 hand-rolled live guards, `failure()` (`CataloguePopin.tsx`) and `json()` (`chat/conversations.ts`) local to one file; `toMessage` duplicated in `useConversations.ts` and `Delegations.tsx`, drifted (the second drops `signatures`, kept as defect); `prettify` ×3, `folderOf` ×2, `isIndexPage` ×2 with different rules (`app/sections.ts`, `app/collections.ts`, `editor/nodes.ts`, `editor/listing.ts`) | one idea, several answers | charte (the shared request helper), pages, chat for `chat/` | |
 | R-12 | Giant components: `App` 571 lines, `useConversations` 456; files `Reader.tsx` 1153, `Editor.tsx` 703, `Instructions.tsx` 591, `Home.tsx` 546, `Chat.tsx` 542, `Configuration.tsx` 456 | unreadable, untestable in parts | pages (App, Reader, Editor, Home); chat (Chat, useConversations, Composer); charte (Instructions, Configuration, McpServers) | |
 | R-13 | `copilot-cli/driver.ts` › `SHELL_TOOL_CLI_SOURCE`, a whole JS program in a template string | untyped, unlinted | serveur (real file read at build, behaviour kept) | |
-| R-14 | `server/test/catalogues-ui-ensemble.test.ts` skips itself without Playwright or a built web shell, so it never runs in a plain `npm test` | a suite that looks green and never ran | tests | |
+| R-14 | `server/test/catalogues-ui-ensemble.test.ts` skips itself without Playwright or a built web shell, so it never runs in a plain `npm test` | a suite that looks green and never ran | tests | closed: the suite runs in `npm test` (the shell is built in its `beforeAll` when `dist-web` is absent; without Playwright it skips and says `no playwright` in its title and in a `console.warn`); its first case, stale since Catalogues moved into the Instructions page (E-11/E-12), was corrected by the tester |
 | R-15 | `zod` imported dynamically by `server/src/drivers.ts` but declared in no `package.json` | works only by hoisting | serveur | |
+
+## Detail of R-9, R-10 and R-14 (tests tranche)
+
+The tranche changes no production file (B-1): everything below lives in `packages/*/test`.
+
+**Shared support (R-9).** One directory, `packages/server/test/support/`, never matched by
+vitest's `include` (no `.test.` in the names), imported by relative path:
+
+| Module | Exports | Replaces |
+|---|---|---|
+| `support/driver.ts` | `ScriptedDriver` (events, then `{ capabilities, hold, instructionPaths }` as constructor options; `describe()` and `runTurn()` as the existing `ScriptedDriver` of `app.test.ts`), `RESULT`, `driverWith(overrides)` returning a `Driver` from a partial one, and `scriptedDriver(script)` (a driver that records its `requests`; the `delegations` helper) | the fake `Driver` of `app`, `oidc-routes`, `start` (and its `SkilledDriver` / `AgentDriver` subclasses), `instruction-catalogue-materialize`, `instruction-catalogue-materialize-review`, `mcp-servers`, `settings-route`, `restart`, `delegations` (its `scriptedDriver()`) and `turns` (its inline `{ runTurn }` objects) tests; the grep of the tranche's exit is the list |
+| `support/git.ts` | `git(cwd, ...args)` with the fixed author and committer (`T <t@example.org>`), and `gitRepo(dir, files)`: `git init -b main`, write the files, one commit, return the HEAD sha | the `git()` of `catalogues-ensemble`, `catalogues-ui-ensemble`, `instruction-catalogues-api`, `instruction-catalogues`, `sources` tests, and their repository set-up |
+| `support/tmp.ts` | `tmpDir(prefix)`: `mkdtemp` under `os.tmpdir()`, remembered; `cleanTmp()`: removes everything remembered (`rm -rf`, force); each file registers `afterEach(cleanTmp)` (`afterAll` when the tree is built once in a `beforeAll`: `extensions`, `static`, `mono-store-witness`) | the 37 test files that call `mkdtemp` and each their own `rm` |
+
+A test that needs a fake behaviour the module lacks extends the module (an option), never
+re-declares a driver. `packages/drivers/test` keeps its own fakes: R-9 aims at the server.
+A file whose fake is genuinely not a `Driver` stays as it is and is named in this table's
+outcome (`kept: reason`) if its name matched the grep of the tranche's exit.
+
+**Signals, not delays (R-10).** The rule is `CLAUDE.md`'s « A handshake waits for a SIGNAL »,
+applied file by file:
+
+- `callback.test.ts`: `runTurn` is a `vi.fn` owned by the test; it resolves a deferred
+  (`woke`) on its first call, and the test awaits `woke` instead of `settle()`. An assertion
+  that the wake did **not** happen awaits the last step the handler takes before that branch
+  (the `fetchImpl` stub resolving its own deferred), then asserts.
+- `mcp.test.ts`: the fake channel resolves a deferred when it is pulled (`runTurn`), the test
+  awaits it. Same rule for the negative cases.
+- `restart.test.ts`: the `restart` stub resolves a deferred; the guard's refusal (409) has no
+  later step to signal, so the negative cases assert on the response and then on
+  `await app.close()` having completed, which flushes what the app scheduled.
+- A case where no signal can exist without touching production is not turned into a longer
+  delay: it keeps its wait, and R-10's outcome says `kept: <file>, <why>`.
+- Clock waits become a clock the test owns: `background.test.ts` (5 ms), `shell-tools.test.ts`
+  (10 ms, `tokenTtlMs: 1`) use `vi.useFakeTimers()` and `vi.setSystemTime` /
+  `vi.advanceTimersByTime`; `pages.test.ts` (10 ms, so the revision differs) sets the file's
+  mtime explicitly with `utimes`; `watch.test.ts` (`wait(500)`) waits on the stream's own
+  frames, and a "nothing arrives" case writes a sentinel after and asserts the sentinel is
+  the next frame. The `deadline` timer of `nextBatch` bounds a wait, it is not a wait, and
+  stays.
+- `web/test/page-editor.test.tsx` › "tells the plugin when it takes the file…": the cause of
+  the flake is found first (run the test file under CPU load, thirty times; the suspect is
+  `waitFor`'s default one-second budget on an editor that mounts lazily). The fix waits on the
+  cause (`[data-mounted]`, as its neighbour test does), not on a longer budget; the cause is
+  written in R-10's outcome.
+
+**The catalogue screens suite (R-14).** `catalogues-ui-ensemble.test.ts` keeps its two
+conditions and gains a way to meet them:
+
+- Playwright is found by a plain `require` (the packages' `node_modules`, `NODE_PATH`), then
+  through `npm root -g` (the pod keeps it in `/usr/lib/node_modules`); the hard-coded
+  `/usr/lib` and `/usr/local/lib` are gone, so a `PATH` and `NODE_PATH` that hide it do hide it.
+  The bench (`bench/bench.mjs`, still a hard-coded `/usr/lib` import today) is outside this
+  tranche; its own tranche resolves Playwright, and the two stay separate copies: the bench is
+  `.mjs` outside the packages.
+- A missing built shell is no longer a reason to skip when Playwright is there: a `beforeAll`
+  runs `npm run build:web --workspace @antorfr/adestia-web` once (generous timeout) when
+  `packages/web/dist-web/index.html` is absent. *Rejected*: building in the `test` script
+  (every run pays, including those that never reach this suite) and a vitest `globalSetup`
+  (hides the cost from the file that needs it). The build child gets `NODE_ENV=production`:
+  under vitest it would inherit `test`, vite would emit `react/jsx-dev-runtime`, which the
+  shell does not keep external, and the page would die on a CJS `require("react")`. *Reversed if*: the build exceeds a minute in
+  the pod, then a `pretest` is the honest place.
+- Without Playwright the suite still skips, and now says it twice: in the title, as today,
+  and with one `console.warn` line at collection naming the missing piece. A skipped run is
+  not a seen screen.
+- `catalogues-ensemble.test.ts` has no such condition and is unchanged but for the support
+  imports.
+
+**Five greens.** `npm test` runs five times in a row in the pod (a shell loop, output kept
+outside the tree); a red names the flake, which is fixed by signal, never retried.
 
 ## Known defects (found, not fixed by this epic)
 

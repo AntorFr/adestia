@@ -7,11 +7,10 @@
  * what lets the routes be a rename instead of a rewrite.
  */
 
-import { mkdtemp, mkdir, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import {
   candidatesOf,
@@ -22,11 +21,14 @@ import {
   targetFor,
   type Store,
 } from '../src/stores.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
+
+afterEach(cleanTmp)
 
 let workspace: string
 
 beforeEach(async () => {
-  workspace = await mkdtemp(join(tmpdir(), 'adestia-stores-'))
+  workspace = await tmpDir('adestia-stores-')
 })
 
 const write = async (path: string, content = 'x') => {
