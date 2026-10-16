@@ -66,6 +66,12 @@ const parseArgs = (args) => {
 
 const options = parseArgs(argv.slice(2))
 
+// The local OIDC stub disables TLS verification in this process. Refuse before
+// loading the seed so a real Claude process can never inherit that setting.
+if (options.engine === 'claude' && options.seed === 'oidc') {
+  fail('--seed oidc requires --engine fake: its self-signed provider disables TLS verification and must not run with real Claude')
+}
+
 // Refuse before creating anything: a missing credential is a one-line answer.
 if (options.engine === 'claude' && !env.CLAUDE_CODE_OAUTH_TOKEN) {
   fail('--engine claude needs CLAUDE_CODE_OAUTH_TOKEN in the environment (a real turn cannot run without it)')

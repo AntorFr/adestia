@@ -68,11 +68,13 @@ with `--engine claude` the real token is the one in the environment: the launche
 deletes the placeholder credential a seed stored (the Claude driver prefers a stored
 credential to the environment, so it would answer `401 Invalid bearer token`).
 
-**`oidc`** is real: `/auth/login` goes to the stub, which signs `alice` (group
+**`oidc`** requires `--engine fake`; the launcher refuses `--engine claude --seed oidc`
+before loading the seed, so the real Claude CLI cannot inherit disabled TLS verification.
+The sign-in is real: `/auth/login` goes to the stub, which signs `alice` (group
 `famille`, allowed) in; `GET <issuer>/__as?user=visiteur` makes the next
 sign-in the visitor's, whom `allowedGroups` refuses. The product only talks to
 an issuer over HTTPS, so the stub serves a self-signed certificate made by
-`openssl` and the launcher sets `NODE_TLS_REJECT_UNAUTHORIZED=0` (a browser
+`openssl` and the stub sets `NODE_TLS_REJECT_UNAUTHORIZED=0` (a browser
 following the redirect must ignore certificate errors). The session secret is
 fixed in the seed so a session of a refused group can be forged to reach the
 « refused » gate.

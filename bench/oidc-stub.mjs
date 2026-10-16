@@ -6,6 +6,7 @@
  * The product speaks to an issuer over HTTPS only (openid-client refuses
  * plain http), so the stub serves a self-signed certificate made by `openssl`
  * and sets `NODE_TLS_REJECT_UNAUTHORIZED=0` for this process and its children.
+ * The launcher refuses this seed with the real Claude engine before loading it.
  * A browser that follows the redirect to the stub must ignore certificate
  * errors.
  *
