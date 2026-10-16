@@ -1,7 +1,8 @@
 # Status — Adestia
-> MàJ : 2026-09-30
+> MàJ : 2026-10-16
 
-**État :** `main`, **v0.80.0** taguée et **déployée sur les trois corps le
+**État :** `main` est à **v0.88.0** (catalogues d'instructions, entrée v0.88.0 plus bas ; entrées v0.69 à v0.87 pas dans
+l'ordre) ; la **v0.80.0** était taguée et **déployée sur les trois corps le
 29/09 au soir** — deux marches dans la même soirée (0.79.0 la lecture en
 fond, 0.80.0 les heures fixes), faites l'une pour l'autre : ensemble elles
 rebranchent le briefing d'Alfred, mort avec l'agent-gw le 05/09. L'horloge
@@ -672,3 +673,64 @@ le sceau seul, rond et sans fond ; les PNG installés sont la même cire en
 carré opaque, rendus depuis `assets/plate.svg`, chaussette dans les 80 %
 centraux pour la découpe ronde. Les sceaux de l'interface (envoi, écusson)
 restent rouges. Pas de scénario de banc : seules les icônes changent.
+
+v0.87.1 (mergée et taguée le 13/10) : **rouvrir une entrée qu'on vient d'écrire
+ne la vide plus.** L'éditeur monté par le ✎ partait du texte CHARGÉ à l'ouverture
+de l'écran et non du dernier texte sauvegardé : après un enregistrement et un
+Terminé, le lecteur montrait le nouveau texte mais l'éditeur rouvrait sur
+l'ancien — vide pour une entrée de journal créée avec `+` — et la première
+frappe sauvegardait cette version par-dessus le fichier. Il part maintenant de
+`saved`, lu par une ref pour qu'une sauvegarde automatique ne remonte jamais
+l'éditeur sous le curseur. Deux tests (la réouverture, et l'absence de remontage),
+et le scénario de banc `journal-sauvegarde` rejoue le cycle édition → Terminé →
+✎ → frappe contre le vrai Milkdown.
+
+v0.87.2 (mergée, taguée et déployée le 15/10) : **l'index
+des pages se lit en parallèle**, pour un espace de travail sur WSL `/mnt/c`
+(OneDrive) où chaque `readdir`/`stat`/`readFile` est un aller-retour 9p
+(`/api/pages/index` ~1,3 s → ~0,15 s sur 147 pages, sortie identique). Deux
+garde-fous ajoutés à la revue : un plafond de 32 appels disque simultanés
+(`io.ts`, sur les seuls appels feuilles, pour ne pas épuiser les descripteurs
+sur un gros espace) et un cache de digests clé par le HASH du texte, non par le
+texte (la mémoire ne copie plus l'espace de travail). Le cache ne repose sur
+aucune date : toute modification, quel qu'en soit l'auteur, se voit à l'appel
+suivant. Tests : le plafond, l'ordre des listes, l'invalidation après édition
+ou suppression. Pas de scénario de banc : aucun rendu ne change.
+
+v0.87.4 : **un
+serveur MCP peut déclarer `cliName`**, la clé que le CLI Copilot reçoit à la
+place de `name` — un registre d'entreprise filtre par ce nom (ex.
+`io.modelcontextprotocol.aitechlab/microsoft-mcp`). L'interface continue de
+montrer `name` : la santé remontée par le CLI est ramenée de `cliName` à `name`.
+Ajouté à la revue : deux serveurs qui arriveraient chez le CLI sous la même clé
+(un `cliName` égal à un autre `name`, ou à un autre `cliName`) sont refusés à la
+lecture de la config, car l'un écraserait l'autre en silence ; et l'option est
+documentée dans `adestia.config.example.yaml`. Seul le pilote Copilot la lit ;
+le pilote Claude l'ignore. Pas de scénario de banc : aucun rendu ne change.
+
+(La v0.87.3 a été taguée par erreur sur le commit de la v0.87.2, avant le
+merge de `cliName` : son image ne contient rien de plus que la 0.87.2. Ne pas
+la déployer.)
+
+v0.88.0 (mergée et taguée le 15/10) : **catalogues d'instructions.** Instructions › Catalogues déclare des
+dépôts git, scanne leurs items par forme de fichier, importe item par item dans
+la zone du driver actif, rafraîchit par dépôt. Serveur :
+`instruction-catalogues{,-store}.ts`, `routes/instruction-catalogues.ts` ;
+écran : `CataloguePopin.tsx`, provenance sur la carte. Scénario de banc :
+`catalogue-popin` (joué le 15/10 contre un dépôt local monté par `.prep.sh` : liste,
+import, clair, sombre, téléphone ; le bouton Rafraîchir y était un bouton natif
+non stylé, corrigé). À l'audit avant merge : les imports étaient supprimés à
+chaque redémarrage (la livraison des contrats balayait tout dossier marqué) —
+corrigé, et le rechargement au boot ajouté. Audit de sécurité suivant : un `ref`/`repo`
+commençant par `-` (option git, `--upload-pack`) est refusé (400 / `source-invalid`,
+`--` dans `sources.ts`) et les liens symboliques d'un skill ne sont plus suivis
+à la copie (listés dans `skipped` à la réponse d'import, pas affichés à l'écran).
+Raisonné dans `DESIGN.md` (Instructions & workspace).
+
+Reste / pièges encore vrais : le rechargement au boot est borné à 20 s (au-delà
+le démarrage continue avec les copies d'hier) ; retirer un dépôt supprime ses copies ; un import que le dépôt ne
+propose plus est laissé en place et signalé, jamais supprimé ; le clone d'un
+dépôt privé passe par un jeton stocké en clair (0600) dans le fichier d'état ;
+le clone est lu sans réseau tant qu'il existe (un `GET items` ne rafraîchit
+pas). Recette : déclarer un dépôt, importer un skill, le voir en carte avec
+`dépôt @ réf`, modifier la source, Rafraîchir, Supprimer.

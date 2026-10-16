@@ -358,6 +358,31 @@ mcp:
     ])
   })
 
+  it('carries a registry-style cliName next to the plain name', () => {
+    const config = parseConfig(
+      'mcp:\n  servers:\n    - name: microsoft-mcp\n      cliName: io.modelcontextprotocol.aitechlab/microsoft-mcp\n      url: https://x/mcp\n',
+    )
+    expect(config.mcpServers[0]?.cliName).toBe('io.modelcontextprotocol.aitechlab/microsoft-mcp')
+    expect(issuesOf('mcp:\n  servers:\n    - name: ha\n      cliName: "a b"\n      url: https://x/mcp\n')).toEqual([
+      'mcp.servers[0].cliName must be letters, digits, dashes, underscores, dots and slashes',
+    ])
+  })
+
+  it('refuses two servers that would reach the CLI under one key', () => {
+    // A cliName equal to another server's name, or to another cliName, would
+    // have one entry silently overwrite the other in the CLI's own config.
+    expect(
+      issuesOf(
+        'mcp:\n  servers:\n    - name: a\n      url: https://x/mcp\n    - name: b\n      cliName: a\n      url: https://y/mcp\n',
+      ),
+    ).toEqual(['mcp.servers[1]: "a" is already the CLI key of another server'])
+    expect(
+      issuesOf(
+        'mcp:\n  servers:\n    - name: a\n      cliName: io.x/s\n      url: https://x/mcp\n    - name: b\n      cliName: io.x/s\n      url: https://y/mcp\n',
+      ),
+    ).toEqual(['mcp.servers[1]: "io.x/s" is already the CLI key of another server'])
+  })
+
   it('refuses a placeholder the environment never filled', () => {
     // A literal "${TOKEN}" reaching a server fails later, in a call, blaming
     // the server rather than the config that never resolved.

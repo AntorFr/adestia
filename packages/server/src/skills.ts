@@ -442,6 +442,8 @@ export function stamped(contents: string): string {
 export async function deliverSkills(
   skillsRoot: string,
   skills: readonly SkillFile[],
+  /** Absolute paths the sweep must not touch: copies a catalogue import wrote. */
+  keep: ReadonlySet<string> = new Set(),
 ): Promise<{ written: number; removed: number }> {
   const root = resolve(skillsRoot)
   await mkdir(root, { recursive: true })
@@ -452,7 +454,7 @@ export async function deliverSkills(
   for (const entry of await readdir(root, { withFileTypes: true }).catch(() => [])) {
     if (!entry.isDirectory()) continue
     const path = join(entry.name, 'SKILL.md')
-    if (wanted.has(path)) continue
+    if (wanted.has(path) || keep.has(join(root, entry.name))) continue
     try {
       const existing = await readFile(join(root, path), 'utf8')
       if (!existing.includes(MANAGED_MARKER)) continue
@@ -496,6 +498,8 @@ export async function deliverSkills(
 export async function deliverAgents(
   agentsRoot: string,
   agents: readonly AgentFile[],
+  /** Absolute paths the sweep must not touch: copies a catalogue import wrote. */
+  keep: ReadonlySet<string> = new Set(),
 ): Promise<{ written: number; removed: number; kept: readonly string[] }> {
   const root = resolve(agentsRoot)
   await mkdir(root, { recursive: true })
@@ -504,6 +508,7 @@ export async function deliverAgents(
   let removed = 0
   for (const entry of await readdir(root, { withFileTypes: true }).catch(() => [])) {
     if (!entry.isFile() || !entry.name.endsWith('.md') || wanted.has(entry.name)) continue
+    if (keep.has(join(root, entry.name))) continue
     const existing = await readFile(join(root, entry.name), 'utf8').catch(() => '')
     if (!existing.includes(MANAGED_MARKER)) continue
     await rm(join(root, entry.name), { force: true })

@@ -25,7 +25,7 @@
  * settled by one.
  */
 
-import { mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises'
+import { lstat, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises'
 import { basename, dirname, join, resolve, sep } from 'node:path'
 
 import type { InstructionZone } from '@antorfr/adestia-drivers'
@@ -217,13 +217,28 @@ async function chooseLandedAt(
  * carries scripts and references beside its contract, and those are not
  * instructions to stamp, just files to hand over untouched.
  */
-async function copyMarkedTree(sourceDir: string, targetDir: string): Promise<void> {
+async function copyMarkedTree(
+  sourceDir: string,
+  targetDir: string,
+  skipped: string[],
+  prefix = '',
+  depth = 0,
+): Promise<void> {
   await mkdir(targetDir, { recursive: true })
   for (const entry of await readdir(sourceDir, { withFileTypes: true })) {
     const from = join(sourceDir, entry.name)
     const to = join(targetDir, entry.name)
-    if (entry.isDirectory()) {
-      await copyMarkedTree(from, to)
+    const shown = prefix ? `${prefix}/${entry.name}` : entry.name
+    // A third party's repository decides what a link points at; following one
+    // would copy a file from outside the clone into the workspace. `readdir`
+    // reports the entry itself (lstat semantics), so a link is never a file
+    // or a directory here — same rule as `readSkillAssets`.
+    if (entry.isDirectory() && depth < 8) {
+      await copyMarkedTree(from, to, skipped, shown, depth + 1)
+      continue
+    }
+    if (!entry.isFile()) {
+      skipped.push(shown)
       continue
     }
     if (entry.name === 'SKILL.md') {
@@ -247,7 +262,7 @@ export interface MaterializeOptions {
 }
 
 /** Writes one catalogue item into the zone the active driver declares for its kind. */
-export async function materializeItem(options: MaterializeOptions): Promise<{ landedAt: string }> {
+export async function materializeItem(options: MaterializeOptions): Promise<{ landedAt: string; skipped: readonly string[] }> {
   const { workspaceRoot, zones, catalogueRoot, item, catalogueId, landedAt: reuse } = options
   const zone = zones.find((candidate) => candidate.kind === item.kind)
   if (!zone) {
@@ -260,15 +275,20 @@ export async function materializeItem(options: MaterializeOptions): Promise<{ la
   const sourceAbsolute = join(catalogueRoot, ...item.itemPath.split('/'))
   const targetAbsolute = resolve(workspaceRoot, landedAt)
 
+  const skipped: string[] = []
+  const root = await lstat(sourceAbsolute).catch(() => undefined)
+  if (root && !root.isDirectory() && !root.isFile()) {
+    throw new Error(`cannot import "${item.itemPath}": it is a link or special file, not a regular one`)
+  }
   if (item.kind === 'skill') {
-    await copyMarkedTree(sourceAbsolute, targetAbsolute)
+    await copyMarkedTree(sourceAbsolute, targetAbsolute, skipped)
   } else {
     const contents = await readFile(sourceAbsolute, 'utf8')
     await mkdir(dirname(targetAbsolute), { recursive: true })
     await writeFile(targetAbsolute, stamped(contents), 'utf8')
   }
 
-  return { landedAt }
+  return { landedAt, skipped }
 }
 
 /**
@@ -308,7 +328,7 @@ export async function importCatalogueItem(
   workspaceRoot: string,
   zones: readonly InstructionZone[],
   item: CatalogueItem,
-): Promise<CatalogueImport> {
+): Promise<CatalogueImport & { readonly skipped?: readonly string[] }> {
   return store.update(async (catalogues) => {
     const catalogue = catalogues.find((candidate) => candidate.id === catalogueId)
     if (!catalogue) throw new Error(`no catalogue declared with id "${catalogueId}"`)
@@ -316,7 +336,7 @@ export async function importCatalogueItem(
     // Importing again is a refresh of our own copy: keep its path rather than
     // seeing it as a collision and writing a second one beside it.
     const previous = catalogue.imports.find((entry) => entry.itemPath === item.itemPath)
-    const { landedAt } = await materializeItem({
+    const { landedAt, skipped } = await materializeItem({
       workspaceRoot,
       zones,
       catalogueRoot,
@@ -331,7 +351,7 @@ export async function importCatalogueItem(
         ? { ...candidate, imports: [...candidate.imports.filter((entry) => entry.itemPath !== item.itemPath), imported] }
         : candidate,
     )
-    return { catalogues: updated, result: imported }
+    return { catalogues: updated, result: skipped.length > 0 ? { ...imported, skipped } : imported }
   })
 }
 

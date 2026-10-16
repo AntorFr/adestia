@@ -154,6 +154,8 @@ import type { McpOAuth } from './mcp-oauth.js'
  */
 export interface McpServer {
   readonly name: string
+  /** The key handed to the agent CLI instead of `name` — a corp registry may allowlist by it. */
+  readonly cliName?: string | undefined
   readonly command?: string | undefined
   readonly args?: readonly string[] | undefined
   readonly url?: string | undefined

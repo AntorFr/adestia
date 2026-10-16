@@ -14,7 +14,7 @@
  * - writes are atomic, since the agent may be reading the file at that moment.
  */
 
-import { randomUUID } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 import { mkdir, readFile, rename, stat, unlink, writeFile } from 'node:fs/promises'
 import { basename, dirname, extname, join } from 'node:path'
 
@@ -30,6 +30,7 @@ import {
 } from '@antorfr/adestia-content'
 import type { FastifyInstance } from 'fastify'
 
+import { gated } from './io.js'
 import {
   candidatesOf,
   fileIn,
@@ -254,6 +255,19 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
       ...(store.isDefault ? { default: true } : {}),
     }))
 
+  // A full markdown parse per page per index request was most of its CPU. The
+  // key is a hash of the text, not the text: any change — whoever made it —
+  // invalidates, and the cache holds a few bytes per page rather than a copy
+  // of the workspace.
+  const digests = new Map<string, { hash: string; digest: Record<string, string> }>()
+  const digestOf = (file: string, markdown: string): Record<string, string> => {
+    const hash = createHash('sha256').update(markdown).digest('hex')
+    const known = digests.get(file)
+    if (known?.hash === hash) return known.digest
+    const digest = contentDigest(markdown)
+    digests.set(file, { hash, digest })
+    return digest
+  }
   /**
    * The curated brief — "À la une".
    *
@@ -279,17 +293,22 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
 
   app.get('/api/pages', async () => {
     const { entries } = await listAll(stores, { keep: isMarkdown })
-    const pages: PageInfo[] = []
-    for (const entry of [...entries].sort((a, b) => order.compare(a.path, b.path))) {
-      const [info, markdown] = await Promise.all([stat(entry.file), readFile(entry.file, 'utf8')])
-      pages.push({
-        path: entry.path,
-        ...(multi ? { store: entry.store.id } : {}),
-        title: titleOf(markdown, entry.path),
-        modified: new Date(info.mtimeMs).toISOString(),
-        revision: revisionOf(info),
-      })
-    }
+    const sorted = [...entries].sort((a, b) => order.compare(a.path, b.path))
+    const pages: PageInfo[] = await Promise.all(
+      sorted.map(async (entry) => {
+        const [info, markdown] = await Promise.all([
+          gated(() => stat(entry.file)),
+          gated(() => readFile(entry.file, 'utf8')),
+        ])
+        return {
+          path: entry.path,
+          ...(multi ? { store: entry.store.id } : {}),
+          title: titleOf(markdown, entry.path),
+          modified: new Date(info.mtimeMs).toISOString(),
+          revision: revisionOf(info),
+        }
+      }),
+    )
     // The stores travel with the list, once, rather than being guessed from
     // the entries: the shell needs the LABEL to suffix a card and the HUE to
     // draw its rim, and a store carrying nothing must still appear in a legend.
@@ -308,10 +327,16 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
       body: boolean
       blocks?: Record<string, string>
     }[] = []
-    for (const entry of [...entries].sort((a, b) => order.compare(a.path, b.path))) {
-      const markdown = await readFile(entry.file, 'utf8').catch(() => '')
+    const sorted = [...entries].sort((a, b) => order.compare(a.path, b.path))
+    const texts = await Promise.all(
+      sorted.map((entry) => gated(() => readFile(entry.file, 'utf8')).catch(() => '')),
+    )
+    const listed = new Set(sorted.map((entry) => entry.file))
+    for (const file of digests.keys()) if (!listed.has(file)) digests.delete(file)
+    for (const [i, entry] of sorted.entries()) {
+      const markdown = texts[i] ?? ''
       const fields = parseFrontmatter(markdown)
-      const digest = contentDigest(markdown)
+      const digest = digestOf(entry.file, markdown)
       out.push({
         path: entry.path,
         ...(multi ? { store: entry.store.id } : {}),

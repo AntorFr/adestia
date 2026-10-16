@@ -114,6 +114,12 @@ export function readMcpServer(
     return undefined
   }
 
+  const cliName = entry['cliName']
+  if (cliName !== undefined && (typeof cliName !== 'string' || !/^[a-zA-Z][\w./-]{0,127}$/.test(cliName))) {
+    issues.push(`${where}.cliName must be letters, digits, dashes, underscores, dots and slashes`)
+    return undefined
+  }
+
   const command = typeof entry['command'] === 'string' ? entry['command'] : undefined
   const url = typeof entry['url'] === 'string' ? entry['url'] : undefined
   if (!command && !url) {
@@ -221,6 +227,7 @@ export function readMcpServer(
 
   return {
     name,
+    ...(cliName ? { cliName } : {}),
     ...(identity ? { identity } : {}),
     ...(signIn ? { signIn } : {}),
     ...(background ? { background } : {}),
@@ -242,6 +249,9 @@ export function readMcpServers(raw: unknown, issues: string[]): readonly McpServ
 
   const servers: McpServerConfig[] = []
   const seen = new Set<string>()
+  // The key the CLI is handed, which is `cliName` when there is one. Two
+  // servers sharing it would overwrite each other in the CLI's own config.
+  const keys = new Set<string>()
 
   for (const [index, entry] of raw.entries()) {
     const server = readMcpServer(entry, `mcp.servers[${index}]`, issues)
@@ -251,7 +261,13 @@ export function readMcpServers(raw: unknown, issues: string[]): readonly McpServ
       issues.push(`mcp.servers[${index}]: "${server.name}" is declared twice`)
       continue
     }
+    const key = server.cliName ?? server.name
+    if (keys.has(key)) {
+      issues.push(`mcp.servers[${index}]: "${key}" is already the CLI key of another server`)
+      continue
+    }
     seen.add(server.name)
+    keys.add(key)
     servers.push(server)
   }
 
