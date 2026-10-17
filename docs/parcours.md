@@ -304,7 +304,7 @@ Needs: B-2, B-3, B-4, B-5, B-11, B-12
 
 - **Any functional change**: a new feature, a removed feature, a renamed configuration key,
   route or file, a changed data format, a changed MCP tool. A defect found on the way is
-  written down (`.agent/status.md` › Known defects) and left for its own feature.
+  written down (`ARCHITECTURE.md` › Known defects) and left for its own feature.
 - **The two security defects of instruction catalogues** found by the verification of
   `homelab-sdlc-maj-consignes` (a `ref` or `repo` beginning with `-` reaches git as an
   option; `copyMarkedTree` follows symbolic links): they belong to that feature's
