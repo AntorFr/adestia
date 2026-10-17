@@ -17,8 +17,18 @@
   → 200 sur `/`. Le build du shell est payé une fois, au premier passage de la suite
   des catalogues sans `dist-web`.
 - Reste / pièges : `ci.yml` ne lance toujours pas lint (B-12, hors tranche) ; le
-  lancement local sur moteur factice (B-2) n'existe pas encore ; si le build du shell
+  lancement local sur moteur factice (B-2) vit sous `bench/` (voir ci-dessous) ; si le build du shell
   dépasse la minute, passer à un `pretest`.
+
+**Banc sans docker (feature `adestia-qualite-banc`, assemblée, PR vers `epic/adestia-qualite`) :**
+`bench/launch.mjs` (moteur factice ou vrai Claude), `bench/seed/*` (base, empty,
+config-writable, config-readonly, oidc, plugins ; contrôle `bench/seed/check.mjs`),
+`bench/sweep.mjs` (124 captures E-1 à E-31, `--skin`). Vérifié dans le pod : `/api/health`
+répond `ok`, SIGTERM retire le répertoire de données, balayage 124/124 en ~2 min (2 à 4 min selon la machine), refus net
+de `--engine claude` sans jeton. **Pas vérifié** : un tour réel `--engine claude` (pas de
+jeton dans le pod d'intégration) — joué par Monsieur : il a révélé que le jeton factice rangé par un semis masquait celui de l'environnement (le pilote préfère la crédential rangée) ; le lanceur la retire désormais en `--engine claude`. Suite entière verte (2013 vitest) une fois l'epic fusionnée. Le balayage et le lanceur lisent
+Playwright dans `npm root -g` ; `docker`/`bench/run.sh` inchangés. Reste à l'epic : les
+corrections visuelles (charte, chat, pages, plugins) et le support de test (tests).
 
 **État :** `main` est à **v0.87.0** (entrées v0.69 à v0.87 ci-dessous, pas dans
 l'ordre) ; la **v0.80.0** était taguée et **déployée sur les trois corps le

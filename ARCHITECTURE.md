@@ -45,7 +45,9 @@ Outside `packages/`:
 - `skills/` — the product's authoring contracts (`plugin-author`, `skin-author`,
   `page-author`, `persona-author`, `schedule-author`, `collections`), delivered to the agent.
 - `bench/` — screenshot bench: `run.sh` builds the image and drives Chromium in docker,
-  `bench.mjs` and `scenarios/`; `live-codex.sh` boots a real Codex engine.
+  `bench.mjs` and `scenarios/`; `live-codex.sh` boots a real Codex engine. Without docker:
+  `launch.mjs` (fake or real engine), `fake-engine.mjs`, `seed/`, `oidc-stub.mjs` and `sweep.mjs`
+  (see the AD-2 and AD-3 detail below).
 - `spikes/` — validation record (editor, concurrency, copilot-cli, codex-cli, esm-runtime,
   shell-tools-transport); not linted, not shipped.
 
@@ -194,7 +196,7 @@ and every turn — chat, scheduled, delegated, callback wake — goes through th
   checks every bundled plugin's French entries. Skins have no words through the locale today.
 - **Tests** — `vitest.config.ts` runs `packages/*/test`, aliasing every `@antorfr/*` to its
   `src/index.ts`; `npm run test:plugins` runs `node --test` over the plugins; `bench/` is the
-  visual check (docker). CI (`.github/workflows/ci.yml`) runs typecheck, tests, the build, a start of the built server and a docker image build (not lint).
+  visual check (`bench/run.sh` with docker; `bench/launch.mjs` and `bench/sweep.mjs` without). CI (`.github/workflows/ci.yml`) runs typecheck, tests, the build, a start of the built server and a docker image build (not lint).
 
 ## Decisions of adestia-qualite
 
@@ -202,14 +204,14 @@ and every turn — chat, scheduled, delegated, callback wake — goes through th
 Every refactoring keeps routes, API shapes, configuration keys, file formats
 (`docs/donnees.md`) and MCP tools. The existing suite is the witness; a refactoring with no
 test around it gets a characterization test first. A defect found on the way is written in
-`.agent/status.md` › Known defects, not fixed.
+this file's « Known defects », not fixed.
 *Why*: a quality pass is reviewable only if its diff means "same thing, written better".
 *Rejected*: "fix while we're there" — it mixes a behaviour change into a diff nobody reviews
 as one. *Reversed if*: a defect blocks a refactoring outright; it then becomes its own feature.
 
 ### AD-2 — A launcher on the fake engine, outside the product
 One term: **the fake engine**, a scripted fake driver handed to the server through
-`start({ driverFactory })`. **TARGET** (B-2, not built): a script under `bench/` starts the server on the fake engine
+`start({ driverFactory })`. Built (B-2): a script under `bench/` (`bench/launch.mjs`) starts the server on the fake engine
 with a seeded workspace and data directory; the real-Claude mode is the plain binary with
 `CLAUDE_CODE_OAUTH_TOKEN` in the environment.
 *Rejected*: a `fake` driver id in the configuration (a product surface added for tests);
@@ -223,6 +225,50 @@ The bench's Playwright is resolved from the environment (the runner image ships 
 *Rejected*: Playwright as a devDependency — its browser revision would not match the one
 installed, and it downloads browsers on every dev machine. *Reversed if*: the runner image
 stops shipping Playwright.
+
+#### Detail of AD-2 and AD-3 — the bench launcher (tranche `adestia-qualite-banc`)
+
+- **Launcher.** `node bench/launch.mjs [--engine fake|claude] [--skin <id>] [--locale en|fr]
+  [--seed <name>] [--port <n>] [--data <dir>]`. It needs a built server (`npm run build`) and
+  prints `listening on <url>` once `/api/health` answers `ok`; it runs until SIGTERM and removes
+  its throwaway workspace and data directory (under `os.tmpdir()`, unless `--data` is given).
+  `--engine fake` calls `start({ configPath, cwd, driverFactory })` with the fake engine;
+  `--engine claude` starts the plain binary (`packages/server/bin/adestia.js`) with
+  `CLAUDE_CODE_OAUTH_TOKEN` taken from the environment, and refuses to start without it. It also
+  deletes the placeholder credential the seed stored (`secrets/claude-code.token`): the Claude
+  driver prefers a stored credential to the environment.
+  The `oidc` seed requires the fake engine: the launcher refuses it with real Claude before
+  loading the seed, whose local identity provider disables TLS certificate verification.
+  Nothing is added to the product: no configuration key, no driver id (AD-1, AD-2).
+- **Fake engine.** `bench/fake-engine.mjs` is a `Driver` (`packages/drivers/src/contract.ts`)
+  whose `runTurn` answers by script: the last user message is matched against an ordered list
+  of `{ when, events }`, the events being `TurnEvent`s (text deltas, tool use and result,
+  permission request, error); no match echoes the message. Deterministic: no clock, no random
+  id, no delay unless a script asks for one. The scripts that seed the chat states of
+  `docs/ecrans.md` live beside the seeds.
+- **Seeds.** `bench/seed/<name>.mjs` default-exports `async ({ workspace, dataDir, base, port, onClose }) => config`:
+  it writes pages, thread files, plugin data and `.mcp` entries the way the product itself
+  stores them (`docs/donnees.md`), and returns the YAML of the instance configuration. Seeds are
+  data written to disk, never a route added or a mock of a module. One seed per instance
+  configuration the screens need (`docs/ecrans.md`, "Seeded data for captures"): `base`,
+  `empty`, `config-writable`, `config-readonly`, `oidc` (with a stub identity provider,
+  `bench/oidc-stub.mjs`, so E-1's sign-in and refused gates are real), and `plugins`.
+  A seed may also export `scripts` (fake-engine answers, `bench/seed/_scripts.mjs`), `engine`
+  (MCP health and credential state the fake engine reports), `config` (`file: writable |
+  readonly | none` — `none` is answered 404 on `/api/settings` by the launcher, since `start()`
+  always has a `configPath`) and `ready({ url })` (the turns that must be running). The seeds
+  are checked by `bench/seed/check.mjs`, which names each measure in default.
+- **Sweep.** `node bench/sweep.mjs [--skin <id>] [--locale en|fr] [--out <dir>] [--only E-n]`
+  starts, for each seed it needs, the launcher as a child process, and drives Chromium from the
+  environment: Playwright is imported from the global npm root (`npm root -g`), never from the
+  repository (AD-3). It captures each screen at 1440×900 and at a 390×844 touch viewport, in
+  `light` and `dark`, to `<out>/<skin>/<E-n>-<name>-<theme>-<viewport>.png` (default `<out>` is
+  `bench/shots-sweep`, ignored by git). A screen table in the script lists, per `E-n`, the
+  route, the gesture that opens it and the **selector that proves it is that screen**; a capture
+  whose selector is absent, or that shows `.adestia-fatal` or a loading state, fails the sweep
+  and names the screen. The sweep exits non-zero on any failure and prints a count.
+- **docker.** `bench/run.sh` and `bench/bench.mjs` are untouched except that the Playwright
+  import falls back from `/usr/lib/node_modules` to the global root. Scenarios keep working.
 
 ### AD-4 — The charter extends the inherited livery
 The base palette is the one inherited in `tokens.css` (decision of 2026-08-24). Failing
@@ -348,8 +394,8 @@ conditions and gains a way to meet them:
 - Playwright is found by a plain `require` (the packages' `node_modules`, `NODE_PATH`), then
   through `npm root -g` (the pod keeps it in `/usr/lib/node_modules`); the hard-coded
   `/usr/lib` and `/usr/local/lib` are gone, so a `PATH` and `NODE_PATH` that hide it do hide it.
-  The bench (`bench/bench.mjs`, still a hard-coded `/usr/lib` import today) is outside this
-  tranche; its own tranche resolves Playwright, and the two stay separate copies: the bench is
+  The bench (`bench/bench.mjs`, `bench/sweep.mjs`) resolves it the same way (`/usr/lib/node_modules`, then `npm root -g`)
+  in its own code, and the two stay separate copies: the bench is
   `.mjs` outside the packages.
 - A missing built shell is no longer a reason to skip when Playwright is there: a `beforeAll`
   runs `npm run build:web --workspace @antorfr/adestia-web` once (generous timeout) when
