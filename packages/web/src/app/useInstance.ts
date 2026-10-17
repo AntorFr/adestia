@@ -109,7 +109,13 @@ export function useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef
         if (cancelled) return
         setInstance(info)
 
-        const dressed = await loadSkin(info.skin, browserSkinEnvironment())
+        // The skin speaks the instance's language, so the locale is resolved
+        // before the module is asked for its words.
+        const pluginLocale = resolveLocale(
+          info.locale,
+          typeof navigator === 'undefined' ? undefined : navigator.language,
+        )
+        const dressed = await loadSkin(info.skin, browserSkinEnvironment(), pluginLocale)
         if (!cancelled) {
           setSkin(dressed.skin)
           setSkinScheme(
@@ -151,10 +157,6 @@ export function useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef
         // would hold one that is not wired yet.
         // The plugins are loaded once the instance has answered, so this is
         // the resolved locale rather than a guess.
-        const pluginLocale = resolveLocale(
-          info.locale,
-          typeof navigator === 'undefined' ? undefined : navigator.language,
-        )
         const environment = browserEnvironment(
           (prompt) => askRef.current?.(prompt),
           (text) => composeRef.current?.(text),

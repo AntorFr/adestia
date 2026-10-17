@@ -13,9 +13,10 @@
  *
  * WHO OWNS WHAT: the shell translates the shell. A plugin ships its own
  * words the same way it ships its own skills, and is handed the active
- * locale to do it. A SKIN never translates — a livery is a look, not a
- * language, and letting it carry words would mean the interface changed
- * language when you changed its colours.
+ * locale to do it. A SKIN does not translate the shell: it says its own
+ * persona's few words (greetings, placeholder), in the language the shell
+ * hands its factory, so the interface never changes language when you change
+ * its colours.
  *
  * Where that line is not enough, and what `plugins/words.ts` answers: some of
  * a plugin's words are DECLARED, not said — a field's label, a tile's name, a
@@ -379,9 +380,9 @@ const FR: Readonly<Record<string, string>> = {
   'Turn interrupted.': 'Tour interrompu.',
   // Signatures asked for at the hub's façade
   'Signature requested': 'Signature demandée',
-  'A held action waits for your signature.': 'Une action attend ta signature.',
+  'A held action waits for your signature.': 'Une action attend votre signature.',
   'A standing authorisation asks for your signature.':
-    'Une autorisation à l’avance attend ta signature.',
+    'Une autorisation à l’avance attend votre signature.',
   until: 'jusqu’à',
   'Action signed — the agent resumes it.': 'Action signée — l’agent la reprend.',
   'Authorisation signed.': 'Autorisation signée.',

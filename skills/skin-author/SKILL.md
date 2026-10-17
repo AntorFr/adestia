@@ -159,7 +159,10 @@ unless the skin genuinely has two looks.
 ```js
 // skin.js — every field optional; absent means the shell's own behaviour.
 // STRINGS ONLY: anything else is rejected and reported, by design.
-export default function skin(api) {
+// The shell passes `{ locale: 'en' | 'fr' }` — the instance's language — so
+// the skin can say its words in it. The argument is optional to use: a skin
+// that ignores it loads and shows its own words as before.
+export default function skin({ locale } = {}) {
   return {
     brand: 'Atelier',
     title: 'Atelier — Adestia',
