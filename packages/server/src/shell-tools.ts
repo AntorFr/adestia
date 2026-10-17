@@ -36,7 +36,8 @@ import { join } from 'node:path'
 import type { ShellToolOutcome, ShellToolSpec, ShellToolsHandle } from '@antorfr/adestia-drivers'
 
 import type { ConversationStore } from './conversations.js'
-import { parseFrontmatter, titleOf } from './pages.js'
+import { parseFrontmatter } from './frontmatter.js'
+import { titleOf } from './pages.js'
 import { listAll, type Store } from './stores.js'
 
 /** A failure worded for the AGENT — anything else is logged, not forwarded. */
