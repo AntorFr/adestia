@@ -26,9 +26,9 @@ function resolve(token: string, theme: number, seen: string[] = []): string {
   let value = tokens[token]
   if (!value) throw new Error(`Undefined token: ${token}`)
   const themed = /^light-dark\((#[\da-f]+),\s*(#[\da-f]+)\)$/i.exec(value)
-  if (themed) value = themed[theme + 1]
+  if (themed) value = themed[theme + 1]!
   const alias = /^var\((--[\w-]+)\)$/.exec(value)
-  if (alias) return resolve(alias[1], theme, [...seen, token])
+  if (alias) return resolve(alias[1]!, theme, [...seen, token])
   if (!/^#[\da-f]{6}$/i.test(value)) throw new Error(`Unsupported colour: ${token} = ${value}`)
   return value
 }
@@ -36,15 +36,16 @@ function resolve(token: string, theme: number, seen: string[] = []): string {
 function luminance(hex: string): number {
   const channels = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
     .map((c) => c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)
-  return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722
+  return channels[0]! * 0.2126 + channels[1]! * 0.7152 + channels[2]! * 0.0722
 }
 
 it('measures the declared base palette pairs in both schemes and prints the charter table', () => {
   const rows = pairs.flatMap(([fg, bg, threshold]) => ['light', 'dark'].map((theme, index) => {
     const foreground = resolve(fg, index)
     const background = resolve(bg, index)
-    const [low, high] = [luminance(foreground), luminance(background)].sort((a, b) => a - b)
-    const ratio = (high + 0.05) / (low + 0.05)
+    const a = luminance(foreground)
+    const b = luminance(background)
+    const ratio = (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05)
     return { fg, bg, theme, foreground, background, ratio, threshold }
   }))
   const table = [
