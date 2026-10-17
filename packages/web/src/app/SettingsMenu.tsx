@@ -25,13 +25,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 import { Settings } from './Settings.js'
-
-/** The theme choices, in the order they are offered. `''` follows the device. */
-const THEMES = [
-  { value: '', label: 'System' },
-  { value: 'light', label: 'Light' },
-  { value: 'dark', label: 'Dark' },
-] as const
+import { Button, Popover, ThemeSwitch } from './ui/index.js'
 
 export interface SettingsMenuProps {
   /** The theme in force: `''` follows the device, `light`/`dark` override it. */
@@ -46,6 +40,7 @@ export interface SettingsMenuProps {
   readonly version?: string | undefined
   readonly fetchImpl?: typeof fetch
   readonly t?: (key: string) => string
+  readonly locale?: string
 }
 
 export function SettingsMenu({
@@ -55,115 +50,75 @@ export function SettingsMenu({
   version,
   fetchImpl = fetch,
   t = (key) => key,
+  locale,
 }: SettingsMenuProps) {
   const [open, setOpen] = useState(false)
   const host = useRef<HTMLDivElement>(null)
 
   /**
-   * Closing, by the two gestures every menu owes a person.
-   *
-   * Bound only while open, so a shell with the menu shut carries no document
-   * listeners at all. `pointerdown` rather than `click`: a click that starts
-   * inside the panel and ends outside it — a drag on the code field, say —
-   * would close the menu mid-gesture on `click`.
+   * Escape and a press outside are the popover's (it also hands focus back to
+   * the cog). What stays here is the screen changing underneath: nothing in
+   * the menu navigates, so a `hashchange` is a Back, a bookmark or a link
+   * elsewhere — and a panel left hovering over a screen its owner never opened
+   * it on reads as stuck. Bound only while open.
    */
   useEffect(() => {
     if (!open) return undefined
-    const away = (event: PointerEvent) => {
-      if (!host.current?.contains(event.target as Node)) setOpen(false)
-    }
-    const escape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false)
-    }
-    // And when the screen underneath changes. Nothing in here navigates, so
-    // this only ever fires on a Back, a bookmark or a link elsewhere — and a
-    // menu left hovering over a screen its owner never opened it on reads as
-    // a panel that is stuck. Photographed once, on a phone, where the panel
-    // covers most of what it is floating over.
     const moved = () => setOpen(false)
-    document.addEventListener('pointerdown', away)
-    document.addEventListener('keydown', escape)
     window.addEventListener('hashchange', moved)
-    return () => {
-      document.removeEventListener('pointerdown', away)
-      document.removeEventListener('keydown', escape)
-      window.removeEventListener('hashchange', moved)
-    }
+    return () => window.removeEventListener('hashchange', moved)
   }, [open])
 
   return (
     <div className="adestia-cog" ref={host}>
-      <button
-        type="button"
-        className="adestia-ib"
-        onClick={() => setOpen(!open)}
+      <Button
+        icon="settings"
         aria-label={t('Settings')}
         aria-expanded={open}
         aria-haspopup="menu"
-      >
-        ⚙
-      </button>
+        onClick={() => setOpen(!open)}
+      />
 
-      {open && (
-        <div className="adestia-cog__panel" role="dialog" aria-label={t('Settings')}>
-          <section className="adestia-cog__block">
-            <h3 className="adestia-cog__title">{t('Tokens')}</h3>
-            {/* Mounted with the menu, so an instance nobody opens the cog on
-                never asks the driver for its credential state at all. */}
-            <Settings fetchImpl={fetchImpl} t={t} />
-          </section>
+      <Popover anchor={host} open={open} onClose={() => setOpen(false)} label={t('Settings')} className="adestia-cog__panel">
+        <section className="adestia-cog__block">
+          <h3 className="adestia-cog__title">{t('Tokens')}</h3>
+          {/* Mounted with the menu, so an instance nobody opens the cog on
+              never asks the driver for its credential state at all. */}
+          <Settings fetchImpl={fetchImpl} t={t} {...(locale ? { locale } : {})} />
+        </section>
 
-          <section className="adestia-cog__block">
-            <h3 className="adestia-cog__title">{t('Appearance')}</h3>
-            {/* Named choices rather than the cycling glyph this menu replaced:
-                three buttons SAY which one is in force, where a glyph that
-                changes nothing visible until you click it can only be
-                inferred. */}
-            <div className="adestia-choices" role="radiogroup" aria-label={t('Appearance')}>
-              {THEMES.map((choice) => (
-                <button
-                  key={choice.value || 'system'}
-                  type="button"
-                  role="radio"
-                  aria-checked={theme === choice.value}
-                  className="adestia-choices__choice"
-                  onClick={() => onTheme(choice.value)}
-                >
-                  {t(choice.label)}
-                </button>
-              ))}
-            </div>
-            <p className="adestia-cog__note">
-              {t('Kept in this browser, like the model choice and the rail width.')}
-            </p>
-          </section>
-
-          {signedIn !== undefined && (
-            <section className="adestia-cog__block">
-              <form method="post" action="/auth/logout">
-                <button type="submit" className="adestia-cog__signout">
-                  {t('Sign out')}
-                  {signedIn ? <span className="adestia-cog__who">{signedIn}</span> : null}
-                </button>
-              </form>
-            </section>
-          )}
-
-          {/* Which build is on screen — the one thing you come looking for
-              when a deployment may or may not have landed, and the one thing
-              no other surface says. Here rather than on the canvas header
-              beside the driver: that line is diagnostics about the ENGINE,
-              and it is the first thing a phone drops. The cog is reachable
-              from either screen at any width.
-
-              The number is omitted, never faked: a checkout has no release to
-              name, and the product's name alone reads as a name where
-              "Adestia unknown" reads as a broken field. */}
-          <p className="adestia-cog__build">
-            Adestia{version ? <span className="adestia-cog__version"> {version}</span> : null}
+        <section className="adestia-cog__block">
+          <h3 className="adestia-cog__title">{t('Appearance')}</h3>
+          {/* Three icons, each named: the chosen one is told by its plate and
+              its accent ink, and by aria-checked — not by colour alone. */}
+          <ThemeSwitch value={theme} onChange={onTheme} t={t} />
+          <p className="adestia-cog__note">
+            {t('Kept in this browser, like the model choice and the rail width.')}
           </p>
-        </div>
-      )}
+        </section>
+
+        {signedIn !== undefined && (
+          <section className="adestia-cog__block">
+            <form method="post" action="/auth/logout">
+              <Button type="submit" variant="ghost" icon="log-out" className="adestia-cog__signout">
+                {t('Sign out')}
+                {signedIn ? <span className="adestia-cog__who">{signedIn}</span> : null}
+              </Button>
+            </form>
+          </section>
+        )}
+
+        {/* Which build is on screen — the one thing you come looking for when
+            a deployment may or may not have landed. Here rather than on the
+            canvas header: that line is diagnostics about the ENGINE, and it is
+            the first thing a phone drops.
+
+            The number is omitted, never faked: a checkout has no release to
+            name, and "Adestia unknown" reads as a broken field. */}
+        <p className="adestia-cog__build">
+          Adestia{version ? <span className="adestia-cog__version"> {version}</span> : null}
+        </p>
+      </Popover>
     </div>
   )
 }

@@ -26,7 +26,7 @@ import {
   type SettingChange,
 } from '../settings-file.js'
 
-export interface SettingsDependencies {
+interface SettingsDependencies {
   /** The config file this instance booted from. */
   readonly configPath: string
 }

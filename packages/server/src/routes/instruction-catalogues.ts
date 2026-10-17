@@ -19,7 +19,6 @@ import { join } from 'node:path'
 import type { FastifyInstance } from 'fastify'
 import { type Driver, instructionZones } from '@antorfr/adestia-drivers'
 
-import type { ExtensionSource } from '../config/types.js'
 import {
   type CatalogueItem,
   importCatalogueItem,
@@ -31,10 +30,13 @@ import type {
   InstructionCatalogue,
   InstructionCataloguesStore,
 } from '../instruction-catalogues-store.js'
-import { refreshCatalogue } from '../instruction-catalogues-refresh.js'
-import { fetchSources } from '../sources.js'
+import {
+  catalogueClone,
+  fetchCatalogueClone,
+  refreshCatalogue,
+} from '../instruction-catalogues-refresh.js'
 
-export interface CatalogueRoutesOptions {
+interface CatalogueRoutesOptions {
   readonly driver: Driver
   readonly workspaceRoot: string
   readonly dataDir: string
@@ -69,23 +71,7 @@ export function registerInstructionCatalogues(
   app: FastifyInstance,
   { driver, workspaceRoot, dataDir, store, log = () => undefined }: CatalogueRoutesOptions,
 ): void {
-  const cacheDir = join(dataDir, 'catalogues')
-  const cloneOf = (id: string): string => join(cacheDir, id)
-
-  const sourceOf = (catalogue: InstructionCatalogue): ExtensionSource => ({
-    kind: 'git',
-    name: catalogue.id,
-    repo: catalogue.repo,
-    ref: catalogue.ref,
-    ...(catalogue.token !== undefined ? { token: catalogue.token } : {}),
-  })
-
-  /** Fetches the clone; the reason it failed when nothing usable came of it. */
-  async function fetchClone(catalogue: InstructionCatalogue): Promise<string | undefined> {
-    const { roots, problems } = await fetchSources([sourceOf(catalogue)], cacheDir, log)
-    if (roots.length === 0) return problems[0]?.reason ?? 'could not be fetched'
-    return undefined
-  }
+  const cloneOf = (id: string): string => catalogueClone(dataDir, id)
 
   const isCloned = (id: string): Promise<boolean> =>
     stat(join(cloneOf(id), '.git')).then(
@@ -163,7 +149,12 @@ export function registerInstructionCatalogues(
     const catalogue = (await store.list()).find((candidate) => candidate.id === id)
     if (!catalogue) return { status: 404, error: 'no such catalogue' }
     if (!(await isCloned(id))) {
-      const failure = await fetchClone(catalogue)
+      const failure = await fetchCatalogueClone(catalogue, {
+        driver,
+        workspaceRoot,
+        dataDir,
+        log,
+      })
       if (failure !== undefined) return { status: 502, error: failure }
     }
     return { catalogue, items: await scanCatalogue(cloneOf(id)) }
@@ -178,7 +169,7 @@ export function registerInstructionCatalogues(
         const imported = found.catalogue.imports.find((entry) => entry.itemPath === item.itemPath)
         return {
           ...item,
-          // Greyed, not hidden — see technique.md: the catalogue offers it
+          // Greyed, not hidden — see docs/donnees.md: the catalogue offers it
           // even if this engine cannot receive it.
           importable: zones.some((zone) => zone.kind === item.kind),
           imported: imported !== undefined,

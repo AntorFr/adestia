@@ -1,7 +1,7 @@
 /**
  * Ensemble test for feature `adestia-instance-url`, written from its own
  * conception — `features/adestia-instance-url/fonctionnelle.md`, and, since
- * this feature has no screen, `technique.md`'s contracts (the config field,
+ * this feature has no screen, `ARCHITECTURE.md`'s contracts (the config field,
  * its validation, and the `this-instance` contract) as the only point of
  * entry — never from the diff that implemented it.
  *
@@ -11,19 +11,21 @@
  * same one the CLI and the Docker image build). The only thing never spawned
  * is the agent CLI subprocess, because no test here runs a turn.
  */
-import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { start, type StartedInstance } from '../src/start.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
+
+afterEach(cleanTmp)
 
 let root: string
 let started: StartedInstance | undefined
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'adestia-instance-url-'))
+  root = await tmpDir('adestia-instance-url-')
 })
 
 afterEach(async () => {
@@ -67,7 +69,7 @@ describe('B-1 — the operator declares the address, the agent can state it', ()
   })
 
   it('keeps a declared path, normalising only a trailing slash', async () => {
-    // technique.md: a path under an ingress prefix is allowed; a trailing
+    // ARCHITECTURE.md: a path under an ingress prefix is allowed; a trailing
     // slash is stripped "pour un affichage stable" — tranché le 2026-10-01.
     await boot('url: https://chronique.example.org/jeux/\n')
     const contract = await readContract()

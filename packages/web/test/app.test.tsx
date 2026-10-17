@@ -352,12 +352,10 @@ describe('boot', () => {
     // In the menu rather than on the header strip: signing out is a
     // session-sized switch, and the strip is for where you ARE.
     const body = { ...INSTANCE, auth: { mode: 'oidc' } }
-    const { container } = render(<App fetchImpl={apiFetch({ body })} />)
-    await waitFor(() =>
-      expect(container.querySelector('.adestia-ib[aria-label="Settings"]')).toBeTruthy(),
-    )
+    render(<App fetchImpl={apiFetch({ body })} />)
+    await screen.findByLabelText('Settings')
     expect(screen.queryByText('Sign out')).toBeNull()
-    fireEvent.click(container.querySelector('.adestia-ib[aria-label="Settings"]') as HTMLElement)
+    fireEvent.click(screen.getByLabelText('Settings'))
     await waitFor(() => expect(screen.getByText('Sign out')).toBeTruthy())
   })
 
@@ -608,20 +606,20 @@ describe('settings, as an app of the shell', () => {
     // What is behind it is settled without leaving the page you are on: the
     // token, the theme, signing out. Sending somebody to another screen to
     // flip one is what this move undid.
-    const container = await shell()
-    const gear = container.querySelector('.adestia-ib[aria-label="Settings"]') as HTMLElement
+    await shell()
+    const gear = screen.getByLabelText('Settings')
     await act(async () => {
       fireEvent.click(gear)
     })
     expect(location.hash).toBe('')
-    expect(container.querySelector('.adestia-cog__panel')).toBeTruthy()
+    expect(document.querySelector('.adestia-cog__panel')).toBeTruthy()
     expect(screen.getByRole('radio', { name: 'System' })).toBeTruthy()
 
     // And it closes on Escape, like every menu owes a person.
     await act(async () => {
       fireEvent.keyDown(document, { key: 'Escape' })
     })
-    expect(container.querySelector('.adestia-cog__panel')).toBeNull()
+    expect(document.querySelector('.adestia-cog__panel')).toBeNull()
     location.hash = ''
   })
 
@@ -630,13 +628,13 @@ describe('settings, as an app of the shell', () => {
     // or a link elsewhere — and a panel left over a screen its owner never
     // opened it on reads as one that is stuck. Seen on a phone, where it
     // covers most of what it floats over.
-    const container = await shell()
+    await shell()
     await act(async () => {
-      fireEvent.click(container.querySelector('.adestia-ib[aria-label="Settings"]') as HTMLElement)
+      fireEvent.click(screen.getByLabelText('Settings'))
     })
-    expect(container.querySelector('.adestia-cog__panel')).toBeTruthy()
+    expect(document.querySelector('.adestia-cog__panel')).toBeTruthy()
     await go('#/settings')
-    expect(container.querySelector('.adestia-cog__panel')).toBeNull()
+    expect(document.querySelector('.adestia-cog__panel')).toBeNull()
     location.hash = ''
   })
 

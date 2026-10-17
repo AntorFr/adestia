@@ -1,19 +1,56 @@
-export * from './contract.js'
+export {
+  instructionZones,
+  type Capability,
+  type DriverDescriptor,
+  type AuthState,
+  type AuthSource,
+  type AuthStatus,
+  type AuthMode,
+  type AuthPrompt,
+  type McpServer,
+  type ModelInfo,
+  type ShellToolParam,
+  type ShellToolSpec,
+  type ShellToolOutcome,
+  type ShellToolsHandle,
+  type TurnUsage,
+  type QuotaWindow,
+  type QuotaReport,
+  type TurnEvent,
+  type TurnRequest,
+  type InstructionKind,
+  type InstructionZone,
+  type Driver,
+  type AuthManagement,
+  type ModelSelection,
+  type McpServerHealth,
+  type McpStatus,
+} from './contract.js'
 export * from './asks.js'
-export * from './signatures.js'
-export * from './shell-tools-config.js'
+export type { SignatureRequest } from './signatures.js'
+export { SHELL_TOOLS_SERVER_NAME } from './shell-tools-config.js'
 
-export * from './conformance.js'
-export * from './claude-code/index.js'
+export type { ConformanceIssue } from './conformance.js'
+export {
+  type ClaudeCodeOptions,
+  type ArmingFlow,
+  ClaudeCodeDriver,
+  type McpServerConfig,
+  type ContentBlock,
+  type ModelUsageEntry,
+  type SdkMessage,
+  type RawMessage,
+  type QueryParams,
+  type QueryHandle,
+  type QueryFn,
+  createOAuthFlow,
+  type Pkce,
+  type ExchangeOptions,
+  type ArmedToken,
+  type OAuthFlowOptions,
+} from './claude-code/index.js'
 
-/**
- * Namespaced, because both drivers legitimately define `TOKEN_ENV_VAR` and
- * `looksLikeToken` — one for a Claude subscription token, one for a GitHub
- * fine-grained one. Flattening them would force a rename that hides which
- * engine each belongs to, which is exactly the knowledge worth keeping.
- */
-export * as copilot from './copilot-cli/index.js'
 export { CopilotDriver, type CopilotDriverOptions } from './copilot-cli/driver.js'
-export * as codex from './codex-cli/index.js'
+
 export { CodexDriver, type CodexDriverOptions } from './codex-cli/driver.js'
 export * from './mcp-oauth.js'

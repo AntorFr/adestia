@@ -7,16 +7,18 @@
  * can carry a token for a private repository.
  */
 
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
-import { mkdtemp, readFile, readdir, stat, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { readFile, readdir, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import { InstructionCataloguesStore, type InstructionCatalogue } from '../src/instruction-catalogues-store.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
+
+afterEach(cleanTmp)
 
 async function dataDir() {
-  return mkdtemp(join(tmpdir(), 'adestia-catalogues-'))
+  return tmpDir('adestia-catalogues-')
 }
 
 const CATALOGUE: InstructionCatalogue = {

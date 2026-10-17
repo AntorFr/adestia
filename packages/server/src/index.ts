@@ -1,21 +1,53 @@
-export * from './app.js'
-export * from './auth.js'
-export * from './config.js'
-export * from './extensions.js'
-export * from './start.js'
-export * from './static.js'
-export * from './pages.js'
-export * from './files.js'
-export * from './conversations.js'
-export * from './secrets.js'
-export * from './oidc.js'
-export * from './oidc-routes.js'
-export * from './skills.js'
-export * from './schedule.js'
-export * from './clock.js'
-export * from './attachments.js'
-export * from './screen.js'
-export * from './mcp-in.js'
-export * from './mcp-routes.js'
-export * from './mcp-store.js'
-export * from './plugin-host.js'
+export type { SkinPayload, AppDependencies } from './app.js'
+export type { Identity, AuthOutcome, RequestLike } from './auth.js'
+export type {
+  AuthMode,
+  OidcConfig,
+  ProxyAuthConfig,
+  AuthConfig,
+  WorkspaceConfig,
+  WatchConfig,
+  DriverConfig,
+  ExtensionSource,
+  ExtensionsConfig,
+  PermissionsConfig,
+  ScheduleConfig,
+  AttachmentsConfig,
+  McpServerConfig,
+  McpInConfig,
+  SignaturesConfig,
+  AdestiaConfig,
+} from './config.js'
+export type {
+  McpServer,
+  DiscoveredPlugin,
+  DiscoveredSkin,
+  DiscoveryProblem,
+  PluginDiscovery,
+  ActivationConfig,
+  PluginPayload,
+} from './extensions.js'
+export type { StartOptions, StartedInstance } from './start.js'
+export type { StaticOptions } from './static.js'
+export type { PageInfo, PageContent, PagesOptions } from './pages.js'
+export type { WorkspaceFile, FileKind, FilesOptions } from './files.js'
+export type { Conversation, ConversationMeta, StoredMessage } from './conversations.js'
+export type { StoredSecret, ArmingFlow } from './secrets.js'
+export type { LoginState, SessionPayload } from './oidc.js'
+
+export type { SkillAsset, SkillFile, AgentFile } from './skills.js'
+export type { ScheduledNote, ScheduleState, MissionPaths } from './schedule.js'
+export type { ClockOptions } from './clock.js'
+export type { AttachmentLimits, StoredAttachment, AttachmentOwner } from './attachments.js'
+export type { ScreenView } from './screen.js'
+export type {
+  JobState,
+  Job,
+  McpConfig,
+  JobSeed,
+  JsonRpcRequest,
+  McpTool,
+} from './mcp-in.js'
+export type { DelegationPort, McpDependencies } from './mcp-routes.js'
+export type { McpServerView, McpSource } from './mcp-store.js'
+export type { HostProblem, PluginApiContext } from './plugin-host.js'

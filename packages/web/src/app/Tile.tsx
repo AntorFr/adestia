@@ -16,6 +16,8 @@
 import type { CSSProperties } from 'react'
 
 import { glyphOf } from './glyphs.js'
+import { Icon } from './Icon.js'
+import type { IconName } from './icons.js'
 import type { TileInfo } from '../plugins/contract.js'
 
 /**
@@ -26,16 +28,23 @@ import type { TileInfo } from '../plugins/contract.js'
  * here. Inventing one would mean a palette the skin cannot reach.
  */
 function hueStyle(hue?: string): Record<string, string> {
-  return hue ? { '--tile-color': `var(--adestia-hue-${hue}, var(--accent))` } : {}
+  return hue ? {
+    '--tile-color': `var(--adestia-hue-${hue}, var(--accent))`,
+    '--tile-color-text': `var(--adestia-hue-${hue}-text, var(--adestia-hue-${hue}, var(--accent-text)))`,
+  } : {}
 }
 
 export function Tile(props: {
-  readonly icon: string
+  /** The mark, as text or emoji — a manifest's. The shell's own tiles name an `iconName` instead. */
+  readonly icon?: string
+  /** One of the product's Lucide icons (docs/charte.md § 2, Icons); wins over `icon` and `glyph`. */
+  readonly iconName?: IconName
   /** `ic:` name resolved against the shell's closed glyph set. */
   readonly glyph?: string
   readonly label: string
   readonly subtitle?: string
-  readonly chips?: TileInfo['chips']
+  /** A chip may carry a Lucide icon: a status is never told by its tint alone. */
+  readonly chips?: readonly (NonNullable<TileInfo['chips']>[number] & { readonly icon?: IconName })[]
   readonly hue?: string
   /**
    * The store everything behind this tile comes from — its mark, exactly the
@@ -111,7 +120,11 @@ export function Tile(props: {
       >
         {/* The markup comes from the shell's own closed set, never from a
             manifest — which is what makes the injection safe. */}
-        {drawn ? (
+        {props.iconName ? (
+          <span className="adestia-tile__icon" aria-hidden="true">
+            <Icon name={props.iconName} />
+          </span>
+        ) : drawn ? (
           <span
             className="adestia-tile__icon"
             aria-hidden="true"
@@ -152,6 +165,7 @@ export function Tile(props: {
               key={chip.text}
               className={chip.hot ? 'adestia-chip adestia-chip--hot' : 'adestia-chip'}
             >
+              {chip.icon ? <Icon name={chip.icon} /> : null}
               {chip.text}
             </span>
           ))}

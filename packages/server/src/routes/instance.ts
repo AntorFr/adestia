@@ -19,7 +19,7 @@ export interface SkinPayload {
   readonly scheme?: 'light' | 'dark' | 'auto'
 }
 
-export interface InstanceDependencies {
+interface InstanceDependencies {
   readonly config: AdestiaConfig
   readonly driver: Driver
   readonly descriptor: DriverDescriptor

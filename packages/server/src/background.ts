@@ -27,7 +27,7 @@
 import type { McpServerConfig } from './config.js'
 
 /** What the rebound store answers the background minter. */
-export interface ReboundKeys {
+interface ReboundKeys {
   subjects(): Promise<readonly string[]>
   accessToken(subject: string): Promise<string | undefined>
 }

@@ -53,7 +53,7 @@ export interface WebManifest {
   readonly [key: string]: unknown
 }
 
-export interface ManifestBaseOptions {
+interface ManifestBaseOptions {
   /** The instance's language, when its operator set one. */
   readonly locale?: string | undefined
 }
@@ -94,7 +94,7 @@ export function baseManifest(options: ManifestBaseOptions = {}): WebManifest {
   }
 }
 
-export interface MergedManifest {
+interface MergedManifest {
   readonly manifest: WebManifest
   /** Fields the fragment declared that this contract does not carry. */
   readonly ignored: readonly string[]
