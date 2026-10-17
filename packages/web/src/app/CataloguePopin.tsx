@@ -264,15 +264,16 @@ function CatalogueList(props: ListProps) {
         }}
       >
         <Field label={t('Repository address')}>
-          <input className="adestia-input" value={repo} onChange={(event) => props.onRepo(event.target.value)} />
+          <input className="adestia-input" placeholder={t('Repository address')} value={repo} onChange={(event) => props.onRepo(event.target.value)} />
         </Field>
         <Field label={t('Ref')}>
-          <input className="adestia-input" value={ref_} onChange={(event) => props.onRef(event.target.value)} />
+          <input className="adestia-input" placeholder={t('Ref')} value={ref_} onChange={(event) => props.onRef(event.target.value)} />
         </Field>
         <Field label={t('Token (optional)')}>
           <input
             className="adestia-input"
             type="password"
+            placeholder={t('Token (optional)')}
             value={token}
             autoComplete="off"
             onChange={(event) => props.onToken(event.target.value)}
