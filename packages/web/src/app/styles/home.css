@@ -436,7 +436,7 @@
   background: none;
   outline: 2px solid transparent;
   color: var(--text);
-  font: 14px var(--font);
+  font: var(--text-base) var(--font);
 }
 
 .adestia-facets { display: flex; gap: 6px; flex-wrap: wrap; }

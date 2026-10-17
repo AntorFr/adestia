@@ -1,7 +1,7 @@
 /**
  * What fills the canvas, in the one order the address decides it.
  *
- * `docs/ecrans.md` › Navigation gives the order: an open app, then settings,
+ * `docs/ecrans.md`, Navigation gives the order: an open app, then settings,
  * then a page, then a page that would not load, then a section, then the home.
  * It is one function so the order is read in one place rather than inferred
  * from a ternary three screens long.

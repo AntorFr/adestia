@@ -248,8 +248,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
 
         <Problems instance={instance} failures={failures} loaded={loaded} pages={pages} t={t} locale={locale} />
 
-        <Canvas
-          ready={ready}
+        <Canvas ready={ready}
           instance={instance}
           skin={skin}
           loaded={loaded}

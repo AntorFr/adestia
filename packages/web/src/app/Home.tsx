@@ -146,7 +146,7 @@ export function Home({
             ask={ask}
             t={t}
           />
-    
+
           <Domains
             plugins={plugins}
             entries={entries}
