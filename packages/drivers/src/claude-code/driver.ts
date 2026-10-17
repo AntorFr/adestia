@@ -25,10 +25,12 @@ import type {
   TurnUsage,
 } from '../contract.js'
 import { SHELL_TOOLS_SERVER_NAME, bridgeStdioConfig } from '../shell-tools-config.js'
+import { usageOf as usageFrom } from '../engine-aids.js'
 import { AskDesk, type PendingAsk } from '../asks.js'
 import { signatureRequests } from '../signatures.js'
 import { ManagedCredential } from '../managed-credential.js'
 import { McpTokens, type RefreshStore } from '../mcp-oauth.js'
+import { mcpHeaders } from '../mcp-headers.js'
 import { TOKEN_ENV_VAR, looksLikeToken } from './arming.js'
 import { toolTarget } from './events.js'
 import { isKnownMessage } from './sdk-types.js'
@@ -139,31 +141,8 @@ async function toSdkServers(
       continue
     }
 
-    const headers: Record<string, string> = { ...server.headers }
-    if (server.identity === 'user') {
-      // Somebody's own data. Without a person's token there is nobody to act
-      // as, so the server is absent from this turn rather than reached with
-      // the instance's identity — which would be a different person's data,
-      // or a flat refusal read as a broken tool. The caller's token when the
-      // turn has one; else the per-server token the core minted (only for
-      // `background` servers, only on clock and callback turns). A `signIn`
-      // server takes ONLY its own per-turn token: the rebound one is foreign
-      // currency there, and presenting it would read as "failed" where the
-      // truthful state is "this caller never connected".
-      const token = server.signIn
-        ? serverTokens?.[server.name]
-        : (callerToken ?? serverTokens?.[server.name])
-      if (!token) continue
-      headers['Authorization'] = `Bearer ${token}`
-    } else if (server.auth) {
-      const token = await tokens.for(server.auth)
-      // A server whose token could not be minted is OMITTED rather than sent
-      // unauthenticated: the hub would refuse every call, and the agent would
-      // read a wall of 401s as "the tool is broken" instead of "I am not
-      // logged in". Absent, the CLI simply has one tool fewer.
-      if (!token) continue
-      headers['Authorization'] = `Bearer ${token}`
-    }
+    const headers = await mcpHeaders(server, tokens, callerToken, serverTokens)
+    if (!headers) continue
 
     out[server.name] = {
       type: 'http',
@@ -610,7 +589,7 @@ export class ClaudeCodeDriver implements Driver {
               // thread; the predecessor dropped this flag and the interruption
               // vanished from the transcript.
               stopped: message.subtype === 'error_during_execution',
-              usage: usageOf(message),
+              usage: resultUsage(message),
             }
             break
           }
@@ -629,7 +608,7 @@ export class ClaudeCodeDriver implements Driver {
   }
 }
 
-function usageOf(message: Extract<SdkMessage, { type: 'result' }>): TurnUsage {
+function resultUsage(message: Extract<SdkMessage, { type: 'result' }>): TurnUsage {
   const usage = message.usage ?? {}
   const input = usage.input_tokens ?? 0
   const cacheRead = usage.cache_read_input_tokens ?? 0
@@ -640,7 +619,7 @@ function usageOf(message: Extract<SdkMessage, { type: 'result' }>): TurnUsage {
     perModel[model] = (stats.inputTokens ?? 0) + (stats.outputTokens ?? 0)
   }
 
-  return {
+  return usageFrom({
     inputTokens: input,
     outputTokens: usage.output_tokens ?? 0,
     cacheReadTokens: cacheRead,
@@ -651,10 +630,10 @@ function usageOf(message: Extract<SdkMessage, { type: 'result' }>): TurnUsage {
      * a number that has nothing to do with what their next message costs.
      */
     contextTokens: input + cacheRead + cacheWrite,
-    ...(message.duration_ms === undefined ? {} : { durationMs: message.duration_ms }),
+    durationMs: message.duration_ms,
     // Honest under a subscription: the SDK reports an estimate that means
     // nothing when the plan is flat, so it is surfaced only as `cost`.
     costUsd: typeof message.total_cost_usd === 'number' ? message.total_cost_usd : null,
     perModel,
-  }
+  })
 }

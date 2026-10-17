@@ -1,17 +1,14 @@
 /**
  * What the linter is for here, and what it is deliberately NOT for.
  *
- * `npm run lint` existed as a script for months with no config behind it, so
- * it failed with "couldn't find an eslint.config.*" — a gate that is red for
- * everybody is a gate nobody reads. This makes it run, and pass.
- *
  * It is not a style engine. Formatting is not policed (no quotes, no semis, no
  * import order): those arguments cost review attention and the diff already
- * shows them. What is policed is the class of mistake that survives review and
- * TypeScript both — a floating promise, an `any` smuggled in, a caught error
- * thrown away, a `case` that falls through. Rules that would fire on the
- * repository's deliberate choices are off, with the reason written down rather
- * than left for the next person to rediscover.
+ * shows them. The recommended JavaScript and TypeScript rules check unused
+ * bindings, explicit `any`, unreachable code and switch fallthroughs. React's
+ * hook rules also run on the web shell (dependency checks are warnings).
+ * No rule uses type information. Ignored caught errors are allowed
+ * (`caughtErrors: 'none'`), as are empty catch blocks. Deliberate exceptions
+ * are explained beside their rules below.
  */
 
 import js from '@eslint/js'

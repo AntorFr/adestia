@@ -9,31 +9,34 @@
  * a documented API.
  */
 
-export type CopilotAuthProblem = 'absent' | 'classic-pat' | 'unvalidated' | 'unknown'
+import {
+  classifyAuthError as classify,
+  explainAuthProblem as explain,
+  type AuthErrorRule,
+} from '../engine-aids.js'
 
-export function classifyAuthError(stderr: string): CopilotAuthProblem | undefined {
-  const text = stderr.toLowerCase()
-  if (text.includes('no authentication information found')) return 'absent'
-  if (text.includes('classic personal access tokens')) return 'classic-pat'
-  if (text.includes('authentication token found but could not be validated')) return 'unvalidated'
-  if (text.includes('error:') && text.includes('authenticat')) return 'unknown'
-  return undefined
+type CopilotAuthProblem = 'absent' | 'classic-pat' | 'unvalidated' | 'unknown'
+
+const AUTH_RULES: readonly AuthErrorRule<CopilotAuthProblem>[] = [
+  { problem: 'absent', all: ['no authentication information found'] },
+  { problem: 'classic-pat', all: ['classic personal access tokens'] },
+  { problem: 'unvalidated', all: ['authentication token found but could not be validated'] },
+  { problem: 'unknown', all: ['error:', 'authenticat'] },
+]
+
+const AUTH_SENTENCES: Readonly<Record<CopilotAuthProblem, string>> = {
+  absent: 'No GitHub credential: arm a fine-grained token, or set COPILOT_GITHUB_TOKEN.',
+  'classic-pat':
+    'That is a classic PAT (ghp_), which Copilot does not accept. Use a fine-grained token with the "Copilot Requests" permission.',
+  // The CLI itself hedges here ("your token may still be valid, check your
+  // network"), so the driver must not claim revocation it cannot know.
+  unvalidated: 'GitHub would not validate the token. It may be expired or revoked — or the network may simply be down.',
+  unknown: 'The CLI refused to authenticate; see the server logs for its exact message.',
 }
 
-export function explainAuthProblem(problem: CopilotAuthProblem): string {
-  switch (problem) {
-    case 'absent':
-      return 'No GitHub credential: arm a fine-grained token, or set COPILOT_GITHUB_TOKEN.'
-    case 'classic-pat':
-      return 'That is a classic PAT (ghp_), which Copilot does not accept. Use a fine-grained token with the "Copilot Requests" permission.'
-    case 'unvalidated':
-      // The CLI itself hedges here ("your token may still be valid, check your
-      // network"), so the driver must not claim revocation it cannot know.
-      return 'GitHub would not validate the token. It may be expired or revoked — or the network may simply be down.'
-    case 'unknown':
-      return 'The CLI refused to authenticate; see the server logs for its exact message.'
-  }
-}
+export const classifyAuthError = (stderr: string): CopilotAuthProblem | undefined => classify(stderr, AUTH_RULES)
+
+export const explainAuthProblem = (problem: CopilotAuthProblem): string => explain(problem, AUTH_SENTENCES)
 
 /**
  * Fine-grained tokens and OAuth tokens are accepted; classic `ghp_` ones are

@@ -10,6 +10,8 @@
 
 import { useEffect, useState } from 'react'
 
+import { requestJson } from './request.js'
+
 export interface McpConnection {
   readonly name: string
   readonly connected: boolean
@@ -96,14 +98,12 @@ export function useConnections(
     if (!enabled) return
     let live = true
     const load = async () => {
-      try {
-        const response = await fetchImpl('/api/mcp/connections')
-        if (!response.ok) return
-        const body = (await response.json()) as { connections?: readonly McpConnection[] }
-        if (live) setConnections(body.connections ?? [])
-      } catch {
-        /* no state, no card — the tools still fail visibly in the trace */
-      }
+      // A failure leaves no state, so no card — the tools still fail visibly in the trace.
+      const result = await requestJson<{ connections?: readonly McpConnection[] }>(
+        fetchImpl,
+        '/api/mcp/connections',
+      )
+      if (result.ok && live) setConnections(result.data?.connections ?? [])
     }
     void load()
     const onFocus = () => void load()

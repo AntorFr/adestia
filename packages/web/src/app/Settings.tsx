@@ -11,7 +11,12 @@
  * wherever they were standing rather than behind a navigation.
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
+
+import { Icon } from './Icon.js'
+import type { IconName } from './icons.js'
+import { jsonInit, requestJson } from './request.js'
+import { Button, Field } from './ui/index.js'
 
 export interface AuthStatus {
   readonly state: 'absent' | 'armed' | 'invalid' | 'unknown'
@@ -37,39 +42,83 @@ type Phase =
   | { readonly kind: 'exchanging'; readonly prompt: AuthPrompt }
   | { readonly kind: 'failed'; readonly message: string }
 
+/**
+ * One line of the token's state: an icon and a sentence, so the state is told
+ * by its shape and its words and never by the colour alone (E-15).
+ */
+function Token({
+  icon,
+  tone,
+  spin,
+  children,
+}: {
+  readonly icon: IconName
+  readonly tone?: 'ok' | 'error'
+  readonly spin?: boolean
+  readonly children: ReactNode
+}) {
+  return (
+    <span className={tone ? `adestia-save adestia-token adestia-token--${tone}` : 'adestia-save adestia-token'}>
+      <Icon name={icon} {...(spin ? { className: 'adestia-icon--spin' } : {})} />
+      <span>{children}</span>
+    </span>
+  )
+}
+
 export function StatusLine({
   status,
   t = (key) => key,
+  locale,
 }: {
   status: AuthStatus | undefined
   t?: (key: string) => string
+  locale?: string
 }) {
-  if (!status) return <span className="adestia-save">{t('Checking…')}</span>
+  if (!status)
+    return (
+      <Token icon="loader-circle" spin>
+        {t('Checking…')}
+      </Token>
+    )
   switch (status.state) {
     case 'armed':
       return (
-        <span className="adestia-save adestia-save--ok">
+        <Token icon="check" tone="ok">
           {t('Armed')}
-          {status.savedAt ? ` — ${new Date(status.savedAt).toLocaleDateString()}` : ''}
-        </span>
+          {status.savedAt ? ` — ${new Date(status.savedAt).toLocaleDateString(locale)}` : ''}
+        </Token>
       )
     case 'invalid':
       return (
-        <span className="adestia-save adestia-save--error">{status.reason ?? t('Refused upstream')}</span>
+        <Token icon="circle-alert" tone="error">
+          {status.reason ?? t('Refused upstream')}
+        </Token>
       )
     case 'absent':
       return (
-        <span className="adestia-save">
+        <Token icon="key-round">
           {/* Not an error: the CLI may be living on credentials set up outside
               Adestia, and saying "missing" would send someone fixing what works. */}
           {status.source === 'cli-native'
             ? t('Using the CLI’s own credentials')
             : t('No token stored here')}
-        </span>
+        </Token>
       )
     default:
-      return <span className="adestia-save">{t('Unknown')}</span>
+      return (
+        <Token icon="info">{t('Unknown')}</Token>
+      )
   }
+}
+
+/** Puts nodes where a translated sentence has `%name` markers, so word order is the language's. */
+function weave(sentence: string, parts: Readonly<Record<string, ReactNode>>): ReactNode[] {
+  return sentence
+    .split(/(%[a-z]+)/)
+    .map((piece, index) => {
+      const part = piece.startsWith('%') ? parts[piece.slice(1)] : undefined
+      return part === undefined ? piece : <span key={index}>{part}</span>
+    })
 }
 
 /** One outbound MCP server, as the driver reports it. */
@@ -99,14 +148,9 @@ export function useMcpServers(
     if (!enabled) return undefined
     let live = true
     void (async () => {
-      try {
-        const response = await fetchImpl('/api/mcp/status')
-        if (!response.ok) return
-        const body = (await response.json()) as { servers?: readonly McpServerHealth[] }
-        if (live) setServers(body.servers ?? [])
-      } catch {
-        /* no report, no panel */
-      }
+      // No report, no panel: a failure is silence here.
+      const result = await requestJson<{ servers?: readonly McpServerHealth[] }>(fetchImpl, '/api/mcp/status')
+      if (live && result.ok) setServers(result.data?.servers ?? [])
     })()
     return () => {
       live = false
@@ -119,8 +163,10 @@ export function useMcpServers(
 export function Settings({
   fetchImpl = fetch,
   t = (key) => key,
+  locale,
 }: {
   fetchImpl?: typeof fetch
+  locale?: string
   /** The shell's translator; identity leaves every label in English. */
   t?: (key: string) => string
 }) {
@@ -133,16 +179,16 @@ export function Settings({
   const [consented, setConsented] = useState(false)
 
   const refresh = useCallback(async () => {
-    const response = await fetchImpl('/api/auth/driver')
+    const result = await requestJson<AuthStatus>(fetchImpl, '/api/auth/driver', undefined, t)
     // 404 means this engine cannot be armed from here at all — a different
     // fact from "has no token", and the panel must not offer a button that
     // can never work.
-    if (response.status === 404) {
+    if (!result.ok && result.status === 404) {
       setSupported(false)
       return
     }
-    if (response.ok) setStatus((await response.json()) as AuthStatus)
-  }, [fetchImpl])
+    if (result.ok) setStatus(result.data)
+  }, [fetchImpl, t])
 
   useEffect(() => {
     void refresh()
@@ -151,31 +197,30 @@ export function Settings({
   const begin = useCallback(async () => {
     setPhase({ kind: 'starting' })
     setConsented(false)
-    const response = await fetchImpl('/api/auth/driver/begin', { method: 'POST' })
-    if (!response.ok) {
-      const body = (await response.json().catch(() => ({}))) as { error?: string }
-      setPhase({ kind: 'failed', message: body.error ?? 'the flow could not be started' })
+    const result = await requestJson<AuthPrompt>(fetchImpl, '/api/auth/driver/begin', jsonInit('POST'), t)
+    if (!result.ok) {
+      setPhase({ kind: 'failed', message: result.error })
       return
     }
-    setPhase({ kind: 'awaiting', prompt: (await response.json()) as AuthPrompt })
-  }, [fetchImpl])
+    setPhase({ kind: 'awaiting', prompt: result.data })
+  }, [fetchImpl, t])
 
   const complete = useCallback(
     async (prompt: AuthPrompt) => {
       setPhase({ kind: 'exchanging', prompt })
-      const response = await fetchImpl('/api/auth/driver/complete', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        // A device code is approved in a browser, with nothing to copy back;
-        // the server still requires a non-empty field, so send a sentinel.
-        body: JSON.stringify({
+      // A device code is approved in a browser, with nothing to copy back;
+      // the server still requires a non-empty field, so send a sentinel.
+      const result = await requestJson(
+        fetchImpl,
+        '/api/auth/driver/complete',
+        jsonInit('POST', {
           sessionId: prompt.sessionId,
           input: prompt.mode === 'device-code' ? 'approved' : code,
         }),
-      })
-      if (!response.ok) {
-        const body = (await response.json().catch(() => ({}))) as { error?: string }
-        setPhase({ kind: 'failed', message: body.error ?? 'the code was refused' })
+        t,
+      )
+      if (!result.ok) {
+        setPhase({ kind: 'failed', message: result.error })
         return
       }
       setCode('')
@@ -183,7 +228,7 @@ export function Settings({
       setPhase({ kind: 'idle' })
       await refresh()
     },
-    [code, fetchImpl, refresh],
+    [code, fetchImpl, refresh, t],
   )
 
   const cancel = useCallback(
@@ -191,19 +236,15 @@ export function Settings({
       setPhase({ kind: 'idle' })
       setCode('')
       setConsented(false)
-      await fetchImpl('/api/auth/driver/cancel', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ sessionId: prompt.sessionId }),
-      })
+      await requestJson(fetchImpl, '/api/auth/driver/cancel', jsonInit('POST', { sessionId: prompt.sessionId }), t)
     },
-    [fetchImpl],
+    [fetchImpl, t],
   )
 
   const clear = useCallback(async () => {
-    await fetchImpl('/api/auth/driver', { method: 'DELETE' })
+    await requestJson(fetchImpl, '/api/auth/driver', jsonInit('DELETE'), t)
     await refresh()
-  }, [fetchImpl, refresh])
+  }, [fetchImpl, refresh, t])
 
   if (!supported) {
     return (
@@ -224,24 +265,31 @@ export function Settings({
   return (
     <section className="adestia-settings">
       <header className="adestia-settings__header">
-        <StatusLine status={status} t={t} />
+        <StatusLine status={status} t={t} {...(locale ? { locale } : {})} />
       </header>
 
       {phase.kind === 'failed' && (
-        <p className="adestia-save adestia-save--error" role="alert">
-          {phase.message}
+        <p className="adestia-save adestia-token adestia-token--error" role="alert">
+          <Icon name="circle-alert" />
+          <span>{phase.message}</span>
         </p>
       )}
 
       {!active && (
         <div className="adestia-settings__actions">
-          <button type="button" onClick={() => void begin()} disabled={phase.kind === 'starting'}>
+          <Button
+            variant={status?.state === 'armed' ? 'neutral' : 'accent'}
+            icon="key-round"
+            onClick={() => void begin()}
+            disabled={phase.kind === 'starting'}
+            busy={phase.kind === 'starting'}
+          >
             {status?.state === 'armed' ? t('Renew the token') : t('Arm a token')}
-          </button>
+          </Button>
           {status?.state === 'armed' && (
-            <button type="button" onClick={() => void clear()}>
+            <Button variant="ghost" onClick={() => void clear()}>
               {t('Forget it')}
-            </button>
+            </Button>
           )}
         </div>
       )}
@@ -249,20 +297,22 @@ export function Settings({
       {active && (
         <ol className="adestia-arming">
           <li>
-            {active.mode === 'device-code' ? (
-              <>
-                Open <a href={active.authorizeUrl} target="_blank" rel="noreferrer">the sign-in page</a>{' '}
-                and enter the code <code>{active.userCode}</code>
-              </>
-            ) : (
-              <>
-                Open{' '}
-                <a href={active.authorizeUrl} target="_blank" rel="noreferrer">
-                  this authorisation link
-                </a>{' '}
-                and approve the request
-              </>
-            )}
+            {active.mode === 'device-code'
+              ? weave(t('Open %link and enter the code %code'), {
+                  link: (
+                    <a href={active.authorizeUrl} target="_blank" rel="noreferrer">
+                      {t('the sign-in page')}
+                    </a>
+                  ),
+                  code: <code>{active.userCode}</code>,
+                })
+              : weave(t('Open %link and approve the request'), {
+                  link: (
+                    <a href={active.authorizeUrl} target="_blank" rel="noreferrer">
+                      {t('this authorisation link')}
+                    </a>
+                  ),
+                })}
           </li>
           <li>
             {active.consent !== undefined && (
@@ -277,40 +327,41 @@ export function Settings({
             )}
             {active.mode === 'device-code' ? (
               <div className="adestia-settings__actions">
-                <button type="button" onClick={() => void cancel(active)}>
+                <Button variant="ghost" onClick={() => void cancel(active)}>
                   {t('Cancel')}
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  variant="accent"
                   onClick={() => void complete(active)}
                   disabled={consentPending || phase.kind === 'exchanging'}
+                  busy={phase.kind === 'exchanging'}
                 >
-                  {phase.kind === 'exchanging' ? 'Finishing…' : 'I have approved — finish'}
-                </button>
+                  {phase.kind === 'exchanging' ? t('Finishing…') : t('I have approved — finish')}
+                </Button>
               </div>
             ) : (
               <>
-                <label className="adestia-arming__label">
-                  {active.inputLabel ?? t('Paste the code you were given')}
+                <Field label={active.inputLabel ?? t('Paste the code you were given')}>
                   <input
-                    className="adestia-arming__input"
+                    className="adestia-input adestia-arming__input"
                     value={code}
                     onChange={(event) => setCode(event.target.value)}
                     autoComplete="off"
                     spellCheck={false}
                   />
-                </label>
+                </Field>
                 <div className="adestia-settings__actions">
-                  <button type="button" onClick={() => void cancel(active)}>
+                  <Button variant="ghost" onClick={() => void cancel(active)}>
                     {t('Cancel')}
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
+                    variant="accent"
                     onClick={() => void complete(active)}
                     disabled={code.trim() === '' || consentPending || phase.kind === 'exchanging'}
+                    busy={phase.kind === 'exchanging'}
                   >
-                    {phase.kind === 'exchanging' ? 'Exchanging…' : 'Validate'}
-                  </button>
+                    {phase.kind === 'exchanging' ? t('Exchanging…') : t('Validate')}
+                  </Button>
                 </div>
               </>
             )}

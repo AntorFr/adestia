@@ -188,7 +188,7 @@ const SOURCE_KEYS = new Set(['repo', 'ref', 'token', 'dir'])
  * disk on purpose — an operator looking at `<dataDir>/extensions` should be
  * able to tell what each folder is without opening its `.git/config`.
  */
-export function sourceName(repo: string): string {
+function sourceName(repo: string): string {
   return repo
     .replace(/^[a-z+]+:\/\//i, '')
     .replace(/^[^@/]*@/, '')

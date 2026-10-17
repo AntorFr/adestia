@@ -39,3 +39,11 @@ describe('translator', () => {
     )
   })
 })
+
+describe('the French table addresses the reader as vous', () => {
+  it('has no tu form in i18n.ts', async () => {
+    const { readFileSync } = await import('node:fs')
+    const source = readFileSync(new URL('../src/app/i18n.ts', import.meta.url), 'utf8')
+    expect(source.match(/\b(ta|ton|tes|toi|tu)\b/g)).toBeNull()
+  })
+})

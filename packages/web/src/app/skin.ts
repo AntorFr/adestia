@@ -20,6 +20,15 @@ export interface SkinDescriptor {
   readonly scheme?: 'light' | 'dark' | 'auto'
 }
 
+/**
+ * What the shell hands the skin factory: the instance's language. Optional on
+ * the skin's side — a factory that takes no argument, or ignores this one,
+ * loads and shows its own words as before.
+ */
+export interface SkinFactoryContext {
+  readonly locale: 'en' | 'fr'
+}
+
 /** Everything a skin may provide. Every field optional. */
 export interface Skin {
   readonly brand?: string
@@ -193,6 +202,7 @@ export interface SkinEnvironment {
 export async function loadSkin(
   descriptor: SkinDescriptor,
   environment: SkinEnvironment,
+  locale: SkinFactoryContext['locale'] = 'en',
 ): Promise<SkinLoad> {
   // The attribute arms whatever token overrides the sheet declares. Set even
   // for the default, so a page always says which livery it is wearing.
@@ -219,7 +229,7 @@ export async function loadSkin(
     if (typeof factory !== 'function') {
       return { skin: {}, rejected: [], error: 'the skin module must default-export a factory' }
     }
-    return narrowSkin((factory as () => unknown)())
+    return narrowSkin((factory as (context: SkinFactoryContext) => unknown)({ locale }))
   } catch (error) {
     // A skin that fails to load leaves the shell dressed as itself rather than
     // taking the page down: a livery is not worth an interface.

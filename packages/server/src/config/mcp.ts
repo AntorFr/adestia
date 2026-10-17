@@ -17,7 +17,7 @@ import { isObject } from './values.js'
  * wrong: the caller then skips the server entirely rather than wiring one that
  * will be refused on every call.
  */
-export function readMcpAuth(
+function readMcpAuth(
   raw: unknown,
   where: string,
   issues: string[],

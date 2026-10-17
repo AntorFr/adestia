@@ -72,6 +72,29 @@ const editor = (fetchImpl: typeof fetch) =>
     loadMount: () => Promise.resolve(fakeMount),
   })
 
+/**
+ * Renders and lets the editor finish loading: the page, then the mount.
+ *
+ * Everything the editor waits for here is a promise the test itself resolved
+ * (the fake `fetch`, the fake `loadMount`), so an async `act` that drains them
+ * IS the signal. Waiting through `findBy*` / `waitFor` instead spends a
+ * one-second wall-clock budget on a chain that needs no clock, and a loaded
+ * machine runs it out: this file failed that way under CPU load, on
+ * whichever of its tests was unlucky.
+ */
+async function renderSettled(element: React.ReactElement) {
+  await act(async () => {
+    render(element)
+  })
+}
+
+/** Clicks inside an async `act`, so what the click set going has finished. */
+async function click(element: Element) {
+  await act(async () => {
+    fireEvent.click(element)
+  })
+}
+
 describe('the page editor lent to plugins', () => {
   it('fetches the page it was given a path for', async () => {
     const PageEditor = editor(workspaceFetch())
@@ -132,14 +155,14 @@ describe('the page editor lent to plugins', () => {
     // unsaved paragraph.
     const postures: boolean[] = []
     const PageEditor = editor(workspaceFetch())
-    render(
+    await renderSettled(
       <PageEditor path="journal/atelier/2026-08-25.md" onEditing={(open) => postures.push(open)} />,
     )
 
-    fireEvent.click(await screen.findByTitle('Edit'))
-    await waitFor(() => expect(postures.at(-1)).toBe(true))
-    fireEvent.click(screen.getByText('Done'))
-    await waitFor(() => expect(postures.at(-1)).toBe(false))
+    await click(screen.getByTitle('Edit'))
+    expect(postures.at(-1)).toBe(true)
+    await click(screen.getByText('Done'))
+    expect(postures.at(-1)).toBe(false)
 
     // Announced on CHANGE: a callback written inline by its caller would
     // otherwise fire on every render and put that caller in a loop.
@@ -150,25 +173,24 @@ describe('the page editor lent to plugins', () => {
     const saves: { url: string; body: unknown }[] = []
     const PageEditor = editor(workspaceFetch(saves))
     const onSaved = vi.fn()
-    render(<PageEditor path="journal/atelier/2026-08-24.md" onSaved={onSaved} />)
+    await renderSettled(<PageEditor path="journal/atelier/2026-08-24.md" onSaved={onSaved} />)
 
-    await screen.findByText('Lame changée.')
-    fireEvent.click(screen.getByTitle('Edit'))
-    await waitFor(() => expect(document.querySelector('[data-mounted]')).toBeTruthy())
+    await click(screen.getByTitle('Edit'))
+    expect(document.querySelector('[data-mounted]')).toBeTruthy()
 
     const surface = document.querySelector('[data-mounted]') as HTMLElement & {
       edit: (md: string) => void
     }
     act(() => surface.edit('Lame changée, et affûtée.\n'))
-    fireEvent.click(screen.getByText('Done'))
+    await click(screen.getByText('Done'))
 
-    await waitFor(() => expect(saves).toHaveLength(1))
+    expect(saves).toHaveLength(1)
     expect(saves[0]).toMatchObject({
       url: '/api/pages/journal/atelier/2026-08-24.md',
       body: { revision: '900-8', markdown: 'Lame changée, et affûtée.\n' },
     })
     // The list a plugin drew from the index is stale the moment a save lands.
-    await waitFor(() => expect(onSaved).toHaveBeenCalled())
+    expect(onSaved).toHaveBeenCalled()
   })
 
   it('leaves the attachment strip out of a plugin layout unless asked', async () => {

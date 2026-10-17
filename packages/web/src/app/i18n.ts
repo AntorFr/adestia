@@ -13,9 +13,10 @@
  *
  * WHO OWNS WHAT: the shell translates the shell. A plugin ships its own
  * words the same way it ships its own skills, and is handed the active
- * locale to do it. A SKIN never translates — a livery is a look, not a
- * language, and letting it carry words would mean the interface changed
- * language when you changed its colours.
+ * locale to do it. A SKIN does not translate the shell: it says its own
+ * persona's few words (greetings, placeholder), in the language the shell
+ * hands its factory, so the interface never changes language when you change
+ * its colours.
  *
  * Where that line is not enough, and what `plugins/words.ts` answers: some of
  * a plugin's words are DECLARED, not said — a field's label, a tile's name, a
@@ -130,6 +131,8 @@ const FR: Readonly<Record<string, string>> = {
 
   // The instruction zone
   Catalogues: 'Catalogues',
+  'A name': 'Un nom',
+  Create: 'Créer',
   'No catalogue yet — add a repository of instructions.':
     'Aucun catalogue — ajoutez un dépôt d’instructions.',
   imported: 'importé(s)',
@@ -201,6 +204,11 @@ const FR: Readonly<Record<string, string>> = {
   conversation: 'fil',
   conversations: 'fils',
   '%n running': '%n en cours',
+  running: 'en cours',
+  waiting: 'en attente',
+  'the configuration file is not writable by this instance':
+    'le fichier de configuration n’est pas modifiable par cette instance',
+  'No setting to show.': 'Aucun réglage à afficher.',
 
   // Signing in to an MCP server (the chat card, and the server page's row)
   'asks you to connect before it can act for you.':
@@ -265,6 +273,7 @@ const FR: Readonly<Record<string, string>> = {
 
   // MCP servers, on their settings page
   'MCP servers': 'Serveurs MCP',
+  'The declaration is not valid JSON.': 'La déclaration n’est pas du JSON valide.',
   'What this instance reaches, and what it is doing about it':
     'Ce que cette instance atteint, et où chacun en est',
   server: 'serveur',
@@ -375,13 +384,15 @@ const FR: Readonly<Record<string, string>> = {
   'Not allowed': 'Accès refusé',
   'This instance requires you to sign in.': 'Cette instance demande une connexion.',
   'Adestia could not start': 'Adestia n’a pas pu démarrer',
+  'You are signed in, but your account is not in a group this instance admits. Ask whoever runs it to add you.':
+    'Votre session est ouverte, mais votre compte n’est dans aucun groupe admis par cette instance. Demandez à son responsable de vous y ajouter.',
   'That app is not active on this instance.': 'Cette app n’est pas activée sur cette instance.',
   'Turn interrupted.': 'Tour interrompu.',
   // Signatures asked for at the hub's façade
   'Signature requested': 'Signature demandée',
-  'A held action waits for your signature.': 'Une action attend ta signature.',
+  'A held action waits for your signature.': 'Une action attend votre signature.',
   'A standing authorisation asks for your signature.':
-    'Une autorisation à l’avance attend ta signature.',
+    'Une autorisation à l’avance attend votre signature.',
   until: 'jusqu’à',
   'Action signed — the agent resumes it.': 'Action signée — l’agent la reprend.',
   'Authorisation signed.': 'Autorisation signée.',
@@ -407,7 +418,19 @@ const FR: Readonly<Record<string, string>> = {
   'Renew the token': 'Renouveler le jeton',
   'Forget it': 'L’oublier',
   Cancel: 'Annuler',
+  'request failed (%n)': 'la requête a échoué (%n)',
   'Paste the code you were given': 'Collez le code qui vous a été donné',
+  // The cog menu, the problems band and the settings mosaic
+  'Open %link and enter the code %code': 'Ouvrez %link et saisissez le code %code',
+  'the sign-in page': 'la page de connexion',
+  'Open %link and approve the request': 'Ouvrez %link et approuvez la demande',
+  'this authorisation link': 'ce lien d’autorisation',
+  'I have approved — finish': 'J’ai approuvé — terminer',
+  'Finishing…': 'Finalisation…',
+  'Exchanging…': 'Échange…',
+  Validate: 'Valider',
+  '"app" is only read on a top-level folder': '« app » n’est lu que sur un dossier de premier niveau',
+  'no active plugin is called "%name"': 'aucun plugin actif ne s’appelle « %name »',
 }
 
 const TABLES: Readonly<Record<Locale, Readonly<Record<string, string>>>> = {

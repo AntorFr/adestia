@@ -108,7 +108,7 @@ export type ContributedField = Omit<FieldSpec, 'key' | 'group' | 'always'>
  *
  * ⚠️ The list is the one `tokens.css` defines. Adding a hue is two edits.
  */
-export const HUES: readonly string[] = [
+const HUES: readonly string[] = [
   'rouge',
   'orange',
   'ambre',
@@ -211,7 +211,7 @@ export const CORE_FIELDS: readonly FieldSpec[] = [
 ]
 
 /** The core's fields by key, for a lookup that does not walk the list. */
-export const CORE_FIELD_AT: Readonly<Record<string, FieldSpec>> = Object.fromEntries(
+const CORE_FIELD_AT: Readonly<Record<string, FieldSpec>> = Object.fromEntries(
   CORE_FIELDS.map((field) => [field.key, field]),
 )
 

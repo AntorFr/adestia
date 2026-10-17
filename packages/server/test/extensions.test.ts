@@ -1,9 +1,8 @@
 import { existsSync } from 'node:fs'
-import { mkdtemp, mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-import { afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 
 import { parsePluginManifest } from '@antorfr/adestia-schemas'
 
@@ -25,6 +24,9 @@ import {
   unmatchedActivations,
   type DiscoveredPlugin,
 } from '../src/extensions.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
+
+afterAll(cleanTmp)
 
 let root: string
 
@@ -38,7 +40,7 @@ async function plugin(id: string, manifest: unknown | string): Promise<void> {
 }
 
 beforeAll(async () => {
-  root = await mkdtemp(join(tmpdir(), 'adestia-ext-'))
+  root = await tmpDir('adestia-ext-')
 
   await plugin('workbench', {
     schemaVersion: 1,
@@ -199,7 +201,7 @@ describe('frontend payload', () => {
 
 describe('several roots', () => {
   it('reads every root, in the order they were given', async () => {
-    const elsewhere = await mkdtemp(join(tmpdir(), 'adestia-root-'))
+    const elsewhere = await tmpDir('adestia-root-')
     await mkdir(join(elsewhere, 'extra'), { recursive: true })
     await writeFile(
       join(elsewhere, 'extra', 'adestia-plugin.json'),
@@ -215,7 +217,7 @@ describe('several roots', () => {
     // A plugin repository's folder is named after the REPOSITORY — nobody
     // promised `adestia-plugin-notes` and `notes` would agree, so the folder
     // cannot be the authority here the way it is inside a plugins directory.
-    const repoLike = await mkdtemp(join(tmpdir(), 'adestia-plugin-notes-'))
+    const repoLike = await tmpDir('adestia-plugin-notes-')
     await writeFile(
       join(repoLike, 'adestia-plugin.json'),
       JSON.stringify({ schemaVersion: 1, id: 'carnet', kind: 'app', description: 'Notes.' }),
@@ -230,7 +232,7 @@ describe('several roots', () => {
   it('keeps the first root that provides an id, and names the loser', async () => {
     // The bundled directory is first at boot, so a fetched repository can add
     // a plugin and never quietly replace one the image ships.
-    const shadow = await mkdtemp(join(tmpdir(), 'adestia-shadow-'))
+    const shadow = await tmpDir('adestia-shadow-')
     await mkdir(join(shadow, 'workbench'), { recursive: true })
     await writeFile(
       join(shadow, 'workbench', 'adestia-plugin.json'),

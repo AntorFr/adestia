@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { TurnEvent, TurnRequest } from '@antorfr/adestia-drivers'
 
 import { TurnCapacityError, TurnDesk, TurnJob, type TurnOutcome } from '../src/turns.js'
+import { RESULT, driverWith } from './support/driver.js'
 
 /** A gate the test opens when it decides the driver may go on. */
 function gate() {
@@ -46,7 +47,6 @@ function meter(max = Number.POSITIVE_INFINITY) {
   }
 }
 
-const RESULT: TurnEvent = { type: 'result', sessionId: 's1', stopped: false }
 
 describe('the turn desk', () => {
   it('takes back a queued spec only while it has not left', async () => {
@@ -54,13 +54,13 @@ describe('the turn desk', () => {
     // already carries it, in which case refusing it would be a lie.
     const held = gate()
     const requests: TurnRequest[] = []
-    const driver = {
-      async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
+    const driver = driverWith({
+      runTurn: async function* (request: TurnRequest): AsyncIterable<TurnEvent> {
         requests.push(request)
         if (requests.length === 1) await held.passed
         yield RESULT
       },
-    }
+    })
     const desk = new TurnDesk(driver, meter())
     const spec = (prompt: string) => ({ request: { prompt, cwd: '.' }, finish: async () => {} })
 
@@ -86,15 +86,15 @@ describe('the turn desk', () => {
   it('runs a turn with nobody watching and still hands finish the outcome', async () => {
     // The whole point of the desk: the turn is not the HTTP request's. No
     // subscriber ever attaches here, and the transcript closure still runs.
-    const driver = {
-      async *runTurn(_request: TurnRequest): AsyncIterable<TurnEvent> {
+    const driver = driverWith({
+      runTurn: async function* (_request: TurnRequest): AsyncIterable<TurnEvent> {
         yield { type: 'text-delta', text: 'Bonjour ' }
         yield { type: 'text-delta', text: 'singe' }
         yield { type: 'tool-use', name: 'Read', target: '/a.md' }
         yield { type: 'tool-result', name: 'Read', ok: true }
         yield RESULT
       },
-    }
+    })
     const limiter = meter()
     const desk = new TurnDesk(driver, limiter)
     const finished: TurnOutcome[] = []
@@ -123,8 +123,8 @@ describe('the turn desk', () => {
     // operator's. One that was not named never reaches the browser, and the
     // transcript keeps the card where the live view drew it.
     const trusted = 'https://tessera.example/consent/c1'
-    const driver = {
-      async *runTurn(_request: TurnRequest): AsyncIterable<TurnEvent> {
+    const driver = driverWith({
+      runTurn: async function* (_request: TurnRequest): AsyncIterable<TurnEvent> {
         yield { type: 'tool-use', name: 'mcp__g__send', id: 't' }
         yield { type: 'tool-result', name: 'mcp__g__send', ok: true, id: 't' }
         yield { type: 'signature-request', id: 'c1', kind: 'consent', url: trusted }
@@ -132,7 +132,7 @@ describe('the turn desk', () => {
         yield { type: 'text-delta', text: 'Signe, je reprends ensuite.' }
         yield RESULT
       },
-    }
+    })
     const signs = (url: string) => new URL(url).origin === 'https://tessera.example'
     const desk = new TurnDesk(driver, meter(), undefined, signs)
     const finished: TurnOutcome[] = []
@@ -157,12 +157,12 @@ describe('the turn desk', () => {
   })
 
   it('relays no signature at all when no origin is named', async () => {
-    const driver = {
-      async *runTurn(_request: TurnRequest): AsyncIterable<TurnEvent> {
+    const driver = driverWith({
+      runTurn: async function* (_request: TurnRequest): AsyncIterable<TurnEvent> {
         yield { type: 'signature-request', id: 'c1', kind: 'consent', url: 'https://tessera.example/consent/c1' }
         yield RESULT
       },
-    }
+    })
     const desk = new TurnDesk(driver, meter())
     const admission = desk.admit('u/c:none')
     if (admission.mode !== 'run') throw new Error('expected a run')
@@ -175,15 +175,15 @@ describe('the turn desk', () => {
     // Two Reads in flight at once, the FIRST one failing. Matched on the name,
     // the failure lands on the second call and the transcript blames the wrong
     // file — silently, since both rows look alike.
-    const driver = {
-      async *runTurn(_request: TurnRequest): AsyncIterable<TurnEvent> {
+    const driver = driverWith({
+      runTurn: async function* (_request: TurnRequest): AsyncIterable<TurnEvent> {
         yield { type: 'tool-use', name: 'Read', target: '/a.md', id: 'a' }
         yield { type: 'tool-use', name: 'Read', target: '/b.md', id: 'b' }
         yield { type: 'tool-result', name: 'Read', ok: false, id: 'a' }
         yield { type: 'tool-result', name: 'Read', ok: true, id: 'b' }
         yield RESULT
       },
-    }
+    })
     const desk = new TurnDesk(driver, meter())
     const finished: TurnOutcome[] = []
     const admission = desk.admit('u/c:overlap')
@@ -207,13 +207,13 @@ describe('the turn desk', () => {
   it('still marks by name when the driver reports no id', async () => {
     // A driver with no ids of its own stays on the old rule, which is right
     // for one whose calls never overlap.
-    const driver = {
-      async *runTurn(_request: TurnRequest): AsyncIterable<TurnEvent> {
+    const driver = driverWith({
+      runTurn: async function* (_request: TurnRequest): AsyncIterable<TurnEvent> {
         yield { type: 'tool-use', name: 'Bash', target: 'ls' }
         yield { type: 'tool-result', name: 'Bash', ok: true }
         yield RESULT
       },
-    }
+    })
     const desk = new TurnDesk(driver, meter())
     const finished: TurnOutcome[] = []
     const admission = desk.admit('u/c:noid')
@@ -231,13 +231,13 @@ describe('the turn desk', () => {
   it('never writes the driver id into what gets stored', async () => {
     // The id is plumbing for matching. The transcript records what the UI
     // drew, and an engine's internal handle is not that.
-    const driver = {
-      async *runTurn(_request: TurnRequest): AsyncIterable<TurnEvent> {
+    const driver = driverWith({
+      runTurn: async function* (_request: TurnRequest): AsyncIterable<TurnEvent> {
         yield { type: 'tool-use', name: 'Read', target: '/a.md', id: 'toolu_01' }
         yield { type: 'tool-result', name: 'Read', ok: true, id: 'toolu_01' }
         yield RESULT
       },
-    }
+    })
     const desk = new TurnDesk(driver, meter())
     const finished: TurnOutcome[] = []
     const admission = desk.admit('u/c:plumbing')
@@ -253,13 +253,13 @@ describe('the turn desk', () => {
   it('queues behind the key, then dispatches ONE merged turn under the same slot', async () => {
     const first = gate()
     const requests: TurnRequest[] = []
-    const driver = {
-      async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
+    const driver = driverWith({
+      runTurn: async function* (request: TurnRequest): AsyncIterable<TurnEvent> {
         requests.push(request)
         if (requests.length === 1) await first.passed
         yield RESULT
       },
-    }
+    })
     const limiter = meter()
     const desk = new TurnDesk(driver, limiter)
     const finishes: string[] = []
@@ -311,8 +311,8 @@ describe('the turn desk', () => {
   it('replays a coalesced log to a late subscriber', async () => {
     const midway = gate()
     const rest = gate()
-    const driver = {
-      async *runTurn(_request: TurnRequest): AsyncIterable<TurnEvent> {
+    const driver = driverWith({
+      runTurn: async function* (_request: TurnRequest): AsyncIterable<TurnEvent> {
         yield { type: 'text-delta', text: 'moitié ' }
         yield { type: 'text-delta', text: 'une' }
         midway.open()
@@ -320,7 +320,7 @@ describe('the turn desk', () => {
         yield { type: 'text-delta', text: ' — moitié deux' }
         yield RESULT
       },
-    }
+    })
     const desk = new TurnDesk(driver, meter())
     const admission = desk.admit('u/c:1')
     if (admission.mode !== 'run') throw new Error('expected a run')
@@ -346,8 +346,8 @@ describe('the turn desk', () => {
   it('scrubs an answered question from the replay', async () => {
     const asked = gate()
     const rest = gate()
-    const driver = {
-      async *runTurn(_request: TurnRequest): AsyncIterable<TurnEvent> {
+    const driver = driverWith({
+      runTurn: async function* (_request: TurnRequest): AsyncIterable<TurnEvent> {
         yield {
           type: 'permission-request',
           id: 'q1',
@@ -359,7 +359,7 @@ describe('the turn desk', () => {
         await rest.passed
         yield RESULT
       },
-    }
+    })
     const desk = new TurnDesk(driver, meter())
     const admission = desk.admit('u/c:1')
     if (admission.mode !== 'run') throw new Error('expected a run')
@@ -376,12 +376,12 @@ describe('the turn desk', () => {
 
   it('refuses a fresh turn when the cap is full, but never the backlog of a running one', async () => {
     const hold = gate()
-    const driver = {
-      async *runTurn(_request: TurnRequest): AsyncIterable<TurnEvent> {
+    const driver = driverWith({
+      runTurn: async function* (_request: TurnRequest): AsyncIterable<TurnEvent> {
         await hold.passed
         yield RESULT
       },
-    }
+    })
     const desk = new TurnDesk(driver, meter(1))
 
     const admission = desk.admit('u/c:1')
@@ -398,10 +398,7 @@ describe('the turn desk', () => {
   })
 
   it('gives the slot back when the caller aborts before starting', () => {
-    const desk = new TurnDesk(
-      { runTurn: async function* (): AsyncIterable<TurnEvent> {} },
-      meter(1),
-    )
+    const desk = new TurnDesk(driverWith(), meter(1))
     const admission = desk.admit()
     if (admission.mode !== 'run') throw new Error('expected a run')
     admission.abort()
@@ -410,12 +407,12 @@ describe('the turn desk', () => {
   })
 
   it('stops the turn a key is running, and the driver hears it on the request', async () => {
-    const driver = {
-      async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
+    const driver = driverWith({
+      runTurn: async function* (request: TurnRequest): AsyncIterable<TurnEvent> {
         await told(request.signal)
         yield { type: 'result', sessionId: 's1', stopped: true }
       },
-    }
+    })
     const desk = new TurnDesk(driver, meter())
     const finished: TurnOutcome[] = []
 
@@ -437,12 +434,12 @@ describe('the turn desk', () => {
     // The route admits the turn, writes the message to the thread, and only
     // THEN starts it. A stop pressed inside that window must not fall through
     // the floor — the driver is handed a signal already aborted.
-    const driver = {
-      async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
+    const driver = driverWith({
+      runTurn: async function* (request: TurnRequest): AsyncIterable<TurnEvent> {
         await told(request.signal)
         yield { type: 'result', sessionId: 's1', stopped: true }
       },
-    }
+    })
     const desk = new TurnDesk(driver, meter())
     const finished: TurnOutcome[] = []
 
@@ -461,13 +458,13 @@ describe('the turn desk', () => {
     // Stopping means "stop what you are doing". The queued message is already
     // in the thread, so dropping it would leave a question nothing answers.
     const prompts: string[] = []
-    const driver = {
-      async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
+    const driver = driverWith({
+      runTurn: async function* (request: TurnRequest): AsyncIterable<TurnEvent> {
         prompts.push(request.prompt)
         if (request.prompt === 'a') await told(request.signal)
         yield RESULT
       },
-    }
+    })
     const desk = new TurnDesk(driver, meter())
 
     const admission = desk.admit('u/c:1')
@@ -484,12 +481,12 @@ describe('the turn desk', () => {
 
   it('resumes the session its store keeps when the request names none — and only then', async () => {
     const requests: TurnRequest[] = []
-    const driver = {
-      async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
+    const driver = driverWith({
+      runTurn: async function* (request: TurnRequest): AsyncIterable<TurnEvent> {
         requests.push(request)
         yield RESULT
       },
-    }
+    })
     const desk = new TurnDesk(driver, meter())
     const kept = async () => 'from-the-thread'
 
@@ -517,8 +514,8 @@ describe('the turn desk', () => {
     // engine session; read at dispatch, it continues the thread.
     const first = gate()
     const requests: TurnRequest[] = []
-    const driver = {
-      async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
+    const driver = driverWith({
+      runTurn: async function* (request: TurnRequest): AsyncIterable<TurnEvent> {
         requests.push(request)
         if (requests.length === 1) {
           await first.passed
@@ -526,7 +523,7 @@ describe('the turn desk', () => {
         }
         yield RESULT
       },
-    }
+    })
     const desk = new TurnDesk(driver, meter())
     let stored: string | undefined
     const spec = (prompt: string) => ({
@@ -551,17 +548,17 @@ describe('the turn desk', () => {
   })
 
   it('says so when a key has nothing running', async () => {
-    const desk = new TurnDesk({ runTurn: async function* (): AsyncIterable<TurnEvent> {} }, meter())
+    const desk = new TurnDesk(driverWith(), meter())
     expect(desk.stop('u/c:nobody')).toBe(false)
   })
 
   it('turns a driver crash into a fatal error event and a finish that says so', async () => {
-    const driver = {
-      async *runTurn(_request: TurnRequest): AsyncIterable<TurnEvent> {
+    const driver = driverWith({
+      runTurn: async function* (_request: TurnRequest): AsyncIterable<TurnEvent> {
         yield { type: 'text-delta', text: 'partiel' }
         throw new Error('CLI died')
       },
-    }
+    })
     const desk = new TurnDesk(driver, meter())
     const finished: TurnOutcome[] = []
     const seen: TurnEvent[] = []
@@ -583,13 +580,13 @@ describe('the turn desk', () => {
   it('survives a finish that throws, and still runs the backlog', async () => {
     const first = gate()
     const prompts: string[] = []
-    const driver = {
-      async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
+    const driver = driverWith({
+      runTurn: async function* (request: TurnRequest): AsyncIterable<TurnEvent> {
         prompts.push(request.prompt)
         if (prompts.length === 1) await first.passed
         yield RESULT
       },
-    }
+    })
     const desk = new TurnDesk(driver, meter())
     const finish = vi.fn().mockRejectedValue(new Error('disk full'))
 
@@ -608,8 +605,8 @@ describe('the turn desk', () => {
   it('reports waiting while a question is pending, and not once it is answered', async () => {
     const asked = gate()
     const rest = gate()
-    const driver = {
-      async *runTurn(_request: TurnRequest): AsyncIterable<TurnEvent> {
+    const driver = driverWith({
+      runTurn: async function* (_request: TurnRequest): AsyncIterable<TurnEvent> {
         yield {
           type: 'permission-request',
           id: 'q1',
@@ -621,7 +618,7 @@ describe('the turn desk', () => {
         await rest.passed
         yield RESULT
       },
-    }
+    })
     const desk = new TurnDesk(driver, meter())
     const admission = desk.admit('u/c:1')
     if (admission.mode !== 'run') throw new Error('expected a run')
@@ -646,8 +643,8 @@ describe('the turn desk', () => {
     const asked = gate()
     const resumed = gate()
     const rest = gate()
-    const driver = {
-      async *runTurn(_request: TurnRequest): AsyncIterable<TurnEvent> {
+    const driver = driverWith({
+      runTurn: async function* (_request: TurnRequest): AsyncIterable<TurnEvent> {
         yield {
           type: 'permission-request',
           id: 'q1',
@@ -661,7 +658,7 @@ describe('the turn desk', () => {
         resumed.open()
         yield RESULT
       },
-    }
+    })
     const desk = new TurnDesk(driver, meter())
     const admission = desk.admit('u/c:1')
     if (admission.mode !== 'run') throw new Error('expected a run')
@@ -679,8 +676,8 @@ describe('the turn desk', () => {
     const keyedAsked = gate()
     const keyedRest = gate()
     const looseHold = gate()
-    const driver = {
-      async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
+    const driver = driverWith({
+      runTurn: async function* (request: TurnRequest): AsyncIterable<TurnEvent> {
         if (request.prompt === 'ask') {
           yield {
             type: 'permission-request',
@@ -696,7 +693,7 @@ describe('the turn desk', () => {
         }
         yield RESULT
       },
-    }
+    })
     const desk = new TurnDesk(driver, meter())
     expect(desk.active()).toEqual([])
 
@@ -728,12 +725,12 @@ describe('the instance introducing itself', () => {
     // all replay from, so a preamble baked into it would put the shell's own
     // notes in a person's message.
     const seen: TurnRequest[] = []
-    const driver = {
-      async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
+    const driver = driverWith({
+      runTurn: async function* (request: TurnRequest): AsyncIterable<TurnEvent> {
         seen.push(request)
         yield RESULT
       },
-    }
+    })
     const desk = new TurnDesk(driver, meter(), (prompt) => `[shell]\n${prompt}`)
     const spec = { request: { prompt: 'salut', cwd: '.' }, finish: async () => {} }
 
@@ -748,13 +745,13 @@ describe('the instance introducing itself', () => {
   it('introduces a merged batch once, not once per message it merged', async () => {
     const first = gate()
     const seen: TurnRequest[] = []
-    const driver = {
-      async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
+    const driver = driverWith({
+      runTurn: async function* (request: TurnRequest): AsyncIterable<TurnEvent> {
         seen.push(request)
         if (seen.length === 1) await first.passed
         yield RESULT
       },
-    }
+    })
     const desk = new TurnDesk(driver, meter(), (prompt) => `[shell]\n${prompt}`)
     const spec = (prompt: string) => ({ request: { prompt, cwd: '.' }, finish: async () => {} })
 
@@ -780,12 +777,12 @@ describe('the instance introducing itself', () => {
     // A driver with no skills directory gets no contract delivered, so it must
     // get no anchor either: a line citing a file nobody wrote reads as a lie.
     const seen: TurnRequest[] = []
-    const driver = {
-      async *runTurn(request: TurnRequest): AsyncIterable<TurnEvent> {
+    const driver = driverWith({
+      runTurn: async function* (request: TurnRequest): AsyncIterable<TurnEvent> {
         seen.push(request)
         yield RESULT
       },
-    }
+    })
     const desk = new TurnDesk(driver, meter())
     const admission = desk.admit('u/c:1')
     if (admission.mode !== 'run') throw new Error('expected a run')
