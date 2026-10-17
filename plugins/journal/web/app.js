@@ -139,6 +139,8 @@ export default function view(api) {
     // journal's name standing under the app's tile.
     useEffect(() => {
       api.trail(open ? [{ label: open.title, route: routeOf(folders, open.folder) }] : [])
+      // Trail follows the selected journal, not arrays recreated by render.
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- Preserve the existing navigation triggers.
     }, [open?.id, open?.title])
 
     if (error && !journals) return h('p', { className: 'journal-problem' }, error)

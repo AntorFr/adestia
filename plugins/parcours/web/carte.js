@@ -757,7 +757,7 @@ function avancement(coords, dist, ancres, pos) {
   };
 }
 
-function modeBalade(hote, carte, coords, reperes, trace) {
+function modeBalade(hote, carte, coords, reperes, _trace) {
   const dist = cumule(coords);
   const total = dist[dist.length - 1] || 0;
   // Où chaque repère tombe sur la trace — même règle que partout : on ne cherche

@@ -20,7 +20,7 @@ import { join } from 'node:path'
 import { litTable, pourFamille } from '../moteur/tables.mjs'
 import { derive } from '../moteur/derive/index.mjs'
 import { calepine } from '../moteur/debit/calepine.mjs'
-import { chantsRetenus } from '../moteur/modele/visibilite.mjs'
+import '../moteur/modele/visibilite.mjs'
 import { fraicheur, signature } from '../moteur/design.mjs'
 import { diff, rendu } from '../moteur/diff.mjs'
 

@@ -32,7 +32,8 @@ export default tseslint.config(
       '**/public/vendor/**',
       'spikes/**',
       'bench/**',
-      'plugins/**',
+      // Vendored barcode decoder: third-party bundle, maintained upstream.
+      'plugins/scan/web/decoder.js',
       'skins/**',
       'data/**',
       'tmp/**',
@@ -47,7 +48,6 @@ export default tseslint.config(
     languageOptions: {
       ecmaVersion: 2023,
       sourceType: 'module',
-      globals: { ...globals.node, ...globals.browser },
     },
     rules: {
       // The repository writes `#private` fields and reads them back; the base
@@ -76,11 +76,33 @@ export default tseslint.config(
   },
 
   {
+    files: ['**/*.{ts,tsx,js,mjs}'],
+    ignores: ['plugins/**'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+  },
+
+  {
     // The shell's own code has `eslint-disable-next-line
     // react-hooks/exhaustive-deps` comments in it, written against a plugin
     // that was never installed — so the disables pointed at nothing and the
     // rule they silence was never running either.
     files: ['packages/web/src/**/*.{ts,tsx}'],
+    plugins: { 'react-hooks': reactHooks },
+    rules: {
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
+    },
+  },
+
+  {
+    files: ['plugins/**/*.{js,mjs}'],
+    ignores: ['plugins/**/web/**/*.js'],
+    languageOptions: { globals: globals.node },
+  },
+
+  {
+    files: ['plugins/**/web/**/*.js'],
+    languageOptions: { globals: globals.browser },
     plugins: { 'react-hooks': reactHooks },
     rules: {
       'react-hooks/rules-of-hooks': 'error',
@@ -100,4 +122,20 @@ export default tseslint.config(
       'require-yield': 'off',
     },
   },
+  // Legacy fixture imports in these existing tests are kept for the tester;
+  // all other unused bindings remain checked, and no assertion is changed.
+  ...[
+    ['plugins/atelier/test/chants.test.js', '^(entre|traverse)$'],
+    ['plugins/listening-post/test/library.test.js', '^(readFile|readdir|stat)$'],
+    ['plugins/parcours/test/api.test.js', '^(join|ROOT)$'],
+    ['plugins/voyages/test/api.test.js', '^(join|sep)$'],
+  ].map(([file, varsIgnorePattern]) => ({
+    files: [file],
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', {
+        argsIgnorePattern: '^_', varsIgnorePattern, caughtErrors: 'none',
+      }],
+    },
+  })),
+
 )

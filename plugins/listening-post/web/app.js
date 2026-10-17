@@ -128,6 +128,8 @@ export default function view(api) {
     // SAY nothing rather than leave the last item's title standing.
     useEffect(() => {
       api.trail(open ? [{ label: open.titre, route: routeOf(items, open.path) }] : [])
+      // Trail follows the selected item and library, not arrays recreated by render.
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- Preserve the existing navigation triggers.
     }, [open?.path, open?.titre, library])
 
     if (error && !library) return h('p', { className: 'lp-problem' }, error)
@@ -138,7 +140,7 @@ export default function view(api) {
   }
 
   /** The hub: search, what is waiting, what was kept. */
-  function Hub({ items, reload, error }) {
+  function Hub({ items, error }) {
     const [queue, setQueue] = useState(null)
     const [queueError, setQueueError] = useState(null)
     const [busy, setBusy] = useState(false)
@@ -493,7 +495,7 @@ export default function view(api) {
    * its own reading posture, its own revision and its own conflict handling.
    * A second editor here would be a second grammar for the same file.
    */
-  function One({ item, items, reload }) {
+  function One({ item, reload }) {
     const [transcript, setTranscript] = useState(null)
     const [filter, setFilter] = useState('')
 

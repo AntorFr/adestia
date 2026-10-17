@@ -10,8 +10,8 @@
  * POURQUOI UNE ANCRE ET PAS UN DESSIN. Une boucle de 3 km fait 328 points de
  * trace. Les écrire dans la fiche ferait repasser toute la géométrie par le
  * modèle à chaque retouche — précisément le coût que le `.parcours.json` existe
- * pour éviter (cf. PARCOURS.md, et D44 côté cerveau). Le bloc résout le chemin,
- * pose un élément et s'arrête là ; `carte.js` va chercher le fichier et peint.
+ * pour éviter : la géométrie reste dans un fichier partagé entre les fiches.
+ * Le bloc résout le chemin, pose un élément et s'arrête là ; `carte.js` va chercher le fichier et peint.
  *
  * DEUX VUES, et c'est ce qui évite un domaine « balades ». Un parcours n'a pas
  * de maison : il s'accroche à la fiche qui a une raison d'en parler — un

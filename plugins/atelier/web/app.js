@@ -8,7 +8,7 @@
    handing it back at build time.
 
    ONE source of truth, two consumers: the browser view renders with the very
-   rules the CLI validates and migrates against (ATELIER-3.md D4). They cannot
+   rules the CLI validates and migrates against. They cannot
    disagree, because they are the same file.
 
    THE CONTRACT — `(api) => ({ routes })`. `atelier` is the hub, `atelier/<path>`
@@ -21,7 +21,7 @@
 
 import { normalise } from './convert.js';
 import {
-  SURFACES, CHANTS, epOf, kerfOf, zoneUtile, bandBox, bandGuide, bandLong,
+  CHANTS, epOf, kerfOf, zoneUtile, bandBox, bandGuide, bandLong,
   chantEdges, lamPoints, lamLignes, ligneBande, prepsDe, plaqueBands, plaquePoses, bandesMeres, issuesPlaque,
 } from './regles.js';
 
@@ -42,7 +42,7 @@ import {
  * does not.
  */
 export default function createAtelierApp(api) {
-  const { esc, crumbs, headers, add, chipsOf, href, learn } = api;
+  const { esc, crumbs, headers, href, learn } = api;
   /* The one line this port needed.
 
      In agent-gw the engine was BUNDLED into the launcher, so a bare `page`
@@ -473,7 +473,6 @@ export default function createAtelierApp(api) {
   function renderDebit(body, st) {
     const plaques = stPlaques(st);
     if (!plaques.length) { body.innerHTML = '<div class="empty">Pas de plan de débit.</div>'; return; }
-    const refL = Math.max(...plaques.map((pl) => (wb.matById.get(pl.materiau)?.plaque?.l) || 2800));
     const remanie = Object.keys(wbPoses()).length;
     // La ROTATION est bridée par la matière : sur un panneau à fil, tourner une pièce change
     // le sens du veinage — ce n'est pas un choix de calepinage, c'est un défaut.

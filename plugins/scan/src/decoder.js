@@ -6,6 +6,8 @@
  * shell has to know it exists.
  */
 
+// This source is bundled for the browser; its canvas is the decoder's input.
+/* global document */
 import {
   BarcodeFormat,
   BinaryBitmap,

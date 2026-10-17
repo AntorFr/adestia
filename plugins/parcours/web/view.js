@@ -4,7 +4,7 @@
  * La même carte que le bloc, montée sans la fiche autour. C'est ce qui rend un
  * parcours ADRESSABLE : il n'appartient à aucun domaine, il s'accroche à la
  * fiche qui a une raison d'en parler, et un même fichier peut être cité depuis
- * plusieurs fiches (D44). Sans une page à lui, `vue="lien"` n'aurait nulle part
+ * plusieurs fiches. Sans une page à lui, `vue="lien"` n'aurait nulle part
  * où mener et la non-duplication tomberait.
  *
  * Une vue SANS tuile, délibérément : un parcours n'est pas une app, il n'a rien

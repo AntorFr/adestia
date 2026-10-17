@@ -563,7 +563,10 @@ export default function createVoyagesApp(api) {
         // The insertion rule: above the card being aimed at, or below the last.
         const { idx, els } = vdropIndex(dz, e.clientY, vdragId)
         vclearIns()
-        if (els.length) idx < els.length ? els[idx].classList.add('inst') : els[els.length - 1].classList.add('insb')
+        if (els.length) {
+          if (idx < els.length) els[idx].classList.add('inst')
+          else els[els.length - 1].classList.add('insb')
+        }
       })
       dz.addEventListener('dragleave', (e) => {
         if (!dz.contains(e.relatedTarget)) {
@@ -669,7 +672,6 @@ export default function createVoyagesApp(api) {
   function openVFiche(id) {
     const it = vItems().find((x) => x.id === id)
     if (!it) return
-    const T = vtypeOf(it.type)
     const cal =
       it.jour ?
         vfmtDay(it.jour) + (it.heure ? ' · ' + esc(it.heure) : it.creneau ? ' · ' + (CRN[it.creneau] || esc(it.creneau)) : '')

@@ -126,7 +126,7 @@ export function makeSheet(api, t) {
       /**
        * The way back sits IN the header, not above it.
        *
-       * The shell draws its own « Back » in the canvas, and a second button
+       * The shell draws its own « Back » in the canvas, and a second button
        * stacked under it read as two of the same control — seen in the bench
        * before it was written down. They are not the same: the shell's walks
        * the browser's history, which leaves the app entirely, while this one

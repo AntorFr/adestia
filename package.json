@@ -13,7 +13,7 @@
     "test": "vitest run && npm run test:plugins",
     "test:watch": "vitest",
     "typecheck": "tsc --build && tsc -p packages/web --noEmit",
-    "lint": "eslint packages",
+    "lint": "eslint packages plugins",
     "build": "npm run build --workspace @antorfr/adestia-server && npm run build:web --workspace @antorfr/adestia-web",
     "test:plugins": "node --test \"plugins/*/test/*.test.js\" \"plugins/test/*.test.js\""
   },
