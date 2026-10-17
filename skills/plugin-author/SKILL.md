@@ -843,6 +843,43 @@ The shell ships its own controls as classes, drawn from tokens, so a plugin's sc
 like the shell's in every skin and in both themes. Use the classes; do not restyle them.
 Variants are modifiers, sizes are `--sm` or the default.
 
+### Icons
+
+The shell mounts its Lucide sprite once at boot. Use it directly from your markup;
+no shell import, icon package or network request is needed:
+
+```html
+<button type="button" class="adestia-btn adestia-btn--icon" aria-label="Add">
+  <svg class="adestia-icon" aria-hidden="true" focusable="false">
+    <use href="#adestia-i-plus"></use>
+  </svg>
+</button>
+```
+
+For vanilla JS, create the `svg` and `use` with
+`document.createElementNS('http://www.w3.org/2000/svg', …)` and set the use's `href`
+to `#adestia-i-<name>`. The icon is decorative: put the translated accessible name
+on its control (or visible text beside it), as with `aria-label` above.
+`.adestia-icon` draws at `1em`, with a `currentColor` stroke of width 2;
+`.adestia-icon--sm` uses a finer stroke of width 1.75. Add
+`.adestia-icon--spin` for a spinner.
+
+Available names (the closed subset in `packages/web/src/app/icons.ts`, also listed
+in `docs/charte.md` under Icons):
+
+```text
+plus, x, chevron-left, chevron-right, settings, pencil, rotate-ccw, save,
+trash-2, search, folder, file-text, sparkles, plug, book-open,
+sliders-horizontal, handshake, monitor, sun, moon, log-out, key-round, lock,
+users, check, circle-alert, triangle-alert, info, wifi-off, refresh-cw, copy,
+external-link, loader-circle
+```
+
+Use these exact kebab-case names after `adestia-i-`; other Lucide names are not
+in the sprite. A plugin's declared tile icon remains its own choice.
+
+### Controls
+
 - **Button** — `.adestia-btn`; variants `.adestia-btn--accent`, `--danger`, `--ghost`;
   `.adestia-btn--icon` (square, **needs an `aria-label`**); size `.adestia-btn--sm`.
   Busy: put a `loader-circle` icon with `.adestia-icon--spin` in place of the icon and set
