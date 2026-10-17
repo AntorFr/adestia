@@ -63,7 +63,7 @@ export function ServerList({
                       },
                     ]
                   : []),
-                ...(view.editable ? [] : [{ text: t('read-only') }]),
+                ...(view.editable ? [] : [{ text: t('read-only'), icon: 'lock' as const }]),
               ]}
               onOpen={() => onOpen(view.name)}
               t={t}

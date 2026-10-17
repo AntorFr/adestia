@@ -257,7 +257,8 @@ switch (three icons; accessible names System / Light / Dark as the text buttons 
 out" (ghost, `log-out`, only under OIDC; hidden otherwise as today), the build version.
 
 **E-19 Problems band.** Icon per kind (circle-alert refused, triangle-alert degraded), text
-in the `*-text` tokens, band background a 12 % tint; present only when there is a problem.
+in the `*-text` tokens, band background a 4 % tint to keep the composed contrast at AA;
+present only when there is a problem.
 
 **Roles.** Owner and user see the same on these screens (no role check exists); the agent
 (a peer) sees none of them as a page — its work shows on E-13 and E-19; E-13 is

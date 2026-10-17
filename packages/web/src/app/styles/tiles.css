@@ -420,7 +420,6 @@
 }
 
 /* The catalogue pop-in rides the shared sheet; this is only what is inside it. */
-.adestia-catalogues { width: 560px; }
 .adestia-catalogues__body {
   display: flex;
   flex-direction: column;
