@@ -209,6 +209,8 @@ folded into them.
   blocks go; no hue or value changes except the contrast corrections of § 7.2. Skins keep
   redefining tokens in their own `:root[data-skin=<id>]` blocks, with plain values or
   `light-dark()`.
+  The dark selectors may still redeclare only the inherited geometry of `--shadow` and
+  `--shadow-lg`, with their inks defined once in `light-dark()` and no literal colours.
 - **Type scale**: `--text-2xs` 11px, `--text-xs` 12px, `--text-sm` 13px, `--text-base` 15px,
   `--text-lg` 18px, `--text-xl` 22px, `--text-2xl` 28px. A literal size in the 17 distinct
   values of today maps to the nearest step; the visible change is at most 1 px.
