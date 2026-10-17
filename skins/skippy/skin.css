@@ -121,6 +121,8 @@
 
   --accent: #b0731a;
   --accent-text: #8a5a14;
+  /* Hot MCP chips keep the amber fill and read its darker text twin. */
+  --adestia-hue-indigo-text: var(--accent-text);
   --on-accent: #080a0d;
   --danger-text: #b53b29;
   --warning-text: #8a5a14;

@@ -528,6 +528,47 @@ inherited accents. Its lightness also lets the unchanged danger, warning and suc
 fills carry a label at AA. `--text-faint` is corrected in both themes; placeholders have
 the same 4.5:1 floor as other text.
 
+### Composed backgrounds on E-10 and E-19
+
+Measured in Chromium on the `base` seed of `bench/launch.mjs --engine fake`,
+under each skin, explicit light and dark, at 1440 × 900 and 390 × 844. Both sizes
+give the same ratios below. The backgrounds are the rendered sRGB colours after
+alpha composition, rounded to RGB integers for display; ratios use the unrounded values.
+
+E-19 uses the existing `--danger-text` / `--warning-text` inks over a **4%** fill tint
+(the 12% tint failed AA). E-10 hot chips use `--tile-color-text`: `Tile.tsx` reads
+`--adestia-hue-<hue>-text`, falling back to the original hue, or `--accent-text`
+when no hue is defined. Skippy light supplies `--adestia-hue-indigo-text` from
+`--accent-text`; its amber marks and fills keep their colour. The two hot states,
+failed and needs-auth, have identical colours and are represented by one row.
+
+| Pair | Skin / theme | Text RGB | Composed background RGB | Ratio | Threshold | Result |
+|---|---|---|---|---|---|---|
+| E-10 hot chip | skippy / light | 138, 90, 20 | 255,255,255 | 5.91 | 4.5 | ok |
+| E-19 refused heading | skippy / light | 181, 59, 41 | 232,230,233 | 4.66 | 4.5 | ok |
+| E-19 degraded heading | skippy / light | 138, 90, 20 | 231,232,232 | 4.80 | 4.5 | ok |
+| E-10 hot chip | skippy / dark | 242, 169, 59 | 16,20,25 | 9.25 | 4.5 | ok |
+| E-19 refused heading | skippy / dark | 232, 84, 63 | 17,13,14 | 5.32 | 4.5 | ok |
+| E-19 degraded heading | skippy / dark | 242, 169, 59 | 17,17,14 | 9.49 | 4.5 | ok |
+| E-10 hot chip | alfred / light | 76, 111, 224 | 255,255,255 | 4.51 | 4.5 | ok |
+| E-19 refused heading | alfred / light | 190, 57, 44 | 237,235,238 | 4.63 | 4.5 | ok |
+| E-19 degraded heading | alfred / light | 143, 94, 21 | 236,237,237 | 4.72 | 4.5 | ok |
+| E-10 hot chip | alfred / dark | 123, 150, 242 | 20,24,33 | 6.33 | 4.5 | ok |
+| E-19 refused heading | alfred / dark | 234, 106, 92 | 20,16,21 | 6.01 | 4.5 | ok |
+| E-19 degraded heading | alfred / dark | 224, 166, 79 | 20,20,20 | 8.57 | 4.5 | ok |
+| E-10 hot chip | nestor / light | 76, 111, 224 | 255,255,255 | 4.51 | 4.5 | ok |
+| E-19 refused heading | nestor / light | 177, 58, 40 | 243,235,227 | 5.07 | 4.5 | ok |
+| E-19 degraded heading | nestor / light | 135, 89, 20 | 241,236,226 | 5.13 | 4.5 | ok |
+| E-10 hot chip | nestor / dark | 123, 150, 242 | 29,24,54 | 6.06 | 4.5 | ok |
+| E-19 refused heading | nestor / dark | 234, 106, 126 | 27,19,38 | 5.86 | 4.5 | ok |
+| E-19 degraded heading | nestor / dark | 232, 180, 92 | 27,22,37 | 9.33 | 4.5 | ok |
+| E-10 hot chip | dobby / light | 76, 74, 134 | 247,240,225 | 7.03 | 4.5 | ok |
+| E-19 refused heading | dobby / light | 161, 54, 41 | 234,220,201 | 5.07 | 4.5 | ok |
+| E-19 degraded heading | dobby / light | 121, 82, 22 | 234,222,200 | 5.21 | 4.5 | ok |
+| E-10 hot chip | dobby / dark | 138, 136, 184 | 34,27,21 | 5.09 | 4.5 | ok |
+| E-19 refused heading | dobby / dark | 208, 101, 79 | 30,22,17 | 4.79 | 4.5 | ok |
+| E-19 degraded heading | dobby / dark | 217, 165, 72 | 31,24,17 | 7.86 | 4.5 | ok |
+
 ### How the contrast test works
 
 `packages/web/test/contrast.test.ts` reads `tokens.css` and the four `skins/*/skin.css`,
@@ -551,7 +592,8 @@ and gains a `*-text` twin for its text uses; a token that is only ever text
 
 ## 6. Accepted departures
 
-None: every pair of the base palette and of the four skins reaches its threshold by
-lightness alone, without redrawing a persona. A pair that could reach AA only by redrawing
-the persona is written here with its reason and "accepted by the mandate holder, to be shown
-to Monsieur" — never silently left under its threshold.
+None: the declared token pairs and the rendered E-10 hot chips and E-19 headings
+listed in § 5 reach AA. This includes the composed backgrounds: token-on-surface
+measurements alone do not establish contrast on a translucent tint. The hot chip uses
+a text twin and E-19 uses a 4% tint; neither redraws a persona. Any pair left below
+AA must be recorded here with its reason and the mandate holder’s acceptance.
