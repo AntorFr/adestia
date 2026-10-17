@@ -16,6 +16,8 @@ import { PluginBoundary } from '../plugins/Boundary.js'
 import type { LoadedPlugin } from '../plugins/loader.js'
 import type { wordsFor } from '../plugins/words.js'
 import { CollectionShell } from './Collection.js'
+import { BackButton } from './BackButton.js'
+import { EmptyState } from './ui/EmptyState.js'
 import { Home } from './Home.js'
 import { MissingPage } from './MissingPage.js'
 import { Preferences, prefsTitle, type PrefsPage } from './Preferences.js'
@@ -35,6 +37,7 @@ export interface ChatChannel {
 }
 
 export interface CanvasProps {
+  readonly ready?: boolean
   readonly instance: InstanceInfo
   readonly skin: Skin & SkinSlots
   readonly loaded: readonly LoadedPlugin[]
@@ -73,20 +76,13 @@ export function Canvas(props: CanvasProps) {
       // a blank canvas: a bookmark outliving a config change must say
       // so instead of looking broken.
       return (
-        <section className="adestia-empty">
-          <p>{t('That app is not active on this instance.')}</p>
-          <button type="button" className="adestia-switch" onClick={() => closeApp()}>
-            ‹ Back
-          </button>
-        </section>
+        <EmptyState icon="plug" text={t('That app is not active on this instance.')} action={<BackButton label={t('Home')} onClick={closeApp} />} />
       )
     }
     const View = plugin.view.component
     return (
       <>
-        <button type="button" className="adestia-switch" onClick={() => closeApp()}>
-          ‹ Back
-        </button>
+        <BackButton label={t('Home')} onClick={closeApp} />
         {/* Rendered inside a boundary: a plugin that throws mid-render
             takes its own panel down, never the shell around it. */}
         <PluginBoundary id={plugin.id}>
@@ -176,9 +172,8 @@ function SettingsScreen({
           which went to its own list — stacked one above the other and
           reading as a bug. This is the survivor, so it has to be right
           at every depth. */}
-      <button
-        type="button"
-        className="adestia-switch"
+      <BackButton
+        label={settings?.item !== undefined ? prefsTitle(settingsPage, t) : settingsPage === '' ? t('Home') : t('Settings')}
         onClick={() => {
           location.hash =
             settings?.item !== undefined
@@ -187,14 +182,7 @@ function SettingsScreen({
                 ? ''
                 : '/settings'
         }}
-      >
-        ‹{' '}
-        {settings?.item !== undefined
-          ? prefsTitle(settingsPage, t)
-          : settingsPage === ''
-            ? t('Home')
-            : t('Settings')}
-      </button>
+      />
       <Preferences
         page={settingsPage}
         onPage={(next) => {
@@ -217,6 +205,7 @@ function SettingsScreen({
 
 /** The landing canvas, with the livery's head when it draws one. */
 function LandingScreen({
+  ready,
   instance,
   skin,
   loaded,
@@ -233,6 +222,7 @@ function LandingScreen({
   const slotUser = skinUser(instance)
   return (
     <Home
+      {...(ready === undefined ? {} : { ready })}
       skin={skin}
       {...(skin.hero
         ? {

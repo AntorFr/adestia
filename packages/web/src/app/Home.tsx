@@ -17,10 +17,12 @@ import { useEffect, type ReactNode } from 'react'
 import type { LoadedPlugin } from '../plugins/loader.js'
 import type { Skin } from './skin.js'
 import type { IndexEntry, StoreInfo } from './sections.js'
+import { Icon } from './Icon.js'
 import { Brief } from './Brief.js'
 import { Domains, plural } from './Domains.js'
 
 export interface HomeProps {
+  readonly ready?: boolean
   readonly skin: Skin
   /**
    * The livery's own head — greeting, mascot, way in — in place of the
@@ -56,6 +58,7 @@ export interface HomeProps {
 const EVENING_FROM = 18
 
 export function Home({
+  ready = true,
   skin,
   hero,
   plugins,
@@ -117,46 +120,43 @@ export function Home({
               split the user's attention between two places that do different
               things. */}
           <button type="button" className="adestia-home__ask" onClick={focusComposer}>
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <circle cx="11" cy="11" r="7" />
-              <path d="M21 21l-4-4" />
-            </svg>
+            <Icon name="search" />
             {/* The block caret: invisible on most liveries, a beating amber
                 slab on the one whose whole identity is a terminal. CSS
                 decides. */}
             <span className="adestia-home__ask-caret" aria-hidden="true" />
             <span className="adestia-home__ask-text">{skin.placeholder ?? t('Ask…')}</span>
-            <kbd className="adestia-home__ask-kbd">⌘K</kbd>
+            <kbd className="adestia-home__ask-kbd">{/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl K'}</kbd>
           </button>
         </>
       )}
 
-      <Brief
-        skin={skin}
-        plugins={plugins}
-        clock={clock}
-        fetchImpl={fetchImpl}
-        openPlugin={openPlugin}
-        openSection={openSection}
-        openPage={openPage}
-        ask={ask}
-        t={t}
-      />
-
-      <Domains
-        plugins={plugins}
-        entries={entries}
-        stores={stores}
-        openPlugin={openPlugin}
-        openSection={openSection}
-        t={t}
-      />
+      {!ready ? (
+        <div className="adestia-loading" role="status"><Icon name="loader-circle" />{t('Loading…')}</div>
+      ) : (
+        <>
+          <Brief
+            skin={skin}
+            plugins={plugins}
+            clock={clock}
+            fetchImpl={fetchImpl}
+            openPlugin={openPlugin}
+            openSection={openSection}
+            openPage={openPage}
+            ask={ask}
+            t={t}
+          />
+    
+          <Domains
+            plugins={plugins}
+            entries={entries}
+            stores={stores}
+            openPlugin={openPlugin}
+            openSection={openSection}
+            t={t}
+          />
+        </>
+      )}
     </div>
   )
 }

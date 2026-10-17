@@ -21,6 +21,9 @@
  */
 
 export const ICON_PATHS = {
+  'folder-open': '<path d="m6 14 1.5-3h14l-3 9H3V5a2 2 0 0 1 2-2h4l2 3h8a2 2 0 0 1 2 2v3"/>',
+  'file-question': '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M10 13a2 2 0 1 1 3 1.7c-.6.3-1 .8-1 1.3M12 19h.01"/>',
+  'search-x': '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3m-8.2-8.2 5 5m0-5-5 5"/>',
   'plus': '<path d="M5 12h14"/><path d="M12 5v14"/>',
   'x': '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
   'chevron-left': '<path d="m15 18-6-6 6-6"/>',

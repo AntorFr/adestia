@@ -7,6 +7,7 @@
 
 import { Fragment } from 'react'
 
+import { BackButton } from './BackButton.js'
 import { SettingsMenu } from './SettingsMenu.js'
 import type { Crumb } from './trail.js'
 import type { InstanceInfo } from './useInstance.js'
@@ -42,18 +43,15 @@ export function CanvasHeader({
       {/* Folded onto one screen, the canvas needs its own way back — the
           CSS alone would hide it with no route to it at all. */}
       {mobile && (
-        <button
-          type="button"
-          className="adestia-switch"
+        <BackButton
+          label={t('Chat')}
           onClick={onChat}
           aria-label={t('Back to the chat')}
-        >
-          ‹ Chat
-        </button>
+        />
       )}
       {/* Where you are, in the apparatus voice. The brand moved to the
           rail: this side of the gutter is about PLACE, not identity. */}
-      <nav className="adestia-crumbs" aria-label="Breadcrumb">
+      <nav className="adestia-crumbs" aria-label={t('Breadcrumb')}>
         <button
           type="button"
           onClick={goHome}

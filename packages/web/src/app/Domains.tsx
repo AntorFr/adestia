@@ -10,6 +10,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { LoadedPlugin } from '../plugins/loader.js'
 import { wordsFor } from '../plugins/words.js'
 import type { TileInfo } from '../plugins/contract.js'
+import { EmptyState } from './ui/EmptyState.js'
 import { Tile } from './Tile.js'
 import { sectionsOf, type IndexEntry, type SectionTile, type StoreInfo } from './sections.js'
 import { ORDER_KEY_DOMAINS } from './order.js'
@@ -159,7 +160,7 @@ export function Domains({
       label: plugin.tile?.label ? say(plugin.id, plugin.tile.label) : plugin.id,
       ...(info[plugin.id]?.subtitle ? { subtitle: info[plugin.id]!.subtitle! } : {}),
       ...(info[plugin.id]?.chips ? { chips: info[plugin.id]!.chips! } : {}),
-      ...(plugin.view ? {} : { disabled: true, title: 'This plugin ships no screen' }),
+      ...(plugin.view ? {} : { disabled: true, title: t('This plugin ships no screen') }),
       open: () => openPlugin(plugin),
     })),
     ...sections.map((section) => {
@@ -219,7 +220,7 @@ export function Domains({
         {domains.length > 1 && (
           <button
             type="button"
-            className="adestia-section__edit"
+            className={`adestia-section__edit adestia-btn adestia-btn--sm ${editing ? 'adestia-btn--accent' : 'adestia-btn--ghost'}`}
             aria-pressed={editing}
             onClick={() => setEditing(!editing)}
           >
@@ -251,7 +252,7 @@ export function Domains({
         ))}
         <Tile
           key="shell:settings"
-          icon={SHELL_APP.icon}
+          iconName="settings"
           hue={SHELL_APP.hue}
           label={t('Settings')}
           onOpen={() => {
@@ -262,13 +263,10 @@ export function Domains({
       </ul>
 
       {tiled.length === 0 && sections.length === 0 && (
-        <section className="adestia-empty">
-          <p>{t('Nothing to show yet.')}</p>
-          <p className="adestia-empty__hint">
+        <EmptyState icon="folder-open" text={t('Nothing to show yet.')} action={<p className="adestia-empty__hint">
             {t('Turn a plugin on in')} <code>adestia.config.yaml</code>,{' '}
             {t('or write a page — a folder holding one becomes a section on its own.')}
-          </p>
-        </section>
+          </p>} />
       )}
     </>
   )

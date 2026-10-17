@@ -34,6 +34,12 @@ export type Locale = 'en' | 'fr'
  * mistranslated, and beats a raw identifier by a mile.
  */
 const FR: Readonly<Record<string, string>> = {
+  Highlights: 'À la une',
+  'Refresh my highlights': 'Rafraîchis ma une',
+  'Open “%label”': 'Ouvre « %label »',
+  Breadcrumb: 'Fil d’Ariane',
+  Chat: 'Chat',
+  'This plugin ships no screen': 'Ce plugin ne fournit pas d’écran',
   // The landing canvas
   // One mosaic now: a plugin's tile and a folder's are both doors on a domain.
   Domains: 'Domaines',

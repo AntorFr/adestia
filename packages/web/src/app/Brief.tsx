@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react'
 
 import type { LoadedPlugin } from '../plugins/loader.js'
 import type { Skin } from './skin.js'
+import { Icon } from './Icon.js'
 import { requestJson } from './request.js'
 import { routeForPath } from './owners.js'
 
@@ -146,7 +147,7 @@ export function Brief({
       }
     }
     // The truthful fallback: let the person ask about it.
-    ask?.(`Ouvre « ${label} »`)
+    ask?.(t('Open “%label”').replace('%label', label))
   }
 
   if (!brief) return null
@@ -154,7 +155,7 @@ export function Brief({
   return (
     <>
       <h2 className="adestia-section">
-        À la une
+        {t('Highlights')}
         {(() => {
           const age = briefAge(brief.generatedAt, clock, t)
           const by = skin.brand ?? t('the agent')
@@ -168,11 +169,12 @@ export function Brief({
         {ask && (
           <button
             type="button"
-            className="adestia-section__refresh"
+            className="adestia-section__refresh adestia-btn adestia-btn--ghost adestia-btn--icon adestia-btn--sm"
             title={t('Ask for a fresh brief')}
-            onClick={() => ask('Rafraîchis ma une')}
+            aria-label={t('Ask for a fresh brief')}
+            onClick={() => ask(t('Refresh my highlights'))}
           >
-            ↺
+            <Icon name="rotate-ccw" />
           </button>
         )}
       </h2>

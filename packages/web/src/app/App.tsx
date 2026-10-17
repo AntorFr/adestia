@@ -74,7 +74,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
     [],
   )
 
-  const { instance, failures, fatal, offline, needsLogin, pages, stores, skin, skinScheme, loaded } =
+  const { instance, failures, fatal, offline, needsLogin, pages, stores, skin, skinScheme, loaded, ready } =
     useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef, onTrail })
 
   /**
@@ -249,6 +249,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
         <Problems instance={instance} failures={failures} loaded={loaded} pages={pages} t={t} locale={locale} />
 
         <Canvas
+          ready={ready}
           instance={instance}
           skin={skin}
           loaded={loaded}
