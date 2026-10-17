@@ -183,7 +183,7 @@ escaped `\:::` in the content tests, and looks like a serialiser bug
 npm ci
 npm test          # no account or network needed; the catalogue screens suite builds the shell on first run and skips (npm test stays green) when Playwright is not found through require/NODE_PATH, then `npm root -g`
 npm run typecheck
-npm run lint      # not yet run by CI
+npm run lint      # also run by CI
 npm run build
 ```
 

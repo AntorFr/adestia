@@ -196,7 +196,7 @@ and every turn — chat, scheduled, delegated, callback wake — goes through th
   checks every bundled plugin's French entries. Skins have no words through the locale today.
 - **Tests** — `vitest.config.ts` runs `packages/*/test`, aliasing every `@antorfr/*` to its
   `src/index.ts`; `npm run test:plugins` runs `node --test` over the plugins; `bench/` is the
-  visual check (`bench/run.sh` with docker; `bench/launch.mjs` and `bench/sweep.mjs` without). CI (`.github/workflows/ci.yml`) runs typecheck, tests, the build, a start of the built server and a docker image build (not lint).
+  visual check (`bench/run.sh` with docker; `bench/launch.mjs` and `bench/sweep.mjs` without). CI (`.github/workflows/ci.yml`) runs typecheck, lint, tests, the build, a start of the built server and a docker image build.
 
 ## Decisions of adestia-qualite
 
@@ -371,6 +371,15 @@ rules. The server outcomes above stay blank until the documentation tranche fill
   production. What remains after the tranche is a type that is part of a package's public
   contract (the `index.ts` of a package), each named in this section when it is known; every
   other hit is un-exported or deleted.
+  Run `node scripts/unused-exports.mjs`: sorted entries go to stdout, the count to stderr.
+  The baseline before export removal is **297** entries. The TypeScript module graph uses
+  `tsconfig.base.json` source aliases and counts type imports, aliases and re-exports
+  (including `export *`). Each barrel has its own entries; its re-export consumes the
+  original module's export. All package sources, including web, supply importers; web
+  exports are omitted from the report. Namespace imports and literal dynamic imports or
+  `require` calls conservatively consume the target's whole surface; import types with a
+  qualifier consume its first name. Tests, `bin/`, bench scripts, plugins and computed
+  module paths are outside the graph: check their runtime uses before removing a hit.
 - **R-8, a claim the gate keeps.** `eslint.config.js` is rewritten to say what its rules do
   (no type-aware rule, so no floating-promise check; `caughtErrors: 'none'`, so an ignored caught
   error is allowed). Turning on type-aware rules would fire on deliberate fire-and-forget
