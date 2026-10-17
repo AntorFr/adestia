@@ -27,6 +27,41 @@ import { fileURLToPath } from 'node:url'
 import { test } from 'node:test'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
+// Each plugin's language task removes its own line; a stale exception fails.
+const TU_A_CORRIGER = [
+  'listening-post',
+  'meals',
+]
+
+/** Quoted speech may address an agent; the surrounding interface says vous. */
+function familiarWords(table, locate) {
+  const faults = []
+  for (const [key, value] of Object.entries(table)) {
+    let depth = 0
+    let outside = ''
+    for (const character of String(value)) {
+      if (character === '«') { depth += 1; outside += ' ' }
+      else if (character === '»' && depth) { depth -= 1; outside += ' ' }
+      else if (!depth) outside += character
+    }
+    const hits = [...outside.matchAll(/(?<![\p{L}\p{N}_])(?:tu|te|ton|ta|tes|toi)(?![\p{L}\p{N}_])|(?<![\p{L}\p{N}_])t['’](?=\p{L})/giu)]
+    if (hits.length) faults.push(`${locate(value)}: familiar French (${hits.map((m) => m[0]).join(', ')}): ${key} → ${value}`)
+  }
+  return faults
+}
+
+// Negative fixtures use the same gate as the manifest tables, without changing
+// the bundled plugins: PLUGIN_WORDS_FIXTURE=plugins/test/fixtures/tu.json
+if (process.env.PLUGIN_WORDS_FIXTURE) {
+  const file = process.env.PLUGIN_WORDS_FIXTURE
+  test(`${file}: French words address the reader as vous`, () => {
+    const table = JSON.parse(readFileSync(file, 'utf8')).fr
+    assert.ok(table && typeof table === 'object', `${file}: missing fr table`)
+    const faults = familiarWords(table, () => file)
+    assert.deepEqual(faults, [], faults.join('\n'))
+  })
+}
+
 const FACETS = ['view', 'blocks', 'chrome', 'layouts']
 
 /**
@@ -172,6 +207,19 @@ for (const id of plugins) {
   const web = join(root, id, 'web')
   const sources = existsSync(web) ? sourcesOf(web) : []
 
+  test(`${id}: French words address the reader as vous`, async () => {
+    const table = await tableOf(id, manifest)
+    const faults = familiarWords(table, (value) => {
+      const source = sources.find(([, text]) => text.includes(value))?.[0]
+      return source ? `plugins/${id}/web/${source}` : `plugins/${id}/adestia-plugin.json (facet words)`
+    })
+    if (TU_A_CORRIGER.includes(id)) {
+      assert.ok(faults.length, `${id}: no familiar French remains; remove it from TU_A_CORRIGER`)
+    } else {
+      assert.deepEqual(faults, [], faults.join('\n'))
+    }
+  })
+
   test(`${id}: every sentence it says is translated`, async () => {
     const table = await tableOf(id, manifest)
     const missing = [
@@ -195,3 +243,7 @@ for (const id of plugins) {
     assert.deepEqual(orphans, [], `traduit et employé nulle part :\n  ${orphans.join('\n  ')}`)
   })
 }
+
+test('every pending vous correction names a bundled plugin', () => {
+  assert.deepEqual(TU_A_CORRIGER.filter((id) => !plugins.includes(id)), [])
+})
