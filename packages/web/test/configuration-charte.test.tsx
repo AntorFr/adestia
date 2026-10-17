@@ -133,6 +133,27 @@ describe('every restart state carries an icon', () => {
   })
 })
 
+describe('the restart line names its state with the icon docs/ecrans.md fixes', () => {
+  const href = (c: HTMLElement) => c.querySelector('.adestia-config__restart-line svg use')?.getAttribute('href') ?? ''
+  it('pending is rotate-ccw, not refresh-cw', async () => {
+    const { container } = await owedRestart(restartFetch({ status: 202, body: {} }))
+    expect(href(container)).toContain('rotate-ccw')
+    expect(href(container)).not.toContain('refresh-cw')
+  })
+  it('asking is loader-circle', async () => {
+    const { container } = await owedRestart(restartFetch('hang'))
+    fireEvent.click(screen.getByText('Restart now'))
+    await waitFor(() => expect(href(container)).toContain('loader-circle'))
+  })
+  it('blocked keeps the pending line, failed too, each with its own alert icon', async () => {
+    const { container } = await owedRestart(restartFetch({ status: 409, body: { running: 2 } }))
+    fireEvent.click(screen.getByText('Restart now'))
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('2 turn(s) running'))
+    expect(screen.getByRole('alert').querySelector('use')?.getAttribute('href')).toContain('triangle-alert')
+    expect(href(container)).toContain('triangle-alert')
+  })
+})
+
 describe('no English left in French', () => {
   it('writable form with a pending restart, blocked and failed', async () => {
     const { asked, t } = spy('fr')
