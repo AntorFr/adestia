@@ -57,7 +57,7 @@ Outside `packages/`:
 (owns the restart loop), `index.ts` (re-exports), `start.ts` › `start`, `app.ts` › `buildApp`.
 
 - **Auth / OIDC** — `auth.ts` (`resolveIdentity`, `isPublicRoute`, modes `none|oidc|proxy`),
-  `oidc.ts`, `oidc-routes.ts` (`registerOidc`, session cookie hook), `user-tokens.ts`
+  `oidc.ts`, `routes/oidc.ts` (`registerOidc`, session cookie hook; `oidc-routes.ts` re-exports it), `user-tokens.ts`
   (`UserTokens`, per-user rebound tokens), `routes/identity.ts` (`identityOf`).
 - **Conversations and turns** — `turns.ts` (`TurnDesk`: admission, chaining, the single
   spawn site), `routes/turns.ts` (`registerTurns`, SSE, `sseFrame`), `conversations.ts`
@@ -65,24 +65,26 @@ Outside `packages/`:
   (`frameShell`, the preamble), `screen.ts`.
 - **Drivers and arming** — `drivers.ts` (`buildDriver`, `AVAILABLE_DRIVERS`), `secrets.ts`
   (`SecretStore`, `ArmingFlows`), `routes/arming.ts`.
-- **MCP inbound and delegations** — `mcp-in.ts`, `mcp-routes.ts` (`registerMcp`, `/mcp`),
+- **MCP inbound and delegations** — `mcp-in.ts`, `routes/mcp.ts` (`registerMcp`, `/mcp`; `mcp-routes.ts` re-exports it),
   `delegations.ts` (`DelegationChannel`), inline `/api/delegations` routes in `app.ts`,
-  `callback.ts` (`registerCallback`, `/callback`).
+  `callback.ts` (`wakePrompt`, `verifySettled`), `routes/callback.ts` (`registerCallback`, `/callback`).
 - **MCP outbound** — `config/mcp.ts`, `mcp-store.ts` (`McpStore`, the shell-written layer),
   `mcp-signin.ts` (`McpSignIn`), `mcp-refresh.ts` (`FileRefreshStore`), `background.ts`
   (`BackgroundReach`), `routes/mcp-servers.ts` (`outboundServersOf`).
 - **Schedule** — `schedule.ts` (`parseNote`, `isDue`, `stampField`), `clock.ts` (`Clock`).
 - **Plugin host and extensions** — `extensions.ts` (`discoverPlugins`, `discoverSkins`,
   `registerPluginVocabulary`, `mcpServersFor`), `sources.ts` (`fetchSources`, git clones),
-  `plugin-host.ts` (`runSetups`, `mountPluginApis`), `static.ts` (`registerStatic`).
+  `plugin-host.ts` (`runSetups`), `routes/plugin-host.ts` (`mountPluginApis`), `static.ts` (`mimeFor`,
+  `safeJoin`), `routes/static.ts` (`registerStatic`, the catch-all, mounted last).
 - **Instructions and skills** — `skills.ts` (`collectSkills`, `deliverSkills`,
   `deliverAgents`, `MANAGED_MARKER`, `stamped`), `instructions.ts`,
   `routes/instructions.ts`, `instruction-catalogues.ts` (scan, `copyMarkedTree`),
   `instruction-catalogues-store.ts`, `instruction-catalogues-refresh.ts`,
   `routes/instruction-catalogues.ts`.
 - **Pages, files, stores, watch** — `stores.ts` (`resolveStores`, `pagesService`,
-  `foreignRoots`), `pages.ts` (`registerPages`, also `parseFrontmatter`, `splitFrontmatter`,
-  `titleOf`), `files.ts` (`registerFiles`), `watch.ts` (`registerEvents`, `/api/events`),
+  `foreignRoots`), `pages.ts` (`titleOf`, `revisionOf`, `safePagePath`), `routes/pages.ts` (`registerPages`),
+  `files.ts` (`kindOf`, `attachmentsOf`), `routes/files.ts` (`registerFiles`), `watch.ts`
+  (`ChangeFeed`), `routes/watch.ts` (`registerEvents`, `/api/events`),
   `io.ts`.
 - **Config and settings** — `config.ts` (`parseConfig`, `ConfigError`, env overrides),
   `config/types.ts`, `config/values.ts`, `settings-file.ts`, `routes/settings.ts`,
@@ -379,7 +381,7 @@ rules. The server outcomes above stay blank until the documentation tranche fill
   contract (the `index.ts` of a package), each named in this section when it is known; every
   other hit is un-exported or deleted.
   Run `node scripts/unused-exports.mjs`: sorted entries go to stdout, the count to stderr.
-  The baseline before export removal is **293** entries. The TypeScript module graph uses
+  The baseline before export removal is **292** entries. The TypeScript module graph uses
   `tsconfig.base.json` source aliases and counts type imports, aliases and re-exports
   (including `export *`). Each barrel has its own entries; its re-export consumes the
   original module's export. All package sources, including web, supply importers; web
