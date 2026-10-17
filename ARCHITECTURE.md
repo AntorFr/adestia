@@ -108,6 +108,9 @@ Outside `packages/`:
 - `editor/` — Milkdown editor (`Editor.tsx`, `milkdown.ts`, `blockview.tsx`), `Reader.tsx`,
   page settings and listing helpers. `Reader.tsx` keeps the page and prose frames;
   `reader/` holds the recursive walk, directive dispatch and block renderers by kind.
+  `useAutosave.ts` owns the document baseline and save cadence, `useEditorSurface.ts`
+  the mounted writing surface, `usePageDrop.ts` the reading drop target; `SaveStatus.tsx`
+  draws the save result.
 - `plugins/` — `contract.ts` (the plugin front-end contract, `PluginApi`), `loader.ts`,
   `words.ts` (plugin word tables), `Boundary.tsx`, `PageEditor.tsx`.
 - `sw/` — the service worker (`sw.ts`, `policy.ts`, `register.ts`).
