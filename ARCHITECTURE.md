@@ -106,7 +106,8 @@ Outside `packages/`:
 - `chat/` — `Chat.tsx`, `Composer.tsx`, `useConversations.ts`, `stream.ts` (SSE client),
   `Signatures.tsx`, `tabs.ts`.
 - `editor/` — Milkdown editor (`Editor.tsx`, `milkdown.ts`, `blockview.tsx`), `Reader.tsx`,
-  page settings and listing helpers.
+  page settings and listing helpers. `Reader.tsx` keeps the page and prose frames;
+  `reader/` holds the recursive walk, directive dispatch and block renderers by kind.
 - `plugins/` — `contract.ts` (the plugin front-end contract, `PluginApi`), `loader.ts`,
   `words.ts` (plugin word tables), `Boundary.tsx`, `PageEditor.tsx`.
 - `sw/` — the service worker (`sw.ts`, `policy.ts`, `register.ts`).
