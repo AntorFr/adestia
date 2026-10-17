@@ -1,3 +1,5 @@
+import { makeT } from './words.js';
+
 // Parcours — la carte d'une balade, peinte au montage. Sans bibliothèque.
 //
 // PORTÉ DU PRÉDÉCESSEUR, comme le moteur des voyages l'a été : mille lignes de
@@ -72,13 +74,13 @@ const FONDS = {
     url: (z, x, y) => 'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0'
       + '&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&STYLE=normal&TILEMATRIXSET=PM'
       + `&FORMAT=image/png&TILEMATRIX=${z}&TILEROW=${y}&TILECOL=${x}`,
-    credit: '© IGN — Géoplateforme',
+    credit: '© IGN — Geoplateforme',
     zoomMax: 18,
   },
   osm: {
     nom: 'OpenStreetMap',
     url: (z, x, y) => `https://tile.openstreetmap.org/${z}/${x}/${y}.png`,
-    credit: '© les contributeurs OpenStreetMap',
+    credit: '© OpenStreetMap contributors',
     zoomMax: 19,
   },
 };
@@ -207,7 +209,7 @@ function latLngDe(x, y, z) {
  *
  *  Rend un contrôleur : { redessine, bascule, recadre, detruire }.
  */
-export function creerCarte(boite, coords, reperes, fondInitial) {
+export function creerCarte(boite, coords, reperes, fondInitial, t = makeT('fr')) {
   let fondId = fondInitial;
   let vue = null;                                  // { z, lat, lng } — le centre
   // Le zoom de cadrage — celui qui montre le parcours entier. Il sert de PLANCHER
@@ -386,12 +388,12 @@ export function creerCarte(boite, coords, reperes, fondInitial) {
       b.type = 'button';
       if (estDepart) b.classList.add('pc-start');
       if (!estBoucle && rang === dernier && v.i === reperes.length - 1) b.classList.add('pc-end');
-      const t = teinte(v.r.couleur);
-      if (t) b.dataset.teinte = t;
+      const hue = teinte(v.r.couleur);
+      if (hue) b.dataset.teinte = hue;
       b.style.left = `${x}px`;
       b.style.top = `${y}px`;
-      const role = estDepart ? (estBoucle ? 'Départ et arrivée' : 'Départ')
-        : (rang === dernier ? 'Arrivée' : `Repère ${v.i + 1}`);
+      const role = estDepart ? (estBoucle ? t("Start and finish") : t("Start"))
+        : (rang === dernier ? t("Finish") : t("Waypoint %n", { n: v.i + 1 }));
       b.title = `${role} — ${v.r.nom || ''}`.trim();
       b.setAttribute('aria-label', b.title);
       b.dataset.n = String(v.i);
@@ -404,7 +406,7 @@ export function creerCarte(boite, coords, reperes, fondInitial) {
     boite.textContent = '';
     boite.appendChild(pan);
     boite.appendChild(commandes());
-    boite.appendChild(el('div', 'pc-credit', fond.credit));
+    boite.appendChild(el('div', 'pc-credit', t(fond.credit)));
   }
 
   /** Le marqueur de position : un point, son cercle de PRÉCISION, et le cap.
@@ -446,9 +448,9 @@ export function creerCarte(boite, coords, reperes, fondInitial) {
       ctl.appendChild(b);
     };
     const { w, h } = taille();
-    bouton('+', 'Zoomer', () => zoome(1, w / 2, h / 2));
-    bouton('−', 'Dézoomer', () => zoome(-1, w / 2, h / 2));
-    bouton('⤢', 'Recadrer sur le parcours', () => { recadre(); dessine(); });
+    bouton('+', t("Zoom in"), () => zoome(1, w / 2, h / 2));
+    bouton('−', t("Zoom out"), () => zoome(-1, w / 2, h / 2));
+    bouton('⤢', t("Fit the route"), () => { recadre(); dessine(); });
     return ctl;
   }
 
@@ -621,7 +623,7 @@ function ancre(coords, pt, depuis = 0) {
  *  Géométrie en unités de viewBox, mise à l'échelle par le conteneur — même
  *  technique que `chart-ligne` : le texte suit, et une requête de conteneur le
  *  regrossit dans une colonne étroite (cf. design-system.css). */
-function dessineProfil(coords, altitudes, reperes) {
+function dessineProfil(coords, altitudes, reperes, t) {
   if (altitudes.length < 4 || coords.length !== altitudes.length) return null;
   const min = Math.min(...altitudes);
   const max = Math.max(...altitudes);
@@ -648,8 +650,7 @@ function dessineProfil(coords, altitudes, reperes) {
     svg.appendChild(n);
     return n;
   };
-  add('desc', {}, `Profil altimétrique sur ${fmtKm(total)} : de ${Math.round(min)} `
-    + `à ${Math.round(max)} mètres, ${reperes.length} repères.`);
+  add('desc', {}, t("Elevation profile over %distance: from %min to %max metres, %n waypoints.", { distance: fmtKm(total), min: Math.round(min), max: Math.round(max), n: reperes.length }));
 
   // Échelle verticale : les deux altitudes qui bornent, pas une graduation
   // décorative — c'est l'amplitude qui se lit, et elle tient en deux nombres.
@@ -687,7 +688,7 @@ function dessineProfil(coords, altitudes, reperes) {
   return svg;
 }
 
-function listeReperes(reperes) {
+function listeReperes(reperes, t) {
   const ol = el('ol', 'pc-list');
   reperes.forEach((r, i) => {
     const li = el('li');
@@ -695,18 +696,18 @@ function listeReperes(reperes) {
     // Picto et teinte sont libres : c'est l'agent qui rédige qui décide de
     // l'allure d'un repère, pas ce fichier. Le NUMÉRO, lui, ne bouge pas —
     // c'est le seul lien entre la pastille sur la carte et sa description.
-    const t = teinte(r.couleur);
-    if (t) li.dataset.teinte = t;
+    const hue = teinte(r.couleur);
+    if (hue) li.dataset.teinte = hue;
     const nom = el('div', 'pc-nom');
     if (r.picto) nom.appendChild(el('span', 'pc-ico', String(r.picto).slice(0, 2)));
-    nom.appendChild(el('span', null, r.nom || `Repère ${i + 1}`));
+    nom.appendChild(el('span', null, r.nom || t("Waypoint %n", { n: i + 1 })));
     li.appendChild(nom);
 
     const meta = [];
-    if (r.distance_precedent_m) meta.push(`${fmtKm(r.distance_precedent_m)} depuis le précédent`);
+    if (r.distance_precedent_m) meta.push(t("%distance since the previous waypoint", { distance: fmtKm(r.distance_precedent_m) }));
     // Au-delà de 60 m, l'écart cesse d'être « le point vise le lieu, la trace
     // suit la voie » et devient une coordonnée à vérifier. On le dit.
-    if (r.ecart_trace_m > 60) meta.push(`⚠ à ${r.ecart_trace_m} m de la trace`);
+    if (r.ecart_trace_m > 60) meta.push(t("⚠ %distance m from the route", { distance: r.ecart_trace_m }));
     if (meta.length) li.appendChild(el('div', 'pc-meta', meta.join(' · ')));
 
     if (r.desc) li.appendChild(el('div', 'pc-desc', r.desc));
@@ -757,7 +758,7 @@ function avancement(coords, dist, ancres, pos) {
   };
 }
 
-function modeBalade(hote, carte, coords, reperes, _trace) {
+function modeBalade(hote, carte, coords, reperes, _trace, t) {
   const dist = cumule(coords);
   const total = dist[dist.length - 1] || 0;
   // Où chaque repère tombe sur la trace — même règle que partout : on ne cherche
@@ -767,7 +768,7 @@ function modeBalade(hote, carte, coords, reperes, _trace) {
   reperes.forEach((r, n) => {
     if (!r.pt) return;
     depuis = ancre(coords, r.pt, depuis);
-    ancres.push({ i: depuis, n, nom: r.nom || `Repère ${n + 1}` });
+    ancres.push({ i: depuis, n, nom: r.nom || t("Waypoint %n", { n: n + 1 }) });
   });
 
   let veille = null;
@@ -775,22 +776,30 @@ function modeBalade(hote, carte, coords, reperes, _trace) {
   let suit = true;
 
   const hud = el('div', 'pc-hud');
-  const ligne1 = el('div', 'pc-hud-1', 'En attente du GPS…');
+  const ligne1 = el('div', 'pc-hud-1', t("Waiting for GPS…"));
   const ligne2 = el('div', 'pc-hud-2', '');
   const gauche = el('div', 'pc-hud-txt');
   gauche.appendChild(ligne1); gauche.appendChild(ligne2);
   hud.appendChild(gauche);
 
-  const bSuit = el('button', 'pc-hud-b on', '🧭 Suivi');
+  const bSuit = el('button', 'pc-hud-b on', t("🧭 Follow"));
   bSuit.type = 'button';
   bSuit.addEventListener('click', () => {
     suit = !suit;
     bSuit.classList.toggle('on', suit);
     carte.suit(suit);
   });
-  const bSortie = el('button', 'pc-hud-b', '✕');
+  const bSortie = el('button', 'adestia-btn adestia-btn--ghost adestia-btn--sm');
+  const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  icon.setAttribute('class', 'adestia-icon');
+  icon.setAttribute('aria-hidden', 'true');
+  icon.setAttribute('focusable', 'false');
+  const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+  use.setAttribute('href', '#adestia-i-x');
+  icon.appendChild(use);
+  bSortie.append(icon, el('span', null, t('Leave walking mode')));
   bSortie.type = 'button';
-  bSortie.title = 'Quitter le mode balade';
+  bSortie.title = t("Leave walking mode");
   hud.appendChild(bSuit);
   hud.appendChild(bSortie);
 
@@ -803,8 +812,15 @@ function modeBalade(hote, carte, coords, reperes, _trace) {
     hote.classList.remove('pc-balade');
     hud.remove();
     document.removeEventListener('visibilitychange', onVis);
+    document.removeEventListener('keydown', onKey);
     carte.recadre();
+    opener?.focus();
   }
+  function onKey(event) {
+    if (event.key === 'Escape') { event.preventDefault(); stop(); }
+  }
+  const opener = document.activeElement;
+  document.addEventListener('keydown', onKey);
   bSortie.addEventListener('click', stop);
 
   // Le verrou d'écran se PERD quand l'onglet passe en arrière-plan : sans ce
@@ -817,11 +833,12 @@ function modeBalade(hote, carte, coords, reperes, _trace) {
 
   hote.classList.add('pc-balade');
   hote.appendChild(hud);
+  bSortie.focus();
   prendVeille();
   carte.suit(true);
 
   if (!navigator.geolocation) {
-    ligne1.textContent = 'Ce navigateur ne donne pas la position.';
+    ligne1.textContent = t("This browser cannot provide your position.");
     return stop;
   }
   watch = navigator.geolocation.watchPosition(
@@ -833,19 +850,19 @@ function modeBalade(hote, carte, coords, reperes, _trace) {
       // plus proche peut être n'importe où sur la boucle. On le dit au lieu de
       // rendre un chiffre faux.
       if (a.ecart > 120) {
-        ligne1.textContent = `À ${Math.round(a.ecart)} m du parcours`;
-        ligne2.textContent = 'Hors trace — l’avancement ne veut rien dire ici.';
+        ligne1.textContent = t("%distance m from the route", { distance: Math.round(a.ecart) });
+        ligne2.textContent = t("Off route — progress is meaningless here.");
         return;
       }
-      ligne1.textContent = `${fmtKm(Math.round(a.fait))} sur ${fmtKm(total)}`;
+      ligne1.textContent = t("%done of %total", { done: fmtKm(Math.round(a.fait)), total: fmtKm(total) });
       ligne2.textContent = a.suivant
         ? `→ ${a.suivant.n + 1}. ${a.suivant.nom} · ${fmtKm(Math.round(a.resteAuSuivant))}`
-        : 'Dernier repère atteint.';
+        : t("Last waypoint reached.");
     },
     (err) => {
       ligne1.textContent = err.code === err.PERMISSION_DENIED
-        ? 'Position refusée — autorisez-la dans le navigateur.'
-        : 'Position indisponible pour l’instant.';
+        ? t("Position denied — allow it in your browser.")
+        : t("Position unavailable for now.");
       ligne2.textContent = '';
     },
     { enableHighAccuracy: true, maximumAge: 2000, timeout: 15000 },
@@ -853,7 +870,7 @@ function modeBalade(hote, carte, coords, reperes, _trace) {
   return stop;
 }
 
-function peindre(hote, data, relPath, urls) {
+function peindre(hote, data, relPath, urls, t) {
   const trace = data.trace || {};
   const reperes = (data.reperes || []).map((r) => {
     const m = /^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/.exec(String(r.latlng || ''));
@@ -871,9 +888,9 @@ function peindre(hote, data, relPath, urls) {
   if (trace.distance_m) chiffres.push(fmtKm(trace.distance_m));
   if (trace.denivele_pos_m != null) chiffres.push(`D+ ${trace.denivele_pos_m} m`);
   const duree = fmtDuree(trace.duree_s);
-  if (duree) chiffres.push(`${duree} de marche`);
-  if (trace.escaliers_m) chiffres.push(`${trace.escaliers_m} m d'escaliers`);
-  chiffres.push(`${reperes.length} repère${reperes.length > 1 ? 's' : ''}`);
+  if (duree) chiffres.push(t("%duration walking", { duration: duree }));
+  if (trace.escaliers_m) chiffres.push(t("%distance m of stairs", { distance: trace.escaliers_m }));
+  chiffres.push(t(reperes.length > 1 ? '%n waypoints' : '%n waypoint', { n: reperes.length }));
   tete.appendChild(el('div', 'pc-stats', chiffres.join(' · ')));
   hote.appendChild(tete);
 
@@ -886,7 +903,7 @@ function peindre(hote, data, relPath, urls) {
 
     const boite = el('div', 'pc-map');
     hote.appendChild(boite);
-    const carte = creerCarte(boite, coords, reperes, fondId);
+    const carte = creerCarte(boite, coords, reperes, fondId, t);
     carte.dessine();
 
     // La barre de commandes vit SOUS LA CARTE, pas en pied de page : le GPX
@@ -895,26 +912,26 @@ function peindre(hote, data, relPath, urls) {
     const barre = el('div', 'pc-bar');
     const bascule = el('button', 'pc-fond', FONDS[fondId === 'ign' ? 'osm' : 'ign'].nom);
     bascule.type = 'button';
-    bascule.title = 'Changer de fond de carte';
+    bascule.title = t("Change map background");
     bascule.addEventListener('click', () => {
       fondId = fondId === 'ign' ? 'osm' : 'ign';
       bascule.textContent = FONDS[fondId === 'ign' ? 'osm' : 'ign'].nom;
       carte.bascule(fondId);
     });
     barre.appendChild(bascule);
-    const bBalade = el('button', 'pc-fond', '🥾 Mode balade');
+    const bBalade = el('button', 'pc-fond', t("🥾 Walking mode"));
     bBalade.type = 'button';
-    bBalade.title = 'Plein écran, votre position, ce qui reste à marcher';
+    bBalade.title = t("Full screen, your position, the walk ahead");
     let quitte = null;
     bBalade.addEventListener('click', () => {
-      if (quitte) { quitte(); quitte = null; return; }
-      quitte = modeBalade(hote, carte, coords, reperes, trace);
+      if (quitte && hote.classList.contains('pc-balade')) { quitte(); quitte = null; return; }
+      quitte = modeBalade(hote, carte, coords, reperes, trace, t);
     });
     barre.appendChild(bBalade);
     if (relPath && urls.gpx) {
-      const dl = el('a', 'pc-dl', '↓ Télécharger le GPX');
+      const dl = el('a', 'pc-dl', t("↓ Download GPX"));
       dl.href = urls.gpx(relPath);
-      dl.title = 'La trace, pour Organic Maps, OsmAnd…';
+      dl.title = t("The route, for Organic Maps, OsmAnd…");
       barre.appendChild(dl);
     }
     hote.appendChild(barre);
@@ -922,22 +939,22 @@ function peindre(hote, data, relPath, urls) {
     // La largeur du conteneur décide du cadrage : une rotation de téléphone
     // doit recadrer, sinon la trace sort du cadre ou s'y perd. On RECADRE (et
     // non on redessine) : après une rotation, la vue courante n'a plus de sens.
-    let t = 0;
-    const onResize = () => { clearTimeout(t); t = setTimeout(() => carte.recadre(), 180); };
+    let resizeTimer = 0;
+    const onResize = () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => carte.recadre(), 180); };
     window.addEventListener('resize', onResize);
-    hote._pcCleanup = () => { window.removeEventListener('resize', onResize); carte.detruire(); };
+    hote._pcCleanup = () => { quitte?.(); window.removeEventListener('resize', onResize); carte.detruire(); };
   } else {
-    hote.appendChild(el('div', 'pc-vide', 'Aucun point à afficher.'));
+    hote.appendChild(el('div', 'pc-vide', t("No points to display.")));
   }
 
-  const profil = dessineProfil(coords, altitudes, reperes);
+  const profil = dessineProfil(coords, altitudes, reperes, t);
   if (profil) {
     const cadre = el('div', 'pc-prof-box');
     cadre.appendChild(profil);
     hote.appendChild(cadre);
   }
 
-  const liste = listeReperes(reperes);
+  const liste = listeReperes(reperes, t);
   hote.appendChild(liste);
 
   // Cliquer une pastille met en avant son repère dans la liste, et l'inverse.
@@ -957,7 +974,7 @@ function peindre(hote, data, relPath, urls) {
   if (trace.calcule_le) {
     const pied = el('div', 'pc-foot');
     pied.appendChild(el('span', 'pc-src',
-      `Trace calculée le ${trace.calcule_le} — ${trace.moteur || 'routeur inconnu'}.`));
+      t("Route calculated on %date — %router.", { date: trace.calcule_le, router: trace.moteur || t("unknown router") })));
     hote.appendChild(pied);
   }
 }
@@ -967,7 +984,7 @@ function peindre(hote, data, relPath, urls) {
  *  Un parcours n'appartient à aucun domaine — il s'accroche à la fiche qui a
  *  une raison d'en parler. Une fiche « week-end en Brocéliande » peut donc en
  *  citer trois sans empiler trois cartes plein cadre. */
-function peindreLien(hote, data, relPath, urls) {
+function peindreLien(hote, data, relPath, urls, t) {
   const trace = data.trace || {};
   hote.textContent = '';
   hote.classList.add('pc-ready', 'pc-asLink');
@@ -976,7 +993,7 @@ function peindreLien(hote, data, relPath, urls) {
   a.href = urls.page(relPath);
   a.appendChild(el('span', 'pc-card-ico', '⛰'));
   const corps = el('span', 'pc-card-body');
-  corps.appendChild(el('span', 'pc-card-t', data.titre || 'Parcours'));
+  corps.appendChild(el('span', 'pc-card-t', data.titre || t("Route")));
 
   const bits = [];
   if (trace.distance_m) bits.push(fmtKm(trace.distance_m));
@@ -984,10 +1001,10 @@ function peindreLien(hote, data, relPath, urls) {
   const d = fmtDuree(trace.duree_s);
   if (d) bits.push(d);
   const n = (data.reperes || []).length;
-  if (n) bits.push(`${n} repère${n > 1 ? 's' : ''}`);
+  if (n) bits.push(t(n > 1 ? '%n waypoints' : '%n waypoint', { n: n }));
   // Sans bloc `trace`, on ne fabrique pas un chiffre : on dit qu'il manque.
   corps.appendChild(el('span', 'pc-card-m',
-    bits.length ? bits.join(' · ') : 'trace pas encore calculée'));
+    bits.length ? bits.join(' · ') : t("route not calculated yet")));
   a.appendChild(corps);
   hote.appendChild(a);
 }
@@ -1006,7 +1023,8 @@ function peindreLien(hote, data, relPath, urls) {
  * @returns de quoi défaire le montage — à appeler au démontage du bloc, sinon
  *          l'écouteur de redimensionnement survit à la page qui l'a posé.
  */
-export function mountParcours(hote, { src, chemin, vue, urls = {} }) {
+export function mountParcours(hote, { src, chemin, vue, urls = {}, locale = 'fr' }) {
+  const t = makeT(locale);
   let vivant = true;
   const peintre = vue === 'lien' ? peindreLien : peindre;
 
@@ -1018,12 +1036,12 @@ export function mountParcours(hote, { src, chemin, vue, urls = {} }) {
     .then((data) => {
       // Le bloc a pu être démonté pendant la requête — on ne peint pas dans un
       // élément que React a déjà retiré de la page.
-      if (vivant) peintre(hote, data, chemin, urls);
+      if (vivant) peintre(hote, data, chemin, urls, t);
     })
     .catch((e) => {
       if (!vivant) return;
       hote.textContent = '';
-      hote.appendChild(el('div', 'pc-vide', `Parcours illisible : ${e.message}`));
+      hote.appendChild(el('div', 'pc-vide', t("Unreadable route: %message", { message: e.message })));
     });
 
   return () => {

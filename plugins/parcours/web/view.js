@@ -1,3 +1,5 @@
+import { makeT } from './words.js'
+
 /**
  * `#/parcours/<chemin>` — un parcours seul dans son écran.
  *
@@ -18,7 +20,7 @@ import { mountParcours } from './carte.js'
 import { ficheDuParcours, parcoursDeLaRoute } from './route.js'
 
 export default function view(api) {
-  const fr = api.locale === 'fr'
+  const t = makeT(api.locale)
 
   function ParcoursSeul() {
     const hote = useRef(null)
@@ -36,6 +38,7 @@ export default function view(api) {
       return mountParcours(element, {
         src: `/api/files/${chemin.split('/').map(encodeURIComponent).join('/')}`,
         chemin,
+        locale: api.locale,
         vue: 'carte',
         urls: { gpx: (p) => `/api/plugin/${api.id}/gpx?f=${encodeURIComponent(p)}` },
       })
@@ -48,7 +51,7 @@ export default function view(api) {
         h(
           'p',
           { className: 'pc-vide' },
-          fr ? 'Aucun parcours dans cette adresse.' : 'No route in this address.',
+          t("No route in this address."),
         ),
       )
     }
@@ -64,7 +67,7 @@ export default function view(api) {
     return h('section', { className: 'parcours-page' }, [
       dossier !== chemin &&
         h('p', { key: 'd', className: 'parcours-dans' }, [
-          fr ? 'Dans ' : 'In ',
+          t("In "),
           h('a', { key: 'a', href: `#/section/${encodeURIComponent(dossier)}` }, nom),
         ]),
       h('div', { key: 'p', ref: hote, className: 'parcours' }),
