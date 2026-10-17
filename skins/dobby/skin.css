@@ -170,6 +170,7 @@
 /* ── Evening — the base of this body. Imposed: dark unless a person
    explicitly picks light. ─────────────────────────────────────────────── */
 :root[data-skin='dobby']:not([data-theme='light']) {
+  color-scheme: dark;
   --surface: #17130f;
   --surface-raised: #221b15;
   --surface-soft: #1c1712;
@@ -179,11 +180,15 @@
 
   --text: #ecdfc6;
   --text-muted: #b6a385;
-  --text-faint: #7d6c56;
+  --text-faint: #958167;
 
   /* ONE accent: the gilt of a binding, patinated rather than bright. */
   --accent: #c8a25a;
-  --accent-text: #1a130b;
+  --accent-text: var(--accent);
+  --on-accent: #1a130b;
+  --danger-text: var(--danger);
+  --warning-text: var(--warning);
+  --success-text: var(--success);
   --accent-quiet: rgb(200 162 90 / 12%);
 
   --danger: #d0654f;
@@ -228,11 +233,15 @@
 
   --text: #2a2119;
   --text-muted: #5f5040;
-  --text-faint: #8d7c66;
+  --text-faint: #655949;
 
   /* The gilt drops to an old bronze to hold contrast on paper. */
   --accent: #8a6420;
-  --accent-text: #fbf5e8;
+  --accent-text: #75551b;
+  --on-accent: #fbf5e8;
+  --danger-text: #a13629;
+  --warning-text: #795216;
+  --success-text: #406338;
   --accent-quiet: rgb(138 100 32 / 10%);
 
   --danger: #a5372a;
@@ -352,8 +361,9 @@
   transition: border-color 0.18s;
 }
 
-.dby-plume:hover,
-.dby-plume:focus-visible { border-color: color-mix(in srgb, var(--accent) 55%, transparent); outline: none; }
+.dby-plume:hover { border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
+/* The global focus ring (tokens.css) stays: a keyboard user sees where they are. */
+.dby-plume:focus-visible { border-color: var(--accent-text); }
 
 .dby-plume svg { width: 18px; height: 18px; color: var(--accent); flex: none; }
 

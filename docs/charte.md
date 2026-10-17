@@ -103,84 +103,389 @@ focus visible and not hidden, targets 24 × 24 px. Measured with
 
 The base palette table is printed by `packages/web/test/contrast.test.ts`. Regenerate it
 with `UPDATE_CONTRAST_TABLE=1 npx vitest run packages/web/test/contrast.test.ts`.
-The four skins are measured by the skin contrast tranche.
+The four skins are measured by the same test, in the themes each one declares: nestor
+follows the system, dobby and skippy impose their night and keep a light variant on
+explicit request, alfred wears the base sheet. Regenerate both tables with the command above.
+
+In a skin, `--accent-text` is the accent read as text on its surfaces and `--on-accent` is
+the ink on its fills, as in the base; the skins corrected lightness only, never hue, and
+set `color-scheme: dark` where they impose their night so `light-dark()` follows the skin.
+Nestor's light warning and success fills moved darker so white ink carries a label, and
+skippy's light danger fill moved lighter so its dark ink does.
 
 <!-- base-contrast:start -->
 | Foreground | Background | Theme | Ratio | Threshold | Result |
 |---|---|---|---|---|---|
 | `--text` #151a22 | `--surface` #eef1f6 | light | 15.42 | 4.5 | ok |
-| `--text` #e9ecf3 | `--surface` #0b0d12 | dark | 16.43 | 4.5 | ok |
 | `--text` #151a22 | `--surface-raised` #ffffff | light | 17.46 | 4.5 | ok |
-| `--text` #e9ecf3 | `--surface-raised` #141821 | dark | 15.02 | 4.5 | ok |
 | `--text` #151a22 | `--surface-soft` #f4f6fa | light | 16.14 | 4.5 | ok |
-| `--text` #e9ecf3 | `--surface-soft` #1a1f29 | dark | 13.96 | 4.5 | ok |
 | `--text` #151a22 | `--surface-sunken` #e5e9f0 | light | 14.34 | 4.5 | ok |
-| `--text` #e9ecf3 | `--surface-sunken` #07090d | dark | 16.85 | 4.5 | ok |
 | `--text-muted` #586274 | `--surface` #eef1f6 | light | 5.43 | 4.5 | ok |
-| `--text-muted` #98a2b3 | `--surface` #0b0d12 | dark | 7.55 | 4.5 | ok |
 | `--text-muted` #586274 | `--surface-raised` #ffffff | light | 6.15 | 4.5 | ok |
-| `--text-muted` #98a2b3 | `--surface-raised` #141821 | dark | 6.90 | 4.5 | ok |
 | `--text-muted` #586274 | `--surface-soft` #f4f6fa | light | 5.68 | 4.5 | ok |
-| `--text-muted` #98a2b3 | `--surface-soft` #1a1f29 | dark | 6.41 | 4.5 | ok |
 | `--text-muted` #586274 | `--surface-sunken` #e5e9f0 | light | 5.05 | 4.5 | ok |
-| `--text-muted` #98a2b3 | `--surface-sunken` #07090d | dark | 7.74 | 4.5 | ok |
 | `--text-faint` #5d697d | `--surface` #eef1f6 | light | 4.90 | 4.5 | ok |
-| `--text-faint` #7d8797 | `--surface` #0b0d12 | dark | 5.35 | 4.5 | ok |
 | `--text-faint` #5d697d | `--surface-raised` #ffffff | light | 5.55 | 4.5 | ok |
-| `--text-faint` #7d8797 | `--surface-raised` #141821 | dark | 4.89 | 4.5 | ok |
 | `--text-faint` #5d697d | `--surface-soft` #f4f6fa | light | 5.13 | 4.5 | ok |
-| `--text-faint` #7d8797 | `--surface-soft` #1a1f29 | dark | 4.55 | 4.5 | ok |
 | `--text-faint` #5d697d | `--surface-sunken` #e5e9f0 | light | 4.56 | 4.5 | ok |
-| `--text-faint` #7d8797 | `--surface-sunken` #07090d | dark | 5.49 | 4.5 | ok |
 | `--accent-text` #0b7386 | `--surface` #eef1f6 | light | 4.87 | 4.5 | ok |
-| `--accent-text` #4ecad8 | `--surface` #0b0d12 | dark | 9.96 | 4.5 | ok |
 | `--accent-text` #0b7386 | `--surface-raised` #ffffff | light | 5.51 | 4.5 | ok |
-| `--accent-text` #4ecad8 | `--surface-raised` #141821 | dark | 9.10 | 4.5 | ok |
 | `--accent-text` #0b7386 | `--surface-soft` #f4f6fa | light | 5.09 | 4.5 | ok |
-| `--accent-text` #4ecad8 | `--surface-soft` #1a1f29 | dark | 8.46 | 4.5 | ok |
 | `--accent-text` #0b7386 | `--surface-sunken` #e5e9f0 | light | 4.53 | 4.5 | ok |
-| `--accent-text` #4ecad8 | `--surface-sunken` #07090d | dark | 10.21 | 4.5 | ok |
 | `--danger-text` #be392c | `--surface` #eef1f6 | light | 4.87 | 4.5 | ok |
-| `--danger-text` #ea6a5c | `--surface` #0b0d12 | dark | 6.21 | 4.5 | ok |
 | `--danger-text` #be392c | `--surface-raised` #ffffff | light | 5.51 | 4.5 | ok |
-| `--danger-text` #ea6a5c | `--surface-raised` #141821 | dark | 5.68 | 4.5 | ok |
 | `--danger-text` #be392c | `--surface-soft` #f4f6fa | light | 5.09 | 4.5 | ok |
-| `--danger-text` #ea6a5c | `--surface-soft` #1a1f29 | dark | 5.28 | 4.5 | ok |
 | `--danger-text` #be392c | `--surface-sunken` #e5e9f0 | light | 4.53 | 4.5 | ok |
-| `--danger-text` #ea6a5c | `--surface-sunken` #07090d | dark | 6.37 | 4.5 | ok |
 | `--warning-text` #8f5e15 | `--surface` #eef1f6 | light | 4.91 | 4.5 | ok |
-| `--warning-text` #e0a64f | `--surface` #0b0d12 | dark | 9.01 | 4.5 | ok |
 | `--warning-text` #8f5e15 | `--surface-raised` #ffffff | light | 5.56 | 4.5 | ok |
-| `--warning-text` #e0a64f | `--surface-raised` #141821 | dark | 8.24 | 4.5 | ok |
 | `--warning-text` #8f5e15 | `--surface-soft` #f4f6fa | light | 5.13 | 4.5 | ok |
-| `--warning-text` #e0a64f | `--surface-soft` #1a1f29 | dark | 7.66 | 4.5 | ok |
 | `--warning-text` #8f5e15 | `--surface-sunken` #e5e9f0 | light | 4.56 | 4.5 | ok |
-| `--warning-text` #e0a64f | `--surface-sunken` #07090d | dark | 9.24 | 4.5 | ok |
 | `--success-text` #23774b | `--surface` #eef1f6 | light | 4.87 | 4.5 | ok |
-| `--success-text` #5cbe83 | `--surface` #0b0d12 | dark | 8.47 | 4.5 | ok |
 | `--success-text` #23774b | `--surface-raised` #ffffff | light | 5.51 | 4.5 | ok |
-| `--success-text` #5cbe83 | `--surface-raised` #141821 | dark | 7.74 | 4.5 | ok |
 | `--success-text` #23774b | `--surface-soft` #f4f6fa | light | 5.09 | 4.5 | ok |
-| `--success-text` #5cbe83 | `--surface-soft` #1a1f29 | dark | 7.19 | 4.5 | ok |
 | `--success-text` #23774b | `--surface-sunken` #e5e9f0 | light | 4.52 | 4.5 | ok |
-| `--success-text` #5cbe83 | `--surface-sunken` #07090d | dark | 8.68 | 4.5 | ok |
 | `--accent` #0e8fa6 | `--surface` #eef1f6 | light | 3.37 | 3 | ok |
-| `--accent` #4ecad8 | `--surface` #0b0d12 | dark | 9.96 | 3 | ok |
 | `--accent` #0e8fa6 | `--surface-raised` #ffffff | light | 3.82 | 3 | ok |
-| `--accent` #4ecad8 | `--surface-raised` #141821 | dark | 9.10 | 3 | ok |
 | `--accent` #0e8fa6 | `--surface-soft` #f4f6fa | light | 3.53 | 3 | ok |
-| `--accent` #4ecad8 | `--surface-soft` #1a1f29 | dark | 8.46 | 3 | ok |
 | `--accent` #0e8fa6 | `--surface-sunken` #e5e9f0 | light | 3.14 | 3 | ok |
-| `--accent` #4ecad8 | `--surface-sunken` #07090d | dark | 10.21 | 3 | ok |
 | `--on-accent` #010c0f | `--accent` #0e8fa6 | light | 5.18 | 4.5 | ok |
-| `--on-accent` #010c0f | `--accent` #4ecad8 | dark | 10.15 | 4.5 | ok |
 | `--on-accent` #010c0f | `--danger` #d24b3e | light | 4.54 | 4.5 | ok |
-| `--on-accent` #010c0f | `--danger` #ea6a5c | dark | 6.33 | 4.5 | ok |
 | `--on-accent` #010c0f | `--warning` #b4771b | light | 5.27 | 4.5 | ok |
-| `--on-accent` #010c0f | `--warning` #e0a64f | dark | 9.18 | 4.5 | ok |
 | `--on-accent` #010c0f | `--success` #2e9e63 | light | 5.83 | 4.5 | ok |
+| `--text` #e9ecf3 | `--surface` #0b0d12 | dark | 16.43 | 4.5 | ok |
+| `--text` #e9ecf3 | `--surface-raised` #141821 | dark | 15.02 | 4.5 | ok |
+| `--text` #e9ecf3 | `--surface-soft` #1a1f29 | dark | 13.96 | 4.5 | ok |
+| `--text` #e9ecf3 | `--surface-sunken` #07090d | dark | 16.85 | 4.5 | ok |
+| `--text-muted` #98a2b3 | `--surface` #0b0d12 | dark | 7.55 | 4.5 | ok |
+| `--text-muted` #98a2b3 | `--surface-raised` #141821 | dark | 6.90 | 4.5 | ok |
+| `--text-muted` #98a2b3 | `--surface-soft` #1a1f29 | dark | 6.41 | 4.5 | ok |
+| `--text-muted` #98a2b3 | `--surface-sunken` #07090d | dark | 7.74 | 4.5 | ok |
+| `--text-faint` #7d8797 | `--surface` #0b0d12 | dark | 5.35 | 4.5 | ok |
+| `--text-faint` #7d8797 | `--surface-raised` #141821 | dark | 4.89 | 4.5 | ok |
+| `--text-faint` #7d8797 | `--surface-soft` #1a1f29 | dark | 4.55 | 4.5 | ok |
+| `--text-faint` #7d8797 | `--surface-sunken` #07090d | dark | 5.49 | 4.5 | ok |
+| `--accent-text` #4ecad8 | `--surface` #0b0d12 | dark | 9.96 | 4.5 | ok |
+| `--accent-text` #4ecad8 | `--surface-raised` #141821 | dark | 9.10 | 4.5 | ok |
+| `--accent-text` #4ecad8 | `--surface-soft` #1a1f29 | dark | 8.46 | 4.5 | ok |
+| `--accent-text` #4ecad8 | `--surface-sunken` #07090d | dark | 10.21 | 4.5 | ok |
+| `--danger-text` #ea6a5c | `--surface` #0b0d12 | dark | 6.21 | 4.5 | ok |
+| `--danger-text` #ea6a5c | `--surface-raised` #141821 | dark | 5.68 | 4.5 | ok |
+| `--danger-text` #ea6a5c | `--surface-soft` #1a1f29 | dark | 5.28 | 4.5 | ok |
+| `--danger-text` #ea6a5c | `--surface-sunken` #07090d | dark | 6.37 | 4.5 | ok |
+| `--warning-text` #e0a64f | `--surface` #0b0d12 | dark | 9.01 | 4.5 | ok |
+| `--warning-text` #e0a64f | `--surface-raised` #141821 | dark | 8.24 | 4.5 | ok |
+| `--warning-text` #e0a64f | `--surface-soft` #1a1f29 | dark | 7.66 | 4.5 | ok |
+| `--warning-text` #e0a64f | `--surface-sunken` #07090d | dark | 9.24 | 4.5 | ok |
+| `--success-text` #5cbe83 | `--surface` #0b0d12 | dark | 8.47 | 4.5 | ok |
+| `--success-text` #5cbe83 | `--surface-raised` #141821 | dark | 7.74 | 4.5 | ok |
+| `--success-text` #5cbe83 | `--surface-soft` #1a1f29 | dark | 7.19 | 4.5 | ok |
+| `--success-text` #5cbe83 | `--surface-sunken` #07090d | dark | 8.68 | 4.5 | ok |
+| `--accent` #4ecad8 | `--surface` #0b0d12 | dark | 9.96 | 3 | ok |
+| `--accent` #4ecad8 | `--surface-raised` #141821 | dark | 9.10 | 3 | ok |
+| `--accent` #4ecad8 | `--surface-soft` #1a1f29 | dark | 8.46 | 3 | ok |
+| `--accent` #4ecad8 | `--surface-sunken` #07090d | dark | 10.21 | 3 | ok |
+| `--on-accent` #010c0f | `--accent` #4ecad8 | dark | 10.15 | 4.5 | ok |
+| `--on-accent` #010c0f | `--danger` #ea6a5c | dark | 6.33 | 4.5 | ok |
+| `--on-accent` #010c0f | `--warning` #e0a64f | dark | 9.18 | 4.5 | ok |
 | `--on-accent` #010c0f | `--success` #5cbe83 | dark | 8.62 | 4.5 | ok |
 <!-- base-contrast:end -->
+
+### Skins
+
+<!-- skin-contrast:start -->
+| Skin | Foreground | Background | Theme | Ratio | Threshold | Result |
+|---|---|---|---|---|---|---|
+| alfred | `--text` #151a22 | `--surface` #eef1f6 | light | 15.42 | 4.5 | ok |
+| alfred | `--text` #151a22 | `--surface-raised` #ffffff | light | 17.46 | 4.5 | ok |
+| alfred | `--text` #151a22 | `--surface-soft` #f4f6fa | light | 16.14 | 4.5 | ok |
+| alfred | `--text` #151a22 | `--surface-sunken` #e5e9f0 | light | 14.34 | 4.5 | ok |
+| alfred | `--text-muted` #586274 | `--surface` #eef1f6 | light | 5.43 | 4.5 | ok |
+| alfred | `--text-muted` #586274 | `--surface-raised` #ffffff | light | 6.15 | 4.5 | ok |
+| alfred | `--text-muted` #586274 | `--surface-soft` #f4f6fa | light | 5.68 | 4.5 | ok |
+| alfred | `--text-muted` #586274 | `--surface-sunken` #e5e9f0 | light | 5.05 | 4.5 | ok |
+| alfred | `--text-faint` #5d697d | `--surface` #eef1f6 | light | 4.90 | 4.5 | ok |
+| alfred | `--text-faint` #5d697d | `--surface-raised` #ffffff | light | 5.55 | 4.5 | ok |
+| alfred | `--text-faint` #5d697d | `--surface-soft` #f4f6fa | light | 5.13 | 4.5 | ok |
+| alfred | `--text-faint` #5d697d | `--surface-sunken` #e5e9f0 | light | 4.56 | 4.5 | ok |
+| alfred | `--accent-text` #0b7386 | `--surface` #eef1f6 | light | 4.87 | 4.5 | ok |
+| alfred | `--accent-text` #0b7386 | `--surface-raised` #ffffff | light | 5.51 | 4.5 | ok |
+| alfred | `--accent-text` #0b7386 | `--surface-soft` #f4f6fa | light | 5.09 | 4.5 | ok |
+| alfred | `--accent-text` #0b7386 | `--surface-sunken` #e5e9f0 | light | 4.53 | 4.5 | ok |
+| alfred | `--danger-text` #be392c | `--surface` #eef1f6 | light | 4.87 | 4.5 | ok |
+| alfred | `--danger-text` #be392c | `--surface-raised` #ffffff | light | 5.51 | 4.5 | ok |
+| alfred | `--danger-text` #be392c | `--surface-soft` #f4f6fa | light | 5.09 | 4.5 | ok |
+| alfred | `--danger-text` #be392c | `--surface-sunken` #e5e9f0 | light | 4.53 | 4.5 | ok |
+| alfred | `--warning-text` #8f5e15 | `--surface` #eef1f6 | light | 4.91 | 4.5 | ok |
+| alfred | `--warning-text` #8f5e15 | `--surface-raised` #ffffff | light | 5.56 | 4.5 | ok |
+| alfred | `--warning-text` #8f5e15 | `--surface-soft` #f4f6fa | light | 5.13 | 4.5 | ok |
+| alfred | `--warning-text` #8f5e15 | `--surface-sunken` #e5e9f0 | light | 4.56 | 4.5 | ok |
+| alfred | `--success-text` #23774b | `--surface` #eef1f6 | light | 4.87 | 4.5 | ok |
+| alfred | `--success-text` #23774b | `--surface-raised` #ffffff | light | 5.51 | 4.5 | ok |
+| alfred | `--success-text` #23774b | `--surface-soft` #f4f6fa | light | 5.09 | 4.5 | ok |
+| alfred | `--success-text` #23774b | `--surface-sunken` #e5e9f0 | light | 4.52 | 4.5 | ok |
+| alfred | `--accent` #0e8fa6 | `--surface` #eef1f6 | light | 3.37 | 3 | ok |
+| alfred | `--accent` #0e8fa6 | `--surface-raised` #ffffff | light | 3.82 | 3 | ok |
+| alfred | `--accent` #0e8fa6 | `--surface-soft` #f4f6fa | light | 3.53 | 3 | ok |
+| alfred | `--accent` #0e8fa6 | `--surface-sunken` #e5e9f0 | light | 3.14 | 3 | ok |
+| alfred | `--on-accent` #010c0f | `--accent` #0e8fa6 | light | 5.18 | 4.5 | ok |
+| alfred | `--on-accent` #010c0f | `--danger` #d24b3e | light | 4.54 | 4.5 | ok |
+| alfred | `--on-accent` #010c0f | `--warning` #b4771b | light | 5.27 | 4.5 | ok |
+| alfred | `--on-accent` #010c0f | `--success` #2e9e63 | light | 5.83 | 4.5 | ok |
+| alfred | `--text` #e9ecf3 | `--surface` #0b0d12 | dark | 16.43 | 4.5 | ok |
+| alfred | `--text` #e9ecf3 | `--surface-raised` #141821 | dark | 15.02 | 4.5 | ok |
+| alfred | `--text` #e9ecf3 | `--surface-soft` #1a1f29 | dark | 13.96 | 4.5 | ok |
+| alfred | `--text` #e9ecf3 | `--surface-sunken` #07090d | dark | 16.85 | 4.5 | ok |
+| alfred | `--text-muted` #98a2b3 | `--surface` #0b0d12 | dark | 7.55 | 4.5 | ok |
+| alfred | `--text-muted` #98a2b3 | `--surface-raised` #141821 | dark | 6.90 | 4.5 | ok |
+| alfred | `--text-muted` #98a2b3 | `--surface-soft` #1a1f29 | dark | 6.41 | 4.5 | ok |
+| alfred | `--text-muted` #98a2b3 | `--surface-sunken` #07090d | dark | 7.74 | 4.5 | ok |
+| alfred | `--text-faint` #7d8797 | `--surface` #0b0d12 | dark | 5.35 | 4.5 | ok |
+| alfred | `--text-faint` #7d8797 | `--surface-raised` #141821 | dark | 4.89 | 4.5 | ok |
+| alfred | `--text-faint` #7d8797 | `--surface-soft` #1a1f29 | dark | 4.55 | 4.5 | ok |
+| alfred | `--text-faint` #7d8797 | `--surface-sunken` #07090d | dark | 5.49 | 4.5 | ok |
+| alfred | `--accent-text` #4ecad8 | `--surface` #0b0d12 | dark | 9.96 | 4.5 | ok |
+| alfred | `--accent-text` #4ecad8 | `--surface-raised` #141821 | dark | 9.10 | 4.5 | ok |
+| alfred | `--accent-text` #4ecad8 | `--surface-soft` #1a1f29 | dark | 8.46 | 4.5 | ok |
+| alfred | `--accent-text` #4ecad8 | `--surface-sunken` #07090d | dark | 10.21 | 4.5 | ok |
+| alfred | `--danger-text` #ea6a5c | `--surface` #0b0d12 | dark | 6.21 | 4.5 | ok |
+| alfred | `--danger-text` #ea6a5c | `--surface-raised` #141821 | dark | 5.68 | 4.5 | ok |
+| alfred | `--danger-text` #ea6a5c | `--surface-soft` #1a1f29 | dark | 5.28 | 4.5 | ok |
+| alfred | `--danger-text` #ea6a5c | `--surface-sunken` #07090d | dark | 6.37 | 4.5 | ok |
+| alfred | `--warning-text` #e0a64f | `--surface` #0b0d12 | dark | 9.01 | 4.5 | ok |
+| alfred | `--warning-text` #e0a64f | `--surface-raised` #141821 | dark | 8.24 | 4.5 | ok |
+| alfred | `--warning-text` #e0a64f | `--surface-soft` #1a1f29 | dark | 7.66 | 4.5 | ok |
+| alfred | `--warning-text` #e0a64f | `--surface-sunken` #07090d | dark | 9.24 | 4.5 | ok |
+| alfred | `--success-text` #5cbe83 | `--surface` #0b0d12 | dark | 8.47 | 4.5 | ok |
+| alfred | `--success-text` #5cbe83 | `--surface-raised` #141821 | dark | 7.74 | 4.5 | ok |
+| alfred | `--success-text` #5cbe83 | `--surface-soft` #1a1f29 | dark | 7.19 | 4.5 | ok |
+| alfred | `--success-text` #5cbe83 | `--surface-sunken` #07090d | dark | 8.68 | 4.5 | ok |
+| alfred | `--accent` #4ecad8 | `--surface` #0b0d12 | dark | 9.96 | 3 | ok |
+| alfred | `--accent` #4ecad8 | `--surface-raised` #141821 | dark | 9.10 | 3 | ok |
+| alfred | `--accent` #4ecad8 | `--surface-soft` #1a1f29 | dark | 8.46 | 3 | ok |
+| alfred | `--accent` #4ecad8 | `--surface-sunken` #07090d | dark | 10.21 | 3 | ok |
+| alfred | `--on-accent` #010c0f | `--accent` #4ecad8 | dark | 10.15 | 4.5 | ok |
+| alfred | `--on-accent` #010c0f | `--danger` #ea6a5c | dark | 6.33 | 4.5 | ok |
+| alfred | `--on-accent` #010c0f | `--warning` #e0a64f | dark | 9.18 | 4.5 | ok |
+| alfred | `--on-accent` #010c0f | `--success` #5cbe83 | dark | 8.62 | 4.5 | ok |
+| nestor | `--text` #332e3c | `--surface` #f5f1ea | light | 11.68 | 4.5 | ok |
+| nestor | `--text` #332e3c | `--surface-raised` #ffffff | light | 13.15 | 4.5 | ok |
+| nestor | `--text` #332e3c | `--surface-soft` #ede8de | light | 10.77 | 4.5 | ok |
+| nestor | `--text` #332e3c | `--surface-sunken` #e6e0d4 | light | 10.01 | 4.5 | ok |
+| nestor | `--text-muted` #666076 | `--surface` #f5f1ea | light | 5.33 | 4.5 | ok |
+| nestor | `--text-muted` #666076 | `--surface-raised` #ffffff | light | 6.00 | 4.5 | ok |
+| nestor | `--text-muted` #666076 | `--surface-soft` #ede8de | light | 4.91 | 4.5 | ok |
+| nestor | `--text-muted` #666076 | `--surface-sunken` #e6e0d4 | light | 4.57 | 4.5 | ok |
+| nestor | `--text-faint` #695f7a | `--surface` #f5f1ea | light | 5.30 | 4.5 | ok |
+| nestor | `--text-faint` #695f7a | `--surface-raised` #ffffff | light | 5.97 | 4.5 | ok |
+| nestor | `--text-faint` #695f7a | `--surface-soft` #ede8de | light | 4.89 | 4.5 | ok |
+| nestor | `--text-faint` #695f7a | `--surface-sunken` #e6e0d4 | light | 4.54 | 4.5 | ok |
+| nestor | `--accent-text` #6b4bc8 | `--surface` #f5f1ea | light | 5.38 | 4.5 | ok |
+| nestor | `--accent-text` #6b4bc8 | `--surface-raised` #ffffff | light | 6.06 | 4.5 | ok |
+| nestor | `--accent-text` #6b4bc8 | `--surface-soft` #ede8de | light | 4.96 | 4.5 | ok |
+| nestor | `--accent-text` #6b4bc8 | `--surface-sunken` #e6e0d4 | light | 4.61 | 4.5 | ok |
+| nestor | `--danger-text` #b13a28 | `--surface` #f5f1ea | light | 5.32 | 4.5 | ok |
+| nestor | `--danger-text` #b13a28 | `--surface-raised` #ffffff | light | 5.99 | 4.5 | ok |
+| nestor | `--danger-text` #b13a28 | `--surface-soft` #ede8de | light | 4.91 | 4.5 | ok |
+| nestor | `--danger-text` #b13a28 | `--surface-sunken` #e6e0d4 | light | 4.56 | 4.5 | ok |
+| nestor | `--warning-text` #875914 | `--surface` #f5f1ea | light | 5.38 | 4.5 | ok |
+| nestor | `--warning-text` #875914 | `--surface-raised` #ffffff | light | 6.05 | 4.5 | ok |
+| nestor | `--warning-text` #875914 | `--surface-soft` #ede8de | light | 4.96 | 4.5 | ok |
+| nestor | `--warning-text` #875914 | `--surface-sunken` #e6e0d4 | light | 4.61 | 4.5 | ok |
+| nestor | `--success-text` #217046 | `--surface` #f5f1ea | light | 5.37 | 4.5 | ok |
+| nestor | `--success-text` #217046 | `--surface-raised` #ffffff | light | 6.05 | 4.5 | ok |
+| nestor | `--success-text` #217046 | `--surface-soft` #ede8de | light | 4.96 | 4.5 | ok |
+| nestor | `--success-text` #217046 | `--surface-sunken` #e6e0d4 | light | 4.60 | 4.5 | ok |
+| nestor | `--accent` #6b4bc8 | `--surface` #f5f1ea | light | 5.38 | 3 | ok |
+| nestor | `--accent` #6b4bc8 | `--surface-raised` #ffffff | light | 6.06 | 3 | ok |
+| nestor | `--accent` #6b4bc8 | `--surface-soft` #ede8de | light | 4.96 | 3 | ok |
+| nestor | `--accent` #6b4bc8 | `--surface-sunken` #e6e0d4 | light | 4.61 | 3 | ok |
+| nestor | `--on-accent` #ffffff | `--accent` #6b4bc8 | light | 6.06 | 4.5 | ok |
+| nestor | `--on-accent` #ffffff | `--danger` #c4402c | light | 5.10 | 4.5 | ok |
+| nestor | `--on-accent` #ffffff | `--warning` #a26b18 | light | 4.51 | 4.5 | ok |
+| nestor | `--on-accent` #ffffff | `--success` #278654 | light | 4.54 | 4.5 | ok |
+| nestor | `--text` #ece7f6 | `--surface` #131022 | dark | 15.40 | 4.5 | ok |
+| nestor | `--text` #ece7f6 | `--surface-raised` #1d1836 | dark | 14.02 | 4.5 | ok |
+| nestor | `--text` #ece7f6 | `--surface-soft` #171331 | dark | 14.76 | 4.5 | ok |
+| nestor | `--text` #ece7f6 | `--surface-sunken` #0c0a18 | dark | 16.16 | 4.5 | ok |
+| nestor | `--text-muted` #9c94b4 | `--surface` #131022 | dark | 6.50 | 4.5 | ok |
+| nestor | `--text-muted` #9c94b4 | `--surface-raised` #1d1836 | dark | 5.91 | 4.5 | ok |
+| nestor | `--text-muted` #9c94b4 | `--surface-soft` #171331 | dark | 6.23 | 4.5 | ok |
+| nestor | `--text-muted` #9c94b4 | `--surface-sunken` #0c0a18 | dark | 6.82 | 4.5 | ok |
+| nestor | `--text-faint` #8680a0 | `--surface` #131022 | dark | 4.99 | 4.5 | ok |
+| nestor | `--text-faint` #8680a0 | `--surface-raised` #1d1836 | dark | 4.54 | 4.5 | ok |
+| nestor | `--text-faint` #8680a0 | `--surface-soft` #171331 | dark | 4.78 | 4.5 | ok |
+| nestor | `--text-faint` #8680a0 | `--surface-sunken` #0c0a18 | dark | 5.23 | 4.5 | ok |
+| nestor | `--accent-text` #8e70e9 | `--surface` #131022 | dark | 5.02 | 4.5 | ok |
+| nestor | `--accent-text` #8e70e9 | `--surface-raised` #1d1836 | dark | 4.57 | 4.5 | ok |
+| nestor | `--accent-text` #8e70e9 | `--surface-soft` #171331 | dark | 4.81 | 4.5 | ok |
+| nestor | `--accent-text` #8e70e9 | `--surface-sunken` #0c0a18 | dark | 5.26 | 4.5 | ok |
+| nestor | `--danger-text` #ea6a7e | `--surface` #131022 | dark | 6.10 | 4.5 | ok |
+| nestor | `--danger-text` #ea6a7e | `--surface-raised` #1d1836 | dark | 5.55 | 4.5 | ok |
+| nestor | `--danger-text` #ea6a7e | `--surface-soft` #171331 | dark | 5.84 | 4.5 | ok |
+| nestor | `--danger-text` #ea6a7e | `--surface-sunken` #0c0a18 | dark | 6.40 | 4.5 | ok |
+| nestor | `--warning-text` #e8b45c | `--surface` #131022 | dark | 9.88 | 4.5 | ok |
+| nestor | `--warning-text` #e8b45c | `--surface-raised` #1d1836 | dark | 8.99 | 4.5 | ok |
+| nestor | `--warning-text` #e8b45c | `--surface-soft` #171331 | dark | 9.47 | 4.5 | ok |
+| nestor | `--warning-text` #e8b45c | `--surface-sunken` #0c0a18 | dark | 10.37 | 4.5 | ok |
+| nestor | `--success-text` #4fc08a | `--surface` #131022 | dark | 8.21 | 4.5 | ok |
+| nestor | `--success-text` #4fc08a | `--surface-raised` #1d1836 | dark | 7.47 | 4.5 | ok |
+| nestor | `--success-text` #4fc08a | `--surface-soft` #171331 | dark | 7.87 | 4.5 | ok |
+| nestor | `--success-text` #4fc08a | `--surface-sunken` #0c0a18 | dark | 8.62 | 4.5 | ok |
+| nestor | `--accent` #8b6ce8 | `--surface` #131022 | dark | 4.81 | 3 | ok |
+| nestor | `--accent` #8b6ce8 | `--surface-raised` #1d1836 | dark | 4.37 | 3 | ok |
+| nestor | `--accent` #8b6ce8 | `--surface-soft` #171331 | dark | 4.61 | 3 | ok |
+| nestor | `--accent` #8b6ce8 | `--surface-sunken` #0c0a18 | dark | 5.04 | 3 | ok |
+| nestor | `--on-accent` #0f0a1e | `--accent` #8b6ce8 | dark | 5.00 | 4.5 | ok |
+| nestor | `--on-accent` #0f0a1e | `--danger` #ea6a7e | dark | 6.34 | 4.5 | ok |
+| nestor | `--on-accent` #0f0a1e | `--warning` #e8b45c | dark | 10.27 | 4.5 | ok |
+| nestor | `--on-accent` #0f0a1e | `--success` #4fc08a | dark | 8.54 | 4.5 | ok |
+| dobby | `--text` #2a2119 | `--surface` #ede3cf | light | 12.40 | 4.5 | ok |
+| dobby | `--text` #2a2119 | `--surface-raised` #f7f0e1 | light | 13.91 | 4.5 | ok |
+| dobby | `--text` #2a2119 | `--surface-soft` #e6dac2 | light | 11.41 | 4.5 | ok |
+| dobby | `--text` #2a2119 | `--surface-sunken` #dfd1b6 | light | 10.48 | 4.5 | ok |
+| dobby | `--text-muted` #5f5040 | `--surface` #ede3cf | light | 6.09 | 4.5 | ok |
+| dobby | `--text-muted` #5f5040 | `--surface-raised` #f7f0e1 | light | 6.83 | 4.5 | ok |
+| dobby | `--text-muted` #5f5040 | `--surface-soft` #e6dac2 | light | 5.60 | 4.5 | ok |
+| dobby | `--text-muted` #5f5040 | `--surface-sunken` #dfd1b6 | light | 5.15 | 4.5 | ok |
+| dobby | `--text-faint` #655949 | `--surface` #ede3cf | light | 5.36 | 4.5 | ok |
+| dobby | `--text-faint` #655949 | `--surface-raised` #f7f0e1 | light | 6.01 | 4.5 | ok |
+| dobby | `--text-faint` #655949 | `--surface-soft` #e6dac2 | light | 4.93 | 4.5 | ok |
+| dobby | `--text-faint` #655949 | `--surface-sunken` #dfd1b6 | light | 4.53 | 4.5 | ok |
+| dobby | `--accent-text` #75551b | `--surface` #ede3cf | light | 5.37 | 4.5 | ok |
+| dobby | `--accent-text` #75551b | `--surface-raised` #f7f0e1 | light | 6.02 | 4.5 | ok |
+| dobby | `--accent-text` #75551b | `--surface-soft` #e6dac2 | light | 4.94 | 4.5 | ok |
+| dobby | `--accent-text` #75551b | `--surface-sunken` #dfd1b6 | light | 4.54 | 4.5 | ok |
+| dobby | `--danger-text` #a13629 | `--surface` #ede3cf | light | 5.36 | 4.5 | ok |
+| dobby | `--danger-text` #a13629 | `--surface-raised` #f7f0e1 | light | 6.02 | 4.5 | ok |
+| dobby | `--danger-text` #a13629 | `--surface-soft` #e6dac2 | light | 4.93 | 4.5 | ok |
+| dobby | `--danger-text` #a13629 | `--surface-sunken` #dfd1b6 | light | 4.53 | 4.5 | ok |
+| dobby | `--warning-text` #795216 | `--surface` #ede3cf | light | 5.44 | 4.5 | ok |
+| dobby | `--warning-text` #795216 | `--surface-raised` #f7f0e1 | light | 6.10 | 4.5 | ok |
+| dobby | `--warning-text` #795216 | `--surface-soft` #e6dac2 | light | 5.00 | 4.5 | ok |
+| dobby | `--warning-text` #795216 | `--surface-sunken` #dfd1b6 | light | 4.60 | 4.5 | ok |
+| dobby | `--success-text` #406338 | `--surface` #ede3cf | light | 5.39 | 4.5 | ok |
+| dobby | `--success-text` #406338 | `--surface-raised` #f7f0e1 | light | 6.05 | 4.5 | ok |
+| dobby | `--success-text` #406338 | `--surface-soft` #e6dac2 | light | 4.96 | 4.5 | ok |
+| dobby | `--success-text` #406338 | `--surface-sunken` #dfd1b6 | light | 4.55 | 4.5 | ok |
+| dobby | `--accent` #8a6420 | `--surface` #ede3cf | light | 4.20 | 3 | ok |
+| dobby | `--accent` #8a6420 | `--surface-raised` #f7f0e1 | light | 4.72 | 3 | ok |
+| dobby | `--accent` #8a6420 | `--surface-soft` #e6dac2 | light | 3.87 | 3 | ok |
+| dobby | `--accent` #8a6420 | `--surface-sunken` #dfd1b6 | light | 3.55 | 3 | ok |
+| dobby | `--on-accent` #fbf5e8 | `--accent` #8a6420 | light | 4.93 | 4.5 | ok |
+| dobby | `--on-accent` #fbf5e8 | `--danger` #a5372a | light | 6.08 | 4.5 | ok |
+| dobby | `--on-accent` #fbf5e8 | `--warning` #93641b | light | 4.74 | 4.5 | ok |
+| dobby | `--on-accent` #fbf5e8 | `--success` #4f7a45 | light | 4.60 | 4.5 | ok |
+| dobby | `--dby-cuir-text` #f7ecd8 | `--dby-cuir` #7a2e27 | light | 7.98 | 4.5 | ok |
+| dobby | `--text` #ecdfc6 | `--surface` #17130f | dark | 14.02 | 4.5 | ok |
+| dobby | `--text` #ecdfc6 | `--surface-raised` #221b15 | dark | 12.90 | 4.5 | ok |
+| dobby | `--text` #ecdfc6 | `--surface-soft` #1c1712 | dark | 13.50 | 4.5 | ok |
+| dobby | `--text` #ecdfc6 | `--surface-sunken` #0f0c09 | dark | 14.80 | 4.5 | ok |
+| dobby | `--text-muted` #b6a385 | `--surface` #17130f | dark | 7.54 | 4.5 | ok |
+| dobby | `--text-muted` #b6a385 | `--surface-raised` #221b15 | dark | 6.93 | 4.5 | ok |
+| dobby | `--text-muted` #b6a385 | `--surface-soft` #1c1712 | dark | 7.26 | 4.5 | ok |
+| dobby | `--text-muted` #b6a385 | `--surface-sunken` #0f0c09 | dark | 7.96 | 4.5 | ok |
+| dobby | `--text-faint` #958167 | `--surface` #17130f | dark | 4.94 | 4.5 | ok |
+| dobby | `--text-faint` #958167 | `--surface-raised` #221b15 | dark | 4.54 | 4.5 | ok |
+| dobby | `--text-faint` #958167 | `--surface-soft` #1c1712 | dark | 4.75 | 4.5 | ok |
+| dobby | `--text-faint` #958167 | `--surface-sunken` #0f0c09 | dark | 5.21 | 4.5 | ok |
+| dobby | `--accent-text` #c8a25a | `--surface` #17130f | dark | 7.72 | 4.5 | ok |
+| dobby | `--accent-text` #c8a25a | `--surface-raised` #221b15 | dark | 7.10 | 4.5 | ok |
+| dobby | `--accent-text` #c8a25a | `--surface-soft` #1c1712 | dark | 7.43 | 4.5 | ok |
+| dobby | `--accent-text` #c8a25a | `--surface-sunken` #0f0c09 | dark | 8.15 | 4.5 | ok |
+| dobby | `--danger-text` #d0654f | `--surface` #17130f | dark | 4.98 | 4.5 | ok |
+| dobby | `--danger-text` #d0654f | `--surface-raised` #221b15 | dark | 4.58 | 4.5 | ok |
+| dobby | `--danger-text` #d0654f | `--surface-soft` #1c1712 | dark | 4.79 | 4.5 | ok |
+| dobby | `--danger-text` #d0654f | `--surface-sunken` #0f0c09 | dark | 5.25 | 4.5 | ok |
+| dobby | `--warning-text` #d9a548 | `--surface` #17130f | dark | 8.29 | 4.5 | ok |
+| dobby | `--warning-text` #d9a548 | `--surface-raised` #221b15 | dark | 7.63 | 4.5 | ok |
+| dobby | `--warning-text` #d9a548 | `--surface-soft` #1c1712 | dark | 7.98 | 4.5 | ok |
+| dobby | `--warning-text` #d9a548 | `--surface-sunken` #0f0c09 | dark | 8.75 | 4.5 | ok |
+| dobby | `--success-text` #8fb07a | `--surface` #17130f | dark | 7.62 | 4.5 | ok |
+| dobby | `--success-text` #8fb07a | `--surface-raised` #221b15 | dark | 7.01 | 4.5 | ok |
+| dobby | `--success-text` #8fb07a | `--surface-soft` #1c1712 | dark | 7.33 | 4.5 | ok |
+| dobby | `--success-text` #8fb07a | `--surface-sunken` #0f0c09 | dark | 8.04 | 4.5 | ok |
+| dobby | `--accent` #c8a25a | `--surface` #17130f | dark | 7.72 | 3 | ok |
+| dobby | `--accent` #c8a25a | `--surface-raised` #221b15 | dark | 7.10 | 3 | ok |
+| dobby | `--accent` #c8a25a | `--surface-soft` #1c1712 | dark | 7.43 | 3 | ok |
+| dobby | `--accent` #c8a25a | `--surface-sunken` #0f0c09 | dark | 8.15 | 3 | ok |
+| dobby | `--on-accent` #1a130b | `--accent` #c8a25a | dark | 7.68 | 4.5 | ok |
+| dobby | `--on-accent` #1a130b | `--danger` #d0654f | dark | 4.95 | 4.5 | ok |
+| dobby | `--on-accent` #1a130b | `--warning` #d9a548 | dark | 8.25 | 4.5 | ok |
+| dobby | `--on-accent` #1a130b | `--success` #8fb07a | dark | 7.58 | 4.5 | ok |
+| dobby | `--dby-cuir-text` #f3e6d0 | `--dby-cuir` #7a2e27 | dark | 7.58 | 4.5 | ok |
+| skippy | `--text` #141920 | `--surface` #e9ecf0 | light | 14.90 | 4.5 | ok |
+| skippy | `--text` #141920 | `--surface-raised` #ffffff | light | 17.65 | 4.5 | ok |
+| skippy | `--text` #141920 | `--surface-soft` #f3f5f8 | light | 16.16 | 4.5 | ok |
+| skippy | `--text` #141920 | `--surface-sunken` #dfe3e9 | light | 13.70 | 4.5 | ok |
+| skippy | `--text-muted` #5a6370 | `--surface` #e9ecf0 | light | 5.13 | 4.5 | ok |
+| skippy | `--text-muted` #5a6370 | `--surface-raised` #ffffff | light | 6.08 | 4.5 | ok |
+| skippy | `--text-muted` #5a6370 | `--surface-soft` #f3f5f8 | light | 5.57 | 4.5 | ok |
+| skippy | `--text-muted` #5a6370 | `--surface-sunken` #dfe3e9 | light | 4.72 | 4.5 | ok |
+| skippy | `--text-faint` #5e6571 | `--surface` #e9ecf0 | light | 4.96 | 4.5 | ok |
+| skippy | `--text-faint` #5e6571 | `--surface-raised` #ffffff | light | 5.87 | 4.5 | ok |
+| skippy | `--text-faint` #5e6571 | `--surface-soft` #f3f5f8 | light | 5.38 | 4.5 | ok |
+| skippy | `--text-faint` #5e6571 | `--surface-sunken` #dfe3e9 | light | 4.56 | 4.5 | ok |
+| skippy | `--accent-text` #8a5a14 | `--surface` #e9ecf0 | light | 4.99 | 4.5 | ok |
+| skippy | `--accent-text` #8a5a14 | `--surface-raised` #ffffff | light | 5.91 | 4.5 | ok |
+| skippy | `--accent-text` #8a5a14 | `--surface-soft` #f3f5f8 | light | 5.41 | 4.5 | ok |
+| skippy | `--accent-text` #8a5a14 | `--surface-sunken` #dfe3e9 | light | 4.59 | 4.5 | ok |
+| skippy | `--danger-text` #b53b29 | `--surface` #e9ecf0 | light | 4.89 | 4.5 | ok |
+| skippy | `--danger-text` #b53b29 | `--surface-raised` #ffffff | light | 5.80 | 4.5 | ok |
+| skippy | `--danger-text` #b53b29 | `--surface-soft` #f3f5f8 | light | 5.31 | 4.5 | ok |
+| skippy | `--danger-text` #b53b29 | `--surface-sunken` #dfe3e9 | light | 4.50 | 4.5 | ok |
+| skippy | `--warning-text` #8a5a14 | `--surface` #e9ecf0 | light | 4.99 | 4.5 | ok |
+| skippy | `--warning-text` #8a5a14 | `--surface-raised` #ffffff | light | 5.91 | 4.5 | ok |
+| skippy | `--warning-text` #8a5a14 | `--surface-soft` #f3f5f8 | light | 5.41 | 4.5 | ok |
+| skippy | `--warning-text` #8a5a14 | `--surface-sunken` #dfe3e9 | light | 4.59 | 4.5 | ok |
+| skippy | `--success-text` #217348 | `--surface` #e9ecf0 | light | 4.91 | 4.5 | ok |
+| skippy | `--success-text` #217348 | `--surface-raised` #ffffff | light | 5.82 | 4.5 | ok |
+| skippy | `--success-text` #217348 | `--surface-soft` #f3f5f8 | light | 5.33 | 4.5 | ok |
+| skippy | `--success-text` #217348 | `--surface-sunken` #dfe3e9 | light | 4.52 | 4.5 | ok |
+| skippy | `--accent` #b0731a | `--surface` #e9ecf0 | light | 3.34 | 3 | ok |
+| skippy | `--accent` #b0731a | `--surface-raised` #ffffff | light | 3.95 | 3 | ok |
+| skippy | `--accent` #b0731a | `--surface-soft` #f3f5f8 | light | 3.62 | 3 | ok |
+| skippy | `--accent` #b0731a | `--surface-sunken` #dfe3e9 | light | 3.07 | 3 | ok |
+| skippy | `--on-accent` #080a0d | `--accent` #b0731a | light | 5.01 | 4.5 | ok |
+| skippy | `--on-accent` #080a0d | `--danger` #d24c37 | light | 4.56 | 4.5 | ok |
+| skippy | `--on-accent` #080a0d | `--warning` #b0731a | light | 5.01 | 4.5 | ok |
+| skippy | `--on-accent` #080a0d | `--success` #2e9e63 | light | 5.84 | 4.5 | ok |
+| skippy | `--text` #d7dee6 | `--surface` #080a0d | dark | 14.61 | 4.5 | ok |
+| skippy | `--text` #d7dee6 | `--surface-raised` #101419 | dark | 13.63 | 4.5 | ok |
+| skippy | `--text` #d7dee6 | `--surface-soft` #171c23 | dark | 12.62 | 4.5 | ok |
+| skippy | `--text` #d7dee6 | `--surface-sunken` #05070a | dark | 14.87 | 4.5 | ok |
+| skippy | `--text-muted` #8e98a5 | `--surface` #080a0d | dark | 6.78 | 4.5 | ok |
+| skippy | `--text-muted` #8e98a5 | `--surface-raised` #101419 | dark | 6.32 | 4.5 | ok |
+| skippy | `--text-muted` #8e98a5 | `--surface-soft` #171c23 | dark | 5.86 | 4.5 | ok |
+| skippy | `--text-muted` #8e98a5 | `--surface-sunken` #05070a | dark | 6.90 | 4.5 | ok |
+| skippy | `--text-faint` #7a8592 | `--surface` #080a0d | dark | 5.28 | 4.5 | ok |
+| skippy | `--text-faint` #7a8592 | `--surface-raised` #101419 | dark | 4.93 | 4.5 | ok |
+| skippy | `--text-faint` #7a8592 | `--surface-soft` #171c23 | dark | 4.56 | 4.5 | ok |
+| skippy | `--text-faint` #7a8592 | `--surface-sunken` #05070a | dark | 5.38 | 4.5 | ok |
+| skippy | `--accent-text` #f2a93b | `--surface` #080a0d | dark | 9.92 | 4.5 | ok |
+| skippy | `--accent-text` #f2a93b | `--surface-raised` #101419 | dark | 9.25 | 4.5 | ok |
+| skippy | `--accent-text` #f2a93b | `--surface-soft` #171c23 | dark | 8.57 | 4.5 | ok |
+| skippy | `--accent-text` #f2a93b | `--surface-sunken` #05070a | dark | 10.10 | 4.5 | ok |
+| skippy | `--danger-text` #e8543f | `--surface` #080a0d | dark | 5.45 | 4.5 | ok |
+| skippy | `--danger-text` #e8543f | `--surface-raised` #101419 | dark | 5.08 | 4.5 | ok |
+| skippy | `--danger-text` #e8543f | `--surface-soft` #171c23 | dark | 4.70 | 4.5 | ok |
+| skippy | `--danger-text` #e8543f | `--surface-sunken` #05070a | dark | 5.54 | 4.5 | ok |
+| skippy | `--warning-text` #f2a93b | `--surface` #080a0d | dark | 9.92 | 4.5 | ok |
+| skippy | `--warning-text` #f2a93b | `--surface-raised` #101419 | dark | 9.25 | 4.5 | ok |
+| skippy | `--warning-text` #f2a93b | `--surface-soft` #171c23 | dark | 8.57 | 4.5 | ok |
+| skippy | `--warning-text` #f2a93b | `--surface-sunken` #05070a | dark | 10.10 | 4.5 | ok |
+| skippy | `--success-text` #3fbf86 | `--surface` #080a0d | dark | 8.50 | 4.5 | ok |
+| skippy | `--success-text` #3fbf86 | `--surface-raised` #101419 | dark | 7.93 | 4.5 | ok |
+| skippy | `--success-text` #3fbf86 | `--surface-soft` #171c23 | dark | 7.34 | 4.5 | ok |
+| skippy | `--success-text` #3fbf86 | `--surface-sunken` #05070a | dark | 8.65 | 4.5 | ok |
+| skippy | `--accent` #f2a93b | `--surface` #080a0d | dark | 9.92 | 3 | ok |
+| skippy | `--accent` #f2a93b | `--surface-raised` #101419 | dark | 9.25 | 3 | ok |
+| skippy | `--accent` #f2a93b | `--surface-soft` #171c23 | dark | 8.57 | 3 | ok |
+| skippy | `--accent` #f2a93b | `--surface-sunken` #05070a | dark | 10.10 | 3 | ok |
+| skippy | `--on-accent` #080a0d | `--accent` #f2a93b | dark | 9.92 | 4.5 | ok |
+| skippy | `--on-accent` #080a0d | `--danger` #e8543f | dark | 5.45 | 4.5 | ok |
+| skippy | `--on-accent` #080a0d | `--warning` #f2a93b | dark | 9.92 | 4.5 | ok |
+| skippy | `--on-accent` #080a0d | `--success` #3fbf86 | dark | 8.50 | 4.5 | ok |
+<!-- skin-contrast:end -->
 
 Corrections keep each hue and move lightness only. Bright fills keep their colour;
 `--accent-text`, `--danger-text`, `--warning-text` and `--success-text` are their text twins
@@ -191,7 +496,8 @@ the same 4.5:1 floor as other text.
 
 ## 6. Accepted departures
 
-None yet. A pair left under its threshold is written here with its reason and who accepted
+None yet: every pair of the base palette and of the four skins reaches its threshold
+without redrawing a persona. A pair left under its threshold is written here with its reason and who accepted
 it.
 
 ## 7. Build specification — tranche `adestia-qualite-charte`
