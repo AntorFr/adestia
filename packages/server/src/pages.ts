@@ -40,9 +40,6 @@ import {
   type Store,
 } from './stores.js'
 
-// pages.test.ts still imports it from here; kept until the tester moves that import.
-export { parseFrontmatter }
-
 export interface PagesOptions {
   /**
    * The stores this instance composes, in precedence order — the default

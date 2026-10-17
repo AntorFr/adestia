@@ -372,7 +372,7 @@ rules. The server outcomes above stay blank until the documentation tranche fill
   contract (the `index.ts` of a package), each named in this section when it is known; every
   other hit is un-exported or deleted.
   Run `node scripts/unused-exports.mjs`: sorted entries go to stdout, the count to stderr.
-  The baseline before export removal is **294** entries. The TypeScript module graph uses
+  The baseline before export removal is **293** entries. The TypeScript module graph uses
   `tsconfig.base.json` source aliases and counts type imports, aliases and re-exports
   (including `export *`). Each barrel has its own entries; its re-export consumes the
   original module's export. All package sources, including web, supply importers; web

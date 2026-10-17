@@ -72,8 +72,6 @@ export function registerInstructionCatalogues(
   { driver, workspaceRoot, dataDir, store, log = () => undefined }: CatalogueRoutesOptions,
 ): void {
   const cloneOf = (id: string): string => catalogueClone(dataDir, id)
-  const fetchClone = (catalogue: InstructionCatalogue): Promise<string | undefined> =>
-    fetchCatalogueClone(catalogue, { driver, workspaceRoot, dataDir, log })
 
   const isCloned = (id: string): Promise<boolean> =>
     stat(join(cloneOf(id), '.git')).then(
@@ -151,7 +149,12 @@ export function registerInstructionCatalogues(
     const catalogue = (await store.list()).find((candidate) => candidate.id === id)
     if (!catalogue) return { status: 404, error: 'no such catalogue' }
     if (!(await isCloned(id))) {
-      const failure = await fetchClone(catalogue)
+      const failure = await fetchCatalogueClone(catalogue, {
+        driver,
+        workspaceRoot,
+        dataDir,
+        log,
+      })
       if (failure !== undefined) return { status: 502, error: failure }
     }
     return { catalogue, items: await scanCatalogue(cloneOf(id)) }
