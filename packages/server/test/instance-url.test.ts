@@ -1,7 +1,7 @@
 /**
  * Ensemble test for feature `adestia-instance-url`, written from its own
  * conception — `features/adestia-instance-url/fonctionnelle.md`, and, since
- * this feature has no screen, `technique.md`'s contracts (the config field,
+ * this feature has no screen, `ARCHITECTURE.md`'s contracts (the config field,
  * its validation, and the `this-instance` contract) as the only point of
  * entry — never from the diff that implemented it.
  *
@@ -69,7 +69,7 @@ describe('B-1 — the operator declares the address, the agent can state it', ()
   })
 
   it('keeps a declared path, normalising only a trailing slash', async () => {
-    // technique.md: a path under an ingress prefix is allowed; a trailing
+    // ARCHITECTURE.md: a path under an ingress prefix is allowed; a trailing
     // slash is stripped "pour un affichage stable" — tranché le 2026-10-01.
     await boot('url: https://chronique.example.org/jeux/\n')
     const contract = await readContract()
