@@ -22,7 +22,8 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
-  padding: 2px var(--space-2);
+  max-width: 100%;
+  padding: 0 var(--space-1) 0 var(--space-3);
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
   background: var(--surface-sunken);
@@ -30,24 +31,23 @@
 }
 
 .adestia-attachments__item button {
-  background: none;
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
   border: 0;
-  padding: 0 2px;
+  border-radius: var(--radius-pill);
+  background: none;
   color: var(--text-faint);
   cursor: pointer;
-  font-size: var(--text-base);
-  width: auto;
-  height: auto;
 }
+.adestia-attachments__item button:hover { color: var(--text); }
+.adestia-attachments__item button:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 1px; }
+.adestia-attachments__item .adestia-icon { width: 14px; height: 14px; }
 
-.adestia-attachments__error { color: var(--danger); }
-
-.adestia-composer__attach {
-  background: none !important;
-  border: 1px solid var(--border) !important;
-  color: var(--text-muted) !important;
-  font-size: var(--text-base) !important;
-}
+/* The shared error form (`.adestia-field__error`), taking the tray's full row. */
+.adestia-attachments__error { flex-basis: 100%; }
 
 /* The model picker, in the chat header.
 
@@ -100,25 +100,29 @@
   box-shadow: var(--shadow);
 }
 
-/* Overrides the composer's square icon buttons: these are rows of text. */
+/* Rows of text, not square icon buttons. */
 .adestia-fold__item {
-  display: flex !important;
+  display: flex;
   align-items: center;
   gap: var(--space-3);
-  width: 100% !important;
-  height: auto !important;
-  padding: 10px var(--space-3) !important;
-  border-radius: var(--radius-sm) !important;
-  background: none !important;
-  color: var(--text) !important;
-  font: inherit !important;
+  width: 100%;
+  min-height: 40px;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
   text-align: left;
   white-space: nowrap;
   cursor: pointer;
 }
+.adestia-fold__item:focus-visible { outline: 2px solid var(--accent-text); outline-offset: -2px; }
 
-.adestia-fold__item:hover { background: var(--surface-sunken) !important; }
-.adestia-fold__glyph { font-size: var(--text-lg); line-height: 1; }
+.adestia-fold__item:hover { background: var(--surface-sunken); }
+.adestia-fold__glyph { display: inline-grid; place-items: center; line-height: 1; }
+.adestia-fold__glyph .adestia-icon { width: 18px; height: 18px; }
 
 /* Section heading on the landing canvas. The pages list sits BELOW the app
    tiles and needs to announce itself as a second thing rather than reading as

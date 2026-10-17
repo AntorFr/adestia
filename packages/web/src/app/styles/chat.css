@@ -493,6 +493,8 @@
 
 /* Composer ---------------------------------------------------------------- */
 
+/* The controls are shell buttons (`.adestia-btn`, icon-only); this block sizes
+   the row and draws the busy / stopping / blocked states, nothing else. */
 .adestia-composer {
   display: flex;
   gap: var(--space-2);
@@ -504,15 +506,18 @@
 
 .adestia-composer__input {
   flex: 1;
-  /* A floor, not a fixed height: the JS grows it up to COMPOSER_MAX_HEIGHT and
-     the two numbers must agree, or the field jumps on the first keystroke. */
+  min-width: 0;
+  /* The field's own look (border, radius, ring) is `.adestia-input`'s; the
+     height is a floor and a ceiling. The JS grows the field between them and
+     COMPOSER_MIN/MAX_HEIGHT in Composer.tsx must agree with these two, or the
+     field jumps on the first keystroke. Past the ceiling it scrolls. */
   min-height: 48px;
   max-height: 200px;
+  height: auto;
   resize: none;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  /* Was 8px/12px, which left the caret hard against the frame on a surface
-     people write paragraphs into. */
+  overflow-y: auto;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
   padding: 13px var(--space-4);
   background: var(--surface);
   color: var(--text);
@@ -522,33 +527,26 @@
   font-size: max(var(--input-text-min), var(--text-base));
 }
 
+.adestia-composer__input::placeholder { color: var(--text-faint); }
+
 .adestia-composer__input:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -1px;
+  outline: 2px solid var(--accent-text);
+  outline-offset: 1px;
 }
 
-.adestia-composer button {
-  /* 40px against a 48px field, and 44 on a phone below: the row reads as one
-     control rather than as buttons parked next to a box. */
+/* Buttons beside the field: 40px against a 48px field (44 on a phone, see
+   mobile.css), so the row reads as one control. */
+.adestia-composer .adestia-btn--icon {
   width: 40px;
   height: 40px;
   flex: none;
-  border-radius: var(--radius);
-  border: 0;
-  background: var(--accent);
-  color: var(--on-accent);
-  font-size: var(--text-lg);
-  cursor: pointer;
 }
 
 /* The send is the body's signature on every message: its own knobs, so a
-   livery can make it a seal without rounding the stop or the attach.
-   Qualified by the composer to outrank `.adestia-composer button` above;
-   `:disabled` below still outranks this, so an empty field greys the seal. */
+   livery can make it a seal without rounding the stop or the attach. */
 .adestia-composer .adestia-composer__send {
-  display: grid;
-  place-items: center;
   border-radius: var(--send-radius);
+  border-color: transparent;
   background: var(--send-bg);
   color: var(--send-text);
   box-shadow: var(--send-shadow);
@@ -557,13 +555,23 @@
 .adestia-composer__glyph { display: contents; }
 .adestia-composer__glyph svg { width: 18px; height: 18px; }
 
-.adestia-composer button:disabled {
+/* Nothing to send, or a question holds the turn: greyed and inert. */
+.adestia-composer .adestia-composer__send:disabled {
   background: var(--surface-sunken);
+  border-color: var(--border);
   color: var(--text-faint);
-  cursor: default;
+  box-shadow: none;
+  opacity: 1;
 }
 
-.adestia-composer__stop { background: var(--danger); }
+/* Stop was taken, the engine has not landed: spent, but still a stop. */
+.adestia-composer--stopping .adestia-composer__stop { opacity: 0.45; }
+
+/* A question is on screen: the field waits with the turn. */
+.adestia-composer--blocked .adestia-composer__input {
+  background: var(--surface-sunken);
+  border-style: dashed;
+}
 
 /* Shared buttons keep their legacy hooks for the skins. */
 .adestia-chat__header .adestia-ib { width: 32px; height: 32px; }

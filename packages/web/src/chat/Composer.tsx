@@ -5,6 +5,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { Icon } from '../app/Icon.js'
 import { requestRaw } from '../app/request.js'
 import { useMobile } from '../app/useMobile.js'
 // The drag primitive is shared with the page screen: one answer to "is this
@@ -68,13 +69,14 @@ export function ComposerFold({
     <div className="adestia-fold" ref={host}>
       <button
         type="button"
-        className="adestia-composer__attach"
+        className="adestia-composer__attach adestia-btn adestia-btn--icon"
         aria-label={t('More')}
+        title={t('More')}
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen(!open)}
       >
-        ＋
+        <Icon name="plus" />
       </button>
       {open && (
         <div className="adestia-fold__menu" role="menu">
@@ -88,7 +90,7 @@ export function ComposerFold({
             }}
           >
             <span className="adestia-fold__glyph" aria-hidden="true">
-              📎
+              <Icon name="paperclip" />
             </span>
             {t('Attach files')}
           </button>
@@ -205,7 +207,7 @@ export function Composer({
   onSend: (text: string, attachments: readonly PendingAttachment[]) => void
   onStop: () => void
   busy: boolean
-  /** The stop was taken and the engine has not landed yet: the ■ is spent. */
+  /** The stop was taken and the engine has not landed yet: the stop button is spent. */
   stopping?: boolean
   /** A question is on screen: the turn is waiting on it, not on more text. */
   blocked?: boolean
@@ -284,7 +286,15 @@ export function Composer({
 
   return (
     <form
-      className={`adestia-composer${dropping ? ' adestia-composer--dropping' : ''}`}
+      className={[
+        'adestia-composer',
+        dropping && 'adestia-composer--dropping',
+        busy && 'adestia-composer--busy',
+        stopping && 'adestia-composer--stopping',
+        blocked && 'adestia-composer--blocked',
+      ]
+        .filter(Boolean)
+        .join(' ')}
       onSubmit={(event) => {
         event.preventDefault()
         submit()
@@ -308,6 +318,7 @@ export function Composer({
       <AttachmentTray
         attachments={attachments}
         {...(uploadError ? { error: uploadError } : {})}
+        t={t}
         onRemove={(id) => setAttachments((current) => current.filter((a) => a.id !== id))}
       />
       <input
@@ -334,17 +345,18 @@ export function Composer({
         <>
           <button
             type="button"
-            className="adestia-composer__attach"
+            className="adestia-composer__attach adestia-btn adestia-btn--icon"
             onClick={() => picker.current?.click()}
             aria-label={t('Attach files')}
+            title={t('Attach files')}
           >
-            📎
+            <Icon name="paperclip" />
           </button>
           {extraButtons?.map((button) => (
             <button
               key={button.key}
               type="button"
-              className="adestia-composer__attach"
+              className="adestia-composer__attach adestia-btn adestia-btn--icon"
               onClick={() => button.onClick(button.api)}
               aria-label={button.title}
               title={button.title}
@@ -357,6 +369,7 @@ export function Composer({
       <textarea
         ref={area}
         className="adestia-composer__input"
+        aria-label={placeholder ?? t('Ask the agent…')}
         value={text}
         placeholder={placeholder ?? t('Ask the agent…')}
         rows={1}
@@ -383,19 +396,21 @@ export function Composer({
       {busy && text.trim() === '' ? (
         <button
           type="button"
-          className="adestia-composer__stop"
+          className="adestia-composer__stop adestia-btn adestia-btn--danger adestia-btn--icon"
           onClick={onStop}
           disabled={stopping ?? false}
           aria-label={t('Stop')}
+          title={t('Stop')}
         >
-          ■
+          <Icon name="square" />
         </button>
       ) : (
         <button
           type="submit"
-          className="adestia-composer__send"
+          className="adestia-composer__send adestia-btn adestia-btn--icon"
           disabled={(text.trim() === '' && attachments.length === 0) || blocked}
           aria-label={t('Send')}
+          title={t('Send')}
         >
           {/* The livery's glyph comes from the skin MODULE, code the
               instance already runs — inlining it adds no reach. */}
@@ -406,7 +421,7 @@ export function Composer({
               dangerouslySetInnerHTML={{ __html: sendIcon }}
             />
           ) : (
-            '↑'
+            <Icon name="arrow-up" />
           )}
         </button>
       )}
@@ -417,10 +432,12 @@ export function Composer({
 function AttachmentTray({
   attachments,
   error,
+  t,
   onRemove,
 }: {
   attachments: readonly PendingAttachment[]
   error?: string | undefined
+  t: (key: string) => string
   onRemove: (id: string) => void
 }) {
   if (attachments.length === 0 && !error) return null
@@ -429,12 +446,22 @@ function AttachmentTray({
       {attachments.map((attachment) => (
         <span key={attachment.id} className="adestia-attachments__item">
           {attachment.name}
-          <button type="button" onClick={() => onRemove(attachment.id)} aria-label={`Remove ${attachment.name}`}>
-            ×
+          <button
+            type="button"
+            onClick={() => onRemove(attachment.id)}
+            aria-label={t('Remove %name').replace('%name', attachment.name)}
+            title={t('Remove %name').replace('%name', attachment.name)}
+          >
+            <Icon name="x" />
           </button>
         </span>
       ))}
-      {error && <span className="adestia-attachments__error">{error}</span>}
+      {error && (
+        <p className="adestia-field__error adestia-attachments__error" role="alert">
+          <Icon name="circle-alert" />
+          {error}
+        </p>
+      )}
     </div>
   )
 }

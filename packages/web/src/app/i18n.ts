@@ -324,6 +324,7 @@ const FR: Readonly<Record<string, string>> = {
   Auto: 'Auto',
   'Attach files': 'Joindre des fichiers',
   More: 'Plus',
+  'Remove %name': 'Retirer %name',
   Stop: 'Arrêter',
   Send: 'Envoyer',
   'Ask the agent…': 'Demandez à l’agent…',
