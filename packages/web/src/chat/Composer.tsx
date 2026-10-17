@@ -139,6 +139,54 @@ export interface PendingAttachment {
   readonly name: string
 }
 
+/**
+ * What a composer has taken in: the files waiting in its tray, the refusal
+ * under them, and the uploader that fills both. The send empties the tray, so
+ * the setter is handed out with the list rather than kept private.
+ */
+function useUploads(fetchImpl: typeof fetch, t: (key: string) => string) {
+  const [attachments, setAttachments] = useState<readonly PendingAttachment[]>([])
+  const [uploadError, setUploadError] = useState<string | undefined>()
+
+  const upload = useCallback(
+    async (files: readonly File[]) => {
+      if (files.length === 0) return
+      setUploadError(undefined)
+      const form = new FormData()
+      for (const file of files) form.append('file', file)
+
+      const sent = await requestRaw(fetchImpl, '/api/upload', { method: 'POST', body: form }, t)
+      // Only an unreachable server takes the translated fallback; the server's
+      // own `error` and the list of refusals keep their way.
+      if (!sent.ok) {
+        setUploadError(sent.error)
+        return
+      }
+      const { response } = sent
+      try {
+        const body = (await response.json()) as {
+          attachments?: PendingAttachment[]
+          refused?: string[]
+          error?: string
+        }
+        if (!response.ok) {
+          setUploadError(body.error ?? `upload failed (${response.status})`)
+          return
+        }
+        setAttachments((current) => [...current, ...(body.attachments ?? [])])
+        // Refusals are shown next to what worked: a file silently dropped is a
+        // file the user believes the agent has.
+        if (body.refused?.length) setUploadError(body.refused.join('; '))
+      } catch (error) {
+        setUploadError((error as Error).message)
+      }
+    },
+    [fetchImpl, t],
+  )
+
+  return { attachments, setAttachments, uploadError, upload }
+}
+
 export function Composer({
   onSend,
   onStop,
@@ -189,47 +237,10 @@ export function Composer({
   // still runs so the answer stays live when nobody does.
   const fold = folded ?? narrow
   const [text, setText] = useState('')
-  const [attachments, setAttachments] = useState<readonly PendingAttachment[]>([])
-  const [uploadError, setUploadError] = useState<string | undefined>()
   const [dropping, setDropping] = useState(false)
   const area = useRef<HTMLTextAreaElement>(null)
   const picker = useRef<HTMLInputElement>(null)
-
-  const upload = useCallback(
-    async (files: readonly File[]) => {
-      if (files.length === 0) return
-      setUploadError(undefined)
-      const form = new FormData()
-      for (const file of files) form.append('file', file)
-
-      const sent = await requestRaw(fetchImpl, '/api/upload', { method: 'POST', body: form }, t)
-      // Only an unreachable server takes the translated fallback; the server's
-      // own `error` and the list of refusals keep their way.
-      if (!sent.ok) {
-        setUploadError(sent.error)
-        return
-      }
-      const { response } = sent
-      try {
-        const body = (await response.json()) as {
-          attachments?: PendingAttachment[]
-          refused?: string[]
-          error?: string
-        }
-        if (!response.ok) {
-          setUploadError(body.error ?? `upload failed (${response.status})`)
-          return
-        }
-        setAttachments((current) => [...current, ...(body.attachments ?? [])])
-        // Refusals are shown next to what worked: a file silently dropped is a
-        // file the user believes the agent has.
-        if (body.refused?.length) setUploadError(body.refused.join('; '))
-      } catch (error) {
-        setUploadError((error as Error).message)
-      }
-    },
-    [fetchImpl, t],
-  )
+  const { attachments, setAttachments, uploadError, upload } = useUploads(fetchImpl, t)
 
   const submit = useCallback(() => {
     const value = text.trim()
@@ -239,7 +250,7 @@ export function Composer({
     onSend(value, attachments)
     setText('')
     setAttachments([])
-  }, [attachments, blocked, onSend, text])
+  }, [attachments, blocked, onSend, setAttachments, text])
 
   useEffect(() => {
     // Appends rather than replaces: whatever the user already typed IS the
