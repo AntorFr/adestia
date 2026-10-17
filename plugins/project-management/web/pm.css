@@ -41,8 +41,8 @@
   /* Plein, pas délavé : une barre est un objet, pas une ombre. Les états se
      distinguent par la DENSITÉ de la même teinte, l'écart de retard mis à
      part — un planning lu de loin doit rester un seul dessin.
-     Teinte de la SURFACE et texte du thème : `#fff` en dur était juste en
-     clair et illisible en sombre, où l'accent est un cyan pâle. */
+     Teinte de la SURFACE et texte du thème : un blanc écrit en dur était juste
+     en clair et illisible en sombre, où l'accent est un cyan pâle. */
   background: color-mix(in srgb, var(--accent) 55%, var(--surface-sunken));
   color: var(--text);
   font-size: var(--text-sm);
@@ -57,8 +57,8 @@
    la teinte, puis on y pose du blanc, ce qui tient sur les deux fonds sans
    qu'un thème ait à redéfinir quoi que ce soit. */
 .pm-timeline__span--current {
-  background: color-mix(in srgb, var(--accent) var(--plate-mix, 62%), var(--plate-base, #000));
-  color: var(--plate-fg, #fff);
+  background: color-mix(in srgb, var(--accent) var(--plate-mix), var(--plate-base));
+  color: var(--plate-fg);
   box-shadow: 0 1px 3px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 .pm-timeline__span--past {
@@ -97,7 +97,7 @@
   bottom: -3px;
   width: 6px;
   height: 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--warning);
 }
 .pm-timeline__mile > span,
@@ -105,13 +105,13 @@
   position: absolute;
   left: -4px;
   white-space: nowrap;
-  font-size: 11px;
+  font-size: var(--text-2xs);
   /* Its own line height, not the page's: the rows are 18px apart, and a label
      as tall as a line of prose would reach into the row above. */
   line-height: 14px;
   font-weight: 600;
   font-family: var(--font-mono);
-  color: var(--warning);
+  color: var(--warning-text);
 }
 /* Near the right edge: the label ends at its line instead of starting there. */
 .pm-timeline__mile--end > span,
@@ -153,12 +153,12 @@ button.pm-timeline__span:hover {
 .pm-timeline__mile > button {
   background: none;
   padding: 0;
-  font-size: 11px;
+  font-size: var(--text-2xs);
   font-family: var(--font-mono);
   color: var(--text-muted);
 }
 .pm-timeline__mile > button:hover {
-  color: var(--accent);
+  color: var(--accent-text);
   text-decoration: underline;
 }
 
@@ -178,7 +178,7 @@ button.pm-timeline__span:hover {
   position: absolute;
   left: 3px;
   bottom: -17px;
-  font-size: 10px;
+  font-size: var(--text-2xs);
   font-weight: 600;
   font-family: var(--font-mono);
   color: var(--text);
@@ -197,7 +197,7 @@ button.pm-timeline__span:hover {
   position: absolute;
   top: 3px;
   transform: translateX(1px);
-  font-size: 10px;
+  font-size: var(--text-2xs);
   font-family: var(--font-mono);
   color: var(--text-faint);
   white-space: nowrap;
@@ -272,11 +272,10 @@ button.pm-timeline__span:hover {
   flex: none;
   width: 9px;
   height: 9px;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: currentcolor;
   box-shadow: 0 0 0 3px color-mix(in srgb, currentcolor 16%, transparent);
   color: var(--accent);
-  font-size: 0;
 }
 .pm-subproject__ico--underway { color: var(--accent); }
 .pm-subproject__ico--waiting,
@@ -290,7 +289,7 @@ button.pm-timeline__span:hover {
 .pm-subproject__title { flex: 1; }
 .pm-subproject__empty {
   color: var(--text-muted);
-  font-size: 0.9em;
+  font-size: var(--text-sm);
   margin: 0;
 }
 /* ── `view=cards` — les mêmes entrées, en grille ───────────────────────────
@@ -333,7 +332,7 @@ button.pm-timeline__span:hover {
 .pm-subproject__fold > summary {
   padding: var(--space-2) var(--space-3);
   color: var(--text-muted);
-  font-size: 0.86em;
+  font-size: var(--text-sm);
   cursor: pointer;
 }
 
@@ -348,7 +347,7 @@ button.pm-timeline__span:hover {
    d'écran, une impression en gris et un lecteur daltonien devant une liste
    de losanges identiques. */
 .pm-subproject__tag {
-  font: 600 10.5px/1.5 var(--font-mono);
+  font: 600 var(--text-2xs)/1.5 var(--font-mono);
   border-radius: var(--radius-sm);
   padding: 2px 8px;
   border: 1px solid var(--border);

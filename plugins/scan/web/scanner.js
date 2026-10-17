@@ -6,6 +6,7 @@
  * contract to buttons rather than growing an overlay facet for one use case.
  */
 
+import { words } from './chrome.js'
 import { addCode, composeMessage, createBasket, dropCode, FORMATS } from './codes.js'
 
 /** Native where it exists — Android and Chrome desktop — zxing elsewhere. */
@@ -28,7 +29,9 @@ async function makeDecoder() {
   return decodeFrame
 }
 
-export async function openScanner(api) {
+export async function openScanner(api, t = words(api?.locale)) {
+  // Whoever opened the reader gets the focus back when it closes.
+  const opener = document.activeElement
   const stream = await navigator.mediaDevices.getUserMedia({
     // The rear camera, without demanding it: `exact` fails outright on a
     // laptop, where the front camera is the only one and works fine.
@@ -38,13 +41,16 @@ export async function openScanner(api) {
   const basket = createBasket()
   const overlay = document.createElement('div')
   overlay.className = 'scan-overlay'
+  overlay.setAttribute('role', 'dialog')
+  overlay.setAttribute('aria-modal', 'true')
+  overlay.setAttribute('aria-label', t('Scan barcodes'))
   overlay.innerHTML = `
     <video class="scan-video" playsinline muted></video>
     <div class="scan-panel">
       <ul class="scan-basket"></ul>
       <div class="scan-actions">
-        <button type="button" class="scan-cancel">Cancel</button>
-        <button type="button" class="scan-done" disabled>Add to message</button>
+        <button type="button" class="scan-cancel" aria-label="${t('Cancel scanning')}">${t('Cancel')}</button>
+        <button type="button" class="scan-done" disabled>${t('Add to message')}</button>
       </div>
     </div>`
   document.body.append(overlay)
@@ -57,10 +63,38 @@ export async function openScanner(api) {
 
   let running = true
   const close = () => {
+    if (!running) return
     running = false
+    document.removeEventListener('keydown', onKey, true)
     for (const track of stream.getTracks()) track.stop()
     overlay.remove()
+    if (opener?.isConnected) opener.focus()
   }
+  // Escape closes it exactly as « cancel » does; Tab stays inside the overlay.
+  function onKey(event) {
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      event.stopPropagation()
+      close()
+    } else if (event.key === 'Tab') {
+      const controls = [...overlay.querySelectorAll('button:not(:disabled)')]
+      if (controls.length === 0) return
+      const first = controls[0]
+      const last = controls[controls.length - 1]
+      if (!overlay.contains(document.activeElement)) {
+        event.preventDefault()
+        first.focus()
+      } else if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+  }
+  document.addEventListener('keydown', onKey, true)
+  overlay.querySelector('.scan-cancel').focus()
 
   const paint = () => {
     list.replaceChildren(
@@ -70,8 +104,16 @@ export async function openScanner(api) {
         item.textContent = code
         const remove = document.createElement('button')
         remove.type = 'button'
-        remove.textContent = '×'
-        remove.setAttribute('aria-label', `Remove ${code}`)
+        const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+        icon.setAttribute('class', 'adestia-icon')
+        icon.setAttribute('aria-hidden', 'true')
+        icon.setAttribute('focusable', 'false')
+        const use = document.createElementNS('http://www.w3.org/2000/svg', 'use')
+        use.setAttribute('href', '#adestia-i-x')
+        icon.append(use)
+        remove.append(icon)
+        remove.setAttribute('aria-label', t('Remove this code'))
+        remove.title = t('Remove this code')
         remove.addEventListener('click', () => {
           dropCode(basket, code)
           paint()
@@ -83,8 +125,8 @@ export async function openScanner(api) {
     done.disabled = basket.codes.length === 0
     done.textContent =
       basket.codes.length === 0
-        ? 'Add to message'
-        : `Add ${basket.codes.length} to message`
+        ? t('Add to message')
+        : t('Add %n to message', { n: basket.codes.length })
   }
 
   overlay.querySelector('.scan-cancel').addEventListener('click', close)

@@ -17,6 +17,8 @@ import { fileURLToPath } from 'node:url'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const CHECKED = [
+  'project-management',
+  'scan',
 ]
 const withoutComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, (s) => s.replace(/[^\n]/g, ' '))
 const tokens = new Set([...withoutComments(readFileSync(join(root, 'packages/web/src/app/tokens.css'), 'utf8'))
