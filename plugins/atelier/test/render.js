@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url'
 import { JSDOM } from 'jsdom'
 
 import createAtelierApp from '../web/app.js'
+import { makeT } from '../web/words.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
 
@@ -59,7 +60,7 @@ export function screen(dom) {
  * A booted engine. `listing`/`workbook` null means the endpoint answers 500;
  * `broken` makes the listing throw.
  */
-export function boot({ t, locale, listing = LISTING, workbook = WORKBOOK, broken = false } = {}) {
+export function boot({ locale, t = makeT(locale), listing = LISTING, workbook = WORKBOOK, broken = false } = {}) {
   const dom = new JSDOM('<!doctype html><body><div class="atelier-page"></div></body>')
   const { window } = dom
   const state = { fait: {} }
