@@ -216,5 +216,7 @@ are deliberately left in their original language. `rail-report.json` records the
 header controls' measured bounds. The running/held states go through the fake
 engine and the real composer and upload route. `bench/run.sh
 bench/scenarios/chat-rail.mjs` also runs one locale/skin through the Docker
-bench's scripted stream; it replays the disconnected MCP identity in the browser
-because that instance has no sign-in server configured.
+bench with a scenario-local scripted stream; it replays the model catalogue and
+disconnected MCP identity in the browser because that instance has no engine CLI
+or sign-in server configured. Docker is optional; the host matrix uses the real
+seeded server and its fake driver.

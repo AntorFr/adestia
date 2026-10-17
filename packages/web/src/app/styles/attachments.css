@@ -61,7 +61,8 @@
   max-width: 130px;
   flex: 0 1 130px;
 }
-.adestia-model {
+.adestia-model-wrap .adestia-model {
+  max-width: 100%;
   width: 100%;
   min-width: 0;
   text-overflow: ellipsis;

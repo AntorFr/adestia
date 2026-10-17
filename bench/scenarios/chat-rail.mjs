@@ -13,6 +13,7 @@
  * Docker: bench/run.sh bench/scenarios/chat-rail.mjs (one skin; proxy engine).
  */
 import assert from 'node:assert/strict'
+import { createServer } from 'node:http'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { execFileSync } from 'node:child_process'
@@ -36,6 +37,44 @@ function playwright() {
   throw new Error('Playwright must come from the environment')
 }
 
+/** Docker's generic proxy serves one attach only. This local replay supplies
+ * fresh held-open streams per viewport, without changing the shared bench. */
+async function replayEngine() {
+  const streams = new Map()
+  const server = createServer(async (request, response) => {
+    let raw = ''
+    for await (const chunk of request) raw += chunk
+    const body = JSON.parse(raw || '{}')
+    response.setHeader('access-control-allow-origin', '*')
+    if (request.url === '/api/turn/stop') {
+      const stream = streams.get(body.conversation)
+      stream?.write(`data: ${JSON.stringify({ type: 'result', sessionId: 'rail', stopped: true })}\n\n`)
+      stream?.end()
+      streams.delete(body.conversation)
+      response.writeHead(200, { 'content-type': 'application/json' }).end('{"stopped":true}')
+    } else if (streams.has(body.conversationId)) {
+      response.writeHead(202, { 'content-type': 'application/json' }).end('{"held":true}')
+    } else {
+      streams.set(body.conversationId, response)
+      response.writeHead(200, { 'content-type': 'text/event-stream' })
+      for (const event of [
+        { type: 'text-delta', text: 'Seeded live reply.' },
+        { type: 'tool-use', name: 'Read', target: 'pages/plan.md' },
+        { type: 'usage-delta', outputTokens: 240 },
+      ]) response.write(`data: ${JSON.stringify(event)}\n\n`)
+    }
+  })
+  await new Promise((done) => server.listen(0, '127.0.0.1', done))
+  return {
+    url: `http://127.0.0.1:${server.address().port}`,
+    close: async () => {
+      for (const response of streams.values()) response.end()
+      server.closeAllConnections()
+      await new Promise((done) => server.close(done))
+    },
+  }
+}
+
 export default async function scenario(bench) {
   let base = process.env.BENCH_URL
   const out = process.env.BENCH_OUT ?? (bench ? '/shots' : 'bench/shots-chat-rail')
@@ -48,6 +87,7 @@ export default async function scenario(bench) {
   }
   assert(base, 'BENCH_URL is required outside bench/run.sh')
   const browser = await playwright().chromium.launch({ args: ['--no-sandbox'] })
+  const replay = bench ? await replayEngine() : undefined
   const report = []
   try {
     for (const theme of ['light', 'dark']) for (const [format, width, height] of [['desk', 1440, 900], ['phone', 390, 844], ['narrow', 360, 800]]) {
@@ -69,14 +109,19 @@ export default async function scenario(bench) {
         }, { theme, ...CONVERSATIONS, waiting: WAITING })
         // The docker bench's proxy has no configured sign-in server. Replay the
         // same disconnected identity the host seed puts in its real MCP store.
-        if (bench) await page.route('**/api/mcp/connections', (route) => route.fulfill({ json: { connections: [{ name: 'agenda', connected: false }] } }))
+        if (bench) {
+          await page.route('**/api/mcp/connections', (route) => route.fulfill({ json: { connections: [{ name: 'agenda', connected: false }] } }))
+          await page.route('**/api/models', (route) => route.fulfill({ json: { models: [{ id: 'bench-long', label: 'A deliberately very long model name for the narrow header' }] } }))
+          await page.route('**/api/turn/attach?*', (route) => route.fulfill({ status: 204 }))
+          await page.route('**/api/turn', (route) => route.continue({ url: `${replay.url}/api/turn` }))
+        }
         await page.goto(base, { waitUntil: 'domcontentloaded' })
         const chat = page.locator('.adestia-chat')
         await chat.locator('.adestia-bubble__error').waitFor()
         await chat.locator('.adestia-connect').first().waitFor()
         assert.equal(await chat.getByLabel(w.model, { exact: true }).getAttribute('title'), w.model)
         const picker = chat.getByLabel(w.model, { exact: true })
-        if (!bench) await picker.selectOption('bench-long')
+        await picker.selectOption('bench-long')
         assert.equal(await chat.getByLabel(w.new, { exact: true }).getAttribute('title'), w.new)
         assert.equal(await chat.locator('.adestia-connect__hide').getAttribute('title'), w.hide)
         assert.equal(await chat.locator('.adestia-connect__go').innerText(), w.connect)
@@ -96,6 +141,14 @@ export default async function scenario(bench) {
         await shoot('stored-top')
         await chat.locator('.adestia-chat__conversation').evaluate((node) => { node.scrollTop = node.scrollHeight })
         await shoot('stored-bottom')
+        const modelGeometry = await chat.locator('.adestia-model-wrap').evaluate((node) => {
+          const select = node.querySelector('select')
+          const arrow = node.querySelector('svg').getBoundingClientRect()
+          const box = select.getBoundingClientRect()
+          return { arrowLeft: arrow.left, arrowRight: arrow.right, selectLeft: box.left, selectRight: box.right, backgroundImage: getComputedStyle(select).backgroundImage }
+        })
+        assert(modelGeometry.arrowLeft >= modelGeometry.selectLeft && modelGeometry.arrowRight <= modelGeometry.selectRight, JSON.stringify(modelGeometry))
+        assert.equal(modelGeometry.backgroundImage, 'none')
         const controls = await chat.locator('.adestia-chat__header button, .adestia-model-wrap').evaluateAll((nodes) => nodes.map((node) => {
           const r = node.getBoundingClientRect()
           return { label: node.getAttribute('aria-label') ?? node.className, left: r.left, right: r.right, width: r.width }
@@ -125,12 +178,6 @@ export default async function scenario(bench) {
         await chat.getByLabel(w.new, { exact: true }).click()
         await chat.locator('textarea').fill('en cours')
         await chat.locator('textarea').press('Enter')
-        if (bench) {
-          await bench.attached()
-          bench.emit({ type: 'text-delta', text: 'Seeded live reply.' })
-          bench.emit({ type: 'tool-use', name: 'Read', target: 'pages/plan.md' })
-          bench.emit({ type: 'usage-delta', outputTokens: 240 })
-        }
         await chat.locator('.adestia-bubble--live .adestia-trace').waitFor()
         await chat.locator('.adestia-bubble--live .adestia-trace__toggle').click()
         await shoot('working')
@@ -138,21 +185,17 @@ export default async function scenario(bench) {
         await chat.locator('.adestia-attachments__item').waitFor()
         // Enter queues an attachments-only message even while the button says
         // Stop. This drives the existing held path through the real composer.
-        if (bench) await page.route('**/api/turn', (route) => route.fulfill({ status: 202, json: { held: true } }))
         await chat.locator('textarea').press('Enter')
         await chat.locator('.adestia-bubble--held .adestia-icon use[href="#adestia-i-paperclip"]').waitFor()
         await shoot('held-attachment')
         const tab = await page.evaluate(() => JSON.parse(localStorage.getItem('adestia.tabs')).active)
-        if (bench) { bench.emit({ type: 'result', sessionId: 'rail', stopped: true }); bench.endTurn() }
-        else {
-          const stopped = await fetch(`${base}/api/turn/stop`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ conversation: tab }) })
-          assert.equal(stopped.status, 200)
-          await chat.locator('.adestia-bubble__working').waitFor({ state: 'hidden' })
-        }
-        report.push({ theme, format, locale, controls, screenshots: 7 })
+        const stopped = await fetch(`${replay?.url ?? base}/api/turn/stop`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ conversation: tab }) })
+        assert.equal(stopped.status, 200)
+        await chat.locator('.adestia-bubble__working').waitFor({ state: 'hidden' })
+        report.push({ theme, format, locale, controls, modelGeometry, screenshots: 7 })
       } finally { await context.close() }
     }
-  } finally { await browser.close() }
+  } finally { await browser.close(); await replay?.close() }
   await writeFile(join(out, 'rail-report.json'), JSON.stringify(report, null, 2) + '\n')
 }
 
