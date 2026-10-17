@@ -606,7 +606,7 @@ describe('settings, as an app of the shell', () => {
     // What is behind it is settled without leaving the page you are on: the
     // token, the theme, signing out. Sending somebody to another screen to
     // flip one is what this move undid.
-    const container = await shell()
+    await shell()
     const gear = screen.getByLabelText('Settings')
     await act(async () => {
       fireEvent.click(gear)
@@ -628,7 +628,7 @@ describe('settings, as an app of the shell', () => {
     // or a link elsewhere — and a panel left over a screen its owner never
     // opened it on reads as one that is stuck. Seen on a phone, where it
     // covers most of what it floats over.
-    const container = await shell()
+    await shell()
     await act(async () => {
       fireEvent.click(screen.getByLabelText('Settings'))
     })
