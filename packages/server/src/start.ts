@@ -536,8 +536,7 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
   // The clock runs through the app's own turn function, never its own path.
   let clock: Clock | undefined
   if (resolved.schedule.enabled) {
-    const runTurn = (app as FastifyInstance & { adestiaRunTurn(prompt: string): Promise<void> })
-      .adestiaRunTurn
+    const runTurn = app.adestiaRunTurn
     clock = new Clock({
       dir: join(workspaceRoot, resolved.workspace.planif),
       statePath: scheduleStatePath(dataDir),

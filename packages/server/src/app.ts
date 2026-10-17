@@ -15,7 +15,6 @@ import type { AskDesk, Driver, DriverDescriptor } from '@antorfr/adestia-drivers
 import { isPublicRoute, resolveIdentity, type Identity } from './auth.js'
 import { AttachmentInbox } from './attachments.js'
 import { BackgroundReach } from './background.js'
-import { frameShell } from './introduction.js'
 import { ConversationStore } from './conversations.js'
 import { ConfigError, type AdestiaConfig } from './config.js'
 import { registerCallback } from './routes/callback.js'
@@ -43,13 +42,25 @@ import { registerEvents } from './routes/watch.js'
 import { mountPluginApis } from './routes/plugin-host.js'
 import { ArmingFlows, SecretStore } from './secrets.js'
 import { registerStatic } from './routes/static.js'
-import { TurnDesk, type TurnOutcome } from './turns.js'
+import { buildDesk } from './desk.js'
+import { makeRunUnattended } from './unattended.js'
+import { registerDelegations } from './routes/delegations.js'
 import { baseManifest, withInstanceName, type WebManifest } from './webmanifest.js'
 
 // Two helpers the tests reach through this module, where they always lived.
 export { buildVersion } from './routes/instance.js'
 export { sseFrame } from './routes/turns.js'
 export type { SkinPayload } from './routes/instance.js'
+
+declare module 'fastify' {
+  interface FastifyInstance {
+    /**
+     * The app's own unattended turn function, exposed on the instance so
+     * `start()` can hand it to the clock without a second construction path.
+     */
+    adestiaRunTurn: (prompt: string) => Promise<void>
+  }
+}
 
 export interface AppDependencies {
   readonly config: AdestiaConfig
@@ -123,88 +134,8 @@ export interface AppDependencies {
   readonly restart?: (() => void) | undefined
 }
 
-/** Turn admission: subscription limits are real, so concurrency is bounded. */
-class TurnLimiter {
-  #running = 0
-  constructor(private readonly max: number) {}
-
-  tryAcquire(): boolean {
-    if (this.#running >= this.max) return false
-    this.#running += 1
-    return true
-  }
-
-  release(): void {
-    this.#running = Math.max(0, this.#running - 1)
-  }
-
-  get running(): number {
-    return this.#running
-  }
-}
-
-export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> {
-  const { config, driver, plugins, pluginProblems, userTokens, webRoot } = deps
-  /**
-   * `forceCloseConnections`, because this server holds streams that never end
-   * on their own.
-   *
-   * Fastify 5 defaults to `'idle'`: it drops idle keep-alive connections and
-   * WAITS for requests still in flight. Two of ours are in flight for as long
-   * as somebody is looking — the change feed (`/api/events`) and an attached
-   * turn — so the wait never ends, and `close()` never returns.
-   *
-   * That was not a theory. Measured 2026-09-23 against the image: with one
-   * `/api/events` stream open, `docker stop` could not shut the container down
-   * and it left with code 137, killed. With no browser watching, the same stop
-   * took under a second. It was already broken before anything restarted
-   * anything; the restart button is merely what made it impossible to miss.
-   *
-   * What it costs, stated rather than discovered: a request in flight loses
-   * its RESPONSE when the server goes down. It does not lose its work — a
-   * handler that has already written a page has written it — and a shutdown
-   * that cannot shut down is worse than a reply nobody receives.
-   */
-  const app = Fastify({ logger: false, forceCloseConnections: true })
-  const limiter = new TurnLimiter(config.maxConcurrentTurns)
-  /**
-   * The shell's own preamble, decided once and applied on both spawn paths.
-   *
-   * Only where the engine has somewhere to READ the contract from: a driver
-   * declaring no skills directory gets none delivered, and an anchor citing a
-   * file that was never written is worse than saying nothing — it invites
-   * exactly the invention it exists to stop.
-   */
-  const introduce = driver.skillsPath?.() ? frameShell : undefined
-  // The desk owns chat turns; the clock's and the MCP delegation's loops below
-  // stay as they are and share the same limiter, so the cap keeps one meaning.
-  // A ceremony link becomes a card only on an origin the operator named.
-  const signatureOrigins = new Set(config.signatures.origins)
-  const signs = (url: string): boolean => {
-    try {
-      return signatureOrigins.has(new URL(url).origin)
-    } catch {
-      return false
-    }
-  }
-  const desk = new TurnDesk(driver, limiter, introduce, signs)
-  const conversations = new ConversationStore(config.dataDir)
-  const secrets = deps.secrets ?? new SecretStore(config.dataDir)
-  const mcpStore = deps.mcpStore ?? new McpStore(config.dataDir)
-  // Sign-in state for the servers that are their own authorization server:
-  // one client registration per server, one rotating refresh key per person.
-  const mcpSignIn = deps.mcpSignIn ?? new McpSignIn(config.dataDir)
-  const inbox = new AttachmentInbox(config.dataDir, config.attachments)
-  const arming = new ArmingFlows()
-  const descriptor: DriverDescriptor = await driver.describe()
-
-  app.decorateRequest('identity', null)
-
-  // Mounted FIRST, because it installs the hook that reads the session cookie
-  // — and a gate that runs before the session is resolved sees every signed-in
-  // user as anonymous. Hook order is the whole correctness of this file.
-  await registerOidc(app, config, userTokens)
-
+/** The gate: every route mounted after this is behind the identity check. */
+function installIdentityGate(app: FastifyInstance, config: AdestiaConfig): void {
   app.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
     if (isPublicRoute(request.url.split('?')[0] ?? request.url)) return
 
@@ -243,7 +174,11 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     ;(request as FastifyRequest & { identity: Identity }).identity = outcome.identity
     return undefined
   })
+}
 
+/** Memory, the background reach and the outbound servers every route below shares. */
+function resolveShared(deps: AppDependencies, mcpStore: McpStore) {
+  const { config, plugins, userTokens } = deps
   // Memory, composed. One store or several, every route below sees the same
   // shape — and a contradiction between declarations is refused here rather
   // than repaired, because the repair would have to guess which half the
@@ -261,6 +196,51 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   // carries to the servers flagged `background`. Built unconditionally so a
   // flag the deployment cannot honour (no rebound) is SAID, not skipped.
   const backgroundReach = new BackgroundReach(userTokens, deps.log)
+  return { stores, agentRoots, outboundServers, backgroundReach }
+}
+
+export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> {
+  const { config, driver, plugins, pluginProblems, userTokens, webRoot } = deps
+  /**
+   * `forceCloseConnections`, because this server holds streams that never end
+   * on their own.
+   *
+   * Fastify 5 defaults to `'idle'`: it drops idle keep-alive connections and
+   * WAITS for requests still in flight. Two of ours are in flight for as long
+   * as somebody is looking — the change feed (`/api/events`) and an attached
+   * turn — so the wait never ends, and `close()` never returns.
+   *
+   * That was not a theory. Measured 2026-09-23 against the image: with one
+   * `/api/events` stream open, `docker stop` could not shut the container down
+   * and it left with code 137, killed. With no browser watching, the same stop
+   * took under a second. It was already broken before anything restarted
+   * anything; the restart button is merely what made it impossible to miss.
+   *
+   * What it costs, stated rather than discovered: a request in flight loses
+   * its RESPONSE when the server goes down. It does not lose its work — a
+   * handler that has already written a page has written it — and a shutdown
+   * that cannot shut down is worse than a reply nobody receives.
+   */
+  const app = Fastify({ logger: false, forceCloseConnections: true })
+  const { desk, limiter } = buildDesk(driver, config)
+  const conversations = new ConversationStore(config.dataDir)
+  const secrets = deps.secrets ?? new SecretStore(config.dataDir)
+  const mcpStore = deps.mcpStore ?? new McpStore(config.dataDir)
+  // Sign-in state for the servers that are their own authorization server:
+  // one client registration per server, one rotating refresh key per person.
+  const mcpSignIn = deps.mcpSignIn ?? new McpSignIn(config.dataDir)
+  const inbox = new AttachmentInbox(config.dataDir, config.attachments)
+  const arming = new ArmingFlows()
+  const descriptor: DriverDescriptor = await driver.describe()
+
+  // Mounted FIRST, because it installs the hook that reads the session cookie
+  // — and a gate that runs before the session is resolved sees every signed-in
+  // user as anonymous. Hook order is the whole correctness of this file.
+  app.decorateRequest('identity', null)
+  await registerOidc(app, config, userTokens)
+  installIdentityGate(app, config)
+
+  const { stores, agentRoots, outboundServers, backgroundReach } = resolveShared(deps, mcpStore)
 
   // Reported by `/api/instance`, filled once the plugin APIs are mounted below.
   let apiProblems: readonly DiscoveryProblem[] = []
@@ -305,51 +285,13 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   })
   registerArming(app, { driver, descriptor, secrets, arming })
 
-  /**
-   * The loose unattended spawn path — the clock's and the callback wake's.
-   *
-   * Same limiter as everything else: a person typing must not find the
-   * instance busy with work nobody asked for right now, so a full house
-   * refuses rather than queues. Unattended, because nobody is at a screen: a
-   * question raised in such a turn is refused at once rather than holding a
-   * slot for five minutes waiting on a person who was never there.
-   */
-  const runUnattended = async (prompt: string): Promise<void> => {
-    // Through the desk, like every other turn: same cap, same preamble, same
-    // event log. A LOOSE job — no key — because nothing will ever attach to
-    // it or queue behind it; a full house refuses (`TurnCapacityError`)
-    // rather than queues, which is the refusal the callers already log.
-    const admission = desk.admit()
-    if (admission.mode !== 'run') throw new Error('a loose turn is never queued')
-    // The `background` servers' tokens — this spawn path and no other: the
-    // delegation channel below deliberately never mints, so an agent that
-    // may delegate work here still cannot read anybody's mail by ricochet.
-    // Minted after admission: a full house should refuse before the identity
-    // provider is asked for anything. Minting never throws by design; the
-    // reads around it can, and a slot reserved by `admit` must go back.
-    let serverTokens: Readonly<Record<string, string>>
-    try {
-      serverTokens = await backgroundReach.tokensFor(await outboundServers())
-    } catch (error) {
-      admission.abort()
-      throw error
-    }
-    let outcome: TurnOutcome | undefined
-    const job = admission.start({
-      request: {
-        prompt,
-        cwd: config.workspace.root,
-        ...(agentRoots.length > 0 ? { roots: agentRoots } : {}),
-        ...(Object.keys(serverTokens).length > 0 ? { serverTokens } : {}),
-        unattended: true,
-      },
-      finish: async (done) => {
-        outcome = done
-      },
-    })
-    await job.done
-    if (outcome?.failure) throw new Error(outcome.failure)
-  }
+  const runTurn = makeRunUnattended({
+    desk,
+    backgroundReach,
+    outboundServers,
+    cwd: config.workspace.root,
+    agentRoots,
+  })
 
   registerPages(app, { stores, locale: config.locale })
   // The agent writes these files with its own tools, past every route above;
@@ -383,37 +325,13 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   })
 
   registerMcp(app, { config: config.mcp, channel: delegations })
-
-  /**
-   * The delegations screen's two questions: what ran here, and what did it
-   * say. Read-only on purpose — these conversations belong to the CALLING
-   * agents, and a person typing into one would inject a turn into a
-   * conversation its owner believes it holds alone. Gated like every other /api
-   * route: any signed-in human may look, which is rather the point.
-   */
-  app.get('/api/delegations', async () => ({ delegations: await delegations.list() }))
-
-  app.get<{ Params: { caller: string; id: string } }>(
-    '/api/delegations/:caller/:id',
-    async (request, reply) => {
-      let conversation
-      try {
-        conversation = await delegations.read(request.params.caller, request.params.id)
-      } catch {
-        // An unsafe caller segment throws in the store's last-line guard;
-        // from this side it is the same answer as a conversation that is not there.
-        conversation = undefined
-      }
-      if (!conversation) return reply.code(404).send({ error: 'no such delegation' })
-      return { caller: request.params.caller, ...conversation }
-    },
-  )
+  registerDelegations(app, { channel: delegations })
 
   registerCallback(app, {
     servers: outboundServers,
     // The clock's spawn path exactly: unattended, loose, capped. A callback
     // wake is nobody at a screen either.
-    runTurn: (prompt) => runUnattended(prompt),
+    runTurn,
   })
 
   // Last, so an API route always wins over the shell's catch-all.
@@ -425,9 +343,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
       deps.webManifest ?? withInstanceName(baseManifest({ locale: config.locale }), config.name),
   })
 
-  // Exposed on the instance so `start()` can hand it to the clock without a
-  // second construction path.
-  ;(app as FastifyInstance & { adestiaRunTurn?: unknown }).adestiaRunTurn = runUnattended
+  app.decorate('adestiaRunTurn', runTurn)
 
   return app
 }
