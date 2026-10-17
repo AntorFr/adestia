@@ -50,8 +50,8 @@
 - **Spacing**: the six steps of `tokens.css` (4 to 32 px) on a 4 px grid.
 - **Radii**: 6 / 10 / 14 px and a 999 px pill (`--radius-sm`, `--radius`, `--radius-lg`,
   `--radius-pill`); legacy micro, control and bubble roles alias this set, while round
-  remains 50%. `--radius-md` is intentionally absent; its chat uses move to `--radius-sm`
-  in that tranche. `--text-xs` and `--on-accent` are defined.
+  remains 50%. `--radius-md` is intentionally absent; the chat's remaining `var(--radius-md, 8px)` (conversations.css) falls back to 8 px until the chat tranche (`adestia-qualite-chat`) moves it to `--radius-sm`
+  `--text-xs` and `--on-accent` are defined.
 - **Colour once**: every colour token of the base palette is written once, as
   `light-dark(<light>, <dark>)`, driven by `color-scheme`. `:root` sets `color-scheme: light
   dark`; `:root[data-theme='light']` and `[data-theme='dark']` force one. No pasted dark
@@ -126,10 +126,10 @@ classes and the contract in `skills/plugin-author`.
 | Component | Class | Wrapper | Spec |
 |---|---|---|---|
 | Button | `.adestia-btn`, `--accent`, `--danger`, `--ghost`, `--icon` | `<Button variant icon busy>` | Height 32 px (`--sm` 28), radius `--radius-sm`, padding 0 12 px, label `--text-sm` medium; neutral = `--surface-raised` + `--border-strong`; accent = `--accent` fill + `--on-accent`; danger = `--danger` fill, `--on-accent` label, one rendering everywhere; ghost = transparent, hover `--surface-soft`; icon = square 32 px, `aria-label` required (typed). States: hover darkens 6 %, active 10 %, disabled 45 % opacity and `cursor: not-allowed`, busy = spinner replaces the icon, label kept, `aria-busy`. No label is renamed by the charter (B-1); a destructive button names the verb and the object where today's label does. |
-| Sheet / dialog | `.adestia-sheet` (scrim), `.adestia-sheet__panel`, `__head`, `__body`, `__foot` | `<Sheet open title onClose>` | One scrim `--scrim`, one z-index (`--z-sheet` 100); the panel is centred, 520 px wide, from a `max-width: var(--breakpoint-mobile)` query a bottom sheet (full width, top radii, safe-area padding). `role="dialog"`, `aria-modal`, `aria-labelledby` the title; Escape and a click on the scrim close; focus goes to the first focusable on open, is trapped (Tab wraps), and returns to the opener on close. The shared sheet took over the `.adestia-sheet*` rules that were in `chat.css` (class names kept, so E-18's markup in `Signatures.tsx` renders unchanged; the chat tranche then adopts `<Sheet>`). A plugin without React uses the classes and the three-line contract in `skills/plugin-author` (a `data-adestia-sheet` helper is *not* shipped: AD-8). |
+| Sheet / dialog | `.adestia-sheet` (scrim), `.adestia-sheet__panel`, `__head`, `__body`, `__foot` | `<Sheet open title onClose>` | One scrim `--scrim`, one z-index (`--z-sheet` 100); the panel is centred, 520 px wide, from a `max-width: var(--breakpoint-mobile)` query a bottom sheet (full width, top radii, safe-area padding); the panel's height is `min(88vh, 720px)`. `role="dialog"`, `aria-modal`, `aria-labelledby` the title; Escape and a click on the scrim close; focus goes to the first focusable on open, is trapped (Tab wraps), and returns to the opener on close. The shared sheet took over the `.adestia-sheet*` rules that were in `chat.css` (class names kept, so E-18's markup in `Signatures.tsx` renders unchanged; the chat tranche then adopts `<Sheet>`). A plugin without React uses the classes and the three-line contract in `skills/plugin-author` (a `data-adestia-sheet` helper is *not* shipped: AD-8). |
 | Popover | `.adestia-popover` | `<Popover anchor open>` | Panel of `--surface-raised`, `--shadow`, `--radius`, 8 px from its anchor, flips above when there is no room below; Escape closes and returns focus; click outside closes. The cog menu (E-15) uses it. Block settings (E-6) and page properties (E-5) keep their `.adestia-blockset` until `adestia-qualite-pages` adopts the popover. |
 | Spinner | the `loader-circle` icon | `<Icon name="loader-circle">` | Rotating; static under reduced motion; the loading mark of a row, a card or a gate. |
-| Empty state | `.adestia-empty`, `__icon`, `__text`, `__action` | `<EmptyState icon text action>` | Icon 28 px in `--text-muted`, one sentence in `--text-muted`, optional ghost or neutral button. It replaced `.adestia-instructions__empty` and `.adestia-deleg__empty` on the settings screens. |
+| Empty state | `.adestia-empty`, `__icon`, `__text`, `__action` | `<EmptyState icon text action>` | Icon 28 px in `--text-muted`, one sentence in `--text-muted`, optional ghost or neutral button. It replaced `.adestia-instructions__empty` and `.adestia-deleg__empty` on the settings screens; `.adestia-instructions__empty` is kept for E-12's "Reading the repository…" line. |
 | Field | `.adestia-field`, `__label`, `__help`, `__error`, `.adestia-input`, `-select`, `-textarea`, `.adestia-toggle` | `<Field label help error>` around a control | Control height 32 px (textarea auto), `--surface-raised`, `--border-strong`, radius `--radius-sm`; focus ring as in § 2; error = border `--danger`, message `--danger-text` with an alert icon (colour never alone), linked by `aria-describedby`; a toggle is a real `<input type=checkbox role=switch>`. Browser-native selects stay native elements but drawn (`appearance` reset + chevron icon). |
 | Theme switch | `.adestia-segmented` | `<ThemeSwitch>` in the cog menu | Three icon buttons in a `radiogroup`: monitor (System), sun (Light), moon (Dark); each has `aria-label` and `title`; the chosen one is `aria-checked`. |
 | Focus ring | one global `:focus-visible` rule in `tokens.css` | — | `outline: 2px solid var(--accent-text); outline-offset: 2px`. `outline: none` stays only where the same rule paints a visible replacement (a 2 px `box-shadow` ring). Mouse clicks show nothing. |
@@ -138,7 +138,7 @@ classes and the contract in `skills/plugin-author`.
 
 WCAG 2.2 AA: text 4.5:1 (3:1 at 24 px or 18.66 px bold), non-text 3:1, colour never alone,
 focus visible and not hidden, targets 24 × 24 px. Measured with
-`charte-graphique/scripts/contraste.py` (or the browser's inspector), in both themes.
+`packages/web/test/contrast.test.ts` (it regenerates the threshold table's ratios; or the browser's inspector), in both themes.
 
 The base palette table is printed by `packages/web/test/contrast.test.ts`. Regenerate it
 with `UPDATE_CONTRAST_TABLE=1 npx vitest run packages/web/test/contrast.test.ts`.
