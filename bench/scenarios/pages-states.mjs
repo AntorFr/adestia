@@ -37,7 +37,7 @@ export default async function pagesStates({ page, url, shot, phone, locale }) {
     await page.waitForSelector(proof)
     await shot(name)
     if (name === 'section') {
-      await page.getByRole('textbox').fill('no-page-can-match-this')
+      await page.locator('.adestia-search input').fill('no-page-can-match-this')
       await page.waitForSelector('.adestia-empty--state')
       await shot('section-no-match')
     }
