@@ -17,5 +17,8 @@
   "files": [
     "dist",
     "README.md"
-  ]
+  ],
+  "scripts": {
+    "build": "tsc --build && cp src/copilot-cli/shell-tool.mjs dist/src/copilot-cli/shell-tool.mjs"
+  }
 }

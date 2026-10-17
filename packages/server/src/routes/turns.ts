@@ -42,7 +42,7 @@ export interface ShellToolsPort {
   release(handle: ShellToolsHandle): Promise<void>
 }
 
-export interface TurnsDependencies {
+interface TurnsDependencies {
   readonly config: AdestiaConfig
   readonly desk: TurnDesk
   readonly conversations: ConversationStore

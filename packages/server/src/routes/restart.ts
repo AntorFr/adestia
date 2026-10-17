@@ -27,7 +27,7 @@
 
 import type { FastifyInstance } from 'fastify'
 
-export interface RestartDependencies {
+interface RestartDependencies {
   /**
    * How many turns are running this instant. The same counter the instance
    * route reports, rather than a second one that could disagree.
