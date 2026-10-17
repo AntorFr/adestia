@@ -16,6 +16,8 @@
 import type { CSSProperties } from 'react'
 
 import { glyphOf } from './glyphs.js'
+import { Icon } from './Icon.js'
+import type { IconName } from './icons.js'
 import type { TileInfo } from '../plugins/contract.js'
 
 /**
@@ -30,7 +32,10 @@ function hueStyle(hue?: string): Record<string, string> {
 }
 
 export function Tile(props: {
-  readonly icon: string
+  /** The mark, as text or emoji — a manifest's. The shell's own tiles name an `iconName` instead. */
+  readonly icon?: string
+  /** One of the product's Lucide icons (docs/charte.md § 7.3); wins over `icon` and `glyph`. */
+  readonly iconName?: IconName
   /** `ic:` name resolved against the shell's closed glyph set. */
   readonly glyph?: string
   readonly label: string
@@ -111,7 +116,11 @@ export function Tile(props: {
       >
         {/* The markup comes from the shell's own closed set, never from a
             manifest — which is what makes the injection safe. */}
-        {drawn ? (
+        {props.iconName ? (
+          <span className="adestia-tile__icon" aria-hidden="true">
+            <Icon name={props.iconName} />
+          </span>
+        ) : drawn ? (
           <span
             className="adestia-tile__icon"
             aria-hidden="true"

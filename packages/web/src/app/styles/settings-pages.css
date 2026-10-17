@@ -26,28 +26,12 @@
   margin-top: var(--space-3);
 }
 
-.adestia-settings__actions button {
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-strong);
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
-  cursor: pointer;
-}
-
-.adestia-settings__actions button:last-child {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--on-accent);
-}
-
-.adestia-settings__actions button:disabled {
-  background: var(--surface-sunken);
-  border-color: var(--border);
-  color: var(--text-faint);
-  cursor: default;
-}
+/* A token's state: its icon beside its sentence, in the ink twin so the words
+   pass contrast in both themes. The icon says the state without the colour. */
+.adestia-token { display: inline-flex; align-items: flex-start; gap: var(--space-2); margin: 0; }
+.adestia-token .adestia-icon { flex: none; margin-top: 0.15em; }
+.adestia-token--ok { color: var(--success-text); }
+.adestia-token--error { color: var(--danger-text); }
 
 .adestia-arming {
   margin: 0;
@@ -59,12 +43,6 @@
 }
 
 .adestia-arming a { color: var(--accent-text); }
-
-.adestia-arming__label {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
 
 /* Deliberately not muted: this is what the user is agreeing to, so it reads at
    the same weight as the step it gates. */
@@ -82,15 +60,7 @@
   flex: none;
 }
 
-.adestia-arming__input {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: var(--space-2);
-  background: var(--surface);
-  color: var(--text);
-  font-family: var(--font-code);
-  font-size: max(var(--input-text-min), var(--text-sm));
-}
+.adestia-arming__input { font-family: var(--font-code); }
 
 /* ── The configuration screen ────────────────────────────────────────────
    A form, not a file. The layout carries one claim: the LABEL and its

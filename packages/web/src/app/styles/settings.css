@@ -10,19 +10,14 @@
 .adestia-cog { position: relative; display: inline-flex; }
 
 .adestia-cog__panel {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  z-index: 40;
+  /* Placed by the popover, which is portalled to the body: only the size and
+     the surface are this menu's. */
   /* Wide enough for the arming flow, which is the tallest thing in here and
      the reason this is a panel rather than a list of three items. */
   width: min(340px, calc(100vw - 2 * var(--space-4)));
   max-height: min(70vh, 560px);
   overflow-y: auto;
   padding: var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface-raised);
   box-shadow: var(--shadow-lg);
   text-align: left;
 }
@@ -44,23 +39,8 @@
 .adestia-cog__note { margin: var(--space-2) 0 0; color: var(--text-faint); font-size: var(--text-sm); }
 
 /* Full width and quiet: the last thing in the menu, and never the thing a
-   finger reaches for by accident on the way to the theme buttons. */
-.adestia-cog__signout {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  width: 100%;
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: none;
-  color: var(--text);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.adestia-cog__signout:hover { border-color: var(--accent); color: var(--accent-text); }
+   finger reaches for by accident on the way to the theme switch. */
+.adestia-cog__signout { width: 100%; justify-content: flex-start; }
 
 .adestia-cog__who { color: var(--text-faint); font-size: var(--text-sm); }
 
@@ -86,36 +66,6 @@
    No rows here any more. Rows were a preferences idiom, and they made two
    domains of this instance — the servers it reaches, the prose it was told —
    look like options in a dialog. They are tiles, like every other way in. */
-
-/* Named choices, as one segmented control. The header's cycling glyph can
-   only be inferred; three buttons SAY which one is in force. */
-.adestia-choices {
-  display: inline-flex;
-  padding: 3px;
-  gap: 3px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface-sunken);
-}
-
-.adestia-choices__choice {
-  padding: 7px var(--space-4);
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: none;
-  color: var(--text-muted);
-  font: inherit;
-  cursor: pointer;
-}
-
-.adestia-choices__choice[aria-checked='true'] {
-  background: var(--surface-raised);
-  color: var(--text);
-  box-shadow: var(--shadow-sm);
-  font-weight: 600;
-}
-
-.adestia-choices__choice:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 1px; }
 
 /* One MCP server, opened ------------------------------------------------- */
 
@@ -182,49 +132,36 @@
 }
 
 /*
- * A refusal and a degradation are two different pieces of news, and the
- * SHAPE has to say which before the words do.
- *
- * The first attempt only made the degraded box quieter — same outline, paler
- * colours — which produced the worst of both: a heading that announces
- * something is amputated, sitting in a box that looks like nothing in
- * particular. Read as a warning whose styling failed to load.
- *
- * So they stop sharing a shape. A refusal keeps the framed, tinted box: an
- * extension is OFF and somebody has to act. A degradation becomes a rule and
- * a mark in the margin — the typography of a footnote, which is what it is:
- * true, worth knowing, and nothing to do right now.
+ * A refusal and a degradation are two different pieces of news, and the SHAPE
+ * has to say which before the words do. A refusal is a framed band — an
+ * extension is OFF and somebody has to act; a degradation is a band with a
+ * rule in the margin — true, worth knowing, nothing to do right now. Each
+ * carries its own icon, so the kind is never told by the tint alone, and its
+ * words sit in the `*-text` ink that passes contrast in both themes.
  */
-/* The row keeps its own control, revealed on hover — a conversation list is read
-   far more often than it is tidied. */
+.adestia-problems--refused {
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
+.adestia-problems--refused h2 { color: var(--danger-text); }
+
 .adestia-problems--degraded {
   border: 0;
-  border-left: 2px solid var(--border);
-  border-radius: 0;
-  background: none;
-  color: var(--text-muted);
-  padding: var(--space-2) 0 var(--space-2) var(--space-3);
-  margin-bottom: var(--space-4);
+  border-left: 3px solid var(--warning);
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
 }
 
-.adestia-problems--degraded h2 {
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--text-faint);
-  letter-spacing: 0.04em;
+.adestia-problems--degraded h2 { color: var(--warning-text); }
+
+.adestia-problems h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-base);
 }
 
-/* Marked, so it reads as an aside rather than as a headline that lost its
-   colour. */
-.adestia-problems--degraded h2::before {
-  content: 'ⓘ';
-  margin-right: 6px;
-  font-weight: 400;
-}
-
+.adestia-problems ul { margin: 0; padding-left: var(--space-4); }
 .adestia-problems--degraded ul { padding-left: var(--space-3); }
 .adestia-problems--degraded li { list-style: none; }
-
-.adestia-problems h2 { margin: 0 0 var(--space-2); font-size: var(--text-base); }
-.adestia-problems ul { margin: 0; padding-left: var(--space-4); }
-

@@ -207,9 +207,8 @@
 .adestia-problems {
   margin-bottom: var(--space-5);
   padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--warning);
   border-radius: var(--radius);
-  background: var(--accent-quiet);
+  color: var(--text);
   font-size: var(--text-sm);
 }
 

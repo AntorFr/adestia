@@ -412,6 +412,17 @@ const FR: Readonly<Record<string, string>> = {
   Cancel: 'Annuler',
   'request failed (%n)': 'la requête a échoué (%n)',
   'Paste the code you were given': 'Collez le code qui vous a été donné',
+  // The cog menu, the problems band and the settings mosaic
+  'Open %link and enter the code %code': 'Ouvrez %link et saisissez le code %code',
+  'the sign-in page': 'la page de connexion',
+  'Open %link and approve the request': 'Ouvrez %link et approuvez la demande',
+  'this authorisation link': 'ce lien d’autorisation',
+  'I have approved — finish': 'J’ai approuvé — terminer',
+  'Finishing…': 'Finalisation…',
+  'Exchanging…': 'Échange…',
+  Validate: 'Valider',
+  '"app" is only read on a top-level folder': '« app » n’est lu que sur un dossier de premier niveau',
+  'no active plugin is called "%name"': 'aucun plugin actif ne s’appelle « %name »',
 }
 
 const TABLES: Readonly<Record<Locale, Readonly<Record<string, string>>>> = {

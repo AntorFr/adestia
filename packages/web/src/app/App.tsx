@@ -398,12 +398,13 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
             {...(instance.version ? { version: instance.version } : {})}
             fetchImpl={fetchImpl}
             t={t}
+            locale={locale}
           />
         </header>
 
         <div className="adestia-canvas__body">
 
-        <Problems instance={instance} failures={failures} loaded={loaded} pages={pages} t={t} />
+        <Problems instance={instance} failures={failures} loaded={loaded} pages={pages} t={t} locale={locale} />
 
         {openApp ? (
           (() => {
