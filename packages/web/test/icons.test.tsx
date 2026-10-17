@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * The Lucide sprite (docs/charte.md § 7.3, AD-9): every name of the closed list renders
+ * The Lucide sprite (docs/charte.md § 2, AD-9): every name of the closed list renders
  * an <Icon> whose <use> resolves to a symbol in the mounted sprite; the sprite is
  * mounted once; a name outside the list does not compile; no network for an icon.
  */

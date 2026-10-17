@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * The shell's React wrappers (docs/charte.md § 7.4): Sheet, Popover, Button, ThemeSwitch,
+ * The shell's React wrappers (docs/charte.md § 4): Sheet, Popover, Button, ThemeSwitch,
  * EmptyState, Field — behaviour the criterion names, plus the class/skill contract.
  */
 import { readFileSync } from 'node:fs'
@@ -239,7 +239,7 @@ describe('stylesheet and skill contract', () => {
   it('chat.css no longer carries the sheet rules', () => {
     expect(readFileSync(resolve(root, 'packages/web/src/app/styles/chat.css'), 'utf8')).not.toContain('adestia-sheet')
   })
-  it('the shared stylesheet defines, and the plugin-author skill names, every § 7.4 class', () => {
+  it('the shared stylesheet defines, and the plugin-author skill names, every § 4 class', () => {
     const css = readFileSync(resolve(root, 'packages/web/src/app/styles/components.css'), 'utf8')
     const skill = readFileSync(resolve(root, 'skills/plugin-author/SKILL.md'), 'utf8')
     for (const cls of ['adestia-btn', 'adestia-sheet', 'adestia-popover', 'adestia-empty', 'adestia-field',
