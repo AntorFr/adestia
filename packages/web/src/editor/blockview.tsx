@@ -32,7 +32,7 @@ import type { EditorView, NodeView } from '@milkdown/kit/prose/view'
 import { createRoot, type Root } from 'react-dom/client'
 
 import { BlockSettings } from './BlockSettings.js'
-import { prettify } from './nodes.js'
+import { prettify } from '../app/paths.js'
 import { Reader, type BlockComponents, type VocabularyContext } from './Reader.js'
 import type { Say } from '../plugins/words.js'
 

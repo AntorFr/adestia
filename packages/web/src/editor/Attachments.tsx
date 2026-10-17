@@ -20,6 +20,8 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { parse } from '@antorfr/adestia-content'
 
+import { requestJson } from '../app/request.js'
+
 export interface Attachment {
   readonly path: string
   readonly name: string
@@ -133,16 +135,15 @@ export function Attachments({
   useEffect(() => {
     let cancelled = false
     void (async () => {
-      try {
-        const response = await fetchImpl(`/api/files?page=${encodeURIComponent(path)}`)
-        if (!response.ok) return
-        const body = (await response.json()) as { files?: readonly Attachment[] }
-        if (!cancelled) setFiles(body.files ?? [])
-      } catch {
-        // A page whose companions cannot be listed is still a readable page:
-        // this strip is an addition, never a precondition.
-        if (!cancelled) setFiles([])
-      }
+      const response = await requestJson<{ files?: readonly Attachment[] }>(
+        fetchImpl,
+        `/api/files?page=${encodeURIComponent(path)}`,
+      )
+      if (cancelled) return
+      // A page whose companions cannot be listed is still a readable page:
+      // this strip is an addition, never a precondition.
+      if (response.ok) setFiles(response.data?.files ?? [])
+      else if (response.status === 0) setFiles([])
     })()
     return () => {
       cancelled = true

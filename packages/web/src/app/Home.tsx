@@ -18,6 +18,7 @@ import { wordsFor } from '../plugins/words.js'
 import type { TileInfo } from '../plugins/contract.js'
 import { Tile } from './Tile.js'
 import type { Skin } from './skin.js'
+import { requestJson } from './request.js'
 import { sectionsOf, type IndexEntry, type SectionTile, type StoreInfo } from './sections.js'
 import { routeForPath } from './owners.js'
 import { ORDER_KEY_DOMAINS } from './order.js'
@@ -222,15 +223,10 @@ export function Home({
 
   useEffect(() => {
     let live = true
-    const doFetch = fetchImpl ?? fetch
-    void doFetch('/api/home/brief')
-      .then((response) => (response.ok ? (response.json() as Promise<Brief>) : undefined))
-      .then((data) => {
-        if (live && data?.items?.length) setBrief(data)
-      })
-      .catch(() => {
-        /* no brief is a home without that section, never an error */
-      })
+    // No brief is a home without that section, never an error: a failure is silent.
+    void requestJson<Brief>(fetchImpl ?? globalThis.fetch, '/api/home/brief').then((result) => {
+      if (live && result.ok && result.data?.items?.length) setBrief(result.data)
+    })
     return () => {
       live = false
     }

@@ -20,7 +20,8 @@
 
 import { routeMatches } from '../plugins/contract.js'
 import type { LoadedPlugin } from '../plugins/loader.js'
-import { absorbs, indexOf, isIndexPage, type IndexEntry } from './sections.js'
+import { isIndexFile } from './paths.js'
+import { absorbs, indexOf, type IndexEntry } from './sections.js'
 
 /**
  * How a workspace path is written into a route: segments escaped, slashes
@@ -364,7 +365,7 @@ export function folderRoute(
   if (!face) return sectionRoute(folder)
   // The FOLDER's own address when its face is its index — `INDEX` never
   // belongs in a link. Any other page keeps its own name.
-  return pageRoute(isIndexPage(face) ? folder : face)
+  return pageRoute(isIndexFile(face) ? folder : face)
 }
 
 /**

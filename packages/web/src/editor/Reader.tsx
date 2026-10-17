@@ -35,8 +35,10 @@ import { PluginBoundary } from '../plugins/Boundary.js'
 import { fileUrl, GLYPHS, humanSize, type Attachment } from './Attachments.js'
 import type { BlockProps, LayoutProps, StoreInfo } from '../plugins/contract.js'
 import { assetUrl, resolveHref, workspacePath } from './links.js'
-import { finished, folderOf, initials, isIndexPage, titleOf, under } from './listing.js'
-import { isBlankBreak, listItems, plain, prettify, type Node } from './nodes.js'
+import { requestJson } from '../app/request.js'
+import { folderOf, isIndexPath, prettify } from '../app/paths.js'
+import { finished, initials, titleOf, under } from './listing.js'
+import { isBlankBreak, listItems, plain, type Node } from './nodes.js'
 
 /** What a plugin contributed, by block name. */
 /**
@@ -721,7 +723,7 @@ function FileList({ node, ctx, view }: { readonly node: Node; readonly ctx: Ctx;
   const attrs = node.attributes ?? {}
   const path = ctx.page?.path
   const deep = attrs['depth'] === 'subtree'
-  const ask = ctx.fetchImpl ?? fetch
+  const ask = ctx.fetchImpl ?? globalThis.fetch
   const [files, setFiles] = useState<readonly Attachment[] | 'failed' | undefined>(undefined)
 
   useEffect(() => {
@@ -729,14 +731,8 @@ function FileList({ node, ctx, view }: { readonly node: Node; readonly ctx: Ctx;
     let cancelled = false
     const query = deep ? `under=${encodeURIComponent(folderOf(path))}` : `page=${encodeURIComponent(path)}`
     void (async () => {
-      try {
-        const response = await ask(`/api/files?${query}`)
-        if (!response.ok) throw new Error(`files: ${response.status}`)
-        const body = (await response.json()) as { files?: readonly Attachment[] }
-        if (!cancelled) setFiles(body.files ?? [])
-      } catch {
-        if (!cancelled) setFiles('failed')
-      }
+      const response = await requestJson<{ files?: readonly Attachment[] }>(ask, `/api/files?${query}`)
+      if (!cancelled) setFiles(response.ok ? (response.data?.files ?? []) : 'failed')
     })()
     return () => {
       cancelled = true
@@ -924,7 +920,7 @@ function Row({
   const glyph =
     typeof declared === 'string' && declared !== ''
       ? declared
-      : isIndexPage(page.path)
+      : isIndexPath(page.path)
         ? '◆'
         : '•'
   return (

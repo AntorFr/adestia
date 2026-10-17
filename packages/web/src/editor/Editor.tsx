@@ -21,6 +21,7 @@ import {
   type Indexed,
 } from '@antorfr/adestia-content'
 
+import { jsonInit, requestJson } from '../app/request.js'
 import { Attachments } from './Attachments.js'
 import type { PropertiesEnv } from './frontmatterview.js'
 import type { FieldContributions } from './pageform.js'
@@ -71,23 +72,27 @@ export async function savePage(
   fetchImpl: typeof fetch = fetch,
 ): Promise<{ state: SaveState; revision?: string }> {
   const qualifier = page.store ? `?store=${encodeURIComponent(page.store)}` : ''
-  const response = await fetchImpl(`/api/pages/${page.path}${qualifier}`, {
-    method: 'PUT',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ markdown, revision: page.revision }),
-  })
+  const response = await requestJson<{ revision: string; normalized: boolean }>(
+    fetchImpl,
+    `/api/pages/${page.path}${qualifier}`,
+    jsonInit('PUT', { markdown, revision: page.revision }),
+  )
 
   if (response.ok) {
-    const body = (await response.json()) as { revision: string; normalized: boolean }
-    return { state: { kind: 'saved', normalized: body.normalized }, revision: body.revision }
+    return { state: { kind: 'saved', normalized: response.data.normalized }, revision: response.data.revision }
   }
   if (response.status === 409) return { state: { kind: 'conflict' } }
   if (response.status === 422) {
-    const body = (await response.json()) as { diagnostics: readonly { message: string }[] }
+    const body = response.data as { diagnostics: readonly { message: string }[] }
     return { state: { kind: 'rejected', diagnostics: body.diagnostics } }
   }
-  const body = (await response.json().catch(() => ({}))) as { error?: string }
-  return { state: { kind: 'failed', message: body.error ?? `save failed (${response.status})` } }
+  const said = (response.data as { error?: unknown } | null | undefined)?.error
+  return {
+    state: {
+      kind: 'failed',
+      message: typeof said === 'string' && said !== '' ? said : response.status === 0 ? response.error : `save failed (${response.status})`,
+    },
+  }
 }
 
 function Diagnostics({ items }: { items: PageDocument['diagnostics'] }) {

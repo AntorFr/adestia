@@ -37,7 +37,9 @@ export async function requestJson<T = unknown>(
     const message = cause instanceof Error ? cause.message : ''
     return { ok: false, status: 0, error: message !== '' ? message : fallback(0) }
   }
-  const body: unknown = await response.json().catch(() => undefined)
+  const body: unknown = await Promise.resolve()
+    .then(() => response.json())
+    .catch(() => undefined)
   if (!response.ok) {
     const error = (body as { error?: unknown } | null | undefined)?.error
     return {
@@ -48,4 +50,21 @@ export async function requestJson<T = unknown>(
     }
   }
   return { ok: true, status: response.status, data: body as T }
+}
+
+/**
+ * The same promise as `requestJson` for a caller that reads the response
+ * itself (a stream, a status it routes on). It never throws: any HTTP status is
+ * a `response`; only a failure of the network is `{ ok: false }`.
+ */
+export async function requestRaw(
+  fetchImpl: typeof fetch,
+  path: string,
+  init?: RequestInit,
+): Promise<{ readonly ok: true; readonly response: Response } | { readonly ok: false; readonly error: string }> {
+  try {
+    return { ok: true, response: await fetchImpl(path, init) }
+  } catch (cause) {
+    return { ok: false, error: cause instanceof Error ? cause.message : '' }
+  }
 }

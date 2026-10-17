@@ -13,6 +13,7 @@
  */
 
 import { SseParser } from '../chat/stream.js'
+import { requestRaw } from './request.js'
 
 export interface PagesChangedEvent {
   readonly type: 'pages-changed'
@@ -48,10 +49,8 @@ export async function followChanges(options: FollowOptions): Promise<void> {
   let everConnected = false
 
   while (!options.signal.aborted) {
-    let response: Response
-    try {
-      response = await fetchImpl('/api/events', { signal: options.signal })
-    } catch {
+    const reply = await requestRaw(fetchImpl, '/api/events', { signal: options.signal })
+    if (!reply.ok) {
       // The server is unreachable — down, or the network is. Worth retrying:
       // this loop outlives a server restart on purpose.
       if (options.signal.aborted) return
@@ -59,6 +58,7 @@ export async function followChanges(options: FollowOptions): Promise<void> {
       delay = Math.min(delay * 2, 30_000)
       continue
     }
+    const response = reply.response
 
     // Anything but a live stream means the feed is not offered here — the
     // operator disabled it, or something in between answered for the server.
