@@ -47,6 +47,7 @@ import type {
 } from '../contract.js'
 import { ManagedCredential } from '../managed-credential.js'
 import { McpTokens, type RefreshStore } from '../mcp-oauth.js'
+import { mcpHeaders } from '../mcp-headers.js'
 import { SHELL_TOOLS_SERVER_NAME, bridgeStdioConfig } from '../shell-tools-config.js'
 import {
   CREDENTIAL_KEY,
@@ -575,25 +576,9 @@ export class CodexDriver implements Driver {
 
     for (const server of declared) {
       if (server.url) {
-        const headers: Record<string, string> = { ...server.headers }
-        if (server.identity === 'user') {
-          // No person's token, no server: the caller's, or the per-server
-          // one the core minted for a `background` server on a clock or
-          // callback turn. And a `signIn` server takes only its own per-turn
-          // token — never the rebound one, which would be foreign currency
-          // to it.
-          const token = server.signIn
-            ? serverTokens?.[server.name]
-            : (callerToken ?? serverTokens?.[server.name])
-          if (!token) continue
-          headers['Authorization'] = `Bearer ${token}`
-        } else if (server.auth) {
-          const token = await this.#tokens.for(server.auth)
-          // Omitted rather than sent unauthenticated: a wall of 401s reads as
-          // a broken tool, an absent server reads as an absent one.
-          if (!token) continue
-          headers['Authorization'] = `Bearer ${token}`
-        }
+        const headers = await mcpHeaders(server, this.#tokens, callerToken, serverTokens)
+        if (!headers) continue
+
         servers[server.name] = {
           url: server.url,
           ...(Object.keys(headers).length > 0 ? { http_headers: headers } : {}),

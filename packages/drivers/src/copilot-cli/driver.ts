@@ -32,6 +32,7 @@ import { SHELL_TOOLS_SERVER_NAME, bridgeStdioConfig } from '../shell-tools-confi
 import { TOKEN_ENV_VAR, classifyAuthError, copilotEnv, explainAuthProblem, looksLikeToken } from './auth.js'
 import { ManagedCredential } from '../managed-credential.js'
 import { McpTokens, type RefreshStore } from '../mcp-oauth.js'
+import { mcpHeaders } from '../mcp-headers.js'
 import { newTranslationState, parseLine, translate } from './events.js'
 import { PLAINTEXT_CONSENT, startDeviceCodeLogin, type DeviceCodeLogin } from './login.js'
 
@@ -379,25 +380,9 @@ export class CopilotDriver implements Driver {
     }
     for (const server of declared) {
       if (server.url) {
-        const headers: Record<string, string> = { ...server.headers }
-        if (server.identity === 'user') {
-          // See the other driver: no person's token, no server — the
-          // caller's, or the per-server one the core minted for a
-          // `background` server on a clock or callback turn. And a `signIn`
-          // server takes only its own per-turn token — never the rebound one.
-          const token = server.signIn
-            ? serverTokens?.[server.name]
-            : (callerToken ?? serverTokens?.[server.name])
-          if (!token) continue
-          headers['Authorization'] = `Bearer ${token}`
-        } else if (server.auth) {
-          const token = await this.#tokens.for(server.auth)
-          // Omitted rather than sent unauthenticated — same rule as the other
-          // driver: a wall of 401s reads as a broken tool, an absent one reads
-          // as an absent one.
-          if (!token) continue
-          headers['Authorization'] = `Bearer ${token}`
-        }
+        const headers = await mcpHeaders(server, this.#tokens, callerToken, serverTokens)
+        if (!headers) continue
+
         mcpServers[server.cliName ?? server.name] = {
           type: 'http',
           url: server.url,

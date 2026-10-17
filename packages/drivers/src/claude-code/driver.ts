@@ -29,6 +29,7 @@ import { AskDesk, type PendingAsk } from '../asks.js'
 import { signatureRequests } from '../signatures.js'
 import { ManagedCredential } from '../managed-credential.js'
 import { McpTokens, type RefreshStore } from '../mcp-oauth.js'
+import { mcpHeaders } from '../mcp-headers.js'
 import { TOKEN_ENV_VAR, looksLikeToken } from './arming.js'
 import { toolTarget } from './events.js'
 import { isKnownMessage } from './sdk-types.js'
@@ -139,31 +140,8 @@ async function toSdkServers(
       continue
     }
 
-    const headers: Record<string, string> = { ...server.headers }
-    if (server.identity === 'user') {
-      // Somebody's own data. Without a person's token there is nobody to act
-      // as, so the server is absent from this turn rather than reached with
-      // the instance's identity — which would be a different person's data,
-      // or a flat refusal read as a broken tool. The caller's token when the
-      // turn has one; else the per-server token the core minted (only for
-      // `background` servers, only on clock and callback turns). A `signIn`
-      // server takes ONLY its own per-turn token: the rebound one is foreign
-      // currency there, and presenting it would read as "failed" where the
-      // truthful state is "this caller never connected".
-      const token = server.signIn
-        ? serverTokens?.[server.name]
-        : (callerToken ?? serverTokens?.[server.name])
-      if (!token) continue
-      headers['Authorization'] = `Bearer ${token}`
-    } else if (server.auth) {
-      const token = await tokens.for(server.auth)
-      // A server whose token could not be minted is OMITTED rather than sent
-      // unauthenticated: the hub would refuse every call, and the agent would
-      // read a wall of 401s as "the tool is broken" instead of "I am not
-      // logged in". Absent, the CLI simply has one tool fewer.
-      if (!token) continue
-      headers['Authorization'] = `Bearer ${token}`
-    }
+    const headers = await mcpHeaders(server, tokens, callerToken, serverTokens)
+    if (!headers) continue
 
     out[server.name] = {
       type: 'http',
