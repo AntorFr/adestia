@@ -5,7 +5,7 @@
  * POST refresh, DELETE the item — each call returns the expected code and
  * body; GET /api/instructions carries `source` for an imported item and not
  * for a local file. Expected values are written by hand from the design
- * (technique.md §Contrats d'interface), not read back from the routes.
+ * (docs/donnees.md), not read back from the routes.
  */
 
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
