@@ -85,7 +85,7 @@ export default function createAtelierApp(api) {
     const vertical = Math.abs(x2 - x1) < 0.5;   // arête verticale → texte couché
     const tr = vertical ? ` transform="rotate(-90 ${mx} ${my})"` : '';
     return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--proj)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="6 3"/>`
-      + `<text x="${mx}" y="${my + (vertical ? 0 : (y1 < r.y + r.h / 2 ? 9 : -3))}"${tr} text-anchor="middle" fill="var(--proj)" font-family="var(--f-mono)" font-size="${fs}" font-weight="700" paint-order="stroke" stroke="var(--surface)" stroke-width="3">▲ HAUT</text>`;
+      + `<text x="${mx}" y="${my + (vertical ? 0 : (y1 < r.y + r.h / 2 ? 9 : -3))}"${tr} text-anchor="middle" fill="var(--proj)" font-family="var(--f-mono)" font-size="${fs}" font-weight="700" paint-order="stroke" stroke="var(--surface)" stroke-width="3">${t('▲ TOP')}</text>`;
   }
   const chantSVG = (edges, sw) => edges.map(([x1, y1, x2, y2]) =>
     `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="var(--warn)" stroke-width="${sw}" stroke-linecap="round"/>`).join('');

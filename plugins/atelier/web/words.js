@@ -143,6 +143,7 @@ const WORDS = {
     'bands %list mm': 'bandes %list mm',
     'Sheet %id · %type': 'Plaque %id · %type',
     'DONE ✓': 'FAIT ✓',
+    '▲ TOP': '▲ HAUT',
     '%n workbook': '%n workbook',
     '%n workbooks': '%n workbooks',
     '%done/%total steps': '%done/%total étapes',
