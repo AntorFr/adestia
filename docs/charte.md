@@ -61,6 +61,9 @@
 - **On fills**: `--on-accent` is the dark ink on a filled accent in both themes, and also
   carries danger, warning and success fills. `--accent-text`, `--danger-text`,
   `--warning-text`, `--success-text` are the text twins of the fills (§ 5).
+- **Hot tile chips**: text uses `--accent-text`; their border and translucent background
+  keep the tile hue. The decorative hue is not a text token (Skippy light indigo falls
+  below AA on its tinted chip background).
 - **Depth**: as inherited — three shadow depths on white cards over a tinted canvas in
   light; borders and planes in dark. One strategy per theme, kept.
 - **Icons**: one set, **Lucide** (ISC licence), vendored as an inline sprite (no CDN: the

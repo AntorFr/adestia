@@ -451,6 +451,10 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
 
 ## Known defects (found, not fixed by this epic)
 
+- **MCP server counts disagree**: the Settings tile can say “6 servers” while the MCP
+  breadcrumb badge says “7 servers”. Observed during the charter review; whether it
+  predates this epic is unknown. Kept under B-1, pending a separate behaviour investigation.
+
 - **Catalogue ref or repo starting with `-`** reaches git as an option: `sources.ts` passes
   `source.ref` to `git fetch … origin <ref>` with no `--` separator. Arbitration of
   `homelab-sdlc-maj-consignes`.
