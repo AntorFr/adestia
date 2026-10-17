@@ -19,7 +19,7 @@ const CHARTE = [
   'trash-2', 'search', 'folder', 'file-text', 'sparkles', 'plug', 'book-open',
   'sliders-horizontal', 'handshake', 'monitor', 'sun', 'moon', 'log-out', 'key-round', 'lock',
   'users', 'check', 'circle-alert', 'triangle-alert', 'info', 'wifi-off', 'refresh-cw', 'copy',
-  'external-link', 'loader-circle',
+  'external-link', 'loader-circle', 'file-question', 'folder-open', 'search-x',
 ]
 
 afterEach(() => {
@@ -48,7 +48,7 @@ describe('icon sprite', () => {
     mountSprite()
     mountSprite()
     expect(document.querySelectorAll('#adestia-icon-sprite')).toHaveLength(1)
-    expect(document.querySelectorAll('symbol')).toHaveLength(33)
+    expect(document.querySelectorAll('symbol')).toHaveLength(36)
   })
 
   it('is decorative and takes the text colour, not a hard-coded one', () => {
