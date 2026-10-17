@@ -266,6 +266,7 @@ const FR: Readonly<Record<string, string>> = {
 
   // MCP servers, on their settings page
   'MCP servers': 'Serveurs MCP',
+  'The declaration is not valid JSON.': 'La déclaration n’est pas du JSON valide.',
   'What this instance reaches, and what it is doing about it':
     'Ce que cette instance atteint, et où chacun en est',
   server: 'serveur',

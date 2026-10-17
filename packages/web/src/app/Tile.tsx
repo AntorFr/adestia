@@ -40,7 +40,8 @@ export function Tile(props: {
   readonly glyph?: string
   readonly label: string
   readonly subtitle?: string
-  readonly chips?: TileInfo['chips']
+  /** A chip may carry a Lucide icon: a status is never told by its tint alone. */
+  readonly chips?: readonly (NonNullable<TileInfo['chips']>[number] & { readonly icon?: IconName })[]
   readonly hue?: string
   /**
    * The store everything behind this tile comes from — its mark, exactly the
@@ -161,6 +162,7 @@ export function Tile(props: {
               key={chip.text}
               className={chip.hot ? 'adestia-chip adestia-chip--hot' : 'adestia-chip'}
             >
+              {chip.icon ? <Icon name={chip.icon} /> : null}
               {chip.text}
             </span>
           ))}

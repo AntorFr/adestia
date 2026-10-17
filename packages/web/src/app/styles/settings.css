@@ -80,22 +80,19 @@
 /* The declaration, edited AS a declaration. A form with a field per option
    would have to know every option, and would drop the one it did not know
    about — `auth`, which is the whole reason a hub works. */
+.adestia-mcp__declaration { margin-top: var(--space-3); }
+
 .adestia-mcp__config {
   display: block;
-  width: 100%;
   min-height: 40vh;
-  margin-top: var(--space-3);
   padding: var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
   background: var(--surface-raised);
-  color: var(--text);
-  font: var(--text-sm)/1.65 var(--font-code);
+  font-family: var(--font-code);
+  line-height: 1.65;
   resize: vertical;
   tab-size: 2;
 }
 
-.adestia-mcp__config:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 1px; }
 .adestia-mcp__config[readonly] { background: var(--surface-sunken); color: var(--text-muted); }
 
 .adestia-mcp__bar {
@@ -106,16 +103,17 @@
   margin-top: var(--space-2);
 }
 
-/* Destructive, and dressed as such — but not red until it is hovered: a
-   permanently red button in a row of ordinary ones is noise by the third
-   visit. */
-.adestia-mcp__drop {
-  border: 1px solid var(--border);
-  background: none;
-  color: var(--text-muted);
-}
+.adestia-mcp__spacer { flex: 1; }
 
-.adestia-mcp__drop:hover { border-color: var(--danger); color: var(--danger-text); }
+/* A health tone wears its own icon: the dot of the plain pill is dropped, so
+   the shape and the word say the state and the tint only agrees with them. */
+.adestia-stat--icon::before { content: none; }
+.adestia-stat--icon .adestia-icon { width: 12px; height: 12px; }
+.adestia-stat--icon.adestia-stat--underway { color: var(--accent-text); }
+.adestia-stat--icon.adestia-stat--waiting { color: var(--warning-text); }
+.adestia-stat--icon.adestia-stat--settled { color: var(--success-text); }
+
+.adestia-tile__foot .adestia-chip .adestia-icon { width: 12px; height: 12px; margin-right: var(--space-1); }
 
 /* The reason takes the whole next line: it is a sentence from the CLI, and
    squeezing it beside a pill truncates the part that explains anything. */
