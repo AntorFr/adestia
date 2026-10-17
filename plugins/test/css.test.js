@@ -19,6 +19,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const CHECKED = [
   'journal',
   'listening-post',
+  'meals',
   'parcours',
   'planif',
   'project-management',

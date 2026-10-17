@@ -28,9 +28,7 @@ import { test } from 'node:test'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 // Each plugin's language task removes its own line; a stale exception fails.
-const TU_A_CORRIGER = [
-  'meals',
-]
+const TU_A_CORRIGER = []
 
 /** Quoted speech may address an agent; the surrounding interface says vous. */
 function familiarWords(table, locate) {
