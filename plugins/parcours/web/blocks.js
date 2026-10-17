@@ -1,3 +1,5 @@
+import { makeT, table } from './words.js'
+
 /**
  * Le bloc `:::parcours` — l'adaptateur entre le contrat de Adestia et le moteur.
  *
@@ -25,24 +27,10 @@ import { createElement as h, useEffect, useRef } from 'react'
 import { mountParcours } from './carte.js'
 import { routeDuParcours } from './route.js'
 
-/**
- * The words this plugin DECLARES, for the shell to say.
- *
- * Its screens pick their language inline, which is fine for a handful of
- * words — but the block's description lives in the manifest, drawn by the
- * editor's settings panel, and the plugin never gets to say it. So it hands
- * the table over instead (`words:` in what the factory returns).
- */
-export function table(locale) {
-  return String(locale ?? '').slice(0, 2) === 'fr'
-    ? {
-        'A walk, drawn from the `.parcours.json` that sits beside the page.':
-          'Un parcours, dessiné depuis le `.parcours.json` posé à côté de la fiche.',
-      }
-    : {}
-}
+export { table } from './words.js'
 
 export default function createParcoursBlocks(api) {
+  const t = makeT(api.locale)
   // Les deux URL de l'hôte, fabriquées ici et injectées dans le moteur : un
   // plugin qui écrirait `/api/plugin/parcours/` en dur ne pourrait plus être
   // renommé, et le moteur n'a aucune raison de connaître sa propre adresse.
@@ -62,6 +50,7 @@ export default function createParcoursBlocks(api) {
       return mountParcours(element, {
         src: resolve(source),
         chemin: locate(source),
+        locale: api.locale,
         vue,
         urls,
       })
@@ -77,7 +66,7 @@ export default function createParcoursBlocks(api) {
     return h(
       'div',
       { ref: hote, className: 'parcours' },
-      h('div', { className: 'pc-vide' }, api.locale === 'fr' ? 'Parcours…' : 'Route…'),
+      h('div', { className: 'pc-vide' }, t("Route…")),
     )
   }
 
