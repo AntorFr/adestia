@@ -49,3 +49,26 @@ export async function requestJson<T = unknown>(
   }
   return { ok: true, status: response.status, data: body as T }
 }
+
+export type RawResult =
+  | { readonly ok: true; readonly response: Response }
+  | { readonly ok: false; readonly error: string }
+
+/**
+ * For the two callers that stream the body (the turn POST, the attach GET) or
+ * read it their own way: any HTTP status comes back as a `response`, whole;
+ * only a failure to reach the server is `{ ok: false }`, with the locale's
+ * fallback. It never throws.
+ */
+export async function requestRaw(
+  fetchImpl: typeof fetch,
+  path: string,
+  init?: RequestInit,
+  t: (key: string) => string = (key) => key,
+): Promise<RawResult> {
+  try {
+    return { ok: true, response: await fetchImpl(path, init) }
+  } catch {
+    return { ok: false, error: t(FALLBACK_KEY).replace('%n', '0') }
+  }
+}

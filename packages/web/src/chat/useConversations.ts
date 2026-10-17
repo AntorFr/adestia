@@ -21,7 +21,9 @@ import {
   type ConversationMeta,
   type StoredMessage,
 } from './conversations.js'
+import { jsonInit, requestRaw } from '../app/request.js'
 import type { Message } from './Bubble.js'
+import { toMessage } from './messages.js'
 import type { PendingAttachment } from './Composer.js'
 import {
   INITIAL_TURN,
@@ -57,19 +59,6 @@ interface HeldMessage {
   readonly attachments: readonly PendingAttachment[]
 }
 
-/** A stored message, as the conversation renders it. */
-function toMessage(stored: StoredMessage): Message {
-  return {
-    id: stored.id,
-    role: stored.role,
-    text: stored.text,
-    ...(stored.tools ? { tools: stored.tools } : {}),
-    ...(stored.signatures ? { signatures: stored.signatures } : {}),
-    ...(stored.stopped ? { stopped: stored.stopped } : {}),
-    ...(stored.error ? { error: stored.error } : {}),
-  }
-}
-
 /**
  * A conversation as the store has it — everything it REMEMBERS.
  *
@@ -84,7 +73,7 @@ function fromStore(stored: Conversation): Partial<OpenConversation> {
   const waiting = (message: StoredMessage): boolean =>
     stored.turn !== undefined && message.after !== undefined && !answered.has(message.after)
   return {
-    messages: stored.messages.filter((message) => !waiting(message)).map(toMessage),
+    messages: stored.messages.filter((message) => !waiting(message)).map((message) => toMessage(message)),
     held: stored.messages.filter(waiting).map((message) => ({ text: message.text, attachments: [] })),
     contextTokens: stored.messages.at(-1)?.usage?.contextTokens ?? 0,
     loaded: true,
@@ -574,13 +563,8 @@ export function useConversations({ fetchImpl, narrow, model, view, t }: Conversa
     const tabId = activeRef.current
     if (tabId === DRAFT) return
     patchConversation(tabId, { stopping: true })
-    void (fetchImpl ?? fetch)('/api/turn/stop', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ conversation: tabId }),
-    })
-      .then((response) => response.ok)
-      .catch(() => false)
+    void requestRaw(fetchImpl ?? fetch, '/api/turn/stop', jsonInit('POST', { conversation: tabId }))
+      .then((result) => result.ok && result.response.ok)
       .then((taken) => {
         // Refused or never sent: give the button back. A turn that settled
         // first clears this on its own, one line below in `consume`.

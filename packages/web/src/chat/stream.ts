@@ -11,6 +11,7 @@
 
 import type { StoredSignature } from '@antorfr/adestia-schemas'
 
+import { requestRaw, type RawResult } from '../app/request.js'
 import type { TurnEvent } from './events.js'
 
 /**
@@ -287,8 +288,8 @@ export interface StreamOptions {
 
 /** POSTs the turn. Shared by `runTurn` and `startTurn` so the wire format
     exists exactly once. */
-function postTurn(options: StreamOptions, fetchImpl: typeof fetch): Promise<Response> {
-  return fetchImpl('/api/turn', {
+function postTurn(options: StreamOptions, fetchImpl: typeof fetch): Promise<RawResult> {
+  return requestRaw(fetchImpl, '/api/turn', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
@@ -378,7 +379,17 @@ export async function startTurn(
   options: StreamOptions,
   fetchImpl: typeof fetch = fetch,
 ): Promise<TurnStart> {
-  const response = await postTurn(options, fetchImpl)
+  const posted = await postTurn(options, fetchImpl)
+  if (!posted.ok) {
+    // The server could not be reached: a refused turn, said in the thread.
+    return {
+      kind: 'stream',
+      states: (async function* () {
+        yield { ...INITIAL_TURN, running: false, error: posted.error }
+      })(),
+    }
+  }
+  const { response } = posted
 
   if (response.status === 202) return { kind: 'held' }
 
@@ -407,12 +418,12 @@ export async function attachTurn(
   conversationId: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<AsyncGenerator<TurnState> | undefined> {
-  let response: Response
-  try {
-    response = await fetchImpl(`/api/turn/attach?conversation=${encodeURIComponent(conversationId)}`)
-  } catch {
-    return undefined
-  }
+  const attached = await requestRaw(
+    fetchImpl,
+    `/api/turn/attach?conversation=${encodeURIComponent(conversationId)}`,
+  )
+  if (!attached.ok) return undefined
+  const { response } = attached
   if (response.status !== 200 || !response.body) return undefined
   return streamStates(response)
 }

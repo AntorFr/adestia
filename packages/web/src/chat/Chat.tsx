@@ -31,6 +31,7 @@ import { Bubble, LiveProse, ToolTrace, livePartsOf } from './Bubble.js'
 import { SignatureCards, type Signature, type SigningOptions } from './Signatures.js'
 import { Composer, type ComposerButton, type PendingAttachment } from './Composer.js'
 import { ContextPill, formatTokens } from './ContextPill.js'
+import { jsonInit, requestJson } from '../app/request.js'
 import { DRAFT, useConversations } from './useConversations.js'
 import { ModelPicker, type ModelInfo } from './ModelPicker.js'
 
@@ -161,14 +162,9 @@ export function Chat({
     // Anything else (a network blip, a driver error) leaves it empty too: a
     // missing selector beats a selector that lists nothing.
     void (async () => {
-      try {
-        const response = await (fetchImpl ?? fetch)('/api/models')
-        if (!response.ok) return
-        const body = (await response.json()) as { models?: readonly ModelInfo[] }
-        setModels(body.models ?? [])
-      } catch {
-        /* no catalogue, no control */
-      }
+      const result = await requestJson<{ models?: readonly ModelInfo[] }>(fetchImpl ?? fetch, '/api/models')
+      // No catalogue, no control.
+      if (result.ok) setModels(result.data?.models ?? [])
     })()
   }, [fetchImpl])
 
@@ -496,14 +492,10 @@ export function Chat({
             // this answer, so no event will arrive to clear it — and any
             // event that does arrive still carries the question.
             setAnswered((current) => new Set(current).add(id))
-            void (fetchImpl ?? fetch)('/api/permission', {
-              method: 'POST',
-              headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({ id, answer }),
-            }).catch(() => {
-              // The turn will time out on its own and refuse; saying so twice
-              // would put an error over a question that is already gone.
-            })
+            // A failure is not reported: the turn will time out on its own and
+            // refuse; saying so twice would put an error over a question that
+            // is already gone.
+            void requestJson(fetchImpl ?? fetch, '/api/permission', jsonInit('POST', { id, answer }))
           }}
         />
       )}

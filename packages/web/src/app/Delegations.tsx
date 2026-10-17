@@ -19,8 +19,9 @@
 
 import { useEffect, useState } from 'react'
 
-import { Bubble, type Message } from '../chat/Bubble.js'
+import { Bubble } from '../chat/Bubble.js'
 import type { StoredMessage } from '../chat/conversations.js'
+import { toMessage } from '../chat/messages.js'
 import { Icon } from './Icon.js'
 import { requestJson } from './request.js'
 import { EmptyState } from './ui/index.js'
@@ -39,18 +40,6 @@ export interface Delegation {
   readonly id: string
   readonly title: string
   readonly messages: readonly StoredMessage[]
-}
-
-/** The same conversion the chat applies to its own stored messages. */
-function toMessage(stored: StoredMessage): Message {
-  return {
-    id: stored.id,
-    role: stored.role,
-    text: stored.text,
-    ...(stored.tools ? { tools: stored.tools } : {}),
-    ...(stored.stopped ? { stopped: stored.stopped } : {}),
-    ...(stored.error ? { error: stored.error } : {}),
-  }
 }
 
 /** Rows bundled per caller, callers alphabetical, rows kept newest-first. */
@@ -186,7 +175,7 @@ export function Delegations({
         </header>
         <div className="adestia-chat__conversation adestia-deleg__conversation">
           {delegation.messages.map((message) => (
-            <Bubble key={message.id} message={toMessage(message)} t={t} />
+            <Bubble key={message.id} message={toMessage(message, { signatures: false })} t={t} />
           ))}
         </div>
       </div>

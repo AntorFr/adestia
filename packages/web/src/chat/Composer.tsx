@@ -5,6 +5,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { requestRaw } from '../app/request.js'
 import { useMobile } from '../app/useMobile.js'
 // The drag primitive is shared with the page screen: one answer to "is this
 // drag carrying files", so the two surfaces cannot disagree about it.
@@ -201,8 +202,15 @@ export function Composer({
       const form = new FormData()
       for (const file of files) form.append('file', file)
 
+      const sent = await requestRaw(fetchImpl, '/api/upload', { method: 'POST', body: form }, t)
+      // Only an unreachable server takes the translated fallback; the server's
+      // own `error` and the list of refusals keep their way.
+      if (!sent.ok) {
+        setUploadError(sent.error)
+        return
+      }
+      const { response } = sent
       try {
-        const response = await fetchImpl('/api/upload', { method: 'POST', body: form })
         const body = (await response.json()) as {
           attachments?: PendingAttachment[]
           refused?: string[]
@@ -220,7 +228,7 @@ export function Composer({
         setUploadError((error as Error).message)
       }
     },
-    [fetchImpl],
+    [fetchImpl, t],
   )
 
   const submit = useCallback(() => {
