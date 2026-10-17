@@ -138,7 +138,9 @@ describe('the MCP screen, charter level', () => {
   it('colours hot chip text with the text token, not the tile hue', () => {
     const css = readFileSync(resolve(__dirname, '../src/app/styles/tiles.css'), 'utf8')
     const rule = /\.adestia-chip--hot\s*\{([^}]*)\}/.exec(css)![1]!
-    expect(rule).toMatch(/(^|[;\s])color:\s*var\(--accent-text\)\s*;/)
+    // The text twin first (contrast.test.ts measures it composed, AA per skin and theme); the plain hue
+    // alone (`var(--tile-color)`) or a bare `--accent-text` that drops the tile's hue are not it.
+    expect(rule).toMatch(/(^|[;\s])color:\s*var\(--tile-color-text,\s*var\(--tile-color,\s*var\(--accent-text\)\)\)\s*;/)
   })
 
   // Fails if any sentence the MCP files say is missing from the French table.
