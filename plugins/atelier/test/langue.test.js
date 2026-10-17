@@ -101,3 +101,10 @@ test('the table says vous', () => {
   const familiar = Object.values(table('fr')).filter((value) => /(?<![\p{L}\p{N}_])(?:tu|te|ton|ta|tes|toi)(?![\p{L}\p{N}_])/iu.test(value))
   assert.deepEqual(familiar, [])
 })
+
+test('in English, the "top" mark drawn in the SVG is not French', async () => {
+  // An unaccented French word slips past the accent check: the mark that
+  // flags the top edge of the assembled piece is text inside an SVG.
+  const said = (await tour({ locale: 'en' })).map(([, text]) => text).join('\n')
+  assert.ok(!/\bHAUT\b/.test(said), 'the SVG mark says HAUT in English')
+})
