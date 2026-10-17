@@ -837,6 +837,37 @@ another plugin's data.
 store directories on its command line and build one over them, the way
 `listening-post`'s `pagesOverDirs` does. Do not re-derive a walk.
 
+## Shell components
+
+The shell ships its own controls as classes, drawn from tokens, so a plugin's screen looks
+like the shell's in every skin and in both themes. Use the classes; do not restyle them.
+Variants are modifiers, sizes are `--sm` or the default.
+
+- **Button** — `.adestia-btn`; variants `.adestia-btn--accent`, `--danger`, `--ghost`;
+  `.adestia-btn--icon` (square, **needs an `aria-label`**); size `.adestia-btn--sm`.
+  Busy: put a `loader-circle` icon with `.adestia-icon--spin` in place of the icon and set
+  `aria-busy="true"`. Disabled uses the `disabled` attribute.
+- **Sheet** — `.adestia-sheet` (the scrim), `.adestia-sheet__panel`, `__head`, `__title`,
+  `__body`, `__foot`. A centred panel; a bottom sheet under 820 px (`--breakpoint-mobile`).
+- **Popover** — `.adestia-popover`: a raised panel, positioned by you (`position: fixed`,
+  8 px from the anchor).
+- **Empty state** — `.adestia-empty.adestia-empty--state` with `__icon`, `__text`, `__action`.
+- **Field** — `.adestia-field` with `__label`, `__help`, `__error`; controls
+  `.adestia-input`, `.adestia-select`, `.adestia-textarea`, and `.adestia-toggle` (a real
+  `<input type="checkbox" role="switch">`). Bind help and error with `aria-describedby`,
+  set `aria-invalid="true"` on the control, and put an alert icon in the error: colour is never alone.
+- **Segmented control** — `.adestia-segmented` with `.adestia-segmented__item`
+  (`role="radiogroup"` / `role="radio"`, `aria-checked`, `aria-label` and `title`).
+
+**The sheet contract, for JS without React** (three lines — there is no helper, AD-8):
+
+1. Mount `.adestia-sheet` on `document.body` (not inside your view: the shell's panes are
+   transformed on a phone) with `role="dialog"`, `aria-modal="true"` and `aria-labelledby`
+   on the panel.
+2. On open move focus to the first focusable inside, wrap Tab within the panel; Escape and a
+   click on the scrim close it.
+3. On close remove the node and give focus back to the element that opened it.
+
 ## Before you finish
 
 1. `adestia-plugin.json` parses and matches the schema above.

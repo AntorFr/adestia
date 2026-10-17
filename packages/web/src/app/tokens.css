@@ -181,6 +181,7 @@
   --shadow-lg: 0 14px 36px var(--shadow-lg-ink-1);
 
   --scrim: rgb(8 11 18 / 55%);
+  --z-sheet: 100;
 
   /* The split: chat rail against the apps canvas, resizable and persisted. */
   --rail: 33.333%;
