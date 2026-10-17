@@ -27,8 +27,8 @@
 ## 2. Tokens
 
 - **Source**: `packages/web/src/app/tokens.css`, custom properties on `:root`, light first,
-  dark under `prefers-color-scheme` and under `[data-theme='dark']`. **TARGET**: the dark
-  palette is written once (today it is pasted twice) — the two selectors share one block.
+  colours written once as `light-dark()`; `color-scheme` follows the system unless
+  `[data-theme]` forces light or dark.
 - **Two levels**: primitives (the named hues `--adestia-hue-*`, which pages name) and
   semantic tokens by role (`--surface*`, `--border*`, `--text*`, `--accent*`, `--danger`,
   `--warning`, `--success`, radii, spacing, shadows, fonts, sizes). Components use the
@@ -41,14 +41,15 @@
   move to the shell's names.
 - **Fonts**: `--font` (system stack), `--font-title` (serif), `--font-mono`, `--font-code`;
   a skin may serve its own (Dobby does). Kept as inherited.
-- **Type scale — TARGET**: today three steps (`--text-sm` 13px, `--text-base` 15px,
-  `--text-lg` 18px) and about sixty literal sizes over 17 distinct values (`Q-16`). The tranche writes the
-  scale every stylesheet uses (proposal: 11 / 12 / 13 / 15 / 18 / 22 / 28, named), and no
-  literal size remains outside `tokens.css` and skins.
+- **Type scale**: seven named steps in `tokens.css`: 11 / 12 / 13 / 15 / 18 / 22 / 28 px
+  (`--text-2xs` through `--text-2xl`). The settings sheets use them; the other shell and
+  plugin sheets adopt them in their tranches. `--input-text-min` keeps the 16 px iOS zoom
+  prevention floor on controls without adding a type-scale step.
 - **Spacing**: the six steps of `tokens.css` (4 to 32 px) on a 4 px grid.
-- **Radii — TARGET**: one set, used; the pill is `--radius-pill` everywhere (today `999px`
-  and `20px` coexist); no token used and never defined (`--text-xs`, `--radius-md`,
-  `--on-accent` today).
+- **Radii**: 6 / 10 / 14 px and a 999 px pill (`--radius-sm`, `--radius`, `--radius-lg`,
+  `--radius-pill`); legacy micro, control and bubble roles alias this set, while round
+  remains 50%. `--radius-md` is intentionally absent; its chat uses move to `--radius-sm`
+  in that tranche. `--text-xs` and `--on-accent` are defined.
 - **Depth**: as inherited — three shadow depths on white cards over a tinted canvas in
   light; borders and planes in dark. One strategy per theme, kept.
 - **Icons — TARGET**: one set, **Lucide**, bundled by the product (no CDN: the instance may
@@ -100,24 +101,93 @@ WCAG 2.2 AA: text 4.5:1 (3:1 at 24 px or 18.66 px bold), non-text 3:1, colour ne
 focus visible and not hidden, targets 24 × 24 px. Measured with
 `charte-graphique/scripts/contraste.py` (or the browser's inspector), in both themes.
 
-Measured at framing on the base palette (light unless stated):
+The base palette table is printed by `packages/web/test/contrast.test.ts`. Regenerate it
+with `UPDATE_CONTRAST_TABLE=1 npx vitest run packages/web/test/contrast.test.ts`.
+The four skins are measured by the skin contrast tranche.
 
+<!-- base-contrast:start -->
 | Foreground | Background | Theme | Ratio | Threshold | Result |
 |---|---|---|---|---|---|
+| `--text` #151a22 | `--surface` #eef1f6 | light | 15.42 | 4.5 | ok |
+| `--text` #e9ecf3 | `--surface` #0b0d12 | dark | 16.43 | 4.5 | ok |
+| `--text` #151a22 | `--surface-raised` #ffffff | light | 17.46 | 4.5 | ok |
+| `--text` #e9ecf3 | `--surface-raised` #141821 | dark | 15.02 | 4.5 | ok |
+| `--text` #151a22 | `--surface-soft` #f4f6fa | light | 16.14 | 4.5 | ok |
+| `--text` #e9ecf3 | `--surface-soft` #1a1f29 | dark | 13.96 | 4.5 | ok |
+| `--text` #151a22 | `--surface-sunken` #e5e9f0 | light | 14.34 | 4.5 | ok |
+| `--text` #e9ecf3 | `--surface-sunken` #07090d | dark | 16.85 | 4.5 | ok |
 | `--text-muted` #586274 | `--surface` #eef1f6 | light | 5.43 | 4.5 | ok |
-| `--text-faint` #98a2b2 | `--surface` #eef1f6 | light | 2.28 | 4.5 | fail |
-| `--text-faint` #98a2b2 | `--surface-raised` #ffffff | light | 2.58 | 4.5 | fail |
-| `--text-faint` #59616f | `--surface-raised` dark | dark | ≈2.6–2.85 | 4.5 | fail |
-| `--accent` #0e8fa6 as text | #ffffff | light | 3.82 | 4.5 | fail |
-| `--warning` #b4771b | #ffffff | light | 3.75 | 4.5 | fail |
-| `--success` #2e9e63 | #ffffff | light | 3.39 | 4.5 | fail |
-| `--danger` #d24b3e | #ffffff | light | 4.36 | 4.5 | fail |
+| `--text-muted` #98a2b3 | `--surface` #0b0d12 | dark | 7.55 | 4.5 | ok |
+| `--text-muted` #586274 | `--surface-raised` #ffffff | light | 6.15 | 4.5 | ok |
+| `--text-muted` #98a2b3 | `--surface-raised` #141821 | dark | 6.90 | 4.5 | ok |
+| `--text-muted` #586274 | `--surface-soft` #f4f6fa | light | 5.68 | 4.5 | ok |
+| `--text-muted` #98a2b3 | `--surface-soft` #1a1f29 | dark | 6.41 | 4.5 | ok |
+| `--text-muted` #586274 | `--surface-sunken` #e5e9f0 | light | 5.05 | 4.5 | ok |
+| `--text-muted` #98a2b3 | `--surface-sunken` #07090d | dark | 7.74 | 4.5 | ok |
+| `--text-faint` #5d697d | `--surface` #eef1f6 | light | 4.90 | 4.5 | ok |
+| `--text-faint` #7d8797 | `--surface` #0b0d12 | dark | 5.35 | 4.5 | ok |
+| `--text-faint` #5d697d | `--surface-raised` #ffffff | light | 5.55 | 4.5 | ok |
+| `--text-faint` #7d8797 | `--surface-raised` #141821 | dark | 4.89 | 4.5 | ok |
+| `--text-faint` #5d697d | `--surface-soft` #f4f6fa | light | 5.13 | 4.5 | ok |
+| `--text-faint` #7d8797 | `--surface-soft` #1a1f29 | dark | 4.55 | 4.5 | ok |
+| `--text-faint` #5d697d | `--surface-sunken` #e5e9f0 | light | 4.56 | 4.5 | ok |
+| `--text-faint` #7d8797 | `--surface-sunken` #07090d | dark | 5.49 | 4.5 | ok |
+| `--accent-text` #0b7386 | `--surface` #eef1f6 | light | 4.87 | 4.5 | ok |
+| `--accent-text` #4ecad8 | `--surface` #0b0d12 | dark | 9.96 | 4.5 | ok |
+| `--accent-text` #0b7386 | `--surface-raised` #ffffff | light | 5.51 | 4.5 | ok |
+| `--accent-text` #4ecad8 | `--surface-raised` #141821 | dark | 9.10 | 4.5 | ok |
+| `--accent-text` #0b7386 | `--surface-soft` #f4f6fa | light | 5.09 | 4.5 | ok |
+| `--accent-text` #4ecad8 | `--surface-soft` #1a1f29 | dark | 8.46 | 4.5 | ok |
+| `--accent-text` #0b7386 | `--surface-sunken` #e5e9f0 | light | 4.53 | 4.5 | ok |
+| `--accent-text` #4ecad8 | `--surface-sunken` #07090d | dark | 10.21 | 4.5 | ok |
+| `--danger-text` #be392c | `--surface` #eef1f6 | light | 4.87 | 4.5 | ok |
+| `--danger-text` #ea6a5c | `--surface` #0b0d12 | dark | 6.21 | 4.5 | ok |
+| `--danger-text` #be392c | `--surface-raised` #ffffff | light | 5.51 | 4.5 | ok |
+| `--danger-text` #ea6a5c | `--surface-raised` #141821 | dark | 5.68 | 4.5 | ok |
+| `--danger-text` #be392c | `--surface-soft` #f4f6fa | light | 5.09 | 4.5 | ok |
+| `--danger-text` #ea6a5c | `--surface-soft` #1a1f29 | dark | 5.28 | 4.5 | ok |
+| `--danger-text` #be392c | `--surface-sunken` #e5e9f0 | light | 4.53 | 4.5 | ok |
+| `--danger-text` #ea6a5c | `--surface-sunken` #07090d | dark | 6.37 | 4.5 | ok |
+| `--warning-text` #8f5e15 | `--surface` #eef1f6 | light | 4.91 | 4.5 | ok |
+| `--warning-text` #e0a64f | `--surface` #0b0d12 | dark | 9.01 | 4.5 | ok |
+| `--warning-text` #8f5e15 | `--surface-raised` #ffffff | light | 5.56 | 4.5 | ok |
+| `--warning-text` #e0a64f | `--surface-raised` #141821 | dark | 8.24 | 4.5 | ok |
+| `--warning-text` #8f5e15 | `--surface-soft` #f4f6fa | light | 5.13 | 4.5 | ok |
+| `--warning-text` #e0a64f | `--surface-soft` #1a1f29 | dark | 7.66 | 4.5 | ok |
+| `--warning-text` #8f5e15 | `--surface-sunken` #e5e9f0 | light | 4.56 | 4.5 | ok |
+| `--warning-text` #e0a64f | `--surface-sunken` #07090d | dark | 9.24 | 4.5 | ok |
+| `--success-text` #23774b | `--surface` #eef1f6 | light | 4.87 | 4.5 | ok |
+| `--success-text` #5cbe83 | `--surface` #0b0d12 | dark | 8.47 | 4.5 | ok |
+| `--success-text` #23774b | `--surface-raised` #ffffff | light | 5.51 | 4.5 | ok |
+| `--success-text` #5cbe83 | `--surface-raised` #141821 | dark | 7.74 | 4.5 | ok |
+| `--success-text` #23774b | `--surface-soft` #f4f6fa | light | 5.09 | 4.5 | ok |
+| `--success-text` #5cbe83 | `--surface-soft` #1a1f29 | dark | 7.19 | 4.5 | ok |
+| `--success-text` #23774b | `--surface-sunken` #e5e9f0 | light | 4.52 | 4.5 | ok |
+| `--success-text` #5cbe83 | `--surface-sunken` #07090d | dark | 8.68 | 4.5 | ok |
+| `--accent` #0e8fa6 | `--surface` #eef1f6 | light | 3.37 | 3 | ok |
+| `--accent` #4ecad8 | `--surface` #0b0d12 | dark | 9.96 | 3 | ok |
+| `--accent` #0e8fa6 | `--surface-raised` #ffffff | light | 3.82 | 3 | ok |
+| `--accent` #4ecad8 | `--surface-raised` #141821 | dark | 9.10 | 3 | ok |
+| `--accent` #0e8fa6 | `--surface-soft` #f4f6fa | light | 3.53 | 3 | ok |
+| `--accent` #4ecad8 | `--surface-soft` #1a1f29 | dark | 8.46 | 3 | ok |
+| `--accent` #0e8fa6 | `--surface-sunken` #e5e9f0 | light | 3.14 | 3 | ok |
+| `--accent` #4ecad8 | `--surface-sunken` #07090d | dark | 10.21 | 3 | ok |
+| `--on-accent` #010c0f | `--accent` #0e8fa6 | light | 5.18 | 4.5 | ok |
+| `--on-accent` #010c0f | `--accent` #4ecad8 | dark | 10.15 | 4.5 | ok |
+| `--on-accent` #010c0f | `--danger` #d24b3e | light | 4.54 | 4.5 | ok |
+| `--on-accent` #010c0f | `--danger` #ea6a5c | dark | 6.33 | 4.5 | ok |
+| `--on-accent` #010c0f | `--warning` #b4771b | light | 5.27 | 4.5 | ok |
+| `--on-accent` #010c0f | `--warning` #e0a64f | dark | 9.18 | 4.5 | ok |
+| `--on-accent` #010c0f | `--success` #2e9e63 | light | 5.83 | 4.5 | ok |
+| `--on-accent` #010c0f | `--success` #5cbe83 | dark | 8.62 | 4.5 | ok |
+<!-- base-contrast:end -->
 
-**TARGET**: every pair of the base palette and of each skin's palette, both themes, listed
-here; the failing ones corrected. The correction keeps each hue and moves its lightness only
-as far as the threshold needs: either the token itself, or a distinct `*-text` token where a
-colour must stay bright as a fill but needs a darker twin as text (as `--accent-text`
-already does for text on the accent).
+Corrections keep each hue and move lightness only. Bright fills keep their colour;
+`--accent-text`, `--danger-text`, `--warning-text` and `--success-text` are their text twins
+on surfaces. `--on-accent` is dark ink on bright fills, in both themes: white fails on the
+inherited accents. Its lightness also lets the unchanged danger, warning and success
+fills carry a label at AA. `--text-faint` is corrected in both themes; placeholders have
+the same 4.5:1 floor as other text.
 
 ## 6. Accepted departures
 
@@ -145,8 +215,8 @@ folded into them.
 - **Radii**: `--radius-sm` 6px, `--radius` 10px (as inherited), `--radius-lg` 14px,
   `--radius-pill` 999px. `--radius-md` is not defined (its three uses take `--radius-sm`).
 - **Previously undefined tokens** are defined or replaced: `--text-xs` (above), `--on-accent`
-  (text on a filled accent, white in both themes), `--lc` (not used by any markup: the rule
-  goes with the plugin tranche).
+  (dark ink on a filled accent in both themes, also suitable for danger, warning and
+  success fills), `--lc` (not used by any markup: the rule goes with the plugin tranche).
 - **Focus ring**: one rule, `:focus-visible { outline: 2px solid var(--accent-text);
   outline-offset: 2px }`, on `:root`-level selectors; `outline: none` stays only where the same
   rule paints a visible replacement (a 2 px `box-shadow` ring). Mouse clicks show nothing.
@@ -156,12 +226,14 @@ folded into them.
 
 ### 7.2 Contrast, measured by a test
 
-A test in `packages/web/test` (`contrast.test.ts`) reads `tokens.css` and the four
-`skins/*/skin.css`, resolves each theme (evaluating `light-dark()` and `var()`), and
+A test in `packages/web/test` (`contrast.test.ts`) reads `tokens.css` (the skin contrast
+tranche extends it to the four `skins/*/skin.css`), resolves each theme (evaluating
+`light-dark()` and `var()`), and
 computes the WCAG ratio of every **declared pair**: `--text`, `--text-muted`, `--text-faint`,
-`--accent-text`, `--danger`, `--warning`, `--success`, `--accent` (as text and as a non-text
-3:1 edge) over `--surface`, `--surface-raised`, `--surface-soft`, `--surface-sunken`, and
-`--accent-text` over `--accent`, plus each skin's own text tokens over its surfaces. It fails
+`--accent-text`, `--danger-text`, `--warning-text`, `--success-text` (as text),
+`--accent` (as a non-text 3:1 edge) over `--surface`, `--surface-raised`, `--surface-soft`, `--surface-sunken`, and
+`--on-accent` over `--accent`, `--danger`, `--warning`, `--success`, plus each skin's own
+text tokens over its surfaces. It fails
 for a pair under its threshold that is not listed in § 6, and it prints the table that § 5
 holds (the file is regenerated from the test's output, not typed). The list of pairs is data
 in the test, so a pair added to the palette is a line to add.

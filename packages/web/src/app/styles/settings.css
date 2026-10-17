@@ -60,7 +60,7 @@
   cursor: pointer;
 }
 
-.adestia-cog__signout:hover { border-color: var(--accent); color: var(--accent); }
+.adestia-cog__signout:hover { border-color: var(--accent); color: var(--accent-text); }
 
 .adestia-cog__who { color: var(--text-faint); font-size: var(--text-sm); }
 
@@ -115,7 +115,7 @@
   font-weight: 600;
 }
 
-.adestia-choices__choice:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.adestia-choices__choice:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 1px; }
 
 /* One MCP server, opened ------------------------------------------------- */
 
@@ -140,12 +140,12 @@
   border-radius: var(--radius);
   background: var(--surface-raised);
   color: var(--text);
-  font: 13.5px/1.65 var(--font-code);
+  font: var(--text-sm)/1.65 var(--font-code);
   resize: vertical;
   tab-size: 2;
 }
 
-.adestia-mcp__config:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.adestia-mcp__config:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 1px; }
 .adestia-mcp__config[readonly] { background: var(--surface-sunken); color: var(--text-muted); }
 
 .adestia-mcp__bar {
@@ -165,7 +165,7 @@
   color: var(--text-muted);
 }
 
-.adestia-mcp__drop:hover { border-color: var(--danger); color: var(--danger); }
+.adestia-mcp__drop:hover { border-color: var(--danger); color: var(--danger-text); }
 
 /* The reason takes the whole next line: it is a sentence from the CLI, and
    squeezing it beside a pill truncates the part that explains anything. */
@@ -234,4 +234,4 @@
   color: var(--text-muted);
 }
 
-.adestia-fatal h1 { color: var(--danger); font-size: var(--text-lg); }
+.adestia-fatal h1 { color: var(--danger-text); font-size: var(--text-lg); }

@@ -458,7 +458,7 @@
 .adestia-pill--on {
   background: var(--tile-color, var(--accent));
   border-color: var(--tile-color, var(--accent));
-  color: var(--accent-text);
+  color: var(--on-accent);
 }
 
 /* What is over, folded away — still counted, one click from being read. */

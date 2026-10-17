@@ -39,7 +39,7 @@
 .adestia-settings__actions button:last-child {
   background: var(--accent);
   border-color: var(--accent);
-  color: var(--accent-text);
+  color: var(--on-accent);
 }
 
 .adestia-settings__actions button:disabled {
@@ -58,7 +58,7 @@
   font-size: var(--text-sm);
 }
 
-.adestia-arming a { color: var(--accent); }
+.adestia-arming a { color: var(--accent-text); }
 
 .adestia-arming__label {
   display: flex;
@@ -89,7 +89,7 @@
   background: var(--surface);
   color: var(--text);
   font-family: var(--font-code);
-  font-size: max(16px, var(--text-sm));
+  font-size: max(var(--input-text-min), var(--text-sm));
 }
 
 .adestia-signin {
@@ -102,14 +102,14 @@
   text-align: center;
 }
 
-.adestia-signin h1 { margin: 0; font-size: 2rem; }
+.adestia-signin h1 { margin: 0; font-size: var(--text-2xl); }
 .adestia-signin p { margin: 0; color: var(--text-muted); }
 
 .adestia-signin__button {
   padding: var(--space-2) var(--space-5);
   border-radius: var(--radius);
   background: var(--accent);
-  color: var(--accent-text);
+  color: var(--on-accent);
   text-decoration: none;
   font-weight: 500;
 }
@@ -185,7 +185,7 @@
 }
 
 .adestia-config__from--edited {
-  color: var(--accent);
+  color: var(--accent-text);
   border-color: var(--accent);
 }
 
@@ -216,7 +216,7 @@
   background: var(--surface);
   color: var(--text);
   font: inherit;
-  font-size: max(16px, var(--text-sm));
+  font-size: max(var(--input-text-min), var(--text-sm));
 }
 
 .adestia-config__field input:disabled,
