@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react'
 
-import { requestJson } from '../request.js'
+import { jsonInit, requestJson } from '../request.js'
 import type { RestartState } from './model.js'
 
 /**
@@ -23,24 +23,19 @@ export function useRestart(
     async (force: boolean) => {
       onAsk()
       setRestart({ kind: 'asking' })
-      // Not `requestJson`: a refusal here carries DATA — how many turns run —
-      // and the helper keeps only a refusal's message.
-      try {
-        const response = await fetchImpl('/api/restart', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify(force ? { force: true } : {}),
-        })
-        if (response.status === 409) {
-          const body = (await response.json().catch(() => ({}))) as { running?: number }
-          setRestart({ kind: 'blocked', running: body.running ?? 1 })
-          return
-        }
-        if (!response.ok) {
-          setRestart({ kind: 'failed', message: t('The instance could not be restarted.') })
-          return
-        }
-      } catch {
+      const result = await requestJson<unknown>(
+        fetchImpl,
+        '/api/restart',
+        jsonInit('POST', force ? { force: true } : {}),
+        t,
+      )
+      if (!result.ok && result.status === 409) {
+        // A refusal here carries DATA — how many turns run.
+        const body = result.data as { running?: number } | null | undefined
+        setRestart({ kind: 'blocked', running: body?.running ?? 1 })
+        return
+      }
+      if (!result.ok) {
         setRestart({ kind: 'failed', message: t('The instance could not be restarted.') })
         return
       }

@@ -22,13 +22,18 @@ describe('requestJson', () => {
 
   it('carries the server error of a refusal', async () => {
     const result = await requestJson(reply('{"error":"nope"}', 409), '/x', undefined, said)
-    expect(result).toEqual({ ok: false, status: 409, error: 'nope' })
+    expect(result).toEqual({ ok: false, status: 409, error: 'nope', data: { error: 'nope' } })
+  })
+
+  it('keeps the parsed body of a refusal, for one that carries figures', async () => {
+    const result = await requestJson(reply('{"running":2}', 409), '/x', undefined, said)
+    expect((result as { data: unknown }).data).toEqual({ running: 2 })
   })
 
   it('falls back to a sentence in the locale when the refusal has no error', async () => {
     for (const body of ['{}', '', 'not json', '{"error":""}', '{"error":3}', 'null']) {
       const result = await requestJson(reply(body, 500), '/x', undefined, said)
-      expect(result).toEqual({ ok: false, status: 500, error: 'échec (500)' })
+      expect(result).toMatchObject({ ok: false, status: 500, error: 'échec (500)' })
     }
   })
 

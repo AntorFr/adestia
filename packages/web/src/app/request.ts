@@ -3,7 +3,8 @@
  *
  * `requestJson` never throws: a network error is `{ ok: false, status: 0 }`, an
  * empty or non-JSON body is `data: undefined`-safe, and a refusal carries the
- * server's own `error` or a fallback SAID IN THE LOCALE (Q-4) — `t` is the
+ * server's own `error` (and its parsed body in `data`, for a refusal that
+ * carries figures) or a fallback SAID IN THE LOCALE (Q-4) — `t` is the
  * caller's translator, so the helper stays free of any language state.
  * `fetchImpl` stays the injected dependency. What a failure MEANS (silence, an
  * inline message) remains the call site's; only the plumbing lives here.
@@ -11,7 +12,7 @@
 
 export type RequestResult<T> =
   | { readonly ok: true; readonly status: number; readonly data: T }
-  | { readonly ok: false; readonly status: number; readonly error: string }
+  | { readonly ok: false; readonly status: number; readonly error: string; readonly data?: unknown }
 
 /** The key of the fallback sentence; `%n` stands for the status. */
 export const FALLBACK_KEY = 'request failed (%n)'
@@ -43,6 +44,7 @@ export async function requestJson<T = unknown>(
       ok: false,
       status: response.status,
       error: typeof error === 'string' && error !== '' ? error : fallback(response.status),
+      data: body,
     }
   }
   return { ok: true, status: response.status, data: body as T }
