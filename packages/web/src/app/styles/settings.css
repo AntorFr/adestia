@@ -228,10 +228,3 @@
 .adestia-problems h2 { margin: 0 0 var(--space-2); font-size: var(--text-base); }
 .adestia-problems ul { margin: 0; padding-left: var(--space-4); }
 
-.adestia-loading,
-.adestia-fatal {
-  padding: var(--space-6);
-  color: var(--text-muted);
-}
-
-.adestia-fatal h1 { color: var(--danger-text); font-size: var(--text-lg); }

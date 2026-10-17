@@ -376,6 +376,8 @@ const FR: Readonly<Record<string, string>> = {
   'Not allowed': 'Accès refusé',
   'This instance requires you to sign in.': 'Cette instance demande une connexion.',
   'Adestia could not start': 'Adestia n’a pas pu démarrer',
+  'You are signed in, but your account is not in a group this instance admits. Ask whoever runs it to add you.':
+    'Votre session est ouverte, mais votre compte n’est dans aucun groupe admis par cette instance. Demandez à son responsable de vous y ajouter.',
   'That app is not active on this instance.': 'Cette app n’est pas activée sur cette instance.',
   'Turn interrupted.': 'Tour interrompu.',
   // Signatures asked for at the hub's façade

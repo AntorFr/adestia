@@ -81,7 +81,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
     [],
   )
 
-  const { instance, failures, fatal, needsLogin, pages, stores, skin, skinScheme, loaded } =
+  const { instance, failures, fatal, offline, needsLogin, pages, stores, skin, skinScheme, loaded } =
     useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef, onTrail })
 
   /**
@@ -264,9 +264,9 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   )
 
   if (needsLogin === 'refused') return <RefusedGate t={t} />
-  if (needsLogin === 'signin') return <SignInGate />
-  if (fatal) return <FatalGate t={t} message={fatal} />
-  if (!instance) return <LoadingGate />
+  if (needsLogin === 'signin') return <SignInGate t={t} />
+  if (fatal) return <FatalGate t={t} message={fatal} offline={offline} />
+  if (!instance) return <LoadingGate t={t} />
 
   const slotUser = skinUser(instance)
 

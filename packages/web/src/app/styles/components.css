@@ -22,6 +22,7 @@
   font-size: var(--text-sm);
   font-weight: 500;
   white-space: nowrap;
+  text-decoration: none;
   cursor: pointer;
 }
 
@@ -278,3 +279,37 @@
   color: var(--accent-text);
   box-shadow: var(--shadow-sm);
 }
+
+/* The focus ring of a button or a link drawn as one: the same ring as the fields'. */
+.adestia-btn:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
+
+/* Gates (E-1, E-21): one centred card before the shell exists ------------------ */
+
+.adestia-gate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: var(--space-4);
+  background: var(--surface);
+}
+
+.adestia-gate__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 420px;
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.adestia-gate__icon { display: inline-flex; font-size: 28px; color: var(--text-muted); }
+.adestia-gate__icon--danger { color: var(--danger-text); }
+.adestia-gate__title { margin: 0; font-size: var(--text-xl); }
+.adestia-gate__text { margin: 0; color: var(--text-muted); overflow-wrap: anywhere; }

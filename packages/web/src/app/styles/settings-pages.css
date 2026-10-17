@@ -92,28 +92,6 @@
   font-size: max(var(--input-text-min), var(--text-sm));
 }
 
-.adestia-signin {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-4);
-  height: 100dvh;
-  text-align: center;
-}
-
-.adestia-signin h1 { margin: 0; font-size: var(--text-2xl); }
-.adestia-signin p { margin: 0; color: var(--text-muted); }
-
-.adestia-signin__button {
-  padding: var(--space-2) var(--space-5);
-  border-radius: var(--radius);
-  background: var(--accent);
-  color: var(--on-accent);
-  text-decoration: none;
-  font-weight: 500;
-}
-
 /* ── The configuration screen ────────────────────────────────────────────
    A form, not a file. The layout carries one claim: the LABEL and its
    control sit on one line, and the sentence explaining the setting sits
