@@ -268,7 +268,7 @@ stops shipping Playwright.
   `light` and `dark`, to `<out>/<skin>/<E-n>-<name>-<theme>-<viewport>.png` (default `<out>` is
   `bench/shots-sweep`, ignored by git). A screen table in the script lists, per `E-n`, the
   route, the gesture that opens it and the **selector that proves it is that screen**; a capture
-  whose selector is absent, or that shows `.adestia-fatal` or a loading state, fails the sweep
+  whose selector is absent, or that shows `.adestia-gate__card--fatal` or a loading state, fails the sweep
   and names the screen. The sweep exits non-zero on any failure and prints a count.
 - **docker.** `bench/run.sh` and `bench/bench.mjs` are untouched except that the Playwright
   import falls back from `/usr/lib/node_modules` to the global root. Scenarios keep working.
@@ -596,3 +596,11 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
   file and a rename, so a config file kept at 0600 comes back in the umask's default mode.
 - **`user-tokens.json` holds access tokens too**, with their expiry, where the module comment
   says refresh tokens only.
+- **Skippy's status banner wraps onto two lines on the phone**, found by the sweep at phone
+  width; not fixed by this epic.
+- **E-14: the switch sits apart from its title on the phone**, the row wrapping between them.
+  Seen in the sweep; left for the pages tranche.
+- **E-19 detail in English under the French locale** when the server sent no code: the detail
+  is then the raw server text, which no catalogue translates.
+- **A catalogue token field has no `autoComplete`**, so a browser may offer to fill or save it
+  as a password.
