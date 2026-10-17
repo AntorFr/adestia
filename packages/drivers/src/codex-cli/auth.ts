@@ -44,7 +44,7 @@ export const CREDENTIAL_KEY = 'CODEX_AUTH_JSON'
 
 export const AUTH_FILE = 'auth.json'
 
-export interface CodexAuthDocument {
+interface CodexAuthDocument {
   readonly auth_mode?: string
   readonly OPENAI_API_KEY?: string | null
   readonly tokens?: {
@@ -161,7 +161,7 @@ export function codexEnv(
  * which is what this reads; the prose around it is pinned to a binary version,
  * not to a documented API.
  */
-export type CodexAuthProblem = 'absent' | 'invalid' | 'unknown'
+type CodexAuthProblem = 'absent' | 'invalid' | 'unknown'
 
 const AUTH_RULES: readonly AuthErrorRule<CodexAuthProblem>[] = [
   { problem: 'invalid', all: ['invalid_api_key'] },

@@ -15,7 +15,7 @@ import {
   type AuthErrorRule,
 } from '../engine-aids.js'
 
-export type CopilotAuthProblem = 'absent' | 'classic-pat' | 'unvalidated' | 'unknown'
+type CopilotAuthProblem = 'absent' | 'classic-pat' | 'unvalidated' | 'unknown'
 
 const AUTH_RULES: readonly AuthErrorRule<CopilotAuthProblem>[] = [
   { problem: 'absent', all: ['no authentication information found'] },

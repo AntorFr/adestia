@@ -36,7 +36,7 @@ import {
   refreshCatalogue,
 } from '../instruction-catalogues-refresh.js'
 
-export interface CatalogueRoutesOptions {
+interface CatalogueRoutesOptions {
   readonly driver: Driver
   readonly workspaceRoot: string
   readonly dataDir: string

@@ -34,13 +34,13 @@ import type { Store } from './stores.js'
 export const CONTRACT_NAME = 'this-instance'
 
 /** One tool of the instance's own registry, as the contract lists it. */
-export interface ToolFact {
+interface ToolFact {
   readonly name: string
   readonly description: string
 }
 
 /** One active plugin, as the contract lists it. */
-export interface AppFact {
+interface AppFact {
   readonly id: string
   readonly label: string
   readonly description: string

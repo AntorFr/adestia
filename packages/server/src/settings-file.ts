@@ -43,7 +43,7 @@ export interface SettingChange {
   readonly value: unknown
 }
 
-export interface WriteRefusal {
+interface WriteRefusal {
   readonly reason: string
   /** Which of the two kinds of no this is, so the route can pick its status. */
   readonly kind: 'invalid' | 'stale' | 'read-only' | 'unreadable'
@@ -131,7 +131,7 @@ export async function replaceContents(
 }
 
 /** The file's revision, same shape as a page's: mtime and size. */
-export async function revisionOfFile(file: string): Promise<string | undefined> {
+async function revisionOfFile(file: string): Promise<string | undefined> {
   try {
     const info = await stat(file)
     return `${Math.trunc(info.mtimeMs)}-${info.size}`

@@ -39,7 +39,7 @@ export interface DeviceAuthLogin {
   cancel(): void
 }
 
-export interface StartLoginOptions {
+interface StartLoginOptions {
   readonly command: string
   /** A throwaway home: the login writes `auth.json` into it and nothing else. */
   readonly home: string

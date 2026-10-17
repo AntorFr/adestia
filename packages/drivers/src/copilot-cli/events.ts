@@ -13,7 +13,7 @@ import { health, truncate, usageOf as usageFrom } from '../engine-aids.js'
 import { signatureRequests } from '../signatures.js'
 
 /** The envelope every line shares. */
-export interface CopilotEvent {
+interface CopilotEvent {
   readonly type: string
   readonly data?: Record<string, unknown>
   readonly ephemeral?: boolean
@@ -52,7 +52,7 @@ export function toolTargetOf(data: Record<string, unknown> | undefined): string 
   return undefined
 }
 
-export const usageOf = copilotUsage
+const usageOf = copilotUsage
 
 function copilotUsage(data: Record<string, unknown> | undefined): TurnUsage | undefined {
   const usage = data?.['usage']
@@ -70,7 +70,7 @@ function copilotUsage(data: Record<string, unknown> | undefined): TurnUsage | un
   })
 }
 
-export interface TranslationState {
+interface TranslationState {
   /** Tool calls awaiting their result, by call id. */
   readonly pending: Map<string, string>
   sessionId: string

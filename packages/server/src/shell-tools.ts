@@ -43,7 +43,7 @@ import { listAll, type Store } from './stores.js'
 /** A failure worded for the AGENT — anything else is logged, not forwarded. */
 class ShellToolError extends Error {}
 
-export interface ShellToolContext {
+interface ShellToolContext {
   readonly userId: string
   readonly conversationId: string
 }
@@ -130,7 +130,7 @@ interface TokenEntry {
   readonly expiresAt: number
 }
 
-export interface ShellToolsOptions {
+interface ShellToolsOptions {
   readonly dataDir: string
   readonly conversations: ConversationStore
   /**

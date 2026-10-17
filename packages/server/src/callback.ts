@@ -100,4 +100,4 @@ export async function verifySettled(
 }
 
 // The route registration lives under `routes/`; kept importable from here.
-export { registerCallback, type CallbackDependencies } from './routes/callback.js'
+export { registerCallback } from './routes/callback.js'

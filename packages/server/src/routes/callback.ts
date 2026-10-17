@@ -16,7 +16,7 @@ const JOB_ID = /^[A-Za-z0-9-]{8,64}$/
     not wake the agent twice for one settlement. */
 const SEEN_TTL_MS = 60 * 60 * 1000
 
-export interface CallbackDependencies {
+interface CallbackDependencies {
   /** Every outbound server this instance may call — config, plugin and UI
       layers merged, credentials included. The verification path. */
   servers(): Promise<readonly McpServerConfig[]>

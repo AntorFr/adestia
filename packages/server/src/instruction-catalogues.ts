@@ -34,7 +34,7 @@ import { field, parseFrontmatter } from './frontmatter.js'
 import { MANAGED_MARKER, stamped } from './skills.js'
 import type { CatalogueImport, InstructionCatalogue, InstructionCataloguesStore } from './instruction-catalogues-store.js'
 
-export type CatalogueItemKind = 'skill' | 'agent' | 'instruction'
+type CatalogueItemKind = 'skill' | 'agent' | 'instruction'
 
 export interface CatalogueItem {
   /** Catalogue-relative, forward slashes: the folder for a skill, the file otherwise. */
@@ -225,7 +225,7 @@ async function copyMarkedTree(sourceDir: string, targetDir: string): Promise<voi
   }
 }
 
-export interface MaterializeOptions {
+interface MaterializeOptions {
   readonly workspaceRoot: string
   /** The active driver's declared zones — `instructionZones(driver)`. */
   readonly zones: readonly InstructionZone[]

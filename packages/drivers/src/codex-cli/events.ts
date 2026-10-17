@@ -90,7 +90,7 @@ function codexUsage(total: Record<string, unknown> | undefined): TurnUsage | und
   return usageFrom({ inputTokens, outputTokens, cacheReadTokens, cacheWriteTokens })
 }
 
-export interface TranslationState {
+interface TranslationState {
   threadId: string
   stopped: boolean
   /** Last cumulative output-token reading, so deltas are deltas. */

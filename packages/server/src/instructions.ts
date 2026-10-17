@@ -37,7 +37,7 @@ import type { InstructionKind, InstructionZone } from '@antorfr/adestia-drivers'
 import { field, parseFrontmatter } from './frontmatter.js'
 import { MANAGED_MARKER } from './skills.js'
 
-export interface InstructionFile {
+interface InstructionFile {
   /** Workspace-relative, forward slashes, as the API speaks. */
   readonly path: string
   readonly modified: string
@@ -139,7 +139,7 @@ async function walk(
 }
 
 /** A declared path, what it holds, and whether it is one file or many. */
-export interface InstructionPath {
+interface InstructionPath {
   readonly path: string
   /** The SHAPE on disk: one file, or a folder holding many. */
   readonly kind: 'file' | 'folder'
