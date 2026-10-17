@@ -20,6 +20,9 @@ const CHARTE = [
   'sliders-horizontal', 'handshake', 'monitor', 'sun', 'moon', 'log-out', 'key-round', 'lock',
   'users', 'check', 'circle-alert', 'triangle-alert', 'info', 'wifi-off', 'refresh-cw', 'copy',
   'external-link', 'loader-circle',
+  // Added by the chat rail task (charte § 7.3 gaps).
+  'list', 'panel-right-open', 'archive', 'paperclip', 'chevron-down', 'square', 'arrow-up', 'clock',
+  'pen-line',
 ]
 
 afterEach(() => {
@@ -48,7 +51,7 @@ describe('icon sprite', () => {
     mountSprite()
     mountSprite()
     expect(document.querySelectorAll('#adestia-icon-sprite')).toHaveLength(1)
-    expect(document.querySelectorAll('symbol')).toHaveLength(33)
+    expect(document.querySelectorAll('symbol')).toHaveLength(42)
   })
 
   it('is decorative and takes the text colour, not a hard-coded one', () => {

@@ -1,97 +1,108 @@
 <section class="adestia-chat">
 <header class="adestia-chat__header">
 <span class="adestia-brandname">Corps</span>
-<select class="adestia-model" aria-label="Model" title="Model">
+<span class="adestia-model-wrap">
+<select class="adestia-model adestia-select" aria-label="Model" title="Model">
 <option value="">Auto</option>
 <option value="m-a">Modèle A</option>
 </select>
+<svg class="adestia-icon" aria-hidden="true" focusable="false">
+<use href="#adestia-i-chevron-down">
+</use>
+</svg>
+</span>
 <span class="adestia-chat__spacer">
 </span>
-<button type="button" class="adestia-ib" aria-label="Conversations" aria-expanded="true">▤</button>
-<button type="button" class="adestia-ib" aria-label="New conversation">＋</button>
-<button type="button" class="adestia-ib" aria-label="Open apps">▥</button>
+<button type="button" class="adestia-ib adestia-btn adestia-btn--icon" aria-label="Conversations" title="Conversations" aria-expanded="true">
+<svg class="adestia-icon" aria-hidden="true" focusable="false">
+<use href="#adestia-i-list">
+</use>
+</svg>
+</button>
+<button type="button" class="adestia-ib adestia-btn adestia-btn--icon" aria-label="New conversation" title="New conversation">
+<svg class="adestia-icon" aria-hidden="true" focusable="false">
+<use href="#adestia-i-plus">
+</use>
+</svg>
+</button>
+<button type="button" class="adestia-ib adestia-btn adestia-btn--icon" aria-label="Open apps" title="Open apps">
+<svg class="adestia-icon" aria-hidden="true" focusable="false">
+<use href="#adestia-i-panel-right-open">
+</use>
+</svg>
+</button>
 </header>
 <div class="adestia-tabs" role="tablist">
 <div class="adestia-tab" role="tab" aria-selected="false" draggable="true">
 <button type="button" class="adestia-tab__pick" title="Fil deux">
-<span class="adestia-dot adestia-dot--idle" aria-hidden="true">
+<span class="adestia-dot adestia-dot--idle" role="img" aria-label="Idle" title="Idle">
 </span>
 <span class="adestia-tab__title">Fil deux</span>
 </button>
-<button type="button" class="adestia-tab__tool" aria-label="Archive — Fil deux" title="Archive">
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-<rect x="3" y="4" width="18" height="4" rx="1">
-</rect>
-<path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8">
-</path>
-<path d="M10 12h4">
-</path>
+<button type="button" class="adestia-tab__tool adestia-btn adestia-btn--ghost adestia-btn--icon" aria-label="Archive — Fil deux" title="Archive">
+<svg class="adestia-icon" aria-hidden="true" focusable="false">
+<use href="#adestia-i-archive">
+</use>
 </svg>
 </button>
-<button type="button" class="adestia-tab__tool" aria-label="Close tab — Fil deux" title="Close tab">×</button>
+<button type="button" class="adestia-tab__tool adestia-btn adestia-btn--ghost adestia-btn--icon" aria-label="Close tab — Fil deux" title="Close tab">
+<svg class="adestia-icon" aria-hidden="true" focusable="false">
+<use href="#adestia-i-x">
+</use>
+</svg>
+</button>
 </div>
 <div class="adestia-tab adestia-tab--active" role="tab" aria-selected="true" draggable="true">
 <button type="button" class="adestia-tab__pick" title="Fil un">
-<span class="adestia-dot adestia-dot--idle" aria-hidden="true">
+<span class="adestia-dot adestia-dot--idle" role="img" aria-label="Idle" title="Idle">
 </span>
 <span class="adestia-tab__title">Fil un</span>
 </button>
-<button type="button" class="adestia-tab__tool" aria-label="Archive — Fil un" title="Archive">
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-<rect x="3" y="4" width="18" height="4" rx="1">
-</rect>
-<path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8">
-</path>
-<path d="M10 12h4">
-</path>
+<button type="button" class="adestia-tab__tool adestia-btn adestia-btn--ghost adestia-btn--icon" aria-label="Archive — Fil un" title="Archive">
+<svg class="adestia-icon" aria-hidden="true" focusable="false">
+<use href="#adestia-i-archive">
+</use>
 </svg>
 </button>
-<button type="button" class="adestia-tab__tool" aria-label="Close tab — Fil un" title="Close tab">×</button>
+<button type="button" class="adestia-tab__tool adestia-btn adestia-btn--ghost adestia-btn--icon" aria-label="Close tab — Fil un" title="Close tab">
+<svg class="adestia-icon" aria-hidden="true" focusable="false">
+<use href="#adestia-i-x">
+</use>
+</svg>
+</button>
 </div>
 </div>
 <ul class="adestia-conversations">
 <li>
 <button type="button" class="adestia-conversations__item adestia-conversations__item--current">
-<span class="adestia-dot adestia-dot--idle" aria-hidden="true">
+<span class="adestia-dot adestia-dot--idle" role="img" aria-label="Idle" title="Idle">
 </span>Fil un</button>
-<button type="button" class="adestia-conversations__archive" aria-label="Archive — Fil un" title="Archive">
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-<rect x="3" y="4" width="18" height="4" rx="1">
-</rect>
-<path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8">
-</path>
-<path d="M10 12h4">
-</path>
+<button type="button" class="adestia-conversations__archive adestia-btn adestia-btn--ghost adestia-btn--icon" aria-label="Archive — Fil un" title="Archive">
+<svg class="adestia-icon" aria-hidden="true" focusable="false">
+<use href="#adestia-i-archive">
+</use>
 </svg>
 </button>
 </li>
 <li>
 <button type="button" class="adestia-conversations__item">
-<span class="adestia-dot adestia-dot--idle" aria-hidden="true">
+<span class="adestia-dot adestia-dot--idle" role="img" aria-label="Idle" title="Idle">
 </span>Fil deux</button>
-<button type="button" class="adestia-conversations__archive" aria-label="Archive — Fil deux" title="Archive">
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-<rect x="3" y="4" width="18" height="4" rx="1">
-</rect>
-<path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8">
-</path>
-<path d="M10 12h4">
-</path>
+<button type="button" class="adestia-conversations__archive adestia-btn adestia-btn--ghost adestia-btn--icon" aria-label="Archive — Fil deux" title="Archive">
+<svg class="adestia-icon" aria-hidden="true" focusable="false">
+<use href="#adestia-i-archive">
+</use>
 </svg>
 </button>
 </li>
 <li>
 <button type="button" class="adestia-conversations__item">
-<span class="adestia-dot adestia-dot--idle" aria-hidden="true">
+<span class="adestia-dot adestia-dot--idle" role="img" aria-label="Idle" title="Idle">
 </span>Fil trois</button>
-<button type="button" class="adestia-conversations__archive" aria-label="Archive — Fil trois" title="Archive">
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-<rect x="3" y="4" width="18" height="4" rx="1">
-</rect>
-<path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8">
-</path>
-<path d="M10 12h4">
-</path>
+<button type="button" class="adestia-conversations__archive adestia-btn adestia-btn--ghost adestia-btn--icon" aria-label="Archive — Fil trois" title="Archive">
+<svg class="adestia-icon" aria-hidden="true" focusable="false">
+<use href="#adestia-i-archive">
+</use>
 </svg>
 </button>
 </li>
