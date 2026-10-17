@@ -14,8 +14,10 @@
  * truth rather than a copy kept here.
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+
+import { jsonInit, requestJson } from './request.js'
 
 interface Catalogue {
   readonly id: string
@@ -45,11 +47,6 @@ const urlOf = (id: string, itemPath?: string) =>
   `/api/instruction-catalogues/${encodeURIComponent(id)}` +
   (itemPath === undefined ? '' : `/items/${itemPath.split('/').map(encodeURIComponent).join('/')}`)
 
-async function failure(response: Response): Promise<string> {
-  const body = (await response.json().catch(() => ({}))) as { error?: string }
-  return body.error ?? `request failed (${response.status})`
-}
-
 export function CataloguePopin({
   onClose,
   onChanged,
@@ -64,26 +61,39 @@ export function CataloguePopin({
   const [repo, setRepo] = useState('')
   const [ref, setRef] = useState('main')
   const [token, setToken] = useState('')
+  // `t` defaults to a fresh function each render: a dependency of the loaders
+  // would re-run their effect forever, so they read the latest through a ref.
+  const tRef = useRef(t)
+  tRef.current = t
+  const say = useCallback((key: string) => tRef.current(key), [])
 
   const loadCatalogues = useCallback(async () => {
-    const response = await fetchImpl('/api/instruction-catalogues')
-    if (!response.ok) return setError(await failure(response))
-    const body = (await response.json()) as { catalogues?: readonly Catalogue[] }
-    setCatalogues(body.catalogues ?? [])
-  }, [fetchImpl])
+    const result = await requestJson<{ catalogues?: readonly Catalogue[] }>(
+      fetchImpl,
+      '/api/instruction-catalogues',
+      undefined,
+      say,
+    )
+    if (!result.ok) return setError(result.error)
+    setCatalogues(result.data?.catalogues ?? [])
+  }, [fetchImpl, say])
 
   const loadItems = useCallback(
     async (catalogue: Catalogue) => {
       setItems(undefined)
-      const response = await fetchImpl(`${urlOf(catalogue.id)}/items`)
-      if (!response.ok) {
+      const result = await requestJson<{ items?: readonly Item[] }>(
+        fetchImpl,
+        `${urlOf(catalogue.id)}/items`,
+        undefined,
+        say,
+      )
+      if (!result.ok) {
         setItems([])
-        return setError(await failure(response))
+        return setError(result.error)
       }
-      const body = (await response.json()) as { items?: readonly Item[] }
-      setItems(body.items ?? [])
+      setItems(result.data?.items ?? [])
     },
-    [fetchImpl],
+    [fetchImpl, say],
   )
 
   useEffect(() => {
@@ -92,16 +102,17 @@ export function CataloguePopin({
 
   const add = async () => {
     setError(undefined)
-    const response = await fetchImpl('/api/instruction-catalogues', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
+    const result = await requestJson(
+      fetchImpl,
+      '/api/instruction-catalogues',
+      jsonInit('POST', {
         repo: repo.trim(),
         ref: ref.trim(),
         ...(token.trim() !== '' ? { token: token.trim() } : {}),
       }),
-    })
-    if (!response.ok) return setError(await failure(response))
+      say,
+    )
+    if (!result.ok) return setError(result.error)
     setRepo('')
     setToken('')
     await loadCatalogues()
@@ -118,16 +129,19 @@ export function CataloguePopin({
     setError(undefined)
     setBusy('refresh')
     try {
-      const response = await fetchImpl(`${urlOf(catalogue.id)}/refresh`, { method: 'POST' })
-      if (!response.ok) return setError(await failure(response))
-      const body = (await response.json()) as { missing?: readonly string[] }
-      if (body.missing && body.missing.length > 0) {
-        setError(`${t('No longer offered upstream, left as is:')} ${body.missing.join(', ')}`)
+      const result = await requestJson<{ missing?: readonly string[] }>(
+        fetchImpl,
+        `${urlOf(catalogue.id)}/refresh`,
+        jsonInit('POST'),
+        say,
+      )
+      if (!result.ok) return setError(result.error)
+      const missing = result.data?.missing
+      if (missing && missing.length > 0) {
+        setError(`${t('No longer offered upstream, left as is:')} ${missing.join(', ')}`)
       }
       await loadItems(catalogue)
       onChanged()
-    } catch (cause) {
-      setError((cause as Error).message)
     } finally {
       setBusy(undefined)
     }
@@ -137,14 +151,15 @@ export function CataloguePopin({
     setError(undefined)
     setBusy(item.itemPath)
     try {
-      const response = await fetchImpl(urlOf(catalogue.id, item.itemPath), {
-        method: item.imported ? 'DELETE' : 'PUT',
-      })
-      if (!response.ok) return setError(await failure(response))
+      const result = await requestJson(
+        fetchImpl,
+        urlOf(catalogue.id, item.itemPath),
+        jsonInit(item.imported ? 'DELETE' : 'PUT'),
+        say,
+      )
+      if (!result.ok) return setError(result.error)
       await loadItems(catalogue)
       onChanged()
-    } catch (cause) {
-      setError((cause as Error).message)
     } finally {
       setBusy(undefined)
     }

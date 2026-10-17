@@ -408,6 +408,7 @@ const FR: Readonly<Record<string, string>> = {
   'Renew the token': 'Renouveler le jeton',
   'Forget it': 'L’oublier',
   Cancel: 'Annuler',
+  'request failed (%n)': 'la requête a échoué (%n)',
   'Paste the code you were given': 'Collez le code qui vous a été donné',
 }
 
