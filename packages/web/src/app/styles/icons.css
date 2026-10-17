@@ -1,0 +1,42 @@
+/* Lucide sprite icons (docs/charte.md § 7.3): 1em, drawn in the text colour. */
+.adestia-icon {
+  width: 1em;
+  height: 1em;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vertical-align: -0.125em;
+}
+
+.adestia-icon--sm {
+  stroke-width: 1.75;
+}
+
+@keyframes adestia-icon-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.adestia-icon--spin {
+  animation: adestia-icon-spin 0.9s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adestia-icon--spin {
+    animation: none;
+  }
+}
+
+@keyframes adestia-icon-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.adestia-icon--spin {
+  animation: adestia-icon-spin 0.9s linear infinite;
+}
