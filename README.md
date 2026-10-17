@@ -181,7 +181,7 @@ escaped `\:::` in the content tests, and looks like a serialiser bug
 
 ```sh
 npm ci
-npm test          # no account or network needed; the catalogue screens suite builds the shell on first run and skips (npm test stays green) when Playwright is not found under /usr/lib/node_modules or `npm root -g`
+npm test          # no account or network needed; the catalogue screens suite builds the shell on first run and skips (npm test stays green) when Playwright is not found through require/NODE_PATH, then `npm root -g`
 npm run typecheck
 npm run lint      # not yet run by CI
 npm run build
