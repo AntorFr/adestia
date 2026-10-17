@@ -3,7 +3,7 @@
  * The shell's markup, pinned. The snapshots were taken from the monolithic App
  * and Home before they were split by lifetime; the split must not move them.
  */
-import { cleanup, render, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
 import { App } from '../src/app/App.js'
@@ -79,4 +79,19 @@ for (const [name, hash] of Object.entries(routes)) {
       await expect(html).toMatchFileSnapshot(`./__snapshots__/shell-markup/${name}-${width}.html`)
     })
   }
+}
+
+for (const width of [1440, 390]) {
+  it(`renders the home in arrange mode at ${width}px unchanged`, async () => {
+    window.innerWidth = width
+    location.hash = ''
+    const { container, getAllByRole } = render(<App fetchImpl={fetchImpl} />)
+    await waitFor(() => expect(container.querySelector('.adestia-brief__item')).toBeTruthy())
+    const btn = getAllByRole('button').find((b) => /^(Arrange|Organiser|Réorganiser)/.test(b.textContent ?? ''))
+    expect(btn).toBeTruthy()
+    fireEvent.click(btn!)
+    await waitFor(() => expect(container.innerHTML).not.toContain('>Arrange<'))
+    const html = container.innerHTML.replace(/:r[0-9a-z]+:/g, ':rN:')
+    await expect(html).toMatchFileSnapshot(`./__snapshots__/shell-markup/arrange-${width}.html`)
+  })
 }
