@@ -32,6 +32,23 @@ npm run build:web --workspace @antorfr/adestia-web
 node packages/server/bin/adestia.js
 ```
 
+To look at the app without an agent or Docker (a scripted engine, seeded data):
+
+```sh
+npm ci && npm run build               # npm run build also builds the web shell
+node bench/launch.mjs --engine fake    # prints `listening on <url>`; <url>/api/health answers ok
+node bench/sweep.mjs                   # every screen, light and dark, desk and phone
+```
+
+The sweep takes Playwright and Chromium from the environment (`npm root -g`); do not
+add them to the repo. The launcher runs until SIGTERM (`kill <pid>`, or Ctrl-C), which
+removes its throwaway data; in a script, start it in the background and keep its pid.
+
+`--engine claude` runs a real turn instead (needs `CLAUDE_CODE_OAUTH_TOKEN`).
+See [bench/README.md](bench/README.md). The map of the code, the decisions (AD-n) and the
+needs and screens they cite (B-n, P-n, E-n: `docs/parcours.md`, `docs/ecrans.md`) are in
+[ARCHITECTURE.md](ARCHITECTURE.md).
+
 Either way, with no config file at all Adestia runs a single-user instance on
 <http://127.0.0.1:8730> with no authentication. Every setting is documented in
 [adestia.config.example.yaml](adestia.config.example.yaml).
@@ -157,10 +174,16 @@ quota. See [DESIGN.md](DESIGN.md) for the principles and every decision taken.
 
 ## Contributing
 
+Node 22 or later (`engines` in `package.json`). After `npm ci`, check that
+`node_modules/micromark-extension-directive` exists: a missing grammar shows as
+escaped `\:::` in the content tests, and looks like a serialiser bug
+(`CLAUDE.md`).
+
 ```sh
 npm ci
-npm test          # no account or network needed
+npm test          # no account or network needed; the catalogue screens suite builds the shell on first run and skips (npm test stays green) when Playwright is not found through require/NODE_PATH, then `npm root -g`
 npm run typecheck
+npm run lint      # not yet run by CI
 npm run build
 ```
 
@@ -169,7 +192,8 @@ driver contract rather than a convenience: a driver whose behaviour is only
 testable against a live account is a driver tested by its first user.
 
 Work happens in an isolated git worktree and comes back to `main` before it is
-tagged — `CLAUDE.md` has the workflow and the reasons behind it.
+tagged. `CLAUDE.md` covers the install traps of a worktree, how to commit, and
+when to look at the interface.
 
 ## License
 
