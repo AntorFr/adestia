@@ -27,7 +27,7 @@
     "adestia": "./bin/adestia.js"
   },
   "scripts": {
-    "build": "tsc --build"
+    "build": "npm run build --workspace @antorfr/adestia-drivers && tsc --build"
   },
   "types": "./dist/src/index.d.ts",
   "files": [
