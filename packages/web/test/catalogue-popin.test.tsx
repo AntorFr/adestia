@@ -136,3 +136,17 @@ describe('the catalogue pop-in', () => {
     expect(state.calls).toContain('POST /api/instruction-catalogues/homelab/refresh')
   })
 })
+
+describe('the catalogue pop-in as a sheet', () => {
+  it('closes on Escape and hands the focus back to the Catalogues button', async () => {
+    const { fetchImpl } = world()
+    screenWith(fetchImpl)
+    const button = await screen.findByRole('button', { name: 'Catalogues' })
+    button.focus()
+    fireEvent.click(button)
+    const dialog = await screen.findByRole('dialog')
+    fireEvent.keyDown(dialog, { key: 'Escape' })
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(document.activeElement).toBe(button)
+  })
+})

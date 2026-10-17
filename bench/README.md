@@ -104,8 +104,8 @@ ignored by git). Two to four minutes, depending on the machine.
 
 The table at the top of the script is the one place that knows a screen: its
 seed, route, the gesture that opens it and the **selector that proves it is that
-screen**. A capture whose selector never shows, or that shows `.adestia-loading`
-or `.adestia-fatal` where the screen is not one (E-21 is: offline, the cached
+screen**. A capture whose selector never shows, or that shows `.adestia-gate__card--loading`
+or `.adestia-gate__card--fatal` where the screen is not one (E-21 is: offline, the cached
 shell opens on the fatal gate), is a failure: the sweep goes on, prints
 `FAIL E-n name theme size: why`, and exits 1 naming each. A new screen is a new
 row; a screen whose markup changes is a selector to update.

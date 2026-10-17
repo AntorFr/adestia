@@ -16,7 +16,7 @@
  *
  * `--out` defaults to `bench/shots-sweep`, ignored by git. A capture whose
  * proof selector never appears, or that shows a loading or an error screen
- * (`.adestia-loading`, `.adestia-fatal`) the screen is not supposed to be,
+ * (`.adestia-gate__card--loading`, `.adestia-gate__card--fatal`) the screen is not supposed to be,
  * is a failure: the sweep goes on, then exits 1 naming each screen that failed.
  *
  * The TABLE below is the one place that knows a screen: the seed it needs, the
@@ -53,7 +53,7 @@ const launcher = join(here, 'launch.mjs')
  *   after      put things back (stop a turn the gesture started)
  */
 const SCREENS = [
-  { id: 'E-1', name: 'gates', seed: 'oidc', signedIn: true, before: sessionLost, reload: true, shell: 'none', proof: '.adestia-signin .adestia-signin__button' },
+  { id: 'E-1', name: 'gates', seed: 'oidc', signedIn: true, before: sessionLost, reload: true, shell: 'none', proof: '.adestia-gate .adestia-btn--accent' },
   { id: 'E-2', name: 'home', seed: 'base', proof: '.adestia-home__greeting ~ .adestia-section .adestia-brief__item, .adestia-home .adestia-tiles .adestia-tile' },
   { id: 'E-3', name: 'section', seed: 'base', route: '/section/voyages', proof: '.adestia-home .adestia-cards .adestia-card' },
   { id: 'E-4', name: 'page', seed: 'base', route: '/page/pieces/dossier', proof: '.adestia-editor .adestia-reader .adestia-list' },
@@ -73,7 +73,7 @@ const SCREENS = [
   { id: 'E-18', name: 'signature', seed: 'base', shell: 'chat', chat: 'rich', open: click('.adestia-sign__go'), proof: '.adestia-sheet__panel' },
   { id: 'E-19', name: 'problems', seed: 'base', proof: '.adestia-problems--refused' },
   { id: 'E-20', name: 'inactive-app', seed: 'plugins', route: '/bench-noview', proof: '.adestia-empty .adestia-switch' },
-  { id: 'E-21', name: 'offline', seed: 'base', shell: 'none', offline: true, fatalOk: true, proof: '.adestia-fatal' },
+  { id: 'E-21', name: 'offline', seed: 'base', shell: 'none', offline: true, fatalOk: true, proof: '.adestia-gate__card--fatal .adestia-icon' },
   { id: 'E-22', name: 'todo', seed: 'plugins', route: '/todo', proof: '.todo .todo-task' },
   { id: 'E-23', name: 'planif', seed: 'plugins', route: '/planif', proof: '.planif .planif__note' },
   { id: 'E-24', name: 'journal', seed: 'plugins', route: '/journal', proof: '.journal .journal-card' },
@@ -270,10 +270,10 @@ async function capture(browser, base, screen, theme, size) {
     await page.evaluate(() => document.fonts.ready)
     await page.waitForTimeout(700)
 
-    if (await page.locator('.adestia-loading').count()) throw new Error('a loading screen is shown (.adestia-loading)')
-    if (!screen.fatalOk && (await page.locator('.adestia-fatal').count())) {
-      const said = (await page.locator('.adestia-fatal').first().innerText()).replace(/\s+/g, ' ').slice(0, 160)
-      throw new Error(`an error screen is shown (.adestia-fatal): ${said}`)
+    if (await page.locator('.adestia-gate__card--loading').count()) throw new Error('a loading screen is shown (.adestia-gate__card--loading)')
+    if (!screen.fatalOk && (await page.locator('.adestia-gate__card--fatal').count())) {
+      const said = (await page.locator('.adestia-gate__card--fatal').first().innerText()).replace(/\s+/g, ' ').slice(0, 160)
+      throw new Error(`an error screen is shown (.adestia-gate__card--fatal): ${said}`)
     }
 
     const file = join(outDir, `${screen.id}-${screen.name}-${theme}-${size}.png`)

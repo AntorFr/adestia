@@ -34,6 +34,10 @@ npm run build:web --workspace @antorfr/adestia-web
 node packages/server/bin/adestia.js
 ```
 
+This serves `http://127.0.0.1:8730` and answers 200 on `/`. Without
+`CLAUDE_CODE_OAUTH_TOKEN` it still starts: the app is there, but a real agent
+turn fails (use the scripted engine below to look at it without one).
+
 To look at the app without an agent or Docker (a scripted engine, seeded data):
 
 ```sh

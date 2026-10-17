@@ -25,42 +25,46 @@
   /* Surfaces, from the page up to what floats above it. `--surface` is the
      canvas itself — deliberately NOT white, so white cards read as raised
      without borrowing their weight from shadows alone. */
-  --surface: #eef1f6;
-  --surface-raised: #ffffff;
-  --surface-soft: #f4f6fa;
-  --surface-sunken: #e5e9f0;
-  --border: #e1e6ee;
-  --border-strong: #d0d7e2;
+  --surface: light-dark(#eef1f6, #0b0d12);
+  --surface-raised: light-dark(#ffffff, #141821);
+  --surface-soft: light-dark(#f4f6fa, #1a1f29);
+  --surface-sunken: light-dark(#e5e9f0, #07090d);
+  --border: light-dark(#e1e6ee, #232a37);
+  --border-strong: light-dark(#d0d7e2, #313a4a);
 
   /* Text, three weights of presence. */
-  --text: #151a22;
-  --text-muted: #586274;
-  --text-faint: #98a2b2;
+  --text: light-dark(#151a22, #e9ecf3);
+  --text-muted: light-dark(#586274, #98a2b3);
+  --text-faint: light-dark(#5d697d, #7d8797);
 
-  --accent: #0e8fa6;
-  --accent-text: #04222a;
-  --accent-quiet: #0e8fa614;
+  --accent: light-dark(#0e8fa6, #4ecad8);
+  --accent-text: light-dark(#0b7386, #4ecad8);
+  --on-accent: #010c0f;
+  --accent-quiet: light-dark(#0e8fa614, #4ecad81c);
 
-  --danger: #d24b3e;
-  --warning: #b4771b;
-  --success: #2e9e63;
+  --danger: light-dark(#d24b3e, #ea6a5c);
+  --warning: light-dark(#b4771b, #e0a64f);
+  --success: light-dark(#2e9e63, #5cbe83);
+  --danger-text: light-dark(#be392c, #ea6a5c);
+  --warning-text: light-dark(#8f5e15, #e0a64f);
+  --success-text: light-dark(#23774b, #5cbe83);
 
   /* The named hues. A page says `couleur: turquoise`; the shell turns that
      into `--adestia-hue-turquoise`; this table says what it means. Names in
      pages, values here — a workspace that hardcoded a hex would be a
      workspace that looks wrong under the next livery. */
-  --adestia-hue-rouge: #d24b3e;
-  --adestia-hue-orange: #db7a45;
-  --adestia-hue-ambre: #b8890f;
-  --adestia-hue-vert: #4fb05c;
-  --adestia-hue-emeraude: #1e9e86;
-  --adestia-hue-turquoise: #33b4a8;
-  --adestia-hue-bleu: #4f92d8;
-  --adestia-hue-indigo: #4c6fe0;
-  --adestia-hue-violet: #7a5bd1;
-  --adestia-hue-rose: #c255a6;
-  --adestia-hue-gris: #7e8aa6;
-  --adestia-hue-ardoise: #5b6473;
+  --adestia-hue-rouge: light-dark(#d24b3e, #ea6a5c);
+  --adestia-hue-orange: light-dark(#db7a45, #e08a55);
+  --adestia-hue-ambre: light-dark(#b8890f, #e4c25e);
+  --adestia-hue-vert: light-dark(#4fb05c, #5cc06a);
+  --adestia-hue-emeraude: light-dark(#1e9e86, #3fc7a8);
+  --adestia-hue-turquoise: light-dark(#33b4a8, #4fc7c0);
+  --adestia-hue-bleu: light-dark(#4f92d8, #5fa2e8);
+  --adestia-hue-indigo: light-dark(#4c6fe0, #7b96f2);
+  --adestia-hue-violet: light-dark(#7a5bd1, #a78bf0);
+  --adestia-hue-rose: light-dark(#c255a6, #de86c6);
+  --adestia-hue-gris: light-dark(#7e8aa6, #96a0b2);
+  --adestia-hue-ardoise: light-dark(#5b6473, #8b95a6);
 
   /* Icon plates — the "app store" look. A tile's icon sits on a saturated
      gradient of the tile's colour with a white glyph, not on a pale tint.
@@ -80,6 +84,8 @@
      a skin can move a box the liveries stop being one product. `auto` on one
      axis lets the inset stretch it: top bar = inset `0 0 auto` with a height,
      left bar = inset `0 auto 0 0` with a width. */
+  /* Optional per-tile colour: an unset root keeps each var() fallback active. */
+  --tile-color: initial;
   --tile-mark-inset: 0 0 auto;
   --tile-mark-width: auto;
   --tile-mark-height: 3px;
@@ -92,18 +98,18 @@
 
   /* Chat bubbles: the user speaks on accent, the agent on a bordered surface. */
   --bubble-user-bg: var(--accent);
-  --bubble-user-text: var(--accent-text);
+  --bubble-user-text: var(--on-accent);
   --bubble-agent-bg: var(--surface-soft);
   --bubble-agent-text: var(--text);
 
-  --radius-micro: 4px;
-  --radius-sm: 7px;
-  --radius-ctl: 11px;
-  --radius: 13px;
-  --radius-lg: 17px;
-  --radius-pill: 20px;
+  --radius-micro: var(--radius-sm);
+  --radius-sm: 6px;
+  --radius-ctl: var(--radius);
+  --radius: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
   --radius-round: 50%;
-  --radius-bubble: 15px;
+  --radius-bubble: var(--radius-lg);
 
   /* The send button and the crest are the two marks a body signs with, so
      each has its own knobs rather than borrowing a scale step: a livery can
@@ -111,7 +117,7 @@
      ARE the base look — the accent square, the accent plate. */
   --send-radius: var(--radius);
   --send-bg: var(--accent);
-  --send-text: var(--accent-text);
+  --send-text: var(--on-accent);
   --send-shadow: none;
   --crest-radius: var(--radius-ctl);
   --crest-bg: linear-gradient(
@@ -150,21 +156,32 @@
   --font-title: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
   --font-code: var(--font-mono);
+  --text-2xs: 0.6875rem;
+  --text-xs: 0.75rem;
   --text-sm: 0.8125rem;
   --text-base: 0.9375rem;
   --text-lg: 1.125rem;
-  --label-size: 11px;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  /* iOS zoom prevention is a control floor, not a type-scale step. */
+  --input-text-min: 16px;
+  --label-size: var(--text-2xs);
   --label-track: 0.16em;
   --title-track: -0.01em;
 
   /* Three depths, and the difference matters: resting cards carry the small
      one, the default dresses menus and popovers, the large is reserved for
      what the pointer is about to pick up. */
-  --shadow-sm: 0 1px 2px rgb(20 28 45 / 6%);
-  --shadow: 0 4px 12px rgb(20 28 45 / 7%), 0 1px 3px rgb(20 28 45 / 6%);
-  --shadow-lg: 0 14px 36px rgb(20 28 45 / 13%);
+  --shadow-sm-ink-1: light-dark(rgb(20 28 45 / 6%), rgb(0 0 0 / 40%));
+  --shadow-sm: 0 1px 2px var(--shadow-sm-ink-1);
+  --shadow-ink-1: light-dark(rgb(20 28 45 / 7%), rgb(0 0 0 / 42%));
+  --shadow-ink-2: light-dark(rgb(20 28 45 / 6%), rgb(0 0 0 / 30%));
+  --shadow: 0 4px 12px var(--shadow-ink-1), 0 1px 3px var(--shadow-ink-2);
+  --shadow-lg-ink-1: light-dark(rgb(20 28 45 / 13%), rgb(0 0 0 / 55%));
+  --shadow-lg: 0 14px 36px var(--shadow-lg-ink-1);
 
   --scrim: rgb(8 11 18 / 55%);
+  --z-sheet: 100;
 
   /* The split: chat rail against the apps canvas, resizable and persisted. */
   --rail: 33.333%;
@@ -172,88 +189,22 @@
   /* Shared with the JS: a layout that disagrees with itself between the two
      is a layout that flickers on resize. */
   --breakpoint-mobile: 820px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    color-scheme: dark;
-    --surface: #0b0d12;
-    --surface-raised: #141821;
-    --surface-soft: #1a1f29;
-    --surface-sunken: #07090d;
-    --border: #232a37;
-    --border-strong: #313a4a;
-
-    --text: #e9ecf3;
-    --text-muted: #98a2b3;
-    --text-faint: #59616f;
-
-    --accent: #4ecad8;
-    --accent-quiet: #4ecad81c;
-
-    --danger: #ea6a5c;
-    --warning: #e0a64f;
-    --success: #5cbe83;
-
-    --adestia-hue-rouge: #ea6a5c;
-    --adestia-hue-orange: #e08a55;
-    --adestia-hue-ambre: #e4c25e;
-    --adestia-hue-vert: #5cc06a;
-    --adestia-hue-emeraude: #3fc7a8;
-    --adestia-hue-turquoise: #4fc7c0;
-    --adestia-hue-bleu: #5fa2e8;
-    --adestia-hue-indigo: #7b96f2;
-    --adestia-hue-violet: #a78bf0;
-    --adestia-hue-rose: #de86c6;
-    --adestia-hue-gris: #96a0b2;
-    --adestia-hue-ardoise: #8b95a6;
-
-    --shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
-    --shadow: 0 6px 18px rgb(0 0 0 / 42%), 0 1px 3px rgb(0 0 0 / 30%);
-    --shadow-lg: 0 18px 46px rgb(0 0 0 / 55%);
-  }
+  --motion: 150ms;
+  --motion-quick: var(--motion);
+  --motion-slow: 250ms;
 }
 
 :root[data-theme='light'] { color-scheme: light; }
-
 :root[data-theme='dark'] {
-  /*
-   * Said again, and not as a repetition: `color-scheme: light dark` at the
-   * top lets the BROWSER choose, and a theme chosen HERE has to tell it which
-   * one won. Without this, a reader on a light system who picks the dark
-   * livery gets every native control drawn light — a date picker as a white
-   * slab on a black card, which is how it was found.
-   */
   color-scheme: dark;
-  --surface: #0b0d12;
-  --surface-raised: #141821;
-  --surface-soft: #1a1f29;
-  --surface-sunken: #07090d;
-  --border: #232a37;
-  --border-strong: #313a4a;
-  --text: #e9ecf3;
-  --text-muted: #98a2b3;
-  --text-faint: #59616f;
-  --accent: #4ecad8;
-  --accent-quiet: #4ecad81c;
-  --danger: #ea6a5c;
-  --warning: #e0a64f;
-  --success: #5cbe83;
-  --adestia-hue-rouge: #ea6a5c;
-  --adestia-hue-orange: #e08a55;
-  --adestia-hue-ambre: #e4c25e;
-  --adestia-hue-vert: #5cc06a;
-  --adestia-hue-emeraude: #3fc7a8;
-  --adestia-hue-turquoise: #4fc7c0;
-  --adestia-hue-bleu: #5fa2e8;
-  --adestia-hue-indigo: #7b96f2;
-  --adestia-hue-violet: #a78bf0;
-  --adestia-hue-rose: #de86c6;
-  --adestia-hue-gris: #96a0b2;
-  --adestia-hue-ardoise: #8b95a6;
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
-  --shadow: 0 6px 18px rgb(0 0 0 / 42%), 0 1px 3px rgb(0 0 0 / 30%);
-  --shadow-lg: 0 18px 46px rgb(0 0 0 / 55%);
+  --shadow: 0 6px 18px var(--shadow-ink-1), 0 1px 3px var(--shadow-ink-2);
+  --shadow-lg: 0 18px 46px var(--shadow-lg-ink-1);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --shadow: 0 6px 18px var(--shadow-ink-1), 0 1px 3px var(--shadow-ink-2);
+    --shadow-lg: 0 18px 46px var(--shadow-lg-ink-1);
+  }
 }
 
 *,
@@ -293,7 +244,7 @@ body {
   textarea,
   select,
   [contenteditable]:not([contenteditable='false']) {
-    font-size: max(16px, 1em) !important;
+    font-size: max(var(--input-text-min), 1em) !important;
   }
 
   /* Double-tap zoom strands the same interface for the same reason, and buys
@@ -304,7 +255,18 @@ body {
   }
 }
 
+:focus-visible {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion: 0ms;
+    --motion-quick: 0ms;
+    --motion-slow: 0ms;
+  }
+
   *,
   *::before,
   *::after {

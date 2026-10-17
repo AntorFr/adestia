@@ -268,7 +268,7 @@ stops shipping Playwright.
   `light` and `dark`, to `<out>/<skin>/<E-n>-<name>-<theme>-<viewport>.png` (default `<out>` is
   `bench/shots-sweep`, ignored by git). A screen table in the script lists, per `E-n`, the
   route, the gesture that opens it and the **selector that proves it is that screen**; a capture
-  whose selector is absent, or that shows `.adestia-fatal` or a loading state, fails the sweep
+  whose selector is absent, or that shows `.adestia-gate__card--fatal` or a loading state, fails the sweep
   and names the screen. The sweep exits non-zero on any failure and prints a count.
 - **docker.** `bench/run.sh` and `bench/bench.mjs` are untouched except that the Playwright
   import falls back from `/usr/lib/node_modules` to the global root. Scenarios keep working.
@@ -323,6 +323,41 @@ module. AD-8 is about JS helpers: the shell's tokens and component classes (AD-4
 the plugin reads by name, not code it imports. *Reversed if*: the plugin contract grows a
 helper surface in `PluginApi`.
 
+### AD-9 — Lucide as an inline sprite, vendored
+The icons are Lucide (ISC), the subset the screens use, vendored in
+`packages/web/src/app/icons.ts` as path data and mounted once at boot as a hidden `<svg>`
+sprite; any markup of the page — the shell's React or a plugin's vanilla JS — draws one with
+`<svg class="adestia-icon"><use href="#adestia-i-<name>"/></svg>`. No runtime dependency, no
+file to fetch (the instance may be offline, or behind a strict CSP; the service worker
+needs nothing more), no base-path trap. The data is copied from the `lucide-static` package
+at build-of-the-task time, with its licence in the header of the file.
+*Rejected*: `lucide-react` (React only; plugins are not React); an external `icons.svg`
+(`<use>` of an external file is subject to the base path and the cache, and fails offline
+the first time); a CDN. *Reversed if*: the subset grows past a hundred icons (then a
+build-time sprite from `lucide-static`).
+
+### AD-10 — The dark palette is written once, with `light-dark()`
+Each colour token of the base palette is one declaration, `light-dark(<light>, <dark>)`,
+and `color-scheme` (`light dark`, or forced by `data-theme`) picks. This removes the
+duplicate dark block (Q-19) without JavaScript: the media query and the attribute cannot
+share one selector list, but a function of the scheme can. *Rejected*: a script that
+always writes `data-theme` (a first paint in the wrong theme, a behaviour change); a CSS
+preprocessor (a build step for one file). *Reversed if*: the supported browsers (the
+service worker's audience: current evergreen) lose `light-dark()`.
+
+### AD-11 — One request helper for the web
+`packages/web/src/app/request.ts` exports `requestJson<T>(fetchImpl, path, init?)` →
+`{ ok: true, status, data: T } | { ok: false, status, error, data? }` and `jsonInit(method,
+body)`. It never throws (a network error is `{ ok: false, status: 0 }`); `error` is the
+server's `error` field or a **translated** fallback (`request failed (404)` in the locale, Q-4).
+It is what every `fetchImpl(` call site of the web becomes; a call site keeps its own
+meaning for failure (silent, inline message), only the plumbing moves. `fetchImpl` stays
+the injected dependency (tests). The 14 live guards stay in each effect (they belong to the
+component's lifetime); a `useRequest`-style hook is *not* introduced (a new abstraction,
+none of the sites share a shape).
+*Rejected*: a hook layer over every fetch (a new abstraction); a client class. *Reversed
+if*: the charte tranche finds a third of the sites sharing one loading/error shape.
+
 ## Refactoring targets
 
 Each target: what, where, why it costs, the tranche that owns it, and its outcome
@@ -340,8 +375,8 @@ Each target: what, where, why it costs, the tranche that owns it, and its outcom
 | R-8 | `eslint.config.js` claims floating promises and thrown-away errors are caught, which its rules cannot do (no type-aware rule, `caughtErrors: 'none'`); `plugins/` not linted; lint not in CI | a claim the gate does not keep | serveur (CI, claim), plugins (plugins lint) | closed: claim rewritten, `npm run lint` in CI; plugins lint is the plugins tranche's |
 | R-9 | Test support rewritten per file: the fake `Driver` in 10 test files, `git()` in 5, `mkdtemp` in 39 | each new test copies one | tests | closed: `packages/server/test/support/` holds the three, and every file that rewrote them imports them |
 | R-10 | `web/test/page-editor.test.tsx` "tells the plugin when it takes the file…" reported flaky; turn-counting waits (`setImmediate`) in `callback.test.ts`, `mcp.test.ts`, `restart.test.ts`; fixed sleeps in `watch`, `pages`, `shell-tools`, `background` tests | races dressed as delays (CLAUDE.md) | tests | closed: no `setImmediate` is left in `callback`, `mcp`, `restart` tests (a wake or a call is a deferred the fake resolves; a negative case is proved by a sentinel that does wake, or by `app.close()`), and the sleeps of `watch` (chokidar's own `ready`, through the test's watcher factory), `pages` (`utimes`), `shell-tools` and `background` (a faked `Date`) are gone. Page-editor flake: its waits (`findBy*`, `waitFor`) spend a one-second wall-clock budget on a chain of promises the test resolves itself, and a loaded machine runs it out; reproduced under `yes` load on the neighbour test "saves with the revision…" (`[data-mounted]` not there in time). The file now drains the chain with an async `act`, no budget left |
-| R-11 | Web: about 40 `fetchImpl(` call sites and 14 hand-rolled live guards, `failure()` (`CataloguePopin.tsx`) and `json()` (`chat/conversations.ts`) local to one file; `toMessage` duplicated in `useConversations.ts` and `Delegations.tsx`, drifted (the second drops `signatures`, kept as defect); `prettify` ×3, `folderOf` ×2, `isIndexPage` ×2 with different rules (`app/sections.ts`, `app/collections.ts`, `editor/nodes.ts`, `editor/listing.ts`) | one idea, several answers | charte (the shared request helper), pages, chat for `chat/` | |
-| R-12 | Giant components: `App` 571 lines, `useConversations` 456; files `Reader.tsx` 1153, `Editor.tsx` 703, `Instructions.tsx` 591, `Home.tsx` 546, `Chat.tsx` 542, `Configuration.tsx` 456 | unreadable, untestable in parts | pages (App, Reader, Editor, Home); chat (Chat, useConversations, Composer); charte (Instructions, Configuration, McpServers) | |
+| R-11 | Web: about 40 `fetchImpl(` call sites and 14 hand-rolled live guards, `failure()` (`CataloguePopin.tsx`) and `json()` (`chat/conversations.ts`) local to one file; `toMessage` duplicated in `useConversations.ts` and `Delegations.tsx`, drifted (the second drops `signatures`, kept as defect); `prettify` ×3, `folderOf` ×2, `isIndexPage` ×2 with different rules (`app/sections.ts`, `app/collections.ts`, `editor/nodes.ts`, `editor/listing.ts`) | one idea, several answers | charte (the shared request helper), pages, chat for `chat/` | closed for the charter's part: `packages/web/src/app/request.ts` (`requestJson`, `jsonInit`) is the one way the shell's settings and entry code talks to the server (it never throws, the fallback message is said in the locale, `fetchImpl` stays injected); `failure()` of `CataloguePopin.tsx` is absorbed, and `Gates`/`signin.ts`/`useInstance.ts`, `Settings`, `Preferences`, `McpServers`, `Instructions`, `CataloguePopin`, `Configuration` and `Delegations` call it, the restart included (a refusal keeps its parsed body in `data`: how many turns run). No raw `fetchImpl(` is left in those files. kept: the `fetchImpl(` calls of `chat/`, `editor/`, `plugins/PageEditor.tsx`, `usePage.ts` and `live.ts`, `json()` in `chat/conversations.ts`, `toMessage` ×2 (the second still drops `signatures`, a defect kept) and `prettify`/`folderOf`/`isIndexPage` — the chat and pages tranches' |
+| R-12 | Giant components: `App` 571 lines, `useConversations` 456; files `Reader.tsx` 1153, `Editor.tsx` 703, `Instructions.tsx` 591, `Home.tsx` 546, `Chat.tsx` 542, `Configuration.tsx` 456 | unreadable, untestable in parts | pages (App, Reader, Editor, Home); chat (Chat, useConversations, Composer); charte (Instructions, Configuration, McpServers) | closed for the charter's part: `Instructions.tsx` (591 → 146 lines), `Configuration.tsx` (456 → 160) and `McpServers.tsx` are each a short screen over parts in `app/instructions/`, `app/configuration/` and `app/mcp/` (list, editor, name sheet, model and hook for the first; fields, restart bar and hooks for the second; list, detail, health and declaration hook for the third), none over 190 lines, and the exports the tests import are kept. kept: `App`, `useConversations`, `Reader`, `Editor`, `Home`, `Chat` — the pages and chat tranches' |
 | R-13 | `copilot-cli/driver.ts` › `SHELL_TOOL_CLI_SOURCE`, a whole JS program in a template string | untyped, unlinted | serveur (real file read at build, behaviour kept) | closed: `copilot-cli/shell-tool.mjs`, copied under `dist/` by the drivers `build`, bytes pinned by a test |
 | R-14 | `server/test/catalogues-ui-ensemble.test.ts` skips itself without Playwright or a built web shell, so it never runs in a plain `npm test` | a suite that looks green and never ran | tests | closed: the suite runs in `npm test` (the shell is built in its `beforeAll` when `dist-web` is absent; without Playwright it skips and says `no playwright` in its title and in a `console.warn`); its first case, stale since Catalogues moved into the Instructions page (E-11/E-12), was corrected by the tester |
 | R-15 | `zod` imported dynamically by `server/src/drivers.ts` but declared in no `package.json` | works only by hoisting | serveur | closed: `zod` declared in `packages/server/package.json` |
@@ -539,6 +574,10 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
 
 ## Known defects (found, not fixed by this epic)
 
+- **MCP server counts disagree**: the Settings tile can say “6 servers” while the MCP
+  breadcrumb badge says “7 servers”. Observed during the charter review; whether it
+  predates this epic is unknown. Kept under B-1, pending a separate behaviour investigation.
+
 - **Catalogue ref or repo starting with `-`** reaches git as an option: `sources.ts` passes
   `source.ref` to `git fetch … origin <ref>` with no `--` separator. Arbitration of
   `homelab-sdlc-maj-consignes`.
@@ -557,3 +596,11 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
   file and a rename, so a config file kept at 0600 comes back in the umask's default mode.
 - **`user-tokens.json` holds access tokens too**, with their expiry, where the module comment
   says refresh tokens only.
+- **Skippy's status banner wraps onto two lines on the phone**, found by the sweep at phone
+  width; not fixed by this epic.
+- **E-14: the switch sits apart from its title on the phone**, the row wrapping between them.
+  Seen in the sweep; left for the pages tranche.
+- **E-19 detail in English under the French locale** when the server sent no code: the detail
+  is then the raw server text, which no catalogue translates.
+- **A catalogue token field has no `autoComplete`**, so a browser may offer to fill or save it
+  as a password.

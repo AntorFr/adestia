@@ -105,11 +105,36 @@ const esc = (value) =>
  * each — so the household was quietly reading a poorer screen than an
  * unskinned instance. A livery is a look, not a navigation.
  */
-function hero(host, context) {
+const WORDS = {
+  fr: {
+    night: 'Bonne nuit',
+    morning: 'Bonjour',
+    evening: 'Bonsoir',
+    date: 'fr-FR',
+    invite: 'Confier quelque chose à Nestor…',
+    idleLabel: 'Nestor veille',
+    busyLabel: 'Nestor s’affaire…',
+    greetingDay: 'Bonjour.',
+    greetingEvening: 'Bonsoir.',
+  },
+  en: {
+    night: 'Good night',
+    morning: 'Good morning',
+    evening: 'Good evening',
+    date: 'en-GB',
+    invite: 'Leave something with Nestor…',
+    idleLabel: 'Nestor is keeping watch',
+    busyLabel: 'Nestor is on it…',
+    greetingDay: 'Good morning.',
+    greetingEvening: 'Good evening.',
+  },
+}
+
+function hero(host, context, words) {
   const h = new Date().getHours()
-  const salut = h < 5 ? 'Bonne nuit' : h < 18 ? 'Bonjour' : 'Bonsoir'
+  const salut = h < 5 ? words.night : h < 18 ? words.morning : words.evening
   const date = new Date()
-    .toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+    .toLocaleDateString(words.date, { weekday: 'long', day: 'numeric', month: 'long' })
     .toUpperCase()
 
   host.innerHTML = `<div class="nst-accueil">
@@ -117,7 +142,7 @@ function hero(host, context) {
     <p class="nst-date">${esc(date)}</p>
     <div class="nst-scene"></div>
     <button class="nst-invite" data-invite type="button">
-      <span>Confier quelque chose à Nestor…</span><i aria-hidden="true">↑</i>
+      <span>${esc(words.invite)}</span><i aria-hidden="true">↑</i>
     </button>
   </div>`
 
@@ -127,19 +152,20 @@ function hero(host, context) {
   host.querySelector('[data-invite]').addEventListener('click', () => context.focusComposer())
 }
 
-export default function nestor() {
+export default function nestor(context) {
+  const words = WORDS[context?.locale] ?? WORDS.fr
   return {
     brand: 'Nestor',
     title: 'Nestor',
-    placeholder: 'Confier quelque chose à Nestor…',
-    idleLabel: 'Nestor veille',
-    busyLabel: 'Nestor s’affaire…',
-    greetingDay: 'Bonjour.',
-    greetingEvening: 'Bonsoir.',
+    placeholder: words.invite,
+    idleLabel: words.idleLabel,
+    busyLabel: words.busyLabel,
+    greetingDay: words.greetingDay,
+    greetingEvening: words.greetingEvening,
     // The crest, in currentColor: eyes and muzzle being holes, the rail makes
     // the face — the silhouette holds in monochrome as-is.
     crest: `<svg viewBox="0 0 100 100" aria-hidden="true"><path fill="currentColor" d="${LAPIN}"/></svg>`,
-    hero,
+    hero: (host, ctx) => hero(host, ctx, words),
     busy: (host) => {
       host.appendChild(lapin(30, { affaire: true, surBulle: true }))
     },

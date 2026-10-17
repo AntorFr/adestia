@@ -120,7 +120,27 @@
   font-size: var(--text-sm);
 }
 
-.adestia-deleg__empty { color: var(--text-muted); }
+/* The state chip: an icon and a word, so the colour is never the whole message. */
+.adestia-deleg__state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex: none;
+  padding: 1px var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-soft);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+.adestia-deleg__state .adestia-icon { width: 12px; height: 12px; }
+
+.adestia-deleg__state--waiting {
+  color: var(--tile-color, var(--accent-text));
+  border-color: color-mix(in srgb, var(--tile-color, var(--accent)) 40%, transparent);
+  background: color-mix(in srgb, var(--tile-color, var(--accent)) 10%, transparent);
+}
 
 .adestia-deleg__conversation { margin-top: var(--space-4); }
 
