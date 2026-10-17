@@ -21,7 +21,7 @@
 
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
 
-export interface JsonRpcMessage {
+interface JsonRpcMessage {
   readonly jsonrpc?: string
   readonly id?: number | string
   readonly method?: string
@@ -51,7 +51,7 @@ const defaultSpawn: SpawnImpl = (command, args, options) =>
     stdio: ['pipe', 'pipe', 'pipe'],
   }) as unknown as ChildProcessWithoutNullStreams as unknown as SpawnedProcess
 
-export interface AppServerOptions {
+interface AppServerOptions {
   readonly command: string
   readonly args?: readonly string[]
   readonly cwd: string

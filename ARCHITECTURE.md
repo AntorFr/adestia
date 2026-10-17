@@ -57,32 +57,35 @@ Outside `packages/`:
 (owns the restart loop), `index.ts` (re-exports), `start.ts` › `start`, `app.ts` › `buildApp`.
 
 - **Auth / OIDC** — `auth.ts` (`resolveIdentity`, `isPublicRoute`, modes `none|oidc|proxy`),
-  `oidc.ts`, `oidc-routes.ts` (`registerOidc`, session cookie hook), `user-tokens.ts`
+  `oidc.ts`, `routes/oidc.ts` (`registerOidc`, session cookie hook), `user-tokens.ts`
   (`UserTokens`, per-user rebound tokens), `routes/identity.ts` (`identityOf`).
 - **Conversations and turns** — `turns.ts` (`TurnDesk`: admission, chaining, the single
   spawn site), `routes/turns.ts` (`registerTurns`, SSE, `sseFrame`), `conversations.ts`
-  (`ConversationStore`, JSONL transcripts), `routes/conversations.ts`, `introduction.ts`
+  (`ConversationStore`, JSONL transcripts), `desk.ts` (`buildDesk`: the `TurnLimiter` and the `TurnDesk`), `turn-limiter.ts`, `unattended.ts`, `routes/conversations.ts`, `introduction.ts`
   (`frameShell`, the preamble), `screen.ts`.
 - **Drivers and arming** — `drivers.ts` (`buildDriver`, `AVAILABLE_DRIVERS`), `secrets.ts`
   (`SecretStore`, `ArmingFlows`), `routes/arming.ts`.
-- **MCP inbound and delegations** — `mcp-in.ts`, `mcp-routes.ts` (`registerMcp`, `/mcp`),
-  `delegations.ts` (`DelegationChannel`), inline `/api/delegations` routes in `app.ts`,
-  `callback.ts` (`registerCallback`, `/callback`).
+- **MCP inbound and delegations** — `mcp-in.ts`, `routes/mcp.ts` (`registerMcp`, `/mcp`; `mcp-routes.ts` re-exports it),
+  `delegations.ts` (`DelegationChannel`), `routes/delegations.ts` (`/api/delegations`),
+  `callback.ts` (`wakePrompt`, `verifySettled`), `routes/callback.ts` (`registerCallback`, `/callback`).
 - **MCP outbound** — `config/mcp.ts`, `mcp-store.ts` (`McpStore`, the shell-written layer),
   `mcp-signin.ts` (`McpSignIn`), `mcp-refresh.ts` (`FileRefreshStore`), `background.ts`
   (`BackgroundReach`), `routes/mcp-servers.ts` (`outboundServersOf`).
 - **Schedule** — `schedule.ts` (`parseNote`, `isDue`, `stampField`), `clock.ts` (`Clock`).
 - **Plugin host and extensions** — `extensions.ts` (`discoverPlugins`, `discoverSkins`,
   `registerPluginVocabulary`, `mcpServersFor`), `sources.ts` (`fetchSources`, git clones),
-  `plugin-host.ts` (`runSetups`, `mountPluginApis`), `static.ts` (`registerStatic`).
+  `plugin-host.ts` (`runSetups`), `routes/plugin-host.ts` (`mountPluginApis`), `static.ts` (`mimeFor`,
+  `safeJoin`), `routes/static.ts` (`registerStatic`, the catch-all, mounted last).
+- **Frontmatter** — `frontmatter.ts` (`splitFrontmatter`, `parseFrontmatter`, `field`; the server's own reader, distinct from `content/src/frontmatter.ts`, AD-7).
 - **Instructions and skills** — `skills.ts` (`collectSkills`, `deliverSkills`,
   `deliverAgents`, `MANAGED_MARKER`, `stamped`), `instructions.ts`,
   `routes/instructions.ts`, `instruction-catalogues.ts` (scan, `copyMarkedTree`),
   `instruction-catalogues-store.ts`, `instruction-catalogues-refresh.ts`,
   `routes/instruction-catalogues.ts`.
 - **Pages, files, stores, watch** — `stores.ts` (`resolveStores`, `pagesService`,
-  `foreignRoots`), `pages.ts` (`registerPages`, also `parseFrontmatter`, `splitFrontmatter`,
-  `titleOf`), `files.ts` (`registerFiles`), `watch.ts` (`registerEvents`, `/api/events`),
+  `foreignRoots`), `pages.ts` (`titleOf`, `revisionOf`, `safePagePath`), `routes/pages.ts` (`registerPages`),
+  `files.ts` (`kindOf`, `attachmentsOf`), `routes/files.ts` (`registerFiles`), `watch.ts`
+  (`ChangeFeed`), `routes/watch.ts` (`registerEvents`, `/api/events`),
   `io.ts`.
 - **Config and settings** — `config.ts` (`parseConfig`, `ConfigError`, env overrides),
   `config/types.ts`, `config/values.ts`, `settings-file.ts`, `routes/settings.ts`,
@@ -125,7 +128,7 @@ Every problem before `listen` is either a boot-log line or a `ConfigError` that 
 `skillsPath`, `agentsPath`, `acceptsRoots`, `instructionPaths`), `TurnRequest`, `TurnEvent`.
 Optional features are declared in `DriverDescriptor.capabilities` from `CAPABILITIES`;
 `CAPABILITY_METHODS` names the interface each obliges (`AuthManagement`, `ModelSelection`,
-`SubscriptionQuotas`, `McpStatus`) and `CAPABILITY_REQUIRES` their dependencies.
+`McpStatus`) and `CAPABILITY_REQUIRES` their dependencies.
 `conformance.ts` › `checkConformance` checks a driver against its descriptor (used by tests
 only). `managed-credential.ts` › `ManagedCredential` holds the armed secret the same way in
 all three drivers. One instance runs ONE driver: `config.driver.id` picks it in `buildDriver`,
@@ -162,7 +165,7 @@ and every turn — chat, scheduled, delegated, callback wake — goes through th
   writes. Copilot and Codex homes live under `dataDir`; the claude-code engine inherits the
   process environment and keeps its own session files in its default home. The shell-tools
   socket may fall back to the OS temp directory (not durable).
-- **One spawn site.** Every turn goes through `TurnDesk`, under one `TurnLimiter` cap.
+- **One spawn site.** Every turn goes through `TurnDesk`, under one `TurnLimiter` cap (`turn-limiter.ts`; the clock's and the callback's headless turn is `unattended.ts` › `makeRunUnattended`).
 
 ## Boundaries
 
@@ -196,7 +199,7 @@ and every turn — chat, scheduled, delegated, callback wake — goes through th
   checks every bundled plugin's French entries. Skins have no words through the locale today.
 - **Tests** — `vitest.config.ts` runs `packages/*/test`, aliasing every `@antorfr/*` to its
   `src/index.ts`; `npm run test:plugins` runs `node --test` over the plugins; `bench/` is the
-  visual check (`bench/run.sh` with docker; `bench/launch.mjs` and `bench/sweep.mjs` without). CI (`.github/workflows/ci.yml`) runs typecheck, tests, the build, a start of the built server and a docker image build (not lint).
+  visual check (`bench/run.sh` with docker; `bench/launch.mjs` and `bench/sweep.mjs` without). CI (`.github/workflows/ci.yml`) runs typecheck, lint, tests, the build, a start of the built server and a docker image build.
 
 ## Decisions of adestia-qualite
 
@@ -204,7 +207,7 @@ and every turn — chat, scheduled, delegated, callback wake — goes through th
 Every refactoring keeps routes, API shapes, configuration keys, file formats
 (`docs/donnees.md`) and MCP tools. The existing suite is the witness; a refactoring with no
 test around it gets a characterization test first. A defect found on the way is written in
-this file's « Known defects », not fixed.
+the "Known defects" section of this file, not fixed. (`.agent/status.md` keeps no such register; the documentation tranche reduces it to a state.)
 *Why*: a quality pass is reviewable only if its diff means "same thing, written better".
 *Rejected*: "fix while we're there" — it mixes a behaviour change into a diff nobody reviews
 as one. *Reversed if*: a defect blocks a refactoring outright; it then becomes its own feature.
@@ -362,21 +365,141 @@ Each target: what, where, why it costs, the tranche that owns it, and its outcom
 
 | R | What and where | Why it costs | Tranche | Outcome |
 |---|---|---|---|---|
-| R-1 | MCP `Authorization: Bearer` header selection copied in `claude-code/driver.ts`, `copilot-cli/driver.ts`, `codex-cli/driver.ts` | three copies of a security-relevant rule | serveur | |
-| R-2 | Driver helpers duplicated: device-code `beginAuth`/`completeAuth`/`cancelAuth` (codex, copilot), `truncate` ×3 (`*/events.ts`), `health` ×2, `usageOf` ×3, `classifyAuthError`/`explainAuthProblem` ×2 (`*/auth.ts`) | drift between engines | serveur | |
-| R-3 | `start()` (464 lines) and `buildApp` (287 lines) mix concerns; `TurnLimiter`, `runUnattended`, inline `/api/delegations` routes and the `adestiaRunTurn` monkey-patch live in `app.ts`; routes registered both from `routes/` and top-level files (`pages.ts`, `oidc-routes.ts`, `mcp-routes.ts`, `static.ts`, `files.ts`, `watch.ts`, `callback.ts`) | no single place says what is mounted | serveur | |
-| R-4 | `field()` duplicated in `instruction-catalogues.ts` and `instructions.ts`; `routes/instruction-catalogues.ts` `sourceOf` / `fetchClone` / `cacheDir` duplicate `catalogueSource` / `fetchCatalogueClone` / `catalogueClone` of `instruction-catalogues-refresh.ts` | pure extraction, behaviour kept | serveur | |
-| R-5 | `pages.ts` doubles as a frontmatter library for `instructions.ts`, `instruction-catalogues.ts`, `schedule.ts`, `shell-tools.ts` | a route module as a dependency; move without changing the parser (AD-7) | serveur | |
-| R-6 | Dead or test-only exports: `SubscriptionQuotas` (no implementer), `assertConformance` in the production index, `formatReference`, `isValidId`, `isEditable` (tests only); about 140 exports used only in their own file | surface nobody uses | serveur | |
-| R-7 | Comments pointing to absent documents: `technique.md` (server sources and tests), `ATELIER-3.md` (`plugins/atelier/web`), `PARCOURS.md` and "D44 côté cerveau" (`plugins/parcours/web`) | dead references | serveur (server), plugins (plugins) | |
-| R-8 | `eslint.config.js` claims floating promises and thrown-away errors are caught, which its rules cannot do (no type-aware rule, `caughtErrors: 'none'`); `plugins/` not linted; lint not in CI | a claim the gate does not keep | serveur (CI, claim), plugins (plugins lint) | |
+| R-1 | MCP `Authorization: Bearer` header selection copied in `claude-code/driver.ts`, `copilot-cli/driver.ts`, `codex-cli/driver.ts` | three copies of a security-relevant rule | serveur | closed: `drivers/src/mcp-headers.ts`, pinned by a test written first |
+| R-2 | Driver helpers duplicated: device-code `beginAuth`/`completeAuth`/`cancelAuth` (codex, copilot), `truncate` ×3 (`*/events.ts`), `health` ×2, `usageOf` ×3, `classifyAuthError`/`explainAuthProblem` ×2 (`*/auth.ts`) | drift between engines | serveur | closed: `engine-aids.ts` and `device-code.ts`; the engines pass their own tables |
+| R-3 | `start()` (464 lines) and `buildApp` (287 lines) mix concerns; `TurnLimiter`, `runUnattended`, inline `/api/delegations` routes and the `adestiaRunTurn` monkey-patch live in `app.ts`; routes registered both from `routes/` and top-level files (`pages.ts`, `oidc-routes.ts`, `mcp-routes.ts`, `static.ts`, `files.ts`, `watch.ts`, `callback.ts`) | no single place says what is mounted | serveur | closed: every route is registered from `routes/`; the top-level files keep only their helpers and a re-export (`mcp-routes.ts` is a pure re-export); `app.ts` mounts, `turn-limiter.ts` and `unattended.ts` hold the rest; `start()` is named stages, order pinned by `start-order.test.ts` |
+| R-4 | `field()` duplicated in `instruction-catalogues.ts` and `instructions.ts`; `routes/instruction-catalogues.ts` `sourceOf` / `fetchClone` / `cacheDir` duplicate `catalogueSource` / `fetchCatalogueClone` / `catalogueClone` of `instruction-catalogues-refresh.ts` | pure extraction, behaviour kept | serveur | closed: `field()` once in `frontmatter.ts`; the catalogue route calls the refresh module |
+| R-5 | `pages.ts` doubles as a frontmatter library for `instructions.ts`, `instruction-catalogues.ts`, `schedule.ts`, `shell-tools.ts` | a route module as a dependency; move without changing the parser (AD-7) | serveur | closed: `server/src/frontmatter.ts`, bodies untouched; the CRLF divergence stays (AD-7) |
+| R-6 | Dead interface removed; test-only helpers removed from production indexes; remaining public types, test imports and boot entry points named below | surface limited to its consumers | serveur | closed: 178 entries remain, all named below |
+| R-7 | Comments pointing to absent documents: `technique.md` (server sources and tests), `ATELIER-3.md` (`plugins/atelier/web`), `PARCOURS.md` and "D44 côté cerveau" (`plugins/parcours/web`) | dead references | serveur (server), plugins (plugins) | closed for the server; `ATELIER-3.md` and `PARCOURS.md` are the plugins tranche's |
+| R-8 | `eslint.config.js` claims floating promises and thrown-away errors are caught, which its rules cannot do (no type-aware rule, `caughtErrors: 'none'`); `plugins/` not linted; lint not in CI | a claim the gate does not keep | serveur (CI, claim), plugins (plugins lint) | closed: claim rewritten, `npm run lint` in CI; plugins lint is the plugins tranche's |
 | R-9 | Test support rewritten per file: the fake `Driver` in 10 test files, `git()` in 5, `mkdtemp` in 39 | each new test copies one | tests | closed: `packages/server/test/support/` holds the three, and every file that rewrote them imports them |
 | R-10 | `web/test/page-editor.test.tsx` "tells the plugin when it takes the file…" reported flaky; turn-counting waits (`setImmediate`) in `callback.test.ts`, `mcp.test.ts`, `restart.test.ts`; fixed sleeps in `watch`, `pages`, `shell-tools`, `background` tests | races dressed as delays (CLAUDE.md) | tests | closed: no `setImmediate` is left in `callback`, `mcp`, `restart` tests (a wake or a call is a deferred the fake resolves; a negative case is proved by a sentinel that does wake, or by `app.close()`), and the sleeps of `watch` (chokidar's own `ready`, through the test's watcher factory), `pages` (`utimes`), `shell-tools` and `background` (a faked `Date`) are gone. Page-editor flake: its waits (`findBy*`, `waitFor`) spend a one-second wall-clock budget on a chain of promises the test resolves itself, and a loaded machine runs it out; reproduced under `yes` load on the neighbour test "saves with the revision…" (`[data-mounted]` not there in time). The file now drains the chain with an async `act`, no budget left |
 | R-11 | Web: about 40 `fetchImpl(` call sites and 14 hand-rolled live guards, `failure()` (`CataloguePopin.tsx`) and `json()` (`chat/conversations.ts`) local to one file; `toMessage` duplicated in `useConversations.ts` and `Delegations.tsx`, drifted (the second drops `signatures`, kept as defect); `prettify` ×3, `folderOf` ×2, `isIndexPage` ×2 with different rules (`app/sections.ts`, `app/collections.ts`, `editor/nodes.ts`, `editor/listing.ts`) | one idea, several answers | charte (the shared request helper), pages, chat for `chat/` | closed for the charter's part: `packages/web/src/app/request.ts` (`requestJson`, `jsonInit`) is the one way the shell's settings and entry code talks to the server (it never throws, the fallback message is said in the locale, `fetchImpl` stays injected); `failure()` of `CataloguePopin.tsx` is absorbed, and `Gates`/`signin.ts`/`useInstance.ts`, `Settings`, `Preferences`, `McpServers`, `Instructions`, `CataloguePopin`, `Configuration` and `Delegations` call it, the restart included (a refusal keeps its parsed body in `data`: how many turns run). No raw `fetchImpl(` is left in those files. kept: the `fetchImpl(` calls of `chat/`, `editor/`, `plugins/PageEditor.tsx`, `usePage.ts` and `live.ts`, `json()` in `chat/conversations.ts`, `toMessage` ×2 (the second still drops `signatures`, a defect kept) and `prettify`/`folderOf`/`isIndexPage` — the chat and pages tranches' |
 | R-12 | Giant components: `App` 571 lines, `useConversations` 456; files `Reader.tsx` 1153, `Editor.tsx` 703, `Instructions.tsx` 591, `Home.tsx` 546, `Chat.tsx` 542, `Configuration.tsx` 456 | unreadable, untestable in parts | pages (App, Reader, Editor, Home); chat (Chat, useConversations, Composer); charte (Instructions, Configuration, McpServers) | closed for the charter's part: `Instructions.tsx` (591 → 146 lines), `Configuration.tsx` (456 → 160) and `McpServers.tsx` are each a short screen over parts in `app/instructions/`, `app/configuration/` and `app/mcp/` (list, editor, name sheet, model and hook for the first; fields, restart bar and hooks for the second; list, detail, health and declaration hook for the third), none over 190 lines, and the exports the tests import are kept. kept: `App`, `useConversations`, `Reader`, `Editor`, `Home`, `Chat` — the pages and chat tranches' |
-| R-13 | `copilot-cli/driver.ts` › `SHELL_TOOL_CLI_SOURCE`, a whole JS program in a template string | untyped, unlinted | serveur (real file read at build, behaviour kept) | |
+| R-13 | `copilot-cli/driver.ts` › `SHELL_TOOL_CLI_SOURCE`, a whole JS program in a template string | untyped, unlinted | serveur (real file read at build, behaviour kept) | closed: `copilot-cli/shell-tool.mjs`, copied under `dist/` by the drivers `build`, bytes pinned by a test |
 | R-14 | `server/test/catalogues-ui-ensemble.test.ts` skips itself without Playwright or a built web shell, so it never runs in a plain `npm test` | a suite that looks green and never ran | tests | closed: the suite runs in `npm test` (the shell is built in its `beforeAll` when `dist-web` is absent; without Playwright it skips and says `no playwright` in its title and in a `console.warn`); its first case, stale since Catalogues moved into the Instructions page (E-11/E-12), was corrected by the tester |
-| R-15 | `zod` imported dynamically by `server/src/drivers.ts` but declared in no `package.json` | works only by hoisting | serveur | |
+| R-15 | `zod` imported dynamically by `server/src/drivers.ts` but declared in no `package.json` | works only by hoisting | serveur | closed: `zod` declared in `packages/server/package.json` |
+
+### How the server tranche meets its targets (R-1 to R-8, R-13, R-15)
+
+Written before the code, so that each task of `adestia-qualite-serveur` is held to the same
+rules. The server outcomes above are filled.
+
+- **Same bytes, one home.** A shared helper takes the strictest copy's behaviour only if the
+  copies are identical; where two copies differ (R-2's `truncate` ×3, `usageOf` ×3, `health` ×2
+  are suspects), the helper takes the difference as a parameter and each engine passes its own.
+  A difference found is written in the "Known defects" section of this file, never harmonised (AD-1).
+- **A characterization test before a move, when none exists.** R-1 (the Bearer rule: which
+  servers get the user's token, which get the instance's, which get none) and R-3 (the boot
+  order that `start.ts` comments carry) have thin cover today: each gets a test that pins
+  today's behaviour first, run green before the move and unchanged after it.
+- **R-3, what "mounted" means.** Every route is registered from a module under `routes/`;
+  `buildApp` only calls them, in today's order. `buildApp` keeps its signature (the tests call
+  it). `adestiaRunTurn` stops being an untyped property: a typed decoration the boot reads, the
+  same behaviour. `TurnLimiter` and `runUnattended` (now `makeRunUnattended`) move to their own modules; `start()` becomes
+  a sequence of named steps whose order is the order of today's code, and no step function
+  exceeds 150 lines.
+- **R-2, one definition, the differences as parameters.** `drivers/src/engine-aids.ts` holds
+  `truncate`, `health`, `usageOf` and `classifyAuthError`/`explainAuthProblem`; `device-code.ts`
+  holds the `beginAuth`/`completeAuth`/`cancelAuth` run. The copies agreed except where an engine
+  speaks its own language, and that stays the engine's: Codex's startup words (`ready`, `starting`)
+  versus Copilot's pass-through status words are two tables given to `health`; each engine's
+  counters, error fragments and sentences are its own tables; Copilot's consent text and token
+  check, Codex's pasted-credential path, are hooks of the flow. No difference was a defect.
+- **R-5, a move, not a merge.** `splitFrontmatter` and `parseFrontmatter` move out of `pages.ts`
+  into their own module with their bodies untouched; `instructions.ts`, `instruction-catalogues.ts`,
+  `schedule.ts` and `shell-tools.ts` import from it. The CRLF divergence stays (AD-7).
+- **R-6, how exports are counted.** `scripts/unused-exports.mjs` lists every named export of
+  `packages/*/src` except `packages/web` (the web exports belong to the screen tranches) that no other file under those sources imports, re-exports through an
+  index, or names; it prints `file:name`. A name used only by `test/` counts as unused by
+  production. Remaining hits are package public-contract types, internal exports kept
+  for their tests under the R-6 arbitration, or runtime entry points outside the graph;
+  each is named below. Every other hit is un-exported or deleted.
+  Run `node scripts/unused-exports.mjs`: sorted entries go to stdout, the count to stderr.
+  The baseline before export removal is **292** entries. The TypeScript module graph uses
+  `tsconfig.base.json` source aliases and counts type imports, aliases and re-exports
+  (including `export *`). Each barrel has its own entries; its re-export consumes the
+  original module's export. All package sources, including web, supply importers; web
+  exports are omitted from the report. Namespace imports and literal dynamic imports or
+  `require` calls conservatively consume the target's whole surface; import types with a
+  qualifier consume its first name. Tests, `bin/`, bench scripts, plugins and computed
+  module paths are outside the graph: check their runtime uses before removing a hit.
+
+  The final inventory is **178** entries: public contract types below,
+  test-only exports retained under the R-6 arbitration, and the boot entry points.
+  No measurement rule or test was changed.
+
+  Public contract types (each row names the package index):
+
+  | Index | Types without another production importer |
+  |---|---|
+  | `packages/content/src/index.ts` | `AttributeSpec`, `BlockClaim`, `BlockContent`, `BlockContext`, `DiagnosticSeverity`, `FieldGroup`, `FieldKind`, `FrontmatterRead`, `Reference`, `Resolution` |
+  | `packages/drivers/src/index.ts` | `ArmedToken`, `ArmingFlow`, `AuthMode`, `AuthPrompt`, `AuthSource`, `AuthState`, `AuthStatus`, `Capability`, `ClaudeCodeOptions`, `CodexDriverOptions`, `ConformanceIssue`, `ContentBlock`, `CopilotDriverOptions`, `ExchangeOptions`, `McpOAuth`, `McpServerConfig`, `McpServerHealth`, `ModelInfo`, `ModelUsageEntry`, `OAuthFlowOptions`, `PendingAsk`, `Pkce`, `QueryFn`, `QueryHandle`, `QueryParams`, `QuotaReport`, `QuotaWindow`, `RawMessage`, `SdkMessage`, `ShellToolParam`, `SignatureRequest` |
+  | `packages/schemas/src/index.ts` | `PluginBlockAttribute`, `PluginKind`, `PluginMcpServer`, `PluginTile`, `SettingGroup`, `SettingKind`, `SettingSource`, `ValidationIssue` |
+  | `packages/server/src/index.ts` | `ActivationConfig`, `AdestiaConfig`, `AgentFile`, `AppDependencies`, `ArmingFlow`, `AttachmentLimits`, `AttachmentOwner`, `AttachmentsConfig`, `AuthConfig`, `AuthMode`, `AuthOutcome`, `ClockOptions`, `Conversation`, `ConversationMeta`, `DelegationPort`, `DiscoveredPlugin`, `DiscoveredSkin`, `DiscoveryProblem`, `DriverConfig`, `ExtensionSource`, `ExtensionsConfig`, `FileKind`, `FilesOptions`, `HostProblem`, `Identity`, `Job`, `JobSeed`, `JobState`, `JsonRpcRequest`, `LoginState`, `McpConfig`, `McpDependencies`, `McpInConfig`, `McpServer`, `McpServerConfig`, `McpServerView`, `McpSource`, `McpTool`, `MissionPaths`, `OidcConfig`, `PageContent`, `PageInfo`, `PagesOptions`, `PermissionsConfig`, `PluginApiContext`, `PluginDiscovery`, `PluginPayload`, `ProxyAuthConfig`, `RequestLike`, `ScheduleConfig`, `ScheduleState`, `ScheduledNote`, `ScreenView`, `SessionPayload`, `SignaturesConfig`, `SkillAsset`, `SkillFile`, `SkinPayload`, `StartOptions`, `StartedInstance`, `StaticOptions`, `StoredAttachment`, `StoredMessage`, `StoredSecret`, `WatchConfig`, `WorkspaceConfig`, `WorkspaceFile` |
+
+  Internal exports kept for their tests (the index export of `isKnownBlock` is also
+  retained because those tests import the package index):
+
+  | Module | Exports | Importing tests |
+  |---|---|---|
+  | `packages/content/src/frontmatter.ts` | `splitFrontmatter` | `packages/content/test/frontmatter.test.ts` |
+  | `packages/content/src/index.ts` | `isKnownBlock` | `packages/server/test/extensions.test.ts`, `packages/web/test/loader.test.ts` |
+  | `packages/content/src/reference.ts` | `formatReference`, `isValidId` | `packages/content/test/reference.test.ts` |
+  | `packages/content/src/validate.ts` | `frontmatterOf` | `packages/content/test/roundtrip.test.ts` |
+  | `packages/content/src/validate.ts` | `isEditable` | `packages/content/test/validate.test.ts` |
+  | `packages/drivers/src/claude-code/oauth.ts` | `CLIENT_ID`, `ONE_YEAR_SECONDS`, `REDIRECT_URI`, `TOKEN_URL`, `authorizeUrl`, `createPkce`, `exchangeCode`, `splitPastedCode` | `packages/drivers/test/oauth.test.ts` |
+  | `packages/drivers/src/codex-cli/auth.ts` | `apiKeyDocument` | `packages/drivers/test/codex.test.ts` |
+  | `packages/drivers/src/codex-cli/driver.ts` | `quotaReportOf` | `packages/drivers/test/codex.test.ts` |
+  | `packages/drivers/src/codex-cli/events.ts` | `describeItem`, `usageOf` | `packages/drivers/test/codex.test.ts` |
+  | `packages/drivers/src/codex-cli/login.ts` | `readPrompt`, `saidSuccess`, `stripAnsi` | `packages/drivers/test/codex.test.ts` |
+  | `packages/drivers/src/codex-cli/protocol.ts` | `SpawnedProcess` | `packages/drivers/test/codex.test.ts` |
+  | `packages/drivers/src/conformance.ts` | `assertConformance` | `packages/drivers/test/conformance.test.ts` |
+  | `packages/drivers/src/conformance.ts` | `checkConformance` | `packages/drivers/test/claude-code.test.ts`, `packages/drivers/test/codex.test.ts`, `packages/drivers/test/conformance.test.ts`, `packages/drivers/test/copilot.test.ts` |
+  | `packages/drivers/src/contract.ts` | `CAPABILITIES` | `packages/drivers/test/conformance.test.ts` |
+  | `packages/drivers/src/copilot-cli/events.ts` | `toolTargetOf` | `packages/drivers/test/copilot.test.ts` |
+  | `packages/drivers/src/copilot-cli/login.ts` | `harvestToken`, `ptyLogin` | `packages/drivers/test/copilot.test.ts` |
+  | `packages/drivers/src/signatures.ts` | `signatureRequest` | `packages/drivers/test/signatures.test.ts` |
+  | `packages/server/src/app.ts` | `buildVersion`, `sseFrame` | `packages/server/test/app.test.ts` |
+  | `packages/server/src/attachments.ts` | `safeName` | `packages/server/test/attachments.test.ts` |
+  | `packages/server/src/callback.ts` | `registerCallback` | `packages/server/test/callback.test.ts` |
+  | `packages/server/src/clock.ts` | `readState`, `writeState` | `packages/server/test/schedule.test.ts` |
+  | `packages/server/src/config.ts` | `DEFAULT_SESSION_TTL_MS` | `packages/server/test/auth.test.ts`, `packages/server/test/oidc-routes.test.ts`, `packages/server/test/oidc.test.ts` |
+  | `packages/server/src/conversations.ts` | `isSafeId` | `packages/server/test/conversations.test.ts` |
+  | `packages/server/src/delegations.ts` | `titleFor` | `packages/server/test/delegations.test.ts` |
+  | `packages/server/src/files.ts` | `kindOf` | `packages/server/test/files.test.ts` |
+  | `packages/server/src/files.ts` | `registerFiles` (re-export of `routes/files.ts`) | `packages/server/test/files.test.ts`, `packages/server/test/mono-store-witness.test.ts`, `packages/server/test/pages-stores.test.ts` |
+  | `packages/server/src/introduction.ts` | `CONTRACT_NAME` | `packages/server/test/introduction.test.ts` |
+  | `packages/server/src/io.ts` | `inFlight` | `packages/server/test/io.test.ts` |
+  | `packages/server/src/mcp-routes.ts` | `registerMcp` | `packages/server/test/mcp.test.ts` |
+  | `packages/server/src/mcp-store.ts` | `MCP_MASK` | `packages/server/test/mcp-servers.test.ts` |
+  | `packages/server/src/oidc.ts` | `identityFrom`, `isAllowed` | `packages/server/test/oidc.test.ts` |
+  | `packages/server/src/pages.ts` | `registerPages` (re-export of `routes/pages.ts`) | `packages/server/test/mono-store-witness.test.ts`, `packages/server/test/pages-stores.test.ts`, `packages/server/test/pages.test.ts` |
+  | `packages/server/src/plugin-host.ts` | `mountPluginApis` | `packages/server/test/plugin-host.test.ts`, `packages/server/test/plugin-secrets.test.ts` |
+  | `packages/server/src/schedule.ts` | `GRACE_MINUTES`, `MIN_PERIOD_MINUTES`, `parseAt`, `parseEvery`, `parseNote` | `packages/server/test/schedule.test.ts` |
+  | `packages/server/src/secrets.ts` | `ARMING_TTL_MS` | `packages/server/test/secrets.test.ts` |
+  | `packages/server/src/settings-file.ts` | `coerce`, `replaceContents` | `packages/server/test/settings-file.test.ts` |
+  | `packages/server/src/shell-tools.ts` | `ulid` | `packages/server/test/shell-tools.test.ts` |
+  | `packages/server/src/static.ts` | `registerStatic` (re-export of `routes/static.ts`) | `packages/server/test/static.test.ts` |
+  | `packages/server/src/watch.ts` | `EventsOptions`, `registerEvents` (re-exports of `routes/watch.ts`) | `packages/server/test/watch.test.ts` |
+
+  Runtime entry points outside the graph: `packages/server/src/start.ts` exports
+  `start` for `bench/launch.mjs` (a computed dynamic import of the built module),
+  and `start` / `loadConfigFile` for `packages/server/bin/adestia.js`. Both are
+  also imported by the server boot tests. Plugins use their own modules and
+  the host HTTP protocol, not the removed package re-exports; web source imports
+  are already included in the measurement.
+- **R-8, a claim the gate keeps.** `eslint.config.js` is rewritten to say what its rules do
+  (no type-aware rule, so no floating-promise check; `caughtErrors: 'none'`, so an ignored caught
+  error is allowed). Turning on type-aware rules would fire on deliberate fire-and-forget
+  calls and is **kept: a cost out of proportion to a quality pass**, noted for the
+  recommendations. `npm run lint` joins the CI job beside `typecheck` and `test`.
+- **R-13, a real file.** The Copilot shell-tool CLI becomes a real `.mjs` file beside the driver;
+  the driver writes the same bytes it writes today, found whether it runs from `src/` (tests) or
+  from `dist/` (the image). The program is linted with the rest.
+- **R-15.** `zod` is declared in `packages/server/package.json` at the version the lockfile
+  already resolves, and the lockfile is edited to match; no other package moves.
 
 ## Detail of R-9, R-10 and R-14 (tests tranche)
 

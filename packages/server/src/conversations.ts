@@ -49,7 +49,7 @@ export function isSafeId(id: string): boolean {
  *
  * Moves nothing already in place, so a compacted file reads the same twice.
  */
-export function inTurnOrder(messages: readonly StoredMessage[]): StoredMessage[] {
+function inTurnOrder(messages: readonly StoredMessage[]): StoredMessage[] {
   const lastWord = new Map<string, number>()
   for (const [index, message] of messages.entries()) {
     if (message.role === 'agent' && message.turn) lastWord.set(message.turn, index)

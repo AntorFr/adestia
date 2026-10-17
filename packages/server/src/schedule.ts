@@ -24,7 +24,7 @@
 import { readFile, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 
-import { splitFrontmatter } from './pages.js'
+import { splitFrontmatter } from './frontmatter.js'
 
 export interface ScheduledNote {
   /** File name without extension; also its id. */

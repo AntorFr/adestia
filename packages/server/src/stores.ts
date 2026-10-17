@@ -65,7 +65,7 @@ export interface Store {
 }
 
 /** A logical path, and the store that carries it. */
-export interface Candidate {
+interface Candidate {
   readonly store: Store
   /** The absolute file, guard already applied. */
   readonly file: string
@@ -208,7 +208,7 @@ export async function candidatesOf(
   return found
 }
 
-export interface Listed {
+interface Listed {
   /** The name the whole product speaks. */
   readonly path: string
   readonly store: Store
@@ -330,7 +330,7 @@ export async function listAll(
  * that is the one case where the default is a real answer rather than a
  * shrug: nothing on disk has an opinion yet.
  */
-export type WriteTarget =
+type WriteTarget =
   | { readonly kind: 'store'; readonly store: Store; readonly file: string }
   | { readonly kind: 'ambiguous'; readonly stores: readonly Store[] }
 

@@ -4,7 +4,8 @@ import { join } from 'node:path'
 import Fastify, { type FastifyInstance } from 'fastify'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { parseFrontmatter, registerPages, revisionOf, safePagePath, titleOf } from '../src/pages.js'
+import { registerPages, revisionOf, safePagePath, titleOf } from '../src/pages.js'
+import { parseFrontmatter } from '../src/frontmatter.js'
 import { resolveStores, type Store } from '../src/stores.js'
 import { cleanTmp, tmpDir } from './support/tmp.js'
 

@@ -27,6 +27,23 @@
   `live.ts` et `usePage.ts` gardent leur `fetchImpl(` (tranches chat/pages). Une valeur de token
   qui change change tous les écrans : la charte écrit la raison.
 
+**Tranche `adestia-qualite-serveur` (epic adestia-qualite) — assemblée, PR vers
+`epic/adestia-qualite`, pas fusionnée.** Aucun comportement changé (AD-1).
+- Pilotes : règle des en-têtes MCP (`mcp-headers.ts`), aides et déroulé device-code
+  (`engine-aids.ts`, `device-code.ts`) écrits une fois ; le programme du CLI d'outils de
+  Copilot est un `.mjs` copié sous `dist/` par le `build` du paquet `drivers`, octets inchangés.
+- Serveur : toutes les routes sous `routes/` ; `app.ts` ne fait que monter (limiteur →
+  `turn-limiter.ts`, tour sans tête → `unattended.ts`) ; `start()` en étapes nommées, ordre du
+  boot fixé par `start-order.test.ts` ; frontmatter dans `frontmatter.ts`, `field()` unique.
+- Garde-fous : `npm run lint` en CI, zod déclaré, `scripts/unused-exports.mjs` (178 hits
+  restants, tous nommés dans ARCHITECTURE.md › R-6 : types de contrat public ou exports gardés
+  pour leur test, par arbitrage — le critère « que des types publics » a été lu ainsi).
+- Recette : `npm ci` (jamais `npm install`), `npm run typecheck`, `npm run lint`, `npm test`
+  (2073 vitest, 15 sautés) ; lancement `node bench/launch.mjs --engine fake`.
+- Reste / pièges : `assertConformance` n'est toujours pas câblé au boot (défaut connu) ;
+  analyseurs de frontmatter, parcours de dossiers, `copyMarkedTree` et défauts de sécurité des
+  catalogues restent (AD-7) ; `bench-ensemble.test.ts` dure ~5 min.
+
 **Tranche `adestia-qualite-tests` (epic adestia-qualite) — assemblée, PR vers
 `epic/adestia-qualite`, pas fusionnée.** Aucun fichier de production touché.
 - R-9 : `packages/server/test/support/` (`driver.ts`, `git.ts`, `tmp.ts`) porte le
@@ -42,7 +59,7 @@
   vitest + 543 `node --test`, aucun sauté) ; lancement `node packages/server/bin/adestia.js`
   → 200 sur `/`. Le build du shell est payé une fois, au premier passage de la suite
   des catalogues sans `dist-web`.
-- Reste / pièges : `ci.yml` ne lance toujours pas lint (B-12, hors tranche) ; le
+- Reste / pièges : le
   lancement local sur moteur factice (B-2) vit sous `bench/` (voir ci-dessous) ; si le build du shell
   dépasse la minute, passer à un `pretest`.
 

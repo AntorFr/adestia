@@ -35,7 +35,7 @@ import { McpTokens } from '@antorfr/adestia-drivers'
 import type { McpServerConfig } from './config.js'
 
 /** What DCR handed back for one server — enough to mint forever after. */
-export interface Registration {
+interface Registration {
   readonly clientId: string
   readonly clientSecret?: string | undefined
   readonly authorizationEndpoint: string

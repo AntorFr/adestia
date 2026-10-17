@@ -12,7 +12,7 @@
  */
 
 import { spawn } from 'node:child_process'
-import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import type {
@@ -30,70 +30,12 @@ import type {
 } from '../contract.js'
 import { SHELL_TOOLS_SERVER_NAME, bridgeStdioConfig } from '../shell-tools-config.js'
 import { TOKEN_ENV_VAR, classifyAuthError, copilotEnv, explainAuthProblem, looksLikeToken } from './auth.js'
+import { DeviceCodeFlow } from '../device-code.js'
 import { ManagedCredential } from '../managed-credential.js'
 import { McpTokens, type RefreshStore } from '../mcp-oauth.js'
+import { mcpHeaders } from '../mcp-headers.js'
 import { newTranslationState, parseLine, translate } from './events.js'
 import { PLAINTEXT_CONSENT, startDeviceCodeLogin, type DeviceCodeLogin } from './login.js'
-
-/**
- * The shell-transport CLI, embedded so it needs no build step or shipped
- * asset: the driver writes it under its own home and points the agent's
- * environment at it. It speaks the socket's newline-delimited JSON-RPC (the
- * MCP subset the shell-tools server answers), announcing the turn's token
- * with `bridge/hello` before a `tools/list` or `tools/call`. Secret-free: the
- * socket path and token arrive in this process's env.
- */
-const SHELL_TOOL_CLI_SOURCE = `import { connect } from 'node:net'
-
-const socket = process.env.ADESTIA_TOOLS_SOCKET
-const token = process.env.ADESTIA_TOOLS_TOKEN
-if (!socket || !token) {
-  process.stderr.write('adestia-tool: ADESTIA_TOOLS_SOCKET/ADESTIA_TOOLS_TOKEN not set\\n')
-  process.exit(2)
-}
-
-const [cmd, name, argsJson] = process.argv.slice(2)
-let args = {}
-if (argsJson) {
-  try { args = JSON.parse(argsJson) } catch { process.stderr.write('adestia-tool: arguments must be a JSON object\\n'); process.exit(2) }
-}
-const request =
-  cmd === 'list' ? { jsonrpc: '2.0', id: 1, method: 'tools/list' }
-  : cmd === 'call' ? { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args } }
-  : null
-if (!request) {
-  process.stderr.write("usage: adestia-tool <list|call> [name] ['<json-args>']\\n")
-  process.exit(2)
-}
-
-const conn = connect(socket)
-let buffer = ''
-const timer = setTimeout(() => { process.stderr.write('adestia-tool: timed out\\n'); process.exit(2) }, 15000)
-timer.unref?.()
-conn.on('connect', () => {
-  conn.write(JSON.stringify({ jsonrpc: '2.0', method: 'bridge/hello', params: { token } }) + '\\n')
-  conn.write(JSON.stringify(request) + '\\n')
-})
-conn.on('data', (chunk) => {
-  buffer += chunk.toString('utf8')
-  let nl = buffer.indexOf('\\n')
-  while (nl !== -1) {
-    const line = buffer.slice(0, nl); buffer = buffer.slice(nl + 1); nl = buffer.indexOf('\\n')
-    if (!line.trim()) continue
-    let msg; try { msg = JSON.parse(line) } catch { continue }
-    if (msg.id !== 1) continue
-    const result = msg.result ?? {}
-    if (cmd === 'list') {
-      process.stdout.write(JSON.stringify(result.tools ?? [], null, 2) + '\\n')
-      conn.end(); process.exit(0)
-    }
-    const text = result.content && result.content[0] ? result.content[0].text : ''
-    process.stdout.write((text ?? '') + '\\n')
-    conn.end(); process.exit(result.isError ? 1 : 0)
-  }
-})
-conn.on('error', (error) => { process.stderr.write('adestia-tool: ' + error.message + '\\n'); process.exit(2) })
-`
 
 export interface CopilotDriverOptions {
   /** The pinned binary. An absolute path in a container; `copilot` in dev. */
@@ -153,14 +95,13 @@ export class CopilotDriver implements Driver {
   readonly #agent: string | undefined
   readonly #cliVersion: string
   readonly #spawn: typeof spawn
-  readonly #startLogin: typeof startDeviceCodeLogin
   readonly #mcpServers: () => readonly McpServer[]
   readonly #shellToolsTransport: 'mcp' | 'shell'
   readonly #tokens: McpTokens
   /** What the last session said about them. Empty until a turn has run. */
   #mcpHealth: readonly McpServerHealth[] = []
   readonly #credential: ManagedCredential
-  #pending: { login: DeviceCodeLogin; home: string } | undefined
+  readonly #deviceFlow: DeviceCodeFlow<DeviceCodeLogin>
 
   constructor(options: CopilotDriverOptions) {
     this.#command = options.command ?? 'copilot'
@@ -170,13 +111,20 @@ export class CopilotDriver implements Driver {
     this.#agent = options.agent
     this.#cliVersion = options.cliVersion ?? 'unknown'
     this.#spawn = options.spawnImpl ?? spawn
-    this.#startLogin = options.startLoginImpl ?? startDeviceCodeLogin
     // A question rather than an answer: see the option's own note.
     const given = options.mcpServers ?? []
     this.#mcpServers = typeof given === 'function' ? given : () => given
     this.#shellToolsTransport = options.shellToolsTransport ?? 'mcp'
     this.#tokens = new McpTokens(options.fetchImpl ?? fetch, options.refreshStore)
     this.#credential = new ManagedCredential(TOKEN_ENV_VAR, options.credentials)
+    const startLogin = options.startLoginImpl ?? startDeviceCodeLogin
+    this.#deviceFlow = new DeviceCodeFlow({
+      home: this.#home,
+      sessionId: 'copilot-device',
+      extraPrompt: { consent: PLAINTEXT_CONSENT },
+      start: (home) =>
+        startLogin({ command: this.#command, home, baseEnv: this.#baseEnv, spawnImpl: this.#spawn }),
+    })
   }
 
   describe(): Promise<DriverDescriptor> {
@@ -264,62 +212,33 @@ export class CopilotDriver implements Driver {
     // COPILOT_GITHUB_TOKEN. So completeAuth harvests it into the one managed
     // secret, and a login that visibly succeeds is one the interface reports
     // as armed.
-    this.#pending?.login.cancel()
-
-    const home = join(this.#home, 'arming')
-    await rm(home, { recursive: true, force: true })
-    await mkdir(home, { recursive: true })
-
-    const login = await this.#startLogin({
-      command: this.#command,
-      home,
-      baseEnv: this.#baseEnv,
-      spawnImpl: this.#spawn,
-    })
-    this.#pending = { login, home }
-
-    return {
-      sessionId: 'copilot-device',
-      mode: 'device-code',
-      authorizeUrl: login.verificationUri,
-      userCode: login.userCode,
-      inputLabel: 'Approve in your browser, then finish here',
-      consent: PLAINTEXT_CONSENT,
-      ttl: 900,
-    }
+    return this.#deviceFlow.begin()
   }
 
   async completeAuth(_sessionId: string, _input: string): Promise<{ secret: string }> {
     // No pasted input: a device code is approved in a browser, with nothing to
     // copy back. The server requires a non-empty field, which the interface
     // fills with a sentinel; it is deliberately ignored here.
-    const pending = this.#pending
-    if (!pending) throw new Error('no device-code login is in progress; start again')
-    try {
-      // Finishing IS the consent. On a keychain-less machine the CLI blocks on
-      // "may I write this token in plaintext?", and until now nobody answered:
-      // the flow stalled until the device code expired, with no hint why. The
-      // answer is the user's to give — the panel will not enable this step
-      // until they have accepted the statement above — so it is released here,
-      // and nowhere else.
-      pending.login.consentToPlaintextStorage()
-      const token = await pending.login.completed
-      if (!looksLikeToken(token)) {
-        throw new Error('the login stored a credential Copilot will not accept')
-      }
-      return { secret: token }
-    } finally {
-      await rm(pending.home, { recursive: true, force: true }).catch(() => undefined)
-      this.#pending = undefined
+    return {
+      secret: await this.#deviceFlow.finish(async (login) => {
+        // Finishing IS the consent. On a keychain-less machine the CLI blocks on
+        // "may I write this token in plaintext?", and until now nobody answered:
+        // the flow stalled until the device code expired, with no hint why. The
+        // answer is the user's to give — the panel will not enable this step
+        // until they have accepted the statement above — so it is released here,
+        // and nowhere else.
+        login.consentToPlaintextStorage()
+        const token = await login.completed
+        if (!looksLikeToken(token)) {
+          throw new Error('the login stored a credential Copilot will not accept')
+        }
+        return token
+      }),
     }
   }
 
   async cancelAuth(_sessionId: string): Promise<void> {
-    const pending = this.#pending
-    if (!pending) return
-    pending.login.cancel()
-    await rm(pending.home, { recursive: true, force: true }).catch(() => undefined)
-    this.#pending = undefined
+    await this.#deviceFlow.cancel()
   }
 
   /**
@@ -379,25 +298,9 @@ export class CopilotDriver implements Driver {
     }
     for (const server of declared) {
       if (server.url) {
-        const headers: Record<string, string> = { ...server.headers }
-        if (server.identity === 'user') {
-          // See the other driver: no person's token, no server — the
-          // caller's, or the per-server one the core minted for a
-          // `background` server on a clock or callback turn. And a `signIn`
-          // server takes only its own per-turn token — never the rebound one.
-          const token = server.signIn
-            ? serverTokens?.[server.name]
-            : (callerToken ?? serverTokens?.[server.name])
-          if (!token) continue
-          headers['Authorization'] = `Bearer ${token}`
-        } else if (server.auth) {
-          const token = await this.#tokens.for(server.auth)
-          // Omitted rather than sent unauthenticated — same rule as the other
-          // driver: a wall of 401s reads as a broken tool, an absent one reads
-          // as an absent one.
-          if (!token) continue
-          headers['Authorization'] = `Bearer ${token}`
-        }
+        const headers = await mcpHeaders(server, this.#tokens, callerToken, serverTokens)
+        if (!headers) continue
+
         mcpServers[server.cliName ?? server.name] = {
           type: 'http',
           url: server.url,
@@ -444,7 +347,9 @@ export class CopilotDriver implements Driver {
     const bin = join(this.#home, 'adestia-tool.mjs')
     try {
       await mkdir(this.#home, { recursive: true })
-      await writeFile(bin, SHELL_TOOL_CLI_SOURCE)
+      // Resolve beside this module in both src/ and the built dist/src/ tree.
+      const source = await readFile(new URL('./shell-tool.mjs', import.meta.url))
+      await writeFile(bin, source)
     } catch {
       // A missing CLI degrades to a tool the agent simply cannot call — the
       // same shape of failure as a filtered MCP server, and never fatal.

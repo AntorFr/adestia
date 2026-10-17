@@ -26,9 +26,9 @@
  * known, documented cost of that posture on this engine.
  */
 
-import { mkdir, rm } from 'node:fs/promises'
-import { join } from 'node:path'
+import { mkdir } from 'node:fs/promises'
 
+import { DeviceCodeFlow } from '../device-code.js'
 import { AskDesk, type PendingAsk } from '../asks.js'
 import type {
   AuthPrompt,
@@ -47,6 +47,7 @@ import type {
 } from '../contract.js'
 import { ManagedCredential } from '../managed-credential.js'
 import { McpTokens, type RefreshStore } from '../mcp-oauth.js'
+import { mcpHeaders } from '../mcp-headers.js'
 import { SHELL_TOOLS_SERVER_NAME, bridgeStdioConfig } from '../shell-tools-config.js'
 import {
   CREDENTIAL_KEY,
@@ -130,14 +131,13 @@ export class CodexDriver implements Driver {
   readonly #asks: AskDesk | undefined
   readonly #tokens: McpTokens
   readonly #spawnImpl: SpawnImpl | undefined
-  readonly #startLogin: typeof startDeviceAuthLogin
   readonly #onCredentialRefreshed: ((document: string) => void) | undefined
 
   readonly #credential: ManagedCredential
   #models: readonly ModelInfo[] | undefined
   #quotas: QuotaReport | undefined
   #health = new Map<string, McpServerHealth>()
-  #pending: { login: DeviceAuthLogin; home: string } | undefined
+  readonly #deviceFlow: DeviceCodeFlow<DeviceAuthLogin>
 
   constructor(options: CodexDriverOptions) {
     this.#command = options.command ?? 'codex'
@@ -150,9 +150,14 @@ export class CodexDriver implements Driver {
     this.#asks = options.asks
     this.#tokens = new McpTokens(options.fetchImpl ?? fetch, options.refreshStore)
     this.#spawnImpl = options.spawnImpl
-    this.#startLogin = options.startLogin ?? startDeviceAuthLogin
     this.#onCredentialRefreshed = options.onCredentialRefreshed
     this.#credential = new ManagedCredential(CREDENTIAL_KEY, options.credentials)
+    const startLogin = options.startLogin ?? startDeviceAuthLogin
+    this.#deviceFlow = new DeviceCodeFlow({
+      home: this.#home,
+      sessionId: 'codex-device',
+      start: (home) => startLogin({ command: this.#command, home, baseEnv: this.#baseEnv }),
+    })
   }
 
   describe(): Promise<DriverDescriptor> {
@@ -240,27 +245,7 @@ export class CodexDriver implements Driver {
    * no error on either side.
    */
   async beginAuth(): Promise<AuthPrompt> {
-    this.#pending?.login.cancel()
-
-    const home = join(this.#home, 'arming')
-    await rm(home, { recursive: true, force: true })
-    await mkdir(home, { recursive: true })
-
-    const login = await this.#startLogin({
-      command: this.#command,
-      home,
-      baseEnv: this.#baseEnv,
-    })
-    this.#pending = { login, home }
-
-    return {
-      sessionId: 'codex-device',
-      mode: 'device-code',
-      authorizeUrl: login.verificationUri,
-      userCode: login.userCode,
-      inputLabel: 'Approve in your browser, then finish here',
-      ttl: 900,
-    }
+    return this.#deviceFlow.begin()
   }
 
   /**
@@ -273,15 +258,8 @@ export class CodexDriver implements Driver {
    * ~35 s into the first turn.
    */
   async completeAuth(_sessionId: string, input: string): Promise<{ secret: string }> {
-    const pending = this.#pending
-    if (pending) {
-      try {
-        const document = await pending.login.completed
-        return { secret: document }
-      } finally {
-        await rm(pending.home, { recursive: true, force: true }).catch(() => undefined)
-        this.#pending = undefined
-      }
+    if (this.#deviceFlow.active) {
+      return { secret: await this.#deviceFlow.finish((login) => login.completed) }
     }
 
     const document = normalizeCredential(input)
@@ -292,11 +270,7 @@ export class CodexDriver implements Driver {
   }
 
   async cancelAuth(_sessionId: string): Promise<void> {
-    const pending = this.#pending
-    if (!pending) return
-    pending.login.cancel()
-    await rm(pending.home, { recursive: true, force: true }).catch(() => undefined)
-    this.#pending = undefined
+    await this.#deviceFlow.cancel()
   }
 
   /**
@@ -575,25 +549,9 @@ export class CodexDriver implements Driver {
 
     for (const server of declared) {
       if (server.url) {
-        const headers: Record<string, string> = { ...server.headers }
-        if (server.identity === 'user') {
-          // No person's token, no server: the caller's, or the per-server
-          // one the core minted for a `background` server on a clock or
-          // callback turn. And a `signIn` server takes only its own per-turn
-          // token — never the rebound one, which would be foreign currency
-          // to it.
-          const token = server.signIn
-            ? serverTokens?.[server.name]
-            : (callerToken ?? serverTokens?.[server.name])
-          if (!token) continue
-          headers['Authorization'] = `Bearer ${token}`
-        } else if (server.auth) {
-          const token = await this.#tokens.for(server.auth)
-          // Omitted rather than sent unauthenticated: a wall of 401s reads as
-          // a broken tool, an absent server reads as an absent one.
-          if (!token) continue
-          headers['Authorization'] = `Bearer ${token}`
-        }
+        const headers = await mcpHeaders(server, this.#tokens, callerToken, serverTokens)
+        if (!headers) continue
+
         servers[server.name] = {
           url: server.url,
           ...(Object.keys(headers).length > 0 ? { http_headers: headers } : {}),

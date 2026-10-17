@@ -1,6 +1,6 @@
 /**
  * Review-phase tests for catalogue materialisation: derived from the task's
- * exit criterion and the design (technique.md), not from the implementation.
+ * exit criterion and the design (ARCHITECTURE.md), not from the implementation.
  */
 
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
