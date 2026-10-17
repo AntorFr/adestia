@@ -26,9 +26,9 @@
  * known, documented cost of that posture on this engine.
  */
 
-import { mkdir, rm } from 'node:fs/promises'
-import { join } from 'node:path'
+import { mkdir } from 'node:fs/promises'
 
+import { DeviceCodeFlow } from '../device-code.js'
 import { AskDesk, type PendingAsk } from '../asks.js'
 import type {
   AuthPrompt,
@@ -131,14 +131,13 @@ export class CodexDriver implements Driver {
   readonly #asks: AskDesk | undefined
   readonly #tokens: McpTokens
   readonly #spawnImpl: SpawnImpl | undefined
-  readonly #startLogin: typeof startDeviceAuthLogin
   readonly #onCredentialRefreshed: ((document: string) => void) | undefined
 
   readonly #credential: ManagedCredential
   #models: readonly ModelInfo[] | undefined
   #quotas: QuotaReport | undefined
   #health = new Map<string, McpServerHealth>()
-  #pending: { login: DeviceAuthLogin; home: string } | undefined
+  readonly #deviceFlow: DeviceCodeFlow<DeviceAuthLogin>
 
   constructor(options: CodexDriverOptions) {
     this.#command = options.command ?? 'codex'
@@ -151,9 +150,14 @@ export class CodexDriver implements Driver {
     this.#asks = options.asks
     this.#tokens = new McpTokens(options.fetchImpl ?? fetch, options.refreshStore)
     this.#spawnImpl = options.spawnImpl
-    this.#startLogin = options.startLogin ?? startDeviceAuthLogin
     this.#onCredentialRefreshed = options.onCredentialRefreshed
     this.#credential = new ManagedCredential(CREDENTIAL_KEY, options.credentials)
+    const startLogin = options.startLogin ?? startDeviceAuthLogin
+    this.#deviceFlow = new DeviceCodeFlow({
+      home: this.#home,
+      sessionId: 'codex-device',
+      start: (home) => startLogin({ command: this.#command, home, baseEnv: this.#baseEnv }),
+    })
   }
 
   describe(): Promise<DriverDescriptor> {
@@ -241,27 +245,7 @@ export class CodexDriver implements Driver {
    * no error on either side.
    */
   async beginAuth(): Promise<AuthPrompt> {
-    this.#pending?.login.cancel()
-
-    const home = join(this.#home, 'arming')
-    await rm(home, { recursive: true, force: true })
-    await mkdir(home, { recursive: true })
-
-    const login = await this.#startLogin({
-      command: this.#command,
-      home,
-      baseEnv: this.#baseEnv,
-    })
-    this.#pending = { login, home }
-
-    return {
-      sessionId: 'codex-device',
-      mode: 'device-code',
-      authorizeUrl: login.verificationUri,
-      userCode: login.userCode,
-      inputLabel: 'Approve in your browser, then finish here',
-      ttl: 900,
-    }
+    return this.#deviceFlow.begin()
   }
 
   /**
@@ -274,15 +258,8 @@ export class CodexDriver implements Driver {
    * ~35 s into the first turn.
    */
   async completeAuth(_sessionId: string, input: string): Promise<{ secret: string }> {
-    const pending = this.#pending
-    if (pending) {
-      try {
-        const document = await pending.login.completed
-        return { secret: document }
-      } finally {
-        await rm(pending.home, { recursive: true, force: true }).catch(() => undefined)
-        this.#pending = undefined
-      }
+    if (this.#deviceFlow.active) {
+      return { secret: await this.#deviceFlow.finish((login) => login.completed) }
     }
 
     const document = normalizeCredential(input)
@@ -293,11 +270,7 @@ export class CodexDriver implements Driver {
   }
 
   async cancelAuth(_sessionId: string): Promise<void> {
-    const pending = this.#pending
-    if (!pending) return
-    pending.login.cancel()
-    await rm(pending.home, { recursive: true, force: true }).catch(() => undefined)
-    this.#pending = undefined
+    await this.#deviceFlow.cancel()
   }
 
   /**

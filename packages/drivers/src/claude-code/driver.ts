@@ -25,6 +25,7 @@ import type {
   TurnUsage,
 } from '../contract.js'
 import { SHELL_TOOLS_SERVER_NAME, bridgeStdioConfig } from '../shell-tools-config.js'
+import { usageOf as usageFrom } from '../engine-aids.js'
 import { AskDesk, type PendingAsk } from '../asks.js'
 import { signatureRequests } from '../signatures.js'
 import { ManagedCredential } from '../managed-credential.js'
@@ -588,7 +589,7 @@ export class ClaudeCodeDriver implements Driver {
               // thread; the predecessor dropped this flag and the interruption
               // vanished from the transcript.
               stopped: message.subtype === 'error_during_execution',
-              usage: usageOf(message),
+              usage: resultUsage(message),
             }
             break
           }
@@ -607,7 +608,7 @@ export class ClaudeCodeDriver implements Driver {
   }
 }
 
-function usageOf(message: Extract<SdkMessage, { type: 'result' }>): TurnUsage {
+function resultUsage(message: Extract<SdkMessage, { type: 'result' }>): TurnUsage {
   const usage = message.usage ?? {}
   const input = usage.input_tokens ?? 0
   const cacheRead = usage.cache_read_input_tokens ?? 0
@@ -618,7 +619,7 @@ function usageOf(message: Extract<SdkMessage, { type: 'result' }>): TurnUsage {
     perModel[model] = (stats.inputTokens ?? 0) + (stats.outputTokens ?? 0)
   }
 
-  return {
+  return usageFrom({
     inputTokens: input,
     outputTokens: usage.output_tokens ?? 0,
     cacheReadTokens: cacheRead,
@@ -629,10 +630,10 @@ function usageOf(message: Extract<SdkMessage, { type: 'result' }>): TurnUsage {
      * a number that has nothing to do with what their next message costs.
      */
     contextTokens: input + cacheRead + cacheWrite,
-    ...(message.duration_ms === undefined ? {} : { durationMs: message.duration_ms }),
+    durationMs: message.duration_ms,
     // Honest under a subscription: the SDK reports an estimate that means
     // nothing when the plan is flat, so it is surfaced only as `cost`.
     costUsd: typeof message.total_cost_usd === 'number' ? message.total_cost_usd : null,
     perModel,
-  }
+  })
 }

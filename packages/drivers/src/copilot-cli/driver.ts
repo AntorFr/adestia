@@ -12,7 +12,7 @@
  */
 
 import { spawn } from 'node:child_process'
-import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import type {
@@ -30,6 +30,7 @@ import type {
 } from '../contract.js'
 import { SHELL_TOOLS_SERVER_NAME, bridgeStdioConfig } from '../shell-tools-config.js'
 import { TOKEN_ENV_VAR, classifyAuthError, copilotEnv, explainAuthProblem, looksLikeToken } from './auth.js'
+import { DeviceCodeFlow } from '../device-code.js'
 import { ManagedCredential } from '../managed-credential.js'
 import { McpTokens, type RefreshStore } from '../mcp-oauth.js'
 import { mcpHeaders } from '../mcp-headers.js'
@@ -154,14 +155,13 @@ export class CopilotDriver implements Driver {
   readonly #agent: string | undefined
   readonly #cliVersion: string
   readonly #spawn: typeof spawn
-  readonly #startLogin: typeof startDeviceCodeLogin
   readonly #mcpServers: () => readonly McpServer[]
   readonly #shellToolsTransport: 'mcp' | 'shell'
   readonly #tokens: McpTokens
   /** What the last session said about them. Empty until a turn has run. */
   #mcpHealth: readonly McpServerHealth[] = []
   readonly #credential: ManagedCredential
-  #pending: { login: DeviceCodeLogin; home: string } | undefined
+  readonly #deviceFlow: DeviceCodeFlow<DeviceCodeLogin>
 
   constructor(options: CopilotDriverOptions) {
     this.#command = options.command ?? 'copilot'
@@ -171,13 +171,20 @@ export class CopilotDriver implements Driver {
     this.#agent = options.agent
     this.#cliVersion = options.cliVersion ?? 'unknown'
     this.#spawn = options.spawnImpl ?? spawn
-    this.#startLogin = options.startLoginImpl ?? startDeviceCodeLogin
     // A question rather than an answer: see the option's own note.
     const given = options.mcpServers ?? []
     this.#mcpServers = typeof given === 'function' ? given : () => given
     this.#shellToolsTransport = options.shellToolsTransport ?? 'mcp'
     this.#tokens = new McpTokens(options.fetchImpl ?? fetch, options.refreshStore)
     this.#credential = new ManagedCredential(TOKEN_ENV_VAR, options.credentials)
+    const startLogin = options.startLoginImpl ?? startDeviceCodeLogin
+    this.#deviceFlow = new DeviceCodeFlow({
+      home: this.#home,
+      sessionId: 'copilot-device',
+      extraPrompt: { consent: PLAINTEXT_CONSENT },
+      start: (home) =>
+        startLogin({ command: this.#command, home, baseEnv: this.#baseEnv, spawnImpl: this.#spawn }),
+    })
   }
 
   describe(): Promise<DriverDescriptor> {
@@ -265,62 +272,33 @@ export class CopilotDriver implements Driver {
     // COPILOT_GITHUB_TOKEN. So completeAuth harvests it into the one managed
     // secret, and a login that visibly succeeds is one the interface reports
     // as armed.
-    this.#pending?.login.cancel()
-
-    const home = join(this.#home, 'arming')
-    await rm(home, { recursive: true, force: true })
-    await mkdir(home, { recursive: true })
-
-    const login = await this.#startLogin({
-      command: this.#command,
-      home,
-      baseEnv: this.#baseEnv,
-      spawnImpl: this.#spawn,
-    })
-    this.#pending = { login, home }
-
-    return {
-      sessionId: 'copilot-device',
-      mode: 'device-code',
-      authorizeUrl: login.verificationUri,
-      userCode: login.userCode,
-      inputLabel: 'Approve in your browser, then finish here',
-      consent: PLAINTEXT_CONSENT,
-      ttl: 900,
-    }
+    return this.#deviceFlow.begin()
   }
 
   async completeAuth(_sessionId: string, _input: string): Promise<{ secret: string }> {
     // No pasted input: a device code is approved in a browser, with nothing to
     // copy back. The server requires a non-empty field, which the interface
     // fills with a sentinel; it is deliberately ignored here.
-    const pending = this.#pending
-    if (!pending) throw new Error('no device-code login is in progress; start again')
-    try {
-      // Finishing IS the consent. On a keychain-less machine the CLI blocks on
-      // "may I write this token in plaintext?", and until now nobody answered:
-      // the flow stalled until the device code expired, with no hint why. The
-      // answer is the user's to give — the panel will not enable this step
-      // until they have accepted the statement above — so it is released here,
-      // and nowhere else.
-      pending.login.consentToPlaintextStorage()
-      const token = await pending.login.completed
-      if (!looksLikeToken(token)) {
-        throw new Error('the login stored a credential Copilot will not accept')
-      }
-      return { secret: token }
-    } finally {
-      await rm(pending.home, { recursive: true, force: true }).catch(() => undefined)
-      this.#pending = undefined
+    return {
+      secret: await this.#deviceFlow.finish(async (login) => {
+        // Finishing IS the consent. On a keychain-less machine the CLI blocks on
+        // "may I write this token in plaintext?", and until now nobody answered:
+        // the flow stalled until the device code expired, with no hint why. The
+        // answer is the user's to give — the panel will not enable this step
+        // until they have accepted the statement above — so it is released here,
+        // and nowhere else.
+        login.consentToPlaintextStorage()
+        const token = await login.completed
+        if (!looksLikeToken(token)) {
+          throw new Error('the login stored a credential Copilot will not accept')
+        }
+        return token
+      }),
     }
   }
 
   async cancelAuth(_sessionId: string): Promise<void> {
-    const pending = this.#pending
-    if (!pending) return
-    pending.login.cancel()
-    await rm(pending.home, { recursive: true, force: true }).catch(() => undefined)
-    this.#pending = undefined
+    await this.#deviceFlow.cancel()
   }
 
   /**

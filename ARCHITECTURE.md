@@ -362,6 +362,13 @@ rules. The server outcomes above stay blank until the documentation tranche fill
   same behaviour. `TurnLimiter` and `runUnattended` move to their own modules; `start()` becomes
   a sequence of named steps whose order is the order of today's code, and no step function
   exceeds 150 lines.
+- **R-2, one definition, the differences as parameters.** `drivers/src/engine-aids.ts` holds
+  `truncate`, `health`, `usageOf` and `classifyAuthError`/`explainAuthProblem`; `device-code.ts`
+  holds the `beginAuth`/`completeAuth`/`cancelAuth` run. The copies agreed except where an engine
+  speaks its own language, and that stays the engine's: Codex's startup words (`ready`, `starting`)
+  versus Copilot's pass-through status words are two tables given to `health`; each engine's
+  counters, error fragments and sentences are its own tables; Copilot's consent text and token
+  check, Codex's pasted-credential path, are hooks of the flow. No difference was a defect.
 - **R-5, a move, not a merge.** `splitFrontmatter` and `parseFrontmatter` move out of `pages.ts`
   into their own module with their bodies untouched; `instructions.ts`, `instruction-catalogues.ts`,
   `schedule.ts` and `shell-tools.ts` import from it. The CRLF divergence stays (AD-7).

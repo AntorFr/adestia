@@ -9,6 +9,7 @@
  */
 
 import type { McpServerHealth, TurnEvent, TurnUsage } from '../contract.js'
+import { health, truncate, usageOf as usageFrom } from '../engine-aids.js'
 import { signatureRequests } from '../signatures.js'
 
 /** The envelope every line shares. */
@@ -38,8 +39,6 @@ export function parseLine(line: string): CopilotEvent | undefined {
  * file's contents or an entire command, and a trace is a witness, not an
  * archive.
  */
-const MAX_TARGET = 78
-
 export function toolTargetOf(data: Record<string, unknown> | undefined): string | undefined {
   const args = data?.['arguments']
   if (typeof args === 'string') return truncate(args)
@@ -53,25 +52,22 @@ export function toolTargetOf(data: Record<string, unknown> | undefined): string 
   return undefined
 }
 
-function truncate(value: string): string {
-  const flat = value.replace(/\s+/g, ' ').trim()
-  return flat.length <= MAX_TARGET ? flat : `${flat.slice(0, MAX_TARGET - 1)}…`
-}
+export const usageOf = copilotUsage
 
-export function usageOf(data: Record<string, unknown> | undefined): TurnUsage | undefined {
+function copilotUsage(data: Record<string, unknown> | undefined): TurnUsage | undefined {
   const usage = data?.['usage']
   if (typeof usage !== 'object' || usage === null) return undefined
   const record = usage as Record<string, unknown>
 
   const durationMs = record['sessionDurationMs']
-  return {
+  return usageFrom({
     // No token counts on this line: `premiumRequests` is a request count, and
     // reporting it as tokens would put a number in the context pill that means
     // something entirely different. The per-call token data lives in the
     // session store, which is a separate capability.
-    ...(typeof durationMs === 'number' ? { durationMs } : {}),
+    durationMs: typeof durationMs === 'number' ? durationMs : undefined,
     costUsd: null,
-  }
+  })
 }
 
 export interface TranslationState {
@@ -101,17 +97,9 @@ export function newTranslationState(sessionId = ''): TranslationState {
  * state the CLI invents is not evidence that a server is down, and saying
  * "down" about a working server is the more expensive mistake.
  */
-const HEALTH_STATES = new Set(['connected', 'failed', 'needs-auth', 'pending', 'disabled'])
-
-function health(name: string, status: unknown, error: unknown): McpServerHealth {
-  return {
-    name,
-    state: (HEALTH_STATES.has(String(status ?? ''))
-      ? String(status)
-      : 'unknown') as McpServerHealth['state'],
-    ...(error ? { error: String(error) } : {}),
-  }
-}
+const HEALTH_WORDS = new Map<string, McpServerHealth['state']>(
+  (['connected', 'failed', 'needs-auth', 'pending', 'disabled'] as const).map((word) => [word, word]),
+)
 
 /**
  * One JSONL event in, zero or more turn events out.
@@ -162,7 +150,7 @@ export function translate(event: CopilotEvent, state: TranslationState): readonl
       if (Array.isArray(servers)) {
         for (const entry of servers as Record<string, unknown>[]) {
           const name = String(entry['name'] ?? entry['serverName'] ?? '')
-          if (name) state.mcp.set(name, health(name, entry['status'], entry['error']))
+          if (name) state.mcp.set(name, health(name, entry['status'], entry['error'], HEALTH_WORDS))
         }
       }
       return []
@@ -170,7 +158,7 @@ export function translate(event: CopilotEvent, state: TranslationState): readonl
 
     case 'session.mcp_server_status_changed': {
       const name = String(data['serverName'] ?? '')
-      if (name) state.mcp.set(name, health(name, data['status'], data['error']))
+      if (name) state.mcp.set(name, health(name, data['status'], data['error'], HEALTH_WORDS))
       // Surfaced as a non-fatal error: an MCP server that failed to start is
       // why a tool the user expects is missing, and silence there sends them
       // looking at the agent instead of at their config.

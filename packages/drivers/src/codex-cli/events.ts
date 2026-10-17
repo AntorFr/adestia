@@ -9,19 +9,12 @@
  */
 
 import type { McpServerHealth, TurnEvent, TurnUsage } from '../contract.js'
+import { health, truncate, usageOf as usageFrom } from '../engine-aids.js'
 import { signatureRequests } from '../signatures.js'
 
 export interface Notification {
   readonly method?: string
   readonly params?: Record<string, unknown>
-}
-
-/** The name and a SHORT target — never the whole command. */
-const MAX_TARGET = 78
-
-function truncate(value: string): string {
-  const flat = value.replace(/\s+/g, ' ').trim()
-  return flat.length <= MAX_TARGET ? flat : `${flat.slice(0, MAX_TARGET - 1)}…`
 }
 
 /**
@@ -81,7 +74,9 @@ function stripShellWrapper(command: string): string {
 /** Items that are conversation, not action — they must never become trace rows. */
 const NOT_TOOLS = new Set(['agentMessage', 'userMessage', 'reasoning', 'error', 'todoList', 'plan'])
 
-export function usageOf(total: Record<string, unknown> | undefined): TurnUsage | undefined {
+export const usageOf = codexUsage
+
+function codexUsage(total: Record<string, unknown> | undefined): TurnUsage | undefined {
   if (!total) return undefined
   const number = (key: string): number | undefined => {
     const value = total[key]
@@ -92,12 +87,7 @@ export function usageOf(total: Record<string, unknown> | undefined): TurnUsage |
   const cacheReadTokens = number('cachedInputTokens')
   const cacheWriteTokens = number('cacheWriteInputTokens')
   if (inputTokens === undefined && outputTokens === undefined) return undefined
-  return {
-    ...(inputTokens !== undefined ? { inputTokens } : {}),
-    ...(outputTokens !== undefined ? { outputTokens } : {}),
-    ...(cacheReadTokens !== undefined ? { cacheReadTokens } : {}),
-    ...(cacheWriteTokens !== undefined ? { cacheWriteTokens } : {}),
-  }
+  return usageFrom({ inputTokens, outputTokens, cacheReadTokens, cacheWriteTokens })
 }
 
 export interface TranslationState {
@@ -122,12 +112,11 @@ export function newTranslationState(threadId = ''): TranslationState {
  * this table has never met becomes `unknown` rather than `failed`: a state the
  * CLI invents is not evidence a server is down.
  */
-function health(name: string, status: unknown, error: unknown): McpServerHealth {
-  const raw = String(status ?? '')
-  const state: McpServerHealth['state'] =
-    raw === 'ready' ? 'connected' : raw === 'starting' ? 'pending' : raw === 'failed' ? 'failed' : 'unknown'
-  return { name, state, ...(error ? { error: String(error) } : {}) }
-}
+const STARTUP_WORDS = new Map<string, McpServerHealth['state']>([
+  ['ready', 'connected'],
+  ['starting', 'pending'],
+  ['failed', 'failed'],
+])
 
 /** One notification in, zero or more turn events out. */
 export function translate(notification: Notification, state: TranslationState): readonly TurnEvent[] {
@@ -204,7 +193,7 @@ export function translate(notification: Notification, state: TranslationState): 
       if (name === '') return []
       const status = params['status']
       const error = params['error'] ?? params['failureReason']
-      state.mcp.set(name, health(name, status, error))
+      state.mcp.set(name, health(name, status, error, STARTUP_WORDS))
       if (status !== 'failed') return []
       const detail = error ? `: ${String(error)}` : ''
       return [{ type: 'error', message: `MCP server "${name}" failed to start${detail}`, fatal: false }]
