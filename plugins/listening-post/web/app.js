@@ -40,6 +40,11 @@ import {
   words,
 } from './model.js'
 
+/** The shell mounts this sprite once; plugins share its names, not its code. */
+const icon = (name) => h('svg', {
+  className: 'adestia-icon', 'aria-hidden': true, focusable: false,
+}, h('use', { href: `#adestia-i-${name}` }))
+
 export default function view(api) {
   const t = words(api.locale)
 
@@ -63,7 +68,7 @@ export default function view(api) {
 
   const refresh = async () => {
     const response = await api.fetch('/api/pages/index')
-    if (!response.ok) throw new Error(`the page index answered ${response.status}`)
+    if (!response.ok) throw new Error(t('the page index answered %status', { status: response.status }))
     const { entries } = await response.json()
     known = buildLibrary(Array.isArray(entries) ? entries : [])
     return known
@@ -405,7 +410,7 @@ export default function view(api) {
         h(
           'button',
           { type: 'button', className: 'lp-quiet', onClick: () => dismiss(candidate) },
-          `✕ ${t('dismiss')}`,
+          icon('x'), ' ', t('dismiss'),
         ),
       ),
     )
@@ -440,7 +445,7 @@ export default function view(api) {
             0,
           )} ${t('passages')}`,
         ),
-        h('button', { type: 'button', className: 'lp-quiet', onClick: onClear }, '✕'),
+        h('button', { type: 'button', className: 'lp-quiet', 'aria-label': t('Clear'), onClick: onClear }, icon('x')),
       ),
       results.error ? h('p', { className: 'lp-problem' }, results.error) : null,
       found.length === 0

@@ -274,8 +274,10 @@ export function formatWhen(when, locale) {
 
 const WORDS = {
   fr: {
+    'the page index answered %status': 'l’index des pages a répondu %status',
     // The manifest's own word, said by the shell on the launcher.
     Journal: 'Journal',
+    Icon: 'Icône',
     'Journals': 'Journaux',
     'No journal yet.': 'Aucun journal pour le moment.',
     'Nothing written yet.': 'Rien d’écrit pour le moment.',
@@ -287,9 +289,9 @@ const WORDS = {
     'Loading…': 'Chargement…',
     'could not write that entry': 'impossible d’écrire cette entrée',
     'another author just took that name — try again':
-      'un autre auteur vient de prendre ce nom — réessaie',
+      'un autre auteur vient de prendre ce nom — réessayez',
     'A journal is a folder of entries. Ask the agent for one, or name it here.':
-      'Un journal est un dossier d’entrées. Demande-le à l’agent, ou nomme-le ici.',
+      'Un journal est un dossier d’entrées. Demandez-le à l’agent, ou nommez-le ici.',
     'Name of the journal': 'Nom du journal',
     'Create': 'Créer',
     'Write an entry': 'Écrire une entrée',
@@ -311,5 +313,5 @@ export function table(locale) {
 
 export const words = (locale) => {
   const said = table(locale)
-  return (key) => said[key] ?? key
+  return (key, values = {}) => (said[key] ?? key).replace(/%(\w+)/g, (match, name) => values[name] ?? match)
 }

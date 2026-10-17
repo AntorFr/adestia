@@ -37,6 +37,11 @@ const HOME = 'journal'
 /** How many entries a journal shows before asking. */
 const PAGE = 15
 
+/** The shell mounts this sprite once; plugins share its names, not its code. */
+const icon = (name) => h('svg', {
+  className: 'adestia-icon', 'aria-hidden': true, focusable: false,
+}, h('use', { href: `#adestia-i-${name}` }))
+
 export default function view(api) {
   const t = words(api.locale)
 
@@ -54,7 +59,7 @@ export default function view(api) {
 
   const refresh = async () => {
     const response = await api.fetch('/api/pages/index')
-    if (!response.ok) throw new Error(`the page index answered ${response.status}`)
+    if (!response.ok) throw new Error(t('the page index answered %status', { status: response.status }))
     const { entries } = await response.json()
     const model = buildModel(Array.isArray(entries) ? entries : [])
     known = model.map((journal) => journal.folder)
@@ -237,7 +242,7 @@ export default function view(api) {
             value: draft.ico,
             maxLength: 4,
             placeholder: '📓',
-            'aria-label': 'ico',
+            'aria-label': t('Icon'),
             onChange: (event) => setDraft({ ...draft, ico: event.target.value }),
           }),
           h('input', {
@@ -328,8 +333,8 @@ export default function view(api) {
     return h('section', { className: 'journal' }, [
       h(
         'a',
-        { key: 'b', className: 'journal-back', href: '#/journal' },
-        `‹ ${t('Journals')}`,
+        { key: 'b', className: 'journal-back adestia-btn adestia-btn--ghost adestia-btn--sm', href: '#/journal' },
+        icon('chevron-left'), t('Journals'),
       ),
       h('header', { key: 'h', className: 'journal__head' }, [
         h('h2', { key: 't' }, `${journal.ico ?? '📓'} ${journal.title}`),
@@ -346,10 +351,11 @@ export default function view(api) {
           type: 'button',
           className: 'journal-add',
           'aria-label': t('New entry'),
+          'aria-expanded': adding,
           onClick: () => setAdding(!adding),
         },
         [
-          h('span', { key: 'p', className: 'journal-add__plus' }, adding ? '×' : '+'),
+          h('span', { key: 'p', className: 'journal-add__plus' }, icon(adding ? 'x' : 'plus')),
           h('span', { key: 'l' }, adding ? t('Cancel') : t('Write an entry')),
         ],
       ),

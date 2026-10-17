@@ -29,7 +29,6 @@ import { test } from 'node:test'
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 // Each plugin's language task removes its own line; a stale exception fails.
 const TU_A_CORRIGER = [
-  'listening-post',
   'meals',
 ]
 
