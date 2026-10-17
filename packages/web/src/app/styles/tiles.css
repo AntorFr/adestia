@@ -452,3 +452,6 @@
 .adestia-catalogues__back { align-self: flex-start; }
 .adestia-catalogues__add { display: flex; flex-direction: column; gap: var(--space-3); }
 .adestia-catalogues__add > .adestia-btn { align-self: flex-end; }
+
+/* A name and one field: the sheet is as tall as that, not the 720px of a list. */
+.adestia-nameprompt { height: auto; }
