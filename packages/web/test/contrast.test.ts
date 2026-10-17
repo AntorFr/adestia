@@ -129,3 +129,72 @@ it("keeps nestor's system-dark rule identical to its explicit dark rule", () => 
   expect(system, 'media rule').toBeDefined()
   expect(colour(system![1])).toEqual(colour(declared(sheet, [":root[data-skin='nestor'][data-theme='dark']"])))
 })
+
+// Composed backgrounds: a tint of a colour over a surface is a colour of its own, and
+// the token table above cannot see it. The tint percentages are READ from the shipped
+// rules, so a return to 12 % turns this red; the chip ink follows Tile's fallback chain.
+const sheetOf = (path: string) => readFileSync(new URL(`../src/app/styles/${path}`, import.meta.url), 'utf8')
+const rule = (sheet: string, selector: string): string => {
+  const found = rules0(sheet).find(([sel]) => sel === selector)
+  if (!found) throw new Error(`Missing rule: ${selector}`)
+  return found[1]
+}
+function rules0(sheet: string): [string, string][] {
+  const flat = sheet.replace(/\/\*[\s\S]*?\*\//g, '')
+  return [...flat.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => [m[1]!.trim(), m[2]!])
+}
+/** The percentage of `var(--token) N%` in a `color-mix(in srgb, …, transparent)` of a declaration. */
+function tint(body: string, property: string, token: string): number {
+  const m = new RegExp(`${property}:\\s*color-mix\\(in srgb,\\s*var\\(${token}(?:,[^)]*\\))?\\)\\s+(\\d+)%,\\s*transparent\\)`).exec(body)
+  if (!m) throw new Error(`No ${property} tint of ${token} in: ${body}`)
+  return Number(m[1]) / 100
+}
+function over(top: string, alpha: number, bottom: string): string {
+  const ch = (i: number) => Math.round(parseInt(top.slice(i, i + 2), 16) * alpha + parseInt(bottom.slice(i, i + 2), 16) * (1 - alpha))
+  return '#' + [1, 3, 5].map((i) => ch(i).toString(16).padStart(2, '0')).join('')
+}
+const ratioOf = (a: string, b: string) => {
+  const [x, y] = [luminance(a), luminance(b)]
+  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05)
+}
+const firstDefined = (tokens: Tokens, names: string[]) => names.find((n) => tokens[n] !== undefined)!
+
+it('keeps the E-19 headings legible on the band they sit in, under every skin and theme', () => {
+  const settings = sheetOf('settings.css')
+  const kinds = [['.adestia-problems--refused', '--danger', '--danger-text'],
+    ['.adestia-problems--degraded', '--warning', '--warning-text']] as const
+  for (const scope of scopes) {
+    const i = scope.theme === 'light' ? 0 : 1
+    for (const [selector, fill, ink] of kinds) {
+      const alpha = tint(rule(settings, selector), 'background', fill)
+      expect(alpha, `${selector} tint`).toBeLessThanOrEqual(0.05)
+      for (const surface of ['--surface']) { // the page: a band is drawn straight on it
+        const bg = over(resolve(scope.tokens, fill, i), alpha, resolve(scope.tokens, surface, i))
+        const ratio = ratioOf(resolve(scope.tokens, ink, i), bg)
+        expect(ratio, `${scope.skin} ${scope.theme}: ${selector} h2 on ${surface}`).toBeGreaterThanOrEqual(4.5)
+      }
+    }
+  }
+})
+
+it('keeps the hot chip legible on its fill for the hues of the shell hot chips, following the twin chain', () => {
+  const body = rule(sheetOf('tiles.css'), '.adestia-chip--hot')
+  tint(body, 'background', '--tile-color') // the declared 10 % tint must stay parseable
+  // The rendered fill is the plain raised surface: reader.css's `.adestia-chip` declares its
+  // background after `--hot` at equal weight and wins (E-10 captured white in light). If that
+  // stops being true the tint shows and the premise below must be re-measured, not assumed.
+  expect(rule(sheetOf('reader.css'), '.adestia-chip')).toMatch(/background:\s*var\(--surface-raised\)/)
+  expect(body).toMatch(/color:\s*var\(--tile-color-text,/)
+  for (const scope of scopes) {
+    const i = scope.theme === 'light' ? 0 : 1
+    // The only hues a shell tile with a hot chip wears (MCP servers, settings).
+    for (const hue of ['indigo', 'ardoise']) {
+      // Tile: --tile-color = hue ?? accent; --tile-color-text = hue-text ?? hue ?? accent-text.
+      const ink = resolve(scope.tokens, firstDefined(scope.tokens, [`--adestia-hue-${hue}-text`, `--adestia-hue-${hue}`, '--accent-text']), i)
+      for (const surface of ['--surface-raised']) {
+        const ratio = ratioOf(ink, resolve(scope.tokens, surface, i))
+        expect(ratio, `${scope.skin} ${scope.theme}: hot chip ${hue} on ${surface}`).toBeGreaterThanOrEqual(4.5)
+      }
+    }
+  }
+})

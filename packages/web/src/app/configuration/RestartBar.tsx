@@ -10,7 +10,7 @@ function iconOf(restart: RestartState): IconName {
   if (restart.kind === 'blocked') return 'triangle-alert'
   if (restart.kind === 'failed') return 'circle-alert'
   if (restart.kind === 'asking' || restart.kind === 'waiting') return 'loader-circle'
-  return 'refresh-cw'
+  return 'rotate-ccw'
 }
 
 /**

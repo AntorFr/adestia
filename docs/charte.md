@@ -61,9 +61,11 @@
 - **On fills**: `--on-accent` is the dark ink on a filled accent in both themes, and also
   carries danger, warning and success fills. `--accent-text`, `--danger-text`,
   `--warning-text`, `--success-text` are the text twins of the fills (§ 5).
-- **Hot tile chips**: text uses `--accent-text`; their border and translucent background
-  keep the tile hue. The decorative hue is not a text token (Skippy light indigo falls
-  below AA on its tinted chip background).
+- **Hot tile chips**: text uses `--tile-color-text`, supplied by the tile hue’s
+  `--adestia-hue-<hue>-text` twin where needed, falling back to the hue and then
+  `--accent-text`. Their border and translucent background keep the tile hue. The
+  composed contrast checks in § 5 cover indigo and ardoise; Skippy light indigo needs
+  its text twin to reach AA on the tinted chip background.
 - **Depth**: as inherited — three shadow depths on white cards over a tinted canvas in
   light; borders and planes in dark. One strategy per theme, kept.
 - **Icons**: one set, **Lucide** (ISC licence), vendored as an inline sprite (no CDN: the
@@ -531,6 +533,52 @@ inherited accents. Its lightness also lets the unchanged danger, warning and suc
 fills carry a label at AA. `--text-faint` is corrected in both themes; placeholders have
 the same 4.5:1 floor as other text.
 
+### Composed backgrounds on E-10 and E-19
+
+Measured in Chromium on the `base` seed of `bench/launch.mjs --engine fake`,
+under each skin, explicit light and dark, at 1440 × 900 and 390 × 844. Both sizes
+give the same ratios below. The backgrounds are the rendered sRGB colours after
+alpha composition, rounded to RGB integers for display; ratios use the unrounded values.
+
+E-19 uses the existing `--danger-text` / `--warning-text` inks over a **4%** fill tint
+(the 12% tint failed AA). E-10 hot chips use `--tile-color-text`: `Tile.tsx` reads
+`--adestia-hue-<hue>-text`, falling back to the original hue, or `--accent-text`
+when no hue is defined. Skippy light supplies `--adestia-hue-indigo-text` from
+`--accent-text`; its amber marks and fills keep their colour. The two hot states,
+failed and needs-auth, have identical colours and are represented by one row.
+The E-10 rows below use indigo. Dobby dark also supplies an ardoise text twin
+`#8c8983` (HSL lightness lifted from `#7d7a74`), leaving its tile marks and fills
+unchanged. The hot chip's rendered background is the opaque `--surface-raised`:
+the later `.adestia-chip` rule in `reader.css` overrides the 10% tint in `tiles.css`.
+
+| Pair | Skin / theme | Text RGB | Composed background RGB | Ratio | Threshold | Result |
+|---|---|---|---|---|---|---|
+| E-10 hot chip | skippy / light | 138, 90, 20 | 255,255,255 | 5.91 | 4.5 | ok |
+| E-19 refused heading | skippy / light | 181, 59, 41 | 232,230,233 | 4.66 | 4.5 | ok |
+| E-19 degraded heading | skippy / light | 138, 90, 20 | 231,232,232 | 4.80 | 4.5 | ok |
+| E-10 hot chip | skippy / dark | 242, 169, 59 | 16,20,25 | 9.25 | 4.5 | ok |
+| E-19 refused heading | skippy / dark | 232, 84, 63 | 17,13,14 | 5.32 | 4.5 | ok |
+| E-19 degraded heading | skippy / dark | 242, 169, 59 | 17,17,14 | 9.49 | 4.5 | ok |
+| E-10 hot chip | alfred / light | 76, 111, 224 | 255,255,255 | 4.51 | 4.5 | ok |
+| E-19 refused heading | alfred / light | 190, 57, 44 | 237,235,238 | 4.63 | 4.5 | ok |
+| E-19 degraded heading | alfred / light | 143, 94, 21 | 236,237,237 | 4.72 | 4.5 | ok |
+| E-10 hot chip | alfred / dark | 123, 150, 242 | 20,24,33 | 6.33 | 4.5 | ok |
+| E-19 refused heading | alfred / dark | 234, 106, 92 | 20,16,21 | 6.01 | 4.5 | ok |
+| E-19 degraded heading | alfred / dark | 224, 166, 79 | 20,20,20 | 8.57 | 4.5 | ok |
+| E-10 hot chip | nestor / light | 76, 111, 224 | 255,255,255 | 4.51 | 4.5 | ok |
+| E-19 refused heading | nestor / light | 177, 58, 40 | 243,235,227 | 5.07 | 4.5 | ok |
+| E-19 degraded heading | nestor / light | 135, 89, 20 | 241,236,226 | 5.13 | 4.5 | ok |
+| E-10 hot chip | nestor / dark | 123, 150, 242 | 29,24,54 | 6.06 | 4.5 | ok |
+| E-19 refused heading | nestor / dark | 234, 106, 126 | 27,19,38 | 5.86 | 4.5 | ok |
+| E-19 degraded heading | nestor / dark | 232, 180, 92 | 27,22,37 | 9.33 | 4.5 | ok |
+| E-10 hot chip | dobby / light | 76, 74, 134 | 247,240,225 | 7.03 | 4.5 | ok |
+| E-19 refused heading | dobby / light | 161, 54, 41 | 234,220,201 | 5.07 | 4.5 | ok |
+| E-19 degraded heading | dobby / light | 121, 82, 22 | 234,222,200 | 5.21 | 4.5 | ok |
+| E-10 hot chip | dobby / dark | 138, 136, 184 | 34,27,21 | 5.09 | 4.5 | ok |
+| E-10 hot chip, ardoise | dobby / dark | 140, 137, 131 | 34,27,21 | 4.87 | 4.5 | ok |
+| E-19 refused heading | dobby / dark | 208, 101, 79 | 30,22,17 | 4.79 | 4.5 | ok |
+| E-19 degraded heading | dobby / dark | 217, 165, 72 | 31,24,17 | 7.86 | 4.5 | ok |
+
 ### How the contrast test works
 
 `packages/web/test/contrast.test.ts` reads `tokens.css` and the four `skins/*/skin.css`,
@@ -544,6 +592,12 @@ not listed in § 6, and it prints the two tables above (the file is regenerated 
 test's output, not typed). The list of pairs is data in the test, so a pair added to the
 palette is a line to add.
 
+The same test also composes E-19's refused/degraded tints over the page's
+`--surface` and checks the headings in every declared theme. Hot chips are checked
+for indigo and ardoise through the `hue-text` → `hue` → `accent-text` fallback
+chain on their rendered `--surface-raised` fill. These checks read the delivered
+CSS, so reverting the 4% tint to 12% or dropping a required text twin fails.
+
 Corrections keep the hue (HSL h) and move lightness only. Method per token: a token that is
 a **fill** somewhere (accent, danger, success, warning as a dot, a bar or a button) is kept
 and gains a `*-text` twin for its text uses; a token that is only ever text
@@ -554,7 +608,8 @@ and gains a `*-text` twin for its text uses; a token that is only ever text
 
 ## 6. Accepted departures
 
-None: every pair of the base palette and of the four skins reaches its threshold by
-lightness alone, without redrawing a persona. A pair that could reach AA only by redrawing
-the persona is written here with its reason and "accepted by the mandate holder, to be shown
-to Monsieur" — never silently left under its threshold.
+None: the declared token pairs and the rendered E-10 hot chips and E-19 headings
+listed in § 5 reach AA. This includes the composed backgrounds: token-on-surface
+measurements alone do not establish contrast on a translucent tint. The hot chip uses
+a text twin and E-19 uses a 4% tint; neither redraws a persona. Any pair left below
+AA must be recorded here with its reason and the mandate holder’s acceptance.

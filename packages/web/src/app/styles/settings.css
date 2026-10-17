@@ -139,7 +139,7 @@
  */
 .adestia-problems--refused {
   border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
-  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  background: color-mix(in srgb, var(--danger) 4%, transparent);
 }
 
 .adestia-problems--refused h2 { color: var(--danger-text); }
@@ -147,7 +147,7 @@
 .adestia-problems--degraded {
   border: 0;
   border-left: 3px solid var(--warning);
-  background: color-mix(in srgb, var(--warning) 12%, transparent);
+  background: color-mix(in srgb, var(--warning) 4%, transparent);
 }
 
 .adestia-problems--degraded h2 { color: var(--warning-text); }

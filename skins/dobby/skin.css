@@ -209,6 +209,8 @@
   --adestia-hue-rose: #b67a86;
   --adestia-hue-gris: #9a8c78;
   --adestia-hue-ardoise: #7d7a74;
+  /* Lift only the text twin: the slate binding keeps its muted fill. */
+  --adestia-hue-ardoise-text: #8c8983;
 
   --dby-cuir: #7a2e27;
   --dby-cuir-text: #f3e6d0;

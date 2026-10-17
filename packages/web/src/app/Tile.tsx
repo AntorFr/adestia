@@ -28,7 +28,10 @@ import type { TileInfo } from '../plugins/contract.js'
  * here. Inventing one would mean a palette the skin cannot reach.
  */
 function hueStyle(hue?: string): Record<string, string> {
-  return hue ? { '--tile-color': `var(--adestia-hue-${hue}, var(--accent))` } : {}
+  return hue ? {
+    '--tile-color': `var(--adestia-hue-${hue}, var(--accent))`,
+    '--tile-color-text': `var(--adestia-hue-${hue}-text, var(--adestia-hue-${hue}, var(--accent-text)))`,
+  } : {}
 }
 
 export function Tile(props: {

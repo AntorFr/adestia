@@ -196,7 +196,7 @@
 /* Exactly one kind of figure earns the colour: the one somebody has to act
    on. A tile where every chip is hot has told the reader nothing. */
 .adestia-chip--hot {
-  color: var(--accent-text);
+  color: var(--tile-color-text, var(--tile-color, var(--accent-text)));
   border-color: color-mix(in srgb, var(--tile-color, var(--accent)) 40%, transparent);
   background: color-mix(in srgb, var(--tile-color, var(--accent)) 10%, transparent);
 }
@@ -420,7 +420,6 @@
 }
 
 /* The catalogue pop-in rides the shared sheet; this is only what is inside it. */
-.adestia-catalogues { width: 560px; }
 .adestia-catalogues__body {
   display: flex;
   flex-direction: column;
