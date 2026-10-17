@@ -67,7 +67,7 @@ export function Thread({ active, t, openPage, signing, busySlot, bottom }: Threa
                       context={{ ask: () => {}, compose: () => {}, focusComposer: () => {} }}
                     />
                   ) : (
-                    <span role="status" aria-label={t('Working')}><Icon name="loader-circle" className="adestia-icon--spin" /></span>
+                    <span className="adestia-dots" role="status" aria-label={t('Working')}><Icon name="loader-circle" className="adestia-icon--spin" /></span>
                   )}
                   {/* The climbing counter, when the driver can feed it. */}
                   {active.live!.outputTokens > 0 && (

@@ -66,6 +66,7 @@
   min-width: 0;
   text-overflow: ellipsis;
   padding-right: var(--space-5);
+  background-image: none;
   font-family: var(--font-mono);
 }
 .adestia-model-wrap > .adestia-icon {

@@ -50,7 +50,7 @@
 - **Spacing**: the six steps of `tokens.css` (4 to 32 px) on a 4 px grid.
 - **Radii**: 6 / 10 / 14 px and a 999 px pill (`--radius-sm`, `--radius`, `--radius-lg`,
   `--radius-pill`); legacy micro, control and bubble roles alias this set, while round
-  remains 50%. `--radius-md` is intentionally absent; the chat's remaining `var(--radius-md, 8px)` (conversations.css) falls back to 8 px until the chat tranche (`adestia-qualite-chat`) moves it to `--radius-sm`
+  remains 50%. `--radius-md` is intentionally absent; the chat and delegations use `--radius-sm`.
   `--text-xs` and `--on-accent` are defined.
 - **Colour once**: every colour token of the base palette is written once, as
   `light-dark(<light>, <dark>)`, driven by `color-scheme`. `:root` sets `color-scheme: light
@@ -77,10 +77,12 @@
   chevron-right, settings, pencil, rotate-ccw, save, trash-2, search, folder, file-text,
   sparkles, plug, book-open, sliders-horizontal, handshake, monitor, sun, moon, log-out,
   key-round, lock, users, check, circle-alert, triangle-alert, info, wifi-off, refresh-cw,
-  copy, external-link, loader-circle. The shell's settings and entry screens carry no emoji
-  or Unicode glyph on a control any more; the chat, the editor and the home still draw
-  `▤ ＋ ▥ ⚙ ✎ ↺ ✕ ×`: the chat tranche (`adestia-qualite-chat`) moves its controls to
-  icons, and **TARGET** `adestia-qualite-pages` those of the home and the editor. The manifest `ic:` glyphs (`glyphs.ts`) and a plugin's declared
+  copy, external-link, loader-circle, list, panel-right-open, archive, paperclip,
+  chevron-down, square, arrow-up, clock, pen-line. The shell's settings and entry screens carry no emoji
+  or Unicode glyph on a control any more. The chat rail uses this sprite for its
+  header, tab/list tools, tool traces and MCP close control; the composer, permission
+  and signature controls are the remaining chat tasks. **TARGET**
+  `adestia-qualite-pages` moves the home and editor controls to icons. The manifest `ic:` glyphs (`glyphs.ts`) and a plugin's declared
   tile icon stay its own choice.
 - **Focus**: one global `:focus-visible` rule (§ 4); mouse clicks show nothing.
 - **Motion**: 150–250 ms for a change of state: `--motion-quick` (150 ms) and

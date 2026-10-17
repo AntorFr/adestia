@@ -102,6 +102,7 @@ const FR: Readonly<Record<string, string>> = {
   'No lasting rule for this one — the engine proposed none.':
     "Pas d'autorisation durable ici — le moteur n'a proposé aucune règle.",
   'New conversation': 'Nouvelle conversation',
+  'Close tab': 'Fermer l’onglet',
   'Open apps': 'Ouvrir les apps',
   'There is no page at this address.': 'Il n’y a aucune page à cette adresse.',
   'This page is out of reach — the session may have expired.':

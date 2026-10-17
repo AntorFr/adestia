@@ -256,13 +256,7 @@
   color: var(--text-faint);
 }
 
-.adestia-dots {
-  width: 28px;
-  height: 8px;
-  background:
-    radial-gradient(circle 3px at 4px 4px, var(--text-faint) 96%, transparent) 0 0/12px 8px repeat-x;
-  animation: adestia-pulse 1.1s ease-in-out infinite;
-}
+.adestia-dots { display: inline-flex; align-items: center; }
 
 @keyframes adestia-pulse {
   0%, 100% { opacity: 0.35; }
@@ -464,7 +458,7 @@
 }
 
 .adestia-connect__text {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-width: 0;
   overflow-wrap: anywhere;
   font-size: var(--text-sm);
@@ -573,7 +567,7 @@
 
 /* Shared buttons keep their legacy hooks for the skins. */
 .adestia-chat__header .adestia-ib { width: 32px; height: 32px; }
-.adestia-connect { flex-wrap: wrap; }
+
 .adestia-connect__hide { width: 32px; height: 32px; }
 .adestia-bubble__error .adestia-icon { vertical-align: middle; }
 .adestia-trace__glyph { display: inline-flex; align-self: center; }

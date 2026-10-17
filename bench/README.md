@@ -192,3 +192,29 @@ directory, which is the same thing the server would have written.
   `hover` the `.adestia-edblock` first.
 - **A permanent stream loops.** `/api/turn/attach` is answered once and then
   `204`, because the shell re-attaches after every turn it finishes.
+
+### Chat tranche scenarios
+
+After `npm run build`, run the rail's state captures on the host:
+
+```sh
+node bench/scenarios/chat-matrix.mjs bench/scenarios/chat-rail.mjs
+```
+
+The runner starts and stops one fake-engine instance per skin and locale, and
+passes `BENCH_URL`, `BENCH_OUT` and `BENCH_LOCALE` to the scenario. Optional
+`--skin alfred`, `--locale fr` and `--out bench/shots-chat` narrow a replay or
+choose its output directory. A subsequent chat scenario can export its own
+`seed` name; otherwise the runner uses `base`.
+
+`chat-rail.mjs` captures finished, interrupted and failed turns, expanded tool
+traces, MCP connection prompts, an empty and a long list, keyboard focus, a live
+turn and an attachments-only held message. Each locale gets light and dark at
+1440, 390 and 360 px. Its header lists the rail strings to inspect; seeded
+conversation titles, model names, tool names/targets and message/error content
+are deliberately left in their original language. `rail-report.json` records the
+header controls' measured bounds. The running/held states go through the fake
+engine and the real composer and upload route. `bench/run.sh
+bench/scenarios/chat-rail.mjs` also runs one locale/skin through the Docker
+bench's scripted stream; it replays the disconnected MCP identity in the browser
+because that instance has no sign-in server configured.
