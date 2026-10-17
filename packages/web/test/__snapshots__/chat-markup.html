@@ -122,10 +122,20 @@
 </div>
 <form class="adestia-composer">
 <input multiple="" hidden="" type="file">
-<button type="button" class="adestia-composer__attach" aria-label="Attach files">📎</button>
-<button type="button" class="adestia-composer__attach" aria-label="Extra" title="Extra">✦</button>
-<textarea class="adestia-composer__input" placeholder="Ask the agent…" rows="1" style="height: 48px; overflow-y: hidden;">
+<button type="button" class="adestia-composer__attach adestia-btn adestia-btn--icon" aria-label="Attach files" title="Attach files">
+<svg class="adestia-icon" aria-hidden="true" focusable="false">
+<use href="#adestia-i-paperclip">
+</use>
+</svg>
+</button>
+<button type="button" class="adestia-composer__attach adestia-btn adestia-btn--icon" aria-label="Extra" title="Extra">✦</button>
+<textarea class="adestia-composer__input" aria-label="Ask the agent…" placeholder="Ask the agent…" rows="1" style="height: 48px; overflow-y: hidden;">
 </textarea>
-<button type="submit" class="adestia-composer__send" disabled="" aria-label="Send">↑</button>
+<button type="submit" class="adestia-composer__send adestia-btn adestia-btn--icon" disabled="" aria-label="Send" title="Send">
+<svg class="adestia-icon" aria-hidden="true" focusable="false">
+<use href="#adestia-i-arrow-up">
+</use>
+</svg>
+</button>
 </form>
 </section>
