@@ -773,6 +773,7 @@ function modeBalade(hote, carte, coords, reperes, _trace, t) {
 
   let veille = null;
   let watch = null;
+  let stopped = false;
   let suit = true;
 
   const hud = el('div', 'pc-hud');
@@ -804,6 +805,8 @@ function modeBalade(hote, carte, coords, reperes, _trace, t) {
   hud.appendChild(bSortie);
 
   function stop() {
+    if (stopped) return;
+    stopped = true;
     if (watch != null) navigator.geolocation.clearWatch(watch);
     veille?.release?.().catch(() => {});
     veille = null;

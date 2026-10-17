@@ -10,7 +10,7 @@
  * plugin pose lui-même.
  *
  * Les JETONS sont ceux du shell, lus directement : un skin qui redéfinit `--accent`
- * repeigne la trace, le profil et les pastilles sans savoir que ce plugin
+ * repeint la trace, le profil et les pastilles sans savoir que ce plugin
  * existe. Une couleur en dur ici serait le seul endroit du produit qu'un skin
  * ne pourrait pas habiller.
  *
@@ -195,3 +195,12 @@
 .parcours .pc-moi-acc{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); border-radius:50%; background:color-mix(in srgb,var(--proj) 18%,transparent); border:1px solid color-mix(in srgb,var(--proj) 45%,transparent); }
 .parcours .pc-moi-pt{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:15px; height:15px; border-radius:50%; background:var(--proj); border:2.5px solid var(--surface); box-shadow:var(--shadow-sm); }
 .parcours .pc-moi-cap{ position:absolute; left:50%; top:50%; width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; border-bottom:11px solid var(--proj); transform-origin:50% 100%; }
+
+/* The named exit keeps its word; on a phone the GPS gets its own row. */
+@media (max-width:820px){
+  /* A transformed two-screen track can contain fixed elements: occupy its
+     visible right-hand screen, not the full track. */
+  .parcours.pc-balade{ left:auto; width:100vw; }
+  .parcours .pc-hud{ flex-wrap:wrap; }
+  .parcours .pc-hud-txt{ flex-basis:100%; }
+}
