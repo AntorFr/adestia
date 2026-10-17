@@ -2,8 +2,10 @@
 
 import { useRef } from 'react'
 
+import { StatusDot } from './StatusDot.js'
+
 import type { ConversationMeta } from './conversations.js'
-import { ArchiveGlyph } from './ConversationList.js'
+import { Icon } from '../app/Icon.js'
 import { DRAFT, type OpenConversation } from './useConversations.js'
 import type { TabDot, TabsState } from './tabs.js'
 
@@ -65,7 +67,7 @@ export function TabStrip({
                 onClick={() => activate(id)}
                 title={title}
               >
-                <span className={`adestia-dot adestia-dot--${dotOf(id)}`} aria-hidden="true" />
+                <StatusDot state={dotOf(id)} t={t} />
                 <span className="adestia-tab__title">{title}</span>
               </button>
               {/* Two exits, two meanings: the box puts the CONVERSATION
@@ -74,22 +76,22 @@ export function TabStrip({
               {id !== DRAFT && (
                 <button
                   type="button"
-                  className="adestia-tab__tool"
+                  className="adestia-tab__tool adestia-btn adestia-btn--ghost adestia-btn--icon"
                   aria-label={`${t('Archive')} — ${title}`}
                   title={t('Archive')}
                   onClick={() => void archive(id)}
                 >
-                  <ArchiveGlyph />
+                  <Icon name="archive" />
                 </button>
               )}
               <button
                 type="button"
-                className="adestia-tab__tool"
+                className="adestia-tab__tool adestia-btn adestia-btn--ghost adestia-btn--icon"
                 aria-label={`${t('Close tab')} — ${title}`}
                 title={t('Close tab')}
                 onClick={() => shut(id)}
               >
-                ×
+                <Icon name="x" />
               </button>
             </div>
           )

@@ -34,6 +34,15 @@ export type Locale = 'en' | 'fr'
  * mistranslated, and beats a raw identifier by a mile.
  */
 const FR: Readonly<Record<string, string>> = {
+  Idle: 'Au repos',
+  Waiting: 'En attente',
+  Unread: 'Non lu',
+  Working: 'En cours',
+  Failed: 'Échec',
+  'Weight of the context your next message re-pays': 'Poids du contexte repris par votre prochain message',
+  '%n tool call': '%n appel d’outil',
+  '%n tool calls': '%n appels d’outil',
+
   // The landing canvas
   // One mosaic now: a plugin's tile and a folder's are both doors on a domain.
   Domains: 'Domaines',

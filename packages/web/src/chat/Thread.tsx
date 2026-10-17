@@ -2,6 +2,7 @@
 
 import type { RefObject } from 'react'
 
+import { Icon } from '../app/Icon.js'
 import { SkinSlot } from '../app/SkinSlot.js'
 import type { SkinSlotRender } from '../app/skin.js'
 import { Prose } from '../editor/Reader.js'
@@ -45,7 +46,7 @@ export function Thread({ active, t, openPage, signing, busySlot, bottom }: Threa
               key={`l${index}`}
               className={`adestia-bubble adestia-bubble--agent${last ? ' adestia-bubble--live' : ''}`}
             >
-              <ToolTrace tools={part.tools} />
+              <ToolTrace tools={part.tools} t={t} />
               {part.text &&
                 (last ? (
                   <LiveProse text={part.text} {...(openPage ? { openPage } : {})} />
@@ -66,7 +67,7 @@ export function Thread({ active, t, openPage, signing, busySlot, bottom }: Threa
                       context={{ ask: () => {}, compose: () => {}, focusComposer: () => {} }}
                     />
                   ) : (
-                    <span className="adestia-dots" aria-label="Working" />
+                    <span role="status" aria-label={t('Working')}><Icon name="loader-circle" className="adestia-icon--spin" /></span>
                   )}
                   {/* The climbing counter, when the driver can feed it. */}
                   {active.live!.outputTokens > 0 && (
@@ -83,7 +84,7 @@ export function Thread({ active, t, openPage, signing, busySlot, bottom }: Threa
                 <p className="adestia-bubble__note">{t('Turn interrupted.')}</p>
               )}
               {last && !active.live!.running && active.live!.error && (
-                <p className="adestia-bubble__error">{active.live!.error}</p>
+                <p className="adestia-bubble__error" role="alert"><Icon name="circle-alert" /> {active.live!.error}</p>
               )}
             </article>
           )
@@ -95,7 +96,7 @@ export function Thread({ active, t, openPage, signing, busySlot, bottom }: Threa
       {active.held.map((message, index) => (
         <article key={`h${index}`} className="adestia-bubble adestia-bubble--user adestia-bubble--held">
           <div className="adestia-bubble__text">
-            {message.text || `📎 ${message.attachments.map((a) => a.name).join(', ')}`}
+            {message.text || <><Icon name="paperclip" /> {message.attachments.map((a) => a.name).join(', ')}</>}
           </div>
         </article>
       ))}

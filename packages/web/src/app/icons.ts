@@ -21,6 +21,15 @@
  */
 
 export const ICON_PATHS = {
+  'list': '<path d="M9 6h12M9 12h12M9 18h12M3 6h.01M3 12h.01M3 18h.01"/>',
+  'panel-right-open': '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18m-5-12-3 3 3 3"/>',
+  'archive': '<rect x="3" y="3" width="18" height="4" rx="1"/><path d="M5 7v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7M10 12h4"/>',
+  'paperclip': '<path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>',
+  'chevron-down': '<path d="m6 9 6 6 6-6"/>',
+  'square': '<rect x="3" y="3" width="18" height="18" rx="2"/>',
+  'arrow-up': '<path d="m5 12 7-7 7 7M12 19V5"/>',
+  'clock': '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  'pen-line': '<path d="M13 21h8M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>',
   'plus': '<path d="M5 12h14"/><path d="M12 5v14"/>',
   'x': '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
   'chevron-left': '<path d="m15 18-6-6 6-6"/>',

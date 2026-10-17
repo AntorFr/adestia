@@ -1,5 +1,7 @@
 /** The chat's header: the body's name, the model, the context, the three buttons. */
 
+import { Icon } from '../app/Icon.js'
+
 import { ContextPill } from './ContextPill.js'
 import { ModelPicker, type ModelInfo } from './ModelPicker.js'
 
@@ -49,11 +51,12 @@ export function ChatHeader({
         <span className="adestia-chat__spacer" />
         <ContextPill
           tokens={tokens}
+          t={t}
           {...(contextWindow ? { windowSize: contextWindow } : {})}
         />
         <button
           type="button"
-          className="adestia-ib"
+          className="adestia-ib adestia-btn adestia-btn--icon"
           onClick={() => {
             const opening = !listOpen
             setListOpen(opening)
@@ -62,16 +65,17 @@ export function ChatHeader({
             if (opening) void refreshConversations()
           }}
           aria-label={t('Conversations')}
+          title={t('Conversations')}
           aria-expanded={listOpen}
         >
-          ▤
+          <Icon name="list" />
         </button>
-        <button type="button" className="adestia-ib" onClick={newDraft} aria-label="New conversation">
-          ＋
+        <button type="button" className="adestia-ib adestia-btn adestia-btn--icon" onClick={newDraft} aria-label={t('New conversation')} title={t('New conversation')}>
+          <Icon name="plus" />
         </button>
         {onOpenCanvas && (
-          <button type="button" className="adestia-ib" onClick={onOpenCanvas} aria-label="Open apps">
-            ▥
+          <button type="button" className="adestia-ib adestia-btn adestia-btn--icon" onClick={onOpenCanvas} aria-label={t('Open apps')} title={t('Open apps')}>
+            <Icon name="panel-right-open" />
           </button>
         )}
     </header>

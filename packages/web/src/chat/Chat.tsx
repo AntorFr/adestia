@@ -10,6 +10,8 @@
  * stored transcript and follow a live stream with no second code path.
  */
 
+import { Icon } from '../app/Icon.js'
+
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { type ScreenView } from './stream.js'
@@ -310,17 +312,17 @@ export function Chat({
           <span className="adestia-connect__text">
             <strong>{name}</strong> {t('asks you to connect before it can act for you.')}
           </span>
-          <button type="button" className="adestia-connect__go" onClick={() => beginSignIn(name)}>
+          <button type="button" className="adestia-connect__go adestia-btn adestia-btn--accent" onClick={() => beginSignIn(name)}>
             {t('Connect')}
           </button>
           <button
             type="button"
-            className="adestia-connect__hide"
+            className="adestia-connect__hide adestia-btn adestia-btn--ghost adestia-btn--icon"
             aria-label={`${t('Not now')} — ${name}`}
             title={t('Not now')}
             onClick={() => setDismissed(dismissSignIn(name))}
           >
-            ✕
+            <Icon name="x" />
           </button>
         </div>
       ))}

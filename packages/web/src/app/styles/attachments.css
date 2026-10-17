@@ -24,7 +24,7 @@
   gap: var(--space-1);
   padding: 2px var(--space-2);
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--surface-sunken);
   color: var(--text-muted);
 }
@@ -55,23 +55,27 @@
    and lost the argument on every phone. Up here it is a label beside the
    brand, so it may be sized to the name it actually holds — still truncated
    rather than allowed to push the header's controls off the end. */
-.adestia-model {
-  height: 26px;
-  max-width: 130px;
+.adestia-model-wrap {
+  position: relative;
   min-width: 0;
-  flex: 0 1 auto;
-  text-overflow: ellipsis;
-  padding: 0 var(--space-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-ctl);
-  background: var(--surface);
-  color: var(--text-muted);
-  font: 600 var(--text-sm) var(--font-mono);
-  cursor: pointer;
+  max-width: 130px;
+  flex: 0 1 130px;
 }
-
-.adestia-model:hover { color: var(--text); border-color: var(--accent); }
-.adestia-model:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.adestia-model {
+  width: 100%;
+  min-width: 0;
+  text-overflow: ellipsis;
+  padding-right: var(--space-5);
+  font-family: var(--font-mono);
+}
+.adestia-model-wrap > .adestia-icon {
+  position: absolute;
+  right: var(--space-2);
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--text-muted);
+}
 
 /* The composer's folded controls ---------------------------------------- */
 
