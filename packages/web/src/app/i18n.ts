@@ -204,6 +204,11 @@ const FR: Readonly<Record<string, string>> = {
   conversation: 'fil',
   conversations: 'fils',
   '%n running': '%n en cours',
+  running: 'en cours',
+  waiting: 'en attente',
+  'the configuration file is not writable by this instance':
+    'le fichier de configuration n’est pas modifiable par cette instance',
+  'No setting to show.': 'Aucun réglage à afficher.',
 
   // Signing in to an MCP server (the chat card, and the server page's row)
   'asks you to connect before it can act for you.':
