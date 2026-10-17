@@ -541,6 +541,10 @@ E-19 uses the existing `--danger-text` / `--warning-text` inks over a **4%** fil
 when no hue is defined. Skippy light supplies `--adestia-hue-indigo-text` from
 `--accent-text`; its amber marks and fills keep their colour. The two hot states,
 failed and needs-auth, have identical colours and are represented by one row.
+The E-10 rows below use indigo. Dobby dark also supplies an ardoise text twin
+`#8c8983` (HSL lightness lifted from `#7d7a74`), leaving its tile marks and fills
+unchanged. The hot chip's rendered background is the opaque `--surface-raised`:
+the later `.adestia-chip` rule in `reader.css` overrides the 10% tint in `tiles.css`.
 
 | Pair | Skin / theme | Text RGB | Composed background RGB | Ratio | Threshold | Result |
 |---|---|---|---|---|---|---|
@@ -566,6 +570,7 @@ failed and needs-auth, have identical colours and are represented by one row.
 | E-19 refused heading | dobby / light | 161, 54, 41 | 234,220,201 | 5.07 | 4.5 | ok |
 | E-19 degraded heading | dobby / light | 121, 82, 22 | 234,222,200 | 5.21 | 4.5 | ok |
 | E-10 hot chip | dobby / dark | 138, 136, 184 | 34,27,21 | 5.09 | 4.5 | ok |
+| E-10 hot chip, ardoise | dobby / dark | 140, 137, 131 | 34,27,21 | 4.87 | 4.5 | ok |
 | E-19 refused heading | dobby / dark | 208, 101, 79 | 30,22,17 | 4.79 | 4.5 | ok |
 | E-19 degraded heading | dobby / dark | 217, 165, 72 | 31,24,17 | 7.86 | 4.5 | ok |
 
@@ -581,6 +586,12 @@ every **declared pair**: `--text`, `--text-muted`, `--text-faint`, `--accent-tex
 not listed in § 6, and it prints the two tables above (the file is regenerated from the
 test's output, not typed). The list of pairs is data in the test, so a pair added to the
 palette is a line to add.
+
+The same test also composes E-19's refused/degraded tints over the page's
+`--surface` and checks the headings in every declared theme. Hot chips are checked
+for indigo and ardoise through the `hue-text` → `hue` → `accent-text` fallback
+chain on their rendered `--surface-raised` fill. These checks read the delivered
+CSS, so reverting the 4% tint to 12% or dropping a required text twin fails.
 
 Corrections keep the hue (HSL h) and move lightness only. Method per token: a token that is
 a **fill** somewhere (accent, danger, success, warning as a dot, a bar or a button) is kept
