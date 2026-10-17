@@ -1,0 +1,120 @@
+<section class="adestia-chat">
+<header class="adestia-chat__header">
+<span class="adestia-brandname">Corps</span>
+<select class="adestia-model" aria-label="Model" title="Model">
+<option value="">Auto</option>
+<option value="m-a">Modèle A</option>
+</select>
+<span class="adestia-chat__spacer">
+</span>
+<button type="button" class="adestia-ib" aria-label="Conversations" aria-expanded="true">▤</button>
+<button type="button" class="adestia-ib" aria-label="New conversation">＋</button>
+<button type="button" class="adestia-ib" aria-label="Open apps">▥</button>
+</header>
+<div class="adestia-tabs" role="tablist">
+<div class="adestia-tab" role="tab" aria-selected="false" draggable="true">
+<button type="button" class="adestia-tab__pick" title="Fil deux">
+<span class="adestia-dot adestia-dot--idle" aria-hidden="true">
+</span>
+<span class="adestia-tab__title">Fil deux</span>
+</button>
+<button type="button" class="adestia-tab__tool" aria-label="Archive — Fil deux" title="Archive">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+<rect x="3" y="4" width="18" height="4" rx="1">
+</rect>
+<path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8">
+</path>
+<path d="M10 12h4">
+</path>
+</svg>
+</button>
+<button type="button" class="adestia-tab__tool" aria-label="Close tab — Fil deux" title="Close tab">×</button>
+</div>
+<div class="adestia-tab adestia-tab--active" role="tab" aria-selected="true" draggable="true">
+<button type="button" class="adestia-tab__pick" title="Fil un">
+<span class="adestia-dot adestia-dot--idle" aria-hidden="true">
+</span>
+<span class="adestia-tab__title">Fil un</span>
+</button>
+<button type="button" class="adestia-tab__tool" aria-label="Archive — Fil un" title="Archive">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+<rect x="3" y="4" width="18" height="4" rx="1">
+</rect>
+<path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8">
+</path>
+<path d="M10 12h4">
+</path>
+</svg>
+</button>
+<button type="button" class="adestia-tab__tool" aria-label="Close tab — Fil un" title="Close tab">×</button>
+</div>
+</div>
+<ul class="adestia-conversations">
+<li>
+<button type="button" class="adestia-conversations__item adestia-conversations__item--current">
+<span class="adestia-dot adestia-dot--idle" aria-hidden="true">
+</span>Fil un</button>
+<button type="button" class="adestia-conversations__archive" aria-label="Archive — Fil un" title="Archive">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+<rect x="3" y="4" width="18" height="4" rx="1">
+</rect>
+<path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8">
+</path>
+<path d="M10 12h4">
+</path>
+</svg>
+</button>
+</li>
+<li>
+<button type="button" class="adestia-conversations__item">
+<span class="adestia-dot adestia-dot--idle" aria-hidden="true">
+</span>Fil deux</button>
+<button type="button" class="adestia-conversations__archive" aria-label="Archive — Fil deux" title="Archive">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+<rect x="3" y="4" width="18" height="4" rx="1">
+</rect>
+<path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8">
+</path>
+<path d="M10 12h4">
+</path>
+</svg>
+</button>
+</li>
+<li>
+<button type="button" class="adestia-conversations__item">
+<span class="adestia-dot adestia-dot--idle" aria-hidden="true">
+</span>Fil trois</button>
+<button type="button" class="adestia-conversations__archive" aria-label="Archive — Fil trois" title="Archive">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+<rect x="3" y="4" width="18" height="4" rx="1">
+</rect>
+<path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8">
+</path>
+<path d="M10 12h4">
+</path>
+</svg>
+</button>
+</li>
+</ul>
+<div class="adestia-chat__conversation">
+<article class="adestia-bubble adestia-bubble--user">
+<div class="adestia-bubble__text">question c1</div>
+</article>
+<article class="adestia-bubble adestia-bubble--agent">
+<div class="adestia-prose">
+<p>
+<strong>réponse</strong> c1</p>
+</div>
+</article>
+<div>
+</div>
+</div>
+<form class="adestia-composer">
+<input multiple="" hidden="" type="file">
+<button type="button" class="adestia-composer__attach" aria-label="Attach files">📎</button>
+<button type="button" class="adestia-composer__attach" aria-label="Extra" title="Extra">✦</button>
+<textarea class="adestia-composer__input" placeholder="Ask the agent…" rows="1" style="height: 48px; overflow-y: hidden;">
+</textarea>
+<button type="submit" class="adestia-composer__send" disabled="" aria-label="Send">↑</button>
+</form>
+</section>
