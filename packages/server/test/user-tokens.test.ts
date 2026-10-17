@@ -7,20 +7,22 @@
  * outage mistaken for a revocation.
  */
 
-import { mkdtemp, readFile, stat } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { readFile, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { UserTokens } from '../src/user-tokens.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
+
+afterEach(cleanTmp)
 
 const ISSUER = 'https://auth.example'
 const TOKEN_URL = 'https://auth.example/api/oidc/token'
 
 let dir: string
 beforeEach(async () => {
-  dir = await mkdtemp(join(tmpdir(), 'adestia-tokens-'))
+  dir = await tmpDir('adestia-tokens-')
 })
 
 /** A provider that discovers, then answers each refresh in turn. */

@@ -8,6 +8,8 @@
  * coming after it.
  */
 
+@import './styles/icons.css';
+@import './styles/components.css';
 @import './styles/frame.css';
 @import './styles/chat.css';
 @import './styles/canvas.css';

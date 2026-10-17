@@ -46,7 +46,7 @@ export function registerInstructions(
       return reply
     }
     const files = await listInstructions(workspaceRoot, zones)
-    // Provenance lives in the store, not in the file (see technique.md): a
+    // Provenance lives in the store, not in the file (see ARCHITECTURE.md): a
     // file is an import's when it IS its landing path, or sits inside it for
     // a skill's folder. A local file matches nothing and carries no `source`.
     const declared = catalogues ? await catalogues.list() : []

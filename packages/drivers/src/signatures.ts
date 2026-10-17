@@ -57,7 +57,7 @@ export function signatureRequest(text: string): SignatureRequest | undefined {
  * others' — and from breaking the day an engine nests it one level deeper.
  * Bounded, because a tool result can be a whole file.
  */
-export function textsOf(value: unknown, depth = 0, out: string[] = []): string[] {
+function textsOf(value: unknown, depth = 0, out: string[] = []): string[] {
   if (depth > 6 || out.length > 64) return out
   if (typeof value === 'string') out.push(value)
   else if (Array.isArray(value)) for (const item of value) textsOf(item, depth + 1, out)

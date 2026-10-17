@@ -190,16 +190,26 @@ describe('the delegation frame', () => {
 function fakeChannel(
   run: DelegationPort['run'] = async () => ({ text: 'the answer' }),
   overrides: Partial<DelegationPort> = {},
-): DelegationPort & { runs: { caller: string; conversationId: string; request: string }[] } {
+): DelegationPort & {
+  runs: { caller: string; conversationId: string; request: string }[]
+  /** Resolves when the channel has been asked to run, the first time. */
+  ran: Promise<void>
+} {
   const runs: { caller: string; conversationId: string; request: string }[] = []
   let created = 0
+  let asked!: () => void
+  const ran = new Promise<void>((resolve) => {
+    asked = resolve
+  })
   return {
     runs,
+    ran,
     open: async (_caller, _request, taskId) =>
       taskId === undefined ? { conversationId: `conversation-${++created}` } : { unknown: true as const },
     busy: () => false,
     run: async (caller, conversationId, request) => {
       runs.push({ caller, conversationId, request })
+      asked()
       return run(caller, conversationId, request)
     },
     ...overrides,
@@ -236,7 +246,27 @@ async function call(
   })
 }
 
-const settle = () => new Promise((resolve) => setImmediate(resolve))
+/**
+ * Collects a job once the registry says it is no longer running — and, when
+ * given, once `until` holds of its text. What it waits on is the state the
+ * test is about to assert, observed through the tool the caller itself uses;
+ * each look is a real request, so there is no delay to size and none to lose.
+ */
+async function settledStatus(
+  app: FastifyInstance,
+  jobId: string | undefined,
+  until: (text: string) => boolean = () => true,
+) {
+  for (;;) {
+    const response = await call(app, {
+      method: 'tools/call',
+      id: 99,
+      params: { name: 'ask_skippy_status', arguments: { job_id: jobId } },
+    })
+    const text = response.json().result.content[0].text as string
+    if (!text.includes('still running') && until(text)) return response
+  }
+}
 
 describe('the endpoint', () => {
   it('is not mounted when disabled', async () => {
@@ -355,13 +385,8 @@ describe('the endpoint', () => {
     expect(polled.json().result.content[0].text).toContain('still running')
 
     release({ text: 'the review' })
-    await settle()
 
-    const collected = await call(app, {
-      method: 'tools/call',
-      id: 3,
-      params: { name: 'ask_skippy_status', arguments: { job_id: jobId } },
-    })
+    const collected = await settledStatus(app, jobId)
     expect(collected.json().result.content[0].text).toContain('the review')
     await app.close()
   })
@@ -374,13 +399,8 @@ describe('the endpoint', () => {
       params: { name: 'ask_skippy', arguments: { prompt: 'step one' } },
     })
     const jobId = /job_id "([^"]+)"/.exec(started.json().result.content[0].text as string)?.[1]
-    await settle()
 
-    const collected = await call(app, {
-      method: 'tools/call',
-      id: 2,
-      params: { name: 'ask_skippy_status', arguments: { job_id: jobId } },
-    })
+    const collected = await settledStatus(app, jobId)
     const text = collected.json().result.content[0].text as string
     expect(text).toContain('task_id: "conversation-1"')
     expect(text).toContain('ask_skippy')
@@ -427,7 +447,7 @@ describe('the endpoint', () => {
       id: 1,
       params: { name: 'ask_skippy', arguments: { prompt: 'do it' } },
     })
-    await settle()
+    await channel.ran
     expect(channel.runs[0]).toMatchObject({ caller: 'agent', request: 'do it' })
     await app.close()
   })
@@ -441,7 +461,7 @@ describe('the endpoint', () => {
       'a-shared-secret',
       { 'x-adestia-caller': 'alfred' },
     )
-    await settle()
+    await channel.ran
     expect(channel.runs[0]!.caller).toBe('alfred')
     await app.close()
   })
@@ -455,13 +475,8 @@ describe('the endpoint', () => {
       params: { name: 'ask_skippy', arguments: { prompt: 'x' } },
     })
     const jobId = /job_id "([^"]+)"/.exec(started.json().result.content[0].text as string)?.[1]
-    await settle()
 
-    const collected = await call(app, {
-      method: 'tools/call',
-      id: 2,
-      params: { name: 'ask_skippy_status', arguments: { job_id: jobId } },
-    })
+    const collected = await settledStatus(app, jobId)
     expect(collected.json().result).toMatchObject({ isError: true })
     expect(collected.json().result.content[0].text).toContain('the CLI died')
     await app.close()
@@ -523,16 +538,20 @@ describe('the settled-job ping', () => {
 
   it('knocks on the caller’s callback with the two identifiers, nothing more', async () => {
     const sent: { url: string; body: unknown }[] = []
+    let knocked!: () => void
+    const pinged = new Promise<void>((resolve) => {
+      knocked = resolve
+    })
     const fetchImpl = vi.fn(async (url: unknown, init?: RequestInit) => {
       sent.push({ url: String(url), body: JSON.parse(String(init?.body)) })
+      knocked()
       return new Response('{}', { status: 202 })
     }) as unknown as typeof fetch
     const { app } = await build({}, fakeChannel(), fetchImpl)
 
     const started = await askWithCallback(app)
     const jobId = /job_id "([^"]+)"/.exec(started.json().result.content[0].text as string)?.[1]
-    await settle()
-    await settle()
+    await pinged
 
     expect(sent).toHaveLength(1)
     expect(sent[0]!.url).toBe('https://alfred.example/callback')
@@ -541,7 +560,17 @@ describe('the settled-job ping', () => {
   })
 
   it('sends nothing when the caller declared no door, or said notify false', async () => {
-    const fetchImpl = vi.fn(async () => new Response('{}')) as unknown as typeof fetch
+    // The proof is a sentinel: a third ask that DOES declare its door. Every
+    // job settles through the same steps in the order it was asked, so when the
+    // sentinel's ping has gone out, the two before it have had their chance to.
+    let knocked!: () => void
+    const pinged = new Promise<void>((resolve) => {
+      knocked = resolve
+    })
+    const fetchImpl = vi.fn(async () => {
+      knocked()
+      return new Response('{}')
+    }) as unknown as typeof fetch
     const { app } = await build({}, fakeChannel(), fetchImpl)
 
     await call(app, {
@@ -550,10 +579,10 @@ describe('the settled-job ping', () => {
       params: { name: 'ask_skippy', arguments: { prompt: 'no door' } },
     })
     await askWithCallback(app, { notify: false })
-    await settle()
-    await settle()
+    await askWithCallback(app)
+    await pinged
 
-    expect(fetchImpl).not.toHaveBeenCalled()
+    expect(fetchImpl).toHaveBeenCalledTimes(1)
     await app.close()
   })
 
@@ -565,14 +594,9 @@ describe('the settled-job ping', () => {
 
     const started = await askWithCallback(app)
     const jobId = /job_id "([^"]+)"/.exec(started.json().result.content[0].text as string)?.[1]
-    await settle()
-    await settle()
 
-    const collected = await call(app, {
-      method: 'tools/call',
-      id: 2,
-      params: { name: 'ask_skippy_status', arguments: { job_id: jobId } },
-    })
+    // The note of the failed ping is the last thing the job receives.
+    const collected = await settledStatus(app, jobId, (text) => text.includes('callback ping failed'))
     const text = collected.json().result.content[0].text as string
     expect(text).toContain('the answer')
     expect(text).toContain('callback ping failed')

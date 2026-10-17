@@ -11,30 +11,17 @@
  * Needs: `git` on the PATH. No engine binary, no credential.
  */
 
-import { execFile } from 'node:child_process'
-import { lstat, mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { lstat, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-import { promisify } from 'node:util'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { type StartedInstance, start } from '../src/start.js'
+import { git } from './support/git.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
 
-const run = promisify(execFile)
+afterEach(cleanTmp)
 
-async function git(cwd: string, ...args: string[]): Promise<void> {
-  await run('git', args, {
-    cwd,
-    env: {
-      ...process.env,
-      GIT_AUTHOR_NAME: 'T',
-      GIT_AUTHOR_EMAIL: 't@example.org',
-      GIT_COMMITTER_NAME: 'T',
-      GIT_COMMITTER_EMAIL: 't@example.org',
-    },
-  })
-}
 
 const exists = (path: string) => stat(path).then(() => true, () => false)
 
@@ -108,14 +95,13 @@ const items = async (id: string) => (await api('GET', `/api/instruction-catalogu
 const read = (path: string) => readFile(join(workspace, path), 'utf8')
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'adestia-cat-e2e-'))
+  root = await tmpDir('adestia-cat-e2e-')
   dataDir = join(root, 'data')
   workspace = join(root, 'workspace')
   driverId = 'claude-code'
 })
 afterEach(async () => {
   await shutdown()
-  await rm(root, { recursive: true, force: true })
 })
 
 describe('B-declare: a list of catalogue repositories, kept by the instance, not by the config file', () => {

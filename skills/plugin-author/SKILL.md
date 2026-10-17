@@ -837,6 +837,74 @@ another plugin's data.
 store directories on its command line and build one over them, the way
 `listening-post`'s `pagesOverDirs` does. Do not re-derive a walk.
 
+## Shell components
+
+The shell ships its own controls as classes, drawn from tokens, so a plugin's screen looks
+like the shell's in every skin and in both themes. Use the classes; do not restyle them.
+Variants are modifiers, sizes are `--sm` or the default.
+
+### Icons
+
+The shell mounts its Lucide sprite once at boot. Use it directly from your markup;
+no shell import, icon package or network request is needed:
+
+```html
+<button type="button" class="adestia-btn adestia-btn--icon" aria-label="Add">
+  <svg class="adestia-icon" aria-hidden="true" focusable="false">
+    <use href="#adestia-i-plus"></use>
+  </svg>
+</button>
+```
+
+For vanilla JS, create the `svg` and `use` with
+`document.createElementNS('http://www.w3.org/2000/svg', …)` and set the use's `href`
+to `#adestia-i-<name>`. The icon is decorative: put the translated accessible name
+on its control (or visible text beside it), as with `aria-label` above.
+`.adestia-icon` draws at `1em`, with a `currentColor` stroke of width 2;
+`.adestia-icon--sm` uses a finer stroke of width 1.75. Add
+`.adestia-icon--spin` for a spinner.
+
+Available names (the closed subset in `packages/web/src/app/icons.ts`, also listed
+in `docs/charte.md` under Icons):
+
+```text
+plus, x, chevron-left, chevron-right, settings, pencil, rotate-ccw, save,
+trash-2, search, folder, file-text, sparkles, plug, book-open,
+sliders-horizontal, handshake, monitor, sun, moon, log-out, key-round, lock,
+users, check, circle-alert, triangle-alert, info, wifi-off, refresh-cw, copy,
+external-link, loader-circle
+```
+
+Use these exact kebab-case names after `adestia-i-`; other Lucide names are not
+in the sprite. A plugin's declared tile icon remains its own choice.
+
+### Controls
+
+- **Button** — `.adestia-btn`; variants `.adestia-btn--accent`, `--danger`, `--ghost`;
+  `.adestia-btn--icon` (square, **needs an `aria-label`**); size `.adestia-btn--sm`.
+  Busy: put a `loader-circle` icon with `.adestia-icon--spin` in place of the icon and set
+  `aria-busy="true"`. Disabled uses the `disabled` attribute.
+- **Sheet** — `.adestia-sheet` (the scrim), `.adestia-sheet__panel`, `__head`, `__title`,
+  `__body`, `__foot`. A centred panel; a bottom sheet under 820 px (`--breakpoint-mobile`).
+- **Popover** — `.adestia-popover`: a raised panel, positioned by you (`position: fixed`,
+  8 px from the anchor).
+- **Empty state** — `.adestia-empty.adestia-empty--state` with `__icon`, `__text`, `__action`.
+- **Field** — `.adestia-field` with `__label`, `__help`, `__error`; controls
+  `.adestia-input`, `.adestia-select`, `.adestia-textarea`, and `.adestia-toggle` (a real
+  `<input type="checkbox" role="switch">`). Bind help and error with `aria-describedby`,
+  set `aria-invalid="true"` on the control, and put an alert icon in the error: colour is never alone.
+- **Segmented control** — `.adestia-segmented` with `.adestia-segmented__item`
+  (`role="radiogroup"` / `role="radio"`, `aria-checked`, `aria-label` and `title`).
+
+**The sheet contract, for JS without React** (three lines — there is no helper, AD-8):
+
+1. Mount `.adestia-sheet` on `document.body` (not inside your view: the shell's panes are
+   transformed on a phone) with `role="dialog"`, `aria-modal="true"` and `aria-labelledby`
+   on the panel.
+2. On open move focus to the first focusable inside, wrap Tab within the panel; Escape and a
+   click on the scrim close it.
+3. On close remove the node and give focus back to the element that opened it.
+
 ## Before you finish
 
 1. `adestia-plugin.json` parses and matches the schema above.

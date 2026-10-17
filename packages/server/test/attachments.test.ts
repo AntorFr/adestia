@@ -1,10 +1,12 @@
-import { mkdir, mkdtemp, readFile, readdir, utimes, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, readFile, readdir, utimes, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { AttachmentInbox, frameAttachments, safeName } from '../src/attachments.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
+
+afterEach(cleanTmp)
 
 let root: string
 let inbox: AttachmentInbox
@@ -13,7 +15,7 @@ const anna = { id: 'https://id.example/anna', displayName: 'Anna' }
 const bo = { id: 'https://id.example/bo', displayName: 'Bo' }
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'adestia-inbox-'))
+  root = await tmpDir('adestia-inbox-')
   inbox = new AttachmentInbox(root)
 })
 

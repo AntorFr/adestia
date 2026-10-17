@@ -1,5 +1,77 @@
 # Status — Adestia
-> MàJ : 2026-10-08
+> MàJ : 2026-10-17
+
+**Tranche `adestia-qualite-charte` (epic adestia-qualite) — assemblée, PR vers
+`epic/adestia-qualite`, pas fusionnée.** Aucun changement de ce que font les écrans (B-1).
+- Charte : `docs/charte.md` écrite (sections TARGET comprises) ; `tokens.css` écrit sa
+  palette sombre une fois (`light-dark()`, AD-10), l'échelle typographique et les rayons ;
+  `packages/web/test/contrast.test.ts` mesure chaque paire de la palette de base et des
+  quatre skins, clair et sombre (AA ou écart écrit). Focus visible global.
+- Composants (B-7) : classes CSS du shell (`styles/components.css`) + enveloppes React
+  `app/ui/` (Button, Sheet, Popover, EmptyState, Field, focus) ; icônes Lucide en sprite
+  inline vendoré (`app/icons.ts`, `Icon.tsx`, AD-9) ; documentés dans `skills/plugin-author`.
+- Requêtes (R-11) : `app/request.ts` (`requestJson`, AD-11), utilisée par E-1, E-9 à E-15,
+  `signin.ts`, `useInstance.ts` ; plus aucun `fetchImpl(` dans ces écrans.
+- Langue (AD-5, B-10) : le skin reçoit la langue de l'instance (entrée facultative) ; les
+  quatre skins parlent en en et fr, chacun dans sa voix ; table française d'`i18n.ts` au *vous*.
+- Écrans : E-1 (portes) et E-21, E-9 à E-15, E-19 refaits avec les composants ; Instructions,
+  Configuration, McpServers découpés (R-12, `app/instructions/`, `app/configuration/`,
+  `app/mcp/`, aucune fonction > 250 lignes : `node scripts/function-lines.mjs`) ; E-14 a
+  son état de chargement et `--tile-color` sur ses rendus d'erreur et vide (Q-21, Q-23).
+- Recette : `npm ci`, `npm run typecheck`, `npm run lint`, `npm test` (2160 vitest +
+  543 `node --test`, 2 sautés) ; lancement `node bench/launch.mjs --engine fake`, captures
+  par `node bench/sweep.mjs`.
+- Reste / pièges : la charte n'est pas appliquée au chat, aux pages ni aux plugins (tranches
+  suivantes, qui adoptent ces composants) ; pas de toasts (écart écrit) ; pas de « Réessayer »,
+  de confirmation avant « Remove » ni d'écran hors ligne (B-1, recommandations de fin d'epic) ;
+  `live.ts` et `usePage.ts` gardent leur `fetchImpl(` (tranches chat/pages). Une valeur de token
+  qui change change tous les écrans : la charte écrit la raison.
+
+**Tranche `adestia-qualite-serveur` (epic adestia-qualite) — assemblée, PR vers
+`epic/adestia-qualite`, pas fusionnée.** Aucun comportement changé (AD-1).
+- Pilotes : règle des en-têtes MCP (`mcp-headers.ts`), aides et déroulé device-code
+  (`engine-aids.ts`, `device-code.ts`) écrits une fois ; le programme du CLI d'outils de
+  Copilot est un `.mjs` copié sous `dist/` par le `build` du paquet `drivers`, octets inchangés.
+- Serveur : toutes les routes sous `routes/` ; `app.ts` ne fait que monter (limiteur →
+  `turn-limiter.ts`, tour sans tête → `unattended.ts`) ; `start()` en étapes nommées, ordre du
+  boot fixé par `start-order.test.ts` ; frontmatter dans `frontmatter.ts`, `field()` unique.
+- Garde-fous : `npm run lint` en CI, zod déclaré, `scripts/unused-exports.mjs` (178 hits
+  restants, tous nommés dans ARCHITECTURE.md › R-6 : types de contrat public ou exports gardés
+  pour leur test, par arbitrage — le critère « que des types publics » a été lu ainsi).
+- Recette : `npm ci` (jamais `npm install`), `npm run typecheck`, `npm run lint`, `npm test`
+  (2073 vitest, 15 sautés) ; lancement `node bench/launch.mjs --engine fake`.
+- Reste / pièges : `assertConformance` n'est toujours pas câblé au boot (défaut connu) ;
+  analyseurs de frontmatter, parcours de dossiers, `copyMarkedTree` et défauts de sécurité des
+  catalogues restent (AD-7) ; `bench-ensemble.test.ts` dure ~5 min.
+
+**Tranche `adestia-qualite-tests` (epic adestia-qualite) — assemblée, PR vers
+`epic/adestia-qualite`, pas fusionnée.** Aucun fichier de production touché.
+- R-9 : `packages/server/test/support/` (`driver.ts`, `git.ts`, `tmp.ts`) porte le
+  pilote factice, le dépôt git de test et l'espace temporaire ; les fichiers de
+  `packages/server/test` l'importent. `packages/drivers/test` garde ses faux.
+- R-10 : callback, mcp, restart n'attendent plus par `setImmediate` ; watch, pages,
+  shell-tools, background n'ont plus de `setTimeout` d'attente ; cause du test
+  instable de page-editor écrite dans ARCHITECTURE.md (R-10).
+- R-14 : `catalogues-ui-ensemble.test.ts` trouve Playwright par `npm root -g`,
+  construit le shell dans son `beforeAll` si `dist-web` manque (avec
+  `NODE_ENV=production`), et se saute en disant `no playwright` sinon.
+- Recette : `npm ci`, `npm run typecheck`, `npm run lint`, `npm test` (1977 tests
+  vitest + 543 `node --test`, aucun sauté) ; lancement `node packages/server/bin/adestia.js`
+  → 200 sur `/`. Le build du shell est payé une fois, au premier passage de la suite
+  des catalogues sans `dist-web`.
+- Reste / pièges : le
+  lancement local sur moteur factice (B-2) vit sous `bench/` (voir ci-dessous) ; si le build du shell
+  dépasse la minute, passer à un `pretest`.
+
+**Banc sans docker (feature `adestia-qualite-banc`, assemblée, PR vers `epic/adestia-qualite`) :**
+`bench/launch.mjs` (moteur factice ou vrai Claude), `bench/seed/*` (base, empty,
+config-writable, config-readonly, oidc, plugins ; contrôle `bench/seed/check.mjs`),
+`bench/sweep.mjs` (124 captures E-1 à E-31, `--skin`). Vérifié dans le pod : `/api/health`
+répond `ok`, SIGTERM retire le répertoire de données, balayage 124/124 en ~2 min (2 à 4 min selon la machine), refus net
+de `--engine claude` sans jeton. **Pas vérifié** : un tour réel `--engine claude` (pas de
+jeton dans le pod d'intégration) — joué par Monsieur : il a révélé que le jeton factice rangé par un semis masquait celui de l'environnement (le pilote préfère la crédential rangée) ; le lanceur la retire désormais en `--engine claude`. Suite entière verte (2013 vitest) une fois l'epic fusionnée. Le balayage et le lanceur lisent
+Playwright dans `npm root -g` ; `docker`/`bench/run.sh` inchangés. Reste à l'epic : les
+corrections visuelles (charte, chat, pages, plugins) et le support de test (tests).
 
 **État :** `main` est à **v0.87.0** (entrées v0.69 à v0.87 ci-dessous, pas dans
 l'ordre) ; la **v0.80.0** était taguée et **déployée sur les trois corps le

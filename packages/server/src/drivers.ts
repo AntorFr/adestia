@@ -23,7 +23,7 @@ import type { McpServer } from './extensions.js'
 import { FileRefreshStore } from './mcp-refresh.js'
 import { SecretStore } from './secrets.js'
 
-export const AVAILABLE_DRIVERS = ['claude-code', 'copilot-cli', 'codex-cli'] as const
+const AVAILABLE_DRIVERS = ['claude-code', 'copilot-cli', 'codex-cli'] as const
 
 export async function buildDriver(
   config: AdestiaConfig,

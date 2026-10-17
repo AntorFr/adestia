@@ -39,7 +39,7 @@ interface Entry {
 const EARLY_MS = 60_000
 const TIMEOUT_MS = 15_000
 
-export interface TokenExchange {
+interface TokenExchange {
   /**
    * The provider's issuer. The token endpoint is DISCOVERED from it rather
    * than assembled: `<issuer>/api/oidc/token` is one provider's path, not a

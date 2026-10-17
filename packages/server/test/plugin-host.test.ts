@@ -1,20 +1,22 @@
-import { chmod, mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { chmod, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import Fastify from 'fastify'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import type { DiscoveredPlugin } from '../src/extensions.js'
 import { mountPluginApis, runSetups } from '../src/plugin-host.js'
 import { pagesService, resolveStores } from '../src/stores.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
+
+afterEach(cleanTmp)
 
 let root: string
 const logs: string[] = []
 const log = (message: string) => void logs.push(message)
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'adestia-host-'))
+  root = await tmpDir('adestia-host-')
   logs.length = 0
 })
 

@@ -5,39 +5,27 @@
  * POST refresh, DELETE the item — each call returns the expected code and
  * body; GET /api/instructions carries `source` for an imported item and not
  * for a local file. Expected values are written by hand from the design
- * (technique.md §Contrats d'interface), not read back from the routes.
+ * (docs/donnees.md), not read back from the routes.
  */
 
-import { execFile } from 'node:child_process'
-import { mkdtemp, mkdir, readFile, stat, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { promisify } from 'node:util'
 
 import Fastify, { type FastifyInstance } from 'fastify'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import type { Driver } from '@antorfr/adestia-drivers'
 
 import { InstructionCataloguesStore } from '../src/instruction-catalogues-store.js'
 import { registerInstructionCatalogues } from '../src/routes/instruction-catalogues.js'
 import { registerInstructions } from '../src/routes/instructions.js'
 import { MANAGED_MARKER } from '../src/skills.js'
+import { ScriptedDriver } from './support/driver.js'
+import { git } from './support/git.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
 
-const execFileAsync = promisify(execFile)
+afterEach(cleanTmp)
 
-async function git(cwd: string, ...args: string[]): Promise<void> {
-  await execFileAsync('git', args, {
-    cwd,
-    env: {
-      ...process.env,
-      GIT_AUTHOR_NAME: 'Test',
-      GIT_AUTHOR_EMAIL: 'test@example.org',
-      GIT_COMMITTER_NAME: 'Test',
-      GIT_COMMITTER_EMAIL: 'test@example.org',
-    },
-  })
-}
+
 async function commitAll(dir: string): Promise<void> {
   await git(dir, 'add', '--', '.')
   await git(dir, 'commit', '--quiet', '--no-gpg-sign', '-m', 'change')
@@ -46,8 +34,8 @@ const exists = (path: string) => stat(path).then(() => true, () => false)
 
 /** A driver that reads skills and the root instruction, but has no agent zone. */
 type Zone = { path: string; kind: 'instruction' | 'skill' | 'agent'; entry?: string }
-function driverWith(zones: Zone[]): Driver {
-  return { instructionPaths: () => zones } as unknown as Driver
+function driverFor(zones: Zone[]) {
+  return new ScriptedDriver([], { instructionPaths: zones })
 }
 const NO_AGENT: Zone[] = [
   { path: 'CLAUDE.md', kind: 'instruction' as const },
@@ -61,7 +49,7 @@ let app: FastifyInstance
 
 async function boot(zones: Zone[] = NO_AGENT): Promise<void> {
   const store = new InstructionCataloguesStore(dataDir)
-  const driver = driverWith(zones)
+  const driver = driverFor(zones)
   app = Fastify()
   registerInstructions(app, { driver, workspaceRoot: workspace, catalogues: store })
   registerInstructionCatalogues(app, { driver, workspaceRoot: workspace, dataDir, store })
@@ -78,9 +66,9 @@ async function declare(): Promise<void> {
 }
 
 beforeEach(async () => {
-  repo = await mkdtemp(join(tmpdir(), 'adestia-cat-api-repo-'))
-  workspace = await mkdtemp(join(tmpdir(), 'adestia-cat-api-ws-'))
-  dataDir = await mkdtemp(join(tmpdir(), 'adestia-cat-api-data-'))
+  repo = await tmpDir('adestia-cat-api-repo-')
+  workspace = await tmpDir('adestia-cat-api-ws-')
+  dataDir = await tmpDir('adestia-cat-api-data-')
   await git(repo, 'init', '--quiet', '-b', 'main')
   await mkdir(join(repo, 'dev-flow/skills/tri'), { recursive: true })
   await writeFile(
@@ -365,7 +353,7 @@ describe('what a refresh and a removal leave alone', () => {
   it('refreshing one catalogue does not touch another catalogue\'s import', async () => {
     await declare()
     await app.inject({ method: 'PUT', url: '/api/instruction-catalogues/core/items/dev-flow/skills/tri' })
-    const other = await mkdtemp(join(tmpdir(), 'adestia-cat-api-other-'))
+    const other = await tmpDir('adestia-cat-api-other-')
     await git(other, 'init', '--quiet', '-b', 'main')
     await mkdir(join(other, 'skills/zed'), { recursive: true })
     await writeFile(join(other, 'skills/zed/SKILL.md'), '---\nname: zed\ndescription: z\n---\n# zed\n')

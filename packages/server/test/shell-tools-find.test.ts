@@ -14,8 +14,7 @@
  * most valuable primitive. Hence the last describe below.
  */
 
-import { mkdtemp, mkdir, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -23,6 +22,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { ConversationStore } from '../src/conversations.js'
 import { ShellToolsService } from '../src/shell-tools.js'
 import { resolveStores, type Store } from '../src/stores.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
+
+afterEach(cleanTmp)
 
 let root: string
 let workspace: string
@@ -52,8 +54,8 @@ const find = async (args: Record<string, string> = {}) => {
 }
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'adestia-find-'))
-  workspace = await mkdtemp(join(tmpdir(), 'adestia-find-ws-'))
+  root = await tmpDir('adestia-find-')
+  workspace = await tmpDir('adestia-find-ws-')
 })
 
 afterEach(async () => {

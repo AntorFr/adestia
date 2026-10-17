@@ -11,6 +11,7 @@ import { makePageEditor } from '../plugins/PageEditor.js'
 import { wordsFor } from '../plugins/words.js'
 import { resolveLocale, translator } from './i18n.js'
 import { followChanges } from './live.js'
+import { requestJson } from './request.js'
 import type { IndexEntry, StoreInfo } from './sections.js'
 import { browserSkinEnvironment, loadSkin, type Skin, type SkinDescriptor, type SkinSlots } from './skin.js'
 
@@ -68,6 +69,8 @@ export function useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef
   const [instance, setInstance] = useState<InstanceInfo | undefined>()
   const [failures, setFailures] = useState<readonly { id: string; reason: string }[]>([])
   const [fatal, setFatal] = useState<string | undefined>()
+  /** The first start failed on the network itself (a thrown fetch), not on an HTTP status. */
+  const [offline, setOffline] = useState(false)
   const [needsLogin, setNeedsLogin] = useState<'signin' | 'refused' | undefined>()
   const [pages, setPages] = useState<readonly IndexEntry[]>([])
   /**
@@ -91,7 +94,11 @@ export function useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef
     let cancelled = false
     void (async () => {
       try {
-        const response = await fetchImpl('/api/instance')
+        // Before the instance answers there is no operator locale: the browser's speaks.
+        const say = translator(
+          resolveLocale(undefined, typeof navigator === 'undefined' ? undefined : navigator.language),
+        )
+        const response = await requestJson<InstanceInfo>(fetchImpl, '/api/instance', undefined, say)
         if (response.status === 401) {
           // Not an error to display: it means "sign in", and showing a status
           // code instead leaves the user reading a number with no way forward.
@@ -104,12 +111,25 @@ export function useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef
           if (!cancelled) setNeedsLogin('refused')
           return
         }
-        if (!response.ok) throw new Error(`the server answered ${response.status}`)
-        const info = (await response.json()) as InstanceInfo
+        if (!response.ok) {
+          // Status 0 is the helper's mark for a failure before any answer: the network.
+          if (!cancelled) {
+            setOffline(response.status === 0)
+            setFatal(response.error)
+          }
+          return
+        }
+        const info = response.data
         if (cancelled) return
         setInstance(info)
 
-        const dressed = await loadSkin(info.skin, browserSkinEnvironment())
+        // The skin speaks the instance's language, so the locale is resolved
+        // before the module is asked for its words.
+        const pluginLocale = resolveLocale(
+          info.locale,
+          typeof navigator === 'undefined' ? undefined : navigator.language,
+        )
+        const dressed = await loadSkin(info.skin, browserSkinEnvironment(), pluginLocale)
         if (!cancelled) {
           setSkin(dressed.skin)
           setSkinScheme(
@@ -151,10 +171,6 @@ export function useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef
         // would hold one that is not wired yet.
         // The plugins are loaded once the instance has answered, so this is
         // the resolved locale rather than a guess.
-        const pluginLocale = resolveLocale(
-          info.locale,
-          typeof navigator === 'undefined' ? undefined : navigator.language,
-        )
         const environment = browserEnvironment(
           (prompt) => askRef.current?.(prompt),
           (text) => composeRef.current?.(text),
@@ -181,15 +197,18 @@ export function useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef
 
         // The INDEX rather than the plain list: sections are dressed by their
         // index page's frontmatter, and only this endpoint carries it.
-        const list = await fetchImpl('/api/pages/index')
+        const list = await requestJson<{ entries?: IndexEntry[]; stores?: StoreInfo[] }>(
+          fetchImpl,
+          '/api/pages/index',
+        )
         if (list.ok && !cancelled) {
           // Checked rather than trusted: this JSON crosses a process boundary,
           // and a shape the shell did not expect used to reach `sectionsOf`
           // and throw mid-render — blanking the whole app over a payload that
           // merely had no pages in it.
-          const body = (await list.json()) as { entries?: IndexEntry[]; stores?: StoreInfo[] }
-          setPages(Array.isArray(body.entries) ? body.entries : [])
-          setStores(Array.isArray(body.stores) ? body.stores : [])
+          const body = list.data
+          setPages(Array.isArray(body?.entries) ? body.entries : [])
+          setStores(Array.isArray(body?.stores) ? body.stores : [])
         }
       } catch (error) {
         // A shell that renders an empty page when the API is unreachable makes
@@ -226,15 +245,18 @@ export function useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef
       fetchImpl,
       signal: controller.signal,
       onChange: async () => {
-        const list = await fetchImpl('/api/pages/index').catch(() => undefined)
-        if (!list?.ok || controller.signal.aborted) return
-        const body = (await list.json()) as { entries?: IndexEntry[]; stores?: StoreInfo[] }
-        setPages(Array.isArray(body.entries) ? body.entries : [])
-        setStores(Array.isArray(body.stores) ? body.stores : [])
+        const list = await requestJson<{ entries?: IndexEntry[]; stores?: StoreInfo[] }>(
+          fetchImpl,
+          '/api/pages/index',
+        )
+        if (!list.ok || controller.signal.aborted) return
+        const body = list.data
+        setPages(Array.isArray(body?.entries) ? body.entries : [])
+        setStores(Array.isArray(body?.stores) ? body.stores : [])
       },
     })
     return () => controller.abort()
   }, [instance, fetchImpl])
 
-  return { instance, failures, fatal, needsLogin, pages, stores, skin, skinScheme, loaded }
+  return { instance, failures, fatal, offline, needsLogin, pages, stores, skin, skinScheme, loaded }
 }
