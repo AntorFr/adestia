@@ -1,39 +1,22 @@
-import { mkdtemp, mkdir, readFile, stat, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import type { Driver, DriverDescriptor, TurnEvent } from '@antorfr/adestia-drivers'
+import type { Driver } from '@antorfr/adestia-drivers'
 
 import { MANAGED_MARKER } from '../src/skills.js'
 import { start, loadConfigFile, type StartedInstance } from '../src/start.js'
+import { ScriptedDriver } from './support/driver.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
 
-class StubDriver implements Driver {
-  describe(): Promise<DriverDescriptor> {
-    return Promise.resolve({
-      id: 'stub',
-      label: 'Stub',
-      cliVersion: '0',
-      capabilities: [],
-    })
-  }
-  env(): Promise<Readonly<Record<string, string>>> {
-    return Promise.resolve({})
-  }
-  async *runTurn(): AsyncIterable<TurnEvent> {
-    return
-  }
-  interrupt(): Promise<void> {
-    return Promise.resolve()
-  }
-}
+afterEach(cleanTmp)
 
 let root: string
 let started: StartedInstance | undefined
 let logs: string[]
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'adestia-start-'))
+  root = await tmpDir('adestia-start-')
   logs = []
 })
 
@@ -46,7 +29,7 @@ afterEach(async () => {
 const boot = async (
   config: string,
   file = 'adestia.config.yaml',
-  driverFactory: () => Driver = () => new StubDriver(),
+  driverFactory: () => Driver = () => new ScriptedDriver([], { capabilities: [] }),
 ) => {
   await writeFile(join(root, file), `${config}\nport: 0\n`)
   started = await start({
@@ -69,7 +52,7 @@ describe('configuration loading', () => {
   it('surfaces a malformed config instead of starting half-configured', async () => {
     await writeFile(join(root, 'bad.yaml'), 'prt: 8080\n')
     await expect(
-      start({ cwd: root, configPath: 'bad.yaml', driverFactory: () => new StubDriver() }),
+      start({ cwd: root, configPath: 'bad.yaml', driverFactory: () => new ScriptedDriver([], { capabilities: [] }) }),
     ).rejects.toThrow(/unknown setting "prt"/)
   })
 
@@ -299,14 +282,14 @@ describe('the permission posture', () => {
     // broken" by everyone including the agent. Loud beats degraded.
     await writeFile(join(root, 'ask.yaml'), 'permissions:\n  mode: ask\nport: 0\n')
     await expect(
-      start({ cwd: root, configPath: 'ask.yaml', driverFactory: () => new StubDriver() }),
+      start({ cwd: root, configPath: 'ask.yaml', driverFactory: () => new ScriptedDriver([], { capabilities: [] }) }),
     ).rejects.toThrow(/cannot ask/)
   })
 
   it('refuses a posture it does not know', async () => {
     await writeFile(join(root, 'bogus.yaml'), 'permissions:\n  mode: sometimes\nport: 0\n')
     await expect(
-      start({ cwd: root, configPath: 'bogus.yaml', driverFactory: () => new StubDriver() }),
+      start({ cwd: root, configPath: 'bogus.yaml', driverFactory: () => new ScriptedDriver([], { capabilities: [] }) }),
     ).rejects.toThrow(/permissions.mode/)
   })
 })
@@ -359,11 +342,7 @@ describe('workspace.umask', () => {
 
 describe('the shell introducing itself', () => {
   /** A CLI that reads contracts, which is what makes delivery happen at all. */
-  class SkilledDriver extends StubDriver {
-    skillsPath(): string {
-      return '.claude/skills'
-    }
-  }
+  const skilled = () => new ScriptedDriver([], { skillsPath: '.claude/skills' })
 
   const contractPath = (workspace: string) =>
     join(root, workspace, '.claude', 'skills', 'this-instance', 'SKILL.md')
@@ -372,7 +351,7 @@ describe('the shell introducing itself', () => {
     // The end of the confabulation, tested where it actually happens: not that
     // a function can compose prose, but that a booting instance leaves the
     // prose on disk, naming itself.
-    await boot('name: Atelier\nworkspace:\n  root: ./ws\n', 'adestia.config.yaml', () => new SkilledDriver())
+    await boot('name: Atelier\nworkspace:\n  root: ./ws\n', 'adestia.config.yaml', () => skilled())
     const contract = await readFile(contractPath('ws'), 'utf8')
 
     expect(contract).toContain('Adestia')
@@ -385,7 +364,7 @@ describe('the shell introducing itself', () => {
   })
 
   it('lists the tools this boot really registered, never a hard-coded set', async () => {
-    await boot('workspace:\n  root: ./ws\n', 'adestia.config.yaml', () => new SkilledDriver())
+    await boot('workspace:\n  root: ./ws\n', 'adestia.config.yaml', () => skilled())
     const contract = await readFile(contractPath('ws'), 'utf8')
     expect(contract).toContain('rename_conversation')
     expect(contract).toContain('new_id')
@@ -411,13 +390,8 @@ describe('the shell introducing itself', () => {
     await writeFile(join(dir, 'skills', 'relire', 'SKILL.md'), '---\nname: relire\nagent: relecteur\n---\n')
     await writeFile(join(dir, 'agents', 'relecteur.md'), '---\nname: relecteur\n---\n\nRelis.\n')
 
-    class AgentDriver extends SkilledDriver {
-      agentsPath(): string {
-        return '.claude/agents'
-      }
-    }
     const config = 'workspace:\n  root: ./ws\nextensions:\n  tools: [sdlc]\n'
-    await boot(config, 'adestia.config.yaml', () => new AgentDriver())
+    await boot(config, 'adestia.config.yaml', () => new ScriptedDriver([], { skillsPath: '.claude/skills', agentsPath: '.claude/agents' }))
     const agent = await readFile(join(root, 'ws', '.claude', 'agents', 'sdlc-relecteur.md'), 'utf8')
     expect(agent).toContain('name: sdlc-relecteur')
     const skill = await readFile(join(root, 'ws', '.claude', 'skills', 'sdlc-relire', 'SKILL.md'), 'utf8')
@@ -427,7 +401,7 @@ describe('the shell introducing itself', () => {
     await started?.close()
     started = undefined
     logs.length = 0
-    await boot(config.replace('./ws', './ws2'), 'adestia.config.yaml', () => new SkilledDriver())
+    await boot(config.replace('./ws', './ws2'), 'adestia.config.yaml', () => skilled())
     expect(logs.join('\n')).toContain('reads no subagents: sdlc-relecteur.md not delivered')
   })
 
@@ -449,7 +423,7 @@ describe('the shell introducing itself', () => {
     await boot(
       'name: Atelier\nurl: https://atelier.example/\nworkspace:\n  root: ./ws\n',
       'adestia.config.yaml',
-      () => new SkilledDriver(),
+      () => skilled(),
     )
     const contract = await readFile(contractPath('ws'), 'utf8')
     // The trailing slash is a display detail the config layer strips (see
@@ -465,7 +439,7 @@ describe('the shell introducing itself', () => {
     await boot(
       'name: Atelier\nworkspace:\n  root: ./ws\n',
       'adestia.config.yaml',
-      () => new SkilledDriver(),
+      () => skilled(),
     )
     const contract = await readFile(contractPath('ws'), 'utf8')
     expect(contract).not.toContain('It answers at')

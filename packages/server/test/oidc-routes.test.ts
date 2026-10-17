@@ -13,22 +13,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { buildApp, type AppDependencies } from '../src/app.js'
 import { DEFAULT_SESSION_TTL_MS, parseConfig } from '../src/config.js'
 import { SESSION_COOKIE, signPayload, type SessionPayload } from '../src/oidc.js'
-import type { Driver, DriverDescriptor, TurnEvent } from '@antorfr/adestia-drivers'
-
-class StubDriver implements Driver {
-  describe(): Promise<DriverDescriptor> {
-    return Promise.resolve({ id: 'stub', label: 'Stub', cliVersion: '0', capabilities: [] })
-  }
-  env(): Promise<Readonly<Record<string, string>>> {
-    return Promise.resolve({})
-  }
-  async *runTurn(): AsyncIterable<TurnEvent> {
-    return
-  }
-  interrupt(): Promise<void> {
-    return Promise.resolve()
-  }
-}
+import { ScriptedDriver } from './support/driver.js'
 
 const SECRET = 'a-test-secret-long-enough-to-pass'
 
@@ -52,7 +37,7 @@ let app: FastifyInstance
 const build = async (config = oidcConfig(), overrides: Partial<AppDependencies> = {}) => {
   app = await buildApp({
     config: parseConfig(config),
-    driver: new StubDriver(),
+    driver: new ScriptedDriver([], { capabilities: [] }),
     plugins: [],
     pluginProblems: [],
     ...overrides,

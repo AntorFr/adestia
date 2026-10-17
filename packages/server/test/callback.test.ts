@@ -25,19 +25,49 @@ const build = async (
   fetchImpl: typeof fetch = statusAnswer('done: voilà'),
 ) => {
   const app = Fastify()
-  const runTurn = vi.fn(async (_prompt: string) => {})
+  // The test owns the wake: `woke` resolves on the first call, so a test that
+  // expects a wake awaits it rather than counting turns of the event loop.
+  let wake!: () => void
+  const woke = new Promise<void>((resolve) => {
+    wake = resolve
+  })
+  const runTurn = vi.fn(async (_prompt: string) => {
+    wake()
+  })
   registerCallback(app, { servers: async () => servers, runTurn, fetchImpl })
   await app.ready()
-  return { app, runTurn }
+  return { app, runTurn, woke }
 }
+
+/**
+ * Proves a wake did NOT happen without waiting for time to pass: the handler
+ * detaches its work and answers 202 before that work is done, so the test
+ * sends one more knock that is certain to wake, and awaits that wake. The
+ * detached chains start in order and take the same steps, so by the time the
+ * sentinel wakes, the one under test has ended. The wake it did not make is
+ * then the only thing missing from `runTurn`'s calls.
+ */
+const SENTINEL = 'job-sentinel'
+const sentinelWakes = async (
+  app: Awaited<ReturnType<typeof build>>['app'],
+  woke: Promise<void>,
+) => {
+  expect((await knock(app, { from: 'alfred', job_id: SENTINEL })).statusCode).toBe(202)
+  await woke
+}
+
+/** A peer that confirms only the sentinel's job, and says "no such job" to the rest. */
+const confirmsSentinelOnly = () =>
+  vi.fn(async (_url: unknown, init?: { body?: unknown }) =>
+    String(init?.body).includes(SENTINEL)
+      ? new Response(JSON.stringify({ result: { content: [{ type: 'text', text: 'done' }] } }))
+      : new Response(
+          JSON.stringify({ result: { content: [{ type: 'text', text: 'no such job — expired' }] } }),
+        ),
+  ) as unknown as typeof fetch
 
 const knock = (app: Awaited<ReturnType<typeof build>>['app'], body: unknown) =>
   app.inject({ method: 'POST', url: '/callback', payload: body as Record<string, unknown> })
-
-const settle = async () => {
-  await new Promise((resolve) => setImmediate(resolve))
-  await new Promise((resolve) => setImmediate(resolve))
-}
 
 describe('the wake prompt', () => {
   it('is a template whose only variables are the two validated ids', () => {
@@ -96,17 +126,18 @@ describe('the verification', () => {
 
 describe('the door', () => {
   it('wakes the agent for a verified settlement, once', async () => {
-    const { app, runTurn } = await build()
+    const { app, runTurn, woke } = await build()
     const first = await knock(app, { from: 'alfred', job_id: 'job-0000007' })
     expect(first.statusCode).toBe(202)
-    await settle()
+    await woke
 
     expect(runTurn).toHaveBeenCalledTimes(1)
     expect(runTurn.mock.calls[0]![0]).toContain('ask_alfred_status')
 
     // The replay: same 202 — this door explains itself to nobody — no wake.
-    await knock(app, { from: 'alfred', job_id: 'job-0000007' })
-    await settle()
+    // A duplicate schedules nothing, so the answer is the last step there is.
+    const replay = await knock(app, { from: 'alfred', job_id: 'job-0000007' })
+    expect(replay.statusCode).toBe(202)
     expect(runTurn).toHaveBeenCalledTimes(1)
     await app.close()
   })
@@ -125,7 +156,7 @@ describe('the door', () => {
       payload: '{not json',
     })
     expect(broken.statusCode).toBe(400)
-    await settle()
+    // Every refusal above answered before anything was scheduled: nothing is left to wait for.
     expect(runTurn).not.toHaveBeenCalled()
     await app.close()
   })
@@ -133,20 +164,23 @@ describe('the door', () => {
   it('drops a ping from a name that is none of OUR peers', async () => {
     // The only settlements that mean anything are those of agents this
     // instance can ask; everything else is noise a 202 swallows.
-    const fetchImpl = vi.fn() as unknown as typeof fetch
-    const { app, runTurn } = await build([alfred], fetchImpl)
+    const fetchImpl = confirmsSentinelOnly()
+    const { app, runTurn, woke } = await build([alfred], fetchImpl)
     expect((await knock(app, { from: 'mallory', job_id: 'job-0000001' })).statusCode).toBe(202)
-    await settle()
-    expect(fetchImpl).not.toHaveBeenCalled()
-    expect(runTurn).not.toHaveBeenCalled()
+    await sentinelWakes(app, woke)
+    // The one poll that went out is the sentinel's: mallory bought none.
+    expect(fetchImpl).toHaveBeenCalledTimes(1)
+    expect(runTurn).toHaveBeenCalledTimes(1)
+    expect(runTurn.mock.calls[0]![0]).toContain(SENTINEL)
     await app.close()
   })
 
   it('drops a ping the peer does not confirm — a forged one buys a poll, nothing more', async () => {
-    const { app, runTurn } = await build([alfred], statusAnswer('no such job — it may have expired'))
+    const { app, runTurn, woke } = await build([alfred], confirmsSentinelOnly())
     expect((await knock(app, { from: 'alfred', job_id: 'job-0000001' })).statusCode).toBe(202)
-    await settle()
-    expect(runTurn).not.toHaveBeenCalled()
+    await sentinelWakes(app, woke)
+    expect(runTurn).toHaveBeenCalledTimes(1)
+    expect(runTurn.mock.calls[0]![0]).toContain(SENTINEL)
     await app.close()
   })
 })

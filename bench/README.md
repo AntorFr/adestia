@@ -14,6 +14,110 @@ It builds the image from an explicit path, boots it with a throwaway data
 directory, drives headless Chromium in a container against it, and removes
 everything it made. Screenshots land in `bench/shots/` (git-ignored).
 
+## Without Docker: `bench/launch.mjs`
+
+```sh
+npm run build
+node bench/launch.mjs --engine fake                               # the scripted engine
+CLAUDE_CODE_OAUTH_TOKEN=… node bench/launch.mjs --engine claude   # a real Claude turn
+```
+
+Options: `--skin <id>`, `--locale en|fr`, `--seed <name>` (default `base`),
+`--port <n>` (default: a free one), `--data <dir>` (default: a throwaway
+directory under `os.tmpdir()`; a directory you name is kept). It prints
+`listening on <url>` once `/api/health` answers `ok`, and runs until SIGTERM,
+which stops it and removes its data. Browse the URL, or drive it by API
+(`POST /api/conversations`, then `POST /api/turn`).
+
+- **`--engine fake`** calls `start({ driverFactory })` with `bench/fake-engine.mjs`,
+  a `Driver` that answers by script: the last message is matched against an
+  ordered list of `{ when, events }` (events are `TurnEvent`s); no match echoes
+  the message, `ping` answers `pong`. Same message, same events, every time.
+  It is a bench tool only — the product has no fake mode and no config key for it.
+- **`--engine claude`** starts the plain `packages/server/bin/adestia.js` with the
+  token from the environment and refuses without `CLAUDE_CODE_OAUTH_TOKEN`.
+- **Seeds**: `bench/seed/<name>.mjs` default-exports
+  `async ({ workspace, dataDir, base, port, onClose }) => configYaml`. It writes
+  pages, threads and plugin data the way the product stores them
+  (`docs/donnees.md`) and returns the instance configuration as YAML; the
+  launcher sets port, directories, locale and skin over it. Optional exports:
+  `scripts` (fake-engine answers), `engine` (what the fake engine reports: MCP
+  health, the credential `armed|absent|invalid`), `config` (`{ file:
+  'writable'|'readonly'|'none' }`, below) and `ready({ url })` (runs once it
+  answers, to start the turns that must be *running*). A file starting with `_`
+  is shared code, not a seed.
+
+| `--seed` | What it shows |
+|---|---|
+| `base` | The populated instance: 20+ pages in two stores (every core block, a lost and an ambiguous wikilink, a vocabulary the product refuses to save, an unreadable frontmatter, a stray `app:`, files, two collections), conversations (running, unread, idle, archived, long, medium, a thread with every bubble state), six MCP servers in every health, instructions and three catalogues (importable, empty, unreachable), four delegations from two callers, a brief, a stored credential, a refused plugin and a plugin delivering a skill. No settings route: E-14 says it does not expose its configuration. |
+| `config-writable` | `base`, with the configuration file the screen reads and writes. |
+| `config-readonly` | `base`, with the file read-only and the credential refused upstream. A process running as root can write a `0444` file: the screen then shows it writable. |
+| `oidc` | `base` behind a sign-in; the provider is `bench/oidc-stub.mjs`. |
+| `empty` | Nothing: no plugin, page, conversation, server, catalogue or credential. |
+| `plugins` | The ten bundled plugins active, each with data in its own format (`bench/seed/_plugins.mjs`): tasks and lists (late, today, later, closed, unassigned), planif notes (valid, disabled, invalid, with a last run; the clock stays off), journals (with entries, empty), a derived atelier workbook, trips (confirmed, suggested, dismissed, an idea without dates, a closed one), a watchlist (sources, a local feed the seed serves, a source that fails, kept items with transcripts, a pasted link, a dismissed one), a route with its trace, meals periods (with and without dates), a project planning (dated sub-pages, statuses, an unreadable date, an undated folder) and a page for the scan feature. `bench-noview` is an app with a tile and no view: `#/bench-noview` is E-20. The camera of E-30 is the browser's: launch Chromium with `--use-fake-device-for-media-stream --use-fake-ui-for-media-stream`. No MCP server and no refused plugin, so no band sits over a screen; the trips' map key is a placeholder. |
+
+The chat states are asked for by typing their word (`bench/seed/_scripts.mjs`):
+`fini`, `outil`, `erreur`, `permission` (waits), `signature`, `en cours`
+(waits), `long contexte`, `contexte moyen`. A waiting turn ends when you stop it
+(`POST /api/turn/stop`). `base` starts two of them itself: the conversation
+« Conversation en cours » and a delegation from `courrier`.
+
+`--engine claude` always has a configuration file (the binary reads one), so
+`base` exposes `/api/settings` there. Seeds, not engines, decide the credential:
+with `--engine claude` the real token is the one in the environment: the launcher
+deletes the placeholder credential a seed stored (the Claude driver prefers a stored
+credential to the environment, so it would answer `401 Invalid bearer token`).
+
+**`oidc`** requires `--engine fake`; the launcher refuses `--engine claude --seed oidc`
+before loading the seed, so the real Claude CLI cannot inherit disabled TLS verification.
+The sign-in is real: `/auth/login` goes to the stub, which signs `alice` (group
+`famille`, allowed) in; `GET <issuer>/__as?user=visiteur` makes the next
+sign-in the visitor's, whom `allowedGroups` refuses. The product only talks to
+an issuer over HTTPS, so the stub serves a self-signed certificate made by
+`openssl` and the stub sets `NODE_TLS_REJECT_UNAUTHORIZED=0` (a browser
+following the redirect must ignore certificate errors). The session secret is
+fixed in the seed so a session of a refused group can be forged to reach the
+« refused » gate.
+
+**Checking the seeds**: `node bench/seed/check.mjs [--seed base,empty,…]` starts
+each seed (for `plugins`, one measure per plugin — `plugins › voyages: …` — reading what its API answers), reads the screens' data through the API, sends every trigger message
+and exits non-zero naming each measure that failed (`check: base › mcp: …`).
+
+`bench/bench.mjs` finds Playwright under `/usr/lib/node_modules`, or else under
+`npm root -g`.
+
+## Every screen, both themes, both sizes: `bench/sweep.mjs`
+
+```sh
+npm run build
+node bench/sweep.mjs [--skin <id>] [--locale en|fr] [--out <dir>] [--only E-4,E-9]
+```
+
+One command, no docker: Playwright and its Chromium come from the environment
+(`npm root -g`, never from the repository). For each seed the screens need
+(`base`, `config-writable`, `oidc`, `plugins`) it starts the launcher on the
+scripted engine, then captures each screen of `docs/ecrans.md` (E-1 to E-31) in
+`light` and `dark`, at 1440×900 and at a 390×844 touch viewport:
+31 × 2 × 2 = 124 files in `<out>/<skin>/<E-n>-<name>-<theme>-<desk|phone>.png`
+(`<skin>` is `default` without `--skin`; `--out` defaults to `bench/shots-sweep`,
+ignored by git). Two to four minutes, depending on the machine.
+
+The table at the top of the script is the one place that knows a screen: its
+seed, route, the gesture that opens it and the **selector that proves it is that
+screen**. A capture whose selector never shows, or that shows `.adestia-loading`
+or `.adestia-fatal` where the screen is not one (E-21 is: offline, the cached
+shell opens on the fatal gate), is a failure: the sweep goes on, prints
+`FAIL E-n name theme size: why`, and exits 1 naming each. A new screen is a new
+row; a screen whose markup changes is a selector to update.
+
+How the states that have no file to live in are reached: E-1 is the sign-in gate
+of a shell whose session has ended (a fresh visit is bounced to the provider, which
+signs Alice straight back in), so the shell is loaded signed in and its one
+`/api/instance` request is answered with what the server answers without a session;
+E-17 types `permission` and stops the turn afterwards; E-21 waits for the service
+worker to cache the shell, then cuts the network and reloads; E-30 runs Chromium on a
+fake camera (`--use-fake-device-for-media-stream`).
+
 ## What is real and what is not
 
 Everything is the real product — the image, the server, the shell, its

@@ -8,36 +8,22 @@
  * convention an engine ships.
  */
 
-import { execFile } from 'node:child_process'
-import { mkdtemp, mkdir, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { promisify } from 'node:util'
 
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import { scanCatalogue } from '../src/instruction-catalogues.js'
 import { fetchSources } from '../src/sources.js'
+import { git } from './support/git.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
 
-const execFileAsync = promisify(execFile)
+afterEach(cleanTmp)
+
 const silent = () => {}
 
-async function git(cwd: string, ...args: string[]): Promise<void> {
-  await execFileAsync('git', args, {
-    cwd,
-    // A runner has no identity configured, and a commit without one fails.
-    env: {
-      ...process.env,
-      GIT_AUTHOR_NAME: 'Test',
-      GIT_AUTHOR_EMAIL: 'test@example.org',
-      GIT_COMMITTER_NAME: 'Test',
-      GIT_COMMITTER_EMAIL: 'test@example.org',
-    },
-  })
-}
-
 async function seedRepo(): Promise<string> {
-  const dir = await mkdtemp(join(tmpdir(), 'adestia-catalogue-repo-'))
+  const dir = await tmpDir('adestia-catalogue-repo-')
   await git(dir, 'init', '--quiet', '-b', 'main')
   return dir
 }
@@ -48,7 +34,7 @@ async function commit(dir: string): Promise<void> {
 }
 
 async function cloned(repo: string): Promise<string> {
-  const cache = await mkdtemp(join(tmpdir(), 'adestia-catalogue-cache-'))
+  const cache = await tmpDir('adestia-catalogue-cache-')
   const { roots, problems } = await fetchSources(
     [{ kind: 'git', name: 'catalogue', repo: `file://${repo}`, ref: 'main' }],
     cache,
