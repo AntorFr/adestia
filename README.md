@@ -20,7 +20,9 @@ docker compose up
 ```
 
 The first `up` builds the image from the `Dockerfile`; the agent needs
-`CLAUDE_CODE_OAUTH_TOKEN` (see `docker-compose.yml`).
+`CLAUDE_CODE_OAUTH_TOKEN` (see `docker-compose.yml`). The compose file mounts
+`adestia.config.yaml` read-only: saving from the Settings screen cannot write it
+there; edit the file on the host (or drop the `:ro`).
 
 Without Docker, from a clone (`data/` and `workspace/` are created in the
 current directory; `-c <path>` points at another config file):
@@ -42,7 +44,8 @@ node bench/sweep.mjs                   # every screen, light and dark, desk and 
 
 The sweep takes Playwright and Chromium from the environment (`npm root -g`); do not
 add them to the repo. The launcher runs until SIGTERM (`kill <pid>`, or Ctrl-C), which
-removes its throwaway data; in a script, start it in the background and keep its pid.
+removes its throwaway data; in a script, start it in the background and keep its pid
+(`$!`). Its boot log includes a plugin refused on purpose (`bench-refused`, part of the seed): not an error.
 
 `--engine claude` runs a real turn instead (needs `CLAUDE_CODE_OAUTH_TOKEN`).
 See [bench/README.md](bench/README.md). The map of the code, the decisions (AD-n) and the
