@@ -118,6 +118,29 @@ describe('the MCP screen, charter level', () => {
     expect(screen.queryByText('Remove')).toBeNull()
   })
 
+  // Fails if the read-only mark loses its lock (E-10), in either language.
+  it.each([['en', 'read-only'], ['fr', 'lecture seule']])('marks a config-owned tile with a lock in %s', async (lang, word) => {
+    const f = serving({
+      '/api/mcp/servers': () =>
+        reply(200, { servers: [{ name: 'ha', source: 'config', editable: false, transport: 'http', config: { name: 'ha' } }] }),
+    })
+    const { container } = render(<McpServers onOpen={() => {}} fetchImpl={f} t={translator(lang as 'en' | 'fr')} />)
+    await screen.findByText('ha')
+    const chip = await waitFor(() => {
+      const el = Array.from(container.querySelectorAll('.adestia-chip')).find((c) => c.textContent?.includes(word))
+      expect(el).toBeTruthy()
+      return el!
+    })
+    expect(chip.querySelector('svg use')?.getAttribute('href') ?? chip.querySelector('svg')?.innerHTML).toContain('lock')
+  })
+
+  // Fails if hot chip text goes back to the decorative tile hue (Skippy light fell under AA).
+  it('colours hot chip text with the text token, not the tile hue', () => {
+    const css = readFileSync(resolve(__dirname, '../src/app/styles/tiles.css'), 'utf8')
+    const rule = /\.adestia-chip--hot\s*\{([^}]*)\}/.exec(css)![1]!
+    expect(rule).toMatch(/(^|[;\s])color:\s*var\(--accent-text\)\s*;/)
+  })
+
   // Fails if any sentence the MCP files say is missing from the French table.
   it('has a French form for every sentence the MCP screen files say', () => {
     const fr = translator('fr')
