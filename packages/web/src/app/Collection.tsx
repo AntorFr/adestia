@@ -100,6 +100,9 @@ export function CollectionLayout({ fields, openPage, children }: LayoutProps) {
   return (
     <div className="adestia-collection">
       {children}
+      {!open && collection.live.length === 0 && collection.archived.length > 0 && (
+        <EmptyState icon="check" text={t('Everything here is finished.')} />
+      )}
 
       {!collection.of && (
         <p className="adestia-collection__problem">
@@ -117,7 +120,7 @@ export function CollectionLayout({ fields, openPage, children }: LayoutProps) {
           {open.live.length > 0
             ? rows(open.live)
             : open.archived.length > 0 && (
-                <EmptyState icon="folder-open" text={t('Everything here is finished.')} />
+                <EmptyState icon="check" text={t('Everything here is finished.')} />
               )}
           {fold(open.archived)}
         </>
@@ -154,7 +157,7 @@ export function CollectionLayout({ fields, openPage, children }: LayoutProps) {
       {collection.of && collection.into && ask && (
         <button
           type="button"
-          className="adestia-btn adestia-btn--ghost adestia-collection__new"
+          className="adestia-btn adestia-btn--ghost adestia-btn--sm adestia-collection__new"
           onClick={() =>
             ask(
               t('Create a new page of type “%type” in %into, for this collection.')

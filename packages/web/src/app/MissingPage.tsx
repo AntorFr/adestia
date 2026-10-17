@@ -16,6 +16,7 @@
  * go next, and the one thing this screen knows for certain.
  */
 
+import { Icon } from './Icon.js'
 import { EmptyState } from './ui/EmptyState.js'
 import { sectionRoute } from './owners.js'
 
@@ -39,11 +40,11 @@ export function MissingPage({ path, status, t = (key) => key }: MissingPageProps
 
   return (
     <section className="adestia-missing">
-      <EmptyState icon={status === 404 ? 'file-question' : status === 401 || status === 403 ? 'lock' : 'triangle-alert'} text={reason} />
+      <EmptyState icon={status === 404 ? 'file-question' : status === 401 || status === 403 ? 'lock' : 'circle-alert'} text={reason} />
       <p className="adestia-missing__path">{path}</p>
       {folder ? (
         <p>
-          <a className="adestia-btn adestia-btn--ghost" href={`#${sectionRoute(folder)}`}>{t('Open the folder above')}</a>
+          <a className="adestia-btn adestia-btn--ghost" href={`#${sectionRoute(folder)}`}><Icon name="folder-open" />{t('Open the folder above')}</a>
         </p>
       ) : null}
     </section>
