@@ -10,7 +10,7 @@ export interface FieldProps {
   readonly children: ReactElement<{ id?: string; 'aria-describedby'?: string; 'aria-invalid'?: boolean }>
 }
 
-/** `.adestia-field` (docs/charte.md § 7.4): label, control, help and error bound by `aria-describedby`. */
+/** `.adestia-field` (docs/charte.md § 4): label, control, help and error bound by `aria-describedby`. */
 export function Field({ label, help, error, children }: FieldProps) {
   const uid = useId()
   const id = children.props.id ?? `${uid}-control`

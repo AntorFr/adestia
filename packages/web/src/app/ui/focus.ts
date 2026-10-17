@@ -1,5 +1,5 @@
 /**
- * The focus trap and its return, shared by Sheet and Popover (docs/charte.md § 7.4).
+ * The focus trap and its return, shared by Sheet and Popover (docs/charte.md § 4).
  *
  * On open, focus goes to the first focusable of the container (the container itself
  * when it holds none); on close it returns to the element that had it before.

@@ -1,5 +1,5 @@
 /*
- * Shell components (docs/charte.md § 7.4, AD-4): classes first, React wrappers
+ * Shell components (docs/charte.md § 4, AD-4): classes first, React wrappers
  * second. A plugin without React draws the same thing with the same classes.
  * Every value is a token; variants are modifiers, sizes are `--sm` or default.
  */

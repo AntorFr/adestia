@@ -27,7 +27,7 @@ interface Labelled extends Common {
 
 export type ButtonProps = IconOnly | Labelled
 
-/** `.adestia-btn` (docs/charte.md § 7.4). */
+/** `.adestia-btn` (docs/charte.md § 4). */
 export function Button(props: ButtonProps) {
   const { variant = 'neutral', small, busy, icon, className, children, type = 'button', disabled, ...rest } = props
   const classes = ['adestia-btn']

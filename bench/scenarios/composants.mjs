@@ -1,5 +1,5 @@
 /**
- * The shell components of docs/charte.md § 7.4, each in its states, light and dark,
+ * The shell components of docs/charte.md § 4, each in its states, light and dark,
  * then the sheet on a phone (a bottom sheet under 820 px).
  *
  * The product has no page for them yet (the screens adopt them in later tranches), so the

@@ -16,7 +16,7 @@ export interface ThemeSwitchProps {
   readonly t?: (key: string) => string
 }
 
-/** `.adestia-segmented` (docs/charte.md § 7.4): System, Light, Dark as a radiogroup. */
+/** `.adestia-segmented` (docs/charte.md § 4): System, Light, Dark as a radiogroup. */
 export function ThemeSwitch({ value, onChange, t = (k) => k }: ThemeSwitchProps) {
   const group = useRef<HTMLDivElement>(null)
   const onKey = (event: KeyboardEvent, index: number) => {

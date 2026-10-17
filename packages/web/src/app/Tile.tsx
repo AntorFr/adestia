@@ -34,7 +34,7 @@ function hueStyle(hue?: string): Record<string, string> {
 export function Tile(props: {
   /** The mark, as text or emoji — a manifest's. The shell's own tiles name an `iconName` instead. */
   readonly icon?: string
-  /** One of the product's Lucide icons (docs/charte.md § 7.3); wins over `icon` and `glyph`. */
+  /** One of the product's Lucide icons (docs/charte.md § 2, Icons); wins over `icon` and `glyph`. */
   readonly iconName?: IconName
   /** `ic:` name resolved against the shell's closed glyph set. */
   readonly glyph?: string

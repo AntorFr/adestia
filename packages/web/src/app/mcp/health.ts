@@ -9,7 +9,7 @@ export type HealthState = McpServerHealth['state']
 
 /**
  * How each state reads: one of the three tones, its words, and its own icon —
- * the tone alone never says the state (docs/charte.md § 7.3).
+ * the tone alone never says the state (docs/charte.md § 2, Icons).
  */
 export const STATES: Readonly<
   Record<HealthState, { readonly tone: string; readonly label: string; readonly icon: IconName }>

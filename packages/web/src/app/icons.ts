@@ -1,5 +1,5 @@
 /**
- * The icon subset of docs/charte.md § 7.3 — Lucide, vendored as path data (AD-9).
+ * The icon subset of docs/charte.md § 2, Icons — Lucide, vendored as path data (AD-9).
  *
  * Copied from the `lucide-static` package v1.59.0; not a dependency. Lucide's licence:
  *

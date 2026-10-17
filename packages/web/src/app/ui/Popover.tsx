@@ -15,7 +15,7 @@ export interface PopoverProps {
 const GAP = 8
 
 /**
- * `.adestia-popover` (docs/charte.md § 7.4): 8 px from its anchor, below it, above when
+ * `.adestia-popover` (docs/charte.md § 4): 8 px from its anchor, below it, above when
  * there is no room. Escape or a press outside closes it; focus returns to the opener.
  */
 export function Popover({ anchor, open, onClose, children, label, className }: PopoverProps) {

@@ -16,7 +16,7 @@ export interface SheetProps {
 }
 
 /**
- * `.adestia-sheet` (docs/charte.md § 7.4): a modal dialog over a scrim, a bottom sheet
+ * `.adestia-sheet` (docs/charte.md § 4): a modal dialog over a scrim, a bottom sheet
  * under `--breakpoint-mobile`. Portalled to the body: the shell folds its panes with
  * transforms, and a fixed element inside a transformed one is fixed to THAT.
  */
