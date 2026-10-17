@@ -227,37 +227,28 @@
   margin: var(--space-4) 0 var(--space-3);
 }
 
-.adestia-instructions__search {
+.adestia-instructions__searchbox {
+  position: relative;
   flex: 1 1 220px;
   min-width: 0;
   max-width: 360px;
-  padding: 7px var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface-raised);
-  color: var(--text);
-  font: inherit;
 }
-
-.adestia-instructions__search:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 1px; }
-
-/* Dashed, like every other "make a new one" in this shell: it is an
-   invitation rather than a control acting on what is already there. */
-.adestia-instructions__tools button {
-  padding: 6px 13px;
-  border: 1px dashed var(--border);
-  border-radius: var(--radius);
-  background: none;
-  color: var(--text-muted);
-  font: 600 var(--text-sm) var(--font);
-  cursor: pointer;
+.adestia-instructions__searchbox .adestia-icon {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: var(--space-3);
+  margin-block: auto;
+  color: var(--text-faint);
+  pointer-events: none;
 }
-
-.adestia-instructions__tools button:hover { border-color: var(--accent); color: var(--accent-text); }
+.adestia-instructions__search { width: 100%; padding-inline-start: calc(var(--space-3) + 24px); }
 
 /* Said once, at the top of a file nobody may save: the textarea is read-only
    and looks it, but "why" is not something a greyed-out control can say. */
 .adestia-instructions__delivered {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   margin: var(--space-3) 0 0;
   padding: var(--space-2) var(--space-3);
   border-left: 3px solid var(--tile-color, var(--accent));
@@ -340,18 +331,23 @@
 
 .adestia-filecard__head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--space-2);
-  justify-content: space-between;
 }
+.adestia-filecard__head > .adestia-icon { flex: none; color: var(--text-muted); }
 
 .adestia-filecard__name {
+  flex: 1 1 auto;
+  min-width: 0;
   font-weight: 600;
   overflow-wrap: anywhere;
 }
 
 .adestia-filecard__badge {
   flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 1px 7px;
   border-radius: var(--radius-pill);
   background: var(--surface-sunken);
@@ -413,17 +409,10 @@
    what these files mean, and a proportional face hides both. */
 .adestia-instructions__text {
   min-height: 60vh;
-  padding: var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface-raised);
-  color: var(--text);
+  field-sizing: fixed;
   font: var(--text-sm)/1.65 var(--font-code);
-  resize: vertical;
   tab-size: 2;
 }
-
-.adestia-instructions__text:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 1px; }
 
 .adestia-instructions__empty {
   margin-top: var(--space-4);
@@ -431,7 +420,7 @@
 }
 
 /* The catalogue pop-in rides the shared sheet; this is only what is inside it. */
-.adestia-catalogues { max-height: 85vh; }
+.adestia-catalogues { width: 560px; }
 .adestia-catalogues__body {
   display: flex;
   flex-direction: column;
@@ -459,29 +448,7 @@
   background: var(--surface-raised);
 }
 .adestia-catalogues__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.adestia-catalogues__item button,
-.adestia-catalogues__add button,
-.adestia-catalogues__refresh {
-  padding: 6px 13px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: none;
-  color: var(--text);
-  font: 600 var(--text-sm) var(--font);
-  cursor: pointer;
-}
-.adestia-catalogues__refresh { align-self: flex-end; }
-.adestia-catalogues__item button:disabled,
-.adestia-catalogues__add button:disabled,
-.adestia-catalogues__refresh:disabled { opacity: 0.5; cursor: not-allowed; }
-.adestia-catalogues__add { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-.adestia-catalogues__add input {
-  flex: 1 1 140px;
-  min-width: 0;
-  padding: 7px var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface-raised);
-  color: var(--text);
-  font: inherit;
-}
+.adestia-catalogues__item > .adestia-btn { flex: none; }
+.adestia-catalogues__back { align-self: flex-start; }
+.adestia-catalogues__add { display: flex; flex-direction: column; gap: var(--space-3); }
+.adestia-catalogues__add > .adestia-btn { align-self: flex-end; }

@@ -131,6 +131,8 @@ const FR: Readonly<Record<string, string>> = {
 
   // The instruction zone
   Catalogues: 'Catalogues',
+  'A name': 'Un nom',
+  Create: 'Créer',
   'No catalogue yet — add a repository of instructions.':
     'Aucun catalogue — ajoutez un dépôt d’instructions.',
   imported: 'importé(s)',
