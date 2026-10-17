@@ -1,5 +1,31 @@
 # Status — Adestia
-> MàJ : 2026-10-15
+> MàJ : 2026-10-17
+
+**Tranche `adestia-qualite-charte` (epic adestia-qualite) — assemblée, PR vers
+`epic/adestia-qualite`, pas fusionnée.** Aucun changement de ce que font les écrans (B-1).
+- Charte : `docs/charte.md` écrite (sections TARGET comprises) ; `tokens.css` écrit sa
+  palette sombre une fois (`light-dark()`, AD-10), l'échelle typographique et les rayons ;
+  `packages/web/test/contrast.test.ts` mesure chaque paire de la palette de base et des
+  quatre skins, clair et sombre (AA ou écart écrit). Focus visible global.
+- Composants (B-7) : classes CSS du shell (`styles/components.css`) + enveloppes React
+  `app/ui/` (Button, Sheet, Popover, EmptyState, Field, focus) ; icônes Lucide en sprite
+  inline vendoré (`app/icons.ts`, `Icon.tsx`, AD-9) ; documentés dans `skills/plugin-author`.
+- Requêtes (R-11) : `app/request.ts` (`requestJson`, AD-11), utilisée par E-1, E-9 à E-15,
+  `signin.ts`, `useInstance.ts` ; plus aucun `fetchImpl(` dans ces écrans.
+- Langue (AD-5, B-10) : le skin reçoit la langue de l'instance (entrée facultative) ; les
+  quatre skins parlent en en et fr, chacun dans sa voix ; table française d'`i18n.ts` au *vous*.
+- Écrans : E-1 (portes) et E-21, E-9 à E-15, E-19 refaits avec les composants ; Instructions,
+  Configuration, McpServers découpés (R-12, `app/instructions/`, `app/configuration/`,
+  `app/mcp/`, aucune fonction > 250 lignes : `node scripts/function-lines.mjs`) ; E-14 a
+  son état de chargement et `--tile-color` sur ses rendus d'erreur et vide (Q-21, Q-23).
+- Recette : `npm ci`, `npm run typecheck`, `npm run lint`, `npm test` (2160 vitest +
+  543 `node --test`, 2 sautés) ; lancement `node bench/launch.mjs --engine fake`, captures
+  par `node bench/sweep.mjs`.
+- Reste / pièges : la charte n'est pas appliquée au chat, aux pages ni aux plugins (tranches
+  suivantes, qui adoptent ces composants) ; pas de toasts (écart écrit) ; pas de « Réessayer »,
+  de confirmation avant « Remove » ni d'écran hors ligne (B-1, recommandations de fin d'epic) ;
+  `live.ts` et `usePage.ts` gardent leur `fetchImpl(` (tranches chat/pages). Une valeur de token
+  qui change change tous les écrans : la charte écrit la raison.
 
 **Tranche `adestia-qualite-tests` (epic adestia-qualite) — assemblée, PR vers
 `epic/adestia-qualite`, pas fusionnée.** Aucun fichier de production touché.
