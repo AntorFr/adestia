@@ -55,10 +55,11 @@ export type RawResult =
   | { readonly ok: false; readonly error: string }
 
 /**
- * For the two callers that stream the body (the turn POST, the attach GET) or
- * read it their own way: any HTTP status comes back as a `response`, whole;
- * only a failure to reach the server is `{ ok: false }`, with the locale's
- * fallback. It never throws.
+ * For the six callers of `chat/` that want the `Response` itself: two stream
+ * the body (the turn POST, the attach GET) and four do not (the upload, the
+ * stop, the archive and the delete, which read only the status or the body once).
+ * Any HTTP status comes back as a `response`, whole; only a failure to reach
+ * the server is `{ ok: false }`, with the locale's fallback. It never throws.
  */
 export async function requestRaw(
   fetchImpl: typeof fetch,

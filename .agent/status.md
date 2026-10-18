@@ -6,7 +6,7 @@
 - Code (R-11, R-12, AD-12) : `toMessage` écrit une fois (`chat/messages.ts`, option
   `signatures`, défaut vrai ; Delegations passe `{ signatures: false }`, écart gardé comme
   défaut écrit) ; tout appel réseau de `chat/` passe par `app/request.ts` (`requestJson`,
-  `requestRaw` pour le POST du tour et l'attache) ; `useConversations` coupé en
+  `requestRaw` pour six appelants : le POST du tour et l'attache, qui lisent un flux, et l'envoi, l'arrêt, l'archivage et la suppression, qui n'en lisent pas) ; `useConversations` coupé en
   `useOpenConversations`/`useTurn`/`useTabActions`, `Chat` en `ChatHeader`/`TabStrip`/
   `ConversationList`/`Thread`, `Composer` en `useUploads` (hooks locaux à leur fichier, seul `useConversations` est exporté) ; aucune fonction > 250 lignes
   (`node bench/long-functions.mjs packages/web/src/chat`). Instantané du balisage

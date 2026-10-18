@@ -368,9 +368,11 @@ Three decisions of the chat tranche, none changing a behaviour.
 with `signatures` defaulting to `true` (the chat's behaviour). `Delegations.tsx` imports it
 and passes `{ signatures: false }`, which keeps today's drift as a written defect (AD-7:
 whether a delegated conversation should show signature cards is a behaviour).
-(b) Every `fetchImpl(` of `chat/` goes through `app/request.ts` (AD-11). Two sites cannot
-use `requestJson`: the turn POST and the attach GET, which hand the caller a `Response` to
-stream. `request.ts` gains one additive function, `requestRaw(fetchImpl, path, init?)` →
+(b) Every `fetchImpl(` of `chat/` goes through `app/request.ts` (AD-11). Six sites do not
+use `requestJson` and take `requestRaw`: two stream (the turn POST and the attach GET hand
+the caller a `Response` to read as it comes), four do not (the upload, the stop, the
+archive and the delete read only the status or a single body, and need any HTTP status
+back whole). `request.ts` gains one additive function, `requestRaw(fetchImpl, path, init?)` →
 `{ ok: true, response } | { ok: false, error }` (never throws; any HTTP status is a
 `response`), and nothing else about it changes. The upload keeps its two messages
 (server `error`, refusals) and loses only the raw `Error.message` of a thrown network
