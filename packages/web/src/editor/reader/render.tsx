@@ -4,6 +4,7 @@ import { resolveHref } from '../links.js'
 import { isBlankBreak, type Node } from '../nodes.js'
 import type { Ctx } from './types.js'
 import { Meta } from './Meta.js'
+import { sayOf } from './Note.js'
 import { directive } from './directive.js'
 
 /**
@@ -219,8 +220,8 @@ export function render(node: Node, ctx: Ctx): ReactNode {
           className="adestia-wikilink adestia-wikilink--lost"
           title={
             answer.kind === 'ambiguous'
-              ? `${answer.candidates.length} pages carry this id`
-              : 'this page was not found'
+              ? sayOf(ctx)('%n pages carry this id').replace('%n', String(answer.candidates.length))
+              : sayOf(ctx)('this page was not found')
           }
         >
           {label}
