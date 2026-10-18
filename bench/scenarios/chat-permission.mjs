@@ -113,6 +113,8 @@ export default async function scenario(bench) {
         await dialog.getByText(w.hint, { exact: true }).waitFor()
         colours.push(await contrast(dialog.locator('.adestia-sheet__hint')))
         await shoot('sheet-hint')
+        await page.keyboard.press('Tab')
+        assert(await dialog.evaluate((n) => n.contains(document.activeElement)), 'Tab leaving the ceremony stays in the sheet')
         await dialog.getByRole('link', { name: w.tab }).focus()
         // Focus starts at the header link, wraps backwards to the frame and returns on Escape.
         assert(await dialog.getByRole('link', { name: w.tab }).evaluate((n) => n === document.activeElement))

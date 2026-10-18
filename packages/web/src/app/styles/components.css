@@ -49,6 +49,9 @@
 .adestia-btn[aria-disabled='true'] { opacity: 0.45; cursor: not-allowed; }
 .adestia-btn[aria-busy='true'] { cursor: progress; }
 
+/* A modal's native Tab stop after an embedded document; never drawn. */
+.adestia-focus-guard { position: fixed; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
 /* Sheet -------------------------------------------------------------------- */
 
 /* The scrim and the one z-index; the panel is centred, a bottom sheet on a phone. */
