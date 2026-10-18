@@ -299,7 +299,7 @@ none is removed; no target changes. At v0.88.0 these are all of them in E-22 to 
 
 | Screen | Control (today) | Leads to | Becomes |
 |---|---|---|---|
-| all plugin views | the shell's `‹ Back` | Home | named by the pages tranche (not here) |
+| all plugin views | the shell's `‹ Back` | Home | `‹ Home` above plugins and E-20, translated (`t('Home')`) |
 | E-22 | `todo-back` « ‹ » (`aria-label` « Back ») in the task sheet's header | the todo list it was opened from | the icon `chevron-left` then the visible word of the list screen: « Todo » (`t('Todo')`, as the list's title says it); `aria-label` is the same words |
 | E-24 | `journal-back` « ‹ Journals » | the journals list (`#/journal`) | unchanged in words (it already names its destination); its `‹` glyph becomes the `chevron-left` icon, like its sibling |
 | E-25 | `#atelier-close` « ✕ » of the bench mode | the bench it was opened from | `x` icon + « Leave the bench mode » / « Quitter le mode atelier » |

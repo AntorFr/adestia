@@ -384,7 +384,7 @@ no path where they differ, then they merge.
 (answer or failure — a failed index is "ready, empty", as today). It is additive; nothing else
 of the hook changes. E-2 draws the shared spinner row in place of the mosaic and the empty
 state while `ready` is false; the greeting, the hero and the ask bar do not wait.
-(c) The giants split by lifetime, as AD-12 does for the chat. `App` into `App` (gates, state,
+(c) The giants split by lifetime, as the chat tranche does for its own giants. `App` into `App` (gates, state,
 wiring), `CanvasHeader` (the phone's back to the chat, the breadcrumb, the driver label, the
 cog slot) and `Canvas` (the dispatch order of `docs/ecrans.md` › Navigation, kept readable as
 one function and tested as one). `Home` into `Home` (composition), `Brief` (the brief, its
@@ -701,9 +701,6 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
   is then the raw server text, which no catalogue translates.
 - **A catalogue token field has no `autoComplete`**, so a browser may offer to fill or save it
   as a password.
-- **The shell's `‹ Back` stays English on a French instance** above every plugin view (E-22 to
-  E-31; `App.tsx`), next to the plugin's own back, which is translated and named. Seen on the plugin
-  matrix; the pages tranche owns the shell's back (Q-12, Q-4).
 - **E-23 (planif) says the server's sentences in English.** A note's problem (`carries both
   \`every\` and \`at\``, `the note is empty — its body is the prompt`, `below the 15-minute floor`…) is
   built by `plugins/planif/api.mjs` and `schedule.ts` and drawn as received; no table holds it, and

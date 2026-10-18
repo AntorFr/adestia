@@ -8,7 +8,7 @@ elles parlent une seule langue (B-8) et le `‹ Back` du shell dit qu'il mène �
   (`isIndexFile`, `isIndexPath`, AD-13 a) ; les pages parlent au serveur par `requestJson` /
   `requestRaw` (plus de `fetchImpl(` dans les écrans de la tranche, `api.fetch` des plugins
   excepté) ; `useInstance` rend `ready`. App, Home, Reader, Editor découpés par durée de vie
-  (R-12) : `node bench/long-functions.mjs <fichiers>` ne liste rien > 250 lignes.
+  (R-12) : `node scripts/function-lines.mjs <fichiers>` (qui fait foi : il imprime la plus longue fonction de chaque fichier, sort 1 au-delà de 250) ; `bench/long-functions.mjs` ne liste que les dépassements, donc se tait quand tout va bien.
 - Écrans : E-2 (état de chargement, Q-23), E-3, E-4 lecteur et éditeur, E-5, E-6, E-7, E-8, E-20
   avec composants, icônes et jetons de la charte ; feuilles de la tranche sans couleur, taille
   ni rayon littéral, sans `outline: none` nu ; chaînes par `i18n.ts` en en et fr.

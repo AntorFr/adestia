@@ -46,7 +46,7 @@ node bench/launch.mjs --engine fake    # prints `listening on <url>`; <url>/api/
 node bench/sweep.mjs                   # every screen, light and dark, desk and phone
 ```
 
-The sweep takes Playwright and Chromium from the environment (`npm root -g`); do not
+The sweep takes Playwright and Chromium from the environment (`npm root -g`; the `pages-*` scenarios load it from `/usr/lib/node_modules`, so a host with another global root must link it there); do not
 add them to the repo. The launcher runs until SIGTERM (`kill <pid>`, or Ctrl-C), which
 removes its throwaway data; in a script, start it in the background and keep its pid
 (`$!`). Run it from the clone's root: the bundled plugins are found through `./plugins`, and from elsewhere the server starts with `0 of 0 plugin(s) active`. Its boot log includes a plugin refused on purpose (`bench-refused`, part of the seed): not an error.
