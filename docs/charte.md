@@ -154,10 +154,10 @@ The sheet's open-in-tab link has a minimum 24 × 24 px target (`--space-5`).
 
 Nestor signature metadata, measured on the browser-composited pending card:
 
-| Foreground | Background | Theme | Ratio | Threshold | Result |
-|---|---|---|---|---|---|
-| `--sign-meta-text` #5c566b | #dfd8db | light | 5.00 | 4.5 | ok |
-| `--sign-meta-text` → `--text-muted` #9c94b4 | #271f4b | dark | 5.28 | 4.5 | ok |
+| Component | Foreground | Background | Theme | Ratio | Threshold | Result |
+|---|---|---|---|---|---|---|
+| Nestor signature metadata | `--sign-meta-text` #5c566b | #dfd8db | light | 5.00 | 4.5 | ok |
+| Nestor signature metadata | `--sign-meta-text` → `--text-muted` #9c94b4 | #271f4b | dark | 5.28 | 4.5 | ok |
 
 The base palette table is printed by `packages/web/test/contrast.test.ts`. Regenerate it
 with `UPDATE_CONTRAST_TABLE=1 npx vitest run packages/web/test/contrast.test.ts`.
