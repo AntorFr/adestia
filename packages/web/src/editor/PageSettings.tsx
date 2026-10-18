@@ -14,10 +14,13 @@
  * lines it cannot model are shown as they are and left alone.
  */
 
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState, type RefObject } from 'react'
 
 import type { FieldSpec, FieldValue, Indexed } from '@antorfr/adestia-content'
 
+import { Icon } from '../app/Icon.js'
+import { Button, Popover } from '../app/ui/index.js'
+import { FieldRow } from './FieldRow.js'
 import {
   addableFields,
   formFor,
@@ -44,6 +47,8 @@ export interface PageSettingsProps {
   /** Keys something else on screen already owns — the title field, typically. */
   readonly without?: readonly string[]
   /** One field changed. `undefined` removes it. */
+  /** The properties strip's ⚙: the window hangs from it, and focus goes back to it on close. */
+  readonly anchor?: RefObject<HTMLElement | null>
   readonly onChange: (key: string, value: FieldValue | undefined) => void
   readonly onClose: () => void
   /** The shell's translator; identity in English. */
@@ -77,14 +82,16 @@ function Tags({
           <button
             type="button"
             aria-label={`${t('Remove tag')} ${tag}`}
+            title={`${t('Remove tag')} ${tag}`}
             onClick={() => onChange(value.filter((one) => one !== tag))}
           >
-            ×
+            <Icon name="x" />
           </button>
         </span>
       ))}
       <input
         type="text"
+        className="adestia-input"
         list={list}
         value={draft}
         placeholder={t('add…')}
@@ -158,6 +165,7 @@ function Control({
       return (
         <input
           type="date"
+          className="adestia-input"
           value={current}
           onChange={(event) => onChange(event.target.value === '' ? undefined : event.target.value)}
         />
@@ -166,6 +174,7 @@ function Control({
       return (
         <input
           type="number"
+          className="adestia-input"
           value={current}
           onChange={(event) =>
             onChange(event.target.value === '' ? undefined : Number(event.target.value))
@@ -176,7 +185,7 @@ function Control({
       return (
         <input
           type="text"
-          className="adestia-blockset__ico"
+          className="adestia-input adestia-blockset__ico"
           value={current}
           placeholder="◆"
           onChange={(event) => onChange(event.target.value === '' ? undefined : event.target.value)}
@@ -187,6 +196,7 @@ function Control({
       const orphan = current !== '' && !options.some((one) => one.id === current)
       return (
         <select
+          className="adestia-select"
           value={current}
           onChange={(event) => onChange(event.target.value === '' ? undefined : event.target.value)}
         >
@@ -206,7 +216,8 @@ function Control({
       if (free) {
         return (
           <input
-            type="text"
+              type="text"
+            className="adestia-input"
             autoFocus={chose}
             value={current}
             onChange={(event) => onChange(event.target.value === '' ? undefined : event.target.value)}
@@ -216,6 +227,7 @@ function Control({
       }
       return (
         <select
+          className="adestia-select"
           value={current}
           onChange={(event) => {
             if (event.target.value === FREE) {
@@ -246,6 +258,7 @@ function Control({
       return (
         <input
           type="text"
+          className="adestia-input"
           value={current}
           onChange={(event) => onChange(event.target.value === '' ? undefined : event.target.value)}
         />
@@ -261,10 +274,13 @@ export function PageSettings({
   contributions,
   locale = 'en',
   without = [],
+  anchor,
   onChange,
   onClose,
   t = (key) => key,
 }: PageSettingsProps) {
+  // Without an anchor (a test, a caller that has none) the window has nothing to hang from.
+  const orphan = useRef<HTMLElement | null>(null)
   /*
    * Fields somebody ASKED for that the page does not carry yet. Held here
    * rather than written empty: a field is added to the form by choosing it,
@@ -288,41 +304,39 @@ export function PageSettings({
   const type = typeof fields['type'] === 'string' ? fields['type'] : undefined
 
   const row = (field: FormField) => (
-    <label className="adestia-blockset__field" key={field.spec.key}>
-      <span>{t(field.spec.label)}</span>
+    <FieldRow
+      key={field.spec.key}
+      label={t(field.spec.label)}
+      {...(field.spec.help ? { help: t(field.spec.help) } : {})}
+    >
       <Control
         field={field}
         value={present[field.spec.key]}
         onChange={(next) => onChange(field.spec.key, next)}
         t={t}
       />
-      {field.spec.help && <p className="adestia-blockset__hint">{t(field.spec.help)}</p>}
-    </label>
+    </FieldRow>
   )
 
   return (
-    <div
+    <Popover
+      anchor={anchor ?? orphan}
+      open
+      onClose={onClose}
+      label={t('Page properties')}
       className="adestia-blockset adestia-blockset--page"
-      role="dialog"
-      aria-label={t('Page properties')}
     >
       <div className="adestia-blockset__head">
         <span className="adestia-blockset__name">
           {t('properties')}
           {type ? ` · type=${type}` : ''}
         </span>
-        <button
-          type="button"
-          className="adestia-blockset__close"
-          onClick={onClose}
-          aria-label={t('Close')}
-        >
-          ×
-        </button>
+        <Button variant="ghost" small icon="x" aria-label={t('Close')} title={t('Close')} onClick={onClose} />
       </div>
 
       {broken ? (
         <p className="adestia-blockset__missing">
+          <Icon name="circle-alert" />
           {t('This page’s frontmatter does not parse, so nothing here is editable — fixing it is a change to the file.')}
         </p>
       ) : (
@@ -338,15 +352,14 @@ export function PageSettings({
             <fieldset className="adestia-blockset__group">
               <legend>{t('Nobody reads these')}</legend>
               {unknown.map((key) => (
-                <label className="adestia-blockset__field" key={key}>
-                  <span>{key}</span>
+                <FieldRow label={key} key={key}>
                   <Control
                     field={{ spec: strayField(key), options: [] }}
                     value={present[key]}
                     onChange={(next) => onChange(key, next)}
                     t={t}
                   />
-                </label>
+                </FieldRow>
               ))}
             </fieldset>
           )}
@@ -354,7 +367,7 @@ export function PageSettings({
           {opaque.length > 0 && (
             <fieldset className="adestia-blockset__group">
               <legend>{t('Kept as written')}</legend>
-              <p className="adestia-blockset__hint adestia-blockset__hint--wide">
+              <p className="adestia-field__help">
                 {t('The editor does not model these, so it leaves them exactly as they are.')}
               </p>
               {opaque.map((one) => (
@@ -368,6 +381,8 @@ export function PageSettings({
           {addable.length > 0 && (
             <div className="adestia-blockset__add">
               <select
+                className="adestia-select"
+                aria-label={t('+ add a field…')}
                 value=""
                 onChange={(event) => {
                   if (event.target.value === '') return
@@ -385,6 +400,6 @@ export function PageSettings({
           )}
         </>
       )}
-    </div>
+    </Popover>
   )
 }

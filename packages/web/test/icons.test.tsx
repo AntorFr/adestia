@@ -20,6 +20,9 @@ const CHARTE = [
   'sliders-horizontal', 'handshake', 'monitor', 'sun', 'moon', 'log-out', 'key-round', 'lock',
   'users', 'check', 'circle-alert', 'triangle-alert', 'info', 'wifi-off', 'refresh-cw', 'copy',
   'external-link', 'loader-circle', 'file-question', 'folder-open', 'search-x',
+  // The page and its editor (adestia-qualite-pages-editeur)
+  'grip-vertical', 'eye', 'code', 'corner-left-up', 'corner-down-left', 'image', 'music', 'film',
+  'table', 'paperclip', 'list', 'chart-column',
 ]
 
 afterEach(() => {
@@ -48,7 +51,7 @@ describe('icon sprite', () => {
     mountSprite()
     mountSprite()
     expect(document.querySelectorAll('#adestia-icon-sprite')).toHaveLength(1)
-    expect(document.querySelectorAll('symbol')).toHaveLength(36)
+    expect(document.querySelectorAll('symbol')).toHaveLength(48)
   })
 
   it('is decorative and takes the text colour, not a hard-coded one', () => {

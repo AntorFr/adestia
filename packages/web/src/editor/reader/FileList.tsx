@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { fileUrl, GLYPHS, humanSize, type Attachment } from '../Attachments.js'
+import { Icon } from '../../app/Icon.js'
+import { fileUrl, KIND_ICONS, humanSize, type Attachment } from '../Attachments.js'
+import { Note, sayOf } from './Note.js'
 import { folderOf } from '../../app/paths.js'
 import { requestJson } from '../../app/request.js'
 import type { Node } from '../nodes.js'
@@ -16,6 +18,7 @@ import type { Ctx } from './types.js'
  * newest first. A file OPENS, in a tab, as it does from the strip.
  */
 export function FileList({ node, ctx, view }: { readonly node: Node; readonly ctx: Ctx; readonly view: string }) {
+  const say = sayOf(ctx)
   const attrs = node.attributes ?? {}
   const path = ctx.page?.path
   const deep = attrs['depth'] === 'subtree'
@@ -37,12 +40,12 @@ export function FileList({ node, ctx, view }: { readonly node: Node; readonly ct
 
   // No page — a chat bubble, a preview: nothing to list the files OF.
   if (path === undefined) {
-    return <p className="adestia-block-note">Cette liste a besoin de la page dont elle montre les fichiers.</p>
+    return <Note>{say('This list needs the page whose files it shows.')}</Note>
   }
   // Still asking. The heading, if any, holds the place; rows arrive under it.
   if (files === undefined) return null
   if (files === 'failed') {
-    return <p className="adestia-block-note">Les fichiers de cette page n’ont pas pu être listés.</p>
+    return <Note icon="circle-alert">{say('This page’s files could not be listed.')}</Note>
   }
 
   const kinds = (attrs['type'] ?? '').split(',').map((one) => one.trim()).filter(Boolean)
@@ -52,7 +55,7 @@ export function FileList({ node, ctx, view }: { readonly node: Node; readonly ct
   } else if (attrs['sort'] === 'name') {
     shown.sort((a, b) => a.name.localeCompare(b.name, ctx.locale, { numeric: true }))
   }
-  if (shown.length === 0) return <p className="adestia-block-note">Aucun fichier ici.</p>
+  if (shown.length === 0) return <Note>{say('No file here.')}</Note>
 
   const size = (file: Attachment) => humanSize(file.bytes, ctx.locale)
   const opens = (file: Attachment) => ({
@@ -74,7 +77,7 @@ export function FileList({ node, ctx, view }: { readonly node: Node; readonly ct
               {file.kind === 'image' ? (
                 <img src={fileUrl(file.path)} alt="" loading="lazy" />
               ) : (
-                <i aria-hidden="true">{GLYPHS[file.kind]}</i>
+                <Icon name={KIND_ICONS[file.kind]} />
               )}
             </span>
             <span className="adestia-list__title">{file.name}</span>
@@ -91,7 +94,7 @@ export function FileList({ node, ctx, view }: { readonly node: Node; readonly ct
         {shown.map((file) => (
           <a key={file.path} className="adestia-list__row" {...opens(file)}>
             <i className="adestia-chip__plate" aria-hidden="true">
-              {GLYPHS[file.kind]}
+              <Icon name={KIND_ICONS[file.kind]} />
             </i>
             <span className="adestia-list__title">{file.name}</span>
           </a>
@@ -105,7 +108,7 @@ export function FileList({ node, ctx, view }: { readonly node: Node; readonly ct
       {shown.map((file) => (
         <a key={file.path} className="adestia-list__row" {...opens(file)}>
           <i className="adestia-list__ico" aria-hidden="true">
-            {GLYPHS[file.kind]}
+            <Icon name={KIND_ICONS[file.kind]} />
           </i>
           <span className="adestia-list__title">{file.name}</span>
           <span className="adestia-list__size">{size(file)}</span>

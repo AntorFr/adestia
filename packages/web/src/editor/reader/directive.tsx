@@ -7,6 +7,7 @@ import { Figures } from './Figures.js'
 import { TableBlock } from './TableBlock.js'
 import { ListBlock } from './ListBlock.js'
 import { Contributed } from './Contributed.js'
+import { Note, sayOf } from './Note.js'
 
 export function directive(node: Node, ctx: Ctx, renderChildren: RenderChildren): ReactNode {
   // WHO draws this block is decided before anything is drawn. The core's
@@ -41,9 +42,9 @@ export function directive(node: Node, ctx: Ctx, renderChildren: RenderChildren):
     // here. Said like a dead link: visibly, with the body kept underneath.
     return place(
       <>
-        <p className="adestia-block-note">
-          :::{name} — from={asked} : rien ne porte ce nom ici.
-        </p>
+        <Note icon="circle-alert">
+          :::{name} — from={asked} : {sayOf(ctx)('nothing carries this name here')}.
+        </Note>
         {renderChildren(node, ctx)}
       </>,
     )

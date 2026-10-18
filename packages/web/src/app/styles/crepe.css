@@ -121,3 +121,12 @@
   font-size: var(--text-sm);
   margin: var(--space-2) 0;
 }
+
+/* Crepe fills the icons of its menus with its outline colour; ours are the
+   sprite's strokes, drawn in the text colour (docs/charte.md § 2, Icons). */
+.adestia-editor__surface .milkdown :is(.milkdown-slash-menu, .milkdown-toolbar) .adestia-icon {
+  width: 1.25em;
+  height: 1.25em;
+  fill: none;
+  stroke: currentColor;
+}

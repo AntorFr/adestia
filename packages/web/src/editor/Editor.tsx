@@ -20,6 +20,9 @@ import type { FieldContributions } from './pageform.js'
 import type { StoreInfo } from '../plugins/contract.js'
 import type { Say } from '../plugins/words.js'
 import { PluginBoundary } from '../plugins/Boundary.js'
+import { Icon } from '../app/Icon.js'
+import { resolveLocale, translator } from '../app/i18n.js'
+import { Button } from '../app/ui/index.js'
 import { Reader, type BlockComponents, type LayoutComponents, type VocabularyContext } from './Reader.js'
 import { SaveStatus } from './SaveStatus.js'
 import { useAutosave } from './useAutosave.js'
@@ -56,13 +59,16 @@ export interface PageDocument {
   readonly diagnostics: readonly { severity: string; message: string; line?: number }[]
 }
 
-function Diagnostics({ items }: { items: PageDocument['diagnostics'] }) {
+function Diagnostics({ items, t }: { items: PageDocument['diagnostics']; t: (key: string) => string }) {
   if (items.length === 0) return null
   return (
     <ul className="adestia-diagnostics">
       {items.map((item, index) => (
         <li key={index} className={`adestia-diagnostics__item adestia-diagnostics__item--${item.severity}`}>
-          {item.line !== undefined && <span className="adestia-diagnostics__line">line {item.line}</span>}
+          <Icon name={item.severity === 'error' ? 'circle-alert' : 'triangle-alert'} />
+          {item.line !== undefined && (
+            <span className="adestia-diagnostics__line">{t('line %n').replace('%n', String(item.line))}</span>
+          )}
           {item.message}
         </li>
       ))}
@@ -75,7 +81,7 @@ export interface EditorProps {
   readonly fetchImpl?: typeof fetch
   /** Follows a wikilink to another page. */
   readonly openPage?: (path: string) => void
-  /** The shell's translator; identity in English. */
+  /** The shell's translator; absent, the page's `locale` decides the language. */
   readonly t?: (key: string) => string
   /** The reader's language, for the sizes in the attachment strip. */
   readonly locale?: string
@@ -190,7 +196,7 @@ export function Editor(props: EditorProps) {
     titleField = false,
     onEditing,
     onSaved,
-    t = (key) => key,
+    t = translator(resolveLocale(locale)),
   } = props
   const { shown, setBody, title, setTitle, markdown, saved, status, dirty, save } =
     useAutosave(page, fetchImpl, titleField, onSaved)
@@ -280,21 +286,25 @@ export function Editor(props: EditorProps) {
           heading opens it. Three of the same words is two too many. */}
       <header className="adestia-editor__header">
         <div className="adestia-editor__actions">
-          <SaveStatus state={status} />
+          <SaveStatus state={status} t={t} />
           {page.editable && !editing && (
-            <button type="button" className="adestia-ib" onClick={() => setEditing(true)} title={t('Edit')}>
-              ✎
-            </button>
+            <Button
+              variant="ghost"
+              icon="pencil"
+              aria-label={t('Edit')}
+              title={t('Edit')}
+              onClick={() => setEditing(true)}
+            />
           )}
           {page.editable && editing && (
-            <button
-              type="button"
+            <Button
+              variant="accent"
               className="adestia-editor__save"
               onClick={() => void done()}
               disabled={status.kind === 'saving'}
             >
               {t('Done')}
-            </button>
+            </Button>
           )}
         </div>
       </header>
@@ -319,12 +329,12 @@ export function Editor(props: EditorProps) {
 
       {!page.editable && (
         <p className="adestia-editor__readonly" role="status">
-          This page uses blocks Adestia does not know, so it is open read-only.
-          Fixing it is a change to the code, not to the file.
+          <Icon name="lock" />
+          {t('This page uses blocks Adestia does not know, so it is open read-only. Fixing it is a change to the code, not to the file.')}
         </p>
       )}
 
-      <Diagnostics items={page.diagnostics} />
+      <Diagnostics items={page.diagnostics} t={t} />
 
       {/* A refused page shows its RAW source, not a rendering: its vocabulary
           is broken, the diagnostics above say where, and what somebody needs
@@ -361,6 +371,7 @@ export function Editor(props: EditorProps) {
           {...(stores ? { stores } : {})}
               fetchImpl={fetchImpl}
               locale={locale}
+              t={t}
             />
           </Layout>
         </PluginBoundary>
@@ -377,6 +388,7 @@ export function Editor(props: EditorProps) {
           {...(stores ? { stores } : {})}
           fetchImpl={fetchImpl}
           locale={locale}
+          t={t}
         />
       )}
 

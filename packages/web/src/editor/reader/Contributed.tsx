@@ -2,6 +2,7 @@ import { blockSpec, type ResolvedBlock } from '@antorfr/adestia-content'
 import { PluginBoundary } from '../../plugins/Boundary.js'
 import { assetUrl, workspacePath } from '../links.js'
 import { listItems } from '../nodes.js'
+import { Note, sayOf } from './Note.js'
 import type { RenderChildren } from './types.js'
 import type { Node } from '../nodes.js'
 import type { Ctx } from './types.js'
@@ -43,9 +44,9 @@ export function Contributed({
     // an ugly one — the same reason a refused page shows its raw source.
     return (
       <>
-        <p className="adestia-unknown-block">
-          :::{name} — {`this block does not render yet`}
-        </p>
+        <Note icon="info" className="adestia-unknown-block">
+          :::{name} — {sayOf(ctx)('this block does not render yet')}
+        </Note>
         {body}
       </>
     )

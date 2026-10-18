@@ -65,6 +65,8 @@ export type Ctx = {
   readonly fetchImpl?: typeof fetch
   /** The interface's language, for what a block formats: a file's size. */
   readonly locale?: string
+  /** The interface's words: a block's notes are said through it. Identity when absent. */
+  readonly t?: (key: string) => string
   /**
    * The source is PROSE, not a document — see `Prose` below. Only the head of
    * the source tells the two apart, so only the head reads this.

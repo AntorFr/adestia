@@ -23,6 +23,7 @@ import type { StoreInfo } from '../plugins/contract.js'
 import type { Node } from './nodes.js'
 import type { BlockComponents, VocabularyContext } from './reader/types.js'
 import { render } from './reader/render.js'
+import { resolveLocale, translator } from '../app/i18n.js'
 
 export type { BlockComponents, LayoutComponents, VocabularyContext } from './reader/types.js'
 
@@ -91,6 +92,7 @@ export function Reader({
   stores,
   fetchImpl,
   locale,
+  t,
 }: {
   readonly markdown: string
   /**
@@ -116,6 +118,8 @@ export function Reader({
   /** For the blocks that ask the server — `:::list{source=files}`. */
   readonly fetchImpl?: typeof fetch
   readonly locale?: string
+  /** The interface's words; absent, the page's own `locale` decides the language. */
+  readonly t?: (key: string) => string
 }) {
   let tree: Node
   try {
@@ -140,6 +144,7 @@ export function Reader({
         ...(stores ? { stores } : {}),
         ...(fetchImpl ? { fetchImpl } : {}),
         ...(locale ? { locale } : {}),
+        t: t ?? translator(resolveLocale(locale)),
       })}
     </article>
   )

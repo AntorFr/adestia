@@ -20,6 +20,8 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { parse } from '@antorfr/adestia-content'
 
+import { Icon } from '../app/Icon.js'
+import type { IconName } from '../app/icons.js'
 import { requestJson } from '../app/request.js'
 
 export interface Attachment {
@@ -30,14 +32,15 @@ export interface Attachment {
   readonly kind: 'image' | 'pdf' | 'audio' | 'video' | 'text' | 'data' | 'file'
 }
 
-export const GLYPHS: Readonly<Record<Attachment['kind'], string>> = {
-  image: '🖼',
-  pdf: '📕',
-  audio: '🎵',
-  video: '🎬',
-  text: '📄',
-  data: '📊',
-  file: '📎',
+/** One sprite icon per kind of file (docs/ecrans.md, E-4). */
+export const KIND_ICONS: Readonly<Record<Attachment['kind'], IconName>> = {
+  image: 'image',
+  pdf: 'file-text',
+  audio: 'music',
+  video: 'film',
+  text: 'file-text',
+  data: 'table',
+  file: 'paperclip',
 }
 
 export const fileUrl = (path: string, download = false): string =>
@@ -193,9 +196,9 @@ export function Attachments({
                 rel="noreferrer"
               >
                 <span className="adestia-page-files__glyph" aria-hidden="true">
-                  {GLYPHS[file.kind]}
+                  <Icon name={KIND_ICONS[file.kind]} />
                 </span>
-                <span className="adestia-page-files__name">{file.name}</span>
+                <span className="adestia-page-files__name" title={file.name}>{file.name}</span>
                 <span className="adestia-page-files__size">{humanSize(file.bytes, locale)}</span>
               </a>
             </li>

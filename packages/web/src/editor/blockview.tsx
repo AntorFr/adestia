@@ -17,8 +17,8 @@
  * - ATOMS (a block with no body — a checklist, `:::row`) show the rendering
  *   and nothing to type in.
  *
- * Every block carries a small bar with its name and ⚙, which opens its
- * settings (`BlockSettings`): the attributes it declares and the reserved
+ * Every block carries a small bar with its name and a settings button, which
+ * opens its settings window (`BlockSettings`): the attributes it declares and the reserved
  * ones — title, icon, card, width. The layout the reader gives `w=` bands is
  * given here too, by CSS on the editor surface (`editor.css`).
  */
@@ -32,6 +32,8 @@ import type { EditorView, NodeView } from '@milkdown/kit/prose/view'
 import { createRoot, type Root } from 'react-dom/client'
 
 import { BlockSettings } from './BlockSettings.js'
+import { domIcon } from './dom-icon.js'
+import type { IconName } from '../app/icons.js'
 import { prettify } from '../app/paths.js'
 import { Reader, type BlockComponents, type VocabularyContext } from './Reader.js'
 import type { Say } from '../plugins/words.js'
@@ -52,6 +54,8 @@ export interface EditorEnv {
    * runs — so the settings panel cannot get it translated any other way.
    */
   readonly say?: Say | undefined
+  /** The editor's translator: the bar, the settings and the notes speak the instance's language. */
+  readonly t?: ((key: string) => string) | undefined
 }
 
 type Posture = 'prose' | 'data' | 'atom'
@@ -89,6 +93,9 @@ class DirectiveView implements NodeView {
   private previewRoot?: Root
   private readonly head?: HTMLElement
   private readonly lift: HTMLButtonElement
+  /** The ⚙ as a ref, which is what the settings window hangs from and returns focus to. */
+  private readonly anchor: { current: HTMLElement | null }
+  private readonly t: (key: string) => string
   /** A data block showing its raw lines rather than its rendering. */
   private raw = false
   private open: boolean
@@ -115,11 +122,13 @@ class DirectiveView implements NodeView {
 
     this.bar = make('div', 'adestia-edblock__bar')
     this.bar.contentEditable = 'false'
+    const t = (this.t = env.t ?? ((key) => key))
     const label = make('span', 'adestia-edblock__name')
     label.textContent = `:::${name}`
     this.bar.append(label)
+    const buttonClasses = 'adestia-btn adestia-btn--ghost adestia-btn--sm'
     if (posture === 'data') {
-      this.toggle = make('button', 'adestia-edblock__toggle')
+      this.toggle = make('button', `${buttonClasses} adestia-edblock__toggle`)
       this.toggle.type = 'button'
       this.toggle.addEventListener('mousedown', (event) => {
         event.preventDefault()
@@ -129,12 +138,18 @@ class DirectiveView implements NodeView {
     }
     // Moving a block is done from here, not with Crepe's handle — which aims
     // at the editor's middle and drops a block INSIDE another (`milkdown.ts`).
-    const action = (symbol: string, title: string, run: () => void, className = '') => {
-      const button = make('button', `adestia-edblock__act ${className}`.trim())
+    // Each control is an icon button named by `aria-label` and `title`, both
+    // in the instance's language.
+    const iconButton = (icon: IconName, title: string, className: string) => {
+      const button = make('button', `${buttonClasses} adestia-btn--icon ${className}`)
       button.type = 'button'
       button.title = title
       button.setAttribute('aria-label', title)
-      button.textContent = symbol
+      button.append(domIcon(doc, icon))
+      return button
+    }
+    const action = (icon: IconName, title: string, run: () => void, className = '') => {
+      const button = iconButton(icon, title, `adestia-edblock__act ${className}`.trim())
       button.addEventListener('mousedown', (event) => {
         event.preventDefault()
         run()
@@ -142,25 +157,20 @@ class DirectiveView implements NodeView {
       this.bar.append(button)
       return button
     }
-    const grip = make('button', 'adestia-edblock__grip')
-    grip.type = 'button'
-    grip.title = 'Déplacer le bloc'
-    grip.setAttribute('aria-label', 'Déplacer le bloc')
-    grip.textContent = '⠿'
+    const grip = iconButton('grip-vertical', t('Move block'), 'adestia-edblock__grip')
     grip.addEventListener('pointerdown', (event) => {
       event.preventDefault()
       this.startDrag(event)
     })
     this.bar.append(grip)
-    this.lift = action('⤴', 'Sortir du bloc parent', () => this.liftOut(), 'adestia-edblock__lift')
-    action('✕', 'Supprimer le bloc', () => this.remove(), 'adestia-edblock__remove')
-    const gear = make('button', 'adestia-edblock__gear')
-    gear.type = 'button'
-    gear.title = 'Réglages du bloc'
-    gear.setAttribute('aria-label', 'Réglages du bloc')
-    gear.textContent = '⚙'
+    this.lift = action('corner-left-up', t('Leave the parent block'), () => this.liftOut(), 'adestia-edblock__lift')
+    action('trash-2', t('Delete block'), () => this.remove(), 'adestia-edblock__remove')
+    const gear = iconButton('settings', t('Block settings'), 'adestia-edblock__gear')
+    this.anchor = { current: gear }
     gear.addEventListener('mousedown', (event) => {
       event.preventDefault()
+      // Focus goes to the ⚙ itself, so that closing the window gives it back here.
+      if (!this.open) gear.focus()
       this.setOpen(!this.open)
     })
     this.bar.append(gear)
@@ -180,6 +190,8 @@ class DirectiveView implements NodeView {
       this.dom.append(this.head, this.contentDOM)
     } else {
       this.preview = make('div', 'adestia-edblock__preview')
+      // What `:::row` says about itself in the editor — drawn by the stylesheet from this.
+      this.preview.dataset['note'] = t('new line')
       this.preview.contentEditable = 'false'
       // A click on the rendering is how a person asks to change it: the raw
       // lines for a data block, the settings for one with no body. It never
@@ -220,7 +232,7 @@ class DirectiveView implements NodeView {
     if (attributes['w']) this.dom.dataset['w'] = attributes['w']
     else delete this.dom.dataset['w']
     this.dom.classList.toggle('adestia-edblock--open', this.open)
-    // `⤴` only for a block that sits inside another.
+    // The lift button only for a block that sits inside another.
     const at = this.getPos()
     this.lift.hidden = at === undefined || this.view.state.doc.resolve(at).depth === 0
 
@@ -228,7 +240,11 @@ class DirectiveView implements NodeView {
     else this.renderPreview()
 
     if (this.toggle) {
-      this.toggle.textContent = this.raw ? 'Aperçu' : 'Modifier'
+      // The word and its icon: raw lines call for the way back to the rendering.
+      this.toggle.replaceChildren(
+        domIcon(this.toggle.ownerDocument, this.raw ? 'eye' : 'code'),
+        this.toggle.ownerDocument.createTextNode(this.raw ? this.t('Preview') : this.t('Edit')),
+      )
       this.dom.classList.toggle('adestia-edblock--raw', this.raw)
     }
     this.renderPanel()
@@ -319,10 +335,6 @@ class DirectiveView implements NodeView {
       return
     }
     this.panelRoot ??= createRoot(this.panel)
-    // Once drawn — React commits on its own schedule — kept inside the
-    // canvas: anchored to the block's right edge, a panel wider than a
-    // narrow block spilled off the page.
-    requestAnimationFrame(() => requestAnimationFrame(() => this.keepPanelInside()))
     const resolved = resolveBlock(this.name, this.env.vocabulary ?? {})
     // Said by whoever declared the block: the owning plugin for a contributed
     // one, the shell for a core one (`plugin` is then `core`, which no table
@@ -336,22 +348,12 @@ class DirectiveView implements NodeView {
         spec={resolved?.spec}
         {...(about ? { about } : {})}
         attributes={this.attributes}
+        anchor={this.anchor}
+        t={this.t}
         onChange={(next) => this.write(next)}
         onClose={() => this.setOpen(false)}
       />,
     )
-  }
-
-  private keepPanelInside(): void {
-    if (!this.open) return
-    this.panel.style.transform = ''
-    const bounds = (this.dom.closest('.adestia-canvas') ?? this.view.dom).getBoundingClientRect()
-    const box = this.panel.getBoundingClientRect()
-    const margin = 8
-    let shift = 0
-    if (box.right > bounds.right - margin) shift = bounds.right - margin - box.right
-    if (box.left + shift < bounds.left + margin) shift = bounds.left + margin - box.left
-    if (shift !== 0) this.panel.style.transform = `translateX(${Math.round(shift)}px)`
   }
 
   private write(attributes: Attributes): void {

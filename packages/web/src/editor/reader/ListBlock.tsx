@@ -3,6 +3,7 @@ import { folderOf } from '../../app/paths.js'
 import { listItems } from '../nodes.js'
 import { finished, titleOf, under } from '../listing.js'
 import { FileList } from './FileList.js'
+import { Note, sayOf } from './Note.js'
 import { Written, Row } from './Rows.js'
 import type { Node } from '../nodes.js'
 import type { Ctx } from './types.js'
@@ -56,7 +57,7 @@ export function ListBlock({ node, ctx }: { readonly node: Node; readonly ctx: Ct
   // No index here — a chat bubble, a preview. Saying so beats drawing an
   // empty list, which would read as "this folder holds nothing".
   if (ctx.pages === undefined) {
-    return <p className="adestia-block-note">Cette liste a besoin de l’index des pages.</p>
+    return <Note>{sayOf(ctx)('This list needs the pages index.')}</Note>
   }
 
   // `depth` says how far to look; `type` says what to keep. Both are needed:
@@ -81,7 +82,7 @@ export function ListBlock({ node, ctx }: { readonly node: Node; readonly ctx: Ct
 
   const shown = closed === 'show' ? [...live, ...done] : live
   if (shown.length === 0 && done.length === 0) {
-    return <p className="adestia-block-note">Rien sous cette page.</p>
+    return <Note>{sayOf(ctx)('Nothing under this page.')}</Note>
   }
 
   return (

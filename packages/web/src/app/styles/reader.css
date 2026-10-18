@@ -27,7 +27,7 @@
    it was never designed for. */
 .adestia-reader {
   --measure: 89ch;
-  font-size: 15.5px;
+  font-size: var(--text-base);
   line-height: 1.65;
 }
 
@@ -55,9 +55,9 @@
   text-wrap: balance;
 }
 
-.adestia-reader h2 { font-size: 1.5rem; }
-.adestia-reader h3 { font-size: 1.2rem; }
-.adestia-reader h4 { font-size: 1.05rem; }
+.adestia-reader h2 { font-size: var(--text-xl); }
+.adestia-reader h3 { font-size: var(--text-lg); }
+.adestia-reader h4 { font-size: var(--text-base); }
 
 .adestia-reader p { margin: 0 0 1em; }
 .adestia-reader ul,
@@ -66,7 +66,7 @@
 .adestia-reader li.adestia-task { list-style: none; margin-left: -1.4em; }
 .adestia-reader li.adestia-task input { margin-right: 0.5em; }
 
-.adestia-reader a { color: var(--accent); text-underline-offset: 2px; }
+.adestia-reader a { color: var(--accent-text); text-underline-offset: 2px; }
 
 .adestia-reader blockquote {
   margin: 0 0 1em;
@@ -111,7 +111,7 @@
   padding: 0;
   background: none;
   font: inherit;
-  color: var(--accent);
+  color: var(--accent-text);
   cursor: pointer;
   border-bottom: 1px dotted var(--accent);
 }
@@ -160,7 +160,7 @@
   height: 28px;
   border-radius: var(--radius-sm);
   background: var(--accent-quiet);
-  font-size: 15px;
+  font-size: var(--text-base);
   line-height: 1;
 }
 /* Through the header, not on the class alone: `.adestia-reader h3` outranks a
@@ -192,7 +192,7 @@
    plate tinted like the callout's own ground would vanish into it. */
 .adestia-callout > .adestia-head { min-height: 0; margin-bottom: var(--space-2); }
 .adestia-callout .adestia-head__ico { width: auto; height: auto; background: none; }
-.adestia-callout .adestia-head > .adestia-head__title { font-size: 1rem; }
+.adestia-callout .adestia-head > .adestia-head__title { font-size: var(--text-base); }
 
 /* `:::content` — a title and prose. It always has a header: its title falls
    back on the prettified `type`. The section spaces ITSELF, above and below:
@@ -316,7 +316,7 @@
   font-style: normal;
   font-size: 0.9em;
   line-height: 1.4;
-  color: var(--accent);
+  color: var(--accent-text);
   text-align: center;
 }
 .adestia-list__title { flex: 1; min-width: 0; font-weight: 600; font-size: 0.95em; }
@@ -380,7 +380,7 @@
   width: auto;
   align-items: center;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 5px var(--space-3) 5px 5px;
   background: var(--surface-raised);
 }
@@ -390,7 +390,7 @@
   gap: 8px;
   padding: 5px var(--space-3) 5px 5px;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--surface-raised);
 }
 .adestia-chip__plate {
@@ -399,9 +399,9 @@
   flex: none;
   width: 28px;
   height: 28px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--accent-quiet);
-  color: var(--accent);
+  color: var(--accent-text);
   font-style: normal;
   font-size: 0.72em;
   font-weight: 700;
@@ -444,12 +444,13 @@
   background: var(--surface-soft);
 }
 .adestia-list__thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.adestia-list__thumb i { font-style: normal; font-size: 2rem; }
+.adestia-list__thumb i { display: inline-flex; font-style: normal; font-size: var(--text-2xl); color: var(--text-muted); }
 
 /* What a block says when it cannot do its job — never an empty rectangle,
    which reads as "there is nothing here" when the truth is "I could not
    look". */
-.adestia-block-note {
+.adestia-block-note,
+.adestia-block-note.adestia-empty--inline {
   margin: 0 0 1.4em;
   padding: var(--space-2) var(--space-3);
   border: 1px dashed var(--border);
@@ -457,6 +458,9 @@
   color: var(--text-muted);
   font-size: 0.9em;
 }
+.adestia-block-note.adestia-empty--inline { align-items: flex-start; }
+.adestia-block-note .adestia-empty__icon { margin-top: 0.15em; color: var(--text-muted); }
+.adestia-block-note .adestia-empty__text { min-width: 0; overflow-wrap: anywhere; }
 
 /* Callouts: the tone carries the colour, the left rule carries the weight. */
 .adestia-callout {
@@ -541,7 +545,8 @@
 }
 
 .adestia-page-files__file:hover { border-color: var(--accent); }
-.adestia-page-files__name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.adestia-page-files__glyph { display: inline-flex; flex: none; color: var(--text-muted); }
+.adestia-page-files__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .adestia-page-files__size {
   font-size: var(--text-sm);
   color: var(--text-faint);
@@ -570,7 +575,7 @@
 .adestia-editor__surface .milkdown {
   --measure: 89ch;
   font-family: var(--font);
-  font-size: 15.5px;
+  font-size: var(--text-base);
   line-height: 1.65;
   color: var(--text);
 }
@@ -601,16 +606,16 @@
   margin: 1.8em 0 0.5em;
 }
 
-.adestia-editor__surface .milkdown .ProseMirror h1 { font-size: 1.85rem; }
-.adestia-editor__surface .milkdown .ProseMirror h2 { font-size: 1.5rem; }
-.adestia-editor__surface .milkdown .ProseMirror h3 { font-size: 1.2rem; }
-.adestia-editor__surface .milkdown .ProseMirror h4 { font-size: 1.05rem; }
+.adestia-editor__surface .milkdown .ProseMirror h1 { font-size: var(--text-2xl); }
+.adestia-editor__surface .milkdown .ProseMirror h2 { font-size: var(--text-xl); }
+.adestia-editor__surface .milkdown .ProseMirror h3 { font-size: var(--text-lg); }
+.adestia-editor__surface .milkdown .ProseMirror h4 { font-size: var(--text-base); }
 .adestia-editor__surface .milkdown .ProseMirror p { margin: 0 0 1em; }
 /* A list item's paragraph is the item, not a paragraph: the 1em below every
    other p would otherwise open a blank line between bullets. Matches the read
    view's `.adestia-prose li > p`. */
 .adestia-editor__surface .milkdown .ProseMirror li p { margin: 0; }
-.adestia-editor__surface .milkdown .ProseMirror a { color: var(--accent); }
+.adestia-editor__surface .milkdown .ProseMirror a { color: var(--accent-text); }
 
 /* The frontmatter chips sit in the flow of both postures identically. */
 .adestia-editor__surface .adestia-editor__meta { margin-bottom: var(--space-4); }
