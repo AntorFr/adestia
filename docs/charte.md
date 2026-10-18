@@ -39,8 +39,8 @@
   structural (the rule in the header of `tokens.css`). A skin's hero and crest markup is its
   own; its colours still come from tokens.
 - **Plugins** read the shell's tokens. A plugin stylesheet defines no second vocabulary of
-  aliases (`--ink`, `--line`, `--f-body`…): **TARGET** (`adestia-qualite-plugins`),
-  `parcours.css` and `atelier.css` move to the shell's names.
+  aliases (`--ink`, `--line`, `--f-body`…): `parcours.css` and `atelier.css` read the
+  shell's names, and `plugins/test/css.test.js` keeps it so.
 - **Fonts**: `--font` (system stack), `--font-title` (serif), `--font-mono`, `--font-code`;
   a skin may serve its own (Dobby does). Kept as inherited.
 - **Type scale**: seven named steps in `tokens.css`: 11 / 12 / 13 / 15 / 18 / 22 / 28 px
@@ -97,8 +97,8 @@ reason.
   each with its accessible name.
 - **Navigation**: the breadcrumb is the location; every back control names its destination
   (**TARGET** `adestia-qualite-pages`: the shell's `‹ Back` above a plugin says it goes home;
-  **TARGET** `adestia-qualite-plugins`: a plugin's own back that goes one level up keeps its
-  place and its name). No back is removed (`B-9`).
+  a plugin's own back that goes one level up keeps its
+  place and its name, built by `adestia-qualite-plugins`). No back is removed (`B-9`).
 - **Feedback**: save status inline where the edit happens (editor, settings forms), as
   today. **Departure kept**: no toast system — every action of the product happens in a
   form or a page that shows its own state; a toast would duplicate it.
