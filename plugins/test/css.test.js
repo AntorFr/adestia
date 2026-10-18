@@ -24,6 +24,7 @@ const CHECKED = [
   'planif',
   'project-management',
   'scan',
+  'todo',
 ]
 const withoutComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, (s) => s.replace(/[^\n]/g, ' '))
 const tokens = new Set([...withoutComments(readFileSync(join(root, 'packages/web/src/app/tokens.css'), 'utf8'))
