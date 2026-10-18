@@ -19,11 +19,9 @@
  * plugin declares no secret and works on an instance that holds none.
  */
 
-import { join, relative, sep } from 'node:path'
-
 import { byFreshness, clockOf, deepLink, keyOf, parseFeed } from './lib/feeds.mjs'
 import { assetsFor, readLibrary, readSources, safePath } from './lib/library.mjs'
-import { emptyState, readState, stamp, stateFile, writeState } from './lib/store.mjs'
+import { readState, stamp, stateFile, writeState } from './lib/store.mjs'
 import { parseTranscript, search } from './lib/transcript.mjs'
 
 const TIMEOUT = 12_000

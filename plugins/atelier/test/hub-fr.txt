@@ -1,0 +1,591 @@
+== hub ==
+L’Atelier
+Suivi menuiserie — vos plans de débit.
+Workbooks
+Étagère de test
+1/4 étapes · 4 pièces · 3 sept.
+Sans activité
+0/0 étapes · 0 pièces · jamais
+
+== crumbs of the hub ==
+Accueil > L’Atelier
+
+== crumbs of the bench ==
+Accueil > L’Atelier > Étagère de test
+
+== station 0 ==
+Étagère de test
+Workbook menuiserie · 0/4 étapes
+▶ Mode atelier
+Plaques
+Tronçons
+Rainures
+Lamello
+Assemblage
+Suivi
+✎ Remanier
+PLAQUE P1
+Mélaminé blanc 19 · 4 pièces
+plaque 2800 × 2070 mm · dérasage 10 · tronçon +5
+C1-COTE-G
+2000×600
+▲ HAUT
+P1B1 · 600
+2050 mm
+C1-COTE-D
+2000×600
+▲ HAUT
+P1B2 · 600
+2050 mm
+C1-TAB-1
+762×600
+C1-TAB-2
+762×600
+P1B3 · 600
+2050 mm
+à débiter
+débité ✓
+arête à plaquer (chant)
+clic colonne → détail/débiter · clic sur le nom → la pièce
+
+== station 1 ==
+Étagère de test
+Workbook menuiserie · 0/4 étapes
+▶ Mode atelier
+Plaques
+Tronçons
+Rainures
+Lamello
+Assemblage
+Suivi
+Plaques refendues → tronçonnage. Chaque type de colonne (identiques regroupées ×N), ses tronçons cotés, et la position de coupe cumulée (butée) —
+à la même échelle
+d'une bande à l'autre. Cocher une colonne = tronçonnée.
+Guide 600 mm
+1 tronçon · ×2 colonnes
+600 mm
+▲ HAUT
+C1-COTE-G
+2000 mm
+0
+2000
+[title] GAR-C1-COTE-G
+P1B1
+[title] GAR-C1-COTE-D
+P1B2
+Guide 600 mm
+2 tronçons · ×1 colonne
+600 mm
+C1-TAB-1
+C1-TAB-2
+762 mm
+762 mm
+0
+762
+1528
+[title] GAR-C1-TAB-1, GAR-C1-TAB-2
+P1B3
+tronçon
+côté plaqué (chant)
+cocher une pastille = colonne tronçonnée · clic sur le nom → la pièce
+
+== station 2 ==
+Étagère de test
+Workbook menuiserie · 0/4 étapes
+▶ Mode atelier
+Plaques
+Tronçons
+Rainures
+Lamello
+Assemblage
+Suivi
+Vue de dessus du panneau,
+à l'échelle
+: la rainure (
+▬
+bande) court le long, à 10 mm du bord
+arrière
+— minuscule sur la largeur (620−10−8). Traversante d'un bout, arrêt de l'autre · profondeur en cote écrite (invisible de dessus). Cocher = rainurée.
+Rainure — largeur 8 · prof. 9 mm
+2 pièces · ex. TABLETTE 762×600
+10
+avant
+arr.
+panneau 762×600 · rainure largeur 8 · profondeur 9 mm · traversante ◀ arrêt ▶ 10
+C1-TAB-1
+C1-TAB-2
+
+== station 3 ==
+Étagère de test
+Workbook menuiserie · 0/4 étapes
+▶ Mode atelier
+Plaques
+Tronçons
+Rainures
+Lamello
+Assemblage
+Suivi
+Plan par pièce,
+tout à la même échelle
+— les surfaces fendues (about, rive, contre-face) rabattues en projection alignée : la fente y est un trait, la cote fait foi.
+En pointillé bleu
+: la planche qui vient se poser, cotée depuis son bord de référence —
+une planche en butée lit 0
+, c'est la cote qu'on règle au sabot (jamais l'axe de la fente).
+▬ établi
+: sur un chant, la face à poser sur le banc — la lamelleuse cote depuis elle.
+●
+Tenso/Clamex ·
+◆
+biscuit ·
+▬
+rainure fond.
+TABLETTE · 762 × 600 mm
+face + ab. G + rive av. + contre-face · 5 points · ×1 · haut : face
+face
+50
+▬ établi
+ab. G
+rive av.
+contre-face (par transparence)
+100
+9.5
+200
+360
+100
+avant↓
+300
+avant↓
+C1-TAB-1
+
+== station 4 ==
+Étagère de test
+Workbook menuiserie · 0/4 étapes
+▶ Mode atelier
+Plaques
+Tronçons
+Rainures
+Lamello
+Assemblage
+Suivi
+Assemblage —
+scène à l'échelle
+(contrat ouvert v0.2). Cotes mesurées depuis la géométrie ; clic pièce → détail ; clic étape → pièces surlignées ; cocher chaque étape.
+Caisson
+face
+G
+T
+800 mm
+Coller puis serrer
+haut
+Montage — 0/2
+1
+[title] poser
+▽
+Poser la tablette
+à plat
+serre-joint
+2
+[title] visser
+✱
+Visser
+Vue simple
+Monté
+
+== station 5 ==
+Étagère de test
+Workbook menuiserie · 0/4 étapes
+▶ Mode atelier
+Plaques
+Tronçons
+Rainures
+Lamello
+Assemblage
+Suivi
+Plaque P1 · 4 étapes restantes
+P1-REF-1
+refente
+P1-TR-1
+tronconnage
+P1-TR-2
+tronconnage
+P1-TR-3
+tronconnage
+
+== column sheet ==
+Étagère de test
+Workbook menuiserie · 0/4 étapes
+▶ Mode atelier
+Plaques
+Tronçons
+Rainures
+Lamello
+Assemblage
+Suivi
+✎ Remanier
+PLAQUE P1
+Mélaminé blanc 19 · 4 pièces
+plaque 2800 × 2070 mm · dérasage 10 · tronçon +5
+C1-COTE-G
+2000×600
+▲ HAUT
+P1B1 · 600
+2050 mm
+C1-COTE-D
+2000×600
+▲ HAUT
+P1B2 · 600
+2050 mm
+C1-TAB-1
+762×600
+C1-TAB-2
+762×600
+P1B3 · 600
+2050 mm
+à débiter
+débité ✓
+arête à plaquer (chant)
+clic colonne → détail/débiter · clic sur le nom → la pièce
+Colonne P1B1
+Plaque
+P1
+Refente
+guide 600 · longueur 2050 mm · ép. 19
+Matière
+Mélaminé blanc 19
+Tronçons (1)
+C1-COTE-G
+2000
+[title] chants
+▮ rive-avant
+Débiter la colonne (1) ✓
+Fermer
+
+== piece sheet ==
+Étagère de test
+Workbook menuiserie · 0/4 étapes
+▶ Mode atelier
+Plaques
+Tronçons
+Rainures
+Lamello
+Assemblage
+Suivi
+✎ Remanier
+PLAQUE P1
+Mélaminé blanc 19 · 4 pièces
+plaque 2800 × 2070 mm · dérasage 10 · tronçon +5
+C1-COTE-G
+2000×600
+▲ HAUT
+P1B1 · 600
+2050 mm
+C1-COTE-D
+2000×600
+▲ HAUT
+P1B2 · 600
+2050 mm
+C1-TAB-1
+762×600
+C1-TAB-2
+762×600
+P1B3 · 600
+2050 mm
+à débiter
+débité ✓
+arête à plaquer (chant)
+clic colonne → détail/débiter · clic sur le nom → la pièce
+GAR-C1-COTE-G
+Dimensions
+2000×600 mm · ép. 19
+Chants
+rive-avant
+Haut (monté)
+▲ about-droit
+Matière
+Mélaminé blanc 19
+Colonne
+P1-B1 · plaque P1
+Débiter la colonne (1 pièce) ✓
+Fermer
+
+== edit, nothing selected ==
+Étagère de test
+Workbook menuiserie · 0/4 étapes
+▶ Mode atelier
+Plaques
+Tronçons
+Rainures
+Lamello
+Assemblage
+Suivi
+✓ Établi ouvert
+[title] Interdit : longueur — le fil du panneau impose le sens
+⟲ Tourner
+＋ Colonne
+PLAQUE P1
+Mélaminé blanc 19 · 4 pièces
+plaque 2800 × 2070 mm · dérasage 10 · tronçon +5
+C1-COTE-G
+2000×600
+▲ HAUT
+P1B1 · 600
+2050 mm
+C1-COTE-D
+2000×600
+▲ HAUT
+P1B2 · 600
+2050 mm
+C1-TAB-1
+762×600
+C1-TAB-2
+762×600
+P1B3 · 600
+2050 mm
+à débiter
+débité ✓
+arête à plaquer (chant)
+glisser une pièce · les bords s’aimantent en ajoutant le trait de scie
+
+== edit, a piece selected ==
+Étagère de test
+Workbook menuiserie · 0/4 étapes
+▶ Mode atelier
+Plaques
+Tronçons
+Rainures
+Lamello
+Assemblage
+Suivi
+✓ Établi ouvert
+[title] Interdit : longueur — le fil du panneau impose le sens
+⟲ Tourner C1-COTE-G
+＋ Colonne
+PLAQUE P1
+Mélaminé blanc 19 · 4 pièces
+plaque 2800 × 2070 mm · dérasage 10 · tronçon +5
+C1-COTE-G
+2000×600
+▲ HAUT
+P1B1 · 600
+2050 mm
+C1-COTE-D
+2000×600
+▲ HAUT
+P1B2 · 600
+2050 mm
+C1-TAB-1
+762×600
+C1-TAB-2
+762×600
+P1B3 · 600
+2050 mm
+à débiter
+débité ✓
+arête à plaquer (chant)
+glisser une pièce · les bords s’aimantent en ajoutant le trait de scie
+
+== edit, a column selected ==
+Étagère de test
+Workbook menuiserie · 0/4 étapes
+▶ Mode atelier
+Plaques
+Tronçons
+Rainures
+Lamello
+Assemblage
+Suivi
+✓ Établi ouvert
+[title] Interdit : longueur — le fil du panneau impose le sens
+⟲ Tourner
+▭ B1
+guide
+long.
+[title] Bande debout (tronçons empilés) ou couchée
+⇄ debout
+[title] Sortez d’abord ses 1 pièce(s)
+Supprimer
+＋ Colonne
+PLAQUE P1
+Mélaminé blanc 19 · 4 pièces
+plaque 2800 × 2070 mm · dérasage 10 · tronçon +5
+C1-COTE-G
+2000×600
+▲ HAUT
+P1B1 · 600
+2050 mm
+C1-COTE-D
+2000×600
+▲ HAUT
+P1B2 · 600
+2050 mm
+C1-TAB-1
+762×600
+C1-TAB-2
+762×600
+P1B3 · 600
+2050 mm
+à débiter
+débité ✓
+arête à plaquer (chant)
+glisser une pièce · les bords s’aimantent en ajoutant le trait de scie
+
+== shop mode ==
+Étagère de test
+Workbook menuiserie · 0/4 étapes
+▶ Mode atelier
+Plaques
+Tronçons
+Rainures
+Lamello
+Assemblage
+Suivi
+✎ Remanier
+PLAQUE P1
+Mélaminé blanc 19 · 4 pièces
+plaque 2800 × 2070 mm · dérasage 10 · tronçon +5
+C1-COTE-G
+2000×600
+▲ HAUT
+P1B1 · 600
+2050 mm
+C1-COTE-D
+2000×600
+▲ HAUT
+P1B2 · 600
+2050 mm
+C1-TAB-1
+762×600
+C1-TAB-2
+762×600
+P1B3 · 600
+2050 mm
+à débiter
+débité ✓
+arête à plaquer (chant)
+clic colonne → détail/débiter · clic sur le nom → la pièce
+Quitter le mode atelier
+Plaque P1 · refente
+P1-REF-1
+bandes 600 · 600 · 600 mm
+FAIT ✓
+0/4 étapes
+
+== shop mode, one step done ==
+Étagère de test
+Workbook menuiserie · 1/4 étapes
+▶ Mode atelier
+Plaques
+Tronçons
+Rainures
+Lamello
+Assemblage
+Suivi
+✎ Remanier
+PLAQUE P1
+Mélaminé blanc 19 · 4 pièces
+plaque 2800 × 2070 mm · dérasage 10 · tronçon +5
+C1-COTE-G
+2000×600
+▲ HAUT
+P1B1 · 600
+2050 mm
+C1-COTE-D
+2000×600
+▲ HAUT
+P1B2 · 600
+2050 mm
+C1-TAB-1
+762×600
+C1-TAB-2
+762×600
+P1B3 · 600
+2050 mm
+à débiter
+débité ✓
+arête à plaquer (chant)
+clic colonne → détail/débiter · clic sur le nom → la pièce
+Quitter le mode atelier
+Plaque P1 · tronconnage
+P1-TR-1
+C1-COTE-G
+FAIT ✓
+1/4 étapes
+
+== shop mode, finished ==
+Étagère de test
+Workbook menuiserie · 4/4 étapes
+▶ Mode atelier
+Plaques
+Tronçons
+Rainures
+Lamello
+Assemblage
+Suivi
+✎ Remanier
+PLAQUE P1
+Mélaminé blanc 19 · 4 pièces
+plaque 2800 × 2070 mm · dérasage 10 · tronçon +5
+C1-COTE-G
+2000×600
+✓
+P1B1 · 600
+2050 mm
+C1-COTE-D
+2000×600
+✓
+P1B2 · 600
+2050 mm
+C1-TAB-1
+762×600
+✓
+C1-TAB-2
+762×600
+✓
+P1B3 · 600
+2050 mm
+à débiter
+débité ✓
+arête à plaquer (chant)
+clic colonne → détail/débiter · clic sur le nom → la pièce
+Quitter le mode atelier
+Terminé 🎉
+4 étapes faites
+
+== follow-up, finished ==
+Étagère de test
+Workbook menuiserie · 4/4 étapes
+▶ Mode atelier
+Plaques
+Tronçons
+Rainures
+Lamello
+Assemblage
+Suivi
+Plaque P1 · ✓ terminé
+✓
+P1-REF-1
+refente
+✓
+P1-TR-1
+tronconnage
+✓
+P1-TR-2
+tronconnage
+✓
+P1-TR-3
+tronconnage
+Quitter le mode atelier
+Terminé 🎉
+4 étapes faites
+
+== empty hub ==
+L’Atelier
+Suivi menuiserie — vos plans de débit.
+Aucun workbook — demandez à Alfred d’en générer un (skill menuiserie).
+
+== hub offline ==
+Atelier indisponible.
+
+== unreadable bench ==
+Workbook illisible (Error: 500).

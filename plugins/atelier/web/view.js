@@ -16,6 +16,7 @@ import { createElement as h, useEffect, useRef, useState } from 'react'
 
 import createAtelierApp from './app.js'
 import { folderOf, resolve, restOf, routeOf } from './address.js'
+import { makeT, table } from './words.js'
 
 /** What the engine escapes with before putting anything in innerHTML. */
 const esc = (value) =>
@@ -42,6 +43,9 @@ function screenFor(routes, workbook) {
 }
 
 export default function view(api) {
+  /** The sentence in the reader's language, or the English key when the table has none. */
+  const t = makeT(api.locale)
+
   /**
    * Project folder → the `workbook.json` that IS its bench.
    *
@@ -103,7 +107,7 @@ export default function view(api) {
     /**
      * The engine, built once.
      *
-     * It appends its modal and its full-screen bench to `document.body` at
+     * It appends its sheet and its full-screen bench to `document.body` at
      * construction, so constructing it per navigation would leave one of each
      * behind on every click. Built here, routed below.
      */
@@ -116,6 +120,10 @@ export default function view(api) {
       engine.current ??= createAtelierApp({
         page,
         esc,
+        // The engine says nothing of its own: every sentence goes through here,
+        // and the date it writes follows the same locale.
+        t,
+        locale: api.locale,
         // The engine's trail goes to the SHELL's header, which is where a
         // breadcrumb belongs. It used to be drawn inside this panel — the two
         // competing ones this comment always warned about, one under the
@@ -180,7 +188,7 @@ export default function view(api) {
     // engine gives those nodes.
     useEffect(
       () => () => {
-        for (const node of document.querySelectorAll('body > .atelier-modal, body > .atelier-full')) {
+        for (const node of document.querySelectorAll('body > .atelier-sheet, body > .atelier-full')) {
           node.remove()
         }
       },
@@ -214,8 +222,8 @@ export default function view(api) {
     return {
       subtitle: workbooks.length === 1 ? workbooks[0].titre : undefined,
       chips: [
-        { text: `${workbooks.length} workbook${workbooks.length === 1 ? '' : 's'}` },
-        ...(total > 0 ? [{ text: `${done}/${total} steps` }] : []),
+        { text: t(workbooks.length === 1 ? '%n workbook' : '%n workbooks', { n: workbooks.length }) },
+        ...(total > 0 ? [{ text: t('%done/%total steps', { done, total }) }] : []),
       ],
     }
   }
@@ -262,5 +270,7 @@ export default function view(api) {
      tile: `routeFor` above claims every folder holding a workbook, from a link,
      a crumb or the brief. `tileInfo` stays, dormant, so that restoring a tile
      is a manifest edit and not an archaeology. */
-  return { component: Atelier, route: '/atelier', routeFor, tileInfo }
+  // The table goes to the shell too, as the other plugins' do, so what the
+  // shell says on this plugin's behalf reaches the reader's language.
+  return { component: Atelier, route: '/atelier', routeFor, tileInfo, words: table(api.locale) }
 }

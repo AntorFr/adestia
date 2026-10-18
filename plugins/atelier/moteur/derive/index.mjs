@@ -11,7 +11,7 @@
 
 import { choisit, pourFamille } from '../tables.mjs'
 import { applique } from '../modele/methodes.mjs'
-import { compte, constante, etiquette, relationsDOrientation, relationsDuMeuble, traverse, v } from '../modele/ancrages.mjs'
+import { compte, constante, etiquette, relationsDOrientation, relationsDuMeuble, v } from '../modele/ancrages.mjs'
 import { lineaireDeChant, retraitsDe } from '../modele/chants.mjs'
 import { chantsRetenus, ecartsAuDefaut } from '../modele/visibilite.mjs'
 import { RESULTATS, squelette } from '../modele/familles.mjs'
@@ -30,7 +30,6 @@ const issue = (gravite, type, message, plus = {}) => ({ gravite, type, message, 
    pas ne dit rien, et un compte illisible doit se voir même quand aucune table
    ne réclame la pièce qu'il compte. */
 const COMPTES = ['tablettes', 'tiroirs', 'lames', 'traverses']
-
 
 /* Les pièces que le design ANNONCE, et que quelqu'un doit donc poser.
    Une pièce qu'aucune méthode ne pose ne laisse aucune trace : pas de cote

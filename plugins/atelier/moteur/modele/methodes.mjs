@@ -646,7 +646,7 @@ const separateurs = {
    plan en mélaminé se plaque tout seul le jour où il y en aura un. */
 const planRapporte = {
   decrit: 'plan de travail rapporté, affleurant l\'enveloppe du meuble',
-  applique({ trigramme, module, design }) {
+  applique({ trigramme, module }) {
     const plan = {
       etiquette: etiquette(trigramme, module, 'PLAN'),
       role: 'PLAN',
