@@ -77,7 +77,7 @@
 
 .adestia-reader code {
   font-family: var(--font-code);
-  font-size: 0.88em;
+  font-size: var(--text-sm);
   background: var(--surface-soft);
   border: 1px solid var(--border);
   border-radius: var(--radius-micro);
@@ -93,14 +93,14 @@
   border-radius: var(--radius);
 }
 
-.adestia-reader pre code { background: none; border: 0; padding: 0; font-size: 0.85em; }
+.adestia-reader pre code { background: none; border: 0; padding: 0; font-size: var(--text-sm); }
 
 .adestia-reader img { max-width: 100%; height: auto; border-radius: var(--radius); }
 .adestia-reader hr { border: 0; border-top: 1px solid var(--border); margin: 2em 0; }
 
 /* Wide content scrolls in its own box; the page never moves sideways. */
 .adestia-table-scroll { overflow-x: auto; margin: 0 0 1em; }
-.adestia-reader table { border-collapse: collapse; font-size: 0.94em; }
+.adestia-reader table { border-collapse: collapse; font-size: var(--text-base); }
 .adestia-reader td { border: 1px solid var(--border); padding: var(--space-2) var(--space-3); }
 .adestia-reader tr:first-child td { font-weight: 600; background: var(--surface-soft); }
 
@@ -254,7 +254,7 @@
   display: block;
   margin-top: 3px;
   color: var(--text-muted);
-  font-size: 0.8em;
+  font-size: var(--text-xs);
 }
 .adestia-figure__label em { font-style: normal; color: var(--text-faint); }
 
@@ -314,12 +314,12 @@
   flex: none;
   width: 1.2em;
   font-style: normal;
-  font-size: 0.9em;
+  font-size: var(--text-sm);
   line-height: 1.4;
   color: var(--accent-text);
   text-align: center;
 }
-.adestia-list__title { flex: 1; min-width: 0; font-weight: 600; font-size: 0.95em; }
+.adestia-list__title { flex: 1; min-width: 0; font-weight: 600; font-size: var(--text-base); }
 /* What the child SAYS of itself, pulled from its own `:::content` block. A
    sentence, so it sits under the title rather than in a chip beside it. */
 .adestia-list__said {
@@ -327,14 +327,14 @@
   margin-top: 2px;
   font-weight: 400;
   font-style: normal;
-  font-size: 0.92em;
+  font-size: var(--text-sm);
   color: var(--text-muted);
 }
 .adestia-list__pulled { display: flex; gap: 5px; flex-wrap: wrap; }
 .adestia-list__fold > summary {
   padding: var(--space-2) var(--space-3);
   color: var(--text-muted);
-  font-size: 0.86em;
+  font-size: var(--text-sm);
   cursor: pointer;
 }
 /* A written row has no page behind it: nothing to hover, nothing to press. */
@@ -403,11 +403,11 @@
   background: var(--accent-quiet);
   color: var(--accent-text);
   font-style: normal;
-  font-size: 0.72em;
+  font-size: var(--text-2xs);
   font-weight: 700;
   letter-spacing: 0.02em;
 }
-.adestia-chip__text { font-size: 0.92em; }
+.adestia-chip__text { font-size: var(--text-sm); }
 .adestia-chip__text em { color: var(--text-muted); font-style: normal; }
 
 /* `source=files` — the same three views, over files. A row is a LINK, since
@@ -456,7 +456,7 @@
   border: 1px dashed var(--border);
   border-radius: var(--radius);
   color: var(--text-muted);
-  font-size: 0.9em;
+  font-size: var(--text-sm);
 }
 .adestia-block-note.adestia-empty--inline { align-items: flex-start; }
 .adestia-block-note .adestia-empty__icon { margin-top: 0.15em; color: var(--text-muted); }

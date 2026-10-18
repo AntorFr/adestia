@@ -174,7 +174,7 @@ Needs: B-1, B-6, B-7, B-8, B-10
 A user corrects or writes a page that the agent also edits.
 
 1. On E-4 the user presses **Edit** (the `pencil` control), and the page opens in the Milkdown/Crepe editor (`Editor.tsx`, `milkdown.ts`).
-2. The user types **/** to open the slash menu (`slash.ts`), which offers every block in the vocabulary, including those of active plugins. Selecting text shows the toolbar: Crepe's text formats, plus list, heading and quote (`toolbar.ts`).
+2. The user types **/** to open the slash menu (`slash.ts`), which offers every block that has a body in the vocabulary, including those of active plugins. The core `app` block has no body and is excluded. Selecting text shows the toolbar: Crepe's text formats, plus list, heading and quote (`toolbar.ts`).
 3. Each block in the editor has a frame with its `:::name`, a grip to move it, a raw/preview switch and a `settings` control that opens E-6 (`BlockSettings`). That form is built from the block's declared attributes and the shared ones (`title`, `ico`, `frame`, `w`).
 4. The **Page properties** button (`settings`) on the frontmatter row opens E-5 (`PageSettings`), a form over the frontmatter that includes the fields plugins declare for the page's `type`. YAML lines it cannot handle are kept unchanged. E-5 and E-6 use shared popovers and fields; Escape or an outside click closes them and returns focus to their settings anchor.
 5. The page saves itself 1.6 s after typing stops, and again on **Done** (`PUT /api/pages/<path>` with the revision it opened). The translated status reads Saving…, Saved, or "Saved, tidied to house style", with a spinner or check icon. Toolbar, slash menu and block controls use the instance locale.

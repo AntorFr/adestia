@@ -667,6 +667,21 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
 
 ## Known defects (found, not fixed by this epic)
 
+- **P-5 step 7: the open page does not refresh after an agent write.**
+  `app/useInstance.ts` refetches only the index on the change feed; it deliberately
+  leaves the open page alone to protect unsaved editor text. The revision check
+  reports a conflict on save. This predates the pages tranche; automatic refresh
+  of the open page needs a separate behaviour decision. Carry it into the epic's
+  closing recommendations; the browser bench must not require that refresh.
+- **Nestor's send control still uses the `↑` glyph**, supplied by its skin.
+  Kept during the pages tranche; the skin's control remains for a separate fix.
+- **The chat's native model select says `Auto` (`chat/ModelPicker.tsx`)**, outside the pages tranche.
+- **E-6's block settings can overlap the banner at 1440 px.** Observed during the
+  pages review; left unchanged by the typography and documentation correction.
+- **A page diagnostic can mix languages on a French instance.** Its translated
+  frame draws the server's diagnostic text as received, outside the screen's
+  translation table; left for a separate API/diagnostic translation decision.
+
 - **A root page's breadcrumb can invent a folder**: `app/trail.ts` derives the parent
   with `path.slice(0, path.lastIndexOf('/'))`. Without a slash it drops the last
   character instead of returning the empty parent that `app/paths.ts`'s `folderOf`

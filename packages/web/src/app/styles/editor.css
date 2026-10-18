@@ -345,7 +345,7 @@ body.adestia-dragging-block * { cursor: grabbing !important; user-select: none; 
   border-radius: var(--radius);
   background: var(--surface-sunken);
   font-family: var(--font-code);
-  font-size: 0.9em;
+  font-size: var(--text-sm);
 }
 
 /* The settings of a block (E-6) and of the page (E-5) are popovers hung from
