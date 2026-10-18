@@ -148,6 +148,10 @@ WCAG 2.2 AA: text 4.5:1 (3:1 at 24 px or 18.66 px bold), non-text 3:1, colour ne
 focus visible and not hidden, targets 24 × 24 px. Measured with
 `packages/web/test/contrast.test.ts` (it regenerates the threshold table's ratios; or the browser's inspector), in both themes.
 
+Signature metadata uses `--sign-meta-text`, defaulting to `--text-muted`; Nestor deepens
+only this ink to `#5c566b` in light mode for the accent tint over the agent bubble.
+The sheet's open-in-tab link has a minimum 24 × 24 px target (`--space-5`).
+
 The base palette table is printed by `packages/web/test/contrast.test.ts`. Regenerate it
 with `UPDATE_CONTRAST_TABLE=1 npx vitest run packages/web/test/contrast.test.ts`.
 The four skins are measured by the same test, in the themes each one declares: nestor

@@ -407,7 +407,7 @@
 
 .adestia-sign__meta {
   font-size: var(--text-xs);
-  color: var(--text-muted);
+  color: var(--sign-meta-text);
   overflow-wrap: anywhere;
 }
 

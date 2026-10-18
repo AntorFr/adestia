@@ -115,7 +115,7 @@
   overflow-wrap: anywhere;
 }
 
-.adestia-sheet__tab { display: inline-flex; align-items: center; gap: var(--space-1); font-size: var(--text-sm); color: var(--accent-text); white-space: nowrap; }
+.adestia-sheet__tab { display: inline-flex; align-items: center; min-width: var(--space-5); min-height: var(--space-5); gap: var(--space-1); font-size: var(--text-sm); color: var(--accent-text); white-space: nowrap; }
 .adestia-sheet__origin { display: inline-flex; align-items: center; gap: var(--space-2); }
 .adestia-sheet__origin .adestia-icon { flex: none; }
 .adestia-sheet--signature .adestia-sheet__body { display: flex; flex-direction: column; padding: 0; }
