@@ -40,6 +40,11 @@ import {
   words,
 } from './model.js'
 
+/** The shell mounts this sprite once; plugins share its names, not its code. */
+const icon = (name) => h('svg', {
+  className: 'adestia-icon', 'aria-hidden': true, focusable: false,
+}, h('use', { href: `#adestia-i-${name}` }))
+
 export default function view(api) {
   const t = words(api.locale)
 
@@ -63,7 +68,7 @@ export default function view(api) {
 
   const refresh = async () => {
     const response = await api.fetch('/api/pages/index')
-    if (!response.ok) throw new Error(`the page index answered ${response.status}`)
+    if (!response.ok) throw new Error(t('the page index answered %status', { status: response.status }))
     const { entries } = await response.json()
     known = buildLibrary(Array.isArray(entries) ? entries : [])
     return known
@@ -128,6 +133,8 @@ export default function view(api) {
     // SAY nothing rather than leave the last item's title standing.
     useEffect(() => {
       api.trail(open ? [{ label: open.titre, route: routeOf(items, open.path) }] : [])
+      // Trail follows the selected item and library, not arrays recreated by render.
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- Preserve the existing navigation triggers.
     }, [open?.path, open?.titre, library])
 
     if (error && !library) return h('p', { className: 'lp-problem' }, error)
@@ -138,7 +145,7 @@ export default function view(api) {
   }
 
   /** The hub: search, what is waiting, what was kept. */
-  function Hub({ items, reload, error }) {
+  function Hub({ items, error }) {
     const [queue, setQueue] = useState(null)
     const [queueError, setQueueError] = useState(null)
     const [busy, setBusy] = useState(false)
@@ -403,7 +410,7 @@ export default function view(api) {
         h(
           'button',
           { type: 'button', className: 'lp-quiet', onClick: () => dismiss(candidate) },
-          `✕ ${t('dismiss')}`,
+          icon('x'), ' ', t('dismiss'),
         ),
       ),
     )
@@ -438,7 +445,7 @@ export default function view(api) {
             0,
           )} ${t('passages')}`,
         ),
-        h('button', { type: 'button', className: 'lp-quiet', onClick: onClear }, '✕'),
+        h('button', { type: 'button', className: 'lp-quiet', 'aria-label': t('Clear'), onClick: onClear }, icon('x')),
       ),
       results.error ? h('p', { className: 'lp-problem' }, results.error) : null,
       found.length === 0
@@ -493,7 +500,7 @@ export default function view(api) {
    * its own reading posture, its own revision and its own conflict handling.
    * A second editor here would be a second grammar for the same file.
    */
-  function One({ item, items, reload }) {
+  function One({ item, reload }) {
     const [transcript, setTranscript] = useState(null)
     const [filter, setFilter] = useState('')
 

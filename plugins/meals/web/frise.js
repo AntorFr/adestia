@@ -135,7 +135,15 @@ function Card({ item, t, onOpen, onDrag, onDismiss, tray }) {
       draggable: true,
       title: t('Click for the detail · Drag to move'),
       onDragStart: (event) => onDrag(event, item),
-      onClick: () => onOpen(item),
+      role: 'button',
+      tabIndex: 0,
+      onClick: (event) => onOpen(item, event.currentTarget),
+      onKeyDown: (event) => {
+        if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) {
+          event.preventDefault()
+          onOpen(item, event.currentTarget)
+        }
+      },
     },
     [
       item.ico ? h('span', { key: 'i', className: 'meals-ico' }, item.ico) : null,
@@ -152,53 +160,103 @@ function Card({ item, t, onOpen, onDrag, onDismiss, tray }) {
               type: 'button',
               className: 'meals-dismiss',
               title: t('Set this one aside'),
+              'aria-label': t('Set this one aside'),
               onClick: (event) => {
                 event.stopPropagation()
                 onDismiss(item)
               },
             },
-            '✕',
+            icon('x'),
           )
         : null,
     ],
   )
 }
 
-/** The detail nobody sees until they ask for it. */
-function Detail({ item, t, onClose }) {
-  const entries = Object.entries(item.props ?? {}).filter(
-    ([key]) => typeof key === 'string' && key !== '',
-  )
-  return h(
-    'div',
-    { className: 'meals-modal', onClick: onClose },
-    h('div', { className: 'meals-sheet', onClick: (event) => event.stopPropagation() }, [
-      h('header', { key: 'h', className: 'meals-sheet-head' }, [
-        item.ico ? h('span', { key: 'i', className: 'meals-ico' }, item.ico) : null,
-        h('h3', { key: 't' }, item.titre || item.id),
-        item.quantite ? h('span', { key: 'q', className: 'meals-qty' }, item.quantite) : null,
-      ]),
-      item.desc || item.hint
-        ? h('p', { key: 'd', className: 'meals-desc' }, item.desc || item.hint)
-        : null,
-      entries.length > 0
-        ? h(
-            'dl',
-            { key: 'p', className: 'meals-props' },
-            entries.flatMap(([key, value]) => [
-              h('dt', { key: `k${key}` }, key),
-              h('dd', { key: `v${key}` }, String(value ?? '')),
-            ]),
-          )
-        : null,
-      item.source ? h('p', { key: 's', className: 'meals-source' }, item.source) : null,
-      h(
-        'button',
-        { key: 'c', type: 'button', className: 'meals-close', onClick: onClose },
-        t('Close'),
-      ),
-    ]),
-  )
+/** The shell mounts this sprite once; plugins share its names, not its code. */
+const NS = 'http://www.w3.org/2000/svg'
+const icon = (name) =>
+  h('svg', { className: 'adestia-icon', 'aria-hidden': true, focusable: false }, h('use', { href: `#adestia-i-${name}` }))
+
+/** A node with a class and some text, for the sheet written outside React. */
+function node(tag, className, text) {
+  const made = document.createElement(tag)
+  if (className) made.className = className
+  if (text !== undefined) made.textContent = text
+  return made
+}
+
+/**
+ * The detail nobody sees until they ask for it, as the shell's sheet.
+ *
+ * Written to the body by an effect, not rendered in the view: the shell folds
+ * its panes with transforms and a fixed element inside one is fixed to THAT.
+ * The contract is the plugin-author skill's: a dialog named by its title,
+ * Escape and the scrim close it, Tab stays inside, and focus goes back to
+ * whatever opened it.
+ */
+function Detail({ item, opener, t, onClose }) {
+  const close = useRef(onClose)
+  close.current = onClose
+  useEffect(() => {
+    const scrim = node('div', 'adestia-sheet')
+    const panel = node('div', 'adestia-sheet__panel meals-sheet')
+    panel.setAttribute('role', 'dialog')
+    panel.setAttribute('aria-modal', 'true')
+    const head = node('header', 'adestia-sheet__head')
+    const title = node('h2', 'adestia-sheet__title', item.titre || item.id)
+    title.id = `meals-sheet-${item.id}`
+    panel.setAttribute('aria-labelledby', title.id)
+    const x = node('button', 'adestia-btn adestia-btn--ghost adestia-btn--sm adestia-btn--icon')
+    x.type = 'button'
+    x.setAttribute('aria-label', t('Close'))
+    const svg = document.createElementNS(NS, 'svg')
+    svg.setAttribute('class', 'adestia-icon')
+    svg.setAttribute('aria-hidden', 'true')
+    svg.setAttribute('focusable', 'false')
+    const use = document.createElementNS(NS, 'use')
+    use.setAttribute('href', '#adestia-i-x')
+    svg.append(use)
+    x.append(svg)
+    head.append(title, x)
+    const body = node('div', 'adestia-sheet__body')
+    const lead = node('div', 'meals-sheet-lead')
+    if (item.ico) lead.append(node('span', 'meals-ico', item.ico))
+    if (item.quantite) lead.append(node('span', 'meals-qty', item.quantite))
+    if (lead.childNodes.length) body.append(lead)
+    if (item.desc || item.hint) body.append(node('p', 'meals-desc', item.desc || item.hint))
+    const entries = Object.entries(item.props ?? {}).filter(([key]) => typeof key === 'string' && key !== '')
+    if (entries.length > 0) {
+      const list = node('dl', 'meals-props')
+      for (const [key, value] of entries) list.append(node('dt', '', key), node('dd', '', String(value ?? '')))
+      body.append(list)
+    }
+    if (item.source) body.append(node('p', 'meals-source', item.source))
+    panel.append(head, body)
+    scrim.append(panel)
+    document.body.append(scrim)
+    const onKey = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        event.stopPropagation()
+        close.current()
+      } else if (event.key === 'Tab') {
+        const controls = [...panel.querySelectorAll('button:not(:disabled)')]
+        const inside = panel.contains(document.activeElement)
+        if (!inside || controls.length === 1) { event.preventDefault(); controls[0]?.focus() }
+      }
+    }
+    scrim.addEventListener('click', (event) => { if (event.target === scrim) close.current() })
+    x.addEventListener('click', () => close.current())
+    document.addEventListener('keydown', onKey, true)
+    x.focus()
+    return () => {
+      document.removeEventListener('keydown', onKey, true)
+      scrim.remove()
+      if (opener?.isConnected) opener.focus()
+    }
+  }, [item, opener, t])
+  return null
 }
 
 /**
@@ -212,6 +270,7 @@ function Detail({ item, t, onClose }) {
 export default function Frise({ api, page }) {
   const t = useMemo(() => words(api.locale), [api.locale])
   const [open, setOpen] = useState()
+  const onOpen = useCallback((item, from) => setOpen({ item, from }), [])
   const dragged = useRef(null)
   const { shape, items, loading, error, run, note } = usePeriod(api, page)
 
@@ -269,7 +328,7 @@ export default function Frise({ api, page }) {
                 },
                 group.cards.length > 0
                   ? group.cards.map((item) =>
-                      h(Card, { key: item.id, item, t, onOpen: setOpen, onDrag }),
+                      h(Card, { key: item.id, item, t, onOpen, onDrag }),
                     )
                   : h('span', { className: 'meals-drop' }, t('Drop a card here')),
               ),
@@ -316,7 +375,7 @@ export default function Frise({ api, page }) {
                 'div',
                 { key: 'z', className: 'meals-zone' },
                 view.strays.map((item) =>
-                  h(Card, { key: item.id, item, t, onOpen: setOpen, onDrag }),
+                  h(Card, { key: item.id, item, t, onOpen, onDrag }),
                 ),
               ),
             ])
@@ -334,7 +393,7 @@ export default function Frise({ api, page }) {
                   item,
                   t,
                   tray: true,
-                  onOpen: setOpen,
+                  onOpen,
                   onDrag,
                   onDismiss: (card) => run({ op: 'dismiss', id: card.id }),
                 }),
@@ -347,6 +406,6 @@ export default function Frise({ api, page }) {
         ],
       ),
     ]),
-    open ? h(Detail, { key: 'd', item: open, t, onClose: () => setOpen(undefined) }) : null,
+    open ? h(Detail, { key: 'd', item: open.item, opener: open.from, t, onClose: () => setOpen(undefined) }) : null,
   ])
 }

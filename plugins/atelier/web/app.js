@@ -8,7 +8,7 @@
    handing it back at build time.
 
    ONE source of truth, two consumers: the browser view renders with the very
-   rules the CLI validates and migrates against (ATELIER-3.md D4). They cannot
+   rules the CLI validates and migrates against. They cannot
    disagree, because they are the same file.
 
    THE CONTRACT — `(api) => ({ routes })`. `atelier` is the hub, `atelier/<path>`
@@ -20,8 +20,9 @@
    error: the failure this rule prevents was found by a screenshot, nothing else. */
 
 import { normalise } from './convert.js';
+import { iconHTML, makeSheet, node, trap } from './sheet.js';
 import {
-  SURFACES, CHANTS, epOf, kerfOf, zoneUtile, bandBox, bandGuide, bandLong,
+  CHANTS, epOf, kerfOf, zoneUtile, bandBox, bandGuide, bandLong,
   chantEdges, lamPoints, lamLignes, ligneBande, prepsDe, plaqueBands, plaquePoses, bandesMeres, issuesPlaque,
 } from './regles.js';
 
@@ -42,7 +43,7 @@ import {
  * does not.
  */
 export default function createAtelierApp(api) {
-  const { esc, crumbs, headers, add, chipsOf, href, learn } = api;
+  const { esc, crumbs, headers, href, learn, t } = api;
   /* The one line this port needed.
 
      In agent-gw the engine was BUNDLED into the launcher, so a bare `page`
@@ -84,11 +85,11 @@ export default function createAtelierApp(api) {
     const [x1, y1, x2, y2] = e, mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
     const vertical = Math.abs(x2 - x1) < 0.5;   // arête verticale → texte couché
     const tr = vertical ? ` transform="rotate(-90 ${mx} ${my})"` : '';
-    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--proj)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="6 3"/>`
-      + `<text x="${mx}" y="${my + (vertical ? 0 : (y1 < r.y + r.h / 2 ? 9 : -3))}"${tr} text-anchor="middle" fill="var(--proj)" font-family="var(--f-mono)" font-size="${fs}" font-weight="700" paint-order="stroke" stroke="var(--surface)" stroke-width="3">▲ HAUT</text>`;
+    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="6 3"/>`
+      + `<text x="${mx}" y="${my + (vertical ? 0 : (y1 < r.y + r.h / 2 ? 9 : -3))}"${tr} text-anchor="middle" fill="var(--accent)" font-family="var(--font-mono)" font-size="${fs}" font-weight="700" paint-order="stroke" stroke="var(--surface)" stroke-width="3">${t('▲ TOP')}</text>`;
   }
   const chantSVG = (edges, sw) => edges.map(([x1, y1, x2, y2]) =>
-    `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="var(--warn)" stroke-width="${sw}" stroke-linecap="round"/>`).join('');
+    `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="var(--wb-edge)" stroke-width="${sw}" stroke-linecap="round"/>`).join('');
   // L'échelle 3.0 : UN px/mm pour tout le workbook — chaque vue compose son viewBox sur la
   // même largeur de référence wb.WG (calculée à l'index), au même WS mm→unités.
   const WS = 0.33;
@@ -105,21 +106,45 @@ export default function createAtelierApp(api) {
   const wbPart = (vbW) => `style="width:${Math.min(100, vbW / wb.WG * 100).toFixed(2)}%;height:auto;display:block"`;
   const fitNom = (place, txt) => Math.max(8.5, Math.min(FS.nom, place / (String(txt).length * 0.68)));
 
-  // Conteneurs créés une fois : modale pièce + mode atelier plein écran.
-  const pieceModal = document.createElement('div');
-  pieceModal.className = 'modal atelier-modal'; pieceModal.hidden = true;
-  pieceModal.innerHTML = '<div class="card"><div class="piece-body" id="piece-body"></div></div>';
-  pieceModal.addEventListener('click', (e) => { if (e.target === pieceModal) pieceModal.hidden = true; });
-  document.body.appendChild(pieceModal);
+  // Conteneurs créés une fois : la feuille de pièce (partagée avec la charte) + le mode atelier plein écran.
+  const sheet = makeSheet(t);
+  document.body.appendChild(sheet.scrim);
   const atelierFull = document.createElement('div');
   atelierFull.className = 'atelier-full'; atelierFull.hidden = true;
-  atelierFull.innerHTML = '<button class="close" id="atelier-close">✕</button><div id="atelier-body"></div>';
-  atelierFull.querySelector('#atelier-close').addEventListener('click', () => { atelierFull.hidden = true; });
+  atelierFull.setAttribute('role', 'dialog'); atelierFull.setAttribute('aria-modal', 'true');
+  atelierFull.setAttribute('aria-label', t('The Workshop'));
+  atelierFull.innerHTML = `<button type="button" class="adestia-btn adestia-btn--ghost adestia-btn--sm atelier-leave" id="atelier-close">${iconHTML('x')}<span>${t('Leave the bench mode')}</span></button><div id="atelier-body"></div>`;
   document.body.appendChild(atelierFull);
+  let fullOpener = null;
+  function onFullKey(e) {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeFull(); } else trap(e, atelierFull);
+  }
+  function openFull(from) {
+    fullOpener = from || null;
+    atelierFull.hidden = false;
+    document.addEventListener('keydown', onFullKey, true);
+    renderShop();
+    atelierFull.querySelector('#atelier-close').focus();
+  }
+  function closeFull() {
+    if (atelierFull.hidden) return;
+    atelierFull.hidden = true;
+    document.removeEventListener('keydown', onFullKey, true);
+    // Le plan se redessine à chaque coche : le bouton d'origine a pu être remplacé.
+    (fullOpener && fullOpener.isConnected ? fullOpener : page.querySelector('#shopmode'))?.focus();
+    fullOpener = null;
+  }
+  atelierFull.querySelector('#atelier-close').addEventListener('click', closeFull);
+  // Une pièce ou une colonne est un SVG : pour que le clavier l'ouvre et que le focus lui revienne, elle devient un bouton.
+  function openable(el, open) {
+    el.setAttribute('tabindex', '0'); el.setAttribute('role', 'button');
+    el.addEventListener('click', (e) => { e.stopPropagation(); open(e); });
+    el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); open(e); } });
+  }
 
   async function renderAtelierHub() {
-    crumbs([{ label: 'Accueil', hash: '#/' }, { label: 'L’Atelier', hash: '#/atelier' }]);
-    page.innerHTML = '<div class="wrap"><div class="empty">chargement…</div></div>';
+    crumbs([{ label: t('Home'), hash: '#/' }, { label: t('The Workshop'), hash: '#/atelier' }]);
+    page.innerHTML = `<div class="wrap"><div class="empty">${t('loading…')}</div></div>`;
     let list;
     try {
       const r = await fetch('/api/plugin/atelier/workbooks', { headers: headers(false), cache: 'no-store' });
@@ -128,22 +153,22 @@ export default function createAtelierApp(api) {
       // court un lien vers l'un d'eux. Voici la copie la plus fraîche.
       learn(list);
     }
-    catch { page.innerHTML = '<div class="wrap"><div class="empty">Atelier indisponible.</div></div>'; return; }
-    let html = `<div class="wrap" style="--dc:var(--shop)"><div class="chead"><div class="aico" style="--dc:var(--shop)">${IC.shop}</div><div><h1>L’Atelier</h1><div class="lede">Suivi menuiserie — vos plans de débit.</div></div></div>`;
-    if (!list.length) { page.innerHTML = html + '<div class="empty">Aucun workbook — demandez à Alfred d’en générer un (skill menuiserie).</div></div>'; return; }
-    html += '<div class="grouplabel">Workbooks</div><div class="cards">';
+    catch { page.innerHTML = `<div class="wrap"><div class="empty">${t('The Workshop is unavailable.')}</div></div>`; return; }
+    let html = `<div class="wrap"><div class="chead"><div class="aico">${IC.shop}</div><div><h1>${t('The Workshop')}</h1><div class="lede">${t('Woodworking follow-up — your cutting plans.')}</div></div></div>`;
+    if (!list.length) { page.innerHTML = html + `<div class="empty">${t('No workbook — ask Alfred to generate one (woodworking skill).')}</div></div>`; return; }
+    html += `<div class="grouplabel">${t('Workbooks')}</div><div class="cards">`;
     for (const w of list) {
       const tot = w.total || w.pieces || 0;
       const pct = tot ? Math.round(100 * w.done / tot) : 0;
-      const last = w.lastActivity ? new Date(w.lastActivity).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : 'jamais';
-      html += `<a class="card" href="${href(w.path)}"><div class="ct">${esc(w.titre)}</div><div class="cmeta">${w.done}/${tot} étapes · ${w.pieces} pièces · ${esc(last)}</div><div class="bar"><i style="width:${pct}%"></i></div></a>`;
+      const last = w.lastActivity ? new Date(w.lastActivity).toLocaleDateString(api.locale || 'fr-FR', { day: 'numeric', month: 'short' }) : t('never');
+      html += `<a class="card" href="${href(w.path)}"><div class="ct">${esc(w.titre)}</div><div class="cmeta">${w.done}/${tot} ${t('steps')} · ${t(w.pieces === 1 ? '%n piece' : '%n pieces', { n: w.pieces })} · ${esc(last)}</div><div class="bar"><i style="width:${pct}%"></i></div></a>`;
     }
     page.innerHTML = html + '</div></div>';
   }
 
   async function renderWorkbook(path) {
-    crumbs([{ label: 'Accueil', hash: '#/' }, { label: 'L’Atelier', hash: '#/atelier' }, { label: '…', hash: href(path) }]);
-    page.innerHTML = '<div class="wrap"><div class="empty">chargement…</div></div>';
+    crumbs([{ label: t('Home'), hash: '#/' }, { label: t('The Workshop'), hash: '#/atelier' }, { label: '…', hash: href(path) }]);
+    page.innerHTML = `<div class="wrap"><div class="empty">${t('loading…')}</div></div>`;
     let data, state, layout;
     try {
       const [rd, rs, rl] = await Promise.all([
@@ -154,11 +179,11 @@ export default function createAtelierApp(api) {
       if (!rd.ok) throw new Error(rd.status);
       data = normalise(await rd.json()); state = await rs.json();
       layout = rl.ok ? await rl.json() : { poses: {}, bandes: {} };
-    } catch (e) { page.innerHTML = '<div class="wrap"><div class="empty">Workbook illisible (' + esc(String(e)) + ').</div></div>'; return; }
+    } catch (e) { page.innerHTML = `<div class="wrap"><div class="empty">${t('Unreadable workbook (%err).', { err: esc(String(e)) })}</div></div>`; return; }
     if (!wb || wb.path !== path) { wbTab = 0; wbEditOn = false; wbSel = null; }   // autre workbook = autre barre, l'index ne se transpose pas
     wb = { path, data, state, layout, byEtq: new Map((data.pieces || []).map((p) => [p.etiquette, p])) };
     buildWbIndex();
-    crumbs([{ label: 'Accueil', hash: '#/' }, { label: 'L’Atelier', hash: '#/atelier' }, { label: data.titre || data.projet || 'Workbook', hash: href(path) }]);
+    crumbs([{ label: t('Home'), hash: '#/' }, { label: t('The Workshop'), hash: '#/atelier' }, { label: data.titre || data.projet || 'Workbook', hash: href(path) }]);
     renderWb();
   }
 
@@ -192,7 +217,7 @@ export default function createAtelierApp(api) {
   // plusieurs fois chaque type, `titre` et portée optionnels) ; à défaut, DÉRIVÉE — la barre
   // historique, moins les stations sans contenu (« zéro fois » sans rien déclarer). Le type est
   // un vocabulaire fermé : inconnu → station ignorée, on ne dessine pas un onglet mort.
-  const ST_LABELS = { debit: 'Plaques', tronconnage: 'Tronçons', rainure: 'Rainures', lamello: 'Lamello', assemblage: 'Assemblage', suivi: 'Suivi' };
+  const ST_LABELS = { debit: t('Sheets'), tronconnage: t('Cross-cuts'), rainure: t('Grooves'), lamello: t('Lamello'), assemblage: t('Assembly'), suivi: t('Follow-up') };
   function wbStations() {
     const d = wb.data;
     const declared = (Array.isArray(d.stations) ? d.stations : []).filter((s) => s && ST_LABELS[s.type]);
@@ -217,9 +242,9 @@ export default function createAtelierApp(api) {
     const pct = total ? Math.round(100 * done / total) : 0;
     const stations = wbStations();
     if (wbTab >= stations.length) wbTab = 0;
-    const cur = stations[wbTab] || { type: 'suivi', titre: 'Suivi' };
-    page.innerHTML = `<div class="wrap" style="--dc:var(--shop)">
-      <div class="chead"><div class="aico" style="--dc:var(--shop)">${IC.shop}</div><div><h1>${esc(d.titre || d.projet || 'Workbook')}</h1><div class="lede">Workbook menuiserie · ${done}/${total} étapes</div></div><span style="flex:1"></span><button class="tag" id="shopmode" style="cursor:pointer;padding:8px 14px;border-color:var(--shop);color:var(--shop)">▶ Mode atelier</button></div>
+    const cur = stations[wbTab] || { type: 'suivi', titre: t('Follow-up') };
+    page.innerHTML = `<div class="wrap">
+      <div class="chead"><div class="aico">${IC.shop}</div><div><h1>${esc(d.titre || d.projet || 'Workbook')}</h1><div class="lede">${t('Woodworking workbook · %done/%total steps', { done, total })}</div></div><span style="flex:1"></span><button class="tag shopmode" id="shopmode">${t('▶ Workshop mode')}</button></div>
       <div class="prog"><i style="width:${pct}%"></i></div>
       <div class="wbtabs">${stations.map((s, i) => `<button class="wbtab${wbTab === i ? ' on' : ''}" data-w="${i}">${esc(s.titre)}</button>`).join('')}</div>
       <div id="wbbody"></div></div>`;
@@ -231,7 +256,7 @@ export default function createAtelierApp(api) {
     else if (cur.type === 'assemblage') renderAsm(body, cur);
     else renderSuivi(body);
     page.querySelectorAll('.wbtab').forEach((t) => t.addEventListener('click', () => { wbTab = +t.dataset.w; renderWb(); }));
-    $('shopmode').addEventListener('click', () => { atelierFull.hidden = false; renderShop(); });
+    $('shopmode').addEventListener('click', (e) => openFull(e.currentTarget));
   }
 
   // Vue Débit (modèle A) — la plaque est le tronc. Chaque plaque de `debit[]` est dessinée
@@ -298,8 +323,8 @@ export default function createAtelierApp(api) {
     const issues = wbEditOn ? wbIssues(pl) : new Map();
     const parents = bandesMeres(pl);
     const vw = SW + pad * 2, vh = SH + top + pad;   // taille réelle ; la part de largeur fait l'échelle
-    let g = `<g transform="translate(${pad},${top})"><rect x="0" y="0" width="${SW}" height="${SH}" rx="3" fill="var(--surface)" stroke="var(--ink-soft)" stroke-width="1.5" stroke-dasharray="5 4"/>`;
-    if (d > 0) g += `<rect x="${d * S}" y="${d * S}" width="${(L - 2 * d) * S}" height="${(H - 2 * d) * S}" rx="2" fill="none" stroke="var(--ink)" stroke-width="1.5"/>`;
+    let g = `<g transform="translate(${pad},${top})"><rect x="0" y="0" width="${SW}" height="${SH}" rx="3" fill="var(--surface)" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="5 4"/>`;
+    if (d > 0) g += `<rect x="${d * S}" y="${d * S}" width="${(L - 2 * d) * S}" height="${(H - 2 * d) * S}" rx="2" fill="none" stroke="var(--text)" stroke-width="1.5"/>`;
     for (const band of bands.values()) {
       // en lecture on ne montre que ce qui porte des pièces ; à l'établi on montre aussi les
       // colonnes VIDES (pour y déposer), mais jamais les bandes mères, qui seront recoupées
@@ -307,7 +332,7 @@ export default function createAtelierApp(api) {
       const done = band.done;
       // à débiter = sarcelle vif ; débité = gris estompé + ✓ (contraste par la clarté, pas la teinte).
       const badB = issues.has('▭ ' + band.id), selB = wbEditOn && wbSelB === band.id;
-      const cc = badB ? 'var(--crit)' : selB ? 'var(--proj)' : done ? 'var(--ink-faint)' : 'var(--shop)';
+      const cc = badB ? 'var(--wb-fault)' : selB ? 'var(--accent)' : done ? 'var(--text-faint)' : 'var(--wb-plan)';
       // 3.0 : la bande est un rectangle + un axe — les cotes suivent l'axe, le guide est la transverse
       const long = band.axe === 'x';
       const bb = bandBox(band);
@@ -329,21 +354,21 @@ export default function createAtelierApp(api) {
         const tr = vert ? ` transform="rotate(-90 ${cx} ${cy})"` : '';
         const fontE = fitNom(vert ? ph : pw, short);
         const bad = issues.has(r.et), sel = wbEditOn && wbSel === r.et;
-        const pk = bad ? 'var(--crit)' : sel ? 'var(--proj)' : cc;
+        const pk = bad ? 'var(--wb-fault)' : sel ? 'var(--accent)' : cc;
         // en mode établi chaque pièce est son propre <g> : le glissé la déplace par transform,
         // sans redessiner la plaque à chaque pixel
         g += `<g class="dragp" data-et="${esc(r.et)}" data-band="${esc(r.bande || '')}"${wbEditOn ? ' style="cursor:grab"' : ''}>`;
         g += `<rect x="${px}" y="${py}" width="${pw}" height="${ph}" rx="2" fill="${pk}" fill-opacity="${bad ? .3 : done ? .12 : .2}" stroke="${pk}" stroke-width="${bad || sel ? 2.5 : 1}" stroke-opacity="${bad || sel ? 1 : .45}"/>`;
-        g += `<text class="pname" data-et="${esc(r.et)}" x="${cx}" y="${cy - 1}"${tr} text-anchor="middle" fill="${done ? 'var(--ink-faint)' : 'var(--ink)'}" font-family="var(--f-mono)" font-size="${fontE}" font-weight="700" paint-order="stroke" stroke="var(--surface)" stroke-width="3">${esc(short)}</text>`;
+        g += `<text class="pname" data-et="${esc(r.et)}" x="${cx}" y="${cy - 1}"${tr} text-anchor="middle" fill="${done ? 'var(--text-faint)' : 'var(--text)'}" font-family="var(--font-mono)" font-size="${fontE}" font-weight="700" paint-order="stroke" stroke="var(--surface)" stroke-width="3">${esc(short)}</text>`;
         // La cote de la pièce se lit à l'établi, penché sur une tablette : même corps et même
         // encre que les cotes de bande (11,5 gras, halo sur le fond de colonne), pas le gris
         // discret d'une mention secondaire — c'est un chiffre qu'on va scier.
-        g += `<text x="${cx}" y="${cy + 15}"${tr} text-anchor="middle" fill="${done ? 'var(--ink-faint)' : 'var(--ink)'}" font-family="var(--f-mono)" font-size="11.5" font-weight="800" paint-order="stroke" stroke="var(--surface)" stroke-width="4">${pc.longueur}×${pc.largeur}</text>`;
+        g += `<text x="${cx}" y="${cy + 15}"${tr} text-anchor="middle" fill="${done ? 'var(--text-faint)' : 'var(--text)'}" font-family="var(--font-mono)" font-size="11.5" font-weight="800" paint-order="stroke" stroke="var(--surface)" stroke-width="4">${pc.longueur}×${pc.largeur}</text>`;
         // CHANTS sur la plaque : ce sont eux qui décident de l'orientation au calepinage (un
         // chant sur le long bord d'une bande se plaque en UNE passe avant tronçonnage).
         if (!done && r.chants.length) g += chantSVG(chantEdges(r.chants, { x: px, y: py, w: pw, h: ph }, !r.rot), 2.5);
         if (!done) g += hautMark(pc.haut, { x: px, y: py, w: pw, h: ph }, !r.rot, FS.note);
-        if (done) g += `<text x="${px + 5}" y="${py + 14}" fill="var(--good)" font-family="var(--f-mono)" font-size="13" font-weight="700">✓</text>`;
+        if (done) g += `<text x="${px + 5}" y="${py + 14}" fill="var(--wb-done)" font-family="var(--font-mono)" font-size="13" font-weight="700">✓</text>`;
         g += `</g>`;
       }
       // POIGNÉE de colonne — dessinée APRÈS les pièces, donc toujours au-dessus : une bande
@@ -356,28 +381,28 @@ export default function createAtelierApp(api) {
         // largeur = arête gauche (verticale) ; longueur = arête haute (horizontale, flèches)
         const lx = Math.max(bx - 5, 9);
         g += `<line x1="${lx - 3}" y1="${byo + 1}" x2="${lx + 3}" y2="${byo + 1}" stroke="${cc}" stroke-width="1.5"/><line x1="${lx - 3}" y1="${byo + bh - 1}" x2="${lx + 3}" y2="${byo + bh - 1}" stroke="${cc}" stroke-width="1.5"/>`;
-        g += `<text x="${lx}" y="${byo + bh / 2}" transform="rotate(-90 ${lx} ${byo + bh / 2})" text-anchor="middle" fill="${cc}" font-family="var(--f-mono)" font-size="${FS.rep}" font-weight="700" paint-order="stroke" stroke="var(--surface)" stroke-width="3">${esc(cid)} · ${bandGuide(band)}</text>`;
+        g += `<text x="${lx}" y="${byo + bh / 2}" transform="rotate(-90 ${lx} ${byo + bh / 2})" text-anchor="middle" fill="${cc}" font-family="var(--font-mono)" font-size="${FS.rep}" font-weight="700" paint-order="stroke" stroke="var(--surface)" stroke-width="3">${esc(cid)} · ${bandGuide(band)}</text>`;
         const dy = byo + 15, mx = bx + bw / 2;
-        g += `<line x1="${bx + 1}" y1="${dy}" x2="${bx + bw - 1}" y2="${dy}" stroke="var(--ink-soft)" stroke-width="1"/>`;
-        g += `<path d="M${bx} ${dy} l${a} ${-a} M${bx} ${dy} l${a} ${a} M${bx + bw} ${dy} l${-a} ${-a} M${bx + bw} ${dy} l${-a} ${a}" stroke="var(--ink-soft)" stroke-width="1.2" fill="none"/>`;
-        g += `<text x="${mx}" y="${dy - 4}" text-anchor="middle" fill="var(--ink)" font-family="var(--f-mono)" font-size="${FS.cote}" font-weight="800" paint-order="stroke" stroke="var(--surface)" stroke-width="4">${len} mm</text>`;
+        g += `<line x1="${bx + 1}" y1="${dy}" x2="${bx + bw - 1}" y2="${dy}" stroke="var(--text-muted)" stroke-width="1"/>`;
+        g += `<path d="M${bx} ${dy} l${a} ${-a} M${bx} ${dy} l${a} ${a} M${bx + bw} ${dy} l${-a} ${-a} M${bx + bw} ${dy} l${-a} ${a}" stroke="var(--text-muted)" stroke-width="1.2" fill="none"/>`;
+        g += `<text x="${mx}" y="${dy - 4}" text-anchor="middle" fill="var(--text)" font-family="var(--font-mono)" font-size="${FS.cote}" font-weight="800" paint-order="stroke" stroke="var(--surface)" stroke-width="4">${len} mm</text>`;
       } else {
         // court : id + largeur en tête (arête haute) ; longueur en flèches verticales
         const wy = Math.max(byo - 4, 9);
         g += `<line x1="${bx + 1}" y1="${wy + 3}" x2="${bx + 1}" y2="${wy - 3}" stroke="${cc}" stroke-width="1.5"/><line x1="${bx + bw - 1}" y1="${wy + 3}" x2="${bx + bw - 1}" y2="${wy - 3}" stroke="${cc}" stroke-width="1.5"/>`;
-        g += `<text x="${bx + bw / 2}" y="${wy}" text-anchor="middle" fill="${cc}" font-family="var(--f-mono)" font-size="${FS.rep}" font-weight="700" paint-order="stroke" stroke="var(--surface)" stroke-width="3">${esc(cid)} · ${bandGuide(band)}</text>`;
+        g += `<text x="${bx + bw / 2}" y="${wy}" text-anchor="middle" fill="${cc}" font-family="var(--font-mono)" font-size="${FS.rep}" font-weight="700" paint-order="stroke" stroke="var(--surface)" stroke-width="3">${esc(cid)} · ${bandGuide(band)}</text>`;
         // colonne étroite : l'étiquette de pièce occupe déjà l'axe médian — la cote de bande
         // remonte en tête plutôt que de s'imprimer par-dessus (la ligne de cote, elle, court
         // sur toute la hauteur, comme il se doit)
         const dx = bx + 17, my = byo + (bw < 46 ? bh * 0.18 : bh / 2);
-        g += `<line x1="${dx}" y1="${byo + 1}" x2="${dx}" y2="${byo + bh - 1}" stroke="var(--ink-soft)" stroke-width="1"/>`;
-        g += `<path d="M${dx} ${byo} l${-a} ${a} M${dx} ${byo} l${a} ${a} M${dx} ${byo + bh} l${-a} ${-a} M${dx} ${byo + bh} l${a} ${-a}" stroke="var(--ink-soft)" stroke-width="1.2" fill="none"/>`;
-        g += `<text x="${dx}" y="${my}" transform="rotate(-90 ${dx} ${my})" text-anchor="middle" fill="var(--ink)" font-family="var(--f-mono)" font-size="${FS.cote}" font-weight="800" paint-order="stroke" stroke="var(--surface)" stroke-width="4">${len} mm</text>`;
+        g += `<line x1="${dx}" y1="${byo + 1}" x2="${dx}" y2="${byo + bh - 1}" stroke="var(--text-muted)" stroke-width="1"/>`;
+        g += `<path d="M${dx} ${byo} l${-a} ${a} M${dx} ${byo} l${a} ${a} M${dx} ${byo + bh} l${-a} ${-a} M${dx} ${byo + bh} l${a} ${-a}" stroke="var(--text-muted)" stroke-width="1.2" fill="none"/>`;
+        g += `<text x="${dx}" y="${my}" transform="rotate(-90 ${dx} ${my})" text-anchor="middle" fill="var(--text)" font-family="var(--font-mono)" font-size="${FS.cote}" font-weight="800" paint-order="stroke" stroke="var(--surface)" stroke-width="4">${len} mm</text>`;
       }
       g += `</g>`;
     }
-    const sub = d > 0 ? ` · dérasage ${d} · tronçon +${wb.data.meta?.tronconnage || 10}` : '';
-    return `<svg viewBox="0 0 ${vw} ${vh}" ${wbPart(vw)}><text x="${pad + SW / 2}" y="${top - 30}" text-anchor="middle" fill="var(--ink-soft)" font-family="var(--f-mono)" font-size="${FS.rep}">plaque ${L} × ${H} mm${sub}</text>${g}</g></svg>`;
+    const sub = d > 0 ? t(' · trim %d · cross-cut +%n', { d, n: wb.data.meta?.tronconnage || 10 }) : '';
+    return `<svg viewBox="0 0 ${vw} ${vh}" ${wbPart(vw)}><text x="${pad + SW / 2}" y="${top - 30}" text-anchor="middle" fill="var(--text-muted)" font-family="var(--font-mono)" font-size="${FS.rep}">${t('sheet %L × %H mm', { L, H })}${sub}</text>${g}</g></svg>`;
   }
   // Quelle colonne accueille une pièce lâchée ici ? Celle qui contient son CENTRE — à défaut,
   // la pièce garde la sienne (une pièce posée dans la chute n'est pas orpheline, elle est fausse).
@@ -472,8 +497,7 @@ export default function createAtelierApp(api) {
   }
   function renderDebit(body, st) {
     const plaques = stPlaques(st);
-    if (!plaques.length) { body.innerHTML = '<div class="empty">Pas de plan de débit.</div>'; return; }
-    const refL = Math.max(...plaques.map((pl) => (wb.matById.get(pl.materiau)?.plaque?.l) || 2800));
+    if (!plaques.length) { body.innerHTML = `<div class="empty">${t('No cutting plan.')}</div>`; return; }
     const remanie = Object.keys(wbPoses()).length;
     // La ROTATION est bridée par la matière : sur un panneau à fil, tourner une pièce change
     // le sens du veinage — ce n'est pas un choix de calepinage, c'est un défaut.
@@ -484,33 +508,33 @@ export default function createAtelierApp(api) {
       const bs = wbBands(pl); wbPosesEff(pl, bs);
       if (bs.has(wbSelB)) { selB = bs.get(wbSelB); selPl = pl; break; }
     }
-    const inp = 'style="width:5em;background:transparent;border:0;border-bottom:1px solid currentColor;color:inherit;font:inherit;text-align:right"';
-    let bar = `<div class="tgcols" style="margin-bottom:10px"><button class="colchip${wbEditOn ? ' done' : ''}" id="wbedit">${wbEditOn ? '✓ Établi ouvert' : '✎ Remanier'}</button>`;
+    const inp = 'class="colfield"';
+    let bar = `<div class="tgcols" style="margin-bottom:10px"><button class="colchip${wbEditOn ? ' done' : ''}" id="wbedit">${wbEditOn ? t('✓ Bench open') : t('✎ Rearrange')}</button>`;
     if (wbEditOn) {
-      bar += `<button class="colchip" id="wbrot"${wbSel && libre ? '' : ' disabled style="opacity:.45"'} title="${libre ? 'Quart de tour' : 'Interdit : ' + esc(String(wb.data.meta.sensFil)) + ' — le fil du panneau impose le sens'}">⟲ Tourner${wbSel ? ' ' + esc(wbSel.replace(/^[^-]+-/, '')) : ''}</button>`;
+      bar += `<button class="colchip" id="wbrot"${wbSel && libre ? '' : ' disabled'} title="${libre ? t('Quarter turn') : t('Forbidden: %grain — the panel grain dictates the direction', { grain: esc(String(wb.data.meta.sensFil)) })}">${t('⟲ Rotate')}${wbSel ? ' ' + esc(wbSel.replace(/^[^-]+-/, '')) : ''}</button>`;
       if (selB) {
         // La LARGEUR d'une bande est un réglage de guide : ça se saisit au chiffre, pas à la
         // souris — et c'est ce qui marche au doigt sur la tablette d'atelier.
-        bar += `<span class="colchip" style="border-color:var(--proj);color:var(--proj)">▭ ${esc(selB.label || selB.id)}</span>`;
-        bar += `<span class="colchip">guide <input id="wbbl" type="number" step="0.5" min="1" value="${+bandGuide(selB)}" ${inp}></span>`;
-        bar += `<span class="colchip">long. <input id="wbbL" type="number" step="0.5" min="1" value="${+bandLong(selB)}" ${inp}></span>`;
-        bar += `<button class="colchip" id="wbbsens" title="Bande debout (tronçons empilés) ou couchée">⇄ ${selB.axe === 'x' ? 'couchée' : 'debout'}</button>`;
+        bar += `<span class="colchip sel">▭ ${esc(selB.label || selB.id)}</span>`;
+        bar += `<span class="colchip">${t('guide')} <input id="wbbl" type="number" step="0.5" min="1" value="${+bandGuide(selB)}" ${inp}></span>`;
+        bar += `<span class="colchip">${t('len.')} <input id="wbbL" type="number" step="0.5" min="1" value="${+bandLong(selB)}" ${inp}></span>`;
+        bar += `<button class="colchip" id="wbbsens" title="${t('Band standing (cross-cuts stacked) or lying')}">⇄ ${selB.axe === 'x' ? t('lying') : t('standing')}</button>`;
         bar += selB.poses.length
-          ? `<span class="colchip" style="opacity:.45" title="Sortez d’abord ses ${selB.poses.length} pièce(s)">✕ Supprimer</span>`
-          : `<button class="colchip" id="wbbdel">✕ Supprimer</button>`;
+          ? `<span class="colchip off" title="${t('Take its %n piece(s) out first', { n: selB.poses.length })}">${`${iconHTML('x')} ${t('Delete')}`}</span>`
+          : `<button class="colchip" id="wbbdel">${`${iconHTML('x')} ${t('Delete')}`}</button>`;
       }
-      bar += `<button class="colchip" id="wbbnew">＋ Colonne</button>`;
-      if (remanie) bar += `<button class="colchip" id="wbreset" title="Reprendre la proposition d'Alfred">↺ Rendre la main (${remanie})</button>`;
+      bar += `<button class="colchip" id="wbbnew">${t('＋ Column')}</button>`;
+      if (remanie) bar += `<button class="colchip" id="wbreset" title="${t('Take back Alfred’s proposal')}">${t('↺ Hand back (%n)', { n: remanie })}</button>`;
     }
     bar += '</div>';
     const allIss = wbEditOn ? plaques.map((pl) => [pl, wbIssues(pl)]).filter(([, m]) => m.size) : [];
     body.innerHTML = bar + plaques.map((pl) => {
       const mat = wb.matById.get(pl.materiau) || {};
       const n = (pl.etapes || []).reduce((s, st) => s + (st.type === 'tronconnage' ? (st.pieces || []).length : 0), 0);
-      return `<div class="blueprint" data-plaque="${esc(pl.plaque || '')}"><div class="bp-inner"><div class="bp-h"><b>PLAQUE ${esc(pl.plaque || '')}</b><span>${esc(mat.label || pl.materiau || '')} · ${n} pièces</span></div><div class="cutwrap">${plaqueSVG(pl)}</div></div></div>`;
+      return `<div class="blueprint" data-plaque="${esc(pl.plaque || '')}"><div class="bp-inner"><div class="bp-h"><b>${t('SHEET %id', { id: esc(pl.plaque || '') })}</b><span>${esc(mat.label || pl.materiau || '')} · ${t(n === 1 ? '%n piece' : '%n pieces', { n })}</span></div><div class="cutwrap">${plaqueSVG(pl)}</div></div></div>`;
     }).join('')
-      + (allIss.length ? `<div class="blueprint"><div class="bp-inner"><div class="bp-h"><b style="color:var(--crit)">À corriger</b><span>le débit ne passera pas en l'état</span></div><div style="font-size:12.5px;line-height:1.6;margin-top:8px">${allIss.map(([pl, m]) => [...m.entries()].map(([et, ms]) => `<div><b style="font-family:var(--f-mono)">${esc(pl.plaque)} · ${esc(et.replace(/^[^-]+-/, ''))}</b> — ${esc(ms.join(' · '))}</div>`).join('')).join('')}</div></div></div>` : '')
-      + `<div class="legend"><span><i class="sw" style="background:var(--shop);opacity:.6"></i>à débiter</span><span><i class="sw" style="background:var(--ink-faint);opacity:.6"></i>débité ✓</span><span><i class="sw" style="background:var(--warn)"></i>arête à plaquer (chant)</span><span style="color:var(--ink-faint)">${wbEditOn ? 'glisser une pièce · les bords s’aimantent en ajoutant le trait de scie' : 'clic colonne → détail/débiter · clic sur le nom → la pièce'}</span></div>`;
+      + (allIss.length ? `<div class="blueprint"><div class="bp-inner"><div class="bp-h"><b class="c-fault">${t('To fix')}</b><span>${t('the cutting plan will not go through as it stands')}</span></div><div class="issues">${allIss.map(([pl, m]) => [...m.entries()].map(([et, ms]) => `<div><b class="mono">${esc(pl.plaque)} · ${esc(et.replace(/^[^-]+-/, ''))}</b> — ${esc(ms.join(' · '))}</div>`).join('')).join('')}</div></div></div>` : '')
+      + `<div class="legend"><span><i class="sw sw-plan"></i>${t('to cut')}</span><span><i class="sw sw-done"></i>${t('cut ✓')}</span><span><i class="sw sw-edge"></i>${t('edge to band (edge banding)')}</span><span class="c-faint">${wbEditOn ? t('drag a piece · edges snap, adding the saw kerf') : t('click a column → detail/cut · click the name → the piece')}</span></div>`;
     $('wbedit').addEventListener('click', () => { wbEditOn = !wbEditOn; wbSel = null; wbSelB = null; renderWb(); });
     if (wbEditOn) {
       wbWireEdit(body, plaques);
@@ -541,11 +565,11 @@ export default function createAtelierApp(api) {
         wbSavePose({ bande: { id, cree: true, plaque: pl.plaque, axe: 'y', x, y: uz.y0, w: 100, h: Math.min(600, uz.y1 - uz.y0) } });
       });
       $('wbreset')?.addEventListener('click', () => {
-        if (confirm('Abandonner votre calepinage et reprendre celui d’Alfred ?')) { wbSel = null; wbSelB = null; wbSavePose({ reset: true }); }
+        if (confirm(t('Drop your layout and go back to Alfred’s?'))) { wbSel = null; wbSelB = null; wbSavePose({ reset: true }); }
       });
     } else {
-      body.querySelectorAll('.colc').forEach((gEl) => gEl.addEventListener('click', () => showColonne(gEl.dataset.band)));
-      body.querySelectorAll('.pname').forEach((t) => t.addEventListener('click', (e) => { e.stopPropagation(); showPiece(t.dataset.et); }));
+      body.querySelectorAll('.colc').forEach((gEl) => openable(gEl, () => showColonne(gEl.dataset.band, gEl)));
+      body.querySelectorAll('.pname').forEach((t) => openable(t, () => showPiece(t.dataset.et, t)));
     }
   }
   // Vue TRONÇONS (2ᵉ station) : la plaque refendue, on raisonne PAR COLONNE. On regroupe les
@@ -582,33 +606,33 @@ export default function createAtelierApp(api) {
         groups.get(sig).colonnes.push({ id: pl.plaque + (band.label || String(band.id).split('-').pop()), stepId: band.stepId, done: band.done, etqs: troncs.map((t) => t.et) });
       }
     }
-    if (!groups.size) { body.innerHTML = '<div class="empty">Pas de colonnes.</div>'; return; }
+    if (!groups.size) { body.innerHTML = `<div class="empty">${t('No columns.')}</div>`; return; }
     const S2 = WS, pad = 24;
     const sorted = [...groups.values()].sort((a, b) => b.largeur - a.largeur);
     const tot = (g) => g.troncs.reduce((m, t) => Math.max(m, t.a0 + t.al), 0);   // étendue réelle de la bande
     const W0 = Math.max(...sorted.map(tot)) * S2 + pad * 2;   // le plus large des groupes
-    let html = `<div class="lede" style="margin-bottom:12px">Plaques refendues → tronçonnage. Chaque type de colonne (identiques regroupées ×N), ses tronçons cotés, et la position de coupe cumulée (butée) — <b>à la même échelle</b> d'une bande à l'autre. Cocher une colonne = tronçonnée.</div>`;
+    let html = `<div class="lede" style="margin-bottom:12px">${t('Ripped sheets → cross-cutting. Each kind of column (identical ones grouped ×N), its cross-cuts dimensioned, and the cumulative cut position (stop) — <b>at the same scale</b> from one band to the next. Ticking a column = cross-cut.')}</div>`;
     for (const g of sorted) {
       const total = tot(g);
       const bh = Math.round(g.largeur * S2), top = 12, Hc = bh + top + 62;   // hauteur = largeur RÉELLE (même échelle) → ratio fidèle ; +place pour les cotes et la butée
       let svg = `<svg viewBox="0 0 ${Math.round(W0)} ${Hc}" ${wbPart(W0)}><g transform="translate(${pad},${top})">`;
-      svg += `<rect x="0" y="0" width="${total * S2}" height="${bh}" rx="3" fill="var(--shop)" fill-opacity=".07" stroke="var(--shop)" stroke-width="2"/>`;
+      svg += `<rect x="0" y="0" width="${total * S2}" height="${bh}" rx="3" fill="var(--wb-plan)" fill-opacity=".07" stroke="var(--wb-plan)" stroke-width="2"/>`;
       // largeur cotée sur le flanc (façon plan : largeur en Y, longueur en X)
       // COTE largeur sur le flanc — style cote : ligne + empattements + valeur (unité incluse)
       const fx = -7;
-      svg += `<line x1="${fx}" y1="0" x2="${fx}" y2="${bh}" stroke="var(--ink-soft)" stroke-width="1"/><line x1="${fx - 3}" y1="0" x2="${fx + 3}" y2="0" stroke="var(--ink-soft)" stroke-width="1"/><line x1="${fx - 3}" y1="${bh}" x2="${fx + 3}" y2="${bh}" stroke="var(--ink-soft)" stroke-width="1"/>`;
-      svg += `<text x="${fx - 6}" y="${bh / 2}" transform="rotate(-90 ${fx - 6} ${bh / 2})" text-anchor="middle" fill="var(--ink-soft)" font-family="var(--f-mono)" font-size="${FS.rep}">${g.largeur} mm</text>`;
+      svg += `<line x1="${fx}" y1="0" x2="${fx}" y2="${bh}" stroke="var(--text-muted)" stroke-width="1"/><line x1="${fx - 3}" y1="0" x2="${fx + 3}" y2="0" stroke="var(--text-muted)" stroke-width="1"/><line x1="${fx - 3}" y1="${bh}" x2="${fx + 3}" y2="${bh}" stroke="var(--text-muted)" stroke-width="1"/>`;
+      svg += `<text x="${fx - 6}" y="${bh / 2}" transform="rotate(-90 ${fx - 6} ${bh / 2})" text-anchor="middle" fill="var(--text-muted)" font-family="var(--font-mono)" font-size="${FS.rep}">${g.largeur} mm</text>`;
       for (const t of g.troncs) {
         const x = t.a0 * S2, y = t.c0 * S2, w = t.al * S2, h = t.cr * S2;
         const short = t.et.replace(/^[^-]+-/, '');
         const tv = h > w * 1.25, tcx = x + w / 2, tcy = y + h / 2;   // même convention qu'en vue Plaques
         const ttr = tv ? ` transform="rotate(-90 ${tcx.toFixed(1)} ${tcy.toFixed(1)})"` : '';
         const nf = fitNom(tv ? h : w, short);
-        svg += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="var(--shop)" fill-opacity=".15" stroke="var(--shop)" stroke-width="1" stroke-opacity=".5"/>`;
+        svg += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="var(--wb-plan)" fill-opacity=".15" stroke="var(--wb-plan)" stroke-width="1" stroke-opacity=".5"/>`;
         // chants : SEULES les arêtes plaquées se surlignent, placées par `swap`
         if (t.chants.length) svg += chantSVG(chantEdges(t.chants, { x: x + 1.5, y: y + 1.5, w: w - 3, h: h - 3 }, t.swap), 3);
         svg += hautMark(t.haut, { x: x + 2, y: y + 2, w: w - 4, h: h - 4 }, t.swap, FS.note);
-        svg += `<text class="pname" data-et="${esc(t.et)}" x="${tcx.toFixed(1)}" y="${(tcy + 3).toFixed(1)}"${ttr} text-anchor="middle" fill="var(--ink)" font-family="var(--f-mono)" font-size="${nf.toFixed(1)}" font-weight="700" paint-order="stroke" stroke="var(--surface)" stroke-width="3">${esc(short)}</text>`;
+        svg += `<text class="pname" data-et="${esc(t.et)}" x="${tcx.toFixed(1)}" y="${(tcy + 3).toFixed(1)}"${ttr} text-anchor="middle" fill="var(--text)" font-family="var(--font-mono)" font-size="${nf.toFixed(1)}" font-weight="700" paint-order="stroke" stroke="var(--surface)" stroke-width="3">${esc(short)}</text>`;
       }
       // COTES : une par TRANCHE le long de la bande — deux pièces en travers partagent la leur,
       // c'est une seule coupe de tronçonnage. Puis la BUTÉE : la position cumulée de chaque trait.
@@ -623,8 +647,8 @@ export default function createAtelierApp(api) {
         // s'imprimer par-dessus sa voisine (le corps a grossi, l'encombrement aussi)
         crow = (x - lastCx) < 46 ? 1 - crow : 0;
         lastCx = x;
-        svg += `<line x1="${(x + 2).toFixed(1)}" y1="${cy}" x2="${(x + w - 2).toFixed(1)}" y2="${cy}" stroke="var(--ink-soft)" stroke-width="1"/><line x1="${(x + 2).toFixed(1)}" y1="${cy - 3}" x2="${(x + 2).toFixed(1)}" y2="${cy + 3}" stroke="var(--ink-soft)" stroke-width="1"/><line x1="${(x + w - 2).toFixed(1)}" y1="${cy - 3}" x2="${(x + w - 2).toFixed(1)}" y2="${cy + 3}" stroke="var(--ink-soft)" stroke-width="1"/>`;
-        svg += `<text x="${(x + w / 2).toFixed(1)}" y="${cy - 4 + crow * 12}" text-anchor="middle" fill="var(--ink)" font-family="var(--f-mono)" font-size="${FS.cote}" font-weight="800" paint-order="stroke" stroke="var(--surface)" stroke-width="4">${+s.al.toFixed(1)} mm</text>`;
+        svg += `<line x1="${(x + 2).toFixed(1)}" y1="${cy}" x2="${(x + w - 2).toFixed(1)}" y2="${cy}" stroke="var(--text-muted)" stroke-width="1"/><line x1="${(x + 2).toFixed(1)}" y1="${cy - 3}" x2="${(x + 2).toFixed(1)}" y2="${cy + 3}" stroke="var(--text-muted)" stroke-width="1"/><line x1="${(x + w - 2).toFixed(1)}" y1="${cy - 3}" x2="${(x + w - 2).toFixed(1)}" y2="${cy + 3}" stroke="var(--text-muted)" stroke-width="1"/>`;
+        svg += `<text x="${(x + w / 2).toFixed(1)}" y="${cy - 4 + crow * 12}" text-anchor="middle" fill="var(--text)" font-family="var(--font-mono)" font-size="${FS.cote}" font-weight="800" paint-order="stroke" stroke="var(--surface)" stroke-width="4">${+s.al.toFixed(1)} mm</text>`;
       }
       // Une butée par TRAIT, pas par arête : la fin d'une tranche et le début de la suivante ne
       // sont séparés que du trait de scie — c'est la même coupe, une seule position de guide.
@@ -637,19 +661,19 @@ export default function createAtelierApp(api) {
         const bx = b * S2;
         brow = bx - lastBx < 24 ? 1 - brow : 0;   // encore trop serré → deux rangs, jamais l'un sur l'autre
         lastBx = bx;
-        svg += `<text x="${bx.toFixed(1)}" y="${cy + 17 + brow * 10}" text-anchor="middle" fill="var(--ink-faint)" font-family="var(--f-mono)" font-size="${FS.note}">${+b.toFixed(1)}</text>`;
+        svg += `<text x="${bx.toFixed(1)}" y="${cy + 17 + brow * 10}" text-anchor="middle" fill="var(--text-faint)" font-family="var(--font-mono)" font-size="${FS.note}">${+b.toFixed(1)}</text>`;
       }
       svg += `</g></svg>`;
       const chips = g.colonnes.map((c) => c.stepId
         ? `<button class="colchip${c.done ? ' done' : ''}" data-tick="${esc(c.stepId)}" title="${esc(c.etqs.join(', '))}">${c.done ? '✓ ' : ''}${esc(c.id)}</button>`
-        : `<span class="colchip" style="opacity:.5" title="colonne sans étape de tronçonnage — à consolider par Alfred">${esc(c.id)}</span>`).join('');
-      html += `<div class="blueprint"><div class="bp-inner"><div class="bp-h"><b>Guide ${g.largeur} mm</b><span>${g.troncs.length} tronçon${g.troncs.length > 1 ? 's' : ''} · ×${g.colonnes.length} colonne${g.colonnes.length > 1 ? 's' : ''}</span></div><div class="cutwrap">${svg}</div><div class="tgcols">${chips}</div></div></div>`;
+        : `<span class="colchip off" title="${t('column with no cross-cutting step — for Alfred to consolidate')}">${esc(c.id)}</span>`).join('');
+      html += `<div class="blueprint"><div class="bp-inner"><div class="bp-h"><b>${t('Guide %n mm', { n: g.largeur })}</b><span>${t(g.troncs.length > 1 ? '%n cross-cuts' : '%n cross-cut', { n: g.troncs.length })} · ${t(g.colonnes.length > 1 ? '×%n columns' : '×%n column', { n: g.colonnes.length })}</span></div><div class="cutwrap">${svg}</div><div class="tgcols">${chips}</div></div></div>`;
     }
     // même pied de page que Plaques : la légende des conventions de la vue
-    html += `<div class="legend"><span><i class="sw" style="background:var(--shop);opacity:.6"></i>tronçon</span><span><i class="sw" style="background:var(--warn)"></i>côté plaqué (chant)</span><span style="color:var(--ink-faint)">cocher une pastille = colonne tronçonnée · clic sur le nom → la pièce</span></div>`;
+    html += `<div class="legend"><span><i class="sw sw-plan"></i>${t('cross-cut')}</span><span><i class="sw sw-edge"></i>${t('banded side (edge banding)')}</span><span class="c-faint">${t('tick a chip = column cross-cut · click the name → the piece')}</span></div>`;
     body.innerHTML = html;
     body.querySelectorAll('[data-tick]').forEach((b) => b.addEventListener('click', () => tick(b.dataset.tick, !wbDone(b.dataset.tick))));
-    body.querySelectorAll('.pname[data-et]').forEach((t) => t.addEventListener('click', () => showPiece(t.dataset.et)));
+    body.querySelectorAll('.pname[data-et]').forEach((t) => openable(t, () => showPiece(t.dataset.et, t)));
   }
   // Vue RAINURAGE (station) : pièces rainurées regroupées par réglage, schéma coté de la
   // rainure (section + position), pastille cochable par pièce (clé synthétique rainure-<étq>).
@@ -660,23 +684,23 @@ export default function createAtelierApp(api) {
       if (!groups.has(sig)) groups.set(sig, { pos: pr.pos || '', cotes: pr.cotes || '', pieces: [] });
       groups.get(sig).pieces.push(p);
     }
-    if (!groups.size) { body.innerHTML = '<div class="empty">Aucune rainure.</div>'; return; }
+    if (!groups.size) { body.innerHTML = `<div class="empty">${t('No grooves.')}</div>`; return; }
     const S2 = 0.33, padL = 42, padR = 14, padT = 16;   // MÊME format que les autres vues (dessus, échelle commune)
     const W = Math.max(...[...groups.values()].map((g) => g.pieces[0].longueur || 1)) * S2 + padL + padR;
-    let html = `<div class="lede" style="margin-bottom:12px">Vue de dessus du panneau, <b>à l'échelle</b> : la rainure (<span style="color:var(--proj)">▬</span> bande) court le long, à 10 mm du bord <b>arrière</b> — minuscule sur la largeur (620−10−8). Traversante d'un bout, arrêt de l'autre · profondeur en cote écrite (invisible de dessus). Cocher = rainurée.</div>`;
+    let html = `<div class="lede" style="margin-bottom:12px">${t('Top view of the panel, <b>to scale</b>: the groove (%mark band) runs lengthwise, 10 mm from the <b>back</b> edge — tiny across the width (620−10−8). Through at one end, stopped at the other · depth given as a written dimension (invisible from above). Tick = grooved.', { mark: '<span class="c-accent">▬</span>' })}</div>`;
     for (const g of groups.values()) {
       const p0 = g.pieces[0], len = p0.longueur, larg = p0.largeur;
       const gw = +((g.cotes.match(/largeur\s*(\d+)/) || [])[1]) || 8, gd = +((g.cotes.match(/prof\.?\s*~?\s*(\d+)/) || [])[1]) || 9, off = +((g.pos.match(/(\d+)\s*mm/) || [])[1]) || 10;
       const bh = larg * S2, botC = 22, gTop = bh - (off + gw) * S2;   // rainure à `off` du bord ARRIÈRE (bas)
       let svg = `<svg viewBox="0 0 ${Math.round(W)} ${Math.round(padT + bh + botC)}" style="max-width:100%;height:auto"><g transform="translate(${padL},${padT})">`;
-      svg += `<rect x="0" y="0" width="${len * S2}" height="${bh}" rx="3" fill="var(--shop)" fill-opacity=".06" stroke="var(--shop)" stroke-width="1.5"/>`;
-      svg += `<rect x="0" y="${gTop}" width="${len * S2 - off * S2}" height="${Math.max(gw * S2, 2)}" fill="var(--proj)" fill-opacity=".6" stroke="var(--proj)" stroke-width="1"/>`;
-      svg += `<line x1="-9" y1="${bh}" x2="-9" y2="${gTop + gw * S2}" stroke="var(--ink-soft)" stroke-width="1"/><line x1="-12" y1="${bh}" x2="-6" y2="${bh}" stroke="var(--ink-soft)" stroke-width="1"/><line x1="-12" y1="${gTop + gw * S2}" x2="-6" y2="${gTop + gw * S2}" stroke="var(--ink-soft)" stroke-width="1"/><text x="-14" y="${(bh + gTop + gw * S2) / 2 + 3}" text-anchor="end" fill="var(--ink-soft)" font-family="var(--f-mono)" font-size="8.5">${off}</text>`;
-      svg += `<text x="-14" y="9" text-anchor="end" fill="var(--ink-faint)" font-family="var(--f-mono)" font-size="8">avant</text><text x="-14" y="${bh - 1}" text-anchor="end" fill="var(--ink-faint)" font-family="var(--f-mono)" font-size="8">arr.</text>`;
-      svg += `<text x="0" y="${bh + 15}" fill="var(--ink-soft)" font-family="var(--f-mono)" font-size="8.5">panneau ${len}×${larg} · rainure largeur ${gw} · profondeur ${gd} mm · traversante ◀ arrêt ▶ ${off}</text>`;
+      svg += `<rect x="0" y="0" width="${len * S2}" height="${bh}" rx="3" fill="var(--wb-plan)" fill-opacity=".06" stroke="var(--wb-plan)" stroke-width="1.5"/>`;
+      svg += `<rect x="0" y="${gTop}" width="${len * S2 - off * S2}" height="${Math.max(gw * S2, 2)}" fill="var(--accent)" fill-opacity=".6" stroke="var(--accent)" stroke-width="1"/>`;
+      svg += `<line x1="-9" y1="${bh}" x2="-9" y2="${gTop + gw * S2}" stroke="var(--text-muted)" stroke-width="1"/><line x1="-12" y1="${bh}" x2="-6" y2="${bh}" stroke="var(--text-muted)" stroke-width="1"/><line x1="-12" y1="${gTop + gw * S2}" x2="-6" y2="${gTop + gw * S2}" stroke="var(--text-muted)" stroke-width="1"/><text x="-14" y="${(bh + gTop + gw * S2) / 2 + 3}" text-anchor="end" fill="var(--text-muted)" font-family="var(--font-mono)" font-size="8.5">${off}</text>`;
+      svg += `<text x="-14" y="9" text-anchor="end" fill="var(--text-faint)" font-family="var(--font-mono)" font-size="8">${t('front')}</text><text x="-14" y="${bh - 1}" text-anchor="end" fill="var(--text-faint)" font-family="var(--font-mono)" font-size="8">${t('rear')}</text>`;
+      svg += `<text x="0" y="${bh + 15}" fill="var(--text-muted)" font-family="var(--font-mono)" font-size="8.5">${t('panel %len×%wid · groove width %gw · depth %gd mm · through ◀ stop ▶ %off', { len, wid: larg, gw, gd, off })}</text>`;
       svg += `</g></svg>`;
       const chips = g.pieces.map((p) => `<button class="colchip${wbDone('rainure-' + p.etiquette) ? ' done' : ''}" data-tick="rainure-${esc(p.etiquette)}">${wbDone('rainure-' + p.etiquette) ? '✓ ' : ''}${esc(p.etiquette.replace(/^[^-]+-/, ''))}</button>`).join('');
-      html += `<div class="blueprint"><div class="bp-inner"><div class="bp-h"><b>Rainure — largeur ${gw} · prof. ${gd} mm</b><span>${g.pieces.length} pièces · ex. ${esc(p0.role)} ${len}×${larg}</span></div><div class="cutwrap">${svg}</div><div class="tgcols">${chips}</div></div></div>`;
+      html += `<div class="blueprint"><div class="bp-inner"><div class="bp-h"><b>${t('Groove — width %gw · depth %gd mm', { gw, gd })}</b><span>${t(g.pieces.length === 1 ? '%n piece' : '%n pieces', { n: g.pieces.length })} · ${t('e.g. %role %len×%wid', { role: esc(p0.role), len, wid: larg })}</span></div><div class="cutwrap">${svg}</div><div class="tgcols">${chips}</div></div></div>`;
     }
     body.innerHTML = html;
     body.querySelectorAll('[data-tick]').forEach((b) => b.addEventListener('click', () => tick(b.dataset.tick, !wbDone(b.dataset.tick))));
@@ -695,15 +719,15 @@ export default function createAtelierApp(api) {
       if (!groups.has(sig)) groups.set(sig, { p0: p, preps, pieces: [] });
       groups.get(sig).pieces.push(p);
     }
-    if (!groups.size) { body.innerHTML = '<div class="empty">Aucun lamello.</div>'; return; }
+    if (!groups.size) { body.innerHTML = `<div class="empty">${t('No lamello.')}</div>`; return; }
     const S2 = WS, padL = 50, padR = 14, padT = 24, gap = 8;
     const W0 = Math.max(...[...groups.values()].map((g) => (g.p0.longueur || 0) * S2)) + padL + padR + 2 * (gap + 12);
     const mk = (x, y, t) => t === 'biscuit'
-      ? `<path d="M${x} ${y - 4.5} L${x + 4.5} ${y} L${x} ${y + 4.5} L${x - 4.5} ${y} Z" fill="var(--warn)" stroke="var(--warn)" stroke-width="1"/>`
-      : `<circle cx="${x}" cy="${y}" r="3.6" fill="var(--shop)" fill-opacity=".45" stroke="var(--shop)" stroke-width="1.4"/>`;
+      ? `<path d="M${x} ${y - 4.5} L${x + 4.5} ${y} L${x} ${y + 4.5} L${x - 4.5} ${y} Z" fill="var(--wb-edge)" stroke="var(--wb-edge)" stroke-width="1"/>`
+      : `<circle cx="${x}" cy="${y}" r="3.6" fill="var(--wb-plan)" fill-opacity=".45" stroke="var(--wb-plan)" stroke-width="1.4"/>`;
     const chipsOf = (pieces) => pieces.map((p) => `<button class="colchip${wbDone('lamello-' + p.etiquette) ? ' done' : ''}" data-tick="lamello-${esc(p.etiquette)}">${wbDone('lamello-' + p.etiquette) ? '✓ ' : ''}${esc(p.etiquette.replace(/^[^-]+-/, ''))}</button>`).join('');
-    let html = `<div class="lede" style="margin-bottom:12px">Plan par pièce, <b>tout à la même échelle</b> — les surfaces fendues (about, rive, contre-face) rabattues en projection alignée : la fente y est un trait, la cote fait foi. <b style="color:var(--proj)">En pointillé bleu</b> : la planche qui vient se poser, cotée depuis son bord de référence — <b>une planche en butée lit 0</b>, c'est la cote qu'on règle au sabot (jamais l'axe de la fente). <b style="color:var(--agenda)">▬ établi</b> : sur un chant, la face à poser sur le banc — la lamelleuse cote depuis elle. <span style="color:var(--shop)">●</span> Tenso/Clamex · <span style="color:var(--warn)">◆</span> biscuit · <span style="color:var(--proj)">▬</span> rainure fond.</div>`;
-    const SURLBL = { face: 'face', 'contre-face': 'contre-face', 'about-gauche': 'ab. G', 'about-droit': 'ab. D', 'rive-avant': 'rive av.', 'rive-arriere': 'rive ar.' };
+    let html = `<div class="lede" style="margin-bottom:12px">${t('Plan per piece, <b>all at the same scale</b> — the slotted surfaces (end, edge, back face) folded out in aligned projection: the slot is a line there, the dimension is what counts. %blue In blue dashes</b>: the board that will be fitted, dimensioned from its reference edge — <b>a board against the stop reads 0</b>, the dimension you set on the shoe (never the slot axis). %bench ▬ bench</b>: on an edge, the face to lay on the bench — the lamello cutter measures from it. %dotShop ●</span> Tenso/Clamex · %dotWarn ◆</span> biscuit · %dotProj ▬</span> back groove.', { blue: '<b class="c-accent">', bench: '<b class="c-accent">', dotShop: '<span class="c-plan">', dotWarn: '<span class="c-edge">', dotProj: '<span class="c-accent">' })}</div>`;
+    const SURLBL = { face: t('face'), 'contre-face': t('back face'), 'about-gauche': t('end L'), 'about-droit': t('end R'), 'rive-avant': t('front edge'), 'rive-arriere': t('rear edge') };
     for (const g of groups.values()) {
       const { p0, preps } = g, len = p0.longueur || 0, larg = p0.largeur || 0, ep = epOf(wb.data, p0);
       const bh = larg * S2, es = Math.max(ep * S2, 4);
@@ -728,14 +752,14 @@ export default function createAtelierApp(api) {
       const Hc = padT + topE + (hasContre ? yC + bh + 12 : coteBase + 30);
       let svg = `<svg viewBox="0 0 ${Math.round(W0)} ${Math.round(Hc)}" ${wbPart(W0)}><g transform="translate(${padL + es + gap},${padT + topE})">`;
       // la FACE — le repère commun : tout se rabat autour d'elle, axes partagés
-      svg += `<rect x="0" y="0" width="${len * S2}" height="${bh}" rx="3" fill="var(--shop)" fill-opacity=".06" stroke="var(--shop)" stroke-width="1.5"/>`;
-      svg += `<text x="3" y="10" fill="var(--ink-faint)" font-family="var(--f-mono)" font-size="${FS.note}">face</text>`;
+      svg += `<rect x="0" y="0" width="${len * S2}" height="${bh}" rx="3" fill="var(--wb-plan)" fill-opacity=".06" stroke="var(--wb-plan)" stroke-width="1.5"/>`;
+      svg += `<text x="3" y="10" fill="var(--text-faint)" font-family="var(--font-mono)" font-size="${FS.note}">${SURLBL.face}</text>`;
       const rain = prepsDe(wb.data, p0).find((x) => x.type === 'rainure');
       if (rain) {
         const roff = +((String(rain.pos).match(/(\d+)\s*mm/) || [])[1]) || 10;
         const rwd = +((String(rain.cotes).match(/largeur\s*(\d+)/) || [])[1]) || 8;
         const gy = bh - (roff + rwd) * S2;
-        svg += `<rect x="0" y="${gy}" width="${len * S2 - roff * S2}" height="${Math.max(rwd * S2, 2)}" fill="var(--proj)" fill-opacity=".6" stroke="var(--proj)" stroke-width="1"/>`;
+        svg += `<rect x="0" y="${gy}" width="${len * S2 - roff * S2}" height="${Math.max(rwd * S2, 2)}" fill="var(--accent)" fill-opacity=".6" stroke="var(--accent)" stroke-width="1"/>`;
       }
       // LA PLANCHE QUI ARRIVE : deux traits pointillés à ses faces, et la cote prise depuis le
       // bord de référence jusqu'à la face la plus proche — une planche en butée lit 0. C'est
@@ -747,18 +771,18 @@ export default function createAtelierApp(api) {
           const p1 = b.a * S2, p2 = b.b * S2, near = b.loin ? p2 : p1;
           const L1 = uAxe ? `<line x1="${p1.toFixed(1)}" y1="${yOff}" x2="${p1.toFixed(1)}" y2="${yOff + bh}"` : `<line x1="0" y1="${(yOff + p1).toFixed(1)}" x2="${len * S2}" y2="${(yOff + p1).toFixed(1)}"`;
           const L2 = uAxe ? `<line x1="${p2.toFixed(1)}" y1="${yOff}" x2="${p2.toFixed(1)}" y2="${yOff + bh}"` : `<line x1="0" y1="${(yOff + p2).toFixed(1)}" x2="${len * S2}" y2="${(yOff + p2).toFixed(1)}"`;
-          const st = ` stroke="var(--proj)" stroke-width="1.4" stroke-dasharray="5 3"/>`;
+          const st = ` stroke="var(--accent)" stroke-width="1.4" stroke-dasharray="5 3"/>`;
           o += L1 + st + L2 + st;
           // ligne de cote depuis le bord de référence (0 = butée)
           const orig = b.loin ? (uAxe ? len * S2 : bh) : 0;
           if (uAxe) {
             const cyl = yOff + bh - 9;
-            o += `<line x1="${orig}" y1="${cyl}" x2="${near.toFixed(1)}" y2="${cyl}" stroke="var(--proj)" stroke-width="1"/>`;
-            o += `<text x="${((orig + near) / 2).toFixed(1)}" y="${cyl - 3}" text-anchor="middle" fill="var(--proj)" font-family="var(--f-mono)" font-size="${FS.cote}" font-weight="800" paint-order="stroke" stroke="var(--surface)" stroke-width="4">${+li.pos.toFixed(1)}</text>`;
+            o += `<line x1="${orig}" y1="${cyl}" x2="${near.toFixed(1)}" y2="${cyl}" stroke="var(--accent)" stroke-width="1"/>`;
+            o += `<text x="${((orig + near) / 2).toFixed(1)}" y="${cyl - 3}" text-anchor="middle" fill="var(--accent)" font-family="var(--font-mono)" font-size="${FS.cote}" font-weight="800" paint-order="stroke" stroke="var(--surface)" stroke-width="4">${+li.pos.toFixed(1)}</text>`;
           } else {
             const cxl = 12;
-            o += `<line x1="${cxl}" y1="${(yOff + orig).toFixed(1)}" x2="${cxl}" y2="${(yOff + near).toFixed(1)}" stroke="var(--proj)" stroke-width="1"/>`;
-            o += `<text x="${cxl}" y="${(yOff + (orig + near) / 2).toFixed(1)}" transform="rotate(-90 ${cxl} ${(yOff + (orig + near) / 2).toFixed(1)})" text-anchor="middle" fill="var(--proj)" font-family="var(--f-mono)" font-size="${FS.cote}" font-weight="800" paint-order="stroke" stroke="var(--surface)" stroke-width="4">${+li.pos.toFixed(1)}</text>`;
+            o += `<line x1="${cxl}" y1="${(yOff + orig).toFixed(1)}" x2="${cxl}" y2="${(yOff + near).toFixed(1)}" stroke="var(--accent)" stroke-width="1"/>`;
+            o += `<text x="${cxl}" y="${(yOff + (orig + near) / 2).toFixed(1)}" transform="rotate(-90 ${cxl} ${(yOff + (orig + near) / 2).toFixed(1)})" text-anchor="middle" fill="var(--accent)" font-family="var(--font-mono)" font-size="${FS.cote}" font-weight="800" paint-order="stroke" stroke="var(--surface)" stroke-width="4">${+li.pos.toFixed(1)}</text>`;
           }
         }
         return o;
@@ -776,27 +800,27 @@ export default function createAtelierApp(api) {
         const a = APP[sur]; if (!a) return '';
         const xFace = versDessin ? x0 + es : x0;
         const x = a === 'face' ? xFace : (versDessin ? x0 : x0 + es);
-        return `<line x1="${x}" y1="0" x2="${x}" y2="${bh}" stroke="var(--agenda)" stroke-width="3" stroke-linecap="round"/>`
-          + `<text x="${x}" y="${bh / 2}" transform="rotate(-90 ${x} ${bh / 2})" text-anchor="middle" fill="var(--agenda)" font-family="var(--f-mono)" font-size="${FS.note}" font-weight="700" paint-order="stroke" stroke="var(--surface)" stroke-width="3">\u25ac \u00e9tabli</text>`;
+        return `<line x1="${x}" y1="0" x2="${x}" y2="${bh}" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/>`
+          + `<text x="${x}" y="${bh / 2}" transform="rotate(-90 ${x} ${bh / 2})" text-anchor="middle" fill="var(--accent)" font-family="var(--font-mono)" font-size="${FS.note}" font-weight="700" paint-order="stroke" stroke="var(--surface)" stroke-width="3">${t('▬ bench')}</text>`;
       };
-      const strip = (x0, marks) => { let o = `<rect x="${x0}" y="0" width="${es}" height="${bh}" rx="2" fill="var(--shop)" fill-opacity=".1" stroke="var(--shop)" stroke-width="1.2"/>`; for (const m of marks) o += `<line x1="${x0}" y1="${(m.v * S2).toFixed(1)}" x2="${x0 + es}" y2="${(m.v * S2).toFixed(1)}" stroke="var(--shop)" stroke-width="2"/>`; return o; };
-      if (M.aG.length) svg += strip(-gap - es, M.aG) + appuiEdge(-gap - es, 'about-gauche', true) + `<text x="${-gap - es}" y="-4" fill="var(--ink-faint)" font-family="var(--f-mono)" font-size="${FS.note}">ab. G</text>`;
-      if (M.aD.length) svg += strip(len * S2 + gap, M.aD) + appuiEdge(len * S2 + gap, 'about-droit', false) + `<text x="${len * S2 + gap + es}" y="-4" text-anchor="end" fill="var(--ink-faint)" font-family="var(--f-mono)" font-size="${FS.note}">ab. D</text>`;
+      const strip = (x0, marks) => { let o = `<rect x="${x0}" y="0" width="${es}" height="${bh}" rx="2" fill="var(--wb-plan)" fill-opacity=".1" stroke="var(--wb-plan)" stroke-width="1.2"/>`; for (const m of marks) o += `<line x1="${x0}" y1="${(m.v * S2).toFixed(1)}" x2="${x0 + es}" y2="${(m.v * S2).toFixed(1)}" stroke="var(--wb-plan)" stroke-width="2"/>`; return o; };
+      if (M.aG.length) svg += strip(-gap - es, M.aG) + appuiEdge(-gap - es, 'about-gauche', true) + `<text x="${-gap - es}" y="-4" fill="var(--text-faint)" font-family="var(--font-mono)" font-size="${FS.note}">${SURLBL['about-gauche']}</text>`;
+      if (M.aD.length) svg += strip(len * S2 + gap, M.aD) + appuiEdge(len * S2 + gap, 'about-droit', false) + `<text x="${len * S2 + gap + es}" y="-4" text-anchor="end" fill="var(--text-faint)" font-family="var(--font-mono)" font-size="${FS.note}">${SURLBL['about-droit']}</text>`;
       // rives rabattues (axe u partagé)
       const appuiRive = (y0, sur, versDessin) => {
         const a = APP[sur]; if (!a) return '';
         const yFace = versDessin ? y0 + es : y0;
         const y = a === 'face' ? yFace : (versDessin ? y0 : y0 + es);
-        return `<line x1="0" y1="${y}" x2="${len * S2}" y2="${y}" stroke="var(--agenda)" stroke-width="3" stroke-linecap="round"/>`
-          + `<text x="${len * S2 / 2}" y="${y - 3}" text-anchor="middle" fill="var(--agenda)" font-family="var(--f-mono)" font-size="${FS.note}" font-weight="700" paint-order="stroke" stroke="var(--surface)" stroke-width="3">\u25ac \u00e9tabli</text>`;
+        return `<line x1="0" y1="${y}" x2="${len * S2}" y2="${y}" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/>`
+          + `<text x="${len * S2 / 2}" y="${y - 3}" text-anchor="middle" fill="var(--accent)" font-family="var(--font-mono)" font-size="${FS.note}" font-weight="700" paint-order="stroke" stroke="var(--surface)" stroke-width="3">${t('▬ bench')}</text>`;
       };
-      const rive = (y0, marks) => { let o = `<rect x="0" y="${y0}" width="${len * S2}" height="${es}" rx="2" fill="var(--shop)" fill-opacity=".1" stroke="var(--shop)" stroke-width="1.2"/>`; for (const m of marks) o += `<line x1="${(m.u * S2).toFixed(1)}" y1="${y0}" x2="${(m.u * S2).toFixed(1)}" y2="${y0 + es}" stroke="var(--shop)" stroke-width="2"/>`; return o; };
-      if (M.rAv.length) svg += rive(-gap - es, M.rAv) + appuiRive(-gap - es, 'rive-avant', true) + `<text x="2" y="${-gap - es - 3}" fill="var(--ink-faint)" font-family="var(--f-mono)" font-size="${FS.note}">rive av.</text>`;
-      if (M.rAr.length) svg += rive(bh + gap, M.rAr) + appuiRive(bh + gap, 'rive-arriere', false) + `<text x="2" y="${bh + gap + es + 9}" fill="var(--ink-faint)" font-family="var(--f-mono)" font-size="${FS.note}">rive ar.</text>`;
+      const rive = (y0, marks) => { let o = `<rect x="0" y="${y0}" width="${len * S2}" height="${es}" rx="2" fill="var(--wb-plan)" fill-opacity=".1" stroke="var(--wb-plan)" stroke-width="1.2"/>`; for (const m of marks) o += `<line x1="${(m.u * S2).toFixed(1)}" y1="${y0}" x2="${(m.u * S2).toFixed(1)}" y2="${y0 + es}" stroke="var(--wb-plan)" stroke-width="2"/>`; return o; };
+      if (M.rAv.length) svg += rive(-gap - es, M.rAv) + appuiRive(-gap - es, 'rive-avant', true) + `<text x="2" y="${-gap - es - 3}" fill="var(--text-faint)" font-family="var(--font-mono)" font-size="${FS.note}">${SURLBL['rive-avant']}</text>`;
+      if (M.rAr.length) svg += rive(bh + gap, M.rAr) + appuiRive(bh + gap, 'rive-arriere', false) + `<text x="2" y="${bh + gap + es + 9}" fill="var(--text-faint)" font-family="var(--font-mono)" font-size="${FS.note}">${SURLBL['rive-arriere']}</text>`;
       // contre-face — PAR TRANSPARENCE (même orientation) : les cotes se lisent pareil
       if (hasContre) {
-        svg += `<rect x="0" y="${yC}" width="${len * S2}" height="${bh}" rx="3" fill="var(--shop)" fill-opacity=".06" stroke="var(--shop)" stroke-width="1.5" stroke-dasharray="6 3"/>`;
-        svg += `<text x="3" y="${yC + 10}" fill="var(--ink-faint)" font-family="var(--f-mono)" font-size="${FS.note}">contre-face (par transparence)</text>`;
+        svg += `<rect x="0" y="${yC}" width="${len * S2}" height="${bh}" rx="3" fill="var(--wb-plan)" fill-opacity=".06" stroke="var(--wb-plan)" stroke-width="1.5" stroke-dasharray="6 3"/>`;
+        svg += `<text x="3" y="${yC + 10}" fill="var(--text-faint)" font-family="var(--font-mono)" font-size="${FS.note}">${t('back face (seen through)')}</text>`;
         svg += planche(yC, 'contre-face');
         for (const c of M.contre) svg += mk(c.u * S2, yC + c.v * S2, c.t);
       }
@@ -809,26 +833,26 @@ export default function createAtelierApp(api) {
           // seulement les marques qu'on TRACE : un axe déduit (milieu de bande, bord imposé)
           // ne se cote pas, puisque la machine ne sait pas le viser — cf. le sabot
           const us = [...new Set(pts.filter((m) => m.u != null && m.fixe !== 'u').map((m) => m.u))].sort((a2, b2) => a2 - b2);
-          o += `<line x1="0" y1="${base + 7}" x2="${len * S2}" y2="${base + 7}" stroke="var(--ink-soft)" stroke-width="0.8"/>`;
+          o += `<line x1="0" y1="${base + 7}" x2="${len * S2}" y2="${base + 7}" stroke="var(--text-muted)" stroke-width="0.8"/>`;
           let lastG = -1e9, grow = 0;
           for (const uv of us) {
             const x = uv * S2;
             grow = x - lastG < 26 ? 1 - grow : 0; lastG = x;
-            o += `<line x1="${x}" y1="${base + 4}" x2="${x}" y2="${base + 10}" stroke="var(--ink-soft)" stroke-width="0.8"/><text x="${x}" y="${base + 19 + grow * 10}" text-anchor="middle" fill="var(--ink-soft)" font-family="var(--f-mono)" font-size="${FS.rep}">${uv}</text>`;
+            o += `<line x1="${x}" y1="${base + 4}" x2="${x}" y2="${base + 10}" stroke="var(--text-muted)" stroke-width="0.8"/><text x="${x}" y="${base + 19 + grow * 10}" text-anchor="middle" fill="var(--text-muted)" font-family="var(--font-mono)" font-size="${FS.rep}">${uv}</text>`;
           }
         }
         const vs = [...new Set(pts.filter((m) => m.v != null && m.fixe !== 'v').map((m) => m.v))].sort((a2, b2) => a2 - b2);
-        o += `<line x1="${lx0}" y1="${yOff}" x2="${lx0}" y2="${yOff + bh}" stroke="var(--ink-soft)" stroke-width="0.8"/>`;
-        vs.forEach((vv, i) => { const y = yOff + vv * S2, lx = lx0 - 4 - (i % 2 ? 11 : 0); o += `<line x1="${lx0 - 3}" y1="${y}" x2="${lx0 + 3}" y2="${y}" stroke="var(--ink-soft)" stroke-width="0.8"/><text x="${lx}" y="${y + 3}" text-anchor="end" fill="var(--ink-soft)" font-family="var(--f-mono)" font-size="${FS.rep}">${vv}</text>`; });
-        o += `<text x="${lx0 + 3}" y="${yOff - 6}" text-anchor="end" fill="var(--ink-faint)" font-family="var(--f-mono)" font-size="${FS.note}">avant↓</text>`;
+        o += `<line x1="${lx0}" y1="${yOff}" x2="${lx0}" y2="${yOff + bh}" stroke="var(--text-muted)" stroke-width="0.8"/>`;
+        vs.forEach((vv, i) => { const y = yOff + vv * S2, lx = lx0 - 4 - (i % 2 ? 11 : 0); o += `<line x1="${lx0 - 3}" y1="${y}" x2="${lx0 + 3}" y2="${y}" stroke="var(--text-muted)" stroke-width="0.8"/><text x="${lx}" y="${y + 3}" text-anchor="end" fill="var(--text-muted)" font-family="var(--font-mono)" font-size="${FS.rep}">${vv}</text>`; });
+        o += `<text x="${lx0 + 3}" y="${yOff - 6}" text-anchor="end" fill="var(--text-faint)" font-family="var(--font-mono)" font-size="${FS.note}">${t('front↓')}</text>`;
         return o;
       };
       svg += grads(0, coteBase, [...M.face, ...M.rAv, ...M.rAr, ...M.aG, ...M.aD]);
       if (hasContre) svg += grads(yC, yC + bh, M.contre);
       svg += `</g></svg>`;
       const npts = Object.values(M).reduce((n2, l) => n2 + l.length, 0);
-      const hautTxt = p0.haut ? ` · haut : ${esc(SURLBL[p0.haut] || p0.haut)}` : '';
-      html += `<div class="blueprint"><div class="bp-inner"><div class="bp-h"><b>${esc(p0.role || '')} · ${len} × ${larg} mm</b><span>${surs.map((x) => esc(SURLBL[x] || x)).join(' + ')} · ${npts} points · ×${g.pieces.length}${hautTxt}</span></div><div class="cutwrap">${svg}</div><div class="tgcols">${chipsOf(g.pieces)}</div></div></div>`;
+      const hautTxt = p0.haut ? ` · ${t('top: %face', { face: esc(SURLBL[p0.haut] || p0.haut) })}` : '';
+      html += `<div class="blueprint"><div class="bp-inner"><div class="bp-h"><b>${esc(p0.role || '')} · ${len} × ${larg} mm</b><span>${surs.map((x) => esc(SURLBL[x] || x)).join(' + ')} · ${t(npts === 1 ? '%n point' : '%n points', { n: npts })} · ×${g.pieces.length}${hautTxt}</span></div><div class="cutwrap">${svg}</div><div class="tgcols">${chipsOf(g.pieces)}</div></div></div>`;
     }
     body.innerHTML = html;
     body.querySelectorAll('[data-tick]').forEach((b2) => b2.addEventListener('click', () => tick(b2.dataset.tick, !wbDone(b2.dataset.tick))));
@@ -866,12 +890,12 @@ export default function createAtelierApp(api) {
         const skin = fant ? 'fill="none" stroke-dasharray="5 4"' : 'fill="var(--surface)" fill-opacity=".55"';
         const ref = n.ref ? ` class="pname" data-et="${esc(n.ref)}" style="cursor:pointer"` : '';
         const nid = n.id ? ` data-nid="${esc(n.id)}"` : '';   // cible du surlignage séquence (v0.2)
-        g += `<rect${ref}${nid} x="${X(n.x)}" y="${X(n.y)}" width="${X(n.w)}" height="${X(n.h)}" rx="2" ${skin} stroke="var(--shop)" stroke-width="1.5"/>`;
-        if (n.label) g += `<text x="${X(n.x + n.w / 2)}" y="${X(n.y + n.h / 2)}" text-anchor="middle" dominant-baseline="middle" fill="var(--ink)" font-family="var(--f-mono)" font-size="${FS.rep}" font-weight="600">${esc(n.label)}</text>`;
+        g += `<rect${ref}${nid} x="${X(n.x)}" y="${X(n.y)}" width="${X(n.w)}" height="${X(n.h)}" rx="2" ${skin} stroke="var(--wb-plan)" stroke-width="1.5"/>`;
+        if (n.label) g += `<text x="${X(n.x + n.w / 2)}" y="${X(n.y + n.h / 2)}" text-anchor="middle" dominant-baseline="middle" fill="var(--text)" font-family="var(--font-mono)" font-size="${FS.rep}" font-weight="600">${esc(n.label)}</text>`;
       } else if (n.type === 'trait') {
         const pts = (n.pts || []).map((p) => `${X(p[0])},${X(p[1])}`).join(' ');
         const dash = n.style === 'axe' ? 'stroke-dasharray="9 3 2 3"' : n.style === 'pointille' ? 'stroke-dasharray="3 3"' : '';
-        g += `<polyline points="${pts}" fill="none" stroke="var(--ink-soft)" stroke-width="1.2" ${dash}/>`;
+        g += `<polyline points="${pts}" fill="none" stroke="var(--text-muted)" stroke-width="1.2" ${dash}/>`;
       } else if (n.type === 'cote') {
         const a = anc(n.de), b = anc(n.a), off = n.offset == null ? 28 : n.offset;
         const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1;
@@ -879,32 +903,32 @@ export default function createAtelierApp(api) {
         const dist = String(Math.round(L * 2) / 2).replace('.', ','), nx = -dy / L, ny = dx / L;
         const a2 = [a[0] + nx * off, a[1] + ny * off], b2 = [b[0] + nx * off, b[1] + ny * off];
         const mx = (a2[0] + b2[0]) / 2, my = (a2[1] + b2[1]) / 2, ang = Math.atan2(dy, dx) * 180 / Math.PI;
-        g += `<line x1="${X(a[0])}" y1="${X(a[1])}" x2="${X(a2[0])}" y2="${X(a2[1])}" stroke="var(--ink-soft)" stroke-width="0.7"/>`;
-        g += `<line x1="${X(b[0])}" y1="${X(b[1])}" x2="${X(b2[0])}" y2="${X(b2[1])}" stroke="var(--ink-soft)" stroke-width="0.7"/>`;
-        g += `<line x1="${X(a2[0])}" y1="${X(a2[1])}" x2="${X(b2[0])}" y2="${X(b2[1])}" stroke="var(--ink)" stroke-width="1"/>`;
-        g += `<text x="${X(mx)}" y="${X(my)}" transform="rotate(${ang.toFixed(0)} ${X(mx)} ${X(my)})" text-anchor="middle" dy="-3" fill="var(--ink)" font-family="var(--f-mono)" font-size="${FS.cote}" font-weight="800" paint-order="stroke" stroke="var(--surface)" stroke-width="4">${esc(n.texte || dist + ' mm')}</text>`;
+        g += `<line x1="${X(a[0])}" y1="${X(a[1])}" x2="${X(a2[0])}" y2="${X(a2[1])}" stroke="var(--text-muted)" stroke-width="0.7"/>`;
+        g += `<line x1="${X(b[0])}" y1="${X(b[1])}" x2="${X(b2[0])}" y2="${X(b2[1])}" stroke="var(--text-muted)" stroke-width="0.7"/>`;
+        g += `<line x1="${X(a2[0])}" y1="${X(a2[1])}" x2="${X(b2[0])}" y2="${X(b2[1])}" stroke="var(--text)" stroke-width="1"/>`;
+        g += `<text x="${X(mx)}" y="${X(my)}" transform="rotate(${ang.toFixed(0)} ${X(mx)} ${X(my)})" text-anchor="middle" dy="-3" fill="var(--text)" font-family="var(--font-mono)" font-size="${FS.cote}" font-weight="800" paint-order="stroke" stroke="var(--surface)" stroke-width="4">${esc(n.texte || dist + ' mm')}</text>`;
       } else if (n.type === 'feature') {
         if (n.forme === 'lamello') {
           const [x, y] = anc(n.at);
           g += n.stampe === 'biscuit'
-            ? `<rect x="${(x * S - 4.5).toFixed(1)}" y="${(y * S - 4.5).toFixed(1)}" width="9" height="9" transform="rotate(45 ${X(x)} ${X(y)})" fill="var(--warn)"/>`
-            : `<circle cx="${X(x)}" cy="${X(y)}" r="4.5" fill="var(--shop)"/>`;
+            ? `<rect x="${(x * S - 4.5).toFixed(1)}" y="${(y * S - 4.5).toFixed(1)}" width="9" height="9" transform="rotate(45 ${X(x)} ${X(y)})" fill="var(--wb-edge)"/>`
+            : `<circle cx="${X(x)}" cy="${X(y)}" r="4.5" fill="var(--wb-plan)"/>`;
         } else if (n.forme === 'rainure') {
           const a = anc(n.de), b = anc(n.a);
-          g += `<line x1="${X(a[0])}" y1="${X(a[1])}" x2="${X(b[0])}" y2="${X(b[1])}" stroke="var(--proj)" stroke-opacity=".55" stroke-width="${Math.max(2, (n.largeur || 8) * S).toFixed(1)}" stroke-linecap="round"/>`;
+          g += `<line x1="${X(a[0])}" y1="${X(a[1])}" x2="${X(b[0])}" y2="${X(b[1])}" stroke="var(--accent)" stroke-opacity=".55" stroke-width="${Math.max(2, (n.largeur || 8) * S).toFixed(1)}" stroke-linecap="round"/>`;
         } else if (n.forme === 'percage') {
           const [x, y] = anc(n.at), r = Math.max(2.5, (n.diametre || 5) * S / 2);
-          g += `<circle cx="${X(x)}" cy="${X(y)}" r="${r.toFixed(1)}" fill="none" stroke="var(--ink)" stroke-width="1"/><line x1="${(x * S - r - 2).toFixed(1)}" y1="${X(y)}" x2="${(x * S + r + 2).toFixed(1)}" y2="${X(y)}" stroke="var(--ink)" stroke-width="0.6"/><line x1="${X(x)}" y1="${(y * S - r - 2).toFixed(1)}" x2="${X(x)}" y2="${(y * S + r + 2).toFixed(1)}" stroke="var(--ink)" stroke-width="0.6"/>`;
+          g += `<circle cx="${X(x)}" cy="${X(y)}" r="${r.toFixed(1)}" fill="none" stroke="var(--text)" stroke-width="1"/><line x1="${(x * S - r - 2).toFixed(1)}" y1="${X(y)}" x2="${(x * S + r + 2).toFixed(1)}" y2="${X(y)}" stroke="var(--text)" stroke-width="0.6"/><line x1="${X(x)}" y1="${(y * S - r - 2).toFixed(1)}" x2="${X(x)}" y2="${(y * S + r + 2).toFixed(1)}" stroke="var(--text)" stroke-width="0.6"/>`;
         }
       } else if (n.type === 'note') {
         const [x, y] = anc(n.at), w = (n.w || 170) * S, t = String(n.texte || '');
-        g += `<rect x="${X(x)}" y="${X(y)}" width="${w.toFixed(0)}" height="22" rx="3" fill="var(--surface)" stroke="var(--ink-soft)" stroke-width="0.8"/>`;
-        g += `<text x="${(x * S + 6).toFixed(1)}" y="${(y * S + 15).toFixed(1)}" fill="var(--ink)" font-family="var(--f-mono)" font-size="${FS.note}">${esc(t.length > 42 ? t.slice(0, 40) + '…' : t)}</text>`;
+        g += `<rect x="${X(x)}" y="${X(y)}" width="${w.toFixed(0)}" height="22" rx="3" fill="var(--surface)" stroke="var(--text-muted)" stroke-width="0.8"/>`;
+        g += `<text x="${(x * S + 6).toFixed(1)}" y="${(y * S + 15).toFixed(1)}" fill="var(--text)" font-family="var(--font-mono)" font-size="${FS.note}">${esc(t.length > 42 ? t.slice(0, 40) + '…' : t)}</text>`;
       } else if (n.type === 'repere') {
         const [x, y] = anc(n.at);
-        if (n.vers) { const [vx, vy] = anc(n.vers); g += `<line x1="${X(x)}" y1="${X(y)}" x2="${X(vx)}" y2="${X(vy)}" stroke="var(--ink-soft)" stroke-width="0.7"/>`; }
+        if (n.vers) { const [vx, vy] = anc(n.vers); g += `<line x1="${X(x)}" y1="${X(y)}" x2="${X(vx)}" y2="${X(vy)}" stroke="var(--text-muted)" stroke-width="0.7"/>`; }
         const ta = x > cad.w * 0.6 ? 'end' : 'start';   // près du bord droit → texte aligné à droite (anti-débordement)
-        g += `<text x="${X(x)}" y="${X(y)}" text-anchor="${ta}" fill="var(--ink)" font-family="var(--f-mono)" font-size="${FS.rep}" font-weight="600" paint-order="stroke" stroke="var(--surface)" stroke-width="3">${esc(n.texte || '')}</text>`;
+        g += `<text x="${X(x)}" y="${X(y)}" text-anchor="${ta}" fill="var(--text)" font-family="var(--font-mono)" font-size="${FS.rep}" font-weight="600" paint-order="stroke" stroke="var(--surface)" stroke-width="3">${esc(n.texte || '')}</text>`;
       }
     }
     const vw = Math.round(cad.w * S + 2 * M), vh = (cad.h * S + 2 * M).toFixed(0);
@@ -917,14 +941,14 @@ export default function createAtelierApp(api) {
     const set = new Set(ids);
     scope.querySelectorAll('[data-nid]').forEach((r) => {
       const on = set.has(r.getAttribute('data-nid'));
-      r.setAttribute('stroke', on ? 'var(--proj)' : 'var(--shop)');
+      r.setAttribute('stroke', on ? 'var(--accent)' : 'var(--wb-plan)');
       r.setAttribute('stroke-width', on ? '3' : '1.5');
       if (r.getAttribute('fill') !== 'none') r.setAttribute('fill-opacity', on ? '.85' : '.55');
     });
   }
   function renderScenes(body, scenes) {
     const hasSeq = scenes.some((sc) => Array.isArray(sc.sequence) && sc.sequence.length);
-    let html = `<div class="lede" style="margin-bottom:12px">Assemblage — <b>scène à l'échelle</b> (contrat ouvert v0.2). Cotes mesurées depuis la géométrie ; clic pièce → détail ; ${hasSeq ? 'clic étape → pièces surlignées ; cocher chaque étape.' : 'cocher = monté.'}</div>`;
+    let html = `<div class="lede" style="margin-bottom:12px">${t('Assembly — <b>scene to scale</b> (open contract v0.2). Dimensions measured from the geometry; click a piece → detail; %tail', { tail: hasSeq ? t('click a step → pieces highlighted; tick each step.') : t('tick = assembled.') })}</div>`;
     scenes.forEach((sc, si) => {
       const seq = Array.isArray(sc.sequence) ? sc.sequence : [];
       let side;
@@ -940,16 +964,16 @@ export default function createAtelierApp(api) {
             + `<span class="asmg" title="${esc(s.geste || '')}">${ASMG[s.geste] || '•'}</span>`
             + `<span class="asmt"><b>${esc(s.titre || s.key)}</b>${meta}</span></div>`;
         }).join('');
-        side = `<div class="asmseq"><div class="asmseqh">Montage — ${dn}/${seq.length}</div>${rows}</div>`;
+        side = `<div class="asmseq"><div class="asmseqh">${t('Assembly sequence — %done/%total', { done: dn, total: seq.length })}</div>${rows}</div>`;
       } else {
         const dk = 'asm-' + (sc.id || sc.titre || 'scene');
-        side = `<div class="tgcols"><button class="colchip${wbDone(dk) ? ' done' : ''}" data-tick="${esc(dk)}">${wbDone(dk) ? '✓ ' : ''}Monté</button></div>`;
+        side = `<div class="tgcols"><button class="colchip${wbDone(dk) ? ' done' : ''}" data-tick="${esc(dk)}">${wbDone(dk) ? '✓ ' : ''}${t('Assembled')}</button></div>`;
       }
-      html += `<div class="blueprint" data-scene="${si}"><div class="bp-inner"><div class="bp-h"><b>${esc(sc.titre || 'Assemblage')}</b><span>${esc(sc.vue || '')}</span></div><div class="asmgrid"><div class="cutwrap">${sceneSVG(sc)}</div>${side}</div></div></div>`;
+      html += `<div class="blueprint" data-scene="${si}"><div class="bp-inner"><div class="bp-h"><b>${esc(sc.titre || t('Assembly'))}</b><span>${esc(sc.vue || '')}</span></div><div class="asmgrid"><div class="cutwrap">${sceneSVG(sc)}</div>${side}</div></div></div>`;
     });
     body.innerHTML = html;
     body.querySelectorAll('[data-tick]').forEach((b) => b.addEventListener('click', (e) => { e.stopPropagation(); tick(b.dataset.tick, !wbDone(b.dataset.tick)); }));
-    body.querySelectorAll('.pname[data-et]').forEach((t) => t.addEventListener('click', () => showPiece(t.dataset.et)));
+    body.querySelectorAll('.pname[data-et]').forEach((t) => openable(t, () => showPiece(t.dataset.et, t)));
     // clic sur une étape → surligne ses pièces cibles dans la scène (l'étape devient active)
     body.querySelectorAll('.asmstep').forEach((row) => row.addEventListener('click', () => {
       const bp = row.closest('.blueprint');
@@ -968,7 +992,7 @@ export default function createAtelierApp(api) {
     // les vieux livres à élévation) — portée par module ; une scène sans module n'appartient
     // qu'aux stations non scopées.
     const scenes = (wb.data.assemblage || []).filter((x) => x && stModOk(st, x.module));
-    if (!scenes.length) { body.innerHTML = '<div class="empty">Pas de scène d’assemblage.</div>'; return; }
+    if (!scenes.length) { body.innerHTML = `<div class="empty">${t('No assembly scene.')}</div>`; return; }
     renderScenes(body, scenes);
   }
   function renderSuivi(body) {
@@ -976,13 +1000,13 @@ export default function createAtelierApp(api) {
     for (const pl of wb.data.debit || []) {
       const steps = pl.etapes || [];
       const open = steps.filter((s) => !wbDone(s.id)).length;
-      html += `<div class="sgrp"><div class="sh">Plaque ${esc(pl.plaque)} · ${open ? open + ' étape' + (open > 1 ? 's' : '') + ' restante' + (open > 1 ? 's' : '') : '✓ terminé'}</div>`;
+      html += `<div class="sgrp"><div class="sh">${t('Sheet %id · %state', { id: esc(pl.plaque), state: open ? t(open > 1 ? '%n steps left' : '%n step left', { n: open }) : t('✓ done') })}</div>`;
       for (const st of steps) {
         html += `<div class="srow${wbDone(st.id) ? ' done' : ''}"><button class="cbox" data-tick="${esc(st.id)}">${wbDone(st.id) ? '✓' : ''}</button><span class="lbl">${esc(st.titre || st.id)}</span><span class="dim">${esc(st.type)}</span></div>`;
       }
       html += '</div>';
     }
-    body.innerHTML = html || '<div class="empty">Aucune étape.</div>';
+    body.innerHTML = html || `<div class="empty">${t('No steps.')}</div>`;
     body.querySelectorAll('[data-tick]').forEach((b) => b.addEventListener('click', () => tick(b.dataset.tick, !wbDone(b.dataset.tick))));
   }
   // Résout une bande (colonne) : sa géométrie (refente) + son étape de tronçonnage.
@@ -998,79 +1022,71 @@ export default function createAtelierApp(api) {
     return null;
   }
   // Pop-up COLONNE : l'objet réel du débit — longueur, refente, tronçons (liens), débiter d'un bloc.
-  function showColonne(bandId) {
+  function showColonne(bandId, from) {
     const f = findBand(bandId); if (!f) return;
     const { plaque, mat, band, troncStep } = f;
     const stepId = troncStep && troncStep.id;
     const on = stepId ? wbDone(stepId) : false;
     const troncs = ((troncStep && troncStep.pieces) || []).map((pose) => { const p = wb.byEtq.get(pose.etiquette) || {}; return { et: pose.etiquette, longueur: p.longueur, chants: pieceChants(p) }; });
-    const body = pieceModal.querySelector('#piece-body');
-    body.innerHTML = `<h2>Colonne ${esc(plaque + bandId.split('-').pop())}</h2>
-      <div class="prow"><b>Plaque</b><span>${esc(plaque)}</span></div>
-      <div class="prow"><b>Refente</b><span>guide ${esc(String(bandGuide(band)))} · longueur ${esc(String(Math.round(bandLong(band))))} mm${mat.ep ? ' · ép. ' + mat.ep : ''}</span></div>
-      <div class="prow"><b>Matière</b><span>${esc(mat.label || '')}</span></div>
-      <div class="prow"><b>Tronçons (${troncs.length})</b><span>${troncs.map((t) => `<button class="lnk" data-piece="${esc(t.et)}" style="background:none;border:0;padding:0;color:var(--accent);cursor:pointer;text-decoration:underline;font:inherit">${esc(t.et.replace(/^[^-]+-/, ''))}</button> <span style="color:var(--ink-faint)">${t.longueur}</span>${t.chants.length ? ` <span style="color:var(--warn)" title="chants">▮ ${t.chants.map(esc).join('+')}</span>` : ''}`).join('<br>')}</span></div>`;
-    const actions = document.createElement('div'); actions.className = 'actions';
-    if (stepId) {
-      const btn = document.createElement('button');
-      btn.textContent = on ? 'Colonne à refaire' : `Débiter la colonne (${troncs.length}) ✓`;
-      btn.addEventListener('click', () => { pieceModal.hidden = true; tick(stepId, !on); });
-      actions.append(btn);
+    const { body, foot } = sheet.open({ title: t('Column %id', { id: plaque + bandId.split('-').pop() }), from });
+    body.innerHTML = `<div class="prow"><b>${t('Sheet')}</b><span>${esc(plaque)}</span></div>
+      <div class="prow"><b>${t('Ripping')}</b><span>${t('guide %g · length %l mm', { g: esc(String(bandGuide(band))), l: esc(String(Math.round(bandLong(band)))) })}${mat.ep ? ' · ' + t('thk. %n', { n: mat.ep }) : ''}</span></div>
+      <div class="prow"><b>${t('Material')}</b><span>${esc(mat.label || '')}</span></div>
+      <div class="prow"><b>${t('Cross-cuts (%n)', { n: troncs.length })}</b><span>${troncs.map((tc) => `<button class="lnk" data-piece="${esc(tc.et)}" >${esc(tc.et.replace(/^[^-]+-/, ''))}</button> <span class="c-faint">${tc.longueur}</span>${tc.chants.length ? ` <span class="c-edge" title="${t('edges')}">▮ ${tc.chants.map(esc).join('+')}</span>` : ''}`).join('<br>')}</span></div>`;
+        if (stepId) {
+      const btn = node('button', 'adestia-btn adestia-btn--accent adestia-btn--sm'); btn.type = 'button';
+      btn.textContent = on ? t('Column to redo') : t('Cut the column (%n) ✓', { n: troncs.length });
+      btn.addEventListener('click', () => { sheet.close(); tick(stepId, !on); });
+      foot.append(btn);
     }
-    const close = document.createElement('button'); close.textContent = 'Fermer';
-    close.addEventListener('click', () => { pieceModal.hidden = true; });
-    actions.append(close); body.appendChild(actions);
+    const shut = node('button', 'adestia-btn adestia-btn--sm', t('Close')); shut.type = 'button';
+    shut.addEventListener('click', sheet.close); foot.append(shut);
     body.querySelectorAll('.lnk[data-piece]').forEach((b) => b.addEventListener('click', () => showPiece(b.dataset.piece)));
-    pieceModal.hidden = false;
   }
-  function showPiece(etq) {
+  function showPiece(etq, from) {
     const p = wb.byEtq.get(etq); if (!p) return;
     const loc = wb.pieceStep.get(etq) || {};
     const mat = wb.matById.get(loc.materiau) || {};
     const stepId = loc.stepId;
     const step = (wb.steps || []).find((s) => s.id === stepId);
     const sibs = step ? (step.pieces || []).map((pp) => pp.etiquette.replace(/^[^-]+-/, '')) : [];
-    const body = pieceModal.querySelector('#piece-body');
-    body.innerHTML = `<h2>${esc(etq)}</h2>
-      <div class="prow"><b>Dimensions</b><span>${esc(pieceDims(p))} mm${mat.ep ? ' · ép. ' + mat.ep : ''}</span></div>
-      ${pieceChants(p).length ? `<div class="prow"><b>Chants</b><span style="color:var(--warn)">${pieceChants(p).map(esc).join(' · ')}</span></div>` : ''}
-      ${p.haut ? `<div class="prow"><b>Haut (monté)</b><span style="color:var(--proj)">▲ ${esc(p.haut)}</span></div>` : ''}
-      <div class="prow"><b>Matière</b><span>${esc(mat.label || loc.materiau || '—')}</span></div>
-      <div class="prow"><b>Colonne</b><span>${esc(step?.entree || '?')} · plaque ${esc(loc.plaque || '?')}</span></div>
-      ${sibs.length > 1 ? `<div class="prow"><b>Tronçons</b><span>${sibs.map(esc).join(' · ')}</span></div>` : ''}
-      ${(p.preparations || []).length ? `<div class="prow"><b>Préparations</b><span>${p.preparations.map((pr) => esc(`${pr.type}${pr.sur ? ' (sur ' + pr.sur + ')' : ''} ${pr.cotes || ''} ${pr.pos || ''}`)).join('<br>')}</span></div>` : ''}
-      ${p.placeAssemblage ? `<div class="prow"><b>Assemblage</b><span>${esc(p.placeAssemblage)}</span></div>` : ''}`;
-    const actions = document.createElement('div'); actions.className = 'actions';
-    if (stepId) {
+    const { body, foot } = sheet.open({ title: etq, from });
+    body.innerHTML = `<div class="prow"><b>${t('Dimensions')}</b><span>${esc(pieceDims(p))} mm${mat.ep ? ' · ' + t('thk. %n', { n: mat.ep }) : ''}</span></div>
+      ${pieceChants(p).length ? `<div class="prow"><b>${t('Edges')}</b><span class="c-edge">${pieceChants(p).map(esc).join(' · ')}</span></div>` : ''}
+      ${p.haut ? `<div class="prow"><b>${t('Top (assembled)')}</b><span class="c-accent">▲ ${esc(p.haut)}</span></div>` : ''}
+      <div class="prow"><b>${t('Material')}</b><span>${esc(mat.label || loc.materiau || '—')}</span></div>
+      <div class="prow"><b>${t('Column')}</b><span>${t('%entree · sheet %id', { entree: esc(step?.entree || '?'), id: esc(loc.plaque || '?') })}</span></div>
+      ${sibs.length > 1 ? `<div class="prow"><b>${t('Cross-cuts')}</b><span>${sibs.map(esc).join(' · ')}</span></div>` : ''}
+      ${(p.preparations || []).length ? `<div class="prow"><b>${t('Preparations')}</b><span>${p.preparations.map((pr) => esc(`${pr.type}${pr.sur ? ' (' + t('on %face', { face: pr.sur }) + ')' : ''} ${pr.cotes || ''} ${pr.pos || ''}`)).join('<br>')}</span></div>` : ''}
+      ${p.placeAssemblage ? `<div class="prow"><b>${t('Assembly')}</b><span>${esc(p.placeAssemblage)}</span></div>` : ''}`;
+        if (stepId) {
       const on = wbDone(stepId);
-      const tickBtn = document.createElement('button');
-      tickBtn.textContent = on ? 'Colonne à refaire' : `Débiter la colonne (${sibs.length} pièce${sibs.length > 1 ? 's' : ''}) ✓`;
-      tickBtn.addEventListener('click', () => { pieceModal.hidden = true; tick(stepId, !on); });
-      actions.append(tickBtn);
+      const tickBtn = node('button', 'adestia-btn adestia-btn--accent adestia-btn--sm'); tickBtn.type = 'button';
+      tickBtn.textContent = on ? t('Column to redo') : t(sibs.length > 1 ? 'Cut the column (%n pieces) ✓' : 'Cut the column (%n piece) ✓', { n: sibs.length });
+      tickBtn.addEventListener('click', () => { sheet.close(); tick(stepId, !on); });
+      foot.append(tickBtn);
     }
-    const close = document.createElement('button'); close.textContent = 'Fermer';
-    close.addEventListener('click', () => { pieceModal.hidden = true; });
-    actions.append(close); body.appendChild(actions);
-    pieceModal.hidden = false;
+    const shut = node('button', 'adestia-btn adestia-btn--sm', t('Close')); shut.type = 'button';
+    shut.addEventListener('click', sheet.close); foot.append(shut);
   }
   function renderShop() {
     const bodyEl = atelierFull.querySelector('#atelier-body');
     const steps = wb.steps || [];
     const total = steps.length;
     const remaining = steps.filter((s) => !wbDone(s.id));
-    if (!remaining.length) { bodyEl.innerHTML = `<div class="etq">Terminé 🎉</div><div class="dims">${total} étapes faites</div>`; return; }
+    if (!remaining.length) { bodyEl.innerHTML = `<div class="etq">${t('Done 🎉')}</div><div class="dims">${t(total === 1 ? '%n step done' : '%n steps done', { n: total })}</div>`; return; }
     const cur = remaining[0];
     const doneCount = total - remaining.length;
     const detail = cur.type === 'tronconnage'
       ? (cur.pieces || []).map((p) => p.etiquette.replace(/^[^-]+-/, '')).join(' · ')
       : cur.type === 'refente'
-        ? 'bandes ' + (cur.bandes || []).map((b) => bandGuide(b)).join(' · ') + ' mm'
+        ? t('bands %list mm', { list: (cur.bandes || []).map((b) => bandGuide(b)).join(' · ') })
         : '';
-    bodyEl.innerHTML = `<div class="reg">Plaque ${esc(cur.plaque)} · ${esc(cur.type)}</div><div class="etq">${esc(cur.titre || cur.id)}</div>
+    bodyEl.innerHTML = `<div class="reg">${t('Sheet %id · %type', { id: esc(cur.plaque), type: esc(cur.type) })}</div><div class="etq">${esc(cur.titre || cur.id)}</div>
       <div class="dims">${esc(detail)}</div>`;
-    const btn = document.createElement('button'); btn.className = 'done-btn'; btn.textContent = 'FAIT ✓';
+    const btn = document.createElement('button'); btn.className = 'done-btn'; btn.textContent = t('DONE ✓');
     btn.addEventListener('click', () => tick(cur.id, true)); bodyEl.appendChild(btn);
-    bodyEl.insertAdjacentHTML('beforeend', `<div class="progress"><div style="width:${Math.round(100 * doneCount / total)}%"></div></div><div class="pcount">${doneCount}/${total} étapes</div>`);
+    bodyEl.insertAdjacentHTML('beforeend', `<div class="progress"><div style="width:${Math.round(100 * doneCount / total)}%"></div></div><div class="pcount">${t('%done/%total steps', { done: doneCount, total })}</div>`);
   }
 
   return {

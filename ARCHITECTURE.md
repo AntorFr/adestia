@@ -388,6 +388,44 @@ turn); extending `requestJson` to streams (its result type is JSON by contract);
 be cut without moving state that two of them write, then that state stays in the first and
 the target R-12 reads "kept: reason" for that hook.
 
+### AD-14 — The plugins' tranche: tokens by name, a copied sheet, tables per plugin, a lint and a CSS test
+(a) **No second vocabulary.** A plugin stylesheet reads the shell's tokens by name; an alias is a
+custom property whose whole value is `var(--<shell token>)` and none survives. A parameter that
+carries a meaning (a type colour, a hue, a derived mix) is defined once in the sheet that uses it,
+from tokens or hues, never from a literal. `plugins/test/css.test.js` (node:test, run by
+`npm run test:plugins`) holds the rules of the plugins' tokens section of `docs/ecrans.md` (its rules are written in the header of `css.test.js` and, screen by screen, in the rows of E-22 to E-31 and « The plugins' screens, as built » of `docs/ecrans.md`; `docs/charte.md` is not touched by it). A second test in the same file compares its `CHECKED` list to the `plugins/*/web/` folders, so a plugin added without its name fails:
+an undefined token, an alias, a literal colour outside a `var()` fallback, `999px`, an
+`outline: none` without a ring. It reads the token list from `tokens.css`, so a token removed
+there fails here. *Rejected*: a lint plugin for CSS (a dependency for six rules a test states).
+(b) **The sheet is a copy, by classes.** The shared dialog reaches plugins as CSS classes and a
+three-line contract (AD-4); each plugin that opens a sheet carries its own ~30 lines of behaviour
+(`web/sheet.js`; an effect in meals' React view) — AD-8's rule, applied: a plugin loads from its own
+folder or another repository and imports no shell code. *Rejected*: a `data-adestia-sheet` helper
+shipped by the shell (a second contract, AD-8; the charter tranche also declines it). The two
+full-screen modes (atelier's step mode, the scan camera) are not sheets: they keep their full
+screen and take the sheet's behaviour contract and z-index family.
+(c) **Words: one table per plugin, English keys.** Atelier gets the table it lacked
+(`web/words.js`), `t` injected into its engine like `crumbs` and `href`; its `fr` values are
+today's French, so a French instance reads the same words (B-1). Parcours and project-management
+get the same. Messages of `regles.js` / `convert.js` go to the CLI and MCP tools, not to the
+screen, and stay French; the agent prompts stay as written. The class test `plugins/test/words.test.js` (it already
+reads the tables the way the shell does, the atelier's included once it has one) gains the *tu* rule, with a short list of the plugins still to correct that each task empties.
+(d) **Lint.** `eslint.config.js` (the serveur tranche's file, extended here) drops `plugins/**` from
+`ignores` and gains a block for `plugins/**/web/**/*.js` (browser globals; the `react-hooks` rules apply, since
+journal, todo, listening-post and meals call hooks through `createElement`) and one for the
+plugins' other `.mjs`/`.js` (node globals); the vendored `plugins/scan/web/decoder.js` (448 KB, third-party) joins the ignores with
+the reason. `npm run lint` covers `plugins`. A finding is fixed, or turned off for the rule with
+its reason written beside it (the file's own convention); no `eslint-disable` without a reason.
+(e) **Kept.** The native `confirm()` of the atelier (resetting a layout) and the `window.alert` of
+voyages (a refused gesture) stay: a sheet would make the answer asynchronous, a change of flow (Q-20,
+*kept: the flow would change*; written under Known defects). In plugin sheets only `820px` is a breakpoint; 520, 560, 640, 720 and 900 px are kept
+(*kept: moving a width changes the layout between phone and desktop, a redesign the mandate does
+not ask for*). Plugin buttons, fields and empty states do not adopt the charter's classes, except
+backs, exits and the sheet's close button.
+*Rejected*: moving the aids copied on purpose (`address.js`, word tables) into a shared module —
+AD-8. *Reversed if*: the plugin contract grows a helper surface in `PluginApi`.
+
+
 ## Refactoring targets
 
 Each target: what, where, why it costs, the tranche that owns it, and its outcome
@@ -401,8 +439,8 @@ Each target: what, where, why it costs, the tranche that owns it, and its outcom
 | R-4 | `field()` duplicated in `instruction-catalogues.ts` and `instructions.ts`; `routes/instruction-catalogues.ts` `sourceOf` / `fetchClone` / `cacheDir` duplicate `catalogueSource` / `fetchCatalogueClone` / `catalogueClone` of `instruction-catalogues-refresh.ts` | pure extraction, behaviour kept | serveur | closed: `field()` once in `frontmatter.ts`; the catalogue route calls the refresh module |
 | R-5 | `pages.ts` doubles as a frontmatter library for `instructions.ts`, `instruction-catalogues.ts`, `schedule.ts`, `shell-tools.ts` | a route module as a dependency; move without changing the parser (AD-7) | serveur | closed: `server/src/frontmatter.ts`, bodies untouched; the CRLF divergence stays (AD-7) |
 | R-6 | Dead interface removed; test-only helpers removed from production indexes; remaining public types, test imports and boot entry points named below | surface limited to its consumers | serveur | closed: 178 entries remain, all named below |
-| R-7 | Comments pointing to absent documents: `technique.md` (server sources and tests), `ATELIER-3.md` (`plugins/atelier/web`), `PARCOURS.md` and "D44 côté cerveau" (`plugins/parcours/web`) | dead references | serveur (server), plugins (plugins) | closed for the server; `ATELIER-3.md` and `PARCOURS.md` are the plugins tranche's |
-| R-8 | `eslint.config.js` claims floating promises and thrown-away errors are caught, which its rules cannot do (no type-aware rule, `caughtErrors: 'none'`); `plugins/` not linted; lint not in CI | a claim the gate does not keep | serveur (CI, claim), plugins (plugins lint) | closed: claim rewritten, `npm run lint` in CI; plugins lint is the plugins tranche's |
+| R-7 | Comments pointing to absent documents: `technique.md` (server sources and tests), `ATELIER-3.md` (`plugins/atelier/web`), `PARCOURS.md` and "D44 côté cerveau" (`plugins/parcours/web`) | dead references | serveur (server), plugins (plugins) | server: closed; plugins: closed — no comment under `plugins/` names `ATELIER-3.md`, `PARCOURS.md` or "D44 côté cerveau" any more (`git grep` finds none) |
+| R-8 | `eslint.config.js` claims floating promises and thrown-away errors are caught, which its rules cannot do (no type-aware rule, `caughtErrors: 'none'`); `plugins/` not linted; lint not in CI | a claim the gate does not keep | serveur (CI, claim), plugins (plugins lint) | server: closed — claim rewritten, `npm run lint` in CI; plugins: closed — `npm run lint` (`eslint packages plugins`) covers `plugins/` and is clean |
 | R-9 | Test support rewritten per file: the fake `Driver` in 10 test files, `git()` in 5, `mkdtemp` in 39 | each new test copies one | tests | closed: `packages/server/test/support/` holds the three, and every file that rewrote them imports them |
 | R-10 | `web/test/page-editor.test.tsx` "tells the plugin when it takes the file…" reported flaky; turn-counting waits (`setImmediate`) in `callback.test.ts`, `mcp.test.ts`, `restart.test.ts`; fixed sleeps in `watch`, `pages`, `shell-tools`, `background` tests | races dressed as delays (CLAUDE.md) | tests | closed: no `setImmediate` is left in `callback`, `mcp`, `restart` tests (a wake or a call is a deferred the fake resolves; a negative case is proved by a sentinel that does wake, or by `app.close()`), and the sleeps of `watch` (chokidar's own `ready`, through the test's watcher factory), `pages` (`utimes`), `shell-tools` and `background` (a faked `Date`) are gone. Page-editor flake: its waits (`findBy*`, `waitFor`) spend a one-second wall-clock budget on a chain of promises the test resolves itself, and a loaded machine runs it out; reproduced under `yes` load on the neighbour test "saves with the revision…" (`[data-mounted]` not there in time). The file now drains the chain with an async `act`, no budget left |
 | R-11 | Web: about 40 `fetchImpl(` call sites and 14 hand-rolled live guards, `failure()` (`CataloguePopin.tsx`) and `json()` (`chat/conversations.ts`) local to one file; `toMessage` duplicated in `useConversations.ts` and `Delegations.tsx`, drifted (the second drops `signatures`, kept as defect); `prettify` ×3, `folderOf` ×2, `isIndexPage` ×2 with different rules (`app/sections.ts`, `app/collections.ts`, `editor/nodes.ts`, `editor/listing.ts`) | one idea, several answers | charte (the shared request helper), pages, chat for `chat/` | closed for the charter's part: `packages/web/src/app/request.ts` (`requestJson`, `jsonInit`) is the one way the shell's settings and entry code talks to the server (it never throws, the fallback message is said in the locale, `fetchImpl` stays injected); `failure()` of `CataloguePopin.tsx` is absorbed, and `Gates`/`signin.ts`/`useInstance.ts`, `Settings`, `Preferences`, `McpServers`, `Instructions`, `CataloguePopin`, `Configuration` and `Delegations` call it, the restart included (a refusal keeps its parsed body in `data`: how many turns run). No raw `fetchImpl(` is left in those files. closed for the chat: every network call uses `requestJson` or `requestRaw` (including streams, stop and upload); `json()` is absorbed. `messages.ts` defines `toMessage` once; Delegations passes `{ signatures: false }`, preserving the written defect (AD-12). kept: the `fetchImpl(` calls of `editor/`, `plugins/PageEditor.tsx`, `usePage.ts` and `live.ts`, and `prettify`/`folderOf`/`isIndexPage` — pages |
@@ -617,6 +655,10 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
   `chat/messages.ts` › `toMessage` with `{ signatures: false }`, while the chat keeps
   `stored.signatures` by default (AD-12, preserved under AD-7). To be confirmed
   that a delegation transcript can carry signatures.
+- **Native dialogs in plugins**: `plugins/atelier/web/app.js` asks `confirm()` before resetting a
+  layout and `plugins/voyages/web/app.js` shows `window.alert` for a refused gesture; unstyled,
+  unlocalised by the browser's own words, not closeable like a sheet. Replacing them changes the flow
+  (the answer is asynchronous), so it is a feature, not part of the mise à niveau (Q-20).
 - **Frontmatter CRLF divergence**: `content` accepts `\r\n` fences, `pages.ts` and
   `schedule.ts` only `\n` — a CRLF page has fields in the editor and none in the index or the
   schedule. Seen in the code; behaviour not yet reproduced.
@@ -635,3 +677,26 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
   is then the raw server text, which no catalogue translates.
 - **A catalogue token field has no `autoComplete`**, so a browser may offer to fill or save it
   as a password.
+- **The shell's `‹ Back` stays English on a French instance** above every plugin view (E-22 to
+  E-31; `App.tsx`), next to the plugin's own back, which is translated and named. Seen on the plugin
+  matrix; the pages tranche owns the shell's back (Q-12, Q-4).
+- **E-23 (planif) says the server's sentences in English.** A note's problem (`carries both
+  \`every\` and \`at\``, `the note is empty — its body is the prompt`, `below the 15-minute floor`…) is
+  built by `plugins/planif/api.mjs` and `schedule.ts` and drawn as received; no table holds it, and
+  `words.test.js` cannot see a sentence that comes from data. Same for E-27's failure reason of a
+  source (`muet: fetch failed`, the fetch's own text). Translating them is a change to what the API
+  answers or a table keyed by those sentences: left.
+- **E-28's walking map keeps its pre-walk size.** In walking mode the map's box fills the screen, but
+  `carte.js` draws the SVG at `taille()` (at most 420 px high, the width it had), so on a phone the
+  map takes the top quarter and the rest is blank; it is drawn full again only on leaving. Found by
+  the matrix, not caused by the tranche; fixing it changes the drawing engine.
+- **E-30 on a phone: the focus is lost when the reader closes.** The composer folds its buttons on a
+  narrow screen and drops the item that opened the reader; the plugin's `opener` is then no longer in
+  the document and nothing takes the focus. The shell's fold would have to hand it back; the matrix
+  notes it (`NOTE … focus not returned`) rather than failing on it.
+- **E-25's piece sheet shows the workbook's own words under `en`**: edge names such as `about-droit`
+  and piece references come from the workbook data, which the plugin does not translate.
+- **E-25 says « 1 pièces »** in French: the table's `%n piece` entry is « %n pièces », as the French
+  read before the atelier had a table (B-1), so a plate of one piece gets a plural.
+- **E-26's card sheet names the item's type with the data's own word** (`trajet`, `resto`) under `en`:
+  the type is an identifier of `voyage.json`, drawn as it is written.

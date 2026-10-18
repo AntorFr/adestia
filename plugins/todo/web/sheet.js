@@ -17,6 +17,11 @@ import { createElement as h, useCallback, useEffect, useState } from 'react'
 import { assigneesOf, setField } from './model.js'
 import { check, shortDate, todayISO } from './rows.js'
 
+/** The shell mounts this sprite once; plugins share its names, not its code. */
+const icon = (name) => h('svg', {
+  className: 'adestia-icon', 'aria-hidden': true, focusable: false,
+}, h('use', { href: `#adestia-i-${name}` }))
+
 export function makeSheet(api, t) {
   const PageEditor = api.PageEditor
 
@@ -126,7 +131,7 @@ export function makeSheet(api, t) {
       /**
        * The way back sits IN the header, not above it.
        *
-       * The shell draws its own « Back » in the canvas, and a second button
+       * The shell draws its own « Back » in the canvas, and a second button
        * stacked under it read as two of the same control — seen in the bench
        * before it was written down. They are not the same: the shell's walks
        * the browser's history, which leaves the app entirely, while this one
@@ -135,8 +140,15 @@ export function makeSheet(api, t) {
       h('header', { key: 'h', className: 'todo-sheet__head' }, [
         h(
           'button',
-          { key: 'b', type: 'button', className: 'todo-back', onClick: onBack, 'aria-label': t('Back') },
-          '‹',
+          {
+            key: 'b',
+            type: 'button',
+            className: 'todo-back adestia-btn adestia-btn--ghost adestia-btn--sm',
+            onClick: onBack,
+            'aria-label': t('Todo'),
+          },
+          icon('chevron-left'),
+          t('Todo'),
         ),
         check(h, { done: task.done, onToggle: () => void edit('done', task.done ? '' : day), label: task.title }),
         h('h2', { key: 't' }, task.title),

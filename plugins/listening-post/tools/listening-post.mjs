@@ -242,7 +242,7 @@ async function cherche(query, { pagesDir, n }) {
   })
 }
 
-async function flux({ pagesDir, jours }) {
+async function flux({ jours }) {
   const { sources, problems } = await readSources(pages)
   const library = await readLibrary(pages, keyOf)
   const filed = new Set(library.map((item) => item.key).filter(Boolean))

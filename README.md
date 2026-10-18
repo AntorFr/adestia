@@ -49,7 +49,7 @@ node bench/sweep.mjs                   # every screen, light and dark, desk and 
 The sweep takes Playwright and Chromium from the environment (`npm root -g`); do not
 add them to the repo. The launcher runs until SIGTERM (`kill <pid>`, or Ctrl-C), which
 removes its throwaway data; in a script, start it in the background and keep its pid
-(`$!`). Its boot log includes a plugin refused on purpose (`bench-refused`, part of the seed): not an error.
+(`$!`). Run it from the clone's root: the bundled plugins are found through `./plugins`, and from elsewhere the server starts with `0 of 0 plugin(s) active`. Its boot log includes a plugin refused on purpose (`bench-refused`, part of the seed): not an error.
 
 `--engine claude` runs a real turn instead (needs `CLAUDE_CODE_OAUTH_TOKEN`).
 See [bench/README.md](bench/README.md). The map of the code, the decisions (AD-n) and the
@@ -188,7 +188,7 @@ escaped `\:::` in the content tests, and looks like a serialiser bug
 
 ```sh
 npm ci
-npm test          # no account or network needed; the catalogue screens suite builds the shell on first run and skips (npm test stays green) when Playwright is not found through require/NODE_PATH, then `npm root -g`
+npm test          # no account or network needed; takes 7 minutes or more (the browser suites dominate), so do not cut it short; the catalogue screens suite builds the shell on first run and skips (npm test stays green) when Playwright is not found through require/NODE_PATH, then `npm root -g`
 npm run typecheck
 npm run lint      # also run by CI
 npm run build

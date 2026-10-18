@@ -39,12 +39,12 @@
 }
 
 .lp-warn {
-  color: var(--warning);
+  color: var(--warning-text);
   font-size: var(--text-sm);
 }
 
 .lp-problem {
-  color: var(--danger);
+  color: var(--danger-text);
   font-size: var(--text-sm);
   margin: 0;
 }
@@ -76,7 +76,7 @@
 .lp-ask {
   border: 1px solid transparent;
   background: var(--accent);
-  color: var(--accent-text);
+  color: var(--on-accent);
 }
 
 .lp-quiet {
@@ -286,7 +286,7 @@
 .lp-stamp {
   font-family: var(--font-mono);
   font-size: var(--text-sm);
-  color: var(--accent);
+  color: var(--accent-text);
   text-decoration: none;
 }
 

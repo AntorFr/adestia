@@ -1,12 +1,22 @@
 import { createElement as h, useEffect, useState } from 'react'
 
-const fmt = (iso) =>
-  iso ? new Date(iso).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' }) : '—'
+const fmt = (iso, locale) =>
+  iso ? new Date(iso).toLocaleString(locale, { dateStyle: 'short', timeStyle: 'short' }) : '—'
 
 const WORDS = {
   fr: {
     // The manifest's own word, drawn by the shell on the launcher.
     Schedules: 'Planifications',
+    'Loading…': 'Chargement…',
+    'clock running': 'horloge en marche',
+    'done %when': 'terminée %when',
+    'expired %when': 'expirée %when',
+    'until %when': 'jusqu’au %when',
+    suspended: 'suspendue',
+    'last %last · next %next': 'dernier %last · prochain %next',
+    'Ask to suspend': 'Demander la suspension',
+    'Ask to resume': 'Demander la reprise',
+    '＋ Ask for a new scheduled turn': '＋ Demander une nouvelle planification',
     'clock off': 'horloge coupée',
     active: 'actives',
     invalid: 'invalides',
@@ -23,13 +33,13 @@ const WORDS = {
  * of this plugin runs. Handing the table over (`words:` in what the factory
  * returns) is how those words reach the reader's language too.
  */
-function table(locale) {
+export function table(locale) {
   return WORDS[String(locale ?? '').slice(0, 2)] ?? {}
 }
 
 const words = (locale) => {
   const said = table(locale)
-  return (key) => said[key] ?? key
+  return (key, values = {}) => (said[key] ?? key).replace(/%(\w+)/g, (match, name) => values[name] ?? match)
 }
 
 export default function view(api) {
@@ -46,7 +56,7 @@ export default function view(api) {
         .catch((e) => setState({ loading: false, notes: [], enabled: false, error: e.message }))
     }, [])
 
-    if (state.loading) return h('p', { className: 'planif-muted' }, 'Loading…')
+    if (state.loading) return h('p', { className: 'planif-muted' }, t('Loading…'))
     if (state.error) return h('p', { className: 'planif-problem' }, state.error)
 
     return h('section', { className: 'planif' }, [
@@ -57,7 +67,7 @@ export default function view(api) {
         h(
           'span',
           { key: 's', className: state.enabled ? 'planif-on' : 'planif-off' },
-          state.enabled ? 'clock running' : t('clock off — nothing will run'),
+          state.enabled ? t('clock running') : t('clock off — nothing will run'),
         ),
       ]),
 
@@ -74,23 +84,23 @@ export default function view(api) {
                   // A mission's whole story, one badge at a time: a deadline
                   // ahead, or how it ended. An expired mission stays visible —
                   // an escalation nobody sees is an escalation that failed.
-                  note.done && h('span', { key: 'ok', className: 'planif-on' }, `done ${note.done}`),
+                  note.done && h('span', { key: 'ok', className: 'planif-on' }, t('done %when', { when: note.done })),
                   note.expired &&
-                    h('span', { key: 'x', className: 'planif-problem' }, `expired ${note.expired}`),
+                    h('span', { key: 'x', className: 'planif-problem' }, t('expired %when', { when: note.expired })),
                   note.until &&
                     !note.done &&
                     !note.expired &&
-                    h('span', { key: 'u', className: 'planif-every' }, `until ${note.until}`),
+                    h('span', { key: 'u', className: 'planif-every' }, t('until %when', { when: note.until })),
                   !note.enabled &&
                     !note.done &&
                     !note.expired &&
-                    h('span', { key: 'd', className: 'planif-off' }, 'suspended'),
+                    h('span', { key: 'd', className: 'planif-off' }, t('suspended')),
                   note.problem && h('span', { key: 'p', className: 'planif-problem' }, note.problem),
                 ]),
                 h(
                   'div',
                   { key: 'w', className: 'planif-muted' },
-                  `last ${fmt(note.lastRun)} · next ${fmt(note.nextRun)}`,
+                  t('last %last · next %next', { last: fmt(note.lastRun, api.locale), next: fmt(note.nextRun, api.locale) }),
                 ),
                 // The prompt itself: a scheduled turn nobody can read is a
                 // scheduled turn nobody can predict.
@@ -114,7 +124,7 @@ export default function view(api) {
                             : `Réactive la tâche planifiée « ${note.title} ».`,
                         ),
                     },
-                    note.enabled ? 'Ask to suspend' : 'Ask to resume',
+                    t(note.enabled ? 'Ask to suspend' : 'Ask to resume'),
                   ),
               ]),
             ),
@@ -127,7 +137,7 @@ export default function view(api) {
           className: 'planif__ask',
           onClick: () => api.ask('Crée une tâche planifiée « … » qui tourne tous les jours et qui : '),
         },
-        '＋ Ask for a new scheduled turn',
+        t('＋ Ask for a new scheduled turn'),
       ),
     ])
   }

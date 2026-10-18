@@ -17,13 +17,14 @@ export const ROUTE = '/listening-post'
 
 const WORDS = {
   fr: {
+    'the page index answered %status': 'l’index des pages a répondu %status',
     // The manifest's own word, drawn by the shell on the launcher.
     Watchlist: 'Veille',
     'Loading…': 'Chargement…',
     'to watch': 'À voir',
     // Lowercase: this one lands mid-sentence, on the tile's chip.
     'waiting': 'à voir',
-    'in your sources': 'Dans tes flux',
+    'in your sources': 'Dans vos flux',
     'kept': 'gardés',
     'archive': 'Archive',
     'search what was said': 'chercher dans ce qui a été dit',
@@ -33,6 +34,7 @@ const WORDS = {
     'open': 'ouvrir',
     'extract': 'extraire',
     'dismiss': 'écarter',
+    Clear: 'Effacer',
     'drop a link': 'coller un lien — vidéo, épisode, article',
     'add': 'Ajouter',
     'refresh': 'rafraîchir',
@@ -67,7 +69,7 @@ export function table(locale) {
 
 export const words = (locale) => {
   const said = table(locale)
-  return (key) => said[key] ?? key
+  return (key, values = {}) => (said[key] ?? key).replace(/%(\w+)/g, (match, name) => values[name] ?? match)
 }
 
 /** `veille/underscore-ia.md` → `underscore-ia`. */
