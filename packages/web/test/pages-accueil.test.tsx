@@ -206,7 +206,7 @@ describe('the keyboard reaches the home', () => {
     const input = screen.getByLabelText('Search this section')
     expect(input.tagName).toBe('INPUT')
     expect(input.tabIndex).toBe(0)
-    const chips = [...container.querySelectorAll('button.adestia-chip')]
+    const chips = [...container.querySelectorAll<HTMLButtonElement>('button.adestia-chip')]
     expect(chips.map((c) => c.textContent)).toEqual(['All', 'a', 'b'])
     expect(chips.every((c) => c.tabIndex === 0)).toBe(true)
     fireEvent.change(input, { target: { value: 'zzz' } })

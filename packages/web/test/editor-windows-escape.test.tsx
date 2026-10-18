@@ -27,7 +27,7 @@ function Host({ kind }: { kind: 'block' | 'page' }) {
         <BlockSettings name="list" spec={VOCABULARY['list']} attributes={{}} anchor={anchor} onChange={() => {}} onClose={() => setOpen(false)} />
       )}
       {open && kind === 'page' && (
-        <PageSettings fields={{}} opaque="" pages={[]} anchor={anchor} onChange={() => {}} onClose={() => setOpen(false)} />
+        <PageSettings fields={{}} opaque={[]} pages={[]} anchor={anchor} onChange={() => {}} onClose={() => setOpen(false)} />
       )}
     </>
   )
