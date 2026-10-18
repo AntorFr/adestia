@@ -78,7 +78,8 @@
   sparkles, plug, book-open, sliders-horizontal, handshake, monitor, sun, moon, log-out,
   key-round, lock, users, check, circle-alert, triangle-alert, info, wifi-off, refresh-cw,
   copy, external-link, loader-circle, list, panel-right-open, archive, paperclip,
-  chevron-down, square, arrow-up, clock, pen-line. The shell's settings and entry screens carry no emoji
+  chevron-down, square, arrow-up, clock, pen-line. The last nine names are the chat's
+  additions, shared by its rail, composer and decision surfaces. The shell's settings and entry screens carry no emoji
   or Unicode glyph on a control any more. The chat rail uses this sprite for its
   header, tab/list tools, tool traces, MCP close, composer, permission and signature
   controls. **TARGET**
@@ -605,7 +606,8 @@ a **fill** somewhere (accent, danger, success, warning as a dot, a bar or a butt
 and gains a `*-text` twin for its text uses; a token that is only ever text
 (`--text-faint`) is moved. Call sites that use `--accent`, `--danger`, `--success`,
 `--warning` as a text colour switch to the twin: the four sheets of the settings screens and
-`shell.css` have done so; the chat, pages and plugin sheets do in their tranches.
+`shell.css` have done so, as have `chat.css`, `conversations.css` and `attachments.css`;
+the pages and plugin sheets do in their tranches.
 `--text-faint` is for decoration and placeholders **at 4.5:1**; there is no tier below.
 
 ## 6. Accepted departures
