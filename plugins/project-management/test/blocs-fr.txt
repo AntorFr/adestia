@@ -1,0 +1,112 @@
+## timeline written
+[title] Review · 2026-12-01 · à venir
+Review · 1 déc.
+[title] aujourd'hui · 2026-10-17
+[label] auj.
+[title] Phase one · 2026-01-15 → 2026-11-01 · en cours
+Phase one
+janv. 2026
+févr.
+mars
+avr.
+mai
+juin
+juil.
+août
+sept.
+oct.
+nov.
+déc.
+Lignes sans date lisible : not a date line
+
+## timeline written quarters
+[title] Review · 2026-12-01 · à venir
+Review · 1 déc.
+[title] aujourd'hui · 2026-10-17
+[label] auj.
+[title] Phase one · 2026-01-15 → 2026-11-01 · en cours
+Phase one
+T1 2026
+T2 2026
+T3 2026
+T4 2026
+Lignes sans date lisible : not a date line
+
+## timeline written empty
+Rien ne porte de date ici — une phase s’écrit « Cadrage: 2026-01-15 → 2026-03-01 », un jalon « Recette: 2026-06-01 ».
+
+## timeline written unreadable
+Rien ne porte de date ici — une phase s’écrit « Cadrage: 2026-01-15 → 2026-03-01 », un jalon « Recette: 2026-06-01 ».
+Lignes sans date lisible : nope
+
+## timeline queried
+[title] Charlie · 2026-04-01 · clos
+Charlie · 1 avr.
+[title] Delta · 2026-05-01 · en retard
+Delta · 1 mai
+[title] aujourd'hui · 2026-10-17
+[label] auj.
+[title] Alpha · 2026-01-10 → 2026-12-01 · Amber
+Alpha
+[title] Bravo · 2026-02-01 → 2026-03-01 · clos
+Bravo
+janv. 2026
+févr.
+mars
+avr.
+mai
+juin
+juil.
+août
+sept.
+oct.
+nov.
+déc.
+Pages aux dates illisibles : Echo
+
+## timeline queried empty
+Aucune page sous celle-ci ne porte de date — une phase se déclare avec « start: » et « due: » dans son entête, un jalon avec « due: » seul.
+
+## timeline queried loading
+Planning…
+
+## subproject rows
+[title] Amber
+Alpha
+Amber
+Bravo
+Charlie
+Delta
+Echo
+
+## subproject fold two
+[title] Amber
+Alpha
+Amber
+Delta
+Echo
+2 projets clos
+Bravo
+Charlie
+
+## subproject fold one
+[title] Amber
+Alpha
+Amber
+Delta
+Echo
+1 projet clos
+Bravo
+
+## subproject cards
+[title] Amber
+Alpha
+Amber
+Delta
+Echo
+2 projets clos
+Bravo
+Charlie
+
+## subproject empty
+Aucun sous-projet sous cette page — un projet se déclare avec « type: project-management » dans son entête.

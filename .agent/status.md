@@ -1,5 +1,26 @@
 # Status — Adestia
-> MàJ : 2026-10-17
+> MàJ : 2026-10-18
+
+**Tranche `adestia-qualite-plugins` (epic adestia-qualite) — assemblée, PR vers
+`epic/adestia-qualite`, pas fusionnée.** Aucun changement de ce que font les plugins (B-1).
+- Jetons : les feuilles de `plugins/*/web/*.css` lisent les jetons du shell (plus d'alias,
+  de couleur en dur, de `999px`, d'`outline: none` sans anneau) ; `plugins/test/css.test.js`
+  garde ces règles et compare sa liste `CHECKED` aux dossiers `web/` (AD-14 a).
+- Feuille et retours : todo, voyages, repas et pièce de l'atelier dessinent la feuille
+  partagée par ses classes (voile, Échap, focus ; chaque plugin porte sa copie du
+  comportement, AD-8) ; chaque retour dit sa destination, aucun n'est retiré. Écart à montrer :
+  le bouton de fermeture de la feuille est nouveau pour la pièce et le plat.
+- Langue : atelier, parcours et project-management ont une table `words.js` (clés anglaises) ;
+  l'atelier parle en et fr, son français inchangé ; `words.test.js` impose le *vous*.
+- Lint : `eslint packages plugins` couvre `plugins/` (`decoder.js` tiers ignoré) ; références
+  à `ATELIER-3.md`/`PARCOURS.md` retirées (R-7, R-8).
+- Recette : `npm ci`, `npm run typecheck`, `npm run lint`, `npm test` (vitest + 617
+  `node --test`) ; lancement `node bench/launch.mjs --engine fake --seed plugins`, captures
+  `bench/sweep.mjs --only`, matrice `bench/scenarios/plugins-matrix.mjs`.
+- Reste / pièges : le `confirm()` de l'atelier et le `window.alert` de voyages restent natifs
+  (Q-20, le flux changerait) ; breakpoints 520/560/640/720/900 px gardés ; invites ✦ inchangées
+  (l'une dit *tu* à l'agent : recommandation de fin d'epic) ; la suite vitest à navigateur
+  peut dépasser 5 s sous charge (repasse seule).
 
 **Tranche `adestia-qualite-charte` (epic adestia-qualite) — assemblée, PR vers
 `epic/adestia-qualite`, pas fusionnée.** Aucun changement de ce que font les écrans (B-1).
@@ -21,7 +42,7 @@
 - Recette : `npm ci`, `npm run typecheck`, `npm run lint`, `npm test` (2160 vitest +
   543 `node --test`, 2 sautés) ; lancement `node bench/launch.mjs --engine fake`, captures
   par `node bench/sweep.mjs`.
-- Reste / pièges : la charte n'est pas appliquée au chat, aux pages ni aux plugins (tranches
+- Reste / pièges : la charte n'est pas appliquée au chat ni aux pages (tranches
   suivantes, qui adoptent ces composants) ; pas de toasts (écart écrit) ; pas de « Réessayer »,
   de confirmation avant « Remove » ni d'écran hors ligne (B-1, recommandations de fin d'epic) ;
   `live.ts` et `usePage.ts` gardent leur `fetchImpl(` (tranches chat/pages). Une valeur de token

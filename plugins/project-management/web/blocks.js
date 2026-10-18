@@ -48,12 +48,48 @@ export function table(locale) {
           'Où en est le projet, et seulement tant qu’il tourne — un projet en attente ou clos dit ça à la place.',
         // The group the form files those fields under wears the plugin's id.
         'project-management': 'Gestion de projet',
+        // What the blocks themselves say. The French is what they said before
+        // they had a table, letter for letter (B-1).
+        closed: 'clos',
+        late: 'en retard',
+        elapsed: 'échu',
+        'under way': 'en cours',
+        ahead: 'à venir',
+        today: 'aujourd\'hui',
+        'today|axis': 'auj.',
+        Q: 'T',
+        'Planning…': 'Planning…',
+        'the page index answered %status': 'l\'index des pages a répondu %status',
+        'No page below this one carries a date — a phase declares `start:` and `due:` in its header, a milestone `due:` alone.':
+          'Aucune page sous celle-ci ne porte de date — une phase se déclare avec « start: » et « due: » dans son entête, un jalon avec « due: » seul.',
+        'Nothing here carries a date — a phase reads “Scoping: 2026-01-15 → 2026-03-01”, a milestone “Review: 2026-06-01”.':
+          'Rien ne porte de date ici — une phase s’écrit « Cadrage: 2026-01-15 → 2026-03-01 », un jalon « Recette: 2026-06-01 ».',
+        'Pages with unreadable dates: ': 'Pages aux dates illisibles : ',
+        'Lines with no readable date: ': 'Lignes sans date lisible : ',
+        'No sub-project below this page — a project declares `type: project-management` in its header.':
+          'Aucun sous-projet sous cette page — un projet se déclare avec « type: project-management » dans son entête.',
+        '%n closed project': '%n projet clos',
+        '%n closed projects': '%n projets clos',
       }
     : {}
 }
 
+/**
+ * The sayer for one locale: the English key stands when no table answers.
+ * A key may carry a context after `|` (`today|axis`) when one English word
+ * is two French ones; the context is never shown. `%name` is filled from the
+ * values.
+ */
+const words = (locale) => {
+  const said = table(locale)
+  return (key, values = {}) =>
+    (said[key] ?? key.replace(/\|.*$/, '')).replace(/%(\w+)/g, (whole, name) =>
+      name in values ? String(values[name]) : whole,
+    )
+}
+
 export default function createProjectBlocks(api) {
-  const fr = api.locale === 'fr'
+  const t = words(api.locale)
 
   /**
    * The page index, asked for ONCE however many blocks want it.
@@ -73,7 +109,7 @@ export default function createProjectBlocks(api) {
     if (!flight) {
       flight = (async () => {
         const response = await api.fetch('/api/pages/index')
-        if (!response.ok) throw new Error(`l'index des pages a répondu ${response.status}`)
+        if (!response.ok) throw new Error(t('the page index answered %status', { status: response.status }))
         const { entries } = await response.json()
         return entries ?? []
       })()
@@ -126,11 +162,11 @@ export default function createProjectBlocks(api) {
    * dates are carried by position alone: neither survives a screen reader.
    */
   const STATES = {
-    done: fr ? 'clos' : 'closed',
-    late: fr ? 'en retard' : 'late',
-    past: fr ? 'échu' : 'elapsed',
-    current: fr ? 'en cours' : 'under way',
-    ahead: fr ? 'à venir' : 'ahead',
+    done: t('closed'),
+    late: t('late'),
+    past: t('elapsed'),
+    current: t('under way'),
+    ahead: t('ahead'),
     // The three a project's owner writes themselves, and not translated: the
     // domain's own words, the same ones the file carries and the pill shows.
     // They sit in the same table as the calendar's because a bar wears ONE
@@ -148,7 +184,7 @@ export default function createProjectBlocks(api) {
   function short(isoDate, scale) {
     const date = new Date(`${isoDate}T00:00:00Z`)
     if (scale === 'quarters') {
-      return `${fr ? 'T' : 'Q'}${Math.floor(date.getUTCMonth() / 3) + 1} ${date.getUTCFullYear()}`
+      return `${t('Q')}${Math.floor(date.getUTCMonth() / 3) + 1} ${date.getUTCFullYear()}`
     }
     const parts = { month: 'short', timeZone: 'UTC' }
     if (scale === 'weeks') parts.day = 'numeric'
@@ -180,7 +216,7 @@ export default function createProjectBlocks(api) {
     if (queried) {
       if (failure) return h('p', { className: 'pm-timeline__empty' }, failure)
       if (!index) {
-        return h('p', { className: 'pm-timeline__empty' }, fr ? 'Planning…' : 'Planning…')
+        return h('p', { className: 'pm-timeline__empty' }, t('Planning…'))
       }
       const found = fromPages(index, path === undefined ? '' : folderOf(path), depth)
       entries = found.entries
@@ -200,12 +236,8 @@ export default function createProjectBlocks(api) {
           'p',
           { className: 'pm-timeline__empty', key: 'empty' },
           queried
-            ? fr
-              ? 'Aucune page sous celle-ci ne porte de date — une phase se déclare avec « start: » et « due: » dans son entête, un jalon avec « due: » seul.'
-              : 'No page below this one carries a date — a phase declares `start:` and `due:` in its header, a milestone `due:` alone.'
-            : fr
-              ? 'Rien ne porte de date ici — une phase s’écrit « Cadrage: 2026-01-15 → 2026-03-01 », un jalon « Recette: 2026-06-01 ».'
-              : 'Nothing here carries a date — a phase reads “Scoping: 2026-01-15 → 2026-03-01”, a milestone “Review: 2026-06-01”.',
+            ? t('No page below this one carries a date — a phase declares `start:` and `due:` in its header, a milestone `due:` alone.')
+            : t('Nothing here carries a date — a phase reads “Scoping: 2026-01-15 → 2026-03-01”, a milestone “Review: 2026-06-01”.'),
         )
     const leftover =
       unread.length > 0
@@ -213,13 +245,7 @@ export default function createProjectBlocks(api) {
             'p',
             { className: 'pm-timeline__unread', key: 'unread' },
             `${
-              queried
-                ? fr
-                  ? 'Pages aux dates illisibles : '
-                  : 'Pages with unreadable dates: '
-                : fr
-                  ? 'Lignes sans date lisible : '
-                  : 'Lines with no readable date: '
+              queried ? t('Pages with unreadable dates: ') : t('Lines with no readable date: ')
             }${unread.join(' · ')}`,
           )
         : null
@@ -273,8 +299,8 @@ export default function createProjectBlocks(api) {
                 className: 'pm-timeline__today',
                 // Named at the foot, so the one line nobody drew cannot be
                 // mistaken for a milestone somebody did.
-                'data-label': fr ? "auj." : 'today',
-                title: `${fr ? "aujourd'hui" : 'today'} · ${today}`,
+                'data-label': t('today|axis'),
+                title: `${t('today')} · ${today}`,
                 // Below the label rows, like a milestone's line: drawn
                 // through them, it cuts a label in two.
                 style: { left: at(today), top: `${4 + rows * ROW}px` },
@@ -353,9 +379,7 @@ export default function createProjectBlocks(api) {
       return h(
         'p',
         { className: 'pm-subproject__empty' },
-        fr
-          ? 'Aucun sous-projet sous cette page — un projet se déclare avec « type: project-management » dans son entête.'
-          : 'No sub-project below this page — a project declares `type: project-management` in its header.',
+        t('No sub-project below this page — a project declares `type: project-management` in its header.'),
       )
     }
 
@@ -477,9 +501,7 @@ export default function createProjectBlocks(api) {
             h(
               'summary',
               { key: 'summary' },
-              fr
-                ? `${done.length} ${done.length === 1 ? 'projet clos' : 'projets clos'}`
-                : `${done.length} closed ${done.length === 1 ? 'project' : 'projects'}`,
+              t(done.length === 1 ? '%n closed project' : '%n closed projects', { n: done.length }),
             ),
             grid(done, 'done'),
           ])
