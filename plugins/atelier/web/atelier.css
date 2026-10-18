@@ -123,6 +123,7 @@
 .atelier-page .asmt i { font-family: var(--font-mono); font-size: var(--text-2xs); font-style: normal; color: var(--text-muted); }
 
 /* ── The piece's sheet: the shell's `.adestia-sheet`, with a body of rows ─── */
+.atelier-sheet[hidden] { display: none; }
 .atelier-sheet .atelier-sheet__panel { height: auto; max-height: min(88vh, 720px); }
 .atelier-sheet .prow { display: flex; gap: 10px; font-size: var(--text-sm); margin-bottom: var(--space-2); }
 .atelier-sheet .prow b { flex: 0 0 92px; color: var(--text-faint); font-family: var(--font-mono); font-size: var(--text-xs); font-weight: 600; }
@@ -138,7 +139,7 @@
 .atelier-full .reg { font-family: var(--font-mono); font-size: var(--text-base); font-weight: 600; color: var(--wb-plan); letter-spacing: var(--label-track); }
 .atelier-full .etq { font-family: var(--font-mono); font-size: var(--wb-etq); font-weight: 800; line-height: 1; margin: 6px 0; }
 .atelier-full .dims { font-family: var(--font-mono); font-size: var(--wb-dims); font-weight: 600; color: var(--text-muted); }
-.atelier-full .progress { width: min(420px, 80vw); height: 8px; border-radius: var(--radius-micro); background: var(--surface-sunken); overflow: hidden; margin-top: 26px; }
+.atelier-full .progress { width: min(420px, 80vw); margin-inline: auto; height: 8px; border-radius: var(--radius-micro); background: var(--surface-sunken); overflow: hidden; margin-top: 26px; }
 .atelier-full .progress > div { height: 100%; background: var(--wb-done); }
 .atelier-full .pcount { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--text-faint); margin-top: 10px; }
 .atelier-full .done-btn { margin-top: 34px; border: none; background: var(--wb-done); color: var(--on-accent); border-radius: var(--radius-lg); padding: var(--space-5) 48px; font-family: var(--font); font-size: var(--text-xl); font-weight: 800; cursor: pointer; }
