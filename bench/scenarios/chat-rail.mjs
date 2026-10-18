@@ -183,6 +183,7 @@ export default async function scenario(bench) {
           return { skin: document.documentElement.dataset.skin, ink, background, ratio: (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05) }
         })
         if (currentContrast.skin === 'nestor' && theme === 'dark') assert(currentContrast.ratio >= 4.5, JSON.stringify(currentContrast))
+        await chat.locator('.adestia-conversations__item--current').scrollIntoViewIfNeeded()
         await shoot('current-list')
         await chat.locator('.adestia-conversations').evaluate((node) => { node.scrollTop = node.scrollHeight })
         await shoot('long-list')
