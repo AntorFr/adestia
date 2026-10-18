@@ -8,7 +8,7 @@
   défaut écrit) ; tout appel réseau de `chat/` passe par `app/request.ts` (`requestJson`,
   `requestRaw` pour le POST du tour et l'attache) ; `useConversations` coupé en
   `useOpenConversations`/`useTurn`/`useTabActions`, `Chat` en `ChatHeader`/`TabStrip`/
-  `ConversationList`/`Thread`, `Composer` en `useUploads` ; aucune fonction > 250 lignes
+  `ConversationList`/`Thread`, `Composer` en `useUploads` (hooks locaux à leur fichier, seul `useConversations` est exporté) ; aucune fonction > 250 lignes
   (`node bench/long-functions.mjs packages/web/src/chat`). Instantané du balisage
   (`chat-markup.test.tsx`).
 - Écrans (B-7, B-8, B-10, B-11) : rail (E-16), compositeur, permission (E-17) et feuille de

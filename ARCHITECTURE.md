@@ -378,9 +378,9 @@ failure, which becomes the helper's translated fallback (Q-4).
 (c) The three giants split by lifetime, not by line count: `useConversations` into the
 store of open conversations (`useOpenConversations`: state, load, reconcile), the live turn
 (`useTurn`: send, stop, hold, attach, cadence) and the tab/list actions (`useTabActions`:
-open, shut, archive, reorder, drafts) behind the same returned object, so `Chat` and the
+open, shut, archive, reorder, drafts) behind the same returned object (the three are local to `useConversations.ts`, only `useConversations` is exported), so `Chat` and the
 tests see no change; `Chat` into `Chat` (state and wiring), `ChatHeader`, `TabStrip`,
-`ConversationList`, `Thread`; `Composer` into `Composer`, `useUploads` and the existing
+`ConversationList`, `Thread`; `Composer` into `Composer`, `useUploads` (local to `Composer.tsx`) and the existing
 `ComposerFold` and `AttachmentTray`. Exports that tests import keep their names and paths.
 *Rejected*: a state library or a reducer rewrite (a new abstraction, a risk to the live
 turn); extending `requestJson` to streams (its result type is JSON by contract); leaving

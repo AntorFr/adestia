@@ -53,7 +53,7 @@ removes its throwaway data; in a script, start it in the background and keep its
 
 `--engine claude` runs a real turn instead (needs `CLAUDE_CODE_OAUTH_TOKEN`).
 See [bench/README.md](bench/README.md). The map of the code, the decisions (AD-n) and the
-needs and screens they cite (B-n, P-n, E-n: `docs/parcours.md`, `docs/ecrans.md`) are in
+needs and screens they cite (B-n, P-n, E-n: `docs/parcours.md`, `docs/ecrans.md`; the Q-n are the numbered audit list at the end of `docs/ecrans.md`; AD-13 belongs to another tranche and is not in this branch) are in
 [ARCHITECTURE.md](ARCHITECTURE.md).
 
 Either way, with no config file at all Adestia runs a single-user instance on
