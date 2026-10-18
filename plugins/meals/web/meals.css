@@ -215,7 +215,9 @@
 /* The detail ------------------------------------------------------------ */
 
 /* The detail is the shell's sheet (.adestia-sheet), written to the body by
-   the frise; only what is inside the panel is ours. */
+   the frise; only what is inside the panel is ours. Its height follows its
+   content, as the other plugins' sheets do, instead of the shell's fixed 720px. */
+.meals-sheet { height: auto; max-height: min(88vh, 720px); }
 .meals-sheet-lead { display: flex; align-items: baseline; gap: 9px; margin-bottom: var(--space-3, 12px); }
 
 .meals-desc { margin: 0 0 var(--space-3, 12px); color: var(--text); }

@@ -86,6 +86,17 @@ and exits non-zero naming each measure that failed (`check: base › mcp: …`).
 `bench/bench.mjs` finds Playwright under `/usr/lib/node_modules`, or else under
 `npm root -g`.
 
+## The plugins' screens, four skins × two languages: `bench/scenarios/plugins-matrix.mjs`
+
+`npm run build`, then `node bench/scenarios/plugins-matrix.mjs` (Playwright from the environment, no
+Docker). It launches `node bench/launch.mjs --engine fake --seed plugins --skin <s> --locale <l>` per
+skin and language, takes E-22 to E-31 and each state the seed shows (19 per variant, light and dark,
+desk and phone: 608 pictures in `bench/shots-plugins/` or `BENCH_OUT`), presses Escape on every window and
+checks the focus, and reads each screen's text for the other language. `BENCH_SKINS=alfred,dobby` narrows
+it; `BENCH_URL` (with `BENCH_SKIN`, `BENCH_LOCALE`) plays an instance already running. A full run takes
+about 25 minutes when the four skins run side by side (one process each, `BENCH_SKINS=<skin>`). Exit 1
+names each failing state.
+
 ## Every screen, both themes, both sizes: `bench/sweep.mjs`
 
 ```sh

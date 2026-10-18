@@ -4,13 +4,14 @@
  * only in var() fallbacks; radii and font sizes use the shell's steps.
  * Removing an outline requires a replacement 2px ring in the same rule.
  *
- * Each migrated plugin adds its name on its own line, alphabetically. The
- * final tranche checks coverage; an empty list is intentional at the start.
+ * Each plugin with a web folder is in CHECKED, one name per line,
+ * alphabetically: the last test below fails on a folder the list forgets and
+ * on a name with no folder.
  * To exercise this gate with a bad sheet:
  * PLUGIN_CSS_FIXTURE=plugins/test/fixtures/alias.css node --test plugins/test/css.test.js
  */
 import assert from 'node:assert/strict'
-import { readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
@@ -113,6 +114,15 @@ const sheets = CHECKED.flatMap((id) => {
   return readdirSync(web).filter((name) => name.endsWith('.css')).map((name) => join(web, name))
 })
 if (process.env.PLUGIN_CSS_FIXTURE) sheets.push(resolve(process.env.PLUGIN_CSS_FIXTURE))
+
+test('CHECKED names every plugin that ships a web folder', () => {
+  const withWeb = readdirSync(join(root, 'plugins'), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && existsSync(join(root, 'plugins', entry.name, 'web')))
+    .map((entry) => entry.name)
+    .sort()
+  assert.deepEqual([...CHECKED].sort(), withWeb)
+  assert.deepEqual(CHECKED, [...CHECKED].sort(), 'CHECKED stays alphabetical')
+})
 
 test('plugin styles keep the shell token contract', () => {
   const errors = sheets.flatMap(faults)

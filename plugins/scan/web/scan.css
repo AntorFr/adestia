@@ -2,7 +2,7 @@
    focus handed back), one step above the sheets. The video covers the sunken
    surface; it only shows while the camera starts. */
 .scan-overlay { position: fixed; inset: 0; z-index: calc(var(--z-sheet) + 1); display: flex; flex-direction: column; background: var(--surface-sunken); }
-.scan-video { flex: 1; width: 100%; object-fit: cover; }
+.scan-video { flex: 1 1 0; min-height: 0; width: 100%; object-fit: cover; }
 .scan-panel { padding: var(--space-3); background: var(--surface-raised); border-top: 1px solid var(--border); }
 .scan-basket { list-style: none; margin: 0 0 var(--space-3); padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); min-height: 28px; }
 .scan-code { display: inline-flex; align-items: center; gap: var(--space-1); padding: 2px var(--space-2); border: 1px solid var(--border); border-radius: var(--radius-pill); font-family: var(--font-mono); font-size: var(--text-sm); color: var(--text); }

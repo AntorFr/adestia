@@ -10,7 +10,11 @@
  * The scrim is created once and handed to the host, which places it in the
  * plugin's own subtree: unmounting the view takes it away, where a node on
  * `document.body` would have to be swept by hand (the leak the predecessor
- * left behind on every navigation).
+ * left behind on every navigation). While it is OPEN it moves to the body:
+ * the shell folds its panes with transforms on a phone, and a fixed element
+ * inside one is fixed to THAT pane — the sheet came out half off the screen,
+ * seen on the bench. Closing puts it back where the host placed it, and the
+ * view closes it when it unmounts, so nothing stays on the body.
  */
 
 /** The shell mounts the sprite once; a plugin shares its names, not its code. */
@@ -33,6 +37,7 @@ export function makeSheet(t) {
   let panel = null
   let opener = null
   let onClose = null
+  let home = null
 
   function onKey(event) {
     if (event.key === 'Escape') {
@@ -67,6 +72,9 @@ export function makeSheet(t) {
     document.removeEventListener('keydown', onKey, true)
     scrim.hidden = true
     scrim.replaceChildren()
+    if (home?.isConnected) home.append(scrim)
+    else scrim.remove()
+    home = null
     panel = null
     const back = opener
     const done = onClose
@@ -89,7 +97,7 @@ export function makeSheet(t) {
     if (!scrim.hidden) close()
     opener = from ?? null
     onClose = closed ?? null
-    panel = node('div', 'adestia-sheet__panel voyages-sheet')
+    panel = node('div', 'adestia-sheet__panel voyages-sheet voyages')
     panel.setAttribute('role', 'dialog')
     panel.setAttribute('aria-modal', 'true')
     const head = node('header', 'adestia-sheet__head')
@@ -113,6 +121,8 @@ export function makeSheet(t) {
     panel.append(head, body, foot)
     scrim.replaceChildren(panel)
     scrim.hidden = false
+    home = scrim.parentElement
+    document.body.append(scrim)
     document.addEventListener('keydown', onKey, true)
     x.focus()
     return { panel, body, foot }

@@ -768,6 +768,8 @@ export default function createVoyagesApp(api) {
   return {
     /** The dialog the host must place in this plugin's subtree. */
     modal: sheet.scrim,
+    /** Closes the card's sheet, which lives on the body while open, when the view goes. */
+    closeSheet: sheet.close,
     hub: renderHub,
     voyage: renderVoyage,
   }

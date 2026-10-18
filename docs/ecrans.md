@@ -182,28 +182,31 @@ columns are the same except where the instance's configuration decides what exis
 | E-19 | background trouble, refused, degraded, an icon per kind; absent when nothing | — |
 | E-20 | single state | — |
 | E-21 | the fatal gate drawn, with a wifi-off icon when the failure is a thrown fetch, and the browser's network error | an offline screen; an offline banner once the shell is open (kept, recommendations) |
-| E-22 | loading, empty, error, conflict, sheet | — |
-| E-23 | loading, empty, error, clock off | — |
-| E-24 | loading, no journal, empty journal, conflict, editing | — |
-| E-25 | hub, empty ("Aucun workbook…"), per-section empties, full-screen bench mode | loading, error; any English |
-| E-26 | loading, no trip, empty tray, detail modal, dismissed list | — |
-| E-27 | loading, empty, no sources, error, conflict | — |
-| E-28 | map, no route in the address, no points, walking HUD | loading |
-| E-29 | loading, empty, conflict, detail modal | — |
-| E-30 | camera live, codes listed; camera failure said in the composer | in-overlay error state |
+| E-22 | loading, empty, error, conflict, sheet (a view with a named back: « Todo ») | Escape on the task sheet does nothing (kept: it is a view, not a dialog) |
+| E-23 | loading, empty, error, clock off | the notes' problem sentences (`carries both …`, `the note is empty …`) reach the screen in English on every instance (kept, Known defects) |
+| E-24 | loading, no journal, empty journal, conflict, editing; back « Journals » / « Journaux » | — |
+| E-25 | hub, empty (in both languages), per-section empties, piece sheet (shared sheet), full-screen bench mode with an exit that names where it leads | loading, error (kept, recommendations); the native `confirm()` before a layout reset (kept, B-1) |
+| E-26 | loading, no trip, empty tray, card sheet (shared sheet), dismissed list | the native `window.alert` of a refused gesture (kept, B-1) |
+| E-27 | loading, empty, no sources, error, conflict | a source's failure reason is the server's raw text (`fetch failed`), in English on every instance (kept, Known defects) |
+| E-28 | map, no route in the address, no points, walking HUD with an exit that names where it leads | loading (kept, a recommendation); the walking map keeps the size it was drawn at before the walk (kept, Known defects) |
+| E-29 | loading, empty, conflict, dish sheet (shared sheet) | — |
+| E-30 | camera live, codes listed; camera failure said in the composer | in-overlay error state (kept: a refusal never reaches the overlay); on a phone the focus does not go back to the scan button, which the composer's fold has removed (kept, Known defects) |
 | E-31 | timeline, status, no dated page, no sub-project | — |
 
-## Target of the plugins tranche
+## The plugins' screens, as built
 
 Screens E-22 to E-31, after `adestia-qualite-plugins` (which follows the charter tranche:
 tokens, `.adestia-sheet*`, `.adestia-icon`, `--z-sheet` and `--on-accent` of `docs/charte.md`
-§ 7 exist). **B-1 binds this section**: what a plugin does, its routes, its API, its
-manifests, the prompts its ✦ buttons send to the agent and the files it writes do not change.
-What changes is what is seen: the colours and sizes it reads, the form of its dialogs, the
-name of its backs, and the language of its words. No state, control or screen is added or
-removed; no screen is redrawn (there is no mock-up: each screen keeps its layout, and the bench
+§ 7 exist). **B-1 bound the tranche**: what a plugin does, its routes, its API, its
+manifests, the prompts its ✦ buttons send to the agent and the files it writes did not change.
+What changed is what is seen: the colours and sizes it reads, the form of its dialogs, the
+name of its backs, and the language of its words. No state, control or screen was added or
+removed; no screen was redrawn (there is no mock-up: each screen keeps its layout, and the bench
 captures of § "Captures" are the reference). Where `docs/charte.md` says otherwise, this
-section wins for plugin screens.
+section wins for plugin screens. The rules below are the ones the screens keep now: the token
+rules live on in the header of `plugins/test/css.test.js`, which `npm run test:plugins` runs
+over every plugin that ships a `web/` folder (a test compares its `CHECKED` list to those
+folders), and the words in `plugins/test/words.test.js`.
 
 ### Tokens (B-9, Q-17, Q-16, Q-18)
 
@@ -404,8 +407,7 @@ closed by the tranche, each by the plugin's own word table (AD-8: tables stay co
   plugin's French table (read as the shell reads it, through the manifest's facet modules — the test already does) and fails on a *tu*, *te*, *ton*, *ta*, *tes*, *toi* or apostrophe-elided *t'* (`t’`)
   outside a quotation, and on a sentence a plugin says with no French entry, or an entry nobody says (the English text is the
   key, so `en` needs no table); the test already covers both for the plugins that have a table, the atelier joining
-  it with its table, and the tranche adds the *tu* rule, with a list of the two plugins that still have a
-  *tu* line, each emptied by that plugin's task.
+  it with its table; the *tu* rule is in it too, and its list of exceptions (`TU_A_CORRIGER`) is empty.
 - **Format sentences** that join a value and a word (`%n late`, `from %n`) keep their `%` placeholders:
   the table is the only place a sentence's word order is decided.
 
@@ -461,8 +463,9 @@ bench captures).
 
 ### Captures (the exit's proof)
 
-The tranche adds `bench/scenarios/plugins-matrix.mjs` (a module that reads `BENCH_URL` and
-`BENCH_OUT`, in the manner of the pages tranche's matrix) over the bench's `plugins` seed: for each
+`bench/scenarios/plugins-matrix.mjs` (`npm run build`, then `node bench/scenarios/plugins-matrix.mjs`;
+`BENCH_OUT` names the folder, `BENCH_SKINS` narrows the skins, `BENCH_URL` plays one skin and language
+on an instance already running; it starts its own otherwise) plays the bench's `plugins` seed: for each
 of the four skins × `en` and `fr` × light and dark × desktop (1440×900) and phone (390×844), one
 capture per plugin screen, plus each state the screen lists that the seed can show (the task sheet,
 an open sheet of voyages, meals and atelier, the atelier bench mode, the walking HUD, the scan overlay
@@ -470,7 +473,26 @@ with the faked camera stream), and a keyboard check per dialog: press Escape, as
 that focus is back on the opener. The language check is a scan in the same module: on an `en`
 instance, no text node of a plugin screen contains an accented letter or one of a short list of
 French stop-words (« le », « la », « des », « pour », « avec ») outside the seeded user content; on
-`fr`, none of the English counterparts of the plugin tables.
+`fr`, none of the English counterparts of the plugin tables. What the seed wrote (and the examples a
+plugin ships) is content, never read as an interface word. It exits 1 naming each failing state.
+The pictures are then LOOKED at, and what they showed is under « What the captures found » below.
+
+**What the captures found** (the matrix takes 608 pictures, 19 states on each of 32 variants; every screen
+and state was looked at, in light and dark, on desk and phone, across the four skins and both languages):
+
+- *Fixed, in the plugin's own sheet.* E-26's card sheet came out half off the screen on a phone: the
+  shell folds its panes with a `translateX(-50%)`, and a fixed element inside one is fixed to that pane,
+  so `voyages/web/sheet.js` now carries its scrim to the body while it is open and puts it back on
+  closing (the view closes it when it unmounts), and its panel keeps the `voyages` class its rules
+  are scoped under (a document link in the sheet had come out in the browser's blue). E-30's panel
+  with « Cancel » and « Add to message » was pushed below the screen by a tall camera image
+  (`scan.css`: the video takes the space left and may shrink). E-29's dish sheet filled the shell's
+  fixed 720 px for three lines (`meals.css`: the height follows the content, as the atelier's and
+  voyages' do).
+- *Seen and kept*, written under Known defects of `ARCHITECTURE.md`: the shell's `‹ Back` in English on
+  a French instance; the English sentences planif and the listening post show from the server;
+  the walking map that keeps its pre-walk size (E-28); the focus lost on closing the scan overlay on a
+  phone; the workbook's own words under `en`.
 
 ### Kept, written here (B-1, mandate principle 3)
 
@@ -676,11 +698,12 @@ What a capture sweep (target of B-3) needs so every state above shows; what to s
 8. **Q-8 — Plugins with no or ad-hoc locale.** Atelier is French-only (no `api.locale`, no
    table) and uses `confirm()`; parcours and project-management switch with inline
    `fr ? … : …`; others use a `WORDS` table — three patterns. E-25, E-28, E-31.
+   **closed** for the plugins' screens: every plugin says its words through a table keyed by the English sentence (the atelier has its own `web/words.js`; parcours and project-management read one table each), the French is *vous*, and the matrix finds no French on an `en` instance and no table word in English on a `fr` one. **kept: what is not a word of the screen** — the atelier's rule messages (`regles.js` › `valide`, which go to the CLI and the MCP tools), the prompts sent to the agent, the owner's status words *Green, Amber, Red*; and the sentences the server hands the screen as data (E-23's problems, E-27's failure reasons), under Known defects.
 9. **Q-9 — Undefined tokens.** `--text-xs` (`chat.css`, three uses, no fallback),
    `--radius-md` (`conversations.css`, fallback 8px), `--on-accent` (`voyages.css`, fallback
    `#fff`). `atelier.css` reads `--lc` that nothing sets (rule `.lcard .bar i`, also unused
    markup). E-16, E-26, E-25.
-   **closed** for the shell's tokens: `--text-xs` and `--on-accent` are defined in `tokens.css`, so the `--text-xs` uses of `chat.css` and the `--on-accent` of `voyages.css` resolve. **kept: `--radius-md`** stays undefined on purpose; its one use (`conversations.css`) moves to `--radius-sm` in the chat tranche. **kept: `--lc`** (`atelier.css`, a rule with no markup) goes with the plugins tranche.
+   **closed** for the shell's tokens: `--text-xs` and `--on-accent` are defined in `tokens.css`, so the `--text-xs` uses of `chat.css` and the `--on-accent` of `voyages.css` resolve. **kept: `--radius-md`** stays undefined on purpose; its one use (`conversations.css`) moves to `--radius-sm` in the chat tranche. **kept: `--lc`** (`atelier.css`, a rule with no markup) goes with the plugins tranche. *(closed there: `--lc` is read by no plugin sheet.)*
 10. **Q-10 — Seven dialog implementations.** `.adestia-sheet` (E-12, E-18; scrim
     `rgb(0 0 0 / 0.45)`, z 100), `.adestia-blockset` (E-5, E-6; popover), `.adestia-cog__panel`
     (E-15; z 40), `.meals-modal` (E-29; `color-mix(#000 45%)`, z 40), `.atelier-modal`
@@ -688,11 +711,12 @@ What a capture sweep (target of B-3) needs so every state above shows; what to s
     55%)` + blur, z 60), `.scan-overlay` (E-30; `#000`, z 100). Escape is handled by the cog,
     the signature sheet and the block bar; **not** by `CataloguePopin.tsx`. Only one scrim
     uses `--scrim`.
-    **closed** for E-12: `CataloguePopin.tsx` is the shared `<Sheet>` (one scrim `--scrim`, one z-index, Escape, focus trapped and returned, a bottom sheet under 820 px), and the cog menu (E-15) is a `<Popover>`. **kept: E-18's markup** (the sheet rules moved to the shared sheet, `Signatures.tsx` unchanged until the chat tranche), the block popovers E-5 and E-6 (pages), and the plugin dialogs `.meals-modal`, `.atelier-modal`, `.atelier-full`, `.vmodal`, `.scan-overlay` (plugins).
+    **closed** for E-12: `CataloguePopin.tsx` is the shared `<Sheet>` (one scrim `--scrim`, one z-index, Escape, focus trapped and returned, a bottom sheet under 820 px), and the cog menu (E-15) is a `<Popover>`. **kept: E-18's markup** (the sheet rules moved to the shared sheet, `Signatures.tsx` unchanged until the chat tranche) and the block popovers E-5 and E-6 (pages). **closed** for the plugins: the piece (E-25), card (E-26) and dish (E-29) dialogs are the shared sheet (`.adestia-sheet`, one scrim, `--z-sheet`, a close button, Escape, focus returned), each carrying its own copy of the contract (AD-14 b); `.meals-modal`, `.atelier-modal` and `.vmodal` are gone. **kept: E-25's bench mode (`.atelier-full`) and E-30's camera (`.scan-overlay`)** as full-screen modes, one z-index above the sheet, with the same contract (dialog, Escape, focus returned) and an exit that names where it leads.
 11. **Q-11 — Close glyph.** `✕` (`Chat.tsx` connect hide, `Signatures.tsx`,
     `CataloguePopin.tsx`, `blockview.tsx`, listening-post, meals, atelier, parcours, voyages)
     vs `×` (`Chat.tsx` tab close, `Composer.tsx`, `PageSettings.tsx`, `BlockSettings.tsx`,
     scan, journal).
+    **closed** for the plugins: no control of E-22 to E-31 draws `✕` or `×`; the close controls are the `x` icon (the `×` left in the atelier's and the fiches' text is a dimension sign).
     **closed** for the charter's screens: the close controls there are the `x` icon, and the new/edit/restart glyphs are icons too. **kept: the chat, pages and plugin controls** (`Chat.tsx`, `Composer.tsx`, `Signatures.tsx`, `blockview.tsx`, `PageSettings.tsx`, `BlockSettings.tsx` and the plugins) keep `✕` and `×` until their tranches move them to the icon.
 12. **Q-12 — Two ways back.** The shell's `‹ Back` above every plugin view goes home, and
     plugins add their own: `journal-back` `‹ Journals` (E-24), `todo-back` `‹` in the task
@@ -700,6 +724,7 @@ What a capture sweep (target of B-3) needs so every state above shows; what to s
     `‹ Back` is untranslated (Q-4). No two backs lead to the same place. The rule (`B-9`): each
     back is labelled by its destination (the shell's says home); none is removed; no target
     changes.
+    **closed** for the plugins: every back of E-22 to E-31 names where it leads (« Todo », « Journals », « Leave the bench mode », « Leave walking mode », see Backs) and the sheets' close button says « Close ». **kept: the shell's own `‹ Back`** above a plugin view (the pages tranche's), still English on a French instance (Known defects).
 13. **Q-13 — Contrast.** `--text-faint` is used as text colour about 100 times and reaches
     2.3–2.6:1 in light, 2.6–3.1:1 in dark. In light, `--accent` (3.4–3.8:1), `--success`
     (3.0–3.4:1), `--warning` (3.3–3.8:1) and `--danger` (3.9–4.4:1) used as text are under
@@ -727,11 +752,12 @@ What a capture sweep (target of B-3) needs so every state above shows; what to s
     vocabulary (`--ink`, `--line`, `--f-mono`, `--r-xs`…), voyages a few more; raw colours
     in plugin CSS (voyages 10, meals 6, todo 4 incl. `#fff`, pm 3) and in `chat.css` (sheet
     scrim). E-22–E-31.
+    **closed**: no plugin stylesheet defines a second vocabulary, a literal colour outside a `var()` fallback, `999px` or a literal font size; `plugins/test/css.test.js` holds it for every plugin that ships a `web/` folder, and a test compares its `CHECKED` list to those folders. **kept: the plugins' own buttons and fields** do not adopt `.adestia-btn` / `.adestia-field` (a redesign), except the backs, the exits and the sheets' close button, and the five breakpoints other than 820 px (see Kept).
 18. **Q-18 — No global keyboard focus.** No `:focus-visible` rule in `tokens.css`; about a
     dozen local ones. `outline: none` in `home.css` (`.adestia-search input`, E-3),
     `editor.css` (`.adestia-editor__title:focus`, E-4), `todo/app.css` (three rules, E-22),
     `skins/dobby/skin.css`.
-    **closed** for the rule: `tokens.css` carries one global `:focus-visible` ring. **kept: the `outline: none` of `home.css` (`.adestia-search input`) and `editor.css` (`.adestia-editor__title:focus`)** (pages) and of `todo/app.css` (plugins), each to be given a visible replacement by its tranche; Dobby's skin no longer has one.
+    **closed** for the rule: `tokens.css` carries one global `:focus-visible` ring. **kept: the `outline: none` of `home.css` (`.adestia-search input`) and `editor.css` (`.adestia-editor__title:focus`)** (pages), each to be given a visible replacement by its tranche; Dobby's skin no longer has one. **closed** for the plugins: `todo/app.css` has no `outline: none` left, and `css.test.js` refuses one without a 2px ring.
 19. **Q-19 — Dark palette written twice.** `tokens.css` repeats the whole dark palette in
     the `prefers-color-scheme: dark` block and in `:root[data-theme='dark']`.
     **closed**: the dark palette is written once, as `light-dark()`; the `prefers-color-scheme` and `[data-theme='dark']` blocks of `tokens.css` redeclare only the geometry of `--shadow` and `--shadow-lg`.

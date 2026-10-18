@@ -197,6 +197,8 @@ export default function view(api) {
       })()
       return () => {
         cancelled = true
+        // An open sheet is on the body, outside the subtree the view takes away.
+        engine.current?.closeSheet?.()
       }
     }, [tick])
 
