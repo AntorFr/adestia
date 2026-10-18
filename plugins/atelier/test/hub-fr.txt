@@ -404,7 +404,7 @@ long.
 [title] Bande debout (tronçons empilés) ou couchée
 ⇄ debout
 [title] Sortez d’abord ses 1 pièce(s)
-✕ Supprimer
+Supprimer
 ＋ Colonne
 PLAQUE P1
 Mélaminé blanc 19 · 4 pièces
@@ -464,7 +464,7 @@ P1B3 · 600
 débité ✓
 arête à plaquer (chant)
 clic colonne → détail/débiter · clic sur le nom → la pièce
-✕
+Quitter le mode atelier
 Plaque P1 · refente
 P1-REF-1
 bandes 600 · 600 · 600 mm
@@ -505,7 +505,7 @@ P1B3 · 600
 débité ✓
 arête à plaquer (chant)
 clic colonne → détail/débiter · clic sur le nom → la pièce
-✕
+Quitter le mode atelier
 Plaque P1 · tronconnage
 P1-TR-1
 C1-COTE-G
@@ -548,7 +548,7 @@ P1B3 · 600
 débité ✓
 arête à plaquer (chant)
 clic colonne → détail/débiter · clic sur le nom → la pièce
-✕
+Quitter le mode atelier
 Terminé 🎉
 4 étapes faites
 
@@ -575,7 +575,7 @@ tronconnage
 ✓
 P1-TR-3
 tronconnage
-✕
+Quitter le mode atelier
 Terminé 🎉
 4 étapes faites
 

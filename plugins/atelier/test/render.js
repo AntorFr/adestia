@@ -50,7 +50,7 @@ export function said(root) {
 export function screen(dom) {
   const { document } = dom.window
   const parts = [said(document.querySelector('.atelier-page'))]
-  for (const node of document.querySelectorAll('body > .atelier-modal, body > .atelier-full')) {
+  for (const node of document.querySelectorAll('body > .atelier-sheet, body > .atelier-full')) {
     if (!node.hidden) parts.push(said(node))
   }
   return parts.filter(Boolean).join('\n')
@@ -137,10 +137,10 @@ export async function tour(options) {
   await click('.wbtab', 0)
   await click('.colc')
   snap('column sheet')
-  await click('.atelier-modal .actions button', 1)
+  await click('.atelier-sheet .actions button', 1)
   await click('.pname')
   snap('piece sheet')
-  await click('.atelier-modal .actions button', 1)
+  await click('.atelier-sheet .actions button', 1)
   await click('#wbedit')
   snap('edit, nothing selected')
   press('.dragp')
