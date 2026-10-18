@@ -116,14 +116,15 @@ async function nativeControls(page) {
   })
 }
 
-/** controls whose whole text is a typographic character standing for an icon */
+/** controls whose text holds a typographic character standing for an icon (docs/charte.md: one icon set, no glyph) */
 async function glyphControls(page) {
   return page.evaluate(() => {
-    const re = /^[‹›✎⚙↺▥▤✕✓✗×⠿▸▾▴★☆⌕⋮＋↑■◆]+$/u
+    const re = /[‹›✎⚙↺▥▤✕✓✗×⠿▸▾▴★☆⌕⋮＋↑■◆]/u
     const out = []
     for (const el of document.querySelectorAll('main button, main summary, main a, .adestia-popover button')) {
       const box = el.getBoundingClientRect()
       if (box.width === 0 || box.height === 0) continue
+      if (el.closest('.adestia-tile')) continue // a tile's icon is the author's emoji
       const text = (el.textContent || '').trim()
       if (re.test(text)) out.push(`${el.tagName.toLowerCase()} "${text}"`)
     }
