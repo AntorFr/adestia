@@ -415,7 +415,7 @@ const FR: Readonly<Record<string, string>> = {
   'Signature ceremony': 'Cérémonie de signature',
   'Open in a tab': 'Ouvrir dans un onglet',
   'If the passkey does not open here, sign in a tab instead.':
-    'Si la passkey ne s’ouvre pas ici, signe dans un onglet.',
+    'Si la passkey ne s’ouvre pas ici, signez dans un onglet.',
   'Signed — resume the held call with': 'Signé — reprends l’appel suspendu avec',
   'The conversation could not be created.': 'La conversation n’a pas pu être créée.',
   'Agent credential': 'Jeton de l’agent',

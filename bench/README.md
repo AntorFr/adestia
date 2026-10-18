@@ -50,11 +50,22 @@ which stops it and removes its data. Browse the URL, or drive it by API
 | `--seed` | What it shows |
 |---|---|
 | `base` | The populated instance: 20+ pages in two stores (every core block, a lost and an ambiguous wikilink, a vocabulary the product refuses to save, an unreadable frontmatter, a stray `app:`, files, two collections), conversations (running, unread, idle, archived, long, medium, a thread with every bubble state), six MCP servers in every health, instructions and three catalogues (importable, empty, unreachable), four delegations from two callers, a brief, a stored credential, a refused plugin and a plugin delivering a skill. No settings route: E-14 says it does not expose its configuration. |
+| `chat-permission` | E-17/E-18: isolated desk/phone threads, pending/signed/denied/expired signatures, questions with and without a lasting rule; `permissions.mode: ask` also supports the real-Claude proof. |
 | `config-writable` | `base`, with the configuration file the screen reads and writes. |
 | `config-readonly` | `base`, with the file read-only and the credential refused upstream. A process running as root can write a `0444` file: the screen then shows it writable. |
 | `oidc` | `base` behind a sign-in; the provider is `bench/oidc-stub.mjs`. |
 | `empty` | Nothing: no plugin, page, conversation, server, catalogue or credential. |
 | `plugins` | The ten bundled plugins active, each with data in its own format (`bench/seed/_plugins.mjs`): tasks and lists (late, today, later, closed, unassigned), planif notes (valid, disabled, invalid, with a last run; the clock stays off), journals (with entries, empty), a derived atelier workbook, trips (confirmed, suggested, dismissed, an idea without dates, a closed one), a watchlist (sources, a local feed the seed serves, a source that fails, kept items with transcripts, a pasted link, a dismissed one), a route with its trace, meals periods (with and without dates), a project planning (dated sub-pages, statuses, an unreadable date, an undated folder) and a page for the scan feature. `bench-noview` is an app with a tile and no view: `#/bench-noview` is E-20. The camera of E-30 is the browser's: launch Chromium with `--use-fake-device-for-media-stream --use-fake-ui-for-media-stream`. No MCP server and no refused plugin, so no band sits over a screen; the trips' map key is a placeholder. |
+
+The permission/signature matrix runs with
+`node bench/scenarios/chat-matrix.mjs bench/scenarios/chat-permission.mjs` after the build.
+It checks the sheet's Escape/focus return, the absence of Always without a rule, and
+captures the ceremony and its fallback hint. For the real engine, start
+`node bench/launch.mjs --engine claude --seed chat-permission --locale fr`, then run
+`BENCH_URL=<printed-url> node bench/scenarios/chat-permission-live.mjs`. The latter sends
+the file-creation prompt from the composer, answers any questions, compares the UTF-8
+stream text to the stored transcript exactly, and compares live/stored prose after reload.
+Its JSON report records the number of real questions; no question is also a valid outcome.
 
 The chat states are asked for by typing their word (`bench/seed/_scripts.mjs`):
 `fini`, `outil`, `erreur`, `permission` (waits), `signature`, `en cours`
