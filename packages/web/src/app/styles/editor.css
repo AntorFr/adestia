@@ -105,6 +105,8 @@
   font-family: var(--font-mono);
   color: var(--text-faint);
   margin-right: var(--space-2);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .adestia-editor__raw {

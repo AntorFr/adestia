@@ -15,3 +15,12 @@ describe('the reader, editor and Crepe sheets draw their type from the --text-* 
     })
   }
 })
+
+describe('a diagnostic’s line number stays on one line', () => {
+  it('.adestia-diagnostics__line does not wrap or shrink in its flex row', () => {
+    const css = readFileSync(join(styles, 'editor.css'), 'utf8')
+    const rule = /\.adestia-diagnostics__line\s*\{([^}]*)\}/.exec(css)?.[1] ?? ''
+    expect(rule).toMatch(/white-space:\s*nowrap/)
+    expect(rule).toMatch(/flex-shrink:\s*0/)
+  })
+})
