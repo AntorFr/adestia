@@ -94,9 +94,9 @@ is labelled with the destination. Plugins with sub-screens add their own back (E
 | E-2 | Home | `#/` | `app/Home.tsx`, `Brief.tsx`, `Domains.tsx`, `Tile.tsx`, `useReorder.ts`, `SkinSlot.tsx` (hero), `styles/home.css`, `tiles.css` | Greeting and "ask" button (focuses the composer), the agent's brief (« À la une »), the Domains mosaic (plugin tiles, folder tiles, the Settings tile), Arrange mode | P-4, P-11 |
 | E-3 | Section | `#/section/<folder>` | `app/Section.tsx`, `sections.ts`, `styles/home.css` | A folder: header, stores, sub-rooms (`Inside`), searchable and facetable page cards, `Finished` archive | P-4 |
 | E-4 | Page (reader and editor) | `#/page/<path>` | `editor/Editor.tsx`, `useAutosave.ts`, `SaveStatus.tsx`, `Reader.tsx`, `reader/`, `milkdown.ts`, `toolbar.ts`, `slash.ts`, `blockview.tsx`, `frontmatterview.tsx`, `Attachments.tsx`, `usePage.ts`, `styles/editor.css`, `reader.css`, `crepe.css` | Read a page (rendered blocks, wikilinks, attachments strip); the `pencil` control opens the Milkdown editor with toolbar, slash menu, block bars; autosave; `Done` | P-5, P-6 |
-| E-5 | Page properties popover | ⚙ on the frontmatter strip in the editor | `editor/PageSettings.tsx`, `pageform.ts`, `frontmatterview.tsx` | Edit frontmatter as a form drawn from declared fields | P-6 |
-| E-6 | Block settings popover | ⚙ on a block bar in the editor | `editor/BlockSettings.tsx`, `blockview.tsx` | Edit a `:::block`'s attributes, title, icon, frame, width; remove stray attributes | P-6 |
-| E-7 | Collection page | a page with `type: collection` | `app/Collection.tsx` (`CollectionLayout`, `CollectionShell`), `collections.ts`, `styles/collection.css` | A page listing its members as cards with facets, a `Ask for a new page` button, `Everything here is finished.` | P-5 |
+| E-5 | Page properties popover | `settings` on the frontmatter strip in the editor | `editor/PageSettings.tsx`, `pageform.ts`, `frontmatterview.tsx` | Edit frontmatter as a form drawn from declared fields | P-6 |
+| E-6 | Block settings popover | `settings` on a block bar in the editor | `editor/BlockSettings.tsx`, `blockview.tsx` | Edit a `:::block`'s attributes, title, icon, frame, width; remove stray attributes | P-6 |
+| E-7 | Collection page | a page with `type: collection` | `app/Collection.tsx` (`CollectionLayout`, `CollectionShell`), `collections.ts`, `styles/collection.css` | A page listing its members as cards with facets, an `Ask for a new page` button, `Everything here is finished.` | P-5 |
 | E-8 | Missing page | `#/page/<path>` refused (404, 401/403, other) | `app/MissingPage.tsx`, `styles/missing-page.css` | Name the address, say which refusal, link to the folder above | P-5 |
 | E-9 | Settings mosaic | `#/settings` | `app/Preferences.tsx`, `Tile.tsx` | Four tiles: MCP servers, Instructions, Configuration, Delegations, with counts | P-8, P-9, P-10, P-13 |
 | E-10 | MCP servers | `#/settings/mcp[/<name>]` | `app/McpServers.tsx`, `Settings.tsx` (`useMcpServers`), `styles/settings.css` | List servers with health; open one: state, per-person OAuth connect, JSON declaration editor, Save, Remove, add | P-8 |
@@ -154,12 +154,12 @@ columns are the same except where the instance's configuration decides what exis
 |---|---|---|
 | E-1 | loading (`LoadingGate`: spinner and "Loading…"), sign-in, refused, fatal; four cards with an icon each, every string through `t()` | — |
 | E-2 | loading (`.adestia-loading`, spinner and translated Loading…), normal, shared empty state (after ready), with/without brief, with/without hero, Arrange mode | — |
-| E-3 | normal, no match ("Nothing matches."), empty ("This section holds nothing yet."), finished archive, multi-store marks | loading (index-driven, renders whatever is held) |
+| E-3 | normal, shared empty/no-match states ("This section holds nothing yet." / "Nothing matches."), facet chips, finished archive, multi-store marks | loading (index-driven, renders whatever is held) |
 | E-4 | reading, editing, saving/saved/"tidied", conflict (`.adestia-save--warn`), rejected, failed, read-only (`.adestia-editor__readonly` + raw source), diagnostics, drop zone, lost/ambiguous wikilink, unknown block, missing `from=` | a loading state while the page is fetched (previous screen stays); an empty-page state |
-| E-5 | normal, broken frontmatter (nothing editable), unknown fields, kept-as-written | — |
-| E-6 | normal, required attributes missing, stray attributes | — |
-| E-7 | normal, all finished | empty collection state distinct from "all finished" |
-| E-8 | 404, 401/403, other | a retry for the "server could not" case |
+| E-5 | shared popover/fields, normal, broken frontmatter (nothing editable), unknown fields, kept-as-written | — |
+| E-6 | shared popover/fields, normal, required attributes missing, stray attributes | — |
+| E-7 | normal, shared all-finished state inside a facet, count chips | empty collection state distinct from "all finished" |
+| E-8 | shared empty state: 404 (`file-question`), 401/403 (`lock`), other (`circle-alert`) | a retry for the "server could not" case |
 | E-9 | normal, tiles with Lucide icons; counts absent when unreadable | loading (tiles first render without counts; kept, a recommendation) |
 | E-10 | list, empty ("None wired yet…", shared empty state), health tones each with an icon, needs-auth, connected/not, shadowed, read-only declaration, saving/saved/failed | loading; a confirmation before Remove (kept, recommendations) |
 | E-11 | list, empty, no match, file open, delivered (read-only, lock icon), saving/saved/failed, the name sheet for a new skill or agent | loading (kept, a recommendation) |
