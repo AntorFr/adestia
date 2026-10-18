@@ -353,6 +353,8 @@
   overflow-wrap: anywhere;
 }
 
+.adestia-ask__text > .adestia-icon { color: var(--warning-text); margin-right: var(--space-2); vertical-align: text-bottom; }
+
 .adestia-ask__reason {
   margin: 0 0 var(--space-3);
   font-size: var(--text-xs);
@@ -364,22 +366,6 @@
   flex-wrap: wrap;
   gap: var(--space-2);
   justify-content: flex-end;
-}
-
-.adestia-ask button {
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-strong);
-  background: var(--surface-raised);
-  color: var(--text);
-  font: inherit;
-  cursor: pointer;
-}
-
-.adestia-ask__always {
-  background: var(--accent);
-  color: var(--on-accent);
-  border-color: var(--accent);
 }
 
 /* A signature asked for at the hub's façade -------------------------------- */
@@ -406,7 +392,7 @@
   color: var(--text-muted);
 }
 
-.adestia-sign__glyph { flex: none; font-size: var(--text-lg); }
+.adestia-sign__glyph { flex: none; display: inline-flex; font-size: var(--text-lg); }
 
 .adestia-sign__text {
   flex: 1 1 auto;
@@ -424,23 +410,6 @@
 }
 
 .adestia-sign__actions { flex: none; display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: flex-end; }
-
-.adestia-sign button {
-  white-space: nowrap;
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-strong);
-  background: var(--surface-raised);
-  color: var(--text);
-  font: inherit;
-  cursor: pointer;
-}
-
-.adestia-sign__go {
-  background: var(--accent) !important;
-  color: var(--on-accent) !important;
-  border-color: var(--accent) !important;
-}
 
 /* The sign-in card — a server wants THIS person connected ------------------ */
 
@@ -583,4 +552,11 @@
 @media (max-width: 400px) {
   .adestia-chat__header { gap: var(--space-1); padding: var(--space-2); }
   .adestia-chat__header .adestia-brandname { max-width: 4em; }
+}
+
+/* A decision's actions keep their room on a narrow chat rail. */
+@media (max-width: 820px) {
+  .adestia-sign { flex-wrap: wrap; }
+  .adestia-sign__text { flex-basis: calc(100% - var(--space-3) - var(--text-lg)); }
+  .adestia-sign__actions { margin-left: auto; }
 }
