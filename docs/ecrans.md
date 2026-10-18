@@ -14,7 +14,8 @@
 > (E-2, E-14) — coherence, not behaviour (`B-1`). Every `Q-n` is either closed by its tranche
 > or written "kept: <reason>". The charter tranche (`adestia-qualite-charte`) is done: E-1,
 > E-9 to E-15, E-19 and E-21 are described as built; the Q-n it closes say so, and the part
-> of a Q-n that belongs to the chat, pages or plugins tranche stays open under its name.
+> of a Q-n that belongs to the chat or plugins tranche stays open under its name.
+> The pages tranche is also built: E-2 to E-8 and E-20, including the shell returns.
 
 ## Format
 
@@ -24,7 +25,7 @@
   below, the shell folds into a track of two full-width screens, **chat** and **canvas**
   (`mobile.css`, `.adestia-shell[data-screen]`). The reader moves between them by a swipe
   that follows the finger (`useSwipe.ts`), by the header buttons (`▥` "Open apps" in the
-  chat header, `‹ Chat` in the canvas header), or by the edge handles (`.adestia-edge`,
+  chat header, `Chat` in the canvas header), or by the edge handles (`.adestia-edge`,
   `data-side="right"` from the chat, `"left"` from the canvas). On a phone the tab strip is
   not drawn; the conversation list is the navigation. Touch screens get a 16px floor on
   fields (`tokens.css`, `pointer: coarse`) so iOS does not zoom.
@@ -40,7 +41,7 @@
 
 **Layout.** `.adestia-shell` = `.adestia-chat` (E-16) + `.adestia-gutter` +
 `.adestia-canvas`. The canvas has an optional skin console band (`.adestia-console-host`),
-a header (`.adestia-canvas__header`: on a phone `‹ Chat`; the breadcrumb; the driver label
+a header (`.adestia-canvas__header`: on a phone `Chat`; the breadcrumb; the driver label
 `.adestia-canvas__driver`, hidden on a phone; the cog E-15), and a body
 (`.adestia-canvas__body`) that starts with the problems band (E-19) and then shows one
 screen.
@@ -74,13 +75,13 @@ each message as "where the reader is" (`screenView`).
 | `#/parcours/<path>` | E-28 Parcours map |
 | any other route matching an inactive plugin | E-20 Inactive app (only when a plugin is loaded without a view; an unknown route falls through to Home) |
 
-**Dispatch order** (`App.tsx`), first match wins: gates (E-1: refused, sign-in, fatal,
+**Dispatch order** (`App.tsx` gates, then `Canvas.tsx`), first match wins: gates (E-1: refused, sign-in, fatal,
 loading) → plugin app (`openApp`, longest route first) → settings (`settingsPage`) → page
 (`page`) → missing page (`pageProblem`) → section → home.
 
 **Plugin apps.** A plugin of kind `app` (or a feature with a `view`) declares a component
 and a route; the shell mounts it inside `PluginBoundary` (a throw takes down the panel, not
-the shell) and hands it `pages` and `stores`. Above the view the shell draws a `‹ Back`
+the shell) and hands it `pages` and `stores`. Above the view the shell draws a `Home`
 (`.adestia-switch`) that always goes **home** (`closeApp = goHome`), not one step up.
 Settings draws its own back, which goes **one level up** (item → page → mosaic → home) and
 is labelled with the destination. Plugins with sub-screens add their own back (E-22, E-24).
@@ -90,12 +91,12 @@ is labelled with the destination. Plugins with sub-screens add their own back (E
 | E-n | Name | Route or where it opens | Component file(s) | What it is for | Journeys |
 |---|---|---|---|---|---|
 | E-1 | Gates | instead of the shell, before `/api/instance` answers or when it refuses | `app/Gates.tsx` (`RefusedGate`, `SignInGate`, `FatalGate`, `LoadingGate`), `useInstance.ts` | Say why the shell is not there: loading, sign in (OIDC 401), not allowed (403), could not start | P-1 |
-| E-2 | Home | `#/` | `app/Home.tsx`, `Tile.tsx`, `useReorder.ts`, `SkinSlot.tsx` (hero), `styles/home.css`, `tiles.css` | Greeting and "ask" button (focuses the composer), the agent's brief (« À la une »), the Domains mosaic (plugin tiles, folder tiles, the Settings tile), Arrange mode | P-4, P-11 |
+| E-2 | Home | `#/` | `app/Home.tsx`, `Brief.tsx`, `Domains.tsx`, `Tile.tsx`, `useReorder.ts`, `SkinSlot.tsx` (hero), `styles/home.css`, `tiles.css` | Greeting and "ask" button (focuses the composer), the agent's brief (« À la une »), the Domains mosaic (plugin tiles, folder tiles, the Settings tile), Arrange mode | P-4, P-11 |
 | E-3 | Section | `#/section/<folder>` | `app/Section.tsx`, `sections.ts`, `styles/home.css` | A folder: header, stores, sub-rooms (`Inside`), searchable and facetable page cards, `Finished` archive | P-4 |
-| E-4 | Page (reader and editor) | `#/page/<path>` | `editor/Editor.tsx`, `Reader.tsx`, `milkdown.ts`, `toolbar.ts`, `slash.ts`, `blockview.tsx`, `frontmatterview.tsx`, `Attachments.tsx`, `usePage.ts`, `styles/editor.css`, `reader.css`, `crepe.css` | Read a page (rendered blocks, wikilinks, attachments strip); ✎ opens the Milkdown editor with toolbar, slash menu, block bars; autosave; `Done` | P-5, P-6 |
+| E-4 | Page (reader and editor) | `#/page/<path>` | `editor/Editor.tsx`, `useAutosave.ts`, `SaveStatus.tsx`, `Reader.tsx`, `reader/`, `milkdown.ts`, `toolbar.ts`, `slash.ts`, `blockview.tsx`, `frontmatterview.tsx`, `Attachments.tsx`, `usePage.ts`, `styles/editor.css`, `reader.css`, `crepe.css` | Read a page (rendered blocks, wikilinks, attachments strip); the `pencil` control opens the Milkdown editor with toolbar, slash menu, block bars; autosave; `Done` | P-5, P-6 |
 | E-5 | Page properties popover | ⚙ on the frontmatter strip in the editor | `editor/PageSettings.tsx`, `pageform.ts`, `frontmatterview.tsx` | Edit frontmatter as a form drawn from declared fields | P-6 |
 | E-6 | Block settings popover | ⚙ on a block bar in the editor | `editor/BlockSettings.tsx`, `blockview.tsx` | Edit a `:::block`'s attributes, title, icon, frame, width; remove stray attributes | P-6 |
-| E-7 | Collection page | a page with `type: collection` | `app/Collection.tsx` (`CollectionLayout`, `CollectionShell`), `collections.ts`, `styles/collection.css` | A page listing its members as cards with facets, a `New` pill, `Everything here is finished.` | P-5 |
+| E-7 | Collection page | a page with `type: collection` | `app/Collection.tsx` (`CollectionLayout`, `CollectionShell`), `collections.ts`, `styles/collection.css` | A page listing its members as cards with facets, a `Ask for a new page` button, `Everything here is finished.` | P-5 |
 | E-8 | Missing page | `#/page/<path>` refused (404, 401/403, other) | `app/MissingPage.tsx`, `styles/missing-page.css` | Name the address, say which refusal, link to the folder above | P-5 |
 | E-9 | Settings mosaic | `#/settings` | `app/Preferences.tsx`, `Tile.tsx` | Four tiles: MCP servers, Instructions, Configuration, Delegations, with counts | P-8, P-9, P-10, P-13 |
 | E-10 | MCP servers | `#/settings/mcp[/<name>]` | `app/McpServers.tsx`, `Settings.tsx` (`useMcpServers`), `styles/settings.css` | List servers with health; open one: state, per-person OAuth connect, JSON declaration editor, Save, Remove, add | P-8 |
@@ -108,7 +109,7 @@ is labelled with the destination. Plugins with sub-screens add their own back (E
 | E-17 | Permission question | above the composer while a turn waits on a permission | `chat/AskPrompt.tsx` (`.adestia-ask`) | Allow once / always / deny a tool call | P-2 |
 | E-18 | Signature sheet | a signature card in the thread, opened | `chat/Signatures.tsx` (`SignatureCards`, `.adestia-sheet`) | Sign a held action or a standing grant in an embedded ceremony (or in a tab) | P-3 |
 | E-19 | Problems band | top of the canvas body, any screen | `app/Problems.tsx` (`.adestia-problems--refused`, `--degraded`) | Background reading interrupted; extensions refused; running with something missing; stray `app:` | P-11, P-14 |
-| E-20 | Inactive app | a plugin route whose plugin has no view | `App.tsx` (`.adestia-empty`) | Say the app is not active, `‹ Back` | P-11 |
+| E-20 | Inactive app | a plugin route whose plugin has no view | `app/Canvas.tsx`, `BackButton.tsx` (`EmptyState`, `plug`) | Say the app is not active, `Home` | P-11 |
 | E-21 | Offline screen | the cached shell opened without network | `sw/sw.ts`, then `FatalGate` | Today: "Adestia could not start" with the browser's network error | P-1 |
 | E-22 | Todo (and task sheet) | `#/todo`, folders `todo`, `taches` | `plugins/todo/web/app.js`, `rows.js`, `sheet.js`, `blocks.js`, `app.css` | Lists and tasks, capture field, assignees; the task sheet (`.todo-sheet`) with its own `‹`; `:::todo` blocks | P-11 |
 | E-23 | Planif | `#/planif` | `plugins/planif/web/app.js`, `app.css` | Scheduled notes, clock state, last/next run | P-11, P-12 |
@@ -152,7 +153,7 @@ columns are the same except where the instance's configuration decides what exis
 | E-n | Has today | Lacks |
 |---|---|---|
 | E-1 | loading (`LoadingGate`: spinner and "Loading…"), sign-in, refused, fatal; four cards with an icon each, every string through `t()` | — |
-| E-2 | normal, empty (`.adestia-empty` "Nothing to show yet."), with/without brief, with/without hero, Arrange mode | a loading state: until plugins and the index arrive it shows the empty state |
+| E-2 | loading (`.adestia-loading`, spinner and translated Loading…), normal, shared empty state (after ready), with/without brief, with/without hero, Arrange mode | — |
 | E-3 | normal, no match ("Nothing matches."), empty ("This section holds nothing yet."), finished archive, multi-store marks | loading (index-driven, renders whatever is held) |
 | E-4 | reading, editing, saving/saved/"tidied", conflict (`.adestia-save--warn`), rejected, failed, read-only (`.adestia-editor__readonly` + raw source), diagnostics, drop zone, lost/ambiguous wikilink, unknown block, missing `from=` | a loading state while the page is fetched (previous screen stays); an empty-page state |
 | E-5 | normal, broken frontmatter (nothing editable), unknown fields, kept-as-written | — |
@@ -170,7 +171,7 @@ columns are the same except where the instance's configuration decides what exis
 | E-17 | question, with/without lasting rule | — |
 | E-18 | pending, signed, denied, expired, open in a tab | — |
 | E-19 | background trouble, refused, degraded, an icon per kind; absent when nothing | — |
-| E-20 | single state | — |
+| E-20 | shared empty state, `plug`, translated Home action | — |
 | E-21 | the fatal gate drawn, with a wifi-off icon when the failure is a thrown fetch, and the browser's network error | an offline screen; an offline banner once the shell is open (kept, recommendations) |
 | E-22 | loading, empty, error, conflict, sheet | — |
 | E-23 | loading, empty, error, clock off | — |
@@ -332,147 +333,92 @@ What a capture sweep (target of B-3) needs so every state above shows; what to s
   stream; a route of a plugin that is loaded without a view (E-20).
 - **Network**: the shell cached by the service worker, then the network cut (E-21).
 
-## Target of the pages tranche
+## The pages' screens, as built
 
-Screens E-2 to E-8 and E-20, and the shell's own chrome (`App.tsx`: the phone's back to the
-chat, the breadcrumb, the back above a plugin, settings' back), after
-`adestia-qualite-pages`. The tranche uses what `adestia-qualite-charte` built: the components
-of `docs/charte.md` § 7.4, the icons of § 7.3, the request helper (AD-11), the type scale and
-the focus ring; and AD-13 for its own additions. **B-1 binds this section**: the words of today
-stay (a string changes only by `B-8`'s language rule or `B-9`'s back labels), no control, gesture
-or route is added or removed, no state is added except E-2's loading (Q-23). Where
-`docs/charte.md` or the plan says otherwise, this section wins.
+E-2 to E-8 and E-20 use the components of `docs/charte.md` § 4, the Lucide
+sprite (§ 2), translated shell words and the token scales (AD-13). Author text,
+frontmatter values, block names and `ico` remain data, in the author's words.
+The shell passes `t` and the instance locale into the editor and the reader;
+`editor/dom-icon.ts` gives Milkdown's DOM bars the same sprite as React.
 
-**Icons** (names of § 7.3; the additions are AD-13 d). `✎` (open the editor) → `pencil`; the
-block bar's grip → `grip-vertical`, its `⚙` → `settings`, its remove → `trash-2`, its raw/preview
-switch → `code` / `eye` with the same words; every `×` and `✕` of these screens → `x` (Q-11);
-the brief's `↺` → `rotate-ccw`; the ask bar → `search`; every `‹` → `chevron-left`; the
-Settings tile and the other tiles are the charte tranche's. `⌘K` on the ask bar is printed
-`Ctrl K` off a Mac and `⌘K` on one (Q-14; a label, the key already works). An icon-only
-control keeps its `aria-label` and `title`, both through `t()`.
+**Shell chrome (B-9).** `BackButton.tsx` draws `chevron-left` and a destination,
+with `.adestia-switch.adestia-btn--ghost.adestia-btn--sm`. Above a plugin and
+in E-20 it says `Home` (`Accueil` in French) and goes home. In `CanvasHeader`
+on a phone it says `Chat`, with the translated accessible name `Back to the chat`.
+Settings goes one level up, labelled `Home`, `Settings` or the settings page's title.
+`Breadcrumb` is translated too. Plugins' own backs remain their tranche's.
 
-**Backs (B-9).** One component, `<BackButton label onClick>` in `app/`: a ghost small
-`.adestia-btn` that keeps the class `adestia-switch` (skins restyle it), `chevron-left` and the
-destination's name. Three uses, three destinations, no target changed. Above a plugin's view:
-`Home` (it goes home: `closeApp = goHome`). On the phone, in the canvas header: `Chat`
-(aria-label `Back to the chat`, as today). In settings: one level up, `Home` / `Settings` /
-the page's title, as today. E-20's back is the first of these. A plugin's own back (`‹ Journals`,
-the task sheet's `‹`) is the plugins tranche's.
+**E-2 Home.** `Home` composes the greeting or skin hero, ask bar, `Brief` and
+`Domains`. The ask bar uses `search` and labels its shortcut `Ctrl K` off Apple
+platforms, `⌘K` on Mac/iPhone/iPad; either Ctrl+K or Meta+K focuses the composer.
+While `useInstance.ready` is false, the brief and mosaic are replaced by
+`.adestia-loading` (`role="status"`, `loader-circle`, `Loading…` / `Chargement…`).
+The greeting/hero stays visible. Ready means plugins loaded and the first index
+request settled, including failure; there is no timeout. Once ready, Settings is
+always drawn; with no app tile or section, `EmptyState` adds `folder-open`, an
+empty sentence and the configuration/page hint. `Brief` says `Highlights` in
+English, `À la une` in French; its `rotate-ccw` button sends `Refresh my highlights`
+or `Rafraîchis ma une`. Arrange/Done use shared buttons; tiles keep their focus ring.
 
-**E-2 Home.** Greeting (or the skin's `hero`), the ask bar (`search` icon, today's words, the
-shortcut label above), the brief, Domains, Arrange. *Loading* (new, Q-23): while `ready` is false
-(AD-13 b) the place of the brief and of Domains shows the shared spinner row with the word
-`Loading…` (today's key), the greeting and the ask bar already drawn; neither "Nothing to show
-yet." nor the Settings tile is drawn before the index and the plugins have answered. *Empty*
-(`ready`, no tile, no section): `<EmptyState>` with `folder-open`, today's sentence and its
-hint, as one form. *Brief*: the heading `À la une` is `Highlights` in English; the refresh
-button is the icon `rotate-ccw` with its label; the prompt it sends is `Refresh my highlights`
-in English and `Rafraîchis ma une` in French (AD-13 e). Entry rows keep age and chooser. *Arrange*:
-`Arrange` / `Done` are `.adestia-btn` (`Done` accent); a tile being dragged keeps today's
-affordance, plus a visible focus ring on every tile. *Phone*: the mosaic keeps its columns; every
-target is at least 24 × 24 px.
+**E-3 Section.** Stores and sub-rooms precede cards. Past five pages the search
+has a `search` icon and `.adestia-input` with a visible focus ring. Facet buttons
+are `.adestia-chip` with `aria-pressed`. Finished pages fold under a chevron
+summary. Empty and no-match use `EmptyState` with `folder-open` and `search-x`.
 
-**E-3 Section.** Header with the folder's icon; stores and sub-rooms as today; the search is a
-`.adestia-input` with a `search` icon (shown past five pages, as today) and a visible ring (the
-`outline: none` of `home.css` goes); facet pills are `.adestia-chip` with `aria-pressed`;
-cards keep their content; `Finished` stays a `<details>` whose summary is a ghost button row with
-a chevron. *States*, today's, in one form: no match → `<EmptyState>` `search-x`, "Nothing
-matches."; empty → `folder-open`, "This section holds nothing yet.". No loading state is added
-(Lacks column).
+**E-4 reading.** The edit control is `pencil` (`Edit` accessible name and tooltip).
+Metadata, block frames and attachments keep their content; attachments have file
+icons and names with tooltips. `reader/Note.tsx` draws translated block notes as
+`.adestia-empty--inline`, retaining `.adestia-block-note` as a layout/skin hook.
+Lost references, absent files, unknown blocks and missing providers use this form.
+Read-only pages show `lock`, raw source and diagnostics.
 
-**E-4 Page, reading.** The page frame, the title, the `✎` button (`pencil`, `aria-label` and
-`title` through `t()`), the metadata strip, the attachments strip (file icons by kind, name
-truncated with a `title`), blocks. The notes inside blocks — no file here, nothing under this
-page, nothing carries this name here, this page was not found, this block does not render
-yet — are the **inline empty state**, one form, all through `t()`. A block's frame, title,
-`ico` and width are drawn as today (the `ico` is the page author's data and stays what they
-wrote). Conflict, rejected, read-only (raw source, diagnostics) keep their words, each with its
-icon (`triangle-alert`, `circle-alert`, `lock`).
+**E-4 editing.** Toolbar, slash menu and DOM block bars use translated words and
+sprite icons: `grip-vertical`, `code`/`eye`, `settings`, `trash-2`. Milkdown's surface
+uses tokens in `crepe.css`; the title has a focus ring and Done is accent.
+`SaveStatus` shows `loader-circle` while saving, `check` when saved or tidied,
+`triangle-alert` on conflict and `circle-alert` on rejection/failure. A conflict
+keeps the editor and text open and stops saves; the words and drop-zone prompt
+follow the instance locale.
 
-**E-4 Page, editing.** The editor surface and Milkdown's menus (toolbar, slash menu, block
-handles) are restyled with tokens (`crepe.css`); toolbar and slash labels through `t()`
-(`Bullet list`, `Numbered list`, `Title`, `Subtitle`, `Quote`, `Plain text`, `Text blocks`,
-each with its French of today). Block bar: grip, `:::name`, raw/preview toggle, settings, remove —
-`.adestia-btn --icon --sm`, each with a translated `aria-label` and `title`; the bar is built as
-DOM and takes its words from the editor's translator (the page editor is handed `t` and the
-locale at construction). Save status: `Saving…` (`loader-circle`), `Saved` / `Saved, tidied to
-house style` (`check`), conflict "The agent changed this page. Reload to see its version."
-(`triangle-alert`, the existing `.adestia-save--warn` becomes a token pair), refusal and failure
-(`circle-alert`); the title field keeps a visible ring; `Done` is the accent button. The drop
-zone keeps its words.
+**E-5 and E-6.** Page properties and block settings are shared `Popover`s anchored
+to their settings controls. Escape or an outside click closes them and returns
+focus to the anchor. Fields use `.adestia-field` and shared controls; Close uses
+`x`. Required attributes have a textual alternative to the star; stray attributes
+have named `trash-2` controls. Both forms speak the instance locale. Icon examples
+in placeholders remain author data. At 360 px the block bar and toolbar wrap;
+popovers stay inside the viewport with `--space-2` (8 px) margins and scroll internally.
 
-**E-5 Page properties** and **E-6 Block settings.** Both are `<Popover>`s anchored to their
-⚙ (the old `.adestia-blockset` goes), closing on Escape and an outside click, focus returned to
-the anchor; the close control is `x`. Every field is a `.adestia-field` (label, help, error)
-with the shared control classes; the required mark keeps its `*` and gains a text alternative
-(colour never alone); the unknown-attribute list keeps its remove buttons (`trash-2`, named
-verb and object). E-6's whole form speaks the locale (today it is French on an English
-instance): `Réglages du bloc <name>`, `Ce bloc`, `titre`, `dans une carte`, `largeur`, `Inconnus
-de ce bloc`, `choisir…`, `obligatoire`, `la moitié` and the other widths, `Fermer`. The `ico`
-placeholders (`📋`, `◆`) are example data for the author, not icons of the product, and stay.
+**E-7.** Members follow the collection text. Facet cards carry shared count chips;
+Ask for a new page uses a small button with `plus` when `of:`, `into:` and the
+agent callback are present. Inside a facet, all finished uses
+`EmptyState` with `check`. An empty collection has no additional distinct state.
 
-**E-7 Collection.** The page's text, then members as cards (facet cards when grouped) with
-`.adestia-chip` facets; `New` is a small `.adestia-btn` with `plus` (it asks the agent, as
-today); all finished → `<EmptyState>` `check`, "Everything here is finished.". No empty-collection
-state is added (Lacks).
+**E-8.** `EmptyState` names the path, with `file-question` for 404, `lock` for
+401/403 and `circle-alert` otherwise. Its ghost folder link uses `folder-open`.
+There is no retry control.
 
-**E-8 Missing page.** `<EmptyState>`: `file-question` for no page here (404), `lock` for out of
-reach (401/403), `circle-alert` for a server error; it names the address, says which case, and
-the link to the folder above is a ghost button with `folder-open`. No retry is added (Lacks).
+**E-20.** `Canvas` shows `EmptyState` with `plug`, `That app is not active on this
+instance.` and the Home action when a matched, loaded plugin has no view (for
+example, its view module failed to import). An unknown or disabled plugin route
+falls through to Home; E-19 reports browser module refusals.
 
-**E-20 Inactive app.** `<EmptyState>` `plug`, "That app is not active on this instance.", and
-the `<BackButton>` (`Home`) beside it as today.
+**Limits kept (B-1).** E-3 has no loading state; E-4 keeps the previous screen
+while fetching and has no special empty-page state. E-7 has no distinct empty
+collection state and E-8 has no retry. Offline after startup keeps existing
+behaviour; E-21 covers startup failure. These remain end-of-epic recommendations.
+Roles are unchanged: every admitted person can read/edit/save; the agent writes
+the same files and may cause the conflict state. There is no screen for a calling agent.
 
-**Strings.** Every visible string, `aria-label`, `title`, `alt` and placeholder of the files of
-the tranche goes through `t()` (AD-13 e) — including the editor's, which today mix French and
-English (Q-3): `BlockSettings`, `blockview`, `toolbar`, `Editor` (`SaveStatus`, the read-only
-notice), `Reader` (its notes), `Attachments`, `PageSettings`; and the shell's `‹ Back`,
-`‹ Chat`, `Breadcrumb` (aria-label), `Highlights`. A page author's own text (titles, `ico`,
-frontmatter values, block names such as `:::callout`) is data and is never translated.
+**Capture tools.** `bench/scenarios/pages-matrix.mjs` runs the four skins × en/fr ×
+light/dark × desk/phone. `pages-states.mjs` includes held-index loading, section,
+collection, missing-page cases and E-20; `pages-editor.mjs` includes blocks,
+attachments, read-only diagnostics, conflict and E-5/E-6.
+`pages-editor-narrow.mjs` separately checks the default skin at 360×740, en/fr.
 
-**States, for every screen of the tranche.** The six states, with the word each shows. Error,
-offline and extreme content are *today's*, redrawn with the shared components; a state a screen
-lacks today is not added (B-1), except E-2's loading. The offline state exists only at the first
-start (E-21, the charter tranche's); an open shell that loses the network keeps today's
-behaviour. Extreme content never wraps a control out of its row: a long title, folder name,
-address or card name truncates with an ellipsis and a `title`; the page title in the canvas
-header and the breadcrumb truncate in the middle of the trail, never the last crumb to "Plan d…".
+## Known incoherences (historical input; outcomes below each item)
 
-| E-n | Loading | Empty | Error / refused | Extreme content |
-|---|---|---|---|---|
-| E-2 | **new**: spinner row + `Loading…` while `ready` is false; `ready` turns true when the plugins have loaded and the index request has settled, answer or failure, so the spinner lasts exactly as long as the requests and no timeout is invented | `<EmptyState>` once `ready` | a failed index is an empty Home, as today | 60 tiles wrap; a long folder name truncates; a brief of four long entries wraps to two lines each |
-| E-3 | none (as today, accepted): on a deep link opened cold the section says "This section holds nothing yet." until the index arrives — kept: a loading state here widens `B-1`'s one exception (E-2, E-14); listed for the end-of-epic recommendations | "This section holds nothing yet." / "Nothing matches." | none | long card titles clamp to two lines; hundreds of pages scroll, the search stays reachable |
-| E-4 | none: the previous screen stays until the page arrives (kept: Lacks) | a page with no body draws its title and the editor's empty surface | E-8 for a refusal; saving failed / refused / conflict inline | long title truncates in the header, wraps in the page |
-| E-5, E-6 | none (instant) | "—" no attribute: only the shared fields | a refused save shows in E-4's status line | a long value scrolls inside its field; the unknown-attribute list scrolls |
-| E-7 | none | "Everything here is finished." (no member at all shows nothing more: Lacks, kept) | — | long member names clamp |
-| E-8 | none | — | 404 / 401-403 / other, each its sentence | a long address breaks anywhere and stays inside the card |
-| E-20 | none | — | the one state, "That app is not active on this instance." | — |
-| Shell chrome (backs, crumbs) | none | — | — | the trail truncates its middle crumbs |
-
-**Shell chrome** (the backs and the breadcrumb of `App.tsx`) has no E-n of its own — it is the
-frame of E-2 to E-9, `docs/ecrans.md` › Navigation — and no state beyond its table row. It is
-seen by everyone (no role, no refusal): the same frame for the owner, the user and the person on
-a phone. The phone's `Chat` back is a step of P-4 step 6 once the doc task writes it.
-
-**Not this tranche's.** Q-6 and Q-7 on E-2 (a skin's greetings and their voice) are closed by the
-charter tranche's skin module; E-2 draws what that module returns, in the instance's locale, and
-the captures of this tranche (four skins, both languages) are where it is seen. E-20 is reached
-by an active plugin loaded without a view (its view module refused to import) — seed it so;
-`docs/parcours.md` P-11 step 10 says the same thing in other words and is aligned by the doc
-task, which also rewrites the glyphs and the back label that P-4 to P-6 and P-11 still carry.
-**Developer**: no screen of its own, he sees these through the bench captures. **Refused** is
-E-8's 401/403 and nothing else on these screens: no control is hidden by a role.
-
-**Roles.** Unchanged, as in § Roles: every signed-in person reads, edits and saves; the agent
-edits the same files (the conflict state is how a person meets it); the calling agent sees none
-of these screens.
-
-**Phone.** E-4's block bar and the toolbar wrap rather than overflow at 360 px; the popovers of
-E-5 and E-6 are at most the screen's width minus 16 px on each side and scroll inside
-themselves (a popover is not turned into a sheet: that would be a second form for one screen);
-targets are at least 24 × 24 px (`docs/charte.md` § 5).
-
-## Known incoherences (input for the epic, to be emptied by its tranches)
+The descriptions record the state before the epic. **closed** marks the resolved
+portion; **kept: reason** names what another tranche owns or B-1 deliberately leaves.
 
 1. **Q-1 — Native unstyled buttons.** Save/Discard/`Restart now` in `Configuration.tsx`
    (`.adestia-config__bar`, `.adestia-config__restart-bar` style the bars, not the
@@ -486,7 +432,7 @@ targets are at least 24 × 24 px (`docs/charte.md` § 5).
    `.adestia-instructions__tools button`), and three looks for "Save":
    `.adestia-editor__save` (E-4), `.adestia-settings__actions` last child (E-15), native
    (Q-1). All screens.
-   **closed** for the shared piece: `.adestia-btn` and `<Button>` exist (`docs/charte.md` § 4) and every button of E-1, E-9 to E-15 is one, with one "Save" look there. **kept: the chat, editor and home buttons** (`.adestia-editor__save` and the chat's own classes) are the chat and pages tranches' to move onto it.
+   **closed** for the shared piece: `.adestia-btn` and `<Button>` exist (`docs/charte.md` § 4) and every button of E-1, E-9 to E-15 is one, with one "Save" look there. **closed** for the pages: editor and home actions use shared buttons. **kept: chat buttons** belong to the chat tranche.
 3. **Q-3 — Languages mixed in the editor.** Hard-coded French: `BlockSettings.tsx` (whole
    form, `Fermer`), `blockview.tsx` (`Déplacer le bloc`, `Réglages du bloc`, `Supprimer le
    bloc`, `Aperçu`/`Modifier`), `toolbar.ts` (`Blocs de texte`, `Liste à puces`…),
@@ -494,6 +440,7 @@ targets are at least 24 × 24 px (`docs/charte.md` § 5).
    ici`). Hard-coded English in the same screen: `Editor.tsx` `SaveStatus` and the
    read-only notice, `Reader.tsx` (`this page was not found`, `this block does not render
    yet`). E-4, E-6.
+    **closed**: the editor chrome, settings forms, save status, attachments and reader notes use the instance translator; author data stays untouched (AD-13 e).
 4. **Q-4 — Untranslated shell strings.** `Gates.tsx` (`LoadingGate` "Loading…" though the
    key exists, `SignInGate` entirely, `RefusedGate` paragraph and "Sign out"); `App.tsx`
    `‹ Back`, `‹ Chat`, `aria-label="Breadcrumb"`; `Chat.tsx` "No conversation yet." (an FR
@@ -502,9 +449,10 @@ targets are at least 24 × 24 px (`docs/charte.md` § 5).
    `McpServers.tsx`, `CataloguePopin.tsx` fallback errors (`refused (404)`, `request
    failed`); `SettingsMenu.tsx` "Adestia" build line is fine (a name). E-1, E-10, E-12,
    E-15, E-16, E-20.
-   **closed** for the charter's files: `Gates.tsx` (all four gates), `Settings.tsx`, `McpServers.tsx` and `CataloguePopin.tsx` say every string through `t()`, and their fallback errors come from `requestJson` with a translated fallback (`request failed (%n)`). **kept: `App.tsx` (`‹ Back`, `‹ Chat`, `Breadcrumb`), `Chat.tsx`, `ContextPill.tsx` and `Composer.tsx`** — the pages and chat tranches' files.
+   **closed** for the charter's files: `Gates.tsx` (all four gates), `Settings.tsx`, `McpServers.tsx` and `CataloguePopin.tsx` say every string through `t()`, and their fallback errors come from `requestJson` with a translated fallback (`request failed (%n)`). **closed** for the shell chrome: `Canvas` and `CanvasHeader` translate Home, Chat and Breadcrumb. **kept: `Chat.tsx`, `ContextPill.tsx` and `Composer.tsx`** belong to the chat tranche.
 5. **Q-5 — Hard-coded French in the shell.** `Home.tsx` brief heading « À la une » and the
    refresh prompt `Rafraîchis ma une`, shown on an `en` instance. E-2.
+    **closed**: Brief uses Highlights / À la une and translates the refresh prompt.
 6. **Q-6 — Two registers.** `i18n.ts` speaks *vous* everywhere except the signature lines
    (`Une action attend ta signature.`); skin words use *toi* (skippy) and *vous* (dobby).
    The rule (`B-8`, `B-10`): the shell's and plugins' words say *vous*, so the signature
@@ -529,40 +477,42 @@ targets are at least 24 × 24 px (`docs/charte.md` § 5).
     55%)` + blur, z 60), `.scan-overlay` (E-30; `#000`, z 100). Escape is handled by the cog,
     the signature sheet and the block bar; **not** by `CataloguePopin.tsx`. Only one scrim
     uses `--scrim`.
-    **closed** for E-12: `CataloguePopin.tsx` is the shared `<Sheet>` (one scrim `--scrim`, one z-index, Escape, focus trapped and returned, a bottom sheet under 820 px), and the cog menu (E-15) is a `<Popover>`. **kept: E-18's markup** (the sheet rules moved to the shared sheet, `Signatures.tsx` unchanged until the chat tranche), the block popovers E-5 and E-6 (pages), and the plugin dialogs `.meals-modal`, `.atelier-modal`, `.atelier-full`, `.vmodal`, `.scan-overlay` (plugins).
+    **closed** for E-12: `CataloguePopin.tsx` is the shared `<Sheet>` (one scrim `--scrim`, one z-index, Escape, focus trapped and returned, a bottom sheet under 820 px), and the cog menu (E-15) is a `<Popover>`. **kept: E-18's markup** (the sheet rules moved to the shared sheet, `Signatures.tsx` unchanged until the chat tranche), and the plugin dialogs `.meals-modal`, `.atelier-modal`, `.atelier-full`, `.vmodal`, `.scan-overlay` (plugins).
+    **closed** for E-5 and E-6: shared Popover, Escape/outside close and focus return to the settings anchor.
 11. **Q-11 — Close glyph.** `✕` (`Chat.tsx` connect hide, `Signatures.tsx`,
     `CataloguePopin.tsx`, `blockview.tsx`, listening-post, meals, atelier, parcours, voyages)
     vs `×` (`Chat.tsx` tab close, `Composer.tsx`, `PageSettings.tsx`, `BlockSettings.tsx`,
     scan, journal).
-    **closed** for the charter's screens: the close controls there are the `x` icon, and the new/edit/restart glyphs are icons too. **kept: the chat, pages and plugin controls** (`Chat.tsx`, `Composer.tsx`, `Signatures.tsx`, `blockview.tsx`, `PageSettings.tsx`, `BlockSettings.tsx` and the plugins) keep `✕` and `×` until their tranches move them to the icon.
+    **closed** for the charter's screens: the close controls there are the `x` icon, and the new/edit/restart glyphs are icons too. **closed** for the pages: block removal is `trash-2`, popover close is `x`. **kept: the chat and plugin controls** await their tranches.
 12. **Q-12 — Two ways back.** The shell's `‹ Back` above every plugin view goes home, and
     plugins add their own: `journal-back` `‹ Journals` (E-24), `todo-back` `‹` in the task
     sheet (E-22). The shell's back goes home while settings' back goes one level up.
     `‹ Back` is untranslated (Q-4). No two backs lead to the same place. The rule (`B-9`): each
     back is labelled by its destination (the shell's says home); none is removed; no target
     changes.
+    **closed for the shell**: BackButton labels Home above plugins/E-20, Chat on a phone, and the destination in settings. kept: plugin-owned backs belong to the plugins tranche; their destinations are unchanged.
 13. **Q-13 — Contrast.** `--text-faint` is used as text colour about 100 times and reaches
     2.3–2.6:1 in light, 2.6–3.1:1 in dark. In light, `--accent` (3.4–3.8:1), `--success`
     (3.0–3.4:1), `--warning` (3.3–3.8:1) and `--danger` (3.9–4.4:1) used as text are under
     4.5:1; `--accent-text` on `--accent` (user bubble, send button) is 4.3:1. All screens.
-    **closed** for the base palette and the four skins: `--text-faint` is corrected in both themes, the `*-text` twins carry the text uses of the fills, and `contrast.test.ts` prints every pair in `docs/charte.md` § 5 — all at their threshold, no departure in § 6. The settings and entry sheets and `shell.css` use the twins. **kept: the text uses of `--accent`, `--danger`, `--success`, `--warning` in the chat, pages and plugin sheets** move to the twins in their tranches.
+    **closed** for the base palette and the four skins: `--text-faint` is corrected in both themes, the `*-text` twins carry the text uses of the fills, and `contrast.test.ts` prints every pair in `docs/charte.md` § 5 — all at their threshold, no departure in § 6. The settings, entry and pages sheets and `shell.css` use the twins. **kept: the text uses of `--accent`, `--danger`, `--success`, `--warning` in the chat and plugin sheets** move to the twins in their tranches.
 14. **Q-14 — No icon set.** Emoji on tiles and headers (`🔌 📓 🎛 🤝 ⚙`), Unicode glyphs
     in controls (`▤ ＋ ▥ ⚙ ✎ ↺ ■ ↑ ‹`), `glyphs.ts` with two SVGs, inline SVG in
     `Chat.tsx` (`ArchiveGlyph`) and `Home.tsx`. `⌘K` is printed on the home ask button on
     every platform though Ctrl+K is what works off a Mac; Ctrl+K already works everywhere
     (`Home.tsx` accepts `metaKey` or `ctrlKey`), so showing Ctrl+K off a Mac is a label, not a
     behaviour. E-2, E-9, E-16.
-    **closed** for the charter's screens: a vendored Lucide sprite (`<Icon>`), no emoji or Unicode glyph on a control of E-1, E-9 to E-15, E-19. **kept: E-2 (`Home.tsx`: `⚙`, `↺`, `⌘K`) and E-16 (`▤ ＋ ▥ ■ ↑`, `ArchiveGlyph`)** — pages and chat; the `⌘K` label off a Mac is a label for the pages tranche.
+    **closed** for the charter screens (E-1, E-9 to E-15, E-19) and **closed for E-2 and the pages**: sprite icons replace product glyphs; the ask bar prints Ctrl K off Apple platforms and ⌘K on them. kept: E-16 controls and ArchiveGlyph belong to the chat tranche.
 15. **Q-15 — Five empty-state styles in the shell.** `.adestia-empty` (E-2, E-3, E-7,
     E-20), `.adestia-instructions__empty` (E-11, E-10, E-12, and E-14's error),
     `.adestia-deleg__empty` (E-13), `.adestia-conversations__empty` (E-16),
     `.adestia-block-note` (E-4); each plugin adds its own (`.pc-vide`, voyages `.empty`…).
-    **closed** for the settings screens: E-10, E-11, E-13 and E-14's error use the shared `<EmptyState>`. **kept: E-12's "Reading the repository…"** is a status line still drawn with `.adestia-instructions__empty`; `.adestia-conversations__empty` (E-16) is the chat's, `.adestia-block-note` (E-4) the pages', the plugins' own empties theirs.
+    **closed** for the settings screens and **closed for E-2, E-3, E-7, E-8 and E-20**: shared EmptyState; E-4 notes use the inline variant, keeping adestia-block-note only as a hook. kept: E-12 reading status, E-16 conversation emptiness and plugin empties belong to their existing status form or their own tranches.
 16. **Q-16 — Scales bypassed.** About 60 literal px font sizes, 17 distinct values, in the
     shell's stylesheets beside `--text-sm/base/lg`; pill radius `999px` (6 rules) beside
     `--radius-pill: 20px`; six breakpoints across shell and plugins (520, 560, 640, 720,
     820, 900px), only 820 being `--breakpoint-mobile`.
-    **closed** for the four sheets of the charter (`tokens.css`, `settings.css`, `settings-pages.css`, `tiles.css`): the seven-step type scale and the radius set are the only sizes and radii they use, and `--radius-pill` is 999 px. **kept: the other shell sheets and the plugins' sheets** adopt the scale in their tranches (`999px` is still literal in `attachments.css`, `chat.css`, `reader.css`), and the six breakpoints stay: only 820 px is a token.
+    **closed** for the four sheets of the charter (`tokens.css`, `settings.css`, `settings-pages.css`, `tiles.css`): the seven-step type scale and the radius set are the only sizes and radii they use, and `--radius-pill` is 999 px. **closed** for the pages sheets (`home`, `mobile`, `missing-page`, `collection`, `reader`, `editor`, `crepe`): tokens supply type, radius and colours (Crepe keeps its base font variable). **kept: the chat and plugins' sheets** adopt the scale in their tranches (`999px` is still literal in `attachments.css`, `chat.css`), and the six breakpoints stay: only 820 px is a token.
 17. **Q-17 — Plugins restyle everything.** No plugin uses a shell class (only the
     `--adestia-hue-*` tokens); `parcours.css` (18) and `atelier.css` (27) define a second
     vocabulary (`--ink`, `--line`, `--f-mono`, `--r-xs`…), voyages a few more; raw colours
@@ -572,7 +522,7 @@ targets are at least 24 × 24 px (`docs/charte.md` § 5).
     dozen local ones. `outline: none` in `home.css` (`.adestia-search input`, E-3),
     `editor.css` (`.adestia-editor__title:focus`, E-4), `todo/app.css` (three rules, E-22),
     `skins/dobby/skin.css`.
-    **closed** for the rule: `tokens.css` carries one global `:focus-visible` ring. **kept: the `outline: none` of `home.css` (`.adestia-search input`) and `editor.css` (`.adestia-editor__title:focus`)** (pages) and of `todo/app.css` (plugins), each to be given a visible replacement by its tranche; Dobby's skin no longer has one.
+    **closed** for the rule: `tokens.css` carries one global `:focus-visible` ring. **closed** for E-3 search and E-4 title: visible replacement rings. **kept: `todo/app.css`** belongs to the plugins tranche; Dobby's skin no longer has one.
 19. **Q-19 — Dark palette written twice.** `tokens.css` repeats the whole dark palette in
     the `prefers-color-scheme: dark` block and in `:root[data-theme='dark']`.
     **closed**: the dark palette is written once, as `light-dark()`; the `prefers-color-scheme` and `[data-theme='dark']` blocks of `tokens.css` redeclare only the geometry of `--shadow` and `--shadow-lg`.
@@ -590,9 +540,10 @@ targets are at least 24 × 24 px (`docs/charte.md` § 5).
     inactive app (E-20), the parcours map (E-28), the scan overlay (E-30), the offline
     start (E-21), nor any run under the nestor or skippy skins (only default, alfred,
     dobby).
+    **closed** for E-20 and the pages matrix under all four skins and both locales. **kept: the other bench gaps** belong to the bench/chat/plugins tranches, outside the pages scope.
 23. **Q-23 — Home looks empty while it loads.** Until the plugins and the page index arrive,
     E-2 shows its empty state (`.adestia-empty` "Nothing to show yet.") instead of a loading
     state; E-14 Configuration has no loading state either (Q-21). Closed by a loading state in
     the charter's form (the one exception of `B-1`): E-2 by `adestia-qualite-pages`, E-14 by
     `adestia-qualite-charte`.
-    **closed** for E-14: it shows a spinner row (`.adestia-config__loading`) before its form. **kept: E-2** — its loading state is `adestia-qualite-pages`'s.
+    **closed**: E-2 uses the ready-gated spinner row and E-14 its configuration loading row; neither shows an empty state while waiting.

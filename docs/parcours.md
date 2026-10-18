@@ -38,7 +38,7 @@ Form of the `exigences` skill; each need names the journeys it serves.
   ignores it works unchanged, including skins from `extensions.skinsDir` or
   `extensions.sources`. The "Lacks" column of `docs/ecrans.md` › States is an observation, not
   a target: the epic builds no new state, except a loading state where a screen shows a wrong
-  state while it loads today (E-2 shows "Nothing to show yet.", E-14 an empty page) — that is
+  state while it loaded before this epic (E-2 and E-14 now show spinner rows) — that is
   coherence, not behaviour. Every `Q-n` of `docs/ecrans.md` is either closed by its tranche or
   written "kept: <reason>". *(all)*
 
@@ -79,7 +79,7 @@ Form of the `exigences` skill; each need names the journeys it serves.
   voice (`B-10`) — Skippy may say *tu*. *(all journeys with a screen)*
 - **B-9** — A plugin screen looks like the shell: it reads the shell's tokens (no second
   vocabulary) and uses the shared dialog. Every back control is labelled by its destination —
-  the shell's `‹ Back` above a plugin goes home and says so; a plugin's own back (one level up
+  the shell's `Home` above a plugin goes home and says so; a plugin's own back (one level up
   inside the plugin, `‹ Journals`, the task sheet's `‹`) stays and names where it leads. No back
   is removed and no navigation target changes (`B-1`): at v0.88.0 no two backs lead to the
   same place.
@@ -145,12 +145,12 @@ Needs: B-1, B-6, B-7, B-8, B-10
 ### P-4 — Find one's way
 A user looks for a page or a domain from the landing canvas.
 
-1. The user opens `#/` and sees E-2: a greeting (or the skin's `hero` slot), a line of context and an ask bar. Clicking the ask bar, or pressing Ctrl/⌘+K, puts the cursor in the composer.
-2. If `home/brief.json` exists in a store (`GET /api/home/brief`), the daily brief shows up to four entries, with how old it is and who chose it. Each entry opens its target: an app, a page, a section or a path an app claims. An entry with no target asks the agent instead. **↺** sends the agent a request for a fresh brief.
+1. The user opens `#/` and sees E-2: a greeting (or the skin's `hero` slot), a line of context and an ask bar. Clicking the ask bar, or pressing Ctrl+K or Meta+K, puts the cursor in the composer; the label is Ctrl K off Apple platforms and ⌘K on them. Until plugins load and the first index request settles (including failure), a spinner row says Loading… (Chargement… in French) in place of the brief and Domains; the greeting or hero stays visible.
+2. If `home/brief.json` exists in a store (`GET /api/home/brief`), the daily brief shows up to four entries, with how old it is and who chose it. Each entry opens its target: an app, a page, a section or a path an app claims. An entry with no target asks the agent instead. The `rotate-ccw` refresh control sends Refresh my highlights in English, Rafraîchis ma une in French; the heading is Highlights / À la une.
 3. Under **Domains**, one tile per active app that has a `tile`, then one tile per top-level folder of pages (its index page gives the icon and colour; `home/` and the folders an active app absorbs are left out), then the **Settings** tile.
 4. The user presses **Arrange** and drags the tiles. The order is kept in this browser (`adestia.order.domains`) and moves nothing on disk. **Done** ends the arranging.
 5. The user opens a section tile and lands on E-3 at `#/section/<folder>`: its sub-folders, then the live pages as cards, then the finished ones folded under **Finished**. A search field appears past five pages, and facet pills when the pages declare `status`, `role` or `cat` (the first of these found).
-6. The breadcrumb in the canvas header (`adestia-crumbs`) names each level and walks back up; **Home** goes to `#/`.
+6. The breadcrumb in the canvas header (`adestia-crumbs`) names each level and walks back up; **Home** goes to `#/`. On a phone, **Chat** in the canvas header returns to the conversation.
 7. A folder link always goes through `folderRoute` (`owners.ts`). A folder an active app owns opens that app's screen. A folder holding a single typed page of its owner's kind opens directly on that page (`#/page/<folder>`). Anything else opens the section. A `#/section/…` address typed by hand is redirected the same way.
 
 Needs: B-1, B-6, B-7, B-8, B-10
@@ -161,23 +161,23 @@ A user reads a markdown page of the workspace.
 1. The user opens `#/page/<path>` (with `?store=<id>` when two stores hold the same name); the shell reads `GET /api/pages/<path>.md`, and E-4 shows it in reading mode (`Reader`).
 2. Typed blocks written in the `:::` grammar (`packages/content/src/vocabulary.ts`: `callout`, `app`, `row`, `gallery`, `content`, `figures`, `table`, `list`), and those an active plugin adds, are drawn with their `title`, `ico`, `frame=card` and `w` width. A block is drawn by the plugin named in `from=` when one is given.
 3. In a `:::list`, finished pages (`isFinished` on `status`/`statut`) are folded into a `<details>` by default (`closed=fold`).
-4. A page with `type: collection` is drawn by E-7 (`CollectionLayout`): its own text, then its members (as facet cards when grouped, otherwise as pages), the finished ones folded. Its `into:` button asks the agent to create a new member.
+4. A page with `type: collection` is drawn by E-7 (`CollectionLayout`): its own text, then its members (as facet cards when grouped, otherwise as pages), the finished ones folded. Its Ask for a new page button (when `of:`, `into:` and the agent callback are present) uses `plus` and asks the agent to create a new member; facet cards show shared count chips. Inside a facet whose members are all finished, the shared empty state uses `check`.
 5. A page whose `type` a plugin claims is drawn by that plugin's layout (E-29 for `meals`).
 6. Under the page, the attachments strip (`Attachments`, `GET /api/files?page=…`) lists the files in the page's folder and its `assets/` that the page body does not already show.
 7. When the agent writes the page, the server pushes the change (`GET /api/events`, `workspace.watch`) and the page refreshes without a reload.
-8. A page that cannot load shows E-8 (`MissingPage`), with three cases: no page at this address (404), out of reach because the session may have expired (401/403), or a server error. It names the path and links to the folder above.
-9. A page using blocks the vocabulary does not know opens read-only, showing its raw source and the diagnostics.
+8. A page that cannot load shows E-8 (`MissingPage`), with three cases: no page at this address (404), out of reach because the session may have expired (401/403), or a server error. It names the path and links to the folder above, using file-question, lock or circle-alert in the shared empty state.
+9. A page using blocks the vocabulary does not know opens read-only, showing a lock icon, its raw source and the diagnostics. Block notes use the translated inline empty state.
 
 Needs: B-1, B-6, B-7, B-8, B-10
 
 ### P-6 — Edit a page
 A user corrects or writes a page that the agent also edits.
 
-1. On E-4 the user presses **✎**, and the page opens in the Milkdown/Crepe editor (`Editor.tsx`, `milkdown.ts`).
+1. On E-4 the user presses **Edit** (the `pencil` control), and the page opens in the Milkdown/Crepe editor (`Editor.tsx`, `milkdown.ts`).
 2. The user types **/** to open the slash menu (`slash.ts`), which offers every block in the vocabulary, including those of active plugins. Selecting text shows the toolbar: Crepe's text formats, plus list, heading and quote (`toolbar.ts`).
-3. Each block in the editor has a frame with its `:::name`, a grip to move it, a raw/preview switch and a **⚙** that opens E-6 (`BlockSettings`). That form is built from the block's declared attributes and the shared ones (`title`, `ico`, `frame`, `w`).
-4. The **⚙ Page properties** button on the frontmatter row opens E-5 (`PageSettings`), a form over the frontmatter that includes the fields plugins declare for the page's `type`. YAML lines it cannot handle are kept unchanged.
-5. The page saves itself 1.6 s after typing stops, and again on **Done** (`PUT /api/pages/<path>` with the revision it opened). The status reads Saving…, Saved, or "Saved, tidied to house style".
+3. Each block in the editor has a frame with its `:::name`, a grip to move it, a raw/preview switch and a `settings` control that opens E-6 (`BlockSettings`). That form is built from the block's declared attributes and the shared ones (`title`, `ico`, `frame`, `w`).
+4. The **Page properties** button (`settings`) on the frontmatter row opens E-5 (`PageSettings`), a form over the frontmatter that includes the fields plugins declare for the page's `type`. YAML lines it cannot handle are kept unchanged. E-5 and E-6 use shared popovers and fields; Escape or an outside click closes them and returns focus to their settings anchor.
+5. The page saves itself 1.6 s after typing stops, and again on **Done** (`PUT /api/pages/<path>` with the revision it opened). The translated status reads Saving…, Saved, or "Saved, tidied to house style", with a spinner or check icon. Toolbar, slash menu and block controls use the instance locale.
 6. If the agent wrote the file in the meantime, the server answers 409: the status says "The agent changed this page. Reload to see its version.", the editor stays open with the text, and nothing more is saved. A save that breaks the vocabulary is refused with its first diagnostic.
 7. Files the user drops on the page go to the chat inbox, and the composer is filled with "File the attached files with the page …" so the agent files them in the right place.
 
@@ -234,7 +234,7 @@ Needs: B-1, B-6, B-7, B-8, B-10
 ### P-11 — Use a plugin
 A user works in an app or meets a feature plugin the owner turned on.
 
-1. The owner names plugins in `extensions.apps` and `extensions.features`. Each active app with a `tile` shows a tile on E-2 and opens at `#/<route>` (default `#/<id>`), with a **‹ Back** above the plugin's view. A plugin that crashes takes down only its own panel (`PluginBoundary`), which says why in its place.
+1. The owner names plugins in `extensions.apps` and `extensions.features`. Each active app with a `tile` shows a tile on E-2 and opens at `#/<route>` (default `#/<id>`), with a **Home** control (Accueil in French, chevron-left) above the plugin's view. A plugin that crashes takes down only its own panel (`PluginBoundary`), which says why in its place.
 2. **todo** (E-22): tasks are pages (`type: tache`), and lists are curated (`liste`) or dynamic. Ticking a task writes its `done:`. Opening a task shows the task sheet (`sheet.js`), whose note is the shell's own page editor. The `:::checklist` block lets any page carry tasks.
 3. **planif** (E-23): see P-12. **journal** (E-24): a folder is a journal and each page in it an entry; the history reads on one screen and each entry is edited in place. **atelier** (E-25, no tile, reached at `#/atelier/<path>` or from a path it claims): draws the cutting diagram from a project's `workbook.json`, with a bench mode; ticking a step or moving a band writes `workbook-state.json` or `workbook-layout.json` beside the workbook, through the plugin's API.
 4. **voyages** (E-26): a per-day timeline and suggestions from a trip's `voyage.json` (secret `GOOGLE_MAPS_API_KEY`); confirming, moving or dismissing a card writes `voyage-state.json` beside the trip, through the plugin's API. **listening-post** (E-27, folder `veille`): a queue fed by feeds and pasted links (dropping a link, dismissing or restoring a candidate writes `<dataDir>/listening-post/queue.json`), transcripts with `yt-dlp`, and a search; its ✦ buttons ask the agent.
@@ -243,7 +243,7 @@ A user works in an app or meets a feature plugin the owner turned on.
 7. **scan** adds a button to the composer that opens a camera overlay (E-30) and drops the codes it reads into the composer.
 8. **project-management** adds the `:::timeline` block (phases and milestones on a time axis) and the `:::subproject` block (sub-projects with their `project-status`) (E-31).
 9. Many plugin buttons send a prompt to the agent (`api.ask`) instead of writing anything themselves.
-10. An address whose app is not active (a bookmark, a plugin turned off) matches no loaded plugin and falls through to Home (E-2). E-20 ("That app is not active on this instance.", with **‹ Back**) shows only for an active plugin with a tile whose view did not load (its module would not import); E-19 lists that refusal under "Extensions refused".
+10. An address whose app is not active (a bookmark, a plugin turned off) matches no loaded plugin and falls through to Home (E-2). E-20 (the shared empty state with plug, "That app is not active on this instance.", and **Home**) shows when a matched, loaded plugin has no view, for example because its view module failed to import; E-19 lists that refusal under "Extensions refused".
 
 Needs: B-1, B-6, B-7, B-8, B-9, B-10
 
