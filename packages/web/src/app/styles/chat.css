@@ -49,6 +49,8 @@
 .adestia-crest svg { width: 18px; height: 18px; }
 
 .adestia-brandname {
+  /* The name stays readable before the model and context surrender width. */
+  flex-shrink: 0;
   min-width: 0;
   max-width: 6em;
   overflow: hidden;
@@ -551,7 +553,6 @@
 
 @media (max-width: 400px) {
   .adestia-chat__header { gap: var(--space-1); padding: var(--space-2); }
-  .adestia-chat__header .adestia-brandname { max-width: 4em; }
 }
 
 /* A decision's actions keep their room on a narrow chat rail. */

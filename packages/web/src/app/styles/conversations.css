@@ -282,7 +282,7 @@
 
 .adestia-conversations__item--current {
   background: var(--accent-quiet);
-  color: var(--accent-text);
+  color: var(--conversation-current-text);
 }
 
 .adestia-conversations__empty {
@@ -291,7 +291,6 @@
   color: var(--text-faint);
 }
 
-.adestia-chat__header { gap: var(--space-2); }
 
 /* The same tint may carry two states: geometry tells them apart as well. */
 .adestia-dot--idle { background: transparent; border: 1px solid var(--text-faint); }

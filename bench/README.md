@@ -235,7 +235,9 @@ turn and an attachments-only held message. Each locale gets light and dark at
 1440, 390 and 360 px. Its header lists the rail strings to inspect; seeded
 conversation titles, model names, tool names/targets and message/error content
 are deliberately left in their original language. `rail-report.json` records the
-header controls' measured bounds. The running/held states go through the fake
+header controls' measured bounds, the brand's visible/content widths, and the current
+conversation's text contrast on its composed background. A current-list capture
+keeps the selected row visible before scrolling the long list. The running/held states go through the fake
 engine and the real composer and upload route. `bench/run.sh
 bench/scenarios/chat-rail.mjs` also runs one locale/skin through the Docker
 bench with a scenario-local scripted stream; it replays the model catalogue and

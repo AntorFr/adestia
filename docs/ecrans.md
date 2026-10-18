@@ -665,7 +665,8 @@ signature words are the charte tranche's (Q-6). A skin's words are the charte tr
 **Roles.** Same as E-16 to E-18 in § Roles: nothing changes.
 
 **Phone.** The header keeps one row (brand, model picker, context pill, three icon
-buttons); at 360 px the model picker and the pill truncate with an ellipsis and a `title`,
+buttons); the brand keeps its width while the model picker and the pill yield first.
+At 360 px the model picker and the pill truncate with an ellipsis and a `title`,
 never push the buttons out. The conversation list is full width; every target is at least 24 × 24 px
 (`docs/charte.md` § 5).
 

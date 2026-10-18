@@ -61,6 +61,9 @@
 - **On fills**: `--on-accent` is the dark ink on a filled accent in both themes, and also
   carries danger, warning and success fills. `--accent-text`, `--danger-text`,
   `--warning-text`, `--success-text` are the text twins of the fills (§ 5).
+- **Current conversation**: `--conversation-current-text` defaults to `--accent-text`
+  on `--accent-quiet` over `--surface-raised`. Nestor dark supplies `#a48ced` for this
+  role only (same hue and saturation, higher lightness); its general accent stays unchanged.
 - **Hot tile chips**: text uses `--tile-color-text`, supplied by the tile hue’s
   `--adestia-hue-<hue>-text` twin where needed, falling back to the hue and then
   `--accent-text`. Their border and translucent background keep the tile hue. The
@@ -583,6 +586,15 @@ the later `.adestia-chip` rule in `reader.css` overrides the 10% tint in `tiles.
 | E-10 hot chip, ardoise | dobby / dark | 140, 137, 131 | 34,27,21 | 4.87 | 4.5 | ok |
 | E-19 refused heading | dobby / dark | 208, 101, 79 | 30,22,17 | 4.79 | 4.5 | ok |
 | E-19 degraded heading | dobby / dark | 217, 165, 72 | 31,24,17 | 7.86 | 4.5 | ok |
+
+### Current conversation on E-16
+
+Measured in Chromium on the `chat-rail` seed, with explicit themes, at 1440, 390
+and 360 px. Nestor dark's `--conversation-current-text` is `#a48ced` over the
+14% accent tint on `--surface-raised` (`#1d1836`): composed background
+RGB 44.40, 35.76, 78.92, ratio **5.13:1**, threshold 4.5:1. The local text token
+leaves the other accent roles unchanged. `chat-rail.mjs` records the rendered
+pair and checks this threshold; its current-list capture keeps the selected row visible.
 
 ### How the contrast test works
 

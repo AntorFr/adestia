@@ -154,6 +154,10 @@ export default async function scenario(bench) {
           return { label: node.getAttribute('aria-label') ?? node.className, left: r.left, right: r.right, width: r.width }
         }))
         assert(controls.every((r) => r.left >= 0 && r.right <= width && r.width > 0), JSON.stringify(controls))
+        const brandGeometry = await chat.locator('.adestia-brandname').evaluate((node) => ({
+          name: node.textContent, visible: node.clientWidth, content: node.scrollWidth,
+        }))
+        assert(brandGeometry.visible >= brandGeometry.content, JSON.stringify(brandGeometry))
         // Actual keyboard navigation, with the focused control checked before
         // photographing the shared :focus-visible ring.
         await picker.focus()
@@ -163,6 +167,23 @@ export default async function scenario(bench) {
         await shoot('keyboard-focus')
         await chat.getByLabel(w.conversations, { exact: true }).click()
         await chat.locator('.adestia-conversations__item').nth(20).waitFor()
+        const currentContrast = await chat.locator('.adestia-conversations__item--current').evaluate((node) => {
+          const rgb = (value) => value.match(/[\d.]+/g).map(Number)
+          const style = getComputedStyle(node)
+          const ink = rgb(style.color)
+          const tint = rgb(style.backgroundColor)
+          const surface = rgb(getComputedStyle(node.closest('ul')).backgroundColor)
+          const alpha = tint[3] ?? 1
+          const background = surface.slice(0, 3).map((v, i) => tint[i] * alpha + v * (1 - alpha))
+          const luminance = (values) => values.slice(0, 3).map((v) => {
+            const c = v / 255
+            return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+          }).reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0)
+          const a = luminance(ink), b = luminance(background)
+          return { skin: document.documentElement.dataset.skin, ink, background, ratio: (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05) }
+        })
+        if (currentContrast.skin === 'nestor' && theme === 'dark') assert(currentContrast.ratio >= 4.5, JSON.stringify(currentContrast))
+        await shoot('current-list')
         await chat.locator('.adestia-conversations').evaluate((node) => { node.scrollTop = node.scrollHeight })
         await shoot('long-list')
         await chat.getByLabel(w.conversations, { exact: true }).click()
@@ -192,7 +213,7 @@ export default async function scenario(bench) {
         const stopped = await fetch(`${replay?.url ?? base}/api/turn/stop`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ conversation: tab }) })
         assert.equal(stopped.status, 200)
         await chat.locator('.adestia-bubble__working').waitFor({ state: 'hidden' })
-        report.push({ theme, format, locale, controls, modelGeometry, screenshots: 7 })
+        report.push({ theme, format, locale, controls, modelGeometry, brandGeometry, currentContrast, screenshots: 8 })
       } finally { await context.close() }
     }
   } finally { await browser.close(); await replay?.close() }
