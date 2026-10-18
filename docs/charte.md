@@ -81,7 +81,9 @@
   or Unicode glyph on a control any more; the chat, the editor and the home still draw
   `▤ ＋ ▥ ⚙ ✎ ↺ ✕ ×`: the chat tranche (`adestia-qualite-chat`) moves its controls to
   icons, and **TARGET** `adestia-qualite-pages` those of the home and the editor. The manifest `ic:` glyphs (`glyphs.ts`) and a plugin's declared
-  tile icon stay its own choice.
+  tile icon stay its own choice, and so does the emoji a plugin draws inside its own screens
+  (E-22 to E-31: media-type, journal, trip and meal marks): the closed list above is the shell's, a
+  plugin's mark is its content, **kept: replacing them adds icons to the contract (B-1)**.
 - **Focus**: one global `:focus-visible` rule (§ 4); mouse clicks show nothing.
 - **Motion**: 150–250 ms for a change of state: `--motion-quick` (150 ms) and
   `--motion-slow` (250 ms), both 0 under `prefers-reduced-motion` (which sets `--motion:
