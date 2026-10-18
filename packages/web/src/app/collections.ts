@@ -29,9 +29,6 @@ import { isFinished } from '@antorfr/adestia-content'
 import { prettify } from './paths.js'
 import type { IndexEntry } from './sections.js'
 
-// Kept for the callers that import it from here.
-export { prettify }
-
 /** A page the collection gathers, with the verdict on its life. */
 export interface Member {
   readonly path: string

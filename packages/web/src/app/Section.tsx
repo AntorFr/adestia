@@ -155,7 +155,7 @@ function RoomCard({
     <li>
       <button type="button" className="adestia-tile" style={hueVar(room.hue)} onClick={onOpen}>
         <span className="adestia-tile__icon" aria-hidden="true">
-          {room.icon}
+          {room.icon || <Icon name="folder" />}
         </span>
         {from && !from.default && (
           <span

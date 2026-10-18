@@ -15,7 +15,7 @@ export function folderOf(path: string): string {
   return cut === -1 ? '' : path.slice(0, cut)
 }
 
-const INDEX_FILE = /(^|\/)index\.md$/i
+export const INDEX_FILE = /(^|\/)index\.md$/i
 
 /**
  * `dietetique/dietetique.md` — the sibling shell's "space": a folder and a

@@ -12,6 +12,7 @@ import { wordsFor } from '../plugins/words.js'
 import type { TileInfo } from '../plugins/contract.js'
 import { EmptyState } from './ui/EmptyState.js'
 import { Tile } from './Tile.js'
+import type { IconName } from './icons.js'
 import { sectionsOf, type IndexEntry, type SectionTile, type StoreInfo } from './sections.js'
 import { ORDER_KEY_DOMAINS } from './order.js'
 import { useReorder } from './useReorder.js'
@@ -44,6 +45,7 @@ const SHELL_APP = { icon: '⚙', hue: 'ardoise', route: '/settings' } as const
 interface Domain {
   readonly key: string
   readonly icon: string
+  readonly iconName?: IconName
   readonly glyph?: string
   readonly hue?: string
   readonly label: string
@@ -170,6 +172,7 @@ export function Domains({
       return {
         key: section.path,
         icon: section.icon,
+        ...(!section.icon ? { iconName: 'folder' as const } : {}),
         ...(section.hue ? { hue: section.hue } : {}),
         label: section.title,
         chips: [{ text: plural(section.count, t('page'), t('pages')) }],
@@ -233,6 +236,7 @@ export function Domains({
           <Tile
             key={domain.key}
             icon={domain.icon}
+            {...(domain.iconName ? { iconName: domain.iconName } : {})}
             {...(domain.glyph ? { glyph: domain.glyph } : {})}
             {...(domain.hue ? { hue: domain.hue } : {})}
             {...(domain.store ? { store: domain.store } : {})}

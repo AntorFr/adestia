@@ -667,6 +667,11 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
 
 ## Known defects (found, not fixed by this epic)
 
+- **A root page's breadcrumb can invent a folder**: `app/trail.ts` derives the parent
+  with `path.slice(0, path.lastIndexOf('/'))`. Without a slash it drops the last
+  character instead of returning the empty parent that `app/paths.ts`'s `folderOf`
+  returns. Kept separate to preserve behaviour; correcting the breadcrumb needs its own fix.
+
 - **MCP server counts disagree**: the Settings tile can say “6 servers” while the MCP
   breadcrumb badge says “7 servers”. Observed during the charter review; whether it
   predates this epic is unknown. Kept under B-1, pending a separate behaviour investigation.

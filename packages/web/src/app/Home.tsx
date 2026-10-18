@@ -20,6 +20,7 @@ import type { IndexEntry, StoreInfo } from './sections.js'
 import { Icon } from './Icon.js'
 import { Brief } from './Brief.js'
 import { Domains, plural } from './Domains.js'
+import { INDEX_FILE } from './paths.js'
 
 export interface HomeProps {
   readonly ready?: boolean
@@ -94,7 +95,7 @@ export function Home({
   // Written by the shell because the shell is what knows the corpus: the
   // number is the reason the line exists, and a date with nothing after it is
   // decoration.
-  const pages = entries.filter((entry) => !/(^|\/)index\.md$/i.test(entry.path)).length
+  const pages = entries.filter((entry) => !INDEX_FILE.test(entry.path)).length
   const context = `${clock.toLocaleDateString(locale, {
     weekday: 'long',
     day: 'numeric',

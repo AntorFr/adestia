@@ -202,7 +202,7 @@ function tileFor(
     // keeps the title it would have had. An all-or-nothing rule would punish a
     // half-filled frontmatter by discarding the half that was there.
     title: text(fields['title']) ?? index?.title ?? prettify(folder.split('/').at(-1) ?? folder),
-    icon: text(fields['ico']) ?? '◆',
+    icon: text(fields['ico']) ?? '',
     ...(text(fields['couleur']) ? { hue: text(fields['couleur'])! } : {}),
     count: held.filter((entry) => !isIndexFile(entry.path)).length,
     ...(only !== undefined ? { store: only } : {}),
