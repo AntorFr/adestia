@@ -1,6 +1,31 @@
 # Status — Adestia
 > MàJ : 2026-10-18
 
+**Tranche `adestia-qualite-chat` (epic adestia-qualite) — assemblée, PR vers
+`epic/adestia-qualite`, pas fusionnée.** Aucun changement de ce que fait le chat (B-1, AD-7).
+- Code (R-11, R-12, AD-12) : `toMessage` écrit une fois (`chat/messages.ts`, option
+  `signatures`, défaut vrai ; Delegations passe `{ signatures: false }`, écart gardé comme
+  défaut écrit) ; tout appel réseau de `chat/` passe par `app/request.ts` (`requestJson`,
+  `requestRaw` pour le POST du tour et l'attache) ; `useConversations` coupé en
+  `useOpenConversations`/`useTurn`/`useTabActions`, `Chat` en `ChatHeader`/`TabStrip`/
+  `ConversationList`/`Thread`, `Composer` en `useUploads` ; aucune fonction > 250 lignes
+  (`node bench/long-functions.mjs packages/web/src/chat`). Instantané du balisage
+  (`chat-markup.test.tsx`).
+- Écrans (B-7, B-8, B-10, B-11) : rail (E-16), compositeur, permission (E-17) et feuille de
+  signature (E-18, la `<Sheet>` partagée) dessinés avec les composants et neuf icônes ajoutées
+  au sprite ; plus de glyphe ni d'émoji, une seule fermeture (`x`) ; chaînes et libellés par
+  la langue (en/fr) ; `chat.css`, `conversations.css`, `attachments.css` sans token indéfini,
+  couleur ou rayon littéral.
+- Recette : `npm ci`, `npm run typecheck`, `npm run lint`, `npm run build`, `npm test` ;
+  lancement `node bench/launch.mjs --engine fake` ; matrice
+  `bench/scenarios/chat-matrix.mjs` (rail, compositeur, permission, 4 habillages, en/fr,
+  clair/sombre, bureau/téléphone) ; tour réel : `bench/scenarios/chat-permission-live.mjs`.
+- Reste / pièges : suppression, renommage, désarchivage d'une conversation depuis
+  l'interface non faits (comportements nouveaux, AD-7) ; `live.ts`, `usePage.ts`, l'éditeur
+  et `PageEditor` gardent leur `fetchImpl(` (tranche pages) ; la suite vitest à navigateur
+  peut dépasser 5 s sous charge (repasse seule) ; une phrase de carte de permission peut venir
+  de l'outil en anglais (donnée du serveur, pas un libellé).
+
 **Tranche `adestia-qualite-plugins` (epic adestia-qualite) — assemblée, PR vers
 `epic/adestia-qualite`, pas fusionnée.** Aucun changement de ce que font les plugins (B-1).
 - Jetons : les feuilles de `plugins/*/web/*.css` lisent les jetons du shell (plus d'alias,
