@@ -19,6 +19,8 @@
  * its own name when it has none. Declared beats guessed; guessed beats gone.
  */
 
+import { folderOf, isIndexFile, prettify } from './paths.js'
+
 export interface SectionTile {
   /** Folder path, which is also the route to open it. */
   readonly path: string
@@ -71,21 +73,8 @@ export interface StoreInfo {
   readonly default?: boolean
 }
 
-const INDEX_FILE = /(^|\/)index\.md$/i
-
 /** Folders that are storage, not content: never a section. */
 const NOT_A_SECTION = new Set(['assets'])
-
-/**
- * `dietetique/dietetique.md` — the sibling shell's "space": a folder and a
- * page of the same name, the page being the folder's own overview. Seven of
- * them in the corpus this was measured against.
- */
-function isHomonymous(path: string): boolean {
-  const parts = path.split('/')
-  const file = parts.at(-1)?.replace(/\.md$/i, '')
-  return parts.length > 1 && file === parts.at(-2)
-}
 
 /**
  * The index page of a folder, either spelling.
@@ -98,31 +87,8 @@ export function indexOf(entries: readonly IndexEntry[], folder: string): IndexEn
   return entries.find(
     (entry) =>
       folderOf(entry.path) === folder &&
-      (INDEX_FILE.test(entry.path) || isHomonymous(entry.path)),
+      isIndexFile(entry.path),
   )
-}
-
-/** True for a page that IS its folder's index rather than one of its contents. */
-export function isIndexPage(path: string): boolean {
-  return INDEX_FILE.test(path) || isHomonymous(path)
-}
-
-/**
- * `plan-travail-garage` → `Plan travail garage`.
- *
- * Exported because the breadcrumb needs the SAME answer: a folder that has to
- * wear its own name there must wear the one the tiles already gave it, or the
- * same folder is `Cuisine` on one screen and `cuisine` on the next.
- */
-export function prettify(name: string): string {
-  const words = name.replace(/[-_]+/g, ' ').trim()
-  return words ? words.charAt(0).toUpperCase() + words.slice(1) : name
-}
-
-/** `domaines/achats/INDEX.md` → `domaines/achats`. */
-function folderOf(path: string): string {
-  const cut = path.lastIndexOf('/')
-  return cut === -1 ? '' : path.slice(0, cut)
 }
 
 function text(value: unknown): string | undefined {
@@ -236,9 +202,9 @@ function tileFor(
     // keeps the title it would have had. An all-or-nothing rule would punish a
     // half-filled frontmatter by discarding the half that was there.
     title: text(fields['title']) ?? index?.title ?? prettify(folder.split('/').at(-1) ?? folder),
-    icon: text(fields['ico']) ?? '◆',
+    icon: text(fields['ico']) ?? '',
     ...(text(fields['couleur']) ? { hue: text(fields['couleur'])! } : {}),
-    count: held.filter((entry) => !isIndexPage(entry.path)).length,
+    count: held.filter((entry) => !isIndexFile(entry.path)).length,
     ...(only !== undefined ? { store: only } : {}),
     ...(from.size > 1 ? { mixed: true } : {}),
   }
@@ -288,7 +254,7 @@ export function pagesIn(
   return entries.filter(
     (entry) =>
       entry.path.startsWith(prefix) &&
-      !isIndexPage(entry.path) &&
+      !isIndexFile(entry.path) &&
       !entry.path.slice(prefix.length).includes('/'),
   )
 }

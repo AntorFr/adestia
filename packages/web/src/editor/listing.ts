@@ -5,13 +5,7 @@
 
 import { isFinished, type Indexed } from '@antorfr/adestia-content'
 
-import { prettify } from './nodes.js'
-
-/** `domaines/voyages/baden.md` → `domaines/voyages`. */
-export function folderOf(path: string): string {
-  const cut = path.lastIndexOf('/')
-  return cut === -1 ? '' : path.slice(0, cut)
-}
+import { folderOf, isIndexPath, prettify } from '../app/paths.js'
 
 /**
  * Whether a page belongs in the list, at the depth asked for.
@@ -38,17 +32,10 @@ export function under(path: string, base: string, depth: string): boolean {
   if (depth === 'subtree') return true
 
   const rest = base === '' ? folder : folder.slice(base.length + 1).replace(/^\//, '')
-  if (folder === base) return !isIndexPage(path)
+  if (folder === base) return !isIndexPath(path)
   if (depth === 'self') return false
   // One folder down: only its index stands for it, the rest is that folder's business.
-  return !rest.includes('/') && isIndexPage(path)
-}
-
-/** A folder's own index page is the folder, not one of its contents. */
-export function isIndexPage(path: string): boolean {
-  const parts = path.split('/')
-  const file = parts.at(-1)?.replace(/\.md$/i, '') ?? ''
-  return /^index$/i.test(file) || (parts.length > 1 && file === parts.at(-2))
+  return !rest.includes('/') && isIndexPath(path)
 }
 
 /**

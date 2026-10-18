@@ -60,7 +60,7 @@ export default async function scenario(bench) {
   // A page opens as a READER; the field only exists once you take the pen —
   // which on a phone is the tap that used to zoom the screen for good.
   await go(phone, '/page/notes/note-1.md')
-  await phone.click('.adestia-editor__actions .adestia-ib')
+  await phone.click('.adestia-editor__actions .adestia-btn')
   await phone.waitForSelector('.adestia-editor__surface .ProseMirror')
   await phone.waitForTimeout(600)
   console.log('phone editor:', await sizeOf(phone, '.adestia-editor__surface .ProseMirror'))

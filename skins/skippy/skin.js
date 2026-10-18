@@ -143,7 +143,7 @@ function hero(host, context, words) {
         <div class="hailwrap">
           <h1 class="hail">${esc(salut)}, <em>${esc(words.monkey)}</em>.</h1>
           <p class="hailsub">${esc(sub)}</p>
-          <button class="promptbox" data-prompt type="button"><span class="caret" aria-hidden="true"></span><span>${esc(words.prompt)}</span><kbd>⌘K</kbd></button>
+          <button class="promptbox" data-prompt type="button"><span class="caret" aria-hidden="true"></span><span>${esc(words.prompt)}</span><kbd>${/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl K'}</kbd></button>
         </div>
       </div>
     </section>

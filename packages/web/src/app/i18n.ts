@@ -34,6 +34,12 @@ export type Locale = 'en' | 'fr'
  * mistranslated, and beats a raw identifier by a mile.
  */
 const FR: Readonly<Record<string, string>> = {
+  Highlights: 'À la une',
+  'Refresh my highlights': 'Rafraîchis ma une',
+  'Open “%label”': 'Ouvre « %label »',
+  Breadcrumb: 'Fil d’Ariane',
+  Chat: 'Chat',
+  'This plugin ships no screen': 'Ce plugin ne fournit pas d’écran',
   // The landing canvas
   // One mosaic now: a plugin's tile and a folder's are both doors on a domain.
   Domains: 'Domaines',
@@ -431,6 +437,69 @@ const FR: Readonly<Record<string, string>> = {
   Validate: 'Valider',
   '"app" is only read on a top-level folder': '« app » n’est lu que sur un dossier de premier niveau',
   'no active plugin is called "%name"': 'aucun plugin actif ne s’appelle « %name »',
+  // The page, read and written: save line, block bar, block settings, toolbar
+  // and slash menu, the reader's notes. French here is what the editor said
+  // before it spoke the instance's language, word for word.
+  'Saved, tidied to house style': 'Enregistré, remis au style de la maison',
+  'The agent changed this page. Reload to see its version.':
+    'L’agent a modifié cette fiche. Rechargez pour voir sa version.',
+  'Not saved: %reason': 'Non enregistré : %reason',
+  'the page breaks the vocabulary': 'la fiche sort du vocabulaire',
+  'line %n': 'ligne %n',
+  'This page uses blocks Adestia does not know, so it is open read-only. Fixing it is a change to the code, not to the file.':
+    'Cette fiche emploie des blocs qu’Adestia ne connaît pas : elle est ouverte en lecture seule. La corriger demande un changement du code, pas du fichier.',
+  'The editor could not open this page: %reason': 'L’éditeur n’a pas pu ouvrir cette fiche : %reason',
+  'Block settings': 'Réglages du bloc',
+  'Block settings %name': 'Réglages du bloc %name',
+  'Move block': 'Déplacer le bloc',
+  'Leave the parent block': 'Sortir du bloc parent',
+  'Delete block': 'Supprimer le bloc',
+  Preview: 'Aperçu',
+  'This block': 'Ce bloc',
+  required: 'obligatoire',
+  'choose…': 'choisir…',
+  'To fill in: %fields — the page is refused without.': 'À remplir : %fields — la page est refusée sans.',
+  Presentation: 'Présentation',
+  title: 'titre',
+  icon: 'icône',
+  'in a card': 'dans une carte',
+  width: 'largeur',
+  'the whole line': 'toute la ligne',
+  'two thirds': 'deux tiers',
+  'a half': 'la moitié',
+  'a third': 'un tiers',
+  'Unknown to this block': 'Inconnus de ce bloc',
+  'Remove %key': 'Retirer %key',
+  'new line': 'nouvelle ligne',
+  'Text blocks': 'Blocs de texte',
+  'Bullet list': 'Liste à puces',
+  'Numbered list': 'Liste numérotée',
+  Subtitle: 'Sous-titre',
+  Quote: 'Citation',
+  'Plain text': 'Texte simple',
+  Blocks: 'Blocs',
+  'This list needs the page whose files it shows.': 'Cette liste a besoin de la page dont elle montre les fichiers.',
+  'This page’s files could not be listed.': 'Les fichiers de cette page n’ont pas pu être listés.',
+  'No file here.': 'Aucun fichier ici.',
+  'This list needs the pages index.': 'Cette liste a besoin de l’index des pages.',
+  'Nothing under this page.': 'Rien sous cette page.',
+  'nothing carries this name here': 'rien ne porte ce nom ici',
+  'this block does not render yet': 'ce bloc ne s’affiche pas encore',
+  'this page was not found': 'cette fiche est introuvable',
+  '%n pages carry this id': '%n fiches portent cet identifiant',
+  // What the core says about each of its blocks, in the settings window.
+  'A highlighted aside: note, tip or warning.': 'Un encadré mis en valeur : note, astuce ou avertissement.',
+  'Embeds a coded app module, addressed by id. NOT DRAWN YET.':
+    'Intègre un module d’app codé, désigné par son id. PAS ENCORE DESSINÉ.',
+  'A line break between blocks that share lines: the next block starts a new line.':
+    'Un saut de ligne entre des blocs qui se partagent une ligne : le bloc suivant commence une nouvelle ligne.',
+  'A group of images laid out as a gallery.': 'Un groupe d’images disposées en galerie.',
+  'A titled passage of prose. Its subject is `type`.': 'Un passage de prose titré. Son sujet est `type`.',
+  'Figures drawn as tiles, from a markdown list.': 'Des chiffres dessinés en tuiles, à partir d’une liste markdown.',
+  'A markdown table, scrolling, with its first column emphasised.':
+    'Un tableau markdown, défilant, dont la première colonne est mise en valeur.',
+  'Rows: the pages under this one, the files beside it, or the lines written in the block.':
+    'Des lignes : les fiches sous celle-ci, les fichiers à côté, ou les lignes écrites dans le bloc.',
 }
 
 const TABLES: Readonly<Record<Locale, Readonly<Record<string, string>>>> = {

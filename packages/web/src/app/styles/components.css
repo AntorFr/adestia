@@ -313,3 +313,29 @@
 .adestia-gate__icon--danger { color: var(--danger-text); }
 .adestia-gate__title { margin: 0; font-size: var(--text-xl); }
 .adestia-gate__text { margin: 0; color: var(--text-muted); overflow-wrap: anywhere; }
+
+/* Pages: facet toggles and notes share the shell's focus and empty grammar. */
+button.adestia-chip {
+  appearance: none;
+  min-height: 28px;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  font: 600 var(--text-xs) var(--font-mono);
+  cursor: pointer;
+}
+button.adestia-chip:hover { background: var(--surface-soft); }
+button.adestia-chip[aria-pressed='true'] {
+  background: var(--accent-quiet);
+  color: var(--accent-text);
+  border-color: var(--accent-text);
+}
+button.adestia-chip:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
+.adestia-empty--inline { display: flex; flex-direction: row; gap: var(--space-2); padding: var(--space-2) 0; }
+.adestia-empty--inline .adestia-empty__icon { display: inline-flex; font-size: var(--text-base); }
+.adestia-loading { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-5); color: var(--text-muted); }
+.adestia-loading .adestia-icon { animation: adestia-spin 1s linear infinite; }
+@keyframes adestia-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .adestia-loading .adestia-icon { animation: none; } }

@@ -649,7 +649,7 @@ describe('settings, as an app of the shell', () => {
       expect(found).toBeTruthy()
       return found as HTMLElement
     })
-    expect(back.textContent).toBe('‹ Instructions')
+    expect(back.textContent).toBe('Instructions')
     await act(async () => {
       fireEvent.click(back)
       window.dispatchEvent(new HashChangeEvent('hashchange'))

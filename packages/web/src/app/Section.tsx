@@ -20,6 +20,8 @@ import { useMemo, useState, type CSSProperties } from 'react'
 import { isFinished, toneOf } from '@antorfr/adestia-content'
 
 import type { IndexEntry, SectionTile, StoreInfo } from './sections.js'
+import { Icon } from './Icon.js'
+import { EmptyState } from './ui/EmptyState.js'
 import { pagesIn, subsectionsOf } from './sections.js'
 
 export interface SectionProps {
@@ -153,7 +155,7 @@ function RoomCard({
     <li>
       <button type="button" className="adestia-tile" style={hueVar(room.hue)} onClick={onOpen}>
         <span className="adestia-tile__icon" aria-hidden="true">
-          {room.icon}
+          {room.icon || <Icon name="folder" />}
         </span>
         {from && !from.default && (
           <span
@@ -278,7 +280,7 @@ export function Section({
           rather than a jump to somewhere unrelated. */}
       <header className="adestia-chead">
         <span className="adestia-chead__icon" aria-hidden="true">
-          {tile?.icon ?? '◆'}
+          {tile?.icon ? tile.icon : <Icon name="folder" />}
         </span>
         <div>
           <h1 className="adestia-chead__title">{title}</h1>
@@ -331,11 +333,8 @@ export function Section({
           {(live.length > 5 || facetValues.length > 1) && (
             <div className="adestia-toolbar">
               <label className="adestia-search">
-                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="11" cy="11" r="7" />
-                  <path d="M21 21l-4-4" />
-                </svg>
-                <input
+                <Icon name="search" />
+                <input className="adestia-input"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder={t('Search…')}
@@ -346,7 +345,8 @@ export function Section({
                 <div className="adestia-facets">
                   <button
                     type="button"
-                    className={facet === undefined ? 'adestia-pill adestia-pill--on' : 'adestia-pill'}
+                    className="adestia-chip"
+                    aria-pressed={facet === undefined}
                     onClick={() => setFacet(undefined)}
                   >
                     {t('All')}
@@ -355,7 +355,8 @@ export function Section({
                     <button
                       key={value}
                       type="button"
-                      className={facet === value ? 'adestia-pill adestia-pill--on' : 'adestia-pill'}
+                      className="adestia-chip"
+                      aria-pressed={facet === value}
                       onClick={() => setFacet(facet === value ? undefined : value)}
                     >
                       {value}
@@ -379,7 +380,7 @@ export function Section({
               ))}
             </ul>
           ) : (
-            <p className="adestia-empty">{t('Nothing matches.')}</p>
+            <EmptyState icon="search-x" text={t('Nothing matches.')} />
           )}
         </>
       )}
@@ -388,7 +389,7 @@ export function Section({
           section: folded away, counted, one click from being read again. */}
       {finished.length > 0 && (
         <details className="adestia-archive">
-          <summary>
+          <summary className="adestia-btn adestia-btn--ghost"><Icon name="chevron-right" />
             {t('Finished')} <span className="adestia-archive__count">{finished.length}</span>
           </summary>
           <ul className="adestia-cards">
@@ -406,9 +407,7 @@ export function Section({
       )}
 
       {rooms.length === 0 && all.length === 0 && (
-        <section className="adestia-empty">
-          <p>{t('This section holds nothing yet.')}</p>
-        </section>
+        <EmptyState icon="folder-open" text={t('This section holds nothing yet.')} />
       )}
     </div>
   )

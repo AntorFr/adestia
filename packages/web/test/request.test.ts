@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { FALLBACK_KEY, jsonInit, requestJson } from '../src/app/request.js'
+import { FALLBACK_KEY, jsonInit, requestJson, requestRaw } from '../src/app/request.js'
 
 const reply = (body: string | null, status = 200) =>
   (async () => new Response(body, { status })) as unknown as typeof fetch
@@ -78,5 +78,26 @@ describe('jsonInit', () => {
   })
   it('sends no content-type without a body', () => {
     expect(jsonInit('DELETE')).toEqual({ method: 'DELETE' })
+  })
+})
+
+describe('requestRaw', () => {
+  it('hands back any HTTP status as a response, never as a failure', async () => {
+    for (const status of [200, 404, 500]) {
+      const out = await requestRaw(reply('x', status), '/x')
+      expect(out.ok).toBe(true)
+      expect((out as { response: Response }).response.status).toBe(status)
+    }
+  })
+
+  it('passes the init through and never throws on a network error', async () => {
+    let seen: RequestInit | undefined
+    const spy = (async (_p: string, init?: RequestInit) => {
+      seen = init
+      throw new TypeError('offline')
+    }) as unknown as typeof fetch
+    const signal = new AbortController().signal
+    expect(await requestRaw(spy, '/x', { signal })).toEqual({ ok: false, error: 'offline' })
+    expect(seen?.signal).toBe(signal)
   })
 })

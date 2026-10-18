@@ -46,12 +46,17 @@ node bench/launch.mjs --engine fake    # prints `listening on <url>`; <url>/api/
 node bench/sweep.mjs                   # every screen, light and dark, desk and phone
 ```
 
-The sweep takes Playwright and Chromium from the environment (`npm root -g`); do not
+The sweep takes Playwright and Chromium from the environment (`npm root -g`; the `pages-*` scenarios load it from `/usr/lib/node_modules`, so a host with another global root must link it there); do not
 add them to the repo. The launcher runs until SIGTERM (`kill <pid>`, or Ctrl-C), which
 removes its throwaway data; in a script, start it in the background and keep its pid
 (`$!`). Run it from the clone's root: the bundled plugins are found through `./plugins`, and from elsewhere the server starts with `0 of 0 plugin(s) active`. Its boot log includes a plugin refused on purpose (`bench-refused`, part of the seed): not an error.
 
 `--engine claude` runs a real turn instead (needs `CLAUDE_CODE_OAUTH_TOKEN`).
+For the pages state matrix (four skins, both languages, both themes, desktop
+and phone), run `node bench/scenarios/pages-matrix.mjs` after the build; the pictures land in `bench/shots-pages/` (`BENCH_OUT` moves them) and success is the list of captures with no error. Pass
+`bench/scenarios/pages-editor.mjs` as its argument for the editor states;
+`node bench/scenarios/pages-editor-narrow.mjs` checks the 360 px layout (it prints `overflow=0` per state).
+
 See [bench/README.md](bench/README.md). The map of the code, the decisions (AD-n) and the
 needs and screens they cite (B-n, P-n, E-n: `docs/parcours.md`, `docs/ecrans.md`) are in
 [ARCHITECTURE.md](ARCHITECTURE.md).
@@ -76,6 +81,9 @@ Adestia's own interface.
   blocks, edited in a Notion-like editor or by the agent with its own file
   tools. One grammar renders, edits and validates them, so a save cannot change
   what a page means. A save is refused if the agent wrote underneath you.
+  Home shows a loading row
+  while the plugins and page index arrive; pages, their editor and properties
+  use shared controls and the instance language (English or French).
   A page's other files — the plan as a PDF, the photo of the dish — sit next to
   it on disk, display in it, and are listed under it as attachments. What a
   page's status says is finished folds away rather than crowding the live ones.
@@ -193,6 +201,11 @@ npm run typecheck
 npm run lint      # also run by CI
 npm run build
 ```
+
+The web shell dispatches screens in `app/Canvas.tsx`; `CanvasHeader.tsx` owns the
+breadcrumb and phone return. `Home.tsx` composes `Brief` and `Domains`; the page
+editor delegates saving to `editor/useAutosave.ts` and reading to `editor/reader/`.
+Shared path rules and requests live in `app/paths.ts` and `app/request.ts`.
 
 Every driver is exercised against a fake binary, which is a property of the
 driver contract rather than a convenience: a driver whose behaviour is only

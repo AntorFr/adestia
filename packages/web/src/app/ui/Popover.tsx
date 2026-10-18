@@ -20,7 +20,7 @@ const GAP = 8
  */
 export function Popover({ anchor, open, onClose, children, label, className }: PopoverProps) {
   const panel = useRef<HTMLDivElement>(null)
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
+  const [pos, setPos] = useState<{ top: number; left: number; maxHeight?: number } | null>(null)
   useFocusScope(panel, open, { trap: false, onEscape: onClose })
 
   useLayoutEffect(() => {
@@ -33,7 +33,14 @@ export function Popover({ anchor, open, onClose, children, label, className }: P
     const below = a.bottom + GAP
     const flip = below + h > window.innerHeight && a.top - GAP - h >= 0
     const left = Math.max(GAP, Math.min(a.left, window.innerWidth - w - GAP))
-    setPos({ top: flip ? a.top - GAP - h : below, left })
+    // No room above and not enough below: the panel keeps its place and the
+    // screen's edge becomes its height — it scrolls inside itself, whole.
+    const clamp = !flip && below + h > window.innerHeight
+    setPos({
+      top: flip ? a.top - GAP - h : below,
+      left,
+      ...(clamp ? { maxHeight: Math.max(120, window.innerHeight - below - GAP) } : {}),
+    })
   }, [open, anchor])
 
   useEffect(() => {
@@ -58,7 +65,7 @@ export function Popover({ anchor, open, onClose, children, label, className }: P
       className={className ? `adestia-popover ${className}` : 'adestia-popover'}
       role="dialog"
       aria-label={label}
-      style={pos ? { top: pos.top, left: pos.left } : { top: 0, left: 0, visibility: 'hidden' }}
+      style={pos ? { top: pos.top, left: pos.left, ...(pos.maxHeight ? { maxHeight: pos.maxHeight } : {}) } : { top: 0, left: 0, visibility: 'hidden' }}
     >
       {children}
     </div>,

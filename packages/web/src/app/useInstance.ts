@@ -82,6 +82,11 @@ export function useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef
   const [skinScheme, setSkinScheme] = useState<'light' | 'dark' | undefined>(undefined)
   const [loaded, setLoaded] = useState<readonly LoadedPlugin[]>([])
   /**
+   * False until the plugins are loaded AND the first index request has answered
+   * — answer or failure: a failed index is "ready, empty".
+   */
+  const [ready, setReady] = useState(false)
+  /**
    * The same list, readable the instant it exists.
    *
    * The page editor lent to plugins is built BEFORE they load, and a plugin
@@ -210,6 +215,7 @@ export function useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef
           setPages(Array.isArray(body?.entries) ? body.entries : [])
           setStores(Array.isArray(body?.stores) ? body.stores : [])
         }
+        if (!cancelled) setReady(true)
       } catch (error) {
         // A shell that renders an empty page when the API is unreachable makes
         // its user reload forever; naming the failure costs one line.
@@ -258,5 +264,5 @@ export function useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef
     return () => controller.abort()
   }, [instance, fetchImpl])
 
-  return { instance, failures, fatal, offline, needsLogin, pages, stores, skin, skinScheme, loaded }
+  return { instance, failures, fatal, offline, needsLogin, pages, stores, skin, skinScheme, loaded, ready }
 }

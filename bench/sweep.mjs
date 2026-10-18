@@ -57,8 +57,8 @@ const SCREENS = [
   { id: 'E-2', name: 'home', seed: 'base', proof: '.adestia-home__greeting ~ .adestia-section .adestia-brief__item, .adestia-home .adestia-tiles .adestia-tile' },
   { id: 'E-3', name: 'section', seed: 'base', route: '/section/voyages', proof: '.adestia-home .adestia-cards .adestia-card' },
   { id: 'E-4', name: 'page', seed: 'base', route: '/page/pieces/dossier', proof: '.adestia-editor .adestia-reader .adestia-list' },
-  { id: 'E-5', name: 'page-properties', seed: 'base', route: '/page/pieces/dossier', open: edit('.adestia-editor__meta-gear'), proof: '.adestia-editor__meta-panel .adestia-blockset--page' },
-  { id: 'E-6', name: 'block-settings', seed: 'base', route: '/page/pieces/dossier', open: edit('.adestia-edblock__gear', { force: true }), proof: '.adestia-edblock__panel .adestia-blockset' },
+  { id: 'E-5', name: 'page-properties', seed: 'base', route: '/page/pieces/dossier', open: edit('.adestia-editor__meta-gear'), proof: '.adestia-popover.adestia-blockset--page' },
+  { id: 'E-6', name: 'block-settings', seed: 'base', route: '/page/pieces/dossier', open: edit('.adestia-edblock__gear', { force: true }), proof: '.adestia-popover.adestia-blockset' },
   { id: 'E-7', name: 'collection', seed: 'base', route: '/page/projets/INDEX', proof: '.adestia-collection .adestia-cards .adestia-card' },
   { id: 'E-8', name: 'missing-page', seed: 'base', route: '/page/nope/absente', proof: '.adestia-missing .adestia-missing__path' },
   { id: 'E-9', name: 'settings', seed: 'base', route: '/settings', proof: '.adestia-prefs .adestia-tiles .adestia-tile' },
@@ -96,7 +96,7 @@ function click(selector, options = {}) {
 /** Opens the page in the editor (✎), then does `gesture`. */
 function edit(selector, options = {}) {
   return async (page) => {
-    await page.locator('.adestia-editor__actions .adestia-ib').first().click({ timeout: 10_000 })
+    await page.locator('.adestia-editor__actions .adestia-btn').first().click({ timeout: 10_000 })
     await page.waitForSelector('.adestia-editor__surface .ProseMirror', { timeout: 10_000 })
     await click(selector, options)(page)
   }

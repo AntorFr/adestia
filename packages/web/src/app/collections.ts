@@ -26,6 +26,7 @@
 
 import { isFinished } from '@antorfr/adestia-content'
 
+import { prettify } from './paths.js'
 import type { IndexEntry } from './sections.js'
 
 /** A page the collection gathers, with the verdict on its life. */
@@ -161,12 +162,6 @@ export function facetsOf(
       if (b.live.length !== a.live.length) return b.live.length - a.live.length
       return a.label.localeCompare(b.label)
     })
-}
-
-/** `rangement-garage` → `Rangement garage`. */
-export function prettify(value: string): string {
-  const words = value.replace(/[-_]+/g, ' ').trim()
-  return words ? words.charAt(0).toUpperCase() + words.slice(1) : value
 }
 
 /**
