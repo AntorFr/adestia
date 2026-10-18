@@ -28,8 +28,7 @@ for (const locale of ['en', 'fr']) {
     opener.click()
     const scrim = document.querySelector('.adestia-sheet')
     assert.equal(scrim.hidden, false)
-    assert.ok(document.querySelector('.voyages').parentElement.contains(scrim), 'scrim stays in the plugin subtree')
-    assert.equal(scrim.parentElement.tagName === 'BODY', false)
+    assert.equal(scrim.parentElement.tagName, 'BODY', 'open, the scrim sits on the body: a fixed node inside a folded pane is fixed to the pane')
     const dialog = scrim.querySelector('[role="dialog"]')
     assert.equal(dialog.getAttribute('aria-modal'), 'true')
     assert.equal(document.getElementById(dialog.getAttribute('aria-labelledby')).textContent, 'Caracalla')
@@ -42,6 +41,7 @@ for (const locale of ['en', 'fr']) {
     key(document, 'Escape')
     assert.equal(scrim.hidden, true)
     assert.equal(scrim.children.length, 0)
+    assert.ok(document.querySelector('.voyages').parentElement.contains(scrim), 'closed, the scrim is back in the plugin subtree')
     assert.equal(document.activeElement, opener, 'focus goes back to the card')
     root.unmount()
   })
@@ -104,6 +104,16 @@ test('unmounting the view leaves no sheet behind', async () => {
   root.unmount()
   await settle()
   assert.equal(document.querySelector('.adestia-sheet'), null)
+})
+
+test('unmounting the view while a card is open leaves nothing on the body', async () => {
+  const { document, root } = await mountTrip('en')
+  card(document).click()
+  assert.equal(document.querySelector('.adestia-sheet').parentElement.tagName, 'BODY')
+  root.unmount()
+  await settle()
+  assert.equal(document.querySelector('.adestia-sheet'), null)
+  assert.equal(document.querySelector('[role="dialog"]'), null)
 })
 
 test('in English no text node, label or title is accented or French, sheet included, outside the seeded content', async () => {
