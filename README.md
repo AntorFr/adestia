@@ -53,9 +53,9 @@ removes its throwaway data; in a script, start it in the background and keep its
 
 `--engine claude` runs a real turn instead (needs `CLAUDE_CODE_OAUTH_TOKEN`).
 For the pages state matrix (four skins, both languages, both themes, desktop
-and phone), run `node bench/scenarios/pages-matrix.mjs` after the build. Pass
+and phone), run `node bench/scenarios/pages-matrix.mjs` after the build; the pictures land in `bench/shots-pages/` (`BENCH_OUT` moves them) and success is the list of captures with no error. Pass
 `bench/scenarios/pages-editor.mjs` as its argument for the editor states;
-`node bench/scenarios/pages-editor-narrow.mjs` checks the 360 px layout.
+`node bench/scenarios/pages-editor-narrow.mjs` checks the 360 px layout (it prints `overflow=0` per state).
 
 See [bench/README.md](bench/README.md). The map of the code, the decisions (AD-n) and the
 needs and screens they cite (B-n, P-n, E-n: `docs/parcours.md`, `docs/ecrans.md`) are in
