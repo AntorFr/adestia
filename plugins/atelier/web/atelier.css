@@ -1,153 +1,145 @@
 /*
  * The workbench's styles.
  *
- * Two parts, and the split is the interesting one.
+ * The rules read the shell's tokens by name (`--text`, `--border`,
+ * `--surface-*`, `--font-mono`, `--radius-*`): a skin that changes them
+ * dresses the cutting diagram too. What a cutting plan colours to MEAN
+ * something — an edge banded, a piece done, a cut that will not fit — is a
+ * parameter defined once below and DERIVED from the tokens, never a second
+ * name for one of them.
  *
- * The FIRST is a token bridge. The engine was written against agent-gw's names
- * (`--ink`, `--proj`, `--f-mono`) and carrying it over unchanged was the whole
- * point of the port — so the names are aliased here, scoped to this plugin,
- * rather than renamed across a thousand lines. Aliases mean a Adestia skin still
- * dresses the workbench: change `--accent` and the cutting diagram follows.
- *
- * The SECOND is the layout rules the engine's markup needs, extracted from the
- * shell it came from. They are namespaced under `.atelier-page`, so a plugin's
- * `.card` cannot restyle the shell's.
+ * The rules are namespaced under `.atelier-page`, so a plugin's `.card`
+ * cannot restyle the shell's. The sheet and the full-screen bench are
+ * attached to `document.body`, outside it, and carry their own classes.
  */
 
-/* The bridge is armed on the overlays too, and not only on the page: the
-   engine attaches them to `document.body`, where nothing inherits from
-   `.atelier`, and a full-screen bench with unresolved colours is a black
-   screen. */
 .atelier,
 .atelier-full,
-.atelier-modal {
-  /* Bridge: agent-gw's vocabulary, in Adestia's tokens. */
-  --ink: var(--text);
-  --ink-soft: var(--text-muted);
-  --ink-faint: var(--text-faint);
-  --line: var(--border);
-  --surface2: var(--surface-sunken);
-  --f-mono: var(--font-mono);
-  --f-body: var(--font);
-  --f-title: var(--font);
-  --r-xs: var(--radius-sm);
-  --r-micro: 2px;
-  --r-s: var(--radius);
-  --r-m: var(--radius-lg);
-  --r: var(--radius);
-  --r-sm: var(--radius-sm);
-  --r-ctl: var(--radius);
-  --r-lg: var(--radius-lg);
-  --shadow-lg: var(--shadow);
-
-  /* The domain palette: a cutting diagram uses colour to MEAN something —
-     an edge banded, a piece done, a cut that will not fit — so these are
-     derived from the accent rather than left to a skin's discretion. */
-  --proj: var(--accent);
-  --agenda: var(--accent);
-  --shop: var(--text-muted);
-  --good: var(--success);
-  --warn: var(--warning);
-  --crit: var(--danger);
-  --todo: var(--danger);
-  --sink: var(--surface-sunken, var(--surface));
-  --on-solid: #fff;
-  --scrim: rgb(8 11 18 / 55%);
+.atelier-sheet {
+  --wb-plan: color-mix(in srgb, var(--text-muted) 80%, var(--accent));
+  --wb-edge: color-mix(in srgb, var(--warning) 85%, var(--text));
+  --wb-done: color-mix(in srgb, var(--success) 85%, var(--text));
+  --wb-fault: color-mix(in srgb, var(--danger) 90%, var(--text));
+  --wb-etq: clamp(56px, 14vw, 140px);
+  --wb-dims: clamp(20px, 4vw, 34px);
 }
 
 .atelier-page { color: var(--text); }
 .atelier-page .wrap { display: flex; flex-direction: column; gap: var(--space-3); }
 .atelier-page .chead { display: flex; align-items: center; gap: var(--space-3); }
-.atelier-page .aico { font-size: 1.6rem; }
+.atelier-page .aico { font-size: var(--text-xl); }
 .atelier-page h1 { margin: 0; font-size: var(--text-lg); }
 .atelier-page .lede { color: var(--text-muted); font-size: var(--text-sm); }
 .atelier-page .empty { color: var(--text-faint); font-size: var(--text-sm); }
-.atelier-page .grouplabel { font-size: var(--text-sm); text-transform: uppercase; letter-spacing: .06em; color: var(--text-faint); margin-top: var(--space-4); }
+.atelier-page .grouplabel { font-size: var(--text-sm); text-transform: uppercase; letter-spacing: var(--label-track); color: var(--text-faint); margin-top: var(--space-4); }
 .atelier-page .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--space-3); list-style: none; margin: 0; padding: 0; }
 .atelier-page .card { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface-raised); color: var(--text); text-decoration: none; }
 .atelier-page .card:hover { border-color: var(--border-strong); }
 .atelier-page svg { max-width: 100%; height: auto; }
 .atelier-page .cutwrap { overflow-x: auto; }
-.atelier-page .wbtabs { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-3); }
-.atelier-page .wbtabs button { padding: var(--space-1) var(--space-3); border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text-muted); font: inherit; font-size: var(--text-sm); cursor: pointer; }
+.atelier-page .wbtabs { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-2) 0 var(--space-4); }
+.atelier-page .wbtabs button { padding: var(--space-1) var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-pill); background: var(--surface); color: var(--text-muted); font: inherit; font-size: var(--text-sm); cursor: pointer; }
 .atelier-page .wbtabs button[aria-selected='true'] { border-color: var(--accent); color: var(--accent); }
 
-/* ── Extracted from the shell the engine came from ───────────────────────── */
-.atelier-page .tag { font:600 10.5px/1.5 var(--f-mono); border-radius:var(--r-xs); padding:2px 8px; border:1px solid var(--line); color:var(--ink-soft); }
-.atelier-page .card .ct { font:600 15.5px/1.2 var(--f-title); }
-.atelier-page .card .cmeta { font:12.5px var(--f-body); color:var(--ink-soft); }
-.atelier-page .card .bar { height:5px; background:var(--surface2); border-radius:var(--r-micro); overflow:hidden; }
-.atelier-page .card .bar i { display:block; height:100%; background:var(--dc,var(--proj)); }
-.atelier-page .space-toc .lbl { font:600 10px var(--f-mono); letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint); padding:2px 10px 8px; }
-/* padding:0 est INDISPENSABLE : .cbox est un <button>, le reset `button` plus haut
-   n'annule que bordure et fond, jamais le padding UA (~1px 6px). Sans ça, la zone de
-   contenu tombe à ~4px (19 - 12 de padding - 3.2 de bordure) et le ✓ déborde en biais.
-   Invisible tant que la case ne se cochait pas (color:transparent) — révélé par D28. */
-.atelier-page .cbox { width:19px; height:19px; border:1.6px solid var(--ink-faint); border-radius:var(--r-xs); flex-shrink:0; margin-top:1px; display:grid; place-items:center; color:transparent; font-size:12px; padding:0; line-height:1; transition:.14s; }
-.atelier-page .task:hover .cbox { border-color:var(--todo); }
-.atelier-page .cbox.on { background:var(--good); border-color:var(--good); color:var(--on-solid); }
-.atelier-page .lcard .bar { height:5px; background:var(--surface2); border-radius:var(--r-micro); overflow:hidden; }
-.atelier-page .lcard .bar i { display:block; height:100%; background:var(--lc); }
-/* Workbook (débit SVG à l'échelle) */
-.atelier-page .prog { height:7px; background:var(--surface2); border:1px solid var(--line); border-radius:var(--r-micro); overflow:hidden; margin:16px 0 18px; }
-.atelier-page .prog i { display:block; height:100%; background:var(--shop); }
-.atelier-page .wbtabs { display:flex; gap:2px; margin:6px 0 18px; border-bottom:1px solid var(--line); }
-.atelier-page .blueprint { background:var(--sink); border:1px solid var(--line); border-radius:var(--r-lg); margin-bottom:14px; background-image:linear-gradient(color-mix(in srgb,var(--ink) 5%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--ink) 5%,transparent) 1px,transparent 1px); background-size:20px 20px; }
-.atelier-page .bp-inner { padding:16px 18px; }
-.atelier-page .bp-h { display:flex; align-items:baseline; gap:10px; margin-bottom:6px; }
-.atelier-page .bp-h b { font:600 12.5px var(--f-mono); color:var(--shop); }
-.atelier-page .bp-h span { font:11.5px var(--f-mono); color:var(--ink-soft); }
-.atelier-page .cutwrap { overflow-x:auto; }
-.atelier-page .cutwrap svg { display:block; width:100%; height:auto; }
-/* PAS de min-width : elle remontait de force les petits dessins et cassait le px/mm commun du workbook (une plaque de 700 rendait au double d'une de 2800). L'échelle est un invariant. */ .colc { cursor:pointer; }
-.atelier-page .colc:hover .colbox { stroke-width:4; }
-.atelier-page .pname { cursor:pointer; }
-.atelier-page .pname:hover { fill:var(--accent)!important; text-decoration:underline; }
-.atelier-page .tgcols { display:flex; flex-wrap:wrap; gap:7px; margin-top:11px; }
-.atelier-page .colchip { font:600 12px var(--f-mono); padding:5px 11px; border:1.5px solid var(--shop); color:var(--shop); background:none; border-radius:var(--r-sm); cursor:pointer; }
-.atelier-page .colchip:hover { background:color-mix(in srgb,var(--shop) 10%,transparent); }
-.atelier-page .colchip.done { border-color:var(--ink-faint); color:var(--ink-faint); background:color-mix(in srgb,var(--ink-faint) 8%,transparent); }
-.atelier-page .legend { display:flex; gap:14px; flex-wrap:wrap; margin:10px 2px 0; }
-.atelier-page .legend span { display:inline-flex; align-items:center; gap:7px; font:600 11px var(--f-mono); color:var(--ink-soft); }
-.atelier-page .sw { width:13px; height:13px; border-radius:var(--r-micro); }
-.atelier-page .srow .cbox { width:17px; height:17px; }
-.atelier-page .srow.done .cbox { background:var(--good); border-color:var(--good); color:var(--on-solid); }
-.atelier-page .srow .lbl { cursor:pointer; }
-.atelier-page .srow .dim { margin-left:auto; color:var(--ink-faint); font-size:11px; }
-.atelier-page .sgrp { margin-bottom:16px; }
-.atelier-page .sgrp .sh { font:600 10.5px var(--f-mono); letter-spacing:.1em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:8px; }
-/* Assemblage v0.2 — scène + séquence de montage cochable côte à côte */
-.atelier-page .asmgrid { display:block; }
-/* la scène prend TOUTE la largeur : partagée avec la séquence, elle rendait à la moitié du px/mm des autres vues — l'échelle commune du workbook est un invariant, pas une préférence */ .asmgrid .cutwrap { min-width:0; }
-.atelier-page .asmgrid .asmseq { margin-top:12px; }
-.atelier-page .asmseq { flex:1 1 300px; display:flex; flex-direction:column; gap:6px; }
-.atelier-page .asmseqh { font:600 10.5px var(--f-mono); letter-spacing:.1em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:2px; }
-.atelier-page .asmstep .cbox { width:17px; height:17px; margin-top:1px; }
-.atelier-page .asmstep.done .cbox { background:var(--good); border-color:var(--good); color:var(--on-solid); }
-.atelier-page .asmno { font:600 11px var(--f-mono); color:var(--ink-faint); min-width:14px; text-align:right; margin-top:2px; }
-.atelier-page .asmg { font-size:14px; line-height:1.35; color:var(--shop); min-width:16px; text-align:center; }
-.atelier-page .asmt { display:flex; flex-direction:column; gap:1px; min-width:0; }
-.atelier-page .asmt b { font:600 12.5px var(--f-mono); color:var(--ink); }
-.atelier-page .asmt i { font:11px var(--f-mono); font-style:normal; color:var(--ink-soft); }
-.atelier-full .reg { font:600 15px var(--f-mono); color:var(--shop); letter-spacing:.05em; }
-.atelier-full .etq { font:800 clamp(56px,14vw,140px) var(--f-mono); line-height:1; margin:6px 0; }
-.atelier-full .dims { font:600 clamp(20px,4vw,34px) var(--f-mono); color:var(--ink-soft); }
-.atelier-full .progress { width:min(420px,80vw); height:8px; border-radius:var(--r-micro); background:var(--surface2); overflow:hidden; margin-top:26px; }
-.atelier-full .progress > div { height:100%; background:var(--good); }
-.atelier-full .pcount { font:12px var(--f-mono); color:var(--ink-faint); margin-top:10px; }
-.atelier-modal .piece-body h2 { font:800 24px var(--f-mono); margin:0 0 12px; }
-.atelier-modal .piece-body .prow { display:flex; gap:10px; font-size:13.5px; margin-bottom:8px; }
-.atelier-modal .piece-body .prow b { flex:0 0 92px; color:var(--ink-faint); font:600 12px var(--f-mono); }
-/* Overlays the engine attaches to `document.body`, which is why nothing here
-   is nested under `.atelier-page` — they are not in it. `.atelier-modal`
-   rather than the launcher's bare `.modal`: a plugin does not get to own a
-   name that generic in somebody else's shell. */
-.atelier-full { position: fixed; inset: 0; z-index: 60; background: var(--sink); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px; }
-.atelier-full[hidden] { display: none; }
-.atelier-full .close { position: absolute; top: 16px; right: 18px; width: 40px; height: 40px; border-radius: var(--r-ctl); border: 1px solid var(--line); background: var(--surface); font-size: 17px; }
-.atelier-full .extra { font: 14px var(--f-mono); color: var(--ink-faint); margin-top: 8px; }
-.atelier-full .done-btn { margin-top: 34px; border: none; background: var(--good); color: var(--on-solid); border-radius: var(--r-lg); padding: 20px 48px; font: 800 22px var(--f-body); }
+/* ── The engine's own markup ─────────────────────────────────────────────── */
+.atelier-page .tag { font-family: var(--font-mono); font-size: var(--text-2xs); font-weight: 600; line-height: 1.5; border-radius: var(--radius-sm); padding: 2px var(--space-2); border: 1px solid var(--border); color: var(--text-muted); }
+.atelier-page .tag.shopmode { cursor: pointer; padding: var(--space-2) var(--space-3); border-color: var(--wb-plan); color: var(--wb-plan); background: none; }
+.atelier-page .card .ct { font-size: var(--text-base); font-weight: 600; line-height: 1.2; }
+.atelier-page .card .cmeta { font-size: var(--text-xs); color: var(--text-muted); }
+.atelier-page .card .bar { height: 5px; background: var(--surface-sunken); border-radius: var(--radius-micro); overflow: hidden; }
+.atelier-page .card .bar i { display: block; height: 100%; background: var(--wb-plan); }
+.atelier-page .space-toc .lbl { font-family: var(--font-mono); font-size: var(--text-2xs); font-weight: 600; letter-spacing: var(--label-track); text-transform: uppercase; color: var(--text-faint); padding: 2px 10px var(--space-2); }
+/* padding:0 is ESSENTIAL: .cbox is a <button>, and the reset only clears its
+   border and background, never the UA padding (~1px 6px) — which squeezed the
+   content box and tilted the tick. */
+.atelier-page .cbox { width: 19px; height: 19px; border: 1.6px solid var(--text-faint); border-radius: var(--radius-sm); flex-shrink: 0; margin-top: 1px; display: grid; place-items: center; color: transparent; font-size: var(--text-xs); padding: 0; line-height: 1; transition: .14s; }
+.atelier-page .task:hover .cbox { border-color: var(--danger); }
+.atelier-page .cbox.on { background: var(--wb-done); border-color: var(--wb-done); color: var(--on-accent); }
+/* Workbook: the cutting diagram, to scale */
+.atelier-page .prog { height: 7px; background: var(--surface-sunken); border: 1px solid var(--border); border-radius: var(--radius-micro); overflow: hidden; margin: var(--space-4) 0 18px; }
+.atelier-page .prog i { display: block; height: 100%; background: var(--wb-plan); }
+.atelier-page .wbtabs { display: flex; gap: 2px; margin: 6px 0 18px; border-bottom: 1px solid var(--border); }
+.atelier-page .blueprint { background: var(--surface-sunken); border: 1px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 14px; background-image: linear-gradient(color-mix(in srgb, var(--text) 5%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--text) 5%, transparent) 1px, transparent 1px); background-size: 20px 20px; }
+.atelier-page .bp-inner { padding: var(--space-4) 18px; }
+.atelier-page .bp-h { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+.atelier-page .bp-h b { font-family: var(--font-mono); font-size: var(--text-xs); font-weight: 600; color: var(--wb-plan); }
+.atelier-page .bp-h span { font-family: var(--font-mono); font-size: var(--text-2xs); color: var(--text-muted); }
+.atelier-page .cutwrap svg { display: block; width: 100%; height: auto; }
+/* No min-width on the drawings: it raised the small ones by force and broke
+   the px/mm shared by the whole workbook. The scale is an invariant. */
+.colc { cursor: pointer; }
+.atelier-page .colc:hover .colbox { stroke-width: 4; }
+.atelier-page .pname { cursor: pointer; }
+.atelier-page .pname:hover { fill: var(--accent) !important; text-decoration: underline; }
+.atelier-page .colc:focus-visible,
+.atelier-page .pname:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.atelier-page .tgcols { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 11px; }
+.atelier-page .colchip { display: inline-flex; align-items: center; gap: var(--space-1); font-family: var(--font-mono); font-size: var(--text-xs); font-weight: 600; padding: 5px 11px; border: 1.5px solid var(--wb-plan); color: var(--wb-plan); background: none; border-radius: var(--radius-sm); cursor: pointer; }
+.atelier-page .colchip:hover { background: color-mix(in srgb, var(--wb-plan) 10%, transparent); }
+.atelier-page .colchip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.atelier-page .colchip.done { border-color: var(--text-faint); color: var(--text-faint); background: color-mix(in srgb, var(--text-faint) 8%, transparent); }
+.atelier-page .colchip.sel { border-color: var(--accent); color: var(--accent); }
+.atelier-page .colchip.off,
+.atelier-page .colchip:disabled { opacity: .45; cursor: default; }
+.atelier-page .colchip .adestia-icon { width: 12px; height: 12px; }
+.atelier-page .colfield { width: 5em; background: transparent; border: 0; border-bottom: 1px solid currentColor; color: inherit; font: inherit; text-align: right; }
+.atelier-page .colfield:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.atelier-page .issues { font-size: var(--text-xs); line-height: 1.6; margin-top: var(--space-2); }
+.atelier-page .mono { font-family: var(--font-mono); }
+.atelier-page .legend { display: flex; gap: 14px; flex-wrap: wrap; margin: 10px 2px 0; }
+.atelier-page .legend span { display: inline-flex; align-items: center; gap: 7px; font-family: var(--font-mono); font-size: var(--text-2xs); font-weight: 600; color: var(--text-muted); }
+.atelier-page .sw { width: 13px; height: 13px; border-radius: var(--radius-micro); }
+.atelier-page .sw-plan { background: var(--wb-plan); opacity: .6; }
+.atelier-page .sw-done { background: var(--text-faint); opacity: .6; }
+.atelier-page .sw-edge { background: var(--wb-edge); }
+.atelier-page .c-accent,
+.atelier-sheet .c-accent { color: var(--accent); }
+.atelier-page .c-plan { color: var(--wb-plan); }
+.atelier-page .c-edge,
+.atelier-sheet .c-edge { color: var(--wb-edge); }
+.atelier-page .c-fault { color: var(--wb-fault); }
+.atelier-page .c-faint,
+.atelier-sheet .c-faint { color: var(--text-faint); }
+.atelier-page .srow .cbox { width: 17px; height: 17px; }
+.atelier-page .srow.done .cbox { background: var(--wb-done); border-color: var(--wb-done); color: var(--on-accent); }
+.atelier-page .srow .lbl { cursor: pointer; }
+.atelier-page .srow .dim { margin-left: auto; color: var(--text-faint); font-size: var(--text-2xs); }
+.atelier-page .sgrp { margin-bottom: var(--space-4); }
+.atelier-page .sgrp .sh { font-family: var(--font-mono); font-size: var(--text-2xs); font-weight: 600; letter-spacing: var(--label-track); text-transform: uppercase; color: var(--text-muted); margin-bottom: var(--space-2); }
+/* Assembly: the scene and the tickable sequence, one under the other */
+.atelier-page .asmgrid { display: block; }
+/* The scene takes the WHOLE width: shared with the sequence it rendered at half
+   the px/mm of the other views — the common scale is an invariant. */
+.atelier-page .asmgrid .cutwrap { min-width: 0; }
+.atelier-page .asmgrid .asmseq { margin-top: var(--space-3); }
+.atelier-page .asmseq { flex: 1 1 300px; display: flex; flex-direction: column; gap: 6px; }
+.atelier-page .asmseqh { font-family: var(--font-mono); font-size: var(--text-2xs); font-weight: 600; letter-spacing: var(--label-track); text-transform: uppercase; color: var(--text-muted); margin-bottom: 2px; }
+.atelier-page .asmstep .cbox { width: 17px; height: 17px; margin-top: 1px; }
+.atelier-page .asmstep.done .cbox { background: var(--wb-done); border-color: var(--wb-done); color: var(--on-accent); }
+.atelier-page .asmno { font-family: var(--font-mono); font-size: var(--text-2xs); font-weight: 600; color: var(--text-faint); min-width: 14px; text-align: right; margin-top: 2px; }
+.atelier-page .asmg { font-size: var(--text-sm); line-height: 1.35; color: var(--wb-plan); min-width: 16px; text-align: center; }
+.atelier-page .asmt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.atelier-page .asmt b { font-family: var(--font-mono); font-size: var(--text-xs); font-weight: 600; color: var(--text); }
+.atelier-page .asmt i { font-family: var(--font-mono); font-size: var(--text-2xs); font-style: normal; color: var(--text-muted); }
 
-.atelier-modal { position: fixed; inset: 0; z-index: 50; background: var(--scrim); display: grid; place-items: center; padding: 20px; }
-.atelier-modal[hidden] { display: none; }
-.atelier-modal .card { max-width: 400px; width: 100%; max-height: calc(100dvh - 40px); overflow-y: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; box-shadow: var(--shadow-lg); cursor: default; }
+/* ── The piece's sheet: the shell's `.adestia-sheet`, with a body of rows ─── */
+.atelier-sheet .atelier-sheet__panel { height: auto; max-height: min(88vh, 720px); }
+.atelier-sheet .prow { display: flex; gap: 10px; font-size: var(--text-sm); margin-bottom: var(--space-2); }
+.atelier-sheet .prow b { flex: 0 0 92px; color: var(--text-faint); font-family: var(--font-mono); font-size: var(--text-xs); font-weight: 600; }
+.atelier-sheet .lnk { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; text-decoration: underline; font: inherit; }
+.atelier-sheet .lnk:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ── The full-screen bench mode: not a sheet, it needs the whole screen, but
+   it keeps the sheet's contract (dialog, Escape, focus back) and stays above one. */
+.atelier-full { position: fixed; inset: 0; z-index: calc(var(--z-sheet) + 1); background: var(--surface); color: var(--text); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: var(--space-5); }
+.atelier-full[hidden] { display: none; }
+.atelier-full .atelier-leave { position: absolute; top: var(--space-4); right: var(--space-4); }
+.atelier-full .adestia-icon { width: 16px; height: 16px; }
+.atelier-full .reg { font-family: var(--font-mono); font-size: var(--text-base); font-weight: 600; color: var(--wb-plan); letter-spacing: var(--label-track); }
+.atelier-full .etq { font-family: var(--font-mono); font-size: var(--wb-etq); font-weight: 800; line-height: 1; margin: 6px 0; }
+.atelier-full .dims { font-family: var(--font-mono); font-size: var(--wb-dims); font-weight: 600; color: var(--text-muted); }
+.atelier-full .progress { width: min(420px, 80vw); height: 8px; border-radius: var(--radius-micro); background: var(--surface-sunken); overflow: hidden; margin-top: 26px; }
+.atelier-full .progress > div { height: 100%; background: var(--wb-done); }
+.atelier-full .pcount { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--text-faint); margin-top: 10px; }
+.atelier-full .done-btn { margin-top: 34px; border: none; background: var(--wb-done); color: var(--on-accent); border-radius: var(--radius-lg); padding: var(--space-5) 48px; font-family: var(--font); font-size: var(--text-xl); font-weight: 800; cursor: pointer; }
+.atelier-full .done-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }

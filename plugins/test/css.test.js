@@ -17,6 +17,7 @@ import { fileURLToPath } from 'node:url'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const CHECKED = [
+  'atelier',
   'journal',
   'listening-post',
   'meals',

@@ -107,7 +107,7 @@ export default function view(api) {
     /**
      * The engine, built once.
      *
-     * It appends its modal and its full-screen bench to `document.body` at
+     * It appends its sheet and its full-screen bench to `document.body` at
      * construction, so constructing it per navigation would leave one of each
      * behind on every click. Built here, routed below.
      */
@@ -188,7 +188,7 @@ export default function view(api) {
     // engine gives those nodes.
     useEffect(
       () => () => {
-        for (const node of document.querySelectorAll('body > .atelier-modal, body > .atelier-full')) {
+        for (const node of document.querySelectorAll('body > .atelier-sheet, body > .atelier-full')) {
           node.remove()
         }
       },
