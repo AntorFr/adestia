@@ -3,7 +3,7 @@
  * in a row when there is room, folded under one button when there is not.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 
 import { Icon } from '../app/Icon.js'
 import { requestRaw } from '../app/request.js'
@@ -134,6 +134,50 @@ export const COMPOSER_MAX_HEIGHT = 200
 
 export function composerHeight(scrollHeight: number): number {
   return Math.min(Math.max(scrollHeight, COMPOSER_MIN_HEIGHT), COMPOSER_MAX_HEIGHT)
+}
+
+/** Grows the field to its text, or to its placeholder when empty. */
+function useFittedField(area: RefObject<HTMLTextAreaElement | null>, text: string, placeholder: string | undefined): void {
+  const fit = useCallback(() => {
+    const element = area.current
+    if (!element) return
+    // Measured from scratch each time: `scrollHeight` on an element that
+    // still carries its previous height reports that height, so a field that
+    // grew would never shrink back when the text was deleted.
+    element.style.height = 'auto'
+    // An empty field reports the height of nothing, not of its placeholder:
+    // on a narrow phone the placeholder wraps to a second line and would be
+    // cut. So the empty field is measured with the placeholder standing in
+    // for the text, then put back before anything paints.
+    const empty = element.value === ''
+    if (empty) element.value = element.placeholder
+    const content = element.scrollHeight
+    if (empty) element.value = ''
+    // scrollHeight leaves the border out and the field is border-box.
+    const border = element.offsetHeight - element.clientHeight
+    const height = composerHeight(content + border)
+    element.style.height = `${height}px`
+    // Only once it has stopped growing, or the scrollbar flickers in and out
+    // on every keystroke of an ordinary two-line message.
+    element.style.overflowY = content + border > COMPOSER_MAX_HEIGHT ? 'auto' : 'hidden'
+  }, [area])
+
+  // Re-fitted when the words change and when the field's width does (a phone
+  // turned, a window resized): the placeholder wraps with the width.
+  useEffect(fit, [fit, text, placeholder])
+  useEffect(() => {
+    const element = area.current
+    if (!element || typeof ResizeObserver === 'undefined') return
+    let width = element.clientWidth
+    const observer = new ResizeObserver(() => {
+      if (element.clientWidth !== width) {
+        width = element.clientWidth
+        fit()
+      }
+    })
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [area, fit])
 }
 
 export interface PendingAttachment {
@@ -270,19 +314,7 @@ export function Composer({
     onAttach?.(upload)
   }, [onAttach, upload])
 
-  useEffect(() => {
-    const element = area.current
-    if (!element) return
-    // Measured from scratch each time: `scrollHeight` on an element that
-    // still carries its previous height reports that height, so a field that
-    // grew would never shrink back when the text was deleted.
-    element.style.height = 'auto'
-    const height = composerHeight(element.scrollHeight)
-    element.style.height = `${height}px`
-    // Only once it has stopped growing, or the scrollbar flickers in and out
-    // on every keystroke of an ordinary two-line message.
-    element.style.overflowY = element.scrollHeight > COMPOSER_MAX_HEIGHT ? 'auto' : 'hidden'
-  }, [text])
+  useFittedField(area, text, placeholder)
 
   return (
     <form

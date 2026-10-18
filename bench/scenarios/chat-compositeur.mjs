@@ -71,7 +71,7 @@ export default async function scenario(bench) {
   const engine = await heldEngine()
   const report = []
   try {
-    for (const theme of ['light', 'dark']) for (const [format, width, height] of [['desk', 1440, 900], ['phone', 390, 844]]) {
+    for (const theme of ['light', 'dark']) for (const [format, width, height] of [['desk', 1440, 900], ['phone', 390, 844], ['narrow', 360, 740]]) {
       const context = await browser.newContext({ viewport: { width, height }, colorScheme: theme, locale, ...(width < 820 ? { hasTouch: true, isMobile: true } : {}) })
       const page = await context.newPage()
       const prefix = `${theme}-${format}`
@@ -102,6 +102,21 @@ export default async function scenario(bench) {
         } else {
           assert.equal(await chat.getByLabel(w.attach, { exact: true }).getAttribute('title'), w.attach)
         }
+
+        // The empty field is tall enough for its own placeholder: a mirror with the field's
+        // font and inner width wraps the placeholder, and its height must fit the field.
+        const fit = await field.evaluate((n) => {
+          const style = getComputedStyle(n)
+          const mirror = document.createElement('div')
+          mirror.style.cssText = `position:absolute;visibility:hidden;white-space:pre-wrap;overflow-wrap:break-word;box-sizing:border-box;width:${n.clientWidth}px;font:${style.font};line-height:${style.lineHeight};padding:${style.padding};border:0`
+          mirror.textContent = n.placeholder
+          document.body.append(mirror)
+          const need = mirror.getBoundingClientRect().height + 2 * parseFloat(style.borderTopWidth)
+          mirror.remove()
+          return { need, height: n.getBoundingClientRect().height, placeholder: n.placeholder }
+        })
+        assert(fit.need <= fit.height + 0.5, `placeholder clipped: ${JSON.stringify(fit)}`)
+        console.log(`placeholder ${prefix}`, JSON.stringify(fit))
 
         // No glyph stands in for an icon: every composer button holds an svg or its plugin's own glyph.
         const glyphs = await chat.locator('.adestia-composer button:not(.adestia-fold__item)').evaluateAll((nodes) => nodes.map((n) => ({ label: n.getAttribute('aria-label'), svg: n.querySelector('svg') !== null, text: n.textContent.trim() })))
@@ -144,7 +159,7 @@ export default async function scenario(bench) {
         await chat.locator('textarea').fill('hello')
         assert(await chat.getByLabel(w.send, { exact: true }).isDisabled())
         await shoot('blocked')
-        report.push({ theme, format, locale, field: box, glyphs })
+        report.push({ theme, format, locale, field: box, glyphs, fit })
       } finally { await context.close() }
     }
   } finally { await browser.close(); await engine.close() }
