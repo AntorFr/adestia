@@ -487,6 +487,19 @@ const FR: Readonly<Record<string, string>> = {
   'this block does not render yet': 'ce bloc ne s’affiche pas encore',
   'this page was not found': 'cette fiche est introuvable',
   '%n pages carry this id': '%n fiches portent cet identifiant',
+  // What the core says about each of its blocks, in the settings window.
+  'A highlighted aside: note, tip or warning.': 'Un encadré mis en valeur : note, astuce ou avertissement.',
+  'Embeds a coded app module, addressed by id. NOT DRAWN YET.':
+    'Intègre un module d’app codé, désigné par son id. PAS ENCORE DESSINÉ.',
+  'A line break between blocks that share lines: the next block starts a new line.':
+    'Un saut de ligne entre des blocs qui se partagent une ligne : le bloc suivant commence une nouvelle ligne.',
+  'A group of images laid out as a gallery.': 'Un groupe d’images disposées en galerie.',
+  'A titled passage of prose. Its subject is `type`.': 'Un passage de prose titré. Son sujet est `type`.',
+  'Figures drawn as tiles, from a markdown list.': 'Des chiffres dessinés en tuiles, à partir d’une liste markdown.',
+  'A markdown table, scrolling, with its first column emphasised.':
+    'Un tableau markdown, défilant, dont la première colonne est mise en valeur.',
+  'Rows: the pages under this one, the files beside it, or the lines written in the block.':
+    'Des lignes : les fiches sous celle-ci, les fichiers à côté, ou les lignes écrites dans le bloc.',
 }
 
 const TABLES: Readonly<Record<Locale, Readonly<Record<string, string>>>> = {

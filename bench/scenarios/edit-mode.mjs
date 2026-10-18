@@ -32,7 +32,7 @@ export default async function scenario(bench) {
   await page.waitForSelector('.adestia-blockset', { timeout: 5_000 })
   await page.waitForTimeout(300)
   await bench.shoot(page, '3-reglages')
-  await page.click('.adestia-blockset__close')
+  await page.click('.adestia-blockset__head .adestia-btn')
 
   // The figures, typed in.
   await page.click('.adestia-edblock[data-block="figures"] .adestia-edblock__preview')
