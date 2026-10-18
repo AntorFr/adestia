@@ -48,7 +48,7 @@ elles parlent une seule langue (B-8) et le `‹ Back` du shell dit qu'il mène �
   palette sombre une fois (`light-dark()`, AD-10), l'échelle typographique et les rayons ;
   `packages/web/test/contrast.test.ts` mesure chaque paire de la palette de base et des
   quatre skins, clair et sombre (AA ou écart écrit). Focus visible global.
-- Composants (B-7) : classes CSS du shell (`styles/components.css`) + enveloppes React
+- Composants (B-7) : classes CSS du shell (`packages/web/src/app/styles/components.css`) + enveloppes React
   `app/ui/` (Button, Sheet, Popover, EmptyState, Field, focus) ; icônes Lucide en sprite
   inline vendoré (`app/icons.ts`, `Icon.tsx`, AD-9) ; documentés dans `skills/plugin-author`.
 - Requêtes (R-11) : `app/request.ts` (`requestJson`, AD-11), utilisée par E-1, E-9 à E-15,
