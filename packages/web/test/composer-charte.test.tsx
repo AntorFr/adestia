@@ -247,3 +247,43 @@ describe('French wording', () => {
     expect(await screen.findByLabelText('Retirer devis.pdf')).toBeTruthy()
   })
 })
+
+describe('field height on a narrow phone', () => {
+  // jsdom has no layout, so scrollHeight is scripted: it answers with the
+  // length of whatever the field holds at the moment it is read.
+  const withScrollHeight = (height: (value: string) => number) =>
+    vi.spyOn(HTMLTextAreaElement.prototype, 'scrollHeight', 'get').mockImplementation(function (this: HTMLTextAreaElement) {
+      return height(this.value)
+    })
+
+  it('measures an empty field on its placeholder and puts the empty value back', () => {
+    // Panne : lire scrollHeight sur le champ vide (hauteur du rien) coupe le placeholder sur 2 lignes.
+    const spy = withScrollHeight((value) => (value === 'Write to the assistant, at length' ? 90 : 20))
+    try {
+      const { container } = render(
+        <Composer onSend={vi.fn()} onStop={vi.fn()} busy={false} folded={false} placeholder="Write to the assistant, at length" />,
+      )
+      const field = container.querySelector('textarea') as HTMLTextAreaElement
+      expect(field.value).toBe('')
+      expect(field.style.height).toBe('90px')
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
+  it('measures typed text, not the placeholder, and caps the field at 200px with a scrollbar', () => {
+    const spy = withScrollHeight((value) => (value === 'long' ? 500 : 20))
+    try {
+      const { container } = render(<Composer onSend={vi.fn()} onStop={vi.fn()} busy={false} folded={false} placeholder="ph" />)
+      const field = container.querySelector('textarea') as HTMLTextAreaElement
+      fireEvent.change(field, { target: { value: 'long' } })
+      expect(field.style.height).toBe('200px')
+      expect(field.style.overflowY).toBe('auto')
+      fireEvent.change(field, { target: { value: '' } })
+      expect(field.style.height).toBe('48px')
+      expect(field.style.overflowY).toBe('hidden')
+    } finally {
+      spy.mockRestore()
+    }
+  })
+})
