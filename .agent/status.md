@@ -1,5 +1,5 @@
 # Status — Adestia
-> MàJ : 2026-10-18
+> MàJ : 2026-10-24
 
 **Tranche `adestia-qualite-chat` (epic adestia-qualite) — assemblée, PR vers
 `epic/adestia-qualite`, pas fusionnée.** Aucun changement de ce que fait le chat (B-1, AD-7).
@@ -12,7 +12,7 @@
   (`node bench/long-functions.mjs packages/web/src/chat`). Instantané du balisage
   (`chat-markup.test.tsx`).
 - Écrans (B-7, B-8, B-10, B-11) : rail (E-16), compositeur, permission (E-17) et feuille de
-  signature (E-18, la `<Sheet>` partagée) dessinés avec les composants et neuf icônes ajoutées
+  signature (E-18, la `<Sheet>` partagée) dessinés avec les composants et sept icônes ajoutées
   au sprite ; plus de glyphe ni d'émoji, une seule fermeture (`x`) ; chaînes et libellés par
   la langue (en/fr) ; `chat.css`, `conversations.css`, `attachments.css` sans token indéfini,
   couleur ou rayon littéral.
@@ -43,7 +43,7 @@ elles parlent une seule langue (B-8) et le `‹ Back` du shell dit qu'il mène �
   (B-1, recommandations de fin d'epic) ; les deux règles d'index diffèrent sur un chemin sans
   extension, gardées chacune ; l'invite de la une garde sa forme française (AD-13 e) ; le
   frontmatter garde ses deux analyseurs (AD-7). Deux tests à navigateur de la charte dépassent
-  5 s sous la charge de toute la suite et repassent seuls. Le chat reste hors charte.
+  5 s sous la charge de toute la suite et repassent seuls.
 
 **Tranche `adestia-qualite-plugins` (epic adestia-qualite) — assemblée, PR vers
 `epic/adestia-qualite`, pas fusionnée.** Aucun changement de ce que font les plugins (B-1).
