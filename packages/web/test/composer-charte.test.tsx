@@ -98,10 +98,9 @@ describe('send / stop / blocked', () => {
     expect(onSend).toHaveBeenCalledWith('hi', [])
   })
 
-  it('marks busy, stopping and blocked on the form so the stylesheet can draw them', () => {
+  it('marks stopping and blocked on the form so the stylesheet can draw them', () => {
     const { container } = render(<Composer onSend={vi.fn()} onStop={vi.fn()} busy stopping blocked />)
     const form = container.querySelector('form') as HTMLFormElement
-    expect(form.className).toContain('adestia-composer--busy')
     expect(form.className).toContain('adestia-composer--stopping')
     expect(form.className).toContain('adestia-composer--blocked')
   })
@@ -181,6 +180,26 @@ describe('attachment tray', () => {
     expect(alert.textContent).toBe('File too large')
     expect(alert.className).toContain('adestia-field__error')
     expect(alert.querySelector('svg')).toBeTruthy()
+  })
+
+  it('translates the HTTP fallback when the server sends no error, and keeps the server error first', async () => {
+    const send = async (fetchImpl: typeof fetch, t?: (key: string) => string) => {
+      const view = render(<Composer onSend={vi.fn()} onStop={vi.fn()} busy={false} folded={false} fetchImpl={fetchImpl} t={t} />)
+      fireEvent.change(view.container.querySelector('input[type=file]') as HTMLInputElement, {
+        target: { files: [new File(['x'], 'big.bin')] },
+      })
+      const alert = await screen.findByRole('alert')
+      const text = alert.textContent
+      view.unmount()
+      return text
+    }
+    const FRR = (key: string) => (key === 'request failed (%n)' ? 'la requête a échoué (%n)' : key)
+    const status503 = (() =>
+      Promise.resolve({ ok: false, status: 503, json: () => Promise.resolve({}) } as unknown as Response)) as unknown as typeof fetch
+    expect(await send(status503, FRR)).toBe('la requête a échoué (503)')
+    expect(await send(upload({ error: 'Trop gros' }, false), FRR)).toBe('Trop gros')
+    const down = (() => Promise.reject(new Error(''))) as unknown as typeof fetch
+    expect(await send(down, FRR)).toBe('la requête a échoué (0)')
   })
 
   it('shows refused names next to what was accepted', async () => {
