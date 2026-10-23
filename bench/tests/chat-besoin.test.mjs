@@ -623,7 +623,7 @@ describe('sources of the chat', () => {
   })
 
   test('Chat, useConversations and Composer hold no function longer than 250 lines', () => {
-    const out = execFileSync('node', ['bench/long-functions.mjs', 'packages/web/src/chat', '--max', '250'], { cwd: root, encoding: 'utf8' })
+    const out = execFileSync('node', ['bench/long-functions.mjs', 'packages/web/src/chat'], { cwd: root, encoding: 'utf8' })
     const hits = out.split('\n').filter((l) => /(Chat|useConversations|Composer)\.tsx?:/.test(l))
     assert.deepEqual(hits, [])
   })

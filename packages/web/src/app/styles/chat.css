@@ -49,7 +49,7 @@
 .adestia-crest svg { width: 18px; height: 18px; }
 
 .adestia-brandname {
-  /* The name stays readable before the model and context surrender width. */
+  /* The name stays readable while the model surrenders width. */
   flex-shrink: 0;
   min-width: 0;
   max-width: 6em;
@@ -336,6 +336,14 @@
 
 .adestia-pill--warn { border-color: var(--warning-text); color: var(--warning-text); }
 .adestia-pill--hot { border-color: var(--danger-text); color: var(--danger-text); }
+
+/* The context count must stay readable; the model picker yields first.
+   Scope this to the header: home facets share the pill class. */
+.adestia-chat__header .adestia-pill {
+  min-width: 24px;
+  max-width: none;
+  flex-shrink: 0;
+}
 
 /* The engine's question --------------------------------------------------- */
 

@@ -158,6 +158,24 @@ export default async function scenario(bench) {
           name: node.textContent, visible: node.clientWidth, content: node.scrollWidth,
         }))
         assert(brandGeometry.visible >= brandGeometry.content, JSON.stringify(brandGeometry))
+        const pillGeometry = await chat.locator('.adestia-pill').evaluate((node) => {
+          const box = node.getBoundingClientRect()
+          const text = document.createRange()
+          text.selectNodeContents(node)
+          const content = text.getBoundingClientRect()
+          const style = getComputedStyle(node)
+          return {
+            count: node.textContent, visible: node.clientWidth, content: node.scrollWidth,
+            width: box.width, height: box.height,
+            textLeft: content.left, textRight: content.right,
+            innerLeft: box.left + parseFloat(style.borderLeftWidth) + parseFloat(style.paddingLeft),
+            innerRight: box.right - parseFloat(style.borderRightWidth) - parseFloat(style.paddingRight),
+          }
+        })
+        assert.equal(pillGeometry.count, '150k')
+        assert(pillGeometry.visible >= pillGeometry.content, JSON.stringify(pillGeometry))
+        assert(pillGeometry.textLeft >= pillGeometry.innerLeft - 1 && pillGeometry.textRight <= pillGeometry.innerRight + 1, JSON.stringify(pillGeometry))
+        assert(pillGeometry.width >= 24 && pillGeometry.height >= 24, JSON.stringify(pillGeometry))
         // Actual keyboard navigation, with the focused control checked before
         // photographing the shared :focus-visible ring.
         await picker.focus()
@@ -214,7 +232,7 @@ export default async function scenario(bench) {
         const stopped = await fetch(`${replay?.url ?? base}/api/turn/stop`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ conversation: tab }) })
         assert.equal(stopped.status, 200)
         await chat.locator('.adestia-bubble__working').waitFor({ state: 'hidden' })
-        report.push({ theme, format, locale, controls, modelGeometry, brandGeometry, currentContrast, screenshots: 8 })
+        report.push({ theme, format, locale, controls, modelGeometry, brandGeometry, pillGeometry, currentContrast, screenshots: 8 })
       } finally { await context.close() }
     }
   } finally { await browser.close(); await replay?.close() }
