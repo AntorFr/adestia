@@ -80,8 +80,8 @@
   chevron-right, settings, pencil, rotate-ccw, save, trash-2, search, folder, file-text,
   sparkles, plug, book-open, sliders-horizontal, handshake, monitor, sun, moon, log-out,
   key-round, lock, users, check, circle-alert, triangle-alert, info, wifi-off, refresh-cw,
-  copy, external-link, loader-circle, list, panel-right-open, archive, paperclip,
-  chevron-down, square, arrow-up, clock, pen-line. The last nine names are the chat's
+  copy, external-link, loader-circle, list, paperclip, panel-right-open, archive,
+  chevron-down, square, arrow-up, clock, pen-line. The last seven names are the chat's
   additions, shared by its rail, composer and decision surfaces. The shell's settings and entry screens carry no emoji
   or Unicode glyph on a control any more. The chat rail uses this sprite for its
   header, tab/list tools, tool traces, MCP close, composer, permission and signature

@@ -612,7 +612,7 @@ function useTabActions(
   }
 
   /**
-   * Stops the ACTIVE tab's turn — the one whose ■ the user can see.
+   * Stops the ACTIVE tab's turn — the one whose square icon the user can see.
    *
    * Named by the CONVERSATION, the same address the re-attach uses. The
    * engine's session id, which this used to send, only comes back when the
@@ -635,7 +635,7 @@ function useTabActions(
       })
   }
 
-  /** The ＋ of the strip and the header: a fresh tab, conversation-less
+  /** The plus icon of the strip and the header: a fresh tab, conversation-less
       until its first message names one. Only ever one draft — reopening it
       just activates it. */
   function newDraft(): void {
