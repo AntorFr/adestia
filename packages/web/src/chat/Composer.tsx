@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 
 import { Icon } from '../app/Icon.js'
-import { requestRaw } from '../app/request.js'
+import { FALLBACK_KEY, requestRaw } from '../app/request.js'
 import { useMobile } from '../app/useMobile.js'
 // The drag primitive is shared with the page screen: one answer to "is this
 // drag carrying files", so the two surfaces cannot disagree about it.
@@ -202,7 +202,7 @@ function useUploads(fetchImpl: typeof fetch, t: (key: string) => string) {
       for (const file of files) form.append('file', file)
 
       const sent = await requestRaw(fetchImpl, '/api/upload', { method: 'POST', body: form }, t)
-      // Only an unreachable server takes the translated fallback; the server's
+      // Network failures use the helper's translated fallback; the server's
       // own `error` and the list of refusals keep their way.
       if (!sent.ok) {
         setUploadError(sent.error)
@@ -216,7 +216,7 @@ function useUploads(fetchImpl: typeof fetch, t: (key: string) => string) {
           error?: string
         }
         if (!response.ok) {
-          setUploadError(body.error ?? `upload failed (${response.status})`)
+          setUploadError(body.error ?? t(FALLBACK_KEY).replace('%n', String(response.status)))
           return
         }
         setAttachments((current) => [...current, ...(body.attachments ?? [])])
@@ -321,7 +321,6 @@ export function Composer({
       className={[
         'adestia-composer',
         dropping && 'adestia-composer--dropping',
-        busy && 'adestia-composer--busy',
         stopping && 'adestia-composer--stopping',
         blocked && 'adestia-composer--blocked',
       ]

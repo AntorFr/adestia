@@ -473,7 +473,7 @@
 /* Composer ---------------------------------------------------------------- */
 
 /* The controls are shell buttons (`.adestia-btn`, icon-only); this block sizes
-   the row and draws the busy / stopping / blocked states, nothing else. */
+   the row and draws the stopping / blocked states. Busy swaps Send for Stop. */
 .adestia-composer {
   display: flex;
   gap: var(--space-2);
