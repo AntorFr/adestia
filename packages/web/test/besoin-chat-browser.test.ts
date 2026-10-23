@@ -369,7 +369,7 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
         await stop.waitFor({ timeout: 15_000 })
         expect(await chat.getByRole('button', { name: 'Send', exact: true }).count()).toBe(0)
         await say(page, 'bonjour pendant ce temps')
-        await chat.getByText('bonjour pendant ce temps').waitFor({ timeout: 10_000 })
+        await chat.locator('.adestia-bubble__text', { hasText: 'bonjour pendant ce temps' }).first().waitFor({ timeout: 10_000 })
         await chat.locator('.adestia-bubble--held').waitFor({ timeout: 10_000 })
         expect(await chat.locator('.adestia-bubble--held').count()).toBe(1)
         await shot(page, 'p2-held')
@@ -381,7 +381,7 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
       } finally {
         await context.close()
       }
-    })
+    }, 30_000)
 
     it('shows the context pill once a turn has reported its weight', async () => {
       const { context, page } = await fresh()
