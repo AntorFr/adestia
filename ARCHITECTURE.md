@@ -8,7 +8,7 @@
 > Written by the epic `adestia-qualite` (2026-10-15), a quality pass that changes **no
 > behaviour**. Decisions taken BEFORE this epic live in `DESIGN.md` › Decision log, which is
 > not renumbered; `AD-n` starts at `AD-1` with this epic. The map below is the code at
-> v0.88.0.
+> v0.88.0, updated below for the completed pages tranche.
 
 ## Overview
 
@@ -102,6 +102,9 @@ Outside `packages/`:
 
 - `app/` — the shell: `App.tsx`, routing (`useRoute.ts`), home, sections, settings screens
   (`Settings`, `Configuration`, `Instructions`, `McpServers`, `Delegations`, `Preferences`),
+  `Canvas.tsx` (screen dispatch), `CanvasHeader.tsx` (breadcrumbs and phone return),
+  `ScreenEdges.tsx` (phone handles), `BackButton.tsx`; `Home` composes `Brief` and `Domains`.
+  `paths.ts` holds path naming/index rules, `request.ts` the injected request helpers;
   `Problems.tsx`, skin slot (`skin.ts`, `SkinSlot.tsx`), `i18n.ts`, `tokens.css`, `shell.css`.
 - `chat/` — `Chat.tsx` wires `ChatHeader.tsx`, `TabStrip.tsx`, `ConversationList.tsx` and
   `Thread.tsx` (`Bubble.tsx`, `StatusDot.tsx`); `ModelPicker.tsx`, `ContextPill.tsx`,
@@ -110,7 +113,11 @@ Outside `packages/`:
   is the HTTP store client, `messages.ts` the shared `toMessage`, `stream.ts` the SSE client
   (`events.ts`), `useCadence.ts` the live display cadence, `tabs.ts` browser persistence.
 - `editor/` — Milkdown editor (`Editor.tsx`, `milkdown.ts`, `blockview.tsx`), `Reader.tsx`,
-  page settings and listing helpers.
+  page settings and listing helpers. `Reader.tsx` keeps the page and prose frames;
+  `reader/` holds the recursive walk, directive dispatch and block renderers by kind.
+  `useAutosave.ts` owns the document baseline and save cadence, `useEditorSurface.ts`
+  the mounted writing surface, `usePageDrop.ts` the reading drop target; `SaveStatus.tsx`
+  draws the save result.
 - `plugins/` — `contract.ts` (the plugin front-end contract, `PluginApi`), `loader.ts`,
   `words.ts` (plugin word tables), `Boundary.tsx`, `PageEditor.tsx`.
 - `sw/` — the service worker (`sw.ts`, `policy.ts`, `register.ts`).
@@ -372,11 +379,13 @@ whether a delegated conversation should show signature cards is a behaviour).
 use `requestJson` and take `requestRaw`: two stream (the turn POST and the attach GET hand
 the caller a `Response` to read as it comes), four do not (the upload, the stop, the
 archive and the delete read only the status or a single body, and need any HTTP status
-back whole). `request.ts` gains one additive function, `requestRaw(fetchImpl, path, init?)` →
+back whole). `request.ts` gains one additive function, `requestRaw(fetchImpl, path, init?, t?)` →
 `{ ok: true, response } | { ok: false, error }` (never throws; any HTTP status is a
 `response`), and nothing else about it changes. The upload keeps its two messages
 (server `error`, refusals) and loses only the raw `Error.message` of a thrown network
-failure, which becomes the helper's translated fallback (Q-4).
+failure, which becomes the helper's translated fallback when `t` is supplied (Q-4).
+Without `t`, `requestRaw` keeps the network message, as `requestJson` does; `live.ts`
+uses this form without displaying its error.
 (c) The three giants split by lifetime, not by line count: `useConversations` into the
 store of open conversations (`useOpenConversations`: state, load, reconcile), the live turn
 (`useTurn`: send, stop, hold, attach, cadence) and the tab/list actions (`useTabActions`:
@@ -389,6 +398,54 @@ turn); extending `requestJson` to streams (its result type is JSON by contract);
 `stream.ts` on bare `fetchImpl` (the criterion says one path). *Reversed if*: a hook cannot
 be cut without moving state that two of them write, then that state stays in the first and
 the target R-12 reads "kept: reason" for that hook.
+
+### AD-13 — The pages' code: one paths module, one ready signal, cuts by lifetime
+Four decisions of the pages tranche; none changes a behaviour.
+(a) `app/paths.ts` holds `prettify` and `folderOf` once (the three `prettify` bodies and the
+two `folderOf` are identical, checked). The two `isIndexPage` are **not** the same rule —
+`app/sections.ts` requires the `.md` extension (`/(^|\/)index\.md$/i`, or a homonymous
+folder), `editor/listing.ts` strips an optional `.md` first — and a path without extension
+is the only input where they differ. Both rules are kept, **named for what they answer**:
+`isIndexFile(path)` (sections, routing, owners: the file of an index) and
+`isIndexPath(path)` (the reader's listings: the address of an index, extension or not), both
+in `paths.ts`, each with a test pinning its rule on `index.md`, `INDEX.MD`, `a/index`,
+`a/a.md`, `a/a`, `a/b.md`. *Rejected*: one `isIndexPage` with the wider rule (a path without
+extension would start counting as an index in sections: a behaviour change); one with the
+narrower (the reader's lists would change). *Reversed if*: a test over the real corpus shows
+no path where they differ, then they merge.
+(b) Home's loading state needs a signal the shell does not give: `useInstance` returns
+`ready`, false until the plugins are loaded **and** the first index request has answered
+(answer or failure — a failed index is "ready, empty", as today). It is additive; nothing else
+of the hook changes. E-2 draws the shared spinner row in place of the mosaic and the empty
+state while `ready` is false; the greeting, the hero and the ask bar do not wait.
+(c) The giants split by lifetime, as the chat tranche does for its own giants. `App` into `App` (gates, state,
+wiring), `CanvasHeader` (the phone's back to the chat, the breadcrumb, the driver label, the
+cog slot) and `Canvas` (the dispatch order of `docs/ecrans.md` › Navigation, kept readable as
+one function and tested as one). `Home` into `Home` (composition), `Brief` (the brief, its
+age and its refresh) and `Domains` (the mosaic and Arrange). `Editor` into `Editor` (wiring),
+`useAutosave` (the 1.6 s cadence, the revision, the 409 conflict, the refusal) and the
+status line. `Reader` is not one giant function (its longest is 114 lines) but a 1153-line
+file: its blocks leave for `editor/reader/` by kind (list and file list, table, figures,
+written and contributed rows), `Reader.tsx` keeping the page frame. Exports that tests import
+keep their names and paths (re-exported from the old file when the code moves).
+*Rejected*: a reducer or a state library for the editor (a new abstraction on the save path);
+cutting by line count. *Reversed if*: a hook cannot be cut without moving state two of them
+write — then that state stays in the first and the target R-12 reads "kept: reason".
+(d) Three additions to the charter, additive and written here because the pages are their
+first user: a **chip** (`.adestia-chip`, a toggle button with `aria-pressed`, pill radius,
+for the facet pills of E-3 and E-7), an **inline empty state** (`.adestia-empty--inline`: the
+empty state's icon at 16 px beside its sentence, for a note inside a block of a page), and
+the icon names the screens need beyond `docs/charte.md` § 7.3 (`grip-vertical`, `eye`, `code`,
+`file-question`, `folder-open`, `search-x`). The editor's block bars are built
+by Milkdown as DOM, not React: `editor/dom-icon.ts` draws a sprite icon from its name (the
+AD-9 markup) so the bars use the same set. *Rejected*: restyling the facet pills as
+`.adestia-btn` (a pressed state the button does not have); a chip owned by the charter tranche
+(it is already built — AD-13 adds, never edits, its files).
+(e) A word is moved, never invented, by `B-8`: where today's string is French the French
+table keeps it **byte for byte** and the English key is a literal translation; where it is
+English the English stays and the French is a literal translation. The one string sent to the
+agent (`Rafraîchis ma une`) keeps its French form on a French instance. *Reversed if*: Monsieur
+wants the voice of the agent prompts changed — that is a behaviour of the conversation.
 
 ### AD-14 — The plugins' tranche: tokens by name, a copied sheet, tables per plugin, a lint and a CSS test
 (a) **No second vocabulary.** A plugin stylesheet reads the shell's tokens by name; an alias is a
@@ -445,8 +502,8 @@ Each target: what, where, why it costs, the tranche that owns it, and its outcom
 | R-8 | `eslint.config.js` claims floating promises and thrown-away errors are caught, which its rules cannot do (no type-aware rule, `caughtErrors: 'none'`); `plugins/` not linted; lint not in CI | a claim the gate does not keep | serveur (CI, claim), plugins (plugins lint) | server: closed — claim rewritten, `npm run lint` in CI; plugins: closed — `npm run lint` (`eslint packages plugins`) covers `plugins/` and is clean |
 | R-9 | Test support rewritten per file: the fake `Driver` in 10 test files, `git()` in 5, `mkdtemp` in 39 | each new test copies one | tests | closed: `packages/server/test/support/` holds the three, and every file that rewrote them imports them |
 | R-10 | `web/test/page-editor.test.tsx` "tells the plugin when it takes the file…" reported flaky; turn-counting waits (`setImmediate`) in `callback.test.ts`, `mcp.test.ts`, `restart.test.ts`; fixed sleeps in `watch`, `pages`, `shell-tools`, `background` tests | races dressed as delays (CLAUDE.md) | tests | closed: no `setImmediate` is left in `callback`, `mcp`, `restart` tests (a wake or a call is a deferred the fake resolves; a negative case is proved by a sentinel that does wake, or by `app.close()`), and the sleeps of `watch` (chokidar's own `ready`, through the test's watcher factory), `pages` (`utimes`), `shell-tools` and `background` (a faked `Date`) are gone. Page-editor flake: its waits (`findBy*`, `waitFor`) spend a one-second wall-clock budget on a chain of promises the test resolves itself, and a loaded machine runs it out; reproduced under `yes` load on the neighbour test "saves with the revision…" (`[data-mounted]` not there in time). The file now drains the chain with an async `act`, no budget left |
-| R-11 | Web: about 40 `fetchImpl(` call sites and 14 hand-rolled live guards, `failure()` (`CataloguePopin.tsx`) and `json()` (`chat/conversations.ts`) local to one file; `toMessage` duplicated in `useConversations.ts` and `Delegations.tsx`, drifted (the second drops `signatures`, kept as defect); `prettify` ×3, `folderOf` ×2, `isIndexPage` ×2 with different rules (`app/sections.ts`, `app/collections.ts`, `editor/nodes.ts`, `editor/listing.ts`) | one idea, several answers | charte (the shared request helper), pages, chat for `chat/` | closed for the charter's part: `packages/web/src/app/request.ts` (`requestJson`, `jsonInit`) is the one way the shell's settings and entry code talks to the server (it never throws, the fallback message is said in the locale, `fetchImpl` stays injected); `failure()` of `CataloguePopin.tsx` is absorbed, and `Gates`/`signin.ts`/`useInstance.ts`, `Settings`, `Preferences`, `McpServers`, `Instructions`, `CataloguePopin`, `Configuration` and `Delegations` call it, the restart included (a refusal keeps its parsed body in `data`: how many turns run). No raw `fetchImpl(` is left in those files. closed for the chat: every network call uses `requestJson` or `requestRaw` (including streams, stop and upload); `json()` is absorbed. `messages.ts` defines `toMessage` once; Delegations passes `{ signatures: false }`, preserving the written defect (AD-12). kept: the `fetchImpl(` calls of `editor/`, `plugins/PageEditor.tsx`, `usePage.ts` and `live.ts`, and `prettify`/`folderOf`/`isIndexPage` — pages |
-| R-12 | Giant components: `App` 571 lines, `useConversations` 456; files `Reader.tsx` 1153, `Editor.tsx` 703, `Instructions.tsx` 591, `Home.tsx` 546, `Chat.tsx` 542, `Configuration.tsx` 456 | unreadable, untestable in parts | pages (App, Reader, Editor, Home); chat (Chat, useConversations, Composer); charte (Instructions, Configuration, McpServers) | closed for the charter's part: `Instructions.tsx` (591 → 146 lines), `Configuration.tsx` (456 → 160) and `McpServers.tsx` are each a short screen over parts in `app/instructions/`, `app/configuration/` and `app/mcp/` (list, editor, name sheet, model and hook for the first; fields, restart bar and hooks for the second; list, detail, health and declaration hook for the third), none over 190 lines, and the exports the tests import are kept. closed for the chat: `Chat` delegates to `ChatHeader`, `TabStrip`, `ConversationList` and `Thread`; `useConversations` wraps `useOpenConversations`, `useTurn`, `useTabActions`; `Composer` extracts `useUploads`. No function in `chat/` exceeds 250 lines (`node bench/long-functions.mjs packages/web/src/chat`), with no kept exception; existing exports and behaviours remain (AD-12). kept: `App`, `Reader`, `Editor`, `Home` — pages |
+| R-11 | Web: about 40 `fetchImpl(` call sites and 14 hand-rolled live guards, `failure()` (`CataloguePopin.tsx`) and `json()` (`chat/conversations.ts`) local to one file; `toMessage` duplicated in `useConversations.ts` and `Delegations.tsx`, drifted (the second drops `signatures`, kept as defect); `prettify` ×3, `folderOf` ×2, `isIndexPage` ×2 with different rules (`app/sections.ts`, `app/collections.ts`, `editor/nodes.ts`, `editor/listing.ts`) | one idea, several answers | charte (the shared request helper), pages, chat for `chat/` | closed for the charter's part: `packages/web/src/app/request.ts` (`requestJson`, `jsonInit`) is the one way the shell's settings and entry code talks to the server (it never throws, the fallback message is said in the locale, `fetchImpl` stays injected); `failure()` of `CataloguePopin.tsx` is absorbed, and `Gates`/`signin.ts`/`useInstance.ts`, `Settings`, `Preferences`, `McpServers`, `Instructions`, `CataloguePopin`, `Configuration` and `Delegations` call it, the restart included (a refusal keeps its parsed body in `data`: how many turns run). No raw `fetchImpl(` is left in those files. closed for the pages' part: `app/paths.ts` holds `prettify`, `folderOf`, `isIndexFile` and `isIndexPath` once (AD-13 a), and `Home`, `usePage`, `live` (`requestRaw`), `PageEditor`, `Attachments`, `Editor` and the reader's file list go through `requestJson`/`requestRaw`. closed for the chat: every network call uses `requestJson` or `requestRaw` (including streams, stop and upload); `json()` is absorbed. `messages.ts` defines `toMessage` once; Delegations passes `{ signatures: false }`, preserving the written defect (AD-12). |
+| R-12 | Giant components: `App` 571 lines, `useConversations` 456; files `Reader.tsx` 1153, `Editor.tsx` 703, `Instructions.tsx` 591, `Home.tsx` 546, `Chat.tsx` 542, `Configuration.tsx` 456 | unreadable, untestable in parts | pages (App, Reader, Editor, Home); chat (Chat, useConversations, Composer); charte (Instructions, Configuration, McpServers) | closed for the charter's part: `Instructions.tsx` (591 → 146 lines), `Configuration.tsx` (456 → 160) and `McpServers.tsx` are each a short screen over parts in `app/instructions/`, `app/configuration/` and `app/mcp/` (list, editor, name sheet, model and hook for the first; fields, restart bar and hooks for the second; list, detail, health and declaration hook for the third), none over 190 lines, and the exports the tests import are kept. closed for the pages: `App` wires gates/state into `CanvasHeader`, `Canvas` and `ScreenEdges`; `Home` composes `Brief` and `Domains`; `Editor` wires `useAutosave`, `useEditorSurface`, `usePageDrop` and `SaveStatus`; `Reader.tsx` keeps the frame and exports over `reader/` renderers by kind. No function in App, Home, Editor or Reader exceeds 250 lines. closed for the chat: `Chat` delegates to `ChatHeader`, `TabStrip`, `ConversationList` and `Thread`; `useConversations` wraps `useOpenConversations`, `useTurn`, `useTabActions`; `Composer` extracts `useUploads`. No function in `chat/` exceeds 250 lines (`node bench/long-functions.mjs packages/web/src/chat`), with no kept exception; existing exports and behaviours remain (AD-12). |
 | R-13 | `copilot-cli/driver.ts` › `SHELL_TOOL_CLI_SOURCE`, a whole JS program in a template string | untyped, unlinted | serveur (real file read at build, behaviour kept) | closed: `copilot-cli/shell-tool.mjs`, copied under `dist/` by the drivers `build`, bytes pinned by a test |
 | R-14 | `server/test/catalogues-ui-ensemble.test.ts` skips itself without Playwright or a built web shell, so it never runs in a plain `npm test` | a suite that looks green and never ran | tests | closed: the suite runs in `npm test` (the shell is built in its `beforeAll` when `dist-web` is absent; without Playwright it skips and says `no playwright` in its title and in a `console.warn`); its first case, stale since Catalogues moved into the Instructions page (E-11/E-12), was corrected by the tester |
 | R-15 | `zod` imported dynamically by `server/src/drivers.ts` but declared in no `package.json` | works only by hoisting | serveur | closed: `zod` declared in `packages/server/package.json` |
@@ -644,6 +701,26 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
 
 ## Known defects (found, not fixed by this epic)
 
+- **P-5 step 7: the open page does not refresh after an agent write.**
+  `app/useInstance.ts` refetches only the index on the change feed; it deliberately
+  leaves the open page alone to protect unsaved editor text. The revision check
+  reports a conflict on save. This predates the pages tranche; automatic refresh
+  of the open page needs a separate behaviour decision. Carry it into the epic's
+  closing recommendations; the browser bench must not require that refresh.
+- **Nestor's send control still uses the `↑` glyph**, supplied by its skin.
+  Kept during the pages tranche; the skin's control remains for a separate fix.
+- **The chat's native model select says `Auto` (`chat/ModelPicker.tsx`)**, outside the pages tranche.
+- **E-6's block settings can overlap the banner at 1440 px.** Observed during the
+  pages review; left unchanged by the typography and documentation correction.
+- **A page diagnostic can mix languages on a French instance.** Its translated
+  frame draws the server's diagnostic text as received, outside the screen's
+  translation table; left for a separate API/diagnostic translation decision.
+
+- **A root page's breadcrumb can invent a folder**: `app/trail.ts` derives the parent
+  with `path.slice(0, path.lastIndexOf('/'))`. Without a slash it drops the last
+  character instead of returning the empty parent that `app/paths.ts`'s `folderOf`
+  returns. Kept separate to preserve behaviour; correcting the breadcrumb needs its own fix.
+
 - **MCP server counts disagree**: the Settings tile can say “6 servers” while the MCP
   breadcrumb badge says “7 servers”. Observed during the charter review; whether it
   predates this epic is unknown. Kept under B-1, pending a separate behaviour investigation.
@@ -679,9 +756,6 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
   is then the raw server text, which no catalogue translates.
 - **A catalogue token field has no `autoComplete`**, so a browser may offer to fill or save it
   as a password.
-- **The shell's `‹ Back` stays English on a French instance** above every plugin view (E-22 to
-  E-31; `App.tsx`), next to the plugin's own back, which is translated and named. Seen on the plugin
-  matrix; the pages tranche owns the shell's back (Q-12, Q-4).
 - **E-23 (planif) says the server's sentences in English.** A note's problem (`carries both
   \`every\` and \`at\``, `the note is empty — its body is the prompt`, `below the 15-minute floor`…) is
   built by `plugins/planif/api.mjs` and `schedule.ts` and drawn as received; no table holds it, and

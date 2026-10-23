@@ -44,35 +44,36 @@
   gap: var(--space-3);
 }
 
-.adestia-editor__save {
-  padding: var(--space-1) var(--space-4);
+/* The save line: an icon and a sentence. A refusal or a conflict is a token
+   pair — tinted ground, the `*-text` twin for the words — so it reads in the
+   dark as well as in the light. */
+.adestia-save {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+.adestia-save--ok { color: var(--success-text); }
+.adestia-save--warn,
+.adestia-save--error {
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
-  border: 1px solid var(--accent);
-  background: var(--accent);
-  color: var(--on-accent);
-  font: inherit;
-  cursor: pointer;
 }
-
-.adestia-editor__save:disabled {
-  background: var(--surface-sunken);
-  border-color: var(--border);
-  color: var(--text-faint);
-  cursor: default;
-}
-
-.adestia-save { font-size: var(--text-sm); color: var(--text-muted); }
-.adestia-save--ok { color: var(--success); }
-.adestia-save--warn { color: var(--warning); }
-.adestia-save--error { color: var(--danger); }
+.adestia-save--warn { background: color-mix(in srgb, var(--warning) 12%, transparent); color: var(--warning-text); }
+.adestia-save--error { background: color-mix(in srgb, var(--danger) 12%, transparent); color: var(--danger-text); }
 
 .adestia-editor__readonly {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
   padding: var(--space-3);
   border: 1px solid var(--warning);
   border-radius: var(--radius);
-  background: var(--accent-quiet);
+  background: color-mix(in srgb, var(--warning) 9%, transparent);
   font-size: var(--text-sm);
 }
+.adestia-editor__readonly .adestia-icon { margin-top: 2px; color: var(--warning-text); }
 
 /* The editor refusing to open, written where the editor would have been.
    Only Milkdown's own parse failure lands here: a page whose vocabulary is
@@ -81,7 +82,7 @@
   padding: var(--space-3);
   border: 1px solid var(--danger);
   border-radius: var(--radius);
-  color: var(--danger);
+  color: var(--danger-text);
   font-size: var(--text-sm);
 }
 
@@ -95,13 +96,17 @@
   gap: var(--space-1);
 }
 
-.adestia-diagnostics__item--error { color: var(--danger); }
-.adestia-diagnostics__item--warning { color: var(--warning); }
+.adestia-diagnostics__item { display: flex; align-items: baseline; gap: var(--space-2); }
+.adestia-diagnostics__item .adestia-icon { align-self: center; }
+.adestia-diagnostics__item--error { color: var(--danger-text); }
+.adestia-diagnostics__item--warning { color: var(--warning-text); }
 
 .adestia-diagnostics__line {
   font-family: var(--font-mono);
   color: var(--text-faint);
   margin-right: var(--space-2);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .adestia-editor__raw {
@@ -139,7 +144,7 @@ h2.adestia-editor__title { padding-bottom: 3px; }
   background: none;
   color: var(--text);
   font-family: var(--font-title);
-  font-size: 1.35rem;
+  font-size: var(--text-xl);
   font-weight: 600;
   letter-spacing: -0.01em;
   line-height: 1.25;
@@ -153,10 +158,11 @@ h2.adestia-editor__title { padding-bottom: 3px; }
 
 .adestia-editor__title:hover { border-bottom-color: var(--border-strong); }
 
-.adestia-editor__title:focus {
-  outline: none;
-  border-bottom-color: var(--accent);
-}
+.adestia-editor__title:focus { border-bottom-color: var(--accent-text); }
+
+/* The ring is for the keyboard, and it is drawn: a title that is a field must
+   say where the caret is. */
+.adestia-editor__title:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
 
 /* Typed blocks, as the editor shows them. A skin may recolour these; it may
    not change what they are. */
@@ -194,7 +200,7 @@ h2.adestia-editor__title { padding-bottom: 3px; }
 .adestia-editor__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-2);
   align-items: center;
   margin-bottom: var(--space-4);
 }
@@ -203,7 +209,7 @@ h2.adestia-editor__title { padding-bottom: 3px; }
 .adestia-editor__meta-empty { display: none; }
 
 .adestia-wikilink {
-  color: var(--accent);
+  color: var(--accent-text);
   text-decoration: none;
   border-bottom: 1px dotted var(--accent);
 }
@@ -240,7 +246,7 @@ h2.adestia-editor__title { padding-bottom: 3px; }
   max-width: none;
   margin: 0 0 0 auto;
   padding: 0;
-  font: 500 11px/1.3 var(--font-mono);
+  font: 500 var(--text-2xs)/1.3 var(--font-mono);
   letter-spacing: 0.02em;
   color: var(--text-faint);
 }
@@ -253,11 +259,11 @@ h2.adestia-editor__title { padding-bottom: 3px; }
    can be seen, selected and removed. */
 .adestia-edblock[data-block="row"] { margin: var(--space-2) 0; }
 .adestia-edblock[data-block="row"] > .adestia-edblock__preview::before {
-  content: ':::row — nouvelle ligne';
+  content: ':::row — ' attr(data-note);
   display: block;
   padding: 2px var(--space-2);
   border-top: 1px dashed var(--border-strong);
-  font: 500 11px/1.4 var(--font-mono);
+  font: 500 var(--text-2xs)/1.4 var(--font-mono);
   color: var(--text-faint);
 }
 
@@ -268,26 +274,31 @@ h2.adestia-editor__title { padding-bottom: 3px; }
    below their bar and their settings. */
 .adestia-editor__surface .milkdown .ProseMirror .prosemirror-virtual-cursor { z-index: 2; }
 
-/* The bar: the block's name and ⚙. Out of the way until a block is pointed
-   at, focused or selected — the page is what is being looked at. */
+/* The bar: the block's name and its controls — grip, lift, remove, settings,
+   and for a data block the raw/preview switch. They are `.adestia-btn`s built
+   as DOM (`dom-icon.ts`). Out of the way until a block is pointed at,
+   focused or selected — the page is what is being looked at. */
 .adestia-edblock__bar {
   position: absolute;
-  top: -11px;
+  top: -14px;
   right: var(--space-2);
   z-index: 3;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 2px;
-  padding: 1px 3px 1px 7px;
+  justify-content: flex-end;
+  gap: var(--space-1);
+  max-width: calc(100% - var(--space-4));
+  padding: 2px var(--space-1) 2px var(--space-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface-raised);
   box-shadow: var(--shadow-sm);
-  font: 500 11px/1.5 var(--font-mono);
-  color: var(--text-faint);
+  font: 500 var(--text-2xs)/1.5 var(--font-mono);
+  color: var(--text-muted);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 120ms ease;
+  transition: opacity var(--motion-quick) ease;
 }
 .adestia-edblock:hover > .adestia-edblock__bar,
 .adestia-edblock:focus-within > .adestia-edblock__bar,
@@ -296,20 +307,10 @@ h2.adestia-editor__title { padding-bottom: 3px; }
   opacity: 1;
   pointer-events: auto;
 }
-.adestia-edblock__name { margin-right: 4px; }
-.adestia-edblock__bar button {
-  padding: 1px 6px;
-  border: 0;
-  border-radius: 5px;
-  background: none;
-  color: var(--text-muted);
-  font: inherit;
-  cursor: pointer;
-}
-.adestia-edblock__bar button:hover { color: var(--accent); background: var(--accent-quiet); }
-.adestia-edblock__gear { font-size: 13px; }
-.adestia-edblock__act { font-size: 12px; }
-.adestia-edblock__bar button.adestia-edblock__grip { cursor: grab; font-size: 13px; letter-spacing: -1px; }
+.adestia-edblock__name { margin-right: var(--space-1); overflow-wrap: anywhere; }
+.adestia-edblock__bar .adestia-btn { font-size: var(--text-xs); }
+.adestia-edblock__bar .adestia-edblock__grip { cursor: grab; }
+.adestia-edblock__bar .adestia-edblock__remove:hover:not(:disabled) { color: var(--danger-text); }
 
 /* Dragging a block: the block itself fades, a line says where it will land. */
 .adestia-edblock--dragging { opacity: 0.4; }
@@ -318,22 +319,21 @@ body.adestia-dragging-block * { cursor: grabbing !important; user-select: none; 
 .adestia-drop-line {
   position: fixed;
   z-index: 1000;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   background: var(--accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent);
+  box-shadow: 0 0 0 2px var(--accent-quiet);
   pointer-events: none;
 }
 .adestia-drop-line[hidden] { display: none; }
 .adestia-edblock__act[hidden] { display: none; }
-.adestia-edblock__bar button.adestia-edblock__remove:hover { color: var(--danger); }
 
 /* Which block the bar belongs to: a faint outline on the one pointed at. */
 .adestia-edblock:hover {
-  outline: 1px dashed color-mix(in srgb, var(--accent) 45%, transparent);
+  outline: 1px dashed var(--border-strong);
   outline-offset: 5px;
 }
 .adestia-edblock.ProseMirror-selectednode {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--accent-text);
   outline-offset: 5px;
 }
 
@@ -347,41 +347,37 @@ body.adestia-dragging-block * { cursor: grabbing !important; user-select: none; 
   border-radius: var(--radius);
   background: var(--surface-sunken);
   font-family: var(--font-code);
-  font-size: 0.9em;
+  font-size: var(--text-sm);
 }
 
-/* The settings, floating under the bar. */
-.adestia-edblock__panel {
-  position: absolute;
-  top: 16px;
-  right: var(--space-2);
-  z-index: 4;
-}
-.adestia-edblock__panel[hidden] { display: none; }
+/* The settings of a block (E-6) and of the page (E-5) are popovers hung from
+   their button (`<Popover>`, docs/charte.md § 4); the block view keeps only an
+   empty host for the React root that draws them. */
+.adestia-edblock__panel[hidden],
+.adestia-edblock__panel:empty { display: none; }
 
 .adestia-blockset {
-  width: min(23rem, 86vw);
+  width: min(23rem, calc(100vw - 2 * var(--space-2)));
+  max-height: min(80vh, 40rem);
   padding: var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface-raised);
-  box-shadow: var(--shadow-lg);
-  color: var(--text);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   font: 400 var(--text-sm)/1.45 var(--font);
   cursor: default;
 }
-.adestia-blockset__head { display: flex; align-items: center; margin-bottom: var(--space-2); }
-.adestia-blockset__name { flex: 1; font: 600 12px var(--font-mono); color: var(--text-muted); }
-.adestia-blockset__close {
-  border: 0;
-  background: none;
+.adestia-blockset__head { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-2); }
+.adestia-blockset__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 600 var(--text-xs) var(--font-mono);
   color: var(--text-muted);
-  font-size: 18px;
-  line-height: 1;
-  cursor: pointer;
 }
-.adestia-blockset__about { margin: 0 0 var(--space-2); color: var(--text-faint); font-size: 12px; }
+.adestia-blockset__about { margin: 0 0 var(--space-2); color: var(--text-muted); font-size: var(--text-xs); }
 .adestia-blockset__group {
+  min-width: 0;
   margin: 0 0 var(--space-2);
   padding: var(--space-2) 0 0;
   border: 0;
@@ -392,54 +388,52 @@ body.adestia-dragging-block * { cursor: grabbing !important; user-select: none; 
   font: 600 var(--label-size) var(--font-mono);
   letter-spacing: var(--label-track);
   text-transform: uppercase;
-  color: var(--text-faint);
+  color: var(--text-muted);
 }
-.adestia-blockset__field {
-  display: grid;
-  grid-template-columns: 6.5rem 1fr;
+.adestia-blockset .adestia-field { margin: var(--space-2) 0; }
+.adestia-blockset .adestia-field__label { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--text-muted); }
+.adestia-blockset .adestia-toggle { align-self: flex-start; }
+.adestia-blockset__ico { width: 6rem; }
+.adestia-blockset__stray {
+  display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin: 6px 0;
+  margin: var(--space-1) 0;
 }
-.adestia-blockset__field > span { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
-.adestia-blockset__field em { color: var(--danger); font-style: normal; }
-/* Every control but the checkbox, which draws its own box — a date and a
-   number are fields like any other and looked like neither before. */
-.adestia-blockset__field input:not([type="checkbox"]),
-.adestia-blockset__field select {
-  min-width: 0;
-  padding: 4px 8px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
+.adestia-blockset__stray-value { flex: 1; min-width: 0; overflow-wrap: anywhere; font: var(--text-xs) var(--font-mono); }
+.adestia-blockset__missing {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-1);
+  margin: var(--space-1) 0 0;
+  color: var(--danger-text);
+  font-size: var(--text-xs);
 }
-.adestia-blockset__field input:focus-visible,
-.adestia-blockset__field select:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; }
-.adestia-blockset__field--check { grid-template-columns: auto 1fr; justify-content: start; }
-.adestia-blockset__field--check > span { font-family: var(--font); font-size: var(--text-sm); color: var(--text); }
-.adestia-blockset__ico { width: 4.5rem; }
-.adestia-blockset__field--stray > button {
-  justify-self: start;
-  border: 0;
-  background: none;
-  color: var(--danger);
-  font: inherit;
-  cursor: pointer;
+
+/* Said in words for a screen reader, not drawn: the required mark `*` is
+   colour-free already, and its meaning still needs a sentence. */
+.adestia-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
-.adestia-blockset__missing { margin: var(--space-1) 0 0; color: var(--danger); font-size: 12px; }
 
 /* ── The page's own properties, at the top of the document ────────────────
    The frontmatter is drawn as chips in both postures. What writing adds is a
-   ⚙ beside them and the form behind it — the same object a block's settings
-   are, one level up. See `frontmatterview.tsx`. */
+   settings button beside them and the window behind it (E-5, a popover hung
+   from the button) — the same object a block's settings are, one level up.
+   See `frontmatterview.tsx`. */
 
 .adestia-editor__meta--edit {
   position: relative;
-  min-height: 26px;
-  margin-left: -6px;
-  padding: 3px 6px;
+  min-height: 32px;
+  margin-left: calc(-1 * var(--space-2));
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
   cursor: default;
 }
@@ -451,93 +445,53 @@ body.adestia-dragging-block * { cursor: grabbing !important; user-select: none; 
 
 /* A page with no properties yet still has the row, and says so. It is the
    page somebody is most likely to be naming, and a strip that hides itself
-   when empty hides the ⚙ on exactly that page. */
-.adestia-editor__meta-none { font: 500 11px/1.5 var(--font-mono); color: var(--text-faint); }
+   when empty hides the settings button on exactly that page. */
+.adestia-editor__meta-none { font: 500 var(--text-2xs)/1.5 var(--font-mono); color: var(--text-faint); }
 
-.adestia-editor__meta-gear {
-  margin-left: 4px;
-  padding: 1px 6px;
-  border: 0;
-  border-radius: 5px;
-  background: none;
-  color: var(--text-faint);
-  font: 13px/1.5 var(--font-mono);
-  cursor: pointer;
-}
+.adestia-editor__meta-gear { margin-left: var(--space-1); }
+.adestia-editor__meta--open .adestia-editor__meta-gear { color: var(--accent-text); }
 
-.adestia-editor__meta--edit:hover .adestia-editor__meta-gear,
-.adestia-editor__meta--open .adestia-editor__meta-gear { color: var(--accent); }
-.adestia-editor__meta-gear:hover { background: var(--accent-quiet); }
+/* The window is a popover in the body; its host here stays empty. */
+.adestia-editor__meta-panel:empty { display: none; }
 
-/* The form, under the strip rather than under a bar: the strip sits at the
-   very top of the document, so there is nothing above it to hang from. */
-.adestia-editor__meta-panel {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  z-index: 4;
-}
-.adestia-editor__meta-panel[hidden] { display: none; }
-
-/* A page has more to say than a block, and `groupBy` does not fit in 6.5rem
-   of label. Its form is also LONG — a task carries seven fields of its own —
-   so it scrolls inside itself rather than running off the bottom of a laptop
-   screen, where the last field and the "add a field" list were unreachable. */
-.adestia-blockset--page {
-  width: min(30rem, 92vw);
-  max-height: min(70vh, 40rem);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-.adestia-blockset--page .adestia-blockset__field {
-  grid-template-columns: 8rem 1fr;
-  /* The help belongs to the control above it, not to the space between two
-     fields: with the group's own row gap it read as floating between them. */
-  row-gap: 0;
-  margin: 10px 0;
-}
-.adestia-blockset__hint {
-  grid-column: 2;
-  margin: 4px 0 0;
-  color: var(--text-faint);
-  font-size: 11px;
-  line-height: 1.4;
-}
-.adestia-blockset__hint--wide { grid-column: 1 / -1; }
+/* A page has more to say than a block, and `groupBy` does not fit in a
+   narrow label. Its form is also LONG — a task carries seven fields of its
+   own — so it scrolls inside itself rather than running off the bottom of a
+   laptop screen, where the last field and the "add a field" list were
+   unreachable. */
+.adestia-blockset--page { width: min(30rem, calc(100vw - 2 * var(--space-2))); }
 
 /* Tags: pills that come off, and a field that completes on what the corpus
    already writes. */
-.adestia-tagedit { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
-.adestia-tagedit .adestia-tag { display: inline-flex; align-items: center; gap: 5px; }
+.adestia-tagedit { display: flex; flex-wrap: wrap; gap: var(--space-1); align-items: center; }
+.adestia-tagedit .adestia-tag { display: inline-flex; align-items: center; gap: var(--space-1); }
 .adestia-tagedit .adestia-tag button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  min-height: 24px;
   padding: 0;
   border: 0;
+  border-radius: var(--radius-sm);
   background: none;
-  color: var(--text-faint);
+  color: var(--text-muted);
   font: inherit;
   line-height: 1;
   cursor: pointer;
 }
-.adestia-tagedit .adestia-tag button:hover { color: var(--danger); }
-.adestia-tagedit input {
-  flex: 1;
-  min-width: 6rem;
-  padding: 3px 8px;
-  border: 1px dashed var(--border-strong);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text);
-  font: inherit;
-}
+.adestia-tagedit .adestia-tag button:hover { color: var(--danger-text); }
+.adestia-tagedit .adestia-tag button:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 1px; }
+.adestia-tagedit input { flex: 1; min-width: 6rem; width: auto; }
 
 /* What the editor does not model: shown as written, and left alone. */
 .adestia-blockset__kept {
   margin: var(--space-1) 0 0;
-  padding: 6px 8px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
   background: var(--surface-sunken);
-  color: var(--text-faint);
-  font: 11px/1.5 var(--font-mono);
+  color: var(--text-muted);
+  font: var(--text-2xs)/1.5 var(--font-mono);
   white-space: pre-wrap;
   overflow-x: auto;
 }
@@ -551,15 +505,7 @@ body.adestia-dragging-block * { cursor: grabbing !important; user-select: none; 
   padding-top: var(--space-2);
   border-top: 1px solid var(--border);
 }
-.adestia-blockset__add select {
-  flex: 1;
-  padding: 4px 8px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--text-muted);
-  font: inherit;
-}
+.adestia-blockset__add .adestia-select { flex: 1; color: var(--text-muted); }
 
 /* Bands, as the reader lays them out: consecutive `w=` blocks share a line,
    a block that does not fit starts the next, `:::row` and any full-width

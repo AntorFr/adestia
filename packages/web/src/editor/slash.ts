@@ -12,8 +12,8 @@
  * mounted this morning, appears here because it EXISTS. Nothing to keep in
  * step, which is the mistake this file's neighbour paid for twice.
  *
- * What is presentation, and therefore hand-written, is small and fails safe: a
- * glyph per name with a fallback, and one label override. A block nobody gave
+ * What is presentation, and therefore hand-written, is small and fails safe: an
+ * icon per name with a fallback, and one label override. A block nobody gave
  * an icon still appears, wearing the fallback.
  */
 
@@ -26,7 +26,9 @@ import {
   wrapInBlockTypeCommand,
 } from '@milkdown/kit/preset/commonmark'
 
+import type { IconName } from '../app/icons.js'
 import { openSettingsOnNextBlock } from './blockview.js'
+import { iconMarkup } from './dom-icon.js'
 import { editorBlocks, pmId } from './vocabulary.js'
 
 /** Crepe's builder, named through the config that receives it. */
@@ -45,18 +47,18 @@ const LABELS: Readonly<Record<string, string>> = {
   table: 'bloc-table',
 }
 
-const ICONS: Readonly<Record<string, string>> = {
-  callout: '💡',
-  gallery: '🖼',
-  content: '📄',
-  figures: '📊',
-  table: '▦',
-  list: '🗂',
-  row: '↵',
+const ICONS: Readonly<Record<string, IconName>> = {
+  callout: 'info',
+  gallery: 'image',
+  content: 'file-text',
+  figures: 'chart-column',
+  table: 'table',
+  list: 'list',
+  row: 'corner-down-left',
 }
 
-/** Anything the table gains before somebody chooses it a glyph. */
-const FALLBACK = '❖'
+/** Anything the table gains before somebody chooses it an icon. */
+const FALLBACK: IconName = 'sparkles'
 
 /**
  * Every block the menu can offer — now that a block's settings can be edited
@@ -93,15 +95,15 @@ function seed(spec: BlockSpec): Record<string, string> {
  * commonmark, they are not ours to remove, and a person reaching for a heading
  * should not have to know which half of the menu we wrote.
  */
-export function buildBlockMenu(builder: MenuBuilder): void {
+export function buildBlockMenu(builder: MenuBuilder, t: (key: string) => string = (key) => key): void {
   const blocks = editorBlocks().filter(insertable)
   if (blocks.length === 0) return
 
-  const group = builder.addGroup('adestia', 'Blocs')
+  const group = builder.addGroup('adestia', t('Blocks'))
   for (const spec of blocks) {
     group.addItem(spec.name, {
       label: LABELS[spec.name] ?? spec.name,
-      icon: ICONS[spec.name] ?? FALLBACK,
+      icon: iconMarkup(ICONS[spec.name] ?? FALLBACK),
       onRun: (ctx) => {
         const nodeType = ctx.get(schemaCtx).nodes[pmId(spec.name)]
         // The node is registered by `adestiaVocabulary()` from the same table

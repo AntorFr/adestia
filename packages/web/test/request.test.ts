@@ -106,7 +106,7 @@ describe('requestRaw', () => {
       throw new TypeError('offline')
     }) as unknown as typeof fetch
     expect(await requestRaw(boom, '/x', undefined, said)).toEqual({ ok: false, error: 'échec (0)' })
-    expect(await requestRaw(boom, '/x')).toEqual({ ok: false, error: FALLBACK_KEY.replace('%n', '0') })
+    expect(await requestRaw(boom, '/x', undefined, (key) => key)).toEqual({ ok: false, error: FALLBACK_KEY.replace('%n', '0') })
   })
 
   it('passes path and init to the injected fetch', async () => {
@@ -118,5 +118,24 @@ describe('requestRaw', () => {
     const init = { method: 'DELETE' }
     await requestRaw(spy, '/p', init)
     expect(seen).toEqual(['/p', init])
+  })
+
+  it('hands back any HTTP status as a response, never as a failure', async () => {
+    for (const status of [200, 404, 500]) {
+      const out = await requestRaw(reply('x', status), '/x')
+      expect(out.ok).toBe(true)
+      expect((out as { response: Response }).response.status).toBe(status)
+    }
+  })
+
+  it('passes the init through and never throws on a network error', async () => {
+    let seen: RequestInit | undefined
+    const spy = (async (_p: string, init?: RequestInit) => {
+      seen = init
+      throw new TypeError('offline')
+    }) as unknown as typeof fetch
+    const signal = new AbortController().signal
+    expect(await requestRaw(spy, '/x', { signal })).toEqual({ ok: false, error: 'offline' })
+    expect(seen?.signal).toBe(signal)
   })
 })

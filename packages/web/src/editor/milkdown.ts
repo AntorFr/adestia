@@ -82,6 +82,7 @@ export function mountMilkdown(
   onChange: (markdown: string) => void,
   env: PropertiesEnv = {},
 ): () => void {
+  const t = env.t ?? ((key: string) => key)
   const crepe = new Crepe({
     root: element,
     defaultValue: markdown,
@@ -93,10 +94,10 @@ export function mountMilkdown(
     },
     featureConfigs: {
       // The vocabulary's blocks, in the `/` menu — see `slash.ts`.
-      [CrepeFeature.BlockEdit]: { buildMenu: buildBlockMenu },
+      [CrepeFeature.BlockEdit]: { buildMenu: (builder) => buildBlockMenu(builder, t) },
       // Lists, headings and quotes on the selection toolbar, so they are
       // reachable inside a block — see `toolbar.ts`.
-      [CrepeFeature.Toolbar]: { buildToolbar: buildBlockTypes },
+      [CrepeFeature.Toolbar]: { buildToolbar: (builder) => buildBlockTypes(builder, t) },
       // An image written relative to its page (`assets/avant.jpg`) resolved
       // against the SHELL's address in the editor, and drew broken where the
       // reader drew it fine. The editor now asks the reader's own resolver.
@@ -174,9 +175,10 @@ export function mountMilkdown(
       const problem = element.ownerDocument.createElement('p')
       problem.className = 'adestia-editor__problem'
       problem.setAttribute('role', 'status')
-      problem.textContent = `The editor could not open this page: ${
-        cause instanceof Error ? cause.message : String(cause)
-      }`
+      problem.textContent = t('The editor could not open this page: %reason').replace(
+        '%reason',
+        cause instanceof Error ? cause.message : String(cause),
+      )
       element.replaceChildren(problem)
     })
 

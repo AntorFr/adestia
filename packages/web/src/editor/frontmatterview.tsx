@@ -33,6 +33,7 @@ import type { EditorView, NodeView } from '@milkdown/kit/prose/view'
 import { createRoot, type Root } from 'react-dom/client'
 
 import type { EditorEnv } from './blockview.js'
+import { domIcon } from './dom-icon.js'
 import { PageSettings } from './PageSettings.js'
 import type { FieldContributions } from './pageform.js'
 
@@ -92,6 +93,7 @@ class FrontmatterView implements NodeView {
   private readonly chips: HTMLElement
   private readonly gear: HTMLButtonElement
   private readonly panel: HTMLElement
+  private readonly anchor: { current: HTMLElement | null }
   private panelRoot?: Root
   private open = false
 
@@ -114,12 +116,15 @@ class FrontmatterView implements NodeView {
 
     this.gear = doc.createElement('button')
     this.gear.type = 'button'
-    this.gear.className = 'adestia-editor__meta-gear'
+    this.gear.className = 'adestia-btn adestia-btn--ghost adestia-btn--icon adestia-btn--sm adestia-editor__meta-gear'
     this.gear.title = t('Page properties')
     this.gear.setAttribute('aria-label', t('Page properties'))
-    this.gear.textContent = '⚙'
+    this.gear.append(domIcon(doc, 'settings'))
+    this.anchor = { current: this.gear }
     this.gear.addEventListener('mousedown', (event) => {
       event.preventDefault()
+      // Focus goes to the button itself, so that closing the window gives it back here.
+      if (!this.open) this.gear.focus()
       this.setOpen(!this.open)
     })
 
@@ -181,6 +186,7 @@ class FrontmatterView implements NodeView {
         opaque={read.opaque}
         broken={read.broken}
         pages={(this.env.pages ?? []) as readonly Indexed[]}
+        anchor={this.anchor}
         {...(this.env.contributions ? { contributions: this.env.contributions } : {})}
         {...(this.env.locale ? { locale: this.env.locale } : {})}
         {...(this.env.without ? { without: this.env.without } : {})}

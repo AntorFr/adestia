@@ -27,6 +27,7 @@
 
 import { useEffect, useState, type ComponentType } from 'react'
 
+import { requestJson } from '../app/request.js'
 import { Editor, type PageDocument } from '../editor/Editor.js'
 import type { BlockComponents } from '../editor/Reader.js'
 
@@ -98,9 +99,11 @@ export function makePageEditor(host: PageEditorHost): ComponentType<PageEditorPr
           // Settled rather than awaited together: an editor module that fails
           // to load costs writing, not reading, and a page nobody can read
           // because ProseMirror 404'd is the worse of the two failures.
-          const response = await fetchImpl(`/api/pages/${path}`)
-          if (!response.ok) throw new Error(`that page answered ${response.status}`)
-          const document = (await response.json()) as PageDocument
+          const response = await requestJson<PageDocument>(fetchImpl, `/api/pages/${path}`)
+          if (!response.ok) {
+            throw new Error(response.status === 0 ? response.error : `that page answered ${response.status}`)
+          }
+          const document = response.data
           if (cancelled) return
           setPage(document)
           const mounter = await loadMount().catch(() => undefined)

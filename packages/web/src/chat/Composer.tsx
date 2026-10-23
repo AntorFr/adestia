@@ -302,11 +302,11 @@ export function Composer({
     // Appends rather than replaces: whatever the user already typed IS the
     // instruction, and a plugin dropping text must not erase it.
     onFill?.((text: string) => {
-      // Composing nothing is a no-op, not a stray space: a plugin whose
-      // scanner found no code should leave the field exactly as it was.
+      // An empty fill is also the home's focus command. Leave the draft
+      // untouched, including when a plugin's scanner found no code.
+      area.current?.focus()
       if (text.trim() === '') return
       setText((current) => (current.trim() === '' ? text : `${current.trimEnd()} ${text}`))
-      area.current?.focus()
     })
   }, [onFill])
 

@@ -37,7 +37,9 @@ export async function requestJson<T = unknown>(
     const message = cause instanceof Error ? cause.message : ''
     return { ok: false, status: 0, error: message !== '' ? message : fallback(0) }
   }
-  const body: unknown = await response.json().catch(() => undefined)
+  const body: unknown = await Promise.resolve()
+    .then(() => response.json())
+    .catch(() => undefined)
   if (!response.ok) {
     const error = (body as { error?: unknown } | null | undefined)?.error
     return {
@@ -59,17 +61,18 @@ export type RawResult =
  * the body (the turn POST, the attach GET) and four do not (the upload, the
  * stop, the archive and the delete, which read only the status or the body once).
  * Any HTTP status comes back as a `response`, whole; only a failure to reach
- * the server is `{ ok: false }`, with the locale's fallback. It never throws.
+ * the server is `{ ok: false }`. With a translator, its error is the locale's
+ * fallback; otherwise it is the network message (also used by live.ts). It never throws.
  */
 export async function requestRaw(
   fetchImpl: typeof fetch,
   path: string,
   init?: RequestInit,
-  t: (key: string) => string = (key) => key,
+  t?: (key: string) => string,
 ): Promise<RawResult> {
   try {
     return { ok: true, response: await fetchImpl(path, init) }
-  } catch {
-    return { ok: false, error: t(FALLBACK_KEY).replace('%n', '0') }
+  } catch (cause) {
+    return { ok: false, error: t ? t(FALLBACK_KEY).replace('%n', '0') : cause instanceof Error ? cause.message : '' }
   }
 }

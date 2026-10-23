@@ -25,6 +25,25 @@
   et `PageEditor` gardent leur `fetchImpl(` (tranche pages) ; la suite vitest à navigateur
   peut dépasser 5 s sous charge (repasse seule) ; une phrase de carte de permission peut venir
   de l'outil en anglais (donnée du serveur, pas un libellé).
+**Tranche `adestia-qualite-pages` (epic adestia-qualite) — assemblée, PR vers
+`epic/adestia-qualite`, pas fusionnée.** Aucun changement de ce que font les pages (B-1) ;
+elles parlent une seule langue (B-8) et le `‹ Back` du shell dit qu'il mène à l'accueil (B-9).
+- Code : `app/paths.ts` porte `prettify`, `folderOf` et les deux règles d'index, nommées
+  (`isIndexFile`, `isIndexPath`, AD-13 a) ; les pages parlent au serveur par `requestJson` /
+  `requestRaw` (plus de `fetchImpl(` dans les écrans de la tranche, `api.fetch` des plugins
+  excepté) ; `useInstance` rend `ready`. App, Home, Reader, Editor découpés par durée de vie
+  (R-12) : `node scripts/function-lines.mjs <fichiers>` (qui fait foi : il imprime la plus longue fonction de chaque fichier, sort 1 au-delà de 250) ; `bench/long-functions.mjs` ne liste que les dépassements, donc se tait quand tout va bien.
+- Écrans : E-2 (état de chargement, Q-23), E-3, E-4 lecteur et éditeur, E-5, E-6, E-7, E-8, E-20
+  avec composants, icônes et jetons de la charte ; feuilles de la tranche sans couleur, taille
+  ni rayon littéral, sans `outline: none` nu ; chaînes par `i18n.ts` en en et fr.
+- Recette : `npm ci`, `npm run typecheck`, `npm run lint`, `npm test` ; lancement
+  `node bench/launch.mjs --engine fake` (`/api/health`), captures
+  `node bench/scenarios/pages-matrix.mjs` après `npm run build`, et `pages-editor-narrow.mjs`.
+- Reste / pièges : pas d'état de chargement pour E-3, E-4, E-9, pas de « Réessayer » sur E-8
+  (B-1, recommandations de fin d'epic) ; les deux règles d'index diffèrent sur un chemin sans
+  extension, gardées chacune ; l'invite de la une garde sa forme française (AD-13 e) ; le
+  frontmatter garde ses deux analyseurs (AD-7). Deux tests à navigateur de la charte dépassent
+  5 s sous la charge de toute la suite et repassent seuls. Le chat reste hors charte.
 
 **Tranche `adestia-qualite-plugins` (epic adestia-qualite) — assemblée, PR vers
 `epic/adestia-qualite`, pas fusionnée.** Aucun changement de ce que font les plugins (B-1).
@@ -53,7 +72,7 @@
   palette sombre une fois (`light-dark()`, AD-10), l'échelle typographique et les rayons ;
   `packages/web/test/contrast.test.ts` mesure chaque paire de la palette de base et des
   quatre skins, clair et sombre (AA ou écart écrit). Focus visible global.
-- Composants (B-7) : classes CSS du shell (`styles/components.css`) + enveloppes React
+- Composants (B-7) : classes CSS du shell (`packages/web/src/app/styles/components.css`) + enveloppes React
   `app/ui/` (Button, Sheet, Popover, EmptyState, Field, focus) ; icônes Lucide en sprite
   inline vendoré (`app/icons.ts`, `Icon.tsx`, AD-9) ; documentés dans `skills/plugin-author`.
 - Requêtes (R-11) : `app/request.ts` (`requestJson`, AD-11), utilisée par E-1, E-9 à E-15,
@@ -67,10 +86,10 @@
 - Recette : `npm ci`, `npm run typecheck`, `npm run lint`, `npm test` (2160 vitest +
   543 `node --test`, 2 sautés) ; lancement `node bench/launch.mjs --engine fake`, captures
   par `node bench/sweep.mjs`.
-- Reste / pièges : la charte n'est pas appliquée au chat ni aux pages (tranches
-  suivantes, qui adoptent ces composants) ; pas de toasts (écart écrit) ; pas de « Réessayer »,
+- Reste / pièges : la charte n'est pas appliquée au chat (tranche
+  suivante, qui adoptent ces composants) ; pas de toasts (écart écrit) ; pas de « Réessayer »,
   de confirmation avant « Remove » ni d'écran hors ligne (B-1, recommandations de fin d'epic) ;
-  `live.ts` et `usePage.ts` gardent leur `fetchImpl(` (tranches chat/pages). Une valeur de token
+  `live.ts` et `usePage.ts` passent désormais par l'aide de requêtes (tranche pages). Une valeur de token
   qui change change tous les écrans : la charte écrit la raison.
 
 **Tranche `adestia-qualite-serveur` (epic adestia-qualite) — assemblée, PR vers

@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 
 import type { PageDocument } from '../editor/Editor.js'
 import { sectionRoute } from './owners.js'
+import { requestJson } from './request.js'
 
 export type EditorMount = (
   element: HTMLElement,
@@ -53,7 +54,10 @@ export function usePage({
     let cancelled = false
     void (async () => {
       const [response, editor] = await Promise.all([
-        fetchImpl(`/api/pages/${pagePath}${pageStore ? `?store=${encodeURIComponent(pageStore)}` : ''}`),
+        requestJson<PageDocument>(
+          fetchImpl,
+          `/api/pages/${pagePath}${pageStore ? `?store=${encodeURIComponent(pageStore)}` : ''}`,
+        ),
         import('../editor/milkdown.js'),
       ])
       if (cancelled) return
@@ -71,7 +75,7 @@ export function usePage({
         location.hash = folder ? sectionRoute(folder) : ''
         return
       }
-      if (!response.ok) {
+      if (!response.ok || response.data === undefined) {
         // Said, not swallowed. A 404, a 401 and a 502 used to leave the screen
         // exactly as it was — which is the home — and there was no way for a
         // reader to tell a mistyped address from an expired session.
@@ -83,7 +87,7 @@ export function usePage({
       // Stored via a thunk: passing a function to setState directly would
       // have React call it as an updater.
       setMount(() => editor.mountMilkdown)
-      setPage((await response.json()) as PageDocument)
+      setPage(response.data)
     })()
     return () => {
       cancelled = true

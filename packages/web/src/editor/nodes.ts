@@ -48,15 +48,6 @@ export function listItems(node: Node): readonly string[] {
 }
 
 /**
- * `plan-travail-garage` → `Plan travail garage`. The fallback when nothing
- * declares a label for a subject — declared beats guessed, guessed beats gone.
- */
-export function prettify(name: string): string {
-  const words = name.replace(/[-_]+/g, ' ').trim()
-  return words ? words.charAt(0).toUpperCase() + words.slice(1) : name
-}
-
-/**
  * A `<br />` standing alone — what the editor used to save an empty paragraph
  * as. The reader draws nothing for one, and the editor drops it on parse.
  */

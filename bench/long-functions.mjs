@@ -1,66 +1,68 @@
 #!/usr/bin/env node
-// Lists the functions longer than a limit in a folder of TypeScript sources.
-//
-//   node bench/long-functions.mjs <folder> [--max 250]
-//
-// A function is a declaration, a method, a function expression or an arrow
-// function; its length is the lines from its first to its last, nested ones
-// included (a component that holds a 300-line hook body is 300 lines long).
-// Test files are skipped. Prints `path:line name — N lines`, longest first,
-// and nothing when none is over the limit. Exits 0 either way: it reports,
-// the reader of the report decides (a commit message may name a "kept: …").
+/**
+ * Lists the functions and components longer than 250 lines.
+ *
+ *   node bench/long-functions.mjs <file-or-folder>...
+ *
+ * A folder is walked for .ts/.tsx (tests and declarations skipped); a file is
+ * read as given. Every function declaration, arrow or function expression bound
+ * to a name, and method is counted from its first to its last line. Exits 1 if
+ * it lists any. Uses the repository's own TypeScript compiler.
+ */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
-import { createRequire } from 'node:module'
+import { argv, exit } from 'node:process'
+import ts from 'typescript'
 
-const args = process.argv.slice(2)
-const maxAt = args.indexOf('--max')
-const max = maxAt >= 0 ? Number(args.splice(maxAt, 2)[1]) : 250
-const folder = args[0]
-if (!folder || !Number.isFinite(max)) {
-  console.error('usage: node bench/long-functions.mjs <folder> [--max 250]')
-  process.exit(2)
-}
+const LIMIT = 250
 
-// TypeScript is resolved from the folder asked about, then from here.
-const require = createRequire(join(process.cwd(), 'package.json'))
-const ts = require('typescript')
-
-function* sources(dir) {
-  for (const name of readdirSync(dir).sort()) {
-    const path = join(dir, name)
-    if (statSync(path).isDirectory()) yield* sources(path)
-    else if (/\.(ts|tsx)$/.test(name) && !/\.test\./.test(name) && !name.endsWith('.d.ts')) yield path
-  }
+function files(target) {
+  if (statSync(target).isFile()) return [target]
+  return readdirSync(target, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(target, entry.name)
+    if (entry.isDirectory()) return entry.name === 'node_modules' ? [] : files(path)
+    return /\.tsx?$/.test(entry.name) && !entry.name.endsWith('.d.ts') && !/\.test\.tsx?$/.test(entry.name)
+      ? [path]
+      : []
+  })
 }
 
 function nameOf(node) {
   if (node.name) return node.name.getText()
   const parent = node.parent
-  if (parent && ts.isVariableDeclaration(parent)) return parent.name.getText()
-  if (parent && ts.isPropertyAssignment(parent)) return parent.name.getText()
-  return '(anonymous)'
+  if (ts.isVariableDeclaration(parent) || ts.isPropertyAssignment(parent)) return parent.name.getText()
+  return undefined
 }
 
-const found = []
-for (const path of sources(folder)) {
-  const text = readFileSync(path, 'utf8')
-  const file = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)
+function measure(path) {
+  const source = ts.createSourceFile(path, readFileSync(path, 'utf8'), ts.ScriptTarget.Latest, true, path.endsWith('x') ? ts.ScriptKind.TSX : ts.ScriptKind.TS)
+  const found = []
   const visit = (node) => {
     if (
       ts.isFunctionDeclaration(node) ||
-      ts.isFunctionExpression(node) ||
+      ts.isMethodDeclaration(node) ||
       ts.isArrowFunction(node) ||
-      ts.isMethodDeclaration(node)
+      ts.isFunctionExpression(node)
     ) {
-      const start = file.getLineAndCharacterOfPosition(node.getStart()).line
-      const end = file.getLineAndCharacterOfPosition(node.getEnd()).line
-      const lines = end - start + 1
-      if (lines > max) found.push({ path, line: start + 1, name: nameOf(node), lines })
+      const name = nameOf(node)
+      if (name !== undefined) {
+        const from = source.getLineAndCharacterOfPosition(node.getStart()).line
+        const to = source.getLineAndCharacterOfPosition(node.getEnd()).line
+        const lines = to - from + 1
+        if (lines > LIMIT) found.push({ path, name, lines, line: from + 1 })
+      }
     }
     ts.forEachChild(node, visit)
   }
-  visit(file)
+  visit(source)
+  return found
 }
-found.sort((a, b) => b.lines - a.lines)
-for (const f of found) console.log(`${f.path}:${f.line} ${f.name} — ${f.lines} lines`)
+
+const targets = argv.slice(2)
+if (targets.length === 0) {
+  console.error('usage: node bench/long-functions.mjs <file-or-folder>...')
+  exit(2)
+}
+const long = targets.flatMap(files).flatMap(measure)
+for (const item of long) console.log(`${item.path}:${item.line}  ${item.name}  ${item.lines} lines`)
+exit(long.length > 0 ? 1 : 0)
