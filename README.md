@@ -25,7 +25,8 @@ The first `up` builds the image from the `Dockerfile`; the agent needs
 there; edit the file on the host (or drop the `:ro`).
 
 Without Docker, from a clone (`data/` and `workspace/` are created in the
-current directory; `-c <path>` points at another config file):
+current directory, and `workspace/` is not git-ignored: run from a scratch directory,
+not the clone root; `-c <path>` points at another config file):
 
 ```sh
 npm ci

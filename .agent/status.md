@@ -19,7 +19,8 @@
 - Recette : `npm ci`, `npm run typecheck`, `npm run lint`, `npm run build`, `npm test` ;
   lancement `node bench/launch.mjs --engine fake` ; matrice
   `bench/scenarios/chat-matrix.mjs` (rail, compositeur, permission, 4 habillages, en/fr,
-  clair/sombre, bureau/téléphone) ; tour réel : `bench/scenarios/chat-permission-live.mjs`.
+  clair/sombre, bureau/téléphone) ; tour réel (jeton Claude) : `node bench/launch.mjs --engine claude --seed chat-permission --locale fr`,
+  puis `BENCH_URL=<adresse imprimée> node bench/scenarios/chat-permission-live.mjs` (bench/README.md).
 - Reste / pièges : suppression, renommage, désarchivage d'une conversation depuis
   l'interface non faits (comportements nouveaux, AD-7) ; `live.ts`, `usePage.ts`, l'éditeur
   et `PageEditor` gardent leur `fetchImpl(` (tranche pages) ; la suite vitest à navigateur

@@ -8,7 +8,7 @@
 > Written by the epic `adestia-qualite` (2026-10-15), a quality pass that changes **no
 > behaviour**. Decisions taken BEFORE this epic live in `DESIGN.md` › Decision log, which is
 > not renumbered; `AD-n` starts at `AD-1` with this epic. The map below is the code at
-> the git tag `v0.88.0` (the packages' `version` fields stay `0.0.0`), updated below for the completed pages tranche.
+> the git tag `v0.88.0` (the packages' `version` fields stay `0.0.0`), updated below for the completed charter, pages and chat tranches; the repository's later tags (`git tag`) mark releases, not this map.
 
 ## Overview
 
@@ -188,8 +188,8 @@ and every turn — chat, scheduled, delegated, callback wake — goes through th
   `plugin-host.ts` mounts each plugin's `api.mjs` under `/api/plugin/<id>/`, behind the
   same auth hook, and hands it only the secrets its manifest declares (`secretsFor`).
 - **Shell / skin** — CSS custom properties on `:root[data-skin=<id>]`, plus an optional
-  module mounted in `SkinSlot`. **TARGET** (AD-5): the shell also hands that module the
-  instance's locale, an extra optional input; a skin that ignores it works unchanged.
+  module mounted in `SkinSlot`. The shell also hands that module the instance's locale
+  (`SkinFactoryContext.locale`, AD-5), an optional input; a skin that ignores it works unchanged.
 - **Instance / calling agent** — `/mcp`, mounted only when `mcp.enabled` and `mcp.token` are
   set, gated by that bearer; delegations run in their own `DelegationChannel`, never in a
   person's conversations. `/callback` grants nothing and verifies with the peer.
