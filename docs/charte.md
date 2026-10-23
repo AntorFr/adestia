@@ -155,6 +155,9 @@ focus visible and not hidden, targets 24 × 24 px. Measured with
 Signature metadata uses `--sign-meta-text`, defaulting to `--text-muted`; Nestor deepens
 only this ink to `#5c566b` in light mode for the accent tint over the agent bubble.
 The sheet's open-in-tab link has a minimum 24 × 24 px target (`--space-5`).
+On a phone, the signature header uses two grid columns: host and close control
+share the first row; the link spans the second row, without an extra vertical gap.
+The desktop header keeps its single row.
 
 Nestor signature metadata, measured on the browser-composited pending card:
 
