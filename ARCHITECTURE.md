@@ -8,7 +8,7 @@
 > Written by the epic `adestia-qualite` (2026-10-15), a quality pass that changes **no
 > behaviour**. Decisions taken BEFORE this epic live in `DESIGN.md` › Decision log, which is
 > not renumbered; `AD-n` starts at `AD-1` with this epic. The map below is the code at
-> v0.88.0, updated below for the completed pages tranche.
+> the git tag `v0.88.0` (the packages' `version` fields stay `0.0.0`), updated below for the completed pages tranche.
 
 ## Overview
 
