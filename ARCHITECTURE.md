@@ -381,11 +381,15 @@ the caller a `Response` to read as it comes), four do not (the upload, the stop,
 archive and the delete read only the status or a single body, and need any HTTP status
 back whole). `request.ts` gains one additive function, `requestRaw(fetchImpl, path, init?, t?)` →
 `{ ok: true, response } | { ok: false, error }` (never throws; any HTTP status is a
-`response`), and nothing else about it changes. The upload keeps its two messages
-(server `error`, refusals) and loses only the raw `Error.message` of a thrown network
-failure, which becomes the helper's translated fallback when `t` is supplied (Q-4).
-Without `t`, `requestRaw` keeps the network message, as `requestJson` does; `live.ts`
-uses this form without displaying its error.
+`response`). The upload keeps the server's `error` and the joined list of refused
+files; an HTTP refusal without an `error` now uses the translated
+`request failed (%n)` fallback with the response status (Q-4). A thrown network
+failure becomes that fallback with status 0 when `t` is supplied to `requestRaw`,
+replacing the raw `Error.message`. Without `t`, `requestRaw` keeps the network
+message; `live.ts` uses this form without displaying its error. `requestJson`
+keeps a non-empty network `Error.message` even with `t`, using its translated
+fallback only when that message is absent. Upload response-parsing errors still
+show their raw message (`Composer.tsx` › `useUploads`).
 (c) The three giants split by lifetime, not by line count: `useConversations` into the
 store of open conversations (`useOpenConversations`: state, load, reconcile), the live turn
 (`useTurn`: send, stop, hold, attach, cadence) and the tab/list actions (`useTabActions`:
@@ -730,6 +734,19 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
   `homelab-sdlc-maj-consignes`.
 - **`copyMarkedTree` follows symbolic links** (`instruction-catalogues.ts`): a non-directory
   entry is read with `readFile`, which reads the link's target. Same arbitration.
+- **P-2 step 4: a refused turn (429) can stay silent.** `chat/stream.ts` yields
+  the refusal as a live error, but `chat/Thread.tsx` draws that error only inside
+  a non-empty part; the refused turn has no text or tools, so its error line is
+  not rendered. `useConversations.ts` › `consume` also clears the live state when
+  rereading the stored conversation succeeds. P-2 says the chat explains the
+  refusal; this predates the tranche and stays under AD-7. Overall acceptance
+  must carry this discrepancy: `bench/tests/chat-p2-gestes-besoin.test.mjs`
+  checks HTTP 429 and the freed composer, without requiring an error line.
+- **Attachment names still carry a text emoji in the optimistic user bubble.**
+  `chat/useConversations.ts` › `stamped()` appends `📎` and the attachment names
+  to the message text kept in the open conversation's state. The held bubbles
+  and attachment controls use the `paperclip` icon, but this text emoji remains
+  unchanged under AD-7.
 - **Delegations drop signatures**: `app/Delegations.tsx` calls the shared
   `chat/messages.ts` › `toMessage` with `{ signatures: false }`, while the chat keeps
   `stored.signatures` by default (AD-12, preserved under AD-7). To be confirmed
