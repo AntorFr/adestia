@@ -29,6 +29,8 @@
   --text: #332e3c;
   --text-muted: #666076;
   --text-faint: #695f7a;
+  /* The accent tint over an agent bubble needs a deeper metadata ink by day. */
+  --sign-meta-text: light-dark(#5c566b, var(--text-muted));
 
   /* ONE accent: amethyst, the belly-light of the original Nabaztag. Deeper
      by day than the night's #8B6CE8 — same hue, measured for contrast. */
@@ -107,6 +109,7 @@
 
     --accent: #8b6ce8;
     --accent-text: #8e70e9;
+    --conversation-current-text: #a48ced;
     --on-accent: #0f0a1e;
     --danger-text: var(--danger);
     --warning-text: var(--warning);
@@ -144,6 +147,7 @@
   --text-faint: #8680a0;
   --accent: #8b6ce8;
   --accent-text: #8e70e9;
+  --conversation-current-text: #a48ced;
   --on-accent: #0f0a1e;
   --danger-text: var(--danger);
   --warning-text: var(--warning);

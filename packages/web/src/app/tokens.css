@@ -41,6 +41,10 @@
   --accent-text: light-dark(#0b7386, #4ecad8);
   --on-accent: #010c0f;
   --accent-quiet: light-dark(#0e8fa614, #4ecad81c);
+  /* Text on the conversation list's composed accent tint. */
+  --conversation-current-text: var(--accent-text);
+  /* Signature metadata sits on a tint inside the agent's bubble. */
+  --sign-meta-text: var(--text-muted);
 
   --danger: light-dark(#d24b3e, #ea6a5c);
   --warning: light-dark(#b4771b, #e0a64f);

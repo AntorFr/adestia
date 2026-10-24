@@ -49,6 +49,9 @@
 .adestia-btn[aria-disabled='true'] { opacity: 0.45; cursor: not-allowed; }
 .adestia-btn[aria-busy='true'] { cursor: progress; }
 
+/* A modal's native Tab stop after an embedded document; never drawn. */
+.adestia-focus-guard { position: fixed; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
 /* Sheet -------------------------------------------------------------------- */
 
 /* The scrim and the one z-index; the panel is centred, a bottom sheet on a phone. */
@@ -105,6 +108,9 @@
 }
 
 .adestia-sheet__origin {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
   flex: 1 1 auto;
   min-width: 0;
   font-family: var(--font-code);
@@ -112,22 +118,25 @@
   overflow-wrap: anywhere;
 }
 
-.adestia-sheet__tab { font-size: var(--text-sm); color: var(--accent); white-space: nowrap; }
-
-.adestia-sheet__close {
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
-  font: inherit;
-  font-size: var(--text-lg);
-  cursor: pointer;
+.adestia-sheet__tab { display: inline-flex; align-items: center; min-width: var(--space-5); min-height: var(--space-5); gap: var(--space-1); font-size: var(--text-sm); color: var(--accent-text); white-space: nowrap; }
+.adestia-sheet__origin .adestia-icon { flex: none; }
+.adestia-sheet--signature .adestia-sheet__body { display: flex; flex-direction: column; padding: 0; }
+@media (max-width: 820px) {
+  .adestia-sheet--signature .adestia-sheet__head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0 var(--space-3);
+  }
+  .adestia-sheet--signature .adestia-sheet__title { grid-column: 1; grid-row: 1; }
+  .adestia-sheet--signature .adestia-sheet__head > button { grid-column: 2; grid-row: 1; }
+  .adestia-sheet--signature .adestia-sheet__tab { grid-column: 1 / -1; grid-row: 2; justify-self: start; }
 }
 
 .adestia-sheet__hint {
   margin: 0;
   padding: var(--space-2) var(--space-3);
   font-size: var(--text-xs);
-  color: var(--warning);
+  color: var(--warning-text);
 }
 
 /* The ceremony page brings its own colours; white behind it keeps a slow load

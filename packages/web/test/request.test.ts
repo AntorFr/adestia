@@ -82,6 +82,44 @@ describe('jsonInit', () => {
 })
 
 describe('requestRaw', () => {
+  it('hands back a 200 response whole, body unread', async () => {
+    const result = await requestRaw(reply('{"a":1}'), '/x')
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.response.status).toBe(200)
+    expect(await result.response.json()).toEqual({ a: 1 })
+  })
+
+  it('hands back an error status as a response, not as a failure', async () => {
+    for (const status of [429, 500]) {
+      const result = await requestRaw(reply('{"error":"busy"}', status), '/x', undefined, said)
+      expect(result.ok).toBe(true)
+      if (!result.ok) return
+      expect(result.response.status).toBe(status)
+      expect(result.response.ok).toBe(false)
+      expect(await result.response.json()).toEqual({ error: 'busy' })
+    }
+  })
+
+  it('turns a network failure into { ok: false } with the fallback in the locale, never throwing', async () => {
+    const boom = (async () => {
+      throw new TypeError('offline')
+    }) as unknown as typeof fetch
+    expect(await requestRaw(boom, '/x', undefined, said)).toEqual({ ok: false, error: 'échec (0)' })
+    expect(await requestRaw(boom, '/x', undefined, (key) => key)).toEqual({ ok: false, error: FALLBACK_KEY.replace('%n', '0') })
+  })
+
+  it('passes path and init to the injected fetch', async () => {
+    const seen: unknown[] = []
+    const spy = (async (...args: unknown[]) => {
+      seen.push(...args)
+      return new Response('{}')
+    }) as unknown as typeof fetch
+    const init = { method: 'DELETE' }
+    await requestRaw(spy, '/p', init)
+    expect(seen).toEqual(['/p', init])
+  })
+
   it('hands back any HTTP status as a response, never as a failure', async () => {
     for (const status of [200, 404, 500]) {
       const out = await requestRaw(reply('x', status), '/x')

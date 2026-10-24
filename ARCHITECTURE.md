@@ -8,7 +8,7 @@
 > Written by the epic `adestia-qualite` (2026-10-15), a quality pass that changes **no
 > behaviour**. Decisions taken BEFORE this epic live in `DESIGN.md` › Decision log, which is
 > not renumbered; `AD-n` starts at `AD-1` with this epic. The map below is the code at
-> v0.88.0, updated below for the completed pages tranche.
+> the git tag `v0.88.0` (the packages' `version` fields stay `0.0.0`), updated below for the completed charter, pages and chat tranches; the repository's later tags (`git tag`) mark releases, not this map.
 
 ## Overview
 
@@ -106,8 +106,12 @@ Outside `packages/`:
   `ScreenEdges.tsx` (phone handles), `BackButton.tsx`; `Home` composes `Brief` and `Domains`.
   `paths.ts` holds path naming/index rules, `request.ts` the injected request helpers;
   `Problems.tsx`, skin slot (`skin.ts`, `SkinSlot.tsx`), `i18n.ts`, `tokens.css`, `shell.css`.
-- `chat/` — `Chat.tsx`, `Composer.tsx`, `useConversations.ts`, `stream.ts` (SSE client),
-  `Signatures.tsx`, `tabs.ts`.
+- `chat/` — `Chat.tsx` wires `ChatHeader.tsx`, `TabStrip.tsx`, `ConversationList.tsx` and
+  `Thread.tsx` (`Bubble.tsx`, `StatusDot.tsx`); `ModelPicker.tsx`, `ContextPill.tsx`,
+  `Composer.tsx` (uploads and fold), `AskPrompt.tsx`, `Signatures.tsx` (shared sheet).
+  `useConversations.ts` holds the open-store, turn and tab-action hooks; `conversations.ts`
+  is the HTTP store client, `messages.ts` the shared `toMessage`, `stream.ts` the SSE client
+  (`events.ts`), `useCadence.ts` the live display cadence, `tabs.ts` browser persistence.
 - `editor/` — Milkdown editor (`Editor.tsx`, `milkdown.ts`, `blockview.tsx`), `Reader.tsx`,
   page settings and listing helpers. `Reader.tsx` keeps the page and prose frames;
   `reader/` holds the recursive walk, directive dispatch and block renderers by kind.
@@ -184,8 +188,8 @@ and every turn — chat, scheduled, delegated, callback wake — goes through th
   `plugin-host.ts` mounts each plugin's `api.mjs` under `/api/plugin/<id>/`, behind the
   same auth hook, and hands it only the secrets its manifest declares (`secretsFor`).
 - **Shell / skin** — CSS custom properties on `:root[data-skin=<id>]`, plus an optional
-  module mounted in `SkinSlot`. **TARGET** (AD-5): the shell also hands that module the
-  instance's locale, an extra optional input; a skin that ignores it works unchanged.
+  module mounted in `SkinSlot`. The shell also hands that module the instance's locale
+  (`SkinFactoryContext.locale`, AD-5), an optional input; a skin that ignores it works unchanged.
 - **Instance / calling agent** — `/mcp`, mounted only when `mcp.enabled` and `mcp.token` are
   set, gated by that bearer; delegations run in their own `DelegationChannel`, never in a
   person's conversations. `/callback` grants nothing and verifies with the peer.
@@ -365,6 +369,40 @@ none of the sites share a shape).
 *Rejected*: a hook layer over every fetch (a new abstraction); a client class. *Reversed
 if*: the charte tranche finds a third of the sites sharing one loading/error shape.
 
+### AD-12 — The chat's code: one message conversion, one request path, three hooks
+Three decisions of the chat tranche, none changing a behaviour.
+(a) `toMessage` lives once, in `chat/messages.ts`, as `toMessage(stored, { signatures })`
+with `signatures` defaulting to `true` (the chat's behaviour). `Delegations.tsx` imports it
+and passes `{ signatures: false }`, which keeps today's drift as a written defect (AD-7:
+whether a delegated conversation should show signature cards is a behaviour).
+(b) Every `fetchImpl(` of `chat/` goes through `app/request.ts` (AD-11). Six sites do not
+use `requestJson` and take `requestRaw`: two stream (the turn POST and the attach GET hand
+the caller a `Response` to read as it comes), four do not (the upload, the stop, the
+archive and the delete read only the status or a single body, and need any HTTP status
+back whole). `request.ts` gains one additive function, `requestRaw(fetchImpl, path, init?, t?)` →
+`{ ok: true, response } | { ok: false, error }` (never throws; any HTTP status is a
+`response`). The upload keeps the server's `error` and the joined list of refused
+files; an HTTP refusal without an `error` now uses the translated
+`request failed (%n)` fallback with the response status (Q-4). A thrown network
+failure becomes that fallback with status 0 when `t` is supplied to `requestRaw`,
+replacing the raw `Error.message`. Without `t`, `requestRaw` keeps the network
+message; `live.ts` uses this form without displaying its error. `requestJson`
+keeps a non-empty network `Error.message` even with `t`, using its translated
+fallback only when that message is absent. Upload response-parsing errors still
+show their raw message (`Composer.tsx` › `useUploads`).
+(c) The three giants split by lifetime, not by line count: `useConversations` into the
+store of open conversations (`useOpenConversations`: state, load, reconcile), the live turn
+(`useTurn`: send, stop, hold, attach, cadence) and the tab/list actions (`useTabActions`:
+open, shut, archive, reorder, drafts) behind the same returned object (the three are local to `useConversations.ts`, only `useConversations` is exported), so `Chat` and the
+tests see no change; `Chat` into `Chat` (state and wiring), `ChatHeader`, `TabStrip`,
+`ConversationList`, `Thread`; `Composer` into `Composer`, `useUploads` (local to `Composer.tsx`) and the existing
+`ComposerFold` and `AttachmentTray`. Exports that tests import keep their names and paths.
+*Rejected*: a state library or a reducer rewrite (a new abstraction, a risk to the live
+turn); extending `requestJson` to streams (its result type is JSON by contract); leaving
+`stream.ts` on bare `fetchImpl` (the criterion says one path). *Reversed if*: a hook cannot
+be cut without moving state that two of them write, then that state stays in the first and
+the target R-12 reads "kept: reason" for that hook.
+
 ### AD-13 — The pages' code: one paths module, one ready signal, cuts by lifetime
 Four decisions of the pages tranche; none changes a behaviour.
 (a) `app/paths.ts` holds `prettify` and `folderOf` once (the three `prettify` bodies and the
@@ -468,8 +506,8 @@ Each target: what, where, why it costs, the tranche that owns it, and its outcom
 | R-8 | `eslint.config.js` claims floating promises and thrown-away errors are caught, which its rules cannot do (no type-aware rule, `caughtErrors: 'none'`); `plugins/` not linted; lint not in CI | a claim the gate does not keep | serveur (CI, claim), plugins (plugins lint) | server: closed — claim rewritten, `npm run lint` in CI; plugins: closed — `npm run lint` (`eslint packages plugins`) covers `plugins/` and is clean |
 | R-9 | Test support rewritten per file: the fake `Driver` in 10 test files, `git()` in 5, `mkdtemp` in 39 | each new test copies one | tests | closed: `packages/server/test/support/` holds the three, and every file that rewrote them imports them |
 | R-10 | `web/test/page-editor.test.tsx` "tells the plugin when it takes the file…" reported flaky; turn-counting waits (`setImmediate`) in `callback.test.ts`, `mcp.test.ts`, `restart.test.ts`; fixed sleeps in `watch`, `pages`, `shell-tools`, `background` tests | races dressed as delays (CLAUDE.md) | tests | closed: no `setImmediate` is left in `callback`, `mcp`, `restart` tests (a wake or a call is a deferred the fake resolves; a negative case is proved by a sentinel that does wake, or by `app.close()`), and the sleeps of `watch` (chokidar's own `ready`, through the test's watcher factory), `pages` (`utimes`), `shell-tools` and `background` (a faked `Date`) are gone. Page-editor flake: its waits (`findBy*`, `waitFor`) spend a one-second wall-clock budget on a chain of promises the test resolves itself, and a loaded machine runs it out; reproduced under `yes` load on the neighbour test "saves with the revision…" (`[data-mounted]` not there in time). The file now drains the chain with an async `act`, no budget left |
-| R-11 | Web: about 40 `fetchImpl(` call sites and 14 hand-rolled live guards, `failure()` (`CataloguePopin.tsx`) and `json()` (`chat/conversations.ts`) local to one file; `toMessage` duplicated in `useConversations.ts` and `Delegations.tsx`, drifted (the second drops `signatures`, kept as defect); `prettify` ×3, `folderOf` ×2, `isIndexPage` ×2 with different rules (`app/sections.ts`, `app/collections.ts`, `editor/nodes.ts`, `editor/listing.ts`) | one idea, several answers | charte (the shared request helper), pages, chat for `chat/` | closed for the charter's part: `packages/web/src/app/request.ts` (`requestJson`, `jsonInit`) is the one way the shell's settings and entry code talks to the server (it never throws, the fallback message is said in the locale, `fetchImpl` stays injected); `failure()` of `CataloguePopin.tsx` is absorbed, and `Gates`/`signin.ts`/`useInstance.ts`, `Settings`, `Preferences`, `McpServers`, `Instructions`, `CataloguePopin`, `Configuration` and `Delegations` call it, the restart included (a refusal keeps its parsed body in `data`: how many turns run). No raw `fetchImpl(` is left in those files. closed for the pages' part: `app/paths.ts` holds `prettify`, `folderOf`, `isIndexFile` and `isIndexPath` once (AD-13 a), and `Home`, `usePage`, `live` (`requestRaw`), `PageEditor`, `Attachments`, `Editor` and the reader's file list go through `requestJson`/`requestRaw`. kept: the `fetchImpl(` calls of `chat/`, `json()` in `chat/conversations.ts`, `toMessage` ×2 (the second still drops `signatures`, a defect kept) — the chat tranche's |
-| R-12 | Giant components: `App` 571 lines, `useConversations` 456; files `Reader.tsx` 1153, `Editor.tsx` 703, `Instructions.tsx` 591, `Home.tsx` 546, `Chat.tsx` 542, `Configuration.tsx` 456 | unreadable, untestable in parts | pages (App, Reader, Editor, Home); chat (Chat, useConversations, Composer); charte (Instructions, Configuration, McpServers) | closed for the charter's part: `Instructions.tsx` (591 → 146 lines), `Configuration.tsx` (456 → 160) and `McpServers.tsx` are each a short screen over parts in `app/instructions/`, `app/configuration/` and `app/mcp/` (list, editor, name sheet, model and hook for the first; fields, restart bar and hooks for the second; list, detail, health and declaration hook for the third), none over 190 lines, and the exports the tests import are kept. closed for the pages: `App` wires gates/state into `CanvasHeader`, `Canvas` and `ScreenEdges`; `Home` composes `Brief` and `Domains`; `Editor` wires `useAutosave`, `useEditorSurface`, `usePageDrop` and `SaveStatus`; `Reader.tsx` keeps the frame and exports over `reader/` renderers by kind. No function in App, Home, Editor or Reader exceeds 250 lines. kept: `useConversations`, `Chat`, `Composer` — the chat tranche's |
+| R-11 | Web: about 40 `fetchImpl(` call sites and 14 hand-rolled live guards, `failure()` (`CataloguePopin.tsx`) and `json()` (`chat/conversations.ts`) local to one file; `toMessage` duplicated in `useConversations.ts` and `Delegations.tsx`, drifted (the second drops `signatures`, kept as defect); `prettify` ×3, `folderOf` ×2, `isIndexPage` ×2 with different rules (`app/sections.ts`, `app/collections.ts`, `editor/nodes.ts`, `editor/listing.ts`) | one idea, several answers | charte (the shared request helper), pages, chat for `chat/` | closed for the charter's part: `packages/web/src/app/request.ts` (`requestJson`, `jsonInit`) is the one way the shell's settings and entry code talks to the server (it never throws, the fallback message is said in the locale, `fetchImpl` stays injected); `failure()` of `CataloguePopin.tsx` is absorbed, and `Gates`/`signin.ts`/`useInstance.ts`, `Settings`, `Preferences`, `McpServers`, `Instructions`, `CataloguePopin`, `Configuration` and `Delegations` call it, the restart included (a refusal keeps its parsed body in `data`: how many turns run). No raw `fetchImpl(` is left in those files. closed for the pages' part: `app/paths.ts` holds `prettify`, `folderOf`, `isIndexFile` and `isIndexPath` once (AD-13 a), and `Home`, `usePage`, `live` (`requestRaw`), `PageEditor`, `Attachments`, `Editor` and the reader's file list go through `requestJson`/`requestRaw`. closed for the chat: every network call uses `requestJson` or `requestRaw` (including streams, stop and upload); `json()` is absorbed. `messages.ts` defines `toMessage` once; Delegations passes `{ signatures: false }`, preserving the written defect (AD-12). |
+| R-12 | Giant components: `App` 571 lines, `useConversations` 456; files `Reader.tsx` 1153, `Editor.tsx` 703, `Instructions.tsx` 591, `Home.tsx` 546, `Chat.tsx` 542, `Configuration.tsx` 456 | unreadable, untestable in parts | pages (App, Reader, Editor, Home); chat (Chat, useConversations, Composer); charte (Instructions, Configuration, McpServers) | closed for the charter's part: `Instructions.tsx` (591 → 146 lines), `Configuration.tsx` (456 → 160) and `McpServers.tsx` are each a short screen over parts in `app/instructions/`, `app/configuration/` and `app/mcp/` (list, editor, name sheet, model and hook for the first; fields, restart bar and hooks for the second; list, detail, health and declaration hook for the third), none over 190 lines, and the exports the tests import are kept. closed for the pages: `App` wires gates/state into `CanvasHeader`, `Canvas` and `ScreenEdges`; `Home` composes `Brief` and `Domains`; `Editor` wires `useAutosave`, `useEditorSurface`, `usePageDrop` and `SaveStatus`; `Reader.tsx` keeps the frame and exports over `reader/` renderers by kind. No function in App, Home, Editor or Reader exceeds 250 lines. closed for the chat: `Chat` delegates to `ChatHeader`, `TabStrip`, `ConversationList` and `Thread`; `useConversations` wraps `useOpenConversations`, `useTurn`, `useTabActions`; `Composer` extracts `useUploads`. No function in `chat/` exceeds 250 lines (`node bench/long-functions.mjs packages/web/src/chat`), with no kept exception; existing exports and behaviours remain (AD-12). |
 | R-13 | `copilot-cli/driver.ts` › `SHELL_TOOL_CLI_SOURCE`, a whole JS program in a template string | untyped, unlinted | serveur (real file read at build, behaviour kept) | closed: `copilot-cli/shell-tool.mjs`, copied under `dist/` by the drivers `build`, bytes pinned by a test |
 | R-14 | `server/test/catalogues-ui-ensemble.test.ts` skips itself without Playwright or a built web shell, so it never runs in a plain `npm test` | a suite that looks green and never ran | tests | closed: the suite runs in `npm test` (the shell is built in its `beforeAll` when `dist-web` is absent; without Playwright it skips and says `no playwright` in its title and in a `console.warn`); its first case, stale since Catalogues moved into the Instructions page (E-11/E-12), was corrected by the tester |
 | R-15 | `zod` imported dynamically by `server/src/drivers.ts` but declared in no `package.json` | works only by hoisting | serveur | closed: `zod` declared in `packages/server/package.json` |
@@ -696,8 +734,22 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
   `homelab-sdlc-maj-consignes`.
 - **`copyMarkedTree` follows symbolic links** (`instruction-catalogues.ts`): a non-directory
   entry is read with `readFile`, which reads the link's target. Same arbitration.
-- **Delegations drop signatures**: `app/Delegations.tsx` › `toMessage` omits
-  `stored.signatures`, which `chat/useConversations.ts` › `toMessage` keeps. To be confirmed
+- **P-2 step 4: a refused turn (429) can stay silent.** `chat/stream.ts` yields
+  the refusal as a live error. `chat/Thread.tsx` draws its error line only while
+  that live state is present; `useConversations.ts` › `consume` clears it when
+  rereading the stored conversation succeeds, losing the refusal message.
+  P-2 says the chat explains the
+  refusal; this predates the tranche and stays under AD-7. Overall acceptance
+  must carry this discrepancy: `bench/tests/chat-p2-gestes-besoin.test.mjs`
+  checks HTTP 429 and the freed composer, without requiring an error line.
+- **Attachment names still carry a text emoji in the optimistic user bubble.**
+  `chat/useConversations.ts` › `stamped()` appends `📎` and the attachment names
+  to the message text kept in the open conversation's state. The held bubbles
+  and attachment controls use the `paperclip` icon, but this text emoji remains
+  unchanged under AD-7.
+- **Delegations drop signatures**: `app/Delegations.tsx` calls the shared
+  `chat/messages.ts` › `toMessage` with `{ signatures: false }`, while the chat keeps
+  `stored.signatures` by default (AD-12, preserved under AD-7). To be confirmed
   that a delegation transcript can carry signatures.
 - **Native dialogs in plugins**: `plugins/atelier/web/app.js` asks `confirm()` before resetting a
   layout and `plugins/voyages/web/app.js` shows `window.alert` for a refused gesture; unstyled,

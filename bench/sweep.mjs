@@ -256,7 +256,7 @@ async function capture(browser, base, screen, theme, size) {
     if (size === 'phone' && screen.shell !== 'none') {
       const want = screen.shell ?? 'canvas'
       if ((await page.locator('.adestia-shell').getAttribute('data-screen')) !== want && want === 'canvas') {
-        await page.locator('.adestia-chat__header .adestia-ib', { hasText: '▥' }).click()
+        await page.locator('.adestia-chat__header').getByRole('button', { name: /^(Open apps|Ouvrir les apps)$/ }).click()
       }
       await page.waitForSelector(`.adestia-shell[data-screen="${want}"]`, { timeout: 10_000 })
     }

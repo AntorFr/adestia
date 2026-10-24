@@ -34,6 +34,15 @@ export type Locale = 'en' | 'fr'
  * mistranslated, and beats a raw identifier by a mile.
  */
 const FR: Readonly<Record<string, string>> = {
+  Idle: 'Au repos',
+  Waiting: 'En attente',
+  Unread: 'Non lu',
+  Working: 'En cours',
+  Failed: 'Échec',
+  'Weight of the context your next message re-pays': 'Poids du contexte repris par votre prochain message',
+  '%n tool call': '%n appel d’outil',
+  '%n tool calls': '%n appels d’outil',
+
   Highlights: 'À la une',
   'Refresh my highlights': 'Rafraîchis ma une',
   'Open “%label”': 'Ouvre « %label »',
@@ -99,6 +108,7 @@ const FR: Readonly<Record<string, string>> = {
   'No lasting rule for this one — the engine proposed none.':
     "Pas d'autorisation durable ici — le moteur n'a proposé aucune règle.",
   'New conversation': 'Nouvelle conversation',
+  'Close tab': 'Fermer l’onglet',
   'Open apps': 'Ouvrir les apps',
   'There is no page at this address.': 'Il n’y a aucune page à cette adresse.',
   'This page is out of reach — the session may have expired.':
@@ -320,6 +330,7 @@ const FR: Readonly<Record<string, string>> = {
   Auto: 'Auto',
   'Attach files': 'Joindre des fichiers',
   More: 'Plus',
+  'Remove %name': 'Retirer %name',
   Stop: 'Arrêter',
   Send: 'Envoyer',
   'Ask the agent…': 'Demandez à l’agent…',
@@ -410,7 +421,7 @@ const FR: Readonly<Record<string, string>> = {
   'Signature ceremony': 'Cérémonie de signature',
   'Open in a tab': 'Ouvrir dans un onglet',
   'If the passkey does not open here, sign in a tab instead.':
-    'Si la passkey ne s’ouvre pas ici, signe dans un onglet.',
+    'Si la passkey ne s’ouvre pas ici, signez dans un onglet.',
   'Signed — resume the held call with': 'Signé — reprends l’appel suspendu avec',
   'The conversation could not be created.': 'La conversation n’a pas pu être créée.',
   'Agent credential': 'Jeton de l’agent',

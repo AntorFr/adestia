@@ -21,6 +21,13 @@
  */
 
 export const ICON_PATHS = {
+  'panel-right-open': '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18m-5-12-3 3 3 3"/>',
+  'archive': '<rect x="3" y="3" width="18" height="4" rx="1"/><path d="M5 7v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7M10 12h4"/>',
+  'chevron-down': '<path d="m6 9 6 6 6-6"/>',
+  'square': '<rect x="3" y="3" width="18" height="18" rx="2"/>',
+  'arrow-up': '<path d="m5 12 7-7 7 7M12 19V5"/>',
+  'clock': '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  'pen-line': '<path d="M13 21h8M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>',
   'folder-open': '<path d="m6 14 1.5-3h14l-3 9H3V5a2 2 0 0 1 2-2h4l2 3h8a2 2 0 0 1 2 2v3"/>',
   'file-question': '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M10 13a2 2 0 1 1 3 1.7c-.6.3-1 .8-1 1.3M12 19h.01"/>',
   'search-x': '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3m-8.2-8.2 5 5m0-5-5 5"/>',

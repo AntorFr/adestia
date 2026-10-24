@@ -1,6 +1,31 @@
 # Status — Adestia
-> MàJ : 2026-10-18
+> MàJ : 2026-10-24
 
+**Tranche `adestia-qualite-chat` (epic adestia-qualite) — assemblée, PR vers
+`epic/adestia-qualite`, pas fusionnée.** Aucun changement de ce que fait le chat (B-1, AD-7).
+- Code (R-11, R-12, AD-12) : `toMessage` écrit une fois (`chat/messages.ts`, option
+  `signatures`, défaut vrai ; Delegations passe `{ signatures: false }`, écart gardé comme
+  défaut écrit) ; tout appel réseau de `chat/` passe par `app/request.ts` (`requestJson`,
+  `requestRaw` pour six appelants : le POST du tour et l'attache, qui lisent un flux, et l'envoi, l'arrêt, l'archivage et la suppression, qui n'en lisent pas) ; `useConversations` coupé en
+  `useOpenConversations`/`useTurn`/`useTabActions`, `Chat` en `ChatHeader`/`TabStrip`/
+  `ConversationList`/`Thread`, `Composer` en `useUploads` (hooks locaux à leur fichier, seul `useConversations` est exporté) ; aucune fonction > 250 lignes
+  (`node bench/long-functions.mjs packages/web/src/chat`). Instantané du balisage
+  (`chat-markup.test.tsx`).
+- Écrans (B-7, B-8, B-10, B-11) : rail (E-16), compositeur, permission (E-17) et feuille de
+  signature (E-18, la `<Sheet>` partagée) dessinés avec les composants et sept icônes ajoutées
+  au sprite ; plus de glyphe ni d'émoji, une seule fermeture (`x`) ; chaînes et libellés par
+  la langue (en/fr) ; `chat.css`, `conversations.css`, `attachments.css` sans token indéfini,
+  couleur ou rayon littéral.
+- Recette : `npm ci`, `npm run typecheck`, `npm run lint`, `npm run build`, `npm test` ;
+  lancement `node bench/launch.mjs --engine fake` ; matrice, un scénario par passe :
+  `node bench/scenarios/chat-matrix.mjs bench/scenarios/chat-rail.mjs`, puis `chat-compositeur.mjs`
+  et `chat-permission.mjs` (4 habillages = skins, en/fr, clair/sombre, bureau/téléphone) ; tour réel (jeton Claude) : `node bench/launch.mjs --engine claude --seed chat-permission --locale fr`,
+  puis `BENCH_URL=<adresse imprimée> node bench/scenarios/chat-permission-live.mjs` (bench/README.md).
+- Reste / pièges : suppression, renommage, désarchivage d'une conversation depuis
+  l'interface non faits (comportements nouveaux, AD-7) ; `live.ts`, `usePage.ts`, l'éditeur
+  et `PageEditor` gardent leur `fetchImpl(` (tranche pages) ; la suite vitest à navigateur
+  peut dépasser 5 s sous charge (repasse seule) ; une phrase de carte de permission peut venir
+  de l'outil en anglais (donnée du serveur, pas un libellé).
 **Tranche `adestia-qualite-pages` (epic adestia-qualite) — assemblée, PR vers
 `epic/adestia-qualite`, pas fusionnée.** Aucun changement de ce que font les pages (B-1) ;
 elles parlent une seule langue (B-8) et le `‹ Back` du shell dit qu'il mène à l'accueil (B-9).
@@ -19,7 +44,7 @@ elles parlent une seule langue (B-8) et le `‹ Back` du shell dit qu'il mène �
   (B-1, recommandations de fin d'epic) ; les deux règles d'index diffèrent sur un chemin sans
   extension, gardées chacune ; l'invite de la une garde sa forme française (AD-13 e) ; le
   frontmatter garde ses deux analyseurs (AD-7). Deux tests à navigateur de la charte dépassent
-  5 s sous la charge de toute la suite et repassent seuls. Le chat reste hors charte.
+  5 s sous la charge de toute la suite et repassent seuls.
 
 **Tranche `adestia-qualite-plugins` (epic adestia-qualite) — assemblée, PR vers
 `epic/adestia-qualite`, pas fusionnée.** Aucun changement de ce que font les plugins (B-1).

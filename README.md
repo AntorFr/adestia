@@ -25,7 +25,8 @@ The first `up` builds the image from the `Dockerfile`; the agent needs
 there; edit the file on the host (or drop the `:ro`).
 
 Without Docker, from a clone (`data/` and `workspace/` are created in the
-current directory; `-c <path>` points at another config file):
+current directory, and `workspace/` is not git-ignored: run from a scratch directory,
+not the clone root; `-c <path>` points at another config file):
 
 ```sh
 npm ci
@@ -58,7 +59,7 @@ and phone), run `node bench/scenarios/pages-matrix.mjs` after the build; the pic
 `node bench/scenarios/pages-editor-narrow.mjs` checks the 360 px layout (it prints `overflow=0` per state).
 
 See [bench/README.md](bench/README.md). The map of the code, the decisions (AD-n) and the
-needs and screens they cite (B-n, P-n, E-n: `docs/parcours.md`, `docs/ecrans.md`) are in
+needs and screens they cite (B-n, P-n, E-n: `docs/parcours.md`, `docs/ecrans.md`; the Q-n are the numbered audit list at the end of `docs/ecrans.md`) are in
 [ARCHITECTURE.md](ARCHITECTURE.md).
 
 Either way, with no config file at all Adestia runs a single-user instance on

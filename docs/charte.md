@@ -50,7 +50,7 @@
 - **Spacing**: the six steps of `tokens.css` (4 to 32 px) on a 4 px grid.
 - **Radii**: 6 / 10 / 14 px and a 999 px pill (`--radius-sm`, `--radius`, `--radius-lg`,
   `--radius-pill`); legacy micro, control and bubble roles alias this set, while round
-  remains 50%. `--radius-md` is intentionally absent; the chat's remaining `var(--radius-md, 8px)` (conversations.css) falls back to 8 px until the chat tranche (`adestia-qualite-chat`) moves it to `--radius-sm`
+  remains 50%. `--radius-md` is intentionally absent; the chat and delegations use `--radius-sm`.
   `--text-xs` and `--on-accent` are defined.
 - **Colour once**: every colour token of the base palette is written once, as
   `light-dark(<light>, <dark>)`, driven by `color-scheme`. `:root` sets `color-scheme: light
@@ -61,6 +61,9 @@
 - **On fills**: `--on-accent` is the dark ink on a filled accent in both themes, and also
   carries danger, warning and success fills. `--accent-text`, `--danger-text`,
   `--warning-text`, `--success-text` are the text twins of the fills (§ 5).
+- **Current conversation**: `--conversation-current-text` defaults to `--accent-text`
+  on `--accent-quiet` over `--surface-raised`. Nestor dark supplies `#a48ced` for this
+  role only (same hue and saturation, higher lightness); its general accent stays unchanged.
 - **Hot tile chips**: text uses `--tile-color-text`, supplied by the tile hue’s
   `--adestia-hue-<hue>-text` twin where needed, falling back to the hue and then
   `--accent-text`. Their border and translucent background keep the tile hue. The
@@ -77,10 +80,13 @@
   chevron-right, settings, pencil, rotate-ccw, save, trash-2, search, folder, file-text,
   sparkles, plug, book-open, sliders-horizontal, handshake, monitor, sun, moon, log-out,
   key-round, lock, users, check, circle-alert, triangle-alert, info, wifi-off, refresh-cw,
-  copy, external-link, loader-circle. The shell's settings and entry screens carry no emoji
-  or Unicode glyph on a control any more; the chat, the editor and the home still draw
-  `▤ ＋ ▥ ⚙ ✎ ↺ ✕ ×`: the chat tranche (`adestia-qualite-chat`) moves its controls to
-  icons, and **TARGET** `adestia-qualite-pages` those of the home and the editor. The manifest `ic:` glyphs (`glyphs.ts`) and a plugin's declared
+  copy, external-link, loader-circle, list, paperclip, panel-right-open, archive,
+  chevron-down, square, arrow-up, clock, pen-line. The last seven names are the chat's
+  additions, shared by its rail, composer and decision surfaces. The shell's settings and entry screens carry no emoji
+  or Unicode glyph on a control any more. The chat rail uses this sprite for its
+  header, tab/list tools, tool traces, MCP close, composer, permission and signature
+  controls. **TARGET**
+  `adestia-qualite-pages` moves the home and editor controls to icons. The manifest `ic:` glyphs (`glyphs.ts`) and a plugin's declared
   tile icon stay its own choice, and so does the emoji a plugin draws inside its own screens
   (E-22 to E-31: media-type, journal, trip and meal marks): the closed list above is the shell's, a
   plugin's mark is its content, **kept: replacing them adds icons to the contract (B-1)**.
@@ -128,7 +134,7 @@ classes and the contract in `skills/plugin-author`.
 | Component | Class | Wrapper | Spec |
 |---|---|---|---|
 | Button | `.adestia-btn`, `--accent`, `--danger`, `--ghost`, `--icon` | `<Button variant icon busy>` | Height 32 px (`--sm` 28), radius `--radius-sm`, padding 0 12 px, label `--text-sm` medium; neutral = `--surface-raised` + `--border-strong`; accent = `--accent` fill + `--on-accent`; danger = `--danger` fill, `--on-accent` label, one rendering everywhere; ghost = transparent, hover `--surface-soft`; icon = square 32 px, `aria-label` required (typed). States: hover darkens 6 %, active 10 %, disabled 45 % opacity and `cursor: not-allowed`, busy = spinner replaces the icon, label kept, `aria-busy`. No label is renamed by the charter (B-1); a destructive button names the verb and the object where today's label does. |
-| Sheet / dialog | `.adestia-sheet` (scrim), `.adestia-sheet__panel`, `__head`, `__body`, `__foot` | `<Sheet open title onClose>` | One scrim `--scrim`, one z-index (`--z-sheet` 100); the panel is centred, 520 px wide, from a `max-width: var(--breakpoint-mobile)` query a bottom sheet (full width, top radii, safe-area padding); the panel's height is `min(88vh, 720px)`. `role="dialog"`, `aria-modal`, `aria-labelledby` the title; Escape and a click on the scrim close; focus goes to the first focusable on open, is trapped (Tab wraps), and returns to the opener on close. The shared sheet took over the `.adestia-sheet*` rules that were in `chat.css` (class names kept, so E-18's markup in `Signatures.tsx` renders unchanged; the chat tranche then adopts `<Sheet>`). A plugin without React uses the classes and the three-line contract in `skills/plugin-author` (a `data-adestia-sheet` helper is *not* shipped: AD-8). |
+| Sheet / dialog | `.adestia-sheet` (scrim), `.adestia-sheet__panel`, `__head`, `__body`, `__foot` | `<Sheet open title onClose>` | One scrim `--scrim`, one z-index (`--z-sheet` 100); the panel is centred, 520 px wide, from a `max-width: var(--breakpoint-mobile)` query a bottom sheet (full width, top radii, safe-area padding); the panel's height is `min(88vh, 720px)`. `role="dialog"`, `aria-modal`, `aria-labelledby` the title; Escape and a click on the scrim close; focus goes to the first focusable on open, is trapped (Tab wraps), and returns to the opener on close. The shared sheet took over the `.adestia-sheet*` rules that were in `chat.css` (class names kept). E-18 uses `<Sheet>` with an origin heading and an open-in-tab header action; the translated `title` remains its accessible name. A plugin without React uses the classes and the three-line contract in `skills/plugin-author` (a `data-adestia-sheet` helper is *not* shipped: AD-8). |
 | Popover | `.adestia-popover` | `<Popover anchor open>` | Panel of `--surface-raised`, `--shadow`, `--radius`, 8 px from its anchor, flips above when there is no room below; Escape closes and returns focus; click outside closes. The cog menu (E-15), block settings (E-6) and page properties (E-5) use it; E-5/E-6 keep `--space-2` (8 px) viewport margins and scroll internally on a phone. |
 | Spinner | the `loader-circle` icon | `<Icon name="loader-circle">` | Rotating; static under reduced motion; the loading mark of a row, a card or a gate. |
 | Empty state | `.adestia-empty`, `__icon`, `__text`, `__action` | `<EmptyState icon text action>` | Icon 28 px in `--text-muted`, one sentence in `--text-muted`, optional ghost or neutral button. Used by E-2, E-3, E-7, E-8 and E-20 as well as the settings screens; it replaced `.adestia-instructions__empty` and `.adestia-deleg__empty` there; `.adestia-instructions__empty` is kept for E-12's "Reading the repository…" line. |
@@ -145,6 +151,20 @@ classes and the contract in `skills/plugin-author`.
 WCAG 2.2 AA: text 4.5:1 (3:1 at 24 px or 18.66 px bold), non-text 3:1, colour never alone,
 focus visible and not hidden, targets 24 × 24 px. Measured with
 `packages/web/test/contrast.test.ts` (it regenerates the threshold table's ratios; or the browser's inspector), in both themes.
+
+Signature metadata uses `--sign-meta-text`, defaulting to `--text-muted`; Nestor deepens
+only this ink to `#5c566b` in light mode for the accent tint over the agent bubble.
+The sheet's open-in-tab link has a minimum 24 × 24 px target (`--space-5`).
+On a phone, the signature header uses two grid columns: host and close control
+share the first row; the link spans the second row, without an extra vertical gap.
+The desktop header keeps its single row.
+
+Nestor signature metadata, measured on the browser-composited pending card:
+
+| Component | Foreground | Background | Theme | Ratio | Threshold | Result |
+|---|---|---|---|---|---|---|
+| Nestor signature metadata | `--sign-meta-text` #5c566b | #dfd8db | light | 5.00 | 4.5 | ok |
+| Nestor signature metadata | `--sign-meta-text` → `--text-muted` #9c94b4 | #271f4b | dark | 5.28 | 4.5 | ok |
 
 The base palette table is printed by `packages/web/test/contrast.test.ts`. Regenerate it
 with `UPDATE_CONTRAST_TABLE=1 npx vitest run packages/web/test/contrast.test.ts`.
@@ -585,6 +605,15 @@ the later `.adestia-chip` rule in `reader.css` overrides the 10% tint in `tiles.
 | E-19 refused heading | dobby / dark | 208, 101, 79 | 30,22,17 | 4.79 | 4.5 | ok |
 | E-19 degraded heading | dobby / dark | 217, 165, 72 | 31,24,17 | 7.86 | 4.5 | ok |
 
+### Current conversation on E-16
+
+Measured in Chromium on the `chat-rail` seed, with explicit themes, at 1440, 390
+and 360 px. Nestor dark's `--conversation-current-text` is `#a48ced` over the
+14% accent tint on `--surface-raised` (`#1d1836`): composed background
+RGB 44.40, 35.76, 78.92, ratio **5.13:1**, threshold 4.5:1. The local text token
+leaves the other accent roles unchanged. `chat-rail.mjs` records the rendered
+pair and checks this threshold; its current-list capture keeps the selected row visible.
+
 ### How the contrast test works
 
 `packages/web/test/contrast.test.ts` reads `tokens.css` and the four `skins/*/skin.css`,
@@ -609,7 +638,8 @@ a **fill** somewhere (accent, danger, success, warning as a dot, a bar or a butt
 and gains a `*-text` twin for its text uses; a token that is only ever text
 (`--text-faint`) is moved. Call sites that use `--accent`, `--danger`, `--success`,
 `--warning` as a text colour switch to the twin: the four sheets of the settings screens and
-`shell.css` have done so; the chat, pages and plugin sheets do in their tranches.
+`shell.css` have done so, as have `chat.css`, `conversations.css` and `attachments.css`;
+the pages and plugin sheets do in their tranches.
 `--text-faint` is for decoration and placeholders **at 4.5:1**; there is no tier below.
 
 ## 6. Accepted departures

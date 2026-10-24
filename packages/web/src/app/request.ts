@@ -52,19 +52,27 @@ export async function requestJson<T = unknown>(
   return { ok: true, status: response.status, data: body as T }
 }
 
+export type RawResult =
+  | { readonly ok: true; readonly response: Response }
+  | { readonly ok: false; readonly error: string }
+
 /**
- * The same promise as `requestJson` for a caller that reads the response
- * itself (a stream, a status it routes on). It never throws: any HTTP status is
- * a `response`; only a failure of the network is `{ ok: false }`.
+ * For the six callers of `chat/` that want the `Response` itself: two stream
+ * the body (the turn POST, the attach GET) and four do not (the upload, the
+ * stop, the archive and the delete, which read only the status or the body once).
+ * Any HTTP status comes back as a `response`, whole; only a failure to reach
+ * the server is `{ ok: false }`. With a translator, its error is the locale's
+ * fallback; otherwise it is the network message (also used by live.ts). It never throws.
  */
 export async function requestRaw(
   fetchImpl: typeof fetch,
   path: string,
   init?: RequestInit,
-): Promise<{ readonly ok: true; readonly response: Response } | { readonly ok: false; readonly error: string }> {
+  t?: (key: string) => string,
+): Promise<RawResult> {
   try {
     return { ok: true, response: await fetchImpl(path, init) }
   } catch (cause) {
-    return { ok: false, error: cause instanceof Error ? cause.message : '' }
+    return { ok: false, error: t ? t(FALLBACK_KEY).replace('%n', '0') : cause instanceof Error ? cause.message : '' }
   }
 }

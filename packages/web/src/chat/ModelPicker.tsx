@@ -1,3 +1,5 @@
+import { Icon } from '../app/Icon.js'
+
 /**
  * The model the instance will answer with, chosen in the chat's header.
  */
@@ -46,19 +48,22 @@ export function ModelPicker({
 }) {
   if (models === undefined || models.length === 0) return null
   return (
-    <select
-      className="adestia-model"
-      value={model ?? ''}
-      onChange={(event) => onModel?.(event.target.value)}
-      aria-label={t('Model')}
-      title={t('Model')}
-    >
-      <option value="">{t('Auto')}</option>
-      {models.map((entry) => (
-        <option key={entry.id} value={entry.id}>
-          {entry.label ?? entry.id}
-        </option>
-      ))}
-    </select>
+    <span className="adestia-model-wrap">
+      <select
+        className="adestia-model adestia-select"
+        value={model ?? ''}
+        onChange={(event) => onModel?.(event.target.value)}
+        aria-label={t('Model')}
+        title={t('Model')}
+      >
+        <option value="">{t('Auto')}</option>
+        {models.map((entry) => (
+          <option key={entry.id} value={entry.id}>
+            {entry.label ?? entry.id}
+          </option>
+        ))}
+      </select>
+      <Icon name="chevron-down" />
+    </span>
   )
 }

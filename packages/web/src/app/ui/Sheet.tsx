@@ -2,11 +2,14 @@ import { useId, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 
 import { Button } from './Button.js'
-import { useFocusScope } from './focus.js'
+import { focusables, useFocusScope } from './focus.js'
 
 export interface SheetProps {
   readonly open: boolean
   readonly title: string
+  /** Optional visible heading; title remains the accessible dialog name. */
+  readonly heading?: ReactNode
+  readonly headerActions?: ReactNode
   readonly onClose: () => void
   readonly children: ReactNode
   readonly footer?: ReactNode
@@ -20,7 +23,7 @@ export interface SheetProps {
  * under `--breakpoint-mobile`. Portalled to the body: the shell folds its panes with
  * transforms, and a fixed element inside a transformed one is fixed to THAT.
  */
-export function Sheet({ open, title, onClose, children, footer, className, t = (k) => k }: SheetProps) {
+export function Sheet({ open, title, heading, headerActions, onClose, children, footer, className, t = (k) => k }: SheetProps) {
   const panel = useRef<HTMLDivElement>(null)
   const titleId = useId()
   useFocusScope(panel, open, { trap: true, onEscape: onClose })
@@ -36,11 +39,21 @@ export function Sheet({ open, title, onClose, children, footer, className, t = (
         onClick={(event) => event.stopPropagation()}
       >
         <header className="adestia-sheet__head">
-          <h2 id={titleId} className="adestia-sheet__title">{title}</h2>
+          <h2 id={titleId} className="adestia-sheet__title" aria-label={heading ? title : undefined}>{heading ?? title}</h2>
+          {headerActions}
           <Button variant="ghost" small icon="x" aria-label={t('Close')} onClick={onClose} />
         </header>
         <div className="adestia-sheet__body">{children}</div>
         {footer ? <footer className="adestia-sheet__foot">{footer}</footer> : null}
+        {/* A cross-origin frame's Tab cannot be cancelled by the parent. Catch
+            its next focus before the browser leaves the dialog for its chrome. */}
+        <span
+          className="adestia-focus-guard"
+          data-adestia-focus-guard
+          tabIndex={0}
+          aria-hidden="true"
+          onFocus={() => { if (panel.current) focusables(panel.current)[0]?.focus() }}
+        />
       </div>
     </div>,
     document.body,

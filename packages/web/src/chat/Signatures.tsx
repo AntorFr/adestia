@@ -15,7 +15,9 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { Icon } from '../app/Icon.js'
+import { Button } from '../app/ui/Button.js'
+import { Sheet } from '../app/ui/Sheet.js'
 import type { StoredSignature } from '@antorfr/adestia-schemas'
 
 export type Signature = StoredSignature
@@ -165,7 +167,7 @@ export function SignatureCards({
             aria-label={t('Signature requested')}
           >
             <span className="adestia-sign__glyph" aria-hidden="true">
-              {state === 'signed' ? '✓' : state === 'denied' ? '✕' : state === 'expired' ? '⌛' : '✍'}
+              <Icon name={state === 'signed' ? 'check' : state === 'denied' ? 'x' : state === 'expired' ? 'clock' : 'pen-line'} />
             </span>
             <span className="adestia-sign__text">
               <strong>{t(TITLES[state][signature.kind])}</strong>
@@ -177,13 +179,13 @@ export function SignatureCards({
             {state === 'pending' && (
               <span className="adestia-sign__actions">
                 {inTab.has(signature.id) && signature.kind === 'consent' && (
-                  <button type="button" onClick={() => signed(signature)}>
+                  <Button onClick={() => signed(signature)}>
                     {t('I signed it')}
-                  </button>
+                  </Button>
                 )}
-                <button type="button" className="adestia-sign__go" onClick={() => begin(signature)}>
+                <Button variant="accent" className="adestia-sign__go" onClick={() => begin(signature)}>
                   {t('Sign')}
-                </button>
+                </Button>
               </span>
             )}
           </div>
@@ -279,58 +281,40 @@ export function SignatureSheet({
     }
   }, [origin])
 
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') close()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [close])
-
-  // Portalled to the body: the shell folds its panes with transforms on a
-  // phone, and a fixed element inside a transformed one is fixed to THAT —
-  // the sheet came out as wide as both panes, its close button off-screen.
-  return createPortal(
-    <div className="adestia-sheet" onClick={close}>
-      <div
-        className="adestia-sheet__panel"
-        role="dialog"
-        aria-modal="true"
-        aria-label={t('Signature')}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <header className="adestia-sheet__head">
-          {/* The origin, said out loud: the page below is the authority, and
-              where it comes from is the one thing the frame cannot show. */}
-          <span className="adestia-sheet__origin">🔒 {hostOf(signature.url)}</span>
-          <a
-            className="adestia-sheet__tab"
-            href={signature.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={close}
-          >
-            {t('Open in a tab')} ↗
-          </a>
-          <button type="button" className="adestia-sheet__close" aria-label={t('Close')} onClick={close}>
-            ✕
-          </button>
-        </header>
-        {troubled && (
-          <p className="adestia-sheet__hint">
-            {t('If the passkey does not open here, sign in a tab instead.')}
-          </p>
-        )}
-        <iframe
-          ref={frame}
-          className="adestia-sheet__frame"
-          src={signature.url}
-          title={t('Signature ceremony')}
-          allow="publickey-credentials-get"
-          referrerPolicy="no-referrer"
-        />
-      </div>
-    </div>,
-    document.body,
+  return (
+    <Sheet
+      open
+      title={t('Signature')}
+      heading={<span className="adestia-sheet__origin"><Icon name="lock" />{hostOf(signature.url)}</span>}
+      headerActions={(
+        <a
+          className="adestia-sheet__tab"
+          href={signature.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={close}
+        >
+          {t('Open in a tab')}<Icon name="external-link" />
+        </a>
+      )}
+      className="adestia-sheet--signature"
+      onClose={close}
+      t={t}
+    >
+      {troubled && (
+        <p className="adestia-sheet__hint">
+          {t('If the passkey does not open here, sign in a tab instead.')}
+        </p>
+      )}
+      <iframe
+        ref={frame}
+        tabIndex={0}
+        className="adestia-sheet__frame"
+        src={signature.url}
+        title={t('Signature ceremony')}
+        allow="publickey-credentials-get"
+        referrerPolicy="no-referrer"
+      />
+    </Sheet>
   )
 }
