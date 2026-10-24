@@ -8,8 +8,8 @@
 > Written by the framing of `adestia-qualite` (2026-10-15), folded to what is built by the
 > tranche `adestia-qualite-charte`: the tokens, the icons, the components, the contrast
 > tables and the voice are in the code. Pages, chat and plugins now use them too.
-> The plugin migration tables below retain the old-to-current mapping; current
-> screen states and accepted gaps are in `docs/ecrans.md`.
+> Plugin migration tables, current screen states and accepted gaps are in
+> `docs/ecrans.md`.
 
 ## 1. Direction
 
@@ -80,8 +80,8 @@
   sparkles, plug, book-open, sliders-horizontal, handshake, monitor, sun, moon, log-out,
   key-round, lock, users, check, circle-alert, triangle-alert, info, wifi-off, refresh-cw,
   copy, external-link, loader-circle, list, paperclip, panel-right-open, archive,
-  chevron-down, square, arrow-up, clock, pen-line. The last seven names are the chat's
-  additions, shared by its rail, composer and decision surfaces. The shell's settings and entry screens carry no emoji
+  chevron-down, square, arrow-up, clock, pen-line, folder-open, file-question, search-x,
+  grip-vertical, eye, code. The chat and pages additions share the same sprite. The shell's settings and entry screens carry no emoji
   or Unicode glyph on a control any more. The chat rail uses this sprite for its
   header, tab/list tools, tool traces, MCP close, composer, permission and signature
   controls. Home and editor controls use the sprite too. The manifest `ic:` glyphs (`glyphs.ts`) and a plugin's declared

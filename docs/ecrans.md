@@ -197,7 +197,7 @@ columns are the same except where the instance's configuration decides what exis
 
 Screens E-22 to E-31, after `adestia-qualite-plugins` (which follows the charter tranche:
 tokens, `.adestia-sheet*`, `.adestia-icon`, `--z-sheet` and `--on-accent` of `docs/charte.md`
-§ 7 exist). **B-1 bound the tranche**: what a plugin does, its routes, its API, its
+§§ 2 and 4 exist). **B-1 bound the tranche**: what a plugin does, its routes, its API, its
 manifests, the prompts its ✦ buttons send to the agent and the files it writes did not change.
 What changed is what is seen: the colours and sizes it reads, the form of its dialogs, the
 name of its backs, and the language of its words. No state, control or screen was added or

@@ -497,7 +497,7 @@ write — then that state stays in the first and the target R-12 reads "kept: re
 first user: a **chip** (`.adestia-chip`, a toggle button with `aria-pressed`, pill radius,
 for the facet pills of E-3 and E-7), an **inline empty state** (`.adestia-empty--inline`: the
 empty state's icon at 16 px beside its sentence, for a note inside a block of a page), and
-the icon names the screens need beyond `docs/charte.md` § 7.3 (`grip-vertical`, `eye`, `code`,
+the icon names the screens need beyond `docs/charte.md` § 2 (`grip-vertical`, `eye`, `code`,
 `file-question`, `folder-open`, `search-x`). The editor's block bars are built
 by Milkdown as DOM, not React: `editor/dom-icon.ts` draws a sprite icon from its name (the
 AD-9 markup) so the bars use the same set. *Rejected*: restyling the facet pills as

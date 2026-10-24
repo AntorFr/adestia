@@ -112,7 +112,9 @@ a user (see Rules of access).
   a stamped copy written in the driver's zone for its kind (`landedAt`, which may differ
   from `itemPath` on a name collision: `<catalogue>-<slug>`). Re-copied by the Refresh
   button and at every boot (`refreshCataloguesAtBoot`, 20 s ceiling); withdrawn by the
-  user, or with the catalogue.
+  user, or with the catalogue. `copyMarkedTree` copies regular files and
+  directories only: symbolic links and special entries are skipped. A repository
+  or ref beginning with `-` (after leading whitespace) is refused by `sources.ts`.
 - **MCP server (outbound)** — a server the agent may call. Four origins merged per turn:
   the config's `mcp.servers`, an active plugin's manifest, the screen's own file
   `mcp-servers.json` (only these are editable, from E-10 MCP servers; a name already
