@@ -6,7 +6,8 @@
 - Dernier tag accessible : **`v0.95.0-adestia-qualite.3`** (`git describe --tags
   --abbrev=0`), une préversion de l'epic `adestia-qualite`.
 - Branche de travail : `feature/adestia-qualite-chat`, sur `origin/epic/adestia-qualite`
-  (correctif B-12 : un message envoyé avant que le premier soit parti est retenu). Banc, tests, serveur, charte,
+  (correctifs de recette et de verify : un message envoyé avant que le premier soit parti est retenu ;
+  en-tête du rail à moins de 400 px à un seul espacement, sélecteur de modèle d'au moins 72 px ; bulle d'erreur seule à marge symétrique). Banc, tests, serveur, charte,
   plugins, pages et chat sont intégrés à l'epic ; la documentation est relue
   contre le code.
 - Déploiement actuel des instances Alfred, Skippy et Nestor : **non attesté ici**. La dernière
