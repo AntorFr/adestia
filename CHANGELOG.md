@@ -379,7 +379,10 @@ Claude ignores it.
 scans items by file shape, imports them individually into the active driver's zone,
 and refreshes by repository. Cards show provenance. The pre-merge audit found that
 contract delivery deleted imports on every restart; this was corrected and startup
-reload added.
+reload added. A subsequent security audit rejected repository/ref values starting
+with `-` (git options such as `--upload-pack`) and stopped following skill symlinks
+when copying; imports report the skipped paths, which the screen does not show.
+The repository list also offers catalogue withdrawal, removing its imported copies.
 
 ## v0.89.0
 
