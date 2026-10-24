@@ -7,9 +7,9 @@
 >
 > Written by the framing of `adestia-qualite` (2026-10-15), folded to what is built by the
 > tranche `adestia-qualite-charte`: the tokens, the icons, the components, the contrast
-> tables and the voice are in the code and this file says what they are. What is still to
-> build is marked **TARGET**, followed by the tranche that builds it (`adestia-qualite-pages`
-> or `adestia-qualite-plugins`); no mark belongs to the charter any more.
+> tables and the voice are in the code. Pages, chat and plugins now use them too.
+> The plugin migration tables below retain the old-to-current mapping; current
+> screen states and accepted gaps are in `docs/ecrans.md`.
 
 ## 1. Direction
 
@@ -44,8 +44,7 @@
 - **Fonts**: `--font` (system stack), `--font-title` (serif), `--font-mono`, `--font-code`;
   a skin may serve its own (Dobby does). Kept as inherited.
 - **Type scale**: seven named steps in `tokens.css`: 11 / 12 / 13 / 15 / 18 / 22 / 28 px
-  (`--text-2xs` through `--text-2xl`). The settings sheets use them; the other shell and
-  plugin sheets adopt them in their tranches. `--input-text-min` keeps the 16 px iOS zoom
+  (`--text-2xs` through `--text-2xl`). The shell and plugin sheets use them. `--input-text-min` keeps the 16 px iOS zoom
   prevention floor on controls without adding a type-scale step.
 - **Spacing**: the six steps of `tokens.css` (4 to 32 px) on a 4 px grid.
 - **Radii**: 6 / 10 / 14 px and a 999 px pill (`--radius-sm`, `--radius`, `--radius-lg`,
@@ -85,8 +84,7 @@
   additions, shared by its rail, composer and decision surfaces. The shell's settings and entry screens carry no emoji
   or Unicode glyph on a control any more. The chat rail uses this sprite for its
   header, tab/list tools, tool traces, MCP close, composer, permission and signature
-  controls. **TARGET**
-  `adestia-qualite-pages` moves the home and editor controls to icons. The manifest `ic:` glyphs (`glyphs.ts`) and a plugin's declared
+  controls. Home and editor controls use the sprite too. The manifest `ic:` glyphs (`glyphs.ts`) and a plugin's declared
   tile icon stay its own choice, and so does the emoji a plugin draws inside its own screens
   (E-22 to E-31: media-type, journal, trip and meal marks): the closed list above is the shell's, a
   plugin's mark is its content, **kept: replacing them adds icons to the contract (B-1)**.
@@ -104,9 +102,8 @@ reason.
   Dark, sign out, version. The theme switch is a three-icon radiogroup (monitor, sun, moon),
   each with its accessible name.
 - **Navigation**: the breadcrumb is the location; every back control names its destination
-  (**TARGET** `adestia-qualite-pages`: the shell's `‹ Back` above a plugin says it goes home;
-  a plugin's own back that goes one level up keeps its
-  place and its name, built by `adestia-qualite-plugins`). No back is removed (`B-9`).
+  (the shell says Home above a plugin; a plugin's own back goes one level up
+  and keeps its place, with the destination named). No back is removed (`B-9`).
 - **Feedback**: save status inline where the edit happens (editor, settings forms), as
   today. **Departure kept**: no toast system — every action of the product happens in a
   form or a page that shows its own state; a toast would duplicate it.
@@ -639,7 +636,7 @@ and gains a `*-text` twin for its text uses; a token that is only ever text
 (`--text-faint`) is moved. Call sites that use `--accent`, `--danger`, `--success`,
 `--warning` as a text colour switch to the twin: the four sheets of the settings screens and
 `shell.css` have done so, as have `chat.css`, `conversations.css` and `attachments.css`;
-the pages and plugin sheets do in their tranches.
+the pages and plugin sheets use the same text twins.
 `--text-faint` is for decoration and placeholders **at 4.5:1**; there is no tier below.
 
 ## 6. Accepted departures

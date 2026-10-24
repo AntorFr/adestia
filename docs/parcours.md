@@ -55,7 +55,8 @@ Form of the `exigences` skill; each need names the journeys it serves.
   (`docs/parcours.md`), its screens (`docs/ecrans.md`), its data (`docs/donnees.md`), its
   map, invariants and decisions (`ARCHITECTURE.md`), its look (`docs/charte.md`), how to
   build, test and launch it (`README.md`, `CLAUDE.md`); what these say is true of the code
-  (a `relire-doc` pass finds no contradiction it classes as blocking). *(P-15)*
+  (the `relire-doc` pass is the fresh-context `relecteur-depot` review, using
+  ARCHITECTURE.md's "What counts as a contradiction" bar). *(P-15)*
 - **B-5** — `.agent/status.md` says the state — current version, what is known broken or half
   built, the traps still true — in under 150 lines; the history of versions lives in
   `CHANGELOG.md`, in version order. *(P-15)*
@@ -227,7 +228,7 @@ The owner changes a setting of the instance without a shell on the machine.
 3. On a read-only file (a ConfigMap, a `:ro` mount), a banner says so; the values stay visible and nothing can be edited.
 4. **Save** (`PUT /api/settings` with the revision it read) writes `adestia.config.yaml` in place and keeps its comments. If the file changed on disk, the save is refused and asks for a reload. **Discard** throws the changes away.
 5. The restart bar says "Saved, and waiting for a restart." **Restart now** (`POST /api/restart`) is refused while turns are running and says how many; **Restart anyway** sends `force`.
-6. The server restarts in the same process (`routes/restart.ts`). The screen shows "Coming back…" until the instance answers again, or "The instance did not come back" if it does not.
+6. `routes/restart.ts` requests the restart; `bin/adestia.js` closes and boots the server again in the same process. The screen shows "Coming back…" until the instance answers again, or "The instance did not come back" if it does not.
 
 Needs: B-1, B-6, B-7, B-8, B-10
 
@@ -287,7 +288,7 @@ The owner deploys an instance and makes it their own.
 Needs: B-1, B-6, B-7, B-8, B-10
 
 ### P-15 — Develop Adestia
-A developer, a person or a night agent without docker, changes Adestia's code, checks it and looks at it. This journey is mostly what the epic builds; each step is marked as existing **today** or as **TARGET**.
+A developer, a person or a night agent without docker, changes Adestia's code, checks it and looks at it. The tools below are built; the independent documentation review checks their instructions against the code.
 
 1. **Today.** Install and check the install: `npm ci` (never `npm install`), then `ls node_modules/micromark-extension-directive` (`CLAUDE.md`).
 2. **Today.** Build, typecheck, lint and test: `npm run build`, `npm run typecheck`, `npm run lint` (`eslint packages plugins`), and `npm test` (vitest, then `npm run test:plugins` with `node --test`). CI (`.github/workflows/ci.yml`) runs typecheck, lint, tests and a docker build (B-12). The server tests share one support module (`packages/server/test/support/`: fake driver, git repository, temp dirs; R-9), wait on signals the test owns rather than on turns or fixed delays (R-10), and `npm test` runs the catalogue screens suite when Playwright is there, building the shell it needs, and says `no playwright` when it is not (R-14).
@@ -295,8 +296,8 @@ A developer, a person or a night agent without docker, changes Adestia's code, c
 4. **Today (B-2).** Launch locally (`node bench/launch.mjs --engine fake|claude`, ARCHITECTURE.md › AD-2 detail) with one documented command and no docker, either on the fake engine (AD-2) or on real Claude with only `CLAUDE_CODE_OAUTH_TOKEN`. The fake engine is a bench tool (`bench/fake-engine.mjs`), not a product mode. The Copilot and Codex engines keep their fakes in the tests.
 5. **Today, docker only.** Look at a change: `bench/run.sh bench/scenarios/<change>.mjs` builds the image, fakes the engine (unless `BENCH_REAL_ENGINE=1`), drives headless Chromium in a container and drops screenshots in `bench/shots/`; `bench/live-codex.sh` runs a real codex engine.
 6. **Today (B-3).** Capture every screen of `docs/ecrans.md` (`node bench/sweep.mjs [--skin <id>] [--locale en|fr] [--out <dir>] [--only E-n]`, ARCHITECTURE.md › AD-3 detail), in light and dark, at desk and phone width, for a chosen skin, on seeded data and with no docker (Playwright and Chromium from the environment): 124 captures in `bench/shots-sweep/<skin>/`, and a non-zero exit naming each screen that did not show.
-7. **TARGET (B-4, B-5).** Find what the product does in `docs/parcours.md`, `docs/ecrans.md`, `docs/donnees.md`, `ARCHITECTURE.md`, `docs/charte.md`, `README.md` and `CLAUDE.md`, and the current state in `.agent/status.md` (under 150 lines) with the history in `CHANGELOG.md`.
-8. **TARGET (B-11).** Work on code that carries each idea once, following the refactoring targets in `ARCHITECTURE.md`.
+7. **Today (B-4, B-5).** Find what the product does in `docs/parcours.md`, `docs/ecrans.md`, `docs/donnees.md`, `ARCHITECTURE.md`, `docs/charte.md`, `README.md` and `CLAUDE.md`, and the current state in `.agent/status.md` (under 150 lines) with the history in `CHANGELOG.md`.
+8. **Today (B-11).** Work on code that carries each idea once, following the refactoring targets in `ARCHITECTURE.md`.
 9. **Today.** Commit by explicit path in a worktree; the work comes back to `main` before it is tagged (`CLAUDE.md`).
 
 Needs: B-2, B-3, B-4, B-5, B-11, B-12
@@ -306,11 +307,9 @@ Needs: B-2, B-3, B-4, B-5, B-11, B-12
 - **Any functional change**: a new feature, a removed feature, a renamed configuration key,
   route or file, a changed data format, a changed MCP tool. A defect found on the way is
   written down (`ARCHITECTURE.md` › Known defects) and left for its own feature.
-- **The two security defects of instruction catalogues** found by the verification of
-  `homelab-sdlc-maj-consignes` (a `ref` or `repo` beginning with `-` reaches git as an
-  option; `copyMarkedTree` follows symbolic links): they belong to that feature's
-  arbitration, which is Monsieur's. A tranche that refactors those files keeps their
-  behaviour, defects included, and says so.
+- **Catalogue security corrections** belonged to the separate catalogue work, not
+  this quality pass. They are now integrated: `sources.ts` refuses option-like
+  repository/ref values, and `copyMarkedTree` skips links and special files.
 - The half-built features listed in `.agent/status.md` (the `ask` posture, usage and quota
   display, Copilot permission plumbing, the editor embedded in plugins without attachments,
   `adestia init`): written down, not built.

@@ -8,7 +8,7 @@
 > Written by the epic `adestia-qualite` (2026-10-15), a quality pass that changes **no
 > behaviour**. Decisions taken BEFORE this epic live in `DESIGN.md` › Decision log, which is
 > not renumbered; `AD-n` starts at `AD-1` with this epic. The map below is the code at
-> the git tag `v0.88.0` (the packages' `version` fields stay `0.0.0`), updated below for the completed charter, pages and chat tranches; the repository's later tags (`git tag`) mark releases, not this map.
+> the git tag `v0.88.0` (the packages' `version` fields stay `0.0.0`), updated below for the completed charter, pages, chat, plugins, tests and server tranches; the repository's later tags (`git tag`) mark releases, not this map.
 
 ## Overview
 
@@ -369,8 +369,10 @@ reversal both standing. Style is not one.
 **Verification, by search:** a search for the stale phrases about the number of skins and about open spikes, over every `*.md`, empty;
 `git grep -n "not built" -- DESIGN.md` empty outside quoted history; every `docs/*.md` and
 `*.md` link target exists (a one-line `node` script written in the task, not committed);
-the tokens check of the charter tranche run once more over `packages/web/src` and
-`plugins/*/web`.
+a temporary check collects `var(--x` uses in CSS under `packages/web/src` and
+`plugins/*/web`, subtracts `--x:` definitions, and reports any remainder. Check
+skin declarations and JS/TSX inline parameters separately: they are definitions
+outside those stylesheets, not evidence that the CSS-only difference is empty.
 
 ### AD-7 — Out of this epic, because they change behaviour
 Unifying the frontmatter parsers (`content/src/frontmatter.ts` accepts CRLF; `pages.ts`
@@ -785,11 +787,6 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
   breadcrumb badge says “7 servers”. Observed during the charter review; whether it
   predates this epic is unknown. Kept under B-1, pending a separate behaviour investigation.
 
-- **Catalogue ref or repo starting with `-`** reaches git as an option: `sources.ts` passes
-  `source.ref` to `git fetch … origin <ref>` with no `--` separator. Arbitration of
-  `homelab-sdlc-maj-consignes`.
-- **`copyMarkedTree` follows symbolic links** (`instruction-catalogues.ts`): a non-directory
-  entry is read with `readFile`, which reads the link's target. Same arbitration.
 - **P-2 step 4: a refused turn (429) can stay silent.** `chat/stream.ts` yields
   the refusal as a live error. `chat/Thread.tsx` draws its error line only while
   that live state is present; `useConversations.ts` › `consume` clears it when
@@ -824,7 +821,7 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
 - **Skippy's status banner wraps onto two lines on the phone**, found by the sweep at phone
   width; not fixed by this epic.
 - **E-14: the switch sits apart from its title on the phone**, the row wrapping between them.
-  Seen in the sweep; left for the pages tranche.
+  Seen in the sweep; kept for a separate layout correction.
 - **E-19 detail in English under the French locale** when the server sent no code: the detail
   is then the raw server text, which no catalogue translates.
 - **A catalogue token field has no `autoComplete`**, so a browser may offer to fill or save it
