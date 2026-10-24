@@ -3,24 +3,24 @@
  * it must never carry a file from outside the clone into the workspace.
  */
 
-import { mkdtemp, mkdir, readFile, readdir, symlink, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, readFile, readdir, symlink, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-import { instructionZones, type Driver } from '@antorfr/adestia-drivers'
-import { describe, expect, it } from 'vitest'
+import { instructionZones } from '@antorfr/adestia-drivers'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import { importCatalogueItem, materializeItem, type CatalogueItem } from '../src/instruction-catalogues.js'
 import { InstructionCataloguesStore } from '../src/instruction-catalogues-store.js'
+import { driverWith } from './support/driver.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
 
-const SKILL = {
-  describe: () => Promise.resolve({ id: 'test', label: 'Test', cliVersion: '0', capabilities: [] }),
-  env: () => Promise.resolve({}),
+afterEach(cleanTmp)
+
+const SKILL = driverWith({
   instructionPaths: () => [{ path: '.claude/skills', kind: 'skill', entry: '<name>/SKILL.md' }],
-  runTurn: async function* () {},
-} as unknown as Driver
+})
 
-const tmp = (p: string) => mkdtemp(join(tmpdir(), p))
+const tmp = tmpDir
 const item: CatalogueItem = { itemPath: 's/a', kind: 'skill', name: 'a', description: 'd' }
 
 async function allFiles(dir: string, base = ''): Promise<string[]> {

@@ -12,14 +12,12 @@
  * Screenshots go to $ADESTIA_SHOTS or the OS temp directory, never the tree.
  */
 
-import { execFile } from 'node:child_process'
 import { existsSync } from 'node:fs'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { promisify } from 'node:util'
 
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -28,8 +26,9 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 })
 
 import { type StartedInstance, start } from '../src/start.js'
+import { git } from './support/git.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
 
-const run = promisify(execFile)
 const requireFrom = createRequire(import.meta.url)
 
 function loadPlaywright(): any {
@@ -47,18 +46,6 @@ const shellBuilt = existsSync(new URL('../../web/dist-web/index.html', import.me
 const canDrive = playwright !== undefined && shellBuilt
 const SKIP_REASON = `${playwright === undefined ? 'no playwright ' : ''}${shellBuilt ? '' : 'no built web shell'}`
 
-async function git(cwd: string, ...args: string[]): Promise<void> {
-  await run('git', args, {
-    cwd,
-    env: {
-      ...process.env,
-      GIT_AUTHOR_NAME: 'T',
-      GIT_AUTHOR_EMAIL: 't@example.org',
-      GIT_COMMITTER_NAME: 'T',
-      GIT_COMMITTER_EMAIL: 't@example.org',
-    },
-  })
-}
 async function commitFiles(dir: string, files: Record<string, string>, message: string): Promise<void> {
   for (const [path, content] of Object.entries(files)) {
     await mkdir(dirname(join(dir, path)), { recursive: true })
@@ -131,7 +118,7 @@ afterAll(async () => {
   await browser?.close()
 })
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'adestia-cat-ui-'))
+  root = await tmpDir('adestia-cat-ui-')
   workspace = join(root, 'workspace')
   driverId = 'claude-code'
   repo = join(root, 'core')
@@ -150,7 +137,7 @@ beforeEach(async () => {
 afterEach(async () => {
   await page?.close()
   await instance?.close()
-  await rm(root, { recursive: true, force: true })
+  await cleanTmp()
 })
 
 async function newPage(): Promise<void> {
