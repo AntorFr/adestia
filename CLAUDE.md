@@ -4,6 +4,30 @@ Conventions for anyone — person or agent — writing code in this repository.
 `DESIGN.md` records why the product is shaped the way it is; this file records
 how work gets done to it.
 
+## Code and commands
+
+npm workspaces: `packages/content` owns the markdown grammar; `packages/drivers`
+owns the engine contract and adapters; `packages/schemas` owns extension and wire
+contracts; `packages/server` owns boot, HTTP and turns; `packages/web` owns the
+React shell, editor and runtime plugin loader. `ARCHITECTURE.md` is the module
+map; `docs/parcours.md` and `docs/ecrans.md` describe the built journeys and screens.
+Current defects and unfinished work live in `.agent/status.md`; release history
+lives in `CHANGELOG.md`, design reasons in `DESIGN.md`.
+
+After `npm ci`, from the repository root:
+
+```sh
+npm test             # vitest run, then node --test for plugins; allow 7+ minutes
+npm run typecheck    # workspace tsc builds, then web --noEmit
+npm run lint         # eslint packages plugins; also in CI
+npm run build        # server/dependencies, then the web shell and its vendor/SW files
+```
+
+The catalogue browser suite builds a missing shell when Playwright is available.
+Without Playwright it explicitly skips; a green run then does not prove those
+screens. For Vite hot reload, use `npm run dev --workspace @antorfr/adestia-web`
+with the server running on port 8730. For a seeded instance, use the launcher below.
+
 ## A fresh worktree needs its install checked, not assumed
 
 The grammar comes from a git dependency — a fork of

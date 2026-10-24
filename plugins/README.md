@@ -1,6 +1,6 @@
 # Bundled plugins
 
-Adestia ships ten plugins and three skins. None of them is active until you name it
+Adestia ships ten plugins and four skins. None of them is active until you name it
 in your config — discovery is not activation, and a folder sitting here costs
 nothing until you ask for it.
 
@@ -38,7 +38,8 @@ activate. The contract that teaches it is the core's own `collections` skill.
 | Skin | What it is |
 |---|---|
 | [`alfred`](../skins/alfred/) | Warm paper, a quiet chevron, and nothing that shouts. Light and dark, following the system. |
-| [`nestor`](../skins/nestor/) | The house's night-light: porcelain by day, plum after dark, amethyst, the roundest corners of the three — and a rabbit whose belly lights up when it works. Follows the phone's setting. |
+| [`dobby`](../skins/dobby/) | A college library: walnut, vellum, gilt and a sock on a wax seal. Dark by default, parchment light on request. |
+| [`nestor`](../skins/nestor/) | The house's night-light: porcelain by day, plum after dark, amethyst, rounded corners — and a rabbit whose belly lights up when it works. Follows the phone's setting. |
 | [`skippy`](../skins/skippy/) | The code agent's HUD: dark, monospace headings, amber, hard corners, no ambient shadow — emitted light rather than simulated depth. It imposes its night; light exists only on explicit request. |
 
 ## Their agent contracts

@@ -26,13 +26,15 @@ there; edit the file on the host (or drop the `:ro`).
 
 Without Docker, from a clone (`data/` and `workspace/` are created in the
 current directory, and `workspace/` is not git-ignored: run from a scratch directory,
-not the clone root; `-c <path>` points at another config file):
+not the clone root; `-c <path>` points at another config file). Build in the
+clone, then launch the binary by absolute path from that scratch directory:
 
 ```sh
 npm ci
 npm run build --workspace @antorfr/adestia-server
 npm run build:web --workspace @antorfr/adestia-web
-node packages/server/bin/adestia.js
+cd /path/to/scratch
+node /path/to/adestia/packages/server/bin/adestia.js -c /path/to/adestia.config.yaml
 ```
 
 This serves `http://127.0.0.1:8730` and answers 200 on `/`. Without
@@ -122,9 +124,9 @@ Adestia's own interface.
 - **Scheduled turns**: notes whose body runs as a prompt on a cadence, with a
   missed occurrence lost rather than replayed. Give one a deadline and it
   becomes a **mission** — a watch that ends itself once its goal is met, or
-  escalates when the deadline passes. A mission may tick its own `done:` and
-  nothing else: every other write to a scheduled note needs a human, so a
-  turn running unattended can never rewrite the prompt it runs on.
+  escalates when the deadline passes. The `schedule-author` contract tells a mission to write only its own `done:`;
+  this is an agent instruction, with no server-side write gate (see
+  `docs/parcours.md`, P-12).
 - **Attachments** the agent reads with its own tools, framed as data — a file
   that says "ignore your instructions" is reported, not obeyed.
 - **The screen next to the chat**, joined to each message as a hint: the route
@@ -162,8 +164,9 @@ Two rules follow, and both bite in production:
 
 - **The cap and the memory limit must agree.** A cap of 8 behind a 1 GB limit
   is not a conservative deployment — it is a deployment that starts eight
-  processes and gets killed. Adestia refuses a turn past its cap cleanly, with a
-  429 the interface explains; the kernel does not.
+  processes and gets killed. Adestia refuses a turn past its cap with HTTP 429. The chat can lose the
+  refusal message when it reloads the transcript (Known defects in
+  `ARCHITECTURE.md`); the composer is freed.
 - **An OOM kill loses the turn in flight**, along with anything the agent had
   not yet written to disk. There is no retry: the turn died with the process,
   and replaying it behind the user's back would be worse than losing it.
@@ -185,10 +188,12 @@ Adestia is a few hundred megabytes, and it is the burst that kills it. Raise
 ## Status
 
 **Early, and running.** Everything above is verified against a real browser and
-real CLIs, not only by tests. What is deliberately not built: pushing and pulling the
-workspace's own instructions to a remote (catalogues above only read
-repositories), and the concurrency measurements that need real subscription
-quota. See [DESIGN.md](DESIGN.md) for the principles and every decision taken.
+real CLIs, not only by tests. Pushing and pulling the workspace's own instructions
+to a remote is still unbuilt (catalogues above only read repositories).
+Concurrency measurements are recorded in `spikes/concurrency/REPORT.md`.
+See [.agent/status.md](.agent/status.md) for current defects and unfinished work,
+[CHANGELOG.md](CHANGELOG.md) for release history, and [DESIGN.md](DESIGN.md) for
+the principles and decision log.
 
 ## Contributing
 
