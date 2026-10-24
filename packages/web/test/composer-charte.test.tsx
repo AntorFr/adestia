@@ -184,7 +184,7 @@ describe('attachment tray', () => {
 
   it('translates the HTTP fallback when the server sends no error, and keeps the server error first', async () => {
     const send = async (fetchImpl: typeof fetch, t?: (key: string) => string) => {
-      const view = render(<Composer onSend={vi.fn()} onStop={vi.fn()} busy={false} folded={false} fetchImpl={fetchImpl} t={t} />)
+      const view = render(<Composer onSend={vi.fn()} onStop={vi.fn()} busy={false} folded={false} fetchImpl={fetchImpl} {...(t ? { t } : {})} />)
       fireEvent.change(view.container.querySelector('input[type=file]') as HTMLInputElement, {
         target: { files: [new File(['x'], 'big.bin')] },
       })
