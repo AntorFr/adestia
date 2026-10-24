@@ -348,6 +348,8 @@ function useTurn({ fetchImpl, model, view, t }: ConversationsOptions, open: Open
   } = open
   /** In-flight conversation creation, so two rapid sends share ONE conversation. */
   const creation = useRef<Promise<string | undefined> | undefined>(undefined)
+  /** The last message sent into an idle tab: its conversation id once its POST has left. */
+  const leaving = useRef<Promise<string | undefined> | undefined>(undefined)
 
   /**
    * Loads a conversation from the store if needed, then re-attaches to its
@@ -500,13 +502,21 @@ function useTurn({ fetchImpl, model, view, t }: ConversationsOptions, open: Open
     // Sent DURING that tab's turn: the SERVER holds it — POSTed at once,
     // persisted on acceptance, dispatched as one merged turn when the
     // running one settles. What is kept here is only the waiting bubble.
-    if (current.turning) {
+    // `live.running` is what the Stop button reads, and it is up from the
+    // moment the first message is typed — before its POST has left. A message
+    // sent in that gap is held too, once the first one has gone.
+    if (current.turning || current.live?.running) {
       patchConversation(tabId, { held: [...current.held, { text, attachments }] })
       const controller = new AbortController()
-      // A turning tab has a conversation: a draft never turns, its conversation is made
-      // before its first turn leaves.
+      // A draft has no conversation until the first message makes it: wait for that
+      // message to have left, and take the id it was made with.
+      const id = tabId === DRAFT ? await leaving.current : tabId
+      if (!id) {
+        patchConversation(tabId, { held: current.held })
+        return
+      }
       const start = await startTurn(
-        { ...turnOptions({ model, view }, text, attachments, tabId), signal: controller.signal },
+        { ...turnOptions({ model, view }, text, attachments, id), signal: controller.signal },
         fetchImpl,
       )
       if (start.kind === 'stream') {
@@ -534,8 +544,13 @@ function useTurn({ fetchImpl, model, view, t }: ConversationsOptions, open: Open
 
     // Named from the first message, at creation: a title set in a second
     // call is a title lost whenever that call is.
+    let departed!: (id: string | undefined) => void
+    leaving.current = new Promise((resolve) => {
+      departed = resolve
+    })
     const id = await ensureConversation(tabId, titleFrom(text))
     if (!id) {
+      departed(undefined)
       // No id, no turn. The message stays drawn with the refusal under
       // it, and the next send tries the creation again. It used to leave
       // anyway — keyed by nothing, carrying the browser's own idea of the
@@ -545,7 +560,9 @@ function useTurn({ fetchImpl, model, view, t }: ConversationsOptions, open: Open
       })
       return
     }
-    const start = await startTurn(turnOptions({ model, view }, text, attachments, id), fetchImpl)
+    const start = await startTurn(turnOptions({ model, view }, text, attachments, id), fetchImpl).finally(() =>
+      departed(id),
+    )
 
     if (start.kind === 'held') {
       // Another browser tab is running this conversation's turn: adopt it,

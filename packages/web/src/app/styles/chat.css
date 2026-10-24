@@ -22,7 +22,9 @@
 .adestia-chat__header {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  /* One gap between every item; the spacer below takes none of its own. */
+  --rail-gap: var(--space-2);
+  gap: var(--rail-gap);
   padding: var(--space-3);
   min-width: 0;
   border-bottom: 1px solid var(--border);
@@ -61,7 +63,13 @@
   color: var(--text);
 }
 
-.adestia-chat__spacer { margin-left: auto; }
+.adestia-chat__spacer {
+  flex: 0 0 0;
+  margin-left: auto;
+  /* The spacer is a flex item, so it would add a second gap on its far side:
+     take it back, so the pill sits one gap from its neighbours. */
+  margin-right: calc(-1 * var(--rail-gap));
+}
 
 /* Square icon buttons — the chrome's own controls, chat side and canvas side. */
 .adestia-ib {
@@ -238,6 +246,8 @@
   font-size: var(--text-sm);
   color: var(--danger-text);
 }
+
+.adestia-bubble__error:first-child { margin-top: 0; }
 
 .adestia-bubble__working {
   display: flex;
@@ -560,7 +570,11 @@
 .adestia-trace__glyph { display: inline-flex; align-self: center; }
 
 @media (max-width: 400px) {
-  .adestia-chat__header { gap: var(--space-1); padding: var(--space-2); }
+  .adestia-chat__header { --rail-gap: var(--space-1); padding: var(--space-2); }
+  /* No free width to park beside the spacer: the picker takes it, so the
+     gaps stay one value whatever the skin's glyph widths. */
+  .adestia-chat__header .adestia-model-wrap { max-width: none; flex: 1 1 130px; }
+  .adestia-chat__header .adestia-chat__spacer { margin-left: 0; }
 }
 
 /* A decision's actions keep their room on a narrow chat rail. */
