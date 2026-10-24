@@ -10,7 +10,6 @@
  * The real-Claude turn of the exit criterion needs a token and is not here (see the report).
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { type Size, type Theme, VIEWPORTS, inspect, launch, newBrowser, playwright } from './charte-browser.js'
