@@ -126,7 +126,7 @@ async function boot(): Promise<void> {
   })
 }
 
-/** Settings › Instructions › Catalogues, with the pop-in open. */
+/** Instructions › Catalogues, with the pop-in open. */
 async function openCatalogues(): Promise<void> {
   await page.goto(`${instance.url}#/settings/instructions`)
   await page.getByRole('button', { name: 'Catalogues' }).click()

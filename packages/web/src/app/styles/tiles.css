@@ -436,6 +436,21 @@
   gap: var(--space-2);
 }
 .adestia-catalogues__list .adestia-filecard { width: 100%; }
+.adestia-catalogues__repository { display: flex; flex-direction: column; gap: var(--space-1); }
+.adestia-catalogues__remove {
+  align-self: flex-end;
+  min-height: 32px;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: none;
+  color: var(--text-muted);
+  font: 600 var(--text-sm) var(--font);
+  cursor: pointer;
+}
+.adestia-catalogues__remove:hover:not(:disabled) { border-color: var(--danger); color: var(--text); }
+.adestia-catalogues__remove:focus-visible { outline: 2px solid var(--text-muted); outline-offset: 2px; }
+.adestia-catalogues__remove:disabled { opacity: 0.5; cursor: not-allowed; }
 .adestia-catalogues__item {
   display: flex;
   gap: var(--space-3);

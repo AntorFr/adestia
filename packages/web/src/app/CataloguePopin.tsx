@@ -59,6 +59,7 @@ export function CataloguePopin({
   const [items, setItems] = useState<readonly Item[] | undefined>()
   const [error, setError] = useState<string | undefined>()
   const [busy, setBusy] = useState<string | undefined>()
+  const [removing, setRemoving] = useState<string | undefined>()
   const [repo, setRepo] = useState('')
   const [ref, setRef] = useState('main')
   const [token, setToken] = useState('')
@@ -123,6 +124,22 @@ export function CataloguePopin({
     setError(undefined)
     setEntered(catalogue)
     void loadItems(catalogue)
+  }
+
+  const removeCatalogue = async (catalogue: Catalogue) => {
+    setError(undefined)
+    setRemoving(catalogue.id)
+    try {
+      const result = await requestJson(fetchImpl, urlOf(catalogue.id), jsonInit('DELETE'), say)
+      if (!result.ok) return setError(result.error)
+      setCatalogues((current) => current?.filter((entry) => entry.id !== catalogue.id))
+      // Removing a repository also withdraws the instructions it delivered.
+      onChanged()
+    } catch (cause) {
+      setError((cause as Error).message)
+    } finally {
+      setRemoving(undefined)
+    }
   }
 
   /** Re-fetch the repository and re-copy what was imported from it, then re-read. */
@@ -199,6 +216,8 @@ export function CataloguePopin({
             onRef={setRef}
             onToken={setToken}
             onEnter={enter}
+            removing={removing}
+            onRemove={(catalogue) => void removeCatalogue(catalogue)}
             onAdd={() => void add()}
             t={t}
           />
@@ -228,6 +247,8 @@ interface ListProps {
   readonly onToken: (value: string) => void
   readonly onEnter: (catalogue: Catalogue) => void
   readonly onAdd: () => void
+  readonly removing: string | undefined
+  readonly onRemove: (catalogue: Catalogue) => void
   readonly t: (key: string) => string
 }
 
@@ -241,8 +262,8 @@ function CatalogueList(props: ListProps) {
       )}
       <ul className="adestia-catalogues__list">
         {(catalogues ?? []).map((catalogue) => (
-          <li key={catalogue.id}>
-            <button type="button" className="adestia-filecard" onClick={() => props.onEnter(catalogue)}>
+          <li key={catalogue.id} className="adestia-catalogues__repository">
+            <button type="button" className="adestia-filecard" disabled={props.removing === catalogue.id} onClick={() => props.onEnter(catalogue)}>
               <span className="adestia-filecard__name">{catalogue.id}</span>
               <span className="adestia-filecard__path">
                 {catalogue.repo} @ {catalogue.ref}
@@ -253,6 +274,16 @@ function CatalogueList(props: ListProps) {
                 </span>
               </span>
             </button>
+            <Button
+              variant="danger"
+              icon="trash-2"
+              disabled={props.removing !== undefined}
+              aria-label={`${t('Remove catalogue')} ${catalogue.id}`}
+              title={t('Remove this catalogue and its imported instructions')}
+              onClick={() => props.onRemove(catalogue)}
+            >
+              {t('Remove catalogue')}
+            </Button>
           </li>
         ))}
       </ul>
