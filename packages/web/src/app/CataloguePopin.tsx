@@ -275,7 +275,7 @@ function CatalogueList(props: ListProps) {
               </span>
             </button>
             <Button
-              variant="danger"
+              className="adestia-catalogues__remove"
               icon="trash-2"
               disabled={props.removing !== undefined}
               aria-label={`${t('Remove catalogue')} ${catalogue.id}`}
