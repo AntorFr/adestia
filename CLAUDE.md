@@ -25,7 +25,8 @@ npm run build        # server/dependencies, then the web shell and its vendor/SW
 
 The catalogue browser suite builds a missing shell when Playwright is available.
 Without Playwright it explicitly skips; a green run then does not prove those
-screens. For Vite hot reload, use `npm run dev --workspace @antorfr/adestia-web`
+screens. It only builds a *missing* shell: after changing
+`packages/web`, run `npm run build` first, or a stale shell fails those tests. For Vite hot reload, use `npm run dev --workspace @antorfr/adestia-web`
 with the server running on port 8730. For a seeded instance, use the launcher below.
 
 ## A fresh worktree needs its install checked, not assumed
