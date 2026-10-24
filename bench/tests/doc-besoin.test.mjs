@@ -234,4 +234,25 @@ describe('B-4 — what README, CLAUDE.md and the docs name exists', () => {
     assert.equal(skins, 4)
     assert.match(read('docs/parcours.md') + read('README.md'), /\b(four|4) (bundled )?skins\b/i)
   })
+
+  test('no doc calls workspace/ unignored while .gitignore ignores it', () => {
+    assert.match(read('.gitignore'), /^workspace\/$/m)
+    const wrong = []
+    for (const f of ['README.md', 'CLAUDE.md', 'ARCHITECTURE.md']) {
+      read(f).split('\n').forEach((l, i) => {
+        if (/workspace\//.test(l) && /not git-ignored|isn't git-ignored|is not ignored|not ignored by git/i.test(l)) wrong.push(`${f}:${i + 1}`)
+      })
+    }
+    assert.deepEqual(wrong, [])
+  })
+
+  test('ARCHITECTURE.md does not call the link and var(--x) checks uncommitted: the test file is committed', () => {
+    assert.ok(tracked.includes('bench/tests/doc-besoin.test.mjs'))
+    const wrong = []
+    read('ARCHITECTURE.md').split('\n').forEach((l, i) => {
+      if (/(link|var\(--)/i.test(l) && /(uncommitted|not committed|isn't committed|not in the repository|not checked in)/i.test(l)) wrong.push(`${i + 1}`)
+    })
+    assert.deepEqual(wrong, [])
+    assert.ok(read('ARCHITECTURE.md').includes('bench/tests/doc-besoin.test.mjs'))
+  })
 })
