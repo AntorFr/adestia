@@ -50,42 +50,42 @@ function run<T>(ctx: Ctx, key: CmdKey<T>, payload?: T): void {
   ctx.get(commandsCtx).call(key, payload)
 }
 
-export function buildBlockTypes(builder: ToolbarBuilder): void {
+export function buildBlockTypes(builder: ToolbarBuilder, t: (key: string) => string = (key) => key): void {
   builder
-    .addGroup('adestia-blocks', 'Blocs de texte')
+    .addGroup('adestia-blocks', t('Text blocks'))
     .addItem('bullet-list', {
       icon: ICONS.bullet,
-      label: 'Liste à puces',
+      label: t('Bullet list'),
       active: (ctx: Ctx) => inside(ctx, 'bullet_list'),
       onRun: (ctx: Ctx) => run(ctx, wrapInBulletListCommand.key),
     })
     .addItem('ordered-list', {
       icon: ICONS.ordered,
-      label: 'Liste numérotée',
+      label: t('Numbered list'),
       active: (ctx: Ctx) => inside(ctx, 'ordered_list'),
       onRun: (ctx: Ctx) => run(ctx, wrapInOrderedListCommand.key),
     })
     .addItem('heading', {
       icon: ICONS.heading,
-      label: 'Titre',
+      label: t('Title'),
       active: (ctx: Ctx) => inside(ctx, 'heading', 2),
       onRun: (ctx: Ctx) => run(ctx, wrapInHeadingCommand.key, inside(ctx, 'heading', 2) ? 0 : 2),
     })
     .addItem('subheading', {
       icon: ICONS.subheading,
-      label: 'Sous-titre',
+      label: t('Subtitle'),
       active: (ctx: Ctx) => inside(ctx, 'heading', 3),
       onRun: (ctx: Ctx) => run(ctx, wrapInHeadingCommand.key, inside(ctx, 'heading', 3) ? 0 : 3),
     })
     .addItem('quote', {
       icon: ICONS.quote,
-      label: 'Citation',
+      label: t('Quote'),
       active: (ctx: Ctx) => inside(ctx, 'blockquote'),
       onRun: (ctx: Ctx) => run(ctx, wrapInBlockquoteCommand.key),
     })
     .addItem('text', {
       icon: ICONS.text,
-      label: 'Texte simple',
+      label: t('Plain text'),
       active: () => false,
       onRun: (ctx: Ctx) => run(ctx, turnIntoTextCommand.key),
     })

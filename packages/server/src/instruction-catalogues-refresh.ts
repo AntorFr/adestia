@@ -12,7 +12,7 @@ import { materializeItem, scanCatalogue } from './instruction-catalogues.js'
 import type { InstructionCatalogue } from './instruction-catalogues-store.js'
 import { fetchSources } from './sources.js'
 
-export interface CatalogueRefreshContext {
+interface CatalogueRefreshContext {
   readonly driver: Driver
   readonly workspaceRoot: string
   readonly dataDir: string
@@ -22,7 +22,7 @@ export interface CatalogueRefreshContext {
 /** Where a catalogue's clone sits, apart from plugin sources. */
 export const catalogueClone = (dataDir: string, id: string): string => join(dataDir, 'catalogues', id)
 
-export function catalogueSource(catalogue: InstructionCatalogue): ExtensionSource {
+function catalogueSource(catalogue: InstructionCatalogue): ExtensionSource {
   return {
     kind: 'git',
     name: catalogue.id,

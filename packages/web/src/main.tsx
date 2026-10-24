@@ -2,12 +2,15 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 
 import { App } from './app/App.js'
+import { mountSprite } from './app/icons.js'
 import { registerServiceWorker } from './sw/register.js'
 import './app/tokens.css'
 import './app/shell.css'
 
 const container = document.getElementById('root')
 if (!container) throw new Error('missing #root')
+
+mountSprite()
 
 createRoot(container).render(
   <StrictMode>

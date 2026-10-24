@@ -21,6 +21,9 @@ import { createContext, useContext, useState } from 'react'
 import { toneOf } from '@antorfr/adestia-content'
 
 import type { LayoutProps } from '../plugins/contract.js'
+import { BackButton } from './BackButton.js'
+import { Icon } from './Icon.js'
+import { EmptyState } from './ui/EmptyState.js'
 import { collectionOf, facetsOf, statusOf, type Facet, type Member } from './collections.js'
 import type { IndexEntry } from './sections.js'
 
@@ -87,7 +90,7 @@ export function CollectionLayout({ fields, openPage, children }: LayoutProps) {
   const fold = (members: readonly Member[]) =>
     members.length > 0 && (
       <details className="adestia-archive">
-        <summary>
+        <summary className="adestia-btn adestia-btn--ghost"><Icon name="chevron-right" />
           {t('Finished')} <span className="adestia-archive__count">{members.length}</span>
         </summary>
         {rows(members)}
@@ -97,6 +100,9 @@ export function CollectionLayout({ fields, openPage, children }: LayoutProps) {
   return (
     <div className="adestia-collection">
       {children}
+      {!open && collection.live.length === 0 && collection.archived.length > 0 && (
+        <EmptyState icon="check" text={t('Everything here is finished.')} />
+      )}
 
       {!collection.of && (
         <p className="adestia-collection__problem">
@@ -107,16 +113,14 @@ export function CollectionLayout({ fields, openPage, children }: LayoutProps) {
       {open ? (
         <>
           <div className="adestia-collection__nav">
-            <button type="button" className="adestia-pill" onClick={() => setFacet(undefined)}>
-              ‹ {t('All')}
-            </button>
+            <BackButton label={t('All')} onClick={() => setFacet(undefined)} />
             <h2 className="adestia-section">{open.label}</h2>
             <span className="adestia-collection__count">{counts(open.live.length, open.archived.length)}</span>
           </div>
           {open.live.length > 0
             ? rows(open.live)
             : open.archived.length > 0 && (
-                <p className="adestia-empty">{t('Everything here is finished.')}</p>
+                <EmptyState icon="check" text={t('Everything here is finished.')} />
               )}
           {fold(open.archived)}
         </>
@@ -153,7 +157,7 @@ export function CollectionLayout({ fields, openPage, children }: LayoutProps) {
       {collection.of && collection.into && ask && (
         <button
           type="button"
-          className="adestia-pill adestia-collection__new"
+          className="adestia-btn adestia-btn--ghost adestia-btn--sm adestia-collection__new"
           onClick={() =>
             ask(
               t('Create a new page of type “%type” in %into, for this collection.')
@@ -162,7 +166,7 @@ export function CollectionLayout({ fields, openPage, children }: LayoutProps) {
             )
           }
         >
-          ＋ {t('Ask for a new page')}
+          <Icon name="plus" />{t('Ask for a new page')}
         </button>
       )}
     </div>

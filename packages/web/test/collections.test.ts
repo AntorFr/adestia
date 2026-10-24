@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { collectionOf, facetsOf, parseLabels, prettify, statusOf } from '../src/app/collections.js'
+import { collectionOf, facetsOf, parseLabels, statusOf } from '../src/app/collections.js'
+import { prettify } from '../src/app/paths.js'
 import type { IndexEntry } from '../src/app/sections.js'
 
 const entry = (path: string, fields: Record<string, unknown>, title = path): IndexEntry => ({

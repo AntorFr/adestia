@@ -93,7 +93,7 @@ export default async function scenario(bench) {
   const offered = await desk.evaluate(() =>
     [...document.querySelectorAll('.adestia-blockset__group')]
       .filter((group) => group.querySelector('legend')?.textContent === 'Ce bloc')
-      .flatMap((group) => [...group.querySelectorAll('.adestia-blockset__field > span')])
+      .flatMap((group) => [...group.querySelectorAll('.adestia-field > .adestia-field__label')])
       .map((span) => span.textContent),
   )
   console.log('LE ⚙ DU BLOC OFFRE', JSON.stringify(offered))

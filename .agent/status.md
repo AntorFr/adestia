@@ -1,5 +1,143 @@
 # Status — Adestia
-> MàJ : 2026-10-08
+> MàJ : 2026-10-24
+
+**Tranche `adestia-qualite-chat` (epic adestia-qualite) — assemblée, PR vers
+`epic/adestia-qualite`, pas fusionnée.** Aucun changement de ce que fait le chat (B-1, AD-7).
+- Code (R-11, R-12, AD-12) : `toMessage` écrit une fois (`chat/messages.ts`, option
+  `signatures`, défaut vrai ; Delegations passe `{ signatures: false }`, écart gardé comme
+  défaut écrit) ; tout appel réseau de `chat/` passe par `app/request.ts` (`requestJson`,
+  `requestRaw` pour six appelants : le POST du tour et l'attache, qui lisent un flux, et l'envoi, l'arrêt, l'archivage et la suppression, qui n'en lisent pas) ; `useConversations` coupé en
+  `useOpenConversations`/`useTurn`/`useTabActions`, `Chat` en `ChatHeader`/`TabStrip`/
+  `ConversationList`/`Thread`, `Composer` en `useUploads` (hooks locaux à leur fichier, seul `useConversations` est exporté) ; aucune fonction > 250 lignes
+  (`node bench/long-functions.mjs packages/web/src/chat`). Instantané du balisage
+  (`chat-markup.test.tsx`).
+- Écrans (B-7, B-8, B-10, B-11) : rail (E-16), compositeur, permission (E-17) et feuille de
+  signature (E-18, la `<Sheet>` partagée) dessinés avec les composants et sept icônes ajoutées
+  au sprite ; plus de glyphe ni d'émoji, une seule fermeture (`x`) ; chaînes et libellés par
+  la langue (en/fr) ; `chat.css`, `conversations.css`, `attachments.css` sans token indéfini,
+  couleur ou rayon littéral.
+- Recette : `npm ci`, `npm run typecheck`, `npm run lint`, `npm run build`, `npm test` ;
+  lancement `node bench/launch.mjs --engine fake` ; matrice, un scénario par passe :
+  `node bench/scenarios/chat-matrix.mjs bench/scenarios/chat-rail.mjs`, puis `chat-compositeur.mjs`
+  et `chat-permission.mjs` (4 habillages = skins, en/fr, clair/sombre, bureau/téléphone) ; tour réel (jeton Claude) : `node bench/launch.mjs --engine claude --seed chat-permission --locale fr`,
+  puis `BENCH_URL=<adresse imprimée> node bench/scenarios/chat-permission-live.mjs` (bench/README.md).
+- Reste / pièges : suppression, renommage, désarchivage d'une conversation depuis
+  l'interface non faits (comportements nouveaux, AD-7) ; `live.ts`, `usePage.ts`, l'éditeur
+  et `PageEditor` gardent leur `fetchImpl(` (tranche pages) ; la suite vitest à navigateur
+  peut dépasser 5 s sous charge (repasse seule) ; une phrase de carte de permission peut venir
+  de l'outil en anglais (donnée du serveur, pas un libellé).
+**Tranche `adestia-qualite-pages` (epic adestia-qualite) — assemblée, PR vers
+`epic/adestia-qualite`, pas fusionnée.** Aucun changement de ce que font les pages (B-1) ;
+elles parlent une seule langue (B-8) et le `‹ Back` du shell dit qu'il mène à l'accueil (B-9).
+- Code : `app/paths.ts` porte `prettify`, `folderOf` et les deux règles d'index, nommées
+  (`isIndexFile`, `isIndexPath`, AD-13 a) ; les pages parlent au serveur par `requestJson` /
+  `requestRaw` (plus de `fetchImpl(` dans les écrans de la tranche, `api.fetch` des plugins
+  excepté) ; `useInstance` rend `ready`. App, Home, Reader, Editor découpés par durée de vie
+  (R-12) : `node scripts/function-lines.mjs <fichiers>` (qui fait foi : il imprime la plus longue fonction de chaque fichier, sort 1 au-delà de 250) ; `bench/long-functions.mjs` ne liste que les dépassements, donc se tait quand tout va bien.
+- Écrans : E-2 (état de chargement, Q-23), E-3, E-4 lecteur et éditeur, E-5, E-6, E-7, E-8, E-20
+  avec composants, icônes et jetons de la charte ; feuilles de la tranche sans couleur, taille
+  ni rayon littéral, sans `outline: none` nu ; chaînes par `i18n.ts` en en et fr.
+- Recette : `npm ci`, `npm run typecheck`, `npm run lint`, `npm test` ; lancement
+  `node bench/launch.mjs --engine fake` (`/api/health`), captures
+  `node bench/scenarios/pages-matrix.mjs` après `npm run build`, et `pages-editor-narrow.mjs`.
+- Reste / pièges : pas d'état de chargement pour E-3, E-4, E-9, pas de « Réessayer » sur E-8
+  (B-1, recommandations de fin d'epic) ; les deux règles d'index diffèrent sur un chemin sans
+  extension, gardées chacune ; l'invite de la une garde sa forme française (AD-13 e) ; le
+  frontmatter garde ses deux analyseurs (AD-7). Deux tests à navigateur de la charte dépassent
+  5 s sous la charge de toute la suite et repassent seuls.
+
+**Tranche `adestia-qualite-plugins` (epic adestia-qualite) — assemblée, PR vers
+`epic/adestia-qualite`, pas fusionnée.** Aucun changement de ce que font les plugins (B-1).
+- Jetons : les feuilles de `plugins/*/web/*.css` lisent les jetons du shell (plus d'alias,
+  de couleur en dur, de `999px`, d'`outline: none` sans anneau) ; `plugins/test/css.test.js`
+  garde ces règles et compare sa liste `CHECKED` aux dossiers `web/` (AD-14 a).
+- Feuille et retours : todo, voyages, repas et pièce de l'atelier dessinent la feuille
+  partagée par ses classes (voile, Échap, focus ; chaque plugin porte sa copie du
+  comportement, AD-8) ; chaque retour dit sa destination, aucun n'est retiré. Écart à montrer :
+  le bouton de fermeture de la feuille est nouveau pour la pièce et le plat.
+- Langue : atelier, parcours et project-management ont une table `words.js` (clés anglaises) ;
+  l'atelier parle en et fr, son français inchangé ; `words.test.js` impose le *vous*.
+- Lint : `eslint packages plugins` couvre `plugins/` (`decoder.js` tiers ignoré) ; références
+  à `ATELIER-3.md`/`PARCOURS.md` retirées (R-7, R-8).
+- Recette : `npm ci`, `npm run typecheck`, `npm run lint`, `npm test` (vitest + 617
+  `node --test`) ; lancement `node bench/launch.mjs --engine fake --seed plugins`, captures
+  `bench/sweep.mjs --only`, matrice `bench/scenarios/plugins-matrix.mjs`.
+- Reste / pièges : le `confirm()` de l'atelier et le `window.alert` de voyages restent natifs
+  (Q-20, le flux changerait) ; breakpoints 520/560/640/720/900 px gardés ; invites ✦ inchangées
+  (l'une dit *tu* à l'agent : recommandation de fin d'epic) ; la suite vitest à navigateur
+  peut dépasser 5 s sous charge (repasse seule).
+
+**Tranche `adestia-qualite-charte` (epic adestia-qualite) — assemblée, PR vers
+`epic/adestia-qualite`, pas fusionnée.** Aucun changement de ce que font les écrans (B-1).
+- Charte : `docs/charte.md` écrite (sections TARGET comprises) ; `tokens.css` écrit sa
+  palette sombre une fois (`light-dark()`, AD-10), l'échelle typographique et les rayons ;
+  `packages/web/test/contrast.test.ts` mesure chaque paire de la palette de base et des
+  quatre skins, clair et sombre (AA ou écart écrit). Focus visible global.
+- Composants (B-7) : classes CSS du shell (`packages/web/src/app/styles/components.css`) + enveloppes React
+  `app/ui/` (Button, Sheet, Popover, EmptyState, Field, focus) ; icônes Lucide en sprite
+  inline vendoré (`app/icons.ts`, `Icon.tsx`, AD-9) ; documentés dans `skills/plugin-author`.
+- Requêtes (R-11) : `app/request.ts` (`requestJson`, AD-11), utilisée par E-1, E-9 à E-15,
+  `signin.ts`, `useInstance.ts` ; plus aucun `fetchImpl(` dans ces écrans.
+- Langue (AD-5, B-10) : le skin reçoit la langue de l'instance (entrée facultative) ; les
+  quatre skins parlent en en et fr, chacun dans sa voix ; table française d'`i18n.ts` au *vous*.
+- Écrans : E-1 (portes) et E-21, E-9 à E-15, E-19 refaits avec les composants ; Instructions,
+  Configuration, McpServers découpés (R-12, `app/instructions/`, `app/configuration/`,
+  `app/mcp/`, aucune fonction > 250 lignes : `node scripts/function-lines.mjs`) ; E-14 a
+  son état de chargement et `--tile-color` sur ses rendus d'erreur et vide (Q-21, Q-23).
+- Recette : `npm ci`, `npm run typecheck`, `npm run lint`, `npm test` (2160 vitest +
+  543 `node --test`, 2 sautés) ; lancement `node bench/launch.mjs --engine fake`, captures
+  par `node bench/sweep.mjs`.
+- Reste / pièges : la charte n'est pas appliquée au chat (tranche
+  suivante, qui adoptent ces composants) ; pas de toasts (écart écrit) ; pas de « Réessayer »,
+  de confirmation avant « Remove » ni d'écran hors ligne (B-1, recommandations de fin d'epic) ;
+  `live.ts` et `usePage.ts` passent désormais par l'aide de requêtes (tranche pages). Une valeur de token
+  qui change change tous les écrans : la charte écrit la raison.
+
+**Tranche `adestia-qualite-serveur` (epic adestia-qualite) — assemblée, PR vers
+`epic/adestia-qualite`, pas fusionnée.** Aucun comportement changé (AD-1).
+- Pilotes : règle des en-têtes MCP (`mcp-headers.ts`), aides et déroulé device-code
+  (`engine-aids.ts`, `device-code.ts`) écrits une fois ; le programme du CLI d'outils de
+  Copilot est un `.mjs` copié sous `dist/` par le `build` du paquet `drivers`, octets inchangés.
+- Serveur : toutes les routes sous `routes/` ; `app.ts` ne fait que monter (limiteur →
+  `turn-limiter.ts`, tour sans tête → `unattended.ts`) ; `start()` en étapes nommées, ordre du
+  boot fixé par `start-order.test.ts` ; frontmatter dans `frontmatter.ts`, `field()` unique.
+- Garde-fous : `npm run lint` en CI, zod déclaré, `scripts/unused-exports.mjs` (178 hits
+  restants, tous nommés dans ARCHITECTURE.md › R-6 : types de contrat public ou exports gardés
+  pour leur test, par arbitrage — le critère « que des types publics » a été lu ainsi).
+- Recette : `npm ci` (jamais `npm install`), `npm run typecheck`, `npm run lint`, `npm test`
+  (2073 vitest, 15 sautés) ; lancement `node bench/launch.mjs --engine fake`.
+- Reste / pièges : `assertConformance` n'est toujours pas câblé au boot (défaut connu) ;
+  analyseurs de frontmatter, parcours de dossiers, `copyMarkedTree` et défauts de sécurité des
+  catalogues restent (AD-7) ; `bench-ensemble.test.ts` dure ~5 min.
+
+**Tranche `adestia-qualite-tests` (epic adestia-qualite) — assemblée, PR vers
+`epic/adestia-qualite`, pas fusionnée.** Aucun fichier de production touché.
+- R-9 : `packages/server/test/support/` (`driver.ts`, `git.ts`, `tmp.ts`) porte le
+  pilote factice, le dépôt git de test et l'espace temporaire ; les fichiers de
+  `packages/server/test` l'importent. `packages/drivers/test` garde ses faux.
+- R-10 : callback, mcp, restart n'attendent plus par `setImmediate` ; watch, pages,
+  shell-tools, background n'ont plus de `setTimeout` d'attente ; cause du test
+  instable de page-editor écrite dans ARCHITECTURE.md (R-10).
+- R-14 : `catalogues-ui-ensemble.test.ts` trouve Playwright par `npm root -g`,
+  construit le shell dans son `beforeAll` si `dist-web` manque (avec
+  `NODE_ENV=production`), et se saute en disant `no playwright` sinon.
+- Recette : `npm ci`, `npm run typecheck`, `npm run lint`, `npm test` (1977 tests
+  vitest + 543 `node --test`, aucun sauté) ; lancement `node packages/server/bin/adestia.js`
+  → 200 sur `/`. Le build du shell est payé une fois, au premier passage de la suite
+  des catalogues sans `dist-web`.
+- Reste / pièges : le
+  lancement local sur moteur factice (B-2) vit sous `bench/` (voir ci-dessous) ; si le build du shell
+  dépasse la minute, passer à un `pretest`.
+
+**Banc sans docker (feature `adestia-qualite-banc`, assemblée, PR vers `epic/adestia-qualite`) :**
+`bench/launch.mjs` (moteur factice ou vrai Claude), `bench/seed/*` (base, empty,
+config-writable, config-readonly, oidc, plugins ; contrôle `bench/seed/check.mjs`),
+`bench/sweep.mjs` (124 captures E-1 à E-31, `--skin`). Vérifié dans le pod : `/api/health`
+répond `ok`, SIGTERM retire le répertoire de données, balayage 124/124 en ~2 min (2 à 4 min selon la machine), refus net
+de `--engine claude` sans jeton. **Pas vérifié** : un tour réel `--engine claude` (pas de
+jeton dans le pod d'intégration) — joué par Monsieur : il a révélé que le jeton factice rangé par un semis masquait celui de l'environnement (le pilote préfère la crédential rangée) ; le lanceur la retire désormais en `--engine claude`. Suite entière verte (2013 vitest) une fois l'epic fusionnée. Le balayage et le lanceur lisent
+Playwright dans `npm root -g` ; `docker`/`bench/run.sh` inchangés. Reste à l'epic : les
+corrections visuelles (charte, chat, pages, plugins) et le support de test (tests).
 
 **État :** `main` est à **v0.87.0** (entrées v0.69 à v0.87 ci-dessous, pas dans
 l'ordre) ; la **v0.80.0** était taguée et **déployée sur les trois corps le

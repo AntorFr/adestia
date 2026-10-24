@@ -14,7 +14,13 @@
  * since the page-author rule is to write what changes something.
  */
 
+import { useRef, type RefObject } from 'react'
+
 import { WIDTHS, type BlockSpec } from '@antorfr/adestia-content'
+
+import { Icon } from '../app/Icon.js'
+import { Button, Popover } from '../app/ui/index.js'
+import { FieldRow } from './FieldRow.js'
 
 /** The reserved attributes a person sets, in the order they are asked. */
 const COMMON = ['title', 'ico', 'frame', 'w'] as const
@@ -22,12 +28,12 @@ const COMMON = ['title', 'ico', 'frame', 'w'] as const
 /** Attributes the form never offers: identity and resolution, not settings. */
 const HIDDEN = new Set(['id', 'from'])
 
-/** What each width means, said the way a person would. */
+/** What each width means, said the way a person would — keys of the shell's table. */
 const WIDTH_LABELS: Readonly<Record<string, string>> = {
-  '1': 'toute la ligne',
-  '2/3': 'deux tiers',
-  '1/2': 'la moitié',
-  '1/3': 'un tiers',
+  '1': 'the whole line',
+  '2/3': 'two thirds',
+  '1/2': 'a half',
+  '1/3': 'a third',
 }
 
 export interface BlockSettingsProps {
@@ -45,11 +51,26 @@ export interface BlockSettingsProps {
    */
   readonly about?: string | undefined
   readonly attributes: Readonly<Record<string, string>>
+  /** The block's ⚙: the window hangs from it, and focus goes back to it on close. */
+  readonly anchor?: RefObject<HTMLElement | null>
   readonly onChange: (next: Record<string, string>) => void
   readonly onClose: () => void
+  /** The shell's translator; identity in English. */
+  readonly t?: (key: string) => string
 }
 
-export function BlockSettings({ name, spec, about, attributes, onChange, onClose }: BlockSettingsProps) {
+export function BlockSettings({
+  name,
+  spec,
+  about,
+  attributes,
+  anchor,
+  onChange,
+  onClose,
+  t = (key) => key,
+}: BlockSettingsProps) {
+  // Without an anchor (a test, a caller that has none) the window has nothing to hang from.
+  const orphan = useRef<HTMLElement | null>(null)
   const set = (key: string, value: string) => {
     const next: Record<string, string> = { ...attributes }
     if (value === '') delete next[key]
@@ -71,12 +92,16 @@ export function BlockSettings({ name, spec, about, attributes, onChange, onClose
   const missing = own.filter(([key, one]) => one.required && !attributes[key]).map(([key]) => key)
 
   return (
-    <div className="adestia-blockset" role="dialog" aria-label={`Réglages du bloc ${name}`}>
+    <Popover
+      anchor={anchor ?? orphan}
+      open
+      onClose={onClose}
+      label={t('Block settings %name').replace('%name', name)}
+      className="adestia-blockset"
+    >
       <div className="adestia-blockset__head">
         <span className="adestia-blockset__name">:::{name}</span>
-        <button type="button" className="adestia-blockset__close" onClick={onClose} aria-label="Fermer">
-          ×
-        </button>
+        <Button variant="ghost" small icon="x" aria-label={t('Close')} title={t('Close')} onClick={onClose} />
       </div>
 
       {(about ?? spec?.description) && (
@@ -85,19 +110,30 @@ export function BlockSettings({ name, spec, about, attributes, onChange, onClose
 
       {own.length > 0 && (
         <fieldset className="adestia-blockset__group">
-          <legend>Ce bloc</legend>
+          <legend>{t('This block')}</legend>
           {own.map(([key, one]) => (
-            <label className="adestia-blockset__field" key={key}>
-              <span>
-                {key}
-                {one.required && <em title="obligatoire"> *</em>}
-              </span>
-              {one.values ? (
-                <select value={attributes[key] ?? ''} onChange={(event) => set(key, event.target.value)}>
-                  {!one.required && (
-                    <option value="">{one.default ? `(${one.default})` : '—'}</option>
+            <FieldRow
+              key={key}
+              label={
+                <>
+                  {key}
+                  {one.required && (
+                    <>
+                      <span aria-hidden="true"> *</span>
+                      <span className="adestia-sr-only"> ({t('required')})</span>
+                    </>
                   )}
-                  {one.required && !attributes[key] && <option value="">choisir…</option>}
+                </>
+              }
+            >
+              {one.values ? (
+                <select
+                  className="adestia-select"
+                  value={attributes[key] ?? ''}
+                  onChange={(event) => set(key, event.target.value)}
+                >
+                  {!one.required && <option value="">{one.default ? `(${one.default})` : '—'}</option>}
+                  {one.required && !attributes[key] && <option value="">{t('choose…')}</option>}
                   {one.values.map((value) => (
                     <option key={value} value={value}>
                       {value}
@@ -107,75 +143,90 @@ export function BlockSettings({ name, spec, about, attributes, onChange, onClose
               ) : (
                 <input
                   type="text"
+                  className="adestia-input"
                   value={attributes[key] ?? ''}
                   placeholder={one.default ?? ''}
                   onChange={(event) => set(key, event.target.value)}
                 />
               )}
-            </label>
+            </FieldRow>
           ))}
           {missing.length > 0 && (
             <p className="adestia-blockset__missing">
-              À remplir : {missing.join(', ')} — la page est refusée sans.
+              <Icon name="circle-alert" />
+              {t('To fill in: %fields — the page is refused without.').replace('%fields', missing.join(', '))}
             </p>
           )}
         </fieldset>
       )}
 
       <fieldset className="adestia-blockset__group">
-        <legend>Présentation</legend>
-        <label className="adestia-blockset__field">
-          <span>titre</span>
-          <input type="text" value={attributes['title'] ?? ''} onChange={(event) => set('title', event.target.value)} />
-        </label>
-        <label className="adestia-blockset__field">
-          <span>icône</span>
+        <legend>{t('Presentation')}</legend>
+        <FieldRow label={t('title')}>
           <input
             type="text"
-            className="adestia-blockset__ico"
+            className="adestia-input"
+            value={attributes['title'] ?? ''}
+            onChange={(event) => set('title', event.target.value)}
+          />
+        </FieldRow>
+        <FieldRow label={t('icon')}>
+          {/* The placeholder is an EXAMPLE of what an author writes, not an icon of the product. */}
+          <input
+            type="text"
+            className="adestia-input adestia-blockset__ico"
             value={attributes['ico'] ?? ''}
             placeholder="📋"
             onChange={(event) => set('ico', event.target.value)}
           />
-        </label>
-        <label className="adestia-blockset__field adestia-blockset__field--check">
+        </FieldRow>
+        <FieldRow label={t('in a card')}>
           <input
             type="checkbox"
+            role="switch"
+            className="adestia-toggle"
             checked={attributes['frame'] === 'card'}
             onChange={(event) => set('frame', event.target.checked ? 'card' : '')}
           />
-          <span>dans une carte</span>
-        </label>
-        <label className="adestia-blockset__field">
-          <span>largeur</span>
-          <select value={attributes['w'] ?? ''} onChange={(event) => set('w', event.target.value === '1' ? '' : event.target.value)}>
-            <option value="">{WIDTH_LABELS['1']}</option>
+        </FieldRow>
+        <FieldRow label={t('width')}>
+          <select
+            className="adestia-select"
+            value={attributes['w'] ?? ''}
+            onChange={(event) => set('w', event.target.value === '1' ? '' : event.target.value)}
+          >
+            <option value="">{t(WIDTH_LABELS['1']!)}</option>
             {Object.keys(WIDTHS)
               .filter((one) => one !== '1')
               .map((one) => (
                 <option key={one} value={one}>
-                  {WIDTH_LABELS[one] ?? one} ({one})
+                  {t(WIDTH_LABELS[one] ?? one)} ({one})
                 </option>
               ))}
           </select>
-        </label>
+        </FieldRow>
       </fieldset>
 
       {stray.length > 0 && (
         <fieldset className="adestia-blockset__group">
-          <legend>Inconnus de ce bloc</legend>
+          <legend>{t('Unknown to this block')}</legend>
           {stray.map((key) => (
-            <div className="adestia-blockset__field adestia-blockset__field--stray" key={key}>
-              <span>
+            <div className="adestia-blockset__stray" key={key}>
+              <span className="adestia-blockset__stray-value">
                 {key}={attributes[key]}
               </span>
-              <button type="button" onClick={() => set(key, '')}>
-                retirer
-              </button>
+              <Button
+                variant="ghost"
+                small
+                icon="trash-2"
+                aria-label={t('Remove %key').replace('%key', key)}
+                title={t('Remove %key').replace('%key', key)}
+                onClick={() => set(key, '')}
+              />
             </div>
           ))}
         </fieldset>
       )}
-    </div>
+    </Popover>
   )
 }

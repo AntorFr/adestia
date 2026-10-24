@@ -221,7 +221,6 @@ const WORDS = {
     Note: 'Note',
     Attachments: 'Pièces jointes',
     Subtasks: 'Sous-tâches',
-    Back: 'Retour',
     Details: 'Détail',
     'from %n': 'de %n',
     Overdue: 'En retard',

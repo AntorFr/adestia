@@ -8,7 +8,7 @@
 > Written by the epic `adestia-qualite` (2026-10-15), a quality pass that changes **no
 > behaviour**. Decisions taken BEFORE this epic live in `DESIGN.md` › Decision log, which is
 > not renumbered; `AD-n` starts at `AD-1` with this epic. The map below is the code at
-> v0.88.0.
+> the git tag `v0.88.0` (the packages' `version` fields stay `0.0.0`), updated below for the completed charter, pages and chat tranches; the repository's later tags (`git tag`) mark releases, not this map.
 
 ## Overview
 
@@ -45,7 +45,9 @@ Outside `packages/`:
 - `skills/` — the product's authoring contracts (`plugin-author`, `skin-author`,
   `page-author`, `persona-author`, `schedule-author`, `collections`), delivered to the agent.
 - `bench/` — screenshot bench: `run.sh` builds the image and drives Chromium in docker,
-  `bench.mjs` and `scenarios/`; `live-codex.sh` boots a real Codex engine.
+  `bench.mjs` and `scenarios/`; `live-codex.sh` boots a real Codex engine. Without docker:
+  `launch.mjs` (fake or real engine), `fake-engine.mjs`, `seed/`, `oidc-stub.mjs` and `sweep.mjs`
+  (see the AD-2 and AD-3 detail below).
 - `spikes/` — validation record (editor, concurrency, copilot-cli, codex-cli, esm-runtime,
   shell-tools-transport); not linted, not shipped.
 
@@ -55,32 +57,35 @@ Outside `packages/`:
 (owns the restart loop), `index.ts` (re-exports), `start.ts` › `start`, `app.ts` › `buildApp`.
 
 - **Auth / OIDC** — `auth.ts` (`resolveIdentity`, `isPublicRoute`, modes `none|oidc|proxy`),
-  `oidc.ts`, `oidc-routes.ts` (`registerOidc`, session cookie hook), `user-tokens.ts`
+  `oidc.ts`, `routes/oidc.ts` (`registerOidc`, session cookie hook), `user-tokens.ts`
   (`UserTokens`, per-user rebound tokens), `routes/identity.ts` (`identityOf`).
 - **Conversations and turns** — `turns.ts` (`TurnDesk`: admission, chaining, the single
   spawn site), `routes/turns.ts` (`registerTurns`, SSE, `sseFrame`), `conversations.ts`
-  (`ConversationStore`, JSONL transcripts), `routes/conversations.ts`, `introduction.ts`
+  (`ConversationStore`, JSONL transcripts), `desk.ts` (`buildDesk`: the `TurnLimiter` and the `TurnDesk`), `turn-limiter.ts`, `unattended.ts`, `routes/conversations.ts`, `introduction.ts`
   (`frameShell`, the preamble), `screen.ts`.
 - **Drivers and arming** — `drivers.ts` (`buildDriver`, `AVAILABLE_DRIVERS`), `secrets.ts`
   (`SecretStore`, `ArmingFlows`), `routes/arming.ts`.
-- **MCP inbound and delegations** — `mcp-in.ts`, `mcp-routes.ts` (`registerMcp`, `/mcp`),
-  `delegations.ts` (`DelegationChannel`), inline `/api/delegations` routes in `app.ts`,
-  `callback.ts` (`registerCallback`, `/callback`).
+- **MCP inbound and delegations** — `mcp-in.ts`, `routes/mcp.ts` (`registerMcp`, `/mcp`; `mcp-routes.ts` re-exports it),
+  `delegations.ts` (`DelegationChannel`), `routes/delegations.ts` (`/api/delegations`),
+  `callback.ts` (`wakePrompt`, `verifySettled`), `routes/callback.ts` (`registerCallback`, `/callback`).
 - **MCP outbound** — `config/mcp.ts`, `mcp-store.ts` (`McpStore`, the shell-written layer),
   `mcp-signin.ts` (`McpSignIn`), `mcp-refresh.ts` (`FileRefreshStore`), `background.ts`
   (`BackgroundReach`), `routes/mcp-servers.ts` (`outboundServersOf`).
 - **Schedule** — `schedule.ts` (`parseNote`, `isDue`, `stampField`), `clock.ts` (`Clock`).
 - **Plugin host and extensions** — `extensions.ts` (`discoverPlugins`, `discoverSkins`,
   `registerPluginVocabulary`, `mcpServersFor`), `sources.ts` (`fetchSources`, git clones),
-  `plugin-host.ts` (`runSetups`, `mountPluginApis`), `static.ts` (`registerStatic`).
+  `plugin-host.ts` (`runSetups`), `routes/plugin-host.ts` (`mountPluginApis`), `static.ts` (`mimeFor`,
+  `safeJoin`), `routes/static.ts` (`registerStatic`, the catch-all, mounted last).
+- **Frontmatter** — `frontmatter.ts` (`splitFrontmatter`, `parseFrontmatter`, `field`; the server's own reader, distinct from `content/src/frontmatter.ts`, AD-7).
 - **Instructions and skills** — `skills.ts` (`collectSkills`, `deliverSkills`,
   `deliverAgents`, `MANAGED_MARKER`, `stamped`), `instructions.ts`,
   `routes/instructions.ts`, `instruction-catalogues.ts` (scan, `copyMarkedTree`),
   `instruction-catalogues-store.ts`, `instruction-catalogues-refresh.ts`,
   `routes/instruction-catalogues.ts`.
 - **Pages, files, stores, watch** — `stores.ts` (`resolveStores`, `pagesService`,
-  `foreignRoots`), `pages.ts` (`registerPages`, also `parseFrontmatter`, `splitFrontmatter`,
-  `titleOf`), `files.ts` (`registerFiles`), `watch.ts` (`registerEvents`, `/api/events`),
+  `foreignRoots`), `pages.ts` (`titleOf`, `revisionOf`, `safePagePath`), `routes/pages.ts` (`registerPages`),
+  `files.ts` (`kindOf`, `attachmentsOf`), `routes/files.ts` (`registerFiles`), `watch.ts`
+  (`ChangeFeed`), `routes/watch.ts` (`registerEvents`, `/api/events`),
   `io.ts`.
 - **Config and settings** — `config.ts` (`parseConfig`, `ConfigError`, env overrides),
   `config/types.ts`, `config/values.ts`, `settings-file.ts`, `routes/settings.ts`,
@@ -97,11 +102,22 @@ Outside `packages/`:
 
 - `app/` — the shell: `App.tsx`, routing (`useRoute.ts`), home, sections, settings screens
   (`Settings`, `Configuration`, `Instructions`, `McpServers`, `Delegations`, `Preferences`),
+  `Canvas.tsx` (screen dispatch), `CanvasHeader.tsx` (breadcrumbs and phone return),
+  `ScreenEdges.tsx` (phone handles), `BackButton.tsx`; `Home` composes `Brief` and `Domains`.
+  `paths.ts` holds path naming/index rules, `request.ts` the injected request helpers;
   `Problems.tsx`, skin slot (`skin.ts`, `SkinSlot.tsx`), `i18n.ts`, `tokens.css`, `shell.css`.
-- `chat/` — `Chat.tsx`, `Composer.tsx`, `useConversations.ts`, `stream.ts` (SSE client),
-  `Signatures.tsx`, `tabs.ts`.
+- `chat/` — `Chat.tsx` wires `ChatHeader.tsx`, `TabStrip.tsx`, `ConversationList.tsx` and
+  `Thread.tsx` (`Bubble.tsx`, `StatusDot.tsx`); `ModelPicker.tsx`, `ContextPill.tsx`,
+  `Composer.tsx` (uploads and fold), `AskPrompt.tsx`, `Signatures.tsx` (shared sheet).
+  `useConversations.ts` holds the open-store, turn and tab-action hooks; `conversations.ts`
+  is the HTTP store client, `messages.ts` the shared `toMessage`, `stream.ts` the SSE client
+  (`events.ts`), `useCadence.ts` the live display cadence, `tabs.ts` browser persistence.
 - `editor/` — Milkdown editor (`Editor.tsx`, `milkdown.ts`, `blockview.tsx`), `Reader.tsx`,
-  page settings and listing helpers.
+  page settings and listing helpers. `Reader.tsx` keeps the page and prose frames;
+  `reader/` holds the recursive walk, directive dispatch and block renderers by kind.
+  `useAutosave.ts` owns the document baseline and save cadence, `useEditorSurface.ts`
+  the mounted writing surface, `usePageDrop.ts` the reading drop target; `SaveStatus.tsx`
+  draws the save result.
 - `plugins/` — `contract.ts` (the plugin front-end contract, `PluginApi`), `loader.ts`,
   `words.ts` (plugin word tables), `Boundary.tsx`, `PageEditor.tsx`.
 - `sw/` — the service worker (`sw.ts`, `policy.ts`, `register.ts`).
@@ -123,7 +139,7 @@ Every problem before `listen` is either a boot-log line or a `ConfigError` that 
 `skillsPath`, `agentsPath`, `acceptsRoots`, `instructionPaths`), `TurnRequest`, `TurnEvent`.
 Optional features are declared in `DriverDescriptor.capabilities` from `CAPABILITIES`;
 `CAPABILITY_METHODS` names the interface each obliges (`AuthManagement`, `ModelSelection`,
-`SubscriptionQuotas`, `McpStatus`) and `CAPABILITY_REQUIRES` their dependencies.
+`McpStatus`) and `CAPABILITY_REQUIRES` their dependencies.
 `conformance.ts` › `checkConformance` checks a driver against its descriptor (used by tests
 only). `managed-credential.ts` › `ManagedCredential` holds the armed secret the same way in
 all three drivers. One instance runs ONE driver: `config.driver.id` picks it in `buildDriver`,
@@ -160,7 +176,7 @@ and every turn — chat, scheduled, delegated, callback wake — goes through th
   writes. Copilot and Codex homes live under `dataDir`; the claude-code engine inherits the
   process environment and keeps its own session files in its default home. The shell-tools
   socket may fall back to the OS temp directory (not durable).
-- **One spawn site.** Every turn goes through `TurnDesk`, under one `TurnLimiter` cap.
+- **One spawn site.** Every turn goes through `TurnDesk`, under one `TurnLimiter` cap (`turn-limiter.ts`; the clock's and the callback's headless turn is `unattended.ts` › `makeRunUnattended`).
 
 ## Boundaries
 
@@ -172,8 +188,8 @@ and every turn — chat, scheduled, delegated, callback wake — goes through th
   `plugin-host.ts` mounts each plugin's `api.mjs` under `/api/plugin/<id>/`, behind the
   same auth hook, and hands it only the secrets its manifest declares (`secretsFor`).
 - **Shell / skin** — CSS custom properties on `:root[data-skin=<id>]`, plus an optional
-  module mounted in `SkinSlot`. **TARGET** (AD-5): the shell also hands that module the
-  instance's locale, an extra optional input; a skin that ignores it works unchanged.
+  module mounted in `SkinSlot`. The shell also hands that module the instance's locale
+  (`SkinFactoryContext.locale`, AD-5), an optional input; a skin that ignores it works unchanged.
 - **Instance / calling agent** — `/mcp`, mounted only when `mcp.enabled` and `mcp.token` are
   set, gated by that bearer; delegations run in their own `DelegationChannel`, never in a
   person's conversations. `/callback` grants nothing and verifies with the peer.
@@ -194,7 +210,7 @@ and every turn — chat, scheduled, delegated, callback wake — goes through th
   checks every bundled plugin's French entries. Skins have no words through the locale today.
 - **Tests** — `vitest.config.ts` runs `packages/*/test`, aliasing every `@antorfr/*` to its
   `src/index.ts`; `npm run test:plugins` runs `node --test` over the plugins; `bench/` is the
-  visual check (docker). CI (`.github/workflows/ci.yml`) runs typecheck and tests.
+  visual check (`bench/run.sh` with docker; `bench/launch.mjs` and `bench/sweep.mjs` without). CI (`.github/workflows/ci.yml`) runs typecheck, lint, tests, the build, a start of the built server and a docker image build.
 
 ## Decisions of adestia-qualite
 
@@ -202,14 +218,14 @@ and every turn — chat, scheduled, delegated, callback wake — goes through th
 Every refactoring keeps routes, API shapes, configuration keys, file formats
 (`docs/donnees.md`) and MCP tools. The existing suite is the witness; a refactoring with no
 test around it gets a characterization test first. A defect found on the way is written in
-`.agent/status.md` › Known defects, not fixed.
+the "Known defects" section of this file, not fixed. (`.agent/status.md` keeps no such register; the documentation tranche reduces it to a state.)
 *Why*: a quality pass is reviewable only if its diff means "same thing, written better".
 *Rejected*: "fix while we're there" — it mixes a behaviour change into a diff nobody reviews
 as one. *Reversed if*: a defect blocks a refactoring outright; it then becomes its own feature.
 
 ### AD-2 — A launcher on the fake engine, outside the product
 One term: **the fake engine**, a scripted fake driver handed to the server through
-`start({ driverFactory })`. A script under `bench/` starts the server on the fake engine
+`start({ driverFactory })`. Built (B-2): a script under `bench/` (`bench/launch.mjs`) starts the server on the fake engine
 with a seeded workspace and data directory; the real-Claude mode is the plain binary with
 `CLAUDE_CODE_OAUTH_TOKEN` in the environment.
 *Rejected*: a `fake` driver id in the configuration (a product surface added for tests);
@@ -223,6 +239,50 @@ The bench's Playwright is resolved from the environment (the runner image ships 
 *Rejected*: Playwright as a devDependency — its browser revision would not match the one
 installed, and it downloads browsers on every dev machine. *Reversed if*: the runner image
 stops shipping Playwright.
+
+#### Detail of AD-2 and AD-3 — the bench launcher (tranche `adestia-qualite-banc`)
+
+- **Launcher.** `node bench/launch.mjs [--engine fake|claude] [--skin <id>] [--locale en|fr]
+  [--seed <name>] [--port <n>] [--data <dir>]`. It needs a built server (`npm run build`) and
+  prints `listening on <url>` once `/api/health` answers `ok`; it runs until SIGTERM and removes
+  its throwaway workspace and data directory (under `os.tmpdir()`, unless `--data` is given).
+  `--engine fake` calls `start({ configPath, cwd, driverFactory })` with the fake engine;
+  `--engine claude` starts the plain binary (`packages/server/bin/adestia.js`) with
+  `CLAUDE_CODE_OAUTH_TOKEN` taken from the environment, and refuses to start without it. It also
+  deletes the placeholder credential the seed stored (`secrets/claude-code.token`): the Claude
+  driver prefers a stored credential to the environment.
+  The `oidc` seed requires the fake engine: the launcher refuses it with real Claude before
+  loading the seed, whose local identity provider disables TLS certificate verification.
+  Nothing is added to the product: no configuration key, no driver id (AD-1, AD-2).
+- **Fake engine.** `bench/fake-engine.mjs` is a `Driver` (`packages/drivers/src/contract.ts`)
+  whose `runTurn` answers by script: the last user message is matched against an ordered list
+  of `{ when, events }`, the events being `TurnEvent`s (text deltas, tool use and result,
+  permission request, error); no match echoes the message. Deterministic: no clock, no random
+  id, no delay unless a script asks for one. The scripts that seed the chat states of
+  `docs/ecrans.md` live beside the seeds.
+- **Seeds.** `bench/seed/<name>.mjs` default-exports `async ({ workspace, dataDir, base, port, onClose }) => config`:
+  it writes pages, thread files, plugin data and `.mcp` entries the way the product itself
+  stores them (`docs/donnees.md`), and returns the YAML of the instance configuration. Seeds are
+  data written to disk, never a route added or a mock of a module. One seed per instance
+  configuration the screens need (`docs/ecrans.md`, "Seeded data for captures"): `base`,
+  `empty`, `config-writable`, `config-readonly`, `oidc` (with a stub identity provider,
+  `bench/oidc-stub.mjs`, so E-1's sign-in and refused gates are real), and `plugins`.
+  A seed may also export `scripts` (fake-engine answers, `bench/seed/_scripts.mjs`), `engine`
+  (MCP health and credential state the fake engine reports), `config` (`file: writable |
+  readonly | none` — `none` is answered 404 on `/api/settings` by the launcher, since `start()`
+  always has a `configPath`) and `ready({ url })` (the turns that must be running). The seeds
+  are checked by `bench/seed/check.mjs`, which names each measure in default.
+- **Sweep.** `node bench/sweep.mjs [--skin <id>] [--locale en|fr] [--out <dir>] [--only E-n]`
+  starts, for each seed it needs, the launcher as a child process, and drives Chromium from the
+  environment: Playwright is imported from the global npm root (`npm root -g`), never from the
+  repository (AD-3). It captures each screen at 1440×900 and at a 390×844 touch viewport, in
+  `light` and `dark`, to `<out>/<skin>/<E-n>-<name>-<theme>-<viewport>.png` (default `<out>` is
+  `bench/shots-sweep`, ignored by git). A screen table in the script lists, per `E-n`, the
+  route, the gesture that opens it and the **selector that proves it is that screen**; a capture
+  whose selector is absent, or that shows `.adestia-gate__card--fatal` or a loading state, fails the sweep
+  and names the screen. The sweep exits non-zero on any failure and prints a count.
+- **docker.** `bench/run.sh` and `bench/bench.mjs` are untouched except that the Playwright
+  import falls back from `/usr/lib/node_modules` to the global root. Scenarios keep working.
 
 ### AD-4 — The charter extends the inherited livery
 The base palette is the one inherited in `tokens.css` (decision of 2026-08-24). Failing
@@ -330,6 +390,161 @@ module. AD-8 is about JS helpers: the shell's tokens and component classes (AD-4
 the plugin reads by name, not code it imports. *Reversed if*: the plugin contract grows a
 helper surface in `PluginApi`.
 
+### AD-9 — Lucide as an inline sprite, vendored
+The icons are Lucide (ISC), the subset the screens use, vendored in
+`packages/web/src/app/icons.ts` as path data and mounted once at boot as a hidden `<svg>`
+sprite; any markup of the page — the shell's React or a plugin's vanilla JS — draws one with
+`<svg class="adestia-icon"><use href="#adestia-i-<name>"/></svg>`. No runtime dependency, no
+file to fetch (the instance may be offline, or behind a strict CSP; the service worker
+needs nothing more), no base-path trap. The data is copied from the `lucide-static` package
+at build-of-the-task time, with its licence in the header of the file.
+*Rejected*: `lucide-react` (React only; plugins are not React); an external `icons.svg`
+(`<use>` of an external file is subject to the base path and the cache, and fails offline
+the first time); a CDN. *Reversed if*: the subset grows past a hundred icons (then a
+build-time sprite from `lucide-static`).
+
+### AD-10 — The dark palette is written once, with `light-dark()`
+Each colour token of the base palette is one declaration, `light-dark(<light>, <dark>)`,
+and `color-scheme` (`light dark`, or forced by `data-theme`) picks. This removes the
+duplicate dark block (Q-19) without JavaScript: the media query and the attribute cannot
+share one selector list, but a function of the scheme can. *Rejected*: a script that
+always writes `data-theme` (a first paint in the wrong theme, a behaviour change); a CSS
+preprocessor (a build step for one file). *Reversed if*: the supported browsers (the
+service worker's audience: current evergreen) lose `light-dark()`.
+
+### AD-11 — One request helper for the web
+`packages/web/src/app/request.ts` exports `requestJson<T>(fetchImpl, path, init?)` →
+`{ ok: true, status, data: T } | { ok: false, status, error, data? }` and `jsonInit(method,
+body)`. It never throws (a network error is `{ ok: false, status: 0 }`); `error` is the
+server's `error` field or a **translated** fallback (`request failed (404)` in the locale, Q-4).
+It is what every `fetchImpl(` call site of the web becomes; a call site keeps its own
+meaning for failure (silent, inline message), only the plumbing moves. `fetchImpl` stays
+the injected dependency (tests). The 14 live guards stay in each effect (they belong to the
+component's lifetime); a `useRequest`-style hook is *not* introduced (a new abstraction,
+none of the sites share a shape).
+*Rejected*: a hook layer over every fetch (a new abstraction); a client class. *Reversed
+if*: the charte tranche finds a third of the sites sharing one loading/error shape.
+
+### AD-12 — The chat's code: one message conversion, one request path, three hooks
+Three decisions of the chat tranche, none changing a behaviour.
+(a) `toMessage` lives once, in `chat/messages.ts`, as `toMessage(stored, { signatures })`
+with `signatures` defaulting to `true` (the chat's behaviour). `Delegations.tsx` imports it
+and passes `{ signatures: false }`, which keeps today's drift as a written defect (AD-7:
+whether a delegated conversation should show signature cards is a behaviour).
+(b) Every `fetchImpl(` of `chat/` goes through `app/request.ts` (AD-11). Six sites do not
+use `requestJson` and take `requestRaw`: two stream (the turn POST and the attach GET hand
+the caller a `Response` to read as it comes), four do not (the upload, the stop, the
+archive and the delete read only the status or a single body, and need any HTTP status
+back whole). `request.ts` gains one additive function, `requestRaw(fetchImpl, path, init?, t?)` →
+`{ ok: true, response } | { ok: false, error }` (never throws; any HTTP status is a
+`response`). The upload keeps the server's `error` and the joined list of refused
+files; an HTTP refusal without an `error` now uses the translated
+`request failed (%n)` fallback with the response status (Q-4). A thrown network
+failure becomes that fallback with status 0 when `t` is supplied to `requestRaw`,
+replacing the raw `Error.message`. Without `t`, `requestRaw` keeps the network
+message; `live.ts` uses this form without displaying its error. `requestJson`
+keeps a non-empty network `Error.message` even with `t`, using its translated
+fallback only when that message is absent. Upload response-parsing errors still
+show their raw message (`Composer.tsx` › `useUploads`).
+(c) The three giants split by lifetime, not by line count: `useConversations` into the
+store of open conversations (`useOpenConversations`: state, load, reconcile), the live turn
+(`useTurn`: send, stop, hold, attach, cadence) and the tab/list actions (`useTabActions`:
+open, shut, archive, reorder, drafts) behind the same returned object (the three are local to `useConversations.ts`, only `useConversations` is exported), so `Chat` and the
+tests see no change; `Chat` into `Chat` (state and wiring), `ChatHeader`, `TabStrip`,
+`ConversationList`, `Thread`; `Composer` into `Composer`, `useUploads` (local to `Composer.tsx`) and the existing
+`ComposerFold` and `AttachmentTray`. Exports that tests import keep their names and paths.
+*Rejected*: a state library or a reducer rewrite (a new abstraction, a risk to the live
+turn); extending `requestJson` to streams (its result type is JSON by contract); leaving
+`stream.ts` on bare `fetchImpl` (the criterion says one path). *Reversed if*: a hook cannot
+be cut without moving state that two of them write, then that state stays in the first and
+the target R-12 reads "kept: reason" for that hook.
+
+### AD-13 — The pages' code: one paths module, one ready signal, cuts by lifetime
+Four decisions of the pages tranche; none changes a behaviour.
+(a) `app/paths.ts` holds `prettify` and `folderOf` once (the three `prettify` bodies and the
+two `folderOf` are identical, checked). The two `isIndexPage` are **not** the same rule —
+`app/sections.ts` requires the `.md` extension (`/(^|\/)index\.md$/i`, or a homonymous
+folder), `editor/listing.ts` strips an optional `.md` first — and a path without extension
+is the only input where they differ. Both rules are kept, **named for what they answer**:
+`isIndexFile(path)` (sections, routing, owners: the file of an index) and
+`isIndexPath(path)` (the reader's listings: the address of an index, extension or not), both
+in `paths.ts`, each with a test pinning its rule on `index.md`, `INDEX.MD`, `a/index`,
+`a/a.md`, `a/a`, `a/b.md`. *Rejected*: one `isIndexPage` with the wider rule (a path without
+extension would start counting as an index in sections: a behaviour change); one with the
+narrower (the reader's lists would change). *Reversed if*: a test over the real corpus shows
+no path where they differ, then they merge.
+(b) Home's loading state needs a signal the shell does not give: `useInstance` returns
+`ready`, false until the plugins are loaded **and** the first index request has answered
+(answer or failure — a failed index is "ready, empty", as today). It is additive; nothing else
+of the hook changes. E-2 draws the shared spinner row in place of the mosaic and the empty
+state while `ready` is false; the greeting, the hero and the ask bar do not wait.
+(c) The giants split by lifetime, as the chat tranche does for its own giants. `App` into `App` (gates, state,
+wiring), `CanvasHeader` (the phone's back to the chat, the breadcrumb, the driver label, the
+cog slot) and `Canvas` (the dispatch order of `docs/ecrans.md` › Navigation, kept readable as
+one function and tested as one). `Home` into `Home` (composition), `Brief` (the brief, its
+age and its refresh) and `Domains` (the mosaic and Arrange). `Editor` into `Editor` (wiring),
+`useAutosave` (the 1.6 s cadence, the revision, the 409 conflict, the refusal) and the
+status line. `Reader` is not one giant function (its longest is 114 lines) but a 1153-line
+file: its blocks leave for `editor/reader/` by kind (list and file list, table, figures,
+written and contributed rows), `Reader.tsx` keeping the page frame. Exports that tests import
+keep their names and paths (re-exported from the old file when the code moves).
+*Rejected*: a reducer or a state library for the editor (a new abstraction on the save path);
+cutting by line count. *Reversed if*: a hook cannot be cut without moving state two of them
+write — then that state stays in the first and the target R-12 reads "kept: reason".
+(d) Three additions to the charter, additive and written here because the pages are their
+first user: a **chip** (`.adestia-chip`, a toggle button with `aria-pressed`, pill radius,
+for the facet pills of E-3 and E-7), an **inline empty state** (`.adestia-empty--inline`: the
+empty state's icon at 16 px beside its sentence, for a note inside a block of a page), and
+the icon names the screens need beyond `docs/charte.md` § 7.3 (`grip-vertical`, `eye`, `code`,
+`file-question`, `folder-open`, `search-x`). The editor's block bars are built
+by Milkdown as DOM, not React: `editor/dom-icon.ts` draws a sprite icon from its name (the
+AD-9 markup) so the bars use the same set. *Rejected*: restyling the facet pills as
+`.adestia-btn` (a pressed state the button does not have); a chip owned by the charter tranche
+(it is already built — AD-13 adds, never edits, its files).
+(e) A word is moved, never invented, by `B-8`: where today's string is French the French
+table keeps it **byte for byte** and the English key is a literal translation; where it is
+English the English stays and the French is a literal translation. The one string sent to the
+agent (`Rafraîchis ma une`) keeps its French form on a French instance. *Reversed if*: Monsieur
+wants the voice of the agent prompts changed — that is a behaviour of the conversation.
+
+### AD-14 — The plugins' tranche: tokens by name, a copied sheet, tables per plugin, a lint and a CSS test
+(a) **No second vocabulary.** A plugin stylesheet reads the shell's tokens by name; an alias is a
+custom property whose whole value is `var(--<shell token>)` and none survives. A parameter that
+carries a meaning (a type colour, a hue, a derived mix) is defined once in the sheet that uses it,
+from tokens or hues, never from a literal. `plugins/test/css.test.js` (node:test, run by
+`npm run test:plugins`) holds the rules of the plugins' tokens section of `docs/ecrans.md` (its rules are written in the header of `css.test.js` and, screen by screen, in the rows of E-22 to E-31 and « The plugins' screens, as built » of `docs/ecrans.md`; `docs/charte.md` is not touched by it). A second test in the same file compares its `CHECKED` list to the `plugins/*/web/` folders, so a plugin added without its name fails:
+an undefined token, an alias, a literal colour outside a `var()` fallback, `999px`, an
+`outline: none` without a ring. It reads the token list from `tokens.css`, so a token removed
+there fails here. *Rejected*: a lint plugin for CSS (a dependency for six rules a test states).
+(b) **The sheet is a copy, by classes.** The shared dialog reaches plugins as CSS classes and a
+three-line contract (AD-4); each plugin that opens a sheet carries its own ~30 lines of behaviour
+(`web/sheet.js`; an effect in meals' React view) — AD-8's rule, applied: a plugin loads from its own
+folder or another repository and imports no shell code. *Rejected*: a `data-adestia-sheet` helper
+shipped by the shell (a second contract, AD-8; the charter tranche also declines it). The two
+full-screen modes (atelier's step mode, the scan camera) are not sheets: they keep their full
+screen and take the sheet's behaviour contract and z-index family.
+(c) **Words: one table per plugin, English keys.** Atelier gets the table it lacked
+(`web/words.js`), `t` injected into its engine like `crumbs` and `href`; its `fr` values are
+today's French, so a French instance reads the same words (B-1). Parcours and project-management
+get the same. Messages of `regles.js` / `convert.js` go to the CLI and MCP tools, not to the
+screen, and stay French; the agent prompts stay as written. The class test `plugins/test/words.test.js` (it already
+reads the tables the way the shell does, the atelier's included once it has one) gains the *tu* rule, with a short list of the plugins still to correct that each task empties.
+(d) **Lint.** `eslint.config.js` (the serveur tranche's file, extended here) drops `plugins/**` from
+`ignores` and gains a block for `plugins/**/web/**/*.js` (browser globals; the `react-hooks` rules apply, since
+journal, todo, listening-post and meals call hooks through `createElement`) and one for the
+plugins' other `.mjs`/`.js` (node globals); the vendored `plugins/scan/web/decoder.js` (448 KB, third-party) joins the ignores with
+the reason. `npm run lint` covers `plugins`. A finding is fixed, or turned off for the rule with
+its reason written beside it (the file's own convention); no `eslint-disable` without a reason.
+(e) **Kept.** The native `confirm()` of the atelier (resetting a layout) and the `window.alert` of
+voyages (a refused gesture) stay: a sheet would make the answer asynchronous, a change of flow (Q-20,
+*kept: the flow would change*; written under Known defects). In plugin sheets only `820px` is a breakpoint; 520, 560, 640, 720 and 900 px are kept
+(*kept: moving a width changes the layout between phone and desktop, a redesign the mandate does
+not ask for*). Plugin buttons, fields and empty states do not adopt the charter's classes, except
+backs, exits and the sheet's close button.
+*Rejected*: moving the aids copied on purpose (`address.js`, word tables) into a shared module —
+AD-8. *Reversed if*: the plugin contract grows a helper surface in `PluginApi`.
+
+
 ## Refactoring targets
 
 Each target: what, where, why it costs, the tranche that owns it, and its outcome
@@ -337,32 +552,265 @@ Each target: what, where, why it costs, the tranche that owns it, and its outcom
 
 | R | What and where | Why it costs | Tranche | Outcome |
 |---|---|---|---|---|
-| R-1 | MCP `Authorization: Bearer` header selection copied in `claude-code/driver.ts`, `copilot-cli/driver.ts`, `codex-cli/driver.ts` | three copies of a security-relevant rule | serveur | |
-| R-2 | Driver helpers duplicated: device-code `beginAuth`/`completeAuth`/`cancelAuth` (codex, copilot), `truncate` ×3 (`*/events.ts`), `health` ×2, `usageOf` ×3, `classifyAuthError`/`explainAuthProblem` ×2 (`*/auth.ts`) | drift between engines | serveur | |
-| R-3 | `start()` (464 lines) and `buildApp` (287 lines) mix concerns; `TurnLimiter`, `runUnattended`, inline `/api/delegations` routes and the `adestiaRunTurn` monkey-patch live in `app.ts`; routes registered both from `routes/` and top-level files (`pages.ts`, `oidc-routes.ts`, `mcp-routes.ts`, `static.ts`, `files.ts`, `watch.ts`, `callback.ts`) | no single place says what is mounted | serveur | |
-| R-4 | `field()` duplicated in `instruction-catalogues.ts` and `instructions.ts`; `routes/instruction-catalogues.ts` `sourceOf` / `fetchClone` / `cacheDir` duplicate `catalogueSource` / `fetchCatalogueClone` / `catalogueClone` of `instruction-catalogues-refresh.ts` | pure extraction, behaviour kept | serveur | |
-| R-5 | `pages.ts` doubles as a frontmatter library for `instructions.ts`, `instruction-catalogues.ts`, `schedule.ts`, `shell-tools.ts` | a route module as a dependency; move without changing the parser (AD-7) | serveur | |
-| R-6 | Dead or test-only exports: `SubscriptionQuotas` (no implementer), `assertConformance` in the production index, `formatReference`, `isValidId`, `isEditable` (tests only); about 140 exports used only in their own file | surface nobody uses | serveur | |
-| R-7 | Comments pointing to absent documents: `technique.md` (server sources and tests), `ATELIER-3.md` (`plugins/atelier/web`), `PARCOURS.md` and "D44 côté cerveau" (`plugins/parcours/web`) | dead references | serveur (server), plugins (plugins) | |
-| R-8 | `eslint.config.js` claims floating promises and thrown-away errors are caught, which its rules cannot do (no type-aware rule, `caughtErrors: 'none'`); `plugins/` not linted; lint not in CI | a claim the gate does not keep | serveur (CI, claim), plugins (plugins lint) | |
-| R-9 | Test support rewritten per file: the fake `Driver` in 9 test files, `git()` in 5, `mkdtemp` in 39 | each new test copies one | tests | |
-| R-10 | `web/test/page-editor.test.tsx` "tells the plugin when it takes the file…" reported flaky; turn-counting waits (`setImmediate`) in `callback.test.ts`, `mcp.test.ts`, `restart.test.ts`; fixed sleeps in `watch`, `pages`, `shell-tools`, `background` tests | races dressed as delays (CLAUDE.md) | tests | |
-| R-11 | Web: about 40 `fetchImpl(` call sites and 14 hand-rolled live guards, `failure()` (`CataloguePopin.tsx`) and `json()` (`chat/conversations.ts`) local to one file; `toMessage` duplicated in `useConversations.ts` and `Delegations.tsx`, drifted (the second drops `signatures`, kept as defect); `prettify` ×3, `folderOf` ×2, `isIndexPage` ×2 with different rules (`app/sections.ts`, `app/collections.ts`, `editor/nodes.ts`, `editor/listing.ts`) | one idea, several answers | charte (the shared request helper), pages, chat for `chat/` | |
-| R-12 | Giant components: `App` 571 lines, `useConversations` 456; files `Reader.tsx` 1153, `Editor.tsx` 703, `Instructions.tsx` 591, `Home.tsx` 546, `Chat.tsx` 542, `Configuration.tsx` 456 | unreadable, untestable in parts | pages (App, Reader, Editor, Home); chat (Chat, useConversations, Composer); charte (Instructions, Configuration, McpServers) | |
-| R-13 | `copilot-cli/driver.ts` › `SHELL_TOOL_CLI_SOURCE`, a whole JS program in a template string | untyped, unlinted | serveur (real file read at build, behaviour kept) | |
-| R-14 | `server/test/catalogues-ui-ensemble.test.ts` skips itself without Playwright or a built web shell, so it never runs in a plain `npm test` | a suite that looks green and never ran | tests | |
-| R-15 | `zod` imported dynamically by `server/src/drivers.ts` but declared in no `package.json` | works only by hoisting | serveur | |
+| R-1 | MCP `Authorization: Bearer` header selection copied in `claude-code/driver.ts`, `copilot-cli/driver.ts`, `codex-cli/driver.ts` | three copies of a security-relevant rule | serveur | closed: `drivers/src/mcp-headers.ts`, pinned by a test written first |
+| R-2 | Driver helpers duplicated: device-code `beginAuth`/`completeAuth`/`cancelAuth` (codex, copilot), `truncate` ×3 (`*/events.ts`), `health` ×2, `usageOf` ×3, `classifyAuthError`/`explainAuthProblem` ×2 (`*/auth.ts`) | drift between engines | serveur | closed: `engine-aids.ts` and `device-code.ts`; the engines pass their own tables |
+| R-3 | `start()` (464 lines) and `buildApp` (287 lines) mix concerns; `TurnLimiter`, `runUnattended`, inline `/api/delegations` routes and the `adestiaRunTurn` monkey-patch live in `app.ts`; routes registered both from `routes/` and top-level files (`pages.ts`, `oidc-routes.ts`, `mcp-routes.ts`, `static.ts`, `files.ts`, `watch.ts`, `callback.ts`) | no single place says what is mounted | serveur | closed: every route is registered from `routes/`; the top-level files keep only their helpers and a re-export (`mcp-routes.ts` is a pure re-export); `app.ts` mounts, `turn-limiter.ts` and `unattended.ts` hold the rest; `start()` is named stages, order pinned by `start-order.test.ts` |
+| R-4 | `field()` duplicated in `instruction-catalogues.ts` and `instructions.ts`; `routes/instruction-catalogues.ts` `sourceOf` / `fetchClone` / `cacheDir` duplicate `catalogueSource` / `fetchCatalogueClone` / `catalogueClone` of `instruction-catalogues-refresh.ts` | pure extraction, behaviour kept | serveur | closed: `field()` once in `frontmatter.ts`; the catalogue route calls the refresh module |
+| R-5 | `pages.ts` doubles as a frontmatter library for `instructions.ts`, `instruction-catalogues.ts`, `schedule.ts`, `shell-tools.ts` | a route module as a dependency; move without changing the parser (AD-7) | serveur | closed: `server/src/frontmatter.ts`, bodies untouched; the CRLF divergence stays (AD-7) |
+| R-6 | Dead interface removed; test-only helpers removed from production indexes; remaining public types, test imports and boot entry points named below | surface limited to its consumers | serveur | closed: 178 entries remain, all named below |
+| R-7 | Comments pointing to absent documents: `technique.md` (server sources and tests), `ATELIER-3.md` (`plugins/atelier/web`), `PARCOURS.md` and "D44 côté cerveau" (`plugins/parcours/web`) | dead references | serveur (server), plugins (plugins) | server: closed; plugins: closed — no comment under `plugins/` names `ATELIER-3.md`, `PARCOURS.md` or "D44 côté cerveau" any more (`git grep` finds none) |
+| R-8 | `eslint.config.js` claims floating promises and thrown-away errors are caught, which its rules cannot do (no type-aware rule, `caughtErrors: 'none'`); `plugins/` not linted; lint not in CI | a claim the gate does not keep | serveur (CI, claim), plugins (plugins lint) | server: closed — claim rewritten, `npm run lint` in CI; plugins: closed — `npm run lint` (`eslint packages plugins`) covers `plugins/` and is clean |
+| R-9 | Test support rewritten per file: the fake `Driver` in 10 test files, `git()` in 5, `mkdtemp` in 39 | each new test copies one | tests | closed: `packages/server/test/support/` holds the three, and every file that rewrote them imports them |
+| R-10 | `web/test/page-editor.test.tsx` "tells the plugin when it takes the file…" reported flaky; turn-counting waits (`setImmediate`) in `callback.test.ts`, `mcp.test.ts`, `restart.test.ts`; fixed sleeps in `watch`, `pages`, `shell-tools`, `background` tests | races dressed as delays (CLAUDE.md) | tests | closed: no `setImmediate` is left in `callback`, `mcp`, `restart` tests (a wake or a call is a deferred the fake resolves; a negative case is proved by a sentinel that does wake, or by `app.close()`), and the sleeps of `watch` (chokidar's own `ready`, through the test's watcher factory), `pages` (`utimes`), `shell-tools` and `background` (a faked `Date`) are gone. Page-editor flake: its waits (`findBy*`, `waitFor`) spend a one-second wall-clock budget on a chain of promises the test resolves itself, and a loaded machine runs it out; reproduced under `yes` load on the neighbour test "saves with the revision…" (`[data-mounted]` not there in time). The file now drains the chain with an async `act`, no budget left |
+| R-11 | Web: about 40 `fetchImpl(` call sites and 14 hand-rolled live guards, `failure()` (`CataloguePopin.tsx`) and `json()` (`chat/conversations.ts`) local to one file; `toMessage` duplicated in `useConversations.ts` and `Delegations.tsx`, drifted (the second drops `signatures`, kept as defect); `prettify` ×3, `folderOf` ×2, `isIndexPage` ×2 with different rules (`app/sections.ts`, `app/collections.ts`, `editor/nodes.ts`, `editor/listing.ts`) | one idea, several answers | charte (the shared request helper), pages, chat for `chat/` | closed for the charter's part: `packages/web/src/app/request.ts` (`requestJson`, `jsonInit`) is the one way the shell's settings and entry code talks to the server (it never throws, the fallback message is said in the locale, `fetchImpl` stays injected); `failure()` of `CataloguePopin.tsx` is absorbed, and `Gates`/`signin.ts`/`useInstance.ts`, `Settings`, `Preferences`, `McpServers`, `Instructions`, `CataloguePopin`, `Configuration` and `Delegations` call it, the restart included (a refusal keeps its parsed body in `data`: how many turns run). No raw `fetchImpl(` is left in those files. closed for the pages' part: `app/paths.ts` holds `prettify`, `folderOf`, `isIndexFile` and `isIndexPath` once (AD-13 a), and `Home`, `usePage`, `live` (`requestRaw`), `PageEditor`, `Attachments`, `Editor` and the reader's file list go through `requestJson`/`requestRaw`. closed for the chat: every network call uses `requestJson` or `requestRaw` (including streams, stop and upload); `json()` is absorbed. `messages.ts` defines `toMessage` once; Delegations passes `{ signatures: false }`, preserving the written defect (AD-12). |
+| R-12 | Giant components: `App` 571 lines, `useConversations` 456; files `Reader.tsx` 1153, `Editor.tsx` 703, `Instructions.tsx` 591, `Home.tsx` 546, `Chat.tsx` 542, `Configuration.tsx` 456 | unreadable, untestable in parts | pages (App, Reader, Editor, Home); chat (Chat, useConversations, Composer); charte (Instructions, Configuration, McpServers) | closed for the charter's part: `Instructions.tsx` (591 → 146 lines), `Configuration.tsx` (456 → 160) and `McpServers.tsx` are each a short screen over parts in `app/instructions/`, `app/configuration/` and `app/mcp/` (list, editor, name sheet, model and hook for the first; fields, restart bar and hooks for the second; list, detail, health and declaration hook for the third), none over 190 lines, and the exports the tests import are kept. closed for the pages: `App` wires gates/state into `CanvasHeader`, `Canvas` and `ScreenEdges`; `Home` composes `Brief` and `Domains`; `Editor` wires `useAutosave`, `useEditorSurface`, `usePageDrop` and `SaveStatus`; `Reader.tsx` keeps the frame and exports over `reader/` renderers by kind. No function in App, Home, Editor or Reader exceeds 250 lines. closed for the chat: `Chat` delegates to `ChatHeader`, `TabStrip`, `ConversationList` and `Thread`; `useConversations` wraps `useOpenConversations`, `useTurn`, `useTabActions`; `Composer` extracts `useUploads`. No function in `chat/` exceeds 250 lines (`node bench/long-functions.mjs packages/web/src/chat`), with no kept exception; existing exports and behaviours remain (AD-12). |
+| R-13 | `copilot-cli/driver.ts` › `SHELL_TOOL_CLI_SOURCE`, a whole JS program in a template string | untyped, unlinted | serveur (real file read at build, behaviour kept) | closed: `copilot-cli/shell-tool.mjs`, copied under `dist/` by the drivers `build`, bytes pinned by a test |
+| R-14 | `server/test/catalogues-ui-ensemble.test.ts` skips itself without Playwright or a built web shell, so it never runs in a plain `npm test` | a suite that looks green and never ran | tests | closed: the suite runs in `npm test` (the shell is built in its `beforeAll` when `dist-web` is absent; without Playwright it skips and says `no playwright` in its title and in a `console.warn`); its first case, stale since Catalogues moved into the Instructions page (E-11/E-12), was corrected by the tester |
+| R-15 | `zod` imported dynamically by `server/src/drivers.ts` but declared in no `package.json` | works only by hoisting | serveur | closed: `zod` declared in `packages/server/package.json` |
+
+### How the server tranche meets its targets (R-1 to R-8, R-13, R-15)
+
+Written before the code, so that each task of `adestia-qualite-serveur` is held to the same
+rules. The server outcomes above are filled.
+
+- **Same bytes, one home.** A shared helper takes the strictest copy's behaviour only if the
+  copies are identical; where two copies differ (R-2's `truncate` ×3, `usageOf` ×3, `health` ×2
+  are suspects), the helper takes the difference as a parameter and each engine passes its own.
+  A difference found is written in the "Known defects" section of this file, never harmonised (AD-1).
+- **A characterization test before a move, when none exists.** R-1 (the Bearer rule: which
+  servers get the user's token, which get the instance's, which get none) and R-3 (the boot
+  order that `start.ts` comments carry) have thin cover today: each gets a test that pins
+  today's behaviour first, run green before the move and unchanged after it.
+- **R-3, what "mounted" means.** Every route is registered from a module under `routes/`;
+  `buildApp` only calls them, in today's order. `buildApp` keeps its signature (the tests call
+  it). `adestiaRunTurn` stops being an untyped property: a typed decoration the boot reads, the
+  same behaviour. `TurnLimiter` and `runUnattended` (now `makeRunUnattended`) move to their own modules; `start()` becomes
+  a sequence of named steps whose order is the order of today's code, and no step function
+  exceeds 150 lines.
+- **R-2, one definition, the differences as parameters.** `drivers/src/engine-aids.ts` holds
+  `truncate`, `health`, `usageOf` and `classifyAuthError`/`explainAuthProblem`; `device-code.ts`
+  holds the `beginAuth`/`completeAuth`/`cancelAuth` run. The copies agreed except where an engine
+  speaks its own language, and that stays the engine's: Codex's startup words (`ready`, `starting`)
+  versus Copilot's pass-through status words are two tables given to `health`; each engine's
+  counters, error fragments and sentences are its own tables; Copilot's consent text and token
+  check, Codex's pasted-credential path, are hooks of the flow. No difference was a defect.
+- **R-5, a move, not a merge.** `splitFrontmatter` and `parseFrontmatter` move out of `pages.ts`
+  into their own module with their bodies untouched; `instructions.ts`, `instruction-catalogues.ts`,
+  `schedule.ts` and `shell-tools.ts` import from it. The CRLF divergence stays (AD-7).
+- **R-6, how exports are counted.** `scripts/unused-exports.mjs` lists every named export of
+  `packages/*/src` except `packages/web` (the web exports belong to the screen tranches) that no other file under those sources imports, re-exports through an
+  index, or names; it prints `file:name`. A name used only by `test/` counts as unused by
+  production. Remaining hits are package public-contract types, internal exports kept
+  for their tests under the R-6 arbitration, or runtime entry points outside the graph;
+  each is named below. Every other hit is un-exported or deleted.
+  Run `node scripts/unused-exports.mjs`: sorted entries go to stdout, the count to stderr.
+  The baseline before export removal is **292** entries. The TypeScript module graph uses
+  `tsconfig.base.json` source aliases and counts type imports, aliases and re-exports
+  (including `export *`). Each barrel has its own entries; its re-export consumes the
+  original module's export. All package sources, including web, supply importers; web
+  exports are omitted from the report. Namespace imports and literal dynamic imports or
+  `require` calls conservatively consume the target's whole surface; import types with a
+  qualifier consume its first name. Tests, `bin/`, bench scripts, plugins and computed
+  module paths are outside the graph: check their runtime uses before removing a hit.
+
+  The final inventory is **178** entries: public contract types below,
+  test-only exports retained under the R-6 arbitration, and the boot entry points.
+  No measurement rule or test was changed.
+
+  Public contract types (each row names the package index):
+
+  | Index | Types without another production importer |
+  |---|---|
+  | `packages/content/src/index.ts` | `AttributeSpec`, `BlockClaim`, `BlockContent`, `BlockContext`, `DiagnosticSeverity`, `FieldGroup`, `FieldKind`, `FrontmatterRead`, `Reference`, `Resolution` |
+  | `packages/drivers/src/index.ts` | `ArmedToken`, `ArmingFlow`, `AuthMode`, `AuthPrompt`, `AuthSource`, `AuthState`, `AuthStatus`, `Capability`, `ClaudeCodeOptions`, `CodexDriverOptions`, `ConformanceIssue`, `ContentBlock`, `CopilotDriverOptions`, `ExchangeOptions`, `McpOAuth`, `McpServerConfig`, `McpServerHealth`, `ModelInfo`, `ModelUsageEntry`, `OAuthFlowOptions`, `PendingAsk`, `Pkce`, `QueryFn`, `QueryHandle`, `QueryParams`, `QuotaReport`, `QuotaWindow`, `RawMessage`, `SdkMessage`, `ShellToolParam`, `SignatureRequest` |
+  | `packages/schemas/src/index.ts` | `PluginBlockAttribute`, `PluginKind`, `PluginMcpServer`, `PluginTile`, `SettingGroup`, `SettingKind`, `SettingSource`, `ValidationIssue` |
+  | `packages/server/src/index.ts` | `ActivationConfig`, `AdestiaConfig`, `AgentFile`, `AppDependencies`, `ArmingFlow`, `AttachmentLimits`, `AttachmentOwner`, `AttachmentsConfig`, `AuthConfig`, `AuthMode`, `AuthOutcome`, `ClockOptions`, `Conversation`, `ConversationMeta`, `DelegationPort`, `DiscoveredPlugin`, `DiscoveredSkin`, `DiscoveryProblem`, `DriverConfig`, `ExtensionSource`, `ExtensionsConfig`, `FileKind`, `FilesOptions`, `HostProblem`, `Identity`, `Job`, `JobSeed`, `JobState`, `JsonRpcRequest`, `LoginState`, `McpConfig`, `McpDependencies`, `McpInConfig`, `McpServer`, `McpServerConfig`, `McpServerView`, `McpSource`, `McpTool`, `MissionPaths`, `OidcConfig`, `PageContent`, `PageInfo`, `PagesOptions`, `PermissionsConfig`, `PluginApiContext`, `PluginDiscovery`, `PluginPayload`, `ProxyAuthConfig`, `RequestLike`, `ScheduleConfig`, `ScheduleState`, `ScheduledNote`, `ScreenView`, `SessionPayload`, `SignaturesConfig`, `SkillAsset`, `SkillFile`, `SkinPayload`, `StartOptions`, `StartedInstance`, `StaticOptions`, `StoredAttachment`, `StoredMessage`, `StoredSecret`, `WatchConfig`, `WorkspaceConfig`, `WorkspaceFile` |
+
+  Internal exports kept for their tests (the index export of `isKnownBlock` is also
+  retained because those tests import the package index):
+
+  | Module | Exports | Importing tests |
+  |---|---|---|
+  | `packages/content/src/frontmatter.ts` | `splitFrontmatter` | `packages/content/test/frontmatter.test.ts` |
+  | `packages/content/src/index.ts` | `isKnownBlock` | `packages/server/test/extensions.test.ts`, `packages/web/test/loader.test.ts` |
+  | `packages/content/src/reference.ts` | `formatReference`, `isValidId` | `packages/content/test/reference.test.ts` |
+  | `packages/content/src/validate.ts` | `frontmatterOf` | `packages/content/test/roundtrip.test.ts` |
+  | `packages/content/src/validate.ts` | `isEditable` | `packages/content/test/validate.test.ts` |
+  | `packages/drivers/src/claude-code/oauth.ts` | `CLIENT_ID`, `ONE_YEAR_SECONDS`, `REDIRECT_URI`, `TOKEN_URL`, `authorizeUrl`, `createPkce`, `exchangeCode`, `splitPastedCode` | `packages/drivers/test/oauth.test.ts` |
+  | `packages/drivers/src/codex-cli/auth.ts` | `apiKeyDocument` | `packages/drivers/test/codex.test.ts` |
+  | `packages/drivers/src/codex-cli/driver.ts` | `quotaReportOf` | `packages/drivers/test/codex.test.ts` |
+  | `packages/drivers/src/codex-cli/events.ts` | `describeItem`, `usageOf` | `packages/drivers/test/codex.test.ts` |
+  | `packages/drivers/src/codex-cli/login.ts` | `readPrompt`, `saidSuccess`, `stripAnsi` | `packages/drivers/test/codex.test.ts` |
+  | `packages/drivers/src/codex-cli/protocol.ts` | `SpawnedProcess` | `packages/drivers/test/codex.test.ts` |
+  | `packages/drivers/src/conformance.ts` | `assertConformance` | `packages/drivers/test/conformance.test.ts` |
+  | `packages/drivers/src/conformance.ts` | `checkConformance` | `packages/drivers/test/claude-code.test.ts`, `packages/drivers/test/codex.test.ts`, `packages/drivers/test/conformance.test.ts`, `packages/drivers/test/copilot.test.ts` |
+  | `packages/drivers/src/contract.ts` | `CAPABILITIES` | `packages/drivers/test/conformance.test.ts` |
+  | `packages/drivers/src/copilot-cli/events.ts` | `toolTargetOf` | `packages/drivers/test/copilot.test.ts` |
+  | `packages/drivers/src/copilot-cli/login.ts` | `harvestToken`, `ptyLogin` | `packages/drivers/test/copilot.test.ts` |
+  | `packages/drivers/src/signatures.ts` | `signatureRequest` | `packages/drivers/test/signatures.test.ts` |
+  | `packages/server/src/app.ts` | `buildVersion`, `sseFrame` | `packages/server/test/app.test.ts` |
+  | `packages/server/src/attachments.ts` | `safeName` | `packages/server/test/attachments.test.ts` |
+  | `packages/server/src/callback.ts` | `registerCallback` | `packages/server/test/callback.test.ts` |
+  | `packages/server/src/clock.ts` | `readState`, `writeState` | `packages/server/test/schedule.test.ts` |
+  | `packages/server/src/config.ts` | `DEFAULT_SESSION_TTL_MS` | `packages/server/test/auth.test.ts`, `packages/server/test/oidc-routes.test.ts`, `packages/server/test/oidc.test.ts` |
+  | `packages/server/src/conversations.ts` | `isSafeId` | `packages/server/test/conversations.test.ts` |
+  | `packages/server/src/delegations.ts` | `titleFor` | `packages/server/test/delegations.test.ts` |
+  | `packages/server/src/files.ts` | `kindOf` | `packages/server/test/files.test.ts` |
+  | `packages/server/src/files.ts` | `registerFiles` (re-export of `routes/files.ts`) | `packages/server/test/files.test.ts`, `packages/server/test/mono-store-witness.test.ts`, `packages/server/test/pages-stores.test.ts` |
+  | `packages/server/src/introduction.ts` | `CONTRACT_NAME` | `packages/server/test/introduction.test.ts` |
+  | `packages/server/src/io.ts` | `inFlight` | `packages/server/test/io.test.ts` |
+  | `packages/server/src/mcp-routes.ts` | `registerMcp` | `packages/server/test/mcp.test.ts` |
+  | `packages/server/src/mcp-store.ts` | `MCP_MASK` | `packages/server/test/mcp-servers.test.ts` |
+  | `packages/server/src/oidc.ts` | `identityFrom`, `isAllowed` | `packages/server/test/oidc.test.ts` |
+  | `packages/server/src/pages.ts` | `registerPages` (re-export of `routes/pages.ts`) | `packages/server/test/mono-store-witness.test.ts`, `packages/server/test/pages-stores.test.ts`, `packages/server/test/pages.test.ts` |
+  | `packages/server/src/plugin-host.ts` | `mountPluginApis` | `packages/server/test/plugin-host.test.ts`, `packages/server/test/plugin-secrets.test.ts` |
+  | `packages/server/src/schedule.ts` | `GRACE_MINUTES`, `MIN_PERIOD_MINUTES`, `parseAt`, `parseEvery`, `parseNote` | `packages/server/test/schedule.test.ts` |
+  | `packages/server/src/secrets.ts` | `ARMING_TTL_MS` | `packages/server/test/secrets.test.ts` |
+  | `packages/server/src/settings-file.ts` | `coerce`, `replaceContents` | `packages/server/test/settings-file.test.ts` |
+  | `packages/server/src/shell-tools.ts` | `ulid` | `packages/server/test/shell-tools.test.ts` |
+  | `packages/server/src/static.ts` | `registerStatic` (re-export of `routes/static.ts`) | `packages/server/test/static.test.ts` |
+  | `packages/server/src/watch.ts` | `EventsOptions`, `registerEvents` (re-exports of `routes/watch.ts`) | `packages/server/test/watch.test.ts` |
+
+  Runtime entry points outside the graph: `packages/server/src/start.ts` exports
+  `start` for `bench/launch.mjs` (a computed dynamic import of the built module),
+  and `start` / `loadConfigFile` for `packages/server/bin/adestia.js`. Both are
+  also imported by the server boot tests. Plugins use their own modules and
+  the host HTTP protocol, not the removed package re-exports; web source imports
+  are already included in the measurement.
+- **R-8, a claim the gate keeps.** `eslint.config.js` is rewritten to say what its rules do
+  (no type-aware rule, so no floating-promise check; `caughtErrors: 'none'`, so an ignored caught
+  error is allowed). Turning on type-aware rules would fire on deliberate fire-and-forget
+  calls and is **kept: a cost out of proportion to a quality pass**, noted for the
+  recommendations. `npm run lint` joins the CI job beside `typecheck` and `test`.
+- **R-13, a real file.** The Copilot shell-tool CLI becomes a real `.mjs` file beside the driver;
+  the driver writes the same bytes it writes today, found whether it runs from `src/` (tests) or
+  from `dist/` (the image). The program is linted with the rest.
+- **R-15.** `zod` is declared in `packages/server/package.json` at the version the lockfile
+  already resolves, and the lockfile is edited to match; no other package moves.
+
+## Detail of R-9, R-10 and R-14 (tests tranche)
+
+The tranche changes no production file (B-1): everything below lives in `packages/*/test`.
+
+**Shared support (R-9).** One directory, `packages/server/test/support/`, never matched by
+vitest's `include` (no `.test.` in the names), imported by relative path:
+
+| Module | Exports | Replaces |
+|---|---|---|
+| `support/driver.ts` | `ScriptedDriver` (events, then `{ capabilities, hold, instructionPaths }` as constructor options; `describe()` and `runTurn()` as the existing `ScriptedDriver` of `app.test.ts`), `RESULT`, `driverWith(overrides)` returning a `Driver` from a partial one, and `scriptedDriver(script)` (a driver that records its `requests`; the `delegations` helper) | the fake `Driver` of `app`, `oidc-routes`, `start` (and its `SkilledDriver` / `AgentDriver` subclasses), `instruction-catalogue-materialize`, `instruction-catalogue-materialize-review`, `mcp-servers`, `settings-route`, `restart`, `delegations` (its `scriptedDriver()`) and `turns` (its inline `{ runTurn }` objects) tests; the grep of the tranche's exit is the list |
+| `support/git.ts` | `git(cwd, ...args)` with the fixed author and committer (`T <t@example.org>`), and `gitRepo(dir, files)`: `git init -b main`, write the files, one commit, return the HEAD sha | the `git()` of `catalogues-ensemble`, `catalogues-ui-ensemble`, `instruction-catalogues-api`, `instruction-catalogues`, `sources` tests, and their repository set-up |
+| `support/tmp.ts` | `tmpDir(prefix)`: `mkdtemp` under `os.tmpdir()`, remembered; `cleanTmp()`: removes everything remembered (`rm -rf`, force); each file registers `afterEach(cleanTmp)` (`afterAll` when the tree is built once in a `beforeAll`: `extensions`, `static`, `mono-store-witness`) | the 37 test files that call `mkdtemp` and each their own `rm` |
+
+A test that needs a fake behaviour the module lacks extends the module (an option), never
+re-declares a driver. `packages/drivers/test` keeps its own fakes: R-9 aims at the server.
+A file whose fake is genuinely not a `Driver` stays as it is and is named in this table's
+outcome (`kept: reason`) if its name matched the grep of the tranche's exit.
+
+**Signals, not delays (R-10).** The rule is `CLAUDE.md`'s « A handshake waits for a SIGNAL »,
+applied file by file:
+
+- `callback.test.ts`: `runTurn` is a `vi.fn` owned by the test; it resolves a deferred
+  (`woke`) on its first call, and the test awaits `woke` instead of `settle()`. An assertion
+  that the wake did **not** happen awaits the last step the handler takes before that branch
+  (the `fetchImpl` stub resolving its own deferred), then asserts.
+- `mcp.test.ts`: the fake channel resolves a deferred when it is pulled (`runTurn`), the test
+  awaits it. Same rule for the negative cases.
+- `restart.test.ts`: the `restart` stub resolves a deferred; the guard's refusal (409) has no
+  later step to signal, so the negative cases assert on the response and then on
+  `await app.close()` having completed, which flushes what the app scheduled.
+- A case where no signal can exist without touching production is not turned into a longer
+  delay: it keeps its wait, and R-10's outcome says `kept: <file>, <why>`.
+- Clock waits become a clock the test owns: `background.test.ts` (5 ms), `shell-tools.test.ts`
+  (10 ms, `tokenTtlMs: 1`) use `vi.useFakeTimers()` and `vi.setSystemTime` /
+  `vi.advanceTimersByTime`; `pages.test.ts` (10 ms, so the revision differs) sets the file's
+  mtime explicitly with `utimes`; `watch.test.ts` (`wait(500)`) waits on the stream's own
+  frames, and a "nothing arrives" case writes a sentinel after and asserts the sentinel is
+  the next frame. The `deadline` timer of `nextBatch` bounds a wait, it is not a wait, and
+  stays.
+- `web/test/page-editor.test.tsx` › "tells the plugin when it takes the file…": the cause of
+  the flake is found first (run the test file under CPU load, thirty times; the suspect is
+  `waitFor`'s default one-second budget on an editor that mounts lazily). The fix waits on the
+  cause (`[data-mounted]`, as its neighbour test does), not on a longer budget; the cause is
+  written in R-10's outcome.
+
+**The catalogue screens suite (R-14).** `catalogues-ui-ensemble.test.ts` keeps its two
+conditions and gains a way to meet them:
+
+- Playwright is found by a plain `require` (the packages' `node_modules`, `NODE_PATH`), then
+  through `npm root -g` (the pod keeps it in `/usr/lib/node_modules`); the hard-coded
+  `/usr/lib` and `/usr/local/lib` are gone, so a `PATH` and `NODE_PATH` that hide it do hide it.
+  The bench (`bench/bench.mjs`, `bench/sweep.mjs`) resolves it the same way (`/usr/lib/node_modules`, then `npm root -g`)
+  in its own code, and the two stay separate copies: the bench is
+  `.mjs` outside the packages.
+- A missing built shell is no longer a reason to skip when Playwright is there: a `beforeAll`
+  runs `npm run build:web --workspace @antorfr/adestia-web` once (generous timeout) when
+  `packages/web/dist-web/index.html` is absent. *Rejected*: building in the `test` script
+  (every run pays, including those that never reach this suite) and a vitest `globalSetup`
+  (hides the cost from the file that needs it). The build child gets `NODE_ENV=production`:
+  under vitest it would inherit `test`, vite would emit `react/jsx-dev-runtime`, which the
+  shell does not keep external, and the page would die on a CJS `require("react")`. *Reversed if*: the build exceeds a minute in
+  the pod, then a `pretest` is the honest place.
+- Without Playwright the suite still skips, and now says it twice: in the title, as today,
+  and with one `console.warn` line at collection naming the missing piece. A skipped run is
+  not a seen screen.
+- `catalogues-ensemble.test.ts` has no such condition and is unchanged but for the support
+  imports.
+
+**Five greens.** `npm test` runs five times in a row in the pod (a shell loop, output kept
+outside the tree); a red names the flake, which is fixed by signal, never retried.
 
 ## Known defects (found, not fixed by this epic)
+
+- **P-5 step 7: the open page does not refresh after an agent write.**
+  `app/useInstance.ts` refetches only the index on the change feed; it deliberately
+  leaves the open page alone to protect unsaved editor text. The revision check
+  reports a conflict on save. This predates the pages tranche; automatic refresh
+  of the open page needs a separate behaviour decision. Carry it into the epic's
+  closing recommendations; the browser bench must not require that refresh.
+- **Nestor's send control still uses the `↑` glyph**, supplied by its skin.
+  Kept during the pages tranche; the skin's control remains for a separate fix.
+- **The chat's native model select says `Auto` (`chat/ModelPicker.tsx`)**, outside the pages tranche.
+- **E-6's block settings can overlap the banner at 1440 px.** Observed during the
+  pages review; left unchanged by the typography and documentation correction.
+- **A page diagnostic can mix languages on a French instance.** Its translated
+  frame draws the server's diagnostic text as received, outside the screen's
+  translation table; left for a separate API/diagnostic translation decision.
+
+- **A root page's breadcrumb can invent a folder**: `app/trail.ts` derives the parent
+  with `path.slice(0, path.lastIndexOf('/'))`. Without a slash it drops the last
+  character instead of returning the empty parent that `app/paths.ts`'s `folderOf`
+  returns. Kept separate to preserve behaviour; correcting the breadcrumb needs its own fix.
+
+- **MCP server counts disagree**: the Settings tile can say “6 servers” while the MCP
+  breadcrumb badge says “7 servers”. Observed during the charter review; whether it
+  predates this epic is unknown. Kept under B-1, pending a separate behaviour investigation.
 
 - **Catalogue ref or repo starting with `-`** reaches git as an option: `sources.ts` passes
   `source.ref` to `git fetch … origin <ref>` with no `--` separator. Arbitration of
   `homelab-sdlc-maj-consignes`.
 - **`copyMarkedTree` follows symbolic links** (`instruction-catalogues.ts`): a non-directory
   entry is read with `readFile`, which reads the link's target. Same arbitration.
-- **Delegations drop signatures**: `app/Delegations.tsx` › `toMessage` omits
-  `stored.signatures`, which `chat/useConversations.ts` › `toMessage` keeps. To be confirmed
+- **P-2 step 4: a refused turn (429) can stay silent.** `chat/stream.ts` yields
+  the refusal as a live error. `chat/Thread.tsx` draws its error line only while
+  that live state is present; `useConversations.ts` › `consume` clears it when
+  rereading the stored conversation succeeds, losing the refusal message.
+  P-2 says the chat explains the
+  refusal; this predates the tranche and stays under AD-7. Overall acceptance
+  must carry this discrepancy: `bench/tests/chat-p2-gestes-besoin.test.mjs`
+  checks HTTP 429 and the freed composer, without requiring an error line.
+- **Attachment names still carry a text emoji in the optimistic user bubble.**
+  `chat/useConversations.ts` › `stamped()` appends `📎` and the attachment names
+  to the message text kept in the open conversation's state. The held bubbles
+  and attachment controls use the `paperclip` icon, but this text emoji remains
+  unchanged under AD-7.
+- **Delegations drop signatures**: `app/Delegations.tsx` calls the shared
+  `chat/messages.ts` › `toMessage` with `{ signatures: false }`, while the chat keeps
+  `stored.signatures` by default (AD-12, preserved under AD-7). To be confirmed
   that a delegation transcript can carry signatures.
+- **Native dialogs in plugins**: `plugins/atelier/web/app.js` asks `confirm()` before resetting a
+  layout and `plugins/voyages/web/app.js` shows `window.alert` for a refused gesture; unstyled,
+  unlocalised by the browser's own words, not closeable like a sheet. Replacing them changes the flow
+  (the answer is asynchronous), so it is a feature, not part of the mise à niveau (Q-20).
 - **Frontmatter CRLF divergence**: `content` accepts `\r\n` fences, `pages.ts` and
   `schedule.ts` only `\n` — a CRLF page has fields in the editor and none in the index or the
   schedule. Seen in the code; behaviour not yet reproduced.
@@ -373,3 +821,31 @@ Each target: what, where, why it costs, the tranche that owns it, and its outcom
   file and a rename, so a config file kept at 0600 comes back in the umask's default mode.
 - **`user-tokens.json` holds access tokens too**, with their expiry, where the module comment
   says refresh tokens only.
+- **Skippy's status banner wraps onto two lines on the phone**, found by the sweep at phone
+  width; not fixed by this epic.
+- **E-14: the switch sits apart from its title on the phone**, the row wrapping between them.
+  Seen in the sweep; left for the pages tranche.
+- **E-19 detail in English under the French locale** when the server sent no code: the detail
+  is then the raw server text, which no catalogue translates.
+- **A catalogue token field has no `autoComplete`**, so a browser may offer to fill or save it
+  as a password.
+- **E-23 (planif) says the server's sentences in English.** A note's problem (`carries both
+  \`every\` and \`at\``, `the note is empty — its body is the prompt`, `below the 15-minute floor`…) is
+  built by `plugins/planif/api.mjs` and `schedule.ts` and drawn as received; no table holds it, and
+  `words.test.js` cannot see a sentence that comes from data. Same for E-27's failure reason of a
+  source (`muet: fetch failed`, the fetch's own text). Translating them is a change to what the API
+  answers or a table keyed by those sentences: left.
+- **E-28's walking map keeps its pre-walk size.** In walking mode the map's box fills the screen, but
+  `carte.js` draws the SVG at `taille()` (at most 420 px high, the width it had), so on a phone the
+  map takes the top quarter and the rest is blank; it is drawn full again only on leaving. Found by
+  the matrix, not caused by the tranche; fixing it changes the drawing engine.
+- **E-30 on a phone: the focus is lost when the reader closes.** The composer folds its buttons on a
+  narrow screen and drops the item that opened the reader; the plugin's `opener` is then no longer in
+  the document and nothing takes the focus. The shell's fold would have to hand it back; the matrix
+  notes it (`NOTE … focus not returned`) rather than failing on it.
+- **E-25's piece sheet shows the workbook's own words under `en`**: edge names such as `about-droit`
+  and piece references come from the workbook data, which the plugin does not translate.
+- **E-25 says « 1 pièces »** in French: the table's `%n piece` entry is « %n pièces », as the French
+  read before the atelier had a table (B-1), so a plate of one piece gets a plural.
+- **E-26's card sheet names the item's type with the data's own word** (`trajet`, `resto`) under `en`:
+  the type is an identifier of `voyage.json`, drawn as it is written.

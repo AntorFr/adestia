@@ -72,7 +72,7 @@ export default async function scenario(bench) {
   // ── The cog, which is the half that must not be a navigation ────────────
   for (const theme of ['light', 'dark']) {
     const page = await bench.open({ theme })
-    await page.click('.adestia-ib[aria-label="Réglages"]')
+    await page.click('button[aria-label="Réglages"]')
     await page.waitForTimeout(500)
     // The whole menu, over the canvas it did NOT take you away from.
     await bench.shoot(page, `1-cog-menu-${theme}`)
@@ -116,7 +116,7 @@ export default async function scenario(bench) {
   await phone.waitForTimeout(600)
   await bench.shoot(phone, '9-settings-mosaic-phone')
 
-  await phone.click('.adestia-ib[aria-label="Réglages"]')
+  await phone.click('button[aria-label="Réglages"]')
   await phone.waitForTimeout(500)
   await bench.shoot(phone, '10-cog-menu-phone')
 

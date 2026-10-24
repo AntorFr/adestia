@@ -30,7 +30,7 @@ import type { Driver, TurnEvent, TurnRequest } from '@antorfr/adestia-drivers'
 import type { StoredSignature } from '@antorfr/adestia-schemas'
 
 /** The slice of the app's concurrency limiter the desk needs. */
-export interface TurnSlotLimiter {
+interface TurnSlotLimiter {
   tryAcquire(): boolean
   release(): void
 }
@@ -48,7 +48,7 @@ export interface TurnSlotLimiter {
  * keeps the two honest is the pair of tests that feed the same interleaving
  * to each side and expect the same cut.
  */
-export interface TurnPart {
+interface TurnPart {
   readonly tools: readonly { name: string; target?: string; ok?: boolean }[]
   readonly text: string
   /** Signatures its tools asked for — see `signatures` on the desk. */
@@ -234,7 +234,7 @@ interface Chain {
   readonly queue: TurnSpec[]
 }
 
-export type Admission =
+type Admission =
   | {
       readonly mode: 'run'
       start(spec: TurnSpec): TurnJob

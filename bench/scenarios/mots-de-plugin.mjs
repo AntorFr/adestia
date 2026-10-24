@@ -24,7 +24,7 @@ const champs = (page) =>
     groupes: [...document.querySelectorAll('.adestia-blockset__group legend')].map(
       (one) => one.textContent,
     ),
-    libelles: [...document.querySelectorAll('label.adestia-blockset__field > span')].map(
+    libelles: [...document.querySelectorAll('label.adestia-field > .adestia-field__label')].map(
       (one) => one.textContent,
     ),
   }))

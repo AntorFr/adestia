@@ -1,17 +1,14 @@
 /**
  * What the linter is for here, and what it is deliberately NOT for.
  *
- * `npm run lint` existed as a script for months with no config behind it, so
- * it failed with "couldn't find an eslint.config.*" — a gate that is red for
- * everybody is a gate nobody reads. This makes it run, and pass.
- *
  * It is not a style engine. Formatting is not policed (no quotes, no semis, no
  * import order): those arguments cost review attention and the diff already
- * shows them. What is policed is the class of mistake that survives review and
- * TypeScript both — a floating promise, an `any` smuggled in, a caught error
- * thrown away, a `case` that falls through. Rules that would fire on the
- * repository's deliberate choices are off, with the reason written down rather
- * than left for the next person to rediscover.
+ * shows them. The recommended JavaScript and TypeScript rules check unused
+ * bindings, explicit `any`, unreachable code and switch fallthroughs. React's
+ * hook rules also run on the web shell (dependency checks are warnings).
+ * No rule uses type information. Ignored caught errors are allowed
+ * (`caughtErrors: 'none'`), as are empty catch blocks. Deliberate exceptions
+ * are explained beside their rules below.
  */
 
 import js from '@eslint/js'
@@ -35,7 +32,8 @@ export default tseslint.config(
       '**/public/vendor/**',
       'spikes/**',
       'bench/**',
-      'plugins/**',
+      // Vendored barcode decoder: third-party bundle, maintained upstream.
+      'plugins/scan/web/decoder.js',
       'skins/**',
       'data/**',
       'tmp/**',
@@ -50,7 +48,6 @@ export default tseslint.config(
     languageOptions: {
       ecmaVersion: 2023,
       sourceType: 'module',
-      globals: { ...globals.node, ...globals.browser },
     },
     rules: {
       // The repository writes `#private` fields and reads them back; the base
@@ -79,11 +76,32 @@ export default tseslint.config(
   },
 
   {
+    files: ['packages/**/*.{ts,tsx,js,mjs}', '*.{js,mjs}', 'scripts/**/*.{js,mjs}'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+  },
+
+  {
     // The shell's own code has `eslint-disable-next-line
     // react-hooks/exhaustive-deps` comments in it, written against a plugin
     // that was never installed — so the disables pointed at nothing and the
     // rule they silence was never running either.
     files: ['packages/web/src/**/*.{ts,tsx}'],
+    plugins: { 'react-hooks': reactHooks },
+    rules: {
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
+    },
+  },
+
+  {
+    files: ['plugins/**/*.{js,mjs}'],
+    ignores: ['plugins/**/web/**/*.js'],
+    languageOptions: { globals: globals.node },
+  },
+
+  {
+    files: ['plugins/**/web/**/*.js'],
+    languageOptions: { globals: globals.browser },
     plugins: { 'react-hooks': reactHooks },
     rules: {
       'react-hooks/rules-of-hooks': 'error',
@@ -103,4 +121,20 @@ export default tseslint.config(
       'require-yield': 'off',
     },
   },
+  // Legacy fixture imports in these existing tests are kept for the tester;
+  // all other unused bindings remain checked, and no assertion is changed.
+  ...[
+    ['plugins/atelier/test/chants.test.js', '^(entre|traverse)$'],
+    ['plugins/listening-post/test/library.test.js', '^(readFile|readdir|stat)$'],
+    ['plugins/parcours/test/api.test.js', '^(join|ROOT)$'],
+    ['plugins/voyages/test/api.test.js', '^(join|sep)$'],
+  ].map(([file, varsIgnorePattern]) => ({
+    files: [file],
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', {
+        argsIgnorePattern: '^_', varsIgnorePattern, caughtErrors: 'none',
+      }],
+    },
+  })),
+
 )

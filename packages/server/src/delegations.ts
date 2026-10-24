@@ -38,12 +38,12 @@ export interface DelegatedResult {
 }
 
 /** A conversation row for the delegations screen: whose it is, and whether it runs. */
-export interface DelegationRow extends ConversationMeta {
+interface DelegationRow extends ConversationMeta {
   readonly caller: string
   readonly turn?: 'running' | 'waiting'
 }
 
-export interface DelegationChannelOptions {
+interface DelegationChannelOptions {
   readonly dataDir: string
   readonly cwd: string
   readonly roots?: readonly string[] | undefined

@@ -20,6 +20,10 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { parse } from '@antorfr/adestia-content'
 
+import { Icon } from '../app/Icon.js'
+import type { IconName } from '../app/icons.js'
+import { requestJson } from '../app/request.js'
+
 export interface Attachment {
   readonly path: string
   readonly name: string
@@ -28,14 +32,15 @@ export interface Attachment {
   readonly kind: 'image' | 'pdf' | 'audio' | 'video' | 'text' | 'data' | 'file'
 }
 
-export const GLYPHS: Readonly<Record<Attachment['kind'], string>> = {
-  image: '🖼',
-  pdf: '📕',
-  audio: '🎵',
-  video: '🎬',
-  text: '📄',
-  data: '📊',
-  file: '📎',
+/** One sprite icon per kind of file (docs/ecrans.md, E-4). */
+export const KIND_ICONS: Readonly<Record<Attachment['kind'], IconName>> = {
+  image: 'image',
+  pdf: 'file-text',
+  audio: 'music',
+  video: 'film',
+  text: 'file-text',
+  data: 'table',
+  file: 'paperclip',
 }
 
 export const fileUrl = (path: string, download = false): string =>
@@ -133,16 +138,15 @@ export function Attachments({
   useEffect(() => {
     let cancelled = false
     void (async () => {
-      try {
-        const response = await fetchImpl(`/api/files?page=${encodeURIComponent(path)}`)
-        if (!response.ok) return
-        const body = (await response.json()) as { files?: readonly Attachment[] }
-        if (!cancelled) setFiles(body.files ?? [])
-      } catch {
-        // A page whose companions cannot be listed is still a readable page:
-        // this strip is an addition, never a precondition.
-        if (!cancelled) setFiles([])
-      }
+      const response = await requestJson<{ files?: readonly Attachment[] }>(
+        fetchImpl,
+        `/api/files?page=${encodeURIComponent(path)}`,
+      )
+      if (cancelled) return
+      // A page whose companions cannot be listed is still a readable page:
+      // this strip is an addition, never a precondition.
+      if (response.ok) setFiles(response.data?.files ?? [])
+      else if (response.status === 0) setFiles([])
     })()
     return () => {
       cancelled = true
@@ -192,9 +196,9 @@ export function Attachments({
                 rel="noreferrer"
               >
                 <span className="adestia-page-files__glyph" aria-hidden="true">
-                  {GLYPHS[file.kind]}
+                  <Icon name={KIND_ICONS[file.kind]} />
                 </span>
-                <span className="adestia-page-files__name">{file.name}</span>
+                <span className="adestia-page-files__name" title={file.name}>{file.name}</span>
                 <span className="adestia-page-files__size">{humanSize(file.bytes, locale)}</span>
               </a>
             </li>

@@ -1,0 +1,351 @@
+{
+  "schemaVersion": "3.0",
+  "projet": "langue",
+  "titre": "Étagère de test",
+  "note": "Fixture for the language test: every station of the bench has something to draw, so every word the engine says is said.",
+  "materiaux": [
+    {
+      "id": "MEL19",
+      "label": "Mélaminé blanc 19",
+      "ep": 19,
+      "plaque": {
+        "l": 2800,
+        "h": 2070
+      },
+      "derasage": 10
+    }
+  ],
+  "meta": {
+    "kerf": 4,
+    "tronconnage": 5,
+    "sensFil": "longueur"
+  },
+  "pieces": [
+    {
+      "etiquette": "GAR-C1-COTE-G",
+      "module": "C1",
+      "role": "CÔTÉ",
+      "repere": "gauche",
+      "longueur": 2000,
+      "largeur": 600,
+      "materiau": "MEL19",
+      "chants": [
+        "rive-avant"
+      ],
+      "haut": "about-droit"
+    },
+    {
+      "etiquette": "GAR-C1-COTE-D",
+      "module": "C1",
+      "role": "CÔTÉ",
+      "repere": "droit",
+      "longueur": 2000,
+      "largeur": 600,
+      "materiau": "MEL19",
+      "chants": [
+        "rive-avant"
+      ],
+      "haut": "about-droit"
+    },
+    {
+      "etiquette": "GAR-C1-TAB-1",
+      "module": "C1",
+      "role": "TABLETTE",
+      "repere": "1",
+      "longueur": 762,
+      "largeur": 600,
+      "materiau": "MEL19",
+      "chants": [
+        "rive-avant"
+      ],
+      "haut": "face",
+      "preparations": [
+        {
+          "type": "rainure",
+          "pos": "à 10 mm du bord arrière",
+          "cotes": "largeur 8, prof. 9"
+        },
+        {
+          "type": "lamello",
+          "sur": "face",
+          "lignes": [
+            {
+              "v": 50,
+              "points": [
+                {
+                  "u": 9.5,
+                  "t": "tenso"
+                },
+                {
+                  "u": 360,
+                  "t": "biscuit"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "lamello",
+          "sur": "about-gauche",
+          "appui": "face",
+          "points": [
+            {
+              "v": 100,
+              "t": "tenso"
+            }
+          ]
+        },
+        {
+          "type": "lamello",
+          "sur": "rive-avant",
+          "points": [
+            {
+              "u": 200,
+              "t": "tenso"
+            }
+          ]
+        },
+        {
+          "type": "lamello",
+          "sur": "contre-face",
+          "lignes": [
+            {
+              "u": 100,
+              "points": [
+                {
+                  "v": 300,
+                  "t": "tenso"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "etiquette": "GAR-C1-TAB-2",
+      "module": "C1",
+      "role": "TABLETTE",
+      "repere": "2",
+      "longueur": 762,
+      "largeur": 600,
+      "materiau": "MEL19",
+      "chants": [
+        "rive-avant"
+      ],
+      "preparations": [
+        {
+          "type": "rainure",
+          "pos": "à 10 mm du bord arrière",
+          "cotes": "largeur 8, prof. 9"
+        }
+      ]
+    }
+  ],
+  "debit": [
+    {
+      "plaque": "P1",
+      "label": "Plaque 1",
+      "materiau": "MEL19",
+      "etapes": [
+        {
+          "id": "P1-REF-1",
+          "type": "refente",
+          "label": "Refente en trois bandes",
+          "entree": "plaque",
+          "bandes": [
+            {
+              "id": "P1-B1",
+              "label": "B1",
+              "x": 10,
+              "y": 10,
+              "w": 600,
+              "h": 2050,
+              "axe": "y"
+            },
+            {
+              "id": "P1-B2",
+              "label": "B2",
+              "x": 614,
+              "y": 10,
+              "w": 600,
+              "h": 2050,
+              "axe": "y"
+            },
+            {
+              "id": "P1-B3",
+              "label": "B3",
+              "x": 1218,
+              "y": 10,
+              "w": 600,
+              "h": 2050,
+              "axe": "y"
+            }
+          ]
+        },
+        {
+          "id": "P1-TR-1",
+          "type": "tronconnage",
+          "label": "Montant gauche",
+          "entree": "P1-B1",
+          "pieces": [
+            {
+              "etiquette": "GAR-C1-COTE-G",
+              "x": 10,
+              "y": 10,
+              "rot": true
+            }
+          ]
+        },
+        {
+          "id": "P1-TR-2",
+          "type": "tronconnage",
+          "label": "Montant droit",
+          "entree": "P1-B2",
+          "pieces": [
+            {
+              "etiquette": "GAR-C1-COTE-D",
+              "x": 614,
+              "y": 10,
+              "rot": true
+            }
+          ]
+        },
+        {
+          "id": "P1-TR-3",
+          "type": "tronconnage",
+          "label": "Les deux tablettes",
+          "entree": "P1-B3",
+          "pieces": [
+            {
+              "etiquette": "GAR-C1-TAB-1",
+              "x": 1218,
+              "y": 10,
+              "rot": true
+            },
+            {
+              "etiquette": "GAR-C1-TAB-2",
+              "x": 1218,
+              "y": 776,
+              "rot": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "stations": [
+    {
+      "type": "debit"
+    },
+    {
+      "type": "tronconnage"
+    },
+    {
+      "type": "rainure"
+    },
+    {
+      "type": "lamello"
+    },
+    {
+      "type": "assemblage"
+    },
+    {
+      "type": "suivi"
+    }
+  ],
+  "assemblage": [
+    {
+      "id": "S1",
+      "titre": "Caisson",
+      "vue": "face",
+      "cadre": {
+        "w": 800,
+        "h": 600
+      },
+      "noeuds": [
+        {
+          "type": "piece",
+          "id": "g",
+          "ref": "GAR-C1-COTE-G",
+          "x": 0,
+          "y": 0,
+          "w": 19,
+          "h": 600,
+          "label": "G"
+        },
+        {
+          "type": "piece",
+          "id": "t",
+          "x": 19,
+          "y": 300,
+          "w": 762,
+          "h": 19,
+          "label": "T",
+          "fill": "fantome"
+        },
+        {
+          "type": "cote",
+          "de": [
+            0,
+            0
+          ],
+          "a": [
+            800,
+            0
+          ]
+        },
+        {
+          "type": "feature",
+          "forme": "lamello",
+          "at": [
+            100,
+            300
+          ],
+          "stampe": "biscuit"
+        },
+        {
+          "type": "note",
+          "at": [
+            100,
+            100
+          ],
+          "texte": "Coller puis serrer"
+        },
+        {
+          "type": "repere",
+          "at": [
+            700,
+            50
+          ],
+          "texte": "haut"
+        }
+      ],
+      "sequence": [
+        {
+          "key": "asm-1",
+          "titre": "Poser la tablette",
+          "geste": "poser",
+          "cible": [
+            "t"
+          ],
+          "detail": "à plat",
+          "outil": "serre-joint"
+        },
+        {
+          "key": "asm-2",
+          "titre": "Visser",
+          "geste": "visser",
+          "cible": [
+            "g"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S2",
+      "titre": "Vue simple",
+      "noeuds": []
+    }
+  ]
+}

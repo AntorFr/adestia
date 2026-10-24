@@ -29,7 +29,7 @@ const FORBIDDEN_CREDENTIAL_VARS = new Set([
   'ENV',
 ])
 
-export function credentialVar(driver: { credentialVar?: string }, driverId: string): string {
+function credentialVar(driver: { credentialVar?: string }, driverId: string): string {
   const variable = driver.credentialVar
   if (!variable) {
     throw new Error(`driver "${driverId}" declares no credential variable`)

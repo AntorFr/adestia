@@ -89,14 +89,51 @@ function core(px, speed) {
  * The module count stays, and now without a fetch: the slot is handed the
  * instance summary, the same one the console band reads.
  */
-function hero(host, context) {
+const WORDS = {
+  fr: {
+    late: 'Encore debout',
+    day: 'Encore toi',
+    evening: 'Toujours là',
+    monkey: 'petit singe',
+    date: 'fr-FR',
+    modules: (n) => `${n} MODULE${n > 1 ? 'S' : ''} EN LIGNE`,
+    prompt: 'Ordonner quelque chose au Magnifique…',
+    idleLabel: 'Le Magnifique est au repos',
+    busyLabel: 'Le Magnifique opère',
+    greetingDay: 'Encore toi, petit singe.',
+    greetingEvening: 'Toujours là, petit singe.',
+    greetingAside: 'Qu’est-ce qu’on casse ?',
+    engine: 'moteur ',
+    modulesCell: 'modules ',
+    turns: 'tours ',
+  },
+  en: {
+    late: 'Still up',
+    day: 'Back already',
+    evening: 'Still here',
+    monkey: 'little monkey',
+    date: 'en-GB',
+    modules: (n) => `${n} MODULE${n > 1 ? 'S' : ''} ONLINE`,
+    prompt: 'Give the Magnificent something to do…',
+    idleLabel: 'The Magnificent is idle',
+    busyLabel: 'The Magnificent is on it',
+    greetingDay: 'Back already, little monkey.',
+    greetingEvening: 'Still here, little monkey.',
+    greetingAside: 'What are we breaking?',
+    engine: 'engine ',
+    modulesCell: 'modules ',
+    turns: 'turns ',
+  },
+}
+
+function hero(host, context, words) {
   const h = new Date().getHours()
-  const salut = h < 5 || h >= 22 ? 'Encore debout' : h < 18 ? 'Encore toi' : 'Toujours là'
+  const salut = h < 5 || h >= 22 ? words.late : h < 18 ? words.day : words.evening
   const date = new Date()
-    .toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+    .toLocaleDateString(words.date, { weekday: 'long', day: 'numeric', month: 'long' })
     .toUpperCase()
   const armed = context.instance?.plugins?.length ?? 0
-  const sub = armed ? `${date} · ${armed} MODULE${armed > 1 ? 'S' : ''} EN LIGNE` : date
+  const sub = armed ? `${date} · ${words.modules(armed)}` : date
 
   host.innerHTML = `<div class="hud">
     <section class="panel brackets bridge">
@@ -104,9 +141,9 @@ function hero(host, context) {
       <div class="bridgebody">
         <div class="corewrap"></div>
         <div class="hailwrap">
-          <h1 class="hail">${esc(salut)}, <em>petit singe</em>.</h1>
+          <h1 class="hail">${esc(salut)}, <em>${esc(words.monkey)}</em>.</h1>
           <p class="hailsub">${esc(sub)}</p>
-          <button class="promptbox" data-prompt type="button"><span class="caret" aria-hidden="true"></span><span>Ordonner quelque chose au Magnifique…</span><kbd>⌘K</kbd></button>
+          <button class="promptbox" data-prompt type="button"><span class="caret" aria-hidden="true"></span><span>${esc(words.prompt)}</span><kbd>${/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl K'}</kbd></button>
         </div>
       </div>
     </section>
@@ -119,29 +156,30 @@ function hero(host, context) {
 }
 
 /** The status band above the breadcrumb. */
-function consoleBand(host, context) {
+function consoleBand(host, context, words) {
   const info = context.instance
   const cell = (label, strong) =>
     `<span class="cst">${esc(label)}${strong ? `<b>${esc(strong)}</b>` : ''}</span>`
   host.innerHTML = `<div class="console">
     <span class="cmark"><i class="led"></i>SKIPPY</span>
-    ${cell('moteur ', info ? `${info.driver.label} ${info.driver.cliVersion}` : '?')}
-    ${cell('modules ', String(info?.plugins.length ?? 0))}
+    ${cell(words.engine, info ? `${info.driver.label} ${info.driver.cliVersion}` : '?')}
+    ${cell(words.modulesCell, String(info?.plugins.length ?? 0))}
     <span class="cgrow"></span>
-    ${cell('tours ', info ? `${info.turns.running}/${info.turns.max}` : '—')}
+    ${cell(words.turns, info ? `${info.turns.running}/${info.turns.max}` : '—')}
   </div>`
 }
 
-export default function skippy() {
+export default function skippy(context) {
+  const words = WORDS[context?.locale] ?? WORDS.fr
   return {
     brand: 'SKIPPY',
     title: 'Skippy',
-    placeholder: 'Ordonner quelque chose au Magnifique…',
-    idleLabel: 'Le Magnifique est au repos',
-    busyLabel: 'Le Magnifique opère',
-    greetingDay: 'Encore toi, petit singe.',
-    greetingEvening: 'Toujours là, petit singe.',
-    greetingAside: 'Qu’est-ce qu’on casse ?',
+    placeholder: words.prompt,
+    idleLabel: words.idleLabel,
+    busyLabel: words.busyLabel,
+    greetingDay: words.greetingDay,
+    greetingEvening: words.greetingEvening,
+    greetingAside: words.greetingAside,
     // The header crest: same silhouette as the favicon, in currentColor — it
     // has to hold in monochrome, so the stroke carries it, not the amber.
     crest:
@@ -149,10 +187,10 @@ export default function skippy() {
       '<circle cx="50" cy="50" r="31" stroke-width="9" stroke-dasharray="120 75" transform="rotate(-40 50 50)"/>' +
       '<circle cx="50" cy="50" r="10" fill="currentColor" stroke="none"/>' +
       '<path d="M50 8 v9 M50 83 v9 M8 50 h9 M83 50 h9" stroke-width="8"/></svg>',
-    hero,
+    hero: (host, ctx) => hero(host, ctx, words),
     busy: (host) => {
       host.appendChild(core(40, 4.5))
     },
-    console: consoleBand,
+    console: (host, ctx) => consoleBand(host, ctx, words),
   }
 }

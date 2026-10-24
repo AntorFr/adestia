@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url'
 import { AskDesk, type AuthManagement, type Driver } from '@antorfr/adestia-drivers'
 import type { FastifyInstance } from 'fastify'
 
-import { buildApp } from './app.js'
+import { buildApp, type AppDependencies } from './app.js'
 import { buildDriver } from './drivers.js'
 import { inboxDir } from './attachments.js'
 import { ConfigError, parseConfig, type AdestiaConfig } from './config.js'
@@ -29,17 +29,20 @@ import {
   mcpServersFor,
   registerPluginVocabulary,
   unmatchedActivations,
+  type DiscoveredPlugin,
+  type DiscoveredSkin,
+  type McpServer,
 } from './extensions.js'
 import { McpStore } from './mcp-store.js'
 import { runSetups } from './plugin-host.js'
 import { UserTokens } from './user-tokens.js'
 import { SecretStore } from './secrets.js'
 import { fetchSources } from './sources.js'
-import { baseManifest, mergeSkinManifest, withInstanceName } from './webmanifest.js'
+import { baseManifest, mergeSkinManifest, withInstanceName, type WebManifest } from './webmanifest.js'
 import { refreshCataloguesAtBoot } from './instruction-catalogues-refresh.js'
 import { InstructionCataloguesStore } from './instruction-catalogues-store.js'
 import { collectSkills, deliverAgents, deliverSkills } from './skills.js'
-import { foreignRoots, resolveStores } from './stores.js'
+import { foreignRoots, resolveStores, type Store } from './stores.js'
 
 const DEFAULT_CONFIG_FILE = 'adestia.config.yaml'
 
@@ -98,13 +101,9 @@ async function findWebRoot(): Promise<string | undefined> {
   }
 }
 
-export async function start(options: StartOptions = {}): Promise<StartedInstance> {
-  const cwd = options.cwd ?? process.cwd()
-  const log = options.log ?? ((message: string) => console.log(message))
-  const configPath = resolve(cwd, options.configPath ?? DEFAULT_CONFIG_FILE)
+type BootLog = (message: string) => void
 
-  const config = await loadConfigFile(configPath)
-
+async function prepareWorkspace(config: AdestiaConfig, cwd: string, log: BootLog) {
   // BEFORE the first mkdir, and that ordering is the whole point: a umask
   // applies at CREATION and never retroactively, so a workspace created three
   // lines earlier would keep the old mode forever.
@@ -158,7 +157,10 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
         .join(', ')}`,
     )
   }
+  return { workspaceRoot, stores }
+}
 
+async function discoverExtensions(config: AdestiaConfig, cwd: string, log: BootLog) {
   // Extensions from somewhere else, fetched BEFORE discovery reads anything:
   // a source is a directory this instance did not ship, and by the time the
   // folders are walked it has to be as ordinary as the bundled one. The clone
@@ -218,7 +220,14 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
   } else if (activeSkin) {
     log(`skin "${activeSkin.manifest.id}" active`)
   }
+  return { plugins, sourceProblems, problems, activeSkin }
+}
 
+async function readWebManifest(
+  config: AdestiaConfig,
+  activeSkin: DiscoveredSkin | undefined,
+  log: BootLog,
+) {
   /**
    * What the instance is called once it is installed.
    *
@@ -250,8 +259,15 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
   // that THIS instance is the workshop's and the other is the kitchen's.
   webManifest = withInstanceName(webManifest, config.name)
   if (config.name) log(`instance named "${config.name}"`)
+  return webManifest
+}
 
-  const dataDir = resolve(cwd, config.dataDir)
+async function prepareMcp(
+  config: AdestiaConfig,
+  dataDir: string,
+  plugins: readonly DiscoveredPlugin[],
+  log: BootLog,
+) {
   // The shell's own layer, primed before anything asks for it. Read here
   // rather than lazily so a malformed file is a line in the boot log instead
   // of a surprise on somebody's first turn.
@@ -286,16 +302,15 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
   if (mcpServers.length > 0) {
     log(`${mcpServers.length} MCP server(s) wired: ${mcpServers.map((s) => s.name).join(', ')}`)
   }
+  return { mcpStore, mcpServers, wiredMcpServers }
+}
 
-  // Built only in `ask` posture, and handed to the driver so IT can declare
-  // `interactivePermissions`. In `open` there is no desk, nothing asks, and
-  // the capability is honestly absent.
-  const asks = config.permissions.mode === 'ask' ? new AskDesk() : undefined
-
-  const driver = options.driverFactory
-    ? await options.driverFactory(config)
-    : await buildDriver(config, dataDir, wiredMcpServers, asks, log)
-
+async function startShellTools(
+  config: AdestiaConfig,
+  dataDir: string,
+  stores: readonly Store[],
+  log: BootLog,
+) {
   // The instance's own tools: one registry, hosted in-process by a driver
   // that can and served over a unix socket to every other (shell-tools.ts).
   // Started here, not in buildApp — the app is built bare in tests, and a
@@ -311,7 +326,10 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
   })
   await shellTools.start()
   log(`shell tools ready (${shellTools.socketPath})`)
+  return shellTools
+}
 
+async function checkPermissions(config: AdestiaConfig, driver: Driver, log: BootLog) {
   // `ask` on an engine that cannot be asked is refused OUT LOUD rather than
   // degraded. Copilot in programmatic mode has no return channel: every
   // question it raised would become a silent refusal mid-turn, which reads as
@@ -328,7 +346,14 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
   } else {
     log('permissions: open — every tool runs unasked (container and MCP servers are the bounds)')
   }
+}
 
+async function restoreCredentials(
+  config: AdestiaConfig,
+  driver: Driver,
+  dataDir: string,
+  log: BootLog,
+) {
   // A token armed in a previous run is loaded before the first turn: an
   // instance that forgets its credential on restart is an instance someone
   // has to re-arm every deploy.
@@ -339,12 +364,20 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     armable.setCredentials({ [armable.credentialVar]: stored.value }, stored.savedAt)
     log(`driver credential loaded (armed ${stored.savedAt})`)
   }
+  return secrets
+}
 
-  // Setup runs BEFORE the app is built: a plugin's API may depend on whatever
-  // its setup wired up, and mounting first would make that ordering luck.
-  const setupProblems = await runSetups(plugins, log)
-  for (const problem of setupProblems) log(`extension "${problem.id}": ${problem.reason}`)
-
+async function deliverContracts(
+  config: AdestiaConfig,
+  driver: Driver,
+  workspaceRoot: string,
+  dataDir: string,
+  stores: readonly Store[],
+  plugins: readonly DiscoveredPlugin[],
+  shellTools: ShellToolsService,
+  mcpServers: readonly McpServer[],
+  log: BootLog,
+) {
   // Contracts are refreshed at every boot rather than installed once: a
   // plugin upgraded in place would otherwise leave the agent reading last
   // version's instructions for code that has changed underneath it.
@@ -431,7 +464,24 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     // comes up with yesterday's copies if the repository does not answer.
     await refreshCataloguesAtBoot(catalogues, { driver, workspaceRoot, dataDir, log })
   }
+}
 
+async function mountBootApp(
+  options: StartOptions,
+  cwd: string,
+  workspaceRoot: string,
+  configPath: string,
+  deps: AppDependencies & {
+    secrets: SecretStore
+    mcpStore: McpStore
+    shellTools: ShellToolsService
+  },
+  activeSkin: DiscoveredSkin | undefined,
+  webManifest: WebManifest,
+  log: BootLog,
+) {
+  const { config, driver, plugins, pluginProblems, secrets, mcpStore, asks, shellTools } = deps
+  const dataDir = resolve(cwd, config.dataDir)
   // One resolved config from here on. The absolute workspace path means a turn
   // never depends on the server's cwd at spawn — and returning the same object
   // the app runs on keeps callers from reading a different truth.
@@ -486,7 +536,7 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     },
     driver,
     plugins,
-    pluginProblems: [...sourceProblems, ...problems, ...setupProblems],
+    pluginProblems,
     ...(rebound ? { userTokens: rebound } : {}),
     // The boot log, so what the app must say out loud (a background reach
     // that failed to mint) lands where the clock's own refusals already do.
@@ -515,6 +565,10 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     ...(webRoot ? { webRoot } : {}),
     webManifest,
   })
+  return { app, resolved }
+}
+
+async function listen(app: FastifyInstance, resolved: AdestiaConfig, log: BootLog) {
   await app.listen({ host: resolved.host, port: resolved.port })
 
   // The bound port, not the configured one: with `port: 0` they differ, and
@@ -532,12 +586,20 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     // network is a shell anyone can drive.
     log('WARNING: auth is disabled and the server is not bound to loopback.')
   }
+  return url
+}
 
+function startClock(
+  app: FastifyInstance,
+  resolved: AdestiaConfig,
+  workspaceRoot: string,
+  dataDir: string,
+  log: BootLog,
+) {
   // The clock runs through the app's own turn function, never its own path.
   let clock: Clock | undefined
   if (resolved.schedule.enabled) {
-    const runTurn = (app as FastifyInstance & { adestiaRunTurn(prompt: string): Promise<void> })
-      .adestiaRunTurn
+    const runTurn = app.adestiaRunTurn
     clock = new Clock({
       dir: join(workspaceRoot, resolved.workspace.planif),
       statePath: scheduleStatePath(dataDir),
@@ -550,6 +612,58 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
     clock.start()
     log(`scheduled turns enabled (notes in ${resolved.workspace.planif}/)`)
   }
+  return clock
+}
+
+export async function start(options: StartOptions = {}): Promise<StartedInstance> {
+  const cwd = options.cwd ?? process.cwd()
+  const log = options.log ?? ((message: string) => console.log(message))
+  const configPath = resolve(cwd, options.configPath ?? DEFAULT_CONFIG_FILE)
+
+  const config = await loadConfigFile(configPath)
+  const { workspaceRoot, stores } = await prepareWorkspace(config, cwd, log)
+  const { plugins, sourceProblems, problems, activeSkin } = await discoverExtensions(config, cwd, log)
+  const webManifest = await readWebManifest(config, activeSkin, log)
+  const dataDir = resolve(cwd, config.dataDir)
+  const { mcpStore, mcpServers, wiredMcpServers } = await prepareMcp(config, dataDir, plugins, log)
+
+  // Built only in `ask` posture, and handed to the driver so IT can declare
+  // `interactivePermissions`. In `open` there is no desk, nothing asks, and
+  // the capability is honestly absent.
+  const asks = config.permissions.mode === 'ask' ? new AskDesk() : undefined
+
+  const driver = options.driverFactory
+    ? await options.driverFactory(config)
+    : await buildDriver(config, dataDir, wiredMcpServers, asks, log)
+
+  const shellTools = await startShellTools(config, dataDir, stores, log)
+  await checkPermissions(config, driver, log)
+  const secrets = await restoreCredentials(config, driver, dataDir, log)
+
+  // Setup runs BEFORE the app is built: a plugin's API may depend on whatever
+  // its setup wired up, and mounting first would make that ordering luck.
+  const setupProblems = await runSetups(plugins, log)
+  for (const problem of setupProblems) log(`extension "${problem.id}": ${problem.reason}`)
+
+  await deliverContracts(
+    config, driver, workspaceRoot, dataDir, stores, plugins, shellTools, mcpServers, log,
+  )
+  const { app, resolved } = await mountBootApp(
+    options, cwd, workspaceRoot, configPath,
+    {
+      config,
+      driver,
+      plugins,
+      pluginProblems: [...sourceProblems, ...problems, ...setupProblems],
+      secrets,
+      mcpStore,
+      ...(asks ? { asks } : {}),
+      shellTools,
+    },
+    activeSkin, webManifest, log,
+  )
+  const url = await listen(app, resolved, log)
+  const clock = startClock(app, resolved, workspaceRoot, dataDir, log)
 
   return {
     app,

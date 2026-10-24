@@ -13,33 +13,17 @@
  *   the screen shows after a save is what the next boot will read.
  */
 
-import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-import { describe, expect, it } from 'vitest'
-import type { Driver, DriverDescriptor, TurnEvent } from '@antorfr/adestia-drivers'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import { buildApp, type AppDependencies } from '../src/app.js'
 import { parseConfig } from '../src/config.js'
+import { ScriptedDriver } from './support/driver.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
 
-class Bare implements Driver {
-  describe(): Promise<DriverDescriptor> {
-    return Promise.resolve({ id: 'bare', label: 'Bare', cliVersion: '0', capabilities: [] })
-  }
-  env(): Promise<Readonly<Record<string, string>>> {
-    return Promise.resolve({})
-  }
-  listModels(): Promise<readonly { id: string }[]> {
-    return Promise.resolve([])
-  }
-  async *runTurn(): AsyncIterable<TurnEvent> {
-    return
-  }
-  interrupt(): Promise<void> {
-    return Promise.resolve()
-  }
-}
+afterEach(cleanTmp)
 
 const CONFIG = `# Written by hand, and it stays that way.
 auth:
@@ -52,12 +36,12 @@ workspace:
 `
 
 async function instance(source = CONFIG, withFile = true) {
-  const dir = await mkdtemp(join(tmpdir(), 'adestia-settings-route-'))
+  const dir = await tmpDir('adestia-settings-route-')
   const file = join(dir, 'adestia.config.yaml')
   if (withFile) await writeFile(file, source, 'utf8')
   const deps: AppDependencies = {
     config: { ...parseConfig(source), dataDir: dir },
-    driver: new Bare(),
+    driver: new ScriptedDriver([], { capabilities: [] }),
     plugins: [],
     pluginProblems: [],
     ...(withFile ? { configPath: file } : {}),

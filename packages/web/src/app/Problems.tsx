@@ -4,6 +4,7 @@
  */
 
 import type { LoadedPlugin } from '../plugins/loader.js'
+import { Icon } from './Icon.js'
 import { strayApp } from './owners.js'
 import type { IndexEntry } from './sections.js'
 import type { InstanceInfo } from './useInstance.js'
@@ -39,6 +40,13 @@ const BACKGROUND_SAID: Readonly<Record<string, string>> = {
     'the key behind background reading of %servers stopped working — signing in again renews it',
 }
 
+/** A folder's stray `app:`, said in the reader's language (owners.ts writes the prose in English). */
+function saidStray(t: (key: string) => string, reason: string): string {
+  const named = /^no active plugin is called "(.*)"$/.exec(reason)
+  if (named) return t('no active plugin is called "%name"').replace('%name', named[1]!)
+  return t(reason)
+}
+
 function say(
   t: (key: string) => string,
   problem: { reason: string; code?: string; params?: Record<string, string> },
@@ -57,12 +65,15 @@ export function Problems({
   loaded,
   pages,
   t,
+  locale,
 }: {
   readonly instance: InstanceInfo
   readonly failures: readonly { id: string; reason: string }[]
   readonly loaded: readonly LoadedPlugin[]
   readonly pages: readonly IndexEntry[]
   readonly t: (key: string) => string
+  /** The instance's language, for the date; absent, the browser's. */
+  readonly locale?: string
 }) {
   // Every refusal reaches the user: the server's (a malformed manifest) and
   // the browser's (a module that would not import). A plugin silently absent
@@ -85,7 +96,7 @@ export function Problems({
     // hour spent wondering why the folder opens on the wrong screen.
     ...strayApp(loaded, pages).map((stray) => ({
       id: stray.path,
-      reason: stray.reason,
+      reason: saidStray(t, stray.reason),
       severity: 'degraded' as const,
     })),
   ]
@@ -102,14 +113,17 @@ export function Problems({
       */}
       {trouble ? (
         <section className="adestia-problems adestia-problems--degraded" role="status">
-          <h2>{t('Background reading interrupted')}</h2>
+          <h2>
+            <Icon name="triangle-alert" />
+            {t('Background reading interrupted')}
+          </h2>
           <p>
             {(BACKGROUND_SAID[trouble.code]
               ? t(BACKGROUND_SAID[trouble.code]!)
               : trouble.code
             ).replaceAll('%servers', trouble.servers.join(', '))}
             {' — '}
-            {t('since')} {new Date(trouble.since).toLocaleString()}
+            {t('since')} {new Date(trouble.since).toLocaleString(locale)}
           </p>
         </section>
       ) : null}
@@ -124,7 +138,10 @@ export function Problems({
         if (listed.length === 0) return null
         return (
           <section key={severity} className={`adestia-problems adestia-problems--${severity}`} role="status">
-            <h2>{t(severity === 'refused' ? 'Extensions refused' : 'Running with something missing')}</h2>
+            <h2>
+              <Icon name={severity === 'refused' ? 'circle-alert' : 'triangle-alert'} />
+              {t(severity === 'refused' ? 'Extensions refused' : 'Running with something missing')}
+            </h2>
             <ul>
               {listed.map((problem) => (
                 <li key={`${problem.id}-${problem.reason.slice(0, 20)}`}>

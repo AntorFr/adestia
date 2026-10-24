@@ -20,10 +20,7 @@
  * a fallback — a household without a Maps key still plans holidays.
  */
 
-import { createReadStream } from 'node:fs'
-import { mkdir, readFile, readdir, rename, stat, writeFile } from 'node:fs/promises'
-import { randomUUID } from 'node:crypto'
-import { dirname, extname, join, relative, resolve, sep } from 'node:path'
+import { extname } from 'node:path'
 
 const VOYAGE = 'voyage.json'
 const TIMEOUT = 12_000

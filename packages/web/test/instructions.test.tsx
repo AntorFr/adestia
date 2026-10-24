@@ -9,7 +9,7 @@
  */
 
 import { useState } from 'react'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { Instructions, label, matches } from '../src/app/Instructions.js'
@@ -456,7 +456,7 @@ describe('writing a new one', () => {
     // given. In the subagent folder that produced a file no engine opens —
     // and silently: the save succeeded and the card appeared.
     const sent: string[] = []
-    vi.spyOn(window, 'prompt').mockReturnValue('Relecteur')
+    const prompt = vi.spyOn(window, 'prompt')
     render(
       <Zone
         fetchImpl={recorder(
@@ -474,6 +474,10 @@ describe('writing a new one', () => {
       />,
     )
     fireEvent.click(await screen.findByRole('button', { name: '+ Agent' }))
+    const sheet = await screen.findByRole('dialog')
+    fireEvent.change(within(sheet).getByRole('textbox'), { target: { value: 'Relecteur' } })
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Create' }))
+    expect(prompt).not.toHaveBeenCalled()
     const area = (await screen.findByRole('textbox')) as HTMLTextAreaElement
     // Frontmatter, because a subagent with no `description` is one the engine
     // never matches to anything.
@@ -483,6 +487,33 @@ describe('writing a new one', () => {
     await waitFor(() =>
       expect(sent).toEqual(['/api/instructions/.claude/agents/relecteur.md']),
     )
+  })
+
+  const agentPlace = [
+    { path: '.claude/agents', kind: 'folder', holds: 'agent', entry: '<name>.md', exists: true },
+  ]
+
+  it('creates nothing when the name sheet is cancelled, escaped or left empty', async () => {
+    const sent: string[] = []
+    const prompt = vi.spyOn(window, 'prompt')
+    render(<Zone fetchImpl={recorder(agentPlace, sent)} />)
+    const open = async () => {
+      fireEvent.click(await screen.findByRole('button', { name: '+ Agent' }))
+      return screen.findByRole('dialog')
+    }
+    let sheet = await open()
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Cancel' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    sheet = await open()
+    fireEvent.keyDown(sheet, { key: 'Escape' })
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    sheet = await open()
+    fireEvent.change(within(sheet).getByRole('textbox'), { target: { value: '   ' } })
+    fireEvent.submit(within(sheet).getByRole('textbox').closest('form') as HTMLFormElement)
+    expect(screen.queryByRole('dialog')).not.toBeNull()
+    expect(screen.queryByText('Save')).toBeNull()
+    expect(sent).toEqual([])
+    expect(prompt).not.toHaveBeenCalled()
   })
 
   it('names the folder when two buttons would otherwise be the same control', async () => {

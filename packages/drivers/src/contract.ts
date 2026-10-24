@@ -602,10 +602,6 @@ export interface ModelSelection {
   listModels(): Promise<readonly ModelInfo[]>
 }
 
-export interface SubscriptionQuotas {
-  subscriptionQuotas(): Promise<QuotaReport>
-}
-
 /**
  * What one outbound MCP server is doing.
  *

@@ -10,8 +10,8 @@
 import cookie from '@fastify/cookie'
 import type { FastifyInstance, FastifyRequest } from 'fastify'
 
-import type { Identity } from './auth.js'
-import type { AdestiaConfig } from './config.js'
+import type { Identity } from '../auth.js'
+import type { AdestiaConfig } from '../config.js'
 import {
   LOGIN_COOKIE,
   LOGIN_TTL_MS,
@@ -23,7 +23,7 @@ import {
   verifyPayload,
   type LoginState,
   type SessionPayload,
-} from './oidc.js'
+} from '../oidc.js'
 
 export async function registerOidc(
   app: FastifyInstance,

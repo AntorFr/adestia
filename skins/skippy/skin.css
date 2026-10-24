@@ -55,6 +55,7 @@
 /* ── Night — the base of this body. It imposes it: dark unless a person
    explicitly picks light. ──────────────────────────────────────────────── */
 :root[data-skin='skippy']:not([data-theme='light']) {
+  color-scheme: dark;
   --surface: #080a0d;
   --surface-raised: #101419;
   --surface-soft: #171c23;
@@ -64,11 +65,15 @@
 
   --text: #d7dee6;
   --text-muted: #8e98a5;
-  --text-faint: #5c6570;
+  --text-faint: #7a8592;
 
   /* ONE accent: amber. The can, and a terminal's phosphor. */
   --accent: #f2a93b;
-  --accent-text: #080a0d;
+  --accent-text: var(--accent);
+  --on-accent: #080a0d;
+  --danger-text: var(--danger);
+  --warning-text: var(--warning);
+  --success-text: var(--success);
   --accent-quiet: rgb(242 169 59 / 10%);
 
   --danger: #e8543f;
@@ -112,13 +117,19 @@
 
   --text: #141920;
   --text-muted: #5a6370;
-  --text-faint: #8a929e;
+  --text-faint: #5e6571;
 
   --accent: #b0731a;
-  --accent-text: #ffffff;
+  --accent-text: #8a5a14;
+  /* Hot MCP chips keep the amber fill and read its darker text twin. */
+  --adestia-hue-indigo-text: var(--accent-text);
+  --on-accent: #080a0d;
+  --danger-text: #b53b29;
+  --warning-text: #8a5a14;
+  --success-text: #217348;
   --accent-quiet: rgb(176 115 26 / 10%);
 
-  --danger: #c4402c;
+  --danger: #d24c37;
   --warning: #b0731a;
   --success: #2e9e63;
 

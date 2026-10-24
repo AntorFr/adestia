@@ -1,14 +1,18 @@
-import { mkdtemp, mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, sep } from 'node:path'
 import type { AddressInfo } from 'node:net'
 
+import { watch as chokidar } from 'chokidar'
 import Fastify, { type FastifyInstance } from 'fastify'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { ChangeFeed, pagePathOf, registerEvents, type EventsOptions } from '../src/watch.js'
 import type { WatchConfig } from '../src/config.js'
 import { resolveStores } from '../src/stores.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
+
+afterEach(cleanTmp)
 
 const WATCH: WatchConfig = { enabled: true, polling: false, intervalMs: 2000 }
 
@@ -120,7 +124,14 @@ async function nextBatch(
   }
 }
 
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+/** A promise and the function that settles it: the test's own signal. */
+function signal() {
+  let fire!: () => void
+  const fired = new Promise<void>((resolve) => {
+    fire = resolve
+  })
+  return { fired, fire }
+}
 
 describe('/api/events', () => {
   let app: FastifyInstance | undefined
@@ -144,10 +155,12 @@ describe('/api/events', () => {
   it('starts watching at the first subscriber, and streams filtered batches', async () => {
     let onPath: ((path: string) => void) | undefined
     let started = 0
+    const factoryRan = signal()
     const served = await serve({
       watcherFactory: (_root, report) => {
         started += 1
         onPath = report
+        factoryRan.fire()
         return { close: () => undefined }
       },
     })
@@ -160,7 +173,8 @@ describe('/api/events', () => {
     expect(response.headers.get('content-type')).toContain('text/event-stream')
     const reader = response.body!.getReader()
     // The factory runs when the route admits the subscriber, not before.
-    await vi.waitFor(() => expect(started).toBe(1))
+    await factoryRan.fired
+    expect(started).toBe(1)
 
     onPath!('recettes/tarte.md')
     onPath!(join('.obsidian', 'cache.md'))
@@ -170,10 +184,12 @@ describe('/api/events', () => {
 
   it('closes the watcher once the last subscriber is gone', async () => {
     let closed = 0
+    const watcherClosed = signal()
     const served = await serve({
       watcherFactory: () => ({
         close: () => {
           closed += 1
+          watcherClosed.fire()
         },
       }),
     })
@@ -185,23 +201,38 @@ describe('/api/events', () => {
     controller.current.abort()
     controller.current = undefined
 
-    await vi.waitFor(() => expect(closed).toBe(1))
+    await watcherClosed.fired
+    expect(closed).toBe(1)
   })
 
   it('sees a real write land as a pages-changed event', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'adestia-watch-'))
+    const root = await tmpDir('adestia-watch-')
     // Polling, so the test does not depend on which native backend this
     // machine has; production defaults to native events.
-    const served = await serve({ stores: resolveStores([{ id: 'perso', path: root }], root).stores, watch: { ...WATCH, polling: true, intervalMs: 100 } })
+    // The watcher is the disk's own, and so is its `ready`: chokidar says when
+    // its initial scan is over, and the factory hands that to the test. A file
+    // landing during the scan reads as already present rather than as a change,
+    // which is what a fixed wait used to guard against.
+    const scanned = signal()
+    const served = await serve({
+      stores: resolveStores([{ id: 'perso', path: root }], root).stores,
+      watch: { ...WATCH, polling: true, intervalMs: 100 },
+      watcherFactory: (dir, report) => {
+        const watcher = chokidar(dir, { ignoreInitial: true, usePolling: true, interval: 100 })
+        watcher.on('ready', scanned.fire)
+        watcher.on('add', report)
+        watcher.on('change', report)
+        watcher.on('unlink', report)
+        return { close: () => watcher.close() }
+      },
+    })
     app = served.app
 
     controller.current = new AbortController()
     const response = await fetch(served.url, { signal: controller.current.signal })
     const reader = response.body!.getReader()
 
-    // Let the initial scan finish: a file landing during it reads as already
-    // present rather than as a change.
-    await wait(500)
+    await scanned.fired
     await mkdir(join(root, 'notes'), { recursive: true })
     await writeFile(join(root, 'notes', 'fraiche.md'), '# Toute fraîche\n')
 

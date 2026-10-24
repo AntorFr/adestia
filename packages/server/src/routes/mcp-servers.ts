@@ -13,7 +13,7 @@ import { maskServer, unmaskServer, type McpServerView, type McpStore } from '../
 import type { McpSignIn } from '../mcp-signin.js'
 import { identityOf } from './identity.js'
 
-export interface McpServersDependencies {
+interface McpServersDependencies {
   readonly config: AdestiaConfig
   readonly driver: Driver
   readonly descriptor: DriverDescriptor

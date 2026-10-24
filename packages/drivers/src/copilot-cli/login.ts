@@ -76,7 +76,7 @@ export interface DeviceCodeLogin {
   cancel(): void
 }
 
-export interface StartLoginOptions {
+interface StartLoginOptions {
   readonly command: string
   /** Driver-owned dir the login writes its config (and token) into. */
   readonly home: string

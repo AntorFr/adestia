@@ -34,20 +34,20 @@ describe('BlockSettings', () => {
 
   it('puts a block in a card, and takes it out again', () => {
     const onChange = setup('content', { type: 'synthese' })
-    fireEvent.click(screen.getByLabelText('dans une carte'))
+    fireEvent.click(screen.getByLabelText('in a card'))
     expect(onChange).toHaveBeenLastCalledWith({ type: 'synthese', frame: 'card' })
   })
 
   it('removes an attribute whose field is emptied, rather than writing it empty', () => {
     const onChange = setup('content', { type: 'synthese', title: 'Synthèse' })
-    const title = screen.getByText('titre').closest('label')?.querySelector('input') as HTMLInputElement
+    const title = screen.getByText('title').closest('label')?.querySelector('input') as HTMLInputElement
     fireEvent.change(title, { target: { value: '' } })
     expect(onChange).toHaveBeenLastCalledWith({ type: 'synthese' })
   })
 
-  it('writes a width, and "toute la ligne" as no width at all', () => {
+  it('writes a width, and "the whole line" as no width at all', () => {
     const onChange = setup('figures', { w: '1/2' })
-    const width = screen.getByText('largeur').closest('label')?.querySelector('select') as HTMLSelectElement
+    const width = screen.getByText('width').closest('label')?.querySelector('select') as HTMLSelectElement
     fireEvent.change(width, { target: { value: '2/3' } })
     expect(onChange).toHaveBeenLastCalledWith({ w: '2/3' })
     fireEvent.change(width, { target: { value: '' } })
@@ -56,13 +56,13 @@ describe('BlockSettings', () => {
 
   it('says what a required attribute is missing', () => {
     setup('content', {})
-    expect(screen.getByText(/À remplir : type/)).toBeTruthy()
+    expect(screen.getByText(/To fill in: type/)).toBeTruthy()
   })
 
   it('shows an attribute the block does not know, and lets it be removed', () => {
     const onChange = setup('figures', { couleur: 'rouge' })
     expect(screen.getByText('couleur=rouge')).toBeTruthy()
-    fireEvent.click(screen.getByText('retirer'))
+    fireEvent.click(screen.getByLabelText('Remove couleur'))
     expect(onChange).toHaveBeenLastCalledWith({})
   })
 })
