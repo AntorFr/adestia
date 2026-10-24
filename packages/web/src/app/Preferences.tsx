@@ -33,6 +33,8 @@ import { Delegations, delegChips, useDelegationRows } from './Delegations.js'
 import { Instructions } from './Instructions.js'
 import { Configuration } from './Configuration.js'
 import { McpServers } from './McpServers.js'
+import { Icon } from './Icon.js'
+import { requestJson } from './request.js'
 import { Tile } from './Tile.js'
 import { useMcpServers, type McpServerHealth } from './Settings.js'
 
@@ -98,15 +100,11 @@ function useCount(
   useEffect(() => {
     let live = true
     void (async () => {
-      try {
-        const response = await fetchImpl(url)
-        if (!response.ok) return
-        const body = (await response.json()) as Record<string, unknown>
-        const list = body[field]
-        if (live && Array.isArray(list)) setCount(list.length)
-      } catch {
-        /* no figure, no chip */
-      }
+      // A failure is silence, never a zero.
+      const result = await requestJson<Record<string, unknown>>(fetchImpl, url)
+      if (!result.ok) return
+      const list = result.data?.[field]
+      if (live && Array.isArray(list)) setCount(list.length)
     })()
     return () => {
       live = false
@@ -198,7 +196,7 @@ export function Preferences({
         style={{ '--tile-color': 'var(--adestia-hue-ardoise, var(--accent))' } as Record<string, string>}
       >
         <span className="adestia-chead__icon" aria-hidden="true">
-          ⚙
+          <Icon name="settings" />
         </span>
         <div>
           <h1 className="adestia-chead__title">{t('Settings')}</h1>
@@ -207,7 +205,7 @@ export function Preferences({
       </header>
       <ul className="adestia-tiles">
         <Tile
-          icon="🔌"
+          iconName="plug"
           hue="indigo"
           label={t('MCP servers')}
           {...(health && health.length > 0 ? { subtitle: mcpLede(health, t) } : {})}
@@ -218,7 +216,7 @@ export function Preferences({
           t={t}
         />
         <Tile
-          icon="📓"
+          iconName="book-open"
           hue="bleu"
           label={t('Instructions')}
           subtitle={t('Read and correct what you told the agent')}
@@ -233,7 +231,7 @@ export function Preferences({
             on the machine and a restart — fine for whoever deployed it,
             impossible from anywhere else. */}
         <Tile
-          icon="🎛"
+          iconName="sliders-horizontal"
           hue="ardoise"
           label={t('Configuration')}
           subtitle={t('Read and change this instance’s own settings')}
@@ -243,7 +241,7 @@ export function Preferences({
         {/* The inbound face of the MCP tile above: that one is the agents
             this instance reaches, this one is the agents that reach it. */}
         <Tile
-          icon="🤝"
+          iconName="handshake"
           hue="violet"
           label={t('Delegations')}
           subtitle={t('What other agents asked this one to do')}

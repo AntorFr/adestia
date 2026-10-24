@@ -14,7 +14,7 @@
 
 .adestia-missing__title {
   margin: 0 0 var(--space-3, 12px);
-  font-size: 1.05rem;
+  font-size: var(--text-lg);
   font-weight: 600;
 }
 
@@ -26,7 +26,7 @@
   background: var(--surface-sunken, var(--surface));
   color: var(--text-muted);
   font-family: var(--font-code, monospace);
-  font-size: 0.85em;
+  font-size: var(--text-sm);
   overflow-wrap: anywhere;
 }
 

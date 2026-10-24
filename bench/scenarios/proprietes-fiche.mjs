@@ -39,7 +39,7 @@ export default async function scenario(bench) {
   // Les listes sortent de l'index, pas du code : `domaine` doit connaître les
   // deux mots que le corpus écrit, et rien d'autre.
   const domaines = await page.evaluate(() => {
-    const row = [...document.querySelectorAll('.adestia-blockset__field')].find(
+    const row = [...document.querySelectorAll('.adestia-field')].find(
       (one) => one.querySelector('span')?.textContent === 'Domaine',
     )
     return [...(row?.querySelector('select')?.options ?? [])].map((one) => one.textContent)
@@ -48,7 +48,7 @@ export default async function scenario(bench) {
 
   // Un état choisi s'écrit dans le fichier, et rien d'autre ne bouge.
   await page.evaluate(() => {
-    const row = [...document.querySelectorAll('.adestia-blockset__field')].find(
+    const row = [...document.querySelectorAll('.adestia-field')].find(
       (one) => one.querySelector('span')?.textContent === 'État',
     )
     const select = row?.querySelector('select')
@@ -84,7 +84,7 @@ export default async function scenario(bench) {
   // « Chantier » et non « Project » : le libellé vient du manifeste de `todo`,
   // et c'est la table du plugin qui le dit dans la langue du lecteur.
   const projets = await page.evaluate(() => {
-    const row = [...document.querySelectorAll('.adestia-blockset__field')].find(
+    const row = [...document.querySelectorAll('.adestia-field')].find(
       (one) => one.querySelector('span')?.textContent === 'Chantier',
     )
     return [...(row?.querySelector('select')?.options ?? [])].map((one) => one.textContent)

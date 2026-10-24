@@ -90,7 +90,7 @@
   max-height: none;
   background: none;
   border: 1px solid var(--border);
-  border-radius: var(--radius-md, 8px);
+  border-radius: var(--radius-sm);
 }
 
 .adestia-deleg__group { margin: var(--space-4) 0 0; }
@@ -120,7 +120,27 @@
   font-size: var(--text-sm);
 }
 
-.adestia-deleg__empty { color: var(--text-muted); }
+/* The state chip: an icon and a word, so the colour is never the whole message. */
+.adestia-deleg__state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex: none;
+  padding: 1px var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-soft);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+.adestia-deleg__state .adestia-icon { width: 12px; height: 12px; }
+
+.adestia-deleg__state--waiting {
+  color: var(--tile-color, var(--accent-text));
+  border-color: color-mix(in srgb, var(--tile-color, var(--accent)) 40%, transparent);
+  background: color-mix(in srgb, var(--tile-color, var(--accent)) 10%, transparent);
+}
 
 .adestia-deleg__conversation { margin-top: var(--space-4); }
 
@@ -198,7 +218,8 @@
      until a hover (or keyboard focus, which cannot hover) asks for the
      controls. */
   width: 0;
-  height: 22px;
+  min-width: 0;
+  height: 24px;
   margin-right: 0;
   padding: 0;
   overflow: hidden;
@@ -216,7 +237,7 @@
 
 .adestia-tab:hover .adestia-tab__tool,
 .adestia-tab:focus-within .adestia-tab__tool {
-  width: 22px;
+  width: 24px;
   margin-right: 2px;
   opacity: 1;
 }
@@ -237,7 +258,7 @@
   display: inline-block;
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: var(--border-strong);
 }
 
@@ -261,7 +282,7 @@
 
 .adestia-conversations__item--current {
   background: var(--accent-quiet);
-  color: var(--accent);
+  color: var(--conversation-current-text);
 }
 
 .adestia-conversations__empty {
@@ -270,4 +291,14 @@
   color: var(--text-faint);
 }
 
-.adestia-chat__header { gap: var(--space-2); }
+
+/* The same tint may carry two states: geometry tells them apart as well. */
+.adestia-dot--idle { background: transparent; border: 1px solid var(--text-faint); }
+.adestia-dot--working { border: 1px dashed var(--text); }
+.adestia-dot--waiting { border-radius: 0; transform: rotate(45deg); }
+.adestia-dot--unread { border-radius: 0; }
+.adestia-conversations__empty .adestia-empty { width: 100%; }
+.adestia-conversations { flex: 0 1 auto; }
+@media (hover: none) {
+  .adestia-conversations__archive { opacity: 1; }
+}

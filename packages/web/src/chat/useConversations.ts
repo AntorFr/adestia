@@ -21,7 +21,9 @@ import {
   type ConversationMeta,
   type StoredMessage,
 } from './conversations.js'
+import { jsonInit, requestRaw } from '../app/request.js'
 import type { Message } from './Bubble.js'
+import { toMessage } from './messages.js'
 import type { PendingAttachment } from './Composer.js'
 import {
   INITIAL_TURN,
@@ -57,19 +59,6 @@ interface HeldMessage {
   readonly attachments: readonly PendingAttachment[]
 }
 
-/** A stored message, as the conversation renders it. */
-function toMessage(stored: StoredMessage): Message {
-  return {
-    id: stored.id,
-    role: stored.role,
-    text: stored.text,
-    ...(stored.tools ? { tools: stored.tools } : {}),
-    ...(stored.signatures ? { signatures: stored.signatures } : {}),
-    ...(stored.stopped ? { stopped: stored.stopped } : {}),
-    ...(stored.error ? { error: stored.error } : {}),
-  }
-}
-
 /**
  * A conversation as the store has it — everything it REMEMBERS.
  *
@@ -84,7 +73,7 @@ function fromStore(stored: Conversation): Partial<OpenConversation> {
   const waiting = (message: StoredMessage): boolean =>
     stored.turn !== undefined && message.after !== undefined && !answered.has(message.after)
   return {
-    messages: stored.messages.filter((message) => !waiting(message)).map(toMessage),
+    messages: stored.messages.filter((message) => !waiting(message)).map((message) => toMessage(message)),
     held: stored.messages.filter(waiting).map((message) => ({ text: message.text, attachments: [] })),
     contextTokens: stored.messages.at(-1)?.usage?.contextTokens ?? 0,
     loaded: true,
@@ -154,7 +143,35 @@ export interface ConversationsOptions {
   readonly view?: ScreenView | undefined
 }
 
-export function useConversations({ fetchImpl, narrow, model, view, t }: ConversationsOptions) {
+/** The user's half, as the conversation shows it — attachments named after it. */
+function stamped(text: string, attachments: readonly PendingAttachment[]): string {
+  return attachments.length > 0
+    ? `${text}\n📎 ${attachments.map((a) => a.name).join(', ')}`.trim()
+    : text
+}
+
+function turnOptions(
+  { model, view }: Pick<ConversationsOptions, 'model' | 'view'>,
+  text: string,
+  attachments: readonly PendingAttachment[],
+  id: string,
+) {
+  return {
+    prompt: text,
+    ...(model ? { model } : {}),
+    conversationId: id,
+    ...(attachments.length > 0 ? { attachments: attachments.map((a) => a.id) } : {}),
+    ...(view ? { view } : {}),
+  }
+}
+
+/**
+ * What the conversations REMEMBER while the page lives: the tabs, what each open
+ * conversation carries, the list, the answered questions. Every other piece
+ * reads and writes these through the object this returns; none of them owns a
+ * second copy.
+ */
+function useOpenConversations({ fetchImpl, narrow }: ConversationsOptions) {
   /**
    * Which conversations are open as tabs, their order, and the active one —
    * persisted like a browser's tab strip, so a refresh reopens what was open.
@@ -186,8 +203,6 @@ export function useConversations({ fetchImpl, narrow, model, view, t }: Conversa
   const activeId = tabs.active ?? DRAFT
   /** Mirror for the pump loops, which outlive any render's `tabs` closure. */
   const activeRef = useRef(activeId)
-  /** In-flight conversation creation, so two rapid sends share ONE conversation. */
-  const creation = useRef<Promise<string | undefined> | undefined>(undefined)
 
   useEffect(() => {
     void refreshConversations()
@@ -202,9 +217,9 @@ export function useConversations({ fetchImpl, narrow, model, view, t }: Conversa
     saveTabs(tabs)
   }, [tabs])
 
-  // Declared as FUNCTIONS, not useCallback: the machinery below is a
-  // web of mutual calls (adoption is recursive by nature — a turn's end looks
-  // for the next), and hoisting lets the cycle be written in reading order.
+  // Declared as FUNCTIONS, not useCallback: the machinery is a web of mutual
+  // calls (adoption is recursive by nature — a turn's end looks for the next),
+  // and hoisting lets the cycle be written in reading order.
 
   function conversation(id: string): OpenConversation {
     return openRef.current.get(id) ?? EMPTY_CONVERSATION
@@ -255,6 +270,88 @@ export function useConversations({ fetchImpl, narrow, model, view, t }: Conversa
   }
 
   /**
+   * Puts what the store holds in place of what a tab drew, for a tab whose
+   * live view lost track of its turn.
+   *
+   * Not `adopt`, for two reasons. It is called from inside the pump, where
+   * `adopt` declines because a pump is turning. And a store that does not
+   * answer changes NOTHING here — false, and the tab keeps what it drew —
+   * where `adopt` closes the tab: a phone waking from sleep may reach the
+   * server a moment after it needs to, and that is no reason to lose the tab.
+   */
+  async function reread(id: string): Promise<boolean> {
+    const record = await readConversation(id, fetchImpl)
+    if (!record || !Array.isArray(record.messages)) return false
+    patchConversation(id, fromStore(record))
+    return true
+  }
+
+  /**
+   * One dot vocabulary for the tab strip and the conversation list. What this
+   * browser carries is the authority when it is watching the conversation; the
+   * list's server-computed `turn` field answers for everything else, and the
+   * stored read-marks answer "seen?" for conversations it carries nothing of.
+   */
+  function dotOf(id: string, meta?: ConversationMeta) {
+    const s = openRef.current.get(id)
+    return dotFor({
+      waiting:
+        (s?.live?.ask !== undefined && !answered.has(s.live.ask.id)) || meta?.turn === 'waiting',
+      working: (s?.live?.running ?? false) || meta?.turn === 'running',
+      unread: s?.unread || (meta ? isUnread(meta) : false),
+    })
+  }
+
+  return {
+    narrow,
+    tabs,
+    setTabs,
+    conversations,
+    setConversations,
+    listOpen,
+    setListOpen,
+    activeId,
+    activeRef,
+    /** What the visible conversation renders — everything below reads through this. */
+    active: conversation(activeId),
+    answered,
+    setAnswered,
+    conversation,
+    refreshConversations,
+    patchConversation,
+    rekeyConversation,
+    read,
+    reread,
+    dotOf,
+  }
+}
+
+type Open = ReturnType<typeof useOpenConversations>
+
+/**
+ * The turn: adopting a conversation from the store, sending into it, following
+ * it to its end, stopping it. Writes what `useOpenConversations` keeps — through
+ * its object, never a copy — and owns only the in-flight creation of a conversation.
+ */
+function useTurn({ fetchImpl, model, view, t }: ConversationsOptions, open: Open) {
+  const {
+    tabs,
+    setTabs,
+    setConversations,
+    activeRef,
+    conversation,
+    refreshConversations,
+    patchConversation,
+    rekeyConversation,
+    read,
+    reread,
+  } = open
+  /** In-flight conversation creation, so two rapid sends share ONE conversation. */
+  const creation = useRef<Promise<string | undefined> | undefined>(undefined)
+  /** The last message sent into an idle tab: its conversation id once its POST has left. */
+  const leaving = useRef<Promise<string | undefined> | undefined>(undefined)
+
+  /**
    * Loads a conversation from the store if needed, then re-attaches to its
    * running turn if the desk has one — a reload, a phone that slept, a tab
    * restored at mount. A tab pointing at a conversation that no longer
@@ -284,108 +381,17 @@ export function useConversations({ fetchImpl, narrow, model, view, t }: Conversa
     }
   }
 
-  /**
-   * Puts what the store holds in place of what a tab drew, for a tab whose
-   * live view lost track of its turn.
-   *
-   * Not `adopt`, for two reasons. It is called from inside the pump, where
-   * `adopt` declines because a pump is turning. And a store that does not
-   * answer changes NOTHING here — false, and the tab keeps what it drew —
-   * where `adopt` closes the tab: a phone waking from sleep may reach the
-   * server a moment after it needs to, and that is no reason to lose the tab.
-   */
-  async function reread(id: string): Promise<boolean> {
-    const record = await readConversation(id, fetchImpl)
-    if (!record || !Array.isArray(record.messages)) return false
-    patchConversation(id, fromStore(record))
-    return true
-  }
-
-  /** From the list: opening a conversation opens it AS a tab, active. */
-  function openConversation(id: string): void {
-    setTabs((state) => openTab(state, id))
-    setListOpen(false)
-    read(id)
-    void adopt(id)
-  }
-
-  function activate(id: string): void {
-    setTabs((state) => activateTab(state, id))
-    read(id)
-    if (!conversation(id).loaded && id !== DRAFT) void adopt(id)
-  }
-
-  /**
-   * Closes the TAB — never the conversation. The conversation stays in the list,
-   * what it carries stays warm (a running pump keeps feeding it, and its dot
-   * keeps meaning something if the tab is reopened).
-   */
-  function shut(id: string): void {
-    setTabs((state) => closeTab(state, id))
-  }
-
-  /** Put away, not deleted — and its tab goes with it. */
-  async function archive(id: string): Promise<void> {
-    if (!(await archiveConversation(fetchImpl ?? fetch, id))) return
-    setConversations((current) => current.filter((entry) => entry.id !== id))
-    shut(id)
-  }
-
-  /**
-   * One dot vocabulary for the tab strip and the conversation list. What this
-   * browser carries is the authority when it is watching the conversation; the
-   * list's server-computed `turn` field answers for everything else, and the
-   * stored read-marks answer "seen?" for conversations it carries nothing of.
-   */
-  function dotOf(id: string, meta?: ConversationMeta) {
-    const s = openRef.current.get(id)
-    return dotFor({
-      waiting:
-        (s?.live?.ask !== undefined && !answered.has(s.live.ask.id)) || meta?.turn === 'waiting',
-      working: (s?.live?.running ?? false) || meta?.turn === 'running',
-      unread: s?.unread || (meta ? isUnread(meta) : false),
-    })
-  }
-
   useEffect(() => {
     // Restore what the last visit left open: every tab on a desktop, only
     // the last active one on a phone — the tab strip is a desktop surface,
     // and a phone reopening everything would pay N fetches for one screen.
-    const restore = (narrow ? [tabs.active] : tabs.open).filter(
+    const restore = (open.narrow ? [tabs.active] : tabs.open).filter(
       (id): id is string => typeof id === 'string' && id !== DRAFT,
     )
     for (const id of restore) void adopt(id)
     // Run once, with the state the page loaded with.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  /** The ＋ of the strip and the header: a fresh tab, conversation-less
-      until its first message names one. Only ever one draft — reopening it
-      just activates it. */
-  function newDraft(): void {
-    setTabs((state) => openTab(state, DRAFT))
-    setListOpen(false)
-  }
-
-  /** What the visible conversation renders — everything below reads through this. */
-  const active = conversation(activeId)
-
-  /** The user's half, as the conversation shows it — attachments named after it. */
-  function stamped(text: string, attachments: readonly PendingAttachment[]): string {
-    return attachments.length > 0
-      ? `${text}\n📎 ${attachments.map((a) => a.name).join(', ')}`.trim()
-      : text
-  }
-
-  function turnOptions(text: string, attachments: readonly PendingAttachment[], id: string) {
-    return {
-      prompt: text,
-      ...(model ? { model } : {}),
-      conversationId: id,
-      ...(attachments.length > 0 ? { attachments: attachments.map((a) => a.id) } : {}),
-      ...(view ? { view } : {}),
-    }
-  }
 
   /**
    * A conversation is created on the first message rather than on arrival: an
@@ -496,13 +502,21 @@ export function useConversations({ fetchImpl, narrow, model, view, t }: Conversa
     // Sent DURING that tab's turn: the SERVER holds it — POSTed at once,
     // persisted on acceptance, dispatched as one merged turn when the
     // running one settles. What is kept here is only the waiting bubble.
-    if (current.turning) {
+    // `live.running` is what the Stop button reads, and it is up from the
+    // moment the first message is typed — before its POST has left. A message
+    // sent in that gap is held too, once the first one has gone.
+    if (current.turning || current.live?.running) {
       patchConversation(tabId, { held: [...current.held, { text, attachments }] })
       const controller = new AbortController()
-      // A turning tab has a conversation: a draft never turns, its conversation is made
-      // before its first turn leaves.
+      // A draft has no conversation until the first message makes it: wait for that
+      // message to have left, and take the id it was made with.
+      const id = tabId === DRAFT ? await leaving.current : tabId
+      if (!id) {
+        patchConversation(tabId, { held: current.held })
+        return
+      }
       const start = await startTurn(
-        { ...turnOptions(text, attachments, tabId), signal: controller.signal },
+        { ...turnOptions({ model, view }, text, attachments, id), signal: controller.signal },
         fetchImpl,
       )
       if (start.kind === 'stream') {
@@ -530,8 +544,13 @@ export function useConversations({ fetchImpl, narrow, model, view, t }: Conversa
 
     // Named from the first message, at creation: a title set in a second
     // call is a title lost whenever that call is.
+    let departed!: (id: string | undefined) => void
+    leaving.current = new Promise((resolve) => {
+      departed = resolve
+    })
     const id = await ensureConversation(tabId, titleFrom(text))
     if (!id) {
+      departed(undefined)
       // No id, no turn. The message stays drawn with the refusal under
       // it, and the next send tries the creation again. It used to leave
       // anyway — keyed by nothing, carrying the browser's own idea of the
@@ -541,7 +560,9 @@ export function useConversations({ fetchImpl, narrow, model, view, t }: Conversa
       })
       return
     }
-    const start = await startTurn(turnOptions(text, attachments, id), fetchImpl)
+    const start = await startTurn(turnOptions({ model, view }, text, attachments, id), fetchImpl).finally(() =>
+      departed(id),
+    )
 
     if (start.kind === 'held') {
       // Another browser tab is running this conversation's turn: adopt it,
@@ -559,8 +580,56 @@ export function useConversations({ fetchImpl, narrow, model, view, t }: Conversa
 
     void pump(id, start.states)
   }
+
+  return { adopt, send }
+}
+
+/**
+ * What the reader does to the tabs: open, activate, close, archive, reorder, and
+ * stop the turn of the one in front of them.
+ * Each is a change to the tabs and the list; opening and activating also
+ * adopt, which the turn piece hands in.
+ */
+function useTabActions(
+  { fetchImpl }: ConversationsOptions,
+  open: Open,
+  adopt: (id: string) => Promise<void>,
+) {
+  const { setTabs, setConversations, setListOpen, activeRef, conversation, patchConversation, read } =
+    open
+
+  /** From the list: opening a conversation opens it AS a tab, active. */
+  function openConversation(id: string): void {
+    setTabs((state) => openTab(state, id))
+    setListOpen(false)
+    read(id)
+    void adopt(id)
+  }
+
+  function activate(id: string): void {
+    setTabs((state) => activateTab(state, id))
+    read(id)
+    if (!conversation(id).loaded && id !== DRAFT) void adopt(id)
+  }
+
   /**
-   * Stops the ACTIVE tab's turn — the one whose ■ the user can see.
+   * Closes the TAB — never the conversation. The conversation stays in the list,
+   * what it carries stays warm (a running pump keeps feeding it, and its dot
+   * keeps meaning something if the tab is reopened).
+   */
+  function shut(id: string): void {
+    setTabs((state) => closeTab(state, id))
+  }
+
+  /** Put away, not deleted — and its tab goes with it. */
+  async function archive(id: string): Promise<void> {
+    if (!(await archiveConversation(fetchImpl ?? fetch, id))) return
+    setConversations((current) => current.filter((entry) => entry.id !== id))
+    shut(id)
+  }
+
+  /**
+   * Stops the ACTIVE tab's turn — the one whose square icon the user can see.
    *
    * Named by the CONVERSATION, the same address the re-attach uses. The
    * engine's session id, which this used to send, only comes back when the
@@ -574,13 +643,8 @@ export function useConversations({ fetchImpl, narrow, model, view, t }: Conversa
     const tabId = activeRef.current
     if (tabId === DRAFT) return
     patchConversation(tabId, { stopping: true })
-    void (fetchImpl ?? fetch)('/api/turn/stop', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ conversation: tabId }),
-    })
-      .then((response) => response.ok)
-      .catch(() => false)
+    void requestRaw(fetchImpl ?? fetch, '/api/turn/stop', jsonInit('POST', { conversation: tabId }))
+      .then((result) => result.ok && result.response.ok)
       .then((taken) => {
         // Refused or never sent: give the button back. A turn that settled
         // first clears this on its own, one line below in `consume`.
@@ -588,26 +652,49 @@ export function useConversations({ fetchImpl, narrow, model, view, t }: Conversa
       })
   }
 
+  /** The plus icon of the strip and the header: a fresh tab, conversation-less
+      until its first message names one. Only ever one draft — reopening it
+      just activates it. */
+  function newDraft(): void {
+    setTabs((state) => openTab(state, DRAFT))
+    setListOpen(false)
+  }
+
   return {
-    tabs,
-    setTabs,
-    conversations,
-    listOpen,
-    setListOpen,
-    activeId,
-    active,
-    answered,
-    setAnswered,
-    conversation,
-    refreshConversations,
     openConversation,
     activate,
     shut,
     archive,
-    dotOf,
     newDraft,
-    send,
     stop,
     moveTab: (from: number, to: number) => setTabs((state) => moveTab(state, from, to)),
+  }
+}
+
+export function useConversations(options: ConversationsOptions) {
+  const open = useOpenConversations(options)
+  const { adopt, send } = useTurn(options, open)
+  const actions = useTabActions(options, open, adopt)
+  return {
+    tabs: open.tabs,
+    setTabs: open.setTabs,
+    conversations: open.conversations,
+    listOpen: open.listOpen,
+    setListOpen: open.setListOpen,
+    activeId: open.activeId,
+    active: open.active,
+    answered: open.answered,
+    setAnswered: open.setAnswered,
+    conversation: open.conversation,
+    refreshConversations: open.refreshConversations,
+    openConversation: actions.openConversation,
+    activate: actions.activate,
+    shut: actions.shut,
+    archive: actions.archive,
+    dotOf: open.dotOf,
+    newDraft: actions.newDraft,
+    send,
+    stop: actions.stop,
+    moveTab: actions.moveTab,
   }
 }

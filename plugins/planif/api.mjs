@@ -7,7 +7,7 @@
  * a prompt, which is exactly the surface the design puts behind a risk zone.
  */
 
-import { readFile, readdir, stat } from 'node:fs/promises'
+import { readFile, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 
 const EVERY = /^(\d+)\s*(m|h|d)$/

@@ -6,10 +6,8 @@
  * makes Alfred recognisable is a colour, a name, and a way of addressing you.
  */
 
-export default function alfred() {
-  return {
-    brand: 'Alfred',
-    title: 'Alfred',
+const WORDS = {
+  fr: {
     // The placeholder does real work: it tells a first-time visitor that this
     // chat can also open things, which no amount of chrome would.
     placeholder: 'Écrire à Alfred… ou « ouvre mes projets »',
@@ -19,6 +17,25 @@ export default function alfred() {
     greetingDay: 'Bonjour, Monsieur.',
     greetingEvening: 'Bonsoir, Monsieur.',
     greetingAside: 'Que puis-je pour vous ?',
+  },
+  en: {
+    placeholder: 'Write to Alfred… or “open my projects”',
+    busyLabel: 'One moment',
+    idleLabel: 'At your service',
+    greetingDay: 'Good morning, Sir.',
+    greetingEvening: 'Good evening, Sir.',
+    greetingAside: 'What may I do for you?',
+  },
+}
+
+// The shell hands the factory `{ locale }`; a shell that does not still gets
+// the French words.
+export default function alfred(context) {
+  const words = WORDS[context?.locale] ?? WORDS.fr
+  return {
+    brand: 'Alfred',
+    title: 'Alfred',
+    ...words,
     // The crest: an open chevron, in currentColor so it follows the rail's
     // own colour through light and dark without a line of CSS.
     crest:

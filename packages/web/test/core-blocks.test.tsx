@@ -418,7 +418,7 @@ describe(':::list', () => {
     // Une liste vide se lit « ce dossier ne contient rien », ce qui est un
     // mensonge quand la vérité est « je n’ai pas pu regarder ».
     render(<Reader markdown={':::list{}\n:::\n'} path={HERE} />)
-    expect(screen.getByText(/index des pages/)).toBeTruthy()
+    expect(screen.getByText(/pages index/)).toBeTruthy()
   })
 })
 
@@ -696,17 +696,17 @@ describe(':::list{source=files}', () => {
   it('descend sous le dossier avec `depth=subtree`', async () => {
     const { fetchImpl, asked } = answering([])
     render(<Reader markdown={':::list{source=files depth=subtree}\n:::\n'} path={HERE} fetchImpl={fetchImpl} />)
-    await waitFor(() => expect(screen.getByText('Aucun fichier ici.')).toBeTruthy())
+    await waitFor(() => expect(screen.getByText('No file here.')).toBeTruthy())
     expect(asked).toEqual(['/api/files?under=chantiers%2Fadestia'])
   })
 
   it('DIT qu’il n’a pas pu lister, et qu’il lui faut une page', async () => {
     const { fetchImpl } = answering([], false)
     const { unmount } = render(<Reader markdown={':::list{source=files}\n:::\n'} path={HERE} fetchImpl={fetchImpl} />)
-    await waitFor(() => expect(screen.getByText(/n’ont pas pu être listés/)).toBeTruthy())
+    await waitFor(() => expect(screen.getByText(/could not be listed/)).toBeTruthy())
     unmount()
     render(<Reader markdown={':::list{source=files}\n:::\n'} />)
-    expect(screen.getByText(/a besoin de la page/)).toBeTruthy()
+    expect(screen.getByText(/needs the page whose files/)).toBeTruthy()
   })
 
   it('laisse des lignes ÉCRITES être écrites, quoi que dise `source`', () => {

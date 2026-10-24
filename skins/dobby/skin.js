@@ -30,19 +30,48 @@ const PLUME =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">' +
   '<path d="M4 20c4-7 8-12 16-16-1 6-5 10-11 11M4 20l5-5"/></svg>'
 
+const WORDS = {
+  fr: {
+    madame: 'Madame',
+    morning: (n) => `Bonjour, ${n}.`,
+    evening: (n) => `Bonsoir, ${n}.`,
+    candle: 'Dobby garde la chandelle allumée. Que doit-il chercher ?',
+    service: 'Dobby est à votre service. Que doit-il chercher ?',
+    ask: 'Demander à Dobby…',
+    busyLabel: 'Dobby écrit à la chandelle',
+    idleLabel: 'Dobby veille',
+    greetingDay: 'Bonjour, Madame.',
+    greetingEvening: 'Bonsoir, Madame.',
+    greetingAside: 'Dobby est à votre service.',
+  },
+  en: {
+    madame: 'Madam',
+    morning: (n) => `Good morning, ${n}.`,
+    evening: (n) => `Good evening, ${n}.`,
+    candle: 'Dobby keeps the candle lit. What should he look for?',
+    service: 'Dobby is at your service. What should he look for?',
+    ask: 'Ask Dobby…',
+    busyLabel: 'Dobby writes by candlelight',
+    idleLabel: 'Dobby keeps watch',
+    greetingDay: 'Good morning, Madam.',
+    greetingEvening: 'Good evening, Madam.',
+    greetingAside: 'Dobby is at your service.',
+  },
+}
+
 /** The bookplate and the greeting — the head of the landing. */
-function hero(host, context) {
+function hero(host, context, words) {
   // The bookplate carries the whole name, as a bookplate does; the greeting
   // only the first, as one speaks to a person. `user` is there only under
   // OIDC — a local instance has nobody to name.
-  const nom = context.user?.displayName?.trim() || 'Madame'
+  const nom = context.user?.displayName?.trim() || words.madame
   const prenom = nom.split(/\s+/)[0]
   const h = new Date().getHours()
-  const salut = h >= 5 && h < 18 ? `Bonjour, ${prenom}.` : `Bonsoir, ${prenom}.`
+  const salut = h >= 5 && h < 18 ? words.morning(prenom) : words.evening(prenom)
   const aparte =
     h >= 22 || h < 5
-      ? 'Dobby garde la chandelle allumée. Que doit-il chercher ?'
-      : 'Dobby est à votre service. Que doit-il chercher ?'
+      ? words.candle
+      : words.service
 
   host.innerHTML = `<div class="dby-hero">
     <div class="dby-exlibris" aria-hidden="true">
@@ -53,7 +82,7 @@ function hero(host, context) {
     <div class="dby-salut">
       <h1>${esc(salut)}</h1>
       <p>${esc(aparte)}</p>
-      <button class="dby-plume" type="button" data-plume>${PLUME}<span>Demander à Dobby…</span></button>
+      <button class="dby-plume" type="button" data-plume>${PLUME}<span>${esc(words.ask)}</span></button>
     </div>
   </div>`
 
@@ -71,22 +100,23 @@ function busy(host) {
   host.appendChild(el)
 }
 
-export default function dobby() {
+export default function dobby(context) {
+  const words = WORDS[context?.locale] ?? WORDS.fr
   return {
     brand: 'Dobby',
     title: 'Dobby',
-    placeholder: 'Demander à Dobby…',
-    busyLabel: 'Dobby écrit à la chandelle',
-    idleLabel: 'Dobby veille',
-    greetingDay: 'Bonjour, Madame.',
-    greetingEvening: 'Bonsoir, Madame.',
-    greetingAside: 'Dobby est à votre service.',
+    placeholder: words.ask,
+    busyLabel: words.busyLabel,
+    idleLabel: words.idleLabel,
+    greetingDay: words.greetingDay,
+    greetingEvening: words.greetingEvening,
+    greetingAside: words.greetingAside,
     // Pressed into the wax seal: the silhouette alone, so it holds in
     // monochrome.
     crest: `<svg viewBox="0 0 100 100" fill="currentColor">${CHAUSSETTE}</svg>`,
     // The quill on the send seal: Dobby writes the answer down.
     sendIcon: PLUME,
-    hero,
+    hero: (host, ctx) => hero(host, ctx, words),
     busy,
   }
 }

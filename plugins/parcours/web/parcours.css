@@ -9,10 +9,8 @@
  * feuille des voyages) — donc tout est sous `.parcours`, la seule classe que ce
  * plugin pose lui-même.
  *
- * Ensuite les JETONS. Ils sont traduits une fois ci-dessous, vers ceux de
- * Adestia, plutôt que réécrits dans cent quatre-vingts lignes de règles. Ce qui
- * compte n'est pas l'économie : c'est qu'un skin qui redéfinit `--accent`
- * repeigne la trace, le profil et les pastilles sans savoir que ce plugin
+ * Les JETONS sont ceux du shell, lus directement : un skin qui redéfinit `--accent`
+ * repeint la trace, le profil et les pastilles sans savoir que ce plugin
  * existe. Une couleur en dur ici serait le seul endroit du produit qu'un skin
  * ne pourrait pas habiller.
  *
@@ -23,36 +21,17 @@
 
 .parcours,
 .parcours-page {
-  /* Les surfaces, de la page au creux. */
-  --bg: var(--surface);
-  --surface2: var(--surface-soft);
-  --sink: var(--surface-sunken);
-  /* L'encre, du texte au murmure. */
-  --ink: var(--text);
-  --ink-soft: var(--text-muted);
-  --ink-faint: var(--text-faint);
-  --line: var(--border);
-  --accent-lo: var(--accent-quiet);
-  --on-solid: var(--accent-text);
-  --good: var(--success);
-  --crit: var(--danger);
-  --f-body: var(--font);
-  --f-mono: var(--font-mono);
-  --r: var(--radius);
-  --r-ctl: var(--radius-ctl);
-  --r-xs: var(--radius-sm);
-  --r-micro: var(--radius-micro);
   /* « Vous êtes ici », en mode balade. Une teinte à elle, pas `--accent` : le
      tracé porte déjà l'accent, et un point de position de la même couleur que
      le chemin est un point qu'on cherche sur la carte. */
-  --proj: var(--adestia-hue-indigo, #4c6fe0);
+  --proj: var(--adestia-hue-indigo);
 }
 
 /* La page d'un parcours seul — la même carte, sans la fiche autour. */
 .parcours-page { color: var(--text); }
-.parcours-page .parcours-dans { font-size: 13px; color: var(--text-faint); margin: 0 0 var(--space-3); }
+.parcours-page .parcours-dans { font-size: var(--text-sm); color: var(--text-faint); margin: 0 0 var(--space-3); }
 .parcours-page .parcours-dans a { color: var(--text-muted); }
-.parcours-page .parcours-dans a:hover { color: var(--accent); }
+.parcours-page .parcours-dans a:hover { color:var(--accent-text); }
 
 /* ── Parcours — la carte d'une balade ────────────────────────────────────────
    Peint au montage par parcours.js (la géométrie vit dans un fichier à côté,
@@ -63,21 +42,21 @@
    aussi bien sur une forêt sombre que sur une place claire. */
 .parcours{ margin:1.5em 0; }
 .parcours .pc-head{ margin-bottom:10px; }
-.parcours .pc-title{ font:600 15px/1.3 var(--f-body); color:var(--ink); }
-.parcours .pc-stats{ font:13px/1.5 var(--f-body); color:var(--ink-soft); font-variant-numeric:tabular-nums; }
-.parcours .pc-vide{ font:13px var(--f-body); color:var(--ink-faint); padding:14px 0; }
+.parcours .pc-title{ font:600 var(--text-base)/1.3 var(--font); color:var(--text); }
+.parcours .pc-stats{ font:var(--text-sm)/1.5 var(--font); color:var(--text-muted); font-variant-numeric:tabular-nums; }
+.parcours .pc-vide{ font:var(--text-sm) var(--font); color:var(--text-faint); padding:14px 0; }
 
 /* `touch-action:pan-y` est le partage du geste tactile : la PAGE garde le doigt
    unique (une fiche longue doit rester parcourable quand le pouce tombe sur la
    carte), la CARTE prend les deux doigts. `touch-action:none` aurait pris le
    doigt unique et rendu la fiche impossible à faire défiler. */
-.parcours .pc-map{ position:relative; overflow:hidden; border-radius:var(--r); border:1px solid var(--line); background:var(--surface2); box-shadow:var(--shadow-sm); touch-action:pan-y; cursor:grab; user-select:none; -webkit-user-select:none; }
+.parcours .pc-map{ position:relative; overflow:hidden; border-radius:var(--radius); border:1px solid var(--border); background:var(--surface-soft); box-shadow:var(--shadow-sm); touch-action:pan-y; cursor:grab; user-select:none; -webkit-user-select:none; }
 .parcours .pc-map:active{ cursor:grabbing; }
 /* Le calque déplaçable : pendant le geste on le translate, on ne redessine pas
    la mosaïque — recalculer les tuiles à chaque `pointermove` saccaderait. */
 .parcours .pc-pan{ position:absolute; inset:0; }
 .parcours .pc-ctl{ position:absolute; right:8px; top:8px; z-index:3; display:flex; flex-direction:column; gap:4px; }
-.parcours .pc-z{ width:27px; height:27px; padding:0; border-radius:var(--r-xs); border:1px solid var(--line); background:var(--surface); color:var(--ink); font:600 15px/1 var(--f-body); cursor:pointer; box-shadow:var(--shadow-sm); }
+.parcours .pc-z{ width:27px; height:27px; padding:0; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--surface); color:var(--text); font:600 var(--text-base)/1 var(--font); cursor:pointer; box-shadow:var(--shadow-sm); }
 .parcours .pc-tiles{ position:absolute; inset:0; }
 .parcours .pc-tiles img{ position:absolute; width:256px; height:256px; max-width:none; pointer-events:none; -webkit-user-drag:none; }
 /* Ni `inset:0` ni `100%` : le SVG porte ses dimensions en PIXELS (cf.
@@ -90,55 +69,55 @@
    juste, que le tracé ne suivait pas les rues. */
 .parcours .pc-halo{ fill:none; stroke:var(--surface); stroke-width:4.5; stroke-linecap:round; stroke-linejoin:round; opacity:.8; }
 .parcours .pc-line{ fill:none; stroke:var(--accent); stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; opacity:.78; }
-.parcours .pc-credit{ position:absolute; right:0; bottom:0; font:10.5px var(--f-body); color:var(--ink-soft); background:var(--surface); opacity:.86; padding:2px 6px; border-radius:var(--r-micro) 0 0 0; }
+.parcours .pc-credit{ position:absolute; right:0; bottom:0; font:var(--text-2xs) var(--font); color:var(--text-muted); background:var(--surface); opacity:.86; padding:2px 6px; border-radius:var(--radius-micro) 0 0 0; }
 
-.parcours .pc-pin{ position:absolute; transform:translate(-50%,-50%); width:19px; height:19px; padding:0; border-radius:50%; border:2px solid var(--surface); background:var(--accent); color:var(--on-solid); font:700 10px var(--f-body); font-variant-numeric:tabular-nums; cursor:pointer; box-shadow:var(--shadow-sm); }
-.parcours .pc-pin.on{ background:var(--ink); transform:translate(-50%,-50%) scale(1.25); }
-.parcours .pc-fond{ margin-top:8px; padding:5px 11px; border-radius:var(--r-ctl); border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); font:12px var(--f-body); cursor:pointer; }
+.parcours .pc-pin{ position:absolute; transform:translate(-50%,-50%); width:19px; height:19px; padding:0; border-radius:50%; border:2px solid var(--surface); background:var(--accent); color:var(--on-accent); font:700 var(--text-2xs) var(--font); font-variant-numeric:tabular-nums; cursor:pointer; box-shadow:var(--shadow-sm); }
+.parcours .pc-pin.on{ background:var(--text); transform:translate(-50%,-50%) scale(1.25); }
+.parcours .pc-fond{ margin-top:8px; padding:5px 11px; border-radius:var(--radius-ctl); border:1px solid var(--border); background:var(--surface); color:var(--text-muted); font:var(--text-xs) var(--font); cursor:pointer; }
 
 .parcours .pc-prof-box{ container-type:inline-size; margin-top:14px; }
 .parcours .pc-prof{ display:block; width:100%; max-width:660px; height:auto; }
-.parcours .pc-prof-fill{ fill:var(--accent-lo); }
+.parcours .pc-prof-fill{ fill:var(--accent-quiet); }
 .parcours .pc-prof-line{ fill:none; stroke:var(--accent); stroke-width:1.5; vector-effect:non-scaling-stroke; }
 
 .parcours .pc-list{ margin:14px 0 0; padding:0; list-style:none; counter-reset:pc; }
-.parcours .pc-list li{ counter-increment:pc; position:relative; padding:9px 0 9px 34px; border-top:1px solid var(--line); }
-.parcours .pc-list li::before{ content:counter(pc); position:absolute; left:0; top:11px; width:22px; height:22px; border-radius:50%; background:var(--sink); color:var(--ink-soft); font:600 11px/22px var(--f-body); text-align:center; }
-.parcours .pc-list li.on{ background:var(--accent-lo); border-radius:var(--r-xs); }
-.parcours .pc-list li.on::before{ background:var(--accent); color:var(--on-solid); }
-.parcours .pc-nom{ font:600 13.5px/1.35 var(--f-body); color:var(--ink); }
-.parcours .pc-meta{ font:12px var(--f-body); color:var(--ink-faint); font-variant-numeric:tabular-nums; margin-top:2px; }
-.parcours .pc-desc{ font:13px/1.5 var(--f-body); color:var(--ink-soft); margin-top:4px; white-space:pre-line; }
+.parcours .pc-list li{ counter-increment:pc; position:relative; padding:9px 0 9px 34px; border-top:1px solid var(--border); }
+.parcours .pc-list li::before{ content:counter(pc); position:absolute; left:0; top:11px; width:22px; height:22px; border-radius:50%; background:var(--surface-sunken); color:var(--text-muted); font:600 var(--text-2xs)/22px var(--font); text-align:center; }
+.parcours .pc-list li.on{ background:var(--accent-quiet); border-radius:var(--radius-sm); }
+.parcours .pc-list li.on::before{ background:var(--accent); color:var(--on-accent); }
+.parcours .pc-nom{ font:600 var(--text-sm)/1.35 var(--font); color:var(--text); }
+.parcours .pc-meta{ font:var(--text-xs) var(--font); color:var(--text-faint); font-variant-numeric:tabular-nums; margin-top:2px; }
+.parcours .pc-desc{ font:var(--text-sm)/1.5 var(--font); color:var(--text-muted); margin-top:4px; white-space:pre-line; }
 /* La note est ce qu'Alfred ajoute de sa main : elle se distingue de la description. */
-.parcours .pc-note{ font:13px/1.5 var(--f-body); color:var(--ink-soft); margin-top:5px; padding-left:9px; border-left:2px solid var(--accent); white-space:pre-line; }
-.parcours .pc-web{ display:inline-block; font:12px var(--f-body); color:var(--accent); margin-top:5px; }
+.parcours .pc-note{ font:var(--text-sm)/1.5 var(--font); color:var(--text-muted); margin-top:5px; padding-left:9px; border-left:2px solid var(--accent); white-space:pre-line; }
+.parcours .pc-web{ display:inline-block; font:var(--text-xs) var(--font); color:var(--accent-text); margin-top:5px; }
 
-.parcours .pc-foot{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-top:12px; padding-top:10px; border-top:1px solid var(--line); }
-.parcours .pc-src{ font:11.5px var(--f-body); color:var(--ink-faint); }
-.parcours .pc-dl{ font:600 12.5px var(--f-body); color:var(--ink); text-decoration:none; padding:6px 12px; border-radius:var(--r-ctl); border:1px solid var(--line); background:var(--surface); }
+.parcours .pc-foot{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-top:12px; padding-top:10px; border-top:1px solid var(--border); }
+.parcours .pc-src{ font:var(--text-xs) var(--font); color:var(--text-faint); }
+.parcours .pc-dl{ font:600 var(--text-xs) var(--font); color:var(--text); text-decoration:none; padding:6px 12px; border-radius:var(--radius-ctl); border:1px solid var(--border); background:var(--surface); }
 
 /* Vue « lien » : la carte compacte qui mène à `#/parcours/…`. Elle existe pour
    qu'un parcours n'ait pas besoin d'un domaine à lui — une fiche l'accroche là
    où elle a une raison d'en parler, et peut en citer trois sans empiler trois
    cartes plein cadre. */
 .parcours.pc-asLink{ margin:.7em 0; }
-.pc-card{ display:flex; align-items:center; gap:13px; padding:11px 15px; border-radius:var(--r); background:var(--surface); border:1px solid var(--line); box-shadow:var(--shadow-sm); text-decoration:none; color:inherit; }
-.pc-card-ico{ font-size:19px; line-height:1; }
+.pc-card{ display:flex; align-items:center; gap:13px; padding:11px 15px; border-radius:var(--radius); background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow-sm); text-decoration:none; color:inherit; }
+.pc-card-ico{ font-size:var(--text-lg); line-height:1; }
 .pc-card-body{ display:flex; flex-direction:column; gap:2px; min-width:0; }
-.pc-card-t{ font:600 13.5px/1.3 var(--f-body); color:var(--ink); }
-.pc-card-m{ font:12px var(--f-body); color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+.pc-card-t{ font:600 var(--text-sm)/1.3 var(--font); color:var(--text); }
+.pc-card-m{ font:var(--text-xs) var(--font); color:var(--text-muted); font-variant-numeric:tabular-nums; }
 
 /* Un bloc incomplet le DIT, à sa place — il ne meurt pas et n'écrit pas
    « undefined ». Discret mais visible : c'est une faute d'écriture à corriger,
    pas une alarme. */
-.bloc-ko{ display:inline-block; margin:.6em 0; padding:9px 13px; border-radius:var(--r-xs); border:1px dashed color-mix(in srgb,var(--crit) 45%,var(--line)); background:color-mix(in srgb,var(--crit) 7%,transparent); color:var(--ink-soft); font:12.5px var(--f-mono); }
+.bloc-ko{ display:inline-block; margin:.6em 0; padding:9px 13px; border-radius:var(--radius-sm); border:1px dashed color-mix(in srgb,var(--danger) 45%,var(--border)); background:color-mix(in srgb,var(--danger) 7%,transparent); color:var(--text-muted); font:var(--text-xs) var(--font-mono); }
 
 /* Le bandeau d'erreurs d'écriture, posé en tête de fiche par le lanceur.
    Il s'adresse à qui ÉCRIT (Alfred, Monsieur), pas au lecteur : sobre, cadré,
    et jamais à la place du contenu — la fiche s'affiche quand même. */
-.doc-errs{ margin:0 0 1.4em; padding:11px 14px; border-radius:var(--r-xs); border:1px solid color-mix(in srgb,var(--crit) 35%,var(--line)); background:color-mix(in srgb,var(--crit) 6%,transparent); }
-.doc-errs .de-t{ font:600 12.5px var(--f-body); color:var(--crit); margin-bottom:5px; }
-.doc-errs .de-l{ font:12px/1.55 var(--f-mono); color:var(--ink-soft); }
+.doc-errs{ margin:0 0 1.4em; padding:11px 14px; border-radius:var(--radius-sm); border:1px solid color-mix(in srgb,var(--danger) 35%,var(--border)); background:color-mix(in srgb,var(--danger) 6%,transparent); }
+.doc-errs .de-t{ font:600 var(--text-xs) var(--font); color:var(--danger-text); margin-bottom:5px; }
+.doc-errs .de-l{ font:var(--text-xs)/1.55 var(--font-mono); color:var(--text-muted); }
 
 /* ── Parcours : sens de marche, depart/arrivee, echelles ─────────────────────
    Trois manques constates a l'usage le 2026-08-05, tous des defauts de LECTURE :
@@ -149,26 +128,26 @@
 
 /* Depart et arrivee ne sont pas des reperes comme les autres : ce sont les deux
    seuls dont la POSITION dans la liste change la lecture de la carte. */
-.parcours .pc-pin.pc-start{ background:var(--good); width:auto; min-width:22px; padding:0 6px; border-radius:11px; border-width:2.5px; }
-.parcours .pc-pin.pc-end{ background:var(--ink); border-width:2.5px; }
+.parcours .pc-pin.pc-start{ background:var(--success); width:auto; min-width:22px; padding:0 6px; border-radius:11px; border-width:2.5px; }
+.parcours .pc-pin.pc-end{ background:var(--text); border-width:2.5px; }
 .parcours .pc-pin.on{ z-index:2; }
 
 /* Les echelles du profil. */
-.parcours .pc-grid{ stroke:var(--line); stroke-width:1; }
-.parcours .pc-tick{ fill:var(--ink-faint); font:10.5px var(--f-body); font-variant-numeric:tabular-nums; }
-.parcours .pc-mark{ stroke:var(--line); stroke-width:1; }
-.parcours .pc-mark-n{ fill:var(--ink-faint); font:9.5px var(--f-body); font-variant-numeric:tabular-nums; }
+.parcours .pc-grid{ stroke:var(--border); stroke-width:1; }
+.parcours .pc-tick{ fill:var(--text-faint); font:var(--text-2xs) var(--font); font-variant-numeric:tabular-nums; }
+.parcours .pc-mark{ stroke:var(--border); stroke-width:1; }
+.parcours .pc-mark-n{ fill:var(--text-faint); font:var(--text-2xs) var(--font); font-variant-numeric:tabular-nums; }
 /* ⚠️ Apres les regles de base : une requete de conteneur n'ajoute AUCUNE
    specificite (meme piege que chart-ligne). Dans une colonne etroite, le texte
    d'un SVG retrecit avec le viewBox — on le regrossit. */
 @container (max-width:620px){
-  .parcours .pc-tick{ font-size:13px; }
-  .parcours .pc-mark-n{ font-size:12px; }
+  .parcours .pc-tick{ font-size:var(--text-sm); }
+  .parcours .pc-mark-n{ font-size:var(--text-xs); }
 }
 
 /* La barre de commandes, sous la carte. */
 .parcours .pc-bar{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-top:9px; }
-.parcours .pc-bar .pc-dl{ font:600 12.5px var(--f-body); color:var(--ink); text-decoration:none; padding:5px 12px; border-radius:var(--r-ctl); border:1px solid var(--line); background:var(--surface); }
+.parcours .pc-bar .pc-dl{ font:600 var(--text-xs) var(--font); color:var(--text); text-decoration:none; padding:5px 12px; border-radius:var(--radius-ctl); border:1px solid var(--border); background:var(--surface); }
 .parcours .pc-foot{ justify-content:flex-start; }
 .parcours .pc-ico{ margin-right:7px; }
 
@@ -194,19 +173,19 @@
    La carte sert EN MARCHANT. En mode balade elle prend l'ecran entier — le
    reste de la fiche n'a aucun interet a mi-parcours — et la barre d'etat dit
    les deux seules choses utiles : ce qui est fait, ce qui vient. */
-.parcours.pc-balade{ position:fixed; inset:0; z-index:60; margin:0; background:var(--bg); display:flex; flex-direction:column; }
+.parcours.pc-balade{ position:fixed; inset:0; z-index:60; margin:0; background:var(--surface); display:flex; flex-direction:column; }
 /* Tout ce qui n'est pas la carte disparait : titre, profil, liste, pied. */
 .parcours.pc-balade>*{ display:none; }
 .parcours.pc-balade>.pc-map{ display:block; flex:1; height:auto!important; border-radius:0; border:0; }
 .parcours.pc-balade>.pc-hud{ display:flex; }
 
-.parcours .pc-hud{ align-items:center; gap:10px; padding:10px 14px; padding-bottom:calc(10px + env(safe-area-inset-bottom)); background:var(--surface); border-top:1px solid var(--line); }
+.parcours .pc-hud{ align-items:center; gap:10px; padding:10px 14px; padding-bottom:calc(10px + env(safe-area-inset-bottom)); background:var(--surface); border-top:1px solid var(--border); }
 .parcours .pc-hud-txt{ flex:1; min-width:0; }
-.parcours .pc-hud-1{ font:600 15px/1.25 var(--f-body); color:var(--ink); font-variant-numeric:tabular-nums; }
-.parcours .pc-hud-2{ font:13px/1.35 var(--f-body); color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.parcours .pc-hud-1{ font:600 var(--text-base)/1.25 var(--font); color:var(--text); font-variant-numeric:tabular-nums; }
+.parcours .pc-hud-2{ font:var(--text-sm)/1.35 var(--font); color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 /* Cibles tactiles : on les touche en marchant, avec des gants parfois. */
-.parcours .pc-hud-b{ min-width:46px; height:42px; padding:0 12px; border-radius:var(--r-ctl); border:1px solid var(--line); background:var(--surface2); color:var(--ink-soft); font:600 13px var(--f-body); cursor:pointer; }
-.parcours .pc-hud-b.on{ border-color:var(--accent); color:var(--accent); background:var(--accent-lo); }
+.parcours .pc-hud-b{ min-width:46px; height:42px; padding:0 12px; border-radius:var(--radius-ctl); border:1px solid var(--border); background:var(--surface-soft); color:var(--text-muted); font:600 var(--text-sm) var(--font); cursor:pointer; }
+.parcours .pc-hud-b.on{ border-color:var(--accent-text); color:var(--accent-text); background:var(--accent-quiet); }
 
 /* La position : un point, son cercle de PRECISION, et le cap.
    Le cercle n'est pas decoratif — dans une ville close le GPS donne couramment
@@ -216,3 +195,12 @@
 .parcours .pc-moi-acc{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); border-radius:50%; background:color-mix(in srgb,var(--proj) 18%,transparent); border:1px solid color-mix(in srgb,var(--proj) 45%,transparent); }
 .parcours .pc-moi-pt{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:15px; height:15px; border-radius:50%; background:var(--proj); border:2.5px solid var(--surface); box-shadow:var(--shadow-sm); }
 .parcours .pc-moi-cap{ position:absolute; left:50%; top:50%; width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; border-bottom:11px solid var(--proj); transform-origin:50% 100%; }
+
+/* The named exit keeps its word; on a phone the GPS gets its own row. */
+@media (max-width:820px){
+  /* A transformed two-screen track can contain fixed elements: occupy its
+     visible right-hand screen, not the full track. */
+  .parcours.pc-balade{ left:auto; width:100vw; }
+  .parcours .pc-hud{ flex-wrap:wrap; }
+  .parcours .pc-hud-txt{ flex-basis:100%; }
+}

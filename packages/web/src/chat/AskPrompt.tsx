@@ -2,6 +2,9 @@
  * The question the engine raised, and the three ways to answer it.
  */
 
+import { Icon } from '../app/Icon.js'
+import { Button } from '../app/ui/Button.js'
+
 import type { PendingAsk } from './stream.js'
 
 /**
@@ -33,7 +36,7 @@ export function AskPrompt({
 }) {
   return (
     <div className="adestia-ask" role="alertdialog" aria-label={t('Permission required')}>
-      <p className="adestia-ask__text">{ask.title}</p>
+      <p className="adestia-ask__text"><Icon name="triangle-alert" />{ask.title}</p>
       {ask.reason && <p className="adestia-ask__reason">{ask.reason}</p>}
       {/* Said out loud rather than left as a missing button. The engine
           declines to propose a rule for a command its own parser cannot cut
@@ -47,20 +50,20 @@ export function AskPrompt({
         </p>
       )}
       <div className="adestia-ask__actions">
-        <button type="button" onClick={() => onAnswer(ask.id, 'deny')}>
+        <Button onClick={() => onAnswer(ask.id, 'deny')}>
           {t('Refuse')}
-        </button>
-        <button type="button" onClick={() => onAnswer(ask.id, 'once')}>
+        </Button>
+        <Button onClick={() => onAnswer(ask.id, 'once')}>
           {t('Just this once')}
-        </button>
+        </Button>
         {ask.remembering && (
-          <button
-            type="button"
+          <Button
+            variant="accent"
             className="adestia-ask__always"
             onClick={() => onAnswer(ask.id, 'always')}
           >
             {t('Always')}
-          </button>
+          </Button>
         )}
       </div>
     </div>

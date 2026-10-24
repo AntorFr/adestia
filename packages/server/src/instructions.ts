@@ -34,10 +34,10 @@ import { dirname, join, relative, resolve, sep } from 'node:path'
 
 import type { InstructionKind, InstructionZone } from '@antorfr/adestia-drivers'
 
-import { parseFrontmatter } from './pages.js'
+import { field, parseFrontmatter } from './frontmatter.js'
 import { MANAGED_MARKER } from './skills.js'
 
-export interface InstructionFile {
+interface InstructionFile {
   /** Workspace-relative, forward slashes, as the API speaks. */
   readonly path: string
   readonly modified: string
@@ -81,21 +81,6 @@ const PROSE = new Set(['.md', '.markdown', '.txt'])
 const isProse = (name: string): boolean => {
   const dot = name.lastIndexOf('.')
   return dot > 0 && PROSE.has(name.slice(dot).toLowerCase())
-}
-
-/**
- * One frontmatter field, when it is a usable line of prose.
- *
- * Anything that is not a non-empty string is dropped rather than coerced: a
- * YAML block scalar (`description: >`) parses shallowly to its indicator, and
- * a card captioned `>` is worse than a card with no caption.
- */
-function field(fields: Record<string, unknown>, key: string): string | undefined {
-  const value = fields[key]
-  if (typeof value !== 'string') return undefined
-  const trimmed = value.trim()
-  if (trimmed === '' || trimmed === '>' || trimmed === '|') return undefined
-  return trimmed
 }
 
 /**
@@ -154,7 +139,7 @@ async function walk(
 }
 
 /** A declared path, what it holds, and whether it is one file or many. */
-export interface InstructionPath {
+interface InstructionPath {
   readonly path: string
   /** The SHAPE on disk: one file, or a folder holding many. */
   readonly kind: 'file' | 'folder'

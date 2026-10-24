@@ -1,8 +1,7 @@
-import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { Clock, readState, writeState } from '../src/clock.js'
 import {
@@ -21,11 +20,14 @@ import {
   stampField,
   type ScheduledNote,
 } from '../src/schedule.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
+
+afterEach(cleanTmp)
 
 let root: string
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'adestia-sched-'))
+  root = await tmpDir('adestia-sched-')
 })
 
 const MINUTE = 60_000

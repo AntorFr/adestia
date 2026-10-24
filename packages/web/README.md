@@ -2,7 +2,7 @@
 
 The browser shell: the chat, the apps canvas, and the runtime plugin loader.
 
-Two pieces carry the weight, and both are testable without a browser because
+Three pieces carry the weight, and all are testable without a browser because
 their environment is injected:
 
 - **`chat/stream.ts`** — the SSE parser and the live turn state. Text arrives

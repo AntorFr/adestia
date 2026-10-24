@@ -3,8 +3,10 @@
  * in a row when there is room, folded under one button when there is not.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 
+import { Icon } from '../app/Icon.js'
+import { FALLBACK_KEY, requestRaw } from '../app/request.js'
 import { useMobile } from '../app/useMobile.js'
 // The drag primitive is shared with the page screen: one answer to "is this
 // drag carrying files", so the two surfaces cannot disagree about it.
@@ -67,13 +69,14 @@ export function ComposerFold({
     <div className="adestia-fold" ref={host}>
       <button
         type="button"
-        className="adestia-composer__attach"
+        className="adestia-composer__attach adestia-btn adestia-btn--icon"
         aria-label={t('More')}
+        title={t('More')}
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen(!open)}
       >
-        ＋
+        <Icon name="plus" />
       </button>
       {open && (
         <div className="adestia-fold__menu" role="menu">
@@ -87,7 +90,7 @@ export function ComposerFold({
             }}
           >
             <span className="adestia-fold__glyph" aria-hidden="true">
-              📎
+              <Icon name="paperclip" />
             </span>
             {t('Attach files')}
           </button>
@@ -133,9 +136,101 @@ export function composerHeight(scrollHeight: number): number {
   return Math.min(Math.max(scrollHeight, COMPOSER_MIN_HEIGHT), COMPOSER_MAX_HEIGHT)
 }
 
+/** Grows the field to its text, or to its placeholder when empty. */
+function useFittedField(area: RefObject<HTMLTextAreaElement | null>, text: string, placeholder: string | undefined): void {
+  const fit = useCallback(() => {
+    const element = area.current
+    if (!element) return
+    // Measured from scratch each time: `scrollHeight` on an element that
+    // still carries its previous height reports that height, so a field that
+    // grew would never shrink back when the text was deleted.
+    element.style.height = 'auto'
+    // An empty field reports the height of nothing, not of its placeholder:
+    // on a narrow phone the placeholder wraps to a second line and would be
+    // cut. So the empty field is measured with the placeholder standing in
+    // for the text, then put back before anything paints.
+    const empty = element.value === ''
+    if (empty) element.value = element.placeholder
+    const content = element.scrollHeight
+    if (empty) element.value = ''
+    // scrollHeight leaves the border out and the field is border-box.
+    const border = element.offsetHeight - element.clientHeight
+    const height = composerHeight(content + border)
+    element.style.height = `${height}px`
+    // Only once it has stopped growing, or the scrollbar flickers in and out
+    // on every keystroke of an ordinary two-line message.
+    element.style.overflowY = content + border > COMPOSER_MAX_HEIGHT ? 'auto' : 'hidden'
+  }, [area])
+
+  // Re-fitted when the words change and when the field's width does (a phone
+  // turned, a window resized): the placeholder wraps with the width.
+  useEffect(fit, [fit, text, placeholder])
+  useEffect(() => {
+    const element = area.current
+    if (!element || typeof ResizeObserver === 'undefined') return
+    let width = element.clientWidth
+    const observer = new ResizeObserver(() => {
+      if (element.clientWidth !== width) {
+        width = element.clientWidth
+        fit()
+      }
+    })
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [area, fit])
+}
+
 export interface PendingAttachment {
   readonly id: string
   readonly name: string
+}
+
+/**
+ * What a composer has taken in: the files waiting in its tray, the refusal
+ * under them, and the uploader that fills both. The send empties the tray, so
+ * the setter is handed out with the list rather than kept private.
+ */
+function useUploads(fetchImpl: typeof fetch, t: (key: string) => string) {
+  const [attachments, setAttachments] = useState<readonly PendingAttachment[]>([])
+  const [uploadError, setUploadError] = useState<string | undefined>()
+
+  const upload = useCallback(
+    async (files: readonly File[]) => {
+      if (files.length === 0) return
+      setUploadError(undefined)
+      const form = new FormData()
+      for (const file of files) form.append('file', file)
+
+      const sent = await requestRaw(fetchImpl, '/api/upload', { method: 'POST', body: form }, t)
+      // Network failures use the helper's translated fallback; the server's
+      // own `error` and the list of refusals keep their way.
+      if (!sent.ok) {
+        setUploadError(sent.error)
+        return
+      }
+      const { response } = sent
+      try {
+        const body = (await response.json()) as {
+          attachments?: PendingAttachment[]
+          refused?: string[]
+          error?: string
+        }
+        if (!response.ok) {
+          setUploadError(body.error ?? t(FALLBACK_KEY).replace('%n', String(response.status)))
+          return
+        }
+        setAttachments((current) => [...current, ...(body.attachments ?? [])])
+        // Refusals are shown next to what worked: a file silently dropped is a
+        // file the user believes the agent has.
+        if (body.refused?.length) setUploadError(body.refused.join('; '))
+      } catch (error) {
+        setUploadError((error as Error).message)
+      }
+    },
+    [fetchImpl, t],
+  )
+
+  return { attachments, setAttachments, uploadError, upload }
 }
 
 export function Composer({
@@ -156,7 +251,7 @@ export function Composer({
   onSend: (text: string, attachments: readonly PendingAttachment[]) => void
   onStop: () => void
   busy: boolean
-  /** The stop was taken and the engine has not landed yet: the ■ is spent. */
+  /** The stop was taken and the engine has not landed yet: the stop button is spent. */
   stopping?: boolean
   /** A question is on screen: the turn is waiting on it, not on more text. */
   blocked?: boolean
@@ -188,40 +283,10 @@ export function Composer({
   // still runs so the answer stays live when nobody does.
   const fold = folded ?? narrow
   const [text, setText] = useState('')
-  const [attachments, setAttachments] = useState<readonly PendingAttachment[]>([])
-  const [uploadError, setUploadError] = useState<string | undefined>()
   const [dropping, setDropping] = useState(false)
   const area = useRef<HTMLTextAreaElement>(null)
   const picker = useRef<HTMLInputElement>(null)
-
-  const upload = useCallback(
-    async (files: readonly File[]) => {
-      if (files.length === 0) return
-      setUploadError(undefined)
-      const form = new FormData()
-      for (const file of files) form.append('file', file)
-
-      try {
-        const response = await fetchImpl('/api/upload', { method: 'POST', body: form })
-        const body = (await response.json()) as {
-          attachments?: PendingAttachment[]
-          refused?: string[]
-          error?: string
-        }
-        if (!response.ok) {
-          setUploadError(body.error ?? `upload failed (${response.status})`)
-          return
-        }
-        setAttachments((current) => [...current, ...(body.attachments ?? [])])
-        // Refusals are shown next to what worked: a file silently dropped is a
-        // file the user believes the agent has.
-        if (body.refused?.length) setUploadError(body.refused.join('; '))
-      } catch (error) {
-        setUploadError((error as Error).message)
-      }
-    },
-    [fetchImpl],
-  )
+  const { attachments, setAttachments, uploadError, upload } = useUploads(fetchImpl, t)
 
   const submit = useCallback(() => {
     const value = text.trim()
@@ -231,17 +296,17 @@ export function Composer({
     onSend(value, attachments)
     setText('')
     setAttachments([])
-  }, [attachments, blocked, onSend, text])
+  }, [attachments, blocked, onSend, setAttachments, text])
 
   useEffect(() => {
     // Appends rather than replaces: whatever the user already typed IS the
     // instruction, and a plugin dropping text must not erase it.
     onFill?.((text: string) => {
-      // Composing nothing is a no-op, not a stray space: a plugin whose
-      // scanner found no code should leave the field exactly as it was.
+      // An empty fill is also the home's focus command. Leave the draft
+      // untouched, including when a plugin's scanner found no code.
+      area.current?.focus()
       if (text.trim() === '') return
       setText((current) => (current.trim() === '' ? text : `${current.trimEnd()} ${text}`))
-      area.current?.focus()
     })
   }, [onFill])
 
@@ -249,23 +314,18 @@ export function Composer({
     onAttach?.(upload)
   }, [onAttach, upload])
 
-  useEffect(() => {
-    const element = area.current
-    if (!element) return
-    // Measured from scratch each time: `scrollHeight` on an element that
-    // still carries its previous height reports that height, so a field that
-    // grew would never shrink back when the text was deleted.
-    element.style.height = 'auto'
-    const height = composerHeight(element.scrollHeight)
-    element.style.height = `${height}px`
-    // Only once it has stopped growing, or the scrollbar flickers in and out
-    // on every keystroke of an ordinary two-line message.
-    element.style.overflowY = element.scrollHeight > COMPOSER_MAX_HEIGHT ? 'auto' : 'hidden'
-  }, [text])
+  useFittedField(area, text, placeholder)
 
   return (
     <form
-      className={`adestia-composer${dropping ? ' adestia-composer--dropping' : ''}`}
+      className={[
+        'adestia-composer',
+        dropping && 'adestia-composer--dropping',
+        stopping && 'adestia-composer--stopping',
+        blocked && 'adestia-composer--blocked',
+      ]
+        .filter(Boolean)
+        .join(' ')}
       onSubmit={(event) => {
         event.preventDefault()
         submit()
@@ -289,6 +349,7 @@ export function Composer({
       <AttachmentTray
         attachments={attachments}
         {...(uploadError ? { error: uploadError } : {})}
+        t={t}
         onRemove={(id) => setAttachments((current) => current.filter((a) => a.id !== id))}
       />
       <input
@@ -315,17 +376,18 @@ export function Composer({
         <>
           <button
             type="button"
-            className="adestia-composer__attach"
+            className="adestia-composer__attach adestia-btn adestia-btn--icon"
             onClick={() => picker.current?.click()}
             aria-label={t('Attach files')}
+            title={t('Attach files')}
           >
-            📎
+            <Icon name="paperclip" />
           </button>
           {extraButtons?.map((button) => (
             <button
               key={button.key}
               type="button"
-              className="adestia-composer__attach"
+              className="adestia-composer__attach adestia-btn adestia-btn--icon"
               onClick={() => button.onClick(button.api)}
               aria-label={button.title}
               title={button.title}
@@ -338,6 +400,7 @@ export function Composer({
       <textarea
         ref={area}
         className="adestia-composer__input"
+        aria-label={placeholder ?? t('Ask the agent…')}
         value={text}
         placeholder={placeholder ?? t('Ask the agent…')}
         rows={1}
@@ -364,19 +427,21 @@ export function Composer({
       {busy && text.trim() === '' ? (
         <button
           type="button"
-          className="adestia-composer__stop"
+          className="adestia-composer__stop adestia-btn adestia-btn--danger adestia-btn--icon"
           onClick={onStop}
           disabled={stopping ?? false}
           aria-label={t('Stop')}
+          title={t('Stop')}
         >
-          ■
+          <Icon name="square" />
         </button>
       ) : (
         <button
           type="submit"
-          className="adestia-composer__send"
+          className="adestia-composer__send adestia-btn adestia-btn--icon"
           disabled={(text.trim() === '' && attachments.length === 0) || blocked}
           aria-label={t('Send')}
+          title={t('Send')}
         >
           {/* The livery's glyph comes from the skin MODULE, code the
               instance already runs — inlining it adds no reach. */}
@@ -387,7 +452,7 @@ export function Composer({
               dangerouslySetInnerHTML={{ __html: sendIcon }}
             />
           ) : (
-            '↑'
+            <Icon name="arrow-up" />
           )}
         </button>
       )}
@@ -398,10 +463,12 @@ export function Composer({
 function AttachmentTray({
   attachments,
   error,
+  t,
   onRemove,
 }: {
   attachments: readonly PendingAttachment[]
   error?: string | undefined
+  t: (key: string) => string
   onRemove: (id: string) => void
 }) {
   if (attachments.length === 0 && !error) return null
@@ -410,12 +477,22 @@ function AttachmentTray({
       {attachments.map((attachment) => (
         <span key={attachment.id} className="adestia-attachments__item">
           {attachment.name}
-          <button type="button" onClick={() => onRemove(attachment.id)} aria-label={`Remove ${attachment.name}`}>
-            ×
+          <button
+            type="button"
+            onClick={() => onRemove(attachment.id)}
+            aria-label={t('Remove %name').replace('%name', attachment.name)}
+            title={t('Remove %name').replace('%name', attachment.name)}
+          >
+            <Icon name="x" />
           </button>
         </span>
       ))}
-      {error && <span className="adestia-attachments__error">{error}</span>}
+      {error && (
+        <p className="adestia-field__error adestia-attachments__error" role="alert">
+          <Icon name="circle-alert" />
+          {error}
+        </p>
+      )}
     </div>
   )
 }

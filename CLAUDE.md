@@ -4,6 +4,31 @@ Conventions for anyone — person or agent — writing code in this repository.
 `DESIGN.md` records why the product is shaped the way it is; this file records
 how work gets done to it.
 
+## Code and commands
+
+npm workspaces: `packages/content` owns the markdown grammar; `packages/drivers`
+owns the engine contract and adapters; `packages/schemas` owns extension and wire
+contracts; `packages/server` owns boot, HTTP and turns; `packages/web` owns the
+React shell, editor and runtime plugin loader. `ARCHITECTURE.md` is the module
+map; `docs/parcours.md` and `docs/ecrans.md` describe the built journeys and screens.
+Current defects and unfinished work live in `.agent/status.md`; release history
+lives in `CHANGELOG.md`, design reasons in `DESIGN.md`.
+
+After `npm ci`, from the repository root:
+
+```sh
+npm test             # vitest run, then node --test for plugins; allow 7+ minutes
+npm run typecheck    # workspace tsc builds, then web --noEmit
+npm run lint         # eslint packages plugins; also in CI
+npm run build        # server/dependencies, then the web shell and its vendor/SW files
+```
+
+The catalogue browser suite builds a missing shell when Playwright is available.
+Without Playwright it explicitly skips; a green run then does not prove those
+screens. It only builds a *missing* shell: after changing
+`packages/web`, run `npm run build` first, or a stale shell fails those tests. For Vite hot reload, use `npm run dev --workspace @antorfr/adestia-web`
+with the server running on port 8730. For a seeded instance, use the launcher below.
+
 ## A fresh worktree needs its install checked, not assumed
 
 The grammar comes from a git dependency — a fork of
@@ -60,6 +85,31 @@ go idle; the container has no bold font; the engine is faked unless
 Nothing installs on the machine: the browser lives in its own image. When
 Docker is NOT available, say so in the report rather than passing green off as
 seen — "the suite is green" and "I looked at it" are different claims.
+
+**Without Docker** (a pod, a plain host), the same instance runs on the host after
+`npm run build`:
+
+```sh
+node bench/launch.mjs --engine fake                          # scripted engine, deterministic
+CLAUDE_CODE_OAUTH_TOKEN=… node bench/launch.mjs --engine claude   # the plain binary, a real turn
+```
+
+Each prints `listening on <url>` and runs until SIGTERM, which removes its
+throwaway data. `--engine claude` refuses to start without the token. Flags
+(`--skin`, `--locale`, `--seed`, `--port`, `--data`) and the format of a seed are
+in `bench/README.md`. This is how you LOOK at a change without Docker; say which
+you used.
+
+To see EVERY screen — light and dark, desk and phone — in one go:
+
+```sh
+node bench/sweep.mjs [--skin <id>] [--only E-4,E-9]   # 124 PNGs (31 screens x 2 themes x desk/phone) in bench/shots-sweep/<skin>/
+```
+
+It needs the build and Playwright from the environment (`npm root -g`), nothing
+else; it exits non-zero naming each screen whose proof selector is missing or that
+shows a loading or error screen. Pictures are for LOOKING at: open the few that
+your change touches.
 
 ## A handshake waits for a SIGNAL, never for a number of turns
 

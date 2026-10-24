@@ -4,6 +4,8 @@
 
 import { useState } from 'react'
 
+import { Icon } from '../app/Icon.js'
+
 // Markdown in a bubble is the SAME renderer a page is read through — one
 // grammar, one switch, no second vocabulary and no new dependency.
 import { Prose } from '../editor/Reader.js'
@@ -21,14 +23,14 @@ export interface Message {
   readonly error?: string | undefined
 }
 
-export function ToolTrace({ tools }: { tools: Message['tools'] }) {
+export function ToolTrace({ tools, t = (key) => key }: { tools: Message['tools']; t?: (key: string) => string }) {
   const [open, setOpen] = useState(false)
   if (!tools || tools.length === 0) return null
 
   return (
     <div className="adestia-trace">
-      <button type="button" className="adestia-trace__toggle" onClick={() => setOpen(!open)}>
-        {open ? '▾' : '▸'} {tools.length} tool call{tools.length > 1 ? 's' : ''}
+      <button type="button" className="adestia-trace__toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
+        <Icon name={open ? 'chevron-down' : 'chevron-right'} /> {t(tools.length === 1 ? '%n tool call' : '%n tool calls').replace('%n', String(tools.length))}
       </button>
       {open && (
         <ul className="adestia-trace__list">
@@ -36,7 +38,7 @@ export function ToolTrace({ tools }: { tools: Message['tools'] }) {
             <li key={`${tool.name}-${index}`} className={`adestia-trace__item adestia-trace__item--${
               tool.ok === false ? 'failed' : tool.ok ? 'done' : 'running'
             }`}>
-              <span className="adestia-trace__glyph">◇</span>
+              <span className="adestia-trace__glyph" role="img" aria-label={t(tool.ok === false ? 'Failed' : tool.ok ? 'Done' : 'Working')}><Icon name={tool.ok === false ? 'x' : tool.ok ? 'check' : 'loader-circle'} /></span>
               <span className="adestia-trace__name">{tool.name}</span>
               {/* The target only. Never the full input: it routinely holds a
                   file's contents or an entire command. */}
@@ -77,7 +79,7 @@ export function Bubble({
 }) {
   return (
     <article className={`adestia-bubble adestia-bubble--${message.role}`}>
-      {message.role === 'agent' && <ToolTrace tools={message.tools} />}
+      {message.role === 'agent' && <ToolTrace tools={message.tools} t={t} />}
       {message.text &&
         (message.role === 'agent' ? (
           <Prose markdown={message.text} {...(openPage ? { openPage } : {})} />
@@ -89,7 +91,7 @@ export function Bubble({
           sentence that says what became of their turn reached them in English. */}
       <SignatureCards signatures={message.signatures} signing={signing} t={t} />
       {message.stopped && <p className="adestia-bubble__note">{t('Turn interrupted.')}</p>}
-      {message.error && <p className="adestia-bubble__error">{message.error}</p>}
+      {message.error && <p className="adestia-bubble__error" role="alert"><Icon name="circle-alert" /> {message.error}</p>}
     </article>
   )
 }

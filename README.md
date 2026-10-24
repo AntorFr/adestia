@@ -20,17 +20,53 @@ docker compose up
 ```
 
 The first `up` builds the image from the `Dockerfile`; the agent needs
-`CLAUDE_CODE_OAUTH_TOKEN` (see `docker-compose.yml`).
+`CLAUDE_CODE_OAUTH_TOKEN` (see `docker-compose.yml`), which compose reads from the
+host's environment: `export CLAUDE_CODE_OAUTH_TOKEN=<token>` before `docker compose up`
+(`claude setup-token` with the Claude CLI prints one; it may also be armed later from
+Adestia's own interface, and the app starts without it). The compose file mounts
+`adestia.config.yaml` read-only: saving from the Settings screen cannot write it
+there; edit the file on the host (or drop the `:ro`).
 
 Without Docker, from a clone (`data/` and `workspace/` are created in the
-current directory; `-c <path>` points at another config file):
+current directory; `-c <path>` points at another config file). To keep runtime data
+in a scratch directory, build in the clone, then launch the binary by absolute
+path from that scratch directory:
 
 ```sh
 npm ci
 npm run build --workspace @antorfr/adestia-server
 npm run build:web --workspace @antorfr/adestia-web
-node packages/server/bin/adestia.js
+cp adestia.config.example.yaml /path/to/adestia.config.yaml   # optional: without `-c`, the launcher reads ./adestia.config.yaml, and with no file at all it runs on defaults
+cd /path/to/scratch
+node /path/to/adestia/packages/server/bin/adestia.js -c /path/to/adestia.config.yaml
 ```
+
+This serves `http://127.0.0.1:8730` and answers 200 on `/`. `extensions.pluginsDir` and `skinsDir` (`./plugins`, `./skins`) resolve from the current directory, so from an empty scratch directory the log says `0 of 0 plugin(s) active`: link or copy the clone's `plugins/` and `skins/` there (or set the two paths in the config) to load them. Without
+`CLAUDE_CODE_OAUTH_TOKEN` it still starts: the app is there, but a real agent
+turn fails (use the scripted engine below to look at it without one).
+
+To look at the app without an agent or Docker (a scripted engine, seeded data):
+
+```sh
+npm ci && npm run build               # npm run build also builds the web shell
+node bench/launch.mjs --engine fake    # prints `listening on <url>`; <url>/api/health answers ok
+node bench/sweep.mjs                   # every screen, light and dark, desk and phone
+```
+
+The sweep takes Playwright and Chromium from the environment (it looks in `/usr/lib/node_modules`, then `npm root -g`); the `pages-*` scenarios look only in `/usr/lib/node_modules`, so a host with another global root must link it there for them: `ln -s "$(npm root -g)/playwright" /usr/lib/node_modules/playwright`); do not
+add them to the repo. The launcher runs until SIGTERM (`kill <pid>`, or Ctrl-C), which
+removes its throwaway data; in a script, start it in the background and keep its pid
+(`$!`). Run it from the clone's root: the bundled plugins are found through `./plugins`, and from elsewhere the server starts with `0 of 0 plugin(s) active`. The seed brings its own two small plugins (`bench-notes`, `bench-degraded`), so the boot log says `2 of 2 plugin(s) active`, not the ten of `plugins/`: that is normal. Its boot log includes a plugin refused on purpose (`bench-refused`, part of the seed): not an error.
+
+`--engine claude` runs a real turn instead (needs `CLAUDE_CODE_OAUTH_TOKEN`).
+For the pages state matrix (four skins, both languages, both themes, desktop
+and phone), run `node bench/scenarios/pages-matrix.mjs` after the build (without argument it captures `pages-states.mjs`); the pictures land in `bench/shots-pages/` (`BENCH_OUT` moves them) and success is the list of captures with no error. Pass
+`bench/scenarios/pages-editor.mjs` as its argument for the editor states;
+`node bench/scenarios/pages-editor-narrow.mjs` checks the 360 px layout (it prints `overflow=0` per state).
+
+See [bench/README.md](bench/README.md). The map of the code, the decisions (AD-n) and the
+needs and screens they cite (B-n, P-n, E-n: `docs/parcours.md`, `docs/ecrans.md`; the Q-n are the numbered audit list at the end of `docs/ecrans.md`) are in
+[ARCHITECTURE.md](ARCHITECTURE.md).
 
 Either way, with no config file at all Adestia runs a single-user instance on
 <http://127.0.0.1:8730> with no authentication. Every setting is documented in
@@ -52,6 +88,9 @@ Adestia's own interface.
   blocks, edited in a Notion-like editor or by the agent with its own file
   tools. One grammar renders, edits and validates them, so a save cannot change
   what a page means. A save is refused if the agent wrote underneath you.
+  Home shows a loading row
+  while the plugins and page index arrive; pages, their editor and properties
+  use shared controls and the instance language (English or French).
   A page's other files — the plan as a PDF, the photo of the dish — sit next to
   it on disk, display in it, and are listed under it as attachments. What a
   page's status says is finished folds away rather than crowding the live ones.
@@ -89,9 +128,9 @@ Adestia's own interface.
 - **Scheduled turns**: notes whose body runs as a prompt on a cadence, with a
   missed occurrence lost rather than replayed. Give one a deadline and it
   becomes a **mission** — a watch that ends itself once its goal is met, or
-  escalates when the deadline passes. A mission may tick its own `done:` and
-  nothing else: every other write to a scheduled note needs a human, so a
-  turn running unattended can never rewrite the prompt it runs on.
+  escalates when the deadline passes. The `schedule-author` contract tells a mission to write only its own `done:`;
+  this is an agent instruction, with no server-side write gate (see
+  `docs/parcours.md`, P-12).
 - **Attachments** the agent reads with its own tools, framed as data — a file
   that says "ignore your instructions" is reported, not obeyed.
 - **The screen next to the chat**, joined to each message as a hint: the route
@@ -129,8 +168,9 @@ Two rules follow, and both bite in production:
 
 - **The cap and the memory limit must agree.** A cap of 8 behind a 1 GB limit
   is not a conservative deployment — it is a deployment that starts eight
-  processes and gets killed. Adestia refuses a turn past its cap cleanly, with a
-  429 the interface explains; the kernel does not.
+  processes and gets killed. Adestia refuses a turn past its cap with HTTP 429. The chat can lose the
+  refusal message when it reloads the transcript (Known defects in
+  `ARCHITECTURE.md`); the composer is freed.
 - **An OOM kill loses the turn in flight**, along with anything the agent had
   not yet written to disk. There is no retry: the turn died with the process,
   and replaying it behind the user's back would be worse than losing it.
@@ -151,27 +191,42 @@ Adestia is a few hundred megabytes, and it is the burst that kills it. Raise
 
 ## Status
 
-**Early, and running.** Everything above is verified against a real browser and
-real CLIs, not only by tests. What is deliberately not built: pushing and pulling the
-workspace's own instructions to a remote (catalogues above only read
-repositories), and the concurrency measurements that need real subscription
-quota. See [DESIGN.md](DESIGN.md) for the principles and every decision taken.
+**Early, and running.** The screens are checked in a real browser (`bench/`) and
+the agent drivers against real CLIs, not only by tests; which version each deployment
+runs is not recorded here. Pushing and pulling the workspace's own instructions
+to a remote is still unbuilt (catalogues above only read repositories).
+Concurrency measurements are recorded in `spikes/concurrency/REPORT.md`.
+See [.agent/status.md](.agent/status.md) for current defects and unfinished work,
+[CHANGELOG.md](CHANGELOG.md) for release history, and [DESIGN.md](DESIGN.md) for
+the principles and decision log.
 
 ## Contributing
 
+Node 22 or later (`engines` in `package.json`). After `npm ci`, check that
+`node_modules/micromark-extension-directive` exists: a missing grammar shows as
+escaped `\:::` in the content tests, and looks like a serialiser bug
+(`CLAUDE.md`).
+
 ```sh
 npm ci
-npm test          # no account or network needed
+npm test          # no account or network needed; takes 7 minutes or more (the browser suites dominate), so do not cut it short; the catalogue screens suite builds the shell on first run and skips (npm test stays green) when Playwright is not found through require/NODE_PATH, then `npm root -g`
 npm run typecheck
+npm run lint      # also run by CI
 npm run build
 ```
+
+The web shell dispatches screens in `app/Canvas.tsx`; `CanvasHeader.tsx` owns the
+breadcrumb and phone return. `Home.tsx` composes `Brief` and `Domains`; the page
+editor delegates saving to `editor/useAutosave.ts` and reading to `editor/reader/`.
+Shared path rules and requests live in `app/paths.ts` and `app/request.ts`.
 
 Every driver is exercised against a fake binary, which is a property of the
 driver contract rather than a convenience: a driver whose behaviour is only
 testable against a live account is a driver tested by its first user.
 
 Work happens in an isolated git worktree and comes back to `main` before it is
-tagged — `CLAUDE.md` has the workflow and the reasons behind it.
+tagged. `CLAUDE.md` covers the install traps of a worktree, how to commit, and
+when to look at the interface.
 
 ## License
 

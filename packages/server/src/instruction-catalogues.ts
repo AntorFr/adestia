@@ -30,11 +30,11 @@ import { basename, dirname, join, resolve, sep } from 'node:path'
 
 import type { InstructionZone } from '@antorfr/adestia-drivers'
 
-import { parseFrontmatter } from './pages.js'
+import { field, parseFrontmatter } from './frontmatter.js'
 import { MANAGED_MARKER, stamped } from './skills.js'
 import type { CatalogueImport, InstructionCatalogue, InstructionCataloguesStore } from './instruction-catalogues-store.js'
 
-export type CatalogueItemKind = 'skill' | 'agent' | 'instruction'
+type CatalogueItemKind = 'skill' | 'agent' | 'instruction'
 
 export interface CatalogueItem {
   /** Catalogue-relative, forward slashes: the folder for a skill, the file otherwise. */
@@ -51,15 +51,6 @@ const SKIPPED_DIRS = new Set(['.git', 'node_modules'])
 
 /** A tree deep enough to need this is a tree that has stopped being a catalogue. */
 const MAX_DEPTH = 12
-
-/** One frontmatter field, when it is a usable line of prose — see `instructions.ts`. */
-function field(fields: Record<string, unknown>, key: string): string | undefined {
-  const value = fields[key]
-  if (typeof value !== 'string') return undefined
-  const trimmed = value.trim()
-  if (trimmed === '' || trimmed === '>' || trimmed === '|') return undefined
-  return trimmed
-}
 
 async function readFrontmatter(
   path: string,
@@ -179,7 +170,7 @@ function landedPathFor(zone: InstructionZone, slug: string): string {
  *
  * A local skill called `tri` and a catalogue item called `tri` are two
  * different things that happen to share a name — exactly the case
- * `technique.md` calls out as the reason `landedAt` is tracked apart from
+ * `docs/donnees.md` calls out as the reason `landedAt` is tracked apart from
  * `itemPath`. The same move `skills.ts` makes for two plugins sharing a
  * skill name, applied here to a catalogue sharing one with the workspace.
  */
@@ -249,7 +240,7 @@ async function copyMarkedTree(
   }
 }
 
-export interface MaterializeOptions {
+interface MaterializeOptions {
   readonly workspaceRoot: string
   /** The active driver's declared zones — `instructionZones(driver)`. */
   readonly zones: readonly InstructionZone[]

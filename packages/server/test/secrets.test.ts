@@ -1,16 +1,18 @@
-import { mkdtemp, readFile, readdir, stat } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { readFile, readdir, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { ARMING_TTL_MS, ArmingFlows, SecretStore } from '../src/secrets.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
+
+afterEach(cleanTmp)
 
 let root: string
 let store: SecretStore
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'adestia-secrets-'))
+  root = await tmpDir('adestia-secrets-')
   store = new SecretStore(root)
 })
 

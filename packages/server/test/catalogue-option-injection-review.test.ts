@@ -9,37 +9,21 @@
  * file the injected command would create — against REAL git.
  */
 
-import { execFile } from 'node:child_process'
-import { mkdtemp, mkdir, stat, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { promisify } from 'node:util'
 
 import Fastify, { type FastifyInstance } from 'fastify'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import type { Driver } from '@antorfr/adestia-drivers'
-
 import { InstructionCataloguesStore } from '../src/instruction-catalogues-store.js'
 import { registerInstructionCatalogues } from '../src/routes/instruction-catalogues.js'
 import { fetchSources } from '../src/sources.js'
+import { driverWith } from './support/driver.js'
+import { git } from './support/git.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
 
-const execFileAsync = promisify(execFile)
 const silent = () => {}
 const exists = (path: string) => stat(path).then(() => true, () => false)
-
-async function git(cwd: string, ...args: string[]): Promise<void> {
-  await execFileAsync('git', args, {
-    cwd,
-    env: {
-      ...process.env,
-      GIT_AUTHOR_NAME: 'Test',
-      GIT_AUTHOR_EMAIL: 'test@example.org',
-      GIT_COMMITTER_NAME: 'Test',
-      GIT_COMMITTER_EMAIL: 'test@example.org',
-    },
-  })
-}
 
 let repo: string
 let marker: string
@@ -48,10 +32,10 @@ let app: FastifyInstance
 let store: InstructionCataloguesStore
 
 beforeEach(async () => {
-  repo = await mkdtemp(join(tmpdir(), 'adestia-inj-repo-'))
-  const scratch = await mkdtemp(join(tmpdir(), 'adestia-inj-marker-'))
+  repo = await tmpDir('adestia-inj-repo-')
+  const scratch = await tmpDir('adestia-inj-marker-')
   marker = join(scratch, 'pwned')
-  dataDir = await mkdtemp(join(tmpdir(), 'adestia-inj-data-'))
+  dataDir = await tmpDir('adestia-inj-data-')
   await git(repo, 'init', '--quiet', '-b', 'main')
   await mkdir(join(repo, 'skills/tri'), { recursive: true })
   await writeFile(join(repo, 'skills/tri/SKILL.md'), '---\nname: tri\ndescription: Trier.\n---\n\n# Tri\n')
@@ -59,15 +43,16 @@ beforeEach(async () => {
   await git(repo, 'commit', '--quiet', '--no-gpg-sign', '-m', 'init')
   store = new InstructionCataloguesStore(dataDir)
   app = Fastify()
-  const driver = {
+  const driver = driverWith({
     instructionPaths: () => [{ path: '.claude/skills', kind: 'skill', entry: '<name>/SKILL.md' }],
-  } as unknown as Driver
-  registerInstructionCatalogues(app, { driver, workspaceRoot: await mkdtemp(join(tmpdir(), 'adestia-inj-ws-')), dataDir, store })
+  })
+  registerInstructionCatalogues(app, { driver, workspaceRoot: await tmpDir('adestia-inj-ws-'), dataDir, store })
   await app.ready()
 })
 
 afterEach(async () => {
   await app.close()
+  await cleanTmp()
 })
 
 describe('POST /api/instruction-catalogues', () => {
@@ -142,7 +127,7 @@ describe('a catalogue already saved with an option-like ref', () => {
 
 describe('fetchSources, for every source including extensions', () => {
   it('refuses an option-like ref without creating the file the command would create', async () => {
-    const cache = await mkdtemp(join(tmpdir(), 'adestia-inj-cache-'))
+    const cache = await tmpDir('adestia-inj-cache-')
     const { roots, problems } = await fetchSources(
       [{ kind: 'git', name: 'x', repo: `file://${repo}`, ref: `--upload-pack=touch ${marker}` }],
       cache,
@@ -155,7 +140,7 @@ describe('fetchSources, for every source including extensions', () => {
   })
 
   it('refuses an option-like repo too, and fetches the next valid source anyway', async () => {
-    const cache = await mkdtemp(join(tmpdir(), 'adestia-inj-cache-'))
+    const cache = await tmpDir('adestia-inj-cache-')
     const { roots, problems } = await fetchSources(
       [
         { kind: 'git', name: 'bad', repo: `--upload-pack=touch ${marker}`, ref: 'main' },
@@ -170,7 +155,7 @@ describe('fetchSources, for every source including extensions', () => {
   })
 
   it('still fetches, then refetches onto an existing clone (set-url path), with "--" in place', async () => {
-    const cache = await mkdtemp(join(tmpdir(), 'adestia-inj-cache-'))
+    const cache = await tmpDir('adestia-inj-cache-')
     const sources = [{ kind: 'git' as const, name: 'good', repo: `file://${repo}`, ref: 'main' }]
     for (let round = 0; round < 2; round++) {
       const { roots, problems } = await fetchSources(sources, cache, silent)

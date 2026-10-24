@@ -10,6 +10,8 @@
 // compiler erases the import, so the bundle still carries no server code.
 import type { Conversation, ConversationMeta, StoredMessage } from '@antorfr/adestia-schemas'
 
+import { jsonInit, requestJson, requestRaw } from '../app/request.js'
+
 export type { Conversation, ConversationMeta, StoredMessage }
 
 /**
@@ -25,13 +27,8 @@ async function json<T>(
   url: string,
   init?: RequestInit,
 ): Promise<T | undefined> {
-  try {
-    const response = await fetchImpl(url, init)
-    if (!response.ok) return undefined
-    return (await response.json()) as T
-  } catch {
-    return undefined
-  }
+  const result = await requestJson<T>(fetchImpl, url, init)
+  return result.ok ? result.data : undefined
 }
 
 export async function listConversations(
@@ -45,11 +42,11 @@ export async function createConversation(
   fetchImpl: typeof fetch = fetch,
   title?: string,
 ): Promise<ConversationMeta | undefined> {
-  const created = await json<ConversationMeta>(fetchImpl, '/api/conversations', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(title ? { title } : {}),
-  })
+  const created = await json<ConversationMeta>(
+    fetchImpl,
+    '/api/conversations',
+    jsonInit('POST', title ? { title } : {}),
+  )
   // A body with no id is no conversation, whatever answered: an id-less meta
   // would become a tab and a list row keyed on undefined.
   return created?.id ? created : undefined
@@ -66,11 +63,8 @@ export async function deleteConversation(
   id: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<boolean> {
-  try {
-    return (await fetchImpl(`/api/conversations/${id}`, { method: 'DELETE' })).ok
-  } catch {
-    return false
-  }
+  const result = await requestRaw(fetchImpl, `/api/conversations/${id}`, { method: 'DELETE' })
+  return result.ok && result.response.ok
 }
 
 /** A conversation's first words make a better name than "New conversation". */
@@ -90,14 +84,10 @@ export async function archiveConversation(
   id: string,
   archived = true,
 ): Promise<boolean> {
-  try {
-    const response = await fetchImpl(`/api/conversations/${encodeURIComponent(id)}/archive`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ archived }),
-    })
-    return response.ok
-  } catch {
-    return false
-  }
+  const result = await requestRaw(
+    fetchImpl,
+    `/api/conversations/${encodeURIComponent(id)}/archive`,
+    jsonInit('POST', { archived }),
+  )
+  return result.ok && result.response.ok
 }

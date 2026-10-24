@@ -9,11 +9,11 @@ import type { LoadedPlugin } from '../plugins/loader.js'
 import type { Say } from '../plugins/words.js'
 import { label as instructionLabel } from './Instructions.js'
 import { addressOf, opensOn, ownerOf, routeForPath } from './owners.js'
+import { prettify } from './paths.js'
 import { prefsTitle, type PrefsPage } from './Preferences.js'
 import {
   holdsPages,
   indexOf,
-  prettify,
   sectionAt,
   type IndexEntry,
   type StoreInfo,

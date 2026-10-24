@@ -16,12 +16,12 @@
   cursor: pointer;
 }
 
-.adestia-section__edit:hover { border-color: var(--accent); color: var(--accent); }
+.adestia-section__edit:hover { border-color: var(--accent); color: var(--accent-text); }
 
 .adestia-section__edit[aria-pressed='true'] {
   border-color: var(--accent);
   background: var(--accent);
-  color: var(--accent-text);
+  color: var(--on-accent);
 }
 
 .adestia-tile-slot { position: relative; display: flex; }
@@ -56,7 +56,7 @@
 }
 
 .adestia-tile-slot--editing:not(.adestia-tile-slot--carried) .adestia-tile {
-  animation: adestia-restless 0.28s ease-in-out infinite;
+  animation: adestia-restless var(--motion-slow) ease-in-out infinite;
   outline: 1px dashed var(--border-strong);
   outline-offset: 2px;
 }
@@ -83,7 +83,7 @@
   cursor: pointer;
 }
 
-.adestia-tile-slot__arrows button:hover { border-color: var(--accent); color: var(--accent); }
+.adestia-tile-slot__arrows button:hover { border-color: var(--accent); color: var(--accent-text); }
 
 .adestia-tiles {
   list-style: none;
@@ -112,7 +112,7 @@
   font: inherit;
   cursor: pointer;
   overflow: hidden;
-  transition: transform 0.16s, box-shadow 0.16s, border-color 0.16s;
+  transition: transform var(--motion-quick), box-shadow var(--motion-quick), border-color var(--motion-quick);
 }
 
 /* The colour mark. Every dimension of it is a token: a livery moves the bar
@@ -130,7 +130,7 @@
     var(--tile-color, var(--accent)) var(--tile-mark-tint),
     transparent
   );
-  transition: background 0.16s;
+  transition: background var(--motion-quick);
 }
 
 .adestia-tile:hover:not(:disabled) {
@@ -154,7 +154,7 @@
   width: 42px;
   height: 42px;
   border-radius: var(--radius-ctl);
-  font-size: 20px;
+  font-size: var(--text-lg);
   box-shadow: var(--shadow-sm);
   background: linear-gradient(
     145deg,
@@ -171,11 +171,11 @@
 .adestia-tile__label {
   font-family: var(--tile-label-font);
   font-weight: 600;
-  font-size: 17px;
+  font-size: var(--text-lg);
   line-height: 1.1;
   letter-spacing: var(--tile-label-track);
 }
-.adestia-tile__subtitle { color: var(--text-muted); font-size: 13px; margin-top: -4px; }
+.adestia-tile__subtitle { color: var(--text-muted); font-size: var(--text-sm); margin-top: -4px; }
 
 .adestia-tile__foot {
   margin-top: auto;
@@ -185,7 +185,7 @@
 }
 
 .adestia-chip {
-  font: 600 11px var(--font-mono);
+  font: 600 var(--text-2xs) var(--font-mono);
   padding: 2px 9px;
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
@@ -196,7 +196,7 @@
 /* Exactly one kind of figure earns the colour: the one somebody has to act
    on. A tile where every chip is hot has told the reader nothing. */
 .adestia-chip--hot {
-  color: var(--tile-color, var(--accent));
+  color: var(--tile-color-text, var(--tile-color, var(--accent-text)));
   border-color: color-mix(in srgb, var(--tile-color, var(--accent)) 40%, transparent);
   background: color-mix(in srgb, var(--tile-color, var(--accent)) 10%, transparent);
 }
@@ -207,9 +207,8 @@
 .adestia-problems {
   margin-bottom: var(--space-5);
   padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--warning);
   border-radius: var(--radius);
-  background: var(--accent-quiet);
+  color: var(--text);
   font-size: var(--text-sm);
 }
 
@@ -228,37 +227,28 @@
   margin: var(--space-4) 0 var(--space-3);
 }
 
-.adestia-instructions__search {
+.adestia-instructions__searchbox {
+  position: relative;
   flex: 1 1 220px;
   min-width: 0;
   max-width: 360px;
-  padding: 7px var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface-raised);
-  color: var(--text);
-  font: inherit;
 }
-
-.adestia-instructions__search:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-
-/* Dashed, like every other "make a new one" in this shell: it is an
-   invitation rather than a control acting on what is already there. */
-.adestia-instructions__tools button {
-  padding: 6px 13px;
-  border: 1px dashed var(--border);
-  border-radius: var(--radius);
-  background: none;
-  color: var(--text-muted);
-  font: 600 var(--text-sm) var(--font);
-  cursor: pointer;
+.adestia-instructions__searchbox .adestia-icon {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: var(--space-3);
+  margin-block: auto;
+  color: var(--text-faint);
+  pointer-events: none;
 }
-
-.adestia-instructions__tools button:hover { border-color: var(--accent); color: var(--accent); }
+.adestia-instructions__search { width: 100%; padding-inline-start: calc(var(--space-3) + 24px); }
 
 /* Said once, at the top of a file nobody may save: the textarea is read-only
    and looks it, but "why" is not something a greyed-out control can say. */
 .adestia-instructions__delivered {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   margin: var(--space-3) 0 0;
   padding: var(--space-2) var(--space-3);
   border-left: 3px solid var(--tile-color, var(--accent));
@@ -337,27 +327,32 @@
 }
 
 .adestia-filecard:hover { border-color: var(--accent); }
-.adestia-filecard:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.adestia-filecard:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 1px; }
 
 .adestia-filecard__head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--space-2);
-  justify-content: space-between;
 }
+.adestia-filecard__head > .adestia-icon { flex: none; color: var(--text-muted); }
 
 .adestia-filecard__name {
+  flex: 1 1 auto;
+  min-width: 0;
   font-weight: 600;
   overflow-wrap: anywhere;
 }
 
 .adestia-filecard__badge {
   flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 1px 7px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--surface-sunken);
   color: var(--text-faint);
-  font-size: 11px;
+  font-size: var(--text-2xs);
 }
 
 /* What it is FOR, in its author's words — and for a skill the very sentence
@@ -376,13 +371,13 @@
 }
 
 .adestia-filecard__path {
-  font: 11px var(--font-code);
+  font: var(--text-2xs) var(--font-code);
   color: var(--text-faint);
   overflow-wrap: anywhere;
 }
 
 .adestia-filecard__source {
-  font: 11px var(--font-code);
+  font: var(--text-2xs) var(--font-code);
   color: var(--text-faint);
   overflow-wrap: anywhere;
 }
@@ -414,17 +409,10 @@
    what these files mean, and a proportional face hides both. */
 .adestia-instructions__text {
   min-height: 60vh;
-  padding: var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface-raised);
-  color: var(--text);
-  font: 13.5px/1.65 var(--font-code);
-  resize: vertical;
+  field-sizing: fixed;
+  font: var(--text-sm)/1.65 var(--font-code);
   tab-size: 2;
 }
-
-.adestia-instructions__text:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 .adestia-instructions__empty {
   margin-top: var(--space-4);
@@ -432,7 +420,6 @@
 }
 
 /* The catalogue pop-in rides the shared sheet; this is only what is inside it. */
-.adestia-catalogues { max-height: 85vh; }
 .adestia-catalogues__body {
   display: flex;
   flex-direction: column;
@@ -475,29 +462,10 @@
   background: var(--surface-raised);
 }
 .adestia-catalogues__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.adestia-catalogues__item button,
-.adestia-catalogues__add button,
-.adestia-catalogues__refresh {
-  padding: 6px 13px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: none;
-  color: var(--text);
-  font: 600 var(--text-sm) var(--font);
-  cursor: pointer;
-}
-.adestia-catalogues__refresh { align-self: flex-end; }
-.adestia-catalogues__item button:disabled,
-.adestia-catalogues__add button:disabled,
-.adestia-catalogues__refresh:disabled { opacity: 0.5; cursor: not-allowed; }
-.adestia-catalogues__add { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-.adestia-catalogues__add input {
-  flex: 1 1 140px;
-  min-width: 0;
-  padding: 7px var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface-raised);
-  color: var(--text);
-  font: inherit;
-}
+.adestia-catalogues__item > .adestia-btn { flex: none; }
+.adestia-catalogues__back { align-self: flex-start; }
+.adestia-catalogues__add { display: flex; flex-direction: column; gap: var(--space-3); }
+.adestia-catalogues__add > .adestia-btn { align-self: flex-end; }
+
+/* A name and one field: the sheet is as tall as that, not the 720px of a list. */
+.adestia-nameprompt { height: auto; }

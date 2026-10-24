@@ -29,10 +29,12 @@ export function ContextPill({
   tokens,
   windowSize,
   onClick,
+  t = (key) => key,
 }: {
   tokens: number
   windowSize?: number
   onClick?: () => void
+  t?: (key: string) => string
 }) {
   if (tokens <= 0) return null
   const level = contextLevel(tokens, windowSize)
@@ -41,7 +43,7 @@ export function ContextPill({
       type="button"
       className={`adestia-pill adestia-pill--${level}`}
       onClick={onClick}
-      title="Weight of the context your next message re-pays"
+      title={t('Weight of the context your next message re-pays')}
     >
       {formatTokens(tokens)}
     </button>

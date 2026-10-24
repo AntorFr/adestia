@@ -68,7 +68,7 @@ export default async function scenario(bench) {
   // gets fixed, in the editor every other page uses.
   // By its glyph, not by its title: the title is translated, and this bench
   // runs a French instance.
-  await page.click('.adestia-editor__actions .adestia-ib')
+  await page.click('.adestia-editor__actions .adestia-btn')
   await page.waitForSelector('.adestia-editor__surface', { timeout: 10_000 })
   await page.waitForTimeout(500)
   await bench.shoot(page, '5-still-a-page')

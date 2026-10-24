@@ -26,6 +26,12 @@
 import { chmod, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
+import {
+  classifyAuthError as classify,
+  explainAuthProblem as explain,
+  type AuthErrorRule,
+} from '../engine-aids.js'
+
 /**
  * The key under which the core stores this driver's secret.
  *
@@ -38,7 +44,7 @@ export const CREDENTIAL_KEY = 'CODEX_AUTH_JSON'
 
 export const AUTH_FILE = 'auth.json'
 
-export interface CodexAuthDocument {
+interface CodexAuthDocument {
   readonly auth_mode?: string
   readonly OPENAI_API_KEY?: string | null
   readonly tokens?: {
@@ -155,23 +161,21 @@ export function codexEnv(
  * which is what this reads; the prose around it is pinned to a binary version,
  * not to a documented API.
  */
-export type CodexAuthProblem = 'absent' | 'invalid' | 'unknown'
+type CodexAuthProblem = 'absent' | 'invalid' | 'unknown'
 
-export function classifyAuthError(message: string): CodexAuthProblem | undefined {
-  const text = message.toLowerCase()
-  if (text.includes('invalid_api_key') || text.includes('incorrect api key')) return 'invalid'
-  if (text.includes('missing bearer or basic authentication')) return 'absent'
-  if (text.includes('401 unauthorized')) return 'unknown'
-  return undefined
+const AUTH_RULES: readonly AuthErrorRule<CodexAuthProblem>[] = [
+  { problem: 'invalid', all: ['invalid_api_key'] },
+  { problem: 'invalid', all: ['incorrect api key'] },
+  { problem: 'absent', all: ['missing bearer or basic authentication'] },
+  { problem: 'unknown', all: ['401 unauthorized'] },
+]
+
+const AUTH_SENTENCES: Readonly<Record<CodexAuthProblem, string>> = {
+  absent: 'No credential reached the CLI: arm an API key, or sign in with ChatGPT.',
+  invalid: 'OpenAI refused the key. It may be revoked, or belong to another account.',
+  unknown: 'OpenAI refused the request as unauthorized; see the server logs for its exact message.',
 }
 
-export function explainAuthProblem(problem: CodexAuthProblem): string {
-  switch (problem) {
-    case 'absent':
-      return 'No credential reached the CLI: arm an API key, or sign in with ChatGPT.'
-    case 'invalid':
-      return 'OpenAI refused the key. It may be revoked, or belong to another account.'
-    case 'unknown':
-      return 'OpenAI refused the request as unauthorized; see the server logs for its exact message.'
-  }
-}
+export const classifyAuthError = (message: string): CodexAuthProblem | undefined => classify(message, AUTH_RULES)
+
+export const explainAuthProblem = (problem: CodexAuthProblem): string => explain(problem, AUTH_SENTENCES)

@@ -11,8 +11,6 @@
  * Which is why there are three routes and only two of them accept writes.
  */
 
-import { dirname, join, relative, resolve, sep } from 'node:path'
-
 const WORKBOOK = 'workbook.json'
 
 /**

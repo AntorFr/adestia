@@ -75,7 +75,7 @@ describe('a collection page', () => {
     expect(fold?.textContent).toContain('Terrasse')
     expect(fold?.hasAttribute('open')).toBe(false)
 
-    fireEvent.click(screen.getByText('‹ All'))
+    fireEvent.click(screen.getByRole('button', { name: 'All' }))
     expect(screen.queryByText('Garage')).toBeNull()
     expect(screen.getByText('Menuiserie')).toBeTruthy()
   })
@@ -97,7 +97,7 @@ describe('a collection page', () => {
     // A member is a page, and writing pages is the agent's job: the button
     // asks rather than opening a form.
     const { ask } = draw(DECLARED)
-    fireEvent.click(screen.getByText('＋ Ask for a new page'))
+    fireEvent.click(screen.getByRole('button', { name: 'Ask for a new page' }))
     expect(ask).toHaveBeenCalledTimes(1)
     const prompt = String(ask.mock.calls[0]![0])
     expect(prompt).toContain('projet')
@@ -106,7 +106,7 @@ describe('a collection page', () => {
 
   it('offers no ＋ without a place to file', () => {
     draw({ type: 'collection', of: 'projet', groupBy: 'cat' })
-    expect(screen.queryByText('＋ Ask for a new page')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Ask for a new page' })).toBeNull()
   })
 
   it('opens a member', () => {

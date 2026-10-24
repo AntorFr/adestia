@@ -154,7 +154,7 @@ const FR = {
     'Une idée pour l’instant — le tray est vivant, la frise attend des dates.',
   'That move was refused.': 'Ce déplacement a été refusé.',
   'Someone changed this period while you were reading it. Reloaded.':
-    'Quelqu’un a modifié cette période pendant que tu la lisais. Rechargée.',
+    'Quelqu’un a modifié cette période pendant que vous la lisiez. Rechargée.',
   'Drop a card here': 'Déposez une carte ici',
   'Out of the period': 'Hors période',
   'Set this one aside': 'Écarter celle-ci',

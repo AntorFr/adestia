@@ -27,18 +27,24 @@
   --border-strong: #d6cdbc;
 
   --text: #332e3c;
-  --text-muted: #6f6880;
-  --text-faint: #a79fb4;
+  --text-muted: #666076;
+  --text-faint: #695f7a;
+  /* The accent tint over an agent bubble needs a deeper metadata ink by day. */
+  --sign-meta-text: light-dark(#5c566b, var(--text-muted));
 
   /* ONE accent: amethyst, the belly-light of the original Nabaztag. Deeper
      by day than the night's #8B6CE8 — same hue, measured for contrast. */
   --accent: #6b4bc8;
-  --accent-text: #ffffff;
+  --accent-text: var(--accent);
+  --on-accent: #ffffff;
+  --danger-text: #b13a28;
+  --warning-text: #875914;
+  --success-text: #217046;
   --accent-quiet: rgb(107 75 200 / 10%);
 
   --danger: #c4402c;
-  --warning: #b4771b;
-  --success: #2e9e63;
+  --warning: #a26b18;
+  --success: #278654;
 
   /* SOFT, dropped shadows: an object rests on something. The exact opposite
      of Skippy, who only emits light. */
@@ -99,10 +105,15 @@
 
     --text: #ece7f6;
     --text-muted: #9c94b4;
-    --text-faint: #6b6486;
+    --text-faint: #8680a0;
 
     --accent: #8b6ce8;
-    --accent-text: #0f0a1e;
+    --accent-text: #8e70e9;
+    --conversation-current-text: #a48ced;
+    --on-accent: #0f0a1e;
+    --danger-text: var(--danger);
+    --warning-text: var(--warning);
+    --success-text: var(--success);
     --accent-quiet: rgb(139 108 232 / 14%);
 
     --danger: #ea6a7e;
@@ -133,9 +144,14 @@
   --border-strong: #3a3160;
   --text: #ece7f6;
   --text-muted: #9c94b4;
-  --text-faint: #6b6486;
+  --text-faint: #8680a0;
   --accent: #8b6ce8;
-  --accent-text: #0f0a1e;
+  --accent-text: #8e70e9;
+  --conversation-current-text: #a48ced;
+  --on-accent: #0f0a1e;
+  --danger-text: var(--danger);
+  --warning-text: var(--warning);
+  --success-text: var(--success);
   --accent-quiet: rgb(139 108 232 / 14%);
   --danger: #ea6a7e;
   --warning: #e8b45c;
@@ -314,7 +330,7 @@
   font-weight: 700;
   border-radius: var(--radius-round);
   background: var(--accent);
-  color: var(--accent-text);
+  color: var(--on-accent);
 }
 
 .nst-invite:hover { border-color: var(--accent); box-shadow: var(--shadow); }

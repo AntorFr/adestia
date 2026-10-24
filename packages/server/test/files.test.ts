@@ -1,12 +1,14 @@
-import { mkdtemp, mkdir, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import Fastify, { type FastifyInstance } from 'fastify'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { attachmentsOf, kindOf, registerFiles, safeFilePath } from '../src/files.js'
 import { resolveStores, type Store } from '../src/stores.js'
+import { cleanTmp, tmpDir } from './support/tmp.js'
+
+afterEach(cleanTmp)
 
 let root: string
 let store: Store
@@ -16,7 +18,7 @@ let app: FastifyInstance
 const only = (dir: string): Store => resolveStores([{ id: 'perso', path: dir }], dir).stores[0]!
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'adestia-files-'))
+  root = await tmpDir('adestia-files-')
   store = only(root)
   app = Fastify()
   registerFiles(app, { stores: [store] })

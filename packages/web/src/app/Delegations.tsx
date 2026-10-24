@@ -19,8 +19,12 @@
 
 import { useEffect, useState } from 'react'
 
-import { Bubble, type Message } from '../chat/Bubble.js'
+import { Bubble } from '../chat/Bubble.js'
 import type { StoredMessage } from '../chat/conversations.js'
+import { toMessage } from '../chat/messages.js'
+import { Icon } from './Icon.js'
+import { requestJson } from './request.js'
+import { EmptyState } from './ui/index.js'
 
 export interface DelegationRow {
   readonly caller: string
@@ -36,18 +40,6 @@ export interface Delegation {
   readonly id: string
   readonly title: string
   readonly messages: readonly StoredMessage[]
-}
-
-/** The same conversion the chat applies to its own stored messages. */
-function toMessage(stored: StoredMessage): Message {
-  return {
-    id: stored.id,
-    role: stored.role,
-    text: stored.text,
-    ...(stored.tools ? { tools: stored.tools } : {}),
-    ...(stored.stopped ? { stopped: stored.stopped } : {}),
-    ...(stored.error ? { error: stored.error } : {}),
-  }
 }
 
 /** Rows bundled per caller, callers alphabetical, rows kept newest-first. */
@@ -94,14 +86,9 @@ export function useDelegationRows(
     if (!enabled) return
     let live = true
     void (async () => {
-      try {
-        const response = await fetchImpl('/api/delegations')
-        if (!response.ok) return
-        const body = (await response.json()) as { delegations?: readonly DelegationRow[] }
-        if (live) setRows(body.delegations ?? [])
-      } catch {
-        /* no figure, no chip */
-      }
+      // A failure leaves no figure, and no figure means no chip.
+      const result = await requestJson<{ delegations?: readonly DelegationRow[] }>(fetchImpl, '/api/delegations')
+      if (live && result.ok) setRows(result.data?.delegations ?? [])
     })()
     return () => {
       live = false
@@ -142,14 +129,9 @@ export function Delegations({
   useEffect(() => {
     let live = true
     void (async () => {
-      try {
-        const response = await fetchImpl('/api/delegations')
-        if (!response.ok) return
-        const body = (await response.json()) as { delegations?: readonly DelegationRow[] }
-        if (live) setRows(body.delegations ?? [])
-      } catch {
-        /* the empty state says there is nothing to show, which is then true */
-      }
+      // On a failure the list stays as it was; the empty state is only drawn once a read succeeded.
+      const result = await requestJson<{ delegations?: readonly DelegationRow[] }>(fetchImpl, '/api/delegations')
+      if (live && result.ok) setRows(result.data?.delegations ?? [])
     })()
     return () => {
       live = false
@@ -163,15 +145,12 @@ export function Delegations({
     }
     let live = true
     void (async () => {
-      try {
-        const response = await fetchImpl(
-          `/api/delegations/${open.split('/').map(encodeURIComponent).join('/')}`,
-        )
-        if (!response.ok) return
-        if (live) setDelegation((await response.json()) as Delegation)
-      } catch {
-        /* stays on the list; the address still names the conversation */
-      }
+      // A failure stays on the list; the address still names the conversation.
+      const result = await requestJson<Delegation>(
+        fetchImpl,
+        `/api/delegations/${open.split('/').map(encodeURIComponent).join('/')}`,
+      )
+      if (live && result.ok) setDelegation(result.data)
     })()
     return () => {
       live = false
@@ -183,7 +162,7 @@ export function Delegations({
       <div className="adestia-deleg">
         <header className="adestia-chead">
           <span className="adestia-chead__icon" aria-hidden="true">
-            🤝
+            <Icon name="handshake" />
           </span>
           <div>
             <h1 className="adestia-chead__title">{delegation.title}</h1>
@@ -196,7 +175,7 @@ export function Delegations({
         </header>
         <div className="adestia-chat__conversation adestia-deleg__conversation">
           {delegation.messages.map((message) => (
-            <Bubble key={message.id} message={toMessage(message)} t={t} />
+            <Bubble key={message.id} message={toMessage(message, { signatures: false })} t={t} />
           ))}
         </div>
       </div>
@@ -207,7 +186,7 @@ export function Delegations({
     <div className="adestia-deleg">
       <header className="adestia-chead">
         <span className="adestia-chead__icon" aria-hidden="true">
-          🤝
+          <Icon name="handshake" />
         </span>
         <div>
           <h1 className="adestia-chead__title">{t('Delegations')}</h1>
@@ -216,9 +195,10 @@ export function Delegations({
       </header>
 
       {rows !== undefined && rows.length === 0 && (
-        <p className="adestia-deleg__empty">
-          {t('No delegated task yet — the conversations other agents open here will appear by caller.')}
-        </p>
+        <EmptyState
+          icon="handshake"
+          text={t('No delegated task yet — the conversations other agents open here will appear by caller.')}
+        />
       )}
 
       {groupByCaller(rows ?? []).map((group) => (
@@ -232,15 +212,18 @@ export function Delegations({
                   className="adestia-conversations__item"
                   onClick={() => onOpen(`${group.caller}/${row.id}`)}
                 >
-                  {/* The chat's dot vocabulary: this list answers the same
-                      question — is something happening behind this row. */}
-                  {row.turn && (
-                    <span
-                      className={`adestia-dot adestia-dot--${row.turn === 'waiting' ? 'waiting' : 'working'}`}
-                      aria-hidden="true"
-                    />
-                  )}
                   {row.title}
+                  {/* The state is a chip with its own icon: the colour never
+                      says it alone. The same two states the chat's dots tell. */}
+                  {row.turn && (
+                    <span className={`adestia-deleg__state adestia-deleg__state--${row.turn}`}>
+                      <Icon
+                        name={row.turn === 'waiting' ? 'circle-alert' : 'loader-circle'}
+                        {...(row.turn === 'waiting' ? {} : { className: 'adestia-icon--spin' })}
+                      />
+                      {t(row.turn === 'waiting' ? 'waiting' : 'running')}
+                    </span>
+                  )}
                   <span className="adestia-deleg__when">{lastMoved(row.updatedAt, locale)}</span>
                 </button>
               </li>

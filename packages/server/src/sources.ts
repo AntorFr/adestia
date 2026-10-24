@@ -43,7 +43,7 @@ const execFileAsync = promisify(execFile)
  */
 const GIT_TIMEOUT_MS = 60_000
 
-export interface FetchedSources {
+interface FetchedSources {
   /** Discovery roots, in the order they were declared. */
   readonly roots: readonly string[]
   readonly problems: readonly DiscoveryProblem[]

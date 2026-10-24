@@ -22,9 +22,6 @@
  * requête est une entrée utilisateur d'où qu'il ait l'air de venir.
  */
 
-import { readFile } from 'node:fs/promises'
-import { join, relative, resolve, sep } from 'node:path'
-
 const SUFFIXE = '.parcours.json'
 
 /**
