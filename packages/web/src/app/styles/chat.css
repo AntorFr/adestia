@@ -571,6 +571,10 @@
 
 @media (max-width: 400px) {
   .adestia-chat__header { --rail-gap: var(--space-1); padding: var(--space-2); }
+  /* No free width to park beside the spacer: the picker takes it, so the
+     gaps stay one value whatever the skin's glyph widths. */
+  .adestia-chat__header .adestia-model-wrap { max-width: none; flex: 1 1 130px; }
+  .adestia-chat__header .adestia-chat__spacer { margin-left: 0; }
 }
 
 /* A decision's actions keep their room on a narrow chat rail. */
