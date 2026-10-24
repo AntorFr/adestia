@@ -543,6 +543,72 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
       }
     })
 
+    it('spaces the pill evenly from its neighbours at 360 and 390 px, the picker yielding alone', async () => {
+      for (const width of [360, 390]) {
+        const { context, page } = await fresh({ size: 'phone' })
+        try {
+          await page.setViewportSize({ width, height: 800 })
+          await say(page, 'long contexte')
+          await page.locator('.adestia-pill').waitFor({ timeout: 15_000 })
+          await page.waitForTimeout(500)
+          const m = await page.evaluate(() => {
+            const box = (el: Element) => el.getBoundingClientRect()
+            const header = document.querySelector('.adestia-chat__header') as HTMLElement
+            const pill = box(document.querySelector('.adestia-pill') as Element)
+            const model = box(document.querySelector('.adestia-model-wrap') as Element)
+            const visible = [...header.children].filter((c) => box(c).width > 0)
+            const gaps: number[] = []
+            for (let i = 1; i < visible.length; i++) gaps.push(Math.round(box(visible[i]!).left - box(visible[i - 1]!).right))
+            const at = visible.findIndex((c) => c.contains(document.querySelector('.adestia-pill')))
+            const next = box(visible[at + 1]!)
+            return {
+              before: Math.round(pill.left - model.right),
+              after: Math.round(next.left - pill.right),
+              gaps,
+              modelWidth: Math.round(model.width),
+              pillWidth: pill.width,
+              pillScroll: (document.querySelector('.adestia-pill') as HTMLElement).scrollWidth,
+              pillClient: (document.querySelector('.adestia-pill') as HTMLElement).clientWidth,
+              headerRight: box(header).right,
+              lastRight: Math.max(...visible.map((c) => box(c).right)),
+              vw: window.innerWidth,
+            }
+          })
+          // every gap between header items is the same value, none zero
+          expect(new Set(m.gaps).size, `${width}px gaps ${m.gaps}`).toBe(1)
+          expect(m.gaps[0]).toBeGreaterThan(0)
+          expect(m.before).toBe(m.after)
+          // the picker keeps a floor (more than a letter and an ellipsis) and the pill is whole
+          expect(m.modelWidth).toBeGreaterThanOrEqual(72)
+          expect(m.pillScroll).toBeLessThanOrEqual(m.pillClient)
+          expect(m.lastRight).toBeLessThanOrEqual(m.vw)
+        } finally {
+          await context.close()
+        }
+      }
+    }, 60_000)
+
+    it('pads a bubble holding only an error as evenly above as below', async () => {
+      const { context, page } = await fresh()
+      try {
+        await say(page, 'fini')
+        await page.locator('.adestia-chat').getByText('Rien ne manque pour samedi.').waitFor({ timeout: 15_000 })
+        const m = await page.evaluate(() => {
+          const thread = document.querySelector('.adestia-chat__conversation') as HTMLElement
+          const bubble = document.createElement('article')
+          bubble.className = 'adestia-bubble adestia-bubble--agent'
+          bubble.innerHTML = '<p class="adestia-bubble__error" role="alert">Boom</p>'
+          thread.appendChild(bubble)
+          const b = bubble.getBoundingClientRect()
+          const e = (bubble.firstElementChild as Element).getBoundingClientRect()
+          return { top: Math.round(e.top - b.top), bottom: Math.round(b.bottom - e.bottom) }
+        })
+        expect(m.top).toBe(m.bottom)
+      } finally {
+        await context.close()
+      }
+    })
+
     it('names attached files in the tray and removes one with the x icon', async () => {
       const { context, page } = await fresh()
       try {
