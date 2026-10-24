@@ -37,6 +37,22 @@ PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone
 
 ## À moitié construit
 
+- La question de permission ne permet pas de corriger la règle proposée par le
+  moteur ; `AskPrompt` ne renvoie que `once`, `always` ou `deny`. Copilot ne porte
+  toujours pas le retour interactif (`drivers.ts`).
+- La synchronisation git distante du workspace reste absente ; le rafraîchissement
+  des catalogues ne synchronise que leurs imports (`instruction-catalogues.ts`).
+- Les métriques, coûts et quotas déclarés par les pilotes n'ont pas de vue dédiée ;
+  le chat ne consomme que le compteur de contexte (`Chat.tsx`, `contract.ts`).
+- Les instructions sont éditables, mais aucun écran ne règle les permissions du
+  moteur : ses fichiers de réglages ne sont pas exposés par `instructionPaths()`.
+- `maxConcurrentTurns` reste dans le fichier de configuration, absent des champs
+  éditables de `SETTING_GROUPS` ; pas de réglage du plafond à l'écran.
+- Le chat ne marque pas une perte de contexte moteur après redémarrage ; les homes
+  Copilot/Codex sont sous `dataDir`, celui de Claude dépend du `HOME` du déploiement
+  (`drivers.ts`).
+- Le lanceur `packages/server/bin/adestia.js` n'a pas de commande `adestia init`
+  pour créer le workspace documenté.
 - `chat/conversations.ts` expose `deleteConversation`, sans commande à l'écran.
 - Le serveur garde le tour sans conversation (question éphémère) ; la coque
   ne propose pas ce mode (`routes/turns.ts`).
