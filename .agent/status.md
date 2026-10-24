@@ -9,9 +9,9 @@
   `origin/epic/adestia-qualite` et `origin/main`. Banc, tests, serveur, charte,
   plugins, pages et chat sont intégrés à l'epic ; la documentation est relue
   contre le code.
-- Déploiement actuel d'Alfred, Skippy et Nestor : **non attesté ici**. La dernière
+- Déploiement actuel des instances Alfred, Skippy et Nestor : **non attesté ici**. La dernière
   mention commune dans l'ancien état est v0.81.0 le 30/09 ; v0.87.2 est dite
-  déployée le 15/10 sans détail par corps. Cela ne prouve pas leur version actuelle.
+  déployée le 15/10 sans détail par instance déployée. Cela ne prouve pas leur version actuelle.
 - Histoire et décisions des chantiers clos : [CHANGELOG.md](../CHANGELOG.md).
 
 ## Défauts connus
@@ -52,8 +52,8 @@ PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone
 - Le chat ne marque pas une perte de contexte moteur après redémarrage ; les homes
   Copilot/Codex sont sous `dataDir`, celui de Claude dépend du `HOME` du déploiement
   (`drivers.ts`).
-- Le lanceur `packages/server/bin/adestia.js` n'a pas de commande `adestia init`
-  pour créer le workspace documenté.
+- Le lanceur `packages/server/bin/adestia.js` n'a pas de commande `adestia init` ;
+  il crée `workspace/` et `data/` au démarrage (`created workspace at …`).
 - `chat/conversations.ts` expose `deleteConversation`, sans commande à l'écran.
 - Le serveur garde le tour sans conversation (question éphémère) ; la coque
   ne propose pas ce mode (`routes/turns.ts`).

@@ -20,7 +20,10 @@ docker compose up
 ```
 
 The first `up` builds the image from the `Dockerfile`; the agent needs
-`CLAUDE_CODE_OAUTH_TOKEN` (see `docker-compose.yml`). The compose file mounts
+`CLAUDE_CODE_OAUTH_TOKEN` (see `docker-compose.yml`), which compose reads from the
+host's environment: `export CLAUDE_CODE_OAUTH_TOKEN=<token>` before `docker compose up`
+(`claude setup-token` with the Claude CLI prints one; it may also be armed later from
+Adestia's own interface, and the app starts without it). The compose file mounts
 `adestia.config.yaml` read-only: saving from the Settings screen cannot write it
 there; edit the file on the host (or drop the `:ro`).
 
@@ -33,6 +36,7 @@ clone, then launch the binary by absolute path from that scratch directory:
 npm ci
 npm run build --workspace @antorfr/adestia-server
 npm run build:web --workspace @antorfr/adestia-web
+cp adestia.config.example.yaml /path/to/adestia.config.yaml   # optional: without `-c`, the launcher reads ./adestia.config.yaml, and with no file at all it runs on defaults
 cd /path/to/scratch
 node /path/to/adestia/packages/server/bin/adestia.js -c /path/to/adestia.config.yaml
 ```
@@ -49,7 +53,7 @@ node bench/launch.mjs --engine fake    # prints `listening on <url>`; <url>/api/
 node bench/sweep.mjs                   # every screen, light and dark, desk and phone
 ```
 
-The sweep takes Playwright and Chromium from the environment (`npm root -g`; the `pages-*` scenarios load it from `/usr/lib/node_modules`, so a host with another global root must link it there); do not
+The sweep takes Playwright and Chromium from the environment (`npm root -g`; the `pages-*` scenarios load it from `/usr/lib/node_modules`, so a host with another global root must link it there: `ln -s "$(npm root -g)/playwright" /usr/lib/node_modules/playwright`); do not
 add them to the repo. The launcher runs until SIGTERM (`kill <pid>`, or Ctrl-C), which
 removes its throwaway data; in a script, start it in the background and keep its pid
 (`$!`). Run it from the clone's root: the bundled plugins are found through `./plugins`, and from elsewhere the server starts with `0 of 0 plugin(s) active`. Its boot log includes a plugin refused on purpose (`bench-refused`, part of the seed): not an error.
