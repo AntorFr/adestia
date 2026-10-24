@@ -3,8 +3,8 @@
 
 ## Version courante
 
-- Dernier tag accessible : **`v0.95.0-adestia-qualite.3`** (`git describe --tags
-  --abbrev=0`), une préversion de l'epic `adestia-qualite`.
+- Dernier tag accessible : **`v0.95.0`** (`git describe --tags
+  --abbrev=0`), l'epic `adestia-qualite`, entrée dans `main`.
 - Branche de travail : `feature/adestia-qualite-chat`, sur `origin/epic/adestia-qualite`
   (correctifs de recette et de verify : un message envoyé avant que le premier soit parti est retenu ;
   en-tête du rail à moins de 400 px à un seul espacement, sélecteur de modèle d'au moins 72 px ; bulle d'erreur seule à marge symétrique). Banc, tests, serveur, charte,

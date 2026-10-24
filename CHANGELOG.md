@@ -424,7 +424,7 @@ No release paragraph or date was recorded in the source status file.
 
 No release paragraph or date was recorded in the source status file.
 
-## Unreleased — adestia-qualite
+## v0.95.0
 
 The merged quality tranches keep the product's behaviour while making its screens,
 code and development bench consistent. This entry comes from their commit messages,
