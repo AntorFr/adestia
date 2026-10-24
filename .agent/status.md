@@ -5,9 +5,10 @@
 
 - Dernier tag accessible : **`v0.95.0-adestia-qualite.2`** (`git describe --tags
   --abbrev=0`), une préversion de l'epic `adestia-qualite`.
-- Branche de travail : `task/adestia-qualite-doc-etat`, après fusion de
+- Branche de travail : `feature/adestia-qualite-doc`, après fusion de
   `origin/epic/adestia-qualite` et `origin/main`. Banc, tests, serveur, charte,
-  plugins, pages et chat sont intégrés à l'epic ; la documentation se termine.
+  plugins, pages et chat sont intégrés à l'epic ; la documentation est relue
+  contre le code.
 - Déploiement actuel d'Alfred, Skippy et Nestor : **non attesté ici**. La dernière
   mention commune dans l'ancien état est v0.81.0 le 30/09 ; v0.87.2 est dite
   déployée le 15/10 sans détail par corps. Cela ne prouve pas leur version actuelle.
@@ -16,8 +17,8 @@
 ## Défauts connus
 
 La liste de référence est dans [ARCHITECTURE.md](../ARCHITECTURE.md), section
-« Known defects ». La relecture de fin d'epic doit notamment y retirer les défauts
-catalogues corrigés par `main` (options git et liens symboliques).
+« Known defects ». Les défauts catalogues d'options git et de liens symboliques
+sont corrigés par `main` et n'y figurent plus.
 
 Compléments encore visibles dans le code :
 - `:::content` affiche `on` tel qu'écrit, sans date au format de la langue
