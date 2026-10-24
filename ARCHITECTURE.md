@@ -1,7 +1,7 @@
 # Adestia — architecture
 
-> Product documentation. On `epic/adestia-qualite`, the target of the epic's framing; on
-> `main`, exactly what is built. Stable identifiers, never renumbered: `B-n` (needs), `P-n`
+> Product documentation. On `epic/adestia-qualite` (the epic's integration branch, where its tranches merge), it describes the epic's target; on
+> `main`, exactly what is built. An epic is a group of features delivered together; a tranche is one of them. Stable identifiers, never renumbered: `B-n` (needs), `P-n`
 > (journeys, `docs/parcours.md`), `E-n` (screens, `docs/ecrans.md`), `AD-n` (decisions,
 > this file), `R-n` (refactoring targets, this file).
 >
@@ -384,7 +384,7 @@ Unifying the frontmatter parsers (`content/src/frontmatter.ts` accepts CRLF; `pa
 (symlinks, dotfiles, modes, stale files — the catalogue security defects are the
 arbitration of `homelab-sdlc-maj-consignes`); wiring `deleteConversation` into the UI.
 Written as known defects. *Rejected*: doing them here under AD-1's cover. *Reversed if*:
-Monsieur schedules them into this epic.
+the owner (Monsieur, the repository's owner) schedules them into this epic.
 
 ### AD-8 — Plugin helpers stay copied
 `address.js` (journal, voyages, atelier) and the per-plugin word tables (`WORDS` / `FR`)
@@ -508,7 +508,7 @@ AD-9 markup) so the bars use the same set. *Rejected*: restyling the facet pills
 (e) A word is moved, never invented, by `B-8`: where today's string is French the French
 table keeps it **byte for byte** and the English key is a literal translation; where it is
 English the English stays and the French is a literal translation. The one string sent to the
-agent (`Rafraîchis ma une`) keeps its French form on a French instance. *Reversed if*: Monsieur
+agent (`Rafraîchis ma une`) keeps its French form on a French instance. *Reversed if*: the owner (Monsieur)
 wants the voice of the agent prompts changed — that is a behaviour of the conversation.
 
 ### AD-14 — The plugins' tranche: tokens by name, a copied sheet, tables per plugin, a lint and a CSS test
