@@ -28,9 +28,9 @@ Adestia's own interface, and the app starts without it). The compose file mounts
 there; edit the file on the host (or drop the `:ro`).
 
 Without Docker, from a clone (`data/` and `workspace/` are created in the
-current directory, and `workspace/` is not git-ignored: run from a scratch directory,
-not the clone root; `-c <path>` points at another config file). Build in the
-clone, then launch the binary by absolute path from that scratch directory:
+current directory; `-c <path>` points at another config file). To keep runtime data
+in a scratch directory, build in the clone, then launch the binary by absolute
+path from that scratch directory:
 
 ```sh
 npm ci

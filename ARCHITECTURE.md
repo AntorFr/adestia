@@ -367,12 +367,14 @@ plugins, of tests) the code contradicts, a "not built" the code builds, a decisi
 reversal both standing. Style is not one.
 
 **Verification, by search:** a search for the stale phrases about the number of skins and about open spikes, over every `*.md`, empty;
-`git grep -n "not built" -- DESIGN.md` empty outside quoted history; every `docs/*.md` and
-`*.md` link target exists (a one-line `node` script written in the task, not committed);
-a temporary check collects `var(--x` uses in CSS under `packages/web/src` and
-`plugins/*/web`, subtracts `--x:` definitions, and reports any remainder. Check
-skin declarations and JS/TSX inline parameters separately: they are definitions
-outside those stylesheets, not evidence that the CSS-only difference is empty.
+`git grep -n "not built" -- DESIGN.md` empty outside quoted history. The committed
+regression test `bench/tests/doc-besoin.test.mjs` checks relative Markdown link targets
+(excluding package tests, nested spike documents and skills) and collects `var(--x` uses in CSS
+under `packages/web/src` and `plugins/*/web`, subtracts definitions in CSS, skins and
+scripts, and reports any remainder. Run it with
+`node --test bench/tests/doc-besoin.test.mjs` to check B-4 and B-5. Skin declarations
+and JS/TSX inline parameters count as definitions outside those stylesheets;
+this does not mean the CSS-only difference is empty.
 
 ### AD-7 — Out of this epic, because they change behaviour
 Unifying the frontmatter parsers (`content/src/frontmatter.ts` accepts CRLF; `pages.ts`
