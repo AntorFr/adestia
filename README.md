@@ -41,7 +41,7 @@ cd /path/to/scratch
 node /path/to/adestia/packages/server/bin/adestia.js -c /path/to/adestia.config.yaml
 ```
 
-This serves `http://127.0.0.1:8730` and answers 200 on `/`. Without
+This serves `http://127.0.0.1:8730` and answers 200 on `/`. `extensions.pluginsDir` and `skinsDir` (`./plugins`, `./skins`) resolve from the current directory, so from an empty scratch directory the log says `0 of 0 plugin(s) active`: link or copy the clone's `plugins/` and `skins/` there (or set the two paths in the config) to load them. Without
 `CLAUDE_CODE_OAUTH_TOKEN` it still starts: the app is there, but a real agent
 turn fails (use the scripted engine below to look at it without one).
 
@@ -191,8 +191,9 @@ Adestia is a few hundred megabytes, and it is the burst that kills it. Raise
 
 ## Status
 
-**Early, and running.** Everything above is verified against a real browser and
-real CLIs, not only by tests. Pushing and pulling the workspace's own instructions
+**Early, and running.** The screens are checked in a real browser (`bench/`) and
+the agent drivers against real CLIs, not only by tests; which version each deployment
+runs is not recorded here. Pushing and pulling the workspace's own instructions
 to a remote is still unbuilt (catalogues above only read repositories).
 Concurrency measurements are recorded in `spikes/concurrency/REPORT.md`.
 See [.agent/status.md](.agent/status.md) for current defects and unfinished work,
