@@ -43,4 +43,10 @@ export default async function scenario(bench) {
   await phone.getByRole('button', { name: 'Catalogues' }).click()
   await phone.waitForSelector('.adestia-catalogues .adestia-filecard')
   await bench.shoot(phone, '6-phone')
+
+  if (repo) {
+    await dark.getByRole('button', { name: /^Retirer le catalogue / }).click()
+    await dark.getByText('Aucun catalogue — ajoutez un dépôt d’instructions.').waitFor()
+    await bench.shoot(dark, '7-catalogue-removed')
+  }
 }

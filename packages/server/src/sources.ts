@@ -149,6 +149,22 @@ export async function fetchSources(
       continue
     }
 
+    // A value that begins with "-" reaches git as an option, and
+    // `--upload-pack=<cmd>` runs a command. `--` below is the belt; this is
+    // the braces, and it also covers a declaration saved before the rule
+    // existed, which is refused here without git being called at all.
+    const optionLike = [source.repo, source.ref].some((value) => value.trimStart().startsWith('-'))
+    if (optionLike) {
+      problems.push({
+        id: source.repo,
+        severity: 'refused',
+        code: 'source-invalid',
+        params: { source: source.repo, ref: source.ref },
+        reason: `has a repo or a ref that begins with "-", which git would read as an option; it was not fetched`,
+      })
+      continue
+    }
+
     const dir = join(cacheDir, source.name)
     await mkdir(dir, { recursive: true })
     const cached = await headOf(dir)
@@ -156,19 +172,19 @@ export async function fetchSources(
     try {
       if (!(await isDirectory(join(dir, '.git')))) {
         await git(dir, ['init', '--quiet'], source.token)
-        await git(dir, ['remote', 'add', 'origin', source.repo], source.token)
+        await git(dir, ['remote', 'add', '--', 'origin', source.repo], source.token)
       } else {
         // The address can change under a name that does not — a repository
         // moved, a fork taken over. Kept in step rather than silently fetching
         // from wherever the cache was first filled.
-        await git(dir, ['remote', 'set-url', 'origin', source.repo], source.token)
+        await git(dir, ['remote', 'set-url', '--', 'origin', source.repo], source.token)
       }
 
       // Shallow on purpose: what is wanted is a folder at one commit, and a
       // plugin's history is somebody else's repository. `--depth 1` against a
       // ref name covers a tag, a branch and — on the forges that allow it — a
       // commit, which is why the fetch takes the ref rather than a branch flag.
-      await git(dir, ['fetch', '--depth', '1', 'origin', source.ref], source.token)
+      await git(dir, ['fetch', '--depth', '1', '--', 'origin', source.ref], source.token)
       await git(dir, ['reset', '--hard', '--quiet', 'FETCH_HEAD'], source.token)
 
       const head = (await headOf(dir)) ?? '?'

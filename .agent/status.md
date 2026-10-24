@@ -1,871 +1,97 @@
 # Status — Adestia
 > MàJ : 2026-10-24
 
-**Tranche `adestia-qualite-chat` (epic adestia-qualite) — assemblée, PR vers
-`epic/adestia-qualite`, pas fusionnée.** Aucun changement de ce que fait le chat (B-1, AD-7).
-- Code (R-11, R-12, AD-12) : `toMessage` écrit une fois (`chat/messages.ts`, option
-  `signatures`, défaut vrai ; Delegations passe `{ signatures: false }`, écart gardé comme
-  défaut écrit) ; tout appel réseau de `chat/` passe par `app/request.ts` (`requestJson`,
-  `requestRaw` pour six appelants : le POST du tour et l'attache, qui lisent un flux, et l'envoi, l'arrêt, l'archivage et la suppression, qui n'en lisent pas) ; `useConversations` coupé en
-  `useOpenConversations`/`useTurn`/`useTabActions`, `Chat` en `ChatHeader`/`TabStrip`/
-  `ConversationList`/`Thread`, `Composer` en `useUploads` (hooks locaux à leur fichier, seul `useConversations` est exporté) ; aucune fonction > 250 lignes
-  (`node bench/long-functions.mjs packages/web/src/chat`). Instantané du balisage
-  (`chat-markup.test.tsx`).
-- Écrans (B-7, B-8, B-10, B-11) : rail (E-16), compositeur, permission (E-17) et feuille de
-  signature (E-18, la `<Sheet>` partagée) dessinés avec les composants et sept icônes ajoutées
-  au sprite ; plus de glyphe ni d'émoji, une seule fermeture (`x`) ; chaînes et libellés par
-  la langue (en/fr) ; `chat.css`, `conversations.css`, `attachments.css` sans token indéfini,
-  couleur ou rayon littéral.
-- Recette : `npm ci`, `npm run typecheck`, `npm run lint`, `npm run build`, `npm test` ;
-  lancement `node bench/launch.mjs --engine fake` ; matrice, un scénario par passe :
-  `node bench/scenarios/chat-matrix.mjs bench/scenarios/chat-rail.mjs`, puis `chat-compositeur.mjs`
-  et `chat-permission.mjs` (4 habillages = skins, en/fr, clair/sombre, bureau/téléphone) ; tour réel (jeton Claude) : `node bench/launch.mjs --engine claude --seed chat-permission --locale fr`,
-  puis `BENCH_URL=<adresse imprimée> node bench/scenarios/chat-permission-live.mjs` (bench/README.md).
-- Reste / pièges : suppression, renommage, désarchivage d'une conversation depuis
-  l'interface non faits (comportements nouveaux, AD-7) ; `live.ts`, `usePage.ts`, l'éditeur
-  et `PageEditor` gardent leur `fetchImpl(` (tranche pages) ; la suite vitest à navigateur
-  peut dépasser 5 s sous charge (repasse seule) ; une phrase de carte de permission peut venir
-  de l'outil en anglais (donnée du serveur, pas un libellé).
-**Tranche `adestia-qualite-pages` (epic adestia-qualite) — assemblée, PR vers
-`epic/adestia-qualite`, pas fusionnée.** Aucun changement de ce que font les pages (B-1) ;
-elles parlent une seule langue (B-8) et le `‹ Back` du shell dit qu'il mène à l'accueil (B-9).
-- Code : `app/paths.ts` porte `prettify`, `folderOf` et les deux règles d'index, nommées
-  (`isIndexFile`, `isIndexPath`, AD-13 a) ; les pages parlent au serveur par `requestJson` /
-  `requestRaw` (plus de `fetchImpl(` dans les écrans de la tranche, `api.fetch` des plugins
-  excepté) ; `useInstance` rend `ready`. App, Home, Reader, Editor découpés par durée de vie
-  (R-12) : `node scripts/function-lines.mjs <fichiers>` (qui fait foi : il imprime la plus longue fonction de chaque fichier, sort 1 au-delà de 250) ; `bench/long-functions.mjs` ne liste que les dépassements, donc se tait quand tout va bien.
-- Écrans : E-2 (état de chargement, Q-23), E-3, E-4 lecteur et éditeur, E-5, E-6, E-7, E-8, E-20
-  avec composants, icônes et jetons de la charte ; feuilles de la tranche sans couleur, taille
-  ni rayon littéral, sans `outline: none` nu ; chaînes par `i18n.ts` en en et fr.
-- Recette : `npm ci`, `npm run typecheck`, `npm run lint`, `npm test` ; lancement
-  `node bench/launch.mjs --engine fake` (`/api/health`), captures
-  `node bench/scenarios/pages-matrix.mjs` après `npm run build`, et `pages-editor-narrow.mjs`.
-- Reste / pièges : pas d'état de chargement pour E-3, E-4, E-9, pas de « Réessayer » sur E-8
-  (B-1, recommandations de fin d'epic) ; les deux règles d'index diffèrent sur un chemin sans
-  extension, gardées chacune ; l'invite de la une garde sa forme française (AD-13 e) ; le
-  frontmatter garde ses deux analyseurs (AD-7). Deux tests à navigateur de la charte dépassent
-  5 s sous la charge de toute la suite et repassent seuls.
-
-**Tranche `adestia-qualite-plugins` (epic adestia-qualite) — assemblée, PR vers
-`epic/adestia-qualite`, pas fusionnée.** Aucun changement de ce que font les plugins (B-1).
-- Jetons : les feuilles de `plugins/*/web/*.css` lisent les jetons du shell (plus d'alias,
-  de couleur en dur, de `999px`, d'`outline: none` sans anneau) ; `plugins/test/css.test.js`
-  garde ces règles et compare sa liste `CHECKED` aux dossiers `web/` (AD-14 a).
-- Feuille et retours : todo, voyages, repas et pièce de l'atelier dessinent la feuille
-  partagée par ses classes (voile, Échap, focus ; chaque plugin porte sa copie du
-  comportement, AD-8) ; chaque retour dit sa destination, aucun n'est retiré. Écart à montrer :
-  le bouton de fermeture de la feuille est nouveau pour la pièce et le plat.
-- Langue : atelier, parcours et project-management ont une table `words.js` (clés anglaises) ;
-  l'atelier parle en et fr, son français inchangé ; `words.test.js` impose le *vous*.
-- Lint : `eslint packages plugins` couvre `plugins/` (`decoder.js` tiers ignoré) ; références
-  à `ATELIER-3.md`/`PARCOURS.md` retirées (R-7, R-8).
-- Recette : `npm ci`, `npm run typecheck`, `npm run lint`, `npm test` (vitest + 617
-  `node --test`) ; lancement `node bench/launch.mjs --engine fake --seed plugins`, captures
-  `bench/sweep.mjs --only`, matrice `bench/scenarios/plugins-matrix.mjs`.
-- Reste / pièges : le `confirm()` de l'atelier et le `window.alert` de voyages restent natifs
-  (Q-20, le flux changerait) ; breakpoints 520/560/640/720/900 px gardés ; invites ✦ inchangées
-  (l'une dit *tu* à l'agent : recommandation de fin d'epic) ; la suite vitest à navigateur
-  peut dépasser 5 s sous charge (repasse seule).
-
-**Tranche `adestia-qualite-charte` (epic adestia-qualite) — assemblée, PR vers
-`epic/adestia-qualite`, pas fusionnée.** Aucun changement de ce que font les écrans (B-1).
-- Charte : `docs/charte.md` écrite (sections TARGET comprises) ; `tokens.css` écrit sa
-  palette sombre une fois (`light-dark()`, AD-10), l'échelle typographique et les rayons ;
-  `packages/web/test/contrast.test.ts` mesure chaque paire de la palette de base et des
-  quatre skins, clair et sombre (AA ou écart écrit). Focus visible global.
-- Composants (B-7) : classes CSS du shell (`packages/web/src/app/styles/components.css`) + enveloppes React
-  `app/ui/` (Button, Sheet, Popover, EmptyState, Field, focus) ; icônes Lucide en sprite
-  inline vendoré (`app/icons.ts`, `Icon.tsx`, AD-9) ; documentés dans `skills/plugin-author`.
-- Requêtes (R-11) : `app/request.ts` (`requestJson`, AD-11), utilisée par E-1, E-9 à E-15,
-  `signin.ts`, `useInstance.ts` ; plus aucun `fetchImpl(` dans ces écrans.
-- Langue (AD-5, B-10) : le skin reçoit la langue de l'instance (entrée facultative) ; les
-  quatre skins parlent en en et fr, chacun dans sa voix ; table française d'`i18n.ts` au *vous*.
-- Écrans : E-1 (portes) et E-21, E-9 à E-15, E-19 refaits avec les composants ; Instructions,
-  Configuration, McpServers découpés (R-12, `app/instructions/`, `app/configuration/`,
-  `app/mcp/`, aucune fonction > 250 lignes : `node scripts/function-lines.mjs`) ; E-14 a
-  son état de chargement et `--tile-color` sur ses rendus d'erreur et vide (Q-21, Q-23).
-- Recette : `npm ci`, `npm run typecheck`, `npm run lint`, `npm test` (2160 vitest +
-  543 `node --test`, 2 sautés) ; lancement `node bench/launch.mjs --engine fake`, captures
-  par `node bench/sweep.mjs`.
-- Reste / pièges : la charte n'est pas appliquée au chat (tranche
-  suivante, qui adoptent ces composants) ; pas de toasts (écart écrit) ; pas de « Réessayer »,
-  de confirmation avant « Remove » ni d'écran hors ligne (B-1, recommandations de fin d'epic) ;
-  `live.ts` et `usePage.ts` passent désormais par l'aide de requêtes (tranche pages). Une valeur de token
-  qui change change tous les écrans : la charte écrit la raison.
-
-**Tranche `adestia-qualite-serveur` (epic adestia-qualite) — assemblée, PR vers
-`epic/adestia-qualite`, pas fusionnée.** Aucun comportement changé (AD-1).
-- Pilotes : règle des en-têtes MCP (`mcp-headers.ts`), aides et déroulé device-code
-  (`engine-aids.ts`, `device-code.ts`) écrits une fois ; le programme du CLI d'outils de
-  Copilot est un `.mjs` copié sous `dist/` par le `build` du paquet `drivers`, octets inchangés.
-- Serveur : toutes les routes sous `routes/` ; `app.ts` ne fait que monter (limiteur →
-  `turn-limiter.ts`, tour sans tête → `unattended.ts`) ; `start()` en étapes nommées, ordre du
-  boot fixé par `start-order.test.ts` ; frontmatter dans `frontmatter.ts`, `field()` unique.
-- Garde-fous : `npm run lint` en CI, zod déclaré, `scripts/unused-exports.mjs` (178 hits
-  restants, tous nommés dans ARCHITECTURE.md › R-6 : types de contrat public ou exports gardés
-  pour leur test, par arbitrage — le critère « que des types publics » a été lu ainsi).
-- Recette : `npm ci` (jamais `npm install`), `npm run typecheck`, `npm run lint`, `npm test`
-  (2073 vitest, 15 sautés) ; lancement `node bench/launch.mjs --engine fake`.
-- Reste / pièges : `assertConformance` n'est toujours pas câblé au boot (défaut connu) ;
-  analyseurs de frontmatter, parcours de dossiers, `copyMarkedTree` et défauts de sécurité des
-  catalogues restent (AD-7) ; `bench-ensemble.test.ts` dure ~5 min.
-
-**Tranche `adestia-qualite-tests` (epic adestia-qualite) — assemblée, PR vers
-`epic/adestia-qualite`, pas fusionnée.** Aucun fichier de production touché.
-- R-9 : `packages/server/test/support/` (`driver.ts`, `git.ts`, `tmp.ts`) porte le
-  pilote factice, le dépôt git de test et l'espace temporaire ; les fichiers de
-  `packages/server/test` l'importent. `packages/drivers/test` garde ses faux.
-- R-10 : callback, mcp, restart n'attendent plus par `setImmediate` ; watch, pages,
-  shell-tools, background n'ont plus de `setTimeout` d'attente ; cause du test
-  instable de page-editor écrite dans ARCHITECTURE.md (R-10).
-- R-14 : `catalogues-ui-ensemble.test.ts` trouve Playwright par `npm root -g`,
-  construit le shell dans son `beforeAll` si `dist-web` manque (avec
-  `NODE_ENV=production`), et se saute en disant `no playwright` sinon.
-- Recette : `npm ci`, `npm run typecheck`, `npm run lint`, `npm test` (1977 tests
-  vitest + 543 `node --test`, aucun sauté) ; lancement `node packages/server/bin/adestia.js`
-  → 200 sur `/`. Le build du shell est payé une fois, au premier passage de la suite
-  des catalogues sans `dist-web`.
-- Reste / pièges : le
-  lancement local sur moteur factice (B-2) vit sous `bench/` (voir ci-dessous) ; si le build du shell
-  dépasse la minute, passer à un `pretest`.
-
-**Banc sans docker (feature `adestia-qualite-banc`, assemblée, PR vers `epic/adestia-qualite`) :**
-`bench/launch.mjs` (moteur factice ou vrai Claude), `bench/seed/*` (base, empty,
-config-writable, config-readonly, oidc, plugins ; contrôle `bench/seed/check.mjs`),
-`bench/sweep.mjs` (124 captures E-1 à E-31, `--skin`). Vérifié dans le pod : `/api/health`
-répond `ok`, SIGTERM retire le répertoire de données, balayage 124/124 en ~2 min (2 à 4 min selon la machine), refus net
-de `--engine claude` sans jeton. **Pas vérifié** : un tour réel `--engine claude` (pas de
-jeton dans le pod d'intégration) — joué par Monsieur : il a révélé que le jeton factice rangé par un semis masquait celui de l'environnement (le pilote préfère la crédential rangée) ; le lanceur la retire désormais en `--engine claude`. Suite entière verte (2013 vitest) une fois l'epic fusionnée. Le balayage et le lanceur lisent
-Playwright dans `npm root -g` ; `docker`/`bench/run.sh` inchangés. Reste à l'epic : les
-corrections visuelles (charte, chat, pages, plugins) et le support de test (tests).
-
-**État :** `main` est à **v0.87.0** (entrées v0.69 à v0.87 ci-dessous, pas dans
-l'ordre) ; la **v0.80.0** était taguée et **déployée sur les trois corps le
-29/09 au soir** — deux marches dans la même soirée (0.79.0 la lecture en
-fond, 0.80.0 les heures fixes), faites l'une pour l'autre : ensemble elles
-rebranchent le briefing d'Alfred, mort avec l'agent-gw le 05/09. L'horloge
-d'Alfred tourne (`schedule.enabled: true`, k8s-home-lab `01081c5e` puis
-`57c1d465`), sa note `planif/briefing.md` porte `at: 06:30, 12:30, 18:30`
-(prompt agent-gw repris verbatim, originaux sauvegardés en `.md.agent-gw` à
-côté, `sncf-scan` converti mais toujours éteint). Vérifié sur le POD, pas au
-gabarit : boot propre, `scheduled turns enabled (notes in planif/)`, note
-datée au premier tick dans `schedule-state.json` — premier briefing le 30/09
-à 06:30. Entre les deux marches, la 0.79.0 a tourné une demi-heure avec la
-note `at:` signalée « missing every » : refusée sans tour ni dégât, comme
-prévu par le commit `01081c5e`.
-
-⚠️ **Et on a trouvé POURQUOI ils traînaient.** Le `regexManager` de Renovate
-matche `image:` suivi de `repository:` à la ligne **suivante** ; un bloc de
-commentaire s'était glissé entre les deux dans `alfred-helm.yml` et
-`skippy-helm.yml`. Résultat : Renovate n'ouvrait de PR de bump que pour
-Nestor, et les deux autres sortaient du radar **sans erreur, sans PR, sans
-symptôme** — exactement ce que le commentaire juste en dessous prétendait
-empêcher (« on les bump ENSEMBLE »). Le commentaire est remonté au-dessus de
-`image:` dans les deux fichiers, avec un avertissement pour qu'il n'y
-redescende pas (`k8s-home-lab`, commit `cb067c76`). À surveiller au prochain
-tag : si les trois reçoivent leur PR, c'est réparé.
-
-v0.69.0 : **`dev-flow` quitte l'image**. Il vit dans
-`AntorFr/homelab-sdlc-core` (tag `v0.1.0`), à côté de l'outillage dont il lit
-les fiches, et Skippy le récupère par `extensions.sources` — premier usage réel
-du mécanisme, et il valide une forme qui n'était que dessinée : une racine qui
-n'est PAS un plugin, dont `bin/`, `cmd/` et `internal/` sont ignorés sans un
-mot, et qui porte DEUX plugins (`sdlc-console` arrive avec, non allumé).
-L'image livre dix plugins, plus onze. Déployée le 24/09.
-
-v0.70.0 : **le fil d'Ariane ne dit plus deux fois le même nom**. Un dossier
-qui ne tient qu'une fiche du type réclamé par son plugin s'ouvre SUR cette
-fiche — dossier et page sont un seul écran — et le bandeau dessinait les deux
-marches : le titre écrit deux fois, le premier exemplaire étant un lien vers
-l'écran déjà ouvert, donc un clic qui ne faisait rien. La marche du dossier
-saute (`opensOn`, qui interroge `folderRoute` et relit la réponse par
-`pageAddress` plutôt que de recopier la règle : `/page/<dossier>` et
-`/page/<page>` s'écrivent différemment et nomment le même fichier). Le cas
-jumeau — un dossier que personne ne possède, dont on lit l'aperçu — se corrige
-à l'envers : la marche mène à l'étagère, un vrai second écran, donc c'est le
-LIBELLÉ qui cède et le dossier porte son propre nom. Signalé par
-l'utilisateur sur une fiche `project-management`. Scénario de banc :
-`fil-ariane-fiche`. Déployée le 24/09.
-
-v0.71.0 : **les réglages de l'instance s'éditent depuis le navigateur**
-(Réglages › Configuration). Le clic écrit `adestia.config.yaml` LUI-MÊME — pas
-de surcouche, le fichier reste la seule source de vérité — et garde tous les
-commentaires : l'API document de `yaml` réimprime ce qu'on ne lui a pas demandé
-de changer, et les `${VAR}` ne sont jamais substitués. Un catalogue dans
-`schemas` déclare chaque réglage (sorte de contrôle, libellé, aide, bornes,
-à chaud ou au redémarrage) ; le serveur valide contre lui et l'écran s'y
-dessine. Le champ dit si la valeur vient du fichier ou du défaut, et la
-sauvegarde n'envoie QUE ce qu'on a touché.
-
-Deux choses trouvées en cours de route. Le fichier est bind-monté à l'unité
-(compose, ConfigMap) : on ne peut pas lui renommer un frère par-dessus
-(EBUSY, mesuré sur `node:22-alpine`), donc écriture atomique quand c'est
-possible, en place quand le montage l'interdit, et jamais de repli sur une
-autre erreur. Et monté en lecture seule, l'écran le dit avant qu'on remplisse
-un formulaire, en continuant d'afficher toutes les valeurs — c'est la moitié
-qui manquait : rien ne disait dans quel mode tournait le guetteur de fichiers.
-
-Volontairement absents du catalogue : `driver.command` (un binaire que le
-serveur lance), `extensions.sources`/`apps` (cloner un dépôt et exécuter son
-script de setup), les secrets et le `clientSecret` OIDC. Sur une instance en
-`auth.mode: none`, les offrir reviendrait à les offrir à qui atteint le port.
-Premier groupe livré : le rafraîchissement vivant (`workspace.watch`), soit
-exactement le réglage qui manquait sur WSL/OneDrive. Scénario de banc :
-`editeur-config`. Déployée le 24/09.
-
-v0.72.0 : **un bouton « redémarrer » dans les réglages**, et il ne tue rien.
-Le serveur ferme son instance et en démarre une neuve DANS LE MÊME PROCESSUS
-(`start()` rendait déjà quelque chose qui se ferme ; c'est le lanceur qui tient
-désormais la boucle). Le conteneur ne bouge pas — compteur de redémarrages à
-zéro, vérifié — et ça se comporte pareil sous `npm start`, sous Docker et en
-k8s. Écarté au passage : le processus enfant supervisé (proposé par
-l'utilisateur), qui coûtait le suivi des signaux, un protocole de codes de
-sortie et la récolte des zombies en PID 1 — alors que la version en processus
-se vérifie dans la suite de tests. La conf est RELUE avant toute démolition :
-une conf cassée coûte le redémarrage, jamais l'instance qui sert. Un tour en
-cours refuse le redémarrage en disant combien ; `force` passe outre. Le bandeau
-n'apparaît que quand un réglage « effectif après redémarrage » vient d'être
-écrit, et l'écran attend le retour de la santé plutôt que d'échouer dans le
-trou.
-
-**Défaut ANTÉRIEUR trouvé en chemin, et corrigé : le serveur ne pouvait pas
-s'arrêter tant qu'une coque le regardait.** Fastify attend les requêtes en vol,
-et deux des nôtres ne finissent jamais seules (le flux de changements, un tour
-attaché). Mesuré sur l'image : avec un seul `/api/events` ouvert, `docker stop`
-n'y arrivait pas et le conteneur sortait en **code 137**, tué ; sans navigateur,
-le même stop prenait moins d'une seconde. `forceCloseConnections` règle ça —
-au prix d'une requête en vol qui perd sa RÉPONSE, jamais son travail.
-Scénario de banc : `editeur-config` (étendu). Déployée le 24/09.
-
-v0.73.0 : **le frontmatter s'édite au formulaire**, par le ⚙ de la bande de
-pastilles en haut d'une fiche en écriture (option A, choisie par
-l'utilisateur sur maquette). Rien ne se tape en YAML : chaque champ est un
-contrôle, et ce que le formulaire ne sait pas modéliser — une structure
-imbriquée — est MONTRÉ tel quel et jamais réécrit. Le savoir vient de trois
-endroits, et c'est le dessin : le cœur déclare les dix champs qu'il lit
-(`content/fields.ts`), un plugin déclare ceux qu'il lit pour les types qu'il
-revendique (clé `fields` du manifeste — `todo` ouvre le bal avec `due`,
-`start`, `pri`, `assignee`, `dom`, `projet`, `done`), et les VALEURS sortent
-de l'index : `domaine: atelier` est un fait sur un espace de travail, pas sur
-Adestia, donc la liste propose ce que le corpus écrit déjà, le plus utilisé
-d'abord, et accepte un mot qu'elle n'a jamais vu. Un champ « référence »
-(`projet`) se choisit parmi les fiches du type visé, écrites par leur `id`.
-Aucune requête nouvelle : la coque tient déjà l'index.
-
-L'écriture passe par l'API document de `yaml`, comme l'éditeur de conf — ce
-qui règle ce que la chirurgie par expression régulière ne savait pas faire :
-les listes, les commentaires, et un titre qui contient un deux-points (`title:
-Servante: le retour` n'est pas du YAML, et rien ne l'aurait dit). Un bloc qui
-ne PARSE pas n'est jamais écrit : le panneau le dit et refuse, plutôt que de
-« réparer » ce qu'il a réussi à lire.
-
-Le second écrivain de frontmatter est retiré au passage : l'éditeur en avait
-un à lui, par expression régulière, pour le `title:` des plugins — deux
-écrivains qui ne s'accordaient pas, dont un écrivait du YAML invalide sans que
-rien ne le dise.
-
-Quatre choses trouvées en chemin. La bande se cachait quand elle était vide,
-donc la fiche qu'on vient de créer — celle qu'on veut justement nommer —
-n'avait aucun point d'entrée : le nœud est désormais inséré même absent, et un
-nœud vide s'écrit comme RIEN (le fichier ne gagne un `---` qu'au premier champ
-rempli). Les contrôles natifs ne suivaient pas le thème : `color-scheme`
-n'était déclaré qu'en `light dark` sur `:root`, jamais forcé sous
-`[data-theme]`, et un sélecteur de date était un bloc blanc sur une carte
-noire. La poignée `+ ⠿` de Crepe visait la bande : elle proposait de DÉPLACER
-les propriétés au milieu du document (vu au banc, corrigé). Et `main` ne
-passait plus son propre `npm run typecheck` (six erreurs,
-dont un `Saving…` traduit deux fois avec deux orthographes de points de
-suspension) — corrigé dans un commit à part.
-
-Reste ouvert à la livraison, réglé depuis par la v0.74.0 : les libellés
-déclarés par un plugin s'affichaient en anglais sur une instance française.
-Scénario de banc : `proprietes-fiche`. Déployée le 24/09.
-
-v0.74.0 : **un plugin traduit AUSSI les mots qu'il déclare**. Un facet rend
-sa table avec sa contribution (`words: table(api.locale)`), et la coque la
-consulte partout où elle dessine un mot venu du manifeste : le nom d'une
-tuile, le libellé et l'aide d'un champ, la description d'un bloc, le titre du
-groupe dans le formulaire. Trois tables répondent dans cet ordre — celle du
-plugin, celle de la coque (donc un champ nommé `Title` hérite d'une
-traduction que personne n'a réécrite), puis la phrase anglaise. Celle du
-plugin ne touche QUE ses propres déclarations : une app ne renomme pas
-« Réglages » pour tout le monde, même raison qu'un skin ne porte aucun mot.
-
-Ce qui l'a rendue possible, et que l'analyse de la veille avait manqué : tout
-plugin dont un mot atteint l'écran a déjà son code en mémoire. Le chargeur
-importe tous les facets avant de publier `loaded`, et un plugin dont aucun
-facet ne répond est jeté en entier — ni tuile, ni champs. Le fichier de
-langue à côté du manifeste, envisagé d'abord, aurait ajouté un fichier et une
-clé pour un tuyau qui existait déjà.
-
-Le ménage qui allait avec, trouvé au balayage des dix plugins : `meals`
-affichait un refus de glisser en anglais (« That move was refused. ») ;
-`scan` avait son info-bulle de composeur en dur ; trois tuiles étaient
-écrites en FRANÇAIS dans leur manifeste (`Veille`, `Planifications`,
-`Voyages`) — le même défaut en miroir, illisible pour un lecteur anglais —
-et sont repassées à l'anglais avec leur entrée de table ; quinze entrées que
-plus personne ne disait ont été retirées (8 chez `journal`, 5 chez `meals`,
-2 chez `voyages`). Les six phrases anglaises de `todo` notées le 23/09
-étaient DÉJÀ rentrées : la ligne avait vieilli.
-
-Le test de mots de `todo` devient celui des dix (`plugins/test/words.test.js`)
-et lit la table comme la coque la lit — les modules du manifeste, importés et
-appelés. Il échoue sur la classe dans les deux sens : une phrase sans
-traduction, une traduction que personne ne dit. Le banc ouvre DEUX lecteurs
-sur une même instance (elle ne déclare aucune langue, le navigateur tranche) :
-« Échéance / Dès le / Portée par » d'un côté, « Due / Not before / Carried
-by » de l'autre. Scénario de banc : `mots-de-plugin`. Déployée le 24/09.
-
-v0.75.0 : **un projet dit AUSSI comment il va**. `status:` dit où une fiche en
-est dans sa vie ; il ne sait pas dire si un projet qui tourne va bien. Un
-second mot, `project-status: Green | Amber | Red`, déclaré par
-`project-management` pour le type qu'il revendique — donc il n'existe QUE sur
-ces fiches-là, et le déclarer suffit à le rendre modifiable : le formulaire de
-propriétés de la 0.73.0 le dessine, la table de mots de la 0.74.0 le nomme
-« Statut projet ». Zéro ligne d'interface pour le champ lui-même. Les VALEURS
-restent en anglais délibérément : c'est ce que le fichier porte, et un menu
-qui proposerait « Vert » en écrivant `Green` mentirait sur ce qu'il s'apprête
-à écrire.
-
-**La précédence est une substitution, pas une addition** : la vie de la fiche
-parle d'abord. Un projet en attente ou clos montre son statut de cycle de vie,
-quelle que soit la note écrite dessus — « Green » à côté de « bloqué » serait
-un projet qui se dit bien portant pendant que personne ne peut y toucher. Une
-seule pastille par ligne. Sur une BARRE, la même règle plus une : une note
-écrite l'emporte sur `late`, parce que `late` est déduit d'une date tandis
-qu'une note est la parole de quelqu'un sur la même question, et deux couleurs
-disant « ça ne va pas » ne se distingueraient pas.
-
-**`:::subproject`** dessine ça : une ligne par sous-projet, la pastille au
-bout, les projets clos derrière un repli. Un bloc À LUI plutôt qu'une prise
-dans la ligne du cœur — décision du propriétaire, et l'argument est qu'une
-prise est un contrat : un contrat qui traverse le dessin d'une carte oblige à
-tester l'évolution de cette carte contre tous les plugins, y compris ceux
-qu'on ne maîtrise pas. Le fork est petit ici parce que le plugin possédait
-déjà la marche, l'éligibilité et la machine à états de `:::timeline`.
-
-Deux choses mesurées plutôt que supposées. Les couleurs passent par
-`--danger` / `--warning` / `--success` et JAMAIS par les teintes nommées : un
-skin a le droit d'aplatir celles-ci, et Skippy écrase les dix sur un seul
-ambre — vert, ambre et rouge y auraient été la même tache. Et
-`/api/pages/index` publie `tone` à côté de `finished`, même raison qu'elle :
-un plugin peut n'importer que React, et `finished` ne distingue pas « en
-attente » de « en cours », qui est justement ce dont la précédence a besoin.
-
-Au passage, la ligne d'un `:::list{pull=status}` porte enfin la pastille
-colorée que la carte d'à côté portait déjà — le seul endroit où la coque se
-contredisait sur un même champ lu dans le même index.
-
-Ce qui est assumé : une carte d'étagère et les puces d'entête d'une fiche ne
-sont pas des blocs, donc un projet noté Red est en couleur dans son
-`:::subproject` et en statut de cycle de vie sur la carte qui ouvre son
-dossier. Le jour où ça gêne, c'est un chantier « prise à puces ».
-
-Ambre veut désormais dire deux choses sur un planning — « en retard » (déduit)
-et « Amber » (écrit) ; le survol écrit le mot, mais à l'œil deux barres ambre
-ne se distinguent pas. Sortie si ça gêne : donner à `late` un dessin plutôt
-qu'une teinte. Scénarios de banc : `statut-en-liste`, `statut-projet` (rejoué
-sur le skin Skippy, c'est lui qui prouve le choix des tokens). Pas encore
-déployée.
-
-v0.76.0 : **chacun sa boîte dans l'inbox des pièces jointes, et le moteur
-sait où elle est**. L'inbox garde ce qu'on a déposé dans le chat et dont
-personne n'a encore décidé la place — c'est donc exactement ce qui doit se
-séparer : un tas indécis ne se range que si on peut dire à qui il est. Chaque
-personne a sa boîte, nommée par le hash de son identifiant (un `sub` OIDC
-contient des slashes et des deux-points ; « assainir » deux personnes vers un
-même dossier est une fuite, pas un choix de format), avec un `owner.txt` d'une
-ligne à côté des lots — un hash est illisible PAR CONSTRUCTION, et un tas
-illisible est précisément ce que les boîtes empêchent. Le balayage suit la
-forme : chaque lot vieillit sur SA propre date, parce que celle d'un dossier
-bouge quand on y ajoute un enfant — une boîte vieillie d'un bloc prendrait un
-vieux lot des mains d'un actif et garderait pour toujours celui d'un
-silencieux. Un lot resté à la racine d'avant les boîtes expire là où il est.
-
-**Et la boîte est déclarée au moteur comme répertoire de travail.** Une CLI
-qui vérifie les chemins de lecture refuse un fichier hors de son répertoire
-courant : l'agent recevait de l'instance elle-même le chemin d'une pièce
-jointe et répondait « Permission denied » dessus, ce qui se lit comme un agent
-devenu bête plutôt que comme une déclaration manquante. Le contrat pilote
-portait déjà `roots` pour les stores montés hors workspace ; codex et Claude
-Code l'honoraient, le pilote Copilot l'ignorait — il déclare désormais chaque
-racine en `--add-dir`. Déclarée à CHAQUE tour de chat, pas seulement à ceux
-qui portent des fichiers : le navigateur n'envoie les ids qu'avec le message
-qui les apporte, alors qu'on revient sur un fichier deux tours plus tard. Et
-seulement quand la boîte existe, un root inexistant étant un drapeau de
-lancement qui pointe vers rien.
-
-Deux formes écartées en chemin. Déclarer l'inbox ENTIÈRE : une constante, zéro
-comptabilité — mais ça défait ce que les boîtes viennent de séparer, et ça
-donne à un tour délégué, dont l'appelant est un jeton porteur et pas une
-personne, les fichiers non rangés de tout le monde. Et dériver le root des ids
-envoyés par le navigateur (la première forme du correctif), qui a l'air
-minimale sans l'être : les ids viennent du client, `resolve` vérifie l'évasion
-et pas la forme, et un id d'un seul segment nommait l'inbox entière — la
-permission maximale, obtenue par le paramètre censé la garder minimale.
-
-**Mesuré plutôt que supposé** (CLI 1.0.80, mock BYOK, sans credentials —
-spike §12). Le refus est mot pour mot celui rapporté sur l'instance :
-« Permission denied and could not request permission from user », sans
-nommer ni le chemin ni le drapeau qui manque. `--allow-all-tools` ne le
-couvre PAS : permission d'outil et vérification de chemin sont deux portes.
-`--add-dir` l'ouvre, en lecture comme en écriture. Et un `--add-dir` sur un
-dossier absent **tue le tour entier** (exit 1, aucune ligne `result`) — ce
-qui valide le choix de ne déclarer la boîte que lorsqu'elle existe.
-
-Piège trouvé en mesurant, et consigné pour la prochaine fois : le répertoire
-temporaire du système est autorisé PAR DÉFAUT, donc une fixture posée dans
-`/tmp` fait croire qu'aucune vérification n'existe. Deux lectures fausses
-avant de s'en apercevoir. À arbitrer séparément : le pilote ne passe ni
-`--allow-all-paths` ni `--disallow-temp-dir`, donc l'agent lit et écrit
-aujourd'hui librement dans le `/tmp` du conteneur.
-
-Pas encore déployée.
-
-v0.77.0 : **un plugin ne redemande plus ce que la coque tient déjà** — et
-une boulette dit où en est un sous-projet.
-
-Le gros morceau est le premier, et il vient d'un constat d'usage : le bloc
-`:::subproject` mettait une à deux secondes à apparaître là où le `:::list`
-du cœur était instantané, sur la même page, pour lire la même chose. La
-différence était **une requête**. La coque récupère `/api/pages/index` UNE
-fois au démarrage et le tient vivant par le surveillant de fichiers du
-serveur ; un bloc de plugin, lui, recevait sa page et son entête mais jamais
-le listing de l'instance, donc chaque bloc de requête le refaisait pour son
-compte — et cette route relit tous les fichiers markdown du serveur, sans
-cache. Deux blocs sur une page payaient deux fois.
-
-`pages` et `stores` voyagent donc désormais **ensemble**, aux blocs comme aux
-écrans (une vue ne recevait AUCUNE prop, ce qui explique que les quatre apps
-allaient chercher l'index elles-mêmes). Le couple est le point : la table des
-magasins vit sur le LISTING, pas sur ses entrées — une entrée dit quel magasin
-la porte, jamais comment il s'appelle, quelle teinte il porte ni lequel est
-celui de cette coque. Tendre une moitié sans l'autre coûtait à `todo` ses
-marques de provenance et pouvait faire répondre « à moi » avec le nom de
-quelqu'un d'autre, ce que le code appelle pire que pas de « à moi » du tout.
-
-Migrés : le planning et la liste de sous-projets, la checklist, et les écrans
-de `todo`, `journal`, `listening-post` et `voyages`. Ce qui garde un `fetch`
-est nommé plutôt que laissé : un `routeFor` qui dessine un lien sur le lanceur
-et un `tileInfo` qui compte pour une tuile tournent AVANT tout montage et ne
-voient aucune prop ; et chaque écran garde un repli pour un montage sans index
-et pour une instance dont le surveillant est éteint, où rien ne lui dirait que
-sa propre écriture a atterri. `voyages` reçoit une fonction et non le tableau :
-son moteur est impératif et survit à chaque voyage ouvert, donc un listing
-capturé à la création vieillirait dedans.
-
-**Et le sous-projet porte son état dans sa boulette.** Le rond à gauche de
-chaque ligne prend la couleur — là où l'œil descend une liste — et le mot
-reste à droite du titre en étiquette neutre : la teinte n'est jamais
-l'étiquette, et un rond coloré sans mot laisserait un lecteur d'écran, une
-impression en gris et un lecteur daltonien devant une liste de ronds
-identiques. Le rond est DESSINÉ, pas pris dans la police : un glyphe change
-d'un système à l'autre et n'a ni la taille ni le poids qu'on lui demande.
-`view=cards` lave la même liste en grille, au mot du cœur et à son sens
-(`view` range l'intérieur, `frame=card` met le bloc en carte).
-
-La règle de la boulette est celle du bloc, inchangée : un `project-status` ne
-colore que tant que le projet tourne ; en attente ou clos, le cycle de vie
-reprend la boulette et porte sa propre couleur — et « clos » est dit par le
-repli autant que par la teinte.
-
-Deux pièges payés au banc : la barre d'un bloc est à `opacity: 0` et
-`pointer-events: none` tant que le bloc n'est pas survolé, donc un clic direct
-sur son ⚙ expire sur un élément invisible ; et deux bancs lancés en parallèle
-partagent des noms de conteneurs fixes, celui qui sort le premier emportant le
-serveur de l'autre — sans échouer proprement, le survivant photographie des
-blocs vides. Scénarios de banc : `statut-projet` (rejoué sur le skin Skippy,
-et qui vérifie que le ⚙ du bloc offre bien `view`), `statut-en-liste`. Pas
-encore déployée.
-
-v0.61.0 : une page occupe un grand écran. Le canevas
-monte à 1400 px (940 avant) ; la prose garde une mesure, relevée à 89ch
-(~830 px, choix de l'utilisateur sur son écran, au-delà des 70 classiques),
-et tout ce qui se parcourt plutôt qu'il ne se lit — tableaux, bandeaux `w=`,
-chiffres, cartes, blocs de plugins — prend la largeur du canevas. Même
-partage dans l'éditeur. L'en-tête d'un bloc `:::content` est redessiné
-(pastille, titre serif, signature mono à droite, bandeau dans une carte), et
-le vide de 35 px en haut des cartes a disparu. Scénario de banc :
-`page-width`. Partie dans la 0.68.0, donc déployée le 20/09 — la mention
-« pas encore déployée » avait vieilli sur place.
-
-v0.62.0 : `title=` et `ico=` sont RÉSERVÉS, comme `w` — tout
-bloc, du cœur ou d'un plugin, peut porter un titre et une icône, et le lecteur
-dessine l'en-tête : première ligne de la boîte d'une liste, première ligne d'un
-encadré, au-dessus du reste. Signalé à l'usage : un `:::list{title=…}` passait
-avec un simple avertissement et s'affichait sans titre. Scénario de banc :
-`block-titles`.
-
-v0.63.0 : `:::list{source=files}` liste les fichiers d'une
-page (son dossier et son `assets/`, la règle de la bande « Pièces jointes »)
-là où l'auteur écrit le bloc ; `type=` filtre par sorte (`image`, `pdf`…),
-`view=cards` fait une planche, `depth=subtree` descend sous le dossier. La
-bande du bas ne répète plus ce qu'une liste montre. Corrigé en passant : le
-lecteur d'une page ordinaire ne recevait pas `vocabulary` (latent, aucune app
-ne surcharge un bloc du cœur). Scénario de banc : `list-files`.
-
-v0.64.0 : `view=cards` pour le planning et la checklist — REMPLACÉ avant tout
-déploiement par ce qui suit.
-
-v0.65.0 : **`frame=card` encadre n'importe quel bloc**
-(réservé, dessiné par le lecteur, le titre en bandeau) ; **`view` ne dit plus
-que la disposition de l'intérieur** (liste : `rows`/`cards`/`chips`). Un bloc
-est nu par défaut : la liste en lignes a perdu sa bordure, la checklist son
-liseré. Sans rétrocompatibilité (choix de l'utilisateur) : `content{view=cards}`
-et `checklist{view=…}` ne sont plus que des avertissements sans effet. Le
-planning pose ses étiquettes de jalons en rangées mesurées, DANS le graphique
-(elles montaient sur le bloc du dessus). Scénario de banc : `block-cards`.
-
-v0.66.0 : **`:::row`**, un saut de ligne entre blocs `w=`
-qui ne dessine rien dans la page (l'éditeur le montre « :::row »). Choisi par
-l'utilisateur contre un attribut `break` et un `---` détourné. Scénario de
-banc : `row-break`.
-
-v0.67.0 : **l'édition dessine les blocs comme la lecture** — cartes,
-bandeaux, encadrés, rangées `w=`, vrai rendu des blocs de données (lignes
-brutes au clic) ; ⚙ règle chaque bloc (ses attributs + titre, icône, carte,
-largeur) ; le menu « / » propose tous les blocs ; la barre de sélection porte
-listes, titres et citation ; un bloc se glisse (⠿) là où on le veut, toujours
-au premier niveau, ⤴ sort un bloc imbriqué, ✕ le supprime. Corrigé en route :
-enregistrement à l'ouverture, `<br />` pour les paragraphes vides, curseur
-caché dans les cartes, reset de Crepe (en couche CSS). Construit sur les
-retours de l'utilisateur, instance d'essai locale (port 8744).
-
-v0.68.0 : **un plugin peut venir d'un AUTRE dépôt**. `extensions.sources`
-déclare une adresse git (`ref` obligatoire — pas de branche par défaut : tirer
-un dépôt, c'est exécuter son code) ou un dossier monté ; le clone vit dans
-`<dataDir>/extensions`, donc une forge injoignable coûte le rafraîchissement
-et jamais le démarrage (on repart du cache, la bande des problèmes dit
-laquelle). La découverte lit plusieurs racines, l'image d'abord : un dépôt
-ajoute un plugin, il n'en remplace jamais un. Un dépôt dont la RACINE est le
-plugin est nommé par son manifeste (le dossier d'un clone porte le nom du
-dépôt, pas celui du plugin). Les skins suivent le même chemin.
-Scénario de banc : `plugins-externes`. Déployée le 20/09 sur les trois corps.
-
-v0.78.0 : **l'écran des instructions dit de quoi chaque fichier est fait**.
-Il listait tout à plat — une consigne permanente, une skill que rien n'a
-encore appelée et la charte d'un sous-agent, trente cartes du même poids, le
-nom du fichier et son nombre d'octets pour toute différence. La question que
-personne ne pouvait poser à cette grille : *lesquels de ces fichiers arrivent
-devant le modèle à CHAQUE tour ?*
-
-Le pilote le dit désormais. `instructionPaths()` ne rend plus des chaînes mais
-des zones qui portent leur **nature** — `instruction` (lue à chaque tour),
-`skill` (lue quand une tâche correspond), `agent` (un assistant nommé) — et,
-pour un dossier, la **forme** qu'y prend un nouveau venu (`<name>/SKILL.md`,
-`<name>.md`, `<name>.agent.md`). Déduire du nom de dossier marchait sur les
-trois moteurs d'aujourd'hui et aurait menti sur le quatrième ; c'est la même
-règle que le marqueur `managed`, qui se lit dans le fichier et jamais dans son
-chemin.
-
-L'écran groupe par nature, une ligne sous chaque titre disant **quand** c'est
-lu, et ne dessine pas un groupe vide (Codex a des skills et aucun sous-agent).
-Les titres gardent le mot du moteur — `skills`, `agents` — parce que ce mot est
-sur le dossier et dans le fichier qu'on s'apprête à ouvrir ; c'est la phrase
-en dessous qui est traduite. La carte porte enfin la `description` du
-frontmatter, c'est-à-dire la phrase même que le moteur compare à la tâche, et
-le titre vient du `name` plutôt que du nom de fichier. La recherche lit les
-deux.
-
-**Deux défauts corrigés en chemin**, tous deux vus au banc : le fil d'Ariane
-affichait `SKILL.md` sous un écran intitulé `page-author` (il nomme
-maintenant comme l'écran), et le bouton « + » écrivait un `<name>/SKILL.md`
-dans TOUS les dossiers déclarés — donc un sous-agent atterrissait à
-`.claude/agents/x/SKILL.md`, un fichier qu'aucun moteur n'ouvre, créé sans un
-mot. Scénario de banc : `types-d-instruction`.
-
-v0.79.0 : **la lecture en fond — une connexion `identity: user` peut
-s'ouvrir aux tours sans appelant**. `background: true` sur la connexion
-l'ouvre à l'horloge et aux réveils de callback — JAMAIS aux délégations
-entrantes : un agent qui peut déléguer ici ne lit pas le courrier par
-ricochet, et si un tiers doit un jour le lire, ce sera un droit signé à la
-façade du hub, pas un drapeau élargi. Le tour de fond agit comme la SEULE
-personne du magasin de rebond — deux clés font un refus bruyant, jamais un
-choix, et aucun sujet ne s'écrit au manifeste (le magasin est clé par le
-`sub` Authelia, qu'un reset du storage réassigne en silence). Binaire
-exprès : une allowlist par outil que le moteur n'applique pas (claude-code
-n'a aucun filtre par serveur en posture `open`) serait une promesse portée
-en garde-fou. L'ancienne garantie — rien n'écrit pendant qu'on dort — reste
-vraie et change de gardien : Tessera suspend toute écriture à la porte
-jusqu'à signature ; le drapeau ne gouverne que la VISIBILITÉ en fond.
-
-Et parce que la portée est désormais accordée, la perdre se DIT : chaque
-frappe manquée journalise, `/api/instance` porte `backgroundTrouble`, et la
-coque l'affiche en bannière datée (quatre causes : pas de rebond du tout,
-personne de connecté, deux personnes, clé morte ou fournisseur injoignable).
-Un fond qui cesse de lire en silence est indiscernable d'un fond qui n'a
-jamais tourné. Un manifeste qui déclare le champ sur une coque plus vieille
-le voit ignoré sans un mot (la connexion reste invisible en fond, l'ancien
-comportement) : déployer la coque avant le manifeste. Scénario de banc :
-`lecture-en-fond`.
-
-v0.80.0 : **l'horloge sait les heures fixes**. `every:` compte depuis le
-dernier passage et dérive avec lui — dit trois fois par jour, jamais à la
-même heure. Le briefing d'Alfred veut 06:30, 12:30, 18:30, et c'est la
-moitié lisible de ce que le refus du cron avait écartée : `at: 06:30, 12:30,
-18:30`, une liste d'heures au mur, aussi prévisible qu'`every: 30m` là où un
-champ cron ne l'est pas.
-
-L'ancrage change avec la forme : une note `at:` est due quand la dernière
-heure listée est passée depuis moins que la grâce et n'a pas encore tourné —
-jamais « une période après le dernier run ». Tout le reste se transpose tel
-quel : une occurrence manquée est perdue (une nuit d'arrêt = UN signalement,
-pas une file), une note neuve attend sa prochaine heure au lieu de partir à
-l'enregistrement, le plancher des 15 minutes se mesure autour du cadran
-(23:55 et 00:05 sont à dix minutes), et une note qui porte les deux cadences
-est refusée plutôt que devinée. Les occurrences passent par le constructeur
-`Date` : un jour de changement d'heure, 06:30 reste le 06:30 du mur.
-
-La tuile Planifications suit : la liste d'heures s'affiche là où la période
-s'affiche, et le « next » d'une note `at:` se calcule sur l'horloge murale —
-visible avant même le premier passage, là où une note `every:` n'a de
-prochain qu'après avoir couru. `schedule-author` documente le choix entre
-les deux formes. Scénario de banc : `heures-fixes`.
-
-**Prochaines étapes :**
-- [ ] Mode édition, suite (retours du 19/09) : libellés parlants dans ⚙
-      (« sujet » pour `type`…), même espacement vertical qu'en lecture sur
-      les pages à rangées, formulaires pour les blocs de données (chiffres,
-      lignes écrites d'une liste, planning) au lieu des lignes brutes.
-- [x] Migration du contenu : CLOSE le 20/09, on ne migre pas — le contenu
-      d'avant 0.65 reste en l'état (`view=cards` sans cadre, `checklist`
-      sans filtre). Le script attend le jour où la question se repose :
-      `.agent/questions-migration-contenu.md`.
-- [x] Les trois corps tournent en v0.67.0 depuis le 19/09.
-- [ ] Date d'un bloc `:::content` au format de la langue (« 9 sept. 2026 ») :
-      demande de passer la locale de l'instance jusqu'au `Reader`, pas fait.
-- [ ] (décidé le 15/09 : PAS de kit d'aides porté par le cœur ; les plugins
-      gardent leurs copies de `slugOf`, `slugify`, du parseur de frontmatter
-      et de `makeCache` — cinq lignes chacune, et un plugin reste un dossier
-      autonome qui n'importe que React.)
-- [x] (fait le 15/09 : conversations et vue MCP déclarées une fois dans
-      `schemas/src/protocol.ts` ; les événements de tour restent ceux du
-      contrat pilote, importés en type seulement par le web. Déclaration de
-      `@antorfr/adestia-schemas` dans `packages/web/package.json` faite le
-      16/09, avec le retrait de `plugin-react`.)
-- [x] `@vitejs/plugin-react` retiré de `packages/web` le 16/09 : déclaré,
-      jamais chargé — le bundle sort avec la même empreinte qu'avant. Lockfile
-      mis à jour par `npm install --package-lock-only` (ne touche pas aux
-      paquets installés) : deux entrées changées, le fork du parseur intact.
-- [x] Scénario de banc `journal-blocs` réécrit le 16/09 : il passe de bout en
-      bout (12 captures). Trois choses avaient vieilli — le bouton
-      « Enregistrer » (parti le 10/09), le sélecteur du titre d'une entrée, et
-      les attributs des blocs dans ses fiches d'exemple. Il RAPPORTE un défaut
-      réel au passage : insérer une table depuis le menu « / » écrit
-      `:::table` avec un `<br />` dedans, et un second enregistrement se fait
-      refuser en 422. À traiter à part, c'est l'insertion, pas le scénario.
-- [x] Fait le 16/09 : `auth.oidc.sessionTtlMs: 2592000000` (30 jours) sur les
-      trois, dans le même commit cluster que le bump d'image.
-- [x] Fait au déploiement du 16/09 : `collections` retiré d'`extensions.apps`
-      chez Alfred et Skippy (Nestor ne le portait pas), dans le même commit
-      que le bump d'image — le pod reçoit image et conf d'un coup. Les trois
-      démarrent proprement : 8, 2 et 8 plugins actifs sur 11, aucun avis.
-- [x] Refonte structurelle fusionnée dans `main` le 15/09, tag `v0.58.0`.
-
-**Restes ouverts des chantiers passés** (relevés au dégraissage de ce fichier,
-non revérifiés un par un ; l'historique complet est dans git) :
-- [ ] Le fil « tuyau Festool » d'Alfred reste coupé en deux côté moteur.
-- [ ] Le banc mesure en pixels ce qu'il photographiait ; à généraliser.
-- [x] Éditer les attributs d'un bloc depuis l'interface : fait pour les blocs
-      en v0.67.0 (⚙), et pour le frontmatter en v0.73.0 (le ⚙ de la bande).
-- [ ] L'éditeur embarqué dans un plugin est amputé : ni `attach`/`compose`,
-      ni bandeau de pièces jointes, ni `pages` pour les `[[type#id]]`.
-- [ ] La puce `tache` et le crayon de l'éditeur embarqué s'affichent sous le
-      titre « Note » d'une fiche.
-- [ ] `‹ Back` du shell est en dur en anglais (`App.tsx`).
-- [ ] `atelier` n'a AUCUNE i18n : tout son écran est écrit en français en
-      dur (« Plaques », « Tronçons », « Colonne à refaire »…). Le même défaut
-      que les tuiles françaises, mais à l'échelle d'une app entière — vu au
-      balayage du 24/09, laissé de côté : c'est un chantier, pas un oubli.
-      Il ne déclare ni tuile ni mot de manifeste, donc rien ne le signale au
-      nouveau test.
-- [ ] `todo-config` : le raisonnement « premier par ordre de chemin » réparé
-      pour `me:` vaudrait aussi pour `folder:`.
-- [x] Les six phrases anglaises de `todo/web/app.js` : déjà faites avant le
-      24/09 (le test du plugin passait), ligne périmée. Le balayage des dix
-      plugins qui l'a constaté a trouvé et corrigé le reste — voir v0.74.0.
-- [ ] `journal` : pas encore vérifié en navigateur ; `api.trail` sans test.
-- [ ] Pilote Copilot : pas de plomberie de permissions, la porte planif ne
-      s'y applique pas.
-- [ ] PWA : l'invite d'installation à constater sur un vrai appareil ; le
-      hors-ligne des tuiles de carte de `parcours`.
-- [ ] Backlog UX du 26/08 : deux bugs de la vague 1 (pop-up d'autorisation
-      qui ne se ferme pas, fiche `adestia-evolutions` absente de la nav).
-- [ ] Plugin `project-management` : son `kind` (feature ou app) reste à
-      arbitrer le jour des surcharges (`table{type=risques}`, contributeurs).
-- [ ] **Les valeurs d'état sont à retravailler** (dit acceptable en l'état le
-      25/09, remis à plus tard). Le défaut qui se voit déjà : `--warning`
-      porte DEUX sens — « en attente » du cycle de vie et « Amber » du
-      `project-status` — donc deux boulettes ambre côte à côte ne se
-      distinguent que par le mot à droite, et deux barres ambre d'un planning
-      par le survol. Le chantier n'est pas « ajouter une couleur » : c'est
-      reprendre l'ensemble des valeurs d'état, les trois familles de la coque
-      et les trois du projet, et décider ce que chaque teinte dit.
-
-v0.81.0 (**déployée sur les trois corps le 30/09**, avec Tessera Seal v0.1.3 en mode embarqué — k8s-home-lab `8d9f451f`, pods vérifiés) : **les signatures
-Tessera deviennent des cartes, et se donnent sans quitter le fil.** Le moteur
-lit la cérémonie dans le résultat d'un outil MCP (`CONSENT PENDING` ou
-`REQUEST OPENED`), le serveur ne la relaie que si son origine figure dans
-`signatures.origins`, et la carte s'accroche sous le message qui l'a
-demandée, en direct comme après rechargement. Avec `signatures.embed: true`,
-« Signer » ouvre la page de Tessera dans un volet (iframe
-`publickey-credentials-get`) ; sur `assertion_ok` d'un consentement immédiat,
-le fil envoie lui-même « Signé — reprends l'appel suspendu avec
-{"_consent": …} ». Sans `embed`, un onglet puis un bouton « C'est signé ». Une
-autorisation à l'avance (le cas des tâches planifiées) a la même carte, sans
-relance.
-
-À savoir avant de l'allumer : le mode embarqué de Tessera **refusait toute
-signature faite en iframe** (drapeau `crossOrigin` rejeté par la lib
-WebAuthn) — corrigé côté Tessera en v0.1.3 (`tessera-ceremony-embed`). Déploiement : Tessera `TESSERA_CEREMONY_EMBED=on` +
-`TESSERA_EMBED_ANCESTORS` listant l'origine de chaque corps, puis le bloc
-`signatures:` dans chaque config Adestia. Reste non mesuré : la passkey dans
-l'iframe sur iPhone, en PWA installée — si elle ne monte pas,
-`embed: false` rabat tout sur l'onglet. Scénario de banc : `signatures`.
-
-v0.81.1 (mergée et taguée le 30/09, **pas déployée**) : **un message envoyé
-pendant un tour se relit après la réponse qu'il attendait, et part toujours.**
-Signalé par l'utilisateur : à la fin du tour, le fil montrait les deux
-questions puis les deux réponses. Le message en attente est écrit dès son
-arrivée, la réponse seulement à la fin du tour — le fichier reste dans cet
-ordre, mais chaque réponse porte désormais son tour (`turn`) et le message en
-attente le tour derrière lequel il patiente (`after`) ; le magasin le replace à
-la lecture, et le navigateur le garde « en attente » tant que ce tour court
-(rechargement en plein tour). Les échanges enregistrés avant restent dans
-l'ancien ordre. Au passage, une course confirmée par test : un tour qui se
-terminait pendant l'écriture du message en attente fermait sa file, et le
-message ne partait jamais ; il entre désormais dans la file avant d'être
-écrit, et le tour suivant attend son écriture. Scénario de banc :
-`ordre-file-attente`.
-
-v0.82.0 (mergée et taguée le 01/10, **pas déployée**) : **un plugin livre
-désormais le dossier entier de ses skills, et ses sous-agents.** Avant, seul
-`SKILL.md` était copié : une skill qui disait « lis `references/x.md` » ou
-« lance `scripts/y.py` » pointait vers des fichiers absents. Tout le dossier
-voyage maintenant (fichiers cachés et liens symboliques exceptés) ; un dossier
-géré est vidé avant réécriture, un dossier écrit à la main n'est jamais touché.
-Le manifeste gagne une liste `agents` (fichiers `.md`), livrés dans le dossier
-d'agents du pilote (`.claude/agents/` pour Claude Code) sous le nom
-`<plugin>-<nom>.md` ; les skills du plugin qui disent `agent: relecteur` sont
-réécrites en `agent: <plugin>-relecteur`. Un pilote sans dossier d'agents le
-signale au démarrage. Pas de changement d'interface, donc pas de scénario de
-banc.
-
-v0.83.0 (mergée et taguée le 01/10) : **une quatrième livrée, `dobby`** — une
-bibliothèque de collège le soir : noyer, vélin, dorure, cuir sang-de-bœuf,
-Garamond pour lire, machine à écrire pour l'appareil (et le code). Un ex-libris
-en tête d'accueil, une chandelle pendant les tours, un jour « parchemin » sur
-demande explicite. Les polices sont embarquées (OFL), pour qu'une instance du
-LAN n'ait pas besoin d'internet. Elle s'adresse à « Madame », comme Alfred dit
-« Monsieur » : pas de prénom dans un dépôt public. Scénario de banc :
-`skin-dobby`.
-
-v0.84.0 (mergée et taguée le 01/10) : **une skill du cœur, `persona-author`,
-pour qu'une instance neuve demande qui elle est au lieu de se l'inventer.**
-L'agent mène l'entretien — une question à la fois, en proposant plutôt qu'en
-interrogeant, sans jamais se nommer lui-même — sur le squelette commun à Alfred
-et Skippy : rôle et ce qu'il n'est pas, nom et figure empruntée, adresse,
-registre sur quatre axes, traits avec une phrase chacun, tics dosés,
-initiative, garde-fous proposés par défaut. Trois réponses d'essai avant
-d'écrire, puis une section dans le fichier d'instructions de la personne
-(`CLAUDE.md` / `AGENTS.md`), et les mots d'écran passés à `skin-author`.
-Rédigée en anglais comme les autres skills du cœur. Pas d'interface, donc pas
-de scénario de banc ; jamais jouée en vrai sur une instance.
-
-v0.85.0 (mergée et taguée le 01/10) : **le contrat des livrées s'élargit pour
-que Dobby soit ce qu'il était dessiné.** Le code a sa propre voix
-(`--font-code`, qui suit `--font-mono` par défaut — les trois autres corps ne
-bougent pas), ce qui laisse l'appareil de Dobby passer en petites capitales.
-Le bouton d'envoi et l'écusson ont chacun leurs jetons (`--send-*`,
-`--crest-*`) et l'envoi un glyphe (`sendIcon`) : chez Dobby, deux sceaux de
-cire, la chaussette et la plume. Une lettrine en jetons inertes
-(`--drop-cap-*`), dorée chez Dobby. Et les slots `hero`/`console` reçoivent
-`user` sous OIDC : l'ex-libris porte le nom, le salut le prénom, « Madame »
-sinon — aucun prénom dans le dépôt. Le banc a trouvé ce qu'aucun type ne
-voyait : le montage du slot reconstruisait le contexte sans `user`. Hors
-chantier, non corrigé : le ■ d'arrêt n'est jamais rouge (`.adestia-composer
-button` l'emporte sur `.adestia-composer__stop`). Scénario de banc :
-`dobby-sceau`.
-
-v0.86.0 (mergée et taguée le 01/10, **pas déployée**) : **l'instance
-connaît sa propre adresse, quand l'opérateur l'a déclarée.** Déclencheur : un
-agent interrogé sur sa propre adresse répondait ne pas la connaître, alors que
-l'opérateur, lui, la connaît déjà. Nouveau réglage `url:` dans
-`adestia.config.yaml`, à côté de `name`/`locale` — fichier seul comme eux,
-l'écran Réglages n'est pas touché. Validé comme `signatures.origins`
-(`new URL` + protocole http(s)) mais sans son exigence d'origin nu : cette
-valeur n'est jamais comparée bit à bit, seulement affichée, donc un chemin est
-autorisé (`https://host/adestia`, pour une instance derrière un préfixe
-d'ingress) ; une query ou un fragment sont refusés, un `/` final est retiré
-pour un affichage stable. Le contrat `this-instance` porte la phrase « It
-answers at `<url>` » quand elle est renseignée, rien de plus sinon — pas de
-détection automatique, pas de dérivation depuis `host`/`port` (l'adresse de
-BIND interne du process, pas l'adresse publique derrière un ingress/reverse
-proxy). Recette sautée sur décision de Monsieur (vérification seule : besoin,
-sécurité, qualité au vert après correction d'un chemin faux dans `DESIGN.md`).
-
-v0.87.0 (mergée et taguée le 04/10) : **l'icône de Dobby devient un sceau de
-cire VERT qui remplit son carré**, et son favicon perd le fond presque noir qui
-disparaissait dans un onglet sombre et tachait un onglet clair. Le favicon est
-le sceau seul, rond et sans fond ; les PNG installés sont la même cire en
-carré opaque, rendus depuis `assets/plate.svg`, chaussette dans les 80 %
-centraux pour la découpe ronde. Les sceaux de l'interface (envoi, écusson)
-restent rouges. Pas de scénario de banc : seules les icônes changent.
-
-v0.87.1 (mergée et taguée le 13/10) : **rouvrir une entrée qu'on vient d'écrire
-ne la vide plus.** L'éditeur monté par le ✎ partait du texte CHARGÉ à l'ouverture
-de l'écran et non du dernier texte sauvegardé : après un enregistrement et un
-Terminé, le lecteur montrait le nouveau texte mais l'éditeur rouvrait sur
-l'ancien — vide pour une entrée de journal créée avec `+` — et la première
-frappe sauvegardait cette version par-dessus le fichier. Il part maintenant de
-`saved`, lu par une ref pour qu'une sauvegarde automatique ne remonte jamais
-l'éditeur sous le curseur. Deux tests (la réouverture, et l'absence de remontage),
-et le scénario de banc `journal-sauvegarde` rejoue le cycle édition → Terminé →
-✎ → frappe contre le vrai Milkdown.
-
-v0.87.2 (mergée, taguée et déployée le 15/10) : **l'index
-des pages se lit en parallèle**, pour un espace de travail sur WSL `/mnt/c`
-(OneDrive) où chaque `readdir`/`stat`/`readFile` est un aller-retour 9p
-(`/api/pages/index` ~1,3 s → ~0,15 s sur 147 pages, sortie identique). Deux
-garde-fous ajoutés à la revue : un plafond de 32 appels disque simultanés
-(`io.ts`, sur les seuls appels feuilles, pour ne pas épuiser les descripteurs
-sur un gros espace) et un cache de digests clé par le HASH du texte, non par le
-texte (la mémoire ne copie plus l'espace de travail). Le cache ne repose sur
-aucune date : toute modification, quel qu'en soit l'auteur, se voit à l'appel
-suivant. Tests : le plafond, l'ordre des listes, l'invalidation après édition
-ou suppression. Pas de scénario de banc : aucun rendu ne change.
-
-v0.87.4 : **un
-serveur MCP peut déclarer `cliName`**, la clé que le CLI Copilot reçoit à la
-place de `name` — un registre d'entreprise filtre par ce nom (ex.
-`io.modelcontextprotocol.aitechlab/microsoft-mcp`). L'interface continue de
-montrer `name` : la santé remontée par le CLI est ramenée de `cliName` à `name`.
-Ajouté à la revue : deux serveurs qui arriveraient chez le CLI sous la même clé
-(un `cliName` égal à un autre `name`, ou à un autre `cliName`) sont refusés à la
-lecture de la config, car l'un écraserait l'autre en silence ; et l'option est
-documentée dans `adestia.config.example.yaml`. Seul le pilote Copilot la lit ;
-le pilote Claude l'ignore. Pas de scénario de banc : aucun rendu ne change.
-
-(La v0.87.3 a été taguée par erreur sur le commit de la v0.87.2, avant le
-merge de `cliName` : son image ne contient rien de plus que la 0.87.2. Ne pas
-la déployer.)
-
-v0.88.0 (mergée et taguée le 15/10) : **catalogues d'instructions.** Instructions › Catalogues déclare des
-dépôts git, scanne leurs items par forme de fichier, importe item par item dans
-la zone du driver actif, rafraîchit par dépôt. Serveur :
-`instruction-catalogues{,-store}.ts`, `routes/instruction-catalogues.ts` ;
-écran : `CataloguePopin.tsx`, provenance sur la carte. Scénario de banc :
-`catalogue-popin` (joué le 15/10 contre un dépôt local monté par `.prep.sh` : liste,
-import, clair, sombre, téléphone ; le bouton Rafraîchir y était un bouton natif
-non stylé, corrigé). À l'audit avant merge : les imports étaient supprimés à
-chaque redémarrage (la livraison des contrats balayait tout dossier marqué) —
-corrigé, et le rechargement au boot ajouté.
-Raisonné dans `DESIGN.md` (Instructions & workspace).
-
-Reste / pièges encore vrais : le rechargement au boot est borné à 20 s (au-delà
-le démarrage continue avec les copies d'hier) ; retirer un dépôt supprime ses copies ; un import que le dépôt ne
-propose plus est laissé en place et signalé, jamais supprimé ; le clone d'un
-dépôt privé passe par un jeton stocké en clair (0600) dans le fichier d'état ;
-le clone est lu sans réseau tant qu'il existe (un `GET items` ne rafraîchit
-pas). Recette : déclarer un dépôt, importer un skill, le voir en carte avec
-`dépôt @ réf`, modifier la source, Rafraîchir, Supprimer.
+## Version courante
+
+- Dernier tag accessible : **`v0.95.0-adestia-qualite.2`** (`git describe --tags
+  --abbrev=0`), une préversion de l'epic `adestia-qualite`.
+- Branche de travail : `feature/adestia-qualite-doc`, après fusion de
+  `origin/epic/adestia-qualite` et `origin/main`. Banc, tests, serveur, charte,
+  plugins, pages et chat sont intégrés à l'epic ; la documentation est relue
+  contre le code.
+- Déploiement actuel des instances Alfred, Skippy et Nestor : **non attesté ici**. La dernière
+  mention commune dans l'ancien état est v0.81.0 le 30/09 ; v0.87.2 est dite
+  déployée le 15/10 sans détail par instance déployée. Cela ne prouve pas leur version actuelle.
+- Histoire et décisions des chantiers clos : [CHANGELOG.md](../CHANGELOG.md).
+
+## Défauts connus
+
+La liste de référence est dans [ARCHITECTURE.md](../ARCHITECTURE.md), section
+« Known defects ». Les défauts catalogues d'options git et de liens symboliques
+sont corrigés par `main` et n'y figurent plus.
+
+Compléments encore visibles dans le code :
+- `:::content` affiche `on` tel qu'écrit, sans date au format de la langue
+  (`editor/reader/ContentBlock.tsx`).
+- L'ambre signifie à la fois attente/retard et évaluation `Amber` d'un projet ;
+  le mot distingue, pas la couleur (`plugins/project-management/web/model.js`).
+- Les formulaires de données de blocs restent à faire : l'édition montre leur
+  rendu, puis leurs lignes brutes au clic ; les réglages ne sont pas ces formulaires.
+
+Signalements d'usage hérités, **non reproduits dans cette tâche** : fil « tuyau
+Festool » d'Alfred coupé côté moteur ; insertion de `:::table` signalée en 422 au
+second enregistrement ; puce `tache` et crayon sous le titre « Note » dans l'éditeur
+embarqué ; deux bugs UX du 26/08 (pop-up d'autorisation restant ouverte, fiche
+`adestia-evolutions` absente de la navigation). À requalifier par reproduction,
+sans les déclarer corrigés. Restent aussi à constater sur appareil : installation
+PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone/PWA.
+
+## À moitié construit
+
+- La question de permission ne permet pas de corriger la règle proposée par le
+  moteur ; `AskPrompt` ne renvoie que `once`, `always` ou `deny`. Copilot ne porte
+  toujours pas le retour interactif (`drivers.ts`).
+- La synchronisation git distante du workspace reste absente ; le rafraîchissement
+  des catalogues ne synchronise que leurs imports (`instruction-catalogues.ts`).
+- Les métriques, coûts et quotas déclarés par les pilotes n'ont pas de vue dédiée ;
+  le chat ne consomme que le compteur de contexte (`Chat.tsx`, `contract.ts`).
+- Les instructions sont éditables, mais aucun écran ne règle les permissions du
+  moteur : ses fichiers de réglages ne sont pas exposés par `instructionPaths()`.
+- `maxConcurrentTurns` reste dans le fichier de configuration, absent des champs
+  éditables de `SETTING_GROUPS` ; pas de réglage du plafond à l'écran.
+- Le chat ne marque pas une perte de contexte moteur après redémarrage ; les homes
+  Copilot/Codex sont sous `dataDir`, celui de Claude dépend du `HOME` du déploiement
+  (`drivers.ts`).
+- Le lanceur `packages/server/bin/adestia.js` n'a pas de commande `adestia init` ;
+  il crée `workspace/` et `data/` au démarrage (`created workspace at …`).
+- `chat/conversations.ts` expose `deleteConversation`, sans commande à l'écran.
+- Le serveur garde le tour sans conversation (question éphémère) ; la coque
+  ne propose pas ce mode (`routes/turns.ts`).
+- L'éditeur embarqué ne reçoit ni `attach`/`compose` ni l'index `pages` du shell
+  (`plugins/PageEditor.tsx`) : pas de dépôt de fichier ni de résolution par cet index.
+- Les états de chargement de E-3/E-4/E-9, « Réessayer » de E-8, les toasts et
+  l'écran hors ligne restent hors de l'epic (B-1, docs/ecrans.md).
+- Mesures du banc en pixels à généraliser ; `journal` : couverture navigateur
+  et `api.trail` à compléter selon les signalements de l'ancien état.
+
+## Pièges encore vrais
+
+- **Grammaire absente après installation** : le fork git du parseur est indispensable.
+  Vérifier `node_modules/micromark-extension-directive` ; utiliser `npm ci` (CLAUDE.md).
+- **Lire les paquets d'une autre branche dans une worktree** : les liens npm peuvent
+  viser le checkout primaire ; les résolveurs du dépôt pointent sur les sources locales.
+- **Copies d'instructions anciennes au démarrage** : le rechargement des catalogues
+  cesse de bloquer le boot après 20 s (`instruction-catalogues-refresh.ts`).
+- **Import absent de la source mais toujours présent localement** : le rafraîchissement
+  le signale et garde la copie ; retirer le catalogue retire ses imports.
+- **Catalogue privé et jeton lisible sur disque** : le fichier d'état garde le jeton
+  en clair, mode 0600 (`instruction-catalogues-store.ts`).
+- **Source distante inchangée après lecture de ses items** : le clone existant est lu
+  sans réseau ; c'est « Rafraîchir » qui le met à jour (`routes/instruction-catalogues.ts`).
+- **Permission de fichier Copilot mal mesurée dans `/tmp`** : la CLI autorise ce dossier
+  par défaut ; le pilote déclare les racines par `--add-dir`, sans `--disallow-temp-dir`.
+- **Fichier bind-monté et `EBUSY` à la sauvegarde** : `settings-file.ts` ne peut pas
+  renommer un frère par-dessus ; repli en place pour ce seul cas, refus si lecture seule.
+- **Ancien contenu non converti** : `content{view=cards}` et les anciens filtres
+  `checklist{view=…}` n'agissent plus ; ne pas relancer une migration close le 20/09.
+
+## Où regarder
+
+- [README.md](../README.md) et [CLAUDE.md](../CLAUDE.md) : lancer, tester, conventions.
+- [ARCHITECTURE.md](../ARCHITECTURE.md) : carte, décisions, défauts connus.
+- [docs/parcours.md](../docs/parcours.md), [docs/ecrans.md](../docs/ecrans.md),
+  [docs/donnees.md](../docs/donnees.md) : usages, écrans et fichiers.
+- [docs/charte.md](../docs/charte.md) : jetons, composants et mesures de contraste.
+- [DESIGN.md](../DESIGN.md) : raisons et journal des décisions historiques.
+- [CHANGELOG.md](../CHANGELOG.md) : versions et tranches de l'epic intégrées.
+- [bench/README.md](../bench/README.md) : moteur factice/réel, semis, captures.

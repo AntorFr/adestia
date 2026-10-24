@@ -149,6 +149,9 @@ const FR: Readonly<Record<string, string>> = {
   Catalogues: 'Catalogues',
   'A name': 'Un nom',
   Create: 'Créer',
+  'Remove catalogue': 'Retirer le catalogue',
+  'Remove this catalogue and its imported instructions':
+    'Retirer ce catalogue et ses instructions importées',
   'No catalogue yet — add a repository of instructions.':
     'Aucun catalogue — ajoutez un dépôt d’instructions.',
   imported: 'importé(s)',

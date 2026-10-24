@@ -12,11 +12,9 @@
 > The "Lacks" column of States is an observation, not a target: the epic builds no new
 > state, except a loading state where a screen shows a wrong state while it loads today
 > (E-2, E-14) — coherence, not behaviour (`B-1`). Every `Q-n` is either closed by its tranche
-> or written "kept: <reason>". The charter tranche (`adestia-qualite-charte`) is done: E-1,
-> E-9 to E-15, E-19 and E-21 are described as built; the Q-n it closes say so, and the part
-> of a Q-n that belongs to the plugins tranche stays open under its name. The chat
-> tranche is also done: E-16 to E-18 and its Q-n outcomes below describe the built code.
-> The pages tranche is also built: E-2 to E-8 and E-20, including the shell returns.
+> or written "kept: <reason>". Charter, pages, chat and plugins are built:
+> the inventory and outcome paragraphs below describe their current screens.
+> The numbered audit descriptions at the end are historical input, not open work.
 
 ## Format
 
@@ -199,7 +197,7 @@ columns are the same except where the instance's configuration decides what exis
 
 Screens E-22 to E-31, after `adestia-qualite-plugins` (which follows the charter tranche:
 tokens, `.adestia-sheet*`, `.adestia-icon`, `--z-sheet` and `--on-accent` of `docs/charte.md`
-§ 7 exist). **B-1 bound the tranche**: what a plugin does, its routes, its API, its
+§§ 2 and 4 exist). **B-1 bound the tranche**: what a plugin does, its routes, its API, its
 manifests, the prompts its ✦ buttons send to the agent and the files it writes did not change.
 What changed is what is seen: the colours and sizes it reads, the form of its dialogs, the
 name of its backs, and the language of its words. No state, control or screen was added or
@@ -796,7 +794,7 @@ attachments, read-only diagnostics, conflict and E-5/E-6.
 ## Known incoherences (historical input; outcomes below each item)
 
 The descriptions record the state before the epic. **closed** marks the resolved
-portion; **kept: reason** names what another tranche owns or B-1 deliberately leaves.
+portion; **kept: reason** names what B-1 deliberately leaves.
 
 1. **Q-1 — Native unstyled buttons.** Save/Discard/`Restart now` in `Configuration.tsx`
    (`.adestia-config__bar`, `.adestia-config__restart-bar` style the bars, not the
@@ -810,7 +808,7 @@ portion; **kept: reason** names what another tranche owns or B-1 deliberately le
    `.adestia-instructions__tools button`), and three looks for "Save":
    `.adestia-editor__save` (E-4), `.adestia-settings__actions` last child (E-15), native
    (Q-1). All screens.
-   **closed** for the shared piece: `.adestia-btn` and `<Button>` exist (`docs/charte.md` § 4) and every button of E-1, E-9 to E-15 is one, with one "Save" look there. **closed** for the pages: editor and home actions use shared buttons. **kept: chat buttons** belong to the chat tranche.
+   **closed** for the shared piece: `.adestia-btn` and `<Button>` exist (`docs/charte.md` § 4) and every button of E-1, E-9 to E-15 is one, with one "Save" look there. **closed** for the pages: editor and home actions use shared buttons. **closed** for the chat: rail, composer, permission and signature actions use the shared button family; the skin send slot remains its own.
 3. **Q-3 — Languages mixed in the editor.** Hard-coded French: `BlockSettings.tsx` (whole
    form, `Fermer`), `blockview.tsx` (`Déplacer le bloc`, `Réglages du bloc`, `Supprimer le
    bloc`, `Aperçu`/`Modifier`), `toolbar.ts` (`Blocs de texte`, `Liste à puces`…),
@@ -848,7 +846,7 @@ portion; **kept: reason** names what another tranche owns or B-1 deliberately le
    `--radius-md` (`conversations.css`, fallback 8px), `--on-accent` (`voyages.css`, fallback
    `#fff`). `atelier.css` reads `--lc` that nothing sets (rule `.lcard .bar i`, also unused
    markup). E-16, E-26, E-25.
-   **closed** for the shell's tokens: `--text-xs` and `--on-accent` are defined in `tokens.css`, so the `--text-xs` uses of `chat.css` and the `--on-accent` of `voyages.css` resolve. **closed** for the chat: `chat.css` and `conversations.css` use defined tokens; the undefined `--radius-md` use is replaced by `--radius-sm`. **kept: `--lc`** (`atelier.css`, a rule with no markup) goes with the plugins tranche. *(closed there: `--lc` is read by no plugin sheet.)*
+   **closed** for the shell's tokens: `--text-xs` and `--on-accent` are defined in `tokens.css`, so the `--text-xs` uses of `chat.css` and the `--on-accent` of `voyages.css` resolve. **closed** for the chat: `chat.css` and `conversations.css` use defined tokens; the undefined `--radius-md` use is replaced by `--radius-sm`. **closed** for the plugins: no plugin sheet reads `--lc` any more.
 10. **Q-10 — Seven dialog implementations.** `.adestia-sheet` (E-12, E-18; scrim
     `rgb(0 0 0 / 0.45)`, z 100), `.adestia-blockset` (E-5, E-6; popover), `.adestia-cog__panel`
     (E-15; z 40), `.meals-modal` (E-29; `color-mix(#000 45%)`, z 40), `.atelier-modal`
@@ -874,7 +872,7 @@ portion; **kept: reason** names what another tranche owns or B-1 deliberately le
     2.3–2.6:1 in light, 2.6–3.1:1 in dark. In light, `--accent` (3.4–3.8:1), `--success`
     (3.0–3.4:1), `--warning` (3.3–3.8:1) and `--danger` (3.9–4.4:1) used as text are under
     4.5:1; `--accent-text` on `--accent` (user bubble, send button) is 4.3:1. All screens.
-    **closed** for the base palette and the four skins: `--text-faint` is corrected in both themes, the `*-text` twins carry the text uses of the fills, and `contrast.test.ts` prints every pair in `docs/charte.md` § 5 — all at their threshold, no departure in § 6. The settings, entry and pages sheets and `shell.css` use the twins. **kept: the text uses of `--accent`, `--danger`, `--success`, `--warning` in the chat and plugin sheets** move to the twins in their tranches.
+    **closed** for the base palette and the four skins: `--text-faint` is corrected in both themes, the `*-text` twins carry the text uses of the fills, and `contrast.test.ts` prints every pair in `docs/charte.md` § 5 — all at their threshold, no departure in § 6. The settings, entry and pages sheets and `shell.css` use the twins. **closed** for chat and plugins: text uses of the semantic fills use their `*-text` twins; filled controls keep the fill and `--on-accent`.
 14. **Q-14 — No icon set.** Emoji on tiles and headers (`🔌 📓 🎛 🤝 ⚙`), Unicode glyphs
     in controls (the chat was `▤ ＋ ▥ ■ ↑`), and `⚙ ✎ ↺ ‹` elsewhere; `glyphs.ts` with two SVGs, inline SVG in `Home.tsx`. `⌘K` is printed on the home ask button on
     every platform though Ctrl+K is what works off a Mac; Ctrl+K already works everywhere
@@ -885,12 +883,12 @@ portion; **kept: reason** names what another tranche owns or B-1 deliberately le
     E-20), `.adestia-instructions__empty` (E-11, E-10, E-12, and E-14's error),
     `.adestia-deleg__empty` (E-13), `.adestia-conversations__empty` (E-16),
     `.adestia-block-note` (E-4); each plugin adds its own (`.pc-vide`, voyages `.empty`…).
-    **closed** for the settings screens and **closed for E-2, E-3, E-7, E-8 and E-20**: shared EmptyState; E-4 notes use the inline variant, keeping adestia-block-note only as a hook. **closed** for the chat's empty conversation list: `ConversationList.tsx` uses `<EmptyState>` with translated text; and `.adestia-block-note` stays only a hook in E-4. **kept:** E-12's reading status (`.adestia-instructions__empty`) and the plugins' own empties.
+    **closed** for the settings screens and **closed for E-2, E-3, E-7, E-8 and E-20**: shared EmptyState; E-4 notes use the inline variant, keeping adestia-block-note only as a hook. **closed** for the chat's empty conversation list: `ConversationList.tsx` uses `<EmptyState>` with translated text; and `.adestia-block-note` stays only a hook in E-4. **kept: E-12's reading status (`.adestia-instructions__empty`) and the plugins' own empties preserve their existing layouts under B-1.**
 16. **Q-16 — Scales bypassed.** About 60 literal px font sizes, 17 distinct values, in the
     shell's stylesheets beside `--text-sm/base/lg`; pill radius `999px` (6 rules) beside
     `--radius-pill: 20px`; six breakpoints across shell and plugins (520, 560, 640, 720,
     820, 900px), only 820 being `--breakpoint-mobile`.
-    **closed** for the four sheets of the charter (`tokens.css`, `settings.css`, `settings-pages.css`, `tiles.css`): the seven-step type scale and the radius set are the only sizes and radii they use, and `--radius-pill` is 999 px. **closed** for the chat: `chat.css`, `conversations.css` (Delegations rules included) and `attachments.css` use tokens for font sizes, radii and colours. **closed** for the pages sheets (`home`, `mobile`, `missing-page`, `collection`, `reader`, `editor`, `crepe`): tokens supply type, radius and colours (Crepe keeps its base font variable). **kept: the plugins' sheets** adopt the scale in their tranche, and the six breakpoints stay: only 820 px is a token.
+    **closed** for the four sheets of the charter (`tokens.css`, `settings.css`, `settings-pages.css`, `tiles.css`): the seven-step type scale and the radius set are the only sizes and radii they use, and `--radius-pill` is 999 px. **closed** for the chat: `chat.css`, `conversations.css` (Delegations rules included) and `attachments.css` use tokens for font sizes, radii and colours. **closed** for the pages sheets (`home`, `mobile`, `missing-page`, `collection`, `reader`, `editor`, `crepe`): tokens supply type, radius and colours (Crepe keeps its base font variable). **closed** for plugin type sizes and radii (`plugins/test/css.test.js`). **kept: the six breakpoints preserve existing layouts under B-1; only 820 px is a token.**
 17. **Q-17 — Plugins restyle everything.** No plugin uses a shell class (only the
     `--adestia-hue-*` tokens); `parcours.css` (18) and `atelier.css` (27) define a second
     vocabulary (`--ink`, `--line`, `--f-mono`, `--r-xs`…), voyages a few more; raw colours
@@ -919,7 +917,7 @@ portion; **kept: reason** names what another tranche owns or B-1 deliberately le
     inactive app (E-20), the parcours map (E-28), the scan overlay (E-30), the offline
     start (E-21), nor any run under the nestor or skippy skins (only default, alfred,
     dobby).
-    **closed** for E-20 and the pages matrix under all four skins and both locales. **closed** for the chat: `chat-rail.mjs` covers the model picker, context pill, rail states and keyboard focus (also at 360 px); `chat-compositeur.mjs` covers the More fold, tray, upload error, long input and busy/blocked states; `chat-permission.mjs` covers permission with/without a lasting rule, signature states and the sheet. `chat-matrix.mjs` runs each across four skins × en/fr, with light/dark and desktop/phone inside each scenario. `chat-permission-live.mjs` compares a real Claude reply in the thread against its stored text. **kept: real Copilot/Codex permission checks** — these scenarios use stand-ins; the overall acceptance owns the real engines. Other screens' gaps belong to their tranches.
+    **closed** for E-20 and the pages matrix under all four skins and both locales. **closed** for the chat: `chat-rail.mjs` covers the model picker, context pill, rail states and keyboard focus (also at 360 px); `chat-compositeur.mjs` covers the More fold, tray, upload error, long input and busy/blocked states; `chat-permission.mjs` covers permission with/without a lasting rule, signature states and the sheet. `chat-matrix.mjs` runs each across four skins × en/fr, with light/dark and desktop/phone inside each scenario. `chat-permission-live.mjs` compares a real Claude reply in the thread against its stored text. **kept: real Copilot/Codex permission checks** — these scenarios use stand-ins; the overall acceptance owns the real engines. **closed** for the remaining seeded screens: `bench/sweep.mjs` dispatches E-1, E-17, E-20, E-21, E-28 and E-30 with per-screen proof selectors; the plugin matrix covers E-22 to E-31.
 23. **Q-23 — Home looks empty while it loads.** Until the plugins and the page index arrive,
     E-2 shows its empty state (`.adestia-empty` "Nothing to show yet.") instead of a loading
     state; E-14 Configuration has no loading state either (Q-21). Closed by a loading state in

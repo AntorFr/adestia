@@ -20,22 +20,28 @@ docker compose up
 ```
 
 The first `up` builds the image from the `Dockerfile`; the agent needs
-`CLAUDE_CODE_OAUTH_TOKEN` (see `docker-compose.yml`). The compose file mounts
+`CLAUDE_CODE_OAUTH_TOKEN` (see `docker-compose.yml`), which compose reads from the
+host's environment: `export CLAUDE_CODE_OAUTH_TOKEN=<token>` before `docker compose up`
+(`claude setup-token` with the Claude CLI prints one; it may also be armed later from
+Adestia's own interface, and the app starts without it). The compose file mounts
 `adestia.config.yaml` read-only: saving from the Settings screen cannot write it
 there; edit the file on the host (or drop the `:ro`).
 
 Without Docker, from a clone (`data/` and `workspace/` are created in the
-current directory, and `workspace/` is not git-ignored: run from a scratch directory,
-not the clone root; `-c <path>` points at another config file):
+current directory; `-c <path>` points at another config file). To keep runtime data
+in a scratch directory, build in the clone, then launch the binary by absolute
+path from that scratch directory:
 
 ```sh
 npm ci
 npm run build --workspace @antorfr/adestia-server
 npm run build:web --workspace @antorfr/adestia-web
-node packages/server/bin/adestia.js
+cp adestia.config.example.yaml /path/to/adestia.config.yaml   # optional: without `-c`, the launcher reads ./adestia.config.yaml, and with no file at all it runs on defaults
+cd /path/to/scratch
+node /path/to/adestia/packages/server/bin/adestia.js -c /path/to/adestia.config.yaml
 ```
 
-This serves `http://127.0.0.1:8730` and answers 200 on `/`. Without
+This serves `http://127.0.0.1:8730` and answers 200 on `/`. `extensions.pluginsDir` and `skinsDir` (`./plugins`, `./skins`) resolve from the current directory, so from an empty scratch directory the log says `0 of 0 plugin(s) active`: link or copy the clone's `plugins/` and `skins/` there (or set the two paths in the config) to load them. Without
 `CLAUDE_CODE_OAUTH_TOKEN` it still starts: the app is there, but a real agent
 turn fails (use the scripted engine below to look at it without one).
 
@@ -47,7 +53,7 @@ node bench/launch.mjs --engine fake    # prints `listening on <url>`; <url>/api/
 node bench/sweep.mjs                   # every screen, light and dark, desk and phone
 ```
 
-The sweep takes Playwright and Chromium from the environment (`npm root -g`; the `pages-*` scenarios load it from `/usr/lib/node_modules`, so a host with another global root must link it there); do not
+The sweep takes Playwright and Chromium from the environment (`npm root -g`; the `pages-*` scenarios load it from `/usr/lib/node_modules`, so a host with another global root must link it there: `ln -s "$(npm root -g)/playwright" /usr/lib/node_modules/playwright`); do not
 add them to the repo. The launcher runs until SIGTERM (`kill <pid>`, or Ctrl-C), which
 removes its throwaway data; in a script, start it in the background and keep its pid
 (`$!`). Run it from the clone's root: the bundled plugins are found through `./plugins`, and from elsewhere the server starts with `0 of 0 plugin(s) active`. Its boot log includes a plugin refused on purpose (`bench-refused`, part of the seed): not an error.
@@ -107,7 +113,9 @@ Adestia's own interface.
   and read-only, with its repository and ref shown on its card. *Refresh*
   re-fetches a repository and re-copies what was imported from it (the same
   happens at boot, within a 20 s ceiling); removing an
-  item removes only its copy. An item whose kind the active engine has no
+  item removes only its copy, while *Remove catalogue* (on the repository list)
+  forgets the repository and withdraws everything imported from it. A skill's links and special files are never
+  copied, and a repository address or ref starting with `-` is refused. An item whose kind the active engine has no
   folder for is listed but cannot be imported. The list lives in
   `<dataDir>/instruction-catalogues.json`, not in the config file.
 - **Three ways in**: none (local), a trusted proxy header, or any OIDC issuer.
@@ -120,9 +128,9 @@ Adestia's own interface.
 - **Scheduled turns**: notes whose body runs as a prompt on a cadence, with a
   missed occurrence lost rather than replayed. Give one a deadline and it
   becomes a **mission** — a watch that ends itself once its goal is met, or
-  escalates when the deadline passes. A mission may tick its own `done:` and
-  nothing else: every other write to a scheduled note needs a human, so a
-  turn running unattended can never rewrite the prompt it runs on.
+  escalates when the deadline passes. The `schedule-author` contract tells a mission to write only its own `done:`;
+  this is an agent instruction, with no server-side write gate (see
+  `docs/parcours.md`, P-12).
 - **Attachments** the agent reads with its own tools, framed as data — a file
   that says "ignore your instructions" is reported, not obeyed.
 - **The screen next to the chat**, joined to each message as a hint: the route
@@ -160,8 +168,9 @@ Two rules follow, and both bite in production:
 
 - **The cap and the memory limit must agree.** A cap of 8 behind a 1 GB limit
   is not a conservative deployment — it is a deployment that starts eight
-  processes and gets killed. Adestia refuses a turn past its cap cleanly, with a
-  429 the interface explains; the kernel does not.
+  processes and gets killed. Adestia refuses a turn past its cap with HTTP 429. The chat can lose the
+  refusal message when it reloads the transcript (Known defects in
+  `ARCHITECTURE.md`); the composer is freed.
 - **An OOM kill loses the turn in flight**, along with anything the agent had
   not yet written to disk. There is no retry: the turn died with the process,
   and replaying it behind the user's back would be worse than losing it.
@@ -182,11 +191,14 @@ Adestia is a few hundred megabytes, and it is the burst that kills it. Raise
 
 ## Status
 
-**Early, and running.** Everything above is verified against a real browser and
-real CLIs, not only by tests. What is deliberately not built: pushing and pulling the
-workspace's own instructions to a remote (catalogues above only read
-repositories), and the concurrency measurements that need real subscription
-quota. See [DESIGN.md](DESIGN.md) for the principles and every decision taken.
+**Early, and running.** The screens are checked in a real browser (`bench/`) and
+the agent drivers against real CLIs, not only by tests; which version each deployment
+runs is not recorded here. Pushing and pulling the workspace's own instructions
+to a remote is still unbuilt (catalogues above only read repositories).
+Concurrency measurements are recorded in `spikes/concurrency/REPORT.md`.
+See [.agent/status.md](.agent/status.md) for current defects and unfinished work,
+[CHANGELOG.md](CHANGELOG.md) for release history, and [DESIGN.md](DESIGN.md) for
+the principles and decision log.
 
 ## Contributing
 

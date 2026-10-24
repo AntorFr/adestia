@@ -7,8 +7,8 @@
 >
 > Written by the epic `adestia-qualite` (2026-10-15), a quality pass that changes **no
 > behaviour**. Decisions taken BEFORE this epic live in `DESIGN.md` › Decision log, which is
-> not renumbered; `AD-n` starts at `AD-1` with this epic. The map below is the code at
-> the git tag `v0.88.0` (the packages' `version` fields stay `0.0.0`), updated below for the completed charter, pages and chat tranches; the repository's later tags (`git tag`) mark releases, not this map.
+> not renumbered; `AD-n` starts at `AD-1` with this epic. The map below is the code as first
+> documented at the git tag `v0.88.0` (the packages' `version` fields stay `0.0.0`), updated for the completed charter, pages, chat, plugins, tests and server tranches; the repository's later tags (`git tag`) mark releases, not this map.
 
 ## Overview
 
@@ -218,7 +218,7 @@ and every turn — chat, scheduled, delegated, callback wake — goes through th
 Every refactoring keeps routes, API shapes, configuration keys, file formats
 (`docs/donnees.md`) and MCP tools. The existing suite is the witness; a refactoring with no
 test around it gets a characterization test first. A defect found on the way is written in
-the "Known defects" section of this file, not fixed. (`.agent/status.md` keeps no such register; the documentation tranche reduces it to a state.)
+the "Known defects" section of this file, not fixed. (`.agent/status.md` keeps no register of its own: it points here and lists only the defects still visible in the code.)
 *Why*: a quality pass is reviewable only if its diff means "same thing, written better".
 *Rejected*: "fix while we're there" — it mixes a behaviour change into a diff nobody reviews
 as one. *Reversed if*: a defect blocks a refactoring outright; it then becomes its own feature.
@@ -302,8 +302,8 @@ The skin owns its words in both languages and the shell hands it the locale: an 
 optional input to the skin module, the one contract change of this epic, and only for words
 (`B-1`). It is additive: a skin that ignores it works unchanged, including skins from
 `extensions.skinsDir` or `extensions.sources`. The skin keeps its persona's register and voice
-(`B-8`, `B-10`). Today skins speak French whatever the locale (`nestor`, `dobby` greetings)
-because the shell hands a skin no locale; the epic fixes it by `B-8`.
+(`B-8`, `B-10`). The shell hands a skin its locale (`SkinFactoryContext.locale`,
+`packages/web/src/app/skin.ts`) and the bundled skins use it (`skins/nestor/skin.js`), by `B-8`.
 *Rejected*: leaving skin words out of i18n — an `en` instance greets in French
 (`skins/nestor/skin.js`, `skins/dobby/skin.js`). *Reversed if*: skins stop drawing text.
 
@@ -315,6 +315,66 @@ replaced by pointers); `CHANGELOG.md` for the history of versions; `.agent/statu
 the state only; `.agent` mission and questions files of closed work removed (git keeps them).
 *Rejected*: rewriting `DESIGN.md` into ADR files — 3000 lines of reasons for no reader
 gain. *Reversed if*: `DESIGN.md` stops being read as a whole.
+
+#### Detail of the documentation tranche (AD-6, B-4, B-5)
+
+The tranche changes no code: it only writes and deletes Markdown, plus the dead comments
+nobody else owns (none: R-7 belongs to serveur and plugins). It runs last, on the final
+screens, and carries four things.
+
+**1. `.agent/status.md` says the state, and nothing else.** Under 150 lines, in this order:
+the current version and what it is (tag, deployed or not, per body); *Known defects* (the
+section of this file is the source; status points at it and adds only what is not yet
+there); *Half-built* (functions that exist and are reached by no screen, written as one
+line each); *Traps still true* (each in two lines: the symptom, the cause); *Where to
+look* (pointers to the docs above, to `CHANGELOG.md`, to `bench/README.md`). A version
+paragraph leaves status.md for `CHANGELOG.md` whole, its "Reste / pièges encore vrais" tail
+too when the trap is gone; a trap still true (checked against the code, not recopied) is
+rewritten short in *Traps*. status.md stays in French (`.agent` is French).
+
+**2. `CHANGELOG.md` is the history.** English, one `## vX.Y.Z — date` per version from the
+oldest the status file knows (v0.61.0) to the current one (the latest git tag: no `package.json`
+carries a version), oldest first; what status.md names from before v0.61.0 sits in an
+"Earlier than v0.61.0" section at the top; each entry keeps
+the paragraph's first sentence (what changed for the user) and the *why* it carried, and
+drops the recipe and the deployment chatter. Versions with no entry (tagged by mistake, e.g.
+v0.87.3) get a line saying so. The paragraphs are moved, not re-derived: a version whose date
+or content is not in status.md is not invented. The epic's own changes enter as one
+`## Unreleased — adestia-qualite` entry, written from the merged tranches' commit messages.
+
+**3. `DESIGN.md` is ranged, not rewritten.** (a) *Decision log*: entries in one order,
+oldest first, by the date each opens with; entries with no date keep their place after the
+dated entry they follow. Reordering moves blocks whole. (b) *What is built, and what is
+not*, *Spikes* and the header line "implemented unless marked not built yet" are replaced
+by a short pointer to `docs/parcours.md`, `docs/ecrans.md`, `ARCHITECTURE.md` and
+`CHANGELOG.md`, each *not built yet* item that is built now deleted and each that is not
+moved to *Half-built* in status.md. Reasons stay: nothing in the principles and the
+per-subject sections is cut (AD-6, rejected: ADR files).
+
+**4. The rest is read against the code.** README (what it is, launch, test, launch on the
+fake engine, capture screens: the commands the banc tranche documented), CLAUDE.md (package
+map and commands, as built), this file (map, every R-n *Outcome* filled, defects), the four
+`docs/` files (every Q-n `closed` or `kept: reason`), `plugins/README.md`, `spikes/README.md`
+(the pointer to the list of open spikes goes: DESIGN.md's *Spikes* is a record, not a list of open
+work), `packages/*/README.md`, `packages/schemas/CHANGELOG.md`. Closed work leaves
+`.agent`: a `mission-*.md` and its `questions-*.md` go when the work shipped (the chantier
+is in status.md or CHANGELOG), `migrate-frame.mjs` stays only if the migration it did is
+still undone (`questions-migration-contenu.md` says), else goes with them. Git keeps them.
+
+**What counts as a contradiction** (the bar of the fresh-context documentation pass, made by a `relecteur-depot` agent that reads the code): a command that does not run, a
+file or symbol the text names and the repository lacks, a number (count of skins, of
+plugins, of tests) the code contradicts, a "not built" the code builds, a decision and its
+reversal both standing. Style is not one.
+
+**Verification, by search:** a search for the stale phrases about the number of skins and about open spikes, over every `*.md`, empty;
+`git grep -n "not built" -- DESIGN.md` empty outside quoted history. The committed
+regression test `bench/tests/doc-besoin.test.mjs` checks relative Markdown link targets
+(excluding package tests, nested spike documents and skills) and collects `var(--x` uses in CSS
+under `packages/web/src` and `plugins/*/web`, subtracts definitions in CSS, skins and
+scripts, and reports any remainder. Run it with
+`node --test bench/tests/doc-besoin.test.mjs` to check B-4 and B-5. Skin declarations
+and JS/TSX inline parameters count as definitions outside those stylesheets;
+this does not mean the CSS-only difference is empty.
 
 ### AD-7 — Out of this epic, because they change behaviour
 Unifying the frontmatter parsers (`content/src/frontmatter.ts` accepts CRLF; `pages.ts`
@@ -439,7 +499,7 @@ write — then that state stays in the first and the target R-12 reads "kept: re
 first user: a **chip** (`.adestia-chip`, a toggle button with `aria-pressed`, pill radius,
 for the facet pills of E-3 and E-7), an **inline empty state** (`.adestia-empty--inline`: the
 empty state's icon at 16 px beside its sentence, for a note inside a block of a page), and
-the icon names the screens need beyond `docs/charte.md` § 7.3 (`grip-vertical`, `eye`, `code`,
+the icon names the screens need beyond `docs/charte.md` § 2 (`grip-vertical`, `eye`, `code`,
 `file-question`, `folder-open`, `search-x`). The editor's block bars are built
 by Milkdown as DOM, not React: `editor/dom-icon.ts` draws a sprite icon from its name (the
 AD-9 markup) so the bars use the same set. *Rejected*: restyling the facet pills as
@@ -498,7 +558,7 @@ Each target: what, where, why it costs, the tranche that owns it, and its outcom
 |---|---|---|---|---|
 | R-1 | MCP `Authorization: Bearer` header selection copied in `claude-code/driver.ts`, `copilot-cli/driver.ts`, `codex-cli/driver.ts` | three copies of a security-relevant rule | serveur | closed: `drivers/src/mcp-headers.ts`, pinned by a test written first |
 | R-2 | Driver helpers duplicated: device-code `beginAuth`/`completeAuth`/`cancelAuth` (codex, copilot), `truncate` ×3 (`*/events.ts`), `health` ×2, `usageOf` ×3, `classifyAuthError`/`explainAuthProblem` ×2 (`*/auth.ts`) | drift between engines | serveur | closed: `engine-aids.ts` and `device-code.ts`; the engines pass their own tables |
-| R-3 | `start()` (464 lines) and `buildApp` (287 lines) mix concerns; `TurnLimiter`, `runUnattended`, inline `/api/delegations` routes and the `adestiaRunTurn` monkey-patch live in `app.ts`; routes registered both from `routes/` and top-level files (`pages.ts`, `oidc-routes.ts`, `mcp-routes.ts`, `static.ts`, `files.ts`, `watch.ts`, `callback.ts`) | no single place says what is mounted | serveur | closed: every route is registered from `routes/`; the top-level files keep only their helpers and a re-export (`mcp-routes.ts` is a pure re-export); `app.ts` mounts, `turn-limiter.ts` and `unattended.ts` hold the rest; `start()` is named stages, order pinned by `start-order.test.ts` |
+| R-3 | `start()` (464 lines) and `buildApp` (287 lines) mix concerns; `TurnLimiter`, `runUnattended`, inline `/api/delegations` routes and the `adestiaRunTurn` monkey-patch live in `app.ts`; routes registered both from `routes/` and top-level files (`pages.ts`, `mcp-routes.ts`, `static.ts`, `files.ts`, `watch.ts`, `callback.ts`) | no single place says what is mounted | serveur | closed: every route is registered from `routes/`; the top-level files keep only their helpers and a re-export (`mcp-routes.ts` is a pure re-export); `app.ts` mounts, `turn-limiter.ts` and `unattended.ts` hold the rest; `start()` is named stages, order pinned by `start-order.test.ts` |
 | R-4 | `field()` duplicated in `instruction-catalogues.ts` and `instructions.ts`; `routes/instruction-catalogues.ts` `sourceOf` / `fetchClone` / `cacheDir` duplicate `catalogueSource` / `fetchCatalogueClone` / `catalogueClone` of `instruction-catalogues-refresh.ts` | pure extraction, behaviour kept | serveur | closed: `field()` once in `frontmatter.ts`; the catalogue route calls the refresh module |
 | R-5 | `pages.ts` doubles as a frontmatter library for `instructions.ts`, `instruction-catalogues.ts`, `schedule.ts`, `shell-tools.ts` | a route module as a dependency; move without changing the parser (AD-7) | serveur | closed: `server/src/frontmatter.ts`, bodies untouched; the CRLF divergence stays (AD-7) |
 | R-6 | Dead interface removed; test-only helpers removed from production indexes; remaining public types, test imports and boot entry points named below | surface limited to its consumers | serveur | closed: 178 entries remain, all named below |
@@ -729,11 +789,6 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
   breadcrumb badge says “7 servers”. Observed during the charter review; whether it
   predates this epic is unknown. Kept under B-1, pending a separate behaviour investigation.
 
-- **Catalogue ref or repo starting with `-`** reaches git as an option: `sources.ts` passes
-  `source.ref` to `git fetch … origin <ref>` with no `--` separator. Arbitration of
-  `homelab-sdlc-maj-consignes`.
-- **`copyMarkedTree` follows symbolic links** (`instruction-catalogues.ts`): a non-directory
-  entry is read with `readFile`, which reads the link's target. Same arbitration.
 - **P-2 step 4: a refused turn (429) can stay silent.** `chat/stream.ts` yields
   the refusal as a live error. `chat/Thread.tsx` draws its error line only while
   that live state is present; `useConversations.ts` › `consume` clears it when
@@ -768,7 +823,7 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
 - **Skippy's status banner wraps onto two lines on the phone**, found by the sweep at phone
   width; not fixed by this epic.
 - **E-14: the switch sits apart from its title on the phone**, the row wrapping between them.
-  Seen in the sweep; left for the pages tranche.
+  Seen in the sweep; kept for a separate layout correction.
 - **E-19 detail in English under the French locale** when the server sent no code: the detail
   is then the raw server text, which no catalogue translates.
 - **A catalogue token field has no `autoComplete`**, so a browser may offer to fill or save it

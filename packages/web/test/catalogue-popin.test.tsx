@@ -127,6 +127,75 @@ describe('the catalogue pop-in', () => {
     expect(state.files).toEqual([])
   })
 
+  describe('withdrawing a repository', () => {
+    const open = async (fetchImpl: typeof fetch) => {
+      screenWith(fetchImpl)
+      fireEvent.click(await screen.findByRole('button', { name: 'Catalogues' }))
+      const dialog = await screen.findByRole('dialog')
+      await within(dialog).findByText('homelab')
+      return dialog
+    }
+    const withDelete = (w: ReturnType<typeof world>, onDelete: () => Promise<Response>) => {
+      const base = w.fetchImpl as unknown as ReturnType<typeof vi.fn>
+      const inner = base.getMockImplementation()!
+      base.mockImplementation((url: string, init?: RequestInit) =>
+        init?.method === 'DELETE' ? onDelete() : inner(url, init))
+    }
+
+    // Fails if the pop-in offers no control to withdraw a repository, or sends no DELETE.
+    it('removes the repository from the list with a DELETE, keeping the others', async () => {
+      const w = world()
+      w.state.catalogues.push({ id: 'other', repo: 'https://x/other.git', ref: 'main', imports: [] })
+      const base = w.fetchImpl as unknown as ReturnType<typeof vi.fn>
+      const inner = base.getMockImplementation()!
+      base.mockImplementation((url: string, init?: RequestInit) => {
+        if (init?.method === 'DELETE') {
+          w.state.calls.push(`DELETE ${url}`)
+          w.state.catalogues = w.state.catalogues.filter((c) => `/api/instruction-catalogues/${c.id}` !== url)
+          return json({})
+        }
+        return inner(url, init)
+      })
+      const dialog = await open(w.fetchImpl)
+      fireEvent.click(within(dialog).getByRole('button', { name: /Remove catalogue homelab|Retirer le catalogue homelab/ }))
+      await waitFor(() => expect(within(dialog).queryByText('homelab')).toBeNull())
+      expect(w.state.calls).toContain('DELETE /api/instruction-catalogues/homelab')
+      expect(within(dialog).getByText('other')).toBeTruthy()
+    })
+
+    // Fails if the screen's list is not re-read after the withdrawal (imports left on screen).
+    it('re-reads the instructions so the withdrawn repository imports leave the global list', async () => {
+      const w = world()
+      const dialog = await open(w.fetchImpl)
+      w.state.files = [{ path: '.claude/skills/mail/SKILL.md', modified: '2026-08-25T10:00:00Z', bytes: 1, managed: false, kind: 'skill', name: 'mail' }]
+      withDelete(w, () => { w.state.files = []; w.state.catalogues = []; return json({}) })
+      const before = w.state.calls.filter((c) => c === 'GET /api/instructions').length
+      fireEvent.click(within(dialog).getByRole('button', { name: /Remove catalogue homelab|Retirer le catalogue homelab/ }))
+      await waitFor(() => expect(w.state.calls.filter((c) => c === 'GET /api/instructions').length).toBeGreaterThan(before))
+      await waitFor(() => expect(screen.queryAllByText('mail').length).toBe(0))
+    })
+
+    // Fails if a refused DELETE still drops the repository from the screen.
+    it('keeps the repository and shows the refusal when the server refuses', async () => {
+      const w = world()
+      const dialog = await open(w.fetchImpl)
+      withDelete(w, () => json({ error: 'cannot withdraw' }, 503))
+      fireEvent.click(within(dialog).getByRole('button', { name: /Remove catalogue homelab|Retirer le catalogue homelab/ }))
+      expect((await within(dialog).findByRole('alert')).textContent).toContain('cannot withdraw')
+      expect(within(dialog).getByText('homelab')).toBeTruthy()
+    })
+
+    // Fails if a network failure on DELETE is swallowed or drops the repository.
+    it('keeps the repository and shows the error when the network fails', async () => {
+      const w = world()
+      const dialog = await open(w.fetchImpl)
+      withDelete(w, () => Promise.reject(new Error('network down')))
+      fireEvent.click(within(dialog).getByRole('button', { name: /Remove catalogue homelab|Retirer le catalogue homelab/ }))
+      expect((await within(dialog).findByRole('alert')).textContent).toContain('network down')
+      expect(within(dialog).getByText('homelab')).toBeTruthy()
+    })
+  })
+
   it('refreshes the repository on demand and reports what upstream no longer offers', async () => {
     const { fetchImpl, state } = world()
     screenWith(fetchImpl)

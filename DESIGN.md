@@ -5,7 +5,9 @@
 > and a six-probe analysis pass. This document records the WHY; the code records the
 > WHAT, and where the two disagree the code is right and this file is a bug.
 >
-> Everything below is implemented unless marked **not built yet**.
+> For current behaviour, see [journeys](docs/parcours.md) and
+> [screens](docs/ecrans.md); for the code map, [ARCHITECTURE.md](ARCHITECTURE.md);
+> for release history, [CHANGELOG.md](CHANGELOG.md).
 
 ## What Adestia is
 
@@ -1595,7 +1597,15 @@ resolves in Adestia as follows:
   not answer leaves yesterday's copies and a log line, never a held-up boot.
   The boot sweep of delivered contracts spares the paths an import landed at —
   they carry the managed marker too, and were deleted at every restart before.
-  Not built: a section in Réglages — the screen is Instructions.
+  A third party's repository is hostile input twice over. A repo or ref that
+  begins with `-` would reach git as an option (`--upload-pack=<cmd>` runs a
+  command): the route answers 400, `fetchSources` refuses it without calling
+  git (a declaration saved earlier included), and every positional git
+  argument follows `--` — for `extensions.sources` too. A link or special file
+  inside a skill is never followed or copied (it could carry a host file into
+  the workspace); the import answer lists what was `skipped`, and a link as the
+  item itself is refused.
+  See [docs/parcours.md](docs/parcours.md), P-9, for the current instructions screen.
 - **Instructions are saved byte for byte**, in plain text, never through the
   page grammar. Pages go through a closed vocabulary with a validator because
   this product renders them; an instruction is read by a CLI, and its
@@ -1740,433 +1750,188 @@ where they do not, the reversal is stated.
   to the single-store case would change the answer for nothing, and teach the
   shell a division that does not exist on its instance.
 
-## Spikes (validation record)
+## Validation records
 
-1. **Editor round-trip — DONE, verdict Milkdown** (`spikes/editor/VERDICT.md`):
-   Milkdown and Tiptap both round-tripped byte-identical with typed blocks as
-   first-class nodes; BlockNote eliminated (its md import has no extension
-   hook). Milkdown wins on the one-grammar criterion — its transformer is the
-   same remark/micromark pipeline as the renderer.
-2. **Runtime ESM plugin views — DONE, proven** (`spikes/esm-runtime/REPORT.md`):
-   16/16 assertions in real Chrome — import-map-shared single React instance,
-   manifest-listed CSS, lazy 450 kB chunk, strict-MIME and CORS negative
-   proofs. The import map is a versioned, published contract;
-   `react/jsx-runtime` is mapped from day one.
-3. **Copilot CLI hands-on — DONE** (`spikes/copilot-cli/REPORT.md`): binary
-   1.0.80 pinned, JSONL schema captured via BYOK mock, three auth error
-   states, usage taps, static model catalog, `--acp` discovered. Remaining
-   items require an authenticated session (report §9).
-4. **Subscription concurrency — DONE** (`spikes/concurrency/REPORT.md`):
-   27 real turns, bursts of 1–8. Turns genuinely overlap (78% parallel
-   efficiency at 8), zero failures and zero rate-limit warnings; TTFT pays a
-   one-time ~+1.3 s step at any concurrency then plateaus; parallel turns
-   share the prompt cache perfectly, while switching models re-pays it. The
-   binding constraint is ~300 MB of RSS per CLI process — `maxConcurrentTurns:
-   3` is confirmed as memory-bound, and 8 is verified safe API-side.
-5. **Codex CLI hands-on — DONE** (`spikes/codex-cli/REPORT.md`): binary 0.154.0
-   pinned. `CODEX_HOME` isolates completely — the fake `$HOME` stayed empty —
-   but startup clones a plugin marketplace over the network and **no config
-   value found turns that off**, so egress policy is the only lever. Arming is a
-   **file**, not an env var (`OPENAI_API_KEY` is ignored
-   for the built-in provider) and needs no pty, unlike Copilot's;
-   `login --with-api-key` accepts a bogus key without validating it, and the
-   failure only lands ~35 s into the first turn. The finding that decides the
-   design: `codex exec --json` forces `approval policy = Never`, while
-   `codex app-server` — JSON-RPC with a *generated schema* — carries the return
-   channel (`item/commandExecution/requestApproval`, answered `accept`/`decline`,
-   both proven), plus `model/list`, `mcpServer/startupStatus/updated` and
-   `thread/tokenUsage/updated`. All of it captured against a local mock provider
-   with no OpenAI account — and a second pass on a real ChatGPT account confirmed
-   the mock's event stream is identical to the live one, so that CI story holds.
-   That pass also settled the quota question: `account/rateLimits/updated` is
-   **pushed after every turn** with two windows (5 h and 7 days, `usedPercent` +
-   `resetsAt`), which is a better `subscriptionQuotas` source than anything
-   Copilot offers, and `model/list` turns out to be entitlement-filtered once
-   authenticated. One blocker stands: a command the sandbox blocks emits **no
-   event at all** on either surface — verified with a real model, which then
-   *talks about* the refusal the interface never showed. Report §12 fits the
-   findings to this repository's own contract: seven of nine capabilities would
-   be declarable, the UI needs nothing (no engine name reaches it), and the one
-   functional break is that the per-turn shell-tools token goes stale — codex
-   starts an MCP server once per THREAD, so turn 2 of a conversation would
-   announce a revoked token. Measured fix: one app-server process per turn plus
-   `thread/resume`, which restores one token per turn, keeps the whole history
-   and costs ~100 ms — the shape the Copilot driver already has. Whether a
-   `codex-cli` driver is built was not settled here; the chantier that followed
-   built it, on app-server and one process per turn — see its entry among the
-   engines above.
+See [spikes/README.md](spikes/README.md) for the validation reports and verdicts.
 
-## What is built, and what is not
+## Current product reference
 
-**Built and verified end to end** (in a browser and against real CLIs, not only
-in tests): streamed chat with tool trace and live token counter; the permission
-posture (`open` / `ask`, the engine judging and the chat asking — decision log,
-2026-08-26); conversations per user, replayed faithfully; pages edited by both
-the agent and a Notion-like editor over one shared grammar; runtime plugin
-loading from a mounted folder with a shared React through an import map;
-`claude-code`, `copilot-cli` and `codex-cli` drivers behind the capability
-contract; credential arming from the interface; auth in all three modes;
-authoring skills the agent uses to write conformant plugins; scheduled turns;
-skins; chat attachments; inbound MCP for agent-to-agent delegation; container
-image and CI.
-
-Since then: the trips app; a model selector in the composer; outbound MCP
-wired end to end with OAuth-authenticating servers and health reporting; the
-authority gate; the instruction zone, readable and correctable without an
-IDE; the workspace's non-markdown files — served, resolvable from a page,
-and shown under it as attachments; and the screen context the parity audit
-had missed. And the install: a served manifest a skin renames and recolours, an
-`apple-touch-icon` beside the icons it declares, and a network-first service
-worker — so an instance is an app on a home screen, under its own body's name,
-that opens to its own words when the network is gone. And the shell introduces
-itself: a `this-instance` contract generated from the running configuration and
-delivered with the authoring ones, plus one line on every dispatched turn
-saying it exists — so an agent asked what runs it reads the answer instead of
-composing one.
-
-**Not built yet**, and none of it blocked by a design question:
-
-- **The `ask` posture, finished.** It ships and it works, and it is OUT of the
-  MVP after a day on a real instance (2026-08-26): half-working on one engine,
-  absent on the other. Where it breaks is a granularity the ENGINE owns and
-  Adestia deliberately does not second-guess — for `Bash` the CLI proposes a
-  rule on the EXACT command (`Bash(ls -la /tmp)`), so every variation asks
-  again, and for a composed one (`cd x && cat <<EOF`, any heredoc) it proposes
-  nothing at all: its own parser will not cut the command up, so there is no
-  durable answer to offer. `WebFetch` is the counter-example that shows the
-  shape is right — `WebFetch(domain:…)` is exactly the rule a person wants.
-  The fix is known and is not more Adestia judgement: let the PERSON edit the
-  rule in the prompt (the engine proposes `Bash(ls -la /tmp)`, they write
-  `Bash(ls:*)` or `Bash`), which also turns the no-suggestion dead end into
-  something answerable. On copilot-cli the posture cannot exist at all —
-  no return channel in programmatic mode — so it refuses to boot there.
-  `codex-cli` settles the transport half of that and none of the rest: its
-  app-server carries the return channel, and the driver declares
-  `interactivePermissions` in `ask` for real. But the granularity above belongs
-  to the ENGINE, not to the transport, and this one brings a defect of its own
-  — a command its sandbox refuses emits no event at all, so a trace under `ask`
-  cannot be trusted to show what was refused. So the third engine is given what
-  the other two are given and nothing less: the whole tool set,
-  `danger-full-access`, the container as the bound. Instances run `open` until
-  that is done.
-
-- **Remote instruction sync** (the optional git module).
-- **Usage, cost and quota surfaces.** The drivers declare `usageMetrics`,
-  `cost`, `subscriptionQuotas`; only the live token counter reaches a screen.
-  A capability declared and never consumed is the failure mode to watch for
-  here — it looks finished from the code and shows nothing to a user.
-- **The per-user rebound** for user-scoped MCP addons, and the `oidc` auth mode
-  it depends on (see MCP configuration).
-- **User-editable authority.** The gate refuses writes from a turn, which is
-  the right default and not the final answer: somebody with only a browser
-  cannot change a permission at all. The sketch is dedicated screens backed by
-  `dataDir` rather than the config file — a deployment's config may be
-  GitOps-managed and would be reverted — with a precedence to settle: is the
-  config a floor a person may raise, or a ceiling they cannot exceed?
-- **The turn cap, editable from the settings screen.** `maxConcurrentTurns`
-  lives in the config file, and on a GitOps-managed deployment changing it
-  means a commit, a sync and a pod for what is one number. The MCP servers
-  card already holds the answer's shape: a writable layer under `dataDir`
-  (`mcp-servers.json`) that the settings screen edits and that wins over the
-  file. Give the cap the same treatment on that page — with the sizing
-  coupling made visible where the number is changed: each concurrent turn
-  costs ~300 MB of RSS, and no browser control can raise a container's memory
-  limit, so a cap raised past what the deployment provides trades the polite
-  429 for an OOM kill. The screen must say so, next to the field.
-- **A restart that forgets looks like a conversation that remembers.** Seen on a
-  real instance: the pod restarts, the shell replays the conversation
-  faithfully from its own store, and the screen shows nothing happened — but
-  the engine session the next turn would resume died with the container, so
-  "pick up where we left off" answers from nothing. History shown and context
-  held no longer agree, and the interface sides with the lie. Two directions,
-  not exclusive: make the discontinuity VISIBLE (the conversation marks where the
-  engine's memory ends, the way it already marks other events in the stream),
-  and make it RARER (the CLI's session state could live on the persistent
-  volume with the workspace, or a failed resume could be detected and the
-  transcript re-fed). The first is owed in any case — whatever recovery
-  exists, a person must never learn about amnesia by talking to it.
-- **`adestia init`** — the documented workspace scaffold.
+See [journeys](docs/parcours.md) and [screens](docs/ecrans.md) for current behaviour,
+[ARCHITECTURE.md](ARCHITECTURE.md) for the code map, and
+[CHANGELOG.md](CHANGELOG.md) for release history. Remaining partial implementations
+are recorded in [.agent/status.md](.agent/status.md#à-moitié-construit).
 
 ## Decision log
 
-**2026-09-07 (the shell says what it is, because prose about it goes stale):**
-an agent on a real deployment, asked what interface it ran in, named the
-PREDECESSOR product — `agent-gw` — and hedged about whether that was even its
-public name. It was running on Adestia, and its own delivered skills carried
-the managed marker that said so. Asked what tools acted on its own instance it
-answered "none", holding `rename_conversation` and `new_id` at that moment.
-Nothing was broken: nothing had ever told it. The only prose describing its
-environment was a 40 KB hand-written brief, and a third of that brief was
-transcription of what the shell already knew — the screen-context frame copied
-out by hand, citing a version number; the zones; a catalogue of the MCP servers
-the config declares. Hand-written prose about a running system does not
-announce the day it stops being true.
+**2026-08-20 (founding):** product-first (no parity constraint with agent-gw; the
+author's pods migrate later). Shared-agent multi-user with OIDC plus a zero-auth
+local single-user mode. Files as source of truth. Engines: Claude Code + GitHub
+Copilot CLI behind an internal driver interface. TypeScript/Node + Fastify; React +
+Vite. Runtime plugin and skin loading from mounted directories. Auth:
+none/oidc/proxy. Docker+compose and npx as deployment targets. Name **Adestia**,
+public repo from the start (npm scope needed — `adestia` is taken).
 
-Three channels could carry the correction, and two were refused. A skill body
-alone: an engine loads it on demand, and demand is exactly what the
-confabulating agent lacked. The SDK's `systemPrompt.append`: real, but
-claude-code only — copilot-cli is spawned as a binary whose flags hold no
-system surface, so it would have fixed the engine that happened to show the
-bug and left the other blind. The always-in-context files — `CLAUDE.md`,
-`AGENTS.md` — belong to the person on both engines and are not the product's
-to write.
+**2026-08-20 (second pass):** v1 additions — driver `authManagement` (arm/refresh
+from the UI) and `usageMetrics` as declared capabilities; chat parity bar + six
+exceed items (streaming first); adjustable split view; mobile/PWA; scan-class plugin
+portability; schema-first extension contracts with `plugin-author`/`skin-author`
+skills shipped in v1.
 
-*Taken: a generated contract, plus an anchor at the turn desk.* The body is
-`this-instance/SKILL.md`, composed from what the boot actually did — the tools
-really registered, the plugins really active — and delivered by the same
-mechanism as every other contract, so it is refreshed, withdrawn and readable
-in the instruction zone with no second machinery. A generated document cannot
-drift from what it describes; that is the whole of why it is not written by
-hand. It carries the negative half too: the config file lives outside the
-workspace, and the transcript is replayed by the shell over an engine session
-that may not have survived a restart. And it claims precedence over a
-hand-written brief that contradicts it, because that contradiction is the
-observed failure and somebody has to win it.
+**2026-08-20 (instructions):** workspace convention with `adestia init` scaffold,
+paths repointable; instructions live as workspace markdown files, editable in the
+UI under risk-zoned gating (channel-gated agent self-edits, scheduled turns
+excluded); git optional but first-class — bare-files and git-backed workspaces are
+BOTH supported from v1 (clean per-path commits when git is present); remote sync
+deferred to an optional module.
 
-The anchor is one line, applied where every turn already passes — the desk, and
-the loose unattended path beside it — so a scheduled note and a delegated task
-are introduced as well as a chat message. It is framed at dispatch, never
-stored: fuel, not transcript, so a merge, a re-attach and a reload still replay
-what the person typed. It is omitted entirely on a driver that declares no
-skills directory: an anchor citing a file nobody wrote is worse than silence.
+**2026-08-20 (instruction dialect):** one driver per workspace lifetime; user
+instructions stay in the CLI's native dialect, agent-authored — Adestia neither
+normalizes nor translates them, and the UI is structure-agnostic (risk zoning by
+driver-declared path classification). Driver switch = assisted migration (the new
+agent translates). Only plugin agent-contracts are harness-neutral, compiled per
+driver.
 
-*Measured on both engines rather than reasoned about, and the measurement
-found an older bug.* Asked where its instance keeps chat attachments with no
-anchor, copilot-cli read nothing and described its own SQLite session store —
-the same confabulation, on the engine that had never shown it. With the
-anchor it asked for the contract by name and was told **`Skill not found`**,
-then spent five refused tool calls hunting the filesystem before finding the
-file by hand. The cause was delivery, not the contract: `deliverSkills` wrote
-the managed marker as the file's FIRST line, pushing the YAML frontmatter off
-the first byte, and copilot registers a skill by reading that frontmatter. It
-had never registered a single contract this product delivers — its own four,
-and every plugin's. claude-code tolerates the leading comment and loaded the
-same file either way, which is why nothing had ever surfaced it. The marker
-now goes after the frontmatter, where it is also where a reader looks for it;
-every consumer tests it with `includes`, so nothing else had to learn.
+**2026-08-20 (late additions):** model switching joins v1 as the `modelSelection`
+capability (enumeration where the CLI provides it, config-declared list otherwise,
+never a product-hardcoded catalog); the live climbing token counter on the busy
+bubble joins as a capability-gated bonus (`liveTurnUsage`).
 
-**2026-09-07 (the sign-in card's trigger was impossible, and production said
-so first):** the card shipped watching for a failed tool of a disconnected
-server — but a disconnected `signIn` server is omitted from the turn, so no
-such tool exists to fail; the bench had "proved" the card by seeding a
-transcript no real turn can write. Corrected to the state the shell already
-knows: a conversation the person is talking in + a server with no key for them,
-dismissible per browser, cleared everywhere by connecting. The lesson worth
-the log line: a demand-driven trigger must name an event that CAN occur
-under the design's own rules — the omission that makes "not connected"
-truthful is the same omission that silences every tool-level signal.
+**2026-08-20 (editor verdict + tests):** Milkdown chosen (spike 1) — remark
+grammar shared with the renderer, byte-identical round-trip; Tiptap kept as
+proven fallback behind Adestia's editor interface; BlockNote eliminated. Unit
+tests from the skeleton's first package; spike harnesses promoted to permanent
+conformance suites. Spike-3 corrections folded into the copilot driver section
+(`ghp_` loudly rejected; auto-update pinning; usage taps; `--acp` to evaluate).
 
-**2026-09-06 (a swipe that cannot be seen cannot be trusted):** the fold's
-gesture worked about one time in two, reported from a real phone. Both halves
-of the cause were in the same decision — reading a VERDICT at the end of the
-gesture rather than following the finger through it.
+**2026-08-20 (MCP config):** outbound MCP = three layers (operator config with
+secret interpolation, plugin-declared servers, workspace-native config left
+untouched), materialized per driver at spawn; conflicts loud, operator wins over
+plugin; MCP tools wired end to end; `mcpStatus` and per-user token
+pass-through (oidc) as capability/hook, not promises.
 
-Nothing moved while the finger did, so a refusal and a dead app looked
-identical; there was no way to learn what the gesture wanted, because the
-interface never said what it had understood. And because the app claimed
-nothing, the browser kept the gesture: the moment it decides a touch is a
-scroll it fires `pointercancel`, and a swipe a few degrees off the horizontal
-was cancelled before it could be measured at all. The two compound — the
-failures were invisible, so they read as randomness.
+**2026-08-21 (page-authoring contract):** audited every shipped plugin's data
+model and found four independently-invented frontmatter conventions and one
+core capability (scheduled notes) with no authoring skill at all. Resolved as
+a new core skill, `page-author` — `title` mechanical (core reads it, never the
+first heading), `type` a shared namespace a manifest now declares its claim on
+(`types: [...]`, checked for collisions at boot, mirroring the existing
+unmatched-activation diagnostic), `ico` documented as convention rather than
+schema'd. Named, rather than newly invented: the three dispatch patterns
+already in use (`type` query, reserved folder, sibling asset by convention)
+each stay the right tool for a different shape of data — no attempt to
+collapse them into one mechanism. `schedule-author` gives `planif`'s notes the
+same treatment. Left open, deliberately not implemented under this decision:
+the `:::app` block parses, validates and round-trips but does not render a
+mounted plugin view — making it live is a rendering-architecture decision
+(interactivity, recursion, the security boundary of a plugin's component
+mounting inside another page) for a person to make, not something to wire
+silently while documenting the vocabulary around it.
 
-*Taken: the shell is a track, not a pair of alternatives.* Both panes stay
-mounted side by side, the shell is two screens wide and slides between them,
-and the drag moves it 1:1 under the thumb. The direction is locked after 8px
-and from that instant `preventDefault` keeps the browser out; past 28% of the
-screen the crossing commits, below it the track snaps back — which is how the
-gesture says "understood, not enough" instead of saying nothing.
+**2026-08-25 (the editor is a capability, not a screen):** `journal` — a
+history read on one page, one entry at a time in edit mode — asked a question
+the extension system had not been asked before: how does a plugin edit a page
+inside its OWN screen? Two answers were refused before the third.
 
-Deliberately NOT `touch-action: pan-y` on the shell, which is the tidier CSS
-and the wrong tool: the restriction applies to the whole subtree, so it would
-also kill sideways panning inside the wide tables and code blocks the start
-guard goes out of its way to protect. And the edge handles moved OUT of the
-shell, because a transformed element is the containing block for its `fixed`
-descendants — left inside, the handle meant to stay against the glass would
-have ridden the track off the screen.
+*Refused: a plugin's own editor.* A textarea, or a vendored ProseMirror. Both
+put a second author of markdown in the product, and the closed vocabulary
+holds because there is exactly one writing path.
 
-**2026-09-06 (connecting to an MCP server is the product's job, in the
-conversation):** Alfred could not reach Home Assistant, and the first fix
-proposed was Skippy hand-carrying an OAuth enrollment — a human patching a
-missing feature. The owner named the real product in one sentence: "Alfred
-should handle it himself — oh, a new MCP server, here is the link, done" —
-and placed the button IN THE CONVERSATION at the first demand, not only on a
-settings tile. Second owner call: stay clean about identity — a user-login
-door (OIDC-federated proxy) stays PER USER like google/withings, never
-flattened into one instance-level key; a static multi-user token remains a
-config `headers` entry. Shape in "MCP configuration"; the drivers' rule (a
-`signIn` server never falls back to the rebound token) is what turns
-"not connected" into a card instead of a false "failed".
+*Refused: publishing the content engine through the import map.* The map is
+parsed before the first module resolution and exists for THIRD-PARTY
+dependencies; the shell's own capabilities travel through the injected `api`,
+because a plugin importing the shell would be a cycle and would pin it to a
+build it cannot see. That rationale was already written at the top of the
+plugin contract — the map was the wrong door.
 
-**2026-09-06 (the fold gets a seam; the build says its own name):** two
-surfaces the predecessor had and the migration had not carried over, both
-about a thing being TRUE but unsayable.
+*Taken: `api.PageEditor`.* The shell hands its own editor over as a component,
+lazily mounting Milkdown exactly as `#/page/…` does. It cost a wrapper and one
+field, because `Editor` was ALREADY per-instance: reading posture by default,
+its own `editing` state, its own revision, its own diagnostics. Rendering one
+per item is the entire "edit only this section" feature — no new grammar, and
+no plugin holding its own idea of what a save means. Two positions inside it:
+the attachment strip is OFF by default when embedded (furniture, plus a
+request per item), and file drop is not wired at all — a plugin's layout is
+not the page screen.
 
-*The seam.* Folded onto one screen the two panes stack perfectly, so nothing
-admitted the second one existed — the swipe was there and was discoverable
-only by accident. An edge handle now shows 6px of the pane you cannot see,
-against the side it sits on, one at a time. Two decisions inside a very small
-change. It is a BUTTON, not a decoration: the affordance and the fallback are
-the same object, so a person who never guesses the gesture still gets through.
-And the two handles carry CONSTANT destinations rather than one toggling —
-a swipe begun on a handle may be followed by the click the browser synthesises
-for the same finger, and a toggle would undo the swipe it had just made,
-leaving the screen exactly where it started.
+Which settles the storage question a journal poses, and it is not a
+preference: **one markdown file per entry, never one file holding a history.**
+The page API saves whole files under an optimistic revision, so a single file
+would collide the agent's appended entry with whatever a person is editing,
+every time; the agent adds entries with its own file tools, where a new file
+cannot damage a history and a rewrite can; and `GET /api/pages/index` makes
+each entry's `date` queryable, which entries buried in one document are not. A
+journal is therefore a FOLDER, its cover the folder's index page
+(`type: journal`), its entries the pages inside it (`type: entree`). The known
+cost is stated rather than hidden: the index re-reads every markdown file on
+every call, so a few hundred entries weigh on it — the same bill `todo`
+already pays with one page per task.
 
-*The version.* "Did the deployment I just pushed land?" had no answer on any
-screen: the canvas header names the ENGINE, and a phone drops that line first.
-The number comes from the IMAGE TAG, baked by the publish workflow into the
-artefact it is about to push (`ADESTIA_VERSION`), because nothing in the tree
-carries one — a release is `git tag vX.Y.Z` and every manifest reads `0.0.0` —
-and because the string an operator needs to match is the one the registry
-holds. A checkout therefore has no version and says so by saying nothing: the
-product's name alone reads as a name, where "Adestia unknown" reads as a
-broken field. Same treatment the driver line already gives an engine that has
-not announced itself.
+**2026-08-25 (the screen next to the chat):** a predecessor feature the parity
+audit had missed, found by the owner rather than by the review — agent-gw
+joined the open page's route and breadcrumb to every message, and Adestia sent
+nothing. Ported with its three boundaries intact (route and trail only, hint
+not topic, snapshot at send time), and with one improvement the predecessor
+needed a stripper for: the note is applied where the driver is called rather
+than in the browser, so the conversation stores the raw prompt and a reload has
+nothing to hide. Hostile input is treated as such — a hash is steerable by any
+link somebody is talked into clicking, so route and title arrive flattened to
+one printable line and capped, and a newline in a route cannot forge a line of
+framing.
 
-**2026-09-06 (delegation is a channel; a callback is not an ask):** the
-migration from agent-gw had silently dropped three things nobody recorded:
-conversation resume over inbound MCP (`task_id`), the settled-job
-notification, and the MCP handshake itself (`notifications/initialized`
-answered -32601 — every stock client failed to connect while the
-predecessor's SDK had swallowed the notification for free). Rebuilt at target
-rather than at parity, and the owner's two design calls shaped it. First:
-resume is generic, channels are first-class — delegated turns ride the same
-desk and store as chat but in their own key family and their own caller-owned
-namespace, which is the authorization boundary, not a display choice. Second:
-the callback leaves the ask tool entirely. The predecessor's report-as-ask
-forced caller A to hand callee B its own token (B could then ASK A things —
-any asymmetry of rights died on the first delegation, spotted by the owner),
-and needed `notify: false` as an anti-loop guard. The replacement ping is
-content-free, verified by re-polling the sender's own status tool, and wakes
-the agent from a local template: injection cannot ride it, forgery buys one
-empty poll, and the loop is structurally impossible. No peer table: each
-agent declares its own callback URL per connection, tokenlessly. Full shape
-in "Inbound MCP — the delegation channel".
+**2026-08-25 (what a page's life is worth, and what it carries):** two gaps
+the predecessor did not have, found by comparing screen for screen.
 
-**2026-09-01 (everything with a tile is a DOMAIN; and a plugin is a way of
-DRAWING, not a way of owning):** the landing canvas offered two mosaics, Apps
-and Sections, and the operator could not say what put a thing in one rather
-than the other. Neither could the code: three apps stood for a folder
-(`absorbs`), two also claimed a species of page (`types`), one claimed a
-species and no place, one read a reserved root, one read git repositories, and
-`atelier` claimed nothing at all and so appeared TWICE — its own tile beside
-the folder it is a view of. Four relationships drawn as one binary.
+*Archiving became core knowledge rather than per-view knowledge.* The status
+vocabulary — which words mean a page is over, and the `acheté`-only-archives-a-
+purchase exception — moved from the web shell into `@antorfr/adestia-content`,
+and `GET /api/pages/index` now publishes `finished` for every page. The reason
+is the failure mode, not tidiness: a plugin may import nothing but React, so
+each one that wanted to archive had to transcribe the table, and `voyages`
+already carries its own copy. The predecessor lived that drift — one screen
+archived what the next still showed as live. `collections` consumes the
+published verdict and folds finished pages into an `🗄 Archive` section
+(counts split live/archived, the fold closed like the section screen's own,
+nothing ever dropped). Left deliberately alone: `todo` and `planif` close on `done:`,
+which is a different regime with its own contract, and `voyages` judges the
+status inside `voyage.json` — not a page, so the index cannot answer for it.
 
-The binary was the error. **There is one kind of thing: a domain.** What
-varies is how it materialises and who draws it, and both are properties, not
-species:
+*Dropping a file on a page files it — through the agent.* The gesture people
+expect, with the writing left where it belongs: the file goes up to the chat's
+inbox (outside the workspace, the route that already existed), and the composer
+is pre-filled with "range ces pièces jointes avec la fiche X (path)". Composed
+and NOT sent, the same position the scanner takes: the drop says what, the
+person says what it means — "renomme-la avant.jpg" is a thought you have while
+the file is under the cursor. Deliberately not built: a `POST` that writes
+straight into a page's folder. It would make the shell a general-purpose file
+writer behind a session cookie and skip the one step worth keeping, somebody
+deciding this file belongs in the workspace at all. Revisit when the friction
+of one agent turn is measured rather than assumed.
 
-- **Where it materialises** — a folder (belonging is exclusive: it is where a
-  page LIVES), a species of page (`of:`/`types` — belonging is multiple, a
-  page falls into as many as match), a reserved root, a source outside the
-  workspace, or nothing at all. A domain can have several at once: todo is a
-  folder AND a species.
-- **Who draws it** — the core, or a plugin.
+Found while wiring it: the composer had **no drop handler at all** — picker and
+paste only — though the parity bar above claims "picker+paste+drag-drop". So a
+file let go on the chat made the browser leave the conversation to display it.
+Fixed with the same primitive, so the two surfaces cannot disagree about what a
+file drag is.
 
-**A plugin exists when it brings a display the core does not have.** Measured
-across the seven bundled ones, six do: ticking a task, an itinerary, a cutting
-diagram, a schedule with a clock. `collections` does not — a grid of grouped
-cards that folds finished things away is exactly what `Section` draws, which
-is why the two drifted: the plugin declares its facet (`groupBy`) while the
-core guesses it (status → role → cat). Two implementations of one idea.
+*Workspace files are served.* `GET /api/files` says what is there (`?page=`
+answers "what does this page carry", `?under=` walks a folder) and
+`/api/files/<path>` hands over the bytes. A page's attachments are the
+non-markdown files in its own folder plus its `assets/` — the layout is the
+pairing, no frontmatter to keep in step — and the reader now resolves relative
+links against the page's folder, so `![Avant](assets/avant.jpg)` finally draws
+and `[le devis](devis.pdf)` finally opens. What a page does not already show
+appears under it as an attachment strip.
 
-The criterion is NOT what a plugin writes, which was the first answer and was
-wrong. There is one page-writing route and it belongs to the core; todo's
-creation of a task is a path and a PUT, which anything could do. What earns
-todo its screen is TICKING — knowing that a `tache` has a done state. Creating
-is generic, meaning is not. So a set defined by species must also declare
-where its new members land (`into:`), the way todo files unattached tasks
-under its own folder.
-
-What this makes of `absorbs`: not a de-duplication hack that hides a section,
-but a domain saying where it materialises. Turning a plugin off therefore
-removes a DISPLAY, never a domain — it falls back to the core's, if it has a
-place to fall back to. A domain that materialises only through its plugin
-(dev-flow's git repositories) does disappear, and that is consistent rather
-than an exception.
-
-Not domains, by definition: a `feature` is a capability of the shell (a
-composer control, a block) and a `tool` is a capability of the agent with no
-interface at all — neither is a subject, neither earns a tile. **Settings is
-the one motivated exception**: it IS a domain, whose matter is the instance's
-configuration, deliberately stored apart from the workspace rather than as
-pages.
-
-Consequences, none of them done here (the first was, on 2026-09-16):
-collections becomes a page type the core renders, with `into:` for creation; `atelier` showing two tiles for one domain
-is a bug, not an arbitration; and the home's two mosaics become one. That last
-one costs an arrangement: the two per-browser order keys are DROPPED rather
-than concatenated (decided 2026-09-01). Splicing two permutations would
-reproduce, as a stored preference, exactly the split this entry removes — and
-an arrangement is a minute of dragging, not a year of writing.
-
-**2026-08-31 (settings was one word for two different things):** the app the
-previous entry built held four subjects, and measured against use they split
-cleanly in half. Two are SESSION-SIZED SWITCHES — is the agent's token still
-good, is this light or dark, am I signing out — answered in a second, from
-wherever somebody happens to be standing. Two are CONTENT — the servers this
-instance reaches, the prose it was told — browsed, searched, edited. Putting
-them on one screen made the first kind a navigation away from whatever you
-were reading, which is the classic way a preferences screen becomes a place
-people dread; and it made the second kind a list of ROWS, a preferences idiom,
-so two domains of this instance looked like options in a dialog.
-
-*Taken: the cog is a menu, the app is a canvas.* The cog holds the token flow
-(in place — the moment somebody opens it is the moment something has just
-stopped working, and sending them elsewhere to fix it is the wrong direction
-to move an already-annoyed person), the three named theme choices, sign out,
-and — at its foot, as a colophon rather than a setting — which build is
-answering. The app keeps its tile and its address and drops the rows for tiles, like
-every other way in. `#/settings/credential` and `#/settings/appearance` hand
-over to `#/settings` rather than surviving as blank frames.
-
-Two things that split unlocked, and both were the point rather than a bonus.
-**MCP servers became editable** — a tile each, a declaration behind each, an
-"add" button — which needed a writable fourth layer (`mcp-store.ts`, see *MCP
-configuration*), and needed the drivers to be handed a FUNCTION rather than a
-list so a server added from a browser is wired on the next turn. And
-**delivered instructions became visible**: hiding them answered "what is this
-agent reading?" with half the truth, so they are listed, flagged, and drawn
-without a Save.
-
-What did NOT change is the doctrine underneath. The config file is still the
-operator's, never rewritten by us. The grammar that judges a server is still
-the config's own. A secret still never leaves the server. And a name a plugin
-or the config already answers to is still refused rather than shadowed.
-
-**2026-08-31 (a plugin writes paths from where IT stands; the server anchors
-them):** a plugin cannot know where it was mounted — `extensions.pluginsDir`
-is the operator's — and the agent does not run from inside it: its working
-directory is the workspace. So every path a plugin wrote was true in the
-plugin and false in use. Atelier's skill said `node
-plugins/atelier/tools/atelier.mjs`; from the workspace that resolves to
-nothing, and the agent concluded the validator was "out of reach in this
-environment" — then wrote that conclusion into two project fiches, which
-carried a warning to re-validate against a tool that had been installed and
-working all along. Run afterwards, it found one of those two workbooks
-carrying fourteen errors, four of them pieces the cutting plan never placed.
-A wrong path does not fail loudly: it teaches the agent something false, and
-the agent writes it down. Both halves are now anchored by the layer that
-knows — `{{plugin_dir}}` in a skill, substituted at delivery, and `./`
-entries in a manifest's `mcpServers`, resolved when the server is wired. The
-operator's own servers are never touched: they wrote their paths from where
-they stand, and there is no plugin folder to anchor them to.
-
-**2026-08-31 (a result belongs to a CALL, not to a name):** the transcript
-promised the tool trace back on reload, and gave it back with every call drawn
-as still running — for months, in every conversation. Three things had to line up.
-The Claude Code driver read a tool's name off the `tool_result` block, which
-carries none (only `tool_use_id`), so it reported the literal "tool"; the
-server and the shell then looked for a pending call by NAME and found nothing;
-and the driver's own test fed a fixture with a `name` field the SDK never
-sends, so the suite agreed with the bug. Results now travel with the engine's
-id, and both consumers match on it — the name stays as a fallback for a driver
-that has none, and is the fallback ONLY: two calls of the same tool overlap
-routinely, and "the most recent unresolved one" marks the wrong row about as
-often as the right one. What this cost is worth writing down: nothing was red
-and nothing was green, so the interface looked calm while telling the operator
-nothing, and the JSONL kept no record of which tool call had failed — the one
-question a transcript exists to answer.
+Two positions inside that: **read-only**, because a file writer behind a
+session cookie is a categorically more dangerous thing than a page editor, and
+files reach the workspace through the chat inbox where the agent decides they
+belong there; and **inline only for inert media**, since these bytes are
+same-origin with the session — an SVG or an HTML file rendered in place would
+run its script as the signed-in user, so everything outside a short whitelist
+is `application/octet-stream` with an attachment disposition, `nosniff`, and a
+CSP that permits nothing. `voyages` keeps its own `/doc` route: it is bounded
+to one trip's folder and already forces a download, so replacing it would be
+churn rather than a fix.
 
 **2026-08-26 (the permission layer was a doorbell sold as a wall — removed):**
 interactive permissions were a v1 pillar: a broker gating every tool call
@@ -2333,176 +2098,6 @@ The shell's modal went with it: nothing rendered it any more, and a component
 kept warm for a dialog nobody has asked for yet is a lie about what this
 product does. Plugins draw their own; git keeps ours.
 
-**2026-08-25 (the editor is a capability, not a screen):** `journal` — a
-history read on one page, one entry at a time in edit mode — asked a question
-the extension system had not been asked before: how does a plugin edit a page
-inside its OWN screen? Two answers were refused before the third.
-
-*Refused: a plugin's own editor.* A textarea, or a vendored ProseMirror. Both
-put a second author of markdown in the product, and the closed vocabulary
-holds because there is exactly one writing path.
-
-*Refused: publishing the content engine through the import map.* The map is
-parsed before the first module resolution and exists for THIRD-PARTY
-dependencies; the shell's own capabilities travel through the injected `api`,
-because a plugin importing the shell would be a cycle and would pin it to a
-build it cannot see. That rationale was already written at the top of the
-plugin contract — the map was the wrong door.
-
-*Taken: `api.PageEditor`.* The shell hands its own editor over as a component,
-lazily mounting Milkdown exactly as `#/page/…` does. It cost a wrapper and one
-field, because `Editor` was ALREADY per-instance: reading posture by default,
-its own `editing` state, its own revision, its own diagnostics. Rendering one
-per item is the entire "edit only this section" feature — no new grammar, and
-no plugin holding its own idea of what a save means. Two positions inside it:
-the attachment strip is OFF by default when embedded (furniture, plus a
-request per item), and file drop is not wired at all — a plugin's layout is
-not the page screen.
-
-Which settles the storage question a journal poses, and it is not a
-preference: **one markdown file per entry, never one file holding a history.**
-The page API saves whole files under an optimistic revision, so a single file
-would collide the agent's appended entry with whatever a person is editing,
-every time; the agent adds entries with its own file tools, where a new file
-cannot damage a history and a rewrite can; and `GET /api/pages/index` makes
-each entry's `date` queryable, which entries buried in one document are not. A
-journal is therefore a FOLDER, its cover the folder's index page
-(`type: journal`), its entries the pages inside it (`type: entree`). The known
-cost is stated rather than hidden: the index re-reads every markdown file on
-every call, so a few hundred entries weigh on it — the same bill `todo`
-already pays with one page per task.
-
-**2026-08-25 (the screen next to the chat):** a predecessor feature the parity
-audit had missed, found by the owner rather than by the review — agent-gw
-joined the open page's route and breadcrumb to every message, and Adestia sent
-nothing. Ported with its three boundaries intact (route and trail only, hint
-not topic, snapshot at send time), and with one improvement the predecessor
-needed a stripper for: the note is applied where the driver is called rather
-than in the browser, so the conversation stores the raw prompt and a reload has
-nothing to hide. Hostile input is treated as such — a hash is steerable by any
-link somebody is talked into clicking, so route and title arrive flattened to
-one printable line and capped, and a newline in a route cannot forge a line of
-framing.
-
-**2026-08-25 (what a page's life is worth, and what it carries):** two gaps
-the predecessor did not have, found by comparing screen for screen.
-
-*Archiving became core knowledge rather than per-view knowledge.* The status
-vocabulary — which words mean a page is over, and the `acheté`-only-archives-a-
-purchase exception — moved from the web shell into `@antorfr/adestia-content`,
-and `GET /api/pages/index` now publishes `finished` for every page. The reason
-is the failure mode, not tidiness: a plugin may import nothing but React, so
-each one that wanted to archive had to transcribe the table, and `voyages`
-already carries its own copy. The predecessor lived that drift — one screen
-archived what the next still showed as live. `collections` consumes the
-published verdict and folds finished pages into an `🗄 Archive` section
-(counts split live/archived, the fold closed like the section screen's own,
-nothing ever dropped). Left deliberately alone: `todo` and `planif` close on `done:`,
-which is a different regime with its own contract, and `voyages` judges the
-status inside `voyage.json` — not a page, so the index cannot answer for it.
-
-*Dropping a file on a page files it — through the agent.* The gesture people
-expect, with the writing left where it belongs: the file goes up to the chat's
-inbox (outside the workspace, the route that already existed), and the composer
-is pre-filled with "range ces pièces jointes avec la fiche X (path)". Composed
-and NOT sent, the same position the scanner takes: the drop says what, the
-person says what it means — "renomme-la avant.jpg" is a thought you have while
-the file is under the cursor. Deliberately not built: a `POST` that writes
-straight into a page's folder. It would make the shell a general-purpose file
-writer behind a session cookie and skip the one step worth keeping, somebody
-deciding this file belongs in the workspace at all. Revisit when the friction
-of one agent turn is measured rather than assumed.
-
-Found while wiring it: the composer had **no drop handler at all** — picker and
-paste only — though the parity bar above claims "picker+paste+drag-drop". So a
-file let go on the chat made the browser leave the conversation to display it.
-Fixed with the same primitive, so the two surfaces cannot disagree about what a
-file drag is.
-
-*Workspace files are served.* `GET /api/files` says what is there (`?page=`
-answers "what does this page carry", `?under=` walks a folder) and
-`/api/files/<path>` hands over the bytes. A page's attachments are the
-non-markdown files in its own folder plus its `assets/` — the layout is the
-pairing, no frontmatter to keep in step — and the reader now resolves relative
-links against the page's folder, so `![Avant](assets/avant.jpg)` finally draws
-and `[le devis](devis.pdf)` finally opens. What a page does not already show
-appears under it as an attachment strip.
-
-Two positions inside that: **read-only**, because a file writer behind a
-session cookie is a categorically more dangerous thing than a page editor, and
-files reach the workspace through the chat inbox where the agent decides they
-belong there; and **inline only for inert media**, since these bytes are
-same-origin with the session — an SVG or an HTML file rendered in place would
-run its script as the signed-in user, so everything outside a short whitelist
-is `application/octet-stream` with an attachment disposition, `nosniff`, and a
-CSP that permits nothing. `voyages` keeps its own `/doc` route: it is bounded
-to one trip's folder and already forces a download, so replacing it would be
-churn rather than a fix.
-
-**2026-08-20 (founding):** product-first (no parity constraint with agent-gw; the
-author's pods migrate later). Shared-agent multi-user with OIDC plus a zero-auth
-local single-user mode. Files as source of truth. Engines: Claude Code + GitHub
-Copilot CLI behind an internal driver interface. TypeScript/Node + Fastify; React +
-Vite. Runtime plugin and skin loading from mounted directories. Auth:
-none/oidc/proxy. Docker+compose and npx as deployment targets. Name **Adestia**,
-public repo from the start (npm scope needed — `adestia` is taken).
-
-**2026-08-20 (second pass):** v1 additions — driver `authManagement` (arm/refresh
-from the UI) and `usageMetrics` as declared capabilities; chat parity bar + six
-exceed items (streaming first); adjustable split view; mobile/PWA; scan-class plugin
-portability; schema-first extension contracts with `plugin-author`/`skin-author`
-skills shipped in v1.
-
-**2026-08-20 (instructions):** workspace convention with `adestia init` scaffold,
-paths repointable; instructions live as workspace markdown files, editable in the
-UI under risk-zoned gating (channel-gated agent self-edits, scheduled turns
-excluded); git optional but first-class — bare-files and git-backed workspaces are
-BOTH supported from v1 (clean per-path commits when git is present); remote sync
-deferred to an optional module.
-
-**2026-08-20 (instruction dialect):** one driver per workspace lifetime; user
-instructions stay in the CLI's native dialect, agent-authored — Adestia neither
-normalizes nor translates them, and the UI is structure-agnostic (risk zoning by
-driver-declared path classification). Driver switch = assisted migration (the new
-agent translates). Only plugin agent-contracts are harness-neutral, compiled per
-driver.
-
-**2026-08-20 (late additions):** model switching joins v1 as the `modelSelection`
-capability (enumeration where the CLI provides it, config-declared list otherwise,
-never a product-hardcoded catalog); the live climbing token counter on the busy
-bubble joins as a capability-gated bonus (`liveTurnUsage`).
-
-**2026-08-20 (editor verdict + tests):** Milkdown chosen (spike 1) — remark
-grammar shared with the renderer, byte-identical round-trip; Tiptap kept as
-proven fallback behind Adestia's editor interface; BlockNote eliminated. Unit
-tests from the skeleton's first package; spike harnesses promoted to permanent
-conformance suites. Spike-3 corrections folded into the copilot driver section
-(`ghp_` loudly rejected; auto-update pinning; usage taps; `--acp` to evaluate).
-
-**2026-08-20 (MCP config):** outbound MCP = three layers (operator config with
-secret interpolation, plugin-declared servers, workspace-native config left
-untouched), materialized per driver at spawn; conflicts loud, operator wins over
-plugin; MCP tools wired end to end; `mcpStatus` and per-user token
-pass-through (oidc) as capability/hook, not promises.
-
-**2026-08-21 (page-authoring contract):** audited every shipped plugin's data
-model and found four independently-invented frontmatter conventions and one
-core capability (scheduled notes) with no authoring skill at all. Resolved as
-a new core skill, `page-author` — `title` mechanical (core reads it, never the
-first heading), `type` a shared namespace a manifest now declares its claim on
-(`types: [...]`, checked for collisions at boot, mirroring the existing
-unmatched-activation diagnostic), `ico` documented as convention rather than
-schema'd. Named, rather than newly invented: the three dispatch patterns
-already in use (`type` query, reserved folder, sibling asset by convention)
-each stay the right tool for a different shape of data — no attempt to
-collapse them into one mechanism. `schedule-author` gives `planif`'s notes the
-same treatment. Left open, deliberately not implemented under this decision:
-the `:::app` block parses, validates and round-trips but does not render a
-mounted plugin view — making it live is a rendering-architecture decision
-(interactivity, recursion, the security boundary of a plugin's component
-mounting inside another page) for a person to make, not something to wire
-silently while documenting the vocabulary around it.
-
 **2026-08-27/29 (page identity and typed references):** a curated todo list
 resolves its members with `list.refs.map((ref) => tasks[ref]).filter(Boolean)`,
 and the comment above it says a missing task is *dropped rather than shown as a
@@ -2602,6 +2197,74 @@ reversible, compacts on settle) and `new_id` (ULID, the author-mints-id rule
 made canonical). The MCP-forbidden-org case is a per-instance contingency the
 registry absorbs later, not a constraint the design bent for.
 
+**2026-08-31 (settings was one word for two different things):** the app the
+previous entry built held four subjects, and measured against use they split
+cleanly in half. Two are SESSION-SIZED SWITCHES — is the agent's token still
+good, is this light or dark, am I signing out — answered in a second, from
+wherever somebody happens to be standing. Two are CONTENT — the servers this
+instance reaches, the prose it was told — browsed, searched, edited. Putting
+them on one screen made the first kind a navigation away from whatever you
+were reading, which is the classic way a preferences screen becomes a place
+people dread; and it made the second kind a list of ROWS, a preferences idiom,
+so two domains of this instance looked like options in a dialog.
+
+*Taken: the cog is a menu, the app is a canvas.* The cog holds the token flow
+(in place — the moment somebody opens it is the moment something has just
+stopped working, and sending them elsewhere to fix it is the wrong direction
+to move an already-annoyed person), the three named theme choices, sign out,
+and — at its foot, as a colophon rather than a setting — which build is
+answering. The app keeps its tile and its address and drops the rows for tiles, like
+every other way in. `#/settings/credential` and `#/settings/appearance` hand
+over to `#/settings` rather than surviving as blank frames.
+
+Two things that split unlocked, and both were the point rather than a bonus.
+**MCP servers became editable** — a tile each, a declaration behind each, an
+"add" button — which needed a writable fourth layer (`mcp-store.ts`, see *MCP
+configuration*), and needed the drivers to be handed a FUNCTION rather than a
+list so a server added from a browser is wired on the next turn. And
+**delivered instructions became visible**: hiding them answered "what is this
+agent reading?" with half the truth, so they are listed, flagged, and drawn
+without a Save.
+
+What did NOT change is the doctrine underneath. The config file is still the
+operator's, never rewritten by us. The grammar that judges a server is still
+the config's own. A secret still never leaves the server. And a name a plugin
+or the config already answers to is still refused rather than shadowed.
+
+**2026-08-31 (a plugin writes paths from where IT stands; the server anchors
+them):** a plugin cannot know where it was mounted — `extensions.pluginsDir`
+is the operator's — and the agent does not run from inside it: its working
+directory is the workspace. So every path a plugin wrote was true in the
+plugin and false in use. Atelier's skill said `node
+plugins/atelier/tools/atelier.mjs`; from the workspace that resolves to
+nothing, and the agent concluded the validator was "out of reach in this
+environment" — then wrote that conclusion into two project fiches, which
+carried a warning to re-validate against a tool that had been installed and
+working all along. Run afterwards, it found one of those two workbooks
+carrying fourteen errors, four of them pieces the cutting plan never placed.
+A wrong path does not fail loudly: it teaches the agent something false, and
+the agent writes it down. Both halves are now anchored by the layer that
+knows — `{{plugin_dir}}` in a skill, substituted at delivery, and `./`
+entries in a manifest's `mcpServers`, resolved when the server is wired. The
+operator's own servers are never touched: they wrote their paths from where
+they stand, and there is no plugin folder to anchor them to.
+
+**2026-08-31 (a result belongs to a CALL, not to a name):** the transcript
+promised the tool trace back on reload, and gave it back with every call drawn
+as still running — for months, in every conversation. Three things had to line up.
+The Claude Code driver read a tool's name off the `tool_result` block, which
+carries none (only `tool_use_id`), so it reported the literal "tool"; the
+server and the shell then looked for a pending call by NAME and found nothing;
+and the driver's own test fed a fixture with a `name` field the SDK never
+sends, so the suite agreed with the bug. Results now travel with the engine's
+id, and both consumers match on it — the name stays as a fallback for a driver
+that has none, and is the fallback ONLY: two calls of the same tool overlap
+routinely, and "the most recent unresolved one" marks the wrong row about as
+often as the right one. What this cost is worth writing down: nothing was red
+and nothing was green, so the interface looked calm while telling the operator
+nothing, and the JSONL kept no record of which tool call had failed — the one
+question a transcript exists to answer.
+
 **2026-08-31 (the MCP-forbidden org, absorbed):** the contingency above came
 due sooner than "later". An org filters the CLI's MCP servers against its own
 registry, so the shell-tools server is dropped and the instance's agent loses
@@ -2617,6 +2280,63 @@ written a line of instruction prose, and starting for one escape hatch would
 buy discovery at the price of the rule. The operator writes it, and the cost
 is stated here rather than discovered in a turn where the agent simply never
 calls a tool nobody told it about.
+
+**2026-09-01 (everything with a tile is a DOMAIN; and a plugin is a way of
+DRAWING, not a way of owning):** the landing canvas offered two mosaics, Apps
+and Sections, and the operator could not say what put a thing in one rather
+than the other. Neither could the code: three apps stood for a folder
+(`absorbs`), two also claimed a species of page (`types`), one claimed a
+species and no place, one read a reserved root, one read git repositories, and
+`atelier` claimed nothing at all and so appeared TWICE — its own tile beside
+the folder it is a view of. Four relationships drawn as one binary.
+
+The binary was the error. **There is one kind of thing: a domain.** What
+varies is how it materialises and who draws it, and both are properties, not
+species:
+
+- **Where it materialises** — a folder (belonging is exclusive: it is where a
+  page LIVES), a species of page (`of:`/`types` — belonging is multiple, a
+  page falls into as many as match), a reserved root, a source outside the
+  workspace, or nothing at all. A domain can have several at once: todo is a
+  folder AND a species.
+- **Who draws it** — the core, or a plugin.
+
+**A plugin exists when it brings a display the core does not have.** Measured
+across the seven bundled ones, six do: ticking a task, an itinerary, a cutting
+diagram, a schedule with a clock. `collections` does not — a grid of grouped
+cards that folds finished things away is exactly what `Section` draws, which
+is why the two drifted: the plugin declares its facet (`groupBy`) while the
+core guesses it (status → role → cat). Two implementations of one idea.
+
+The criterion is NOT what a plugin writes, which was the first answer and was
+wrong. There is one page-writing route and it belongs to the core; todo's
+creation of a task is a path and a PUT, which anything could do. What earns
+todo its screen is TICKING — knowing that a `tache` has a done state. Creating
+is generic, meaning is not. So a set defined by species must also declare
+where its new members land (`into:`), the way todo files unattached tasks
+under its own folder.
+
+What this makes of `absorbs`: not a de-duplication hack that hides a section,
+but a domain saying where it materialises. Turning a plugin off therefore
+removes a DISPLAY, never a domain — it falls back to the core's, if it has a
+place to fall back to. A domain that materialises only through its plugin
+(dev-flow's git repositories) does disappear, and that is consistent rather
+than an exception.
+
+Not domains, by definition: a `feature` is a capability of the shell (a
+composer control, a block) and a `tool` is a capability of the agent with no
+interface at all — neither is a subject, neither earns a tile. **Settings is
+the one motivated exception**: it IS a domain, whose matter is the instance's
+configuration, deliberately stored apart from the workspace rather than as
+pages.
+
+Consequences, none of them done here (the first was, on 2026-09-16):
+collections becomes a page type the core renders, with `into:` for creation; `atelier` showing two tiles for one domain
+is a bug, not an arbitration; and the home's two mosaics become one. That last
+one costs an arrangement: the two per-browser order keys are DROPPED rather
+than concatenated (decided 2026-09-01). Splicing two permutations would
+reproduce, as a stored preference, exactly the split this entry removes — and
+an arrangement is a minute of dragging, not a year of writing.
 
 **2026-09-05 (a reference drops its slug):** the form decided on 08-29 was
 `<type>/<slug>#<id>`, and the owner asked what the slug was for. Nothing that
@@ -2792,6 +2512,93 @@ symmetrical failure — it still taught a spelling the code had stopped reading,
 and would have written it back. **A skill left behind is not documentation debt,
 it is behaviour.**
 
+**2026-09-06 (a swipe that cannot be seen cannot be trusted):** the fold's
+gesture worked about one time in two, reported from a real phone. Both halves
+of the cause were in the same decision — reading a VERDICT at the end of the
+gesture rather than following the finger through it.
+
+Nothing moved while the finger did, so a refusal and a dead app looked
+identical; there was no way to learn what the gesture wanted, because the
+interface never said what it had understood. And because the app claimed
+nothing, the browser kept the gesture: the moment it decides a touch is a
+scroll it fires `pointercancel`, and a swipe a few degrees off the horizontal
+was cancelled before it could be measured at all. The two compound — the
+failures were invisible, so they read as randomness.
+
+*Taken: the shell is a track, not a pair of alternatives.* Both panes stay
+mounted side by side, the shell is two screens wide and slides between them,
+and the drag moves it 1:1 under the thumb. The direction is locked after 8px
+and from that instant `preventDefault` keeps the browser out; past 28% of the
+screen the crossing commits, below it the track snaps back — which is how the
+gesture says "understood, not enough" instead of saying nothing.
+
+Deliberately NOT `touch-action: pan-y` on the shell, which is the tidier CSS
+and the wrong tool: the restriction applies to the whole subtree, so it would
+also kill sideways panning inside the wide tables and code blocks the start
+guard goes out of its way to protect. And the edge handles moved OUT of the
+shell, because a transformed element is the containing block for its `fixed`
+descendants — left inside, the handle meant to stay against the glass would
+have ridden the track off the screen.
+
+**2026-09-06 (connecting to an MCP server is the product's job, in the
+conversation):** Alfred could not reach Home Assistant, and the first fix
+proposed was Skippy hand-carrying an OAuth enrollment — a human patching a
+missing feature. The owner named the real product in one sentence: "Alfred
+should handle it himself — oh, a new MCP server, here is the link, done" —
+and placed the button IN THE CONVERSATION at the first demand, not only on a
+settings tile. Second owner call: stay clean about identity — a user-login
+door (OIDC-federated proxy) stays PER USER like google/withings, never
+flattened into one instance-level key; a static multi-user token remains a
+config `headers` entry. Shape in "MCP configuration"; the drivers' rule (a
+`signIn` server never falls back to the rebound token) is what turns
+"not connected" into a card instead of a false "failed".
+
+**2026-09-06 (the fold gets a seam; the build says its own name):** two
+surfaces the predecessor had and the migration had not carried over, both
+about a thing being TRUE but unsayable.
+
+*The seam.* Folded onto one screen the two panes stack perfectly, so nothing
+admitted the second one existed — the swipe was there and was discoverable
+only by accident. An edge handle now shows 6px of the pane you cannot see,
+against the side it sits on, one at a time. Two decisions inside a very small
+change. It is a BUTTON, not a decoration: the affordance and the fallback are
+the same object, so a person who never guesses the gesture still gets through.
+And the two handles carry CONSTANT destinations rather than one toggling —
+a swipe begun on a handle may be followed by the click the browser synthesises
+for the same finger, and a toggle would undo the swipe it had just made,
+leaving the screen exactly where it started.
+
+*The version.* "Did the deployment I just pushed land?" had no answer on any
+screen: the canvas header names the ENGINE, and a phone drops that line first.
+The number comes from the IMAGE TAG, baked by the publish workflow into the
+artefact it is about to push (`ADESTIA_VERSION`), because nothing in the tree
+carries one — a release is `git tag vX.Y.Z` and every manifest reads `0.0.0` —
+and because the string an operator needs to match is the one the registry
+holds. A checkout therefore has no version and says so by saying nothing: the
+product's name alone reads as a name, where "Adestia unknown" reads as a
+broken field. Same treatment the driver line already gives an engine that has
+not announced itself.
+
+**2026-09-06 (delegation is a channel; a callback is not an ask):** the
+migration from agent-gw had silently dropped three things nobody recorded:
+conversation resume over inbound MCP (`task_id`), the settled-job
+notification, and the MCP handshake itself (`notifications/initialized`
+answered -32601 — every stock client failed to connect while the
+predecessor's SDK had swallowed the notification for free). Rebuilt at target
+rather than at parity, and the owner's two design calls shaped it. First:
+resume is generic, channels are first-class — delegated turns ride the same
+desk and store as chat but in their own key family and their own caller-owned
+namespace, which is the authorization boundary, not a display choice. Second:
+the callback leaves the ask tool entirely. The predecessor's report-as-ask
+forced caller A to hand callee B its own token (B could then ASK A things —
+any asymmetry of rights died on the first delegation, spotted by the owner),
+and needed `notify: false` as an anti-loop guard. The replacement ping is
+content-free, verified by re-polling the sender's own status tool, and wakes
+the agent from a local template: injection cannot ride it, forgery buys one
+empty poll, and the loop is structurally impossible. No peer table: each
+agent declares its own callback URL per connection, tokenlessly. Full shape
+in "Inbound MCP — the delegation channel".
+
 **2026-09-06 (a store two instances co-edit needs the writer's umask, and
 nothing else can supply it):** composing memory from several stores made a
 shared circle possible; it did not make it CO-EDITABLE, and the gap is one
@@ -2833,6 +2640,73 @@ happens to be a valid umask and would therefore be accepted in silence while
 meaning something else — `012` would arrive as `0014`. Nothing would fail;
 files would simply carry permissions nobody chose, which is the failure this
 whole feature exists to end.
+
+**2026-09-07 (the shell says what it is, because prose about it goes stale):**
+an agent on a real deployment, asked what interface it ran in, named the
+PREDECESSOR product — `agent-gw` — and hedged about whether that was even its
+public name. It was running on Adestia, and its own delivered skills carried
+the managed marker that said so. Asked what tools acted on its own instance it
+answered "none", holding `rename_conversation` and `new_id` at that moment.
+Nothing was broken: nothing had ever told it. The only prose describing its
+environment was a 40 KB hand-written brief, and a third of that brief was
+transcription of what the shell already knew — the screen-context frame copied
+out by hand, citing a version number; the zones; a catalogue of the MCP servers
+the config declares. Hand-written prose about a running system does not
+announce the day it stops being true.
+
+Three channels could carry the correction, and two were refused. A skill body
+alone: an engine loads it on demand, and demand is exactly what the
+confabulating agent lacked. The SDK's `systemPrompt.append`: real, but
+claude-code only — copilot-cli is spawned as a binary whose flags hold no
+system surface, so it would have fixed the engine that happened to show the
+bug and left the other blind. The always-in-context files — `CLAUDE.md`,
+`AGENTS.md` — belong to the person on both engines and are not the product's
+to write.
+
+*Taken: a generated contract, plus an anchor at the turn desk.* The body is
+`this-instance/SKILL.md`, composed from what the boot actually did — the tools
+really registered, the plugins really active — and delivered by the same
+mechanism as every other contract, so it is refreshed, withdrawn and readable
+in the instruction zone with no second machinery. A generated document cannot
+drift from what it describes; that is the whole of why it is not written by
+hand. It carries the negative half too: the config file lives outside the
+workspace, and the transcript is replayed by the shell over an engine session
+that may not have survived a restart. And it claims precedence over a
+hand-written brief that contradicts it, because that contradiction is the
+observed failure and somebody has to win it.
+
+The anchor is one line, applied where every turn already passes — the desk, and
+the loose unattended path beside it — so a scheduled note and a delegated task
+are introduced as well as a chat message. It is framed at dispatch, never
+stored: fuel, not transcript, so a merge, a re-attach and a reload still replay
+what the person typed. It is omitted entirely on a driver that declares no
+skills directory: an anchor citing a file nobody wrote is worse than silence.
+
+*Measured on both engines rather than reasoned about, and the measurement
+found an older bug.* Asked where its instance keeps chat attachments with no
+anchor, copilot-cli read nothing and described its own SQLite session store —
+the same confabulation, on the engine that had never shown it. With the
+anchor it asked for the contract by name and was told **`Skill not found`**,
+then spent five refused tool calls hunting the filesystem before finding the
+file by hand. The cause was delivery, not the contract: `deliverSkills` wrote
+the managed marker as the file's FIRST line, pushing the YAML frontmatter off
+the first byte, and copilot registers a skill by reading that frontmatter. It
+had never registered a single contract this product delivers — its own four,
+and every plugin's. claude-code tolerates the leading comment and loaded the
+same file either way, which is why nothing had ever surfaced it. The marker
+now goes after the frontmatter, where it is also where a reader looks for it;
+every consumer tests it with `includes`, so nothing else had to learn.
+
+**2026-09-07 (the sign-in card's trigger was impossible, and production said
+so first):** the card shipped watching for a failed tool of a disconnected
+server — but a disconnected `signIn` server is omitted from the turn, so no
+such tool exists to fail; the bench had "proved" the card by seeding a
+transcript no real turn can write. Corrected to the state the shell already
+knows: a conversation the person is talking in + a server with no key for them,
+dismissible per browser, cleared everywhere by connecting. The lesson worth
+the log line: a demand-driven trigger must name an event that CAN occur
+under the design's own rules — the omission that makes "not connected"
+truthful is the same omission that silences every tool-level signal.
 
 **2026-09-15 (the shapes that cross the wire are declared once, and the
 plugins keep their five-line helpers):** the conversation records, the MCP
