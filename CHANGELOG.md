@@ -416,6 +416,10 @@ No release paragraph or date was recorded in the source status file.
 
 No release paragraph or date was recorded in the source status file.
 
+## v0.95.0-adestia-qualite.3
+
+No release paragraph or date was recorded in the source status file.
+
 ## Unreleased — adestia-qualite
 
 The merged quality tranches keep the product's behaviour while making its screens,
