@@ -5,7 +5,7 @@
 > (journeys), `E-n` (screens, `docs/ecrans.md`), `AD-n` (decisions, `ARCHITECTURE.md`).
 >
 > This file was written by the epic `adestia-qualite` (2026-10-15), a quality pass that
-> changes **no behaviour**: the journeys below are the product as it is at v0.88.0; the needs
+> changed **no behaviour** (B-1; `adestia-correctifs` then repairs the defects it wrote down, B-13 to B-16): the journeys below are the product as it is at v0.88.0; the needs
 > `B-1` to `B-12` are what the epic adds — documentation, a test bench without docker, a
 > visual charter, coherent screens, cleaner code.
 
@@ -29,7 +29,7 @@ One instance is one agent, one workspace, one subscription.
 Form of the `exigences` skill; each need names the journeys it serves.
 
 ### Unchanged behaviour
-- **B-1** — Every journey `P-1` to `P-14` behaves after the epic as it did at v0.88.0: same
+- **B-1** *(`adestia-qualite`; `adestia-correctifs` lifts it for its register, B-13)* — Every journey `P-1` to `P-14` behaves after the epic as it did at v0.88.0: same
   routes, same API, same configuration keys, same files on disk and their formats, same MCP
   tools, same words where a word is not corrected by `B-8` or `B-9`. A visible change is limited to
   the look (`B-6`, `B-7`, `B-9`), to the language of a string (`B-8`), to the labels of back
@@ -48,8 +48,8 @@ Form of the `exigences` skill; each need names the journeys it serves.
   test that failed before, or leaves the register as *not reproduced*, or is kept under Known
   defects with its reason. None disappears unwritten. *(all journeys)*
 - **B-14** — Where a journey states a behaviour the product did not keep — P-2 step 4 (a refused
-  turn is explained to the user), P-5 step 7 (a page changed by the agent is shown without losing
-  unsaved text) — the product does what the journey says. *(P-2, P-5)*
+  turn is explained to the user) — the product does what the journey says. P-5 step 7 says the
+  open page is not reloaded: that stays, and refreshing it is a recommendation, not a repair. *(P-2)*
 - **B-15** — A changed behaviour is written in `CHANGELOG.md`, and in the journey or screen that
   states it, in the same task. *(all)*
 - **B-16** — A repaired screen shows right under the four skins, in `en` and `fr`, in both themes,
@@ -126,7 +126,7 @@ A user opens the instance in a browser or from its installed icon, at a desk or 
 7. Offline, the service worker (`sw/sw.ts`, rules in `sw/policy.ts`) serves the cached shell for a navigation. `/api/` is never cached, so the instance request fails and the shell shows E-21: today this is the fatal gate carrying the browser's network error, not a dedicated screen.
 8. Under OIDC, the user signs out from the cog menu on E-15 (`POST /auth/logout`). This ends Adestia's session only, not the identity provider's.
 
-Needs: B-1, B-6, B-7, B-8, B-10
+Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16
 
 ### P-2 — Chat with the agent
 A user talks to the agent in the chat rail, beside whatever the canvas shows (on a phone, the chat and the canvas are two screens with a swipe between them).
@@ -142,7 +142,7 @@ A user talks to the agent in the chat rail, beside whatever the canvas shows (on
 9. The user manages conversations from E-16. Tabs are desktop only; the browser remembers which are open (`adestia.tabs`) and which have been read (`adestia.read`). The user drags tabs to reorder them, closes one with the `x` icon or archives it with the `archive` icon, on the tab or on its list entry (`POST /api/conversations/:id/archive`). The `list` icon opens the conversation list, which is the only navigation on a phone, and the `plus` icon starts a new draft. From the screen the user creates and archives, nothing more: renaming is the agent's (step 8), and the server's rename (`PATCH /api/conversations/:id`), unarchive (`archived: false`) and delete (`DELETE /api/conversations/:id`) are reached by no screen. An archived conversation leaves the list, which never asks for archived ones.
 10. When a reply arrives while the user is reading something else, the dot on the tab or list entry marks the conversation as unread.
 
-Needs: B-1, B-6, B-7, B-8, B-10
+Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16, B-14
 
 ### P-3 — Sign a ceremony
 The agent calls a tool held at a Tessera façade, and the user has to sign before the call goes through.
@@ -155,7 +155,7 @@ The agent calls a tool held at a Tessera façade, and the user has to sign befor
 6. For a consent that was signed, the chat itself sends ``Signed — resume the held call with {"_consent": "<id>"}``, so the agent calls the tool again. A grant needs nothing more.
 7. The card shows signed (`check` icon), denied (`x`) or expired (`clock`, past its deadline), each with a text label. What this browser saw is kept in `localStorage` under `adestia.signatures`.
 
-Needs: B-1, B-6, B-7, B-8, B-10
+Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16
 
 ### P-4 — Find one's way
 A user looks for a page or a domain from the landing canvas.
@@ -168,7 +168,7 @@ A user looks for a page or a domain from the landing canvas.
 6. The breadcrumb in the canvas header (`adestia-crumbs`) names each level and walks back up; **Home** goes to `#/`. On a phone, **Chat** in the canvas header returns to the conversation.
 7. A folder link always goes through `folderRoute` (`owners.ts`). A folder an active app owns opens that app's screen. A folder holding a single typed page of its owner's kind opens directly on that page (`#/page/<folder>`). Anything else opens the section. A `#/section/…` address typed by hand is redirected the same way.
 
-Needs: B-1, B-6, B-7, B-8, B-10
+Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16
 
 ### P-5 — Read a page
 A user reads a markdown page of the workspace.
@@ -183,7 +183,7 @@ A user reads a markdown page of the workspace.
 8. A page that cannot load shows E-8 (`MissingPage`), with three cases: no page at this address (404), out of reach because the session may have expired (401/403), or a server error. It names the path and links to the folder above, using file-question, lock or circle-alert in the shared empty state.
 9. A page using blocks the vocabulary does not know opens read-only, showing a lock icon, its raw source and the diagnostics. Block notes use the translated inline empty state.
 
-Needs: B-1, B-6, B-7, B-8, B-10
+Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16
 
 ### P-6 — Edit a page
 A user corrects or writes a page that the agent also edits.
@@ -196,7 +196,7 @@ A user corrects or writes a page that the agent also edits.
 6. If the agent wrote the file in the meantime, the server answers 409: the status says "The agent changed this page. Reload to see its version.", the editor stays open with the text, and nothing more is saved. A save that breaks the vocabulary is refused with its first diagnostic.
 7. Files the user drops on the page go to the chat inbox, and the composer is filled with "File the attached files with the page …" so the agent files them in the right place.
 
-Needs: B-1, B-6, B-7, B-8, B-10
+Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16
 
 ### P-7 — Arm the agent's credential and choose the theme
 The owner or a user adjusts this session without leaving the screen they are on.
@@ -208,7 +208,7 @@ The owner or a user adjusts this session without leaving the screen they are on.
 5. **Appearance** offers System / Light / Dark, kept in this browser (`adestia.theme`). A skin with its own `scheme` sets the default.
 6. Under OIDC, **Sign out** shows who is signed in. The last line shows "Adestia" and the version (`ADESTIA_VERSION`) when there is one.
 
-Needs: B-1, B-6, B-7, B-8, B-10
+Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16
 
 ### P-8 — Manage MCP servers
 The owner wires the servers the agent may call, and each person connects to the servers that act on their behalf.
@@ -220,7 +220,7 @@ The owner wires the servers the agent may call, and each person connects to the 
 5. For a server declared `identity: user` with `signIn: oauth`, the user presses **Connect** on the server's page or on the card in the chat ("… asks you to connect before it can act for you"). A window runs `GET /api/mcp/signin/:name`, the provider, then `/api/mcp/signin/callback`; the person's refresh key goes to `<dataDir>/mcp-signin.json`. **Not now** hides the chat card in this browser.
 6. A person who has not connected, or a turn with no person behind it (a schedule or a delegation), does not see that server at all. A plain `identity: user` server uses the person's OIDC token minted from `auth.oidc.reboundAudience`.
 
-Needs: B-1, B-6, B-7, B-8, B-10
+Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16
 
 ### P-9 — Edit the agent's instructions and import from catalogues
 The owner reads and corrects what the agent is told, and imports skills from git repositories.
@@ -232,7 +232,7 @@ The owner reads and corrects what the agent is told, and imports skills from git
 5. **Import** copies one item into the folder the active engine reads (`PUT …/:id/items/<path>`), and **Remove** deletes only that copy. An item the engine has no folder for is listed with its button disabled.
 6. **Refresh** fetches the repository again and re-copies what was imported from it (`POST …/:id/refresh`). The same happens at boot, within a 20 s limit (`instruction-catalogues-refresh.ts`). The list is kept in `<dataDir>/instruction-catalogues.json`, not in the configuration file.
 
-Needs: B-1, B-6, B-7, B-8, B-10
+Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16
 
 ### P-10 — Edit the configuration from the browser and restart
 The owner changes a setting of the instance without a shell on the machine.
@@ -244,7 +244,7 @@ The owner changes a setting of the instance without a shell on the machine.
 5. The restart bar says "Saved, and waiting for a restart." **Restart now** (`POST /api/restart`) is refused while turns are running and says how many; **Restart anyway** sends `force`.
 6. `routes/restart.ts` requests the restart; `bin/adestia.js` closes and boots the server again in the same process. The screen shows "Coming back…" until the instance answers again, or "The instance did not come back" if it does not.
 
-Needs: B-1, B-6, B-7, B-8, B-10
+Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16
 
 ### P-11 — Use a plugin
 A user works in an app or meets a feature plugin the owner turned on.
@@ -261,7 +261,7 @@ A user works in an app or meets a feature plugin the owner turned on.
 10. **Dialogs and backs (B-9).** Dani, who keeps the household's meals and trips in Adestia, opens a dish on the meals strip (E-29), reads it in a sheet and presses Escape: the sheet closes and the card has the focus. She opens a task in the todo app, reads its note, and takes the back that says « Todo » to the list; she opens a journal entry and takes « Journals » back to the list of journals. In the atelier she enters the bench mode, and leaves it by the button that says « Leave the bench mode ». Her **failure path**: with the network lost while she ticks a task, the plugin shows its own error state (today's) and the tick is not recorded; the camera denied in the scan overlay (E-30) is said in the composer. Her instance speaks French: every word she reads in these plugins is French and says *vous*, and the same page on an English instance is English throughout; under each of the four skins the sheet and the backs keep their shape. Other failure paths: the listening post (E-27) opened while its queue file changed under it shows its conflict state; the walking HUD (E-28) leaves by its exit button, « Leave walking mode » / « Quitter le mode balade » (or Escape), and the map is where she was; a `:::timeline` with no dated sub-page (E-31) says what the block needs. Every back names where it leads; none is removed: the task sheet's says « Todo », the journal's « Journals » / « Journaux », the atelier's bench mode leaves by « Leave the bench mode » / « Quitter le mode atelier », every sheet closes by Escape, its scrim or an icon button named « Close » / « Fermer », and the focus goes back to what opened it (on a phone the scan overlay cannot hand it back: the composer's fold has removed its button, a known defect). The shell's own `‹ Back` above the plugin says it leads Home, in the instance's language.
 11. An address whose app is not active (a bookmark, a plugin turned off) matches no loaded plugin and falls through to Home (E-2). E-20 (the shared empty state with plug, "That app is not active on this instance.", and **Home**) shows when a matched, loaded plugin has no view, for example because its view module failed to import; E-19 lists that refusal under "Extensions refused".
 
-Needs: B-1, B-6, B-7, B-8, B-9, B-10
+Needs: B-1, B-6, B-7, B-8, B-9, B-10, B-13, B-15, B-16
 
 ### P-12 — Schedule unattended turns
 The owner has the agent act on a schedule, with nobody watching.
@@ -273,7 +273,7 @@ The owner has the agent act on a schedule, with nobody watching.
 5. The user opens the **planif** app (E-23, tile "Schedules"). It lists the notes with their next and last runs, invalid ones with their problem, and says when the clock is off. It is read-only: its buttons ask the agent to create or change a note.
 6. E-23 has no back of its own beside the shell's, and no window: its words are in both languages, except the sentences the server gives for a note's problem, which stay English (Known defects). The rule that a mission may only write its own `done:` is a convention in the `schedule-author` skill; nothing in the code enforces it.
 
-Needs: B-1, B-6, B-7, B-8, B-10
+Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16
 
 ### P-13 — Delegate to the instance from another agent
 A calling agent (often another Adestia) hands this instance a task over MCP and comes back for the answer.
@@ -286,7 +286,7 @@ A calling agent (often another Adestia) hands this instance a task over MCP and 
 6. If the caller gave a callback URL, this instance sends a `{from, job_id}` ping to it when the job ends. On the receiving side, `POST /callback` accepts only a `from` naming one of its own outbound servers, checks the job with that peer's status tool, and then wakes its own agent with an unattended turn.
 7. A user opens **Delegations** (E-13, `#/settings/delegations`, a tile of the Settings mosaic E-9; `GET /api/delegations`): threads grouped by caller, with running/waiting markers. Opening one (`GET /api/delegations/:caller/:id`) shows it read-only, with no composer.
 
-Needs: B-1, B-6, B-7, B-8, B-10
+Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16
 
 ### P-14 — Install and extend an instance
 The owner deploys an instance and makes it their own.
@@ -299,7 +299,7 @@ The owner deploys an instance and makes it their own.
 6. On a fresh instance whose instructions do not say who the agent is, the user talks to the agent in the chat (E-16). The `persona-author` skill has it ask for a name, a role and a voice, then write them into the instructions.
 7. The user asks the agent for a plugin, a skin, a page or a schedule. The agent follows `plugin-author`, `skin-author`, `page-author`/`collections` or `schedule-author` and writes files the product loads after the owner names them and restarts.
 
-Needs: B-1, B-6, B-7, B-8, B-10
+Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16
 
 ### P-15 — Develop Adestia
 A developer, a person or a night agent without docker, changes Adestia's code, checks it and looks at it. The tools below are built; the independent documentation review checks their instructions against the code.
@@ -314,7 +314,7 @@ A developer, a person or a night agent without docker, changes Adestia's code, c
 8. **Today (B-11).** Work on code that carries each idea once, following the refactoring targets in `ARCHITECTURE.md`.
 9. **Today.** Commit by explicit path in a worktree; the work comes back to `main` before it is tagged (`CLAUDE.md`).
 
-Needs: B-2, B-3, B-4, B-5, B-11, B-12
+Needs: B-2, B-3, B-4, B-5, B-11, B-12, B-13, B-15, B-16
 
 ## Out of scope
 

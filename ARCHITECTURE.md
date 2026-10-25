@@ -215,6 +215,7 @@ and every turn — chat, scheduled, delegated, callback wake — goes through th
 ## Decisions of adestia-qualite
 
 ### AD-1 — No behaviour change
+*(Applied to `adestia-qualite` only; `adestia-correctifs` lifts it for the register of AD-17, and nothing else.)*
 Every refactoring keeps routes, API shapes, configuration keys, file formats
 (`docs/donnees.md`) and MCP tools. The existing suite is the witness; a refactoring with no
 test around it gets a characterization test first. A defect found on the way is written in
@@ -567,7 +568,7 @@ none elsewhere in the product; it is then kept under Known defects with that rea
 Each defect of the register starts with a test (or a bench scenario for a screen) that fails on
 the defect, written before the fix. A defect that cannot be reproduced is not "fixed": it
 leaves the register as *not reproduced*, with the attempt written in Known defects. A fixed
-defect leaves Known defects, `.agent/status.md` and the register's row in the same commit.
+defect leaves Known defects and `.agent/status.md` in the same commit, and the tranche's task names it.
 *Rejected*: fixing from the description — several entries say "seen in the code; behaviour not
 yet reproduced" (frontmatter CRLF) or "whether it predates the epic is unknown" (MCP counts).
 
@@ -575,11 +576,17 @@ yet reproduced" (frontmatter CRLF) or "whether it predates the epic is unknown" 
 | Tranche | Defects (Known defects, kept parts of `docs/ecrans.md`, non-blockers) |
 |---|---|
 | chat | refused turn (429) silent (P-2 step 4); `📎` text emoji in `stamped()`; native model select says `Auto`; delegations drop signatures; the chat race (below); chat nits left open by the tests (`adestia-composer--busy` without a rule, unused `.adestia-sheet__close`, double `.adestia-sheet__origin`, the `upload failed` fallback through `t()`) |
-| pages | open page not refreshed after an agent write (P-5 step 7); root page breadcrumb invents a folder; E-6 settings overlap the banner at 1440 px; page diagnostic mixes languages; frontmatter CRLF divergence (`pages.ts`, `schedule.ts` against `content`) |
+| pages | root page breadcrumb invents a folder; E-6 settings overlap the banner at 1440 px; page diagnostic mixes languages; frontmatter CRLF divergence (`pages.ts`, `schedule.ts` against `content`) |
 | shell | Nestor's `↑` send glyph; MCP server counts disagree (tile against badge); Skippy's banner wraps on the phone; E-14 switch apart from its title on the phone; E-19 detail in English under `fr`; token field without `autoComplete`; "Invalid plugin manifest" in English; the duplicate `.adestia-icon--spin` block; `CataloguePopin` `refresh()` no longer shows a thrown error |
 | server | conformance never asserted at boot; saving the configuration loosens its file mode; `user-tokens.json` comment against content; `register*` re-exports left in old files |
-| plugins | `confirm()` of the atelier and `alert` of the voyages replaced by the shared sheet (Q-20, the flow becomes asynchronous: the one deliberate flow change); planif and veille sentences in English; E-28 walking map keeps its pre-walk size; E-30 focus lost on phone; E-25 "1 pièces"; workbook and card-type words under `en`; the emojis kept in plugins; the amber of project-management meaning two things; `:::content` `on` without a localised date |
+| plugins | `confirm()` of the atelier and `alert` of the voyages replaced by the shared sheet (Q-20, kept by `adestia-qualite` because "the flow would change": the answer becomes asynchronous; this is the one deliberate flow change, bounded to two gestures, and `docs/ecrans.md` Q-20 and the atelier and voyages journeys are rewritten with it. If the tranche proves risky it is narrowed and the reason written under Known defects); planif and veille sentences in English; E-28 walking map keeps its pre-walk size; E-30 focus lost on phone; E-25 "1 pièces"; the emojis kept in plugins; the amber of project-management meaning two things; `:::content` `on` without a localised date |
 | debt | R-2 one-line aliases of the drivers and R-6 exports kept only for tests (removed, tests import the module that owns the symbol); bench duplicates (`launch(seed)`, `loadPlaywright`); fake-engine options with no caller; `doc-besoin.test.mjs` into CI; the two duplicate guards on `DESIGN.md`; typed lint rules switched on if the repo passes them; `.agent/migrate-frame.mjs` lint errors |
+
+Kept on purpose, with their reason, and still under Known defects: the open page is **not**
+refreshed after an agent write (P-5 step 7 states that it is not, to protect unsaved text; refreshing
+it is a new behaviour, so a closing recommendation); the workbook's, the cards' and the server's
+own words that are author or engine data (E-25 piece names, E-26 card types, E-23 and E-27 sentences
+built by the server unless a table keyed by them already exists).
 
 A row may be narrowed — a risky correction kept for later, written under Known defects with its
 reason — never dropped without a line.
