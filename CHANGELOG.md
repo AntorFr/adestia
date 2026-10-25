@@ -461,3 +461,12 @@ not from invented release notes for the tags above.
 
 The documentation tranche separates this history from the current state and retires
 closed work files. DESIGN.md and the remaining documentation review follow separately.
+
+## adestia-correctifs (unreleased)
+
+- The Settings MCP tile counts the listed servers in both its chip and subtitle;
+  driver-only health entries no longer inflate the count or the attention total.
+  Refused plugin and skin manifest headings now follow the instance language,
+  while validator field lines stay as the server wrote them. Catalogue refresh
+  shows thrown errors in the pop-in. Remove the duplicate icon spin animation;
+  the catalogue token field already had `autoComplete="off"` and keeps it.

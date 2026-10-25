@@ -875,6 +875,9 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
 
 ## Known defects (found, not fixed by this epic)
 
+The catalogue token field is **not reproduced** — already `autoComplete="off"`
+since `64dee0f`; it remains so. The missing-attribute report is closed.
+
 - **P-5 step 7: the open page does not refresh after an agent write.**
   `app/useInstance.ts` refetches only the index on the change feed; it deliberately
   leaves the open page alone to protect unsaved editor text. The revision check
@@ -894,10 +897,6 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
   with `path.slice(0, path.lastIndexOf('/'))`. Without a slash it drops the last
   character instead of returning the empty parent that `app/paths.ts`'s `folderOf`
   returns. Kept separate to preserve behaviour; correcting the breadcrumb needs its own fix.
-
-- **MCP server counts disagree**: the Settings tile can say “6 servers” while the MCP
-  breadcrumb badge says “7 servers”. Observed during the charter review; whether it
-  predates this epic is unknown. Kept under B-1, pending a separate behaviour investigation.
 
 - **P-2 step 4: a refused turn (429) can stay silent.** `chat/stream.ts` yields
   the refusal as a live error. `chat/Thread.tsx` draws its error line only while
@@ -934,10 +933,9 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
   width; not fixed by this epic.
 - **E-14: the switch sits apart from its title on the phone**, the row wrapping between them.
   Seen in the sweep; kept for a separate layout correction.
-- **E-19 detail in English under the French locale** when the server sent no code: the detail
-  is then the raw server text, which no catalogue translates.
-- **A catalogue token field has no `autoComplete`**, so a browser may offer to fill or save it
-  as a password.
+- **ManifestError field lines (`field: message`)**: kept — English validator sentences,
+  a table keyed by them is new (AD-17). E-19 translates the plugin/skin manifest heading;
+  the field lines remain as the server writes them.
 - **E-23 (planif) says the server's sentences in English.** A note's problem (`carries both
   \`every\` and \`at\``, `the note is empty — its body is the prompt`, `below the 15-minute floor`…) is
   built by `plugins/planif/api.mjs` and `schedule.ts` and drawn as received; no table holds it, and
