@@ -618,6 +618,46 @@ previous pass swept the default skin in English only. A task that touches no scr
 Real engines: Claude by the pod's token; Copilot and Codex by their fakes, their real trial is
 Monsieur's before deployment.
 
+### AD-22 — Shell tranche: what the reproduction found, and the shape of each repair
+Read on `epic/adestia-correctifs` before any code, so the tranche builds the true list.
+- **MCP counts (E-9 against E-10).** Reproduced by reading: the Settings tile says its count twice
+  from two sources, the chip from `/api/mcp/servers` (the servers the screen lists) and the lede
+  (`mcpLede`) from `/api/mcp/status` (everything the driver reports, which can include a server
+  the screen does not list). The screen E-10 is the truth the tile points to. Repair: the tile
+  counts the listed servers once; the driver's health only says how many of *those* need
+  attention (a health entry whose name is not listed is not counted). Test first, with two payloads that
+  disagree (6 listed, 7 reported). If a real instance shows no gap, the test still pins the rule.
+- **Token field without `autoComplete`: not reproduced.** `CataloguePopin.tsx` already has
+  `type="password"` and `autoComplete="off"` (since `64dee0f`). It leaves Known defects as
+  *not reproduced*; a test pins the attribute. `"new-password"` is not chosen: it is what a
+  password manager reads as an invitation to generate one.
+- **E-19 and "Invalid plugin manifest".** One cause: a refused extension's reason with no `code`
+  is drawn as the server wrote it (`Invalid plugin manifest:\n  - field: message`, from
+  `ManifestError`). Repair in the shell only (the API answer is unchanged, AD-17): `say()`
+  recognises the lead `Invalid plugin manifest` / `Invalid skin manifest` and says it through `t()`
+  (a key in `en` and `fr`), keeping the field lines as the author's data, as the other prose.
+  The lines of `ManifestError` themselves (`field: message`, English) stay and are written under
+  Known defects: translating them is a table keyed by validator sentences.
+- **`CataloguePopin` `refresh()`.** `removeCatalogue` catches a throw and shows it; `refresh`
+  has `try/finally` only, so anything thrown after the request (`loadItems`, `onChanged`) escapes
+  and the popin shows nothing. Repair: `refresh` catches and shows, as `removeCatalogue` does. Test first
+  with `onChanged` that throws.
+- **`.adestia-icon--spin`** is declared twice in `app/styles/icons.css` (same rule, plus one `@keyframes`
+  duplicate); the second block goes. A CSS test counts one rule and one `@keyframes`.
+- **Nestor's `↑`.** It is a text glyph in `skins/nestor/skin.js` (`.nst-invite i`), drawn by whatever
+  font the phone has. Repair: an inline SVG arrow in `currentColor` (the `arrow-up` shape the sprite
+  uses), in the same 32 px disc. Skins stay declarations: no structure added.
+- **Skippy's console band on the phone.** `.console` wraps its cells onto two lines under ~400 px.
+  Repair in `skins/skippy/skin.css`: at phone width the band keeps one line (the cells that can go
+  are hidden by the skin, the mark and the first status remain). Judged on captures.
+- **E-14 switch.** The row (`.adestia-config__head`) wraps between title and switch on the phone.
+  Repair: the switch stays on the title's line (no wrap on the head, the label shrinks).
+- **E-20** is read under B-16 with the rest: a capture under four skins and two languages; if it
+  shows no defect it is written *relu, rien à corriger*.
+- **Tasks cut by lifetime.** Behaviour with a failing test first (`shell-textes`: counts, manifest
+  words, refresh, spin, autoComplete pin); what is only seen (`shell-habillage`: Nestor, Skippy,
+  E-14, E-20); the proof and the register last (`shell-preuve`).
+
 ## Refactoring targets
 
 Each target: what, where, why it costs, the tranche that owns it, and its outcome
