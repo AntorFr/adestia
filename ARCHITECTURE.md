@@ -378,6 +378,8 @@ and JS/TSX inline parameters count as definitions outside those stylesheets;
 this does not mean the CSS-only difference is empty.
 
 ### AD-7 — Out of this epic, because they change behaviour
+*Reopened for one point by `adestia-correctifs` (AD-15, AD-17 pages): the CRLF divergence below is repaired there, `pages.ts` and `schedule.ts` aligned on `content`, with a test written first and a CHANGELOG line. The rest of this decision stands.*
+
 Unifying the frontmatter parsers (`content/src/frontmatter.ts` accepts CRLF; `pages.ts`
 › `splitFrontmatter`, its `parseScalar`, and `schedule.ts` › `frontmatterOf` /
 `stampField` do not, and read scalars differently); unifying `copyMarkedTree` with
@@ -667,7 +669,7 @@ rules. The server outcomes above are filled.
   check, Codex's pasted-credential path, are hooks of the flow. No difference was a defect.
 - **R-5, a move, not a merge.** `splitFrontmatter` and `parseFrontmatter` move out of `pages.ts`
   into their own module with their bodies untouched; `instructions.ts`, `instruction-catalogues.ts`,
-  `schedule.ts` and `shell-tools.ts` import from it. The CRLF divergence stays (AD-7).
+  `schedule.ts` and `shell-tools.ts` import from it. The CRLF divergence stays (AD-7; repaired later by `adestia-correctifs`, see the note under AD-7).
 - **R-6, how exports are counted.** `scripts/unused-exports.mjs` lists every named export of
   `packages/*/src` except `packages/web` (the web exports belong to the screen tranches) that no other file under those sources imports, re-exports through an
   index, or names; it prints `file:name`. A name used only by `test/` counts as unused by
