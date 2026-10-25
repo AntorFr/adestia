@@ -625,7 +625,7 @@ Read on `epic/adestia-correctifs` before any code, so the tranche builds the tru
   `error` and no part (a refusal, or an unreachable server) survives the reread as an
   error-only `live`, and is cleared by the next send or by leaving the conversation. The 429
   is carried as data (`TurnState.refusal = { status, max? }`, filled by `refusalMessage` from the
-  server's `max`); `Thread` says it through `t()` ("%n turns are running at most — try again in
+  server's `max`); `Thread` says it through `t()` ("Turn limit reached (%n at a time) — try again in
   a moment."), in both languages, because the server's `error` is English. Any other refusal
   keeps the server's text. No server change.
 - **`📎` in `stamped()`.** The optimistic bubble must draw what the held bubble draws: a
@@ -634,8 +634,9 @@ Read on `epic/adestia-correctifs` before any code, so the tranche builds the tru
 - **Native model select.** The option goes through `t()` already; what is left to read is the
   native `<select>` and its `Auto` entry. Repair: keep the `<select>` (a custom listbox is a new
   component, AD-18), pin that the option text is the `t()` value and the control carries
-  `.adestia-select`. If the bench shows nothing left to repair, the defect leaves the register
-  *not reproduced*, with the capture.
+  `.adestia-select`. The defect stays in Known defects, rewritten *kept — native control, a custom listbox is a new
+  component (AD-18)*. The fiche's `## Livre` is narrowed on this, on the delegation signatures and on the
+  composer fold (a pinned test, not a repair); the letter's principle 3 allows it with the reason written.
 - **Already repaired before the epic** (`e00156a`, in `main`): the `upload failed` fallback
   through `t()`, `adestia-composer--busy` without a rule, the unused `.adestia-sheet__close`, the
   double `.adestia-sheet__origin`. The tranche takes them out of Known defects as *not
