@@ -639,8 +639,8 @@ written first, red until the removal, then green). Inventory taken on `epic/ades
   line saying why. A row never stays without its reason. `node scripts/unused-exports.mjs` falls from 178;
   the new count is written beside the old one. The guard: a suite test reads the table and fails if a row
   has no reason or names an export that is absent from the module (rows cannot rot).
-- **Bench duplicates.** `loadPlaywright` is written eleven times (`bench.mjs`, `sweep.mjs`, nine tests
-  and scenarios) and `launch(seed)` twice (`sweep.mjs`, `seed/check.mjs`; the scenarios' own `launch(locale)` and `launch(skin, locale)` are other functions and stay). Each goes
+- **Bench duplicates.** `loadPlaywright` is written ten times (`bench.mjs`, `sweep.mjs`, `scenarios/plugins-matrix.mjs`
+  and seven tests) and `launch(seed)` twice (`sweep.mjs`, `seed/check.mjs`; the scenarios' own `launch(locale)` and `launch(skin, locale)` are other functions and stay). Each goes
   to one module under `bench/lib/` that every caller imports; the two `launch(seed)` copies are compared
   first — where they differ, the difference becomes a parameter and is written down, as R-2 did.
   The guard: `bench/tests/bench-once.test.mjs` fails on a second definition (`git grep`).
@@ -650,10 +650,10 @@ written first, red until the removal, then green). Inventory taken on `epic/ades
   `.mjs`, outside the typecheck: the criterion's "typecheck fails" is held by this test instead, same
   strength, which also covers the case of an option read by nothing.)
 - **`doc-besoin.test.mjs` in CI.** `.github/workflows` gains a step `node --test bench/tests/doc-besoin.test.mjs
-  bench/tests/bench-once.test.mjs` (neither needs a browser). The two tests that guard `DESIGN.md` twice
+  bench/tests/bench-once.test.mjs bench/tests/ci-step.test.mjs` (neither needs a browser). The two tests that guard `DESIGN.md` twice
   (`design-doc.test.ts` and `doc-besoin.test.mjs`) keep the `doc-besoin` pair, which also checks headings;
   `design-doc.test.ts` goes if nothing else is in it. A node test reads the workflow file and fails
-  if the step is absent, so the CI line is held by the suite itself.
+  if the step is absent, so the CI line is held by a test that the same step runs.
 - **Typed lint.** `eslint.config.js` adds `no-floating-promises`, `no-misused-promises` and `await-thenable`
   for `packages/**` and `plugins/**` through the project service, and its header comment ("No rule uses type
   information") is rewritten. The threshold, per rule: if it reports 15 findings or fewer, they are fixed
