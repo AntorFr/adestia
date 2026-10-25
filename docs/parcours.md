@@ -118,7 +118,7 @@ Six functions, kept by Monsieur on 2026-10-25 from the recommendations of `adest
 nothing else is added (see Out of scope).
 
 - **B-17** — The page that is open follows what the agent writes. In reading mode (E-4) it
-  refreshes by itself when its file changes on disk. In editing mode a banner "The page
+  refreshes by itself when its file changes on disk (when the workspace watch is off, nothing refreshes, as today). If the agent deletes or moves the open page, reading mode shows E-8; editing mode shows the same banner and **Reload** leads to E-8. In editing mode a banner "The page
   changed" offers **Reload**; nothing is ever replaced under the cursor, and the text being
   typed is never lost. *(P-16)*
 - **B-18** — Every screen whose "Lacks" names a loading state shows one while it fetches
@@ -209,7 +209,7 @@ A user reads a markdown page of the workspace.
 4. A page with `type: collection` is drawn by E-7 (`CollectionLayout`): its own text, then its members (as facet cards when grouped, otherwise as pages), the finished ones folded. Its Ask for a new page button (when `of:`, `into:` and the agent callback are present) uses `plus` and asks the agent to create a new member; facet cards show shared count chips. Inside a facet whose members are all finished, the shared empty state uses `check`.
 5. A page whose `type` a plugin claims is drawn by that plugin's layout (E-29 for `meals`).
 6. Under the page, the attachments strip (`Attachments`, `GET /api/files?page=…`) lists the files in the page's folder and its `assets/` that the page body does not already show.
-7. When the agent writes the page, the server pushes the change (`GET /api/events`, `workspace.watch`) and the pages index is refetched (new pages appear in the navigation); the open page is not reloaded, since the editor may hold unsaved words, and a conflicting save is refused by its revision check (known defect, `ARCHITECTURE.md` › Known defects).
+7. When the agent writes the page, the server pushes the change (`GET /api/events`, `workspace.watch`) and the pages index is refetched (new pages appear in the navigation); the open page is not reloaded, since the editor may hold unsaved words, and a conflicting save is refused by its revision check (`adestia-ajouts` changes this: B-17, P-16).
 8. A page that cannot load shows E-8 (`MissingPage`), with three cases: no page at this address (404), out of reach because the session may have expired (401/403), or a server error. It names the path and links to the folder above, using file-question, lock or circle-alert in the shared empty state.
 9. A page using blocks the vocabulary does not know opens read-only, showing a lock icon, its raw source and the diagnostics. Block notes use the translated inline empty state.
 
@@ -351,7 +351,7 @@ The user works with a page open and the agent writes in it; the owner is away fr
 
 1. The user reads a page (E-4) while the agent, asked in the chat (E-16), rewrites it. The page redraws by itself (B-17).
 2. The user is editing the same page when the agent writes it. A banner "The page changed" appears over the editor (E-4) with **Reload**; what was typed stays until the user reloads or saves (B-17). The save-time conflict of the revision check is unchanged.
-3. The user opens a screen listed in B-18 on a slow link: a loading state shows (E-4, E-9, E-10, E-11, E-13, E-16, E-25, E-28, E-3). If the fetch fails, a message and **Retry** replace it, and Retry fetches again.
+3. The user opens a screen listed in B-18 on a slow link: a loading state shows (E-3, E-4, E-9, E-10, E-11, E-13, E-16, E-25, E-28). If the fetch of E-4, E-10, E-11, E-13, E-16, E-25 or E-28 fails, a message and **Retry** replace it, and Retry fetches again; E-4's failure is E-8 with its Retry. E-3 and E-9 have no Retry: their failure is the banner of step 4.
 4. The VPN drops. A banner "The server is not responding" shows over whatever screen is open (E-32). The user waits, or reconnects the VPN; the banner goes away by itself when the server answers.
 5. The owner opens the MCP servers (E-10) and presses **Remove** on one. A sheet (E-33) names the server and asks; **Remove** confirms, **Cancel** or Escape keeps it (B-20).
 6. The owner opens the settings (E-14) and changes "Simultaneous turns"; the field says a restart is needed, like the others (B-21).
@@ -376,7 +376,7 @@ Needs: B-17, B-18, B-19, B-20, B-21, B-22
   conversation (the archive serves to audit), the engine's permissions, a cost view (the
   token counter per conversation suffices). **Refused**: `adestia init` and the ephemeral
   question. Also not built: an offline screen, a cache of pages for offline reading, toasts,
-  the native `confirm()` of E-25 and `alert()` of E-26, the empty states of E-4 and E-7, and
+  the empty states of E-4 and E-7, and
   a volume for the Claude home in the deployment (`k8s-home-lab` is Monsieur's).
 - Deployment: nothing here changes `k8s-home-lab`; the epic reaches `main` and is tagged,
   the bodies are bumped by Monsieur.

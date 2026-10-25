@@ -626,16 +626,20 @@ them; AD-18's list is what they take from.
 ### AD-21 — The open page follows the change feed it already receives
 `useInstance.ts` already gets `pages-changed` from `GET /api/events` (`app/live.ts`) and refetches
 the index. The open page subscribes to the same event: if its path is in the batch, reading mode
-refetches the page; editing mode raises the "The page changed" banner and fetches nothing until
+refetches the page; editing mode reads the page's `revision` (the event carries only `paths`, no
+revision) and raises the "The page changed" banner when it differs from the revision the editor
+holds (the one it opened with or its last save returned); it loads nothing into the editor until
 **Reload**. The editor's text is never replaced by the refresh. A change caused by the user's own
-save is recognised by its `revision` and raises nothing. The feed is `workspace.watch`: when it is
+save carries the revision the editor already holds and raises nothing. The feed is `workspace.watch`: when it is
 off (404), nothing refreshes and the save-time 409 stays the only guard, as today. The browser
 bench stops being forbidden to require the refresh (the "Known defects" entry is removed).
 *Rejected*: polling the page (a second channel beside the one that exists); refreshing in editing
 mode with a merge (loses typed text, or needs a design nobody asked for).
 A page deleted or moved by the agent while open: reading mode shows the missing-page state (E-8);
-editing mode raises the same banner, and Reload leads to E-8. *Reversed if*: the feed cannot name
-the changed path for a page in a second store.
+editing mode raises the same banner, and Reload leads to E-8. A page of a second store is named by
+its path plus its `store` id like any page route; the refresh matches both. *Reversed if*: the
+feed cannot name the changed path for a page in a second store (then only the first store
+refreshes, and the rest stays as today).
 
 ### AD-22 — The server is gone when it does not answer, not when the browser says offline
 The offline banner (E-32) reads the outcome of the shell's own requests (failed fetch of any
@@ -654,20 +658,22 @@ Verified in code. Copilot (`COPILOT_HOME`) and Codex (`CODEX_HOME`) keep session
 the container with `/data` kept, loses nothing. Claude keeps its sessions in the process's
 default home (`~/.claude`), which is not a volume (`Dockerfile`, `docker-compose.yml`): a
 `docker restart` survives, a recreated container does not. The loss therefore **can still
-happen**, for Claude only, and the mark (B-22) is built. Detecting it belongs to the tranche
-is `[À VÉRIFIER]` by a real Claude test (the first task of the tranche; nothing else is built before it): what the SDK does when `resume` names a session that is
-gone (error, or a silent new session). The mark is written when the turn ended on a session id
-other than the one the conversation carried (`turns.ts`), or when the engine refused to resume
-and the turn was rerun fresh. Pointing Claude's home under `dataDir` would remove the cause but
-is a behaviour change of the engine environment and, in the deployment, Monsieur's: not built,
-written under Out of scope.
+happen**, for Claude only, and the mark (B-22) is built. The first task of the tranche is a real
+Claude test of what the SDK does when `resume` names a session that is gone; nothing else is built
+before it. Decided now for both outcomes: if the SDK starts a silent new session, the mark is
+written when the turn ended on a session id other than the one the conversation carried
+(`turns.ts`); if it refuses to resume, the server reruns the turn fresh on the same conversation
+and writes the same mark (P-16 step 7 is what the user sees in both cases). If it fails loudly and
+the server already shows that as an error, nothing is rerun and B-22 reduces to writing that.
+Pointing Claude's home under `dataDir` would remove the cause but is a behaviour change of the
+engine environment and, in the deployment, Monsieur's: not built, written under Out of scope.
 *Rejected*: marking for every engine (two cannot lose it; a mark that cannot fire is dead code).
 *Reversed if*: the real Claude test shows the SDK always errors loudly and the server already
 surfaces it as an error (then B-22 reduces to writing that, as the letter allows).
 
 ### AD-24 — Retry and loading are two shared parts, not nine local ones
 A loading row (the one E-14 draws) and a failure block with **Retry** (the shared empty state of
-E-8 with a button) are shared components in `app/ui/`; each listed screen uses them. Fetch hooks
+E-8 with a button) are shared components in `app/ui/`; each listed screen of the shell uses them. Plugins (E-25, E-28) do not import them: they reach the same look through the shell's CSS classes (`.adestia-loading`, `.adestia-empty*`, `.adestia-btn` for the Retry button, `.adestia-sheet*`), so AD-8 is untouched. Fetch hooks
 expose `status: loading | ready | failed` and a `retry()`. No screen invents its own spinner.
 *Rejected*: one wrapper around the router (screens differ in what stays on screen while loading:
 E-4 keeps the previous screen until the page arrives).
