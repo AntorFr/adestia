@@ -618,6 +618,53 @@ previous pass swept the default skin in English only. A task that touches no scr
 Real engines: Claude by the pod's token; Copilot and Codex by their fakes, their real trial is
 Monsieur's before deployment.
 
+### AD-26 — Debt tranche: what is removed, how each removal is held, no screen
+`adestia-correctifs-dette` changes no behaviour and touches no screen (B-13 is held by suite guards
+written first, red until the removal, then green). Inventory taken on `epic/adestia-correctifs`
+(re-take it with the commands given; the code may have moved):
+
+- **Drivers' one-line aliases (R-2).** An alias is a binding of one identifier to another, or a
+  wrapper whose only job is to pass a module's table to a shared helper: `export const usageOf =
+  codexUsage` (`codex-cli/events.ts`), `const usageOf = copilotUsage` (`copilot-cli/events.ts`), and the
+  `classifyAuthError` / `explainAuthProblem` wrappers of `codex-cli/auth.ts` and `copilot-cli/auth.ts`.
+  Removed when no production file needs the short name; a wrapper a production file calls with its own
+  table stays (it is a binding, not an alias) and is not counted. Tests import `engine-aids.ts` and pass
+  the table. The guard: a suite test lists `packages/drivers/src/**/*.ts` and fails on a line
+  `^(export )?const \w+ = [\w.]+$` that is not a literal constant (first written, red on `usageOf`).
+- **Exports kept for their tests (R-6).** The table "Internal exports kept for their tests" above is
+  emptied row by row. Per row, the rule: (1) the behaviour is reachable through a function the module
+  exposes to production (`exchangeCode` through the OAuth flow, `quotaReportOf` through `describe`/`usage`)
+  — the test goes through it and the export goes; (2) it is not reachable (a pure unit with no public
+  entry, a package-index symbol the web or server tests need) — the export stays and the row keeps one
+  line saying why. A row never stays without its reason. `node scripts/unused-exports.mjs` falls from 178;
+  the new count is written beside the old one. The guard: a suite test reads the table and fails if a row
+  has no reason or names an export that is absent from the module (rows cannot rot).
+- **Bench duplicates.** `loadPlaywright` is written eleven times (`bench.mjs`, `sweep.mjs`, nine tests
+  and scenarios) and `launch(seed)` three times (`sweep.mjs`, `seed/check.mjs`, `bench.mjs`). Each goes
+  to one module under `bench/lib/` that every caller imports; the three `launch` copies are compared
+  first — where they differ, the difference becomes a parameter and is written down, as R-2 did.
+  The guard: `bench/tests/bench-once.test.mjs` fails on a second definition (`git grep`).
+- **Fake-engine options with no caller.** `createFakeEngine` takes `capabilities`, `mcp`, `auth`,
+  `models`, `zones`. No seed sets `capabilities` or `zones`; they become module constants. The same test
+  fails when an option is destructured that no seed in `bench/seed/` and no scenario passes. (The bench is
+  `.mjs`, outside the typecheck: the criterion's "typecheck fails" is held by this test instead, same
+  strength, which also covers the case of an option read by nothing.)
+- **`doc-besoin.test.mjs` in CI.** `.github/workflows` gains a step `node --test bench/tests/doc-besoin.test.mjs
+  bench/tests/bench-once.test.mjs` (neither needs a browser). The two tests that guard `DESIGN.md` twice
+  (`design-doc.test.ts` and `doc-besoin.test.mjs`) keep the `doc-besoin` pair, which also checks headings;
+  `design-doc.test.ts` goes if nothing else is in it, after the CI step is green.
+- **Typed lint.** `eslint.config.js` adds `no-floating-promises`, `no-misused-promises` and `await-thenable`
+  for `packages/**` and `plugins/**` through the project service, and its header comment ("No rule uses type
+  information") is rewritten. If `npm run lint` is not clean with them, findings are fixed up to one
+  tranche's worth (judgement: fixes that do not change behaviour); otherwise the rules that do not pass are
+  left off and each is named under Known defects with its count. `.agent/migrate-frame.mjs` is linted
+  directly (`npx eslint .agent/migrate-frame.mjs`) and its errors fixed; it is deleted instead only if
+  `.agent/status.md` says its migration is done, and then the deletion is written in CHANGELOG-free form
+  under the same Known defects line.
+*Rejected*: dropping the exports and the tests together (tests are the contract of pure units); typing the
+bench (it is scripts, not product). *Reversed if*: a removal changes a built file under `dist/`
+(then it is a behaviour and goes through B-13's red-first rule).
+
 ## Refactoring targets
 
 Each target: what, where, why it costs, the tranche that owns it, and its outcome
