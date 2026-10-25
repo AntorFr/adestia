@@ -466,6 +466,7 @@ function useTurn({ fetchImpl, model, view, t }: ConversationsOptions, open: Open
       // A fetch that REJECTS — network down, server gone — must land as the
       // error it is, not leave the dots pulsing forever.
       last = { ...(last ?? INITIAL_TURN), running: false, lost: true, error: (error as Error).message }
+      patchConversation(tabId, { live: last })
     }
 
     // A refused message is never filed by the server. Keep its optimistic
@@ -476,7 +477,9 @@ function useTurn({ fetchImpl, model, view, t }: ConversationsOptions, open: Open
     patchConversation(tabId, {
       ...(errorOnly ? { messages } : {}),
       live: errorOnly
-        ? tabId === activeRef.current ? last : undefined
+        // Leaving may have cleared this error while reread was in flight,
+        // even if the reader has already come back. Do not revive it.
+        ? tabId === activeRef.current && conversation(tabId).live === last ? last : undefined
         : filed || !last ? undefined : { ...last, running: false },
       stopping: false,
       // The dot that says "finished, and you have not seen it": only when
