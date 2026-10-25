@@ -461,3 +461,12 @@ not from invented release notes for the tags above.
 
 The documentation tranche separates this history from the current state and retires
 closed work files. DESIGN.md and the remaining documentation review follow separately.
+
+## adestia-correctifs (unreleased)
+
+- **Boot refuses a non-conformant driver** — `start()` now checks the driver it arms
+  (built from the config or injected) against its own descriptor before the
+  permissions check. An instance whose driver declares a capability it lacks the
+  method of, or an unknown one, no longer boots: it stops with
+  `Driver "<id>" is not conformant:` and one line per gap. Previously, the
+  descriptor was trusted without this check.
