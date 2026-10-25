@@ -549,6 +549,66 @@ backs, exits and the sheet's close button.
 AD-8. *Reversed if*: the plugin contract grows a helper surface in `PluginApi`.
 
 
+## Decisions of adestia-correctifs
+
+The second pass. `adestia-qualite` was not allowed to change behaviour (AD-1) and wrote what it
+found under *Known defects*; this epic repairs those, behaviour included. Its needs are
+`B-13` to `B-16` in `docs/parcours.md`; its work is the register below.
+
+### AD-15 — A correction makes the behaviour right, it does not invent one
+The right behaviour is read in `docs/parcours.md` and `docs/ecrans.md`; where they are silent,
+in what the product already does elsewhere. Every changed behaviour gets a `CHANGELOG.md`
+entry and, where a journey or a screen states it, its text is corrected in the same task.
+*Rejected*: choosing the richer behaviour when the docs are silent — that is a new function, and
+goes to the closing recommendations. *Reversed if*: a defect has no right answer in the docs and
+none elsewhere in the product; it is then kept under Known defects with that reason.
+
+### AD-16 — Reproduce first, then fix, then pin
+Each defect of the register starts with a test (or a bench scenario for a screen) that fails on
+the defect, written before the fix. A defect that cannot be reproduced is not "fixed": it
+leaves the register as *not reproduced*, with the attempt written in Known defects. A fixed
+defect leaves Known defects, `.agent/status.md` and the register's row in the same commit.
+*Rejected*: fixing from the description — several entries say "seen in the code; behaviour not
+yet reproduced" (frontmatter CRLF) or "whether it predates the epic is unknown" (MCP counts).
+
+### AD-17 — The register: every defect has a tranche, or a written reason
+| Tranche | Defects (Known defects, kept parts of `docs/ecrans.md`, non-blockers) |
+|---|---|
+| chat | refused turn (429) silent (P-2 step 4); `📎` text emoji in `stamped()`; native model select says `Auto`; delegations drop signatures; the chat race (below); chat nits left open by the tests (`adestia-composer--busy` without a rule, unused `.adestia-sheet__close`, double `.adestia-sheet__origin`, the `upload failed` fallback through `t()`) |
+| pages | open page not refreshed after an agent write (P-5 step 7); root page breadcrumb invents a folder; E-6 settings overlap the banner at 1440 px; page diagnostic mixes languages; frontmatter CRLF divergence (`pages.ts`, `schedule.ts` against `content`) |
+| shell | Nestor's `↑` send glyph; MCP server counts disagree (tile against badge); Skippy's banner wraps on the phone; E-14 switch apart from its title on the phone; E-19 detail in English under `fr`; token field without `autoComplete`; "Invalid plugin manifest" in English; the duplicate `.adestia-icon--spin` block; `CataloguePopin` `refresh()` no longer shows a thrown error |
+| server | conformance never asserted at boot; saving the configuration loosens its file mode; `user-tokens.json` comment against content; `register*` re-exports left in old files |
+| plugins | `confirm()` of the atelier and `alert` of the voyages replaced by the shared sheet (Q-20, the flow becomes asynchronous: the one deliberate flow change); planif and veille sentences in English; E-28 walking map keeps its pre-walk size; E-30 focus lost on phone; E-25 "1 pièces"; workbook and card-type words under `en`; the emojis kept in plugins; the amber of project-management meaning two things; `:::content` `on` without a localised date |
+| debt | R-2 one-line aliases of the drivers and R-6 exports kept only for tests (removed, tests import the module that owns the symbol); bench duplicates (`launch(seed)`, `loadPlaywright`); fake-engine options with no caller; `doc-besoin.test.mjs` into CI; the two duplicate guards on `DESIGN.md`; typed lint rules switched on if the repo passes them; `.agent/migrate-frame.mjs` lint errors |
+
+A row may be narrowed — a risky correction kept for later, written under Known defects with its
+reason — never dropped without a line.
+*Rejected*: one tranche per defect (36 tranches, each paying the same full-suite cost); one tranche
+per Known defects bullet order (it mixes areas that review differently).
+
+### AD-18 — What stays out: functions, not defects
+The "Lacks" cells that name an absent function are not repaired: loading states of E-3, E-4, E-9,
+E-10, E-11, E-13, E-16, E-25, E-28; an offline screen and banner (E-21); a retry for E-8; a
+confirmation before Remove (E-10); the empty states of E-4 and E-7; a delete command for
+conversations (`deleteConversation` has no screen); the half-built items of `.agent/status.md`
+(`ask` posture, usage view, Copilot permission feedback, `adestia init`). They go to the closing
+recommendations, posted in this epic's discussion at the end of the framing.
+*Reversed if*: Monsieur retains one; it comes back as a new idea.
+
+### AD-19 — The chat race is already in `main`; it is written as a change
+Before v0.95.0 `send` held a second message only while `turning` was set, which happens after the
+POST; the Stop button reads `live.running`, up from the keystroke. A message sent in that gap
+left as a fresh turn and was never drawn as held (`main` of 2026-10-16, `useConversations.ts`).
+Commit `c549a5d` (v0.95.0) holds it. The chat tranche writes it in the `CHANGELOG.md` as an
+assumed behaviour change and pins it with the browser test that already exists.
+
+### AD-20 — Proof: four skins, two languages, both themes, both widths
+A screen change is judged on bench captures under the four skins, `en` and `fr`, light and dark,
+desk and phone (`node bench/sweep.mjs --skin <id>`, run with `BENCH_LOCALE`/`--locale`). The
+previous pass swept the default skin in English only. A task that touches no screen says so.
+Real engines: Claude by the pod's token; Copilot and Codex by their fakes, their real trial is
+Monsieur's before deployment.
+
 ## Refactoring targets
 
 Each target: what, where, why it costs, the tranche that owns it, and its outcome

@@ -42,6 +42,20 @@ Form of the `exigences` skill; each need names the journeys it serves.
   coherence, not behaviour. Every `Q-n` of `docs/ecrans.md` is either closed by its tranche or
   written "kept: <reason>". *(all)*
 
+### Corrections (adestia-correctifs)
+
+- **B-13** — Every defect of the register (`ARCHITECTURE.md` › AD-17) is either repaired with a
+  test that failed before, or leaves the register as *not reproduced*, or is kept under Known
+  defects with its reason. None disappears unwritten. *(all journeys)*
+- **B-14** — Where a journey states a behaviour the product did not keep — P-2 step 4 (a refused
+  turn is explained to the user), P-5 step 7 (a page changed by the agent is shown without losing
+  unsaved text) — the product does what the journey says. *(P-2, P-5)*
+- **B-15** — A changed behaviour is written in `CHANGELOG.md`, and in the journey or screen that
+  states it, in the same task. *(all)*
+- **B-16** — A repaired screen shows right under the four skins, in `en` and `fr`, in both themes,
+  at desk and phone width (AD-20); a word the user reads is in their language, except data the
+  author wrote. *(all screens)*
+
 ### The developer's journey
 - **B-2** — A developer launches Adestia locally with one documented command and no docker,
   either on the **fake engine** (a scripted fake driver, deterministic turns; AD-2) or on the **real Claude engine**
@@ -304,7 +318,7 @@ Needs: B-2, B-3, B-4, B-5, B-11, B-12
 
 ## Out of scope
 
-- **Any functional change**: a new feature, a removed feature, a renamed configuration key,
+- **Any functional change** (from `adestia-qualite`; `adestia-correctifs` repairs defects but adds no function, AD-18): a new feature, a removed feature, a renamed configuration key,
   route or file, a changed data format, a changed MCP tool. A defect found on the way is
   written down (`ARCHITECTURE.md` › Known defects) and left for its own feature.
 - **Catalogue security corrections** belonged to the separate catalogue work, not
