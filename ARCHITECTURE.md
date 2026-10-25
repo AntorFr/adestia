@@ -650,10 +650,10 @@ written first, red until the removal, then green). Inventory taken on `epic/ades
   `.mjs`, outside the typecheck: the criterion's "typecheck fails" is held by this test instead, same
   strength, which also covers the case of an option read by nothing.)
 - **`doc-besoin.test.mjs` in CI.** `.github/workflows` gains a step `node --test bench/tests/doc-besoin.test.mjs
-  bench/tests/bench-once.test.mjs bench/tests/ci-step.test.mjs` (neither needs a browser). The two tests that guard `DESIGN.md` twice
+  bench/tests/bench-once.test.mjs` (neither needs a browser). The two tests that guard `DESIGN.md` twice
   (`design-doc.test.ts` and `doc-besoin.test.mjs`) keep the `doc-besoin` pair, which also checks headings;
-  `design-doc.test.ts` goes if nothing else is in it. A node test reads the workflow file and fails
-  if the step is absent, so the CI line is held by a test that the same step runs.
+  `design-doc.test.ts` goes if nothing else is in it. A vitest test (`packages/server/test/ci-workflow.test.ts`, run by `npm test`, so not by the step it guards) reads
+  the workflow file and fails if the step is absent.
 - **Typed lint.** `eslint.config.js` adds `no-floating-promises`, `no-misused-promises` and `await-thenable`
   for `packages/**` and `plugins/**` through the project service, and its header comment ("No rule uses type
   information") is rewritten. The threshold, per rule: if it reports 15 findings or fewer, they are fixed
