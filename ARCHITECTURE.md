@@ -633,7 +633,9 @@ off (404), nothing refreshes and the save-time 409 stays the only guard, as toda
 bench stops being forbidden to require the refresh (the "Known defects" entry is removed).
 *Rejected*: polling the page (a second channel beside the one that exists); refreshing in editing
 mode with a merge (loses typed text, or needs a design nobody asked for).
-*Reversed if*: the feed cannot name the changed path for a page in a second store.
+A page deleted or moved by the agent while open: reading mode shows the missing-page state (E-8);
+editing mode raises the same banner, and Reload leads to E-8. *Reversed if*: the feed cannot name
+the changed path for a page in a second store.
 
 ### AD-22 — The server is gone when it does not answer, not when the browser says offline
 The offline banner (E-32) reads the outcome of the shell's own requests (failed fetch of any
@@ -653,7 +655,7 @@ the container with `/data` kept, loses nothing. Claude keeps its sessions in the
 default home (`~/.claude`), which is not a volume (`Dockerfile`, `docker-compose.yml`): a
 `docker restart` survives, a recreated container does not. The loss therefore **can still
 happen**, for Claude only, and the mark (B-22) is built. Detecting it belongs to the tranche
-`[À VÉRIFIER]` by a real Claude test: what the SDK does when `resume` names a session that is
+is `[À VÉRIFIER]` by a real Claude test (the first task of the tranche; nothing else is built before it): what the SDK does when `resume` names a session that is
 gone (error, or a silent new session). The mark is written when the turn ended on a session id
 other than the one the conversation carried (`turns.ts`), or when the engine refused to resume
 and the turn was rerun fresh. Pointing Claude's home under `dataDir` would remove the cause but

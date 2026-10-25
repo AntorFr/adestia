@@ -17,7 +17,7 @@ Three roots, plus the extension folders. Nothing is held in a database.
   first run on defaults. `${VAR}` in a value is replaced from the environment; unknown keys
   refuse the boot. E-14 Configuration edits it in place through `settings-file.ts`,
   which writes only keys the catalogue `SETTING_GROUPS` declares (today three:
-  `workspace.watch.enabled`, `workspace.watch.polling`, `workspace.watch.intervalMs`) and
+  `workspace.watch.enabled`, `workspace.watch.polling`, `workspace.watch.intervalMs`; `adestia-ajouts` adds `maxConcurrentTurns`, B-21) and
   keeps comments and layout through `yaml`'s document API. A read-only file (ConfigMap,
   `:ro` mount) is reported by `writability`, not written.
 - **The data directory** — `dataDir`, default `./data`, overridden by `ADESTIA_DATA_DIR`
@@ -68,7 +68,7 @@ a user (see Rules of access).
   (`session` line). Belongs to exactly one user; the workspace is shared, conversations are
   not.
 - **Context-lost mark** (`adestia-ajouts`, B-22) — not an entity: one optional boolean
-  `contextLost` on the agent message of the turn that ran on a fresh engine session while the
+  `contextLost` on the **first** agent message the turn writes (the turn writes one per part), when the turn ran on a fresh engine session while the
   conversation carried an earlier one. Written by the server at the end of that turn; read by
   E-16 to draw the marker. Absent everywhere else.
 - **Message / turn** — a message is one line of a conversation, `role` `user` or `agent`. A

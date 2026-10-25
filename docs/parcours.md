@@ -29,7 +29,7 @@ One instance is one agent, one workspace, one subscription.
 Form of the `exigences` skill; each need names the journeys it serves.
 
 ### Unchanged behaviour
-- **B-1** *(`adestia-qualite`; `adestia-correctifs` lifts it for its register, B-13)* — Every journey `P-1` to `P-14` behaves after the epic as it did at v0.88.0: same
+- **B-1** *(`adestia-qualite`; `adestia-correctifs` lifts it for its register, B-13; `adestia-ajouts` lifts it for B-17 to B-22 only)* — Every journey `P-1` to `P-14` behaves after the epic as it did at v0.88.0: same
   routes, same API, same configuration keys, same files on disk and their formats, same MCP
   tools, same words where a word is not corrected by `B-8` or `B-9`. A visible change is limited to
   the look (`B-6`, `B-7`, `B-9`), to the language of a string (`B-8`), to the labels of back
@@ -137,7 +137,7 @@ nothing else is added (see Out of scope).
   settings screen (E-14), like the other fields of `SETTING_GROUPS`, with the same "restart
   needed" mark. *(P-16)*
 - **B-22** — When a conversation continues on a fresh engine session because the one it
-  carried cannot be resumed (after a restart), the chat marks it where it happened: the user
+  carried cannot be resumed (after a restart), the chat marks it where it happened — the turn runs fresh, on the same conversation: the user
   learns that the engine no longer remembers the earlier messages. Only the engines that can
   still lose it get the mark (checked in AD-23). *(P-16)*
 
@@ -361,7 +361,7 @@ Needs: B-17, B-18, B-19, B-20, B-21, B-22
 
 ## Out of scope
 
-- **Any functional change** (from `adestia-qualite`; `adestia-correctifs` repairs defects but adds no function, AD-18): a new feature, a removed feature, a renamed configuration key,
+- **Any functional change, except the six of `adestia-ajouts` (B-17 to B-22)** (from `adestia-qualite`; `adestia-correctifs` repairs defects but adds no function, AD-18): a new feature, a removed feature, a renamed configuration key,
   route or file, a changed data format, a changed MCP tool. A defect found on the way is
   written down (`ARCHITECTURE.md` › Known defects) and left for its own feature.
 - **Catalogue security corrections** belonged to the separate catalogue work, not

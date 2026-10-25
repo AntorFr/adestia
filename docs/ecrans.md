@@ -9,6 +9,7 @@
 > The night agents who make screens coherent and the visual reviewers check each screen
 > against this file. Components, classes and routes are named so they can be searched.
 >
+> (`adestia-qualite` and `adestia-correctifs`; `adestia-ajouts` builds the states of "Target states of `adestia-ajouts`" below. The "as built" sections below record the earlier epics' "no loading, no offline state" and are corrected by the tranche that builds each state.)
 > The "Lacks" column of States is an observation, not a target: the epic builds no new
 > state, except a loading state where a screen shows a wrong state while it loads today
 > (E-2, E-14) — coherence, not behaviour (`B-1`). Every `Q-n` is either closed by its tranche
@@ -158,6 +159,8 @@ columns are the same except where the instance's configuration decides what exis
 | E-29 | use (reads, reorders, sets aside) | same | writes the meals page, guarded by a revision | — |
 | E-30 | use (camera; camera refusal is *shown* in the composer) | same | — | — |
 | E-31 | use (reads) | same | — | — |
+| E-32 | sees it; nothing to do | same | — | — |
+| E-33 | confirms or cancels a removal | same | — | — |
 
 ## States
 
@@ -209,14 +212,14 @@ vocabulary of looks (`docs/charte.md`).
 | E-8 | **Retry** on the "server could not" case | 404 and 401/403 have no Retry |
 | E-10 | loading; fetch-failed with **Retry**; **Remove** opens E-33 | |
 | E-11, E-13 | loading; fetch-failed with **Retry** | |
-| E-14 | field "Simultaneous turns" (number, min 1) in a group of its own, "restart needed" mark | same row shape as "Scan period" |
+| E-14 | field "Simultaneous turns" (number, min 1, max 16) in a group of its own, "restart needed" mark | same row shape as "Scan period"; the offline banner (E-32) and the restart-needed state of E-14 are independent: both may show |
 | E-16 | loading for the list and the thread; fetch-failed with **Retry**; a context-lost marker in the thread (B-22) | the marker is a line in the thread, not a toast; text says the engine no longer remembers the earlier messages |
-| E-25, E-28 | loading; E-25 fetch-failed with **Retry** | E-25's native `confirm()` stays (B-1) |
+| E-25, E-28 | loading; fetch-failed with **Retry** | plugins reach the look through the shell's CSS classes (`.adestia-loading`, the empty-state classes, `.adestia-sheet*`), as they already do for sheets; the plugin contract (AD-8) gains nothing. E-25's native `confirm()` stays: not among the six kept functions |
 | E-32 | banner at the top of the canvas body (the place of `Problems`), role `status`, a `wifi-off` icon; absent when the server answers | not an overlay: the screen below stays usable |
 | E-33 | `Sheet` (bottom sheet on a phone), title "Remove server?", the server's name, **Cancel**, **Remove** (danger) | focus on Cancel; Escape = Cancel; modelled on `NamePrompt` |
 
-Roles: every action above belongs to the **user** (or the **owner** for E-10, E-14, E-33) —
-there is no new role. States are drawn in the four skins, `en` and `fr`, light and dark, desk
+Roles: no route tells an owner from a user (matrix below): E-32 and E-33 are the same for both,
+the agent touches neither, and no calling agent sees them. There is no new role. States are drawn in the four skins, `en` and `fr`, light and dark, desk
 and phone (AD-20).
 
 ## The plugins' screens, as built
