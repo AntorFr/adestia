@@ -647,7 +647,7 @@ origin and tab link, live in `styles/components.css`; `chat.css` contains none.
 **States, as built.** E-16: the empty list says "No conversation yet." through `t()`
 in an `<EmptyState>`; the empty thread keeps its blank; the working indicator is the skin's
 `busy` slot or the shared spinner icon with the counters; the interrupted note, the error
-line, the held bubble (`paperclip` + names when the message is attachments only), the
+line (a refused turn keeps it after the reread, said through `t()`, until the next send; AD-21), the held bubble (`paperclip` + names when the message is attachments only), the
 unread/running/idle dots (colour and a shape, not colour alone), the MCP connect prompt, the
 composer busy/stopping/blocked and the upload error keep their words and places. **No
 loading or offline state is added** for the list or the thread (Lacks column of E-16: listed

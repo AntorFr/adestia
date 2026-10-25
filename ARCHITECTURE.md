@@ -618,6 +618,42 @@ previous pass swept the default skin in English only. A task that touches no scr
 Real engines: Claude by the pod's token; Copilot and Codex by their fakes, their real trial is
 Monsieur's before deployment.
 
+### AD-21 — Chat tranche: what the reproduction found, and the shape of each repair
+Read on `epic/adestia-correctifs` before any code, so the tranche builds the true list.
+- **Refused turn (P-2 step 4).** Reproduced by reading: `consume` clears `live` when `reread`
+  succeeds, and a refusal has nothing stored behind it. Repair: a state that ends with an
+  `error` and no part (a refusal, or an unreachable server) survives the reread as an
+  error-only `live`, and is cleared by the next send or by leaving the conversation. The 429
+  is carried as data (`TurnState.refusal = { status, max? }`, filled by `refusalMessage` from the
+  server's `max`); `Thread` says it through `t()` ("%n turns are running at most — try again in
+  a moment."), in both languages, because the server's `error` is English. Any other refusal
+  keeps the server's text. No server change.
+- **`📎` in `stamped()`.** The optimistic bubble must draw what the held bubble draws: a
+  `paperclip` icon and the names. `stamped()` stops appending the emoji; the user message
+  carries its attachment names as data, and the bubble draws them as the held bubble does.
+- **Native model select.** The option goes through `t()` already; what is left to read is the
+  native `<select>` and its `Auto` entry. Repair: keep the `<select>` (a custom listbox is a new
+  component, AD-18), pin that the option text is the `t()` value and the control carries
+  `.adestia-select`. If the bench shows nothing left to repair, the defect leaves the register
+  *not reproduced*, with the capture.
+- **Already repaired before the epic** (`e00156a`, in `main`): the `upload failed` fallback
+  through `t()`, `adestia-composer--busy` without a rule, the unused `.adestia-sheet__close`, the
+  double `.adestia-sheet__origin`. The tranche takes them out of Known defects as *not
+  reproduced — repaired in e00156a*, and adds one suite guard so none comes back.
+- **Delegations and signatures: narrowed, with its reason.** A delegation transcript can carry
+  signatures (same JSONL), but `SignatureCards` draws nothing without a `signing` handler, and
+  E-13 is read-only with no composer (P-13 step 7): the ceremony belongs to the delegating
+  caller. Showing passive cards would be a new function (AD-18). `{ signatures: false }` stays;
+  its reason is written in the code and in Known defects, and a test pins that a transcript
+  carrying signatures draws no card.
+- **Composer fold.** `onFill` already focuses the textarea (`4e6f16f`). The tranche writes the
+  composer test first: folded, an empty fill leaves the focus in the field and the draft
+  untouched. Green on arrival means *not reproduced* for the composer; the phone focus defect
+  (E-30) is the plugins tranche's.
+- **Chat race.** `c549a5d` is in `main`; the tranche adds the CHANGELOG entry (AD-19). The
+  CHANGELOG gets one section, "adestia-correctifs (unreleased)", created by whichever tranche
+  lands first and appended by the others, one bullet per changed behaviour.
+
 ## Refactoring targets
 
 Each target: what, where, why it costs, the tranche that owns it, and its outcome
