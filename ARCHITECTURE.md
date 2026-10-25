@@ -618,6 +618,52 @@ previous pass swept the default skin in English only. A task that touches no scr
 Real engines: Claude by the pod's token; Copilot and Codex by their fakes, their real trial is
 Monsieur's before deployment.
 
+### AD-22 — Server tranche: four repairs, no screen
+Read on `epic/adestia-correctifs` before any code. No screen is touched (the tranche says so, AD-20).
+- **Conformance at boot.** `start()` builds the driver (`buildDriver` or `options.driverFactory`)
+  and then trusts `driver.describe()`. Repair: right after the driver is built, before
+  `checkPermissions`, `start()` calls `assertConformance(driver, driver.describe())` (exported
+  by `@antorfr/adestia-drivers`), so a bad driver stops the boot with the message that function
+  already writes — `Driver "<id>" is not conformant:` and one line per `ConformanceIssue`. It
+  applies to the driver the instance arms, whether built or injected by `driverFactory`; the
+  stage order stays pinned by `start-order.test.ts`. Reproduced by a test that starts with a
+  `driverFactory` whose descriptor declares a capability it lacks the method of: today it boots.
+  The test doubles of the suite (`ScriptedDriver` and others) must pass the check; one that does
+  not is a real finding, repaired in the double and written in the tranche's report, never by
+  skipping the check. Behaviour changed: an instance that booted with a lying driver now refuses
+  to boot — a CHANGELOG line.
+- **Configuration file mode.** `replaceContents` (`settings-file.ts`) writes a sibling and renames
+  it over the target; the sibling is created with the umask's mode, so a 0600 file comes back
+  0644. Repair: read the target's mode before writing and apply it to the sibling before the
+  rename (`chmod` on the temporary file, not `writeFile`'s `mode`, which the umask masks). The
+  in-place fallback already keeps the mode (it truncates the same inode); a test pins both
+  paths. A target that does not exist yet keeps the default. Written in the CHANGELOG.
+- **`user-tokens.json` comment.** The module comment says "refresh tokens only". The `Entry`
+  carries `accessToken` and `expiresAt` too, and `store` is written whole (`user-tokens.ts:87`).
+  The content is the truth, so only the comment changes: it names the access token and its
+  expiry (kept so a second turn within the hour does not call the provider again), still 0600,
+  still never in a cookie or in the agent's workspace. A guard test reads the comment and
+  fails if it again claims "refresh tokens only" while `Entry` has `accessToken`. No behaviour
+  changes, so no CHANGELOG line.
+- **`register*` re-exports.** Six old files re-export what `routes/` owns: `callback.ts`,
+  `files.ts`, `pages.ts`, `static.ts`, `watch.ts` (named `register*` and their option types) and
+  `mcp-routes.ts` (a pure `export *`). Repair: the re-exports go; `app.ts` already imports from
+  `routes/`. The tests that import `register*` from the old files import `routes/...`
+  (`pages-stores`, `pages`, `callback`, `mcp`, `files`, `static`, `watch`). `index.ts` takes
+  its types (`StaticOptions`, `PagesOptions`, `FilesOptions`, `DelegationPort`,
+  `McpDependencies`) from `routes/`. `mcp-routes.ts` is deleted if nothing else imports it. The
+  pages tranche depends on this one precisely because `pages.ts` stops re-exporting. The
+  guard is a suite test: no file of `packages/server/src` outside `routes/` contains an
+  `export … register…` or `export * from './routes/`. The rows of the "exports kept only for
+  tests" table that name these re-exports leave in the same commit; `R-3`'s outcome says "a
+  re-export" and is corrected to say the files keep only their helpers.
+- **Known defects and the register.** Each of the four repairs leaves *Known defects* and
+  `.agent/status.md` in the commit that makes it (AD-16); the CHANGELOG section
+  "adestia-correctifs (unreleased)" is created by whichever tranche lands first.
+- **P-10 and P-14.** P-10 (edit the configuration) gains one sentence — the file keeps its mode.
+  P-14 (install) is touched only for the boot refusing a non-conformant driver, in the step that
+  describes boot. Nothing else in either journey changes.
+
 ## Refactoring targets
 
 Each target: what, where, why it costs, the tranche that owns it, and its outcome
