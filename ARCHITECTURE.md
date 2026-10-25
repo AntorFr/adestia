@@ -618,6 +618,70 @@ previous pass swept the default skin in English only. A task that touches no scr
 Real engines: Claude by the pod's token; Copilot and Codex by their fakes, their real trial is
 Monsieur's before deployment.
 
+## Decisions of adestia-ajouts
+
+Six kept functions (`docs/parcours.md` › B-17 to B-22). `B-1` of the earlier epics does not bind
+them; AD-18's list is what they take from.
+
+### AD-21 — The open page follows the change feed it already receives
+`useInstance.ts` already gets `pages-changed` from `GET /api/events` (`app/live.ts`) and refetches
+the index. The open page subscribes to the same event: if its path is in the batch, reading mode
+refetches the page; editing mode raises the "The page changed" banner and fetches nothing until
+**Reload**. The editor's text is never replaced by the refresh. A change caused by the user's own
+save is recognised by its `revision` and raises nothing. The feed is `workspace.watch`: when it is
+off (404), nothing refreshes and the save-time 409 stays the only guard, as today. The browser
+bench stops being forbidden to require the refresh (the "Known defects" entry is removed).
+*Rejected*: polling the page (a second channel beside the one that exists); refreshing in editing
+mode with a merge (loses typed text, or needs a design nobody asked for).
+*Reversed if*: the feed cannot name the changed path for a page in a second store.
+
+### AD-22 — The server is gone when it does not answer, not when the browser says offline
+The offline banner (E-32) reads the outcome of the shell's own requests (failed fetch of any
+`/api/` call, the event stream dropping) and, while shown, probes `GET /api/health` until it
+answers. `navigator.onLine` is not used: with a VPN down the browser is "online" and the server
+is unreachable, which is the case that matters. No service-worker change (`/api/` is never
+touched by it). No offline screen, no page cache. The first-load failure keeps the fatal gate
+(E-1).
+*Rejected*: `online`/`offline` events (wrong signal); an offline screen and cached pages (not
+kept by Monsieur).
+*Reversed if*: a request failure cannot be told from a deliberate abort in the fetch layer.
+
+### AD-23 — Context loss: Claude can still lose it; Copilot and Codex cannot
+Verified in code. Copilot (`COPILOT_HOME`) and Codex (`CODEX_HOME`) keep sessions under
+`<dataDir>/copilot-home` and `<dataDir>/codex-home`: a restart of the server, or recreation of
+the container with `/data` kept, loses nothing. Claude keeps its sessions in the process's
+default home (`~/.claude`), which is not a volume (`Dockerfile`, `docker-compose.yml`): a
+`docker restart` survives, a recreated container does not. The loss therefore **can still
+happen**, for Claude only, and the mark (B-22) is built. Detecting it belongs to the tranche
+`[À VÉRIFIER]` by a real Claude test: what the SDK does when `resume` names a session that is
+gone (error, or a silent new session). The mark is written when the turn ended on a session id
+other than the one the conversation carried (`turns.ts`), or when the engine refused to resume
+and the turn was rerun fresh. Pointing Claude's home under `dataDir` would remove the cause but
+is a behaviour change of the engine environment and, in the deployment, Monsieur's: not built,
+written under Out of scope.
+*Rejected*: marking for every engine (two cannot lose it; a mark that cannot fire is dead code).
+*Reversed if*: the real Claude test shows the SDK always errors loudly and the server already
+surfaces it as an error (then B-22 reduces to writing that, as the letter allows).
+
+### AD-24 — Retry and loading are two shared parts, not nine local ones
+A loading row (the one E-14 draws) and a failure block with **Retry** (the shared empty state of
+E-8 with a button) are shared components in `app/ui/`; each listed screen uses them. Fetch hooks
+expose `status: loading | ready | failed` and a `retry()`. No screen invents its own spinner.
+*Rejected*: one wrapper around the router (screens differ in what stays on screen while loading:
+E-4 keeps the previous screen until the page arrives).
+
+### AD-25 — `maxConcurrentTurns` is a restart setting
+It joins `SETTING_GROUPS` (`packages/schemas/src/settings.ts`) as a `number` field, min 1, max 16,
+fallback 3, `applies: 'restart'`: the limiter is built once in `buildDesk`. The config validation
+(`config.ts`, integer >= 1) stays; the settings route validates through `spec`. The max of 16
+follows the memory sizing in `README.md` (~300 MB a turn) and is a guard, not a measure.
+*Rejected*: applying live by resizing `TurnLimiter` (a second code path for one field).
+
+### AD-26 — Confirm Remove in the shared sheet; no `confirm()`
+E-33 is a `Sheet` with `NamePrompt`'s footer shape, opened by `ServerDetail`'s **Remove**. The
+declaration is removed only on **Remove**. No generic `useConfirm` is created for one use.
+*Reversed if*: a second confirmation is kept later; then it is extracted.
+
 ## Refactoring targets
 
 Each target: what, where, why it costs, the tranche that owns it, and its outcome
@@ -834,12 +898,8 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
 
 ## Known defects (found, not fixed by this epic)
 
-- **P-5 step 7: the open page does not refresh after an agent write.**
-  `app/useInstance.ts` refetches only the index on the change feed; it deliberately
-  leaves the open page alone to protect unsaved editor text. The revision check
-  reports a conflict on save. This predates the pages tranche; automatic refresh
-  of the open page needs a separate behaviour decision. Carry it into the epic's
-  closing recommendations; the browser bench must not require that refresh.
+- **P-5 step 7: the open page does not refresh after an agent write.** Taken by
+  `adestia-ajouts` (AD-21, B-17); removed from here when that tranche lands.
 - **Nestor's send control still uses the `↑` glyph**, supplied by its skin.
   Kept during the pages tranche; the skin's control remains for a separate fix.
 - **The chat's native model select says `Auto` (`chat/ModelPicker.tsx`)**, outside the pages tranche.

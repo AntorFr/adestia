@@ -112,6 +112,36 @@ Form of the `exigences` skill; each need names the journeys it serves.
 - **B-12** — Typecheck, lint and the whole test suite are green on every tranche and in CI;
   lint runs in CI. *(P-15)*
 
+### What `adestia-ajouts` adds
+Six functions, kept by Monsieur on 2026-10-25 from the recommendations of `adestia-correctifs`
+(AD-18 there). Each one is a new behaviour, so `B-1` (no functional change) does not bind them;
+nothing else is added (see Out of scope).
+
+- **B-17** — The page that is open follows what the agent writes. In reading mode (E-4) it
+  refreshes by itself when its file changes on disk. In editing mode a banner "The page
+  changed" offers **Reload**; nothing is ever replaced under the cursor, and the text being
+  typed is never lost. *(P-16)*
+- **B-18** — Every screen whose "Lacks" names a loading state shows one while it fetches
+  (E-3, E-4, E-9, E-10, E-11, E-13, E-16, E-25, E-28), and every one of those that fetches its
+  own data says so in a message with a **Retry** when the fetch fails (E-4, E-8, E-10, E-11,
+  E-13, E-16, E-25, E-28). E-3 and E-9 draw from the instance index: they get the loading
+  state only, their failure is the offline banner (B-19). The empty states of E-4 and E-7 are
+  not part of this need. *(P-16)*
+- **B-19** — When the server does not answer, a banner over the open shell says so ("The
+  server is not responding"), and it goes away by itself when the server answers again. There
+  is no offline screen and no cache of pages. The reason: away from home, Adestia sits behind
+  a VPN, and a dropped VPN must not look like a broken product. *(P-16)*
+- **B-20** — "Remove" on an MCP server (E-10) asks first, in the shared sheet: the server's
+  name, **Cancel** and **Remove**. Escape and Cancel keep the server. *(P-16)*
+- **B-21** — The owner sets the number of simultaneous turns (`maxConcurrentTurns`) from the
+  settings screen (E-14), like the other fields of `SETTING_GROUPS`, with the same "restart
+  needed" mark. *(P-16)*
+- **B-22** — When a conversation continues on a fresh engine session because the one it
+  carried cannot be resumed (after a restart), the chat marks it where it happened: the user
+  learns that the engine no longer remembers the earlier messages. Only the engines that can
+  still lose it get the mark (checked in AD-23). *(P-16)*
+
+
 ## Journeys
 
 ### P-1 — Reach the instance
@@ -316,6 +346,19 @@ A developer, a person or a night agent without docker, changes Adestia's code, c
 
 Needs: B-2, B-3, B-4, B-5, B-11, B-12, B-13, B-15, B-16
 
+### P-16 — Follow the agent, and know when the server is gone
+The user works with a page open and the agent writes in it; the owner is away from home.
+
+1. The user reads a page (E-4) while the agent, asked in the chat (E-16), rewrites it. The page redraws by itself (B-17).
+2. The user is editing the same page when the agent writes it. A banner "The page changed" appears over the editor (E-4) with **Reload**; what was typed stays until the user reloads or saves (B-17). The save-time conflict of the revision check is unchanged.
+3. The user opens a screen listed in B-18 on a slow link: a loading state shows (E-4, E-9, E-10, E-11, E-13, E-16, E-25, E-28, E-3). If the fetch fails, a message and **Retry** replace it, and Retry fetches again.
+4. The VPN drops. A banner "The server is not responding" shows over whatever screen is open (E-32). The user waits, or reconnects the VPN; the banner goes away by itself when the server answers.
+5. The owner opens the MCP servers (E-10) and presses **Remove** on one. A sheet (E-33) names the server and asks; **Remove** confirms, **Cancel** or Escape keeps it (B-20).
+6. The owner opens the settings (E-14) and changes "Simultaneous turns"; the field says a restart is needed, like the others (B-21).
+7. After the container was recreated, the user writes in an old Claude conversation. The turn runs on a fresh engine session and the thread shows a marker at that point (B-22). The conversation itself and its messages are untouched.
+
+Needs: B-17, B-18, B-19, B-20, B-21, B-22
+
 ## Out of scope
 
 - **Any functional change** (from `adestia-qualite`; `adestia-correctifs` repairs defects but adds no function, AD-18): a new feature, a removed feature, a renamed configuration key,
@@ -329,5 +372,11 @@ Needs: B-2, B-3, B-4, B-5, B-11, B-12, B-13, B-15, B-16
   `adestia init`): written down, not built.
 - Running the Copilot and Codex engines for real: done with Monsieur at the end of the epic,
   before it reaches `main`.
+- **Kept for later by Monsieur (2026-10-25), not built by `adestia-ajouts`**: deleting a
+  conversation (the archive serves to audit), the engine's permissions, a cost view (the
+  token counter per conversation suffices). **Refused**: `adestia init` and the ephemeral
+  question. Also not built: an offline screen, a cache of pages for offline reading, toasts,
+  the native `confirm()` of E-25 and `alert()` of E-26, the empty states of E-4 and E-7, and
+  a volume for the Claude home in the deployment (`k8s-home-lab` is Monsieur's).
 - Deployment: nothing here changes `k8s-home-lab`; the epic reaches `main` and is tagged,
   the bodies are bumped by Monsieur.

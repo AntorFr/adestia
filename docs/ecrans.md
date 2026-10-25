@@ -120,6 +120,8 @@ is labelled with the destination. Plugins with sub-screens add their own back (E
 | E-29 | Meals page layout | a page with `type: meals` | `plugins/meals/web/layouts.js`, `frise.js`, `meals.css` | Meal timeline (frise), drag to reorder, dish detail (`.meals-modal`) | P-5, P-11 |
 | E-30 | Scan overlay | composer button "Scan barcodes" | `plugins/scan/web/chrome.js`, `scanner.js`, `scan.css` | Full-screen camera, decoded codes list, “Add to message” into the composer | P-11 |
 | E-31 | Project-management blocks | `:::timeline` and `:::subproject` blocks in a page | `plugins/project-management/web/blocks.js`, `model.js`, `pm.css` | Timeline of dated sub-pages, project status pills | P-11 |
+| E-32 | Offline banner | over the open shell, whichever screen is open, while the server does not answer | `app/Offline.tsx` (new), `app/App.tsx` | Say "The server is not responding"; goes away by itself when it answers (`adestia-ajouts`, B-19) | P-16 |
+| E-33 | Remove-server confirmation | **Remove** on E-10 | `app/mcp/ServerDetail.tsx`, `app/ui/Sheet.tsx` | Name the server and ask; **Cancel** / **Remove** (`adestia-ajouts`, B-20) | P-16 |
 
 ## Roles × screens × actions
 
@@ -192,6 +194,30 @@ columns are the same except where the instance's configuration decides what exis
 | E-29 | loading, empty, conflict, dish sheet (shared sheet) | — |
 | E-30 | camera live, codes listed; camera failure said in the composer | in-overlay error state (kept: a refusal never reaches the overlay); on a phone the focus does not go back to the scan button, which the composer's fold has removed (kept, Known defects) |
 | E-31 | timeline, status, no dated page, no sub-project | — |
+
+## Target states of `adestia-ajouts`
+
+Written before the build; each tranche moves its rows into the States table above and empties
+the matching "Lacks" cell. Same shared parts everywhere: the loading row of E-14 (spinner and
+translated "Loading…"), the shared empty state of E-8 with its icon, `Button`, `Sheet`; no new
+vocabulary of looks (`docs/charte.md`).
+
+| E-n | Adds | Notes |
+|---|---|---|
+| E-3, E-9 | loading | index-driven: loading while `/api/pages/index` / the counts have not answered; no Retry (failure = E-32) |
+| E-4 | loading while the page is fetched; fetch-failed with **Retry**; reading: refreshes when its file changes; editing: banner "The page changed" with **Reload** | the banner uses `.adestia-save--warn`'s family; it never touches the editor's text; absent when the change is the user's own save |
+| E-8 | **Retry** on the "server could not" case | 404 and 401/403 have no Retry |
+| E-10 | loading; fetch-failed with **Retry**; **Remove** opens E-33 | |
+| E-11, E-13 | loading; fetch-failed with **Retry** | |
+| E-14 | field "Simultaneous turns" (number, min 1) in a group of its own, "restart needed" mark | same row shape as "Scan period" |
+| E-16 | loading for the list and the thread; fetch-failed with **Retry**; a context-lost marker in the thread (B-22) | the marker is a line in the thread, not a toast; text says the engine no longer remembers the earlier messages |
+| E-25, E-28 | loading; E-25 fetch-failed with **Retry** | E-25's native `confirm()` stays (B-1) |
+| E-32 | banner at the top of the canvas body (the place of `Problems`), role `status`, a `wifi-off` icon; absent when the server answers | not an overlay: the screen below stays usable |
+| E-33 | `Sheet` (bottom sheet on a phone), title "Remove server?", the server's name, **Cancel**, **Remove** (danger) | focus on Cancel; Escape = Cancel; modelled on `NamePrompt` |
+
+Roles: every action above belongs to the **user** (or the **owner** for E-10, E-14, E-33) —
+there is no new role. States are drawn in the four skins, `en` and `fr`, light and dark, desk
+and phone (AD-20).
 
 ## The plugins' screens, as built
 
