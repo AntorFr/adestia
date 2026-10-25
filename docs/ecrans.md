@@ -47,7 +47,7 @@ screen.
 
 **Breadcrumb.** `nav.adestia-crumbs`: `Home`, then the trail computed by `trail.ts`
 (`trailOf`) from settings, the open app and what its view published through `api.trail`,
-the page or the section. Every crumb but the last is a button; a folder crumb resolves
+the page or the section. A page at the root of the workspace has no folder crumb: Home, then its title. Every crumb but the last is a button; a folder crumb resolves
 through `folderRoute` (a folder an app absorbs opens that app). The same trail is sent with
 each message as "where the reader is" (`screenView`).
 
@@ -746,7 +746,7 @@ Metadata, block frames and attachments keep their content; attachments have file
 icons and names with tooltips. `reader/Note.tsx` draws translated block notes as
 `.adestia-empty--inline`, retaining `.adestia-block-note` as a layout/skin hook.
 Lost references, absent files, unknown blocks and missing providers use this form.
-Read-only pages show `lock`, raw source and diagnostics.
+Read-only pages show `lock`, raw source and diagnostics; each diagnostic sentence is translated by its `code` into the instance's language, with the block name, attribute and values left as the author wrote them (a diagnostic with no known code is drawn as received).
 
 **E-4 editing.** Toolbar, slash menu and DOM block bars use translated words and
 sprite icons: `grip-vertical`, `code`/`eye`, `settings`, `trash-2`. Milkdown's surface
@@ -762,7 +762,7 @@ focus to the anchor. Fields use `.adestia-field` and shared controls; Close uses
 `x`. Required attributes have a textual alternative to the star; stray attributes
 have named `trash-2` controls. Both forms speak the instance locale. Icon examples
 in placeholders remain author data. At 360 px the block bar and toolbar wrap;
-popovers stay inside the viewport with `--space-2` (8 px) margins and scroll internally.
+popovers stay inside the viewport with `--space-2` (8 px) margins and scroll internally. At any width a popover also stays below the canvas header and the bands above the page (problems band E-19, skin console): it never covers them, and it follows its anchor when the page scrolls or the window is resized.
 
 **E-7.** Members follow the collection text. Facet cards carry shared count chips;
 Ask for a new page uses a small button with `plus` when `of:`, `into:` and the

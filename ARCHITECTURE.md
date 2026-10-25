@@ -618,6 +618,76 @@ previous pass swept the default skin in English only. A task that touches no scr
 Real engines: Claude by the pod's token; Copilot and Codex by their fakes, their real trial is
 Monsieur's before deployment.
 
+### AD-23 — Pages tranche: four repairs, the shape of each, and the order tests are written in
+Reproduction comes first (AD-16); each repair below says what is expected to be found and what
+is written if it is not.
+
+**a. The root page's breadcrumb (`app/trail.ts`).** `trailOf` derives the folder a page sits in
+with `path.slice(0, path.lastIndexOf('/'))`; for `INDEX.md` (no slash) `lastIndexOf` is -1 and
+the slice drops the last character, so `deepest` is `INDEX.m` instead of the empty parent. The
+fake folder reaches the screen only when something accepts it: the section being open
+under that name, or an app owning a folder of that name (`holdsPages` compares `folderOf`, so
+no page index entry can). The repair is one line: the parent is `folderOf(path)`
+of `app/paths.ts`, the function the rest of the shell already uses (R-11), so a root page's trail
+is its title alone. The test is a `trailOf` call on a root page (`notes.md`) with the section or the owner
+arranged so that the invented name is accepted — red on `main`. The slice is wrong in itself, so
+the repair is made whatever the screens reach; if no real route reaches it, the entry is written
+*repaired, latent* (no visible effect found) and not claimed as a screen fix.
+
+**b. E-6 and the banner at 1440 px (`app/ui/Popover.tsx`).** The popover is `position: fixed`,
+placed once at open from the anchor's rectangle (`useLayoutEffect` on `[open, anchor]`). It is
+not placed again when the canvas scrolls under it or the window is resized, and nothing keeps it
+out of the canvas's sticky header (`canvas.css`, `z-index: 5`, under the popover's 101) or the
+band above the page (problems band E-19, skin console). The right behaviour, read in E-5/E-6
+of `docs/ecrans.md` ("stay inside the viewport"): the panel never covers the header or the bands
+above the page; it keeps clear of them by taking the *bottom edge of the canvas header* as its
+top limit, and follows its anchor on scroll and resize (`scroll` captured, `resize`), closing
+nothing. The cause is **confirmed by a bench scenario at 1440×900 before the fix** (a page with a
+block near the top, E-19 band present, the popover opened): if the overlap is another one
+(the console band, the read-only banner), the same rule — the panel stays below every element the
+canvas draws above the page — covers it, and the cause found is written in the task. If nothing
+overlaps in any of the four skins, the defect leaves Known defects as *not reproduced* with the
+scenario named. The popover is shared with E-5 and the chat's model list, so the rule is tested on
+the component (a `Popover` test with an anchor under a header rectangle) and the bench judges the
+three users.
+
+**c. The page diagnostic in one language (`content`, `Editor.tsx`, `SaveStatus.tsx`).** The
+sentence is built in English by `validateDocument` and drawn as received. The wire keeps its
+English `message` (the 422 body and the agent read it); a `Diagnostic`
+gains two additive fields, `code` (`unknown-block`, `no-content`, `no-content-disputed`,
+`needs-content`, `needs-content-disputed`, `attribute-required`, `attribute-value`,
+`attribute-unknown`) and `args` (the block name, key, value, accepted values, all author data and
+therefore never translated). The shell draws `t(<English template with %block, %key, %value,
+%accepted>)` filled from `args`; a diagnostic with no known `code` (a plugin's, an older server)
+is drawn as received. The `Not saved: %reason` status uses the same function for the first
+diagnostic. In English the sentence is byte for byte the server's (a test pins that), so only
+`fr` changes. *Rejected*: translating on the server by `Accept-Language` (the server has no
+per-request locale for pages, and the agent must keep English); translating by matching the
+message text (breaks at the first reworded sentence).
+
+**d. Frontmatter CRLF (`server/src/frontmatter.ts`, `schedule.ts`).** The editor reads fields from
+a `\r\n` page (`content`'s `BLOCK` takes `\r?\n`), the index and the schedule do not. The repair
+makes `content` the one fence reader: the server's `splitFrontmatter` calls
+`@antorfr/adestia-content`'s (exported from its index if it is not), `parseFrontmatter` and
+`frontmatterOf` split the head on `/\r?\n/`, and `stampField` finds the block with the same
+fence and writes back **in the line ending the note already uses**, so stamping `expired:` on a
+CRLF note does not turn it into a mixed file. Scalars keep being read as they are (AD-7: the
+shallow reader and `content`'s YAML reader still differ on quoting; only the fence is aligned).
+The fence of `content` also takes spaces after the closing `---`, which the server's did not: that
+widening is the editor's rule and is written with the change. Every reader of
+`server/src/frontmatter.ts` (pages index, instructions, catalogues, shell tools, schedule) gains
+CRLF; the CHANGELOG says so. The test is written first on a page and a scheduled note whose
+fences and lines end `\r\n`: the index returns the fields the editor shows, the note reads its
+`at`/`expired`, and `stampField` keeps CRLF. If the first test passes on `main` (the Known defect says "behaviour not yet
+reproduced"), the defect is written *not reproduced* with the attempt and nothing else in (d) is
+built.
+
+Not in this tranche: refreshing the open page when the agent writes (kept, P-5 step 7), loading
+and retry states (AD-18), E-8's retry. E-8's text and the Known defect entries leave with their
+repair, in the same commit (AD-16).
+*Reversed if*: the reproduction of (b) finds the overlap is the sheet or popover of another
+screen: the rule stays, the file changes, and the task says which.
+
 ## Refactoring targets
 
 Each target: what, where, why it costs, the tranche that owns it, and its outcome

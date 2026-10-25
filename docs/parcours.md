@@ -165,7 +165,7 @@ A user looks for a page or a domain from the landing canvas.
 3. Under **Domains**, one tile per active app that has a `tile`, then one tile per top-level folder of pages (its index page gives the icon and colour; `home/` and the folders an active app absorbs are left out), then the **Settings** tile.
 4. The user presses **Arrange** and drags the tiles. The order is kept in this browser (`adestia.order.domains`) and moves nothing on disk. **Done** ends the arranging.
 5. The user opens a section tile and lands on E-3 at `#/section/<folder>`: its sub-folders, then the live pages as cards, then the finished ones folded under **Finished**. A search field appears past five pages, and facet pills when the pages declare `status`, `role` or `cat` (the first of these found).
-6. The breadcrumb in the canvas header (`adestia-crumbs`) names each level and walks back up; **Home** goes to `#/`. On a phone, **Chat** in the canvas header returns to the conversation.
+6. The breadcrumb in the canvas header (`adestia-crumbs`) names each level and walks back up; **Home** goes to `#/`. A page at the root of the workspace has no folder above it: its trail is Home and its title, never a folder it does not sit in. On a phone, **Chat** in the canvas header returns to the conversation.
 7. A folder link always goes through `folderRoute` (`owners.ts`). A folder an active app owns opens that app's screen. A folder holding a single typed page of its owner's kind opens directly on that page (`#/page/<folder>`). Anything else opens the section. A `#/section/…` address typed by hand is redirected the same way.
 
 Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16
@@ -181,7 +181,7 @@ A user reads a markdown page of the workspace.
 6. Under the page, the attachments strip (`Attachments`, `GET /api/files?page=…`) lists the files in the page's folder and its `assets/` that the page body does not already show.
 7. When the agent writes the page, the server pushes the change (`GET /api/events`, `workspace.watch`) and the pages index is refetched (new pages appear in the navigation); the open page is not reloaded, since the editor may hold unsaved words, and a conflicting save is refused by its revision check (known defect, `ARCHITECTURE.md` › Known defects).
 8. A page that cannot load shows E-8 (`MissingPage`), with three cases: no page at this address (404), out of reach because the session may have expired (401/403), or a server error. It names the path and links to the folder above, using file-question, lock or circle-alert in the shared empty state.
-9. A page using blocks the vocabulary does not know opens read-only, showing a lock icon, its raw source and the diagnostics. Block notes use the translated inline empty state.
+9. A page using blocks the vocabulary does not know opens read-only, showing a lock icon, its raw source and the diagnostics, each one in the instance's language (the block names, attributes and values in them stay as the author wrote them). Block notes use the translated inline empty state.
 
 Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16
 
@@ -193,7 +193,7 @@ A user corrects or writes a page that the agent also edits.
 3. Each block in the editor has a frame with its `:::name`, a grip to move it, a raw/preview switch and a `settings` control that opens E-6 (`BlockSettings`). That form is built from the block's declared attributes and the shared ones (`title`, `ico`, `frame`, `w`).
 4. The **Page properties** button (`settings`) on the frontmatter row opens E-5 (`PageSettings`), a form over the frontmatter that includes the fields plugins declare for the page's `type`. YAML lines it cannot handle are kept unchanged. E-5 and E-6 use shared popovers and fields; Escape or an outside click closes them and returns focus to their settings anchor.
 5. The page saves itself 1.6 s after typing stops, and again on **Done** (`PUT /api/pages/<path>` with the revision it opened). The translated status reads Saving…, Saved, or "Saved, tidied to house style", with a spinner or check icon. Toolbar, slash menu and block controls use the instance locale.
-6. If the agent wrote the file in the meantime, the server answers 409: the status says "The agent changed this page. Reload to see its version.", the editor stays open with the text, and nothing more is saved. A save that breaks the vocabulary is refused with its first diagnostic.
+6. If the agent wrote the file in the meantime, the server answers 409: the status says "The agent changed this page. Reload to see its version.", the editor stays open with the text, and nothing more is saved. A save that breaks the vocabulary is refused with its first diagnostic, in the instance's language.
 7. Files the user drops on the page go to the chat inbox, and the composer is filled with "File the attached files with the page …" so the agent files them in the right place.
 
 Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16
