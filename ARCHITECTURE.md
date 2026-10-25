@@ -65,7 +65,7 @@ Outside `packages/`:
   (`frameShell`, the preamble), `screen.ts`.
 - **Drivers and arming** — `drivers.ts` (`buildDriver`, `AVAILABLE_DRIVERS`), `secrets.ts`
   (`SecretStore`, `ArmingFlows`), `routes/arming.ts`.
-- **MCP inbound and delegations** — `mcp-in.ts`, `routes/mcp.ts` (`registerMcp`, `/mcp`; `mcp-routes.ts` re-exports it),
+- **MCP inbound and delegations** — `mcp-in.ts`, `routes/mcp.ts` (`registerMcp`, `/mcp`),
   `delegations.ts` (`DelegationChannel`), `routes/delegations.ts` (`/api/delegations`),
   `callback.ts` (`wakePrompt`, `verifySettled`), `routes/callback.ts` (`registerCallback`, `/callback`).
 - **MCP outbound** — `config/mcp.ts`, `mcp-store.ts` (`McpStore`, the shell-written layer),
@@ -649,14 +649,16 @@ Read on `epic/adestia-correctifs` before any code. No screen is touched (the tra
   `files.ts`, `pages.ts`, `static.ts`, `watch.ts` (named `register*` and their option types) and
   `mcp-routes.ts` (a pure `export *`). Repair: the re-exports go; `app.ts` already imports from
   `routes/`. The tests that import `register*` from the old files import `routes/...`
-  (`pages-stores`, `pages`, `callback`, `mcp`, `files`, `static`, `watch`). `index.ts` takes
-  its types (`StaticOptions`, `PagesOptions`, `FilesOptions`, `DelegationPort`,
-  `McpDependencies`) from `routes/`. `mcp-routes.ts` is deleted if nothing else imports it. The
+  (`pages-stores`, `pages`, `callback`, `mcp`, `files`, `static`, `watch`). `index.ts` stays the
+  package's public type surface and keeps exporting those types (`StaticOptions`, `PagesOptions`,
+  `FilesOptions`, `DelegationPort`, `McpDependencies`), but its `export type … from` lines point
+  at `./routes/…`, where they are owned, not at the six old files. `mcp-routes.ts` is deleted if nothing else imports it. The
   pages tranche depends on this one precisely because `pages.ts` stops re-exporting. The
-  guard is a suite test over the seven files this repair names (`callback.ts`, `files.ts`,
-  `pages.ts`, `static.ts`, `watch.ts`, `mcp-routes.ts`, `index.ts`): none re-exports from
-  `routes/` (`export { register… } from './routes/…'`, `export * from './routes/…'`, or a type
-  re-export — `index.ts` takes its types from `routes/` by import, not by re-export). The two
+  guard is a suite test with two parts. Over the six old files (`callback.ts`, `files.ts`,
+  `pages.ts`, `static.ts`, `watch.ts`, `mcp-routes.ts` if it still exists): none re-exports
+  from `routes/` (`export { register… } from './routes/…'`, `export * from './routes/…'`, or a
+  type re-export). Over `index.ts`: no `export … from` line names one of those six files for a
+  symbol `routes/` owns; its lines to `./routes/…` are the public surface and are allowed. The two
   other helper re-exports (`buildVersion`, `sseFrame`, `SkinPayload` in `app.ts`; `mountPluginApis`
   in `plugin-host.ts`) are tests' aliases left to the dette tranche, and the guard does not cover them; it targets
   re-exports, not definitions — `registerPluginVocabulary` in `extensions.ts` is defined there and stays. The rows of the "exports kept only for
