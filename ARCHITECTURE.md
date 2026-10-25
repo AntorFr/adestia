@@ -626,7 +626,8 @@ Read on `epic/adestia-correctifs` before any code, so the tranche builds the tru
   the screen does not list). The screen E-10 is the truth the tile points to. Repair: the tile
   counts the listed servers once; the driver's health only says how many of *those* need
   attention (a health entry whose name is not listed is not counted). Test first, with two payloads that
-  disagree (6 listed, 7 reported). If a real instance shows no gap, the test still pins the rule.
+  disagree (6 listed, 7 reported). If it is green on arrival (the sources never disagree), the defect leaves Known defects as
+  *not reproduced* with the attempt, and the test stays as the guard.
 - **Token field without `autoComplete`: not reproduced.** `CataloguePopin.tsx` already has
   `type="password"` and `autoComplete="off"` (since `64dee0f`). It leaves Known defects as
   *not reproduced*; a test pins the attribute. `"new-password"` is not chosen: it is what a
