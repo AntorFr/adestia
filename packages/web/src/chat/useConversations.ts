@@ -338,6 +338,29 @@ function useOpenConversations({ fetchImpl, narrow }: ConversationsOptions) {
 
 type Open = ReturnType<typeof useOpenConversations>
 
+/** Reconcile a finished stream with the store without losing an unfiled refusal. */
+async function settleTurn(open: Open, tabId: string, last: TurnState | undefined): Promise<void> {
+  const { conversation, reread, patchConversation, activeRef, read } = open
+  // A refused message is never filed by the server. Keep its optimistic
+  // bubble too: rereading the transcript must not swallow what was refused.
+  const errorOnly = isErrorOnly(last)
+  const messages = conversation(tabId).messages
+  const filed = tabId !== DRAFT && (await reread(tabId))
+  patchConversation(tabId, {
+    ...(errorOnly ? { messages } : {}),
+    live: errorOnly
+      // Leaving may have cleared this error while reread was in flight,
+      // even if the reader has already come back. Do not revive it.
+      ? tabId === activeRef.current && conversation(tabId).live === last ? last : undefined
+      : filed || !last ? undefined : { ...last, running: false },
+    stopping: false,
+    // The dot that says "finished, and you have not seen it": only when
+    // the answer landed in a tab the reader was not looking at.
+    unread: tabId !== activeRef.current,
+  })
+  if (tabId === activeRef.current) read(tabId)
+}
+
 /**
  * The turn: adopting a conversation from the store, sending into it, following
  * it to its end, stopping it. Writes what `useOpenConversations` keeps — through
@@ -354,7 +377,6 @@ function useTurn({ fetchImpl, model, view, t }: ConversationsOptions, open: Open
     patchConversation,
     rekeyConversation,
     read,
-    reread,
   } = open
   /** In-flight conversation creation, so two rapid sends share ONE conversation. */
   const creation = useRef<Promise<string | undefined> | undefined>(undefined)
@@ -469,24 +491,7 @@ function useTurn({ fetchImpl, model, view, t }: ConversationsOptions, open: Open
       patchConversation(tabId, { live: last })
     }
 
-    // A refused message is never filed by the server. Keep its optimistic
-    // bubble too: rereading the transcript must not swallow what was refused.
-    const errorOnly = isErrorOnly(last)
-    const messages = conversation(tabId).messages
-    const filed = tabId !== DRAFT && (await reread(tabId))
-    patchConversation(tabId, {
-      ...(errorOnly ? { messages } : {}),
-      live: errorOnly
-        // Leaving may have cleared this error while reread was in flight,
-        // even if the reader has already come back. Do not revive it.
-        ? tabId === activeRef.current && conversation(tabId).live === last ? last : undefined
-        : filed || !last ? undefined : { ...last, running: false },
-      stopping: false,
-      // The dot that says "finished, and you have not seen it": only when
-      // the answer landed in a tab the reader was not looking at.
-      unread: tabId !== activeRef.current,
-    })
-    if (tabId === activeRef.current) read(tabId)
+    await settleTurn(open, tabId, last)
 
     if (tabId === DRAFT) return
     const follow = await attachTurn(tabId, fetchImpl ?? fetch)
