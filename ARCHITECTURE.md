@@ -640,8 +640,8 @@ written first, red until the removal, then green). Inventory taken on `epic/ades
   the new count is written beside the old one. The guard: a suite test reads the table and fails if a row
   has no reason or names an export that is absent from the module (rows cannot rot).
 - **Bench duplicates.** `loadPlaywright` is written eleven times (`bench.mjs`, `sweep.mjs`, nine tests
-  and scenarios) and `launch(seed)` three times (`sweep.mjs`, `seed/check.mjs`, `bench.mjs`). Each goes
-  to one module under `bench/lib/` that every caller imports; the three `launch` copies are compared
+  and scenarios) and `launch(seed)` twice (`sweep.mjs`, `seed/check.mjs`; the scenarios' own `launch(locale)` and `launch(skin, locale)` are other functions and stay). Each goes
+  to one module under `bench/lib/` that every caller imports; the two `launch(seed)` copies are compared
   first — where they differ, the difference becomes a parameter and is written down, as R-2 did.
   The guard: `bench/tests/bench-once.test.mjs` fails on a second definition (`git grep`).
 - **Fake-engine options with no caller.** `createFakeEngine` takes `capabilities`, `mcp`, `auth`,
@@ -652,15 +652,16 @@ written first, red until the removal, then green). Inventory taken on `epic/ades
 - **`doc-besoin.test.mjs` in CI.** `.github/workflows` gains a step `node --test bench/tests/doc-besoin.test.mjs
   bench/tests/bench-once.test.mjs` (neither needs a browser). The two tests that guard `DESIGN.md` twice
   (`design-doc.test.ts` and `doc-besoin.test.mjs`) keep the `doc-besoin` pair, which also checks headings;
-  `design-doc.test.ts` goes if nothing else is in it, after the CI step is green.
+  `design-doc.test.ts` goes if nothing else is in it. A node test reads the workflow file and fails
+  if the step is absent, so the CI line is held by the suite itself.
 - **Typed lint.** `eslint.config.js` adds `no-floating-promises`, `no-misused-promises` and `await-thenable`
   for `packages/**` and `plugins/**` through the project service, and its header comment ("No rule uses type
-  information") is rewritten. If `npm run lint` is not clean with them, findings are fixed up to one
-  tranche's worth (judgement: fixes that do not change behaviour); otherwise the rules that do not pass are
-  left off and each is named under Known defects with its count. `.agent/migrate-frame.mjs` is linted
-  directly (`npx eslint .agent/migrate-frame.mjs`) and its errors fixed; it is deleted instead only if
-  `.agent/status.md` says its migration is done, and then the deletion is written in CHANGELOG-free form
-  under the same Known defects line.
+  information") is rewritten. The threshold, per rule: if it reports 15 findings or fewer, they are fixed
+  (without changing a behaviour) and the rule stays on; if it reports more, the rule stays off and is named
+  under Known defects with its count. `.agent/migrate-frame.mjs` no longer exists (removed by 9960469;
+  `doc-besoin.test.mjs` requires its absence): its lint errors are "not reproduced". The debt row of the
+  AD-17 register above gets its outcome appended in the row's own text (`— closed: …`), as R-6's row does.
+  The R-6 outcome (`closed: 178 entries remain…`) is rewritten by the exports task with the new count.
 *Rejected*: dropping the exports and the tests together (tests are the contract of pure units); typing the
 bench (it is scripts, not product). *Reversed if*: a removal changes a built file under `dist/`
 (then it is a behaviour and goes through B-13's red-first rule).
