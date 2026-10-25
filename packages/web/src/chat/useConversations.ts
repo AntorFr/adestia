@@ -376,7 +376,6 @@ function useTurn({ fetchImpl, model, view, t }: ConversationsOptions, open: Open
     refreshConversations,
     patchConversation,
     rekeyConversation,
-    read,
   } = open
   /** In-flight conversation creation, so two rapid sends share ONE conversation. */
   const creation = useRef<Promise<string | undefined> | undefined>(undefined)
