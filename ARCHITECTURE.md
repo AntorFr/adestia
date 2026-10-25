@@ -895,14 +895,6 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
   breadcrumb badge says “7 servers”. Observed during the charter review; whether it
   predates this epic is unknown. Kept under B-1, pending a separate behaviour investigation.
 
-- **P-2 step 4: a refused turn (429) can stay silent.** `chat/stream.ts` yields
-  the refusal as a live error. `chat/Thread.tsx` draws its error line only while
-  that live state is present; `useConversations.ts` › `consume` clears it when
-  rereading the stored conversation succeeds, losing the refusal message.
-  P-2 says the chat explains the
-  refusal; this predates the tranche and stays under AD-7. Overall acceptance
-  must carry this discrepancy: `bench/tests/chat-p2-gestes-besoin.test.mjs`
-  checks HTTP 429 and the freed composer, without requiring an error line.
 - **Attachment names still carry a text emoji in the optimistic user bubble.**
   `chat/useConversations.ts` › `stamped()` appends `📎` and the attachment names
   to the message text kept in the open conversation's state. The held bubbles

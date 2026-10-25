@@ -131,6 +131,11 @@ const EMPTY_CONVERSATION: OpenConversation = {
   stopping: false,
 }
 
+/** Nothing was filed for a refusal or a connection that failed before any answer. */
+function isErrorOnly(live: TurnState | undefined): boolean {
+  return !!live?.error && !live.running && live.parts.length === 0
+}
+
 export interface ConversationsOptions {
   readonly fetchImpl?: typeof fetch | undefined
   /** The shell's translator, for the one sentence this hook says itself. */
@@ -213,8 +218,13 @@ function useOpenConversations({ fetchImpl, narrow }: ConversationsOptions) {
     // Persisted like a browser's tab strip — order, membership, activation —
     // so a refresh reopens what was open. The ref keeps the pump loops honest
     // about which tab the reader is looking at.
-    activeRef.current = tabs.active ?? DRAFT
+    const next = tabs.active ?? DRAFT
+    if (activeRef.current !== next && isErrorOnly(conversation(activeRef.current).live)) {
+      patchConversation(activeRef.current, { live: undefined })
+    }
+    activeRef.current = next
     saveTabs(tabs)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- helpers read the stable conversation ref
   }, [tabs])
 
   // Declared as FUNCTIONS, not useCallback: the machinery is a web of mutual
@@ -458,9 +468,16 @@ function useTurn({ fetchImpl, model, view, t }: ConversationsOptions, open: Open
       last = { ...(last ?? INITIAL_TURN), running: false, lost: true, error: (error as Error).message }
     }
 
+    // A refused message is never filed by the server. Keep its optimistic
+    // bubble too: rereading the transcript must not swallow what was refused.
+    const errorOnly = isErrorOnly(last)
+    const messages = conversation(tabId).messages
     const filed = tabId !== DRAFT && (await reread(tabId))
     patchConversation(tabId, {
-      live: filed || !last ? undefined : { ...last, running: false },
+      ...(errorOnly ? { messages } : {}),
+      live: errorOnly
+        ? tabId === activeRef.current ? last : undefined
+        : filed || !last ? undefined : { ...last, running: false },
       stopping: false,
       // The dot that says "finished, and you have not seen it": only when
       // the answer landed in a tab the reader was not looking at.

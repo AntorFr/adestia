@@ -84,7 +84,11 @@ export function Thread({ active, t, openPage, signing, busySlot, bottom }: Threa
                 <p className="adestia-bubble__note">{t('Turn interrupted.')}</p>
               )}
               {last && !active.live!.running && active.live!.error && (
-                <p className="adestia-bubble__error" role="alert"><Icon name="circle-alert" /> {active.live!.error}</p>
+                <p className="adestia-bubble__error" role="alert"><Icon name="circle-alert" /> {active.live!.refusal?.status === 429
+                  ? active.live!.refusal.max !== undefined
+                    ? t('Turn limit reached (%n at a time) — try again in a moment.').replace('%n', String(active.live!.refusal.max))
+                    : t('Turn limit reached — try again in a moment.')
+                  : active.live!.error}</p>
               )}
             </article>
           )

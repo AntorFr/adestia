@@ -461,3 +461,11 @@ not from invented release notes for the tags above.
 
 The documentation tranche separates this history from the current state and retires
 closed work files. DESIGN.md and the remaining documentation review follow separately.
+
+## adestia-correctifs (unreleased)
+
+- **Chat refusal** — A turn refused at the concurrency limit now says the server's
+  limit in English or French. Its error line and the sent message survive rereading
+  the conversation; the line clears on the next send or when leaving the conversation.
+  A server unreachable before any answer keeps its error line in the same way;
+  other refusals retain the server's words. No server behaviour changes.
