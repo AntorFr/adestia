@@ -653,8 +653,12 @@ Read on `epic/adestia-correctifs` before any code. No screen is touched (the tra
   its types (`StaticOptions`, `PagesOptions`, `FilesOptions`, `DelegationPort`,
   `McpDependencies`) from `routes/`. `mcp-routes.ts` is deleted if nothing else imports it. The
   pages tranche depends on this one precisely because `pages.ts` stops re-exporting. The
-  guard is a suite test: no file of `packages/server/src` outside `routes/` re-exports from
-  `routes/` (`export { register… } from './routes/…'` or `export * from './routes/…'`); it targets
+  guard is a suite test over the seven files this repair names (`callback.ts`, `files.ts`,
+  `pages.ts`, `static.ts`, `watch.ts`, `mcp-routes.ts`, `index.ts`): none re-exports from
+  `routes/` (`export { register… } from './routes/…'`, `export * from './routes/…'`, or a type
+  re-export — `index.ts` takes its types from `routes/` by import, not by re-export). The two
+  other helper re-exports (`buildVersion`, `sseFrame`, `SkinPayload` in `app.ts`; `mountPluginApis`
+  in `plugin-host.ts`) are tests' aliases left to the dette tranche, and the guard does not cover them; it targets
   re-exports, not definitions — `registerPluginVocabulary` in `extensions.ts` is defined there and stays. The rows of the "exports kept only for
   tests" table that name these re-exports leave in the same commit; `R-3`'s outcome says "a
   re-export" and is corrected to say the files keep only their helpers.
