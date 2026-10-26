@@ -641,6 +641,37 @@ its path plus its `store` id like any page route; the refresh matches both. *Rev
 feed cannot name the changed path for a page in a second store (then only the first store
 refreshes, and the rest stays as today).
 
+**Detail built by `adestia-ajouts-page-suivie`.**
+- One subscription, not two. `useInstance` already holds the stream (`followChanges`); besides
+  refetching the index it publishes the last batch as `pageChanges: { seq, paths }` (`seq` grows on
+  every batch, so two batches naming the same path are two signals). `App` hands it to `usePage`.
+  `usePage` opens no `EventSource` of its own.
+- The event names the LOGICAL path (`routes/watch.ts`: "never which circle it changed in"), so the
+  condition of "Reversed if" holds: a page of a second store is matched on its path alone, and the
+  refetch carries the page's own `?store=` as the first load does. A batch that names the path
+  while the open page lives in another circle than the one that changed costs one extra read of the
+  same page (same revision: nothing shown); it is never wrong.
+- Reading: a match refetches the page silently (no `Loading`, the screen stays) and replaces
+  `page`; a failed refetch other than 404 changes nothing on screen (the next batch retries).
+  404 on the refetch is the deletion: `pageProblem` becomes `{ path, status: 404 }` and E-8 shows
+  (the page is no longer followed: `pagePath` still routes it, but the next fetch is the user's).
+- Editing: `Editor` tells `App` it is editing (`onEditing`, already there); `usePage` then does
+  not replace `page`. On a match it reads the page into a side slot, `incoming: { revision } |
+  { gone: true }`, and the editor compares `incoming.revision` with the revision it holds now —
+  `useAutosave`'s own `revision` (the one it opened with or its last save returned), which the
+  hook exposes; `page.revision` alone does not move after a save and would raise the banner on the
+  user's own save. Equal: nothing. Different or gone: the banner. `reload()` (the banner's
+  button) moves `incoming` into `page` (or, when gone, into `pageProblem` 404, so E-8 shows) and
+  the editor's existing reset-on-revision effect loads it. Nothing else writes the editor's text.
+- A save the user's own makes is silent for free: the feed reports it, the side read returns the
+  revision the save returned, equal to the editor's. The save-time 409 line ("The agent changed
+  this page. Reload to see its version.", `SaveStatus`) is unchanged and may show with the banner.
+- Watch off (`/api/events` 404): `followChanges` already stops asking, `pageChanges` stays at
+  `seq: 0`, nothing refreshes, as today.
+*Rejected for the detail*: the editor fetching the page itself (a second path to the same read,
+and the editor also embeds in plugins that have no feed); comparing the markdown text instead of
+the revision (the editor's text differs from the disk's after tidying).
+
 ### AD-22 — The server is gone when it does not answer, not when the browser says offline
 The offline banner (E-32) reads the outcome of the shell's own requests (failed fetch of any
 `/api/` call, the event stream dropping) and, while shown, probes `GET /api/health` until it

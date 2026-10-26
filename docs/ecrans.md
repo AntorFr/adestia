@@ -218,6 +218,36 @@ vocabulary of looks (`docs/charte.md`).
 | E-32 | banner at the top of the canvas body (the place of `Problems`), role `status`, a `wifi-off` icon; absent when the server answers | not an overlay: the screen below stays usable |
 | E-33 | `Sheet` (bottom sheet on a phone), title "Remove server?", the server's name, **Cancel**, **Remove** (danger) | focus on Cancel; Escape = Cancel; modelled on `NamePrompt` |
 
+### E-4 — the page that follows the agent (`adestia-ajouts-page-suivie`)
+
+Reading: no visible state of its own — the text is replaced in place when the file changes; the
+scroll position is kept by the browser as long as the blocks above it keep their height.
+Editing: the banner sits **above the editor surface, below the title row**, full width of the
+page column, in the family of `.adestia-save--warn` (icon `triangle-alert`, one line, the **Reload**
+button at its end, an `.adestia-btn`):
+
+```
+[ ⚠ The page changed.                                   [ Reload ] ]
+  <title>
+  <text the user is typing — untouched>
+```
+
+| State | Shown |
+|---|---|
+| reading, file changed | new text, nothing else |
+| reading, file deleted or moved | E-8 (404), path named |
+| editing, file changed by the agent | banner "The page changed." + **Reload**; text kept |
+| editing, own save | no banner; "Saved" as today |
+| editing, banner up, user saves | the save may 409 ("The agent changed this page…" line); banner stays |
+| editing, banner up, Reload | editor shows the agent's version; banner gone; unsaved typing is replaced (the user chose it) |
+| editing, file deleted or moved | the same banner; **Reload** leads to E-8 |
+| watch off | nothing |
+
+The banner has `role="status"`, is reached by Tab before the editor text, and keeps the width of
+the page column on the phone (the button wraps under the sentence below 820 px). `en`: "The page
+changed." / "Reload"; `fr`: "La page a changé." / "Recharger". Proof under the four skins, light
+and dark, desk and phone, `en` and `fr`.
+
 Roles: no route tells an owner from a user (matrix below): E-32 and E-33 are the same for both,
 the agent touches neither, and no calling agent sees them. There is no new role. States are drawn in the four skins, `en` and `fr`, light and dark, desk
 and phone (AD-20).
