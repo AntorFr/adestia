@@ -663,8 +663,9 @@ Claude test of what the SDK does when `resume` names a session that is gone; not
 before it. Decided now for both outcomes: if the SDK starts a silent new session, the mark is
 written when the turn ended on a session id other than the one the conversation carried
 (`turns.ts`); if it refuses to resume, the server reruns the turn fresh on the same conversation
-and writes the same mark (P-16 step 7 is what the user sees in both cases). If it fails loudly and
-the server already shows that as an error, nothing is rerun and B-22 reduces to writing that.
+and writes the same mark (P-16 step 7 is what the user sees in both cases). If it refuses but the
+error is already shown and the conversation heals by itself on the next turn (the "already shown"
+case of outcome (b)), nothing is rerun and B-22 reduces to writing that.
 Pointing Claude's home under `dataDir` would remove the cause but is a behaviour change of the
 engine environment and, in the deployment, Monsieur's: not built, written under Out of scope.
 *Rejected*: marking for every engine (two cannot lose it; a mark that cannot fire is dead code).
@@ -675,16 +676,18 @@ surfaces it as an error (then B-22 reduces to writing that, as the letter allows
 - *The first task is the real test* (`packages/drivers`, skipped without `CLAUDE_CODE_OAUTH_TOKEN`, run
   by the pod's token): a Claude turn with `resume` naming a session id that does not exist. It
   records which of the three outcomes happened — **(a)** a new session starts silently (the result
-  carries another id), **(b)** the SDK throws or ends in error before any text (the driver emits
-  `error`), **(c)** the SDK answers without telling. The result is written under this
+  carries another id), **(b)** the SDK refuses to resume: it throws or ends in error before any text (the driver emits
+  `error`), and the test notes whether the next turn succeeds by itself, **(c)** the SDK answers without telling. The result is written under this
   heading ("Outcome of the real test") before anything else is built. If the token is missing at
   run time the task stops with no exit reached; no fake stands in for it.
 - *Where the mark is decided* (`routes/turns.ts`, in `finish`, and nowhere else): the session the
   turn resumed (`conversations.read(…).sessionId` read just before `recordOutcome`) is compared
   with `outcome.sessionId`; both defined and different, on the Claude engine, → `recordOutcome`
   puts `contextLost: true` on the first agent message it writes. A conversation with no earlier
-  session (first turn) never gets it. Outcome (b): the route reruns once without `sessionId` on
-  the same conversation, and the rerun's outcome is the one filed, with the same mark. Outcome (c)
+  session (first turn) never gets it. Outcome (b): the SDK refuses to resume (error before any text). If the next turn of the
+  same conversation then succeeds by itself, B-22 reduces to one sentence in `docs/parcours.md` and here ("already
+  shown"); otherwise the route reruns once without `sessionId` on the same conversation, and the rerun's
+  outcome is the one filed, with the same mark. Outcome (c)
   has no signal and is written down as "cannot be detected", the mark not built, and the task
   reduces to that sentence in `docs/parcours.md` and here.
 - *Only Claude*: the check is behind the engine id the turn ran on; Copilot and Codex fakes in
