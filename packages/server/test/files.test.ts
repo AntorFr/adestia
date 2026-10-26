@@ -4,7 +4,8 @@ import { join } from 'node:path'
 import Fastify, { type FastifyInstance } from 'fastify'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { attachmentsOf, kindOf, registerFiles, safeFilePath } from '../src/files.js'
+import { attachmentsOf, kindOf, safeFilePath } from '../src/files.js'
+import { registerFiles } from '../src/routes/files.js'
 import { resolveStores, type Store } from '../src/stores.js'
 import { cleanTmp, tmpDir } from './support/tmp.js'
 

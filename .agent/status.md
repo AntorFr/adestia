@@ -1,11 +1,17 @@
 # Status — Adestia
-> MàJ : 2026-10-24
+> MàJ : 2026-10-26
 
 ## Version courante
 
 - Dernier tag accessible : **`v0.95.0`** (`git describe --tags
   --abbrev=0`), l'epic `adestia-qualite`, entrée dans `main`.
-- Branche de travail : `feature/adestia-qualite-chat`, sur `origin/epic/adestia-qualite`
+- Branche de travail : `feature/adestia-correctifs-serveur`, sur `origin/epic/adestia-correctifs`
+  (tranche serveur d'`adestia-correctifs`, AD-22 : `start()` refuse un pilote dont le descripteur
+  ne tient pas son contrat (`Driver "<id>" is not conformant:` + un écart par ligne) ; l'enregistrement
+  de la configuration garde le mode du fichier (0600) ; le commentaire de `user-tokens.ts` dit que
+  le fichier porte aussi le jeton d'accès et son échéance ; les anciens fichiers ne réexportent plus
+  les `register*` de `routes/`, gardé par `reexports-retires.test.ts`. Plus aucun défaut serveur connu).
+  Précédemment : `feature/adestia-qualite-chat`, sur `origin/epic/adestia-qualite`
   (correctifs de recette et de verify : un message envoyé avant que le premier soit parti est retenu ;
   en-tête du rail à moins de 400 px à un seul espacement, sélecteur de modèle d'au moins 72 px ; bulle d'erreur seule à marge symétrique). Banc, tests, serveur, charte,
   plugins, pages et chat sont intégrés à l'epic ; la documentation est relue
