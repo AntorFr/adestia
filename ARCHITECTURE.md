@@ -879,7 +879,7 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
   closing recommendations; the browser bench must not require that refresh.
 - **Nestor's send control still uses the `↑` glyph**, supplied by its skin.
   Kept during the pages tranche; the skin's control remains for a separate fix.
-- **The chat's native model select says `Auto` (`chat/ModelPicker.tsx`)**, outside the pages tranche.
+- **The chat's model select stays native (`chat/ModelPicker.tsx`)** — kept — native control, a custom listbox is a new component (AD-18). Its empty option is the `t()` value and the control carries `.adestia-select`.
 - **E-6's block settings can overlap the banner at 1440 px.** Observed during the
   pages review; left unchanged by the typography and documentation correction.
 - **A page diagnostic can mix languages on a French instance.** Its translated
@@ -895,11 +895,6 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
   breadcrumb badge says “7 servers”. Observed during the charter review; whether it
   predates this epic is unknown. Kept under B-1, pending a separate behaviour investigation.
 
-- **Attachment names still carry a text emoji in the optimistic user bubble.**
-  `chat/useConversations.ts` › `stamped()` appends `📎` and the attachment names
-  to the message text kept in the open conversation's state. The held bubbles
-  and attachment controls use the `paperclip` icon, but this text emoji remains
-  unchanged under AD-7.
 - **Delegation signature cards — kept, read-only view (AD-21).** A delegation
   transcript can carry signatures, but E-13 has no composer or signing handler
   (P-13 step 7). `app/Delegations.tsx` therefore passes `{ signatures: false }` to

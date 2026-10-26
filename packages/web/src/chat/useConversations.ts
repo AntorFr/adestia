@@ -148,11 +148,17 @@ export interface ConversationsOptions {
   readonly view?: ScreenView | undefined
 }
 
-/** The user's half, as the conversation shows it — attachments named after it. */
-function stamped(text: string, attachments: readonly PendingAttachment[]): string {
-  return attachments.length > 0
-    ? `${text}\n📎 ${attachments.map((a) => a.name).join(', ')}`.trim()
-    : text
+/**
+ * The user's half, as the conversation shows it: the text, and the attachment
+ * names as data — the bubble draws the `paperclip` icon, as the held one does.
+ */
+export function stamped(id: string, text: string, attachments: readonly PendingAttachment[]): Message {
+  return {
+    id,
+    role: 'user',
+    text,
+    ...(attachments.length > 0 ? { attachments: attachments.map((a) => a.name) } : {}),
+  }
 }
 
 function turnOptions(
@@ -557,7 +563,7 @@ function useTurn({ fetchImpl, model, view, t }: ConversationsOptions, open: Open
     patchConversation(tabId, (previous) => ({
       messages: [
         ...previous.messages,
-        { id: `u${previous.messages.length}`, role: 'user' as const, text: stamped(text, attachments) },
+        stamped(`u${previous.messages.length}`, text, attachments),
       ],
       // The dots go up BEFORE the server is asked anything: between here and
       // the driver's first event stand a conversation write, the POST and a

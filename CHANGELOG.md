@@ -469,3 +469,7 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
   the conversation; the line clears on the next send or when leaving the conversation.
   A server unreachable before any answer keeps its error line in the same way;
   other refusals retain the server's words. No server behaviour changes.
+
+- **Chat attachments** — The message you just sent shows its attachments the way a held
+  message does: the `paperclip` icon and the file names, no longer a text 📎 appended to
+  the text. The model select stays native; a test now pins its translated empty option.
