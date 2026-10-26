@@ -136,9 +136,9 @@ columns are the same except where the instance's configuration decides what exis
 | E-1 | sees gates | sees gates | — | — |
 | E-2 | open tiles, arrange, ask | same | writes the brief, the pages behind tiles | — |
 | E-3 | browse, search, facet | same | creates/moves pages (cards appear live) | — |
-| E-4, E-5, E-6 | read, edit, save | same | edits the same files; a concurrent edit gives the conflict state | — |
+| E-4, E-5, E-6 | read, edit, save | same | edits the same files; a concurrent edit gives the conflict state; an agent write refreshes the reading page and raises the banner in editing (`adestia-ajouts`, B-17) | — |
 | E-7 | add a member, open | same | writes members | — |
-| E-8 | follow the folder link | same | a mistyped address it gave lands here | — |
+| E-8 | follow the folder link | same | a mistyped address it gave lands here; so does a page the agent deleted or moved while open (`adestia-ajouts`) | — |
 | E-9 | open tiles | same | — | its delegations are counted |
 | E-10 | add/edit/remove servers, connect | same (connect is per person) | uses the servers; health reported after a turn | — |
 | E-11, E-12 | write, import, refresh | same | may write instruction files | — |
@@ -208,7 +208,7 @@ vocabulary of looks (`docs/charte.md`).
 | E-n | Adds | Notes |
 |---|---|---|
 | E-3, E-9 | loading | index-driven: loading while `/api/pages/index` / the counts have not answered; no Retry (failure = E-32) |
-| E-4 | loading while the page is fetched; fetch-failed shows E-8 with its **Retry** (one failure block, not a second one); reading: refreshes when its file changes; editing: banner "The page changed" with **Reload** | the banner uses `.adestia-save--warn`'s family; it never touches the editor's text; absent when the change is the user's own save; if the open page is deleted or moved by the agent, E-8 (not found) shows and the page is no longer followed; when the workspace watch is off nothing refreshes, as today (B-17, AD-21) |
+| E-4 | loading while the page is fetched; fetch-failed shows E-8 with its **Retry** (one failure block, not a second one); reading: refreshes when its file changes; editing: banner "The page changed" with **Reload** | the banner uses `.adestia-save--warn`'s family; it never touches the editor's text; absent when the change is the user's own save; if the open page is deleted or moved by the agent, E-8 (not found) shows in reading, and in editing the banner shows first and Reload leads to E-8; the page is no longer followed; when the workspace watch is off nothing refreshes, as today (B-17, AD-21) |
 | E-8 | **Retry** on the "server could not" case | 404 and 401/403 have no Retry |
 | E-10 | loading; fetch-failed with **Retry**; **Remove** opens E-33 | |
 | E-11, E-13 | loading; fetch-failed with **Retry** | |
@@ -241,9 +241,14 @@ button at its end, an `.adestia-btn`):
 | editing, banner up, user saves | the save may 409 ("The agent changed this page…" line); banner stays |
 | editing, banner up, Reload | editor shows the agent's version; banner gone; unsaved typing is replaced (the user chose it) |
 | editing, file deleted or moved | the same banner; **Reload** leads to E-8 |
+| editing, user presses Done with the banner up | Done saves, then the page is followed again as in reading: the agent's version (or E-8) shows |
+| Reload | immediate (the page was read when the banner rose): no loading, no failure |
+| the side read fails (server down, 401/403, 5xx) | nothing on screen; offline is E-32's; the next change retries |
+| agent writes repeatedly, or the page is long | one read per batch, the latest answer wins; the banner stays one banner |
+| the agent empties the page | shown as any empty page (E-4's empty state is out of scope) |
 | watch off | nothing |
 
-The banner has `role="status"`, is reached by Tab before the editor text, and keeps the width of
+The banner and the save-time line ("The agent changed this page. Reload to see its version.") are two messages that may show together: the first is the push, the second the refusal of a save. The banner has `role="status"`, is reached by Tab before the editor text, and keeps the width of
 the page column on the phone (the button wraps under the sentence below 820 px). `en`: "The page
 changed." / "Reload"; `fr`: "La page a changé." / "Recharger". Proof under the four skins, light
 and dark, desk and phone, `en` and `fr`.

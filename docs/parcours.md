@@ -49,7 +49,7 @@ Form of the `exigences` skill; each need names the journeys it serves.
   defects with its reason. None disappears unwritten. *(all journeys)*
 - **B-14** — Where a journey states a behaviour the product did not keep — P-2 step 4 (a refused
   turn is explained to the user) — the product does what the journey says. P-5 step 7 says the
-  open page is not reloaded: that stays, and refreshing it is a recommendation, not a repair. *(P-2)*
+  open page is not reloaded: that stayed through `adestia-correctifs`, and `adestia-ajouts` changes it on purpose (B-17). *(P-2)*
 - **B-15** — A changed behaviour is written in `CHANGELOG.md`, and in the journey or screen that
   states it, in the same task. *(all)*
 - **B-16** — A repaired screen shows right under the four skins, in `en` and `fr`, in both themes,

@@ -586,7 +586,8 @@ yet reproduced" (frontmatter CRLF) or "whether it predates the epic is unknown" 
 
 Kept on purpose, with their reason, and still under Known defects: the open page is **not**
 refreshed after an agent write (P-5 step 7 states that it is not, to protect unsaved text; refreshing
-it is a new behaviour, so a closing recommendation); the workbook's, the cards' and the server's
+it is a new behaviour, so a closing recommendation; `adestia-ajouts-page-suivie` builds it, and the
+tranche's last task rewrites this paragraph); the workbook's, the cards' and the server's
 own words that are author or engine data (E-25 piece names, E-26 card types, E-23 and E-27 sentences
 built by the server unless a table keyed by them already exists).
 
@@ -656,13 +657,20 @@ refreshes, and the rest stays as today).
   404 on the refetch is the deletion: `pageProblem` becomes `{ path, status: 404 }` and E-8 shows
   (the page is no longer followed: `pagePath` still routes it, but the next fetch is the user's).
 - Editing: `Editor` tells `App` it is editing (`onEditing`, already there); `usePage` then does
-  not replace `page`. On a match it reads the page into a side slot, `incoming: { revision } |
-  { gone: true }`, and the editor compares `incoming.revision` with the revision it holds now —
+  not replace `page`. On a match it reads the whole page into a side slot, `incoming: { page } |
+  { gone: true }` (the latest batch wins: an older answer arriving late is dropped, so a long page
+  or repeated agent writes cost reads, never a wrong banner), and the editor compares
+  `incoming.page.revision` with the revision it holds now —
   `useAutosave`'s own `revision` (the one it opened with or its last save returned), which the
   hook exposes; `page.revision` alone does not move after a save and would raise the banner on the
   user's own save. Equal: nothing. Different or gone: the banner. `reload()` (the banner's
   button) moves `incoming` into `page` (or, when gone, into `pageProblem` 404, so E-8 shows) and
-  the editor's existing reset-on-revision effect loads it. Nothing else writes the editor's text.
+  the editor's existing reset-on-revision effect loads it; it holds the page already, so Reload
+  has no loading state and cannot fail. Nothing else writes the editor's text. Leaving the
+  editor (`onEditing(false)`, Done, which saves first) with `incoming` pending applies it the same
+  way: the page is followed again as in reading, so the reader never shows a version older than
+  the disk. A side read that fails (any status, offline included) changes nothing: the offline
+  banner (E-32) owns that case, and the next batch retries.
 - A save the user's own makes is silent for free: the feed reports it, the side read returns the
   revision the save returned, equal to the editor's. The save-time 409 line ("The agent changed
   this page. Reload to see its version.", `SaveStatus`) is unchanged and may show with the banner.
