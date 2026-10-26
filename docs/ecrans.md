@@ -218,6 +218,25 @@ vocabulary of looks (`docs/charte.md`).
 | E-32 | banner at the top of the canvas body (the place of `Problems`), role `status`, a `wifi-off` icon; absent when the server answers | not an overlay: the screen below stays usable |
 | E-33 | `Sheet` (bottom sheet on a phone), title "Remove server?", the server's name, **Cancel**, **Remove** (danger) | focus on Cancel; Escape = Cancel; modelled on `NamePrompt` |
 
+### E-25 and E-28: loading and Retry, in detail (`adestia-ajouts-plugins-chargements`)
+
+The plugins stay what they are (AD-8): no import from the shell, no new field in `PluginApi`. They draw
+with the classes `adestia-ajouts-chargements` names above (`.adestia-loading`, the empty-state
+classes, `.adestia-btn`); that tranche is the single source of their markup, and a plugin copies it
+verbatim. No new CSS rule in a plugin sheet unless the placement needs one, and then in the shell's
+tokens only (`plugins/test/css.test.js`).
+
+| Plugin screen | Fetch | Loading | Failure (network error, or a non-2xx answer) |
+|---|---|---|---|
+| E-25 hub (`renderAtelierHub`) | `/workbooks` | loading row replaces today's bare « loading… » | message « The Workshop is unavailable. » + **Retry**, which runs the hub again. The hub today never reads `response.ok`: a 500 must count as a failure |
+| E-25 workbook (`renderWorkbook`) | `/workbook`, `/state`, `/layout` | same row | message « Unreadable workbook. » + **Retry**, which runs the workbook again; the raw error text (`%err`) is no longer shown. `/layout` failing alone stays tolerated, as today |
+| E-28 map, page and `:::parcours` block (`mountParcours`) | the `.parcours.json` | loading row in the host before the answer | message « Unreadable route. » + **Retry**, which fetches again into the same host. The `vivant` guard still applies: a Retry answered after unmount paints nothing |
+
+Not touched: the walking mode, the points-less state, the `x`-less link view (`vue: 'lien'` shows the
+same loading and failure, in one line); the native `confirm()` of E-25 (`adestia-correctifs`, AD-17).
+Words are added in each plugin's `words.js` (`Loading…`, `Retry`, the two messages), `en` and `fr`.
+The tile information call (`tileInfo`) is not a screen and stays silent on failure.
+
 Roles: no route tells an owner from a user (matrix below): E-32 and E-33 are the same for both,
 the agent touches neither, and no calling agent sees them. There is no new role. States are drawn in the four skins, `en` and `fr`, light and dark, desk
 and phone (AD-20).
