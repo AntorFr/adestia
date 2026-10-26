@@ -145,7 +145,7 @@ columns are the same except where the instance's configuration decides what exis
 | E-13 | read | same | runs the delegated turns | creates the rows through inbound MCP `ask_<name>` |
 | E-14 | edit, save, restart — only when the server got a `configPath`; else "does not expose its configuration" (the tile is still shown) | same | — | — |
 | E-15 | arm the token, theme, sign out | same (token is the instance's) | — | — |
-| E-16 | talk, create and archive conversations | same, own conversations under OIDC | answers, renames conversations (`rename_conversation`) | — (its threads are not in this list; they show on E-13 only, `DelegationChannel`) |
+| E-16 | talk, create and archive conversations; **Retry** a failed list or thread; read the context-lost line (not dismissable) | same, own conversations under OIDC (another owner's: denied as today) | answers, renames conversations (`rename_conversation`) | — (its threads are not in this list; they show on E-13 only, `DelegationChannel`) |
 | E-17, E-18 | answer, sign | same | asks permission, holds actions | may hold actions for signature |
 | E-19 | read | same | background trouble from its scheduled turns | — |
 | E-20 | use | same | — | — |
@@ -181,7 +181,7 @@ columns are the same except where the instance's configuration decides what exis
 | E-13 | list by caller, empty (shared empty state), state chips with an icon, open conversation | loading, error (kept, recommendations) |
 | E-14 | loading (a spinner row), read error, not exposed (404), read-only, edited/default badges, saving/saved/failed, stale file, restart pending/asking/waiting/blocked/failed, each restart state with an icon | — |
 | E-15 | token states (stored, none, refused, arming flow, failed) with an icon, theme chosen (three-icon switch), signed in, version | — |
-| E-16 | empty thread, live turn (spinner or skin busy slot, counters), interrupted, error, held message, tabs/list with labelled state shapes, translated shared empty list ("No conversation yet."), MCP connect prompt, composer busy/stopping/blocked, attachments and upload error | loading for the list and thread; offline/disconnected (kept: no new state under B-1; end-of-epic recommendations) |
+| E-16 | empty thread, live turn (spinner or skin busy slot, counters), interrupted, error, held message, tabs/list with labelled state shapes, translated shared empty list ("No conversation yet."), MCP connect prompt, composer busy/stopping/blocked, attachments and upload error | an offline state of its own (the banner E-32 covers it; see "E-16 in `adestia-ajouts-chat`") |
 | E-17 | translated question with `triangle-alert`, with/without lasting rule (Always absent without one) | — |
 | E-18 | pending (`pen-line`), signed (`check`), denied (`x`), expired (`clock`), open in a tab; each with text; shared sheet with Escape, focus trap and return, bottom sheet on a phone | — |
 | E-19 | background trouble, refused, degraded, an icon per kind; absent when nothing | — |
@@ -243,6 +243,27 @@ longer remembers the earlier messages." / `fr` "Le moteur ne se souvient plus de
 précédents." It is stored with the message, so a reload, another tab or another device draws
 it too; it is not dismissable. After a live turn, the stream's end rereads the conversation
 (as it does today) and the line appears then. Copilot and Codex conversations never carry it.
+
+**Words.** Loading: shared `Loading` line, `en` "Loading…" / `fr` "Chargement…". Failure: the server's
+`error`, else the locale's `request failed (%n)` sentence (`fr` "la requête a échoué (%n)"); button
+**Retry** / `fr` **Réessayer**. While Retry runs, the Failure is replaced by `Loading` and comes
+back if the new attempt fails too. The disabled composer is the existing blocked look (greyed,
+send inert); it carries no extra text, the Failure above it is the explanation.
+
+**Other cases.** 401/403 on the list or the thread (session expired, another owner's
+conversation under OIDC): the shell's existing sign-in/denied handling applies as today and the
+chat adds no state of its own; the Failure and Retry are for network and 5xx failures only.
+Offline (server not answering): the banner E-32 is drawn at the top of the canvas body on desk;
+on a phone, where the rail is the whole screen and the canvas is not visible, the rail draws
+the same banner above the header (same component, same `status` role); a list or thread
+fetch that fails meanwhile shows its Failure beneath it, and Retry works once the server is back.
+Extreme content: several marks in one thread each draw their line; `fr` text wraps onto two
+lines in a narrow rail (the hairlines shrink, the text never truncates); a long list keeps its
+rows only after it answered, and a Retry never shows old rows beside `Loading`.
+**Loud failure of B-22.** If AD-23's real test finds that the SDK refuses a missing session,
+the failed turn shows as today (the thread's `error` state with the server's message) and no
+marker is drawn; if the next turn then succeeds on its own that is the end, otherwise the rerun
+carries the marker (AD-23). The tester expects the error state, not the line.
 
 Roles: no route tells an owner from a user (matrix below): E-32 and E-33 are the same for both,
 the agent touches neither, and no calling agent sees them. There is no new role. States are drawn in the four skins, `en` and `fr`, light and dark, desk
