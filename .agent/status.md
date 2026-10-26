@@ -3,8 +3,9 @@
 
 ## Version courante
 
-- Dernier tag accessible : **`v0.95.0`** (`git describe --tags
-  --abbrev=0`), l'epic `adestia-qualite`, entrée dans `main`.
+- Dernier tag accessible : **`v0.96.0-adestia-correctifs.1`** (`git describe --tags
+  --abbrev=0`), la tranche serveur de l'epic `adestia-correctifs`, sur la branche d'intégration
+  de l'epic ; le dernier tag dans `main` est `v0.95.0` (l'epic `adestia-qualite`).
 - Branche de travail : `feature/adestia-correctifs-chat`, sur `origin/epic/adestia-correctifs`
   (tranche chat d'`adestia-correctifs`, AD-23 : un tour refusé en 429 est dit par `t()` en `en`/`fr`
   avec le plafond, et sa ligne survit à la relecture jusqu'au prochain envoi ou à une autre
