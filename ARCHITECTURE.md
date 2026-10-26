@@ -690,6 +690,21 @@ E-33 is a `Sheet` with `NamePrompt`'s footer shape, opened by `ServerDetail`'s *
 declaration is removed only on **Remove**. No generic `useConfirm` is created for one use.
 *Reversed if*: a second confirmation is kept later; then it is extracted.
 
+**Detail built by `adestia-ajouts-mcp`.**
+- `app/mcp/ConfirmRemove.tsx` is a `Sheet` with `NamePrompt`'s footer shape; `ServerDetail` holds a
+  `confirming` flag and its **Remove** only sets it. On confirm the flag drops *before* `onRemove` runs, so
+  one press sends one `DELETE`. `useDeclaration.remove` is unchanged (a failure still lands in `save`).
+- The initial focus goes to Cancel through one small, opt-in rule in the shared scope (`ui/focus.ts`): on
+  open, focus the first element marked `data-autofocus` inside the container, else the first focusable as
+  before. `Button` already forwards `data-*`. Nothing else in the scope changes (trap, Escape, return of
+  focus), and no other sheet is marked, so none moves.
+- Loading and failure of E-10 come from `useDeclaration`'s `views` fetch only, through the shared hook shape
+  and parts of AD-24 (`status`, `retry()`); the first answer ends loading, a later refetch never returns to
+  it. `useMcpServers` (health) is not touched.
+*Rejected here*: a `window.confirm` (AD-26); focusing Cancel with an effect in the footer (the scope's own
+effect runs after it and takes the ✕); making Remove wait on the `DELETE` inside the open sheet (a second
+state for one use).
+
 ## Refactoring targets
 
 Each target: what, where, why it costs, the tranche that owns it, and its outcome

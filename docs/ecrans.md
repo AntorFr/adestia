@@ -222,6 +222,55 @@ Roles: no route tells an owner from a user (matrix below): E-32 and E-33 are the
 the agent touches neither, and no calling agent sees them. There is no new role. States are drawn in the four skins, `en` and `fr`, light and dark, desk
 and phone (AD-20).
 
+### E-10 and E-33 in `adestia-ajouts-mcp`
+
+**E-33, the confirmation.** The owner presses **Remove** in the action bar of an opened server (E-10;
+the button exists only for an editable, saved server, as today). A `Sheet` opens, modelled on
+`NamePrompt`'s footer (Cancel on the left, the action on the right); on a phone it is the bottom sheet.
+
+```
+desk / phone (bottom sheet)
+┌ Remove server?                         ✕ ┐
+│                                          │
+│ “github” will no longer be wired.        │
+│ Its declaration is deleted from this     │
+│ instance.                                │
+│                                          │
+│                  [ Cancel ]  [ Remove ]  │   Cancel neutral, focused; Remove danger
+└──────────────────────────────────────────┘
+```
+
+- Texts (`fr` in brackets): title "Remove server?" (« Retirer le serveur ? »); body "“%name” will no
+  longer be wired. Its declaration is deleted from this instance." (« « %name » ne sera plus branché.
+  Sa déclaration est supprimée de cette instance. »), the name set in the body's strong text and
+  never truncated (it wraps); buttons "Cancel" / "Remove" (existing keys, « Annuler » / « Supprimer »).
+- **Cancel, the ✕, a click on the scrim and Escape all keep the server**: nothing is sent, the declaration
+  and the draft are as they were, and focus returns to **Remove** (the shared focus scope's return).
+- **Initial focus is on Cancel**, not on the ✕ that the scope would pick first: an element marked
+  `data-autofocus` inside a scope takes the initial focus (`ui/focus.ts`, AD-26); Tab stays trapped as in
+  every sheet. Enter on the focused Cancel cancels; **Remove** is never the default.
+- **Remove**: the sheet closes at once (a second press is impossible), then the existing `DELETE
+  /api/mcp/servers/<name>` runs. Success: back to the list, which is refetched, as today. Failure: the
+  sheet stays closed and the error shows in the action bar of E-10 as a failed save does today
+  (`role="alert"`); the owner may press Remove again, which asks again.
+- The sheet is local state of `ServerDetail`, not in the address: a reload cancels it. Same for owner and
+  user (no route tells them apart); the agent never sees it.
+
+**E-10, loading and failure.** The list's data is `GET /api/mcp/servers` (the declarations); the health
+of each server (`GET /api/mcp/status`) stays what it is, a decoration that is silent when it fails ("no
+report, no panel"): it has no loading state and no Retry.
+
+| Situation | E-10 shows |
+|---|---|
+| declarations not answered yet (list, or an opened `#/settings/mcp/<name>`) | the heading stays; under it the shared loading row ("Loading…"); no tiles, no "None wired yet", no "Add a server" |
+| declarations failed (first fetch) | the heading stays; the shared failure block: the message the request helper gives and **Retry**; no tiles; Retry shows the loading row again and fetches again |
+| declarations answered | as today |
+| a refetch after Save or Remove | the screen keeps what it shows (no loading row); a failed refetch is silent, as today |
+
+States of E-10 after the tranche: list, empty, health tones, needs-auth, connected/not, shadowed,
+read-only, saving/saved/failed, loading, fetch-failed with Retry, and the E-33 confirmation. Nothing
+else changes; the shared parts are those of `adestia-ajouts-chargements` (AD-24).
+
 ## The plugins' screens, as built
 
 Screens E-22 to E-31, after `adestia-qualite-plugins` (which follows the charter tranche:
