@@ -621,6 +621,7 @@ Monsieur's before deployment.
 
 ### AD-22 — Server tranche: four repairs, no screen
 Read on `epic/adestia-correctifs` before any code. No screen is touched (the tranche says so, AD-20).
+Built: the four repairs below are in the code, each with its test; the text keeps the design's wording ("Repair:", "today it boots") for the reason behind each.
 - **Conformance at boot.** `start()` builds the driver (`buildDriver` or `options.driverFactory`)
   and then trusts `driver.describe()`. Repair: right after the driver is built, before
   `checkPermissions`, `start()` calls `assertConformance(driver, driver.describe())` (exported
