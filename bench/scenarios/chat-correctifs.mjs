@@ -62,9 +62,13 @@ export default async function scenario() {
   assert(w, `Unsupported locale: ${locale}`)
   const out = process.env.BENCH_OUT ?? 'bench/shots-correctifs-chat'
   await mkdir(out, { recursive: true })
+  const instance = await (await fetch(`${base}/api/instance`)).json()
+  const skin = instance.skin.id
+  const brand = { alfred: 'Alfred', nestor: 'Nestor', dobby: 'Dobby', skippy: 'Skippy' }[skin]
+  assert(brand, `Expected one of the four skins, got ${skin}`)
   const nativePopup = process.env.BENCH_NATIVE_PICKER === '1'
   const browser = await playwright().chromium.launch({ headless: !nativePopup, args: ['--no-sandbox', '--window-position=0,0'] })
-  const report = { engine: 'fake', realClaude: false, screen: 'E-16', locale, variants: [] }
+  const report = { engine: 'fake', realClaude: false, screen: 'E-16', skin, locale, variants: [] }
   const post = async (path, body) => {
     const response = await fetch(`${base}${path}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
     assert(response.ok, `${path}: ${response.status}`)
@@ -81,10 +85,17 @@ export default async function scenario() {
         await reader.read()
         await reader.cancel()
         const page = await context.newPage()
+        const dressed = () => page.waitForFunction(({ skin, brand, theme }) =>
+          document.documentElement.dataset.skin === skin &&
+          document.documentElement.dataset.theme === theme &&
+          document.querySelector('.adestia-brandname')?.textContent === brand &&
+          [...document.querySelectorAll('link[data-skin]')].some((link) => link.sheet),
+        { skin, brand, theme })
         await page.addInitScript((theme) => localStorage.setItem('adestia.theme', theme), theme)
         await page.goto(base, { waitUntil: 'domcontentloaded' })
         const chat = page.locator('.adestia-chat')
         await chat.waitFor()
+        await dressed()
         await chat.getByRole('button', { name: w.new, exact: true }).click()
         const upload = page.waitForResponse((r) => new URL(r.url()).pathname === '/api/upload' && r.request().method() === 'POST')
         await chat.locator('input[type=file]').setInputFiles(file)
@@ -109,6 +120,7 @@ export default async function scenario() {
         const shots = []
         const shoot = async (state, native = false) => {
           const name = `${theme}-${format}-${state}.png`
+          await dressed()
           await page.evaluate(() => document.fonts.ready)
           if (native) execFileSync('python3', ['bench/native-picker-shot.py', join(out, name)])
           else await chat.screenshot({ path: join(out, name) })
