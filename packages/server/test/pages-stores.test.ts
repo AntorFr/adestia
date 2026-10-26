@@ -17,8 +17,8 @@ import { join } from 'node:path'
 import Fastify, { type FastifyInstance } from 'fastify'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { registerFiles } from '../src/files.js'
-import { registerPages } from '../src/pages.js'
+import { registerFiles } from '../src/routes/files.js'
+import { registerPages } from '../src/routes/pages.js'
 import { resolveStores, type Store } from '../src/stores.js'
 import { cleanTmp, tmpDir } from './support/tmp.js'
 

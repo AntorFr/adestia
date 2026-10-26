@@ -7,8 +7,10 @@
  * per user, the refresh token their login yielded, and mints a fresh access
  * token when a turn needs one.
  *
- * WHAT LIVES HERE AND WHAT DOES NOT. Refresh tokens only, on disk, `0600`,
- * under the instance's data directory. Never in a cookie, never in the
+ * WHAT LIVES HERE AND WHAT DOES NOT. The refresh token, and the access token
+ * it last produced with its expiry (so a second turn within the hour does not
+ * call the provider again), on disk, `0600`, under the instance's data
+ * directory. Never in a cookie, never in the
  * session payload, never in the workspace the agent can read. The agent is
  * handed a short-lived ACCESS token for the length of one turn and never sees
  * what produced it.
