@@ -250,13 +250,14 @@ desk / phone (bottom sheet)
   `data-autofocus` inside a scope takes the initial focus (`ui/focus.ts`, AD-26); Tab stays trapped as in
   every sheet. Enter on the focused Cancel cancels; **Remove** is never the default.
 - **Remove**: the sheet closes at once (a second press is impossible), then the existing `DELETE
-  /api/mcp/servers/<name>` runs. Success: back to the list, which is refetched, as today. Failure: the
+  /api/mcp/servers/<name>` runs. Until the server answers, E-10's own **Remove** button is disabled
+  (busy, as Save is while saving), so E-33 cannot open again over a request in flight. Success: back to the list, which is refetched, as today. Failure: the
   sheet stays closed and the error shows in the action bar of E-10 as a failed save does today
   (`role="alert"`); the owner may press Remove again, which asks again.
-- Failure text: the message of the request helper, translated (Q-4), in the same alert a failed Save uses.
+- Failure text: the message of the request helper (the strings Adestia writes are translated, Q-4), in the same alert a failed Save uses.
   With an answer from the server: its `error`, else `en` "request failed (%n)", `fr` « la requête a échoué (%n) »
   with the HTTP status. With **no answer at all** (server down, VPN cut) there is no status: the alert shows
-  the browser's own network message (for example "Failed to fetch", not translated by Adestia), and
+  the browser's own network message (for example "Failed to fetch": it comes from the browser, in its language, and is not a defect), and
   « la requête a échoué (0) » / "request failed (0)" when the browser gives none. No new string.
 - Vocabulary: the `fr` title and button both say « Supprimer » (« Supprimer le serveur ? » / « Supprimer »),
   the word of E-10's existing Remove label, so the sheet answers the button that opened it; « Annuler » for
