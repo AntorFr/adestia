@@ -675,6 +675,36 @@ surfaces it as an error (then B-22 reduces to writing that, as the letter allows
 A loading row (the one E-14 draws) and a failure block with **Retry** (the shared empty state of
 E-8 with a button) are shared components in `app/ui/`; each listed screen of the shell uses them. Plugins (E-25, E-28) do not import them: they reach the same look through the shell's CSS classes (`.adestia-loading`, `.adestia-empty*`, `.adestia-btn` for the Retry button, `.adestia-sheet*`), so AD-8 is untouched. Fetch hooks
 expose `status: loading | ready | failed` and a `retry()`. No screen invents its own spinner.
+
+**Detail built by `adestia-ajouts-chargements`.** Three parts in `app/ui/`, one hook beside them.
+- `Loading` — the row of E-2/E-14 (`.adestia-loading`, `role="status"`, `loader-circle`, translated
+  "Loading…"); E-2 (`Home`) and E-14 (`Configuration`, which draws `.adestia-config__loading`
+  today) switch to it, so the shell has one spinner row, not three.
+- `Failure` — `EmptyState` (icon `circle-alert`, one sentence) with a `Button` **Retry** as its
+  `action`; the classes a plugin reuses are `.adestia-empty--state`, `.adestia-empty__text`,
+  `.adestia-empty__action` and `.adestia-btn` (named in `docs/ecrans.md`, § "Loading and failure").
+  The sentence is the server's own `error` when it sent one, else the locale's
+  `request failed (%n)` (`request.ts`): said in the locale, never a raw `fetch failed`.
+- `MissingPage` (E-8) draws `Failure` for the "server could not" case only; 404 and 401/403 keep
+  their sentence and have no Retry (retrying cannot change them).
+- `useRequest(fetchImpl, url, { enabled, t })` (`app/useRequest.ts`) → `{ status: 'loading' |
+  'ready' | 'failed', data, error, httpStatus, retry }`, over `requestJson`. `retry()` goes back
+  to `loading`, then refetches; a result that arrives after the url changed or the screen
+  unmounted is dropped (the `live` guard every hand-rolled copy has). It replaces the hand-rolled
+  fetch of E-11's list, E-13's list and open conversation, E-11's open file and E-9's counts; the
+  hooks that also *write* (`useInstructionText`'s save, `reload` after an import) keep `reload`.
+- E-4 keeps the screen it leaves until the page arrives (the rejection above): `usePage` exposes
+  `loading` and `retry`, and `Canvas` draws `Loading` only when no page is held (opening a page
+  from the home, a section or a setting); going from page to page keeps the first until the
+  second answers, so no flash. `pageProblem` with a status that is neither 404 nor 401/403 (a
+  network failure is status 0) is the E-8 case that gets Retry.
+- E-3 and E-9 draw `Loading` and no failure: E-3 while the shell's index has not answered
+  (`ready` is false: today it draws "This section holds nothing yet." at that moment, which is
+  false); E-9 above its tiles until its four reads have *settled* (answered or failed), the tiles
+  staying drawn because they work without counts. A failed count stays absent, as today.
+*Rejected for the detail*: a global "something is loading" bar (the screens differ in what they
+keep, as above); a minimum display time or a delay before the row (a fast answer simply never
+shows it, and a delay is a number to tune).
 *Rejected*: one wrapper around the router (screens differ in what stays on screen while loading:
 E-4 keeps the previous screen until the page arrives).
 

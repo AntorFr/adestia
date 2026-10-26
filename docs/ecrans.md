@@ -207,16 +207,24 @@ vocabulary of looks (`docs/charte.md`).
 
 | E-n | Adds | Notes |
 |---|---|---|
-| E-3, E-9 | loading | index-driven: loading while `/api/pages/index` / the counts have not answered; no Retry (failure = E-32) |
+| E-3, E-9 | loading | index-driven: E-3 draws the loading row (instead of its empty state) while the shell's index has not answered; E-9 draws it above its tiles until its four reads (servers, instructions, delegations, health) have answered or failed, the tiles staying drawn. No Retry (failure = E-32) |
 | E-4 | loading while the page is fetched; fetch-failed shows E-8 with its **Retry** (one failure block, not a second one); reading: refreshes when its file changes; editing: banner "The page changed" with **Reload** | the banner uses `.adestia-save--warn`'s family; it never touches the editor's text; absent when the change is the user's own save; if the open page is deleted or moved by the agent, E-8 (not found) shows and the page is no longer followed; when the workspace watch is off nothing refreshes, as today (B-17, AD-21) |
-| E-8 | **Retry** on the "server could not" case | 404 and 401/403 have no Retry |
+| E-8 | **Retry** on the "server could not" case (status 0 included: the shell could not reach the server) | 404 and 401/403 have no Retry; Retry fetches the page again and the screen becomes the page, or stays E-8 |
 | E-10 | loading; fetch-failed with **Retry**; **Remove** opens E-33 | |
-| E-11, E-13 | loading; fetch-failed with **Retry** | |
+| E-11, E-13 | loading; fetch-failed with **Retry** | for the list and for what is open (a file, a conversation): a failed list shows the failure block in place of the list, a failed open item shows it in place of the item, the list reachable by the back control as today. E-11: 404 on the list is still "this engine has no such folder" (no Retry, no failure) |
 | E-14 | field "Simultaneous turns" (number, min 1, max 16) in a group of its own, "restart needed" mark | same row shape as "Scan period"; the offline banner (E-32) and the restart-needed state of E-14 are independent: both may show. While the screen waits for the restart ("Coming back…", P-10), the server does not answer, so E-32 may show above it; when the instance answers both go |
 | E-16 | loading for the list and the thread; fetch-failed with **Retry**; a context-lost marker in the thread (B-22) | the marker is a line in the thread, not a toast; text says the engine no longer remembers the earlier messages |
 | E-25, E-28 | loading; fetch-failed with **Retry** | plugins reach the look through the shell's CSS classes (`.adestia-loading`, the empty-state classes, `.adestia-sheet*`), as they already do for sheets; the plugin contract (AD-8) gains nothing. the native `confirm()` of E-25 and `alert()` of E-26 are not touched by `adestia-ajouts`: `adestia-correctifs` replaces them by the shared sheet (AD-17, Q-20). The words « kept » about them in Q-20 and `ARCHITECTURE.md` (Known defects, AD-7 (e)) are the base branch's and are rewritten by that epic; if it narrows the change, whatever it leaves stays as it leaves it, and `adestia-ajouts` neither adds nor removes anything there |
 | E-32 | banner at the top of the canvas body (the place of `Problems`), role `status`, a `wifi-off` icon; absent when the server answers | not an overlay: the screen below stays usable |
 | E-33 | `Sheet` (bottom sheet on a phone), title "Remove server?", the server's name, **Cancel**, **Remove** (danger) | focus on Cancel; Escape = Cancel; modelled on `NamePrompt` |
+
+### Loading and failure (shared by the shell and the plugins)
+
+One loading row: `.adestia-loading` (`role="status"`, a spinning `loader-circle`, "Loading…").
+One failure block: `.adestia-empty.adestia-empty--state` with `.adestia-empty__icon`
+(`circle-alert`), `.adestia-empty__text` (the message) and, in `.adestia-empty__action`, a
+`.adestia-btn` **Retry**. A plugin screen writes those classes itself (AD-8: it imports nothing
+from the shell). Filled in by `adestia-ajouts-chargements`; the plugin tranche reuses it.
 
 Roles: no route tells an owner from a user (matrix below): E-32 and E-33 are the same for both,
 the agent touches neither, and no calling agent sees them. There is no new role. States are drawn in the four skins, `en` and `fr`, light and dark, desk
