@@ -208,7 +208,7 @@ vocabulary of looks (`docs/charte.md`).
 | E-n | Adds | Notes |
 |---|---|---|
 | E-3, E-9 | loading | index-driven: loading while `/api/pages/index` / the counts have not answered; no Retry (failure = E-32) |
-| E-4 | loading while the page is fetched; fetch-failed shows E-8 with its **Retry** (one failure block, not a second one); reading: refreshes when its file changes; editing: banner "The page changed" with **Reload** | the banner uses `.adestia-save--warn`'s family; it never touches the editor's text; absent when the change is the user's own save; if the open page is deleted or moved by the agent, E-8 (not found) shows in reading, and in editing the banner shows first and Reload leads to E-8; the page is no longer followed; when the workspace watch is off nothing refreshes, as today (B-17, AD-21) |
+| E-4 | loading while the page is fetched; fetch-failed shows E-8 with its **Retry** (one failure block, not a second one); reading: refreshes when its file changes; editing: banner "The page changed." with **Reload** | the banner uses `.adestia-save--warn`'s family; it never touches the editor's text; absent when the change is the user's own save; if the open page is deleted or moved by the agent, E-8 (not found) shows in reading, and in editing the banner shows first and Reload leads to E-8; the page is no longer followed; when the workspace watch is off nothing refreshes, as today (B-17, AD-21) |
 | E-8 | **Retry** on the "server could not" case | 404 and 401/403 have no Retry |
 | E-10 | loading; fetch-failed with **Retry**; **Remove** opens E-33 | |
 | E-11, E-13 | loading; fetch-failed with **Retry** | |
@@ -221,14 +221,14 @@ vocabulary of looks (`docs/charte.md`).
 ### E-4 — the page that follows the agent (`adestia-ajouts-page-suivie`)
 
 Reading: no visible state of its own — the text is replaced in place when the file changes; the
-scroll position is kept by the browser as long as the blocks above it keep their height.
+scroll position is left to the browser's own anchoring (no restore is built); if the blocks above change height the view may shift.
 Editing: the banner sits **above the editor surface, below the title row**, full width of the
-page column, in the family of `.adestia-save--warn` (icon `triangle-alert`, one line, the **Reload**
+page column, in the family of `.adestia-save--warn` (icon `triangle-alert`, one line on a desk, wrapping under 820 px with **Reload** below the sentence, the **Reload**
 button at its end, an `.adestia-btn`):
 
 ```
-[ ⚠ The page changed.                                   [ Reload ] ]
   <title>
+[ ⚠ The page changed.                                   [ Reload ] ]
   <text the user is typing — untouched>
 ```
 
@@ -238,12 +238,16 @@ button at its end, an `.adestia-btn`):
 | reading, file deleted or moved | E-8 (404), path named |
 | editing, file changed by the agent | banner "The page changed." + **Reload**; text kept |
 | editing, own save | no banner; "Saved" as today |
-| editing, banner up, user saves | the save may 409 ("The agent changed this page…" line); banner stays |
+| editing, banner up, user saves | save accepted: "Saved" as today, the banner stays (the agent's version is still unread); save refused (409): the existing "The agent changed this page…" line (`en`/`fr` as today), the editor stays open with the typed text, the banner stays |
 | editing, banner up, Reload | editor shows the agent's version; banner gone; unsaved typing is replaced (the user chose it) |
 | editing, file deleted or moved | the same banner; **Reload** leads to E-8 |
-| editing, user presses Done with the banner up | Done saves, then the page is followed again as in reading: the agent's version (or E-8) shows |
+| editing, user presses Done with the banner up | Done behaves as today, including when the save is refused (409 line; the editor stays open, as today, with the typed text and the banner); once the editor has closed, the page is followed again as in reading: the agent's version (or E-8) shows |
+| editing, Reload leads to E-8 | the unsaved text goes with it (the user chose Reload; no copy is kept) |
+| reading, permission denied (read-only editor state) | `.adestia-editor__readonly` is not touched by the feed; the page refreshes as in reading |
+| long title | wraps in the title row; the banner is a separate row below and keeps the column width |
 | Reload | immediate (the page was read when the banner rose): no loading, no failure |
-| the side read fails (server down, 401/403, 5xx) | nothing on screen; offline is E-32's; the next change retries |
+| the side read fails (server down, 401/403, 5xx) | nothing on screen; offline is E-32's; the next change retries; nothing is caught up when the server returns, until the next change or a reopen |
+| the side read answers 404 | the page is gone: the banner, then E-8 at Reload |
 | agent writes repeatedly, or the page is long | one read per batch, the latest answer wins; the banner stays one banner |
 | the agent empties the page | shown as any empty page (E-4's empty state is out of scope) |
 | watch off | nothing |

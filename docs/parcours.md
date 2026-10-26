@@ -49,7 +49,7 @@ Form of the `exigences` skill; each need names the journeys it serves.
   defects with its reason. None disappears unwritten. *(all journeys)*
 - **B-14** — Where a journey states a behaviour the product did not keep — P-2 step 4 (a refused
   turn is explained to the user) — the product does what the journey says. P-5 step 7 says the
-  open page is not reloaded: that stayed through `adestia-correctifs`, and `adestia-ajouts` changes it on purpose (B-17). *(P-2)*
+  open page is not reloaded: that stayed through `adestia-correctifs`, and `adestia-ajouts` changes it on purpose (B-17): P-5 step 7 is the one exception to this rule, rewritten by that tranche. *(P-2)*
 - **B-15** — A changed behaviour is written in `CHANGELOG.md`, and in the journey or screen that
   states it, in the same task. *(all)*
 - **B-16** — A repaired screen shows right under the four skins, in `en` and `fr`, in both themes,
@@ -119,8 +119,8 @@ nothing else is added (see Out of scope).
 
 - **B-17** — The page that is open follows what the agent writes. In reading mode (E-4) it
   refreshes by itself when its file changes on disk (when the workspace watch is off, nothing refreshes, as today). If the agent deletes or moves the open page, reading mode shows E-8; editing mode shows the same banner and **Reload** leads to E-8. In editing mode a banner "The page
-  changed" offers **Reload**; nothing is ever replaced under the cursor, and the text being
-  typed is never lost. *(P-16)*
+  changed." offers **Reload**; nothing is replaced under the cursor, and the text being
+  typed is never lost to the refresh itself (only the user's own **Reload** replaces it, and the banner says so). *(P-16)*
 - **B-18** — Every screen whose "Lacks" names a loading state shows one while it fetches
   (E-3, E-4, E-9, E-10, E-11, E-13, E-16, E-25, E-28), and every one of those that fetches its
   own data says so in a message with a **Retry** when the fetch fails (E-4, E-8, E-10, E-11,
@@ -209,7 +209,7 @@ A user reads a markdown page of the workspace.
 4. A page with `type: collection` is drawn by E-7 (`CollectionLayout`): its own text, then its members (as facet cards when grouped, otherwise as pages), the finished ones folded. Its Ask for a new page button (when `of:`, `into:` and the agent callback are present) uses `plus` and asks the agent to create a new member; facet cards show shared count chips. Inside a facet whose members are all finished, the shared empty state uses `check`.
 5. A page whose `type` a plugin claims is drawn by that plugin's layout (E-29 for `meals`).
 6. Under the page, the attachments strip (`Attachments`, `GET /api/files?page=…`) lists the files in the page's folder and its `assets/` that the page body does not already show.
-7. When the agent writes the page, the server pushes the change (`GET /api/events`, `workspace.watch`) and the pages index is refetched (new pages appear in the navigation); the open page is not reloaded, since the editor may hold unsaved words, and a conflicting save is refused by its revision check (`adestia-ajouts` changes this: B-17, P-16).
+7. When the agent writes the page, the server pushes the change (`GET /api/events`, `workspace.watch`) and the pages index is refetched (new pages appear in the navigation); in reading mode the open page is refreshed in place, in editing mode a banner offers **Reload** and the typed text is never replaced; a conflicting save is still refused by its revision check (B-17, P-16).
 8. A page that cannot load shows E-8 (`MissingPage`), with three cases: no page at this address (404), out of reach because the session may have expired (401/403), or a server error. It names the path and links to the folder above, using file-question, lock or circle-alert in the shared empty state.
 9. A page using blocks the vocabulary does not know opens read-only, showing a lock icon, its raw source and the diagnostics. Block notes use the translated inline empty state.
 
@@ -350,8 +350,8 @@ Needs: B-2, B-3, B-4, B-5, B-11, B-12, B-13, B-15, B-16
 The user works with a page open and the agent writes in it; the owner is away from home.
 
 1. The user reads a page (E-4) while the agent, asked in the chat (E-16), rewrites it. The page redraws by itself (B-17).
-2. The user is editing the same page when the agent writes it. A banner "The page changed" appears over the editor (E-4) with **Reload**; what was typed stays until the user reloads or saves (B-17). The save-time conflict of the revision check is unchanged.
-   If the agent deletes or moves the open page, the screen shows E-8 (not found) in reading and in editing, and in editing mode the banner stays until the user chooses **Reload** (B-17). When the workspace watch is off, nothing refreshes, as today.
+2. The user is editing the same page when the agent writes it. A banner "The page changed." appears over the editor (E-4) with **Reload**; what was typed stays until the user reloads or saves (B-17). The save-time conflict of the revision check is unchanged.
+   If the agent deletes or moves the open page, the screen shows E-8 (not found) in reading; in editing the banner shows first, the text stays, and E-8 shows when the user chooses **Reload** (B-17; the unsaved text is then gone with the page). When the workspace watch is off, nothing refreshes, as today.
 3. The user opens a screen listed in B-18 on a slow link: a loading state shows (E-3, E-4, E-9, E-10, E-11, E-13, E-16, E-25, E-28). If the fetch of E-4, E-10, E-11, E-13, E-16, E-25 or E-28 fails, a message and **Retry** replace it, and Retry fetches again; E-4's failure is E-8 with its Retry. E-3 and E-9 have no Retry: their failure is the banner of step 4.
 4. The VPN drops. A banner "The server is not responding" shows over whatever screen is open (E-32). The user waits, or reconnects the VPN; the banner goes away by itself when the server answers.
 5. The owner opens the MCP servers (E-10) and presses **Remove** on one. A sheet (E-33) names the server and asks; **Remove** confirms, **Cancel** or Escape keeps it (B-20).

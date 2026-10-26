@@ -628,7 +628,7 @@ them; AD-18's list is what they take from.
 `useInstance.ts` already gets `pages-changed` from `GET /api/events` (`app/live.ts`) and refetches
 the index. The open page subscribes to the same event: if its path is in the batch, reading mode
 refetches the page; editing mode reads the page's `revision` (the event carries only `paths`, no
-revision) and raises the "The page changed" banner when it differs from the revision the editor
+revision) and raises the "The page changed." banner when it differs from the revision the editor
 holds (the one it opened with or its last save returned); it loads nothing into the editor until
 **Reload**. The editor's text is never replaced by the refresh. A change caused by the user's own
 save carries the revision the editor already holds and raises nothing. The feed is `workspace.watch`: when it is
@@ -650,7 +650,7 @@ refreshes, and the rest stays as today).
 - The event names the LOGICAL path (`routes/watch.ts`: "never which circle it changed in"), so the
   condition of "Reversed if" holds: a page of a second store is matched on its path alone, and the
   refetch carries the page's own `?store=` as the first load does. A batch that names the path
-  while the open page lives in another circle than the one that changed costs one extra read of the
+  while the open page lives in another store than the one that changed costs one extra read of the
   same page (same revision: nothing shown); it is never wrong.
 - Reading: a match refetches the page silently (no `Loading`, the screen stays) and replaces
   `page`; a failed refetch other than 404 changes nothing on screen (the next batch retries).
@@ -669,8 +669,10 @@ refreshes, and the rest stays as today).
   has no loading state and cannot fail. Nothing else writes the editor's text. Leaving the
   editor (`onEditing(false)`, Done, which saves first) with `incoming` pending applies it the same
   way: the page is followed again as in reading, so the reader never shows a version older than
-  the disk. A side read that fails (any status, offline included) changes nothing: the offline
-  banner (E-32) owns that case, and the next batch retries.
+  the disk. A side read that fails with anything but 404 (offline included) changes nothing: the offline
+  banner (E-32) owns that case, and the next batch retries. A 404 on the side read is the only
+  source of `incoming: { gone: true }`. Serving again after an outage catches nothing up by itself
+  (AD-22 rejects polling): the page stays as it was until the next batch or until it is reopened.
 - A save the user's own makes is silent for free: the feed reports it, the side read returns the
   revision the save returned, equal to the editor's. The save-time 409 line ("The agent changed
   this page. Reload to see its version.", `SaveStatus`) is unchanged and may show with the banner.
