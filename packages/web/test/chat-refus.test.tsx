@@ -171,7 +171,7 @@ describe('a turn refused with 429 in an existing conversation', () => {
       release = resolve
     })
     // First open reads immediately; hold only the reread that follows the refusal.
-    const gate = { delay: undefined as Promise<void> | undefined }
+    const gate: { delay?: Promise<void> } = {}
     const s = setup([refuse(429, { error: 'too many turns running', max: 3 })], gate)
     render(<Chat fetchImpl={s.fetchImpl} t={translator('en')} />)
     await open('Premier')
@@ -180,7 +180,7 @@ describe('a turn refused with 429 in an existing conversation', () => {
     await send('trop tard')
     await screen.findByRole('alert')
     await open('Second')
-    gate.delay = undefined
+    delete gate.delay
     await open('Premier')
     await act(async () => release())
     await afterReread(s)

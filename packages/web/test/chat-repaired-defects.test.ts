@@ -1,4 +1,4 @@
-/** Static regression guard for the chat reports already repaired in e00156a (AD-21). */
+/** Static regression guard for the chat reports already repaired in e00156a (AD-23). */
 import { readdirSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
