@@ -168,9 +168,9 @@ Two rules follow, and both bite in production:
 
 - **The cap and the memory limit must agree.** A cap of 8 behind a 1 GB limit
   is not a conservative deployment — it is a deployment that starts eight
-  processes and gets killed. Adestia refuses a turn past its cap with HTTP 429. The chat can lose the
-  refusal message when it reloads the transcript (Known defects in
-  `ARCHITECTURE.md`); the composer is freed.
+  processes and gets killed. Adestia refuses a turn past its cap with HTTP 429. The chat says why, in the
+  user's language, and keeps that line until the next send or another conversation;
+  the composer is freed.
 - **An OOM kill loses the turn in flight**, along with anything the agent had
   not yet written to disk. There is no retry: the turn died with the process,
   and replaying it behind the user's back would be worse than losing it.

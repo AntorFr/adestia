@@ -142,7 +142,7 @@ columns are the same except where the instance's configuration decides what exis
 | E-13 | read | same | runs the delegated turns | creates the rows through inbound MCP `ask_<name>` |
 | E-14 | edit, save, restart — only when the server got a `configPath`; else "does not expose its configuration" (the tile is still shown) | same | — | — |
 | E-15 | arm the token, theme, sign out | same (token is the instance's) | — | — |
-| E-16 | talk, create and archive conversations | same, own conversations under OIDC | answers, renames conversations (`rename_conversation`) | — (its threads are not in this list; they show on E-13 only, `DelegationChannel`) |
+| E-16 | talk, create and archive conversations | same, own conversations under OIDC | answers, renames conversations (`rename_conversation`) | — (its threads are not in this list; they show on E-13 only, `DelegationChannel`); a refused turn (too many running) is explained to the Owner and the User alike |
 | E-17, E-18 | answer, sign | same | asks permission, holds actions | may hold actions for signature |
 | E-19 | read | same | background trouble from its scheduled turns | — |
 | E-20 | use | same | — | — |
@@ -173,10 +173,10 @@ columns are the same except where the instance's configuration decides what exis
 | E-10 | list, empty ("None wired yet…", shared empty state), health tones each with an icon, needs-auth, connected/not, shadowed, read-only declaration, saving/saved/failed | loading; a confirmation before Remove (kept, recommendations) |
 | E-11 | list, empty, no match, file open, delivered (read-only, lock icon), saving/saved/failed, the name sheet for a new skill or agent | loading (kept, a recommendation) |
 | E-12 | no catalogue, reading the repository, nothing importable, error, items; in the shared sheet (Escape, focus kept and returned, bottom sheet on a phone) | — |
-| E-13 | list by caller, empty (shared empty state), state chips with an icon, open conversation | loading, error (kept, recommendations) |
+| E-13 | list by caller, empty (shared empty state), state chips with an icon, open conversation (read-only text, no signature card) | loading, error (kept, recommendations) |
 | E-14 | loading (a spinner row), read error, not exposed (404), read-only, edited/default badges, saving/saved/failed, stale file, restart pending/asking/waiting/blocked/failed, each restart state with an icon | — |
 | E-15 | token states (stored, none, refused, arming flow, failed) with an icon, theme chosen (three-icon switch), signed in, version | — |
-| E-16 | empty thread, live turn (spinner or skin busy slot, counters), interrupted, error, held message, tabs/list with labelled state shapes, translated shared empty list ("No conversation yet."), MCP connect prompt, composer busy/stopping/blocked, attachments and upload error | loading for the list and thread; offline/disconnected (kept: no new state under B-1; end-of-epic recommendations) |
+| E-16 | empty thread, live turn (spinner or skin busy slot, counters), interrupted, error, held message, refused turn (its line now said in `en` and `fr`, kept until the next send or another conversation), tabs/list with labelled state shapes, translated shared empty list ("No conversation yet."), MCP connect prompt, composer busy/stopping/blocked, attachments and upload error | loading for the list and thread; offline/disconnected (kept: no new state under B-1; end-of-epic recommendations) |
 | E-17 | translated question with `triangle-alert`, with/without lasting rule (Always absent without one) | — |
 | E-18 | pending (`pen-line`), signed (`check`), denied (`x`), expired (`clock`), open in a tab; each with text; shared sheet with Escape, focus trap and return, bottom sheet on a phone | — |
 | E-19 | background trouble, refused, degraded, an icon per kind; absent when nothing | — |
@@ -619,7 +619,7 @@ E-17 and E-18 to the chat tranche.
 Screens E-16, E-17, E-18 (and the thread of E-13 where it shares `Bubble`), after
 `adestia-qualite-chat`. The tranche uses what `adestia-qualite-charte` built: the
 components of `docs/charte.md` § 4, the icons of § 2, the request helper (AD-11) and
-the type scale. **B-1 binds this section**: words of today stay (a string is changed only
+the type scale. **B-1 binds this section**: words of today stay (a string is changed only by B-14 for the refused turn, and
 by `B-8`'s language rule), no state, control or gesture is added or removed, the
 conversation gestures stay the five of P-2 step 9 (create, archive, open, reorder, close).
 Where `docs/charte.md` says otherwise, this line wins.
@@ -647,13 +647,13 @@ origin and tab link, live in `styles/components.css`; `chat.css` contains none.
 **States, as built.** E-16: the empty list says "No conversation yet." through `t()`
 in an `<EmptyState>`; the empty thread keeps its blank; the working indicator is the skin's
 `busy` slot or the shared spinner icon with the counters; the interrupted note, the error
-line, the held bubble (`paperclip` + names when the message is attachments only), the
+line (a turn the server refuses because too many turns already run keeps its line, under the message that was refused, which stays in the thread; the line says "Turn limit reached (N at a time) — try again in a moment." in English and "Limite de tours atteinte (N à la fois) — réessayez dans un instant." in French, N being the server's limit, for the Owner and the User alike; it stays when the conversation is read again, and goes at the next send or when the user opens another conversation; a turn that fails with no answer from the server keeps the error line the chat already draws for it, with the same words as today, under the sent message, and keeps it after the reread as long as the refusal's line stays; other HTTP refusals keep the server's text), the held bubble (`paperclip` + names when the message is attachments only), the
 unread/running/idle dots (colour and a shape, not colour alone), the MCP connect prompt, the
-composer busy/stopping/blocked and the upload error keep their words and places. **No
+composer busy/stopping/blocked and the upload error keep their words and places; the one line whose words, length and language change is the refused turn's. **No
 loading or offline state is added** for the list or the thread (Lacks column of E-16: listed
 for the end-of-epic recommendations). E-17: the question card keeps its three answers and
 the "No lasting rule" line; it takes `triangle-alert`. E-18: pending, signed, denied,
-expired, open-in-a-tab keep their words; each gets its icon above.
+expired, open-in-a-tab keep their words; each gets its icon above. E-13: a delegated conversation is read-only and has no composer (P-13 step 7), so its conversation reads as text only: a signature request in the transcript is not drawn as a card and nothing replaces it; the ceremony belongs to the calling agent's user. The refusal for too many turns is a capacity refusal, not a permission one: no "extreme content" or "permission denied" state applies to it.
 
 **Strings.** Every visible string, `aria-label`, `title` and `alt` under `chat/` goes
 through `t()`: "New conversation", "Open apps", "Working", `Remove <name>`, the context
