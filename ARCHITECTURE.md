@@ -900,10 +900,12 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
   to the message text kept in the open conversation's state. The held bubbles
   and attachment controls use the `paperclip` icon, but this text emoji remains
   unchanged under AD-7.
-- **Delegations drop signatures**: `app/Delegations.tsx` calls the shared
-  `chat/messages.ts` › `toMessage` with `{ signatures: false }`, while the chat keeps
-  `stored.signatures` by default (AD-12, preserved under AD-7). To be confirmed
-  that a delegation transcript can carry signatures.
+- **Delegation signature cards — kept, read-only view (AD-21).** A delegation
+  transcript can carry signatures, but E-13 has no composer or signing handler
+  (P-13 step 7). `app/Delegations.tsx` therefore passes `{ signatures: false }` to
+  `chat/messages.ts` › `toMessage`; `SignatureCards` also draws nothing without a
+  signing handler. The calling agent's user holds the ceremony. Passive cards
+  would be a new function (AD-18), outside this tranche.
 - **Native dialogs in plugins**: `plugins/atelier/web/app.js` asks `confirm()` before resetting a
   layout and `plugins/voyages/web/app.js` shows `window.alert` for a refused gesture; unstyled,
   unlocalised by the browser's own words, not closeable like a sheet. Replacing them changes the flow
@@ -946,3 +948,18 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
   read before the atelier had a table (B-1), so a plate of one piece gets a plural.
 - **E-26's card sheet names the item's type with the data's own word** (`trajet`, `resto`) under `en`:
   the type is an identifier of `voyage.json`, drawn as it is written.
+
+### Chat checks closed without a behaviour change (AD-21)
+
+- **Not reproduced — repaired in `e00156a`:** the literal `upload failed`
+  fallback, `adestia-composer--busy` without a rule, unused `.adestia-sheet__close`,
+  and the duplicate `.adestia-sheet__origin` rule. Source inspection finds the
+  upload refusal using `t(FALLBACK_KEY)`, neither obsolete class, and one base
+  origin rule with its use in `Signatures.tsx`. `chat-repaired-defects.test.ts`
+  guards these sources; these four reports are no longer open defects.
+- **Composer fold — not reproduced.** In Chromium at phone width, opening the
+  fold and invoking a plugin's empty fill returns focus to the textarea, closes
+  the menu, preserves the exact draft (including surrounding spaces) and sends
+  nothing. A whitespace-only fill does the same. `Composer.tsx` already focuses
+  before ignoring an empty fill (`4e6f16f`). This does not close E-30: its reader
+  must request that focus when its phone opener has disappeared.
