@@ -7,7 +7,7 @@
 >
 > Written by the epic `adestia-qualite` (2026-10-15), a quality pass that changes **no
 > behaviour**. Decisions taken BEFORE this epic live in `DESIGN.md` › Decision log, which is
-> not renumbered; `AD-n` starts at `AD-1` with this epic. The map below is the code as first
+> not renumbered; `AD-n` starts at `AD-1` with this epic. The epic `adestia-correctifs` (AD-15 onward) then repairs the defects this pass listed and does change behaviour, each repair named in the CHANGELOG; `AD-21` is taken by the epic `adestia-ajouts`, hence the gap before AD-22. The map below is the code as first
 > documented at the git tag `v0.88.0` (the packages' `version` fields stay `0.0.0`), updated for the completed charter, pages, chat, plugins, tests and server tranches; the repository's later tags (`git tag`) mark releases, not this map.
 
 ## Overview
@@ -65,7 +65,7 @@ Outside `packages/`:
   (`frameShell`, the preamble), `screen.ts`.
 - **Drivers and arming** — `drivers.ts` (`buildDriver`, `AVAILABLE_DRIVERS`), `secrets.ts`
   (`SecretStore`, `ArmingFlows`), `routes/arming.ts`.
-- **MCP inbound and delegations** — `mcp-in.ts`, `routes/mcp.ts` (`registerMcp`, `/mcp`; `mcp-routes.ts` re-exports it),
+- **MCP inbound and delegations** — `mcp-in.ts`, `routes/mcp.ts` (`registerMcp`, `/mcp`),
   `delegations.ts` (`DelegationChannel`), `routes/delegations.ts` (`/api/delegations`),
   `callback.ts` (`wakePrompt`, `verifySettled`), `routes/callback.ts` (`registerCallback`, `/callback`).
 - **MCP outbound** — `config/mcp.ts`, `mcp-store.ts` (`McpStore`, the shell-written layer),
@@ -128,7 +128,7 @@ Outside `packages/`:
 `resolveStores` → `fetchSources` → `discoverPlugins` / `discoverSkins` →
 `registerPluginVocabulary`, `claimedTypeCollisions` → web manifest merge → `McpStore` primed,
 `mcpServersFor` → `AskDesk` (ask posture) → `buildDriver` (or `driverFactory`) →
-`ShellToolsService.start` → `interactivePermissions` check → stored credential loaded →
+`assertConformance` → `ShellToolsService.start` → `interactivePermissions` check → stored credential loaded →
 `runSetups` → if `skillsPath`: `collectSkills`, `deliverSkills`, `deliverAgents`,
 `refreshCataloguesAtBoot` → `findWebRoot` → `UserTokens` → `buildApp` → `listen` → `Clock`.
 Every problem before `listen` is either a boot-log line or a `ConfigError` that refuses to start.
@@ -140,8 +140,9 @@ Every problem before `listen` is either a boot-log line or a `ConfigError` that 
 Optional features are declared in `DriverDescriptor.capabilities` from `CAPABILITIES`;
 `CAPABILITY_METHODS` names the interface each obliges (`AuthManagement`, `ModelSelection`,
 `McpStatus`) and `CAPABILITY_REQUIRES` their dependencies.
-`conformance.ts` › `checkConformance` checks a driver against its descriptor (used by tests
-only). `managed-credential.ts` › `ManagedCredential` holds the armed secret the same way in
+`conformance.ts` › `checkConformance` checks a driver against its descriptor;
+`assertConformance` refuses a non-conformant driver at boot, before tools and permissions.
+`managed-credential.ts` › `ManagedCredential` holds the armed secret the same way in
 all three drivers. One instance runs ONE driver: `config.driver.id` picks it in `buildDriver`,
 and every turn — chat, scheduled, delegated, callback wake — goes through the one `TurnDesk`.
 
@@ -580,7 +581,7 @@ yet reproduced" (frontmatter CRLF) or "whether it predates the epic is unknown" 
 | chat | refused turn (429) silent (P-2 step 4); `📎` text emoji in `stamped()`; native model select says `Auto`; delegations drop signatures; the chat race (below); chat nits left open by the tests (`adestia-composer--busy` without a rule, unused `.adestia-sheet__close`, double `.adestia-sheet__origin`, the `upload failed` fallback through `t()`) |
 | pages | root page breadcrumb invents a folder; E-6 settings overlap the banner at 1440 px; page diagnostic mixes languages; frontmatter CRLF divergence (`pages.ts`, `schedule.ts` against `content`) |
 | shell | Nestor's `↑` send glyph; MCP server counts disagree (tile against badge); Skippy's banner wraps on the phone; E-14 switch apart from its title on the phone; E-19 detail in English under `fr`; token field without `autoComplete`; "Invalid plugin manifest" in English; the duplicate `.adestia-icon--spin` block; `CataloguePopin` `refresh()` no longer shows a thrown error |
-| server | conformance never asserted at boot; saving the configuration loosens its file mode; `user-tokens.json` comment against content; `register*` re-exports left in old files |
+| server | none left: the configuration file mode, the `user-tokens.json` comment and the `register*` re-exports were repaired by AD-22 |
 | plugins | `confirm()` of the atelier and `alert` of the voyages replaced by the shared sheet (Q-20, kept by `adestia-qualite` because "the flow would change": the answer becomes asynchronous; this is the one deliberate flow change, bounded to two gestures, and `docs/ecrans.md` Q-20 and the atelier and voyages journeys are rewritten with it. If the tranche proves risky it is narrowed and the reason written under Known defects); planif and veille sentences in English; E-28 walking map keeps its pre-walk size; E-30 focus lost on phone; E-25 "1 pièces"; the emojis kept in plugins; the amber of project-management meaning two things; `:::content` `on` without a localised date |
 | debt | R-2 one-line aliases of the drivers and R-6 exports kept only for tests (removed, tests import the module that owns the symbol); bench duplicates (`launch(seed)`, `loadPlaywright`); fake-engine options with no caller; `doc-besoin.test.mjs` into CI; the two duplicate guards on `DESIGN.md`; typed lint rules switched on if the repo passes them; `.agent/migrate-frame.mjs` lint errors |
 
@@ -618,7 +619,61 @@ previous pass swept the default skin in English only. A task that touches no scr
 Real engines: Claude by the pod's token; Copilot and Codex by their fakes, their real trial is
 Monsieur's before deployment.
 
-### AD-21 — Chat tranche: what the reproduction found, and the shape of each repair
+### AD-22 — Server tranche: four repairs, no screen
+Read on `epic/adestia-correctifs` before any code. No screen is touched (the tranche says so, AD-20).
+Built: the four repairs below are in the code, each with its test; the text keeps the design's wording ("Repair:", "today it boots") for the reason behind each.
+- **Conformance at boot.** `start()` builds the driver (`buildDriver` or `options.driverFactory`)
+  and then trusts `driver.describe()`. Repair: right after the driver is built, before
+  `checkPermissions`, `start()` calls `assertConformance(driver, driver.describe())` (exported
+  by `@antorfr/adestia-drivers`), so a bad driver stops the boot with the message that function
+  already writes — `Driver "<id>" is not conformant:` and one line per `ConformanceIssue`. It
+  applies to the driver the instance arms, whether built or injected by `driverFactory`; the
+  stage order stays pinned by `start-order.test.ts`. Reproduced by a test that starts with a
+  `driverFactory` whose descriptor declares a capability it lacks the method of: today it boots.
+  The test doubles of the suite (`ScriptedDriver` and others) must pass the check; one that does
+  not is a real finding, repaired in the double and written in the tranche's report, never by
+  skipping the check. Behaviour changed: an instance that booted with a lying driver now refuses
+  to boot — a CHANGELOG line.
+- **Configuration file mode.** `replaceContents` (`settings-file.ts`) writes a sibling and renames
+  it over the target; the sibling is created with the umask's mode, so a 0600 file comes back
+  0644. Repair: read the target's mode before writing and apply it to the sibling before the
+  rename (`chmod` on the temporary file, not `writeFile`'s `mode`, which the umask masks). The
+  in-place fallback already keeps the mode (it truncates the same inode); a test pins both
+  paths. A target that does not exist yet keeps the default. Written in the CHANGELOG.
+- **`user-tokens.json` comment.** The module comment says "refresh tokens only". The `Entry`
+  carries `accessToken` and `expiresAt` too, and `store` is written whole (`user-tokens.ts:87`).
+  The content is the truth, so only the comment changes: it names the access token and its
+  expiry (kept so a second turn within the hour does not call the provider again), still 0600,
+  still never in a cookie or in the agent's workspace. A guard test reads the comment and
+  fails if it again claims "refresh tokens only" while `Entry` has `accessToken`. No behaviour
+  changes, so no CHANGELOG line.
+- **`register*` re-exports.** Six old files re-export what `routes/` owns: `callback.ts`,
+  `files.ts`, `pages.ts`, `static.ts`, `watch.ts` (named `register*` and their option types) and
+  `mcp-routes.ts` (a pure `export *`). Repair: the re-exports go; `app.ts` already imports from
+  `routes/`. The tests that import `register*` from the old files import `routes/...`
+  (`pages-stores`, `pages`, `callback`, `mcp`, `files`, `static`, `watch`). `index.ts` stays the
+  package's public type surface and keeps exporting those types (`StaticOptions`, `PagesOptions`,
+  `FilesOptions`, `DelegationPort`, `McpDependencies`), but its `export type … from` lines point
+  at `./routes/…`, where they are owned, not at the six old files. `mcp-routes.ts` is deleted if nothing else imports it. The
+  pages tranche depends on this one precisely because `pages.ts` stops re-exporting. The
+  guard is a suite test with two parts. Over the six old files (`callback.ts`, `files.ts`,
+  `pages.ts`, `static.ts`, `watch.ts`, `mcp-routes.ts` if it still exists): none re-exports
+  from `routes/` (`export { register… } from './routes/…'`, `export * from './routes/…'`, or a
+  type re-export). Over `index.ts`: no `export … from` line names one of those six files for a
+  symbol `routes/` owns; its lines to `./routes/…` are the public surface and are allowed. The two
+  other helper re-exports (`buildVersion`, `sseFrame`, `SkinPayload` in `app.ts`; `mountPluginApis`
+  in `plugin-host.ts`) are tests' aliases left to the dette tranche, and the guard does not cover them; it targets
+  re-exports, not definitions — `registerPluginVocabulary` in `extensions.ts` is defined there and stays. The rows of the "exports kept only for
+  tests" table that name these re-exports leave in the same commit; `R-3`'s outcome says "a
+  re-export" and is corrected to say the files keep only their helpers.
+- **Known defects and the register.** Each of the four repairs leaves *Known defects* and
+  `.agent/status.md` in the commit that makes it (AD-16); the CHANGELOG section
+  "adestia-correctifs (unreleased)" is created by whichever tranche lands first.
+- **P-10 and P-14.** P-10 (edit the configuration) gains one sentence — the file keeps its mode.
+  P-14 (install) is touched only for the boot refusing a non-conformant driver, in the step that
+  describes boot. Nothing else in either journey changes.
+
+### AD-23 — Chat tranche: what the reproduction found, and the shape of each repair
 Read on `epic/adestia-correctifs` before any code, so the tranche builds the true list.
 - **Refused turn (P-2 step 4).** Reproduced by reading: `consume` clears `live` when `reread`
   succeeds, and a refusal has nothing stored behind it. Repair: a state that ends with an
@@ -664,10 +719,10 @@ Each target: what, where, why it costs, the tranche that owns it, and its outcom
 |---|---|---|---|---|
 | R-1 | MCP `Authorization: Bearer` header selection copied in `claude-code/driver.ts`, `copilot-cli/driver.ts`, `codex-cli/driver.ts` | three copies of a security-relevant rule | serveur | closed: `drivers/src/mcp-headers.ts`, pinned by a test written first |
 | R-2 | Driver helpers duplicated: device-code `beginAuth`/`completeAuth`/`cancelAuth` (codex, copilot), `truncate` ×3 (`*/events.ts`), `health` ×2, `usageOf` ×3, `classifyAuthError`/`explainAuthProblem` ×2 (`*/auth.ts`) | drift between engines | serveur | closed: `engine-aids.ts` and `device-code.ts`; the engines pass their own tables |
-| R-3 | `start()` (464 lines) and `buildApp` (287 lines) mix concerns; `TurnLimiter`, `runUnattended`, inline `/api/delegations` routes and the `adestiaRunTurn` monkey-patch live in `app.ts`; routes registered both from `routes/` and top-level files (`pages.ts`, `mcp-routes.ts`, `static.ts`, `files.ts`, `watch.ts`, `callback.ts`) | no single place says what is mounted | serveur | closed: every route is registered from `routes/`; the top-level files keep only their helpers and a re-export (`mcp-routes.ts` is a pure re-export); `app.ts` mounts, `turn-limiter.ts` and `unattended.ts` hold the rest; `start()` is named stages, order pinned by `start-order.test.ts` |
+| R-3 | `start()` (464 lines) and `buildApp` (287 lines) mix concerns; `TurnLimiter`, `runUnattended`, inline `/api/delegations` routes and the `adestiaRunTurn` monkey-patch live in `app.ts`; routes registered both from `routes/` and top-level files (`pages.ts`, `mcp-routes.ts`, `static.ts`, `files.ts`, `watch.ts`, `callback.ts`) | no single place says what is mounted | serveur | closed: every route is registered from `routes/`; the top-level files keep only their helpers (`mcp-routes.ts` is gone); `app.ts` mounts, `turn-limiter.ts` and `unattended.ts` hold the rest; `start()` is named stages, order pinned by `start-order.test.ts` |
 | R-4 | `field()` duplicated in `instruction-catalogues.ts` and `instructions.ts`; `routes/instruction-catalogues.ts` `sourceOf` / `fetchClone` / `cacheDir` duplicate `catalogueSource` / `fetchCatalogueClone` / `catalogueClone` of `instruction-catalogues-refresh.ts` | pure extraction, behaviour kept | serveur | closed: `field()` once in `frontmatter.ts`; the catalogue route calls the refresh module |
 | R-5 | `pages.ts` doubles as a frontmatter library for `instructions.ts`, `instruction-catalogues.ts`, `schedule.ts`, `shell-tools.ts` | a route module as a dependency; move without changing the parser (AD-7) | serveur | closed: `server/src/frontmatter.ts`, bodies untouched; the CRLF divergence stays (AD-7) |
-| R-6 | Dead interface removed; test-only helpers removed from production indexes; remaining public types, test imports and boot entry points named below | surface limited to its consumers | serveur | closed: 178 entries remain, all named below |
+| R-6 | Dead interface removed; test-only helpers removed from production indexes; remaining public types, test imports and boot entry points named below | surface limited to its consumers | serveur | closed: 171 entries remain, all named below |
 | R-7 | Comments pointing to absent documents: `technique.md` (server sources and tests), `ATELIER-3.md` (`plugins/atelier/web`), `PARCOURS.md` and "D44 côté cerveau" (`plugins/parcours/web`) | dead references | serveur (server), plugins (plugins) | server: closed; plugins: closed — no comment under `plugins/` names `ATELIER-3.md`, `PARCOURS.md` or "D44 côté cerveau" any more (`git grep` finds none) |
 | R-8 | `eslint.config.js` claims floating promises and thrown-away errors are caught, which its rules cannot do (no type-aware rule, `caughtErrors: 'none'`); `plugins/` not linted; lint not in CI | a claim the gate does not keep | serveur (CI, claim), plugins (plugins lint) | server: closed — claim rewritten, `npm run lint` in CI; plugins: closed — `npm run lint` (`eslint packages plugins`) covers `plugins/` and is clean |
 | R-9 | Test support rewritten per file: the fake `Driver` in 10 test files, `git()` in 5, `mkdtemp` in 39 | each new test copies one | tests | closed: `packages/server/test/support/` holds the three, and every file that rewrote them imports them |
@@ -723,7 +778,7 @@ rules. The server outcomes above are filled.
   qualifier consume its first name. Tests, `bin/`, bench scripts, plugins and computed
   module paths are outside the graph: check their runtime uses before removing a hit.
 
-  The final inventory is **178** entries: public contract types below,
+  The final inventory is **171** entries: public contract types below,
   test-only exports retained under the R-6 arbitration, and the boot entry points.
   No measurement rule or test was changed.
 
@@ -752,7 +807,6 @@ rules. The server outcomes above are filled.
   | `packages/drivers/src/codex-cli/events.ts` | `describeItem`, `usageOf` | `packages/drivers/test/codex.test.ts` |
   | `packages/drivers/src/codex-cli/login.ts` | `readPrompt`, `saidSuccess`, `stripAnsi` | `packages/drivers/test/codex.test.ts` |
   | `packages/drivers/src/codex-cli/protocol.ts` | `SpawnedProcess` | `packages/drivers/test/codex.test.ts` |
-  | `packages/drivers/src/conformance.ts` | `assertConformance` | `packages/drivers/test/conformance.test.ts` |
   | `packages/drivers/src/conformance.ts` | `checkConformance` | `packages/drivers/test/claude-code.test.ts`, `packages/drivers/test/codex.test.ts`, `packages/drivers/test/conformance.test.ts`, `packages/drivers/test/copilot.test.ts` |
   | `packages/drivers/src/contract.ts` | `CAPABILITIES` | `packages/drivers/test/conformance.test.ts` |
   | `packages/drivers/src/copilot-cli/events.ts` | `toolTargetOf` | `packages/drivers/test/copilot.test.ts` |
@@ -760,26 +814,21 @@ rules. The server outcomes above are filled.
   | `packages/drivers/src/signatures.ts` | `signatureRequest` | `packages/drivers/test/signatures.test.ts` |
   | `packages/server/src/app.ts` | `buildVersion`, `sseFrame` | `packages/server/test/app.test.ts` |
   | `packages/server/src/attachments.ts` | `safeName` | `packages/server/test/attachments.test.ts` |
-  | `packages/server/src/callback.ts` | `registerCallback` | `packages/server/test/callback.test.ts` |
   | `packages/server/src/clock.ts` | `readState`, `writeState` | `packages/server/test/schedule.test.ts` |
   | `packages/server/src/config.ts` | `DEFAULT_SESSION_TTL_MS` | `packages/server/test/auth.test.ts`, `packages/server/test/oidc-routes.test.ts`, `packages/server/test/oidc.test.ts` |
   | `packages/server/src/conversations.ts` | `isSafeId` | `packages/server/test/conversations.test.ts` |
   | `packages/server/src/delegations.ts` | `titleFor` | `packages/server/test/delegations.test.ts` |
   | `packages/server/src/files.ts` | `kindOf` | `packages/server/test/files.test.ts` |
-  | `packages/server/src/files.ts` | `registerFiles` (re-export of `routes/files.ts`) | `packages/server/test/files.test.ts`, `packages/server/test/mono-store-witness.test.ts`, `packages/server/test/pages-stores.test.ts` |
   | `packages/server/src/introduction.ts` | `CONTRACT_NAME` | `packages/server/test/introduction.test.ts` |
   | `packages/server/src/io.ts` | `inFlight` | `packages/server/test/io.test.ts` |
-  | `packages/server/src/mcp-routes.ts` | `registerMcp` | `packages/server/test/mcp.test.ts` |
   | `packages/server/src/mcp-store.ts` | `MCP_MASK` | `packages/server/test/mcp-servers.test.ts` |
   | `packages/server/src/oidc.ts` | `identityFrom`, `isAllowed` | `packages/server/test/oidc.test.ts` |
-  | `packages/server/src/pages.ts` | `registerPages` (re-export of `routes/pages.ts`) | `packages/server/test/mono-store-witness.test.ts`, `packages/server/test/pages-stores.test.ts`, `packages/server/test/pages.test.ts` |
   | `packages/server/src/plugin-host.ts` | `mountPluginApis` | `packages/server/test/plugin-host.test.ts`, `packages/server/test/plugin-secrets.test.ts` |
+  | `packages/server/src/routes/watch.ts` | `EventsOptions` | `packages/server/test/watch.test.ts` |
   | `packages/server/src/schedule.ts` | `GRACE_MINUTES`, `MIN_PERIOD_MINUTES`, `parseAt`, `parseEvery`, `parseNote` | `packages/server/test/schedule.test.ts` |
   | `packages/server/src/secrets.ts` | `ARMING_TTL_MS` | `packages/server/test/secrets.test.ts` |
   | `packages/server/src/settings-file.ts` | `coerce`, `replaceContents` | `packages/server/test/settings-file.test.ts` |
   | `packages/server/src/shell-tools.ts` | `ulid` | `packages/server/test/shell-tools.test.ts` |
-  | `packages/server/src/static.ts` | `registerStatic` (re-export of `routes/static.ts`) | `packages/server/test/static.test.ts` |
-  | `packages/server/src/watch.ts` | `EventsOptions`, `registerEvents` (re-exports of `routes/watch.ts`) | `packages/server/test/watch.test.ts` |
 
   Runtime entry points outside the graph: `packages/server/src/start.ts` exports
   `start` for `bench/launch.mjs` (a computed dynamic import of the built module),
@@ -895,7 +944,7 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
   breadcrumb badge says “7 servers”. Observed during the charter review; whether it
   predates this epic is unknown. Kept under B-1, pending a separate behaviour investigation.
 
-- **Delegation signature cards — kept, read-only view (AD-21).** A delegation
+- **Delegation signature cards — kept, read-only view (AD-23).** A delegation
   transcript can carry signatures, but E-13 has no composer or signing handler
   (P-13 step 7). `app/Delegations.tsx` therefore passes `{ signatures: false }` to
   `chat/messages.ts` › `toMessage`; `SignatureCards` also draws nothing without a
@@ -908,13 +957,7 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
 - **Frontmatter CRLF divergence**: `content` accepts `\r\n` fences, `pages.ts` and
   `schedule.ts` only `\n` — a CRLF page has fields in the editor and none in the index or the
   schedule. Seen in the code; behaviour not yet reproduced.
-- **Conformance never asserted at boot**: `checkConformance` runs only in
-  `drivers/test/conformance.test.ts`; `start()` trusts the descriptor.
 - **`deleteConversation`** exists in `chat/conversations.ts` and is reached by no screen.
-- **Saving the configuration loosens its mode**: `settings-file.ts` writes through a temporary
-  file and a rename, so a config file kept at 0600 comes back in the umask's default mode.
-- **`user-tokens.json` holds access tokens too**, with their expiry, where the module comment
-  says refresh tokens only.
 - **Skippy's status banner wraps onto two lines on the phone**, found by the sweep at phone
   width; not fixed by this epic.
 - **E-14: the switch sits apart from its title on the phone**, the row wrapping between them.
@@ -944,7 +987,7 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
 - **E-26's card sheet names the item's type with the data's own word** (`trajet`, `resto`) under `en`:
   the type is an identifier of `voyage.json`, drawn as it is written.
 
-### Chat checks closed without a behaviour change (AD-21)
+### Chat checks closed without a behaviour change (AD-23)
 
 - **Not reproduced — repaired in `e00156a`:** the literal `upload failed`
   fallback, `adestia-composer--busy` without a rule, unused `.adestia-sheet__close`,
