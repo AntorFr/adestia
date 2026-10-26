@@ -968,9 +968,6 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
 - **The chat's native model select says `Auto` (`chat/ModelPicker.tsx`)**, outside the pages tranche.
 - **E-6's block settings can overlap the banner at 1440 px.** Observed during the
   pages review; left unchanged by the typography and documentation correction.
-- **A page diagnostic can mix languages on a French instance.** Its translated
-  frame draws the server's diagnostic text as received, outside the screen's
-  translation table; left for a separate API/diagnostic translation decision.
 
 - **MCP server counts disagree**: the Settings tile can say “6 servers” while the MCP
   breadcrumb badge says “7 servers”. Observed during the charter review; whether it

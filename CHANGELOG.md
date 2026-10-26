@@ -476,3 +476,8 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
 - **Configuration file keeps its mode on save** — saving the configuration through
   the rename path used to leave the file in the umask's default mode (a 0600 file came
   back 0644). The temporary file now takes the target's mode before the rename.
+- **Page diagnostics follow the instance language** — read-only pages and refused
+  saves now show content validation sentences in French on a French instance.
+  Block names, attribute keys and values stay as authored. Additive `code` and
+  `args` metadata leaves the English wire `message` unchanged; diagnostics from
+  older servers or unknown plugin codes keep their received text.
