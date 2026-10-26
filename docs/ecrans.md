@@ -235,6 +235,21 @@ tokens only (`plugins/test/css.test.js`).
 Not touched: the walking mode, the no-points state, the link view (`vue: 'lien'` shows the
 same loading and failure, in one line); the native `confirm()` of E-25 (`adestia-correctifs`, AD-17).
 Words are added in each plugin's `words.js` (`Loading…`, `Retry`, the two messages), `en` and `fr`.
+
+*Texts.* `en` → `fr`: « Loading… » → « Chargement… »; « Retry » → « Réessayer »; E-25 hub « The Workshop is
+unavailable. » → « Atelier indisponible. » (the sentence the screen already says: « Workshop » is the
+existing English name of the Atelier, `words.js`, and stays); « Unreadable workbook. » → « Workbook
+illisible. »; E-28 « Unreadable route. » → « Parcours illisible. » (the link view shows the same sentence,
+Retry beside it, on its one line).
+
+*States.* Loading and fetch-failed are the only states added; the empty states (no workbook, no points)
+and the content states are unchanged. While Retry fetches, the screen returns to the loading row (the
+Retry button is gone, so it cannot be pressed twice). When `/workbook` answers but `/state` fails, the
+whole workbook counts as failed (state is what the ticks show). When the server is unreachable, E-32's
+banner sits above the canvas and the plugin's failure block fills the body: both show, they are
+independent. No role sees anything different: the owner and the user get the same blocks; permission
+refusals (401/403) are the shell's, not the plugin's. The screen is reached from P-11 (E-25 from a
+project folder, E-28 from a page's link); its slow-link and failed-fetch steps are P-16 step 3.
 The tile information call (`tileInfo`) is not a screen and stays silent on failure.
 
 Roles: no route tells an owner from a user (matrix below): E-32 and E-33 are the same for both,
