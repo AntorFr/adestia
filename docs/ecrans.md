@@ -218,6 +218,44 @@ vocabulary of looks (`docs/charte.md`).
 | E-32 | banner at the top of the canvas body (the place of `Problems`), role `status`, a `wifi-off` icon; absent when the server answers | not an overlay: the screen below stays usable |
 | E-33 | `Sheet` (bottom sheet on a phone), title "Remove server?", the server's name, **Cancel**, **Remove** (danger) | focus on Cancel; Escape = Cancel; modelled on `NamePrompt` |
 
+### E-32 in `adestia-ajouts-hors-ligne`
+
+**Look.** One line of text on a tinted strip, full width of its place: a `wifi-off` icon (the shell's
+icon set, `currentColor`) then "The server is not responding" (`fr`: « Le serveur ne répond pas »).
+The family of `.adestia-save--warn` (warning tint over the surface, `--warning-text`), so it reads in
+the four skins and both themes without a colour of its own; class `.adestia-offline`, in a new
+`styles/offline.css`. One line, no button, no close, no timer text: it states a fact and leaves by
+itself. The `fr` text may wrap onto two lines in a narrow place; it never truncates.
+
+```
+desk                                          phone, chat shown
+┌ canvas header ─────────────────────┐        ┌────────────────────────┐
+│ ▸ Home                          ⚙  │        │ ⌁ The server is not    │
+├────────────────────────────────────┤        │   responding           │
+│ ⌁ The server is not responding     │        ├ rail header ───────────┤
+│ (Problems band, if any, below it)  │        │ Adestia   list  +  ▸   │
+│ the open screen, still usable      │        │ thread …               │
+└────────────────────────────────────┘        └────────────────────────┘
+```
+
+**Two places, one at a time.** On desk, and on a phone while the canvas is shown, the banner is the
+first child of `.adestia-canvas__body`, above `Problems`. On a phone while the chat is shown (the
+rail is the whole screen) it is drawn above the rail's header, through a `banner` slot of `Chat`
+(rendered above `ChatHeader`, empty when unused). Never both: `App` picks by `mobile && screen`.
+
+**States.** Absent (the server answers; nothing is drawn, no reserved height — the screen below does
+not jump when it leaves except by the banner's own height). Shown (server not answering, whichever
+screen is open; the screen stays usable and its own failures show their own Failure and Retry beneath).
+Gone (the first probe or call that is answered). Not a state: "reconnecting" — no spinner, no count.
+While E-14 waits for the restart ("Coming back…") it may show; both go when the instance answers.
+Under the gates (E-1 fatal, sign-in, refused) it is never drawn.
+
+**Other cases.** Under OIDC an answer of 401/403 is an answer: the server is there, the banner stays
+away and the shell's sign-in handling applies. A long chat turn streaming when the link drops: the turn
+shows its own interruption (E-16); the banner is the explanation of why nothing answers. A deliberate
+abort (stopping a turn, leaving a page mid-fetch) never lights it. The service worker serves the shell
+offline as today; the banner is drawn by that cached shell once it runs.
+
 Roles: no route tells an owner from a user (matrix below): E-32 and E-33 are the same for both,
 the agent touches neither, and no calling agent sees them. There is no new role. States are drawn in the four skins, `en` and `fr`, light and dark, desk
 and phone (AD-20).
