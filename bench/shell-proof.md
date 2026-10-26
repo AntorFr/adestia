@@ -26,13 +26,14 @@ Each complete sweep covers E-1 to E-31, light/dark, 1440×900 and 390×844:
 | Skin | English | French |
 |---|---|---|
 | Alfred | exit 0, 124/124 | exit 0, 124/124 |
-| Dobby | pending | pending |
+| Dobby | exit 0, 124/124 | pending |
 | Nestor | pending | pending |
 | Skippy | pending | pending |
 
 ## Images opened
 
-First complete visual passes: Alfred, English and French, both themes, 1440 and 390 px.
+Complete visual passes so far: Alfred (English and French), Dobby (English),
+both themes, 1440 and 390 px.
 The images were opened in labelled contact sheets made from the actual PNGs.
 
 | Screen | What was inspected and seen |
@@ -42,12 +43,12 @@ The images were opened in labelled contact sheets made from the actual PNGs.
 | E-11 | Search, creation buttons, grouped file cards and delivered badges: relu, rien à corriger. The page continues in the canvas scroll area. |
 | E-12 | Centred desktop sheet, bottom phone sheet, catalogue list and repository/ref/token fields; no second scrim. The phone form continues below the fold. |
 | E-14 | First switches remain beside the start of their labels; default/restart badges and explanations wrap inside the field. |
-| E-19 | Refused/degraded bands; manifest heading is English under `en`, validator lines remain server data. Phone text wraps within the band. |
+| E-19 | Refused/degraded bands; manifest heading follows `en`/`fr` (Manifeste de plugin invalide); validator lines remain server data. Phone text wraps within the band. |
 | E-20 | Plug icon, inactive-app sentence and Home control: relu, rien à corriger. `Sans vue` is the fixture plugin's title, including under `en`. |
 | E-1 | Sign-in gate: centred card, lock, sentence and action in light/dark at both widths; relu, rien à corriger. Loading spinner is separately captured and measured below. |
 | E-15 | Credential state, renewal/forget actions, theme icons, OIDC sign-out and colophon: relu, rien à corriger. Phone popover stays inside the viewport. |
 
-Additional matrices still to inspect: Dobby, Nestor and
+Additional matrices still to inspect: Dobby/French, Nestor and
 Skippy, including Nestor's invitation arrow and Skippy's console band.
 
 ## Supplemental observations
@@ -58,7 +59,17 @@ bench/shots-shell-preuve/habillage` completed with exit 0. Skippy’s band is
 E-14’s first label and switch have identical top coordinates in all variants.
 Some 360×740 captures leave the first control below the fold (Dobby/fr): a
 second pass scrolls that field into view, measures alignment and containment,
-and takes 16 further pictures. All 16 measures pass.
+and takes 16 further pictures. All 16 measures pass and those pictures were opened.
+The French label may take two lines; the switch stays at its first line.
+
+The inherited scenario sets browser `colorScheme`, without forcing
+`adestia.theme`; Dobby and Skippy can keep their default dark scheme. Its
+light-labelled pictures alone do not attest their light theme. The sweep
+forces the stored theme, as does the scrolled E-14 supplement. Those are the
+two-theme proof. Nestor’s invitation and Skippy’s band were also opened
+at 1440/360 px in both languages; Nestor’s arrow is crisp in its disc, and
+Skippy’s band occupies one line. Its hero remains tall at 360 px; this task
+judges the band, not a redesign of the hero.
 
 LoadingGate: 32 pictures (four configured skins, two browser locales, both
 themes, 1440/390 px) were opened. The `/api/instance` request was held to keep
