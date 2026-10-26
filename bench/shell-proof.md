@@ -29,12 +29,12 @@ Each complete sweep covers E-1 to E-31, light/dark, 1440×900 and 390×844:
 |---|---|---|
 | Alfred | exit 0, 124/124 | exit 0, 124/124 |
 | Dobby | exit 0, 124/124 | exit 0, 124/124 |
-| Nestor | exit 0, 124/124 | pending |
+| Nestor | exit 0, 124/124 | exit 0, 124/124 |
 | Skippy | pending | pending |
 
 ## Images opened
 
-Complete visual passes on the merged product so far: Alfred (English and French), Dobby (English and French), Nestor (English),
+Complete visual passes on the merged product so far: Alfred (English and French), Dobby (English and French), Nestor (English and French),
 both themes, 1440 and 390 px.
 The images were opened in labelled contact sheets made from the actual PNGs.
 
@@ -50,9 +50,8 @@ The images were opened in labelled contact sheets made from the actual PNGs.
 | E-1 | Sign-in gate: centred card, lock, sentence and action in light/dark at both widths; relu, rien à corriger. Loading spinner is separately captured and measured below. |
 | E-15 | Credential state, renewal/forget actions, theme icons, OIDC sign-out and colophon: relu, rien à corriger. Phone popover stays inside the viewport. |
 
-Additional matrices still to inspect: Nestor/French and
-Skippy, including the French Nestor invitation and Skippy's console band.
-Nestor/en: the invitation arrow is crisp and centred inside its disc in all
+Additional matrices still to inspect: Skippy, including its console band.
+Nestor/en/fr: the invitation arrow is crisp and centred inside its disc in all
 four sweep variants; the rounded panels keep their shape in both palettes.
 The three passes on 27c62b5 remain recorded in the task discussion; the
 current matrix above is a fresh run after merging the epic.
