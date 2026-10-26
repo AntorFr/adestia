@@ -181,12 +181,12 @@ columns are the same except where the instance's configuration decides what exis
 | E-13 | list by caller, empty (shared empty state), state chips with an icon, open conversation | loading, error (kept, recommendations) |
 | E-14 | loading (a spinner row), read error, not exposed (404), read-only, edited/default badges, saving/saved/failed, stale file, restart pending/asking/waiting/blocked/failed, each restart state with an icon | — |
 | E-15 | token states (stored, none, refused, arming flow, failed) with an icon, theme chosen (three-icon switch), signed in, version | — |
-| E-16 | empty thread, live turn (spinner or skin busy slot, counters), interrupted, error, held message, tabs/list with labelled state shapes, translated shared empty list ("No conversation yet."), MCP connect prompt, composer busy/stopping/blocked, attachments and upload error | loading for the list and thread; offline/disconnected (kept: no new state under B-1; end-of-epic recommendations) |
+| E-16 | empty thread, live turn (spinner or skin busy slot, counters), interrupted, error, held message, tabs/list with labelled state shapes, translated shared empty list ("No conversation yet."), MCP connect prompt, composer busy/stopping/blocked, attachments and upload error | loading for the list and thread |
 | E-17 | translated question with `triangle-alert`, with/without lasting rule (Always absent without one) | — |
 | E-18 | pending (`pen-line`), signed (`check`), denied (`x`), expired (`clock`), open in a tab; each with text; shared sheet with Escape, focus trap and return, bottom sheet on a phone | — |
 | E-19 | background trouble, refused, degraded, an icon per kind; absent when nothing | — |
 | E-20 | shared empty state, `plug`, translated Home action | — |
-| E-21 | the fatal gate drawn, with a wifi-off icon when the failure is a thrown fetch, and the browser's network error | an offline screen; an offline banner once the shell is open (kept, recommendations) |
+| E-21 | the fatal gate drawn, with a wifi-off icon when the failure is a thrown fetch, and the browser's network error | an offline screen (never built: B-19 is a banner, E-32) |
 | E-22 | loading, empty, error, conflict, sheet (a view with a named back: « Todo ») | Escape on the task sheet does nothing (kept: it is a view, not a dialog) |
 | E-23 | loading, empty, error, clock off | the notes' problem sentences (`carries both …`, `the note is empty …`) reach the screen in English on every instance (kept, Known defects) |
 | E-24 | loading, no journal, empty journal, conflict, editing; back « Journals » / « Journaux » | — |
@@ -212,10 +212,10 @@ vocabulary of looks (`docs/charte.md`).
 | E-8 | **Retry** on the "server could not" case | 404 and 401/403 have no Retry |
 | E-10 | loading; fetch-failed with **Retry**; **Remove** opens E-33 | |
 | E-11, E-13 | loading; fetch-failed with **Retry** | |
-| E-14 | field "Simultaneous turns" (number, min 1, max 16) in a group of its own, "restart needed" mark | same row shape as "Scan period"; the offline banner (E-32) and the restart-needed state of E-14 are independent: both may show. While the screen waits for the restart ("Coming back…", P-10), the server does not answer, so E-32 may show above it; when the instance answers both go |
+| E-14 | field "Simultaneous turns" (number, min 1, max 16) in a group of its own, "restart needed" mark | same row shape as "Scan period"; the offline banner (E-32) and the restart-needed state of E-14 are independent: both may show. While the screen waits for the restart ("Coming back…", P-10), the server does not answer, so E-32 shows above it; when the instance answers both go |
 | E-16 | loading for the list and the thread; fetch-failed with **Retry**; a context-lost marker in the thread (B-22) | the marker is a line in the thread, not a toast; text says the engine no longer remembers the earlier messages |
 | E-25, E-28 | loading; fetch-failed with **Retry** | plugins reach the look through the shell's CSS classes (`.adestia-loading`, the empty-state classes, `.adestia-sheet*`), as they already do for sheets; the plugin contract (AD-8) gains nothing. the native `confirm()` of E-25 and `alert()` of E-26 are not touched by `adestia-ajouts`: `adestia-correctifs` replaces them by the shared sheet (AD-17, Q-20). The words « kept » about them in Q-20 and `ARCHITECTURE.md` (Known defects, AD-7 (e)) are the base branch's and are rewritten by that epic; if it narrows the change, whatever it leaves stays as it leaves it, and `adestia-ajouts` neither adds nor removes anything there |
-| E-32 | banner at the top of the canvas body (the place of `Problems`), role `status`, a `wifi-off` icon; absent when the server answers | not an overlay: the screen below stays usable |
+| E-32 | banner at the top of the canvas body, above `Problems` (on a phone with the chat shown: above the rail's header), role `status`, a `wifi-off` icon; absent when the server answers | not an overlay: the screen below stays usable |
 | E-33 | `Sheet` (bottom sheet on a phone), title "Remove server?", the server's name, **Cancel**, **Remove** (danger) | focus on Cancel; Escape = Cancel; modelled on `NamePrompt` |
 
 ### E-32 in `adestia-ajouts-hors-ligne`
@@ -243,11 +243,19 @@ first child of `.adestia-canvas__body`, above `Problems`. On a phone while the c
 rail is the whole screen) it is drawn above the rail's header, through a `banner` slot of `Chat`
 (rendered above `ChatHeader`, empty when unused). Never both: `App` picks by `mobile && screen`.
 
-**States.** Absent (the server answers; nothing is drawn, no reserved height — the screen below does
+**What lights it, and when.** A call to `/api/` that throws (not an abort) or answers 502/503/504, or
+the event feed dropping, starts a probe `GET /api/health`. The banner appears when a probe fails: at
+once if the link refuses, within 5 s if it hangs. While shown, the probe repeats every 3 s; the banner
+leaves within 3 s of the server answering (or at once on any real call that is answered). A single failed
+call with a healthy probe never shows it. To see it in the bench, stop the server and wait ≤ 6 s.
+
+**States.** Empty, loading, error: not applicable: it is the error display itself, draws nothing when
+the server answers, has no data to wait for. Extreme content: the `fr` text on a 320 px phone wraps onto
+two lines; with `Problems` also present, the banner sits above it. Absent (the server answers; nothing is drawn, no reserved height — the screen below does
 not jump when it leaves except by the banner's own height). Shown (server not answering, whichever
 screen is open; the screen stays usable and its own failures show their own Failure and Retry beneath).
 Gone (the first probe or call that is answered). Not a state: "reconnecting" — no spinner, no count.
-While E-14 waits for the restart ("Coming back…") it may show; both go when the instance answers.
+While E-14 waits for the restart ("Coming back…") it shows (the server does not answer, so a probe fails): both go when the instance answers.
 Under the gates (E-1 fatal, sign-in, refused) it is never drawn.
 
 **Other cases.** Under OIDC an answer of 401/403 is an answer: the server is there, the banner stays
@@ -256,7 +264,7 @@ shows its own interruption (E-16); the banner is the explanation of why nothing 
 abort (stopping a turn, leaving a page mid-fetch) never lights it. The service worker serves the shell
 offline as today; the banner is drawn by that cached shell once it runs.
 
-Roles: no route tells an owner from a user (matrix below): E-32 and E-33 are the same for both,
+Roles: no route tells an owner from a user (matrix above, "Roles × screens × actions"): E-32 and E-33 are the same for both,
 the agent touches neither, and no calling agent sees them. There is no new role. States are drawn in the four skins, `en` and `fr`, light and dark, desk
 and phone (AD-20).
 
