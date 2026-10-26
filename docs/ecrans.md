@@ -121,7 +121,7 @@ is labelled with the destination. Plugins with sub-screens add their own back (E
 | E-29 | Meals page layout | a page with `type: meals` | `plugins/meals/web/layouts.js`, `frise.js`, `meals.css` | Meal timeline (frise), drag to reorder, dish detail (`.meals-modal`) | P-5, P-11 |
 | E-30 | Scan overlay | composer button "Scan barcodes" | `plugins/scan/web/chrome.js`, `scanner.js`, `scan.css` | Full-screen camera, decoded codes list, “Add to message” into the composer | P-11 |
 | E-31 | Project-management blocks | `:::timeline` and `:::subproject` blocks in a page | `plugins/project-management/web/blocks.js`, `model.js`, `pm.css` | Timeline of dated sub-pages, project status pills | P-11 |
-| E-32 | Offline banner | over the open shell, whichever screen is open, while the server does not answer | `app/Offline.tsx` (new), `app/App.tsx` | Say "The server is not responding"; goes away by itself when it answers (`adestia-ajouts`, B-19) | P-16 |
+| E-32 | Offline banner | above the open screen, whichever it is, while the server does not answer (it pushes the screen down, it does not cover it) | `app/Offline.tsx` (new), `app/App.tsx` | Say "The server is not responding"; goes away by itself when it answers (`adestia-ajouts`, B-19) | P-16 |
 | E-33 | Remove-server confirmation | **Remove** on E-10 | `app/mcp/ServerDetail.tsx`, `app/ui/Sheet.tsx` | Name the server and ask; **Cancel** / **Remove** (`adestia-ajouts`, B-20) | P-16 |
 
 ## Roles × screens × actions
@@ -207,7 +207,7 @@ vocabulary of looks (`docs/charte.md`).
 
 | E-n | Adds | Notes |
 |---|---|---|
-| E-3, E-9 | loading | index-driven: loading while `/api/pages/index` / the counts have not answered; no Retry (failure = E-32) |
+| E-3, E-9 | loading | index-driven: loading while `/api/pages/index` / the counts have not answered; no Retry: when the server is away their failure is the banner E-32; when the server answers but the call fails (a 500), the loading state ends and the screen shows what it shows today for an empty answer, and opening it again fetches again |
 | E-4 | loading while the page is fetched; fetch-failed shows E-8 with its **Retry** (one failure block, not a second one); reading: refreshes when its file changes; editing: banner "The page changed" with **Reload** | the banner uses `.adestia-save--warn`'s family; it never touches the editor's text; absent when the change is the user's own save; if the open page is deleted or moved by the agent, E-8 (not found) shows and the page is no longer followed; when the workspace watch is off nothing refreshes, as today (B-17, AD-21) |
 | E-8 | **Retry** on the "server could not" case | 404 and 401/403 have no Retry |
 | E-10 | loading; fetch-failed with **Retry**; **Remove** opens E-33 | |
@@ -215,7 +215,7 @@ vocabulary of looks (`docs/charte.md`).
 | E-14 | field "Simultaneous turns" (number, min 1, max 16) in a group of its own, "restart needed" mark | same row shape as "Scan period"; the offline banner (E-32) and the restart-needed state of E-14 are independent: both may show. While the screen waits for the restart ("Coming back…", P-10), the server does not answer, so E-32 shows above it; when the instance answers both go |
 | E-16 | loading for the list and the thread; fetch-failed with **Retry**; a context-lost marker in the thread (B-22) | the marker is a line in the thread, not a toast; text says the engine no longer remembers the earlier messages |
 | E-25, E-28 | loading; fetch-failed with **Retry** | plugins reach the look through the shell's CSS classes (`.adestia-loading`, the empty-state classes, `.adestia-sheet*`), as they already do for sheets; the plugin contract (AD-8) gains nothing. the native `confirm()` of E-25 and `alert()` of E-26 are not touched by `adestia-ajouts`: `adestia-correctifs` replaces them by the shared sheet (AD-17, Q-20). The words « kept » about them in Q-20 and `ARCHITECTURE.md` (Known defects, AD-7 (e)) are the base branch's and are rewritten by that epic; if it narrows the change, whatever it leaves stays as it leaves it, and `adestia-ajouts` neither adds nor removes anything there |
-| E-32 | banner at the top of the canvas body, above `Problems` (on a phone with the chat shown: above the rail's header), role `status`, a `wifi-off` icon; absent when the server answers | not an overlay: the screen below stays usable |
+| E-32 | banner at the top of the canvas body, above `Problems` (on a phone with the chat shown: above the rail's header), role `status`, a `wifi-off` icon; absent when the server answers | takes its own height and moves the screen down; it covers nothing, the screen stays usable |
 | E-33 | `Sheet` (bottom sheet on a phone), title "Remove server?", the server's name, **Cancel**, **Remove** (danger) | focus on Cancel; Escape = Cancel; modelled on `NamePrompt` |
 
 ### E-32 in `adestia-ajouts-hors-ligne`
@@ -255,14 +255,14 @@ two lines; with `Problems` also present, the banner sits above it. Absent (the s
 not jump when it leaves except by the banner's own height). Shown (server not answering, whichever
 screen is open; the screen stays usable and its own failures show their own Failure and Retry beneath).
 Gone (the first probe or call that is answered). Not a state: "reconnecting" — no spinner, no count.
-While E-14 waits for the restart ("Coming back…") it shows (the server does not answer, so a probe fails): both go when the instance answers.
+While E-14 waits for the restart ("Coming back…") the server does not answer, so the probe fails and the banner shows: both go when the instance answers. A restart shorter than a probe never lights it; one of a few seconds may show it for a moment, then take it away: that flash is accepted, it is the same fact stated twice.
 Under the gates (E-1 fatal, sign-in, refused) it is never drawn.
 
-**Other cases.** Under OIDC an answer of 401/403 is an answer: the server is there, the banner stays
+**Other cases.** "Permission refused" is not a state of this banner: under OIDC an answer of 401/403 is an answer: the server is there, the banner stays
 away and the shell's sign-in handling applies. A long chat turn streaming when the link drops: the turn
 shows its own interruption (E-16); the banner is the explanation of why nothing answers. A deliberate
 abort (stopping a turn, leaving a page mid-fetch) never lights it. The service worker serves the shell
-offline as today; the banner is drawn by that cached shell once it runs.
+offline as today; opened with no network, the cached shell fails its first call and shows E-1 fatal (wifi-off), as today: the banner exists only once the shell has passed the gates, so E-32 and E-21 never show together.
 
 Roles: no route tells an owner from a user (matrix above, "Roles × screens × actions"): E-32 and E-33 are the same for both,
 the agent touches neither, and no calling agent sees them. There is no new role. States are drawn in the four skins, `en` and `fr`, light and dark, desk
