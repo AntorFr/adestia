@@ -9,7 +9,7 @@
 > The night agents who make screens coherent and the visual reviewers check each screen
 > against this file. Components, classes and routes are named so they can be searched.
 >
-> (`adestia-qualite` and `adestia-correctifs`; `adestia-ajouts` builds the states of "Target states of `adestia-ajouts`" below. The "as built" sections below record the earlier epics' "no loading, no offline state" and are corrected by the tranche that builds each state.)
+> Where this file says an earlier epic (`adestia-qualite`, `adestia-correctifs`) "builds no new state" or keeps a state "a recommendation" (loading, error, offline), `adestia-ajouts` builds it: "Target states of `adestia-ajouts`" below is the rule, and the tranche that builds each state moves its row into the "as built" tables and empties the "Lacks" cell.
 > The "Lacks" column of States is an observation, not a target: the epic builds no new
 > state, except a loading state where a screen shows a wrong state while it loads today
 > (E-2, E-14) — coherence, not behaviour (`B-1`). Every `Q-n` is either closed by its tranche
@@ -169,7 +169,7 @@ columns are the same except where the instance's configuration decides what exis
 | E-1 | loading (`LoadingGate`: spinner and "Loading…"), sign-in, refused, fatal; four cards with an icon each, every string through `t()` | — |
 | E-2 | loading (`.adestia-loading`, spinner and translated Loading…), normal, shared empty state (after ready), with/without brief, with/without hero, Arrange mode | — |
 | E-3 | normal, shared empty/no-match states ("This section holds nothing yet." / "Nothing matches."), facet chips, finished archive, multi-store marks | loading (index-driven, renders whatever is held) |
-| E-4 | reading, editing, saving/saved/"tidied", conflict (`.adestia-save--warn`), rejected, failed, read-only (`.adestia-editor__readonly` + raw source), diagnostics, drop zone, lost/ambiguous wikilink, unknown block, missing `from=` | a loading state while the page is fetched (previous screen stays); an empty-page state |
+| E-4 | reading, editing, saving/saved/"tidied", conflict (`.adestia-save--warn`), rejected, failed, read-only (`.adestia-editor__readonly` + raw source), diagnostics, drop zone, lost/ambiguous wikilink, unknown block, missing `from=` | a loading state while the page is fetched (to build: `Loading` only when no page is held, see "Target states"); an empty-page state |
 | E-5 | shared popover/fields, normal, broken frontmatter (nothing editable), unknown fields, kept-as-written | — |
 | E-6 | shared popover/fields, normal, required attributes missing, stray attributes | — |
 | E-7 | normal, shared all-finished state inside a facet, count chips | empty collection state distinct from "all finished" |
@@ -207,11 +207,11 @@ vocabulary of looks (`docs/charte.md`).
 
 | E-n | Adds | Notes |
 |---|---|---|
-| E-3, E-9 | loading | index-driven: E-3 draws the loading row (instead of its empty state) while the shell's index has not answered; E-9 draws it above its tiles until its four reads (servers, instructions, delegations, health) have answered or failed, the tiles staying drawn. No Retry (failure = E-32) |
-| E-4 | loading while the page is fetched; fetch-failed shows E-8 with its **Retry** (one failure block, not a second one); reading: refreshes when its file changes; editing: banner "The page changed" with **Reload** | the banner uses `.adestia-save--warn`'s family; it never touches the editor's text; absent when the change is the user's own save; if the open page is deleted or moved by the agent, E-8 (not found) shows and the page is no longer followed; when the workspace watch is off nothing refreshes, as today (B-17, AD-21) |
+| E-3, E-9 | loading | index-driven: E-3 draws the loading row (instead of its empty state) while the shell's index has not answered; E-9 draws it above its tiles until its four reads (servers, instructions, delegations, health) have answered or failed, the tiles staying drawn. No Retry. Server cut: the row of E-3 stays until E-32 (a later tranche) says it; a 500 on the index leaves E-3 on its row too, as the index is the shell's own boot read (E-1 owns its failure); in E-9 a failed read leaves its tile without a count, no message |
+| E-4 | loading while the page is fetched; fetch-failed shows E-8 with its **Retry** (one failure block, not a second one); reading: refreshes when its file changes; editing: banner "The page changed" with **Reload** | the banner uses `.adestia-save--warn`'s family; it never touches the editor's text; absent when the change is the user's own save; if the open page is deleted or moved by the agent, E-8 (not found) shows and the page is no longer followed; when the workspace watch is off nothing refreshes, as today (B-17, AD-21); going from page to page keeps the first page on screen until the second answers, `Loading` shows only when no page is held (AD-24) |
 | E-8 | **Retry** on the "server could not" case (status 0 included: the shell could not reach the server) | 404 and 401/403 have no Retry; Retry fetches the page again and the screen becomes the page, or stays E-8 |
 | E-10 | loading; fetch-failed with **Retry**; **Remove** opens E-33 | |
-| E-11, E-13 | loading; fetch-failed with **Retry** | for the list and for what is open (a file, a conversation): a failed list shows the failure block in place of the list, a failed open item shows it in place of the item, the list reachable by the back control as today. E-11: 404 on the list is still "this engine has no such folder" (no Retry, no failure) |
+| E-11, E-13 | loading; fetch-failed with **Retry** | for the list and for what is open (a file, a conversation): a failed list shows the failure block in place of the list, a failed open item shows it in place of the item, the list reachable by the back control as today. E-11: 404 on the list is still "this engine has no such folder" (no Retry, no failure). Status 0 (the server did not answer) and 5xx have Retry; 401/403 and a 404 on an open item (E-11 file, E-13 conversation) have the message and no Retry, as in E-8 (retrying cannot change them); E-13 has no 404 on its list |
 | E-14 | field "Simultaneous turns" (number, min 1, max 16) in a group of its own, "restart needed" mark | same row shape as "Scan period"; the offline banner (E-32) and the restart-needed state of E-14 are independent: both may show. While the screen waits for the restart ("Coming back…", P-10), the server does not answer, so E-32 may show above it; when the instance answers both go |
 | E-16 | loading for the list and the thread; fetch-failed with **Retry**; a context-lost marker in the thread (B-22) | the marker is a line in the thread, not a toast; text says the engine no longer remembers the earlier messages |
 | E-25, E-28 | loading; fetch-failed with **Retry** | plugins reach the look through the shell's CSS classes (`.adestia-loading`, the empty-state classes, `.adestia-sheet*`), as they already do for sheets; the plugin contract (AD-8) gains nothing. the native `confirm()` of E-25 and `alert()` of E-26 are not touched by `adestia-ajouts`: `adestia-correctifs` replaces them by the shared sheet (AD-17, Q-20). The words « kept » about them in Q-20 and `ARCHITECTURE.md` (Known defects, AD-7 (e)) are the base branch's and are rewritten by that epic; if it narrows the change, whatever it leaves stays as it leaves it, and `adestia-ajouts` neither adds nor removes anything there |
@@ -226,7 +226,10 @@ One failure block: `.adestia-empty.adestia-empty--state` with `.adestia-empty__i
 `.adestia-btn` **Retry**. A plugin screen writes those classes itself (AD-8: it imports nothing
 from the shell). Filled in by `adestia-ajouts-chargements`; the plugin tranche reuses it.
 
-Roles: no route tells an owner from a user (matrix below): E-32 and E-33 are the same for both,
+Words: the loading row says "Loading…" (`fr` "Chargement…"); **Retry** is `fr` "Réessayer". The failure sentence is the server's own `error` when it sent one, else "Request failed (%n)" (`fr` "La requête a échoué (%n)"; status 0: "The server did not answer" / "Le serveur n'a pas répondu"), never a raw `fetch failed`.
+While Retry runs the failure block is replaced by the loading row where nothing else is held (E-11/E-13 list or item, E-8 and E-4: the page); no button is left to press twice. A long server message or file/conversation name wraps inside the block (`overflow-wrap: anywhere`), the block never widens the screen.
+
+Roles: **Retry** is open to everyone who can open the screen, and absent (not refused) where retrying cannot change the outcome (404, 401/403). No route tells an owner from a user (matrix below): E-32 and E-33 are the same for both,
 the agent touches neither, and no calling agent sees them. There is no new role. States are drawn in the four skins, `en` and `fr`, light and dark, desk
 and phone (AD-20).
 
