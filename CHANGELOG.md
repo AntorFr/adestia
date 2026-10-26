@@ -464,6 +464,9 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
 
 ## adestia-correctifs (unreleased)
 
+- **A root page's breadcrumb no longer invents a folder** — `trailOf` took the parent of
+  `notes.md` by slicing off its last character; it now uses `folderOf`, so the trail is Home
+  then the title. The missing-page screen (E-8) links to Home when the refused page is at the root.
 - **Boot refuses a non-conformant driver** — `start()` now checks the driver it arms
   (built from the config or injected) against its own descriptor before the
   permissions check. An instance whose driver declares a capability it lacks the
