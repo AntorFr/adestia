@@ -7,7 +7,7 @@
 >
 > Written by the epic `adestia-qualite` (2026-10-15), a quality pass that changes **no
 > behaviour**. Decisions taken BEFORE this epic live in `DESIGN.md` › Decision log, which is
-> not renumbered; `AD-n` starts at `AD-1` with this epic. The epic `adestia-correctifs` (AD-15 onward) then repairs the defects this pass listed and does change behaviour, each repair named in the CHANGELOG; `AD-21` is the number of a tranche of that epic not yet merged here. The map below is the code as first
+> not renumbered; `AD-n` starts at `AD-1` with this epic. The epic `adestia-correctifs` (AD-15 onward) then repairs the defects this pass listed and does change behaviour, each repair named in the CHANGELOG; `AD-21` is taken by the epic `adestia-ajouts`, hence the gap before AD-22. The map below is the code as first
 > documented at the git tag `v0.88.0` (the packages' `version` fields stay `0.0.0`), updated for the completed charter, pages, chat, plugins, tests and server tranches; the repository's later tags (`git tag`) mark releases, not this map.
 
 ## Overview
