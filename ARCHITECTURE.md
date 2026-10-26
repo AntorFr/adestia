@@ -681,10 +681,10 @@ Each target: what, where, why it costs, the tranche that owns it, and its outcom
 |---|---|---|---|---|
 | R-1 | MCP `Authorization: Bearer` header selection copied in `claude-code/driver.ts`, `copilot-cli/driver.ts`, `codex-cli/driver.ts` | three copies of a security-relevant rule | serveur | closed: `drivers/src/mcp-headers.ts`, pinned by a test written first |
 | R-2 | Driver helpers duplicated: device-code `beginAuth`/`completeAuth`/`cancelAuth` (codex, copilot), `truncate` ×3 (`*/events.ts`), `health` ×2, `usageOf` ×3, `classifyAuthError`/`explainAuthProblem` ×2 (`*/auth.ts`) | drift between engines | serveur | closed: `engine-aids.ts` and `device-code.ts`; the engines pass their own tables |
-| R-3 | `start()` (464 lines) and `buildApp` (287 lines) mix concerns; `TurnLimiter`, `runUnattended`, inline `/api/delegations` routes and the `adestiaRunTurn` monkey-patch live in `app.ts`; routes registered both from `routes/` and top-level files (`pages.ts`, `mcp-routes.ts`, `static.ts`, `files.ts`, `watch.ts`, `callback.ts`) | no single place says what is mounted | serveur | closed: every route is registered from `routes/`; the top-level files keep only their helpers and a re-export (`mcp-routes.ts` is a pure re-export); `app.ts` mounts, `turn-limiter.ts` and `unattended.ts` hold the rest; `start()` is named stages, order pinned by `start-order.test.ts` |
+| R-3 | `start()` (464 lines) and `buildApp` (287 lines) mix concerns; `TurnLimiter`, `runUnattended`, inline `/api/delegations` routes and the `adestiaRunTurn` monkey-patch live in `app.ts`; routes registered both from `routes/` and top-level files (`pages.ts`, `mcp-routes.ts`, `static.ts`, `files.ts`, `watch.ts`, `callback.ts`) | no single place says what is mounted | serveur | closed: every route is registered from `routes/`; the top-level files keep only their helpers (`mcp-routes.ts` is gone); `app.ts` mounts, `turn-limiter.ts` and `unattended.ts` hold the rest; `start()` is named stages, order pinned by `start-order.test.ts` |
 | R-4 | `field()` duplicated in `instruction-catalogues.ts` and `instructions.ts`; `routes/instruction-catalogues.ts` `sourceOf` / `fetchClone` / `cacheDir` duplicate `catalogueSource` / `fetchCatalogueClone` / `catalogueClone` of `instruction-catalogues-refresh.ts` | pure extraction, behaviour kept | serveur | closed: `field()` once in `frontmatter.ts`; the catalogue route calls the refresh module |
 | R-5 | `pages.ts` doubles as a frontmatter library for `instructions.ts`, `instruction-catalogues.ts`, `schedule.ts`, `shell-tools.ts` | a route module as a dependency; move without changing the parser (AD-7) | serveur | closed: `server/src/frontmatter.ts`, bodies untouched; the CRLF divergence stays (AD-7) |
-| R-6 | Dead interface removed; test-only helpers removed from production indexes; remaining public types, test imports and boot entry points named below | surface limited to its consumers | serveur | closed: 177 entries remain, all named below |
+| R-6 | Dead interface removed; test-only helpers removed from production indexes; remaining public types, test imports and boot entry points named below | surface limited to its consumers | serveur | closed: 171 entries remain, all named below |
 | R-7 | Comments pointing to absent documents: `technique.md` (server sources and tests), `ATELIER-3.md` (`plugins/atelier/web`), `PARCOURS.md` and "D44 côté cerveau" (`plugins/parcours/web`) | dead references | serveur (server), plugins (plugins) | server: closed; plugins: closed — no comment under `plugins/` names `ATELIER-3.md`, `PARCOURS.md` or "D44 côté cerveau" any more (`git grep` finds none) |
 | R-8 | `eslint.config.js` claims floating promises and thrown-away errors are caught, which its rules cannot do (no type-aware rule, `caughtErrors: 'none'`); `plugins/` not linted; lint not in CI | a claim the gate does not keep | serveur (CI, claim), plugins (plugins lint) | server: closed — claim rewritten, `npm run lint` in CI; plugins: closed — `npm run lint` (`eslint packages plugins`) covers `plugins/` and is clean |
 | R-9 | Test support rewritten per file: the fake `Driver` in 10 test files, `git()` in 5, `mkdtemp` in 39 | each new test copies one | tests | closed: `packages/server/test/support/` holds the three, and every file that rewrote them imports them |
@@ -740,7 +740,7 @@ rules. The server outcomes above are filled.
   qualifier consume its first name. Tests, `bin/`, bench scripts, plugins and computed
   module paths are outside the graph: check their runtime uses before removing a hit.
 
-  The final inventory is **177** entries: public contract types below,
+  The final inventory is **171** entries: public contract types below,
   test-only exports retained under the R-6 arbitration, and the boot entry points.
   No measurement rule or test was changed.
 
@@ -776,26 +776,21 @@ rules. The server outcomes above are filled.
   | `packages/drivers/src/signatures.ts` | `signatureRequest` | `packages/drivers/test/signatures.test.ts` |
   | `packages/server/src/app.ts` | `buildVersion`, `sseFrame` | `packages/server/test/app.test.ts` |
   | `packages/server/src/attachments.ts` | `safeName` | `packages/server/test/attachments.test.ts` |
-  | `packages/server/src/callback.ts` | `registerCallback` | `packages/server/test/callback.test.ts` |
   | `packages/server/src/clock.ts` | `readState`, `writeState` | `packages/server/test/schedule.test.ts` |
   | `packages/server/src/config.ts` | `DEFAULT_SESSION_TTL_MS` | `packages/server/test/auth.test.ts`, `packages/server/test/oidc-routes.test.ts`, `packages/server/test/oidc.test.ts` |
   | `packages/server/src/conversations.ts` | `isSafeId` | `packages/server/test/conversations.test.ts` |
   | `packages/server/src/delegations.ts` | `titleFor` | `packages/server/test/delegations.test.ts` |
   | `packages/server/src/files.ts` | `kindOf` | `packages/server/test/files.test.ts` |
-  | `packages/server/src/files.ts` | `registerFiles` (re-export of `routes/files.ts`) | `packages/server/test/files.test.ts`, `packages/server/test/mono-store-witness.test.ts`, `packages/server/test/pages-stores.test.ts` |
   | `packages/server/src/introduction.ts` | `CONTRACT_NAME` | `packages/server/test/introduction.test.ts` |
   | `packages/server/src/io.ts` | `inFlight` | `packages/server/test/io.test.ts` |
-  | `packages/server/src/mcp-routes.ts` | `registerMcp` | `packages/server/test/mcp.test.ts` |
   | `packages/server/src/mcp-store.ts` | `MCP_MASK` | `packages/server/test/mcp-servers.test.ts` |
   | `packages/server/src/oidc.ts` | `identityFrom`, `isAllowed` | `packages/server/test/oidc.test.ts` |
-  | `packages/server/src/pages.ts` | `registerPages` (re-export of `routes/pages.ts`) | `packages/server/test/mono-store-witness.test.ts`, `packages/server/test/pages-stores.test.ts`, `packages/server/test/pages.test.ts` |
   | `packages/server/src/plugin-host.ts` | `mountPluginApis` | `packages/server/test/plugin-host.test.ts`, `packages/server/test/plugin-secrets.test.ts` |
+  | `packages/server/src/routes/watch.ts` | `EventsOptions` | `packages/server/test/watch.test.ts` |
   | `packages/server/src/schedule.ts` | `GRACE_MINUTES`, `MIN_PERIOD_MINUTES`, `parseAt`, `parseEvery`, `parseNote` | `packages/server/test/schedule.test.ts` |
   | `packages/server/src/secrets.ts` | `ARMING_TTL_MS` | `packages/server/test/secrets.test.ts` |
   | `packages/server/src/settings-file.ts` | `coerce`, `replaceContents` | `packages/server/test/settings-file.test.ts` |
   | `packages/server/src/shell-tools.ts` | `ulid` | `packages/server/test/shell-tools.test.ts` |
-  | `packages/server/src/static.ts` | `registerStatic` (re-export of `routes/static.ts`) | `packages/server/test/static.test.ts` |
-  | `packages/server/src/watch.ts` | `EventsOptions`, `registerEvents` (re-exports of `routes/watch.ts`) | `packages/server/test/watch.test.ts` |
 
   Runtime entry points outside the graph: `packages/server/src/start.ts` exports
   `start` for `bench/launch.mjs` (a computed dynamic import of the built module),
