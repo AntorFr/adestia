@@ -187,6 +187,3 @@ export async function attachmentsOf(
   ]
   return found.sort((a, b) => order.compare(a.path, b.path))
 }
-
-// The route registration lives under `routes/`; kept importable from here.
-export { registerFiles, type FilesOptions } from './routes/files.js'

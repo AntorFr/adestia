@@ -4,7 +4,8 @@ import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import Fastify from 'fastify'
 
-import { mimeFor, registerStatic, safeJoin } from '../src/static.js'
+import { mimeFor, safeJoin } from '../src/static.js'
+import { registerStatic } from '../src/routes/static.js'
 import type { DiscoveredPlugin } from '../src/extensions.js'
 import { cleanTmp, tmpDir } from './support/tmp.js'
 

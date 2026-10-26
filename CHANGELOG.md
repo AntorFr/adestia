@@ -470,3 +470,12 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
   while validator field lines stay as the server wrote them. Catalogue refresh
   shows thrown errors in the pop-in. Remove the duplicate icon spin animation;
   the catalogue token field already had `autoComplete="off"` and keeps it.
+- **Boot refuses a non-conformant driver** — `start()` now checks the driver it arms
+  (built from the config or injected) against its own descriptor before the
+  permissions check. An instance whose driver declares a capability it lacks the
+  method of, or an unknown one, no longer boots: it stops with
+  `Driver "<id>" is not conformant:` and one line per gap. Previously, the
+  descriptor was trusted without this check.
+- **Configuration file keeps its mode on save** — saving the configuration through
+  the rename path used to leave the file in the umask's default mode (a 0600 file came
+  back 0644). The temporary file now takes the target's mode before the rename.
