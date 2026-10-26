@@ -464,6 +464,12 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
 
 ## adestia-correctifs (unreleased)
 
+- **Chat sends while the first message is leaving** — Since `c549a5d` (v0.95.0), a
+  second message sent before the first conversation's creation and turn POST finish
+  is shown as held and waits for that same conversation. Previously it could leave
+  as a fresh turn and never appear as held. This records the behaviour change already
+  in `main` (AD-19); the existing held-message regressions keep it pinned.
+
 - **Chat refusal** — A turn refused at the concurrency limit now says the server's
   limit in English or French. Its error line and the sent message survive rereading
   the conversation; the line clears on the next send or when leaving the conversation.
