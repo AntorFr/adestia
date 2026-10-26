@@ -38,6 +38,10 @@ const FR: Readonly<Record<string, string>> = {
   Waiting: 'En attente',
   Unread: 'Non lu',
   Working: 'En cours',
+  'Turn limit reached (%n at a time) — try again in a moment.':
+    'Limite de tours atteinte (%n à la fois) — réessayez dans un instant.',
+  'Turn limit reached — try again in a moment.':
+    'Limite de tours atteinte — réessayez dans un instant.',
   Failed: 'Échec',
   'Weight of the context your next message re-pays': 'Poids du contexte repris par votre prochain message',
   '%n tool call': '%n appel d’outil',
@@ -517,7 +521,12 @@ const FR: Readonly<Record<string, string>> = {
 }
 
 const TABLES: Readonly<Record<Locale, Readonly<Record<string, string>>>> = {
-  en: {},
+  en: {
+    'Turn limit reached (%n at a time) — try again in a moment.':
+      'Turn limit reached (%n at a time) — try again in a moment.',
+    'Turn limit reached — try again in a moment.':
+      'Turn limit reached — try again in a moment.',
+  },
   fr: FR,
 }
 
