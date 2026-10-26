@@ -30,13 +30,15 @@ Each complete sweep covers E-1 to E-31, light/dark, 1440×900 and 390×844:
 | Alfred | exit 0, 124/124 | exit 0, 124/124 |
 | Dobby | exit 0, 124/124 | exit 0, 124/124 |
 | Nestor | exit 0, 124/124 | exit 0, 124/124 |
-| Skippy | exit 0, 124/124 | pending |
+| Skippy | exit 0, 124/124 | exit 0, 124/124 |
 
 ## Images opened
 
-Complete visual passes on the merged product so far: Alfred (English and French), Dobby (English and French), Nestor (English and French), Skippy (English),
-both themes, 1440 and 390 px.
-The images were opened in labelled contact sheets made from the actual PNGs.
+All eight sweeps on the merged product exit 0: 992 captures in total.
+For Alfred, Dobby, Nestor and Skippy, in English and French, the screens
+below were opened in both themes at 1440 and 390 px: 40 labelled contact
+sheets made from the actual PNGs, ten screens per matrix (E-2 included).
+Every observation below applies to those eight matrices.
 
 | Screen | What was inspected and seen |
 |---|---|
@@ -50,8 +52,7 @@ The images were opened in labelled contact sheets made from the actual PNGs.
 | E-1 | Sign-in gate: centred card, lock, sentence and action in light/dark at both widths; relu, rien à corriger. Loading spinner is separately captured and measured below. |
 | E-15 | Credential state, renewal/forget actions, theme icons, OIDC sign-out and colophon: relu, rien à corriger. Phone popover stays inside the viewport. |
 
-Additional matrix still to inspect: Skippy/French, including its console band.
-Skippy/en: the console band stays on one line at 390 px in both forced
+Skippy/en/fr: the console band stays on one line at 390 px in both forced
 themes, with the engine name shortened; sheets and menu remain contained.
 Nestor/en/fr: the invitation arrow is crisp and centred inside its disc in all
 four sweep variants; the rounded panels keep their shape in both palettes.
@@ -79,8 +80,8 @@ light-labelled pictures alone do not attest their light theme. The sweep
 forces the stored theme, as does the scrolled E-14 supplement. Those are the
 two-theme proof. Nestor’s invitation and Skippy’s band were also opened
 at 1440/360 px in both languages; Nestor’s arrow is crisp in its disc, and
-Skippy’s band occupies one line. Its hero remains tall at 360 px; this task
-judges the band, not a redesign of the hero.
+Skippy’s band occupies one line. Its hero remains tall and narrow at 360/390 px; this observation does
+not assert a redesign or a repair of that hero (outside the nine entries).
 
 LoadingGate: 32 pictures (four configured skins, two browser locales, both
 themes, 1440/390 px) were opened. The `/api/instance` request was held to keep
@@ -96,8 +97,8 @@ E-1: relu, rien à corriger.
 |---|---|
 | Nestor's `↑` | Repaired: inline SVG in `currentColor`; `packages/web/test/skin-nestor-invite.test.ts` pins SVG, stroke and no text in both locales. `shell-habillage.mjs` also measures it. |
 | MCP tile/badge disagreement | Repaired: chip and subtitle count `/api/mcp/servers`, attention joins health by name. `shell-textes.test.tsx` checks 6 listed / 7 reported, ignoring the unlisted failed server. |
-| Skippy's phone banner | Repaired: one line at 360 px; `bench/scenarios/shell-habillage.mjs` checks height ≤40 px and no horizontal overflow. Fresh run exit 0 (80 captures). |
-| E-14 switch apart from title | Repaired: no wrap between label and switch. The same scenario checks their `top` difference ≤8 px at 360 px. Fresh run exit 0 (80 captures). |
+| Skippy's phone banner | Repaired: one line at 360 px; `bench/scenarios/shell-habillage.mjs` checks height ≤40 px and no horizontal overflow. Supplement on `27c62b5`: exit 0 (80 captures). |
+| E-14 switch apart from title | Repaired: no wrap between label and switch. The same scenario checks their `top` difference ≤8 px at 360 px. Supplement on `27c62b5`: exit 0 (80 captures). |
 | E-19 detail in English under `fr` | Heading repaired, pinned with intact validator lines by `shell-textes.test.tsx`. `field: message` lines are **kept**: English validator sentences; translating them needs a new keyed table (AD-17/AD-24). |
 | Token field without `autoComplete` | **Not reproduced**: already `autoComplete="off"` since `64dee0f`; `shell-textes.test.tsx` pins the driver's code input. The catalogue password field also already has the attribute. |
 | “Invalid plugin manifest” in English | Repaired with E-19: plugin/skin headings, with/without folder name, go through the two word tables. The same test also pins unchanged English and literal placeholder-like folder names. |
@@ -112,9 +113,14 @@ lines and the closed/not-reproduced token report from this tranche.
 defect; its current-branch paragraph now describes the merged chat tranche.
 `phase-dev` reserves this file to integration: it was read, not modified here.
 Integration should refresh that paragraph from the completed shell proof.
+The earlier optional doc check on `27c62b5` found three inherited release-tag
+metadata failures (22/25 passed); their exact reproduction and the need to
+refresh publication metadata are in the task discussion, outside this shell
+proof. No test was weakened to hide them.
 
-No ADR is created and no design decision is changed. The AD-17 shell row will
-be closed after the remaining visual passes. `relire-doc` is absent from the
+The AD-17 shell row now records the eight repairs, the not-reproduced token
+report and the kept validator lines, with this report as their detailed proof.
+No ADR is created and no design decision is changed. `relire-doc` is absent from the
 mounted skills, and this mission forbids delegation: independent reading is
 left to the tester, rather than claimed as performed.
 
