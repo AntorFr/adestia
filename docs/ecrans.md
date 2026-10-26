@@ -254,8 +254,9 @@ send inert); it carries no extra text, the Failure above it is the explanation.
 conversation under OIDC): the shell's existing sign-in/denied handling applies as today and the
 chat adds no state of its own; the Failure and Retry are for network and 5xx failures only.
 Offline (server not answering): the banner E-32 is drawn at the top of the canvas body on desk;
-on a phone, where the rail is the whole screen and the canvas is not visible, the rail draws
-the same banner above the header (same component, same `status` role); a list or thread
+on a phone, where the rail is the whole screen and the canvas is not visible, the same banner is
+drawn above the rail's header (same component, same `status` role). E-32 and its two places belong
+to `adestia-ajouts-hors-ligne`; the chat slice builds none of it. A list or thread
 fetch that fails meanwhile shows its Failure beneath it, and Retry works once the server is back.
 Extreme content: several marks in one thread each draw their line; `fr` text wraps onto two
 lines in a narrow rail (the hairlines shrink, the text never truncates); a long list keeps its
