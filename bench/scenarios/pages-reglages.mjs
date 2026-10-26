@@ -1,4 +1,4 @@
-/** E-5/E-6 geometry, before/after. Host: chat-matrix.mjs, seed base, fake engine.
+/** E-5/E-6 geometry, before/after. Host: chat-matrix.mjs, seed pages-reglages, fake engine.
  * BENCH_OBSERVE=1 records failures without stopping the four-skin baseline.
  * The chat model control is a native select, so only its DOM bounds can be measured.
  */
@@ -9,7 +9,7 @@ import { execFileSync } from 'node:child_process'
 import { resolve, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
-export const seed = 'base'
+export const seed = 'pages-reglages'
 export default async function scenario() {
   const root = execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim()
   const { chromium } = createRequire(`${root}/`)('playwright')
@@ -42,7 +42,7 @@ export default async function scenario() {
           }
           if (state === 'resize') await page.setViewportSize({ width, height: 560 })
           await page.waitForTimeout(100)
-          const measure = await page.locator('.adestia-popover').evaluate((node) => {
+          const measure = await page.locator('.adestia-popover').evaluate((node, anchorSelector) => {
             const rect = (element) => {
               const r = element.getBoundingClientRect()
               return { top: r.top, bottom: r.bottom, left: r.left, right: r.right, height: r.height }
@@ -52,11 +52,14 @@ export default async function scenario() {
               .map((element) => ({ name: element.className, ...rect(element) }))
               .filter((r) => r.height > 0 && r.bottom > 0 && r.top < innerHeight)
             const overlaps = obstacles.filter((r) => panel.left < r.right && panel.right > r.left && panel.top < r.bottom - 1 && panel.bottom > r.top + 1)
-            return { panel, obstacles, overlaps, inside: panel.top >= 7 && panel.bottom <= innerHeight - 7 && panel.left >= 7 && panel.right <= innerWidth - 7 }
-          })
+            const anchor = rect(document.querySelector(anchorSelector))
+            const limit = Math.max(8, ...obstacles.map((r) => r.bottom))
+            const follows = anchor.bottom > limit || panel.top <= limit + 9
+            return { panel, anchor, obstacles, overlaps, follows, inside: panel.top >= 7 && panel.bottom <= innerHeight - 7 && panel.left >= 7 && panel.right <= innerWidth - 7 }
+          }, anchor)
           const name = `${screen}-${theme}-${width}-${state}`
           await page.screenshot({ path: join(out, `${name}.png`) })
-          report.push({ name, ...measure, ok: measure.inside && measure.overlaps.length === 0 })
+          report.push({ name, ...measure, ok: measure.inside && measure.overlaps.length === 0 && (state !== 'scroll' || measure.follows) })
         }
         await page.keyboard.press('Escape')
         await page.setViewportSize({ width, height: 900 })
