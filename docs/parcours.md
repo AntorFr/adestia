@@ -181,7 +181,7 @@ A user reads a markdown page of the workspace.
 5. A page whose `type` a plugin claims is drawn by that plugin's layout (E-29 for `meals`).
 6. Under the page, the attachments strip (`Attachments`, `GET /api/files?page=…`) lists the files in the page's folder and its `assets/` that the page body does not already show.
 7. When the agent writes the page, the server pushes the change (`GET /api/events`, `workspace.watch`) and the pages index is refetched (new pages appear in the navigation); the open page is not reloaded, since the editor may hold unsaved words, and a conflicting save is refused by its revision check (known defect, `ARCHITECTURE.md` › Known defects).
-8. A page that cannot load shows E-8 (`MissingPage`), with three cases: no page at this address (404), out of reach because the session may have expired (401/403), or a server error. It names the path and links to the folder above, using file-question, lock or circle-alert in the shared empty state.
+8. A page that cannot load shows E-8 (`MissingPage`), with three cases: no page at this address (404), out of reach because the session may have expired (401/403), or a server error. It names the path and links to the folder above (to Home for a page at the root, which has none), using file-question, lock or circle-alert in the shared empty state.
 9. A page using blocks the vocabulary does not know opens read-only, showing a lock icon, its raw source and the diagnostics, each one in the instance's language (the block names, attributes and values in them stay as the author wrote them). Block notes use the translated inline empty state.
 
 Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16

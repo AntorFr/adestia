@@ -633,6 +633,9 @@ is its title alone. The test is a `trailOf` call on a root page (`notes.md`) wit
 arranged so that the invented name is accepted — red on `main`. The slice is wrong in itself, so
 the repair is made whatever the screens reach; if no real route reaches it, the entry is written
 *repaired, latent* (no visible effect found) and not claimed as a screen fix.
+Same task, E-8: `MissingPage.tsx` draws its folder link only when `folder` is not empty, so a
+refused page at the root shows none. The link then goes Home (`#/`), as `docs/ecrans.md` E-8 says; a
+component test on a root address, written before, is red on `main`.
 
 **b. E-6 and the banner at 1440 px (`app/ui/Popover.tsx`).** The popover is `position: fixed`,
 placed once at open from the anchor's rectangle (`useLayoutEffect` on `[open, anchor]`). It is
@@ -679,8 +682,9 @@ widening is the editor's rule and is written with the change. Every reader of
 CRLF; the CHANGELOG says so. The test is written first on a page and a scheduled note whose
 fences and lines end `\r\n`: the index returns the fields the editor shows, the note reads its
 `at`/`expired`, and `stampField` keeps CRLF. If the first test passes on `main` (the Known defect says "behaviour not yet
-reproduced"), the defect is written *not reproduced* with the attempt and nothing else in (d) is
-built.
+reproduced"), the CRLF defect is written *not reproduced* with the attempt, and the CRLF line-ending
+work is not built; the closing fence widened to trailing spaces has its own test, red on `main`,
+and is built either way.
 
 Not in this tranche: refreshing the open page when the agent writes (kept, P-5 step 7), loading
 and retry states (AD-18), E-8's retry. E-8's text and the Known defect entries leave with their

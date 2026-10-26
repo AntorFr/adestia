@@ -135,7 +135,7 @@ columns are the same except where the instance's configuration decides what exis
 | E-3 | browse, search, facet | same | creates/moves pages (cards appear live) | — |
 | E-4, E-5, E-6 | read, edit, save | same | edits the same files; a concurrent edit gives the conflict state | — |
 | E-7 | add a member, open | same | writes members | — |
-| E-8 | follow the folder link | same | a mistyped address it gave lands here | — |
+| E-8 | follow the folder link (Home for a root page) | same | a mistyped address it gave lands here | — |
 | E-9 | open tiles | same | — | its delegations are counted |
 | E-10 | add/edit/remove servers, connect | same (connect is per person) | uses the servers; health reported after a turn | — |
 | E-11, E-12 | write, import, refresh | same | may write instruction files | — |
@@ -166,9 +166,9 @@ columns are the same except where the instance's configuration decides what exis
 | E-3 | normal, shared empty/no-match states ("This section holds nothing yet." / "Nothing matches."), facet chips, finished archive, multi-store marks | loading (index-driven, renders whatever is held) |
 | E-4 | reading, editing, saving/saved/"tidied", conflict (`.adestia-save--warn`), rejected, failed, read-only (`.adestia-editor__readonly` + raw source), diagnostics, drop zone, lost/ambiguous wikilink, unknown block, missing `from=` | a loading state while the page is fetched (previous screen stays); an empty-page state |
 | E-5 | shared popover/fields, normal, broken frontmatter (nothing editable), unknown fields, kept-as-written | — |
-| E-6 | shared popover/fields, normal, required attributes missing, stray attributes | — |
+| E-6 | shared popover/fields, normal, required attributes missing, stray attributes, bounded below the canvas header and the bands (anchor scrolled under the header: the panel stays at the header's edge; anchor out at the bottom or soft keyboard on a phone: the panel stays inside the viewport and scrolls internally) | — |
 | E-7 | normal, shared all-finished state inside a facet, count chips | empty collection state distinct from "all finished" |
-| E-8 | shared empty state: 404 (`file-question`), 401/403 (`lock`), other (`circle-alert`) | a retry for the "server could not" case |
+| E-8 | shared empty state: 404 (`file-question`), 401/403 (`lock`), other (`circle-alert`); folder link to the folder above, or to Home for a page at the root; a very long address wraps; offline is the server-could-not case | a retry for the "server could not" case |
 | E-9 | normal, tiles with Lucide icons; counts absent when unreadable | loading (tiles first render without counts; kept, a recommendation) |
 | E-10 | list, empty ("None wired yet…", shared empty state), health tones each with an icon, needs-auth, connected/not, shadowed, read-only declaration, saving/saved/failed | loading; a confirmation before Remove (kept, recommendations) |
 | E-11 | list, empty, no match, file open, delivered (read-only, lock icon), saving/saved/failed, the name sheet for a new skill or agent | loading (kept, a recommendation) |
@@ -764,9 +764,9 @@ have named `trash-2` controls. Both forms speak the instance locale. Icon exampl
 in placeholders remain author data. At 360 px the block bar and toolbar wrap;
 popovers stay inside the viewport with `--space-2` (8 px) margins and scroll internally. At any width a popover also stays below the canvas header and the bands above the page (problems band E-19, skin console): it never covers them, and it follows its anchor when the page scrolls or the window is resized. When the anchor scrolls up under the header, the panel stays at the header's lower edge and closes nothing; with no band present it takes the header's edge alone.
 
-A save the vocabulary refuses shows, in the save status of E-4 (`Not saved: …`), the first diagnostic in the instance's language, the editor staying open with its text.
+A save the vocabulary refuses shows, in the save status of E-4 (`Not saved: …`; in French `Non enregistré : …`), the first diagnostic in the instance's language, the editor staying open with its text. A diagnostic with no known code is drawn as received, in the save status as in read-only mode. Each sentence of `content`'s validation has its French twin, with the block name, key and values as the author wrote them; for example `Block ":::note" needs content.` reads `Le bloc « :::note » a besoin de contenu.` and `":::note" has no attribute "x"; it will be ignored.` reads `« :::note » n'a pas d'attribut « x » ; il sera ignoré.`
 
-A page whose frontmatter lines end in `\r\n` shows the same fields as one ending in `\n`: the cards and facets of E-3 and E-7 (`status`, `role`, `cat`) and the notes list of E-23 read them as the editor does. Scenarios: the bench scenarios named in the tasks of `adestia-correctifs-pages` cover the root breadcrumb, E-6 at 1440 px, the translated diagnostic and a CRLF page.
+A page whose frontmatter lines end in `\r\n` shows the same fields as one ending in `\n`: the cards and facets of E-3 and E-7 (`status`, `role`, `cat`) and the notes list of E-23 read them as the editor does. The bench scenarios of this repair (`bench/scenarios/`, files named for the root breadcrumb, E-6 at 1440 px, the translated diagnostic and a CRLF page) are in the repository next to the screens they judge.
 
 **E-7.** Members follow the collection text. Facet cards carry shared count chips;
 Ask for a new page uses a small button with `plus` when `of:`, `into:` and the
