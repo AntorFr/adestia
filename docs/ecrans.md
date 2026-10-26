@@ -240,7 +240,7 @@ desk / phone (bottom sheet)
 └──────────────────────────────────────────┘
 ```
 
-- Texts (`fr` in brackets): title "Remove server?" (« Retirer le serveur ? »); body "“%name” will no
+- Texts (`fr` in brackets): title "Remove server?" (« Supprimer le serveur ? »); body "“%name” will no
   longer be wired. Its declaration is deleted from this instance." (« « %name » ne sera plus branché.
   Sa déclaration est supprimée de cette instance. »), the name set in the body's strong text and
   never truncated (it wraps); buttons "Cancel" / "Remove" (existing keys, « Annuler » / « Supprimer »).
@@ -253,10 +253,14 @@ desk / phone (bottom sheet)
   /api/mcp/servers/<name>` runs. Success: back to the list, which is refetched, as today. Failure: the
   sheet stays closed and the error shows in the action bar of E-10 as a failed save does today
   (`role="alert"`); the owner may press Remove again, which asks again.
-- Failure text: the message of the request helper, translated (Q-4), in the same alert a failed Save uses
-  (`en` "request failed (%n)", `fr` « la requête a échoué (%n) »); no new string.
-- Vocabulary: the `fr` buttons are E-10's existing Remove label « Supprimer » and « Annuler »; the title
-  says « Retirer » as B-20 does. The two words stay (the button must match the one the owner pressed).
+- Failure text: the message of the request helper, translated (Q-4), in the same alert a failed Save uses.
+  With an answer from the server: its `error`, else `en` "request failed (%n)", `fr` « la requête a échoué (%n) »
+  with the HTTP status. With **no answer at all** (server down, VPN cut) there is no status: the alert shows
+  the browser's own network message (for example "Failed to fetch", not translated by Adestia), and
+  « la requête a échoué (0) » / "request failed (0)" when the browser gives none. No new string.
+- Vocabulary: the `fr` title and button both say « Supprimer » (« Supprimer le serveur ? » / « Supprimer »),
+  the word of E-10's existing Remove label, so the sheet answers the button that opened it; « Annuler » for
+  Cancel. B-20 is written in English, where one word, "Remove", serves both.
 - E-33 states: it has no loading, empty or offline state of its own (the sheet holds a name already on
   screen, and the choice sends nothing until Remove). If the server is down when Remove is pressed, the
   DELETE fails: the alert above, and the offline banner (E-32) shows too, independently. Permission: the
@@ -274,6 +278,11 @@ report, no panel"): it has no loading state and no Retry.
 | declarations failed (first fetch) | the heading stays; the shared failure block: the message the request helper gives and **Retry**; no tiles; Retry shows the loading row again and fetches again |
 | declarations answered | as today |
 | a refetch after Save or Remove | the screen keeps what it shows (no loading row); a failed refetch is silent, as today |
+
+Texts: `en` "Loading…" / `fr` « Chargement… » (existing key); the failure block shows the request helper's
+message (an `error` from the server as sent; otherwise `en` "request failed (%n)" / `fr` « la requête a échoué (%n) »;
+with no answer, the browser's network message) and the button `en` "Retry" / `fr` « Réessayer » (the key
+`adestia-ajouts-chargements` adds, AD-24; E-10 adds none).
 
 Also: if the first fetch fails because the server is down, the failure block and the E-32 banner show
 together (independent, as E-14). An opened `#/settings/mcp/<name>` whose name is not among the answered
