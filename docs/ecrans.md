@@ -47,7 +47,7 @@ screen.
 
 **Breadcrumb.** `nav.adestia-crumbs`: `Home`, then the trail computed by `trail.ts`
 (`trailOf`) from settings, the open app and what its view published through `api.trail`,
-the page or the section. A page at the root of the workspace has no folder crumb: Home, then its title. Every crumb but the last is a button; a folder crumb resolves
+the page or the section. A page at the root of the workspace has no folder crumb: Home, then its title (a missing or very long title is unchanged by this repair). Every crumb but the last is a button; a folder crumb resolves
 through `folderRoute` (a folder an app absorbs opens that app). The same trail is sent with
 each message as "where the reader is" (`screenView`).
 
@@ -96,7 +96,7 @@ is labelled with the destination. Plugins with sub-screens add their own back (E
 | E-5 | Page properties popover | `settings` on the frontmatter strip in the editor | `editor/PageSettings.tsx`, `pageform.ts`, `frontmatterview.tsx` | Edit frontmatter as a form drawn from declared fields | P-6 |
 | E-6 | Block settings popover | `settings` on a block bar in the editor | `editor/BlockSettings.tsx`, `blockview.tsx` | Edit a `:::block`'s attributes, title, icon, frame, width; remove stray attributes | P-6 |
 | E-7 | Collection page | a page with `type: collection` | `app/Collection.tsx` (`CollectionLayout`, `CollectionShell`), `collections.ts`, `styles/collection.css` | A page listing its members as cards with facets, an `Ask for a new page` button, `Everything here is finished.` | P-5 |
-| E-8 | Missing page | `#/page/<path>` refused (404, 401/403, other) | `app/MissingPage.tsx`, `styles/missing-page.css` | Name the address, say which refusal, link to the folder above | P-5 |
+| E-8 | Missing page | `#/page/<path>` refused (404, 401/403, other) | `app/MissingPage.tsx`, `styles/missing-page.css` | Name the address, say which refusal, link to the folder above (to Home for a page at the root, which has none) | P-5 |
 | E-9 | Settings mosaic | `#/settings` | `app/Preferences.tsx`, `Tile.tsx` | Four tiles: MCP servers, Instructions, Configuration, Delegations, with counts | P-8, P-9, P-10, P-13 |
 | E-10 | MCP servers | `#/settings/mcp[/<name>]` | `app/McpServers.tsx`, `Settings.tsx` (`useMcpServers`), `styles/settings.css` | List servers with health; open one: state, per-person OAuth connect, JSON declaration editor, Save, Remove, add | P-8 |
 | E-11 | Instructions | `#/settings/instructions[/<path>]` | `app/Instructions.tsx`, `styles/tiles.css` | Grouped file cards (instructions, skills, agents), search, `+` create buttons, open one in a monospace textarea, Save; delivered files read-only | P-9 |
@@ -762,7 +762,11 @@ focus to the anchor. Fields use `.adestia-field` and shared controls; Close uses
 `x`. Required attributes have a textual alternative to the star; stray attributes
 have named `trash-2` controls. Both forms speak the instance locale. Icon examples
 in placeholders remain author data. At 360 px the block bar and toolbar wrap;
-popovers stay inside the viewport with `--space-2` (8 px) margins and scroll internally. At any width a popover also stays below the canvas header and the bands above the page (problems band E-19, skin console): it never covers them, and it follows its anchor when the page scrolls or the window is resized.
+popovers stay inside the viewport with `--space-2` (8 px) margins and scroll internally. At any width a popover also stays below the canvas header and the bands above the page (problems band E-19, skin console): it never covers them, and it follows its anchor when the page scrolls or the window is resized. When the anchor scrolls up under the header, the panel stays at the header's lower edge and closes nothing; with no band present it takes the header's edge alone.
+
+A save the vocabulary refuses shows, in the save status of E-4 (`Not saved: …`), the first diagnostic in the instance's language, the editor staying open with its text.
+
+A page whose frontmatter lines end in `\r\n` shows the same fields as one ending in `\n`: the cards and facets of E-3 and E-7 (`status`, `role`, `cat`) and the notes list of E-23 read them as the editor does. Scenarios: the bench scenarios named in the tasks of `adestia-correctifs-pages` cover the root breadcrumb, E-6 at 1440 px, the translated diagnostic and a CRLF page.
 
 **E-7.** Members follow the collection text. Facet cards carry shared count chips;
 Ask for a new page uses a small button with `plus` when `of:`, `into:` and the
@@ -770,7 +774,7 @@ agent callback are present. Inside a facet, all finished uses
 `EmptyState` with `check`. An empty collection has no additional distinct state.
 
 **E-8.** `EmptyState` names the path, with `file-question` for 404, `lock` for
-401/403 and `circle-alert` otherwise. Its ghost folder link uses `folder-open`.
+401/403 and `circle-alert` otherwise. Its ghost folder link uses `folder-open` and goes to the folder above the address; for a page at the root of the workspace, which has none, it goes Home.
 There is no retry control.
 
 **E-20.** `Canvas` shows `EmptyState` with `plug`, `That app is not active on this

@@ -54,7 +54,8 @@ Form of the `exigences` skill; each need names the journeys it serves.
   states it, in the same task. *(all)*
 - **B-16** — A repaired screen shows right under the four skins, in `en` and `fr`, in both themes,
   at desk and phone width (AD-20); a word the user reads is in their language, except data the
-  author wrote. *(all screens)*
+  author wrote and the sentences the server builds for a schedule note's problem or a listening-post
+  line (P-12 step 6, kept under Known defects, AD-17). *(all screens)*
 
 ### The developer's journey
 - **B-2** — A developer launches Adestia locally with one documented command and no docker,
@@ -164,7 +165,7 @@ A user looks for a page or a domain from the landing canvas.
 2. If `home/brief.json` exists in a store (`GET /api/home/brief`), the daily brief shows up to four entries, with how old it is and who chose it. Each entry opens its target: an app, a page, a section or a path an app claims. An entry with no target asks the agent instead. The `rotate-ccw` refresh control sends Refresh my highlights in English, Rafraîchis ma une in French; the heading is Highlights / À la une.
 3. Under **Domains**, one tile per active app that has a `tile`, then one tile per top-level folder of pages (its index page gives the icon and colour; `home/` and the folders an active app absorbs are left out), then the **Settings** tile.
 4. The user presses **Arrange** and drags the tiles. The order is kept in this browser (`adestia.order.domains`) and moves nothing on disk. **Done** ends the arranging.
-5. The user opens a section tile and lands on E-3 at `#/section/<folder>`: its sub-folders, then the live pages as cards, then the finished ones folded under **Finished**. A search field appears past five pages, and facet pills when the pages declare `status`, `role` or `cat` (the first of these found).
+5. The user opens a section tile and lands on E-3 at `#/section/<folder>`: its sub-folders, then the live pages as cards, then the finished ones folded under **Finished**. A search field appears past five pages, and facet pills when the pages declare `status`, `role` or `cat` (the first of these found). A page whose frontmatter lines end in `\r\n` is read the same as one ending in `\n`, here and in P-12 step 5.
 6. The breadcrumb in the canvas header (`adestia-crumbs`) names each level and walks back up; **Home** goes to `#/`. A page at the root of the workspace has no folder above it: its trail is Home and its title, never a folder it does not sit in. On a phone, **Chat** in the canvas header returns to the conversation.
 7. A folder link always goes through `folderRoute` (`owners.ts`). A folder an active app owns opens that app's screen. A folder holding a single typed page of its owner's kind opens directly on that page (`#/page/<folder>`). Anything else opens the section. A `#/section/…` address typed by hand is redirected the same way.
 
