@@ -578,7 +578,7 @@ yet reproduced" (frontmatter CRLF) or "whether it predates the epic is unknown" 
 ### AD-17 — The register: every defect has a tranche, or a written reason
 | Tranche | Defects (Known defects, kept parts of `docs/ecrans.md`, non-blockers) |
 |---|---|
-| chat | refused turn (429) silent (P-2 step 4); `📎` text emoji in `stamped()`; native model select says `Auto`; delegations drop signatures; the chat race (below); chat nits left open by the tests (`adestia-composer--busy` without a rule, unused `.adestia-sheet__close`, double `.adestia-sheet__origin`, the `upload failed` fallback through `t()`) |
+| chat | built by AD-23: the refused turn (429) is explained, the sent message draws `paperclip` and names instead of `📎`, the `upload failed` fallback and the three CSS leftovers are guarded (already repaired in `e00156a`), the composer fold is pinned, the chat race is in the CHANGELOG (AD-19). Kept, with their reason under Known defects: the native model select and the delegations' missing signature cards |
 | pages | root page breadcrumb invents a folder; E-6 settings overlap the banner at 1440 px; page diagnostic mixes languages; frontmatter CRLF divergence (`pages.ts`, `schedule.ts` against `content`) |
 | shell | Nestor's `↑` send glyph; MCP server counts disagree (tile against badge); Skippy's banner wraps on the phone; E-14 switch apart from its title on the phone; E-19 detail in English under `fr`; token field without `autoComplete`; "Invalid plugin manifest" in English; the duplicate `.adestia-icon--spin` block; `CataloguePopin` `refresh()` no longer shows a thrown error |
 | server | none left: the configuration file mode, the `user-tokens.json` comment and the `register*` re-exports were repaired by AD-22 |
@@ -674,6 +674,7 @@ Built: the four repairs below are in the code, each with its test; the text keep
   describes boot. Nothing else in either journey changes.
 
 ### AD-23 — Chat tranche: what the reproduction found, and the shape of each repair
+Built: each repair below is in the code with its test; the text keeps the reasoning.
 Read on `epic/adestia-correctifs` before any code, so the tranche builds the true list.
 - **Refused turn (P-2 step 4).** Reproduced by reading: `consume` clears `live` when `reread`
   succeeds, and a refusal has nothing stored behind it. Repair: a state that ends with an
