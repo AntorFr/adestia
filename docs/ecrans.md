@@ -99,7 +99,7 @@ is labelled with the destination. Plugins with sub-screens add their own back (E
 | E-7 | Collection page | a page with `type: collection` | `app/Collection.tsx` (`CollectionLayout`, `CollectionShell`), `collections.ts`, `styles/collection.css` | A page listing its members as cards with facets, an `Ask for a new page` button, `Everything here is finished.` | P-5 |
 | E-8 | Missing page | `#/page/<path>` refused (404, 401/403, other) | `app/MissingPage.tsx`, `styles/missing-page.css` | Name the address, say which refusal, link to the folder above | P-5 |
 | E-9 | Settings mosaic | `#/settings` | `app/Preferences.tsx`, `Tile.tsx` | Four tiles: MCP servers, Instructions, Configuration, Delegations, with counts | P-8, P-9, P-10, P-13 |
-| E-10 | MCP servers | `#/settings/mcp[/<name>]` | `app/McpServers.tsx`, `Settings.tsx` (`useMcpServers`), `styles/settings.css` | List servers with health; open one: state, per-person OAuth connect, JSON declaration editor, Save, Remove, add | P-8 |
+| E-10 | MCP servers | `#/settings/mcp[/<name>]` | `app/McpServers.tsx`, `Settings.tsx` (`useMcpServers`), `styles/settings.css` | List servers with health; open one: state, per-person OAuth connect, JSON declaration editor, Save, Remove (opens E-33), add; loading and fetch-failed with Retry (`adestia-ajouts-mcp`) | P-8 |
 | E-11 | Instructions | `#/settings/instructions[/<path>]` | `app/Instructions.tsx`, `styles/tiles.css` | Grouped file cards (instructions, skills, agents), search, `+` create buttons, open one in a monospace textarea, Save; delivered files read-only | P-9 |
 | E-12 | Catalogue pop-in | `Catalogues` button in E-11 | `app/CataloguePopin.tsx` (`.adestia-sheet`) | Add a git repository of instructions, list its items, import, Refresh | P-9 |
 | E-13 | Delegations | `#/settings/delegations[/<id>]` | `app/Delegations.tsx` | Tasks other agents delegated, grouped by caller, with state chips; open one | P-13 |
@@ -175,7 +175,7 @@ columns are the same except where the instance's configuration decides what exis
 | E-7 | normal, shared all-finished state inside a facet, count chips | empty collection state distinct from "all finished" |
 | E-8 | shared empty state: 404 (`file-question`), 401/403 (`lock`), other (`circle-alert`) | a retry for the "server could not" case |
 | E-9 | normal, tiles with Lucide icons; counts absent when unreadable | loading (tiles first render without counts; kept, a recommendation) |
-| E-10 | list, empty ("None wired yet…", shared empty state), health tones each with an icon, needs-auth, connected/not, shadowed, read-only declaration, saving/saved/failed | loading; a confirmation before Remove (kept, recommendations) |
+| E-10 | list, empty ("None wired yet…", shared empty state), health tones each with an icon, needs-auth, connected/not, shadowed, read-only declaration, saving/saved/failed | loading (replaced by `adestia-ajouts-mcp`, which also adds the confirmation before Remove, E-33) |
 | E-11 | list, empty, no match, file open, delivered (read-only, lock icon), saving/saved/failed, the name sheet for a new skill or agent | loading (kept, a recommendation) |
 | E-12 | no catalogue, reading the repository, nothing importable, error, items; in the shared sheet (Escape, focus kept and returned, bottom sheet on a phone) | — |
 | E-13 | list by caller, empty (shared empty state), state chips with an icon, open conversation | loading, error (kept, recommendations) |
@@ -253,6 +253,14 @@ desk / phone (bottom sheet)
   /api/mcp/servers/<name>` runs. Success: back to the list, which is refetched, as today. Failure: the
   sheet stays closed and the error shows in the action bar of E-10 as a failed save does today
   (`role="alert"`); the owner may press Remove again, which asks again.
+- Failure text: the message of the request helper, translated (Q-4), in the same alert a failed Save uses
+  (`en` "request failed (%n)", `fr` « la requête a échoué (%n) »); no new string.
+- Vocabulary: the `fr` buttons are E-10's existing Remove label « Supprimer » and « Annuler »; the title
+  says « Retirer » as B-20 does. The two words stay (the button must match the one the owner pressed).
+- E-33 states: it has no loading, empty or offline state of its own (the sheet holds a name already on
+  screen, and the choice sends nothing until Remove). If the server is down when Remove is pressed, the
+  DELETE fails: the alert above, and the offline banner (E-32) shows too, independently. Permission: the
+  sheet opens only from a Remove button that exists, so there is no denied state. Long name: wraps.
 - The sheet is local state of `ServerDetail`, not in the address: a reload cancels it. Same for owner and
   user (no route tells them apart); the agent never sees it.
 
@@ -266,6 +274,11 @@ report, no panel"): it has no loading state and no Retry.
 | declarations failed (first fetch) | the heading stays; the shared failure block: the message the request helper gives and **Retry**; no tiles; Retry shows the loading row again and fetches again |
 | declarations answered | as today |
 | a refetch after Save or Remove | the screen keeps what it shows (no loading row); a failed refetch is silent, as today |
+
+Also: if the first fetch fails because the server is down, the failure block and the E-32 banner show
+together (independent, as E-14). An opened `#/settings/mcp/<name>` whose name is not among the answered
+declarations (removed from another tab) shows the list as today, no new state. A read-only or shadowed
+declaration has no Remove button (hidden, not refused). Many or long-named servers wrap in the tiles as today.
 
 States of E-10 after the tranche: list, empty, health tones, needs-auth, connected/not, shadowed,
 read-only, saving/saved/failed, loading, fetch-failed with Retry, and the E-33 confirmation. Nothing
@@ -622,8 +635,8 @@ became Lucide icons (plug, book-open, sliders-horizontal, handshake) on the tile
 Counts absent when unreadable, as today. The Configuration tile stays (Q-21).
 
 **E-10 MCP servers.** Buttons are `.adestia-btn`, labels unchanged: "Save" (accent),
-"Remove" (danger), connect (neutral), "Add a server" (icon `plus` beside its label); no
-confirmation step is added. The JSON declaration is a `.adestia-textarea`, monospace.
+"Remove" (danger), connect (neutral), "Add a server" (icon `plus` beside its label); Remove
+now opens the E-33 confirmation (`adestia-ajouts-mcp`, B-20) in place of "no confirmation step". The JSON declaration is a `.adestia-textarea`, monospace.
 Empty state shared (today's sentence). Health tones keep colour **and** gain an icon
 (check, circle-alert, loader-circle, wifi-off). Fallback errors translated (Q-4).
 Roles: any signed-in person; "connect" is per person, as today.
