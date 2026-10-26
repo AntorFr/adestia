@@ -64,7 +64,7 @@ export default async function scenario() {
   await mkdir(out, { recursive: true })
   const instance = await (await fetch(`${base}/api/instance`)).json()
   const skin = instance.skin.id
-  const brand = { alfred: 'Alfred', nestor: 'Nestor', dobby: 'Dobby', skippy: 'Skippy' }[skin]
+  const brand = { alfred: 'Alfred', nestor: 'Nestor', dobby: 'Dobby', skippy: 'SKIPPY' }[skin]
   assert(brand, `Expected one of the four skins, got ${skin}`)
   const nativePopup = process.env.BENCH_NATIVE_PICKER === '1'
   const browser = await playwright().chromium.launch({ headless: !nativePopup, args: ['--no-sandbox', '--window-position=0,0'] })
