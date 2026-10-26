@@ -232,7 +232,7 @@ tokens only (`plugins/test/css.test.js`).
 | E-25 workbook (`renderWorkbook`) | `/workbook`, `/state`, `/layout` | same row | message « Unreadable workbook. » + **Retry**, which runs the workbook again; the raw error text (`%err`) is no longer shown. `/layout` failing alone stays tolerated, as today |
 | E-28 map, page and `:::parcours` block (`mountParcours`) | the `.parcours.json` | loading row in the host before the answer | message « Unreadable route. » + **Retry**, which fetches again into the same host. The `vivant` guard still applies: a Retry answered after unmount paints nothing |
 
-Not touched: the walking mode, the points-less state, the `x`-less link view (`vue: 'lien'` shows the
+Not touched: the walking mode, the no-points state, the link view (`vue: 'lien'` shows the
 same loading and failure, in one line); the native `confirm()` of E-25 (`adestia-correctifs`, AD-17).
 Words are added in each plugin's `words.js` (`Loading…`, `Retry`, the two messages), `en` and `fr`.
 The tile information call (`tileInfo`) is not a screen and stays silent on failure.
