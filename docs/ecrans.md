@@ -213,10 +213,36 @@ vocabulary of looks (`docs/charte.md`).
 | E-10 | loading; fetch-failed with **Retry**; **Remove** opens E-33 | |
 | E-11, E-13 | loading; fetch-failed with **Retry** | |
 | E-14 | field "Simultaneous turns" (number, min 1, max 16) in a group of its own, "restart needed" mark | same row shape as "Scan period"; the offline banner (E-32) and the restart-needed state of E-14 are independent: both may show. While the screen waits for the restart ("Coming back…", P-10), the server does not answer, so E-32 may show above it; when the instance answers both go |
-| E-16 | loading for the list and the thread; fetch-failed with **Retry**; a context-lost marker in the thread (B-22) | the marker is a line in the thread, not a toast; text says the engine no longer remembers the earlier messages |
+| E-16 | loading for the list and the thread; fetch-failed with **Retry**; a context-lost marker in the thread (B-22) | the marker is a line in the thread, not a toast; text says the engine no longer remembers the earlier messages. Detail below, "E-16 in `adestia-ajouts-chat`" |
 | E-25, E-28 | loading; fetch-failed with **Retry** | plugins reach the look through the shell's CSS classes (`.adestia-loading`, the empty-state classes, `.adestia-sheet*`), as they already do for sheets; the plugin contract (AD-8) gains nothing. the native `confirm()` of E-25 and `alert()` of E-26 are not touched by `adestia-ajouts`: `adestia-correctifs` replaces them by the shared sheet (AD-17, Q-20). The words « kept » about them in Q-20 and `ARCHITECTURE.md` (Known defects, AD-7 (e)) are the base branch's and are rewritten by that epic; if it narrows the change, whatever it leaves stays as it leaves it, and `adestia-ajouts` neither adds nor removes anything there |
 | E-32 | banner at the top of the canvas body (the place of `Problems`), role `status`, a `wifi-off` icon; absent when the server answers | not an overlay: the screen below stays usable |
 | E-33 | `Sheet` (bottom sheet on a phone), title "Remove server?", the server's name, **Cancel**, **Remove** (danger) | focus on Cancel; Escape = Cancel; modelled on `NamePrompt` |
+
+### E-16 in `adestia-ajouts-chat`
+
+**List (the `list` view and the desktop tab strip's source).** While `GET /api/conversations` has
+not answered, the list view draws `Loading` where its rows go; the header, `plus` and the
+composer stay. If it fails, the list view draws `Failure` (the server's `error`, else the
+locale's request-failed sentence) with **Retry**, which asks again. A list that answered empty is
+the existing "No conversation yet." and nothing else: loading and empty never show together.
+Open tabs and the thread do not depend on the list and stay as they are.
+
+**Thread.** A tab being adopted (`loaded` false, the stored transcript being read) draws
+`Loading` in the thread area, not the empty-thread welcome. If `GET /api/conversations/:id`
+fails with anything but 404/401/403, the thread draws `Failure` with **Retry**, which reads the
+conversation again; the composer stays usable only when the conversation could be read (a failed
+read leaves it disabled, since a message sent now would be filed on a thread the user cannot
+see). 404 keeps what the tab does today (it closes). A reread that fails after the thread was
+shown (`reread`, a phone waking up) changes nothing, as today: no banner, no Failure.
+
+**Context-lost marker (B-22).** One line in the thread, directly above the first agent message
+the turn wrote, when that message carries `contextLost`. `role="note"`, class
+`.adestia-thread__mark`, the `rotate-ccw` icon, muted text and a hairline each side: it is a
+line of the thread, not a bubble; it takes the skin's tokens only. Text: `en` "The engine no
+longer remembers the earlier messages." / `fr` "Le moteur ne se souvient plus des messages
+précédents." It is stored with the message, so a reload, another tab or another device draws
+it too; it is not dismissable. After a live turn, the stream's end rereads the conversation
+(as it does today) and the line appears then. Copilot and Codex conversations never carry it.
 
 Roles: no route tells an owner from a user (matrix below): E-32 and E-33 are the same for both,
 the agent touches neither, and no calling agent sees them. There is no new role. States are drawn in the four skins, `en` and `fr`, light and dark, desk

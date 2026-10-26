@@ -671,6 +671,28 @@ engine environment and, in the deployment, Monsieur's: not built, written under 
 *Reversed if*: the real Claude test shows the SDK always errors loudly and the server already
 surfaces it as an error (then B-22 reduces to writing that, as the letter allows).
 
+**Detail built by `adestia-ajouts-chat`.**
+- *The first task is the real test* (`packages/drivers`, skipped without `CLAUDE_CODE_OAUTH_TOKEN`, run
+  by the pod's token): a Claude turn with `resume` naming a session id that does not exist. It
+  records which of the three outcomes happened — **(a)** a new session starts silently (the result
+  carries another id), **(b)** the SDK throws or ends in error before any text (the driver emits
+  `error`), **(c)** the SDK answers without telling. The result is written under this
+  heading ("Outcome of the real test") before anything else is built. If the token is missing at
+  run time the task stops with no exit reached; no fake stands in for it.
+- *Where the mark is decided* (`routes/turns.ts`, in `finish`, and nowhere else): the session the
+  turn resumed (`conversations.read(…).sessionId` read just before `recordOutcome`) is compared
+  with `outcome.sessionId`; both defined and different, on the Claude engine, → `recordOutcome`
+  puts `contextLost: true` on the first agent message it writes. A conversation with no earlier
+  session (first turn) never gets it. Outcome (b): the route reruns once without `sessionId` on
+  the same conversation, and the rerun's outcome is the one filed, with the same mark. Outcome (c)
+  has no signal and is written down as "cannot be detected", the mark not built, and the task
+  reduces to that sentence in `docs/parcours.md` and here.
+- *Only Claude*: the check is behind the engine id the turn ran on; Copilot and Codex fakes in
+  `packages/drivers/test` change session id between turns in a test and the stored message still has no
+  `contextLost`.
+- *Client*: `StoredMessage`/`Message` gain `contextLost?: boolean`; `Thread` draws the line
+  (`docs/ecrans.md`, "E-16 in `adestia-ajouts-chat`") before such a message.
+
 ### AD-24 — Retry and loading are two shared parts, not nine local ones
 A loading row (the one E-14 draws) and a failure block with **Retry** (the shared empty state of
 E-8 with a button) are shared components in `app/ui/`; each listed screen of the shell uses them. Plugins (E-25, E-28) do not import them: they reach the same look through the shell's CSS classes (`.adestia-loading`, `.adestia-empty*`, `.adestia-btn` for the Retry button, `.adestia-sheet*`), so AD-8 is untouched. Fetch hooks
