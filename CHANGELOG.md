@@ -464,6 +464,10 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
 
 ## adestia-correctifs (unreleased)
 
+- **Phone skins and E-14** — Nestor's invitation arrow is now a drawn arrow in the
+  accent disc instead of a font glyph; Skippy's console band keeps one line at 360 px
+  (the modules cell leaves, the engine name ellipsises); the switch of a configuration
+  row stays on its title's line on a phone.
 - The Settings MCP tile counts the listed servers in both its chip and subtitle;
   driver-only health entries no longer inflate the count or the attention total.
   Refused plugin and skin manifest headings now follow the instance language,

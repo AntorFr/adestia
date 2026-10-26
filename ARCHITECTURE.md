@@ -655,7 +655,9 @@ Read on `epic/adestia-correctifs` before any code, so the tranche builds the tru
 - **E-14 switch.** The row (`.adestia-config__head`) wraps between title and switch on the phone.
   Repair: the switch stays on the title's line (no wrap on the head, the label shrinks).
 - **E-20** is read under B-16 with the rest: a capture under four skins and two languages; if it
-  shows no defect it is written *relu, rien à corriger*.
+  shows no defect it is written *relu, rien à corriger*. Read on the bench (four skins, `en`/`fr`,
+  light/dark, 1440 and 360 px): *relu, rien à corriger* — the one English word under `fr` is the
+  fixture plugin's own breadcrumb title.
 - **Tasks cut by lifetime.** Behaviour with a failing test first (`shell-textes`: counts, manifest
   words, refresh, spin, autoComplete pin); what is only seen (`shell-habillage`: Nestor, Skippy,
   E-14, E-20); the proof and the register last (`shell-preuve`).
@@ -933,8 +935,6 @@ since `64dee0f`; it remains so. The missing-attribute report is closed.
   reports a conflict on save. This predates the pages tranche; automatic refresh
   of the open page needs a separate behaviour decision. Carry it into the epic's
   closing recommendations; the browser bench must not require that refresh.
-- **Nestor's send control still uses the `↑` glyph**, supplied by its skin.
-  Kept during the pages tranche; the skin's control remains for a separate fix.
 - **The chat's native model select says `Auto` (`chat/ModelPicker.tsx`)**, outside the pages tranche.
 - **E-6's block settings can overlap the banner at 1440 px.** Observed during the
   pages review; left unchanged by the typography and documentation correction.
@@ -972,10 +972,6 @@ since `64dee0f`; it remains so. The missing-attribute report is closed.
   `schedule.ts` only `\n` — a CRLF page has fields in the editor and none in the index or the
   schedule. Seen in the code; behaviour not yet reproduced.
 - **`deleteConversation`** exists in `chat/conversations.ts` and is reached by no screen.
-- **Skippy's status banner wraps onto two lines on the phone**, found by the sweep at phone
-  width; not fixed by this epic.
-- **E-14: the switch sits apart from its title on the phone**, the row wrapping between them.
-  Seen in the sweep; kept for a separate layout correction.
 - **ManifestError field lines (`field: message`)**: kept — English validator sentences,
   a table keyed by them is new (AD-17). E-19 translates the plugin/skin manifest heading;
   the field lines remain as the server writes them.
