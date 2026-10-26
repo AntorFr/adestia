@@ -19,6 +19,8 @@ export interface Message {
   readonly text: string
   readonly tools?: readonly { name: string; target?: string | undefined; ok?: boolean | undefined }[]
   readonly signatures?: readonly Signature[]
+  /** The names of the files sent with a user's message, drawn under its text. */
+  readonly attachments?: readonly string[]
   readonly stopped?: boolean
   readonly error?: string | undefined
 }
@@ -86,6 +88,11 @@ export function Bubble({
         ) : (
           <div className="adestia-bubble__text">{message.text}</div>
         ))}
+      {message.role === 'user' && message.attachments && message.attachments.length > 0 && (
+        <div className="adestia-bubble__text adestia-bubble__attachments">
+          <Icon name="paperclip" /> {message.attachments.join(', ')}
+        </div>
+      )}
       {/* Said in the reader's language, like everything else they are told:
           the dictionary has carried "Tour interrompu." all along, and the one
           sentence that says what became of their turn reached them in English. */}

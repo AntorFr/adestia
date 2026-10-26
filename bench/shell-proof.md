@@ -87,7 +87,7 @@ E-1: relu, rien à corriger.
 | MCP tile/badge disagreement | Repaired: chip and subtitle count `/api/mcp/servers`, attention joins health by name. `shell-textes.test.tsx` checks 6 listed / 7 reported, ignoring the unlisted failed server. |
 | Skippy's phone banner | Repaired: one line at 360 px; `bench/scenarios/shell-habillage.mjs` checks height ≤40 px and no horizontal overflow. Fresh run exit 0 (80 captures). |
 | E-14 switch apart from title | Repaired: no wrap between label and switch. The same scenario checks their `top` difference ≤8 px at 360 px. Fresh run exit 0 (80 captures). |
-| E-19 detail in English under `fr` | Heading repaired, pinned with intact validator lines by `shell-textes.test.tsx`. `field: message` lines are **kept**: English validator sentences; translating them needs a new keyed table (AD-17/AD-22). |
+| E-19 detail in English under `fr` | Heading repaired, pinned with intact validator lines by `shell-textes.test.tsx`. `field: message` lines are **kept**: English validator sentences; translating them needs a new keyed table (AD-17/AD-24). |
 | Token field without `autoComplete` | **Not reproduced**: already `autoComplete="off"` since `64dee0f`; `shell-textes.test.tsx` pins the driver's code input. The catalogue password field also already has the attribute. |
 | “Invalid plugin manifest” in English | Repaired with E-19: plugin/skin headings, with/without folder name, go through the two word tables. The same test also pins unchanged English and literal placeholder-like folder names. |
 | Duplicate `.adestia-icon--spin` | Repaired: one animation rule and keyframes, pinned across web stylesheets by `shell-textes.test.tsx`; reduced-motion override retained. |
