@@ -1,8 +1,10 @@
 # Shell correction proof — 2026-10-26
 
-Task `adestia-correctifs-shell-preuve`, product revision `27c62b5`.
+Task `adestia-correctifs-shell-preuve`, product revision `36f3870` (epic merged).
 This task changes no runtime behaviour and adds no unit tests. Results below
 are observations of that revision; documentation-only commits preserve it.
+The required merge keeps the chat repairs from `afcc9bd` and all shell repairs.
+The shell decision is now AD-24: AD-22/server and AD-23/chat retain their target IDs.
 
 ## Bench and replay
 
@@ -15,7 +17,7 @@ and locale (`en`, `fr`):
 
 ```sh
 BENCH_LOCALE="$locale" node bench/sweep.mjs --skin "$skin" --locale "$locale" \
-  --out "bench/shots-shell-preuve/$locale"
+  --out "bench/shots-shell-preuve-merged/$locale"
 ```
 
 `--locale` is necessary: `sweep.mjs` does not itself read `BENCH_LOCALE`.
@@ -25,14 +27,14 @@ Each complete sweep covers E-1 to E-31, light/dark, 1440×900 and 390×844:
 
 | Skin | English | French |
 |---|---|---|
-| Alfred | exit 0, 124/124 | exit 0, 124/124 |
-| Dobby | exit 0, 124/124 | pending |
+| Alfred | exit 0, 124/124 | pending |
+| Dobby | pending | pending |
 | Nestor | pending | pending |
 | Skippy | pending | pending |
 
 ## Images opened
 
-Complete visual passes so far: Alfred (English and French), Dobby (English),
+Complete visual passes on the merged product so far: Alfred (English),
 both themes, 1440 and 390 px.
 The images were opened in labelled contact sheets made from the actual PNGs.
 
@@ -48,10 +50,16 @@ The images were opened in labelled contact sheets made from the actual PNGs.
 | E-1 | Sign-in gate: centred card, lock, sentence and action in light/dark at both widths; relu, rien à corriger. Loading spinner is separately captured and measured below. |
 | E-15 | Credential state, renewal/forget actions, theme icons, OIDC sign-out and colophon: relu, rien à corriger. Phone popover stays inside the viewport. |
 
-Additional matrices still to inspect: Dobby/French, Nestor and
+Additional matrices still to inspect: Alfred/French, Dobby, Nestor and
 Skippy, including Nestor's invitation arrow and Skippy's console band.
+The three passes on 27c62b5 remain recorded in the task discussion; the
+current matrix above is a fresh run after merging the epic.
 
 ## Supplemental observations
+
+These supplements were captured on `27c62b5`, before the required merge.
+The merge changes no gate, skin or configuration layout source. The loading
+and scrolled-switch sheets were reopened in this attempt.
 
 The 80 captures of `node bench/scenarios/shell-habillage.mjs preuve --out
 bench/shots-shell-preuve/habillage` completed with exit 0. Skippy’s band is
@@ -98,7 +106,7 @@ E-1: relu, rien à corriger.
 `ARCHITECTURE.md` Known defects already retains only the untranslated validator
 lines and the closed/not-reproduced token report from this tranche.
 `.agent/status.md` already points to that register and carries no repaired shell
-defect; its current-branch paragraph still describes the server tranche.
+defect; its current-branch paragraph now describes the merged chat tranche.
 `phase-dev` reserves this file to integration: it was read, not modified here.
 Integration should refresh that paragraph from the completed shell proof.
 
@@ -106,3 +114,11 @@ No ADR is created and no design decision is changed. The AD-17 shell row will
 be closed after the remaining visual passes. `relire-doc` is absent from the
 mounted skills, and this mission forbids delegation: independent reading is
 left to the tester, rather than claimed as performed.
+
+## Checks on the merged product
+
+On `36f3870`: build, typecheck and lint exit 0; `npm test` exits 0:
+174 Vitest files, 2697 tests passed, 2 skipped; 625 plugin tests passed.
+The inherited E-19 timeout did not recur with no concurrent capture sweep
+(2374 ms). No existing test was edited by this task. Changes to tests and
+status in the merge are the target branch's changes, kept verbatim.
