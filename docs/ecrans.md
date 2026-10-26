@@ -250,6 +250,13 @@ banner sits above the canvas and the plugin's failure block fills the body: both
 independent. No role sees anything different: the owner and the user get the same blocks; permission
 refusals (401/403) are the shell's, not the plugin's. The screen is reached from P-11 (E-25 from a
 project folder, E-28 from a page's link); its slow-link and failed-fetch steps are P-16 step 3.
+
+*Long content.* On a phone, in `fr`, the failure sentence wraps on as many lines as it needs and is never
+truncated; **Retry** sits under it, full width of the block, not beside it. The wording and the trigger
+of E-32's banner belong to its own tranche, and the P-16 step 3 text is the epic's: this section adds
+neither (reviewed and declined, so the next reading does not raise them again). The « as built »
+remarks further down describe the base branch before `adestia-ajouts` and are left as they are, as
+E-25/E-28's notes above say.
 The tile information call (`tileInfo`) is not a screen and stays silent on failure.
 
 Roles: no route tells an owner from a user (matrix below): E-32 and E-33 are the same for both,
