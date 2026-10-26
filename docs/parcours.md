@@ -240,7 +240,7 @@ The owner changes a setting of the instance without a shell on the machine.
 1. The owner opens **Configuration** (E-14, `#/settings/config`, a tile of the Settings mosaic E-9; `GET /api/settings`). It names the file it writes to.
 2. The form is built from `SETTING_GROUPS` in `packages/schemas/src/settings.ts`; today that is `workspace.watch.enabled`, `workspace.watch.polling` and `workspace.watch.intervalMs`. Each field says whether its value is written in the file or is the default, and that it "applies after a restart".
 3. On a read-only file (a ConfigMap, a `:ro` mount), a banner says so; the values stay visible and nothing can be edited.
-4. **Save** (`PUT /api/settings` with the revision it read) writes `adestia.config.yaml` in place and keeps its comments. If the file changed on disk, the save is refused and asks for a reload. **Discard** throws the changes away.
+4. **Save** (`PUT /api/settings` with the revision it read) writes `adestia.config.yaml` in place and keeps its comments. The file keeps its mode after a save (a file kept at 0600 stays 0600). If the file changed on disk, the save is refused and asks for a reload. **Discard** throws the changes away.
 5. The restart bar says "Saved, and waiting for a restart." **Restart now** (`POST /api/restart`) is refused while turns are running and says how many; **Restart anyway** sends `force`.
 6. `routes/restart.ts` requests the restart; `bin/adestia.js` closes and boots the server again in the same process. The screen shows "Coming back…" until the instance answers again, or "The instance did not come back" if it does not.
 

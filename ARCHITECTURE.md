@@ -581,7 +581,7 @@ yet reproduced" (frontmatter CRLF) or "whether it predates the epic is unknown" 
 | chat | refused turn (429) silent (P-2 step 4); `📎` text emoji in `stamped()`; native model select says `Auto`; delegations drop signatures; the chat race (below); chat nits left open by the tests (`adestia-composer--busy` without a rule, unused `.adestia-sheet__close`, double `.adestia-sheet__origin`, the `upload failed` fallback through `t()`) |
 | pages | root page breadcrumb invents a folder; E-6 settings overlap the banner at 1440 px; page diagnostic mixes languages; frontmatter CRLF divergence (`pages.ts`, `schedule.ts` against `content`) |
 | shell | Nestor's `↑` send glyph; MCP server counts disagree (tile against badge); Skippy's banner wraps on the phone; E-14 switch apart from its title on the phone; E-19 detail in English under `fr`; token field without `autoComplete`; "Invalid plugin manifest" in English; the duplicate `.adestia-icon--spin` block; `CataloguePopin` `refresh()` no longer shows a thrown error |
-| server | saving the configuration loosens its file mode; `user-tokens.json` comment against content; `register*` re-exports left in old files |
+| server | `register*` re-exports left in old files |
 | plugins | `confirm()` of the atelier and `alert` of the voyages replaced by the shared sheet (Q-20, kept by `adestia-qualite` because "the flow would change": the answer becomes asynchronous; this is the one deliberate flow change, bounded to two gestures, and `docs/ecrans.md` Q-20 and the atelier and voyages journeys are rewritten with it. If the tranche proves risky it is narrowed and the reason written under Known defects); planif and veille sentences in English; E-28 walking map keeps its pre-walk size; E-30 focus lost on phone; E-25 "1 pièces"; the emojis kept in plugins; the amber of project-management meaning two things; `:::content` `on` without a localised date |
 | debt | R-2 one-line aliases of the drivers and R-6 exports kept only for tests (removed, tests import the module that owns the symbol); bench duplicates (`launch(seed)`, `loadPlaywright`); fake-engine options with no caller; `doc-besoin.test.mjs` into CI; the two duplicate guards on `DESIGN.md`; typed lint rules switched on if the repo passes them; `.agent/migrate-frame.mjs` lint errors |
 
@@ -931,10 +931,6 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
   `schedule.ts` only `\n` — a CRLF page has fields in the editor and none in the index or the
   schedule. Seen in the code; behaviour not yet reproduced.
 - **`deleteConversation`** exists in `chat/conversations.ts` and is reached by no screen.
-- **Saving the configuration loosens its mode**: `settings-file.ts` writes through a temporary
-  file and a rename, so a config file kept at 0600 comes back in the umask's default mode.
-- **`user-tokens.json` holds access tokens too**, with their expiry, where the module comment
-  says refresh tokens only.
 - **Skippy's status banner wraps onto two lines on the phone**, found by the sweep at phone
   width; not fixed by this epic.
 - **E-14: the switch sits apart from its title on the phone**, the row wrapping between them.

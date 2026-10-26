@@ -470,3 +470,6 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
   method of, or an unknown one, no longer boots: it stops with
   `Driver "<id>" is not conformant:` and one line per gap. Previously, the
   descriptor was trusted without this check.
+- **Configuration file keeps its mode on save** — saving the configuration through
+  the rename path used to leave the file in the umask's default mode (a 0600 file came
+  back 0644). The temporary file now takes the target's mode before the rename.
