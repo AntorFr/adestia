@@ -579,7 +579,7 @@ yet reproduced" (frontmatter CRLF) or "whether it predates the epic is unknown" 
 | Tranche | Defects (Known defects, kept parts of `docs/ecrans.md`, non-blockers) |
 |---|---|
 | chat | built by AD-23: the refused turn (429) is explained, the sent message draws `paperclip` and names instead of `📎`, the `upload failed` fallback and the three CSS leftovers are guarded (already repaired in `e00156a`), the composer fold is pinned, the chat race is in the CHANGELOG (AD-19). Kept, with their reason under Known defects: the native model select and the delegations' missing signature cards |
-| pages | root page breadcrumb invents a folder; E-6 settings overlap the banner at 1440 px; page diagnostic mixes languages; frontmatter CRLF divergence (`pages.ts`, `schedule.ts` against `content`) |
+| pages | root page breadcrumb invents a folder; page diagnostic mixes languages; frontmatter CRLF divergence (`pages.ts`, `schedule.ts` against `content`) |
 | shell | Nestor's `↑` send glyph; MCP server counts disagree (tile against badge); Skippy's banner wraps on the phone; E-14 switch apart from its title on the phone; E-19 detail in English under `fr`; token field without `autoComplete`; "Invalid plugin manifest" in English; the duplicate `.adestia-icon--spin` block; `CataloguePopin` `refresh()` no longer shows a thrown error |
 | server | none left: the configuration file mode, the `user-tokens.json` comment and the `register*` re-exports were repaired by AD-22 |
 | plugins | `confirm()` of the atelier and `alert` of the voyages replaced by the shared sheet (Q-20, kept by `adestia-qualite` because "the flow would change": the answer becomes asynchronous; this is the one deliberate flow change, bounded to two gestures, and `docs/ecrans.md` Q-20 and the atelier and voyages journeys are rewritten with it. If the tranche proves risky it is narrowed and the reason written under Known defects); planif and veille sentences in English; E-28 walking map keeps its pre-walk size; E-30 focus lost on phone; E-25 "1 pièces"; the emojis kept in plugins; the amber of project-management meaning two things; `:::content` `on` without a localised date |
@@ -1006,11 +1006,6 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
 - **Nestor's send control still uses the `↑` glyph**, supplied by its skin.
   Kept during the pages tranche; the skin's control remains for a separate fix.
 - **The chat's model select stays native (`chat/ModelPicker.tsx`)** — kept — native control, a custom listbox is a new component (AD-18). Its empty option is the `t()` value and the control carries `.adestia-select`.
-- **E-6's block settings can overlap the banner at 1440 px.** Observed during the
-  pages review; left unchanged by the typography and documentation correction.
-- **A page diagnostic can mix languages on a French instance.** Its translated
-  frame draws the server's diagnostic text as received, outside the screen's
-  translation table; left for a separate API/diagnostic translation decision.
 
 - **MCP server counts disagree**: the Settings tile can say “6 servers” while the MCP
   breadcrumb badge says “7 servers”. Observed during the charter review; whether it
