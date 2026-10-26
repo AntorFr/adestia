@@ -464,6 +464,9 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
 
 ## adestia-correctifs (unreleased)
 
+- **A root page's breadcrumb no longer invents a folder** — `trailOf` took the parent of
+  `notes.md` by slicing off its last character; it now uses `folderOf`, so the trail is Home
+  then the title. The missing-page screen (E-8) links to Home when the refused page is at the root.
 - **Boot refuses a non-conformant driver** — `start()` now checks the driver it arms
   (built from the config or injected) against its own descriptor before the
   permissions check. An instance whose driver declares a capability it lacks the
@@ -473,6 +476,11 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
 - **Configuration file keeps its mode on save** — saving the configuration through
   the rename path used to leave the file in the umask's default mode (a 0600 file came
   back 0644). The temporary file now takes the target's mode before the rename.
+- **Page diagnostics follow the instance language** — read-only pages and refused
+  saves now show content validation sentences in French on a French instance.
+  Block names, attribute keys and values stay as authored. Additive `code` and
+  `args` metadata leaves the English wire `message` unchanged; diagnostics from
+  older servers or unknown plugin codes keep their received text.
 - **Page and block settings stay below the canvas bands** — shared popovers now
   stay below the canvas header, skin console and problem bands, even when flipping
   above their anchor. They follow scrolling and resizing, stay inside the visible

@@ -34,6 +34,22 @@ export type Locale = 'en' | 'fr'
  * mistranslated, and beats a raw identifier by a mile.
  */
 const FR: Readonly<Record<string, string>> = {
+  'Unknown block ":::%block". The vocabulary is closed; extending it is a coded change.':
+    'Bloc inconnu « :::%block ». Le vocabulaire est fermé ; l’étendre nécessite une modification du code.',
+  'Block ":::%block" takes no content — its attributes are its whole meaning.':
+    'Le bloc « :::%block » n’accepte pas de contenu — ses attributs portent tout son sens.',
+  'Block ":::%block" holds a body only some of its definitions accept — it is kept, and drawn only where its definition takes one.':
+    'Le bloc « :::%block » contient un corps que seules certaines de ses définitions acceptent — il est conservé et affiché uniquement là où sa définition l’accepte.',
+  'Block ":::%block" needs content.':
+    'Le bloc « :::%block » a besoin de contenu.',
+  'Block ":::%block" is empty, which only some of its definitions allow.':
+    'Le bloc « :::%block » est vide, ce que seules certaines de ses définitions autorisent.',
+  'Block ":::%block" requires the attribute "%key".':
+    'Le bloc « :::%block » exige l’attribut « %key ».',
+  '":::%block" attribute "%key" is "%value"; accepted: %accepted.':
+    'L’attribut « %key » de « :::%block » vaut « %value » ; valeurs acceptées : %accepted.',
+  '":::%block" has no attribute "%key"; it will be ignored.':
+    "« :::%block » n'a pas d'attribut « %key » ; il sera ignoré.",
   Idle: 'Au repos',
   Waiting: 'En attente',
   Unread: 'Non lu',
