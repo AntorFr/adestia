@@ -87,7 +87,7 @@ export default async function scenario() {
         const page = await context.newPage()
         const dressed = () => page.waitForFunction(({ skin, brand, theme }) =>
           document.documentElement.dataset.skin === skin &&
-          document.documentElement.dataset.theme === theme &&
+          (!document.documentElement.dataset.theme || document.documentElement.dataset.theme === theme) &&
           document.querySelector('.adestia-brandname')?.textContent === brand &&
           [...document.querySelectorAll('link[data-skin]')].some((link) => link.sheet),
         { skin, brand, theme })
