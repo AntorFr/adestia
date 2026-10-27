@@ -464,6 +464,17 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
 
 ## adestia-correctifs (unreleased)
 
+- **Phone skins and E-14** — Nestor's invitation arrow is now a drawn arrow in the
+  accent disc instead of a font glyph; Skippy's console band keeps one line at 360 px
+  (the modules cell leaves, the engine name ellipsises); the switch of a configuration
+  row stays on its title's line on a phone.
+- The Settings MCP tile counts the listed servers in both its chip and subtitle;
+  driver-only health entries no longer inflate the count or the attention total.
+  Refused plugin and skin manifest headings now follow the instance language,
+  while validator field lines stay as the server wrote them. Catalogue refresh
+  shows thrown errors in the pop-in. Remove the duplicate icon spin animation;
+  the catalogue token field already had `autoComplete="off"` and keeps it.
+
 - **Chat sends while the first message is leaving** — Since `c549a5d` (v0.95.0), a
   second message sent before the first conversation's creation and turn POST finish
   is shown as held and waits for that same conversation. Previously it could leave

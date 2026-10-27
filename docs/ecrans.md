@@ -541,7 +541,9 @@ screen and an offline banner are recommendations, not built.
 
 **E-9 Settings mosaic.** The four tiles keep their order, labels and counts; tile emoji
 became Lucide icons (plug, book-open, sliders-horizontal, handshake) on the tile plate.
-Counts absent when unreadable, as today. The Configuration tile stays (Q-21).
+Counts absent when unreadable. The MCP chip and subtitle both count the servers listed
+by `/api/mcp/servers`; health from `/api/mcp/status` adds attention only for those names.
+The Configuration tile stays (Q-21).
 
 **E-10 MCP servers.** Buttons are `.adestia-btn`, labels unchanged: "Save" (accent),
 "Remove" (danger), connect (neutral), "Add a server" (icon `plus` beside its label); no
@@ -579,7 +581,9 @@ out" (ghost, `log-out`, only under OIDC; hidden otherwise as today), the build v
 
 **E-19 Problems band.** Icon per kind (circle-alert refused, triangle-alert degraded), text
 in the `*-text` tokens, band background a 4 % tint to keep the composed contrast at AA;
-present only when there is a problem.
+present only when there is a problem. Reasons without a code translate the
+"Invalid plugin manifest" / "Invalid skin manifest" heading (including a named folder);
+the server's `field: message` lines remain intact, in English (AD-24).
 
 **Roles.** Owner and user see the same on these screens (no role check exists); the agent
 (a peer) sees none of them as a page — its work shows on E-13 and E-19; E-13 is

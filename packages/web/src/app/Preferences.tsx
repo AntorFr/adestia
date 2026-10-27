@@ -58,19 +58,23 @@ export function isPrefsPage(value: string): value is Exclude<PrefsPage, ''> {
 /**
  * A tile's second line, from what this instance can actually check.
  *
+ * The listed servers supply the count; health only supplies their trouble.
  * Counted rather than described: "3 servers" is a fact, and a tile that
  * promised "manage your servers" would say the same thing on an instance with
  * none. The exception is what earns the rest of the sentence — a line that
  * always ended "— all well" is a line nobody reads.
  */
 export function mcpLede(
-  servers: readonly McpServerHealth[],
+  health: readonly McpServerHealth[],
   t: (key: string) => string,
+  listed: readonly { readonly name: string }[] = health,
 ): string {
-  const attention = servers.filter(
-    (server) => server.state === 'failed' || server.state === 'needs-auth',
+  const attention = listed.filter(
+    (entry) => health.some((server) =>
+      server.name === entry.name && (server.state === 'failed' || server.state === 'needs-auth'),
+    ),
   ).length
-  const counted = `${servers.length} ${servers.length === 1 ? t('server') : t('servers')}`
+  const counted = `${listed.length} ${listed.length === 1 ? t('server') : t('servers')}`
   return attention > 0
     ? `${counted} — ${t('%n need attention').replace('%n', String(attention))}`
     : counted
@@ -86,31 +90,31 @@ export function prefsTitle(page: PrefsPage, t: (key: string) => string): string 
 }
 
 /**
- * How many of a thing there are, for a tile that would otherwise say nothing.
+ * Read the items behind a tile, so its count and summary share one answer.
  *
  * A failure is silence, never a zero: "0 instructions" on an engine that
  * cannot report them is a lie a tile has no business telling.
  */
-function useCount(
+function useList<T>(
   url: string,
   field: string,
   fetchImpl: typeof fetch,
-): number | undefined {
-  const [count, setCount] = useState<number | undefined>()
+): readonly T[] | undefined {
+  const [list, setList] = useState<readonly T[] | undefined>()
   useEffect(() => {
     let live = true
     void (async () => {
       // A failure is silence, never a zero.
       const result = await requestJson<Record<string, unknown>>(fetchImpl, url)
       if (!result.ok) return
-      const list = result.data?.[field]
-      if (live && Array.isArray(list)) setCount(list.length)
+      const rows = result.data?.[field]
+      if (live && Array.isArray(rows)) setList(rows)
     })()
     return () => {
       live = false
     }
   }, [fetchImpl, url, field])
-  return count
+  return list
 }
 
 export interface PreferencesProps {
@@ -134,8 +138,8 @@ export function Preferences({
   locale,
 }: PreferencesProps) {
   const health = useMcpServers(fetchImpl, page === '')
-  const servers = useCount('/api/mcp/servers', 'servers', fetchImpl)
-  const written = useCount('/api/instructions', 'files', fetchImpl)
+  const servers = useList<{ readonly name: string }>('/api/mcp/servers', 'servers', fetchImpl)
+  const written = useList<unknown>('/api/instructions', 'files', fetchImpl)?.length
   const delegated = useDelegationRows(fetchImpl, page === '')
 
   if (page === 'instructions') {
@@ -208,9 +212,9 @@ export function Preferences({
           iconName="plug"
           hue="indigo"
           label={t('MCP servers')}
-          {...(health && health.length > 0 ? { subtitle: mcpLede(health, t) } : {})}
+          {...(servers !== undefined ? { subtitle: mcpLede(health ?? [], t, servers) } : {})}
           {...(servers !== undefined
-            ? { chips: [{ text: `${servers} ${servers === 1 ? t('server') : t('servers')}` }] }
+            ? { chips: [{ text: `${servers.length} ${servers.length === 1 ? t('server') : t('servers')}` }] }
             : {})}
           onOpen={() => onPage('mcp')}
           t={t}
