@@ -53,7 +53,7 @@ function nextAtMs(atMinutes, from) {
 }
 
 function parseNote(id, source) {
-  const match = /^---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/.exec(source)
+  const match = /^---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/.exec(source)
   const fields = {}
   for (const line of (match?.[1] ?? '').split(/\r?\n/)) {
     const separator = line.indexOf(':')
