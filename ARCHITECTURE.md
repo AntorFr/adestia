@@ -76,7 +76,7 @@ Outside `packages/`:
   `registerPluginVocabulary`, `mcpServersFor`), `sources.ts` (`fetchSources`, git clones),
   `plugin-host.ts` (`runSetups`), `routes/plugin-host.ts` (`mountPluginApis`), `static.ts` (`mimeFor`,
   `safeJoin`), `routes/static.ts` (`registerStatic`, the catch-all, mounted last).
-- **Frontmatter** — `frontmatter.ts` (`splitFrontmatter`, `parseFrontmatter`, `field`; the server's own reader, distinct from `content/src/frontmatter.ts`, AD-7).
+- **Frontmatter** — `frontmatter.ts` (`splitFrontmatter` delegates fences to `content`; `parseFrontmatter` and `field` keep the server's shallow scalar reader, AD-7, AD-25 d).
 - **Instructions and skills** — `skills.ts` (`collectSkills`, `deliverSkills`,
   `deliverAgents`, `MANAGED_MARKER`, `stamped`), `instructions.ts`,
   `routes/instructions.ts`, `instruction-catalogues.ts` (scan, `copyMarkedTree`),
@@ -1060,9 +1060,6 @@ since `64dee0f`; it remains so. The missing-attribute report is closed.
   layout and `plugins/voyages/web/app.js` shows `window.alert` for a refused gesture; unstyled,
   unlocalised by the browser's own words, not closeable like a sheet. Replacing them changes the flow
   (the answer is asynchronous), so it is a feature, not part of the mise à niveau (Q-20).
-- **Frontmatter CRLF divergence**: `content` accepts `\r\n` fences, `pages.ts` and
-  `schedule.ts` only `\n` — a CRLF page has fields in the editor and none in the index or the
-  schedule. Seen in the code; behaviour not yet reproduced.
 - **`deleteConversation`** exists in `chat/conversations.ts` and is reached by no screen.
 - **ManifestError field lines (`field: message`)**: kept — English validator sentences,
   a table keyed by them is new (AD-17). E-19 translates the plugin/skin manifest heading;

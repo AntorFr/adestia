@@ -513,3 +513,9 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
   above their anchor. They follow scrolling and resizing, stay inside the visible
   viewport (including a phone keyboard), and scroll internally when space is short.
   Reproduced at 1440×900 under all four skins by `bench/scenarios/pages-reglages.mjs`.
+- **CRLF frontmatter is read consistently** — the pages index, instructions,
+  catalogues, shell tools and schedule now recognise the same frontmatter fences
+  as the editor, including CRLF lines and spaces after the closing `---`.
+  Scheduled notes keep their line endings when the product stamps `expired:`;
+  the closing fence and body stay as written. This changes the behaviour kept
+  by AD-7; shallow scalar parsing remains unchanged (AD-25 d).
