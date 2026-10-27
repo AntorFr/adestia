@@ -508,3 +508,8 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
   Block names, attribute keys and values stay as authored. Additive `code` and
   `args` metadata leaves the English wire `message` unchanged; diagnostics from
   older servers or unknown plugin codes keep their received text.
+- **Page and block settings stay below the canvas bands** — shared popovers now
+  stay below the canvas header, skin console and problem bands, even when flipping
+  above their anchor. They follow scrolling and resizing, stay inside the visible
+  viewport (including a phone keyboard), and scroll internally when space is short.
+  Reproduced at 1440×900 under all four skins by `bench/scenarios/pages-reglages.mjs`.
