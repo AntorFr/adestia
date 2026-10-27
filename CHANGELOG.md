@@ -519,3 +519,6 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
   Scheduled notes keep their line endings when the product stamps `expired:`;
   the closing fence and body stay as written. This changes the behaviour kept
   by AD-7; shallow scalar parsing remains unchanged (AD-25 d).
+  The Planif screen's own notes reader (`plugins/planif/api.mjs`) had a third,
+  LF-only copy of the fence and now reads the same lines, so a CRLF scheduled note
+  shows its title, times and `expired` instead of an empty note.
