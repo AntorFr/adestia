@@ -897,9 +897,10 @@ rules. The server outcomes above are filled.
   qualifier consume its first name. Tests, `bin/`, bench scripts, plugins and computed
   module paths are outside the graph: check their runtime uses before removing a hit.
 
-  The final inventory is **171** entries: public contract types below,
+  The final inventory is **170** entries: public contract types below,
   test-only exports retained under the R-6 arbitration, and the boot entry points.
-  No measurement rule or test was changed.
+  `content`'s `splitFrontmatter` now has a production importer through its index
+  (AD-25 d). No measurement rule or test was changed.
 
   Public contract types (each row names the package index):
 
@@ -915,7 +916,6 @@ rules. The server outcomes above are filled.
 
   | Module | Exports | Importing tests |
   |---|---|---|
-  | `packages/content/src/frontmatter.ts` | `splitFrontmatter` | `packages/content/test/frontmatter.test.ts` |
   | `packages/content/src/index.ts` | `isKnownBlock` | `packages/server/test/extensions.test.ts`, `packages/web/test/loader.test.ts` |
   | `packages/content/src/reference.ts` | `formatReference`, `isValidId` | `packages/content/test/reference.test.ts` |
   | `packages/content/src/validate.ts` | `frontmatterOf` | `packages/content/test/roundtrip.test.ts` |
