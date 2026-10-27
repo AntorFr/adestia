@@ -1,7 +1,7 @@
 # Adestia — architecture
 
 > Product documentation. On `epic/adestia-qualite` (the epic's integration branch, where its tranches merge), it describes the epic's target; on
-> `main`, exactly what is built. An epic is a group of features delivered together; a tranche is one of them. Stable identifiers, never renumbered: `B-n` (needs), `P-n`
+> `main`, exactly what is built. On a feature branch of `adestia-correctifs` (e.g. the chat tranche, AD-23) it adds that tranche on top of `epic/adestia-correctifs`; nothing is in `main` until the epic merges. An epic is a group of features delivered together; a tranche is one of them. Stable identifiers, never renumbered: `B-n` (needs), `P-n`
 > (journeys, `docs/parcours.md`), `E-n` (screens, `docs/ecrans.md`), `AD-n` (decisions,
 > this file), `R-n` (refactoring targets, this file).
 >
@@ -578,9 +578,9 @@ yet reproduced" (frontmatter CRLF) or "whether it predates the epic is unknown" 
 ### AD-17 — The register: every defect has a tranche, or a written reason
 | Tranche | Defects (Known defects, kept parts of `docs/ecrans.md`, non-blockers) |
 |---|---|
-| chat | refused turn (429) silent (P-2 step 4); `📎` text emoji in `stamped()`; native model select says `Auto`; delegations drop signatures; the chat race (below); chat nits left open by the tests (`adestia-composer--busy` without a rule, unused `.adestia-sheet__close`, double `.adestia-sheet__origin`, the `upload failed` fallback through `t()`) |
+| chat | built by AD-23: the refused turn (429) is explained, the sent message draws `paperclip` and names instead of `📎`, the `upload failed` fallback and the three CSS leftovers are guarded (already repaired in `e00156a`), the composer fold is pinned, the chat race is in the CHANGELOG (AD-19). Kept, with their reason under Known defects: the native model select and the delegations' missing signature cards |
 | pages | root page breadcrumb invents a folder; E-6 settings overlap the banner at 1440 px; page diagnostic mixes languages; frontmatter CRLF divergence (`pages.ts`, `schedule.ts` against `content`) |
-| shell | Nestor's `↑` send glyph; MCP server counts disagree (tile against badge); Skippy's banner wraps on the phone; E-14 switch apart from its title on the phone; E-19 detail in English under `fr`; token field without `autoComplete`; "Invalid plugin manifest" in English; the duplicate `.adestia-icon--spin` block; `CataloguePopin` `refresh()` no longer shows a thrown error |
+| shell | built by AD-24: Nestor’s arrow is SVG, MCP counts agree, Skippy’s phone band stays on one line, E-14’s switch stays beside its title, E-19/plugin manifest headings follow the locale, the spin rule is single and `CataloguePopin.refresh()` shows thrown errors. Token `autoComplete`: not reproduced, already `off` since `64dee0f`. Kept under Known defects: English validator field lines (a new keyed table would be needed). Nine dispositions and eight complete visual passes: `bench/shell-proof.md` |
 | server | none left: the configuration file mode, the `user-tokens.json` comment and the `register*` re-exports were repaired by AD-22 |
 | plugins | `confirm()` of the atelier and `alert` of the voyages replaced by the shared sheet (Q-20, kept by `adestia-qualite` because "the flow would change": the answer becomes asynchronous; this is the one deliberate flow change, bounded to two gestures, and `docs/ecrans.md` Q-20 and the atelier and voyages journeys are rewritten with it. If the tranche proves risky it is narrowed and the reason written under Known defects); planif and veille sentences in English; E-28 walking map keeps its pre-walk size; E-30 focus lost on phone; E-25 "1 pièces"; the emojis kept in plugins; the amber of project-management meaning two things; `:::content` `on` without a localised date |
 | debt | R-2 one-line aliases of the drivers and R-6 exports kept only for tests (removed, tests import the module that owns the symbol); bench duplicates (`launch(seed)`, `loadPlaywright`); fake-engine options with no caller; `doc-besoin.test.mjs` into CI; the two duplicate guards on `DESIGN.md`; typed lint rules switched on if the repo passes them; `.agent/migrate-frame.mjs` lint errors |
@@ -673,7 +673,7 @@ Built: the four repairs below are in the code, each with its test; the text keep
   P-14 (install) is touched only for the boot refusing a non-conformant driver, in the step that
   describes boot. Nothing else in either journey changes.
 
-### AD-23 — Pages tranche: four repairs, the shape of each, and the order tests are written in
+### AD-25 — Pages tranche: four repairs, the shape of each, and the order tests are written in
 Reproduction comes first (AD-16); each repair below says what is expected to be found and what
 is written if it is not.
 
@@ -746,6 +746,88 @@ and retry states (AD-18), E-8's retry. E-8's text and the Known defect entries l
 repair, in the same commit (AD-16).
 *Reversed if*: the reproduction of (b) finds the overlap is the sheet or popover of another
 screen: the rule stays, the file changes, and the task says which.
+### AD-23 — Chat tranche: what the reproduction found, and the shape of each repair
+Built: each repair below is in the code with its test; the text keeps the reasoning.
+Read on `epic/adestia-correctifs` before any code, so the tranche builds the true list.
+- **Refused turn (P-2 step 4).** Reproduced by reading: `consume` clears `live` when `reread`
+  succeeds, and a refusal has nothing stored behind it. Repair: a state that ends with an
+  `error` and no part (a refusal, or an unreachable server) survives the reread as an
+  error-only `live`, and is cleared by the next send or by leaving the conversation. The 429
+  is carried as data (`TurnState.refusal = { status, max? }`, filled by `refusalMessage` from the
+  server's `max`); `Thread` says it through `t()` ("Turn limit reached (%n at a time) — try again in
+  a moment."), in both languages, because the server's `error` is English. Any other refusal
+  keeps the server's text. No server change.
+- **`📎` in `stamped()`.** The optimistic bubble must draw what the held bubble draws: a
+  `paperclip` icon and the names. `stamped()` stops appending the emoji; the user message
+  carries its attachment names as data, and the bubble draws them as the held bubble does.
+- **Native model select.** The option goes through `t()` already; what is left to read is the
+  native `<select>` and its `Auto` entry. Repair: keep the `<select>` (a custom listbox is a new
+  component, AD-18), pin that the option text is the `t()` value and the control carries
+  `.adestia-select`. The defect stays in Known defects, rewritten *kept — native control, a custom listbox is a new
+  component (AD-18)*. The fiche's `## Livre` is narrowed on this, on the delegation signatures and on the
+  composer fold (a pinned test, not a repair); the letter's principle 3 allows it with the reason written.
+- **Already repaired before the epic** (`e00156a`, in `main`): the `upload failed` fallback
+  through `t()`, `adestia-composer--busy` without a rule, the unused `.adestia-sheet__close`, the
+  double `.adestia-sheet__origin`. The tranche takes them out of Known defects as *not
+  reproduced — repaired in e00156a*, and adds one suite guard so none comes back.
+- **Delegations and signatures: narrowed, with its reason.** A delegation transcript can carry
+  signatures (same JSONL), but `SignatureCards` draws nothing without a `signing` handler, and
+  E-13 is read-only with no composer (P-13 step 7): the ceremony belongs to the delegating
+  caller. Showing passive cards would be a new function (AD-18). `{ signatures: false }` stays;
+  its reason is written in the code and in Known defects, and a test pins that a transcript
+  carrying signatures draws no card.
+- **Composer fold.** `onFill` already focuses the textarea (`4e6f16f`). The tranche writes the
+  composer test first: folded, an empty fill leaves the focus in the field and the draft
+  untouched. Green on arrival means *not reproduced* for the composer; the phone focus defect
+  (E-30) is the plugins tranche's.
+- **Chat race.** `c549a5d` is in `main`; the tranche adds the CHANGELOG entry (AD-19). The
+  CHANGELOG gets one section, "adestia-correctifs (unreleased)", created by whichever tranche
+  lands first and appended by the others, one bullet per changed behaviour.
+
+### AD-24 — Shell tranche: what the reproduction found, and the shape of each repair
+Built: repairs and guards are in the code; the eight skin/locale sweeps and the
+nine original dispositions are recorded in `bench/shell-proof.md`.
+Read on `epic/adestia-correctifs` before any code, so the tranche builds the true list.
+- **MCP counts (E-9 against E-10).** Reproduced by reading: the Settings tile says its count twice
+  from two sources, the chip from `/api/mcp/servers` (the servers the screen lists) and the lede
+  (`mcpLede`) from `/api/mcp/status` (everything the driver reports, which can include a server
+  the screen does not list). The screen E-10 is the truth the tile points to. Repair: the tile
+  counts the listed servers once; the driver's health only says how many of *those* need
+  attention (a health entry whose name is not listed is not counted). Test first, with two payloads that
+  disagree (6 listed, 7 reported). If it is green on arrival (the sources never disagree), the defect leaves Known defects as
+  *not reproduced* with the attempt, and the test stays as the guard.
+- **Token field without `autoComplete`: not reproduced.** `CataloguePopin.tsx` already has
+  `type="password"` and `autoComplete="off"` (since `64dee0f`). It leaves Known defects as
+  *not reproduced*; a test pins the attribute. `"new-password"` is not chosen: it is what a
+  password manager reads as an invitation to generate one.
+- **E-19 and "Invalid plugin manifest".** One cause: a refused extension's reason with no `code`
+  is drawn as the server wrote it (`Invalid plugin manifest:\n  - field: message`, from
+  `ManifestError`). Repair in the shell only (the API answer is unchanged, AD-17): `say()`
+  recognises the lead `Invalid plugin manifest` / `Invalid skin manifest` and says it through `t()`
+  (a key in `en` and `fr`), keeping the field lines as the author's data, as the other prose.
+  The lines of `ManifestError` themselves (`field: message`, English) stay and are written under
+  Known defects: translating them is a table keyed by validator sentences.
+- **`CataloguePopin` `refresh()`.** `removeCatalogue` catches a throw and shows it; `refresh`
+  has `try/finally` only, so anything thrown after the request (`loadItems`, `onChanged`) escapes
+  and the popin shows nothing. Repair: `refresh` catches and shows, as `removeCatalogue` does. Test first
+  with `onChanged` that throws.
+- **`.adestia-icon--spin`** is declared twice in `app/styles/icons.css` (same rule, plus one `@keyframes`
+  duplicate); the second block goes. A CSS test counts one rule and one `@keyframes`.
+- **Nestor's `↑`.** It is a text glyph in `skins/nestor/skin.js` (`.nst-invite i`), drawn by whatever
+  font the phone has. Repair: an inline SVG arrow in `currentColor` (the `arrow-up` shape the sprite
+  uses), in the same 32 px disc. Skins stay declarations: no structure added.
+- **Skippy's console band on the phone.** `.console` wraps its cells onto two lines under ~400 px.
+  Repair in `skins/skippy/skin.css`: at phone width the band keeps one line (the cells that can go
+  are hidden by the skin, the mark and the first status remain). Judged on captures.
+- **E-14 switch.** The row (`.adestia-config__head`) wraps between title and switch on the phone.
+  Repair: the switch stays on the title's line (no wrap on the head, the label shrinks).
+- **E-20** is read under B-16 with the rest: a capture under four skins and two languages; if it
+  shows no defect it is written *relu, rien à corriger*. Read on the bench (four skins, `en`/`fr`,
+  light/dark, 1440 and 360 px): *relu, rien à corriger* — the one English word under `fr` is the
+  fixture plugin's own breadcrumb title.
+- **Tasks cut by lifetime.** Behaviour with a failing test first (`shell-textes`: counts, manifest
+  words, refresh, spin, autoComplete pin); what is only seen (`shell-habillage`: Nestor, Skippy,
+  E-14, E-20); the proof and the register last (`shell-preuve`).
 
 ## Refactoring targets
 
@@ -957,39 +1039,25 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
 
 ## Known defects (found, not fixed by this epic)
 
+The catalogue token field is **not reproduced** — already `autoComplete="off"`
+since `64dee0f`; it remains so. The missing-attribute report is closed.
+
 - **P-5 step 7: the open page does not refresh after an agent write.**
   `app/useInstance.ts` refetches only the index on the change feed; it deliberately
   leaves the open page alone to protect unsaved editor text. The revision check
   reports a conflict on save. This predates the pages tranche; automatic refresh
   of the open page needs a separate behaviour decision. Carry it into the epic's
   closing recommendations; the browser bench must not require that refresh.
-- **Nestor's send control still uses the `↑` glyph**, supplied by its skin.
-  Kept during the pages tranche; the skin's control remains for a separate fix.
-- **The chat's native model select says `Auto` (`chat/ModelPicker.tsx`)**, outside the pages tranche.
+- **The chat's model select stays native (`chat/ModelPicker.tsx`)** — kept — native control, a custom listbox is a new component (AD-18). Its empty option is the `t()` value and the control carries `.adestia-select`.
 - **E-6's block settings can overlap the banner at 1440 px.** Observed during the
   pages review; left unchanged by the typography and documentation correction.
 
-- **MCP server counts disagree**: the Settings tile can say “6 servers” while the MCP
-  breadcrumb badge says “7 servers”. Observed during the charter review; whether it
-  predates this epic is unknown. Kept under B-1, pending a separate behaviour investigation.
-
-- **P-2 step 4: a refused turn (429) can stay silent.** `chat/stream.ts` yields
-  the refusal as a live error. `chat/Thread.tsx` draws its error line only while
-  that live state is present; `useConversations.ts` › `consume` clears it when
-  rereading the stored conversation succeeds, losing the refusal message.
-  P-2 says the chat explains the
-  refusal; this predates the tranche and stays under AD-7. Overall acceptance
-  must carry this discrepancy: `bench/tests/chat-p2-gestes-besoin.test.mjs`
-  checks HTTP 429 and the freed composer, without requiring an error line.
-- **Attachment names still carry a text emoji in the optimistic user bubble.**
-  `chat/useConversations.ts` › `stamped()` appends `📎` and the attachment names
-  to the message text kept in the open conversation's state. The held bubbles
-  and attachment controls use the `paperclip` icon, but this text emoji remains
-  unchanged under AD-7.
-- **Delegations drop signatures**: `app/Delegations.tsx` calls the shared
-  `chat/messages.ts` › `toMessage` with `{ signatures: false }`, while the chat keeps
-  `stored.signatures` by default (AD-12, preserved under AD-7). To be confirmed
-  that a delegation transcript can carry signatures.
+- **Delegation signature cards — kept, read-only view (AD-23).** A delegation
+  transcript can carry signatures, but E-13 has no composer or signing handler
+  (P-13 step 7). `app/Delegations.tsx` therefore passes `{ signatures: false }` to
+  `chat/messages.ts` › `toMessage`; `SignatureCards` also draws nothing without a
+  signing handler. The calling agent's user holds the ceremony. Passive cards
+  would be a new function (AD-18), outside this tranche.
 - **Native dialogs in plugins**: `plugins/atelier/web/app.js` asks `confirm()` before resetting a
   layout and `plugins/voyages/web/app.js` shows `window.alert` for a refused gesture; unstyled,
   unlocalised by the browser's own words, not closeable like a sheet. Replacing them changes the flow
@@ -998,14 +1066,9 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
   `schedule.ts` only `\n` — a CRLF page has fields in the editor and none in the index or the
   schedule. Seen in the code; behaviour not yet reproduced.
 - **`deleteConversation`** exists in `chat/conversations.ts` and is reached by no screen.
-- **Skippy's status banner wraps onto two lines on the phone**, found by the sweep at phone
-  width; not fixed by this epic.
-- **E-14: the switch sits apart from its title on the phone**, the row wrapping between them.
-  Seen in the sweep; kept for a separate layout correction.
-- **E-19 detail in English under the French locale** when the server sent no code: the detail
-  is then the raw server text, which no catalogue translates.
-- **A catalogue token field has no `autoComplete`**, so a browser may offer to fill or save it
-  as a password.
+- **ManifestError field lines (`field: message`)**: kept — English validator sentences,
+  a table keyed by them is new (AD-17). E-19 translates the plugin/skin manifest heading;
+  the field lines remain as the server writes them.
 - **E-23 (planif) says the server's sentences in English.** A note's problem (`carries both
   \`every\` and \`at\``, `the note is empty — its body is the prompt`, `below the 15-minute floor`…) is
   built by `plugins/planif/api.mjs` and `schedule.ts` and drawn as received; no table holds it, and
@@ -1026,3 +1089,18 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
   read before the atelier had a table (B-1), so a plate of one piece gets a plural.
 - **E-26's card sheet names the item's type with the data's own word** (`trajet`, `resto`) under `en`:
   the type is an identifier of `voyage.json`, drawn as it is written.
+
+### Chat checks closed without a behaviour change (AD-23)
+
+- **Not reproduced — repaired in `e00156a`:** the literal `upload failed`
+  fallback, `adestia-composer--busy` without a rule, unused `.adestia-sheet__close`,
+  and the duplicate `.adestia-sheet__origin` rule. Source inspection finds the
+  upload refusal using `t(FALLBACK_KEY)`, neither obsolete class, and one base
+  origin rule with its use in `Signatures.tsx`. `chat-repaired-defects.test.ts`
+  guards these sources; these four reports are no longer open defects.
+- **Composer fold — not reproduced.** In Chromium at phone width, opening the
+  fold and invoking a plugin's empty fill returns focus to the textarea, closes
+  the menu, preserves the exact draft (including surrounding spaces) and sends
+  nothing. A whitespace-only fill does the same. `Composer.tsx` already focuses
+  before ignoring an empty fill (`4e6f16f`). This does not close E-30: its reader
+  must request that focus when its phone opener has disappeared.

@@ -217,6 +217,28 @@ directory, which is the same thing the server would have written.
 
 ### Chat tranche scenarios
 
+For the E-16 repairs (AD-23), after the build:
+
+```sh
+node bench/scenarios/chat-matrix.mjs bench/scenarios/chat-correctifs.mjs --out bench/shots-correctifs-chat
+# Include the native popup itself when Xvfb, Python 3 and libX11 are available:
+xvfb-run -a -s '-screen 0 1600x1100x24' env BENCH_NATIVE_PICKER=1 node bench/scenarios/chat-matrix.mjs bench/scenarios/chat-correctifs.mjs --out bench/shots-correctifs-chat
+```
+
+This host run uses the fake engine and the real server's single concurrency seat:
+it uploads and sends a file, reads the translated HTTP 429 explanation after the
+conversation is reread, opens the native model select, then frees the seat and
+sends `ping`. It checks that `pong` survives reload. Each skin/language has twelve
+E-16 rail captures (three states × two themes × desk/phone), plus
+`correctifs-report.json` with the observations and composed text contrasts.
+This is a scripted nominal turn, not proof of a real Claude call. Other screens
+are outside this scenario. Captures must still be opened and inspected.
+Chromium's page screenshots omit native select popups: the default capture shows
+the focused picker, while the Xvfb command captures the actual list in a 520×360
+crop of the display (including the browser chrome). The JSON records which was used.
+Without `xauth`, start `Xvfb :97 -screen 0 1600x1100x24 -ac -nolisten tcp`,
+run the matrix with `DISPLAY=:97 BENCH_NATIVE_PICKER=1`, then stop that Xvfb process.
+
 After `npm run build`, run the rail's state captures on the host:
 
 ```sh

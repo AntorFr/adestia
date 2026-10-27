@@ -467,6 +467,33 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
 - **A root page's breadcrumb no longer invents a folder** — `trailOf` took the parent of
   `notes.md` by slicing off its last character; it now uses `folderOf`, so the trail is Home
   then the title. The missing-page screen (E-8) links to Home when the refused page is at the root.
+- **Phone skins and E-14** — Nestor's invitation arrow is now a drawn arrow in the
+  accent disc instead of a font glyph; Skippy's console band keeps one line at 360 px
+  (the modules cell leaves, the engine name ellipsises); the switch of a configuration
+  row stays on its title's line on a phone.
+- The Settings MCP tile counts the listed servers in both its chip and subtitle;
+  driver-only health entries no longer inflate the count or the attention total.
+  Refused plugin and skin manifest headings now follow the instance language,
+  while validator field lines stay as the server wrote them. Catalogue refresh
+  shows thrown errors in the pop-in. Remove the duplicate icon spin animation;
+  the catalogue token field already had `autoComplete="off"` and keeps it.
+
+- **Chat sends while the first message is leaving** — Since `c549a5d` (v0.95.0), a
+  second message sent before the first conversation's creation and turn POST finish
+  is shown as held and waits for that same conversation. Previously it could leave
+  as a fresh turn and never appear as held. This records the behaviour change already
+  in `main` (AD-19); the existing held-message regressions keep it pinned.
+
+- **Chat refusal** — A turn refused at the concurrency limit now says the server's
+  limit in English or French. Its error line and the sent message survive rereading
+  the conversation; the line clears on the next send or when leaving the conversation.
+  A server unreachable before any answer keeps its error line in the same way;
+  other refusals retain the server's words. No server behaviour changes.
+
+- **Chat attachments** — The message you just sent shows its attachments the way a held
+  message does: the `paperclip` icon and the file names, no longer a text 📎 appended to
+  the text. The model select stays native; a test now pins its translated empty option.
+
 - **Boot refuses a non-conformant driver** — `start()` now checks the driver it arms
   (built from the config or injected) against its own descriptor before the
   permissions check. An instance whose driver declares a capability it lacks the

@@ -54,6 +54,10 @@ const FR: Readonly<Record<string, string>> = {
   Waiting: 'En attente',
   Unread: 'Non lu',
   Working: 'En cours',
+  'Turn limit reached (%n at a time) — try again in a moment.':
+    'Limite de tours atteinte (%n à la fois) — réessayez dans un instant.',
+  'Turn limit reached — try again in a moment.':
+    'Limite de tours atteinte — réessayez dans un instant.',
   Failed: 'Échec',
   'Weight of the context your next message re-pays': 'Poids du contexte repris par votre prochain message',
   '%n tool call': '%n appel d’outil',
@@ -137,6 +141,10 @@ const FR: Readonly<Record<string, string>> = {
   'No conversation yet.': 'Aucune conversation.',
   Archive: 'Archiver',
   'Extensions refused': 'Extensions refusées',
+  'Invalid plugin manifest': 'Manifeste de plugin invalide',
+  'Invalid skin manifest': 'Manifeste d’habillage invalide',
+  'Invalid plugin manifest for "%name"': 'Manifeste de plugin invalide pour "%name"',
+  'Invalid skin manifest for "%name"': 'Manifeste d’habillage invalide pour "%name"',
   'Running with something missing': 'Actives, sans tout ce qu’elles savent faire',
   Save: 'Enregistrer',
 
@@ -533,7 +541,16 @@ const FR: Readonly<Record<string, string>> = {
 }
 
 const TABLES: Readonly<Record<Locale, Readonly<Record<string, string>>>> = {
-  en: {},
+  en: {
+    'Invalid plugin manifest': 'Invalid plugin manifest',
+    'Invalid skin manifest': 'Invalid skin manifest',
+    'Invalid plugin manifest for "%name"': 'Invalid plugin manifest for "%name"',
+    'Invalid skin manifest for "%name"': 'Invalid skin manifest for "%name"',
+    'Turn limit reached (%n at a time) — try again in a moment.':
+      'Turn limit reached (%n at a time) — try again in a moment.',
+    'Turn limit reached — try again in a moment.':
+      'Turn limit reached — try again in a moment.',
+  },
   fr: FR,
 }
 
