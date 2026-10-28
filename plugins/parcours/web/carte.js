@@ -712,8 +712,23 @@ function listeReperes(reperes, t) {
     if (r.distance_precedent_m) meta.push(t("%distance since the previous waypoint", { distance: fmtKm(r.distance_precedent_m) }));
     // Au-delà de 60 m, l'écart cesse d'être « le point vise le lieu, la trace
     // suit la voie » et devient une coordonnée à vérifier. On le dit.
-    if (r.ecart_trace_m > 60) meta.push(t("⚠ %distance m from the route", { distance: r.ecart_trace_m }));
-    if (meta.length) li.appendChild(el('div', 'pc-meta', meta.join(' · ')));
+    const offRoute = r.ecart_trace_m > 60;
+    if (offRoute) meta.push(t("%offset m from the route", { offset: r.ecart_trace_m }));
+    if (meta.length) {
+      const line = el('div', 'pc-meta');
+      if (offRoute) {
+        const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        icon.setAttribute('class', 'adestia-icon');
+        icon.setAttribute('aria-hidden', 'true');
+        icon.setAttribute('focusable', 'false');
+        const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+        use.setAttribute('href', '#adestia-i-triangle-alert');
+        icon.appendChild(use);
+        line.append(icon, document.createTextNode(' '));
+      }
+      line.appendChild(document.createTextNode(meta.join(' · ')));
+      li.appendChild(line);
+    }
 
     if (r.desc) li.appendChild(el('div', 'pc-desc', r.desc));
     if (r.note) li.appendChild(el('div', 'pc-note', r.note));
@@ -788,7 +803,7 @@ function modeBalade(hote, carte, coords, reperes, _trace, t) {
   gauche.appendChild(ligne1); gauche.appendChild(ligne2);
   hud.appendChild(gauche);
 
-  const bSuit = el('button', 'pc-hud-b on', t("🧭 Follow"));
+  const bSuit = el('button', 'pc-hud-b on', t("Follow"));
   bSuit.type = 'button';
   bSuit.addEventListener('click', () => {
     suit = !suit;
@@ -928,7 +943,7 @@ function peindre(hote, data, relPath, urls, t) {
       carte.bascule(fondId);
     });
     barre.appendChild(bascule);
-    const bBalade = el('button', 'pc-fond', t("🥾 Walking mode"));
+    const bBalade = el('button', 'pc-fond', t("Walking mode"));
     bBalade.type = 'button';
     bBalade.title = t("Full screen, your position, the walk ahead");
     let quitte = null;

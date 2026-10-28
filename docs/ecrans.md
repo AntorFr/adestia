@@ -290,8 +290,13 @@ not a dialog: it is a mode of the map, left as a layer on the map.
 *Close glyph (Q-11).* `✕` and `×` in plugin controls give way to the `x` icon (`<svg
 class="adestia-icon"><use href="#adestia-i-x"/></svg>`, from the shell's sprite, which is on the
 page; a plugin may use any icon of the charter's closed list and none outside it). Decorative
-emoji in plugin chrome are left (`🖐 📄 🧭 📝` are words' companions, not the controls Q-14 names for
-the shell); a **tile icon** a plugin declares in its manifest stays.
+emoji in plugin chrome give way to the same closed sprite list or to their visible word
+(AD-24 d): page links use `file-text`, todo notes and attachments use `pen-line` and `paperclip`,
+journal archives use `archive`, and warnings use `triangle-alert`. Each keeps its visible name
+or `title`. Follow, walking mode, trip hints and Done keep their words without an emoji.
+Content marks stay: an author's or engine's `ico`, trip item and travel/weather types, journal
+and media-type fallbacks, and `⛰` on a route card. `✦` and `✓` are typographic glyphs of the
+plugins' vocabulary, not emoji. A **tile icon** declared in a manifest stays.
 
 ### Backs (B-9, Q-12)
 

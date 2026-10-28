@@ -139,7 +139,7 @@ const WORDS = {
     'on %face': 'sur %face',
     'Cut the column (%n pieces) ✓': 'Débiter la colonne (%n pièces) ✓',
     'Cut the column (%n piece) ✓': 'Débiter la colonne (%n pièce) ✓',
-    'Done 🎉': 'Terminé 🎉',
+    'Done': 'Terminé',
     '%n step done': '%n étapes faites',
     '%n steps done': '%n étapes faites',
     'bands %list mm': 'bandes %list mm',

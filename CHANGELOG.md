@@ -464,6 +464,11 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
 
 ## adestia-correctifs (unreleased)
 
+- **Plugin chrome shares the charter's icons** — page links, todo notes and attachments,
+  journal archives and warnings use the existing sprite with their text or title. Follow,
+  walking mode, trip hints and Done keep their words without an emoji. Author and engine
+  content marks, manifest tile icons, and the typographic `✦`/`✓` remain.
+
 - **The atelier agrees its piece count in the instance’s language** — French reads
   « 0 pièce », « 1 pièce », « 2 pièces »; English keeps « 0 pieces », « 1 piece »,
   « 2 pieces ». Voyages counters now carry each complete French form in their

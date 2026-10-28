@@ -1086,7 +1086,7 @@ export default function createAtelierApp(api) {
     const steps = wb.steps || [];
     const total = steps.length;
     const remaining = steps.filter((s) => !wbDone(s.id));
-    if (!remaining.length) { bodyEl.innerHTML = `<div class="etq">${t('Done 🎉')}</div><div class="dims">${t(total === 1 ? '%n step done' : '%n steps done', { n: total })}</div>`; return; }
+    if (!remaining.length) { bodyEl.innerHTML = `<div class="etq">${t('Done')}</div><div class="dims">${t(total === 1 ? '%n step done' : '%n steps done', { n: total })}</div>`; return; }
     const cur = remaining[0];
     const doneCount = total - remaining.length;
     const detail = cur.type === 'tronconnage'
