@@ -582,7 +582,7 @@ yet reproduced" (frontmatter CRLF) or "whether it predates the epic is unknown" 
 | pages | built by AD-25: the root page breadcrumb no longer invents a folder, the page diagnostic follows the locale, frontmatter CRLF is read as the editor does (`pages.ts`, `schedule.ts`, planif against `content`); proof in `bench/pages-proof.md`. Kept, with its reason under Known defects: the open page is not refreshed after an agent write (P-5 step 7) |
 | shell | built by AD-24: Nestor’s arrow is SVG, MCP counts agree, Skippy’s phone band stays on one line, E-14’s switch stays beside its title, E-19/plugin manifest headings follow the locale, the spin rule is single and `CataloguePopin.refresh()` shows thrown errors. Token `autoComplete`: not reproduced, already `off` since `64dee0f`. Kept under Known defects: English validator field lines (a new keyed table would be needed). Nine dispositions and eight complete visual passes: `bench/shell-proof.md` |
 | server | none left: the configuration file mode, the `user-tokens.json` comment and the `register*` re-exports were repaired by AD-22 |
-| plugins | `confirm()` of the atelier and `alert` of the voyages replaced by the shared sheet (Q-20, kept by `adestia-qualite` because "the flow would change": the answer becomes asynchronous; this is the one deliberate flow change, bounded to two gestures, and `docs/ecrans.md` Q-20 and the atelier and voyages journeys are rewritten with it. If the tranche proves risky it is narrowed and the reason written under Known defects); planif and veille server sentences kept in English (AD-17), plugin phrases in their tables; E-28 walking map keeps its pre-walk size; E-30 focus lost on phone; E-25 counts use the locale’s singular/plural rule; plugin chrome uses the existing sprite or its visible word, while content marks stay (AD-24 d); the amber of project-management meaning two things; `:::content` `on` without a localised date |
+| plugins | built by AD-24 a/b/c/d: the atelier reset and voyages refusal use their shared sheet (Q-20, asynchronous, no narrowing); piece counts and composed phrases follow the locale; the walking map fills its box; the scanner returns focus to the phone composer; plugin chrome uses the sprite or its visible word; Amber is the owner’s assessment and inferred delay is dashed; `:::content` dates follow the instance locale. Proof: `bench/plugins-correctifs-proof.md`. Kept under Known defects: E-23/E-27 server sentences, E-25 workbook words, E-26 item types and raw gesture errors (data, no translation table) |
 | debt | R-2 one-line aliases of the drivers and R-6 exports kept only for tests (removed, tests import the module that owns the symbol); bench duplicates (`launch(seed)`, `loadPlaywright`); fake-engine options with no caller; `doc-besoin.test.mjs` into CI; the two duplicate guards on `DESIGN.md`; typed lint rules switched on if the repo passes them; `.agent/migrate-frame.mjs` lint errors |
 
 Kept on purpose, with their reason, and still under Known defects: the open page is **not**
@@ -1131,14 +1131,12 @@ since `64dee0f`; it remains so. The missing-attribute report is closed.
   `words.test.js` cannot see a sentence that comes from data. Same for E-27's failure reason of a
   source (`muet: fetch failed`, the fetch's own text). Translating them is a change to what the API
   answers or a table keyed by those sentences: left.
-- **E-30 on a phone: the focus is lost when the reader closes.** The composer folds its buttons on a
-  narrow screen and drops the item that opened the reader; the plugin's `opener` is then no longer in
-  the document and nothing takes the focus. The shell's fold would have to hand it back; the matrix
-  notes it (`NOTE … focus not returned`) rather than failing on it.
 - **E-25's piece sheet shows the workbook's own words under `en`**: edge names such as `about-droit`
   and piece references come from the workbook data, which the plugin does not translate.
 - **E-26's card sheet names the item's type with the data's own word** (`trajet`, `resto`) under `en`:
-  the type is an identifier of `voyage.json`, drawn as it is written.
+  the type is an identifier of `voyage.json`, drawn as it is written. A gesture refusal or failure
+  likewise carries the server’s raw error in the sheet; translating that data needs a keyed API
+  contract or a table of server sentences, outside AD-24 (the sheet’s heading and controls are translated).
 
 ### Chat checks closed without a behaviour change (AD-23)
 
@@ -1152,5 +1150,5 @@ since `64dee0f`; it remains so. The missing-attribute report is closed.
   fold and invoking a plugin's empty fill returns focus to the textarea, closes
   the menu, preserves the exact draft (including surrounding spaces) and sends
   nothing. A whitespace-only fill does the same. `Composer.tsx` already focuses
-  before ignoring an empty fill (`4e6f16f`). This does not close E-30: its reader
-  must request that focus when its phone opener has disappeared.
+  before ignoring an empty fill (`4e6f16f`). E-30 is repaired separately by AD-24 c:
+  `scan/web/scanner.js` focuses the composer field when its opener has disappeared or was the body.
