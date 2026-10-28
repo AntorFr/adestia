@@ -2,10 +2,9 @@
  * The words the atelier says, in the languages it speaks.
  *
  * The KEY is the English sentence and is what the engine says when no table
- * answers; the `fr` values are the French the engine said before it had a
- * table, letter for letter — a French instance reads the same words it always
- * did (B-1), and `test/hub-fr.txt` is the proof. The French addresses the
- * reader as *vous*.
+ * answers. The `fr` values started as the engine’s original French (B-1);
+ * AD-24 b corrects the piece count’s singular, including zero. The French
+ * addresses the reader as *vous*.
  *
  * Placeholders are `%name`, filled from the values `t(key, values)` receives.
  * A plural is two keys (`%n cross-cut` / `%n cross-cuts`), never a word with
