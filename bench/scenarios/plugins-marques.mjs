@@ -59,6 +59,25 @@ export default async function scenario() {
         assert.equal(await page.locator(`summary ${sprite('archive')}`).count(), 1)
         assert.equal(await page.locator('.journal-archive summary').getAttribute('title'), locale === 'fr' ? 'Journaux archivés' : 'Archived journals')
         await shot('journal')
+        let loaded
+        const workbook = new Promise((done) => { loaded = done })
+        await page.route('**/api/plugin/atelier/workbook?*', async (route) => {
+          const response = await route.fetch()
+          loaded(await response.json())
+          await route.fulfill({ response })
+        })
+        await page.route('**/api/plugin/atelier/state?*', async (route) => {
+          const response = await route.fetch()
+          const state = await response.json()
+          const data = await workbook
+          state.fait = Object.fromEntries(data.debit.flatMap((plate) => plate.etapes.map((step) => [step.id, true])))
+          await route.fulfill({ response, json: state })
+        })
+        await open('/atelier/caisson', '#shopmode')
+        await page.locator('#shopmode').click()
+        assert.equal(await page.locator('#atelier-body .etq').textContent(), locale === 'fr' ? 'Terminé' : 'Done')
+        await shot('atelier-done')
+        await page.keyboard.press('Escape')
         await open('/voyages', '.vhub-card')
         await shot('trips')
         await open('/voyages/corse', '.vday')
