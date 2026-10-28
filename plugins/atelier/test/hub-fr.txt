@@ -549,7 +549,7 @@ débité ✓
 arête à plaquer (chant)
 clic colonne → détail/débiter · clic sur le nom → la pièce
 Quitter le mode atelier
-Terminé 🎉
+Terminé
 4 étapes faites
 
 == follow-up, finished ==
@@ -576,7 +576,7 @@ tronconnage
 P1-TR-3
 tronconnage
 Quitter le mode atelier
-Terminé 🎉
+Terminé
 4 étapes faites
 
 == empty hub ==

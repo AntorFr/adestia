@@ -84,7 +84,7 @@ export default async function scenario() {
         assert.match(dismissed, locale === 'fr' ? /^\d+ écartées? [▾▸]$/ : /^\d+ dismissed [▾▸]$/)
         await shot('voyages-dismissed')
         await open('/parcours/balades/assets/val-sans-retour.parcours.json', '.parcours.pc-ready .pc-list')
-        const offRoute = locale === 'fr' ? '⚠ à 95 m de la trace' : '⚠ 95 m from the route'
+        const offRoute = locale === 'fr' ? 'à 95 m de la trace' : '95 m from the route'
         const waypoint = page.locator('.pc-list li').filter({ hasText: offRoute })
         await waypoint.waitFor()
         await waypoint.scrollIntoViewIfNeeded()
