@@ -713,10 +713,10 @@ function listeReperes(reperes, t) {
     // Au-delà de 60 m, l'écart cesse d'être « le point vise le lieu, la trace
     // suit la voie » et devient une coordonnée à vérifier. On le dit.
     const offRoute = r.ecart_trace_m > 60;
-    if (offRoute) meta.push(t("%offset m from the route", { offset: r.ecart_trace_m }));
-    if (meta.length) {
-      const line = el('div', 'pc-meta');
+    if (meta.length || offRoute) {
+      const line = el('div', 'pc-meta', meta.join(' · '));
       if (offRoute) {
+        if (meta.length) line.appendChild(document.createTextNode(' · '));
         const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         icon.setAttribute('class', 'adestia-icon');
         icon.setAttribute('aria-hidden', 'true');
@@ -724,9 +724,8 @@ function listeReperes(reperes, t) {
         const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
         use.setAttribute('href', '#adestia-i-triangle-alert');
         icon.appendChild(use);
-        line.append(icon, document.createTextNode(' '));
+        line.append(icon, document.createTextNode(' ' + t("%offset m from the route", { offset: r.ecart_trace_m })));
       }
-      line.appendChild(document.createTextNode(meta.join(' · ')));
       li.appendChild(line);
     }
 
