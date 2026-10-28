@@ -464,6 +464,11 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
 
 ## adestia-correctifs (unreleased)
 
+- **The atelier agrees its piece count in the instance’s language** — French reads
+  « 0 pièce », « 1 pièce », « 2 pièces »; English keeps « 0 pieces », « 1 piece »,
+  « 2 pieces ». Voyages counters now carry each complete French form in their
+  table instead of adding an `s` to a translated word.
+
 - **The atelier and the voyages ask and say in their own sheet** — handing the layout
   back no longer opens the browser's `confirm()`: the plugin's sheet asks, *Cancel* has
   the focus (Escape and the scrim cancel), and *Discard my layout* does what OK did. A

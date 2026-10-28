@@ -536,7 +536,7 @@ screen and take the sheet's behaviour contract and z-index family.
 today's French, so a French instance reads the same words (B-1). Parcours and project-management
 get the same. Messages of `regles.js` / `convert.js` go to the CLI and MCP tools, not to the
 screen, and stay French; the agent prompts stay as written. The class test `plugins/test/words.test.js` (it already
-reads the tables the way the shell does, the atelier's included once it has one) gains the *tu* rule, with a short list of the plugins still to correct that each task empties.
+reads the tables the way the shell does, the atelier's included once it has one) gains the *tu* rule; its correction list is empty, with no pending exception.
 (d) **Lint.** `eslint.config.js` (the serveur tranche's file, extended here) drops `plugins/**` from
 `ignores` and gains a block for `plugins/**/web/**/*.js` (browser globals; the `react-hooks` rules apply, since
 journal, todo, listening-post and meals call hooks through `createElement`) and one for the
@@ -582,7 +582,7 @@ yet reproduced" (frontmatter CRLF) or "whether it predates the epic is unknown" 
 | pages | built by AD-25: the root page breadcrumb no longer invents a folder, the page diagnostic follows the locale, frontmatter CRLF is read as the editor does (`pages.ts`, `schedule.ts`, planif against `content`); proof in `bench/pages-proof.md`. Kept, with its reason under Known defects: the open page is not refreshed after an agent write (P-5 step 7) |
 | shell | built by AD-24: Nestor’s arrow is SVG, MCP counts agree, Skippy’s phone band stays on one line, E-14’s switch stays beside its title, E-19/plugin manifest headings follow the locale, the spin rule is single and `CataloguePopin.refresh()` shows thrown errors. Token `autoComplete`: not reproduced, already `off` since `64dee0f`. Kept under Known defects: English validator field lines (a new keyed table would be needed). Nine dispositions and eight complete visual passes: `bench/shell-proof.md` |
 | server | none left: the configuration file mode, the `user-tokens.json` comment and the `register*` re-exports were repaired by AD-22 |
-| plugins | `confirm()` of the atelier and `alert` of the voyages replaced by the shared sheet (Q-20, kept by `adestia-qualite` because "the flow would change": the answer becomes asynchronous; this is the one deliberate flow change, bounded to two gestures, and `docs/ecrans.md` Q-20 and the atelier and voyages journeys are rewritten with it. If the tranche proves risky it is narrowed and the reason written under Known defects); planif and veille sentences in English; E-28 walking map keeps its pre-walk size; E-30 focus lost on phone; E-25 "1 pièces"; the emojis kept in plugins; the amber of project-management meaning two things; `:::content` `on` without a localised date |
+| plugins | `confirm()` of the atelier and `alert` of the voyages replaced by the shared sheet (Q-20, kept by `adestia-qualite` because "the flow would change": the answer becomes asynchronous; this is the one deliberate flow change, bounded to two gestures, and `docs/ecrans.md` Q-20 and the atelier and voyages journeys are rewritten with it. If the tranche proves risky it is narrowed and the reason written under Known defects); planif and veille sentences in English; E-28 walking map keeps its pre-walk size; E-30 focus lost on phone; E-25 counts use the locale’s singular/plural rule; the emojis kept in plugins; the amber of project-management meaning two things; `:::content` `on` without a localised date |
 | debt | R-2 one-line aliases of the drivers and R-6 exports kept only for tests (removed, tests import the module that owns the symbol); bench duplicates (`launch(seed)`, `loadPlaywright`); fake-engine options with no caller; `doc-besoin.test.mjs` into CI; the two duplicate guards on `DESIGN.md`; typed lint rules switched on if the repo passes them; `.agent/migrate-frame.mjs` lint errors |
 
 Kept on purpose, with their reason, and still under Known defects: the open page is **not**
@@ -1137,8 +1137,6 @@ since `64dee0f`; it remains so. The missing-attribute report is closed.
   notes it (`NOTE … focus not returned`) rather than failing on it.
 - **E-25's piece sheet shows the workbook's own words under `en`**: edge names such as `about-droit`
   and piece references come from the workbook data, which the plugin does not translate.
-- **E-25 says « 1 pièces »** in French: the table's `%n piece` entry is « %n pièces », as the French
-  read before the atelier had a table (B-1), so a plate of one piece gets a plural.
 - **E-26's card sheet names the item's type with the data's own word** (`trajet`, `resto`) under `en`:
   the type is an identifier of `voyage.json`, drawn as it is written.
 

@@ -41,7 +41,10 @@ const FR = {
   'No trip yet — ask the agent to frame one.':
     'Aucun voyage — demandez à l’agent d’en cadrer un (« on part en Corse du 8 au 22 août »).',
   'no dates — an idea to frame': 'sans dates — envie à cadrer',
-  confirmed: 'confirmée',
+  '%one confirmed': '%one confirmée',
+  '%n confirmed': '%n confirmées',
+  '%one dismissed': '%one écartée',
+  '%n dismissed': '%n écartées',
   'confirmed item': 'confirmé',
   Archive: 'Archive',
   'trips closed': 'voyages clos',
@@ -125,10 +128,11 @@ const FR = {
 export default function createVoyagesApp(api) {
   const { page, esc, crumbs, call, url, shellFetch, tone, finished, openPage, href, learn, locale, index } = api
   const said = table(locale)
-  const t = (key) => said[key] ?? key
-  // French agrees in number; English does not. The `s` is part of the French
-  // WORD, so it is added where the table is French and nowhere else.
-  const plural = (key, n) => t(key) + (n > 1 && said[key] !== undefined ? 's' : '')
+  const t = (key, values = {}) => (said[key] ?? key).replace(/%([a-zA-Z]+)/g, (match, name) =>
+    Object.hasOwn(values, name) ? String(values[name]) : match)
+  // English uses the same adjective for both counts. Different placeholders
+  // keep the two complete French forms in the table, with no suffix added here.
+  const counted = (one, many, n) => t(n > 1 ? many : one, { one: n, n })
 
   const VTYPE = {
     hebergement: { ico: '🏠', c: '--v-maison', n: 'hebergement' },
@@ -285,7 +289,7 @@ export default function createVoyagesApp(api) {
       const dates = v.debut ? `${vfmtDay(v.debut)} → ${vfmtDay(v.fin)}` : t('no dates — an idea to frame')
       const foot = []
       if (v.status) foot.push(`<span class="stat stat--${tone(v.status)}">${esc(v.status)}</span>`)
-      if (v.confirmes) foot.push(`<span class="tag">${v.confirmes} ${plural('confirmed', v.confirmes)}</span>`)
+      if (v.confirmes) foot.push(`<span class="tag">${counted('%one confirmed', '%n confirmed', v.confirmes)}</span>`)
       if (v.suggestions) foot.push(`<span class="tag">💡 ${v.suggestions}</span>`)
       return `<a class="vhub-card" href="${href(v.path)}"><div class="ct">${esc(v.titre)}</div><div class="cmeta">${esc(dates)}${v.lieux?.length ? ' · ' + esc(v.lieux.join(' → ')) : ''}</div>${foot.length ? `<div class="foot">${foot.join('')}</div>` : ''}</a>`
     }
@@ -520,7 +524,7 @@ export default function createVoyagesApp(api) {
     const tray = `<aside class="vtray"><div class="th">${t('Suggestions')} <span class="cnt">${allSug.length}</span></div>
       ${types.length > 1 ? `<div class="facets">${['', ...types].map((tp) => `<button class="pill ${(!tp && !voy.filter) || voy.filter === tp ? 'on' : ''}" data-tf="${esc(tp)}">${tp ? vtypeName(tp) : t('All')}</button>`).join('')}</div>` : ''}
       <div class="traygrid">${sug.map((i) => `<div class="traycard" role="button" tabindex="0" draggable="true" title="${t('Click: page · Drag: confirm')}" data-vi="${esc(i.id)}" style="--ic:var(${vtypeOf(i.type).c})"><button class="dis" type="button" data-dis="${esc(i.id)}" title="${t('Dismiss — kept, never suggested again')}" aria-label="${t('Dismiss — kept, never suggested again')}">${iconHTML('x')}</button><span class="vico">${vicoOf(i)}</span><div class="bd"><div class="vt">${esc(i.titre || i.id)}</div>${i.hint ? `<div class="vhint">${esc(i.hint)}</div>` : ''}${i.prix ? `<div class="vmeta"><span class="chip">${esc(i.prix)}</span></div>` : ''}</div></div>`).join('') || `<div class="empty">${t('Nothing to sort — ask the agent for suggestions.')}</div>`}</div>
-      <div class="trayfoot">🖐 ${t('A card on a day = confirmed · a card from the plan back here = returned to suggestions')}${nEc ? ` · <button class="eclink" data-ectoggle>${nEc} ${plural('dismissed', nEc)} ${voy.showEc ? '▾' : '▸'}</button>` : ''}</div>
+      <div class="trayfoot">🖐 ${t('A card on a day = confirmed · a card from the plan back here = returned to suggestions')}${nEc ? ` · <button class="eclink" data-ectoggle>${counted('%one dismissed', '%n dismissed', nEc)} ${voy.showEc ? '▾' : '▸'}</button>` : ''}</div>
       ${voy.showEc && nEc ? `<div class="traygrid">${items.filter((i) => i.statut === 'ecartee').map((i) => `<div class="traycard ec" data-vi="${esc(i.id)}"><button class="dis" type="button" data-rest="${esc(i.id)}" title="${t('Take back into the suggestions')}" aria-label="${t('Take back into the suggestions')}" style="opacity:1">${iconHTML('rotate-ccw')}</button><span class="vico">${vicoOf(i)}</span><div class="bd"><div class="vt">${esc(i.titre || i.id)}</div>${i.hint ? `<div class="vhint">${esc(i.hint)}</div>` : ''}</div></div>`).join('')}</div>` : ''}</aside>`
 
     const bloc = voy.fiches.length

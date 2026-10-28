@@ -10,8 +10,8 @@
  * Placeholders are `%name`, filled from the values `t(key, values)` receives.
  * A plural is two keys (`%n cross-cut` / `%n cross-cuts`), never a word with
  * an `s` glued on: another language does not plural the way these two do.
- * Some French values read the same for one and for many: that is what the
- * engine said, and a translation is not the place to fix it.
+ * The caller chooses the key with the locale’s plural rule: zero pieces
+ * takes the singular in French and the plural in English.
  *
  * Values may carry markup (`<b>`, a coloured `<span>` handed in as a
  * placeholder) because the engine puts them in innerHTML. What the USER wrote
@@ -36,7 +36,7 @@ const WORDS = {
     'Workbooks': 'Workbooks',
     'never': 'jamais',
     'steps': 'étapes',
-    '%n piece': '%n pièces',
+    '%n piece': '%n pièce',
     '%n pieces': '%n pièces',
     'Unreadable workbook (%err).': 'Workbook illisible (%err).',
     'Sheets': 'Plaques',
