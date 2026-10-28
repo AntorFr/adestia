@@ -70,7 +70,8 @@ export async function openScanner(api, t = words(api?.locale)) {
     overlay.remove()
     // On a phone the composer's fold removes the scan button while the reader
     // is open: with no opener left, the focus goes to the composer's field.
-    if (opener?.isConnected) opener.focus()
+    const usable = opener && opener !== document.body && opener !== document.documentElement && opener.isConnected
+    if (usable) opener.focus()
     else document.querySelector('.adestia-composer__input')?.focus()
   }
   // Escape closes it exactly as « cancel » does; Tab stays inside the overlay.
