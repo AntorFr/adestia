@@ -522,3 +522,8 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
   The Planif screen's own notes reader (`plugins/planif/api.mjs`) had a third,
   LF-only copy of the fence and now reads the same lines, so a CRLF scheduled note
   shows its title, times and `expired` instead of an empty note.
+- **Amber means one thing in project management** — `--warning` now draws only the
+  owner's `Amber` assessment. A deduced delay (a late phase bar, a late milestone) is
+  drawn by shape, a dashed outline in `--text-muted`, with the hover word kept, so a skin
+  that flattens hues still tells it from a stated Amber (E-31, AD-24 c). The milestone
+  markers, which shared the amber, take the accent. `plugins/test/css.test.js` guards it.

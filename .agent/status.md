@@ -64,8 +64,6 @@ Compléments encore visibles dans le code :
   le pli du composeur, lui, rend bien le focus au champ.
 - `:::content` affiche `on` tel qu'écrit, sans date au format de la langue
   (`editor/reader/ContentBlock.tsx`).
-- L'ambre signifie à la fois attente/retard et évaluation `Amber` d'un projet ;
-  le mot distingue, pas la couleur (`plugins/project-management/web/model.js`).
 - Les formulaires de données de blocs restent à faire : l'édition montre leur
   rendu, puis leurs lignes brutes au clic ; les réglages ne sont pas ces formulaires.
 
