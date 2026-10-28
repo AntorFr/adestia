@@ -464,6 +464,9 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
 
 ## adestia-correctifs (unreleased)
 
+- **`:::content` reads its date in the instance's language** — `on=2026-03-04` is
+  drawn with `Intl.DateTimeFormat` of the interface locale (`4 mars 2026`,
+  `March 4, 2026`); a value that is not a date is drawn as written.
 - **Walking map fills its box** — E-28 reads the map's actual height in walking
   mode and redraws on entry, exit and resize, so the route and tiles occupy the
   screen above the GPS controls. The map in a page keeps its previous size.
