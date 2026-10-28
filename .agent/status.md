@@ -1,12 +1,22 @@
 # Status — Adestia
-> MàJ : 2026-10-26
+> MàJ : 2026-10-28
 
 ## Version courante
 
 - Dernier tag accessible : **`v0.96.0-adestia-correctifs.2`** (`git describe --tags
   --abbrev=0`; le `.1` était la tranche serveur, le `.2` la tranche chat) de l'epic `adestia-correctifs`, sur la branche d'intégration
   de l'epic ; le dernier tag dans `main` est `v0.95.0` (l'epic `adestia-qualite`).
-- Branche de travail : `feature/adestia-correctifs-shell`, sur `origin/epic/adestia-correctifs`
+- Branche de travail : `feature/adestia-correctifs-pages`, sur `origin/epic/adestia-correctifs`
+  (tranche pages, AD-25 : la trace d'une page racine ne nomme plus de dossier (`folderOf`) et E-8
+  mène à Accueil ; le `Popover` reste sous l'en-tête du canevas et les bandeaux et suit son ancre
+  (`bench/scenarios/pages-reglages.mjs`) ; un `Diagnostic` porte `code` et `args`, le shell le dit
+  par `t()` en `fr`, le `message` anglais du fil est inchangé ; l'index, la planification et la
+  liste Planif (`plugins/planif/api.mjs`) lisent une fiche CRLF et une clôture `---` suivie
+  d'espaces comme l'éditeur, `stampField` garde la fin de ligne. Preuves : `bench/pages-proof.md`,
+  tests `chemin-racine`, `popover-placement`, `page-diagnostics-language`, `frontmatter`,
+  `schedule`. Reste, avec sa raison : la page ouverte ne se rafraîchit pas quand l'agent écrit
+  (P-5 étape 7) ; les phrases serveur d'E-23 restent en anglais).
+  Précédemment : `feature/adestia-correctifs-shell`, sur `origin/epic/adestia-correctifs`
   (tranche shell, AD-24 : la flèche d'envoi de Nestor est un SVG ; la tuile MCP compte les serveurs
   listés par E-10, la santé ne dit que combien demandent attention ; le bandeau de Skippy tient sur
   une ligne à 360 px ; l'interrupteur d'E-14 reste sur la ligne de son titre ; l'en-tête
