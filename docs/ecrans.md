@@ -47,7 +47,7 @@ screen.
 
 **Breadcrumb.** `nav.adestia-crumbs`: `Home`, then the trail computed by `trail.ts`
 (`trailOf`) from settings, the open app and what its view published through `api.trail`,
-the page or the section. Every crumb but the last is a button; a folder crumb resolves
+the page or the section. A page at the root of the workspace has no folder crumb: Home, then its title (a missing or very long title is unchanged by this repair). Every crumb but the last is a button; a folder crumb resolves
 through `folderRoute` (a folder an app absorbs opens that app). The same trail is sent with
 each message as "where the reader is" (`screenView`).
 
@@ -96,7 +96,7 @@ is labelled with the destination. Plugins with sub-screens add their own back (E
 | E-5 | Page properties popover | `settings` on the frontmatter strip in the editor | `editor/PageSettings.tsx`, `pageform.ts`, `frontmatterview.tsx` | Edit frontmatter as a form drawn from declared fields | P-6 |
 | E-6 | Block settings popover | `settings` on a block bar in the editor | `editor/BlockSettings.tsx`, `blockview.tsx` | Edit a `:::block`'s attributes, title, icon, frame, width; remove stray attributes | P-6 |
 | E-7 | Collection page | a page with `type: collection` | `app/Collection.tsx` (`CollectionLayout`, `CollectionShell`), `collections.ts`, `styles/collection.css` | A page listing its members as cards with facets, an `Ask for a new page` button, `Everything here is finished.` | P-5 |
-| E-8 | Missing page | `#/page/<path>` refused (404, 401/403, other) | `app/MissingPage.tsx`, `styles/missing-page.css` | Name the address, say which refusal, link to the folder above | P-5 |
+| E-8 | Missing page | `#/page/<path>` refused (404, 401/403, other) | `app/MissingPage.tsx`, `styles/missing-page.css` | Name the address, say which refusal, link to the folder above (to Home for a page at the root, which has none) | P-5 |
 | E-9 | Settings mosaic | `#/settings` | `app/Preferences.tsx`, `Tile.tsx` | Four tiles: MCP servers, Instructions, Configuration, Delegations, with counts | P-8, P-9, P-10, P-13 |
 | E-10 | MCP servers | `#/settings/mcp[/<name>]` | `app/McpServers.tsx`, `Settings.tsx` (`useMcpServers`), `styles/settings.css` | List servers with health; open one: state, per-person OAuth connect, JSON declaration editor, Save, Remove, add | P-8 |
 | E-11 | Instructions | `#/settings/instructions[/<path>]` | `app/Instructions.tsx`, `styles/tiles.css` | Grouped file cards (instructions, skills, agents), search, `+` create buttons, open one in a monospace textarea, Save; delivered files read-only | P-9 |
@@ -135,7 +135,7 @@ columns are the same except where the instance's configuration decides what exis
 | E-3 | browse, search, facet | same | creates/moves pages (cards appear live) | — |
 | E-4, E-5, E-6 | read, edit, save | same | edits the same files; a concurrent edit gives the conflict state | — |
 | E-7 | add a member, open | same | writes members | — |
-| E-8 | follow the folder link | same | a mistyped address it gave lands here | — |
+| E-8 | follow the folder link (Home for a root page; this link is never hidden) | same; a 401/403 shows the screen with the lock, the page itself is refused | a mistyped address it gave lands here | — |
 | E-9 | open tiles | same | — | its delegations are counted |
 | E-10 | add/edit/remove servers, connect | same (connect is per person) | uses the servers; health reported after a turn | — |
 | E-11, E-12 | write, import, refresh | same | may write instruction files | — |
@@ -166,9 +166,9 @@ columns are the same except where the instance's configuration decides what exis
 | E-3 | normal, shared empty/no-match states ("This section holds nothing yet." / "Nothing matches."), facet chips, finished archive, multi-store marks | loading (index-driven, renders whatever is held) |
 | E-4 | reading, editing, saving/saved/"tidied", conflict (`.adestia-save--warn`), rejected, failed, read-only (`.adestia-editor__readonly` + raw source), diagnostics, drop zone, lost/ambiguous wikilink, unknown block, missing `from=` | a loading state while the page is fetched (previous screen stays); an empty-page state |
 | E-5 | shared popover/fields, normal, broken frontmatter (nothing editable), unknown fields, kept-as-written | — |
-| E-6 | shared popover/fields, normal, required attributes missing, stray attributes | — |
+| E-6 | shared popover/fields, normal, required attributes missing (a star and the text alternative), stray attributes (a named `trash-2` control each), bounded below the canvas header and the bands (anchor scrolled under the header: the panel stays at the header's edge; anchor out at the bottom or soft keyboard on a phone: the panel stays inside the viewport and scrolls internally; on a desktop an anchor out at the bottom keeps the panel inside the viewport the same way; it follows its anchor on scroll and resize) | no loading, error or offline state: it opens on a block already in the editor, so none applies; read-only mode has no settings control, so the popover cannot open |
 | E-7 | normal, shared all-finished state inside a facet, count chips | empty collection state distinct from "all finished" |
-| E-8 | shared empty state: 404 (`file-question`), 401/403 (`lock`), other (`circle-alert`) | a retry for the "server could not" case |
+| E-8 | shared empty state: 404 (`file-question`, "There is no page at this address." / « Il n’y a aucune page à cette adresse. »), 401/403 (`lock`, "This page is out of reach — the session may have expired." / « Cette page est hors de portée — la session a peut-être expiré. »), other (`circle-alert`, "The server could not serve this page." / « Le serveur n’a pas pu servir cette page. »); folder link "Open the folder above" / « Ouvrir le dossier au-dessus », or "Home" / « Accueil » for a page at the root; a very long address wraps; no loading state of its own (the screen is drawn once the server has answered; E-4 keeps the previous screen while fetching); offline after startup is unchanged (Limits kept), E-21 covers startup failure | a retry for the "server could not" case |
 | E-9 | normal, tiles with Lucide icons; counts absent when unreadable | loading (tiles first render without counts; kept, a recommendation) |
 | E-10 | list, empty ("None wired yet…", shared empty state), health tones each with an icon, needs-auth, connected/not, shadowed, read-only declaration, saving/saved/failed | loading; a confirmation before Remove (kept, recommendations) |
 | E-11 | list, empty, no match, file open, delivered (read-only, lock icon), saving/saved/failed, the name sheet for a new skill or agent | loading (kept, a recommendation) |
@@ -750,7 +750,7 @@ Metadata, block frames and attachments keep their content; attachments have file
 icons and names with tooltips. `reader/Note.tsx` draws translated block notes as
 `.adestia-empty--inline`, retaining `.adestia-block-note` as a layout/skin hook.
 Lost references, absent files, unknown blocks and missing providers use this form.
-Read-only pages show `lock`, raw source and diagnostics.
+Read-only pages show `lock`, raw source and diagnostics; each diagnostic sentence is translated by its `code` into the instance's language, with the block name, attribute and values left as the author wrote them (a diagnostic with no known code is drawn as received).
 
 **E-4 editing.** Toolbar, slash menu and DOM block bars use translated words and
 sprite icons: `grip-vertical`, `code`/`eye`, `settings`, `trash-2`. Milkdown's surface
@@ -766,7 +766,11 @@ focus to the anchor. Fields use `.adestia-field` and shared controls; Close uses
 `x`. Required attributes have a textual alternative to the star; stray attributes
 have named `trash-2` controls. Both forms speak the instance locale. Icon examples
 in placeholders remain author data. At 360 px the block bar and toolbar wrap;
-popovers stay inside the viewport with `--space-2` (8 px) margins and scroll internally.
+popovers stay inside the viewport with `--space-2` (8 px) margins and scroll internally. At any width a popover also stays below the canvas header and the bands above the page (problems band E-19, skin console): it never covers them, and it follows its anchor when the page scrolls or the window is resized. When the anchor scrolls up under the header, the panel stays at the header's lower edge and closes nothing; with no band present it takes the header's edge alone.
+
+A very long diagnostic wraps in the save status instead of being cut. A save the vocabulary refuses shows, in the save status of E-4 (`Not saved: …`; in French `Non enregistré : …`), the first diagnostic in the instance's language, the editor staying open with its text. A diagnostic with no known code is drawn as received, in the save status as in read-only mode. Each sentence of `content`'s validation has its French twin, with the block name, key and values as the author wrote them; for example `Block ":::note" needs content.` reads `Le bloc « :::note » a besoin de contenu.` and `":::note" has no attribute "x"; it will be ignored.` reads `« :::note » n'a pas d'attribut « x » ; il sera ignoré.`
+
+A page whose frontmatter lines end in `\r\n` shows the same fields as one ending in `\n`: the cards and facets of E-3 and E-7 (`status`, `role`, `cat`) and the notes list of E-23 read them as the editor does. The bench scenarios of this repair (`bench/scenarios/`, files named for the root breadcrumb, E-6 at 1440 px, the translated diagnostic and a CRLF page) are in the repository next to the screens they judge.
 
 **E-7.** Members follow the collection text. Facet cards carry shared count chips;
 Ask for a new page uses a small button with `plus` when `of:`, `into:` and the
@@ -774,7 +778,7 @@ agent callback are present. Inside a facet, all finished uses
 `EmptyState` with `check`. An empty collection has no additional distinct state.
 
 **E-8.** `EmptyState` names the path, with `file-question` for 404, `lock` for
-401/403 and `circle-alert` otherwise. Its ghost folder link uses `folder-open`.
+401/403 and `circle-alert` otherwise. Its ghost folder link uses `folder-open` and goes to the folder above the address; for a page at the root of the workspace, which has none, it goes Home.
 There is no retry control.
 
 **E-20.** `Canvas` shows `EmptyState` with `plug`, `That app is not active on this

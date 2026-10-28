@@ -133,6 +133,16 @@ describe('frontmatter parsing', () => {
 })
 
 describe('the index', () => {
+  it('shows a CRLF page the fields the editor shows', async () => {
+    await write('crlf.md', '---\r\ntitle: Brief\r\nstatus: active\r\n---\r\n\r\n# Brief\r\n')
+    await write('spaced.md', '---\ntype: tache\n---  \n\n# Spaced\n')
+
+    const { entries } = (await app.inject({ url: '/api/pages/index' })).json()
+    const by = (path: string) => entries.find((e: { path: string }) => e.path === path)
+    expect(by('crlf.md').fields).toEqual({ title: 'Brief', status: 'active' })
+    expect(by('spaced.md').fields).toEqual({ type: 'tache' })
+  })
+
   it('returns every page with its fields, in one request', async () => {
     // The DERIVED regime: a todo list, a project board and a faceted
     // collection are all one query over this.
