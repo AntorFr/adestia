@@ -629,7 +629,7 @@ test or a capture **before** it is fixed (AD-16), and a defect that does not rep
 "Gesture impossible") each already carry `web/sheet.js` (AD-14 b: `makeSheet(t)`, `role="dialog"`, scrim, Escape,
 Tab kept inside, focus returned). Both gain a *message* form of that sheet, no new component and no new
 contract. **Atelier**: a question, two buttons: *Cancel* (focused first, since the gesture destroys the
-layout; Escape and the scrim also cancel) and *Discard my layout* / *Abandonner mon calepinage* (accent, destructive wording; the plugin's own word *calepinage* stays, the question keeps its table entry); confirming does what the
+layout; Escape and the scrim also cancel) and *Discard my layout* / *Abandonner ma mise en plan* (accent, destructive wording; the question keeps its table entry); confirming does what the
 `if (confirm(...))` branch did, cancelling does nothing — the same two outcomes as today. **Voyages**: the refusal or the
 failure is the sheet's body, one button *Close* (Escape and the scrim too); the card stays where it was and
 `paintVoyage()` runs when the sheet is closed, not before (the native alert blocked the repaint; the sheet must not
@@ -1121,10 +1121,6 @@ since `64dee0f`; it remains so. The missing-attribute report is closed.
   `chat/messages.ts` › `toMessage`; `SignatureCards` also draws nothing without a
   signing handler. The calling agent's user holds the ceremony. Passive cards
   would be a new function (AD-18), outside this tranche.
-- **Native dialogs in plugins**: `plugins/atelier/web/app.js` asks `confirm()` before resetting a
-  layout and `plugins/voyages/web/app.js` shows `window.alert` for a refused gesture; unstyled,
-  unlocalised by the browser's own words, not closeable like a sheet. Replacing them changes the flow
-  (the answer is asynchronous), so it was kept by `adestia-qualite`; `adestia-correctifs-plugins` repairs it (AD-24 a).
 - **`deleteConversation`** exists in `chat/conversations.ts` and is reached by no screen.
 - **ManifestError field lines (`field: message`)**: kept — English validator sentences,
   a table keyed by them is new (AD-17). E-19 translates the plugin/skin manifest heading;

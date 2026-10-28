@@ -118,8 +118,8 @@ const FR = {
   driving: 'voiture',
   cycling: 'velo',
   transit: 'transport',
-  'Gesture refused: ': 'Geste refusé : ',
-  'Gesture impossible: ': 'Geste impossible : ',
+  'Gesture refused': 'Geste refusé',
+  'Gesture impossible': 'Geste impossible',
 }
 
 export default function createVoyagesApp(api) {
@@ -417,6 +417,12 @@ export default function createVoyagesApp(api) {
     return (await response.json()).docs ?? []
   }
 
+  // A refused or failed gesture is said in the card's sheet, not in the browser's
+  // alert. Nothing changed, so nothing is repainted until the reader shuts it.
+  function sayGesture(title, message) {
+    sheet.open({ title, bodyHTML: `<p>${esc(message)}</p>`, footHTML: '', from: document.activeElement, closed: paintVoyage })
+  }
+
   async function vgesture(payload) {
     try {
       const r = await call('/state', {
@@ -425,12 +431,13 @@ export default function createVoyagesApp(api) {
         body: JSON.stringify({ v: voy.path, ...payload }),
       })
       if (!r.ok) {
-        window.alert(`${t('Gesture refused: ')}${(await r.json()).error || r.status}`)
+        sayGesture(t('Gesture refused'), String((await r.json()).error || r.status))
         return
       }
       voy.state = await r.json()
     } catch (error) {
-      window.alert(`${t('Gesture impossible: ')}${String(error)}`)
+      sayGesture(t('Gesture impossible'), String(error))
+      return
     }
     paintVoyage()
   }

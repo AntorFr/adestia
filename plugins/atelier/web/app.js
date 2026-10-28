@@ -564,9 +564,7 @@ export default function createAtelierApp(api) {
         wbSelB = id;
         wbSavePose({ bande: { id, cree: true, plaque: pl.plaque, axe: 'y', x, y: uz.y0, w: 100, h: Math.min(600, uz.y1 - uz.y0) } });
       });
-      $('wbreset')?.addEventListener('click', () => {
-        if (confirm(t('Drop your layout and go back to Alfred’s?'))) { wbSel = null; wbSelB = null; wbSavePose({ reset: true }); }
-      });
+      $('wbreset')?.addEventListener('click', (e) => askReset(e.currentTarget));
     } else {
       body.querySelectorAll('.colc').forEach((gEl) => openable(gEl, () => showColonne(gEl.dataset.band, gEl)));
       body.querySelectorAll('.pname').forEach((t) => openable(t, () => showPiece(t.dataset.et, t)));
@@ -1022,6 +1020,18 @@ export default function createAtelierApp(api) {
     return null;
   }
   // Pop-up COLONNE : l'objet réel du débit — longueur, refente, tronçons (liens), débiter d'un bloc.
+  // Handing the layout back is asked in the piece's sheet, not in the browser's
+  // dialog: Cancel has the focus, Escape and the scrim cancel, nothing moves.
+  function askReset(from) {
+    const { body, foot, close } = sheet.open({ title: t('Take back Alfred’s proposal'), from });
+    body.textContent = t('Drop your layout and go back to Alfred’s?');
+    const cancel = node('button', 'adestia-btn adestia-btn--sm', t('Cancel')); cancel.type = 'button';
+    cancel.addEventListener('click', close);
+    const drop = node('button', 'adestia-btn adestia-btn--accent adestia-btn--sm', t('Discard my layout')); drop.type = 'button';
+    drop.addEventListener('click', () => { close(); wbSel = null; wbSelB = null; wbSavePose({ reset: true }); });
+    foot.append(cancel, drop);
+    cancel.focus();
+  }
   function showColonne(bandId, from) {
     const f = findBand(bandId); if (!f) return;
     const { plaque, mat, band, troncStep } = f;

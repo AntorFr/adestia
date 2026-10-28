@@ -464,6 +464,11 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
 
 ## adestia-correctifs (unreleased)
 
+- **The atelier and the voyages ask and say in their own sheet** — handing the layout
+  back no longer opens the browser's `confirm()`: the plugin's sheet asks, *Cancel* has
+  the focus (Escape and the scrim cancel), and *Discard my layout* does what OK did. A
+  trip gesture the server refuses, or that fails, is said in the card's sheet instead of
+  `window.alert`, and the board repaints when it closes. The answer is now asynchronous.
 - **`:::content` reads its date in the instance's language** — `on=2026-03-04` is
   drawn with `Intl.DateTimeFormat` of the interface locale (`4 mars 2026`,
   `March 4, 2026`); a value that is not a date is drawn as written.
