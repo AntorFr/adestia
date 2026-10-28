@@ -595,6 +595,17 @@ describe('driver', () => {
     expect((await turn)[0]).toMatchObject({ type: 'error', message: 'Segmentation fault' })
   })
 
+  it("quotes the CLI's own words for an unrecognised refusal, without its token", async () => {
+    const fake = fakeCopilot()
+    const driver = new CopilotDriver({ home: '/x', spawnImpl: fake.spawnImpl })
+    const turn = collect(driver)
+    fake.stderr.write('Error: failed to authenticate gho_leakedsecret0123456789: certificate verify failed\n')
+    fake.child.emit('close', 1)
+    const { message } = (await turn)[0] as { message: string }
+    expect(message).toContain('certificate verify failed')
+    expect(message).not.toContain('leakedsecret')
+  })
+
   it('arms through a relayed device code, harvesting the token the CLI stored', async () => {
     const home = mkdtempSync(join(tmpdir(), 'copilot-arm-'))
     const consent = vi.fn()

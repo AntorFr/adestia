@@ -35,7 +35,7 @@ import { ManagedCredential } from '../managed-credential.js'
 import { McpTokens, type RefreshStore } from '../mcp-oauth.js'
 import { mcpHeaders } from '../mcp-headers.js'
 import { newTranslationState, parseLine, translate } from './events.js'
-import { PLAINTEXT_CONSENT, startDeviceCodeLogin, type DeviceCodeLogin } from './login.js'
+import { PLAINTEXT_CONSENT, scrubTokens, startDeviceCodeLogin, type DeviceCodeLogin } from './login.js'
 
 export interface CopilotDriverOptions {
   /** The pinned binary. An absolute path in a container; `copilot` in dev. */
@@ -462,7 +462,11 @@ export class CopilotDriver implements Driver {
       if (state.stopped && !answered) {
         queue.push({ type: 'result', sessionId: state.sessionId, stopped: true })
       } else if (problem) {
-        const reason = explainAuthProblem(problem)
+        // An unrecognised refusal (a TLS failure behind a proxy, say) is only diagnosable from the CLI's own words.
+        const reason =
+          problem === 'unknown'
+            ? `${explainAuthProblem(problem)} ${scrubTokens(stderr.trim()).slice(-400)}`
+            : explainAuthProblem(problem)
         this.#credential.invalidate(reason)
         queue.push({ type: 'error', message: reason, fatal: true })
       } else if (code !== 0 && !answered) {

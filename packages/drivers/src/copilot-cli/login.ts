@@ -123,7 +123,7 @@ const REPORTED_OUTPUT = 400
  * Never let a credential the CLI happened to echo ride out on an error string:
  * these messages are rendered in the browser, which is never given the secret.
  */
-function scrubTokens(text: string): string {
+export function scrubTokens(text: string): string {
   return text.replace(/gh[a-z]_[A-Za-z0-9_]{10,}/g, 'gh*_***')
 }
 

@@ -31,7 +31,7 @@ const AUTH_SENTENCES: Readonly<Record<CopilotAuthProblem, string>> = {
   // The CLI itself hedges here ("your token may still be valid, check your
   // network"), so the driver must not claim revocation it cannot know.
   unvalidated: 'GitHub would not validate the token. It may be expired or revoked — or the network may simply be down.',
-  unknown: 'The CLI refused to authenticate; see the server logs for its exact message.',
+  unknown: 'The CLI refused to authenticate. It said:',
 }
 
 export const classifyAuthError = (stderr: string): CopilotAuthProblem | undefined => classify(stderr, AUTH_RULES)
