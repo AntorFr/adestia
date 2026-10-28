@@ -3,8 +3,8 @@
 
 ## Version courante
 
-- Dernier tag accessible : **`v0.96.0-adestia-correctifs.2`** (`git describe --tags
-  --abbrev=0`; le `.1` était la tranche serveur, le `.2` la tranche chat) de l'epic `adestia-correctifs`, sur la branche d'intégration
+- Dernier tag accessible : **`v0.96.0-adestia-correctifs.4`** (`git describe --tags
+  --abbrev=0`; le `.1` était la tranche serveur, le `.2` la tranche chat, le `.3` la tranche shell, le `.4` la tranche pages) de l'epic `adestia-correctifs`, sur la branche d'intégration
   de l'epic ; le dernier tag dans `main` est `v0.95.0` (l'epic `adestia-qualite`).
 - Branche de travail : `feature/adestia-correctifs-pages`, sur `origin/epic/adestia-correctifs`
   (tranche pages, AD-25 : la trace d'une page racine ne nomme plus de dossier (`folderOf`) et E-8
