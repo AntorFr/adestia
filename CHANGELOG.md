@@ -464,6 +464,9 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
 
 ## adestia-correctifs (unreleased)
 
+- **Walking map fills its box** — E-28 reads the map's actual height in walking
+  mode and redraws on entry, exit and resize, so the route and tiles occupy the
+  screen above the GPS controls. The map in a page keeps its previous size.
 - **A root page's breadcrumb no longer invents a folder** — `trailOf` took the parent of
   `notes.md` by slicing off its last character; it now uses `folderOf`, so the trail is Home
   then the title. The missing-page screen (E-8) links to Home when the refused page is at the root.

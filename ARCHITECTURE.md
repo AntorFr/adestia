@@ -1135,10 +1135,6 @@ since `64dee0f`; it remains so. The missing-attribute report is closed.
   `words.test.js` cannot see a sentence that comes from data. Same for E-27's failure reason of a
   source (`muet: fetch failed`, the fetch's own text). Translating them is a change to what the API
   answers or a table keyed by those sentences: left.
-- **E-28's walking map keeps its pre-walk size.** In walking mode the map's box fills the screen, but
-  `carte.js` draws the SVG at `taille()` (at most 420 px high, the width it had), so on a phone the
-  map takes the top quarter and the rest is blank; it is drawn full again only on leaving. Found by
-  the matrix, not caused by the tranche; fixing it changes the drawing engine.
 - **E-30 on a phone: the focus is lost when the reader closes.** The composer folds its buttons on a
   narrow screen and drops the item that opened the reader; the plugin's `opener` is then no longer in
   the document and nothing takes the focus. The shell's fold would have to hand it back; the matrix

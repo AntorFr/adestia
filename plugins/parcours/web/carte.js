@@ -228,7 +228,12 @@ export function creerCarte(boite, coords, reperes, fondInitial, t = makeT('fr'))
 
   const taille = () => {
     const w = Math.max(260, boite.clientWidth || 640);
-    return { w, h: Math.max(200, Math.min(Math.round(w * 0.62), 420)) };
+    // En balade, le flex réserve au HUD sa place : le dessin suit le reste
+    // de l'écran, y compris quand sa hauteur dépasse celle de la carte en page.
+    const h = boite.closest('.pc-balade')
+      ? boite.clientHeight
+      : Math.max(200, Math.min(Math.round(w * 0.62), 420));
+    return { w, h };
   };
 
   function recadre() {
@@ -836,6 +841,7 @@ function modeBalade(hote, carte, coords, reperes, _trace, t) {
 
   hote.classList.add('pc-balade');
   hote.appendChild(hud);
+  carte.recadre();
   bSortie.focus();
   prendVeille();
   carte.suit(true);
