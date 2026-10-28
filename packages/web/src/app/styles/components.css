@@ -156,6 +156,8 @@
   background: var(--surface-raised);
   color: var(--text);
   box-shadow: var(--shadow);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* Empty state -------------------------------------------------------------- */

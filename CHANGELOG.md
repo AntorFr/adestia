@@ -461,3 +461,64 @@ not from invented release notes for the tags above.
 
 The documentation tranche separates this history from the current state and retires
 closed work files. DESIGN.md and the remaining documentation review follow separately.
+
+## adestia-correctifs (unreleased)
+
+- **A root page's breadcrumb no longer invents a folder** — `trailOf` took the parent of
+  `notes.md` by slicing off its last character; it now uses `folderOf`, so the trail is Home
+  then the title. The missing-page screen (E-8) links to Home when the refused page is at the root.
+- **Phone skins and E-14** — Nestor's invitation arrow is now a drawn arrow in the
+  accent disc instead of a font glyph; Skippy's console band keeps one line at 360 px
+  (the modules cell leaves, the engine name ellipsises); the switch of a configuration
+  row stays on its title's line on a phone.
+- The Settings MCP tile counts the listed servers in both its chip and subtitle;
+  driver-only health entries no longer inflate the count or the attention total.
+  Refused plugin and skin manifest headings now follow the instance language,
+  while validator field lines stay as the server wrote them. Catalogue refresh
+  shows thrown errors in the pop-in. Remove the duplicate icon spin animation;
+  the catalogue token field already had `autoComplete="off"` and keeps it.
+
+- **Chat sends while the first message is leaving** — Since `c549a5d` (v0.95.0), a
+  second message sent before the first conversation's creation and turn POST finish
+  is shown as held and waits for that same conversation. Previously it could leave
+  as a fresh turn and never appear as held. This records the behaviour change already
+  in `main` (AD-19); the existing held-message regressions keep it pinned.
+
+- **Chat refusal** — A turn refused at the concurrency limit now says the server's
+  limit in English or French. Its error line and the sent message survive rereading
+  the conversation; the line clears on the next send or when leaving the conversation.
+  A server unreachable before any answer keeps its error line in the same way;
+  other refusals retain the server's words. No server behaviour changes.
+
+- **Chat attachments** — The message you just sent shows its attachments the way a held
+  message does: the `paperclip` icon and the file names, no longer a text 📎 appended to
+  the text. The model select stays native; a test now pins its translated empty option.
+
+- **Boot refuses a non-conformant driver** — `start()` now checks the driver it arms
+  (built from the config or injected) against its own descriptor before the
+  permissions check. An instance whose driver declares a capability it lacks the
+  method of, or an unknown one, no longer boots: it stops with
+  `Driver "<id>" is not conformant:` and one line per gap. Previously, the
+  descriptor was trusted without this check.
+- **Configuration file keeps its mode on save** — saving the configuration through
+  the rename path used to leave the file in the umask's default mode (a 0600 file came
+  back 0644). The temporary file now takes the target's mode before the rename.
+- **Page diagnostics follow the instance language** — read-only pages and refused
+  saves now show content validation sentences in French on a French instance.
+  Block names, attribute keys and values stay as authored. Additive `code` and
+  `args` metadata leaves the English wire `message` unchanged; diagnostics from
+  older servers or unknown plugin codes keep their received text.
+- **Page and block settings stay below the canvas bands** — shared popovers now
+  stay below the canvas header, skin console and problem bands, even when flipping
+  above their anchor. They follow scrolling and resizing, stay inside the visible
+  viewport (including a phone keyboard), and scroll internally when space is short.
+  Reproduced at 1440×900 under all four skins by `bench/scenarios/pages-reglages.mjs`.
+- **CRLF frontmatter is read consistently** — the pages index, instructions,
+  catalogues, shell tools and schedule now recognise the same frontmatter fences
+  as the editor, including CRLF lines and spaces after the closing `---`.
+  Scheduled notes keep their line endings when the product stamps `expired:`;
+  the closing fence and body stay as written. This changes the behaviour kept
+  by AD-7; shallow scalar parsing remains unchanged (AD-25 d).
+  The Planif screen's own notes reader (`plugins/planif/api.mjs`) had a third,
+  LF-only copy of the fence and now reads the same lines, so a CRLF scheduled note
+  shows its title, times and `expired` instead of an empty note.

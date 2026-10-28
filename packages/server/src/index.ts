@@ -28,9 +28,11 @@ export type {
   PluginPayload,
 } from './extensions.js'
 export type { StartOptions, StartedInstance } from './start.js'
-export type { StaticOptions } from './static.js'
-export type { PageInfo, PageContent, PagesOptions } from './pages.js'
-export type { WorkspaceFile, FileKind, FilesOptions } from './files.js'
+export type { StaticOptions } from './routes/static.js'
+export type { PageInfo, PageContent } from './pages.js'
+export type { PagesOptions } from './routes/pages.js'
+export type { WorkspaceFile, FileKind } from './files.js'
+export type { FilesOptions } from './routes/files.js'
 export type { Conversation, ConversationMeta, StoredMessage } from './conversations.js'
 export type { StoredSecret, ArmingFlow } from './secrets.js'
 export type { LoginState, SessionPayload } from './oidc.js'
@@ -48,6 +50,6 @@ export type {
   JsonRpcRequest,
   McpTool,
 } from './mcp-in.js'
-export type { DelegationPort, McpDependencies } from './mcp-routes.js'
+export type { DelegationPort, McpDependencies } from './routes/mcp.js'
 export type { McpServerView, McpSource } from './mcp-store.js'
 export type { HostProblem, PluginApiContext } from './plugin-host.js'

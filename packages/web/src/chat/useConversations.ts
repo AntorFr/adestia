@@ -131,6 +131,11 @@ const EMPTY_CONVERSATION: OpenConversation = {
   stopping: false,
 }
 
+/** Nothing was filed for a refusal or a connection that failed before any answer. */
+function isErrorOnly(live: TurnState | undefined): boolean {
+  return !!live?.error && !live.running && live.parts.length === 0
+}
+
 export interface ConversationsOptions {
   readonly fetchImpl?: typeof fetch | undefined
   /** The shell's translator, for the one sentence this hook says itself. */
@@ -143,11 +148,17 @@ export interface ConversationsOptions {
   readonly view?: ScreenView | undefined
 }
 
-/** The user's half, as the conversation shows it — attachments named after it. */
-function stamped(text: string, attachments: readonly PendingAttachment[]): string {
-  return attachments.length > 0
-    ? `${text}\n📎 ${attachments.map((a) => a.name).join(', ')}`.trim()
-    : text
+/**
+ * The user's half, as the conversation shows it: the text, and the attachment
+ * names as data — the bubble draws the `paperclip` icon, as the held one does.
+ */
+export function stamped(id: string, text: string, attachments: readonly PendingAttachment[]): Message {
+  return {
+    id,
+    role: 'user',
+    text,
+    ...(attachments.length > 0 ? { attachments: attachments.map((a) => a.name) } : {}),
+  }
 }
 
 function turnOptions(
@@ -213,8 +224,13 @@ function useOpenConversations({ fetchImpl, narrow }: ConversationsOptions) {
     // Persisted like a browser's tab strip — order, membership, activation —
     // so a refresh reopens what was open. The ref keeps the pump loops honest
     // about which tab the reader is looking at.
-    activeRef.current = tabs.active ?? DRAFT
+    const next = tabs.active ?? DRAFT
+    if (activeRef.current !== next && isErrorOnly(conversation(activeRef.current).live)) {
+      patchConversation(activeRef.current, { live: undefined })
+    }
+    activeRef.current = next
     saveTabs(tabs)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- helpers read the stable conversation ref
   }, [tabs])
 
   // Declared as FUNCTIONS, not useCallback: the machinery is a web of mutual
@@ -328,6 +344,29 @@ function useOpenConversations({ fetchImpl, narrow }: ConversationsOptions) {
 
 type Open = ReturnType<typeof useOpenConversations>
 
+/** Reconcile a finished stream with the store without losing an unfiled refusal. */
+async function settleTurn(open: Open, tabId: string, last: TurnState | undefined): Promise<void> {
+  const { conversation, reread, patchConversation, activeRef, read } = open
+  // A refused message is never filed by the server. Keep its optimistic
+  // bubble too: rereading the transcript must not swallow what was refused.
+  const errorOnly = isErrorOnly(last)
+  const messages = conversation(tabId).messages
+  const filed = tabId !== DRAFT && (await reread(tabId))
+  patchConversation(tabId, {
+    ...(errorOnly ? { messages } : {}),
+    live: errorOnly
+      // Leaving may have cleared this error while reread was in flight,
+      // even if the reader has already come back. Do not revive it.
+      ? tabId === activeRef.current && conversation(tabId).live === last ? last : undefined
+      : filed || !last ? undefined : { ...last, running: false },
+    stopping: false,
+    // The dot that says "finished, and you have not seen it": only when
+    // the answer landed in a tab the reader was not looking at.
+    unread: tabId !== activeRef.current,
+  })
+  if (tabId === activeRef.current) read(tabId)
+}
+
 /**
  * The turn: adopting a conversation from the store, sending into it, following
  * it to its end, stopping it. Writes what `useOpenConversations` keeps — through
@@ -343,8 +382,6 @@ function useTurn({ fetchImpl, model, view, t }: ConversationsOptions, open: Open
     refreshConversations,
     patchConversation,
     rekeyConversation,
-    read,
-    reread,
   } = open
   /** In-flight conversation creation, so two rapid sends share ONE conversation. */
   const creation = useRef<Promise<string | undefined> | undefined>(undefined)
@@ -456,17 +493,10 @@ function useTurn({ fetchImpl, model, view, t }: ConversationsOptions, open: Open
       // A fetch that REJECTS — network down, server gone — must land as the
       // error it is, not leave the dots pulsing forever.
       last = { ...(last ?? INITIAL_TURN), running: false, lost: true, error: (error as Error).message }
+      patchConversation(tabId, { live: last })
     }
 
-    const filed = tabId !== DRAFT && (await reread(tabId))
-    patchConversation(tabId, {
-      live: filed || !last ? undefined : { ...last, running: false },
-      stopping: false,
-      // The dot that says "finished, and you have not seen it": only when
-      // the answer landed in a tab the reader was not looking at.
-      unread: tabId !== activeRef.current,
-    })
-    if (tabId === activeRef.current) read(tabId)
+    await settleTurn(open, tabId, last)
 
     if (tabId === DRAFT) return
     const follow = await attachTurn(tabId, fetchImpl ?? fetch)
@@ -533,7 +563,7 @@ function useTurn({ fetchImpl, model, view, t }: ConversationsOptions, open: Open
     patchConversation(tabId, (previous) => ({
       messages: [
         ...previous.messages,
-        { id: `u${previous.messages.length}`, role: 'user' as const, text: stamped(text, attachments) },
+        stamped(`u${previous.messages.length}`, text, attachments),
       ],
       // The dots go up BEFORE the server is asked anything: between here and
       // the driver's first event stand a conversation write, the POST and a
