@@ -203,3 +203,44 @@ test('un nom de repère qui ressemble à un espace réservé reste tel quel', as
   const { hote } = await monte(dom, 'en', DATA([{ nom: '%n %distance', latlng: '48,2' }]))
   assert.ok(textes(hote).includes('%n %distance'))
 })
+
+// E-28 — en balade le dessin suit la hauteur RÉELLE de la boîte (le flex lui
+// donne l'écran moins le HUD), pas le plafond de 420 px de la carte en page.
+const boiteDe = (hote, largeur, hauteur) => {
+  const boite = hote.querySelector('.pc-map')
+  Object.defineProperty(boite, 'clientWidth', { configurable: true, get: () => largeur.v })
+  Object.defineProperty(boite, 'clientHeight', { configurable: true, get: () => hauteur.v })
+  return boite
+}
+const svgH = (hote) => hote.querySelector('.pc-map svg.pc-svg').getAttribute('height')
+const svgW = (hote) => hote.querySelector('.pc-map svg.pc-svg').getAttribute('width')
+const ouvreBalade = (hote) => [...hote.querySelectorAll('button.pc-fond')].find((b) => /^🥾/.test(b.textContent)).click()
+
+test('E-28 : en balade la hauteur suit la boîte, au-dessus comme au-dessous de 420 ; hors balade rien ne change', async () => {
+  const dom = await boot()
+  for (const geo of ['ok', 'none']) {
+    const { hote, off } = await monte(dom, 'fr', DATA(REPERES), { geo })
+    const l = { v: 800 }; const h = { v: 900 }
+    const boite = boiteDe(hote, l, h)
+    ouvreBalade(hote)
+    assert.equal(svgH(hote), '900', `${geo}: entrée, plus haut que 420`)
+    assert.equal(svgW(hote), '800')
+    // la boîte plus basse que 200 ou 420 : le dessin la suit, sans plancher
+    h.v = 300; window.dispatchEvent(new window.Event('resize'))
+    await new Promise((r) => setTimeout(r, 260))
+    assert.equal(svgH(hote), '300', `${geo}: resize de hauteur seule`)
+    assert.equal(svgW(hote), '800')
+    h.v = 700; window.dispatchEvent(new window.Event('resize'))
+    await new Promise((r) => setTimeout(r, 260))
+    assert.equal(svgH(hote), '700')
+    // sortie : la formule d'origine, 420 de plafond, 200 de plancher
+    hote.querySelector('.pc-hud button:last-child').click()
+    assert.ok(!hote.classList.contains('pc-balade'))
+    assert.equal(svgH(hote), '420', `${geo}: sortie`)
+    l.v = 300; window.dispatchEvent(new window.Event('resize'))
+    await new Promise((r) => setTimeout(r, 260))
+    assert.equal(svgH(hote), '200', `${geo}: hors balade, plancher 200 (0,62 × 300 = 186)`)
+    assert.ok(boite.isConnected)
+    off()
+  }
+})
