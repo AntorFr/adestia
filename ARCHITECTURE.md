@@ -544,8 +544,8 @@ plugins' other `.mjs`/`.js` (node globals); the vendored `plugins/scan/web/decod
 the reason. `npm run lint` covers `plugins`. A finding is fixed, or turned off for the rule with
 its reason written beside it (the file's own convention); no `eslint-disable` without a reason.
 (e) **Kept.** The native `confirm()` of the atelier (resetting a layout) and the `window.alert` of
-voyages (a refused gesture) stay: a sheet would make the answer asynchronous, a change of flow (Q-20,
-*kept: the flow would change*; written under Known defects). In plugin sheets only `820px` is a breakpoint; 520, 560, 640, 720 and 900 px are kept
+voyages (a refused gesture) stayed at this tranche (Q-20, *the flow would change*); the plugins tranche replaced
+them with each plugin's own sheet (AD-24 a). In plugin sheets only `820px` is a breakpoint; 520, 560, 640, 720 and 900 px are kept
 (*kept: moving a width changes the layout between phone and desktop, a redesign the mandate does
 not ask for*). Plugin buttons, fields and empty states do not adopt the charter's classes, except
 backs, exits and the sheet's close button.

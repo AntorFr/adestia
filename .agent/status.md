@@ -1,12 +1,22 @@
 # Status — Adestia
-> MàJ : 2026-10-28
+> MàJ : 2026-10-29
 
 ## Version courante
 
 - Dernier tag accessible : **`v0.96.0-adestia-correctifs.4`** (`git describe --tags
   --abbrev=0`; le `.1` était la tranche serveur, le `.2` la tranche chat, le `.3` la tranche shell, le `.4` la tranche pages) de l'epic `adestia-correctifs`, sur la branche d'intégration
   de l'epic ; le dernier tag dans `main` est `v0.95.0` (l'epic `adestia-qualite`).
-- Branche de travail : `feature/adestia-correctifs-pages`, sur `origin/epic/adestia-correctifs`
+- Branche de travail : `feature/adestia-correctifs-plugins`, sur `origin/epic/adestia-correctifs`
+  (tranche plugins, AD-24 a-d : l'atelier (réinitialiser la mise en plan) et les voyages (geste
+  refusé) parlent dans la feuille propre au plugin, sans `confirm()` ni `alert` — seul changement de
+  flux, réponse asynchrone, focus rendu à la carte ; « 1 pièce » et les compteurs des voyages
+  s'accordent par langue ; la carte de balade E-28 prend la hauteur de sa boîte ; le lecteur du
+  scanner rend le focus au champ du composeur quand son ouvreur a disparu (E-30) ; `--warning`
+  ne dit plus que l'Amber du porteur, le retard déduit est tireté ; les émojis de chrome cèdent
+  aux icônes de la charte (marques de données, `✦` et `✓` gardés, `emoji.test.js`) ; la date de
+  `:::content` suit la langue. Preuves : `bench/plugins-correctifs-proof.md`, `plugins-mots-proof.md`,
+  `bench/scenarios/plugins-correctifs.mjs`. Reste : voir Défauts connus).
+  Précédemment : `feature/adestia-correctifs-pages`, sur `origin/epic/adestia-correctifs`
   (tranche pages, AD-25 : la trace d'une page racine ne nomme plus de dossier (`folderOf`) et E-8
   mène à Accueil ; le `Popover` reste sous l'en-tête du canevas et les bandeaux et suit son ancre
   (`bench/scenarios/pages-reglages.mjs`) ; un `Diagnostic` porte `code` et `args`, le shell le dit
@@ -60,10 +70,11 @@ Compléments encore visibles dans le code :
   personnalisée serait un composant neuf (AD-18).
 - Une délégation n'affiche pas les cartes de signature (`{ signatures: false }` dans
   `app/Delegations.tsx`) : vue en lecture seule sans gestionnaire de signature (P-13 étape 7).
-- Le focus perdu sur téléphone quand le lecteur d'E-30 se ferme n'est pas réparé (tranche plugins) ;
-  le pli du composeur, lui, rend bien le focus au champ.
-- `:::content` affiche `on` tel qu'écrit, sans date au format de la langue
-  (`editor/reader/ContentBlock.tsx`).
+- Phrases serveur d'E-23/E-27 (problèmes de planif, raison d'échec d'une source), mots de données
+  du classeur (E-25), types d'éléments de voyage (E-26) et erreur brute d'un geste refusé : en
+  anglais ou tels qu'écrits, faute de table clé par phrases (AD-17, AD-24).
+- Vu, non réparé : sur la frise d'E-31 en `fr` au bureau, « auj. » touche le repère « nov. »
+  (cosmétique, `bench/plugins-correctifs-proof.md`).
 - Les formulaires de données de blocs restent à faire : l'édition montre leur
   rendu, puis leurs lignes brutes au clic ; les réglages ne sont pas ces formulaires.
 
