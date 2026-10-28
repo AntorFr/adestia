@@ -14,7 +14,7 @@ export default async function seed(context) {
     poses: { [workbook.pieces[0].etiquette]: { plaque: workbook.debit[0].plaque, x: 20, y: 20 } }, bandes: {},
   }))
   await put(context.workspace, 'pages/proof/plugin-date.md', page({ title: 'Content date proof', type: 'fiche' },
-    ':::content{title="Calendar day" by="Bench" on=2026-03-04}\nA dated content block.\n:::\n\n:::content{title="Author value" on=bientôt}\nAn author value stays as written.\n:::'))
+    ':::content{type=note title="Calendar day" by="Bench" on=2026-03-04}\nA dated content block.\n:::\n\n:::content{type=note title="Author value" on=bientôt}\nAn author value stays as written.\n:::'))
   await put(context.workspace, 'pages/renovation/amber.md', page({
     title: 'Owner assessment', type: 'project-management', start: '2026-09-01', due: '2026-12-31', 'project-status': 'Amber',
   }, 'An explicit Amber assessment, beside the seed’s overdue milestone.'))

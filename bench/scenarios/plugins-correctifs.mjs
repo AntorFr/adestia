@@ -12,6 +12,7 @@ import { join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import words from './plugins-mots.mjs'
 import marks from './plugins-marques.mjs'
+import { CONVERSATIONS } from '../seed/_base.mjs'
 
 export const seed = 'plugins-correctifs'
 
@@ -130,13 +131,16 @@ export default async function scenario() {
         assert.equal(observations.late.border, 'dashed')
         await shot('E-31-amber-and-delay')
 
-        await open('/page/proof/plugin-date', '.adestia-content')
-        observations.dates = await page.locator('.adestia-content .adestia-head__by').allTextContents()
+        await open('/page/proof/plugin-date', '.adestia-head__by')
+        observations.dates = await page.locator('.adestia-head__by').allTextContents()
         assert(observations.dates.includes(`Bench · ${locale === 'fr' ? '4 mars 2026' : 'March 4, 2026'}`))
         assert(observations.dates.includes('bientôt'))
         await shot('content-local-date')
 
-        await open('/', '.adestia-composer__input', false)
+        await page.evaluate((tabs) => localStorage.setItem('adestia.tabs', tabs), JSON.stringify({ open: [CONVERSATIONS.idle], active: CONVERSATIONS.idle }))
+        await page.goto(`${base}/#/`, { waitUntil: 'domcontentloaded' })
+        await page.reload({ waitUntil: 'domcontentloaded' })
+        await page.locator('.adestia-composer__input').waitFor()
         let opener
         if (phone) {
           await page.locator('.adestia-fold > .adestia-composer__attach').click()
