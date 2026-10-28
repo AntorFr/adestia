@@ -420,7 +420,18 @@ export default function createVoyagesApp(api) {
   // A refused or failed gesture is said in the card's sheet, not in the browser's
   // alert. Nothing changed, so nothing is repainted until the reader shuts it.
   function sayGesture(title, message) {
-    sheet.open({ title, bodyHTML: `<p>${esc(message)}</p>`, footHTML: '', from: document.activeElement, closed: paintVoyage })
+    const from = document.activeElement
+    const vi = from && from.dataset ? from.dataset.vi : null
+    // paintVoyage rebuilds the page: the opener is gone by then, so the
+    // focus goes back to the card that carries the same data-vi.
+    const closed = () => {
+      paintVoyage()
+      if (vi) {
+        const card = [...page.querySelectorAll('[data-vi]')].find((c) => c.dataset.vi === vi)
+        if (card && card.focus) card.focus()
+      }
+    }
+    sheet.open({ title, bodyHTML: `<p>${esc(message)}</p>`, footHTML: '', from, closed })
   }
 
   async function vgesture(payload) {
