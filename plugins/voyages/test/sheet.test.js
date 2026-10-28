@@ -147,7 +147,7 @@ test('the plural of the counts follows the language', async () => {
 })
 
 /** The trip page with every POST answered by `answer`; the dismiss gesture is fired from the card of a suggestion. */
-async function gestureWith(locale, answer) {
+async function gestureWith(locale, answer, viaButton = false) {
   const base = apiFor(locale)
   const posts = []
   const api = {
@@ -166,9 +166,16 @@ async function gestureWith(locale, answer) {
   const { document, dom } = mounted
   dom.window.alert = () => { throw new Error('window.alert was called') }
   const opener = document.querySelector('.traycard[data-vi="diner"]')
-  opener.focus()
-  opener.click()
-  document.querySelector('[data-ecarter]').click()
+  if (viaButton) {
+    // the tray's own x button: the focus sits on a CHILD of the card
+    const dis = opener.querySelector('[data-dis="diner"]')
+    dis.focus()
+    dis.click()
+  } else {
+    opener.focus()
+    opener.click()
+    document.querySelector('[data-ecarter]').click()
+  }
   await settle()
   return { ...mounted, opener, posts }
 }
@@ -238,4 +245,20 @@ test('the plugin has no window.alert left', () => {
   const strip = (src) => src.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')
   const found = readdirSync(dir).filter((f) => f.endsWith('.js') && /(?<![\w.])(?:window\.)?alert\(/.test(strip(readFileSync(new URL(f, dir), 'utf8'))))
   assert.deepEqual(found, [])
+})
+
+test('a refusal opened by the tray button (a child of the card) gives the focus back to the card (E-26)', async () => {
+  for (const how of ['foot', 'x', 'scrim']) {
+    const { document, root, posts } = await gestureWith('en', () =>
+      Promise.resolve({ ok: false, status: 409, json: () => Promise.resolve({ error: 'conflit' }) }), true)
+    assert.equal(posts.length, 1, 'the tray button posted the gesture')
+    const scrim = document.querySelector('.adestia-sheet')
+    assert.equal(scrim.hidden, false)
+    if (how === 'foot') scrim.querySelector('footer button:last-child').click()
+    else if (how === 'x') scrim.querySelector('header button').click()
+    else scrim.click()
+    await settle()
+    assert.equal(document.activeElement.dataset.vi, 'diner', `${how}: focus is on the card, not on the body`)
+    root.unmount()
+  }
 })
