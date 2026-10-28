@@ -108,6 +108,27 @@ it; `BENCH_URL` (with `BENCH_SKIN`, `BENCH_LOCALE`) plays an instance already ru
 about 25 minutes when the four skins run side by side (one process each, `BENCH_SKINS=<skin>`). Exit 1
 names each failing state.
 
+## Plugin repairs (AD-24): `plugins-correctifs.mjs`
+
+After `npm run build`, without Docker:
+
+```sh
+node bench/scenarios/chat-matrix.mjs bench/scenarios/plugins-correctifs.mjs --out bench/shots-plugins-correctifs
+```
+
+The runner starts one fake-engine instance per skin/language. The scenario runs the
+existing `plugins-mots` and `plugins-marques` proofs unchanged in `words/` and `marks/`,
+then captures the two message sheets, E-27's transcript, the map before/after walking,
+E-29, Amber beside an overdue milestone, the localised `:::content` date, the scanner
+and its returned focus, and a planif request to the agent retained after reload.
+Each pair gets light/dark × desk/phone and `correctifs-report.json`. The
+`plugins-correctifs` seed adds a hand layout, one dated page and an Amber phase to
+the normal plugins seed. Only the voyages POST refusal and the words/marks GET
+fixtures are intercepted. The nominal agent reply is scripted, not a real Claude call.
+Unlike the older `plugins-matrix` focus waiver, this scenario requires the phone's
+textarea to have focus after the scanner closes. See `plugins-correctifs-proof.md`
+for observations and evidence paths; screenshots still need visual inspection.
+
 ## Every screen, both themes, both sizes: `bench/sweep.mjs`
 
 ```sh
