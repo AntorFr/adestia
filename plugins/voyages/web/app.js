@@ -425,7 +425,7 @@ export default function createVoyagesApp(api) {
   // alert. Nothing changed, so nothing is repainted until the reader shuts it.
   function sayGesture(title, message) {
     const from = document.activeElement
-    const vi = from && from.dataset ? from.dataset.vi : null
+    const vi = from?.closest('[data-vi]')?.dataset.vi ?? null
     // paintVoyage rebuilds the page: the opener is gone by then, so the
     // focus goes back to the card that carries the same data-vi.
     const closed = () => {

@@ -478,7 +478,8 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
   back no longer opens the browser's `confirm()`: the plugin's sheet asks, *Cancel* has
   the focus (Escape and the scrim cancel), and *Discard my layout* does what OK did. A
   trip gesture the server refuses, or that fails, is said in the card's sheet instead of
-  `window.alert`, and the board repaints when it closes. The answer is now asynchronous.
+  `window.alert`, and the board repaints when it closes. The focus returns to the card,
+  including when its tray button opened the refusal. The answer is now asynchronous.
 - **The scan reader gives the focus back on a phone** — when it closes and the
   button that opened it is gone (the composer's fold), the focus goes to the
   composer's field instead of being lost; with the button still there, it
