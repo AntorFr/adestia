@@ -3,8 +3,8 @@
 
 ## Version courante
 
-- Dernier tag accessible : **`v0.96.0-adestia-correctifs.4`** (`git describe --tags
-  --abbrev=0`; le `.1` était la tranche serveur, le `.2` la tranche chat, le `.3` la tranche shell, le `.4` la tranche pages) de l'epic `adestia-correctifs`, sur la branche d'intégration
+- Dernier tag accessible : **`v0.96.0-adestia-correctifs.5`** (`git describe --tags
+  --abbrev=0`; le `.1` était la tranche serveur, le `.2` la tranche chat, le `.3` la tranche shell, le `.4` la tranche pages, le `.5` la tranche plugins) de l'epic `adestia-correctifs`, sur la branche d'intégration
   de l'epic ; le dernier tag dans `main` est `v0.95.0` (l'epic `adestia-qualite`).
 - Branche de travail : `feature/adestia-correctifs-plugins`, sur `origin/epic/adestia-correctifs`
   (tranche plugins, AD-24 a-d : l'atelier (réinitialiser la mise en plan) et les voyages (geste
