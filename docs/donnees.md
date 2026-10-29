@@ -16,8 +16,8 @@ Three roots, plus the extension folders. Nothing is held in a database.
   `adestia --config`. Read at boot by `loadConfigFile` / `parseConfig`; a missing file is a
   first run on defaults. `${VAR}` in a value is replaced from the environment; unknown keys
   refuse the boot. E-14 Configuration edits it in place through `settings-file.ts`,
-  which writes only keys the catalogue `SETTING_GROUPS` declares (today three:
-  `workspace.watch.enabled`, `workspace.watch.polling`, `workspace.watch.intervalMs`; `adestia-ajouts` adds `maxConcurrentTurns`, B-21) and
+  which writes only keys the catalogue `SETTING_GROUPS` declares (today four:
+  `workspace.watch.enabled`, `workspace.watch.polling`, `workspace.watch.intervalMs` and `maxConcurrentTurns`, B-21) and
   keeps comments and layout through `yaml`'s document API. A read-only file (ConfigMap,
   `:ro` mount) is reported by `writability`, not written.
 - **The data directory** — `dataDir`, default `./data`, overridden by `ADESTIA_DATA_DIR`

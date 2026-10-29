@@ -713,6 +713,15 @@ It joins `SETTING_GROUPS` (`packages/schemas/src/settings.ts`) as a `number` fie
 fallback 3, `applies: 'restart'`: the limiter is built once in `buildDesk`. The config validation
 (`config.ts`, integer >= 1) stays; the settings route validates through `spec`. The max of 16
 follows the memory sizing in `README.md` (~300 MB a turn) and is a guard, not a measure.
+The field's path is `['maxConcurrentTurns']` (top level of the config file, where `config.ts` already
+reads it). It sits in a group of its own, `id: 'turns'`, label "Turns", lede "How many conversations
+the agent may work on at once. Each running turn holds an engine process, roughly 300 MB.", the
+field labelled "Simultaneous turns", help "Past this number a new turn is refused with a 429 and the
+chat says why. Raise it only if the instance has the memory.", unit "turns", `min: 1`, `max: 16`,
+`fallback: 3`. The label, lede, help and unit get their `fr` lines in `app/i18n.ts` beside the
+"Live refresh" ones. `settings-file.ts` already refuses a non-integer, below `min` or above `max`
+with "<key> must be a whole number / at least 1 / at most 16": that message is the one the screen
+shows for 0 and 17. `config.ts` keeps its own check, so a hand-edited file stays guarded.
 *Rejected*: applying live by resizing `TurnLimiter` (a second code path for one field).
 
 ### AD-26 — Confirm Remove in the shared sheet; no `confirm()`
