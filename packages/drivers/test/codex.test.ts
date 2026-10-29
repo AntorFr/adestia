@@ -29,7 +29,7 @@ import {
   normalizeCredential,
 } from '../src/codex-cli/auth.js'
 import { CodexDriver, quotaReportOf } from '../src/codex-cli/driver.js'
-import { describeItem, newTranslationState, translate, usageOf } from '../src/codex-cli/events.js'
+import { describeItem, newTranslationState, translate } from '../src/codex-cli/events.js'
 import { readPrompt, saidSuccess, stripAnsi } from '../src/codex-cli/login.js'
 import type { SpawnImpl, SpawnedProcess } from '../src/codex-cli/protocol.js'
 
@@ -250,7 +250,11 @@ describe('translation', () => {
       name: 'ping',
       target: 'spike',
     })
-    expect(usageOf(undefined)).toBeUndefined()
+    // No counters on the wire: no usage is invented, and no delta is emitted.
+    const state = newTranslationState('thread-1')
+    expect([...translate({ method: 'thread/tokenUsage/updated', params: { tokenUsage: {} } }, state)]).toEqual([])
+    expect([...translate({ method: 'thread/tokenUsage/updated', params: { tokenUsage: { total: {} } } }, state)]).toEqual([])
+    expect(state.usage).toBeUndefined()
   })
 })
 
