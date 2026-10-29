@@ -114,7 +114,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
     // that says nothing about its new screen must show the app's name alone.
     onChange: () => setPluginTrail({ id: '', crumbs: [] }),
   })
-  const { page, pageProblem, mount } = usePage({ pagePath, pageStore, fetchImpl })
+  const { page, pageProblem, loading: pageLoading, retry: retryPage, mount } = usePage({ pagePath, pageStore, fetchImpl })
 
   /** The breadcrumb — derived once, drawn by the header and carried by every message. */
   const trail = useMemo(
@@ -259,6 +259,8 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           settingsPage={settingsPage}
           page={page}
           pageProblem={pageProblem}
+          pageLoading={pageLoading}
+          retryPage={retryPage}
           mount={mount}
           section={section}
           channel={{ ask: askRef, compose: composeRef, attach: attachRef }}

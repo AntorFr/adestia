@@ -22,6 +22,7 @@ import { isFinished, toneOf } from '@antorfr/adestia-content'
 import type { IndexEntry, SectionTile, StoreInfo } from './sections.js'
 import { Icon } from './Icon.js'
 import { EmptyState } from './ui/EmptyState.js'
+import { Loading } from './ui/Loading.js'
 import { pagesIn, subsectionsOf } from './sections.js'
 
 export interface SectionProps {
@@ -34,6 +35,8 @@ export interface SectionProps {
   readonly stores?: readonly StoreInfo[]
   readonly openSection: (path: string) => void
   readonly openPage: (path: string, store?: string) => void
+  /** False until the shell's index has answered: the empty state waits for it. */
+  readonly ready?: boolean
   /** The shell's translator; identity in English. */
   readonly t?: (key: string) => string
 }
@@ -193,6 +196,7 @@ export function Section({
   stores = [],
   openSection,
   openPage,
+  ready = true,
   t = (key) => key,
 }: SectionProps) {
   const rooms = subsectionsOf(entries, path)
@@ -406,7 +410,9 @@ export function Section({
         </details>
       )}
 
-      {rooms.length === 0 && all.length === 0 && (
+      {!ready && rooms.length === 0 && all.length === 0 && <Loading t={t} />}
+
+      {ready && rooms.length === 0 && all.length === 0 && (
         <EmptyState icon="folder-open" text={t('This section holds nothing yet.')} />
       )}
     </div>
