@@ -632,12 +632,12 @@ written first, red until the removal, then green). Inventory taken on `epic/ades
   table stays (it is a binding, not an alias) and is not counted. Tests import `engine-aids.ts` and pass
   the table. The guard: a suite test lists `packages/drivers/src/**/*.ts` and fails on a line
   `^(export )?const \w+ = [\w.]+$` that is not a literal constant (first written, red on `usageOf`).
-- **Exports kept for their tests (R-6).** The table "Internal exports kept for their tests" above is
+- **Exports kept for their tests (R-6).** The table "Internal exports kept for their tests" (under "How the server tranche meets its targets" below) is
   emptied row by row. Per row, the rule: (1) the behaviour is reachable through a function the module
   exposes to production (`exchangeCode` through the OAuth flow, `quotaReportOf` through `describe`/`usage`)
   — the test goes through it and the export goes; (2) it is not reachable (a pure unit with no public
   entry, a package-index symbol the web or server tests need) — the export stays and the row keeps one
-  line saying why. A row never stays without its reason. `node scripts/unused-exports.mjs` falls from 178 (recounted: 150);
+  line saying why. A row never stays without its reason. `node scripts/unused-exports.mjs` falls from 178 (the design-time list; the tool's raw count then was 292, see the baseline below) to 150;
   the new count is written beside the old one. The guard: a suite test reads the table and fails if a row
   has no reason or names an export that is absent from the module (rows cannot rot).
 - **Bench duplicates.** `loadPlaywright` is written ten times (`bench.mjs`, `sweep.mjs`, `scenarios/plugins-matrix.mjs`
@@ -662,7 +662,7 @@ written first, red until the removal, then green). Inventory taken on `epic/ades
   under Known defects with its count. `.agent/migrate-frame.mjs` no longer exists (removed by 9960469;
   `doc-besoin.test.mjs` requires its absence): its lint errors are "not reproduced". The debt row of the
   AD-17 register above gets its outcome appended in the row's own text (`— closed: …`), as R-6's row does.
-  The R-6 outcome (`closed: 178 entries remain…`) is rewritten by the exports task with the new count.
+  The R-6 outcome carries the recounted figure (150); `packages/server/test/dette-exports-besoin.test.ts` pins it.
 *Rejected*: dropping the exports and the tests together (tests are the contract of pure units); typing the
 bench (it is scripts, not product). *Reversed if*: a removal changes a built file under `dist/`
 (then it is a behaviour and goes through B-13's red-first rule).
