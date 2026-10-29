@@ -536,16 +536,16 @@ screen and take the sheet's behaviour contract and z-index family.
 today's French, so a French instance reads the same words (B-1). Parcours and project-management
 get the same. Messages of `regles.js` / `convert.js` go to the CLI and MCP tools, not to the
 screen, and stay French; the agent prompts stay as written. The class test `plugins/test/words.test.js` (it already
-reads the tables the way the shell does, the atelier's included once it has one) gains the *tu* rule, with a short list of the plugins still to correct that each task empties.
+reads the tables the way the shell does, the atelier's included once it has one) gains the *tu* rule; its correction list is empty, with no pending exception.
 (d) **Lint.** `eslint.config.js` (the serveur tranche's file, extended here) drops `plugins/**` from
 `ignores` and gains a block for `plugins/**/web/**/*.js` (browser globals; the `react-hooks` rules apply, since
 journal, todo, listening-post and meals call hooks through `createElement`) and one for the
 plugins' other `.mjs`/`.js` (node globals); the vendored `plugins/scan/web/decoder.js` (448 KB, third-party) joins the ignores with
 the reason. `npm run lint` covers `plugins`. A finding is fixed, or turned off for the rule with
 its reason written beside it (the file's own convention); no `eslint-disable` without a reason.
-(e) **Kept.** The native `confirm()` of the atelier (resetting a layout) and the `window.alert` of
-voyages (a refused gesture) stay: a sheet would make the answer asynchronous, a change of flow (Q-20,
-*kept: the flow would change*; written under Known defects). In plugin sheets only `820px` is a breakpoint; 520, 560, 640, 720 and 900 px are kept
+(e) **Superseded by AD-24 a.** The native `confirm()` of the atelier (resetting a layout) and the `window.alert` of
+voyages (a refused gesture) stayed at the styling tranche (Q-20, *the flow would change*); the plugins tranche replaced
+them with each plugin's own sheet, so neither dialog exists any more. In plugin sheets only `820px` is a breakpoint; 520, 560, 640, 720 and 900 px are kept
 (*kept: moving a width changes the layout between phone and desktop, a redesign the mandate does
 not ask for*). Plugin buttons, fields and empty states do not adopt the charter's classes, except
 backs, exits and the sheet's close button.
@@ -582,7 +582,7 @@ yet reproduced" (frontmatter CRLF) or "whether it predates the epic is unknown" 
 | pages | built by AD-25: the root page breadcrumb no longer invents a folder, the page diagnostic follows the locale, frontmatter CRLF is read as the editor does (`pages.ts`, `schedule.ts`, planif against `content`); proof in `bench/pages-proof.md`. Kept, with its reason under Known defects: the open page is not refreshed after an agent write (P-5 step 7) |
 | shell | built by AD-24: Nestor’s arrow is SVG, MCP counts agree, Skippy’s phone band stays on one line, E-14’s switch stays beside its title, E-19/plugin manifest headings follow the locale, the spin rule is single and `CataloguePopin.refresh()` shows thrown errors. Token `autoComplete`: not reproduced, already `off` since `64dee0f`. Kept under Known defects: English validator field lines (a new keyed table would be needed). Nine dispositions and eight complete visual passes: `bench/shell-proof.md` |
 | server | none left: the configuration file mode, the `user-tokens.json` comment and the `register*` re-exports were repaired by AD-22 |
-| plugins | `confirm()` of the atelier and `alert` of the voyages replaced by the shared sheet (Q-20, kept by `adestia-qualite` because "the flow would change": the answer becomes asynchronous; this is the one deliberate flow change, bounded to two gestures, and `docs/ecrans.md` Q-20 and the atelier and voyages journeys are rewritten with it. If the tranche proves risky it is narrowed and the reason written under Known defects); planif and veille sentences in English; E-28 walking map keeps its pre-walk size; E-30 focus lost on phone; E-25 "1 pièces"; the emojis kept in plugins; the amber of project-management meaning two things; `:::content` `on` without a localised date |
+| plugins | built by AD-24 a/b/c/d: the atelier reset and voyages refusal use their shared sheet (Q-20, asynchronous, no narrowing); piece counts and composed phrases follow the locale; the walking map fills its box; the scanner returns focus to the phone composer; plugin chrome uses the sprite or its visible word; Amber is the owner’s assessment and inferred delay is dashed; `:::content` dates follow the instance locale. Proof: `bench/plugins-correctifs-proof.md`. Kept under Known defects: E-23/E-27 server sentences, E-25 workbook words, E-26 item types and raw gesture errors (data, no translation table) |
 | debt | R-2 one-line aliases of the drivers and R-6 exports kept only for tests (removed, tests import the module that owns the symbol); bench duplicates (`launch(seed)`, `loadPlaywright`); fake-engine options with no caller; `doc-besoin.test.mjs` into CI; the two duplicate guards on `DESIGN.md`; typed lint rules switched on if the repo passes them; `.agent/migrate-frame.mjs` lint errors |
 
 Kept on purpose, with their reason, and still under Known defects: the open page is **not**
@@ -618,6 +618,71 @@ desk and phone (`node bench/sweep.mjs --skin <id>`, run with `BENCH_LOCALE`/`--l
 previous pass swept the default skin in English only. A task that touches no screen says so.
 Real engines: Claude by the pod's token; Copilot and Codex by their fakes, their real trial is
 Monsieur's before deployment.
+
+### AD-24 — Plugins tranche (shares its number with the shell tranche below; "AD-24 a/b/c/d" always means this one): one flow change, two small repairs of words, three of drawing, one of marks
+Written from the code as it stands, not from the register's wording; each repair is reproduced by a
+test or a capture **before** it is fixed (AD-16), and a defect that does not reproduce leaves the register as
+`not reproduced` with its reason (B-14).
+
+(a) **Q-20 — the two native dialogs become the plugin's own copy of the shared sheet.** The atelier
+(`wbreset`, "Drop your layout and go back to Alfred's?") and the voyages (`vgesture`: "Gesture refused" and
+"Gesture impossible") each already carry `web/sheet.js` (AD-14 b: `makeSheet(t)`, `role="dialog"`, scrim, Escape,
+Tab kept inside, focus returned). Both gain a *message* form of that sheet, no new component and no new
+contract. **Atelier**: a question, two buttons: *Cancel* (focused first, since the gesture destroys the
+layout; Escape and the scrim also cancel) and *Discard my layout* / *Abandonner ma mise en plan* (accent, destructive wording; the question keeps its table entry); confirming does what the
+`if (confirm(...))` branch did, cancelling does nothing — the same two outcomes as today. **Voyages**: the refusal or the
+failure is the sheet's body, one button *Close* (Escape and the scrim too); the card stays where it was and
+`paintVoyage()` runs when the sheet is closed, not before (the native alert blocked the repaint; the sheet must not
+let a half-updated board show under it). This is the epic's one deliberate flow change: the answer is now asynchronous, so
+the gesture's code continues in the button's handler. It is written in `CHANGELOG.md`, in `docs/ecrans.md` (E-25, E-26, Q-20
+and the "kept" cell of both rows), in P-11 and in the atelier/voyages lines of the journeys. *Narrowing*: if the atelier's
+bench mode (`.atelier-full`, one z-index above the sheet) hides the sheet, the sheet takes the higher z-index
+inside that mode only; if that cannot be done without touching the drawing, the task stops and says so (it does not choose); the narrowing — the atelier gesture kept native, written under Known
+defects with the reason, the voyages one still landing — is then a decision taken and traced outside the task. *Rejected*: a shell helper in `PluginApi` (`api.confirm`) — a new
+contract surface, AD-8; a toast for the voyages (it would vanish before being read).
+
+(b) **Words the plugins compose themselves.** The planif and listening-post ("veille") screens, and every other plugin's `t()` call, are read
+by `plugins/test/words.test.js` (it already fails on a missing French entry; its `TU_A_CORRIGER` list is **already empty**, so
+that part of the register is closed — the task writes that down and does not invent an exception). What the task does is
+reproduce what the sentence list *cannot* see: a phrase built by string concatenation or a template with an English word
+around a `t()` (`${t('Gesture refused: ')}…`, `"⚠ %distance m from the route"`, `until %when`, the planif "clock off" line), under
+`fr` on the bench, and give each one an entry, or a `%`-parameter, so the whole sentence is in the table. The
+sentences built by the server (E-23, E-27) are not touched (AD-17 keeps them).
+"1 pièces" (E-25): the table gets a singular entry (`'%n piece': '%n pièce'`, keeping `'%n pieces'` plural) and the
+callers choose with the count the way `Cut the column (%n piece)` already does; zero reads "0 pièce", as the French does. The date of
+`:::content{on=…}` (`editor/reader/ContentBlock.tsx`) is drawn through the shell's locale (`Intl.DateTimeFormat`, the
+format the reader's other dates use); a value that is not a date is drawn as written, as today.
+
+(c) **Drawing.** *E-28*: `carte.js` `taille()` reads the box's current client height when the walking mode is on
+(`pc-full` / the class the walk sets) instead of the 0.62 ratio capped at 420 px, and redraws on the mode change and on
+resize; outside the walk it returns what it returns today. *E-30*: when the scanner closes and its `opener` is no longer connected
+(the composer folded its buttons), the focus goes to the composer's field; the plugin does it in `scanner.js` with
+`document.querySelector` on the shell's composer field role, and the chat tranche's fold is what makes that element
+stable for the browser test (hence the dependency, an ordering one: the fix itself reads only "the opener is gone"). *Amber*: the colour `--warning` means one thing in project-management: the owner's `Amber`
+assessment (`.pm-timeline__span--amber`, `.pm-subproject__ico--amber`, the Amber chips). **Inferred lateness**
+(`.pm-timeline__span--late`, the late milestone rules) leaves `--warning` and is drawn by shape — a dashed outline in `--text-muted` over the
+same raised surface, plus the existing hover word — so a skin that flattens hues still tells the two apart, and the
+colour keeps the owner's word only. `plugins/test/css.test.js` gains the rule: in `pm.css`, `--warning` appears only in selectors that name
+`amber`. *Rejected*: moving lateness to `--danger` (it would read as the owner's `Red`).
+
+(d) **The emojis kept in plugins.** The charter kept them under B-1 ("replacing adds icons to the contract"); B-1 is lifted for
+the register, and no icon is added: the sprite's closed list is enough. Two kinds, kept apart. *Content marks* are the
+author's or the engine's data and stay: `journal.ico`, an item's `ico`, the trip item types of `voyages`, a manifest tile `ic:`,
+the `⛰` of a route card. *Chrome companions* — an emoji the plugin itself puts beside a word or on a control — go: `🖐` in
+the voyages hints and the tray foot and `🧭 Follow`, `🥾 Walking mode` lose their emoji (the word carries the meaning); `📄 page`
+chip → `file-text`; `📝`/`📎` marks of the todo rows → `pen-line`/`paperclip` with their title kept; `🗄 n` of the journal →
+`archive`; `⚠ …` of listening-post and parcours → `triangle-alert`; `Done 🎉` of the atelier loses the emoji; the `🎧`/`🎬` fallback glyph of
+listening-post is content (the media type) and stays. The `✦` of "extract" / "what's new?" and the `✓` of ticks are typographic glyphs of the plugins'
+own vocabulary, not emoji: kept, and written as such in `docs/ecrans.md`. Each replaced mark keeps a text name (`title` or visible word); an
+icon never stands alone (charter, backs). A test in `plugins/test/` lists the chrome companions it forbids in `web/*.js` string
+literals (an allow-list of the content marks above, by file) — written first, red on `main`.
+
+(e) **Order of the tests.** For (a) a node:test on each plugin's sheet (cancel / confirm / Escape, focus back) and on `vgesture`
+with a fake `call`; for (b) a `words` test per concatenated sentence; for (c) a jsdom test of `taille()` in walk mode, the scanner
+close test, and `css.test.js`; for (d) the emoji test. The bench scenario (`bench/scenarios/plugins-*.mjs`) takes the screens of
+E-23 to E-31 touched here, **before and after** for E-28, under the four skins × `en`/`fr` × light/dark × desk/phone (AD-20).
+
+*Reversed if*: the atelier's sheet cannot sit over its bench mode (see the narrowing above).
 
 ### AD-22 — Server tranche: four repairs, no screen
 Read on `epic/adestia-correctifs` before any code. No screen is touched (the tranche says so, AD-20).
@@ -1042,6 +1107,11 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
 The catalogue token field is **not reproduced** — already `autoComplete="off"`
 since `64dee0f`; it remains so. The missing-attribute report is closed.
 
+- **E-25: « Abandonner ma mise en plan » does not empty the layout (older than AD-24 a).**
+  The sheet sends `{ reset: true }` (`atelier/web/app.js`); `atelier/api.mjs` merges only `poses`
+  and `bandes` and ignores `reset`, so `workbook-layout.json` keeps its bands, contrary to P-11
+  step 3 and E-25. The sheet itself works; the server half is missing. A red test
+  (`bench/tests/plugins-ensemble.test.mjs`, « atelier reset ») stays until the API handles it.
 - **P-5 step 7: the open page does not refresh after an agent write.**
   `app/useInstance.ts` refetches only the index on the change feed; it deliberately
   leaves the open page alone to protect unsaved editor text. The revision check
@@ -1056,10 +1126,6 @@ since `64dee0f`; it remains so. The missing-attribute report is closed.
   `chat/messages.ts` › `toMessage`; `SignatureCards` also draws nothing without a
   signing handler. The calling agent's user holds the ceremony. Passive cards
   would be a new function (AD-18), outside this tranche.
-- **Native dialogs in plugins**: `plugins/atelier/web/app.js` asks `confirm()` before resetting a
-  layout and `plugins/voyages/web/app.js` shows `window.alert` for a refused gesture; unstyled,
-  unlocalised by the browser's own words, not closeable like a sheet. Replacing them changes the flow
-  (the answer is asynchronous), so it is a feature, not part of the mise à niveau (Q-20).
 - **`deleteConversation`** exists in `chat/conversations.ts` and is reached by no screen.
 - **ManifestError field lines (`field: message`)**: kept — English validator sentences,
   a table keyed by them is new (AD-17). E-19 translates the plugin/skin manifest heading;
@@ -1070,20 +1136,12 @@ since `64dee0f`; it remains so. The missing-attribute report is closed.
   `words.test.js` cannot see a sentence that comes from data. Same for E-27's failure reason of a
   source (`muet: fetch failed`, the fetch's own text). Translating them is a change to what the API
   answers or a table keyed by those sentences: left.
-- **E-28's walking map keeps its pre-walk size.** In walking mode the map's box fills the screen, but
-  `carte.js` draws the SVG at `taille()` (at most 420 px high, the width it had), so on a phone the
-  map takes the top quarter and the rest is blank; it is drawn full again only on leaving. Found by
-  the matrix, not caused by the tranche; fixing it changes the drawing engine.
-- **E-30 on a phone: the focus is lost when the reader closes.** The composer folds its buttons on a
-  narrow screen and drops the item that opened the reader; the plugin's `opener` is then no longer in
-  the document and nothing takes the focus. The shell's fold would have to hand it back; the matrix
-  notes it (`NOTE … focus not returned`) rather than failing on it.
 - **E-25's piece sheet shows the workbook's own words under `en`**: edge names such as `about-droit`
   and piece references come from the workbook data, which the plugin does not translate.
-- **E-25 says « 1 pièces »** in French: the table's `%n piece` entry is « %n pièces », as the French
-  read before the atelier had a table (B-1), so a plate of one piece gets a plural.
 - **E-26's card sheet names the item's type with the data's own word** (`trajet`, `resto`) under `en`:
-  the type is an identifier of `voyage.json`, drawn as it is written.
+  the type is an identifier of `voyage.json`, drawn as it is written. A gesture refusal or failure
+  likewise carries the server’s raw error in the sheet; translating that data needs a keyed API
+  contract or a table of server sentences, outside AD-24 (the sheet’s heading and controls are translated).
 
 ### Chat checks closed without a behaviour change (AD-23)
 
@@ -1097,5 +1155,5 @@ since `64dee0f`; it remains so. The missing-attribute report is closed.
   fold and invoking a plugin's empty fill returns focus to the textarea, closes
   the menu, preserves the exact draft (including surrounding spaces) and sends
   nothing. A whitespace-only fill does the same. `Composer.tsx` already focuses
-  before ignoring an empty fill (`4e6f16f`). This does not close E-30: its reader
-  must request that focus when its phone opener has disappeared.
+  before ignoring an empty fill (`4e6f16f`). E-30 is repaired separately by AD-24 c:
+  `scan/web/scanner.js` focuses the composer field when its opener has disappeared or was the body.

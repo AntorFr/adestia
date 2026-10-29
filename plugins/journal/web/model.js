@@ -279,6 +279,7 @@ const WORDS = {
     Journal: 'Journal',
     Icon: 'Icône',
     'Journals': 'Journaux',
+    'Archived journals': 'Journaux archivés',
     'No journal yet.': 'Aucun journal pour le moment.',
     'Nothing written yet.': 'Rien d’écrit pour le moment.',
     'New entry': 'Nouvelle entrée',

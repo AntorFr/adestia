@@ -14,6 +14,8 @@
 > (E-2, E-14) — coherence, not behaviour (`B-1`). Every `Q-n` is either closed by its tranche
 > or written "kept: <reason>". Charter, pages, chat and plugins are built:
 > the inventory and outcome paragraphs below describe their current screens.
+> The plugins' rows of the "Lacks" column (E-23, E-25, E-26, E-28, E-30, E-31) state the behaviour the
+> `adestia-correctifs-plugins` feature delivers; until it is built, the tester reads them as the target.
 > The numbered audit descriptions at the end are historical input, not open work.
 
 ## Format
@@ -149,8 +151,8 @@ columns are the same except where the instance's configuration decides what exis
 | E-22 | use (reads, ticks, edits, adds) | same | writes the tasks' files | — |
 | E-23 | use (reads only) | same | writes the schedule notes (not this screen) | — |
 | E-24 | use (reads, adds, edits) | same | writes the entries | — |
-| E-25 | use (reads, ticks, moves a band) | same | writes `workbook-state.json`, `workbook-layout.json` | — |
-| E-26 | use (reads, confirms, moves, dismisses) | same | writes `voyage-state.json` | — |
+| E-25 | use (reads, ticks, moves a band, resets the layout after the sheet's question) | same | writes `workbook-state.json`, `workbook-layout.json` | — |
+| E-26 | use (reads, confirms, moves, dismisses; reads a refusal in the sheet) | same | writes `voyage-state.json` | — |
 | E-27 | use (reads, drops a link, dismisses, restores) | same | writes `queue.json` | — |
 | E-28 | use (reads) | same | — | — |
 | E-29 | use (reads, reorders, sets aside) | same | writes the meals page, guarded by a revision | — |
@@ -183,15 +185,15 @@ columns are the same except where the instance's configuration decides what exis
 | E-20 | shared empty state, `plug`, translated Home action | — |
 | E-21 | the fatal gate drawn, with a wifi-off icon when the failure is a thrown fetch, and the browser's network error | an offline screen; an offline banner once the shell is open (kept, recommendations) |
 | E-22 | loading, empty, error, conflict, sheet (a view with a named back: « Todo ») | Escape on the task sheet does nothing (kept: it is a view, not a dialog) |
-| E-23 | loading, empty, error, clock off | the notes' problem sentences (`carries both …`, `the note is empty …`) reach the screen in English on every instance (kept, Known defects) |
+| E-23 | loading, empty, error, clock off | the notes' problem sentences (`carries both …`, `the note is empty …`) reach the screen in English on every instance (kept, Known defects); the other sentences the plugin composes around a word (`until …`, the clock-off line) are whole table entries and read in French under `fr` |
 | E-24 | loading, no journal, empty journal, conflict, editing; back « Journals » / « Journaux » | — |
-| E-25 | hub, empty (in both languages), per-section empties, piece sheet (shared sheet), full-screen bench mode with an exit that names where it leads | loading, error (kept, recommendations); the native `confirm()` before a layout reset (kept, B-1) |
-| E-26 | loading, no trip, empty tray, card sheet (shared sheet), dismissed list | the native `window.alert` of a refused gesture (kept, B-1) |
+| E-25 | hub, empty (in both languages), per-section empties, piece sheet (the plugin's sheet), full-screen bench mode with an exit that names where it leads | loading, error (kept, recommendations); the layout reset asks in a sheet (Q-20): the question is today's, « Drop your layout and go back to Alfred's? » / « Abandonner votre mise en plan et reprendre celle d'Alfred ? », two buttons, *Cancel* / *Annuler* (focused first) and *Discard my layout* / *Abandonner ma mise en plan*; Escape and the scrim cancel; the focus returns to the reset button; a bottom sheet on a phone; it opens above the bench mode; if the request fails after the answer, the sheet is closed and the screen shows today's error state; a count of one reads « 1 piece » / « 1 pièce »; « Done » carries no emoji; the other emoji the plugin drew beside a word are gone (the content marks stay: the journal's `ico`, the trip item types, a tile's `ic:`, `⛰`, `🎧`/`🎬`; `✦` and `✓` are typographic glyphs, kept) |
+| E-26 | loading, no trip, empty tray, card sheet (the plugin's sheet), dismissed list | a refused or impossible gesture is said in the plugin's sheet, the sheet shows the server's own text (English on every instance, like E-27's failure reasons: data, kept), titled *Gesture refused* / *Geste refusé* or *Gesture impossible* / *Geste impossible*, with one *Close* / *Fermer*; Escape and the scrim close it, the focus returns to the card, a bottom sheet on a phone; the board repaints when it closes |
 | E-27 | loading, empty, no sources, error, conflict | a source's failure reason is the server's raw text (`fetch failed`), in English on every instance (kept, Known defects) |
-| E-28 | map, no route in the address, no points, walking HUD with an exit that names where it leads | loading (kept, a recommendation); the walking map keeps the size it was drawn at before the walk (kept, Known defects) |
-| E-29 | loading, empty, conflict, dish sheet (shared sheet) | — |
-| E-30 | camera live, codes listed; camera failure said in the composer | in-overlay error state (kept: a refusal never reaches the overlay); on a phone the focus does not go back to the scan button, which the composer's fold has removed (kept, Known defects) |
-| E-31 | timeline, status, no dated page, no sub-project | — |
+| E-28 | map, no route in the address, no points, walking HUD with an exit that names where it leads | loading (kept, a recommendation); in the walking mode the map fills the screen and redraws on a mode change or a resize |
+| E-29 | loading, empty, conflict, dish sheet (the plugin's sheet) | — |
+| E-30 | camera live, codes listed; camera failure said in the composer | in-overlay error state (kept: a refusal never reaches the overlay); on a phone, where the composer's fold has removed the scan button, closing the overlay puts the focus in the composer's field |
+| E-31 | timeline, status, no dated page, no sub-project; amber means one thing, the owner's *Amber* status; a phase or milestone found late is drawn by a dashed outline in `--text-muted`, never by amber, and carries the word « late » / « en retard » as its title and accessible name (on a phone, where nothing hovers, the dashed outline is what is seen); the `:::content{on=…}` block of any page (not an E-31 control; drawn by the shell, `ContentBlock.tsx`) writes its date in the instance's language, e.g. `2026-03-14` reads « March 14, 2026 » under `en` and « 14 mars 2026 » under `fr`, and a value that is not a date is written as it is | — |
 
 ## The plugins' screens, as built
 
@@ -267,7 +269,7 @@ they resolve there too, and the bridge that "armed" the overlays disappears with
 plugin's own, unchanged. Behaviour is the charter's: `role="dialog"`, `aria-modal`,
 `aria-labelledby` the title; Escape and a click on the scrim close; focus goes to the first
 control, Tab wraps, focus returns to the opener. Because a plugin imports no shell code (AD-4,
-AD-8), each plugin that opens a sheet carries its own copy of the ~30 lines doing so
+AD-8), each plugin that opens a sheet carries its own copy (« the plugin's sheet » in this document) of the ~30 lines doing so
 (`web/sheet.js` in atelier and voyages, the same few lines in an effect in meals' React view),
 written to the three-line contract of `skills/plugin-author`. The close button is the icon `x` with
 `aria-label` « Close » (translated, one word the three plugins already say: voyages' « Close »
@@ -288,8 +290,13 @@ not a dialog: it is a mode of the map, left as a layer on the map.
 *Close glyph (Q-11).* `✕` and `×` in plugin controls give way to the `x` icon (`<svg
 class="adestia-icon"><use href="#adestia-i-x"/></svg>`, from the shell's sprite, which is on the
 page; a plugin may use any icon of the charter's closed list and none outside it). Decorative
-emoji in plugin chrome are left (`🖐 📄 🧭 📝` are words' companions, not the controls Q-14 names for
-the shell); a **tile icon** a plugin declares in its manifest stays.
+emoji in plugin chrome give way to the same closed sprite list or to their visible word
+(AD-24 d): page links use `file-text`, todo notes and attachments use `pen-line` and `paperclip`,
+journal archives use `archive`, and warnings use `triangle-alert`. Each keeps its visible name
+or `title`. Follow, walking mode, trip hints and Done keep their words without an emoji.
+Content marks stay: an author's or engine's `ico`, trip item and travel/weather types, journal
+and media-type fallbacks, and `⛰` on a route card. `✦` and `✓` are typographic glyphs of the
+plugins' vocabulary, not emoji. A **tile icon** declared in a manifest stays.
 
 ### Backs (B-9, Q-12)
 
@@ -350,7 +357,9 @@ E-30; the tester presses Escape on each):
 | Card sheet | E-26 | a card (click) | Escape, scrim, `x`, footer « Close » | the card |
 | Walking HUD | E-28 | the walk button of the map | its exit button (Escape also, as a mode of the map) | the walk button |
 | Dish sheet | E-29 | a dish card | Escape, scrim, `x` | the dish card |
-| Camera overlay (full screen) | E-30 | the composer's scan button | Escape, « Cancel » | the composer's scan button |
+| Camera overlay (full screen) | E-30 | the composer's scan button | Escape, « Cancel » | the composer's scan button; on a phone, where the fold has removed it, the composer's field |
+| Reset question | E-25 | the layout reset button | Escape, scrim, *Cancel*; *Discard my layout* confirms | the reset button |
+| Refusal sheet | E-26 | a refused or impossible gesture | Escape, scrim, *Close* | the card |
 
 **States.** Loading, empty, error and conflict are today's, redrawn by tokens (the list per screen is
 in § States above). *Offline*: no plugin has an offline state and none is added (an open shell that
@@ -491,8 +500,8 @@ and state was looked at, in light and dark, on desk and phone, across the four s
   voyages' do).
 - *Seen and kept*, written under Known defects of `ARCHITECTURE.md`: the shell's `‹ Back` in English on
   a French instance; the English sentences planif and the listening post show from the server;
-  the walking map that keeps its pre-walk size (E-28); the focus lost on closing the scan overlay on a
-  phone; the workbook's own words under `en`.
+  the workbook's own words under `en`. (The pre-walk map size and the lost scan focus were kept then and are
+  repaired in `adestia-correctifs-plugins`, E-28 and E-30.)
 
 ### Kept, written here (B-1, mandate principle 3)
 
@@ -500,9 +509,7 @@ Plugin buttons, fields and empty states do **not** adopt `.adestia-btn`, `.adest
 `.adestia-empty` in this tranche, except the backs and exits of Backs and the sheet's close button (B-9 asks for the tokens and the shared dialog; the charter's
 classes are available to plugin authors, not imposed on the ten screens: a visible redesign of every
 button is a recommendation); the five stylesheet breakpoints other than 820 px; the prompts sent to
-the agent; the native `confirm()` of E-25 (« Abandonner votre calepinage… », reset of a layout) and the
-`window.alert` of E-26 (refused or impossible gesture): replacing a blocking native question with a
-sheet changes the flow (the answer becomes asynchronous), which is behaviour, so Q-20 is kept for the plugins (*kept: the flow would change*) and written as a defect; `skills/` of the plugins (they describe the agent's world, not a screen).
+the agent; `skills/` of the plugins (they describe the agent's world, not a screen).
 
 ## The charter's screens, as built
 
@@ -913,7 +920,7 @@ portion; **kept: reason** names what B-1 deliberately leaves.
     **closed**: the dark palette is written once, as `light-dark()`; the `prefers-color-scheme` and `[data-theme='dark']` blocks of `tokens.css` redeclare only the geometry of `--shadow` and `--shadow-lg`.
 20. **Q-20 — Native dialogs.** `window.prompt` names a new skill or agent in
     `Instructions.tsx` (E-11); `confirm()` in atelier (E-25).
-    **closed** for E-11: the name of a new skill or agent is asked in a small sheet with a field (`instructions/NamePrompt.tsx`), same answer rule as the prompt's; `window.prompt` is gone from the web sources. **kept: `confirm()` in atelier (E-25) and `window.alert` in voyages (E-26)**: replacing a blocking dialog changes the flow (B-1), as recorded under Known defects of `ARCHITECTURE.md`.
+    **closed** for E-11: the name of a new skill or agent is asked in a small sheet with a field (`instructions/NamePrompt.tsx`), same answer rule as the prompt's; `window.prompt` is gone from the web sources. **closed** by `adestia-correctifs-plugins`: `confirm()` in atelier (E-25) and `window.alert` in voyages (E-26) are each plugin's own copy of the shared sheet; the answer is asynchronous, the one deliberate flow change of the epic (B-15), and the CHANGELOG says so.
 21. **Q-21 — Configuration offered where it cannot open.** The Configuration tile in E-9 is
     always drawn; without `configPath` it leads to "This instance does not expose its
     configuration." Hiding the tile would change what the screen offers: **kept: behaviour**

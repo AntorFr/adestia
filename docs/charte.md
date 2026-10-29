@@ -85,9 +85,11 @@
   or Unicode glyph on a control any more. The chat rail uses this sprite for its
   header, tab/list tools, tool traces, MCP close, composer, permission and signature
   controls. Home and editor controls use the sprite too. The manifest `ic:` glyphs (`glyphs.ts`) and a plugin's declared
-  tile icon stay its own choice, and so does the emoji a plugin draws inside its own screens
-  (E-22 to E-31: media-type, journal, trip and meal marks): the closed list above is the shell's, a
-  plugin's mark is its content, **kept: replacing them adds icons to the contract (B-1)**.
+  tile icon stay its own choice. Plugins share the same closed sprite list (AD-24 d):
+  chrome companions use its icons or just their visible word, never an emoji. Content marks
+  stay: an author's or engine's `ico`, trip item and travel/weather types, journal and media-type
+  fallbacks, and `⛰` on a route card. `✦` and `✓` are typographic glyphs in the plugins' own
+  vocabulary, not emoji. Every sprite icon keeps a visible name or a `title`.
 - **Focus**: one global `:focus-visible` rule (§ 4); mouse clicks show nothing.
 - **Motion**: 150–250 ms for a change of state: `--motion-quick` (150 ms) and
   `--motion-slow` (250 ms), both 0 under `prefers-reduced-motion` (which sets `--motion:

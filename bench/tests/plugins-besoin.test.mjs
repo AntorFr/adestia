@@ -378,7 +378,7 @@ for (const skin of SKINS) {
       // B-9 · parcours: walking mode exit
       test('parcours: the walking HUD exit is named « Leave walking mode » and the map is where it was; Escape leaves too', async () => {
         await open('page/balades/val-sans-retour', '.pc-fond')
-        const walk = page.locator('main button', { hasText: /🥾/ })
+        const walk = page.locator('main button', { hasText: locale === 'fr' ? 'Mode balade' : 'Walking mode' })
         for (const how of ['button', 'escape']) {
           await walk.click()
           const exit = page.getByRole('button', { name: w.walk })
@@ -394,7 +394,7 @@ for (const skin of SKINS) {
       test('parcours: no French in english (and no english in french) on the map page and in the walking HUD', async () => {
         await open('page/balades/val-sans-retour', '.pc-fond')
         const seen = [...await words(page)]
-        await page.locator('main button', { hasText: /🥾/ }).click()
+        await page.locator('main button', { hasText: locale === 'fr' ? 'Mode balade' : 'Walking mode' }).click()
         await page.waitForTimeout(800)
         seen.push(...await words(page))
         assert.deepEqual(leaks(seen, locale, instance.corpus), [])

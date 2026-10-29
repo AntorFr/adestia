@@ -464,6 +464,32 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
 
 ## adestia-correctifs (unreleased)
 
+- **Plugin chrome shares the charter's icons** — page links, todo notes and attachments,
+  journal archives and warnings use the existing sprite with their text or title. Follow,
+  walking mode, trip hints and Done keep their words without an emoji. Author and engine
+  content marks, manifest tile icons, and the typographic `✦`/`✓` remain.
+
+- **The atelier agrees its piece count in the instance’s language** — French reads
+  « 0 pièce », « 1 pièce », « 2 pièces »; English keeps « 0 pieces », « 1 piece »,
+  « 2 pieces ». Voyages counters now carry each complete French form in their
+  table instead of adding an `s` to a translated word.
+
+- **The atelier and the voyages ask and say in their own sheet** — handing the layout
+  back no longer opens the browser's `confirm()`: the plugin's sheet asks, *Cancel* has
+  the focus (Escape and the scrim cancel), and *Discard my layout* does what OK did. A
+  trip gesture the server refuses, or that fails, is said in the card's sheet instead of
+  `window.alert`, and the board repaints when it closes. The focus returns to the card,
+  including when its tray button opened the refusal. The answer is now asynchronous.
+- **The scan reader gives the focus back on a phone** — when it closes and the
+  button that opened it is gone (the composer's fold), the focus goes to the
+  composer's field instead of being lost; with the button still there, it
+  returns to it as before.
+- **`:::content` reads its date in the instance's language** — `on=2026-03-04` is
+  drawn with `Intl.DateTimeFormat` of the interface locale (`4 mars 2026`,
+  `March 4, 2026`); a value that is not a date is drawn as written.
+- **Walking map fills its box** — E-28 reads the map's actual height in walking
+  mode and redraws on entry, exit and resize, so the route and tiles occupy the
+  screen above the GPS controls. The map in a page keeps its previous size.
 - **A root page's breadcrumb no longer invents a folder** — `trailOf` took the parent of
   `notes.md` by slicing off its last character; it now uses `folderOf`, so the trail is Home
   then the title. The missing-page screen (E-8) links to Home when the refused page is at the root.
@@ -522,3 +548,8 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
   The Planif screen's own notes reader (`plugins/planif/api.mjs`) had a third,
   LF-only copy of the fence and now reads the same lines, so a CRLF scheduled note
   shows its title, times and `expired` instead of an empty note.
+- **Amber means one thing in project management** — `--warning` now draws only the
+  owner's `Amber` assessment. A deduced delay (a late phase bar, a late milestone) is
+  drawn by shape, a dashed outline in `--text-muted`, with the hover word kept, so a skin
+  that flattens hues still tells it from a stated Amber (E-31, AD-24 c). The milestone
+  markers, which shared the amber, take the accent. `plugins/test/css.test.js` guards it.
