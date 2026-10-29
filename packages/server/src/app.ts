@@ -47,7 +47,7 @@ import { makeRunUnattended } from './unattended.js'
 import { registerDelegations } from './routes/delegations.js'
 import { baseManifest, withInstanceName, type WebManifest } from './webmanifest.js'
 
-// Two helpers the tests reach through this module, where they always lived.
+// Public response type exposed through the server's package index.
 export type { SkinPayload } from './routes/instance.js'
 
 declare module 'fastify' {

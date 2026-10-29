@@ -637,7 +637,7 @@ written first, red until the removal, then green). Inventory taken on `epic/ades
   exposes to production (`exchangeCode` through the OAuth flow, `quotaReportOf` through `describe`/`usage`)
   — the test goes through it and the export goes; (2) it is not reachable (a pure unit with no public
   entry, a package-index symbol the web or server tests need) — the export stays and the row keeps one
-  line saying why. A row never stays without its reason. `node scripts/unused-exports.mjs` falls from 178 (recounted: 151);
+  line saying why. A row never stays without its reason. `node scripts/unused-exports.mjs` falls from 178 (recounted: 150);
   the new count is written beside the old one. The guard: a suite test reads the table and fails if a row
   has no reason or names an export that is absent from the module (rows cannot rot).
 - **Bench duplicates.** `loadPlaywright` is written ten times (`bench.mjs`, `sweep.mjs`, `scenarios/plugins-matrix.mjs`
@@ -774,8 +774,9 @@ Built: the four repairs below are in the code, each with its test; the text keep
   from `routes/` (`export { register… } from './routes/…'`, `export * from './routes/…'`, or a
   type re-export). Over `index.ts`: no `export … from` line names one of those six files for a
   symbol `routes/` owns; its lines to `./routes/…` are the public surface and are allowed. The two
-  other helper re-exports (`buildVersion`, `sseFrame`, `SkinPayload` in `app.ts`; `mountPluginApis`
-  in `plugin-host.ts`) are tests' aliases left to the dette tranche, and the guard does not cover them; it targets
+  helper re-exports of `buildVersion` and `sseFrame` in `app.ts`, and `mountPluginApis`
+  in `plugin-host.ts`, are removed by the dette tranche; `SkinPayload` stays in `app.ts` for the
+  public package index. The guard does not cover them; it targets
   re-exports, not definitions — `registerPluginVocabulary` in `extensions.ts` is defined there and stays. The rows of the "exports kept only for
   tests" table that name these re-exports leave in the same commit; `R-3`'s outcome says "a
   re-export" and is corrected to say the files keep only their helpers.
@@ -954,7 +955,7 @@ Each target: what, where, why it costs, the tranche that owns it, and its outcom
 | R-3 | `start()` (464 lines) and `buildApp` (287 lines) mix concerns; `TurnLimiter`, `runUnattended`, inline `/api/delegations` routes and the `adestiaRunTurn` monkey-patch live in `app.ts`; routes registered both from `routes/` and top-level files (`pages.ts`, `mcp-routes.ts`, `static.ts`, `files.ts`, `watch.ts`, `callback.ts`) | no single place says what is mounted | serveur | closed: every route is registered from `routes/`; the top-level files keep only their helpers (`mcp-routes.ts` is gone); `app.ts` mounts, `turn-limiter.ts` and `unattended.ts` hold the rest; `start()` is named stages, order pinned by `start-order.test.ts` |
 | R-4 | `field()` duplicated in `instruction-catalogues.ts` and `instructions.ts`; `routes/instruction-catalogues.ts` `sourceOf` / `fetchClone` / `cacheDir` duplicate `catalogueSource` / `fetchCatalogueClone` / `catalogueClone` of `instruction-catalogues-refresh.ts` | pure extraction, behaviour kept | serveur | closed: `field()` once in `frontmatter.ts`; the catalogue route calls the refresh module |
 | R-5 | `pages.ts` doubles as a frontmatter library for `instructions.ts`, `instruction-catalogues.ts`, `schedule.ts`, `shell-tools.ts` | a route module as a dependency; move without changing the parser (AD-7) | serveur | closed: `server/src/frontmatter.ts`, bodies untouched; the CRLF divergence stays (AD-7) |
-| R-6 | Dead interface removed; test-only helpers removed from production indexes; remaining public types, test imports and boot entry points named below | surface limited to its consumers | serveur | closed: `node scripts/unused-exports.mjs` recounted at 151 entries (from 178 at design time: the Codex usage alias, the splitFrontmatter move and the rows whose behaviour a public function reaches, now tested through it, being the difference), all named below; every remaining internal-export row carries its reason |
+| R-6 | Dead interface removed; test-only helpers removed from production indexes; remaining public types, test imports and boot entry points named below | surface limited to its consumers | serveur | closed: `node scripts/unused-exports.mjs` recounted at 150 entries (from 178 at design time: the Codex usage alias, the splitFrontmatter move and the rows whose behaviour a public function reaches, now tested through it, being the difference), all named below; every remaining internal-export row carries its reason |
 | R-7 | Comments pointing to absent documents: `technique.md` (server sources and tests), `ATELIER-3.md` (`plugins/atelier/web`), `PARCOURS.md` and "D44 côté cerveau" (`plugins/parcours/web`) | dead references | serveur (server), plugins (plugins) | server: closed; plugins: closed — no comment under `plugins/` names `ATELIER-3.md`, `PARCOURS.md` or "D44 côté cerveau" any more (`git grep` finds none) |
 | R-8 | `eslint.config.js` claims floating promises and thrown-away errors are caught, which its rules cannot do (no type-aware rule, `caughtErrors: 'none'`); `plugins/` not linted; lint not in CI | a claim the gate does not keep | serveur (CI, claim), plugins (plugins lint) | server: closed — claim rewritten, `npm run lint` in CI; plugins: closed — `npm run lint` (`eslint packages plugins`) covers `plugins/` and is clean |
 | R-9 | Test support rewritten per file: the fake `Driver` in 10 test files, `git()` in 5, `mkdtemp` in 39 | each new test copies one | tests | closed: `packages/server/test/support/` holds the three, and every file that rewrote them imports them |
@@ -1012,7 +1013,7 @@ rules. The server outcomes above are filled.
   qualifier consume its first name. Tests, `bin/`, bench scripts, plugins and computed
   module paths are outside the graph: check their runtime uses before removing a hit.
 
-  The final inventory is **151** entries: public contract types below,
+  The final inventory is **150** entries: public contract types below,
   test-only exports retained under the R-6 arbitration, and the boot entry points.
   `content`'s `splitFrontmatter` now has a production importer through its index
   (AD-25 d); the Codex usage alias is removed (AD-26). No measurement rule or test was changed.
@@ -1027,7 +1028,8 @@ rules. The server outcomes above are filled.
   | `packages/server/src/index.ts` | `ActivationConfig`, `AdestiaConfig`, `AgentFile`, `AppDependencies`, `ArmingFlow`, `AttachmentLimits`, `AttachmentOwner`, `AttachmentsConfig`, `AuthConfig`, `AuthMode`, `AuthOutcome`, `ClockOptions`, `Conversation`, `ConversationMeta`, `DelegationPort`, `DiscoveredPlugin`, `DiscoveredSkin`, `DiscoveryProblem`, `DriverConfig`, `ExtensionSource`, `ExtensionsConfig`, `FileKind`, `FilesOptions`, `HostProblem`, `Identity`, `Job`, `JobSeed`, `JobState`, `JsonRpcRequest`, `LoginState`, `McpConfig`, `McpDependencies`, `McpInConfig`, `McpServer`, `McpServerConfig`, `McpServerView`, `McpSource`, `McpTool`, `MissionPaths`, `OidcConfig`, `PageContent`, `PageInfo`, `PagesOptions`, `PermissionsConfig`, `PluginApiContext`, `PluginDiscovery`, `PluginPayload`, `ProxyAuthConfig`, `RequestLike`, `ScheduleConfig`, `ScheduleState`, `ScheduledNote`, `ScreenView`, `SessionPayload`, `SignaturesConfig`, `SkillAsset`, `SkillFile`, `SkinPayload`, `StartOptions`, `StartedInstance`, `StaticOptions`, `StoredAttachment`, `StoredMessage`, `StoredSecret`, `WatchConfig`, `WorkspaceConfig`, `WorkspaceFile` |
 
   Internal exports kept for their tests, one reason per row (the index export of `isKnownBlock` is also
-  retained because those tests import the package index):
+  retained because those tests import the package index; web rows record the import paths kept
+  under R-12 and are excluded from the inventory count):
 
   | Module | Exports | Importing tests | Reason |
   |---|---|---|---|
@@ -1047,12 +1049,14 @@ rules. The server outcomes above are filled.
   | `packages/server/src/io.ts` | `inFlight` | `packages/server/test/io.test.ts` | in-flight write counter the test observes directly |
   | `packages/server/src/mcp-store.ts` | `MCP_MASK` | `packages/server/test/mcp-servers.test.ts` | mask value the test compares stored and listed secrets against |
   | `packages/server/src/oidc.ts` | `identityFrom`, `isAllowed` | `packages/server/test/oidc.test.ts` | pure claim-to-identity and allow-list rules pinned on claims; the flow needs a live provider |
-  | `packages/server/src/plugin-host.ts` | `mountPluginApis` | `packages/server/test/plugin-host.test.ts`, `packages/server/test/plugin-secrets.test.ts` | mounting entry the plugin-host tests drive with their own app; `start` mounts it only with discovered plugins |
   | `packages/server/src/routes/watch.ts` | `EventsOptions` | `packages/server/test/watch.test.ts` | type of the options the watch test builds |
   | `packages/server/src/schedule.ts` | `GRACE_MINUTES`, `MIN_PERIOD_MINUTES`, `parseAt`, `parseEvery`, `parseNote` | `packages/server/test/schedule.test.ts` | pure parsers and bounds pinned on strings; reached otherwise only through files on disk |
   | `packages/server/src/secrets.ts` | `ARMING_TTL_MS` | `packages/server/test/secrets.test.ts` | arming lifetime the test advances a fake clock by |
   | `packages/server/src/settings-file.ts` | `coerce`, `replaceContents` | `packages/server/test/settings-file.test.ts` | pure coercion and rewrite units pinned on documents; no public entry returns them alone |
   | `packages/server/src/shell-tools.ts` | `ulid` | `packages/server/test/shell-tools.test.ts` | id generator the test checks for shape and order |
+  | `packages/web/src/app/App.tsx` | `appTrail`, `screenView` | `packages/web/test/app.test.tsx` | retained at their original test import path after the shell split, as decided for the web exports (R-12) |
+  | `packages/web/src/app/Instructions.tsx` | `matches` | `packages/web/test/instructions.test.tsx` | retained at its original test import path after the charter split, as decided for the web exports (R-12) |
+  | `packages/web/src/editor/Editor.tsx` | `SaveStatus`, `savePage` | `packages/web/test/editor.test.tsx` | retained at their original test import path after the editor split, as decided for the web exports (R-12; AD-12 preserves test export paths) |
 
   Runtime entry points outside the graph: `packages/server/src/start.ts` exports
   `start` for `bench/launch.mjs` (a computed dynamic import of the built module),
