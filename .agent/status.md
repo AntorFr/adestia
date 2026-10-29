@@ -1,5 +1,5 @@
 # Status — Adestia
-> MàJ : 2026-10-24
+> MàJ : 2026-10-29
 
 ## Version courante
 
@@ -37,6 +37,20 @@ embarqué ; deux bugs UX du 26/08 (pop-up d'autorisation restant ouverte, fiche
 sans les déclarer corrigés. Restent aussi à constater sur appareil : installation
 PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone/PWA.
 
+## Réglage des tours simultanés (feature `adestia-ajouts-reglage-tours`)
+
+- Fait : le champ « Simultaneous turns » (`maxConcurrentTurns`, 1 à 16, repli 3, `applies: 'restart'`)
+  est dans le groupe `turns` de `SETTING_GROUPS`, traduit en `fr`, validé par la route des réglages
+  (`settings-file.ts`). L'unité du champ est maintenant traduite par `SettingField`. Un test pose le
+  catalogue contre `config.ts` (`packages/server/test/settings-turns.test.ts`).
+- Piège : le changement ne s'applique qu'au redémarrage (le limiteur est construit une fois dans
+  `buildDesk`, AD-25) ; pas de prise en compte à chaud.
+- Reste à la recette : changer le champ à 5, redémarrer, lire `turns.max` dans `/api/instance`.
+  Le banc doit exposer la configuration (`--seed config-writable`, sinon E-14 répond 404), et le
+  redémarrage n'existe qu'avec le vrai binaire : `--engine fake` n'a pas `POST /api/restart`, et
+  `turns.max` y reste 3. Lancer `node packages/server/bin/adestia.js -c <config>` (ou
+  `--engine claude` avec `CLAUDE_CODE_OAUTH_TOKEN`) ; captures de E-14 sous les quatre habillages, en `en` et `fr`.
+
 ## À moitié construit
 
 - La question de permission ne permet pas de corriger la règle proposée par le
@@ -48,8 +62,6 @@ PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone
   le chat ne consomme que le compteur de contexte (`Chat.tsx`, `contract.ts`).
 - Les instructions sont éditables, mais aucun écran ne règle les permissions du
   moteur : ses fichiers de réglages ne sont pas exposés par `instructionPaths()`.
-- `maxConcurrentTurns` reste dans le fichier de configuration, absent des champs
-  éditables de `SETTING_GROUPS` ; pas de réglage du plafond à l'écran.
 - Le chat ne marque pas une perte de contexte moteur après redémarrage ; les homes
   Copilot/Codex sont sous `dataDir`, celui de Claude dépend du `HOME` du déploiement
   (`drivers.ts`).

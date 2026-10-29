@@ -185,6 +185,11 @@ resources:
     memory: 2Gi        # server + 3 concurrent turns, with headroom
 ```
 
+The cap is set from the Settings screen (field "Simultaneous turns", 1 to 16; the table stops
+at 8, so size 16 by the same 300 MB a turn) or in `maxConcurrentTurns` of the config file. It
+applies at the next restart, not live. Under Docker with the read-only config mount above, the
+screen cannot save it: edit the file on the host.
+
 Set the `limit` from the table, not from what the pod uses at rest: an idle
 Adestia is a few hundred megabytes, and it is the burst that kills it. Raise
 `maxConcurrentTurns` and the memory limit together, never one alone.
