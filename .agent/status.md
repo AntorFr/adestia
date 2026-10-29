@@ -3,8 +3,8 @@
 
 ## Version courante
 
-- Dernier tag accessible : **`v0.96.0-adestia-correctifs.8`** (`git describe --tags
-  --abbrev=0`; le `.1` était la tranche serveur, le `.2` la tranche chat, le `.3` la tranche shell, le `.4` la tranche pages, le `.5` la tranche plugins, le `.6` la tranche dette, le `.7` la reprise de la tranche chat, le `.8` la reprise de la tranche dette) de l'epic `adestia-correctifs`, sur la branche d'intégration
+- Dernier tag accessible : **`v0.96.0-adestia-correctifs.9`** (`git describe --tags
+  --abbrev=0`; le `.1` était la tranche serveur, le `.2` la tranche chat, le `.3` la tranche shell, le `.4` la tranche pages, le `.5` la tranche plugins, le `.6` la tranche dette, le `.7` la reprise de la tranche chat, le `.8` la reprise de la tranche dette, le `.9` sa seconde reprise) de l'epic `adestia-correctifs`, sur la branche d'intégration
   de l'epic ; le dernier tag dans `main` est `v0.95.0` (l'epic `adestia-qualite`).
 - Branche de travail : `feature/adestia-correctifs-dette`, sur `origin/epic/adestia-correctifs` : reprise de la tranche dette
   (garde B-5 : dernier titre du CHANGELOG = dernier tag ou version suivante de la série, y compris le titre `vX.Y.Z` de la cible stable après ses préversions ; status.md doit citer ce titre en entier, une préversion ne vaut pas sa version ; la CI prend les tags). Précédemment : `feature/adestia-correctifs-chat` : reprise
