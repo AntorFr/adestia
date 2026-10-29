@@ -773,7 +773,7 @@ Built: the four repairs below are in the code, each with its test; the text keep
   `pages.ts`, `static.ts`, `watch.ts`, `mcp-routes.ts` if it still exists): none re-exports
   from `routes/` (`export { register… } from './routes/…'`, `export * from './routes/…'`, or a
   type re-export). Over `index.ts`: no `export … from` line names one of those six files for a
-  symbol `routes/` owns; its lines to `./routes/…` are the public surface and are allowed. The two
+  symbol `routes/` owns; its lines to `./routes/…` are the public surface and are allowed. The
   helper re-exports of `buildVersion` and `sseFrame` in `app.ts`, and `mountPluginApis`
   in `plugin-host.ts`, are removed by the dette tranche; `SkinPayload` stays in `app.ts` for the
   public package index. The guard does not cover them; it targets
