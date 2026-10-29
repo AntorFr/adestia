@@ -15,26 +15,17 @@
 import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
 import { mkdir, writeFile } from 'node:fs/promises'
-import { createRequire } from 'node:module'
-import { execFileSync } from 'node:child_process'
 import { resolve, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 import { CONVERSATIONS } from '../seed/_base.mjs'
 import { railThreads, WAITING } from '../seed/chat-rail.mjs'
+import { loadPlaywright } from '../lib/playwright.mjs'
 
 export const seed = 'chat-rail'
 const words = {
   en: { conversations: 'Conversations', empty: 'No conversation yet.', new: 'New conversation', working: 'Working', model: 'Model', auto: 'Auto', close: 'Close tab', archive: 'Archive', interrupted: 'Turn interrupted.', singular: '1 tool call', plural: '2 tool calls', connect: 'Connect', hide: 'Not now', context: 'Weight of the context your next message re-pays' },
   fr: { conversations: 'Conversations', empty: 'Aucune conversation.', new: 'Nouvelle conversation', working: 'En cours', model: 'Modèle', auto: 'Auto', close: 'Fermer l’onglet', archive: 'Archiver', interrupted: 'Tour interrompu.', singular: '1 appel d’outil', plural: '2 appels d’outil', connect: 'Se connecter', hide: 'Pas maintenant', context: 'Poids du contexte repris par votre prochain message' },
-}
-function playwright() {
-  for (const root of ['/usr/lib/node_modules', execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim()]) {
-    for (const name of ['playwright', 'playwright-core']) {
-      try { return createRequire(`${root}/`)(name) } catch { /* try the next environment root */ }
-    }
-  }
-  throw new Error('Playwright must come from the environment')
 }
 
 /** Docker's generic proxy serves one attach only. This local replay supplies
@@ -86,7 +77,7 @@ export default async function scenario(bench) {
     await probe.context().close()
   }
   assert(base, 'BENCH_URL is required outside bench/run.sh')
-  const browser = await playwright().chromium.launch({ args: ['--no-sandbox'] })
+  const browser = await loadPlaywright().chromium.launch({ args: ['--no-sandbox'] })
   const replay = bench ? await replayEngine() : undefined
   const report = []
   try {

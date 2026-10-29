@@ -598,3 +598,17 @@ emoji give way to the charter icons; the `:::content` date follows the language.
 tests import the module that owns the symbol, kept exports carry their reason, the bench
 defines `launch(seed)` and `loadPlaywright` once, and the CI plays the documentation
 guard. `no-misused-promises` and `await-thenable` are on.
+
+## v0.96.0-adestia-correctifs.7
+
+**The chat slice, resumed.** A send that fails without a readable sentence from the
+server (empty, unreadable or non-JSON body) reads `t('upload failed')`, in both languages;
+a connection cut before any answer keeps its translated `request failed (0)`. A message
+sent before the first has left is shown held, as the chat-race change (AD-19) says.
+
+## v0.96.0-adestia-correctifs.8
+
+**The debt slice, resumed.** The version guard of the documentation accepts the next
+version of the series as the last CHANGELOG title, so a branch can carry its own entry
+before the tag exists, and still refuses a tag without an entry. The bench scenarios load
+Playwright through the one shared module.
