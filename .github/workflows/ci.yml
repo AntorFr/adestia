@@ -37,6 +37,11 @@ jobs:
       - name: Test
         run: npm test
 
+      # The documentation and bench-once guards are node:test files; `npm test`
+      # runs them only through the plugins pass, and neither needs a browser.
+      - name: Documentation and bench guards
+        run: node --test bench/tests/doc-besoin.test.mjs bench/tests/bench-once.test.mjs
+
       # Proves the shipped artefact still builds, which the tests do not:
       # they read TypeScript sources, so a packaging mistake passes them all.
       - name: Build
