@@ -26,29 +26,8 @@
   tests `chemin-racine`, `popover-placement`, `page-diagnostics-language`, `frontmatter`,
   `schedule`. Reste, avec sa raison : la page ouverte ne se rafraîchit pas quand l'agent écrit
   (P-5 étape 7) ; les phrases serveur d'E-23 restent en anglais).
-  Précédemment : `feature/adestia-correctifs-shell`, sur `origin/epic/adestia-correctifs`
-  (tranche shell, AD-24 : la flèche d'envoi de Nestor est un SVG ; la tuile MCP compte les serveurs
-  listés par E-10, la santé ne dit que combien demandent attention ; le bandeau de Skippy tient sur
-  une ligne à 360 px ; l'interrupteur d'E-14 reste sur la ligne de son titre ; l'en-tête
-  « Invalid plugin/skin manifest » suit la langue ; `refresh()` de la popin montre l'erreur levée ;
-  une seule règle `.adestia-icon--spin`. Jeton : not reproduced, déjà `autoComplete="off"`. E-20 :
-  relu, rien à corriger. Preuves : `bench/shell-proof.md`, `test/shell-textes.test.tsx`,
-  `test/skin-nestor-invite.test.ts`. Reste, avec sa raison : les lignes `champ : message` de
-  `ManifestError` restent en anglais, une table clé par phrases de validateur serait nouvelle).
-  Précédemment : `feature/adestia-correctifs-chat`, sur `origin/epic/adestia-correctifs`
-  (tranche chat d'`adestia-correctifs`, AD-23 : un tour refusé en 429 est dit par `t()` en `en`/`fr`
-  avec le plafond, et sa ligne survit à la relecture jusqu'au prochain envoi ou à une autre
-  conversation ; le message envoyé dessine l'icône `paperclip` et les noms, plus d'émoji texte ;
-  `upload failed` et les trois classes CSS sont gardés par `chat-repaired-defects.test.ts` ;
-  le pli du composeur et les signatures de délégation sont tenus par des tests ; la course du
-  chat est au CHANGELOG. Reste, avec sa raison : le sélecteur de modèle natif et l'absence de
-  cartes de signature en délégation).
-  Précédemment : `feature/adestia-correctifs-serveur`, sur `origin/epic/adestia-correctifs`
-  (tranche serveur d'`adestia-correctifs`, AD-22 : `start()` refuse un pilote dont le descripteur
-  ne tient pas son contrat (`Driver "<id>" is not conformant:` + un écart par ligne) ; l'enregistrement
-  de la configuration garde le mode du fichier (0600) ; le commentaire de `user-tokens.ts` dit que
-  le fichier porte aussi le jeton d'accès et son échéance ; les anciens fichiers ne réexportent plus
-  les `register*` de `routes/`, gardé par `reexports-retires.test.ts`. Plus aucun défaut serveur connu).
+  Les tranches pages, shell, chat et serveur de l'epic (tags `.1` à `.4`) sont au
+  [CHANGELOG](../CHANGELOG.md), avec leurs restes dans Défauts connus.
   Précédemment : `feature/adestia-qualite-chat`, sur `origin/epic/adestia-qualite`
   (correctifs de recette et de verify : un message envoyé avant que le premier soit parti est retenu ;
   en-tête du rail à moins de 400 px à un seul espacement, sélecteur de modèle d'au moins 72 px ; bulle d'erreur seule à marge symétrique). Banc, tests, serveur, charte,
@@ -70,6 +49,9 @@ Compléments encore visibles dans le code :
   personnalisée serait un composant neuf (AD-18).
 - Une délégation n'affiche pas les cartes de signature (`{ signatures: false }` dans
   `app/Delegations.tsx`) : vue en lecture seule sans gestionnaire de signature (P-13 étape 7).
+- La page ouverte ne se rafraîchit pas quand l'agent écrit (P-5 étape 7).
+- Les lignes `champ : message` de `ManifestError` restent en anglais : une table clé par phrases
+  de validateur serait nouvelle.
 - Phrases serveur d'E-23/E-27 (problèmes de planif, raison d'échec d'une source), mots de données
   du classeur (E-25), types d'éléments de voyage (E-26) et erreur brute d'un geste refusé : en
   anglais ou tels qu'écrits, faute de table clé par phrases (AD-17, AD-24).

@@ -553,3 +553,36 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
   drawn by shape, a dashed outline in `--text-muted`, with the hover word kept, so a skin
   that flattens hues still tells it from a stated Amber (E-31, AD-24 c). The milestone
   markers, which shared the amber, take the accent. `plugins/test/css.test.js` guards it.
+
+## v0.96.0-adestia-correctifs.1
+
+**The server slice of `adestia-correctifs` (AD-22).** `start()` refuses a driver
+whose descriptor does not hold its contract (`Driver "<id>" is not conformant:`, one
+gap per line). Saving the configuration keeps the file mode (0600). The old files no
+longer re-export the `register*` functions of `routes/`.
+
+## v0.96.0-adestia-correctifs.2
+
+**The chat slice (AD-23).** A turn refused with 429 is worded by `t()` in `en`/`fr`
+with its ceiling, and its line survives a re-read until the next send or another
+conversation. A sent message draws the `paperclip` icon and the names, no text emoji.
+
+## v0.96.0-adestia-correctifs.3
+
+**The shell slice (AD-24).** The send arrow of Nestor is an SVG; the MCP tile counts the
+servers E-10 lists; Skippy's banner fits one line at 360 px; the “Invalid plugin/skin
+manifest” header follows the language; the dialog's `refresh()` shows the error it
+raised; one `.adestia-icon--spin` rule remains.
+
+## v0.96.0-adestia-correctifs.4
+
+**The pages slice (AD-25).** The trace of a root page names no folder and E-8 leads to
+Home; the `Popover` stays under the canvas header and follows its anchor; a `Diagnostic`
+carries `code` and `args`, so the shell words it by `t()`.
+
+## v0.96.0-adestia-correctifs.5
+
+**The plugins slice (AD-24 a–d).** The atelier and trips speak in the plugin's own
+sheet, with no `confirm()` or `alert`; counters agree per language; the walk card takes
+the height of its box; the scanner returns focus to the composer field (E-30); chrome
+emoji give way to the charter icons; the `:::content` date follows the language.
