@@ -85,7 +85,7 @@ export function inlineTypeOf(path: string): string | undefined {
 }
 
 /** What an interface draws it as — a coarser question than the media type. */
-export function kindOf(path: string): FileKind {
+function kindOf(path: string): FileKind {
   const extension = extname(path).toLowerCase()
   const type = INLINE[extension]
   if (type?.startsWith('image/')) return 'image'

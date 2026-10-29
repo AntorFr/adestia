@@ -11,17 +11,13 @@ import { describe, expect, it } from 'vitest'
 import { createHash } from 'node:crypto'
 
 import { looksLikeToken } from '../src/claude-code/arming.js'
-import {
-  CLIENT_ID,
-  ONE_YEAR_SECONDS,
-  REDIRECT_URI,
-  TOKEN_URL,
-  authorizeUrl,
-  createOAuthFlow,
-  createPkce,
-  exchangeCode,
-  splitPastedCode,
-} from '../src/claude-code/oauth.js'
+import { createOAuthFlow } from '../src/claude-code/oauth.js'
+
+// The protocol's fixed values, as literals: a changed constant must fail here.
+const CLIENT_ID = '9d1c250a-e61b-44d9-88ed-5944d1962f5e'
+const REDIRECT_URI = 'https://platform.claude.com/oauth/code/callback'
+const TOKEN_URL = 'https://platform.claude.com/v1/oauth/token'
+const ONE_YEAR_SECONDS = 31_536_000
 
 const TOKEN = 'sk-ant-oat01-abcdefghijklmnopqrstuvwxyz123456'
 
@@ -36,78 +32,103 @@ function service(reply: { status?: number; body?: unknown; text?: string }) {
   return { fetchImpl, calls }
 }
 
+/** A flow started against a stub; `submit` pastes `code#<its own state>` unless told otherwise. */
+async function started(reply: Parameters<typeof service>[0] = { body: { access_token: TOKEN } }) {
+  const stub = service(reply)
+  const flow = createOAuthFlow({ fetchImpl: stub.fetchImpl })
+  const { authorizeUrl } = await flow.start()
+  const url = new URL(authorizeUrl)
+  const state = url.searchParams.get('state') as string
+  return { flow, url, state, ...stub }
+}
+
 describe('the authorization link', () => {
-  it('carries the CLI own client and a challenge, never the verifier', () => {
-    const pkce = createPkce()
-    const url = new URL(authorizeUrl(pkce))
+  it('carries the CLI own client and a challenge, never the verifier', async () => {
+    const { flow, url, state, calls } = await started()
 
     expect(url.origin + url.pathname).toBe('https://claude.com/cai/oauth/authorize')
     expect(url.searchParams.get('client_id')).toBe(CLIENT_ID)
     expect(url.searchParams.get('redirect_uri')).toBe(REDIRECT_URI)
     expect(url.searchParams.get('code_challenge_method')).toBe('S256')
-    expect(url.searchParams.get('state')).toBe(pkce.state)
     // `code=true` is what makes the page show the code: there is no browser on
     // this side and no port of ours it could post to.
     expect(url.searchParams.get('code')).toBe('true')
     // The secret half stays here. Anything else would defeat PKCE entirely.
-    expect(url.toString()).not.toContain(pkce.verifier)
+    await flow.submit(`the-code#${state}`)
+    const verifier = calls[0]?.body['code_verifier'] as string
+    expect(verifier).toBeTruthy()
+    expect(url.toString()).not.toContain(verifier)
   })
 
-  it('challenges with the SHA-256 of the verifier, as PKCE requires', () => {
-    const pkce = createPkce()
-    expect(pkce.challenge).toBe(createHash('sha256').update(pkce.verifier).digest('base64url'))
+  it('challenges with the SHA-256 of the verifier, as PKCE requires', async () => {
+    const { flow, url, state, calls } = await started()
+    await flow.submit(`the-code#${state}`)
+    const verifier = calls[0]?.body['code_verifier'] as string
+    expect(url.searchParams.get('code_challenge')).toBe(
+      createHash('sha256').update(verifier).digest('base64url'),
+    )
   })
 
-  it('never repeats a verifier', () => {
-    expect(createPkce().verifier).not.toBe(createPkce().verifier)
+  it('never repeats a verifier', async () => {
+    const one = await started()
+    const two = await started()
+    await one.flow.submit(`c#${one.state}`)
+    await two.flow.submit(`c#${two.state}`)
+    expect(one.calls[0]?.body['code_verifier']).not.toBe(two.calls[0]?.body['code_verifier'])
   })
 
-  it('sizes the state like the CLI does, because the page is fussy', () => {
+  it('sizes the state like the CLI does, because the page is fussy', async () => {
     // 32 bytes, base64url: 43 characters. A 22-character state was the only
     // difference between our link and the CLI's, and the page answered
     // `Invalid request format`.
-    const pkce = createPkce()
-    expect(pkce.state).toHaveLength(43)
-    expect(pkce.verifier).toHaveLength(43)
+    const { flow, state, calls } = await started()
+    expect(state).toHaveLength(43)
+    await flow.submit(`c#${state}`)
+    expect(calls[0]?.body['code_verifier']).toHaveLength(43)
   })
 })
 
 describe('the code the user pastes', () => {
-  it('takes the `code#state` form the page gives, and tolerates the paste', () => {
-    expect(splitPastedCode('abc#xyz')).toEqual({ code: 'abc', state: 'xyz' })
-    expect(splitPastedCode('  abc#xyz \n')).toEqual({ code: 'abc', state: 'xyz' })
-    expect(splitPastedCode('abc')).toEqual({ code: 'abc' })
+  it('takes the `code#state` form the page gives, and tolerates the paste', async () => {
+    const a = await started()
+    await a.flow.submit(`  abc#${a.state} \n`)
+    expect(a.calls[0]?.body).toMatchObject({ code: 'abc', state: a.state })
   })
 
-  it('refuses a code from another authorization instead of relaying a 400', () => {
-    const pkce = createPkce()
-    return expect(
-      exchangeCode({ pkce, pasted: 'code#someone-elses-state', fetchImpl: service({}).fetchImpl }),
-    ).rejects.toThrow(/belongs to a different authorization/)
+  it('takes a bare code with no state', async () => {
+    const a = await started()
+    await a.flow.submit('abc')
+    expect(a.calls[0]?.body).toMatchObject({ code: 'abc', state: a.state })
+  })
+
+  it('refuses a code from another authorization instead of relaying a 400', async () => {
+    const a = await started()
+    await expect(a.flow.submit('code#someone-elses-state')).rejects.toThrow(
+      /belongs to a different authorization/,
+    )
+    expect(a.calls).toEqual([])
   })
 
   it('says when nothing was pasted', async () => {
-    const pkce = createPkce()
-    await expect(exchangeCode({ pkce, pasted: '   ' })).rejects.toThrow(/no code was pasted/)
+    const a = await started()
+    await expect(a.flow.submit('   ')).rejects.toThrow(/no code was pasted/)
+    expect(a.calls).toEqual([])
   })
 })
 
 describe('the exchange', () => {
   it('sends the verifier and asks for a year', async () => {
-    const pkce = createPkce()
-    const { fetchImpl, calls } = service({ body: { access_token: TOKEN, expires_in: 31536000 } })
+    const a = await started({ body: { access_token: TOKEN, expires_in: 31536000 } })
 
-    const armed = await exchangeCode({ pkce, pasted: `the-code#${pkce.state}`, fetchImpl })
-
-    expect(armed).toEqual({ token: TOKEN, expiresIn: 31536000 })
-    expect(calls[0]?.url).toBe(TOKEN_URL)
-    expect(calls[0]?.body).toEqual({
+    expect(await a.flow.submit(`the-code#${a.state}`)).toEqual({ token: TOKEN })
+    expect(a.calls[0]?.url).toBe(TOKEN_URL)
+    expect(a.calls[0]?.body).toEqual({
       grant_type: 'authorization_code',
       code: 'the-code',
       redirect_uri: REDIRECT_URI,
       client_id: CLIENT_ID,
-      code_verifier: pkce.verifier,
-      state: pkce.state,
+      code_verifier: expect.any(String),
+      state: a.state,
       expires_in: ONE_YEAR_SECONDS,
     })
   })
@@ -115,57 +136,46 @@ describe('the exchange', () => {
   it('quotes the service when it refuses', async () => {
     // THE point of speaking the protocol: a refusal that can be read, rather
     // than a screen that stopped changing.
-    const pkce = createPkce()
-    const { fetchImpl } = service({
+    const a = await started({
       status: 400,
       body: { error: 'invalid_grant', error_description: 'code expired' },
     })
 
-    await expect(exchangeCode({ pkce, pasted: 'stale', fetchImpl })).rejects.toThrow(
-      /HTTP 400.*invalid_grant.*code expired/,
-    )
+    await expect(a.flow.submit('stale')).rejects.toThrow(/HTTP 400.*invalid_grant.*code expired/)
   })
 
   it('blames the network for a network failure, not the code', async () => {
     // Otherwise an outage becomes an hour of re-copying a perfectly good code.
-    const pkce = createPkce()
     const fetchImpl = (() => Promise.reject(new Error('ECONNREFUSED'))) as unknown as typeof fetch
+    const flow = createOAuthFlow({ fetchImpl })
+    await flow.start()
 
-    await expect(exchangeCode({ pkce, pasted: 'code', fetchImpl })).rejects.toThrow(
+    await expect(flow.submit('code')).rejects.toThrow(
       /could not reach the authorization service: ECONNREFUSED/,
     )
   })
 
   it('names a changed contract instead of returning nothing', async () => {
-    const pkce = createPkce()
-    const { fetchImpl } = service({ body: { token: TOKEN, expires_in: 60 } })
+    const a = await started({ body: { token: TOKEN, expires_in: 60 } })
 
-    await expect(exchangeCode({ pkce, pasted: 'code', fetchImpl })).rejects.toThrow(
+    await expect(a.flow.submit('code')).rejects.toThrow(
       /carried no access_token \(fields: token, expires_in\)/,
     )
   })
 
   it('never puts a credential in an error', async () => {
     // The one field worth hiding is the one an error is most tempted to show.
-    const pkce = createPkce()
-    const { fetchImpl } = service({ body: { access_token: '', secret_token: TOKEN } })
+    const a = await started({ body: { access_token: '', secret_token: TOKEN } })
 
-    await expect(exchangeCode({ pkce, pasted: 'code', fetchImpl })).rejects.toThrow(
-      /fields: access_token, secret_token/,
-    )
-    await expect(exchangeCode({ pkce, pasted: 'code', fetchImpl })).rejects.not.toThrow(
-      new RegExp(TOKEN),
-    )
+    await expect(a.flow.submit('code')).rejects.toThrow(/fields: access_token, secret_token/)
+    await expect(a.flow.submit('code')).rejects.not.toThrow(new RegExp(TOKEN))
   })
 
   it('reports a body that is not JSON at all', async () => {
     // A proxy's HTML error page, which is what a broken deployment returns.
-    const pkce = createPkce()
-    const { fetchImpl } = service({ text: '<html>502 Bad Gateway</html>' })
+    const a = await started({ text: '<html>502 Bad Gateway</html>' })
 
-    await expect(exchangeCode({ pkce, pasted: 'code', fetchImpl })).rejects.toThrow(
-      /not JSON.*502 Bad Gateway/,
-    )
+    await expect(a.flow.submit('code')).rejects.toThrow(/not JSON.*502 Bad Gateway/)
   })
 })
 

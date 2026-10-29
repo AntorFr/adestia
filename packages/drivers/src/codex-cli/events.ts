@@ -27,7 +27,7 @@ export interface Notification {
  * because the command happened to contain `apply_patch` would be the driver
  * inventing structure the engine does not have.
  */
-export function describeItem(item: Record<string, unknown>): { name: string; target?: string } {
+function describeItem(item: Record<string, unknown>): { name: string; target?: string } {
   const type = String(item['type'] ?? 'item')
   switch (type) {
     case 'commandExecution': {
@@ -73,8 +73,6 @@ function stripShellWrapper(command: string): string {
 
 /** Items that are conversation, not action — they must never become trace rows. */
 const NOT_TOOLS = new Set(['agentMessage', 'userMessage', 'reasoning', 'error', 'todoList', 'plan'])
-
-export const usageOf = codexUsage
 
 function codexUsage(total: Record<string, unknown> | undefined): TurnUsage | undefined {
   if (!total) return undefined
@@ -178,7 +176,7 @@ export function translate(notification: Notification, state: TranslationState): 
       if (typeof usage !== 'object' || usage === null) return []
       const total = (usage as Record<string, unknown>)['total']
       const totals = typeof total === 'object' && total !== null ? (total as Record<string, unknown>) : undefined
-      state.usage = usageOf(totals) ?? state.usage
+      state.usage = codexUsage(totals) ?? state.usage
       const output = totals?.['outputTokens']
       if (typeof output !== 'number') return []
       // Cumulative on the wire, a delta in the contract: the climbing counter

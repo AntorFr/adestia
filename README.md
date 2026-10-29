@@ -19,6 +19,7 @@ mkdir -p workspace data plugins skins
 docker compose up
 ```
 
+`./plugins` and `./skins` in the clone already hold the shipped extensions; `mkdir -p` only creates what is missing.
 The first `up` builds the image from the `Dockerfile`; the agent needs
 `CLAUDE_CODE_OAUTH_TOKEN` (see `docker-compose.yml`), which compose reads from the
 host's environment: `export CLAUDE_CODE_OAUTH_TOKEN=<token>` before `docker compose up`

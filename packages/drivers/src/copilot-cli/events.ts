@@ -39,7 +39,7 @@ export function parseLine(line: string): CopilotEvent | undefined {
  * file's contents or an entire command, and a trace is a witness, not an
  * archive.
  */
-export function toolTargetOf(data: Record<string, unknown> | undefined): string | undefined {
+function toolTargetOf(data: Record<string, unknown> | undefined): string | undefined {
   const args = data?.['arguments']
   if (typeof args === 'string') return truncate(args)
   if (typeof args !== 'object' || args === null) return undefined
@@ -51,8 +51,6 @@ export function toolTargetOf(data: Record<string, unknown> | undefined): string 
   }
   return undefined
 }
-
-const usageOf = copilotUsage
 
 function copilotUsage(data: Record<string, unknown> | undefined): TurnUsage | undefined {
   const usage = data?.['usage']
@@ -193,7 +191,7 @@ export function translate(event: CopilotEvent, state: TranslationState): readonl
       const sessionId = stated ?? state.sessionId
       state.sessionId = sessionId
       const exitCode = top['exitCode'] ?? data['exitCode']
-      const usage = usageOf('usage' in top ? top : data)
+      const usage = copilotUsage('usage' in top ? top : data)
       return [
         {
           type: 'result',

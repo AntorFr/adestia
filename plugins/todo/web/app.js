@@ -13,7 +13,7 @@ import {
   taskMarkdown,
   words,
 } from './model.js'
-import { storeMarks, taskRow, todayISO, toggleTask } from './rows.js'
+import { icon, storeMarks, taskRow, todayISO, toggleTask } from './rows.js'
 import { makeSheet } from './sheet.js'
 
 /**
@@ -284,7 +284,7 @@ export default function view(api) {
 
     return h('section', { className: 'todo' }, [
       h('header', { key: 'h', className: 'todo__head' }, [
-        h('span', { key: 'p', className: 'todo__plate' }, '☑'),
+        h('span', { key: 'p', className: 'todo__plate' }, icon(h, 'check')),
         h('div', { key: 'n' }, [
           h('h2', { key: 't' }, t('Todo')),
           h('p', { key: 's', className: 'todo__lede' }, [

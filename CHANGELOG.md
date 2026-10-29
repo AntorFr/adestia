@@ -464,6 +464,32 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
 
 ## adestia-correctifs (unreleased)
 
+- **Plugin chrome shares the charter's icons** — page links, todo notes and attachments,
+  journal archives and warnings use the existing sprite with their text or title. Follow,
+  walking mode, trip hints and Done keep their words without an emoji. Author and engine
+  content marks, manifest tile icons, and the typographic `✦`/`✓` remain.
+
+- **The atelier agrees its piece count in the instance’s language** — French reads
+  « 0 pièce », « 1 pièce », « 2 pièces »; English keeps « 0 pieces », « 1 piece »,
+  « 2 pieces ». Voyages counters now carry each complete French form in their
+  table instead of adding an `s` to a translated word.
+
+- **The atelier and the voyages ask and say in their own sheet** — handing the layout
+  back no longer opens the browser's `confirm()`: the plugin's sheet asks, *Cancel* has
+  the focus (Escape and the scrim cancel), and *Discard my layout* does what OK did. A
+  trip gesture the server refuses, or that fails, is said in the card's sheet instead of
+  `window.alert`, and the board repaints when it closes. The focus returns to the card,
+  including when its tray button opened the refusal. The answer is now asynchronous.
+- **The scan reader gives the focus back on a phone** — when it closes and the
+  button that opened it is gone (the composer's fold), the focus goes to the
+  composer's field instead of being lost; with the button still there, it
+  returns to it as before.
+- **`:::content` reads its date in the instance's language** — `on=2026-03-04` is
+  drawn with `Intl.DateTimeFormat` of the interface locale (`4 mars 2026`,
+  `March 4, 2026`); a value that is not a date is drawn as written.
+- **Walking map fills its box** — E-28 reads the map's actual height in walking
+  mode and redraws on entry, exit and resize, so the route and tiles occupy the
+  screen above the GPS controls. The map in a page keeps its previous size.
 - **A root page's breadcrumb no longer invents a folder** — `trailOf` took the parent of
   `notes.md` by slicing off its last character; it now uses `folderOf`, so the trail is Home
   then the title. The missing-page screen (E-8) links to Home when the refused page is at the root.
@@ -522,3 +548,41 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
   The Planif screen's own notes reader (`plugins/planif/api.mjs`) had a third,
   LF-only copy of the fence and now reads the same lines, so a CRLF scheduled note
   shows its title, times and `expired` instead of an empty note.
+- **Amber means one thing in project management** — `--warning` now draws only the
+  owner's `Amber` assessment. A deduced delay (a late phase bar, a late milestone) is
+  drawn by shape, a dashed outline in `--text-muted`, with the hover word kept, so a skin
+  that flattens hues still tells it from a stated Amber (E-31, AD-24 c). The milestone
+  markers, which shared the amber, take the accent. `plugins/test/css.test.js` guards it.
+
+## v0.96.0-adestia-correctifs.1
+
+**The server slice of `adestia-correctifs` (AD-22).** `start()` refuses a driver
+whose descriptor does not hold its contract (`Driver "<id>" is not conformant:`, one
+gap per line). Saving the configuration keeps the file mode (0600). The old files no
+longer re-export the `register*` functions of `routes/`.
+
+## v0.96.0-adestia-correctifs.2
+
+**The chat slice (AD-23).** A turn refused with 429 is worded by `t()` in `en`/`fr`
+with its ceiling, and its line survives a re-read until the next send or another
+conversation. A sent message draws the `paperclip` icon and the names, no text emoji.
+
+## v0.96.0-adestia-correctifs.3
+
+**The shell slice (AD-24).** The send arrow of Nestor is an SVG; the MCP tile counts the
+servers E-10 lists; Skippy's banner fits one line at 360 px; the “Invalid plugin/skin
+manifest” header follows the language; the dialog's `refresh()` shows the error it
+raised; one `.adestia-icon--spin` rule remains.
+
+## v0.96.0-adestia-correctifs.4
+
+**The pages slice (AD-25).** The trace of a root page names no folder and E-8 leads to
+Home; the `Popover` stays under the canvas header and follows its anchor; a `Diagnostic`
+carries `code` and `args`, so the shell words it by `t()`.
+
+## v0.96.0-adestia-correctifs.5
+
+**The plugins slice (AD-24 a–d).** The atelier and trips speak in the plugin's own
+sheet, with no `confirm()` or `alert`; counters agree per language; the walk card takes
+the height of its box; the scanner returns focus to the composer field (E-30); chrome
+emoji give way to the charter icons; the `:::content` date follows the language.

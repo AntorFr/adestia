@@ -44,6 +44,8 @@ import {
  */
 export default function createAtelierApp(api) {
   const { esc, crumbs, headers, href, learn, t } = api;
+  const pieceNumber = new Intl.PluralRules(api.locale || 'en');
+  const piecesText = (n) => t(pieceNumber.select(n) === 'one' ? '%n piece' : '%n pieces', { n });
   /* The one line this port needed.
 
      In agent-gw the engine was BUNDLED into the launcher, so a bare `page`
@@ -161,7 +163,7 @@ export default function createAtelierApp(api) {
       const tot = w.total || w.pieces || 0;
       const pct = tot ? Math.round(100 * w.done / tot) : 0;
       const last = w.lastActivity ? new Date(w.lastActivity).toLocaleDateString(api.locale || 'fr-FR', { day: 'numeric', month: 'short' }) : t('never');
-      html += `<a class="card" href="${href(w.path)}"><div class="ct">${esc(w.titre)}</div><div class="cmeta">${w.done}/${tot} ${t('steps')} · ${t(w.pieces === 1 ? '%n piece' : '%n pieces', { n: w.pieces })} · ${esc(last)}</div><div class="bar"><i style="width:${pct}%"></i></div></a>`;
+      html += `<a class="card" href="${href(w.path)}"><div class="ct">${esc(w.titre)}</div><div class="cmeta">${w.done}/${tot} ${t('steps')} · ${piecesText(w.pieces)} · ${esc(last)}</div><div class="bar"><i style="width:${pct}%"></i></div></a>`;
     }
     page.innerHTML = html + '</div></div>';
   }
@@ -531,7 +533,7 @@ export default function createAtelierApp(api) {
     body.innerHTML = bar + plaques.map((pl) => {
       const mat = wb.matById.get(pl.materiau) || {};
       const n = (pl.etapes || []).reduce((s, st) => s + (st.type === 'tronconnage' ? (st.pieces || []).length : 0), 0);
-      return `<div class="blueprint" data-plaque="${esc(pl.plaque || '')}"><div class="bp-inner"><div class="bp-h"><b>${t('SHEET %id', { id: esc(pl.plaque || '') })}</b><span>${esc(mat.label || pl.materiau || '')} · ${t(n === 1 ? '%n piece' : '%n pieces', { n })}</span></div><div class="cutwrap">${plaqueSVG(pl)}</div></div></div>`;
+      return `<div class="blueprint" data-plaque="${esc(pl.plaque || '')}"><div class="bp-inner"><div class="bp-h"><b>${t('SHEET %id', { id: esc(pl.plaque || '') })}</b><span>${esc(mat.label || pl.materiau || '')} · ${piecesText(n)}</span></div><div class="cutwrap">${plaqueSVG(pl)}</div></div></div>`;
     }).join('')
       + (allIss.length ? `<div class="blueprint"><div class="bp-inner"><div class="bp-h"><b class="c-fault">${t('To fix')}</b><span>${t('the cutting plan will not go through as it stands')}</span></div><div class="issues">${allIss.map(([pl, m]) => [...m.entries()].map(([et, ms]) => `<div><b class="mono">${esc(pl.plaque)} · ${esc(et.replace(/^[^-]+-/, ''))}</b> — ${esc(ms.join(' · '))}</div>`).join('')).join('')}</div></div></div>` : '')
       + `<div class="legend"><span><i class="sw sw-plan"></i>${t('to cut')}</span><span><i class="sw sw-done"></i>${t('cut ✓')}</span><span><i class="sw sw-edge"></i>${t('edge to band (edge banding)')}</span><span class="c-faint">${wbEditOn ? t('drag a piece · edges snap, adding the saw kerf') : t('click a column → detail/cut · click the name → the piece')}</span></div>`;
@@ -564,9 +566,7 @@ export default function createAtelierApp(api) {
         wbSelB = id;
         wbSavePose({ bande: { id, cree: true, plaque: pl.plaque, axe: 'y', x, y: uz.y0, w: 100, h: Math.min(600, uz.y1 - uz.y0) } });
       });
-      $('wbreset')?.addEventListener('click', () => {
-        if (confirm(t('Drop your layout and go back to Alfred’s?'))) { wbSel = null; wbSelB = null; wbSavePose({ reset: true }); }
-      });
+      $('wbreset')?.addEventListener('click', (e) => askReset(e.currentTarget));
     } else {
       body.querySelectorAll('.colc').forEach((gEl) => openable(gEl, () => showColonne(gEl.dataset.band, gEl)));
       body.querySelectorAll('.pname').forEach((t) => openable(t, () => showPiece(t.dataset.et, t)));
@@ -700,7 +700,7 @@ export default function createAtelierApp(api) {
       svg += `<text x="0" y="${bh + 15}" fill="var(--text-muted)" font-family="var(--font-mono)" font-size="8.5">${t('panel %len×%wid · groove width %gw · depth %gd mm · through ◀ stop ▶ %off', { len, wid: larg, gw, gd, off })}</text>`;
       svg += `</g></svg>`;
       const chips = g.pieces.map((p) => `<button class="colchip${wbDone('rainure-' + p.etiquette) ? ' done' : ''}" data-tick="rainure-${esc(p.etiquette)}">${wbDone('rainure-' + p.etiquette) ? '✓ ' : ''}${esc(p.etiquette.replace(/^[^-]+-/, ''))}</button>`).join('');
-      html += `<div class="blueprint"><div class="bp-inner"><div class="bp-h"><b>${t('Groove — width %gw · depth %gd mm', { gw, gd })}</b><span>${t(g.pieces.length === 1 ? '%n piece' : '%n pieces', { n: g.pieces.length })} · ${t('e.g. %role %len×%wid', { role: esc(p0.role), len, wid: larg })}</span></div><div class="cutwrap">${svg}</div><div class="tgcols">${chips}</div></div></div>`;
+      html += `<div class="blueprint"><div class="bp-inner"><div class="bp-h"><b>${t('Groove — width %gw · depth %gd mm', { gw, gd })}</b><span>${piecesText(g.pieces.length)} · ${t('e.g. %role %len×%wid', { role: esc(p0.role), len, wid: larg })}</span></div><div class="cutwrap">${svg}</div><div class="tgcols">${chips}</div></div></div>`;
     }
     body.innerHTML = html;
     body.querySelectorAll('[data-tick]').forEach((b) => b.addEventListener('click', () => tick(b.dataset.tick, !wbDone(b.dataset.tick))));
@@ -1022,6 +1022,18 @@ export default function createAtelierApp(api) {
     return null;
   }
   // Pop-up COLONNE : l'objet réel du débit — longueur, refente, tronçons (liens), débiter d'un bloc.
+  // Handing the layout back is asked in the piece's sheet, not in the browser's
+  // dialog: Cancel has the focus, Escape and the scrim cancel, nothing moves.
+  function askReset(from) {
+    const { body, foot, close } = sheet.open({ title: t('Take back Alfred’s proposal'), from });
+    body.textContent = t('Drop your layout and go back to Alfred’s?');
+    const cancel = node('button', 'adestia-btn adestia-btn--sm', t('Cancel')); cancel.type = 'button';
+    cancel.addEventListener('click', close);
+    const drop = node('button', 'adestia-btn adestia-btn--accent adestia-btn--sm', t('Discard my layout')); drop.type = 'button';
+    drop.addEventListener('click', () => { close(); wbSel = null; wbSelB = null; wbSavePose({ reset: true }); });
+    foot.append(cancel, drop);
+    cancel.focus();
+  }
   function showColonne(bandId, from) {
     const f = findBand(bandId); if (!f) return;
     const { plaque, mat, band, troncStep } = f;
@@ -1074,7 +1086,7 @@ export default function createAtelierApp(api) {
     const steps = wb.steps || [];
     const total = steps.length;
     const remaining = steps.filter((s) => !wbDone(s.id));
-    if (!remaining.length) { bodyEl.innerHTML = `<div class="etq">${t('Done 🎉')}</div><div class="dims">${t(total === 1 ? '%n step done' : '%n steps done', { n: total })}</div>`; return; }
+    if (!remaining.length) { bodyEl.innerHTML = `<div class="etq">${t('Done')}</div><div class="dims">${t(total === 1 ? '%n step done' : '%n steps done', { n: total })}</div>`; return; }
     const cur = remaining[0];
     const doneCount = total - remaining.length;
     const detail = cur.type === 'tronconnage'
@@ -1085,7 +1097,7 @@ export default function createAtelierApp(api) {
     bodyEl.innerHTML = `<div class="reg">${t('Sheet %id · %type', { id: esc(cur.plaque), type: esc(cur.type) })}</div><div class="etq">${esc(cur.titre || cur.id)}</div>
       <div class="dims">${esc(detail)}</div>`;
     const btn = document.createElement('button'); btn.className = 'done-btn'; btn.textContent = t('DONE ✓');
-    btn.addEventListener('click', () => tick(cur.id, true)); bodyEl.appendChild(btn);
+    btn.addEventListener('click', () => { void tick(cur.id, true); }); bodyEl.appendChild(btn);
     bodyEl.insertAdjacentHTML('beforeend', `<div class="progress"><div style="width:${Math.round(100 * doneCount / total)}%"></div></div><div class="pcount">${t('%done/%total steps', { done: doneCount, total })}</div>`);
   }
 

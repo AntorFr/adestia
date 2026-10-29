@@ -110,19 +110,25 @@ test('en français, le texte d’avant la tâche, à la lettre', async () => {
   const dit = textes(hote)
   for (const s of [
     '3 repères', '20 min de marche', '30 m d\'escaliers', 'Départ — Pont', 'Repère 2 —', 'Arrivée — Fin',
-    'Zoomer', 'Dézoomer', 'Recadrer sur le parcours', 'Changer de fond de carte', '🥾 Mode balade',
+    'Zoomer', 'Dézoomer', 'Recadrer sur le parcours', 'Changer de fond de carte', 'Mode balade',
     'Plein écran, votre position, ce qui reste à marcher', '↓ Télécharger le GPX',
-    'La trace, pour Organic Maps, OsmAnd…', '500 m depuis le précédent', '⚠ à 80 m de la trace',
+    'La trace, pour Organic Maps, OsmAnd…', '500 m depuis le précédent', 'à 80 m de la trace',
     'Trace calculée le 2026-01-02 — osrm.', '© IGN — Géoplateforme',
   ]) assert.ok(dit.includes(s), `manque « ${s} »\n${dit}`)
   assert.ok(/Profil altimétrique sur .* mètres, 3 repères\./.test(dit))
+  // AD-24 d: the warning is the charter's triangle-alert, drawn beside the off-route distance only
+  const metas = [...hote.querySelectorAll('.pc-meta')].filter((m) => m.textContent.includes('à 80 m de la trace'))
+  assert.equal(metas.length, 1)
+  assert.deepEqual([...metas[0].querySelectorAll('use')].map((u) => u.getAttribute('href')), ['#adestia-i-triangle-alert'])
+  assert.ok(!/[⚠🧭🥾]/u.test(hote.textContent))
+  assert.match(metas[0].textContent, /500 m depuis le précédent ·\s+à 80 m de la trace/)
 })
 
 test('le HUD : une sortie nommée dans chaque langue, qui ferme le mode et rend le focus', async () => {
   const dom = await boot()
-  for (const [locale, nom, suivi] of [['en', 'Leave walking mode', '🧭 Follow'], ['fr', 'Quitter le mode balade', '🧭 Suivi']]) {
+  for (const [locale, nom, suivi] of [['en', 'Leave walking mode', 'Follow'], ['fr', 'Quitter le mode balade', 'Suivi']]) {
     const { hote, calls } = await monte(dom, locale, DATA(REPERES))
-    const ouvre = [...hote.querySelectorAll('button.pc-fond')].find((b) => /^🥾/.test(b.textContent))
+    const ouvre = [...hote.querySelectorAll('button.pc-fond')].find((b) => ['Walking mode', 'Mode balade'].includes(b.textContent.trim()))
     ouvre.focus(); ouvre.click()
     const hud = hote.querySelector('.pc-hud')
     assert.ok(hud, 'HUD absent')
@@ -154,12 +160,12 @@ test('les états du GPS, dits dans la langue', async () => {
   for (const geo of ['denied', 'gone', 'none']) {
     for (const [i, locale] of ['fr', 'en'].entries()) {
       const { hote } = await monte(dom, locale, DATA(REPERES), { geo })
-      ;[...hote.querySelectorAll('button.pc-fond')].find((b) => /^🥾/.test(b.textContent)).click()
+      ;[...hote.querySelectorAll('button.pc-fond')].find((b) => ['Walking mode', 'Mode balade'].includes(b.textContent.trim())).click()
       assert.ok(hote.querySelector('.pc-hud-1').textContent === att[geo][i], hote.querySelector('.pc-hud-1').textContent)
     }
   }
   const { hote } = await monte(dom, 'fr', DATA(REPERES), { geo: 'far' })
-  ;[...hote.querySelectorAll('button.pc-fond')].find((b) => /^🥾/.test(b.textContent)).click()
+  ;[...hote.querySelectorAll('button.pc-fond')].find((b) => ['Walking mode', 'Mode balade'].includes(b.textContent.trim())).click()
   assert.match(hote.querySelector('.pc-hud-1').textContent, /^À \d+ m du parcours$/)
   assert.equal(hote.querySelector('.pc-hud-2').textContent, 'Hors trace — l’avancement ne veut rien dire ici.')
 })
@@ -202,4 +208,45 @@ test('un nom de repère qui ressemble à un espace réservé reste tel quel', as
   const dom = await boot()
   const { hote } = await monte(dom, 'en', DATA([{ nom: '%n %distance', latlng: '48,2' }]))
   assert.ok(textes(hote).includes('%n %distance'))
+})
+
+// E-28 — en balade le dessin suit la hauteur RÉELLE de la boîte (le flex lui
+// donne l'écran moins le HUD), pas le plafond de 420 px de la carte en page.
+const boiteDe = (hote, largeur, hauteur) => {
+  const boite = hote.querySelector('.pc-map')
+  Object.defineProperty(boite, 'clientWidth', { configurable: true, get: () => largeur.v })
+  Object.defineProperty(boite, 'clientHeight', { configurable: true, get: () => hauteur.v })
+  return boite
+}
+const svgH = (hote) => hote.querySelector('.pc-map svg.pc-svg').getAttribute('height')
+const svgW = (hote) => hote.querySelector('.pc-map svg.pc-svg').getAttribute('width')
+const ouvreBalade = (hote) => [...hote.querySelectorAll('button.pc-fond')].find((b) => ['Walking mode', 'Mode balade'].includes(b.textContent.trim())).click()
+
+test('E-28 : en balade la hauteur suit la boîte, au-dessus comme au-dessous de 420 ; hors balade rien ne change', async () => {
+  const dom = await boot()
+  for (const geo of ['ok', 'none']) {
+    const { hote, off } = await monte(dom, 'fr', DATA(REPERES), { geo })
+    const l = { v: 800 }; const h = { v: 900 }
+    const boite = boiteDe(hote, l, h)
+    ouvreBalade(hote)
+    assert.equal(svgH(hote), '900', `${geo}: entrée, plus haut que 420`)
+    assert.equal(svgW(hote), '800')
+    // la boîte plus basse que 200 ou 420 : le dessin la suit, sans plancher
+    h.v = 300; dom.window.dispatchEvent(new dom.window.Event('resize'))
+    await new Promise((r) => setTimeout(r, 260))
+    assert.equal(svgH(hote), '300', `${geo}: resize de hauteur seule`)
+    assert.equal(svgW(hote), '800')
+    h.v = 700; dom.window.dispatchEvent(new dom.window.Event('resize'))
+    await new Promise((r) => setTimeout(r, 260))
+    assert.equal(svgH(hote), '700')
+    // sortie : la formule d'origine, 420 de plafond, 200 de plancher
+    hote.querySelector('.pc-hud button:last-child').click()
+    assert.ok(!hote.classList.contains('pc-balade'))
+    assert.equal(svgH(hote), '420', `${geo}: sortie`)
+    l.v = 300; dom.window.dispatchEvent(new dom.window.Event('resize'))
+    await new Promise((r) => setTimeout(r, 260))
+    assert.equal(svgH(hote), '200', `${geo}: hors balade, plancher 200 (0,62 × 300 = 186)`)
+    assert.ok(boite.isConnected)
+    off()
+  }
 })
