@@ -52,8 +52,6 @@ export function toolTargetOf(data: Record<string, unknown> | undefined): string 
   return undefined
 }
 
-const usageOf = copilotUsage
-
 function copilotUsage(data: Record<string, unknown> | undefined): TurnUsage | undefined {
   const usage = data?.['usage']
   if (typeof usage !== 'object' || usage === null) return undefined
@@ -193,7 +191,7 @@ export function translate(event: CopilotEvent, state: TranslationState): readonl
       const sessionId = stated ?? state.sessionId
       state.sessionId = sessionId
       const exitCode = top['exitCode'] ?? data['exitCode']
-      const usage = usageOf('usage' in top ? top : data)
+      const usage = copilotUsage('usage' in top ? top : data)
       return [
         {
           type: 'result',

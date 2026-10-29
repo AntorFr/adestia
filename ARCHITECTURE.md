@@ -950,7 +950,7 @@ Each target: what, where, why it costs, the tranche that owns it, and its outcom
 | R | What and where | Why it costs | Tranche | Outcome |
 |---|---|---|---|---|
 | R-1 | MCP `Authorization: Bearer` header selection copied in `claude-code/driver.ts`, `copilot-cli/driver.ts`, `codex-cli/driver.ts` | three copies of a security-relevant rule | serveur | closed: `drivers/src/mcp-headers.ts`, pinned by a test written first |
-| R-2 | Driver helpers duplicated: device-code `beginAuth`/`completeAuth`/`cancelAuth` (codex, copilot), `truncate` ×3 (`*/events.ts`), `health` ×2, `usageOf` ×3, `classifyAuthError`/`explainAuthProblem` ×2 (`*/auth.ts`) | drift between engines | serveur | closed: `engine-aids.ts` and `device-code.ts`; the engines pass their own tables |
+| R-2 | Driver helpers duplicated: device-code `beginAuth`/`completeAuth`/`cancelAuth` (codex, copilot), `truncate` ×3 (`*/events.ts`), `health` ×2, `usageOf` ×3, `classifyAuthError`/`explainAuthProblem` ×2 (`*/auth.ts`) | drift between engines | serveur | closed: `engine-aids.ts` and `device-code.ts`; the engines pass their own tables; one-line usage aliases removed and guarded by `no-aliases.test.ts`; auth wrappers remain because the production drivers call them |
 | R-3 | `start()` (464 lines) and `buildApp` (287 lines) mix concerns; `TurnLimiter`, `runUnattended`, inline `/api/delegations` routes and the `adestiaRunTurn` monkey-patch live in `app.ts`; routes registered both from `routes/` and top-level files (`pages.ts`, `mcp-routes.ts`, `static.ts`, `files.ts`, `watch.ts`, `callback.ts`) | no single place says what is mounted | serveur | closed: every route is registered from `routes/`; the top-level files keep only their helpers (`mcp-routes.ts` is gone); `app.ts` mounts, `turn-limiter.ts` and `unattended.ts` hold the rest; `start()` is named stages, order pinned by `start-order.test.ts` |
 | R-4 | `field()` duplicated in `instruction-catalogues.ts` and `instructions.ts`; `routes/instruction-catalogues.ts` `sourceOf` / `fetchClone` / `cacheDir` duplicate `catalogueSource` / `fetchCatalogueClone` / `catalogueClone` of `instruction-catalogues-refresh.ts` | pure extraction, behaviour kept | serveur | closed: `field()` once in `frontmatter.ts`; the catalogue route calls the refresh module |
 | R-5 | `pages.ts` doubles as a frontmatter library for `instructions.ts`, `instruction-catalogues.ts`, `schedule.ts`, `shell-tools.ts` | a route module as a dependency; move without changing the parser (AD-7) | serveur | closed: `server/src/frontmatter.ts`, bodies untouched; the CRLF divergence stays (AD-7) |
@@ -991,6 +991,8 @@ rules. The server outcomes above are filled.
   versus Copilot's pass-through status words are two tables given to `health`; each engine's
   counters, error fragments and sentences are its own tables; Copilot's consent text and token
   check, Codex's pasted-credential path, are hooks of the flow. No difference was a defect.
+  `codexUsage` and `copilotUsage` are called directly, without a `usageOf` alias. The
+  authentication wrappers bind each engine's tables for its production driver (AD-26).
 - **R-5, a move, not a merge.** `splitFrontmatter` and `parseFrontmatter` move out of `pages.ts`
   into their own module with their bodies untouched; `instructions.ts`, `instruction-catalogues.ts`,
   `schedule.ts` and `shell-tools.ts` import from it. The CRLF divergence stays (AD-7; repaired later by `adestia-correctifs`, see the note under AD-7).
@@ -1036,7 +1038,7 @@ rules. The server outcomes above are filled.
   | `packages/drivers/src/claude-code/oauth.ts` | `CLIENT_ID`, `ONE_YEAR_SECONDS`, `REDIRECT_URI`, `TOKEN_URL`, `authorizeUrl`, `createPkce`, `exchangeCode`, `splitPastedCode` | `packages/drivers/test/oauth.test.ts` |
   | `packages/drivers/src/codex-cli/auth.ts` | `apiKeyDocument` | `packages/drivers/test/codex.test.ts` |
   | `packages/drivers/src/codex-cli/driver.ts` | `quotaReportOf` | `packages/drivers/test/codex.test.ts` |
-  | `packages/drivers/src/codex-cli/events.ts` | `describeItem`, `usageOf` | `packages/drivers/test/codex.test.ts` |
+  | `packages/drivers/src/codex-cli/events.ts` | `describeItem` | `packages/drivers/test/codex.test.ts` |
   | `packages/drivers/src/codex-cli/login.ts` | `readPrompt`, `saidSuccess`, `stripAnsi` | `packages/drivers/test/codex.test.ts` |
   | `packages/drivers/src/codex-cli/protocol.ts` | `SpawnedProcess` | `packages/drivers/test/codex.test.ts` |
   | `packages/drivers/src/conformance.ts` | `checkConformance` | `packages/drivers/test/claude-code.test.ts`, `packages/drivers/test/codex.test.ts`, `packages/drivers/test/conformance.test.ts`, `packages/drivers/test/copilot.test.ts` |

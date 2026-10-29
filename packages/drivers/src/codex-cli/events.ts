@@ -74,8 +74,6 @@ function stripShellWrapper(command: string): string {
 /** Items that are conversation, not action — they must never become trace rows. */
 const NOT_TOOLS = new Set(['agentMessage', 'userMessage', 'reasoning', 'error', 'todoList', 'plan'])
 
-export const usageOf = codexUsage
-
 function codexUsage(total: Record<string, unknown> | undefined): TurnUsage | undefined {
   if (!total) return undefined
   const number = (key: string): number | undefined => {
@@ -178,7 +176,7 @@ export function translate(notification: Notification, state: TranslationState): 
       if (typeof usage !== 'object' || usage === null) return []
       const total = (usage as Record<string, unknown>)['total']
       const totals = typeof total === 'object' && total !== null ? (total as Record<string, unknown>) : undefined
-      state.usage = usageOf(totals) ?? state.usage
+      state.usage = codexUsage(totals) ?? state.usage
       const output = totals?.['outputTokens']
       if (typeof output !== 'number') return []
       // Cumulative on the wire, a delta in the contract: the climbing counter
