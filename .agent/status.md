@@ -11,8 +11,6 @@
   serveur (corps vide, illisible, non JSON) lit `t('upload failed')` (`Composer.tsx`, B-16), dit dans
   `CHANGELOG.md` et `ARCHITECTURE.md` (Known defects) ; une connexion coupée avant toute réponse garde
   « request failed (0) », traduit. Rien à coder ici ; les deux premières puces des compléments de Défauts connus (sélecteur de modèle natif, signatures des délégations) sont des défauts gardés, avec leur raison.
-  Précédemment : `feature/adestia-correctifs-pages`, de la tranche pages après sa livraison, pour que ses gardes
-  du CHANGELOG lisent la section sous son titre de version ; aucun code produit.
   Précédemment : `feature/adestia-correctifs-dette`, sur `origin/epic/adestia-correctifs`
   (tranche dette, AD-26 : plus d'alias d'une ligne dans `packages/drivers` (`no-aliases.test.ts`) ;
   la table des exports gardés pour leurs tests d'`ARCHITECTURE.md` porte une raison par ligne
