@@ -210,7 +210,7 @@ escaped `\:::` in the content tests, and looks like a serialiser bug
 
 ```sh
 npm ci
-npm test          # no account or network needed; takes 7 minutes or more (the browser suites dominate), so do not cut it short; the browser suites time out at 5 s when the machine is busy: a red `Test timed out` is a load symptom, so rerun that file alone (`npx vitest run <file>`) and run `npm run test:plugins` by itself, since it follows vitest; the catalogue screens suite builds the shell on first run and skips (npm test stays green) when Playwright is not found through require/NODE_PATH, then `npm root -g`
+npm test          # no account or network needed; takes 7 minutes or more (the browser suites dominate), so do not cut it short; the browser suites time out at 5 s when the machine is busy: a red `Test timed out` is a load symptom, so rerun that file alone (`npx vitest run <file>`) and run `npm run test:plugins` by itself after a red vitest, since `npm test` chains it behind vitest and skips it on a failure; the catalogue screens suite builds the shell on first run and skips (npm test stays green) when Playwright is not found through require/NODE_PATH, then `npm root -g`
 npm run typecheck
 npm run lint      # also run by CI
 npm run build
@@ -225,8 +225,8 @@ Every driver is exercised against a fake binary, which is a property of the
 driver contract rather than a convenience: a driver whose behaviour is only
 testable against a live account is a driver tested by its first user.
 
-Work happens in an isolated git worktree and comes back to `main` before it is
-tagged. `CLAUDE.md` covers the install traps of a worktree, how to commit, and
+Work happens in an isolated git worktree and comes back to its target branch (`main`, or the
+integration branch of an epic) before it is tagged there. `CLAUDE.md` covers the install traps of a worktree, how to commit, and
 when to look at the interface.
 
 ## License
