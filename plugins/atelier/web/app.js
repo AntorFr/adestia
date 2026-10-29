@@ -1097,7 +1097,7 @@ export default function createAtelierApp(api) {
     bodyEl.innerHTML = `<div class="reg">${t('Sheet %id · %type', { id: esc(cur.plaque), type: esc(cur.type) })}</div><div class="etq">${esc(cur.titre || cur.id)}</div>
       <div class="dims">${esc(detail)}</div>`;
     const btn = document.createElement('button'); btn.className = 'done-btn'; btn.textContent = t('DONE ✓');
-    btn.addEventListener('click', () => tick(cur.id, true)); bodyEl.appendChild(btn);
+    btn.addEventListener('click', () => { void tick(cur.id, true); }); bodyEl.appendChild(btn);
     bodyEl.insertAdjacentHTML('beforeend', `<div class="progress"><div style="width:${Math.round(100 * doneCount / total)}%"></div></div><div class="pcount">${t('%done/%total steps', { done: doneCount, total })}</div>`);
   }
 

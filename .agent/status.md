@@ -49,6 +49,8 @@ Compléments encore visibles dans le code :
   personnalisée serait un composant neuf (AD-18).
 - Une délégation n'affiche pas les cartes de signature (`{ signatures: false }` dans
   `app/Delegations.tsx`) : vue en lecture seule sans gestionnaire de signature (P-13 étape 7).
+- `no-floating-promises` reste éteinte : 644 constats (22 en production, 622 dans les tests),
+  au-delà du seuil de 15 d'AD-26. `no-misused-promises` et `await-thenable` sont allumées.
 - La page ouverte ne se rafraîchit pas quand l'agent écrit (P-5 étape 7).
 - Les lignes `champ : message` de `ManifestError` restent en anglais : une table clé par phrases
   de validateur serait nouvelle.

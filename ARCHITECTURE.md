@@ -583,7 +583,7 @@ yet reproduced" (frontmatter CRLF) or "whether it predates the epic is unknown" 
 | shell | built by AD-24: Nestor’s arrow is SVG, MCP counts agree, Skippy’s phone band stays on one line, E-14’s switch stays beside its title, E-19/plugin manifest headings follow the locale, the spin rule is single and `CataloguePopin.refresh()` shows thrown errors. Token `autoComplete`: not reproduced, already `off` since `64dee0f`. Kept under Known defects: English validator field lines (a new keyed table would be needed). Nine dispositions and eight complete visual passes: `bench/shell-proof.md` |
 | server | none left: the configuration file mode, the `user-tokens.json` comment and the `register*` re-exports were repaired by AD-22 |
 | plugins | built by AD-24 a/b/c/d: the atelier reset and voyages refusal use their shared sheet (Q-20, asynchronous, no narrowing); piece counts and composed phrases follow the locale; the walking map fills its box; the scanner returns focus to the phone composer; plugin chrome uses the sprite or its visible word; Amber is the owner’s assessment and inferred delay is dashed; `:::content` dates follow the instance locale. Proof: `bench/plugins-correctifs-proof.md`. Kept under Known defects: E-23/E-27 server sentences, E-25 workbook words, E-26 item types and raw gesture errors (data, no translation table) |
-| debt | R-2 one-line aliases of the drivers and R-6 exports kept only for tests (removed, tests import the module that owns the symbol); bench duplicates (`launch(seed)`, `loadPlaywright`); fake-engine options with no caller; `doc-besoin.test.mjs` into CI; the two duplicate guards on `DESIGN.md`; typed lint rules switched on if the repo passes them; `.agent/migrate-frame.mjs` lint errors |
+| debt | R-2 one-line aliases of the drivers and R-6 exports kept only for tests (removed, tests import the module that owns the symbol); bench duplicates (`launch(seed)`, `loadPlaywright`); fake-engine options with no caller; `doc-besoin.test.mjs` into CI; the two duplicate guards on `DESIGN.md`; typed lint rules switched on if the repo passes them; `.agent/migrate-frame.mjs` lint errors — closed: `no-misused-promises` (3 findings) and `await-thenable` (1) are on for `packages/**` and `plugins/**` and their findings fixed; `no-floating-promises` stays off (644 findings, under Known defects); `.agent/migrate-frame.mjs` no longer exists (9960469), its errors are not reproduced |
 
 Kept on purpose, with their reason, and still under Known defects: the open page is **not**
 refreshed after an agent write (P-5 step 7 states that it is not, to protect unsaved text; refreshing
@@ -1152,6 +1152,12 @@ since `64dee0f`; it remains so. The missing-attribute report is closed.
   and `bandes` and ignores `reset`, so `workbook-layout.json` keeps its bands, contrary to P-11
   step 3 and E-25. The sheet itself works; the server half is missing. A red test
   (`bench/tests/plugins-ensemble.test.mjs`, « atelier reset ») stays until the API handles it.
+- **`no-floating-promises` stays off (AD-26, threshold 15).** Typed over `packages/**` and
+  `plugins/**` it reports 644 sites: 22 in production code (`plugins/atelier/web/app.js`,
+  `plugins/voyages/web/app.js`, `plugins/parcours/web/carte.js`) and 622 in tests, mostly node:test
+  `test()` / `describe()` calls. `no-misused-promises` (3) and `await-thenable` (1) were fixed and are on.
+- **`.agent/migrate-frame.mjs`: not reproduced.** The file was removed by 9960469, so its lint errors
+  no longer exist.
 - **P-5 step 7: the open page does not refresh after an agent write.**
   `app/useInstance.ts` refetches only the index on the change feed; it deliberately
   leaves the open page alone to protect unsaved editor text. The revision check
