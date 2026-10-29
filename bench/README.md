@@ -47,6 +47,22 @@ which stops it and removes its data. Browse the URL, or drive it by API
   answers, to start the turns that must be *running*). A file starting with `_`
   is shared code, not a seed.
 
+The fake engine accepts `scripts`, `mcp`, `auth` and `models`; seeds supply each
+of these. Its capabilities and instruction zones are fixed in `fake-engine.mjs`.
+
+`bench/lib/instance.mjs` owns `launch(seed, { skin, locale, ErrorClass } = {})`,
+returning `{ url, stop }`: `url` resolves at the launcher's `listening on` line,
+and `stop()` sends SIGTERM and waits for exit. The two original copies differed
+only in the sweep's optional `skin`/`locale` arguments and the seed checker's
+`Failure` error class. The sweep passes its options; the checker passes
+`{ ErrorClass: Failure }`. The default class is `Error`. Scenario launchers with
+other signatures keep their own setup.
+
+`bench/lib/playwright.mjs` owns `loadPlaywright()`, shared by the bench tools.
+After `npm ci`, `node --test bench/tests/bench-once.test.mjs` checks the tracked
+bench sources for duplicate definitions and fake-engine options without a seed
+or scenario caller. It uses the repository's TypeScript parser, without a browser.
+
 | `--seed` | What it shows |
 |---|---|
 | `base` | The populated instance: 20+ pages in two stores (every core block, a lost and an ambiguous wikilink, a vocabulary the product refuses to save, an unreadable frontmatter, a stray `app:`, files, two collections), conversations (running, unread, idle, archived, long, medium, a thread with every bubble state), six MCP servers in every health, instructions and three catalogues (importable, empty, unreachable), four delegations from two callers, a brief, a stored credential, a refused plugin and a plugin delivering a skill. No settings route: E-14 says it does not expose its configuration. |
