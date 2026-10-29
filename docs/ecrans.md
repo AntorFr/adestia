@@ -175,11 +175,11 @@ columns are the same except where the instance's configuration decides what exis
 | E-6 | shared popover/fields, normal, required attributes missing, stray attributes | — |
 | E-7 | normal, shared all-finished state inside a facet, count chips | empty collection state distinct from "all finished" |
 | E-8 | shared empty state: 404 (`file-question`), 401/403 (`lock`); the "server could not" case (0 included) as the shared failure block with **Retry**, which fetches the page again | — |
-| E-9 | normal, tiles with Lucide icons; counts absent when unreadable | loading (tiles first render without counts; kept, a recommendation) |
+| E-9 | normal, tiles with Lucide icons; counts absent when unreadable; loading (the shared row above the tiles until its four reads have answered or failed, tiles drawn throughout, no Retry) | — |
 | E-10 | list, empty ("None wired yet…", shared empty state), health tones each with an icon, needs-auth, connected/not, shadowed, read-only declaration, saving/saved/failed | loading; a confirmation before Remove (kept, recommendations) |
-| E-11 | list, empty, no match, file open, delivered (read-only, lock icon), saving/saved/failed, the name sheet for a new skill or agent | loading (kept, a recommendation) |
+| E-11 | list, empty, no match, file open, delivered (read-only, lock icon), saving/saved/failed, the name sheet for a new skill or agent; loading and fetch-failed with **Retry** for the list and for the open file (404 on the list stays "this engine has no such folder"; 404 and 401/403 on a file have the message, no Retry) | — |
 | E-12 | no catalogue, reading the repository, nothing importable, error, items; in the shared sheet (Escape, focus kept and returned, bottom sheet on a phone) | — |
-| E-13 | list by caller, empty (shared empty state), state chips with an icon, open conversation | loading, error (kept, recommendations) |
+| E-13 | list by caller, empty (shared empty state), state chips with an icon, open conversation; loading and fetch-failed with **Retry** for the list and for the open conversation (404 and 401/403 on a conversation have the message, no Retry) | — |
 | E-14 | loading (a spinner row), read error, not exposed (404), read-only, edited/default badges, saving/saved/failed, stale file, restart pending/asking/waiting/blocked/failed, each restart state with an icon | — |
 | E-15 | token states (stored, none, refused, arming flow, failed) with an icon, theme chosen (three-icon switch), signed in, version | — |
 | E-16 | empty thread, live turn (spinner or skin busy slot, counters), interrupted, error, held message, tabs/list with labelled state shapes, translated shared empty list ("No conversation yet."), MCP connect prompt, composer busy/stopping/blocked, attachments and upload error | loading for the list and thread; offline/disconnected (kept: no new state under B-1; end-of-epic recommendations) |
