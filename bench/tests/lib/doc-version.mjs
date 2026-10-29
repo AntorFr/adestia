@@ -33,7 +33,8 @@ export const checkVersions = ({ tags, headings, status, since }) => {
   if (!acceptableLast(latest).includes(last)) {
     problems.push(`last CHANGELOG title ${last} is neither the latest tag ${latest} nor its next version`)
   }
-  if (!status.includes(last)) problems.push(`status.md does not cite ${last}`)
+  const cites = new RegExp(`${last.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![-\\w]|\\.\\w)`)
+  if (!cites.test(status)) problems.push(`status.md does not cite ${last}`)
   for (const t of all.filter((t) => compare(t, since) >= 0)) {
     if (!headings.includes(t)) problems.push(`tag ${t} has no CHANGELOG entry`)
   }
