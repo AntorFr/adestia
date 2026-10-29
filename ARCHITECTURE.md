@@ -374,7 +374,7 @@ regression test `bench/tests/doc-besoin.test.mjs` checks relative Markdown link 
 (excluding package tests, nested spike documents and skills) and collects `var(--x` uses in CSS
 under `packages/web/src` and `plugins/*/web`, subtracts definitions in CSS, skins and
 scripts, and reports any remainder. Run it with
-`node --test bench/tests/doc-besoin.test.mjs` to check B-4 and B-5. Skin declarations
+`node --test bench/tests/doc-besoin.test.mjs` to check B-4 and B-5 (B-5: the last CHANGELOG title is the latest git tag or the next version of the same series, `status.md` cites that title, and no existing tag lacks its entry; the rule is the pure `checkVersions` of `bench/tests/lib/doc-version.mjs`, pinned by `doc-version.test.mjs`, and the CI checkout fetches tags). Skin declarations
 and JS/TSX inline parameters count as definitions outside those stylesheets;
 this does not mean the CSS-only difference is empty.
 

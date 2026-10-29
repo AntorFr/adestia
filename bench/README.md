@@ -110,8 +110,8 @@ fixed in the seed so a session of a refused group can be forged to reach the
 each seed (for `plugins`, one measure per plugin — `plugins › voyages: …` — reading what its API answers), reads the screens' data through the API, sends every trigger message
 and exits non-zero naming each measure that failed (`check: base › mcp: …`).
 
-`bench/bench.mjs` finds Playwright under `/usr/lib/node_modules`, or else under
-`npm root -g`.
+`bench/lib/playwright.mjs` (`loadPlaywright`) finds Playwright under `/usr/lib/node_modules`, or else under
+`npm root -g`; the scenarios import it rather than searching themselves.
 
 ## The plugins' screens, four skins × two languages: `bench/scenarios/plugins-matrix.mjs`
 
