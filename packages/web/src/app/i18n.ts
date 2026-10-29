@@ -344,6 +344,9 @@ const FR: Readonly<Record<string, string>> = {
   'Saving…': 'Enregistrement…',
   Saved: 'Enregistré',
   'Loading…': 'Chargement…',
+  'Retry': 'Réessayer',
+  'Request failed (%n)': 'La requête a échoué (%n)',
+  'The server is not responding': 'Le serveur ne répond pas',
   // The page's own properties — the frontmatter, as a form. Field names and
   // their one-line helps come from the catalogue in the content engine, which
   // writes them in English for exactly this.
