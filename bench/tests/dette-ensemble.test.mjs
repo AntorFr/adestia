@@ -93,6 +93,8 @@ test('kept exports: a re-export outside an index is used by production code, not
     }
     return false
   }
+  // a re-export kept by decision is allowed only with a documented row (module, name, test, reason)
+  const documented = new Set(keptTable().rows.flatMap((r) => ticks(r[1]).map((n) => `${ticks(r[0])[0]}:${n}`)))
   const problems = []
   for (const f of prod.filter((p) => !/\/index\.ts$/.test(p))) {
     for (const m of read(f).matchAll(/^export\s*(?:type\s*)?\{([^}]*)\}\s*from\s*['"][^'"]+['"]/gm)) {
@@ -107,7 +109,7 @@ test('kept exports: a re-export outside an index is used by production code, not
       for (const n of m[1].split(',').map((x) => x.trim().replace(/^type\s+/, '').split(/\s+as\s+/).pop()).filter(Boolean)) {
         const users = prod.filter((g) => g !== f && importsFrom(g, n))
         const testers = tests.filter((t) => importsFrom(t, n) || importsFromTest(t, n, target))
-        if (!users.length && testers.length) problems.push(`${f} re-exports ${n}; only ${testers.join(', ')} import it from there`)
+        if (!users.length && testers.length && !documented.has(`${f}:${n}`)) problems.push(`${f} re-exports ${n}; only ${testers.join(', ')} import it from there`)
       }
     }
   }
