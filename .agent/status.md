@@ -3,10 +3,15 @@
 
 ## Version courante
 
-- Dernier tag accessible : **`v0.96.0-adestia-correctifs.5`** (`git describe --tags
-  --abbrev=0`; le `.1` était la tranche serveur, le `.2` la tranche chat, le `.3` la tranche shell, le `.4` la tranche pages, le `.5` la tranche plugins) de l'epic `adestia-correctifs`, sur la branche d'intégration
+- Dernier tag accessible : **`v0.96.0-adestia-correctifs.6`** (`git describe --tags
+  --abbrev=0`; le `.1` était la tranche serveur, le `.2` la tranche chat, le `.3` la tranche shell, le `.4` la tranche pages, le `.5` la tranche plugins, le `.6` la tranche dette) de l'epic `adestia-correctifs`, sur la branche d'intégration
   de l'epic ; le dernier tag dans `main` est `v0.95.0` (l'epic `adestia-qualite`).
-- Branche de travail : `feature/adestia-correctifs-dette`, sur `origin/epic/adestia-correctifs`
+- Branche de travail : `feature/adestia-correctifs-chat`, sur `origin/epic/adestia-correctifs`
+  (reprise de la tranche chat, livrée au tag `.2` : seule la garde B-15 change, elle lit la
+  section du CHANGELOG titrée `adestia-correctifs (unreleased)` ou `v0.96.0`, titre que la
+  release donne ; aucun code ni écran touché. Restes : les deux premières puces des compléments
+  de Défauts connus).
+  Précédemment : `feature/adestia-correctifs-dette`, sur `origin/epic/adestia-correctifs`
   (tranche dette, AD-26 : plus d'alias d'une ligne dans `packages/drivers` (`no-aliases.test.ts`) ;
   la table des exports gardés pour leurs tests d'`ARCHITECTURE.md` porte une raison par ligne
   (`dette-exports-besoin.test.ts`) ; le banc définit `loadPlaywright` et `launch(seed)` une fois
@@ -49,7 +54,7 @@
 ## Défauts connus
 
 La liste de référence est dans [ARCHITECTURE.md](../ARCHITECTURE.md), section
-« Known defects ». Les défauts catalogues d'options git et de liens symboliques
+« Known defects » (`## Known defects`, vers la fin). Les défauts catalogues d'options git et de liens symboliques
 sont corrigés par `main` et n'y figurent plus.
 
 Compléments encore visibles dans le code :
