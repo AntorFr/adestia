@@ -6,9 +6,11 @@
 - Dernier tag accessible : **`v0.96.0-adestia-correctifs.6`** (`git describe --tags
   --abbrev=0`; le `.1` était la tranche serveur, le `.2` la tranche chat, le `.3` la tranche shell, le `.4` la tranche pages, le `.5` la tranche plugins, le `.6` la tranche dette) de l'epic `adestia-correctifs`, sur la branche d'intégration
   de l'epic ; le dernier tag dans `main` est `v0.95.0` (l'epic `adestia-qualite`).
-- Branche de travail : `feature/adestia-correctifs-pages`, sur `origin/epic/adestia-correctifs` : reprise
-  de la tranche pages après sa livraison, pour que ses gardes du CHANGELOG lisent la section sous son
-  titre de version (`besoin-pages-statique.test.ts`, `chat-correctifs-besoin.test.mjs`) ; aucun code produit.
+- Branche de travail : `feature/adestia-correctifs-chat`, sur `origin/epic/adestia-correctifs` : reprise
+  de la tranche chat (tag `.2`) après sa vérification : un envoi qui échoue sans phrase lisible du
+  serveur (corps vide, illisible, non JSON) lit `t('upload failed')` (`Composer.tsx`, B-16), dit dans
+  `CHANGELOG.md` et `ARCHITECTURE.md` (Known defects) ; une connexion coupée avant toute réponse garde
+  « request failed (0) », traduit. Rien à coder ici ; les deux premières puces des compléments de Défauts connus (sélecteur de modèle natif, signatures des délégations) sont des défauts gardés, avec leur raison.
   Précédemment : `feature/adestia-correctifs-dette`, sur `origin/epic/adestia-correctifs`
   (tranche dette, AD-26 : plus d'alias d'une ligne dans `packages/drivers` (`no-aliases.test.ts`) ;
   la table des exports gardés pour leurs tests d'`ARCHITECTURE.md` porte une raison par ligne
