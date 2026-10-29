@@ -606,7 +606,7 @@ export class CodexDriver implements Driver {
 }
 
 /** `{primary, secondary}` in minutes and percents, as the contract's windows. */
-export function quotaReportOf(raw: unknown, stale: boolean): QuotaReport | undefined {
+function quotaReportOf(raw: unknown, stale: boolean): QuotaReport | undefined {
   if (typeof raw !== 'object' || raw === null) return undefined
   const record = raw as Record<string, unknown>
   const windows: QuotaWindow[] = []

@@ -3,7 +3,7 @@ import { join } from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { ConversationStore, isSafeId, userDirectory } from '../src/conversations.js'
+import { ConversationStore, userDirectory } from '../src/conversations.js'
 import { cleanTmp, tmpDir } from './support/tmp.js'
 
 afterEach(cleanTmp)
@@ -41,11 +41,15 @@ describe('user directories', () => {
 })
 
 describe('id safety', () => {
-  it('accepts what we generate and refuses what we do not', () => {
-    expect(isSafeId(crypto.randomUUID())).toBe(true)
-    expect(isSafeId('../../etc/passwd')).toBe(false)
-    expect(isSafeId('a/b')).toBe(false)
-    expect(isSafeId('')).toBe(false)
+  it('accepts what we generate and refuses what we do not', async () => {
+    // `isSafeId` is reached through the store: a safe id reads back, an unsafe one is refused.
+    const { id } = await store.create('u', 'x')
+    expect(await store.read('u', id)).toBeDefined()
+    for (const unsafe of ['../../etc/passwd', 'a/b', '']) {
+      expect(await store.read('u', unsafe)).toBeUndefined()
+      expect(await store.remove('u', unsafe)).toBe(false)
+      await expect(store.rename('u', unsafe, 't')).rejects.toThrow(/unsafe/)
+    }
   })
 
   it('refuses to append under an unsafe id', async () => {

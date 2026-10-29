@@ -7,28 +7,18 @@
  *
  *   npm run build && node --test bench/tests/chat-p2-gestes-besoin.test.mjs
  */
-import { execFileSync, spawn } from 'node:child_process'
+import { spawn } from 'node:child_process'
 import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { createRequire } from 'node:module'
 import { dirname, join, resolve } from 'node:path'
 import { after, before, describe, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { fileURLToPath } from 'node:url'
+import { loadPlaywright } from '../lib/playwright.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const shots = join(root, 'bench/shots-besoin')
 
-function loadPlaywright() {
-  const roots = ['/usr/lib/node_modules']
-  try { roots.push(execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim()) } catch { /* fixed root only */ }
-  for (const dir of roots) {
-    for (const name of ['playwright-core', 'playwright']) {
-      try { return createRequire(`${dir}/`)(name) } catch { /* not here */ }
-    }
-  }
-  throw new Error('playwright not found in the environment')
-}
 const { chromium } = loadPlaywright()
 
 function startInstance(seed, skin, locale) {
