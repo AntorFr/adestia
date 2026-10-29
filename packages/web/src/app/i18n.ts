@@ -289,6 +289,13 @@ const FR: Readonly<Record<string, string>> = {
   'Scan period': 'P\u00e9riode du scan',
   'How long between two scans. Ignored unless scanning is on.':
     'D\u00e9lai entre deux scans. Sans effet si le scan est d\u00e9sactiv\u00e9.',
+  Turns: 'Tours',
+  'How many conversations the agent may work on at once. Each running turn holds an engine process, roughly 300 MB.':
+    'Combien de conversations l\u2019agent peut traiter \u00e0 la fois. Chaque tour en cours occupe un processus du moteur, environ 300 Mo.',
+  'Simultaneous turns': 'Tours simultan\u00e9s',
+  'Past this number a new turn is refused with a 429 and the chat says why. Raise it only if the instance has the memory.':
+    'Au-del\u00e0 de ce nombre, un nouveau tour est refus\u00e9 par un 429 et le chat en dit la raison. Ne l\u2019augmentez que si l\u2019instance a la m\u00e9moire.',
+  turns: 'tours',
 
   // MCP servers, on their settings page
   'MCP servers': 'Serveurs MCP',
