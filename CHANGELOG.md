@@ -555,8 +555,9 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
   markers, which shared the amber, take the accent. `plugins/test/css.test.js` guards it.
 - **An upload that fails without a readable server message says so in the user's language**
   (B-16) — an empty, unreadable or non-JSON answer to `/api/upload`, refused or not, reads
-  `upload failed`, translated, instead of the parser's English `error.message` or a bare
-  status. The server's own `error` still shows first.
+  `upload failed`, translated, instead of the parser's English `error.message` or the generic
+  `request failed (%n)`. The server's own `error` still shows first. A connection that fails before any
+  answer keeps its translated `request failed (0)`.
 
 ## v0.96.0-adestia-correctifs.1
 

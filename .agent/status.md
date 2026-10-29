@@ -9,7 +9,8 @@
 - Branche de travail : `feature/adestia-correctifs-chat`, sur `origin/epic/adestia-correctifs` : reprise
   de la tranche chat (tag `.2`) après sa vérification : un envoi qui échoue sans phrase lisible du
   serveur (corps vide, illisible, non JSON) lit `t('upload failed')` (`Composer.tsx`, B-16), dit dans
-  `CHANGELOG.md` et `ARCHITECTURE.md` (Known defects). Reste : voir Défauts connus.
+  `CHANGELOG.md` et `ARCHITECTURE.md` (Known defects) ; une connexion coupée avant toute réponse garde
+  « request failed (0) », traduit. Rien à coder ici ; les deux premières puces des compléments de Défauts connus (sélecteur de modèle natif, signatures des délégations) sont des défauts gardés, avec leur raison.
   Précédemment : `feature/adestia-correctifs-pages`, de la tranche pages après sa livraison, pour que ses gardes
   du CHANGELOG lisent la section sous son titre de version ; aucun code produit.
   Précédemment : `feature/adestia-correctifs-dette`, sur `origin/epic/adestia-correctifs`

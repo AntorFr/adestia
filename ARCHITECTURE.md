@@ -446,14 +446,15 @@ archive and the delete read only the status or a single body, and need any HTTP 
 back whole). `request.ts` gains one additive function, `requestRaw(fetchImpl, path, init?, t?)` →
 `{ ok: true, response } | { ok: false, error }` (never throws; any HTTP status is a
 `response`). The upload keeps the server's `error` and the joined list of refused
-files; an HTTP refusal without an `error` now uses the translated
-`request failed (%n)` fallback with the response status (Q-4). A thrown network
+files; an HTTP refusal without an `error` first used the translated
+`request failed (%n)` fallback with the response status (Q-4); the chat slice then
+replaced it, for the upload, by the translated `upload failed` (see Known defects). A thrown network
 failure becomes that fallback with status 0 when `t` is supplied to `requestRaw`,
 replacing the raw `Error.message`. Without `t`, `requestRaw` keeps the network
 message; `live.ts` uses this form without displaying its error. `requestJson`
 keeps a non-empty network `Error.message` even with `t`, using its translated
-fallback only when that message is absent. Upload response-parsing errors still
-show their raw message (`Composer.tsx` › `useUploads`).
+fallback only when that message is absent. An upload whose answer cannot be parsed
+no longer shows the parser's message: it reads `upload failed` (`Composer.tsx` › `useUploads`).
 (c) The three giants split by lifetime, not by line count: `useConversations` into the
 store of open conversations (`useOpenConversations`: state, load, reconcile), the live turn
 (`useTurn`: send, stop, hold, attach, cadence) and the tab/list actions (`useTabActions`:
@@ -578,7 +579,7 @@ yet reproduced" (frontmatter CRLF) or "whether it predates the epic is unknown" 
 ### AD-17 — The register: every defect has a tranche, or a written reason
 | Tranche | Defects (Known defects, kept parts of `docs/ecrans.md`, non-blockers) |
 |---|---|
-| chat | built by AD-23: the refused turn (429) is explained, the sent message draws `paperclip` and names instead of `📎`, the `upload failed` fallback and the three CSS leftovers are guarded (already repaired in `e00156a`), the composer fold is pinned, the chat race is in the CHANGELOG (AD-19). Kept, with their reason under Known defects: the native model select and the delegations' missing signature cards |
+| chat | built by AD-23: the refused turn (429) is explained, the sent message draws `paperclip` and names instead of `📎`, the three CSS leftovers are guarded (already repaired in `e00156a`), as is the `upload failed` fallback, which the slice then extends to an upload answered with no readable sentence (B-16, see Known defects), the composer fold is pinned, the chat race is in the CHANGELOG (AD-19). Kept, with their reason under Known defects: the native model select and the delegations' missing signature cards |
 | pages | built by AD-25: the root page breadcrumb no longer invents a folder, the page diagnostic follows the locale, frontmatter CRLF is read as the editor does (`pages.ts`, `schedule.ts`, planif against `content`); proof in `bench/pages-proof.md`. Kept, with its reason under Known defects: the open page is not refreshed after an agent write (P-5 step 7) |
 | shell | built by AD-24: Nestor’s arrow is SVG, MCP counts agree, Skippy’s phone band stays on one line, E-14’s switch stays beside its title, E-19/plugin manifest headings follow the locale, the spin rule is single and `CataloguePopin.refresh()` shows thrown errors. Token `autoComplete`: not reproduced, already `off` since `64dee0f`. Kept under Known defects: English validator field lines (a new keyed table would be needed). Nine dispositions and eight complete visual passes: `bench/shell-proof.md` |
 | server | none left: the configuration file mode, the `user-tokens.json` comment and the `register*` re-exports were repaired by AD-22 |
@@ -883,7 +884,7 @@ Read on `epic/adestia-correctifs` before any code, so the tranche builds the tru
 - **Already repaired before the epic** (`e00156a`, in `main`): the `upload failed` fallback
   through `t()`, `adestia-composer--busy` without a rule, the unused `.adestia-sheet__close`, the
   double `.adestia-sheet__origin`. The tranche takes them out of Known defects as *not
-  reproduced — repaired in e00156a*, and adds one suite guard so none comes back.
+  reproduced — repaired in e00156a*, and adds one suite guard so none comes back. The upload fallback was extended afterwards, to answers with no readable sentence (see Known defects).
 - **Delegations and signatures: narrowed, with its reason.** A delegation transcript can carry
   signatures (same JSONL), but `SignatureCards` draws nothing without a `signing` handler, and
   E-13 is read-only with no composer (P-13 step 7): the ceremony belongs to the delegating
@@ -1197,7 +1198,7 @@ since `64dee0f`; it remains so. The missing-attribute report is closed.
   likewise carries the server’s raw error in the sheet; translating that data needs a keyed API
   contract or a table of server sentences, outside AD-24 (the sheet’s heading and controls are translated).
 
-### Chat checks closed without a behaviour change (AD-23)
+### Chat checks closed (AD-23); one behaviour changed, below
 
 - **Not reproduced — repaired in `e00156a`:** the literal `upload failed`
   fallback, `adestia-composer--busy` without a rule, unused `.adestia-sheet__close`,
@@ -1205,10 +1206,11 @@ since `64dee0f`; it remains so. The missing-attribute report is closed.
   upload refusal using `t('upload failed')`, neither obsolete class, and one base
   origin rule with its use in `Signatures.tsx`. `chat-repaired-defects.test.ts`
   guards these sources; these four reports are no longer open defects.
-  Behaviour changed with it (B-16): an upload that fails with no readable server
-  sentence — empty, unreadable or non-JSON body, refused or not — reads the translated
-  `t('upload failed')`, never a parser's English `error.message`; the server's own
-  `error` still shows first.
+  Behaviour changed in the chat slice's resumption, after `e00156a` (B-16, "a word the user reads is in their language"): an upload
+  the server answers with no readable sentence — empty, unreadable or non-JSON body,
+  refused or not — reads the translated `t('upload failed')`, never a parser's English
+  `error.message`; the server's own `error` still shows first, and the `refused` list of a successful answer is shown as before. A connection that fails
+  before any answer is a different path and keeps `request failed (0)`, translated.
 - **Composer fold — not reproduced.** In Chromium at phone width, opening the
   fold and invoking a plugin's empty fill returns focus to the textarea, closes
   the menu, preserves the exact draft (including surrounding spaces) and sends
