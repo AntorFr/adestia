@@ -48,8 +48,6 @@ import { registerDelegations } from './routes/delegations.js'
 import { baseManifest, withInstanceName, type WebManifest } from './webmanifest.js'
 
 // Two helpers the tests reach through this module, where they always lived.
-export { buildVersion } from './routes/instance.js'
-export { sseFrame } from './routes/turns.js'
 export type { SkinPayload } from './routes/instance.js'
 
 declare module 'fastify' {
