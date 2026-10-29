@@ -44,7 +44,7 @@ export default async function scenario(bench) {
   // ── Loading, then the form ──────────────────────────────────────────────
   const { page: slow, release } = await holding(bench)
   await go(slow, '/settings/config')
-  await slow.waitForSelector('.adestia-config__loading')
+  await slow.waitForSelector('.adestia-prefs__page .adestia-loading')
   await bench.shoot(slow, '1-config-loading')
   release()
   await slow.waitForSelector('.adestia-config__field')
@@ -90,7 +90,7 @@ export default async function scenario(bench) {
   const phone = await bench.open({ width: 390, height: 844, touch: true })
   await go(phone, '/settings/config')
   // On a phone the canvas is the second screen: the header's "Open apps" button brings it.
-  await phone.locator('.adestia-ib[aria-label="Open apps"], .adestia-ib[aria-label="Ouvrir les applis"]').first().click()
+  await phone.locator('.adestia-ib[aria-label="Open apps"], .adestia-ib[aria-label="Ouvrir les apps"]').first().click()
   await phone.waitForSelector('.adestia-config__field, .adestia-config__locked')
   await phone.waitForTimeout(600)
   await bench.shoot(phone, '9-config-phone')
