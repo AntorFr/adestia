@@ -18,7 +18,8 @@ export const compare = (a, b) => {
 export const acceptableLast = (latest) => {
   const p = parse(latest)
   const [a, b, c] = p.n
-  if (p.series !== null) return [latest, `v${a}.${b}.${c}-${p.series}.${p.k + 1}`]
+  // a pre-release of a stable target is followed by its next pre-release or by the release itself
+  if (p.series !== null) return [latest, `v${a}.${b}.${c}-${p.series}.${p.k + 1}`, `v${a}.${b}.${c}`]
   return [latest, `v${a}.${b}.${c + 1}`, `v${a}.${b + 1}.0`, `v${a + 1}.0.0`]
 }
 
