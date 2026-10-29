@@ -47,7 +47,7 @@ interface InstanceDependencies {
  * checkout is not a release, and inventing `0.0.0-dev` for it would put a
  * number on screen that answers no question anyone asked.
  */
-export function buildVersion(env: NodeJS.ProcessEnv = process.env): string | undefined {
+function buildVersion(env: NodeJS.ProcessEnv = process.env): string | undefined {
   const raw = env['ADESTIA_VERSION']?.trim()
   return raw === undefined || raw === '' ? undefined : raw
 }

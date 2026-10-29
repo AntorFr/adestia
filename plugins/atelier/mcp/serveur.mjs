@@ -295,7 +295,7 @@ async function traite(message) {
 
 let tampon = ''
 process.stdin.setEncoding('utf8')
-process.stdin.on('data', async (bout) => {
+async function lit(bout) {
   tampon += bout
   let saut = tampon.indexOf('\n')
   while (saut >= 0) {
@@ -310,6 +310,9 @@ process.stdin.on('data', async (bout) => {
     }
     saut = tampon.indexOf('\n')
   }
+}
+process.stdin.on('data', (bout) => {
+  void lit(bout)
 })
 
 export { OUTILS }

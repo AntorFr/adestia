@@ -374,7 +374,7 @@ regression test `bench/tests/doc-besoin.test.mjs` checks relative Markdown link 
 (excluding package tests, nested spike documents and skills) and collects `var(--x` uses in CSS
 under `packages/web/src` and `plugins/*/web`, subtracts definitions in CSS, skins and
 scripts, and reports any remainder. Run it with
-`node --test bench/tests/doc-besoin.test.mjs` to check B-4 and B-5. Skin declarations
+`node --test bench/tests/doc-besoin.test.mjs` to check B-4 and B-5 (B-5: the last CHANGELOG title is the latest git tag or the next version of the same series, `status.md` cites that title, and no existing tag lacks its entry; the rule is the pure `checkVersions` of `bench/tests/lib/doc-version.mjs`, pinned by `doc-version.test.mjs`, and the CI checkout fetches tags). Skin declarations
 and JS/TSX inline parameters count as definitions outside those stylesheets;
 this does not mean the CSS-only difference is empty.
 
@@ -446,14 +446,15 @@ archive and the delete read only the status or a single body, and need any HTTP 
 back whole). `request.ts` gains one additive function, `requestRaw(fetchImpl, path, init?, t?)` →
 `{ ok: true, response } | { ok: false, error }` (never throws; any HTTP status is a
 `response`). The upload keeps the server's `error` and the joined list of refused
-files; an HTTP refusal without an `error` now uses the translated
-`request failed (%n)` fallback with the response status (Q-4). A thrown network
+files; an HTTP refusal without an `error` first used the translated
+`request failed (%n)` fallback with the response status (Q-4); the chat slice then
+replaced it, for the upload, by the translated `upload failed` (see Known defects). A thrown network
 failure becomes that fallback with status 0 when `t` is supplied to `requestRaw`,
 replacing the raw `Error.message`. Without `t`, `requestRaw` keeps the network
 message; `live.ts` uses this form without displaying its error. `requestJson`
 keeps a non-empty network `Error.message` even with `t`, using its translated
-fallback only when that message is absent. Upload response-parsing errors still
-show their raw message (`Composer.tsx` › `useUploads`).
+fallback only when that message is absent. An upload whose answer cannot be parsed
+no longer shows the parser's message: it reads `upload failed` (`Composer.tsx` › `useUploads`).
 (c) The three giants split by lifetime, not by line count: `useConversations` into the
 store of open conversations (`useOpenConversations`: state, load, reconcile), the live turn
 (`useTurn`: send, stop, hold, attach, cadence) and the tab/list actions (`useTabActions`:
@@ -578,12 +579,12 @@ yet reproduced" (frontmatter CRLF) or "whether it predates the epic is unknown" 
 ### AD-17 — The register: every defect has a tranche, or a written reason
 | Tranche | Defects (Known defects, kept parts of `docs/ecrans.md`, non-blockers) |
 |---|---|
-| chat | built by AD-23: the refused turn (429) is explained, the sent message draws `paperclip` and names instead of `📎`, the `upload failed` fallback and the three CSS leftovers are guarded (already repaired in `e00156a`), the composer fold is pinned, the chat race is in the CHANGELOG (AD-19). Kept, with their reason under Known defects: the native model select and the delegations' missing signature cards |
+| chat | built by AD-23: the refused turn (429) is explained, the sent message draws `paperclip` and names instead of `📎`, the three CSS leftovers are guarded (already repaired in `e00156a`), as is the `upload failed` fallback, which the slice then extends to an upload answered with no readable sentence (B-16, see Known defects), the composer fold is pinned, the chat race is in the CHANGELOG (AD-19). Kept, with their reason under Known defects: the native model select and the delegations' missing signature cards |
 | pages | built by AD-25: the root page breadcrumb no longer invents a folder, the page diagnostic follows the locale, frontmatter CRLF is read as the editor does (`pages.ts`, `schedule.ts`, planif against `content`); proof in `bench/pages-proof.md`. Kept, with its reason under Known defects: the open page is not refreshed after an agent write (P-5 step 7) |
 | shell | built by AD-24: Nestor’s arrow is SVG, MCP counts agree, Skippy’s phone band stays on one line, E-14’s switch stays beside its title, E-19/plugin manifest headings follow the locale, the spin rule is single and `CataloguePopin.refresh()` shows thrown errors. Token `autoComplete`: not reproduced, already `off` since `64dee0f`. Kept under Known defects: English validator field lines (a new keyed table would be needed). Nine dispositions and eight complete visual passes: `bench/shell-proof.md` |
 | server | none left: the configuration file mode, the `user-tokens.json` comment and the `register*` re-exports were repaired by AD-22 |
 | plugins | built by AD-24 a/b/c/d: the atelier reset and voyages refusal use their shared sheet (Q-20, asynchronous, no narrowing); piece counts and composed phrases follow the locale; the walking map fills its box; the scanner returns focus to the phone composer; plugin chrome uses the sprite or its visible word; Amber is the owner’s assessment and inferred delay is dashed; `:::content` dates follow the instance locale. Proof: `bench/plugins-correctifs-proof.md`. Kept under Known defects: E-23/E-27 server sentences, E-25 workbook words, E-26 item types and raw gesture errors (data, no translation table) |
-| debt | R-2 one-line aliases of the drivers and R-6 exports kept only for tests (removed, tests import the module that owns the symbol); bench duplicates (`launch(seed)`, `loadPlaywright`); fake-engine options with no caller; `doc-besoin.test.mjs` into CI; the two duplicate guards on `DESIGN.md`; typed lint rules switched on if the repo passes them; `.agent/migrate-frame.mjs` lint errors |
+| debt | R-2 one-line aliases of the drivers and R-6 exports kept only for tests (removed, tests import the module that owns the symbol); bench duplicates (`launch(seed)`, `loadPlaywright`); fake-engine options with no caller; `doc-besoin.test.mjs` into CI; the two duplicate guards on `DESIGN.md`; typed lint rules switched on if the repo passes them; `.agent/migrate-frame.mjs` lint errors — closed: `no-misused-promises` (3 findings) and `await-thenable` (1) are on for `packages/**` and `plugins/**` and their findings fixed; `no-floating-promises` stays off (644 findings, under Known defects); `.agent/migrate-frame.mjs` no longer exists (9960469), its errors are not reproduced |
 
 Kept on purpose, with their reason, and still under Known defects: the open page is **not**
 refreshed after an agent write (P-5 step 7 states that it is not, to protect unsaved text; refreshing
@@ -632,12 +633,12 @@ written first, red until the removal, then green). Inventory taken on `epic/ades
   table stays (it is a binding, not an alias) and is not counted. Tests import `engine-aids.ts` and pass
   the table. The guard: a suite test lists `packages/drivers/src/**/*.ts` and fails on a line
   `^(export )?const \w+ = [\w.]+$` that is not a literal constant (first written, red on `usageOf`).
-- **Exports kept for their tests (R-6).** The table "Internal exports kept for their tests" above is
+- **Exports kept for their tests (R-6).** The table "Internal exports kept for their tests" (under "How the server tranche meets its targets" below) is
   emptied row by row. Per row, the rule: (1) the behaviour is reachable through a function the module
   exposes to production (`exchangeCode` through the OAuth flow, `quotaReportOf` through `describe`/`usage`)
   — the test goes through it and the export goes; (2) it is not reachable (a pure unit with no public
   entry, a package-index symbol the web or server tests need) — the export stays and the row keeps one
-  line saying why. A row never stays without its reason. `node scripts/unused-exports.mjs` falls from 178;
+  line saying why. A row never stays without its reason. `node scripts/unused-exports.mjs` falls from 178 (the design-time list; the tool's raw count then was 292, see the baseline below) to 150;
   the new count is written beside the old one. The guard: a suite test reads the table and fails if a row
   has no reason or names an export that is absent from the module (rows cannot rot).
 - **Bench duplicates.** `loadPlaywright` is written ten times (`bench.mjs`, `sweep.mjs`, `scenarios/plugins-matrix.mjs`
@@ -662,7 +663,7 @@ written first, red until the removal, then green). Inventory taken on `epic/ades
   under Known defects with its count. `.agent/migrate-frame.mjs` no longer exists (removed by 9960469;
   `doc-besoin.test.mjs` requires its absence): its lint errors are "not reproduced". The debt row of the
   AD-17 register above gets its outcome appended in the row's own text (`— closed: …`), as R-6's row does.
-  The R-6 outcome (`closed: 178 entries remain…`) is rewritten by the exports task with the new count.
+  The R-6 outcome carries the recounted figure (150); `packages/server/test/dette-exports-besoin.test.ts` pins it.
 *Rejected*: dropping the exports and the tests together (tests are the contract of pure units); typing the
 bench (it is scripts, not product). *Reversed if*: a removal changes a built file under `dist/`
 (then it is a behaviour and goes through B-13's red-first rule).
@@ -773,9 +774,10 @@ Built: the four repairs below are in the code, each with its test; the text keep
   `pages.ts`, `static.ts`, `watch.ts`, `mcp-routes.ts` if it still exists): none re-exports
   from `routes/` (`export { register… } from './routes/…'`, `export * from './routes/…'`, or a
   type re-export). Over `index.ts`: no `export … from` line names one of those six files for a
-  symbol `routes/` owns; its lines to `./routes/…` are the public surface and are allowed. The two
-  other helper re-exports (`buildVersion`, `sseFrame`, `SkinPayload` in `app.ts`; `mountPluginApis`
-  in `plugin-host.ts`) are tests' aliases left to the dette tranche, and the guard does not cover them; it targets
+  symbol `routes/` owns; its lines to `./routes/…` are the public surface and are allowed. The
+  helper re-exports of `buildVersion` and `sseFrame` in `app.ts`, and `mountPluginApis`
+  in `plugin-host.ts`, are removed by the dette tranche; `SkinPayload` stays in `app.ts` for the
+  public package index. The guard does not cover them; it targets
   re-exports, not definitions — `registerPluginVocabulary` in `extensions.ts` is defined there and stays. The rows of the "exports kept only for
   tests" table that name these re-exports leave in the same commit; `R-3`'s outcome says "a
   re-export" and is corrected to say the files keep only their helpers.
@@ -882,7 +884,7 @@ Read on `epic/adestia-correctifs` before any code, so the tranche builds the tru
 - **Already repaired before the epic** (`e00156a`, in `main`): the `upload failed` fallback
   through `t()`, `adestia-composer--busy` without a rule, the unused `.adestia-sheet__close`, the
   double `.adestia-sheet__origin`. The tranche takes them out of Known defects as *not
-  reproduced — repaired in e00156a*, and adds one suite guard so none comes back.
+  reproduced — repaired in e00156a*, and adds one suite guard so none comes back. The upload fallback was extended afterwards, to answers with no readable sentence (see Known defects).
 - **Delegations and signatures: narrowed, with its reason.** A delegation transcript can carry
   signatures (same JSONL), but `SignatureCards` draws nothing without a `signing` handler, and
   E-13 is read-only with no composer (P-13 step 7): the ceremony belongs to the delegating
@@ -950,11 +952,11 @@ Each target: what, where, why it costs, the tranche that owns it, and its outcom
 | R | What and where | Why it costs | Tranche | Outcome |
 |---|---|---|---|---|
 | R-1 | MCP `Authorization: Bearer` header selection copied in `claude-code/driver.ts`, `copilot-cli/driver.ts`, `codex-cli/driver.ts` | three copies of a security-relevant rule | serveur | closed: `drivers/src/mcp-headers.ts`, pinned by a test written first |
-| R-2 | Driver helpers duplicated: device-code `beginAuth`/`completeAuth`/`cancelAuth` (codex, copilot), `truncate` ×3 (`*/events.ts`), `health` ×2, `usageOf` ×3, `classifyAuthError`/`explainAuthProblem` ×2 (`*/auth.ts`) | drift between engines | serveur | closed: `engine-aids.ts` and `device-code.ts`; the engines pass their own tables |
+| R-2 | Driver helpers duplicated: device-code `beginAuth`/`completeAuth`/`cancelAuth` (codex, copilot), `truncate` ×3 (`*/events.ts`), `health` ×2, `usageOf` ×3, `classifyAuthError`/`explainAuthProblem` ×2 (`*/auth.ts`) | drift between engines | serveur | closed: `engine-aids.ts` and `device-code.ts`; the engines pass their own tables; one-line usage aliases removed and guarded by `no-aliases.test.ts`; auth wrappers remain because the production drivers call them |
 | R-3 | `start()` (464 lines) and `buildApp` (287 lines) mix concerns; `TurnLimiter`, `runUnattended`, inline `/api/delegations` routes and the `adestiaRunTurn` monkey-patch live in `app.ts`; routes registered both from `routes/` and top-level files (`pages.ts`, `mcp-routes.ts`, `static.ts`, `files.ts`, `watch.ts`, `callback.ts`) | no single place says what is mounted | serveur | closed: every route is registered from `routes/`; the top-level files keep only their helpers (`mcp-routes.ts` is gone); `app.ts` mounts, `turn-limiter.ts` and `unattended.ts` hold the rest; `start()` is named stages, order pinned by `start-order.test.ts` |
 | R-4 | `field()` duplicated in `instruction-catalogues.ts` and `instructions.ts`; `routes/instruction-catalogues.ts` `sourceOf` / `fetchClone` / `cacheDir` duplicate `catalogueSource` / `fetchCatalogueClone` / `catalogueClone` of `instruction-catalogues-refresh.ts` | pure extraction, behaviour kept | serveur | closed: `field()` once in `frontmatter.ts`; the catalogue route calls the refresh module |
 | R-5 | `pages.ts` doubles as a frontmatter library for `instructions.ts`, `instruction-catalogues.ts`, `schedule.ts`, `shell-tools.ts` | a route module as a dependency; move without changing the parser (AD-7) | serveur | closed: `server/src/frontmatter.ts`, bodies untouched; the CRLF divergence stays (AD-7) |
-| R-6 | Dead interface removed; test-only helpers removed from production indexes; remaining public types, test imports and boot entry points named below | surface limited to its consumers | serveur | closed: 171 entries remain, all named below |
+| R-6 | Dead interface removed; test-only helpers removed from production indexes; remaining public types, test imports and boot entry points named below | surface limited to its consumers | serveur | closed: `node scripts/unused-exports.mjs` recounted at 150 entries (from 178 at design time: the Codex usage alias, the splitFrontmatter move and the rows whose behaviour a public function reaches, now tested through it, being the difference), all named below; every remaining internal-export row carries its reason |
 | R-7 | Comments pointing to absent documents: `technique.md` (server sources and tests), `ATELIER-3.md` (`plugins/atelier/web`), `PARCOURS.md` and "D44 côté cerveau" (`plugins/parcours/web`) | dead references | serveur (server), plugins (plugins) | server: closed; plugins: closed — no comment under `plugins/` names `ATELIER-3.md`, `PARCOURS.md` or "D44 côté cerveau" any more (`git grep` finds none) |
 | R-8 | `eslint.config.js` claims floating promises and thrown-away errors are caught, which its rules cannot do (no type-aware rule, `caughtErrors: 'none'`); `plugins/` not linted; lint not in CI | a claim the gate does not keep | serveur (CI, claim), plugins (plugins lint) | server: closed — claim rewritten, `npm run lint` in CI; plugins: closed — `npm run lint` (`eslint packages plugins`) covers `plugins/` and is clean |
 | R-9 | Test support rewritten per file: the fake `Driver` in 10 test files, `git()` in 5, `mkdtemp` in 39 | each new test copies one | tests | closed: `packages/server/test/support/` holds the three, and every file that rewrote them imports them |
@@ -991,6 +993,8 @@ rules. The server outcomes above are filled.
   versus Copilot's pass-through status words are two tables given to `health`; each engine's
   counters, error fragments and sentences are its own tables; Copilot's consent text and token
   check, Codex's pasted-credential path, are hooks of the flow. No difference was a defect.
+  `codexUsage` and `copilotUsage` are called directly, without a `usageOf` alias. The
+  authentication wrappers bind each engine's tables for its production driver (AD-26).
 - **R-5, a move, not a merge.** `splitFrontmatter` and `parseFrontmatter` move out of `pages.ts`
   into their own module with their bodies untouched; `instructions.ts`, `instruction-catalogues.ts`,
   `schedule.ts` and `shell-tools.ts` import from it. The CRLF divergence stays (AD-7; repaired later by `adestia-correctifs`, see the note under AD-7).
@@ -1010,10 +1014,10 @@ rules. The server outcomes above are filled.
   qualifier consume its first name. Tests, `bin/`, bench scripts, plugins and computed
   module paths are outside the graph: check their runtime uses before removing a hit.
 
-  The final inventory is **170** entries: public contract types below,
+  The final inventory is **150** entries: public contract types below,
   test-only exports retained under the R-6 arbitration, and the boot entry points.
   `content`'s `splitFrontmatter` now has a production importer through its index
-  (AD-25 d). No measurement rule or test was changed.
+  (AD-25 d); the Codex usage alias is removed (AD-26). No measurement rule or test was changed.
 
   Public contract types (each row names the package index):
 
@@ -1024,43 +1028,36 @@ rules. The server outcomes above are filled.
   | `packages/schemas/src/index.ts` | `PluginBlockAttribute`, `PluginKind`, `PluginMcpServer`, `PluginTile`, `SettingGroup`, `SettingKind`, `SettingSource`, `ValidationIssue` |
   | `packages/server/src/index.ts` | `ActivationConfig`, `AdestiaConfig`, `AgentFile`, `AppDependencies`, `ArmingFlow`, `AttachmentLimits`, `AttachmentOwner`, `AttachmentsConfig`, `AuthConfig`, `AuthMode`, `AuthOutcome`, `ClockOptions`, `Conversation`, `ConversationMeta`, `DelegationPort`, `DiscoveredPlugin`, `DiscoveredSkin`, `DiscoveryProblem`, `DriverConfig`, `ExtensionSource`, `ExtensionsConfig`, `FileKind`, `FilesOptions`, `HostProblem`, `Identity`, `Job`, `JobSeed`, `JobState`, `JsonRpcRequest`, `LoginState`, `McpConfig`, `McpDependencies`, `McpInConfig`, `McpServer`, `McpServerConfig`, `McpServerView`, `McpSource`, `McpTool`, `MissionPaths`, `OidcConfig`, `PageContent`, `PageInfo`, `PagesOptions`, `PermissionsConfig`, `PluginApiContext`, `PluginDiscovery`, `PluginPayload`, `ProxyAuthConfig`, `RequestLike`, `ScheduleConfig`, `ScheduleState`, `ScheduledNote`, `ScreenView`, `SessionPayload`, `SignaturesConfig`, `SkillAsset`, `SkillFile`, `SkinPayload`, `StartOptions`, `StartedInstance`, `StaticOptions`, `StoredAttachment`, `StoredMessage`, `StoredSecret`, `WatchConfig`, `WorkspaceConfig`, `WorkspaceFile` |
 
-  Internal exports kept for their tests (the index export of `isKnownBlock` is also
-  retained because those tests import the package index):
+  Internal exports kept for their tests, one reason per row (the index export of `isKnownBlock` is also
+  retained because those tests import the package index; web rows record the import paths kept
+  under R-12 and are excluded from the inventory count):
 
-  | Module | Exports | Importing tests |
-  |---|---|---|
-  | `packages/content/src/index.ts` | `isKnownBlock` | `packages/server/test/extensions.test.ts`, `packages/web/test/loader.test.ts` |
-  | `packages/content/src/reference.ts` | `formatReference`, `isValidId` | `packages/content/test/reference.test.ts` |
-  | `packages/content/src/validate.ts` | `frontmatterOf` | `packages/content/test/roundtrip.test.ts` |
-  | `packages/content/src/validate.ts` | `isEditable` | `packages/content/test/validate.test.ts` |
-  | `packages/drivers/src/claude-code/oauth.ts` | `CLIENT_ID`, `ONE_YEAR_SECONDS`, `REDIRECT_URI`, `TOKEN_URL`, `authorizeUrl`, `createPkce`, `exchangeCode`, `splitPastedCode` | `packages/drivers/test/oauth.test.ts` |
-  | `packages/drivers/src/codex-cli/auth.ts` | `apiKeyDocument` | `packages/drivers/test/codex.test.ts` |
-  | `packages/drivers/src/codex-cli/driver.ts` | `quotaReportOf` | `packages/drivers/test/codex.test.ts` |
-  | `packages/drivers/src/codex-cli/events.ts` | `describeItem`, `usageOf` | `packages/drivers/test/codex.test.ts` |
-  | `packages/drivers/src/codex-cli/login.ts` | `readPrompt`, `saidSuccess`, `stripAnsi` | `packages/drivers/test/codex.test.ts` |
-  | `packages/drivers/src/codex-cli/protocol.ts` | `SpawnedProcess` | `packages/drivers/test/codex.test.ts` |
-  | `packages/drivers/src/conformance.ts` | `checkConformance` | `packages/drivers/test/claude-code.test.ts`, `packages/drivers/test/codex.test.ts`, `packages/drivers/test/conformance.test.ts`, `packages/drivers/test/copilot.test.ts` |
-  | `packages/drivers/src/contract.ts` | `CAPABILITIES` | `packages/drivers/test/conformance.test.ts` |
-  | `packages/drivers/src/copilot-cli/events.ts` | `toolTargetOf` | `packages/drivers/test/copilot.test.ts` |
-  | `packages/drivers/src/copilot-cli/login.ts` | `harvestToken`, `ptyLogin` | `packages/drivers/test/copilot.test.ts` |
-  | `packages/drivers/src/signatures.ts` | `signatureRequest` | `packages/drivers/test/signatures.test.ts` |
-  | `packages/server/src/app.ts` | `buildVersion`, `sseFrame` | `packages/server/test/app.test.ts` |
-  | `packages/server/src/attachments.ts` | `safeName` | `packages/server/test/attachments.test.ts` |
-  | `packages/server/src/clock.ts` | `readState`, `writeState` | `packages/server/test/schedule.test.ts` |
-  | `packages/server/src/config.ts` | `DEFAULT_SESSION_TTL_MS` | `packages/server/test/auth.test.ts`, `packages/server/test/oidc-routes.test.ts`, `packages/server/test/oidc.test.ts` |
-  | `packages/server/src/conversations.ts` | `isSafeId` | `packages/server/test/conversations.test.ts` |
-  | `packages/server/src/delegations.ts` | `titleFor` | `packages/server/test/delegations.test.ts` |
-  | `packages/server/src/files.ts` | `kindOf` | `packages/server/test/files.test.ts` |
-  | `packages/server/src/introduction.ts` | `CONTRACT_NAME` | `packages/server/test/introduction.test.ts` |
-  | `packages/server/src/io.ts` | `inFlight` | `packages/server/test/io.test.ts` |
-  | `packages/server/src/mcp-store.ts` | `MCP_MASK` | `packages/server/test/mcp-servers.test.ts` |
-  | `packages/server/src/oidc.ts` | `identityFrom`, `isAllowed` | `packages/server/test/oidc.test.ts` |
-  | `packages/server/src/plugin-host.ts` | `mountPluginApis` | `packages/server/test/plugin-host.test.ts`, `packages/server/test/plugin-secrets.test.ts` |
-  | `packages/server/src/routes/watch.ts` | `EventsOptions` | `packages/server/test/watch.test.ts` |
-  | `packages/server/src/schedule.ts` | `GRACE_MINUTES`, `MIN_PERIOD_MINUTES`, `parseAt`, `parseEvery`, `parseNote` | `packages/server/test/schedule.test.ts` |
-  | `packages/server/src/secrets.ts` | `ARMING_TTL_MS` | `packages/server/test/secrets.test.ts` |
-  | `packages/server/src/settings-file.ts` | `coerce`, `replaceContents` | `packages/server/test/settings-file.test.ts` |
-  | `packages/server/src/shell-tools.ts` | `ulid` | `packages/server/test/shell-tools.test.ts` |
+  | Module | Exports | Importing tests | Reason |
+  |---|---|---|---|
+  | `packages/content/src/index.ts` | `isKnownBlock` | `packages/server/test/extensions.test.ts`, `packages/web/test/loader.test.ts` | package-index symbol that server and web tests import; no other public entry |
+  | `packages/content/src/reference.ts` | `formatReference`, `isValidId` | `packages/content/test/reference.test.ts` | pure id/reference units with no public entry; the grammar calls them only inside the module |
+  | `packages/content/src/validate.ts` | `frontmatterOf` | `packages/content/test/roundtrip.test.ts` | pure unit; the round-trip test needs the frontmatter it reads, which no public function returns alone |
+  | `packages/content/src/validate.ts` | `isEditable` | `packages/content/test/validate.test.ts` | pure predicate with no public entry; tested on cases `validate` does not surface alone |
+  | `packages/drivers/src/codex-cli/login.ts` | `readPrompt`, `saidSuccess`, `stripAnsi` | `packages/drivers/test/codex.test.ts` | pure parsers of the CLI output, pinned on raw strings; the login process itself is spawned |
+  | `packages/drivers/src/codex-cli/protocol.ts` | `SpawnedProcess` | `packages/drivers/test/codex.test.ts` | type of the spawn seam that tests fake; no production importer outside the module |
+  | `packages/drivers/src/conformance.ts` | `checkConformance` | `packages/drivers/test/claude-code.test.ts`, `packages/drivers/test/codex.test.ts`, `packages/drivers/test/conformance.test.ts`, `packages/drivers/test/copilot.test.ts` | the check itself, returning issues; `assertConformance` only throws, and the tests assert on the issue list |
+  | `packages/drivers/src/contract.ts` | `CAPABILITIES` | `packages/drivers/test/conformance.test.ts` | the capability list the conformance test compares the descriptors against |
+  | `packages/drivers/src/copilot-cli/login.ts` | `harvestToken`, `ptyLogin` | `packages/drivers/test/copilot.test.ts` | platform-dependent command and token harvest, pinned on their inputs; the PTY login is spawned |
+  | `packages/drivers/src/signatures.ts` | `signatureRequest` | `packages/drivers/test/signatures.test.ts` | single-text parser under `signatureRequests`; pinned on a text, not on a result tree |
+  | `packages/server/src/clock.ts` | `readState`, `writeState` | `packages/server/test/schedule.test.ts` | state file read/write the schedule test seeds and inspects directly |
+  | `packages/server/src/config.ts` | `DEFAULT_SESSION_TTL_MS` | `packages/server/test/auth.test.ts`, `packages/server/test/oidc-routes.test.ts`, `packages/server/test/oidc.test.ts` | default value the auth and OIDC tests compare cookie lifetimes against |
+  | `packages/server/src/introduction.ts` | `CONTRACT_NAME` | `packages/server/test/introduction.test.ts` | contract name the test compares the generated text against |
+  | `packages/server/src/io.ts` | `inFlight` | `packages/server/test/io.test.ts` | in-flight write counter the test observes directly |
+  | `packages/server/src/mcp-store.ts` | `MCP_MASK` | `packages/server/test/mcp-servers.test.ts` | mask value the test compares stored and listed secrets against |
+  | `packages/server/src/oidc.ts` | `identityFrom`, `isAllowed` | `packages/server/test/oidc.test.ts` | pure claim-to-identity and allow-list rules pinned on claims; the flow needs a live provider |
+  | `packages/server/src/routes/watch.ts` | `EventsOptions` | `packages/server/test/watch.test.ts` | type of the options the watch test builds |
+  | `packages/server/src/schedule.ts` | `GRACE_MINUTES`, `MIN_PERIOD_MINUTES`, `parseAt`, `parseEvery`, `parseNote` | `packages/server/test/schedule.test.ts` | pure parsers and bounds pinned on strings; reached otherwise only through files on disk |
+  | `packages/server/src/secrets.ts` | `ARMING_TTL_MS` | `packages/server/test/secrets.test.ts` | arming lifetime the test advances a fake clock by |
+  | `packages/server/src/settings-file.ts` | `coerce`, `replaceContents` | `packages/server/test/settings-file.test.ts` | pure coercion and rewrite units pinned on documents; no public entry returns them alone |
+  | `packages/server/src/shell-tools.ts` | `ulid` | `packages/server/test/shell-tools.test.ts` | id generator the test checks for shape and order |
+  | `packages/web/src/app/App.tsx` | `appTrail`, `screenView` | `packages/web/test/app.test.tsx` | retained at their original test import path after the shell split, as decided for the web exports (R-12) |
+  | `packages/web/src/app/Instructions.tsx` | `matches` | `packages/web/test/instructions.test.tsx` | retained at its original test import path after the charter split, as decided for the web exports (R-12) |
+  | `packages/web/src/editor/Editor.tsx` | `SaveStatus`, `savePage` | `packages/web/test/editor.test.tsx` | retained at their original test import path after the editor split, as decided for the web exports (R-12; AD-12 preserves test export paths) |
 
   Runtime entry points outside the graph: `packages/server/src/start.ts` exports
   `start` for `bench/launch.mjs` (a computed dynamic import of the built module),
@@ -1160,6 +1157,16 @@ since `64dee0f`; it remains so. The missing-attribute report is closed.
   and `bandes` and ignores `reset`, so `workbook-layout.json` keeps its bands, contrary to P-11
   step 3 and E-25. The sheet itself works; the server half is missing. A red test
   (`bench/tests/plugins-ensemble.test.mjs`, « atelier reset ») stays until the API handles it.
+- **`no-floating-promises` stays off (AD-26, threshold 15).** Typed over `packages/**` and
+  `plugins/**` it reports 644 sites: 22 in production code (`plugins/atelier/web/app.js`,
+  `plugins/voyages/web/app.js`, `plugins/parcours/web/carte.js`) and 622 in tests, mostly node:test
+  `test()` / `describe()` calls. `no-misused-promises` (3) and `await-thenable` (1) were fixed and are on.
+- **E-31, French desk timeline: « auj. » touches the « nov. » marker.** Cosmetic, seen, not repaired
+  (`bench/plugins-correctifs-proof.md`).
+- **Block data forms are not built.** Editing shows the block's render, then its raw lines on click;
+  the settings are not those forms.
+- **`.agent/migrate-frame.mjs`: not reproduced.** The file was removed by 9960469, so its lint errors
+  no longer exist.
 - **P-5 step 7: the open page does not refresh after an agent write.**
   `app/useInstance.ts` refetches only the index on the change feed; it deliberately
   leaves the open page alone to protect unsaved editor text. The revision check
@@ -1191,14 +1198,19 @@ since `64dee0f`; it remains so. The missing-attribute report is closed.
   likewise carries the server’s raw error in the sheet; translating that data needs a keyed API
   contract or a table of server sentences, outside AD-24 (the sheet’s heading and controls are translated).
 
-### Chat checks closed without a behaviour change (AD-23)
+### Chat checks closed (AD-23); one behaviour changed, below
 
 - **Not reproduced — repaired in `e00156a`:** the literal `upload failed`
   fallback, `adestia-composer--busy` without a rule, unused `.adestia-sheet__close`,
   and the duplicate `.adestia-sheet__origin` rule. Source inspection finds the
-  upload refusal using `t(FALLBACK_KEY)`, neither obsolete class, and one base
+  upload refusal using `t('upload failed')`, neither obsolete class, and one base
   origin rule with its use in `Signatures.tsx`. `chat-repaired-defects.test.ts`
   guards these sources; these four reports are no longer open defects.
+  Behaviour changed in the chat slice's resumption, after `e00156a` (B-16, "a word the user reads is in their language"): an upload
+  the server answers with no readable sentence — empty, unreadable or non-JSON body,
+  refused or not — reads the translated `t('upload failed')`, never a parser's English
+  `error.message`; the server's own `error` still shows first, and the `refused` list of a successful answer is shown as before. A connection that fails
+  before any answer is a different path and keeps `request failed (0)`, translated.
 - **Composer fold — not reproduced.** In Chromium at phone width, opening the
   fold and invoking a plugin's empty fill returns focus to the textarea, closes
   the menu, preserves the exact draft (including surrounding spaces) and sends

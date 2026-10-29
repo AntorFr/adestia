@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { TurnEvent } from '@antorfr/adestia-drivers'
 
 import { AttachmentInbox } from '../src/attachments.js'
-import { buildApp, buildVersion, sseFrame, type AppDependencies } from '../src/app.js'
+import { buildApp, type AppDependencies } from '../src/app.js'
 import { ConversationStore } from '../src/conversations.js'
 import { parseConfig } from '../src/config.js'
 import { UserTokens } from '../src/user-tokens.js'
@@ -32,18 +32,24 @@ function deps(overrides: Partial<AppDependencies> = {}): AppDependencies {
   }
 }
 
-describe('sseFrame', () => {
-  it('emits a named event with JSON data', () => {
-    expect(sseFrame({ type: 'text-delta', text: 'salut' })).toBe(
-      'event: text-delta\ndata: {"type":"text-delta","text":"salut"}\n\n',
-    )
+describe('SSE framing on /api/turn', () => {
+  it('emits a named event with JSON data', async () => {
+    const driver = new ScriptedDriver([{ type: 'text-delta', text: 'salut' }, RESULT])
+    const app = await buildApp(deps({ driver }))
+    const response = await app.inject({ method: 'POST', url: '/api/turn', payload: { prompt: 'x' } })
+    expect(response.body).toContain('event: text-delta\ndata: {"type":"text-delta","text":"salut"}\n\n')
+    await app.close()
   })
 
-  it('keeps a multi-line payload inside one data line', () => {
+  it('keeps a multi-line payload inside one data line', async () => {
     // A raw newline in the payload would split the frame and desynchronise the
     // whole stream — JSON escaping is what prevents it.
-    const frame = sseFrame({ type: 'text-delta', text: 'line1\nline2' })
+    const driver = new ScriptedDriver([{ type: 'text-delta', text: 'line1\nline2' }, RESULT])
+    const app = await buildApp(deps({ driver }))
+    const response = await app.inject({ method: 'POST', url: '/api/turn', payload: { prompt: 'x' } })
+    const frame = response.body.split('\n\n').find((f) => f.startsWith('event: text-delta'))!
     expect(frame.split('\n').filter((l) => l.startsWith('data:'))).toHaveLength(1)
+    await app.close()
   })
 })
 
@@ -96,13 +102,22 @@ describe('/api/instance', () => {
     }
   })
 
-  it('treats a stamp that says nothing as no stamp at all', () => {
+  it('treats a stamp that says nothing as no stamp at all', async () => {
     // `docker build` with no `--build-arg` leaves the ARG empty, not unset:
     // the variable exists and holds "". A shell that trusted mere presence
     // would draw "Adestia" followed by a gap.
-    expect(buildVersion({ ADESTIA_VERSION: '  ' })).toBeUndefined()
-    expect(buildVersion({})).toBeUndefined()
-    expect(buildVersion({ ADESTIA_VERSION: ' main ' })).toBe('main')
+    const previous = process.env['ADESTIA_VERSION']
+    try {
+      for (const [stamp, expected] of [['  ', undefined], [' main ', 'main']] as const) {
+        process.env['ADESTIA_VERSION'] = stamp
+        const app = await buildApp(deps())
+        expect((await app.inject({ url: '/api/instance' })).json().version).toBe(expected)
+        await app.close()
+      }
+    } finally {
+      if (previous === undefined) delete process.env['ADESTIA_VERSION']
+      else process.env['ADESTIA_VERSION'] = previous
+    }
   })
 })
 

@@ -35,7 +35,9 @@ describe('chat reports already repaired before the tranche', () => {
           const translated = ts.isCallExpression(parent)
             && ts.isIdentifier(parent.expression) && parent.expression.text === 't'
             && parent.arguments[0] === node
-          if (!translated) {
+          // The French table must carry the key it translates.
+          const tableKey = ts.isPropertyAssignment(parent) && parent.name === node && file === 'app/i18n.ts'
+          if (!translated && !tableKey) {
             const { line } = source.getLineAndCharacterOfPosition(node.getStart(source))
             hits.push(`${file}:${line + 1}`)
           }

@@ -85,7 +85,7 @@ function parseAuthDocument(value: string): CodexAuthDocument | undefined {
 }
 
 /** A bare API key, wrapped into the document the CLI expects. */
-export function apiKeyDocument(key: string): string {
+function apiKeyDocument(key: string): string {
   return `${JSON.stringify({ auth_mode: 'apikey', OPENAI_API_KEY: key.trim() }, null, 2)}\n`
 }
 

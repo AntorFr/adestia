@@ -553,3 +553,55 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
   drawn by shape, a dashed outline in `--text-muted`, with the hover word kept, so a skin
   that flattens hues still tells it from a stated Amber (E-31, AD-24 c). The milestone
   markers, which shared the amber, take the accent. `plugins/test/css.test.js` guards it.
+- **An upload that fails without a readable server message says so in the user's language**
+  (B-16) — an empty, unreadable or non-JSON answer to `/api/upload`, refused or not, reads
+  `upload failed`, translated, instead of the parser's English `error.message` or the generic
+  `request failed (%n)`. The server's own `error` still shows first. A connection that fails before any
+  answer keeps its translated `request failed (0)`.
+
+## v0.96.0-adestia-correctifs.1
+
+**The server slice of `adestia-correctifs` (AD-22).** `start()` refuses a driver
+whose descriptor does not hold its contract (`Driver "<id>" is not conformant:`, one
+gap per line). Saving the configuration keeps the file mode (0600). The old files no
+longer re-export the `register*` functions of `routes/`.
+
+## v0.96.0-adestia-correctifs.2
+
+**The chat slice (AD-23).** A turn refused with 429 is worded by `t()` in `en`/`fr`
+with its ceiling, and its line survives a re-read until the next send or another
+conversation. A sent message draws the `paperclip` icon and the names, no text emoji.
+
+## v0.96.0-adestia-correctifs.3
+
+**The shell slice (AD-24).** The send arrow of Nestor is an SVG; the MCP tile counts the
+servers E-10 lists; Skippy's banner fits one line at 360 px; the “Invalid plugin/skin
+manifest” header follows the language; the dialog's `refresh()` shows the error it
+raised; one `.adestia-icon--spin` rule remains.
+
+## v0.96.0-adestia-correctifs.4
+
+**The pages slice (AD-25).** The trace of a root page names no folder and E-8 leads to
+Home; the `Popover` stays under the canvas header and follows its anchor; a `Diagnostic`
+carries `code` and `args`, so the shell words it by `t()`.
+
+## v0.96.0-adestia-correctifs.5
+
+**The plugins slice (AD-24 a–d).** The atelier and trips speak in the plugin's own
+sheet, with no `confirm()` or `alert`; counters agree per language; the walk card takes
+the height of its box; the scanner returns focus to the composer field (E-30); chrome
+emoji give way to the charter icons; the `:::content` date follows the language.
+
+## v0.96.0-adestia-correctifs.6
+
+**The debt slice (AD-26).** The code keeps no alias or duplicate for its tests alone:
+tests import the module that owns the symbol, kept exports carry their reason, the bench
+defines `launch(seed)` and `loadPlaywright` once, and the CI plays the documentation
+guard. `no-misused-promises` and `await-thenable` are on.
+
+## v0.96.0-adestia-correctifs.7
+
+**The chat slice, resumed.** A send that fails without a readable sentence from the
+server (empty, unreadable or non-JSON body) reads `t('upload failed')`, in both languages;
+a connection cut before any answer keeps its translated `request failed (0)`. A message
+sent before the first has left is shown held, as the chat-race change (AD-19) says.

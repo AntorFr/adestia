@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 
 import { Icon } from '../app/Icon.js'
-import { FALLBACK_KEY, requestRaw } from '../app/request.js'
+import { requestRaw } from '../app/request.js'
 import { useMobile } from '../app/useMobile.js'
 // The drag primitive is shared with the page screen: one answer to "is this
 // drag carrying files", so the two surfaces cannot disagree about it.
@@ -209,23 +209,24 @@ function useUploads(fetchImpl: typeof fetch, t: (key: string) => string) {
         return
       }
       const { response } = sent
-      try {
-        const body = (await response.json()) as {
-          attachments?: PendingAttachment[]
-          refused?: string[]
-          error?: string
-        }
-        if (!response.ok) {
-          setUploadError(body.error ?? t(FALLBACK_KEY).replace('%n', String(response.status)))
-          return
-        }
-        setAttachments((current) => [...current, ...(body.attachments ?? [])])
-        // Refusals are shown next to what worked: a file silently dropped is a
-        // file the user believes the agent has.
-        if (body.refused?.length) setUploadError(body.refused.join('; '))
-      } catch (error) {
-        setUploadError((error as Error).message)
+      // Only the server's own sentence is shown as it came; an empty, unreadable
+      // or non-JSON answer, refused or not, reads the translated fallback (B-16):
+      // never a parser's `error.message`, which is English and says nothing.
+      const body = (await response.json().catch(() => undefined)) as
+        | { attachments?: PendingAttachment[]; refused?: string[]; error?: string }
+        | undefined
+      if (!response.ok) {
+        setUploadError(typeof body?.error === 'string' && body.error !== '' ? body.error : t('upload failed'))
+        return
       }
+      if (body === null || typeof body !== 'object') {
+        setUploadError(t('upload failed'))
+        return
+      }
+      setAttachments((current) => [...current, ...(body.attachments ?? [])])
+      // Refusals are shown next to what worked: a file silently dropped is a
+      // file the user believes the agent has.
+      if (body.refused?.length) setUploadError(body.refused.join('; '))
     },
     [fetchImpl, t],
   )
