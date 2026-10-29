@@ -166,7 +166,8 @@ async function visit(browser, base, skin, locale, theme, size) {
           await shoot(page, state, 'loading')
           release()
           await page.waitForSelector(state.data, { timeout: 15_000 })
-          if (await page.locator('.adestia-loading').count()) fail(tag(state, 'slow'), 'the loading row stays after the data came')
+          // E-9 draws its tiles throughout: the row goes when its last read has answered, not with the first tile.
+          await page.waitForSelector('.adestia-loading', { state: 'detached', timeout: 10_000 }).catch(() => fail(tag(state, 'slow'), 'the loading row stays after the data came'))
         } catch (error) {
           fail(tag(state, 'slow'), String(error.message).split('\n')[0])
         } finally {

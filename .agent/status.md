@@ -29,6 +29,11 @@ Compléments encore visibles dans le code :
 - Les formulaires de données de blocs restent à faire : l'édition montre leur
   rendu, puis leurs lignes brutes au clic ; les réglages ne sont pas ces formulaires.
 
+- La ligne de chargement partagée (`.adestia-loading`, `padding: var(--space-5)`) est
+  décalée d'environ 24 px vers la droite du bord du contenu (titre, bannières) sur tous les
+  écrans qui la montrent, vue au banc (`bench/scenarios/chargements.mjs`). Elle date de la
+  classe partagée (E-2, E-14), pas de la tranche ; non réparée.
+
 Signalements d'usage hérités, **non reproduits dans cette tâche** : fil « tuyau
 Festool » d'Alfred coupé côté moteur ; insertion de `:::table` signalée en 422 au
 second enregistrement ; puce `tache` et crayon sous le titre « Note » dans l'éditeur
