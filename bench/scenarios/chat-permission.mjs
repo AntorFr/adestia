@@ -11,25 +11,16 @@
  */
 import assert from 'node:assert/strict'
 import { mkdir, writeFile } from 'node:fs/promises'
-import { createRequire } from 'node:module'
-import { execFileSync } from 'node:child_process'
 import { resolve, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { THREADS } from '../seed/chat-permission.mjs'
 import { SIGNATURE_ORIGIN } from '../seed/_scripts.mjs'
+import { loadPlaywright } from '../lib/playwright.mjs'
 
 export const seed = 'chat-permission'
 const words = {
   en: { permission: 'Permission required', deny: 'Refuse', once: 'Just this once', always: 'Always', noRule: 'No lasting rule for this one — the engine proposed none.', requested: 'Signature requested', pending: 'A held action waits for your signature.', grant: 'A standing authorisation asks for your signature.', signed: 'Action signed — the agent resumes it.', denied: 'Signature refused.', expired: 'Request lapsed unsigned.', until: 'until', sign: 'Sign', signedIt: 'I signed it', signature: 'Signature', ceremony: 'Signature ceremony', tab: 'Open in a tab', close: 'Close', hint: 'If the passkey does not open here, sign in a tab instead.' },
   fr: { permission: 'Autorisation demandée', deny: 'Refuser', once: 'Cette fois', always: 'Toujours', noRule: "Pas d'autorisation durable ici — le moteur n'a proposé aucune règle.", requested: 'Signature demandée', pending: 'Une action attend votre signature.', grant: 'Une autorisation à l’avance attend votre signature.', signed: 'Action signée — l’agent la reprend.', denied: 'Signature refusée.', expired: 'Demande expirée sans signature.', until: 'jusqu’à', sign: 'Signer', signedIt: 'C’est signé', signature: 'Signature', ceremony: 'Cérémonie de signature', tab: 'Ouvrir dans un onglet', close: 'Fermer', hint: 'Si la passkey ne s’ouvre pas ici, signez dans un onglet.' },
-}
-function playwright() {
-  for (const root of ['/usr/lib/node_modules', execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim()]) {
-    for (const name of ['playwright', 'playwright-core']) {
-      try { return createRequire(`${root}/`)(name) } catch { /* next environment root */ }
-    }
-  }
-  throw new Error('Playwright must come from the environment')
 }
 
 /** Measure the actual composited colours, including the skin's translucent card fill. */
@@ -66,7 +57,7 @@ export default async function scenario(bench) {
   const locale = process.env.BENCH_LOCALE ?? 'fr'
   const w = words[locale]
   await mkdir(out, { recursive: true })
-  const browser = await playwright().chromium.launch({ args: ['--no-sandbox'] })
+  const browser = await loadPlaywright().chromium.launch({ args: ['--no-sandbox'] })
   const report = []
   try {
     for (const theme of ['light', 'dark']) for (const [format, width, height] of [['desk', 1440, 900], ['phone', 390, 844]]) {

@@ -7,9 +7,9 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { mkdir, writeFile } from 'node:fs/promises'
-import { createRequire } from 'node:module'
 import { join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { loadPlaywright } from '../lib/playwright.mjs'
 
 export const seed = 'chat-correctifs'
 const words = {
@@ -18,14 +18,6 @@ const words = {
 }
 const file = { name: 'menu-samedi.txt', mimeType: 'text/plain', buffer: Buffer.from('Soup and pie.\n') }
 
-function playwright() {
-  for (const root of ['/usr/lib/node_modules', execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim()]) {
-    for (const name of ['playwright', 'playwright-core']) {
-      try { return createRequire(`${root}/`)(name) } catch { /* next environment root */ }
-    }
-  }
-  throw new Error('Playwright must come from the environment')
-}
 
 // Compose all ancestor backgrounds, including translucent skin fills.
 async function contrast(locator) {
@@ -67,7 +59,7 @@ export default async function scenario() {
   const brand = { alfred: 'Alfred', nestor: 'Nestor', dobby: 'Dobby', skippy: 'SKIPPY' }[skin]
   assert(brand, `Expected one of the four skins, got ${skin}`)
   const nativePopup = process.env.BENCH_NATIVE_PICKER === '1'
-  const browser = await playwright().chromium.launch({ headless: !nativePopup, args: ['--no-sandbox', '--window-position=0,0'] })
+  const browser = await loadPlaywright().chromium.launch({ headless: !nativePopup, args: ['--no-sandbox', '--window-position=0,0'] })
   const report = { engine: 'fake', realClaude: false, screen: 'E-16', skin, locale, variants: [] }
   const post = async (path, body) => {
     const response = await fetch(`${base}${path}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
