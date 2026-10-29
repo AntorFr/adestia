@@ -16,7 +16,10 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
+      # Full history and tags: the documentation guard names the latest git tag as the current version.
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v5
         with:
@@ -37,8 +40,8 @@ jobs:
       - name: Test
         run: npm test
 
-      # The documentation and bench-once guards are node:test files; `npm test`
-      # runs them only through the plugins pass, and neither needs a browser.
+      # The documentation and bench-once guards are node:test files that `npm test`
+      # does not run (vitest covers `packages/`, the plugins pass covers `plugins/`); neither needs a browser.
       - name: Documentation and bench guards
         run: node --test bench/tests/doc-besoin.test.mjs bench/tests/bench-once.test.mjs
 

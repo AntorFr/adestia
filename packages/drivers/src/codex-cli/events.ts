@@ -27,7 +27,7 @@ export interface Notification {
  * because the command happened to contain `apply_patch` would be the driver
  * inventing structure the engine does not have.
  */
-export function describeItem(item: Record<string, unknown>): { name: string; target?: string } {
+function describeItem(item: Record<string, unknown>): { name: string; target?: string } {
   const type = String(item['type'] ?? 'item')
   switch (type) {
     case 'commandExecution': {

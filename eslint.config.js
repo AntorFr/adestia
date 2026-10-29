@@ -6,7 +6,11 @@
  * shows them. The recommended JavaScript and TypeScript rules check unused
  * bindings, explicit `any`, unreachable code and switch fallthroughs. React's
  * hook rules also run on the web shell (dependency checks are warnings).
- * No rule uses type information. Ignored caught errors are allowed
+ * Two rules use type information, `no-misused-promises` and `await-thenable`,
+ * on `packages/**` (each workspace's tsconfig) and `plugins/**`
+ * (`plugins/tsconfig.json`, which only lets the parser type the plain JS;
+ * nothing is type-checked there). The third candidate, the rule on promises
+ * nobody awaits, is off: its count is above the bar (see the rule's comment below). Ignored caught errors are allowed
  * (`caughtErrors: 'none'`), as are empty catch blocks. Deliberate exceptions
  * are explained beside their rules below.
  */
@@ -72,6 +76,33 @@ export default tseslint.config(
       // terminal. A rule that flags the sanitiser is a rule that would have us
       // delete the sanitising.
       'no-control-regex': 'off',
+    },
+  },
+
+  {
+    // Typed rules: a promise nobody awaits fails silently, which is the one
+    // class of bug the untyped rules cannot see. Files outside a tsconfig
+    // (config files at a package root) are not typed and keep the untyped set.
+    files: ['packages/*/{src,test}/**/*.{ts,tsx}', 'plugins/**/*.{js,mjs}'],
+    ignores: ['plugins/scan/web/decoder.js'],
+    languageOptions: {
+      parserOptions: {
+        projectService: {
+          // A probe piped through `--stdin` has no file on disk for the
+          // project service to find: `qualite-serveur-besoin.test.ts` lints
+          // one to check what this config claims.
+          allowDefaultProject: ['packages/server/src/_probe.ts'],
+        },
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      // `no-floating-promises` stays off: it reports 644 sites (22 in
+      // production code, 622 in tests — most are node:test `test()` and
+      // `describe()` calls), far above the 15-finding bar (AD-26). It is named
+      // under Known defects with that count.
+      '@typescript-eslint/no-misused-promises': 'error',
+      '@typescript-eslint/await-thenable': 'error',
     },
   },
 

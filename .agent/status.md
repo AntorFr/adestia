@@ -3,10 +3,23 @@
 
 ## Version courante
 
-- Dernier tag accessible : **`v0.96.0-adestia-correctifs.5`** (`git describe --tags
-  --abbrev=0`; le `.1` était la tranche serveur, le `.2` la tranche chat, le `.3` la tranche shell, le `.4` la tranche pages, le `.5` la tranche plugins) de l'epic `adestia-correctifs`, sur la branche d'intégration
+- Dernier tag accessible : **`v0.96.0-adestia-correctifs.6`** (`git describe --tags
+  --abbrev=0`; le `.1` était la tranche serveur, le `.2` la tranche chat, le `.3` la tranche shell, le `.4` la tranche pages, le `.5` la tranche plugins, le `.6` la tranche dette) de l'epic `adestia-correctifs`, sur la branche d'intégration
   de l'epic ; le dernier tag dans `main` est `v0.95.0` (l'epic `adestia-qualite`).
-- Branche de travail : `feature/adestia-correctifs-plugins`, sur `origin/epic/adestia-correctifs`
+- Branche de travail : `feature/adestia-correctifs-chat`, sur `origin/epic/adestia-correctifs` : reprise
+  de la tranche chat (tag `.2`) après sa vérification : un envoi qui échoue sans phrase lisible du
+  serveur (corps vide, illisible, non JSON) lit `t('upload failed')` (`Composer.tsx`, B-16), dit dans
+  `CHANGELOG.md` et `ARCHITECTURE.md` (Known defects) ; une connexion coupée avant toute réponse garde
+  « request failed (0) », traduit. Rien à coder ici ; les deux premières puces des compléments de Défauts connus (sélecteur de modèle natif, signatures des délégations) sont des défauts gardés, avec leur raison.
+  Précédemment : `feature/adestia-correctifs-dette`, sur `origin/epic/adestia-correctifs`
+  (tranche dette, AD-26 : plus d'alias d'une ligne dans `packages/drivers` (`no-aliases.test.ts`) ;
+  la table des exports gardés pour leurs tests d'`ARCHITECTURE.md` porte une raison par ligne
+  (`dette-exports-besoin.test.ts`) ; le banc définit `loadPlaywright` et `launch(seed)` une fois
+  (`bench/lib/`, `bench-once.test.mjs`) ; la CI joue `doc-besoin` et `bench-once` ; `DESIGN.md` n'a
+  qu'une garde par règle ; `no-misused-promises` et `await-thenable` sont allumées
+  (`lint-type-aware.test.ts`). Aucun écran touché. Reste : `no-floating-promises`, voir Défauts
+  connus. `.agent/migrate-frame.mjs` n'existe plus : « not reproduced »).
+  Précédemment : `feature/adestia-correctifs-plugins`, sur `origin/epic/adestia-correctifs`
   (tranche plugins, AD-24 a-d : l'atelier (réinitialiser la mise en plan) et les voyages (geste
   refusé) parlent dans la feuille propre au plugin, sans `confirm()` ni `alert` — seul changement de
   flux, réponse asynchrone, focus rendu à la carte ; « 1 pièce » et les compteurs des voyages
@@ -49,6 +62,8 @@ Compléments encore visibles dans le code :
   personnalisée serait un composant neuf (AD-18).
 - Une délégation n'affiche pas les cartes de signature (`{ signatures: false }` dans
   `app/Delegations.tsx`) : vue en lecture seule sans gestionnaire de signature (P-13 étape 7).
+- `no-floating-promises` reste éteinte : 644 constats (22 en production, 622 dans les tests),
+  au-delà du seuil de 15 d'AD-26. `no-misused-promises` et `await-thenable` sont allumées.
 - La page ouverte ne se rafraîchit pas quand l'agent écrit (P-5 étape 7).
 - Les lignes `champ : message` de `ManifestError` restent en anglais : une table clé par phrases
   de validateur serait nouvelle.

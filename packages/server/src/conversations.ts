@@ -33,7 +33,7 @@ export function userDirectory(userId: string): string {
 }
 
 /** Conversation ids come from us, but a stored id is still user-influenced. */
-export function isSafeId(id: string): boolean {
+function isSafeId(id: string): boolean {
   return /^[A-Za-z0-9_-]{1,64}$/.test(id)
 }
 
