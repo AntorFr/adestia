@@ -1202,9 +1202,13 @@ since `64dee0f`; it remains so. The missing-attribute report is closed.
 - **Not reproduced — repaired in `e00156a`:** the literal `upload failed`
   fallback, `adestia-composer--busy` without a rule, unused `.adestia-sheet__close`,
   and the duplicate `.adestia-sheet__origin` rule. Source inspection finds the
-  upload refusal using `t(FALLBACK_KEY)`, neither obsolete class, and one base
+  upload refusal using `t('upload failed')`, neither obsolete class, and one base
   origin rule with its use in `Signatures.tsx`. `chat-repaired-defects.test.ts`
   guards these sources; these four reports are no longer open defects.
+  Behaviour changed with it (B-16): an upload that fails with no readable server
+  sentence — empty, unreadable or non-JSON body, refused or not — reads the translated
+  `t('upload failed')`, never a parser's English `error.message`; the server's own
+  `error` still shows first.
 - **Composer fold — not reproduced.** In Chromium at phone width, opening the
   fold and invoking a plugin's empty fill returns focus to the textarea, closes
   the menu, preserves the exact draft (including surrounding spaces) and sends

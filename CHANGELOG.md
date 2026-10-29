@@ -593,3 +593,9 @@ emoji give way to the charter icons; the `:::content` date follows the language.
 kept for their tests carries a reason per row; the bench defines `loadPlaywright` and
 `launch(seed)` once; CI plays `doc-besoin` and `bench-once`; `no-misused-promises` and
 `await-thenable` are on, `no-floating-promises` stays off.
+
+## Unreleased
+
+**An upload that fails without a readable server message says so in the user's language.**
+An empty, unreadable or non-JSON answer to `/api/upload` reads `upload failed`, translated,
+instead of the parser's English `error.message` or a bare status.
