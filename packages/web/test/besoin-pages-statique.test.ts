@@ -15,8 +15,19 @@ const read = (file: string) => readFileSync(join(repo, file), 'utf8')
 
 describe('pages tranche, documents (B-15)', () => {
   const changelog = read('CHANGELOG.md')
-  // oldest first: the work in progress is written in the last section
-  const unreleased = changelog.slice(changelog.lastIndexOf('\n## '))
+  // The tranche's section: still titled "(unreleased)" before the delivery, renamed to its version
+  // (the highest version title of the CHANGELOG) by it. Either way, the same four requirements below.
+  const sections = changelog.split(/\n(?=## )/)
+  const versionOf = (section: string) => {
+    const m = /^## v(\d+)\.(\d+)\.(\d+)(?:\s|$)/.exec(section)
+    return m ? m.slice(1).map(Number) : null
+  }
+  const compare = (a: number[], b: number[]) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2]
+  const highest = sections
+    .filter((s) => versionOf(s))
+    .sort((a, b) => compare(versionOf(b)!, versionOf(a)!))[0]
+  const unreleased =
+    sections.find((s) => s.startsWith('## adestia-correctifs (unreleased)')) ?? highest ?? ''
 
   // Breaks if the CHANGELOG does not say that a CRLF frontmatter is now read by the index and the schedule.
   it('changelog_dit_la_lecture_des_fins_de_ligne_crlf', () => {
