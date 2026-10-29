@@ -612,3 +612,10 @@ sent before the first has left is shown held, as the chat-race change (AD-19) sa
 version of the series as the last CHANGELOG title, so a branch can carry its own entry
 before the tag exists, and still refuses a tag without an entry. The bench scenarios load
 Playwright through the one shared module.
+
+## v0.96.0-adestia-correctifs.9
+
+**The debt slice, resumed again.** The R-8 note of `ARCHITECTURE.md` says what became of
+the rule: `no-misused-promises` and `await-thenable` are on, `no-floating-promises` stays
+off with its reason under Known defects. The README says that work returns to its target
+branch and that `test:plugins` is replayed after a red vitest run.

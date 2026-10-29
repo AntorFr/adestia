@@ -56,3 +56,23 @@ describe('version guard — a released series', () => {
     for (const next of ['v0.98.0', 'v0.96.2']) assert.notDeepEqual(run(t, [...h, next], S(next)), [], next)
   })
 })
+
+describe('version guard — a stable target after its pre-releases', () => {
+  const t = ['v0.61.0', 'v0.96.0-x.7', 'v0.96.0-x.8'], h = ['v0.61.0', 'v0.96.0-x.7', 'v0.96.0-x.8']
+  test('v0.96.0 follows the pre-release tag .8 (accepted), status citing it', () => {
+    assert.deepEqual(run(t, [...h, 'v0.96.0'], S('v0.96.0')), [])
+  })
+  test('the next pre-release .9 is still accepted', () => {
+    assert.deepEqual(run(t, [...h, 'v0.96.0-x.9'], S('v0.96.0-x.9')), [])
+  })
+  test('a later release, a skipped pre-release, a late title, a stale status are refused', () => {
+    assert.notDeepEqual(run(t, [...h, 'v0.96.1'], S('v0.96.1')), [])
+    assert.notDeepEqual(run(t, [...h, 'v0.97.0'], S('v0.97.0')), [])
+    assert.notDeepEqual(run(t, [...h, 'v0.96.0-x.10'], S('v0.96.0-x.10')), [])
+    assert.notDeepEqual(run(t, h.slice(0, -1), S('v0.96.0-x.7')), [])
+    assert.notDeepEqual(run(t, [...h, 'v0.96.0'], S('v0.96.0-x.8')), [])
+  })
+  test('a missing entry for an existing pre-release tag is still refused', () => {
+    assert.notDeepEqual(run(t, ['v0.61.0', 'v0.96.0-x.8', 'v0.96.0'], S('v0.96.0')), [])
+  })
+})

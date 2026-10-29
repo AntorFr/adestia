@@ -1066,10 +1066,10 @@ rules. The server outcomes above are filled.
   the host HTTP protocol, not the removed package re-exports; web source imports
   are already included in the measurement.
 - **R-8, a claim the gate keeps.** `eslint.config.js` is rewritten to say what its rules do
-  (no type-aware rule, so no floating-promise check; `caughtErrors: 'none'`, so an ignored caught
-  error is allowed). Turning on type-aware rules would fire on deliberate fire-and-forget
-  calls and is **kept: a cost out of proportion to a quality pass**, noted for the
-  recommendations. `npm run lint` joins the CI job beside `typecheck` and `test`.
+  (`caughtErrors: 'none'`, so an ignored caught error is allowed). Two type-aware rules
+  have since been turned on, `no-misused-promises` and `await-thenable`; `no-floating-promises`
+  stays off because it fires on deliberate fire-and-forget calls (644 sites), and is named
+  under Known defects. `npm run lint` joins the CI job beside `typecheck` and `test`.
 - **R-13, a real file.** The Copilot shell-tool CLI becomes a real `.mjs` file beside the driver;
   the driver writes the same bytes it writes today, found whether it runs from `src/` (tests) or
   from `dist/` (the image). The program is linted with the rest.

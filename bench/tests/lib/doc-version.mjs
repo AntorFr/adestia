@@ -18,7 +18,8 @@ export const compare = (a, b) => {
 export const acceptableLast = (latest) => {
   const p = parse(latest)
   const [a, b, c] = p.n
-  if (p.series !== null) return [latest, `v${a}.${b}.${c}-${p.series}.${p.k + 1}`]
+  // a pre-release of a stable target is followed by its next pre-release or by the release itself
+  if (p.series !== null) return [latest, `v${a}.${b}.${c}-${p.series}.${p.k + 1}`, `v${a}.${b}.${c}`]
   return [latest, `v${a}.${b}.${c + 1}`, `v${a}.${b + 1}.0`, `v${a + 1}.0.0`]
 }
 
@@ -32,7 +33,8 @@ export const checkVersions = ({ tags, headings, status, since }) => {
   if (!acceptableLast(latest).includes(last)) {
     problems.push(`last CHANGELOG title ${last} is neither the latest tag ${latest} nor its next version`)
   }
-  if (!status.includes(last)) problems.push(`status.md does not cite ${last}`)
+  const cites = new RegExp(`${last.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![-\\w]|\\.\\w)`)
+  if (!cites.test(status)) problems.push(`status.md does not cite ${last}`)
   for (const t of all.filter((t) => compare(t, since) >= 0)) {
     if (!headings.includes(t)) problems.push(`tag ${t} has no CHANGELOG entry`)
   }
