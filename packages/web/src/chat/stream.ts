@@ -130,6 +130,8 @@ export interface TurnState {
   readonly ask?: PendingAsk | undefined
   readonly sessionId?: string | undefined
   readonly error?: string | undefined
+  /** HTTP refusal data; the thread translates capacity limits in its own locale. */
+  readonly refusal?: { readonly status: number; readonly max?: number } | undefined
   /**
    * The connection ended before the turn's result did.
    *
@@ -303,16 +305,21 @@ function postTurn(options: StreamOptions, fetchImpl: typeof fetch): Promise<RawR
   })
 }
 
-async function refusalMessage(response: Response): Promise<string> {
+async function refusalMessage(response: Response): Promise<Pick<TurnState, 'error' | 'refusal'>> {
   const detail = await response.text().catch(() => '')
   let message = `turn refused (${response.status})`
+  let max: number | undefined
   try {
-    const parsed = JSON.parse(detail) as { error?: string }
-    if (parsed.error) message = parsed.error
+    const parsed: unknown = JSON.parse(detail)
+    if (parsed !== null && typeof parsed === 'object') {
+      const body = parsed as { error?: unknown; max?: unknown }
+      if (typeof body.error === 'string' && body.error) message = body.error
+      if (typeof body.max === 'number' && Number.isInteger(body.max) && body.max > 0) max = body.max
+    }
   } catch {
     /* keep the status-based message */
   }
-  return message
+  return { error: message, refusal: { status: response.status, ...(max !== undefined ? { max } : {}) } }
 }
 
 /** Follows one SSE response, yielding the state after each event. The caller
@@ -394,11 +401,11 @@ export async function startTurn(
   if (response.status === 202) return { kind: 'held' }
 
   if (!response.ok || !response.body) {
-    const message = await refusalMessage(response)
+    const refusal = await refusalMessage(response)
     return {
       kind: 'stream',
       states: (async function* () {
-        yield { ...INITIAL_TURN, running: false, error: message }
+        yield { ...INITIAL_TURN, running: false, ...refusal }
       })(),
     }
   }

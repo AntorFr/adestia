@@ -51,6 +51,17 @@ function say(
   t: (key: string) => string,
   problem: { reason: string; code?: string; params?: Record<string, string> },
 ): string {
+  // Only the manifest heading belongs to the shell. Validator lines stay
+  // byte for byte as the server wrote them, including their field names.
+  if (problem.code === undefined) {
+    const manifest = /^(Invalid (?:plugin|skin) manifest)(?: for "([^\n]*)")?:/.exec(problem.reason)
+    if (manifest) {
+      const heading = manifest[2] === undefined
+        ? t(manifest[1]!)
+        : t(`${manifest[1]} for "%name"`).replace('%name', () => manifest[2]!)
+      return `${heading}:${problem.reason.slice(manifest[0].length)}`
+    }
+  }
   const key = problem.code === undefined ? undefined : SAID[problem.code]
   if (key === undefined) return problem.reason
   return Object.entries(problem.params ?? {}).reduce(

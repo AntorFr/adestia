@@ -30,13 +30,3 @@
     animation: none;
   }
 }
-
-@keyframes adestia-icon-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.adestia-icon--spin {
-  animation: adestia-icon-spin 0.9s linear infinite;
-}

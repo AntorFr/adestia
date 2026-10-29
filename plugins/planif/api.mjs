@@ -53,9 +53,9 @@ function nextAtMs(atMinutes, from) {
 }
 
 function parseNote(id, source) {
-  const match = /^---\n([\s\S]*?)\n---\n?/.exec(source)
+  const match = /^---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/.exec(source)
   const fields = {}
-  for (const line of (match?.[1] ?? '').split('\n')) {
+  for (const line of (match?.[1] ?? '').split(/\r?\n/)) {
     const separator = line.indexOf(':')
     if (separator > 0) {
       fields[line.slice(0, separator).trim()] = line

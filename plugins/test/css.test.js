@@ -128,3 +128,12 @@ test('plugin styles keep the shell token contract', () => {
   const errors = sheets.flatMap(faults)
   assert.deepEqual(errors, [], errors.join('\n'))
 })
+
+test('in project-management, --warning is the owner\'s Amber and nothing else', () => {
+  const source = withoutComments(readFileSync(join(root, 'plugins/project-management/web/pm.css'), 'utf8'))
+  const stray = []
+  for (const [, selector, body] of source.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (/var\(\s*--warning(?:-text)?\b/.test(body) && !/amber/i.test(selector)) stray.push(selector.trim())
+  }
+  assert.deepEqual(stray, [], `--warning drawn for something other than Amber: ${stray.join(' | ')}`)
+})

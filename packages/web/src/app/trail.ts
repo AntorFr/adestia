@@ -9,7 +9,7 @@ import type { LoadedPlugin } from '../plugins/loader.js'
 import type { Say } from '../plugins/words.js'
 import { label as instructionLabel } from './Instructions.js'
 import { addressOf, opensOn, ownerOf, routeForPath } from './owners.js'
-import { prettify } from './paths.js'
+import { folderOf, prettify } from './paths.js'
 import { prefsTitle, type PrefsPage } from './Preferences.js'
 import {
   holdsPages,
@@ -176,7 +176,7 @@ export function trailOf({
       pluginTrail.id === openApp ? pluginTrail.crumbs : [],
     )
   }
-  const deepest = page ? page.path.slice(0, page.path.lastIndexOf('/')) : section
+  const deepest = page ? folderOf(page.path) : section
   if (deepest === undefined || deepest === '') return page ? [{ label: page.title }] : []
 
   const parts = deepest.split('/').filter(Boolean)

@@ -225,7 +225,7 @@ export default function view(api) {
       // of statuses copied in here — that is the one thing guaranteed to drift.
       archived.length > 0 &&
         h('details', { key: 'a', className: 'journal-archive', open: live.length === 0 }, [
-          h('summary', { key: 's' }, `🗄 ${archived.length}`),
+          h('summary', { key: 's', title: t('Archived journals') }, [icon('archive'), ` ${archived.length}`]),
           h('ul', { key: 'l', className: 'journal-shelf' }, archived.map(card)),
         ]),
 

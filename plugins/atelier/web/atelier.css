@@ -124,6 +124,8 @@
 
 /* ── The piece's sheet: the shell's `.adestia-sheet`, with a body of rows ─── */
 .atelier-sheet[hidden] { display: none; }
+/* Above the full-screen bench mode (`--z-sheet` + 1): a question asked from there must be seen. */
+.atelier-sheet { z-index: calc(var(--z-sheet) + 2); }
 .atelier-sheet .atelier-sheet__panel { height: auto; max-height: min(88vh, 720px); }
 .atelier-sheet .prow { display: flex; gap: 10px; font-size: var(--text-sm); margin-bottom: var(--space-2); }
 .atelier-sheet .prow b { flex: 0 0 92px; color: var(--text-faint); font-family: var(--font-mono); font-size: var(--text-xs); font-weight: 600; }

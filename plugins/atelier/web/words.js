@@ -2,16 +2,15 @@
  * The words the atelier says, in the languages it speaks.
  *
  * The KEY is the English sentence and is what the engine says when no table
- * answers; the `fr` values are the French the engine said before it had a
- * table, letter for letter — a French instance reads the same words it always
- * did (B-1), and `test/hub-fr.txt` is the proof. The French addresses the
- * reader as *vous*.
+ * answers. The `fr` values started as the engine’s original French (B-1);
+ * AD-24 b corrects the piece count’s singular, including zero. The French
+ * addresses the reader as *vous*.
  *
  * Placeholders are `%name`, filled from the values `t(key, values)` receives.
  * A plural is two keys (`%n cross-cut` / `%n cross-cuts`), never a word with
  * an `s` glued on: another language does not plural the way these two do.
- * Some French values read the same for one and for many: that is what the
- * engine said, and a translation is not the place to fix it.
+ * The caller chooses the key with the locale’s plural rule: zero pieces
+ * takes the singular in French and the plural in English.
  *
  * Values may carry markup (`<b>`, a coloured `<span>` handed in as a
  * placeholder) because the engine puts them in innerHTML. What the USER wrote
@@ -36,7 +35,7 @@ const WORDS = {
     'Workbooks': 'Workbooks',
     'never': 'jamais',
     'steps': 'étapes',
-    '%n piece': '%n pièces',
+    '%n piece': '%n pièce',
     '%n pieces': '%n pièces',
     'Unreadable workbook (%err).': 'Workbook illisible (%err).',
     'Sheets': 'Plaques',
@@ -73,7 +72,9 @@ const WORDS = {
     'edge to band (edge banding)': 'arête à plaquer (chant)',
     'drag a piece · edges snap, adding the saw kerf': 'glisser une pièce · les bords s’aimantent en ajoutant le trait de scie',
     'click a column → detail/cut · click the name → the piece': 'clic colonne → détail/débiter · clic sur le nom → la pièce',
-    'Drop your layout and go back to Alfred’s?': 'Abandonner votre calepinage et reprendre celui d’Alfred ?',
+    'Drop your layout and go back to Alfred’s?': 'Abandonner votre mise en plan et reprendre celle d’Alfred ?',
+    'Cancel': 'Annuler',
+    'Discard my layout': 'Abandonner ma mise en plan',
     'No columns.': 'Pas de colonnes.',
     'Ripped sheets → cross-cutting. Each kind of column (identical ones grouped ×N), its cross-cuts dimensioned, and the cumulative cut position (stop) — <b>at the same scale</b> from one band to the next. Ticking a column = cross-cut.': "Plaques refendues → tronçonnage. Chaque type de colonne (identiques regroupées ×N), ses tronçons cotés, et la position de coupe cumulée (butée) — <b>à la même échelle</b> d'une bande à l'autre. Cocher une colonne = tronçonnée.",
     'column with no cross-cutting step — for Alfred to consolidate': 'colonne sans étape de tronçonnage — à consolider par Alfred',
@@ -138,7 +139,7 @@ const WORDS = {
     'on %face': 'sur %face',
     'Cut the column (%n pieces) ✓': 'Débiter la colonne (%n pièces) ✓',
     'Cut the column (%n piece) ✓': 'Débiter la colonne (%n pièce) ✓',
-    'Done 🎉': 'Terminé 🎉',
+    'Done': 'Terminé',
     '%n step done': '%n étapes faites',
     '%n steps done': '%n étapes faites',
     'bands %list mm': 'bandes %list mm',

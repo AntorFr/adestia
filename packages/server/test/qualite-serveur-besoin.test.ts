@@ -135,9 +135,9 @@ describe('R-6 · production surface', () => {
       expect(Object.keys(content)).not.toContain(name)
     }
   })
-  it('the drivers index does not export assertConformance', async () => {
+  it('the drivers index exports assertConformance, which start() consumes at boot (AD-22)', async () => {
     const drivers = (await import('@antorfr/adestia-drivers')) as Record<string, unknown>
-    expect(Object.keys(drivers)).not.toContain('assertConformance')
+    expect(Object.keys(drivers)).toContain('assertConformance')
   })
   it('the subscription quotas type of the old contract exists nowhere under packages', () => {
     const word = 'Subscription' + 'Quotas'

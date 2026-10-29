@@ -1,13 +1,13 @@
 # Adestia — architecture
 
 > Product documentation. On `epic/adestia-qualite` (the epic's integration branch, where its tranches merge), it describes the epic's target; on
-> `main`, exactly what is built. An epic is a group of features delivered together; a tranche is one of them. Stable identifiers, never renumbered: `B-n` (needs), `P-n`
+> `main`, exactly what is built. On a feature branch of `adestia-correctifs` (e.g. the chat tranche, AD-23) it adds that tranche on top of `epic/adestia-correctifs`; nothing is in `main` until the epic merges. An epic is a group of features delivered together; a tranche is one of them. Stable identifiers, never renumbered: `B-n` (needs), `P-n`
 > (journeys, `docs/parcours.md`), `E-n` (screens, `docs/ecrans.md`), `AD-n` (decisions,
 > this file), `R-n` (refactoring targets, this file).
 >
 > Written by the epic `adestia-qualite` (2026-10-15), a quality pass that changes **no
 > behaviour**. Decisions taken BEFORE this epic live in `DESIGN.md` › Decision log, which is
-> not renumbered; `AD-n` starts at `AD-1` with this epic. The map below is the code as first
+> not renumbered; `AD-n` starts at `AD-1` with this epic. The epic `adestia-correctifs` (AD-15 onward) then repairs the defects this pass listed and does change behaviour, each repair named in the CHANGELOG; `AD-21` is taken by the epic `adestia-ajouts`, hence the gap before AD-22. The map below is the code as first
 > documented at the git tag `v0.88.0` (the packages' `version` fields stay `0.0.0`), updated for the completed charter, pages, chat, plugins, tests and server tranches; the repository's later tags (`git tag`) mark releases, not this map.
 
 ## Overview
@@ -65,7 +65,7 @@ Outside `packages/`:
   (`frameShell`, the preamble), `screen.ts`.
 - **Drivers and arming** — `drivers.ts` (`buildDriver`, `AVAILABLE_DRIVERS`), `secrets.ts`
   (`SecretStore`, `ArmingFlows`), `routes/arming.ts`.
-- **MCP inbound and delegations** — `mcp-in.ts`, `routes/mcp.ts` (`registerMcp`, `/mcp`; `mcp-routes.ts` re-exports it),
+- **MCP inbound and delegations** — `mcp-in.ts`, `routes/mcp.ts` (`registerMcp`, `/mcp`),
   `delegations.ts` (`DelegationChannel`), `routes/delegations.ts` (`/api/delegations`),
   `callback.ts` (`wakePrompt`, `verifySettled`), `routes/callback.ts` (`registerCallback`, `/callback`).
 - **MCP outbound** — `config/mcp.ts`, `mcp-store.ts` (`McpStore`, the shell-written layer),
@@ -76,7 +76,7 @@ Outside `packages/`:
   `registerPluginVocabulary`, `mcpServersFor`), `sources.ts` (`fetchSources`, git clones),
   `plugin-host.ts` (`runSetups`), `routes/plugin-host.ts` (`mountPluginApis`), `static.ts` (`mimeFor`,
   `safeJoin`), `routes/static.ts` (`registerStatic`, the catch-all, mounted last).
-- **Frontmatter** — `frontmatter.ts` (`splitFrontmatter`, `parseFrontmatter`, `field`; the server's own reader, distinct from `content/src/frontmatter.ts`, AD-7).
+- **Frontmatter** — `frontmatter.ts` (`splitFrontmatter` delegates fences to `content`; `parseFrontmatter` and `field` keep the server's shallow scalar reader, AD-7, AD-25 d).
 - **Instructions and skills** — `skills.ts` (`collectSkills`, `deliverSkills`,
   `deliverAgents`, `MANAGED_MARKER`, `stamped`), `instructions.ts`,
   `routes/instructions.ts`, `instruction-catalogues.ts` (scan, `copyMarkedTree`),
@@ -128,7 +128,7 @@ Outside `packages/`:
 `resolveStores` → `fetchSources` → `discoverPlugins` / `discoverSkins` →
 `registerPluginVocabulary`, `claimedTypeCollisions` → web manifest merge → `McpStore` primed,
 `mcpServersFor` → `AskDesk` (ask posture) → `buildDriver` (or `driverFactory`) →
-`ShellToolsService.start` → `interactivePermissions` check → stored credential loaded →
+`assertConformance` → `ShellToolsService.start` → `interactivePermissions` check → stored credential loaded →
 `runSetups` → if `skillsPath`: `collectSkills`, `deliverSkills`, `deliverAgents`,
 `refreshCataloguesAtBoot` → `findWebRoot` → `UserTokens` → `buildApp` → `listen` → `Clock`.
 Every problem before `listen` is either a boot-log line or a `ConfigError` that refuses to start.
@@ -140,8 +140,9 @@ Every problem before `listen` is either a boot-log line or a `ConfigError` that 
 Optional features are declared in `DriverDescriptor.capabilities` from `CAPABILITIES`;
 `CAPABILITY_METHODS` names the interface each obliges (`AuthManagement`, `ModelSelection`,
 `McpStatus`) and `CAPABILITY_REQUIRES` their dependencies.
-`conformance.ts` › `checkConformance` checks a driver against its descriptor (used by tests
-only). `managed-credential.ts` › `ManagedCredential` holds the armed secret the same way in
+`conformance.ts` › `checkConformance` checks a driver against its descriptor;
+`assertConformance` refuses a non-conformant driver at boot, before tools and permissions.
+`managed-credential.ts` › `ManagedCredential` holds the armed secret the same way in
 all three drivers. One instance runs ONE driver: `config.driver.id` picks it in `buildDriver`,
 and every turn — chat, scheduled, delegated, callback wake — goes through the one `TurnDesk`.
 
@@ -535,16 +536,16 @@ screen and take the sheet's behaviour contract and z-index family.
 today's French, so a French instance reads the same words (B-1). Parcours and project-management
 get the same. Messages of `regles.js` / `convert.js` go to the CLI and MCP tools, not to the
 screen, and stay French; the agent prompts stay as written. The class test `plugins/test/words.test.js` (it already
-reads the tables the way the shell does, the atelier's included once it has one) gains the *tu* rule, with a short list of the plugins still to correct that each task empties.
+reads the tables the way the shell does, the atelier's included once it has one) gains the *tu* rule; its correction list is empty, with no pending exception.
 (d) **Lint.** `eslint.config.js` (the serveur tranche's file, extended here) drops `plugins/**` from
 `ignores` and gains a block for `plugins/**/web/**/*.js` (browser globals; the `react-hooks` rules apply, since
 journal, todo, listening-post and meals call hooks through `createElement`) and one for the
 plugins' other `.mjs`/`.js` (node globals); the vendored `plugins/scan/web/decoder.js` (448 KB, third-party) joins the ignores with
 the reason. `npm run lint` covers `plugins`. A finding is fixed, or turned off for the rule with
 its reason written beside it (the file's own convention); no `eslint-disable` without a reason.
-(e) **Kept.** The native `confirm()` of the atelier (resetting a layout) and the `window.alert` of
-voyages (a refused gesture) stay: a sheet would make the answer asynchronous, a change of flow (Q-20,
-*kept: the flow would change*; written under Known defects). In plugin sheets only `820px` is a breakpoint; 520, 560, 640, 720 and 900 px are kept
+(e) **Superseded by AD-24 a.** The native `confirm()` of the atelier (resetting a layout) and the `window.alert` of
+voyages (a refused gesture) stayed at the styling tranche (Q-20, *the flow would change*); the plugins tranche replaced
+them with each plugin's own sheet, so neither dialog exists any more. In plugin sheets only `820px` is a breakpoint; 520, 560, 640, 720 and 900 px are kept
 (*kept: moving a width changes the layout between phone and desktop, a redesign the mandate does
 not ask for*). Plugin buttons, fields and empty states do not adopt the charter's classes, except
 backs, exits and the sheet's close button.
@@ -577,11 +578,11 @@ yet reproduced" (frontmatter CRLF) or "whether it predates the epic is unknown" 
 ### AD-17 — The register: every defect has a tranche, or a written reason
 | Tranche | Defects (Known defects, kept parts of `docs/ecrans.md`, non-blockers) |
 |---|---|
-| chat | refused turn (429) silent (P-2 step 4); `📎` text emoji in `stamped()`; native model select says `Auto`; delegations drop signatures; the chat race (below); chat nits left open by the tests (`adestia-composer--busy` without a rule, unused `.adestia-sheet__close`, double `.adestia-sheet__origin`, the `upload failed` fallback through `t()`) |
-| pages | root page breadcrumb invents a folder; E-6 settings overlap the banner at 1440 px; page diagnostic mixes languages; frontmatter CRLF divergence (`pages.ts`, `schedule.ts` against `content`) |
-| shell | Nestor's `↑` send glyph; MCP server counts disagree (tile against badge); Skippy's banner wraps on the phone; E-14 switch apart from its title on the phone; E-19 detail in English under `fr`; token field without `autoComplete`; "Invalid plugin manifest" in English; the duplicate `.adestia-icon--spin` block; `CataloguePopin` `refresh()` no longer shows a thrown error |
-| server | conformance never asserted at boot; saving the configuration loosens its file mode; `user-tokens.json` comment against content; `register*` re-exports left in old files |
-| plugins | `confirm()` of the atelier and `alert` of the voyages replaced by the shared sheet (Q-20, kept by `adestia-qualite` because "the flow would change": the answer becomes asynchronous; this is the one deliberate flow change, bounded to two gestures, and `docs/ecrans.md` Q-20 and the atelier and voyages journeys are rewritten with it. If the tranche proves risky it is narrowed and the reason written under Known defects); planif and veille sentences in English; E-28 walking map keeps its pre-walk size; E-30 focus lost on phone; E-25 "1 pièces"; the emojis kept in plugins; the amber of project-management meaning two things; `:::content` `on` without a localised date |
+| chat | built by AD-23: the refused turn (429) is explained, the sent message draws `paperclip` and names instead of `📎`, the `upload failed` fallback and the three CSS leftovers are guarded (already repaired in `e00156a`), the composer fold is pinned, the chat race is in the CHANGELOG (AD-19). Kept, with their reason under Known defects: the native model select and the delegations' missing signature cards |
+| pages | built by AD-25: the root page breadcrumb no longer invents a folder, the page diagnostic follows the locale, frontmatter CRLF is read as the editor does (`pages.ts`, `schedule.ts`, planif against `content`); proof in `bench/pages-proof.md`. Kept, with its reason under Known defects: the open page is not refreshed after an agent write (P-5 step 7) |
+| shell | built by AD-24: Nestor’s arrow is SVG, MCP counts agree, Skippy’s phone band stays on one line, E-14’s switch stays beside its title, E-19/plugin manifest headings follow the locale, the spin rule is single and `CataloguePopin.refresh()` shows thrown errors. Token `autoComplete`: not reproduced, already `off` since `64dee0f`. Kept under Known defects: English validator field lines (a new keyed table would be needed). Nine dispositions and eight complete visual passes: `bench/shell-proof.md` |
+| server | none left: the configuration file mode, the `user-tokens.json` comment and the `register*` re-exports were repaired by AD-22 |
+| plugins | built by AD-24 a/b/c/d: the atelier reset and voyages refusal use their shared sheet (Q-20, asynchronous, no narrowing); piece counts and composed phrases follow the locale; the walking map fills its box; the scanner returns focus to the phone composer; plugin chrome uses the sprite or its visible word; Amber is the owner’s assessment and inferred delay is dashed; `:::content` dates follow the instance locale. Proof: `bench/plugins-correctifs-proof.md`. Kept under Known defects: E-23/E-27 server sentences, E-25 workbook words, E-26 item types and raw gesture errors (data, no translation table) |
 | debt | R-2 one-line aliases of the drivers and R-6 exports kept only for tests (removed, tests import the module that owns the symbol); bench duplicates (`launch(seed)`, `loadPlaywright`); fake-engine options with no caller; `doc-besoin.test.mjs` into CI; the two duplicate guards on `DESIGN.md`; typed lint rules switched on if the repo passes them; `.agent/migrate-frame.mjs` lint errors |
 
 Kept on purpose, with their reason, and still under Known defects: the open page is **not**
@@ -666,6 +667,281 @@ written first, red until the removal, then green). Inventory taken on `epic/ades
 bench (it is scripts, not product). *Reversed if*: a removal changes a built file under `dist/`
 (then it is a behaviour and goes through B-13's red-first rule).
 
+### AD-24 — Plugins tranche (shares its number with the shell tranche below; "AD-24 a/b/c/d" always means this one): one flow change, two small repairs of words, three of drawing, one of marks
+Written from the code as it stands, not from the register's wording; each repair is reproduced by a
+test or a capture **before** it is fixed (AD-16), and a defect that does not reproduce leaves the register as
+`not reproduced` with its reason (B-14).
+
+(a) **Q-20 — the two native dialogs become the plugin's own copy of the shared sheet.** The atelier
+(`wbreset`, "Drop your layout and go back to Alfred's?") and the voyages (`vgesture`: "Gesture refused" and
+"Gesture impossible") each already carry `web/sheet.js` (AD-14 b: `makeSheet(t)`, `role="dialog"`, scrim, Escape,
+Tab kept inside, focus returned). Both gain a *message* form of that sheet, no new component and no new
+contract. **Atelier**: a question, two buttons: *Cancel* (focused first, since the gesture destroys the
+layout; Escape and the scrim also cancel) and *Discard my layout* / *Abandonner ma mise en plan* (accent, destructive wording; the question keeps its table entry); confirming does what the
+`if (confirm(...))` branch did, cancelling does nothing — the same two outcomes as today. **Voyages**: the refusal or the
+failure is the sheet's body, one button *Close* (Escape and the scrim too); the card stays where it was and
+`paintVoyage()` runs when the sheet is closed, not before (the native alert blocked the repaint; the sheet must not
+let a half-updated board show under it). This is the epic's one deliberate flow change: the answer is now asynchronous, so
+the gesture's code continues in the button's handler. It is written in `CHANGELOG.md`, in `docs/ecrans.md` (E-25, E-26, Q-20
+and the "kept" cell of both rows), in P-11 and in the atelier/voyages lines of the journeys. *Narrowing*: if the atelier's
+bench mode (`.atelier-full`, one z-index above the sheet) hides the sheet, the sheet takes the higher z-index
+inside that mode only; if that cannot be done without touching the drawing, the task stops and says so (it does not choose); the narrowing — the atelier gesture kept native, written under Known
+defects with the reason, the voyages one still landing — is then a decision taken and traced outside the task. *Rejected*: a shell helper in `PluginApi` (`api.confirm`) — a new
+contract surface, AD-8; a toast for the voyages (it would vanish before being read).
+
+(b) **Words the plugins compose themselves.** The planif and listening-post ("veille") screens, and every other plugin's `t()` call, are read
+by `plugins/test/words.test.js` (it already fails on a missing French entry; its `TU_A_CORRIGER` list is **already empty**, so
+that part of the register is closed — the task writes that down and does not invent an exception). What the task does is
+reproduce what the sentence list *cannot* see: a phrase built by string concatenation or a template with an English word
+around a `t()` (`${t('Gesture refused: ')}…`, `"⚠ %distance m from the route"`, `until %when`, the planif "clock off" line), under
+`fr` on the bench, and give each one an entry, or a `%`-parameter, so the whole sentence is in the table. The
+sentences built by the server (E-23, E-27) are not touched (AD-17 keeps them).
+"1 pièces" (E-25): the table gets a singular entry (`'%n piece': '%n pièce'`, keeping `'%n pieces'` plural) and the
+callers choose with the count the way `Cut the column (%n piece)` already does; zero reads "0 pièce", as the French does. The date of
+`:::content{on=…}` (`editor/reader/ContentBlock.tsx`) is drawn through the shell's locale (`Intl.DateTimeFormat`, the
+format the reader's other dates use); a value that is not a date is drawn as written, as today.
+
+(c) **Drawing.** *E-28*: `carte.js` `taille()` reads the box's current client height when the walking mode is on
+(`pc-full` / the class the walk sets) instead of the 0.62 ratio capped at 420 px, and redraws on the mode change and on
+resize; outside the walk it returns what it returns today. *E-30*: when the scanner closes and its `opener` is no longer connected
+(the composer folded its buttons), the focus goes to the composer's field; the plugin does it in `scanner.js` with
+`document.querySelector` on the shell's composer field role, and the chat tranche's fold is what makes that element
+stable for the browser test (hence the dependency, an ordering one: the fix itself reads only "the opener is gone"). *Amber*: the colour `--warning` means one thing in project-management: the owner's `Amber`
+assessment (`.pm-timeline__span--amber`, `.pm-subproject__ico--amber`, the Amber chips). **Inferred lateness**
+(`.pm-timeline__span--late`, the late milestone rules) leaves `--warning` and is drawn by shape — a dashed outline in `--text-muted` over the
+same raised surface, plus the existing hover word — so a skin that flattens hues still tells the two apart, and the
+colour keeps the owner's word only. `plugins/test/css.test.js` gains the rule: in `pm.css`, `--warning` appears only in selectors that name
+`amber`. *Rejected*: moving lateness to `--danger` (it would read as the owner's `Red`).
+
+(d) **The emojis kept in plugins.** The charter kept them under B-1 ("replacing adds icons to the contract"); B-1 is lifted for
+the register, and no icon is added: the sprite's closed list is enough. Two kinds, kept apart. *Content marks* are the
+author's or the engine's data and stay: `journal.ico`, an item's `ico`, the trip item types of `voyages`, a manifest tile `ic:`,
+the `⛰` of a route card. *Chrome companions* — an emoji the plugin itself puts beside a word or on a control — go: `🖐` in
+the voyages hints and the tray foot and `🧭 Follow`, `🥾 Walking mode` lose their emoji (the word carries the meaning); `📄 page`
+chip → `file-text`; `📝`/`📎` marks of the todo rows → `pen-line`/`paperclip` with their title kept; `🗄 n` of the journal →
+`archive`; `⚠ …` of listening-post and parcours → `triangle-alert`; `Done 🎉` of the atelier loses the emoji; the `🎧`/`🎬` fallback glyph of
+listening-post is content (the media type) and stays. The `✦` of "extract" / "what's new?" and the `✓` of ticks are typographic glyphs of the plugins'
+own vocabulary, not emoji: kept, and written as such in `docs/ecrans.md`. Each replaced mark keeps a text name (`title` or visible word); an
+icon never stands alone (charter, backs). A test in `plugins/test/` lists the chrome companions it forbids in `web/*.js` string
+literals (an allow-list of the content marks above, by file) — written first, red on `main`.
+
+(e) **Order of the tests.** For (a) a node:test on each plugin's sheet (cancel / confirm / Escape, focus back) and on `vgesture`
+with a fake `call`; for (b) a `words` test per concatenated sentence; for (c) a jsdom test of `taille()` in walk mode, the scanner
+close test, and `css.test.js`; for (d) the emoji test. The bench scenario (`bench/scenarios/plugins-*.mjs`) takes the screens of
+E-23 to E-31 touched here, **before and after** for E-28, under the four skins × `en`/`fr` × light/dark × desk/phone (AD-20).
+
+*Reversed if*: the atelier's sheet cannot sit over its bench mode (see the narrowing above).
+
+### AD-22 — Server tranche: four repairs, no screen
+Read on `epic/adestia-correctifs` before any code. No screen is touched (the tranche says so, AD-20).
+Built: the four repairs below are in the code, each with its test; the text keeps the design's wording ("Repair:", "today it boots") for the reason behind each.
+- **Conformance at boot.** `start()` builds the driver (`buildDriver` or `options.driverFactory`)
+  and then trusts `driver.describe()`. Repair: right after the driver is built, before
+  `checkPermissions`, `start()` calls `assertConformance(driver, driver.describe())` (exported
+  by `@antorfr/adestia-drivers`), so a bad driver stops the boot with the message that function
+  already writes — `Driver "<id>" is not conformant:` and one line per `ConformanceIssue`. It
+  applies to the driver the instance arms, whether built or injected by `driverFactory`; the
+  stage order stays pinned by `start-order.test.ts`. Reproduced by a test that starts with a
+  `driverFactory` whose descriptor declares a capability it lacks the method of: today it boots.
+  The test doubles of the suite (`ScriptedDriver` and others) must pass the check; one that does
+  not is a real finding, repaired in the double and written in the tranche's report, never by
+  skipping the check. Behaviour changed: an instance that booted with a lying driver now refuses
+  to boot — a CHANGELOG line.
+- **Configuration file mode.** `replaceContents` (`settings-file.ts`) writes a sibling and renames
+  it over the target; the sibling is created with the umask's mode, so a 0600 file comes back
+  0644. Repair: read the target's mode before writing and apply it to the sibling before the
+  rename (`chmod` on the temporary file, not `writeFile`'s `mode`, which the umask masks). The
+  in-place fallback already keeps the mode (it truncates the same inode); a test pins both
+  paths. A target that does not exist yet keeps the default. Written in the CHANGELOG.
+- **`user-tokens.json` comment.** The module comment says "refresh tokens only". The `Entry`
+  carries `accessToken` and `expiresAt` too, and `store` is written whole (`user-tokens.ts:87`).
+  The content is the truth, so only the comment changes: it names the access token and its
+  expiry (kept so a second turn within the hour does not call the provider again), still 0600,
+  still never in a cookie or in the agent's workspace. A guard test reads the comment and
+  fails if it again claims "refresh tokens only" while `Entry` has `accessToken`. No behaviour
+  changes, so no CHANGELOG line.
+- **`register*` re-exports.** Six old files re-export what `routes/` owns: `callback.ts`,
+  `files.ts`, `pages.ts`, `static.ts`, `watch.ts` (named `register*` and their option types) and
+  `mcp-routes.ts` (a pure `export *`). Repair: the re-exports go; `app.ts` already imports from
+  `routes/`. The tests that import `register*` from the old files import `routes/...`
+  (`pages-stores`, `pages`, `callback`, `mcp`, `files`, `static`, `watch`). `index.ts` stays the
+  package's public type surface and keeps exporting those types (`StaticOptions`, `PagesOptions`,
+  `FilesOptions`, `DelegationPort`, `McpDependencies`), but its `export type … from` lines point
+  at `./routes/…`, where they are owned, not at the six old files. `mcp-routes.ts` is deleted if nothing else imports it. The
+  pages tranche depends on this one precisely because `pages.ts` stops re-exporting. The
+  guard is a suite test with two parts. Over the six old files (`callback.ts`, `files.ts`,
+  `pages.ts`, `static.ts`, `watch.ts`, `mcp-routes.ts` if it still exists): none re-exports
+  from `routes/` (`export { register… } from './routes/…'`, `export * from './routes/…'`, or a
+  type re-export). Over `index.ts`: no `export … from` line names one of those six files for a
+  symbol `routes/` owns; its lines to `./routes/…` are the public surface and are allowed. The two
+  other helper re-exports (`buildVersion`, `sseFrame`, `SkinPayload` in `app.ts`; `mountPluginApis`
+  in `plugin-host.ts`) are tests' aliases left to the dette tranche, and the guard does not cover them; it targets
+  re-exports, not definitions — `registerPluginVocabulary` in `extensions.ts` is defined there and stays. The rows of the "exports kept only for
+  tests" table that name these re-exports leave in the same commit; `R-3`'s outcome says "a
+  re-export" and is corrected to say the files keep only their helpers.
+- **Known defects and the register.** Each of the four repairs leaves *Known defects* and
+  `.agent/status.md` in the commit that makes it (AD-16); the CHANGELOG section
+  "adestia-correctifs (unreleased)" is created by whichever tranche lands first.
+- **P-10 and P-14.** P-10 (edit the configuration) gains one sentence — the file keeps its mode.
+  P-14 (install) is touched only for the boot refusing a non-conformant driver, in the step that
+  describes boot. Nothing else in either journey changes.
+
+### AD-25 — Pages tranche: four repairs, the shape of each, and the order tests are written in
+Reproduction comes first (AD-16); each repair below says what is expected to be found and what
+is written if it is not.
+
+**a. The root page's breadcrumb (`app/trail.ts`).** `trailOf` derives the folder a page sits in
+with `path.slice(0, path.lastIndexOf('/'))`; for `INDEX.md` (no slash) `lastIndexOf` is -1 and
+the slice drops the last character, so `deepest` is `INDEX.m` instead of the empty parent. The
+fake folder reaches the screen only when something accepts it: the section being open
+under that name, or an app owning a folder of that name (`holdsPages` compares `folderOf`, so
+no page index entry can). The repair is one line: the parent is `folderOf(path)`
+of `app/paths.ts`, the function the rest of the shell already uses (R-11), so a root page's trail
+is its title alone. The test is a `trailOf` call on a root page (`notes.md`) with the section or the owner
+arranged so that the invented name is accepted — red on `main`. The slice is wrong in itself, so
+the repair is made whatever the screens reach; if no real route reaches it, the entry is written
+*repaired, latent* (no visible effect found) and not claimed as a screen fix.
+Same task, E-8: `MissingPage.tsx` draws its folder link only when `folder` is not empty, so a
+refused page at the root shows none. The link then goes Home (`#/`), as `docs/ecrans.md` E-8 says; a
+component test on a root address, written before, is red on `main`.
+
+**b. E-6 and the banner at 1440 px (`app/ui/Popover.tsx`).** The popover is `position: fixed`,
+placed once at open from the anchor's rectangle (`useLayoutEffect` on `[open, anchor]`). It is
+not placed again when the canvas scrolls under it or the window is resized, and nothing keeps it
+out of the canvas's sticky header (`canvas.css`, `z-index: 5`, under the popover's 101) or the
+band above the page (problems band E-19, skin console). The right behaviour, read in E-5/E-6
+of `docs/ecrans.md` ("stay inside the viewport"): the panel never covers the header or the bands
+above the page; it keeps clear of them by taking the *bottom edge of the canvas header* as its
+top limit, and follows its anchor on scroll and resize (`scroll` captured, `resize`), closing
+nothing. The cause is **confirmed by a bench scenario at 1440×900 before the fix** (a page with a
+block near the top, E-19 band present, the popover opened): if the overlap is another one
+(the console band, the read-only banner), the same rule — the panel stays below every element the
+canvas draws above the page — covers it, and the cause found is written in the task. If nothing
+overlaps in any of the four skins, the defect leaves Known defects as *not reproduced* with the
+scenario named. The popover is shared with E-5 and the chat's model list, so the rule is tested on
+the component (a `Popover` test with an anchor under a header rectangle) and the bench judges the
+three users.
+
+**c. The page diagnostic in one language (`content`, `Editor.tsx`, `SaveStatus.tsx`).** The
+sentence is built in English by `validateDocument` and drawn as received. The wire keeps its
+English `message` (the 422 body and the agent read it); a `Diagnostic`
+gains two additive fields, `code` (`unknown-block`, `no-content`, `no-content-disputed`,
+`needs-content`, `needs-content-disputed`, `attribute-required`, `attribute-value`,
+`attribute-unknown`) and `args` (the block name, key, value, accepted values, all author data and
+therefore never translated). The shell draws `t(<English template with %block, %key, %value,
+%accepted>)` filled from `args`; a diagnostic with no known `code` (a plugin's, an older server)
+is drawn as received. The `Not saved: %reason` status uses the same function for the first
+diagnostic. In English the sentence is byte for byte the server's (a test pins that), so only
+`fr` changes. *Rejected*: translating on the server by `Accept-Language` (the server has no
+per-request locale for pages, and the agent must keep English); translating by matching the
+message text (breaks at the first reworded sentence).
+
+**d. Frontmatter CRLF (`server/src/frontmatter.ts`, `schedule.ts`).** The editor reads fields from
+a `\r\n` page (`content`'s `BLOCK` takes `\r?\n`), the index and the schedule do not. The repair
+makes `content` the one fence reader: the server's `splitFrontmatter` calls
+`@antorfr/adestia-content`'s (exported from its index if it is not), `parseFrontmatter` and
+`frontmatterOf` split the head on `/\r?\n/`, and `stampField` finds the block with the same
+fence and writes back **in the line ending the note already uses**, so stamping `expired:` on a
+CRLF note does not turn it into a mixed file. Scalars keep being read as they are (AD-7: the
+shallow reader and `content`'s YAML reader still differ on quoting; only the fence is aligned).
+The fence of `content` also takes spaces after the closing `---`, which the server's did not: that
+widening is the editor's rule and is written with the change. Every reader of
+`server/src/frontmatter.ts` (pages index, instructions, catalogues, shell tools, schedule) gains
+CRLF; the CHANGELOG says so. The test is written first on a page and a scheduled note whose
+fences and lines end `\r\n`: the index returns the fields the editor shows, the note reads its
+`at`/`expired`, and `stampField` keeps CRLF. If the first test passes on `main` (the Known defect says "behaviour not yet
+reproduced"), the CRLF defect is written *not reproduced* with the attempt, and the CRLF line-ending
+work is not built; the closing fence widened to trailing spaces has its own test, red on `main`,
+and is built either way.
+
+Not in this tranche: refreshing the open page when the agent writes (kept, P-5 step 7), loading
+and retry states (AD-18), E-8's retry. E-8's text and the Known defect entries leave with their
+repair, in the same commit (AD-16).
+*Reversed if*: the reproduction of (b) finds the overlap is the sheet or popover of another
+screen: the rule stays, the file changes, and the task says which.
+### AD-23 — Chat tranche: what the reproduction found, and the shape of each repair
+Built: each repair below is in the code with its test; the text keeps the reasoning.
+Read on `epic/adestia-correctifs` before any code, so the tranche builds the true list.
+- **Refused turn (P-2 step 4).** Reproduced by reading: `consume` clears `live` when `reread`
+  succeeds, and a refusal has nothing stored behind it. Repair: a state that ends with an
+  `error` and no part (a refusal, or an unreachable server) survives the reread as an
+  error-only `live`, and is cleared by the next send or by leaving the conversation. The 429
+  is carried as data (`TurnState.refusal = { status, max? }`, filled by `refusalMessage` from the
+  server's `max`); `Thread` says it through `t()` ("Turn limit reached (%n at a time) — try again in
+  a moment."), in both languages, because the server's `error` is English. Any other refusal
+  keeps the server's text. No server change.
+- **`📎` in `stamped()`.** The optimistic bubble must draw what the held bubble draws: a
+  `paperclip` icon and the names. `stamped()` stops appending the emoji; the user message
+  carries its attachment names as data, and the bubble draws them as the held bubble does.
+- **Native model select.** The option goes through `t()` already; what is left to read is the
+  native `<select>` and its `Auto` entry. Repair: keep the `<select>` (a custom listbox is a new
+  component, AD-18), pin that the option text is the `t()` value and the control carries
+  `.adestia-select`. The defect stays in Known defects, rewritten *kept — native control, a custom listbox is a new
+  component (AD-18)*. The fiche's `## Livre` is narrowed on this, on the delegation signatures and on the
+  composer fold (a pinned test, not a repair); the letter's principle 3 allows it with the reason written.
+- **Already repaired before the epic** (`e00156a`, in `main`): the `upload failed` fallback
+  through `t()`, `adestia-composer--busy` without a rule, the unused `.adestia-sheet__close`, the
+  double `.adestia-sheet__origin`. The tranche takes them out of Known defects as *not
+  reproduced — repaired in e00156a*, and adds one suite guard so none comes back.
+- **Delegations and signatures: narrowed, with its reason.** A delegation transcript can carry
+  signatures (same JSONL), but `SignatureCards` draws nothing without a `signing` handler, and
+  E-13 is read-only with no composer (P-13 step 7): the ceremony belongs to the delegating
+  caller. Showing passive cards would be a new function (AD-18). `{ signatures: false }` stays;
+  its reason is written in the code and in Known defects, and a test pins that a transcript
+  carrying signatures draws no card.
+- **Composer fold.** `onFill` already focuses the textarea (`4e6f16f`). The tranche writes the
+  composer test first: folded, an empty fill leaves the focus in the field and the draft
+  untouched. Green on arrival means *not reproduced* for the composer; the phone focus defect
+  (E-30) is the plugins tranche's.
+- **Chat race.** `c549a5d` is in `main`; the tranche adds the CHANGELOG entry (AD-19). The
+  CHANGELOG gets one section, "adestia-correctifs (unreleased)", created by whichever tranche
+  lands first and appended by the others, one bullet per changed behaviour.
+
+### AD-24 — Shell tranche: what the reproduction found, and the shape of each repair
+Built: repairs and guards are in the code; the eight skin/locale sweeps and the
+nine original dispositions are recorded in `bench/shell-proof.md`.
+Read on `epic/adestia-correctifs` before any code, so the tranche builds the true list.
+- **MCP counts (E-9 against E-10).** Reproduced by reading: the Settings tile says its count twice
+  from two sources, the chip from `/api/mcp/servers` (the servers the screen lists) and the lede
+  (`mcpLede`) from `/api/mcp/status` (everything the driver reports, which can include a server
+  the screen does not list). The screen E-10 is the truth the tile points to. Repair: the tile
+  counts the listed servers once; the driver's health only says how many of *those* need
+  attention (a health entry whose name is not listed is not counted). Test first, with two payloads that
+  disagree (6 listed, 7 reported). If it is green on arrival (the sources never disagree), the defect leaves Known defects as
+  *not reproduced* with the attempt, and the test stays as the guard.
+- **Token field without `autoComplete`: not reproduced.** `CataloguePopin.tsx` already has
+  `type="password"` and `autoComplete="off"` (since `64dee0f`). It leaves Known defects as
+  *not reproduced*; a test pins the attribute. `"new-password"` is not chosen: it is what a
+  password manager reads as an invitation to generate one.
+- **E-19 and "Invalid plugin manifest".** One cause: a refused extension's reason with no `code`
+  is drawn as the server wrote it (`Invalid plugin manifest:\n  - field: message`, from
+  `ManifestError`). Repair in the shell only (the API answer is unchanged, AD-17): `say()`
+  recognises the lead `Invalid plugin manifest` / `Invalid skin manifest` and says it through `t()`
+  (a key in `en` and `fr`), keeping the field lines as the author's data, as the other prose.
+  The lines of `ManifestError` themselves (`field: message`, English) stay and are written under
+  Known defects: translating them is a table keyed by validator sentences.
+- **`CataloguePopin` `refresh()`.** `removeCatalogue` catches a throw and shows it; `refresh`
+  has `try/finally` only, so anything thrown after the request (`loadItems`, `onChanged`) escapes
+  and the popin shows nothing. Repair: `refresh` catches and shows, as `removeCatalogue` does. Test first
+  with `onChanged` that throws.
+- **`.adestia-icon--spin`** is declared twice in `app/styles/icons.css` (same rule, plus one `@keyframes`
+  duplicate); the second block goes. A CSS test counts one rule and one `@keyframes`.
+- **Nestor's `↑`.** It is a text glyph in `skins/nestor/skin.js` (`.nst-invite i`), drawn by whatever
+  font the phone has. Repair: an inline SVG arrow in `currentColor` (the `arrow-up` shape the sprite
+  uses), in the same 32 px disc. Skins stay declarations: no structure added.
+- **Skippy's console band on the phone.** `.console` wraps its cells onto two lines under ~400 px.
+  Repair in `skins/skippy/skin.css`: at phone width the band keeps one line (the cells that can go
+  are hidden by the skin, the mark and the first status remain). Judged on captures.
+- **E-14 switch.** The row (`.adestia-config__head`) wraps between title and switch on the phone.
+  Repair: the switch stays on the title's line (no wrap on the head, the label shrinks).
+- **E-20** is read under B-16 with the rest: a capture under four skins and two languages; if it
+  shows no defect it is written *relu, rien à corriger*. Read on the bench (four skins, `en`/`fr`,
+  light/dark, 1440 and 360 px): *relu, rien à corriger* — the one English word under `fr` is the
+  fixture plugin's own breadcrumb title.
+- **Tasks cut by lifetime.** Behaviour with a failing test first (`shell-textes`: counts, manifest
+  words, refresh, spin, autoComplete pin); what is only seen (`shell-habillage`: Nestor, Skippy,
+  E-14, E-20); the proof and the register last (`shell-preuve`).
+
 ## Refactoring targets
 
 Each target: what, where, why it costs, the tranche that owns it, and its outcome
@@ -675,10 +951,10 @@ Each target: what, where, why it costs, the tranche that owns it, and its outcom
 |---|---|---|---|---|
 | R-1 | MCP `Authorization: Bearer` header selection copied in `claude-code/driver.ts`, `copilot-cli/driver.ts`, `codex-cli/driver.ts` | three copies of a security-relevant rule | serveur | closed: `drivers/src/mcp-headers.ts`, pinned by a test written first |
 | R-2 | Driver helpers duplicated: device-code `beginAuth`/`completeAuth`/`cancelAuth` (codex, copilot), `truncate` ×3 (`*/events.ts`), `health` ×2, `usageOf` ×3, `classifyAuthError`/`explainAuthProblem` ×2 (`*/auth.ts`) | drift between engines | serveur | closed: `engine-aids.ts` and `device-code.ts`; the engines pass their own tables |
-| R-3 | `start()` (464 lines) and `buildApp` (287 lines) mix concerns; `TurnLimiter`, `runUnattended`, inline `/api/delegations` routes and the `adestiaRunTurn` monkey-patch live in `app.ts`; routes registered both from `routes/` and top-level files (`pages.ts`, `mcp-routes.ts`, `static.ts`, `files.ts`, `watch.ts`, `callback.ts`) | no single place says what is mounted | serveur | closed: every route is registered from `routes/`; the top-level files keep only their helpers and a re-export (`mcp-routes.ts` is a pure re-export); `app.ts` mounts, `turn-limiter.ts` and `unattended.ts` hold the rest; `start()` is named stages, order pinned by `start-order.test.ts` |
+| R-3 | `start()` (464 lines) and `buildApp` (287 lines) mix concerns; `TurnLimiter`, `runUnattended`, inline `/api/delegations` routes and the `adestiaRunTurn` monkey-patch live in `app.ts`; routes registered both from `routes/` and top-level files (`pages.ts`, `mcp-routes.ts`, `static.ts`, `files.ts`, `watch.ts`, `callback.ts`) | no single place says what is mounted | serveur | closed: every route is registered from `routes/`; the top-level files keep only their helpers (`mcp-routes.ts` is gone); `app.ts` mounts, `turn-limiter.ts` and `unattended.ts` hold the rest; `start()` is named stages, order pinned by `start-order.test.ts` |
 | R-4 | `field()` duplicated in `instruction-catalogues.ts` and `instructions.ts`; `routes/instruction-catalogues.ts` `sourceOf` / `fetchClone` / `cacheDir` duplicate `catalogueSource` / `fetchCatalogueClone` / `catalogueClone` of `instruction-catalogues-refresh.ts` | pure extraction, behaviour kept | serveur | closed: `field()` once in `frontmatter.ts`; the catalogue route calls the refresh module |
 | R-5 | `pages.ts` doubles as a frontmatter library for `instructions.ts`, `instruction-catalogues.ts`, `schedule.ts`, `shell-tools.ts` | a route module as a dependency; move without changing the parser (AD-7) | serveur | closed: `server/src/frontmatter.ts`, bodies untouched; the CRLF divergence stays (AD-7) |
-| R-6 | Dead interface removed; test-only helpers removed from production indexes; remaining public types, test imports and boot entry points named below | surface limited to its consumers | serveur | closed: 178 entries remain, all named below |
+| R-6 | Dead interface removed; test-only helpers removed from production indexes; remaining public types, test imports and boot entry points named below | surface limited to its consumers | serveur | closed: 171 entries remain, all named below |
 | R-7 | Comments pointing to absent documents: `technique.md` (server sources and tests), `ATELIER-3.md` (`plugins/atelier/web`), `PARCOURS.md` and "D44 côté cerveau" (`plugins/parcours/web`) | dead references | serveur (server), plugins (plugins) | server: closed; plugins: closed — no comment under `plugins/` names `ATELIER-3.md`, `PARCOURS.md` or "D44 côté cerveau" any more (`git grep` finds none) |
 | R-8 | `eslint.config.js` claims floating promises and thrown-away errors are caught, which its rules cannot do (no type-aware rule, `caughtErrors: 'none'`); `plugins/` not linted; lint not in CI | a claim the gate does not keep | serveur (CI, claim), plugins (plugins lint) | server: closed — claim rewritten, `npm run lint` in CI; plugins: closed — `npm run lint` (`eslint packages plugins`) covers `plugins/` and is clean |
 | R-9 | Test support rewritten per file: the fake `Driver` in 10 test files, `git()` in 5, `mkdtemp` in 39 | each new test copies one | tests | closed: `packages/server/test/support/` holds the three, and every file that rewrote them imports them |
@@ -734,9 +1010,10 @@ rules. The server outcomes above are filled.
   qualifier consume its first name. Tests, `bin/`, bench scripts, plugins and computed
   module paths are outside the graph: check their runtime uses before removing a hit.
 
-  The final inventory is **178** entries: public contract types below,
+  The final inventory is **170** entries: public contract types below,
   test-only exports retained under the R-6 arbitration, and the boot entry points.
-  No measurement rule or test was changed.
+  `content`'s `splitFrontmatter` now has a production importer through its index
+  (AD-25 d). No measurement rule or test was changed.
 
   Public contract types (each row names the package index):
 
@@ -752,7 +1029,6 @@ rules. The server outcomes above are filled.
 
   | Module | Exports | Importing tests |
   |---|---|---|
-  | `packages/content/src/frontmatter.ts` | `splitFrontmatter` | `packages/content/test/frontmatter.test.ts` |
   | `packages/content/src/index.ts` | `isKnownBlock` | `packages/server/test/extensions.test.ts`, `packages/web/test/loader.test.ts` |
   | `packages/content/src/reference.ts` | `formatReference`, `isValidId` | `packages/content/test/reference.test.ts` |
   | `packages/content/src/validate.ts` | `frontmatterOf` | `packages/content/test/roundtrip.test.ts` |
@@ -763,7 +1039,6 @@ rules. The server outcomes above are filled.
   | `packages/drivers/src/codex-cli/events.ts` | `describeItem`, `usageOf` | `packages/drivers/test/codex.test.ts` |
   | `packages/drivers/src/codex-cli/login.ts` | `readPrompt`, `saidSuccess`, `stripAnsi` | `packages/drivers/test/codex.test.ts` |
   | `packages/drivers/src/codex-cli/protocol.ts` | `SpawnedProcess` | `packages/drivers/test/codex.test.ts` |
-  | `packages/drivers/src/conformance.ts` | `assertConformance` | `packages/drivers/test/conformance.test.ts` |
   | `packages/drivers/src/conformance.ts` | `checkConformance` | `packages/drivers/test/claude-code.test.ts`, `packages/drivers/test/codex.test.ts`, `packages/drivers/test/conformance.test.ts`, `packages/drivers/test/copilot.test.ts` |
   | `packages/drivers/src/contract.ts` | `CAPABILITIES` | `packages/drivers/test/conformance.test.ts` |
   | `packages/drivers/src/copilot-cli/events.ts` | `toolTargetOf` | `packages/drivers/test/copilot.test.ts` |
@@ -771,26 +1046,21 @@ rules. The server outcomes above are filled.
   | `packages/drivers/src/signatures.ts` | `signatureRequest` | `packages/drivers/test/signatures.test.ts` |
   | `packages/server/src/app.ts` | `buildVersion`, `sseFrame` | `packages/server/test/app.test.ts` |
   | `packages/server/src/attachments.ts` | `safeName` | `packages/server/test/attachments.test.ts` |
-  | `packages/server/src/callback.ts` | `registerCallback` | `packages/server/test/callback.test.ts` |
   | `packages/server/src/clock.ts` | `readState`, `writeState` | `packages/server/test/schedule.test.ts` |
   | `packages/server/src/config.ts` | `DEFAULT_SESSION_TTL_MS` | `packages/server/test/auth.test.ts`, `packages/server/test/oidc-routes.test.ts`, `packages/server/test/oidc.test.ts` |
   | `packages/server/src/conversations.ts` | `isSafeId` | `packages/server/test/conversations.test.ts` |
   | `packages/server/src/delegations.ts` | `titleFor` | `packages/server/test/delegations.test.ts` |
   | `packages/server/src/files.ts` | `kindOf` | `packages/server/test/files.test.ts` |
-  | `packages/server/src/files.ts` | `registerFiles` (re-export of `routes/files.ts`) | `packages/server/test/files.test.ts`, `packages/server/test/mono-store-witness.test.ts`, `packages/server/test/pages-stores.test.ts` |
   | `packages/server/src/introduction.ts` | `CONTRACT_NAME` | `packages/server/test/introduction.test.ts` |
   | `packages/server/src/io.ts` | `inFlight` | `packages/server/test/io.test.ts` |
-  | `packages/server/src/mcp-routes.ts` | `registerMcp` | `packages/server/test/mcp.test.ts` |
   | `packages/server/src/mcp-store.ts` | `MCP_MASK` | `packages/server/test/mcp-servers.test.ts` |
   | `packages/server/src/oidc.ts` | `identityFrom`, `isAllowed` | `packages/server/test/oidc.test.ts` |
-  | `packages/server/src/pages.ts` | `registerPages` (re-export of `routes/pages.ts`) | `packages/server/test/mono-store-witness.test.ts`, `packages/server/test/pages-stores.test.ts`, `packages/server/test/pages.test.ts` |
   | `packages/server/src/plugin-host.ts` | `mountPluginApis` | `packages/server/test/plugin-host.test.ts`, `packages/server/test/plugin-secrets.test.ts` |
+  | `packages/server/src/routes/watch.ts` | `EventsOptions` | `packages/server/test/watch.test.ts` |
   | `packages/server/src/schedule.ts` | `GRACE_MINUTES`, `MIN_PERIOD_MINUTES`, `parseAt`, `parseEvery`, `parseNote` | `packages/server/test/schedule.test.ts` |
   | `packages/server/src/secrets.ts` | `ARMING_TTL_MS` | `packages/server/test/secrets.test.ts` |
   | `packages/server/src/settings-file.ts` | `coerce`, `replaceContents` | `packages/server/test/settings-file.test.ts` |
   | `packages/server/src/shell-tools.ts` | `ulid` | `packages/server/test/shell-tools.test.ts` |
-  | `packages/server/src/static.ts` | `registerStatic` (re-export of `routes/static.ts`) | `packages/server/test/static.test.ts` |
-  | `packages/server/src/watch.ts` | `EventsOptions`, `registerEvents` (re-exports of `routes/watch.ts`) | `packages/server/test/watch.test.ts` |
 
   Runtime entry points outside the graph: `packages/server/src/start.ts` exports
   `start` for `bench/launch.mjs` (a computed dynamic import of the built module),
@@ -882,86 +1152,56 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
 
 ## Known defects (found, not fixed by this epic)
 
+The catalogue token field is **not reproduced** — already `autoComplete="off"`
+since `64dee0f`; it remains so. The missing-attribute report is closed.
+
+- **E-25: « Abandonner ma mise en plan » does not empty the layout (older than AD-24 a).**
+  The sheet sends `{ reset: true }` (`atelier/web/app.js`); `atelier/api.mjs` merges only `poses`
+  and `bandes` and ignores `reset`, so `workbook-layout.json` keeps its bands, contrary to P-11
+  step 3 and E-25. The sheet itself works; the server half is missing. A red test
+  (`bench/tests/plugins-ensemble.test.mjs`, « atelier reset ») stays until the API handles it.
 - **P-5 step 7: the open page does not refresh after an agent write.**
   `app/useInstance.ts` refetches only the index on the change feed; it deliberately
   leaves the open page alone to protect unsaved editor text. The revision check
   reports a conflict on save. This predates the pages tranche; automatic refresh
   of the open page needs a separate behaviour decision. Carry it into the epic's
   closing recommendations; the browser bench must not require that refresh.
-- **Nestor's send control still uses the `↑` glyph**, supplied by its skin.
-  Kept during the pages tranche; the skin's control remains for a separate fix.
-- **The chat's native model select says `Auto` (`chat/ModelPicker.tsx`)**, outside the pages tranche.
-- **E-6's block settings can overlap the banner at 1440 px.** Observed during the
-  pages review; left unchanged by the typography and documentation correction.
-- **A page diagnostic can mix languages on a French instance.** Its translated
-  frame draws the server's diagnostic text as received, outside the screen's
-  translation table; left for a separate API/diagnostic translation decision.
+- **The chat's model select stays native (`chat/ModelPicker.tsx`)** — kept — native control, a custom listbox is a new component (AD-18). Its empty option is the `t()` value and the control carries `.adestia-select`.
 
-- **A root page's breadcrumb can invent a folder**: `app/trail.ts` derives the parent
-  with `path.slice(0, path.lastIndexOf('/'))`. Without a slash it drops the last
-  character instead of returning the empty parent that `app/paths.ts`'s `folderOf`
-  returns. Kept separate to preserve behaviour; correcting the breadcrumb needs its own fix.
-
-- **MCP server counts disagree**: the Settings tile can say “6 servers” while the MCP
-  breadcrumb badge says “7 servers”. Observed during the charter review; whether it
-  predates this epic is unknown. Kept under B-1, pending a separate behaviour investigation.
-
-- **P-2 step 4: a refused turn (429) can stay silent.** `chat/stream.ts` yields
-  the refusal as a live error. `chat/Thread.tsx` draws its error line only while
-  that live state is present; `useConversations.ts` › `consume` clears it when
-  rereading the stored conversation succeeds, losing the refusal message.
-  P-2 says the chat explains the
-  refusal; this predates the tranche and stays under AD-7. Overall acceptance
-  must carry this discrepancy: `bench/tests/chat-p2-gestes-besoin.test.mjs`
-  checks HTTP 429 and the freed composer, without requiring an error line.
-- **Attachment names still carry a text emoji in the optimistic user bubble.**
-  `chat/useConversations.ts` › `stamped()` appends `📎` and the attachment names
-  to the message text kept in the open conversation's state. The held bubbles
-  and attachment controls use the `paperclip` icon, but this text emoji remains
-  unchanged under AD-7.
-- **Delegations drop signatures**: `app/Delegations.tsx` calls the shared
-  `chat/messages.ts` › `toMessage` with `{ signatures: false }`, while the chat keeps
-  `stored.signatures` by default (AD-12, preserved under AD-7). To be confirmed
-  that a delegation transcript can carry signatures.
-- **Native dialogs in plugins**: `plugins/atelier/web/app.js` asks `confirm()` before resetting a
-  layout and `plugins/voyages/web/app.js` shows `window.alert` for a refused gesture; unstyled,
-  unlocalised by the browser's own words, not closeable like a sheet. Replacing them changes the flow
-  (the answer is asynchronous), so it is a feature, not part of the mise à niveau (Q-20).
-- **Frontmatter CRLF divergence**: `content` accepts `\r\n` fences, `pages.ts` and
-  `schedule.ts` only `\n` — a CRLF page has fields in the editor and none in the index or the
-  schedule. Seen in the code; behaviour not yet reproduced.
-- **Conformance never asserted at boot**: `checkConformance` runs only in
-  `drivers/test/conformance.test.ts`; `start()` trusts the descriptor.
+- **Delegation signature cards — kept, read-only view (AD-23).** A delegation
+  transcript can carry signatures, but E-13 has no composer or signing handler
+  (P-13 step 7). `app/Delegations.tsx` therefore passes `{ signatures: false }` to
+  `chat/messages.ts` › `toMessage`; `SignatureCards` also draws nothing without a
+  signing handler. The calling agent's user holds the ceremony. Passive cards
+  would be a new function (AD-18), outside this tranche.
 - **`deleteConversation`** exists in `chat/conversations.ts` and is reached by no screen.
-- **Saving the configuration loosens its mode**: `settings-file.ts` writes through a temporary
-  file and a rename, so a config file kept at 0600 comes back in the umask's default mode.
-- **`user-tokens.json` holds access tokens too**, with their expiry, where the module comment
-  says refresh tokens only.
-- **Skippy's status banner wraps onto two lines on the phone**, found by the sweep at phone
-  width; not fixed by this epic.
-- **E-14: the switch sits apart from its title on the phone**, the row wrapping between them.
-  Seen in the sweep; kept for a separate layout correction.
-- **E-19 detail in English under the French locale** when the server sent no code: the detail
-  is then the raw server text, which no catalogue translates.
-- **A catalogue token field has no `autoComplete`**, so a browser may offer to fill or save it
-  as a password.
+- **ManifestError field lines (`field: message`)**: kept — English validator sentences,
+  a table keyed by them is new (AD-17). E-19 translates the plugin/skin manifest heading;
+  the field lines remain as the server writes them.
 - **E-23 (planif) says the server's sentences in English.** A note's problem (`carries both
   \`every\` and \`at\``, `the note is empty — its body is the prompt`, `below the 15-minute floor`…) is
   built by `plugins/planif/api.mjs` and `schedule.ts` and drawn as received; no table holds it, and
   `words.test.js` cannot see a sentence that comes from data. Same for E-27's failure reason of a
   source (`muet: fetch failed`, the fetch's own text). Translating them is a change to what the API
   answers or a table keyed by those sentences: left.
-- **E-28's walking map keeps its pre-walk size.** In walking mode the map's box fills the screen, but
-  `carte.js` draws the SVG at `taille()` (at most 420 px high, the width it had), so on a phone the
-  map takes the top quarter and the rest is blank; it is drawn full again only on leaving. Found by
-  the matrix, not caused by the tranche; fixing it changes the drawing engine.
-- **E-30 on a phone: the focus is lost when the reader closes.** The composer folds its buttons on a
-  narrow screen and drops the item that opened the reader; the plugin's `opener` is then no longer in
-  the document and nothing takes the focus. The shell's fold would have to hand it back; the matrix
-  notes it (`NOTE … focus not returned`) rather than failing on it.
 - **E-25's piece sheet shows the workbook's own words under `en`**: edge names such as `about-droit`
   and piece references come from the workbook data, which the plugin does not translate.
-- **E-25 says « 1 pièces »** in French: the table's `%n piece` entry is « %n pièces », as the French
-  read before the atelier had a table (B-1), so a plate of one piece gets a plural.
 - **E-26's card sheet names the item's type with the data's own word** (`trajet`, `resto`) under `en`:
-  the type is an identifier of `voyage.json`, drawn as it is written.
+  the type is an identifier of `voyage.json`, drawn as it is written. A gesture refusal or failure
+  likewise carries the server’s raw error in the sheet; translating that data needs a keyed API
+  contract or a table of server sentences, outside AD-24 (the sheet’s heading and controls are translated).
+
+### Chat checks closed without a behaviour change (AD-23)
+
+- **Not reproduced — repaired in `e00156a`:** the literal `upload failed`
+  fallback, `adestia-composer--busy` without a rule, unused `.adestia-sheet__close`,
+  and the duplicate `.adestia-sheet__origin` rule. Source inspection finds the
+  upload refusal using `t(FALLBACK_KEY)`, neither obsolete class, and one base
+  origin rule with its use in `Signatures.tsx`. `chat-repaired-defects.test.ts`
+  guards these sources; these four reports are no longer open defects.
+- **Composer fold — not reproduced.** In Chromium at phone width, opening the
+  fold and invoking a plugin's empty fill returns focus to the textarea, closes
+  the menu, preserves the exact draft (including surrounding spaces) and sends
+  nothing. A whitespace-only fill does the same. `Composer.tsx` already focuses
+  before ignoring an empty fill (`4e6f16f`). E-30 is repaired separately by AD-24 c:
+  `scan/web/scanner.js` focuses the composer field when its opener has disappeared or was the body.

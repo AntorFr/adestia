@@ -228,7 +228,12 @@ export function creerCarte(boite, coords, reperes, fondInitial, t = makeT('fr'))
 
   const taille = () => {
     const w = Math.max(260, boite.clientWidth || 640);
-    return { w, h: Math.max(200, Math.min(Math.round(w * 0.62), 420)) };
+    // En balade, le flex réserve au HUD sa place : le dessin suit le reste
+    // de l'écran, y compris quand sa hauteur dépasse celle de la carte en page.
+    const h = boite.closest('.pc-balade')
+      ? boite.clientHeight
+      : Math.max(200, Math.min(Math.round(w * 0.62), 420));
+    return { w, h };
   };
 
   function recadre() {
@@ -707,8 +712,22 @@ function listeReperes(reperes, t) {
     if (r.distance_precedent_m) meta.push(t("%distance since the previous waypoint", { distance: fmtKm(r.distance_precedent_m) }));
     // Au-delà de 60 m, l'écart cesse d'être « le point vise le lieu, la trace
     // suit la voie » et devient une coordonnée à vérifier. On le dit.
-    if (r.ecart_trace_m > 60) meta.push(t("⚠ %distance m from the route", { distance: r.ecart_trace_m }));
-    if (meta.length) li.appendChild(el('div', 'pc-meta', meta.join(' · ')));
+    const offRoute = r.ecart_trace_m > 60;
+    if (meta.length || offRoute) {
+      const line = el('div', 'pc-meta', meta.join(' · '));
+      if (offRoute) {
+        if (meta.length) line.appendChild(document.createTextNode(' · '));
+        const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        icon.setAttribute('class', 'adestia-icon');
+        icon.setAttribute('aria-hidden', 'true');
+        icon.setAttribute('focusable', 'false');
+        const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+        use.setAttribute('href', '#adestia-i-triangle-alert');
+        icon.appendChild(use);
+        line.append(icon, document.createTextNode(' ' + t("%offset m from the route", { offset: r.ecart_trace_m })));
+      }
+      li.appendChild(line);
+    }
 
     if (r.desc) li.appendChild(el('div', 'pc-desc', r.desc));
     if (r.note) li.appendChild(el('div', 'pc-note', r.note));
@@ -783,7 +802,7 @@ function modeBalade(hote, carte, coords, reperes, _trace, t) {
   gauche.appendChild(ligne1); gauche.appendChild(ligne2);
   hud.appendChild(gauche);
 
-  const bSuit = el('button', 'pc-hud-b on', t("🧭 Follow"));
+  const bSuit = el('button', 'pc-hud-b on', t("Follow"));
   bSuit.type = 'button';
   bSuit.addEventListener('click', () => {
     suit = !suit;
@@ -836,6 +855,7 @@ function modeBalade(hote, carte, coords, reperes, _trace, t) {
 
   hote.classList.add('pc-balade');
   hote.appendChild(hud);
+  carte.recadre();
   bSortie.focus();
   prendVeille();
   carte.suit(true);
@@ -922,7 +942,7 @@ function peindre(hote, data, relPath, urls, t) {
       carte.bascule(fondId);
     });
     barre.appendChild(bascule);
-    const bBalade = el('button', 'pc-fond', t("🥾 Walking mode"));
+    const bBalade = el('button', 'pc-fond', t("Walking mode"));
     bBalade.type = 'button';
     bBalade.title = t("Full screen, your position, the walk ahead");
     let quitte = null;
