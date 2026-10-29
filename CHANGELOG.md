@@ -553,6 +553,10 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
   drawn by shape, a dashed outline in `--text-muted`, with the hover word kept, so a skin
   that flattens hues still tells it from a stated Amber (E-31, AD-24 c). The milestone
   markers, which shared the amber, take the accent. `plugins/test/css.test.js` guards it.
+- **An upload that fails without a readable server message says so in the user's language**
+  (B-16) — an empty, unreadable or non-JSON answer to `/api/upload`, refused or not, reads
+  `upload failed`, translated, instead of the parser's English `error.message` or a bare
+  status. The server's own `error` still shows first.
 
 ## v0.96.0-adestia-correctifs.1
 
@@ -589,13 +593,7 @@ emoji give way to the charter icons; the `:::content` date follows the language.
 
 ## v0.96.0-adestia-correctifs.6
 
-**The debt slice (AD-26).** No one-line aliases in `packages/drivers`; the table of exports
-kept for their tests carries a reason per row; the bench defines `loadPlaywright` and
-`launch(seed)` once; CI plays `doc-besoin` and `bench-once`; `no-misused-promises` and
-`await-thenable` are on, `no-floating-promises` stays off.
-
-## Unreleased
-
-**An upload that fails without a readable server message says so in the user's language.**
-An empty, unreadable or non-JSON answer to `/api/upload` reads `upload failed`, translated,
-instead of the parser's English `error.message` or a bare status.
+**The debt slice (AD-26).** The code keeps no alias or duplicate for its tests alone:
+tests import the module that owns the symbol, kept exports carry their reason, the bench
+defines `launch(seed)` and `loadPlaywright` once, and the CI plays the documentation
+guard. `no-misused-promises` and `await-thenable` are on.
