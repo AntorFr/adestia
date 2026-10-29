@@ -461,3 +461,161 @@ not from invented release notes for the tags above.
 
 The documentation tranche separates this history from the current state and retires
 closed work files. DESIGN.md and the remaining documentation review follow separately.
+
+## v0.96.0-adestia-correctifs.1
+
+**The server slice of `adestia-correctifs` (AD-22).** `start()` refuses a driver
+whose descriptor does not hold its contract (`Driver "<id>" is not conformant:`, one
+gap per line). Saving the configuration keeps the file mode (0600). The old files no
+longer re-export the `register*` functions of `routes/`.
+
+## v0.96.0-adestia-correctifs.2
+
+**The chat slice (AD-23).** A turn refused with 429 is worded by `t()` in `en`/`fr`
+with its ceiling, and its line survives a re-read until the next send or another
+conversation. A sent message draws the `paperclip` icon and the names, no text emoji.
+
+## v0.96.0-adestia-correctifs.3
+
+**The shell slice (AD-24).** The send arrow of Nestor is an SVG; the MCP tile counts the
+servers E-10 lists; Skippy's banner fits one line at 360 px; the “Invalid plugin/skin
+manifest” header follows the language; the dialog's `refresh()` shows the error it
+raised; one `.adestia-icon--spin` rule remains.
+
+## v0.96.0-adestia-correctifs.4
+
+**The pages slice (AD-25).** The trace of a root page names no folder and E-8 leads to
+Home; the `Popover` stays under the canvas header and follows its anchor; a `Diagnostic`
+carries `code` and `args`, so the shell words it by `t()`.
+
+## v0.96.0-adestia-correctifs.5
+
+**The plugins slice (AD-24 a–d).** The atelier and trips speak in the plugin's own
+sheet, with no `confirm()` or `alert`; counters agree per language; the walk card takes
+the height of its box; the scanner returns focus to the composer field (E-30); chrome
+emoji give way to the charter icons; the `:::content` date follows the language.
+
+## v0.96.0-adestia-correctifs.6
+
+**The debt slice (AD-26).** The code keeps no alias or duplicate for its tests alone:
+tests import the module that owns the symbol, kept exports carry their reason, the bench
+defines `launch(seed)` and `loadPlaywright` once, and the CI plays the documentation
+guard. `no-misused-promises` and `await-thenable` are on.
+
+## v0.96.0-adestia-correctifs.7
+
+**The chat slice, resumed.** A send that fails without a readable sentence from the
+server (empty, unreadable or non-JSON body) reads `t('upload failed')`, in both languages;
+a connection cut before any answer keeps its translated `request failed (0)`. A message
+sent before the first has left is shown held, as the chat-race change (AD-19) says.
+
+## v0.96.0-adestia-correctifs.8
+
+**The debt slice, resumed.** The version guard of the documentation accepts the next
+version of the series as the last CHANGELOG title, so a branch can carry its own entry
+before the tag exists, and still refuses a tag without an entry. The bench scenarios load
+Playwright through the one shared module.
+
+## v0.96.0-adestia-correctifs.9
+
+**The debt slice, resumed again.** The R-8 note of `ARCHITECTURE.md` says what became of
+the rule: `no-misused-promises` and `await-thenable` are on, `no-floating-promises` stays
+off with its reason under Known defects. The README says that work returns to its target
+branch and that `test:plugins` is replayed after a red vitest run.
+
+## v0.96.0
+
+- **Plugin chrome shares the charter's icons** — page links, todo notes and attachments,
+  journal archives and warnings use the existing sprite with their text or title. Follow,
+  walking mode, trip hints and Done keep their words without an emoji. Author and engine
+  content marks, manifest tile icons, and the typographic `✦`/`✓` remain.
+
+- **The atelier agrees its piece count in the instance’s language** — French reads
+  « 0 pièce », « 1 pièce », « 2 pièces »; English keeps « 0 pieces », « 1 piece »,
+  « 2 pieces ». Voyages counters now carry each complete French form in their
+  table instead of adding an `s` to a translated word.
+
+- **The atelier and the voyages ask and say in their own sheet** — handing the layout
+  back no longer opens the browser's `confirm()`: the plugin's sheet asks, *Cancel* has
+  the focus (Escape and the scrim cancel), and *Discard my layout* does what OK did. A
+  trip gesture the server refuses, or that fails, is said in the card's sheet instead of
+  `window.alert`, and the board repaints when it closes. The focus returns to the card,
+  including when its tray button opened the refusal. The answer is now asynchronous.
+- **The scan reader gives the focus back on a phone** — when it closes and the
+  button that opened it is gone (the composer's fold), the focus goes to the
+  composer's field instead of being lost; with the button still there, it
+  returns to it as before.
+- **`:::content` reads its date in the instance's language** — `on=2026-03-04` is
+  drawn with `Intl.DateTimeFormat` of the interface locale (`4 mars 2026`,
+  `March 4, 2026`); a value that is not a date is drawn as written.
+- **Walking map fills its box** — E-28 reads the map's actual height in walking
+  mode and redraws on entry, exit and resize, so the route and tiles occupy the
+  screen above the GPS controls. The map in a page keeps its previous size.
+- **A root page's breadcrumb no longer invents a folder** — `trailOf` took the parent of
+  `notes.md` by slicing off its last character; it now uses `folderOf`, so the trail is Home
+  then the title. The missing-page screen (E-8) links to Home when the refused page is at the root.
+- **Phone skins and E-14** — Nestor's invitation arrow is now a drawn arrow in the
+  accent disc instead of a font glyph; Skippy's console band keeps one line at 360 px
+  (the modules cell leaves, the engine name ellipsises); the switch of a configuration
+  row stays on its title's line on a phone.
+- The Settings MCP tile counts the listed servers in both its chip and subtitle;
+  driver-only health entries no longer inflate the count or the attention total.
+  Refused plugin and skin manifest headings now follow the instance language,
+  while validator field lines stay as the server wrote them. Catalogue refresh
+  shows thrown errors in the pop-in. Remove the duplicate icon spin animation;
+  the catalogue token field already had `autoComplete="off"` and keeps it.
+
+- **Chat sends while the first message is leaving** — Since `c549a5d` (v0.95.0), a
+  second message sent before the first conversation's creation and turn POST finish
+  is shown as held and waits for that same conversation. Previously it could leave
+  as a fresh turn and never appear as held. This records the behaviour change already
+  in `main` (AD-19); the existing held-message regressions keep it pinned.
+
+- **Chat refusal** — A turn refused at the concurrency limit now says the server's
+  limit in English or French. Its error line and the sent message survive rereading
+  the conversation; the line clears on the next send or when leaving the conversation.
+  A server unreachable before any answer keeps its error line in the same way;
+  other refusals retain the server's words. No server behaviour changes.
+
+- **Chat attachments** — The message you just sent shows its attachments the way a held
+  message does: the `paperclip` icon and the file names, no longer a text 📎 appended to
+  the text. The model select stays native; a test now pins its translated empty option.
+
+- **Boot refuses a non-conformant driver** — `start()` now checks the driver it arms
+  (built from the config or injected) against its own descriptor before the
+  permissions check. An instance whose driver declares a capability it lacks the
+  method of, or an unknown one, no longer boots: it stops with
+  `Driver "<id>" is not conformant:` and one line per gap. Previously, the
+  descriptor was trusted without this check.
+- **Configuration file keeps its mode on save** — saving the configuration through
+  the rename path used to leave the file in the umask's default mode (a 0600 file came
+  back 0644). The temporary file now takes the target's mode before the rename.
+- **Page diagnostics follow the instance language** — read-only pages and refused
+  saves now show content validation sentences in French on a French instance.
+  Block names, attribute keys and values stay as authored. Additive `code` and
+  `args` metadata leaves the English wire `message` unchanged; diagnostics from
+  older servers or unknown plugin codes keep their received text.
+- **Page and block settings stay below the canvas bands** — shared popovers now
+  stay below the canvas header, skin console and problem bands, even when flipping
+  above their anchor. They follow scrolling and resizing, stay inside the visible
+  viewport (including a phone keyboard), and scroll internally when space is short.
+  Reproduced at 1440×900 under all four skins by `bench/scenarios/pages-reglages.mjs`.
+- **CRLF frontmatter is read consistently** — the pages index, instructions,
+  catalogues, shell tools and schedule now recognise the same frontmatter fences
+  as the editor, including CRLF lines and spaces after the closing `---`.
+  Scheduled notes keep their line endings when the product stamps `expired:`;
+  the closing fence and body stay as written. This changes the behaviour kept
+  by AD-7; shallow scalar parsing remains unchanged (AD-25 d).
+  The Planif screen's own notes reader (`plugins/planif/api.mjs`) had a third,
+  LF-only copy of the fence and now reads the same lines, so a CRLF scheduled note
+  shows its title, times and `expired` instead of an empty note.
+- **Amber means one thing in project management** — `--warning` now draws only the
+  owner's `Amber` assessment. A deduced delay (a late phase bar, a late milestone) is
+  drawn by shape, a dashed outline in `--text-muted`, with the hover word kept, so a skin
+  that flattens hues still tells it from a stated Amber (E-31, AD-24 c). The milestone
+  markers, which shared the amber, take the accent. `plugins/test/css.test.js` guards it.
+- **An upload that fails without a readable server message says so in the user's language**
+  (B-16) — an empty, unreadable or non-JSON answer to `/api/upload`, refused or not, reads
+  `upload failed`, translated, instead of the parser's English `error.message` or the generic
+  `request failed (%n)`. The server's own `error` still shows first. A connection that fails before any
+  answer keeps its translated `request failed (0)`.

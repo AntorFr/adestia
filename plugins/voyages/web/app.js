@@ -41,7 +41,10 @@ const FR = {
   'No trip yet — ask the agent to frame one.':
     'Aucun voyage — demandez à l’agent d’en cadrer un (« on part en Corse du 8 au 22 août »).',
   'no dates — an idea to frame': 'sans dates — envie à cadrer',
-  confirmed: 'confirmée',
+  '%one confirmed': '%one confirmée',
+  '%n confirmed': '%n confirmées',
+  '%one dismissed': '%one écartée',
+  '%n dismissed': '%n écartées',
   'confirmed item': 'confirmé',
   Archive: 'Archive',
   'trips closed': 'voyages clos',
@@ -118,17 +121,18 @@ const FR = {
   driving: 'voiture',
   cycling: 'velo',
   transit: 'transport',
-  'Gesture refused: ': 'Geste refusé : ',
-  'Gesture impossible: ': 'Geste impossible : ',
+  'Gesture refused': 'Geste refusé',
+  'Gesture impossible': 'Geste impossible',
 }
 
 export default function createVoyagesApp(api) {
   const { page, esc, crumbs, call, url, shellFetch, tone, finished, openPage, href, learn, locale, index } = api
   const said = table(locale)
-  const t = (key) => said[key] ?? key
-  // French agrees in number; English does not. The `s` is part of the French
-  // WORD, so it is added where the table is French and nowhere else.
-  const plural = (key, n) => t(key) + (n > 1 && said[key] !== undefined ? 's' : '')
+  const t = (key, values = {}) => (said[key] ?? key).replace(/%([a-zA-Z]+)/g, (match, name) =>
+    Object.hasOwn(values, name) ? String(values[name]) : match)
+  // English uses the same adjective for both counts. Different placeholders
+  // keep the two complete French forms in the table, with no suffix added here.
+  const counted = (one, many, n) => t(n > 1 ? many : one, { one: n, n })
 
   const VTYPE = {
     hebergement: { ico: '🏠', c: '--v-maison', n: 'hebergement' },
@@ -275,7 +279,7 @@ export default function createVoyagesApp(api) {
       return
     }
 
-    let html = `<div class="vwrap-outer"><header class="chead"><div class="aico">🌴</div><div><h1>${t('Trips')}</h1><div class="lede">${t('One folder per trip — bookings, suggestions, a timeline to compose.')}</div></div></header>`
+    let html = `<div class="vwrap-outer"><header class="chead"><div class="aico">${iconHTML('folder')}</div><div><h1>${t('Trips')}</h1><div class="lede">${t('One folder per trip — bookings, suggestions, a timeline to compose.')}</div></div></header>`
     if (!list.length) {
       page.innerHTML = html + `<div class="empty">${t('No trip yet — ask the agent to frame one.')}</div></div>`
       return
@@ -285,8 +289,8 @@ export default function createVoyagesApp(api) {
       const dates = v.debut ? `${vfmtDay(v.debut)} → ${vfmtDay(v.fin)}` : t('no dates — an idea to frame')
       const foot = []
       if (v.status) foot.push(`<span class="stat stat--${tone(v.status)}">${esc(v.status)}</span>`)
-      if (v.confirmes) foot.push(`<span class="tag">${v.confirmes} ${plural('confirmed', v.confirmes)}</span>`)
-      if (v.suggestions) foot.push(`<span class="tag">💡 ${v.suggestions}</span>`)
+      if (v.confirmes) foot.push(`<span class="tag">${counted('%one confirmed', '%n confirmed', v.confirmes)}</span>`)
+      if (v.suggestions) foot.push(`<span class="tag" title="${t('Suggestions')}">${v.suggestions}</span>`)
       return `<a class="vhub-card" href="${href(v.path)}"><div class="ct">${esc(v.titre)}</div><div class="cmeta">${esc(dates)}${v.lieux?.length ? ' · ' + esc(v.lieux.join(' → ')) : ''}</div>${foot.length ? `<div class="foot">${foot.join('')}</div>` : ''}</a>`
     }
 
@@ -297,7 +301,7 @@ export default function createVoyagesApp(api) {
     const clos = list.filter((v) => finished(v.status))
     if (vivants.length) html += `<div class="vhub">${vivants.map(vCard).join('')}</div>`
     if (clos.length) {
-      html += `<details class="archsec"${vivants.length ? '' : ' open'}><summary>🗄️ ${t('Archive')} <span class="hint">— ${clos.length} ${t('trips closed')}</span></summary><div class="vhub">${clos.map(vCard).join('')}</div></details>`
+      html += `<details class="archsec"${vivants.length ? '' : ' open'}><summary>${iconHTML('archive')} ${t('Archive')} <span class="hint">— ${clos.length} ${t('trips closed')}</span></summary><div class="vhub">${clos.map(vCard).join('')}</div></details>`
     }
     page.innerHTML = html + '</div>'
   }
@@ -417,6 +421,23 @@ export default function createVoyagesApp(api) {
     return (await response.json()).docs ?? []
   }
 
+  // A refused or failed gesture is said in the card's sheet, not in the browser's
+  // alert. Nothing changed, so nothing is repainted until the reader shuts it.
+  function sayGesture(title, message) {
+    const from = document.activeElement
+    const vi = from?.closest('[data-vi]')?.dataset.vi ?? null
+    // paintVoyage rebuilds the page: the opener is gone by then, so the
+    // focus goes back to the card that carries the same data-vi.
+    const closed = () => {
+      paintVoyage()
+      if (vi) {
+        const card = [...page.querySelectorAll('[data-vi]')].find((c) => c.dataset.vi === vi)
+        if (card && card.focus) card.focus()
+      }
+    }
+    sheet.open({ title, bodyHTML: `<p>${esc(message)}</p>`, footHTML: '', from, closed })
+  }
+
   async function vgesture(payload) {
     try {
       const r = await call('/state', {
@@ -425,12 +446,13 @@ export default function createVoyagesApp(api) {
         body: JSON.stringify({ v: voy.path, ...payload }),
       })
       if (!r.ok) {
-        window.alert(`${t('Gesture refused: ')}${(await r.json()).error || r.status}`)
+        sayGesture(t('Gesture refused'), String((await r.json()).error || r.status))
         return
       }
       voy.state = await r.json()
     } catch (error) {
-      window.alert(`${t('Gesture impossible: ')}${String(error)}`)
+      sayGesture(t('Gesture impossible'), String(error))
+      return
     }
     paintVoyage()
   }
@@ -441,10 +463,10 @@ export default function createVoyagesApp(api) {
     if (item.heure) chips.push(`<span class="chip">${esc(item.heure)}</span>`)
     if (item.duree) chips.push(`<span class="chip">◷ ${esc(item.duree)}</span>`)
     if (item.prix) chips.push(`<span class="chip">${esc(item.prix)}</span>`)
-    if (item.gmail) chips.push(`<span class="chip due">📧 ${t('booking')}</span>`)
+    if (item.gmail) chips.push(`<span class="chip due">${t('booking')}</span>`)
     // Knowing a card carries a page WITHOUT opening it: otherwise the link only
     // exists for whoever thinks to click, and we are back to the orphan.
-    if (item.fiche) chips.push(`<span class="chip">📄 ${t('page')}</span>`)
+    if (item.fiche) chips.push(`<span class="chip">${iconHTML('file-text')} ${t('page')}</span>`)
     return `<div class="vcard" role="button" tabindex="0" draggable="true" title="${t('Click: page · Drag: move')}" data-vi="${esc(item.id)}" style="--ic:var(${T.c})"><span class="vico">${vicoOf(item)}</span><div class="bd"><div class="vt">${esc(item.titre || item.id)}</div>${chips.length ? `<div class="vmeta">${chips.join('')}</div>` : ''}</div>${extra || ''}</div>`
   }
 
@@ -459,12 +481,12 @@ export default function createVoyagesApp(api) {
     const modes = d.modes || ['marche', 'voiture']
     const modesTags = modes.map((m) => `<span class="tag">${VMODE_ICO[m] || ''} ${esc(modeName(m))}</span>`).join('')
     const props = `<div class="props"><span class="k">${t('Status')}</span><span class="stat stat--${tone(d.status)}">${esc(d.status || '—')}</span>${d.debut ? `<span class="k">${t('Dates')}</span><span class="tag">${vfmtDay(d.debut)} → ${vfmtDay(d.fin)}</span>` : ''}<span class="k">${t('Modes')}</span>${modesTags}</div>`
-    const head = `<header class="chead"><div class="aico">🌴</div><div><h1>${esc(d.titre || t('Trip'))}</h1><div class="lede">%LEDE%</div></div></header>`
+    const head = `<header class="chead"><div class="aico">${iconHTML('folder')}</div><div><h1>${esc(d.titre || t('Trip'))}</h1><div class="lede">%LEDE%</div></div></header>`
 
     // An "idea" trip: no timeline, the tray alone — nothing confirms without dates.
     if (!d.debut || !d.fin) {
       page.innerHTML = `<div class="vwrap-outer">${head.replace('%LEDE%', t('An idea for now — the tray is live, the timeline waits for dates.'))}${props}
-        <div class="vnote">🗓️ <b>${t('Set the dates to compose')}</b> ${t('— tell the agent. Without a start and an end, nothing can be confirmed.')}</div>
+        <div class="vnote"><b>${t('Set the dates to compose')}</b> ${t('— tell the agent. Without a start and an end, nothing can be confirmed.')}</div>
         <div class="grouplabel">${t('Suggestions')} <span class="hint">${t('— from the agent, in the meantime')}</span></div>
         <div class="vhub">${allSug.map((i) => `<button class="vhub-card" data-open="${esc(i.id)}"><div class="ct">${vicoOf(i)} ${esc(i.titre || i.id)}</div><div class="cmeta">${esc(i.hint || '')}</div><div class="foot"><span class="tag">${vtypeName(i.type)}</span></div></button>`).join('') || `<div class="empty">${t('No suggestion — ask the agent for some.')}</div>`}</div></div>`
       page.querySelectorAll('[data-open]').forEach((b) => b.addEventListener('click', () => openVFiche(b.dataset.open, b)))
@@ -502,12 +524,12 @@ export default function createVoyagesApp(api) {
     const tray = `<aside class="vtray"><div class="th">${t('Suggestions')} <span class="cnt">${allSug.length}</span></div>
       ${types.length > 1 ? `<div class="facets">${['', ...types].map((tp) => `<button class="pill ${(!tp && !voy.filter) || voy.filter === tp ? 'on' : ''}" data-tf="${esc(tp)}">${tp ? vtypeName(tp) : t('All')}</button>`).join('')}</div>` : ''}
       <div class="traygrid">${sug.map((i) => `<div class="traycard" role="button" tabindex="0" draggable="true" title="${t('Click: page · Drag: confirm')}" data-vi="${esc(i.id)}" style="--ic:var(${vtypeOf(i.type).c})"><button class="dis" type="button" data-dis="${esc(i.id)}" title="${t('Dismiss — kept, never suggested again')}" aria-label="${t('Dismiss — kept, never suggested again')}">${iconHTML('x')}</button><span class="vico">${vicoOf(i)}</span><div class="bd"><div class="vt">${esc(i.titre || i.id)}</div>${i.hint ? `<div class="vhint">${esc(i.hint)}</div>` : ''}${i.prix ? `<div class="vmeta"><span class="chip">${esc(i.prix)}</span></div>` : ''}</div></div>`).join('') || `<div class="empty">${t('Nothing to sort — ask the agent for suggestions.')}</div>`}</div>
-      <div class="trayfoot">🖐 ${t('A card on a day = confirmed · a card from the plan back here = returned to suggestions')}${nEc ? ` · <button class="eclink" data-ectoggle>${nEc} ${plural('dismissed', nEc)} ${voy.showEc ? '▾' : '▸'}</button>` : ''}</div>
+      <div class="trayfoot">${t('A card on a day = confirmed · a card from the plan back here = returned to suggestions')}${nEc ? ` · <button class="eclink" data-ectoggle>${counted('%one dismissed', '%n dismissed', nEc)} ${voy.showEc ? '▾' : '▸'}</button>` : ''}</div>
       ${voy.showEc && nEc ? `<div class="traygrid">${items.filter((i) => i.statut === 'ecartee').map((i) => `<div class="traycard ec" data-vi="${esc(i.id)}"><button class="dis" type="button" data-rest="${esc(i.id)}" title="${t('Take back into the suggestions')}" aria-label="${t('Take back into the suggestions')}" style="opacity:1">${iconHTML('rotate-ccw')}</button><span class="vico">${vicoOf(i)}</span><div class="bd"><div class="vt">${esc(i.titre || i.id)}</div>${i.hint ? `<div class="vhint">${esc(i.hint)}</div>` : ''}</div></div>`).join('')}</div>` : ''}</aside>`
 
     const bloc = voy.fiches.length
       ? `<div class="grouplabel">${t('The pages of this trip')} <span class="hint">${t('— what the folder holds')}</span></div>
-      <div class="vhub vdoss">${voy.fiches.map((f) => `<button class="vhub-card" data-page="${esc(f.path)}"><div class="ct">📄 ${esc(f.nom)}</div><div class="foot"><span class="tag">${t('page')}</span></div></button>`).join('')}</div>`
+      <div class="vhub vdoss">${voy.fiches.map((f) => `<button class="vhub-card" data-page="${esc(f.path)}"><div class="ct">${iconHTML('file-text')} ${esc(f.nom)}</div><div class="foot"><span class="tag">${t('page')}</span></div></button>`).join('')}</div>`
       : ''
 
     // Beside the pages rather than mixed in with them: a note somebody wrote
@@ -714,8 +736,8 @@ export default function createVoyagesApp(api) {
       .join('')
     const desc = it.desc || it.hint || ''
     const src =
-      it.gmail ? `<div class="vsrc">📧 ${t('Booking found in the mailbox — the thread stays the source of truth.')}</div>`
-      : it.place_id ? `<div class="vsrc">📍 ${t('Maps entry — rating, hours, directions.')}</div>`
+      it.gmail ? `<div class="vsrc">${t('Booking found in the mailbox — the thread stays the source of truth.')}</div>`
+      : it.place_id ? `<div class="vsrc">${t('Maps entry — rating, hours, directions.')}</div>`
       : ''
     const docs = (it.docs || []).map(vdocHTML).join('')
 
@@ -725,11 +747,11 @@ export default function createVoyagesApp(api) {
       title: it.titre || it.id,
       from,
       bodyHTML: `<div class="vhead"><span class="vico">${vicoOf(it)}</span><div class="vsub">${vtypeName(it.type)} · <span class="stat stat--${stTone}">${esc(stLbl)}</span> · ${cal}</div></div>
-      ${desc ? `<div class="vby">🎩 ${t('the agent’s note')}</div><p class="vdesc">${esc(desc)}</p>` : ''}
+      ${desc ? `<div class="vby">${t('the agent’s note')}</div><p class="vdesc">${esc(desc)}</p>` : ''}
       ${chips ? `<div class="vmeta">${chips}</div>` : ''}${src}${docs}
       ${it.statut === 'confirme' && !it.debut ? `<div class="vhour"><span class="vby">${t('Hour')}</span><input type="time" data-hour value="${esc(String(it.heure || '').replace('h', ':'))}"><button type="button" class="${button}" data-sethour>${t('Set')}</button>${it.heure ? `<button type="button" class="${button}" data-clearhour>${t('Clear')}</button>` : ''}<span class="vhint">${t('optional — the order of the cards makes the day, the hour annotates it')}</span></div>` : ''}
-      ${it.statut === 'suggestion' ? `<span class="vhint">🖐 ${t('drag the card onto a day to confirm')}</span>` : ''}`,
-      footHTML: `${fiche ? `<button type="button" class="${button} adestia-btn--accent" data-openpage="${esc(fiche)}">📄 ${t('See the page')}</button>` : ''}${it.web ? `<a class="${button}" href="${esc(it.web)}" target="_blank" rel="noreferrer">↗ ${t('Open the site')}</a>` : ''}${it.statut === 'confirme' && !it.debut ? `<button type="button" class="${button}" data-untray>↩ ${t('Return to suggestions')}</button>` : ''}${it.statut !== 'ecartee' && !it.debut ? `<button type="button" class="${button}" data-ecarter>${iconHTML('x')} ${t('Dismiss')}</button>` : ''}${it.statut === 'ecartee' ? `<button type="button" class="${button}" data-restfiche>${iconHTML('rotate-ccw')} ${t('Take back into the suggestions')}</button>` : ''}`,
+      ${it.statut === 'suggestion' ? `<span class="vhint">${t('drag the card onto a day to confirm')}</span>` : ''}`,
+      footHTML: `${fiche ? `<button type="button" class="${button} adestia-btn--accent" data-openpage="${esc(fiche)}">${iconHTML('file-text')} ${t('See the page')}</button>` : ''}${it.web ? `<a class="${button}" href="${esc(it.web)}" target="_blank" rel="noreferrer">↗ ${t('Open the site')}</a>` : ''}${it.statut === 'confirme' && !it.debut ? `<button type="button" class="${button}" data-untray>↩ ${t('Return to suggestions')}</button>` : ''}${it.statut !== 'ecartee' && !it.debut ? `<button type="button" class="${button}" data-ecarter>${iconHTML('x')} ${t('Dismiss')}</button>` : ''}${it.statut === 'ecartee' ? `<button type="button" class="${button}" data-restfiche>${iconHTML('rotate-ccw')} ${t('Take back into the suggestions')}</button>` : ''}`,
     })
 
     // Every gesture closes the sheet first. The card it was opened from is

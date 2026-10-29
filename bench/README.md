@@ -47,6 +47,22 @@ which stops it and removes its data. Browse the URL, or drive it by API
   answers, to start the turns that must be *running*). A file starting with `_`
   is shared code, not a seed.
 
+The fake engine accepts `scripts`, `mcp`, `auth` and `models`; seeds supply each
+of these. Its capabilities and instruction zones are fixed in `fake-engine.mjs`.
+
+`bench/lib/instance.mjs` owns `launch(seed, { skin, locale, ErrorClass } = {})`,
+returning `{ url, stop }`: `url` resolves at the launcher's `listening on` line,
+and `stop()` sends SIGTERM and waits for exit. The two original copies differed
+only in the sweep's optional `skin`/`locale` arguments and the seed checker's
+`Failure` error class. The sweep passes its options; the checker passes
+`{ ErrorClass: Failure }`. The default class is `Error`. Scenario launchers with
+other signatures keep their own setup.
+
+`bench/lib/playwright.mjs` owns `loadPlaywright()`, shared by the bench tools.
+After `npm ci`, `node --test bench/tests/bench-once.test.mjs` checks the tracked
+bench sources for duplicate definitions and fake-engine options without a seed
+or scenario caller. It uses the repository's TypeScript parser, without a browser.
+
 | `--seed` | What it shows |
 |---|---|
 | `base` | The populated instance: 20+ pages in two stores (every core block, a lost and an ambiguous wikilink, a vocabulary the product refuses to save, an unreadable frontmatter, a stray `app:`, files, two collections), conversations (running, unread, idle, archived, long, medium, a thread with every bubble state), six MCP servers in every health, instructions and three catalogues (importable, empty, unreachable), four delegations from two callers, a brief, a stored credential, a refused plugin and a plugin delivering a skill. No settings route: E-14 says it does not expose its configuration. |
@@ -94,8 +110,8 @@ fixed in the seed so a session of a refused group can be forged to reach the
 each seed (for `plugins`, one measure per plugin — `plugins › voyages: …` — reading what its API answers), reads the screens' data through the API, sends every trigger message
 and exits non-zero naming each measure that failed (`check: base › mcp: …`).
 
-`bench/bench.mjs` finds Playwright under `/usr/lib/node_modules`, or else under
-`npm root -g`.
+`bench/lib/playwright.mjs` (`loadPlaywright`) finds Playwright under `/usr/lib/node_modules`, or else under
+`npm root -g`; the scenarios import it rather than searching themselves.
 
 ## The plugins' screens, four skins × two languages: `bench/scenarios/plugins-matrix.mjs`
 
@@ -107,6 +123,27 @@ checks the focus, and reads each screen's text for the other language. `BENCH_SK
 it; `BENCH_URL` (with `BENCH_SKIN`, `BENCH_LOCALE`) plays an instance already running. A full run takes
 about 25 minutes when the four skins run side by side (one process each, `BENCH_SKINS=<skin>`). Exit 1
 names each failing state.
+
+## Plugin repairs (AD-24): `plugins-correctifs.mjs`
+
+After `npm run build`, without Docker:
+
+```sh
+node bench/scenarios/chat-matrix.mjs bench/scenarios/plugins-correctifs.mjs --out bench/shots-plugins-correctifs
+```
+
+The runner starts one fake-engine instance per skin/language. The scenario runs the
+existing `plugins-mots` and `plugins-marques` proofs unchanged in `words/` and `marks/`,
+then captures the two message sheets, E-27's transcript, the map before/after walking,
+E-29, Amber beside an overdue milestone, the localised `:::content` date, the scanner
+and its returned focus, and a planif request to the agent retained after reload.
+Each pair gets light/dark × desk/phone and `correctifs-report.json`. The
+`plugins-correctifs` seed adds a hand layout, one dated page and an Amber phase to
+the normal plugins seed. Only the voyages POST refusal and the words/marks GET
+fixtures are intercepted. The nominal agent reply is scripted, not a real Claude call.
+Unlike the older `plugins-matrix` focus waiver, this scenario requires the phone's
+textarea to have focus after the scanner closes. See `plugins-correctifs-proof.md`
+for observations and evidence paths; screenshots still need visual inspection.
 
 ## Every screen, both themes, both sizes: `bench/sweep.mjs`
 
@@ -216,6 +253,28 @@ directory, which is the same thing the server would have written.
   `204`, because the shell re-attaches after every turn it finishes.
 
 ### Chat tranche scenarios
+
+For the E-16 repairs (AD-23), after the build:
+
+```sh
+node bench/scenarios/chat-matrix.mjs bench/scenarios/chat-correctifs.mjs --out bench/shots-correctifs-chat
+# Include the native popup itself when Xvfb, Python 3 and libX11 are available:
+xvfb-run -a -s '-screen 0 1600x1100x24' env BENCH_NATIVE_PICKER=1 node bench/scenarios/chat-matrix.mjs bench/scenarios/chat-correctifs.mjs --out bench/shots-correctifs-chat
+```
+
+This host run uses the fake engine and the real server's single concurrency seat:
+it uploads and sends a file, reads the translated HTTP 429 explanation after the
+conversation is reread, opens the native model select, then frees the seat and
+sends `ping`. It checks that `pong` survives reload. Each skin/language has twelve
+E-16 rail captures (three states × two themes × desk/phone), plus
+`correctifs-report.json` with the observations and composed text contrasts.
+This is a scripted nominal turn, not proof of a real Claude call. Other screens
+are outside this scenario. Captures must still be opened and inspected.
+Chromium's page screenshots omit native select popups: the default capture shows
+the focused picker, while the Xvfb command captures the actual list in a 520×360
+crop of the display (including the browser chrome). The JSON records which was used.
+Without `xauth`, start `Xvfb :97 -screen 0 1600x1100x24 -ac -nolisten tcp`,
+run the matrix with `DISPLAY=:97 BENCH_NATIVE_PICKER=1`, then stop that Xvfb process.
 
 After `npm run build`, run the rail's state captures on the host:
 

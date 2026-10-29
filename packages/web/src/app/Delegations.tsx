@@ -174,6 +174,9 @@ export function Delegations({
           </div>
         </header>
         <div className="adestia-chat__conversation adestia-deleg__conversation">
+          {/* E-13 / P-13 step 7: read-only, with no signing handler. The
+              calling agent's user holds the ceremony; passive signature
+              cards would be a new function (AD-23). */}
           {delegation.messages.map((message) => (
             <Bubble key={message.id} message={toMessage(message, { signatures: false })} t={t} />
           ))}

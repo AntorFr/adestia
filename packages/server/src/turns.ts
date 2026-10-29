@@ -554,7 +554,7 @@ function mergeSpecs(batch: readonly TurnSpec[], sessionId: string | undefined): 
     },
     finish: last.finish,
     ...(last.session ? { session: last.session } : {}),
-    filed: Promise.all(batch.map((spec) => spec.filed?.catch(() => undefined))),
+    filed: Promise.all(batch.map((spec) => (spec.filed ? spec.filed.catch(() => undefined) : Promise.resolve(undefined)))),
   }
 }
 

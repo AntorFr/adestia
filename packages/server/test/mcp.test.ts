@@ -12,7 +12,7 @@ import {
   tokenMatches,
   type McpConfig,
 } from '../src/mcp-in.js'
-import { registerMcp, type DelegationPort } from '../src/mcp-routes.js'
+import { registerMcp, type DelegationPort } from '../src/routes/mcp.js'
 
 const config = (overrides: Partial<McpConfig> = {}): McpConfig => ({
   enabled: true,

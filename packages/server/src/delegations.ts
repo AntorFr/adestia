@@ -51,7 +51,7 @@ interface DelegationChannelOptions {
 
 /** How a conversation is named in the list: the request's first words, not a serial
     number. Cut on a word so the tile never ends mid-syllable. */
-export function titleFor(request: string): string {
+function titleFor(request: string): string {
   const line = request.trim().split('\n', 1)[0] ?? ''
   if (line.length <= 60) return line || 'Delegated task'
   const cut = line.slice(0, 60)

@@ -46,6 +46,3 @@ export function safeJoin(root: string, requested: string): string | undefined {
   if (rel.startsWith('..') || rel.startsWith(`..${sep}`)) return undefined
   return target
 }
-
-// The route registration lives under `routes/`; kept importable from here.
-export { registerStatic, type StaticOptions } from './routes/static.js'

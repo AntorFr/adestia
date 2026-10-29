@@ -19,6 +19,7 @@ mkdir -p workspace data plugins skins
 docker compose up
 ```
 
+`./plugins` and `./skins` in the clone already hold the shipped extensions; `mkdir -p` only creates what is missing.
 The first `up` builds the image from the `Dockerfile`; the agent needs
 `CLAUDE_CODE_OAUTH_TOKEN` (see `docker-compose.yml`), which compose reads from the
 host's environment: `export CLAUDE_CODE_OAUTH_TOKEN=<token>` before `docker compose up`
@@ -41,7 +42,7 @@ cd /path/to/scratch
 node /path/to/adestia/packages/server/bin/adestia.js -c /path/to/adestia.config.yaml
 ```
 
-This serves `http://127.0.0.1:8730` and answers 200 on `/`. `extensions.pluginsDir` and `skinsDir` (`./plugins`, `./skins`) resolve from the current directory, so from an empty scratch directory the log says `0 of 0 plugin(s) active`: link or copy the clone's `plugins/` and `skins/` there (or set the two paths in the config) to load them. Without
+This serves `http://127.0.0.1:8730` and answers 200 on `/`. It leaves `data/` and `workspace/` in that directory: delete them when done. `extensions.pluginsDir` and `skinsDir` (`./plugins`, `./skins`) resolve from the current directory, so from an empty scratch directory the log says `0 of 0 plugin(s) active`: link or copy the clone's `plugins/` and `skins/` there (or set the two paths in the config) to load them. Without
 `CLAUDE_CODE_OAUTH_TOKEN` it still starts: the app is there, but a real agent
 turn fails (use the scripted engine below to look at it without one).
 
@@ -53,10 +54,10 @@ node bench/launch.mjs --engine fake    # prints `listening on <url>`; <url>/api/
 node bench/sweep.mjs                   # every screen, light and dark, desk and phone
 ```
 
-The sweep takes Playwright and Chromium from the environment (it looks in `/usr/lib/node_modules`, then `npm root -g`); the `pages-*` scenarios look only in `/usr/lib/node_modules`, so a host with another global root must link it there for them: `ln -s "$(npm root -g)/playwright" /usr/lib/node_modules/playwright`); do not
+The sweep needs Playwright and Chromium installed on the host (the runner image ships Playwright 1.63; nothing in the repo installs them). It takes them from the environment (it looks in `/usr/lib/node_modules`, then `npm root -g`); the `pages-*` scenarios look only in `/usr/lib/node_modules`, so a host with another global root must link it there for them: `ln -s "$(npm root -g)/playwright" /usr/lib/node_modules/playwright`); do not
 add them to the repo. The launcher runs until SIGTERM (`kill <pid>`, or Ctrl-C), which
 removes its throwaway data; in a script, start it in the background and keep its pid
-(`$!`). Run it from the clone's root: the bundled plugins are found through `./plugins`, and from elsewhere the server starts with `0 of 0 plugin(s) active`. The seed brings its own two small plugins (`bench-notes`, `bench-degraded`), so the boot log says `2 of 2 plugin(s) active`, not the ten of `plugins/`: that is normal. Its boot log includes a plugin refused on purpose (`bench-refused`, part of the seed): not an error.
+(`$!`). Run it from the clone's root: the bundled plugins are found through `./plugins`, and from elsewhere the server starts with `0 of 0 plugin(s) active`. The seed brings its own two small plugins (`bench-notes`, `bench-degraded`), so the boot log says `2 of 2 plugin(s) active`, not the ten of `plugins/`: that is normal. Its boot log includes two plugins refused on purpose (`bench-refused`, a name mismatch, and `bench-invalid`, an invalid manifest; both part of the seed): not an error.
 
 `--engine claude` runs a real turn instead (needs `CLAUDE_CODE_OAUTH_TOKEN`).
 For the pages state matrix (four skins, both languages, both themes, desktop
@@ -168,9 +169,9 @@ Two rules follow, and both bite in production:
 
 - **The cap and the memory limit must agree.** A cap of 8 behind a 1 GB limit
   is not a conservative deployment — it is a deployment that starts eight
-  processes and gets killed. Adestia refuses a turn past its cap with HTTP 429. The chat can lose the
-  refusal message when it reloads the transcript (Known defects in
-  `ARCHITECTURE.md`); the composer is freed.
+  processes and gets killed. Adestia refuses a turn past its cap with HTTP 429. The chat says why, in the
+  user's language, and keeps that line until the next send or another conversation;
+  the composer is freed.
 - **An OOM kill loses the turn in flight**, along with anything the agent had
   not yet written to disk. There is no retry: the turn died with the process,
   and replaying it behind the user's back would be worse than losing it.
@@ -209,7 +210,7 @@ escaped `\:::` in the content tests, and looks like a serialiser bug
 
 ```sh
 npm ci
-npm test          # no account or network needed; takes 7 minutes or more (the browser suites dominate), so do not cut it short; the catalogue screens suite builds the shell on first run and skips (npm test stays green) when Playwright is not found through require/NODE_PATH, then `npm root -g`
+npm test          # no account or network needed; takes 7 minutes or more (the browser suites dominate), so do not cut it short; the browser suites time out at 5 s when the machine is busy: a red `Test timed out` is a load symptom, so rerun that file alone (`npx vitest run <file>`) and run `npm run test:plugins` by itself after a red vitest, since `npm test` chains it behind vitest and skips it on a failure; the catalogue screens suite builds the shell on first run and skips (npm test stays green) when Playwright is not found through require/NODE_PATH, then `npm root -g`
 npm run typecheck
 npm run lint      # also run by CI
 npm run build
@@ -224,8 +225,8 @@ Every driver is exercised against a fake binary, which is a property of the
 driver contract rather than a convenience: a driver whose behaviour is only
 testable against a live account is a driver tested by its first user.
 
-Work happens in an isolated git worktree and comes back to `main` before it is
-tagged. `CLAUDE.md` covers the install traps of a worktree, how to commit, and
+Work happens in an isolated git worktree and comes back to its target branch (`main`, or the
+integration branch of an epic) before it is tagged there. `CLAUDE.md` covers the install traps of a worktree, how to commit, and
 when to look at the interface.
 
 ## License

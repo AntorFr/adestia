@@ -34,10 +34,30 @@ export type Locale = 'en' | 'fr'
  * mistranslated, and beats a raw identifier by a mile.
  */
 const FR: Readonly<Record<string, string>> = {
+  'Unknown block ":::%block". The vocabulary is closed; extending it is a coded change.':
+    'Bloc inconnu « :::%block ». Le vocabulaire est fermé ; l’étendre nécessite une modification du code.',
+  'Block ":::%block" takes no content — its attributes are its whole meaning.':
+    'Le bloc « :::%block » n’accepte pas de contenu — ses attributs portent tout son sens.',
+  'Block ":::%block" holds a body only some of its definitions accept — it is kept, and drawn only where its definition takes one.':
+    'Le bloc « :::%block » contient un corps que seules certaines de ses définitions acceptent — il est conservé et affiché uniquement là où sa définition l’accepte.',
+  'Block ":::%block" needs content.':
+    'Le bloc « :::%block » a besoin de contenu.',
+  'Block ":::%block" is empty, which only some of its definitions allow.':
+    'Le bloc « :::%block » est vide, ce que seules certaines de ses définitions autorisent.',
+  'Block ":::%block" requires the attribute "%key".':
+    'Le bloc « :::%block » exige l’attribut « %key ».',
+  '":::%block" attribute "%key" is "%value"; accepted: %accepted.':
+    'L’attribut « %key » de « :::%block » vaut « %value » ; valeurs acceptées : %accepted.',
+  '":::%block" has no attribute "%key"; it will be ignored.':
+    "« :::%block » n'a pas d'attribut « %key » ; il sera ignoré.",
   Idle: 'Au repos',
   Waiting: 'En attente',
   Unread: 'Non lu',
   Working: 'En cours',
+  'Turn limit reached (%n at a time) — try again in a moment.':
+    'Limite de tours atteinte (%n à la fois) — réessayez dans un instant.',
+  'Turn limit reached — try again in a moment.':
+    'Limite de tours atteinte — réessayez dans un instant.',
   Failed: 'Échec',
   'Weight of the context your next message re-pays': 'Poids du contexte repris par votre prochain message',
   '%n tool call': '%n appel d’outil',
@@ -121,6 +141,10 @@ const FR: Readonly<Record<string, string>> = {
   'No conversation yet.': 'Aucune conversation.',
   Archive: 'Archiver',
   'Extensions refused': 'Extensions refusées',
+  'Invalid plugin manifest': 'Manifeste de plugin invalide',
+  'Invalid skin manifest': 'Manifeste d’habillage invalide',
+  'Invalid plugin manifest for "%name"': 'Manifeste de plugin invalide pour "%name"',
+  'Invalid skin manifest for "%name"': 'Manifeste d’habillage invalide pour "%name"',
   'Running with something missing': 'Actives, sans tout ce qu’elles savent faire',
   Save: 'Enregistrer',
 
@@ -438,6 +462,7 @@ const FR: Readonly<Record<string, string>> = {
   'Renew the token': 'Renouveler le jeton',
   'Forget it': 'L’oublier',
   Cancel: 'Annuler',
+  'upload failed': 'l’envoi a échoué',
   'request failed (%n)': 'la requête a échoué (%n)',
   'Paste the code you were given': 'Collez le code qui vous a été donné',
   // The cog menu, the problems band and the settings mosaic
@@ -517,7 +542,16 @@ const FR: Readonly<Record<string, string>> = {
 }
 
 const TABLES: Readonly<Record<Locale, Readonly<Record<string, string>>>> = {
-  en: {},
+  en: {
+    'Invalid plugin manifest': 'Invalid plugin manifest',
+    'Invalid skin manifest': 'Invalid skin manifest',
+    'Invalid plugin manifest for "%name"': 'Invalid plugin manifest for "%name"',
+    'Invalid skin manifest for "%name"': 'Invalid skin manifest for "%name"',
+    'Turn limit reached (%n at a time) — try again in a moment.':
+      'Turn limit reached (%n at a time) — try again in a moment.',
+    'Turn limit reached — try again in a moment.':
+      'Turn limit reached — try again in a moment.',
+  },
   fr: FR,
 }
 

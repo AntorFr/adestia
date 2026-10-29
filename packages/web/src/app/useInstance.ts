@@ -250,15 +250,18 @@ export function useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef
     void followChanges({
       fetchImpl,
       signal: controller.signal,
-      onChange: async () => {
-        const list = await requestJson<{ entries?: IndexEntry[]; stores?: StoreInfo[] }>(
-          fetchImpl,
-          '/api/pages/index',
-        )
-        if (!list.ok || controller.signal.aborted) return
-        const body = list.data
-        setPages(Array.isArray(body?.entries) ? body.entries : [])
-        setStores(Array.isArray(body?.stores) ? body.stores : [])
+      // The live feed ignores what `onChange` returns: the refresh is started, not awaited.
+      onChange: () => {
+        void (async () => {
+          const list = await requestJson<{ entries?: IndexEntry[]; stores?: StoreInfo[] }>(
+            fetchImpl,
+            '/api/pages/index',
+          )
+          if (!list.ok || controller.signal.aborted) return
+          const body = list.data
+          setPages(Array.isArray(body?.entries) ? body.entries : [])
+          setStores(Array.isArray(body?.stores) ? body.stores : [])
+        })()
       },
     })
     return () => controller.abort()

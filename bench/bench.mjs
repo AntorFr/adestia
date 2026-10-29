@@ -30,32 +30,8 @@ import { readdir } from 'node:fs/promises'
 import { createServer, request } from 'node:http'
 import { join } from 'node:path'
 import { argv, env } from 'node:process'
-import { execFileSync } from 'node:child_process'
-import { createRequire } from 'node:module'
+import { loadPlaywright } from './lib/playwright.mjs'
 
-/**
- * Playwright lives in the image at /usr/lib/node_modules; on a host without
- * docker it lives under the global npm root (`npm root -g`), and there it may
- * be `playwright` rather than `playwright-core`. Never a dependency of the repo.
- */
-const loadPlaywright = () => {
-  const roots = ['/usr/lib/node_modules']
-  try {
-    roots.push(execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim())
-  } catch {
-    // no npm on the path: the fixed root is all there is
-  }
-  for (const dir of roots) {
-    for (const name of ['playwright-core', 'playwright']) {
-      try {
-        return createRequire(`${dir}/`)(name)
-      } catch {
-        // not under this root
-      }
-    }
-  }
-  throw new Error(`playwright not found under ${roots.join(' or ')}`)
-}
 const playwright = loadPlaywright()
 
 const { chromium } = playwright

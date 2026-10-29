@@ -7,28 +7,18 @@
  *
  *   npm run build && node --test bench/tests/chat-p2-gestes-besoin.test.mjs
  */
-import { execFileSync, spawn } from 'node:child_process'
+import { spawn } from 'node:child_process'
 import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { createRequire } from 'node:module'
 import { dirname, join, resolve } from 'node:path'
 import { after, before, describe, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { fileURLToPath } from 'node:url'
+import { loadPlaywright } from '../lib/playwright.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const shots = join(root, 'bench/shots-besoin')
 
-function loadPlaywright() {
-  const roots = ['/usr/lib/node_modules']
-  try { roots.push(execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim()) } catch { /* fixed root only */ }
-  for (const dir of roots) {
-    for (const name of ['playwright-core', 'playwright']) {
-      try { return createRequire(`${dir}/`)(name) } catch { /* not here */ }
-    }
-  }
-  throw new Error('playwright not found in the environment')
-}
 const { chromium } = loadPlaywright()
 
 function startInstance(seed, skin, locale) {
@@ -192,9 +182,9 @@ describe('P-2 step 4: a turn refused past maxConcurrentTurns', () => {
   })
   after(async () => { await browser?.close(); await instance?.stop() })
 
-  // panne attrapée : la limite ne refuse plus le tour ou le compositeur reste bloqué
-  // Écart P-2 conservé pour la recette : le 429 peut rester muet (ARCHITECTURE.md, Known defects ; AD-7).
-  test('the refused turn answers 429 and the composer is free again', async () => {
+  // panne attrapée : la limite ne refuse plus le tour, le compositeur reste bloqué, ou la ligne
+  // qui explique le refus (avec le plafond du serveur) disparaît à la relecture de la conversation
+  test('the refused turn answers 429, says why under its message, and the composer is free again', async () => {
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'en' })
     const page = await context.newPage()
     try {
@@ -203,8 +193,15 @@ describe('P-2 step 4: a turn refused past maxConcurrentTurns', () => {
       await page.getByRole('button', { name: 'New conversation', exact: true }).click()
       const refused = page.waitForResponse((r) => new URL(r.url()).pathname === '/api/turn' && r.request().method() === 'POST')
       await page.locator('.adestia-composer__input').fill('fini')
+      // armed before the gesture: the read of the stored conversation that follows the refusal
+      const reread = page.waitForResponse((r) => /^\/api\/conversations\/[^/]+$/.test(new URL(r.url()).pathname) && r.request().method() === 'GET')
       await page.locator('.adestia-composer__send').click()
       assert.equal((await refused).status(), 429)
+      await reread
+      const line = page.getByRole('alert').filter({ hasText: 'Turn limit reached (1 at a time) — try again in a moment.' })
+      await line.waitFor()
+      assert.equal(await line.count(), 1, 'the explanation outlasts the reread')
+      assert.equal(await page.locator('.adestia-bubble--user', { hasText: 'fini' }).count(), 1, 'the refused message stays in the thread')
       await shot(page, 'gestes-429.png')
       assert.equal(await page.getByRole('button', { name: 'Stop', exact: true }).count(), 0, 'no Stop: no turn runs in this conversation')
       assert.equal(await page.locator('.adestia-composer__send').count(), 1, 'Send is back')

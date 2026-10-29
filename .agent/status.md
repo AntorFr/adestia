@@ -1,11 +1,47 @@
 # Status — Adestia
-> MàJ : 2026-10-24
+> MàJ : 2026-10-29
 
 ## Version courante
 
-- Dernier tag accessible : **`v0.95.0`** (`git describe --tags
-  --abbrev=0`), l'epic `adestia-qualite`, entrée dans `main`.
-- Branche de travail : `feature/adestia-qualite-chat`, sur `origin/epic/adestia-qualite`
+- Dernier tag accessible : **`v0.96.0`** (`git describe --tags
+  --abbrev=0`, posé sur `main` par la fusion de l'epic `adestia-correctifs` ; ses préversions : le `.1` était la tranche serveur, le `.2` la tranche chat, le `.3` la tranche shell, le `.4` la tranche pages, le `.5` la tranche plugins, le `.6` la tranche dette, le `.7` la reprise de la tranche chat, le `.8` la reprise de la tranche dette, le `.9` sa seconde reprise) de l'epic, posées sur sa branche d'intégration ;
+  le tag précédent dans `main` était `v0.95.0` (l'epic `adestia-qualite`).
+- Branche de travail : `feature/adestia-correctifs-dette`, sur `origin/epic/adestia-correctifs` : reprise de la tranche dette
+  (garde B-5 : dernier titre du CHANGELOG = dernier tag ou version suivante de la série, y compris le titre `vX.Y.Z` de la cible stable après ses préversions ; status.md doit citer ce titre en entier, une préversion ne vaut pas sa version ; la CI prend les tags). Précédemment : `feature/adestia-correctifs-chat` : reprise
+  de la tranche chat (tag `.2`) après sa vérification : un envoi qui échoue sans phrase lisible du
+  serveur (corps vide, illisible, non JSON) lit `t('upload failed')` (`Composer.tsx`, B-16), dit dans
+  `CHANGELOG.md` et `ARCHITECTURE.md` (Known defects) ; une connexion coupée avant toute réponse garde
+  « request failed (0) », traduit. Rien à coder ici ; les deux premières puces des compléments de Défauts connus (sélecteur de modèle natif, signatures des délégations) sont des défauts gardés, avec leur raison.
+  Précédemment : `feature/adestia-correctifs-dette` (tranche dette, AD-26 : plus d'alias d'une ligne dans `packages/drivers` (`no-aliases.test.ts`) ;
+  la table des exports gardés pour leurs tests d'`ARCHITECTURE.md` porte une raison par ligne
+  (`dette-exports-besoin.test.ts`) ; le banc définit `loadPlaywright` et `launch(seed)` une fois
+  (`bench/lib/`, `bench-once.test.mjs`) ; la CI joue `doc-besoin` et `bench-once` ; `DESIGN.md` n'a
+  qu'une garde par règle ; `no-misused-promises` et `await-thenable` sont allumées
+  (`lint-type-aware.test.ts`). Aucun écran touché. Reste : `no-floating-promises`, voir Défauts
+  connus. `.agent/migrate-frame.mjs` n'existe plus : « not reproduced »).
+  Précédemment : `feature/adestia-correctifs-plugins`, sur `origin/epic/adestia-correctifs`
+  (tranche plugins, AD-24 a-d : l'atelier (réinitialiser la mise en plan) et les voyages (geste
+  refusé) parlent dans la feuille propre au plugin, sans `confirm()` ni `alert` — seul changement de
+  flux, réponse asynchrone, focus rendu à la carte ; « 1 pièce » et les compteurs des voyages
+  s'accordent par langue ; la carte de balade E-28 prend la hauteur de sa boîte ; le lecteur du
+  scanner rend le focus au champ du composeur quand son ouvreur a disparu (E-30) ; `--warning`
+  ne dit plus que l'Amber du porteur, le retard déduit est tireté ; les émojis de chrome cèdent
+  aux icônes de la charte (marques de données, `✦` et `✓` gardés, `emoji.test.js`) ; la date de
+  `:::content` suit la langue. Preuves : `bench/plugins-correctifs-proof.md`, `plugins-mots-proof.md`,
+  `bench/scenarios/plugins-correctifs.mjs`. Reste : voir Défauts connus).
+  Précédemment : `feature/adestia-correctifs-pages`, sur `origin/epic/adestia-correctifs`
+  (tranche pages, AD-25 : la trace d'une page racine ne nomme plus de dossier (`folderOf`) et E-8
+  mène à Accueil ; le `Popover` reste sous l'en-tête du canevas et les bandeaux et suit son ancre
+  (`bench/scenarios/pages-reglages.mjs`) ; un `Diagnostic` porte `code` et `args`, le shell le dit
+  par `t()` en `fr`, le `message` anglais du fil est inchangé ; l'index, la planification et la
+  liste Planif (`plugins/planif/api.mjs`) lisent une fiche CRLF et une clôture `---` suivie
+  d'espaces comme l'éditeur, `stampField` garde la fin de ligne. Preuves : `bench/pages-proof.md`,
+  tests `chemin-racine`, `popover-placement`, `page-diagnostics-language`, `frontmatter`,
+  `schedule`. Reste, avec sa raison : la page ouverte ne se rafraîchit pas quand l'agent écrit
+  (P-5 étape 7) ; les phrases serveur d'E-23 restent en anglais).
+  Les tranches pages, shell, chat et serveur de l'epic (tags `.1` à `.4`) sont au
+  [CHANGELOG](../CHANGELOG.md), avec leurs restes dans Défauts connus.
+  Précédemment : `feature/adestia-qualite-chat`, sur `origin/epic/adestia-qualite`
   (correctifs de recette et de verify : un message envoyé avant que le premier soit parti est retenu ;
   en-tête du rail à moins de 400 px à un seul espacement, sélecteur de modèle d'au moins 72 px ; bulle d'erreur seule à marge symétrique). Banc, tests, serveur, charte,
   plugins, pages et chat sont intégrés à l'epic ; la documentation est relue
@@ -22,10 +58,24 @@ La liste de référence est dans [ARCHITECTURE.md](../ARCHITECTURE.md), section
 sont corrigés par `main` et n'y figurent plus.
 
 Compléments encore visibles dans le code :
-- `:::content` affiche `on` tel qu'écrit, sans date au format de la langue
-  (`editor/reader/ContentBlock.tsx`).
-- L'ambre signifie à la fois attente/retard et évaluation `Amber` d'un projet ;
-  le mot distingue, pas la couleur (`plugins/project-management/web/model.js`).
+- Le sélecteur de modèle du chat reste un `<select>` natif (`chat/ModelPicker.tsx`) : une liste
+  personnalisée serait un composant neuf (AD-18).
+- Une délégation n'affiche pas les cartes de signature (`{ signatures: false }` dans
+  `app/Delegations.tsx`) : vue en lecture seule sans gestionnaire de signature (P-13 étape 7).
+- `no-floating-promises` reste éteinte : 644 constats (22 en production, 622 dans les tests),
+  au-delà du seuil de 15 d'AD-26. `no-misused-promises` et `await-thenable` sont allumées.
+- La page ouverte ne se rafraîchit pas quand l'agent écrit (P-5 étape 7).
+- Les lignes `champ : message` de `ManifestError` restent en anglais : une table clé par phrases
+  de validateur serait nouvelle.
+- Phrases serveur d'E-23/E-27 (problèmes de planif, raison d'échec d'une source), mots de données
+  du classeur (E-25), types d'éléments de voyage (E-26) et erreur brute d'un geste refusé : en
+  anglais ou tels qu'écrits, faute de table clé par phrases (AD-17, AD-24).
+- Vu, non réparé : sur la frise d'E-31 en `fr` au bureau, « auj. » touche le repère « nov. »
+  (cosmétique, `bench/plugins-correctifs-proof.md`).
+- Vu, non réparé (antérieur à la tranche, `plugins/atelier/api.mjs` identique à `main`) : la feuille
+  de E-25 envoie `reset: true` et le serveur ne le lit pas ; il ne fusionne que `poses` et `bandes`,
+  donc « Abandonner ma mise en plan » ne vide pas `workbook-layout.json` comme P-11 étape 3 le dit.
+  Test rouge laissé dans `bench/tests/plugins-ensemble.test.mjs` (« atelier reset », 16 variantes).
 - Les formulaires de données de blocs restent à faire : l'édition montre leur
   rendu, puis leurs lignes brutes au clic ; les réglages ne sont pas ces formulaires.
 

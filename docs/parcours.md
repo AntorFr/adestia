@@ -5,7 +5,7 @@
 > (journeys), `E-n` (screens, `docs/ecrans.md`), `AD-n` (decisions, `ARCHITECTURE.md`).
 >
 > This file was written by the epic `adestia-qualite` (2026-10-15), a quality pass that
-> changes **no behaviour**: the journeys below are the product as it is at v0.88.0; the needs
+> changed **no behaviour** (B-1; `adestia-correctifs` then repairs the defects it wrote down, B-13 to B-16): the journeys below are the product as it is at v0.88.0; the needs
 > `B-1` to `B-12` are what the epic adds — documentation, a test bench without docker, a
 > visual charter, coherent screens, cleaner code.
 
@@ -29,7 +29,7 @@ One instance is one agent, one workspace, one subscription.
 Form of the `exigences` skill; each need names the journeys it serves.
 
 ### Unchanged behaviour
-- **B-1** — Every journey `P-1` to `P-14` behaves after the epic as it did at v0.88.0: same
+- **B-1** *(`adestia-qualite`; `adestia-correctifs` lifts it for its register, B-13)* — Every journey `P-1` to `P-14` behaves after the epic as it did at v0.88.0: same
   routes, same API, same configuration keys, same files on disk and their formats, same MCP
   tools, same words where a word is not corrected by `B-8` or `B-9`. A visible change is limited to
   the look (`B-6`, `B-7`, `B-9`), to the language of a string (`B-8`), to the labels of back
@@ -41,6 +41,21 @@ Form of the `exigences` skill; each need names the journeys it serves.
   state while it loaded before this epic (E-2 and E-14 now show spinner rows) — that is
   coherence, not behaviour. Every `Q-n` of `docs/ecrans.md` is either closed by its tranche or
   written "kept: <reason>". *(all)*
+
+### Corrections (adestia-correctifs)
+
+- **B-13** — Every defect of the register (`ARCHITECTURE.md` › AD-17) is either repaired with a
+  test that failed before, or leaves the register as *not reproduced*, or is kept under Known
+  defects with its reason. None disappears unwritten. *(all journeys)*
+- **B-14** — Where a journey states a behaviour the product did not keep — P-2 step 4 (a refused
+  turn is explained to the user) — the product does what the journey says. P-5 step 7 says the
+  open page is not reloaded: that stays, and refreshing it is a recommendation, not a repair. *(P-2)*
+- **B-15** — A changed behaviour is written in `CHANGELOG.md`, and in the journey or screen that
+  states it, in the same task. *(all)*
+- **B-16** — A repaired screen shows right under the four skins, in `en` and `fr`, in both themes,
+  at desk and phone width (AD-20); a word the user reads is in their language, except data the
+  author wrote and the sentences the server builds for a schedule note's problem or a listening-post
+  line (P-12 step 6, kept under Known defects, AD-17). *(all screens)*
 
 ### The developer's journey
 - **B-2** — A developer launches Adestia locally with one documented command and no docker,
@@ -112,7 +127,7 @@ A user opens the instance in a browser or from its installed icon, at a desk or 
 7. Offline, the service worker (`sw/sw.ts`, rules in `sw/policy.ts`) serves the cached shell for a navigation. `/api/` is never cached, so the instance request fails and the shell shows E-21: today this is the fatal gate carrying the browser's network error, not a dedicated screen.
 8. Under OIDC, the user signs out from the cog menu on E-15 (`POST /auth/logout`). This ends Adestia's session only, not the identity provider's.
 
-Needs: B-1, B-6, B-7, B-8, B-10
+Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16
 
 ### P-2 — Chat with the agent
 A user talks to the agent in the chat rail, beside whatever the canvas shows (on a phone, the chat and the canvas are two screens with a swipe between them).
@@ -120,7 +135,7 @@ A user talks to the agent in the chat rail, beside whatever the canvas shows (on
 1. The user types in the composer on E-16 and presses **Send**. Without an open conversation, the first message creates one (`POST /api/conversations`). The turn is posted to `POST /api/turn` and streamed from `GET /api/turn/attach`.
 2. The agent's reply streams in as one bubble per part, with a collapsible tool trace (`ToolTrace`), a working indicator (or the skin's `busy` slot) and a live output-token counter. The reply is rendered as markdown by the page renderer, so a workspace path it names opens that page.
 3. The user picks a model in the header (`ModelPicker`, stored in this browser as `adestia.model`). The picker is hidden when `driver.models` is empty; on `codex-cli` the engine lists its own models (`/api/models`). The context pill (`ContextPill`) shows how much of the model's window the conversation fills, from the first token on.
-4. While a turn runs, the send button becomes **Stop** (`POST /api/turn/stop`). Messages sent meanwhile show as held bubbles: the server queues them and sends them as one merged turn when the running one ends. Past `maxConcurrentTurns`, a new turn is refused with a 429 and the chat says why.
+4. While a turn runs, the send button becomes **Stop** (`POST /api/turn/stop`). Messages sent meanwhile show as held bubbles: the server queues them and sends them as one merged turn when the running one ends. Past `maxConcurrentTurns`, a new turn is refused (HTTP 429) and the chat says why, with the server's limit in the user's language, under the message that was refused, which stays in the thread; the explanation stays until the user sends again or opens another conversation, and the user may send again at once. Test (Owner or User): set `maxConcurrentTurns` to 1, start a turn in one conversation, then send from a second one; the second shows the explanation under its message, which stays in the thread, and the composer is free to send again.
 5. Under `permissions: ask` (claude-code or codex-cli only), the engine's question appears above the composer on E-17 (`AskPrompt`). The user answers **Refuse**, **Just this once** or **Always** (`POST /api/permission`); the composer stays blocked until they do. "Always" lets the engine write its own rule into `<workspace>/.claude/settings.local.json`. This posture is marked unfinished in `adestia.config.example.yaml`.
 6. On a desktop (or on a phone with the canvas showing), each message carries the open route and its breadcrumb as a hint (`screenView` in `trail.ts`, `frameView` in `screen.ts`). It is never sent from the home screen, and never what the page shows.
 7. The user drops or picks files in the composer (**More** › **Attach files**, or drag and drop) — `POST /api/upload`. The files go to an inbox under `dataDir`, outside the workspace, in a box per person (not per conversation), and are cleared after `attachments.ttlMs`. The prompt tells the agent that their contents are data, and the agent reads them with its own tools.
@@ -128,7 +143,7 @@ A user talks to the agent in the chat rail, beside whatever the canvas shows (on
 9. The user manages conversations from E-16. Tabs are desktop only; the browser remembers which are open (`adestia.tabs`) and which have been read (`adestia.read`). The user drags tabs to reorder them, closes one with the `x` icon or archives it with the `archive` icon, on the tab or on its list entry (`POST /api/conversations/:id/archive`). The `list` icon opens the conversation list, which is the only navigation on a phone, and the `plus` icon starts a new draft. From the screen the user creates and archives, nothing more: renaming is the agent's (step 8), and the server's rename (`PATCH /api/conversations/:id`), unarchive (`archived: false`) and delete (`DELETE /api/conversations/:id`) are reached by no screen. An archived conversation leaves the list, which never asks for archived ones.
 10. When a reply arrives while the user is reading something else, the dot on the tab or list entry marks the conversation as unread.
 
-Needs: B-1, B-6, B-7, B-8, B-10
+Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16, B-14
 
 ### P-3 — Sign a ceremony
 The agent calls a tool held at a Tessera façade, and the user has to sign before the call goes through.
@@ -141,7 +156,7 @@ The agent calls a tool held at a Tessera façade, and the user has to sign befor
 6. For a consent that was signed, the chat itself sends ``Signed — resume the held call with {"_consent": "<id>"}``, so the agent calls the tool again. A grant needs nothing more.
 7. The card shows signed (`check` icon), denied (`x`) or expired (`clock`, past its deadline), each with a text label. What this browser saw is kept in `localStorage` under `adestia.signatures`.
 
-Needs: B-1, B-6, B-7, B-8, B-10
+Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16
 
 ### P-4 — Find one's way
 A user looks for a page or a domain from the landing canvas.
@@ -150,11 +165,11 @@ A user looks for a page or a domain from the landing canvas.
 2. If `home/brief.json` exists in a store (`GET /api/home/brief`), the daily brief shows up to four entries, with how old it is and who chose it. Each entry opens its target: an app, a page, a section or a path an app claims. An entry with no target asks the agent instead. The `rotate-ccw` refresh control sends Refresh my highlights in English, Rafraîchis ma une in French; the heading is Highlights / À la une.
 3. Under **Domains**, one tile per active app that has a `tile`, then one tile per top-level folder of pages (its index page gives the icon and colour; `home/` and the folders an active app absorbs are left out), then the **Settings** tile.
 4. The user presses **Arrange** and drags the tiles. The order is kept in this browser (`adestia.order.domains`) and moves nothing on disk. **Done** ends the arranging.
-5. The user opens a section tile and lands on E-3 at `#/section/<folder>`: its sub-folders, then the live pages as cards, then the finished ones folded under **Finished**. A search field appears past five pages, and facet pills when the pages declare `status`, `role` or `cat` (the first of these found).
-6. The breadcrumb in the canvas header (`adestia-crumbs`) names each level and walks back up; **Home** goes to `#/`. On a phone, **Chat** in the canvas header returns to the conversation.
+5. The user opens a section tile and lands on E-3 at `#/section/<folder>`: its sub-folders, then the live pages as cards, then the finished ones folded under **Finished**. A search field appears past five pages, and facet pills when the pages declare `status`, `role` or `cat` (the first of these found). A page whose frontmatter lines end in `\r\n` is read the same as one ending in `\n`, here and in P-12 step 5.
+6. The breadcrumb in the canvas header (`adestia-crumbs`) names each level and walks back up; **Home** goes to `#/`. A page at the root of the workspace has no folder above it: its trail is Home and its title, never a folder it does not sit in. On a phone, **Chat** in the canvas header returns to the conversation.
 7. A folder link always goes through `folderRoute` (`owners.ts`). A folder an active app owns opens that app's screen. A folder holding a single typed page of its owner's kind opens directly on that page (`#/page/<folder>`). Anything else opens the section. A `#/section/…` address typed by hand is redirected the same way.
 
-Needs: B-1, B-6, B-7, B-8, B-10
+Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16
 
 ### P-5 — Read a page
 A user reads a markdown page of the workspace.
@@ -166,10 +181,10 @@ A user reads a markdown page of the workspace.
 5. A page whose `type` a plugin claims is drawn by that plugin's layout (E-29 for `meals`).
 6. Under the page, the attachments strip (`Attachments`, `GET /api/files?page=…`) lists the files in the page's folder and its `assets/` that the page body does not already show.
 7. When the agent writes the page, the server pushes the change (`GET /api/events`, `workspace.watch`) and the pages index is refetched (new pages appear in the navigation); the open page is not reloaded, since the editor may hold unsaved words, and a conflicting save is refused by its revision check (known defect, `ARCHITECTURE.md` › Known defects).
-8. A page that cannot load shows E-8 (`MissingPage`), with three cases: no page at this address (404), out of reach because the session may have expired (401/403), or a server error. It names the path and links to the folder above, using file-question, lock or circle-alert in the shared empty state.
-9. A page using blocks the vocabulary does not know opens read-only, showing a lock icon, its raw source and the diagnostics. Block notes use the translated inline empty state.
+8. A page that cannot load shows E-8 (`MissingPage`), with three cases: no page at this address (404), out of reach because the session may have expired (401/403), or a server error. It names the path and links to the folder above (to Home for a page at the root, which has none), using file-question, lock or circle-alert in the shared empty state.
+9. A page using blocks the vocabulary does not know opens read-only, showing a lock icon, its raw source and the diagnostics, each one in the instance's language (the block names, attributes and values in them stay as the author wrote them). Block notes use the translated inline empty state.
 
-Needs: B-1, B-6, B-7, B-8, B-10
+Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16
 
 ### P-6 — Edit a page
 A user corrects or writes a page that the agent also edits.
@@ -177,12 +192,12 @@ A user corrects or writes a page that the agent also edits.
 1. On E-4 the user presses **Edit** (the `pencil` control), and the page opens in the Milkdown/Crepe editor (`Editor.tsx`, `milkdown.ts`).
 2. The user types **/** to open the slash menu (`slash.ts`), which offers every block that has a body in the vocabulary, including those of active plugins. The core `app` block has no body and is excluded. Selecting text shows the toolbar: Crepe's text formats, plus list, heading and quote (`toolbar.ts`).
 3. Each block in the editor has a frame with its `:::name`, a grip to move it, a raw/preview switch and a `settings` control that opens E-6 (`BlockSettings`). That form is built from the block's declared attributes and the shared ones (`title`, `ico`, `frame`, `w`).
-4. The **Page properties** button (`settings`) on the frontmatter row opens E-5 (`PageSettings`), a form over the frontmatter that includes the fields plugins declare for the page's `type`. YAML lines it cannot handle are kept unchanged. E-5 and E-6 use shared popovers and fields; Escape or an outside click closes them and returns focus to their settings anchor.
+4. The **Page properties** button (`settings`) on the frontmatter row opens E-5 (`PageSettings`), a form over the frontmatter that includes the fields plugins declare for the page's `type`. YAML lines it cannot handle are kept unchanged. E-5 and E-6 use shared popovers and fields; Escape or an outside click closes them and returns focus to their settings anchor. The popover stays below the canvas header and the bands above the page, and inside the viewport.
 5. The page saves itself 1.6 s after typing stops, and again on **Done** (`PUT /api/pages/<path>` with the revision it opened). The translated status reads Saving…, Saved, or "Saved, tidied to house style", with a spinner or check icon. Toolbar, slash menu and block controls use the instance locale.
-6. If the agent wrote the file in the meantime, the server answers 409: the status says "The agent changed this page. Reload to see its version.", the editor stays open with the text, and nothing more is saved. A save that breaks the vocabulary is refused with its first diagnostic.
+6. If the agent wrote the file in the meantime, the server answers 409: the status says "The agent changed this page. Reload to see its version.", the editor stays open with the text, and nothing more is saved. A save that breaks the vocabulary is refused with its first diagnostic, in the instance's language.
 7. Files the user drops on the page go to the chat inbox, and the composer is filled with "File the attached files with the page …" so the agent files them in the right place.
 
-Needs: B-1, B-6, B-7, B-8, B-10
+Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16
 
 ### P-7 — Arm the agent's credential and choose the theme
 The owner or a user adjusts this session without leaving the screen they are on.
@@ -194,7 +209,7 @@ The owner or a user adjusts this session without leaving the screen they are on.
 5. **Appearance** offers System / Light / Dark, kept in this browser (`adestia.theme`). A skin with its own `scheme` sets the default.
 6. Under OIDC, **Sign out** shows who is signed in. The last line shows "Adestia" and the version (`ADESTIA_VERSION`) when there is one.
 
-Needs: B-1, B-6, B-7, B-8, B-10
+Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16
 
 ### P-8 — Manage MCP servers
 The owner wires the servers the agent may call, and each person connects to the servers that act on their behalf.
@@ -206,7 +221,7 @@ The owner wires the servers the agent may call, and each person connects to the 
 5. For a server declared `identity: user` with `signIn: oauth`, the user presses **Connect** on the server's page or on the card in the chat ("… asks you to connect before it can act for you"). A window runs `GET /api/mcp/signin/:name`, the provider, then `/api/mcp/signin/callback`; the person's refresh key goes to `<dataDir>/mcp-signin.json`. **Not now** hides the chat card in this browser.
 6. A person who has not connected, or a turn with no person behind it (a schedule or a delegation), does not see that server at all. A plain `identity: user` server uses the person's OIDC token minted from `auth.oidc.reboundAudience`.
 
-Needs: B-1, B-6, B-7, B-8, B-10
+Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16
 
 ### P-9 — Edit the agent's instructions and import from catalogues
 The owner reads and corrects what the agent is told, and imports skills from git repositories.
@@ -218,7 +233,7 @@ The owner reads and corrects what the agent is told, and imports skills from git
 5. **Import** copies one item into the folder the active engine reads (`PUT …/:id/items/<path>`), and **Remove** deletes only that copy. An item the engine has no folder for is listed with its button disabled.
 6. **Refresh** fetches the repository again and re-copies what was imported from it (`POST …/:id/refresh`). The same happens at boot, within a 20 s limit (`instruction-catalogues-refresh.ts`). The list is kept in `<dataDir>/instruction-catalogues.json`, not in the configuration file.
 
-Needs: B-1, B-6, B-7, B-8, B-10
+Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16
 
 ### P-10 — Edit the configuration from the browser and restart
 The owner changes a setting of the instance without a shell on the machine.
@@ -226,28 +241,28 @@ The owner changes a setting of the instance without a shell on the machine.
 1. The owner opens **Configuration** (E-14, `#/settings/config`, a tile of the Settings mosaic E-9; `GET /api/settings`). It names the file it writes to.
 2. The form is built from `SETTING_GROUPS` in `packages/schemas/src/settings.ts`; today that is `workspace.watch.enabled`, `workspace.watch.polling` and `workspace.watch.intervalMs`. Each field says whether its value is written in the file or is the default, and that it "applies after a restart".
 3. On a read-only file (a ConfigMap, a `:ro` mount), a banner says so; the values stay visible and nothing can be edited.
-4. **Save** (`PUT /api/settings` with the revision it read) writes `adestia.config.yaml` in place and keeps its comments. If the file changed on disk, the save is refused and asks for a reload. **Discard** throws the changes away.
+4. **Save** (`PUT /api/settings` with the revision it read) writes `adestia.config.yaml` in place and keeps its comments. The file keeps its mode after a save (a file kept at 0600 stays 0600). If the file changed on disk, the save is refused and asks for a reload. **Discard** throws the changes away.
 5. The restart bar says "Saved, and waiting for a restart." **Restart now** (`POST /api/restart`) is refused while turns are running and says how many; **Restart anyway** sends `force`.
 6. `routes/restart.ts` requests the restart; `bin/adestia.js` closes and boots the server again in the same process. The screen shows "Coming back…" until the instance answers again, or "The instance did not come back" if it does not.
 
-Needs: B-1, B-6, B-7, B-8, B-10
+Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16
 
 ### P-11 — Use a plugin
 A user works in an app or meets a feature plugin the owner turned on.
 
 1. The owner names plugins in `extensions.apps` and `extensions.features`. Each active app with a `tile` shows a tile on E-2 and opens at `#/<route>` (default `#/<id>`), with a **Home** control (Accueil in French, chevron-left) above the plugin's view. A plugin that crashes takes down only its own panel (`PluginBoundary`), which says why in its place.
 2. **todo** (E-22): tasks are pages (`type: tache`), and lists are curated (`liste`) or dynamic. Ticking a task writes its `done:`. Opening a task shows the task sheet (`sheet.js`), whose note is the shell's own page editor. The `:::checklist` block lets any page carry tasks.
-3. **planif** (E-23): see P-12. **journal** (E-24): a folder is a journal and each page in it an entry; the history reads on one screen and each entry is edited in place. **atelier** (E-25, no tile, reached at `#/atelier/<path>` or from a path it claims): draws the cutting diagram from a project's `workbook.json`, with a bench mode; ticking a step or moving a band writes `workbook-state.json` or `workbook-layout.json` beside the workbook, through the plugin's API.
-4. **voyages** (E-26): a per-day timeline and suggestions from a trip's `voyage.json` (secret `GOOGLE_MAPS_API_KEY`); confirming, moving or dismissing a card writes `voyage-state.json` beside the trip, through the plugin's API. **listening-post** (E-27, folder `veille`): a queue fed by feeds and pasted links (dropping a link, dismissing or restoring a candidate writes `<dataDir>/listening-post/queue.json`), transcripts with `yt-dlp`, and a search; its ✦ buttons ask the agent.
+3. **planif** (E-23): see P-12. **journal** (E-24): a folder is a journal and each page in it an entry; the history reads on one screen and each entry is edited in place. **atelier** (E-25, no tile, reached at `#/atelier/<path>` or from a path it claims): draws the cutting diagram from a project's `workbook.json`, with a bench mode; resetting the layout asks first in the plugin's sheet (*Cancel* is focused; Escape cancels); ticking a step or moving a band writes `workbook-state.json` or `workbook-layout.json` beside the workbook, through the plugin's API.
+4. **voyages** (E-26): a per-day timeline and suggestions from a trip's `voyage.json` (secret `GOOGLE_MAPS_API_KEY`); a gesture the server refuses, or that fails, is said in the plugin's sheet (one *Close*) and the board repaints when it closes; confirming, moving or dismissing a card writes `voyage-state.json` beside the trip, through the plugin's API. **listening-post** (E-27, folder `veille`): a queue fed by feeds and pasted links (dropping a link, dismissing or restoring a candidate writes `<dataDir>/listening-post/queue.json`), transcripts with `yt-dlp`, and a search; its ✦ buttons ask the agent.
 5. **parcours** is a feature, not an app: the `:::parcours` block draws a `.parcours.json` as a map with markers, an elevation profile and a walking mode (E-28).
 6. **meals** draws a page with `type: meals` as a day-by-day strip with a tray to drag from (E-29). The agent writes through the plugin's `meals` MCP server, guarded by a revision.
 7. **scan** adds a button to the composer that opens a camera overlay (E-30) and drops the codes it reads into the composer.
 8. **project-management** adds the `:::timeline` block (phases and milestones on a time axis) and the `:::subproject` block (sub-projects with their `project-status`) (E-31).
 9. Many plugin buttons send a prompt to the agent (`api.ask`) instead of writing anything themselves.
-10. **Dialogs and backs (B-9).** Dani, who keeps the household's meals and trips in Adestia, opens a dish on the meals strip (E-29), reads it in a sheet and presses Escape: the sheet closes and the card has the focus. She opens a task in the todo app, reads its note, and takes the back that says « Todo » to the list; she opens a journal entry and takes « Journals » back to the list of journals. In the atelier she enters the bench mode, and leaves it by the button that says « Leave the bench mode ». Her **failure path**: with the network lost while she ticks a task, the plugin shows its own error state (today's) and the tick is not recorded; the camera denied in the scan overlay (E-30) is said in the composer. Her instance speaks French: every word she reads in these plugins is French and says *vous*, and the same page on an English instance is English throughout; under each of the four skins the sheet and the backs keep their shape. Other failure paths: the listening post (E-27) opened while its queue file changed under it shows its conflict state; the walking HUD (E-28) leaves by its exit button, « Leave walking mode » / « Quitter le mode balade » (or Escape), and the map is where she was; a `:::timeline` with no dated sub-page (E-31) says what the block needs. Every back names where it leads; none is removed: the task sheet's says « Todo », the journal's « Journals » / « Journaux », the atelier's bench mode leaves by « Leave the bench mode » / « Quitter le mode atelier », every sheet closes by Escape, its scrim or an icon button named « Close » / « Fermer », and the focus goes back to what opened it (on a phone the scan overlay cannot hand it back: the composer's fold has removed its button, a known defect). The shell's own `‹ Back` above the plugin says it leads Home, in the instance's language.
+10. **Dialogs and backs (B-9).** Dani, who keeps the household's meals and trips in Adestia, opens a dish on the meals strip (E-29), reads it in a sheet and presses Escape: the sheet closes and the card has the focus. She opens a task in the todo app, reads its note, and takes the back that says « Todo » to the list; she opens a journal entry and takes « Journals » back to the list of journals. In the atelier she enters the bench mode, and leaves it by the button that says « Leave the bench mode ». Her **failure path**: with the network lost while she ticks a task, the plugin shows its own error state (today's) and the tick is not recorded; the camera denied in the scan overlay (E-30) is said in the composer. Her instance speaks French: every word she reads in these plugins is French and says *vous*, and the same page on an English instance is English throughout; under each of the four skins the sheet and the backs keep their shape. Other failure paths: the listening post (E-27) opened while its queue file changed under it shows its conflict state; the walking HUD (E-28) leaves by its exit button, « Leave walking mode » / « Quitter le mode balade » (or Escape), and the map is where she was; a `:::timeline` with no dated sub-page (E-31) says what the block needs. Every back names where it leads; none is removed: the task sheet's says « Todo », the journal's « Journals » / « Journaux », the atelier's bench mode leaves by « Leave the bench mode » / « Quitter le mode atelier », every sheet closes by Escape, its scrim or an icon button named « Close » / « Fermer », and the focus goes back to what opened it (on a phone, where the composer's fold has removed the scan button, the focus goes to the composer's field). The shell's own `‹ Back` above the plugin says it leads Home, in the instance's language.
 11. An address whose app is not active (a bookmark, a plugin turned off) matches no loaded plugin and falls through to Home (E-2). E-20 (the shared empty state with plug, "That app is not active on this instance.", and **Home**) shows when a matched, loaded plugin has no view, for example because its view module failed to import; E-19 lists that refusal under "Extensions refused".
 
-Needs: B-1, B-6, B-7, B-8, B-9, B-10
+Needs: B-1, B-6, B-7, B-8, B-9, B-10, B-13, B-15, B-16
 
 ### P-12 — Schedule unattended turns
 The owner has the agent act on a schedule, with nobody watching.
@@ -259,7 +274,7 @@ The owner has the agent act on a schedule, with nobody watching.
 5. The user opens the **planif** app (E-23, tile "Schedules"). It lists the notes with their next and last runs, invalid ones with their problem, and says when the clock is off. It is read-only: its buttons ask the agent to create or change a note.
 6. E-23 has no back of its own beside the shell's, and no window: its words are in both languages, except the sentences the server gives for a note's problem, which stay English (Known defects). The rule that a mission may only write its own `done:` is a convention in the `schedule-author` skill; nothing in the code enforces it.
 
-Needs: B-1, B-6, B-7, B-8, B-10
+Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16
 
 ### P-13 — Delegate to the instance from another agent
 A calling agent (often another Adestia) hands this instance a task over MCP and comes back for the answer.
@@ -270,9 +285,9 @@ A calling agent (often another Adestia) hands this instance a task over MCP and 
 4. The task runs as a turn in a conversation kept under `dataDir/delegations`, one folder per caller.
 5. The calling agent polls `ask_<agentName>_status` with the `job_id` until the answer comes back with a `task_id`. A job is forgotten `mcp.ttlMs` after it ends.
 6. If the caller gave a callback URL, this instance sends a `{from, job_id}` ping to it when the job ends. On the receiving side, `POST /callback` accepts only a `from` naming one of its own outbound servers, checks the job with that peer's status tool, and then wakes its own agent with an unattended turn.
-7. A user opens **Delegations** (E-13, `#/settings/delegations`, a tile of the Settings mosaic E-9; `GET /api/delegations`): threads grouped by caller, with running/waiting markers. Opening one (`GET /api/delegations/:caller/:id`) shows it read-only, with no composer.
+7. A user opens **Delegations** (E-13, `#/settings/delegations`, a tile of the Settings mosaic E-9; `GET /api/delegations`): threads grouped by caller, with running/waiting markers. Opening one (`GET /api/delegations/:caller/:id`) shows it read-only, with no composer and no signature card (a signature request in the transcript is not drawn; the calling agent's user holds that ceremony).
 
-Needs: B-1, B-6, B-7, B-8, B-10
+Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16
 
 ### P-14 — Install and extend an instance
 The owner deploys an instance and makes it their own.
@@ -281,11 +296,11 @@ The owner deploys an instance and makes it their own.
 2. The owner writes `adestia.config.yaml`. Every key is optional, unknown keys are refused at boot, and `${VAR}` placeholders whose variable is unset are refused (`adestia.config.example.yaml`).
 3. The owner turns plugins on by kind in `extensions.apps`, `extensions.features` and `extensions.tools`, and picks one skin in `extensions.skin` (`alfred`, `dobby`, `nestor`, `skippy`, or `default`). Plugins and skins are found in `extensions.pluginsDir` and `extensions.skinsDir`; being present is not being active. A restart applies the change. A plugin refused at boot (an invalid manifest, for instance) or in the browser (a module that would not import) is listed on E-19 under "Extensions refused"; a refused skin is only logged.
 4. The owner adds `extensions.sources` (a `repo` with a required `ref` and an optional `token`, or a mounted `dir`). The repositories are cloned into `<dataDir>/extensions` at boot. A bundled plugin wins over one from a source with the same id. Problems such as an unreachable or stale source or a missing secret show on E-19.
-5. At boot, the product delivers its skills (`skills/`: `page-author`, `collections`, `plugin-author`, `skin-author`, `schedule-author`, `persona-author`), each active plugin's skills and subagents, and the generated `this-instance` contract (`introduction.ts`) into the engine's folders. Every turn carries a line pointing at that contract.
+5. At boot, the product checks the driver it arms against its own descriptor: a driver that declares a capability it lacks the method of stops the boot with `Driver "<id>" is not conformant:` and one line per gap. Then it delivers its skills (`skills/`: `page-author`, `collections`, `plugin-author`, `skin-author`, `schedule-author`, `persona-author`), each active plugin's skills and subagents, and the generated `this-instance` contract (`introduction.ts`) into the engine's folders. Every turn carries a line pointing at that contract.
 6. On a fresh instance whose instructions do not say who the agent is, the user talks to the agent in the chat (E-16). The `persona-author` skill has it ask for a name, a role and a voice, then write them into the instructions.
 7. The user asks the agent for a plugin, a skin, a page or a schedule. The agent follows `plugin-author`, `skin-author`, `page-author`/`collections` or `schedule-author` and writes files the product loads after the owner names them and restarts.
 
-Needs: B-1, B-6, B-7, B-8, B-10
+Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16
 
 ### P-15 — Develop Adestia
 A developer, a person or a night agent without docker, changes Adestia's code, checks it and looks at it. The tools below are built; the independent documentation review checks their instructions against the code.
@@ -300,11 +315,11 @@ A developer, a person or a night agent without docker, changes Adestia's code, c
 8. **Today (B-11).** Work on code that carries each idea once, following the refactoring targets in `ARCHITECTURE.md`.
 9. **Today.** Commit by explicit path in a worktree; the work comes back to `main` before it is tagged (`CLAUDE.md`).
 
-Needs: B-2, B-3, B-4, B-5, B-11, B-12
+Needs: B-2, B-3, B-4, B-5, B-11, B-12, B-13, B-15, B-16
 
 ## Out of scope
 
-- **Any functional change**: a new feature, a removed feature, a renamed configuration key,
+- **Any functional change** (from `adestia-qualite`; `adestia-correctifs` repairs defects but adds no function, AD-18): a new feature, a removed feature, a renamed configuration key,
   route or file, a changed data format, a changed MCP tool. A defect found on the way is
   written down (`ARCHITECTURE.md` › Known defects) and left for its own feature.
 - **Catalogue security corrections** belonged to the separate catalogue work, not

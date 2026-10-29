@@ -4,7 +4,8 @@ import { join } from 'node:path'
 import Fastify, { type FastifyInstance } from 'fastify'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { attachmentsOf, kindOf, registerFiles, safeFilePath } from '../src/files.js'
+import { attachmentsOf, safeFilePath } from '../src/files.js'
+import { registerFiles } from '../src/routes/files.js'
 import { resolveStores, type Store } from '../src/stores.js'
 import { cleanTmp, tmpDir } from './support/tmp.js'
 
@@ -53,18 +54,28 @@ describe('safeFilePath', () => {
   })
 })
 
-describe('kindOf', () => {
-  it('says what an interface should draw', () => {
-    expect(kindOf('photo.JPG')).toBe('image')
-    expect(kindOf('plan.pdf')).toBe('pdf')
-    expect(kindOf('trace.gpx')).toBe('data')
-    expect(kindOf('archive.zip')).toBe('file')
+/** The `kind` the file list gives a file: `kindOf` is reached through `GET /api/files`. */
+async function kindOfListed(name: string): Promise<string> {
+  // One folder per call, so the listing holds this file alone.
+  const dir = `kinds-${name.replace(/\W/g, '_')}`
+  await write(`${dir}/page.md`, '# Page')
+  await write(`${dir}/${name}`)
+  const body = await app.inject({ url: `/api/files?page=${dir}/page.md` }).then((r) => r.json())
+  return body.files[0].kind
+}
+
+describe('the kind of a listed file', () => {
+  it('says what an interface should draw', async () => {
+    expect(await kindOfListed('photo.JPG')).toBe('image')
+    expect(await kindOfListed('plan.pdf')).toBe('pdf')
+    expect(await kindOfListed('trace.gpx')).toBe('data')
+    expect(await kindOfListed('archive.zip')).toBe('file')
   })
 
-  it('does not call an SVG an image', () => {
+  it('does not call an SVG an image', async () => {
     // Not a classification quibble: `image` is what gets rendered in place,
     // and an SVG rendered in place runs its script with the session.
-    expect(kindOf('logo.svg')).toBe('file')
+    expect(await kindOfListed('logo.svg')).toBe('file')
   })
 })
 

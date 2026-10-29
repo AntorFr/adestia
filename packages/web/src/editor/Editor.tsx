@@ -25,6 +25,7 @@ import { resolveLocale, translator } from '../app/i18n.js'
 import { Button } from '../app/ui/index.js'
 import { Reader, type BlockComponents, type LayoutComponents, type VocabularyContext } from './Reader.js'
 import { SaveStatus } from './SaveStatus.js'
+import { diagnosticMessage, type DiagnosticMessage } from './diagnostics.js'
 import { useAutosave } from './useAutosave.js'
 import { useEditorSurface } from './useEditorSurface.js'
 import { usePageDrop } from './usePageDrop.js'
@@ -56,7 +57,7 @@ export interface PageDocument {
   readonly fields?: Readonly<Record<string, unknown>>
   readonly revision: string
   readonly editable: boolean
-  readonly diagnostics: readonly { severity: string; message: string; line?: number }[]
+  readonly diagnostics: readonly (DiagnosticMessage & { severity: string; line?: number })[]
 }
 
 function Diagnostics({ items, t }: { items: PageDocument['diagnostics']; t: (key: string) => string }) {
@@ -69,7 +70,7 @@ function Diagnostics({ items, t }: { items: PageDocument['diagnostics']; t: (key
           {item.line !== undefined && (
             <span className="adestia-diagnostics__line">{t('line %n').replace('%n', String(item.line))}</span>
           )}
-          {item.message}
+          {diagnosticMessage(item, t)}
         </li>
       ))}
     </ul>

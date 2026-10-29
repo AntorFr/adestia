@@ -83,7 +83,7 @@ function turnKey(
 }
 
 /** One SSE frame. Multi-line payloads must be prefixed per line or they break. */
-export function sseFrame(event: TurnEvent): string {
+function sseFrame(event: TurnEvent): string {
   const data = JSON.stringify(event)
   return `event: ${event.type}\ndata: ${data}\n\n`
 }
