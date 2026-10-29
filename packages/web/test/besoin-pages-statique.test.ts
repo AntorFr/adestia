@@ -22,7 +22,7 @@ describe('pages tranche, documents (B-15)', () => {
     const m = /^## v(\d+)\.(\d+)\.(\d+)(?:\s|$)/.exec(section)
     return m ? m.slice(1).map(Number) : null
   }
-  const compare = (a: number[], b: number[]) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2]
+  const compare = (a: number[], b: number[]) => (a[0]! - b[0]!) || (a[1]! - b[1]!) || (a[2]! - b[2]!)
   const highest = sections
     .filter((s) => versionOf(s))
     .sort((a, b) => compare(versionOf(b)!, versionOf(a)!))[0]
