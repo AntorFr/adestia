@@ -75,6 +75,10 @@ Compléments encore visibles dans le code :
   anglais ou tels qu'écrits, faute de table clé par phrases (AD-17, AD-24).
 - Vu, non réparé : sur la frise d'E-31 en `fr` au bureau, « auj. » touche le repère « nov. »
   (cosmétique, `bench/plugins-correctifs-proof.md`).
+- Vu, non réparé (antérieur à la tranche, `plugins/atelier/api.mjs` identique à `main`) : la feuille
+  de E-25 envoie `reset: true` et le serveur ne le lit pas ; il ne fusionne que `poses` et `bandes`,
+  donc « Abandonner ma mise en plan » ne vide pas `workbook-layout.json` comme P-11 étape 3 le dit.
+  Test rouge laissé dans `bench/tests/plugins-ensemble.test.mjs` (« atelier reset », 16 variantes).
 - Les formulaires de données de blocs restent à faire : l'édition montre leur
   rendu, puis leurs lignes brutes au clic ; les réglages ne sont pas ces formulaires.
 

@@ -543,9 +543,9 @@ journal, todo, listening-post and meals call hooks through `createElement`) and 
 plugins' other `.mjs`/`.js` (node globals); the vendored `plugins/scan/web/decoder.js` (448 KB, third-party) joins the ignores with
 the reason. `npm run lint` covers `plugins`. A finding is fixed, or turned off for the rule with
 its reason written beside it (the file's own convention); no `eslint-disable` without a reason.
-(e) **Kept.** The native `confirm()` of the atelier (resetting a layout) and the `window.alert` of
-voyages (a refused gesture) stayed at this tranche (Q-20, *the flow would change*); the plugins tranche replaced
-them with each plugin's own sheet (AD-24 a). In plugin sheets only `820px` is a breakpoint; 520, 560, 640, 720 and 900 px are kept
+(e) **Superseded by AD-24 a.** The native `confirm()` of the atelier (resetting a layout) and the `window.alert` of
+voyages (a refused gesture) stayed at the styling tranche (Q-20, *the flow would change*); the plugins tranche replaced
+them with each plugin's own sheet, so neither dialog exists any more. In plugin sheets only `820px` is a breakpoint; 520, 560, 640, 720 and 900 px are kept
 (*kept: moving a width changes the layout between phone and desktop, a redesign the mandate does
 not ask for*). Plugin buttons, fields and empty states do not adopt the charter's classes, except
 backs, exits and the sheet's close button.
@@ -1107,6 +1107,11 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
 The catalogue token field is **not reproduced** — already `autoComplete="off"`
 since `64dee0f`; it remains so. The missing-attribute report is closed.
 
+- **E-25: « Abandonner ma mise en plan » does not empty the layout (older than AD-24 a).**
+  The sheet sends `{ reset: true }` (`atelier/web/app.js`); `atelier/api.mjs` merges only `poses`
+  and `bandes` and ignores `reset`, so `workbook-layout.json` keeps its bands, contrary to P-11
+  step 3 and E-25. The sheet itself works; the server half is missing. A red test
+  (`bench/tests/plugins-ensemble.test.mjs`, « atelier reset ») stays until the API handles it.
 - **P-5 step 7: the open page does not refresh after an agent write.**
   `app/useInstance.ts` refetches only the index on the change feed; it deliberately
   leaves the open page alone to protect unsaved editor text. The revision check
