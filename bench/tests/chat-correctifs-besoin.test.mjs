@@ -445,9 +445,15 @@ describe('B-13: the three CSS leftovers of the chat', () => {
 describe('B-15: the CHANGELOG says what changed in the chat', () => {
   test('the unreleased section names the race of the chat, the refused turn and the sent attachment', async () => {
     const text = await readFile(join(root, 'CHANGELOG.md'), 'utf8')
-    const at = text.indexOf('## adestia-correctifs (unreleased)')
-    assert.ok(at >= 0, 'an « adestia-correctifs (unreleased) » section exists')
-    const section = text.slice(at, text.indexOf('\n## ', at + 5) < 0 ? undefined : text.indexOf('\n## ', at + 5))
+    // Titled "(unreleased)" before the delivery, then renamed to its version: the highest one in the file.
+    const sections = text.split(/\n(?=## )/)
+    const version = (s) => /^## v(\d+)\.(\d+)\.(\d+)(?:\s|$)/.exec(s)?.slice(1).map(Number)
+    const highest = sections.filter(version).sort((a, b) => {
+      const x = version(a), y = version(b)
+      return y[0] - x[0] || y[1] - x[1] || y[2] - x[2]
+    })[0]
+    const section = sections.find((s) => s.startsWith('## adestia-correctifs (unreleased)')) ?? highest
+    assert.ok(section, 'an « adestia-correctifs (unreleased) » or highest-version section exists')
     assert.match(section, /c549a5d/, 'the chat race (c549a5d) is written')
     assert.match(section, /429|concurrency limit|refus/i, 'the refused turn is written')
     assert.match(section, /paperclip/, 'the sent attachment is written')

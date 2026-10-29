@@ -123,6 +123,3 @@ export interface PluginApiContext {
   /** The instance's whole secret table; each plugin sees only what it declared. */
   readonly secrets?: Readonly<Record<string, string>>
 }
-
-// The route registration lives under `routes/`; kept importable from here.
-export { mountPluginApis } from './routes/plugin-host.js'

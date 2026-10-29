@@ -66,3 +66,13 @@ test('every fake-engine option is supplied by a seed or scenario', () => {
   }
   assert.deepEqual(options.filter((option) => !supplied.has(option)), [], `fake-engine options without a caller; supplied: ${[...supplied].join(', ')}`)
 })
+
+test('the search for Playwright (image root, then npm root -g) lives only in bench/lib/playwright.mjs', () => {
+  const searching = paths.concat(execFileSync('git', ['grep', '-l', '-F', '/usr/lib/node_modules', '--', 'bench/*.mjs'], { cwd: root, encoding: 'utf8' }).trim().split('\n'))
+    .filter((path, at, all) => path && all.indexOf(path) === at && path !== 'bench/lib/playwright.mjs')
+    .filter((path) => {
+      const text = readFileSync(join(root, path), 'utf8')
+      return text.includes('/usr/lib/node_modules') && /'root',\s*'-g'/.test(text) && /for \(const (root|dir) of/.test(text)
+    })
+  assert.deepEqual(searching, [], `copies of the Playwright search: ${searching.join(', ')}`)
+})

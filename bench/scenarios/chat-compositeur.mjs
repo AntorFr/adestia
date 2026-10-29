@@ -14,25 +14,16 @@
 import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
 import { mkdir, writeFile } from 'node:fs/promises'
-import { createRequire } from 'node:module'
-import { execFileSync } from 'node:child_process'
 import { resolve, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 import { CONVERSATIONS } from '../seed/_base.mjs'
+import { loadPlaywright } from '../lib/playwright.mjs'
 
 export const seed = 'chat-rail'
 const words = {
   en: { more: 'More', attach: 'Attach files', ask: 'Ask the agent…', send: 'Send', stop: 'Stop', remove: 'Remove plan.txt', refused: 'Seeded refusal.' },
   fr: { more: 'Plus', attach: 'Joindre des fichiers', ask: 'Demandez à l’agent…', send: 'Envoyer', stop: 'Arrêter', remove: 'Retirer plan.txt', refused: 'Refus semé.' },
-}
-function playwright() {
-  for (const root of ['/usr/lib/node_modules', execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim()]) {
-    for (const name of ['playwright', 'playwright-core']) {
-      try { return createRequire(`${root}/`)(name) } catch { /* next root */ }
-    }
-  }
-  throw new Error('Playwright must come from the environment')
 }
 
 /** A turn that stays open until stopped, so "a turn is running" can be photographed. */
@@ -67,7 +58,7 @@ export default async function scenario(bench) {
   const locale = process.env.BENCH_LOCALE?.slice(0, 2) ?? 'en'
   const w = words[locale]
   assert(w, `Unsupported locale ${locale}`)
-  const browser = await playwright().chromium.launch({ args: ['--no-sandbox'] })
+  const browser = await loadPlaywright().chromium.launch({ args: ['--no-sandbox'] })
   const engine = await heldEngine()
   const report = []
   try {

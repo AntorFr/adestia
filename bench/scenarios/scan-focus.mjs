@@ -10,29 +10,20 @@
  */
 import assert from 'node:assert/strict'
 import { mkdir } from 'node:fs/promises'
-import { createRequire } from 'node:module'
-import { execFileSync } from 'node:child_process'
 import { join } from 'node:path'
 
 import { CONVERSATIONS } from '../seed/_base.mjs'
+import { loadPlaywright } from '../lib/playwright.mjs'
 
 export const seed = 'plugins'
 
-function playwright() {
-  for (const root of ['/usr/lib/node_modules', execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim()]) {
-    for (const name of ['playwright', 'playwright-core']) {
-      try { return createRequire(`${root}/`)(name) } catch { /* next root */ }
-    }
-  }
-  throw new Error('Playwright must come from the environment')
-}
 
 const base = process.env.BENCH_URL
 const out = process.env.BENCH_OUT ?? 'bench/shots'
 assert.ok(base, 'BENCH_URL is required')
 await mkdir(out, { recursive: true })
 
-const browser = await playwright().chromium.launch({
+const browser = await loadPlaywright().chromium.launch({
   args: ['--no-sandbox', '--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'],
 })
 const context = await browser.newContext({

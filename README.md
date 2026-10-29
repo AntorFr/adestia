@@ -19,6 +19,7 @@ mkdir -p workspace data plugins skins
 docker compose up
 ```
 
+`./plugins` and `./skins` in the clone already hold the shipped extensions; `mkdir -p` only creates what is missing.
 The first `up` builds the image from the `Dockerfile`; the agent needs
 `CLAUDE_CODE_OAUTH_TOKEN` (see `docker-compose.yml`), which compose reads from the
 host's environment: `export CLAUDE_CODE_OAUTH_TOKEN=<token>` before `docker compose up`
@@ -209,7 +210,7 @@ escaped `\:::` in the content tests, and looks like a serialiser bug
 
 ```sh
 npm ci
-npm test          # no account or network needed; takes 7 minutes or more (the browser suites dominate), so do not cut it short; the catalogue screens suite builds the shell on first run and skips (npm test stays green) when Playwright is not found through require/NODE_PATH, then `npm root -g`
+npm test          # no account or network needed; takes 7 minutes or more (the browser suites dominate), so do not cut it short; the browser suites time out at 5 s when the machine is busy: a red `Test timed out` is a load symptom, so rerun that file alone (`npx vitest run <file>`) and run `npm run test:plugins` by itself, since it follows vitest; the catalogue screens suite builds the shell on first run and skips (npm test stays green) when Playwright is not found through require/NODE_PATH, then `npm root -g`
 npm run typecheck
 npm run lint      # also run by CI
 npm run build
