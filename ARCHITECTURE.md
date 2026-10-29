@@ -1156,6 +1156,10 @@ since `64dee0f`; it remains so. The missing-attribute report is closed.
   `plugins/**` it reports 644 sites: 22 in production code (`plugins/atelier/web/app.js`,
   `plugins/voyages/web/app.js`, `plugins/parcours/web/carte.js`) and 622 in tests, mostly node:test
   `test()` / `describe()` calls. `no-misused-promises` (3) and `await-thenable` (1) were fixed and are on.
+- **E-31, French desk timeline: « auj. » touches the « nov. » marker.** Cosmetic, seen, not repaired
+  (`bench/plugins-correctifs-proof.md`).
+- **Block data forms are not built.** Editing shows the block's render, then its raw lines on click;
+  the settings are not those forms.
 - **`.agent/migrate-frame.mjs`: not reproduced.** The file was removed by 9960469, so its lint errors
   no longer exist.
 - **P-5 step 7: the open page does not refresh after an agent write.**

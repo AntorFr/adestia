@@ -6,7 +6,15 @@
 - Dernier tag accessible : **`v0.96.0-adestia-correctifs.5`** (`git describe --tags
   --abbrev=0`; le `.1` était la tranche serveur, le `.2` la tranche chat, le `.3` la tranche shell, le `.4` la tranche pages, le `.5` la tranche plugins) de l'epic `adestia-correctifs`, sur la branche d'intégration
   de l'epic ; le dernier tag dans `main` est `v0.95.0` (l'epic `adestia-qualite`).
-- Branche de travail : `feature/adestia-correctifs-plugins`, sur `origin/epic/adestia-correctifs`
+- Branche de travail : `feature/adestia-correctifs-dette`, sur `origin/epic/adestia-correctifs`
+  (tranche dette, AD-26 : plus d'alias d'une ligne dans `packages/drivers` (`no-aliases.test.ts`) ;
+  la table des exports gardés pour leurs tests d'`ARCHITECTURE.md` porte une raison par ligne
+  (`dette-exports-besoin.test.ts`) ; le banc définit `loadPlaywright` et `launch(seed)` une fois
+  (`bench/lib/`, `bench-once.test.mjs`) ; la CI joue `doc-besoin` et `bench-once` ; `DESIGN.md` n'a
+  qu'une garde par règle ; `no-misused-promises` et `await-thenable` sont allumées
+  (`lint-type-aware.test.ts`). Aucun écran touché. Reste : `no-floating-promises`, voir Défauts
+  connus. `.agent/migrate-frame.mjs` n'existe plus : « not reproduced »).
+  Précédemment : `feature/adestia-correctifs-plugins`, sur `origin/epic/adestia-correctifs`
   (tranche plugins, AD-24 a-d : l'atelier (réinitialiser la mise en plan) et les voyages (geste
   refusé) parlent dans la feuille propre au plugin, sans `confirm()` ni `alert` — seul changement de
   flux, réponse asynchrone, focus rendu à la carte ; « 1 pièce » et les compteurs des voyages

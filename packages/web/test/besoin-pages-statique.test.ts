@@ -15,8 +15,8 @@ const read = (file: string) => readFileSync(join(repo, file), 'utf8')
 
 describe('pages tranche, documents (B-15)', () => {
   const changelog = read('CHANGELOG.md')
-  // oldest first: the work in progress is written in the last section
-  const unreleased = changelog.slice(changelog.lastIndexOf('\n## '))
+  // The section of the epic's unreleased work; the tag sections that follow it do not count.
+  const unreleased = changelog.slice(changelog.indexOf('\n## adestia-correctifs (unreleased)'))
 
   // Breaks if the CHANGELOG does not say that a CRLF frontmatter is now read by the index and the schedule.
   it('changelog_dit_la_lecture_des_fins_de_ligne_crlf', () => {

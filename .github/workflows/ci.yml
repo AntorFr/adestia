@@ -37,8 +37,8 @@ jobs:
       - name: Test
         run: npm test
 
-      # The documentation and bench-once guards are node:test files; `npm test`
-      # runs them only through the plugins pass, and neither needs a browser.
+      # The documentation and bench-once guards are node:test files that `npm test`
+      # does not run (vitest covers `packages/`, the plugins pass covers `plugins/`); neither needs a browser.
       - name: Documentation and bench guards
         run: node --test bench/tests/doc-besoin.test.mjs bench/tests/bench-once.test.mjs
 
