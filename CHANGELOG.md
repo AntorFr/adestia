@@ -586,3 +586,10 @@ carries `code` and `args`, so the shell words it by `t()`.
 sheet, with no `confirm()` or `alert`; counters agree per language; the walk card takes
 the height of its box; the scanner returns focus to the composer field (E-30); chrome
 emoji give way to the charter icons; the `:::content` date follows the language.
+
+## v0.96.0-adestia-correctifs.6
+
+**The debt slice (AD-26).** The code keeps no alias or duplicate for its tests alone:
+tests import the module that owns the symbol, kept exports carry their reason, the bench
+defines `launch(seed)` and `loadPlaywright` once, and the CI plays the documentation
+guard. `no-misused-promises` and `await-thenable` are on.
