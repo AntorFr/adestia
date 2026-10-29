@@ -443,11 +443,15 @@ describe('B-13: the three CSS leftovers of the chat', () => {
 
 // B-15 · the changed behaviours are in the CHANGELOG
 describe('B-15: the CHANGELOG says what changed in the chat', () => {
-  test('the unreleased section names the race of the chat, the refused turn and the sent attachment', async () => {
+  test('the delivery section (unreleased, then v0.96.0) names the race of the chat, the refused turn and the sent attachment', async () => {
     const text = await readFile(join(root, 'CHANGELOG.md'), 'utf8')
-    const at = text.indexOf('## adestia-correctifs (unreleased)')
-    assert.ok(at >= 0, 'an « adestia-correctifs (unreleased) » section exists')
-    const section = text.slice(at, text.indexOf('\n## ', at + 5) < 0 ? undefined : text.indexOf('\n## ', at + 5))
+    // the delivery is titled « adestia-correctifs (unreleased) » until it ships, then exactly « v0.96.0 »
+    // (optionally dated); « v0.96.0-adestia-correctifs.N » are the prereleases and never match
+    const heading = /^## (?:adestia-correctifs \(unreleased\)|v0\.96\.0(?: — \d{4}-\d{2}-\d{2})?)$/m.exec(text)
+    assert.ok(heading, 'a « adestia-correctifs (unreleased) » or « v0.96.0 » section exists')
+    const at = heading.index
+    const next = text.indexOf('\n## ', at + 5)
+    const section = text.slice(at, next < 0 ? undefined : next)
     assert.match(section, /c549a5d/, 'the chat race (c549a5d) is written')
     assert.match(section, /429|concurrency limit|refus/i, 'the refused turn is written')
     assert.match(section, /paperclip/, 'the sent attachment is written')
