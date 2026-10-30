@@ -48,8 +48,8 @@ Form of the `exigences` skill; each need names the journeys it serves.
   test that failed before, or leaves the register as *not reproduced*, or is kept under Known
   defects with its reason. None disappears unwritten. *(all journeys)*
 - **B-14** — Where a journey states a behaviour the product did not keep — P-2 step 4 (a refused
-  turn is explained to the user) — the product does what the journey says. P-5 step 7 says the
-  open page is not reloaded: that stayed through `adestia-correctifs`, and `adestia-ajouts` changes it on purpose (B-17): P-5 step 7 is the one exception to this rule, rewritten by that tranche. *(P-2)*
+  turn is explained to the user) — the product does what the journey says. P-5 step 7 said the
+  open page is not reloaded: that stayed through `adestia-correctifs`, and `adestia-ajouts` changed it on purpose (B-17); step 7 now says the new behaviour. *(P-2)*
 - **B-15** — A changed behaviour is written in `CHANGELOG.md`, and in the journey or screen that
   states it, in the same task. *(all)*
 - **B-16** — A repaired screen shows right under the four skins, in `en` and `fr`, in both themes,
@@ -209,7 +209,7 @@ A user reads a markdown page of the workspace.
 4. A page with `type: collection` is drawn by E-7 (`CollectionLayout`): its own text, then its members (as facet cards when grouped, otherwise as pages), the finished ones folded. Its Ask for a new page button (when `of:`, `into:` and the agent callback are present) uses `plus` and asks the agent to create a new member; facet cards show shared count chips. Inside a facet whose members are all finished, the shared empty state uses `check`.
 5. A page whose `type` a plugin claims is drawn by that plugin's layout (E-29 for `meals`).
 6. Under the page, the attachments strip (`Attachments`, `GET /api/files?page=…`) lists the files in the page's folder and its `assets/` that the page body does not already show.
-7. When the agent writes the page, the server pushes the change (`GET /api/events`, `workspace.watch`) and the pages index is refetched (new pages appear in the navigation); in reading mode the open page is refreshed in place, in editing mode a banner offers **Reload** and the typed text is never replaced; a conflicting save is still refused by its revision check (B-17, P-16).
+7. When the agent writes the page, the server pushes the change (`GET /api/events`, `workspace.watch`) and the pages index is refetched (new pages appear in the navigation); the open page is read again from the same stream, whichever store holds it; in reading mode the open page is refreshed in place, in editing mode a banner offers **Reload** and the typed text is never replaced and the user's own save raises none; if the agent deletes or moves the page, reading shows E-8 and editing shows the banner, then E-8 at **Reload**; with `workspace.watch.enabled: false` nothing moves; a conflicting save is still refused by its revision check (B-17, P-16).
 8. A page that cannot load shows E-8 (`MissingPage`), with three cases: no page at this address (404), out of reach because the session may have expired (401/403), or a server error. It names the path and links to the folder above, using file-question, lock or circle-alert in the shared empty state.
 9. A page using blocks the vocabulary does not know opens read-only, showing a lock icon, its raw source and the diagnostics. Block notes use the translated inline empty state.
 

@@ -584,10 +584,7 @@ yet reproduced" (frontmatter CRLF) or "whether it predates the epic is unknown" 
 | plugins | `confirm()` of the atelier and `alert` of the voyages replaced by the shared sheet (Q-20, kept by `adestia-qualite` because "the flow would change": the answer becomes asynchronous; this is the one deliberate flow change, bounded to two gestures, and `docs/ecrans.md` Q-20 and the atelier and voyages journeys are rewritten with it. If the tranche proves risky it is narrowed and the reason written under Known defects); planif and veille sentences in English; E-28 walking map keeps its pre-walk size; E-30 focus lost on phone; E-25 "1 pièces"; the emojis kept in plugins; the amber of project-management meaning two things; `:::content` `on` without a localised date |
 | debt | R-2 one-line aliases of the drivers and R-6 exports kept only for tests (removed, tests import the module that owns the symbol); bench duplicates (`launch(seed)`, `loadPlaywright`); fake-engine options with no caller; `doc-besoin.test.mjs` into CI; the two duplicate guards on `DESIGN.md`; typed lint rules switched on if the repo passes them; `.agent/migrate-frame.mjs` lint errors |
 
-Kept on purpose, with their reason, and still under Known defects: the open page is **not**
-refreshed after an agent write (P-5 step 7 states that it is not, to protect unsaved text; refreshing
-it is a new behaviour, so a closing recommendation; `adestia-ajouts-page-suivie` builds it, and the
-tranche's last task rewrites this paragraph); the workbook's, the cards' and the server's
+Kept on purpose, with their reason, and still under Known defects: the workbook's, the cards' and the server's
 own words that are author or engine data (E-25 piece names, E-26 card types, E-23 and E-27 sentences
 built by the server unless a table keyed by them already exists).
 
@@ -991,8 +988,6 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
 
 ## Known defects (found, not fixed by this epic)
 
-- **P-5 step 7: the open page does not refresh after an agent write.** Taken by
-  `adestia-ajouts` (AD-21, B-17); removed from here when that tranche lands.
 - **The shared loading row sits about 24 px right of the content edge** (`.adestia-loading`,
   `padding: var(--space-5)`), seen at the bench on every screen that shows it. It dates from the
   class of E-2 and E-14, not from `adestia-ajouts-chargements`; not repaired.

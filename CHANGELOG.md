@@ -6,6 +6,12 @@ source did not record a release date; dates are not inferred from git tags.
 
 ## Unreleased
 
+- **The open page follows the agent** — When the agent rewrites the page on screen, reading shows the
+  new text in place and editing raises the banner "The page changed." with **Reload**; the typed text
+  is never replaced and the user's own save raises nothing. A page the agent deletes or moves shows E-8
+  (in editing, after the banner and **Reload**). It works for every store and does nothing when
+  `workspace.watch.enabled` is false. P-5 step 7 no longer says the page is left alone (B-17, AD-21);
+  `bench/scenarios/page-suivie.mjs` plays it under the four skins.
 - **Simultaneous turns** — The settings screen (E-14) carries `maxConcurrentTurns` (1 to 16,
   default 3) in a group of its own, in English and French. It applies at restart: the limiter is
   built once at boot (B-21, AD-25).
