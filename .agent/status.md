@@ -3,8 +3,9 @@
 
 ## Version courante
 
-- Dernier tag accessible : **`v0.95.0`** (`git describe --tags
-  --abbrev=0`), l'epic `adestia-qualite`, entrée dans `main`.
+- Dernier tag accessible : **`v0.97.0-adestia-ajouts.1`** (`git describe --tags
+  --abbrev=0`), tag de l'epic `adestia-ajouts` ; `v0.95.0` est le dernier tag de `main` (epic
+  `adestia-qualite`).
 - Branche de travail : `feature/adestia-ajouts-chargements`, sur `origin/epic/adestia-ajouts`
   (chargement et Réessayer des écrans du shell, AD-24 ; recette : `node bench/scenarios/chargements.mjs`
   après `npm run build`). Hérité de l'epic précédent (correctifs de recette et de verify : un message envoyé avant que le premier soit parti est retenu ;

@@ -686,8 +686,8 @@ expose `status: loading | ready | failed` and a `retry()`. No screen invents its
   `.adestia-empty__action` and `.adestia-btn` (named in `docs/ecrans.md`, § "Loading and failure").
   The sentence is the server's own `error` when it sent one, else the locale's
   `request failed (%n)` (`request.ts`): said in the locale, never a raw `fetch failed`.
-- `ReadFailure` — `Failure` for a failed read where Retry can help (status 0 or 5xx); on 404 and
-  401/403 it draws a plain `EmptyState` with the message and no button. E-11 and E-13 use it for
+- `ReadFailure` — `Failure` for a failed read where Retry can help (every status but 404 and
+  401/403); on those three it draws a plain `EmptyState` with the message and no button. E-11 and E-13 use it for
   their list and open item.
 - `MissingPage` (E-8) draws `Failure` for the "server could not" case only; 404 and 401/403 keep
   their sentence and have no Retry (retrying cannot change them).
@@ -695,16 +695,17 @@ expose `status: loading | ready | failed` and a `retry()`. No screen invents its
   'ready' | 'failed', data, error, httpStatus, retry }`, over `requestJson`. `retry()` goes back
   to `loading`, then refetches; a result that arrives after the url changed or the screen
   unmounted is dropped (the `live` guard every hand-rolled copy has). It replaces the hand-rolled
-  fetch of E-11's list, E-13's list and open conversation, E-11's open file and E-9's counts; the
-  hooks that also *write* (`useInstructionText`'s save, `reload` after an import) keep `reload`.
+  fetch of E-13's list and open conversation and E-9's counts. E-11's list and open file stay on
+  `requestJson` inside `useInstructions` (they also *write*, and `reload` follows an import), with
+  the same loading/failed states and Retry.
 - E-4 keeps the screen it leaves until the page arrives (the rejection above): `usePage` exposes
   `loading` and `retry`, and `Canvas` draws `Loading` only when no page is held (opening a page
   from the home, a section or a setting); going from page to page keeps the first until the
   second answers, so no flash. `pageProblem` with a status that is neither 404 nor 401/403 (a
   network failure is status 0) is the E-8 case that gets Retry.
 - E-3 and E-9 draw `Loading` and no failure: E-3 while the shell's index has not answered
-  (`ready` is false: today it draws "This section holds nothing yet." at that moment, which is
-  false); E-9 above its tiles until its four reads have *settled* (answered or failed), the tiles
+  (`ready && indexed` is false; `ready` turns true even when the index fails, so a failed index
+  leaves the row turning, with no button, as docs/ecrans.md says); E-9 above its tiles until its four reads have *settled* (answered or failed), the tiles
   staying drawn because they work without counts. A failed count stays absent, as today.
 *Rejected for the detail*: a global "something is loading" bar (the screens differ in what they
 keep, as above); a minimum display time or a delay before the row (a fast answer simply never
