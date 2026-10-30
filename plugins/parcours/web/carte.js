@@ -1012,6 +1012,18 @@ function peindreLien(hote, data, relPath, urls, t) {
   hote.appendChild(a);
 }
 
+/** Une icône du sprite du shell (il le monte une fois ; un plugin en partage les noms, pas le code). */
+function icone(nom) {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'adestia-icon');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+  const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+  use.setAttribute('href', `#adestia-i-${nom}`);
+  svg.appendChild(use);
+  return svg;
+}
+
 /**
  * Peint un parcours dans l'élément qu'on lui donne.
  *
@@ -1026,18 +1038,6 @@ function peindreLien(hote, data, relPath, urls, t) {
  * @returns de quoi défaire le montage — à appeler au démontage du bloc, sinon
  *          l'écouteur de redimensionnement survit à la page qui l'a posé.
  */
-/** Une icône du sprite du shell (il le monte une fois ; un plugin en partage les noms, pas le code). */
-function icone(nom) {
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('class', 'adestia-icon');
-  svg.setAttribute('aria-hidden', 'true');
-  svg.setAttribute('focusable', 'false');
-  const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
-  use.setAttribute('href', `#adestia-i-${nom}`);
-  svg.appendChild(use);
-  return svg;
-}
-
 export function mountParcours(hote, { src, chemin, vue, urls = {}, locale = 'fr' }) {
   const t = makeT(locale);
   let vivant = true;
@@ -1056,7 +1056,7 @@ export function mountParcours(hote, { src, chemin, vue, urls = {}, locale = 'fr'
   function echec(statut) {
     const sansRetour = statut === 404 || statut === 401 || statut === 403;
     const enLigne = vue === 'lien';
-    const bloc = el('div', enLigne ? 'adestia-empty adestia-empty--inline' : 'adestia-empty adestia-empty--state');
+    const bloc = el('div', enLigne ? 'adestia-empty adestia-empty--inline' : 'adestia-empty adestia-empty--state pc-echec');
     const ico = el('span', 'adestia-empty__icon');
     ico.appendChild(icone('circle-alert'));
     bloc.append(ico, el(enLigne ? 'span' : 'p', 'adestia-empty__text', t('Unreadable route.')));

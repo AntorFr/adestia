@@ -204,3 +204,9 @@
   .parcours .pc-hud{ flex-wrap:wrap; }
   .parcours .pc-hud-txt{ flex-basis:100%; }
 }
+
+/* The failure block's Retry: under the sentence, the width of the block, on a phone. */
+@media (max-width:600px){
+  .pc-echec .adestia-empty__action{ align-self:stretch; }
+  .pc-echec .adestia-empty__action .adestia-btn{ width:100%; }
+}

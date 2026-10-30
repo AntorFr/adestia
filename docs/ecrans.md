@@ -265,8 +265,8 @@ and the content states are unchanged. While Retry fetches, the screen returns to
 Retry button is gone, so it cannot be pressed twice). When `/workbook` answers but `/state` fails, the
 whole workbook counts as failed (state is what the ticks show). When the server is unreachable, E-32's
 banner sits above the canvas and the plugin's failure block fills the body: both show, they are
-independent. No role sees anything different: the owner and the user get the same blocks; permission
-refusals (401/403) are the shell's, not the plugin's. The screen is reached from P-11 (E-25 from a
+independent. No role sees anything different: the owner and the user get the same blocks; on the Parcours route a 404 and a refusal
+(401/403) show the message without Retry (the Atelier offers Retry on any non-2xx). The screen is reached from P-11 (E-25 from a
 project folder, E-28 from a page's link); its slow-link and failed-fetch steps are P-16 step 3.
 
 *Long content.* On a phone, in `fr`, the failure sentence wraps on as many lines as it needs and is never
