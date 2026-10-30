@@ -47,7 +47,8 @@ export function observeFetch(fetchImpl: typeof fetch, report: ReachReport): type
       response = await fetchImpl(input, init)
     } catch (error) {
       // A deliberate abort (navigation, a stopped turn) says nothing of the server.
-      if (!(error instanceof Error && error.name === 'AbortError')) report(false)
+      // Name only: a DOMException is not always an Error instance (jsdom).
+      if ((error as { name?: unknown } | null)?.name !== 'AbortError') report(false)
       throw error
     }
     report(!(response.status === 502 || response.status === 503 || response.status === 504))
