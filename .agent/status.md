@@ -1,14 +1,15 @@
 # Status — Adestia
-> MàJ : 2026-10-29
+> MàJ : 2026-10-30
 
 ## Version courante
 
 - Dernier tag accessible : **`v0.97.0-adestia-ajouts.1`** (`git describe --tags
   --abbrev=0`), tag de l'epic `adestia-ajouts` ; `v0.95.0` est le dernier tag de `main` (epic
   `adestia-qualite`).
-- Branche de travail : `feature/adestia-ajouts-chargements`, sur `origin/epic/adestia-ajouts`
-  (chargement et Réessayer des écrans du shell, AD-24 ; recette : `node bench/scenarios/chargements.mjs`
-  après `npm run build`). Hérité de l'epic précédent (correctifs de recette et de verify : un message envoyé avant que le premier soit parti est retenu ;
+- Branche de travail : `feature/adestia-ajouts-page-suivie`, sur `origin/epic/adestia-ajouts`
+  (la page ouverte suit l'agent, AD-21 ; recette : `node bench/scenarios/page-suivie.mjs`
+  après `npm run build`). Livré avant elle sur l'epic : chargement et Réessayer des écrans du shell,
+  AD-24 (`node bench/scenarios/chargements.mjs`). Hérité de l'epic précédent (correctifs de recette et de verify : un message envoyé avant que le premier soit parti est retenu ;
   en-tête du rail à moins de 400 px à un seul espacement, sélecteur de modèle d'au moins 72 px ; bulle d'erreur seule à marge symétrique). Banc, tests, serveur, charte,
   plugins, pages et chat sont intégrés à l'epic ; la documentation est relue
   contre le code.
@@ -58,6 +59,17 @@ PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone
   `turns.max` y reste 3. Lancer `node packages/server/bin/adestia.js -c <config>` (ou
   `--engine claude` avec `CLAUDE_CODE_OAUTH_TOKEN`) ; captures de E-14 sous les quatre habillages, en `en` et `fr`.
 
+## La page ouverte suit l'agent (feature `adestia-ajouts-page-suivie`)
+
+- Fait : lecture rafraîchie en place, bandeau « The page changed. » + Reload en modification,
+  E-8 si la page disparaît (au Reload en modification) ; un seul flux (`useInstance` publie
+  `pageChanges`, `usePage` le consomme, AD-21). Veille éteinte : rien ne bouge.
+- Pièges : le bandeau compare la révision de `useAutosave`, pas `page.revision` (qui ne bouge pas
+  après une sauvegarde) ; après une panne du serveur rien n'est rattrapé avant le lot suivant ou la
+  réouverture (AD-22 rejette le sondage) ; seul le Reload de l'utilisateur remplace la saisie.
+- Reste à la recette : les captures sous les quatre habillages, en `en` et `fr`
+  (`bench/scenarios/page-suivie.mjs`).
+
 ## À moitié construit
 
 - La question de permission ne permet pas de corriger la règle proposée par le
@@ -81,8 +93,7 @@ PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone
   (`plugins/PageEditor.tsx`) : pas de dépôt de fichier ni de résolution par cet index.
 - Chargement et « Réessayer » sont construits pour E-3, E-4, E-8, E-9, E-11 et E-13
   (`adestia-ajouts-chargements`). Restent à faire : E-10 (tranche MCP), E-16 (chat),
-  E-25 et E-28 (plugins), le rafraîchissement de E-4 et son bandeau (`page-suivie`),
-  le bandeau hors ligne E-32 ; les toasts restent hors de l'epic (docs/ecrans.md).
+  E-25 et E-28 (plugins), le bandeau hors ligne E-32 ; les toasts restent hors de l'epic (docs/ecrans.md).
 - Mesures du banc en pixels à généraliser ; `journal` : couverture navigateur
   et `api.trail` à compléter selon les signalements de l'ancien état.
 
