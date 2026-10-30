@@ -245,3 +245,12 @@ bench with a scenario-local scripted stream; it replays the model catalogue and
 disconnected MCP identity in the browser because that instance has no engine CLI
 or sign-in server configured. Docker is optional; the host matrix uses the real
 seeded server and its fake driver.
+
+## Loading and failure of the shell's screens: `bench/scenarios/chargements.mjs`
+
+`npm run build`, then `node bench/scenarios/chargements.mjs` (Playwright from the environment, no
+Docker). Pictures land in `bench/shots-chargements/` (`BENCH_OUT` moves them). It launches `node bench/launch.mjs --engine fake --seed base --skin <s> --locale <l>` per
+skin and language and, with `page.route`, holds the one read a screen waits for (E-3, E-4, E-9, E-11,
+E-13: the loading row must show before the data), then answers it 500 (E-4/E-8, E-11, E-13: message and
+Retry, and Retry brings the data; E-3 and E-9: no button). Light and dark, desk and phone. A line per
+failed check; success is none. `BENCH_SKINS=alfred,dobby` and `BENCH_LOCALES=fr` narrow the run (about 40 s per skin × language); `BENCH_URL` (with `BENCH_SKIN`, `BENCH_LOCALE`) plays an instance already running.

@@ -27,16 +27,15 @@
  * which page is open would be a second one to disagree with the address bar.
  */
 
-import { useEffect, useState } from 'react'
-
 import { Delegations, delegChips, useDelegationRows } from './Delegations.js'
 import { Instructions } from './Instructions.js'
 import { Configuration } from './Configuration.js'
 import { McpServers } from './McpServers.js'
 import { Icon } from './Icon.js'
-import { requestJson } from './request.js'
 import { Tile } from './Tile.js'
-import { useMcpServers, type McpServerHealth } from './Settings.js'
+import type { McpServerHealth } from './Settings.js'
+import { Loading } from './ui/index.js'
+import { useRequest } from './useRequest.js'
 
 /** Which settings page is open. `''` is the mosaic itself. */
 export type PrefsPage = '' | 'mcp' | 'instructions' | 'delegations' | 'config'
@@ -91,26 +90,10 @@ export function prefsTitle(page: PrefsPage, t: (key: string) => string): string 
  * A failure is silence, never a zero: "0 instructions" on an engine that
  * cannot report them is a lie a tile has no business telling.
  */
-function useCount(
-  url: string,
-  field: string,
-  fetchImpl: typeof fetch,
-): number | undefined {
-  const [count, setCount] = useState<number | undefined>()
-  useEffect(() => {
-    let live = true
-    void (async () => {
-      // A failure is silence, never a zero.
-      const result = await requestJson<Record<string, unknown>>(fetchImpl, url)
-      if (!result.ok) return
-      const list = result.data?.[field]
-      if (live && Array.isArray(list)) setCount(list.length)
-    })()
-    return () => {
-      live = false
-    }
-  }, [fetchImpl, url, field])
-  return count
+function useCount(url: string, field: string, fetchImpl: typeof fetch, enabled: boolean) {
+  const read = useRequest<Record<string, unknown>>(fetchImpl, url, { enabled })
+  const list = read.status === 'ready' ? read.data?.[field] : undefined
+  return { count: Array.isArray(list) ? list.length : undefined, settled: !enabled || read.status !== 'loading' }
 }
 
 export interface PreferencesProps {
@@ -133,10 +116,15 @@ export function Preferences({
   t = (key) => key,
   locale,
 }: PreferencesProps) {
-  const health = useMcpServers(fetchImpl, page === '')
-  const servers = useCount('/api/mcp/servers', 'servers', fetchImpl)
-  const written = useCount('/api/instructions', 'files', fetchImpl)
-  const delegated = useDelegationRows(fetchImpl, page === '')
+  const mosaic = page === ''
+  // The four reads behind the tiles. Loading shows until each has answered or failed;
+  // a failed one leaves its tile without a figure and says nothing.
+  const status = useRequest<{ servers?: readonly McpServerHealth[] }>(fetchImpl, '/api/mcp/status', { enabled: mosaic })
+  const health = status.status === 'ready' ? (status.data?.servers ?? []) : undefined
+  const { count: servers, settled: serversSettled } = useCount('/api/mcp/servers', 'servers', fetchImpl, mosaic)
+  const { count: written, settled: writtenSettled } = useCount('/api/instructions', 'files', fetchImpl, mosaic)
+  const { rows: delegated, settled: delegatedSettled } = useDelegationRows(fetchImpl, mosaic)
+  const waiting = mosaic && (status.status === 'loading' || !serversSettled || !writtenSettled || !delegatedSettled)
 
   if (page === 'instructions') {
     return (
@@ -203,6 +191,7 @@ export function Preferences({
           <p className="adestia-chead__lede">{t('What this instance reaches, and what it was told')}</p>
         </div>
       </header>
+      {waiting && <Loading t={t} />}
       <ul className="adestia-tiles">
         <Tile
           iconName="plug"
