@@ -152,3 +152,50 @@ describe('changed banner — reload with same normalized text', () => {
     expect(mounts).toBe(2)
   })
 })
+
+describe('changed banner — the surface under the typist', () => {
+  it('the user’s own save does not remount the surface and keeps what was typed', async () => {
+    vi.useFakeTimers()
+    try {
+      let mounts = 0
+      const counting = (el: HTMLElement, md: string, cb: (m: string) => void) => {
+        mounts++
+        return outer(el, md, cb)
+      }
+      const view = render(
+        <Editor page={page} mount={counting} fetchImpl={okFetch('r2')} incoming={{ page: theirs }} onReload={() => {}} />,
+      )
+      fireEvent.click(screen.getByTitle('Edit'))
+      const h = () => view.container.querySelector('[data-mounted]') as Host
+      act(() => h().edit('# Typed\n'))
+      await act(async () => void vi.advanceTimersByTime(1600))
+      expect(mounts).toBe(1)
+      expect(h().dataset['mounted']).not.toContain('Agent')
+      expect(banner()).toBeTruthy()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('gone: Reload calls onReload once', () => {
+    const onReload = vi.fn()
+    open({ incoming: { gone: true }, onReload })
+    fireEvent.click(screen.getByText('Reload'))
+    expect(onReload).toHaveBeenCalledTimes(1)
+  })
+
+  it('a later agent write after a save raises the banner again', async () => {
+    vi.useFakeTimers()
+    try {
+      const { host, rerenderWith } = open({}, okFetch('r2'))
+      act(() => host().edit('# A\n'))
+      await act(async () => void vi.advanceTimersByTime(1600))
+      rerenderWith({ incoming: { page: { ...theirs, revision: 'r2' } } })
+      expect(banner()).toBeNull()
+      rerenderWith({ incoming: { gone: true } })
+      expect(banner()).toBeTruthy()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})
