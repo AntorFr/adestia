@@ -370,6 +370,37 @@ function useOpenConversations({ fetchImpl, narrow, t }: ConversationsOptions) {
 type Open = ReturnType<typeof useOpenConversations>
 
 /**
+ * Reads a conversation from the store into its slot. False when the tab must
+ * not go on to attach: it closed (404, or a body that is no conversation), or
+ * the read failed (the tab stays with its Failure and a Retry) or was denied
+ * (401/403 belong to the shell).
+ */
+async function loadConversation(
+  id: string,
+  { fetchImpl, t }: Pick<ConversationsOptions, 'fetchImpl' | 't'>,
+  { setTabs, patchConversation }: Pick<Open, 'setTabs' | 'patchConversation'>,
+): Promise<boolean> {
+  const result = await fetchConversation(id, fetchImpl, t)
+  if (!result.ok) {
+    if (result.status === 404) setTabs((state) => closeTab(state, id))
+    else if (result.status === 401 || result.status === 403) patchConversation(id, { denied: true })
+    else patchConversation(id, { failed: result.error })
+    return false
+  }
+  const record = result.data
+  // Answering with something that is not a conversation — an error body
+  // has no transcript to replay — closes the tab as it always did.
+  if (!record || !Array.isArray(record.messages)) {
+    setTabs((state) => closeTab(state, id))
+    return false
+  }
+  // Replayed FAITHFULLY: tool trace, interruptions and all. The stored
+  // transcript is what the UI drew, so replaying it needs no second path.
+  patchConversation(id, { ...fromStore(record), failed: undefined, denied: false })
+  return true
+}
+
+/**
  * The turn: adopting a conversation from the store, sending into it, following
  * it to its end, stopping it. Writes what `useOpenConversations` keeps — through
  * its object, never a copy — and owns only the in-flight creation of a conversation.
@@ -388,6 +419,7 @@ function useTurn({ fetchImpl, model, view, t }: ConversationsOptions, open: Open
     reread,
   } = open
   /** In-flight conversation creation, so two rapid sends share ONE conversation. */
+  const load = (id: string) => loadConversation(id, { fetchImpl, t }, open)
   const creation = useRef<Promise<string | undefined> | undefined>(undefined)
   /** The last message sent into an idle tab: its conversation id once its POST has left. */
   const leaving = useRef<Promise<string | undefined> | undefined>(undefined)
@@ -403,28 +435,7 @@ function useTurn({ fetchImpl, model, view, t }: ConversationsOptions, open: Open
     // A pump already consumes this conversation: attaching a second stream
     // would apply every event twice.
     if (current.turning) return
-    if (!current.loaded) {
-      const result = await fetchConversation(id, fetchImpl, t)
-      if (!result.ok) {
-        // 404: the conversation is gone and the tab closes, as ever. 401/403
-        // belong to the shell. Anything else is a read that failed: the tab
-        // stays, with its Failure and a Retry.
-        if (result.status === 404) setTabs((state) => closeTab(state, id))
-        else if (result.status === 401 || result.status === 403) patchConversation(id, { denied: true })
-        else patchConversation(id, { failed: result.error })
-        return
-      }
-      const record = result.data
-      // Answering with something that is not a conversation — an error body
-      // has no transcript to replay — closes the tab as it always did.
-      if (!record || !Array.isArray(record.messages)) {
-        setTabs((state) => closeTab(state, id))
-        return
-      }
-      // Replayed FAITHFULLY: tool trace, interruptions and all. The stored
-      // transcript is what the UI drew, so replaying it needs no second path.
-      patchConversation(id, { ...fromStore(record), failed: undefined, denied: false })
-    }
+    if (!current.loaded && !(await load(id))) return
     const running = await attachTurn(id, fetchImpl ?? fetch)
     if (running) {
       patchConversation(id, { live: INITIAL_TURN })
