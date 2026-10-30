@@ -353,9 +353,16 @@ describe.skipIf(!playwright)('B-19 · le bandeau « le serveur ne répond pas »
           const go = [...document.querySelectorAll('.adestia-config__restart-bar button')][0] as HTMLElement | undefined
           go?.click()
         })
+        // The proof the press took effect: the bar says "Coming back…". Both are on screen together.
+        const deadline = Date.now() + WAIT_SHOWN
+        let bar = ''
+        while (!bar.includes(comingBack) && Date.now() < deadline) {
+          bar = await page.evaluate(() => document.querySelector('.adestia-config__restart-bar')?.textContent ?? '')
+          await new Promise((r) => setTimeout(r, 100))
+        }
+        expect(bar).toContain(comingBack)
         const shown = await until(page, words, (s) => s.length === 1, WAIT_SHOWN)
         expect(shown).toHaveLength(1)
-        expect(await page.evaluate(() => document.querySelector('.adestia-config__restart-bar')?.textContent ?? '')).toContain(comingBack)
         await shot(page, `skippy-${locale}-E-14-retour-en-cours`)
         await b.start()
         expect(await until(page, words, (s) => s.length === 0, WAIT_GONE)).toHaveLength(0)
