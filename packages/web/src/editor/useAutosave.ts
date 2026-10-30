@@ -186,5 +186,5 @@ export function useAutosave(
     return () => clearTimeout(timer)
   }, [dirty, held, page.editable, save, status.kind])
 
-  return { shown, setBody, title, setTitle, markdown, saved, status, dirty, save }
+  return { shown, setBody, title, setTitle, markdown, saved, status, dirty, save, revision }
 }
