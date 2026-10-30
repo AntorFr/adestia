@@ -14,7 +14,8 @@ import { useEffect, useReducer, useRef, useState } from 'react'
 import {
   archiveConversation,
   createConversation,
-  listConversations,
+  fetchConversation,
+  fetchConversations,
   readConversation,
   titleFrom,
   type Conversation,
@@ -118,6 +119,13 @@ export interface OpenConversation {
    * user repeats, and this one takes a moment to bite.
    */
   readonly stopping: boolean
+  /**
+   * The stored transcript could not be read (network, 5xx): the sentence to
+   * show with Retry. Cleared by a Retry, which shows Loading meanwhile.
+   */
+  readonly failed?: string | undefined
+  /** 401/403 on the read: the shell's own handling applies, the chat draws nothing. */
+  readonly denied?: boolean | undefined
   readonly title?: string | undefined
 }
 
@@ -130,6 +138,10 @@ const EMPTY_CONVERSATION: OpenConversation = {
   turning: false,
   stopping: false,
 }
+
+export type ListState =
+  | { readonly status: 'loading' | 'ready' | 'denied' }
+  | { readonly status: 'failed'; readonly error: string }
 
 export interface ConversationsOptions {
   readonly fetchImpl?: typeof fetch | undefined
@@ -171,7 +183,7 @@ function turnOptions(
  * reads and writes these through the object this returns; none of them owns a
  * second copy.
  */
-function useOpenConversations({ fetchImpl, narrow }: ConversationsOptions) {
+function useOpenConversations({ fetchImpl, narrow, t }: ConversationsOptions) {
   /**
    * Which conversations are open as tabs, their order, and the active one —
    * persisted like a browser's tab strip, so a refresh reopens what was open.
@@ -198,6 +210,10 @@ function useOpenConversations({ fetchImpl, narrow }: ConversationsOptions) {
    */
   const [answered, setAnswered] = useState<ReadonlySet<string>>(() => new Set())
   const [conversations, setConversations] = useState<readonly ConversationMeta[]>([])
+  /** The list's own read: rows are drawn only once it answered (AD-24). */
+  const [listState, setListState] = useState<ListState>({ status: 'loading' })
+  /** Only the latest read of the list may speak. */
+  const listRead = useRef(0)
   const [listOpen, setListOpen] = useState(false)
   /** The tab everything composes into; DRAFT when none is open yet. */
   const activeId = tabs.active ?? DRAFT
@@ -234,13 +250,36 @@ function useOpenConversations({ fetchImpl, narrow }: ConversationsOptions) {
    * long as the tab lives. The list is the server's truth; the copies follow.
    */
   function refreshConversations(): Promise<void> {
-    return listConversations(fetchImpl).then((fresh) => {
+    const mine = ++listRead.current
+    return fetchConversations(fetchImpl, t).then((result) => {
+      if (mine !== listRead.current) return
+      if (!result.ok) {
+        // A refresh that fails after the list was shown changes nothing; the
+        // first read (or a Retry) is the one that says it failed.
+        setListState((state) =>
+          state.status === 'ready'
+            ? state
+            : result.status === 401 || result.status === 403
+              ? { status: 'denied' }
+              : { status: 'failed', error: result.error },
+        )
+        return
+      }
+      const fresh = result.data?.conversations ?? []
       setConversations(fresh)
+      setListState({ status: 'ready' })
       for (const meta of fresh) {
         const open = openRef.current.get(meta.id)
         if (open && open.title !== meta.title) patchConversation(meta.id, { title: meta.title })
       }
     })
+  }
+
+  /** Retry of the list: Loading replaces the Failure, and rows never sit beside it. */
+  function retryList(): void {
+    setListState({ status: 'loading' })
+    setConversations([])
+    void refreshConversations()
   }
 
   function patchConversation(
@@ -308,6 +347,8 @@ function useOpenConversations({ fetchImpl, narrow }: ConversationsOptions) {
     setTabs,
     conversations,
     setConversations,
+    listState,
+    retryList,
     listOpen,
     setListOpen,
     activeId,
@@ -363,16 +404,26 @@ function useTurn({ fetchImpl, model, view, t }: ConversationsOptions, open: Open
     // would apply every event twice.
     if (current.turning) return
     if (!current.loaded) {
-      const record = await readConversation(id, fetchImpl)
-      // "No longer answers" includes answering with something that is not a
-      // conversation — an error body has no transcript to replay.
+      const result = await fetchConversation(id, fetchImpl, t)
+      if (!result.ok) {
+        // 404: the conversation is gone and the tab closes, as ever. 401/403
+        // belong to the shell. Anything else is a read that failed: the tab
+        // stays, with its Failure and a Retry.
+        if (result.status === 404) setTabs((state) => closeTab(state, id))
+        else if (result.status === 401 || result.status === 403) patchConversation(id, { denied: true })
+        else patchConversation(id, { failed: result.error })
+        return
+      }
+      const record = result.data
+      // Answering with something that is not a conversation — an error body
+      // has no transcript to replay — closes the tab as it always did.
       if (!record || !Array.isArray(record.messages)) {
         setTabs((state) => closeTab(state, id))
         return
       }
       // Replayed FAITHFULLY: tool trace, interruptions and all. The stored
       // transcript is what the UI drew, so replaying it needs no second path.
-      patchConversation(id, fromStore(record))
+      patchConversation(id, { ...fromStore(record), failed: undefined, denied: false })
     }
     const running = await attachTurn(id, fetchImpl ?? fetch)
     if (running) {
@@ -612,6 +663,12 @@ function useTabActions(
     if (!conversation(id).loaded && id !== DRAFT) void adopt(id)
   }
 
+  /** Retry of a thread: Loading takes the Failure's place, then the read runs again. */
+  function retry(id: string): void {
+    patchConversation(id, { failed: undefined, denied: false })
+    void adopt(id)
+  }
+
   /**
    * Closes the TAB — never the conversation. The conversation stays in the list,
    * what it carries stays warm (a running pump keeps feeding it, and its dot
@@ -665,6 +722,7 @@ function useTabActions(
     activate,
     shut,
     archive,
+    retry,
     newDraft,
     stop,
     moveTab: (from: number, to: number) => setTabs((state) => moveTab(state, from, to)),
@@ -679,6 +737,8 @@ export function useConversations(options: ConversationsOptions) {
     tabs: open.tabs,
     setTabs: open.setTabs,
     conversations: open.conversations,
+    listState: open.listState,
+    retryList: open.retryList,
     listOpen: open.listOpen,
     setListOpen: open.setListOpen,
     activeId: open.activeId,
@@ -691,6 +751,7 @@ export function useConversations(options: ConversationsOptions) {
     activate: actions.activate,
     shut: actions.shut,
     archive: actions.archive,
+    retry: actions.retry,
     dotOf: open.dotOf,
     newDraft: actions.newDraft,
     send,

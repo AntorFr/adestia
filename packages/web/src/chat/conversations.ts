@@ -10,7 +10,7 @@
 // compiler erases the import, so the bundle still carries no server code.
 import type { Conversation, ConversationMeta, StoredMessage } from '@antorfr/adestia-schemas'
 
-import { jsonInit, requestJson, requestRaw } from '../app/request.js'
+import { FALLBACK_KEY, jsonInit, requestJson, requestRaw } from '../app/request.js'
 
 export type { Conversation, ConversationMeta, StoredMessage }
 
@@ -90,4 +90,42 @@ export async function archiveConversation(
     jsonInit('POST', { archived }),
   )
   return result.ok && result.response.ok
+}
+
+/** A read that says WHY it failed, for the screens that draw a failure (AD-24). */
+export type ReadOutcome<T> =
+  | { readonly ok: true; readonly data: T }
+  | { readonly ok: false; readonly status: number; readonly error: string }
+
+function said(t: (key: string) => string) {
+  return (key: string) => (key === FALLBACK_KEY ? t('Request failed (%n)') : key)
+}
+
+async function outcome<T>(
+  fetchImpl: typeof fetch,
+  url: string,
+  t: (key: string) => string,
+): Promise<ReadOutcome<T>> {
+  const result = await requestJson<T>(fetchImpl, url, undefined, said(t))
+  if (result.ok) return { ok: true, data: result.data }
+  return {
+    ok: false,
+    status: result.status,
+    error: result.status === 0 ? t('The server is not responding') : result.error,
+  }
+}
+
+export function fetchConversations(
+  fetchImpl: typeof fetch = fetch,
+  t: (key: string) => string = (key) => key,
+): Promise<ReadOutcome<{ conversations?: ConversationMeta[] }>> {
+  return outcome(fetchImpl, '/api/conversations', t)
+}
+
+export function fetchConversation(
+  id: string,
+  fetchImpl: typeof fetch = fetch,
+  t: (key: string) => string = (key) => key,
+): Promise<ReadOutcome<Conversation>> {
+  return outcome(fetchImpl, `/api/conversations/${id}`, t)
 }

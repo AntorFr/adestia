@@ -3,6 +3,7 @@
 import type { RefObject } from 'react'
 
 import { Icon } from '../app/Icon.js'
+import { Failure, Loading } from '../app/ui/index.js'
 import { SkinSlot } from '../app/SkinSlot.js'
 import type { SkinSlotRender } from '../app/skin.js'
 import { Prose } from '../editor/Reader.js'
@@ -14,6 +15,10 @@ import type { OpenConversation } from './useConversations.js'
 export interface ThreadProps {
   readonly active: OpenConversation
   readonly t: (key: string) => string
+  /** Reads the conversation again after a failed read. */
+  readonly retry?: (() => void) | undefined
+  /** The tab's stored transcript is not read yet (never a draft: it has none). */
+  readonly adopting?: boolean | undefined
   readonly openPage?: ((path: string) => void) | undefined
   readonly signing: SigningOptions | undefined
   readonly busySlot?: SkinSlotRender | undefined
@@ -21,7 +26,19 @@ export interface ThreadProps {
   readonly bottom: RefObject<HTMLDivElement | null>
 }
 
-export function Thread({ active, t, openPage, signing, busySlot, bottom }: ThreadProps) {
+export function Thread({ active, t, retry, adopting = false, openPage, signing, busySlot, bottom }: ThreadProps) {
+  // A tab being adopted has nothing to show yet; a failed read says so, with Retry.
+  if (adopting) {
+    return (
+      <div className="adestia-chat__conversation">
+        {active.failed !== undefined ? (
+          <Failure message={active.failed} onRetry={retry ?? (() => {})} t={t} />
+        ) : (
+          <Loading t={t} />
+        )}
+      </div>
+    )
+  }
   return (
     <div className="adestia-chat__conversation">
       {active.messages.map((message) => (
