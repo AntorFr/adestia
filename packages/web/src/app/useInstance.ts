@@ -86,6 +86,8 @@ export function useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef
    * — answer or failure: a failed index is "ready, empty".
    */
   const [ready, setReady] = useState(false)
+  /** True only when the index ANSWERED: a failed one leaves E-3 on its loading row (B-18). */
+  const [indexed, setIndexed] = useState(false)
   /**
    * The same list, readable the instant it exists.
    *
@@ -214,6 +216,7 @@ export function useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef
           const body = list.data
           setPages(Array.isArray(body?.entries) ? body.entries : [])
           setStores(Array.isArray(body?.stores) ? body.stores : [])
+          setIndexed(true)
         }
         if (!cancelled) setReady(true)
       } catch (error) {
@@ -264,5 +267,5 @@ export function useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef
     return () => controller.abort()
   }, [instance, fetchImpl])
 
-  return { instance, failures, fatal, offline, needsLogin, pages, stores, skin, skinScheme, loaded, ready }
+  return { instance, failures, fatal, offline, needsLogin, pages, stores, skin, skinScheme, loaded, ready, indexed }
 }

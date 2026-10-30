@@ -22,6 +22,7 @@ import { Home } from './Home.js'
 import { MissingPage } from './MissingPage.js'
 import { Preferences, prefsTitle, type PrefsPage } from './Preferences.js'
 import { Section } from './Section.js'
+import { Loading } from './ui/Loading.js'
 import { SkinSlot } from './SkinSlot.js'
 import { encodePath, ownerOf } from './owners.js'
 import { sectionAt, type IndexEntry, type StoreInfo } from './sections.js'
@@ -38,6 +39,8 @@ export interface ChatChannel {
 
 export interface CanvasProps {
   readonly ready?: boolean
+  /** The index answered; a section waits for this, not for `ready`. */
+  readonly indexed?: boolean
   readonly instance: InstanceInfo
   readonly skin: Skin & SkinSlots
   readonly loaded: readonly LoadedPlugin[]
@@ -48,6 +51,9 @@ export interface CanvasProps {
   readonly settingsPage: PrefsPage | undefined
   readonly page: PageDocument | undefined
   readonly pageProblem: { path: string; status: number } | undefined
+  /** The address asks for a page that has not answered yet. */
+  readonly pageLoading?: boolean
+  readonly retryPage?: () => void
   readonly mount: EditorMount | undefined
   readonly section: string | undefined
   readonly channel: ChatChannel
@@ -136,7 +142,19 @@ export function Canvas(props: CanvasProps) {
     )
   }
 
-  if (pageProblem) return <MissingPage path={pageProblem.path} status={pageProblem.status} t={t} />
+  if (pageProblem) {
+    return (
+      <MissingPage
+        path={pageProblem.path}
+        status={pageProblem.status}
+        t={t}
+        {...(props.retryPage ? { onRetry: props.retryPage } : {})}
+      />
+    )
+  }
+
+  // Nothing held and a page asked for: the wait, not the section or the home.
+  if (props.pageLoading) return <Loading t={t} />
 
   if (section) {
     return (
@@ -148,6 +166,7 @@ export function Canvas(props: CanvasProps) {
         stores={stores}
         openSection={openSection}
         openPage={openPage}
+        {...(props.ready === undefined ? {} : { ready: props.ready && props.indexed !== false })}
         t={t}
       />
     )
