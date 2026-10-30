@@ -334,6 +334,9 @@ const FR: Readonly<Record<string, string>> = {
     'Aucun branché — ajoutez-en un, ou déclarez-le dans le fichier de configuration.',
   'Server declaration': 'Déclaration du serveur',
   Remove: 'Supprimer',
+  'Remove server?': 'Supprimer le serveur ?',
+  '“%name” will no longer be wired. Its declaration is deleted from this instance.':
+    '« %name » ne sera plus branché. Sa déclaration est supprimée de cette instance.',
 
   // The composer
   Model: 'Modèle',
@@ -467,6 +470,8 @@ const FR: Readonly<Record<string, string>> = {
   'Saved, tidied to house style': 'Enregistré, remis au style de la maison',
   'The agent changed this page. Reload to see its version.':
     'L’agent a modifié cette fiche. Rechargez pour voir sa version.',
+  'The page changed.': 'La page a changé.',
+  Reload: 'Recharger',
   'Not saved: %reason': 'Non enregistré : %reason',
   'the page breaks the vocabulary': 'la fiche sort du vocabulaire',
   'line %n': 'ligne %n',

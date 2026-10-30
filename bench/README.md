@@ -55,6 +55,7 @@ which stops it and removes its data. Browse the URL, or drive it by API
 | `config-readonly` | `base`, with the file read-only and the credential refused upstream. A process running as root can write a `0444` file: the screen then shows it writable. |
 | `oidc` | `base` behind a sign-in; the provider is `bench/oidc-stub.mjs`. |
 | `empty` | Nothing: no plugin, page, conversation, server, catalogue or credential. |
+| `page-suivie` | The `base` instance plus `suivi/` pages (four in the main store, one in the second) for `scenarios/page-suivie.mjs`, which rewrites and deletes them on disk as the agent would; `BENCH_WATCH=off` in the environment turns `workspace.watch` off. |
 | `plugins` | The ten bundled plugins active, each with data in its own format (`bench/seed/_plugins.mjs`): tasks and lists (late, today, later, closed, unassigned), planif notes (valid, disabled, invalid, with a last run; the clock stays off), journals (with entries, empty), a derived atelier workbook, trips (confirmed, suggested, dismissed, an idea without dates, a closed one), a watchlist (sources, a local feed the seed serves, a source that fails, kept items with transcripts, a pasted link, a dismissed one), a route with its trace, meals periods (with and without dates), a project planning (dated sub-pages, statuses, an unreadable date, an undated folder) and a page for the scan feature. `bench-noview` is an app with a tile and no view: `#/bench-noview` is E-20. The camera of E-30 is the browser's: launch Chromium with `--use-fake-device-for-media-stream --use-fake-ui-for-media-stream`. No MCP server and no refused plugin, so no band sits over a screen; the trips' map key is a placeholder. |
 
 The permission/signature matrix runs with
@@ -107,6 +108,17 @@ checks the focus, and reads each screen's text for the other language. `BENCH_SK
 it; `BENCH_URL` (with `BENCH_SKIN`, `BENCH_LOCALE`) plays an instance already running. A full run takes
 about 25 minutes when the four skins run side by side (one process each, `BENCH_SKINS=<skin>`). Exit 1
 names each failing state.
+
+## The offline banner, a real server cut: `bench/scenarios/hors-ligne.mjs`
+
+`npm run build`, then `node bench/scenarios/hors-ligne.mjs` (Playwright from the environment, no Docker).
+Per skin and language it starts the launcher on a fixed `--port` and `--data` (seed `config-writable`),
+opens E-2, E-4 and E-14 (edited, saved, restart band showing), stops the process (SIGTERM), waits for the
+banner on each, presses **Restart** on E-14 (only `POST /api/restart` is scripted, 202) and looks at
+"Coming back…" with the banner, then starts the process again on the same port and data and waits for every
+banner to leave with no reload. On the phone, E-2 is also seen with the chat shown. Pictures:
+`bench/shots-hors-ligne/<skin>/<locale>/<theme>-<desk|phone>/` (or `BENCH_OUT`); `BENCH_SKINS`,
+`BENCH_LOCALES` narrow it. About 12 minutes for the 32 variants; exit 1 names each failed expectation.
 
 ## Every screen, both themes, both sizes: `bench/sweep.mjs`
 
@@ -245,6 +257,19 @@ bench with a scenario-local scripted stream; it replays the model catalogue and
 disconnected MCP identity in the browser because that instance has no engine CLI
 or sign-in server configured. Docker is optional; the host matrix uses the real
 seeded server and its fake driver.
+
+## The open page follows the agent: `bench/scenarios/page-suivie.mjs`
+
+`npm run build`, then `node bench/scenarios/page-suivie.mjs` (Playwright from the environment, no
+Docker). Pictures land in `bench/shots-page-suivie/` (`BENCH_OUT` moves them). Per skin × language it
+launches `node bench/launch.mjs --engine fake --seed page-suivie --data <dir> …` and plays the agent
+itself: it writes and deletes the page files on the instance's disk, as a real turn would. Reading:
+the rewrite shows with no action, the deletion shows E-8; a page of the second store (`?store=famille`)
+does the same. Editing: the banner rises, the typed text stays, the user's own save lifts nothing and
+raises nothing, **Reload** loads the agent's version, and a deletion gives the banner then E-8 at
+**Reload**. With the watch off (`BENCH_WATCH=off` in the seed) neither mode moves. Light and dark,
+desk and phone. `BENCH_SKINS`, `BENCH_LOCALES` and `BENCH_SIZES=desk` narrow the run (about 20 s per
+variant). The bench no longer assumes the open page stays put: the refresh is the product's.
 
 ## Loading and failure of the shell's screens: `bench/scenarios/chargements.mjs`
 

@@ -28,6 +28,11 @@ export interface FollowOptions {
   readonly onChange: (paths: readonly string[]) => void
   /** First reconnect delay; doubles up to 30 s. Injected small in tests. */
   readonly retryMs?: number
+  /**
+   * The feed's link: false when it cannot connect or ends without the shell
+   * having cut it, true when it connects. The 404 "not offered" says nothing.
+   */
+  readonly onLink?: ((up: boolean) => void) | undefined
 }
 
 function sleep(ms: number, signal: AbortSignal): Promise<void> {
@@ -54,6 +59,7 @@ export async function followChanges(options: FollowOptions): Promise<void> {
       // The server is unreachable — down, or the network is. Worth retrying:
       // this loop outlives a server restart on purpose.
       if (options.signal.aborted) return
+      options.onLink?.(false)
       await sleep(delay, options.signal)
       delay = Math.min(delay * 2, 30_000)
       continue
@@ -66,6 +72,7 @@ export async function followChanges(options: FollowOptions): Promise<void> {
     if (!response.ok || !response.body) return
 
     delay = floor
+    options.onLink?.(true)
     if (everConnected) {
       // Changes may have happened during the gap; an empty batch says
       // "refetch whatever you hold" without pretending to know what moved.
@@ -100,6 +107,9 @@ export async function followChanges(options: FollowOptions): Promise<void> {
     }
 
     // The stream ended without the shell asking it to; wait a beat, reconnect.
-    if (!options.signal.aborted) await sleep(delay, options.signal)
+    if (!options.signal.aborted) {
+      options.onLink?.(false)
+      await sleep(delay, options.signal)
+    }
   }
 }

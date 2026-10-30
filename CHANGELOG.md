@@ -6,6 +6,14 @@ source did not record a release date; dates are not inferred from git tags.
 
 ## Unreleased
 
+- **The open page follows the agent** — When the agent rewrites the page on screen, reading shows the
+  new text in place and editing raises the banner "The page changed." with **Reload**; the typed text
+  is never replaced and the user's own save raises nothing. A page the agent deletes or moves shows E-8
+  (in editing, after the banner and **Reload**). It works for every store and does nothing when
+  `workspace.watch.enabled` is false. P-5 step 7 no longer says the page is left alone (B-17, AD-21);
+  `bench/scenarios/page-suivie.mjs` plays it under the four skins.
+- **The MCP list shows its loading and offers Retry** — E-10 keeps its heading and shows the shared loading row until the declarations answer (list or an opened `#/settings/mcp/<name>`); a failed first fetch shows the failure block with Retry. A refetch after Save or Remove never brings the loading back and fails silently; server health is untouched (B-18, AD-24).
+- **Removing an MCP server asks first** — **Remove** in E-10 opens a sheet (E-33) that names the server; Cancel, ✕, the scrim and Escape keep it and nothing is sent, and the confirmed press sends a single `DELETE`. Cancel has the initial focus, through a new opt-in `data-autofocus` in the focus scope that no other sheet uses. E-10's Remove stays disabled until the `DELETE` answers (B-20, AD-26).
 - **Simultaneous turns** — The settings screen (E-14) carries `maxConcurrentTurns` (1 to 16,
   default 3) in a group of its own, in English and French. It applies at restart: the limiter is
   built once at boot (B-21, AD-25).
@@ -477,3 +485,11 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
   answer). E-3 and E-9 have no button. The bench plays each one slowed and broken on the
   four skins, in `en` and `fr`, light and dark, desk and phone
   (`bench/scenarios/chargements.mjs`).
+
+- **Offline banner** (E-32) — when the server stops answering, a "The server is not responding" strip
+  shows above the open screen, on the canvas or, on a phone with the chat shown, above the rail; it
+  leaves by itself when the server answers, without reloading the page. On a screen scrolled down it
+  stays under the canvas header. The bench stops and restarts a real instance, looks at E-2, E-4 and
+  E-14 ("Coming back…") on the four skins, in `en` and `fr`, light and dark, desk and phone
+  (`bench/scenarios/hors-ligne.mjs`); a launcher started again on the same `--data` now seeds without
+  failing.

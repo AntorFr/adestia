@@ -20,9 +20,11 @@ import { wordsFor } from '../plugins/words.js'
 import { SkinSlot } from './SkinSlot.js'
 import { folderRoute, pageRoute } from './owners.js'
 import type { LoadedPlugin } from '../plugins/loader.js'
+import { Offline } from './Offline.js'
 import { Problems } from './Problems.js'
 import { screenView, trailOf } from './trail.js'
 import { skinUser } from './skin.js'
+import { useServerReach } from './serverReach.js'
 import { useInstance } from './useInstance.js'
 import { useMobile } from './useMobile.js'
 import { usePage } from './usePage.js'
@@ -35,7 +37,10 @@ import { useTheme } from './useTheme.js'
 export { appTrail, screenView } from './trail.js'
 export type { InstanceInfo } from './useInstance.js'
 
-export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
+export function App({ fetchImpl: baseFetch = fetch }: { fetchImpl?: typeof fetch }) {
+  // The one construction of the layer (AD-22): every child below gets the observed fetch.
+  const { fetchImpl, reachable, report: reportReach } = useServerReach(baseFetch)
+  const onLink = useCallback((up: boolean) => reportReach(up), [reportReach])
   const [screen, setScreen] = useState<'chat' | 'canvas'>('chat')
 
   /**
@@ -74,8 +79,8 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
     [],
   )
 
-  const { instance, failures, fatal, offline, needsLogin, pages, stores, skin, skinScheme, loaded, ready, indexed } =
-    useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef, onTrail })
+  const { instance, failures, fatal, offline, needsLogin, pages, stores, skin, skinScheme, loaded, ready, indexed, pageChanges } =
+    useInstance({ fetchImpl, onLink, openPage, askRef, composeRef, blocksRef, onTrail })
 
   /**
    * The shell's words. Resolved once the instance answers, because the
@@ -114,7 +119,12 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
     // that says nothing about its new screen must show the app's name alone.
     onChange: () => setPluginTrail({ id: '', crumbs: [] }),
   })
-  const { page, pageProblem, loading: pageLoading, retry: retryPage, mount } = usePage({ pagePath, pageStore, fetchImpl })
+  const { page, pageProblem, loading: pageLoading, retry: retryPage, mount, onEditing, incoming, reload: reloadPage } = usePage({
+    pagePath,
+    pageStore,
+    fetchImpl,
+    pageChanges,
+  })
 
   /** The breadcrumb — derived once, drawn by the header and carried by every message. */
   const trail = useMemo(
@@ -179,6 +189,9 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
   if (!instance) return <LoadingGate t={t} />
 
   const slotUser = skinUser(instance)
+  // One place at a time (E-32): above the rail while it is the whole phone screen, else in the canvas body.
+  const bannerInChat = mobile && screen === 'chat'
+  const offlineBanner = !reachable ? <Offline t={t} /> : null
 
   return (
     <>
@@ -213,6 +226,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
         {...(skin.busy ? { busySlot: skin.busy } : {})}
         {...(mobile ? { onOpenCanvas: () => setScreen('canvas') } : {})}
         {...(view ? { view } : {})}
+        {...(bannerInChat && offlineBanner ? { banner: offlineBanner } : {})}
         {...(instance.signatures ? { signatures: instance.signatures } : {})}
       />
       <div className="adestia-gutter" {...split.gutterProps} />
@@ -245,7 +259,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
         />
 
         <div className="adestia-canvas__body">
-
+        {!bannerInChat && offlineBanner}
         <Problems instance={instance} failures={failures} loaded={loaded} pages={pages} t={t} locale={locale} />
 
         <Canvas ready={ready} indexed={indexed}
@@ -261,6 +275,9 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           pageProblem={pageProblem}
           pageLoading={pageLoading}
           retryPage={retryPage}
+          onEditing={onEditing}
+          incoming={incoming}
+          reloadPage={reloadPage}
           mount={mount}
           section={section}
           channel={{ ask: askRef, compose: composeRef, attach: attachRef }}
