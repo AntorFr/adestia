@@ -5,8 +5,9 @@
 
 - Dernier tag accessible : **`v0.95.0`** (`git describe --tags
   --abbrev=0`), l'epic `adestia-qualite`, entrée dans `main`.
-- Branche de travail : `feature/adestia-qualite-chat`, sur `origin/epic/adestia-qualite`
-  (correctifs de recette et de verify : un message envoyé avant que le premier soit parti est retenu ;
+- Branche de travail : `feature/adestia-ajouts-chargements`, sur `origin/epic/adestia-ajouts`
+  (chargement et Réessayer des écrans du shell, AD-24 ; recette : `node bench/scenarios/chargements.mjs`
+  après `npm run build`). Hérité de l'epic précédent (correctifs de recette et de verify : un message envoyé avant que le premier soit parti est retenu ;
   en-tête du rail à moins de 400 px à un seul espacement, sélecteur de modèle d'au moins 72 px ; bulle d'erreur seule à marge symétrique). Banc, tests, serveur, charte,
   plugins, pages et chat sont intégrés à l'epic ; la documentation est relue
   contre le code.
@@ -77,8 +78,10 @@ PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone
   ne propose pas ce mode (`routes/turns.ts`).
 - L'éditeur embarqué ne reçoit ni `attach`/`compose` ni l'index `pages` du shell
   (`plugins/PageEditor.tsx`) : pas de dépôt de fichier ni de résolution par cet index.
-- Les états de chargement de E-3/E-4/E-9, « Réessayer » de E-8, les toasts et
-  l'écran hors ligne restent hors de l'epic (B-1, docs/ecrans.md).
+- Chargement et « Réessayer » sont construits pour E-3, E-4, E-8, E-9, E-11 et E-13
+  (`adestia-ajouts-chargements`). Restent à faire : E-10 (tranche MCP), E-16 (chat),
+  E-25 et E-28 (plugins), le rafraîchissement de E-4 et son bandeau (`page-suivie`),
+  le bandeau hors ligne E-32 ; les toasts restent hors de l'epic (docs/ecrans.md).
 - Mesures du banc en pixels à généraliser ; `journal` : couverture navigateur
   et `api.trail` à compléter selon les signalements de l'ancien état.
 

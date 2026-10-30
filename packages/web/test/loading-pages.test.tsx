@@ -189,7 +189,7 @@ function shell() {
       })
     }
     if (url.startsWith('/api/pages/index')) return answer({ entries: [], conversations: [] })
-    if (url.startsWith('/api/pages/')) return pages.impl(input, init)
+    if (url.startsWith('/api/pages/')) return pages.impl(input as RequestInfo, init)
     return answer({ entries: [], conversations: [] })
   }) as unknown as typeof fetch
   return { impl, calls: pages.calls }

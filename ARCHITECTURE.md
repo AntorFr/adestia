@@ -420,15 +420,15 @@ preprocessor (a build step for one file). *Reversed if*: the supported browsers 
 service worker's audience: current evergreen) lose `light-dark()`.
 
 ### AD-11 — One request helper for the web
-`packages/web/src/app/request.ts` exports `requestJson<T>(fetchImpl, path, init?)` →
+`packages/web/src/app/request.ts` exports `requestJson<T>(fetchImpl, path, init?, t?)` →
 `{ ok: true, status, data: T } | { ok: false, status, error, data? }` and `jsonInit(method,
 body)`. It never throws (a network error is `{ ok: false, status: 0 }`); `error` is the
-server's `error` field or a **translated** fallback (`request failed (404)` in the locale, Q-4).
+server's `error` field or a **translated** fallback (`request failed (404)` in the locale when `t` is passed, Q-4; the key is `request.ts`'s `FALLBACK_KEY`, distinct from the capitalised sentence `useRequest` shows). A network error carries the exception's own message; `useRequest` replaces it by "The server is not responding".
 It is what every `fetchImpl(` call site of the web becomes; a call site keeps its own
 meaning for failure (silent, inline message), only the plumbing moves. `fetchImpl` stays
 the injected dependency (tests). The 14 live guards stay in each effect (they belong to the
 component's lifetime); a `useRequest`-style hook is *not* introduced (a new abstraction,
-none of the sites share a shape).
+none of the sites share a shape; *reversed by AD-24*, which introduces `useRequest` for the loading/failure shape).
 *Rejected*: a hook layer over every fetch (a new abstraction); a client class. *Reversed
 if*: the charte tranche finds a third of the sites sharing one loading/error shape.
 
@@ -597,7 +597,8 @@ per Known defects bullet order (it mixes areas that review differently).
 
 ### AD-18 — What stays out: functions, not defects
 The "Lacks" cells that name an absent function are not repaired: loading states of E-3, E-4, E-9,
-E-10, E-11, E-13, E-16, E-25, E-28; an offline screen and banner (E-21); a retry for E-8; a
+E-10, E-11, E-13, E-16, E-25, E-28; an offline screen and banner (E-21); a retry for E-8
+(*superseded for E-3, E-4, E-8, E-9, E-11 and E-13, built by `adestia-ajouts-chargements`: AD-24*); a
 confirmation before Remove (E-10); the empty states of E-4 and E-7; a delete command for
 conversations (`deleteConversation` has no screen); the half-built items of `.agent/status.md`
 (`ask` posture, usage view, Copilot permission feedback, `adestia init`). They go to the closing
@@ -676,15 +677,18 @@ A loading row (the one E-14 draws) and a failure block with **Retry** (the share
 E-8 with a button) are shared components in `app/ui/`; each listed screen of the shell uses them. Plugins (E-25, E-28) do not import them: they reach the same look through the shell's CSS classes (`.adestia-loading`, `.adestia-empty*`, `.adestia-btn` for the Retry button, `.adestia-sheet*`), so AD-8 is untouched. Fetch hooks
 expose `status: loading | ready | failed` and a `retry()`. No screen invents its own spinner.
 
-**Detail built by `adestia-ajouts-chargements`.** Three parts in `app/ui/`, one hook beside them.
+**Detail built by `adestia-ajouts-chargements`.** Three parts in `app/ui/` (`Loading`, `Failure`, `ReadFailure`), one hook beside them, and `MissingPage` (in `app/`) using `Failure`.
 - `Loading` — the row of E-2/E-14 (`.adestia-loading`, `role="status"`, `loader-circle`, translated
-  "Loading…"); E-2 (`Home`) and E-14 (`Configuration`, which draws `.adestia-config__loading`
-  today) switch to it, so the shell has one spinner row, not three.
+  "Loading…"); E-2 (`Home`) and E-14 (`Configuration`, which drew its own
+  `.adestia-config__loading`, now gone) use it, so the shell has one spinner row, not three.
 - `Failure` — `EmptyState` (icon `circle-alert`, one sentence) with a `Button` **Retry** as its
   `action`; the classes a plugin reuses are `.adestia-empty--state`, `.adestia-empty__text`,
   `.adestia-empty__action` and `.adestia-btn` (named in `docs/ecrans.md`, § "Loading and failure").
   The sentence is the server's own `error` when it sent one, else the locale's
   `request failed (%n)` (`request.ts`): said in the locale, never a raw `fetch failed`.
+- `ReadFailure` — `Failure` for a failed read where Retry can help (status 0 or 5xx); on 404 and
+  401/403 it draws a plain `EmptyState` with the message and no button. E-11 and E-13 use it for
+  their list and open item.
 - `MissingPage` (E-8) draws `Failure` for the "server could not" case only; 404 and 401/403 keep
   their sentence and have no Retry (retrying cannot change them).
 - `useRequest(fetchImpl, url, { enabled, t })` (`app/useRequest.ts`) → `{ status: 'loading' |
@@ -947,6 +951,9 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
 
 - **P-5 step 7: the open page does not refresh after an agent write.** Taken by
   `adestia-ajouts` (AD-21, B-17); removed from here when that tranche lands.
+- **The shared loading row sits about 24 px right of the content edge** (`.adestia-loading`,
+  `padding: var(--space-5)`), seen at the bench on every screen that shows it. It dates from the
+  class of E-2 and E-14, not from `adestia-ajouts-chargements`; not repaired.
 - **Nestor's send control still uses the `↑` glyph**, supplied by its skin.
   Kept during the pages tranche; the skin's control remains for a separate fix.
 - **The chat's native model select says `Auto` (`chat/ModelPicker.tsx`)**, outside the pages tranche.

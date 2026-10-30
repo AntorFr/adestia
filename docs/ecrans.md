@@ -206,6 +206,11 @@ the matching "Lacks" cell. Same shared parts everywhere: the loading row of E-14
 translated "Loading…"), the shared empty state of E-8 with its icon, `Button`, `Sheet`; no new
 vocabulary of looks (`docs/charte.md`).
 
+**Built so far:** loading and Retry for E-3, E-4, E-8, E-9, E-11 and E-13
+(`adestia-ajouts-chargements`). Every other row below (E-10, E-16, E-25, E-28, E-32, E-33, the
+refresh of E-4) is a target, not yet in the code; so is the Retry rule of "Loading and failure"
+for those screens.
+
 | E-n | Adds | Notes |
 |---|---|---|
 | E-3, E-9 | loading | index-driven: E-3 draws the loading row (instead of its empty state) while the shell's index has not answered; E-9 draws it above its tiles until its four reads (the reads behind its tiles: servers, instructions, delegations, and the configuration's health) have answered or failed, the tiles staying drawn. No Retry. Server cut: the row of E-3 stays until E-32 (a later tranche) says it; a 500 on the index leaves E-3 on its loading row (nothing in this tranche says it; the index is the shell's own read and its failure is not a screen of the epic); in E-9 a failed read leaves its tile without a count, no message |
@@ -811,16 +816,18 @@ agent callback are present. Inside a facet, all finished uses
 
 **E-8.** `EmptyState` names the path, with `file-question` for 404, `lock` for
 401/403 and `circle-alert` otherwise. Its ghost folder link uses `folder-open`.
-There is no retry control.
+The "server could not" case (0 and 5xx) draws the shared failure block with **Retry**
+(`MissingPage`, `Failure`); 404 and 401/403 have no retry control.
 
 **E-20.** `Canvas` shows `EmptyState` with `plug`, `That app is not active on this
 instance.` and the Home action when a matched, loaded plugin has no view (for
 example, its view module failed to import). An unknown or disabled plugin route
 falls through to Home; E-19 reports browser module refusals.
 
-**Limits kept (B-1).** E-3 has no loading state; E-4 keeps the previous screen
+**Limits kept (B-1).** E-3 draws the shared loading row until the shell's index answers
+(`adestia-ajouts-chargements`); E-4 keeps the previous screen
 while fetching and has no special empty-page state. E-7 has no distinct empty
-collection state and E-8 has no retry. Offline after startup keeps existing
+collection state. Offline after startup keeps existing
 behaviour; E-21 covers startup failure. These remain end-of-epic recommendations.
 Roles are unchanged: every admitted person can read/edit/save; the agent writes
 the same files and may cause the conflict state. There is no screen for a calling agent.
