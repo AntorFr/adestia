@@ -53,7 +53,18 @@ export function useEditorSurface(
    * would throw away what is being typed.
    */
   const opening = useRef(saved)
-  opening.current = saved
+  /*
+   * ...except in the render where `shown` just changed (a reload took the
+   * agent's version): `saved` only follows in an effect, one render later,
+   * and the remount in this very render would open on the old text.
+   */
+  const lastShown = useRef(shown)
+  if (lastShown.current !== shown) {
+    lastShown.current = shown
+    opening.current = shown
+  } else {
+    opening.current = saved
+  }
 
   useEffect(() => {
     if (!editing || !mount || !host.current || !page.editable) return undefined
