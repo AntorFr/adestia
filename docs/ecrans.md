@@ -191,7 +191,7 @@ columns are the same except where the instance's configuration decides what exis
 | E-22 | loading, empty, error, conflict, sheet (a view with a named back: « Todo ») | Escape on the task sheet does nothing (kept: it is a view, not a dialog) |
 | E-23 | loading, empty, error, clock off | the notes' problem sentences (`carries both …`, `the note is empty …`) reach the screen in English on every instance (kept, Known defects) |
 | E-24 | loading, no journal, empty journal, conflict, editing; back « Journals » / « Journaux » | — |
-| E-25 | hub, empty (in both languages), per-section empties, piece sheet (shared sheet), full-screen bench mode with an exit that names where it leads | loading, error (kept, recommendations); the native `confirm()` before a layout reset (replaced by `adestia-correctifs`, AD-17) |
+| E-25 | hub, empty (in both languages), per-section empties, piece sheet (shared sheet), full-screen bench mode with an exit that names where it leads, loading row and failure block with **Retry** on the hub and on a workbook (built: `adestia-ajouts-plugins-chargements`) | the native `confirm()` before a layout reset (replaced by `adestia-correctifs`, AD-17) |
 | E-26 | loading, no trip, empty tray, card sheet (shared sheet), dismissed list | the native `window.alert` of a refused gesture (replaced by `adestia-correctifs`, AD-17) |
 | E-27 | loading, empty, no sources, error, conflict | a source's failure reason is the server's raw text (`fetch failed`), in English on every instance (kept, Known defects) |
 | E-28 | map, no route in the address, no points, walking HUD with an exit that names where it leads | loading (kept, a recommendation); the walking map keeps the size it was drawn at before the walk (kept, Known defects) |
