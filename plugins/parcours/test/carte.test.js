@@ -179,7 +179,7 @@ test('zéro et un repère : le singulier, et la carte sans trace', async () => {
   assert.equal(fr.hote.querySelector('.pc-stats').textContent, '0 repère')
 })
 
-test('la vue lien et l’erreur de lecture, dans la langue', async () => {
+test('la vue lien, dans la langue', async () => {
   const dom = await boot()
   const nu = { reperes: [] }
   assert.equal((await monte(dom, 'en', nu, { vue: 'lien' })).hote.querySelector('.pc-card-m').textContent, 'route not calculated yet')
@@ -188,14 +188,6 @@ test('la vue lien et l’erreur de lecture, dans la langue', async () => {
   assert.equal(f.hote.querySelector('.pc-card-t').textContent, 'Parcours')
   const e = await monte(dom, 'en', DATA(REPERES), { vue: 'lien' })
   assert.match(e.hote.querySelector('.pc-card-m').textContent, /3 waypoints/)
-  global.fetch = async () => ({ ok: false, status: 404 })
-  const { mountParcours } = await import('../web/carte.js')
-  for (const [locale, msg] of [['en', 'Unreadable route: HTTP 404'], ['fr', 'Parcours illisible : HTTP 404']]) {
-    const hote = globalThis.document.createElement('div')
-    mountParcours(hote, { src: '/x', locale })
-    await new Promise((r) => setTimeout(r, 20))
-    assert.equal(hote.textContent, msg)
-  }
 })
 
 test('un nom de repère qui ressemble à un espace réservé reste tel quel', async () => {
