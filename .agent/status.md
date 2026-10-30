@@ -90,8 +90,8 @@ PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone
   ne propose pas ce mode (`routes/turns.ts`).
 - L'éditeur embarqué ne reçoit ni `attach`/`compose` ni l'index `pages` du shell
   (`plugins/PageEditor.tsx`) : pas de dépôt de fichier ni de résolution par cet index.
-- Chargement et « Réessayer » sont construits pour E-3, E-4, E-8, E-9, E-11 et E-13
-  (`adestia-ajouts-chargements`). Restent à faire : E-10 (tranche MCP), E-16 (chat),
+- Chargement et « Réessayer » sont construits pour E-3, E-4, E-8, E-9, E-10, E-11 et E-13
+  (`adestia-ajouts-chargements`, `adestia-ajouts-mcp`). Restent à faire : E-16 (chat),
   E-25 et E-28 (plugins), le rafraîchissement de E-4 et son bandeau (`page-suivie`),
   le bandeau hors ligne E-32 ; les toasts restent hors de l'epic (docs/ecrans.md).
 - Mesures du banc en pixels à généraliser ; `journal` : couverture navigateur
