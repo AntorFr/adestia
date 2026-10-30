@@ -78,6 +78,11 @@ export function useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef
    * how the shell knows there is no provenance to draw.
    */
   const [stores, setStores] = useState<readonly StoreInfo[]>([])
+  /**
+   * The last batch of the change feed, for the open page (AD-21). One stream:
+   * the index above and this are read from the same `followChanges`.
+   */
+  const [pageChanges, setPageChanges] = useState<{ seq: number; paths: readonly string[] }>({ seq: 0, paths: [] })
   const [skin, setSkin] = useState<Skin & SkinSlots>({})
   const [skinScheme, setSkinScheme] = useState<'light' | 'dark' | undefined>(undefined)
   const [loaded, setLoaded] = useState<readonly LoadedPlugin[]>([])
@@ -253,7 +258,8 @@ export function useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef
     void followChanges({
       fetchImpl,
       signal: controller.signal,
-      onChange: async () => {
+      onChange: async (paths) => {
+        setPageChanges((current) => ({ seq: current.seq + 1, paths }))
         const list = await requestJson<{ entries?: IndexEntry[]; stores?: StoreInfo[] }>(
           fetchImpl,
           '/api/pages/index',
@@ -267,5 +273,5 @@ export function useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef
     return () => controller.abort()
   }, [instance, fetchImpl])
 
-  return { instance, failures, fatal, offline, needsLogin, pages, stores, skin, skinScheme, loaded, ready, indexed }
+  return { instance, failures, fatal, offline, needsLogin, pages, stores, skin, skinScheme, loaded, ready, indexed, pageChanges }
 }

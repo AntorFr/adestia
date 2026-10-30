@@ -137,9 +137,9 @@ columns are the same except where the instance's configuration decides what exis
 | E-1 | sees gates | sees gates | — | — |
 | E-2 | open tiles, arrange, ask | same | writes the brief, the pages behind tiles | — |
 | E-3 | browse, search, facet | same | creates/moves pages (cards appear live) | — |
-| E-4, E-5, E-6 | read, edit, save | same | edits the same files; a concurrent edit gives the conflict state | — |
+| E-4, E-5, E-6 | read, edit, save | same | edits the same files; a concurrent edit gives the conflict state; an agent write refreshes the reading page and raises the banner in editing (`adestia-ajouts`, B-17) | — |
 | E-7 | add a member, open | same | writes members | — |
-| E-8 | follow the folder link | same | a mistyped address it gave lands here | — |
+| E-8 | follow the folder link | same | a mistyped address it gave lands here; so does a page the agent deleted or moved while open (`adestia-ajouts`) | — |
 | E-9 | open tiles | same | — | its delegations are counted |
 | E-10 | add/edit/remove servers, connect | same (connect is per person) | uses the servers; health reported after a turn | — |
 | E-11, E-12 | write, import, refresh | same | may write instruction files | — |
@@ -170,7 +170,7 @@ columns are the same except where the instance's configuration decides what exis
 | E-1 | loading (`LoadingGate`: spinner and "Loading…"), sign-in, refused, fatal; four cards with an icon each, every string through `t()` | — |
 | E-2 | loading (`.adestia-loading`, spinner and translated Loading…), normal, shared empty state (after ready), with/without brief, with/without hero, Arrange mode | — |
 | E-3 | normal, shared empty/no-match states ("This section holds nothing yet." / "Nothing matches."), facet chips, finished archive, multi-store marks, loading (the shared row while the shell's index has not answered, no Retry) | — |
-| E-4 | reading, editing, saving/saved/"tidied", conflict (`.adestia-save--warn`), rejected, failed, read-only (`.adestia-editor__readonly` + raw source), diagnostics, drop zone, lost/ambiguous wikilink, unknown block, missing `from=`, loading while the page is fetched (`Loading` only when no page is held, page to page keeps the first on screen), fetch-failed shows E-8 with Retry | refresh when the file changes and its banner (`page-suivie`); an empty-page state |
+| E-4 | reading, editing, saving/saved/"tidied", conflict (`.adestia-save--warn`), rejected, failed, read-only (`.adestia-editor__readonly` + raw source), diagnostics, drop zone, lost/ambiguous wikilink, unknown block, missing `from=`, loading while the page is fetched (`Loading` only when no page is held, page to page keeps the first on screen), fetch-failed shows E-8 with Retry, reading refreshed in place when the agent rewrites the file, E-8 when it deletes or moves it, editing: the banner "The page changed." with **Reload** (the typed text is never replaced; the user's own save raises none; a watch that is off moves nothing) | an empty-page state |
 | E-5 | shared popover/fields, normal, broken frontmatter (nothing editable), unknown fields, kept-as-written | — |
 | E-6 | shared popover/fields, normal, required attributes missing, stray attributes | — |
 | E-7 | normal, shared all-finished state inside a facet, count chips | empty collection state distinct from "all finished" |
@@ -206,21 +206,59 @@ the matching "Lacks" cell. Same shared parts everywhere: the loading row of E-14
 translated "Loading…"), the shared empty state of E-8 with its icon, `Button`, `Sheet`; no new
 vocabulary of looks (`docs/charte.md`).
 
-**Built so far:** loading and Retry for E-3, E-4, E-8, E-9, E-11 and E-13
-(`adestia-ajouts-chargements`) and for E-10, with the E-33 confirmation (`adestia-ajouts-mcp`). Every other row below (E-16, E-25, E-28, E-32, the
-refresh of E-4) is a target, not yet in the code; so is the Retry rule of "Loading and failure"
+**Built so far:** loading for E-3, E-4, E-8, E-9, E-11 and E-13 (Retry on all but E-3 and E-9)
+(`adestia-ajouts-chargements`), for E-10 with the E-33 confirmation (`adestia-ajouts-mcp`), and the refresh and banner of E-4 (`adestia-ajouts-page-suivie`,
+described under "E-4 — the page that follows the agent" below, and in the States table above). Every other row below (E-16, E-25, E-28, E-32) is a target, not yet in the code; so is the Retry rule of "Loading and failure"
 for those screens.
 
 | E-n | Adds | Notes |
 |---|---|---|
 | E-3, E-9 | loading | index-driven: E-3 draws the loading row (instead of its empty state) while the shell's index has not answered; E-9 draws it above its tiles until its four reads (the reads behind its tiles: servers, instructions, delegations, and the MCP servers' status, `/api/mcp/status`) have answered or failed, the tiles staying drawn. No Retry. Server cut: the row of E-3 stays until E-32 (a later tranche) says it; a 500 on the index leaves E-3 on its loading row (nothing in this tranche says it; the index is the shell's own read and its failure is not a screen of the epic); in E-9 a failed read leaves its tile without a count, no message |
-| E-4 | loading while the page is fetched; fetch-failed shows E-8 with its **Retry** (one failure block, not a second one); reading: refreshes when its file changes; editing: banner "The page changed" with **Reload** | the banner uses `.adestia-save--warn`'s family; it never touches the editor's text; absent when the change is the user's own save; if the open page is deleted or moved by the agent, E-8 (not found) shows and the page is no longer followed; when the workspace watch is off nothing refreshes, as today (B-17, AD-21); going from page to page keeps the first page on screen until the second answers, `Loading` shows only when no page is held (AD-24) |
 | E-8 | **Retry** on the "server could not" case (status 0 included: the shell could not reach the server) | 404 and 401/403 have no Retry; Retry fetches the page again and the screen becomes the page, or stays E-8 |
 | E-11, E-13 | loading; fetch-failed with **Retry** | for the list and for what is open (a file, a conversation): a failed list shows the failure block in place of the list, a failed open item shows it in place of the item, the list reachable by the back control as today. E-11: 404 on the list is still "this engine has no such folder" (no Retry, no failure). Status 0 (the server did not answer) and 5xx have Retry; 401/403 and a 404 on an open item (E-11 file, E-13 conversation) have the message and no Retry, as in E-8 (retrying cannot change them); E-13 has no 404 on its list |
 | E-16 | loading for the list and the thread; fetch-failed with **Retry**; a context-lost marker in the thread (B-22) | the marker is a line in the thread, not a toast; text says the engine no longer remembers the earlier messages |
 | E-25, E-28 | loading; fetch-failed with **Retry** | plugins reach the look through the shell's CSS classes (`.adestia-loading`, the empty-state classes, `.adestia-sheet*`), as they already do for sheets; the plugin contract (AD-8) gains nothing. the native `confirm()` of E-25 and `alert()` of E-26 are not touched by `adestia-ajouts`: `adestia-correctifs` replaces them by the shared sheet (AD-17, Q-20). The words « kept » about them in Q-20 and `ARCHITECTURE.md` (Known defects, AD-7 (e)) are the base branch's and are rewritten by that epic; if it narrows the change, whatever it leaves stays as it leaves it, and `adestia-ajouts` neither adds nor removes anything there |
 | E-32 | banner at the top of the canvas body (the place of `Problems`), role `status`, a `wifi-off` icon; absent when the server answers | not an overlay: the screen below stays usable |
 | E-33 | `Sheet` (bottom sheet on a phone), title "Remove server?", the server's name, **Cancel**, **Remove** (danger) | focus on Cancel; Escape = Cancel; modelled on `NamePrompt` |
+
+### E-4 — the page that follows the agent (`adestia-ajouts-page-suivie`)
+
+Reading: no visible state of its own — the text is replaced in place when the file changes; the
+scroll position is left to the browser's own anchoring (no restore is built); if the blocks above change height the view may shift.
+Editing: the banner sits **above the editor surface, below the title row**, full width of the
+page column, in the family of `.adestia-save--warn` (icon `triangle-alert`, one line on a desk, wrapping under 820 px with **Reload** below the sentence, the **Reload**
+button at its end, an `.adestia-btn`):
+
+```
+  <title>
+[ ⚠ The page changed.                                   [ Reload ] ]
+  <text the user is typing — untouched>
+```
+
+| State | Shown |
+|---|---|
+| reading, file changed | new text, nothing else |
+| reading, file deleted or moved | E-8 (404), path named |
+| editing, file changed by the agent | banner "The page changed." + **Reload**; text kept |
+| editing, own save | no banner; "Saved" as today |
+| editing, banner up, user saves | save accepted: "Saved" as today, the banner stays (the agent's version is still unread); save refused (409): the existing "The agent changed this page…" line (`en`/`fr` as today), the editor stays open with the typed text, the banner stays |
+| editing, banner up, Reload | editor shows the agent's version; banner gone; unsaved typing is replaced (the user chose it) |
+| editing, file deleted or moved | the same banner; **Reload** leads to E-8 |
+| editing, user presses Done with the banner up | Done behaves as today, including when the save is refused (409 line; the editor stays open, as today, with the typed text and the banner); once the editor has closed, the page is followed again as in reading: the agent's version (or E-8) shows |
+| editing, Reload leads to E-8 | the unsaved text goes with it (the user chose Reload; no copy is kept) |
+| reading, permission denied (read-only editor state) | `.adestia-editor__readonly` is not touched by the feed; the page refreshes as in reading |
+| long title | wraps in the title row; the banner is a separate row below and keeps the column width |
+| Reload | immediate (the page was read when the banner rose): no loading, no failure |
+| the side read fails (server down, 401/403, 5xx) | nothing on screen; offline is E-32's; the next change retries; nothing is caught up when the server returns, until the next change or a reopen |
+| the side read answers 404 | the page is gone: the banner, then E-8 at Reload |
+| agent writes repeatedly, or the page is long | one read per batch, the latest answer wins; the banner stays one banner |
+| the agent empties the page | shown as any empty page (E-4's empty state is out of scope) |
+| watch off | nothing |
+
+The banner and the save-time line ("The agent changed this page. Reload to see its version.") are two messages that may show together: the first is the push, the second the refusal of a save. The banner has `role="status"`, is reached by Tab before the editor text, and keeps the width of
+the page column on the phone (the button wraps under the sentence below 820 px). `en`: "The page
+changed." / "Reload"; `fr`: "La page a changé." / "Recharger". Proof under the four skins, light
+and dark, desk and phone, `en` and `fr`.
 
 ### Loading and failure (shared by the shell and the plugins)
 

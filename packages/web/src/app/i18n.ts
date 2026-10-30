@@ -470,6 +470,8 @@ const FR: Readonly<Record<string, string>> = {
   'Saved, tidied to house style': 'Enregistré, remis au style de la maison',
   'The agent changed this page. Reload to see its version.':
     'L’agent a modifié cette fiche. Rechargez pour voir sa version.',
+  'The page changed.': 'La page a changé.',
+  Reload: 'Recharger',
   'Not saved: %reason': 'Non enregistré : %reason',
   'the page breaks the vocabulary': 'la fiche sort du vocabulaire',
   'line %n': 'ligne %n',

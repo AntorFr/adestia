@@ -456,7 +456,7 @@ for (const skin of SKINS) {
           assert.equal(await page.getByText('vue.png').count(), 0, 'the image the body already shows is not listed again')
         })
 
-        test('P-5 · reader: when the agent writes the page the open text is not replaced under the reader', async () => {
+        test('P-5 · reader: when the agent writes the page the open text is refreshed in place, without a reload', async () => {
           const dir = join(instance.pages, 'besoin-live')
           await mkdir(dir, { recursive: true })
           const file = join(dir, 'vivante.md')
@@ -464,10 +464,9 @@ for (const skin of SKINS) {
           await open('/page/besoin-live/vivante', 'text=Avant la réécriture.')
           await page.evaluate(() => { window.__still_here = true })
           await writeFile(file, '---\ntitle: Vivante\ntype: fiche\n---\n\nAprès la réécriture.\n')
-          await settle(3000)
-          // Known defect (ARCHITECTURE.md): only the index follows the agent; the open page is left alone so unsaved words are safe.
-          assert.equal(await page.evaluate(() => window.__still_here), true, 'the page was not reloaded')
-          assert.equal(await page.getByText('Avant la réécriture.').count() > 0, true, 'the open text is kept')
+          await page.getByText('Après la réécriture.').first().waitFor({ state: 'visible', timeout: 15_000 })
+          assert.equal(await page.evaluate(() => window.__still_here), true, 'refreshed in place, the page was not reloaded')
+          assert.equal(await page.getByText('Avant la réécriture.').count(), 0, 'the old text is gone')
         })
 
         // ── E-8 · P-5 step 8 ───────────────────────────────────────────────────────────────

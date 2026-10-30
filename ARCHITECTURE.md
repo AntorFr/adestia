@@ -584,9 +584,7 @@ yet reproduced" (frontmatter CRLF) or "whether it predates the epic is unknown" 
 | plugins | `confirm()` of the atelier and `alert` of the voyages replaced by the shared sheet (Q-20, kept by `adestia-qualite` because "the flow would change": the answer becomes asynchronous; this is the one deliberate flow change, bounded to two gestures, and `docs/ecrans.md` Q-20 and the atelier and voyages journeys are rewritten with it. If the tranche proves risky it is narrowed and the reason written under Known defects); planif and veille sentences in English; E-28 walking map keeps its pre-walk size; E-30 focus lost on phone; E-25 "1 pièces"; the emojis kept in plugins; the amber of project-management meaning two things; `:::content` `on` without a localised date |
 | debt | R-2 one-line aliases of the drivers and R-6 exports kept only for tests (removed, tests import the module that owns the symbol); bench duplicates (`launch(seed)`, `loadPlaywright`); fake-engine options with no caller; `doc-besoin.test.mjs` into CI; the two duplicate guards on `DESIGN.md`; typed lint rules switched on if the repo passes them; `.agent/migrate-frame.mjs` lint errors |
 
-Kept on purpose, with their reason, and still under Known defects: the open page is **not**
-refreshed after an agent write (P-5 step 7 states that it is not, to protect unsaved text; refreshing
-it is a new behaviour, so a closing recommendation); the workbook's, the cards' and the server's
+Kept on purpose, with their reason, and still under Known defects: the workbook's, the cards' and the server's
 own words that are author or engine data (E-25 piece names, E-26 card types, E-23 and E-27 sentences
 built by the server unless a table keyed by them already exists).
 
@@ -628,7 +626,7 @@ them; AD-18's list is what they take from.
 `useInstance.ts` already gets `pages-changed` from `GET /api/events` (`app/live.ts`) and refetches
 the index. The open page subscribes to the same event: if its path is in the batch, reading mode
 refetches the page; editing mode reads the page's `revision` (the event carries only `paths`, no
-revision) and raises the "The page changed" banner when it differs from the revision the editor
+revision) and raises the "The page changed." banner when it differs from the revision the editor
 holds (the one it opened with or its last save returned); it loads nothing into the editor until
 **Reload**. The editor's text is never replaced by the refresh. A change caused by the user's own
 save carries the revision the editor already holds and raises nothing. The feed is `workspace.watch`: when it is
@@ -640,7 +638,47 @@ A page deleted or moved by the agent while open: reading mode shows the missing-
 editing mode raises the same banner, and Reload leads to E-8. A page of a second store is named by
 its path plus its `store` id like any page route; the refresh matches both. *Reversed if*: the
 feed cannot name the changed path for a page in a second store (then only the first store
-refreshes, and the rest stays as today).
+refreshes, and the rest stays as today). The decision stops here; **Detail built** below is what the code does and prevails (the revision compared is the editor's own, from `useAutosave`).
+
+**Detail built by `adestia-ajouts-page-suivie`.**
+- One subscription, not two. `useInstance` already holds the stream (`followChanges`); besides
+  refetching the index it publishes the last batch as `pageChanges: { seq, paths }` (`seq` grows on
+  every batch, so two batches naming the same path are two signals). `App` hands it to `usePage`.
+  `usePage` opens no `EventSource` of its own.
+- The event names the LOGICAL path (`routes/watch.ts`: "never which circle it changed in"), so the
+  condition of "Reversed if" holds: a page of a second store is matched on its path alone, and the
+  refetch carries the page's own `?store=` as the first load does. A batch that names the path
+  while the open page lives in another store than the one that changed costs one extra read of the
+  same page (same revision: nothing shown); it is never wrong.
+- Reading: a match refetches the page silently (no `Loading`, the screen stays) and replaces
+  `page`; a failed refetch other than 404 changes nothing on screen (the next batch retries).
+  404 on the refetch is the deletion: `pageProblem` becomes `{ path, status: 404 }` and E-8 shows
+  (the page is no longer followed: `pagePath` still routes it, but the next fetch is the user's).
+- Editing: `Editor` tells `App` it is editing (`onEditing`, already there); `usePage` then does
+  not replace `page`. On a match it reads the whole page into a side slot, `incoming: { page } |
+  { gone: true }` (the latest batch wins: an older answer arriving late is dropped, so a long page
+  or repeated agent writes cost reads, never a wrong banner), and the editor compares
+  `incoming.page.revision` with the revision it holds now —
+  `useAutosave`'s own `revision` (the one it opened with or its last save returned), which the
+  hook exposes; `page.revision` alone does not move after a save and would raise the banner on the
+  user's own save. Equal: nothing. Different or gone: the banner. `reload()` (the banner's
+  button) moves `incoming` into `page` (or, when gone, into `pageProblem` 404, so E-8 shows) and
+  the editor's existing reset-on-revision effect loads it; it holds the page already, so Reload
+  has no loading state and cannot fail. Nothing else writes the editor's text. Leaving the
+  editor (`onEditing(false)`, Done, which saves first) with `incoming` pending applies it the same
+  way: the page is followed again as in reading, so the reader never shows a version older than
+  the disk. A side read that fails with anything but 404 (offline included) changes nothing: the offline
+  banner (E-32) owns that case, and the next batch retries. A 404 on the side read is the only
+  source of `incoming: { gone: true }`. Serving again after an outage catches nothing up by itself
+  (AD-22 rejects polling): the page stays as it was until the next batch or until it is reopened.
+- A save the user's own makes is silent for free: the feed reports it, the side read returns the
+  revision the save returned, equal to the editor's. The save-time 409 line ("The agent changed
+  this page. Reload to see its version.", `SaveStatus`) is unchanged and may show with the banner.
+- Watch off (`/api/events` 404): `followChanges` already stops asking, `pageChanges` stays at
+  `seq: 0`, nothing refreshes, as today.
+*Rejected for the detail*: the editor fetching the page itself (a second path to the same read,
+and the editor also embeds in plugins that have no feed); comparing the markdown text instead of
+the revision (the editor's text differs from the disk's after tidying).
 
 ### AD-22 — The server is gone when it does not answer, not when the browser says offline
 The offline banner (E-32) reads the outcome of the shell's own requests (failed fetch of any
@@ -965,8 +1003,6 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
 
 ## Known defects (found, not fixed by this epic)
 
-- **P-5 step 7: the open page does not refresh after an agent write.** Taken by
-  `adestia-ajouts` (AD-21, B-17); removed from here when that tranche lands.
 - **The shared loading row sits about 24 px right of the content edge** (`.adestia-loading`,
   `padding: var(--space-5)`), seen at the bench on every screen that shows it. It dates from the
   class of E-2 and E-14, not from `adestia-ajouts-chargements`; not repaired.
