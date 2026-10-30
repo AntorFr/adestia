@@ -55,6 +55,8 @@ export interface InstanceInfo {
 
 export interface InstanceOptions {
   readonly fetchImpl: typeof fetch
+  /** The change feed's link, for the server-reach layer (AD-22). */
+  readonly onLink?: (up: boolean) => void
   readonly openPage: (path: string, store?: string) => void
   /** The chat's channel, read at call time: it mounts after this runs. */
   readonly askRef: { readonly current: ((prompt: string) => void) | undefined }
@@ -65,7 +67,7 @@ export interface InstanceOptions {
   readonly onTrail: (id: string, crumbs: readonly { label: string; route?: string }[]) => void
 }
 
-export function useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef, onTrail }: InstanceOptions) {
+export function useInstance({ fetchImpl, onLink, openPage, askRef, composeRef, blocksRef, onTrail }: InstanceOptions) {
   const [instance, setInstance] = useState<InstanceInfo | undefined>()
   const [failures, setFailures] = useState<readonly { id: string; reason: string }[]>([])
   const [fatal, setFatal] = useState<string | undefined>()
@@ -258,6 +260,7 @@ export function useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef
     void followChanges({
       fetchImpl,
       signal: controller.signal,
+      onLink,
       onChange: async (paths) => {
         setPageChanges((current) => ({ seq: current.seq + 1, paths }))
         const list = await requestJson<{ entries?: IndexEntry[]; stores?: StoreInfo[] }>(
@@ -271,7 +274,7 @@ export function useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef
       },
     })
     return () => controller.abort()
-  }, [instance, fetchImpl])
+  }, [instance, fetchImpl, onLink])
 
   return { instance, failures, fatal, offline, needsLogin, pages, stores, skin, skinScheme, loaded, ready, indexed, pageChanges }
 }

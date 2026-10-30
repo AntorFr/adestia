@@ -595,7 +595,7 @@ per Known defects bullet order (it mixes areas that review differently).
 
 ### AD-18 — What stays out: functions, not defects
 The "Lacks" cells that name an absent function are not repaired: loading states of E-3, E-4, E-9,
-E-10, E-11, E-13, E-16, E-25, E-28; an offline screen and banner (E-21); a retry for E-8
+E-10, E-11, E-13, E-16, E-25, E-28; an offline screen (E-21; the banner is built, *superseded: AD-22*); a retry for E-8
 (*superseded for E-3, E-4, E-8, E-9, E-11 and E-13, built by `adestia-ajouts-chargements`: AD-24*; *and for E-10, built by `adestia-ajouts-mcp`*); a
 confirmation before Remove (E-10) (*superseded: E-33, built by `adestia-ajouts-mcp`, AD-26*); the empty states of E-4 and E-7; a delete command for
 conversations (`deleteConversation` has no screen); the half-built items of `.agent/status.md`
@@ -690,6 +690,36 @@ touched by it). No offline screen, no page cache. The first-load failure keeps t
 *Rejected*: `online`/`offline` events (wrong signal); an offline screen and cached pages (not
 kept by Monsieur).
 *Reversed if*: a request failure cannot be told from a deliberate abort in the fetch layer.
+
+**Detail built by `adestia-ajouts-hors-ligne`.** One observing layer, one hook, one banner.
+- `observeFetch(fetchImpl, report)` (`app/serverReach.ts`) returns a `fetch` that forwards every call
+  unchanged and reports its outcome to `report` — for same-origin `/api/` calls other than
+  `/api/health` only. A **down signal** is a thrown fetch that is not an `AbortError` (a deliberate
+  abort — navigation, a stopped turn, an unsubscribed feed — is never offline, AD-22's reversal
+  condition) or an HTTP 502/503/504 (a proxy in front of a server that is gone). Any other answer, 4xx
+  and 5xx included, is an **up signal**: the server answered. The wrapper never swallows or rewrites
+  the failure; the call site handles it as before.
+- `useServerReach(fetchImpl, { probeMs = 3000, probeTimeoutMs = 5000 })` → `{ fetchImpl: observed,
+  reachable }`. `App` builds it once, above the gates, and hands the observed `fetch` to every child that
+  takes `fetchImpl` today (`useInstance`, `usePage`, `Chat`, `CanvasHeader`, `Canvas`…), so the plugin
+  loader and the plugins it lends `fetchImpl` to are observed too; their contract (AD-8) is unchanged.
+- **A down signal does not light the banner by itself.** It starts a probe: `GET /api/health` through the
+  *unobserved* `fetch`, aborted after `probeTimeoutMs` (a dropped VPN often hangs rather than refuses).
+  The banner shows when a probe fails; while shown the probe repeats every `probeMs`; the first probe
+  that answers `ok`, or any up signal from a real call, clears it. One failed request in an otherwise
+  healthy session therefore never flashes the banner, and a hanging connection still ends in it.
+- `followChanges` (`app/live.ts`) gains one option, `onLink(up: boolean)`: `false` when the feed cannot
+  connect or the stream ends or errors without the shell having aborted it, `true` when it connects. A
+  `false` is a down signal (it starts the probe); the 404 "feed not offered" exit reports nothing.
+- `Offline` (`app/Offline.tsx`) is a pure component of `t`: `role="status"`, `wifi-off`, "The server is
+  not responding" (`fr`: « Le serveur ne répond pas »). `App` draws it in exactly one of two places (see
+  `docs/ecrans.md`, "E-32 in `adestia-ajouts-hors-ligne`"). The first-load failure is untouched: the gates
+  return before the shell is drawn, so the banner never sits on a gate.
+- No `navigator.onLine`, no `online`/`offline` listener, no service-worker change, no persisted state: a
+  reload starts "reachable" and the first failure or the stream finds the truth again.
+*Rejected here*: lighting on the first failed call without a probe (one blip flashes the banner);
+probing on a timer while healthy (traffic for nothing); a second `AbortController` to tell aborts apart
+(the error name already does).
 
 ### AD-23 — Context loss: Claude can still lose it; Copilot and Codex cannot
 Verified in code. Copilot (`COPILOT_HOME`) and Codex (`CODEX_HOME`) keep sessions under

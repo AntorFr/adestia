@@ -13,6 +13,7 @@
 import { Icon } from '../app/Icon.js'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 
 import { type ScreenView } from './stream.js'
 import {
@@ -62,6 +63,8 @@ export interface ChatProps {
    * as the text it is rather than as a link that goes nowhere.
    */
   readonly openPage?: (path: string) => void
+  /** Drawn above the rail's header (the offline banner on a phone, E-32); nothing when absent. */
+  readonly banner?: ReactNode
   /**
    * Hands the shell a way to send a message, so a plugin's button can ask the
    * agent something. The chat owns this channel; nobody else may fabricate a
@@ -155,6 +158,7 @@ export function Chat({
   onReady,
   extraButtons,
   openPage,
+  banner,
   view,
   signatures,
 }: ChatProps) {
@@ -247,6 +251,7 @@ export function Chat({
 
   return (
     <section className="adestia-chat">
+      {banner}
       <ChatHeader
         {...(brand !== undefined ? { brand } : {})}
         {...(crest !== undefined ? { crest } : {})}

@@ -109,6 +109,17 @@ it; `BENCH_URL` (with `BENCH_SKIN`, `BENCH_LOCALE`) plays an instance already ru
 about 25 minutes when the four skins run side by side (one process each, `BENCH_SKINS=<skin>`). Exit 1
 names each failing state.
 
+## The offline banner, a real server cut: `bench/scenarios/hors-ligne.mjs`
+
+`npm run build`, then `node bench/scenarios/hors-ligne.mjs` (Playwright from the environment, no Docker).
+Per skin and language it starts the launcher on a fixed `--port` and `--data` (seed `config-writable`),
+opens E-2, E-4 and E-14 (edited, saved, restart band showing), stops the process (SIGTERM), waits for the
+banner on each, presses **Restart** on E-14 (only `POST /api/restart` is scripted, 202) and looks at
+"Coming back…" with the banner, then starts the process again on the same port and data and waits for every
+banner to leave with no reload. On the phone, E-2 is also seen with the chat shown. Pictures:
+`bench/shots-hors-ligne/<skin>/<locale>/<theme>-<desk|phone>/` (or `BENCH_OUT`); `BENCH_SKINS`,
+`BENCH_LOCALES` narrow it. About 12 minutes for the 32 variants; exit 1 names each failed expectation.
+
 ## Every screen, both themes, both sizes: `bench/sweep.mjs`
 
 ```sh
