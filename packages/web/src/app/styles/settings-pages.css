@@ -242,14 +242,5 @@
 .adestia-config__restart-line > .adestia-icon,
 .adestia-config__locked > .adestia-icon { flex: none; margin-top: 2px; }
 
-/* The wait before the form: the shell's spinner, in the tile's colour. */
-.adestia-config__loading {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin: var(--space-5) 0 0;
-  color: var(--tile-color, var(--text-muted));
-}
-
 /* The empty and failing renderings wear the tile's colour like the header. */
 .adestia-prefs__page .adestia-empty__icon { color: var(--tile-color, var(--text-muted)); }

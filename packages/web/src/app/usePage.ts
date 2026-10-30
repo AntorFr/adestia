@@ -2,7 +2,7 @@
  * The page the address names, loaded — and the editor with it, on demand.
  */
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import type { PageDocument } from '../editor/Editor.js'
 import { sectionRoute } from './owners.js'
@@ -28,7 +28,19 @@ export function usePage({
   /** The section being browsed, if any. Home when undefined. */
   const [page, setPage] = useState<PageDocument | undefined>()
   /** Why the last page would not load — so the shell says it instead of nothing. */
-  const [pageProblem, setPageProblem] = useState<{ path: string; status: number } | undefined>()
+  const [problem, setProblem] = useState<{ path: string; status: number } | undefined>()
+  /** Re-reads the same address: bumped by `retry`. */
+  const [attempt, setAttempt] = useState(0)
+  /**
+   * Which request last answered. Loading is DERIVED from it — the request the
+   * address asks for has not answered — so the very first render of a page
+   * address is already loading, with no frame of the home in between.
+   */
+  const [settled, setSettled] = useState<string | undefined>()
+  const key = pagePath === undefined ? undefined : `${pagePath}\n${pageStore ?? ''}\n${attempt}`
+  const loading = key !== undefined && settled !== key
+  const pageProblem = !loading ? problem : undefined
+  const retry = useCallback(() => setAttempt((current) => current + 1), [])
   /**
    * The editor is loaded on demand: ProseMirror and Milkdown weigh more than
    * the entire rest of the shell, and someone who only wants to chat should
@@ -48,7 +60,8 @@ export function usePage({
   useEffect(() => {
     if (!pagePath) {
       setPage(undefined)
-      setPageProblem(undefined)
+      setProblem(undefined)
+      setSettled(undefined)
       return undefined
     }
     let cancelled = false
@@ -73,6 +86,7 @@ export function usePage({
       if (response.status === 409) {
         const folder = pagePath.split('/').slice(0, -1).join('/')
         location.hash = folder ? sectionRoute(folder) : ''
+        setSettled(key)
         return
       }
       if (!response.ok || response.data === undefined) {
@@ -80,19 +94,23 @@ export function usePage({
         // exactly as it was — which is the home — and there was no way for a
         // reader to tell a mistyped address from an expired session.
         setPage(undefined)
-        setPageProblem({ path: pagePath, status: response.status })
+        setProblem({ path: pagePath, status: response.status })
+        setSettled(key)
         return
       }
-      setPageProblem(undefined)
+      setProblem(undefined)
       // Stored via a thunk: passing a function to setState directly would
       // have React call it as an updater.
       setMount(() => editor.mountMilkdown)
       setPage(response.data)
+      setSettled(key)
     })()
     return () => {
       cancelled = true
     }
-  }, [pagePath, pageStore, fetchImpl])
+    // `key` is a function of the three others and `attempt`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pagePath, pageStore, fetchImpl, attempt])
 
-  return { page, pageProblem, mount }
+  return { page, pageProblem, loading, retry, mount }
 }

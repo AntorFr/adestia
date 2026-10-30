@@ -21,6 +21,7 @@ import { Icon } from './Icon.js'
 import { Brief } from './Brief.js'
 import { Domains, plural } from './Domains.js'
 import { INDEX_FILE } from './paths.js'
+import { Loading } from './ui/index.js'
 
 export interface HomeProps {
   readonly ready?: boolean
@@ -133,7 +134,7 @@ export function Home({
       )}
 
       {!ready ? (
-        <div className="adestia-loading" role="status"><Icon name="loader-circle" />{t('Loading…')}</div>
+        <Loading t={t} />
       ) : (
         <>
           <Brief

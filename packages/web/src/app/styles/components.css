@@ -170,7 +170,7 @@
 }
 
 .adestia-empty__icon { font-size: 28px; color: var(--text-muted); }
-.adestia-empty__text { margin: 0; color: var(--text-muted); }
+.adestia-empty__text { margin: 0; max-width: 100%; overflow-wrap: anywhere; color: var(--text-muted); }
 .adestia-empty__action { margin-top: var(--space-1); }
 
 /* Field -------------------------------------------------------------------- */
