@@ -207,7 +207,7 @@ translated "Loading…"), the shared empty state of E-8 with its icon, `Button`,
 vocabulary of looks (`docs/charte.md`).
 
 **Built so far:** loading and Retry for E-3, E-4, E-8, E-9, E-11 and E-13
-(`adestia-ajouts-chargements`). Every other row below (E-10, E-16, E-25, E-28, E-32, E-33, the
+(`adestia-ajouts-chargements`) and for the plugins' E-25 and E-28 (`adestia-ajouts-plugins-chargements`). Every other row below (E-10, E-16, E-32, E-33, the
 refresh of E-4) is a target, not yet in the code; so is the Retry rule of "Loading and failure"
 for those screens.
 

@@ -51,7 +51,7 @@ To look at the app without an agent or Docker (a scripted engine, seeded data):
 npm ci && npm run build               # npm run build also builds the web shell
 node bench/launch.mjs --engine fake    # prints `listening on <url>`; <url>/api/health answers ok
 node bench/sweep.mjs                   # every screen, light and dark, desk and phone
-node bench/scenarios/chargements.mjs   # loading and Retry on E-3, E-4, E-8, E-9, E-11, E-13 (needs the build; images in $BENCH_OUT)
+node bench/scenarios/chargements.mjs   # loading and Retry on E-3, E-4, E-8, E-9, E-11, E-13 (needs the build; images in $BENCH_OUT); the plugins' E-25 and E-28 are covered by plugins/*/test/chargement.test.js, not by this scenario
 ```
 
 The sweep takes Playwright and Chromium from the environment (it looks in `/usr/lib/node_modules`, then `npm root -g`); the `pages-*` scenarios look only in `/usr/lib/node_modules`, so a host with another global root must link it there for them (`chargements.mjs` and the sweep search both places, as above): `ln -s "$(npm root -g)/playwright" /usr/lib/node_modules/playwright`); do not
