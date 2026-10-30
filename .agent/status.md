@@ -1,14 +1,14 @@
 # Status — Adestia
-> MàJ : 2026-10-29
+> MàJ : 2026-10-30
 
 ## Version courante
 
-- Dernier tag accessible : **`v0.97.0-adestia-ajouts.1`** (`git describe --tags
+- Dernier tag accessible : **`v0.97.0-adestia-ajouts.2`** (`git describe --tags
   --abbrev=0`), tag de l'epic `adestia-ajouts` ; `v0.95.0` est le dernier tag de `main` (epic
   `adestia-qualite`).
-- Branche de travail : `feature/adestia-ajouts-chargements`, sur `origin/epic/adestia-ajouts`
-  (chargement et Réessayer des écrans du shell, AD-24 ; recette : `node bench/scenarios/chargements.mjs`
-  après `npm run build`). Hérité de l'epic précédent (correctifs de recette et de verify : un message envoyé avant que le premier soit parti est retenu ;
+- Branche de travail : `feature/adestia-ajouts-hors-ligne`, sur `origin/epic/adestia-ajouts`
+  (bandeau hors ligne E-32, AD-22 ; recette : `node bench/scenarios/hors-ligne.mjs` après `npm run build` ;
+  chargement et Réessayer, AD-24, déjà fusionnés : `node bench/scenarios/chargements.mjs`). Hérité de l'epic précédent (correctifs de recette et de verify : un message envoyé avant que le premier soit parti est retenu ;
   en-tête du rail à moins de 400 px à un seul espacement, sélecteur de modèle d'au moins 72 px ; bulle d'erreur seule à marge symétrique). Banc, tests, serveur, charte,
   plugins, pages et chat sont intégrés à l'epic ; la documentation est relue
   contre le code.

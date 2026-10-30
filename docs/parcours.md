@@ -125,7 +125,7 @@ nothing else is added (see Out of scope).
   (E-3, E-4, E-9, E-10, E-11, E-13, E-16, E-25, E-28), and every one of those that fetches its
   own data says so in a message with a **Retry** when the fetch fails (E-4, E-8, E-10, E-11,
   E-13, E-16, E-25, E-28). E-3 and E-9 draw from the instance index: they get the loading
-  state only, their failure is the offline banner (B-19). The empty states of E-4 and E-7 are
+  state only, when the server does not answer, the offline banner (B-19) says it; a 500 with a healthy server leaves them on their loading row. The empty states of E-4 and E-7 are
   not part of this need. *(P-16)*
 - **B-19** — When the server does not answer, a banner over the open shell says so ("The
   server is not responding"), and it goes away by itself when the server answers again. There
@@ -376,7 +376,7 @@ Needs: B-17, B-18, B-19, B-20, B-21, B-22
 - **Kept for later by Monsieur (2026-10-25), not built by `adestia-ajouts`**: deleting a
   conversation (the archive serves to audit), the engine's permissions, a cost view (the
   token counter per conversation suffices). **Refused**: `adestia init` and the ephemeral
-  question. Also not built: an offline screen, a cache of pages for offline reading, toasts,
+  question. Also not built: an offline screen, a cache of pages for offline reading (the offline banner is built: B-19, P-16), toasts,
   the empty states of E-4 and E-7, and
   a volume for the Claude home in the deployment (`k8s-home-lab` is Monsieur's).
 - Deployment: nothing here changes `k8s-home-lab`; the epic reaches `main` and is tagged,

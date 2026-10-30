@@ -33,7 +33,7 @@
 - **PWA.** A web manifest per skin (`skins/*/web.manifest`) and a service worker
   (`sw/sw.ts`, rule in `sw/policy.ts`): network-first for the document and mutable files,
   cache-first for content-addressed `/assets/*`, `/api/`, `/auth/` and `/mcp` never
-  touched. Offline, the cached shell opens; there is no offline screen of its own (E-21).
+  touched. Offline, the cached shell opens; there is no offline screen of its own (E-21); once the shell is open, the offline banner (E-32) says when the server does not answer.
 - **Themes and skins.** Light, dark, or system (`useTheme.ts`, chosen in E-15); four skins
   (`skins/alfred`, `dobby`, `nestor`, `skippy`) redefine tokens and may fill slots
   (hero, console band, crest, send icon, busy indicator, placeholder) through `SkinSlot.tsx`.
@@ -448,8 +448,8 @@ E-30; the tester presses Escape on each):
 
 **States.** Loading, empty, error and conflict are today's, redrawn by tokens (the list per screen is
 in § States above). *Offline*: no plugin has an offline state and none is added (an open shell that
-loses the network shows each plugin's error state or the stale view, as today; the offline banner is a
-recommendation). *Permission refused*: no plugin screen checks a role, so there is none; the one refusal
+loses the network shows each plugin's error state or the stale view, as today; the offline banner E-32 is
+the shell's and needs nothing from the plugin: it is drawn above the canvas, and the plugins' `fetchImpl` is observed). *Permission refused*: no plugin screen checks a role, so there is none; the one refusal
 a plugin screen shows is E-30's camera permission, said in the composer (`scanner unavailable` /
 « scanner indisponible »), as today. *Extreme content*: a very long task, trip, piece or dish name
 truncates with an ellipsis and a `title`, never pushes a control out of its row, in the plugin's
@@ -614,8 +614,8 @@ shared components (spinner, empty state, alert icon, `--tile-color`); a state it
 (E-9 counts loading, E-10/E-11/E-13 loading, E-13 error, E-15 token loading) stays
 absent and is listed in the epic's improvement recommendations. Long content (a very long
 server name, instruction path, caller name) truncates with an ellipsis and a `title`,
-never wraps a control out of its row. Offline: only the first start (E-21); an open shell
-that loses the network keeps today's behaviour.
+never wraps a control out of its row. Offline: the first start is E-21; an open shell that
+loses the server shows the banner E-32.
 
 **E-1 Gates.** One centred card (`--surface-raised`, `--shadow`, 420 px max, 24 px
 padding): an icon above the title, the sentence, the actions that exist today.
@@ -631,7 +631,7 @@ control exists.
 **E-21 Offline.** The cached shell opened with no network reaches the Fatal gate with the
 browser's network error; it is drawn as that gate, with a wifi-off icon when the failure
 is a network failure (a thrown fetch, not an HTTP status). Same words. A dedicated offline
-screen and an offline banner are recommendations, not built.
+screen is not built (the banner E-32 is the answer once the shell is open).
 
 **E-9 Settings mosaic.** The four tiles keep their order, labels and counts; tile emoji
 became Lucide icons (plug, book-open, sliders-horizontal, handshake) on the tile plate.
@@ -876,8 +876,8 @@ falls through to Home; E-19 reports browser module refusals.
 **Limits kept (B-1).** E-3 draws the shared loading row until the shell's index answers
 (`adestia-ajouts-chargements`); E-4 keeps the previous screen
 while fetching and has no special empty-page state. E-7 has no distinct empty
-collection state. Offline after startup keeps existing
-behaviour; E-21 covers startup failure. These remain end-of-epic recommendations.
+collection state. Offline after startup is the banner E-32
+(`adestia-ajouts-hors-ligne`); E-21 covers startup failure. These remain end-of-epic recommendations.
 Roles are unchanged: every admitted person can read/edit/save; the agent writes
 the same files and may cause the conflict state. There is no screen for a calling agent.
 
