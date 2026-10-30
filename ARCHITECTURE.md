@@ -598,8 +598,8 @@ per Known defects bullet order (it mixes areas that review differently).
 ### AD-18 — What stays out: functions, not defects
 The "Lacks" cells that name an absent function are not repaired: loading states of E-3, E-4, E-9,
 E-10, E-11, E-13, E-16, E-25, E-28; an offline screen and banner (E-21); a retry for E-8
-(*superseded for E-3, E-4, E-8, E-9, E-11 and E-13, built by `adestia-ajouts-chargements`: AD-24*); a
-confirmation before Remove (E-10); the empty states of E-4 and E-7; a delete command for
+(*superseded for E-3, E-4, E-8, E-9, E-11 and E-13, built by `adestia-ajouts-chargements`: AD-24*; *and for E-10, built by `adestia-ajouts-mcp`*); a
+confirmation before Remove (E-10) (*superseded: E-33, built by `adestia-ajouts-mcp`, AD-26*); the empty states of E-4 and E-7; a delete command for
 conversations (`deleteConversation` has no screen); the half-built items of `.agent/status.md`
 (`ask` posture, usage view, Copilot permission feedback, `adestia init`). They go to the closing
 recommendations, posted in this epic's discussion at the end of the framing.
@@ -733,6 +733,21 @@ shows for 0 and 17. `config.ts` keeps its own check, so a hand-edited file stays
 E-33 is a `Sheet` with `NamePrompt`'s footer shape, opened by `ServerDetail`'s **Remove**. The
 declaration is removed only on **Remove**. No generic `useConfirm` is created for one use.
 *Reversed if*: a second confirmation is kept later; then it is extracted.
+
+**Detail built by `adestia-ajouts-mcp`.**
+- `app/mcp/ConfirmRemove.tsx` is a `Sheet` with `NamePrompt`'s footer shape; `ServerDetail` holds a
+  `confirming` flag and its **Remove** only sets it. On confirm the flag drops *before* `onRemove` runs, so
+  one press sends one `DELETE`. `useDeclaration.remove` is unchanged (a failure still lands in `save`).
+- The initial focus goes to Cancel through one small, opt-in rule in the shared scope (`ui/focus.ts`): on
+  open, focus the first element marked `data-autofocus` inside the container, else the first focusable as
+  before. `Button` already forwards `data-*`. Nothing else in the scope changes (trap, Escape, return of
+  focus), and no other sheet is marked, so none moves.
+- Loading and failure of E-10 come from `useDeclaration`'s `views` fetch only, through the shared hook shape
+  and parts of AD-24 (`status`, `retry()`); the first answer ends loading, a later refetch never returns to
+  it. `useMcpServers` (health) is not touched.
+*Rejected here*: a `window.confirm` (AD-26); focusing Cancel with an effect in the footer (the scope's own
+effect runs after it and takes the ✕); making Remove wait on the `DELETE` inside the open sheet (a second
+state for one use).
 
 ## Refactoring targets
 

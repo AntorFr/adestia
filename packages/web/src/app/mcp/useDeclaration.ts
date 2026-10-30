@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from 'react'
 import type { McpServerView } from '@antorfr/adestia-schemas'
 
 import { jsonInit, requestJson } from '../request.js'
+import { useRequest } from '../useRequest.js'
 import { TEMPLATE } from './health.js'
 
 export type Save =
@@ -22,7 +23,12 @@ export function useDeclaration(
   fetchImpl: typeof fetch,
   t: (key: string) => string,
 ) {
-  const [views, setViews] = useState<readonly McpServerView[] | undefined>()
+  // The first read carries the loading and failure states (AD-24). Later reads
+  // (after Save or Remove) land in `fresh` and never bring the loading back.
+  const first = useRequest<{ servers?: readonly McpServerView[] }>(fetchImpl, '/api/mcp/servers', { t })
+  const [fresh, setFresh] = useState<readonly McpServerView[] | undefined>()
+  const views = fresh ?? (first.status === 'ready' ? (first.data?.servers ?? []) : undefined)
+  const status = fresh !== undefined ? 'ready' : first.status
   /**
    * The new-server form, which is deliberately NOT in the address.
    *
@@ -43,15 +49,11 @@ export function useDeclaration(
       undefined,
       t,
     )
-    if (result.ok) setViews(result.data?.servers ?? [])
+    if (result.ok) setFresh(result.data?.servers ?? [])
   }, [fetchImpl, t])
 
-  useEffect(() => {
-    void refresh()
-    // `t` is a new function on every render of a caller that inlines it;
-    // refreshing on each would poll. The list is fetched when the transport changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchImpl])
+  // A new transport starts over: the first read runs again and the held list goes.
+  useEffect(() => { setFresh(undefined) }, [fetchImpl])
 
   const shown = views?.find((view) => view.name === open)
 
@@ -125,5 +127,6 @@ export function useDeclaration(
     await refresh()
   }, [fetchImpl, onOpen, open, refresh, t])
 
-  return { views, shown, adding, draft, setDraft, dirty: draft !== onServer, save, beginAdding, commit, remove }
+  return {
+    views, status, error: first.error, httpStatus: first.httpStatus, retry: first.retry, shown, adding, draft, setDraft, dirty: draft !== onServer, save, beginAdding, commit, remove }
 }

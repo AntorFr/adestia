@@ -6,9 +6,10 @@
 - Dernier tag accessible : **`v0.97.0-adestia-ajouts.1`** (`git describe --tags
   --abbrev=0`), tag de l'epic `adestia-ajouts` ; `v0.95.0` est le dernier tag de `main` (epic
   `adestia-qualite`).
-- Branche de travail : `feature/adestia-ajouts-chargements`, sur `origin/epic/adestia-ajouts`
-  (chargement et Réessayer des écrans du shell, AD-24 ; recette : `node bench/scenarios/chargements.mjs`
-  après `npm run build`). Hérité de l'epic précédent (correctifs de recette et de verify : un message envoyé avant que le premier soit parti est retenu ;
+- Branche de travail : `feature/adestia-ajouts-mcp`, sur `origin/epic/adestia-ajouts`
+  (E-10 : chargement et Réessayer, E-33 : confirmation avant de retirer un serveur MCP, AD-24 et AD-26 ;
+  la tranche précédente, chargements des autres écrans, est fusionnée ; recette : aucun scénario de `bench/scenarios/` ne couvre E-10 ni E-33 ; après `npm run build`, ouvrir à la main
+  `#/settings/mcp/<nom>` sur `node bench/launch.mjs --engine fake`. `chargements.mjs` couvre les autres écrans). Hérité de l'epic précédent (correctifs de recette et de verify : un message envoyé avant que le premier soit parti est retenu ;
   en-tête du rail à moins de 400 px à un seul espacement, sélecteur de modèle d'au moins 72 px ; bulle d'erreur seule à marge symétrique). Banc, tests, serveur, charte,
   plugins, pages et chat sont intégrés à l'epic ; la documentation est relue
   contre le code.
@@ -58,6 +59,16 @@ PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone
   `turns.max` y reste 3. Lancer `node packages/server/bin/adestia.js -c <config>` (ou
   `--engine claude` avec `CLAUDE_CODE_OAUTH_TOKEN`) ; captures de E-14 sous les quatre habillages, en `en` et `fr`.
 
+## Confirmation du retrait d'un serveur MCP (feature `adestia-ajouts-mcp`)
+
+- Fait : Remove (E-10) ouvre `ConfirmRemove` (E-33) ; Cancel, ✕, voile et Escape ne suppriment rien ;
+  un seul `DELETE` par confirmation ; Remove reste désactivé jusqu'à la réponse. E-10 montre son
+  chargement et Réessayer (premier fetch seulement ; un refetch ne revient pas au chargement).
+- Piège : le focus initial sur Cancel vient de `data-autofocus` dans `ui/focus.ts` ; aucune autre
+  feuille ne le pose, et un effet dans le pied de feuille serait écrasé par celui du scope.
+- Reste à la recette : captures de la feuille (téléphone et bureau, quatre habillages, `en`/`fr`) et
+  de E-10 ralenti puis en erreur, au banc.
+
 ## À moitié construit
 
 - La question de permission ne permet pas de corriger la règle proposée par le
@@ -79,8 +90,8 @@ PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone
   ne propose pas ce mode (`routes/turns.ts`).
 - L'éditeur embarqué ne reçoit ni `attach`/`compose` ni l'index `pages` du shell
   (`plugins/PageEditor.tsx`) : pas de dépôt de fichier ni de résolution par cet index.
-- Chargement et « Réessayer » sont construits pour E-3, E-4, E-8, E-9, E-11 et E-13
-  (`adestia-ajouts-chargements`). Restent à faire : E-10 (tranche MCP), E-16 (chat),
+- Chargement et « Réessayer » sont construits pour E-3, E-4, E-8, E-9, E-10, E-11 et E-13
+  (`adestia-ajouts-chargements`, `adestia-ajouts-mcp`). Restent à faire : E-16 (chat),
   E-25 et E-28 (plugins), le rafraîchissement de E-4 et son bandeau (`page-suivie`),
   le bandeau hors ligne E-32 ; les toasts restent hors de l'epic (docs/ecrans.md).
 - Mesures du banc en pixels à généraliser ; `journal` : couverture navigateur
