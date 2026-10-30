@@ -206,7 +206,7 @@ the matching "Lacks" cell. Same shared parts everywhere: the loading row of E-14
 translated "Loading…"), the shared empty state of E-8 with its icon, `Button`, `Sheet`; no new
 vocabulary of looks (`docs/charte.md`).
 
-**Built so far:** loading and Retry for E-3, E-4, E-8, E-9, E-11 and E-13
+**Built so far:** loading for E-3, E-4, E-8, E-9, E-11 and E-13 (Retry on all but E-3 and E-9)
 (`adestia-ajouts-chargements`), for E-10 with the E-33 confirmation (`adestia-ajouts-mcp`), and the refresh and banner of E-4 (`adestia-ajouts-page-suivie`,
 described under "E-4 — the page that follows the agent" below, and in the States table above). Every other row below (E-16, E-25, E-28, E-32) is a target, not yet in the code; so is the Retry rule of "Loading and failure"
 for those screens.
