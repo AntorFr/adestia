@@ -889,6 +889,7 @@ in the sprite. A plugin's declared tile icon remains its own choice.
 - **Popover** — `.adestia-popover`: a raised panel, positioned by you (`position: fixed`,
   8 px from the anchor).
 - **Empty state** — `.adestia-empty.adestia-empty--state` with `__icon`, `__text`, `__action`.
+- **Loading and failure** — while a fetch runs, a `div.adestia-loading` (`role="status"`, a spinning `loader-circle` icon, then "Loading…"); on failure, an empty state with `circle-alert`, a wrapping message and a `.adestia-btn` Retry in `__action` that runs the fetch again (see the atelier and parcours plugins).
 - **Field** — `.adestia-field` with `__label`, `__help`, `__error`; controls
   `.adestia-input`, `.adestia-select`, `.adestia-textarea`, and `.adestia-toggle` (a real
   `<input type="checkbox" role="switch">`). Bind help and error with `aria-describedby`,

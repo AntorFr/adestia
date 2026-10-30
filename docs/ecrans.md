@@ -241,7 +241,7 @@ The plugins' failure sentences are their own, listed below (the detail of `adest
 The plugins stay what they are (AD-8): no import from the shell, no new field in `PluginApi`. They draw
 with the classes `adestia-ajouts-chargements` names above (`.adestia-loading`, the empty-state
 classes, `.adestia-btn`); that tranche is the single source of their markup, and a plugin copies it
-verbatim. No new CSS rule in a plugin sheet unless the placement needs one, and then in the shell's
+verbatim. The plugins' Retry is the plain `.adestia-btn` with its label and no `rotate-ccw` icon (the shell's `Failure` adds it; a plugin copies the classes, not the component). No new CSS rule in a plugin sheet unless the placement needs one, and then in the shell's
 tokens only (`plugins/test/css.test.js`).
 
 | Plugin screen | Fetch | Loading | Failure (network error, or a non-2xx answer) |
