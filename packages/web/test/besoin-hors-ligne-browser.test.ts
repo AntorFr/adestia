@@ -191,6 +191,10 @@ describe.skipIf(!playwright)('B-19 · le bandeau « le serveur ne répond pas »
         const { context, page } = await open(browser, b.url, { theme: 'light', size: 'desk', locale, route: screen.route })
         try {
           await page.waitForSelector('.adestia-canvas__body', { timeout: 20_000 })
+          // The screen has drawn its data before the server goes: its own read must not be the one that fails.
+          const drawn = Date.now() + 20_000
+          const pattern = screen.shown
+          while (Date.now() < drawn && !pattern.test(await page.evaluate(() => document.querySelector('.adestia-canvas__body')?.textContent ?? ''))) await new Promise((r) => setTimeout(r, 100))
           // At rest: no banner, nothing drawn.
           expect(await banners(page, words)).toHaveLength(0)
           expect(await page.evaluate(() => document.querySelectorAll('.adestia-offline').length)).toBe(0)
