@@ -33,7 +33,7 @@ import { SettingField } from './configuration/SettingField.js'
 import { keyOf, type Value } from './configuration/model.js'
 import { useRestart } from './configuration/useRestart.js'
 import { useSettings } from './configuration/useSettings.js'
-import { Button, EmptyState } from './ui/index.js'
+import { Button, EmptyState, Loading } from './ui/index.js'
 
 /** The tile's colour on every rendering of the screen, loading and failing included. */
 const TILE = { '--tile-color': 'var(--adestia-hue-ardoise, var(--accent))' } as Record<string, string>
@@ -68,10 +68,7 @@ export function Configuration({
   if (!payload) {
     return (
       <div className="adestia-prefs adestia-prefs__page" style={TILE}>
-        <p className="adestia-config__loading" role="status">
-          <Icon name="loader-circle" className="adestia-icon--spin" />
-          {t('Loading…')}
-        </p>
+        <Loading t={t} />
       </div>
     )
   }
