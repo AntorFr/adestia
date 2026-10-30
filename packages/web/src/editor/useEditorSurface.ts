@@ -55,12 +55,14 @@ export function useEditorSurface(
   const opening = useRef(saved)
   /*
    * ...except in the render where `shown` just changed (a reload took the
-   * agent's version): `saved` only follows in an effect, one render later,
+   * agent's version, even with the same text: the revision is the key): `saved` only follows in an effect, one render later,
    * and the remount in this very render would open on the old text.
    */
   const lastShown = useRef(shown)
-  if (lastShown.current !== shown) {
+  const lastRevision = useRef(page.revision)
+  if (lastShown.current !== shown || lastRevision.current !== page.revision) {
     lastShown.current = shown
+    lastRevision.current = page.revision
     opening.current = shown
   } else {
     opening.current = saved
@@ -69,7 +71,7 @@ export function useEditorSurface(
   useEffect(() => {
     if (!editing || !mount || !host.current || !page.editable) return undefined
     return mount(host.current, opening.current, setBody, env.current)
-  }, [editing, mount, page.editable, shown, page.path, setBody])
+  }, [editing, mount, page.editable, shown, page.revision, page.path, setBody])
 
   return host
 }
