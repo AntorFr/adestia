@@ -55,7 +55,7 @@ node bench/scenarios/chargements.mjs   # loading and Retry on E-3, E-4, E-8, E-9
 node bench/scenarios/page-suivie.mjs   # the open page follows the agent, B-17 (needs the build; BENCH_SKINS, BENCH_LOCALES narrow it)
 ```
 
-The sweep takes Playwright and Chromium from the environment (it looks in `/usr/lib/node_modules`, then `npm root -g`); the `pages-*` scenarios look only in `/usr/lib/node_modules`, so a host with another global root must link it there for them (`chargements.mjs`, `page-suivie.mjs` and the sweep search both places, as above): `ln -s "$(npm root -g)/playwright" /usr/lib/node_modules/playwright`); do not
+The scenarios need Playwright and Chromium (`BENCH_SIZES`, `BENCH_SKINS`, `BENCH_LOCALES`, `BENCH_OUT` narrow or move a run). The sweep takes Playwright and Chromium from the environment (it looks in `/usr/lib/node_modules`, then `npm root -g`); the `pages-*` scenarios look only in `/usr/lib/node_modules`, so a host with another global root must link it there for them (`chargements.mjs`, `page-suivie.mjs` and the sweep search both places, as above): `ln -s "$(npm root -g)/playwright" /usr/lib/node_modules/playwright`); do not
 add them to the repo. The launcher runs until SIGTERM (`kill <pid>`, or Ctrl-C), which
 removes its throwaway data; in a script, start it in the background and keep its pid
 (`$!`). Run it from the clone's root: the bundled plugins are found through `./plugins`, and from elsewhere the server starts with `0 of 0 plugin(s) active`. The seed brings its own two small plugins (`bench-notes`, `bench-degraded`), so the boot log says `2 of 2 plugin(s) active`, not the bundled ones of `plugins/`: that is normal. Its boot log includes a plugin refused on purpose (`bench-refused`, part of the seed): not an error.

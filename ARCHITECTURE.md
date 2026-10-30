@@ -634,6 +634,7 @@ off (404), nothing refreshes and the save-time 409 stays the only guard, as toda
 bench stops being forbidden to require the refresh (the "Known defects" entry is removed).
 *Rejected*: polling the page (a second channel beside the one that exists); refreshing in editing
 mode with a merge (loses typed text, or needs a design nobody asked for).
+The decision stops here; **Detail built** below is what the code does and prevails (the revision compared is the editor's own, from `useAutosave`).
 A page deleted or moved by the agent while open: reading mode shows the missing-page state (E-8);
 editing mode raises the same banner, and Reload leads to E-8. A page of a second store is named by
 its path plus its `store` id like any page route; the refresh matches both. *Reversed if*: the

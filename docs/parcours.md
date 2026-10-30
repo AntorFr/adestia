@@ -120,7 +120,7 @@ nothing else is added (see Out of scope).
 - **B-17** — The page that is open follows what the agent writes. In reading mode (E-4) it
   refreshes by itself when its file changes on disk (when the workspace watch is off, nothing refreshes, as today). If the agent deletes or moves the open page, reading mode shows E-8; editing mode shows the same banner and **Reload** leads to E-8. In editing mode a banner "The page
   changed." offers **Reload**; nothing is replaced under the cursor, and the text being
-  typed is never lost to the refresh itself (only the user's own **Reload** replaces it, and the banner says so). *(P-16)*
+  typed is never lost to the refresh itself (only the user's own **Reload** replaces it). *(P-16)*
 - **B-18** — Every screen whose "Lacks" names a loading state shows one while it fetches
   (E-3, E-4, E-9, E-10, E-11, E-13, E-16, E-25, E-28), and every one of those that fetches its
   own data says so in a message with a **Retry** when the fetch fails (E-4, E-8, E-10, E-11,
