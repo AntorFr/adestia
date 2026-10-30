@@ -3,8 +3,8 @@ import { Failure } from './Failure.js'
 
 /**
  * A failed read, said where the data would have been. Retry is offered only
- * when trying again can change the outcome: the server did not answer (0) or
- * failed (5xx). A 404 or 401/403 keeps its message and no button (AD-24).
+ * when trying again can change the outcome: every status but 404 and 401/403,
+ * which keep their message and no button (AD-24).
  */
 export function ReadFailure({
   message,

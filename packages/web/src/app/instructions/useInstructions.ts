@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { jsonInit, requestJson } from '../request.js'
+import { FALLBACK_KEY, jsonInit, requestJson } from '../request.js'
 import { fileUrl, type InstructionFile, type InstructionPath, type Kind } from './model.js'
 
 /** How a read stands: the wait, the answer, or what went wrong and with which status. */
@@ -37,6 +37,11 @@ function useLatest(t: (key: string) => string) {
   return useCallback((key: string) => ref.current(key), [])
 }
 
+/** A failed read says its sentence capitalised, as every shown failure does (AD-24). */
+function sayRead(say: (key: string) => string) {
+  return (key: string) => say(key === FALLBACK_KEY ? 'Request failed (%n)' : key)
+}
+
 /**
  * The list, read once and again on demand (an import calls `reload`, so a new
  * card appears unprompted).
@@ -57,7 +62,7 @@ export function useInstructionList(fetchImpl: typeof fetch, t: (key: string) => 
     const result = await requestJson<{
       files?: readonly InstructionFile[]
       paths?: readonly InstructionPath[]
-    }>(fetchImpl, '/api/instructions', undefined, say)
+    }>(fetchImpl, '/api/instructions', undefined, sayRead(say))
     if (latest.current !== mine) return
     // 404 means this engine has no such concept — a different fact from
     // "you have written none", and the screen must not offer an editor for
@@ -134,7 +139,7 @@ export function useInstructionText(
     let live = true
     setRead(LOADING)
     void (async () => {
-      const result = await requestJson<{ markdown?: string }>(fetchImpl, fileUrl(open), undefined, say)
+      const result = await requestJson<{ markdown?: string }>(fetchImpl, fileUrl(open), undefined, sayRead(say))
       if (!live) return
       if (!result.ok) {
         // Never an empty, editable box in place of a file that could not be read.
