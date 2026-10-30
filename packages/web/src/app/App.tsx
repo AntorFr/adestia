@@ -114,7 +114,7 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
     // that says nothing about its new screen must show the app's name alone.
     onChange: () => setPluginTrail({ id: '', crumbs: [] }),
   })
-  const { page, pageProblem, loading: pageLoading, retry: retryPage, mount, onEditing } = usePage({
+  const { page, pageProblem, loading: pageLoading, retry: retryPage, mount, onEditing, incoming, reload: reloadPage } = usePage({
     pagePath,
     pageStore,
     fetchImpl,
@@ -267,6 +267,8 @@ export function App({ fetchImpl = fetch }: { fetchImpl?: typeof fetch }) {
           pageLoading={pageLoading}
           retryPage={retryPage}
           onEditing={onEditing}
+          incoming={incoming}
+          reloadPage={reloadPage}
           mount={mount}
           section={section}
           channel={{ ask: askRef, compose: composeRef, attach: attachRef }}

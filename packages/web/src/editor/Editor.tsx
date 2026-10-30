@@ -21,6 +21,7 @@ import type { StoreInfo } from '../plugins/contract.js'
 import type { Say } from '../plugins/words.js'
 import { PluginBoundary } from '../plugins/Boundary.js'
 import { Icon } from '../app/Icon.js'
+import type { Incoming } from '../app/usePage.js'
 import { resolveLocale, translator } from '../app/i18n.js'
 import { Button } from '../app/ui/index.js'
 import { Reader, type BlockComponents, type LayoutComponents, type VocabularyContext } from './Reader.js'
@@ -169,6 +170,14 @@ export interface EditorProps {
    * 409 on somebody's unsaved paragraph.
    */
   readonly onEditing?: (editing: boolean) => void
+  /**
+   * What the disk now holds, read aside by the shell while this editor is open
+   * (AD-21). Absent — an embedded editor, no feed — means no banner. Never
+   * replaces the typed text: it only raises the banner.
+   */
+  readonly incoming?: Incoming | undefined
+  /** Puts `incoming` on screen: the agent's version, or E-8 when the page is gone. */
+  readonly onReload?: () => void
   /** Called after a save the server accepted, with the revision it returned. */
   readonly onSaved?: (revision: string) => void
   /** Injected in tests; the real one mounts Milkdown. */
@@ -196,9 +205,11 @@ export function Editor(props: EditorProps) {
     titleField = false,
     onEditing,
     onSaved,
+    incoming,
+    onReload,
     t = translator(resolveLocale(locale)),
   } = props
-  const { shown, setBody, title, setTitle, markdown, saved, status, dirty, save } =
+  const { shown, setBody, title, setTitle, markdown, saved, status, dirty, save, revision } =
     useAutosave(page, fetchImpl, titleField, onSaved)
   /**
    * Reading by default.
@@ -244,6 +255,13 @@ export function Editor(props: EditorProps) {
    */
   const type = page.fields?.['type']
   const Layout = typeof type === 'string' ? layouts?.[type] : undefined
+
+  /*
+   * Compared by REVISION, against the one this editor holds (opening, or the
+   * last save): `page.revision` stays put after a save, and the text is
+   * reformatted by the editor, so neither can say whether the agent wrote.
+   */
+  const changed = incoming !== undefined && ('gone' in incoming || incoming.page.revision !== revision)
 
   /**
    * Leaving writing posture — which SAVES.
@@ -332,6 +350,18 @@ export function Editor(props: EditorProps) {
           <Icon name="lock" />
           {t('This page uses blocks Adestia does not know, so it is open read-only. Fixing it is a change to the code, not to the file.')}
         </p>
+      )}
+
+      {changed && (
+        <div className="adestia-save adestia-save--warn adestia-editor__changed" role="status">
+          <span className="adestia-editor__changed-text">
+            <Icon name="triangle-alert" />
+            {t('The page changed.')}
+          </span>
+          <button type="button" className="adestia-btn" onClick={() => onReload?.()}>
+            {t('Reload')}
+          </button>
+        </div>
       )}
 
       <Diagnostics items={page.diagnostics} t={t} />
