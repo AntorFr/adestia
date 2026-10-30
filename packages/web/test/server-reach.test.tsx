@@ -66,7 +66,7 @@ describe('useServerReach', () => {
 
   /** A fetch whose /api/health answers are settled by the test. */
   function rig() {
-    const probes: { resolve: (r: Response) => void; reject: (e: unknown) => void; signal?: AbortSignal | null }[] = []
+    const probes: { resolve: (r: Response) => void; reject: (e: unknown) => void; signal?: AbortSignal | null | undefined }[] = []
     const base = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
       if (String(input) === '/api/health') {
         return new Promise<Response>((resolve, reject) => {
