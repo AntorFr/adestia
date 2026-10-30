@@ -123,7 +123,7 @@ is labelled with the destination. Plugins with sub-screens add their own back (E
 | E-30 | Scan overlay | composer button "Scan barcodes" | `plugins/scan/web/chrome.js`, `scanner.js`, `scan.css` | Full-screen camera, decoded codes list, “Add to message” into the composer | P-11 |
 | E-31 | Project-management blocks | `:::timeline` and `:::subproject` blocks in a page | `plugins/project-management/web/blocks.js`, `model.js`, `pm.css` | Timeline of dated sub-pages, project status pills | P-11 |
 | E-32 | Offline banner | over the open shell, whichever screen is open, while the server does not answer | `app/Offline.tsx` (new), `app/App.tsx` | Say "The server is not responding"; goes away by itself when it answers (`adestia-ajouts`, B-19) | P-16 |
-| E-33 | Remove-server confirmation | **Remove** on E-10 | `app/mcp/ServerDetail.tsx`, `app/ui/Sheet.tsx` | Name the server and ask; **Cancel** / **Remove** (`adestia-ajouts`, B-20) | P-16 |
+| E-33 | Remove-server confirmation | **Remove** on E-10 | `app/mcp/ConfirmRemove.tsx`, `app/mcp/ServerDetail.tsx`, `app/ui/Sheet.tsx` | Name the server and ask; **Cancel** / **Remove** (`adestia-ajouts`, B-20) | P-16 |
 
 ## Roles × screens × actions
 
@@ -207,7 +207,7 @@ translated "Loading…"), the shared empty state of E-8 with its icon, `Button`,
 vocabulary of looks (`docs/charte.md`).
 
 **Built so far:** loading and Retry for E-3, E-4, E-8, E-9, E-11 and E-13
-(`adestia-ajouts-chargements`) and for E-10 (`adestia-ajouts-mcp`). Every other row below (E-16, E-25, E-28, E-32, E-33, the
+(`adestia-ajouts-chargements`) and for E-10, with the E-33 confirmation (`adestia-ajouts-mcp`). Every other row below (E-16, E-25, E-28, E-32, the
 refresh of E-4) is a target, not yet in the code; so is the Retry rule of "Loading and failure"
 for those screens.
 
@@ -266,7 +266,7 @@ desk / phone (bottom sheet)
   every sheet. Enter on the focused Cancel cancels; **Remove** is never the default.
 - **Remove**: the sheet closes at once (a second press is impossible), then the existing `DELETE
   /api/mcp/servers/<name>` runs. Until the server answers, E-10's own **Remove** button is disabled
-  (busy, as Save is while saving), so E-33 cannot open again over a request in flight. Success: back to the list, which is refetched, as today. Failure: the
+  (busy, as Save is while saving), so E-33 cannot open again over a request in flight. Success: `useDeclaration.remove` leaves the opened server (`onOpen(undefined)`, back to the list) and refetches. Focus does not return to **Remove** after a confirmed removal (the button is disabled while the request runs; on failure it is enabled again but focus is not restored to it). Failure: the
   sheet stays closed and the error shows in the action bar of E-10 as a failed save does today
   (`role="alert"`); the owner may press Remove again, which asks again.
 - Failure text: the message of the request helper (the strings Adestia writes are translated, Q-4), in the same alert a failed Save uses.
