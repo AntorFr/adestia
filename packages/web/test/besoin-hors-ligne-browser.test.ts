@@ -370,7 +370,14 @@ describe.skipIf(!playwright)('B-19 · le bandeau « le serveur ne répond pas »
         await shot(page, `skippy-${locale}-E-14-retour-en-cours`)
         await b.start()
         expect(await until(page, words, (s) => s.length === 0, WAIT_GONE)).toHaveLength(0)
-        const left = await page.evaluate(() => document.querySelector('.adestia-config__restart-bar')?.textContent ?? '')
+        // The bar leaves "Coming back…" on its own poll, not with the banner: wait for it, then assert.
+        const leftBy = Date.now() + WAIT_GONE
+        let left = ''
+        do {
+          left = await page.evaluate(() => document.querySelector('.adestia-config__restart-bar')?.textContent ?? '')
+          if (!left.includes('…')) break
+          await new Promise((r) => setTimeout(r, 100))
+        } while (Date.now() < leftBy)
         expect(left).not.toContain('…')
       } finally {
         await context.close()
