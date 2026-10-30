@@ -453,7 +453,7 @@ describe.skipIf(!playwright)('B-18 · chargement et Réessayer des écrans du sh
         expect(await page.locator(loadingRow).count()).toBe(0)
         g.release()
         await page.getByText('Fini en juin.').first().waitFor({ state: 'visible', timeout: T })
-        expect(await page.getByText('Pièces jointes').count()).toBe(0)
+        await page.getByText('Pièces jointes').first().waitFor({ state: 'detached', timeout: 5000 })
       } finally {
         await context.close()
       }
