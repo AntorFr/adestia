@@ -1,0 +1,15 @@
+/* The offline banner (E-32): the family of .adestia-save--warn, full width of its place. */
+.adestia-offline {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--warning) 12%, var(--surface));
+  color: var(--warning-text);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+.adestia-offline .adestia-icon { flex: none; margin-top: 2px; }
+.adestia-chat > .adestia-offline { border-radius: 0; flex: none; }
+.adestia-canvas__body > .adestia-offline { margin-bottom: var(--space-3); }
