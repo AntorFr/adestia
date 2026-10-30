@@ -17,14 +17,13 @@
  * a display choice — this screen merely shows the seam that already exists).
  */
 
-import { useEffect, useState } from 'react'
-
 import { Bubble } from '../chat/Bubble.js'
 import type { StoredMessage } from '../chat/conversations.js'
 import { toMessage } from '../chat/messages.js'
 import { Icon } from './Icon.js'
-import { requestJson } from './request.js'
-import { EmptyState } from './ui/index.js'
+import { useRequest } from './useRequest.js'
+import { EmptyState, Loading } from './ui/index.js'
+import { ReadFailure } from './ui/ReadFailure.js'
 
 export interface DelegationRow {
   readonly caller: string
@@ -76,25 +75,17 @@ export function delegChips(
 }
 
 /** The rows, for the tile that counts them. `enabled` keeps the mosaic from
-    fetching what an open page already shows. */
+    fetching what an open page already shows. `settled` is true once the read
+    answered or failed; a failure leaves no rows, and no rows means no chip. */
 export function useDelegationRows(
   fetchImpl: typeof fetch,
   enabled: boolean,
-): readonly DelegationRow[] | undefined {
-  const [rows, setRows] = useState<readonly DelegationRow[] | undefined>()
-  useEffect(() => {
-    if (!enabled) return
-    let live = true
-    void (async () => {
-      // A failure leaves no figure, and no figure means no chip.
-      const result = await requestJson<{ delegations?: readonly DelegationRow[] }>(fetchImpl, '/api/delegations')
-      if (live && result.ok) setRows(result.data?.delegations ?? [])
-    })()
-    return () => {
-      live = false
-    }
-  }, [fetchImpl, enabled])
-  return rows
+): { readonly rows: readonly DelegationRow[] | undefined; readonly settled: boolean } {
+  const read = useRequest<{ delegations?: readonly DelegationRow[] }>(fetchImpl, '/api/delegations', { enabled })
+  return {
+    rows: read.status === 'ready' ? (read.data?.delegations ?? []) : undefined,
+    settled: !enabled || read.status !== 'loading',
+  }
 }
 
 /** When a conversation last moved, in the reader's locale — date only once it is
@@ -123,39 +114,29 @@ export function Delegations({
   t = (key) => key,
   locale,
 }: DelegationsProps) {
-  const [rows, setRows] = useState<readonly DelegationRow[] | undefined>()
-  const [delegation, setDelegation] = useState<Delegation | undefined>()
+  // The list is read again each time the address comes back to it, as before.
+  const list = useRequest<{ delegations?: readonly DelegationRow[] }>(fetchImpl, '/api/delegations', {
+    enabled: !open,
+    t,
+  })
+  const item = useRequest<Delegation>(
+    fetchImpl,
+    `/api/delegations/${(open ?? '').split('/').map(encodeURIComponent).join('/')}`,
+    { enabled: Boolean(open), t },
+  )
+  const rows = list.status === 'ready' ? (list.data?.delegations ?? []) : undefined
+  const delegation = item.status === 'ready' ? item.data : undefined
 
-  useEffect(() => {
-    let live = true
-    void (async () => {
-      // On a failure the list stays as it was; the empty state is only drawn once a read succeeded.
-      const result = await requestJson<{ delegations?: readonly DelegationRow[] }>(fetchImpl, '/api/delegations')
-      if (live && result.ok) setRows(result.data?.delegations ?? [])
-    })()
-    return () => {
-      live = false
-    }
-  }, [fetchImpl, open])
-
-  useEffect(() => {
-    if (!open) {
-      setDelegation(undefined)
-      return
-    }
-    let live = true
-    void (async () => {
-      // A failure stays on the list; the address still names the conversation.
-      const result = await requestJson<Delegation>(
-        fetchImpl,
-        `/api/delegations/${open.split('/').map(encodeURIComponent).join('/')}`,
-      )
-      if (live && result.ok) setDelegation(result.data)
-    })()
-    return () => {
-      live = false
-    }
-  }, [fetchImpl, open])
+  if (open && item.status === 'loading') {
+    return <div className="adestia-deleg"><Loading t={t} /></div>
+  }
+  if (open && item.status === 'failed') {
+    return (
+      <div className="adestia-deleg">
+        <ReadFailure message={item.error ?? ''} httpStatus={item.httpStatus} onRetry={item.retry} t={t} />
+      </div>
+    )
+  }
 
   if (open && delegation) {
     return (
@@ -194,6 +175,10 @@ export function Delegations({
         </div>
       </header>
 
+      {list.status === 'loading' && <Loading t={t} />}
+      {list.status === 'failed' && (
+        <ReadFailure message={list.error ?? ''} httpStatus={list.httpStatus} onRetry={list.retry} t={t} />
+      )}
       {rows !== undefined && rows.length === 0 && (
         <EmptyState
           icon="handshake"

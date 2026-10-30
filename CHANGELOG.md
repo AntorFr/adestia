@@ -4,6 +4,12 @@ Oldest first. Release paragraphs are translated from `.agent/status.md`, with th
 reasons retained and their deployment recipes removed. An undated heading means the
 source did not record a release date; dates are not inferred from git tags.
 
+## Unreleased
+
+- **Simultaneous turns** — The settings screen (E-14) carries `maxConcurrentTurns` (1 to 16,
+  default 3) in a group of its own, in English and French. It applies at restart: the limiter is
+  built once at boot (B-21, AD-25).
+
 ## Earlier than v0.61.0
 
 - **v0.58.0** — The structural refactoring merged into `main` on 2026-09-15.
@@ -461,3 +467,13 @@ not from invented release notes for the tags above.
 
 The documentation tranche separates this history from the current state and retires
 closed work files. DESIGN.md and the remaining documentation review follow separately.
+
+## adestia-ajouts (unreleased)
+
+- **Loading and failure of the shell's screens** — the section (E-3), the page (E-4), the
+  settings mosaic (E-9), instructions (E-11) and delegations (E-13) draw the shared loading
+  row while they fetch; a page, instructions or delegations read that fails says so with
+  **Retry**, which fetches again and shows the data (E-8 included when the server could not
+  answer). E-3 and E-9 have no button. The bench plays each one slowed and broken on the
+  four skins, in `en` and `fr`, light and dark, desk and phone
+  (`bench/scenarios/chargements.mjs`).

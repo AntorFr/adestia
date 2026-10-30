@@ -2,8 +2,18 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { jsonInit, requestJson } from '../request.js'
+import { FALLBACK_KEY, jsonInit, requestJson } from '../request.js'
 import { fileUrl, type InstructionFile, type InstructionPath, type Kind } from './model.js'
+
+/** How a read stands: the wait, the answer, or what went wrong and with which status. */
+export interface Read {
+  readonly status: 'loading' | 'ready' | 'failed'
+  readonly error: string | undefined
+  readonly httpStatus: number | undefined
+}
+
+const LOADING: Read = { status: 'loading', error: undefined, httpStatus: undefined }
+const READY: Read = { status: 'ready', error: undefined, httpStatus: undefined }
 
 export type Save =
   | { kind: 'idle' }
@@ -27,6 +37,11 @@ function useLatest(t: (key: string) => string) {
   return useCallback((key: string) => ref.current(key), [])
 }
 
+/** A failed read says its sentence capitalised, as every shown failure does (AD-24). */
+function sayRead(say: (key: string) => string) {
+  return (key: string) => say(key === FALLBACK_KEY ? 'Request failed (%n)' : key)
+}
+
 /**
  * The list, read once and again on demand (an import calls `reload`, so a new
  * card appears unprompted).
@@ -37,22 +52,46 @@ export function useInstructionList(fetchImpl: typeof fetch, t: (key: string) => 
   /** Where one may be written — the listing only says what is already there. */
   const [places, setPlaces] = useState<readonly InstructionPath[]>([])
   const [supported, setSupported] = useState(true)
+  const [read, setRead] = useState<Read>(LOADING)
+  const latest = useRef(0)
+  const held = useRef(false)
 
+  /** Reads again. Silent once the list is held (an import must not blank it); `retry` shows the wait. */
   const reload = useCallback(async () => {
+    const mine = ++latest.current
     const result = await requestJson<{
       files?: readonly InstructionFile[]
       paths?: readonly InstructionPath[]
-    }>(fetchImpl, '/api/instructions', undefined, say)
+    }>(fetchImpl, '/api/instructions', undefined, sayRead(say))
+    if (latest.current !== mine) return
     // 404 means this engine has no such concept — a different fact from
     // "you have written none", and the screen must not offer an editor for
     // a zone that does not exist.
     if (!result.ok) {
-      if (result.status === 404) setSupported(false)
+      if (result.status === 404) {
+        setSupported(false)
+        setRead(READY)
+      } else {
+        // A list already held stays; a failed first read or retry says so.
+        setRead((current) =>
+          current.status === 'ready' && held.current
+            ? current
+            : { status: 'failed', error: result.status === 0 ? say('The server is not responding') : result.error, httpStatus: result.status },
+        )
+      }
       return
     }
+    held.current = true
     setFiles(result.data.files ?? [])
     setPlaces(result.data.paths ?? [])
+    setRead(READY)
   }, [fetchImpl, say])
+
+  /** Retry: the failure gives way to the wait, then to the list. */
+  const retry = useCallback(() => {
+    setRead(LOADING)
+    void reload()
+  }, [reload])
 
   useEffect(() => {
     void reload()
@@ -67,7 +106,7 @@ export function useInstructionList(fetchImpl: typeof fetch, t: (key: string) => 
     )
   }, [])
 
-  return { files, places, supported, reload, announce }
+  return { files, places, supported, read, retry, reload, announce }
 }
 
 /** The text of whatever the address names, seeded or fetched, and its save. */
@@ -83,11 +122,14 @@ export function useInstructionText(
   /** What was loaded, so Save lights up on a real change rather than on focus. */
   const [onDisk, setOnDisk] = useState('')
   const [save, setSave] = useState<Save>({ kind: 'idle' })
+  const [read, setRead] = useState<Read>(READY)
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     if (open === undefined) return undefined
     setSave({ kind: 'idle' })
     if (seed?.path === open) {
+      setRead(READY)
       setText(seed.text)
       // Not on disk yet, so anything typed is a change: Save lights up at the
       // first keystroke rather than waiting for a file that is not there.
@@ -95,17 +137,29 @@ export function useInstructionText(
       return undefined
     }
     let live = true
+    setRead(LOADING)
     void (async () => {
-      const result = await requestJson<{ markdown?: string }>(fetchImpl, fileUrl(open), undefined, say)
+      const result = await requestJson<{ markdown?: string }>(fetchImpl, fileUrl(open), undefined, sayRead(say))
       if (!live) return
-      const markdown = result.ok ? (result.data.markdown ?? '') : ''
+      if (!result.ok) {
+        // Never an empty, editable box in place of a file that could not be read.
+        setRead({ status: 'failed', error: result.status === 0 ? say('The server is not responding') : result.error, httpStatus: result.status })
+        return
+      }
+      const markdown = result.data.markdown ?? ''
       setText(markdown)
       setOnDisk(markdown)
+      setRead(READY)
     })()
     return () => {
       live = false
     }
-  }, [fetchImpl, open, seed, say])
+  }, [fetchImpl, open, seed, say, attempt])
+
+  const retry = useCallback(() => {
+    setRead(LOADING)
+    setAttempt((current) => current + 1)
+  }, [])
 
   const commit = useCallback(async () => {
     if (!open) return
@@ -125,5 +179,5 @@ export function useInstructionText(
     if (save.kind !== 'idle') setSave({ kind: 'idle' })
   }
 
-  return { text, edit, dirty: text !== onDisk, save, commit }
+  return { text, edit, dirty: text !== onDisk, save, commit, read, retry }
 }
