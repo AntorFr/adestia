@@ -1026,26 +1026,72 @@ function peindreLien(hote, data, relPath, urls, t) {
  * @returns de quoi défaire le montage — à appeler au démontage du bloc, sinon
  *          l'écouteur de redimensionnement survit à la page qui l'a posé.
  */
+/** Une icône du sprite du shell (il le monte une fois ; un plugin en partage les noms, pas le code). */
+function icone(nom) {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'adestia-icon');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+  const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+  use.setAttribute('href', `#adestia-i-${nom}`);
+  svg.appendChild(use);
+  return svg;
+}
+
 export function mountParcours(hote, { src, chemin, vue, urls = {}, locale = 'fr' }) {
   const t = makeT(locale);
   let vivant = true;
   const peintre = vue === 'lien' ? peindreLien : peindre;
 
-  fetch(src, { headers: { Accept: 'application/json' } })
-    .then((r) => {
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      return r.json();
-    })
-    .then((data) => {
-      // Le bloc a pu être démonté pendant la requête — on ne peint pas dans un
-      // élément que React a déjà retiré de la page.
-      if (vivant) peintre(hote, data, chemin, urls, t);
-    })
-    .catch((e) => {
-      if (!vivant) return;
-      hote.textContent = '';
-      hote.appendChild(el('div', 'pc-vide', t("Unreadable route: %message", { message: e.message })));
-    });
+  // Le balisage est celui du shell (AD-8 : rien n'est importé, les classes sont copiées).
+  function chargement() {
+    const ligne = el('div', 'adestia-loading');
+    ligne.setAttribute('role', 'status');
+    ligne.append(icone('loader-circle'), t('Loading…'));
+    hote.textContent = '';
+    hote.appendChild(ligne);
+  }
+
+  // Réessayer n'a de sens que si le résultat peut changer : pas sur un 404 ni un refus.
+  function echec(statut) {
+    const sansRetour = statut === 404 || statut === 401 || statut === 403;
+    const enLigne = vue === 'lien';
+    const bloc = el('div', enLigne ? 'adestia-empty adestia-empty--inline' : 'adestia-empty adestia-empty--state');
+    const ico = el('span', 'adestia-empty__icon');
+    ico.appendChild(icone('circle-alert'));
+    bloc.append(ico, el(enLigne ? 'span' : 'p', 'adestia-empty__text', t('Unreadable route.')));
+    if (!sansRetour) {
+      const action = el('div', 'adestia-empty__action');
+      const bouton = el('button', 'adestia-btn', t('Retry'));
+      bouton.type = 'button';
+      bouton.addEventListener('click', () => { bouton.disabled = true; charger(); });
+      action.appendChild(bouton);
+      bloc.appendChild(action);
+    }
+    hote.textContent = '';
+    hote.appendChild(bloc);
+  }
+
+  function charger() {
+    chargement();
+    fetch(src, { headers: { Accept: 'application/json' } })
+      .then((r) => {
+        if (!r.ok) { const e = new Error(`HTTP ${r.status}`); e.statut = r.status; throw e; }
+        return r.json();
+      })
+      .then((data) => {
+        // Le bloc a pu être démonté pendant la requête — on ne peint pas dans un
+        // élément que React a déjà retiré de la page.
+        if (!vivant) return;
+        hote.textContent = '';
+        peintre(hote, data, chemin, urls, t);
+      })
+      .catch((e) => {
+        if (vivant) echec(e.statut);
+      });
+  }
+
+  charger();
 
   return () => {
     vivant = false;
