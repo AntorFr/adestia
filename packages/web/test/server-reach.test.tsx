@@ -135,6 +135,22 @@ describe('useServerReach', () => {
     expect(result.current.reachable).toBe(false)
   })
 
+  it('the probe calls the fetch without the ref as `this` (a native fetch throws Illegal invocation)', async () => {
+    let illegal = false
+    const strict = function (this: unknown) {
+      if (this !== undefined && this !== globalThis) {
+        illegal = true
+        return Promise.reject(new TypeError('Illegal invocation'))
+      }
+      return Promise.resolve(res(200))
+    } as unknown as typeof fetch
+    const { result } = renderHook(() => useServerReach(strict))
+    act(() => result.current.report(false))
+    await flush()
+    expect(illegal).toBe(false)
+    expect(result.current.reachable).toBe(true)
+  })
+
   it('a real call that answers while away brings reachable back and ends the probing', async () => {
     const { base, probes } = rig()
     const { result } = renderHook(() => useServerReach(base, { probeMs: 3000 }))

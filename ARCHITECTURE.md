@@ -595,7 +595,7 @@ per Known defects bullet order (it mixes areas that review differently).
 
 ### AD-18 — What stays out: functions, not defects
 The "Lacks" cells that name an absent function are not repaired: loading states of E-3, E-4, E-9,
-E-10, E-11, E-13, E-16, E-25, E-28; an offline screen and banner (E-21); a retry for E-8
+E-10, E-11, E-13, E-16, E-25, E-28; an offline screen (E-21; the banner is built, *superseded: AD-22*); a retry for E-8
 (*superseded for E-3, E-4, E-8, E-9, E-11 and E-13, built by `adestia-ajouts-chargements`: AD-24*; *and for E-10, built by `adestia-ajouts-mcp`*); a
 confirmation before Remove (E-10) (*superseded: E-33, built by `adestia-ajouts-mcp`, AD-26*); the empty states of E-4 and E-7; a delete command for
 conversations (`deleteConversation` has no screen); the half-built items of `.agent/status.md`

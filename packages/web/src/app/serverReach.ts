@@ -91,7 +91,9 @@ export function useServerReach(
       void (async () => {
         let ok = false
         try {
-          ok = (await raw.current(HEALTH, { signal: controller.signal })).ok
+          // Detached from the ref: a native fetch called with the ref as `this` throws.
+          const call = raw.current
+          ok = (await call(HEALTH, { signal: controller.signal })).ok
         } catch {
           ok = false
         }

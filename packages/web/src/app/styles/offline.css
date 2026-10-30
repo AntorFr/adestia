@@ -13,3 +13,9 @@
 .adestia-offline .adestia-icon { flex: none; margin-top: 2px; }
 .adestia-chat > .adestia-offline { border-radius: 0; flex: none; }
 .adestia-canvas__body > .adestia-offline { margin-bottom: var(--space-3); }
+/* The screen under it scrolls (E-14's restart band sits at its foot, where the user is when the server goes);
+   the banner stays below the sticky canvas header, so the fact is always on screen. */
+.adestia-canvas__body > .adestia-offline {
+  position: sticky;
+  top: 56px;
+}

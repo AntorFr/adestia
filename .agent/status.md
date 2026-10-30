@@ -7,7 +7,7 @@
   --abbrev=0`), tag de l'epic `adestia-ajouts` ; `v0.95.0` est le dernier tag de `main` (epic
   `adestia-qualite`).
 - Branche de travail : `feature/adestia-ajouts-page-suivie`, sur `origin/epic/adestia-ajouts`
-  (la page ouverte suit l'agent, AD-21 ; recette : `node bench/scenarios/page-suivie.mjs`
+  (la page ouverte suit l'agent, AD-21 ; bandeau hors ligne E-32, AD-22, déjà fusionné : `node bench/scenarios/hors-ligne.mjs` ; recette : `node bench/scenarios/page-suivie.mjs`
   après `npm run build`). Livré avant elle sur l'epic : chargement et Réessayer des écrans du shell,
   AD-24 (`node bench/scenarios/chargements.mjs`) ; E-10 (chargement, Réessayer) et la confirmation E-33 avant de retirer
   un serveur MCP, AD-26 (aucun scénario de `bench/scenarios/` ne les couvre ; après `npm run build`, ouvrir à la main
@@ -105,7 +105,7 @@ PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone
   (`plugins/PageEditor.tsx`) : pas de dépôt de fichier ni de résolution par cet index.
 - Chargement et « Réessayer » sont construits pour E-3, E-4, E-8, E-9, E-10, E-11 et E-13
   (`adestia-ajouts-chargements`, `adestia-ajouts-mcp`). Restent à faire : E-16 (chat),
-  E-25 et E-28 (plugins), le bandeau hors ligne E-32 ; les toasts restent hors de l'epic (docs/ecrans.md).
+  E-25 et E-28 (plugins) ; le bandeau hors ligne E-32 est construit et vu au banc (`bench/scenarios/hors-ligne.mjs`) ; les toasts restent hors de l'epic (docs/ecrans.md).
 - Mesures du banc en pixels à généraliser ; `journal` : couverture navigateur
   et `api.trail` à compléter selon les signalements de l'ancien état.
 
