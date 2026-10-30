@@ -477,3 +477,11 @@ closed work files. DESIGN.md and the remaining documentation review follow separ
   answer). E-3 and E-9 have no button. The bench plays each one slowed and broken on the
   four skins, in `en` and `fr`, light and dark, desk and phone
   (`bench/scenarios/chargements.mjs`).
+
+- **Offline banner** (E-32) — when the server stops answering, a "The server is not responding" strip
+  shows above the open screen, on the canvas or, on a phone with the chat shown, above the rail; it
+  leaves by itself when the server answers, without reloading the page. On a screen scrolled down it
+  stays under the canvas header. The bench stops and restarts a real instance, looks at E-2, E-4 and
+  E-14 ("Coming back…") on the four skins, in `en` and `fr`, light and dark, desk and phone
+  (`bench/scenarios/hors-ligne.mjs`); a launcher started again on the same `--data` now seeds without
+  failing.

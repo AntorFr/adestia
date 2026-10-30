@@ -81,8 +81,8 @@ PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone
   (`plugins/PageEditor.tsx`) : pas de dépôt de fichier ni de résolution par cet index.
 - Chargement et « Réessayer » sont construits pour E-3, E-4, E-8, E-9, E-11 et E-13
   (`adestia-ajouts-chargements`). Restent à faire : E-10 (tranche MCP), E-16 (chat),
-  E-25 et E-28 (plugins), le rafraîchissement de E-4 et son bandeau (`page-suivie`),
-  le bandeau hors ligne E-32 ; les toasts restent hors de l'epic (docs/ecrans.md).
+  E-25 et E-28 (plugins), le rafraîchissement de E-4 et son bandeau (`page-suivie`) ;
+  le bandeau hors ligne E-32 est construit et vu au banc (`bench/scenarios/hors-ligne.mjs`) ; les toasts restent hors de l'epic (docs/ecrans.md).
 - Mesures du banc en pixels à généraliser ; `journal` : couverture navigateur
   et `api.trail` à compléter selon les signalements de l'ancien état.
 

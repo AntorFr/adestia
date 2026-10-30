@@ -221,7 +221,7 @@ for those screens.
 | E-14 | field "Simultaneous turns" (number, min 1, max 16) in a group of its own, "restart needed" mark | same row shape as "Scan period"; the offline banner (E-32) and the restart-needed state of E-14 are independent: both may show. While the screen waits for the restart ("Coming back…", P-10), the server does not answer, so E-32 shows above it; when the instance answers both go |
 | E-16 | loading for the list and the thread; fetch-failed with **Retry**; a context-lost marker in the thread (B-22) | the marker is a line in the thread, not a toast; text says the engine no longer remembers the earlier messages |
 | E-25, E-28 | loading; fetch-failed with **Retry** | plugins reach the look through the shell's CSS classes (`.adestia-loading`, the empty-state classes, `.adestia-sheet*`), as they already do for sheets; the plugin contract (AD-8) gains nothing. the native `confirm()` of E-25 and `alert()` of E-26 are not touched by `adestia-ajouts`: `adestia-correctifs` replaces them by the shared sheet (AD-17, Q-20). The words « kept » about them in Q-20 and `ARCHITECTURE.md` (Known defects, AD-7 (e)) are the base branch's and are rewritten by that epic; if it narrows the change, whatever it leaves stays as it leaves it, and `adestia-ajouts` neither adds nor removes anything there |
-| E-32 | banner at the top of the canvas body, above `Problems` (on a phone with the chat shown: above the rail's header), role `status`, a `wifi-off` icon; absent when the server answers | takes its own height and moves the screen down; it covers nothing, the screen stays usable |
+| E-32 | banner at the top of the canvas body, above `Problems` (on a phone with the chat shown: above the rail's header), role `status`, a `wifi-off` icon; absent when the server answers | takes its own height and moves the screen down; it covers nothing, the screen stays usable; in the canvas it is sticky under the canvas header (`top: 56px`), so on a screen scrolled to its foot (E-14's restart band) it is still on screen |
 | E-33 | `Sheet` (bottom sheet on a phone), title "Remove server?", the server's name, **Cancel**, **Remove** (danger) | focus on Cancel; Escape = Cancel; modelled on `NamePrompt` |
 
 ### E-32 in `adestia-ajouts-hors-ligne`
@@ -243,6 +243,8 @@ desk                                          phone, chat shown
 │ the open screen, still usable      │        │ thread …               │
 └────────────────────────────────────┘        └────────────────────────┘
 ```
+
+**Sticky in the canvas.** In the canvas body the banner is `position: sticky` under the sticky canvas header (`top: 56px`, above 55 px, the tallest header among the four skins): a screen scrolled down — E-14 at its restart band, where the user is when the server goes — still shows it, and the bench checks that on each skin. Above the rail it is not sticky: the rail's own header and thread are laid out under it.
 
 **Two places, one at a time.** On desk, and on a phone while the canvas is shown, the banner is the
 first child of `.adestia-canvas__body`, above `Problems`. On a phone while the chat is shown (the
