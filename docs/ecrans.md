@@ -174,10 +174,10 @@ columns are the same except where the instance's configuration decides what exis
 | E-5 | shared popover/fields, normal, broken frontmatter (nothing editable), unknown fields, kept-as-written | — |
 | E-6 | shared popover/fields, normal, required attributes missing, stray attributes | — |
 | E-7 | normal, shared all-finished state inside a facet, count chips | empty collection state distinct from "all finished" |
+| E-8 | shared empty state: 404 (`file-question`), 401/403 (`lock`); the "server could not" case (0 included) as the shared failure block with **Retry**, which fetches the page again | — |
 | E-9 | normal, tiles with Lucide icons; counts absent when unreadable; loading (the shared row above the tiles until its four reads have answered or failed, tiles drawn throughout, no Retry) | — |
-| E-10 | list, empty ("None wired yet…", shared empty state), health tones each with an icon, needs-auth, connected/not, shadowed, read-only declaration, saving/saved/failed | loading; a confirmation before Remove (kept, recommendations) |
 | E-10 | list, empty ("None wired yet…", shared empty state), health tones each with an icon, needs-auth, connected/not, shadowed, read-only declaration, saving/saved/failed | loading (replaced by `adestia-ajouts-mcp`, which also adds the confirmation before Remove, E-33) |
->>>>>>> origin/epic/adestia-ajouts
+| E-11 | list, empty, no match, file open, delivered (read-only, lock icon), saving/saved/failed, the name sheet for a new skill or agent; loading and fetch-failed with **Retry** for the list and for the open file (404 on the list stays "this engine has no such folder"; 404 and 401/403 on a file have the message, no Retry) | — |
 | E-12 | no catalogue, reading the repository, nothing importable, error, items; in the shared sheet (Escape, focus kept and returned, bottom sheet on a phone) | — |
 | E-13 | list by caller, empty (shared empty state), state chips with an icon, open conversation; loading and fetch-failed with **Retry** for the list and for the open conversation (404 and 401/403 on a conversation have the message, no Retry) | — |
 | E-14 | loading (a spinner row), read error, not exposed (404), read-only, edited/default badges, saving/saved/failed, stale file, restart pending/asking/waiting/blocked/failed, each restart state with an icon; the "Simultaneous turns" field (number, min 1, max 16) in a group of its own, with the "restart needed" mark (same row shape as "Scan period"; the offline banner E-32 and the restart-needed state are independent, both may show) | — |
