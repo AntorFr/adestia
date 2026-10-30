@@ -232,3 +232,32 @@ describe('E-13 delegations', () => {
     expect(screen.queryByRole('heading', { name: 'Ranger les fiches' })).toBeNull()
   })
 })
+
+describe('the fallback failure sentence, capitalised (AD-24 failure block)', () => {
+  const said = () => screen.getByText(/equest failed|a échoué/i).textContent ?? ''
+
+  it('E-11 list: a 500 with an empty body says "Request failed (500)"', async () => {
+    const h = held()
+    render(<Instructions open={undefined} onOpen={vi.fn()} fetchImpl={h.impl} />)
+    await act(async () => { (await h.next('/api/instructions')).reply(500, {}) })
+    await waitFor(() => expect(retryButton()).not.toBeNull())
+    expect(said()).toContain('Request failed (500)')
+  })
+
+  it('E-11 open file: a 500 with an empty body says "Request failed (500)"', async () => {
+    const h = held()
+    render(<Instructions open="CLAUDE.md" onOpen={vi.fn()} fetchImpl={h.impl} />)
+    await act(async () => { (await h.next('/api/instructions')).reply(200, { files: FILES, paths: [] }) })
+    await act(async () => { (await h.next('/api/instructions/CLAUDE.md')).reply(500, {}) })
+    await waitFor(() => expect(retryButton()).not.toBeNull())
+    expect(said()).toContain('Request failed (500)')
+  })
+
+  it('E-13 list: a 500 with an empty body says "Request failed (500)"', async () => {
+    const h = held()
+    render(<Delegations onOpen={vi.fn()} fetchImpl={h.impl} />)
+    await act(async () => { (await h.next('/api/delegations')).reply(500, {}) })
+    await waitFor(() => expect(retryButton()).not.toBeNull())
+    expect(said()).toContain('Request failed (500)')
+  })
+})
