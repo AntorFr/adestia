@@ -18,5 +18,4 @@
 .adestia-canvas__body > .adestia-offline {
   position: sticky;
   top: 56px;
-  z-index: 4;
 }

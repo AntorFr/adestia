@@ -244,7 +244,7 @@ desk                                          phone, chat shown
 └────────────────────────────────────┘        └────────────────────────┘
 ```
 
-**Sticky in the canvas.** In the canvas body the banner is `position: sticky` under the sticky canvas header (`top: 56px`, above 55 px, the tallest header among the four skins): a screen scrolled down — E-14 at its restart band, where the user is when the server goes — still shows it, and the bench checks that on each skin. Above the rail it is not sticky: the rail's own header and thread are laid out under it.
+**Sticky in the canvas.** In the canvas body the banner is `position: sticky` under the sticky canvas header (`top: 56px`, above 55 px, the tallest header among the four skins): a screen scrolled down — E-14 at its restart band, where the user is when the server goes — still shows it, and the bench checks that on each skin. It has an opaque background and no z-index: scrolled text passes behind it, as behind any sticky header — an accepted overlap, it never covers the screen at rest. Above the rail it is not sticky: the rail's own header and thread are laid out under it.
 
 **Two places, one at a time.** On desk, and on a phone while the canvas is shown, the banner is the
 first child of `.adestia-canvas__body`, above `Problems`. On a phone while the chat is shown (the
