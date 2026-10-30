@@ -51,9 +51,10 @@ To look at the app without an agent or Docker (a scripted engine, seeded data):
 npm ci && npm run build               # npm run build also builds the web shell
 node bench/launch.mjs --engine fake    # prints `listening on <url>`; <url>/api/health answers ok
 node bench/sweep.mjs                   # every screen, light and dark, desk and phone
+node bench/scenarios/chargements.mjs   # loading and Retry on E-3, E-4, E-8, E-9, E-11, E-13 (needs the build; images in $BENCH_OUT)
 ```
 
-The sweep takes Playwright and Chromium from the environment (it looks in `/usr/lib/node_modules`, then `npm root -g`); the `pages-*` scenarios look only in `/usr/lib/node_modules`, so a host with another global root must link it there for them: `ln -s "$(npm root -g)/playwright" /usr/lib/node_modules/playwright`); do not
+The sweep takes Playwright and Chromium from the environment (it looks in `/usr/lib/node_modules`, then `npm root -g`); the `pages-*` scenarios look only in `/usr/lib/node_modules`, so a host with another global root must link it there for them (`chargements.mjs` and the sweep search both places, as above): `ln -s "$(npm root -g)/playwright" /usr/lib/node_modules/playwright`); do not
 add them to the repo. The launcher runs until SIGTERM (`kill <pid>`, or Ctrl-C), which
 removes its throwaway data; in a script, start it in the background and keep its pid
 (`$!`). Run it from the clone's root: the bundled plugins are found through `./plugins`, and from elsewhere the server starts with `0 of 0 plugin(s) active`. The seed brings its own two small plugins (`bench-notes`, `bench-degraded`), so the boot log says `2 of 2 plugin(s) active`, not the ten of `plugins/`: that is normal. Its boot log includes a plugin refused on purpose (`bench-refused`, part of the seed): not an error.
@@ -184,6 +185,11 @@ resources:
   limits:
     memory: 2Gi        # server + 3 concurrent turns, with headroom
 ```
+
+The cap is set from the Settings screen (field "Simultaneous turns", 1 to 16; the table stops
+at 8, so size 16 by the same 300 MB a turn) or in `maxConcurrentTurns` of the config file. It
+applies at the next restart, not live. Under Docker with the read-only config mount above, the
+screen cannot save it: edit the file on the host.
 
 Set the `limit` from the table, not from what the pod uses at rest: an idle
 Adestia is a few hundred megabytes, and it is the burst that kills it. Raise

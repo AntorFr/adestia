@@ -18,6 +18,7 @@
 
 import { Icon } from './Icon.js'
 import { EmptyState } from './ui/EmptyState.js'
+import { Failure } from './ui/Failure.js'
 import { sectionRoute } from './owners.js'
 
 export interface MissingPageProps {
@@ -27,9 +28,11 @@ export interface MissingPageProps {
   readonly status: number
   /** The shell's translator; identity in English. */
   readonly t?: (key: string) => string
+  /** Fetches the page again. Offered only when the server could not (not 404, 401, 403). */
+  readonly onRetry?: () => void
 }
 
-export function MissingPage({ path, status, t = (key) => key }: MissingPageProps) {
+export function MissingPage({ path, status, t = (key) => key, onRetry }: MissingPageProps) {
   const folder = path.split('/').slice(0, -1).join('/')
   const reason =
     status === 404
@@ -38,9 +41,17 @@ export function MissingPage({ path, status, t = (key) => key }: MissingPageProps
         ? t('This page is out of reach — the session may have expired.')
         : t('The server could not serve this page.')
 
+  const refused = status === 404 || status === 401 || status === 403
+
   return (
     <section className="adestia-missing">
-      <EmptyState icon={status === 404 ? 'file-question' : status === 401 || status === 403 ? 'lock' : 'circle-alert'} text={reason} />
+      {refused ? (
+        <EmptyState icon={status === 404 ? 'file-question' : 'lock'} text={reason} />
+      ) : onRetry ? (
+        <Failure message={reason} onRetry={onRetry} t={t} />
+      ) : (
+        <EmptyState icon="circle-alert" text={reason} />
+      )}
       <p className="adestia-missing__path">{path}</p>
       {folder ? (
         <p>
