@@ -26,6 +26,11 @@
 
 .atelier-page { color: var(--text); }
 .atelier-page .wrap { display: flex; flex-direction: column; gap: var(--space-3); }
+/* The failure block's Retry: under the sentence, the width of the block, on a phone. */
+@media (max-width: 600px) {
+  .atelier-page .adestia-empty__action { align-self: stretch; }
+  .atelier-page .adestia-empty__action .adestia-btn { width: 100%; }
+}
 .atelier-page .chead { display: flex; align-items: center; gap: var(--space-3); }
 .atelier-page .aico { font-size: var(--text-xl); }
 .atelier-page h1 { margin: 0; font-size: var(--text-lg); }

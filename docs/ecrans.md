@@ -277,7 +277,7 @@ remarks further down describe the base branch before `adestia-ajouts` and are le
 E-25/E-28's notes above say.
 The tile information call (`tileInfo`) is not a screen and stays silent on failure.
 
-Roles: **Retry** is open to everyone who can open the screen, and absent (not refused) where retrying cannot change the outcome (404, 401/403). No route tells an owner from a user (matrix above): E-32 and E-33 are the same for both,
+Roles: **Retry** is open to everyone who can open the screen, and the Atelier's two screens offer it on any non-2xx answer, 404 included (401/403 are the shell's, not the plugin's). No route tells an owner from a user (matrix above): E-32 and E-33 are the same for both,
 the agent touches neither, and no calling agent sees them. There is no new role. States are drawn in the four skins, `en` and `fr`, light and dark, desk
 and phone (AD-20).
 
