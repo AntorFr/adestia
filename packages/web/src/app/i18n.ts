@@ -334,6 +334,9 @@ const FR: Readonly<Record<string, string>> = {
     'Aucun branché — ajoutez-en un, ou déclarez-le dans le fichier de configuration.',
   'Server declaration': 'Déclaration du serveur',
   Remove: 'Supprimer',
+  'Remove server?': 'Supprimer le serveur ?',
+  '“%name” will no longer be wired. Its declaration is deleted from this instance.':
+    '« %name » ne sera plus branché. Sa déclaration est supprimée de cette instance.',
 
   // The composer
   Model: 'Modèle',

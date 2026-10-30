@@ -100,7 +100,7 @@ is labelled with the destination. Plugins with sub-screens add their own back (E
 | E-7 | Collection page | a page with `type: collection` | `app/Collection.tsx` (`CollectionLayout`, `CollectionShell`), `collections.ts`, `styles/collection.css` | A page listing its members as cards with facets, an `Ask for a new page` button, `Everything here is finished.` | P-5 |
 | E-8 | Missing page | `#/page/<path>` refused (404, 401/403, other) | `app/MissingPage.tsx`, `styles/missing-page.css` | Name the address, say which refusal, link to the folder above | P-5 |
 | E-9 | Settings mosaic | `#/settings` | `app/Preferences.tsx`, `Tile.tsx` | Four tiles: MCP servers, Instructions, Configuration, Delegations, with counts | P-8, P-9, P-10, P-13 |
-| E-10 | MCP servers | `#/settings/mcp[/<name>]` | `app/McpServers.tsx`, `Settings.tsx` (`useMcpServers`), `styles/settings.css` | List servers with health; open one: state, per-person OAuth connect, JSON declaration editor, Save, Remove, add | P-8 |
+| E-10 | MCP servers | `#/settings/mcp[/<name>]` | `app/McpServers.tsx`, `Settings.tsx` (`useMcpServers`), `styles/settings.css` | List servers with health; open one: state, per-person OAuth connect, JSON declaration editor, Save, Remove (opens E-33), add; loading and fetch-failed with Retry (`adestia-ajouts-mcp`) | P-8 |
 | E-11 | Instructions | `#/settings/instructions[/<path>]` | `app/Instructions.tsx`, `styles/tiles.css` | Grouped file cards (instructions, skills, agents), search, `+` create buttons, open one in a monospace textarea, Save; delivered files read-only | P-9 |
 | E-12 | Catalogue pop-in | `Catalogues` button in E-11 | `app/CataloguePopin.tsx` (`.adestia-sheet`) | Add a git repository of instructions, list its items, import, Refresh | P-9 |
 | E-13 | Delegations | `#/settings/delegations[/<id>]` | `app/Delegations.tsx` | Tasks other agents delegated, grouped by caller, with state chips; open one | P-13 |
@@ -123,7 +123,7 @@ is labelled with the destination. Plugins with sub-screens add their own back (E
 | E-30 | Scan overlay | composer button "Scan barcodes" | `plugins/scan/web/chrome.js`, `scanner.js`, `scan.css` | Full-screen camera, decoded codes list, “Add to message” into the composer | P-11 |
 | E-31 | Project-management blocks | `:::timeline` and `:::subproject` blocks in a page | `plugins/project-management/web/blocks.js`, `model.js`, `pm.css` | Timeline of dated sub-pages, project status pills | P-11 |
 | E-32 | Offline banner | over the open shell, whichever screen is open, while the server does not answer | `app/Offline.tsx` (new), `app/App.tsx` | Say "The server is not responding"; goes away by itself when it answers (`adestia-ajouts`, B-19) | P-16 |
-| E-33 | Remove-server confirmation | **Remove** on E-10 | `app/mcp/ServerDetail.tsx`, `app/ui/Sheet.tsx` | Name the server and ask; **Cancel** / **Remove** (`adestia-ajouts`, B-20) | P-16 |
+| E-33 | Remove-server confirmation | **Remove** on E-10 | `app/mcp/ConfirmRemove.tsx`, `app/mcp/ServerDetail.tsx`, `app/ui/Sheet.tsx` | Name the server and ask; **Cancel** / **Remove** (`adestia-ajouts`, B-20) | P-16 |
 
 ## Roles × screens × actions
 
@@ -176,7 +176,7 @@ columns are the same except where the instance's configuration decides what exis
 | E-7 | normal, shared all-finished state inside a facet, count chips | empty collection state distinct from "all finished" |
 | E-8 | shared empty state: 404 (`file-question`), 401/403 (`lock`); the "server could not" case (0 included) as the shared failure block with **Retry**, which fetches the page again | — |
 | E-9 | normal, tiles with Lucide icons; counts absent when unreadable; loading (the shared row above the tiles until its four reads have answered or failed, tiles drawn throughout, no Retry) | — |
-| E-10 | list, empty ("None wired yet…", shared empty state), health tones each with an icon, needs-auth, connected/not, shadowed, read-only declaration, saving/saved/failed | loading; a confirmation before Remove (kept, recommendations) |
+| E-10 | list, empty ("None wired yet…", shared empty state), health tones each with an icon, needs-auth, connected/not, shadowed, read-only declaration, saving/saved/failed; loading (the shared row under the heading, no tiles, no "None wired yet", no "Add a server"); fetch-failed with **Retry** (first fetch only; a refetch after Save or Remove never shows loading and fails silently; health, `/api/mcp/status`, has neither); **Remove** opens E-33 | — |
 | E-11 | list, empty, no match, file open, delivered (read-only, lock icon), saving/saved/failed, the name sheet for a new skill or agent; loading and fetch-failed with **Retry** for the list and for the open file (404 on the list stays "this engine has no such folder"; 404 and 401/403 on a file have the message, no Retry) | — |
 | E-12 | no catalogue, reading the repository, nothing importable, error, items; in the shared sheet (Escape, focus kept and returned, bottom sheet on a phone) | — |
 | E-13 | list by caller, empty (shared empty state), state chips with an icon, open conversation; loading and fetch-failed with **Retry** for the list and for the open conversation (404 and 401/403 on a conversation have the message, no Retry) | — |
@@ -207,15 +207,14 @@ translated "Loading…"), the shared empty state of E-8 with its icon, `Button`,
 vocabulary of looks (`docs/charte.md`).
 
 **Built so far:** loading and Retry for E-3, E-4, E-8, E-9, E-11 and E-13
-(`adestia-ajouts-chargements`), and the refresh and banner of E-4 (`adestia-ajouts-page-suivie`,
-described under "E-4 — the page that follows the agent" below, and in the States table above). Every other row below (E-10, E-16, E-25, E-28, E-32, E-33) is a target, not yet in the code; so is the Retry rule of "Loading and failure"
+(`adestia-ajouts-chargements`), for E-10 with the E-33 confirmation (`adestia-ajouts-mcp`), and the refresh and banner of E-4 (`adestia-ajouts-page-suivie`,
+described under "E-4 — the page that follows the agent" below, and in the States table above). Every other row below (E-16, E-25, E-28, E-32) is a target, not yet in the code; so is the Retry rule of "Loading and failure"
 for those screens.
 
 | E-n | Adds | Notes |
 |---|---|---|
 | E-3, E-9 | loading | index-driven: E-3 draws the loading row (instead of its empty state) while the shell's index has not answered; E-9 draws it above its tiles until its four reads (the reads behind its tiles: servers, instructions, delegations, and the MCP servers' status, `/api/mcp/status`) have answered or failed, the tiles staying drawn. No Retry. Server cut: the row of E-3 stays until E-32 (a later tranche) says it; a 500 on the index leaves E-3 on its loading row (nothing in this tranche says it; the index is the shell's own read and its failure is not a screen of the epic); in E-9 a failed read leaves its tile without a count, no message |
 | E-8 | **Retry** on the "server could not" case (status 0 included: the shell could not reach the server) | 404 and 401/403 have no Retry; Retry fetches the page again and the screen becomes the page, or stays E-8 |
-| E-10 | loading; fetch-failed with **Retry**; **Remove** opens E-33 | |
 | E-11, E-13 | loading; fetch-failed with **Retry** | for the list and for what is open (a file, a conversation): a failed list shows the failure block in place of the list, a failed open item shows it in place of the item, the list reachable by the back control as today. E-11: 404 on the list is still "this engine has no such folder" (no Retry, no failure). Status 0 (the server did not answer) and 5xx have Retry; 401/403 and a 404 on an open item (E-11 file, E-13 conversation) have the message and no Retry, as in E-8 (retrying cannot change them); E-13 has no 404 on its list |
 | E-16 | loading for the list and the thread; fetch-failed with **Retry**; a context-lost marker in the thread (B-22) | the marker is a line in the thread, not a toast; text says the engine no longer remembers the earlier messages |
 | E-25, E-28 | loading; fetch-failed with **Retry** | plugins reach the look through the shell's CSS classes (`.adestia-loading`, the empty-state classes, `.adestia-sheet*`), as they already do for sheets; the plugin contract (AD-8) gains nothing. the native `confirm()` of E-25 and `alert()` of E-26 are not touched by `adestia-ajouts`: `adestia-correctifs` replaces them by the shared sheet (AD-17, Q-20). The words « kept » about them in Q-20 and `ARCHITECTURE.md` (Known defects, AD-7 (e)) are the base branch's and are rewritten by that epic; if it narrows the change, whatever it leaves stays as it leaves it, and `adestia-ajouts` neither adds nor removes anything there |
@@ -275,6 +274,78 @@ Words: the loading row says "Loading…" (`fr` "Chargement…"); **Retry** is `f
 Roles: **Retry** is open to everyone who can open the screen, and absent (not refused) where retrying cannot change the outcome (404, 401/403). No route tells an owner from a user (matrix above): E-32 and E-33 are the same for both,
 the agent touches neither, and no calling agent sees them. There is no new role. States are drawn in the four skins, `en` and `fr`, light and dark, desk
 and phone (AD-20).
+
+### E-10 and E-33 in `adestia-ajouts-mcp`
+
+**E-33, the confirmation.** The owner presses **Remove** in the action bar of an opened server (E-10;
+the button exists only for an editable, saved server, as today). A `Sheet` opens, modelled on
+`NamePrompt`'s footer (Cancel on the left, the action on the right); on a phone it is the bottom sheet.
+
+```
+desk / phone (bottom sheet)
+┌ Remove server?                         ✕ ┐
+│                                          │
+│ “github” will no longer be wired.        │
+│ Its declaration is deleted from this     │
+│ instance.                                │
+│                                          │
+│                  [ Cancel ]  [ Remove ]  │   Cancel neutral, focused; Remove danger
+└──────────────────────────────────────────┘
+```
+
+- Texts (`fr` in brackets): title "Remove server?" (« Supprimer le serveur ? »); body "“%name” will no
+  longer be wired. Its declaration is deleted from this instance." (« « %name » ne sera plus branché.
+  Sa déclaration est supprimée de cette instance. »), the name set in the body's strong text and
+  never truncated (it wraps); buttons "Cancel" / "Remove" (existing keys, « Annuler » / « Supprimer »).
+- **Cancel, the ✕, a click on the scrim and Escape all keep the server**: nothing is sent, the declaration
+  and the draft are as they were, and focus returns to **Remove** (the shared focus scope's return).
+- **Initial focus is on Cancel**, not on the ✕ that the scope would pick first: an element marked
+  `data-autofocus` inside a scope takes the initial focus (`ui/focus.ts`, AD-26); Tab stays trapped as in
+  every sheet. Enter on the focused Cancel cancels; **Remove** is never the default.
+- **Remove**: the sheet closes at once (a second press is impossible), then the existing `DELETE
+  /api/mcp/servers/<name>` runs. Until the server answers, E-10's own **Remove** button is disabled
+  (busy, as Save is while saving), so E-33 cannot open again over a request in flight. Success: `useDeclaration.remove` leaves the opened server (`onOpen(undefined)`, back to the list) and refetches. Focus does not return to **Remove** after a confirmed removal (the button is disabled while the request runs; on failure it is enabled again but focus is not restored to it). Failure: the
+  sheet stays closed and the error shows in the action bar of E-10 as a failed save does today
+  (`role="alert"`); the owner may press Remove again, which asks again.
+- Failure text: the message of the request helper (the strings Adestia writes are translated, Q-4), in the same alert a failed Save uses.
+  With an answer from the server: its `error`, else `en` "request failed (%n)", `fr` « la requête a échoué (%n) »
+  with the HTTP status. With **no answer at all** (server down, VPN cut) there is no status: the alert shows
+  the browser's own network message (for example "Failed to fetch": it comes from the browser, in its language, and is not a defect), and
+  « la requête a échoué (0) » / "request failed (0)" when the browser gives none. No new string.
+- Vocabulary: the `fr` title and button both say « Supprimer » (« Supprimer le serveur ? » / « Supprimer »),
+  the word of E-10's existing Remove label, so the sheet answers the button that opened it; « Annuler » for
+  Cancel. B-20 is written in English, where one word, "Remove", serves both.
+- E-33 states: it has no loading, empty or offline state of its own (the sheet holds a name already on
+  screen, and the choice sends nothing until Remove). If the server is down when Remove is pressed, the
+  DELETE fails: the alert above, and the offline banner (E-32) shows too, independently. Permission: the
+  sheet opens only from a Remove button that exists, so there is no denied state. Long name: wraps.
+- The sheet is local state of `ServerDetail`, not in the address: a reload cancels it. Same for owner and
+  user (no route tells them apart); the agent never sees it.
+
+**E-10, loading and failure.** The list's data is `GET /api/mcp/servers` (the declarations); the health
+of each server (`GET /api/mcp/status`) stays what it is, a decoration that is silent when it fails ("no
+report, no panel"): it has no loading state and no Retry.
+
+| Situation | E-10 shows |
+|---|---|
+| declarations not answered yet (list, or an opened `#/settings/mcp/<name>`) | the heading stays; under it the shared loading row ("Loading…"); no tiles, no "None wired yet", no "Add a server" |
+| declarations failed (first fetch) | the heading stays; the shared failure block: the message the request helper gives and **Retry**; no tiles; Retry shows the loading row again and fetches again |
+| declarations answered | as today |
+| a refetch after Save or Remove | the screen keeps what it shows (no loading row); a failed refetch is silent, as today |
+
+Texts: `en` "Loading…" / `fr` « Chargement… » (existing key); the failure block shows the request helper's
+message (an `error` from the server as sent; otherwise `en` "request failed (%n)" / `fr` « la requête a échoué (%n) »;
+with no answer, the browser's network message) and the button `en` "Retry" / `fr` « Réessayer » (the key
+`adestia-ajouts-chargements` adds, AD-24; E-10 adds none).
+
+Also: if the first fetch fails because the server is down, the failure block and the E-32 banner show
+together (independent, as E-14). An opened `#/settings/mcp/<name>` whose name is not among the answered
+declarations (removed from another tab) shows the list as today, no new state. A read-only or shadowed
+declaration has no Remove button (hidden, not refused). Many or long-named servers wrap in the tiles as today.
+
+States of E-10 after the tranche: list, empty, health tones, needs-auth, connected/not, shadowed,
+read-only, saving/saved/failed, loading, fetch-failed with Retry, and the E-33 confirmation. Nothing
+else changes; the shared parts are those of `adestia-ajouts-chargements` (AD-24).
 
 ## The plugins' screens, as built
 
@@ -627,8 +698,8 @@ became Lucide icons (plug, book-open, sliders-horizontal, handshake) on the tile
 Counts absent when unreadable, as today. The Configuration tile stays (Q-21).
 
 **E-10 MCP servers.** Buttons are `.adestia-btn`, labels unchanged: "Save" (accent),
-"Remove" (danger), connect (neutral), "Add a server" (icon `plus` beside its label); no
-confirmation step is added. The JSON declaration is a `.adestia-textarea`, monospace.
+"Remove" (danger), connect (neutral), "Add a server" (icon `plus` beside its label); Remove
+now opens the E-33 confirmation (`adestia-ajouts-mcp`, B-20) in place of "no confirmation step". The JSON declaration is a `.adestia-textarea`, monospace.
 Empty state shared (today's sentence). Health tones keep colour **and** gain an icon
 (check, circle-alert, loader-circle, wifi-off). Fallback errors translated (Q-4).
 Roles: any signed-in person; "connect" is per person, as today.
