@@ -39,6 +39,8 @@ export interface ChatChannel {
 
 export interface CanvasProps {
   readonly ready?: boolean
+  /** The index answered; a section waits for this, not for `ready`. */
+  readonly indexed?: boolean
   readonly instance: InstanceInfo
   readonly skin: Skin & SkinSlots
   readonly loaded: readonly LoadedPlugin[]
@@ -164,7 +166,7 @@ export function Canvas(props: CanvasProps) {
         stores={stores}
         openSection={openSection}
         openPage={openPage}
-        {...(props.ready === undefined ? {} : { ready: props.ready })}
+        {...(props.ready === undefined ? {} : { ready: props.ready && props.indexed !== false })}
         t={t}
       />
     )
