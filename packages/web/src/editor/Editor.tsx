@@ -358,9 +358,7 @@ export function Editor(props: EditorProps) {
             <Icon name="triangle-alert" />
             {t('The page changed.')}
           </span>
-          <button type="button" className="adestia-btn" onClick={() => onReload?.()}>
-            {t('Reload')}
-          </button>
+          <Button onClick={() => onReload?.()}>{t('Reload')}</Button>
         </div>
       )}
 
