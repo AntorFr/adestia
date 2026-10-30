@@ -62,7 +62,7 @@ export function McpServers({ open, onOpen, fetchImpl = fetch, t = (key) => key }
         save={declaration.save}
         onDraft={declaration.setDraft}
         onSave={() => void declaration.commit()}
-        onRemove={() => void declaration.remove()}
+        onRemove={() => declaration.remove()}
         t={t}
       />
     )

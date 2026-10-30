@@ -6,6 +6,7 @@ source did not record a release date; dates are not inferred from git tags.
 
 ## Unreleased
 
+- **Removing an MCP server asks first** — **Remove** in E-10 opens a sheet (E-33) that names the server; Cancel, ✕, the scrim and Escape keep it and nothing is sent, and the confirmed press sends a single `DELETE`. Cancel has the initial focus, through a new opt-in `data-autofocus` in the focus scope that no other sheet uses. E-10's Remove stays disabled until the `DELETE` answers (B-20, AD-26).
 - **Simultaneous turns** — The settings screen (E-14) carries `maxConcurrentTurns` (1 to 16,
   default 3) in a group of its own, in English and French. It applies at restart: the limiter is
   built once at boot (B-21, AD-25).
