@@ -130,3 +130,25 @@ describe('changed banner', () => {
     expect(screen.queryByText('Reload')).toBeNull()
   })
 })
+
+const outer = mount
+describe('changed banner — reload with same normalized text', () => {
+  it('Reload of a new revision with the same text drops the typed text from the surface', () => {
+    const same: PageDocument = { ...page, revision: '3000-1' }
+    let mounts = 0
+    const mount = (el: HTMLElement, md: string, cb: (m: string) => void) => {
+      mounts++
+      return outer(el, md, cb)
+    }
+    const view = render(
+      <Editor page={page} mount={mount} fetchImpl={okFetch('r2')} incoming={{ page: same }} onReload={() => {}} />,
+    )
+    fireEvent.click(screen.getByTitle('Edit'))
+    const h = () => view.container.querySelector('[data-mounted]') as Host
+    act(() => h().edit('# Typed\n'))
+    fireEvent.click(screen.getByText('Reload'))
+    view.rerender(<Editor page={same} mount={mount} fetchImpl={okFetch('r2')} />)
+    expect(banner()).toBeNull()
+    expect(mounts).toBe(2)
+  })
+})
