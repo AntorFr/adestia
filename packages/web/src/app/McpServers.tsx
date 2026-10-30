@@ -67,5 +67,15 @@ export function McpServers({ open, onOpen, fetchImpl = fetch, t = (key) => key }
       />
     )
   }
-  return <ServerList views={views} health={health} onOpen={onOpen} onAdd={declaration.beginAdding} t={t} />
+  return (
+    <ServerList
+      views={views}
+      status={declaration.status}
+      error={declaration.error}
+      httpStatus={declaration.httpStatus}
+      onRetry={declaration.retry}
+      health={health} onOpen={onOpen} onAdd={declaration.beginAdding}
+      t={t}
+    />
+  )
 }
