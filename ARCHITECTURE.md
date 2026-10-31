@@ -595,8 +595,8 @@ per Known defects bullet order (it mixes areas that review differently).
 
 ### AD-18 — What stays out: functions, not defects
 The "Lacks" cells that name an absent function are not repaired: loading states of E-3, E-4, E-9,
-E-10, E-11, E-13, E-16, E-25, E-28; an offline screen (E-21; the banner is built, *superseded: AD-22*); a retry for E-8
-(*superseded for E-3, E-4, E-8, E-9, E-11 and E-13, built by `adestia-ajouts-chargements`: AD-24*; *and for E-10, built by `adestia-ajouts-mcp`*); a
+E-10, E-11, E-13, E-16; an offline screen (E-21; the banner is built, *superseded: AD-22*); a retry for E-8
+(*superseded for E-3, E-4, E-8, E-9, E-11 and E-13, built by `adestia-ajouts-chargements`: AD-24*; *for E-10, built by `adestia-ajouts-mcp`*; *and for E-25 and E-28, built by `adestia-ajouts-plugins-chargements`*); a
 confirmation before Remove (E-10) (*superseded: E-33, built by `adestia-ajouts-mcp`, AD-26*); the empty states of E-4 and E-7; a delete command for
 conversations (`deleteConversation` has no screen); the half-built items of `.agent/status.md`
 (`ask` posture, usage view, Copilot permission feedback, `adestia init`). They go to the closing
@@ -775,6 +775,13 @@ expose `status: loading | ready | failed` and a `retry()`. No screen invents its
   (`ready && indexed` is false; `ready` turns true even when the index fails, so a failed index
   leaves the row turning, with no button, as docs/ecrans.md says); E-9 above its tiles until its four reads have *settled* (answered or failed), the tiles
   staying drawn because they work without counts. A failed count stays absent, as today.
+- The plugins (E-25 hub and workbook, E-28 map) do not import these parts (AD-8, `PluginApi` unchanged):
+  they write the same markup with the same classes (`.adestia-loading`, `.adestia-empty*`,
+  `.adestia-btn`), `plugins/atelier/web/app.js` (`loadingHTML`, `showFailure`) and
+  `plugins/parcours/web/carte.js` (`charger`, `echec`). Their failure sentence is their own
+  (« The Workshop is unavailable. », « Unreadable workbook. », « Unreadable route. »), not the
+  server's `error`; Retry returns to the loading row then refetches, and E-28 paints nothing
+  after unmount. Retry is absent on a 404 or a refusal in E-28.
 *Rejected for the detail*: a global "something is loading" bar (the screens differ in what they
 keep, as above); a minimum display time or a delay before the row (a fast answer simply never
 shows it, and a delay is a number to tune).

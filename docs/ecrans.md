@@ -191,10 +191,10 @@ columns are the same except where the instance's configuration decides what exis
 | E-22 | loading, empty, error, conflict, sheet (a view with a named back: « Todo ») | Escape on the task sheet does nothing (kept: it is a view, not a dialog) |
 | E-23 | loading, empty, error, clock off | the notes' problem sentences (`carries both …`, `the note is empty …`) reach the screen in English on every instance (kept, Known defects) |
 | E-24 | loading, no journal, empty journal, conflict, editing; back « Journals » / « Journaux » | — |
-| E-25 | hub, empty (in both languages), per-section empties, piece sheet (shared sheet), full-screen bench mode with an exit that names where it leads | loading, error (kept, recommendations); the native `confirm()` before a layout reset (replaced by `adestia-correctifs`, AD-17) |
+| E-25 | hub, empty (in both languages), per-section empties, piece sheet (shared sheet), full-screen bench mode with an exit that names where it leads, loading row and failure block with **Retry** on the hub and on a workbook (built: `adestia-ajouts-plugins-chargements`) | the native `confirm()` before a layout reset (replaced by `adestia-correctifs`, AD-17) |
 | E-26 | loading, no trip, empty tray, card sheet (shared sheet), dismissed list | the native `window.alert` of a refused gesture (replaced by `adestia-correctifs`, AD-17) |
 | E-27 | loading, empty, no sources, error, conflict | a source's failure reason is the server's raw text (`fetch failed`), in English on every instance (kept, Known defects) |
-| E-28 | map, no route in the address, no points, walking HUD with an exit that names where it leads | loading (kept, a recommendation); the walking map keeps the size it was drawn at before the walk (kept, Known defects) |
+| E-28 | map, no route in the address, no points, walking HUD with an exit that names where it leads, loading row and failure block with **Retry** (absent on a 404 or a refusal) in the page, the `:::parcours` block and the link view (built: `adestia-ajouts-plugins-chargements`) | the walking map keeps the size it was drawn at before the walk (kept, Known defects) |
 | E-29 | loading, empty, conflict, dish sheet (shared sheet) | — |
 | E-30 | camera live, codes listed; camera failure said in the composer | in-overlay error state (kept: a refusal never reaches the overlay); on a phone the focus does not go back to the scan button, which the composer's fold has removed (kept, Known defects) |
 | E-31 | timeline, status, no dated page, no sub-project | — |
@@ -208,7 +208,7 @@ vocabulary of looks (`docs/charte.md`).
 
 **Built so far:** loading for E-3, E-4, E-8, E-9, E-11 and E-13 (Retry on all but E-3 and E-9)
 (`adestia-ajouts-chargements`), for E-10 with the E-33 confirmation (`adestia-ajouts-mcp`), and the refresh and banner of E-4 (`adestia-ajouts-page-suivie`,
-described under "E-4 — the page that follows the agent" below, and in the States table above), and the offline banner E-32 (`adestia-ajouts-hors-ligne`). Every other row below (E-16, E-25, E-28) is a target, not yet in the code; so is the Retry rule of "Loading and failure"
+described under "E-4 — the page that follows the agent" below, and in the States table above), and the offline banner E-32 (`adestia-ajouts-hors-ligne`), and loading and Retry for the plugins' E-25 and E-28 (`adestia-ajouts-plugins-chargements`). Every other row below (E-16) is a target, not yet in the code; so is the Retry rule of "Loading and failure"
 for those screens.
 
 | E-n | Adds | Notes |
@@ -320,7 +320,50 @@ from the shell). Filled in by `adestia-ajouts-chargements`; the plugin tranche r
 Any Retry (E-4, E-8, E-10, E-11, E-13, E-16, and the plugins' E-25, E-28) behaves alike: the failure block gives way to the loading row for exactly what it replaced (E-16: the list or the thread, whichever failed), never two at once, and the button cannot be pressed twice. This paragraph is the single rule; no row restates it. Page to page (E-4): the first page stays on screen exactly as it is (an editor keeps its text), and nothing signals the wait but the address; a later click supersedes the earlier one; the second page replaces the first when it answers; if the second fails, the failure block (E-8) replaces it. A 5xx on E-3 or E-9 is not said in this tranche: the loading row of E-3 keeps turning and E-9's tile has no count; `adestia-ajouts-hors-ligne` says only a cut server (P-16 (3) names E-32 for that alone).
 
 Words: the loading row says "Loading…" (`fr` "Chargement…"); **Retry** is `fr` "Réessayer". The failure sentence is the server's own `error` when it sent one, else "Request failed (%n)" (`fr` "La requête a échoué (%n)"; status 0: "The server is not responding" / "Le serveur ne répond pas", the same words as E-32's banner), never a raw `fetch failed`. A 404 or 401/403 on E-11 or E-13 shows the server's own sentence when it sent one, else the generic "Request failed (%n)"; a server sentence stays as the server wrote it (it may be in English on a `fr` instance: the server's words are not translated here). A very long page address in E-8 wraps the same way.
-Roles: **Retry** is open to everyone who can open the screen, and absent (not refused) where retrying cannot change the outcome (404, 401/403). No route tells an owner from a user (matrix above): E-32 and E-33 are the same for both,
+The plugins' failure sentences are their own, listed below (the detail of `adestia-ajouts-plugins-chargements`); the server's `error` is not shown by a plugin, and the rule above about Retry and the loading row applies to them unchanged.
+
+### E-25 and E-28: loading and Retry, in detail (`adestia-ajouts-plugins-chargements`)
+
+The plugins stay what they are (AD-8): no import from the shell, no new field in `PluginApi`. They draw
+with the classes `adestia-ajouts-chargements` names above (`.adestia-loading`, the empty-state
+classes, `.adestia-btn`); that tranche is the single source of their markup, and a plugin copies it
+verbatim. The plugins' Retry is the plain `.adestia-btn` with its label and no `rotate-ccw` icon (the shell's `Failure` adds it; a plugin copies the classes, not the component). No new CSS rule in a plugin sheet unless the placement needs one, and then in the shell's
+tokens only (`plugins/test/css.test.js`).
+
+| Plugin screen | Fetch | Loading | Failure (network error, or a non-2xx answer) |
+|---|---|---|---|
+| E-25 hub (`renderAtelierHub`) | `/workbooks` | loading row replaces today's bare « loading… » | message « The Workshop is unavailable. » + **Retry**, which runs the hub again. The hub today never reads `response.ok`: a 500 must count as a failure |
+| E-25 workbook (`renderWorkbook`) | `/workbook`, `/state`, `/layout` | same row | message « Unreadable workbook. » + **Retry**, which runs the workbook again; the raw error text (`%err`) is no longer shown. `/layout` failing alone stays tolerated, as today |
+| E-28 map, page and `:::parcours` block (`mountParcours`) | the `.parcours.json` | loading row in the host before the answer | message « Unreadable route. » + **Retry**, which fetches again into the same host. The `vivant` guard still applies: a Retry answered after unmount paints nothing |
+
+Not touched: the walking mode, the no-points state, the link view (`vue: 'lien'` shows the
+same loading and failure, in one line); the native `confirm()` of E-25 (`adestia-correctifs`, AD-17).
+Words are added in each plugin's `words.js` (`Loading…`, `Retry`, the two messages), `en` and `fr`.
+
+*Texts.* `en` → `fr`: « Loading… » → « Chargement… »; « Retry » → « Réessayer »; E-25 hub « The Workshop is
+unavailable. » → « Atelier indisponible. » (the sentence the screen already says: « Workshop » is the
+existing English name of the Atelier, `words.js`, and stays); « Unreadable workbook. » → « Workbook
+illisible. »; E-28 « Unreadable route. » → « Parcours illisible. » (the link view shows the same sentence,
+Retry beside it, on its one line).
+
+*States.* Loading and fetch-failed are the only states added; the empty states (no workbook, no points)
+and the content states are unchanged. While Retry fetches, the screen returns to the loading row (the
+Retry button is gone, so it cannot be pressed twice). When `/workbook` answers but `/state` fails, the
+whole workbook counts as failed (state is what the ticks show). When the server is unreachable, E-32's
+banner sits above the canvas and the plugin's failure block fills the body: both show, they are
+independent. No role sees anything different: the owner and the user get the same blocks; on the Parcours route a 404 and a refusal
+(401/403) show the message without Retry (the Atelier offers Retry on any non-2xx). The screen is reached from P-11 (E-25 from a
+project folder, E-28 from a page's link); its slow-link and failed-fetch steps are P-16 step 3.
+
+*Long content.* On a phone, in `fr`, the failure sentence wraps on as many lines as it needs and is never
+truncated; **Retry** sits under it, full width of the block, not beside it. The wording and the trigger
+of E-32's banner belong to its own tranche, and the P-16 step 3 text is the epic's: this section adds
+neither (reviewed and declined, so the next reading does not raise them again). The « as built »
+remarks further down describe the base branch before `adestia-ajouts` and are left as they are, as
+E-25/E-28's notes above say.
+The tile information call (`tileInfo`) is not a screen and stays silent on failure.
+
+Roles: **Retry** is open to everyone who can open the screen, and the Atelier's two screens offer it on any non-2xx answer, 404 included; the Parcours screen leaves it out on 404 and on a refusal (401/403), as said above. No route tells an owner from a user (matrix above): E-32 and E-33 are the same for both,
 the agent touches neither, and no calling agent sees them. There is no new role. States are drawn in the four skins, `en` and `fr`, light and dark, desk
 and phone (AD-20).
 

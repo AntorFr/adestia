@@ -3,12 +3,12 @@
 
 ## Version courante
 
-- Dernier tag accessible : **`v0.97.0-adestia-ajouts.5`** (`git describe --tags
+- Dernier tag accessible : **`v0.97.0-adestia-ajouts.6`** (`git describe --tags
   --abbrev=0`), tag de l'epic `adestia-ajouts` ; `v0.95.0` est le dernier tag de `main` (epic
   `adestia-qualite`).
-- Branche de travail : `feature/adestia-ajouts-hors-ligne`, sur `origin/epic/adestia-ajouts`
-  (bandeau hors ligne E-32, AD-22 ; recette : `node bench/scenarios/hors-ligne.mjs` après `npm run build`).
-  Livré avant elle sur l'epic : la page ouverte suit l'agent, AD-21 (`node bench/scenarios/page-suivie.mjs`) ;
+- Branche de travail : `feature/adestia-ajouts-plugins-chargements`, sur `origin/epic/adestia-ajouts`
+  (chargement et Réessayer des plugins Atelier et Parcours, E-25 et E-28, AD-24 ; recette : captures du banc, voir ci-dessous).
+  Livré avant elle sur l'epic : le bandeau hors ligne E-32, AD-22 (`node bench/scenarios/hors-ligne.mjs`) ; la page ouverte suit l'agent, AD-21 (`node bench/scenarios/page-suivie.mjs`) ;
   chargement et Réessayer des écrans, AD-24 (`node bench/scenarios/chargements.mjs`) ; E-10 (chargement, Réessayer) et la confirmation E-33 avant de retirer un serveur MCP, AD-26 (aucun scénario de `bench/scenarios/`
   ne les couvre ; après `npm run build`, ouvrir à la main `#/settings/mcp/<nom>` sur `node bench/launch.mjs --engine fake`). Hérité de l'epic précédent (correctifs de recette et de verify : un message envoyé avant que le premier soit parti est retenu ;
   en-tête du rail à moins de 400 px à un seul espacement, sélecteur de modèle d'au moins 72 px ; bulle d'erreur seule à marge symétrique). Banc, tests, serveur, charte,
@@ -110,8 +110,10 @@ PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone
 - L'éditeur embarqué ne reçoit ni `attach`/`compose` ni l'index `pages` du shell
   (`plugins/PageEditor.tsx`) : pas de dépôt de fichier ni de résolution par cet index.
 - Chargement et « Réessayer » sont construits pour E-3, E-4, E-8, E-9, E-10, E-11 et E-13
-  (`adestia-ajouts-chargements`, `adestia-ajouts-mcp`). Restent à faire : E-16 (chat),
-  E-25 et E-28 (plugins) ; le bandeau hors ligne E-32 est construit et vu au banc (`bench/scenarios/hors-ligne.mjs`) ; les toasts restent hors de l'epic (docs/ecrans.md).
+  (`adestia-ajouts-chargements`, `adestia-ajouts-mcp`), et pour les plugins E-25 (hub, workbook) et E-28 (carte, bloc,
+  lien) par `adestia-ajouts-plugins-chargements` (balisage du shell recopié, sans import : AD-8 ;
+  recette : captures du banc sous les quatre habillages, `en` et `fr`, serveur ralenti puis en
+  erreur). Reste à faire : E-16 (chat) ; le bandeau hors ligne E-32 est construit et vu au banc (`bench/scenarios/hors-ligne.mjs`) ; les toasts restent hors de l'epic (docs/ecrans.md).
 - Mesures du banc en pixels à généraliser ; `journal` : couverture navigateur
   et `api.trail` à compléter selon les signalements de l'ancien état.
 
