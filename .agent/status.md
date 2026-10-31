@@ -1,14 +1,16 @@
 # Status — Adestia
-> MàJ : 2026-10-29
+> MàJ : 2026-10-30
 
 ## Version courante
 
-- Dernier tag accessible : **`v0.97.0-adestia-ajouts.2`** (`git describe --tags
+- Dernier tag accessible : **`v0.97.0-adestia-ajouts.5`** (`git describe --tags
   --abbrev=0`), tag de l'epic `adestia-ajouts` ; `v0.95.0` est le dernier tag de `main` (epic
   `adestia-qualite`).
-- Branche de travail : `feature/adestia-ajouts-plugins-chargements` (après `adestia-ajouts-chargements`), sur `origin/epic/adestia-ajouts`
-  (chargement et Réessayer des écrans du shell puis des plugins Atelier et Parcours, AD-24 ; recette : `node bench/scenarios/chargements.mjs`
-  après `npm run build`). Hérité de l'epic précédent (correctifs de recette et de verify : un message envoyé avant que le premier soit parti est retenu ;
+- Branche de travail : `feature/adestia-ajouts-plugins-chargements`, sur `origin/epic/adestia-ajouts`
+  (chargement et Réessayer des plugins Atelier et Parcours, E-25 et E-28, AD-24 ; recette : captures du banc, voir ci-dessous).
+  Livré avant elle sur l'epic : le bandeau hors ligne E-32, AD-22 (`node bench/scenarios/hors-ligne.mjs`) ; la page ouverte suit l'agent, AD-21 (`node bench/scenarios/page-suivie.mjs`) ;
+  chargement et Réessayer des écrans, AD-24 (`node bench/scenarios/chargements.mjs`) ; E-10 (chargement, Réessayer) et la confirmation E-33 avant de retirer un serveur MCP, AD-26 (aucun scénario de `bench/scenarios/`
+  ne les couvre ; après `npm run build`, ouvrir à la main `#/settings/mcp/<nom>` sur `node bench/launch.mjs --engine fake`). Hérité de l'epic précédent (correctifs de recette et de verify : un message envoyé avant que le premier soit parti est retenu ;
   en-tête du rail à moins de 400 px à un seul espacement, sélecteur de modèle d'au moins 72 px ; bulle d'erreur seule à marge symétrique). Banc, tests, serveur, charte,
   plugins, pages et chat sont intégrés à l'epic ; la documentation est relue
   contre le code.
@@ -58,6 +60,34 @@ PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone
   `turns.max` y reste 3. Lancer `node packages/server/bin/adestia.js -c <config>` (ou
   `--engine claude` avec `CLAUDE_CODE_OAUTH_TOKEN`) ; captures de E-14 sous les quatre habillages, en `en` et `fr`.
 
+## La page ouverte suit l'agent (feature `adestia-ajouts-page-suivie`)
+
+- Fait : lecture rafraîchie en place, bandeau « The page changed. » + Reload en modification,
+  E-8 si la page disparaît (au Reload en modification) ; un seul flux (`useInstance` publie
+  `pageChanges`, `usePage` le consomme, AD-21). Veille éteinte : rien ne bouge.
+- Pièges : le bandeau compare la révision de `useAutosave`, pas `page.revision` (qui ne bouge pas
+  après une sauvegarde) ; après une panne du serveur rien n'est rattrapé avant le lot suivant ou la
+  réouverture (AD-22 rejette le sondage) ; seul le Reload de l'utilisateur remplace la saisie.
+- Reste à la recette : les captures sous les quatre habillages, en `en` et `fr`
+  (`bench/scenarios/page-suivie.mjs`).
+
+## Confirmation du retrait d'un serveur MCP (feature `adestia-ajouts-mcp`)
+
+- Fait : Remove (E-10) ouvre `ConfirmRemove` (E-33) ; Cancel, ✕, voile et Escape ne suppriment rien ;
+  un seul `DELETE` par confirmation ; Remove reste désactivé jusqu'à la réponse. E-10 montre son
+  chargement et Réessayer (premier fetch seulement ; un refetch ne revient pas au chargement).
+- Piège : le focus initial sur Cancel vient de `data-autofocus` dans `ui/focus.ts` ; aucune autre
+  feuille ne le pose, et un effet dans le pied de feuille serait écrasé par celui du scope.
+- Reste à la recette : captures de la feuille (téléphone et bureau, quatre habillages, `en`/`fr`) et
+  de E-10 ralenti puis en erreur, au banc.
+
+## Bandeau hors ligne (feature `adestia-ajouts-hors-ligne`)
+
+- Fait : E-32 s'allume sur l'échec d'un appel `/api/` ou la chute du flux, sondé par `GET /api/health` toutes les 3 s (AD-22).
+- Piège : la sonde appelle le `fetch` détaché de son ref (sinon « Illegal invocation », lu comme une sonde échouée). Les tests unitaires, qui
+  passent un `fetch` simulé, ne le voient pas : `besoin-hors-ligne-browser.test.ts` (Chromium) oui,
+  mais il a échoué une fois sur `healthCalls >= 2` sous charge puis passé. L'échec du premier chargement garde E-1.
+
 ## À moitié construit
 
 - La question de permission ne permet pas de corriger la règle proposée par le
@@ -79,12 +109,11 @@ PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone
   ne propose pas ce mode (`routes/turns.ts`).
 - L'éditeur embarqué ne reçoit ni `attach`/`compose` ni l'index `pages` du shell
   (`plugins/PageEditor.tsx`) : pas de dépôt de fichier ni de résolution par cet index.
-- Chargement et « Réessayer » sont construits pour E-3, E-4, E-8, E-9, E-11 et E-13
-  (`adestia-ajouts-chargements`), et pour les plugins E-25 (hub, workbook) et E-28 (carte, bloc,
+- Chargement et « Réessayer » sont construits pour E-3, E-4, E-8, E-9, E-10, E-11 et E-13
+  (`adestia-ajouts-chargements`, `adestia-ajouts-mcp`), et pour les plugins E-25 (hub, workbook) et E-28 (carte, bloc,
   lien) par `adestia-ajouts-plugins-chargements` (balisage du shell recopié, sans import : AD-8 ;
   recette : captures du banc sous les quatre habillages, `en` et `fr`, serveur ralenti puis en
-  erreur). Restent à faire : E-10 (tranche MCP), E-16 (chat), le rafraîchissement de E-4 et son bandeau (`page-suivie`),
-  le bandeau hors ligne E-32 ; les toasts restent hors de l'epic (docs/ecrans.md).
+  erreur). Reste à faire : E-16 (chat) ; le bandeau hors ligne E-32 est construit et vu au banc (`bench/scenarios/hors-ligne.mjs`) ; les toasts restent hors de l'epic (docs/ecrans.md).
 - Mesures du banc en pixels à généraliser ; `journal` : couverture navigateur
   et `api.trail` à compléter selon les signalements de l'ancien état.
 

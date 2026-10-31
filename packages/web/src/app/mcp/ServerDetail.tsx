@@ -1,11 +1,14 @@
 /** One server, opened: where it came from, how it is doing, and its declaration. */
 
+import { useState } from 'react'
+
 import type { McpServerView } from '@antorfr/adestia-schemas'
 
 import { Icon } from '../Icon.js'
 import { beginSignIn, type McpConnection } from '../signin.js'
 import type { McpServerHealth } from '../Settings.js'
 import { Button, Field } from '../ui/index.js'
+import { ConfirmRemove } from './ConfirmRemove.js'
 import { provenance, stateOf } from './health.js'
 import type { Save } from './useDeclaration.js'
 
@@ -20,7 +23,8 @@ export interface ServerDetailProps {
   readonly save: Save
   readonly onDraft: (text: string) => void
   readonly onSave: () => void
-  readonly onRemove: () => void
+  /** Resolves when the DELETE has answered. */
+  readonly onRemove: () => void | Promise<void>
   readonly t: (key: string) => string
 }
 
@@ -58,8 +62,8 @@ function SignIn({ name, connected, t }: { name: string; connected: boolean; t: (
   )
 }
 
-function Actions(props: ServerDetailProps) {
-  const { adding, dirty, save, onSave, onRemove, t } = props
+function Actions(props: ServerDetailProps & { readonly removing: boolean; readonly onAskRemove: () => void }) {
+  const { adding, dirty, save, onSave, removing, onAskRemove, t } = props
   return (
     <div className="adestia-mcp__bar">
       {save.kind === 'failed' && (
@@ -71,7 +75,7 @@ function Actions(props: ServerDetailProps) {
       {save.kind === 'saved' && !dirty && <span className="adestia-save">{t('Saved')}</span>}
       <span className="adestia-mcp__spacer" />
       {!adding && (
-        <Button variant="danger" onClick={onRemove}>
+        <Button variant="danger" onClick={onAskRemove} disabled={removing} busy={removing}>
           {t('Remove')}
         </Button>
       )}
@@ -92,6 +96,14 @@ export function ServerDetail(props: ServerDetailProps) {
   const { shown, adding, state, connection, draft, onDraft, t } = props
   const tone = stateOf(state?.state)
   const editable = adding || shown?.editable === true
+  const [confirming, setConfirming] = useState(false)
+  const [removing, setRemoving] = useState(false)
+  const confirm = () => {
+    // Closed before the request leaves, so one press sends one DELETE.
+    setConfirming(false)
+    setRemoving(true)
+    void Promise.resolve(props.onRemove()).finally(() => setRemoving(false))
+  }
 
   return (
     <section className="adestia-mcp">
@@ -142,7 +154,8 @@ export function ServerDetail(props: ServerDetailProps) {
         </Field>
       </div>
 
-      {editable && <Actions {...props} />}
+      {editable && <Actions {...props} removing={removing} onAskRemove={() => setConfirming(true)} />}
+      {confirming && shown && <ConfirmRemove name={shown.name} onConfirm={confirm} onCancel={() => setConfirming(false)} t={t} />}
 
       {tone && (
         <p className="adestia-mcp__note">

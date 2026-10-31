@@ -584,9 +584,7 @@ yet reproduced" (frontmatter CRLF) or "whether it predates the epic is unknown" 
 | plugins | `confirm()` of the atelier and `alert` of the voyages replaced by the shared sheet (Q-20, kept by `adestia-qualite` because "the flow would change": the answer becomes asynchronous; this is the one deliberate flow change, bounded to two gestures, and `docs/ecrans.md` Q-20 and the atelier and voyages journeys are rewritten with it. If the tranche proves risky it is narrowed and the reason written under Known defects); planif and veille sentences in English; E-28 walking map keeps its pre-walk size; E-30 focus lost on phone; E-25 "1 pièces"; the emojis kept in plugins; the amber of project-management meaning two things; `:::content` `on` without a localised date |
 | debt | R-2 one-line aliases of the drivers and R-6 exports kept only for tests (removed, tests import the module that owns the symbol); bench duplicates (`launch(seed)`, `loadPlaywright`); fake-engine options with no caller; `doc-besoin.test.mjs` into CI; the two duplicate guards on `DESIGN.md`; typed lint rules switched on if the repo passes them; `.agent/migrate-frame.mjs` lint errors |
 
-Kept on purpose, with their reason, and still under Known defects: the open page is **not**
-refreshed after an agent write (P-5 step 7 states that it is not, to protect unsaved text; refreshing
-it is a new behaviour, so a closing recommendation); the workbook's, the cards' and the server's
+Kept on purpose, with their reason, and still under Known defects: the workbook's, the cards' and the server's
 own words that are author or engine data (E-25 piece names, E-26 card types, E-23 and E-27 sentences
 built by the server unless a table keyed by them already exists).
 
@@ -597,9 +595,9 @@ per Known defects bullet order (it mixes areas that review differently).
 
 ### AD-18 — What stays out: functions, not defects
 The "Lacks" cells that name an absent function are not repaired: loading states of E-3, E-4, E-9,
-E-10, E-11, E-13, E-16; an offline screen and banner (E-21); a retry for E-8
-(*superseded for E-3, E-4, E-8, E-9, E-11 and E-13, built by `adestia-ajouts-chargements`, and for E-25 and E-28, built by `adestia-ajouts-plugins-chargements`: AD-24*); a
-confirmation before Remove (E-10); the empty states of E-4 and E-7; a delete command for
+E-10, E-11, E-13, E-16; an offline screen (E-21; the banner is built, *superseded: AD-22*); a retry for E-8
+(*superseded for E-3, E-4, E-8, E-9, E-11 and E-13, built by `adestia-ajouts-chargements`: AD-24*; *for E-10, built by `adestia-ajouts-mcp`*; *and for E-25 and E-28, built by `adestia-ajouts-plugins-chargements`*); a
+confirmation before Remove (E-10) (*superseded: E-33, built by `adestia-ajouts-mcp`, AD-26*); the empty states of E-4 and E-7; a delete command for
 conversations (`deleteConversation` has no screen); the half-built items of `.agent/status.md`
 (`ask` posture, usage view, Copilot permission feedback, `adestia init`). They go to the closing
 recommendations, posted in this epic's discussion at the end of the framing.
@@ -628,7 +626,7 @@ them; AD-18's list is what they take from.
 `useInstance.ts` already gets `pages-changed` from `GET /api/events` (`app/live.ts`) and refetches
 the index. The open page subscribes to the same event: if its path is in the batch, reading mode
 refetches the page; editing mode reads the page's `revision` (the event carries only `paths`, no
-revision) and raises the "The page changed" banner when it differs from the revision the editor
+revision) and raises the "The page changed." banner when it differs from the revision the editor
 holds (the one it opened with or its last save returned); it loads nothing into the editor until
 **Reload**. The editor's text is never replaced by the refresh. A change caused by the user's own
 save carries the revision the editor already holds and raises nothing. The feed is `workspace.watch`: when it is
@@ -640,7 +638,47 @@ A page deleted or moved by the agent while open: reading mode shows the missing-
 editing mode raises the same banner, and Reload leads to E-8. A page of a second store is named by
 its path plus its `store` id like any page route; the refresh matches both. *Reversed if*: the
 feed cannot name the changed path for a page in a second store (then only the first store
-refreshes, and the rest stays as today).
+refreshes, and the rest stays as today). The decision stops here; **Detail built** below is what the code does and prevails (the revision compared is the editor's own, from `useAutosave`).
+
+**Detail built by `adestia-ajouts-page-suivie`.**
+- One subscription, not two. `useInstance` already holds the stream (`followChanges`); besides
+  refetching the index it publishes the last batch as `pageChanges: { seq, paths }` (`seq` grows on
+  every batch, so two batches naming the same path are two signals). `App` hands it to `usePage`.
+  `usePage` opens no `EventSource` of its own.
+- The event names the LOGICAL path (`routes/watch.ts`: "never which circle it changed in"), so the
+  condition of "Reversed if" holds: a page of a second store is matched on its path alone, and the
+  refetch carries the page's own `?store=` as the first load does. A batch that names the path
+  while the open page lives in another store than the one that changed costs one extra read of the
+  same page (same revision: nothing shown); it is never wrong.
+- Reading: a match refetches the page silently (no `Loading`, the screen stays) and replaces
+  `page`; a failed refetch other than 404 changes nothing on screen (the next batch retries).
+  404 on the refetch is the deletion: `pageProblem` becomes `{ path, status: 404 }` and E-8 shows
+  (the page is no longer followed: `pagePath` still routes it, but the next fetch is the user's).
+- Editing: `Editor` tells `App` it is editing (`onEditing`, already there); `usePage` then does
+  not replace `page`. On a match it reads the whole page into a side slot, `incoming: { page } |
+  { gone: true }` (the latest batch wins: an older answer arriving late is dropped, so a long page
+  or repeated agent writes cost reads, never a wrong banner), and the editor compares
+  `incoming.page.revision` with the revision it holds now —
+  `useAutosave`'s own `revision` (the one it opened with or its last save returned), which the
+  hook exposes; `page.revision` alone does not move after a save and would raise the banner on the
+  user's own save. Equal: nothing. Different or gone: the banner. `reload()` (the banner's
+  button) moves `incoming` into `page` (or, when gone, into `pageProblem` 404, so E-8 shows) and
+  the editor's existing reset-on-revision effect loads it; it holds the page already, so Reload
+  has no loading state and cannot fail. Nothing else writes the editor's text. Leaving the
+  editor (`onEditing(false)`, Done, which saves first) with `incoming` pending applies it the same
+  way: the page is followed again as in reading, so the reader never shows a version older than
+  the disk. A side read that fails with anything but 404 (offline included) changes nothing: the offline
+  banner (E-32) owns that case, and the next batch retries. A 404 on the side read is the only
+  source of `incoming: { gone: true }`. Serving again after an outage catches nothing up by itself
+  (AD-22 rejects polling): the page stays as it was until the next batch or until it is reopened.
+- A save the user's own makes is silent for free: the feed reports it, the side read returns the
+  revision the save returned, equal to the editor's. The save-time 409 line ("The agent changed
+  this page. Reload to see its version.", `SaveStatus`) is unchanged and may show with the banner.
+- Watch off (`/api/events` 404): `followChanges` already stops asking, `pageChanges` stays at
+  `seq: 0`, nothing refreshes, as today.
+*Rejected for the detail*: the editor fetching the page itself (a second path to the same read,
+and the editor also embeds in plugins that have no feed); comparing the markdown text instead of
+the revision (the editor's text differs from the disk's after tidying).
 
 ### AD-22 — The server is gone when it does not answer, not when the browser says offline
 The offline banner (E-32) reads the outcome of the shell's own requests (failed fetch of any
@@ -652,6 +690,36 @@ touched by it). No offline screen, no page cache. The first-load failure keeps t
 *Rejected*: `online`/`offline` events (wrong signal); an offline screen and cached pages (not
 kept by Monsieur).
 *Reversed if*: a request failure cannot be told from a deliberate abort in the fetch layer.
+
+**Detail built by `adestia-ajouts-hors-ligne`.** One observing layer, one hook, one banner.
+- `observeFetch(fetchImpl, report)` (`app/serverReach.ts`) returns a `fetch` that forwards every call
+  unchanged and reports its outcome to `report` — for same-origin `/api/` calls other than
+  `/api/health` only. A **down signal** is a thrown fetch that is not an `AbortError` (a deliberate
+  abort — navigation, a stopped turn, an unsubscribed feed — is never offline, AD-22's reversal
+  condition) or an HTTP 502/503/504 (a proxy in front of a server that is gone). Any other answer, 4xx
+  and 5xx included, is an **up signal**: the server answered. The wrapper never swallows or rewrites
+  the failure; the call site handles it as before.
+- `useServerReach(fetchImpl, { probeMs = 3000, probeTimeoutMs = 5000 })` → `{ fetchImpl: observed,
+  reachable }`. `App` builds it once, above the gates, and hands the observed `fetch` to every child that
+  takes `fetchImpl` today (`useInstance`, `usePage`, `Chat`, `CanvasHeader`, `Canvas`…), so the plugin
+  loader and the plugins it lends `fetchImpl` to are observed too; their contract (AD-8) is unchanged.
+- **A down signal does not light the banner by itself.** It starts a probe: `GET /api/health` through the
+  *unobserved* `fetch`, aborted after `probeTimeoutMs` (a dropped VPN often hangs rather than refuses).
+  The banner shows when a probe fails; while shown the probe repeats every `probeMs`; the first probe
+  that answers `ok`, or any up signal from a real call, clears it. One failed request in an otherwise
+  healthy session therefore never flashes the banner, and a hanging connection still ends in it.
+- `followChanges` (`app/live.ts`) gains one option, `onLink(up: boolean)`: `false` when the feed cannot
+  connect or the stream ends or errors without the shell having aborted it, `true` when it connects. A
+  `false` is a down signal (it starts the probe); the 404 "feed not offered" exit reports nothing.
+- `Offline` (`app/Offline.tsx`) is a pure component of `t`: `role="status"`, `wifi-off`, "The server is
+  not responding" (`fr`: « Le serveur ne répond pas »). `App` draws it in exactly one of two places (see
+  `docs/ecrans.md`, "E-32 in `adestia-ajouts-hors-ligne`"). The first-load failure is untouched: the gates
+  return before the shell is drawn, so the banner never sits on a gate.
+- No `navigator.onLine`, no `online`/`offline` listener, no service-worker change, no persisted state: a
+  reload starts "reachable" and the first failure or the stream finds the truth again.
+*Rejected here*: lighting on the first failed call without a probe (one blip flashes the banner);
+probing on a timer while healthy (traffic for nothing); a second `AbortController` to tell aborts apart
+(the error name already does).
 
 ### AD-23 — Context loss: Claude can still lose it; Copilot and Codex cannot
 Verified in code. Copilot (`COPILOT_HOME`) and Codex (`CODEX_HOME`) keep sessions under
@@ -740,6 +808,21 @@ shows for 0 and 17. `config.ts` keeps its own check, so a hand-edited file stays
 E-33 is a `Sheet` with `NamePrompt`'s footer shape, opened by `ServerDetail`'s **Remove**. The
 declaration is removed only on **Remove**. No generic `useConfirm` is created for one use.
 *Reversed if*: a second confirmation is kept later; then it is extracted.
+
+**Detail built by `adestia-ajouts-mcp`.**
+- `app/mcp/ConfirmRemove.tsx` is a `Sheet` with `NamePrompt`'s footer shape; `ServerDetail` holds a
+  `confirming` flag and its **Remove** only sets it. On confirm the flag drops *before* `onRemove` runs, so
+  one press sends one `DELETE`. `useDeclaration.remove` is unchanged (a failure still lands in `save`).
+- The initial focus goes to Cancel through one small, opt-in rule in the shared scope (`ui/focus.ts`): on
+  open, focus the first element marked `data-autofocus` inside the container, else the first focusable as
+  before. `Button` already forwards `data-*`. Nothing else in the scope changes (trap, Escape, return of
+  focus), and no other sheet is marked, so none moves.
+- Loading and failure of E-10 come from `useDeclaration`'s `views` fetch only, through the shared hook shape
+  and parts of AD-24 (`status`, `retry()`); the first answer ends loading, a later refetch never returns to
+  it. `useMcpServers` (health) is not touched.
+*Rejected here*: a `window.confirm` (AD-26); focusing Cancel with an effect in the footer (the scope's own
+effect runs after it and takes the ✕); making Remove wait on the `DELETE` inside the open sheet (a second
+state for one use).
 
 ## Refactoring targets
 
@@ -957,8 +1040,6 @@ outside the tree); a red names the flake, which is fixed by signal, never retrie
 
 ## Known defects (found, not fixed by this epic)
 
-- **P-5 step 7: the open page does not refresh after an agent write.** Taken by
-  `adestia-ajouts` (AD-21, B-17); removed from here when that tranche lands.
 - **The shared loading row sits about 24 px right of the content edge** (`.adestia-loading`,
   `padding: var(--space-5)`), seen at the bench on every screen that shows it. It dates from the
   class of E-2 and E-14, not from `adestia-ajouts-chargements`; not repaired.

@@ -23,6 +23,8 @@ npm run lint         # eslint packages plugins; also in CI
 npm run build        # server/dependencies, then the web shell and its vendor/SW files
 ```
 
+One test file: `npx vitest run packages/web/test/<file>.test.tsx` from the root.
+
 The catalogue browser suite builds a missing shell when Playwright is available.
 Without Playwright it explicitly skips; a green run then does not prove those
 screens. It only builds a *missing* shell: after changing

@@ -28,7 +28,7 @@ import { encodePath, ownerOf } from './owners.js'
 import { sectionAt, type IndexEntry, type StoreInfo } from './sections.js'
 import { skinUser, type Skin, type SkinSlots } from './skin.js'
 import type { InstanceInfo } from './useInstance.js'
-import type { EditorMount } from './usePage.js'
+import type { EditorMount, Incoming } from './usePage.js'
 
 /** The three ways into the chat the shell lends out, behind refs. */
 export interface ChatChannel {
@@ -54,6 +54,11 @@ export interface CanvasProps {
   /** The address asks for a page that has not answered yet. */
   readonly pageLoading?: boolean
   readonly retryPage?: () => void
+  /** The page editor opened or closed (AD-21: the feed never replaces what is being typed). */
+  readonly onEditing?: (editing: boolean) => void
+  /** The page as the disk now has it, read aside while editing. */
+  readonly incoming?: Incoming | undefined
+  readonly reloadPage?: () => void
   readonly mount: EditorMount | undefined
   readonly section: string | undefined
   readonly channel: ChatChannel
@@ -112,6 +117,9 @@ export function Canvas(props: CanvasProps) {
         <Editor
           page={page}
           fetchImpl={props.fetchImpl}
+          {...(props.onEditing ? { onEditing: props.onEditing } : {})}
+          {...(props.incoming ? { incoming: props.incoming } : {})}
+          {...(props.reloadPage ? { onReload: props.reloadPage } : {})}
           openPage={openPage}
           locale={props.locale}
           // Dropping a file on a page hands it to the chat and writes the
