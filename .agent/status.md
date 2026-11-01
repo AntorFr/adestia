@@ -3,7 +3,7 @@
 
 ## Version courante
 
-- Dernier tag accessible : **`v0.97.0-adestia-ajouts.11`** (`git describe --tags
+- Dernier tag accessible : **`v0.97.0-adestia-ajouts.12`** (`git describe --tags
   --abbrev=0`), tag de l'epic `adestia-ajouts` ; `v0.95.0` est le dernier tag de `main` (epic
   `adestia-qualite`).
 - Branche de travail : `feature/adestia-ajouts-hors-ligne` (PR #35 vers `epic/adestia-ajouts` ; le liseré du bandeau E-32 corrigé, en recette). Dernières tranches fusionnées dans l'epic : `adestia-ajouts-plugins-chargements`, puis `adestia-ajouts-chargements` et `adestia-ajouts-chat` (PR #32 ; la PR #34 n'ajoute que l'import partagé de `loadPlaywright` au banc)
