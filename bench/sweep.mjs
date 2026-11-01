@@ -23,17 +23,16 @@
  * route, the gesture that opens it, and the selector that proves it is THAT
  * screen and not another. A new screen of docs/ecrans.md is a new row.
  */
-import { execFileSync, spawn } from 'node:child_process'
 import { mkdir, stat } from 'node:fs/promises'
-import { createRequire } from 'node:module'
+import { loadPlaywright } from './lib/playwright.mjs'
+import { launch } from './lib/instance.mjs'
 import { dirname, join, resolve } from 'node:path'
-import { argv, execPath, exit } from 'node:process'
+import { argv, exit } from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 import { CONVERSATIONS } from './seed/_base.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const launcher = join(here, 'launch.mjs')
 
 // ── the table ───────────────────────────────────────────────────────────────
 /**
@@ -164,50 +163,11 @@ const screens = SCREENS.filter((screen) => !only || only.includes(screen.id))
 const outDir = join(resolve(options.out), options.skin ?? 'default')
 
 // ── Playwright, from the environment ────────────────────────────────────────
-function loadPlaywright() {
-  const roots = ['/usr/lib/node_modules']
-  try {
-    roots.push(execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim())
-  } catch {
-    // no npm on the path: the fixed root is all there is
-  }
-  for (const dir of roots) {
-    for (const name of ['playwright-core', 'playwright']) {
-      try {
-        return createRequire(`${dir}/`)(name)
-      } catch {
-        // not under this root
-      }
-    }
-  }
-  fail(`playwright not found under ${roots.join(' or ')} — it comes with the environment, not with the repository`, 1)
-}
-const { chromium } = loadPlaywright()
-
-// ── the instances ───────────────────────────────────────────────────────────
-function launch(seed) {
-  const args = [launcher, '--engine', 'fake', '--seed', seed]
-  if (options.skin) args.push('--skin', options.skin)
-  if (options.locale) args.push('--locale', options.locale)
-  const child = spawn(execPath, args, { stdio: ['ignore', 'pipe', 'pipe'] })
-  let stderr = ''
-  child.stderr.on('data', (chunk) => (stderr += chunk))
-  const url = new Promise((resolveUrl, reject) => {
-    let out = ''
-    child.stdout.on('data', (chunk) => {
-      out += chunk
-      const found = /listening on (\S+)/.exec(out)
-      if (found) resolveUrl(found[1])
-    })
-    child.once('exit', (code) => reject(new Error(`the launcher exited (${code}) before answering: ${stderr.trim().split('\n').slice(-3).join(' | ')}`)))
-  })
-  const stop = () =>
-    new Promise((done) => {
-      if (child.exitCode !== null) return done()
-      child.once('exit', done)
-      child.kill('SIGTERM')
-    })
-  return { url, stop }
+let chromium
+try {
+  chromium = loadPlaywright().chromium
+} catch (error) {
+  fail(`${error.message} — it comes with the environment, not with the repository`, 1)
 }
 
 // ── one capture ─────────────────────────────────────────────────────────────
@@ -314,7 +274,7 @@ let taken = 0
 try {
   const seeds = [...new Set(screens.map((screen) => screen.seed))]
   for (const seed of seeds) {
-    const instance = launch(seed)
+    const instance = launch(seed, options)
     try {
       const base = await instance.url
       for (const screen of screens.filter((s) => s.seed === seed)) {

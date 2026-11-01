@@ -13,7 +13,15 @@ import type { Node } from '../nodes.js'
  * `pm-config` will one day say `summary: Synthèse`; until it does, the word
  * the author wrote is a better answer than no title at all.
  */
-export function ContentBlock({ node, children }: { readonly node: Node; readonly children: ReactNode }) {
+export function ContentBlock({
+  node,
+  locale,
+  children,
+}: {
+  readonly node: Node
+  readonly locale?: string | undefined
+  readonly children: ReactNode
+}) {
   const subject = node.attributes?.['type'] ?? ''
   // The page convention, one level down: `ico:` and `title:` are what a PAGE
   // declares, so a block declares the same words. The title ladder is the
@@ -23,7 +31,7 @@ export function ContentBlock({ node, children }: { readonly node: Node; readonly
   // a word someone meant to read.
   const title = node.attributes?.['title'] ?? (subject ? prettify(subject) : '')
   const ico = node.attributes?.['ico']
-  const signed = [node.attributes?.['by'], node.attributes?.['on']].filter(Boolean).join(' · ')
+  const signed = [node.attributes?.['by'], dateOf(node.attributes?.['on'], locale)].filter(Boolean).join(' · ')
   const framed = node.attributes?.['frame'] === 'card'
   return (
     <section className={`adestia-content${framed ? ' adestia-framed' : ''}`}>
@@ -31,6 +39,25 @@ export function ContentBlock({ node, children }: { readonly node: Node; readonly
       {children}
     </section>
   )
+}
+
+/**
+ * `on=` read in the instance's language. A calendar day (`2026-03-04`) is
+ * drawn at UTC so no timezone moves it by one; anything that is not a date
+ * is drawn as the author wrote it.
+ */
+function dateOf(value: string | undefined, locale: string | undefined): string | undefined {
+  if (!value) return value
+  const day = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim())
+  if (!day) return value
+  const [y, m, d] = [Number(day[1]), Number(day[2]), Number(day[3])]
+  const at = new Date(Date.UTC(y, m - 1, d))
+  if (at.getUTCFullYear() !== y || at.getUTCMonth() !== m - 1 || at.getUTCDate() !== d) return value
+  try {
+    return new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' }).format(at)
+  } catch {
+    return value
+  }
 }
 
 /**

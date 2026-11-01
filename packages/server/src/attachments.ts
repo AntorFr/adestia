@@ -69,7 +69,7 @@ export interface AttachmentOwner {
  * called `../../.ssh/authorized_keys` has no business keeping its shape even
  * as a label.
  */
-export function safeName(raw: string): string {
+function safeName(raw: string): string {
   const base = raw.split(/[\\/]/).pop() ?? 'file'
   const cleaned = base.replace(/[\x00-\x1f\x7f]/g, '').replace(/^\.+/, '').trim()
   const name = cleaned === '' ? 'file' : cleaned

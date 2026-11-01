@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { TurnEvent, TurnRequest } from '@antorfr/adestia-drivers'
 
-import { BusyConversationError, DelegationChannel, titleFor } from '../src/delegations.js'
+import { BusyConversationError, DelegationChannel } from '../src/delegations.js'
 import { TurnDesk } from '../src/turns.js'
 import { driverWith, scriptedDriver } from './support/driver.js'
 import { cleanTmp, tmpDir } from './support/tmp.js'
@@ -26,10 +26,18 @@ function channelWith(driver: { runTurn(request: TurnRequest): AsyncIterable<Turn
   return new DelegationChannel(desk, { dataDir, cwd: '/workspace' })
 }
 
+/** The title a request gets: `titleFor` is reached through `open`. */
+async function titleOf(request: string): Promise<string> {
+  const channel = channelWith(scriptedDriver(() => answer('fait.')))
+  const opened = await channel.open('alfred', request, undefined)
+  if (!('conversationId' in opened)) throw new Error('open refused a fresh conversation')
+  return (await channel.read('alfred', opened.conversationId))!.title
+}
+
 describe('the conversation title', () => {
-  it('is the request’s first words, cut on a word', () => {
-    expect(titleFor('Range les fiches du mois')).toBe('Range les fiches du mois')
-    const long = titleFor(
+  it('is the request’s first words, cut on a word', async () => {
+    expect(await titleOf('Range les fiches du mois')).toBe('Range les fiches du mois')
+    const long = await titleOf(
       'Range les fiches du mois de septembre dans le classeur des travaux en cours merci',
     )
     expect(long.length).toBeLessThanOrEqual(61)
@@ -37,8 +45,8 @@ describe('the conversation title', () => {
     expect(long).not.toContain('\n')
   })
 
-  it('never yields an empty name', () => {
-    expect(titleFor('  \n  ')).toBe('Delegated task')
+  it('never yields an empty name', async () => {
+    expect(await titleOf('  \n  ')).toBe('Delegated task')
   })
 })
 

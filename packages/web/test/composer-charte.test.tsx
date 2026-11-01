@@ -196,7 +196,16 @@ describe('attachment tray', () => {
     const FRR = (key: string) => (key === 'request failed (%n)' ? 'la requête a échoué (%n)' : key)
     const status503 = (() =>
       Promise.resolve({ ok: false, status: 503, json: () => Promise.resolve({}) } as unknown as Response)) as unknown as typeof fetch
-    expect(await send(status503, FRR)).toBe('la requête a échoué (503)')
+    // Arbitrated: a refusal with no readable server sentence reads the translated
+    // upload fallback, not the generic HTTP one.
+    const FRU = (key: string) => (key === 'upload failed' ? 'l’envoi a échoué' : FRR(key))
+    expect(await send(status503, FRU)).toBe('l’envoi a échoué')
+    const empty500 = (() =>
+      Promise.resolve({ ok: false, status: 500, json: () => Promise.reject(new SyntaxError('Unexpected end of JSON input')) } as unknown as Response)) as unknown as typeof fetch
+    expect(await send(empty500, FRU)).toBe('l’envoi a échoué')
+    const okBadJson = (() =>
+      Promise.resolve({ ok: true, status: 200, json: () => Promise.reject(new SyntaxError('Unexpected token <')) } as unknown as Response)) as unknown as typeof fetch
+    expect(await send(okBadJson, FRU)).toBe('l’envoi a échoué')
     expect(await send(upload({ error: 'Trop gros' }, false), FRR)).toBe('Trop gros')
     const down = (() => Promise.reject(new Error(''))) as unknown as typeof fetch
     expect(await send(down, FRR)).toBe('la requête a échoué (0)')

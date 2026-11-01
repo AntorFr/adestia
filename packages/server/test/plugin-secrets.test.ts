@@ -11,7 +11,7 @@ import { join } from 'node:path'
 import Fastify from 'fastify'
 
 import { parseConfig } from '../src/config.js'
-import { mountPluginApis } from '../src/plugin-host.js'
+import { mountPluginApis } from '../src/routes/plugin-host.js'
 import type { DiscoveredPlugin } from '../src/extensions.js'
 import { pagesService, resolveStores } from '../src/stores.js'
 import { cleanTmp, tmpDir } from './support/tmp.js'

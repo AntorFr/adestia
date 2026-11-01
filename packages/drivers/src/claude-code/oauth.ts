@@ -35,13 +35,13 @@ import { createHash, randomBytes as nodeRandomBytes } from 'node:crypto'
 import type { ArmingFlow } from './driver.js'
 
 const AUTHORIZE_URL = 'https://claude.com/cai/oauth/authorize'
-export const TOKEN_URL = 'https://platform.claude.com/v1/oauth/token'
-export const REDIRECT_URI = 'https://platform.claude.com/oauth/code/callback'
-export const CLIENT_ID = '9d1c250a-e61b-44d9-88ed-5944d1962f5e'
+const TOKEN_URL = 'https://platform.claude.com/v1/oauth/token'
+const REDIRECT_URI = 'https://platform.claude.com/oauth/code/callback'
+const CLIENT_ID = '9d1c250a-e61b-44d9-88ed-5944d1962f5e'
 /** Inference on the user's subscription — the only scope this token needs. */
 const SCOPE = 'user:inference'
 /** What makes the token long-lived; the CLI asks for exactly this. */
-export const ONE_YEAR_SECONDS = 31_536_000
+const ONE_YEAR_SECONDS = 31_536_000
 const EXCHANGE_TIMEOUT_MS = 30_000
 /** Enough of a failing body to diagnose it, not enough to fill a log. */
 const BODY_EXCERPT = 400
@@ -78,7 +78,7 @@ function base64Url(bytes: Buffer): string {
  * whole point of PKCE: the code the user pastes back is worthless to anyone
  * who did not generate the verifier.
  */
-export function createPkce(randomBytes: (size: number) => Buffer = nodeRandomBytes): Pkce {
+function createPkce(randomBytes: (size: number) => Buffer = nodeRandomBytes): Pkce {
   const verifier = base64Url(randomBytes(SECRET_BYTES))
   return {
     verifier,
@@ -88,7 +88,7 @@ export function createPkce(randomBytes: (size: number) => Buffer = nodeRandomByt
 }
 
 /** Where to send the human. */
-export function authorizeUrl(pkce: Pkce): string {
+function authorizeUrl(pkce: Pkce): string {
   const url = new URL(AUTHORIZE_URL)
   // `code=true` is what makes the page DISPLAY the code instead of posting it
   // to a listening port — there is no browser on this side, and no port of
@@ -108,7 +108,7 @@ export function authorizeUrl(pkce: Pkce): string {
  * What the user pastes: the page hands them `code#state`, and people paste
  * what they are given — with the odd space or newline around it.
  */
-export function splitPastedCode(pasted: string): { code: string; state?: string } {
+function splitPastedCode(pasted: string): { code: string; state?: string } {
   const [code = '', state] = pasted.trim().split('#')
   return state === undefined || state === '' ? { code } : { code, state }
 }
@@ -133,7 +133,7 @@ export interface ArmedToken {
  * Every exit from here names what happened. "It did not work" is the one
  * answer this flow is not allowed to give.
  */
-export async function exchangeCode(options: ExchangeOptions): Promise<ArmedToken> {
+async function exchangeCode(options: ExchangeOptions): Promise<ArmedToken> {
   const { code, state } = splitPastedCode(options.pasted)
   if (code === '') throw new Error('no code was pasted')
   if (state !== undefined && state !== options.pkce.state) {

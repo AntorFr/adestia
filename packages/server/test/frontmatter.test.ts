@@ -39,3 +39,23 @@ describe('field', () => {
     expect(field({}, 'd')).toBeUndefined()
   })
 })
+
+describe('a CRLF page and a fence with trailing spaces', () => {
+  it('splits a \\r\\n head as the editor does', () => {
+    expect(splitFrontmatter('---\r\na: 1\r\n---\r\nbody')).toEqual({ head: 'a: 1', body: 'body' })
+  })
+  it('reads fields from a \\r\\n head without a stray \\r in the values', () => {
+    expect(parseFrontmatter('---\r\ntitle: Brief\r\nstatus: active\r\n---\r\n# T\r\n')).toEqual({
+      title: 'Brief',
+      status: 'active',
+    })
+  })
+  it('accepts spaces after the closing fence and keeps them out of the body', () => {
+    expect(splitFrontmatter('---\na: 1\n---  \nbody')).toEqual({ head: 'a: 1', body: 'body' })
+    expect(splitFrontmatter('---\r\na: 1\r\n---\t \r\nbody')).toEqual({ head: 'a: 1', body: 'body' })
+    expect(splitFrontmatter('---\na: 1\n---  ')).toEqual({ head: 'a: 1', body: '' })
+  })
+  it('does not take text after the fence for a fence', () => {
+    expect(splitFrontmatter('---\na: 1\n--- x\nbody').head).toBeUndefined()
+  })
+})

@@ -12,7 +12,7 @@ import { mkdir, readFile, stat } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { AskDesk, type AuthManagement, type Driver } from '@antorfr/adestia-drivers'
+import { AskDesk, assertConformance, type AuthManagement, type Driver } from '@antorfr/adestia-drivers'
 import type { FastifyInstance } from 'fastify'
 
 import { buildApp, type AppDependencies } from './app.js'
@@ -635,6 +635,10 @@ export async function start(options: StartOptions = {}): Promise<StartedInstance
   const driver = options.driverFactory
     ? await options.driverFactory(config)
     : await buildDriver(config, dataDir, wiredMcpServers, asks, log)
+
+  // A descriptor that promises what the driver cannot deliver stops the boot,
+  // naming the driver and each gap, rather than surfacing as an empty panel.
+  assertConformance(driver, await driver.describe())
 
   const shellTools = await startShellTools(config, dataDir, stores, log)
   await checkPermissions(config, driver, log)

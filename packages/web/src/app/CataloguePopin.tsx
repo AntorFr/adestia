@@ -160,6 +160,8 @@ export function CataloguePopin({
       }
       await loadItems(catalogue)
       onChanged()
+    } catch (cause) {
+      setError((cause as Error).message)
     } finally {
       setBusy(undefined)
     }

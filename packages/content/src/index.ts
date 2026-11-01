@@ -7,6 +7,7 @@ export {
   CORE_FIELDS,
 } from './fields.js'
 export {
+  splitFrontmatter,
   readFrontmatter,
   writeFrontmatter,
   type FieldValue,

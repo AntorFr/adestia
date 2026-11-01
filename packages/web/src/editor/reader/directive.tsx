@@ -75,7 +75,7 @@ export function directive(node: Node, ctx: Ctx, renderChildren: RenderChildren):
     if (node.type === 'containerDirective' && name === 'content') {
       // Draws its own header: a section always has a title, and a
       // signature. Its card is the same one, on its own section.
-      return <ContentBlock node={node}>{renderChildren(node, ctx)}</ContentBlock>
+      return <ContentBlock node={node} locale={ctx.locale}>{renderChildren(node, ctx)}</ContentBlock>
     }
     if (node.type === 'containerDirective' && name === 'figures') {
       return place(<Figures node={node} />)

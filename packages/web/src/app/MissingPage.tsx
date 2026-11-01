@@ -53,11 +53,12 @@ export function MissingPage({ path, status, t = (key) => key, onRetry }: Missing
         <EmptyState icon="circle-alert" text={reason} />
       )}
       <p className="adestia-missing__path">{path}</p>
-      {folder ? (
-        <p>
-          <a className="adestia-btn adestia-btn--ghost" href={`#${sectionRoute(folder)}`}><Icon name="folder-open" />{t('Open the folder above')}</a>
-        </p>
-      ) : null}
+      <p>
+        <a className="adestia-btn adestia-btn--ghost" href={folder ? `#${sectionRoute(folder)}` : '#/'}>
+          {folder ? <Icon name="folder-open" /> : null}
+          {folder ? t('Open the folder above') : t('Home')}
+        </a>
+      </p>
     </section>
   )
 }

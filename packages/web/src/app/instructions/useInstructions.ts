@@ -37,7 +37,7 @@ function useLatest(t: (key: string) => string) {
   return useCallback((key: string) => ref.current(key), [])
 }
 
-/** A failed read says its sentence capitalised, as every shown failure does (AD-24). */
+/** A failed read says its sentence capitalised, as every shown failure does (AD-29). */
 function sayRead(say: (key: string) => string) {
   return (key: string) => say(key === FALLBACK_KEY ? 'Request failed (%n)' : key)
 }

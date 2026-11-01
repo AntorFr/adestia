@@ -109,6 +109,11 @@
   background: var(--surface);
 }
 
+.adestia-config__field > .adestia-toggle {
+  /* On the title's first line, not centred on a head that wrapped its badges. */
+  align-self: start;
+}
+
 .adestia-config__head {
   display: flex;
   align-items: baseline;
@@ -200,6 +205,11 @@
      sliver on a phone. */
   .adestia-config__field {
     grid-template-columns: 1fr;
+  }
+
+  /* A switch is small: it stays on its title's line, the help runs below. */
+  .adestia-config__field:has(> .adestia-toggle) {
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 }
 

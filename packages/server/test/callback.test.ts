@@ -1,7 +1,8 @@
 import Fastify from 'fastify'
 import { describe, expect, it, vi } from 'vitest'
 
-import { registerCallback, verifySettled, wakePrompt } from '../src/callback.js'
+import { verifySettled, wakePrompt } from '../src/callback.js'
+import { registerCallback } from '../src/routes/callback.js'
 import type { McpServerConfig } from '../src/config.js'
 
 const alfred: McpServerConfig = {

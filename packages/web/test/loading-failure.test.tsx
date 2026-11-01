@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * The shared request pieces of AD-24 (B-18): the loading row, the failure
+ * The shared request pieces of AD-29 (B-18): the loading row, the failure
  * block and the `useRequest` hook. Every response is a promise the test
  * resolves itself: nothing here waits for a timer.
  */

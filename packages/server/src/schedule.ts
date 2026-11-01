@@ -170,7 +170,7 @@ function frontmatterOf(source: string): { fields: Record<string, string>; body: 
   if (head === undefined) return { fields: {}, body: source }
 
   const fields: Record<string, string> = {}
-  for (const line of head.split('\n')) {
+  for (const line of head.split(/\r?\n/)) {
     const separator = line.indexOf(':')
     if (separator === -1) continue
     fields[line.slice(0, separator).trim()] = line
@@ -424,13 +424,17 @@ export function frameExpiredPrompt(note: ScheduledNote, mission: MissionPaths): 
  * PRODUCT stamps `expired:`.
  */
 export function stampField(source: string, field: string, value: string): string {
-  const match = /^---\n([\s\S]*?)\n---\n?/.exec(source)
-  if (!match) return `---\n${field}: ${value}\n---\n${source}`
+  const { head } = splitFrontmatter(source)
+  const newline = /\r?\n/.exec(source)?.[0] ?? '\n'
+  if (head === undefined) return `---${newline}${field}: ${value}${newline}---${newline}${source}`
 
-  const lines = (match[1] ?? '').split('\n')
+  const lines = head.split(/\r?\n/)
   const existing = lines.findIndex((line) => line.trimStart().startsWith(`${field}:`))
   if (existing === -1) lines.push(`${field}: ${value}`)
   else lines[existing] = `${field}: ${value}`
 
-  return `---\n${lines.join('\n')}\n---\n${source.slice(match[0].length)}`
+  // Replace only the head: the shared fence reader owns where it ends, and
+  // the closing fence (including its spaces and newline) and body stay verbatim.
+  const start = source.indexOf('\n') + 1
+  return source.slice(0, start) + lines.join(newline) + source.slice(start + head.length)
 }

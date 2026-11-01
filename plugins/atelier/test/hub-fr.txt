@@ -5,7 +5,7 @@ Workbooks
 Étagère de test
 1/4 étapes · 4 pièces · 3 sept.
 Sans activité
-0/0 étapes · 0 pièces · jamais
+0/0 étapes · 0 pièce · jamais
 
 == crumbs of the hub ==
 Accueil > L’Atelier
@@ -549,7 +549,7 @@ débité ✓
 arête à plaquer (chant)
 clic colonne → détail/débiter · clic sur le nom → la pièce
 Quitter le mode atelier
-Terminé 🎉
+Terminé
 4 étapes faites
 
 == follow-up, finished ==
@@ -576,7 +576,7 @@ tronconnage
 P1-TR-3
 tronconnage
 Quitter le mode atelier
-Terminé 🎉
+Terminé
 4 étapes faites
 
 == empty hub ==

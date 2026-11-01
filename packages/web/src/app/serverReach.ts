@@ -1,5 +1,5 @@
 /**
- * Does the server answer? (AD-22)
+ * Does the server answer? (AD-27)
  *
  * The shell learns it from what it already does: every `/api/` call it makes
  * is watched, and the event feed reports its own link. A call that fails is

@@ -75,20 +75,24 @@
 }
 
 /* Its date has passed and its status says it is still open. The one state a
-   planning is actually read for, and both halves of it are already on file. */
+   planning is actually read for, and both halves of it are already on file.
+   Drawn by SHAPE, not hue: `--warning` is the owner's Amber alone, and a skin
+   that flattens hues must still tell a deduced delay from a stated one. */
 .pm-timeline__span--late {
-  background: color-mix(in srgb, var(--warning) 22%, var(--surface-raised));
-  box-shadow: inset 0 0 0 1px var(--warning);
+  background: var(--surface-raised);
+  outline: 1.5px dashed var(--text-muted);
+  outline-offset: -1.5px;
   color: var(--text);
 }
 
 /* A milestone is a DATE, not a duration — it has no width to carry weight,
-   so it earns its own colour instead. Grey ones read as chart furniture; the
+   so it earns its own colour instead (the accent: `--warning` is the owner's
+   Amber, not a milestone's). Grey ones read as chart furniture; the
    whole point of a milestone is that you see it before you see the bars. */
 .pm-timeline__mile {
   position: absolute;
   bottom: 24px;
-  border-left: 2px solid var(--warning);
+  border-left: 2px solid var(--accent);
 }
 .pm-timeline__mile::after {
   content: '';
@@ -98,7 +102,7 @@
   width: 6px;
   height: 6px;
   border-radius: var(--radius-pill);
-  background: var(--warning);
+  background: var(--accent);
 }
 .pm-timeline__mile > span,
 .pm-timeline__mile > button {
@@ -111,7 +115,7 @@
   line-height: 14px;
   font-weight: 600;
   font-family: var(--font-mono);
-  color: var(--warning-text);
+  color: var(--text);
 }
 /* Near the right edge: the label ends at its line instead of starting there. */
 .pm-timeline__mile--end > span,
@@ -120,14 +124,23 @@
   right: -2px;
 }
 
+/* A late milestone: the line itself turns to dashes, in the muted ink. */
+.pm-timeline__mile--late {
+  border-left: 2px dashed var(--text-muted);
+}
+.pm-timeline__mile--late::after {
+  background: var(--surface-raised);
+  box-shadow: inset 0 0 0 1.5px var(--text-muted);
+}
+
 /* A milestone already behind us stops shouting, but stays legible. */
 .pm-timeline__mile--past,
 .pm-timeline__mile--done {
-  border-left-color: color-mix(in srgb, var(--warning) 35%, var(--border));
+  border-left-color: color-mix(in srgb, var(--accent) 35%, var(--border));
 }
 .pm-timeline__mile--past::after,
 .pm-timeline__mile--done::after {
-  background: color-mix(in srgb, var(--warning) 35%, var(--border));
+  background: color-mix(in srgb, var(--accent) 35%, var(--border));
 }
 .pm-timeline__mile--past > span,
 .pm-timeline__mile--past > button,

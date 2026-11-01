@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * E-10, loading and failure of the declarations list (B-18, AD-24).
+ * E-10, loading and failure of the declarations list (B-18, AD-29).
  * Expected values are written from the task's exit criterion, not from the code.
  */
 

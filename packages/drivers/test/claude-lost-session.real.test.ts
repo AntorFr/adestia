@@ -1,8 +1,8 @@
 /**
- * The REAL Claude SDK, asked to resume a session that does not exist (AD-23).
+ * The REAL Claude SDK, asked to resume a session that does not exist (AD-28).
  *
  * Skipped without `CLAUDE_CODE_OAUTH_TOKEN`: no fake stands in for it, because
- * the question is what the real SDK does. The outcome is written under AD-23,
+ * the question is what the real SDK does. The outcome is written under AD-28,
  * "Outcome of the real test", in ARCHITECTURE.md; this test prints what it saw.
  */
 
@@ -46,13 +46,13 @@ describe.skipIf(!token)('claude resume on a session that is gone (real SDK)', ()
         : errors.length && !text
           ? 'b: refused before any text'
           : 'c: answered without signal'
-    // The observation IS the deliverable: it goes to the log, then to AD-23.
-    console.log(`[AD-23] ghost=${ghost} outcome=${outcome}\n${JSON.stringify(first, null, 1)}`)
+    // The observation IS the deliverable: it goes to the log, then to AD-28.
+    console.log(`[AD-28] ghost=${ghost} outcome=${outcome}\n${JSON.stringify(first, null, 1)}`)
     if (outcome.startsWith('b')) {
       // Does the next turn of the same conversation heal by itself? The server
       // no longer sends the dead session, so it is a fresh turn.
       const next = await turn(driver, undefined)
-      console.log(`[AD-23] next turn: ${JSON.stringify(next, null, 1)}`)
+      console.log(`[AD-28] next turn: ${JSON.stringify(next, null, 1)}`)
       expect(next.some((e) => e.type === 'result')).toBe(true)
     }
     expect(first.length).toBeGreaterThan(0)

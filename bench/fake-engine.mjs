@@ -58,38 +58,38 @@ export const untilStopped = (signal) =>
     signal.addEventListener('abort', () => done(), { once: true })
   })
 
+const CAPABILITIES = [
+  'usageMetrics',
+  'contextBreakdown',
+  'mcpStatus',
+  'authManagement',
+  'modelSelection',
+  'interactivePermissions',
+]
+
+const ZONES = [
+  { path: 'CLAUDE.md', kind: 'instruction' },
+  { path: '.claude/agents', kind: 'agent', entry: '<name>.md' },
+  { path: '.claude/skills', kind: 'skill', entry: '<name>/SKILL.md' },
+]
+
 /**
  * What the engine says about the rest of the product it is plugged into —
  * everything a seed may choose, and nothing the product has a key for.
  *
- *   capabilities  the descriptor's capabilities
  *   mcp           health of the outbound servers, `[{ name, state, error? }]`
  *   auth          the credential as the engine sees it: `armed`, `absent`
  *                 or `invalid` (refused upstream). The stored file itself is
  *                 the seed's to write (`secrets/claude-code.token`).
  *   models        what the model picker lists
- *   zones         where the engine reads prose (Claude Code's by default)
  */
 export function createFakeEngine({
   scripts = [],
-  capabilities = [
-    'usageMetrics',
-    'contextBreakdown',
-    'mcpStatus',
-    'authManagement',
-    'modelSelection',
-    'interactivePermissions',
-  ],
   mcp = [],
   auth = 'absent',
   models = [
     { id: 'bench-sonnet', label: 'Sonnet (scripted)' },
     { id: 'bench-opus', label: 'Opus (scripted)' },
-  ],
-  zones = [
-    { path: 'CLAUDE.md', kind: 'instruction' },
-    { path: '.claude/agents', kind: 'agent', entry: '<name>.md' },
-    { path: '.claude/skills', kind: 'skill', entry: '<name>/SKILL.md' },
   ],
 } = {}) {
   const ordered = [...scripts, ...DEFAULT_SCRIPTS]
@@ -102,7 +102,7 @@ export function createFakeEngine({
     async describe() {
       // The id of the real engine: the shell is built from the descriptor and
       // must draw what it draws for it. Not a new driver id in the product.
-      return { id: 'claude-code', label: 'Claude Code (scripted)', cliVersion: 'bench', capabilities }
+      return { id: 'claude-code', label: 'Claude Code (scripted)', cliVersion: 'bench', capabilities: CAPABILITIES }
     },
     async env() {
       return {}
@@ -110,7 +110,7 @@ export function createFakeEngine({
     skillsPath: () => '.claude/skills',
     agentsPath: () => '.claude/agents',
     acceptsRoots: () => true,
-    instructionPaths: () => zones,
+    instructionPaths: () => ZONES,
     listModels: async () => models,
     mcpStatus: async () => mcp,
     credentialVar: 'CLAUDE_CODE_OAUTH_TOKEN',

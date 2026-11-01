@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * B-18 for E-9, E-11 and E-13 (AD-24): the mosaic, the instructions and the
+ * B-18 for E-9, E-11 and E-13 (AD-29): the mosaic, the instructions and the
  * delegations show their wait; the last two offer Retry where trying again can
  * help. Every response is a promise the test settles itself.
  */
@@ -233,7 +233,7 @@ describe('E-13 delegations', () => {
   })
 })
 
-describe('the fallback failure sentence, capitalised (AD-24 failure block)', () => {
+describe('the fallback failure sentence, capitalised (AD-29 failure block)', () => {
   const said = () => screen.getByText(/equest failed|a échoué/i).textContent ?? ''
 
   it('E-11 list: a 500 with an empty body says "Request failed (500)"', async () => {

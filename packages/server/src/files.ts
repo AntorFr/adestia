@@ -85,7 +85,7 @@ export function inlineTypeOf(path: string): string | undefined {
 }
 
 /** What an interface draws it as — a coarser question than the media type. */
-export function kindOf(path: string): FileKind {
+function kindOf(path: string): FileKind {
   const extension = extname(path).toLowerCase()
   const type = INLINE[extension]
   if (type?.startsWith('image/')) return 'image'
@@ -187,6 +187,3 @@ export async function attachmentsOf(
   ]
   return found.sort((a, b) => order.compare(a.path, b.path))
 }
-
-// The route registration lives under `routes/`; kept importable from here.
-export { registerFiles, type FilesOptions } from './routes/files.js'

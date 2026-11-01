@@ -13,6 +13,11 @@
 
 import { hueOf, initialsOf, isDeferred, toggleDone } from './model.js'
 
+/** The shell mounts the sprite once; plugins share its closed list of names. */
+export const icon = (h, name) => h('svg', {
+  className: 'adestia-icon', 'aria-hidden': true, focusable: false,
+}, h('use', { href: `#adestia-i-${name}` }))
+
 export const todayISO = () => new Date().toISOString().slice(0, 10)
 
 /**
@@ -165,10 +170,10 @@ export function taskRow(h, { task, t, locale, day = todayISO(), onToggle, onOpen
           )
         : h('span', { key: 't', className: 'todo-task__title todo-task__title--flat' }, task.title),
       h('span', { key: 'm', className: 'todo-task__meta' }, [
-        task.body && h('span', { key: 'n', className: 'todo-mark', title: t('Note') }, '📝'),
+        task.body && h('span', { key: 'n', className: 'todo-mark', title: t('Note') }, icon(h, 'pen-line')),
         task.files.length > 0 &&
           h('span', { key: 'f', className: 'todo-mark', title: t('Attachments') }, [
-            '📎',
+            icon(h, 'paperclip'),
             task.files.length > 1 && h('b', { key: 'c' }, String(task.files.length)),
           ]),
         priority(h, task.pri),

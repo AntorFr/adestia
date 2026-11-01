@@ -21,15 +21,14 @@ import { AskDesk } from '../src/asks.js'
 import { checkConformance } from '../src/conformance.js'
 import type { TurnEvent, TurnRequest } from '../src/contract.js'
 import {
-  apiKeyDocument,
   classifyAuthError,
   codexEnv,
   CREDENTIAL_KEY,
   looksLikeAuthDocument,
   normalizeCredential,
 } from '../src/codex-cli/auth.js'
-import { CodexDriver, quotaReportOf } from '../src/codex-cli/driver.js'
-import { describeItem, newTranslationState, translate, usageOf } from '../src/codex-cli/events.js'
+import { CodexDriver } from '../src/codex-cli/driver.js'
+import { newTranslationState, translate } from '../src/codex-cli/events.js'
 import { readPrompt, saidSuccess, stripAnsi } from '../src/codex-cli/login.js'
 import type { SpawnImpl, SpawnedProcess } from '../src/codex-cli/protocol.js'
 
@@ -63,7 +62,7 @@ describe('the credential, which is a file', () => {
 
   it('never puts the secret in the environment', async () => {
     const dir = await home()
-    const driver = new CodexDriver({ home: dir, credentials: { [CREDENTIAL_KEY]: apiKeyDocument('sk-abcdefghijkl') } })
+    const driver = new CodexDriver({ home: dir, credentials: { [CREDENTIAL_KEY]: normalizeCredential('sk-abcdefghijkl') as string } })
     const env = await driver.env()
     expect(env).toEqual({ CODEX_HOME: dir })
     expect(JSON.stringify(env)).not.toContain('sk-abcdefghijkl')
@@ -71,7 +70,7 @@ describe('the credential, which is a file', () => {
 
   it('writes it where the CLI reads it, 0600', async () => {
     const dir = await home()
-    const driver = new CodexDriver({ home: dir, credentials: { [CREDENTIAL_KEY]: apiKeyDocument('sk-abcdefghijkl') } })
+    const driver = new CodexDriver({ home: dir, credentials: { [CREDENTIAL_KEY]: normalizeCredential('sk-abcdefghijkl') as string } })
     await driver.env()
     const written = await readFile(join(dir, 'auth.json'), 'utf8')
     expect(JSON.parse(written).OPENAI_API_KEY).toBe('sk-abcdefghijkl')
@@ -235,46 +234,67 @@ describe('translation', () => {
     expect(run([{ method: 'remoteControl/status/changed', params: { status: 'disabled' } }])).toEqual([])
   })
 
+  // What a trace row says an item did, read off the `tool-use` event `translate` emits.
+  const started = (item: Record<string, unknown>) =>
+    [...translate({ method: 'item/started', params: { item } }, newTranslationState('t'))]
+
   it('strips the shell wrapper, quoted or not', () => {
     // `/bin/zsh -lc ls` is what a one-word command produces, and it is the row
     // with the most room to show something useful.
-    expect(describeItem({ type: 'commandExecution', command: "/bin/zsh -lc 'git status'" }).target).toBe('git status')
-    expect(describeItem({ type: 'commandExecution', command: '/bin/zsh -lc ls' }).target).toBe('ls')
+    expect(started({ type: 'commandExecution', command: "/bin/zsh -lc 'git status'" })).toEqual([
+      { type: 'tool-use', name: 'shell', target: 'git status' },
+    ])
+    expect(started({ type: 'commandExecution', command: '/bin/zsh -lc ls' })).toEqual([
+      { type: 'tool-use', name: 'shell', target: 'ls' },
+    ])
     // Something that is not a wrapper is left alone.
-    expect(describeItem({ type: 'commandExecution', command: 'rg --files' }).target).toBe('rg --files')
+    expect(started({ type: 'commandExecution', command: 'rg --files' })).toEqual([
+      { type: 'tool-use', name: 'shell', target: 'rg --files' },
+    ])
   })
 
   it('describes an item without inventing structure the engine lacks', () => {
-    expect(describeItem({ type: 'commandExecution', command: 'ls' })).toEqual({ name: 'shell', target: 'ls' })
-    expect(describeItem({ type: 'mcpToolCall', tool: 'ping', server: 'spike' })).toEqual({
-      name: 'ping',
-      target: 'spike',
-    })
-    expect(usageOf(undefined)).toBeUndefined()
+    expect(started({ type: 'commandExecution', command: 'ls' })).toEqual([
+      { type: 'tool-use', name: 'shell', target: 'ls' },
+    ])
+    expect(started({ type: 'mcpToolCall', tool: 'ping', server: 'spike' })).toEqual([
+      { type: 'tool-use', name: 'ping', target: 'spike' },
+    ])
+    // No counters on the wire: no usage is invented, and no delta is emitted.
+    const state = newTranslationState('thread-1')
+    expect([...translate({ method: 'thread/tokenUsage/updated', params: { tokenUsage: {} } }, state)]).toEqual([])
+    expect([...translate({ method: 'thread/tokenUsage/updated', params: { tokenUsage: { total: {} } } }, state)]).toEqual([])
+    expect(state.usage).toBeUndefined()
   })
 })
 
 // ---------------------------------------------------------------------- quotas
 
 describe('subscription windows', () => {
-  it('normalizes the two windows the engine pushes', () => {
-    const report = quotaReportOf(
-      {
+  // Read through the public call: the driver asks the engine, then normalizes.
+  const quotasOf = async (rateLimits: unknown) => {
+    const dir = await home()
+    const fake = fakeServer({ rateLimits })
+    return new CodexDriver({ home: dir, spawnImpl: fake.spawnImpl }).subscriptionQuotas()
+  }
+
+  it('normalizes the two windows the engine pushes', async () => {
+    const report = await quotasOf({
+      rateLimits: {
         primary: { usedPercent: 2, windowDurationMins: 300, resetsAt: 1789051222 },
         secondary: { usedPercent: 0, windowDurationMins: 10080, resetsAt: 1789638022 },
       },
-      false,
-    )
-    expect(report?.windows).toEqual([
+    })
+    expect(report.windows).toEqual([
       { id: 'primary', label: '5 hours', utilizationPct: 2, resetsAt: new Date(1789051222 * 1000).toISOString() },
       { id: 'secondary', label: 'Weekly', utilizationPct: 0, resetsAt: new Date(1789638022 * 1000).toISOString() },
     ])
-    expect(report?.stale).toBe(false)
+    expect(report.stale).toBe(false)
   })
 
-  it('reports nothing rather than a lying zero', () => {
-    expect(quotaReportOf({ primary: null }, false)).toBeUndefined()
-    expect(quotaReportOf(undefined, false)).toBeUndefined()
+  it('reports nothing rather than a lying zero', async () => {
+    expect((await quotasOf({ rateLimits: { primary: null } })).windows).toEqual([])
+    expect((await quotasOf({})).windows).toEqual([])
   })
 })
 
@@ -288,6 +308,7 @@ function fakeServer(script: {
   readonly notifications?: readonly Record<string, unknown>[]
   readonly serverRequest?: Record<string, unknown>
   readonly modelList?: unknown
+  readonly rateLimits?: unknown
   readonly onCall?: (method: string, params: Record<string, unknown>) => void
 }) {
   const stdin = new PassThrough()
@@ -326,7 +347,9 @@ function fakeServer(script: {
               ? { thread: { id: 'thread-42' } }
               : method === 'model/list'
                 ? (script.modelList ?? { data: [] })
-                : {}
+                : method === 'account/rateLimits/read'
+                  ? (script.rateLimits ?? {})
+                  : {}
         write({ jsonrpc: '2.0', id: message['id'], result })
 
         if (method === 'turn/start') {

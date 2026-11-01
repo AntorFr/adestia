@@ -92,7 +92,7 @@ export async function archiveConversation(
   return result.ok && result.response.ok
 }
 
-/** A read that says WHY it failed, for the screens that draw a failure (AD-24). */
+/** A read that says WHY it failed, for the screens that draw a failure (AD-29). */
 export type ReadOutcome<T> =
   | { readonly ok: true; readonly data: T }
   | { readonly ok: false; readonly status: number; readonly error: string }

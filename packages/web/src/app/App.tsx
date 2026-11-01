@@ -38,7 +38,7 @@ export { appTrail, screenView } from './trail.js'
 export type { InstanceInfo } from './useInstance.js'
 
 export function App({ fetchImpl: baseFetch = fetch }: { fetchImpl?: typeof fetch }) {
-  // The one construction of the layer (AD-22): every child below gets the observed fetch.
+  // The one construction of the layer (AD-27): every child below gets the observed fetch.
   const { fetchImpl, reachable, report: reportReach } = useServerReach(baseFetch)
   const onLink = useCallback((up: boolean) => reportReach(up), [reportReach])
   const [screen, setScreen] = useState<'chat' | 'canvas'>('chat')

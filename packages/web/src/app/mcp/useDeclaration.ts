@@ -23,7 +23,7 @@ export function useDeclaration(
   fetchImpl: typeof fetch,
   t: (key: string) => string,
 ) {
-  // The first read carries the loading and failure states (AD-24). Later reads
+  // The first read carries the loading and failure states (AD-29). Later reads
   // (after Save or Remove) land in `fresh` and never bring the loading back.
   const first = useRequest<{ servers?: readonly McpServerView[] }>(fetchImpl, '/api/mcp/servers', { t })
   const [fresh, setFresh] = useState<readonly McpServerView[] | undefined>()

@@ -143,6 +143,11 @@ export type ListState =
   | { readonly status: 'loading' | 'ready' | 'denied' }
   | { readonly status: 'failed'; readonly error: string }
 
+/** Nothing was filed for a refusal or a connection that failed before any answer. */
+function isErrorOnly(live: TurnState | undefined): boolean {
+  return !!live?.error && !live.running && live.parts.length === 0
+}
+
 export interface ConversationsOptions {
   readonly fetchImpl?: typeof fetch | undefined
   /** The shell's translator, for the one sentence this hook says itself. */
@@ -155,11 +160,17 @@ export interface ConversationsOptions {
   readonly view?: ScreenView | undefined
 }
 
-/** The user's half, as the conversation shows it — attachments named after it. */
-function stamped(text: string, attachments: readonly PendingAttachment[]): string {
-  return attachments.length > 0
-    ? `${text}\n📎 ${attachments.map((a) => a.name).join(', ')}`.trim()
-    : text
+/**
+ * The user's half, as the conversation shows it: the text, and the attachment
+ * names as data — the bubble draws the `paperclip` icon, as the held one does.
+ */
+export function stamped(id: string, text: string, attachments: readonly PendingAttachment[]): Message {
+  return {
+    id,
+    role: 'user',
+    text,
+    ...(attachments.length > 0 ? { attachments: attachments.map((a) => a.name) } : {}),
+  }
 }
 
 function turnOptions(
@@ -210,7 +221,7 @@ function useOpenConversations({ fetchImpl, narrow, t }: ConversationsOptions) {
    */
   const [answered, setAnswered] = useState<ReadonlySet<string>>(() => new Set())
   const [conversations, setConversations] = useState<readonly ConversationMeta[]>([])
-  /** The list's own read: rows are drawn only once it answered (AD-24). */
+  /** The list's own read: rows are drawn only once it answered (AD-29). */
   const [listState, setListState] = useState<ListState>({ status: 'loading' })
   /** Only the latest read of the list may speak. */
   const listRead = useRef(0)
@@ -229,8 +240,13 @@ function useOpenConversations({ fetchImpl, narrow, t }: ConversationsOptions) {
     // Persisted like a browser's tab strip — order, membership, activation —
     // so a refresh reopens what was open. The ref keeps the pump loops honest
     // about which tab the reader is looking at.
-    activeRef.current = tabs.active ?? DRAFT
+    const next = tabs.active ?? DRAFT
+    if (activeRef.current !== next && isErrorOnly(conversation(activeRef.current).live)) {
+      patchConversation(activeRef.current, { live: undefined })
+    }
+    activeRef.current = next
     saveTabs(tabs)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- helpers read the stable conversation ref
   }, [tabs])
 
   // Declared as FUNCTIONS, not useCallback: the machinery is a web of mutual
@@ -369,6 +385,29 @@ function useOpenConversations({ fetchImpl, narrow, t }: ConversationsOptions) {
 
 type Open = ReturnType<typeof useOpenConversations>
 
+/** Reconcile a finished stream with the store without losing an unfiled refusal. */
+async function settleTurn(open: Open, tabId: string, last: TurnState | undefined): Promise<void> {
+  const { conversation, reread, patchConversation, activeRef, read } = open
+  // A refused message is never filed by the server. Keep its optimistic
+  // bubble too: rereading the transcript must not swallow what was refused.
+  const errorOnly = isErrorOnly(last)
+  const messages = conversation(tabId).messages
+  const filed = tabId !== DRAFT && (await reread(tabId))
+  patchConversation(tabId, {
+    ...(errorOnly ? { messages } : {}),
+    live: errorOnly
+      // Leaving may have cleared this error while reread was in flight,
+      // even if the reader has already come back. Do not revive it.
+      ? tabId === activeRef.current && conversation(tabId).live === last ? last : undefined
+      : filed || !last ? undefined : { ...last, running: false },
+    stopping: false,
+    // The dot that says "finished, and you have not seen it": only when
+    // the answer landed in a tab the reader was not looking at.
+    unread: tabId !== activeRef.current,
+  })
+  if (tabId === activeRef.current) read(tabId)
+}
+
 /**
  * Reads a conversation from the store into its slot. False when the tab must
  * not go on to attach: it closed (404, or a body that is no conversation), or
@@ -415,8 +454,6 @@ function useTurn({ fetchImpl, model, view, t }: ConversationsOptions, open: Open
     refreshConversations,
     patchConversation,
     rekeyConversation,
-    read,
-    reread,
   } = open
   /** In-flight conversation creation, so two rapid sends share ONE conversation. */
   const load = (id: string) => loadConversation(id, { fetchImpl, t }, open)
@@ -518,17 +555,10 @@ function useTurn({ fetchImpl, model, view, t }: ConversationsOptions, open: Open
       // A fetch that REJECTS — network down, server gone — must land as the
       // error it is, not leave the dots pulsing forever.
       last = { ...(last ?? INITIAL_TURN), running: false, lost: true, error: (error as Error).message }
+      patchConversation(tabId, { live: last })
     }
 
-    const filed = tabId !== DRAFT && (await reread(tabId))
-    patchConversation(tabId, {
-      live: filed || !last ? undefined : { ...last, running: false },
-      stopping: false,
-      // The dot that says "finished, and you have not seen it": only when
-      // the answer landed in a tab the reader was not looking at.
-      unread: tabId !== activeRef.current,
-    })
-    if (tabId === activeRef.current) read(tabId)
+    await settleTurn(open, tabId, last)
 
     if (tabId === DRAFT) return
     const follow = await attachTurn(tabId, fetchImpl ?? fetch)
@@ -595,7 +625,7 @@ function useTurn({ fetchImpl, model, view, t }: ConversationsOptions, open: Open
     patchConversation(tabId, (previous) => ({
       messages: [
         ...previous.messages,
-        { id: `u${previous.messages.length}`, role: 'user' as const, text: stamped(text, attachments) },
+        stamped(`u${previous.messages.length}`, text, attachments),
       ],
       // The dots go up BEFORE the server is asked anything: between here and
       // the driver's first event stand a conversation write, the POST and a

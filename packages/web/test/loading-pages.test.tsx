@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * B-18 for E-3, E-4 and E-8 (AD-24): the section, the page and the missing
+ * B-18 for E-3, E-4 and E-8 (AD-29): the section, the page and the missing
  * page show their wait, and "the server could not" offers Retry. Every
  * response is a promise the test settles itself; nothing waits on a timer.
  */

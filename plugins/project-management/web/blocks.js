@@ -288,7 +288,17 @@ export default function createProjectBlocks(api) {
                 mile.path && openPage ? 'button' : 'span',
                 {
                   style: { top: `${-(placed[index].row + 1) * ROW}px` },
-                  ...(mile.path && openPage ? { type: 'button', onClick: () => openPage(mile.path) } : {}),
+                  // A button is named by its content, not by the title of the
+                  // box around it: the state word ("late") goes in the name,
+                  // for a phone where nothing hovers.
+                  ...(STATES[barState(mile, today)]
+                    ? { 'aria-label': `${words[index]} · ${STATES[barState(mile, today)]}` }
+                    : {}),
+                  ...(mile.path && openPage
+                    ? { type: 'button', onClick: () => openPage(mile.path) }
+                    : STATES[barState(mile, today)]
+                      ? { role: 'img' }
+                      : {}),
                 },
                 words[index],
               ),

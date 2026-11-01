@@ -1,5 +1,5 @@
 /**
- * The offline banner (E-32, AD-22): the server does not answer.
+ * The offline banner (E-32, AD-27): the server does not answer.
  *
  * It states a fact and leaves by itself when the server answers; the screen
  * under it stays usable. Drawn by `App` in one place at a time.

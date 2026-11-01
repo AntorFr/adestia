@@ -30,9 +30,9 @@ import { fileURLToPath } from 'node:url'
 import Fastify, { type FastifyInstance } from 'fastify'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import { registerPages } from '../src/pages.js'
+import { registerPages } from '../src/routes/pages.js'
 import { resolveStores } from '../src/stores.js'
-import { registerFiles } from '../src/files.js'
+import { registerFiles } from '../src/routes/files.js'
 import { cleanTmp, tmpDir } from './support/tmp.js'
 
 afterAll(cleanTmp)

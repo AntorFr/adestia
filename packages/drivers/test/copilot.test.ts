@@ -25,7 +25,7 @@ import {
   explainAuthProblem,
   looksLikeToken,
 } from '../src/copilot-cli/auth.js'
-import { newTranslationState, parseLine, toolTargetOf, translate } from '../src/copilot-cli/events.js'
+import { newTranslationState, parseLine, translate } from '../src/copilot-cli/events.js'
 import { harvestToken, ptyLogin, startDeviceCodeLogin, type DeviceCodeLogin } from '../src/copilot-cli/login.js'
 
 describe('event parsing', () => {
@@ -150,18 +150,26 @@ describe('translation', () => {
 })
 
 describe('tool targets', () => {
+  // The target is read off the `tool-use` event `translate` emits for a start.
+  const targetOf = (data: Record<string, unknown> | undefined) => {
+    const [event] = translate(
+      { type: 'tool.execution_start', data: { toolCallId: '1', toolName: 'bash', ...data } } as never,
+      newTranslationState(),
+    )
+    return event && event.type === 'tool-use' ? event.target : 'not a tool-use'
+  }
+
   it('prefers the telling argument', () => {
-    expect(toolTargetOf({ arguments: { command: 'npm test', cwd: '/tmp' } })).toBe('npm test')
+    expect(targetOf({ arguments: { command: 'npm test', cwd: '/tmp' } })).toBe('npm test')
   })
 
   it('flattens and truncates', () => {
-    const target = toolTargetOf({ arguments: { command: 'x'.repeat(200) } })
-    expect(target).toHaveLength(78)
+    expect(targetOf({ arguments: { command: 'x'.repeat(200) } })).toHaveLength(78)
   })
 
   it('says nothing rather than guessing', () => {
-    expect(toolTargetOf({ arguments: { unexpected: 1 } })).toBeUndefined()
-    expect(toolTargetOf(undefined)).toBeUndefined()
+    expect(targetOf({ arguments: { unexpected: 1 } })).toBeUndefined()
+    expect(targetOf(undefined)).toBeUndefined()
   })
 })
 

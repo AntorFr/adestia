@@ -94,7 +94,50 @@ describe(':::content', () => {
     )
     expect(screen.getByText('Synthèse')).toBeTruthy()
     expect(screen.getByText('📋')).toBeTruthy()
-    expect(screen.getByText('Antor · 2026-09-10')).toBeTruthy()
+    // Sans langue donnée, le lecteur parle `en` : la date de on= n'est plus écrite telle quelle.
+    expect(screen.getByText('Antor · September 10, 2026')).toBeTruthy()
+  })
+
+  const dated = (on: string, locale?: string) =>
+    render(
+      <Reader
+        markdown={`:::content{type=synthese on=${on}}\nDu texte.\n:::\n`}
+        path={HERE}
+        pages={PAGES}
+        {...(locale ? { locale } : {})}
+      />,
+    )
+
+  it('lit la date de on= dans la langue de l’instance : fr', () => {
+    dated('2026-03-04', 'fr')
+    expect(screen.getByText('4 mars 2026')).toBeTruthy()
+  })
+
+  it('lit la date de on= dans la langue de l’instance : en', () => {
+    dated('2026-03-04', 'en')
+    expect(screen.getByText('March 4, 2026')).toBeTruthy()
+  })
+
+  it('dessine tel quel un on= qui n’est pas une date', () => {
+    dated('bientôt', 'fr')
+    expect(screen.getByText('bientôt')).toBeTruthy()
+  })
+
+  it('dessine tel quel un jour qui n’existe pas (30 février)', () => {
+    dated('2026-02-30', 'fr')
+    expect(screen.getByText('2026-02-30')).toBeTruthy()
+  })
+
+  it('ne décale pas le jour d’un fuseau : 1er janvier reste le 1er', () => {
+    dated('2026-01-01', 'fr')
+    expect(screen.getByText('1 janvier 2026')).toBeTruthy()
+  })
+
+  it('garde l’auteur devant la date localisée', () => {
+    render(
+      <Reader markdown={':::content{type=synthese by=Antor on=2026-03-04}\nT.\n:::\n'} path={HERE} pages={PAGES} locale="fr" />,
+    )
+    expect(screen.getByText('Antor · 4 mars 2026')).toBeTruthy()
   })
 })
 

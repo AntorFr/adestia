@@ -9,16 +9,12 @@
  * Needs a built server (`npm run build`). The measures read the product's own
  * API; nothing is mocked and nothing is written but through the routes.
  */
-import { spawn } from 'node:child_process'
 import { createHmac } from 'node:crypto'
-import { dirname, join } from 'node:path'
-import { argv, execPath, exit } from 'node:process'
-import { fileURLToPath } from 'node:url'
+import { argv, exit } from 'node:process'
+import { launch } from '../lib/instance.mjs'
 
 import { SESSION_SECRET, CONVERSATIONS } from './_base.mjs'
 
-const here = dirname(fileURLToPath(import.meta.url))
-const launcher = join(here, '..', 'launch.mjs')
 const SEEDS = ['base', 'empty', 'config-writable', 'config-readonly', 'oidc', 'plugins']
 
 class Failure extends Error {}
@@ -29,29 +25,6 @@ const expect = (condition, message) => {
 const flag = argv.indexOf('--seed')
 const wanted = flag === -1 ? SEEDS : (argv[flag + 1] ?? '').split(',').filter(Boolean)
 for (const name of wanted) if (!SEEDS.includes(name)) (console.error(`check: no seed named ${name} (${SEEDS.join(', ')})`), exit(2))
-
-// ── launching ───────────────────────────────────────────────────────────────
-function launch(seed) {
-  const child = spawn(execPath, [launcher, '--engine', 'fake', '--seed', seed], { stdio: ['ignore', 'pipe', 'pipe'] })
-  let stderr = ''
-  child.stderr.on('data', (chunk) => (stderr += chunk))
-  const url = new Promise((resolve, reject) => {
-    let out = ''
-    child.stdout.on('data', (chunk) => {
-      out += chunk
-      const found = /listening on (\S+)/.exec(out)
-      if (found) resolve(found[1])
-    })
-    child.once('exit', (code) => reject(new Failure(`the launcher exited (${code}) before answering: ${stderr.trim().split('\n').slice(-3).join(' | ')}`)))
-  })
-  const stop = () =>
-    new Promise((done) => {
-      if (child.exitCode !== null) return done()
-      child.once('exit', done)
-      child.kill('SIGTERM')
-    })
-  return { url, stop }
-}
 
 // ── reading ─────────────────────────────────────────────────────────────────
 const get = async (base, path, init) => {
@@ -383,7 +356,7 @@ const MEASURES = {
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 const failures = []
 for (const seed of wanted) {
-  const instance = launch(seed)
+  const instance = launch(seed, { ErrorClass: Failure })
   try {
     const base = await instance.url
     for (const [name, measure] of Object.entries(MEASURES[seed])) {

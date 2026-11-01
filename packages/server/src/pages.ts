@@ -86,6 +86,3 @@ export function titleOf(markdown: string, path: string): string {
   const heading = /^#\s+(.+)$/m.exec(markdown)?.[1]
   return heading ?? path.replace(/\.md$/, '').split('/').pop() ?? path
 }
-
-// The route registration lives under `routes/`; kept importable from here.
-export { registerPages, type PagesOptions } from './routes/pages.js'

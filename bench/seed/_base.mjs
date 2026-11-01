@@ -44,6 +44,9 @@ const manifest = (value) => JSON.stringify({ schemaVersion: 1, ...value }, null,
 async function plugins(dir) {
   // Refused: the folder says one name, the manifest another (discovery refuses it by name).
   await put(dir, 'bench-refused/adestia-plugin.json', manifest({ id: 'autre-nom', kind: 'app', description: 'Refused on purpose.' }))
+  // Refused by ManifestError, without a code: the heading is the shell's word,
+  // the invalid field's validator sentence stays the server's data (AD-22).
+  await put(dir, 'bench-invalid/adestia-plugin.json', manifest({ id: 'bench-invalid', kind: 'app', description: 42 }))
   // Delivers an instruction file: its skill lands, stamped, in the engine's zone.
   await put(dir, 'bench-notes/adestia-plugin.json', manifest({
     id: 'bench-notes',

@@ -1,5 +1,5 @@
 /**
- * The "Simultaneous turns" field (B-21, AD-25), tested from the criterion:
+ * The "Simultaneous turns" field (B-21, AD-30), tested from the criterion:
  * the catalogue and `config.ts` must agree on fallback and bounds, 5 saves and
  * is what the next boot reads, 0 and 17 are refused with the field's message.
  */
@@ -98,7 +98,7 @@ describe('saving the field', () => {
     expect(response.statusCode).toBe(200)
     expect(await readFile(path, 'utf8')).toMatch(/maxConcurrentTurns: 5/)
 
-    // Not live: the running limiter is still the old one (AD-25).
+    // Not live: the running limiter is still the old one (AD-30).
     const live = (await app.inject({ method: 'GET', url: '/api/instance' })).json()
     expect(live.turns.max).toBe(3)
 

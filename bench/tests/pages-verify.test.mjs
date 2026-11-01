@@ -17,21 +17,12 @@ import { dirname, join, resolve } from 'node:path'
 import { after, before, describe, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { fileURLToPath } from 'node:url'
+import { loadPlaywright } from '../lib/playwright.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const root = resolve(here, '../..')
 const shots = join(root, 'bench/shots-verify')
 
-function loadPlaywright() {
-  const roots = ['/usr/lib/node_modules']
-  try { roots.push(execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim()) } catch { /* fixed root only */ }
-  for (const dir of roots) {
-    for (const name of ['playwright', 'playwright-core']) {
-      try { return createRequire(`${dir}/`)(name) } catch { /* not here */ }
-    }
-  }
-  throw new Error('playwright not found in the environment')
-}
 const { chromium } = loadPlaywright()
 
 const SKINS = (process.env.VERIF_SKINS ?? 'alfred,dobby,nestor,skippy').split(',')

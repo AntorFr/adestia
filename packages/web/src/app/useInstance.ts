@@ -55,7 +55,7 @@ export interface InstanceInfo {
 
 export interface InstanceOptions {
   readonly fetchImpl: typeof fetch
-  /** The change feed's link, for the server-reach layer (AD-22). */
+  /** The change feed's link, for the server-reach layer (AD-27). */
   readonly onLink?: (up: boolean) => void
   readonly openPage: (path: string, store?: string) => void
   /** The chat's channel, read at call time: it mounts after this runs. */
@@ -261,16 +261,19 @@ export function useInstance({ fetchImpl, onLink, openPage, askRef, composeRef, b
       fetchImpl,
       signal: controller.signal,
       onLink,
-      onChange: async (paths) => {
+      // The live feed ignores what `onChange` returns: the refresh is started, not awaited.
+      onChange: (paths) => {
         setPageChanges((current) => ({ seq: current.seq + 1, paths }))
-        const list = await requestJson<{ entries?: IndexEntry[]; stores?: StoreInfo[] }>(
-          fetchImpl,
-          '/api/pages/index',
-        )
-        if (!list.ok || controller.signal.aborted) return
-        const body = list.data
-        setPages(Array.isArray(body?.entries) ? body.entries : [])
-        setStores(Array.isArray(body?.stores) ? body.stores : [])
+        void (async () => {
+          const list = await requestJson<{ entries?: IndexEntry[]; stores?: StoreInfo[] }>(
+            fetchImpl,
+            '/api/pages/index',
+          )
+          if (!list.ok || controller.signal.aborted) return
+          const body = list.data
+          setPages(Array.isArray(body?.entries) ? body.entries : [])
+          setStores(Array.isArray(body?.stores) ? body.stores : [])
+        })()
       },
     })
     return () => controller.abort()

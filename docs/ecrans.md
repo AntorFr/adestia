@@ -16,6 +16,8 @@
 > (E-2, E-14) — coherence, not behaviour (`B-1`). Every `Q-n` is either closed by its tranche
 > or written "kept: <reason>". Charter, pages, chat and plugins are built:
 > the inventory and outcome paragraphs below describe their current screens.
+> The plugins' rows of the "Lacks" column (E-23, E-25, E-26, E-28, E-30, E-31) state the behaviour the
+> `adestia-correctifs-plugins` feature delivers; until it is built, the tester reads them as the target.
 > The numbered audit descriptions at the end are historical input, not open work.
 
 ## Format
@@ -49,7 +51,7 @@ screen.
 
 **Breadcrumb.** `nav.adestia-crumbs`: `Home`, then the trail computed by `trail.ts`
 (`trailOf`) from settings, the open app and what its view published through `api.trail`,
-the page or the section. Every crumb but the last is a button; a folder crumb resolves
+the page or the section. A page at the root of the workspace has no folder crumb: Home, then its title (a missing or very long title is unchanged by this repair). Every crumb but the last is a button; a folder crumb resolves
 through `folderRoute` (a folder an app absorbs opens that app). The same trail is sent with
 each message as "where the reader is" (`screenView`).
 
@@ -98,7 +100,7 @@ is labelled with the destination. Plugins with sub-screens add their own back (E
 | E-5 | Page properties popover | `settings` on the frontmatter strip in the editor | `editor/PageSettings.tsx`, `pageform.ts`, `frontmatterview.tsx` | Edit frontmatter as a form drawn from declared fields | P-6 |
 | E-6 | Block settings popover | `settings` on a block bar in the editor | `editor/BlockSettings.tsx`, `blockview.tsx` | Edit a `:::block`'s attributes, title, icon, frame, width; remove stray attributes | P-6 |
 | E-7 | Collection page | a page with `type: collection` | `app/Collection.tsx` (`CollectionLayout`, `CollectionShell`), `collections.ts`, `styles/collection.css` | A page listing its members as cards with facets, an `Ask for a new page` button, `Everything here is finished.` | P-5 |
-| E-8 | Missing page | `#/page/<path>` refused (404, 401/403, other) | `app/MissingPage.tsx`, `styles/missing-page.css` | Name the address, say which refusal, link to the folder above | P-5 |
+| E-8 | Missing page | `#/page/<path>` refused (404, 401/403, other) | `app/MissingPage.tsx`, `styles/missing-page.css` | Name the address, say which refusal, link to the folder above (to Home for a page at the root, which has none) | P-5 |
 | E-9 | Settings mosaic | `#/settings` | `app/Preferences.tsx`, `Tile.tsx` | Four tiles: MCP servers, Instructions, Configuration, Delegations, with counts | P-8, P-9, P-10, P-13 |
 | E-10 | MCP servers | `#/settings/mcp[/<name>]` | `app/McpServers.tsx`, `Settings.tsx` (`useMcpServers`), `styles/settings.css` | List servers with health; open one: state, per-person OAuth connect, JSON declaration editor, Save, Remove (opens E-33), add; loading and fetch-failed with Retry (`adestia-ajouts-mcp`) | P-8 |
 | E-11 | Instructions | `#/settings/instructions[/<path>]` | `app/Instructions.tsx`, `styles/tiles.css` | Grouped file cards (instructions, skills, agents), search, `+` create buttons, open one in a monospace textarea, Save; delivered files read-only | P-9 |
@@ -139,22 +141,22 @@ columns are the same except where the instance's configuration decides what exis
 | E-3 | browse, search, facet | same | creates/moves pages (cards appear live) | — |
 | E-4, E-5, E-6 | read, edit, save | same | edits the same files; a concurrent edit gives the conflict state; an agent write refreshes the reading page and raises the banner in editing (`adestia-ajouts`, B-17) | — |
 | E-7 | add a member, open | same | writes members | — |
-| E-8 | follow the folder link | same | a mistyped address it gave lands here; so does a page the agent deleted or moved while open (`adestia-ajouts`) | — |
+| E-8 | follow the folder link (Home for a root page; this link is never hidden) | same; a 401/403 shows the screen with the lock, the page itself is refused | a mistyped address it gave lands here; so does a page the agent deleted or moved while open (`adestia-ajouts`) | — |
 | E-9 | open tiles | same | — | its delegations are counted |
 | E-10 | add/edit/remove servers, connect | same (connect is per person) | uses the servers; health reported after a turn | — |
 | E-11, E-12 | write, import, refresh | same | may write instruction files | — |
 | E-13 | read | same | runs the delegated turns | creates the rows through inbound MCP `ask_<name>` |
 | E-14 | edit, save, restart — only when the server got a `configPath`; else "does not expose its configuration" (the tile is still shown) | same | — | — |
 | E-15 | arm the token, theme, sign out | same (token is the instance's) | — | — |
-| E-16 | talk, create and archive conversations; **Retry** a failed list or thread; read the context-lost line (not dismissable) | same, own conversations under OIDC (another owner's: denied as today) | answers, renames conversations (`rename_conversation`) | — (its threads are not in this list; they show on E-13 only, `DelegationChannel`) |
+| E-16 | talk, create and archive conversations; **Retry** a failed list or thread; read the context-lost line (not dismissable) | same, own conversations under OIDC (another owner's: denied as today) | answers, renames conversations (`rename_conversation`) | — (its threads are not in this list; they show on E-13 only, `DelegationChannel`); a refused turn (too many running) is explained to the Owner and the User alike |
 | E-17, E-18 | answer, sign | same | asks permission, holds actions | may hold actions for signature |
 | E-19 | read | same | background trouble from its scheduled turns | — |
 | E-20 | use | same | — | — |
 | E-22 | use (reads, ticks, edits, adds) | same | writes the tasks' files | — |
 | E-23 | use (reads only) | same | writes the schedule notes (not this screen) | — |
 | E-24 | use (reads, adds, edits) | same | writes the entries | — |
-| E-25 | use (reads, ticks, moves a band) | same | writes `workbook-state.json`, `workbook-layout.json` | — |
-| E-26 | use (reads, confirms, moves, dismisses) | same | writes `voyage-state.json` | — |
+| E-25 | use (reads, ticks, moves a band, resets the layout after the sheet's question) | same | writes `workbook-state.json`, `workbook-layout.json` | — |
+| E-26 | use (reads, confirms, moves, dismisses; reads a refusal in the sheet) | same | writes `voyage-state.json` | — |
 | E-27 | use (reads, drops a link, dismisses, restores) | same | writes `queue.json` | — |
 | E-28 | use (reads) | same | — | — |
 | E-29 | use (reads, reorders, sets aside) | same | writes the meals page, guarded by a revision | — |
@@ -172,32 +174,32 @@ columns are the same except where the instance's configuration decides what exis
 | E-3 | normal, shared empty/no-match states ("This section holds nothing yet." / "Nothing matches."), facet chips, finished archive, multi-store marks, loading (the shared row while the shell's index has not answered, no Retry) | — |
 | E-4 | reading, editing, saving/saved/"tidied", conflict (`.adestia-save--warn`), rejected, failed, read-only (`.adestia-editor__readonly` + raw source), diagnostics, drop zone, lost/ambiguous wikilink, unknown block, missing `from=`, loading while the page is fetched (`Loading` only when no page is held, page to page keeps the first on screen), fetch-failed shows E-8 with Retry, reading refreshed in place when the agent rewrites the file, E-8 when it deletes or moves it, editing: the banner "The page changed." with **Reload** (the typed text is never replaced; the user's own save raises none; a watch that is off moves nothing) | an empty-page state |
 | E-5 | shared popover/fields, normal, broken frontmatter (nothing editable), unknown fields, kept-as-written | — |
-| E-6 | shared popover/fields, normal, required attributes missing, stray attributes | — |
+| E-6 | shared popover/fields, normal, required attributes missing (a star and the text alternative), stray attributes (a named `trash-2` control each), bounded below the canvas header and the bands (anchor scrolled under the header: the panel stays at the header's edge; anchor out at the bottom or soft keyboard on a phone: the panel stays inside the viewport and scrolls internally; on a desktop an anchor out at the bottom keeps the panel inside the viewport the same way; it follows its anchor on scroll and resize) | no loading, error or offline state: it opens on a block already in the editor, so none applies; read-only mode has no settings control, so the popover cannot open |
 | E-7 | normal, shared all-finished state inside a facet, count chips | empty collection state distinct from "all finished" |
-| E-8 | shared empty state: 404 (`file-question`), 401/403 (`lock`); the "server could not" case (0 included) as the shared failure block with **Retry**, which fetches the page again | — |
+| E-8 | shared empty state: 404 (`file-question`, "There is no page at this address." / « Il n’y a aucune page à cette adresse. »), 401/403 (`lock`, "This page is out of reach — the session may have expired." / « Cette page est hors de portée — la session a peut-être expiré. »), other (`circle-alert`, "The server could not serve this page." / « Le serveur n’a pas pu servir cette page. »); the "server could not" case (0 included, the shell unable to reach the server) is the shared failure block with **Retry**, which fetches the page again; folder link "Open the folder above" / « Ouvrir le dossier au-dessus », or "Home" / « Accueil » for a page at the root; a very long address wraps; no loading state of its own (the screen is drawn once the server has answered; E-4 keeps the previous screen while fetching); offline after startup is unchanged (Limits kept), E-21 covers startup failure | — |
 | E-9 | normal, tiles with Lucide icons; counts absent when unreadable; loading (the shared row above the tiles until its four reads have answered or failed, tiles drawn throughout, no Retry) | — |
 | E-10 | list, empty ("None wired yet…", shared empty state), health tones each with an icon, needs-auth, connected/not, shadowed, read-only declaration, saving/saved/failed; loading (the shared row under the heading, no tiles, no "None wired yet", no "Add a server"); fetch-failed with **Retry** (first fetch only; a refetch after Save or Remove never shows loading and fails silently; health, `/api/mcp/status`, has neither); **Remove** opens E-33 | — |
 | E-11 | list, empty, no match, file open, delivered (read-only, lock icon), saving/saved/failed, the name sheet for a new skill or agent; loading and fetch-failed with **Retry** for the list and for the open file (404 on the list stays "this engine has no such folder"; 404 and 401/403 on a file have the message, no Retry) | — |
 | E-12 | no catalogue, reading the repository, nothing importable, error, items; in the shared sheet (Escape, focus kept and returned, bottom sheet on a phone) | — |
-| E-13 | list by caller, empty (shared empty state), state chips with an icon, open conversation; loading and fetch-failed with **Retry** for the list and for the open conversation (404 and 401/403 on a conversation have the message, no Retry) | — |
+| E-13 | list by caller, empty (shared empty state), state chips with an icon, open conversation (read-only text, no signature card); loading and fetch-failed with **Retry** for the list and for the open conversation (404 and 401/403 on a conversation have the message, no Retry) | — |
 | E-14 | loading (a spinner row), read error, not exposed (404), read-only, edited/default badges, saving/saved/failed, stale file, restart pending/asking/waiting/blocked/failed, each restart state with an icon; the "Simultaneous turns" field (number, min 1, max 16) in a group of its own, with the "restart needed" mark (same row shape as "Scan period"; the offline banner E-32 and the restart-needed state are independent, both may show) | — |
 | E-15 | token states (stored, none, refused, arming flow, failed) with an icon, theme chosen (three-icon switch), signed in, version | — |
-| E-16 | empty thread, live turn (spinner or skin busy slot, counters), interrupted, error, held message, tabs/list with labelled state shapes, translated shared empty list ("No conversation yet."), MCP connect prompt, composer busy/stopping/blocked, attachments and upload error | an offline state of its own (the banner E-32 covers it; see "E-16 in `adestia-ajouts-chat`") |
+| E-16 | empty thread, live turn (spinner or skin busy slot, counters), interrupted, error, held message, refused turn (its line now said in `en` and `fr`, kept until the next send or another conversation), tabs/list with labelled state shapes, translated shared empty list ("No conversation yet."), MCP connect prompt, composer busy/stopping/blocked, attachments and upload error | an offline state of its own (the banner E-32 covers it; see "E-16 in `adestia-ajouts-chat`") |
 | E-17 | translated question with `triangle-alert`, with/without lasting rule (Always absent without one) | — |
 | E-18 | pending (`pen-line`), signed (`check`), denied (`x`), expired (`clock`), open in a tab; each with text; shared sheet with Escape, focus trap and return, bottom sheet on a phone | — |
 | E-19 | background trouble, refused, degraded, an icon per kind; absent when nothing | — |
 | E-20 | shared empty state, `plug`, translated Home action | — |
 | E-21 | the fatal gate drawn, with a wifi-off icon when the failure is a thrown fetch, and the browser's network error | an offline screen (never built: B-19 is a banner, E-32) |
 | E-22 | loading, empty, error, conflict, sheet (a view with a named back: « Todo ») | Escape on the task sheet does nothing (kept: it is a view, not a dialog) |
-| E-23 | loading, empty, error, clock off | the notes' problem sentences (`carries both …`, `the note is empty …`) reach the screen in English on every instance (kept, Known defects) |
+| E-23 | loading, empty, error, clock off | the notes' problem sentences (`carries both …`, `the note is empty …`) reach the screen in English on every instance (kept, Known defects); the other sentences the plugin composes around a word (`until …`, the clock-off line) are whole table entries and read in French under `fr` |
 | E-24 | loading, no journal, empty journal, conflict, editing; back « Journals » / « Journaux » | — |
-| E-25 | hub, empty (in both languages), per-section empties, piece sheet (shared sheet), full-screen bench mode with an exit that names where it leads, loading row and failure block with **Retry** on the hub and on a workbook (built: `adestia-ajouts-plugins-chargements`) | the native `confirm()` before a layout reset (replaced by `adestia-correctifs`, AD-17) |
-| E-26 | loading, no trip, empty tray, card sheet (shared sheet), dismissed list | the native `window.alert` of a refused gesture (replaced by `adestia-correctifs`, AD-17) |
+| E-25 | hub, empty (in both languages), per-section empties, piece sheet (the plugin's sheet), full-screen bench mode with an exit that names where it leads, loading row and failure block with **Retry** on the hub and on a workbook (built: `adestia-ajouts-plugins-chargements`) | the layout reset asks in a sheet (Q-20): the question is today's, « Drop your layout and go back to Alfred's? » / « Abandonner votre mise en plan et reprendre celle d'Alfred ? », two buttons, *Cancel* / *Annuler* (focused first) and *Discard my layout* / *Abandonner ma mise en plan*; Escape and the scrim cancel; the focus returns to the reset button; a bottom sheet on a phone; it opens above the bench mode; if the request fails after the answer, the sheet is closed and the screen shows today's error state; a count of one reads « 1 piece » / « 1 pièce »; « Done » carries no emoji; the other emoji the plugin drew beside a word are gone (the content marks stay: the journal's `ico`, the trip item types, a tile's `ic:`, `⛰`, `🎧`/`🎬`; `✦` and `✓` are typographic glyphs, kept) (the server does not persist this reset yet: see Known defects in `ARCHITECTURE.md`, E-25) |
+| E-26 | loading, no trip, empty tray, card sheet (the plugin's sheet), dismissed list | a refused or impossible gesture is said in the plugin's sheet, the sheet shows the server's own text (English on every instance, like E-27's failure reasons: data, kept), titled *Gesture refused* / *Geste refusé* or *Gesture impossible* / *Geste impossible*, with one *Close* / *Fermer*; Escape and the scrim close it, the focus returns to the card, a bottom sheet on a phone; the board repaints when it closes |
 | E-27 | loading, empty, no sources, error, conflict | a source's failure reason is the server's raw text (`fetch failed`), in English on every instance (kept, Known defects) |
-| E-28 | map, no route in the address, no points, walking HUD with an exit that names where it leads, loading row and failure block with **Retry** (absent on a 404 or a refusal) in the page, the `:::parcours` block and the link view (built: `adestia-ajouts-plugins-chargements`) | the walking map keeps the size it was drawn at before the walk (kept, Known defects) |
-| E-29 | loading, empty, conflict, dish sheet (shared sheet) | — |
-| E-30 | camera live, codes listed; camera failure said in the composer | in-overlay error state (kept: a refusal never reaches the overlay); on a phone the focus does not go back to the scan button, which the composer's fold has removed (kept, Known defects) |
-| E-31 | timeline, status, no dated page, no sub-project | — |
+| E-28 | map, no route in the address, no points, walking HUD with an exit that names where it leads, loading row and failure block with **Retry** (absent on a 404 or a refusal) in the page, the `:::parcours` block and the link view (built: `adestia-ajouts-plugins-chargements`) | in the walking mode the map fills the screen and redraws on a mode change or a resize |
+| E-29 | loading, empty, conflict, dish sheet (the plugin's sheet) | — |
+| E-30 | camera live, codes listed; camera failure said in the composer | in-overlay error state (kept: a refusal never reaches the overlay); on a phone, where the composer's fold has removed the scan button, closing the overlay puts the focus in the composer's field |
+| E-31 | timeline, status, no dated page, no sub-project; amber means one thing, the owner's *Amber* status; a phase or milestone found late is drawn by a dashed outline in `--text-muted`, never by amber, and carries the word « late » / « en retard » as its title and accessible name (on a phone, where nothing hovers, the dashed outline is what is seen); the `:::content{on=…}` block of any page (not an E-31 control; drawn by the shell, `ContentBlock.tsx`) writes its date in the instance's language, e.g. `2026-03-14` reads « March 14, 2026 » under `en` and « 14 mars 2026 » under `fr`, and a value that is not a date is written as it is | — |
 
 ## Target states of `adestia-ajouts`
 
@@ -368,10 +370,10 @@ fetch that fails meanwhile shows its Failure beneath it, and Retry works once th
 Extreme content: several marks in one thread each draw their line; `fr` text wraps onto two
 lines in a narrow rail (the hairlines shrink, the text never truncates); a long list keeps its
 rows only after it answered, and a Retry never shows old rows beside `Loading`.
-**Loud failure of B-22.** If AD-23's real test finds that the SDK refuses a missing session,
+**Loud failure of B-22.** If AD-28's real test finds that the SDK refuses a missing session,
 the failed turn shows as today (the thread's `error` state with the server's message) and no
 marker is drawn; if the next turn then succeeds on its own that is the end, otherwise the rerun
-carries the marker (AD-23). The tester expects the error state, not the line.
+carries the marker (AD-28). The tester expects the error state, not the line.
 
 
 ### E-25 and E-28: loading and Retry, in detail (`adestia-ajouts-plugins-chargements`)
@@ -445,7 +447,7 @@ desk / phone (bottom sheet)
 - **Cancel, the ✕, a click on the scrim and Escape all keep the server**: nothing is sent, the declaration
   and the draft are as they were, and focus returns to **Remove** (the shared focus scope's return).
 - **Initial focus is on Cancel**, not on the ✕ that the scope would pick first: an element marked
-  `data-autofocus` inside a scope takes the initial focus (`ui/focus.ts`, AD-26); Tab stays trapped as in
+  `data-autofocus` inside a scope takes the initial focus (`ui/focus.ts`, AD-31); Tab stays trapped as in
   every sheet. Enter on the focused Cancel cancels; **Remove** is never the default.
 - **Remove**: the sheet closes at once (a second press is impossible), then the existing `DELETE
   /api/mcp/servers/<name>` runs. Until the server answers, E-10's own **Remove** button is disabled
@@ -481,7 +483,7 @@ report, no panel"): it has no loading state and no Retry.
 Texts: `en` "Loading…" / `fr` « Chargement… » (existing key); the failure block shows the request helper's
 message (an `error` from the server as sent; otherwise `en` "request failed (%n)" / `fr` « la requête a échoué (%n) »;
 with no answer, the browser's network message) and the button `en` "Retry" / `fr` « Réessayer » (the key
-`adestia-ajouts-chargements` adds, AD-24; E-10 adds none).
+`adestia-ajouts-chargements` adds, AD-29; E-10 adds none).
 
 Also: if the first fetch fails because the server is down, the failure block and the E-32 banner show
 together (independent, as E-14). An opened `#/settings/mcp/<name>` whose name is not among the answered
@@ -490,7 +492,7 @@ declaration has no Remove button (hidden, not refused). Many or long-named serve
 
 States of E-10 after the tranche: list, empty, health tones, needs-auth, connected/not, shadowed,
 read-only, saving/saved/failed, loading, fetch-failed with Retry, and the E-33 confirmation. Nothing
-else changes; the shared parts are those of `adestia-ajouts-chargements` (AD-24).
+else changes; the shared parts are those of `adestia-ajouts-chargements` (AD-29).
 
 ## The plugins' screens, as built
 
@@ -566,7 +568,7 @@ they resolve there too, and the bridge that "armed" the overlays disappears with
 plugin's own, unchanged. Behaviour is the charter's: `role="dialog"`, `aria-modal`,
 `aria-labelledby` the title; Escape and a click on the scrim close; focus goes to the first
 control, Tab wraps, focus returns to the opener. Because a plugin imports no shell code (AD-4,
-AD-8), each plugin that opens a sheet carries its own copy of the ~30 lines doing so
+AD-8), each plugin that opens a sheet carries its own copy (« the plugin's sheet » in this document) of the ~30 lines doing so
 (`web/sheet.js` in atelier and voyages, the same few lines in an effect in meals' React view),
 written to the three-line contract of `skills/plugin-author`. The close button is the icon `x` with
 `aria-label` « Close » (translated, one word the three plugins already say: voyages' « Close »
@@ -587,8 +589,13 @@ not a dialog: it is a mode of the map, left as a layer on the map.
 *Close glyph (Q-11).* `✕` and `×` in plugin controls give way to the `x` icon (`<svg
 class="adestia-icon"><use href="#adestia-i-x"/></svg>`, from the shell's sprite, which is on the
 page; a plugin may use any icon of the charter's closed list and none outside it). Decorative
-emoji in plugin chrome are left (`🖐 📄 🧭 📝` are words' companions, not the controls Q-14 names for
-the shell); a **tile icon** a plugin declares in its manifest stays.
+emoji in plugin chrome give way to the same closed sprite list or to their visible word
+(AD-24 d): page links use `file-text`, todo notes and attachments use `pen-line` and `paperclip`,
+journal archives use `archive`, and warnings use `triangle-alert`. Each keeps its visible name
+or `title`. Follow, walking mode, trip hints and Done keep their words without an emoji.
+Content marks stay: an author's or engine's `ico`, trip item and travel/weather types, journal
+and media-type fallbacks, and `⛰` on a route card. `✦` and `✓` are typographic glyphs of the
+plugins' vocabulary, not emoji. A **tile icon** declared in a manifest stays.
 
 ### Backs (B-9, Q-12)
 
@@ -649,7 +656,9 @@ E-30; the tester presses Escape on each):
 | Card sheet | E-26 | a card (click) | Escape, scrim, `x`, footer « Close » | the card |
 | Walking HUD | E-28 | the walk button of the map | its exit button (Escape also, as a mode of the map) | the walk button |
 | Dish sheet | E-29 | a dish card | Escape, scrim, `x` | the dish card |
-| Camera overlay (full screen) | E-30 | the composer's scan button | Escape, « Cancel » | the composer's scan button |
+| Camera overlay (full screen) | E-30 | the composer's scan button | Escape, « Cancel » | the composer's scan button; on a phone, where the fold has removed it, the composer's field |
+| Reset question | E-25 | the layout reset button | Escape, scrim, *Cancel*; *Discard my layout* confirms | the reset button |
+| Refusal sheet | E-26 | a refused or impossible gesture | Escape, scrim, *Close* | the card |
 
 **States.** Loading, empty, error and conflict are today's, redrawn by tokens (the list per screen is
 in § States above). *Offline*: no plugin has an offline state and none is added (an open shell that
@@ -790,8 +799,8 @@ and state was looked at, in light and dark, on desk and phone, across the four s
   voyages' do).
 - *Seen and kept*, written under Known defects of `ARCHITECTURE.md`: the shell's `‹ Back` in English on
   a French instance; the English sentences planif and the listening post show from the server;
-  the walking map that keeps its pre-walk size (E-28); the focus lost on closing the scan overlay on a
-  phone; the workbook's own words under `en`.
+  the workbook's own words under `en`. (The pre-walk map size and the lost scan focus were kept then and are
+  repaired in `adestia-correctifs-plugins`, E-28 and E-30.)
 
 ### Kept, written here (B-1, mandate principle 3)
 
@@ -799,9 +808,7 @@ Plugin buttons, fields and empty states do **not** adopt `.adestia-btn`, `.adest
 `.adestia-empty` in this tranche, except the backs and exits of Backs and the sheet's close button (B-9 asks for the tokens and the shared dialog; the charter's
 classes are available to plugin authors, not imposed on the ten screens: a visible redesign of every
 button is a recommendation); the five stylesheet breakpoints other than 820 px; the prompts sent to
-the agent; the native `confirm()` of E-25 (« Abandonner votre calepinage… », reset of a layout) and the
-`window.alert` of E-26 (refused or impossible gesture): replacing a blocking native question with a
-sheet changes the flow (the answer becomes asynchronous), which is behaviour, so Q-20 is kept for the plugins (*kept: the flow would change*) and written as a defect; `skills/` of the plugins (they describe the agent's world, not a screen).
+the agent; `skills/` of the plugins (they describe the agent's world, not a screen).
 
 ## The charter's screens, as built
 
@@ -840,7 +847,9 @@ screen is not built (the banner E-32 is the answer once the shell is open).
 
 **E-9 Settings mosaic.** The four tiles keep their order, labels and counts; tile emoji
 became Lucide icons (plug, book-open, sliders-horizontal, handshake) on the tile plate.
-Counts absent when unreadable, as today. The Configuration tile stays (Q-21).
+Counts absent when unreadable. The MCP chip and subtitle both count the servers listed
+by `/api/mcp/servers`; health from `/api/mcp/status` adds attention only for those names.
+The Configuration tile stays (Q-21).
 
 **E-10 MCP servers.** Buttons are `.adestia-btn`, labels unchanged: "Save" (accent),
 "Remove" (danger), connect (neutral), "Add a server" (icon `plus` beside its label); Remove
@@ -878,7 +887,9 @@ out" (ghost, `log-out`, only under OIDC; hidden otherwise as today), the build v
 
 **E-19 Problems band.** Icon per kind (circle-alert refused, triangle-alert degraded), text
 in the `*-text` tokens, band background a 4 % tint to keep the composed contrast at AA;
-present only when there is a problem.
+present only when there is a problem. Reasons without a code translate the
+"Invalid plugin manifest" / "Invalid skin manifest" heading (including a named folder);
+the server's `field: message` lines remain intact, in English (AD-24).
 
 **Roles.** Owner and user see the same on these screens (no role check exists); the agent
 (a peer) sees none of them as a page — its work shows on E-13 and E-19; E-13 is
@@ -918,7 +929,7 @@ E-17 and E-18 to the chat tranche.
 Screens E-16, E-17, E-18 (and the thread of E-13 where it shares `Bubble`), after
 `adestia-qualite-chat`. The tranche uses what `adestia-qualite-charte` built: the
 components of `docs/charte.md` § 4, the icons of § 2, the request helper (AD-11) and
-the type scale. **B-1 binds this section**: words of today stay (a string is changed only
+the type scale. **B-1 binds this section**: words of today stay (a string is changed only by B-14 for the refused turn, and
 by `B-8`'s language rule), no state, control or gesture is added or removed, the
 conversation gestures stay the five of P-2 step 9 (create, archive, open, reorder, close).
 Where `docs/charte.md` says otherwise, this line wins.
@@ -946,14 +957,14 @@ origin and tab link, live in `styles/components.css`; `chat.css` contains none.
 **States, as built.** E-16: the empty list says "No conversation yet." through `t()`
 in an `<EmptyState>`; the empty thread keeps its blank; the working indicator is the skin's
 `busy` slot or the shared spinner icon with the counters; the interrupted note, the error
-line, the held bubble (`paperclip` + names when the message is attachments only), the
+line (a turn the server refuses because too many turns already run keeps its line, under the message that was refused, which stays in the thread; the line says "Turn limit reached (N at a time) — try again in a moment." in English and "Limite de tours atteinte (N à la fois) — réessayez dans un instant." in French, N being the server's limit, for the Owner and the User alike; it stays when the conversation is read again, and goes at the next send or when the user opens another conversation; a turn that fails with no answer from the server keeps the error line the chat already draws for it, with the same words as today, under the sent message, and keeps it after the reread as long as the refusal's line stays; other HTTP refusals keep the server's text), the held bubble (`paperclip` + names when the message is attachments only), the
 unread/running/idle dots (colour and a shape, not colour alone), the MCP connect prompt, the
-composer busy/stopping/blocked and the upload error keep their words and places. The list
+composer busy/stopping/blocked and the upload error keep their places; the lines whose words change are the refused turn's and, in the upload error, the fallback an answer with no readable server sentence reads (the translated `upload failed`, where an empty or unreadable body once showed the parser's English message); the server's own sentence and the refused-files list keep their words. The list
 and an adopted tab's thread show the shared loading row, then the failure block with **Retry**
 (built by `adestia-ajouts-chat`, "E-16 in `adestia-ajouts-chat`" above); the offline banner is
 E-32's. E-17: the question card keeps its three answers and
 the "No lasting rule" line; it takes `triangle-alert`. E-18: pending, signed, denied,
-expired, open-in-a-tab keep their words; each gets its icon above.
+expired, open-in-a-tab keep their words; each gets its icon above. E-13: a delegated conversation is read-only and has no composer (P-13 step 7), so its conversation reads as text only: a signature request in the transcript is not drawn as a card and nothing replaces it; the ceremony belongs to the calling agent's user. The refusal for too many turns is a capacity refusal, not a permission one: no "extreme content" or "permission denied" state applies to it.
 
 **Strings.** Every visible string, `aria-label`, `title` and `alt` under `chat/` goes
 through `t()`: "New conversation", "Open apps", "Working", `Remove <name>`, the context
@@ -1046,7 +1057,7 @@ Metadata, block frames and attachments keep their content; attachments have file
 icons and names with tooltips. `reader/Note.tsx` draws translated block notes as
 `.adestia-empty--inline`, retaining `.adestia-block-note` as a layout/skin hook.
 Lost references, absent files, unknown blocks and missing providers use this form.
-Read-only pages show `lock`, raw source and diagnostics.
+Read-only pages show `lock`, raw source and diagnostics; each diagnostic sentence is translated by its `code` into the instance's language, with the block name, attribute and values left as the author wrote them (a diagnostic with no known code is drawn as received).
 
 **E-4 editing.** Toolbar, slash menu and DOM block bars use translated words and
 sprite icons: `grip-vertical`, `code`/`eye`, `settings`, `trash-2`. Milkdown's surface
@@ -1062,7 +1073,11 @@ focus to the anchor. Fields use `.adestia-field` and shared controls; Close uses
 `x`. Required attributes have a textual alternative to the star; stray attributes
 have named `trash-2` controls. Both forms speak the instance locale. Icon examples
 in placeholders remain author data. At 360 px the block bar and toolbar wrap;
-popovers stay inside the viewport with `--space-2` (8 px) margins and scroll internally.
+popovers stay inside the viewport with `--space-2` (8 px) margins and scroll internally. At any width a popover also stays below the canvas header and the bands above the page (problems band E-19, skin console): it never covers them, and it follows its anchor when the page scrolls or the window is resized. When the anchor scrolls up under the header, the panel stays at the header's lower edge and closes nothing; with no band present it takes the header's edge alone.
+
+A very long diagnostic wraps in the save status instead of being cut. A save the vocabulary refuses shows, in the save status of E-4 (`Not saved: …`; in French `Non enregistré : …`), the first diagnostic in the instance's language, the editor staying open with its text. A diagnostic with no known code is drawn as received, in the save status as in read-only mode. Each sentence of `content`'s validation has its French twin, with the block name, key and values as the author wrote them; for example `Block ":::note" needs content.` reads `Le bloc « :::note » a besoin de contenu.` and `":::note" has no attribute "x"; it will be ignored.` reads `« :::note » n'a pas d'attribut « x » ; il sera ignoré.`
+
+A page whose frontmatter lines end in `\r\n` shows the same fields as one ending in `\n`: the cards and facets of E-3 and E-7 (`status`, `role`, `cat`) and the notes list of E-23 read them as the editor does. The bench scenarios of this repair (`bench/scenarios/`, files named for the root breadcrumb, E-6 at 1440 px, the translated diagnostic and a CRLF page) are in the repository next to the screens they judge.
 
 **E-7.** Members follow the collection text. Facet cards carry shared count chips;
 Ask for a new page uses a small button with `plus` when `of:`, `into:` and the
@@ -1070,7 +1085,7 @@ agent callback are present. Inside a facet, all finished uses
 `EmptyState` with `check`. An empty collection has no additional distinct state.
 
 **E-8.** `EmptyState` names the path, with `file-question` for 404, `lock` for
-401/403 and `circle-alert` otherwise. Its ghost folder link uses `folder-open`.
+401/403 and `circle-alert` otherwise. Its ghost folder link uses `folder-open` and goes to the folder above the address; for a page at the root of the workspace, which has none, it goes Home.
 The "server could not" case (0 and 5xx) draws the shared failure block with **Retry**
 (`MissingPage`, `Failure`); 404 and 401/403 have no retry control.
 
@@ -1207,7 +1222,7 @@ portion; **kept: reason** names what B-1 deliberately leaves.
     **closed**: the dark palette is written once, as `light-dark()`; the `prefers-color-scheme` and `[data-theme='dark']` blocks of `tokens.css` redeclare only the geometry of `--shadow` and `--shadow-lg`.
 20. **Q-20 — Native dialogs.** `window.prompt` names a new skill or agent in
     `Instructions.tsx` (E-11); `confirm()` in atelier (E-25).
-    **closed** for E-11: the name of a new skill or agent is asked in a small sheet with a field (`instructions/NamePrompt.tsx`), same answer rule as the prompt's; `window.prompt` is gone from the web sources. **kept: `confirm()` in atelier (E-25) and `window.alert` in voyages (E-26)**: replacing a blocking dialog changes the flow (B-1), as recorded under Known defects of `ARCHITECTURE.md`.
+    **closed** for E-11: the name of a new skill or agent is asked in a small sheet with a field (`instructions/NamePrompt.tsx`), same answer rule as the prompt's; `window.prompt` is gone from the web sources. **closed** by `adestia-correctifs-plugins`: `confirm()` in atelier (E-25) and `window.alert` in voyages (E-26) are each plugin's own copy of the shared sheet; the answer is asynchronous, the one deliberate flow change of the epic (B-15), and the CHANGELOG says so.
 21. **Q-21 — Configuration offered where it cannot open.** The Configuration tile in E-9 is
     always drawn; without `configPath` it leads to "This instance does not expose its
     configuration." Hiding the tile would change what the screen offers: **kept: behaviour**

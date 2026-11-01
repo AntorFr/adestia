@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * The offline banner (E-32, AD-22): drawn once, in the place the user is looking
+ * The offline banner (E-32, AD-27): drawn once, in the place the user is looking
  * at, never under a gate, never covering the screen below.
  */
 

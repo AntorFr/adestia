@@ -14,6 +14,7 @@ import { dirname, join, resolve } from 'node:path'
 import { describe, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { fileURLToPath } from 'node:url'
+import { checkVersions, compare } from './lib/doc-version.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' })
@@ -21,34 +22,14 @@ const read = (p) => readFileSync(join(root, p), 'utf8')
 const tracked = git('ls-files').split('\n').filter(Boolean).filter((f) => existsSync(join(root, f)))
 const markdown = tracked.filter((f) => f.endsWith('.md'))
 
-const semver = (v) => {
-  const m = /^v(\d+)\.(\d+)\.(\d+)(?:-(.+))?$/.exec(v)
-  assert.ok(m, `not a version: ${v}`)
-  return { n: [Number(m[1]), Number(m[2]), Number(m[3])], pre: m[4] ?? '' }
-}
-const cmp = (a, b) => {
-  const x = semver(a), y = semver(b)
-  for (let i = 0; i < 3; i++) if (x.n[i] !== y.n[i]) return x.n[i] - y.n[i]
-  if (x.pre === y.pre) return 0
-  if (x.pre === '') return 1
-  if (y.pre === '') return -1
-  return x.pre.localeCompare(y.pre, 'en', { numeric: true })
-}
-const latestTag = () => {
-  const tags = git('tag', '--list', 'v*').split('\n').filter((t) => /^v\d+\.\d+\.\d+/.test(t))
-  assert.ok(tags.length > 0, 'no git tag in this clone: cannot tell the current version')
-  return tags.sort(cmp).at(-1)
-}
+const cmp = compare
+const allTags = () => git('tag', '--list', 'v*').split('\n').filter(Boolean)
 
 describe('B-5 — .agent/status.md says the state', () => {
   const status = read('.agent/status.md')
 
   test('it is under 150 lines', () => {
     assert.ok(status.split('\n').length < 150, `${status.split('\n').length} lines`)
-  })
-
-  test('it names the current version, the latest git tag', () => {
-    assert.ok(status.includes(latestTag()), `status.md does not mention ${latestTag()}`)
   })
 
   test('it has the known defects and the traps still true', () => {
@@ -79,15 +60,8 @@ describe('B-5 — CHANGELOG.md is the history, in version order', () => {
     }
   })
 
-  test('the current version (latest tag) is the last of them', () => {
-    assert.equal(headings.at(-1), latestTag())
-  })
-
-  test('every released tag from v0.61.0 on has its entry', () => {
-    const tags = git('tag', '--list', 'v*').split('\n')
-      .filter((t) => /^v\d+\.\d+\.\d+(-.+)?$/.test(t) && cmp(t, 'v0.61.0') >= 0)
-    const missing = tags.filter((t) => !headings.includes(t))
-    assert.deepEqual(missing, [])
+  test('the last title is the latest tag or its next version, status.md cites it, no tag lacks its entry', () => {
+    assert.deepEqual(checkVersions({ tags: allTags(), headings, status: read('.agent/status.md'), since: 'v0.61.0' }), [])
   })
 
   test('what status.md knew from before v0.61.0 sits in a section at the top', () => {

@@ -142,7 +142,7 @@ function hero(host, context, words) {
     <p class="nst-date">${esc(date)}</p>
     <div class="nst-scene"></div>
     <button class="nst-invite" data-invite type="button">
-      <span>${esc(words.invite)}</span><i aria-hidden="true">↑</i>
+      <span>${esc(words.invite)}</span><i aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7M12 19V5"/></svg></i>
     </button>
   </div>`
 

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * E-33: removing an MCP server asks first, naming the server (B-20, AD-26).
+ * E-33: removing an MCP server asks first, naming the server (B-20, AD-31).
  * Expected values are written from the task's exit criterion, not from the code.
  */
 

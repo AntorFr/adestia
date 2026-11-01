@@ -1,5 +1,5 @@
 /**
- * B-22 / P-16 step 7 / AD-23 (issue b, rerun): Claude refuses a gone session, the
+ * B-22 / P-16 step 7 / AD-28 (issue b, rerun): Claude refuses a gone session, the
  * server reruns the turn once without it and the first agent message of that
  * turn carries `contextLost`. Only Claude can lose it.
  */

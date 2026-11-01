@@ -14,7 +14,7 @@ import { JSDOM } from 'jsdom'
 import { openScanner } from '../web/scanner.js'
 
 /** A fresh page, a fake camera, a detector that sees `codes` on every frame. */
-async function mount(t, { locale = 'en', codes = [], onCompose = () => {} } = {}) {
+async function mount(t, { locale = 'en', codes = [], onCompose = () => {}, openerGoneFirst = false } = {}) {
   const { window } = new JSDOM('<body><button id="opener">Scan</button></body>')
   const stops = { count: 0 }
   globalThis.document = window.document
@@ -35,6 +35,14 @@ async function mount(t, { locale = 'en', codes = [], onCompose = () => {} } = {}
   }
   const opener = window.document.getElementById('opener')
   opener.focus()
+  // The plugin imports scanner.js lazily: by the time it runs, the folded
+  // composer's menu has closed and the button that was pressed is gone.
+  if (openerGoneFirst) {
+    const field = window.document.createElement('textarea')
+    field.className = 'adestia-composer__input'
+    window.document.body.append(field)
+    opener.remove()
+  }
   await openScanner({ locale, compose: onCompose })
   const overlay = () => window.document.querySelector('.scan-overlay')
   const press = (key, init = {}) => {
@@ -91,6 +99,37 @@ test('Escape does not move the focus onto an opener that left the page', async (
   opener.remove()
   assert.doesNotThrow(() => press('Escape'))
   assert.notEqual(window.document.activeElement, opener)
+})
+
+test('an opener that left the page (the phone\'s folded composer): the focus goes to the composer field', async (t) => {
+  const { press, opener, window } = await mount(t)
+  const field = window.document.createElement('textarea')
+  field.className = 'adestia-composer__input'
+  window.document.body.append(field)
+  opener.remove()
+  press('Escape')
+  assert.equal(window.document.activeElement, field)
+})
+
+test('the opener left BEFORE the reader read it (activeElement is the body): the focus still goes to the composer field', async (t) => {
+  const { press, window } = await mount(t, { openerGoneFirst: true })
+  press('Escape')
+  assert.equal(window.document.activeElement.className, 'adestia-composer__input')
+})
+
+test('an opener still on the page keeps the focus, even with a composer field present', async (t) => {
+  const { press, opener, window } = await mount(t)
+  const field = window.document.createElement('textarea')
+  field.className = 'adestia-composer__input'
+  window.document.body.append(field)
+  press('Escape')
+  assert.equal(window.document.activeElement, opener)
+})
+
+test('an opener gone and no composer field: closing still does not throw', async (t) => {
+  const { press, opener } = await mount(t)
+  opener.remove()
+  assert.doesNotThrow(() => press('Escape'))
 })
 
 test('Tab does not leave the reader, either way round', async (t) => {

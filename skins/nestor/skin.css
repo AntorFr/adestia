@@ -327,7 +327,6 @@
   display: grid;
   place-items: center;
   font-style: normal;
-  font-weight: 700;
   border-radius: var(--radius-round);
   background: var(--accent);
   color: var(--on-accent);

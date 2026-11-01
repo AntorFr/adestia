@@ -3,13 +3,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { parse, readFrontmatter, serialize, writeFrontmatter } from '@antorfr/adestia-content'
 import { jsonInit, requestJson } from '../app/request.js'
 import type { PageDocument } from './Editor.js'
+import type { DiagnosticMessage } from './diagnostics.js'
 
 export type SaveState =
   | { readonly kind: 'idle' }
   | { readonly kind: 'saving' }
   | { readonly kind: 'saved'; readonly normalized: boolean }
   | { readonly kind: 'conflict' }
-  | { readonly kind: 'rejected'; readonly diagnostics: readonly { message: string }[] }
+  | { readonly kind: 'rejected'; readonly diagnostics: readonly DiagnosticMessage[] }
   | { readonly kind: 'failed'; readonly message: string }
 
 export async function savePage(
@@ -29,7 +30,7 @@ export async function savePage(
   }
   if (response.status === 409) return { state: { kind: 'conflict' } }
   if (response.status === 422) {
-    const body = response.data as { diagnostics: readonly { message: string }[] }
+    const body = response.data as { diagnostics: readonly DiagnosticMessage[] }
     return { state: { kind: 'rejected', diagnostics: body.diagnostics } }
   }
   const said = (response.data as { error?: unknown } | null | undefined)?.error

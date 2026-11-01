@@ -3,14 +3,51 @@
 
 ## Version courante
 
-- Dernier tag accessible : **`v0.97.0-adestia-ajouts.7`** (`git describe --tags
-  --abbrev=0`), tag de l'epic `adestia-ajouts` ; `v0.95.0` est le dernier tag de `main` (epic
-  `adestia-qualite`).
-- Branche de travail : `feature/adestia-ajouts-chat`, sur `origin/epic/adestia-ajouts`
-  (chargement et Réessayer du chat, E-16 ; marque de contexte perdu de Claude, AD-23 ; recette : `node bench/scenarios/chat-ajouts.mjs`).
-  Livré avant elle sur l'epic : chargement et Réessayer des plugins Atelier et Parcours, E-25 et E-28, AD-24 ; le bandeau hors ligne E-32, AD-22 (`node bench/scenarios/hors-ligne.mjs`) ; la page ouverte suit l'agent, AD-21 (`node bench/scenarios/page-suivie.mjs`) ;
-  chargement et Réessayer des écrans, AD-24 (`node bench/scenarios/chargements.mjs`) ; E-10 (chargement, Réessayer) et la confirmation E-33 avant de retirer un serveur MCP, AD-26 (aucun scénario de `bench/scenarios/`
-  ne les couvre ; après `npm run build`, ouvrir à la main `#/settings/mcp/<nom>` sur `node bench/launch.mjs --engine fake`). Hérité de l'epic précédent (correctifs de recette et de verify : un message envoyé avant que le premier soit parti est retenu ;
+- Dernier tag accessible : **`v0.97.0`** (`git describe --tags --abbrev=0`, posé sur `main` par la fusion de l'epic
+  `adestia-ajouts` ; ses préversions `v0.97.0-adestia-ajouts.1` à `.7` sont posées sur sa branche) ; le tag précédent
+  dans `main` était `v0.96.0` (l'epic `adestia-correctifs`).
+- Branche de travail : `epic/adestia-ajouts`, qui entre dans `main` : dernière tranche livrée, `feature/adestia-ajouts-chat`
+  (chargement et Réessayer du chat, E-16 ; marque de contexte perdu de Claude, AD-28 ; recette : `node bench/scenarios/chat-ajouts.mjs`).
+  Livré avant elle sur l'epic : chargement et Réessayer des plugins Atelier et Parcours, E-25 et E-28, AD-29 ; le bandeau hors ligne E-32, AD-27 (`node bench/scenarios/hors-ligne.mjs`) ; la page ouverte suit l'agent, AD-21 (`node bench/scenarios/page-suivie.mjs`) ;
+  chargement et Réessayer des écrans, AD-29 (`node bench/scenarios/chargements.mjs`) ; E-10 (chargement, Réessayer) et la confirmation E-33 avant de retirer un serveur MCP, AD-31 (aucun scénario de `bench/scenarios/`
+  ne les couvre ; après `npm run build`, ouvrir à la main `#/settings/mcp/<nom>` sur `node bench/launch.mjs --engine fake`).
+  Précédemment, dans l'epic `adestia-correctifs` : `feature/adestia-correctifs-dette`, sur `origin/epic/adestia-correctifs` : reprise de la tranche dette
+  (garde B-5 : dernier titre du CHANGELOG = dernier tag ou version suivante de la série, y compris le titre `vX.Y.Z` de la cible stable après ses préversions ; status.md doit citer ce titre en entier, une préversion ne vaut pas sa version ; la CI prend les tags). Précédemment : `feature/adestia-correctifs-chat` : reprise
+  de la tranche chat (tag `.2`) après sa vérification : un envoi qui échoue sans phrase lisible du
+  serveur (corps vide, illisible, non JSON) lit `t('upload failed')` (`Composer.tsx`, B-16), dit dans
+  `CHANGELOG.md` et `ARCHITECTURE.md` (Known defects) ; une connexion coupée avant toute réponse garde
+  « request failed (0) », traduit. Rien à coder ici ; les deux premières puces des compléments de Défauts connus (sélecteur de modèle natif, signatures des délégations) sont des défauts gardés, avec leur raison.
+  Précédemment : `feature/adestia-correctifs-dette` (tranche dette, AD-26 : plus d'alias d'une ligne dans `packages/drivers` (`no-aliases.test.ts`) ;
+  la table des exports gardés pour leurs tests d'`ARCHITECTURE.md` porte une raison par ligne
+  (`dette-exports-besoin.test.ts`) ; le banc définit `loadPlaywright` et `launch(seed)` une fois
+  (`bench/lib/`, `bench-once.test.mjs`) ; la CI joue `doc-besoin` et `bench-once` ; `DESIGN.md` n'a
+  qu'une garde par règle ; `no-misused-promises` et `await-thenable` sont allumées
+  (`lint-type-aware.test.ts`). Aucun écran touché. Reste : `no-floating-promises`, voir Défauts
+  connus. `.agent/migrate-frame.mjs` n'existe plus : « not reproduced »).
+  Précédemment : `feature/adestia-correctifs-plugins`, sur `origin/epic/adestia-correctifs`
+  (tranche plugins, AD-24 a-d : l'atelier (réinitialiser la mise en plan) et les voyages (geste
+  refusé) parlent dans la feuille propre au plugin, sans `confirm()` ni `alert` — seul changement de
+  flux, réponse asynchrone, focus rendu à la carte ; « 1 pièce » et les compteurs des voyages
+  s'accordent par langue ; la carte de balade E-28 prend la hauteur de sa boîte ; le lecteur du
+  scanner rend le focus au champ du composeur quand son ouvreur a disparu (E-30) ; `--warning`
+  ne dit plus que l'Amber du porteur, le retard déduit est tireté ; les émojis de chrome cèdent
+  aux icônes de la charte (marques de données, `✦` et `✓` gardés, `emoji.test.js`) ; la date de
+  `:::content` suit la langue. Preuves : `bench/plugins-correctifs-proof.md`, `plugins-mots-proof.md`,
+  `bench/scenarios/plugins-correctifs.mjs`. Reste : voir Défauts connus).
+  Précédemment : `feature/adestia-correctifs-pages`, sur `origin/epic/adestia-correctifs`
+  (tranche pages, AD-25 : la trace d'une page racine ne nomme plus de dossier (`folderOf`) et E-8
+  mène à Accueil ; le `Popover` reste sous l'en-tête du canevas et les bandeaux et suit son ancre
+  (`bench/scenarios/pages-reglages.mjs`) ; un `Diagnostic` porte `code` et `args`, le shell le dit
+  par `t()` en `fr`, le `message` anglais du fil est inchangé ; l'index, la planification et la
+  liste Planif (`plugins/planif/api.mjs`) lisent une fiche CRLF et une clôture `---` suivie
+  d'espaces comme l'éditeur, `stampField` garde la fin de ligne. Preuves : `bench/pages-proof.md`,
+  tests `chemin-racine`, `popover-placement`, `page-diagnostics-language`, `frontmatter`,
+  `schedule`. Reste, avec sa raison : la page ouverte ne se rafraîchit pas quand l'agent écrit
+  (P-5 étape 7) ; les phrases serveur d'E-23 restent en anglais).
+  Les tranches pages, shell, chat et serveur de l'epic (tags `.1` à `.4`) sont au
+  [CHANGELOG](../CHANGELOG.md), avec leurs restes dans Défauts connus.
+  Précédemment : `feature/adestia-qualite-chat`, sur `origin/epic/adestia-qualite`
+  (correctifs de recette et de verify : un message envoyé avant que le premier soit parti est retenu ;
   en-tête du rail à moins de 400 px à un seul espacement, sélecteur de modèle d'au moins 72 px ; bulle d'erreur seule à marge symétrique). Banc, tests, serveur, charte,
   plugins, pages et chat sont intégrés à l'epic ; la documentation est relue
   contre le code.
@@ -26,10 +63,23 @@ La liste de référence est dans [ARCHITECTURE.md](../ARCHITECTURE.md), section
 sont corrigés par `main` et n'y figurent plus.
 
 Compléments encore visibles dans le code :
-- `:::content` affiche `on` tel qu'écrit, sans date au format de la langue
-  (`editor/reader/ContentBlock.tsx`).
-- L'ambre signifie à la fois attente/retard et évaluation `Amber` d'un projet ;
-  le mot distingue, pas la couleur (`plugins/project-management/web/model.js`).
+- Le sélecteur de modèle du chat reste un `<select>` natif (`chat/ModelPicker.tsx`) : une liste
+  personnalisée serait un composant neuf (AD-18).
+- Une délégation n'affiche pas les cartes de signature (`{ signatures: false }` dans
+  `app/Delegations.tsx`) : vue en lecture seule sans gestionnaire de signature (P-13 étape 7).
+- `no-floating-promises` reste éteinte : 644 constats (22 en production, 622 dans les tests),
+  au-delà du seuil de 15 d'AD-26. `no-misused-promises` et `await-thenable` sont allumées.
+- Les lignes `champ : message` de `ManifestError` restent en anglais : une table clé par phrases
+  de validateur serait nouvelle.
+- Phrases serveur d'E-23/E-27 (problèmes de planif, raison d'échec d'une source), mots de données
+  du classeur (E-25), types d'éléments de voyage (E-26) et erreur brute d'un geste refusé : en
+  anglais ou tels qu'écrits, faute de table clé par phrases (AD-17, AD-24).
+- Vu, non réparé : sur la frise d'E-31 en `fr` au bureau, « auj. » touche le repère « nov. »
+  (cosmétique, `bench/plugins-correctifs-proof.md`).
+- Vu, non réparé (antérieur à la tranche, `plugins/atelier/api.mjs` identique à `main`) : la feuille
+  de E-25 envoie `reset: true` et le serveur ne le lit pas ; il ne fusionne que `poses` et `bandes`,
+  donc « Abandonner ma mise en plan » ne vide pas `workbook-layout.json` comme P-11 étape 3 le dit.
+  Test rouge laissé dans `bench/tests/plugins-ensemble.test.mjs` (« atelier reset », 16 variantes).
 - Les formulaires de données de blocs restent à faire : l'édition montre leur
   rendu, puis leurs lignes brutes au clic ; les réglages ne sont pas ces formulaires.
 
@@ -53,7 +103,7 @@ PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone
   (`settings-file.ts`). L'unité du champ est maintenant traduite par `SettingField`. Un test pose le
   catalogue contre `config.ts` (`packages/server/test/settings-turns.test.ts`).
 - Piège : le changement ne s'applique qu'au redémarrage (le limiteur est construit une fois dans
-  `buildDesk`, AD-25) ; pas de prise en compte à chaud.
+  `buildDesk`, AD-30) ; pas de prise en compte à chaud.
 - Reste à la recette : changer le champ à 5, redémarrer, lire `turns.max` dans `/api/instance`.
   Le banc doit exposer la configuration (`--seed config-writable`, sinon E-14 répond 404), et le
   redémarrage n'existe qu'avec le vrai binaire : `--engine fake` n'a pas `POST /api/restart`, et
@@ -67,7 +117,7 @@ PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone
   `pageChanges`, `usePage` le consomme, AD-21). Veille éteinte : rien ne bouge.
 - Pièges : le bandeau compare la révision de `useAutosave`, pas `page.revision` (qui ne bouge pas
   après une sauvegarde) ; après une panne du serveur rien n'est rattrapé avant le lot suivant ou la
-  réouverture (AD-22 rejette le sondage) ; seul le Reload de l'utilisateur remplace la saisie.
+  réouverture (AD-27 rejette le sondage) ; seul le Reload de l'utilisateur remplace la saisie.
 - Reste à la recette : les captures sous les quatre habillages, en `en` et `fr`
   (`bench/scenarios/page-suivie.mjs`).
 
@@ -83,14 +133,14 @@ PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone
 
 ## Bandeau hors ligne (feature `adestia-ajouts-hors-ligne`)
 
-- Fait : E-32 s'allume sur l'échec d'un appel `/api/` ou la chute du flux, sondé par `GET /api/health` toutes les 3 s (AD-22).
+- Fait : E-32 s'allume sur l'échec d'un appel `/api/` ou la chute du flux, sondé par `GET /api/health` toutes les 3 s (AD-27).
 - Piège : la sonde appelle le `fetch` détaché de son ref (sinon « Illegal invocation », lu comme une sonde échouée). Les tests unitaires, qui
   passent un `fetch` simulé, ne le voient pas : `besoin-hors-ligne-browser.test.ts` (Chromium) oui,
   mais il a échoué une fois sur `healthCalls >= 2` sous charge puis passé. L'échec du premier chargement garde E-1.
 
 ## Chat : chargement et contexte perdu (feature `adestia-ajouts-chat`)
 
-- Fait : la liste et le fil d'un onglet adopté montrent le chargement partagé, puis l'échec avec Réessayer (compositeur grisé tant que le fil n'est pas lu) ; 401/403 restent au traitement du shell. Essai réel du SDK Claude (AD-23, issue b) : `resume` sur une session disparue est refusé avant tout texte ; `TurnDesk` (`turns.ts`, `recoverSession`) relance une seule fois sans session, et `finish` écrit `contextLost` sur le premier message agent, que le fil annonce par une ligne `role="note"`.
+- Fait : la liste et le fil d'un onglet adopté montrent le chargement partagé, puis l'échec avec Réessayer (compositeur grisé tant que le fil n'est pas lu) ; 401/403 restent au traitement du shell. Essai réel du SDK Claude (AD-28, issue b) : `resume` sur une session disparue est refusé avant tout texte ; `TurnDesk` (`turns.ts`, `recoverSession`) relance une seule fois sans session, et `finish` écrit `contextLost` sur le premier message agent, que le fil annonce par une ligne `role="note"`.
 - Pièges : la relance n'a lieu que sur ce refus exact, avant tout texte, outil, question ou signature ; Claude seul porte la marque (tests sur les faux Copilot/Codex). `packages/drivers/test/claude-lost-session.real.test.ts` est sauté sans `CLAUDE_CODE_OAUTH_TOKEN` : un `npm test` vert sans jeton ne le prouve pas.
 - Recette : `node bench/scenarios/chat-ajouts.mjs` après `npm run build` (graine `chat-ajouts`, quatre habillages, `en`/`fr`, clair/sombre, bureau/téléphone).
 - Rouges d'ailleurs vus pendant la tâche (déjà sur la cible ou instables sous charge) : `besoin-charte-comportement.test.ts` (E-10, E-13, E-19 : délai de 5 s), `qualite-serveur-besoin.test.ts` (R-8, ESLint), `besoin-tours.test.ts`, `app.test.tsx` (page absente).

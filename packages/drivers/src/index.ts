@@ -30,7 +30,7 @@ export * from './asks.js'
 export type { SignatureRequest } from './signatures.js'
 export { SHELL_TOOLS_SERVER_NAME } from './shell-tools-config.js'
 
-export type { ConformanceIssue } from './conformance.js'
+export { assertConformance, type ConformanceIssue } from './conformance.js'
 export {
   type ClaudeCodeOptions,
   type ArmingFlow,

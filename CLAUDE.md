@@ -25,6 +25,9 @@ npm run build        # server/dependencies, then the web shell and its vendor/SW
 
 One test file: `npx vitest run packages/web/test/<file>.test.tsx` from the root.
 
+`npm test` does not run `bench/tests/*.test.mjs`: those are `node --test bench/tests/<file>`,
+and CI plays two of them (`doc-besoin.test.mjs`, `bench-once.test.mjs`).
+
 The catalogue browser suite builds a missing shell when Playwright is available.
 Without Playwright it explicitly skips; a green run then does not prove those
 screens. It only builds a *missing* shell: after changing
@@ -105,7 +108,7 @@ you used.
 To see EVERY screen — light and dark, desk and phone — in one go:
 
 ```sh
-node bench/sweep.mjs [--skin <id>] [--only E-4,E-9]   # 124 PNGs (31 screens x 2 themes x desk/phone) in bench/shots-sweep/<skin>/
+node bench/sweep.mjs [--skin <id>] [--only E-4,E-9]   # 124 PNGs (31 screens x 2 themes x desk/phone) in bench/shots-sweep/<skin>/ (`default` without `--skin`)
 ```
 
 It needs the build and Playwright from the environment (`npm root -g`), nothing

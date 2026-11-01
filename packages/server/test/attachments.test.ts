@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { AttachmentInbox, frameAttachments, safeName } from '../src/attachments.js'
+import { AttachmentInbox, frameAttachments } from '../src/attachments.js'
 import { cleanTmp, tmpDir } from './support/tmp.js'
 
 afterEach(cleanTmp)
@@ -24,29 +24,32 @@ const file = (name: string, contents = 'hello') => ({ name, data: Buffer.from(co
 /** How old a thing has to be for the default sweep to take it. */
 const ancient = new Date(Date.now() - 48 * 60 * 60 * 1000)
 
+/** The name a file ends up with: `safeName` is reached through `store`. */
+const nameOf = async (raw: string) => (await inbox.store(anna, [file(raw)])).stored[0]!.name
+
 describe('names', () => {
-  it('keeps an ordinary one', () => {
-    expect(safeName('plan-garage.pdf')).toBe('plan-garage.pdf')
+  it('keeps an ordinary one', async () => {
+    expect(await nameOf('plan-garage.pdf')).toBe('plan-garage.pdf')
   })
 
-  it('strips any path a browser sent', () => {
+  it('strips any path a browser sent', async () => {
     // A file called ../../.ssh/authorized_keys has no business keeping its
     // shape even as a label a person reads in a bubble.
-    expect(safeName('../../.ssh/authorized_keys')).toBe('authorized_keys')
-    expect(safeName('C:\\Users\\x\\secret.txt')).toBe('secret.txt')
+    expect(await nameOf('../../.ssh/authorized_keys')).toBe('authorized_keys')
+    expect(await nameOf('C:\\Users\\x\\secret.txt')).toBe('secret.txt')
   })
 
-  it('refuses to produce a dotfile', () => {
-    expect(safeName('.bashrc')).toBe('bashrc')
+  it('refuses to produce a dotfile', async () => {
+    expect(await nameOf('.bashrc')).toBe('bashrc')
   })
 
-  it('never produces an empty name', () => {
-    expect(safeName('')).toBe('file')
-    expect(safeName('...')).toBe('file')
+  it('never produces an empty name', async () => {
+    expect(await nameOf('')).toBe('file')
+    expect(await nameOf('...')).toBe('file')
   })
 
-  it('truncates something absurd', () => {
-    expect(safeName(`${'a'.repeat(400)}.png`).length).toBeLessThanOrEqual(120)
+  it('truncates something absurd', async () => {
+    expect((await nameOf(`${'a'.repeat(400)}.png`)).length).toBeLessThanOrEqual(120)
   })
 })
 

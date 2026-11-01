@@ -9,30 +9,20 @@
  * `bench/shots-besoin/` (ignored by git). Every expected word below is written by hand from
  * docs/ecrans.md and docs/parcours.md (B-9: « Exact words of the names given to backs and exits »).
  */
-import { execFileSync, spawn } from 'node:child_process'
+import { spawn } from 'node:child_process'
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { createRequire } from 'node:module'
 import { dirname, join, resolve } from 'node:path'
 import { after, before, describe, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { fileURLToPath } from 'node:url'
+import { loadPlaywright } from '../lib/playwright.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const root = resolve(here, '../..')
 const shots = join(root, 'bench/shots-besoin')
 
-function loadPlaywright() {
-  const roots = ['/usr/lib/node_modules']
-  try { roots.push(execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim()) } catch { /* fixed root only */ }
-  for (const dir of roots) {
-    for (const name of ['playwright-core', 'playwright']) {
-      try { return createRequire(`${dir}/`)(name) } catch { /* not here */ }
-    }
-  }
-  throw new Error('playwright not found in the environment')
-}
 const { chromium } = loadPlaywright()
 
 const SKINS = (process.env.BESOIN_SKINS ?? 'alfred,dobby,nestor,skippy').split(',')
@@ -378,7 +368,7 @@ for (const skin of SKINS) {
       // B-9 · parcours: walking mode exit
       test('parcours: the walking HUD exit is named « Leave walking mode » and the map is where it was; Escape leaves too', async () => {
         await open('page/balades/val-sans-retour', '.pc-fond')
-        const walk = page.locator('main button', { hasText: /🥾/ })
+        const walk = page.locator('main button', { hasText: locale === 'fr' ? 'Mode balade' : 'Walking mode' })
         for (const how of ['button', 'escape']) {
           await walk.click()
           const exit = page.getByRole('button', { name: w.walk })
@@ -394,7 +384,7 @@ for (const skin of SKINS) {
       test('parcours: no French in english (and no english in french) on the map page and in the walking HUD', async () => {
         await open('page/balades/val-sans-retour', '.pc-fond')
         const seen = [...await words(page)]
-        await page.locator('main button', { hasText: /🥾/ }).click()
+        await page.locator('main button', { hasText: locale === 'fr' ? 'Mode balade' : 'Walking mode' }).click()
         await page.waitForTimeout(800)
         seen.push(...await words(page))
         assert.deepEqual(leaks(seen, locale, instance.corpus), [])

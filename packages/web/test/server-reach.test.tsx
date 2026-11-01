@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * The server-reach layer (AD-22): which calls are watched, what counts as
+ * The server-reach layer (AD-27): which calls are watched, what counts as
  * "down", and when `reachable` flips. Fake timers, promises settled by the test.
  */
 

@@ -2,6 +2,8 @@
  * The frontmatter of a markdown file, read once for every reader in the process.
  */
 
+import { splitFrontmatter as splitContentFrontmatter } from '@antorfr/adestia-content'
+
 /**
  * A page in its two halves: the YAML head, and the text under it.
  *
@@ -11,9 +13,7 @@
  * reader in this process applies.
  */
 export function splitFrontmatter(markdown: string): { head?: string; body: string } {
-  const match = /^---\n([\s\S]*?)\n---\n?/.exec(markdown)
-  if (!match) return { body: markdown }
-  return { head: match[1] ?? '', body: markdown.slice(match[0].length) }
+  return splitContentFrontmatter(markdown)
 }
 
 /**
@@ -35,7 +35,7 @@ export function parseFrontmatter(markdown: string): Record<string, unknown> {
   if (!head) return {}
 
   const fields: Record<string, unknown> = {}
-  for (const line of head.split('\n')) {
+  for (const line of head.split(/\r?\n/)) {
     // Only top-level keys: an indented line belongs to a nested structure this
     // index does not model, and guessing at it would produce a field that
     // looks queryable and is not.

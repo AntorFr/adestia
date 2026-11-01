@@ -268,7 +268,7 @@ export default function view(api) {
       error ? h('p', { className: 'lp-problem' }, error) : null,
       queueError ? h('p', { className: 'lp-problem' }, `${t('sources')} — ${queueError}`) : null,
       health && health.transcriber === null
-        ? h('p', { className: 'lp-muted' }, `⚠ ${t('no transcriber on this instance')}`)
+        ? h('p', { className: 'lp-muted' }, [icon('triangle-alert'), ' ', t('no transcriber on this instance')])
         : null,
 
       h(

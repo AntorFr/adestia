@@ -98,6 +98,3 @@ export async function verifySettled(
   // as "your delegation finished".
   return !text.includes('still running') && !text.includes('no such job')
 }
-
-// The route registration lives under `routes/`; kept importable from here.
-export { registerCallback } from './routes/callback.js'

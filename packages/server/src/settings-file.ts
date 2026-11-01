@@ -29,7 +29,7 @@
  */
 
 import { constants } from 'node:fs'
-import { access, readFile, rename, stat, unlink, writeFile } from 'node:fs/promises'
+import { access, chmod, readFile, rename, stat, unlink, writeFile } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
 import { dirname, join } from 'node:path'
 
@@ -108,6 +108,11 @@ export async function replaceContents(
     const temporary = join(directory, `.adestia.config.${randomUUID()}.tmp`)
     try {
       await writeFile(temporary, text, 'utf8')
+      // The sibling is born with the umask's mode; the target's mode is
+      // carried over (chmod, since writeFile's `mode` is masked by the
+      // umask). An absent target keeps the default.
+      const held = await stat(file).then((info) => info.mode & 0o777, () => undefined)
+      if (held !== undefined) await chmod(temporary, held)
       await renameImpl(temporary, file)
       return { how: 'renamed' }
     } catch (error) {

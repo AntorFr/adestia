@@ -20,6 +20,9 @@ export type DiagnosticSeverity = 'error' | 'warning'
 export interface Diagnostic {
   readonly severity: DiagnosticSeverity
   readonly message: string
+  /** Additive wire metadata; the English message stays useful to agents and older clients. */
+  readonly code?: string
+  readonly args?: Readonly<Record<string, string>>
   /**
    * 1-indexed, when the parser knows it. Explicitly `| undefined` because
    * `exactOptionalPropertyTypes` is on: a position the parser did not give us
@@ -53,6 +56,8 @@ export function validateDocument(tree: Root): readonly Diagnostic[] {
         severity: 'error',
         block: name,
         line,
+        code: 'unknown-block',
+        args: { block: name },
         message: `Unknown block ":::${name}". The vocabulary is closed; extending it is a coded change.`,
       })
       return
@@ -77,6 +82,8 @@ export function validateDocument(tree: Root): readonly Diagnostic[] {
         severity: disputed ? 'warning' : 'error',
         block: name,
         line,
+        code: disputed ? 'no-content-disputed' : 'no-content',
+        args: { block: name },
         message: disputed
           ? `Block ":::${name}" holds a body only some of its definitions accept — it is kept, and drawn only where its definition takes one.`
           : `Block ":::${name}" takes no content — its attributes are its whole meaning.`,
@@ -88,6 +95,8 @@ export function validateDocument(tree: Root): readonly Diagnostic[] {
         severity: disputed ? 'warning' : 'error',
         block: name,
         line,
+        code: disputed ? 'needs-content-disputed' : 'needs-content',
+        args: { block: name },
         message: disputed
           ? `Block ":::${name}" is empty, which only some of its definitions allow.`
           : `Block ":::${name}" needs content.`,
@@ -102,6 +111,8 @@ export function validateDocument(tree: Root): readonly Diagnostic[] {
             severity: 'error',
             block: name,
             line,
+            code: 'attribute-required',
+            args: { block: name, key },
             message: `Block ":::${name}" requires the attribute "${key}".`,
           })
         }
@@ -112,6 +123,8 @@ export function validateDocument(tree: Root): readonly Diagnostic[] {
           severity: 'error',
           block: name,
           line,
+          code: 'attribute-value',
+          args: { block: name, key, value, accepted: attributeSpec.values.join(', ') },
           message: `":::${name}" attribute "${key}" is "${value}"; accepted: ${attributeSpec.values.join(', ')}.`,
         })
       }
@@ -134,6 +147,8 @@ export function validateDocument(tree: Root): readonly Diagnostic[] {
             severity: 'error',
             block: name,
             line,
+            code: 'attribute-value',
+            args: { block: name, key, value: given, accepted: accepted.join(', ') },
             message: `":::${name}" attribute "${key}" is "${given}"; accepted: ${accepted.join(', ')}.`,
           })
         }
@@ -146,6 +161,8 @@ export function validateDocument(tree: Root): readonly Diagnostic[] {
           severity: 'warning',
           block: name,
           line,
+          code: 'attribute-unknown',
+          args: { block: name, key },
           message: `":::${name}" has no attribute "${key}"; it will be ignored.`,
         })
       }

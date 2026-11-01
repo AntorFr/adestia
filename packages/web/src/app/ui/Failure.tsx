@@ -1,7 +1,7 @@
 import { Button } from './Button.js'
 import { EmptyState } from './EmptyState.js'
 
-/** Retry replaces this whole block with Loading at the request's call site (AD-24). */
+/** Retry replaces this whole block with Loading at the request's call site (AD-29). */
 export function Failure({
   message,
   onRetry,

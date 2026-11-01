@@ -483,6 +483,50 @@ describe('stamping a field — the product\'s own pen', () => {
   })
 })
 
+describe('a CRLF note — read and stamped as the editor reads it', () => {
+  it('reads its cadence, fixed times and expiry from a \\r\\n head', () => {
+    const parsed = parseNote(
+      'crlf',
+      '---\r\nat: 06:30,12:30\r\nexpired: 2026-08-30\r\n---\r\n\r\nDo a thing.\r\n',
+    )
+    expect(parsed.problem).toBeUndefined()
+    expect(parsed.enabled).toBe(true)
+    expect(parsed.atMinutes).toEqual([390, 750])
+    expect(parsed.expired).toBe('2026-08-30')
+  })
+
+  it('adds a field in \\r\\n and leaves no bare \\n in the head', () => {
+    const stamped = stampField('---\r\nevery: 2h\r\n---\r\n\r\nBody.\r\n', 'expired', '2026-08-30')
+    expect(stamped).toBe('---\r\nevery: 2h\r\nexpired: 2026-08-30\r\n---\r\n\r\nBody.\r\n')
+  })
+
+  it('replaces a field in \\r\\n', () => {
+    const stamped = stampField('---\r\nexpired: old\r\nevery: 2h\r\n---\r\nBody.\r\n', 'expired', '2026-08-30')
+    expect(stamped).toBe('---\r\nexpired: 2026-08-30\r\nevery: 2h\r\n---\r\nBody.\r\n')
+  })
+
+  it('keeps a closing fence followed by spaces, and the body, to the byte', () => {
+    expect(stampField('---\nevery: 2h\n---  \nBody $& here.\n', 'expired', 'x')).toBe(
+      '---\nevery: 2h\nexpired: x\n---  \nBody $& here.\n',
+    )
+    expect(stampField('---\r\nevery: 2h\r\n---  \r\nBody.', 'expired', 'x')).toBe(
+      '---\r\nevery: 2h\r\nexpired: x\r\n---  \r\nBody.',
+    )
+  })
+
+  it('stamps a note whose fence ends the file', () => {
+    expect(stampField('---\r\nevery: 2h\r\n---', 'expired', 'x')).toBe(
+      '---\r\nevery: 2h\r\nexpired: x\r\n---',
+    )
+  })
+
+  it('gives a note with no head a head in its own line ending', () => {
+    expect(stampField('Body.\r\nMore.\r\n', 'expired', 'x')).toBe(
+      '---\r\nexpired: x\r\n---\r\nBody.\r\nMore.\r\n',
+    )
+  })
+})
+
 describe('the clock and a mission', () => {
   const setup = async (files: Record<string, string>) => {
     const dir = join(root, 'planif')

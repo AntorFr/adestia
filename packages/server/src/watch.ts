@@ -94,6 +94,3 @@ export class ChangeFeed {
     this.#pending.clear()
   }
 }
-
-// The route registration lives under `routes/`; kept importable from here.
-export { registerEvents, type EventsOptions } from './routes/watch.js'

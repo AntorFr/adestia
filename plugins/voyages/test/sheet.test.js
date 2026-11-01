@@ -6,7 +6,7 @@
  * `✕` glyph that became an icon taken out): the language work may not move a word of it.
  */
 import { strict as assert } from 'node:assert'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { test } from 'node:test'
 
 import { settle } from '../../test/mount.js'
@@ -146,26 +146,119 @@ test('the plural of the counts follows the language', async () => {
   assert.equal(mounted.fr.textContent.trim(), '1 écartée ▸')
 })
 
-test('a refused gesture says its reason in the page language', async () => {
-  for (const [locale, head] of [['en', 'Gesture refused: '], ['fr', 'Geste refusé : ']]) {
-    const base = apiFor(locale)
-    const api = {
-      ...base,
-      fetch: (url, init) => init?.method === 'POST'
-        ? Promise.resolve({ ok: false, status: 409, json: () => Promise.resolve({ error: 'conflit' }) })
-        : base.fetch(url, init),
-    }
-    const { mount } = await import('../../test/mount.js')
-    const { default: view } = await import('../web/view.js')
-    const { document, root, dom } = await mount(view, api, `#/voyages/${encodeURIComponent(VOYAGE)}`)
-    await settle()
-    await settle()
-    const seen = []
-    dom.window.alert = (m) => seen.push(m)
-    card(document).click()
+/** The trip page with every POST answered by `answer`; the dismiss gesture is fired from the card of a suggestion. */
+async function gestureWith(locale, answer, viaButton = false) {
+  const base = apiFor(locale)
+  const posts = []
+  const api = {
+    ...base,
+    fetch: (url, init) => {
+      if (init?.method !== 'POST') return base.fetch(url, init)
+      posts.push(url)
+      return answer()
+    },
+  }
+  const { mount } = await import('../../test/mount.js')
+  const { default: view } = await import('../web/view.js')
+  const mounted = await mount(view, api, `#/voyages/${encodeURIComponent(VOYAGE)}`)
+  await settle()
+  await settle()
+  const { document, dom } = mounted
+  dom.window.alert = () => { throw new Error('window.alert was called') }
+  const opener = document.querySelector('.traycard[data-vi="diner"]')
+  if (viaButton) {
+    // the tray's own x button: the focus sits on a CHILD of the card
+    const dis = opener.querySelector('[data-dis="diner"]')
+    dis.focus()
+    dis.click()
+  } else {
+    opener.focus()
+    opener.click()
     document.querySelector('[data-ecarter]').click()
+  }
+  await settle()
+  return { ...mounted, opener, posts }
+}
+
+const dialogOf = (document) => document.querySelector('.adestia-sheet:not([hidden]) [role="dialog"]')
+const titleOf = (document) => document.getElementById(dialogOf(document).getAttribute('aria-labelledby')).textContent
+const feet = (dialog) => [...dialog.querySelectorAll('footer button')].map((b) => b.textContent.trim())
+
+for (const [locale, refused, impossible, close] of [['en', 'Gesture refused', 'Gesture impossible', 'Close'], ['fr', 'Geste refusé', 'Geste impossible', 'Fermer']]) {
+  test(`a refused gesture opens the sheet with the server's text, one Close, nothing repainted until it shuts (${locale})`, async () => {
+    const { document, root, opener, posts } = await gestureWith(locale, () =>
+      Promise.resolve({ ok: false, status: 409, json: () => Promise.resolve({ error: 'conflit' }) }))
+    assert.equal(posts.length, 1)
+    const dialog = dialogOf(document)
+    assert.ok(dialog, 'a dialog is open')
+    assert.equal(titleOf(document), refused)
+    assert.equal(dialog.querySelector('.adestia-sheet__body').textContent.trim(), 'conflit')
+    assert.deepEqual(feet(dialog), [close])
+    assert.ok(document.querySelector('.traycard[data-vi="diner"]') === opener, 'the board was not repainted while the sheet is open')
+    assert.ok(opener.isConnected)
+    key(document, 'Escape')
+    assert.equal(document.querySelector('.adestia-sheet').hidden, true)
     await settle()
-    assert.deepEqual(seen, [`${head}conflit`])
+    assert.ok(document.querySelector('.traycard[data-vi="diner"]') !== opener, 'the board repaints when the sheet closes')
+    root.unmount()
+  })
+
+  test(`a gesture that throws opens the sheet with the error text (${locale})`, async () => {
+    const { document, root } = await gestureWith(locale, () => Promise.reject(new Error('réseau coupé')))
+    assert.equal(titleOf(document), impossible)
+    assert.ok(dialogOf(document).querySelector('.adestia-sheet__body').textContent.includes('réseau coupé'))
+    assert.deepEqual(feet(dialogOf(document)), [close])
+    root.unmount()
+  })
+}
+
+test('a refused gesture: Close, the x and the scrim close the sheet and the focus returns to the card', async () => {
+  for (const how of ['foot', 'x', 'scrim']) {
+    const { document, root } = await gestureWith('en', () =>
+      Promise.resolve({ ok: false, status: 409, json: () => Promise.resolve({ error: 'conflit' }) }))
+    const scrim = document.querySelector('.adestia-sheet')
+    assert.equal(scrim.hidden, false)
+    if (how === 'foot') scrim.querySelector('footer button:last-child').click()
+    else if (how === 'x') scrim.querySelector('header button').click()
+    else scrim.click()
+    await settle()
+    assert.equal(scrim.hidden, true, how)
+    assert.equal(document.activeElement.dataset.vi, 'diner', `${how}: the focus is back on the card the gesture was made on (E-26), not lost on the body`)
+    root.unmount()
+  }
+})
+
+test('a refused gesture without a reason still says its status', async () => {
+  const { document, root } = await gestureWith('en', () => Promise.resolve({ ok: false, status: 500, json: () => Promise.resolve({}) }))
+  assert.equal(dialogOf(document).querySelector('.adestia-sheet__body').textContent.trim(), '500')
+  root.unmount()
+})
+
+test('a gesture the server accepts opens no sheet and repaints', async () => {
+  const { document, root } = await gestureWith('en', () => Promise.resolve({ ok: true, json: () => Promise.resolve({ items: {} }) }))
+  assert.equal(dialogOf(document), null)
+  root.unmount()
+})
+
+test('the plugin has no window.alert left', () => {
+  const dir = new URL('../web/', import.meta.url)
+  const strip = (src) => src.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')
+  const found = readdirSync(dir).filter((f) => f.endsWith('.js') && /(?<![\w.])(?:window\.)?alert\(/.test(strip(readFileSync(new URL(f, dir), 'utf8'))))
+  assert.deepEqual(found, [])
+})
+
+test('a refusal opened by the tray button (a child of the card) gives the focus back to the card (E-26)', async () => {
+  for (const how of ['foot', 'x', 'scrim']) {
+    const { document, root, posts } = await gestureWith('en', () =>
+      Promise.resolve({ ok: false, status: 409, json: () => Promise.resolve({ error: 'conflit' }) }), true)
+    assert.equal(posts.length, 1, 'the tray button posted the gesture')
+    const scrim = document.querySelector('.adestia-sheet')
+    assert.equal(scrim.hidden, false)
+    if (how === 'foot') scrim.querySelector('footer button:last-child').click()
+    else if (how === 'x') scrim.querySelector('header button').click()
+    else scrim.click()
+    await settle()
+    assert.equal(document.activeElement.dataset.vi, 'diner', `${how}: focus is on the card, not on the body`)
     root.unmount()
   }
 })
