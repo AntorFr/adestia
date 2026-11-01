@@ -3,10 +3,10 @@
 
 ## Version courante
 
-- Dernier tag accessible : **`v0.97.0-adestia-ajouts.11`** (`git describe --tags
+- Dernier tag accessible : **`v0.97.0-adestia-ajouts.12`** (`git describe --tags
   --abbrev=0`), tag de l'epic `adestia-ajouts` ; `v0.95.0` est le dernier tag de `main` (epic
   `adestia-qualite`).
-- Branche de travail : `feature/adestia-ajouts-page-suivie` (rouverte pour que le banc importe `loadPlaywright` de `bench/lib`). Dernières tranches fusionnées dans l'epic : `adestia-ajouts-plugins-chargements`, `adestia-ajouts-chargements` et `adestia-ajouts-chat`
+- Branche de travail : `feature/adestia-ajouts-hors-ligne` (PR #35 vers `epic/adestia-ajouts` ; le liseré du bandeau E-32 corrigé, en recette). Dernières tranches fusionnées dans l'epic : `adestia-ajouts-plugins-chargements`, puis `adestia-ajouts-chargements` et `adestia-ajouts-chat` (PR #32 ; la PR #34 n'ajoute que l'import partagé de `loadPlaywright` au banc)
   (chargement et Réessayer du chat, E-16 ; marque de contexte perdu de Claude, AD-23 ; recette : `node bench/scenarios/chat-ajouts.mjs`).
   Livré avant elle sur l'epic : chargement et Réessayer des plugins Atelier et Parcours, E-25 et E-28, AD-24 ; le bandeau hors ligne E-32, AD-22 (`node bench/scenarios/hors-ligne.mjs`) ; la page ouverte suit l'agent, AD-21 (`node bench/scenarios/page-suivie.mjs`) ;
   chargement et Réessayer des écrans, AD-24 (`node bench/scenarios/chargements.mjs`) ; E-10 (chargement, Réessayer) et la confirmation E-33 avant de retirer un serveur MCP, AD-26 (aucun scénario de `bench/scenarios/`
@@ -87,6 +87,7 @@ PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone
 - Piège : la sonde appelle le `fetch` détaché de son ref (sinon « Illegal invocation », lu comme une sonde échouée). Les tests unitaires, qui
   passent un `fetch` simulé, ne le voient pas : `besoin-hors-ligne-browser.test.ts` (Chromium) oui,
   mais il a échoué une fois sur `healthCalls >= 2` sous charge puis passé. L'échec du premier chargement garde E-1.
+- Le bandeau colle sous l'en-tête du canevas par `top: var(--canvas-header-h)`, la variable que l'en-tête prend aussi pour `min-height` (`canvas.css`) : un 56px en dur laissait une fente de 2 à 4 px où passait le texte défilé. Test : `offline-banner-sticky.test.ts`.
 
 ## Chat : chargement et contexte perdu (feature `adestia-ajouts-chat`)
 
