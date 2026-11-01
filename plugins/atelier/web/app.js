@@ -142,18 +142,29 @@ export default function createAtelierApp(api) {
     el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); open(e); } });
   }
 
+  // The shell's loading row and failure block, written out here (AD-8: nothing is imported).
+  const loadingHTML = () => `<div class="adestia-loading" role="status">${iconHTML('loader-circle')}${t('Loading…')}</div>`;
+  /** Failure block with Retry; Retry hands the screen back to the loading row, then runs `again`. */
+  function showFailure(message, again) {
+    page.innerHTML = `<div class="wrap"><div class="adestia-empty adestia-empty--state"><span class="adestia-empty__icon">${iconHTML('circle-alert')}</span><p class="adestia-empty__text">${esc(message)}</p><div class="adestia-empty__action"><button type="button" class="adestia-btn">${t('Retry')}</button></div></div></div>`;
+    const button = page.querySelector('.adestia-empty__action .adestia-btn');
+    button.addEventListener('click', () => { button.disabled = true; again(); });
+  }
+
   async function renderAtelierHub() {
     crumbs([{ label: t('Home'), hash: '#/' }, { label: t('The Workshop'), hash: '#/atelier' }]);
-    page.innerHTML = `<div class="wrap"><div class="empty">${t('loading…')}</div></div>`;
+    page.innerHTML = `<div class="wrap">${loadingHTML()}</div>`;
     let list;
     try {
       const r = await fetch('/api/plugin/atelier/workbooks', { headers: headers(false), cache: 'no-store' });
+      if (!r.ok) throw new Error(r.status);
       list = (await r.json()).workbooks;
+      if (!Array.isArray(list)) throw new Error('shape');
       // L'hôte tient l'index d'où vivent les workbooks — c'est ce qui rend
       // court un lien vers l'un d'eux. Voici la copie la plus fraîche.
       learn(list);
     }
-    catch { page.innerHTML = `<div class="wrap"><div class="empty">${t('The Workshop is unavailable.')}</div></div>`; return; }
+    catch { showFailure(t('The Workshop is unavailable.'), renderAtelierHub); return; }
     let html = `<div class="wrap"><div class="chead"><div class="aico">${IC.shop}</div><div><h1>${t('The Workshop')}</h1><div class="lede">${t('Woodworking follow-up — your cutting plans.')}</div></div></div>`;
     if (!list.length) { page.innerHTML = html + `<div class="empty">${t('No workbook — ask Alfred to generate one (woodworking skill).')}</div></div>`; return; }
     html += `<div class="grouplabel">${t('Workbooks')}</div><div class="cards">`;
@@ -168,7 +179,7 @@ export default function createAtelierApp(api) {
 
   async function renderWorkbook(path) {
     crumbs([{ label: t('Home'), hash: '#/' }, { label: t('The Workshop'), hash: '#/atelier' }, { label: '…', hash: href(path) }]);
-    page.innerHTML = `<div class="wrap"><div class="empty">${t('loading…')}</div></div>`;
+    page.innerHTML = `<div class="wrap">${loadingHTML()}</div>`;
     let data, state, layout;
     try {
       const [rd, rs, rl] = await Promise.all([
@@ -177,9 +188,10 @@ export default function createAtelierApp(api) {
         fetch('/api/plugin/atelier/layout?wb=' + encodeURIComponent(path), { headers: headers(false), cache: 'no-store' }),
       ]);
       if (!rd.ok) throw new Error(rd.status);
+      if (!rs.ok) throw new Error(rs.status);
       data = normalise(await rd.json()); state = await rs.json();
       layout = rl.ok ? await rl.json() : { poses: {}, bandes: {} };
-    } catch (e) { page.innerHTML = `<div class="wrap"><div class="empty">${t('Unreadable workbook (%err).', { err: esc(String(e)) })}</div></div>`; return; }
+    } catch { showFailure(t('Unreadable workbook.'), () => renderWorkbook(path)); return; }
     if (!wb || wb.path !== path) { wbTab = 0; wbEditOn = false; wbSel = null; }   // autre workbook = autre barre, l'index ne se transpose pas
     wb = { path, data, state, layout, byEtq: new Map((data.pieces || []).map((p) => [p.etiquette, p])) };
     buildWbIndex();
