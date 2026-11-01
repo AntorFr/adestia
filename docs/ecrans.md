@@ -948,9 +948,10 @@ in an `<EmptyState>`; the empty thread keeps its blank; the working indicator is
 `busy` slot or the shared spinner icon with the counters; the interrupted note, the error
 line, the held bubble (`paperclip` + names when the message is attachments only), the
 unread/running/idle dots (colour and a shape, not colour alone), the MCP connect prompt, the
-composer busy/stopping/blocked and the upload error keep their words and places. **No
-loading or offline state is added** for the list or the thread (Lacks column of E-16: listed
-for the end-of-epic recommendations). E-17: the question card keeps its three answers and
+composer busy/stopping/blocked and the upload error keep their words and places. The list
+and an adopted tab's thread show the shared loading row, then the failure block with **Retry**
+(built by `adestia-ajouts-chat`, "E-16 in `adestia-ajouts-chat`" above); the offline banner is
+E-32's. E-17: the question card keeps its three answers and
 the "No lasting rule" line; it takes `triangle-alert`. E-18: pending, signed, denied,
 expired, open-in-a-tab keep their words; each gets its icon above.
 
