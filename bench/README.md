@@ -97,10 +97,11 @@ each seed (for `plugins`, one measure per plugin — `plugins › voyages: …` 
 and exits non-zero naming each measure that failed (`check: base › mcp: …`).
 
 `bench/bench.mjs` finds Playwright under `/usr/lib/node_modules`, or else under
-`npm root -g`; `scenarios/chargements.mjs`, `scenarios/chat-ajouts.mjs` and the chat's need tests
-(`tests/chat-chargements-besoin`, `tests/chat-session-perdue-besoin`) get it from `loadPlaywright()` in
-`bench/lib/playwright.mjs`, the shared definition new scenarios import; many older bench files
-still carry their own copy (debt, see `ARCHITECTURE.md`).
+`npm root -g`; `scenarios/chargements.mjs`, `scenarios/chat-ajouts.mjs`, the chat's need tests
+(`tests/chat-chargements-besoin`, `tests/chat-session-perdue-besoin`) and the two
+`tests/plugins-chargements-*.test.mjs` get it from `loadPlaywright()` in `bench/lib/playwright.mjs`,
+the shared definition new scenarios import; many older bench files still carry their own copy
+(debt, see `ARCHITECTURE.md`).
 
 ## The plugins' screens, four skins × two languages: `bench/scenarios/plugins-matrix.mjs`
 
