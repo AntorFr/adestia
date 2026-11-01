@@ -648,6 +648,26 @@ branch and that `test:plugins` is replayed after a red vitest run.
 
 **The chat slice (B-18, B-22, AD-28, AD-29).** The conversation list and thread show their loading, with **Retry** when it fails; when Claude has lost the session of an older conversation, the next turn still succeeds and the thread says the engine no longer remembers the earlier messages.
 
+## v0.97.0-adestia-ajouts.8
+
+**The screens slice, follow-up (B-18, AD-29).** The section, page, settings, instructions and delegations screens show a loading line while their data arrives; a page, instructions or delegations read that fails shows the error with **Retry**, and a page the server could not serve offers it too.
+
+## v0.97.0-adestia-ajouts.9
+
+**The plugins slice, follow-up (B-18, AD-29).** The Atelier (E-25) and Parcours (E-28) screens show a loading line and, when the server fails, a message with **Retry**; same look under the four skins, in English and French.
+
+## v0.97.0-adestia-ajouts.10
+
+**The chat slice, follow-up (B-18, B-22, AD-28, AD-29).** The conversation list and thread show a loading state and **Retry** on failure; with Claude, a thread whose earlier context was lost says so.
+
+## v0.97.0-adestia-ajouts.11
+
+**The followed-page slice, follow-up (B-17, AD-21).** An open page follows the agent, including a page in a second repository; editing raises the **Reload** banner without touching the typed text; with the watch off nothing moves.
+
+## v0.97.0-adestia-ajouts.12
+
+**The offline slice, follow-up (B-19, AD-27).** The "The server is not responding" banner shows above any open screen, also during "Coming back…", and leaves by itself; it stays under the canvas header when the screen is scrolled.
+
 ## v0.97.0
 
 - **The chat shows its loading and says when the engine lost its context** — The conversation list and an adopted tab's thread show the shared loading row, or the failure block with **Retry** (the composer stays on screen, disabled while the thread is unread). When Claude refuses a gone session the server reruns the turn once without it and stores `contextLost` on the first agent message; the thread draws a `role="note"` line above it, in English and French (B-18, B-22, AD-28, AD-29). `bench/scenarios/chat-ajouts.mjs` (seed `chat-ajouts`) plays every state under the four skins, both languages, light and dark, desk and phone, and checks that the line neither overlaps nor cuts the message below it and that the failure block does not swallow the composer.
