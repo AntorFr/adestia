@@ -97,7 +97,8 @@ each seed (for `plugins`, one measure per plugin — `plugins › voyages: …` 
 and exits non-zero naming each measure that failed (`check: base › mcp: …`).
 
 `bench/bench.mjs` finds Playwright under `/usr/lib/node_modules`, or else under
-`npm root -g`.
+`npm root -g`; `scenarios/chargements.mjs` gets it from `loadPlaywright()` in
+`bench/lib/playwright.mjs`, the one shared definition new scenarios import.
 
 ## The plugins' screens, four skins × two languages: `bench/scenarios/plugins-matrix.mjs`
 
