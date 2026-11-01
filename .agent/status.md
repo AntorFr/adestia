@@ -3,10 +3,10 @@
 
 ## Version courante
 
-- Dernier tag accessible : **`v0.97.0-adestia-ajouts.9`** (`git describe --tags
+- Dernier tag accessible : **`v0.97.0-adestia-ajouts.10`** (`git describe --tags
   --abbrev=0`), tag de l'epic `adestia-ajouts` ; `v0.95.0` est le dernier tag de `main` (epic
   `adestia-qualite`).
-- Branche de travail : `feature/adestia-ajouts-plugins-chargements` (livrée dans `epic/adestia-ajouts`). Dernière tranche fusionnée dans l'epic : `adestia-ajouts-plugins-chargements`, après `adestia-ajouts-chargements` et `adestia-ajouts-chat`
+- Branche de travail : `feature/adestia-ajouts-chat` (PR #34 vers `epic/adestia-ajouts` ; sa PR #32 est fusionnée). Dernières tranches fusionnées dans l'epic : `adestia-ajouts-plugins-chargements`, puis `adestia-ajouts-chargements` et `adestia-ajouts-chat` (PR #32 ; la PR #34 n'ajoute que l'import partagé de `loadPlaywright` au banc)
   (chargement et Réessayer du chat, E-16 ; marque de contexte perdu de Claude, AD-23 ; recette : `node bench/scenarios/chat-ajouts.mjs`).
   Livré avant elle sur l'epic : chargement et Réessayer des plugins Atelier et Parcours, E-25 et E-28, AD-24 ; le bandeau hors ligne E-32, AD-22 (`node bench/scenarios/hors-ligne.mjs`) ; la page ouverte suit l'agent, AD-21 (`node bench/scenarios/page-suivie.mjs`) ;
   chargement et Réessayer des écrans, AD-24 (`node bench/scenarios/chargements.mjs`) ; E-10 (chargement, Réessayer) et la confirmation E-33 avant de retirer un serveur MCP, AD-26 (aucun scénario de `bench/scenarios/`
