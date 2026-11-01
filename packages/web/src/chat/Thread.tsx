@@ -1,6 +1,6 @@
 /** The thread: stored bubbles, the live turn one bubble per part, the held messages. */
 
-import type { RefObject } from 'react'
+import { Fragment, type RefObject } from 'react'
 
 import { Icon } from '../app/Icon.js'
 import { Failure, Loading } from '../app/ui/index.js'
@@ -42,13 +42,20 @@ export function Thread({ active, t, retry, adopting = false, openPage, signing, 
   return (
     <div className="adestia-chat__conversation">
       {active.messages.map((message) => (
-        <Bubble
-          key={message.id}
-          message={message}
-          t={t}
-          {...(openPage ? { openPage } : {})}
-          {...(signing ? { signing } : {})}
-        />
+        <Fragment key={message.id}>
+          {message.contextLost && message.role === 'agent' && (
+            <div className="adestia-thread__mark" role="note">
+              <Icon name="rotate-ccw" />
+              <span>{t('The engine no longer remembers the earlier messages.')}</span>
+            </div>
+          )}
+          <Bubble
+            message={message}
+            t={t}
+            {...(openPage ? { openPage } : {})}
+            {...(signing ? { signing } : {})}
+          />
+        </Fragment>
       ))}
 
       {/* A turn draws one bubble PER PART: the agent that answers, works

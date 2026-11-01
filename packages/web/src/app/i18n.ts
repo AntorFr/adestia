@@ -34,6 +34,7 @@ export type Locale = 'en' | 'fr'
  * mistranslated, and beats a raw identifier by a mile.
  */
 const FR: Readonly<Record<string, string>> = {
+  'The engine no longer remembers the earlier messages.': 'Le moteur ne se souvient plus des messages précédents.',
   Idle: 'Au repos',
   Waiting: 'En attente',
   Unread: 'Non lu',

@@ -44,6 +44,7 @@ export interface ShellToolsPort {
 
 interface TurnsDependencies {
   readonly config: AdestiaConfig
+  readonly engineId?: string
   readonly desk: TurnDesk
   readonly conversations: ConversationStore
   readonly inbox: AttachmentInbox
@@ -170,6 +171,7 @@ export function registerTurns(app: FastifyInstance, deps: TurnsDependencies): vo
       const roots = [...agentRoots, ...(box ? [box] : [])]
 
       const spec: TurnSpec = {
+        ...(conversationId && deps.engineId === 'claude-code' ? { recoverSession: true } : {}),
         request: {
           // Framed here, not in the browser: what the conversation stores is the
           // raw prompt, so a reload replays what the person typed rather
@@ -201,7 +203,13 @@ export function registerTurns(app: FastifyInstance, deps: TurnsDependencies): vo
         // is the whole point of the desk.
         finish: async (outcome) => {
           if (!conversationId) return
-          await conversations.recordOutcome(userId, conversationId, outcome)
+          const resumedSession = (await conversations.read(userId, conversationId))?.sessionId
+          const contextLost = deps.engineId === 'claude-code' && resumedSession !== undefined &&
+            outcome.sessionId !== undefined && resumedSession !== outcome.sessionId
+          await conversations.recordOutcome(userId, conversationId, {
+            ...outcome,
+            ...(contextLost ? { contextLost: true } : {}),
+          })
           // Last, after this turn's own appends: the token dies with the
           // turn, and a rename during it compacts the conversation here — under
           // the desk's serialization, so the rewrite races nothing.
