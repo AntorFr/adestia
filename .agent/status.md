@@ -87,6 +87,7 @@ PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone
 - Piège : la sonde appelle le `fetch` détaché de son ref (sinon « Illegal invocation », lu comme une sonde échouée). Les tests unitaires, qui
   passent un `fetch` simulé, ne le voient pas : `besoin-hors-ligne-browser.test.ts` (Chromium) oui,
   mais il a échoué une fois sur `healthCalls >= 2` sous charge puis passé. L'échec du premier chargement garde E-1.
+- Le bandeau colle sous l'en-tête du canevas par `top: var(--canvas-header-h)`, la variable que l'en-tête prend aussi pour `min-height` (`canvas.css`) : un 56px en dur laissait une fente de 2 à 4 px où passait le texte défilé. Test : `offline-banner-sticky.test.ts`.
 
 ## Chat : chargement et contexte perdu (feature `adestia-ajouts-chat`)
 
