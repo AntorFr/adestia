@@ -447,11 +447,18 @@ export class TurnDesk {
       spec.recoverSession && request.sessionId !== undefined && !worked && !signal.aborted &&
       message.includes(`No conversation found with session ID: ${request.sessionId}`)
     let retry = false
+    let result: TurnEvent | undefined
     try {
       for await (const event of this.driver.runTurn(request)) {
         if (event.type === 'error' && missing(event.message)) {
           retry = true
           break
+        }
+        // Claude can yield a terminal error result, then throw while draining.
+        // Hold that result until the resume has actually finished.
+        if (event.type === 'result' && spec.recoverSession && request.sessionId && !worked) {
+          result = event
+          continue
         }
         if (event.type === 'text-delta' || event.type === 'tool-use' ||
             event.type === 'signature-request' || event.type === 'permission-request' ||
@@ -459,12 +466,17 @@ export class TurnDesk {
         yield event
       }
     } catch (error) {
-      if (!missing((error as Error).message)) throw error
+      if (!missing((error as Error).message)) {
+        if (result) yield result
+        throw error
+      }
       retry = true
     }
     if (retry) {
       const { sessionId: _sessionId, ...fresh } = request
       yield* this.driver.runTurn(fresh)
+    } else if (result) {
+      yield result
     }
   }
 
