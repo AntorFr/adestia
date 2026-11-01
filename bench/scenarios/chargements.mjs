@@ -26,26 +26,16 @@
  * (with `BENCH_SKIN`, `BENCH_LOCALE`) plays an instance already running. Exit 1
  * names each failed expectation. The pictures are for LOOKING at.
  */
-import { execFileSync, spawn } from 'node:child_process'
+import { spawn } from 'node:child_process'
 import { mkdir } from 'node:fs/promises'
-import { createRequire } from 'node:module'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { loadPlaywright } from '../lib/playwright.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const root = resolve(here, '../..')
 const out = resolve(process.env.BENCH_OUT ?? join(root, 'bench/shots-chargements'))
 
-function loadPlaywright() {
-  const roots = ['/usr/lib/node_modules']
-  try { roots.push(execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim()) } catch { /* fixed root only */ }
-  for (const dir of roots) {
-    for (const name of ['playwright-core', 'playwright']) {
-      try { return createRequire(`${dir}/`)(name) } catch { /* not here */ }
-    }
-  }
-  throw new Error('playwright not found in the environment')
-}
 const { chromium } = loadPlaywright()
 
 const SKINS = (process.env.BENCH_SKINS ?? 'alfred,dobby,nestor,skippy').split(',')
