@@ -620,6 +620,34 @@ branch and that `test:plugins` is replayed after a red vitest run.
   `request failed (%n)`. The server's own `error` still shows first. A connection that fails before any
   answer keeps its translated `request failed (0)`.
 
+## v0.97.0-adestia-ajouts.1
+
+**The simultaneous-turns slice (B-21, AD-30).** The settings screen carries `maxConcurrentTurns` (1 to 16, default 3) in a group of its own; it applies after a restart.
+
+## v0.97.0-adestia-ajouts.2
+
+**The screens slice (B-18, AD-29).** The section, the page, the settings mosaic, instructions and delegations show the shared loading row while they fetch; a failed page, instructions or delegations read offers **Retry**.
+
+## v0.97.0-adestia-ajouts.3
+
+**The MCP slice (B-18, B-20, AD-29, AD-31).** Removing an MCP server asks first in a sheet that names it (focus on Cancel, Escape cancels); the MCP list shows its loading and offers **Retry**.
+
+## v0.97.0-adestia-ajouts.4
+
+**The followed-page slice (B-17, AD-21).** The open page follows what the agent writes: reading refreshes in place, editing raises a **Reload** banner and never replaces the typed text.
+
+## v0.97.0-adestia-ajouts.5
+
+**The offline slice (B-19, AD-27).** When a call to the server fails or the event stream drops, a banner says the server is not responding and leaves by itself when it answers.
+
+## v0.97.0-adestia-ajouts.6
+
+**The plugins slice (B-18, AD-29).** The Atelier (E-25) and Parcours (E-28) screens show their loading and, when the server fails, a message with **Retry**.
+
+## v0.97.0-adestia-ajouts.7
+
+**The chat slice (B-18, B-22, AD-28, AD-29).** The conversation list and thread show their loading, with **Retry** when it fails; when Claude has lost the session of an older conversation, the next turn still succeeds and the thread says the engine no longer remembers the earlier messages.
+
 ## v0.97.0
 
 - **The chat shows its loading and says when the engine lost its context** — The conversation list and an adopted tab's thread show the shared loading row, or the failure block with **Retry** (the composer stays on screen, disabled while the thread is unread). When Claude refuses a gone session the server reruns the turn once without it and stores `contextLost` on the first agent message; the thread draws a `role="note"` line above it, in English and French (B-18, B-22, AD-28, AD-29). `bench/scenarios/chat-ajouts.mjs` (seed `chat-ajouts`) plays every state under the four skins, both languages, light and dark, desk and phone, and checks that the line neither overlaps nor cuts the message below it and that the failure block does not swallow the composer.
