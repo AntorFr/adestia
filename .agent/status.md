@@ -3,7 +3,7 @@
 
 ## Version courante
 
-- Dernier tag accessible : **`v0.97.0-adestia-ajouts.10`** (`git describe --tags
+- Dernier tag accessible : **`v0.97.0-adestia-ajouts.11`** (`git describe --tags
   --abbrev=0`), tag de l'epic `adestia-ajouts` ; `v0.95.0` est le dernier tag de `main` (epic
   `adestia-qualite`).
 - Branche de travail : `feature/adestia-ajouts-page-suivie` (rouverte pour que le banc importe `loadPlaywright` de `bench/lib`). Dernières tranches fusionnées dans l'epic : `adestia-ajouts-plugins-chargements`, `adestia-ajouts-chargements` et `adestia-ajouts-chat`
