@@ -50,7 +50,7 @@ To look at the app without an agent or Docker (a scripted engine, seeded data):
 ```sh
 npm ci && npm run build               # npm run build also builds the web shell
 node bench/launch.mjs --engine fake    # prints `listening on <url>`; <url>/api/health answers ok
-node bench/sweep.mjs                   # every screen, light and dark, desk and phone
+node bench/sweep.mjs                   # the catalogue screens E-1 to E-31, light and dark, desk and phone (E-32 and E-33 have their own scenarios below)
 node bench/scenarios/chargements.mjs   # takes several minutes (16 capture combinations); loading and Retry on E-3, E-4, E-8, E-9, E-11, E-13 (needs the build; images in $BENCH_OUT); the plugins' E-25 and E-28 are covered by plugins/*/test/chargement.test.js and, in a browser, by bench/tests/plugins-chargements-besoin.test.mjs, not by this scenario; to see them by hand, start the launcher from the clone's root (the atelier and parcours plugins come from `./plugins`) and open #/atelier or a parcours page
 node bench/scenarios/page-suivie.mjs   # the open page follows the agent, B-17 (needs the build; BENCH_SKINS, BENCH_LOCALES narrow it)
 node bench/scenarios/hors-ligne.mjs     # stops and restarts a real bench instance: the offline banner E-32 on E-2, E-4 and E-14 (needs the build; images in $BENCH_OUT)
@@ -151,9 +151,11 @@ Adestia's own interface.
   served the way its favicon already is — including the opaque 180×180 an
   iPhone demands and the manifest cannot give it. The service worker is
   network-first on everything whose name outlives its content, so an installed
-  instance never runs last week's bundle; offline it opens to its own
-  interface, saying the server is unreachable, instead of the browser's error
-  page.
+  instance never runs last week's bundle; offline it opens the cached shell,
+  which shows its "could not start" gate (a `wifi-off` icon) instead of the
+  browser's error page. Once the shell is running, a banner says "The server is
+  not responding" when the server stops answering and leaves by itself when it
+  answers again (E-32, `docs/ecrans.md`; seen with `node bench/scenarios/hors-ligne.mjs`).
 
 ## Sizing (read this before deploying)
 
