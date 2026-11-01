@@ -759,6 +759,18 @@ surfaces it as an error (then B-22 reduces to writing that, as the letter allows
   outcome is the one filed, with the same mark. Outcome (c)
   has no signal and is written down as "cannot be detected", the mark not built, and the task
   reduces to that sentence in `docs/parcours.md` and here.
+- *Outcome of the real test* (played by hand on 2026-10-31 with `claude-lost-session.real.test.ts`,
+  branch `task/adestia-ajouts-chat-essai-claude`): outcome **(b)**. With `resume` naming a session that
+  does not exist, `sdk.query` refuses before any text, throwing "Claude Code returned an error result: No
+  conversation found with session ID: <id>" after about 1.5 s; the driver does not turn it into an `error`
+  event, the exception leaves `runTurn` (the SDK may first yield a `result` with `stopped`, no text). A turn
+  without `sessionId` on the same driver succeeds and returns a new id. The server does not heal by itself:
+  `routes/turns.ts` reads the stored session at each dispatch and `recordOutcome` replaces it only when the
+  outcome carries a session id, so a refused resume leaves the dead id and the next turn resumes it again.
+  Delivery is therefore **(b) with rerun**: `TurnDesk` (`recoverSession`, Claude chat turns only) holds a
+  terminal `result` while the driver drains, and on that exact refusal, before any text, tool, question or
+  signature, reruns once without `sessionId` under the same job and stop signal; any other error is not
+  rerun. The rerun's session differs from the carried one, so `finish` writes the mark.
 - *Only Claude*: the check is behind the engine id the turn ran on; Copilot and Codex fakes in
   `packages/drivers/test` change session id between turns in a test and the stored message still has no
   `contextLost`.

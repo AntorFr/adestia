@@ -140,6 +140,8 @@ nothing else is added (see Out of scope).
   carried cannot be resumed (after a restart), the chat marks it where it happened — the turn runs fresh, on the same conversation: the user
   learns that the engine no longer remembers the earlier messages. Only the engines that can
   still lose it get the mark (checked in AD-23). *(P-16)*
+  Claude refuses to resume a session that is gone (checked in AD-23): the server reruns the turn once
+  without it, on the same conversation, and the mark sits above the first reply of that turn.
 
 
 ## Journeys
