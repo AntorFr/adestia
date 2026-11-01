@@ -218,7 +218,7 @@ async function visit(browser, base, server, skin, locale, theme, size) {
     // Where the user is when the server goes: at the foot of the form, and the banner must still be on screen, under the header (not hidden by it, not floating below it).
     const seen = await banner(config).first().boundingBox()
     const bar = await config.locator('.adestia-canvas__header:visible').first().boundingBox()
-    if (!seen || seen.y + seen.height <= 0 || seen.y >= SIZES[size].viewport.height || (bar && (seen.y < bar.y + bar.height - 1 || seen.y > bar.y + bar.height + 4))) {
+    if (!seen || seen.y + seen.height <= 0 || seen.y >= SIZES[size].viewport.height || (bar && (seen.y < bar.y + bar.height - 1 || seen.y > bar.y + bar.height + 0.5))) {
       fail(tag('E-14'), `the banner is not on screen at the foot of the form (${JSON.stringify(seen)})`)
     }
     await shoot(config, 'E-14-coming-back')
