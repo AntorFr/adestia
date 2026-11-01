@@ -59,6 +59,8 @@ interface TurnPart {
 export interface TurnOutcome {
   /** The job that ran it — what a message queued behind it names (`after`). */
   readonly turn?: string
+  /** Set by the chat route after comparing Claude sessions. */
+  readonly contextLost?: boolean
   /** In order. Empty when the turn produced nothing at all. */
   readonly parts: readonly TurnPart[]
   readonly stopped: boolean
@@ -77,6 +79,8 @@ export interface TurnOutcome {
  */
 export interface TurnSpec {
   readonly request: TurnRequest
+  /** Chat only: recover a missing Claude session once, before any work. */
+  readonly recoverSession?: boolean
   readonly finish: (outcome: TurnOutcome) => Promise<void>
   /**
    * Where the engine session this turn resumes is kept, when a store keeps
@@ -435,6 +439,47 @@ export class TurnDesk {
     return { ...addressed, prompt: this.introduce(request.prompt) }
   }
 
+  /** A rejected resume did no work: retry only that observed refusal, once. */
+  async *#events(spec: TurnSpec, signal: AbortSignal): AsyncIterable<TurnEvent> {
+    const request = this.#dispatched(spec.request, signal)
+    let worked = false
+    const missing = (message: string) =>
+      spec.recoverSession && request.sessionId !== undefined && !worked && !signal.aborted &&
+      message.includes(`No conversation found with session ID: ${request.sessionId}`)
+    let retry = false
+    let result: TurnEvent | undefined
+    try {
+      for await (const event of this.driver.runTurn(request)) {
+        if (event.type === 'error' && missing(event.message)) {
+          retry = true
+          break
+        }
+        // Claude can yield a terminal error result, then throw while draining.
+        // Hold that result until the resume has actually finished.
+        if (event.type === 'result' && spec.recoverSession && request.sessionId && !worked) {
+          result = event
+          continue
+        }
+        if (event.type === 'text-delta' || event.type === 'tool-use' ||
+            event.type === 'signature-request' || event.type === 'permission-request' ||
+            event.type === 'result' || event.type === 'error') worked = true
+        yield event
+      }
+    } catch (error) {
+      if (!missing((error as Error).message)) {
+        if (result) yield result
+        throw error
+      }
+      retry = true
+    }
+    if (retry) {
+      const { sessionId: _sessionId, ...fresh } = request
+      yield* this.driver.runTurn(fresh)
+    } else if (result) {
+      yield result
+    }
+  }
+
   /** One driver turn, accumulated the way the route used to accumulate it. */
   async #turn(job: TurnJob, spec: TurnSpec): Promise<TurnOutcome> {
     const parts: {
@@ -460,7 +505,7 @@ export class TurnDesk {
     }
 
     try {
-      for await (const event of this.driver.runTurn(this.#dispatched(spec.request, job.signal))) {
+      for await (const event of this.#events(spec, job.signal)) {
         if (event.type === 'signature-request') {
           // Dropped before the browser sees it, not hidden after: an origin
           // the operator did not name is a link in a tool result, nothing
@@ -553,6 +598,7 @@ function mergeSpecs(batch: readonly TurnSpec[], sessionId: string | undefined): 
       ...(sessionId ? { sessionId } : {}),
     },
     finish: last.finish,
+    ...(last.recoverSession ? { recoverSession: true } : {}),
     ...(last.session ? { session: last.session } : {}),
     filed: Promise.all(batch.map((spec) => spec.filed?.catch(() => undefined))),
   }

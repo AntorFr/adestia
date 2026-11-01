@@ -1,14 +1,14 @@
 # Status — Adestia
-> MàJ : 2026-10-30
+> MàJ : 2026-11-01
 
 ## Version courante
 
-- Dernier tag accessible : **`v0.97.0-adestia-ajouts.6`** (`git describe --tags
+- Dernier tag accessible : **`v0.97.0-adestia-ajouts.7`** (`git describe --tags
   --abbrev=0`), tag de l'epic `adestia-ajouts` ; `v0.95.0` est le dernier tag de `main` (epic
   `adestia-qualite`).
-- Branche de travail : `feature/adestia-ajouts-plugins-chargements`, sur `origin/epic/adestia-ajouts`
-  (chargement et Réessayer des plugins Atelier et Parcours, E-25 et E-28, AD-24 ; recette : captures du banc, voir ci-dessous).
-  Livré avant elle sur l'epic : le bandeau hors ligne E-32, AD-22 (`node bench/scenarios/hors-ligne.mjs`) ; la page ouverte suit l'agent, AD-21 (`node bench/scenarios/page-suivie.mjs`) ;
+- Branche de travail : `feature/adestia-ajouts-chat`, sur `origin/epic/adestia-ajouts`
+  (chargement et Réessayer du chat, E-16 ; marque de contexte perdu de Claude, AD-23 ; recette : `node bench/scenarios/chat-ajouts.mjs`).
+  Livré avant elle sur l'epic : chargement et Réessayer des plugins Atelier et Parcours, E-25 et E-28, AD-24 ; le bandeau hors ligne E-32, AD-22 (`node bench/scenarios/hors-ligne.mjs`) ; la page ouverte suit l'agent, AD-21 (`node bench/scenarios/page-suivie.mjs`) ;
   chargement et Réessayer des écrans, AD-24 (`node bench/scenarios/chargements.mjs`) ; E-10 (chargement, Réessayer) et la confirmation E-33 avant de retirer un serveur MCP, AD-26 (aucun scénario de `bench/scenarios/`
   ne les couvre ; après `npm run build`, ouvrir à la main `#/settings/mcp/<nom>` sur `node bench/launch.mjs --engine fake`). Hérité de l'epic précédent (correctifs de recette et de verify : un message envoyé avant que le premier soit parti est retenu ;
   en-tête du rail à moins de 400 px à un seul espacement, sélecteur de modèle d'au moins 72 px ; bulle d'erreur seule à marge symétrique). Banc, tests, serveur, charte,
@@ -88,6 +88,13 @@ PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone
   passent un `fetch` simulé, ne le voient pas : `besoin-hors-ligne-browser.test.ts` (Chromium) oui,
   mais il a échoué une fois sur `healthCalls >= 2` sous charge puis passé. L'échec du premier chargement garde E-1.
 
+## Chat : chargement et contexte perdu (feature `adestia-ajouts-chat`)
+
+- Fait : la liste et le fil d'un onglet adopté montrent le chargement partagé, puis l'échec avec Réessayer (compositeur grisé tant que le fil n'est pas lu) ; 401/403 restent au traitement du shell. Essai réel du SDK Claude (AD-23, issue b) : `resume` sur une session disparue est refusé avant tout texte ; `TurnDesk` (`turns.ts`, `recoverSession`) relance une seule fois sans session, et `finish` écrit `contextLost` sur le premier message agent, que le fil annonce par une ligne `role="note"`.
+- Pièges : la relance n'a lieu que sur ce refus exact, avant tout texte, outil, question ou signature ; Claude seul porte la marque (tests sur les faux Copilot/Codex). `packages/drivers/test/claude-lost-session.real.test.ts` est sauté sans `CLAUDE_CODE_OAUTH_TOKEN` : un `npm test` vert sans jeton ne le prouve pas.
+- Recette : `node bench/scenarios/chat-ajouts.mjs` après `npm run build` (graine `chat-ajouts`, quatre habillages, `en`/`fr`, clair/sombre, bureau/téléphone).
+- Rouges d'ailleurs vus pendant la tâche (déjà sur la cible ou instables sous charge) : `besoin-charte-comportement.test.ts` (E-10, E-13, E-19 : délai de 5 s), `qualite-serveur-besoin.test.ts` (R-8, ESLint), `besoin-tours.test.ts`, `app.test.tsx` (page absente).
+
 ## À moitié construit
 
 - La question de permission ne permet pas de corriger la règle proposée par le
@@ -99,9 +106,8 @@ PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone
   le chat ne consomme que le compteur de contexte (`Chat.tsx`, `contract.ts`).
 - Les instructions sont éditables, mais aucun écran ne règle les permissions du
   moteur : ses fichiers de réglages ne sont pas exposés par `instructionPaths()`.
-- Le chat ne marque pas une perte de contexte moteur après redémarrage ; les homes
-  Copilot/Codex sont sous `dataDir`, celui de Claude dépend du `HOME` du déploiement
-  (`drivers.ts`).
+- La marque de contexte perdu ne vaut que pour Claude (Copilot et Codex ne peuvent pas perdre leur session : homes sous `dataDir`) ; le home de
+  Claude dépend toujours du `HOME` du déploiement (`drivers.ts`), le déplacer sous `dataDir` est hors tranche.
 - Le lanceur `packages/server/bin/adestia.js` n'a pas de commande `adestia init` ;
   il crée `workspace/` et `data/` au démarrage (`created workspace at …`).
 - `chat/conversations.ts` expose `deleteConversation`, sans commande à l'écran.
@@ -113,7 +119,7 @@ PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone
   (`adestia-ajouts-chargements`, `adestia-ajouts-mcp`), et pour les plugins E-25 (hub, workbook) et E-28 (carte, bloc,
   lien) par `adestia-ajouts-plugins-chargements` (balisage du shell recopié, sans import : AD-8 ;
   recette : captures du banc sous les quatre habillages, `en` et `fr`, serveur ralenti puis en
-  erreur). Reste à faire : E-16 (chat) ; le bandeau hors ligne E-32 est construit et vu au banc (`bench/scenarios/hors-ligne.mjs`) ; les toasts restent hors de l'epic (docs/ecrans.md).
+  erreur). E-16 (liste et fil du chat) par `adestia-ajouts-chat`. Le bandeau hors ligne E-32 est construit et vu au banc (`bench/scenarios/hors-ligne.mjs`) ; les toasts restent hors de l'epic (docs/ecrans.md).
 - Mesures du banc en pixels à généraliser ; `journal` : couverture navigateur
   et `api.trail` à compléter selon les signalements de l'ancien état.
 

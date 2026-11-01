@@ -6,6 +6,7 @@ source did not record a release date; dates are not inferred from git tags.
 
 ## Unreleased
 
+- **The chat shows its loading and says when the engine lost its context** — The conversation list and an adopted tab's thread show the shared loading row, or the failure block with **Retry** (the composer stays on screen, disabled while the thread is unread). When Claude refuses a gone session the server reruns the turn once without it and stores `contextLost` on the first agent message; the thread draws a `role="note"` line above it, in English and French (B-18, B-22, AD-23, AD-24). `bench/scenarios/chat-ajouts.mjs` (seed `chat-ajouts`) plays every state under the four skins, both languages, light and dark, desk and phone, and checks that the line neither overlaps nor cuts the message below it and that the failure block does not swallow the composer.
 - **The open page follows the agent** — When the agent rewrites the page on screen, reading shows the
   new text in place and editing raises the banner "The page changed." with **Reload**; the typed text
   is never replaced and the user's own save raises nothing. A page the agent deletes or moves shows E-8

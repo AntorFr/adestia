@@ -272,6 +272,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   await registerUpload(app, { config, inbox })
   registerConversations(app, { conversations, desk })
   registerTurns(app, {
+    engineId: descriptor.id,
     config,
     desk,
     conversations,

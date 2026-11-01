@@ -146,7 +146,7 @@ columns are the same except where the instance's configuration decides what exis
 | E-13 | read | same | runs the delegated turns | creates the rows through inbound MCP `ask_<name>` |
 | E-14 | edit, save, restart — only when the server got a `configPath`; else "does not expose its configuration" (the tile is still shown) | same | — | — |
 | E-15 | arm the token, theme, sign out | same (token is the instance's) | — | — |
-| E-16 | talk, create and archive conversations | same, own conversations under OIDC | answers, renames conversations (`rename_conversation`) | — (its threads are not in this list; they show on E-13 only, `DelegationChannel`) |
+| E-16 | talk, create and archive conversations; **Retry** a failed list or thread; read the context-lost line (not dismissable) | same, own conversations under OIDC (another owner's: denied as today) | answers, renames conversations (`rename_conversation`) | — (its threads are not in this list; they show on E-13 only, `DelegationChannel`) |
 | E-17, E-18 | answer, sign | same | asks permission, holds actions | may hold actions for signature |
 | E-19 | read | same | background trouble from its scheduled turns | — |
 | E-20 | use | same | — | — |
@@ -182,7 +182,7 @@ columns are the same except where the instance's configuration decides what exis
 | E-13 | list by caller, empty (shared empty state), state chips with an icon, open conversation; loading and fetch-failed with **Retry** for the list and for the open conversation (404 and 401/403 on a conversation have the message, no Retry) | — |
 | E-14 | loading (a spinner row), read error, not exposed (404), read-only, edited/default badges, saving/saved/failed, stale file, restart pending/asking/waiting/blocked/failed, each restart state with an icon; the "Simultaneous turns" field (number, min 1, max 16) in a group of its own, with the "restart needed" mark (same row shape as "Scan period"; the offline banner E-32 and the restart-needed state are independent, both may show) | — |
 | E-15 | token states (stored, none, refused, arming flow, failed) with an icon, theme chosen (three-icon switch), signed in, version | — |
-| E-16 | empty thread, live turn (spinner or skin busy slot, counters), interrupted, error, held message, tabs/list with labelled state shapes, translated shared empty list ("No conversation yet."), MCP connect prompt, composer busy/stopping/blocked, attachments and upload error | loading for the list and thread |
+| E-16 | empty thread, live turn (spinner or skin busy slot, counters), interrupted, error, held message, tabs/list with labelled state shapes, translated shared empty list ("No conversation yet."), MCP connect prompt, composer busy/stopping/blocked, attachments and upload error | an offline state of its own (the banner E-32 covers it; see "E-16 in `adestia-ajouts-chat`") |
 | E-17 | translated question with `triangle-alert`, with/without lasting rule (Always absent without one) | — |
 | E-18 | pending (`pen-line`), signed (`check`), denied (`x`), expired (`clock`), open in a tab; each with text; shared sheet with Escape, focus trap and return, bottom sheet on a phone | — |
 | E-19 | background trouble, refused, degraded, an icon per kind; absent when nothing | — |
@@ -208,8 +208,8 @@ vocabulary of looks (`docs/charte.md`).
 
 **Built so far:** loading for E-3, E-4, E-8, E-9, E-11 and E-13 (Retry on all but E-3 and E-9)
 (`adestia-ajouts-chargements`), for E-10 with the E-33 confirmation (`adestia-ajouts-mcp`), and the refresh and banner of E-4 (`adestia-ajouts-page-suivie`,
-described under "E-4 — the page that follows the agent" below, and in the States table above), and the offline banner E-32 (`adestia-ajouts-hors-ligne`), and loading and Retry for the plugins' E-25 and E-28 (`adestia-ajouts-plugins-chargements`). Every other row below (E-16) is a target, not yet in the code; so is the Retry rule of "Loading and failure"
-for those screens.
+described under "E-4 — the page that follows the agent" below, and in the States table above), and the offline banner E-32 (`adestia-ajouts-hors-ligne`), and loading and Retry for the plugins' E-25 and E-28 (`adestia-ajouts-plugins-chargements`), and for E-16 (the list, the thread, and the context-lost line of B-22; `adestia-ajouts-chat`,
+seen at the bench with `bench/scenarios/chat-ajouts.mjs`, four skins, `en` and `fr`, light and dark, desk and phone). The Retry rule of "Loading and failure" holds for each of them.
 
 | E-n | Adds | Notes |
 |---|---|---|
@@ -217,7 +217,7 @@ for those screens.
 | E-8 | **Retry** on the "server could not" case (status 0 included: the shell could not reach the server) | 404 and 401/403 have no Retry; Retry fetches the page again and the screen becomes the page, or stays E-8 |
 | E-11, E-13 | loading; fetch-failed with **Retry** | for the list and for what is open (a file, a conversation): a failed list shows the failure block in place of the list, a failed open item shows it in place of the item, the list reachable by the back control as today. E-11: 404 on the list is still "this engine has no such folder" (no Retry, no failure). Status 0 (the server did not answer) and 5xx have Retry; 401/403 and a 404 on an open item (E-11 file, E-13 conversation) have the message and no Retry, as in E-8 (retrying cannot change them); E-13 has no 404 on its list |
 | E-14 | field "Simultaneous turns" (number, min 1, max 16) in a group of its own, "restart needed" mark | same row shape as "Scan period"; the offline banner (E-32) and the restart-needed state of E-14 are independent: both may show. While the screen waits for the restart ("Coming back…", P-10), the server does not answer, so E-32 shows above it; when the instance answers both go |
-| E-16 | loading for the list and the thread; fetch-failed with **Retry**; a context-lost marker in the thread (B-22) | the marker is a line in the thread, not a toast; text says the engine no longer remembers the earlier messages |
+| E-16 | loading for the list and the thread; fetch-failed with **Retry**; a context-lost marker in the thread (B-22) — built | the marker is a line in the thread, not a toast; text says the engine no longer remembers the earlier messages. Detail below, "E-16 in `adestia-ajouts-chat`" |
 | E-25, E-28 | loading; fetch-failed with **Retry** | plugins reach the look through the shell's CSS classes (`.adestia-loading`, the empty-state classes, `.adestia-sheet*`), as they already do for sheets; the plugin contract (AD-8) gains nothing. the native `confirm()` of E-25 and `alert()` of E-26 are not touched by `adestia-ajouts`: `adestia-correctifs` replaces them by the shared sheet (AD-17, Q-20). The words « kept » about them in Q-20 and `ARCHITECTURE.md` (Known defects, AD-7 (e)) are the base branch's and are rewritten by that epic; if it narrows the change, whatever it leaves stays as it leaves it, and `adestia-ajouts` neither adds nor removes anything there |
 | E-32 | banner at the top of the canvas body, above `Problems` (on a phone with the chat shown: above the rail's header), role `status`, a `wifi-off` icon; absent when the server answers | takes its own height and moves the screen down; it covers nothing, the screen stays usable; in the canvas it is sticky under the canvas header (`top: 56px`), so on a screen scrolled to its foot (E-14's restart band) it is still on screen |
 | E-33 | `Sheet` (bottom sheet on a phone), title "Remove server?", the server's name, **Cancel**, **Remove** (danger) | focus on Cancel; Escape = Cancel; modelled on `NamePrompt` |
@@ -320,7 +320,59 @@ from the shell). Filled in by `adestia-ajouts-chargements`; the plugin tranche r
 Any Retry (E-4, E-8, E-10, E-11, E-13, E-16, and the plugins' E-25, E-28) behaves alike: the failure block gives way to the loading row for exactly what it replaced (E-16: the list or the thread, whichever failed), never two at once, and the button cannot be pressed twice. This paragraph is the single rule; no row restates it. Page to page (E-4): the first page stays on screen exactly as it is (an editor keeps its text), and nothing signals the wait but the address; a later click supersedes the earlier one; the second page replaces the first when it answers; if the second fails, the failure block (E-8) replaces it. A 5xx on E-3 or E-9 is not said in this tranche: the loading row of E-3 keeps turning and E-9's tile has no count; `adestia-ajouts-hors-ligne` says only a cut server (P-16 (3) names E-32 for that alone).
 
 Words: the loading row says "Loading…" (`fr` "Chargement…"); **Retry** is `fr` "Réessayer". The failure sentence is the server's own `error` when it sent one, else "Request failed (%n)" (`fr` "La requête a échoué (%n)"; status 0: "The server is not responding" / "Le serveur ne répond pas", the same words as E-32's banner), never a raw `fetch failed`. A 404 or 401/403 on E-11 or E-13 shows the server's own sentence when it sent one, else the generic "Request failed (%n)"; a server sentence stays as the server wrote it (it may be in English on a `fr` instance: the server's words are not translated here). A very long page address in E-8 wraps the same way.
+
 The plugins' failure sentences are their own, listed below (the detail of `adestia-ajouts-plugins-chargements`); the server's `error` is not shown by a plugin, and the rule above about Retry and the loading row applies to them unchanged.
+
+
+
+### E-16 in `adestia-ajouts-chat`
+
+**List (the `list` view and the desktop tab strip's source).** While `GET /api/conversations` has
+not answered, the list view draws `Loading` where its rows go; the header, `plus` and the
+composer stay. If it fails, the list view draws `Failure` (the server's `error`, else the
+locale's request-failed sentence) with **Retry**, which asks again. A list that answered empty is
+the existing "No conversation yet." and nothing else: loading and empty never show together.
+Open tabs and the thread do not depend on the list and stay as they are.
+
+**Thread.** A tab being adopted (`loaded` false, the stored transcript being read) draws
+`Loading` in the thread area, not the empty-thread welcome. If `GET /api/conversations/:id`
+fails with anything but 404/401/403, the thread draws `Failure` with **Retry**, which reads the
+conversation again; the composer stays usable only when the conversation could be read (a failed
+read leaves it disabled, since a message sent now would be filed on a thread the user cannot
+see). 404 keeps what the tab does today (it closes). A reread that fails after the thread was
+shown (`reread`, a phone waking up) changes nothing, as today: no banner, no Failure.
+
+**Context-lost marker (B-22).** One line in the thread, directly above the first agent message
+the turn wrote, when that message carries `contextLost`. `role="note"`, class
+`.adestia-thread__mark`, the `rotate-ccw` icon, muted text and a hairline each side: it is a
+line of the thread, not a bubble; it takes the skin's tokens only. Text: `en` "The engine no
+longer remembers the earlier messages." / `fr` "Le moteur ne se souvient plus des messages
+précédents." It is stored with the message, so a reload, another tab or another device draws
+it too; it is not dismissable. After a live turn, the stream's end rereads the conversation
+(as it does today) and the line appears then. Copilot and Codex conversations never carry it.
+
+**Words.** Loading: shared `Loading` line, `en` "Loading…" / `fr` "Chargement…". Failure: the server's
+`error`, else the locale's `request failed (%n)` sentence (`fr` "la requête a échoué (%n)"); button
+**Retry** / `fr` **Réessayer**. While Retry runs, the Failure is replaced by `Loading` and comes
+back if the new attempt fails too. The disabled composer is the existing blocked look (greyed,
+send inert); it carries no extra text, the Failure above it is the explanation.
+
+**Other cases.** 401/403 on the list or the thread (session expired, another owner's
+conversation under OIDC): the shell's existing sign-in/denied handling applies as today and the
+chat adds no state of its own; the Failure and Retry are for network and 5xx failures only.
+Offline (server not answering): the banner E-32 is drawn at the top of the canvas body on desk;
+on a phone, where the rail is the whole screen and the canvas is not visible, the same banner is
+drawn above the rail's header (same component, same `status` role). E-32 and its two places belong
+to `adestia-ajouts-hors-ligne`; the chat slice builds none of it. A list or thread
+fetch that fails meanwhile shows its Failure beneath it, and Retry works once the server is back.
+Extreme content: several marks in one thread each draw their line; `fr` text wraps onto two
+lines in a narrow rail (the hairlines shrink, the text never truncates); a long list keeps its
+rows only after it answered, and a Retry never shows old rows beside `Loading`.
+**Loud failure of B-22.** If AD-23's real test finds that the SDK refuses a missing session,
+the failed turn shows as today (the thread's `error` state with the server's message) and no
+marker is drawn; if the next turn then succeeds on its own that is the end, otherwise the rerun
+carries the marker (AD-23). The tester expects the error state, not the line.
+
 
 ### E-25 and E-28: loading and Retry, in detail (`adestia-ajouts-plugins-chargements`)
 
@@ -364,6 +416,7 @@ E-25/E-28's notes above say.
 The tile information call (`tileInfo`) is not a screen and stays silent on failure.
 
 Roles: **Retry** is open to everyone who can open the screen, and the Atelier's two screens offer it on any non-2xx answer, 404 included; the Parcours screen leaves it out on 404 and on a refusal (401/403), as said above. No route tells an owner from a user (matrix above): E-32 and E-33 are the same for both,
+
 the agent touches neither, and no calling agent sees them. There is no new role. States are drawn in the four skins, `en` and `fr`, light and dark, desk
 and phone (AD-20).
 
@@ -895,9 +948,10 @@ in an `<EmptyState>`; the empty thread keeps its blank; the working indicator is
 `busy` slot or the shared spinner icon with the counters; the interrupted note, the error
 line, the held bubble (`paperclip` + names when the message is attachments only), the
 unread/running/idle dots (colour and a shape, not colour alone), the MCP connect prompt, the
-composer busy/stopping/blocked and the upload error keep their words and places. **No
-loading or offline state is added** for the list or the thread (Lacks column of E-16: listed
-for the end-of-epic recommendations). E-17: the question card keeps its three answers and
+composer busy/stopping/blocked and the upload error keep their words and places. The list
+and an adopted tab's thread show the shared loading row, then the failure block with **Retry**
+(built by `adestia-ajouts-chat`, "E-16 in `adestia-ajouts-chat`" above); the offline banner is
+E-32's. E-17: the question card keeps its three answers and
 the "No lasting rule" line; it takes `triangle-alert`. E-18: pending, signed, denied,
 expired, open-in-a-tab keep their words; each gets its icon above.
 

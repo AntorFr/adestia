@@ -31,6 +31,8 @@ export interface StoredMessage {
   readonly tools?: readonly { name: string; target?: string; ok?: boolean }[]
   /** Signatures its tools asked for, in the order they were asked. */
   readonly signatures?: readonly StoredSignature[]
+  /** First agent message after Claude lost the resumed session; absent otherwise. */
+  readonly contextLost?: boolean
   readonly stopped?: boolean
   readonly error?: string
   readonly usage?: { contextTokens?: number; outputTokens?: number }

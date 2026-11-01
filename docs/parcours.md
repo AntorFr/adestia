@@ -140,6 +140,8 @@ nothing else is added (see Out of scope).
   carried cannot be resumed (after a restart), the chat marks it where it happened — the turn runs fresh, on the same conversation: the user
   learns that the engine no longer remembers the earlier messages. Only the engines that can
   still lose it get the mark (checked in AD-23). *(P-16)*
+  Claude refuses to resume a session that is gone (checked in AD-23): the server reruns the turn once
+  without it, on the same conversation, and the mark sits above the first reply of that turn.
 
 
 ## Journeys
@@ -352,7 +354,7 @@ The user works with a page open and the agent writes in it; the owner is away fr
 1. The user reads a page (E-4) while the agent, asked in the chat (E-16), rewrites it. The page redraws by itself (B-17).
 2. The user is editing the same page when the agent writes it. A banner "The page changed." appears over the editor (E-4) with **Reload**; what was typed stays until the user reloads or saves (B-17). The save-time conflict of the revision check is unchanged.
    If the agent deletes or moves the open page, the screen shows E-8 (not found) in reading; in editing the banner shows first, the text stays, and E-8 shows when the user chooses **Reload** (B-17; the unsaved text is then gone with the page). When the workspace watch is off, nothing refreshes, as today.
-3. *(Built for E-3, E-4, E-8, E-9, E-10, E-11, E-13, E-25 and E-28; E-16 is still a target.)* The user opens a screen listed in B-18 on a slow link: a loading state shows (E-3, E-4, E-9, E-10, E-11, E-13, E-16, E-25, E-28). If the fetch of E-4, E-10, E-11, E-13, E-16, E-25 or E-28 fails, a message and **Retry** replace it, and Retry fetches again; E-4's failure is E-8 with its Retry. E-3 and E-9 have no Retry: their failure is the banner of step 4.
+3. *(Built for E-3, E-4, E-8, E-9, E-10, E-11, E-13, E-16, E-25 and E-28.)* The user opens a screen listed in B-18 on a slow link: a loading state shows (E-3, E-4, E-9, E-10, E-11, E-13, E-16, E-25, E-28). If the fetch of E-4, E-10, E-11, E-13, E-16, E-25 or E-28 fails, a message and **Retry** replace it, and Retry fetches again; E-4's failure is E-8 with its Retry. E-3 and E-9 have no Retry: their failure is the banner of step 4.
 4. The VPN drops. A banner "The server is not responding" shows above whatever screen is open and moves it down (E-32). The user waits, or reconnects the VPN; the banner goes away by itself when the server answers. Léa, on her phone with the chat full screen, sees it above the rail's header; the owner, who had just pressed **Restart now** on E-14, sees it above "Coming back…" as soon as a probe fails (a restart shorter than a probe lights nothing, a short one may flash it), until the instance answers. A 401/403 under OIDC is an answer: no banner, the sign-in handling applies.
 5. The owner opens the MCP servers (E-10) and presses **Remove** on one. A sheet (E-33) names the server and asks; **Remove** confirms, **Cancel** or Escape keeps it (B-20). If the removal fails (server unreachable or refusing), the sheet stays closed and the action bar of E-10 shows the error; the declaration is unchanged and **Remove** can be pressed again.
 6. The owner opens the settings (E-14) and changes "Simultaneous turns"; the field says a restart is needed, like the others (B-21).

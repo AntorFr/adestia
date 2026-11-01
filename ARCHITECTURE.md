@@ -727,18 +727,40 @@ Verified in code. Copilot (`COPILOT_HOME`) and Codex (`CODEX_HOME`) keep session
 the container with `/data` kept, loses nothing. Claude keeps its sessions in the process's
 default home (`~/.claude`), which is not a volume (`Dockerfile`, `docker-compose.yml`): a
 `docker restart` survives, a recreated container does not. The loss therefore **can still
-happen**, for Claude only, and the mark (B-22) is built. The first task of the tranche is a real
-Claude test of what the SDK does when `resume` names a session that is gone; nothing else is built
-before it. Decided now for both outcomes: if the SDK starts a silent new session, the mark is
-written when the turn ended on a session id other than the one the conversation carried
-(`turns.ts`); if it refuses to resume, the server reruns the turn fresh on the same conversation
-and writes the same mark (P-16 step 7 is what the user sees in both cases). If it fails loudly and
-the server already shows that as an error, nothing is rerun and B-22 reduces to writing that.
+happen**, for Claude only, and the mark (B-22) is built. A real Claude test showed what the SDK
+does when `resume` names a session that is gone: it refuses, so the server reruns the turn fresh,
+once, on the same conversation and writes the mark (details below; P-16 step 7 is what the user sees).
 Pointing Claude's home under `dataDir` would remove the cause but is a behaviour change of the
 engine environment and, in the deployment, Monsieur's: not built, written under Out of scope.
 *Rejected*: marking for every engine (two cannot lose it; a mark that cannot fire is dead code).
-*Reversed if*: the real Claude test shows the SDK always errors loudly and the server already
-surfaces it as an error (then B-22 reduces to writing that, as the letter allows).
+
+**Detail built by `adestia-ajouts-chat`.**
+- *The real test* (`packages/drivers/test/claude-lost-session.real.test.ts`, skipped without
+  `CLAUDE_CODE_OAUTH_TOKEN`: a green `npm test` without the token does not prove it, and it is the only way
+  to replay the observation below): a Claude turn with `resume` naming a session id that does not exist.
+  Outcomes it can tell apart: **(a)** a new session starts silently, **(b)** the SDK refuses before any
+  text, **(c)** it answers without a signal.
+- *Outcome of the real test* (played with that token on 2026-10-31): outcome **(b)**. With `resume`
+  naming a session that does not exist, `sdk.query` refuses before any text, throwing "Claude Code
+  returned an error result: No conversation found with session ID: <id>" after about 1.5 s; the driver
+  does not turn it into an `error` event, the exception leaves `runTurn` (the SDK may first yield a
+  `result` with `stopped`, no text). A turn without `sessionId` on the same driver succeeds and returns a
+  new id. The server does not heal by itself: `routes/turns.ts` reads the stored session at each dispatch
+  and `recordOutcome` replaces it only when the outcome carries a session id, so a refused resume leaves
+  the dead id and the next turn resumes it again. Delivery is therefore **(b) with rerun**: `TurnDesk`
+  (`turns.ts`, `recoverSession`, Claude chat turns only) holds a terminal `result` while the driver
+  drains, and on that exact refusal, before any text, tool, question or signature, reruns once without
+  `sessionId` under the same job and stop signal; any other error is not rerun.
+- *Where the mark is decided* (`routes/turns.ts`, in `finish`, and nowhere else): the session the turn
+  resumed (`conversations.read(…).sessionId` read just before `recordOutcome`) is compared with
+  `outcome.sessionId`; both defined and different, on the Claude engine, → `recordOutcome` puts
+  `contextLost: true` on the first agent message it writes. The rerun's session differs from the carried
+  one, so the mark is written. A conversation with no earlier session (first turn) never gets it.
+- *Only Claude*: the check is behind the engine id the turn ran on; Copilot and Codex fakes in
+  `packages/drivers/test` change session id between turns in a test and the stored message still has no
+  `contextLost`.
+- *Client*: `StoredMessage`/`Message` gain `contextLost?: boolean`; `Thread` draws the line
+  (`docs/ecrans.md`, "E-16 in `adestia-ajouts-chat`") before such a message.
 
 ### AD-24 — Retry and loading are two shared parts, not nine local ones
 A loading row (the one E-14 draws) and a failure block with **Retry** (the shared empty state of

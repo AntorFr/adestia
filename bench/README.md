@@ -50,6 +50,7 @@ which stops it and removes its data. Browse the URL, or drive it by API
 | `--seed` | What it shows |
 |---|---|
 | `base` | The populated instance: 20+ pages in two stores (every core block, a lost and an ambiguous wikilink, a vocabulary the product refuses to save, an unreadable frontmatter, a stray `app:`, files, two collections), conversations (running, unread, idle, archived, long, medium, a thread with every bubble state), six MCP servers in every health, instructions and three catalogues (importable, empty, unreachable), four delegations from two callers, a brief, a stored credential, a refused plugin and a plugin delivering a skill. No settings route: E-14 says it does not expose its configuration. |
+| `chat-ajouts` | E-16 loading, failure and the context-lost line: the base instance plus a conversation with two `contextLost` agent messages, a plain one and 20 more rows. |
 | `chat-permission` | E-17/E-18: isolated desk/phone threads, pending/signed/denied/expired signatures, questions with and without a lasting rule; `permissions.mode: ask` also supports the real-Claude proof. |
 | `config-writable` | `base`, with the configuration file the screen reads and writes. |
 | `config-readonly` | `base`, with the file read-only and the credential refused upstream. A process running as root can write a `0444` file: the screen then shows it writable. |
@@ -279,3 +280,14 @@ skin and language and, with `page.route`, holds the one read a screen waits for 
 E-13: the loading row must show before the data), then answers it 500 (E-4/E-8, E-11, E-13: message and
 Retry, and Retry brings the data; E-3 and E-9: no button). Light and dark, desk and phone. A line per
 failed check; success is none. `BENCH_SKINS=alfred,dobby` and `BENCH_LOCALES=fr` narrow the run (about 40 s per skin × language); `BENCH_URL` (with `BENCH_SKIN`, `BENCH_LOCALE`) plays an instance already running.
+
+## The chat's loading and context-lost line: `bench/scenarios/chat-ajouts.mjs`
+
+`npm run build`, then `node bench/scenarios/chat-ajouts.mjs` (Playwright from the environment, no
+Docker, no engine, no token). It launches `--engine fake --seed chat-ajouts` per skin and language; that
+seed adds a conversation whose agent messages carry `contextLost: true`, a plain one and a long list.
+With `page.route` it holds, then fails (500), the list read and the thread read: `Loading` before the
+rows or bubbles, message and Retry after a failure, Retry bringing the data, the composer never pushed
+off screen nor covered by the failure block. It then checks the two `.adestia-thread__mark` lines (text, `role="note"`, above a
+bubble, no overlap, no truncation, inside the viewport) and that the plain conversation has none.
+Pictures in `bench/shots-chat-ajouts/` (`BENCH_OUT`): `<skin>/<locale>/<theme>-<viewport>/{liste,fil}-{chargement,echec,reessai}.png`, `marque.png`, `marque-2.png`. `BENCH_SKINS`, `BENCH_LOCALES` narrow it.

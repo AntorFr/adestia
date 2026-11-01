@@ -15,6 +15,7 @@ export function toMessage(stored: StoredMessage, { signatures = true }: ToMessag
     text: stored.text,
     ...(stored.tools ? { tools: stored.tools } : {}),
     ...(signatures && stored.signatures ? { signatures: stored.signatures } : {}),
+    ...(stored.contextLost ? { contextLost: true } : {}),
     ...(stored.stopped ? { stopped: stored.stopped } : {}),
     ...(stored.error ? { error: stored.error } : {}),
   }
