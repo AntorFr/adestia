@@ -170,16 +170,27 @@ describe('R-7 · no comment points to an absent document', () => {
 })
 
 describe('R-8 · the lint says what it does, and runs in CI', () => {
-  const lint = (code: string) =>
-    spawnSync(
+  // eslint loads the whole type-aware program: under a full `npm test` it can be slow.
+  // vitest's own limit is 60 s; spawnSync gives up first (50 s) so the failure names the delay.
+  const LINT_TIMEOUT_MS = 50_000
+  const TEST_TIMEOUT_MS = 60_000
+  const lint = (code: string) => {
+    const run = spawnSync(
       process.execPath,
       [abs('node_modules/eslint/bin/eslint.js'), '--stdin', '--stdin-filename', 'packages/server/src/_probe.ts'],
-      { cwd: root, input: code, encoding: 'utf8' },
+      { cwd: root, input: code, encoding: 'utf8', timeout: LINT_TIMEOUT_MS },
     )
+    if (run.status === null) {
+      throw new Error(`eslint was cut after the ${LINT_TIMEOUT_MS} ms allowed (signal ${run.signal ?? 'none'})`, {
+        cause: run.error,
+      })
+    }
+    return run
+  }
 
   it('an unused binding is an error (the rule the config claims)', () => {
     expect(lint('const unused = 1\nexport {}\n').status).toBe(1)
-  })
+  }, TEST_TIMEOUT_MS)
   it('a floating promise and an ignored caught error pass; the config does not claim to catch them', () => {
     const run = lint(
       'async function f() { return 1 }\nexport function g() { f(); try { f() } catch (e) { /* ignored */ } }\n',
@@ -189,7 +200,7 @@ describe('R-8 · the lint says what it does, and runs in CI', () => {
     for (const line of header.split('\n').filter((l) => /floating|thrown[- ]away|unhandled|swallowed/i.test(l))) {
       expect(line).toMatch(/\b(no|not|cannot|nothing|never)\b/i)
     }
-  })
+  }, TEST_TIMEOUT_MS)
   it('the CI workflow runs npm run lint', () => {
     expect(text('.github/workflows/ci.yml')).toMatch(/^\s*run: npm run lint\s*$/m)
   })
