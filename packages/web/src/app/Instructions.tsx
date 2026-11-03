@@ -46,7 +46,8 @@
 import { useCallback, useState } from 'react'
 
 import { CataloguePopin } from './CataloguePopin'
-import { EmptyState } from './ui/index.js'
+import { EmptyState, Loading } from './ui/index.js'
+import { ReadFailure } from './ui/ReadFailure.js'
 import { InstructionEditor } from './instructions/InstructionEditor'
 import { InstructionList } from './instructions/InstructionList'
 import { NamePrompt } from './instructions/NamePrompt'
@@ -72,7 +73,7 @@ interface Naming {
 }
 
 export function Instructions({ open, onOpen, fetchImpl = fetch, t = (key) => key, locale }: InstructionsProps) {
-  const { files, places, supported, reload, announce } = useInstructionList(fetchImpl, t)
+  const { files, places, supported, read, retry, reload, announce } = useInstructionList(fetchImpl, t)
   /**
    * A file being written for the first time, and its opening text.
    *
@@ -106,6 +107,17 @@ export function Instructions({ open, onOpen, fetchImpl = fetch, t = (key) => key
   }
 
   if (open !== undefined) {
+    if (document_.read.status === 'loading') return <Loading t={t} />
+    if (document_.read.status === 'failed') {
+      return (
+        <ReadFailure
+          message={document_.read.error ?? ''}
+          httpStatus={document_.read.httpStatus}
+          onRetry={document_.retry}
+          t={t}
+        />
+      )
+    }
     return (
       <InstructionEditor
         open={open}
@@ -118,6 +130,11 @@ export function Instructions({ open, onOpen, fetchImpl = fetch, t = (key) => key
         t={t}
       />
     )
+  }
+
+  if (read.status === 'loading') return <Loading t={t} />
+  if (read.status === 'failed') {
+    return <ReadFailure message={read.error ?? ''} httpStatus={read.httpStatus} onRetry={retry} t={t} />
   }
 
   return (

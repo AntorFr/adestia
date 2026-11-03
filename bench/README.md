@@ -66,11 +66,13 @@ or scenario caller. It uses the repository's TypeScript parser, without a browse
 | `--seed` | What it shows |
 |---|---|
 | `base` | The populated instance: 20+ pages in two stores (every core block, a lost and an ambiguous wikilink, a vocabulary the product refuses to save, an unreadable frontmatter, a stray `app:`, files, two collections), conversations (running, unread, idle, archived, long, medium, a thread with every bubble state), six MCP servers in every health, instructions and three catalogues (importable, empty, unreachable), four delegations from two callers, a brief, a stored credential, a refused plugin and a plugin delivering a skill. No settings route: E-14 says it does not expose its configuration. |
+| `chat-ajouts` | E-16 loading, failure and the context-lost line: the base instance plus a conversation with two `contextLost` agent messages, a plain one and 20 more rows. |
 | `chat-permission` | E-17/E-18: isolated desk/phone threads, pending/signed/denied/expired signatures, questions with and without a lasting rule; `permissions.mode: ask` also supports the real-Claude proof. |
 | `config-writable` | `base`, with the configuration file the screen reads and writes. |
 | `config-readonly` | `base`, with the file read-only and the credential refused upstream. A process running as root can write a `0444` file: the screen then shows it writable. |
 | `oidc` | `base` behind a sign-in; the provider is `bench/oidc-stub.mjs`. |
 | `empty` | Nothing: no plugin, page, conversation, server, catalogue or credential. |
+| `page-suivie` | The `base` instance plus `suivi/` pages (four in the main store, one in the second) for `scenarios/page-suivie.mjs`, which rewrites and deletes them on disk as the agent would; `BENCH_WATCH=off` in the environment turns `workspace.watch` off. |
 | `plugins` | The ten bundled plugins active, each with data in its own format (`bench/seed/_plugins.mjs`): tasks and lists (late, today, later, closed, unassigned), planif notes (valid, disabled, invalid, with a last run; the clock stays off), journals (with entries, empty), a derived atelier workbook, trips (confirmed, suggested, dismissed, an idea without dates, a closed one), a watchlist (sources, a local feed the seed serves, a source that fails, kept items with transcripts, a pasted link, a dismissed one), a route with its trace, meals periods (with and without dates), a project planning (dated sub-pages, statuses, an unreadable date, an undated folder) and a page for the scan feature. `bench-noview` is an app with a tile and no view: `#/bench-noview` is E-20. The camera of E-30 is the browser's: launch Chromium with `--use-fake-device-for-media-stream --use-fake-ui-for-media-stream`. No MCP server and no refused plugin, so no band sits over a screen; the trips' map key is a placeholder. |
 
 The permission/signature matrix runs with
@@ -144,6 +146,17 @@ fixtures are intercepted. The nominal agent reply is scripted, not a real Claude
 Unlike the older `plugins-matrix` focus waiver, this scenario requires the phone's
 textarea to have focus after the scanner closes. See `plugins-correctifs-proof.md`
 for observations and evidence paths; screenshots still need visual inspection.
+
+## The offline banner, a real server cut: `bench/scenarios/hors-ligne.mjs`
+
+`npm run build`, then `node bench/scenarios/hors-ligne.mjs` (Playwright from the environment, no Docker).
+Per skin and language it starts the launcher on a fixed `--port` and `--data` (seed `config-writable`),
+opens E-2, E-4 and E-14 (edited, saved, restart band showing), stops the process (SIGTERM), waits for the
+banner on each, presses **Restart** on E-14 (only `POST /api/restart` is scripted, 202) and looks at
+"Coming back…" with the banner, then starts the process again on the same port and data and waits for every
+banner to leave with no reload. On the phone, E-2 is also seen with the chat shown. Pictures:
+`bench/shots-hors-ligne/<skin>/<locale>/<theme>-<desk|phone>/` (or `BENCH_OUT`); `BENCH_SKINS`,
+`BENCH_LOCALES` narrow it. About 12 minutes for the 32 variants; exit 1 names each failed expectation.
 
 ## Every screen, both themes, both sizes: `bench/sweep.mjs`
 
@@ -304,3 +317,36 @@ bench with a scenario-local scripted stream; it replays the model catalogue and
 disconnected MCP identity in the browser because that instance has no engine CLI
 or sign-in server configured. Docker is optional; the host matrix uses the real
 seeded server and its fake driver.
+
+## The open page follows the agent: `bench/scenarios/page-suivie.mjs`
+
+`npm run build`, then `node bench/scenarios/page-suivie.mjs` (Playwright from the environment, no
+Docker). Pictures land in `bench/shots-page-suivie/` (`BENCH_OUT` moves them). Per skin × language it
+launches `node bench/launch.mjs --engine fake --seed page-suivie --data <dir> …` and plays the agent
+itself: it writes and deletes the page files on the instance's disk, as a real turn would. Reading:
+the rewrite shows with no action, the deletion shows E-8; a page of the second store (`?store=famille`)
+does the same. Editing: the banner rises, the typed text stays, the user's own save lifts nothing and
+raises nothing, **Reload** loads the agent's version, and a deletion gives the banner then E-8 at
+**Reload**. With the watch off (`BENCH_WATCH=off` in the seed) neither mode moves. Light and dark,
+desk and phone. `BENCH_SKINS`, `BENCH_LOCALES` and `BENCH_SIZES=desk` narrow the run (about 20 s per
+variant). The bench no longer assumes the open page stays put: the refresh is the product's.
+
+## Loading and failure of the shell's screens: `bench/scenarios/chargements.mjs`
+
+`npm run build`, then `node bench/scenarios/chargements.mjs` (Playwright from the environment, no
+Docker). Pictures land in `bench/shots-chargements/` (`BENCH_OUT` moves them). It launches `node bench/launch.mjs --engine fake --seed base --skin <s> --locale <l>` per
+skin and language and, with `page.route`, holds the one read a screen waits for (E-3, E-4, E-9, E-11,
+E-13: the loading row must show before the data), then answers it 500 (E-4/E-8, E-11, E-13: message and
+Retry, and Retry brings the data; E-3 and E-9: no button). Light and dark, desk and phone. A line per
+failed check; success is none. `BENCH_SKINS=alfred,dobby` and `BENCH_LOCALES=fr` narrow the run (about 40 s per skin × language); `BENCH_URL` (with `BENCH_SKIN`, `BENCH_LOCALE`) plays an instance already running.
+
+## The chat's loading and context-lost line: `bench/scenarios/chat-ajouts.mjs`
+
+`npm run build`, then `node bench/scenarios/chat-ajouts.mjs` (Playwright from the environment, no
+Docker, no engine, no token). It launches `--engine fake --seed chat-ajouts` per skin and language; that
+seed adds a conversation whose agent messages carry `contextLost: true`, a plain one and a long list.
+With `page.route` it holds, then fails (500), the list read and the thread read: `Loading` before the
+rows or bubbles, message and Retry after a failure, Retry bringing the data, the composer never pushed
+off screen nor covered by the failure block. It then checks the two `.adestia-thread__mark` lines (text, `role="note"`, above a
+bubble, no overlap, no truncation, inside the viewport) and that the plain conversation has none.
+Pictures in `bench/shots-chat-ajouts/` (`BENCH_OUT`): `<skin>/<locale>/<theme>-<viewport>/{liste,fil}-{chargement,echec,reessai}.png`, `marque.png`, `marque-2.png`. `BENCH_SKINS`, `BENCH_LOCALES` narrow it.

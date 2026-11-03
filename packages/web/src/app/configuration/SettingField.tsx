@@ -90,7 +90,7 @@ function Control({
           disabled={disabled}
           onChange={(event) => onChange(event.currentTarget.value)}
         />
-        {spec.unit && <em>{spec.unit}</em>}
+        {spec.unit && <em>{t(spec.unit)}</em>}
       </span>
     )
   }

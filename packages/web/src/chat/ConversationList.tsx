@@ -1,15 +1,18 @@
 /** The conversation list: every conversation, with the dot the tab strip uses. */
 
 import { Icon } from '../app/Icon.js'
-import { EmptyState } from '../app/ui/EmptyState.js'
+import { EmptyState, Failure, Loading } from '../app/ui/index.js'
 
 import { StatusDot } from './StatusDot.js'
 
 import type { ConversationMeta } from './conversations.js'
 import type { TabDot } from './tabs.js'
+import type { ListState } from './useConversations.js'
 
 export interface ConversationListProps {
   readonly conversations: readonly ConversationMeta[]
+  readonly state: ListState
+  readonly retry: () => void
   readonly activeId: string
   readonly dotOf: (id: string, meta?: ConversationMeta) => TabDot
   readonly openConversation: (id: string) => void
@@ -19,12 +22,21 @@ export interface ConversationListProps {
 
 export function ConversationList({
   conversations,
+  state,
+  retry,
   activeId,
   dotOf,
   openConversation,
   archive,
   t,
 }: ConversationListProps) {
+  // Rows (and the empty state) only exist once the list answered: loading and
+  // empty never show together, and a Retry never leaves old rows beside Loading.
+  if (state.status === 'loading') return <div className="adestia-conversations"><Loading t={t} /></div>
+  if (state.status === 'failed') {
+    return <div className="adestia-conversations"><Failure message={state.error} onRetry={retry} t={t} /></div>
+  }
+  if (state.status === 'denied') return null
   return (
       <ul className="adestia-conversations">
         {conversations.length === 0 && <li className="adestia-conversations__empty"><EmptyState icon="list" text={t('No conversation yet.')} /></li>}

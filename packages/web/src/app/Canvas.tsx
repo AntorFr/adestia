@@ -22,12 +22,13 @@ import { Home } from './Home.js'
 import { MissingPage } from './MissingPage.js'
 import { Preferences, prefsTitle, type PrefsPage } from './Preferences.js'
 import { Section } from './Section.js'
+import { Loading } from './ui/Loading.js'
 import { SkinSlot } from './SkinSlot.js'
 import { encodePath, ownerOf } from './owners.js'
 import { sectionAt, type IndexEntry, type StoreInfo } from './sections.js'
 import { skinUser, type Skin, type SkinSlots } from './skin.js'
 import type { InstanceInfo } from './useInstance.js'
-import type { EditorMount } from './usePage.js'
+import type { EditorMount, Incoming } from './usePage.js'
 
 /** The three ways into the chat the shell lends out, behind refs. */
 export interface ChatChannel {
@@ -38,6 +39,8 @@ export interface ChatChannel {
 
 export interface CanvasProps {
   readonly ready?: boolean
+  /** The index answered; a section waits for this, not for `ready`. */
+  readonly indexed?: boolean
   readonly instance: InstanceInfo
   readonly skin: Skin & SkinSlots
   readonly loaded: readonly LoadedPlugin[]
@@ -48,6 +51,14 @@ export interface CanvasProps {
   readonly settingsPage: PrefsPage | undefined
   readonly page: PageDocument | undefined
   readonly pageProblem: { path: string; status: number } | undefined
+  /** The address asks for a page that has not answered yet. */
+  readonly pageLoading?: boolean
+  readonly retryPage?: () => void
+  /** The page editor opened or closed (AD-21: the feed never replaces what is being typed). */
+  readonly onEditing?: (editing: boolean) => void
+  /** The page as the disk now has it, read aside while editing. */
+  readonly incoming?: Incoming | undefined
+  readonly reloadPage?: () => void
   readonly mount: EditorMount | undefined
   readonly section: string | undefined
   readonly channel: ChatChannel
@@ -106,6 +117,9 @@ export function Canvas(props: CanvasProps) {
         <Editor
           page={page}
           fetchImpl={props.fetchImpl}
+          {...(props.onEditing ? { onEditing: props.onEditing } : {})}
+          {...(props.incoming ? { incoming: props.incoming } : {})}
+          {...(props.reloadPage ? { onReload: props.reloadPage } : {})}
           openPage={openPage}
           locale={props.locale}
           // Dropping a file on a page hands it to the chat and writes the
@@ -136,7 +150,19 @@ export function Canvas(props: CanvasProps) {
     )
   }
 
-  if (pageProblem) return <MissingPage path={pageProblem.path} status={pageProblem.status} t={t} />
+  if (pageProblem) {
+    return (
+      <MissingPage
+        path={pageProblem.path}
+        status={pageProblem.status}
+        t={t}
+        {...(props.retryPage ? { onRetry: props.retryPage } : {})}
+      />
+    )
+  }
+
+  // Nothing held and a page asked for: the wait, not the section or the home.
+  if (props.pageLoading) return <Loading t={t} />
 
   if (section) {
     return (
@@ -148,6 +174,7 @@ export function Canvas(props: CanvasProps) {
         stores={stores}
         openSection={openSection}
         openPage={openPage}
+        {...(props.ready === undefined ? {} : { ready: props.ready && props.indexed !== false })}
         t={t}
       />
     )

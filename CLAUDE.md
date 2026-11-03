@@ -23,6 +23,8 @@ npm run lint         # eslint packages plugins; also in CI
 npm run build        # server/dependencies, then the web shell and its vendor/SW files
 ```
 
+One test file: `npx vitest run packages/web/test/<file>.test.tsx` from the root.
+
 `npm test` does not run `bench/tests/*.test.mjs`: those are `node --test bench/tests/<file>`,
 and CI plays two of them (`doc-besoin.test.mjs`, `bench-once.test.mjs`).
 

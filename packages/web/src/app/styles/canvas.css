@@ -4,6 +4,9 @@
 
 .adestia-canvas {
   overflow-y: auto;
+  /* One height for the sticky header (its min-height) and for whatever sticks under it
+     (the offline banner's `top`): they are siblings, so the variable lives on their parent. */
+  --canvas-header-h: 56px;
 }
 
 .adestia-canvas__header {
@@ -13,7 +16,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 52px;
+  box-sizing: border-box;
+  min-height: var(--canvas-header-h);
   padding: 11px 24px;
   border-bottom: 1px solid var(--border);
   background: color-mix(in srgb, var(--surface) 82%, transparent);

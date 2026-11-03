@@ -55,6 +55,8 @@ export interface InstanceInfo {
 
 export interface InstanceOptions {
   readonly fetchImpl: typeof fetch
+  /** The change feed's link, for the server-reach layer (AD-27). */
+  readonly onLink?: (up: boolean) => void
   readonly openPage: (path: string, store?: string) => void
   /** The chat's channel, read at call time: it mounts after this runs. */
   readonly askRef: { readonly current: ((prompt: string) => void) | undefined }
@@ -65,7 +67,7 @@ export interface InstanceOptions {
   readonly onTrail: (id: string, crumbs: readonly { label: string; route?: string }[]) => void
 }
 
-export function useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef, onTrail }: InstanceOptions) {
+export function useInstance({ fetchImpl, onLink, openPage, askRef, composeRef, blocksRef, onTrail }: InstanceOptions) {
   const [instance, setInstance] = useState<InstanceInfo | undefined>()
   const [failures, setFailures] = useState<readonly { id: string; reason: string }[]>([])
   const [fatal, setFatal] = useState<string | undefined>()
@@ -78,6 +80,11 @@ export function useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef
    * how the shell knows there is no provenance to draw.
    */
   const [stores, setStores] = useState<readonly StoreInfo[]>([])
+  /**
+   * The last batch of the change feed, for the open page (AD-21). One stream:
+   * the index above and this are read from the same `followChanges`.
+   */
+  const [pageChanges, setPageChanges] = useState<{ seq: number; paths: readonly string[] }>({ seq: 0, paths: [] })
   const [skin, setSkin] = useState<Skin & SkinSlots>({})
   const [skinScheme, setSkinScheme] = useState<'light' | 'dark' | undefined>(undefined)
   const [loaded, setLoaded] = useState<readonly LoadedPlugin[]>([])
@@ -86,6 +93,8 @@ export function useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef
    * — answer or failure: a failed index is "ready, empty".
    */
   const [ready, setReady] = useState(false)
+  /** True only when the index ANSWERED: a failed one leaves E-3 on its loading row (B-18). */
+  const [indexed, setIndexed] = useState(false)
   /**
    * The same list, readable the instant it exists.
    *
@@ -214,6 +223,7 @@ export function useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef
           const body = list.data
           setPages(Array.isArray(body?.entries) ? body.entries : [])
           setStores(Array.isArray(body?.stores) ? body.stores : [])
+          setIndexed(true)
         }
         if (!cancelled) setReady(true)
       } catch (error) {
@@ -250,8 +260,10 @@ export function useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef
     void followChanges({
       fetchImpl,
       signal: controller.signal,
+      onLink,
       // The live feed ignores what `onChange` returns: the refresh is started, not awaited.
-      onChange: () => {
+      onChange: (paths) => {
+        setPageChanges((current) => ({ seq: current.seq + 1, paths }))
         void (async () => {
           const list = await requestJson<{ entries?: IndexEntry[]; stores?: StoreInfo[] }>(
             fetchImpl,
@@ -265,7 +277,7 @@ export function useInstance({ fetchImpl, openPage, askRef, composeRef, blocksRef
       },
     })
     return () => controller.abort()
-  }, [instance, fetchImpl])
+  }, [instance, fetchImpl, onLink])
 
-  return { instance, failures, fatal, offline, needsLogin, pages, stores, skin, skinScheme, loaded, ready }
+  return { instance, failures, fatal, offline, needsLogin, pages, stores, skin, skinScheme, loaded, ready, indexed, pageChanges }
 }

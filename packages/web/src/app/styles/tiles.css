@@ -469,3 +469,8 @@
 
 /* A name and one field: the sheet is as tall as that, not the 720px of a list. */
 .adestia-nameprompt { height: auto; }
+
+/* E-33: a question and two buttons; the server's name wraps, it is never cut. */
+.adestia-confirm { height: auto; }
+.adestia-confirm__body { margin: 0; overflow-wrap: anywhere; }
+.adestia-confirm__name { font-weight: 600; }

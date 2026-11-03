@@ -115,6 +115,26 @@ export const SETTING_GROUPS: readonly SettingGroup[] = [
       },
     ],
   },
+  {
+    id: 'turns',
+    label: 'Turns',
+    lede:
+      'How many conversations the agent may work on at once. Each running turn holds an engine process, roughly 300 MB.',
+    settings: [
+      {
+        path: ['maxConcurrentTurns'],
+        kind: 'number',
+        label: 'Simultaneous turns',
+        help:
+          'Past this number a new turn is refused with a 429 and the chat says why. Raise it only if the instance has the memory.',
+        min: 1,
+        max: 16,
+        unit: 'turns',
+        fallback: 3,
+        applies: 'restart',
+      },
+    ],
+  },
 ]
 
 /** Every setting, flat, for the server's lookups. */

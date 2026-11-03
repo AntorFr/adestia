@@ -19,6 +19,7 @@ export interface Message {
   readonly text: string
   readonly tools?: readonly { name: string; target?: string | undefined; ok?: boolean | undefined }[]
   readonly signatures?: readonly Signature[]
+  readonly contextLost?: boolean
   /** The names of the files sent with a user's message, drawn under its text. */
   readonly attachments?: readonly string[]
   readonly stopped?: boolean
