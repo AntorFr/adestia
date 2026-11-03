@@ -1,8 +1,8 @@
 /**
  * The focus trap and its return, shared by Sheet and Popover (docs/charte.md § 4).
  *
- * On open, focus goes to the first focusable of the container (the container itself
- * when it holds none); on close it returns to the element that had it before.
+ * On open, focus goes to the first `data-autofocus` element of the container, else to its
+ * first focusable (the container itself when it holds none); on close it returns to the element that had it before.
  */
 
 import { useEffect, useRef, type RefObject } from 'react'
@@ -31,7 +31,8 @@ export function useFocusScope(
     const root = ref.current
     if (!active || !root) return
     const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
-    const first = focusables(root)[0]
+    // Opt-in: the first `data-autofocus` element wins; otherwise the first focusable, as before.
+    const first = root.querySelector<HTMLElement>('[data-autofocus]') ?? focusables(root)[0]
     if (first) first.focus()
     else {
       if (root.tabIndex < 0) root.tabIndex = -1

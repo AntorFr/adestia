@@ -28,7 +28,8 @@ const WORDS = {
   fr: {
     'Home': 'Accueil',
     'The Workshop': 'L’Atelier',
-    'loading…': 'chargement…',
+    'Loading…': 'Chargement…',
+    'Retry': 'Réessayer',
     'The Workshop is unavailable.': 'Atelier indisponible.',
     'Woodworking follow-up — your cutting plans.': 'Suivi menuiserie — vos plans de débit.',
     'No workbook — ask Alfred to generate one (woodworking skill).': 'Aucun workbook — demandez à Alfred d’en générer un (skill menuiserie).',
@@ -37,7 +38,7 @@ const WORDS = {
     'steps': 'étapes',
     '%n piece': '%n pièce',
     '%n pieces': '%n pièces',
-    'Unreadable workbook (%err).': 'Workbook illisible (%err).',
+    'Unreadable workbook.': 'Workbook illisible.',
     'Sheets': 'Plaques',
     'Cross-cuts': 'Tronçons',
     'Grooves': 'Rainures',

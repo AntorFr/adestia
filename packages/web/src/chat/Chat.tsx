@@ -13,6 +13,7 @@
 import { Icon } from '../app/Icon.js'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 
 import { type ScreenView } from './stream.js'
 import {
@@ -28,7 +29,7 @@ import { AskPrompt } from './AskPrompt.js'
 import { type Signature, type SigningOptions } from './Signatures.js'
 import { Composer, type ComposerButton, type PendingAttachment } from './Composer.js'
 import { jsonInit, requestJson } from '../app/request.js'
-import { useConversations } from './useConversations.js'
+import { DRAFT, useConversations } from './useConversations.js'
 import type { ModelInfo } from './ModelPicker.js'
 import { ChatHeader } from './ChatHeader.js'
 import { ConversationList } from './ConversationList.js'
@@ -62,6 +63,8 @@ export interface ChatProps {
    * as the text it is rather than as a link that goes nowhere.
    */
   readonly openPage?: (path: string) => void
+  /** Drawn above the rail's header (the offline banner on a phone, E-32); nothing when absent. */
+  readonly banner?: ReactNode
   /**
    * Hands the shell a way to send a message, so a plugin's button can ask the
    * agent something. The chat owns this channel; nobody else may fabricate a
@@ -155,6 +158,7 @@ export function Chat({
   onReady,
   extraButtons,
   openPage,
+  banner,
   view,
   signatures,
 }: ChatProps) {
@@ -163,6 +167,9 @@ export function Chat({
   const {
     tabs,
     conversations,
+    listState,
+    retryList,
+    retry,
     listOpen,
     setListOpen,
     activeId,
@@ -181,6 +188,8 @@ export function Chat({
     stop,
     moveTab,
   } = useConversations({ fetchImpl, narrow, model, view, t })
+  /** A saved conversation whose transcript is not read yet: Loading, or Failure with Retry. */
+  const adopting = activeId !== DRAFT && !active.loaded && !active.denied
   /** Latest `send`, for the channel published to plugins (see the effect). */
   const sendRef = useRef<(text: string, attachments?: readonly PendingAttachment[]) => Promise<void>>(
     async () => {},
@@ -247,6 +256,7 @@ export function Chat({
 
   return (
     <section className="adestia-chat">
+      {banner}
       <ChatHeader
         {...(brand !== undefined ? { brand } : {})}
         {...(crest !== undefined ? { crest } : {})}
@@ -283,6 +293,8 @@ export function Chat({
       {listOpen && (
         <ConversationList
           conversations={conversations}
+          state={listState}
+          retry={retryList}
           activeId={activeId}
           dotOf={dotOf}
           openConversation={openConversation}
@@ -294,6 +306,8 @@ export function Chat({
       <Thread
         active={active}
         t={t}
+        retry={() => retry(activeId)}
+        adopting={adopting}
         {...(openPage ? { openPage } : {})}
         signing={signing}
         {...(busySlot ? { busySlot } : {})}
@@ -357,7 +371,10 @@ export function Chat({
         onStop={stop}
         busy={active.live?.running ?? false}
         stopping={active.stopping}
-        blocked={active.live?.ask !== undefined && !answered.has(active.live.ask.id)}
+        blocked={
+          (active.live?.ask !== undefined && !answered.has(active.live.ask.id)) ||
+          (activeId !== DRAFT && !active.loaded)
+        }
         {...(placeholder ? { placeholder } : {})}
         {...(sendIcon ? { sendIcon } : {})}
         t={t}

@@ -4,17 +4,26 @@ import type { McpServerView } from '@antorfr/adestia-schemas'
 
 import { Icon } from '../Icon.js'
 import { Tile } from '../Tile.js'
-import { EmptyState } from '../ui/index.js'
+import { EmptyState, Loading } from '../ui/index.js'
+import { ReadFailure } from '../ui/ReadFailure.js'
 import type { McpServerHealth } from '../Settings.js'
 import { stateOf } from './health.js'
 
 export function ServerList({
   views,
+  status = 'ready',
+  error = '',
+  httpStatus,
+  onRetry = () => undefined,
   health,
   onOpen,
   onAdd,
   t,
 }: {
+  readonly status?: 'loading' | 'ready' | 'failed'
+  readonly error?: string | undefined
+  readonly httpStatus?: number | undefined
+  readonly onRetry?: () => void
   readonly views: readonly McpServerView[] | undefined
   readonly health: readonly McpServerHealth[] | undefined
   readonly onOpen: (name: string) => void
@@ -38,10 +47,15 @@ export function ServerList({
         </div>
       </header>
 
-      {views !== undefined && views.length === 0 && (
+      {status === 'loading' && <Loading t={t} />}
+      {status === 'failed' && (
+        <ReadFailure message={error} httpStatus={httpStatus} onRetry={onRetry} t={t} />
+      )}
+      {status === 'ready' && views !== undefined && views.length === 0 && (
         <EmptyState icon="plug" text={t('None wired yet — add one, or declare it in the configuration file.')} />
       )}
 
+      {status === 'ready' && (
       <ul className="adestia-tiles">
         {(views ?? []).map((view) => {
           const state = health?.find((entry) => entry.name === view.name)
@@ -80,6 +94,7 @@ export function ServerList({
           t={t}
         />
       </ul>
+      )}
     </div>
   )
 }

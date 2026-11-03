@@ -146,6 +146,7 @@ export class ConversationStore {
         role: 'agent',
         text: part.text,
         at: new Date().toISOString(),
+        ...(index === 0 && outcome.contextLost ? { contextLost: true } : {}),
         ...(outcome.turn ? { turn: outcome.turn } : {}),
         ...(part.tools.length > 0 ? { tools: [...part.tools] } : {}),
         ...(part.signatures?.length ? { signatures: [...part.signatures] } : {}),

@@ -34,6 +34,7 @@ export type Locale = 'en' | 'fr'
  * mistranslated, and beats a raw identifier by a mile.
  */
 const FR: Readonly<Record<string, string>> = {
+  'The engine no longer remembers the earlier messages.': 'Le moteur ne se souvient plus des messages précédents.',
   'Unknown block ":::%block". The vocabulary is closed; extending it is a coded change.':
     'Bloc inconnu « :::%block ». Le vocabulaire est fermé ; l’étendre nécessite une modification du code.',
   'Block ":::%block" takes no content — its attributes are its whole meaning.':
@@ -313,6 +314,13 @@ const FR: Readonly<Record<string, string>> = {
   'Scan period': 'P\u00e9riode du scan',
   'How long between two scans. Ignored unless scanning is on.':
     'D\u00e9lai entre deux scans. Sans effet si le scan est d\u00e9sactiv\u00e9.',
+  Turns: 'Tours',
+  'How many conversations the agent may work on at once. Each running turn holds an engine process, roughly 300 MB.':
+    'Combien de conversations l\u2019agent peut traiter \u00e0 la fois. Chaque tour en cours occupe un processus du moteur, environ 300 Mo.',
+  'Simultaneous turns': 'Tours simultan\u00e9s',
+  'Past this number a new turn is refused with a 429 and the chat says why. Raise it only if the instance has the memory.':
+    'Au-del\u00e0 de ce nombre, un nouveau tour est refus\u00e9 par un 429 et le chat en dit la raison. Ne l\u2019augmentez que si l\u2019instance a la m\u00e9moire.',
+  turns: 'tours',
 
   // MCP servers, on their settings page
   'MCP servers': 'Serveurs MCP',
@@ -351,6 +359,9 @@ const FR: Readonly<Record<string, string>> = {
     'Aucun branché — ajoutez-en un, ou déclarez-le dans le fichier de configuration.',
   'Server declaration': 'Déclaration du serveur',
   Remove: 'Supprimer',
+  'Remove server?': 'Supprimer le serveur ?',
+  '“%name” will no longer be wired. Its declaration is deleted from this instance.':
+    '« %name » ne sera plus branché. Sa déclaration est supprimée de cette instance.',
 
   // The composer
   Model: 'Modèle',
@@ -368,6 +379,9 @@ const FR: Readonly<Record<string, string>> = {
   'Saving…': 'Enregistrement…',
   Saved: 'Enregistré',
   'Loading…': 'Chargement…',
+  'Retry': 'Réessayer',
+  'Request failed (%n)': 'La requête a échoué (%n)',
+  'The server is not responding': 'Le serveur ne répond pas',
   // The page's own properties — the frontmatter, as a form. Field names and
   // their one-line helps come from the catalogue in the content engine, which
   // writes them in English for exactly this.
@@ -482,6 +496,8 @@ const FR: Readonly<Record<string, string>> = {
   'Saved, tidied to house style': 'Enregistré, remis au style de la maison',
   'The agent changed this page. Reload to see its version.':
     'L’agent a modifié cette fiche. Rechargez pour voir sa version.',
+  'The page changed.': 'La page a changé.',
+  Reload: 'Recharger',
   'Not saved: %reason': 'Non enregistré : %reason',
   'the page breaks the vocabulary': 'la fiche sort du vocabulaire',
   'line %n': 'ligne %n',

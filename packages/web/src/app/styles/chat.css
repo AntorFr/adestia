@@ -583,3 +583,22 @@
   .adestia-sign__text { flex-basis: calc(100% - var(--space-3) - var(--text-lg)); }
   .adestia-sign__actions { margin-left: auto; }
 }
+
+/* A stored boundary in the thread, with room for the French sentence to wrap. */
+.adestia-thread__mark {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  flex: 0 0 auto;
+}
+.adestia-thread__mark::before,
+.adestia-thread__mark::after {
+  content: '';
+  flex: 1 0 var(--space-2);
+  border-top: 1px solid var(--border);
+}
+.adestia-thread__mark > .adestia-icon { flex-shrink: 0; }
+.adestia-thread__mark > span { min-width: 0; overflow-wrap: anywhere; }

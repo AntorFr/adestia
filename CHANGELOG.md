@@ -627,3 +627,82 @@ branch and that `test:plugins` is replayed after a red vitest run.
   the four changelog statements it checks live, instead of the section of the highest
   version. Writing a later release into the CHANGELOG no longer turns it red. A test-only
   fix: nothing changes for users.
+
+## v0.97.0-adestia-ajouts.1
+
+**The simultaneous-turns slice (B-21, AD-30).** The settings screen carries `maxConcurrentTurns` (1 to 16, default 3) in a group of its own; it applies after a restart.
+
+## v0.97.0-adestia-ajouts.2
+
+**The screens slice (B-18, AD-29).** The section, the page, the settings mosaic, instructions and delegations show the shared loading row while they fetch; a failed page, instructions or delegations read offers **Retry**.
+
+## v0.97.0-adestia-ajouts.3
+
+**The MCP slice (B-18, B-20, AD-29, AD-31).** Removing an MCP server asks first in a sheet that names it (focus on Cancel, Escape cancels); the MCP list shows its loading and offers **Retry**.
+
+## v0.97.0-adestia-ajouts.4
+
+**The followed-page slice (B-17, AD-21).** The open page follows what the agent writes: reading refreshes in place, editing raises a **Reload** banner and never replaces the typed text.
+
+## v0.97.0-adestia-ajouts.5
+
+**The offline slice (B-19, AD-27).** When a call to the server fails or the event stream drops, a banner says the server is not responding and leaves by itself when it answers.
+
+## v0.97.0-adestia-ajouts.6
+
+**The plugins slice (B-18, AD-29).** The Atelier (E-25) and Parcours (E-28) screens show their loading and, when the server fails, a message with **Retry**.
+
+## v0.97.0-adestia-ajouts.7
+
+**The chat slice (B-18, B-22, AD-28, AD-29).** The conversation list and thread show their loading, with **Retry** when it fails; when Claude has lost the session of an older conversation, the next turn still succeeds and the thread says the engine no longer remembers the earlier messages.
+
+## v0.97.0-adestia-ajouts.8
+
+**The screens slice, follow-up (B-18, AD-29).** The section, page, settings, instructions and delegations screens show a loading line while their data arrives; a page, instructions or delegations read that fails shows the error with **Retry**, and a page the server could not serve offers it too.
+
+## v0.97.0-adestia-ajouts.9
+
+**The plugins slice, follow-up (B-18, AD-29).** The Atelier (E-25) and Parcours (E-28) screens show a loading line and, when the server fails, a message with **Retry**; same look under the four skins, in English and French.
+
+## v0.97.0-adestia-ajouts.10
+
+**The chat slice, follow-up (B-18, B-22, AD-28, AD-29).** The conversation list and thread show a loading state and **Retry** on failure; with Claude, a thread whose earlier context was lost says so.
+
+## v0.97.0-adestia-ajouts.11
+
+**The followed-page slice, follow-up (B-17, AD-21).** An open page follows the agent, including a page in a second repository; editing raises the **Reload** banner without touching the typed text; with the watch off nothing moves.
+
+## v0.97.0-adestia-ajouts.12
+
+**The offline slice, follow-up (B-19, AD-27).** The "The server is not responding" banner shows above any open screen, also during "Coming back…", and leaves by itself; it stays under the canvas header when the screen is scrolled.
+
+## v0.97.0
+
+- **The chat shows its loading and says when the engine lost its context** — The conversation list and an adopted tab's thread show the shared loading row, or the failure block with **Retry** (the composer stays on screen, disabled while the thread is unread). When Claude refuses a gone session the server reruns the turn once without it and stores `contextLost` on the first agent message; the thread draws a `role="note"` line above it, in English and French (B-18, B-22, AD-28, AD-29). `bench/scenarios/chat-ajouts.mjs` (seed `chat-ajouts`) plays every state under the four skins, both languages, light and dark, desk and phone, and checks that the line neither overlaps nor cuts the message below it and that the failure block does not swallow the composer.
+- **The open page follows the agent** — When the agent rewrites the page on screen, reading shows the
+  new text in place and editing raises the banner "The page changed." with **Reload**; the typed text
+  is never replaced and the user's own save raises nothing. A page the agent deletes or moves shows E-8
+  (in editing, after the banner and **Reload**). It works for every store and does nothing when
+  `workspace.watch.enabled` is false. P-5 step 7 no longer says the page is left alone (B-17, AD-21);
+  `bench/scenarios/page-suivie.mjs` plays it under the four skins.
+- **The MCP list shows its loading and offers Retry** — E-10 keeps its heading and shows the shared loading row until the declarations answer (list or an opened `#/settings/mcp/<name>`); a failed first fetch shows the failure block with Retry. A refetch after Save or Remove never brings the loading back and fails silently; server health is untouched (B-18, AD-29).
+- **Removing an MCP server asks first** — **Remove** in E-10 opens a sheet (E-33) that names the server; Cancel, ✕, the scrim and Escape keep it and nothing is sent, and the confirmed press sends a single `DELETE`. Cancel has the initial focus, through a new opt-in `data-autofocus` in the focus scope that no other sheet uses. E-10's Remove stays disabled until the `DELETE` answers (B-20, AD-31).
+- **Simultaneous turns** — The settings screen (E-14) carries `maxConcurrentTurns` (1 to 16,
+  default 3) in a group of its own, in English and French. It applies at restart: the limiter is
+  built once at boot (B-21, AD-30).
+
+- **Loading and failure of the shell's screens** — the section (E-3), the page (E-4), the
+  settings mosaic (E-9), instructions (E-11) and delegations (E-13) draw the shared loading
+  row while they fetch; a page, instructions or delegations read that fails says so with
+  **Retry**, which fetches again and shows the data (E-8 included when the server could not
+  answer). E-3 and E-9 have no button. The bench plays each one slowed and broken on the
+  four skins, in `en` and `fr`, light and dark, desk and phone
+  (`bench/scenarios/chargements.mjs`).
+
+- **Offline banner** (E-32) — when the server stops answering, a "The server is not responding" strip
+  shows above the open screen, on the canvas or, on a phone with the chat shown, above the rail; it
+  leaves by itself when the server answers, without reloading the page. On a screen scrolled down it
+  stays under the canvas header. The bench stops and restarts a real instance, looks at E-2, E-4 and
+  E-14 ("Coming back…") on the four skins, in `en` and `fr`, light and dark, desk and phone
+  (`bench/scenarios/hors-ligne.mjs`); a launcher started again on the same `--data` now seeds without
+  failing.

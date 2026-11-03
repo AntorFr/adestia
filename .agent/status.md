@@ -1,51 +1,18 @@
 # Status — Adestia
-> MàJ : 2026-11-03
+> MàJ : 2026-11-01
 
 ## Version courante
 
-- Dernier tag accessible : **`v0.96.1`** (correctif de la garde `besoin-pages-statique`, posé sur `main` par la fusion de `adestia-correctif-garde-changelog`) ; avant lui **`v0.96.0`** (`git describe --tags
-  --abbrev=0`, posé sur `main` par la fusion de l'epic `adestia-correctifs` ; ses préversions : le `.1` était la tranche serveur, le `.2` la tranche chat, le `.3` la tranche shell, le `.4` la tranche pages, le `.5` la tranche plugins, le `.6` la tranche dette, le `.7` la reprise de la tranche chat, le `.8` la reprise de la tranche dette, le `.9` sa seconde reprise) de l'epic, posées sur sa branche d'intégration ;
-  le tag précédent dans `main` était `v0.95.0` (l'epic `adestia-qualite`).
-- Branche de travail : `feature/rouge-adestia-1` (test seul : la garde B-5 de `bench/tests/doc-besoin.test.mjs` ne liste que les tags fusionnés dans HEAD, `--merged HEAD`, pour que les tags `v0.97.0-adestia-ajouts.1..12`, posés sur l'epic non fusionnée, ne rougissent pas `main` ; leurs entrées CHANGELOG viennent avec la fusion de l'epic) ; précédemment `feature/adestia-correctif-garde-changelog` (test seul : la garde `besoin-pages-statique` lit la section `## v0.96.0` du CHANGELOG, plus la version la plus haute) ; précédemment `feature/adestia-correctifs-dette`, sur `origin/epic/adestia-correctifs` : reprise de la tranche dette
-  (garde B-5 : dernier titre du CHANGELOG = dernier tag ou version suivante de la série, y compris le titre `vX.Y.Z` de la cible stable après ses préversions ; status.md doit citer ce titre en entier, une préversion ne vaut pas sa version ; la CI prend les tags). Précédemment : `feature/adestia-correctifs-chat` : reprise
-  de la tranche chat (tag `.2`) après sa vérification : un envoi qui échoue sans phrase lisible du
-  serveur (corps vide, illisible, non JSON) lit `t('upload failed')` (`Composer.tsx`, B-16), dit dans
-  `CHANGELOG.md` et `ARCHITECTURE.md` (Known defects) ; une connexion coupée avant toute réponse garde
-  « request failed (0) », traduit. Rien à coder ici ; les deux premières puces des compléments de Défauts connus (sélecteur de modèle natif, signatures des délégations) sont des défauts gardés, avec leur raison.
-  Précédemment : `feature/adestia-correctifs-dette` (tranche dette, AD-26 : plus d'alias d'une ligne dans `packages/drivers` (`no-aliases.test.ts`) ;
-  la table des exports gardés pour leurs tests d'`ARCHITECTURE.md` porte une raison par ligne
-  (`dette-exports-besoin.test.ts`) ; le banc définit `loadPlaywright` et `launch(seed)` une fois
-  (`bench/lib/`, `bench-once.test.mjs`) ; la CI joue `doc-besoin` et `bench-once` ; `DESIGN.md` n'a
-  qu'une garde par règle ; `no-misused-promises` et `await-thenable` sont allumées
-  (`lint-type-aware.test.ts`). Aucun écran touché. Reste : `no-floating-promises`, voir Défauts
-  connus. `.agent/migrate-frame.mjs` n'existe plus : « not reproduced »).
-  Précédemment : `feature/adestia-correctifs-plugins`, sur `origin/epic/adestia-correctifs`
-  (tranche plugins, AD-24 a-d : l'atelier (réinitialiser la mise en plan) et les voyages (geste
-  refusé) parlent dans la feuille propre au plugin, sans `confirm()` ni `alert` — seul changement de
-  flux, réponse asynchrone, focus rendu à la carte ; « 1 pièce » et les compteurs des voyages
-  s'accordent par langue ; la carte de balade E-28 prend la hauteur de sa boîte ; le lecteur du
-  scanner rend le focus au champ du composeur quand son ouvreur a disparu (E-30) ; `--warning`
-  ne dit plus que l'Amber du porteur, le retard déduit est tireté ; les émojis de chrome cèdent
-  aux icônes de la charte (marques de données, `✦` et `✓` gardés, `emoji.test.js`) ; la date de
-  `:::content` suit la langue. Preuves : `bench/plugins-correctifs-proof.md`, `plugins-mots-proof.md`,
-  `bench/scenarios/plugins-correctifs.mjs`. Reste : voir Défauts connus).
-  Précédemment : `feature/adestia-correctifs-pages`, sur `origin/epic/adestia-correctifs`
-  (tranche pages, AD-25 : la trace d'une page racine ne nomme plus de dossier (`folderOf`) et E-8
-  mène à Accueil ; le `Popover` reste sous l'en-tête du canevas et les bandeaux et suit son ancre
-  (`bench/scenarios/pages-reglages.mjs`) ; un `Diagnostic` porte `code` et `args`, le shell le dit
-  par `t()` en `fr`, le `message` anglais du fil est inchangé ; l'index, la planification et la
-  liste Planif (`plugins/planif/api.mjs`) lisent une fiche CRLF et une clôture `---` suivie
-  d'espaces comme l'éditeur, `stampField` garde la fin de ligne. Preuves : `bench/pages-proof.md`,
-  tests `chemin-racine`, `popover-placement`, `page-diagnostics-language`, `frontmatter`,
-  `schedule`. Reste, avec sa raison : la page ouverte ne se rafraîchit pas quand l'agent écrit
-  (P-5 étape 7) ; les phrases serveur d'E-23 restent en anglais).
-  Les tranches pages, shell, chat et serveur de l'epic (tags `.1` à `.4`) sont au
-  [CHANGELOG](../CHANGELOG.md), avec leurs restes dans Défauts connus.
-  Précédemment : `feature/adestia-qualite-chat`, sur `origin/epic/adestia-qualite`
-  (correctifs de recette et de verify : un message envoyé avant que le premier soit parti est retenu ;
-  en-tête du rail à moins de 400 px à un seul espacement, sélecteur de modèle d'au moins 72 px ; bulle d'erreur seule à marge symétrique). Banc, tests, serveur, charte,
-  plugins, pages et chat sont intégrés à l'epic ; la documentation est relue
-  contre le code.
+- Dernier tag accessible : **`v0.97.0`** (`git describe --tags --abbrev=0`, posé sur `main` par la fusion de l'epic
+  `adestia-ajouts` ; ses préversions `v0.97.0-adestia-ajouts.1` à `.12` sont posées sur sa branche) ; le tag précédent
+  dans `main` était `v0.96.1` (correctif de la garde `besoin-pages-statique`, fusion de `adestia-correctif-garde-changelog`), avant lui `v0.96.0` (l'epic `adestia-correctifs`).
+- Branche de travail : `epic/adestia-ajouts`, qui entre dans `main` : dernière tranche livrée, `feature/adestia-ajouts-chat`
+  (chargement et Réessayer du chat, E-16 ; marque de contexte perdu de Claude, AD-28 ; recette : `node bench/scenarios/chat-ajouts.mjs`).
+  Livré avant elle sur l'epic : chargement et Réessayer des plugins Atelier et Parcours, E-25 et E-28, AD-29 ; le bandeau hors ligne E-32, AD-27 (`node bench/scenarios/hors-ligne.mjs`) ; la page ouverte suit l'agent, AD-21 (`node bench/scenarios/page-suivie.mjs`) ;
+  chargement et Réessayer des écrans, AD-29 (`node bench/scenarios/chargements.mjs`) ; E-10 (chargement, Réessayer) et la confirmation E-33 avant de retirer un serveur MCP, AD-31 (aucun scénario de `bench/scenarios/`
+  ne les couvre ; après `npm run build`, ouvrir à la main `#/settings/mcp/<nom>` sur `node bench/launch.mjs --engine fake`).
+  Précédemment : les tranches des epics `adestia-correctifs` (`v0.96.0`) et `adestia-qualite` (`v0.95.0`) sont au
+  [CHANGELOG](../CHANGELOG.md), avec leurs restes dans Défauts connus ci-dessous.
 - Déploiement actuel des instances Alfred, Skippy et Nestor : **non attesté ici**. La dernière
   mention commune dans l'ancien état est v0.81.0 le 30/09 ; v0.87.2 est dite
   déployée le 15/10 sans détail par instance déployée. Cela ne prouve pas leur version actuelle.
@@ -64,7 +31,6 @@ Compléments encore visibles dans le code :
   `app/Delegations.tsx`) : vue en lecture seule sans gestionnaire de signature (P-13 étape 7).
 - `no-floating-promises` reste éteinte : 644 constats (22 en production, 622 dans les tests),
   au-delà du seuil de 15 d'AD-26. `no-misused-promises` et `await-thenable` sont allumées.
-- La page ouverte ne se rafraîchit pas quand l'agent écrit (P-5 étape 7).
 - Les lignes `champ : message` de `ManifestError` restent en anglais : une table clé par phrases
   de validateur serait nouvelle.
 - Phrases serveur d'E-23/E-27 (problèmes de planif, raison d'échec d'une source), mots de données
@@ -79,6 +45,11 @@ Compléments encore visibles dans le code :
 - Les formulaires de données de blocs restent à faire : l'édition montre leur
   rendu, puis leurs lignes brutes au clic ; les réglages ne sont pas ces formulaires.
 
+- La ligne de chargement partagée (`.adestia-loading`, `padding: var(--space-5)`) est
+  décalée d'environ 24 px vers la droite du bord du contenu (titre, bannières) sur tous les
+  écrans qui la montrent, vue au banc (`bench/scenarios/chargements.mjs`). Elle date de la
+  classe partagée (E-2, E-14), pas de la tranche ; non réparée.
+
 Signalements d'usage hérités, **non reproduits dans cette tâche** : fil « tuyau
 Festool » d'Alfred coupé côté moteur ; insertion de `:::table` signalée en 422 au
 second enregistrement ; puce `tache` et crayon sous le titre « Note » dans l'éditeur
@@ -86,6 +57,22 @@ embarqué ; deux bugs UX du 26/08 (pop-up d'autorisation restant ouverte, fiche
 `adestia-evolutions` absente de la navigation). À requalifier par reproduction,
 sans les déclarer corrigés. Restent aussi à constater sur appareil : installation
 PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone/PWA.
+
+## Ce que l'epic `adestia-ajouts` laisse à savoir
+
+- Réglage des tours (`maxConcurrentTurns`, 1 à 16, repli 3) : il ne s'applique qu'au redémarrage, le limiteur est construit
+  une fois dans `buildDesk` (AD-30). `--engine fake` n'a pas `POST /api/restart` : lire `turns.max` demande le vrai binaire.
+- Page ouverte : le bandeau compare la révision de `useAutosave`, pas `page.revision` ; après une panne du serveur rien
+  n'est rattrapé avant le lot suivant (AD-27 rejette le sondage) ; seul le Reload de l'utilisateur remplace la saisie (AD-21).
+- Retrait d'un serveur MCP : le focus initial sur Cancel vient de `data-autofocus` dans `ui/focus.ts` (AD-31) ; un effet
+  dans le pied de feuille serait écrasé par celui du scope.
+- Bandeau hors ligne : la sonde appelle le `fetch` détaché de son ref (sinon « Illegal invocation », lu comme une sonde
+  échouée), ce que seuls les tests en navigateur voient (`besoin-hors-ligne-browser.test.ts`, instable une fois sous charge).
+- Le bandeau hors ligne colle sous l'en-tête du canevas par `top: var(--canvas-header-h)`, la variable que l'en-tête prend aussi pour `min-height` : un 56px en dur laissait une fente de 2 à 4 px (`offline-banner-sticky.test.ts`).
+- Chat : la relance sans session n'a lieu que sur le refus exact de Claude, avant tout texte (AD-28) ; seul Claude porte
+  la marque. `claude-lost-session.real.test.ts` est sauté sans `CLAUDE_CODE_OAUTH_TOKEN` : un `npm test` vert sans jeton
+  ne le prouve pas. Le banc de chaque tranche : `node bench/scenarios/<chargements|page-suivie|hors-ligne|chat-ajouts>.mjs`.
+
 
 ## À moitié construit
 
@@ -98,11 +85,8 @@ PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone
   le chat ne consomme que le compteur de contexte (`Chat.tsx`, `contract.ts`).
 - Les instructions sont éditables, mais aucun écran ne règle les permissions du
   moteur : ses fichiers de réglages ne sont pas exposés par `instructionPaths()`.
-- `maxConcurrentTurns` reste dans le fichier de configuration, absent des champs
-  éditables de `SETTING_GROUPS` ; pas de réglage du plafond à l'écran.
-- Le chat ne marque pas une perte de contexte moteur après redémarrage ; les homes
-  Copilot/Codex sont sous `dataDir`, celui de Claude dépend du `HOME` du déploiement
-  (`drivers.ts`).
+- La marque de contexte perdu ne vaut que pour Claude (Copilot et Codex ne peuvent pas perdre leur session : homes sous `dataDir`) ; le home de
+  Claude dépend toujours du `HOME` du déploiement (`drivers.ts`), le déplacer sous `dataDir` est hors tranche.
 - Le lanceur `packages/server/bin/adestia.js` n'a pas de commande `adestia init` ;
   il crée `workspace/` et `data/` au démarrage (`created workspace at …`).
 - `chat/conversations.ts` expose `deleteConversation`, sans commande à l'écran.
@@ -110,8 +94,6 @@ PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone
   ne propose pas ce mode (`routes/turns.ts`).
 - L'éditeur embarqué ne reçoit ni `attach`/`compose` ni l'index `pages` du shell
   (`plugins/PageEditor.tsx`) : pas de dépôt de fichier ni de résolution par cet index.
-- Les états de chargement de E-3/E-4/E-9, « Réessayer » de E-8, les toasts et
-  l'écran hors ligne restent hors de l'epic (B-1, docs/ecrans.md).
 - Mesures du banc en pixels à généraliser ; `journal` : couverture navigateur
   et `api.trail` à compléter selon les signalements de l'ancien état.
 

@@ -586,6 +586,8 @@ Aucun workbook — demandez à Alfred d’en générer un (skill menuiserie).
 
 == hub offline ==
 Atelier indisponible.
+Réessayer
 
 == unreadable bench ==
-Workbook illisible (Error: 500).
+Workbook illisible.
+Réessayer

@@ -16,8 +16,8 @@ Three roots, plus the extension folders. Nothing is held in a database.
   `adestia --config`. Read at boot by `loadConfigFile` / `parseConfig`; a missing file is a
   first run on defaults. `${VAR}` in a value is replaced from the environment; unknown keys
   refuse the boot. E-14 Configuration edits it in place through `settings-file.ts`,
-  which writes only keys the catalogue `SETTING_GROUPS` declares (today three:
-  `workspace.watch.enabled`, `workspace.watch.polling`, `workspace.watch.intervalMs`) and
+  which writes only keys the catalogue `SETTING_GROUPS` declares (today four:
+  `workspace.watch.enabled`, `workspace.watch.polling`, `workspace.watch.intervalMs` and `maxConcurrentTurns`, B-21) and
   keeps comments and layout through `yaml`'s document API. A read-only file (ConfigMap,
   `:ro` mount) is reported by `writability`, not written.
 - **The data directory** — `dataDir`, default `./data`, overridden by `ADESTIA_DATA_DIR`
@@ -67,6 +67,10 @@ a user (see Rules of access).
   defects, `deleteConversation`); an archived conversation is not listed. Carries the engine session it resumes
   (`session` line). Belongs to exactly one user; the workspace is shared, conversations are
   not.
+- **Context-lost mark** (`adestia-ajouts`, B-22) — not an entity: one optional boolean
+  `contextLost` on the **first** agent message the turn writes (the turn writes one per part), when the turn ran on a fresh engine session while the
+  conversation carried an earlier one. Written by the server at the end of that turn; read by
+  E-16 to draw the marker. Absent everywhere else.
 - **Message / turn** — a message is one line of a conversation, `role` `user` or `agent`. A
   turn is one engine run started by a user message; it writes one agent message per part it
   said (`recordOutcome`), the last carrying `stopped`, `error`, `usage`. A message posted
@@ -160,7 +164,7 @@ subject.
 
 | Path | Format | Mode | Writer | Readers | Written when |
 |---|---|---|---|---|---|
-| `D/conversations/<userhash>/<uuid>.jsonl` | JSONL, append-only. Lines: `{"type":"meta","id","title","updatedAt"}` at creation and on rename; `{"type":"meta","id","archived":bool}` on (un)archive; `{"type":"session","sessionId","at"}`; `{"type":"message","id","role":"user"\|"agent","text","at",…}` with optional `tools:[{name,target?,ok?}]`, `signatures:[{id,kind:"consent"\|"grant",url,expiresAt?}]`, `stopped`, `error`, `usage:{contextTokens?,outputTokens?}`, `turn`, `after`. Later meta lines win field by field. After `compact`: one meta line (with `updatedAt` of the last message, `archived`, `sessionId` if any), one session line without `at`, then messages in reading order | default | `ConversationStore` (chat routes, turns, `rename_conversation`) | `ConversationStore`, `ShellToolsService` | each message, turn end, rename, archive; rewritten whole by `compact` at the end of a turn that called `rename_conversation`; removed by delete |
+| `D/conversations/<userhash>/<uuid>.jsonl` | JSONL, append-only. Lines: `{"type":"meta","id","title","updatedAt"}` at creation and on rename; `{"type":"meta","id","archived":bool}` on (un)archive; `{"type":"session","sessionId","at"}`; `{"type":"message","id","role":"user"\|"agent","text","at",…}` with optional `tools:[{name,target?,ok?}]`, `signatures:[{id,kind:"consent"\|"grant",url,expiresAt?}]`, `stopped`, `error`, `usage:{contextTokens?,outputTokens?}`, `turn`, `after`, `contextLost:true`. Later meta lines win field by field. After `compact`: one meta line (with `updatedAt` of the last message, `archived`, `sessionId` if any), one session line without `at`, then messages in reading order | default | `ConversationStore` (chat routes, turns, `rename_conversation`) | `ConversationStore`, `ShellToolsService` | each message, turn end, rename, archive; rewritten whole by `compact` at the end of a turn that called `rename_conversation`; removed by delete |
 | `D/delegations/conversations/<caller>/<uuid>.jsonl` | same JSONL; `<caller>` is the `x-adestia-caller` header if it matches `^[a-z][a-z0-9_-]{0,31}$`, else `agent`; title = first line of the request, cut at 60 characters | default | `DelegationChannel` | `DelegationChannel` (`ask_*`, E-13 Delegations) | each ask and its answer |
 | `D/inbox/<userhash>/<batch uuid>/<safe name>` | the uploaded bytes; name via `safeName` | default | `AttachmentInbox.store` | the agent (box declared as a root) | upload |
 | `D/inbox/<userhash>/owner.txt` | two lines: display name (or id), then user id | default | `AttachmentInbox.store` | a person tidying | every upload batch that stored a file |

@@ -9,7 +9,9 @@
 > The night agents who make screens coherent and the visual reviewers check each screen
 > against this file. Components, classes and routes are named so they can be searched.
 >
-> The "Lacks" column of States is an observation, not a target: the epic builds no new
+> Where this file says an earlier epic (`adestia-qualite`, `adestia-correctifs`) "builds no new state" or keeps a state "a recommendation" (loading, error, offline), `adestia-ajouts` builds it: "Target states of `adestia-ajouts`" below is the rule, and the tranche that builds each state moves its row into the "as built" tables and empties the "Lacks" cell.
+> The "Lacks" column of States is an observation, not a target. For `adestia-qualite`, the
+> epic builds no new
 > state, except a loading state where a screen shows a wrong state while it loads today
 > (E-2, E-14) — coherence, not behaviour (`B-1`). Every `Q-n` is either closed by its tranche
 > or written "kept: <reason>". Charter, pages, chat and plugins are built:
@@ -33,7 +35,7 @@
 - **PWA.** A web manifest per skin (`skins/*/web.manifest`) and a service worker
   (`sw/sw.ts`, rule in `sw/policy.ts`): network-first for the document and mutable files,
   cache-first for content-addressed `/assets/*`, `/api/`, `/auth/` and `/mcp` never
-  touched. Offline, the cached shell opens; there is no offline screen of its own (E-21).
+  touched. Offline, the cached shell opens; there is no offline screen of its own (E-21); once the shell is open, the offline banner (E-32) says when the server does not answer.
 - **Themes and skins.** Light, dark, or system (`useTheme.ts`, chosen in E-15); four skins
   (`skins/alfred`, `dobby`, `nestor`, `skippy`) redefine tokens and may fill slots
   (hero, console band, crest, send icon, busy indicator, placeholder) through `SkinSlot.tsx`.
@@ -100,7 +102,7 @@ is labelled with the destination. Plugins with sub-screens add their own back (E
 | E-7 | Collection page | a page with `type: collection` | `app/Collection.tsx` (`CollectionLayout`, `CollectionShell`), `collections.ts`, `styles/collection.css` | A page listing its members as cards with facets, an `Ask for a new page` button, `Everything here is finished.` | P-5 |
 | E-8 | Missing page | `#/page/<path>` refused (404, 401/403, other) | `app/MissingPage.tsx`, `styles/missing-page.css` | Name the address, say which refusal, link to the folder above (to Home for a page at the root, which has none) | P-5 |
 | E-9 | Settings mosaic | `#/settings` | `app/Preferences.tsx`, `Tile.tsx` | Four tiles: MCP servers, Instructions, Configuration, Delegations, with counts | P-8, P-9, P-10, P-13 |
-| E-10 | MCP servers | `#/settings/mcp[/<name>]` | `app/McpServers.tsx`, `Settings.tsx` (`useMcpServers`), `styles/settings.css` | List servers with health; open one: state, per-person OAuth connect, JSON declaration editor, Save, Remove, add | P-8 |
+| E-10 | MCP servers | `#/settings/mcp[/<name>]` | `app/McpServers.tsx`, `Settings.tsx` (`useMcpServers`), `styles/settings.css` | List servers with health; open one: state, per-person OAuth connect, JSON declaration editor, Save, Remove (opens E-33), add; loading and fetch-failed with Retry (`adestia-ajouts-mcp`) | P-8 |
 | E-11 | Instructions | `#/settings/instructions[/<path>]` | `app/Instructions.tsx`, `styles/tiles.css` | Grouped file cards (instructions, skills, agents), search, `+` create buttons, open one in a monospace textarea, Save; delivered files read-only | P-9 |
 | E-12 | Catalogue pop-in | `Catalogues` button in E-11 | `app/CataloguePopin.tsx` (`.adestia-sheet`) | Add a git repository of instructions, list its items, import, Refresh | P-9 |
 | E-13 | Delegations | `#/settings/delegations[/<id>]` | `app/Delegations.tsx` | Tasks other agents delegated, grouped by caller, with state chips; open one | P-13 |
@@ -122,6 +124,8 @@ is labelled with the destination. Plugins with sub-screens add their own back (E
 | E-29 | Meals page layout | a page with `type: meals` | `plugins/meals/web/layouts.js`, `frise.js`, `meals.css` | Meal timeline (frise), drag to reorder, dish detail (`.meals-modal`) | P-5, P-11 |
 | E-30 | Scan overlay | composer button "Scan barcodes" | `plugins/scan/web/chrome.js`, `scanner.js`, `scan.css` | Full-screen camera, decoded codes list, “Add to message” into the composer | P-11 |
 | E-31 | Project-management blocks | `:::timeline` and `:::subproject` blocks in a page | `plugins/project-management/web/blocks.js`, `model.js`, `pm.css` | Timeline of dated sub-pages, project status pills | P-11 |
+| E-32 | Offline banner | above the open screen, whichever it is, while the server does not answer (it pushes the screen down, it does not cover it) | `app/Offline.tsx`, `app/App.tsx` | Say "The server is not responding"; goes away by itself when it answers (`adestia-ajouts`, B-19) | P-16 |
+| E-33 | Remove-server confirmation | **Remove** on E-10 | `app/mcp/ConfirmRemove.tsx`, `app/mcp/ServerDetail.tsx`, `app/ui/Sheet.tsx` | Name the server and ask; **Cancel** / **Remove** (`adestia-ajouts`, B-20) | P-16 |
 
 ## Roles × screens × actions
 
@@ -135,16 +139,16 @@ columns are the same except where the instance's configuration decides what exis
 | E-1 | sees gates | sees gates | — | — |
 | E-2 | open tiles, arrange, ask | same | writes the brief, the pages behind tiles | — |
 | E-3 | browse, search, facet | same | creates/moves pages (cards appear live) | — |
-| E-4, E-5, E-6 | read, edit, save | same | edits the same files; a concurrent edit gives the conflict state | — |
+| E-4, E-5, E-6 | read, edit, save | same | edits the same files; a concurrent edit gives the conflict state; an agent write refreshes the reading page and raises the banner in editing (`adestia-ajouts`, B-17) | — |
 | E-7 | add a member, open | same | writes members | — |
-| E-8 | follow the folder link (Home for a root page; this link is never hidden) | same; a 401/403 shows the screen with the lock, the page itself is refused | a mistyped address it gave lands here | — |
+| E-8 | follow the folder link (Home for a root page; this link is never hidden) | same; a 401/403 shows the screen with the lock, the page itself is refused | a mistyped address it gave lands here; so does a page the agent deleted or moved while open (`adestia-ajouts`) | — |
 | E-9 | open tiles | same | — | its delegations are counted |
 | E-10 | add/edit/remove servers, connect | same (connect is per person) | uses the servers; health reported after a turn | — |
 | E-11, E-12 | write, import, refresh | same | may write instruction files | — |
 | E-13 | read | same | runs the delegated turns | creates the rows through inbound MCP `ask_<name>` |
 | E-14 | edit, save, restart — only when the server got a `configPath`; else "does not expose its configuration" (the tile is still shown) | same | — | — |
 | E-15 | arm the token, theme, sign out | same (token is the instance's) | — | — |
-| E-16 | talk, create and archive conversations | same, own conversations under OIDC | answers, renames conversations (`rename_conversation`) | — (its threads are not in this list; they show on E-13 only, `DelegationChannel`); a refused turn (too many running) is explained to the Owner and the User alike |
+| E-16 | talk, create and archive conversations; **Retry** a failed list or thread; read the context-lost line (not dismissable) | same, own conversations under OIDC (another owner's: denied as today) | answers, renames conversations (`rename_conversation`) | — (its threads are not in this list; they show on E-13 only, `DelegationChannel`); a refused turn (too many running) is explained to the Owner and the User alike |
 | E-17, E-18 | answer, sign | same | asks permission, holds actions | may hold actions for signature |
 | E-19 | read | same | background trouble from its scheduled turns | — |
 | E-20 | use | same | — | — |
@@ -158,6 +162,8 @@ columns are the same except where the instance's configuration decides what exis
 | E-29 | use (reads, reorders, sets aside) | same | writes the meals page, guarded by a revision | — |
 | E-30 | use (camera; camera refusal is *shown* in the composer) | same | — | — |
 | E-31 | use (reads) | same | — | — |
+| E-32 | sees it; nothing to do | same | — | — |
+| E-33 | confirms or cancels a removal | same | — | — |
 
 ## States
 
@@ -165,35 +171,328 @@ columns are the same except where the instance's configuration decides what exis
 |---|---|---|
 | E-1 | loading (`LoadingGate`: spinner and "Loading…"), sign-in, refused, fatal; four cards with an icon each, every string through `t()` | — |
 | E-2 | loading (`.adestia-loading`, spinner and translated Loading…), normal, shared empty state (after ready), with/without brief, with/without hero, Arrange mode | — |
-| E-3 | normal, shared empty/no-match states ("This section holds nothing yet." / "Nothing matches."), facet chips, finished archive, multi-store marks | loading (index-driven, renders whatever is held) |
-| E-4 | reading, editing, saving/saved/"tidied", conflict (`.adestia-save--warn`), rejected, failed, read-only (`.adestia-editor__readonly` + raw source), diagnostics, drop zone, lost/ambiguous wikilink, unknown block, missing `from=` | a loading state while the page is fetched (previous screen stays); an empty-page state |
+| E-3 | normal, shared empty/no-match states ("This section holds nothing yet." / "Nothing matches."), facet chips, finished archive, multi-store marks, loading (the shared row while the shell's index has not answered, no Retry) | — |
+| E-4 | reading, editing, saving/saved/"tidied", conflict (`.adestia-save--warn`), rejected, failed, read-only (`.adestia-editor__readonly` + raw source), diagnostics, drop zone, lost/ambiguous wikilink, unknown block, missing `from=`, loading while the page is fetched (`Loading` only when no page is held, page to page keeps the first on screen), fetch-failed shows E-8 with Retry, reading refreshed in place when the agent rewrites the file, E-8 when it deletes or moves it, editing: the banner "The page changed." with **Reload** (the typed text is never replaced; the user's own save raises none; a watch that is off moves nothing) | an empty-page state |
 | E-5 | shared popover/fields, normal, broken frontmatter (nothing editable), unknown fields, kept-as-written | — |
 | E-6 | shared popover/fields, normal, required attributes missing (a star and the text alternative), stray attributes (a named `trash-2` control each), bounded below the canvas header and the bands (anchor scrolled under the header: the panel stays at the header's edge; anchor out at the bottom or soft keyboard on a phone: the panel stays inside the viewport and scrolls internally; on a desktop an anchor out at the bottom keeps the panel inside the viewport the same way; it follows its anchor on scroll and resize) | no loading, error or offline state: it opens on a block already in the editor, so none applies; read-only mode has no settings control, so the popover cannot open |
 | E-7 | normal, shared all-finished state inside a facet, count chips | empty collection state distinct from "all finished" |
-| E-8 | shared empty state: 404 (`file-question`, "There is no page at this address." / « Il n’y a aucune page à cette adresse. »), 401/403 (`lock`, "This page is out of reach — the session may have expired." / « Cette page est hors de portée — la session a peut-être expiré. »), other (`circle-alert`, "The server could not serve this page." / « Le serveur n’a pas pu servir cette page. »); folder link "Open the folder above" / « Ouvrir le dossier au-dessus », or "Home" / « Accueil » for a page at the root; a very long address wraps; no loading state of its own (the screen is drawn once the server has answered; E-4 keeps the previous screen while fetching); offline after startup is unchanged (Limits kept), E-21 covers startup failure | a retry for the "server could not" case |
-| E-9 | normal, tiles with Lucide icons; counts absent when unreadable | loading (tiles first render without counts; kept, a recommendation) |
-| E-10 | list, empty ("None wired yet…", shared empty state), health tones each with an icon, needs-auth, connected/not, shadowed, read-only declaration, saving/saved/failed | loading; a confirmation before Remove (kept, recommendations) |
-| E-11 | list, empty, no match, file open, delivered (read-only, lock icon), saving/saved/failed, the name sheet for a new skill or agent | loading (kept, a recommendation) |
+| E-8 | shared empty state: 404 (`file-question`, "There is no page at this address." / « Il n’y a aucune page à cette adresse. »), 401/403 (`lock`, "This page is out of reach — the session may have expired." / « Cette page est hors de portée — la session a peut-être expiré. »), other (`circle-alert`, "The server could not serve this page." / « Le serveur n’a pas pu servir cette page. »); the "server could not" case (0 included, the shell unable to reach the server) is the shared failure block with **Retry**, which fetches the page again; folder link "Open the folder above" / « Ouvrir le dossier au-dessus », or "Home" / « Accueil » for a page at the root; a very long address wraps; no loading state of its own (the screen is drawn once the server has answered; E-4 keeps the previous screen while fetching); offline after startup is unchanged (Limits kept), E-21 covers startup failure | — |
+| E-9 | normal, tiles with Lucide icons; counts absent when unreadable; loading (the shared row above the tiles until its four reads have answered or failed, tiles drawn throughout, no Retry) | — |
+| E-10 | list, empty ("None wired yet…", shared empty state), health tones each with an icon, needs-auth, connected/not, shadowed, read-only declaration, saving/saved/failed; loading (the shared row under the heading, no tiles, no "None wired yet", no "Add a server"); fetch-failed with **Retry** (first fetch only; a refetch after Save or Remove never shows loading and fails silently; health, `/api/mcp/status`, has neither); **Remove** opens E-33 | — |
+| E-11 | list, empty, no match, file open, delivered (read-only, lock icon), saving/saved/failed, the name sheet for a new skill or agent; loading and fetch-failed with **Retry** for the list and for the open file (404 on the list stays "this engine has no such folder"; 404 and 401/403 on a file have the message, no Retry) | — |
 | E-12 | no catalogue, reading the repository, nothing importable, error, items; in the shared sheet (Escape, focus kept and returned, bottom sheet on a phone) | — |
-| E-13 | list by caller, empty (shared empty state), state chips with an icon, open conversation (read-only text, no signature card) | loading, error (kept, recommendations) |
-| E-14 | loading (a spinner row), read error, not exposed (404), read-only, edited/default badges, saving/saved/failed, stale file, restart pending/asking/waiting/blocked/failed, each restart state with an icon | — |
+| E-13 | list by caller, empty (shared empty state), state chips with an icon, open conversation (read-only text, no signature card); loading and fetch-failed with **Retry** for the list and for the open conversation (404 and 401/403 on a conversation have the message, no Retry) | — |
+| E-14 | loading (a spinner row), read error, not exposed (404), read-only, edited/default badges, saving/saved/failed, stale file, restart pending/asking/waiting/blocked/failed, each restart state with an icon; the "Simultaneous turns" field (number, min 1, max 16) in a group of its own, with the "restart needed" mark (same row shape as "Scan period"; the offline banner E-32 and the restart-needed state are independent, both may show) | — |
 | E-15 | token states (stored, none, refused, arming flow, failed) with an icon, theme chosen (three-icon switch), signed in, version | — |
-| E-16 | empty thread, live turn (spinner or skin busy slot, counters), interrupted, error, held message, refused turn (its line now said in `en` and `fr`, kept until the next send or another conversation), tabs/list with labelled state shapes, translated shared empty list ("No conversation yet."), MCP connect prompt, composer busy/stopping/blocked, attachments and upload error | loading for the list and thread; offline/disconnected (kept: no new state under B-1; end-of-epic recommendations) |
+| E-16 | empty thread, live turn (spinner or skin busy slot, counters), interrupted, error, held message, refused turn (its line now said in `en` and `fr`, kept until the next send or another conversation), tabs/list with labelled state shapes, translated shared empty list ("No conversation yet."), MCP connect prompt, composer busy/stopping/blocked, attachments and upload error | an offline state of its own (the banner E-32 covers it; see "E-16 in `adestia-ajouts-chat`") |
 | E-17 | translated question with `triangle-alert`, with/without lasting rule (Always absent without one) | — |
 | E-18 | pending (`pen-line`), signed (`check`), denied (`x`), expired (`clock`), open in a tab; each with text; shared sheet with Escape, focus trap and return, bottom sheet on a phone | — |
 | E-19 | background trouble, refused, degraded, an icon per kind; absent when nothing | — |
 | E-20 | shared empty state, `plug`, translated Home action | — |
-| E-21 | the fatal gate drawn, with a wifi-off icon when the failure is a thrown fetch, and the browser's network error | an offline screen; an offline banner once the shell is open (kept, recommendations) |
+| E-21 | the fatal gate drawn, with a wifi-off icon when the failure is a thrown fetch, and the browser's network error | an offline screen (never built: B-19 is a banner, E-32) |
 | E-22 | loading, empty, error, conflict, sheet (a view with a named back: « Todo ») | Escape on the task sheet does nothing (kept: it is a view, not a dialog) |
 | E-23 | loading, empty, error, clock off | the notes' problem sentences (`carries both …`, `the note is empty …`) reach the screen in English on every instance (kept, Known defects); the other sentences the plugin composes around a word (`until …`, the clock-off line) are whole table entries and read in French under `fr` |
 | E-24 | loading, no journal, empty journal, conflict, editing; back « Journals » / « Journaux » | — |
-| E-25 | hub, empty (in both languages), per-section empties, piece sheet (the plugin's sheet), full-screen bench mode with an exit that names where it leads | loading, error (kept, recommendations); the layout reset asks in a sheet (Q-20): the question is today's, « Drop your layout and go back to Alfred's? » / « Abandonner votre mise en plan et reprendre celle d'Alfred ? », two buttons, *Cancel* / *Annuler* (focused first) and *Discard my layout* / *Abandonner ma mise en plan*; Escape and the scrim cancel; the focus returns to the reset button; a bottom sheet on a phone; it opens above the bench mode; if the request fails after the answer, the sheet is closed and the screen shows today's error state; a count of one reads « 1 piece » / « 1 pièce »; « Done » carries no emoji; the other emoji the plugin drew beside a word are gone (the content marks stay: the journal's `ico`, the trip item types, a tile's `ic:`, `⛰`, `🎧`/`🎬`; `✦` and `✓` are typographic glyphs, kept) (the server does not persist this reset yet: see Known defects in `ARCHITECTURE.md`, E-25) |
+| E-25 | hub, empty (in both languages), per-section empties, piece sheet (the plugin's sheet), full-screen bench mode with an exit that names where it leads, loading row and failure block with **Retry** on the hub and on a workbook (built: `adestia-ajouts-plugins-chargements`) | the layout reset asks in a sheet (Q-20): the question is today's, « Drop your layout and go back to Alfred's? » / « Abandonner votre mise en plan et reprendre celle d'Alfred ? », two buttons, *Cancel* / *Annuler* (focused first) and *Discard my layout* / *Abandonner ma mise en plan*; Escape and the scrim cancel; the focus returns to the reset button; a bottom sheet on a phone; it opens above the bench mode; if the request fails after the answer, the sheet is closed and the screen shows today's error state; a count of one reads « 1 piece » / « 1 pièce »; « Done » carries no emoji; the other emoji the plugin drew beside a word are gone (the content marks stay: the journal's `ico`, the trip item types, a tile's `ic:`, `⛰`, `🎧`/`🎬`; `✦` and `✓` are typographic glyphs, kept) (the server does not persist this reset yet: see Known defects in `ARCHITECTURE.md`, E-25) |
 | E-26 | loading, no trip, empty tray, card sheet (the plugin's sheet), dismissed list | a refused or impossible gesture is said in the plugin's sheet, the sheet shows the server's own text (English on every instance, like E-27's failure reasons: data, kept), titled *Gesture refused* / *Geste refusé* or *Gesture impossible* / *Geste impossible*, with one *Close* / *Fermer*; Escape and the scrim close it, the focus returns to the card, a bottom sheet on a phone; the board repaints when it closes |
 | E-27 | loading, empty, no sources, error, conflict | a source's failure reason is the server's raw text (`fetch failed`), in English on every instance (kept, Known defects) |
-| E-28 | map, no route in the address, no points, walking HUD with an exit that names where it leads | loading (kept, a recommendation); in the walking mode the map fills the screen and redraws on a mode change or a resize |
+| E-28 | map, no route in the address, no points, walking HUD with an exit that names where it leads, loading row and failure block with **Retry** (absent on a 404 or a refusal) in the page, the `:::parcours` block and the link view (built: `adestia-ajouts-plugins-chargements`) | in the walking mode the map fills the screen and redraws on a mode change or a resize |
 | E-29 | loading, empty, conflict, dish sheet (the plugin's sheet) | — |
 | E-30 | camera live, codes listed; camera failure said in the composer | in-overlay error state (kept: a refusal never reaches the overlay); on a phone, where the composer's fold has removed the scan button, closing the overlay puts the focus in the composer's field |
 | E-31 | timeline, status, no dated page, no sub-project; amber means one thing, the owner's *Amber* status; a phase or milestone found late is drawn by a dashed outline in `--text-muted`, never by amber, and carries the word « late » / « en retard » as its title and accessible name (on a phone, where nothing hovers, the dashed outline is what is seen); the `:::content{on=…}` block of any page (not an E-31 control; drawn by the shell, `ContentBlock.tsx`) writes its date in the instance's language, e.g. `2026-03-14` reads « March 14, 2026 » under `en` and « 14 mars 2026 » under `fr`, and a value that is not a date is written as it is | — |
+
+## Target states of `adestia-ajouts`
+
+Written before the build; each tranche moves its rows into the States table above and empties
+the matching "Lacks" cell. Same shared parts everywhere: the loading row of E-14 (spinner and
+translated "Loading…"), the shared empty state of E-8 with its icon, `Button`, `Sheet`; no new
+vocabulary of looks (`docs/charte.md`).
+
+**Built so far:** loading for E-3, E-4, E-8, E-9, E-11 and E-13 (Retry on all but E-3 and E-9)
+(`adestia-ajouts-chargements`), for E-10 with the E-33 confirmation (`adestia-ajouts-mcp`), and the refresh and banner of E-4 (`adestia-ajouts-page-suivie`,
+described under "E-4 — the page that follows the agent" below, and in the States table above), and the offline banner E-32 (`adestia-ajouts-hors-ligne`), and loading and Retry for the plugins' E-25 and E-28 (`adestia-ajouts-plugins-chargements`), and for E-16 (the list, the thread, and the context-lost line of B-22; `adestia-ajouts-chat`,
+seen at the bench with `bench/scenarios/chat-ajouts.mjs`, four skins, `en` and `fr`, light and dark, desk and phone). The Retry rule of "Loading and failure" holds for each of them.
+
+| E-n | Adds | Notes |
+|---|---|---|
+| E-3, E-9 | loading | index-driven: E-3 draws the loading row (instead of its empty state) while the shell's index has not answered; E-9 draws it above its tiles until its four reads (the reads behind its tiles: servers, instructions, delegations, and the MCP servers' status, `/api/mcp/status`) have answered or failed, the tiles staying drawn. No Retry. Server cut: when the server does not answer, E-32 (`adestia-ajouts-hors-ligne`) says it above the screen and the row of E-3 stays under it; a 500 on the index leaves E-3 on its loading row (nothing in this tranche says it; the index is the shell's own read and its failure is not a screen of the epic); in E-9 a failed read leaves its tile without a count, no message |
+| E-8 | **Retry** on the "server could not" case (status 0 included: the shell could not reach the server) | 404 and 401/403 have no Retry; Retry fetches the page again and the screen becomes the page, or stays E-8 |
+| E-11, E-13 | loading; fetch-failed with **Retry** | for the list and for what is open (a file, a conversation): a failed list shows the failure block in place of the list, a failed open item shows it in place of the item, the list reachable by the back control as today. E-11: 404 on the list is still "this engine has no such folder" (no Retry, no failure). Status 0 (the server did not answer) and 5xx have Retry; 401/403 and a 404 on an open item (E-11 file, E-13 conversation) have the message and no Retry, as in E-8 (retrying cannot change them); E-13 has no 404 on its list |
+| E-14 | field "Simultaneous turns" (number, min 1, max 16) in a group of its own, "restart needed" mark | same row shape as "Scan period"; the offline banner (E-32) and the restart-needed state of E-14 are independent: both may show. While the screen waits for the restart ("Coming back…", P-10), the server does not answer, so E-32 shows above it; when the instance answers both go |
+| E-16 | loading for the list and the thread; fetch-failed with **Retry**; a context-lost marker in the thread (B-22) — built | the marker is a line in the thread, not a toast; text says the engine no longer remembers the earlier messages. Detail below, "E-16 in `adestia-ajouts-chat`" |
+| E-25, E-28 | loading; fetch-failed with **Retry** | plugins reach the look through the shell's CSS classes (`.adestia-loading`, the empty-state classes, `.adestia-sheet*`), as they already do for sheets; the plugin contract (AD-8) gains nothing. the native `confirm()` of E-25 and `alert()` of E-26 are not touched by `adestia-ajouts`: `adestia-correctifs` replaces them by the shared sheet (AD-17, Q-20). The words « kept » about them in Q-20 and `ARCHITECTURE.md` (Known defects, AD-7 (e)) are the base branch's and are rewritten by that epic; if it narrows the change, whatever it leaves stays as it leaves it, and `adestia-ajouts` neither adds nor removes anything there |
+| E-32 | banner at the top of the canvas body, above `Problems` (on a phone with the chat shown: above the rail's header), role `status`, a `wifi-off` icon; absent when the server answers | takes its own height and moves the screen down; it covers nothing, the screen stays usable; in the canvas it is sticky under the canvas header (`top: var(--canvas-header-h)`), so on a screen scrolled to its foot (E-14's restart band) it is still on screen |
+| E-33 | `Sheet` (bottom sheet on a phone), title "Remove server?", the server's name, **Cancel**, **Remove** (danger) | focus on Cancel; Escape = Cancel; modelled on `NamePrompt` |
+
+### E-4 — the page that follows the agent (`adestia-ajouts-page-suivie`)
+
+Reading: no visible state of its own — the text is replaced in place when the file changes; the
+scroll position is left to the browser's own anchoring (no restore is built); if the blocks above change height the view may shift.
+Editing: the banner sits **above the editor surface, below the title row**, full width of the
+page column, in the family of `.adestia-save--warn` (icon `triangle-alert`, one line on a desk, wrapping under 820 px with **Reload** below the sentence, the **Reload**
+button at its end, an `.adestia-btn`):
+
+```
+  <title>
+[ ⚠ The page changed.                                   [ Reload ] ]
+  <text the user is typing — untouched>
+```
+
+| State | Shown |
+|---|---|
+| reading, file changed | new text, nothing else |
+| reading, file deleted or moved | E-8 (404), path named |
+| editing, file changed by the agent | banner "The page changed." + **Reload**; text kept |
+| editing, own save | no banner; "Saved" as today |
+| editing, banner up, user saves | save accepted: "Saved" as today, the banner stays (the agent's version is still unread); save refused (409): the existing "The agent changed this page…" line (`en`/`fr` as today), the editor stays open with the typed text, the banner stays |
+| editing, banner up, Reload | editor shows the agent's version; banner gone; unsaved typing is replaced (the user chose it) |
+| editing, file deleted or moved | the same banner; **Reload** leads to E-8 |
+| editing, user presses Done with the banner up | Done behaves as today, including when the save is refused (409 line; the editor stays open, as today, with the typed text and the banner); once the editor has closed, the page is followed again as in reading: the agent's version (or E-8) shows |
+| editing, Reload leads to E-8 | the unsaved text goes with it (the user chose Reload; no copy is kept) |
+| reading, permission denied (read-only editor state) | `.adestia-editor__readonly` is not touched by the feed; the page refreshes as in reading |
+| long title | wraps in the title row; the banner is a separate row below and keeps the column width |
+| Reload | immediate (the page was read when the banner rose): no loading, no failure |
+| the side read fails (server down, 401/403, 5xx) | nothing on screen; offline is E-32's; the next change retries; nothing is caught up when the server returns, until the next change or a reopen |
+| the side read answers 404 | the page is gone: the banner, then E-8 at Reload |
+| agent writes repeatedly, or the page is long | one read per batch, the latest answer wins; the banner stays one banner |
+| the agent empties the page | shown as any empty page (E-4's empty state is out of scope) |
+| watch off | nothing |
+
+The banner and the save-time line ("The agent changed this page. Reload to see its version.") are two messages that may show together: the first is the push, the second the refusal of a save. The banner has `role="status"`, is reached by Tab before the editor text, and keeps the width of
+the page column on the phone (the button wraps under the sentence below 820 px). `en`: "The page
+changed." / "Reload"; `fr`: "La page a changé." / "Recharger". Proof under the four skins, light
+and dark, desk and phone, `en` and `fr`.
+
+### E-32 in `adestia-ajouts-hors-ligne`
+
+**Look.** One line of text on a tinted strip, full width of its place: a `wifi-off` icon (the shell's
+icon set, `currentColor`) then "The server is not responding" (`fr`: « Le serveur ne répond pas »).
+The family of `.adestia-save--warn` (warning tint over the surface, `--warning-text`), so it reads in
+the four skins and both themes without a colour of its own; class `.adestia-offline`, in a new
+`styles/offline.css`. One line, no button, no close, no timer text: it states a fact and leaves by
+itself. The `fr` text may wrap onto two lines in a narrow place; it never truncates.
+
+```
+desk                                          phone, chat shown
+┌ canvas header ─────────────────────┐        ┌────────────────────────┐
+│ ▸ Home                          ⚙  │        │ ⌁ The server is not    │
+├────────────────────────────────────┤        │   responding           │
+│ ⌁ The server is not responding     │        ├ rail header ───────────┤
+│ (Problems band, if any, below it)  │        │ Adestia   list  +  ▸   │
+│ the open screen, still usable      │        │ thread …               │
+└────────────────────────────────────┘        └────────────────────────┘
+```
+
+**Sticky in the canvas.** In the canvas body the banner is `position: sticky` under the sticky canvas header (`top: var(--canvas-header-h)`, the very variable the header takes as its `min-height`, so the two cannot drift apart under any of the four skins and no gap lets scrolled text show between them): a screen scrolled down — E-14 at its restart band, where the user is when the server goes — still shows it, and the bench checks that on each skin. It has an opaque background and no z-index: scrolled text passes behind it, as behind any sticky header — an accepted overlap, it never covers the screen at rest. Above the rail it is not sticky: the rail's own header and thread are laid out under it.
+
+**Two places, one at a time.** On desk, and on a phone while the canvas is shown, the banner is the
+first child of `.adestia-canvas__body`, above `Problems`. On a phone while the chat is shown (the
+rail is the whole screen) it is drawn above the rail's header, through a `banner` slot of `Chat`
+(rendered above `ChatHeader`, empty when unused). Never both: `App` picks by `mobile && screen`.
+
+**What lights it, and when.** A call to `/api/` that throws (not an abort) or answers 502/503/504, or
+the event feed dropping, starts a probe `GET /api/health`. The banner appears when a probe fails: at
+once if the link refuses, within 5 s if it hangs. While shown, the probe repeats every 3 s; the banner
+leaves within 3 s of the server answering (or at once on any real call that is answered). A single failed
+call with a healthy probe never shows it. To see it in the bench, stop the server and wait ≤ 6 s.
+
+**States.** Empty, loading, error: not applicable: it is the error display itself, draws nothing when
+the server answers, has no data to wait for. Extreme content: the `fr` text on a 320 px phone wraps onto
+two lines; with `Problems` also present, the banner sits above it. Absent (the server answers; nothing is drawn, no reserved height — the screen below does
+not jump when it leaves except by the banner's own height). Shown (server not answering, whichever
+screen is open; the screen stays usable and its own failures show their own Failure and Retry beneath).
+Gone (the first probe or call that is answered). Not a state: "reconnecting" — no spinner, no count.
+While E-14 waits for the restart ("Coming back…") the server does not answer, so the probe fails and the banner shows: both go when the instance answers. A restart shorter than a probe never lights it; one of a few seconds may show it for a moment, then take it away: that flash is accepted, it is the same fact stated twice.
+Under the gates (E-1 fatal, sign-in, refused) it is never drawn.
+
+**Other cases.** "Permission refused" is not a state of this banner: under OIDC an answer of 401/403 is an answer: the server is there, the banner stays
+away and the shell's sign-in handling applies. A long chat turn streaming when the link drops: the turn
+shows its own interruption (E-16); the banner is the explanation of why nothing answers. A deliberate
+abort (stopping a turn, leaving a page mid-fetch) never lights it. The service worker serves the shell
+offline as today; opened with no network, the cached shell fails its first call and shows E-1 fatal (wifi-off), as today: the banner exists only once the shell has passed the gates, so E-32 and E-21 never show together.
+
+### Loading and failure (shared by the shell and the plugins)
+
+One loading row: `.adestia-loading` (`role="status"`, a spinning `loader-circle`, "Loading…").
+One failure block: `.adestia-empty.adestia-empty--state` with `.adestia-empty__icon`
+(`circle-alert`), `.adestia-empty__text` (the message) and, in `.adestia-empty__action`, a
+`.adestia-btn` **Retry**. A plugin screen writes those classes itself (AD-8: it imports nothing
+from the shell). Filled in by `adestia-ajouts-chargements`; the plugin tranche reuses it.
+
+Any Retry (E-4, E-8, E-10, E-11, E-13, E-16, and the plugins' E-25, E-28) behaves alike: the failure block gives way to the loading row for exactly what it replaced (E-16: the list or the thread, whichever failed), never two at once, and the button cannot be pressed twice. This paragraph is the single rule; no row restates it. Page to page (E-4): the first page stays on screen exactly as it is (an editor keeps its text), and nothing signals the wait but the address; a later click supersedes the earlier one; the second page replaces the first when it answers; if the second fails, the failure block (E-8) replaces it. A 5xx on E-3 or E-9 is not said in this tranche: the loading row of E-3 keeps turning and E-9's tile has no count; `adestia-ajouts-hors-ligne` says only a cut server (P-16 (3) names E-32 for that alone).
+
+Words: the loading row says "Loading…" (`fr` "Chargement…"); **Retry** is `fr` "Réessayer". The failure sentence is the server's own `error` when it sent one, else "Request failed (%n)" (`fr` "La requête a échoué (%n)"; status 0: "The server is not responding" / "Le serveur ne répond pas", the same words as E-32's banner), never a raw `fetch failed`. A 404 or 401/403 on E-11 or E-13 shows the server's own sentence when it sent one, else the generic "Request failed (%n)"; a server sentence stays as the server wrote it (it may be in English on a `fr` instance: the server's words are not translated here). A very long page address in E-8 wraps the same way.
+
+The plugins' failure sentences are their own, listed below (the detail of `adestia-ajouts-plugins-chargements`); the server's `error` is not shown by a plugin, and the rule above about Retry and the loading row applies to them unchanged.
+
+
+
+### E-16 in `adestia-ajouts-chat`
+
+**List (the `list` view and the desktop tab strip's source).** While `GET /api/conversations` has
+not answered, the list view draws `Loading` where its rows go; the header, `plus` and the
+composer stay. If it fails, the list view draws `Failure` (the server's `error`, else the
+locale's request-failed sentence) with **Retry**, which asks again. A list that answered empty is
+the existing "No conversation yet." and nothing else: loading and empty never show together.
+Open tabs and the thread do not depend on the list and stay as they are.
+
+**Thread.** A tab being adopted (`loaded` false, the stored transcript being read) draws
+`Loading` in the thread area, not the empty-thread welcome. If `GET /api/conversations/:id`
+fails with anything but 404/401/403, the thread draws `Failure` with **Retry**, which reads the
+conversation again; the composer stays usable only when the conversation could be read (a failed
+read leaves it disabled, since a message sent now would be filed on a thread the user cannot
+see). 404 keeps what the tab does today (it closes). A reread that fails after the thread was
+shown (`reread`, a phone waking up) changes nothing, as today: no banner, no Failure.
+
+**Context-lost marker (B-22).** One line in the thread, directly above the first agent message
+the turn wrote, when that message carries `contextLost`. `role="note"`, class
+`.adestia-thread__mark`, the `rotate-ccw` icon, muted text and a hairline each side: it is a
+line of the thread, not a bubble; it takes the skin's tokens only. Text: `en` "The engine no
+longer remembers the earlier messages." / `fr` "Le moteur ne se souvient plus des messages
+précédents." It is stored with the message, so a reload, another tab or another device draws
+it too; it is not dismissable. After a live turn, the stream's end rereads the conversation
+(as it does today) and the line appears then. Copilot and Codex conversations never carry it.
+
+**Words.** Loading: shared `Loading` line, `en` "Loading…" / `fr` "Chargement…". Failure: the server's
+`error`, else the locale's `request failed (%n)` sentence (`fr` "la requête a échoué (%n)"); button
+**Retry** / `fr` **Réessayer**. While Retry runs, the Failure is replaced by `Loading` and comes
+back if the new attempt fails too. The disabled composer is the existing blocked look (greyed,
+send inert); it carries no extra text, the Failure above it is the explanation.
+
+**Other cases.** 401/403 on the list or the thread (session expired, another owner's
+conversation under OIDC): the shell's existing sign-in/denied handling applies as today and the
+chat adds no state of its own; the Failure and Retry are for network and 5xx failures only.
+Offline (server not answering): the banner E-32 is drawn at the top of the canvas body on desk;
+on a phone, where the rail is the whole screen and the canvas is not visible, the same banner is
+drawn above the rail's header (same component, same `status` role). E-32 and its two places belong
+to `adestia-ajouts-hors-ligne`; the chat slice builds none of it. A list or thread
+fetch that fails meanwhile shows its Failure beneath it, and Retry works once the server is back.
+Extreme content: several marks in one thread each draw their line; `fr` text wraps onto two
+lines in a narrow rail (the hairlines shrink, the text never truncates); a long list keeps its
+rows only after it answered, and a Retry never shows old rows beside `Loading`.
+**Loud failure of B-22.** If AD-28's real test finds that the SDK refuses a missing session,
+the failed turn shows as today (the thread's `error` state with the server's message) and no
+marker is drawn; if the next turn then succeeds on its own that is the end, otherwise the rerun
+carries the marker (AD-28). The tester expects the error state, not the line.
+
+
+### E-25 and E-28: loading and Retry, in detail (`adestia-ajouts-plugins-chargements`)
+
+The plugins stay what they are (AD-8): no import from the shell, no new field in `PluginApi`. They draw
+with the classes `adestia-ajouts-chargements` names above (`.adestia-loading`, the empty-state
+classes, `.adestia-btn`); that tranche is the single source of their markup, and a plugin copies it
+verbatim. The plugins' Retry is the plain `.adestia-btn` with its label and no `rotate-ccw` icon (the shell's `Failure` adds it; a plugin copies the classes, not the component). No new CSS rule in a plugin sheet unless the placement needs one, and then in the shell's
+tokens only (`plugins/test/css.test.js`).
+
+| Plugin screen | Fetch | Loading | Failure (network error, or a non-2xx answer) |
+|---|---|---|---|
+| E-25 hub (`renderAtelierHub`) | `/workbooks` | loading row replaces today's bare « loading… » | message « The Workshop is unavailable. » + **Retry**, which runs the hub again. The hub today never reads `response.ok`: a 500 must count as a failure |
+| E-25 workbook (`renderWorkbook`) | `/workbook`, `/state`, `/layout` | same row | message « Unreadable workbook. » + **Retry**, which runs the workbook again; the raw error text (`%err`) is no longer shown. `/layout` failing alone stays tolerated, as today |
+| E-28 map, page and `:::parcours` block (`mountParcours`) | the `.parcours.json` | loading row in the host before the answer | message « Unreadable route. » + **Retry**, which fetches again into the same host. The `vivant` guard still applies: a Retry answered after unmount paints nothing |
+
+Not touched: the walking mode, the no-points state, the link view (`vue: 'lien'` shows the
+same loading and failure, in one line); the native `confirm()` of E-25 (`adestia-correctifs`, AD-17).
+Words are added in each plugin's `words.js` (`Loading…`, `Retry`, the two messages), `en` and `fr`.
+
+*Texts.* `en` → `fr`: « Loading… » → « Chargement… »; « Retry » → « Réessayer »; E-25 hub « The Workshop is
+unavailable. » → « Atelier indisponible. » (the sentence the screen already says: « Workshop » is the
+existing English name of the Atelier, `words.js`, and stays); « Unreadable workbook. » → « Workbook
+illisible. »; E-28 « Unreadable route. » → « Parcours illisible. » (the link view shows the same sentence,
+Retry beside it, on its one line).
+
+*States.* Loading and fetch-failed are the only states added; the empty states (no workbook, no points)
+and the content states are unchanged. While Retry fetches, the screen returns to the loading row (the
+Retry button is gone, so it cannot be pressed twice). When `/workbook` answers but `/state` fails, the
+whole workbook counts as failed (state is what the ticks show). When the server is unreachable, E-32's
+banner sits above the canvas and the plugin's failure block fills the body: both show, they are
+independent. No role sees anything different: the owner and the user get the same blocks; on the Parcours route a 404 and a refusal
+(401/403) show the message without Retry (the Atelier offers Retry on any non-2xx). The screen is reached from P-11 (E-25 from a
+project folder, E-28 from a page's link); its slow-link and failed-fetch steps are P-16 step 3.
+
+*Long content.* On a phone, in `fr`, the failure sentence wraps on as many lines as it needs and is never
+truncated; **Retry** sits under it, full width of the block, not beside it. The wording and the trigger
+of E-32's banner belong to its own tranche, and the P-16 step 3 text is the epic's: this section adds
+neither (reviewed and declined, so the next reading does not raise them again). The « as built »
+remarks further down describe the base branch before `adestia-ajouts` and are left as they are, as
+E-25/E-28's notes above say.
+The tile information call (`tileInfo`) is not a screen and stays silent on failure.
+
+Roles: **Retry** is open to everyone who can open the screen, and the Atelier's two screens offer it on any non-2xx answer, 404 included; the Parcours screen leaves it out on 404 and on a refusal (401/403), as said above. No route tells an owner from a user (matrix above): E-32 and E-33 are the same for both,
+
+the agent touches neither, and no calling agent sees them. There is no new role. States are drawn in the four skins, `en` and `fr`, light and dark, desk
+and phone (AD-20).
+
+### E-10 and E-33 in `adestia-ajouts-mcp`
+
+**E-33, the confirmation.** The owner presses **Remove** in the action bar of an opened server (E-10;
+the button exists only for an editable, saved server, as today). A `Sheet` opens, modelled on
+`NamePrompt`'s footer (Cancel on the left, the action on the right); on a phone it is the bottom sheet.
+
+```
+desk / phone (bottom sheet)
+┌ Remove server?                         ✕ ┐
+│                                          │
+│ “github” will no longer be wired.        │
+│ Its declaration is deleted from this     │
+│ instance.                                │
+│                                          │
+│                  [ Cancel ]  [ Remove ]  │   Cancel neutral, focused; Remove danger
+└──────────────────────────────────────────┘
+```
+
+- Texts (`fr` in brackets): title "Remove server?" (« Supprimer le serveur ? »); body "“%name” will no
+  longer be wired. Its declaration is deleted from this instance." (« « %name » ne sera plus branché.
+  Sa déclaration est supprimée de cette instance. »), the name set in the body's strong text and
+  never truncated (it wraps); buttons "Cancel" / "Remove" (existing keys, « Annuler » / « Supprimer »).
+- **Cancel, the ✕, a click on the scrim and Escape all keep the server**: nothing is sent, the declaration
+  and the draft are as they were, and focus returns to **Remove** (the shared focus scope's return).
+- **Initial focus is on Cancel**, not on the ✕ that the scope would pick first: an element marked
+  `data-autofocus` inside a scope takes the initial focus (`ui/focus.ts`, AD-31); Tab stays trapped as in
+  every sheet. Enter on the focused Cancel cancels; **Remove** is never the default.
+- **Remove**: the sheet closes at once (a second press is impossible), then the existing `DELETE
+  /api/mcp/servers/<name>` runs. Until the server answers, E-10's own **Remove** button is disabled
+  (busy, as Save is while saving), so E-33 cannot open again over a request in flight. Success: `useDeclaration.remove` leaves the opened server (`onOpen(undefined)`, back to the list) and refetches. Focus does not return to **Remove** after a confirmed removal (the button is disabled while the request runs; on failure it is enabled again but focus is not restored to it). Failure: the
+  sheet stays closed and the error shows in the action bar of E-10 as a failed save does today
+  (`role="alert"`); the owner may press Remove again, which asks again.
+- Failure text: the message of the request helper (the strings Adestia writes are translated, Q-4), in the same alert a failed Save uses.
+  With an answer from the server: its `error`, else `en` "request failed (%n)", `fr` « la requête a échoué (%n) »
+  with the HTTP status. With **no answer at all** (server down, VPN cut) there is no status: the alert shows
+  the browser's own network message (for example "Failed to fetch": it comes from the browser, in its language, and is not a defect), and
+  « la requête a échoué (0) » / "request failed (0)" when the browser gives none. No new string.
+- Vocabulary: the `fr` title and button both say « Supprimer » (« Supprimer le serveur ? » / « Supprimer »),
+  the word of E-10's existing Remove label, so the sheet answers the button that opened it; « Annuler » for
+  Cancel. B-20 is written in English, where one word, "Remove", serves both.
+- E-33 states: it has no loading, empty or offline state of its own (the sheet holds a name already on
+  screen, and the choice sends nothing until Remove). If the server is down when Remove is pressed, the
+  DELETE fails: the alert above, and the offline banner (E-32) shows too, independently. Permission: the
+  sheet opens only from a Remove button that exists, so there is no denied state. Long name: wraps.
+- The sheet is local state of `ServerDetail`, not in the address: a reload cancels it. Same for owner and
+  user (no route tells them apart); the agent never sees it.
+
+**E-10, loading and failure.** The list's data is `GET /api/mcp/servers` (the declarations); the health
+of each server (`GET /api/mcp/status`) stays what it is, a decoration that is silent when it fails ("no
+report, no panel"): it has no loading state and no Retry.
+
+| Situation | E-10 shows |
+|---|---|
+| declarations not answered yet (list, or an opened `#/settings/mcp/<name>`) | the heading stays; under it the shared loading row ("Loading…"); no tiles, no "None wired yet", no "Add a server" |
+| declarations failed (first fetch) | the heading stays; the shared failure block: the message the request helper gives and **Retry**; no tiles; Retry shows the loading row again and fetches again |
+| declarations answered | as today |
+| a refetch after Save or Remove | the screen keeps what it shows (no loading row); a failed refetch is silent, as today |
+
+Texts: `en` "Loading…" / `fr` « Chargement… » (existing key); the failure block shows the request helper's
+message (an `error` from the server as sent; otherwise `en` "request failed (%n)" / `fr` « la requête a échoué (%n) »;
+with no answer, the browser's network message) and the button `en` "Retry" / `fr` « Réessayer » (the key
+`adestia-ajouts-chargements` adds, AD-29; E-10 adds none).
+
+Also: if the first fetch fails because the server is down, the failure block and the E-32 banner show
+together (independent, as E-14). An opened `#/settings/mcp/<name>` whose name is not among the answered
+declarations (removed from another tab) shows the list as today, no new state. A read-only or shadowed
+declaration has no Remove button (hidden, not refused). Many or long-named servers wrap in the tiles as today.
+
+States of E-10 after the tranche: list, empty, health tones, needs-auth, connected/not, shadowed,
+read-only, saving/saved/failed, loading, fetch-failed with Retry, and the E-33 confirmation. Nothing
+else changes; the shared parts are those of `adestia-ajouts-chargements` (AD-29).
 
 ## The plugins' screens, as built
 
@@ -363,8 +662,8 @@ E-30; the tester presses Escape on each):
 
 **States.** Loading, empty, error and conflict are today's, redrawn by tokens (the list per screen is
 in § States above). *Offline*: no plugin has an offline state and none is added (an open shell that
-loses the network shows each plugin's error state or the stale view, as today; the offline banner is a
-recommendation). *Permission refused*: no plugin screen checks a role, so there is none; the one refusal
+loses the network shows each plugin's error state or the stale view, as today; the offline banner E-32 is
+the shell's and needs nothing from the plugin: it is drawn above the canvas, and the plugins' `fetchImpl` is observed). *Permission refused*: no plugin screen checks a role, so there is none; the one refusal
 a plugin screen shows is E-30's camera permission, said in the composer (`scanner unavailable` /
 « scanner indisponible »), as today. *Extreme content*: a very long task, trip, piece or dish name
 truncates with an ellipsis and a `title`, never pushes a control out of its row, in the plugin's
@@ -527,8 +826,8 @@ shared components (spinner, empty state, alert icon, `--tile-color`); a state it
 (E-9 counts loading, E-10/E-11/E-13 loading, E-13 error, E-15 token loading) stays
 absent and is listed in the epic's improvement recommendations. Long content (a very long
 server name, instruction path, caller name) truncates with an ellipsis and a `title`,
-never wraps a control out of its row. Offline: only the first start (E-21); an open shell
-that loses the network keeps today's behaviour.
+never wraps a control out of its row. Offline: the first start is E-21; an open shell that
+loses the server shows the banner E-32.
 
 **E-1 Gates.** One centred card (`--surface-raised`, `--shadow`, 420 px max, 24 px
 padding): an icon above the title, the sentence, the actions that exist today.
@@ -544,7 +843,7 @@ control exists.
 **E-21 Offline.** The cached shell opened with no network reaches the Fatal gate with the
 browser's network error; it is drawn as that gate, with a wifi-off icon when the failure
 is a network failure (a thrown fetch, not an HTTP status). Same words. A dedicated offline
-screen and an offline banner are recommendations, not built.
+screen is not built (the banner E-32 is the answer once the shell is open).
 
 **E-9 Settings mosaic.** The four tiles keep their order, labels and counts; tile emoji
 became Lucide icons (plug, book-open, sliders-horizontal, handshake) on the tile plate.
@@ -553,8 +852,8 @@ by `/api/mcp/servers`; health from `/api/mcp/status` adds attention only for tho
 The Configuration tile stays (Q-21).
 
 **E-10 MCP servers.** Buttons are `.adestia-btn`, labels unchanged: "Save" (accent),
-"Remove" (danger), connect (neutral), "Add a server" (icon `plus` beside its label); no
-confirmation step is added. The JSON declaration is a `.adestia-textarea`, monospace.
+"Remove" (danger), connect (neutral), "Add a server" (icon `plus` beside its label); Remove
+now opens the E-33 confirmation (`adestia-ajouts-mcp`, B-20) in place of "no confirmation step". The JSON declaration is a `.adestia-textarea`, monospace.
 Empty state shared (today's sentence). Health tones keep colour **and** gain an icon
 (check, circle-alert, loader-circle, wifi-off). Fallback errors translated (Q-4).
 Roles: any signed-in person; "connect" is per person, as today.
@@ -660,9 +959,10 @@ in an `<EmptyState>`; the empty thread keeps its blank; the working indicator is
 `busy` slot or the shared spinner icon with the counters; the interrupted note, the error
 line (a turn the server refuses because too many turns already run keeps its line, under the message that was refused, which stays in the thread; the line says "Turn limit reached (N at a time) — try again in a moment." in English and "Limite de tours atteinte (N à la fois) — réessayez dans un instant." in French, N being the server's limit, for the Owner and the User alike; it stays when the conversation is read again, and goes at the next send or when the user opens another conversation; a turn that fails with no answer from the server keeps the error line the chat already draws for it, with the same words as today, under the sent message, and keeps it after the reread as long as the refusal's line stays; other HTTP refusals keep the server's text), the held bubble (`paperclip` + names when the message is attachments only), the
 unread/running/idle dots (colour and a shape, not colour alone), the MCP connect prompt, the
-composer busy/stopping/blocked and the upload error keep their places; the lines whose words change are the refused turn's and, in the upload error, the fallback an answer with no readable server sentence reads (the translated `upload failed`, where an empty or unreadable body once showed the parser's English message); the server's own sentence and the refused-files list keep their words. **No
-loading or offline state is added** for the list or the thread (Lacks column of E-16: listed
-for the end-of-epic recommendations). E-17: the question card keeps its three answers and
+composer busy/stopping/blocked and the upload error keep their places; the lines whose words change are the refused turn's and, in the upload error, the fallback an answer with no readable server sentence reads (the translated `upload failed`, where an empty or unreadable body once showed the parser's English message); the server's own sentence and the refused-files list keep their words. The list
+and an adopted tab's thread show the shared loading row, then the failure block with **Retry**
+(built by `adestia-ajouts-chat`, "E-16 in `adestia-ajouts-chat`" above); the offline banner is
+E-32's. E-17: the question card keeps its three answers and
 the "No lasting rule" line; it takes `triangle-alert`. E-18: pending, signed, denied,
 expired, open-in-a-tab keep their words; each gets its icon above. E-13: a delegated conversation is read-only and has no composer (P-13 step 7), so its conversation reads as text only: a signature request in the transcript is not drawn as a card and nothing replaces it; the ceremony belongs to the calling agent's user. The refusal for too many turns is a capacity refusal, not a permission one: no "extreme content" or "permission denied" state applies to it.
 
@@ -786,17 +1086,19 @@ agent callback are present. Inside a facet, all finished uses
 
 **E-8.** `EmptyState` names the path, with `file-question` for 404, `lock` for
 401/403 and `circle-alert` otherwise. Its ghost folder link uses `folder-open` and goes to the folder above the address; for a page at the root of the workspace, which has none, it goes Home.
-There is no retry control.
+The "server could not" case (0 and 5xx) draws the shared failure block with **Retry**
+(`MissingPage`, `Failure`); 404 and 401/403 have no retry control.
 
 **E-20.** `Canvas` shows `EmptyState` with `plug`, `That app is not active on this
 instance.` and the Home action when a matched, loaded plugin has no view (for
 example, its view module failed to import). An unknown or disabled plugin route
 falls through to Home; E-19 reports browser module refusals.
 
-**Limits kept (B-1).** E-3 has no loading state; E-4 keeps the previous screen
+**Limits kept (B-1).** E-3 draws the shared loading row until the shell's index answers
+(`adestia-ajouts-chargements`); E-4 keeps the previous screen
 while fetching and has no special empty-page state. E-7 has no distinct empty
-collection state and E-8 has no retry. Offline after startup keeps existing
-behaviour; E-21 covers startup failure. These remain end-of-epic recommendations.
+collection state. Offline after startup is the banner E-32
+(`adestia-ajouts-hors-ligne`); E-21 covers startup failure. These remain end-of-epic recommendations.
 Roles are unchanged: every admitted person can read/edit/save; the agent writes
 the same files and may cause the conflict state. There is no screen for a calling agent.
 

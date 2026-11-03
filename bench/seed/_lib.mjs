@@ -64,7 +64,8 @@ export async function gitRepo(dir, files) {
     })
   git('init', '-q', '-b', 'main')
   git('add', '-A')
-  git('commit', '-q', '-m', 'bench catalogue')
+  // --allow-empty: a launcher started again on the same --data seeds again, with nothing new to commit.
+  git('commit', '-q', '--allow-empty', '-m', 'bench catalogue')
   return dir
 }
 

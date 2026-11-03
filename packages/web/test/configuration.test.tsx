@@ -72,8 +72,9 @@ describe('what a field says before it is touched', () => {
     const marks = [...container.querySelectorAll('.adestia-config__from')].map(
       (node) => node.textContent,
     )
-    // Exactly one of the three is unset in the payload above.
-    expect(marks).toEqual(['default'])
+    // Two of the four are unset in the payload above: polling, and the
+    // turn limit nobody has written.
+    expect(marks).toEqual(['default', 'default'])
   })
 
   it('says which settings wait for a restart rather than letting them look broken', async () => {
@@ -96,7 +97,7 @@ describe('an instance that cannot write its own file', () => {
 
     // Seeing the instance's own settings is worth the screen on its own —
     // that is the half that was missing before this page existed.
-    expect(container.querySelectorAll('.adestia-config__field').length).toBe(3)
+    expect(container.querySelectorAll('.adestia-config__field').length).toBe(4)
     // And no way to pretend otherwise: no save bar, every control inert.
     expect(container.querySelector('.adestia-config__bar')).toBeNull()
     for (const input of container.querySelectorAll('input')) {
