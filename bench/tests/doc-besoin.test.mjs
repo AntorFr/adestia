@@ -6,8 +6,8 @@
  *
  * Needs git history with tags for the version checks (a clone without tags reports it and fails,
  * rather than passing silently). Only tags merged into HEAD count: those of an unmerged epic are
- * not in main's history and get their entry with the merge. The fresh-context `relecteur-depot` pass itself is an agent, not
- * a test: it is not replayed here.
+ * not in main's history and get their entry with the merge. The fresh-context `relecteur-depot`
+ * pass itself is an agent, not a test: it is not replayed here.
  */
 import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
