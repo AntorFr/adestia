@@ -1,12 +1,12 @@
 # Status — Adestia
-> MàJ : 2026-11-01
+> MàJ : 2026-11-03
 
 ## Version courante
 
 - Dernier tag accessible : **`v0.97.0`** (`git describe --tags --abbrev=0`, posé sur `main` par la fusion de l'epic
   `adestia-ajouts` ; ses préversions `v0.97.0-adestia-ajouts.1` à `.12` sont posées sur sa branche) ; le tag précédent
   dans `main` était `v0.96.1` (correctif de la garde `besoin-pages-statique`, fusion de `adestia-correctif-garde-changelog`), avant lui `v0.96.0` (l'epic `adestia-correctifs`).
-- Branche de travail : `epic/adestia-ajouts`, qui entre dans `main` : dernière tranche livrée, `feature/adestia-ajouts-chat`
+- Branche de travail : `feature/rouge-adestia-1` (test seul : la garde B-5 de `bench/tests/doc-besoin.test.mjs` ne liste que les tags fusionnés dans HEAD, `--merged HEAD`, pour que les tags d'une epic non fusionnée ne rougissent pas `main`) ; précédemment `epic/adestia-ajouts`, entrée dans `main` : dernière tranche livrée, `feature/adestia-ajouts-chat`
   (chargement et Réessayer du chat, E-16 ; marque de contexte perdu de Claude, AD-28 ; recette : `node bench/scenarios/chat-ajouts.mjs`).
   Livré avant elle sur l'epic : chargement et Réessayer des plugins Atelier et Parcours, E-25 et E-28, AD-29 ; le bandeau hors ligne E-32, AD-27 (`node bench/scenarios/hors-ligne.mjs`) ; la page ouverte suit l'agent, AD-21 (`node bench/scenarios/page-suivie.mjs`) ;
   chargement et Réessayer des écrans, AD-29 (`node bench/scenarios/chargements.mjs`) ; E-10 (chargement, Réessayer) et la confirmation E-33 avant de retirer un serveur MCP, AD-31 (aucun scénario de `bench/scenarios/`
