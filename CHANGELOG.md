@@ -720,3 +720,13 @@ branch and that `test:plugins` is replayed after a red vitest run.
   `packages/server/test/qualite-serveur-besoin.test.ts` get a 60 s test limit and a 50 s
   `spawnSync` cap, so a slow lint run during the full `npm test` names its delay instead of
   being cut at vitest's default 5 s. A test-only fix: nothing changes for users.
+
+## v0.97.3
+
+- **Copilot sign-in arms the token written by CLI 1.0.98** — after a device-code login,
+  the harvest reads the `authTokens` map (one `{ token }` object per host, account and
+  provider), prefers it, ignores empty entries, and keeps `copilotTokens` as the fallback
+  for older CLIs; with neither readable, arming fails as before.
+- **An unrecognised Copilot refusal quotes the CLI** — instead of sending the reader to
+  the server logs, the error ends with the last 400 characters of the CLI's own error
+  output (a TLS failure behind a proxy, say), with `gh*_` tokens masked.

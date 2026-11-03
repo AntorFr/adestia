@@ -3,7 +3,7 @@
 
 ## Version courante
 
-- Dernier tag accessible : **`v0.97.2`** (correctif des sondes eslint du bloc R-8, posé sur `main` par la fusion de `rouge-adestia-2`) ; avant lui **`v0.97.1`** (correctif de la garde B-5, fusion de `rouge-adestia-1`), puis **`v0.97.0`** (`git describe --tags --abbrev=0`, posé sur `main` par la fusion de l'epic
+- Dernier tag accessible : **`v0.97.3`** (correctif de l'authentification Copilot : jeton `authTokens` de la CLI 1.0.98 armé, refus inconnu cité avec les mots de la CLI, `feature/adestia-copilot-auth`) ; avant lui **`v0.97.2`** (correctif des sondes eslint du bloc R-8, posé sur `main` par la fusion de `rouge-adestia-2`), **`v0.97.1`** (correctif de la garde B-5, fusion de `rouge-adestia-1`), puis **`v0.97.0`** (`git describe --tags --abbrev=0`, posé sur `main` par la fusion de l'epic
   `adestia-ajouts` ; ses préversions `v0.97.0-adestia-ajouts.1` à `.12` sont posées sur sa branche) ; le tag précédent
   dans `main` était `v0.96.1` (correctif de la garde `besoin-pages-statique`, fusion de `adestia-correctif-garde-changelog`), avant lui `v0.96.0` (l'epic `adestia-correctifs`).
 - Branche de travail : `feature/rouge-adestia-2` (test seul : les deux sondes eslint du bloc R-8 de `packages/server/test/qualite-serveur-besoin.test.ts` ont 60 s de délai de test et un plafond `spawnSync` de 50 s, car le délai vitest de 5 s les coupait sous la charge de `npm test` ; le code du lint n'a pas changé) ; avant elle `feature/rouge-adestia-1` (test seul : la garde B-5 de `bench/tests/doc-besoin.test.mjs` ne liste que les tags fusionnés dans HEAD, `--merged HEAD`, pour que les tags d'une epic non fusionnée ne rougissent pas `main`) ; précédemment `epic/adestia-ajouts`, entrée dans `main` : dernière tranche livrée, `feature/adestia-ajouts-chat`
@@ -25,6 +25,7 @@ La liste de référence est dans [ARCHITECTURE.md](../ARCHITECTURE.md), section
 sont corrigés par `main` et n'y figurent plus.
 
 Compléments encore visibles dans le code :
+- Copilot : le refus d'authentification non reconnu cite la fin de la sortie d'erreur de la CLI (400 caractères, jetons `gh*_` masqués) ; l'armement lit `authTokens` (CLI 1.0.98) avant `copilotTokens`. Corrigé en `v0.97.3`, plus un défaut.
 - Le sélecteur de modèle du chat reste un `<select>` natif (`chat/ModelPicker.tsx`) : une liste
   personnalisée serait un composant neuf (AD-18).
 - Une délégation n'affiche pas les cartes de signature (`{ signatures: false }` dans
