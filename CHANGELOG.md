@@ -713,3 +713,10 @@ branch and that `test:plugins` is replayed after a red vitest run.
   `bench/tests/doc-besoin.test.mjs` lists only the tags merged into `HEAD`, so the
   preversions of an epic that is not yet in `main` no longer turn `main` red for lack of
   a CHANGELOG entry. A test-only fix: nothing changes for users.
+
+## v0.97.2
+
+- **The R-8 lint probes no longer fail under load** — the two eslint probes of
+  `packages/server/test/qualite-serveur-besoin.test.ts` get a 60 s test limit and a 50 s
+  `spawnSync` cap, so a slow lint run during the full `npm test` names its delay instead of
+  being cut at vitest's default 5 s. A test-only fix: nothing changes for users.
