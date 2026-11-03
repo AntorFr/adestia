@@ -5,7 +5,8 @@
  *   node --test bench/tests/doc-besoin.test.mjs
  *
  * Needs git history with tags for the version checks (a clone without tags reports it and fails,
- * rather than passing silently). The fresh-context `relecteur-depot` pass itself is an agent, not
+ * rather than passing silently). Only tags merged into HEAD count: those of an unmerged epic are
+ * not in main's history and get their entry with the merge. The fresh-context `relecteur-depot` pass itself is an agent, not
  * a test: it is not replayed here.
  */
 import { execFileSync } from 'node:child_process'
@@ -23,7 +24,9 @@ const tracked = git('ls-files').split('\n').filter(Boolean).filter((f) => exists
 const markdown = tracked.filter((f) => f.endsWith('.md'))
 
 const cmp = compare
-const allTags = () => git('tag', '--list', 'v*').split('\n').filter(Boolean)
+// Only the tags in HEAD's history: a tag laid on an unmerged epic's branch is not on main's
+// history, so its CHANGELOG entry (which arrives with the merge) cannot be demanded yet.
+const allTags = () => git('tag', '--list', 'v*', '--merged', 'HEAD').split('\n').filter(Boolean)
 
 describe('B-5 — .agent/status.md says the state', () => {
   const status = read('.agent/status.md')
