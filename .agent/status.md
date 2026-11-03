@@ -6,7 +6,7 @@
 - Dernier tag accessible : **`v0.96.0`** (`git describe --tags
   --abbrev=0`, posé sur `main` par la fusion de l'epic `adestia-correctifs` ; ses préversions : le `.1` était la tranche serveur, le `.2` la tranche chat, le `.3` la tranche shell, le `.4` la tranche pages, le `.5` la tranche plugins, le `.6` la tranche dette, le `.7` la reprise de la tranche chat, le `.8` la reprise de la tranche dette, le `.9` sa seconde reprise) de l'epic, posées sur sa branche d'intégration ;
   le tag précédent dans `main` était `v0.95.0` (l'epic `adestia-qualite`).
-- Branche de travail : `feature/adestia-correctifs-dette`, sur `origin/epic/adestia-correctifs` : reprise de la tranche dette
+- Branche de travail : `feature/adestia-correctif-garde-changelog` (test seul : la garde `besoin-pages-statique` lit la section `## v0.96.0` du CHANGELOG, plus la version la plus haute) ; précédemment `feature/adestia-correctifs-dette`, sur `origin/epic/adestia-correctifs` : reprise de la tranche dette
   (garde B-5 : dernier titre du CHANGELOG = dernier tag ou version suivante de la série, y compris le titre `vX.Y.Z` de la cible stable après ses préversions ; status.md doit citer ce titre en entier, une préversion ne vaut pas sa version ; la CI prend les tags). Précédemment : `feature/adestia-correctifs-chat` : reprise
   de la tranche chat (tag `.2`) après sa vérification : un envoi qui échoue sans phrase lisible du
   serveur (corps vide, illisible, non JSON) lit `t('upload failed')` (`Composer.tsx`, B-16), dit dans
