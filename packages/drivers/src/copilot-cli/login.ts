@@ -123,7 +123,7 @@ const REPORTED_OUTPUT = 400
  * Never let a credential the CLI happened to echo ride out on an error string:
  * these messages are rendered in the browser, which is never given the secret.
  */
-function scrubTokens(text: string): string {
+export function scrubTokens(text: string): string {
   return text.replace(/gh[a-z]_[A-Za-z0-9_]{10,}/g, 'gh*_***')
 }
 
@@ -328,6 +328,10 @@ export function startDeviceCodeLogin(options: StartLoginOptions): Promise<Device
  *
  *     { "copilotTokens": { "https://github.com:<login>": "gho_… (40 chars)" }, … }
  *
+ * CLI 1.0.98 also writes `authTokens`, keyed by host, account and provider,
+ * with each credential stored as an object containing `token`. Prefer that
+ * current format when an upgraded config still contains legacy tokens.
+ *
  * Keyed by host and account, so there can be more than one; the first is taken
  * because the login that just ran wrote into a directory this driver made for
  * that login alone.
@@ -344,8 +348,13 @@ export async function harvestToken(home: string): Promise<string> {
   if (brace < 0) throw new Error('the login wrote no credential')
   const parsed = JSON.parse(raw.slice(brace)) as {
     copilotTokens?: Record<string, string>
+    authTokens?: Record<string, { token?: string }>
   }
-  const token = parsed.copilotTokens ? Object.values(parsed.copilotTokens)[0] : undefined
+  const token = Object.values(parsed.authTokens ?? {}).find(
+    (credential) => typeof credential?.token === 'string' && credential.token.length > 0,
+  )?.token ?? Object.values(parsed.copilotTokens ?? {}).find(
+    (credential) => typeof credential === 'string' && credential.length > 0,
+  )
   if (!token) throw new Error('the login completed but stored no token')
   return token
 }
