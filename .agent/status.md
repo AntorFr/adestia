@@ -3,7 +3,7 @@
 
 ## Version courante
 
-- Dernier tag accessible : **`v0.96.0`** (`git describe --tags
+- Dernier tag accessible : **`v0.96.1`** (correctif de la garde `besoin-pages-statique`, posé sur `main` par la fusion de `adestia-correctif-garde-changelog`) ; avant lui **`v0.96.0`** (`git describe --tags
   --abbrev=0`, posé sur `main` par la fusion de l'epic `adestia-correctifs` ; ses préversions : le `.1` était la tranche serveur, le `.2` la tranche chat, le `.3` la tranche shell, le `.4` la tranche pages, le `.5` la tranche plugins, le `.6` la tranche dette, le `.7` la reprise de la tranche chat, le `.8` la reprise de la tranche dette, le `.9` sa seconde reprise) de l'epic, posées sur sa branche d'intégration ;
   le tag précédent dans `main` était `v0.95.0` (l'epic `adestia-qualite`).
 - Branche de travail : `feature/adestia-correctif-garde-changelog` (test seul : la garde `besoin-pages-statique` lit la section `## v0.96.0` du CHANGELOG, plus la version la plus haute) ; précédemment `feature/adestia-correctifs-dette`, sur `origin/epic/adestia-correctifs` : reprise de la tranche dette

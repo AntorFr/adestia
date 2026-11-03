@@ -619,3 +619,11 @@ branch and that `test:plugins` is replayed after a red vitest run.
   `upload failed`, translated, instead of the parser's English `error.message` or the generic
   `request failed (%n)`. The server's own `error` still shows first. A connection that fails before any
   answer keeps its translated `request failed (0)`.
+
+## v0.96.1
+
+- **The CHANGELOG guard no longer breaks on the next release** — the
+  `besoin-pages-statique` test reads the `## v0.96.0` section of the CHANGELOG, where
+  the four changelog statements it checks live, instead of the section of the highest
+  version. Writing a later release into the CHANGELOG no longer turns it red. A test-only
+  fix: nothing changes for users.
