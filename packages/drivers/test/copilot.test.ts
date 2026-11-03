@@ -384,6 +384,52 @@ describe('the device-code login flow', () => {
     writeFileSync(join(home, 'config.json'), '// a comment\n// another\n{"copilotTokens":{"x":"gho_abc"}}')
     expect(await harvestToken(home)).toBe('gho_abc')
   })
+
+  describe('the CLI 1.0.98 config', () => {
+    const configWith = (body: string): string => {
+      const home = mkdtempSync(join(tmpdir(), 'copilot-harvest-'))
+      writeFileSync(join(home, 'config.json'), `// managed automatically\n${body}`)
+      return home
+    }
+
+    it('arms the token stored under authTokens', async () => {
+      const home = configWith('{"authTokens":{"https://github.com:me:copilot":{"token":"gho_new1098"}}}')
+      expect(await harvestToken(home)).toBe('gho_new1098')
+    })
+
+    it('prefers authTokens to copilotTokens when both exist', async () => {
+      const home = configWith(
+        '{"copilotTokens":{"https://github.com:me":"gho_legacy"},"authTokens":{"h:me:p":{"token":"gho_current"}}}',
+      )
+      expect(await harvestToken(home)).toBe('gho_current')
+    })
+
+    it('still reads copilotTokens alone', async () => {
+      const home = configWith('{"copilotTokens":{"https://github.com:me":"gho_legacy"}}')
+      expect(await harvestToken(home)).toBe('gho_legacy')
+    })
+
+    it('ignores empty authTokens entries and takes the next usable one', async () => {
+      const home = configWith(
+        '{"authTokens":{"a":{"token":""},"b":{},"c":null,"d":{"token":"gho_usable"}}}',
+      )
+      expect(await harvestToken(home)).toBe('gho_usable')
+    })
+
+    it('falls back to copilotTokens when every authTokens entry is empty', async () => {
+      const home = configWith('{"authTokens":{"a":{"token":""}},"copilotTokens":{"x":"gho_legacy"}}')
+      expect(await harvestToken(home)).toBe('gho_legacy')
+    })
+
+    it('fails when no token is readable anywhere', async () => {
+      const home = configWith('{"authTokens":{"a":{"token":""}},"copilotTokens":{"x":""}}')
+      await expect(harvestToken(home)).rejects.toThrow('stored no token')
+    })
+
+    it('fails on a config with neither key', async () => {
+      await expect(harvestToken(configWith('{}'))).rejects.toThrow('stored no token')
+    })
+  })
 })
 
 describe('the environment a run needs', () => {
@@ -592,6 +638,46 @@ describe('driver', () => {
     expect((events[0] as { message: string }).message).toContain('arm a fine-grained token')
     // And the driver now knows it is unarmed.
     expect(await driver.authStatus()).toMatchObject({ state: 'invalid' })
+  })
+
+  describe('an authentication refusal the driver does not recognise', () => {
+    const refuse = async (stderrText: string) => {
+      const fake = fakeCopilot()
+      const driver = new CopilotDriver({ home: '/x', spawnImpl: fake.spawnImpl })
+      const turn = collect(driver)
+      fake.stderr.write(stderrText)
+      fake.child.emit('close', 1)
+      const events = await turn
+      expect(events[0]).toMatchObject({ type: 'error', fatal: true })
+      return (events[0] as { message: string }).message
+    }
+
+    it('quotes the CLI cause instead of pointing at server logs', async () => {
+      const message = await refuse('Error: authentication failed: certificate verify failed\n')
+      expect(message).toContain('certificate verify failed')
+      expect(message).not.toContain('server logs')
+    })
+
+    it('masks a gh*_ token the CLI echoed', async () => {
+      const message = await refuse(
+        'Error: authentication failed (token gho_abcdefghij1234567890 rejected): certificate verify failed\n',
+      )
+      expect(message).toContain('certificate verify failed')
+      expect(message).not.toContain('gho_abcdefghij1234567890')
+      expect(message).not.toMatch(/gh[a-z]_[A-Za-z0-9]/)
+    })
+
+    it('quotes only the last 400 characters of a long output', async () => {
+      const message = await refuse(`Error: authenticat ${'x'.repeat(1000)} TAIL-MARK`)
+      expect(message).toContain('TAIL-MARK')
+      expect(message).not.toContain('Error: authenticat')
+      expect(message.length).toBeLessThanOrEqual(400 + 120)
+    })
+
+    it('never leaves a token cut by the 400-character window', async () => {
+      const message = await refuse(`Error: authenticat ${'y'.repeat(385)} ghp_${'Z'.repeat(40)} end`)
+      expect(message).not.toMatch(/gh[a-z]_/)
+    })
   })
 
   it('surfaces an unexplained crash with whatever the CLI said', async () => {
