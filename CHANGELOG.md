@@ -706,3 +706,10 @@ branch and that `test:plugins` is replayed after a red vitest run.
   E-14 ("Coming back…") on the four skins, in `en` and `fr`, light and dark, desk and phone
   (`bench/scenarios/hors-ligne.mjs`); a launcher started again on the same `--data` now seeds without
   failing.
+
+## v0.97.1
+
+- **The CHANGELOG guard ignores the tags of an unmerged epic** — the B-5 check of
+  `bench/tests/doc-besoin.test.mjs` lists only the tags merged into `HEAD`, so the
+  preversions of an epic that is not yet in `main` no longer turn `main` red for lack of
+  a CHANGELOG entry. A test-only fix: nothing changes for users.
