@@ -1,0 +1,6 @@
+# Declaration of this repository to the SDLC chain (homelab-sdlc-core, docs/chaine.md).
+# deploiement: the images this repository builds and its application names (vault paths
+# apps/<name>, oidc/<name>); the chain deploys them to k8s-home-lab after a release.
+deploiement:
+  images: [ghcr.io/antorfr/adestia]
+  applis: [alfred, dobby, nestor]
