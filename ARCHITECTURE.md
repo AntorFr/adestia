@@ -211,7 +211,7 @@ and every turn — chat, scheduled, delegated, callback wake — goes through th
   checks every bundled plugin's French entries. Skins have no words through the locale today.
 - **Tests** — `vitest.config.ts` runs `packages/*/test`, aliasing every `@antorfr/*` to its
   `src/index.ts`; `npm run test:plugins` runs `node --test` over the plugins; `bench/` is the
-  visual check (`bench/run.sh` with docker; `bench/launch.mjs` and `bench/sweep.mjs` without). CI (`.github/workflows/ci.yml`) runs typecheck, lint, tests, the build, a start of the built server and a docker image build.
+  visual check (`bench/run.sh` with docker; `bench/launch.mjs` and `bench/sweep.mjs` without). No workflow plays the suite: `scripts/suite-attestee.sh` (typecheck, lint, tests, the build and a start of the built server), declared by `tests:` in `.sdlc.yaml`, is played by `attester --publier`, which sets the `tests-complets` status (AD-preuve-1).
 
 ## Decisions of adestia-qualite
 
@@ -1171,6 +1171,66 @@ declaration is removed only on **Remove**. No generic `useConfirm` is created fo
 *Rejected here*: a `window.confirm` (AD-31); focusing Cancel with an effect in the footer (the scope's own
 effect runs after it and takes the ✕); making Remove wait on the `DELETE` inside the open sheet (a second
 state for one use).
+
+## Decisions of adestia-preuve-tests
+
+The proof that a commit is green is its attestation (rule R15 of the SDLC chain): the commit
+status `tests-complets`, set by `attester --publier` after playing the whole suite this
+repository declares. GitHub Actions plays no suite. This section records how Adestia declares
+it; behaviour of the product does not change.
+
+### AD-preuve-1 — The suite is one script, declared in `.sdlc.yaml`
+
+`.sdlc.yaml` gains `tests:` (`commande: scripts/suite-attestee.sh`, `rapport: resultats.xml`,
+`format: junit`, `delai: 45m`, to be raised if the first attested run measures longer). The
+script is what `ci.yml` used to play, in the same order, from a clean checkout with its own
+`HOME` and no secret: `npm ci`, typecheck, lint, `npm test` (vitest, then the plugins'
+`node --test`), `node --test bench/tests/doc-besoin.test.mjs bench/tests/bench-once.test.mjs`,
+the server and web builds, and a boot of the built server answered by `/api/health`. It writes
+ONE JUnit report: every vitest and `node --test` case under its own name, and the install,
+typecheck, lint, build and boot steps as cases of their own (the pattern WebPoule's
+`scripts/suite-attestee.sh` already uses), so a skipped or red step is named. Playwright is
+part of the pod image: the catalogue screens suite must run, not skip, because `attester` turns
+a skipped test red. A red already in the suite is named in the report, not fixed here.
+*Rejected:* a `tests:attestes` npm script (the boot step needs a background process and a
+merged report, which is a script, not a one-liner); keeping `ci.yml` as a second definition of
+the suite (two truths of green, which the contract forbids).
+
+### AD-preuve-2 — `ci.yml` is removed, and the guards that read it follow the script
+
+Removed, not reduced to `workflow_dispatch`: a manual workflow would be a second copy of the
+suite. Its `image` job (a `docker build` on every PR) goes too; the image is built, and its
+Dockerfile proven, on the tag (AD-preuve-3). Four tests read `ci.yml` to prove the gate is
+there; they keep what they guard and point at `scripts/suite-attestee.sh`:
+`packages/server/test/ci-workflow.test.ts` (documentation and bench-once guards are played;
+the version guard reads tags, so the attested checkout has them — `attester` extracts a clean
+commit, so the script fetches nothing and the guard must say what it needs if tags are absent),
+`garde-fous.test.ts` and `qualite-serveur-besoin.test.ts` (lint is played),
+`bench/tests/dette-ensemble.test.mjs` (the documentation guard is played). This changes what
+four assertions read, not what they assert; any other edit to a test is out.
+*Rejected:* leaving them and keeping a stub `ci.yml` only to satisfy them.
+
+### AD-preuve-3 — The image is built on a `v*` tag only, after the attestation is checked
+
+`docker-publish.yml` loses `push: branches: [main]` and `pull_request`, and the
+`type=ref,event=branch` tag (`:main`). It keeps `tags: ['v*']` and `workflow_dispatch`. A first
+job `attestation` (`permissions: statuses: read`, checkout with `fetch-depth: 2`) runs the
+contract's loop: `tests-complets` `success` on the tagged commit or on a parent of the same
+tree, else it fails naming `attester --publier`; `build` needs it. Nothing pulls an image from
+`main`: the chain deploys by tag, and `k8s-home-lab` pins `0.95.0` for alfred, dobby, nestor and
+skippy (checked on its `main`); `docker-compose.yml` names `:latest` only in a comment. The
+`sha-` tag stays (a tag build is by definition on a commit). `ecart:` is not declared: Adestia
+refuses nothing on a stable tag today.
+
+### AD-preuve-4 — `main` requires `tests-complets`; `CLAUDE.md` says the rule
+
+The repository is public, so a ruleset on `main` requires the check `tests-complets`. Setting a
+repository ruleset is an act on the forge, done once the first attestation of `main`'s head
+exists (otherwise the ruleset blocks its own proof); the task that does it says so in its
+report, and if the token cannot, it is a `Constat` for Monsieur, not a workaround. `CLAUDE.md`
+(Code and commands) states that no workflow plays the suite, that green is `attester --publier`
+on a pushed head that contains `origin/main`, and replaces its mentions of CI; `docs/parcours.md`
+P-15 step 2 and the Tests line of *Cross-cutting* follow.
 
 ## Refactoring targets
 
