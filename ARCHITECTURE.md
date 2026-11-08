@@ -374,7 +374,7 @@ regression test `bench/tests/doc-besoin.test.mjs` checks relative Markdown link 
 (excluding package tests, nested spike documents and skills) and collects `var(--x` uses in CSS
 under `packages/web/src` and `plugins/*/web`, subtracts definitions in CSS, skins and
 scripts, and reports any remainder. Run it with
-`node --test bench/tests/doc-besoin.test.mjs` to check B-4 and B-5 (B-5: the last CHANGELOG title is the latest git tag or the next version of the same series, `status.md` cites that title, and no existing tag lacks its entry — only tags merged into HEAD (`git tag --list 'v*' --merged HEAD`) count, so the tags of an epic not yet merged do not turn `main` red; the rule is the pure `checkVersions` of `bench/tests/lib/doc-version.mjs`, pinned by `doc-version.test.mjs`, and the CI checkout fetches tags). Skin declarations
+`node --test bench/tests/doc-besoin.test.mjs` to check B-4 and B-5 (B-5: the last CHANGELOG title is the latest git tag or the next version of the same series, `status.md` cites that title, and no existing tag lacks its entry — only tags merged into HEAD (`git tag --list 'v*' --merged HEAD`) count, so the tags of an epic not yet merged do not turn `main` red; the rule is the pure `checkVersions` of `bench/tests/lib/doc-version.mjs`, pinned by `doc-version.test.mjs`, and `scripts/suite-attestee.sh` fetches tags when the clean checkout has none). Skin declarations
 and JS/TSX inline parameters count as definitions outside those stylesheets;
 this does not mean the CSS-only difference is empty.
 
@@ -654,7 +654,7 @@ written first, red until the removal, then green). Inventory taken on `epic/ades
   bench/tests/bench-once.test.mjs` (neither needs a browser). The two tests that guard `DESIGN.md` twice
   (`design-doc.test.ts` and `doc-besoin.test.mjs`) keep the `doc-besoin` pair, which also checks headings;
   `design-doc.test.ts` goes if nothing else is in it. A vitest test (`packages/server/test/ci-workflow.test.ts`, run by `npm test`, so not by the step it guards) reads
-  the workflow file and fails if the step is absent.
+  the workflow file and fails if the step is absent. (Since AD-preuve-2 the step is a line of `scripts/suite-attestee.sh`, which that test reads.)
 - **Typed lint.** `eslint.config.js` adds `no-floating-promises`, `no-misused-promises` and `await-thenable`
   for `packages/**` and `plugins/**` through the project service, and its header comment ("No rule uses type
   information") is rewritten. The threshold, per rule: if it reports 15 findings or fewer, they are fixed
@@ -1362,7 +1362,7 @@ rules. The server outcomes above are filled.
   (`caughtErrors: 'none'`, so an ignored caught error is allowed). Two type-aware rules
   have since been turned on, `no-misused-promises` and `await-thenable`; `no-floating-promises`
   stays off because it fires on deliberate fire-and-forget calls (644 sites), and is named
-  under Known defects. `npm run lint` joins the CI job beside `typecheck` and `test`.
+  under Known defects. `npm run lint` joins the attested suite (`scripts/suite-attestee.sh`) beside `typecheck` and `test`.
 - **R-13, a real file.** The Copilot shell-tool CLI becomes a real `.mjs` file beside the driver;
   the driver writes the same bytes it writes today, found whether it runs from `src/` (tests) or
   from `dist/` (the image). The program is linted with the rest.

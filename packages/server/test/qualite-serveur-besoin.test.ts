@@ -201,8 +201,8 @@ describe('R-8 · the lint says what it does, and runs in CI', () => {
       expect(line).toMatch(/\b(no|not|cannot|nothing|never)\b/i)
     }
   }, TEST_TIMEOUT_MS)
-  it('the CI workflow runs npm run lint', () => {
-    expect(text('.github/workflows/ci.yml')).toMatch(/^\s*run: npm run lint\s*$/m)
+  it('the attested suite runs npm run lint', () => {
+    expect(text('scripts/suite-attestee.sh')).toMatch(/^step lint npm run lint\s*$/m)
   })
 })
 

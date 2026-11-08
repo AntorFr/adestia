@@ -19,14 +19,25 @@ After `npm ci`, from the repository root:
 ```sh
 npm test             # vitest run, then node --test for plugins; allow 7+ minutes
 npm run typecheck    # workspace tsc builds, then web --noEmit
-npm run lint         # eslint packages plugins; also in CI
+npm run lint         # eslint packages plugins; part of the attested suite
 npm run build        # server/dependencies, then the web shell and its vendor/SW files
 ```
 
 One test file: `npx vitest run packages/web/test/<file>.test.tsx` from the root.
 
 `npm test` does not run `bench/tests/*.test.mjs`: those are `node --test bench/tests/<file>`,
-and CI plays two of them (`doc-besoin.test.mjs`, `bench-once.test.mjs`).
+and the attested suite plays two of them (`doc-besoin.test.mjs`, `bench-once.test.mjs`).
+
+## A commit is green when it is attested
+
+GitHub Actions plays no suite (rule R15 of the chain). The suite is declared in `.sdlc.yaml`
+(`tests:`) and played by `scripts/suite-attestee.sh` — install, typecheck, lint, tests, guards,
+builds, boot — which writes one JUnit report. Push the branch, make sure it contains
+`origin/main`, then `attester --cible main --publier`: it plays the suite on a clean extraction
+of `HEAD` and, only if green, sets the `tests-complets` status on the commit. Never set that
+status by hand. A skipped test turns it red, so Playwright must be present. A commit pushed
+afterwards needs a new attestation. The image is built on a `v*` tag only, after a job that
+checks the status.
 
 The catalogue browser suite builds a missing shell when Playwright is available.
 Without Playwright it explicitly skips; a green run then does not prove those
