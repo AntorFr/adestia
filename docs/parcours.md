@@ -110,8 +110,8 @@ Form of the `exigences` skill; each need names the journeys it serves.
   from the repository; `app.ts` mounts routes and holds no business logic; the test stub
   driver is shared. The list of targets is `ARCHITECTURE.md` › Refactoring targets, and each
   target is closed or written down as kept, with its reason. *(P-15)*
-- **B-12** — Typecheck, lint and the whole test suite are green on every tranche and in CI;
-  lint runs in CI. *(P-15)*
+- **B-12** — Typecheck, lint and the whole test suite are green on every tranche, proved
+  by `attester --publier` on the pushed head; lint is part of that suite. *(P-15)*
 
 ### What `adestia-ajouts` adds
 Six functions, kept by Monsieur on 2026-10-25 from the recommendations of `adestia-correctifs`

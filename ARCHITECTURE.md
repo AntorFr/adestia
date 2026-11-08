@@ -1203,11 +1203,15 @@ suite. Its `image` job (a `docker build` on every PR) goes too; the image is bui
 Dockerfile proven, on the tag (AD-preuve-3). Four tests read `ci.yml` to prove the gate is
 there; they keep what they guard and point at `scripts/suite-attestee.sh`:
 `packages/server/test/ci-workflow.test.ts` (documentation and bench-once guards are played;
-the version guard reads tags, so the attested checkout has them — `attester` extracts a clean
-commit, so the script fetches nothing and the guard must say what it needs if tags are absent),
+the version guard reads tags; whether `attester`'s clean extraction carries them is not
+assumed: the first `attester` run settles it, and if they are absent the script fetches them
+(`git fetch --tags`) before the suite — the guard is not touched),
 `garde-fous.test.ts` and `qualite-serveur-besoin.test.ts` (lint is played),
 `bench/tests/dette-ensemble.test.mjs` (the documentation guard is played). This changes what
-four assertions read, not what they assert; any other edit to a test is out.
+four assertions read, not what they guard: a regex that matched `run: npm run lint` or a
+`node --test` line of the workflow matches the script's command line instead, and the one on
+the checkout's `fetch-depth: 0` goes with the checkout (the script's tag fetch above takes its
+place, with no new assertion); any other edit to a test is out.
 *Rejected:* leaving them and keeping a stub `ci.yml` only to satisfy them.
 
 ### AD-preuve-3 — The image is built on a `v*` tag only, after the attestation is checked
@@ -1226,8 +1230,9 @@ refuses nothing on a stable tag today.
 
 The repository is public, so a ruleset on `main` requires the check `tests-complets`. Setting a
 repository ruleset is an act on the forge, done once the first attestation of `main`'s head
-exists (otherwise the ruleset blocks its own proof); the task that does it says so in its
-report, and if the token cannot, it is a `Constat` for Monsieur, not a workaround. `CLAUDE.md`
+exists (otherwise the ruleset blocks its own proof): once the declaring task is in `main`, the
+ruleset task plays `attester --publier` on `origin/main`'s head, and only then sets the rule;
+its report names that commit and the ruleset id, and if the token cannot, it is a `Constat` for Monsieur, not a workaround. `CLAUDE.md`
 (Code and commands) states that no workflow plays the suite, that green is `attester --publier`
 on a pushed head that contains `origin/main`, and replaces its mentions of CI; `docs/parcours.md`
 P-15 step 2 and the Tests line of *Cross-cutting* follow.
