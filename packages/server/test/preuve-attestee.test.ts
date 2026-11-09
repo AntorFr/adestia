@@ -1,20 +1,19 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { parse } from 'yaml'
 import { afterEach, describe, expect, it } from 'vitest'
 
+import { cleanTmp, tmpDir } from './support/tmp.js'
+
 const root = fileURLToPath(new URL('../../../', import.meta.url))
 const read = (p: string) => readFileSync(root + p, 'utf8')
-const dirs: string[] = []
-afterEach(() => { while (dirs.length) rmSync(dirs.pop()!, { recursive: true, force: true }) })
+afterEach(cleanTmp)
 
-function report(steps: string, extra: Record<string, string> = {}): string {
-  const dir = mkdtempSync(join(tmpdir(), 'rapport-'))
-  dirs.push(dir)
+async function report(steps: string, extra: Record<string, string> = {}): Promise<string> {
+  const dir = await tmpDir('rapport-')
   writeFileSync(join(dir, 'steps.tsv'), steps)
   for (const [f, c] of Object.entries(extra)) writeFileSync(join(dir, f), c)
   const out = join(dir, 'resultats.xml')
@@ -68,8 +67,8 @@ describe('la suite attestée (R15)', () => {
     expect(s).toMatch(/api\/health/)
   })
 
-  it('le rapport porte une entrée par étape, rouge pour une étape en échec', () => {
-    const xml = report('install\tok\t3\ntypecheck\tko\t2\nlint\tok\t1\nbuild\tok\t1\nboot\tok\t1\n', { 'typecheck.log': 'TS2322 <boom>' })
+  it('le rapport porte une entrée par étape, rouge pour une étape en échec', async () => {
+    const xml = await report('install\tok\t3\ntypecheck\tko\t2\nlint\tok\t1\nbuild\tok\t1\nboot\tok\t1\n', { 'typecheck.log': 'TS2322 <boom>' })
     for (const n of ['install', 'typecheck', 'lint', 'build', 'boot']) expect(xml).toContain(`name="${n}"`)
     expect(xml).toMatch(/name="typecheck"[^>]*><failure/)
     expect(xml).toMatch(/name="install"[^>]*><\/testcase>/)
@@ -77,8 +76,8 @@ describe('la suite attestée (R15)', () => {
     expect(xml).toContain('&lt;boom&gt;')
   })
 
-  it('une étape jamais jouée (install en échec) est rouge, pas absente ; un test sauté est compté', () => {
-    const xml = report('install\tko\t5\n', {
+  it('une étape jamais jouée (install en échec) est rouge, pas absente ; un test sauté est compté', async () => {
+    const xml = await report('install\tko\t5\n', {
       'vitest.xml': '<testsuite><testcase name="a"><skipped/></testcase><testcase name="b"/></testsuite>',
     })
     for (const n of ['typecheck', 'lint', 'build', 'boot']) expect(xml).toMatch(new RegExp(`name="${n}"[^>]*><failure`))
