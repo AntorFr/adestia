@@ -207,9 +207,32 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
         it('editeur_montre_les_champs_dune_page_crlf_comme_ceux_de_sa_jumelle_lf', async () => {
           const read = async (route: string) => {
             const { context, page } = await visit(browser, instance.url, locale, 'light', 'desk', route)
-            await page.getByRole('button', { name: w.edit, exact: true }).click()
-            await page.locator('.adestia-editor__meta-gear').click()
-            await page.waitForSelector('.adestia-popover', { timeout: 10_000 })
+            // Each step waits for the proof that the previous one landed, never for a duration: the page loaded,
+            // the editor mounted (its Done button), the gear drawn, the popover open AND filled (title is non-empty).
+            const edit = page.getByRole('button', { name: w.edit, exact: true })
+            await edit.waitFor({ timeout: 20_000 })
+            // The editor reads what the plugins contribute (the vocabulary behind the selects) when it MOUNTS; the index
+            // answers only after the plugins are loaded. Open the editor before that and the properties come up as
+            // bare text fields, whatever the page says.
+            await indexLoaded(page)
+            await edit.click()
+            await page.getByRole('button', { name: w.done, exact: true }).waitFor({ timeout: 20_000 })
+            const gear = page.locator('.adestia-editor__meta-gear')
+            await gear.waitFor({ state: 'visible', timeout: 20_000 })
+            // A click that lands while the editor is still remounting is lost: click again until the popover is there.
+            const deadline = Date.now() + 20_000
+            while (!(await page.locator('.adestia-popover').count()) && Date.now() < deadline) {
+              await gear.click()
+              await page.locator('.adestia-popover').waitFor({ timeout: 2_000 }).catch(() => null)
+            }
+            await page.waitForFunction(
+              () => {
+                const i = document.querySelector('.adestia-popover input') as HTMLInputElement | null
+                return !!i && i.value !== ''
+              },
+              null,
+              { timeout: 15_000 },
+            )
             const fields = (await page.evaluate(() => ({
               inputs: [...document.querySelectorAll('.adestia-popover input')].map((i) => (i as HTMLInputElement).value),
               selects: [...document.querySelectorAll('.adestia-popover select')].map((s) => (s as HTMLSelectElement).value),
