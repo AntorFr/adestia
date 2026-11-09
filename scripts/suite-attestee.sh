@@ -46,8 +46,13 @@ step build sh -c 'npm run build --workspace @antorfr/adestia-server && npm run b
 # BENCH_FULL_SWEEP=1 plays the 2 x 124-picture sweep, which a skip would turn red.
 # The real-SDK probe (claude-lost-session.real) needs CLAUDE_CODE_OAUTH_TOKEN, a secret
 # an attested extraction never has: it is not played here, not skipped (see the task discussion).
-# Fewer workers than cores: the browser suites time out when 11 of them share the machine.
-step vitest env BENCH_FULL_SWEEP=1 npx vitest run --maxWorkers=6 --exclude '**/*.real.test.ts' --exclude '**/node_modules/**' --reporter=junit --outputFile="$out/vitest.xml"
+# Workers = the CPUs the cgroup grants, not the cores the host shows (12 against a quota of 3):
+# oversubscribed, the browser and jsdom suites exceed their timeouts.
+workers=$(nproc)
+if read -r quota period < /sys/fs/cgroup/cpu.max 2>/dev/null && [ "$quota" != max ]; then
+  workers=$(( (quota + period - 1) / period ))
+fi
+step vitest env BENCH_FULL_SWEEP=1 npx vitest run --maxWorkers=$workers --exclude '**/*.real.test.ts' --exclude '**/node_modules/**' --reporter=junit --outputFile="$out/vitest.xml"
 step plugins npm run test:plugins -- --test-reporter=junit --test-reporter-destination="$out/plugins.xml"
 step guards node --test --test-reporter=junit --test-reporter-destination="$out/guards.xml" bench/tests/doc-besoin.test.mjs bench/tests/bench-once.test.mjs
 
