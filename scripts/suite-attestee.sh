@@ -47,12 +47,13 @@ step build sh -c 'npm run build --workspace @antorfr/adestia-server && npm run b
 # The real-SDK probe (claude-lost-session.real) needs CLAUDE_CODE_OAUTH_TOKEN, a secret
 # an attested extraction never has: it is not played here, not skipped (see the task discussion).
 # Workers = the CPUs the cgroup grants, not the cores the host shows (12 against a quota of 3):
-# oversubscribed, the browser and jsdom suites exceed their timeouts.
+# oversubscribed, the browser and jsdom suites exceed their timeouts. Even at the quota a
+# browser test takes ~5 s here, the vitest default: the timeout is raised on the command line.
 workers=$(nproc)
 if read -r quota period < /sys/fs/cgroup/cpu.max 2>/dev/null && [ "$quota" != max ]; then
   workers=$(( (quota + period - 1) / period ))
 fi
-step vitest env BENCH_FULL_SWEEP=1 npx vitest run --maxWorkers=$workers --exclude '**/*.real.test.ts' --exclude '**/node_modules/**' --reporter=junit --outputFile="$out/vitest.xml"
+step vitest env BENCH_FULL_SWEEP=1 npx vitest run --maxWorkers=$workers --testTimeout=30000 --hookTimeout=60000 --exclude '**/*.real.test.ts' --exclude '**/node_modules/**' --reporter=junit --outputFile="$out/vitest.xml"
 step plugins npm run test:plugins -- --test-reporter=junit --test-reporter-destination="$out/plugins.xml"
 step guards node --test --test-reporter=junit --test-reporter-destination="$out/guards.xml" bench/tests/doc-besoin.test.mjs bench/tests/bench-once.test.mjs
 
