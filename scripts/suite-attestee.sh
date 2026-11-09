@@ -37,12 +37,19 @@ fi
 step install npm ci || { report; exit 1; }
 step typecheck npm run typecheck
 step lint npm run lint
+# Proves the shipped artefact still builds (the tests read TypeScript sources). It comes
+# BEFORE the tests because the browser suites drive the built server and shell
+# (bench/launch.mjs); with Playwright present they are not skipped, they need the build.
+step build sh -c 'npm run build --workspace @antorfr/adestia-server && npm run build:web --workspace @antorfr/adestia-web'
+
 # vitest then the plugins' node --test (what `npm test` plays), each writing JUnit.
-step vitest npx vitest run --reporter=junit --outputFile="$out/vitest.xml"
+# BENCH_FULL_SWEEP=1 plays the 2 x 124-picture sweep, which a skip would turn red.
+# The real-SDK probe (claude-lost-session.real) needs CLAUDE_CODE_OAUTH_TOKEN, a secret
+# an attested extraction never has: it is not played here, not skipped (see the task discussion).
+# Fewer workers than cores: the browser suites time out when 11 of them share the machine.
+step vitest env BENCH_FULL_SWEEP=1 npx vitest run --maxWorkers=6 --exclude '**/*.real.test.ts' --exclude '**/node_modules/**' --reporter=junit --outputFile="$out/vitest.xml"
 step plugins npm run test:plugins -- --test-reporter=junit --test-reporter-destination="$out/plugins.xml"
 step guards node --test --test-reporter=junit --test-reporter-destination="$out/guards.xml" bench/tests/doc-besoin.test.mjs bench/tests/bench-once.test.mjs
-# Proves the shipped artefact still builds: the tests read TypeScript sources.
-step build sh -c 'npm run build --workspace @antorfr/adestia-server && npm run build:web --workspace @antorfr/adestia-web'
 
 boot() {
   dir=$(mktemp -d)
