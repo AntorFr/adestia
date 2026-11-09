@@ -739,3 +739,12 @@ branch and that `test:plugins` is replayed after a red vitest run.
   reading the fields, and the refused-save test waits for the mounted editor before
   clicking and has wider waits for its menu, filter and refusal status, so neither flakes
   during the full `npm test`. A test-only fix: nothing changes for users.
+
+## v0.97.5
+
+- **The full skippy sweep and the CRLF page-editor test no longer time out under load** —
+  in `packages/server/test/bench-ensemble.test.ts` the ceiling of the full `--skin skippy`
+  sweep rises from 420 s to 1 200 s (about four times its single-core duration), and in
+  `packages/web/test/besoin-pages-ensemble-browser.test.ts` the CRLF properties popover
+  test also waits for the mounted editor and reopens the gear until the popover shows, so
+  neither flakes during the full `npm test`. A test-only fix: nothing changes for users.
