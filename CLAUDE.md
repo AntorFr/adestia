@@ -30,7 +30,7 @@ and the attested suite plays two of them (`doc-besoin.test.mjs`, `bench-once.tes
 
 ## A commit is green when it is attested
 
-GitHub Actions plays no suite (rule R15 of the chain). The suite is declared in `.sdlc.yaml`
+GitHub Actions plays no suite (rule R15 of the SDLC chain this repository is built by, `homelab-sdlc-core`: a commit is proved by a suite played once, off the forge, whose result is the `tests-complets` commit status). `attester` is that chain's tool, present in its night pods; without it, run `scripts/suite-attestee.sh` yourself for the same suite and report (`resultats.xml`), and leave the status to the chain. The suite is declared in `.sdlc.yaml`
 (`tests:`) and played by `scripts/suite-attestee.sh` — install, typecheck, lint, tests, guards,
 builds, boot — which writes one JUnit report. Push the branch, make sure it contains
 `origin/main`, then `attester --cible main --publier`: it plays the suite on a clean extraction
