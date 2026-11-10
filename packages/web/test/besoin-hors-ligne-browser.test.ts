@@ -407,8 +407,19 @@ describe.skipIf(!playwright)('B-19 · le bandeau « le serveur ne répond pas »
           if (r.request().url().endsWith('/api/health')) healthCalls++
           await r.abort('failed')
         })
-        await page.evaluate(() => (location.hash = '/settings/instructions'))
-        const shown = await until(page, WORDS.en, (s) => s.length === 1, SHOWN_BUDGET)
+        // The banner needs an observed /api/ call to fail, and a call that was already in flight when the
+        // routes were folded may still answer and retire the probe. So: provoke a fresh failing call (leave and
+        // re-enter the view) each time the banner is not up, and judge only on the banner itself.
+        const askedBy = Date.now() + SHOWN_BUDGET
+        let shown = await banners(page, WORDS.en)
+        for (let turn = 0; shown.length !== 1 && Date.now() < askedBy; turn++) {
+          await page.evaluate((away) => (location.hash = away ? '/' : '/settings/instructions'), turn % 2 === 1)
+          const heard = Date.now() + 3_000
+          while (shown.length !== 1 && Date.now() < heard) {
+            await new Promise((r) => setTimeout(r, 100))
+            shown = await banners(page, WORDS.en)
+          }
+        }
         expect(shown).toHaveLength(1)
         // While shown, the probe GET /api/health keeps asking (every 3 s): at least two probes.
         await until(page, WORDS.en, () => healthCalls >= 2, PROBES_BUDGET)
