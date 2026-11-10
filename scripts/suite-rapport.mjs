@@ -23,7 +23,6 @@ for (const f of ['vitest.xml', 'plugins.xml', 'guards.xml']) {
   const xml = readFileSync(p, 'utf8')
   const re = /<testcase\b[^>]*?(?:\/>|>[\s\S]*?<\/testcase>)/g
   for (const m of xml.match(re) ?? []) {
-    // Prefix the class with its source so the name stays unique and readable.
     cases.push(m)
   }
 }

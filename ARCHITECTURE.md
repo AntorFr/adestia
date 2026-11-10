@@ -1182,11 +1182,12 @@ it; behaviour of the product does not change.
 ### AD-preuve-1 — The suite is one script, declared in `.sdlc.yaml`
 
 `.sdlc.yaml` gains `tests:` (`commande: scripts/suite-attestee.sh`, `rapport: resultats.xml`,
-`format: junit`, `delai: 45m`, to be raised if the first attested run measures longer). The
-script is what `ci.yml` used to play, in the same order, from a clean checkout with its own
-`HOME` and no secret: `npm ci`, typecheck, lint, `npm test` (vitest, then the plugins'
-`node --test`), `node --test bench/tests/doc-besoin.test.mjs bench/tests/bench-once.test.mjs`,
-the server and web builds, and a boot of the built server answered by `/api/health`. It writes
+`format: junit`, `delai: 100m`, raised from a first guess of 45m once the first attested runs measured the
+full suite). The script is what `ci.yml` used to play, from a clean checkout with its own
+`HOME` and no secret: `npm ci`, typecheck, lint, the server and web builds (before the tests: the browser suites
+drive the built server and shell, whereas `ci.yml` built last), `npm test` (vitest, then the
+plugins' `node --test`), `node --test bench/tests/doc-besoin.test.mjs bench/tests/bench-once.test.mjs`,
+and a boot of the built server answered by `/api/health`. It writes
 ONE JUnit report: every vitest and `node --test` case under its own name, and the install,
 typecheck, lint, build and boot steps as cases of their own (the pattern WebPoule's
 `scripts/suite-attestee.sh` already uses), so a skipped or red step is named. Playwright is
