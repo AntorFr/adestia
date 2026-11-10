@@ -29,7 +29,7 @@ One instance is one agent, one workspace, one subscription.
 Form of the `exigences` skill; each need names the journeys it serves.
 
 ### Unchanged behaviour
-- **B-1** *(`adestia-qualite`; `adestia-correctifs` lifts it for its register, B-13; `adestia-ajouts` lifts it for B-17 to B-22 only)* — Every journey `P-1` to `P-14` behaves after the epic as it did at v0.88.0: same
+- **B-1** *(`adestia-qualite`; `adestia-correctifs` lifts it for its register, B-13; `adestia-ajouts` lifts it for B-17 to B-22 only; `adestia-pages` lifts it for B-23 to B-31 only)* — Every journey `P-1` to `P-14` behaves after the epic as it did at v0.88.0: same
   routes, same API, same configuration keys, same files on disk and their formats, same MCP
   tools, same words where a word is not corrected by `B-8` or `B-9`. A visible change is limited to
   the look (`B-6`, `B-7`, `B-9`), to the language of a string (`B-8`), to the labels of back
@@ -156,7 +156,7 @@ keep opening as they did (B-31).
 - **B-26** — The block settings (E-6) are redrawn: labels in the user's language, fields grouped and explained, the variants shown as small pictures rather than words, the effect visible while the user changes it. No raw attribute is shown by default. *(P-18)*
 - **B-27** — The data of a block is entered in a form, not as raw markdown lines: the figures of `figures`, the phases and milestones of `timeline`, the items of `list` and `table`, the cards. The raw lines stay one click away; what the form writes is the same file as before (AD-33). *(P-18)*
 - **B-28** — A page has **sections** (a titled group of blocks that may be folded) and **columns** (two or three side by side that stack on a phone); a block is dropped into, out of, and between them, with the pointer, the keyboard and the buttons of B-23. Nesting is bounded (AD-32). *(P-19)*
-- **B-29** — The blocks of `project-management` are redesigned in this frame, and the project blocks that the status page needs (a candidate list is in the mockup `etat-projet`: derived progress, milestones, risks, workload…) are added from the choice Monsieur makes on that picture; no block is added before it, and the fields each reads are fixed by the design of tranche 4 once it is made. *(P-20)*
+- **B-29** — The blocks of `project-management` are redesigned in this frame, and the project blocks that the status page needs (a candidate list is in the mockup `etat-projet`: derived progress, milestones, risks, workload…) are added from the choice Monsieur makes on that picture; no block is added before it, and the fields each reads are fixed by the design of tranche 4 once it is made. **[À TRANCHER — Monsieur, on the mockup `etat-projet`]** *(P-20)*
 - **B-30** — A page **"Project status"** is created from a template (a page seed with its sections, columns and blocks already placed) and finished by editing its blocks through forms. This is the exit criterion of the epic: someone composes a readable, structured status page without touching markdown or raw configuration. *(P-20)*
 - **B-31** — Every page written before this epic opens, reads and saves unchanged: no migration, and a page without containers is written back byte-for-byte as before its edit (AD-32). *(P-19)*
 
@@ -410,8 +410,8 @@ Needs: B-23, B-28, B-31
 ### P-20 — Compose a project status page
 The owner follows a project and wants a status page without writing markdown.
 
-1. In the section where the project lives, the user presses **New from template** (E-3), chooses "Project status", names the page and creates it (E-36) (B-30).
-2. The page opens with a summary section, a two-column band (progress and milestones, risks), and the timeline; each block has placeholder content the user edits through forms (B-27, B-29). Which project blocks the band holds, and which fields each reads (derived from sub-pages' dates, status and tasks, or typed in its form), is settled by Monsieur's choice on the mockup `etat-projet` and written in the design of tranche 4.
+1. In the folder where the project lives (the E-3 listing, not a block container), the user presses **New from template** (E-3), chooses "Project status", names the page and creates it (E-36) (B-30).
+2. The page opens with a summary section, a two-column band (progress and milestones, risks), and the timeline; each block has placeholder content the user edits through forms (B-27, B-29). **[À TRANCHER — Monsieur, on the mockup `etat-projet`, before tranche 4 is designed]** which project blocks the band holds, and which fields each reads (derived from sub-pages' dates, status and tasks, or typed in its form); the design of tranche 4 writes the answer.
 3. The user changes a block's variant, moves a risk block to another column, adds a block from the gallery (B-23, B-24, B-28).
 4. A reader opens the page (E-4, E-31): it is legible on a desk and on a phone, light and dark (B-30).
 
@@ -419,7 +419,7 @@ Needs: B-25, B-29, B-30
 
 ## Out of scope
 
-- **Any functional change, except the six of `adestia-ajouts` (B-17 to B-22)** (from `adestia-qualite`; `adestia-correctifs` repairs defects but adds no function, AD-18): a new feature, a removed feature, a renamed configuration key,
+- **Any functional change, except the six of `adestia-ajouts` (B-17 to B-22) and the nine of `adestia-pages` (B-23 to B-31)** (from `adestia-qualite`; `adestia-correctifs` repairs defects but adds no function, AD-18): a new feature, a removed feature, a renamed configuration key,
   route or file, a changed data format, a changed MCP tool. A defect found on the way is
   written down (`ARCHITECTURE.md` › Known defects) and left for its own feature.
 - **Catalogue security corrections** belonged to the separate catalogue work, not

@@ -1210,7 +1210,7 @@ A new `:::` name is kept for a different thing (a different data shape), per the
 A template is a markdown file in the core's or a plugin's `templates/`, with a `template:` frontmatter key holding `name`, `image` and `description` (declared in `docs/donnees.md`); "New from template" (E-36) copies the body and the page's own frontmatter (`type`, `title` from the user's name) and drops the `template:` key, so a created page carries no trace of it. No template entity, no user templates (out of scope). `project-management`
 ships "Project status".
 
-*Reversed if* (AD-34 to AD-36): not expected before tranche 4.
+*Reversed if* (AD-34 to AD-36): AD-34 and AD-35 not expected; AD-36 only if Monsieur's choice on the mockup `etat-projet` (**[À TRANCHER]**, B-29) needs a seed shape the frontmatter cannot carry — settled in the design of tranche 4.
 
 ## Refactoring targets
 
