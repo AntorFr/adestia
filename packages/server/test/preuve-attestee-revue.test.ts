@@ -29,7 +29,7 @@ describe('the attested suite says what it plays', () => {
     const header = script.split('\n').filter((l) => l.startsWith('#')).join(' ').replace(/#\s*/g, ' ')
     const m = /in this order:\s*(.+?)\.\s/.exec(header)
     expect(m, 'header names an order').toBeTruthy()
-    const words = m![1].split(',').map((w) => w.trim())
+    const words = (m?.[1] ?? '').split(',').map((w) => w.trim())
     expect(words).toEqual([
       'install', 'typecheck', 'lint', 'builds', 'tests', 'plugins', 'documentation/bench guards', 'boot',
     ])
