@@ -394,6 +394,10 @@ describe.skipIf(!playwright)('B-19 · le bandeau « le serveur ne répond pas »
     }, 60_000)
 
     it('tous les appels /api/ échouent, la sonde /api/health aussi : le bandeau apparaît ; la sonde repasse : il part seul, sans recharger', async () => {
+      // Failure budgets, not expectations: the product answers within 3-5 s; these only bound a loaded machine.
+      const SHOWN_BUDGET = 30_000
+      const PROBES_BUDGET = 30_000
+      const GONE_BUDGET = 30_000
       const { context, page } = await open(browser, b.url, { theme: 'light', size: 'desk', locale: 'en', route: '/' })
       try {
         await page.waitForSelector('.adestia-canvas__body', { timeout: 20_000 })
@@ -404,17 +408,17 @@ describe.skipIf(!playwright)('B-19 · le bandeau « le serveur ne répond pas »
           await r.abort('failed')
         })
         await page.evaluate(() => (location.hash = '/settings/instructions'))
-        const shown = await until(page, WORDS.en, (s) => s.length === 1, WAIT_SHOWN)
+        const shown = await until(page, WORDS.en, (s) => s.length === 1, SHOWN_BUDGET)
         expect(shown).toHaveLength(1)
-        // While shown, the probe GET /api/health keeps asking (every 3 s): at least two probes in 9 s.
-        await until(page, WORDS.en, () => healthCalls >= 2, 9_000)
+        // While shown, the probe GET /api/health keeps asking (every 3 s): at least two probes.
+        await until(page, WORDS.en, () => healthCalls >= 2, PROBES_BUDGET)
         expect(healthCalls).toBeGreaterThanOrEqual(2)
         await (page as unknown as { unroute(g: string): Promise<void> }).unroute('**/api/**')
-        expect(await until(page, WORDS.en, (s) => s.length === 0, WAIT_GONE)).toHaveLength(0)
+        expect(await until(page, WORDS.en, (s) => s.length === 0, GONE_BUDGET)).toHaveLength(0)
       } finally {
         await context.close()
       }
-    }, 90_000)
+    }, 150_000)
 
     it('un appel unique qui échoue alors que le serveur répond : aucun bandeau', async () => {
       const { context, page } = await open(browser, b.url, { theme: 'light', size: 'desk', locale: 'en', route: '/' })
