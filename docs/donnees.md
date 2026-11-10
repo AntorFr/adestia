@@ -266,3 +266,17 @@ subject.
 - **The rule for this epic.** A refactoring keeps every path, file name, key, line type,
   indentation, final newline and file mode above byte-compatible, and keeps each reader's
   tolerance as it is — defects included, written down rather than fixed.
+
+## What `adestia-pages` changes
+
+No entity is added. A Page stays one markdown file. Three things change in its **body grammar**,
+none in the frontmatter:
+
+- **Containers** (AD-32): `section` and `columns`/`col` join the closed vocabulary; they hold blocks and
+  nest by fence length. A page without them is identical to today's.
+- **Display variants** (AD-35): a new value of `view` on existing blocks, or a new optional attribute; an
+  unknown value falls back to the block's default view, never to an error.
+- **Block data** keeps its line formats (AD-33); the forms read and write them.
+
+Templates (AD-36) are page seeds shipped with the core or a plugin: files copied at creation, not stored data.
+Rights are those of pages: whoever may write the page may use the gallery, the forms and the containers.

@@ -1,0 +1,49 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="stylesheet" href="maquette.css"><title>Blocks, before and after</title>
+<body><div class="sheetpage"><h1>Every block, before and after — with its variants (tranche 2, B-25)</h1>
+<p class="lead">In each group, the first picture is today (flat bands, grey rules, the figure as a bare number), the following ones the redrawn block and its variants. Variants are values of <span class="mono">view</span> (AD-35). Same tokens, same fonts; only the composition changes.</p>
+
+<h2>figures — today → "tiles" (default) · "inline"; a "meter" variant lives in the tiles</h2>
+<div class="show" data-sets="desk-light desk-dark" data-tpl="figs"></div>
+<template id="figs">
+<div class="refnote">TODAY</div>
+<div class="bl flat" style="background:var(--surface-soft);border:1px solid var(--border);border-radius:4px"><div class="figs"><div class="fig"><b style="font:600 20px var(--font)">62 %</b><span>Progress</span></div><div class="fig"><b style="font:600 20px var(--font)">14</b><span>Open tasks</span></div><div class="fig"><b style="font:600 20px var(--font)">3</b><span>Late</span></div></div></div>
+<div class="refnote" style="background:var(--accent);color:var(--on-accent)">AFTER · tiles (default)</div>
+<div class="figs tiles" style="margin-bottom:10px"><div class="fig"><span>Progress</span><b>62 %</b><div class="meter" style="margin-top:6px"><i style="width:62%"></i></div><span class="pill p-ok" style="align-self:flex-start;margin-top:6px"><i data-i="up"></i>+8 this week</span></div><div class="fig"><span>Open tasks</span><b>14</b><span>of 37</span></div><div class="fig"><span>Late</span><b style="color:var(--danger-text)">3</b><span class="pill p-ko" style="align-self:flex-start"><i data-i="warn"></i>needs a look</span></div></div>
+<div class="refnote" style="background:var(--accent);color:var(--on-accent)">AFTER · inline</div>
+<div class="bl card"><div style="display:flex;gap:22px;flex-wrap:wrap"><span><b style="font:600 18px var(--font-title)">62 %</b> <span class="muted">progress</span></span><span><b style="font:600 18px var(--font-title)">14</b> <span class="muted">open</span></span><span><b style="font:600 18px var(--font-title);color:var(--danger-text)">3</b> <span class="muted">late</span></span></div></div>
+</template>
+
+<h2>list — today → "rows" · "cards" · "chips"</h2>
+<div class="show" data-sets="desk-light desk-dark" data-tpl="lst"></div>
+<template id="lst">
+<div class="refnote">TODAY</div>
+<div class="bl" style="background:var(--surface-soft);border:1px solid var(--border);border-radius:4px"><div style="font-size:14px">• Kitchen<br>• Roof<br>• Garden shed</div></div>
+<div class="refnote" style="background:var(--accent);color:var(--on-accent)">AFTER</div>
+<div class="var" style="margin-bottom:10px"><div class="on"><div class="th"><i></i><i></i><i></i></div>Rows</div><div><div class="th cd"><i style="background:var(--surface-sunken)"></i><i style="background:var(--surface-sunken)"></i></div>Cards</div><div><div class="th ch"><i></i><i></i><i></i></div>Chips</div></div>
+<div class="bl card" style="padding:4px 14px"><table class="t"><tr><td><b>Kitchen</b><div class="faint" style="font-size:12px">Fitted, tiles to choose</div></td><td><span class="pill p-wa">At risk</span></td><td style="text-align:right" class="muted">12 Mar</td></tr><tr><td><b>Roof</b><div class="faint" style="font-size:12px">Waiting for the quote</div></td><td><span class="pill p-ok">On track</span></td><td style="text-align:right" class="muted">30 Apr</td></tr></table></div>
+<div class="cols c2"><div class="bl card"><b>Kitchen</b><div class="muted" style="font-size:12.5px">12 Mar</div><span class="pill p-wa" style="margin-top:6px">At risk</span></div><div class="bl card"><b>Roof</b><div class="muted" style="font-size:12.5px">30 Apr</div><span class="pill p-ok" style="margin-top:6px">On track</span></div></div>
+<div style="display:flex;gap:6px;flex-wrap:wrap"><span class="pill p-n">Kitchen</span><span class="pill p-n">Roof</span><span class="pill p-n">Garden shed</span></div>
+</template>
+
+<h2>timeline — today → bars (a "milestones" look is candidate B of etat-projet)</h2>
+<div class="show" data-sets="desk-light desk-dark" data-tpl="tml"></div>
+<template id="tml">
+<div class="refnote">TODAY</div>
+<div class="bl" style="background:var(--surface-soft);border:1px solid var(--border);border-radius:4px;font-size:13px">Phase 1 &nbsp; 15 Jan → 1 Mar<br>Phase 2 &nbsp; 1 Mar → 30 Apr</div>
+<div class="refnote" style="background:var(--accent);color:var(--on-accent)">AFTER · bars, a bar turns amber or red when late</div>
+<div class="bl card"><div class="hd"><i class="ico" data-i="tl"></i>Planning</div><div class="tl">
+<div class="ln"><span>Design</span><div class="tr"><i style="left:0;width:30%"></i></div></div>
+<div class="ln"><span>Works</span><div class="tr"><i style="left:28%;width:42%"></i><i class="w" style="left:60%;width:10%"></i></div></div>
+<div class="ln"><span>Handover</span><div class="tr"><i class="k" style="left:72%;width:20%"></i></div></div></div>
+<div class="muted" style="font-size:12px;margin-top:8px"><span class="mono">Jan</span> ····· <span class="mono">Mar</span> ····· <span class="mono">May</span></div></div>
+</template>
+
+<h2>table, callout, content, gallery — one redraw each</h2>
+<div class="show" data-sets="desk-light desk-dark" data-tpl="oth"></div>
+<template id="oth">
+<div class="bl card" style="border-left:3px solid var(--warning)"><div class="hd" style="color:var(--warning-text)"><i data-i="warn"></i>Heads up</div><div style="font-size:14px">The roofer moved the start to April. Nothing else changes yet.</div></div>
+<div class="bl card" style="padding:4px 14px"><table class="t"><tr><th>Item</th><th>Owner</th><th>Status</th></tr><tr><td>Permit</td><td>Anna</td><td><span class="pill p-ok"><i data-i="check"></i>Done</span></td></tr><tr><td>Quote</td><td>Marc</td><td><span class="pill p-wa">Waiting</span></td></tr></table><div class="faint" style="font-size:11.5px;padding:6px 0">Sorted by status · 2 rows</div></div>
+<div class="bl"><div style="font:600 20px var(--font-title);margin-bottom:4px">Summary</div><div style="font-size:15px;max-width:60ch">The renovation is on track for April. Two decisions are open and one risk needs an owner.</div></div>
+<div class="cols c3"><div style="aspect-ratio:4/3;border-radius:10px;background:var(--surface-sunken);display:grid;place-items:center;color:var(--text-faint)"><i data-i="img"></i></div><div style="aspect-ratio:4/3;border-radius:10px;background:var(--surface-sunken);display:grid;place-items:center;color:var(--text-faint)"><i data-i="img"></i></div><div style="aspect-ratio:4/3;border-radius:10px;background:var(--surface-sunken);display:grid;place-items:center;color:var(--text-faint)"><i data-i="img"></i></div></div>
+</template>
+</div><script src="maquette.js"></script>

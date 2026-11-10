@@ -124,6 +124,9 @@ is labelled with the destination. Plugins with sub-screens add their own back (E
 | E-29 | Meals page layout | a page with `type: meals` | `plugins/meals/web/layouts.js`, `frise.js`, `meals.css` | Meal timeline (frise), drag to reorder, dish detail (`.meals-modal`) | P-5, P-11 |
 | E-30 | Scan overlay | composer button "Scan barcodes" | `plugins/scan/web/chrome.js`, `scanner.js`, `scan.css` | Full-screen camera, decoded codes list, “Add to message” into the composer | P-11 |
 | E-31 | Project-management blocks | `:::timeline` and `:::subproject` blocks in a page | `plugins/project-management/web/blocks.js`, `model.js`, `pm.css` | Timeline of dated sub-pages, project status pills | P-11 |
+| E-34 | Block gallery | **Add block** in the editor bar, or "Browse" at the foot of the `/` menu | `editor/BlockGallery.tsx` (new) | Browse the blocks, see each, insert one at a chosen place | P-17, P-19, P-20 |
+| E-35 | Block data form | **Edit data** in E-6, or after an insertion from E-34 | `editor/BlockForm.tsx` (new) | Fill the figures, phases, items, rows of a block in fields | P-18, P-20 |
+| E-36 | Page templates | "New page" in E-3 | `app/NewPage` (existing flow, a template step added) | Start a page from a template, "Project status" first | P-20 |
 | E-32 | Offline banner | above the open screen, whichever it is, while the server does not answer (it pushes the screen down, it does not cover it) | `app/Offline.tsx`, `app/App.tsx` | Say "The server is not responding"; goes away by itself when it answers (`adestia-ajouts`, B-19) | P-16 |
 | E-33 | Remove-server confirmation | **Remove** on E-10 | `app/mcp/ConfirmRemove.tsx`, `app/mcp/ServerDetail.tsx`, `app/ui/Sheet.tsx` | Name the server and ask; **Cancel** / **Remove** (`adestia-ajouts`, B-20) | P-16 |
 
@@ -493,6 +496,26 @@ declaration has no Remove button (hidden, not refused). Many or long-named serve
 States of E-10 after the tranche: list, empty, health tones, needs-auth, connected/not, shadowed,
 read-only, saving/saved/failed, loading, fetch-failed with Retry, and the E-33 confirmation. Nothing
 else changes; the shared parts are those of `adestia-ajouts-chargements` (AD-29).
+
+## Target states of `adestia-pages`
+
+Written at the framing; each tranche moves its rows into the States table above. The look is
+that of the charter (`docs/charte.md`: paper-cold shell, the skin is the persona, Linear/Notion/Raycast
+for density, icon on every action, one dialogue sheet); the **mockups** in `docs/maquettes/`
+show it and are what Monsieur judges: `blocs-avant-apres` (each block before/after with its variants),
+`reglages-formulaires` (E-6 and E-35), `galerie-deplacement` (E-34, the move controls, the drop line),
+`sections-colonnes` (a page with sections and columns, desk and phone), `etat-projet` (the full
+status page from the template, with the candidate project blocks). Light and dark, 1440 and 390 wide.
+
+| E-n | Adds | Notes |
+|---|---|---|
+| E-4 (editing) | **Move up / Move down** on the block bar, keyboard move (focus on the bar, `Alt+↑/↓`; `Alt+←/→` goes in/out of a container), touch move, a live region "Moved to position 3 of 7", the drop line also shown inside containers, a visible reason when a drop is refused | tranche 1 for the page level; tranche 3 for containers. The grip and its pointer drag stay |
+| E-4 (reading and editing) | `section` (title, fold control, optional icon) and `columns` (2 or 3, stacking under 820 px) | tranche 3. A page without containers is drawn as today (B-31) |
+| E-6 | redrawn: grouped fields, labels in the user's language (closes Q-3 for blocks), variants as small pictures, live effect, **Edit data** | tranche 2; same popover, bounded as now |
+| E-34 | gallery sheet (bottom sheet on a phone): search field, blocks in groups (Text, Data, Layout, Project, plugins), a card each with a picture and one line; keyboard: arrows, Enter inserts; empty search state; no loading state (the list is local) | tranche 1 lists the blocks that exist; later tranches add theirs |
+| E-35 | form in the shared sheet: one row per figure/phase/item, add, remove (named `trash-2`), reorder with the same move controls, fields typed (number, date, status, link); validation said under the field; **Raw** switches to the lines | tranche 2 |
+| E-36 | template step in the new-page flow: "Blank" and "Project status", each with a picture | tranche 4 |
+| E-31 | redrawn blocks and the added project blocks, chosen on `etat-projet` | tranche 4; the amber/late rules of E-31 stay |
 
 ## The plugins' screens, as built
 

@@ -1172,6 +1172,47 @@ declaration is removed only on **Remove**. No generic `useConfirm` is created fo
 effect runs after it and takes the ✕); making Remove wait on the `DELETE` inside the open sheet (a second
 state for one use).
 
+## Decisions of adestia-pages
+
+### AD-32 — Containers: `section`, `columns` and `col`, nested by fence length
+The vocabulary (`packages/content/src/vocabulary.ts`) gains a `container` content kind: `section{title, ico, closed=fold}`
+holds blocks; `columns` holds 2 or 3 `col`, each holding blocks. A container is written with a longer
+fence than its children (`::::columns` around `:::col`), as the directive grammar allows. Depth is bounded:
+a section holds blocks and columns; a column holds blocks (and no section or columns); a section does not hold a
+section. `w` still shares a line among top-level blocks outside containers, `row` still cuts it. The reader renders
+containers recursively; the editor drops into them (AD-34). A page without containers parses and serialises
+byte-for-byte as before (B-31), checked by round-trip tests over the pages of the repository and the seeds.
+The grammar fork `micromark-extension-directive` must accept this nesting: verified first, in tranche 3's first task.
+*Rejected*: a markdown table or raw HTML for layout (the editor cannot move blocks in it); a free grid with
+coordinates (not the page of a document, outside the scope); a layout stored in the frontmatter (a block would
+live in two places). *Reversed if*: the fork cannot nest directives without a change that breaks the existing pages.
+
+### AD-33 — Block forms are lenses over the existing lines
+`figures`, `timeline`, `list` and `table` keep the line formats they have (`- Label: 62 % — caption`,
+`- Phase: 2026-01-15 → 2026-03-01`). A form is derived from the block's spec (a `fields` declaration next to its
+attributes, read by core and plugin blocks alike, like `BlockSettings` today) and writes those lines; reading the
+lines back gives the same rows (round-trip tested). A line the form cannot read is kept and shown in **Raw**.
+*Rejected*: a new structured format (YAML/JSON) in the body (a migration and a second truth). *Reversed if*: a
+block needs a datum the line form cannot hold.
+
+### AD-34 — One move operation under pointer, keyboard, buttons and touch
+Moving is one operation on the document tree — `moveBlock(from, toParent, toIndex)` — checked against AD-32's depth rule.
+Pointer drag (`blockview.tsx startDrag`), keyboard, the buttons and touch all call it; the gallery inserts through
+the same position model. The drop line and the live region are drawn from its result. *Rejected*: a second path
+for the keyboard (two behaviours to keep equal); Crepe's own handle (limited to prose, DESIGN.md).
+
+### AD-35 — Variants are `view` values
+A block's alternative presentations of the same data are values of `view` (`list` already has `rows|cards|chips`;
+DESIGN.md: `frame` is the box, `view` the inside); the set is closed per block in its spec; the settings show them as pictures.
+A new `:::` name is kept for a different thing (a different data shape), per the doctrine of DESIGN.md.
+
+### AD-36 — Templates are shipped page seeds
+A template is a markdown file in the core's or a plugin's `templates/`, with a name, a picture and a one-line description in
+its frontmatter; "New page" copies it. No template entity, no user templates (out of scope). `project-management`
+ships "Project status".
+
+*Reversed if* (AD-34 to AD-36): not expected before tranche 4.
+
 ## Refactoring targets
 
 Each target: what, where, why it costs, the tranche that owns it, and its outcome

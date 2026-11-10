@@ -1,0 +1,24 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="stylesheet" href="maquette.css"><title>Block gallery and moving</title>
+<body><div class="sheetpage"><h1>Block gallery (E-34) and moving a block (E-4) — tranche 1, B-23 / B-24</h1>
+<p class="lead">Moving: the grip and its pointer drag stay; the bar gains <b>Move up / Move down</b>; <kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> moves from the keyboard and says where. Gallery: <b>Add block</b> opens a searchable sheet (bottom sheet on a phone); a refused drop says why.</p>
+<h2>Moving — bar, drop line, live region, refused drop</h2>
+<div class="show" data-tpl="m"></div>
+<template id="m"><div class="pg"><h3 class="pt">Garden project</h3><div class="sub">Page · editing</div>
+<div class="bl card"><div class="hd">Summary</div><div class="muted" style="font-size:13px">On track for April.</div></div>
+<div class="drop"></div>
+<div class="bl card sel" style="margin-top:6px"><div class="bar"><button title="Move"><i data-i="grip"></i></button><button><i data-i="up"></i></button><button><i data-i="down"></i></button><button><i data-i="set"></i></button><button><i data-i="trash"></i></button></div><div class="hd"><i class="ico" data-i="chart"></i>Figures</div><div class="figs"><div class="fig"><b>62 %</b><span>Progress</span></div><div class="fig"><b>14</b><span>Open</span></div></div></div>
+<div class="bl card"><div class="hd">Planning</div><div class="tl"><div class="ln"><span>Works</span><div class="tr"><i style="left:20%;width:50%"></i></div></div></div></div>
+<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="toast"><i data-i="check"></i>Moved to position 2 of 4</span><span class="muted" style="font-size:12px"><kbd>Alt</kbd> <kbd>↑</kbd> <kbd>↓</kbd> move · <kbd>Alt</kbd> <kbd>←</kbd> <kbd>→</kbd> in / out of a column</span></div>
+<div class="pill p-wa" style="margin-top:10px"><i data-i="warn"></i>A section cannot go inside a column — it stays where it was.</div></div></template>
+<h2>Gallery — search, groups, a picture and a line each</h2>
+<div class="show" data-tpl="g"></div>
+<template id="g"><div class="sheet"><div class="sh2"><i data-i="plus"></i>Add a block<span class="btn" style="margin-left:auto"><i data-i="x"></i></span></div><div class="sb2">
+<div class="in" style="margin-bottom:6px"><i data-i="search"></i><span class="muted">Search a block…</span></div>
+<div class="grp">Text</div><div class="gal"><div class="gc"><div class="pic"><i></i><i></i><i style="width:70%"></i></div><b><i data-i="text"></i>Content</b><span>Free text, headings, a quote.</span></div><div class="gc"><div class="pic" style="border-left:3px solid var(--warning)"><i class="a" style="background:var(--warning)"></i><i></i></div><b><i data-i="call"></i>Callout</b><span>A highlighted note.</span></div></div>
+<div class="grp">Data</div><div class="gal"><div class="gc on"><div class="pic" style="flex-direction:row;align-items:center"><i class="a" style="width:30%;height:20px;border-radius:4px"></i><i style="width:30%;height:20px;border-radius:4px"></i></div><b><i data-i="chart"></i>Figures</b><span>Big numbers with a caption.</span></div><div class="gc"><div class="pic"><i></i><i></i><i></i></div><b><i data-i="list"></i>List</b><span>Rows, cards or chips.</span></div><div class="gc"><div class="pic"><i class="a"></i><i></i><i></i></div><b><i data-i="table"></i>Table</b><span>Rows and columns.</span></div></div>
+<div class="grp">Project</div><div class="gal"><div class="gc"><div class="pic"><i class="a" style="width:20%"></i><i class="a" style="width:60%;margin-left:25%"></i></div><b><i data-i="tl"></i>Timeline</b><span>Phases on a calendar.</span></div><div class="gc"><div class="pic"><i></i><i></i></div><b><i data-i="flag"></i>Sub-projects</b><span>Child pages with their status.</span></div></div>
+<div style="display:flex;justify-content:space-between;margin-top:14px"><span class="faint" style="font-size:12px"><kbd>↑</kbd><kbd>↓</kbd> choose · <kbd>Enter</kbd> insert here</span><button class="btn pri"><i data-i="plus"></i>Insert Figures</button></div></div></div></template>
+<h2>Gallery — empty search</h2>
+<div class="show" data-sets="desk-light phone-dark" data-tpl="e"></div>
+<template id="e"><div class="sheet"><div class="sb2" style="text-align:center;padding:30px"><i data-i="search" style="width:28px;height:28px;color:var(--text-faint)"></i><div style="font-weight:600;margin:8px 0 2px">No block called "gantt"</div><div class="muted" style="font-size:13px">Try "timeline", or clear the search to browse everything.</div></div></div></template>
+</div><script src="maquette.js"></script>
