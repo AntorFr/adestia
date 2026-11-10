@@ -9,14 +9,15 @@
  * Each test names the change that turns it red.
  */
 import { execFileSync, spawnSync } from 'node:child_process'
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { randomUUID } from 'node:crypto'
-import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { afterAll, describe, expect, it } from 'vitest'
 import { parse } from 'yaml'
+
+import { cleanTmp, tmpDir } from './support/tmp.js'
 
 const root = resolve(fileURLToPath(new URL('../../..', import.meta.url)))
 const read = (p: string) => readFileSync(join(root, p), 'utf8')
@@ -100,9 +101,10 @@ describe('Adestia declares and attests its suite (R15)', () => {
 })
 
 // ---- the attestation job, run for real -------------------------------------------------
+const work = await tmpDir('attest-')
+
 describe('the attestation job of docker-publish', () => {
-  const work = mkdtempSync(join(tmpdir(), 'attest-'))
-  afterAll(() => rmSync(work, { recursive: true, force: true }))
+  afterAll(cleanTmp)
 
   const script: string = (yml(publish).jobs.attestation?.steps ?? [])
     .map((s: any) => s.run).filter(Boolean)
@@ -129,24 +131,24 @@ describe('the attestation job of docker-publish', () => {
   writeFileSync(join(bin, 'gh'), fake.join(String.fromCharCode(10)))
   chmodSync(join(bin, 'gh'), 0o755)
 
-  const git = (cwd: string, ...a: string[]) =>
+  const run = (cwd: string, ...a: string[]) =>
     execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', ...a], { cwd, encoding: 'utf8' }).trim()
 
   let n = 0
   const repo = () => {
     const d = join(work, 'r' + ++n)
     mkdirSync(d)
-    git(d, 'init', '-q', '-b', 'main')
+    run(d, 'init', '-q', '-b', 'main')
     writeFileSync(join(d, 'a.txt'), randomUUID() + '\n')
-    git(d, 'add', 'a.txt')
-    git(d, 'commit', '-q', '-m', 'a')
+    run(d, 'add', 'a.txt')
+    run(d, 'commit', '-q', '-m', 'a')
     return d
   }
   const commit = (d: string, file: string, body: string) => {
     writeFileSync(join(d, file), body)
-    git(d, 'add', file)
-    git(d, 'commit', '-q', '-m', file)
-    return git(d, 'rev-parse', 'HEAD')
+    run(d, 'add', file)
+    run(d, 'commit', '-q', '-m', file)
+    return run(d, 'rev-parse', 'HEAD')
   }
   const mark = (sha: string, line: string) => writeFileSync(join(statuses, sha), line + '\n')
   const play = (d: string) =>
@@ -182,11 +184,11 @@ describe('the attestation job of docker-publish', () => {
   it('passes on a merge commit whose tree is that of its attested parent', () => {
     // red if the job requires the status on the merge commit itself
     const d = repo()
-    git(d, 'checkout', '-q', '-b', 'feat')
+    run(d, 'checkout', '-q', '-b', 'feat')
     const attested = commit(d, 'b.txt', 'b\n')
-    git(d, 'checkout', '-q', 'main')
-    git(d, 'merge', '-q', '--no-ff', '-m', 'merge', 'feat')
-    expect(git(d, 'rev-parse', 'HEAD')).not.toBe(attested)
+    run(d, 'checkout', '-q', 'main')
+    run(d, 'merge', '-q', '--no-ff', '-m', 'merge', 'feat')
+    expect(run(d, 'rev-parse', 'HEAD')).not.toBe(attested)
     mark(attested, 'tests-complets|success|vert')
     expect(play(d).status).toBe(0)
   })
@@ -194,11 +196,11 @@ describe('the attestation job of docker-publish', () => {
   it('fails on a merge commit whose tree differs from every attested parent', () => {
     // red if a green parent is accepted although the content is not the attested one
     const d = repo()
-    git(d, 'checkout', '-q', '-b', 'feat')
+    run(d, 'checkout', '-q', '-b', 'feat')
     const attested = commit(d, 'b.txt', 'b\n')
-    git(d, 'checkout', '-q', 'main')
+    run(d, 'checkout', '-q', 'main')
     const mainHead = commit(d, 'c.txt', 'c\n')
-    git(d, 'merge', '-q', '--no-ff', '-m', 'merge', 'feat')
+    run(d, 'merge', '-q', '--no-ff', '-m', 'merge', 'feat')
     mark(attested, 'tests-complets|success|vert')
     mark(mainHead, 'tests-complets|success|vert')
     expect(play(d).status).toBe(1)
