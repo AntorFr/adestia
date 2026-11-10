@@ -1,7 +1,9 @@
 #!/bin/sh
 # The suite Adestia declares in .sdlc.yaml and has attested (`attester --publier`).
-# It plays what ci.yml used to play, in the same order, from a clean checkout:
-# install, typecheck, lint, tests, documentation/bench guards, builds, boot.
+# It plays what ci.yml used to play, from a clean checkout, in this order:
+# install, typecheck, lint, builds, tests, plugins, documentation/bench guards, boot.
+# The builds come before the tests (ci.yml built after the guards) because the
+# browser suites drive the built server and shell.
 # It writes ONE JUnit report, resultats.xml: every test under its own name, and
 # each step (install, typecheck, lint, build, boot) as a case of its own.
 # It needs no secret. Exit status is non-zero if any step or test is red.
