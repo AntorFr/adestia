@@ -151,12 +151,12 @@ it adds the behaviours below, so `B-1` (no functional change) does not bind it. 
 keep opening as they did (B-31).
 
 - **B-23** — A block moves without a mouse: from the keyboard, from **Move up / Move down** controls on its bar, and by touch (a long press then drag, or the same controls). The move works at the page level today; the same controls move it across containers once B-28 exists. *(P-17)*
-- **B-24** — The user browses all the blocks the instance offers (core and enabled plugins) in a **block gallery**: each with its name, a picture of how it looks, one line saying what it is for; choosing one inserts it where the user was, and opens its form (B-27) when it needs data. The `/` menu stays. *(P-17)*
+- **B-24** — The user browses all the blocks the instance offers (core and enabled plugins) in a **block gallery**: each with its name, a picture of how it looks, one line saying what it is for; choosing one inserts it at the **insertion point** (after the block that has focus or selection; at the end of the page when none; at the end of the container when the focus is a container), and opens its form (B-27) when it needs data. The `/` menu stays. *(P-17)*
 - **B-25** — Every block is redrawn to look finished (the blocks of the core and of `project-management`), and where one data can read in several ways the block offers display variants (`view`), chosen from the settings (B-26) or the gallery. *(P-18)*
 - **B-26** — The block settings (E-6) are redrawn: labels in the user's language, fields grouped and explained, the variants shown as small pictures rather than words, the effect visible while the user changes it. No raw attribute is shown by default. *(P-18)*
 - **B-27** — The data of a block is entered in a form, not as raw markdown lines: the figures of `figures`, the phases and milestones of `timeline`, the items of `list` and `table`, the cards. The raw lines stay one click away; what the form writes is the same file as before (AD-33). *(P-18)*
 - **B-28** — A page has **sections** (a titled group of blocks that may be folded) and **columns** (two or three side by side that stack on a phone); a block is dropped into, out of, and between them, with the pointer, the keyboard and the buttons of B-23. Nesting is bounded (AD-32). *(P-19)*
-- **B-29** — The blocks of `project-management` are redesigned in this frame, and the project blocks that the status page needs (a candidate list is in the mockup `etat-projet`: derived progress, milestones, risks, workload…) are added from the choice Monsieur makes on that picture; no block is added before it. *(P-20)*
+- **B-29** — The blocks of `project-management` are redesigned in this frame, and the project blocks that the status page needs (a candidate list is in the mockup `etat-projet`: derived progress, milestones, risks, workload…) are added from the choice Monsieur makes on that picture; no block is added before it, and the fields each reads are fixed by the design of tranche 4 once it is made. *(P-20)*
 - **B-30** — A page **"Project status"** is created from a template (a page seed with its sections, columns and blocks already placed) and finished by editing its blocks through forms. This is the exit criterion of the epic: someone composes a readable, structured status page without touching markdown or raw configuration. *(P-20)*
 - **B-31** — Every page written before this epic opens, reads and saves unchanged: no migration, and a page without containers is written back byte-for-byte as before its edit (AD-32). *(P-19)*
 
@@ -393,7 +393,7 @@ The user has a block that looks rough and whose data is raw lines.
 
 1. The user opens the block's settings (E-6); the variants are small pictures; choosing one redraws the block in place (B-25, B-26).
 2. The user presses **Edit data**; a form (E-35) lists the figures (or phases, items): add, reorder, remove a row, with the right field per column (a number, a date, a status) (B-27).
-3. The user closes the form; the block shows the result. The raw lines are available from the block's code toggle and say the same thing (B-27, AD-33).
+3. The user closes the form; the block shows the result. The raw lines are available from **Raw** in the form and say the same thing (B-27, AD-33).
 
 Needs: B-25, B-26, B-27
 
@@ -402,7 +402,7 @@ The user wants a section "Risks" next to a section "Decisions" and a summary abo
 
 1. The user adds a **Section** and a **Columns** block from the gallery (E-34) (B-28).
 2. They drop existing blocks into the columns by dragging or with the move controls (B-23, B-28); a block that cannot go somewhere (depth, AD-32) shows why instead of refusing silently.
-3. They fold a section to read the page shorter; on a phone the columns stack (B-28).
+3. They fold a section to read the page shorter (a reader's toggle, local to the screen, also available on a read-only page; the saved initial state is the section's `closed` setting); on a phone the columns stack (B-28).
 4. A colleague opens a page written last month: it reads as before (B-31).
 
 Needs: B-23, B-28, B-31
@@ -410,8 +410,8 @@ Needs: B-23, B-28, B-31
 ### P-20 — Compose a project status page
 The owner follows a project and wants a status page without writing markdown.
 
-1. From the new-page flow the user chooses the template "Project status" (E-36) (B-30).
-2. The page opens with a summary section, a two-column band (progress and milestones, risks), and the timeline; each block has placeholder content the user edits through forms (B-27, B-29).
+1. In the section where the project lives, the user presses **New from template** (E-3), chooses "Project status", names the page and creates it (E-36) (B-30).
+2. The page opens with a summary section, a two-column band (progress and milestones, risks), and the timeline; each block has placeholder content the user edits through forms (B-27, B-29). Which project blocks the band holds, and which fields each reads (derived from sub-pages' dates, status and tasks, or typed in its form), is settled by Monsieur's choice on the mockup `etat-projet` and written in the design of tranche 4.
 3. The user changes a block's variant, moves a risk block to another column, adds a block from the gallery (B-23, B-24, B-28).
 4. A reader opens the page (E-4, E-31): it is legible on a desk and on a phone, light and dark (B-30).
 

@@ -274,9 +274,9 @@ none in the frontmatter:
 
 - **Containers** (AD-32): `section` and `columns`/`col` join the closed vocabulary; they hold blocks and
   nest by fence length. A page without them is identical to today's.
-- **Display variants** (AD-35): a new value of `view` on existing blocks, or a new optional attribute; an
+- **Display variants** (AD-35): a new value of `view` on existing blocks, and only that; an
   unknown value falls back to the block's default view, never to an error.
 - **Block data** keeps its line formats (AD-33); the forms read and write them.
 
-Templates (AD-36) are page seeds shipped with the core or a plugin: files copied at creation, not stored data.
+Templates (AD-36) are page seeds shipped with the core or a plugin: files copied at creation, not stored data. A seed carries a `template:` frontmatter key (`name`, `image`, `description`) read by the template sheet only; it is dropped when the page is created and is not a page property.
 Rights are those of pages: whoever may write the page may use the gallery, the forms and the containers.

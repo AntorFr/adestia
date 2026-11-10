@@ -1179,7 +1179,7 @@ The vocabulary (`packages/content/src/vocabulary.ts`) gains a `container` conten
 holds blocks; `columns` holds 2 or 3 `col`, each holding blocks. A container is written with a longer
 fence than its children (`::::columns` around `:::col`), as the directive grammar allows. Depth is bounded:
 a section holds blocks and columns; a column holds blocks (and no section or columns); a section does not hold a
-section. `w` still shares a line among top-level blocks outside containers, `row` still cuts it. The reader renders
+section. `w` and `row` keep their rules at the page level and inside a section (a section is a flow of bands like the page); inside a `col` the blocks are stacked at the column's full width and `w` is ignored (kept in the file, not rewritten). `closed=fold` is the saved initial state; the reader's fold toggle is local to the screen, writes nothing and works on a read-only page. The reader renders
 containers recursively; the editor drops into them (AD-34). A page without containers parses and serialises
 byte-for-byte as before (B-31), checked by round-trip tests over the pages of the repository and the seeds.
 The grammar fork `micromark-extension-directive` must accept this nesting: verified first, in tranche 3's first task.
@@ -1202,13 +1202,12 @@ the same position model. The drop line and the live region are drawn from its re
 for the keyboard (two behaviours to keep equal); Crepe's own handle (limited to prose, DESIGN.md).
 
 ### AD-35 — Variants are `view` values
-A block's alternative presentations of the same data are values of `view` (`list` already has `rows|cards|chips`;
+A block's alternative presentations of the same data are values of `view`, and only `view` (no new attribute for a variant; another need is a setting of its own) (`list` already has `rows|cards|chips`;
 DESIGN.md: `frame` is the box, `view` the inside); the set is closed per block in its spec; the settings show them as pictures.
 A new `:::` name is kept for a different thing (a different data shape), per the doctrine of DESIGN.md.
 
 ### AD-36 — Templates are shipped page seeds
-A template is a markdown file in the core's or a plugin's `templates/`, with a name, a picture and a one-line description in
-its frontmatter; "New page" copies it. No template entity, no user templates (out of scope). `project-management`
+A template is a markdown file in the core's or a plugin's `templates/`, with a `template:` frontmatter key holding `name`, `image` and `description` (declared in `docs/donnees.md`); "New from template" (E-36) copies the body and the page's own frontmatter (`type`, `title` from the user's name) and drops the `template:` key, so a created page carries no trace of it. No template entity, no user templates (out of scope). `project-management`
 ships "Project status".
 
 *Reversed if* (AD-34 to AD-36): not expected before tranche 4.
