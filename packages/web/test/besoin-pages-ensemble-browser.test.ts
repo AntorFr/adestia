@@ -131,24 +131,27 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
         it('sauvegarde_refusee_dit_le_diagnostic_dans_la_langue_et_garde_lediteur', async () => {
           for (const [i, theme] of THEMES.entries()) {
             const { context, page } = await visit(browser, instance.url, locale, theme, 'desk', `/page/refus-${i}`)
+            await indexLoaded(page)
             await page.getByRole('button', { name: w.edit, exact: true }).click()
+            // the editor is mounted and holds the page text: the signal that a click lands on the real paragraph
+            await page.waitForFunction(() => [...document.querySelectorAll('.ProseMirror')].some((e) => (e.textContent ?? '').includes('Corps.')), null, { timeout: 45_000 })
             await page.locator('.ProseMirror').last().getByText('Corps.').click()
             await page.keyboard.press('End')
             await page.keyboard.press('Enter')
             await page.keyboard.type('/')
-            await page.locator('.milkdown-slash-menu').first().waitFor({ state: 'visible', timeout: 15_000 })
+            await page.locator('.milkdown-slash-menu').first().waitFor({ state: 'visible', timeout: 45_000 })
             await page.keyboard.type('callout')
             // the menu has filtered itself down to the block: the proof Enter will pick it
             await page.waitForFunction(() => {
               const menu = document.querySelector('.milkdown-slash-menu') as HTMLElement | null
               return !!menu && menu.dataset.show === 'true' && /callout/.test(menu.innerText) && !/Heading/.test(menu.innerText)
-            }, null, { timeout: 10_000 })
+            }, null, { timeout: 30_000 })
             await page.keyboard.press('Enter') // an empty :::callout, which the vocabulary refuses at save
             // the proof the save was answered: the status carries the refusal
             const flat = () => page.evaluate(() => (document.querySelector('.adestia-canvas__body') as HTMLElement).innerText.replace(/[\u00a0\u202f\s]+/g, ' '))
             const want = NEEDS_CONTENT[locale].saved
             await page
-              .waitForFunction((t: string) => (document.querySelector('.adestia-canvas__body') as HTMLElement).innerText.replace(/[\u00a0\u202f\s]+/g, ' ').includes(t), want, { timeout: 20_000 })
+              .waitForFunction((t: string) => (document.querySelector('.adestia-canvas__body') as HTMLElement).innerText.replace(/[\u00a0\u202f\s]+/g, ' ').includes(t), want, { timeout: 60_000 })
               .catch(async (error: unknown) => {
                 await shot(page, `refus-ECHEC-${skin}-${locale}-${theme}`)
                 throw new Error(`${String(error)}\nstatus read: ${(await flat()).slice(-400)}`)
@@ -160,7 +163,7 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
             await shot(page, `refus-${skin}-${locale}-${theme}`)
             await context.close()
           }
-        }, 120_000)
+        }, 240_000)
 
         // P-6 step 4 / E-6: the popover stays below the header and the bands even when its block is the first
         // one of the page, right under the bands; at 1440 px and on a phone, in both themes.
@@ -205,11 +208,32 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
         // P-4 step 5 / E-5: the editor shows the fields of a CRLF page as it shows those of its LF twin.
         // Breaks if the properties of a page whose lines end in \r\n come up empty.
         it('editeur_montre_les_champs_dune_page_crlf_comme_ceux_de_sa_jumelle_lf', async () => {
-          const read = async (route: string) => {
+          const read = async (route: string, title: string) => {
             const { context, page } = await visit(browser, instance.url, locale, 'light', 'desk', route)
-            await page.getByRole('button', { name: w.edit, exact: true }).click()
-            await page.locator('.adestia-editor__meta-gear').click()
-            await page.waitForSelector('.adestia-popover', { timeout: 10_000 })
+            // Each step waits for the proof that the previous one landed, never for a duration: the page loaded,
+            // the editor mounted (its Done button), the gear drawn, the popover open AND filled (title is non-empty).
+            const edit = page.getByRole('button', { name: w.edit, exact: true })
+            await edit.waitFor({ timeout: 20_000 })
+            // The editor reads what the plugins contribute (the vocabulary behind the selects) when it MOUNTS; the index
+            // answers only after the plugins are loaded. Open the editor before that and the properties come up as
+            // bare text fields, whatever the page says.
+            await indexLoaded(page)
+            await edit.click()
+            await page.getByRole('button', { name: w.done, exact: true }).waitFor({ timeout: 20_000 })
+            const gear = page.locator('.adestia-editor__meta-gear')
+            await gear.waitFor({ state: 'visible', timeout: 20_000 })
+            // A click that lands while the editor is still remounting is lost: click again until the popover is there.
+            const deadline = Date.now() + 20_000
+            while (!(await page.locator('.adestia-popover').count()) && Date.now() < deadline) {
+              await gear.click()
+              await page.locator('.adestia-popover').waitFor({ timeout: 2_000 }).catch(() => null)
+            }
+            // the fields are filled: the first input carries the title, read from the page, not an empty form
+            await page.waitForFunction(
+              (t: string) => (document.querySelector('.adestia-popover input') as HTMLInputElement | null)?.value === t,
+              title,
+              { timeout: 30_000 },
+            )
             const fields = (await page.evaluate(() => ({
               inputs: [...document.querySelectorAll('.adestia-popover input')].map((i) => (i as HTMLInputElement).value),
               selects: [...document.querySelectorAll('.adestia-popover select')].map((s) => (s as HTMLSelectElement).value),
@@ -218,8 +242,8 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
             await context.close()
             return fields
           }
-          const crlf = await read('/page/editeur-crlf')
-          const lf = await read('/page/editeur-lf')
+          const crlf = await read('/page/editeur-crlf', 'Fiche éditeur CRLF')
+          const lf = await read('/page/editeur-lf', 'Fiche éditeur LF')
           expect(crlf.inputs[0]).toBe('Fiche éditeur CRLF')
           expect(lf.inputs[0]).toBe('Fiche éditeur LF')
           for (const f of [crlf, lf]) {

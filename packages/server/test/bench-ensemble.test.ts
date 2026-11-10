@@ -32,6 +32,13 @@ const ready = built && hasPlaywright
 
 afterAll(cleanTmp)
 
+// A full sweep is 124 captures. Measured on ONE core (`taskset -c 0`) it takes
+// ~280-295 s, and a busy pod is slower still, so a ceiling near 420 s killed it
+// mid-run. The ceiling only guards against a hang: four times the one-core
+// measure, with the test's own timeout a little above so the kill reports first.
+const FULL_SWEEP_KILL_MS = 1_200_000
+const FULL_SWEEP_TEST_MS = FULL_SWEEP_KILL_MS + 30_000
+
 const run = (args: string[], timeoutMs: number) =>
   new Promise<{ status: number | null; stdout: string; stderr: string }>((done) => {
     const child = spawn(process.execPath, [sweep, ...args], { stdio: ['ignore', 'pipe', 'pipe'] })
@@ -86,12 +93,12 @@ describe.skipIf(!ready)('B-3 · the sweep captures every screen, both themes, bo
 
   it('default skin: exits 0 and says 124/124', async () => {
     out = await tmpDir('sweep-ensemble-')
-    results.default = await run(['--out', out], 420_000)
+    results.default = await run(['--out', out], FULL_SWEEP_KILL_MS)
     expect(results.default.status, results.default.stderr).toBe(0)
     expect(results.default.stdout).toContain('124/124')
     expect(results.default.stderr).not.toContain('FAIL')
     def = readShots(join(out, 'default'))
-  }, 450_000)
+  }, FULL_SWEEP_TEST_MS)
 
   it('default skin: 124 files, E-1 to E-31 each in light and dark at desk and phone', () => {
     expect(def).toHaveLength(124)
@@ -141,7 +148,7 @@ describe.skipIf(!ready)('B-3 · the sweep captures every screen, both themes, bo
   })
 
   it('--skin skippy: exits 0, 124/124, under skippy/, and E-2 and E-16 are not the default skin', async () => {
-    results.skippy = await run(['--skin', 'skippy', '--out', out], 420_000)
+    results.skippy = await run(['--skin', 'skippy', '--out', out], FULL_SWEEP_KILL_MS)
     expect(results.skippy.status, results.skippy.stderr).toBe(0)
     expect(results.skippy.stdout).toContain('124/124')
     skippy = readShots(join(out, 'skippy'))
@@ -153,7 +160,7 @@ describe.skipIf(!ready)('B-3 · the sweep captures every screen, both themes, bo
         }
       }
     }
-  }, 450_000)
+  }, FULL_SWEEP_TEST_MS)
 
   it('--only restricts to the screens named and still writes 4 captures per screen', async () => {
     const dir = await tmpDir('sweep-ensemble-only-')
