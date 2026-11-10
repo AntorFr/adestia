@@ -650,7 +650,7 @@ written first, red until the removal, then green). Inventory taken on `epic/ades
   fails when an option is destructured that no seed in `bench/seed/` and no scenario passes. (The bench is
   `.mjs`, outside the typecheck: the criterion's "typecheck fails" is held by this test instead, same
   strength, which also covers the case of an option read by nothing.)
-- **`doc-besoin.test.mjs` in CI.** `.github/workflows` gains a step `node --test bench/tests/doc-besoin.test.mjs
+- **`doc-besoin.test.mjs` in the suite.** (Originally a `ci.yml` step, now played by `scripts/suite-attestee.sh`, AD-preuve-2.) The suite plays `node --test bench/tests/doc-besoin.test.mjs
   bench/tests/bench-once.test.mjs` (neither needs a browser). The two tests that guard `DESIGN.md` twice
   (`design-doc.test.ts` and `doc-besoin.test.mjs`) keep the `doc-besoin` pair, which also checks headings;
   `design-doc.test.ts` goes if nothing else is in it. A vitest test (`packages/server/test/ci-workflow.test.ts`, run by `npm test`, so not by the step it guards) reads
