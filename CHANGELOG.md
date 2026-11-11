@@ -774,3 +774,12 @@ branch and that `test:plugins` is replayed after a red vitest run.
   not load" test and the R-6 exports table test each get an explicit, wider timeout instead of
   the 5 s vitest default, and the rail test waits for the entry count itself instead of a fixed
   800 ms pause. No assertion is removed. A test-only fix: nothing changes for users.
+
+## v0.97.9
+
+- **The "server not answering" banner test waits for its signals with wide failure budgets** —
+  in `packages/web/test/besoin-hors-ligne-browser.test.ts`, the B-19 test where every `/api/`
+  call and the `/api/health` probe fail now allows 30 s each for the banner to show, for two
+  probes to be counted and for the banner to leave on its own, and re-provokes a failed call
+  while the banner is absent, instead of 8 to 10 s windows that broke on a busy machine. The
+  three proofs are kept. A test-only fix: nothing changes for users.
