@@ -147,11 +147,25 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
               return !!menu && menu.dataset.show === 'true' && /callout/.test(menu.innerText) && !/Heading/.test(menu.innerText)
             }, null, { timeout: 30_000 })
             // the save answer is awaited by name, armed BEFORE the keystroke that triggers it (as `indexAnswered` is); it must be the REFUSAL (422), not an autosave of the text typed so far
+            const puts: string[] = []
+            page.on('response', (r: any) => {
+              if (r.request().method() === 'PUT' && r.url().includes(`/api/pages/refus-${i}`)) puts.push(String(r.status()))
+            })
             const saveAnswered = page
               .waitForResponse((r: any) => r.request().method() === 'PUT' && r.url().includes(`/api/pages/refus-${i}`) && r.status() === 422, { timeout: 45_000 })
               .catch(() => null)
             await page.keyboard.press('Enter') // an empty :::callout, which the vocabulary refuses at save
-            expect(await saveAnswered, "the save never left: no PUT answered 422 — an earlier autosave answering 200 does not count (l'enregistrement n'est jamais parti)").not.toBeNull()
+            // the proof the keystroke landed on the menu: the block is in the editor. Without it an Enter that fell
+            // through as a newline would leave no refusal to wait for, and the wait below would blame the save
+            await page
+              .locator('.ProseMirror [data-block="callout"]')
+              .first()
+              .waitFor({ state: 'attached', timeout: 45_000 })
+              .catch(async () => {
+                await shot(page, `refus-ECHEC-bloc-${skin}-${locale}-${theme}`)
+                throw new Error(`the callout never entered the editor: Enter did not pick the block, so no refusal could leave (saves seen: [${puts.join(',')}])`)
+              })
+            expect(await saveAnswered, `the save never left: no PUT answered 422 — an earlier autosave answering 200 does not count (l'enregistrement n'est jamais parti); PUT statuses seen: [${puts.join(',')}]`).not.toBeNull()
             // the proof the save was answered: the status carries the refusal
             const flat = () => page.evaluate(() => (document.querySelector('.adestia-canvas__body') as HTMLElement).innerText.replace(/[\u00a0\u202f\s]+/g, ' '))
             const want = NEEDS_CONTENT[locale].saved
