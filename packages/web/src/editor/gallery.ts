@@ -15,12 +15,12 @@ import { CORE_GALLERY, type Locale } from './galleryTable.js'
 export interface GalleryPlugin {
   readonly id: string
   readonly base: string
-  readonly blockNames?: readonly string[]
+  readonly blockNames?: readonly string[] | undefined
   readonly gallery?: Readonly<
     Record<string, { name: PluginGalleryText; line: PluginGalleryText; image: string; group: string }>
-  >
+  > | undefined
   /** The plugin's own translations of its English sentences. */
-  readonly words?: Readonly<Record<string, string>>
+  readonly words?: Readonly<Record<string, string>> | undefined
 }
 
 export interface GalleryCard {

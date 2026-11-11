@@ -802,3 +802,11 @@ branch and that `test:plugins` is replayed after a red vitest run.
   PUT that carries the `:::callout`, so it no longer turns red under the load of the full
   suite. Five distinct timeouts name what never happened. No assertion is removed. A
   test-only fix: nothing changes for users.
+
+## Unreleased
+
+- **Block gallery** — In the editor bar, **Add block** (shown while editing, absent on a
+  read-only page) opens a sheet of cards, grouped and searchable, for every core block and
+  every enabled plugin's; the `/` menu keeps its blocks and ends with "Browse", which opens
+  the same sheet. Arrows and Enter choose by keyboard. The block lands after the block that
+  holds the selection, at the end of the page when none does. Its form and variants come later.

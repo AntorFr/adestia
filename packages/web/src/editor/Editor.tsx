@@ -11,7 +11,7 @@
  *   because refusing loses the file and rewriting loses the content.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Indexed } from '@antorfr/adestia-content'
 
 import { Attachments } from './Attachments.js'
@@ -30,6 +30,11 @@ import { diagnosticMessage, type DiagnosticMessage } from './diagnostics.js'
 import { useAutosave } from './useAutosave.js'
 import { useEditorSurface } from './useEditorSurface.js'
 import { usePageDrop } from './usePageDrop.js'
+import { BlockGallery } from './BlockGallery.js'
+import { galleryCards, type GalleryPlugin } from './gallery.js'
+import { insertFromGallery } from './galleryBridge.js'
+import { OPEN_GALLERY } from './slash.js'
+import { editorBlocks } from './vocabulary.js'
 
 export { SaveStatus } from './SaveStatus.js'
 export { savePage, type SaveState } from './useAutosave.js'
@@ -112,6 +117,8 @@ export interface EditorProps {
    * the page itself rather than by hunting for the file.
    */
   readonly layouts?: LayoutComponents
+  /** The enabled plugins, for the block gallery's cards. Absent: the core's blocks only. */
+  readonly galleryPlugins?: readonly GalleryPlugin[]
   /** The instance's pages, forwarded so a `[[type#id]]` link finds its page. */
   readonly pages?: readonly Indexed[]
   /** The stores they compose, forwarded for a block that draws provenance. */
@@ -201,6 +208,7 @@ export function Editor(props: EditorProps) {
     layouts,
     pages,
     stores,
+    galleryPlugins,
     attachments = true,
     startEditing = false,
     titleField = false,
@@ -226,6 +234,29 @@ export function Editor(props: EditorProps) {
     editing, shown, saved, setBody,
   )
   const { dropping, events } = usePageDrop({ ...props, t }, editing)
+
+  const [gallery, setGallery] = useState(false)
+  const lang = resolveLocale(locale) === 'fr' ? 'fr' : 'en'
+  // Only blocks the editor can write: a card for a block with no node is a dead end.
+  const cards = useMemo(() => {
+    const known = new Set(editorBlocks().map((spec) => spec.name))
+    return galleryCards(galleryPlugins ?? [], lang).filter((card) => known.has(card.id))
+  }, [galleryPlugins, lang])
+  // "Browse" in the `/` menu asks from inside the surface.
+  useEffect(() => {
+    const element = host.current
+    if (!editing || !element) return undefined
+    const open = () => setGallery(true)
+    element.addEventListener(OPEN_GALLERY, open)
+    return () => element.removeEventListener(OPEN_GALLERY, open)
+  }, [editing, host])
+  useEffect(() => {
+    if (!editing) setGallery(false)
+  }, [editing])
+  const choose = (name: string) => {
+    setGallery(false)
+    insertFromGallery(host.current, name)
+  }
 
   /*
    * Announced on CHANGE, not on every render: the callback is written inline
@@ -317,6 +348,15 @@ export function Editor(props: EditorProps) {
           )}
           {page.editable && editing && (
             <Button
+              variant="ghost"
+              icon="plus"
+              onClick={() => setGallery(true)}
+            >
+              {t('Add block')}
+            </Button>
+          )}
+          {page.editable && editing && (
+            <Button
               variant="accent"
               className="adestia-editor__save"
               onClick={() => void done()}
@@ -364,6 +404,8 @@ export function Editor(props: EditorProps) {
       )}
 
       <Diagnostics items={page.diagnostics} t={t} />
+
+      <BlockGallery open={gallery && editing} cards={cards} onChoose={choose} onClose={() => setGallery(false)} t={t} />
 
       {/* A refused page shows its RAW source, not a rendering: its vocabulary
           is broken, the diagnostics above say where, and what somebody needs
